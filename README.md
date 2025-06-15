@@ -150,7 +150,7 @@ KTPWPは、WordPress上で動作する包括的なビジネス管理プラグイ
 
 プラグインに関するお問い合わせやサポートは、以下までご連絡ください：
 
-* **公式サイト**: https://www.kantan-pro.com/
+* **公式サイト**: https://www.kantanpro.com/
 
 ## システム要件
 
