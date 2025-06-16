@@ -98,10 +98,6 @@ KTPWPは、WordPress上で動作する包括的なビジネス管理プラグイ
    ```
    [ktpwp_all_tab]
    ```
-   または
-   ```
-   [kantanAllTab]
-   ```
 
 4. **初期設定**
    管理画面の「KTPWP設定」から基本設定を行ってください。
