@@ -231,9 +231,6 @@ class KTP_Settings {
         $general_option_name = 'ktp_general_settings';
         if ( false === get_option( $general_option_name ) ) {
             add_option( $general_option_name, array(
-                'plugin_name' => 'KTPWP',
-                // 翻訳関数は使わず、プレーンテキストで初期化（WordPress 6.7+対応）
-                'plugin_description' => 'カスタムプラグインの管理システムです。',
                 'work_list_range' => 20,
                 'company_info' => ''
             ));
@@ -357,8 +354,8 @@ class KTP_Settings {
     public function add_plugin_page() {
         // メインメニュー
         add_menu_page(
-            __( 'KTPWP設定', 'ktpwp' ), // ページタイトル
-            __( 'KTPWP設定', 'ktpwp' ), // メニュータイトル
+            __( 'KantanPro', 'ktpwp' ), // ページタイトル
+            __( 'KantanPro', 'ktpwp' ), // メニュータイトル
             'manage_options', // 権限
             'ktp-settings', // メニューのスラッグ
             array( $this, 'create_general_page' ), // 表示を処理する関数（一般設定を最初に表示）
@@ -424,7 +421,7 @@ class KTP_Settings {
             wp_die( __( 'この設定ページにアクセスする権限がありません。', 'ktpwp' ) );
         }
 
-        // KTPWP利用権限（ktpwp_access）付加/削除処理
+        // KantanPro利用権限（ktpwp_access）付加/削除処理
         if ( isset($_POST['ktpwp_access_user']) && isset($_POST['ktpwp_access_action']) && check_admin_referer('ktp_staff_role_action', 'ktp_staff_role_nonce') ) {
             $user_id = intval($_POST['ktpwp_access_user']);
             $action = sanitize_text_field($_POST['ktpwp_access_action']);
@@ -432,10 +429,26 @@ class KTP_Settings {
             if ($user_obj) {
                 if ($action === 'add') {
                     $user_obj->add_cap('ktpwp_access');
-                    echo '<div class="notice notice-success is-dismissible"><p>KTPWP利用権限（ktpwp_access）を付加しました。</p></div>';
+                    echo '<div class="notice notice-success is-dismissible"><p>KantanPro利用権限（ktpwp_access）を付加しました。</p></div>';
+                    
+                    // スタッフ追加時のメール通知を送信
+                    $mail_sent = $this->send_staff_notification_email($user_obj, 'add');
+                    if ($mail_sent) {
+                        echo '<div class="notice notice-success is-dismissible"><p>📧 スタッフ追加の通知メールを ' . esc_html($user_obj->user_email) . ' に送信しました。</p></div>';
+                    } else {
+                        echo '<div class="notice notice-warning is-dismissible"><p>⚠️ スタッフ追加の通知メール送信に失敗しました。メール設定をご確認ください。</p></div>';
+                    }
                 } elseif ($action === 'remove') {
                     $user_obj->remove_cap('ktpwp_access');
-                    echo '<div class="notice notice-success is-dismissible"><p>KTPWP利用権限（ktpwp_access）を削除しました。</p></div>';
+                    echo '<div class="notice notice-success is-dismissible"><p>KantanPro利用権限（ktpwp_access）を削除しました。</p></div>';
+                    
+                    // スタッフ削除時のメール通知を送信
+                    $mail_sent = $this->send_staff_notification_email($user_obj, 'remove');
+                    if ($mail_sent) {
+                        echo '<div class="notice notice-success is-dismissible"><p>📧 スタッフ削除の通知メールを ' . esc_html($user_obj->user_email) . ' に送信しました。</p></div>';
+                    } else {
+                        echo '<div class="notice notice-warning is-dismissible"><p>⚠️ スタッフ削除の通知メール送信に失敗しました。メール設定をご確認ください。</p></div>';
+                    }
                 }
             }
         }
@@ -455,6 +468,11 @@ class KTP_Settings {
                     <h2>登録スタッフ一覧</h2>
                     <div style="margin-bottom: 10px; color: #555; font-size: 13px;">
                         <?php echo esc_html__('管理者は登録者の権限に関わらずここでスタッフの追加削除が行えます', 'ktpwp'); ?>
+                    </div>
+                    <div style="margin-bottom: 15px; padding: 12px; background: #e7f3ff; border: 1px solid #b3d9ff; border-radius: 4px; font-size: 13px;">
+                        <span class="dashicons dashicons-info" style="color: #0073aa; margin-right: 5px;"></span>
+                        <strong>メール通知について：</strong>スタッフの追加・削除時に、該当ユーザーへ自動でメール通知が送信されます。
+                        通知内容にはログイン情報や権限の変更についての案内が含まれます。
                     </div>
                     <table class="widefat fixed striped ktp-staff-table">
                         <thead>
@@ -506,6 +524,100 @@ class KTP_Settings {
             </div>
         </div>
         <?php
+    }
+
+    /**
+     * スタッフ追加・削除時のメール通知を送信
+     *
+     * @since 1.0.0
+     * @param WP_User $user_obj 対象ユーザーオブジェクト
+     * @param string $action 'add' または 'remove'
+     * @return bool 送信成功/失敗
+     */
+    private function send_staff_notification_email($user_obj, $action) {
+        // メールアドレスが存在しない場合は送信しない
+        if (empty($user_obj->user_email)) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('KTPWP Staff Notification: メールアドレスが未設定のため通知を送信できません (User ID: ' . $user_obj->ID . ')');
+            }
+            return false;
+        }
+
+        // SMTP設定を取得
+        $smtp_settings = get_option('ktp_smtp_settings', array());
+        $from_email = !empty($smtp_settings['email_address']) ? sanitize_email($smtp_settings['email_address']) : get_option('admin_email');
+        $from_name = !empty($smtp_settings['smtp_from_name']) ? sanitize_text_field($smtp_settings['smtp_from_name']) : get_bloginfo('name');
+
+        // 会社情報を取得
+        $company_info = self::get_company_info();
+        if (empty($company_info)) {
+            $company_info = get_bloginfo('name');
+        } else {
+            // HTMLタグを除去してプレーンテキストに変換
+            $company_info = wp_strip_all_tags($company_info);
+        }
+
+        // メール内容を生成
+        $to = sanitize_email($user_obj->user_email);
+        $display_name = !empty($user_obj->display_name) ? $user_obj->display_name : $user_obj->user_login;
+        
+        if ($action === 'add') {
+            $subject = '[' . get_bloginfo('name') . '] スタッフ権限が付与されました';
+            $body = $display_name . ' 様' . "\n\n";
+            $body .= 'この度、' . get_bloginfo('name') . ' の業務管理システム（KantanPro）のスタッフ権限が付与されました。' . "\n\n";
+            $body .= '以下のURLからログインして、システムをご利用ください：' . "\n";
+            $body .= wp_login_url() . "\n\n";
+            $body .= 'ログイン情報：' . "\n";
+            $body .= 'ユーザー名: ' . $user_obj->user_login . "\n";
+            $body .= 'メールアドレス: ' . $user_obj->user_email . "\n\n";
+            $body .= 'パスワードをお忘れの場合は、ログイン画面の「パスワードをお忘れですか？」からリセットしてください。' . "\n\n";
+            $body .= 'ご不明な点がございましたら、システム管理者までお問い合わせください。' . "\n\n";
+        } else {
+            $subject = '[' . get_bloginfo('name') . '] スタッフ権限が削除されました';
+            $body = $display_name . ' 様' . "\n\n";
+            $body .= get_bloginfo('name') . ' の業務管理システム（KantanPro）のスタッフ権限が削除されました。' . "\n\n";
+            $body .= '今後、システムへのアクセスができなくなります。' . "\n";
+            $body .= 'ご質問がございましたら、システム管理者までお問い合わせください。' . "\n\n";
+        }
+
+        // 署名を追加
+        if (!empty($company_info)) {
+            $body .= '―――――――――――――――――――――――――――' . "\n";
+            $body .= $company_info . "\n";
+        }
+
+        // 自動送信であることを明記
+        $body .= "\n※ このメールは自動送信されています。" . "\n";
+
+        // ヘッダーを設定
+        $headers = array();
+        if (!empty($from_email)) {
+            if (!empty($from_name)) {
+                $headers[] = 'From: ' . $from_name . ' <' . $from_email . '>';
+            } else {
+                $headers[] = 'From: ' . $from_email;
+            }
+        }
+
+        // メール送信を実行
+        $sent = wp_mail($to, $subject, $body, $headers);
+
+        // ログ出力（詳細なエラー情報を含む）
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            if ($sent) {
+                error_log('KTPWP Staff Notification: ' . $action . ' 通知メールを送信しました (User: ' . $display_name . ', Email: ' . $to . ')');
+            } else {
+                // PHPMailerのエラー情報を取得
+                global $phpmailer;
+                $error_message = '';
+                if (isset($phpmailer) && is_object($phpmailer) && !empty($phpmailer->ErrorInfo)) {
+                    $error_message = $phpmailer->ErrorInfo;
+                }
+                error_log('KTPWP Staff Notification: ' . $action . ' 通知メールの送信に失敗しました (User: ' . $display_name . ', Email: ' . $to . ', Error: ' . $error_message . ')');
+            }
+        }
+
+        return $sent;
     }
 
     public function create_admin_page() {
@@ -888,24 +1000,6 @@ class KTP_Settings {
             __( '基本設定', 'ktpwp' ),
             array( $this, 'print_general_section_info' ),
             'ktp-general'
-        );
-
-        // プラグイン名
-        add_settings_field(
-            'plugin_name',
-            __( 'プラグイン名', 'ktpwp' ),
-            array( $this, 'plugin_name_callback' ),
-            'ktp-general',
-            'general_setting_section'
-        );
-
-        // 説明文
-        add_settings_field(
-            'plugin_description',
-            __( '説明文', 'ktpwp' ),
-            array( $this, 'plugin_description_callback' ),
-            'ktp-general',
-            'general_setting_section'
         );
 
         // 仕事リスト表示件数
@@ -1400,14 +1494,6 @@ class KTP_Settings {
     public function sanitize_general_settings( $input ) {
         $new_input = array();
         
-        if ( isset( $input['plugin_name'] ) ) {
-            $new_input['plugin_name'] = sanitize_text_field( $input['plugin_name'] );
-        }
-            
-        if ( isset( $input['plugin_description'] ) ) {
-            $new_input['plugin_description'] = sanitize_textarea_field( $input['plugin_description'] );
-        }
-
         if ( isset( $input['work_list_range'] ) ) {
             $range = intval( $input['work_list_range'] );
             // 最小5件、最大500件に制限
@@ -1450,45 +1536,6 @@ class KTP_Settings {
      */
     public function print_general_section_info() {
         echo esc_html__( 'プラグインの基本設定を行います。', 'ktpwp' );
-    }
-
-    /**
-     * プラグイン名フィールドのコールバック
-     *
-     * @since 1.0.0
-     * @return void
-     */
-    public function plugin_name_callback() {
-        $options = get_option( 'ktp_general_settings' );
-        $value = isset( $options['plugin_name'] ) ? $options['plugin_name'] : 'KTPWP';
-        ?>
-        <input type="text" id="plugin_name" name="ktp_general_settings[plugin_name]" 
-               value="<?php echo esc_attr( $value ); ?>" 
-               style="width:320px;max-width:100%;" 
-               placeholder="<?php echo esc_attr__( 'プラグイン名', 'ktpwp' ); ?>">
-        <div style="font-size:12px;color:#555;margin-top:4px;">
-            <?php echo esc_html__( '※ 管理画面で表示されるプラグイン名です。', 'ktpwp' ); ?>
-        </div>
-        <?php
-    }
-
-    /**
-     * プラグイン説明文フィールドのコールバック
-     *
-     * @since 1.0.0
-     * @return void
-     */
-    public function plugin_description_callback() {
-        $options = get_option( 'ktp_general_settings' );
-        $value = isset( $options['plugin_description'] ) ? $options['plugin_description'] : '';
-        ?>
-        <textarea id="plugin_description" name="ktp_general_settings[plugin_description]" 
-                  rows="3" style="width:100%;max-width:500px;" 
-                  placeholder="<?php echo esc_attr__( 'プラグインの説明文を入力してください', 'ktpwp' ); ?>"><?php echo esc_textarea( $value ); ?></textarea>
-        <div style="font-size:12px;color:#555;margin-top:4px;">
-            <?php echo esc_html__( '※ プラグインの概要や使用方法などを記載してください。', 'ktpwp' ); ?>
-        </div>
-        <?php
     }
 
     /**
