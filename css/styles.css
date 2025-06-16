@@ -210,6 +210,58 @@
     background: #f5f5f5;
     box-shadow: 0 1px 4px #0001;
     vertical-align: middle;
+    margin-right: 5px;
+    transition: opacity 0.3s ease, transform 0.2s ease;
+}
+
+/* 現在のユーザーのアバター */
+.user_icon--current {
+    border: 2px solid #0073aa;
+    box-shadow: 0 0 5px rgba(0, 115, 170, 0.3);
+}
+
+/* 他のスタッフのアバター */
+.user_icon--staff {
+    border: 1px solid #ddd;
+    opacity: 0.85;
+}
+
+.user_icon--staff:hover {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+/* アバター表示エリア */
+.logged-in-staff-avatars {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    flex-wrap: wrap;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+    .user_icon {
+        width: 28px;
+        height: 28px;
+        margin-right: 3px;
+    }
+    
+    .logged-in-staff-avatars {
+        gap: 2px;
+    }
+}
+
+@media (max-width: 480px) {
+    .user_icon {
+        width: 24px;
+        height: 24px;
+        margin-right: 2px;
+    }
+    
+    .logged-in-staff-avatars {
+        gap: 1px;
+    }
 }
 
 /* operation（得意先タブ上部の操作ボタン用） */

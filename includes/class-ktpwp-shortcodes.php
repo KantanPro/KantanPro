@@ -184,29 +184,109 @@ class KTPWP_Shortcodes {
     private function get_logged_in_users_display() {
         global $current_user;
 
-        // 厳密なログイン状態確認 (権限チェック部分を削除)
+        // 厳密なログイン状態確認
         if (!is_user_logged_in() || !$current_user || $current_user->ID <= 0) {
             return '';
         }
 
-        // セッション有効性確認
-        $user_sessions = WP_Session_Tokens::get_instance($current_user->ID);
-        if (!$user_sessions || empty($user_sessions->get_all())) {
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('KTPWP Debug: get_logged_in_users_display - Session check failed. $current_user->ID: ' . (isset($current_user->ID) ? $current_user->ID : 'undefined'));
-                if (isset($current_user->ID)) {
-                    if (!$user_sessions) { // Check $user_sessions which would be falsy here
-                        error_log('KTPWP Debug: get_logged_in_users_display - WP_Session_Tokens::get_instance returned falsy for $current_user->ID: ' . $current_user->ID);
-                    }
-                }
-            }
+        // 全てのログイン中のスタッフを取得
+        $logged_in_staff = $this->get_logged_in_staff_users();
+        
+        if (empty($logged_in_staff)) {
             return '';
         }
 
-        $nickname_esc = esc_attr($current_user->nickname);
-        $avatar = get_avatar($current_user->ID, 32, '', '', array('class' => 'user_icon user_icon--current'));
+        $logged_in_users_html = '<div class="logged-in-staff-avatars">';
+        
+        foreach ($logged_in_staff as $user) {
+            $nickname = get_user_meta($user->ID, 'nickname', true);
+            if (empty($nickname)) {
+                $nickname = $user->display_name ? $user->display_name : $user->user_login;
+            }
+            $nickname_esc = esc_attr($nickname);
+            
+            // 現在のユーザーかどうかで表示を変更
+            $is_current = (get_current_user_id() === $user->ID);
+            $class = $is_current ? 'user_icon user_icon--current' : 'user_icon user_icon--staff';
+            
+            if ($is_current) {
+                $logged_in_users_html .= '<strong><span title="' . $nickname_esc . '">' . 
+                    get_avatar($user->ID, 32, '', '', array('class' => $class)) . '</span></strong>';
+            } else {
+                $logged_in_users_html .= '<span title="' . $nickname_esc . '">' . 
+                    get_avatar($user->ID, 32, '', '', array('class' => $class)) . '</span>';
+            }
+        }
 
-        return '<strong><span title="' . $nickname_esc . '">' . $avatar . '</span></strong>';
+        $logged_in_users_html .= '</div>';
+        return $logged_in_users_html;
+    }
+
+    /**
+     * ログイン中のスタッフユーザーを取得
+     *
+     * @return array ログイン中のスタッフユーザー配列
+     */
+    private function get_logged_in_staff_users() {
+        // アクティブなセッションを持つユーザーを取得
+        $users_with_sessions = get_users(array(
+            'meta_key' => 'session_tokens',
+            'meta_compare' => 'EXISTS',
+            'fields' => 'all'
+        ));
+        
+        $logged_in_staff = array();
+        
+        foreach ($users_with_sessions as $user) {
+            // セッションが有効かチェック
+            $sessions = get_user_meta($user->ID, 'session_tokens', true);
+            if (empty($sessions)) {
+                continue;
+            }
+            
+            $has_valid_session = false;
+            foreach ($sessions as $session) {
+                if (isset($session['expiration']) && $session['expiration'] > time()) {
+                    $has_valid_session = true;
+                    break;
+                }
+            }
+            
+            if (!$has_valid_session) {
+                continue;
+            }
+            
+            // スタッフ権限をチェック（ktpwp_access または管理者権限）
+            if ($this->is_staff_user($user)) {
+                $logged_in_staff[] = $user;
+            }
+        }
+        
+        // 現在のユーザーを先頭に並べ替え
+        usort($logged_in_staff, function($a, $b) {
+            $current_user_id = get_current_user_id();
+            if ($a->ID === $current_user_id) return -1;
+            if ($b->ID === $current_user_id) return 1;
+            return strcmp($a->display_name, $b->display_name);
+        });
+        
+        return $logged_in_staff;
+    }
+
+    /**
+     * スタッフユーザーかどうかを判定
+     *
+     * @param WP_User $user ユーザーオブジェクト
+     * @return bool スタッフかどうか
+     */
+    private function is_staff_user($user) {
+        // 管理者は常にスタッフ扱い
+        if (in_array('administrator', $user->roles)) {
+            return true;
+        }
+        
+        // ktpwp_access権限を持つユーザーをスタッフとして判定
+        return user_can($user->ID, 'ktpwp_access');
     }
 
     /**
@@ -627,20 +707,29 @@ class KTPWP_Shortcodes {
             wp_send_json($this->logged_in_users_cache);
         }
 
-        $logged_in_users = get_users(array(
-            'meta_key' => 'session_tokens',
-            'meta_compare' => 'EXISTS'
-        ));
+        // ログイン中スタッフを取得
+        $logged_in_staff = $this->get_logged_in_staff_users();
 
-        $users_names = array();
-        foreach ($logged_in_users as $user) {
-            $users_names[] = esc_html($user->nickname) . 'さん';
+        $users_data = array();
+        foreach ($logged_in_staff as $user) {
+            $nickname = get_user_meta($user->ID, 'nickname', true);
+            if (empty($nickname)) {
+                $nickname = $user->display_name ? $user->display_name : $user->user_login;
+            }
+            
+            $users_data[] = array(
+                'id' => $user->ID,
+                'name' => esc_html($nickname) . 'さん',
+                'is_current' => (get_current_user_id() === $user->ID),
+                'avatar_url' => get_avatar_url($user->ID, array('size' => 32))
+            );
         }
 
-        // キャッシュに保存
-        $this->logged_in_users_cache = $users_names;
+        // キャッシュに保存（30秒）
+        $this->logged_in_users_cache = $users_data;
+        wp_cache_set('ktpwp_logged_in_staff', $users_data, '', 30);
 
-        wp_send_json($users_names);
+        wp_send_json($users_data);
     }
 
     /**
@@ -660,6 +749,15 @@ class KTPWP_Shortcodes {
      */
     public function shortcode_exists($shortcode_name) {
         return in_array($shortcode_name, $this->registered_shortcodes, true);
+    }
+
+    /**
+     * ログイン中スタッフアバター表示の公開メソッド
+     *
+     * @return string ユーザー表示HTML
+     */
+    public function get_staff_avatars_display() {
+        return $this->get_logged_in_users_display();
     }
 
     /**

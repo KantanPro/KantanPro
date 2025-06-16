@@ -616,18 +616,55 @@ function KTPWP_Index(){
             // get_logged_in_users の再宣言防止
             if (!function_exists('get_logged_in_users')) {
                 function get_logged_in_users() {
-                    $logged_in_users = get_users(array(
-                        'meta_key' => 'session_tokens',
-                        'meta_compare' => 'EXISTS'
-                    ));
-
-                    $users_names = array();
-                    foreach ( $logged_in_users as $user ) {
-                        $users_names[] = $user->nickname . 'さん';
+                    // スタッフ権限チェック
+                    if (!current_user_can('edit_posts') && !current_user_can('ktpwp_access')) {
+                        wp_send_json_error(__('この操作を行う権限がありません。', 'ktpwp'));
+                        return;
                     }
 
-                    echo json_encode($users_names);
-                    wp_die();
+                    // アクティブなセッションを持つユーザーを取得
+                    $users_with_sessions = get_users(array(
+                        'meta_key' => 'session_tokens',
+                        'meta_compare' => 'EXISTS',
+                        'fields' => 'all'
+                    ));
+
+                    $logged_in_staff = array();
+                    foreach ($users_with_sessions as $user) {
+                        // セッションが有効かチェック
+                        $sessions = get_user_meta($user->ID, 'session_tokens', true);
+                        if (empty($sessions)) {
+                            continue;
+                        }
+                        
+                        $has_valid_session = false;
+                        foreach ($sessions as $session) {
+                            if (isset($session['expiration']) && $session['expiration'] > time()) {
+                                $has_valid_session = true;
+                                break;
+                            }
+                        }
+                        
+                        if (!$has_valid_session) {
+                            continue;
+                        }
+                        
+                        // スタッフ権限をチェック（ktpwp_access または管理者権限）
+                        if (in_array('administrator', $user->roles) || user_can($user->ID, 'ktpwp_access')) {
+                            $nickname = get_user_meta($user->ID, 'nickname', true);
+                            if (empty($nickname)) {
+                                $nickname = $user->display_name ? $user->display_name : $user->user_login;
+                            }
+                            $logged_in_staff[] = array(
+                                'id' => $user->ID,
+                                'name' => esc_html($nickname) . 'さん',
+                                'is_current' => (get_current_user_id() === $user->ID),
+                                'avatar_url' => get_avatar_url($user->ID, array('size' => 32))
+                            );
+                        }
+                    }
+
+                    wp_send_json($logged_in_staff);
                 }
             }
 
@@ -643,14 +680,10 @@ function KTPWP_Index(){
             // ログイン中のユーザー情報を取得（ログインしている場合のみ）
             $logged_in_users_html = '';
 
-            // より厳密なログイン状態の確認
-            if ( is_user_logged_in() && $current_user && $current_user->ID > 0 ) {
-                // セッションの有効性も確認
-                $user_sessions = WP_Session_Tokens::get_instance( $current_user->ID );
-                if ( $user_sessions && ! empty( $user_sessions->get_all() ) ) {
-                    $nickname_esc = esc_attr($current_user->nickname);
-                    $logged_in_users_html = '<strong><span title="' . $nickname_esc . '">' . get_avatar($current_user->ID, 32, '', '', ['class' => 'user_icon user_icon--current']) . '</span></strong>';
-                }
+            // ショートコードクラスのインスタンスからスタッフアバター表示を取得
+            if (is_user_logged_in()) {
+                $shortcodes_instance = KTPWP_Shortcodes::get_instance();
+                $logged_in_users_html = $shortcodes_instance->get_staff_avatars_display();
             }
 
             // 画像タグをPHP変数で作成（ベースラインを10px上げる）
