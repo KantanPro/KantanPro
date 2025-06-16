@@ -154,6 +154,9 @@ class KTP_Settings {
         add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_media_scripts' ) );
         add_action( 'wp_head', array( $this, 'output_custom_styles' ) );
         add_action( 'admin_init', array( $this, 'handle_default_settings_actions' ) );
+        
+        // ユーザーアクティビティの追跡
+        add_action( 'wp_login', array( $this, 'record_user_last_login' ), 10, 2 );
     }
 
     /**
@@ -429,6 +432,8 @@ class KTP_Settings {
             if ($user_obj) {
                 if ($action === 'add') {
                     $user_obj->add_cap('ktpwp_access');
+                    // 最終変更日時を記録
+                    update_user_meta($user_id, 'last_activity', current_time('mysql'));
                     echo '<div class="notice notice-success is-dismissible"><p>KantanPro利用権限（ktpwp_access）を付加しました。</p></div>';
                     
                     // スタッフ追加時のメール通知を送信
@@ -440,6 +445,8 @@ class KTP_Settings {
                     }
                 } elseif ($action === 'remove') {
                     $user_obj->remove_cap('ktpwp_access');
+                    // 最終変更日時を記録
+                    update_user_meta($user_id, 'last_activity', current_time('mysql'));
                     echo '<div class="notice notice-success is-dismissible"><p>KantanPro利用権限（ktpwp_access）を削除しました。</p></div>';
                     
                     // スタッフ削除時のメール通知を送信
@@ -512,8 +519,20 @@ class KTP_Settings {
                                 </td>
                                 <td>
                                     <?php
-                                    $last_modified = !empty($user->user_modified) ? $user->user_modified : $user->user_registered;
-                                    echo esc_html( date_i18n( 'Y-m-d H:i', strtotime($last_modified) ) );
+                                    // WordPressのユーザーメタからカスタムフィールドで最終更新日時を取得
+                                    $last_modified = get_user_meta($user->ID, 'last_activity', true);
+                                    
+                                    // カスタムフィールドがない場合は、ユーザー登録日時を使用
+                                    if (empty($last_modified)) {
+                                        $last_modified = $user->user_registered;
+                                    }
+                                    
+                                    // 日時をフォーマットして表示
+                                    if (!empty($last_modified)) {
+                                        echo esc_html( date_i18n( 'Y-m-d H:i', strtotime($last_modified) ) );
+                                    } else {
+                                        echo esc_html__( '未記録', 'ktpwp' );
+                                    }
                                     ?>
                                 </td>
                             </tr>
@@ -618,6 +637,21 @@ class KTP_Settings {
         }
 
         return $sent;
+    }
+
+    /**
+     * ユーザーの最終ログイン時間を記録
+     *
+     * @since 1.0.0
+     * @param string $user_login ユーザーログイン名
+     * @param WP_User $user ユーザーオブジェクト
+     * @return void
+     */
+    public function record_user_last_login($user_login, $user) {
+        // KantanPro利用権限を持つユーザーのみ記録
+        if ($user->has_cap('ktpwp_access') || $user->has_cap('manage_options')) {
+            update_user_meta($user->ID, 'last_activity', current_time('mysql'));
+        }
     }
 
     public function create_admin_page() {
