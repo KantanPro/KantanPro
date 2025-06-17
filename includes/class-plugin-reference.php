@@ -128,7 +128,7 @@ class KTPWP_Plugin_Reference {
             'content' => $content,
             'section' => $section,
             'last_updated' => get_option( 'ktpwp_reference_last_updated', time() ),
-            'version' => get_option( 'ktpwp_reference_version', KANTANPRO_PLUGIN_VERSION )
+            'version' => KANTANPRO_PLUGIN_VERSION // 常に最新の定数値を使用
         ) );
     }
 
@@ -148,8 +148,8 @@ class KTPWP_Plugin_Reference {
             wp_send_json_error( array( 'message' => esc_html__( 'ログインが必要です。', 'ktpwp' ) ) );
         }
 
-        // Clear all reference cache
-        $sections = array( 'overview', 'shortcodes', 'templates', 'customize', 'faq', 'advanced', 'support' );
+        // Clear all reference cache (including individual section caches)
+        $sections = array( 'overview', 'tabs', 'shortcodes', 'settings', 'security', 'troubleshooting' );
         
         foreach ( $sections as $section ) {
             delete_transient( "ktpwp_reference_content_{$section}" );
@@ -157,6 +157,10 @@ class KTPWP_Plugin_Reference {
         
         // Clear main cache
         delete_transient( 'ktpwp_reference_cache' );
+        
+        // Update metadata
+        update_option( 'ktpwp_reference_last_updated', current_time( 'timestamp' ) );
+        update_option( 'ktpwp_reference_version', KANTANPRO_PLUGIN_VERSION );
         
         // Update last cleared timestamp
         update_option( 'ktpwp_reference_last_cleared', time() );
@@ -225,26 +229,21 @@ class KTPWP_Plugin_Reference {
      */
     private function get_overview_content() {
         return '<div class="ktpwp-reference-content">'
-            . '<h3>KTPWPプラグイン リファレンス</h3>'
-            . '<p>KTPWPは、WordPress上で動作する包括的なビジネス管理プラグインです。受注処理、顧客管理、サービス管理、仕入先管理、レポート機能、各種設定までを一元管理できます。</p>'
+            . '<h3>KantanProプラグイン リファレンス</h3>'
+            . '<p>KantanPro (KTPWP) は、WordPress上で動作する包括的なビジネス管理プラグインです。受注処理、顧客管理、サービス管理、仕入先管理、レポート機能、各種設定までを一元管理できます。</p>'
             . '<h4>主な機能</h4>'
             . '<ul>'
             . '<li><b>7つの管理タブで完全なワークフロー管理</b></li>'
-            . '<li>受注案件の進捗管理とステータス追跡</li>'
-            . '<li>受注書作成・編集・印刷・請求項目管理</li>'
-            . '<li>顧客情報管理・注文履歴表示・印刷テンプレート</li>'
-            . '<li>サービス・商品マスター管理・価格設定</li>'
-            . '<li>仕入先・外注先情報管理・支払条件設定</li>'
-            . '<li>売上分析・進捗状況・データ集計</li>'
-            . '<li>宛名印刷テンプレート・システム設定</li>'
+            . '<li>受注案件の進捗管理（6段階）</li>'
+            . '<li>受注書の作成・編集・印刷・プレビュー</li>'
+            . '<li>顧客・サービス・仕入先のマスター管理</li>'
+            . '<li>スタッフ間チャット（自動スクロール・削除連動）</li>'
+            . '<li>売上・進捗・顧客別レポート</li>'
+            . '<li>印刷・宛名テンプレート</li>'
+            . '<li>未ログインユーザー向け案内機能（登録リンク自動表示）</li>'
+            . '<li>直感的なタブUI・ページネーション・ソート・検索</li>'
+            . '<li>レスポンシブデザイン</li>'
             . '</ul>'
-            . '<h4>インストール</h4>'
-            . '<ol>'
-            . '<li>プラグインファイルを <code>/wp-content/plugins/</code> ディレクトリにアップロード、または管理画面「プラグイン」→「新規追加」からインストール</li>'
-            . '<li>WordPressの「プラグイン」画面でKTPWPを有効化</li>'
-            . '<li>新しい固定ページを作成し、<code>[ktpwp_all_tab]</code> または <code>[kantanAllTab]</code> を挿入</li>'
-            . '<li>管理画面の「KantanPro」メニューから基本設定（一般設定・メール・デザイン・ライセンス・スタッフ管理）を行ってください</li>'
-            . '</ol>'
             . '<h4>主要機能詳細</h4>'
             . '<ul>'
             . '<li><b>受注管理機能</b><br>6段階の進捗管理（受付中→見積中→作成中→完成未請求→請求済→入金済）、プロジェクト名・顧客情報・担当者・金額・進捗の一元管理、受注書の作成・編集・プレビュー・印刷機能、請求項目とコスト項目の詳細管理、スタッフ間のチャット機能</li>'
@@ -272,12 +271,21 @@ class KTPWP_Plugin_Reference {
             . '<li>リアルタイムプレビュー</li>'
             . '<li>レスポンシブデザイン対応</li>'
             . '</ul>'
+            . '<h4>直近の実装・改善点</h4>'
+            . '<ul>'
+            . '<li>未ログインユーザー向け表示の改善</li>'
+            . '<li>ユーザー登録リンクの追加とホームページリンクの最適化</li>'
+            . '<li>スタッフチャット自動スクロール・キーボードショートカット</li>'
+            . '<li>オーダー削除時のチャットデータ自動削除</li>'
+            . '<li>オーダー削除後の自動作成防止</li>'
+            . '<li>セキュリティ強化（CSRF, SQLi, XSS, 権限制御）</li>'
+            . '</ul>'
             . '<h4>インストール</h4>'
             . '<ol>'
             . '<li>プラグインファイルを <code>/wp-content/plugins/</code> ディレクトリにアップロード、または管理画面「プラグイン」→「新規追加」からインストール</li>'
             . '<li>WordPressの「プラグイン」画面でKTPWPを有効化</li>'
             . '<li>新しい固定ページを作成し、<code>[ktpwp_all_tab]</code> または <code>[kantanAllTab]</code> を挿入</li>'
-            . '<li>管理画面「KTPWP設定」から基本設定</li>'
+            . '<li>管理画面の「KantanPro」メニューから基本設定（一般設定・メール・デザイン・ライセンス・スタッフ管理）を行ってください</li>'
             . '</ol>'
             . '<h4>使い方</h4>'
             . '<ol>'
@@ -310,6 +318,7 @@ class KTPWP_Plugin_Reference {
             . '</ul>'
             . '<h4>よくある質問</h4>'
             . '<ul>'
+            . '<li><b>Q: 未ログインの場合はどうなりますか？</b><br>A: ログインを促すメッセージと共に、ログイン・登録・ホームページへのリンクが表示されます。ユーザー登録が可能な環境では登録リンクも自動で表示されます。</li>'
             . '<li><b>Q: このプラグインは安全ですか？</b><br>A: はい。SQLインジェクション防止、XSS保護、CSRF対策、ファイルアップロード検証など、包括的なセキュリティ対策が実装されています。</li>'
             . '<li><b>Q: 既存のWordPressテーマに影響しますか？</b><br>A: いいえ。プラグイン専用のクラス名とCSSを使用しており、テーマとの競合を避ける設計になっています。</li>'
             . '<li><b>Q: データのバックアップは必要ですか？</b><br>A: はい。重要なビジネスデータを扱うため、定期的なWordPressデータベースのバックアップを推奨します。</li>'
@@ -324,8 +333,10 @@ class KTPWP_Plugin_Reference {
             . '<li>公式サイト: <a href="https://www.kantanpro.com/" target="_blank">https://www.kantanpro.com/</a></li>'
             . '<li>WordPress 5.0 以上 / PHP 7.4 以上 / MySQL 5.6 以上 または MariaDB 10.0 以上 / 推奨メモリ: 256MB 以上</li>'
             . '</ul>'
-            . '<h4>アップグレード通知</h4>'
+            . '<h4>変更履歴</h4>'
             . '<ul>'
+            . '<li>1.0.9 (beta): 未ログインユーザー向け表示の改善、プラグイン名表記をKTPWPからKantanProに統一、ユーザー登録リンクの追加（動的URL生成対応）、ホームページリンクをルートディレクトリに修正、UI/UX向上とユーザビリティ改善</li>'
+            . '<li>1.0.8 (beta): スタッフチャット自動スクロール・削除連動、オーダー削除後の自動作成防止、セキュリティ強化</li>'
             . '<li>1.0.7 (beta): ベータ版リリース。UI/UXを改善しました。</li>'
             . '<li>1.0.0: ベータ版リリース。プラグインリファレンス機能が追加されました。セキュリティとパフォーマンスが大幅に向上。全機能が本番環境で安定稼働。新機能のヘルプ・リファレンスモーダルを活用してください。</li>'
             . '<li>beta: 最初の本格リリース版。全機能が利用可能。本番環境での使用に最適化。</li>'
@@ -565,7 +576,7 @@ return '<div class="ktpwp-reference-content">'
             . '<div class="ktpwp-modal-overlay">'
             . '<div class="ktpwp-modal-content">'
             . '<div class="ktpwp-modal-header">'
-            . '<h3>' . esc_html__( 'KTPWPプラグインリファレンス', 'ktpwp' ) . '</h3>'
+            . '<h3>' . esc_html__( 'KantanProプラグインリファレンス', 'ktpwp' ) . '</h3>'
             . '<div class="ktpwp-modal-header-actions">'
             . '<button class="ktpwp-clear-cache-btn" type="button" title="' . esc_attr__( 'キャッシュをクリア', 'ktpwp' ) . '">'
             . esc_html__( 'キャッシュクリア', 'ktpwp' ) . '</button>'
@@ -617,20 +628,63 @@ return '<div class="ktpwp-reference-content">'
      * @return void
      */
     public static function on_plugin_activation() {
-        // Clear any cached reference data
+        // Clear ALL cached reference data (individual section caches)
+        $sections = array( 'overview', 'tabs', 'shortcodes', 'settings', 'security', 'troubleshooting' );
+        foreach ( $sections as $section ) {
+            delete_transient( "ktpwp_reference_content_{$section}" );
+        }
+        
+        // Clear main cache
         delete_transient( 'ktpwp_reference_cache' );
         
-        // Update plugin reference metadata
+        // Clear any existing options that might store cached data
+        delete_option( 'ktpwp_reference_last_cleared' );
+        
+        // Update plugin reference metadata with current version
         update_option( 'ktpwp_reference_last_updated', current_time( 'timestamp' ) );
         update_option( 'ktpwp_reference_version', KANTANPRO_PLUGIN_VERSION );
         
         // Log activation event for debugging
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP: プラグインリファレンスが有効化時に更新されました。' );
+            error_log( 'KTPWP: プラグインリファレンスが有効化時に更新されました。バージョン: ' . KANTANPRO_PLUGIN_VERSION );
         }
         
         // Force regeneration of reference content on next load
         update_option( 'ktpwp_reference_needs_refresh', true );
+    }
+
+    /**
+     * Manual cache clear function for troubleshooting
+     * 
+     * @since 1.0.9
+     * @return bool Success status
+     */
+    public static function clear_all_cache() {
+        // Clear all individual section caches
+        $sections = array( 'overview', 'tabs', 'shortcodes', 'settings', 'security', 'troubleshooting' );
+        $cleared_count = 0;
+        
+        foreach ( $sections as $section ) {
+            if ( delete_transient( "ktpwp_reference_content_{$section}" ) ) {
+                $cleared_count++;
+            }
+        }
+        
+        // Clear main cache
+        delete_transient( 'ktpwp_reference_cache' );
+        
+        // Update metadata to current version
+        update_option( 'ktpwp_reference_last_updated', current_time( 'timestamp' ) );
+        update_option( 'ktpwp_reference_version', KANTANPRO_PLUGIN_VERSION );
+        update_option( 'ktpwp_reference_last_cleared', time() );
+        update_option( 'ktpwp_reference_needs_refresh', true );
+        
+        // Log the action
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( "KTPWP: Manual cache clear completed. Cleared {$cleared_count} section caches. Version: " . KANTANPRO_PLUGIN_VERSION );
+        }
+        
+        return true;
     }
 }
 
@@ -638,5 +692,45 @@ return '<div class="ktpwp-reference-content">'
 add_action('init', function() {
     KTPWP_Plugin_Reference::get_instance();
 });
+
+// Add admin action to manually clear reference cache
+add_action('wp_ajax_ktpwp_manual_cache_clear', function() {
+    if (!current_user_can('manage_options')) {
+        wp_die('権限がありません');
+    }
+    
+    if (class_exists('KTPWP_Plugin_Reference')) {
+        KTPWP_Plugin_Reference::clear_all_cache();
+        wp_die('プラグインリファレンスキャッシュをクリアしました。バージョン: ' . KANTANPRO_PLUGIN_VERSION);
+    } else {
+        wp_die('プラグインリファレンスクラスが見つかりません');
+    }
+});
+
+// Add admin menu for cache clearing (for debugging)
+if (defined('WP_DEBUG') && WP_DEBUG) {
+    add_action('admin_menu', function() {
+        add_submenu_page(
+            null, // 非表示メニュー
+            'Clear Reference Cache',
+            'Clear Reference Cache',
+            'manage_options',
+            'ktpwp-clear-cache',
+            function() {
+                if (isset($_GET['action']) && $_GET['action'] === 'clear') {
+                    if (class_exists('KTPWP_Plugin_Reference')) {
+                        KTPWP_Plugin_Reference::clear_all_cache();
+                        echo '<div class="notice notice-success"><p>キャッシュをクリアしました。バージョン: ' . KANTANPRO_PLUGIN_VERSION . '</p></div>';
+                    }
+                }
+                echo '<div class="wrap">';
+                echo '<h1>KantanPro リファレンスキャッシュクリア</h1>';
+                echo '<p><a href="?page=ktpwp-clear-cache&action=clear" class="button button-primary">キャッシュをクリア</a></p>';
+                echo '<p>現在のバージョン: ' . KANTANPRO_PLUGIN_VERSION . '</p>';
+                echo '</div>';
+            }
+        );
+    });
+}
 
 } // End if class_exists

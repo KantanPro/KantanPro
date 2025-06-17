@@ -591,6 +591,23 @@ register_activation_hook(KANTANPRO_PLUGIN_FILE, 'ktp_table_setup'); // テーブ
 register_activation_hook(KANTANPRO_PLUGIN_FILE, array('KTP_Settings', 'activate')); // 設定クラスのアクティベート処理
 register_activation_hook(KANTANPRO_PLUGIN_FILE, array('KTPWP_Plugin_Reference', 'on_plugin_activation')); // プラグインリファレンス更新処理
 
+// プラグインアップデート時の処理
+add_action('upgrader_process_complete', function($upgrader_object, $options) {
+    if ($options['action'] == 'update' && $options['type'] == 'plugin') {
+        if (isset($options['plugins'])) {
+            foreach ($options['plugins'] as $plugin) {
+                if ($plugin == plugin_basename(KANTANPRO_PLUGIN_FILE)) {
+                    // プラグインが更新された場合、リファレンスキャッシュをクリア
+                    if (class_exists('KTPWP_Plugin_Reference')) {
+                        KTPWP_Plugin_Reference::clear_all_cache();
+                    }
+                    break;
+                }
+            }
+        }
+    }
+}, 10, 2);
+
 function check_activation_key() {
     $activation_key = get_site_option('ktp_activation_key');
     return empty($activation_key) ? '' : '';
@@ -835,6 +852,21 @@ add_action('admin_menu', function() {
 
 // GitHub Updater
 
+
+// プラグインリファレンス更新処理（バージョン1.0.9対応）
+add_action('init', function() {
+    // バージョン不一致を検出した場合のキャッシュクリア
+    $stored_version = get_option('ktpwp_reference_version', '');
+    if ($stored_version !== KANTANPRO_PLUGIN_VERSION) {
+        if (class_exists('KTPWP_Plugin_Reference')) {
+            KTPWP_Plugin_Reference::clear_all_cache();
+            
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log("KTPWP: バージョン更新を検出しました。{$stored_version} → " . KANTANPRO_PLUGIN_VERSION);
+            }
+        }
+    }
+}, 5);
 
 // 案件名インライン編集用Ajaxハンドラ
 

@@ -147,7 +147,7 @@
                 var infoHTML = `
                     <div class="ktpwp-reference-info">
                         <small>
-                            バージョン: ${data.version} |
+                            <strong>バージョン: ${data.version}</strong> |
                             最終更新: ${lastUpdated.toLocaleDateString('ja-JP')} ${lastUpdated.toLocaleTimeString('ja-JP')}
                         </small>
                     </div>
@@ -158,6 +158,13 @@
 
                 // 新しい情報をヘッダーに追加
                 $('.ktpwp-modal-header').append(infoHTML);
+                
+                // コンソールログでデバッグ情報を出力
+                console.log('KTPWP Reference Info Updated:', {
+                    version: data.version,
+                    last_updated: data.last_updated,
+                    formatted_date: lastUpdated.toLocaleString('ja-JP')
+                });
             }
         }
 
