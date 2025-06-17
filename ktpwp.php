@@ -13,6 +13,7 @@
  * Requires at least: 5.0
  * Tested up to: 6.5
  * Requires PHP: 7.4
+ * Update URI: https://github.com/KantanPro/freeKTP
  *
  * @package KTPWP
  */
@@ -73,20 +74,21 @@ if ( ! defined( 'MY_PLUGIN_URL' ) ) {
 }
 
 // === GitHub自動アップデート: plugin-update-checker を利用 ===
-// 1. 事前に https://github.com/YahnisElsts/plugin-update-checker をダウンロードし、
-//    KantanPro/vendor/plugin-update-checker/ に配置してください。
 if ( file_exists( __DIR__ . '/vendor/plugin-update-checker/plugin-update-checker.php' ) ) {
     require_once __DIR__ . '/vendor/plugin-update-checker/plugin-update-checker.php';
 
     $kantanpro_update_checker = \YahnisElsts\PluginUpdateChecker\v5\PucFactory::buildUpdateChecker(
-        'https://github.com/KantanPro/freeKTP.git', // GitHubリポジトリURL
-        __FILE__,                                   // プラグインのメインファイル
-        'KantanPro'                                 // プラグインのスラッグ
+        'https://github.com/KantanPro/freeKTP', // GitHubリポジトリURL (.gitを削除)
+        __FILE__,                              // プラグインのメインファイル
+        'KantanPro'                           // プラグインのスラッグ
     );
     $kantanpro_update_checker->setBranch('main');
     $kantanpro_update_checker->getVcsApi()->enableReleaseAssets();
-    // プライベートリポジトリの場合は下記を有効化
-    // $kantanpro_update_checker->setAuthentication('your-github-personal-access-token');
+    
+    // デバッグログを有効化（必要に応じて）
+    if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+        error_log( 'KantanPro Update Checker initialized' );
+    }
 }
 
 /**
