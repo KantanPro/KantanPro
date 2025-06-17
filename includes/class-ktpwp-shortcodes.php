@@ -302,16 +302,19 @@ class KTPWP_Shortcodes {
             return '';
         }
 
-        // セッション有効性確認
+        // セッション有効性確認の改善
         $user_sessions = WP_Session_Tokens::get_instance($current_user->ID);
-        if (!$user_sessions || empty($user_sessions->get_all())) {
+        if (!$user_sessions) {
             if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('KTPWP Debug: get_navigation_links - Session check failed. $current_user->ID: ' . (isset($current_user->ID) ? $current_user->ID : 'undefined'));
-                if (isset($current_user->ID)) {
-                     if (!$user_sessions) { // Check $user_sessions which would be falsy here
-                        error_log('KTPWP Debug: get_navigation_links - WP_Session_Tokens::get_instance returned falsy for $current_user->ID: ' . $current_user->ID);
-                    }
-                }
+                error_log('KTPWP Debug: get_navigation_links - WP_Session_Tokens::get_instance returned null for user ID: ' . $current_user->ID);
+            }
+            return '';
+        }
+
+        $all_sessions = $user_sessions->get_all();
+        if (empty($all_sessions)) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('KTPWP Debug: get_navigation_links - No active sessions found for user ID: ' . $current_user->ID);
             }
             return '';
         }
@@ -323,16 +326,48 @@ class KTPWP_Shortcodes {
         $activation_key = esc_html($this->check_activation_key());
 
         $links = array();
+        
+        // 外部リンクの定数化とセキュリティ強化
+        $external_links = array(
+            'official_site' => 'https://www.kantanpro.com/',
+            'features' => 'https://www.kantanpro.com/features/',
+            'community' => 'https://www.kantanpro.com/community/'
+        );
+
         // 公式サイト（KantanPro）
-        $links[] = '<a href="' . esc_url('https://www.kantanpro.com/') . '" target="_blank" rel="noopener">KantanPro</a>';
+        $links[] = sprintf(
+            '<a href="%s" target="_blank" rel="noopener noreferrer">%s</a>',
+            esc_url($external_links['official_site']),
+            esc_html__('KantanPro', 'ktpwp')
+        );
+        
         // 詳細を表示（公式サイトの機能紹介ページ等。なければトップページ）
-        $links[] = '<a href="' . esc_url('https://www.kantanpro.com/features/') . '" target="_blank" rel="noopener">詳細を表示</a>';
+        $links[] = sprintf(
+            '<a href="%s" target="_blank" rel="noopener noreferrer">%s</a>',
+            esc_url($external_links['features']),
+            esc_html__('詳細を表示', 'ktpwp')
+        );
+        
         // コミュニティ
-        $links[] = '<a href="' . esc_url('https://www.kantanpro.com/community/') . '" target="_blank" rel="noopener">コミュニティ</a>';
+        $links[] = sprintf(
+            '<a href="%s" target="_blank" rel="noopener noreferrer">%s</a>',
+            esc_url($external_links['community']),
+            esc_html__('コミュニティ', 'ktpwp')
+        );
+        
         // ログアウト
-        $links[] = '<a href="' . $logout_url . '">' . esc_html__('ログアウト', 'ktpwp') . '</a>';
+        $links[] = sprintf(
+            '<a href="%s">%s</a>',
+            $logout_url,
+            esc_html__('ログアウト', 'ktpwp')
+        );
+        
         // 更新
-        $links[] = '<a href="' . $update_url . '">' . esc_html__('更新', 'ktpwp') . '</a>';
+        $links[] = sprintf(
+            '<a href="%s">%s</a>',
+            $update_url,
+            esc_html__('更新', 'ktpwp')
+        );
         // アクティベーションキー（空文字列）
         if (!empty($activation_key)) {
             $links[] = $activation_key;
