@@ -85,6 +85,9 @@ if ( file_exists( __DIR__ . '/vendor/plugin-update-checker/plugin-update-checker
     $kantanpro_update_checker->setBranch('main');
     $kantanpro_update_checker->getVcsApi()->enableReleaseAssets();
     
+    // 「アップデートを確認」リンクを無効化（自動更新機能が実装済みのため）
+    add_filter('puc_manual_check_link-KantanPro', '__return_false');
+    
     // デバッグログを有効化（必要に応じて）
     if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
         error_log( 'KantanPro Update Checker initialized' );

@@ -327,8 +327,6 @@ class KTPWP_Shortcodes {
         $links[] = '<a href="' . esc_url('https://www.kantanpro.com/') . '" target="_blank" rel="noopener">KantanPro</a>';
         // 詳細を表示（公式サイトの機能紹介ページ等。なければトップページ）
         $links[] = '<a href="' . esc_url('https://www.kantanpro.com/features/') . '" target="_blank" rel="noopener">詳細を表示</a>';
-        // アップデートを確認（公式サイトのアップデート情報ページ等。なければトップページ）
-        $links[] = '<a href="' . esc_url('https://www.kantanpro.com/update/') . '" target="_blank" rel="noopener">アップデートを確認</a>';
         // コミュニティ
         $links[] = '<a href="' . esc_url('https://www.kantanpro.com/community/') . '" target="_blank" rel="noopener">コミュニティ</a>';
         // ログアウト
