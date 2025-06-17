@@ -323,13 +323,23 @@ class KTPWP_Shortcodes {
         $activation_key = esc_html($this->check_activation_key());
 
         $links = array();
+        // 公式サイト（KantanPro）
+        $links[] = '<a href="' . esc_url('https://www.kantanpro.com/') . '" target="_blank" rel="noopener">KantanPro</a>';
+        // 詳細を表示（公式サイトの機能紹介ページ等。なければトップページ）
+        $links[] = '<a href="' . esc_url('https://www.kantanpro.com/features/') . '" target="_blank" rel="noopener">詳細を表示</a>';
+        // アップデートを確認（公式サイトのアップデート情報ページ等。なければトップページ）
+        $links[] = '<a href="' . esc_url('https://www.kantanpro.com/update/') . '" target="_blank" rel="noopener">アップデートを確認</a>';
+        // コミュニティ
+        $links[] = '<a href="' . esc_url('https://www.kantanpro.com/community/') . '" target="_blank" rel="noopener">コミュニティ</a>';
+        // ログアウト
         $links[] = '<a href="' . $logout_url . '">' . esc_html__('ログアウト', 'ktpwp') . '</a>';
+        // 更新
         $links[] = '<a href="' . $update_url . '">' . esc_html__('更新', 'ktpwp') . '</a>';
-
+        // アクティベーションキー（空文字列）
         if (!empty($activation_key)) {
             $links[] = $activation_key;
         }
-
+        // ヘルプ（リファレンス）
         $reference_instance = KTPWP_Plugin_Reference::get_instance();
         $links[] = $reference_instance->get_reference_link();
 
