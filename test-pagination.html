@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>サービス選択ポップアップ - ページネーションテスト</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f0f0f0;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-button {
+            background: #007cba;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+        }
+        .test-button:hover {
+            background: #005a87;
+        }
+        .info {
+            background: #e8f4fd;
+            border: 1px solid #b8e6ff;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .code-block {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>サービス選択ポップアップ - ページネーション機能テスト</h1>
+        
+        <div class="info">
+            <h3>実装された機能：</h3>
+            <ul>
+                <li>✅ ページネーション機能（前/次ページボタン、ページ番号ボタン）</li>
+                <li>✅ 一般設定からの表示件数取得</li>
+                <li>✅ カード型リストビューへの変更</li>
+                <li>✅ レスポンシブデザイン対応</li>
+                <li>✅ ページネーションをリストの下に配置</li>
+                <li>✅ ホバーエフェクトとインタラクション</li>
+            </ul>
+        </div>
+
+        <div class="info">
+            <h3>テスト環境での確認点：</h3>
+            <ul>
+                <li>サービス選択ポップアップの表示</li>
+                <li>ページネーションボタンの動作</li>
+                <li>カード型レイアウトの表示</li>
+                <li>レスポンシブデザインの動作</li>
+                <li>一般設定での表示件数の反映</li>
+            </ul>
+        </div>
+
+        <button class="test-button" onclick="testServiceSelector()">
+            サービス選択ポップアップをテスト
+        </button>
+
+        <div class="info">
+            <h3>実装コードの概要：</h3>
+            <div class="code-block">
+// ページネーション機能
+function renderPagination(pagination, targetRow, mode) {
+    // 前/次ページボタン、ページ番号ボタンの生成
+    // 省略表示（...）の処理
+    // ホバーエフェクトの実装
+}
+
+// カード型リストビューの実装
+function renderServiceList(response, targetRow, mode, currentPage = 1) {
+    // サービス一覧をカード型で表示
+    // ページネーションをリストの下に配置
+    // レスポンシブデザイン対応
+}
+            </div>
+        </div>
+
+        <div class="info">
+            <h3>動作確認手順：</h3>
+            <ol>
+                <li>WordPress管理画面にログイン</li>
+                <li>KantanPro > 受注書管理 にアクセス</li>
+                <li>受注書の編集画面で「[>]」ボタンをクリック</li>
+                <li>サービス選択ポップアップが表示される</li>
+                <li>ページネーションボタンをクリックしてページ移動をテスト</li>
+                <li>カード型レイアウトの表示を確認</li>
+                <li>レスポンシブデザイン（画面サイズ変更）をテスト</li>
+            </ol>
+        </div>
+
+        <div class="info">
+            <h3>一般設定での表示件数設定：</h3>
+            <p>WordPress管理画面 > KantanPro > 一般設定 > 仕事リスト表示件数 で設定した値が適用されます。</p>
+            <div class="code-block">
+// サーバーサイドでの一般設定取得
+if ($limit === 'auto') {
+    $limit = KTP_Settings::get_work_list_range();
+    error_log('[KTP] 一般設定から表示件数を取得: ' . $limit);
+}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // グローバルなAjax設定をシミュレート
+        window.ktp_service_ajax_object = {
+            ajax_url: '/wp-admin/admin-ajax.php',
+            nonce: 'test-nonce-123'
+        };
+
+        function testServiceSelector() {
+            alert('実際のテストはWordPress管理画面で行ってください。\n\n手順：\n1. WordPress管理画面にログイン\n2. KantanPro > 受注書管理\n3. 受注書編集画面で[>]ボタンをクリック\n4. サービス選択ポップアップをテスト');
+        }
+
+        // 画面サイズ変更時のレスポンシブテスト
+        window.addEventListener('resize', function() {
+            console.log('画面サイズ:', window.innerWidth, 'x', window.innerHeight);
+            if (window.innerWidth < 600) {
+                console.log('小さい画面: 縦型レイアウトが適用されます');
+            } else {
+                console.log('大きい画面: 横型レイアウトが適用されます');
+            }
+        });
+
+        console.log('サービス選択ポップアップテストページが読み込まれました');
+        console.log('実装されたファイル: ktp-service-selector.js, class-ktpwp-ajax.php');
+    </script>
+</body>
+</html>

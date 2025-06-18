@@ -46,7 +46,39 @@ if (!current_user_can('edit_posts')) {
     <div class="test-section">
         <h2>テスト 2: ページネーション付きサービス一覧取得</h2>
         <button onclick="testServiceListPagination()">ページネーション テスト</button>
+        <div style="margin: 10px 0;">
+            ページ: <input type="number" id="test-page" value="1" min="1" style="width: 60px;">
+            リミット: <input type="number" id="test-limit" value="5" min="1" max="50" style="width: 60px;">
+            <button onclick="testServiceListWithParams()">指定ページテスト</button>
+        </div>
         <div id="test2-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>テスト 3: サービス選択ポップアップ（ページネーション対応）</h2>
+        <div style="margin: 10px 0;">
+            <input type="hidden" name="order_id" value="1" />
+            <table>
+                <tr id="test-row">
+                    <td><button type="button" onclick="openServiceSelector()">サービス選択 ></button></td>
+                    <td><input type="text" class="product-name" value="" /></td>
+                    <td><input type="number" class="price" value="0" /></td>
+                    <td><input type="number" class="quantity" value="1" /></td>
+                    <td><input type="text" class="unit" value="" /></td>
+                    <td><input type="number" class="amount" value="0" readonly /></td>
+                </tr>
+            </table>
+        </div>
+        <div id="test3-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>テスト 4: 検索機能付きサービス一覧取得</h2>
+        <div style="margin: 10px 0;">
+            検索キーワード: <input type="text" id="search-term" placeholder="サービス名で検索" style="width: 200px;">
+            <button onclick="testServiceListSearch()">検索テスト</button>
+        </div>
+        <div id="test4-result" class="result"></div>
     </div>
 
     <div class="test-section">
@@ -129,6 +161,12 @@ if (!current_user_can('edit_posts')) {
                         <p>総ページ数: ${data.data.pagination.total_pages}</p>
                         <p>総アイテム数: ${data.data.pagination.total_items}</p>
                         <p>ページあたりアイテム数: ${data.data.pagination.items_per_page}</p>
+                        <p>取得したサービス:</p>
+                        <ul>
+                            ${data.data.services.map(service => 
+                                `<li>ID:${service.id} - ${service.service_name} - ${service.price}円</li>`
+                            ).join('')}
+                        </ul>
                     `;
                 } else {
                     resultDiv.className = 'result error';
@@ -142,9 +180,71 @@ if (!current_user_can('edit_posts')) {
             });
         }
 
+        // 指定ページ・リミットでのテスト
+        function testServiceListWithParams() {
+            const resultDiv = document.getElementById('test2-result');
+            const page = document.getElementById('test-page').value;
+            const limit = document.getElementById('test-limit').value;
+            resultDiv.innerHTML = 'テスト実行中...';
+            
+            const formData = new FormData();
+            formData.append('action', 'ktp_get_service_list');
+            formData.append('nonce', nonce);
+            formData.append('page', page);
+            formData.append('limit', limit);
+
+            fetch(ajaxUrl, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Test 2b Response:', data);
+                if (data.success) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <h3>成功! (ページ:${page}, リミット:${limit})</h3>
+                        <p>現在のページ: ${data.data.pagination.current_page}</p>
+                        <p>総ページ数: ${data.data.pagination.total_pages}</p>
+                        <p>総アイテム数: ${data.data.pagination.total_items}</p>
+                        <p>取得したサービス:</p>
+                        <ul>
+                            ${data.data.services.map(service => 
+                                `<li>ID:${service.id} - ${service.service_name} - ${service.price}円</li>`
+                            ).join('')}
+                        </ul>
+                    `;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `<h3>エラー</h3><p>${data.data}</p>`;
+                }
+            })
+            .catch(error => {
+                console.error('Test 2b Error:', error);
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `<h3>通信エラー</h3><p>${error.message}</p>`;
+            });
+        }
+
+        // サービス選択ポップアップのテスト
+        function openServiceSelector() {
+            const testRow = document.getElementById('test-row');
+            const resultDiv = document.getElementById('test3-result');
+            resultDiv.innerHTML = 'サービス選択ポップアップを開いています...';
+            
+            if (typeof window.ktpShowServiceSelector === 'function') {
+                window.ktpShowServiceSelector($(testRow), 'add');
+                resultDiv.className = 'result success';
+                resultDiv.innerHTML = '<h3>ポップアップが開かれました</h3><p>ページネーション機能をテストしてください。</p>';
+            } else {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = '<h3>エラー</h3><p>ktpShowServiceSelector関数が見つかりません。</p>';
+            }
+        }
+
         // 検索機能付きテスト
         function testServiceListSearch() {
-            const resultDiv = document.getElementById('test3-result');
+            const resultDiv = document.getElementById('test4-result');
             const searchTerm = document.getElementById('search-term').value;
             resultDiv.innerHTML = 'テスト実行中...';
             
@@ -161,7 +261,7 @@ if (!current_user_can('edit_posts')) {
             })
             .then(response => response.json())
             .then(data => {
-                console.log('Test 3 Response:', data);
+                console.log('Test 4 Response:', data);
                 if (data.success) {
                     resultDiv.className = 'result success';
                     resultDiv.innerHTML = `
@@ -181,7 +281,7 @@ if (!current_user_can('edit_posts')) {
                 }
             })
             .catch(error => {
-                console.error('Test 3 Error:', error);
+                console.error('Test 4 Error:', error);
                 resultDiv.className = 'result error';
                 resultDiv.innerHTML = `<h3>通信エラー</h3><p>${error.message}</p>`;
             });

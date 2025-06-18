@@ -178,8 +178,16 @@ class KTPWP_Ajax {
         // 基本的なAjax URL設定
         $ajax_data = array(
             'ajax_url' => admin_url('admin-ajax.php'),
-            'nonces' => array()
+            'nonces' => array(),
+            'settings' => array()
         );
+
+        // 一般設定の値を追加
+        if (class_exists('KTP_Settings')) {
+            $ajax_data['settings']['work_list_range'] = KTP_Settings::get_work_list_range();
+        } else {
+            $ajax_data['settings']['work_list_range'] = 20;
+        }
 
         // 現在のユーザー情報を追加
         if (is_user_logged_in()) {
@@ -219,6 +227,15 @@ class KTPWP_Ajax {
         if (isset($wp_scripts->registered['ktp-cost-items'])) {
             wp_add_inline_script('ktp-cost-items', 'var ktp_ajax_nonce = ' . json_encode($ajax_data['nonces']['auto_save']) . ';');
             wp_add_inline_script('ktp-cost-items', 'var ajaxurl = ' . json_encode($ajax_data['ajax_url']) . ';');
+        }
+
+        // サービス選択機能専用のAJAX設定
+        if (isset($wp_scripts->registered['ktp-service-selector'])) {
+            wp_add_inline_script('ktp-service-selector', 'var ktp_service_ajax_object = ' . json_encode(array(
+                'ajax_url' => $ajax_data['ajax_url'],
+                'nonce' => $ajax_data['nonces']['auto_save'],
+                'settings' => $ajax_data['settings']
+            )) . ';');
         }
 
         if (isset($wp_scripts->registered['ktp-order-inline-projectname']) && current_user_can('manage_options')) {
@@ -697,12 +714,27 @@ class KTPWP_Ajax {
 
         // パラメータ取得
         $page = isset($_POST['page']) ? absint($_POST['page']) : 1;
-        $limit = isset($_POST['limit']) ? absint($_POST['limit']) : 20;
+        
+        // 一般設定から表示件数を取得
+        if (isset($_POST['limit']) && $_POST['limit'] === 'auto') {
+            // 一般設定から表示件数を取得（設定クラスが利用可能な場合）
+            if (class_exists('KTP_Settings')) {
+                $limit = KTP_Settings::get_work_list_range();
+                error_log('[AJAX] 一般設定から表示件数を取得: ' . $limit);
+            } else {
+                $limit = 20; // フォールバック値
+                error_log('[AJAX] KTP_Settingsクラスなし - フォールバック値を使用: ' . $limit);
+            }
+        } else {
+            $limit = isset($_POST['limit']) ? absint($_POST['limit']) : 20;
+            error_log('[AJAX] POSTパラメータから表示件数を取得: ' . $limit);
+        }
+        
         $search = isset($_POST['search']) ? sanitize_text_field($_POST['search']) : '';
         $category = isset($_POST['category']) ? sanitize_text_field($_POST['category']) : '';
 
-        if ($limit > 100) {
-            $limit = 100; // 最大100件に制限
+        if ($limit > 500) {
+            $limit = 500; // 一般設定の最大値に合わせる
         }
 
         $offset = ($page - 1) * $limit;
