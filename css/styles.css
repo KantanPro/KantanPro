@@ -84,6 +84,7 @@
     display: inline-block;
     font-size: 18px;
     margin-right: 4px;
+    margin-left: 0;
     color: #888;
     vertical-align: middle;
     user-select: none;
@@ -1749,8 +1750,9 @@ input[name="tab_item"] {
 
 .invoice-items-table .actions-column {
     width: 80px;
-    text-align: center;
     white-space: nowrap;
+    padding-left: 4px;
+    padding-right: 2px;
 }
 
 .invoice-items-table .invoice-item-input {
@@ -1805,7 +1807,7 @@ input[name="tab_item"] {
     color: white;
     border: none;
     padding: 4px 8px;
-    margin: 1px;
+    margin: 0 1px;
     border-radius: 3px;
     cursor: pointer;
     font-size: 12px;
@@ -1927,8 +1929,9 @@ input[name="tab_item"] {
 
 .cost-items-table .actions-column {
     width: 80px;
-    text-align: center;
     white-space: nowrap;
+    padding-left: 4px;
+    padding-right: 2px;
 }
 
 .cost-items-table .cost-item-input {

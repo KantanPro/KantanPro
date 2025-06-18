@@ -118,7 +118,7 @@ class KTPWP_Order_UI {
             $html .= '<button type="button" class="btn-add-row" title="' . esc_attr__( '行を追加', 'ktpwp' ) . '">+</button>';
             // --- ここを修正: 1行目でも常に削除ボタンを出力 ---
             $html .= '<button type="button" class="btn-delete-row" title="' . esc_attr__( '行を削除', 'ktpwp' ) . '">×</button>';
-            $html .= '<button type="button" class="btn-move-row" title="' . esc_attr__( '行を移動', 'ktpwp' ) . '">></button>';
+            $html .= '<button type="button" class="btn-move-row" title="' . esc_attr__( 'サービス選択', 'ktpwp' ) . '">></button>';
             $html .= '</td>';
 
             // Product name

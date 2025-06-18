@@ -166,6 +166,20 @@ class KTPWP_Assets {
                     ),
                 ),
             ),
+            'ktp-service-selector' => array(
+                'src'       => 'js/ktp-service-selector.js',
+                'deps'      => array( 'jquery', 'ktp-invoice-items' ),
+                'ver'       => KTPWP_PLUGIN_VERSION,
+                'in_footer' => true,
+                'admin'     => false,
+                'localize'  => array(
+                    'object' => 'ktp_service_ajax_object',
+                    'data'   => array(
+                        'ajax_url' => admin_url( 'admin-ajax.php' ),
+                        'nonce'    => wp_create_nonce( 'ktp_ajax_nonce' ),
+                    ),
+                ),
+            ),
             'ktp-cost-items' => array(
                 'src'       => 'js/ktp-cost-items.js',
                 'deps'      => array( 'jquery', 'jquery-ui-sortable' ),
@@ -179,6 +193,27 @@ class KTPWP_Assets {
                         'nonce'    => wp_create_nonce( 'ktp_ajax_nonce' ),
                     ),
                 ),
+            ),
+            'ktp-calculation-debug' => array(
+                'src'       => 'js/ktp-calculation-debug.js',
+                'deps'      => array( 'jquery' ),
+                'ver'       => KTPWP_PLUGIN_VERSION,
+                'in_footer' => true,
+                'admin'     => false,
+            ),
+            'ktp-calculation-test' => array(
+                'src'       => 'js/ktp-calculation-test.js',
+                'deps'      => array( 'jquery', 'ktp-calculation-debug' ),
+                'ver'       => KTPWP_PLUGIN_VERSION,
+                'in_footer' => true,
+                'admin'     => false,
+            ),
+            'ktp-calculation-monitor' => array(
+                'src'       => 'js/ktp-calculation-monitor.js',
+                'deps'      => array( 'jquery', 'ktp-invoice-items', 'ktp-cost-items' ),
+                'ver'       => KTPWP_PLUGIN_VERSION,
+                'in_footer' => true,
+                'admin'     => false,
             ),
         );
     }

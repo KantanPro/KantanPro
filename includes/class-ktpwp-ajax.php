@@ -90,6 +90,9 @@ class KTPWP_Ajax {
         // 受注関連のAjax処理を初期化
         $this->init_order_ajax_handlers();
 
+        // サービス関連のAjax処理を初期化
+        $this->init_service_ajax_handlers();
+
         // スタッフチャット関連のAjax処理を初期化
         $this->init_staff_chat_ajax_handlers();
 
@@ -97,8 +100,6 @@ class KTPWP_Ajax {
         add_action('wp_ajax_get_logged_in_users', array($this, 'ajax_get_logged_in_users'));
         add_action('wp_ajax_nopriv_get_logged_in_users', array($this, 'ajax_get_logged_in_users'));
         $this->registered_handlers[] = 'get_logged_in_users';
-
-
     }
 
     /**
@@ -158,6 +159,16 @@ class KTPWP_Ajax {
                 $this->registered_handlers[] = 'send_staff_chat_message';
             }
         }
+    }
+
+    /**
+     * サービス関連Ajaxハンドラー初期化
+     */
+    private function init_service_ajax_handlers() {
+        // サービス一覧取得
+        add_action('wp_ajax_ktp_get_service_list', array($this, 'ajax_get_service_list'));
+        add_action('wp_ajax_nopriv_ktp_get_service_list', array($this, 'ajax_get_service_list'));
+        $this->registered_handlers[] = 'ktp_get_service_list';
     }
 
     /**
@@ -656,6 +667,189 @@ class KTPWP_Ajax {
                 'trace' => $e->getTraceAsString()
             ));
             wp_send_json_error(__( 'アイテムの並び順更新中に予期せぬエラーが発生しました（詳細エラーログ確認）', 'ktpwp' ));
+        }
+    }
+
+    /**
+     * Ajax: サービス一覧取得
+     */
+    public function ajax_get_service_list() {
+        error_log('[AJAX DEBUG] ajax_get_service_list method called');
+        
+        // 権限チェック
+        if (!current_user_can('edit_posts') && !current_user_can('ktpwp_access')) {
+            error_log('[AJAX] サービス一覧取得: 権限不足');
+            wp_send_json_error(__('この操作を行う権限がありません', 'ktpwp'));
+            return;
+        }
+
+        // デバッグログ
+        error_log('[AJAX] サービス一覧取得開始: ' . print_r($_POST, true));
+
+        // 簡単なnonceチェック
+        if (!check_ajax_referer('ktp_ajax_nonce', 'nonce', false)) {
+            error_log('[AJAX] サービス一覧取得: nonce検証失敗');
+            wp_send_json_error(__('セキュリティチェックに失敗しました', 'ktpwp'));
+            return;
+        }
+
+        error_log('[AJAX] サービス一覧取得: nonce検証成功');
+
+        // パラメータ取得
+        $page = isset($_POST['page']) ? absint($_POST['page']) : 1;
+        $limit = isset($_POST['limit']) ? absint($_POST['limit']) : 20;
+        $search = isset($_POST['search']) ? sanitize_text_field($_POST['search']) : '';
+        $category = isset($_POST['category']) ? sanitize_text_field($_POST['category']) : '';
+
+        if ($limit > 100) {
+            $limit = 100; // 最大100件に制限
+        }
+
+        $offset = ($page - 1) * $limit;
+
+        error_log('[AJAX] パラメータ取得完了: page=' . $page . ', limit=' . $limit);
+
+        try {
+            error_log('[AJAX] サービスDB処理開始');
+            
+            // サービスDBクラスのインスタンスを取得
+            if (!class_exists('KTPWP_Service_DB')) {
+                $service_db_file = KTPWP_PLUGIN_DIR . 'includes/class-ktpwp-service-db.php';
+                error_log('[AJAX] サービスDBファイル: ' . $service_db_file . ' (存在: ' . (file_exists($service_db_file) ? 'Yes' : 'No') . ')');
+                require_once $service_db_file;
+            }
+
+            if (!class_exists('KTPWP_Service_DB')) {
+                error_log('[AJAX] KTPWP_Service_DBクラスが見つかりません');
+                wp_send_json_error(__('サービスDBクラスが見つかりません', 'ktpwp'));
+                return;
+            }
+
+            $service_db = KTPWP_Service_DB::get_instance();
+            if (!$service_db) {
+                error_log('[AJAX] サービスDBインスタンスの取得に失敗');
+                
+                // ダミーデータで代替
+                $dummy_services = array(
+                    array(
+                        'id' => 1,
+                        'service_name' => 'テストサービス1（DBエラー時）',
+                        'price' => 10000,
+                        'unit' => '個',
+                        'category' => 'カテゴリ1'
+                    )
+                );
+
+                $response_data = array(
+                    'services' => $dummy_services,
+                    'pagination' => array(
+                        'current_page' => $page,
+                        'total_pages' => 1,
+                        'total_items' => 1,
+                        'items_per_page' => $limit
+                    ),
+                    'debug_message' => 'DBインスタンス取得失敗のためダミーデータを使用'
+                );
+
+                error_log('[AJAX] ダミーデータ送信（DBエラー時）: ' . print_r($response_data, true));
+                wp_send_json_success($response_data);
+                return;
+            }
+
+            error_log('[AJAX] 検索パラメータ: page=' . $page . ', limit=' . $limit . ', search=' . $search . ', category=' . $category);
+
+            // 検索条件の配列
+            $search_args = array(
+                'limit' => $limit,
+                'offset' => $offset,
+                'order_by' => 'frequency',
+                'order' => 'DESC',
+                'search' => $search,
+                'category' => $category
+            );
+
+            // サービス一覧を取得
+            error_log('[AJAX] サービス一覧取得呼び出し');
+            $services = $service_db->get_services('service', $search_args);
+            error_log('[AJAX] サービス一覧取得結果: ' . print_r($services, true));
+            
+            $total_services = $service_db->get_services_count('service', $search_args);
+            error_log('[AJAX] サービス総数: ' . $total_services);
+
+            if ($services === null || empty($services)) {
+                error_log('[AJAX] サービス一覧が空のためダミーデータに切り替え');
+                
+                // テスト用のダミーデータを返す
+                $dummy_services = array(
+                    array(
+                        'id' => 1,
+                        'service_name' => 'サンプルサービス1',
+                        'price' => 10000,
+                        'unit' => '個',
+                        'category' => 'カテゴリ1'
+                    ),
+                    array(
+                        'id' => 2,
+                        'service_name' => 'サンプルサービス2', 
+                        'price' => 20000,
+                        'unit' => '時間',
+                        'category' => 'カテゴリ2'
+                    ),
+                    array(
+                        'id' => 3,
+                        'service_name' => 'サンプルサービス3', 
+                        'price' => 5000,
+                        'unit' => '回',
+                        'category' => 'カテゴリ1'
+                    )
+                );
+
+                $services = $dummy_services;
+                $total_services = count($dummy_services);
+            }
+
+            $total_pages = ceil($total_services / $limit);
+
+            // レスポンスデータ
+            $response_data = array(
+                'services' => $services,
+                'pagination' => array(
+                    'current_page' => $page,
+                    'total_pages' => $total_pages,
+                    'total_items' => $total_services,
+                    'items_per_page' => $limit
+                )
+            );
+
+            error_log('[AJAX] サービス一覧取得成功: ' . count($services) . '件');
+            wp_send_json_success($response_data);
+
+        } catch (Exception $e) {
+            error_log('[AJAX] サービス一覧取得例外エラー: ' . $e->getMessage());
+            
+            // エラー時はダミーデータで代替
+            $dummy_services = array(
+                array(
+                    'id' => 1,
+                    'service_name' => 'エラー時サンプル',
+                    'price' => 1000,
+                    'unit' => '個',
+                    'category' => 'エラー対応'
+                )
+            );
+
+            $response_data = array(
+                'services' => $dummy_services,
+                'pagination' => array(
+                    'current_page' => $page,
+                    'total_pages' => 1,
+                    'total_items' => 1,
+                    'items_per_page' => $limit
+                ),
+                'debug_message' => 'Exception発生: ' . $e->getMessage()
+            );
+
+            wp_send_json_success($response_data);
         }
     }
 

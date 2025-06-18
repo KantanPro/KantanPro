@@ -16,10 +16,34 @@
 
     // 単価×数量の自動計算
     function calculateAmount(row) {
-        const price = parseFloat(row.find('.price').val()) || 0;
-        const quantity = parseFloat(row.find('.quantity').val()) || 0;
+        const priceValue = row.find('.price').val();
+        const quantityValue = row.find('.quantity').val();
+        
+        // より厳密な数値変換
+        const price = (priceValue === '' || priceValue === null || isNaN(priceValue)) ? 0 : parseFloat(priceValue);
+        const quantity = (quantityValue === '' || quantityValue === null || isNaN(quantityValue)) ? 0 : parseFloat(quantityValue);
         const amount = price * quantity;
-        row.find('.amount').val(amount);
+        
+        // NaNチェック
+        const finalAmount = isNaN(amount) ? 0 : amount;
+        
+        // デバッグログ
+        if (window.ktpDebugMode) {
+            console.log('[COST] calculateAmount called:', {
+                priceValue: priceValue,
+                quantityValue: quantityValue,
+                price: price,
+                quantity: quantity,
+                amount: amount,
+                finalAmount: finalAmount,
+                rowIndex: row.index(),
+                priceElement: row.find('.price').length,
+                quantityElement: row.find('.quantity').length,
+                amountElement: row.find('.amount').length
+            });
+        }
+        
+        row.find('.amount').val(finalAmount);
 
         // 金額を自動保存
         const itemId = row.find('input[name*="[id]"]').val();
@@ -27,7 +51,14 @@
 
         if (itemId && orderId && itemId !== '0') {
             // 既存行の場合：金額を自動保存
-            autoSaveItem('cost', itemId, 'amount', amount, orderId);
+            if (window.ktpDebugMode) {
+                console.log('[COST] calculateAmount: 金額自動保存実行', {itemId, amount: finalAmount});
+            }
+            autoSaveItem('cost', itemId, 'amount', finalAmount, orderId);
+        } else {
+            if (window.ktpDebugMode) {
+                console.log('[COST] calculateAmount: 保存条件未満', {itemId, orderId});
+            }
         }
 
         // 利益計算を更新
@@ -107,10 +138,7 @@
         const newRowHtml = `
             <tr class="cost-item-row" data-row-id="0" data-newly-added="true">
                 <td class="actions-column">
-                    <span class="drag-handle" title="ドラッグして並び替え">&#9776;</span>
-                    <button type="button" class="btn-add-row" title="行を追加">+</button>
-                    <button type="button" class="btn-delete-row" title="行を削除">×</button>
-                    <button type="button" class="btn-move-row" title="行を移動">></button>
+                    <span class="drag-handle" title="ドラッグして並び替え">&#9776;</span><button type="button" class="btn-add-row" title="行を追加">+</button><button type="button" class="btn-delete-row" title="行を削除">×</button><button type="button" class="btn-move-row" title="行を移動">></button>
                 </td>
                 <td>
                     <input type="text" name="cost_items[${newIndex}][product_name]" class="cost-item-input product-name" value="">
@@ -120,7 +148,7 @@
                     <input type="number" name="cost_items[${newIndex}][price]" class="cost-item-input price" value="0" step="1" min="0" style="text-align:left;" disabled>
                 </td>
                 <td style="text-align:left;">
-                    <input type="number" name="cost_items[${newIndex}][quantity]" class="cost-item-input quantity" value="0" step="1" min="0" style="text-align:left;" disabled>
+                    <input type="number" name="cost_items[${newIndex}][quantity]" class="cost-item-input quantity" value="1" step="1" min="0" style="text-align:left;" disabled>
                 </td>
                 <td>
                     <input type="text" name="cost_items[${newIndex}][unit]" class="cost-item-input unit" value="式" disabled>
@@ -358,6 +386,12 @@
                             $row.find('.cost-item-input').not('.product-name').not('.amount').prop('disabled', false);
                             console.log('[COST] createNewItem: 他のフィールドを有効化', $row);
 
+                            // フィールド有効化後に金額計算を実行
+                            setTimeout(function() {
+                                calculateAmount($row);
+                                console.log('[COST] createNewItem: フィールド有効化後の金額計算実行');
+                            }, 100);
+
                             // product_name からの最初の保存後、price フィールドにフォーカスを移す
                             const $priceField = $row.find('.cost-item-input.price');
                             if ($priceField.length > 0 && !$priceField.prop('disabled')) {
@@ -472,7 +506,28 @@
 
         // 単価・数量変更時の金額自動計算
         $(document).on('input', '.cost-items-table .price, .cost-items-table .quantity', function () {
-            const row = $(this).closest('tr');
+            const $field = $(this);
+            
+            // disabled フィールドは処理をスキップ
+            if ($field.prop('disabled')) {
+                if (window.ktpDebugMode) {
+                    console.log('[COST] Input event skipped: field is disabled');
+                }
+                return;
+            }
+            
+            const row = $field.closest('tr');
+            const fieldType = $field.hasClass('price') ? 'price' : 'quantity';
+            const value = $field.val();
+            
+            if (window.ktpDebugMode) {
+                console.log('[COST] Input event triggered:', {
+                    fieldType: fieldType,
+                    value: value,
+                    rowIndex: row.index()
+                });
+            }
+            
             calculateAmount(row);
 
             // 金額の自動保存は calculateAmount 内で行われる
@@ -582,8 +637,8 @@
             deleteRow(currentRow);
         });
 
-        // 行移動ボタン（将来の拡張用）
-        $(document).on('click', '.btn-move-row', function (e) {
+        // 行移動ボタン（将来の拡張用）- コスト項目テーブル専用
+        $(document).on('click', '.cost-items-table .btn-move-row', function (e) {
             e.preventDefault();
             // TODO: ドラッグ&ドロップ機能を実装
             alert('行移動機能は今後実装予定です。');
@@ -799,6 +854,11 @@
                     console.log('Cost remarks auto-save skipped - item not yet created or missing data');
                 }
             }
+        });
+
+        // 初期状態で既存の行に対して金額計算を実行
+        $('.cost-items-table tbody tr').each(function () {
+            calculateAmount($(this));
         });
 
         // 初期ロード時に合計金額と利益を計算・表示

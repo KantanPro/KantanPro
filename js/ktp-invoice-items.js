@@ -90,6 +90,12 @@
                             $row.removeAttr('data-newly-added');
                             $row.find('.invoice-item-input').not('.product-name').not('.amount').prop('disabled', false);
                             console.log('[INVOICE] createNewItem: 他のフィールドを有効化', $row);
+                            
+                            // フィールド有効化後に金額計算を実行
+                            setTimeout(function() {
+                                calculateAmount($row);
+                                console.log('[INVOICE] createNewItem: フィールド有効化後の金額計算実行');
+                            }, 100);
                         }
                         console.log('[INVOICE] createNewItem新規IDセット', result.data.item_id);
                         if (callback) callback(true, result.data.item_id); // コールバック呼び出し
@@ -116,10 +122,34 @@
 
     // 価格×数量の自動計算
     function calculateAmount(row) {
-        const price = parseFloat(row.find('.price').val()) || 0;
-        const quantity = parseFloat(row.find('.quantity').val()) || 0;
+        const priceValue = row.find('.price').val();
+        const quantityValue = row.find('.quantity').val();
+        
+        // より厳密な数値変換
+        const price = (priceValue === '' || priceValue === null || isNaN(priceValue)) ? 0 : parseFloat(priceValue);
+        const quantity = (quantityValue === '' || quantityValue === null || isNaN(quantityValue)) ? 0 : parseFloat(quantityValue);
         const amount = price * quantity;
-        row.find('.amount').val(amount);
+        
+        // NaNチェック
+        const finalAmount = isNaN(amount) ? 0 : amount;
+        
+        // デバッグログ
+        if (window.ktpDebugMode) {
+            console.log('[INVOICE] calculateAmount called:', {
+                priceValue: priceValue,
+                quantityValue: quantityValue,
+                price: price,
+                quantity: quantity,
+                amount: amount,
+                finalAmount: finalAmount,
+                rowIndex: row.index(),
+                priceElement: row.find('.price').length,
+                quantityElement: row.find('.quantity').length,
+                amountElement: row.find('.amount').length
+            });
+        }
+        
+        row.find('.amount').val(finalAmount);
 
         // 金額を自動保存
         const itemId = row.find('input[name*="[id]"]').val();
@@ -128,9 +158,19 @@
         if (itemId && orderId) {
             if (itemId === '0') {
                 // 新規行の場合は何もしない（商品名入力時に新規作成される）
+                if (window.ktpDebugMode) {
+                    console.log('[INVOICE] calculateAmount: 新規行のため金額保存スキップ');
+                }
             } else {
                 // 既存行の場合：金額を自動保存
-                window.ktpInvoiceAutoSaveItem('invoice', itemId, 'amount', amount, orderId);
+                if (window.ktpDebugMode) {
+                    console.log('[INVOICE] calculateAmount: 金額自動保存実行', {itemId, amount: finalAmount});
+                }
+                window.ktpInvoiceAutoSaveItem('invoice', itemId, 'amount', finalAmount, orderId);
+            }
+        } else {
+            if (window.ktpDebugMode) {
+                console.log('[INVOICE] calculateAmount: 保存条件未満', {itemId, orderId});
             }
         }
 
@@ -210,10 +250,7 @@
         const newRowHtml = `
             <tr class="invoice-item-row" data-row-id="0" data-newly-added="true">
                 <td class="actions-column">
-                    <span class="drag-handle" title="ドラッグして並び替え">&#9776;</span>
-                    <button type="button" class="btn-add-row" title="行を追加">+</button>
-                    <button type="button" class="btn-delete-row" title="行を削除">×</button>
-                    <button type="button" class="btn-move-row" title="行を移動">></button>
+                    <span class="drag-handle" title="ドラッグして並び替え">&#9776;</span><button type="button" class="btn-add-row" title="行を追加">+</button><button type="button" class="btn-delete-row" title="行を削除">×</button><button type="button" class="btn-move-row" title="サービス選択">></button>
                 </td>
                 <td>
                     <input type="text" name="invoice_items[${newIndex}][product_name]" class="invoice-item-input product-name" value="">
@@ -223,7 +260,7 @@
                     <input type="number" name="invoice_items[${newIndex}][price]" class="invoice-item-input price" value="0" step="1" min="0" style="text-align:left;" disabled>
                 </td>
                 <td style="text-align:left;">
-                    <input type="number" name="invoice_items[${newIndex}][quantity]" class="invoice-item-input quantity" value="0" step="1" min="0" style="text-align:left;" disabled>
+                    <input type="number" name="invoice_items[${newIndex}][quantity]" class="invoice-item-input quantity" value="1" step="1" min="0" style="text-align:left;" disabled>
                 </td>
                 <td>
                     <input type="text" name="invoice_items[${newIndex}][unit]" class="invoice-item-input unit" value="式" disabled>
@@ -447,7 +484,28 @@
 
         // 価格・数量変更時の金額自動計算
         $(document).on('input', '.invoice-items-table .price, .invoice-items-table .quantity', function () {
-            const row = $(this).closest('tr');
+            const $field = $(this);
+            
+            // disabled フィールドは処理をスキップ
+            if ($field.prop('disabled')) {
+                if (window.ktpDebugMode) {
+                    console.log('[INVOICE] Input event skipped: field is disabled');
+                }
+                return;
+            }
+            
+            const row = $field.closest('tr');
+            const fieldType = $field.hasClass('price') ? 'price' : 'quantity';
+            const value = $field.val();
+            
+            if (window.ktpDebugMode) {
+                console.log('[INVOICE] Input event triggered:', {
+                    fieldType: fieldType,
+                    value: value,
+                    rowIndex: row.index()
+                });
+            }
+            
             calculateAmount(row);
         });
 
@@ -546,11 +604,23 @@
                 deleteRow(currentRow);
             });
 
-        // 行移動ボタン（将来の拡張用）
-        $(document).on('click', '.btn-move-row', function (e) {
+        // 行移動ボタン（サービス選択機能）- 請求項目テーブル専用
+        $(document).on('click', '.invoice-items-table .btn-move-row', function (e) {
             e.preventDefault();
-            // TODO: ドラッグ&ドロップ機能を実装
-            alert('行移動機能は今後実装予定です。');
+            e.stopPropagation();
+            console.log('[INVOICE-ITEMS] [>]ボタンクリック - サービス選択開始');
+            
+            // サービス選択ポップアップを表示
+            const currentRow = $(this).closest('tr');
+            
+            // ktpShowServiceSelector関数の存在確認
+            if (typeof window.ktpShowServiceSelector === 'function') {
+                console.log('[INVOICE-ITEMS] ktpShowServiceSelector関数を呼び出し');
+                window.ktpShowServiceSelector(currentRow);
+            } else {
+                console.error('[INVOICE-ITEMS] ktpShowServiceSelector関数が見つかりません');
+                alert('サービス選択機能の読み込みに失敗しました。ページを再読み込みしてください。');
+            }
         });
 
         // フォーカス時の入力欄スタイル調整
