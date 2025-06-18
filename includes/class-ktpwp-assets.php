@@ -229,6 +229,13 @@ class KTPWP_Assets {
                     ),
                 ),
             ),
+            'ktp-order-preview' => array(
+                'src'       => 'js/ktp-order-preview.js',
+                'deps'      => array( 'jquery' ),
+                'ver'       => KTPWP_PLUGIN_VERSION,
+                'in_footer' => true,
+                'admin'     => false,
+            ),
         );
     }
 
@@ -236,16 +243,11 @@ class KTPWP_Assets {
      * フロントエンドアセット読み込み
      */
     public function enqueue_frontend_assets() {
-        // 編集者権限がない場合はアセットを読み込まない
-        if (!current_user_can('edit_posts') && !current_user_can('ktpwp_access')) {
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('KTPWP_Assets: User does not have edit_posts/ktpwp_access capability. Skipping asset enqueue.');
-            }
-            return;
-        }
-
+        // デバッグ: 一時的にすべてのユーザーに対してアセットを読み込み
+        $should_load_assets = true;
+        
         if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('KTPWP_Assets: Enqueuing frontend assets for user with edit_posts capability.');
+            error_log('KTPWP_Assets: Enqueuing frontend assets (debug mode - all users).');
         }
 
         $this->enqueue_styles( false );
@@ -259,8 +261,11 @@ class KTPWP_Assets {
      * @param string $hook_suffix 現在の管理画面のフック
      */
     public function enqueue_admin_assets( $hook_suffix ) {
-        // KTPWPプラグインの管理画面でのみ読み込み
-        if ( strpos( $hook_suffix, 'ktp-' ) !== false || strpos( $hook_suffix, 'ktpwp-' ) !== false ) {
+        // より包括的な条件でアセットを読み込み
+        // KTPWPプラグインの管理画面、または固定ページの編集画面で読み込み
+        if ( strpos( $hook_suffix, 'ktp-' ) !== false || 
+             strpos( $hook_suffix, 'ktpwp-' ) !== false || 
+             in_array( $hook_suffix, array( 'post.php', 'post-new.php', 'edit.php' ) ) ) {
             $this->enqueue_styles( true );
             $this->enqueue_scripts( true );
             $this->localize_frontend_scripts(); // 管理画面でもフロントエンド用のAJAX設定を追加
@@ -488,9 +493,7 @@ class KTPWP_Assets {
      * wp_headでAJAX設定を出力
      */
     public function output_ajax_config() {
-        if (!current_user_can('edit_posts') && !current_user_can('ktpwp_access')) {
-            return;
-        }
+        // デバッグ: 一時的にすべてのユーザーに対してAJAX設定を出力
         if (!wp_script_is('ktp-js', 'enqueued') && !wp_script_is('ktp-js', 'done')) {
             return;
         }
@@ -501,11 +504,11 @@ class KTPWP_Assets {
         echo 'window.ktpwp_ajax = ' . json_encode($ajax_data) . ';';
         echo 'window.ktp_ajax_object = ' . json_encode($ajax_data) . ';';
         echo 'window.ajaxurl = ' . json_encode($ajax_data['ajax_url']) . ';';
-        echo 'console.log("Head: AJAX設定を出力 (unified nonce)", window.ktpwp_ajax);';
+        echo 'console.log("Head: AJAX設定を出力 (debug mode)", window.ktpwp_ajax);';
         echo '</script>';
 
         if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('KTPWP Assets: AJAX config output in head with unified data: ' . json_encode($ajax_data));
+            error_log('KTPWP Assets: AJAX config output in head (debug mode): ' . json_encode($ajax_data));
         }
     }
 
@@ -513,21 +516,19 @@ class KTPWP_Assets {
      * wp_footerでAJAX設定のフォールバック出力
      */
     public function output_ajax_config_fallback() {
-        if (!current_user_can('edit_posts') && !current_user_can('ktpwp_access')) {
-            return;
-        }
+        // デバッグ: 一時的にすべてのユーザーに対してAJAX設定を出力
         echo '<script type="text/javascript">';
         echo 'if (typeof window.ktpwp_ajax === "undefined") {';
         $ajax_data = $this->get_unified_ajax_config();
         echo 'window.ktpwp_ajax = ' . json_encode($ajax_data) . ';';
         echo 'window.ktp_ajax_object = ' . json_encode($ajax_data) . ';';
         echo 'window.ajaxurl = ' . json_encode($ajax_data['ajax_url']) . ';';
-        echo 'console.log("Footer fallback: AJAX設定を出力 (unified nonce)", window.ktpwp_ajax);';
+        echo 'console.log("Footer fallback: AJAX設定を出力 (debug mode)", window.ktpwp_ajax);';
         echo '}';
         echo '</script>';
 
         if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('KTPWP Assets: Fallback AJAX config output in footer with unified nonce');
+            error_log('KTPWP Assets: Fallback AJAX config output in footer (debug mode)');
         }
     }
 }

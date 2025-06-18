@@ -973,51 +973,27 @@ class Kntan_Order_Class {
             $order_data = $wpdb->get_row($wpdb->prepare("SELECT * FROM `{$table_name}` WHERE id = %d", $order_id));
 
             if ($order_data) {
-                // プレビュー用HTML（詳細表示用）
-                $client_id_text = !empty($order_data->client_id) ? "（顧客ID: " . esc_html($order_data->client_id) . "）" : "（顧客ID未設定）";
-                $preview_html = "<div><strong>伝票プレビュー</strong><br>受注書ID: " . esc_html($order_data->id) . "<br>会社名：" . esc_html($order_data->customer_name) . " " . $client_id_text . "<br>担当者名：" . esc_html($order_data->user_name) . "</div>";
-                $preview_html_json = json_encode($preview_html);
+                // プレビュー用HTML生成（進捗状況に応じた帳票形式）
+                $preview_html = $this->Generate_Order_Preview_HTML($order_data);
+                
+                // デバッグ: プレビューHTMLの内容を確認
+                error_log('KTPWP: Preview HTML length: ' . strlen($preview_html));
+                error_log('KTPWP: Preview HTML sample: ' . substr($preview_html, 0, 200));
+                
+                // JavaScriptに安全に渡すためのBase64エンコード（UTF-8文字化け対策）
+                $preview_html_encoded = base64_encode(mb_convert_encoding($preview_html, 'UTF-8', 'auto'));
+                
+                // デバッグ: Base64エンコード結果を確認
+                error_log('KTPWP: Base64 encoded length: ' . strlen($preview_html_encoded));
+                error_log('KTPWP: Base64 sample: ' . substr($preview_html_encoded, 0, 100));
 
-                // プレビュー・印刷ボタンのJavaScriptとHTMLを先に生成
-                $content .= '<script>';
-                $content .= 'var isOrderPreviewOpen = false;';
-                $content .= 'function printOrderContent() {';
-                $content .= '    var printContent = ' . $preview_html_json . ';';
-                $content .= '    var printWindow = window.open("", "_blank");';
-                $content .= '    printWindow.document.open();';
-                $content .= '    printWindow.document.write("<html><head><title>印刷</title></head><body>");';
-                $content .= '    printWindow.document.write(printContent);';
-                $content .= '    printWindow.document.write("<script>window.onafterprint = function(){ window.close(); }<\\/script>");';
-                $content .= '    printWindow.document.write("</body></html>");';
-                $content .= '    printWindow.document.close();';
-                $content .= '    printWindow.print();';
-                $content .= '}';
-                $content .= 'function toggleOrderPreview() {';
-                $content .= '    var previewWindow = document.getElementById("orderPreviewWindow");';
-                $content .= '    var previewButton = document.getElementById("orderPreviewButton");';
-                $content .= '    if (isOrderPreviewOpen) {';
-                $content .= '        previewWindow.style.display = "none";';
-                $content .= '        previewButton.innerHTML = "<span class=\"material-symbols-outlined\" aria-label=\"プレビュー\">preview</span>";';
-                $content .= '        isOrderPreviewOpen = false;';
-                $content .= '        return;';
-                $content .= '    } else {';
-                $content .= '        var printContent = ' . $preview_html_json . ';';
-                $content .= '        previewWindow.innerHTML = printContent;';
-                $content .= '        previewWindow.style.display = "block";';
-                $content .= '        previewButton.innerHTML = "<span class=\"material-symbols-outlined\" aria-label=\"閉じる\">close</span>";';
-                $content .= '        isOrderPreviewOpen = true;';
-                $content .= '        return;';
-                $content .= '    }';
-                $content .= '}';
-                $content .= '</script>';
+                // 旧プレビュー・印刷ボタンのJavaScriptとHTMLを削除し、新しいポップアップ機能に置き換え
 
                 $content .= '<div class="controller">';
                 $content .= '<div class="printer">';
-                $content .= '<button id="orderPreviewButton" onclick="toggleOrderPreview()" title="' . esc_attr__('プレビュー', 'ktpwp') . '" style="padding: 8px 12px; font-size: 14px;">';
+                // data属性にBase64エンコードされたHTMLを安全に埋め込む
+                $content .= '<button id="orderPreviewButton" data-order-id="' . esc_attr($order_data->id) . '" data-preview-content="' . $preview_html_encoded . '" title="' . esc_attr__('プレビュー', 'ktpwp') . '" style="padding: 8px 12px; font-size: 14px;">';
                 $content .= '<span class="material-symbols-outlined" aria-label="' . esc_attr__('プレビュー', 'ktpwp') . '">preview</span>';
-                $content .= '</button>';
-                $content .= '<button onclick="printOrderContent()" title="' . esc_attr__('印刷する', 'ktpwp') . '" style="padding: 8px 12px; font-size: 14px;">';
-                $content .= '<span class="material-symbols-outlined" aria-label="' . esc_attr__('印刷', 'ktpwp') . '">print</span>';
                 $content .= '</button>';
 
                 // 顧客情報に基づいてメールボタンの状態を制御
@@ -1103,7 +1079,6 @@ class Kntan_Order_Class {
                 $content .= '</button>';
                 $content .= '</div>';
                 $content .= '</div>';
-                $content .= '<div id="orderPreviewWindow" style="display: none;"></div>';
 
                 // workflowセクション追加（デザイン統一）
                 $content .= '<div class="workflow">';
@@ -1679,6 +1654,249 @@ $content .= '</div>';
 
         error_log( 'KTPWP: Successfully deleted ' . $result . ' staff chat messages for order ID ' . $order_id );
         return true;
+    }
+
+    /**
+     * 進捗状況に応じた帳票プレビューHTMLを生成
+     *
+     * @param object $order_data 受注書データ
+     * @return string プレビュー用HTML
+     * @since 1.0.0
+     */
+    private function Generate_Order_Preview_HTML($order_data) {
+        // 進捗ラベルの定義
+        $progress_labels = [
+            1 => '受付中',
+            2 => '見積中', 
+            3 => '作成中',
+            4 => '完成未請求',
+            5 => '請求済',
+            6 => '入金済'
+        ];
+
+        // 帳票タイトルと内容の定義
+        $document_info = $this->Get_Document_Info_By_Progress($order_data->progress);
+        
+        // 案件名の取得（空の場合はデフォルト値）
+        $project_name = !empty($order_data->project_name) ? $order_data->project_name : '案件';
+        
+        // デバッグ: 文字化け対策
+        error_log('KTPWP Preview Debug - customer_name: ' . $order_data->customer_name);
+        error_log('KTPWP Preview Debug - user_name: ' . $order_data->user_name);
+        error_log('KTPWP Preview Debug - project_name: ' . $project_name);
+        
+        // 請求項目の取得
+        $invoice_items_html = $this->Generate_Invoice_Items_For_Preview($order_data->id);
+        
+        // 自社情報の取得（設定から）
+        $company_info_html = $this->Get_Company_Info_HTML();
+
+        // プレビューHTML生成 - HTMLエスケープを最小限に抑える
+        $html = '<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><title>受注書プレビュー</title></head><body>';
+        $html .= '<div class="order-preview-document" style="font-family: \'Noto Sans JP\', \'Hiragino Kaku Gothic ProN\', Meiryo, sans-serif; line-height: 1.8; color: #333; max-width: 800px; margin: 0 auto; padding: 40px; background: #fff;">';
+        
+        // 宛先情報
+        $html .= '<div class="customer-info" style="margin-bottom: 40px;">';
+        $html .= '<div class="company-name" style="font-size: 20px; font-weight: bold; margin-bottom: 8px;">' . $order_data->customer_name . '</div>';
+        $html .= '<div class="customer-name" style="font-size: 18px; margin-bottom: 20px;">' . $order_data->user_name . ' 様</div>';
+        $html .= '</div>';
+
+        // 帳票タイトル
+        $html .= '<div class="document-title" style="text-align: center; margin-bottom: 30px; padding: 20px; border: 2px solid #333; font-size: 24px; font-weight: bold;">';
+        $html .= '＜' . $document_info['title'] . '＞';
+        $html .= '</div>';
+
+        // 帳票内容
+        $html .= '<div class="document-content" style="margin-bottom: 40px; padding: 20px; background: #f9f9f9; border-left: 4px solid #007cba; font-size: 16px;">';
+        $html .= sprintf($document_info['content'], '<strong>' . $project_name . '</strong>');
+        $html .= '</div>';
+
+        // 請求項目
+        $html .= '<div class="invoice-items" style="margin-bottom: 40px;">';
+        $html .= '<h3 style="font-size: 18px; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #333;">請求項目</h3>';
+        $html .= $invoice_items_html;
+        $html .= '</div>';
+
+        // 自社情報
+        $html .= '<div class="company-info" style="margin-bottom: 40px;">';
+        $html .= $company_info_html;
+        $html .= '</div>';
+
+        // フッター
+        $html .= '<div class="document-footer" style="text-align: center; margin-top: 60px; padding-top: 20px; border-top: 1px solid #ccc; font-size: 12px; color: #666;">';
+        $html .= '受注書ID: ' . $order_data->id . ' | 作成日: ' . date('Y年m月d日', is_numeric($order_data->time) ? $order_data->time : strtotime($order_data->time));
+        $html .= '</div>';
+        
+        $html .= '</div>'; // .order-preview-document 終了
+        $html .= '</body></html>';
+
+        return $html;
+    }
+
+    /**
+     * 進捗状況に応じた帳票情報を取得
+     *
+     * @param int $progress 進捗状況
+     * @return array 帳票情報
+     * @since 1.0.0
+     */
+    private function Get_Document_Info_By_Progress($progress) {
+        switch ($progress) {
+            case 1: // 受付中
+                return [
+                    'title' => '見積書',
+                    'content' => '%sにつきましてお見積りいたします。'
+                ];
+            case 2: // 見積中
+                return [
+                    'title' => '注文受書',
+                    'content' => '%sにつきましてご注文をお受けしました。'
+                ];
+            case 3: // 作成中
+                return [
+                    'title' => '納品書', 
+                    'content' => '%sにつきまして完了しました。'
+                ];
+            case 4: // 完成未請求
+                return [
+                    'title' => '請求書',
+                    'content' => '%sにつきまして請求申し上げます。'
+                ];
+            case 5: // 請求済
+                return [
+                    'title' => '領収書',
+                    'content' => '%sにつきましてお支払いを確認しました。'
+                ];
+            case 6: // 入金済
+                return [
+                    'title' => '案件完了',
+                    'content' => '%sにつきましては全て完了しています。'
+                ];
+            default:
+                return [
+                    'title' => '受注書',
+                    'content' => '%sにつきましてご依頼をお受けしました。'
+                ];
+        }
+    }
+
+    /**
+     * プレビュー用請求項目HTMLを生成
+     *
+     * @param int $order_id 受注書ID
+     * @return string 請求項目HTML
+     * @since 1.0.0
+     */
+    private function Generate_Invoice_Items_For_Preview($order_id) {
+        global $wpdb;
+        
+        $invoice_table = $wpdb->prefix . 'ktp_order_invoice_items';
+        $invoice_items = $wpdb->get_results($wpdb->prepare(
+            "SELECT * FROM `{$invoice_table}` WHERE order_id = %d ORDER BY sort_order ASC",
+            $order_id
+        ));
+
+        if (empty($invoice_items)) {
+            return '<div style="text-align: center; color: #666; padding: 20px;">請求項目が登録されていません</div>';
+        }
+
+        $html = '<table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">';
+        $html .= '<thead>';
+        $html .= '<tr style="background: #f0f0f0;">';
+        $html .= '<th style="border: 1px solid #ddd; padding: 12px; text-align: left;">項目名</th>';
+        $html .= '<th style="border: 1px solid #ddd; padding: 12px; text-align: right; width: 100px;">数量</th>';
+        $html .= '<th style="border: 1px solid #ddd; padding: 12px; text-align: right; width: 120px;">単価</th>';
+        $html .= '<th style="border: 1px solid #ddd; padding: 12px; text-align: right; width: 120px;">金額</th>';
+        $html .= '</tr>';
+        $html .= '</thead>';
+        $html .= '<tbody>';
+
+        $total_amount = 0;
+
+        foreach ($invoice_items as $item) {
+            // 正しい列名を使用
+            $product_name = isset($item->product_name) ? $item->product_name : '';
+            $quantity = isset($item->quantity) ? floatval($item->quantity) : 0;
+            $price = isset($item->price) ? floatval($item->price) : 0;
+            $amount = isset($item->amount) ? floatval($item->amount) : ($quantity * $price);
+            $unit = isset($item->unit) ? $item->unit : '';
+            
+            // デバッグ: 文字化け対策
+            error_log('KTPWP Invoice Item Debug - product_name: ' . $product_name . ', unit: ' . $unit);
+            
+            $total_amount += $amount;
+
+            $html .= '<tr>';
+            $html .= '<td style="border: 1px solid #ddd; padding: 12px;">' . $product_name . '</td>';
+            $html .= '<td style="border: 1px solid #ddd; padding: 12px; text-align: right;">' . number_format($quantity) . $unit . '</td>';
+            $html .= '<td style="border: 1px solid #ddd; padding: 12px; text-align: right;">¥' . number_format($price) . '</td>';
+            $html .= '<td style="border: 1px solid #ddd; padding: 12px; text-align: right;">¥' . number_format($amount) . '</td>';
+            $html .= '</tr>';
+        }
+
+        // 合計行
+        $html .= '<tr style="background: #f9f9f9; font-weight: bold;">';
+        $html .= '<td colspan="3" style="border: 1px solid #ddd; padding: 12px; text-align: right;">合計</td>';
+        $html .= '<td style="border: 1px solid #ddd; padding: 12px; text-align: right;">¥' . number_format($total_amount) . '</td>';
+        $html .= '</tr>';
+
+        $html .= '</tbody>';
+        $html .= '</table>';
+
+        return $html;
+    }
+
+    /**
+     * 自社情報HTMLを生成
+     *
+     * @return string 自社情報HTML
+     * @since 1.0.0
+     */
+    private function Get_Company_Info_HTML() {
+        // 一般設定から自社情報を取得
+        $company_info = '';
+        if (class_exists('KTP_Settings')) {
+            $company_info = KTP_Settings::get_company_info();
+        }
+
+        // 旧システムからも取得（後方互換性）
+        if (empty($company_info)) {
+            global $wpdb;
+            $setting_table = $wpdb->prefix . 'ktp_setting';
+            $setting = $wpdb->get_row($wpdb->prepare(
+                "SELECT * FROM `{$setting_table}` WHERE id = %d",
+                1
+            ));
+            if ($setting && !empty($setting->my_company_content)) {
+                $company_info = sanitize_text_field(strip_tags($setting->my_company_content));
+            }
+        }
+
+        // デフォルト値を設定
+        if (empty($company_info)) {
+            $company_info = '<div style="font-size: 18px; font-weight: bold; margin-bottom: 10px;">株式会社サンプル</div>';
+            $company_info .= '<div style="margin-bottom: 5px;">〒000-0000 東京都港区サンプル1-1-1</div>';
+            $company_info .= '<div style="margin-bottom: 5px;">TEL: 03-0000-0000</div>';
+            $company_info .= '<div>info@sample.com</div>';
+        } else {
+            // HTMLタグが含まれている場合はそのまま使用、プレーンテキストの場合は改行をHTMLに変換
+            if (strip_tags($company_info) === $company_info) {
+                // プレーンテキストの場合
+                $company_info = nl2br(esc_html($company_info));
+            }
+            // HTMLタグが含まれている場合はそのまま使用（エスケープしない）
+        }
+
+        $html = '<div class="company-info-box" style="
+            text-align: right;
+            padding: 20px;
+            border: 1px solid #ddd;
+            background: #fafafa;
+        ">';
+        $html .= $company_info;
+        $html .= '</div>';
+
+        return $html;
     }
 
 } // End of Kntan_Order_Class
