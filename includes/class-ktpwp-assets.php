@@ -215,6 +215,20 @@ class KTPWP_Assets {
                 'in_footer' => true,
                 'admin'     => false,
             ),
+            'ktp-email-popup' => array(
+                'src'       => 'js/ktp-email-popup.js',
+                'deps'      => array( 'jquery' ),
+                'ver'       => KTPWP_PLUGIN_VERSION,
+                'in_footer' => true,
+                'admin'     => false,
+                'localize'  => array(
+                    'object' => 'ktp_ajax_object',
+                    'data'   => array(
+                        'ajax_url' => admin_url( 'admin-ajax.php' ),
+                        'nonce'    => wp_create_nonce( 'ktpwp_ajax_nonce' ),
+                    ),
+                ),
+            ),
         );
     }
 

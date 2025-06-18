@@ -1084,18 +1084,23 @@ class Kntan_Order_Class {
                     }
                 }
 
-                $content .= '<form id="orderMailForm" method="post" action="" style="display:inline;margin-top:0px;">';
+                // Email form (hidden)
+                $content .= '<form id="orderMailForm" method="post" action="" style="display:none;">';
                 if ($can_send_email) {
                     $content .= '<input type="hidden" name="send_order_mail_id" value="' . esc_attr($order_data->id) . '">';
                     // Add nonce to mail form
                     $content .= wp_nonce_field( 'send_order_mail_action', 'order_mail_nonce', true, false );
-                    $content .= '<button type="submit" id="orderMailButton" title="' . $mail_button_title . '" style="' . $mail_button_style . '">';
+                }
+                $content .= '</form>';
+                
+                // Email button (opens popup)
+                if ($can_send_email) {
+                    $content .= '<button type="button" id="orderMailButton" onclick="ktpShowEmailPopup(' . esc_attr($order_data->id) . ')" title="' . $mail_button_title . '" style="' . $mail_button_style . '">';
                 } else {
                     $content .= '<button type="button" id="orderMailButton" disabled title="' . $mail_button_title . '" style="' . $mail_button_style . '">';
                 }
                 $content .= '<span class="material-symbols-outlined" aria-label="' . esc_attr__('メール', 'ktpwp') . '">mail</span>';
                 $content .= '</button>';
-                $content .= '</form>';
                 $content .= '</div>';
                 $content .= '</div>';
                 $content .= '<div id="orderPreviewWindow" style="display: none;"></div>';

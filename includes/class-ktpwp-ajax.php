@@ -100,6 +100,16 @@ class KTPWP_Ajax {
         add_action('wp_ajax_get_logged_in_users', array($this, 'ajax_get_logged_in_users'));
         add_action('wp_ajax_nopriv_get_logged_in_users', array($this, 'ajax_get_logged_in_users'));
         $this->registered_handlers[] = 'get_logged_in_users';
+
+        // メール内容取得
+        add_action('wp_ajax_get_email_content', array($this, 'ajax_get_email_content'));
+        add_action('wp_ajax_nopriv_get_email_content', array($this, 'ajax_require_login'));
+        $this->registered_handlers[] = 'get_email_content';
+
+        // メール送信
+        add_action('wp_ajax_send_order_email', array($this, 'ajax_send_order_email'));
+        add_action('wp_ajax_nopriv_send_order_email', array($this, 'ajax_require_login'));
+        $this->registered_handlers[] = 'send_order_email';
     }
 
     /**
@@ -886,167 +896,306 @@ class KTPWP_Ajax {
     }
 
     /**
-     * Ajaxリクエストの共通バリデーション
-     *
-     * @param string $action アクション名
-     * @param bool $require_admin 管理者権限必須かどうか
-     * @return bool バリデーション結果
+     * メール内容取得のAJAX処理
      */
-    public function validate_ajax_request($action, $require_admin = false) {
-        // ログインチェック
-        if (!is_user_logged_in()) {
-            wp_send_json_error(__('ログインが必要です', 'ktpwp'));
-            return false;
-        }
-
-        // 管理者権限チェック
-        if ($require_admin && !current_user_can('manage_options')) {
-            wp_send_json_error(__('管理者権限が必要です', 'ktpwp'));
-            return false;
-        }
-
-        // nonceチェック
-        $nonce_key = $this->get_nonce_key_for_action($action);
-        if ($nonce_key && isset($_POST['_wpnonce'])) {
-            if (!wp_verify_nonce($_POST['_wpnonce'], $nonce_key)) {
-                wp_send_json_error(__('セキュリティ検証に失敗しました', 'ktpwp'));
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    /**
-     * アクションに対応するnonce名を取得
-     *
-     * @param string $action アクション名
-     * @return string|false nonce名またはfalse
-     */
-    private function get_nonce_key_for_action($action) {
-        $action_nonce_map = array(
-            'ktp_update_project_name' => $this->nonce_names['project_name'],
-            'ktp_auto_save_item' => $this->nonce_names['auto_save'],
-            'ktp_create_new_item' => $this->nonce_names['auto_save'],
-            'ktp_delete_item' => $this->nonce_names['auto_save'], // ktp_ajax_nonce を使用
-            'ktp_update_item_order' => $this->nonce_names['auto_save'], // Add nonce for new action
-        );
-
-        return isset($action_nonce_map[$action]) ? $action_nonce_map[$action] : false;
-    }
-
-    /**
-     * 安全なAjaxレスポンス送信
-     *
-     * @param mixed $data レスポンスデータ
-     * @param bool $success 成功かどうか
-     * @param string $message メッセージ
-     */
-    public function send_ajax_response($data = null, $success = true, $message = '') {
-        if ($success) {
-            $response = array();
-
-            if (!empty($message)) {
-                $response['message'] = $message;
+    public function ajax_get_email_content() {
+        try {
+            // セキュリティチェック
+            if (!check_ajax_referer('ktpwp_ajax_nonce', 'nonce', false)) {
+                throw new Exception('セキュリティ検証に失敗しました。');
             }
 
-            if ($data !== null) {
-                $response['data'] = $data;
+            // 権限チェック
+            if (!current_user_can('edit_posts') && !current_user_can('ktpwp_access')) {
+                throw new Exception('権限がありません。');
             }
 
-            wp_send_json_success($response);
-        } else {
-            wp_send_json_error($message);
-        }
-    }
-
-    /**
-     * Ajax入力データのサニタイズ（強化版）
-     *
-     * @param string $key POST配列のキー
-     * @param string $type データタイプ（text, email, int, float, textarea, html）
-     * @param mixed $default デフォルト値
-     * @return mixed サニタイズされた値
-     */
-    public function sanitize_ajax_input($key, $type = 'text', $default = '') {
-        // $_POST配列の存在確認（Adminer警告対策）
-        if (!is_array($_POST) || !isset($_POST[$key])) {
-            return $default;
-        }
-
-        $value = wp_unslash($_POST[$key]);
-
-        // null値チェック（追加保護）
-        if ($value === null) {
-            return $default;
-        }
-
-        switch ($type) {
-            case 'int':
-                return intval($value);
-
-            case 'float':
-                return floatval($value);
-
-            case 'email':
-                return sanitize_email($value);
-
-            case 'textarea':
-                return sanitize_textarea_field($value);
-
-            case 'html':
-                return wp_kses_post($value);
-
-            case 'text':
-            default:
-                return sanitize_text_field($value);
-        }
-    }
-
-    /**
-     * 登録されたハンドラー一覧取得
-     *
-     * @return array ハンドラー名配列
-     */
-    public function get_registered_handlers() {
-        return $this->registered_handlers;
-    }
-
-    /**
-     * Ajaxハンドラー存在チェック
-     *
-     * @param string $handler_name ハンドラー名
-     * @return bool 存在するかどうか
-     */
-    public function handler_exists($handler_name) {
-        return in_array($handler_name, $this->registered_handlers, true);
-    }
-
-    /**
-     * nonce名設定の取得
-     *
-     * @param string $type nonce種別
-     * @return string|false nonce名またはfalse
-     */
-    public function get_nonce_name($type) {
-        return isset($this->nonce_names[$type]) ? $this->nonce_names[$type] : false;
-    }
-
-    /**
-     * Ajaxエラーログ記録
-     *
-     * @param string $message エラーメッセージ
-     * @param array $context 追加コンテキスト
-     */
-    public function log_ajax_error( $message, $context = array() ) {
-        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            $log_message = 'KTPWP Ajax Error: ' . $message;
-
-            if ( ! empty( $context ) ) {
-                $log_message .= ' | Context: ' . wp_json_encode( $context );
+            $order_id = isset($_POST['order_id']) ? absint($_POST['order_id']) : 0;
+            if ($order_id <= 0) {
+                throw new Exception('無効な受注書IDです。');
             }
 
-            error_log( $log_message );
+            global $wpdb;
+            $table_name = $wpdb->prefix . 'ktp_order';
+            $client_table = $wpdb->prefix . 'ktp_client';
+
+            // 受注書データを取得
+            $order = $wpdb->get_row($wpdb->prepare(
+                "SELECT * FROM `{$table_name}` WHERE id = %d",
+                $order_id
+            ));
+
+            if (!$order) {
+                throw new Exception('受注書が見つかりません。');
+            }
+
+            // 顧客データを取得
+            $client = null;
+            if (!empty($order->client_id)) {
+                $client = $wpdb->get_row($wpdb->prepare(
+                    "SELECT * FROM `{$client_table}` WHERE id = %d",
+                    $order->client_id
+                ));
+            }
+
+            // IDで見つからない場合は会社名と担当者名で検索
+            if (!$client && !empty($order->customer_name) && !empty($order->user_name)) {
+                $client = $wpdb->get_row($wpdb->prepare(
+                    "SELECT * FROM `{$client_table}` WHERE company_name = %s AND name = %s",
+                    $order->customer_name,
+                    $order->user_name
+                ));
+            }
+
+            // メール送信可否の判定
+            if (!$client) {
+                wp_send_json_error(array(
+                    'message' => 'メール送信不可（顧客データなし）',
+                    'error_type' => 'no_client',
+                    'error_title' => '顧客データが見つかりません',
+                    'error' => 'この受注書に関連する顧客データが見つかりません。顧客管理画面で顧客を登録してください。'
+                ));
+                return;
+            }
+
+            if ($client->category === '対象外') {
+                wp_send_json_error(array(
+                    'message' => 'メール送信不可（対象外顧客）',
+                    'error_type' => 'excluded_client',
+                    'error_title' => 'メール送信不可',
+                    'error' => 'この顧客は削除済み（対象外）のため、メール送信はできません。'
+                ));
+                return;
+            }
+
+            // メールアドレスの取得と検証
+            $email_raw = $client->email ?? '';
+            $name_raw = $client->name ?? '';
+
+            // nameフィールドにメールアドレスが入っている場合を検出
+            $name_is_email = !empty($name_raw) && filter_var($name_raw, FILTER_VALIDATE_EMAIL) !== false;
+            $email_is_empty = empty(trim($email_raw));
+
+            if ($name_is_email && $email_is_empty) {
+                $email_raw = $name_raw;
+            }
+
+            $email = trim($email_raw);
+            $email = str_replace(["\0", "\r", "\n", "\t"], '', $email);
+            $is_valid = !empty($email) && filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
+
+            if (!$is_valid) {
+                wp_send_json_error(array(
+                    'message' => 'メール送信不可（メールアドレス未設定または無効）',
+                    'error_type' => 'no_email',
+                    'error_title' => 'メールアドレス未設定',
+                    'error' => 'この顧客のメールアドレスが未設定または無効です。顧客管理画面でメールアドレスを登録してください。'
+                ));
+                return;
+            }
+
+            $to = sanitize_email($email);
+
+            // 自社情報取得
+            $smtp_settings = get_option('ktp_smtp_settings', array());
+            $my_email = !empty($smtp_settings['email_address']) ? sanitize_email($smtp_settings['email_address']) : '';
+
+            $my_company = '';
+            if (class_exists('KTP_Settings')) {
+                $my_company = KTP_Settings::get_company_info();
+            }
+
+            // 旧システムからも取得（後方互換性）
+            if (empty($my_company)) {
+                $setting_table = $wpdb->prefix . 'ktp_setting';
+                $setting = $wpdb->get_row($wpdb->prepare(
+                    "SELECT * FROM `{$setting_table}` WHERE id = %d",
+                    1
+                ));
+                if ($setting) {
+                    $my_company = sanitize_text_field(strip_tags($setting->my_company_content));
+                }
+            }
+
+            if (empty($my_email) && $setting) {
+                $my_email = sanitize_email($setting->email_address);
+            }
+
+            // 請求項目リストを取得
+            $order_class = new Kntan_Order_Class();
+            $invoice_items_from_db = $order_class->Get_Invoice_Items($order->id);
+            $amount = 0;
+            $invoice_list = '';
+
+            if (!empty($invoice_items_from_db)) {
+                $invoice_list = "\n";
+                $max_length = 0;
+                $item_lines = array();
+
+                foreach ($invoice_items_from_db as $item) {
+                    $product_name = isset($item['product_name']) ? sanitize_text_field($item['product_name']) : '';
+                    $item_amount = isset($item['amount']) ? floatval($item['amount']) : 0;
+                    $price = isset($item['price']) ? floatval($item['price']) : 0;
+                    $quantity = isset($item['quantity']) ? floatval($item['quantity']) : 0;
+                    $unit = isset($item['unit']) ? sanitize_text_field($item['unit']) : '';
+                    $amount += $item_amount;
+
+                    if (!empty(trim($product_name))) {
+                        $line = $product_name . '：' . number_format($price) . '円 × ' . $quantity . $unit . ' = ' . number_format($item_amount) . "円";
+                        $item_lines[] = $line;
+                        $line_length = mb_strlen($line, 'UTF-8');
+                        if ($line_length > $max_length) {
+                            $max_length = $line_length;
+                        }
+                    }
+                }
+
+                foreach ($item_lines as $line) {
+                    $invoice_list .= $line . "\n";
+                }
+
+                $amount_ceiled = ceil($amount);
+                $total_line = "合計：" . number_format($amount_ceiled) . "円";
+                $total_length = mb_strlen($total_line, 'UTF-8');
+
+                $line_length = max($max_length, $total_length);
+                if ($line_length < 30) $line_length = 30;
+                if ($line_length > 80) $line_length = 80;
+
+                $invoice_list .= str_repeat('-', $line_length) . "\n";
+                $invoice_list .= $total_line;
+            } else {
+                $invoice_list = '（請求項目未入力）';
+            }
+
+            // 進捗ごとに件名・本文を生成
+            $progress = absint($order->progress);
+            $project_name = $order->project_name ? sanitize_text_field($order->project_name) : '';
+            $customer_name = sanitize_text_field($order->customer_name);
+            $user_name = sanitize_text_field($order->user_name);
+
+            $subject = '';
+            $body = '';
+
+            switch ($progress) {
+                case 1:
+                    $subject = "お見積り：{$project_name}";
+                    $body = "{$customer_name}\n{$user_name} 様\n\nこの度はご依頼ありがとうございます。\n{$project_name}につきましてお見積させていただきます。\n\n＜お見積り＞「{$project_name}」の件\n{$invoice_list}\n\n—\n{$my_company}";
+                    break;
+                case 2:
+                    $subject = "ご注文ありがとうございます：{$project_name}";
+                    $body = "{$customer_name}\n{$user_name} 様\n\nこの度はご注文頂きありがとうございます。\n{$project_name}につきまして対応させていただきます。\n\n＜ご注文内容＞\n{$project_name}\n{$invoice_list}\n\n—\n{$my_company}";
+                    break;
+                case 3:
+                    $subject = "{$project_name}につきまして質問です";
+                    $body = "{$customer_name}\n{$user_name} 様\n\nお世話になります。\n{$project_name}につきまして質問です。\n\n＜質問内容＞\n（ご質問内容をここにご記入ください）\n\n—\n{$my_company}";
+                    break;
+                case 4:
+                    $subject = "{$project_name}の請求書です";
+                    $body = "{$customer_name}\n{$user_name} 様\n\nお世話になります。\n{$project_name}につきまして請求させていただきます。\n\n＜請求書＞\n{$project_name}\n{$invoice_list}\n\n—\n{$my_company}";
+                    break;
+                case 5:
+                    $subject = "{$project_name}のご入金を確認しました";
+                    $body = "{$customer_name}\n{$user_name} 様\n\nお世話になります。\n{$project_name}につきましてご入金いただきありがとうございます。\n今後ともよろしくお願い申し上げます。\n\n—\n{$my_company}";
+                    break;
+                case 6:
+                    $subject = "{$project_name}";
+                    $body = "{$customer_name}\n{$user_name} 様\n\nお世話になります。\n\n—\n{$my_company}";
+                    break;
+                default:
+                    $subject = "{$project_name}";
+                    $body = "{$customer_name}\n{$user_name} 様\n\nお世話になります。\n\n—\n{$my_company}";
+                    break;
+            }
+
+            wp_send_json_success(array(
+                'to' => $to,
+                'subject' => $subject,
+                'body' => $body,
+                'order_id' => $order_id,
+                'project_name' => $project_name
+            ));
+
+        } catch (Exception $e) {
+            error_log('KTPWP Ajax get_email_content Error: ' . $e->getMessage());
+            wp_send_json_error(array(
+                'message' => $e->getMessage()
+            ));
+        }
+    }
+
+    /**
+     * メール送信のAJAX処理
+     */
+    public function ajax_send_order_email() {
+        try {
+            // セキュリティチェック
+            if (!check_ajax_referer('ktpwp_ajax_nonce', 'nonce', false)) {
+                throw new Exception('セキュリティ検証に失敗しました。');
+            }
+
+            // 権限チェック
+            if (!current_user_can('edit_posts') && !current_user_can('ktpwp_access')) {
+                throw new Exception('権限がありません。');
+            }
+
+            $order_id = isset($_POST['order_id']) ? absint($_POST['order_id']) : 0;
+            $to = isset($_POST['to']) ? sanitize_email($_POST['to']) : '';
+            $subject = isset($_POST['subject']) ? sanitize_text_field($_POST['subject']) : '';
+            $body = isset($_POST['body']) ? sanitize_textarea_field($_POST['body']) : '';
+
+            if ($order_id <= 0) {
+                throw new Exception('無効な受注書IDです。');
+            }
+
+            if (empty($to) || !filter_var($to, FILTER_VALIDATE_EMAIL)) {
+                throw new Exception('有効なメールアドレスが指定されていません。');
+            }
+
+            if (empty($subject) || empty($body)) {
+                throw new Exception('件名と本文を入力してください。');
+            }
+
+            // 自社メールアドレスを取得
+            $smtp_settings = get_option('ktp_smtp_settings', array());
+            $my_email = !empty($smtp_settings['email_address']) ? sanitize_email($smtp_settings['email_address']) : '';
+
+            // 旧システムからも取得（後方互換性）
+            if (empty($my_email)) {
+                global $wpdb;
+                $setting_table = $wpdb->prefix . 'ktp_setting';
+                $setting = $wpdb->get_row($wpdb->prepare(
+                    "SELECT * FROM `{$setting_table}` WHERE id = %d",
+                    1
+                ));
+                if ($setting) {
+                    $my_email = sanitize_email($setting->email_address);
+                }
+            }
+
+            // ヘッダー設定
+            $headers = array();
+            if ($my_email) {
+                $headers[] = 'From: ' . $my_email;
+            }
+
+            // メール送信
+            $sent = wp_mail($to, $subject, $body, $headers);
+
+            if ($sent) {
+                wp_send_json_success(array(
+                    'message' => 'メールを送信しました。',
+                    'to' => $to
+                ));
+            } else {
+                throw new Exception('メール送信に失敗しました。サーバー設定を確認してください。');
+            }
+
+        } catch (Exception $e) {
+            error_log('KTPWP Ajax send_order_email Error: ' . $e->getMessage());
+            wp_send_json_error(array(
+                'message' => $e->getMessage()
+            ));
         }
     }
 
