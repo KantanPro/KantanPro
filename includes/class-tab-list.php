@@ -216,47 +216,135 @@ class Kantan_List_Class {
         }
         // --- ページネーション ---
         if ($total_pages > 1) {
-            // 現在のGETパラメータを維持
-            $base_params = $_GET;
-            // $base_params['tab_name'] = $tab_name; // home_url()で生成するため不要
-            $base_params['page_stage'] = 2;
-            $base_params['flg'] = $flg;
-            $base_params['progress'] = $selected_progress;
-            $content .= '<div class="pagination">';
-            // 最初へ
-            if ($current_page > 1) {
-                $base_params['page_start'] = 0;
-                // $content .= '<a href="?' . http_build_query($base_params) . '">|&lt;</a>';
-                $content .= '<a href="' . add_query_arg($base_params) . '">|&lt;</a>';
-            }
-            // 前へ
-            if ($current_page > 1) {
-                $base_params['page_start'] = ($current_page - 2) * $query_limit;
-                // $content .= '<a href="?' . http_build_query($base_params) . '">&lt;</a>';
-                $content .= '<a href="' . add_query_arg($base_params) . '">&lt;</a>';
-            }
-            // 現在のページ範囲表示と総数
-            $page_end = min($total_rows, $current_page * $query_limit);
-            $page_start_display = ($current_page - 1) * $query_limit + 1;
-            $content .= "<div class='stage'> $page_start_display ~ $page_end / $total_rows</div>";
-            // 次へ
-            if ($current_page < $total_pages) {
-                $base_params['page_start'] = $current_page * $query_limit;
-                // $content .= '<a href="?' . http_build_query($base_params) . '">&gt;</a>';
-                $content .= '<a href="' . add_query_arg($base_params) . '">&gt;</a>';
-            }
-            // 最後へ
-            if ($current_page < $total_pages) {
-                $base_params['page_start'] = ($total_pages - 1) * $query_limit;
-                // $content .= '<a href="?' . http_build_query($base_params) . '">&gt;|</a>';
-                $content .= '<a href="' . add_query_arg($base_params) . '">&gt;|</a>';
-            }
-            $content .= '</div>';
+            // 統一されたページネーションデザインを使用
+            $content .= $this->render_pagination($current_page, $total_pages, $query_limit, $tab_name, $flg, $selected_progress, $total_rows);
         }
         $content .= '</div>'; // .ktp_work_list_box 終了
         // --- ここまでラッパー追加 ---
 
         return $content;
+    }
+
+    /**
+     * 統一されたページネーションデザインをレンダリング
+     *
+     * @param int $current_page 現在のページ
+     * @param int $total_pages 総ページ数
+     * @param int $query_limit 1ページあたりの表示件数
+     * @param string $tab_name タブ名
+     * @param string $flg フラグ
+     * @param int $selected_progress 選択された進捗
+     * @param int $total_rows 総データ数
+     * @return string ページネーションHTML
+     */
+    private function render_pagination($current_page, $total_pages, $query_limit, $tab_name, $flg, $selected_progress, $total_rows) {
+        if ($total_pages <= 1) {
+            return '';
+        }
+
+        $pagination_html = '<div class="pagination" style="text-align: center; margin: 20px 0; padding: 20px 0;">';
+        
+        // 1行目：ページ情報表示
+        $pagination_html .= '<div style="margin-bottom: 18px; color: #4b5563; font-size: 14px; font-weight: 500;">';
+        $pagination_html .= esc_html($current_page) . ' / ' . esc_html($total_pages) . ' ページ（全 ' . esc_html($total_rows) . ' 件）';
+        $pagination_html .= '</div>';
+        
+        // 2行目：ページネーションボタン
+        $pagination_html .= '<div style="display: flex; align-items: center; gap: 4px; flex-wrap: wrap; justify-content: center; width: 100%;">';
+        
+        // ページネーションボタンのスタイル（正円ボタン）
+        $button_style = 'display: inline-block; width: 36px; height: 36px; padding: 0; margin: 0 2px; text-decoration: none; border: 1px solid #ddd; border-radius: 50%; color: #333; background: #fff; transition: all 0.3s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.1); line-height: 34px; text-align: center; vertical-align: middle; font-size: 14px;';
+        $current_style = 'background: #1976d2; color: white; border-color: #1976d2; font-weight: bold; transform: translateY(-1px); box-shadow: 0 2px 5px rgba(0,0,0,0.2);';
+        $hover_effect = 'onmouseover="this.style.backgroundColor=\'#f5f5f5\'; this.style.transform=\'translateY(-1px)\'; this.style.boxShadow=\'0 2px 5px rgba(0,0,0,0.15)\';" onmouseout="this.style.backgroundColor=\'#fff\'; this.style.transform=\'none\'; this.style.boxShadow=\'0 1px 3px rgba(0,0,0,0.1)\';"';
+
+        // 前のページボタン
+        if ($current_page > 1) {
+            $prev_args = array(
+                'tab_name' => $tab_name,
+                'page_start' => ($current_page - 2) * $query_limit,
+                'page_stage' => 2,
+                'flg' => $flg,
+                'progress' => $selected_progress
+            );
+            $prev_url = esc_url(add_query_arg($prev_args));
+            $pagination_html .= "<a href=\"{$prev_url}\" style=\"{$button_style}\" {$hover_effect}>‹</a>";
+        }
+
+        // ページ番号ボタン（省略表示対応）
+        $start_page = max(1, $current_page - 2);
+        $end_page = min($total_pages, $current_page + 2);
+
+        // 最初のページを表示
+        if ($start_page > 1) {
+            $first_args = array(
+                'tab_name' => $tab_name,
+                'page_start' => 0,
+                'page_stage' => 2,
+                'flg' => $flg,
+                'progress' => $selected_progress
+            );
+            $first_url = esc_url(add_query_arg($first_args));
+            $pagination_html .= "<a href=\"{$first_url}\" style=\"{$button_style}\" {$hover_effect}>1</a>";
+            
+            if ($start_page > 2) {
+                $pagination_html .= "<span style=\"{$button_style} background: transparent; border: none; cursor: default;\">...</span>";
+            }
+        }
+
+        // 中央のページ番号
+        for ($i = $start_page; $i <= $end_page; $i++) {
+            $page_args = array(
+                'tab_name' => $tab_name,
+                'page_start' => ($i - 1) * $query_limit,
+                'page_stage' => 2,
+                'flg' => $flg,
+                'progress' => $selected_progress
+            );
+            $page_url = esc_url(add_query_arg($page_args));
+            
+            if ($i == $current_page) {
+                $pagination_html .= "<span style=\"{$button_style} {$current_style}\">{$i}</span>";
+            } else {
+                $pagination_html .= "<a href=\"{$page_url}\" style=\"{$button_style}\" {$hover_effect}>{$i}</a>";
+            }
+        }
+
+        // 最後のページを表示
+        if ($end_page < $total_pages) {
+            if ($end_page < $total_pages - 1) {
+                $pagination_html .= "<span style=\"{$button_style} background: transparent; border: none; cursor: default;\">...</span>";
+            }
+            
+            $last_args = array(
+                'tab_name' => $tab_name,
+                'page_start' => ($total_pages - 1) * $query_limit,
+                'page_stage' => 2,
+                'flg' => $flg,
+                'progress' => $selected_progress
+            );
+            $last_url = esc_url(add_query_arg($last_args));
+            $pagination_html .= "<a href=\"{$last_url}\" style=\"{$button_style}\" {$hover_effect}>{$total_pages}</a>";
+        }
+
+        // 次のページボタン
+        if ($current_page < $total_pages) {
+            $next_args = array(
+                'tab_name' => $tab_name,
+                'page_start' => $current_page * $query_limit,
+                'page_stage' => 2,
+                'flg' => $flg,
+                'progress' => $selected_progress
+            );
+            $next_url = esc_url(add_query_arg($next_args));
+            $pagination_html .= "<a href=\"{$next_url}\" style=\"{$button_style}\" {$hover_effect}>›</a>";
+        }
+
+        // 2行目のボタン部分の終了
+        $pagination_html .= '</div>';
+
+        $pagination_html .= '</div>';
+        
+        return $pagination_html;
     }
 
 }

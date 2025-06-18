@@ -504,7 +504,7 @@
         }
     }
 
-    // ページネーションHTMLの生成
+    // ページネーションHTMLの生成（正円ボタンデザイン統一）
     function renderPagination(pagination, targetRow, mode) {
         const currentPage = pagination.current_page || 1;
         const totalPages = pagination.total_pages || 1;
@@ -529,11 +529,46 @@
                 <div style="
                     display: flex; 
                     align-items: center; 
-                    gap: 8px; 
+                    gap: 4px; 
                     flex-wrap: wrap; 
                     justify-content: center;
                     width: 100%;
                 ">
+        `;
+
+        // 共通ボタンスタイル（正円ボタン）
+        const buttonStyle = `
+            width: 36px;
+            height: 36px;
+            padding: 0;
+            border: 1px solid #ddd;
+            border-radius: 50%;
+            background: #fff;
+            color: #333;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            line-height: 34px;
+            text-align: center;
+            display: inline-block;
+            margin: 0 2px;
+        `;
+
+        const disabledStyle = `
+            background: #f8f9fa;
+            color: #999;
+            border-color: #ddd;
+            cursor: not-allowed;
+        `;
+
+        const currentPageStyle = `
+            background: #1976d2;
+            color: white;
+            border-color: #1976d2;
+            font-weight: bold;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         `;
 
         // 前へボタン
@@ -542,18 +577,11 @@
             <button type="button" 
                     class="ktp-pagination-btn ${prevDisabled ? 'disabled' : ''}" 
                     data-page="${currentPage - 1}"
-                    style="
-                        background: ${prevDisabled ? '#f8f9fa' : '#007cba'};
-                        color: ${prevDisabled ? '#999' : 'white'};
-                        border: 1px solid ${prevDisabled ? '#ddd' : '#007cba'};
-                        padding: 8px 12px;
-                        border-radius: 4px;
-                        cursor: ${prevDisabled ? 'not-allowed' : 'pointer'};
-                        font-size: 14px;
-                        min-width: 40px;
-                    " 
-                    ${prevDisabled ? 'disabled' : ''}>
-                &laquo; 前
+                    style="${buttonStyle} ${prevDisabled ? disabledStyle : ''}"
+                    ${prevDisabled ? 'disabled' : ''}
+                    onmouseover="${!prevDisabled ? 'this.style.backgroundColor=\'#f5f5f5\'; this.style.transform=\'translateY(-1px)\'; this.style.boxShadow=\'0 2px 5px rgba(0,0,0,0.15)\';' : ''}"
+                    onmouseout="${!prevDisabled ? 'this.style.backgroundColor=\'#fff\'; this.style.transform=\'none\'; this.style.boxShadow=\'0 1px 3px rgba(0,0,0,0.1)\';' : ''}">
+                ‹
             </button>
         `;
 
@@ -567,21 +595,14 @@
                 <button type="button" 
                         class="ktp-pagination-btn" 
                         data-page="1"
-                        style="
-                            background: white;
-                            color: #007cba;
-                            border: 1px solid #007cba;
-                            padding: 8px 12px;
-                            border-radius: 4px;
-                            cursor: pointer;
-                            font-size: 14px;
-                            min-width: 40px;
-                        ">
+                        style="${buttonStyle}"
+                        onmouseover="this.style.backgroundColor='#f5f5f5'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 2px 5px rgba(0,0,0,0.15)';"
+                        onmouseout="this.style.backgroundColor='#fff'; this.style.transform='none'; this.style.boxShadow='0 1px 3px rgba(0,0,0,0.1)';">
                     1
                 </button>
             `;
             if (startPage > 2) {
-                paginationHtml += `<span style="padding: 0 8px; color: #999;">...</span>`;
+                paginationHtml += `<span style="${buttonStyle} background: transparent; border: none; cursor: default;">...</span>`;
             }
         }
 
@@ -592,18 +613,9 @@
                 <button type="button" 
                         class="ktp-pagination-btn ${isCurrentPage ? 'current' : ''}" 
                         data-page="${i}"
-                        style="
-                            background: ${isCurrentPage ? '#007cba' : 'white'};
-                            color: ${isCurrentPage ? 'white' : '#007cba'};
-                            border: 1px solid #007cba;
-                            padding: 8px 12px;
-                            border-radius: 4px;
-                            cursor: ${isCurrentPage ? 'default' : 'pointer'};
-                            font-size: 14px;
-                            min-width: 40px;
-                            font-weight: ${isCurrentPage ? 'bold' : 'normal'};
-                        " 
-                        ${isCurrentPage ? 'disabled' : ''}>
+                        style="${buttonStyle} ${isCurrentPage ? currentPageStyle : ''}"
+                        ${isCurrentPage ? 'disabled' : ''}
+                        ${!isCurrentPage ? 'onmouseover="this.style.backgroundColor=\'#f5f5f5\'; this.style.transform=\'translateY(-1px)\'; this.style.boxShadow=\'0 2px 5px rgba(0,0,0,0.15)\';" onmouseout="this.style.backgroundColor=\'#fff\'; this.style.transform=\'none\'; this.style.boxShadow=\'0 1px 3px rgba(0,0,0,0.1)\';"' : ''}>
                     ${i}
                 </button>
             `;
@@ -612,22 +624,15 @@
         // 最後のページ
         if (endPage < totalPages) {
             if (endPage < totalPages - 1) {
-                paginationHtml += `<span style="padding: 0 8px; color: #999;">...</span>`;
+                paginationHtml += `<span style="${buttonStyle} background: transparent; border: none; cursor: default;">...</span>`;
             }
             paginationHtml += `
                 <button type="button" 
                         class="ktp-pagination-btn" 
                         data-page="${totalPages}"
-                        style="
-                            background: white;
-                            color: #007cba;
-                            border: 1px solid #007cba;
-                            padding: 8px 12px;
-                            border-radius: 4px;
-                            cursor: pointer;
-                            font-size: 14px;
-                            min-width: 40px;
-                        ">
+                        style="${buttonStyle}"
+                        onmouseover="this.style.backgroundColor='#f5f5f5'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 2px 5px rgba(0,0,0,0.15)';"
+                        onmouseout="this.style.backgroundColor='#fff'; this.style.transform='none'; this.style.boxShadow='0 1px 3px rgba(0,0,0,0.1)';">
                     ${totalPages}
                 </button>
             `;
@@ -639,18 +644,11 @@
             <button type="button" 
                     class="ktp-pagination-btn ${nextDisabled ? 'disabled' : ''}" 
                     data-page="${currentPage + 1}"
-                    style="
-                        background: ${nextDisabled ? '#f8f9fa' : '#007cba'};
-                        color: ${nextDisabled ? '#999' : 'white'};
-                        border: 1px solid ${nextDisabled ? '#ddd' : '#007cba'};
-                        padding: 8px 12px;
-                        border-radius: 4px;
-                        cursor: ${nextDisabled ? 'not-allowed' : 'pointer'};
-                        font-size: 14px;
-                        min-width: 40px;
-                    " 
-                    ${nextDisabled ? 'disabled' : ''}>
-                次 &raquo;
+                    style="${buttonStyle} ${nextDisabled ? disabledStyle : ''}"
+                    ${nextDisabled ? 'disabled' : ''}
+                    onmouseover="${!nextDisabled ? 'this.style.backgroundColor=\'#f5f5f5\'; this.style.transform=\'translateY(-1px)\'; this.style.boxShadow=\'0 2px 5px rgba(0,0,0,0.15)\';' : ''}"
+                    onmouseout="${!nextDisabled ? 'this.style.backgroundColor=\'#fff\'; this.style.transform=\'none\'; this.style.boxShadow=\'0 1px 3px rgba(0,0,0,0.1)\';' : ''}">
+                ›
             </button>
                 </div>
             </div>
