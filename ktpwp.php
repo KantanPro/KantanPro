@@ -940,6 +940,77 @@ if (!class_exists('Kntan_Report_Class')) {
 }
 
 /**
+ * メール添付ファイル用一時ファイルクリーンアップ機能
+ */
+
+// プラグイン有効化時にクリーンアップスケジュールを設定
+register_activation_hook(__FILE__, 'ktpwp_schedule_temp_file_cleanup');
+
+// プラグイン無効化時にクリーンアップスケジュールを削除
+register_deactivation_hook(__FILE__, 'ktpwp_unschedule_temp_file_cleanup');
+
+/**
+ * 一時ファイルクリーンアップのスケジュール設定
+ */
+function ktpwp_schedule_temp_file_cleanup() {
+    if (!wp_next_scheduled('ktpwp_cleanup_temp_files')) {
+        wp_schedule_event(time(), 'hourly', 'ktpwp_cleanup_temp_files');
+    }
+}
+
+/**
+ * 一時ファイルクリーンアップのスケジュール削除
+ */
+function ktpwp_unschedule_temp_file_cleanup() {
+    $timestamp = wp_next_scheduled('ktpwp_cleanup_temp_files');
+    if ($timestamp) {
+        wp_unschedule_event($timestamp, 'ktpwp_cleanup_temp_files');
+    }
+}
+
+/**
+ * 一時ファイルクリーンアップ処理
+ */
+add_action('ktpwp_cleanup_temp_files', function() {
+    $upload_dir = wp_upload_dir();
+    $temp_dir = $upload_dir['basedir'] . '/ktp-email-temp/';
+    
+    if (!file_exists($temp_dir)) {
+        return;
+    }
+    
+    $current_time = time();
+    $cleanup_age = 3600; // 1時間以上古いファイルを削除
+    
+    $files = glob($temp_dir . '*');
+    if ($files) {
+        foreach ($files as $file) {
+            if (is_file($file)) {
+                $file_age = $current_time - filemtime($file);
+                if ($file_age > $cleanup_age) {
+                    unlink($file);
+                    if (defined('WP_DEBUG') && WP_DEBUG) {
+                        error_log('KTPWP: Cleaned up temp file: ' . basename($file));
+                    }
+                }
+            }
+        }
+    }
+    
+    // 空のディレクトリを削除
+    if (is_dir($temp_dir) && count(scandir($temp_dir)) == 2) {
+        rmdir($temp_dir);
+    }
+});
+
+/**
+ * 手動一時ファイルクリーンアップ関数（デバッグ用）
+ */
+function ktpwp_manual_cleanup_temp_files() {
+    do_action('ktpwp_cleanup_temp_files');
+}
+
+/**
  * Contact Form 7の送信データをwp_ktp_clientテーブルに登録する
  *
  * @param WPCF7_ContactForm $contact_form Contact Form 7のフォームオブジェクト.

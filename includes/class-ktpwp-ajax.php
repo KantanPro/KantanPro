@@ -1120,7 +1120,7 @@ class KTPWP_Ajax {
     }
 
     /**
-     * メール送信のAJAX処理
+     * メール送信のAJAX処理（ファイル添付対応）
      */
     public function ajax_send_order_email() {
         try {
@@ -1174,20 +1174,154 @@ class KTPWP_Ajax {
                 $headers[] = 'From: ' . $my_email;
             }
 
+            // ファイル添付処理
+            $attachments = array();
+            $temp_files = array(); // 一時ファイルの記録（後でクリーンアップ）
+            
+            if (!empty($_FILES['attachments'])) {
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log('KTPWP Email: Processing file attachments - ' . print_r($_FILES['attachments'], true));
+                }
+                
+                $uploaded_files = $_FILES['attachments'];
+                
+                // ファイルの基本設定
+                $max_file_size = 10 * 1024 * 1024; // 10MB
+                $max_total_size = 50 * 1024 * 1024; // 50MB
+                $allowed_types = array(
+                    'application/pdf',
+                    'image/jpeg', 'image/jpg', 'image/png', 'image/gif',
+                    'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                    'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    'application/zip', 'application/x-rar-compressed', 'application/x-zip-compressed'
+                );
+                $allowed_extensions = array('.pdf', '.jpg', '.jpeg', '.png', '.gif', '.doc', '.docx', '.xls', '.xlsx', '.zip', '.rar', '.7z');
+                
+                $total_size = 0;
+                $file_count = is_array($uploaded_files['name']) ? count($uploaded_files['name']) : 1;
+                
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log("KTPWP Email: Processing {$file_count} files");
+                }
+                
+                for ($i = 0; $i < $file_count; $i++) {
+                    $file_name = is_array($uploaded_files['name']) ? $uploaded_files['name'][$i] : $uploaded_files['name'];
+                    $file_tmp = is_array($uploaded_files['tmp_name']) ? $uploaded_files['tmp_name'][$i] : $uploaded_files['tmp_name'];
+                    $file_size = is_array($uploaded_files['size']) ? $uploaded_files['size'][$i] : $uploaded_files['size'];
+                    $file_type = is_array($uploaded_files['type']) ? $uploaded_files['type'][$i] : $uploaded_files['type'];
+                    $file_error = is_array($uploaded_files['error']) ? $uploaded_files['error'][$i] : $uploaded_files['error'];
+                    
+                    if (defined('WP_DEBUG') && WP_DEBUG) {
+                        error_log("KTPWP Email: Processing file {$i}: {$file_name} ({$file_size} bytes, type: {$file_type})");
+                    }
+                    
+                    // ファイルエラーチェック
+                    if ($file_error !== UPLOAD_ERR_OK) {
+                        throw new Exception("ファイル「{$file_name}」のアップロードでエラーが発生しました。（エラーコード: {$file_error}）");
+                    }
+                    
+                    // ファイルサイズチェック
+                    if ($file_size > $max_file_size) {
+                        throw new Exception("ファイル「{$file_name}」は10MBを超えています。");
+                    }
+                    
+                    $total_size += $file_size;
+                    if ($total_size > $max_total_size) {
+                        throw new Exception('合計ファイルサイズが50MBを超えています。');
+                    }
+                    
+                    // ファイル形式チェック
+                    $file_ext = strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
+                    $is_allowed_type = in_array($file_type, $allowed_types);
+                    $is_allowed_ext = in_array('.' . $file_ext, $allowed_extensions);
+                    
+                    if (!$is_allowed_type && !$is_allowed_ext) {
+                        throw new Exception("ファイル「{$file_name}」は対応していない形式です。");
+                    }
+                    
+                    // ファイル名のサニタイズ
+                    $safe_filename = sanitize_file_name($file_name);
+                    
+                    // 一時ディレクトリにファイルを保存
+                    $upload_dir = wp_upload_dir();
+                    $temp_dir = $upload_dir['basedir'] . '/ktp-email-temp/';
+                    
+                    // 一時ディレクトリが存在しない場合は作成
+                    if (!file_exists($temp_dir)) {
+                        wp_mkdir_p($temp_dir);
+                        if (defined('WP_DEBUG') && WP_DEBUG) {
+                            error_log("KTPWP Email: Created temp directory: {$temp_dir}");
+                        }
+                    }
+                    
+                    // ユニークなファイル名を生成
+                    $unique_filename = uniqid() . '_' . $safe_filename;
+                    $temp_file_path = $temp_dir . $unique_filename;
+                    
+                    // ファイルを移動
+                    if (move_uploaded_file($file_tmp, $temp_file_path)) {
+                        $attachments[] = $temp_file_path;
+                        $temp_files[] = $temp_file_path; // クリーンアップ用
+                        if (defined('WP_DEBUG') && WP_DEBUG) {
+                            error_log("KTPWP Email: Saved attachment: {$temp_file_path}");
+                        }
+                    } else {
+                        throw new Exception("ファイル「{$file_name}」の保存に失敗しました。");
+                    }
+                }
+                
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log("KTPWP Email: Successfully processed " . count($attachments) . " attachments, total size: " . round($total_size / 1024 / 1024, 2) . "MB");
+                }
+            }
+
             // メール送信
-            $sent = wp_mail($to, $subject, $body, $headers);
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log("KTPWP Email: Sending email to {$to} with " . count($attachments) . " attachments");
+            }
+            
+            $sent = wp_mail($to, $subject, $body, $headers, $attachments);
+
+            // 一時ファイルのクリーンアップ
+            foreach ($temp_files as $temp_file) {
+                if (file_exists($temp_file)) {
+                    unlink($temp_file);
+                    if (defined('WP_DEBUG') && WP_DEBUG) {
+                        error_log("KTPWP Email: Cleaned up temp file: " . basename($temp_file));
+                    }
+                }
+            }
 
             if ($sent) {
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log("KTPWP Email: Successfully sent email to {$to} with " . count($attachments) . " attachments");
+                }
                 wp_send_json_success(array(
                     'message' => 'メールを送信しました。',
-                    'to' => $to
+                    'to' => $to,
+                    'attachment_count' => count($attachments)
                 ));
             } else {
                 throw new Exception('メール送信に失敗しました。サーバー設定を確認してください。');
             }
 
         } catch (Exception $e) {
+            // エラー時も一時ファイルをクリーンアップ
+            if (!empty($temp_files)) {
+                foreach ($temp_files as $temp_file) {
+                    if (file_exists($temp_file)) {
+                        unlink($temp_file);
+                        if (defined('WP_DEBUG') && WP_DEBUG) {
+                            error_log("KTPWP Email Error: Cleaned up temp file on error: " . basename($temp_file));
+                        }
+                    }
+                }
+            }
+            
             error_log('KTPWP Ajax send_order_email Error: ' . $e->getMessage());
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('KTPWP Ajax send_order_email Error Stack Trace: ' . $e->getTraceAsString());
+            }
             wp_send_json_error(array(
                 'message' => $e->getMessage()
             ));
