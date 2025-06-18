@@ -1036,10 +1036,10 @@ class KTP_Settings {
             'ktp-general'
         );
 
-        // 仕事リスト表示件数
+        // リストの表示件数
         add_settings_field(
             'work_list_range',
-            __( '仕事リスト表示件数', 'ktpwp' ),
+            __( 'リストの表示件数', 'ktpwp' ),
             array( $this, 'work_list_range_callback' ),
             'ktp-general',
             'general_setting_section'
@@ -1593,7 +1593,7 @@ class KTP_Settings {
             <option value="500" <?php selected( $value, 500 ); ?>>500件</option>
         </select>
         <div style="font-size:12px;color:#555;margin-top:4px;">
-            <?php echo esc_html__( '※ 仕事リストで一度に表示する件数を設定してください。', 'ktpwp' ); ?>
+            <?php echo esc_html__( '※ リストで一度に表示する件数を設定してください。', 'ktpwp' ); ?>
         </div>
         <?php
     }
