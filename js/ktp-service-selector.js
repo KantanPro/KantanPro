@@ -66,14 +66,14 @@
                     ">
                         <h3 style="margin: 0; color: #333;">サービス選択</h3>
                         <button type="button" id="ktp-service-selector-close" style="
-                            background: #dc3545;
-                            color: white;
+                            background: none;
+                            color: #333;
                             border: none;
-                            border-radius: 4px;
-                            padding: 8px 16px;
                             cursor: pointer;
-                            font-size: 14px;
-                        ">閉じる</button>
+                            font-size: 28px;
+                            padding: 0;
+                            line-height: 1;
+                        ">×</button>
                     </div>
                     <div id="ktp-service-selector-content" style="
                         display: flex;
