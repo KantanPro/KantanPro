@@ -1074,39 +1074,34 @@ class KTPWP_Ajax {
             $customer_name = sanitize_text_field($order->customer_name);
             $user_name = sanitize_text_field($order->user_name);
 
-            $subject = '';
-            $body = '';
+            // 進捗に応じた帳票タイトルと件名を設定
+            $document_titles = [
+                1 => '見積り書',
+                2 => '注文受書', 
+                3 => '納品書',
+                4 => '請求書',
+                5 => '領収書',
+                6 => '案件完了'
+            ];
 
-            switch ($progress) {
-                case 1:
-                    $subject = "お見積り：{$project_name}";
-                    $body = "{$customer_name}\n{$user_name} 様\n\nこの度はご依頼ありがとうございます。\n{$project_name}につきましてお見積させていただきます。\n\n＜お見積り＞「{$project_name}」の件\n{$invoice_list}\n\n—\n{$my_company}";
-                    break;
-                case 2:
-                    $subject = "ご注文ありがとうございます：{$project_name}";
-                    $body = "{$customer_name}\n{$user_name} 様\n\nこの度はご注文頂きありがとうございます。\n{$project_name}につきまして対応させていただきます。\n\n＜ご注文内容＞\n{$project_name}\n{$invoice_list}\n\n—\n{$my_company}";
-                    break;
-                case 3:
-                    $subject = "{$project_name}につきまして質問です";
-                    $body = "{$customer_name}\n{$user_name} 様\n\nお世話になります。\n{$project_name}につきまして質問です。\n\n＜質問内容＞\n（ご質問内容をここにご記入ください）\n\n—\n{$my_company}";
-                    break;
-                case 4:
-                    $subject = "{$project_name}の請求書です";
-                    $body = "{$customer_name}\n{$user_name} 様\n\nお世話になります。\n{$project_name}につきまして請求させていただきます。\n\n＜請求書＞\n{$project_name}\n{$invoice_list}\n\n—\n{$my_company}";
-                    break;
-                case 5:
-                    $subject = "{$project_name}のご入金を確認しました";
-                    $body = "{$customer_name}\n{$user_name} 様\n\nお世話になります。\n{$project_name}につきましてご入金いただきありがとうございます。\n今後ともよろしくお願い申し上げます。\n\n—\n{$my_company}";
-                    break;
-                case 6:
-                    $subject = "{$project_name}";
-                    $body = "{$customer_name}\n{$user_name} 様\n\nお世話になります。\n\n—\n{$my_company}";
-                    break;
-                default:
-                    $subject = "{$project_name}";
-                    $body = "{$customer_name}\n{$user_name} 様\n\nお世話になります。\n\n—\n{$my_company}";
-                    break;
-            }
+            $document_messages = [
+                1 => "につきましてお見積りいたします。",
+                2 => "につきましてご注文をお受けしました。",
+                3 => "につきまして完了しました。",
+                4 => "につきまして請求申し上げます。",
+                5 => "につきましてお支払いを確認しました。",
+                6 => "につきましては全て完了しています。"
+            ];
+
+            $document_title = isset($document_titles[$progress]) ? $document_titles[$progress] : '受注書';
+            $document_message = isset($document_messages[$progress]) ? $document_messages[$progress] : '';
+
+            // 日付フォーマット
+            $order_date = date('Y年m月d日', $order->time);
+
+            // 件名と本文の統一フォーマット
+            $subject = "{$document_title}：{$project_name}";
+            $body = "{$customer_name}\n{$user_name} 様\n\nお世話になります。\n\n＜{$document_title}＞ ID: {$order->id} [{$order_date}]\n「{$project_name}」{$document_message}\n\n請求項目\n{$invoice_list}\n\n--\n{$my_company}";
 
             wp_send_json_success(array(
                 'to' => $to,

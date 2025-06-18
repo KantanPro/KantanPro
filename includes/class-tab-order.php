@@ -571,25 +571,67 @@ class Kntan_Order_Class {
                     $project_name = $order->project_name ? sanitize_text_field( $order->project_name ) : '';
                     $customer_name = sanitize_text_field( $order->customer_name );
                     $user_name = sanitize_text_field( $order->user_name );
+                    
+                    // 顧客IDの取得と表示
+                    $client_id_display = !empty($order->client_id) ? intval($order->client_id) : '未設定';
+                    
+                    // 進捗に応じた帳票タイトルと件名を設定
+                    $document_titles = [
+                        1 => '見積り書',
+                        2 => '注文受書',
+                        3 => '納品書',
+                        4 => '請求書',
+                        5 => '領収書',
+                        6 => '案件完了'
+                    ];
+                    
+                    $document_messages = [
+                        1 => "{$project_name}につきましてお見積りいたします。",
+                        2 => "{$project_name}につきましてご注文をお受けしました。",
+                        3 => "{$project_name}につきまして完了しました。",
+                        4 => "{$project_name}につきまして請求申し上げます。",
+                        5 => "{$project_name}につきましてお支払いを確認しました。",
+                        6 => "{$project_name}につきましては全て完了しています。"
+                    ];
+                    
+                    $document_title = isset($document_titles[$progress]) ? $document_titles[$progress] : '受注書';
+                    $document_message = isset($document_messages[$progress]) ? $document_messages[$progress] : $project_name;
+                    
+                    // 日付フォーマット（年月日）
+                    $order_date = date('Y年m月d日', $order->time);
+                    
+                    // 件名は「次の進捗」：案件名の形式
+                    $subject = "{$document_title}：{$project_name}";
+                    
+                    // 本文の生成（新フォーマット）
+                    $body = "{$customer_name}\n";
+                    $body .= "{$user_name} 様\n\n";
+                    $body .= "お世話になります。\n\n";
+                    $body .= "＜{$document_title}＞ ID: {$order->id} [{$order_date}]\n";
+                    $body .= "「{$project_name}」{$document_message}\n\n";
+                    $body .= "請求項目\n";
+                    $body .= "{$invoice_list}\n\n";
+                    $body .= "--\n{$my_company}";
+                    
                     $body = $subject = '';
                     if ($progress === 1) {
-                        $subject = "お見積り：{$project_name}";
-                        $body = "{$customer_name}\n{$user_name} 様\n\nこの度はご依頼ありがとうございます。\n{$project_name}につきましてお見積させていただきます。\n\n＜お見積り＞「{$project_name}」の件\n{$invoice_list}\n\n—\n{$my_company}";
+                        $subject = "{$document_title}：{$project_name}";
+                        $body = "{$customer_name}\n{$user_name} 様\n\nお世話になります。\n\n＜{$document_title}＞ ID: {$order->id} [{$order_date}]\n「{$project_name}」{$document_message}\n\n請求項目\n{$invoice_list}\n\n--\n{$my_company}";
                     } elseif ($progress === 2) {
-                        $subject = "ご注文ありがとうございます：{$project_name}";
-                        $body = "{$customer_name}\n{$user_name} 様\n\nこの度はご注文頂きありがとうございます。\n{$project_name}につきまして対応させていただきます。\n\n＜ご注文内容＞\n{$project_name}\n{$invoice_list}\n\n—\n{$my_company}";
+                        $subject = "{$document_title}：{$project_name}";
+                        $body = "{$customer_name}\n{$user_name} 様\n\nお世話になります。\n\n＜{$document_title}＞ ID: {$order->id} [{$order_date}]\n「{$project_name}」{$document_message}\n\n請求項目\n{$invoice_list}\n\n--\n{$my_company}";
                     } elseif ($progress === 3) {
-                        $subject = "{$project_name}につきまして質問です";
-                        $body = "{$customer_name}\n{$user_name} 様\n\nお世話になります。\n{$project_name}につきまして質問です。\n\n＜質問内容＞\n（ご質問内容をここにご記入ください）\n\n—\n{$my_company}";
+                        $subject = "{$document_title}：{$project_name}";
+                        $body = "{$customer_name}\n{$user_name} 様\n\nお世話になります。\n\n＜{$document_title}＞ ID: {$order->id} [{$order_date}]\n「{$project_name}」{$document_message}\n\n請求項目\n{$invoice_list}\n\n--\n{$my_company}";
                     } elseif ($progress === 4) {
-                        $subject = "{$project_name}の請求書です";
-                        $body = "{$customer_name}\n{$user_name} 様\n\nお世話になります。\n{$project_name}につきまして請求させていただきます。\n\n＜請求書＞\n{$project_name}\n{$invoice_list}\n\n—\n{$my_company}";
+                        $subject = "{$document_title}：{$project_name}";
+                        $body = "{$customer_name}\n{$user_name} 様\n\nお世話になります。\n\n＜{$document_title}＞ ID: {$order->id} [{$order_date}]\n「{$project_name}」{$document_message}\n\n請求項目\n{$invoice_list}\n\n--\n{$my_company}";
                     } elseif ($progress === 5) {
-                        $subject = "{$project_name}のご入金を確認しました";
-                        $body = "{$customer_name}\n{$user_name} 様\n\nお世話になります。\n{$project_name}につきましてご入金いただきありがとうございます。\n今後ともよろしくお願い申し上げます。\n\n—\n{$my_company}";
+                        $subject = "{$document_title}：{$project_name}";
+                        $body = "{$customer_name}\n{$user_name} 様\n\nお世話になります。\n\n＜{$document_title}＞ ID: {$order->id} [{$order_date}]\n「{$project_name}」{$document_message}\n\n請求項目\n{$invoice_list}\n\n--\n{$my_company}";
                     } elseif ($progress === 6) {
-                        $subject = "{$project_name}";
-                        $body = "{$customer_name}\n{$user_name} 様\n\nお世話になります。\n\n—\n{$my_company}";
+                        $subject = "{$document_title}：{$project_name}";
+                        $body = "{$customer_name}\n{$user_name} 様\n\nお世話になります。\n\n＜{$document_title}＞ ID: {$order->id} [{$order_date}]\n「{$project_name}」{$document_message}\n\n請求項目\n{$invoice_list}\n\n--\n{$my_company}";
                     }
 
                     // Sanitize email content input
