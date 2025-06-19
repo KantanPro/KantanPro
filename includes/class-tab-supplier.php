@@ -103,6 +103,9 @@ class KTPWP_Supplier_Class {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
         }
 
+        // Handle supplier skills operations first
+        $this->handle_skills_operations();
+
         // Only proceed if POST data exists
         if ( ! empty( $_POST ) ) {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
@@ -111,6 +114,116 @@ class KTPWP_Supplier_Class {
         } else {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
             }
+        }
+    }
+
+    /**
+     * Handle supplier skills operations
+     *
+     * @since 1.0.0
+     * @return void
+     */
+    public function handle_skills_operations() {
+        // Only process POST requests
+        if ( empty( $_POST ) || ! isset( $_POST['skills_action'] ) ) {
+            return;
+        }
+
+        // Security check
+        if ( ! current_user_can( 'edit_posts' ) ) {
+            wp_die( __( 'You do not have sufficient permissions to access this page.', 'ktpwp' ) );
+        }
+
+        // Verify nonce
+        if ( ! isset( $_POST['ktp_skills_nonce'] ) ||
+             ! wp_verify_nonce( $_POST['ktp_skills_nonce'], 'ktp_skills_action' ) ) {
+            wp_die( __( 'Security check failed. Please refresh the page and try again.', 'ktpwp' ) );
+        }
+
+        $skills_action = sanitize_key( $_POST['skills_action'] );
+        $supplier_id = isset( $_POST['supplier_id'] ) ? absint( $_POST['supplier_id'] ) : 0;
+
+        if ( $supplier_id <= 0 ) {
+            return;
+        }
+
+        $skills_manager = KTPWP_Supplier_Skills::get_instance();
+
+        switch ( $skills_action ) {
+            case 'add_skill':
+                $skill_name = isset( $_POST['skill_name'] ) ? sanitize_text_field( $_POST['skill_name'] ) : '';
+                $skill_description = isset( $_POST['skill_description'] ) ? sanitize_textarea_field( $_POST['skill_description'] ) : '';
+                $skill_price = isset( $_POST['skill_price'] ) ? floatval( $_POST['skill_price'] ) : 0;
+                $unit = isset( $_POST['unit'] ) ? sanitize_text_field( $_POST['unit'] ) : '';
+                $category = isset( $_POST['category'] ) ? sanitize_text_field( $_POST['category'] ) : '';
+
+                if ( ! empty( $skill_name ) ) {
+                    $result = $skills_manager->add_skill( $supplier_id, $skill_name, $skill_description, $skill_price, $unit, $category );
+                    
+                    if ( $result ) {
+                        echo '<script>
+                        document.addEventListener("DOMContentLoaded", function() {
+                            showSuccessNotification("' . esc_js( __( '職能を追加しました。', 'ktpwp' ) ) . '");
+                        });
+                        </script>';
+                    } else {
+                        echo '<script>
+                        document.addEventListener("DOMContentLoaded", function() {
+                            showErrorNotification("' . esc_js( __( '職能の追加に失敗しました。', 'ktpwp' ) ) . '");
+                        });
+                        </script>';
+                    }
+                }
+                break;
+
+            case 'update_skill':
+                $skill_id = isset( $_POST['skill_id'] ) ? absint( $_POST['skill_id'] ) : 0;
+                $skill_name = isset( $_POST['skill_name'] ) ? sanitize_text_field( $_POST['skill_name'] ) : '';
+                $skill_description = isset( $_POST['skill_description'] ) ? sanitize_textarea_field( $_POST['skill_description'] ) : '';
+                $skill_price = isset( $_POST['skill_price'] ) ? floatval( $_POST['skill_price'] ) : 0;
+                $unit = isset( $_POST['unit'] ) ? sanitize_text_field( $_POST['unit'] ) : '';
+                $category = isset( $_POST['category'] ) ? sanitize_text_field( $_POST['category'] ) : '';
+
+                if ( $skill_id > 0 && ! empty( $skill_name ) ) {
+                    $result = $skills_manager->update_skill( $skill_id, $skill_name, $skill_description, $skill_price, $unit, $category );
+                    
+                    if ( $result ) {
+                        echo '<script>
+                        document.addEventListener("DOMContentLoaded", function() {
+                            showSuccessNotification("' . esc_js( __( '職能を更新しました。', 'ktpwp' ) ) . '");
+                        });
+                        </script>';
+                    } else {
+                        echo '<script>
+                        document.addEventListener("DOMContentLoaded", function() {
+                            showErrorNotification("' . esc_js( __( '職能の更新に失敗しました。', 'ktpwp' ) ) . '");
+                        });
+                        </script>';
+                    }
+                }
+                break;
+
+            case 'delete_skill':
+                $skill_id = isset( $_POST['skill_id'] ) ? absint( $_POST['skill_id'] ) : 0;
+
+                if ( $skill_id > 0 ) {
+                    $result = $skills_manager->delete_skill( $skill_id );
+                    
+                    if ( $result ) {
+                        echo '<script>
+                        document.addEventListener("DOMContentLoaded", function() {
+                            showSuccessNotification("' . esc_js( __( '職能を削除しました。', 'ktpwp' ) ) . '");
+                        });
+                        </script>';
+                    } else {
+                        echo '<script>
+                        document.addEventListener("DOMContentLoaded", function() {
+                            showErrorNotification("' . esc_js( __( '職能の削除に失敗しました。', 'ktpwp' ) ) . '");
+                        });
+                        </script>';
+                    }
+                }
+                break;
         }
     }
 
@@ -708,10 +821,38 @@ class KTPWP_Supplier_Class {
                . '<span style="margin-left: 18px; font-size: 13px; color: #888;">データがまだ登録されていません</span>'
                . '</div>';
        }        // 統一されたページネーションデザインを使用
-       $results_f = $this->render_pagination($current_page, $total_pages, $query_limit, $name, $flg, $base_page_url, $total_rows);
+        $results_f = $this->render_pagination($current_page, $total_pages, $query_limit, $name, $flg, $base_page_url, $total_rows);
 
-        // ktp_data_list_boxのみを閉じる（ktp_data_contentsは後で閉じる）
-        $results_f .= "</div>"; // ktp_data_list_boxの終了
+        // 職能管理セクションを生成（ktp_data_list_boxの終了前に配置）
+        $skills_section = '';
+        $skills_manager = KTPWP_Supplier_Skills::get_instance();
+        
+        // デバッグ情報追加
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('KTPWP: Supplier skills section in data_list - query_id: ' . var_export($query_id, true));
+        }
+        
+        if ($query_id && is_numeric($query_id) && $query_id > 0) {
+            // 特定の協力会社が選択されている場合：フル機能の職能管理
+            $skills_section = $skills_manager->render_skills_interface($query_id);
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('KTPWP: Rendered individual skills interface for supplier ID: ' . $query_id);
+            }
+        } else {
+            // 協力会社が選択されていない場合：全体の職能一覧を表示
+            $skills_section = $this->render_all_skills_overview($query_id);
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('KTPWP: Rendered all skills overview');
+            }
+        }
+        
+        // 職能セクションが生成されたかチェック
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('KTPWP: Skills section length in data_list: ' . strlen($skills_section));
+        }
+
+        // ktp_data_list_boxを閉じる（職能管理セクションを含める）
+        $results_f .= $skills_section . "</div>"; // 職能管理セクション + ktp_data_list_boxの終了
 
        $data_list = $results_h . implode( $results ) . $results_f;
 
@@ -753,19 +894,24 @@ class KTPWP_Supplier_Class {
                 } else {
                     // 存在しなければ最大ID
                     $max_id_row = $wpdb->get_row("SELECT id FROM {$table_name} ORDER BY id DESC LIMIT 1");
-                    $query_id = $max_id_row ? $max_id_row->id : '';
+                    $query_id = $max_id_row ? $max_id_row->id : null;
                 }
             } else {
                 // data_id未指定時は必ずID最大の協力会社を表示
                 $max_id_row = $wpdb->get_row("SELECT id FROM {$table_name} ORDER BY id DESC LIMIT 1");
-                $query_id = $max_id_row ? $max_id_row->id : '';
+                $query_id = $max_id_row ? $max_id_row->id : null;
             }
 
             // 以降で$query_idを上書きしないこと！
 
-            // データを取得し変数に格納
-            $query = $wpdb->prepare("SELECT * FROM {$table_name} WHERE id = %d", $query_id);
-            $post_row = $wpdb->get_results($query);
+            // データを取得し変数に格納（$query_idがnullでない場合のみ）
+            if ($query_id && is_numeric($query_id) && $query_id > 0) {
+                $query = $wpdb->prepare("SELECT * FROM {$table_name} WHERE id = %d", $query_id);
+                $post_row = $wpdb->get_results($query);
+            } else {
+                $post_row = [];
+            }
+            
             if (!$post_row || count($post_row) === 0) {
                 // データが0件でもフォーム・レイアウトを必ず出す
                 $data_id = '';
@@ -1259,6 +1405,7 @@ class KTPWP_Supplier_Class {
         END;
 
         // コンテンツを返す（ktp_data_contentsの終了タグを追加）
+        
         $content = $print . $data_list . $data_title . $data_forms . $search_results_list . $div_end . '</div> <!-- ktp_data_contents終了 -->';
         return $content;
 
@@ -1288,7 +1435,7 @@ class KTPWP_Supplier_Class {
         $pagination_html .= esc_html($current_page) . ' / ' . esc_html($total_pages) . ' ページ（全 ' . esc_html($total_rows) . ' 件）';
         $pagination_html .= '</div>';
         
-        // 2行目：ページネーションボタン
+        //   // 2行目：ページネーションボタン
         $pagination_html .= '<div style="display: flex; align-items: center; gap: 4px; flex-wrap: wrap; justify-content: center; width: 100%;">';
         
         // ページネーションボタンのスタイル（正円ボタン）
@@ -1389,6 +1536,99 @@ class KTPWP_Supplier_Class {
         $pagination_html .= '</div>';
         
         return $pagination_html;
+    }
+
+    /**
+     * 全協力会社の職能一覧を表示するメソッド
+     *
+     * @since 1.0.0
+     * @param int|null $current_supplier_id 現在詳細に表示されている協力会社のID
+     * @return string HTML content
+     */
+    private function render_all_skills_overview($current_supplier_id = null) {
+        global $wpdb;
+        
+        $skills_table = $wpdb->prefix . 'ktp_supplier_skills';
+        $supplier_table = $wpdb->prefix . 'ktp_supplier';
+        
+        // 全ての職能を協力会社名と一緒に取得
+        $all_skills = $wpdb->get_results("
+            SELECT s.*, sup.company_name 
+            FROM {$skills_table} s 
+            LEFT JOIN {$supplier_table} sup ON s.supplier_id = sup.id 
+            WHERE s.is_active = 1 
+            ORDER BY sup.company_name, s.priority_order ASC, s.skill_name ASC
+        ");
+        
+        // タイトルを動的に設定
+        $title_id = ($current_supplier_id && is_numeric($current_supplier_id) && $current_supplier_id > 0) 
+            ? $current_supplier_id 
+            : '*';
+        
+        $html = '<div class="all-skills-overview" style="margin-top: 20px; padding: 15px; background: #f9f9f9; border-radius: 5px;">';
+        $html .= '<h4 style="margin: 0 0 15px 0; color: #333; font-size: 16px;">ID：' . esc_html($title_id) . ' 協力会社の職能・サービス一覧</h4>';
+        
+        if (!empty($all_skills)) {
+            $current_supplier = '';
+            
+            foreach ($all_skills as $skill) {
+                // 協力会社名が変わったら新しいセクションを開始
+                if ($current_supplier !== $skill->company_name) {
+                    if ($current_supplier !== '') {
+                        $html .= '</div>'; // 前のセクションを閉じる
+                    }
+                    $current_supplier = $skill->company_name;
+                    $html .= '<div class="supplier-skills-group" style="margin-bottom: 20px;">';
+                    $html .= '<h5 style="margin: 10px 0 10px 0; color: #0073aa; font-size: 14px; padding: 5px 10px; background: white; border-left: 4px solid #0073aa;">';
+                    $html .= esc_html($current_supplier ?: '不明な協力会社');
+                    $html .= '</h5>';
+                }
+                
+                $skill_name = esc_html($skill->skill_name);
+                $skill_description = esc_html($skill->skill_description);
+                $price = number_format(intval($skill->price));
+                $unit = esc_html($skill->unit);
+                $category = esc_html($skill->category);
+                
+                $html .= '<div class="skill-item-overview" style="padding: 8px 12px; margin-bottom: 8px; background: white; border: 1px solid #ddd; border-radius: 3px;">';
+                $html .= '<div style="display: flex; justify-content: space-between; align-items: flex-start;">';
+                $html .= '<div style="flex: 1;">';
+                $html .= '<strong style="color: #333; font-size: 13px;">' . $skill_name . '</strong>';
+                if (!empty($category)) {
+                    $html .= ' <span style="color: #666; font-size: 11px;">(' . $category . ')</span>';
+                }
+                if (!empty($skill_description)) {
+                    $html .= '<div style="color: #666; font-size: 11px; margin: 3px 0;">' . $skill_description . '</div>';
+                }
+                $html .= '<div style="color: #333; font-size: 12px; margin-top: 3px;">';
+                $html .= '価格: ' . $price . '円';
+                if (!empty($unit)) {
+                    $html .= ' / ' . $unit;
+                }
+                $html .= '</div>';
+                $html .= '</div>';
+                $html .= '</div>';
+                $html .= '</div>';
+            }
+            
+            if ($current_supplier !== '') {
+                $html .= '</div>'; // 最後のセクションを閉じる
+            }
+            
+        } else {
+            $html .= '<div style="color: #666; font-style: italic; text-align: center; padding: 20px;">';
+            $html .= 'まだ職能・サービスが登録されていません。<br>';
+            $html .= '協力会社を選択して職能・サービスを追加してください。';
+            $html .= '</div>';
+        }
+        
+        $html .= '<div style="margin-top: 15px; padding-top: 10px; border-top: 1px solid #ddd; color: #666; font-size: 12px; text-align: center;">';
+        $html .= '※ 職能・サービスの追加・編集は、協力会社を選択してから行ってください。';
+        $html .= '</div>';
+        
+        $html .= '</div>';
+        
+        return $html;
     }
 
 }

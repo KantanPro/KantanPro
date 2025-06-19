@@ -588,23 +588,26 @@ class KTPWP_Shortcodes {
         if (!current_user_can('edit_posts') && !current_user_can('ktpwp_access')) {
             return $this->render_permission_error();
         }
-        if (!class_exists('Kantan_Supplier_Class')) {
+        if (!class_exists('KTPWP_Supplier_Class')) {
             $this->load_required_class('class-tab-supplier.php');
         }
 
-        if (class_exists('Kantan_Supplier_Class')) {
-            $supplier = new Kantan_Supplier_Class();
+        if (class_exists('KTPWP_Supplier_Class')) {
+            $supplier = new KTPWP_Supplier_Class();
 
-            // 管理者権限がある場合のみテーブル操作
-            if (current_user_can('manage_options')) {
+            // 編集者権限がある場合のみテーブル操作
+            if (current_user_can('edit_posts') || current_user_can('ktpwp_access')) {
                 $supplier->Create_Table($tab_name);
-                $supplier->Update_Table($tab_name);
+                
+                if (!empty($_POST)) {
+                    $supplier->Update_Table($tab_name);
+                }
             }
 
             return $supplier->View_Table($tab_name);
         }
 
-        return $this->get_error_content('Kantan_Supplier_Class');
+        return $this->get_error_content('KTPWP_Supplier_Class');
     }
 
     /**

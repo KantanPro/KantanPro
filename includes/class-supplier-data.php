@@ -26,6 +26,18 @@ if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
 class KTPWP_Supplier_Data {
 
     /**
+     * Constructor
+     *
+     * @since 1.0.0
+     */
+    public function __construct() {
+        // Load supplier skills class if not already loaded
+        if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
+            require_once dirname( __FILE__ ) . '/class-ktpwp-supplier-skills.php';
+        }
+    }
+
+    /**
      * Create supplier table
      *
      * @since 1.0.0
@@ -99,6 +111,11 @@ class KTPWP_Supplier_Data {
 
                 if ( ! empty( $result ) ) {
                     add_option( 'ktp_' . $tab_name . '_table_version', $my_table_version );
+                    
+                    // Create supplier skills table
+                    $skills_manager = KTPWP_Supplier_Skills::get_instance();
+                    $skills_manager->create_table();
+                    
                     return true;
                 }
 
@@ -108,6 +125,10 @@ class KTPWP_Supplier_Data {
 
             error_log( 'KTPWP: dbDelta function not available' );
             return false;
+        } else {
+            // Ensure skills table exists even if supplier table already exists
+            $skills_manager = KTPWP_Supplier_Skills::get_instance();
+            $skills_manager->create_table();
         }
 
         return true;
@@ -153,6 +174,9 @@ class KTPWP_Supplier_Data {
             case 'delete':
                 // Handle delete operation
                 if ( $data_id > 0 ) {
+                    // Fire action hook before deletion for cleanup
+                    do_action( 'ktpwp_supplier_before_delete', $data_id );
+                    
                     $delete_result = $wpdb->delete( $table_name, array( 'id' => $data_id ), array( '%d' ) );
 
                     if ( $delete_result === false ) {
@@ -162,6 +186,9 @@ class KTPWP_Supplier_Data {
                         });
                         </script>';
                     } else {
+                        // Fire action hook after successful deletion
+                        do_action( 'ktpwp_supplier_deleted', $data_id );
+                        
                         $cookie_name = 'ktp_' . $tab_name . '_id';
                         setcookie( $cookie_name, '', time() - 3600, "/" );
 

@@ -78,6 +78,7 @@ class KTPWP_Loader {
             'KTPWP_Supplier_Class'   => 'includes/class-tab-supplier.php',
             'KTPWP_Supplier_Security' => 'includes/class-supplier-security.php',
             'KTPWP_Supplier_Data'    => 'includes/class-supplier-data.php',
+            'KTPWP_Supplier_Skills'  => 'includes/class-ktpwp-supplier-skills.php',
             'KTPWP_Report_Class'     => 'includes/class-tab-report.php',
             'Kntan_Order_Class'      => 'includes/class-tab-order.php',
             'KTPWP_Setting_Class'    => 'includes/class-tab-setting.php',
