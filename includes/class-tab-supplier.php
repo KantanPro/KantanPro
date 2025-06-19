@@ -103,9 +103,6 @@ class KTPWP_Supplier_Class {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
         }
 
-        // Handle supplier skills operations first
-        $this->handle_skills_operations();
-
         // Only proceed if POST data exists
         if ( ! empty( $_POST ) ) {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
@@ -114,114 +111,6 @@ class KTPWP_Supplier_Class {
         } else {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
             }
-        }
-    }
-
-    /**
-     * Handle supplier skills operations
-     *
-     * @since 1.0.0
-     * @return void
-     */
-    public function handle_skills_operations() {
-        // Only process POST requests
-        if ( empty( $_POST ) || ! isset( $_POST['skills_action'] ) ) {
-            return;
-        }
-
-        // Security check
-        if ( ! current_user_can( 'edit_posts' ) ) {
-            wp_die( __( 'You do not have sufficient permissions to access this page.', 'ktpwp' ) );
-        }
-
-        // Verify nonce
-        if ( ! isset( $_POST['ktp_skills_nonce'] ) ||
-             ! wp_verify_nonce( $_POST['ktp_skills_nonce'], 'ktp_skills_action' ) ) {
-            wp_die( __( 'Security check failed. Please refresh the page and try again.', 'ktpwp' ) );
-        }
-
-        $skills_action = sanitize_key( $_POST['skills_action'] );
-        $supplier_id = isset( $_POST['supplier_id'] ) ? absint( $_POST['supplier_id'] ) : 0;
-
-        if ( $supplier_id <= 0 ) {
-            return;
-        }
-
-        $skills_manager = KTPWP_Supplier_Skills::get_instance();
-
-        switch ( $skills_action ) {
-            case 'add_skill':
-                $product_name = isset( $_POST['product_name'] ) ? sanitize_text_field( $_POST['product_name'] ) : '';
-                $unit_price = isset( $_POST['unit_price'] ) ? floatval( $_POST['unit_price'] ) : 0;
-                $quantity = isset( $_POST['quantity'] ) ? absint( $_POST['quantity'] ) : 1;
-                $unit = isset( $_POST['unit'] ) ? sanitize_text_field( $_POST['unit'] ) : '式';
-
-                if ( ! empty( $product_name ) ) {
-                    $result = $skills_manager->add_skill( $supplier_id, $product_name, $unit_price, $quantity, $unit );
-                    
-                    if ( $result ) {
-                        echo '<script>
-                        document.addEventListener("DOMContentLoaded", function() {
-                            showSuccessNotification("' . esc_js( __( '商品を追加しました。', 'ktpwp' ) ) . '");
-                        });
-                        </script>';
-                    } else {
-                        echo '<script>
-                        document.addEventListener("DOMContentLoaded", function() {
-                            showErrorNotification("' . esc_js( __( '商品の追加に失敗しました。', 'ktpwp' ) ) . '");
-                        });
-                        </script>';
-                    }
-                }
-                break;
-
-            case 'update_skill':
-                $skill_id = isset( $_POST['skill_id'] ) ? absint( $_POST['skill_id'] ) : 0;
-                $product_name = isset( $_POST['product_name'] ) ? sanitize_text_field( $_POST['product_name'] ) : '';
-                $unit_price = isset( $_POST['unit_price'] ) ? floatval( $_POST['unit_price'] ) : 0;
-                $quantity = isset( $_POST['quantity'] ) ? absint( $_POST['quantity'] ) : 1;
-                $unit = isset( $_POST['unit'] ) ? sanitize_text_field( $_POST['unit'] ) : '式';
-
-                if ( $skill_id > 0 && ! empty( $product_name ) ) {
-                    $result = $skills_manager->update_skill( $skill_id, $product_name, $unit_price, $quantity, $unit );
-                    
-                    if ( $result ) {
-                        echo '<script>
-                        document.addEventListener("DOMContentLoaded", function() {
-                            showSuccessNotification("' . esc_js( __( '商品を更新しました。', 'ktpwp' ) ) . '");
-                        });
-                        </script>';
-                    } else {
-                        echo '<script>
-                        document.addEventListener("DOMContentLoaded", function() {
-                            showErrorNotification("' . esc_js( __( '商品の更新に失敗しました。', 'ktpwp' ) ) . '");
-                        });
-                        </script>';
-                    }
-                }
-                break;
-
-            case 'delete_skill':
-                $skill_id = isset( $_POST['skill_id'] ) ? absint( $_POST['skill_id'] ) : 0;
-
-                if ( $skill_id > 0 ) {
-                    $result = $skills_manager->delete_skill( $skill_id );
-                    
-                    if ( $result ) {
-                        echo '<script>
-                        document.addEventListener("DOMContentLoaded", function() {
-                            showSuccessNotification("' . esc_js( __( '商品を削除しました。', 'ktpwp' ) ) . '");
-                        });
-                        </script>';
-                    } else {
-                        echo '<script>
-                        document.addEventListener("DOMContentLoaded", function() {
-                            showErrorNotification("' . esc_js( __( '商品の削除に失敗しました。', 'ktpwp' ) ) . '");
-                        });
-                        </script>';
-                    }
-                }
-                break;
         }
     }
 
@@ -812,45 +701,86 @@ class KTPWP_Supplier_Class {
            }
            $query_max_num = $wpdb->num_rows;
        } else {
-           // 新しい0データ案内メッセージ（統一デザイン・ガイダンス）
-           $results[] = '<div class="ktp_data_list_item" style="padding: 15px 20px; background: linear-gradient(135deg, #e3f2fd 0%, #fce4ec 100%); border-radius: 8px; margin: 18px 0; color: #333; font-weight: 600; box-shadow: 0 3px 12px rgba(0,0,0,0.07); display: flex; align-items: center; font-size: 15px; gap: 10px;">'
-               . '<span class="material-symbols-outlined" aria-label="データ作成">add_circle</span>'
-               . '<span style="font-size: 1em; font-weight: 600;">[＋]ボタンを押してデーターを作成してください</span>'
-               . '<span style="margin-left: 18px; font-size: 13px; color: #888;">データがまだ登録されていません</span>'
+           $results[] = '<div class="ktp_data_list_item" style="padding: 15px 20px; background: linear-gradient(135deg, #ffeef1 0%, #ffeff2 100%); border-radius: 6px; margin: 15px 0; color: #333333; font-weight: 500; box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08); display: flex; align-items: center; font-size: 14px;">'
+               . '<span style="margin-right: 10px; color: #ff6b8b; font-size: 18px;" class="material-symbols-outlined">search_off</span>'
+               . esc_html__('データーがありません。', 'ktpwp')
+               . '<span style="margin-left: 16px; font-size: 13px; color: #888;">'
+               . esc_html__('フォームに入力して更新してください。', 'ktpwp')
+               . '</span>'
                . '</div>';
-       }        // 統一されたページネーションデザインを使用
-        $results_f = $this->render_pagination($current_page, $total_pages, $query_limit, $name, $flg, $base_page_url, $total_rows);
+       }
 
-        // 職能管理セクションを生成（ktp_data_list_boxの終了前に配置）
-        $skills_section = '';
-        $skills_manager = KTPWP_Supplier_Skills::get_instance();
-        
-        // デバッグ情報追加
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('KTPWP: Supplier skills section in data_list - query_id: ' . var_export($query_id, true));
-        }
-        
-        if ($query_id && is_numeric($query_id) && $query_id > 0) {
-            // 特定の協力会社が選択されている場合：フル機能の職能管理
-            $skills_section = $skills_manager->render_skills_interface($query_id);
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('KTPWP: Rendered individual skills interface for supplier ID: ' . $query_id);
-            }
-        } else {
-            // 協力会社が選択されていない場合：全体の職能一覧を表示
-            $skills_section = $this->render_all_skills_overview($query_id);
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('KTPWP: Rendered all skills overview');
-            }
-        }
-        
-        // 職能セクションが生成されたかチェック
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('KTPWP: Skills section length in data_list: ' . strlen($skills_section));
+       $results_f = "<div class=\"pagination\">";
+
+        // 最初へリンク
+        if ($current_page > 1) {
+            $first_start = 0; // 最初のページ
+            $first_page_link_args = array('tab_name' => $name, 'page_start' => $first_start, 'page_stage' => 2, 'flg' => $flg);
+            // 現在のソート順を維持
+            if (isset($_GET['sort_by'])) $first_page_link_args['sort_by'] = $_GET['sort_by'];
+            if (isset($_GET['sort_order'])) $first_page_link_args['sort_order'] = $_GET['sort_order'];
+            $first_page_link_url = esc_url(add_query_arg($first_page_link_args, $base_page_url));
+            $results_f .= <<<END
+            <a href="{$first_page_link_url}">|<</a>
+            END;
         }
 
-        // ktp_data_list_boxを閉じる（職能管理セクションを含める）
-        $results_f .= $skills_section . "</div>"; // 職能管理セクション + ktp_data_list_boxの終了
+        // 前へリンク
+        if ($current_page > 1) {
+            $prev_start = ($current_page - 2) * $query_limit;
+            $prev_page_link_args = array('tab_name' => $name, 'page_start' => $prev_start, 'page_stage' => 2, 'flg' => $flg);
+            // 現在のソート順を維持
+            if (isset($_GET['sort_by'])) $prev_page_link_args['sort_by'] = $_GET['sort_by'];
+            if (isset($_GET['sort_order'])) $prev_page_link_args['sort_order'] = $_GET['sort_order'];
+            $prev_page_link_url = esc_url(add_query_arg($prev_page_link_args, $base_page_url));
+            $results_f .= <<<END
+            <a href="{$prev_page_link_url}"><</a>
+            END;
+        }
+
+        // 現在のページ範囲表示と総数
+        $page_end = min($total_rows, $current_page * $query_limit);
+        $page_start_display = ($current_page - 1) * $query_limit + 1;
+        $results_f .= "<div class='stage'> $page_start_display ~ $page_end / $total_rows</div>";
+
+        // 次へリンク（現在のページが最後のページより小さい場合のみ表示）
+        if ($current_page < $total_pages) {
+            $next_start = $current_page * $query_limit;
+            $query_args_next = array(
+                'tab_name' => $name,
+                'page_start' => $next_start,
+                'page_stage' => 2,
+                'flg' => $flg
+            );
+            // 現在のソート順を維持
+            if (isset($_GET['sort_by'])) $query_args_next['sort_by'] = $_GET['sort_by'];
+            if (isset($_GET['sort_order'])) $query_args_next['sort_order'] = $_GET['sort_order'];
+            $next_page_link_url = esc_url(add_query_arg($query_args_next, $base_page_url));
+            $results_f .= <<<END
+            <a href="{$next_page_link_url}">></a>
+            END;
+        }
+
+        // 最後へリンク
+        if ($current_page < $total_pages) {
+            $last_start = ($total_pages - 1) * $query_limit; // 最後のページ
+            $query_args_last = array(
+                'tab_name' => $name,
+                'page_start' => $last_start,
+                'page_stage' => 2,
+                'flg' => $flg
+            );
+            // 現在のソート順を維持
+            if (isset($_GET['sort_by'])) $query_args_last['sort_by'] = $_GET['sort_by'];
+            if (isset($_GET['sort_order'])) $query_args_last['sort_order'] = $_GET['sort_order'];
+            $last_page_link_url = esc_url(add_query_arg($query_args_last, $base_page_url));
+            $results_f .= <<<END
+             <a href="{$last_page_link_url}">>>|</a>
+            END;
+        }
+
+
+        $results_f .= "</div></div>";
 
        $data_list = $results_h . implode( $results ) . $results_f;
 
@@ -892,24 +822,19 @@ class KTPWP_Supplier_Class {
                 } else {
                     // 存在しなければ最大ID
                     $max_id_row = $wpdb->get_row("SELECT id FROM {$table_name} ORDER BY id DESC LIMIT 1");
-                    $query_id = $max_id_row ? $max_id_row->id : null;
+                    $query_id = $max_id_row ? $max_id_row->id : '';
                 }
             } else {
                 // data_id未指定時は必ずID最大の協力会社を表示
                 $max_id_row = $wpdb->get_row("SELECT id FROM {$table_name} ORDER BY id DESC LIMIT 1");
-                $query_id = $max_id_row ? $max_id_row->id : null;
+                $query_id = $max_id_row ? $max_id_row->id : '';
             }
 
             // 以降で$query_idを上書きしないこと！
 
-            // データを取得し変数に格納（$query_idがnullでない場合のみ）
-            if ($query_id && is_numeric($query_id) && $query_id > 0) {
-                $query = $wpdb->prepare("SELECT * FROM {$table_name} WHERE id = %d", $query_id);
-                $post_row = $wpdb->get_results($query);
-            } else {
-                $post_row = [];
-            }
-            
+            // データを取得し変数に格納
+            $query = $wpdb->prepare("SELECT * FROM {$table_name} WHERE id = %d", $query_id);
+            $post_row = $wpdb->get_results($query);
             if (!$post_row || count($post_row) === 0) {
                 // データが0件でもフォーム・レイアウトを必ず出す
                 $data_id = '';
@@ -1297,9 +1222,10 @@ class KTPWP_Supplier_Class {
 
         $data_forms .= '</div>'; // フォームを囲む<div>タグの終了
 
-        // 詳細表示部分の終了（data_detail_boxのみ）
+        // 詳細表示部分の終了
         $div_end = <<<END
             </div> <!-- data_detail_boxの終了 -->
+        </div> <!-- data_contentsの終了 -->
         END;
 
         // -----------------------------
@@ -1402,240 +1328,10 @@ class KTPWP_Supplier_Class {
         <div id="previewWindow" style="display: none;"></div>
         END;
 
-        // コンテンツを返す（ktp_data_contentsの終了タグを追加）
-        
-        $content = $print . $data_list . $data_title . $data_forms . $search_results_list . $div_end . '</div> <!-- ktp_data_contents終了 -->';
+        // コンテンツを返す
+        $content = $print . $data_list . $data_title . $data_forms . $search_results_list . $div_end;
         return $content;
 
-    }
-
-    /**
-     * 統一されたページネーションデザインをレンダリング（2行レイアウト）
-     *
-     * @param int $current_page 現在のページ
-     * @param int $total_pages 総ページ数
-     * @param int $query_limit 1ページあたりの表示件数
-     * @param string $name タブ名
-     * @param string $flg フラグ
-     * @param string $base_page_url ベースURL
-     * @param int $total_rows 総データ数
-     * @return string ページネーションHTML
-     */
-    private function render_pagination($current_page, $total_pages, $query_limit, $name, $flg, $base_page_url, $total_rows) {
-        if ($total_pages <= 1) {
-            return '';
-        }
-
-        $pagination_html = '<div class="pagination" style="text-align: center; margin: 20px 0; padding: 20px 0;">';
-        
-        // 1行目：ページ情報表示
-        $pagination_html .= '<div style="margin-bottom: 18px; color: #4b5563; font-size: 14px; font-weight: 500;">';
-        $pagination_html .= esc_html($current_page) . ' / ' . esc_html($total_pages) . ' ページ（全 ' . esc_html($total_rows) . ' 件）';
-        $pagination_html .= '</div>';
-        
-        //   // 2行目：ページネーションボタン
-        $pagination_html .= '<div style="display: flex; align-items: center; gap: 4px; flex-wrap: wrap; justify-content: center; width: 100%;">';
-        
-        // ページネーションボタンのスタイル（正円ボタン）
-        $button_style = 'display: inline-block; width: 36px; height: 36px; padding: 0; margin: 0 2px; text-decoration: none; border: 1px solid #ddd; border-radius: 50%; color: #333; background: #fff; transition: all 0.3s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.1); line-height: 34px; text-align: center; vertical-align: middle; font-size: 14px;';
-        $current_style = 'background: #1976d2; color: white; border-color: #1976d2; font-weight: bold; transform: translateY(-1px); box-shadow: 0 2px 5px rgba(0,0,0,0.2);';
-        $hover_effect = 'onmouseover="this.style.backgroundColor=\'#f5f5f5\'; this.style.transform=\'translateY(-1px)\'; this.style.boxShadow=\'0 2px 5px rgba(0,0,0,0.15)\';" onmouseout="this.style.backgroundColor=\'#fff\'; this.style.transform=\'none\'; this.style.boxShadow=\'0 1px 3px rgba(0,0,0,0.1)\';"';
-
-        // 前のページボタン
-        if ($current_page > 1) {
-            $prev_args = array(
-                'tab_name' => $name,
-                'page_start' => ($current_page - 2) * $query_limit,
-                'page_stage' => 2,
-                'flg' => $flg
-            );
-            if (isset($_GET['sort_by'])) $prev_args['sort_by'] = $_GET['sort_by'];
-            if (isset($_GET['sort_order'])) $prev_args['sort_order'] = $_GET['sort_order'];
-            $prev_url = esc_url(add_query_arg($prev_args, $base_page_url));
-            $pagination_html .= "<a href=\"{$prev_url}\" style=\"{$button_style}\" {$hover_effect}>‹</a>";
-        }
-
-        // ページ番号ボタン（省略表示対応）
-        $start_page = max(1, $current_page - 2);
-        $end_page = min($total_pages, $current_page + 2);
-
-        // 最初のページを表示
-        if ($start_page > 1) {
-            $first_args = array(
-                'tab_name' => $name,
-                'page_start' => 0,
-                'page_stage' => 2,
-                'flg' => $flg
-            );
-            if (isset($_GET['sort_by'])) $first_args['sort_by'] = $_GET['sort_by'];
-            if (isset($_GET['sort_order'])) $first_args['sort_order'] = $_GET['sort_order'];
-            $first_url = esc_url(add_query_arg($first_args, $base_page_url));
-            $pagination_html .= "<a href=\"{$first_url}\" style=\"{$button_style}\" {$hover_effect}>1</a>";
-            
-            if ($start_page > 2) {
-                $pagination_html .= "<span style=\"{$button_style} background: transparent; border: none; cursor: default;\">...</span>";
-            }
-        }
-
-        // 中央のページ番号
-        for ($i = $start_page; $i <= $end_page; $i++) {
-            $page_args = array(
-                'tab_name' => $name,
-                'page_start' => ($i - 1) * $query_limit,
-                'page_stage' => 2,
-                'flg' => $flg
-            );
-            if (isset($_GET['sort_by'])) $page_args['sort_by'] = $_GET['sort_by'];
-            if (isset($_GET['sort_order'])) $page_args['sort_order'] = $_GET['sort_order'];
-            $page_url = esc_url(add_query_arg($page_args, $base_page_url));
-            
-            if ($i == $current_page) {
-                $pagination_html .= "<span style=\"{$button_style} {$current_style}\">{$i}</span>";
-            } else {
-                $pagination_html .= "<a href=\"{$page_url}\" style=\"{$button_style}\" {$hover_effect}>{$i}</a>";
-            }
-        }
-
-        // 最後のページを表示
-        if ($end_page < $total_pages) {
-            if ($end_page < $total_pages - 1) {
-                $pagination_html .= "<span style=\"{$button_style} background: transparent; border: none; cursor: default;\">...</span>";
-            }
-            
-            $last_args = array(
-                'tab_name' => $name,
-                'page_start' => ($total_pages - 1) * $query_limit,
-                'page_stage' => 2,
-                'flg' => $flg
-            );
-            if (isset($_GET['sort_by'])) $last_args['sort_by'] = $_GET['sort_by'];
-            if (isset($_GET['sort_order'])) $last_args['sort_order'] = $_GET['sort_order'];
-            $last_url = esc_url(add_query_arg($last_args, $base_page_url));
-            $pagination_html .= "<a href=\"{$last_url}\" style=\"{$button_style}\" {$hover_effect}>{$total_pages}</a>";
-        }
-
-        // 次のページボタン
-        if ($current_page < $total_pages) {
-            $next_args = array(
-                'tab_name' => $name,
-                'page_start' => $current_page * $query_limit,
-                'page_stage' => 2,
-                'flg' => $flg
-            );
-            if (isset($_GET['sort_by'])) $next_args['sort_by'] = $_GET['sort_by'];
-            if (isset($_GET['sort_order'])) $next_args['sort_order'] = $_GET['sort_order'];
-            $next_url = esc_url(add_query_arg($next_args, $base_page_url));
-            $pagination_html .= "<a href=\"{$next_url}\" style=\"{$button_style}\" {$hover_effect}>›</a>";
-        }
-
-        // 2行目のボタン部分の終了
-        $pagination_html .= '</div>';
-        
-        $pagination_html .= '</div>';
-        
-        return $pagination_html;
-    }
-
-    /**
-     * 全協力会社の職能一覧を表示するメソッド
-     *
-     * @since 1.0.0
-     * @param int|null $current_supplier_id 現在詳細に表示されている協力会社のID
-     * @return string HTML content
-     */
-    private function render_all_skills_overview($current_supplier_id = null) {
-        global $wpdb;
-        
-        $skills_table = $wpdb->prefix . 'ktp_supplier_skills';
-        $supplier_table = $wpdb->prefix . 'ktp_supplier';
-        
-        // 全ての商品を協力会社名と一緒に取得
-        $all_skills = $wpdb->get_results("
-            SELECT s.*, sup.company_name 
-            FROM {$skills_table} s 
-            LEFT JOIN {$supplier_table} sup ON s.supplier_id = sup.id 
-            WHERE s.is_active = 1 
-            ORDER BY sup.company_name, s.priority_order ASC, s.product_name ASC
-        ");
-        
-        // 現在表示中の協力会社IDを取得（詳細表示中のIDを優先）
-        $cookie_name = 'ktp_supplier_id';
-        $displayed_supplier_id = null;
-        
-        // クッキーから現在表示中のIDを取得
-        if (isset($_COOKIE[$cookie_name])) {
-            $displayed_supplier_id = absint($_COOKIE[$cookie_name]);
-        }
-        
-        // GET パラメータからのIDも確認
-        if (isset($_GET['data_id'])) {
-            $displayed_supplier_id = absint($_GET['data_id']);
-        }
-        
-        // current_supplier_idパラメータも確認
-        if ($current_supplier_id && is_numeric($current_supplier_id) && $current_supplier_id > 0) {
-            $displayed_supplier_id = $current_supplier_id;
-        }
-        
-        // タイトルを動的に設定（実際の協力会社IDを表示）
-        $title_id = ($displayed_supplier_id && is_numeric($displayed_supplier_id) && $displayed_supplier_id > 0) 
-            ? $displayed_supplier_id 
-            : '未選択';
-        
-        $html = '<div class="all-skills-overview" style="margin-top: 20px; padding: 15px; background: #f9f9f9; border-radius: 5px;">';
-        $html .= '<h4 style="margin: 0 0 15px 0; color: #333; font-size: 16px;">ID：' . esc_html($title_id) . ' 協力会社の商品・サービス一覧</h4>';
-        
-        if (!empty($all_skills)) {
-            $current_supplier = '';
-            
-            foreach ($all_skills as $skill) {
-                // 協力会社名が変わったら新しいセクションを開始
-                if ($current_supplier !== $skill->company_name) {
-                    if ($current_supplier !== '') {
-                        $html .= '</div>'; // 前のセクションを閉じる
-                    }
-                    $current_supplier = $skill->company_name;
-                    $html .= '<div class="supplier-skills-group" style="margin-bottom: 20px;">';
-                    $html .= '<h5 style="margin: 10px 0 10px 0; color: #0073aa; font-size: 14px; padding: 5px 10px; background: white; border-left: 4px solid #0073aa;">';
-                    $html .= esc_html($current_supplier ?: '不明な協力会社');
-                    $html .= '</h5>';
-                }
-                
-                $product_name = esc_html($skill->product_name);
-                $unit_price = number_format(floatval($skill->unit_price), 2);
-                $quantity = absint($skill->quantity);
-                $unit = esc_html($skill->unit);
-                
-                $html .= '<div class="skill-item-overview" style="padding: 8px 12px; margin-bottom: 8px; background: white; border: 1px solid #ddd; border-radius: 3px;">';
-                $html .= '<div style="display: flex; justify-content: space-between; align-items: flex-start;">';
-                $html .= '<div style="flex: 1;">';
-                $html .= '<strong style="color: #333; font-size: 13px;">' . $product_name . '</strong>';
-                $html .= '<div style="color: #666; font-size: 11px; margin: 3px 0;">';
-                $html .= '単価: ' . $unit_price . '円 | 数量: ' . $quantity . ' | 単位: ' . $unit;
-                $html .= '</div>';
-                $html .= '</div>';
-                $html .= '</div>';
-                $html .= '</div>';
-            }
-            
-            if ($current_supplier !== '') {
-                $html .= '</div>'; // 最後のセクションを閉じる
-            }
-            
-        } else {
-            $html .= '<div style="color: #666; font-style: italic; text-align: center; padding: 20px;">';
-            $html .= 'まだ商品・サービスが登録されていません。<br>';
-            $html .= '協力会社を選択して商品・サービスを追加してください。';
-            $html .= '</div>';
-        }
-        
-        $html .= '<div style="margin-top: 15px; padding-top: 10px; border-top: 1px solid #ddd; color: #666; font-size: 12px; text-align: center;">';
-        $html .= '※ 商品・サービスの追加・編集は、協力会社を選択してから行ってください。';
-        $html .= '</div>';
-        
-        $html .= '</div>';
-        
-        return $html;
     }
 
 }
