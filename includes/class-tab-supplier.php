@@ -707,13 +707,11 @@ class KTPWP_Supplier_Class {
                . '<span style="font-size: 1em; font-weight: 600;">[＋]ボタンを押してデーターを作成してください</span>'
                . '<span style="margin-left: 18px; font-size: 13px; color: #888;">データがまだ登録されていません</span>'
                . '</div>';
-       }
-
-       // 統一されたページネーションデザインを使用
+       }        // 統一されたページネーションデザインを使用
        $results_f = $this->render_pagination($current_page, $total_pages, $query_limit, $name, $flg, $base_page_url, $total_rows);
 
-
-        $results_f .= "</div></div>";
+        // ktp_data_list_boxのみを閉じる（ktp_data_contentsは後で閉じる）
+        $results_f .= "</div>"; // ktp_data_list_boxの終了
 
        $data_list = $results_h . implode( $results ) . $results_f;
 
@@ -1155,10 +1153,9 @@ class KTPWP_Supplier_Class {
 
         $data_forms .= '</div>'; // フォームを囲む<div>タグの終了
 
-        // 詳細表示部分の終了
+        // 詳細表示部分の終了（data_detail_boxのみ）
         $div_end = <<<END
             </div> <!-- data_detail_boxの終了 -->
-        </div> <!-- data_contentsの終了 -->
         END;
 
         // -----------------------------
@@ -1261,8 +1258,8 @@ class KTPWP_Supplier_Class {
         <div id="previewWindow" style="display: none;"></div>
         END;
 
-        // コンテンツを返す
-        $content = $print . $data_list . $data_title . $data_forms . $search_results_list . $div_end;
+        // コンテンツを返す（ktp_data_contentsの終了タグを追加）
+        $content = $print . $data_list . $data_title . $data_forms . $search_results_list . $div_end . '</div> <!-- ktp_data_contents終了 -->';
         return $content;
 
     }
