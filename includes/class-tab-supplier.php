@@ -832,23 +832,6 @@ class KTPWP_Supplier_Class {
             $query_id = '';
         }
 
-        // 詳細表示中の協力会社ID表示メッセージを追加（ページネーションの下）
-        if ($query_id) {
-            $current_id_message = '<div style="padding: 15px 20px; background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%); border-radius: 6px; margin: 15px 0; color: #2d5a2d; font-weight: 600; text-align: center; box-shadow: 0 3px 12px rgba(0,0,0,0.07); display: flex; align-items: center; justify-content: center; font-size: 16px; gap: 10px;">'
-                . '<span class="material-symbols-outlined" style="color: #4caf50;">business</span>'
-                . '詳細表示中の協力会社ID: ' . esc_html($query_id)
-                . '</div>';
-        } else {
-            $current_id_message = '<div style="padding: 15px 20px; background: linear-gradient(135deg, #fff3cd 0%, #fff8e1 100%); border-radius: 6px; margin: 15px 0; color: #856404; font-weight: 600; text-align: center; box-shadow: 0 3px 12px rgba(0,0,0,0.07); display: flex; align-items: center; justify-content: center; font-size: 16px; gap: 10px;">'
-                . '<span class="material-symbols-outlined" style="color: #ffc107;">info</span>'
-                . ($action === 'istmode' ? '新規追加モード' : '協力会社データがありません')
-                . '</div>';
-        }
-
-        $results_f .= $current_id_message . "</div>";
-
-       $data_list = $results_h . implode( $results ) . $results_f;
-
         // データを取得し変数に格納（$query_idは既に取得済み）
         if ($action !== 'istmode' && $query_id) {
             $query = $wpdb->prepare("SELECT * FROM {$table_name} WHERE id = %d", $query_id);
@@ -928,6 +911,23 @@ class KTPWP_Supplier_Class {
             $memo = '';
             $category = '';
         }
+
+        // データ取得完了後、協力会社ID表示メッセージを生成
+        if ($query_id) {
+            $display_company_name = isset($company_name) && !empty($company_name) ? $company_name : '未設定';
+            $current_id_message = '<div class="data_skill_list_title">'
+                . '<span class="material-symbols-outlined" style="color: #4caf50;">business</span>'
+                . esc_html($display_company_name) . '（ID: ' . esc_html($query_id) . '）の商品・サービス'
+                . '</div>';
+        } else {
+            $current_id_message = '<div style="padding: 15px 20px; background: linear-gradient(135deg, #fff3cd 0%, #fff8e1 100%); border-radius: 6px; margin: 15px 0; color: #856404; font-weight: 600; text-align: center; box-shadow: 0 3px 12px rgba(0,0,0,0.07); display: flex; align-items: center; justify-content: center; font-size: 16px; gap: 10px;">'
+                . '<span class="material-symbols-outlined" style="color: #ffc107;">info</span>'
+                . ($action === 'istmode' ? '新規追加モード' : '協力会社データがありません')
+                . '</div>';
+        }
+
+        // data_listに協力会社ID表示メッセージを追加
+        $data_list = $results_h . implode($results) . $results_f . $current_id_message . "</div>";
 
         // 表示するフォーム要素を定義
         $fields = [

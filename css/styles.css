@@ -164,7 +164,8 @@
 
 /* データ詳細タイトル・リストタイトルのスタイル */
 .data_detail_title,
-.data_list_title {
+.data_list_title,
+.data_skill_list_title {
   font-weight: 700; /* より太い太字に */
   background-color: rgba(173, 216, 230, 0.4); /* 少し濃い目の水色の背景色 */
   padding: 10px;
@@ -174,6 +175,12 @@
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
+}
+
+/* data_skill_list_title専用スタイル（左寄せ） */
+.data_skill_list_title {
+  justify-content: flex-start;
+  gap: 8px;
 }
 
 /* ソートドロップダウンのスタイル */
