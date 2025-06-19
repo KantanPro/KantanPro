@@ -107,6 +107,11 @@ class KTPWP_Supplier_Class {
         if ( ! empty( $_POST ) ) {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
             }
+            
+            // Handle skills operations first
+            $this->handle_skills_operations( $_POST );
+            
+            // Then handle regular supplier data updates
             $this->supplier_data->update_table( $tab_name, $_POST );
         } else {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
@@ -1240,6 +1245,20 @@ class KTPWP_Supplier_Class {
 
         $data_forms .= '</div>'; // フォームを囲む<div>タグの終了
 
+        // スキル管理インターフェースを表示（協力会社が選択されている場合のみ）
+        $skills_section = '';
+        if ($query_id && is_numeric($query_id) && $query_id > 0) {
+            // スキル管理クラスをロード
+            if (!class_exists('KTPWP_Supplier_Skills')) {
+                require_once dirname(__FILE__) . '/class-ktpwp-supplier-skills.php';
+            }
+            
+            $skills_manager = KTPWP_Supplier_Skills::get_instance();
+            if ($skills_manager) {
+                $skills_section = $skills_manager->render_skills_interface($query_id);
+            }
+        }
+
         // 詳細表示部分の終了
         $div_end = <<<END
             </div> <!-- data_detail_boxの終了 -->
@@ -1347,9 +1366,157 @@ class KTPWP_Supplier_Class {
         END;
 
         // コンテンツを返す
-        $content = $print . $data_list . $data_title . $data_forms . $search_results_list . $div_end;
+        $content = $print . $data_list . $data_title . $data_forms . $skills_section . $search_results_list . $div_end;
         return $content;
 
+    }
+
+    /**
+     * Handle skills operations (add, delete, etc.)
+     *
+     * @since 1.0.0
+     * @param array $post_data POST data array
+     * @return void
+     */
+    private function handle_skills_operations( $post_data ) {
+        // Check if this is a skills operation
+        if ( ! isset( $post_data['skills_action'] ) ) {
+            return;
+        }
+
+        // Security check - verify nonce
+        if ( ! isset( $post_data['ktp_skills_nonce'] ) ||
+             ! wp_verify_nonce( $post_data['ktp_skills_nonce'], 'ktp_skills_action' ) ) {
+            return;
+        }
+
+        // Check user permissions
+        if ( ! current_user_can( 'edit_posts' ) ) {
+            return;
+        }
+
+        $action = sanitize_key( $post_data['skills_action'] );
+
+        switch ( $action ) {
+            case 'add_skill':
+                $this->handle_add_skill( $post_data );
+                break;
+            case 'delete_skill':
+                $this->handle_delete_skill( $post_data );
+                break;
+        }
+    }
+
+    /**
+     * Handle adding a new skill
+     *
+     * @since 1.0.0
+     * @param array $post_data POST data array
+     * @return void
+     */
+    private function handle_add_skill( $post_data ) {
+        // Load skills manager
+        if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
+            require_once dirname( __FILE__ ) . '/class-ktpwp-supplier-skills.php';
+        }
+
+        $skills_manager = KTPWP_Supplier_Skills::get_instance();
+        if ( ! $skills_manager ) {
+            echo '<script>
+            document.addEventListener("DOMContentLoaded", function() {
+                showErrorNotification("スキル管理システムが利用できません。");
+            });
+            </script>';
+            return;
+        }
+
+        // Sanitize input data
+        $supplier_id = isset( $post_data['supplier_id'] ) ? absint( $post_data['supplier_id'] ) : 0;
+        $product_name = isset( $post_data['product_name'] ) ? sanitize_text_field( $post_data['product_name'] ) : '';
+        $unit_price = isset( $post_data['unit_price'] ) ? floatval( $post_data['unit_price'] ) : 0;
+        $quantity = isset( $post_data['quantity'] ) ? absint( $post_data['quantity'] ) : 1;
+        $unit = isset( $post_data['unit'] ) ? sanitize_text_field( $post_data['unit'] ) : '式';
+
+        // Validate required fields
+        if ( empty( $supplier_id ) || empty( $product_name ) ) {
+            echo '<script>
+            document.addEventListener("DOMContentLoaded", function() {
+                showErrorNotification("必要な情報が不足しています。");
+            });
+            </script>';
+            return;
+        }
+
+        // Add the skill
+        $result = $skills_manager->add_skill( $supplier_id, $product_name, $unit_price, $quantity, $unit );
+
+        if ( $result ) {
+            echo '<script>
+            document.addEventListener("DOMContentLoaded", function() {
+                showSuccessNotification("商品・サービスを追加しました。");
+            });
+            </script>';
+        } else {
+            echo '<script>
+            document.addEventListener("DOMContentLoaded", function() {
+                showErrorNotification("商品・サービスの追加に失敗しました。");
+            });
+            </script>';
+        }
+    }
+
+    /**
+     * Handle deleting a skill
+     *
+     * @since 1.0.0
+     * @param array $post_data POST data array
+     * @return void
+     */
+    private function handle_delete_skill( $post_data ) {
+        // Load skills manager
+        if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
+            require_once dirname( __FILE__ ) . '/class-ktpwp-supplier-skills.php';
+        }
+
+        $skills_manager = KTPWP_Supplier_Skills::get_instance();
+        if ( ! $skills_manager ) {
+            echo '<script>
+            document.addEventListener("DOMContentLoaded", function() {
+                showErrorNotification("スキル管理システムが利用できません。");
+            });
+            </script>';
+            return;
+        }
+
+        // Sanitize input data
+        $skill_id = isset( $post_data['skill_id'] ) ? absint( $post_data['skill_id'] ) : 0;
+
+        // Validate required fields
+        if ( empty( $skill_id ) ) {
+            echo '<script>
+            document.addEventListener("DOMContentLoaded", function() {
+                showErrorNotification("削除する商品・サービスが指定されていません。");
+            });
+            </script>';
+            return;
+        }
+
+        // Delete the skill
+        $result = $skills_manager->delete_skill( $skill_id );
+
+        if ( $result ) {
+            echo '<script>
+            document.addEventListener("DOMContentLoaded", function() {
+                showSuccessNotification("商品・サービスを削除しました。");
+            });
+            </script>';
+        } else {
+            echo '<script>
+            document.addEventListener("DOMContentLoaded", function() {
+                showErrorNotification("商品・サービスの削除に失敗しました。");
+            });
+            </script>';
+        }
     }
 
 }

@@ -360,8 +360,46 @@ class KTPWP_Supplier_Skills {
         $html = '<div class="supplier-skills-section" style="margin-top: 20px; padding: 15px; background: #f9f9f9; border-radius: 5px;">';
         $html .= '<h4 style="margin: 0 0 15px 0; color: #333; font-size: 16px;">ID：' . $supplier_id . ' 協力会社の商品・サービス一覧</h4>';
 
+        // Add new product form - 1行バー型（タイトルの直後に配置）
+        $html .= '<div class="add-skill-form" style="margin-bottom: 20px;">';
+        $html .= '<form method="post" style="background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; padding: 12px; display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">';
+        $html .= wp_nonce_field( 'ktp_skills_action', 'ktp_skills_nonce', true, false );
+        $html .= '<input type="hidden" name="skills_action" value="add_skill">';
+        $html .= '<input type="hidden" name="supplier_id" value="' . $supplier_id . '">';
+        
+        // 商品名フィールド
+        $html .= '<div style="flex: 2; min-width: 120px;">';
+        $html .= '<input type="text" name="product_name" required placeholder="商品名" style="width: 100%; padding: 8px 10px; border: 1px solid #ced4da; border-radius: 4px; font-size: 14px; box-sizing: border-box;">';
+        $html .= '</div>';
+        
+        // 単価フィールド
+        $html .= '<div style="flex: 1; min-width: 80px;">';
+        $html .= '<input type="number" name="unit_price" min="0" step="0.01" placeholder="単価" style="width: 100%; padding: 8px 10px; border: 1px solid #ced4da; border-radius: 4px; font-size: 14px; box-sizing: border-box;">';
+        $html .= '</div>';
+        
+        // 数量フィールド
+        $html .= '<div style="flex: 0.8; min-width: 60px;">';
+        $html .= '<input type="number" name="quantity" min="1" value="1" placeholder="数量" style="width: 100%; padding: 8px 10px; border: 1px solid #ced4da; border-radius: 4px; font-size: 14px; box-sizing: border-box;">';
+        $html .= '</div>';
+        
+        // 単位フィールド
+        $html .= '<div style="flex: 0.8; min-width: 60px;">';
+        $html .= '<input type="text" name="unit" value="式" placeholder="単位" style="width: 100%; padding: 8px 10px; border: 1px solid #ced4da; border-radius: 4px; font-size: 14px; box-sizing: border-box;">';
+        $html .= '</div>';
+        
+        // 追加ボタン
+        $html .= '<div style="flex: 0 0 auto;">';
+        $html .= '<button type="submit" style="background: #28a745; color: white; border: none; padding: 9px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: 500; display: flex; align-items: center; justify-content: center; white-space: nowrap; transition: background-color 0.2s ease;" onmouseover="this.style.backgroundColor=\'#218838\'" onmouseout="this.style.backgroundColor=\'#28a745\'">';
+        $html .= '+';
+        $html .= '</button>';
+        $html .= '</div>';
+        
+        $html .= '</form>';
+        $html .= '</div>';
+
+        // 職能リストを追加フォームの後に表示
         if ( ! empty( $skills ) ) {
-            $html .= '<div class="skills-list" style="margin-bottom: 15px;">';
+            $html .= '<div class="skills-list" style="margin-top: 15px;">';
             foreach ( $skills as $skill ) {
                 $skill_id = esc_attr( $skill['id'] );
                 $product_name = esc_html( $skill['product_name'] );
@@ -387,46 +425,8 @@ class KTPWP_Supplier_Skills {
             }
             $html .= '</div>';
         } else {
-            $html .= '<div style="color: #666; font-style: italic; margin-bottom: 15px;">まだ商品・サービスが登録されていません。</div>';
+            $html .= '<div style="color: #666; font-style: italic; margin-top: 15px;">まだ商品・サービスが登録されていません。</div>';
         }
-
-        // Add new product form
-        $html .= '<div class="add-skill-form" style="border-top: 1px solid #ddd; padding-top: 15px;">';
-        $html .= '<h5 style="margin: 0 0 10px 0; color: #333;">新しい商品・サービスを追加</h5>';
-        $html .= '<form method="post" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">';
-        $html .= wp_nonce_field( 'ktp_skills_action', 'ktp_skills_nonce', true, false );
-        $html .= '<input type="hidden" name="skills_action" value="add_skill">';
-        $html .= '<input type="hidden" name="supplier_id" value="' . $supplier_id . '">';
-        
-        $html .= '<div>';
-        $html .= '<label style="font-size: 12px; color: #666;">商品名 *</label>';
-        $html .= '<input type="text" name="product_name" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 3px; font-size: 14px;">';
-        $html .= '</div>';
-        
-        $html .= '<div>';
-        $html .= '<label style="font-size: 12px; color: #666;">単価（円）</label>';
-        $html .= '<input type="number" name="unit_price" min="0" step="0.01" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 3px; font-size: 14px;" placeholder="0">';
-        $html .= '</div>';
-        
-        $html .= '<div>';
-        $html .= '<label style="font-size: 12px; color: #666;">数量</label>';
-        $html .= '<input type="number" name="quantity" min="1" value="1" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 3px; font-size: 14px;">';
-        $html .= '</div>';
-        
-        $html .= '<div>';
-        $html .= '<label style="font-size: 12px; color: #666;">単位</label>';
-        $html .= '<input type="text" name="unit" value="式" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 3px; font-size: 14px;" placeholder="式">';
-        $html .= '</div>';
-        
-        $html .= '<div style="grid-column: 1 / -1; text-align: right; margin-top: 10px;">';
-        $html .= '<button type="submit" style="background: #0073aa; color: white; border: none; padding: 8px 16px; border-radius: 3px; cursor: pointer; font-size: 14px;">';
-        $html .= '<span class="material-symbols-outlined" style="font-size: 16px; vertical-align: middle; margin-right: 5px;">add</span>';
-        $html .= '追加';
-        $html .= '</button>';
-        $html .= '</div>';
-        
-        $html .= '</form>';
-        $html .= '</div>';
 
         $html .= '</div>';
 

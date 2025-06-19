@@ -2480,7 +2480,7 @@ body.ktpwp-modal-open {
     border-top: none;
     border-radius: 0;
     padding: 10px;
-    background-color: #fafafa;
+       background-color: #fafafa;
     margin-bottom: 15px;
     box-sizing: border-box;
 }
@@ -2834,4 +2834,51 @@ body.ktpwp-modal-open {
         font-size: 14px !important;
         margin-left: 6px !important;
     }
+}
+
+/* 職能追加フォーム（1行バー型）のスタイル */
+.add-skill-form form {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* 職能追加フォームのレスポンシブ対応 */
+@media (max-width: 768px) {
+  .add-skill-form form {
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px;
+  }
+  
+  .add-skill-form form > div {
+    width: 100% !important;
+    flex: none !important;
+    min-width: auto !important;
+  }
+  
+  .add-skill-form form input {
+    font-size: 16px; /* iOSのズーム防止 */
+  }
+}
+
+@media (max-width: 480px) {
+  .add-skill-form form {
+    padding: 8px;
+    gap: 6px;
+  }
+  
+  .add-skill-form form input {
+    padding: 6px 8px;
+  }
+  
+  .add-skill-form form button {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
 }
