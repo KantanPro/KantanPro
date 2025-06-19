@@ -782,18 +782,8 @@ class KTPWP_Supplier_Class {
 
         $results_f .= "</div>";
 
-        // Hello World! メッセージを追加（ページネーションの下）
-        $hello_world_message = '<div style="padding: 15px 20px; background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%); border-radius: 6px; margin: 15px 0; color: #2d5a2d; font-weight: 600; text-align: center; box-shadow: 0 3px 12px rgba(0,0,0,0.07); display: flex; align-items: center; justify-content: center; font-size: 16px; gap: 10px;">'
-            . '<span class="material-symbols-outlined" style="color: #4caf50;">check_circle</span>'
-            . 'Hello World!'
-            . '</div>';
-
-        $results_f .= $hello_world_message . "</div>";
-
-       $data_list = $results_h . implode( $results ) . $results_f;
-
         // -----------------------------
-        // 詳細表示(GET)
+        // 詳細表示(GET) - ID取得処理を先に実行
         // -----------------------------
 
         // 現在表示中の詳細
@@ -815,7 +805,7 @@ class KTPWP_Supplier_Class {
             }
         }
 
-        // 追加モード（istmode）の場合はデータ取得をスキップ
+        // 詳細表示ID取得処理（ページネーションメッセージ用）
         if ($action !== 'istmode') {
             if (isset($_GET['data_id']) && $_GET['data_id'] !== '') {
                 $query_id = filter_input(INPUT_GET, 'data_id', FILTER_SANITIZE_NUMBER_INT);
@@ -837,10 +827,30 @@ class KTPWP_Supplier_Class {
                 $max_id_row = $wpdb->get_row("SELECT id FROM {$table_name} ORDER BY id DESC LIMIT 1");
                 $query_id = $max_id_row ? $max_id_row->id : '';
             }
+        } else {
+            // 追加モードの場合はIDを取得しない
+            $query_id = '';
+        }
 
-            // 以降で$query_idを上書きしないこと！
+        // 詳細表示中の協力会社ID表示メッセージを追加（ページネーションの下）
+        if ($query_id) {
+            $current_id_message = '<div style="padding: 15px 20px; background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%); border-radius: 6px; margin: 15px 0; color: #2d5a2d; font-weight: 600; text-align: center; box-shadow: 0 3px 12px rgba(0,0,0,0.07); display: flex; align-items: center; justify-content: center; font-size: 16px; gap: 10px;">'
+                . '<span class="material-symbols-outlined" style="color: #4caf50;">business</span>'
+                . '詳細表示中の協力会社ID: ' . esc_html($query_id)
+                . '</div>';
+        } else {
+            $current_id_message = '<div style="padding: 15px 20px; background: linear-gradient(135deg, #fff3cd 0%, #fff8e1 100%); border-radius: 6px; margin: 15px 0; color: #856404; font-weight: 600; text-align: center; box-shadow: 0 3px 12px rgba(0,0,0,0.07); display: flex; align-items: center; justify-content: center; font-size: 16px; gap: 10px;">'
+                . '<span class="material-symbols-outlined" style="color: #ffc107;">info</span>'
+                . ($action === 'istmode' ? '新規追加モード' : '協力会社データがありません')
+                . '</div>';
+        }
 
-            // データを取得し変数に格納
+        $results_f .= $current_id_message . "</div>";
+
+       $data_list = $results_h . implode( $results ) . $results_f;
+
+        // データを取得し変数に格納（$query_idは既に取得済み）
+        if ($action !== 'istmode' && $query_id) {
             $query = $wpdb->prepare("SELECT * FROM {$table_name} WHERE id = %d", $query_id);
             $post_row = $wpdb->get_results($query);
             if (!$post_row || count($post_row) === 0) {
