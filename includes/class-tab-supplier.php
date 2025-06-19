@@ -1560,10 +1560,29 @@ class KTPWP_Supplier_Class {
             ORDER BY sup.company_name, s.priority_order ASC, s.skill_name ASC
         ");
         
-        // タイトルを動的に設定
-        $title_id = ($current_supplier_id && is_numeric($current_supplier_id) && $current_supplier_id > 0) 
-            ? $current_supplier_id 
-            : '*';
+        // 現在表示中の協力会社IDを取得（詳細表示中のIDを優先）
+        $cookie_name = 'ktp_supplier_id';
+        $displayed_supplier_id = null;
+        
+        // クッキーから現在表示中のIDを取得
+        if (isset($_COOKIE[$cookie_name])) {
+            $displayed_supplier_id = absint($_COOKIE[$cookie_name]);
+        }
+        
+        // GET パラメータからのIDも確認
+        if (isset($_GET['data_id'])) {
+            $displayed_supplier_id = absint($_GET['data_id']);
+        }
+        
+        // current_supplier_idパラメータも確認
+        if ($current_supplier_id && is_numeric($current_supplier_id) && $current_supplier_id > 0) {
+            $displayed_supplier_id = $current_supplier_id;
+        }
+        
+        // タイトルを動的に設定（実際の協力会社IDを表示）
+        $title_id = ($displayed_supplier_id && is_numeric($displayed_supplier_id) && $displayed_supplier_id > 0) 
+            ? $displayed_supplier_id 
+            : '未選択';
         
         $html = '<div class="all-skills-overview" style="margin-top: 20px; padding: 15px; background: #f9f9f9; border-radius: 5px;">';
         $html .= '<h4 style="margin: 0 0 15px 0; color: #333; font-size: 16px;">ID：' . esc_html($title_id) . ' 協力会社の職能・サービス一覧</h4>';
