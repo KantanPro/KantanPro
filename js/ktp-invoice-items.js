@@ -328,7 +328,15 @@
                     ajaxUrl = '/wp-admin/admin-ajax.php';
                 }
 
-                const nonce = (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.nonce) ? ktp_ajax_object.nonce : '';
+                // nonce の取得を修正
+                let nonce = '';
+                if (typeof ktp_ajax_nonce !== 'undefined') {
+                    nonce = ktp_ajax_nonce;
+                } else if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.nonce) {
+                    nonce = ktp_ajax_object.nonce;
+                } else {
+                    console.warn('[INVOICE] deleteRow: nonceが取得できませんでした');
+                }
 
                 const ajaxData = {
                     action: 'ktp_delete_item',
@@ -352,16 +360,38 @@
                                 updateTotalAndProfit(); // 合計金額を更新
                             } else {
                                 console.warn('[INVOICE] deleteRowサーバー側削除失敗', result);
-                                alert('行の削除に失敗しました。サーバーからの応答: ' + (result.data && result.data.message ? result.data.message : (result.message || '不明なエラー')));
+                                let errorMessage = '行の削除に失敗しました。';
+                                if (result.data) {
+                                    if (typeof result.data === 'string') {
+                                        errorMessage += '\nエラー: ' + result.data;
+                                    } else if (result.data.message) {
+                                        errorMessage += '\nエラー: ' + result.data.message;
+                                    }
+                                } else if (result.message) {
+                                    errorMessage += '\nエラー: ' + result.message;
+                                }
+                                alert(errorMessage);
                             }
                         } catch (e) {
                             console.error('[INVOICE] deleteRowレスポンスパースエラー', e, response);
-                            alert('行削除の応答処理中にエラーが発生しました。');
+                            alert('行削除の応答処理中にエラーが発生しました。\n詳細: ' + (typeof response === 'string' ? response : JSON.stringify(response)));
                         }
                     },
                     error: function (xhr, status, error) {
-                        console.error('[INVOICE] deleteRowエラー', { status, error, responseText: xhr.responseText });
-                        alert('行の削除中にサーバーエラーが発生しました。');
+                        console.error('[INVOICE] deleteRowエラー', { status, error, responseText: xhr.responseText, statusCode: xhr.status });
+                        let errorDetail = 'サーバーエラーが発生しました。';
+                        if (xhr.responseText) {
+                            try {
+                                const errorResponse = JSON.parse(xhr.responseText);
+                                if (errorResponse.data) {
+                                    errorDetail += '\nエラー詳細: ' + errorResponse.data;
+                                }
+                            } catch (e) {
+                                errorDetail += '\nレスポンス: ' + xhr.responseText.substring(0, 200);
+                            }
+                        }
+                        errorDetail += '\nステータス: ' + xhr.status + ' ' + error;
+                        alert('行の削除中にサーバーエラーが発生しました。\n' + errorDetail);
                     }
                 });
             } else if (itemId === '0') {

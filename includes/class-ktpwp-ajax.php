@@ -551,7 +551,11 @@ class KTPWP_Ajax {
         error_log('[AJAX_DELETE_ITEM] Received params: ' . print_r($_POST, true));
 
         // セキュリティチェック
+        $nonce = $this->sanitize_ajax_input('nonce', 'text');
+        error_log("[AJAX_DELETE_ITEM] Received nonce: {$nonce}");
+        
         if (!check_ajax_referer('ktp_ajax_nonce', 'nonce', false)) {
+            error_log("[AJAX_DELETE_ITEM] Security check failed - nonce verification failed");
             $this->log_ajax_error('Delete item security check failed', $_POST);
             wp_send_json_error(__( 'セキュリティ検証に失敗しました', 'ktpwp' ));
         }
@@ -595,10 +599,12 @@ class KTPWP_Ajax {
             error_log("[AJAX_DELETE_ITEM] delete_item result: " . print_r($result, true));
 
             if ($result) {
+                error_log("[AJAX_DELETE_ITEM] Success: item deleted successfully");
                 wp_send_json_success(array(
                     'message' => __('アイテムを削除しました', 'ktpwp')
                 ));
             } else {
+                error_log("[AJAX_DELETE_ITEM] Failure: delete_item returned false");
                 $this->log_ajax_error('Failed to delete item from database (KTPWP_Order_Items::delete_item returned false)', array(
                     'item_type' => $item_type,
                     'item_id' => $item_id,
@@ -1658,6 +1664,44 @@ class KTPWP_Ajax {
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * Ajax入力データのサニタイズ処理
+     *
+     * @param string $key 取得するPOSTキー
+     * @param string $type サニタイズのタイプ
+     * @param mixed $default デフォルト値
+     * @return mixed サニタイズされた値
+     */
+    private function sanitize_ajax_input($key, $type = 'text', $default = '') {
+        if (!isset($_POST[$key])) {
+            return $default;
+        }
+
+        $value = $_POST[$key];
+
+        switch ($type) {
+            case 'int':
+                return intval($value);
+            case 'float':
+                return floatval($value);
+            case 'email':
+                return sanitize_email($value);
+            case 'url':
+                return esc_url_raw($value);
+            case 'textarea':
+                return sanitize_textarea_field($value);
+            case 'html':
+                return wp_kses_post($value);
+            case 'key':
+                return sanitize_key($value);
+            case 'title':
+                return sanitize_title($value);
+            case 'text':
+            default:
+                return sanitize_text_field($value);
         }
     }
 }
