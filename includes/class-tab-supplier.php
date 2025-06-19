@@ -780,7 +780,15 @@ class KTPWP_Supplier_Class {
         }
 
 
-        $results_f .= "</div></div>";
+        $results_f .= "</div>";
+
+        // Hello World! メッセージを追加（ページネーションの下）
+        $hello_world_message = '<div style="padding: 15px 20px; background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%); border-radius: 6px; margin: 15px 0; color: #2d5a2d; font-weight: 600; text-align: center; box-shadow: 0 3px 12px rgba(0,0,0,0.07); display: flex; align-items: center; justify-content: center; font-size: 16px; gap: 10px;">'
+            . '<span class="material-symbols-outlined" style="color: #4caf50;">check_circle</span>'
+            . 'Hello World!'
+            . '</div>';
+
+        $results_f .= $hello_world_message . "</div>";
 
        $data_list = $results_h . implode( $results ) . $results_f;
 
