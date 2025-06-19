@@ -214,12 +214,16 @@
                 } else if (!ajaxUrl) {
                     ajaxUrl = '/wp-admin/admin-ajax.php'; // Fallback
                 }
-                // nonce の取得を修正
+                // nonce の取得を修正（統一された方法）
                 let nonce = '';
                 if (typeof ktp_ajax_nonce !== 'undefined') {
                     nonce = ktp_ajax_nonce;
                 } else if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.nonce) {
                     nonce = ktp_ajax_object.nonce;
+                } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.auto_save) {
+                    nonce = ktpwp_ajax.nonces.auto_save;
+                } else if (typeof window.ktpwp_ajax !== 'undefined' && window.ktpwp_ajax.nonces && window.ktpwp_ajax.nonces.auto_save) {
+                    nonce = window.ktpwp_ajax.nonces.auto_save;
                 } else {
                     console.warn('[COST] deleteRow: nonceが取得できませんでした');
                 }
@@ -229,7 +233,8 @@
                     item_type: 'cost',
                     item_id: itemId,
                     order_id: orderId,
-                    nonce: nonce
+                    nonce: nonce,
+                    ktp_ajax_nonce: nonce  // 追加: PHPでチェックされるフィールド名
                 };
                 console.log('[COST] deleteRow送信', ajaxData);
                 $.ajax({
@@ -326,6 +331,18 @@
             console.warn('ajaxurl not defined, using fallback');
         }
 
+        // 統一されたnonce取得方法
+        let nonce = '';
+        if (typeof ktp_ajax_nonce !== 'undefined') {
+            nonce = ktp_ajax_nonce;
+        } else if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.nonce) {
+            nonce = ktp_ajax_object.nonce;
+        } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.auto_save) {
+            nonce = ktpwp_ajax.nonces.auto_save;
+        } else if (typeof window.ktpwp_ajax !== 'undefined' && window.ktpwp_ajax.nonces && window.ktpwp_ajax.nonces.auto_save) {
+            nonce = window.ktpwp_ajax.nonces.auto_save;
+        }
+
         const ajaxData = {
             action: 'ktp_auto_save_item',
             item_type: itemType, // 'cost' であることを期待
@@ -333,7 +350,8 @@
             field_name: fieldName,
             field_value: fieldValue,
             order_id: orderId,
-            nonce: ktp_ajax_nonce || ''
+            nonce: nonce,
+            ktp_ajax_nonce: nonce  // 追加: PHPでチェックされるフィールド名
         };
 
         console.log('Cost items - Sending Ajax request:', ajaxData);
@@ -380,13 +398,26 @@
             }
         }
 
+        // 統一されたnonce取得方法
+        let nonce = '';
+        if (typeof ktp_ajax_nonce !== 'undefined') {
+            nonce = ktp_ajax_nonce;
+        } else if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.nonce) {
+            nonce = ktp_ajax_object.nonce;
+        } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.auto_save) {
+            nonce = ktpwp_ajax.nonces.auto_save;
+        } else if (typeof window.ktpwp_ajax !== 'undefined' && window.ktpwp_ajax.nonces && window.ktpwp_ajax.nonces.auto_save) {
+            nonce = window.ktpwp_ajax.nonces.auto_save;
+        }
+
         const ajaxData = {
             action: 'ktp_create_new_item',
             item_type: itemType, // 'cost' であることを期待
             field_name: fieldName,
             field_value: fieldValue,
             order_id: orderId,
-            nonce: ktp_ajax_nonce || ''
+            nonce: nonce,
+            ktp_ajax_nonce: nonce  // 追加: PHPでチェックされるフィールド名
         };
 
         if (window.ktpDebugMode) {
@@ -489,7 +520,19 @@
                     } else if (!ajaxUrl) {
                         ajaxUrl = '/wp-admin/admin-ajax.php'; // Fallback
                     }
-                    const nonce = (typeof ktp_ajax_nonce !== 'undefined') ? ktp_ajax_nonce : ((typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.nonce) ? ktp_ajax_object.nonce : '');
+                    // 統一されたnonce取得方法
+                    let nonce = '';
+                    if (typeof ktp_ajax_nonce !== 'undefined') {
+                        nonce = ktp_ajax_nonce;
+                    } else if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.nonce) {
+                        nonce = ktp_ajax_object.nonce;
+                    } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.auto_save) {
+                        nonce = ktpwp_ajax.nonces.auto_save;
+                    } else if (typeof window.ktpwp_ajax !== 'undefined' && window.ktpwp_ajax.nonces && window.ktpwp_ajax.nonces.auto_save) {
+                        nonce = window.ktpwp_ajax.nonces.auto_save;
+                    }
+                    
+                    console.log('[COST] 使用するnonce:', nonce);
 
                     console.log('[COST] updateItemOrder送信', { order_id: orderId, items: items });
                     $.ajax({
@@ -500,7 +543,8 @@
                             order_id: orderId,
                             items: items,
                             item_type: 'cost',
-                            nonce: nonce
+                            nonce: nonce,
+                            ktp_ajax_nonce: nonce  // 追加: PHPでチェックされるフィールド名
                         },
                         success: function (response) {
                             console.log('[COST] updateItemOrderレスポンス', response);

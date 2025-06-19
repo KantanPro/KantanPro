@@ -401,9 +401,27 @@ class KTPWP_Ajax {
             return;
         }
 
-        // セキュリティチェック
-        if (!check_ajax_referer('ktp_ajax_nonce', 'nonce', false)) {
-            $this->log_ajax_error('Auto-save security check failed');
+        // セキュリティチェック - 複数のnonce名でチェック
+        $nonce_verified = false;
+        $nonce_value = '';
+        
+        // 複数のnonce名でチェック
+        $nonce_fields = ['nonce', 'ktp_ajax_nonce', '_ajax_nonce', '_wpnonce'];
+        foreach ($nonce_fields as $field) {
+            if (isset($_POST[$field])) {
+                $nonce_value = $_POST[$field];
+                if (wp_verify_nonce($nonce_value, 'ktp_ajax_nonce')) {
+                    $nonce_verified = true;
+                    error_log("[AJAX_AUTO_SAVE] Nonce verified with field: {$field}");
+                    break;
+                }
+            }
+        }
+        
+        if (!$nonce_verified) {
+            error_log("[AJAX_AUTO_SAVE] Security check failed - tried fields: " . implode(', ', $nonce_fields));
+            error_log("[AJAX_AUTO_SAVE] Available POST fields: " . implode(', ', array_keys($_POST)));
+            $this->log_ajax_error('Auto-save security check failed', $_POST);
             wp_send_json_error(__('セキュリティ検証に失敗しました', 'ktpwp'));
         }
 
@@ -475,9 +493,27 @@ class KTPWP_Ajax {
             return;
         }
 
-        // セキュリティチェック
-        if (!check_ajax_referer('ktp_ajax_nonce', 'nonce', false)) {
-            $this->log_ajax_error('Create new item security check failed');
+        // セキュリティチェック - 複数のnonce名でチェック
+        $nonce_verified = false;
+        $nonce_value = '';
+        
+        // 複数のnonce名でチェック
+        $nonce_fields = ['nonce', 'ktp_ajax_nonce', '_ajax_nonce', '_wpnonce'];
+        foreach ($nonce_fields as $field) {
+            if (isset($_POST[$field])) {
+                $nonce_value = $_POST[$field];
+                if (wp_verify_nonce($nonce_value, 'ktp_ajax_nonce')) {
+                    $nonce_verified = true;
+                    error_log("[AJAX_CREATE_NEW_ITEM] Nonce verified with field: {$field}");
+                    break;
+                }
+            }
+        }
+        
+        if (!$nonce_verified) {
+            error_log("[AJAX_CREATE_NEW_ITEM] Security check failed - tried fields: " . implode(', ', $nonce_fields));
+            error_log("[AJAX_CREATE_NEW_ITEM] Available POST fields: " . implode(', ', array_keys($_POST)));
+            $this->log_ajax_error('Create new item security check failed', $_POST);
             wp_send_json_error(__('セキュリティ検証に失敗しました', 'ktpwp'));
         }
 
@@ -550,12 +586,26 @@ class KTPWP_Ajax {
         // 受け取ったパラメータをログに出力
         error_log('[AJAX_DELETE_ITEM] Received params: ' . print_r($_POST, true));
 
-        // セキュリティチェック
-        $nonce = $this->sanitize_ajax_input('nonce', 'text');
-        error_log("[AJAX_DELETE_ITEM] Received nonce: {$nonce}");
+        // セキュリティチェック - 複数のnonce名でチェック
+        $nonce_verified = false;
+        $nonce_value = '';
         
-        if (!check_ajax_referer('ktp_ajax_nonce', 'nonce', false)) {
-            error_log("[AJAX_DELETE_ITEM] Security check failed - nonce verification failed");
+        // 複数のnonce名でチェック
+        $nonce_fields = ['nonce', 'ktp_ajax_nonce', '_ajax_nonce', '_wpnonce'];
+        foreach ($nonce_fields as $field) {
+            if (isset($_POST[$field])) {
+                $nonce_value = $_POST[$field];
+                if (wp_verify_nonce($nonce_value, 'ktp_ajax_nonce')) {
+                    $nonce_verified = true;
+                    error_log("[AJAX_DELETE_ITEM] Nonce verified with field: {$field}");
+                    break;
+                }
+            }
+        }
+        
+        if (!$nonce_verified) {
+            error_log("[AJAX_DELETE_ITEM] Security check failed - tried fields: " . implode(', ', $nonce_fields));
+            error_log("[AJAX_DELETE_ITEM] Available POST fields: " . implode(', ', array_keys($_POST)));
             $this->log_ajax_error('Delete item security check failed', $_POST);
             wp_send_json_error(__( 'セキュリティ検証に失敗しました', 'ktpwp' ));
         }
@@ -637,8 +687,31 @@ class KTPWP_Ajax {
             return;
         }
 
-        // セキュリティチェック (ktp_ajax_nonce を使用)
-        if (!check_ajax_referer('ktp_ajax_nonce', 'nonce', false)) {
+        // セキュリティチェック - 複数のnonce名でチェック
+        $nonce_verified = false;
+        $nonce_value = '';
+        
+        // 複数のnonce名でチェック
+        $nonce_fields = ['nonce', 'ktp_ajax_nonce', '_ajax_nonce', '_wpnonce'];
+        foreach ($nonce_fields as $field) {
+            if (isset($_POST[$field])) {
+                $nonce_value = sanitize_text_field($_POST[$field]);
+                if (wp_verify_nonce($nonce_value, 'ktp_ajax_nonce')) {
+                    $nonce_verified = true;
+                    error_log("[AJAX_UPDATE_ITEM_ORDER] Nonce verified with field: {$field}, value: " . substr($nonce_value, 0, 10) . "...");
+                    break;
+                }
+            }
+        }
+        
+        if (!$nonce_verified) {
+            error_log("[AJAX_UPDATE_ITEM_ORDER] Security check failed - tried fields: " . implode(', ', $nonce_fields));
+            error_log("[AJAX_UPDATE_ITEM_ORDER] Available POST fields: " . implode(', ', array_keys($_POST)));
+            foreach ($_POST as $key => $value) {
+                if (strpos($key, 'nonce') !== false || strpos($key, '_wp') !== false) {
+                    error_log("[AJAX_UPDATE_ITEM_ORDER] Found nonce-like field: {$key} = " . substr($value, 0, 10) . "...");
+                }
+            }
             $this->log_ajax_error('Update item order security check failed', $_POST);
             wp_send_json_error(__( 'セキュリティ検証に失敗しました', 'ktpwp' ));
         }
