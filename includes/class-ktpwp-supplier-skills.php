@@ -357,10 +357,9 @@ class KTPWP_Supplier_Skills {
         $skills = $this->get_supplier_skills( $supplier_id );
         $supplier_id = absint( $supplier_id );
 
-        $html = '<div class="supplier-skills-section" style="margin-top: 20px; padding: 15px; background: #f9f9f9; border-radius: 5px;">';
-        $html .= '<h4 style="margin: 0 0 15px 0; color: #333; font-size: 16px;">ID：' . $supplier_id . ' 協力会社の商品・サービス一覧</h4>';
+        $html = '';
 
-        // Add new product form - 1行バー型（タイトルの直後に配置）
+        // Add new product form - 1行バー型
         $html .= '<div class="add-skill-form" style="margin-bottom: 20px;">';
         $html .= '<form method="post" style="background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; padding: 12px; display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">';
         $html .= wp_nonce_field( 'ktp_skills_action', 'ktp_skills_nonce', true, false );
@@ -427,8 +426,6 @@ class KTPWP_Supplier_Skills {
         } else {
             $html .= '<div style="color: #666; font-style: italic; margin-top: 15px;">まだ商品・サービスが登録されていません。</div>';
         }
-
-        $html .= '</div>';
 
         // Add JavaScript for delete functionality
         $nonce_field = wp_nonce_field( 'ktp_skills_action', 'ktp_skills_nonce', true, false );

@@ -632,7 +632,7 @@ class KTPWP_Supplier_Class {
             '</button>' .
             '</form></div>';
 
-        // リスト表示部分の開始
+        // リスト表示部分の開始 - ktp_data_contentsを開始
         $results_h = <<<END
         <div class="ktp_data_contents">
             <div class="ktp_data_list_box">
@@ -931,8 +931,8 @@ class KTPWP_Supplier_Class {
                 . '</div>';
         }
 
-        // data_listに協力会社ID表示メッセージを追加
-        $data_list = $results_h . implode($results) . $results_f . $current_id_message . "</div>";
+        // data_listに協力会社ID表示メッセージを追加 - 協力会社リストBOXを継続（職能セクションを含むため）
+        $data_list = $results_h . implode($results) . $results_f . $current_id_message;
 
         // 表示するフォーム要素を定義
         $fields = [
@@ -1255,14 +1255,18 @@ class KTPWP_Supplier_Class {
             
             $skills_manager = KTPWP_Supplier_Skills::get_instance();
             if ($skills_manager) {
+                // 協力会社の職能追加フォームと職能リストを協力会社リストBOX内に配置
                 $skills_section = $skills_manager->render_skills_interface($query_id);
             }
         }
+        
+        // 協力会社リストBOXの終了
+        $skills_section .= '</div>'; // ktp_data_list_boxの終了
 
         // 詳細表示部分の終了
         $div_end = <<<END
             </div> <!-- data_detail_boxの終了 -->
-        </div> <!-- data_contentsの終了 -->
+        </div> <!-- ktp_data_contentsの終了 -->
         END;
 
         // -----------------------------
@@ -1365,8 +1369,8 @@ class KTPWP_Supplier_Class {
         <div id="previewWindow" style="display: none;"></div>
         END;
 
-        // コンテンツを返す
-        $content = $print . $data_list . $data_title . $data_forms . $skills_section . $search_results_list . $div_end;
+        // コンテンツを返す - 協力会社職能BOXを協力会社リストBOXの内部に配置
+        $content = $print . $data_list . $skills_section . $data_title . $data_forms . $search_results_list . $div_end;
         return $content;
 
     }
