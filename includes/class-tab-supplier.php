@@ -151,25 +151,24 @@ class KTPWP_Supplier_Class {
 
         switch ( $skills_action ) {
             case 'add_skill':
-                $skill_name = isset( $_POST['skill_name'] ) ? sanitize_text_field( $_POST['skill_name'] ) : '';
-                $skill_description = isset( $_POST['skill_description'] ) ? sanitize_textarea_field( $_POST['skill_description'] ) : '';
-                $skill_price = isset( $_POST['skill_price'] ) ? floatval( $_POST['skill_price'] ) : 0;
-                $unit = isset( $_POST['unit'] ) ? sanitize_text_field( $_POST['unit'] ) : '';
-                $category = isset( $_POST['category'] ) ? sanitize_text_field( $_POST['category'] ) : '';
+                $product_name = isset( $_POST['product_name'] ) ? sanitize_text_field( $_POST['product_name'] ) : '';
+                $unit_price = isset( $_POST['unit_price'] ) ? floatval( $_POST['unit_price'] ) : 0;
+                $quantity = isset( $_POST['quantity'] ) ? absint( $_POST['quantity'] ) : 1;
+                $unit = isset( $_POST['unit'] ) ? sanitize_text_field( $_POST['unit'] ) : '式';
 
-                if ( ! empty( $skill_name ) ) {
-                    $result = $skills_manager->add_skill( $supplier_id, $skill_name, $skill_description, $skill_price, $unit, $category );
+                if ( ! empty( $product_name ) ) {
+                    $result = $skills_manager->add_skill( $supplier_id, $product_name, $unit_price, $quantity, $unit );
                     
                     if ( $result ) {
                         echo '<script>
                         document.addEventListener("DOMContentLoaded", function() {
-                            showSuccessNotification("' . esc_js( __( '職能を追加しました。', 'ktpwp' ) ) . '");
+                            showSuccessNotification("' . esc_js( __( '商品を追加しました。', 'ktpwp' ) ) . '");
                         });
                         </script>';
                     } else {
                         echo '<script>
                         document.addEventListener("DOMContentLoaded", function() {
-                            showErrorNotification("' . esc_js( __( '職能の追加に失敗しました。', 'ktpwp' ) ) . '");
+                            showErrorNotification("' . esc_js( __( '商品の追加に失敗しました。', 'ktpwp' ) ) . '");
                         });
                         </script>';
                     }
@@ -178,25 +177,24 @@ class KTPWP_Supplier_Class {
 
             case 'update_skill':
                 $skill_id = isset( $_POST['skill_id'] ) ? absint( $_POST['skill_id'] ) : 0;
-                $skill_name = isset( $_POST['skill_name'] ) ? sanitize_text_field( $_POST['skill_name'] ) : '';
-                $skill_description = isset( $_POST['skill_description'] ) ? sanitize_textarea_field( $_POST['skill_description'] ) : '';
-                $skill_price = isset( $_POST['skill_price'] ) ? floatval( $_POST['skill_price'] ) : 0;
-                $unit = isset( $_POST['unit'] ) ? sanitize_text_field( $_POST['unit'] ) : '';
-                $category = isset( $_POST['category'] ) ? sanitize_text_field( $_POST['category'] ) : '';
+                $product_name = isset( $_POST['product_name'] ) ? sanitize_text_field( $_POST['product_name'] ) : '';
+                $unit_price = isset( $_POST['unit_price'] ) ? floatval( $_POST['unit_price'] ) : 0;
+                $quantity = isset( $_POST['quantity'] ) ? absint( $_POST['quantity'] ) : 1;
+                $unit = isset( $_POST['unit'] ) ? sanitize_text_field( $_POST['unit'] ) : '式';
 
-                if ( $skill_id > 0 && ! empty( $skill_name ) ) {
-                    $result = $skills_manager->update_skill( $skill_id, $skill_name, $skill_description, $skill_price, $unit, $category );
+                if ( $skill_id > 0 && ! empty( $product_name ) ) {
+                    $result = $skills_manager->update_skill( $skill_id, $product_name, $unit_price, $quantity, $unit );
                     
                     if ( $result ) {
                         echo '<script>
                         document.addEventListener("DOMContentLoaded", function() {
-                            showSuccessNotification("' . esc_js( __( '職能を更新しました。', 'ktpwp' ) ) . '");
+                            showSuccessNotification("' . esc_js( __( '商品を更新しました。', 'ktpwp' ) ) . '");
                         });
                         </script>';
                     } else {
                         echo '<script>
                         document.addEventListener("DOMContentLoaded", function() {
-                            showErrorNotification("' . esc_js( __( '職能の更新に失敗しました。', 'ktpwp' ) ) . '");
+                            showErrorNotification("' . esc_js( __( '商品の更新に失敗しました。', 'ktpwp' ) ) . '");
                         });
                         </script>';
                     }
@@ -212,13 +210,13 @@ class KTPWP_Supplier_Class {
                     if ( $result ) {
                         echo '<script>
                         document.addEventListener("DOMContentLoaded", function() {
-                            showSuccessNotification("' . esc_js( __( '職能を削除しました。', 'ktpwp' ) ) . '");
+                            showSuccessNotification("' . esc_js( __( '商品を削除しました。', 'ktpwp' ) ) . '");
                         });
                         </script>';
                     } else {
                         echo '<script>
                         document.addEventListener("DOMContentLoaded", function() {
-                            showErrorNotification("' . esc_js( __( '職能の削除に失敗しました。', 'ktpwp' ) ) . '");
+                            showErrorNotification("' . esc_js( __( '商品の削除に失敗しました。', 'ktpwp' ) ) . '");
                         });
                         </script>';
                     }
@@ -1551,13 +1549,13 @@ class KTPWP_Supplier_Class {
         $skills_table = $wpdb->prefix . 'ktp_supplier_skills';
         $supplier_table = $wpdb->prefix . 'ktp_supplier';
         
-        // 全ての職能を協力会社名と一緒に取得
+        // 全ての商品を協力会社名と一緒に取得
         $all_skills = $wpdb->get_results("
             SELECT s.*, sup.company_name 
             FROM {$skills_table} s 
             LEFT JOIN {$supplier_table} sup ON s.supplier_id = sup.id 
             WHERE s.is_active = 1 
-            ORDER BY sup.company_name, s.priority_order ASC, s.skill_name ASC
+            ORDER BY sup.company_name, s.priority_order ASC, s.product_name ASC
         ");
         
         // 現在表示中の協力会社IDを取得（詳細表示中のIDを優先）
@@ -1585,7 +1583,7 @@ class KTPWP_Supplier_Class {
             : '未選択';
         
         $html = '<div class="all-skills-overview" style="margin-top: 20px; padding: 15px; background: #f9f9f9; border-radius: 5px;">';
-        $html .= '<h4 style="margin: 0 0 15px 0; color: #333; font-size: 16px;">ID：' . esc_html($title_id) . ' 協力会社の職能・サービス一覧</h4>';
+        $html .= '<h4 style="margin: 0 0 15px 0; color: #333; font-size: 16px;">ID：' . esc_html($title_id) . ' 協力会社の商品・サービス一覧</h4>';
         
         if (!empty($all_skills)) {
             $current_supplier = '';
@@ -1603,27 +1601,17 @@ class KTPWP_Supplier_Class {
                     $html .= '</h5>';
                 }
                 
-                $skill_name = esc_html($skill->skill_name);
-                $skill_description = esc_html($skill->skill_description);
-                $price = number_format(intval($skill->price));
+                $product_name = esc_html($skill->product_name);
+                $unit_price = number_format(floatval($skill->unit_price), 2);
+                $quantity = absint($skill->quantity);
                 $unit = esc_html($skill->unit);
-                $category = esc_html($skill->category);
                 
                 $html .= '<div class="skill-item-overview" style="padding: 8px 12px; margin-bottom: 8px; background: white; border: 1px solid #ddd; border-radius: 3px;">';
                 $html .= '<div style="display: flex; justify-content: space-between; align-items: flex-start;">';
                 $html .= '<div style="flex: 1;">';
-                $html .= '<strong style="color: #333; font-size: 13px;">' . $skill_name . '</strong>';
-                if (!empty($category)) {
-                    $html .= ' <span style="color: #666; font-size: 11px;">(' . $category . ')</span>';
-                }
-                if (!empty($skill_description)) {
-                    $html .= '<div style="color: #666; font-size: 11px; margin: 3px 0;">' . $skill_description . '</div>';
-                }
-                $html .= '<div style="color: #333; font-size: 12px; margin-top: 3px;">';
-                $html .= '価格: ' . $price . '円';
-                if (!empty($unit)) {
-                    $html .= ' / ' . $unit;
-                }
+                $html .= '<strong style="color: #333; font-size: 13px;">' . $product_name . '</strong>';
+                $html .= '<div style="color: #666; font-size: 11px; margin: 3px 0;">';
+                $html .= '単価: ' . $unit_price . '円 | 数量: ' . $quantity . ' | 単位: ' . $unit;
                 $html .= '</div>';
                 $html .= '</div>';
                 $html .= '</div>';
@@ -1636,13 +1624,13 @@ class KTPWP_Supplier_Class {
             
         } else {
             $html .= '<div style="color: #666; font-style: italic; text-align: center; padding: 20px;">';
-            $html .= 'まだ職能・サービスが登録されていません。<br>';
-            $html .= '協力会社を選択して職能・サービスを追加してください。';
+            $html .= 'まだ商品・サービスが登録されていません。<br>';
+            $html .= '協力会社を選択して商品・サービスを追加してください。';
             $html .= '</div>';
         }
         
         $html .= '<div style="margin-top: 15px; padding-top: 10px; border-top: 1px solid #ddd; color: #666; font-size: 12px; text-align: center;">';
-        $html .= '※ 職能・サービスの追加・編集は、協力会社を選択してから行ってください。';
+        $html .= '※ 商品・サービスの追加・編集は、協力会社を選択してから行ってください。';
         $html .= '</div>';
         
         $html .= '</div>';
