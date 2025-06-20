@@ -399,10 +399,6 @@ class KTPWP_Ajax {
      * Ajax: 自動保存アイテム処理
      */
     public function ajax_auto_save_item() {
-        // 詳細デバッグログ開始
-        error_log('KTPWP Auto-Save Debug === 自動保存処理開始 ===');
-        error_log('KTPWP Auto-Save Debug - POST data: ' . print_r($_POST, true));
-        
         // 編集者以上の権限チェック
         if (!current_user_can('edit_posts') && !current_user_can('ktpwp_access')) {
             $this->log_ajax_error('Auto-save permission check failed');
@@ -441,14 +437,6 @@ class KTPWP_Ajax {
         $field_value = $this->sanitize_ajax_input('field_value', 'text');
         $order_id = $this->sanitize_ajax_input('order_id', 'int');
 
-        // 詳細デバッグ
-        error_log('KTPWP Auto-Save Debug - Parsed values:');
-        error_log('  item_type: ' . $item_type);
-        error_log('  item_id: ' . $item_id);
-        error_log('  field_name: ' . $field_name);
-        error_log('  field_value: ' . $field_value . ' (type: ' . gettype($field_value) . ')');
-        error_log('  order_id: ' . $order_id);
-
         // バリデーション
         if (!in_array($item_type, array('invoice', 'cost'), true)) {
             $this->log_ajax_error('Invalid item type', array('type' => $item_type));
@@ -465,14 +453,10 @@ class KTPWP_Ajax {
 
         try {
             if ($item_type === 'invoice') {
-                error_log('KTPWP Auto-Save Debug - Updating invoice item ID:' . $item_id . ' field:' . $field_name . ' value:' . $field_value);
                 $result = $order_items->update_item_field('invoice', $item_id, $field_name, $field_value);
             } else {
-                error_log('KTPWP Auto-Save Debug - Updating cost item ID:' . $item_id . ' field:' . $field_name . ' value:' . $field_value);
                 $result = $order_items->update_item_field('cost', $item_id, $field_name, $field_value);
             }
-
-            error_log('KTPWP Auto-Save Debug - Update result: ' . ($result ? 'SUCCESS' : 'FAILED'));
 
             if ($result) {
                 wp_send_json_success(array(
@@ -801,7 +785,7 @@ class KTPWP_Ajax {
      * Ajax: サービス一覧取得
      */
     public function ajax_get_service_list() {
-        error_log('[AJAX DEBUG] ajax_get_service_list method called');
+
         
         // 権限チェック
         if (!current_user_can('edit_posts') && !current_user_can('ktpwp_access')) {

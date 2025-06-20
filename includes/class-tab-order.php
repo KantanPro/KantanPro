@@ -1720,9 +1720,7 @@ $content .= '</div>';
         $project_name = !empty($order_data->project_name) ? $order_data->project_name : '案件';
         
         // デバッグ: 文字化け対策
-        error_log('KTPWP Preview Debug - customer_name: ' . $order_data->customer_name);
-        error_log('KTPWP Preview Debug - user_name: ' . $order_data->user_name);
-        error_log('KTPWP Preview Debug - project_name: ' . $project_name);
+
         
         // 請求項目の取得
         $invoice_items_html = $this->Generate_Invoice_Items_For_Preview($order_data->id);
@@ -1827,18 +1825,10 @@ $content .= '</div>';
      * @since 1.0.0
      */
     private function Generate_Invoice_Items_For_Preview($order_id) {
-        // プレビュー生成開始のログ
-        error_log('KTPWP Preview Debug === プレビュー生成開始 === Order ID: ' . $order_id);
-        
         // メール生成と同じ方法でデータを取得
         $invoice_items = $this->Get_Invoice_Items($order_id);
-        
-        // 生データの詳細ログ
-        error_log('KTPWP Preview Debug - 取得された項目数: ' . count($invoice_items));
-        error_log('KTPWP Preview Debug - 取得データ: ' . print_r($invoice_items, true));
 
         if (empty($invoice_items)) {
-            error_log('KTPWP Preview Debug - 警告: 請求項目が空です');
             return '<div style="text-align: center; color: #666; padding: 20px;">請求項目が登録されていません</div>';
         }
 
@@ -1865,29 +1855,16 @@ $content .= '</div>';
             
             // 詳細デバッグ: [>]ボタンで追加された項目を特定
             $item_id = isset($item['id']) ? $item['id'] : 'N/A';
-            error_log('KTPWP Preview Debug ===== 項目処理開始 =====');
-            error_log('KTPWP Preview Debug - Item ID: ' . $item_id);
-            error_log('KTPWP Preview Debug - Product: ' . $product_name);
-            error_log('KTPWP Preview Debug - Raw Price from DB: ' . (isset($item['price']) ? $item['price'] : 'NULL') . ' (type: ' . gettype(isset($item['price']) ? $item['price'] : null) . ')');
-            error_log('KTPWP Preview Debug - Raw Quantity from DB: ' . (isset($item['quantity']) ? $item['quantity'] : 'NULL') . ' (type: ' . gettype(isset($item['quantity']) ? $item['quantity'] : null) . ')');
-            error_log('KTPWP Preview Debug - Raw Amount from DB: ' . (isset($item['amount']) ? $item['amount'] : 'NULL') . ' (type: ' . gettype(isset($item['amount']) ? $item['amount'] : null) . ')');
-            error_log('KTPWP Preview Debug - Raw Unit from DB: ' . (isset($item['unit']) ? $item['unit'] : 'NULL'));
             
             // 金額が設定されているが単価が0の場合、逆算して単価を求める
             if ($price == 0 && $amount > 0 && $quantity > 0) {
                 $price = $amount / $quantity;
-                error_log('KTPWP Preview Debug - 単価を逆算: ' . $price . ' (金額 ' . $amount . ' ÷ 数量 ' . $quantity . ')');
             }
             
             // 金額が0の場合は単価×数量で計算
             if ($amount == 0 && $price > 0 && $quantity > 0) {
                 $amount = $price * $quantity;
-                error_log('KTPWP Preview Debug - 金額を計算: ' . $amount . ' (単価 ' . $price . ' × 数量 ' . $quantity . ')');
             }
-            
-            error_log('KTPWP Preview Debug - Final Price: ' . $price);
-            error_log('KTPWP Preview Debug - Final Quantity: ' . $quantity);
-            error_log('KTPWP Preview Debug - Final Amount: ' . $amount);
             
             $total_amount += $amount;
 

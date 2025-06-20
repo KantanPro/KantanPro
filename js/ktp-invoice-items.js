@@ -742,13 +742,7 @@
             const orderId = $('input[name="order_id"]').val() || $('#order_id').val();
 
             if (window.ktpDebugMode) {
-                console.log('Invoice product name auto-save debug:', {
-                    productName: productName,
-                    itemId: itemId,
-                    orderId: orderId,
-                    hasNonce: typeof ktp_ajax_nonce !== 'undefined',
-                    hasAjaxurl: typeof ajaxurl !== 'undefined'
-                });
+                // Debug mode only if explicitly enabled
             }
 
             if (orderId) {
