@@ -396,9 +396,11 @@ class KTPWP_Supplier_Skills {
         $html .= '</form>';
         $html .= '</div>';
 
-        // 職能リストを追加フォームの後に表示
+        // 職能リストを追加フォームの後に表示（協力会社リストと同じスタイルに統一）
         if ( ! empty( $skills ) ) {
-            $html .= '<div class="skills-list" style="margin-top: 15px;">';
+            $html .= '<div class="ktp_data_skill_list_box" style="margin-top: 15px;">';
+            
+            $skill_index = 0;
             foreach ( $skills as $skill ) {
                 $skill_id = esc_attr( $skill['id'] );
                 $product_name = esc_html( $skill['product_name'] );
@@ -406,25 +408,38 @@ class KTPWP_Supplier_Skills {
                 $quantity = absint( $skill['quantity'] );
                 $unit = esc_html( $skill['unit'] );
 
-                $html .= '<div class="skill-item" style="padding: 10px; margin-bottom: 10px; background: white; border: 1px solid #ddd; border-radius: 3px; position: relative;">';
-                $html .= '<div style="display: flex; justify-content: space-between; align-items: flex-start;">';
-                $html .= '<div style="flex: 1;">';
-                $html .= '<strong style="color: #333; font-size: 14px;">' . $product_name . '</strong><br>';
-                $html .= '<div style="color: #666; font-size: 12px; margin: 5px 0;">';
-                $html .= '単価: ' . $unit_price . '円 | 数量: ' . $quantity . ' | 単位: ' . $unit;
+                $html .= '<div class="ktp_data_list_item skill-item">';
+                
+                // 商品情報を1行で表示（商品名と詳細を統合）
+                $html .= '<div style="flex: 1; min-width: 0;">';
+                $html .= '<div style="font-weight: 600; color: #2c3e50; line-height: 1.4; word-wrap: break-word;">';
+                $html .= $product_name . ' ';
+                $html .= '<span style="color: #666; font-size: 13px; font-weight: normal;">';
+                $html .= '単価: <strong>' . $unit_price . '円</strong> ';
+                $html .= '数量: <strong>' . $quantity . '</strong> ';
+                $html .= '単位: <strong>' . $unit . '</strong>';
+                $html .= '</span>';
                 $html .= '</div>';
                 $html .= '</div>';
-                $html .= '<div style="margin-left: 10px;">';
-                $html .= '<button type="button" class="delete-skill-btn" data-skill-id="' . $skill_id . '" style="background: #dc3545; color: white; border: none; padding: 4px 8px; border-radius: 3px; cursor: pointer; font-size: 12px;" title="削除">';
-                $html .= '<span class="material-symbols-outlined" style="font-size: 14px;">delete</span>';
+                
+                // 削除ボタン
+                $html .= '<div class="delete-skill-btn-container">';
+                $html .= '<button type="button" class="delete-skill-btn" data-skill-id="' . $skill_id . '" ';
+                $html .= 'style="background: #dc3545; color: white; border: none; padding: 6px 8px; border-radius: 3px; cursor: pointer; font-size: 12px; transition: background-color 0.2s ease; margin-left: 12px;" ';
+                $html .= 'title="削除" onmouseover="this.style.backgroundColor=\'#c82333\'" onmouseout="this.style.backgroundColor=\'#dc3545\'">';
+                $html .= '<span class="material-symbols-outlined" style="font-size: 16px;">delete</span>';
                 $html .= '</button>';
                 $html .= '</div>';
+                
                 $html .= '</div>';
-                $html .= '</div>';
+                $skill_index++;
             }
             $html .= '</div>';
         } else {
-            $html .= '<div style="color: #666; font-style: italic; margin-top: 15px;">まだ商品・サービスが登録されていません。</div>';
+            $html .= '<div class="ktp_data_list_item" style="color: #666; font-style: italic; margin-top: 15px; padding: 20px; text-align: center; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 4px;">';
+            $html .= '<span class="material-symbols-outlined" style="font-size: 20px; vertical-align: middle; margin-right: 8px; color: #999;">info</span>';
+            $html .= 'まだ商品・サービスが登録されていません。';
+            $html .= '</div>';
         }
 
         // Add JavaScript for delete functionality

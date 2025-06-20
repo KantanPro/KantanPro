@@ -766,6 +766,12 @@ form > .create-order-btn {
     width: 50%;
     float: right;
   }
+  
+  /* 職能リストは常に100%幅を維持 */
+  .ktp_data_skill_list_box {
+    width: 100% !important;
+    float: none !important;
+  }
 }
 
 /* フロートのクリアフィックス - 新しいクラス名用 */
@@ -1574,7 +1580,6 @@ input[name="tab_item"] {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  margin-left: 10px;
 }
 
 /* アップロードボタンのホバー時 */
@@ -2481,7 +2486,7 @@ body.ktpwp-modal-open {
     border-radius: 0;
     padding: 10px;
        background-color: #fafafa;
-    margin-bottom: 15px;
+       margin-bottom: 15px;
     box-sizing: border-box;
 }
 
@@ -2881,4 +2886,80 @@ body.ktpwp-modal-open {
     padding: 8px 12px;
     font-size: 13px;
   }
+}
+
+/* ==========================================================================
+   Supplier Skills List Styles
+   ========================================================================== */
+
+/* 職能リストコンテナ - 100%幅に設定 */
+.ktp_data_skill_list_box {
+    width: 100% !important;
+    box-sizing: border-box;
+    display: block;
+    
+    /* 供給者リストと同じスタイリングを継承 */
+    border: 1px solid #e5e7eb;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 20px;
+    background-color: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+/* 職能リスト項目の基本スタイル */
+.ktp_data_skill_list_box .ktp_data_list_item {
+    line-height: 1.5;
+    border-bottom: 1px solid #e5e7eb;
+    margin: 0;
+    padding: 12px 16px;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+    position: relative;
+    font-size: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+/* 職能リストの交互の行に色を付ける */
+.ktp_data_skill_list_box > .ktp_data_list_item:nth-child(odd) {
+    background-color: #f9fafb; /* 薄いグレーブルー */
+}
+
+.ktp_data_skill_list_box > .ktp_data_list_item:nth-child(even) {
+    background-color: #ffffff; /* 白 */
+}
+
+/* ホバー時の背景色変更 */
+.ktp_data_skill_list_box .ktp_data_list_item:hover {
+    background-color: #f0f7ff !important; /* 薄い青 */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03); /* 微妙な影を追加 */
+    z-index: 1; /* ホバー時に前面に */
+}
+
+/* 削除ボタンコンテナ */
+.ktp_data_skill_list_box .delete-skill-btn-container {
+    flex-shrink: 0;
+}
+
+/* 職能リスト項目の詳細情報のレスポンシブ対応 */
+@media screen and (max-width: 768px) {
+    .ktp_data_skill_list_box .skill-item {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+    }
+    
+    .ktp_data_skill_list_box .skill-item .delete-skill-btn {
+        align-self: flex-end;
+        margin-top: 8px;
+        margin-left: 0 !important;
+    }
+    
+    /* モバイルでは商品名と詳細を改行 */
+    .ktp_data_skill_list_box .skill-item > div {
+        word-break: break-word;
+        overflow-wrap: break-word;
+    }
 }
