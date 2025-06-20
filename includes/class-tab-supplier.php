@@ -538,12 +538,26 @@ class KTPWP_Supplier_Class {
                     case "duplicated":
                         showSuccessNotification("' . esc_js(__('複製しました。', 'ktpwp')) . '");
                         break;
+                    case "skill_added":
+                        showSuccessNotification("' . esc_js(__('商品・サービスを追加しました。', 'ktpwp')) . '");
+                        break;
+                    case "skill_deleted":
+                        showSuccessNotification("' . esc_js(__('商品・サービスを削除しました。', 'ktpwp')) . '");
+                        break;
                     case "found":
                         showInfoNotification("' . esc_js(__('検索結果を表示しています。', 'ktpwp')) . '");
                         break;
                     case "not_found":
                         showWarningNotification("' . esc_js(__('該当する協力会社が見つかりませんでした。', 'ktpwp')) . '");
                         break;
+                }
+                // URLからmessageパラメータを削除
+                if (window.history.replaceState) {
+                    var currentUrl = new URL(window.location.href);
+                    if (currentUrl.searchParams.has("message")) {
+                        currentUrl.searchParams.delete("message");
+                        window.history.replaceState({ path: currentUrl.href }, "", currentUrl.href);
+                    }
                 }
             });
             </script>';
@@ -1391,11 +1405,22 @@ class KTPWP_Supplier_Class {
         // Security check - verify nonce
         if ( ! isset( $post_data['ktp_skills_nonce'] ) ||
              ! wp_verify_nonce( $post_data['ktp_skills_nonce'], 'ktp_skills_action' ) ) {
+            // Display security error message and stop execution
+            echo '<script>
+            document.addEventListener("DOMContentLoaded", function() {
+                showErrorNotification("セキュリティチェックに失敗しました。ページを更新して再度お試しください。");
+            });
+            </script>';
             return;
         }
 
         // Check user permissions
         if ( ! current_user_can( 'edit_posts' ) ) {
+            echo '<script>
+            document.addEventListener("DOMContentLoaded", function() {
+                showErrorNotification("この操作を行う権限がありません。");
+            });
+            </script>';
             return;
         }
 
@@ -1455,11 +1480,11 @@ class KTPWP_Supplier_Class {
         $result = $skills_manager->add_skill( $supplier_id, $product_name, $unit_price, $quantity, $unit );
 
         if ( $result ) {
-            echo '<script>
-            document.addEventListener("DOMContentLoaded", function() {
-                showSuccessNotification("商品・サービスを追加しました。");
-            });
-            </script>';
+            // POSTデータ重複送信防止のためリダイレクト
+            $redirect_url = remove_query_arg( array( 'message' ), $_SERVER['REQUEST_URI'] );
+            $redirect_url = add_query_arg( 'message', 'skill_added', $redirect_url );
+            wp_redirect( $redirect_url );
+            exit;
         } else {
             echo '<script>
             document.addEventListener("DOMContentLoaded", function() {
@@ -1509,11 +1534,11 @@ class KTPWP_Supplier_Class {
         $result = $skills_manager->delete_skill( $skill_id );
 
         if ( $result ) {
-            echo '<script>
-            document.addEventListener("DOMContentLoaded", function() {
-                showSuccessNotification("商品・サービスを削除しました。");
-            });
-            </script>';
+            // POSTデータ重複送信防止のためリダイレクト
+            $redirect_url = remove_query_arg( array( 'message' ), $_SERVER['REQUEST_URI'] );
+            $redirect_url = add_query_arg( 'message', 'skill_deleted', $redirect_url );
+            wp_redirect( $redirect_url );
+            exit;
         } else {
             echo '<script>
             document.addEventListener("DOMContentLoaded", function() {
