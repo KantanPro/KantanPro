@@ -2841,125 +2841,180 @@ body.ktpwp-modal-open {
     }
 }
 
-/* 職能追加フォーム（1行バー型）のスタイル */
-.add-skill-form form {
-  background: #f8f9fa;
-  border: 1px solid #e9ecef;
-  border-radius: 8px;
-  padding: 12px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-/* 職能追加フォームのレスポンシブ対応 */
-@media (max-width: 768px) {
-  .add-skill-form form {
-    flex-direction: column;
-    gap: 8px;
-    padding: 10px;
-  }
-  
-  .add-skill-form form > div {
-    width: 100% !important;
-    flex: none !important;
-    min-width: auto !important;
-  }
-  
-  .add-skill-form form input {
-    font-size: 16px; /* iOSのズーム防止 */
-  }
-}
-
-@media (max-width: 480px) {
-  .add-skill-form form {
-    padding: 8px;
-    gap: 6px;
-  }
-  
-  .add-skill-form form input {
-    padding: 6px 8px;
-  }
-  
-  .add-skill-form form button {
-    padding: 8px 12px;
-    font-size: 13px;
-  }
-}
-
 /* ==========================================================================
-   Supplier Skills List Styles
+   Skills List Pagination Styles
    ========================================================================== */
 
-/* 職能リストコンテナ - 100%幅に設定 */
-.ktp_data_skill_list_box {
-    width: 100% !important;
-    box-sizing: border-box;
-    display: block;
-    
-    /* 供給者リストと同じスタイリングを継承 */
+/* 職能リストページネーションコンテナ */
+.ktp-skills-pagination {
+    margin-top: 15px;
+    padding: 15px 20px;
+    background: #f8f9fa;
     border: 1px solid #e5e7eb;
     border-radius: 4px;
-    overflow: hidden;
-    margin-bottom: 20px;
-    background-color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
-/* 職能リスト項目の基本スタイル */
-.ktp_data_skill_list_box .ktp_data_list_item {
-    line-height: 1.5;
-    border-bottom: 1px solid #e5e7eb;
-    margin: 0;
-    padding: 12px 16px;
-    transition: background-color 0.2s ease, transform 0.1s ease;
-    position: relative;
+/* ページネーション情報表示 */
+.ktp-skills-pagination .pagination-info {
+    color: #6b7280;
     font-size: 14px;
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
-}
-
-/* 職能リストの交互の行に色を付ける */
-.ktp_data_skill_list_box > .ktp_data_list_item:nth-child(odd) {
-    background-color: #f9fafb; /* 薄いグレーブルー */
-}
-
-.ktp_data_skill_list_box > .ktp_data_list_item:nth-child(even) {
-    background-color: #ffffff; /* 白 */
-}
-
-/* ホバー時の背景色変更 */
-.ktp_data_skill_list_box .ktp_data_list_item:hover {
-    background-color: #f0f7ff !important; /* 薄い青 */
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03); /* 微妙な影を追加 */
-    z-index: 1; /* ホバー時に前面に */
-}
-
-/* 削除ボタンコンテナ */
-.ktp_data_skill_list_box .delete-skill-btn-container {
+    font-weight: 500;
     flex-shrink: 0;
 }
 
-/* 職能リスト項目の詳細情報のレスポンシブ対応 */
-@media screen and (max-width: 768px) {
+/* ページネーションボタングループ */
+.ktp-skills-pagination .pagination-buttons {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+/* ページネーションボタンの基本スタイル */
+.ktp-skills-pagination-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 12px;
+    min-width: 40px;
+    text-decoration: none;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    border: none;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+/* アクティブなページボタン */
+.ktp-skills-pagination-btn.current {
+    background: #0073aa;
+    color: white;
+    font-weight: 600;
+}
+
+/* 無効なボタン */
+.ktp-skills-pagination-btn.disabled {
+    background: #e5e7eb;
+    color: #9ca3af;
+    cursor: not-allowed;
+}
+
+/* 通常のページネーションボタン */
+.ktp-skills-pagination-btn:not(.current):not(.disabled) {
+    background: #f8f9fa;
+    color: #374151;
+    border: 1px solid #d1d5db;
+}
+
+/* ナビゲーションボタン（前/次） */
+.ktp-skills-pagination-btn:not(.disabled):not(.current):not([style*="border"]) {
+    background: #0073aa;
+    color: white;
+}
+
+/* レスポンシブ対応 */
+@media screen and (max-width: 600px) {
+    .ktp-skills-pagination {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 15px;
+        padding: 15px;
+    }
+    
+    .ktp-skills-pagination .pagination-info {
+        text-align: center;
+        order: 2;
+        margin-top: 5px;
+    }
+    
+    .ktp-skills-pagination .pagination-buttons {
+        justify-content: center;
+        order: 1;
+        gap: 6px;
+    }
+    
+    .ktp-skills-pagination-btn {
+        padding: 10px 14px;
+        font-size: 16px;
+        min-width: 44px;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .ktp-skills-pagination {
+        padding: 12px;
+    }
+    
+    .ktp-skills-pagination .pagination-buttons {
+        gap: 4px;
+    }
+    
+    .ktp-skills-pagination-btn {
+        padding: 8px 10px;
+        min-width: 36px;
+        font-size: 14px;
+    }
+    
+    .ktp-skills-pagination .pagination-info {
+        font-size: 13px;
+    }
+}
+
+/* 職能リストアイテムの1行表示強制 */
+.ktp_data_skill_list_box .skill-item {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    min-height: 48px !important;
+    max-height: 48px !important;
+    overflow: hidden !important;
+    white-space: nowrap !important;
+    line-height: 1.2 !important;
+}
+
+.ktp_data_skill_list_box .skill-item > div:first-child {
+    flex: 1 !important;
+    min-width: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+.ktp_data_skill_list_box .skill-item span {
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+.ktp_data_skill_list_box .skill-item .delete-skill-btn-container {
+    flex-shrink: 0 !important;
+    margin-left: 12px !important;
+}
+
+/* スマートフォン対応 */
+@media screen and (max-width: 600px) {
     .ktp_data_skill_list_box .skill-item {
-        flex-direction: column !important;
-        align-items: flex-start !important;
+        padding: 8px 12px !important;
+        min-height: 44px !important;
+        max-height: 44px !important;
     }
     
-    .ktp_data_skill_list_box .skill-item .delete-skill-btn {
-        align-self: flex-end;
-        margin-top: 8px;
-        margin-left: 0 !important;
+    .ktp_data_skill_list_box .skill-item > div:first-child {
+        gap: 4px !important;
     }
     
-    /* モバイルでは商品名と詳細を改行 */
-    .ktp_data_skill_list_box .skill-item > div {
-        word-break: break-word;
-        overflow-wrap: break-word;
+    .ktp_data_skill_list_box .skill-item span {
+        font-size: 12px !important;
     }
 }
