@@ -70,7 +70,7 @@ class KTPWP_Supplier_Skills {
         global $wpdb;
 
         $table_name = $wpdb->prefix . 'ktp_supplier_skills';
-        $my_table_version = '2.0.0'; // Updated for new product structure
+        $my_table_version = '2.1.0'; // Updated for frequency column
         $option_name = 'ktp_supplier_skills_table_version';
 
         // Check if table needs to be created or updated
@@ -86,6 +86,7 @@ class KTPWP_Supplier_Skills {
                 unit_price DECIMAL(10,2) NOT NULL DEFAULT 0 COMMENT '単価',
                 quantity INT NOT NULL DEFAULT 1 COMMENT '数量',
                 unit VARCHAR(50) NOT NULL DEFAULT '式' COMMENT '単位',
+                frequency INT NOT NULL DEFAULT 0 COMMENT '頻度',
                 priority_order INT NOT NULL DEFAULT 0,
                 is_active TINYINT(1) NOT NULL DEFAULT 1,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
@@ -95,7 +96,8 @@ class KTPWP_Supplier_Skills {
                 KEY is_active (is_active),
                 KEY priority_order (priority_order),
                 KEY product_name (product_name),
-                KEY unit_price (unit_price)
+                KEY unit_price (unit_price),
+                KEY frequency (frequency)
             ) {$charset_collate}";
 
             // Include upgrade functions
@@ -119,6 +121,31 @@ class KTPWP_Supplier_Skills {
 
             error_log( 'KTPWP: dbDelta function not available' );
             return false;
+        } else {
+            // Table exists, check for missing columns (specifically for frequency column)
+            $existing_columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$table_name}`", 0 );
+            
+            // Check if frequency column exists
+            if ( ! in_array( 'frequency', $existing_columns, true ) ) {
+                // Add frequency column
+                $alter_query = "ALTER TABLE `{$table_name}` ADD COLUMN frequency INT NOT NULL DEFAULT 0 COMMENT '頻度' AFTER unit";
+                $result = $wpdb->query( $alter_query );
+                
+                if ( $result === false ) {
+                    error_log( 'KTPWP: Failed to add frequency column to supplier skills table' );
+                } else {
+                    // Add index for frequency column
+                    $index_query = "ALTER TABLE `{$table_name}` ADD KEY frequency (frequency)";
+                    $wpdb->query( $index_query );
+                    
+                    if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                        error_log( 'KTPWP: Successfully added frequency column to supplier skills table' );
+                    }
+                }
+            }
+            
+            // Update version after column addition
+            update_option( $option_name, $my_table_version );
         }
 
         return true;
@@ -143,7 +170,7 @@ class KTPWP_Supplier_Skills {
 
         $results = $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT * FROM {$table_name} WHERE supplier_id = %d AND is_active = 1 ORDER BY priority_order ASC, product_name ASC",
+                "SELECT * FROM {$table_name} WHERE supplier_id = %d AND is_active = 1 ORDER BY frequency DESC, priority_order ASC, product_name ASC",
                 $supplier_id
             ),
             ARRAY_A
@@ -161,7 +188,7 @@ class KTPWP_Supplier_Skills {
      * @param int $offset Starting position
      * @return array Array of skills data
      */
-    public function get_supplier_skills_paginated( $supplier_id, $limit = 10, $offset = 0 ) {
+    public function get_supplier_skills_paginated( $supplier_id, $limit = 10, $offset = 0, $sort_by = 'frequency', $sort_order = 'DESC' ) {
         global $wpdb;
 
         if ( empty( $supplier_id ) || $supplier_id <= 0 ) {
@@ -173,9 +200,14 @@ class KTPWP_Supplier_Skills {
         $limit = absint( $limit );
         $offset = absint( $offset );
 
+        // Sanitize sort parameters
+        $allowed_sort_columns = array( 'id', 'product_name', 'frequency' );
+        $sort_by = in_array( $sort_by, $allowed_sort_columns ) ? $sort_by : 'frequency';
+        $sort_order = ( strtoupper( $sort_order ) === 'ASC' ) ? 'ASC' : 'DESC';
+
         $results = $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT * FROM {$table_name} WHERE supplier_id = %d AND is_active = 1 ORDER BY priority_order ASC, product_name ASC LIMIT %d OFFSET %d",
+                "SELECT * FROM {$table_name} WHERE supplier_id = %d AND is_active = 1 ORDER BY {$sort_by} {$sort_order}, priority_order ASC, product_name ASC LIMIT %d OFFSET %d",
                 $supplier_id,
                 $limit,
                 $offset
@@ -222,9 +254,10 @@ class KTPWP_Supplier_Skills {
      * @param float $unit_price Unit price
      * @param int $quantity Quantity (default: 1)
      * @param string $unit Unit (default: '式')
+     * @param int $frequency Frequency (default: 0)
      * @return int|false Product ID on success, false on failure
      */
-    public function add_skill( $supplier_id, $product_name, $unit_price = 0, $quantity = 1, $unit = '式' ) {
+    public function add_skill( $supplier_id, $product_name, $unit_price = 0, $quantity = 1, $unit = '式', $frequency = 0 ) {
         global $wpdb;
 
         if ( empty( $supplier_id ) || $supplier_id <= 0 || empty( $product_name ) ) {
@@ -241,6 +274,7 @@ class KTPWP_Supplier_Skills {
             'unit_price' => floatval( $unit_price ),
             'quantity' => absint( $quantity ) ?: 1,
             'unit' => sanitize_text_field( $unit ) ?: '式',
+            'frequency' => absint( $frequency ),
             'priority_order' => 0,
             'is_active' => 1,
             'created_at' => current_time( 'mysql' ),
@@ -250,7 +284,7 @@ class KTPWP_Supplier_Skills {
         $result = $wpdb->insert(
             $table_name,
             $sanitized_data,
-            array( '%d', '%s', '%f', '%d', '%s', '%d', '%d', '%s', '%s' )
+            array( '%d', '%s', '%f', '%d', '%s', '%d', '%d', '%d', '%s', '%s' )
         );
 
         if ( $result === false ) {
@@ -270,9 +304,10 @@ class KTPWP_Supplier_Skills {
      * @param float $unit_price Unit price
      * @param int $quantity Quantity
      * @param string $unit Unit
+     * @param int $frequency Frequency (default: 0)
      * @return bool True on success, false on failure
      */
-    public function update_skill( $skill_id, $product_name, $unit_price = 0, $quantity = 1, $unit = '式' ) {
+    public function update_skill( $skill_id, $product_name, $unit_price = 0, $quantity = 1, $unit = '式', $frequency = 0 ) {
         global $wpdb;
 
         if ( empty( $skill_id ) || $skill_id <= 0 || empty( $product_name ) ) {
@@ -288,6 +323,7 @@ class KTPWP_Supplier_Skills {
             'unit_price' => floatval( $unit_price ),
             'quantity' => absint( $quantity ) ?: 1,
             'unit' => sanitize_text_field( $unit ) ?: '式',
+            'frequency' => absint( $frequency ),
             'updated_at' => current_time( 'mysql' )
         );
 
@@ -295,7 +331,7 @@ class KTPWP_Supplier_Skills {
             $table_name,
             $sanitized_data,
             array( 'id' => $skill_id ),
-            array( '%s', '%f', '%d', '%s', '%s' ),
+            array( '%s', '%f', '%d', '%s', '%d', '%s' ),
             array( '%d' )
         );
 
@@ -415,6 +451,25 @@ class KTPWP_Supplier_Skills {
             return '';
         }
 
+        // ソート順の取得（デフォルトは頻度の降順）
+        $sort_by = 'frequency';
+        $sort_order = 'DESC';
+
+        if ( isset( $_GET['skills_sort_by'] ) ) {
+            $sort_by = sanitize_text_field( $_GET['skills_sort_by'] );
+            // 安全なカラム名のみ許可（SQLインジェクション対策）
+            $allowed_columns = array( 'id', 'product_name', 'frequency' );
+            if ( ! in_array( $sort_by, $allowed_columns ) ) {
+                $sort_by = 'frequency'; // 不正な値の場合はデフォルトに戻す
+            }
+        }
+
+        if ( isset( $_GET['skills_sort_order'] ) ) {
+            $sort_order_param = strtoupper( sanitize_text_field( $_GET['skills_sort_order'] ) );
+            // ASCかDESCのみ許可
+            $sort_order = ( $sort_order_param === 'ASC' ) ? 'ASC' : 'DESC';
+        }
+
         // ページネーション設定
         // 一般設定から表示件数を取得（設定クラスが利用可能な場合）
         if ( class_exists( 'KTP_Settings' ) ) {
@@ -427,8 +482,8 @@ class KTPWP_Supplier_Skills {
         $current_page = max( 1, $current_page );
         $offset = ( $current_page - 1 ) * $query_limit;
 
-        // 職能データを取得（ページネーション付き）
-        $skills = $this->get_supplier_skills_paginated( $supplier_id, $query_limit, $offset );
+        // 職能データを取得（ページネーション付き、ソート順も含む）
+        $skills = $this->get_supplier_skills_paginated( $supplier_id, $query_limit, $offset, $sort_by, $sort_order );
         $total_skills = $this->get_supplier_skills_count( $supplier_id );
         $total_pages = ceil( $total_skills / $query_limit );
 
@@ -484,17 +539,20 @@ class KTPWP_Supplier_Skills {
                 $unit_price = number_format( floatval( $skill['unit_price'] ), 2 );
                 $quantity = absint( $skill['quantity'] );
                 $unit = esc_html( $skill['unit'] );
+                $frequency = isset( $skill['frequency'] ) ? absint( $skill['frequency'] ) : 0;
 
                 $html .= '<div class="ktp_data_list_item skill-item" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; line-height: 1.2; min-height: 48px;">';
                 
-                // 商品情報を完全に1行で表示
+                // 商品情報を完全に1行で表示（IDを先頭に、頻度を末尾に追加）
                 $html .= '<div style="flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">';
+                $html .= '<span style="color: #999; font-size: 12px; font-weight: normal; flex-shrink: 0;">ID: ' . $skill_id . '</span>';
                 $html .= '<span style="font-weight: 600; color: #2c3e50; flex-shrink: 0;">' . $product_name . '</span>';
                 $html .= '<span style="color: #666; font-size: 13px; font-weight: normal; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">';
                 $html .= '単価: <strong>' . $unit_price . '円</strong> | ';
                 $html .= '数量: <strong>' . $quantity . '</strong> | ';
                 $html .= '単位: <strong>' . $unit . '</strong>';
                 $html .= '</span>';
+                $html .= '<span style="color: #666; font-size: 13px; font-weight: normal; flex-shrink: 0; margin-left: auto;">頻度(' . $frequency . ')</span>';
                 $html .= '</div>';
                 
                 // 削除ボタン
@@ -563,6 +621,10 @@ class KTPWP_Supplier_Skills {
             return '';
         }
 
+        // 現在のソートパラメータを取得
+        $sort_by = isset( $_GET['skills_sort_by'] ) ? sanitize_text_field( $_GET['skills_sort_by'] ) : 'frequency';
+        $sort_order = isset( $_GET['skills_sort_order'] ) ? sanitize_text_field( $_GET['skills_sort_order'] ) : 'DESC';
+
         // 他のタブと統一した正円ボタンデザインのページネーション
         $pagination_html = '<div class="pagination" style="text-align: center; margin: 20px 0; padding: 20px 0;">';
         
@@ -594,7 +656,9 @@ class KTPWP_Supplier_Skills {
             $prev_url = add_query_arg( array(
                 'data_id' => $supplier_id,
                 'query_post' => 'update',
-                'skills_page' => $prev_page
+                'skills_page' => $prev_page,
+                'skills_sort_by' => $sort_by,
+                'skills_sort_order' => $sort_order
             ), $base_page_url );
             
             $pagination_html .= '<a href="' . esc_url( $prev_url ) . '" style="' . $button_style . '" ' . $hover_effect . '>‹</a>';
@@ -609,7 +673,9 @@ class KTPWP_Supplier_Skills {
             $first_url = add_query_arg( array(
                 'data_id' => $supplier_id,
                 'query_post' => 'update',
-                'skills_page' => 1
+                'skills_page' => 1,
+                'skills_sort_by' => $sort_by,
+                'skills_sort_order' => $sort_order
             ), $base_page_url );
             
             $pagination_html .= '<a href="' . esc_url( $first_url ) . '" style="' . $button_style . '" ' . $hover_effect . '>1</a>';
@@ -627,7 +693,9 @@ class KTPWP_Supplier_Skills {
                 $page_url = add_query_arg( array(
                     'data_id' => $supplier_id,
                     'query_post' => 'update',
-                    'skills_page' => $i
+                    'skills_page' => $i,
+                    'skills_sort_by' => $sort_by,
+                    'skills_sort_order' => $sort_order
                 ), $base_page_url );
                 
                 $pagination_html .= '<a href="' . esc_url( $page_url ) . '" style="' . $button_style . '" ' . $hover_effect . '>' . $i . '</a>';
@@ -643,7 +711,9 @@ class KTPWP_Supplier_Skills {
             $last_url = add_query_arg( array(
                 'data_id' => $supplier_id,
                 'query_post' => 'update',
-                'skills_page' => $total_pages
+                'skills_page' => $total_pages,
+                'skills_sort_by' => $sort_by,
+                'skills_sort_order' => $sort_order
             ), $base_page_url );
             
             $pagination_html .= '<a href="' . esc_url( $last_url ) . '" style="' . $button_style . '" ' . $hover_effect . '>' . $total_pages . '</a>';
@@ -655,7 +725,9 @@ class KTPWP_Supplier_Skills {
             $next_url = add_query_arg( array(
                 'data_id' => $supplier_id,
                 'query_post' => 'update',
-                'skills_page' => $next_page
+                'skills_page' => $next_page,
+                'skills_sort_by' => $sort_by,
+                'skills_sort_order' => $sort_order
             ), $base_page_url );
             
             $pagination_html .= '<a href="' . esc_url( $next_url ) . '" style="' . $button_style . '" ' . $hover_effect . '>›</a>';

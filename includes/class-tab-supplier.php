@@ -865,9 +865,50 @@ class KTPWP_Supplier_Class {
         // データ取得完了後、協力会社ID表示メッセージを生成
         if ($query_id) {
             $display_company_name = isset($company_name) && !empty($company_name) ? $company_name : '未設定';
-            $current_id_message = '<div class="data_skill_list_title">'
+            
+            // 職能ソート用プルダウンを生成
+            $skills_sort_by = isset($_GET['skills_sort_by']) ? sanitize_text_field($_GET['skills_sort_by']) : 'frequency';
+            $skills_sort_order = isset($_GET['skills_sort_order']) ? sanitize_text_field($_GET['skills_sort_order']) : 'DESC';
+            
+            // 現在のURLからソート用プルダウンのアクションURLを生成
+            $skills_sort_url = add_query_arg(array(
+                'tab_name' => $name,
+                'data_id' => $query_id,
+                'query_post' => 'update'
+            ), $base_page_url);
+            
+            // ソート用プルダウンのHTMLを構築
+            $skills_sort_dropdown = '<div class="sort-dropdown" style="float:right;margin-left:10px;">' .
+                '<form method="get" action="' . esc_url($skills_sort_url) . '" style="display:flex;align-items:center;">';
+            
+            // 現在のGETパラメータを維持するための隠しフィールド
+            foreach ($_GET as $key => $value) {
+                if (!in_array($key, ['skills_sort_by', 'skills_sort_order'])) {
+                    $skills_sort_dropdown .= '<input type="hidden" name="' . esc_attr($key) . '" value="' . esc_attr($value) . '">';
+                }
+            }
+            
+            $skills_sort_dropdown .=
+                '<select id="skills-sort-select" name="skills_sort_by" style="margin-right:5px;">' .
+                '<option value="id" ' . selected($skills_sort_by, 'id', false) . '>' . esc_html__('ID', 'ktpwp') . '</option>' .
+                '<option value="product_name" ' . selected($skills_sort_by, 'product_name', false) . '>' . esc_html__('商品名', 'ktpwp') . '</option>' .
+                '<option value="frequency" ' . selected($skills_sort_by, 'frequency', false) . '>' . esc_html__('頻度', 'ktpwp') . '</option>' .
+                '</select>' .
+                '<select id="skills-sort-order" name="skills_sort_order">' .
+                '<option value="ASC" ' . selected($skills_sort_order, 'ASC', false) . '>' . esc_html__('昇順', 'ktpwp') . '</option>' .
+                '<option value="DESC" ' . selected($skills_sort_order, 'DESC', false) . '>' . esc_html__('降順', 'ktpwp') . '</option>' .
+                '</select>' .
+                '<button type="submit" style="margin-left:5px;padding:4px 8px;background:#f0f0f0;border:1px solid #ccc;border-radius:3px;cursor:pointer;" title="' . esc_attr__('適用', 'ktpwp') . '">' .
+                '<span class="material-symbols-outlined" style="font-size:18px;line-height:18px;vertical-align:middle;">check</span>' .
+                '</button>' .
+                '</form></div>';
+                
+            $current_id_message = '<div class="data_skill_list_title" style="display: flex; align-items: center; justify-content: space-between;">'
+                . '<div style="display: flex; align-items: center; gap: 8px;">'
                 . '<span class="material-symbols-outlined" style="color: #4caf50;">business</span>'
                 . esc_html($display_company_name) . '（ID: ' . esc_html($query_id) . '）の商品・サービス'
+                . '</div>'
+                . $skills_sort_dropdown
                 . '</div>';
         } else {
             $current_id_message = '<div style="padding: 15px 20px; background: linear-gradient(135deg, #fff3cd 0%, #fff8e1 100%); border-radius: 6px; margin: 15px 0; color: #856404; font-weight: 600; text-align: center; box-shadow: 0 3px 12px rgba(0,0,0,0.07); display: flex; align-items: center; justify-content: center; font-size: 16px; gap: 10px;">'
