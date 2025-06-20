@@ -564,7 +564,7 @@ class KTPWP_Supplier_Skills {
                 $html .= '数量: <strong>' . $quantity . '</strong> | ';
                 $html .= '単位: <strong>' . $unit . '</strong>';
                 $html .= '</span>';
-                $html .= '<span style="color: #666; font-size: 13px; font-weight: normal; flex-shrink: 0; margin-left: auto;">頻度(' . $frequency . ')</span>';
+                $html .= '<span style="color: #666; font-size: 13px; font-weight: normal; flex-shrink: 0; margin-left: auto;" title="アクセス頻度（クリックされた回数）">頻度(' . $frequency . ')</span>';
                 $html .= '</div>';
                 
                 // 削除ボタン

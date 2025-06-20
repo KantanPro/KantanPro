@@ -713,7 +713,7 @@ class KTPWP_Supplier_Class {
                 $item_link_url = esc_url(add_query_arg($query_args, $base_page_url));
                 $results[] = <<<END
                 <a href="{$item_link_url}" onclick="document.cookie = '{$cookie_name}=' + {$id};">
-                    <div class="ktp_data_list_item">ID: $id $company_name : $category : 頻度($frequency)</div>
+                    <div class="ktp_data_list_item">D: $id $company_name | 担当者: $user_name | $category | <span title="アクセス頻度（クリックされた回数）">頻度($frequency)</span></div>
                 </a>
                 END;
 
@@ -905,8 +905,7 @@ class KTPWP_Supplier_Class {
                 
             $current_id_message = '<div class="data_skill_list_title" style="display: flex; align-items: center; justify-content: space-between;">'
                 . '<div style="display: flex; align-items: center; gap: 8px;">'
-                . '<span class="material-symbols-outlined" style="color: #4caf50;">business</span>'
-                . esc_html($display_company_name) . '（ID: ' . esc_html($query_id) . '）の商品・サービス'
+                . '■ ' . esc_html($display_company_name) . '（ID: ' . esc_html($query_id) . '）の商品'
                 . '</div>'
                 . $skills_sort_dropdown
                 . '</div>';

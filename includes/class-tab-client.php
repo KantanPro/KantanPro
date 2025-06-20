@@ -504,7 +504,7 @@ class Kntan_Client_Class {
        }
 
        $results[] = '<a href="' . $link_url . '" onclick="document.cookie = \'{$cookie_name}=\' + ' . $id . ';">'
-           . '<div class="ktp_data_list_item"' . $list_style . '>' . $deleted_mark . sprintf(esc_html__('ID: %1$s %2$s : %3$s : %4$s : 頻度(%5$s)', 'ktpwp'), $id, $company_name, $user_name, $client_status, $frequency) . '</div>'
+           . '<div class="ktp_data_list_item"' . $list_style . '>' . $deleted_mark . 'ID: ' . $id . ' ' . $company_name . ' : ' . $user_name . ' : ' . $client_status . ' : <span title="アクセス頻度（クリックされた回数）">頻度(' . $frequency . ')</span></div>'
            . '</a>';
        }
    } else {
