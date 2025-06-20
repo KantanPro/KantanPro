@@ -1836,8 +1836,8 @@ $content .= '</div>';
         $html .= '<thead>';
         $html .= '<tr style="background: #f0f0f0;">';
         $html .= '<th style="border: 1px solid #ddd; padding: 12px; text-align: left;">項目名</th>';
-        $html .= '<th style="border: 1px solid #ddd; padding: 12px; text-align: right; width: 100px;">数量</th>';
         $html .= '<th style="border: 1px solid #ddd; padding: 12px; text-align: right; width: 120px;">単価</th>';
+        $html .= '<th style="border: 1px solid #ddd; padding: 12px; text-align: right; width: 100px;">数量</th>';
         $html .= '<th style="border: 1px solid #ddd; padding: 12px; text-align: right; width: 120px;">金額</th>';
         $html .= '</tr>';
         $html .= '</thead>';
@@ -1870,8 +1870,8 @@ $content .= '</div>';
 
             $html .= '<tr>';
             $html .= '<td style="border: 1px solid #ddd; padding: 12px;">' . $product_name . '</td>';
-            $html .= '<td style="border: 1px solid #ddd; padding: 12px; text-align: right;">' . number_format($quantity) . $unit . '</td>';
             $html .= '<td style="border: 1px solid #ddd; padding: 12px; text-align: right;">¥' . number_format($price) . '</td>';
+            $html .= '<td style="border: 1px solid #ddd; padding: 12px; text-align: right;">' . number_format($quantity) . $unit . '</td>';
             $html .= '<td style="border: 1px solid #ddd; padding: 12px; text-align: right;">¥' . number_format($amount) . '</td>';
             $html .= '</tr>';
         }
