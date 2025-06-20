@@ -70,7 +70,7 @@ class KTPWP_Supplier_Skills {
         global $wpdb;
 
         $table_name = $wpdb->prefix . 'ktp_supplier_skills';
-        $my_table_version = '2.1.0'; // Updated for frequency column
+        $my_table_version = '3.0.0'; // Updated for simplified table structure
         $option_name = 'ktp_supplier_skills_table_version';
 
         // Check if table needs to be created or updated
@@ -87,14 +87,10 @@ class KTPWP_Supplier_Skills {
                 quantity INT NOT NULL DEFAULT 1 COMMENT '数量',
                 unit VARCHAR(50) NOT NULL DEFAULT '式' COMMENT '単位',
                 frequency INT NOT NULL DEFAULT 0 COMMENT '頻度',
-                priority_order INT NOT NULL DEFAULT 0,
-                is_active TINYINT(1) NOT NULL DEFAULT 1,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
                 PRIMARY KEY (id),
                 KEY supplier_id (supplier_id),
-                KEY is_active (is_active),
-                KEY priority_order (priority_order),
                 KEY product_name (product_name),
                 KEY unit_price (unit_price),
                 KEY frequency (frequency)
@@ -122,30 +118,32 @@ class KTPWP_Supplier_Skills {
             error_log( 'KTPWP: dbDelta function not available' );
             return false;
         } else {
-            // Table exists, check for missing columns (specifically for frequency column)
+            // Table exists, check for column structure updates
             $existing_columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$table_name}`", 0 );
             
-            // Check if frequency column exists
-            if ( ! in_array( 'frequency', $existing_columns, true ) ) {
-                // Add frequency column
-                $alter_query = "ALTER TABLE `{$table_name}` ADD COLUMN frequency INT NOT NULL DEFAULT 0 COMMENT '頻度' AFTER unit";
-                $result = $wpdb->query( $alter_query );
+            // If version is less than 3.0.0, perform migration
+            if ( version_compare( $installed_version, '3.0.0', '<' ) ) {
+                // Remove deprecated columns if they exist
+                $columns_to_remove = array( 'priority_order', 'is_active' );
                 
-                if ( $result === false ) {
-                    error_log( 'KTPWP: Failed to add frequency column to supplier skills table' );
-                } else {
-                    // Add index for frequency column
-                    $index_query = "ALTER TABLE `{$table_name}` ADD KEY frequency (frequency)";
-                    $wpdb->query( $index_query );
-                    
-                    if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                        error_log( 'KTPWP: Successfully added frequency column to supplier skills table' );
+                foreach ( $columns_to_remove as $column ) {
+                    if ( in_array( $column, $existing_columns, true ) ) {
+                        $drop_column_query = "ALTER TABLE `{$table_name}` DROP COLUMN `{$column}`";
+                        $result = $wpdb->query( $drop_column_query );
+                        
+                        if ( $result === false ) {
+                            error_log( "KTPWP: Failed to drop column {$column} from supplier skills table" );
+                        } else {
+                            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                                error_log( "KTPWP: Successfully dropped column {$column} from supplier skills table" );
+                            }
+                        }
                     }
                 }
+                
+                // Update version after migration
+                update_option( $option_name, $my_table_version );
             }
-            
-            // Update version after column addition
-            update_option( $option_name, $my_table_version );
         }
 
         return true;
@@ -170,7 +168,7 @@ class KTPWP_Supplier_Skills {
 
         $results = $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT * FROM {$table_name} WHERE supplier_id = %d AND is_active = 1 ORDER BY frequency DESC, priority_order ASC, product_name ASC",
+                "SELECT * FROM {$table_name} WHERE supplier_id = %d ORDER BY frequency DESC, product_name ASC",
                 $supplier_id
             ),
             ARRAY_A
@@ -207,7 +205,7 @@ class KTPWP_Supplier_Skills {
 
         $results = $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT * FROM {$table_name} WHERE supplier_id = %d AND is_active = 1 ORDER BY {$sort_by} {$sort_order}, priority_order ASC, product_name ASC LIMIT %d OFFSET %d",
+                "SELECT * FROM {$table_name} WHERE supplier_id = %d ORDER BY {$sort_by} {$sort_order}, product_name ASC LIMIT %d OFFSET %d",
                 $supplier_id,
                 $limit,
                 $offset
@@ -237,7 +235,7 @@ class KTPWP_Supplier_Skills {
 
         $count = $wpdb->get_var(
             $wpdb->prepare(
-                "SELECT COUNT(*) FROM {$table_name} WHERE supplier_id = %d AND is_active = 1",
+                "SELECT COUNT(*) FROM {$table_name} WHERE supplier_id = %d",
                 $supplier_id
             )
         );
@@ -275,8 +273,6 @@ class KTPWP_Supplier_Skills {
             'quantity' => absint( $quantity ) ?: 1,
             'unit' => sanitize_text_field( $unit ) ?: '式',
             'frequency' => absint( $frequency ),
-            'priority_order' => 0,
-            'is_active' => 1,
             'created_at' => current_time( 'mysql' ),
             'updated_at' => current_time( 'mysql' )
         );
@@ -284,7 +280,7 @@ class KTPWP_Supplier_Skills {
         $result = $wpdb->insert(
             $table_name,
             $sanitized_data,
-            array( '%d', '%s', '%f', '%d', '%s', '%d', '%d', '%d', '%s', '%s' )
+            array( '%d', '%s', '%f', '%d', '%s', '%d', '%s', '%s' )
         );
 
         if ( $result === false ) {
@@ -344,7 +340,7 @@ class KTPWP_Supplier_Skills {
     }
 
     /**
-     * Delete a product (soft delete by setting is_active to 0)
+     * Delete a product (physical delete)
      *
      * @since 1.0.0
      * @param int $skill_id Product ID
@@ -360,11 +356,9 @@ class KTPWP_Supplier_Skills {
         $table_name = $wpdb->prefix . 'ktp_supplier_skills';
         $skill_id = absint( $skill_id );
 
-        $result = $wpdb->update(
+        $result = $wpdb->delete(
             $table_name,
-            array( 'is_active' => 0, 'updated_at' => current_time( 'mysql' ) ),
             array( 'id' => $skill_id ),
-            array( '%d', '%s' ),
             array( '%d' )
         );
 
@@ -430,7 +424,7 @@ class KTPWP_Supplier_Skills {
 
         $result = $wpdb->get_row(
             $wpdb->prepare(
-                "SELECT * FROM {$table_name} WHERE id = %d AND is_active = 1",
+                "SELECT * FROM {$table_name} WHERE id = %d",
                 $skill_id
             ),
             ARRAY_A
