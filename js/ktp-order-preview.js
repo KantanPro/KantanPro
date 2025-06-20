@@ -33,36 +33,61 @@
             console.log('[ORDER-PREVIEW] orderPreviewButton data-preview-content length:', orderPreviewButton.getAttribute('data-preview-content') ? orderPreviewButton.getAttribute('data-preview-content').length : 'なし');
         }
         
-        // ボタンクリックイベントを設定
+        // ボタンクリックイベントを設定 - 最新データをAjaxで取得
         $(document).on('click', '#orderPreviewButton', function(e) {
             e.preventDefault();
             console.log('[ORDER-PREVIEW] ボタンがクリックされました！');
             
             const orderId = $(this).data('order-id');
-            const previewContentEncoded = $(this).data('preview-content');
             
             console.log('[ORDER-PREVIEW] データ取得 - OrderID:', orderId);
-            console.log('[ORDER-PREVIEW] データ取得 - PreviewContent encoded length:', previewContentEncoded ? previewContentEncoded.length : 'なし');
             
-            if (!previewContentEncoded) {
-                console.error('[ORDER-PREVIEW] プレビューコンテンツが見つかりません');
-                alert('プレビューコンテンツが見つかりません。');
+            if (!orderId) {
+                console.error('[ORDER-PREVIEW] 受注書IDが見つかりません');
+                alert('受注書IDが見つかりません。');
                 return;
             }
+
+            // ローディング表示
+            $(this).prop('disabled', true).html('<span class="material-symbols-outlined">hourglass_empty</span>');
             
-            try {
-                // UTF-8文字化け対策のためのデコード
-                const previewContent = decodeURIComponent(escape(atob(previewContentEncoded)));
-                console.log('[ORDER-PREVIEW] Base64デコード成功 - Content length:', previewContent.length);
-                console.log('[ORDER-PREVIEW] Content sample:', previewContent.substring(0, 200));
-                
-                // HTMLエンティティデコードは行わずに直接使用
-                window.ktpShowOrderPreview(orderId, previewContent);
-            } catch (error) {
-                console.error('[ORDER-PREVIEW] Base64デコードエラー:', error);
-                console.error('[ORDER-PREVIEW] Encoded data sample:', previewContentEncoded.substring(0, 100));
-                alert('プレビューデータの読み込みに失敗しました: ' + error.message);
-            }
+            // Ajaxで最新のプレビューデータを取得
+            $.ajax({
+                url: typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php',
+                type: 'POST',
+                data: {
+                    action: 'ktp_get_order_preview',
+                    order_id: orderId,
+                    nonce: typeof ktp_ajax_nonce !== 'undefined' ? ktp_ajax_nonce : 
+                          typeof ktp_ajax_object !== 'undefined' ? ktp_ajax_object.nonce : ''
+                },
+                success: function(response) {
+                    console.log('[ORDER-PREVIEW] Ajax成功:', response);
+                    
+                    try {
+                        const result = typeof response === 'string' ? JSON.parse(response) : response;
+                        
+                        if (result.success && result.data && result.data.preview_html) {
+                            console.log('[ORDER-PREVIEW] 最新プレビュー取得成功');
+                            window.ktpShowOrderPreview(orderId, result.data.preview_html);
+                        } else {
+                            console.error('[ORDER-PREVIEW] プレビューデータの取得に失敗:', result);
+                            alert('プレビューデータの取得に失敗しました: ' + (result.data || 'エラー詳細不明'));
+                        }
+                    } catch (parseError) {
+                        console.error('[ORDER-PREVIEW] レスポンス解析エラー:', parseError);
+                        alert('プレビューデータの解析に失敗しました。');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('[ORDER-PREVIEW] Ajax エラー:', { status, error, responseText: xhr.responseText });
+                    alert('プレビューデータの取得中にエラーが発生しました: ' + error);
+                },
+                complete: function() {
+                    // ボタンを元に戻す
+                    $('#orderPreviewButton').prop('disabled', false).html('<span class="material-symbols-outlined" aria-label="プレビュー">preview</span>');
+                }
+            });
         });
     });
 
@@ -223,6 +248,28 @@
         // PDF保存ボタンのイベント
         $(document).on('click', '#ktp-order-preview-save-pdf', function() {
             saveOrderPreviewAsPDF(orderId);
+        });
+    };
+
+    // デバッグ用: Ajaxハンドラーのテスト関数
+    window.ktpTestOrderPreview = function(orderId) {
+        console.log('[ORDER PREVIEW TEST] テスト開始 - OrderID:', orderId);
+        
+        $.ajax({
+            url: typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php',
+            type: 'POST',
+            data: {
+                action: 'ktp_get_order_preview',
+                order_id: orderId,
+                nonce: typeof ktp_ajax_nonce !== 'undefined' ? ktp_ajax_nonce : 
+                      typeof ktp_ajax_object !== 'undefined' ? ktp_ajax_object.nonce : ''
+            },
+            success: function(response) {
+                console.log('[ORDER PREVIEW TEST] 成功:', response);
+            },
+            error: function(xhr, status, error) {
+                console.error('[ORDER PREVIEW TEST] エラー:', { status, error, responseText: xhr.responseText });
+            }
         });
     };
 

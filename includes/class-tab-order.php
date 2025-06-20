@@ -37,6 +37,17 @@ class Kntan_Order_Class {
     }
 
     /**
+     * 受注書プレビューHTML生成のパブリックラッパー
+     *
+     * @param object $order_data 受注書データ
+     * @return string プレビュー用HTML
+     * @since 1.0.0
+     */
+    public function Generate_Order_Preview_HTML_Public($order_data) {
+        return $this->Generate_Order_Preview_HTML($order_data);
+    }
+
+    /**
      * Create order table using new class structure
      *
      * @deprecated Use KTPWP_Order::create_order_table() instead
@@ -388,7 +399,7 @@ class Kntan_Order_Class {
             //     wp_die( __( 'You do not have sufficient permissions to send emails.', 'ktpwp' ) );
             // }
 
-            $order_id = absint( $_POST['send_order_mail_id'] );
+            $order_id = absint( $_POST['send_order_mail_id' ] );
             if ( $order_id > 0 ) {
                 $order = $wpdb->get_row( $wpdb->prepare(
                     "SELECT * FROM `{$table_name}` WHERE id = %d",
@@ -1015,26 +1026,12 @@ class Kntan_Order_Class {
             $order_data = $wpdb->get_row($wpdb->prepare("SELECT * FROM `{$table_name}` WHERE id = %d", $order_id));
 
             if ($order_data) {
-                // プレビュー用HTML生成（進捗状況に応じた帳票形式）
-                $preview_html = $this->Generate_Order_Preview_HTML($order_data);
-                
-                // デバッグ: プレビューHTMLの内容を確認
-                error_log('KTPWP: Preview HTML length: ' . strlen($preview_html));
-                error_log('KTPWP: Preview HTML sample: ' . substr($preview_html, 0, 200));
-                
-                // JavaScriptに安全に渡すためのBase64エンコード（UTF-8文字化け対策）
-                $preview_html_encoded = base64_encode(mb_convert_encoding($preview_html, 'UTF-8', 'auto'));
-                
-                // デバッグ: Base64エンコード結果を確認
-                error_log('KTPWP: Base64 encoded length: ' . strlen($preview_html_encoded));
-                error_log('KTPWP: Base64 sample: ' . substr($preview_html_encoded, 0, 100));
-
-                // 旧プレビュー・印刷ボタンのJavaScriptとHTMLを削除し、新しいポップアップ機能に置き換え
+                // プレビューボタン用のHTML生成は削除（Ajax経由で最新データを取得）
 
                 $content .= '<div class="controller">';
                 $content .= '<div class="printer">';
-                // data属性にBase64エンコードされたHTMLを安全に埋め込む
-                $content .= '<button id="orderPreviewButton" data-order-id="' . esc_attr($order_data->id) . '" data-preview-content="' . $preview_html_encoded . '" title="' . esc_attr__('プレビュー', 'ktpwp') . '" style="padding: 8px 12px; font-size: 14px;">';
+                // プレビューボタン（受注書IDのみ保持、最新データはAjaxで取得）
+                $content .= '<button id="orderPreviewButton" data-order-id="' . esc_attr($order_data->id) . '" title="' . esc_attr__('プレビュー', 'ktpwp') . '" style="padding: 8px 12px; font-size: 14px;">';
                 $content .= '<span class="material-symbols-outlined" aria-label="' . esc_attr__('プレビュー', 'ktpwp') . '">preview</span>';
                 $content .= '</button>';
 

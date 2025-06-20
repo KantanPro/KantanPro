@@ -110,6 +110,11 @@ class KTPWP_Ajax {
         add_action('wp_ajax_send_order_email', array($this, 'ajax_send_order_email'));
         add_action('wp_ajax_nopriv_send_order_email', array($this, 'ajax_require_login'));
         $this->registered_handlers[] = 'send_order_email';
+
+        // 最新の受注書プレビューデータ取得
+        add_action('wp_ajax_ktp_get_order_preview', array($this, 'get_order_preview'));
+        add_action('wp_ajax_nopriv_ktp_get_order_preview', array($this, 'ajax_require_login'));
+        $this->registered_handlers[] = 'ktp_get_order_preview';
     }
 
     /**
@@ -1609,6 +1614,69 @@ class KTPWP_Ajax {
             $this->send_clean_json_response(array(
                 'success' => false,
                 'data' => __('メッセージの送信中にエラーが発生しました', 'ktpwp')
+            ));
+        }
+    }
+
+    /**
+     * 最新の受注書プレビューデータを取得
+     *
+     * @since 1.0.0
+     * @return void
+     */
+    public function get_order_preview() {
+        try {
+            // nonce検証
+            if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'ktp_ajax_nonce')) {
+                throw new Exception('セキュリティチェックに失敗しました。');
+            }
+
+            // 権限チェック
+            if (!current_user_can('edit_posts') && !current_user_can('ktpwp_access')) {
+                throw new Exception('この操作を実行する権限がありません。');
+            }
+
+            // パラメータ取得
+            $order_id = isset($_POST['order_id']) ? absint($_POST['order_id']) : 0;
+            if ($order_id <= 0) {
+                throw new Exception('無効な受注書IDです。');
+            }
+
+            global $wpdb;
+            $table_name = $wpdb->prefix . 'ktp_order';
+
+            // 受注書データを取得
+            $order = $wpdb->get_row($wpdb->prepare(
+                "SELECT * FROM `{$table_name}` WHERE id = %d",
+                $order_id
+            ));
+
+            if (!$order) {
+                throw new Exception('受注書が見つかりません。');
+            }
+
+           
+
+            // Order クラスのインスタンスを作成してプレビューHTML生成を利用
+            if (!class_exists('Kntan_Order_Class')) {
+                require_once MY_PLUGIN_PATH . 'includes/class-tab-order.php';
+            }
+
+            $order_class = new Kntan_Order_Class();
+            
+            // パブリックメソッドを使用して最新のプレビューHTMLを生成
+            $preview_html = $order_class->Generate_Order_Preview_HTML_Public($order);
+
+            wp_send_json_success(array(
+                'preview_html' => $preview_html,
+                'order_id' => $order_id,
+                'timestamp' => current_time('timestamp')
+            ));
+
+        } catch (Exception $e) {
+            error_log('KTPWP Ajax get_order_preview Error: ' . $e->getMessage());
+            wp_send_json_error(array(
+                'message' => $e->getMessage()
             ));
         }
     }
