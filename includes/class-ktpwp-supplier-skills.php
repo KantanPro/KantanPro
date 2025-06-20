@@ -563,42 +563,29 @@ class KTPWP_Supplier_Skills {
             return '';
         }
 
+        // 他のタブと統一した正円ボタンデザインのページネーション
+        $pagination_html = '<div class="pagination" style="text-align: center; margin: 20px 0; padding: 20px 0;">';
+        
+        // 1行目：ページ情報表示
+        $page_start = ( $current_page - 1 ) * ( class_exists( 'KTP_Settings' ) ? KTP_Settings::get_work_list_range() : 10 ) + 1;
+        $page_end = min( $total_skills, $current_page * ( class_exists( 'KTP_Settings' ) ? KTP_Settings::get_work_list_range() : 10 ) );
+        
+        $pagination_html .= '<div style="margin-bottom: 18px; color: #4b5563; font-size: 14px; font-weight: 500;">';
+        $pagination_html .= esc_html($current_page) . ' / ' . esc_html($total_pages) . ' ページ（全 ' . esc_html($total_skills) . ' 件）';
+        $pagination_html .= '</div>';
+        
+        // 2行目：ページネーションボタン
+        $pagination_html .= '<div style="display: flex; align-items: center; gap: 4px; flex-wrap: wrap; justify-content: center; width: 100%;">';
+        
         // 現在のURLを取得
         global $wp;
         $current_page_id = get_queried_object_id();
         $base_page_url = add_query_arg( array( 'page_id' => $current_page_id ), home_url( $wp->request ) );
         
-        $html = '<div class="ktp-skills-pagination" style="
-            margin-top: 15px;
-            padding: 15px 20px;
-            background: #f8f9fa;
-            border: 1px solid #e5e7eb;
-            border-radius: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 10px;
-        ">';
-
-        // 左側：情報表示
-        $page_start = ( $current_page - 1 ) * ( class_exists( 'KTP_Settings' ) ? KTP_Settings::get_work_list_range() : 10 ) + 1;
-        $page_end = min( $total_skills, $current_page * ( class_exists( 'KTP_Settings' ) ? KTP_Settings::get_work_list_range() : 10 ) );
-        
-        $html .= '<div class="pagination-info" style="
-            color: #6b7280;
-            font-size: 14px;
-            font-weight: 500;
-        ">';
-        $html .= "商品・サービス {$page_start} - {$page_end} / {$total_skills}";
-        $html .= '</div>';
-
-        // 右側：ページネーションボタン
-        $html .= '<div class="pagination-buttons" style="
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        ">';
+        // ページネーションボタンのスタイル（正円ボタン）
+        $button_style = 'display: inline-block; width: 36px; height: 36px; padding: 0; margin: 0 2px; text-decoration: none; border: 1px solid #ddd; border-radius: 50%; color: #333; background: #fff; transition: all 0.3s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.1); line-height: 34px; text-align: center; vertical-align: middle; font-size: 14px;';
+        $current_style = 'background: #1976d2; color: white; border-color: #1976d2; font-weight: bold; transform: translateY(-1px); box-shadow: 0 2px 5px rgba(0,0,0,0.2);';
+        $hover_effect = 'onmouseover="this.style.backgroundColor=\'#f5f5f5\'; this.style.transform=\'translateY(-1px)\'; this.style.boxShadow=\'0 2px 5px rgba(0,0,0,0.15)\';" onmouseout="this.style.backgroundColor=\'#fff\'; this.style.transform=\'none\'; this.style.boxShadow=\'0 1px 3px rgba(0,0,0,0.1)\';"';
 
         // 前のページボタン
         if ( $current_page > 1 ) {
@@ -609,57 +596,32 @@ class KTPWP_Supplier_Skills {
                 'skills_page' => $prev_page
             ), $base_page_url );
             
-            $html .= '<a href="' . esc_url( $prev_url ) . '" class="ktp-skills-pagination-btn" style="
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                padding: 8px 12px;
-                min-width: 40px;
-                background: #0073aa;
-                color: white;
-                text-decoration: none;
-                border-radius: 4px;
-                font-size: 14px;
-                font-weight: 500;
-                transition: all 0.2s ease;
-            " onmouseover="this.style.background=\'#005a87\'" onmouseout="this.style.background=\'#0073aa\'">
-                <span style="font-size: 12px;">◀</span>
-            </a>';
-        } else {
-            $html .= '<span class="ktp-skills-pagination-btn disabled" style="
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                padding: 8px 12px;
-                min-width: 40px;
-                background: #e5e7eb;
-                color: #9ca3af;
-                border-radius: 4px;
-                font-size: 14px;
-                font-weight: 500;
-            ">
-                <span style="font-size: 12px;">◀</span>
-            </span>';
+            $pagination_html .= '<a href="' . esc_url( $prev_url ) . '" style="' . $button_style . '" ' . $hover_effect . '>‹</a>';
         }
 
-        // ページ番号ボタン（簡略版：現在のページ周辺のみ表示）
+        // ページ番号ボタン（省略表示対応）
         $start_page = max( 1, $current_page - 2 );
         $end_page = min( $total_pages, $current_page + 2 );
 
+        // 最初のページを表示
+        if ( $start_page > 1 ) {
+            $first_url = add_query_arg( array(
+                'data_id' => $supplier_id,
+                'query_post' => 'update',
+                'skills_page' => 1
+            ), $base_page_url );
+            
+            $pagination_html .= '<a href="' . esc_url( $first_url ) . '" style="' . $button_style . '" ' . $hover_effect . '>1</a>';
+            
+            if ( $start_page > 2 ) {
+                $pagination_html .= '<span style="' . $button_style . ' background: transparent; border: none; cursor: default;">...</span>';
+            }
+        }
+
+        // 中央のページ番号
         for ( $i = $start_page; $i <= $end_page; $i++ ) {
             if ( $i == $current_page ) {
-                $html .= '<span class="ktp-skills-pagination-btn current" style="
-                    display: inline-flex;
-                    align-items: center;
-                    justify-content: center;
-                    padding: 8px 12px;
-                    min-width: 40px;
-                    background: #0073aa;
-                    color: white;
-                    border-radius: 4px;
-                    font-size: 14px;
-                    font-weight: 600;
-                ">' . $i . '</span>';
+                $pagination_html .= '<span style="' . $button_style . ' ' . $current_style . '">' . $i . '</span>';
             } else {
                 $page_url = add_query_arg( array(
                     'data_id' => $supplier_id,
@@ -667,22 +629,23 @@ class KTPWP_Supplier_Skills {
                     'skills_page' => $i
                 ), $base_page_url );
                 
-                $html .= '<a href="' . esc_url( $page_url ) . '" class="ktp-skills-pagination-btn" style="
-                    display: inline-flex;
-                    align-items: center;
-                    justify-content: center;
-                    padding: 8px 12px;
-                    min-width: 40px;
-                    background: #f8f9fa;
-                    color: #374151;
-                    text-decoration: none;
-                    border: 1px solid #d1d5db;
-                    border-radius: 4px;
-                    font-size: 14px;
-                    font-weight: 500;
-                    transition: all 0.2s ease;
-                " onmouseover="this.style.background=\'#e5e7eb\'" onmouseout="this.style.background=\'#f8f9fa\'">' . $i . '</a>';
+                $pagination_html .= '<a href="' . esc_url( $page_url ) . '" style="' . $button_style . '" ' . $hover_effect . '>' . $i . '</a>';
             }
+        }
+
+        // 最後のページを表示
+        if ( $end_page < $total_pages ) {
+            if ( $end_page < $total_pages - 1 ) {
+                $pagination_html .= '<span style="' . $button_style . ' background: transparent; border: none; cursor: default;">...</span>';
+            }
+            
+            $last_url = add_query_arg( array(
+                'data_id' => $supplier_id,
+                'query_post' => 'update',
+                'skills_page' => $total_pages
+            ), $base_page_url );
+            
+            $pagination_html .= '<a href="' . esc_url( $last_url ) . '" style="' . $button_style . '" ' . $hover_effect . '>' . $total_pages . '</a>';
         }
 
         // 次のページボタン
@@ -694,43 +657,13 @@ class KTPWP_Supplier_Skills {
                 'skills_page' => $next_page
             ), $base_page_url );
             
-            $html .= '<a href="' . esc_url( $next_url ) . '" class="ktp-skills-pagination-btn" style="
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                padding: 8px 12px;
-                min-width: 40px;
-                background: #0073aa;
-                color: white;
-                text-decoration: none;
-                border-radius: 4px;
-                font-size: 14px;
-                font-weight: 500;
-                transition: all 0.2s ease;
-            " onmouseover="this.style.background=\'#005a87\'" onmouseout="this.style.background=\'#0073aa\'">
-                <span style="font-size: 12px;">▶</span>
-            </a>';
-        } else {
-            $html .= '<span class="ktp-skills-pagination-btn disabled" style="
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                padding: 8px 12px;
-                min-width: 40px;
-                background: #e5e7eb;
-                color: #9ca3af;
-                border-radius: 4px;
-                font-size: 14px;
-                font-weight: 500;
-            ">
-                <span style="font-size: 12px;">▶</span>
-            </span>';
+            $pagination_html .= '<a href="' . esc_url( $next_url ) . '" style="' . $button_style . '" ' . $hover_effect . '>›</a>';
         }
 
-        $html .= '</div>'; // pagination-buttons
-        $html .= '</div>'; // ktp-skills-pagination
+        $pagination_html .= '</div>'; // ボタングループ終了
+        $pagination_html .= '</div>'; // ページネーション終了
 
-        return $html;
+        return $pagination_html;
     }
 
 }
