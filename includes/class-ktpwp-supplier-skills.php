@@ -582,14 +582,15 @@ class KTPWP_Supplier_Skills {
             $html .= '</div>';
             
             // ページネーションを職能リストの下に表示
-            if ( $total_pages > 1 ) {
-                $html .= $this->render_skills_pagination( $current_page, $total_pages, $total_skills, $supplier_id );
-            }
+            $html .= $this->render_skills_pagination( $current_page, $total_pages, $total_skills, $supplier_id );
         } else {
             $html .= '<div class="ktp_data_list_item" style="color: #666; font-style: italic; margin-top: 15px; padding: 20px; text-align: center; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 4px;">';
             $html .= '<span class="material-symbols-outlined" style="font-size: 20px; vertical-align: middle; margin-right: 8px; color: #999;">info</span>';
             $html .= 'まだ商品・サービスが登録されていません。';
             $html .= '</div>';
+            
+            // データが0件でもページネーションを表示（要件対応）
+            $html .= $this->render_skills_pagination( $current_page, $total_pages, $total_skills, $supplier_id );
         }
 
         // Add JavaScript for delete functionality
@@ -629,8 +630,11 @@ class KTPWP_Supplier_Skills {
      * @return string HTML content for pagination
      */
     private function render_skills_pagination( $current_page, $total_pages, $total_skills, $supplier_id ) {
-        if ( $total_pages <= 1 ) {
-            return '';
+        // 0データの場合でもページネーションを表示（要件対応）
+        // データが0件の場合はtotal_pagesが0になるため、最低1ページとして扱う
+        if ( $total_pages == 0 ) {
+            $total_pages = 1;
+            $current_page = 1;
         }
 
         // 現在のソートパラメータを取得
@@ -663,7 +667,7 @@ class KTPWP_Supplier_Skills {
         $hover_effect = 'onmouseover="this.style.backgroundColor=\'#f5f5f5\'; this.style.transform=\'translateY(-1px)\'; this.style.boxShadow=\'0 2px 5px rgba(0,0,0,0.15)\';" onmouseout="this.style.backgroundColor=\'#fff\'; this.style.transform=\'none\'; this.style.boxShadow=\'0 1px 3px rgba(0,0,0,0.1)\';"';
 
         // 前のページボタン
-        if ( $current_page > 1 ) {
+        if ( $current_page > 1 && $total_pages > 1 ) {
             $prev_page = $current_page - 1;
             $prev_url = add_query_arg( array(
                 'data_id' => $supplier_id,
@@ -680,8 +684,8 @@ class KTPWP_Supplier_Skills {
         $start_page = max( 1, $current_page - 2 );
         $end_page = min( $total_pages, $current_page + 2 );
 
-        // 最初のページを表示
-        if ( $start_page > 1 ) {
+        // 最初のページを表示（データが0件でも1ページ目は表示）
+        if ( $start_page > 1 && $total_pages > 1 ) {
             $first_url = add_query_arg( array(
                 'data_id' => $supplier_id,
                 'query_post' => 'update',
@@ -715,7 +719,7 @@ class KTPWP_Supplier_Skills {
         }
 
         // 最後のページを表示
-        if ( $end_page < $total_pages ) {
+        if ( $end_page < $total_pages && $total_pages > 1 ) {
             if ( $end_page < $total_pages - 1 ) {
                 $pagination_html .= '<span style="' . $button_style . ' background: transparent; border: none; cursor: default;">...</span>';
             }
@@ -732,7 +736,7 @@ class KTPWP_Supplier_Skills {
         }
 
         // 次のページボタン
-        if ( $current_page < $total_pages ) {
+        if ( $current_page < $total_pages && $total_pages > 1 ) {
             $next_page = $current_page + 1;
             $next_url = add_query_arg( array(
                 'data_id' => $supplier_id,
