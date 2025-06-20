@@ -10,23 +10,44 @@
 
     // グローバルスコープに関数を定義
     window.ktpInvoiceAutoSaveItem = function (itemType, itemId, fieldName, fieldValue, orderId) {
-        console.log('[INVOICE] autoSaveItem呼び出し', { itemType, itemId, fieldName, fieldValue, orderId });
+        console.log('[INVOICE AUTO-SAVE] === 自動保存開始 ===');
+        console.log('[INVOICE AUTO-SAVE] Parameters:', { 
+            itemType: itemType, 
+            itemId: itemId, 
+            fieldName: fieldName, 
+            fieldValue: fieldValue + ' (type: ' + typeof fieldValue + ')', 
+            orderId: orderId 
+        });
+        
         // Ajax URLの確認と代替設定
         let ajaxUrl = ajaxurl;
         if (!ajaxUrl) {
             ajaxUrl = '/wp-admin/admin-ajax.php';
         }
+        console.log('[INVOICE AUTO-SAVE] Ajax URL:', ajaxUrl);
 
         // 統一されたnonce取得方法
         let nonce = '';
         if (typeof ktp_ajax_nonce !== 'undefined') {
             nonce = ktp_ajax_nonce;
+            console.log('[INVOICE AUTO-SAVE] Nonce from ktp_ajax_nonce:', nonce);
         } else if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.nonce) {
             nonce = ktp_ajax_object.nonce;
+            console.log('[INVOICE AUTO-SAVE] Nonce from ktp_ajax_object:', nonce);
         } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.auto_save) {
             nonce = ktpwp_ajax.nonces.auto_save;
+            console.log('[INVOICE AUTO-SAVE] Nonce from ktpwp_ajax.nonces.auto_save:', nonce);
         } else if (typeof window.ktpwp_ajax !== 'undefined' && window.ktpwp_ajax.nonces && window.ktpwp_ajax.nonces.auto_save) {
             nonce = window.ktpwp_ajax.nonces.auto_save;
+            console.log('[INVOICE AUTO-SAVE] Nonce from window.ktpwp_ajax.nonces.auto_save:', nonce);
+        }
+
+        if (!nonce) {
+            console.error('[INVOICE AUTO-SAVE] Nonce not found! Available variables:');
+            console.error('  ktp_ajax_nonce:', typeof ktp_ajax_nonce !== 'undefined' ? ktp_ajax_nonce : 'undefined');
+            console.error('  ktp_ajax_object:', typeof ktp_ajax_object !== 'undefined' ? ktp_ajax_object : 'undefined');
+            console.error('  ktpwp_ajax:', typeof ktpwp_ajax !== 'undefined' ? ktpwp_ajax : 'undefined');
+            console.error('  window.ktpwp_ajax:', typeof window.ktpwp_ajax !== 'undefined' ? window.ktpwp_ajax : 'undefined');
         }
 
         const ajaxData = {
@@ -40,27 +61,29 @@
             ktp_ajax_nonce: nonce  // 追加: PHPでチェックされるフィールド名
         };
 
-
-        console.log('[INVOICE] autoSaveItem送信', ajaxData);
+        console.log('[INVOICE AUTO-SAVE] Ajax data:', ajaxData);
+        
         $.ajax({
             url: ajaxUrl,
             type: 'POST',
             data: ajaxData,
             success: function (response) {
-                console.log('[INVOICE] autoSaveItemレスポンス', response);
+                console.log('[INVOICE AUTO-SAVE] Success response:', response);
                 try {
                     const result = typeof response === 'string' ? JSON.parse(response) : response;
                     if (result.success) {
-                        console.log('[INVOICE] autoSaveItem保存成功');
+                        console.log('[INVOICE AUTO-SAVE] 保存成功 - field:', fieldName, 'value:', fieldValue);
                     } else {
-                        console.warn('[INVOICE] autoSaveItem保存失敗', result);
+                        console.warn('[INVOICE AUTO-SAVE] 保存失敗 - field:', fieldName, 'response:', result);
                     }
                 } catch (e) {
-                    console.error('[INVOICE] autoSaveItemレスポンスパースエラー', e, response);
+                    console.error('[INVOICE AUTO-SAVE] レスポンスパースエラー:', e, 'response:', response);
                 }
             },
             error: function (xhr, status, error) {
-                console.error('[INVOICE] autoSaveItemエラー', {
+                console.error('[INVOICE AUTO-SAVE] Ajax エラー:', {
+                    field: fieldName,
+                    value: fieldValue,
                     status: status,
                     error: error,
                     responseText: xhr.responseText,

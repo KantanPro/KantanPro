@@ -306,17 +306,47 @@ class KTPWP_Order_Items {
      * @return array Invoice items
      */
     public function get_invoice_items( $order_id ) {
+        error_log('KTPWP Get Items Debug === 請求項目取得開始 ===');
+        error_log('KTPWP Get Items Debug - order_id: ' . $order_id);
+        
         if ( ! $order_id || $order_id <= 0 ) {
+            error_log('KTPWP Get Items Debug - 無効なorder_id');
             return array();
         }
 
         global $wpdb;
         $table_name = $wpdb->prefix . 'ktp_order_invoice_items';
+        
+        // テーブルの存在確認とデバッグ
+        error_log('KTPWP Get Items Debug - table_name: ' . $table_name);
+        
+        $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table_name'");
+        error_log('KTPWP Get Items Debug - table_exists: ' . ($table_exists ? 'YES' : 'NO'));
+        
+        // 代替テーブル名もチェック
+        $alt_table_name = $wpdb->prefix . 'ktp_invoice_item';
+        $alt_table_exists = $wpdb->get_var("SHOW TABLES LIKE '$alt_table_name'");
+        error_log('KTPWP Get Items Debug - alt_table_name: ' . $alt_table_name . ' exists: ' . ($alt_table_exists ? 'YES' : 'NO'));
+        
+        // 実際に存在するテーブルを使用
+        if (!$table_exists && $alt_table_exists) {
+            error_log('KTPWP Get Items Debug - 代替テーブルを使用: ' . $alt_table_name);
+            $table_name = $alt_table_name;
+        }
 
         $items = $wpdb->get_results( $wpdb->prepare(
             "SELECT * FROM `{$table_name}` WHERE order_id = %d ORDER BY sort_order ASC, id ASC",
             $order_id
         ), ARRAY_A );
+
+        error_log('KTPWP Get Items Debug - SQL query: ' . $wpdb->last_query);
+        error_log('KTPWP Get Items Debug - 取得件数: ' . (is_array($items) ? count($items) : '0'));
+        
+        if (is_array($items) && !empty($items)) {
+            foreach ($items as $i => $item) {
+                error_log('KTPWP Get Items Debug - Item ' . $i . ': ID=' . (isset($item['id']) ? $item['id'] : 'N/A') . ' | product=' . (isset($item['product_name']) ? $item['product_name'] : 'N/A') . ' | price=' . (isset($item['price']) ? $item['price'] : 'N/A'));
+            }
+        }
 
         return $items ? $items : array();
     }
@@ -758,12 +788,34 @@ class KTPWP_Order_Items {
      * @return bool True on success, false on failure
      */
     public function update_item_field( $item_type, $item_id, $field_name, $field_value ) {
+        error_log('KTPWP Update Item Debug === フィールド更新開始 ===');
+        error_log('KTPWP Update Item Debug - item_type: ' . $item_type);
+        error_log('KTPWP Update Item Debug - item_id: ' . $item_id);
+        error_log('KTPWP Update Item Debug - field_name: ' . $field_name);
+        error_log('KTPWP Update Item Debug - field_value: ' . $field_value . ' (type: ' . gettype($field_value) . ')');
+        
         if ( ! in_array( $item_type, array( 'invoice', 'cost' ) ) || ! $item_id || $item_id <= 0 ) {
+            error_log('KTPWP Update Item Debug - バリデーションエラー');
             return false;
         }
 
         global $wpdb;
         $table_name = $wpdb->prefix . 'ktp_order_' . $item_type . '_items';
+        
+        // テーブルの存在確認
+        $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table_name'");
+        
+        // 代替テーブル名もチェック
+        if (!$table_exists && $item_type === 'invoice') {
+            $alt_table_name = $wpdb->prefix . 'ktp_invoice_item';
+            $alt_table_exists = $wpdb->get_var("SHOW TABLES LIKE '$alt_table_name'");
+            if ($alt_table_exists) {
+                error_log('KTPWP Update Item Debug - 代替テーブルを使用: ' . $alt_table_name);
+                $table_name = $alt_table_name;
+            }
+        }
+        
+        error_log('KTPWP Update Item Debug - table_name: ' . $table_name);
 
         // Determine field update data based on field name
         $update_data = array();
@@ -777,6 +829,7 @@ class KTPWP_Order_Items {
             case 'price':
                 $update_data['price'] = floatval( $field_value );
                 $format[] = '%f';
+                error_log('KTPWP Update Item Debug - price処理: ' . $field_value . ' -> ' . floatval( $field_value ));
                 break;
             case 'quantity':
                 $update_data['quantity'] = floatval( $field_value );
@@ -795,12 +848,16 @@ class KTPWP_Order_Items {
                 $format[] = '%s';
                 break;
             default:
+                error_log('KTPWP Update Item Debug - 不明なフィールド名: ' . $field_name);
                 return false;
         }
 
         // Always update the updated_at timestamp
         $update_data['updated_at'] = current_time( 'mysql' );
         $format[] = '%s';
+
+        error_log('KTPWP Update Item Debug - update_data: ' . print_r($update_data, true));
+        error_log('KTPWP Update Item Debug - format: ' . print_r($format, true));
 
         $result = $wpdb->update(
             $table_name,
@@ -810,11 +867,15 @@ class KTPWP_Order_Items {
             array( '%d' )
         );
 
+        error_log('KTPWP Update Item Debug - SQL result: ' . ($result !== false ? $result : 'FALSE'));
+        error_log('KTPWP Update Item Debug - SQL query: ' . $wpdb->last_query);
+        
         if ( $result === false ) {
-            error_log( 'KTPWP: Failed to update item field: ' . $wpdb->last_error );
+            error_log( 'KTPWP Update Item Debug - SQL ERROR: ' . $wpdb->last_error );
             return false;
         }
 
+        error_log('KTPWP Update Item Debug === フィールド更新完了 ===');
         return true;
     }
 

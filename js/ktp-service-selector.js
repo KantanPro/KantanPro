@@ -684,7 +684,7 @@
                     <input type="text" name="invoice_items[${newIndex}][unit]" class="invoice-item-input unit" value="${serviceData.unit}">
                 </td>
                 <td style="text-align:left;">
-                    <input type="number" name="invoice_items[${newIndex}][amount]" class="invoice-item-input amount" value="${serviceData.price}" step="1" readonly style="text-align:left;">
+                    <input type="number" name="invoice_items[${newIndex}][amount]" class="invoice-item-input amount" value="0" step="1" readonly style="text-align:left;">
                 </td>
                 <td>
                     <input type="text" name="invoice_items[${newIndex}][remarks]" class="invoice-item-input remarks" value="">
@@ -697,7 +697,7 @@
         tbody.append(newRowHtml);
         const $newRow = tbody.find('tr').last();
 
-        // 金額を計算
+        // 最初に金額を計算（単価 × 数量）
         if (typeof calculateAmount === 'function') {
             calculateAmount($newRow);
         }
@@ -710,11 +710,40 @@
         // データベースに保存
         const orderId = $('input[name="order_id"]').val() || $('#order_id').val();
         if (orderId && typeof window.ktpInvoiceCreateNewItem === 'function') {
+            console.log('[SERVICE SELECTOR] サービス追加データ保存開始', serviceData);
+            
             window.ktpInvoiceCreateNewItem('invoice', 'product_name', serviceData.name, orderId, $newRow, function(success, newItemId) {
                 if (success && newItemId) {
                     $newRow.find('input[name*="[id]"]').val(newItemId);
                     $newRow.removeAttr('data-newly-added');
                     console.log('[SERVICE SELECTOR] 新規サービス保存成功', newItemId);
+                    
+                    // 各フィールドを個別に保存
+                    if (typeof window.ktpInvoiceAutoSaveItem === 'function') {
+                        console.log('[SERVICE SELECTOR] 単価・数量・単位を保存中...', {
+                            price: serviceData.price,
+                            quantity: 1,
+                            unit: serviceData.unit
+                        });
+                        
+                        window.ktpInvoiceAutoSaveItem('invoice', newItemId, 'price', serviceData.price, orderId);
+                        window.ktpInvoiceAutoSaveItem('invoice', newItemId, 'quantity', 1, orderId);
+                        window.ktpInvoiceAutoSaveItem('invoice', newItemId, 'unit', serviceData.unit, orderId);
+                        
+                        // 金額も明示的に保存
+                        const calculatedAmount = serviceData.price * 1;
+                        window.ktpInvoiceAutoSaveItem('invoice', newItemId, 'amount', calculatedAmount, orderId);
+                    }
+                    
+                    // 保存後に再度金額計算を実行
+                    setTimeout(function() {
+                        if (typeof calculateAmount === 'function') {
+                            calculateAmount($newRow);
+                        }
+                        if (typeof updateTotalAndProfit === 'function') {
+                            updateTotalAndProfit();
+                        }
+                    }, 100);
                 }
             });
         }
@@ -726,6 +755,28 @@
 
         // 成功メッセージ
         showMessage('サービスを新規行に追加しました', 'success');
+
+        // デバッグ用：サービス追加時の金額計算確認
+        window.ktpDebugServiceAmountCalculation = function() {
+            console.log('=== サービス追加後の金額計算確認 ===');
+            $('.invoice-items-table tbody tr').each(function(index) {
+                const $row = $(this);
+                const productName = $row.find('.product-name').val();
+                const price = parseFloat($row.find('.price').val()) || 0;
+                const quantity = parseFloat($row.find('.quantity').val()) || 0;
+                const amount = parseFloat($row.find('.amount').val()) || 0;
+                const expectedAmount = price * quantity;
+                
+                console.log(`Row ${index + 1}:`, {
+                    productName: productName,
+                    price: price,
+                    quantity: quantity,
+                    amount: amount,
+                    expectedAmount: expectedAmount,
+                    isCorrect: amount === expectedAmount
+                });
+            });
+        };
     }
 
     // サービスで既存行を更新
@@ -739,8 +790,10 @@
         
         // 数量はデフォルトで1に設定
         targetRow.find('.quantity').val(1);
+        
+        // 金額フィールドは直接設定せず、計算で自動設定される
 
-        // 金額を再計算
+        // 金額を再計算（これで正しい金額が設定される）
         if (typeof calculateAmount === 'function') {
             calculateAmount(targetRow);
         }
@@ -755,11 +808,32 @@
         const orderId = $('input[name="order_id"]').val() || $('#order_id').val();
         
         if (orderId && itemId && itemId !== '0' && typeof window.ktpInvoiceAutoSaveItem === 'function') {
+            console.log('[SERVICE SELECTOR] サービス更新データ保存中...', {
+                itemId: itemId,
+                price: serviceData.price,
+                quantity: 1,
+                unit: serviceData.unit
+            });
+            
             // 各フィールドを順次保存
             window.ktpInvoiceAutoSaveItem('invoice', itemId, 'product_name', serviceData.name, orderId);
             window.ktpInvoiceAutoSaveItem('invoice', itemId, 'price', serviceData.price, orderId);
             window.ktpInvoiceAutoSaveItem('invoice', itemId, 'unit', serviceData.unit, orderId);
             window.ktpInvoiceAutoSaveItem('invoice', itemId, 'quantity', 1, orderId);
+            
+            // 金額も明示的に保存
+            const calculatedAmount = serviceData.price * 1;
+            window.ktpInvoiceAutoSaveItem('invoice', itemId, 'amount', calculatedAmount, orderId);
+            
+            // 保存後に金額計算を再実行
+            setTimeout(function() {
+                if (typeof calculateAmount === 'function') {
+                    calculateAmount(targetRow);
+                }
+                if (typeof updateTotalAndProfit === 'function') {
+                    updateTotalAndProfit();
+                }
+            }, 200);
         }
 
         // ポップアップを閉じる（イベントハンドラーもクリーンアップ）
