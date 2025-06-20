@@ -70,7 +70,7 @@ class KTPWP_Supplier_Skills {
         global $wpdb;
 
         $table_name = $wpdb->prefix . 'ktp_supplier_skills';
-        $my_table_version = '3.0.0'; // Updated for simplified table structure
+        $my_table_version = '3.1.0'; // Updated for decimal precision increase
         $option_name = 'ktp_supplier_skills_table_version';
 
         // Check if table needs to be created or updated
@@ -83,7 +83,7 @@ class KTPWP_Supplier_Skills {
                 id MEDIUMINT(9) NOT NULL AUTO_INCREMENT,
                 supplier_id MEDIUMINT(9) NOT NULL,
                 product_name VARCHAR(255) NOT NULL DEFAULT '' COMMENT '商品名',
-                unit_price DECIMAL(10,2) NOT NULL DEFAULT 0 COMMENT '単価',
+                unit_price DECIMAL(15,6) NOT NULL DEFAULT 0 COMMENT '単価',
                 quantity INT NOT NULL DEFAULT 1 COMMENT '数量',
                 unit VARCHAR(50) NOT NULL DEFAULT '式' COMMENT '単位',
                 frequency INT NOT NULL DEFAULT 0 COMMENT '頻度',
@@ -140,8 +140,24 @@ class KTPWP_Supplier_Skills {
                         }
                     }
                 }
+            }
+            
+            // If version is less than 3.1.0, update unit_price precision
+            if ( version_compare( $installed_version, '3.1.0', '<' ) ) {
+                $alter_column_query = "ALTER TABLE `{$table_name}` MODIFY COLUMN `unit_price` DECIMAL(15,6) NOT NULL DEFAULT 0 COMMENT '単価'";
+                $result = $wpdb->query( $alter_column_query );
                 
-                // Update version after migration
+                if ( $result === false ) {
+                    error_log( "KTPWP: Failed to update unit_price column precision in supplier skills table" );
+                } else {
+                    if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                        error_log( "KTPWP: Successfully updated unit_price column precision in supplier skills table" );
+                    }
+                }
+            }
+            
+            // Update version after all migrations
+            if ( version_compare( $installed_version, $my_table_version, '<' ) ) {
                 update_option( $option_name, $my_table_version );
             }
         }
@@ -499,7 +515,7 @@ class KTPWP_Supplier_Skills {
         
         // 単価フィールド
         $html .= '<div style="flex: 1; min-width: 80px;">';
-        $html .= '<input type="number" name="unit_price" min="0" step="0.01" placeholder="単価" style="width: 100%; padding: 8px 10px; border: 1px solid #ced4da; border-radius: 4px; font-size: 14px; box-sizing: border-box;">';
+        $html .= '<input type="number" name="unit_price" min="0" step="any" value="0" placeholder="単価" style="width: 100%; padding: 8px 10px; border: 1px solid #ced4da; border-radius: 4px; font-size: 14px; box-sizing: border-box;">';
         $html .= '</div>';
         
         // 数量フィールド
@@ -530,7 +546,9 @@ class KTPWP_Supplier_Skills {
             foreach ( $skills as $skill ) {
                 $skill_id = esc_attr( $skill['id'] );
                 $product_name = esc_html( $skill['product_name'] );
-                $unit_price = number_format( floatval( $skill['unit_price'] ), 2 );
+                // Format unit price to remove unnecessary trailing zeros
+                $unit_price_raw = floatval( $skill['unit_price'] );
+                $unit_price = rtrim( rtrim( number_format( $unit_price_raw, 6, '.', '' ), '0' ), '.' );
                 $quantity = absint( $skill['quantity'] );
                 $unit = esc_html( $skill['unit'] );
                 $frequency = isset( $skill['frequency'] ) ? absint( $skill['frequency'] ) : 0;
