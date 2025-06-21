@@ -1666,10 +1666,15 @@ class KTPWP_Ajax {
             
             // パブリックメソッドを使用して最新のプレビューHTMLを生成
             $preview_html = $order_class->Generate_Order_Preview_HTML_Public($order);
+            
+            // 進捗状況に応じた帳票タイトルを取得
+            $document_info = $order_class->Get_Document_Info_By_Progress_Public($order->progress);
 
             wp_send_json_success(array(
                 'preview_html' => $preview_html,
                 'order_id' => $order_id,
+                'progress' => $order->progress,
+                'document_title' => $document_info['title'],
                 'timestamp' => current_time('timestamp')
             ));
 

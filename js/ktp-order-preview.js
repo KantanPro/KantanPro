@@ -69,7 +69,11 @@
                         
                         if (result.success && result.data && result.data.preview_html) {
                             console.log('[ORDER-PREVIEW] 最新プレビュー取得成功');
-                            window.ktpShowOrderPreview(orderId, result.data.preview_html);
+                            // プレビューデータに進捗情報とタイトル情報を含める
+                            window.ktpShowOrderPreview(orderId, result.data.preview_html, {
+                                progress: result.data.progress,
+                                document_title: result.data.document_title
+                            });
                         } else {
                             console.error('[ORDER-PREVIEW] プレビューデータの取得に失敗:', result);
                             alert('プレビューデータの取得に失敗しました: ' + (result.data || 'エラー詳細不明'));
@@ -92,12 +96,14 @@
     });
 
     // 受注書プレビューポップアップの表示
-    window.ktpShowOrderPreview = function (orderId, previewContent) {
+    window.ktpShowOrderPreview = function (orderId, previewContent, orderInfo) {
         console.log('[ORDER PREVIEW] ===== ktpShowOrderPreview 関数が呼び出されました =====');
         console.log('[ORDER PREVIEW] 引数 orderId:', orderId);
         console.log('[ORDER PREVIEW] 引数 previewContent:', previewContent ? 'データあり (' + previewContent.length + ' 文字)' : 'データなし');
+        console.log('[ORDER PREVIEW] 引数 orderInfo:', orderInfo);
         
-        // アラートで動作確認（最初だけ）
+        // グローバル変数として保存（PDF保存時に使用）
+        window.currentOrderInfo = orderInfo || {};
         console.log('[ORDER PREVIEW] 関数が正常に呼び出されました');
 
         if (!orderId) {
@@ -296,13 +302,27 @@
                 <style>
                     body {
                         font-family: "Noto Sans JP", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
-                        margin: 20px;
+                        margin: 0;
+                        padding: 0;
                         color: #333;
-                        line-height: 1.6;
+                        line-height: 1.4;
                     }
                     @media print {
-                        body { margin: 0; }
+                        body { 
+                            margin: 0; 
+                            padding: 0;
+                        }
                         .no-print { display: none; }
+                        .order-preview-document {
+                            max-width: none !important;
+                            margin: 0 !important;
+                            padding: 10mm !important;
+                            min-height: auto !important;
+                        }
+                        /* ページ区切り処理 */
+                        div[style*="page-break-before: always"] {
+                            page-break-before: always;
+                        }
                     }
                     @page {
                         size: A4;
@@ -364,47 +384,22 @@
         }, 15000);
     }
 
-    // PDF保存機能
+    // PDF保存機能 - 直接PDFダウンロード
     function saveOrderPreviewAsPDF(orderId) {
         console.log('[ORDER PREVIEW] PDF保存開始', { orderId });
         
         const saveContent = $('#ktp-order-preview-content').html();
-        const currentDate = new Date();
-        const timestamp = currentDate.toISOString().slice(0, 19).replace(/[:-]/g, '');
-        const filename = `受注書_${orderId}_${timestamp}.pdf`;
         
-        // PDF生成のためのHTML準備
-        const printContent = `
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>受注書 - ID: ${orderId}</title>
-    <style>
-        body {
-            font-family: "Noto Sans JP", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
-            margin: 0;
-            padding: 20px;
-            color: #333;
-            line-height: 1.6;
-        }
-        @media print {
-            body { margin: 0; padding: 10mm; }
-            .no-print { display: none; }
-        }
-        @page {
-            size: A4;
-            margin: 10mm;
-        }
-    </style>
-</head>
-<body>
-    ${saveContent}
-</body>
-</html>`;
+        // ファイル名を要求された形式で生成
+        const filename = generateFilename(orderId);
+        
+        // Canvas APIを使用してPDF生成
+        generatePDFFromHTML(saveContent, filename, orderId);
+    }
 
-        // ブラウザのPDF機能を使用
+    // HTMLからPDFを生成してダウンロード
+    function generatePDFFromHTML(content, filename, orderId) {
+        // 新しいウィンドウでPDF生成処理
         const printWindow = window.open('', '_blank');
         
         if (!printWindow) {
@@ -412,53 +407,243 @@
             return;
         }
         
+        // PDF生成用HTMLを作成
+        const printContent = createPrintableHTML(content, orderId);
+        
         printWindow.document.open();
         printWindow.document.write(printContent);
         printWindow.document.close();
         
-        var isDialogClosed = false;
-        var startTime = Date.now();
-        
-        // PDF印刷ダイアログを表示
+        // ウィンドウが読み込まれた後にPDF生成を実行
         printWindow.onload = function() {
             setTimeout(function() {
-                printWindow.print();
-            }, 500);
-        };
-        
-        // 印刷ダイアログ終了の検知
-        printWindow.onafterprint = function() {
-            isDialogClosed = true;
-            setTimeout(function() {
-                printWindow.close();
-            }, 100);
-        };
-        
-        // フォーカス変更での検知（代替手段）
-        printWindow.onfocus = function() {
-            if (Date.now() - startTime > 1000 && !isDialogClosed) {
-                isDialogClosed = true;
-                setTimeout(function() {
+                try {
+                    // ブラウザの印刷機能を使ってPDFを生成
+                    printWindow.print();
+                    
+                    // 印刷完了後の処理（自動クローズはHTMLのJavaScriptで処理）
+                    printWindow.onafterprint = function() {
+                        setTimeout(function() {
+                            if (!printWindow.closed) {
+                                printWindow.close();
+                            }
+                            showSaveMessage('PDFを保存しました。');
+                        }, 500);
+                    };
+                    
+                } catch (error) {
+                    console.error('[ORDER PREVIEW] PDF生成エラー:', error);
                     printWindow.close();
-                }, 500);
-            }
+                    showSaveMessage('PDF保存でエラーが発生しました。');
+                }
+            }, 1000);
         };
         
-        // 強制クローズ（15秒後）
-        setTimeout(function() {
+        // 追加の自動クローズ機能（フェイルセーフ）
+        let autoCloseTimer = setTimeout(function() {
             if (printWindow && !printWindow.closed) {
                 try {
                     printWindow.close();
+                    showSaveMessage('PDFを保存しました。');
                 } catch (e) {
-                    console.log('[ORDER PREVIEW] PDFウィンドウクローズエラー:', e);
+                    console.log('[ORDER PREVIEW] 自動クローズエラー:', e);
                 }
             }
         }, 15000);
         
-        console.log('[ORDER PREVIEW] PDF保存処理完了', { filename });
+        // ウィンドウが手動で閉じられた場合のタイマークリア
+        const checkClosed = setInterval(function() {
+            if (printWindow.closed) {
+                clearTimeout(autoCloseTimer);
+                clearInterval(checkClosed);
+                showSaveMessage('PDFを保存しました。');
+            }
+        }, 1000);
         
-        // 成功メッセージを表示
-        showSaveMessage('PDF保存用の印刷ダイアログを開きました。印刷先で「PDFとして保存」を選択してください。');
+        console.log('[ORDER PREVIEW] PDF生成プロセス開始', { filename });
+    }
+
+    // ファイル名生成関数
+    function generateFilename(orderId) {
+        // 現在の日付を取得（YYYYMMDD形式）
+        const currentDate = new Date();
+        const year = currentDate.getFullYear();
+        const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+        const day = String(currentDate.getDate()).padStart(2, '0');
+        const dateString = `${year}${month}${day}`;
+        
+        // 帳票タイトルを取得（デフォルトは受注書）
+        const documentTitle = (window.currentOrderInfo && window.currentOrderInfo.document_title) 
+            ? window.currentOrderInfo.document_title 
+            : '受注書';
+        
+        // ファイル名生成: {タイトル}_ID{id}_{発行日}.pdf
+        // macOSでコロン（：）が問題になるため除去
+        const filename = `${documentTitle}_ID${orderId}_${dateString}`;
+        
+        console.log('[ORDER PREVIEW] 生成されたファイル名:', filename);
+        return filename;
+    }
+
+    // 印刷可能なHTMLを生成（PDF最適化）
+    function createPrintableHTML(content, orderId) {
+        return `<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>受注書 - ID: ${orderId}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif;
+            font-size: 12px;
+            line-height: 1.4;
+            color: #333;
+            background: #f5f5f5;
+            padding: 20px;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        .page-container {
+            width: 210mm;
+            max-width: 210mm;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            padding: 15mm;
+            min-height: 297mm;
+        }
+        .order-preview-document {
+            max-width: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            min-height: auto !important;
+            background: white;
+        }
+        /* ページ区切り処理 */
+        div[style*="page-break-before: always"] {
+            page-break-before: always;
+        }
+        @page {
+            size: A4;
+            margin: 15mm;
+        }
+        @media print {
+            body { 
+                margin: 0; 
+                padding: 0;
+                background: white;
+            }
+            .page-container {
+                box-shadow: none;
+                margin: 0;
+                padding: 0;
+                width: auto;
+                max-width: none;
+                min-height: auto;
+            }
+            .no-print, .pdf-instructions { 
+                display: none !important; 
+            }
+        }
+        /* フォント最適化 */
+        h1, h2, h3, h4, h5, h6 {
+            font-weight: bold;
+        }
+        /* 色の保持 */
+        * {
+            -webkit-print-color-adjust: exact !important;
+            color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+        .pdf-instructions {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            margin: 20px auto;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            max-width: 600px;
+        }
+        .pdf-instructions h3 {
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        .pdf-instructions p {
+            margin: 8px 0;
+            font-size: 14px;
+        }
+        .pdf-instructions .highlight {
+            background: rgba(255,255,255,0.2);
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+    </style>
+    <script>
+        // ページ読み込み完了後に自動でPDF保存を促す
+        window.addEventListener('load', function() {
+            document.title = '${generateFilename(orderId)}.pdf';
+            
+            // ブラウザ判定
+            const isChrome = navigator.userAgent.includes('Chrome');
+            const isEdge = navigator.userAgent.includes('Edge');
+            const isSafari = navigator.userAgent.includes('Safari') && !isChrome;
+            const isFirefox = navigator.userAgent.includes('Firefox');
+            
+            // PDF保存を促すメッセージを更新
+            const instructions = document.querySelector('.pdf-instructions');
+            if (instructions) {
+                if (isChrome || isEdge) {
+                    instructions.innerHTML = '<h3>📄 PDF保存中...</h3><p>印刷ダイアログで「PDFとして保存」を選択してください</p><div class="highlight">送信先: PDFに保存</div>';
+                } else if (isSafari) {
+                    instructions.innerHTML = '<h3>📄 PDF保存中...</h3><p>印刷ダイアログで「PDFとして保存」を選択してください</p><div class="highlight">PDF ボタンをクリック</div>';
+                } else {
+                    instructions.innerHTML = '<h3>📄 PDF保存中...</h3><p>印刷ダイアログで「PDFとして保存」を選択してください</p>';
+                }
+            }
+        });
+        
+        // 印刷完了を検知するためのイベントリスナー
+        window.addEventListener('afterprint', function() {
+            // 印刷完了後、少し待ってからウィンドウを閉じる
+            setTimeout(function() {
+                window.close();
+            }, 1000);
+        });
+        
+        // フォーカス変更での検知（代替手段）
+        let printDialogClosed = false;
+        window.addEventListener('focus', function() {
+            if (!printDialogClosed) {
+                printDialogClosed = true;
+                setTimeout(function() {
+                    window.close();
+                }, 1500);
+            }
+        });
+    </script>
+</head>
+<body>
+    <div class="pdf-instructions no-print">
+        <h3>📄 PDF保存の準備ができました</h3>
+        <p>印刷ダイアログで「PDFとして保存」を選択してください</p>
+        <div class="highlight">
+            自動的に印刷ダイアログが表示されます
+        </div>
+    </div>
+    <div class="page-container">
+        ${content}
+    </div>
+</body>
+</html>`;
     }
 
     // 保存メッセージ表示関数

@@ -1723,51 +1723,63 @@ $content .= '</div>';
 
         
         // 請求項目の取得
-        $invoice_items_html = $this->Generate_Invoice_Items_For_Preview($order_data->id);
+        $invoice_result = $this->Generate_Invoice_Items_For_Preview($order_data->id);
+        $invoice_items_html = $invoice_result['html'];
+        $total_amount = $invoice_result['total'];
         
         // 自社情報の取得（設定から）
         $company_info_html = $this->Get_Company_Info_HTML();
 
-        // プレビューHTML生成 - HTMLエスケープを最小限に抑える
+        // プレビューHTML生成 - A4サイズに最適化
         $html = '<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><title>受注書プレビュー</title></head><body>';
-        $html .= '<div class="order-preview-document" style="font-family: \'Noto Sans JP\', \'Hiragino Kaku Gothic ProN\', Meiryo, sans-serif; line-height: 1.8; color: #333; max-width: 800px; margin: 0 auto; padding: 40px; background: #fff;">';
+        $html .= '<div class="order-preview-document" style="font-family: \'Noto Sans JP\', \'Hiragino Kaku Gothic ProN\', Meiryo, sans-serif; line-height: 1.4; color: #333; max-width: 210mm; margin: 0 auto; padding: 15mm; background: #fff; min-height: 297mm; box-sizing: border-box;">';
         
-        // 宛先情報
-        $html .= '<div class="customer-info" style="margin-bottom: 40px;">';
-        $html .= '<div class="company-name" style="font-size: 20px; font-weight: bold; margin-bottom: 8px;">' . $order_data->customer_name . '</div>';
-        $html .= '<div class="customer-name" style="font-size: 18px; margin-bottom: 20px;">' . $order_data->user_name . ' 様</div>';
+        // 宛先情報（コンパクト）
+        $html .= '<div class="customer-info" style="margin-bottom: 20px;">';
+        $html .= '<div class="company-name" style="font-size: 16px; font-weight: bold; margin-bottom: 4px;">' . esc_html($order_data->customer_name) . '</div>';
+        $html .= '<div class="customer-name" style="font-size: 14px; margin-bottom: 15px;">' . esc_html($order_data->user_name) . ' 様</div>';
         $html .= '</div>';
 
-        // 帳票タイトル
-        $html .= '<div class="document-title" style="text-align: center; margin-bottom: 30px; padding: 20px; border: 2px solid #333; font-size: 24px; font-weight: bold;">';
-        $html .= '＜' . $document_info['title'] . '＞';
+        // 帳票タイトル（コンパクト）
+        $html .= '<div class="document-title" style="text-align: center; margin-bottom: 20px; padding: 12px; border: 2px solid #333; font-size: 18px; font-weight: bold;">';
+        $html .= '＜' . esc_html($document_info['title']) . '＞';
         $html .= '</div>';
 
-        // 帳票内容
-        $html .= '<div class="document-content" style="margin-bottom: 40px; padding: 20px; background: #f9f9f9; border-left: 4px solid #007cba; font-size: 16px;">';
-        $html .= sprintf($document_info['content'], '<strong>' . $project_name . '</strong>');
+        // 帳票内容（コンパクト）
+        $html .= '<div class="document-content" style="margin-bottom: 25px; padding: 12px; background: #f9f9f9; border-left: 4px solid #007cba; font-size: 14px;">';
+        $html .= sprintf($document_info['content'], '<strong>' . esc_html($project_name) . '</strong>');
         $html .= '</div>';
 
-        // 請求項目
-        $html .= '<div class="invoice-items" style="margin-bottom: 40px;">';
-        $html .= '<h3 style="font-size: 18px; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #333;">請求項目</h3>';
+        // 請求項目（メインコンテンツ）
+        $html .= '<div class="invoice-items" style="margin-bottom: 25px;">';
         $html .= $invoice_items_html;
         $html .= '</div>';
 
-        // 自社情報
-        $html .= '<div class="company-info" style="margin-bottom: 40px;">';
+        // 自社情報（コンパクト）
+        $html .= '<div class="company-info" style="margin-bottom: 20px;">';
         $html .= $company_info_html;
         $html .= '</div>';
 
-        // フッター
-        $html .= '<div class="document-footer" style="text-align: center; margin-top: 60px; padding-top: 20px; border-top: 1px solid #ccc; font-size: 12px; color: #666;">';
-        $html .= '受注書ID: ' . $order_data->id . ' | 作成日: ' . date('Y年m月d日', is_numeric($order_data->time) ? $order_data->time : strtotime($order_data->time));
+        // フッター（コンパクト）
+        $html .= '<div class="document-footer" style="text-align: center; margin-top: 40px; padding-top: 15px; border-top: 1px solid #ccc; font-size: 11px; color: #666;">';
+        $html .= '受注書ID: ' . esc_html($order_data->id) . ' | 作成日: ' . date('Y年m月d日', is_numeric($order_data->time) ? $order_data->time : strtotime($order_data->time));
         $html .= '</div>';
         
         $html .= '</div>'; // .order-preview-document 終了
         $html .= '</body></html>';
 
         return $html;
+    }
+
+    /**
+     * 進捗状況に応じた帳票情報を取得（パブリック版）
+     *
+     * @param int $progress 進捗状況
+     * @return array 帳票情報
+     * @since 1.0.0
+     */
+    public function Get_Document_Info_By_Progress_Public($progress) {
+        return $this->Get_Document_Info_By_Progress($progress);
     }
 
     /**
@@ -1821,40 +1833,28 @@ $content .= '</div>';
      * プレビュー用請求項目HTMLを生成
      *
      * @param int $order_id 受注書ID
-     * @return string 請求項目HTML
+     * @return array HTMLと合計金額の配列 ['html' => string, 'total' => float]
      * @since 1.0.0
      */
     private function Generate_Invoice_Items_For_Preview($order_id) {
         // メール生成と同じ方法でデータを取得
         $invoice_items = $this->Get_Invoice_Items($order_id);
-
-        if (empty($invoice_items)) {
-            return '<div style="text-align: center; color: #666; padding: 20px;">請求項目が登録されていません</div>';
-        }
-
-        $html = '<table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">';
-        $html .= '<thead>';
-        $html .= '<tr style="background: #f0f0f0;">';
-        $html .= '<th style="border: 1px solid #ddd; padding: 12px; text-align: left;">項目名</th>';
-        $html .= '<th style="border: 1px solid #ddd; padding: 12px; text-align: right; width: 120px;">単価</th>';
-        $html .= '<th style="border: 1px solid #ddd; padding: 12px; text-align: right; width: 100px;">数量</th>';
-        $html .= '<th style="border: 1px solid #ddd; padding: 12px; text-align: right; width: 120px;">金額</th>';
-        $html .= '</tr>';
-        $html .= '</thead>';
-        $html .= '<tbody>';
-
-        $total_amount = 0;
-
+        
+        // デザイン設定から奇数偶数の背景色を取得
+        $design_options = get_option('ktp_design_settings', array());
+        $odd_row_color = isset($design_options['odd_row_color']) ? $design_options['odd_row_color'] : '#E7EEFD';
+        $even_row_color = isset($design_options['even_row_color']) ? $design_options['even_row_color'] : '#FFFFFF';
+        
+        $total_items = count($invoice_items);
+        $items_per_page = 18;
+        $html = '';
+        $grand_total = 0;
+        
+        // 全体の合計金額を事前に計算
         foreach ($invoice_items as $item) {
-            // メール生成と同じ配列アクセス方式を使用
-            $product_name = isset($item['product_name']) ? $item['product_name'] : '';
             $quantity = isset($item['quantity']) ? floatval($item['quantity']) : 0;
             $price = isset($item['price']) ? floatval($item['price']) : 0;
             $amount = isset($item['amount']) ? floatval($item['amount']) : 0;
-            $unit = isset($item['unit']) ? $item['unit'] : '';
-            
-            // 詳細デバッグ: [>]ボタンで追加された項目を特定
-            $item_id = isset($item['id']) ? $item['id'] : 'N/A';
             
             // 金額が設定されているが単価が0の場合、逆算して単価を求める
             if ($price == 0 && $amount > 0 && $quantity > 0) {
@@ -1866,26 +1866,135 @@ $content .= '</div>';
                 $amount = $price * $quantity;
             }
             
-            $total_amount += $amount;
-
-            $html .= '<tr>';
-            $html .= '<td style="border: 1px solid #ddd; padding: 12px;">' . $product_name . '</td>';
-            $html .= '<td style="border: 1px solid #ddd; padding: 12px; text-align: right;">¥' . number_format($price) . '</td>';
-            $html .= '<td style="border: 1px solid #ddd; padding: 12px; text-align: right;">' . number_format($quantity) . $unit . '</td>';
-            $html .= '<td style="border: 1px solid #ddd; padding: 12px; text-align: right;">¥' . number_format($amount) . '</td>';
-            $html .= '</tr>';
+            $grand_total += $amount;
+        }
+        
+        // ページ数を計算（1ページ目は必ず18行、2ページ目以降は実データのみ）
+        $total_pages = ($total_items <= $items_per_page) ? 1 : ceil($total_items / $items_per_page);
+        
+        // 各ページを生成
+        for ($page = 0; $page < $total_pages; $page++) {
+            $start_index = $page * $items_per_page;
+            $end_index = min($start_index + $items_per_page, $total_items);
+            
+            // 2ページ目以降はページ区切りを追加
+            if ($page > 0) {
+                $html .= '<div style="page-break-before: always; margin-top: 30px;"></div>';
+                $html .= '<h3 style="font-size: 16px; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #333;">請求項目（' . ($page + 1) . '/' . $total_pages . 'p）</h3>';
+            } else {
+                // 1ページ目：請求金額を表示
+                $html .= '<h3 style="font-size: 16px; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #333;">請求項目（' . ($page + 1) . '/' . $total_pages . 'p）　請求金額 ¥' . number_format($grand_total) . '</h3>';
+            }
+            
+            // リスト表示開始（枠線なし、設定された奇数偶数背景カラー）
+            $html .= '<div style="margin-bottom: 15px; font-size: 12px;">';
+            
+            // ヘッダー行
+            $html .= '<div style="display: flex; background: #f0f0f0; padding: 8px; font-weight: bold; border-bottom: 1px solid #ccc; align-items: center;">';
+            $html .= '<div style="width: 30px; text-align: center;">No.</div>';
+            $html .= '<div style="flex: 1; text-align: left; margin-left: 8px;">項目名</div>';
+            $html .= '<div style="width: 80px; text-align: right;">単価</div>';
+            $html .= '<div style="width: 60px; text-align: right;">数量</div>';
+            $html .= '<div style="width: 80px; text-align: right;">金額</div>';
+            $html .= '<div style="width: 100px; text-align: left; margin-left: 8px;">備考</div>';
+            $html .= '</div>';
+            
+            $page_total = 0;
+            $row_count = 0;
+            $global_row_count = $start_index; // ページをまたがった行番号管理
+            $item_no = $start_index + 1; // No.カラム用の通し番号
+            
+            // 1ページ目は18行固定、2ページ目以降は実データのみ
+            $rows_to_show = ($page === 0) ? $items_per_page : ($end_index - $start_index);
+            
+            // 実際のデータを表示
+            for ($i = $start_index; $i < $end_index && $row_count < $rows_to_show; $i++) {
+                $item = $invoice_items[$i];
+                
+                $product_name = isset($item['product_name']) ? $item['product_name'] : '';
+                $quantity = isset($item['quantity']) ? floatval($item['quantity']) : 0;
+                $price = isset($item['price']) ? floatval($item['price']) : 0;
+                $amount = isset($item['amount']) ? floatval($item['amount']) : 0;
+                $unit = isset($item['unit']) ? $item['unit'] : '';
+                $remarks = isset($item['remarks']) ? $item['remarks'] : ''; // 備考フィールドを追加
+                
+                // 金額計算
+                if ($price == 0 && $amount > 0 && $quantity > 0) {
+                    $price = $amount / $quantity;
+                }
+                if ($amount == 0 && $price > 0 && $quantity > 0) {
+                    $amount = $price * $quantity;
+                }
+                
+                $page_total += $amount;
+                
+                // 設定された奇数偶数の背景色を使用
+                $bg_color = ($global_row_count % 2 === 0) ? $even_row_color : $odd_row_color;
+                
+                $html .= '<div style="display: flex; padding: 6px 8px; height: 24px; background: ' . esc_attr($bg_color) . '; align-items: center;">';
+                $html .= '<div style="width: 30px; text-align: center;">' . $item_no . '</div>';
+                $html .= '<div style="flex: 1; text-align: left; margin-left: 8px;">' . esc_html($product_name) . '</div>';
+                $html .= '<div style="width: 80px; text-align: right;">¥' . number_format($price) . '</div>';
+                $html .= '<div style="width: 60px; text-align: right;">' . number_format($quantity) . $unit . '</div>';
+                $html .= '<div style="width: 80px; text-align: right;">¥' . number_format($amount) . '</div>';
+                $html .= '<div style="width: 100px; text-align: left; margin-left: 8px;">' . esc_html($remarks) . '</div>';
+                $html .= '</div>';
+                
+                $row_count++;
+                $global_row_count++;
+                $item_no++;
+            }
+            
+            // 1ページ目のみ空行を追加して18行に調整
+            if ($page === 0) {
+                while ($row_count < $items_per_page) {
+                    // 設定された奇数偶数の背景色を使用
+                    $bg_color = ($global_row_count % 2 === 0) ? $even_row_color : $odd_row_color;
+                    
+                    $html .= '<div style="display: flex; padding: 6px 8px; height: 24px; background: ' . esc_attr($bg_color) . '; align-items: center;">';
+                    $html .= '<div style="width: 30px; text-align: center;">&nbsp;</div>';
+                    $html .= '<div style="flex: 1; text-align: left; margin-left: 8px;">&nbsp;</div>';
+                    $html .= '<div style="width: 80px; text-align: right;">&nbsp;</div>';
+                    $html .= '<div style="width: 60px; text-align: right;">&nbsp;</div>';
+                    $html .= '<div style="width: 80px; text-align: right;">&nbsp;</div>';
+                    $html .= '<div style="width: 100px; text-align: left; margin-left: 8px;">&nbsp;</div>';
+                    $html .= '</div>';
+                    
+                    $row_count++;
+                    $global_row_count++;
+                }
+            }
+            
+            // 最後のページで総合計を表示、それ以外はページ小計（適切な間隔で配置）
+            if ($page === $total_pages - 1) {
+                // 総合計行（上の行との間隔を追加）
+                $html .= '<div style="display: flex; padding: 10px 8px; background: #e9ecef; font-weight: bold; border-top: 2px solid #ccc; margin-top: 5px; align-items: center;">';
+                $html .= '<div style="width: 30px; text-align: center;">&nbsp;</div>';
+                $html .= '<div style="flex: 1; text-align: right; margin-left: 8px;">総合計</div>';
+                $html .= '<div style="width: 80px; text-align: right;">&nbsp;</div>';
+                $html .= '<div style="width: 60px; text-align: right;">&nbsp;</div>';
+                $html .= '<div style="width: 80px; text-align: right;">¥' . number_format($grand_total) . '</div>';
+                $html .= '<div style="width: 100px; text-align: left; margin-left: 8px;">&nbsp;</div>';
+                $html .= '</div>';
+            } else if ($total_pages > 1) {
+                // ページ小計行（上の行との間隔を追加）
+                $html .= '<div style="display: flex; padding: 10px 8px; background: #f5f5f5; font-weight: bold; border-top: 1px solid #ccc; margin-top: 5px; align-items: center;">';
+                $html .= '<div style="width: 30px; text-align: center;">&nbsp;</div>';
+                $html .= '<div style="flex: 1; text-align: right; margin-left: 8px;">ページ小計</div>';
+                $html .= '<div style="width: 80px; text-align: right;">&nbsp;</div>';
+                $html .= '<div style="width: 60px; text-align: right;">&nbsp;</div>';
+                $html .= '<div style="width: 80px; text-align: right;">¥' . number_format($page_total) . '</div>';
+                $html .= '<div style="width: 100px; text-align: left; margin-left: 8px;">&nbsp;</div>';
+                $html .= '</div>';
+            }
+            
+            $html .= '</div>'; // リスト表示終了
         }
 
-        // 合計行
-        $html .= '<tr style="background: #f9f9f9; font-weight: bold;">';
-        $html .= '<td colspan="3" style="border: 1px solid #ddd; padding: 12px; text-align: right;">合計</td>';
-        $html .= '<td style="border: 1px solid #ddd; padding: 12px; text-align: right;">¥' . number_format($total_amount) . '</td>';
-        $html .= '</tr>';
-
-        $html .= '</tbody>';
-        $html .= '</table>';
-
-        return $html;
+        return [
+            'html' => $html,
+            'total' => $grand_total
+        ];
     }
 
     /**
