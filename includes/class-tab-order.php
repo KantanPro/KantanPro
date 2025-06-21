@@ -1758,27 +1758,27 @@ $content .= '</div>';
         $html .= '</div>';
 
         // 帳票タイトル（コンパクト）
-        $html .= '<div class="document-title" style="text-align: center; margin-bottom: 20px; padding: 12px; border: 2px solid #333; font-size: 18px; font-weight: bold;">';
+        $html .= '<div class="document-title" style="text-align: center; margin-bottom: 15px; padding: 12px; border: 2px solid #333; font-size: 18px; font-weight: bold;">';
         $html .= '＜' . esc_html($document_info['title']) . '＞';
         $html .= '</div>';
 
         // 帳票内容（コンパクト）
-        $html .= '<div class="document-content" style="margin-bottom: 25px; padding: 12px; background: #f9f9f9; border-left: 4px solid #007cba; font-size: 14px;">';
+        $html .= '<div class="document-content" style="margin-bottom: 20px; padding: 12px; background: #f9f9f9; border-left: 4px solid #007cba; font-size: 14px;">';
         $html .= sprintf($document_info['content'], '<strong>' . esc_html($project_name) . '</strong>');
         $html .= '</div>';
 
         // 請求項目（メインコンテンツ）
-        $html .= '<div class="invoice-items" style="margin-bottom: 25px;">';
+        $html .= '<div class="invoice-items" style="margin-bottom: 20px;">';
         $html .= $invoice_items_html;
         $html .= '</div>';
 
         // 自社情報（コンパクト）
-        $html .= '<div class="company-info" style="margin-bottom: 20px;">';
+        $html .= '<div class="company-info" style="margin-bottom: 15px;">';
         $html .= $company_info_html;
         $html .= '</div>';
 
         // フッター（コンパクト）
-        $html .= '<div class="document-footer" style="text-align: center; margin-top: 40px; padding-top: 15px; border-top: 1px solid #ccc; font-size: 11px; color: #666;">';
+        $html .= '<div class="document-footer" style="text-align: center; margin-top: 20px; padding-top: 10px; border-top: 1px solid #ccc; font-size: 11px; color: #666;">';
         $html .= '受注書ID: ' . esc_html($order_data->id) . ' | 作成日: ' . date('Y年m月d日', is_numeric($order_data->time) ? $order_data->time : strtotime($order_data->time));
         $html .= '</div>';
         
@@ -1863,7 +1863,7 @@ $content .= '</div>';
         $even_row_color = isset($design_options['even_row_color']) ? $design_options['even_row_color'] : '#FFFFFF';
         
         $total_items = count($invoice_items);
-        $items_per_page = 18;
+        $items_per_page = 16;
         $html = '';
         $grand_total = 0;
         
@@ -1886,7 +1886,7 @@ $content .= '</div>';
             $grand_total += $amount;
         }
         
-        // ページ数を計算（1ページ目は必ず18行、2ページ目以降は実データのみ）
+        // ページ数を計算（1ページ目は必ず16行、2ページ目以降は実データのみ）
         $total_pages = ($total_items <= $items_per_page) ? 1 : ceil($total_items / $items_per_page);
         
         // 各ページを生成
@@ -1921,7 +1921,7 @@ $content .= '</div>';
             $global_row_count = $start_index; // ページをまたがった行番号管理
             $item_no = $start_index + 1; // No.カラム用の通し番号
             
-            // 1ページ目は18行固定、2ページ目以降は実データのみ
+            // 1ページ目は16行固定、2ページ目以降は実データのみ
             $rows_to_show = ($page === 0) ? $items_per_page : ($end_index - $start_index);
             
             // 実際のデータを表示
@@ -1962,7 +1962,7 @@ $content .= '</div>';
                 $item_no++;
             }
             
-            // 1ページ目のみ空行を追加して18行に調整
+            // 1ページ目のみ空行を追加して16行に調整
             if ($page === 0) {
                 while ($row_count < $items_per_page) {
                     // 設定された奇数偶数の背景色を使用
