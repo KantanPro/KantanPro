@@ -1740,15 +1740,19 @@ $content .= '</div>';
         // 顧客の住所情報を取得（顧客テーブルから）
         $customer_address = $this->Get_Customer_Address($order_data->customer_name);
         
-        if (!empty($customer_address)) {
+        if (!empty($customer_address) && is_array($customer_address)) {
             // 住所がある場合：住所 → 会社名 → 名前 様
-            $html .= '<div class="customer-address" style="font-size: 14px; margin-bottom: 4px;">' . esc_html($customer_address) . '</div>';
+            $html .= '<div class="customer-address" style="font-size: 14px; margin-bottom: 4px;">';
+            foreach ($customer_address as $address_line) {
+                $html .= '<div>' . esc_html($address_line) . '</div>';
+            }
+            $html .= '</div>';
             $html .= '<div class="company-name" style="font-size: 16px; font-weight: bold; margin-bottom: 4px;">' . esc_html($order_data->customer_name) . '</div>';
-            $html .= '<div class="customer-name" style="font-size: 14px; margin-bottom: 15px;">' . esc_html($order_data->user_name) . ' 様</div>';
+            $html .= '<div class="customer-name" style="font-size: 14px; margin-bottom: 100px;">' . esc_html($order_data->user_name) . ' 様</div>';
         } else {
             // 住所がない場合：従来通り
             $html .= '<div class="company-name" style="font-size: 16px; font-weight: bold; margin-bottom: 4px;">' . esc_html($order_data->customer_name) . '</div>';
-            $html .= '<div class="customer-name" style="font-size: 14px; margin-bottom: 15px;">' . esc_html($order_data->user_name) . ' 様</div>';
+            $html .= '<div class="customer-name" style="font-size: 14px; margin-bottom: 100px;">' . esc_html($order_data->user_name) . ' 様</div>';
         }
         
         $html .= '</div>';
@@ -2081,41 +2085,58 @@ $content .= '</div>';
             return '';
         }
 
-        // 住所フィールドの組み立て（郵便番号〜番地まで）
-        $address_parts = array();
+        // 住所フィールドの組み立て（3行構成）
+        $address_parts_line1 = array(); // 1行目：郵便番号
+        $address_parts_line2 = array(); // 2行目：都道府県・市区町村・番地
+        $address_parts_line3 = array(); // 3行目：建物名
         
-        // 郵便番号
+        // 郵便番号（1行目）
         if (!empty($customer->postal_code)) {
-            $address_parts[] = '〒' . $customer->postal_code;
+            $address_parts_line1[] = '〒' . $customer->postal_code;
         }
         
-        // 都道府県
+        // 都道府県（2行目）
         if (!empty($customer->prefecture)) {
-            $address_parts[] = $customer->prefecture;
+            $address_parts_line2[] = $customer->prefecture;
         }
         
-        // 市区町村
+        // 市区町村（2行目）
         if (!empty($customer->city)) {
-            $address_parts[] = $customer->city;
+            $address_parts_line2[] = $customer->city;
         }
         
-        // 番地
+        // 番地（2行目）
         if (!empty($customer->address)) {
-            $address_parts[] = $customer->address;
+            $address_parts_line2[] = $customer->address;
         }
         
-        // 建物名
+        // 建物名（3行目）
         if (!empty($customer->building)) {
-            $address_parts[] = $customer->building;
+            $address_parts_line3[] = $customer->building;
         }
 
-        // 住所が何もない場合は空文字を返す
-        if (empty($address_parts)) {
-            return '';
+        // 住所が何もない場合は空配列を返す
+        if (empty($address_parts_line1) && empty($address_parts_line2) && empty($address_parts_line3)) {
+            return array();
         }
 
-        // 住所を結合して返す
-        return implode(' ', $address_parts);
+        // 住所を配列で返す（各行を個別に処理できるように）
+        $lines = array();
+        $line1 = implode(' ', $address_parts_line1);
+        $line2 = implode(' ', $address_parts_line2);
+        $line3 = implode(' ', $address_parts_line3);
+        
+        if (!empty($line1)) {
+            $lines[] = $line1;
+        }
+        if (!empty($line2)) {
+            $lines[] = $line2;
+        }
+        if (!empty($line3)) {
+            $lines[] = $line3;
+        }
+        
+        return $lines;
     }
 
 } // End of Kntan_Order_Class

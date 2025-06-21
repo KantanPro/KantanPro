@@ -754,7 +754,9 @@
         $('#ktp-service-selector-popup').remove();
 
         // 成功メッセージ
-        showMessage('サービスを新規行に追加しました', 'success');
+        if (typeof showSuccessNotification === 'function') {
+            showSuccessNotification('サービスを新規行に追加しました');
+        }
 
         // デバッグ用：サービス追加時の金額計算確認
         window.ktpDebugServiceAmountCalculation = function() {
@@ -842,37 +844,9 @@
         $('#ktp-service-selector-popup').remove();
 
         // 成功メッセージ
-        showMessage('サービス情報で行を更新しました', 'success');
-    }
-
-    // メッセージ表示
-    function showMessage(message, type = 'info') {
-        const className = type === 'success' ? 'notice-success' : type === 'error' ? 'notice-error' : 'notice-info';
-        const messageHtml = `
-            <div class="notice ${className} is-dismissible" style="
-                position: fixed;
-                top: 32px;
-                right: 20px;
-                z-index: 10001;
-                background: white;
-                border-left: 4px solid ${type === 'success' ? '#46b450' : type === 'error' ? '#dc3232' : '#0073aa'};
-                box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-                padding: 12px 16px;
-                margin: 0;
-                max-width: 300px;
-            ">
-                <p style="margin: 0; font-size: 14px;">${message}</p>
-            </div>
-        `;
-
-        $('body').append(messageHtml);
-
-        // 3秒後に自動で削除
-        setTimeout(function () {
-            $('.notice.is-dismissible').fadeOut(300, function () {
-                $(this).remove();
-            });
-        }, 3000);
+        if (typeof showSuccessNotification === 'function') {
+            showSuccessNotification('サービス情報で行を更新しました');
+        }
     }
 
     // HTMLエスケープ関数

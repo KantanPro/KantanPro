@@ -11,6 +11,60 @@
     console.log('[ORDER-PREVIEW] スクリプトが読み込まれました - Version: 2024-06-18');
     console.log('[ORDER-PREVIEW] window.ktpShowOrderPreview定義を開始');
 
+    // PDF生成ライブラリの動的ロード
+    function loadPDFLibraries() {
+        return new Promise((resolve, reject) => {
+            if (typeof html2canvas !== 'undefined' && typeof jsPDF !== 'undefined') {
+                console.log('[ORDER-PREVIEW] PDF生成ライブラリは既にロード済み');
+                resolve();
+                return;
+            }
+
+            let html2canvasLoaded = typeof html2canvas !== 'undefined';
+            let jsPDFLoaded = typeof jsPDF !== 'undefined';
+
+            // html2canvasの読み込み
+            if (!html2canvasLoaded) {
+                const html2canvasScript = document.createElement('script');
+                html2canvasScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+                html2canvasScript.onload = function() {
+                    console.log('[ORDER-PREVIEW] html2canvas読み込み完了');
+                    html2canvasLoaded = true;
+                    if (jsPDFLoaded) resolve();
+                };
+                html2canvasScript.onerror = function() {
+                    console.error('[ORDER-PREVIEW] html2canvas読み込み失敗');
+                    reject('html2canvas読み込み失敗');
+                };
+                document.head.appendChild(html2canvasScript);
+            }
+
+            // jsPDFの読み込み
+            if (!jsPDFLoaded) {
+                const jsPDFScript = document.createElement('script');
+                jsPDFScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+                jsPDFScript.onload = function() {
+                    console.log('[ORDER-PREVIEW] jsPDF読み込み完了');
+                    // jsPDFをグローバルに設定
+                    if (typeof window.jspdf !== 'undefined') {
+                        window.jsPDF = window.jspdf.jsPDF;
+                    }
+                    jsPDFLoaded = true;
+                    if (html2canvasLoaded) resolve();
+                };
+                jsPDFScript.onerror = function() {
+                    console.error('[ORDER-PREVIEW] jsPDF読み込み失敗');
+                    reject('jsPDF読み込み失敗');
+                };
+                document.head.appendChild(jsPDFScript);
+            }
+
+            if (html2canvasLoaded && jsPDFLoaded) {
+                resolve();
+            }
+        });
+    }
+
     // HTMLエンティティをデコードする関数
     function decodeHtmlEntities(text) {
         const textArea = document.createElement('textarea');
@@ -183,21 +237,6 @@
                         border-top: 1px solid #eee;
                         padding-top: 15px;
                     ">
-                        <button type="button" id="ktp-order-preview-print" style="
-                            background: #2196f3;
-                            color: white;
-                            border: none;
-                            padding: 10px 20px;
-                            border-radius: 4px;
-                            cursor: pointer;
-                            font-size: 16px;
-                            display: flex;
-                            align-items: center;
-                            gap: 8px;
-                        ">
-                            <span class="material-symbols-outlined">print</span>
-                            印刷
-                        </button>
                         <button type="button" id="ktp-order-preview-save-pdf" style="
                             background: #ff9800;
                             color: white;
@@ -210,8 +249,8 @@
                             align-items: center;
                             gap: 8px;
                         ">
-                            <span class="material-symbols-outlined">picture_as_pdf</span>
-                            PDF保存
+                            <span class="material-symbols-outlined">print</span>
+                            印刷 PDF保存
                         </button>
                     </div>
                 </div>
@@ -246,12 +285,7 @@
             }
         });
 
-        // 印刷ボタンのイベント
-        $(document).on('click', '#ktp-order-preview-print', function() {
-            printOrderPreview();
-        });
-
-        // PDF保存ボタンのイベント
+        // 印刷 PDF保存ボタンのイベント
         $(document).on('click', '#ktp-order-preview-save-pdf', function() {
             saveOrderPreviewAsPDF(orderId);
         });
@@ -278,113 +312,7 @@
             }
         });
     };
-
-    // 印刷機能
-    function printOrderPreview() {
-        console.log('[ORDER PREVIEW] 印刷開始');
-        
-        const printContent = $('#ktp-order-preview-content').html();
-        
-        // 印刷用ウィンドウを作成
-        const printWindow = window.open('', '_blank');
-        
-        if (!printWindow) {
-            showPopupBlockedMessage();
-            return;
-        }
-        
-        printWindow.document.open();
-        printWindow.document.write(`
-            <html>
-            <head>
-                <title>受注書プレビュー - 印刷</title>
-                <meta charset="UTF-8">
-                <style>
-                    body {
-                        font-family: "Noto Sans JP", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
-                        margin: 0;
-                        padding: 0;
-                        color: #333;
-                        line-height: 1.4;
-                    }
-                    @media print {
-                        body { 
-                            margin: 0; 
-                            padding: 0;
-                        }
-                        .no-print { display: none; }
-                        .order-preview-document {
-                            max-width: none !important;
-                            margin: 0 !important;
-                            padding: 10mm !important;
-                            min-height: auto !important;
-                        }
-                        /* ページ区切り処理 */
-                        div[style*="page-break-before: always"] {
-                            page-break-before: always;
-                        }
-                    }
-                    @page {
-                        size: A4;
-                        margin: 10mm;
-                    }
-                </style>
-            </head>
-            <body>
-                ${printContent}
-                <script>
-                    var isDialogClosed = false;
-                    var startTime = Date.now();
-                    
-                    window.onload = function() {
-                        setTimeout(function() {
-                            window.print();
-                        }, 500);
-                    };
-                    
-                    // 印刷ダイアログ終了の検知
-                    window.onafterprint = function() {
-                        isDialogClosed = true;
-                        setTimeout(function() {
-                            window.close();
-                        }, 100);
-                    };
-                    
-                    // フォーカス変更での検知（代替手段）
-                    window.onfocus = function() {
-                        if (Date.now() - startTime > 1000 && !isDialogClosed) {
-                            isDialogClosed = true;
-                            setTimeout(function() {
-                                window.close();
-                            }, 500);
-                        }
-                    };
-                    
-                    // 強制クローズ（10秒後）
-                    setTimeout(function() {
-                        if (!window.closed) {
-                            window.close();
-                        }
-                    }, 10000);
-                </script>
-            </body>
-            </html>
-        `);
-        printWindow.document.close();
-        
-        // ウィンドウが閉じられない場合の追加対策
-        setTimeout(function() {
-            if (printWindow && !printWindow.closed) {
-                try {
-                    printWindow.close();
-                } catch (e) {
-                    console.log('[ORDER PREVIEW] ウィンドウクローズエラー:', e);
-                }
-            }
-        }, 15000);
-    }
-
-    // PDF保存機能 - 直接PDFダウンロード
+    // PDF保存機能 - 印刷ダイアログ経由でPDF保存
     function saveOrderPreviewAsPDF(orderId) {
         console.log('[ORDER PREVIEW] PDF保存開始', { orderId });
         
@@ -393,14 +321,91 @@
         // ファイル名を要求された形式で生成
         const filename = generateFilename(orderId);
         
-        // Canvas APIを使用してPDF生成
+        // 印刷ダイアログ方式でPDF生成（余白調整可能）
         generatePDFFromHTML(saveContent, filename, orderId);
+    }
+
+    // 直接ダウンロード方式でPDF生成
+    function generatePDFDirectDownload(content, filename, orderId) {
+        console.log('[ORDER PREVIEW] 直接ダウンロード方式でPDF生成開始');
+        
+        // 一時的な印刷用要素を作成
+        const printElement = document.createElement('div');
+        printElement.innerHTML = content;
+        printElement.style.position = 'fixed';
+        printElement.style.left = '-9999px';
+        printElement.style.top = '0';
+        printElement.style.width = '210mm';
+        printElement.style.backgroundColor = 'white';
+        printElement.style.fontFamily = '"Noto Sans JP", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif';
+        printElement.style.fontSize = '12px';
+        printElement.style.lineHeight = '1.4';
+        printElement.style.color = '#333';
+        
+        document.body.appendChild(printElement);
+        
+        // html2canvasとjsPDFを使用してPDF生成
+        if (typeof html2canvas !== 'undefined' && typeof jsPDF !== 'undefined') {
+            html2canvas(printElement, {
+                scale: 2,
+                useCORS: true,
+                allowTaint: true,
+                backgroundColor: '#ffffff',
+                width: printElement.scrollWidth,
+                height: printElement.scrollHeight
+            }).then(function(canvas) {
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                
+                const imgWidth = 210; // A4幅
+                const pageHeight = 295; // A4高さ
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                let heightLeft = imgHeight;
+                let position = 0;
+                
+                // 最初のページ
+                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+                
+                // 複数ページの場合の処理
+                while (heightLeft >= 0) {
+                    position = heightLeft - imgHeight;
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+                }
+                
+                // PDFを保存
+                pdf.save(filename + '.pdf');
+                
+                // 一時要素を削除
+                document.body.removeChild(printElement);
+                
+                console.log('[ORDER PREVIEW] PDF保存完了');
+                
+            }).catch(function(error) {
+                console.error('[ORDER PREVIEW] Canvas生成エラー:', error);
+                document.body.removeChild(printElement);
+                
+                // フォールバック: 印刷ダイアログ方式
+                generatePDFFromHTML(content, filename, orderId);
+            });
+        } else {
+            console.log('[ORDER PREVIEW] html2canvas/jsPDF未対応、印刷ダイアログ方式にフォールバック');
+            document.body.removeChild(printElement);
+            
+            // フォールバック: 印刷ダイアログ方式
+            generatePDFFromHTML(content, filename, orderId);
+        }
     }
 
     // HTMLからPDFを生成してダウンロード
     function generatePDFFromHTML(content, filename, orderId) {
-        // 新しいウィンドウでPDF生成処理
-        const printWindow = window.open('', '_blank');
+        // 元のウィンドウの参照を保持
+        const originalWindow = window;
+        
+        // ポップアップウィンドウとして開く（新しいタブにならないようにする）
+        const printWindow = window.open('', 'printWindow', 'width=800,height=600,scrollbars=yes,resizable=yes,menubar=no,toolbar=no,location=no,status=no');
         
         if (!printWindow) {
             showPopupBlockedMessage();
@@ -414,27 +419,50 @@
         printWindow.document.write(printContent);
         printWindow.document.close();
         
+        console.log('[ORDER PREVIEW] 印刷ウィンドウを作成しました。印刷ダイアログの表示準備中...');
+        
         // ウィンドウが読み込まれた後にPDF生成を実行
         printWindow.onload = function() {
+            // 印刷ウィンドウが完全に読み込まれるまで少し待つ
             setTimeout(function() {
                 try {
-                    // ブラウザの印刷機能を使ってPDFを生成
+                    // 印刷ウィンドウにフォーカスを移して印刷ダイアログを表示
+                    printWindow.focus();
                     printWindow.print();
                     
-                    // 印刷完了後の処理（自動クローズはHTMLのJavaScriptで処理）
+                    console.log('[ORDER PREVIEW] 印刷ダイアログを表示しました。ユーザーの操作をお待ちください。');
+                    
+                    // 印刷ダイアログが表示された後、元のウィンドウにフォーカスを戻す
+                    setTimeout(function() {
+                        try {
+                            originalWindow.focus();
+                            // プレビューポップアップを前面に表示
+                            const previewOverlay = document.getElementById('ktp-order-preview-overlay');
+                            if (previewOverlay) {
+                                previewOverlay.style.zIndex = '999999';
+                            }
+                            console.log('[ORDER PREVIEW] フォーカスを元のウィンドウに戻しました');
+                        } catch (e) {
+                            console.log('[ORDER PREVIEW] フォーカス制御エラー:', e);
+                        }
+                    }, 1000);
+                    
+                    // 印刷完了後の処理
                     printWindow.onafterprint = function() {
+                        console.log('[ORDER PREVIEW] 印刷/PDF保存が完了しました');
                         setTimeout(function() {
+                            // 元のウィンドウにフォーカスを戻す
+                            originalWindow.focus();
                             if (!printWindow.closed) {
                                 printWindow.close();
                             }
-                            showSaveMessage('PDFを保存しました。');
                         }, 500);
                     };
                     
                 } catch (error) {
-                    console.error('[ORDER PREVIEW] PDF生成エラー:', error);
+                    console.error('[ORDER PREVIEW] 印刷ダイアログ表示エラー:', error);
                     printWindow.close();
-                    showSaveMessage('PDF保存でエラーが発生しました。');
+                    originalWindow.focus(); // エラー時もフォーカスを戻す
                 }
             }, 1000);
         };
@@ -444,7 +472,7 @@
             if (printWindow && !printWindow.closed) {
                 try {
                     printWindow.close();
-                    showSaveMessage('PDFを保存しました。');
+                    originalWindow.focus(); // 自動クローズ時もフォーカスを戻す
                 } catch (e) {
                     console.log('[ORDER PREVIEW] 自動クローズエラー:', e);
                 }
@@ -456,7 +484,7 @@
             if (printWindow.closed) {
                 clearTimeout(autoCloseTimer);
                 clearInterval(checkClosed);
-                showSaveMessage('PDFを保存しました。');
+                originalWindow.focus(); // 手動クローズ時もフォーカスを戻す
             }
         }, 1000);
         
@@ -602,41 +630,41 @@
             const instructions = document.querySelector('.pdf-instructions');
             if (instructions) {
                 if (isChrome || isEdge) {
-                    instructions.innerHTML = '<h3>📄 PDF保存中...</h3><p>印刷ダイアログで「PDFとして保存」を選択してください</p><div class="highlight">送信先: PDFに保存</div>';
+                    instructions.innerHTML = '<h3>📄 PDF保存の手順</h3><p>1. 印刷ダイアログで「送信先: PDFに保存」を選択</p><p>2. 必要に応じて余白を調整してください</p><p>3. 保存ボタンをクリック</p><div class="highlight">余白調整: 「詳細設定」→「余白」で変更可能</div>';
                 } else if (isSafari) {
-                    instructions.innerHTML = '<h3>📄 PDF保存中...</h3><p>印刷ダイアログで「PDFとして保存」を選択してください</p><div class="highlight">PDF ボタンをクリック</div>';
+                    instructions.innerHTML = '<h3>📄 PDF保存の手順</h3><p>1. 印刷ダイアログで「PDF」ボタンをクリック</p><p>2. 必要に応じて余白を調整してください</p><p>3. 「PDFとして保存」を選択</p><div class="highlight">余白調整: 印刷設定で変更可能</div>';
+                } else if (isFirefox) {
+                    instructions.innerHTML = '<h3>📄 PDF保存の手順</h3><p>1. 印刷ダイアログで「PDFとして保存」を選択</p><p>2. 必要に応じて余白を調整してください</p><p>3. 保存ボタンをクリック</p><div class="highlight">余白調整: 「詳細設定」で変更可能</div>';
                 } else {
-                    instructions.innerHTML = '<h3>📄 PDF保存中...</h3><p>印刷ダイアログで「PDFとして保存」を選択してください</p>';
+                    instructions.innerHTML = '<h3>📄 PDF保存の手順</h3><p>1. 印刷ダイアログで「PDFとして保存」を選択</p><p>2. 必要に応じて余白を調整してください</p><p>3. 保存ボタンをクリック</p><div class="highlight">余白は印刷設定で調整できます</div>';
                 }
             }
         });
         
         // 印刷完了を検知するためのイベントリスナー
         window.addEventListener('afterprint', function() {
+            console.log('印刷/PDF保存処理が完了しました');
             // 印刷完了後、少し待ってからウィンドウを閉じる
             setTimeout(function() {
                 window.close();
             }, 1000);
         });
         
-        // フォーカス変更での検知（代替手段）
-        let printDialogClosed = false;
-        window.addEventListener('focus', function() {
-            if (!printDialogClosed) {
-                printDialogClosed = true;
-                setTimeout(function() {
-                    window.close();
-                }, 1500);
-            }
+        // ウィンドウがブラウザによって閉じられた場合の検知
+        window.addEventListener('beforeunload', function() {
+            console.log('印刷ウィンドウが閉じられます');
         });
     </script>
 </head>
 <body>
     <div class="pdf-instructions no-print">
-        <h3>📄 PDF保存の準備ができました</h3>
-        <p>印刷ダイアログで「PDFとして保存」を選択してください</p>
+        <h3>📄 PDF保存の手順</h3>
+        <p>1. 印刷ダイアログで「PDFとして保存」を選択</p>
+        <p>2. 必要に応じて余白を調整してください</p>
+        <p>3. 保存ボタンをクリック</p>
         <div class="highlight">
-            自動的に印刷ダイアログが表示されます
+            自動的に印刷ダイアログが表示されます<br>
+            余白調整で見た目を最適化できます
         </div>
     </div>
     <div class="page-container">
