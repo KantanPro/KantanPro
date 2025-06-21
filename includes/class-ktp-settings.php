@@ -985,6 +985,14 @@ class KTP_Settings {
     }
 
     public function page_init() {
+        
+        // メディアライブラリ用のスクリプトとスタイルを読み込み
+        if ( isset( $_GET['page'] ) && $_GET['page'] === 'ktp-settings' ) {
+            wp_enqueue_media();
+            wp_enqueue_script( 'media-upload' );
+            wp_enqueue_script( 'thickbox' );
+            wp_enqueue_style( 'thickbox' );
+        }
 
         // アクティベーションキー保存時の通知
         if (isset($_POST['ktp_activation_key'])) {
@@ -1007,6 +1015,27 @@ class KTP_Settings {
             'ktp_general_group',
             'ktp_general_settings',
             array( $this, 'sanitize_general_settings' )
+        );
+
+        // ロゴマークの登録
+        register_setting(
+            'ktp_general_group',
+            'ktp_logo_image',
+            array( $this, 'sanitize_text_field' )
+        );
+
+        // システム名の登録
+        register_setting(
+            'ktp_general_group',
+            'ktp_system_name',
+            array( $this, 'sanitize_text_field' )
+        );
+
+        // システムの説明の登録
+        register_setting(
+            'ktp_general_group',
+            'ktp_system_description',
+            array( $this, 'sanitize_textarea_field' )
         );
 
         register_setting(
@@ -1034,6 +1063,33 @@ class KTP_Settings {
             __( '基本設定', 'ktpwp' ),
             array( $this, 'print_general_section_info' ),
             'ktp-general'
+        );
+
+        // ロゴマーク
+        add_settings_field(
+            'ktp_logo_image',
+            __( 'ロゴマーク', 'ktpwp' ),
+            array( $this, 'logo_image_callback' ),
+            'ktp-general',
+            'general_setting_section'
+        );
+
+        // システム名
+        add_settings_field(
+            'ktp_system_name',
+            __( 'システム名', 'ktpwp' ),
+            array( $this, 'system_name_callback' ),
+            'ktp-general',
+            'general_setting_section'
+        );
+
+        // システムの説明
+        add_settings_field(
+            'ktp_system_description',
+            __( 'システムの説明', 'ktpwp' ),
+            array( $this, 'system_description_callback' ),
+            'ktp-general',
+            'general_setting_section'
         );
 
         // リストの表示件数
@@ -1221,6 +1277,28 @@ class KTP_Settings {
             'ktp-design',
             'design_setting_section'
         );
+    }
+
+    /**
+     * テキストフィールドのサニタイズ
+     *
+     * @since 1.0.0
+     * @param string $input 入力値
+     * @return string サニタイズされた値
+     */
+    public function sanitize_text_field( $input ) {
+        return sanitize_text_field( $input );
+    }
+
+    /**
+     * テキストエリアフィールドのサニタイズ
+     *
+     * @since 1.0.0
+     * @param string $input 入力値
+     * @return string サニタイズされた値
+     */
+    public function sanitize_textarea_field( $input ) {
+        return sanitize_textarea_field( $input );
     }
 
     public function sanitize($input) {
@@ -1570,6 +1648,114 @@ class KTP_Settings {
      */
     public function print_general_section_info() {
         echo esc_html__( 'プラグインの基本設定を行います。', 'ktpwp' );
+    }
+
+    /**
+     * ロゴマークフィールドのコールバック
+     *
+     * @since 1.0.0
+     * @return void
+     */
+    public function logo_image_callback() {
+        $default_logo = plugins_url('images/default/icon.png', KANTANPRO_PLUGIN_FILE);
+        $value = get_option( 'ktp_logo_image', $default_logo );
+        ?>
+        <div class="logo-upload-field">
+            <input type="hidden" id="ktp_logo_image" name="ktp_logo_image" value="<?php echo esc_attr( $value ); ?>" />
+            <div class="logo-preview" style="margin-bottom: 10px;">
+                <?php if ( ! empty( $value ) ) : ?>
+                    <img src="<?php echo esc_url( $value ); ?>" alt="<?php echo esc_attr__( 'ロゴマーク', 'ktpwp' ); ?>" style="max-width: 200px; max-height: 100px; display: block;" />
+                <?php else : ?>
+                    <div class="no-logo-placeholder" style="width: 200px; height: 100px; border: 2px dashed #ccc; display: flex; align-items: center; justify-content: center; color: #999; font-size: 14px;">
+                        <?php echo esc_html__( 'ロゴマークが設定されていません', 'ktpwp' ); ?>
+                    </div>
+                <?php endif; ?>
+            </div>
+            <button type="button" class="button" id="upload-logo-btn">
+                <?php echo esc_html__( 'ロゴマークを選択', 'ktpwp' ); ?>
+            </button>
+            <button type="button" class="button" id="remove-logo-btn" style="<?php echo empty( $value ) ? 'display:none;' : ''; ?>">
+                <?php echo esc_html__( 'ロゴマークを削除', 'ktpwp' ); ?>
+            </button>
+            <div style="font-size:12px;color:#555;margin-top:4px;">
+                <?php echo esc_html__( '※ ヘッダーに表示するロゴマーク画像を設定してください。推奨サイズ: 200×100px以下', 'ktpwp' ); ?>
+            </div>
+        </div>
+        
+        <script type="text/javascript">
+        jQuery(document).ready(function($) {
+            var mediaUploader;
+            
+            $('#upload-logo-btn').click(function(e) {
+                e.preventDefault();
+                
+                if (mediaUploader) {
+                    mediaUploader.open();
+                    return;
+                }
+                
+                mediaUploader = wp.media.frames.file_frame = wp.media({
+                    title: '<?php echo esc_js( __( 'ロゴマークを選択', 'ktpwp' ) ); ?>',
+                    button: {
+                        text: '<?php echo esc_js( __( 'この画像を使用', 'ktpwp' ) ); ?>'
+                    },
+                    multiple: false,
+                    library: {
+                        type: 'image'
+                    }
+                });
+                
+                mediaUploader.on('select', function() {
+                    var attachment = mediaUploader.state().get('selection').first().toJSON();
+                    $('#ktp_logo_image').val(attachment.url);
+                    $('.logo-preview').html('<img src="' + attachment.url + '" alt="<?php echo esc_attr__( 'ロゴマーク', 'ktpwp' ); ?>" style="max-width: 200px; max-height: 100px; display: block;" />');
+                    $('#remove-logo-btn').show();
+                });
+                
+                mediaUploader.open();
+            });
+            
+            $('#remove-logo-btn').click(function(e) {
+                e.preventDefault();
+                $('#ktp_logo_image').val('');
+                $('.logo-preview').html('<div class="no-logo-placeholder" style="width: 200px; height: 100px; border: 2px dashed #ccc; display: flex; align-items: center; justify-content: center; color: #999; font-size: 14px;"><?php echo esc_js( __( 'ロゴマークが設定されていません', 'ktpwp' ) ); ?></div>');
+                $(this).hide();
+            });
+        });
+        </script>
+        <?php
+    }
+
+    /**
+     * システム名フィールドのコールバック
+     *
+     * @since 1.0.0
+     * @return void
+     */
+    public function system_name_callback() {
+        $value = get_option( 'ktp_system_name', 'ChaChatWorks' );
+        ?>
+        <input type="text" id="ktp_system_name" name="ktp_system_name" value="<?php echo esc_attr( $value ); ?>" class="regular-text" />
+        <div style="font-size:12px;color:#555;margin-top:4px;">
+            <?php echo esc_html__( '※ システムの名称を設定してください。', 'ktpwp' ); ?>
+        </div>
+        <?php
+    }
+
+    /**
+     * システムの説明フィールドのコールバック
+     *
+     * @since 1.0.0
+     * @return void
+     */
+    public function system_description_callback() {
+        $value = get_option( 'ktp_system_description', 'チャチャと仕事が片付く神システム！' );
+        ?>
+        <textarea id="ktp_system_description" name="ktp_system_description" rows="3" cols="50" class="large-text"><?php echo esc_textarea( $value ); ?></textarea>
+        <div style="font-size:12px;color:#555;margin-top:4px;">
+            <?php echo esc_html__( '※ システムの説明文を設定してください。', 'ktpwp' ); ?>
+        </div>
+        <?php
     }
 
     /**

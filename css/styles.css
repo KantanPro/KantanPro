@@ -868,6 +868,34 @@ form > .create-order-btn {
   flex-wrap: wrap;
 }
 
+.ktp_header .logo-and-system-info {
+  display: flex;
+  align-items: center;
+}
+
+.ktp_header .header-logo {
+  flex-shrink: 0;
+}
+
+.ktp_header .system-info {
+  text-align: left;
+  margin-left: 8px;
+}
+
+.ktp_header .system-name {
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+  line-height: 1.2;
+  margin-bottom: 4px;
+}
+
+.ktp_header .system-description {
+  font-size: 14px;
+  color: #666;
+  line-height: 1.2;
+}
+
 /* ページネーション */
 .pagination-container {
   text-align: center;
@@ -2841,180 +2869,38 @@ body.ktpwp-modal-open {
     }
 }
 
-/* ==========================================================================
-   Skills List Pagination Styles
-   ========================================================================== */
-
-/* 職能リストページネーションコンテナ */
-.ktp-skills-pagination {
-    margin-top: 15px;
-    padding: 15px 20px;
-    background: #f8f9fa;
-    border: 1px solid #e5e7eb;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 10px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+/* フッターエリアのスタイル */
+.ktp-footer {
+    margin-top: 30px;
+    padding: 15px 0;
+    border-top: 1px solid #e1e5e9;
+    background-color: #f8f9fa;
+    text-align: center;
 }
 
-/* ページネーション情報表示 */
-.ktp-skills-pagination .pagination-info {
-    color: #6b7280;
+.ktp-footer-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.ktp-footer-text {
     font-size: 14px;
+    color: #6c757d;
     font-weight: 500;
-    flex-shrink: 0;
-}
-
-/* ページネーションボタングループ */
-.ktp-skills-pagination .pagination-buttons {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    flex-wrap: wrap;
-}
-
-/* ページネーションボタンの基本スタイル */
-.ktp-skills-pagination-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 8px 12px;
-    min-width: 40px;
-    text-decoration: none;
-    border-radius: 4px;
-    font-size: 14px;
-    font-weight: 500;
-    transition: all 0.2s ease;
-    border: none;
-    cursor: pointer;
-    white-space: nowrap;
-}
-
-/* アクティブなページボタン */
-.ktp-skills-pagination-btn.current {
-    background: #0073aa;
-    color: white;
-    font-weight: 600;
-}
-
-/* 無効なボタン */
-.ktp-skills-pagination-btn.disabled {
-    background: #e5e7eb;
-    color: #9ca3af;
-    cursor: not-allowed;
-}
-
-/* 通常のページネーションボタン */
-.ktp-skills-pagination-btn:not(.current):not(.disabled) {
-    background: #f8f9fa;
-    color: #374151;
-    border: 1px solid #d1d5db;
-}
-
-/* ナビゲーションボタン（前/次） */
-.ktp-skills-pagination-btn:not(.disabled):not(.current):not([style*="border"]) {
-    background: #0073aa;
-    color: white;
 }
 
 /* レスポンシブ対応 */
-@media screen and (max-width: 600px) {
-    .ktp-skills-pagination {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 15px;
-        padding: 15px;
+@media screen and (max-width: 768px) {
+    .ktp-footer {
+        padding: 12px 0;
     }
     
-    .ktp-skills-pagination .pagination-info {
-        text-align: center;
-        order: 2;
-        margin-top: 5px;
+    .ktp-footer-content {
+        padding: 0 15px;
     }
     
-    .ktp-skills-pagination .pagination-buttons {
-        justify-content: center;
-        order: 1;
-        gap: 6px;
-    }
-    
-    .ktp-skills-pagination-btn {
-        padding: 10px 14px;
-        font-size: 16px;
-        min-width: 44px;
-    }
-}
-
-@media screen and (max-width: 480px) {
-    .ktp-skills-pagination {
-        padding: 12px;
-    }
-    
-    .ktp-skills-pagination .pagination-buttons {
-        gap: 4px;
-    }
-    
-    .ktp-skills-pagination-btn {
-        padding: 8px 10px;
-        min-width: 36px;
-        font-size: 14px;
-    }
-    
-    .ktp-skills-pagination .pagination-info {
-        font-size: 13px;
-    }
-}
-
-/* 職能リストアイテムの1行表示強制 */
-.ktp_data_skill_list_box .skill-item {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    min-height: 48px !important;
-    max-height: 48px !important;
-    overflow: hidden !important;
-    white-space: nowrap !important;
-    line-height: 1.2 !important;
-}
-
-.ktp_data_skill_list_box .skill-item > div:first-child {
-    flex: 1 !important;
-    min-width: 0 !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 8px !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-}
-
-.ktp_data_skill_list_box .skill-item span {
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-}
-
-.ktp_data_skill_list_box .skill-item .delete-skill-btn-container {
-    flex-shrink: 0 !important;
-    margin-left: 12px !important;
-}
-
-/* スマートフォン対応 */
-@media screen and (max-width: 600px) {
-    .ktp_data_skill_list_box .skill-item {
-        padding: 8px 12px !important;
-        min-height: 44px !important;
-        max-height: 44px !important;
-    }
-    
-    .ktp_data_skill_list_box .skill-item > div:first-child {
-        gap: 4px !important;
-    }
-    
-    .ktp_data_skill_list_box .skill-item span {
-        font-size: 12px !important;
+    .ktp-footer-text {
+        font-size: 12px;
     }
 }

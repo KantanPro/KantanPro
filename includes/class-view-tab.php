@@ -94,6 +94,16 @@ EOF;
             </div>
             EOF;
 
+        // フッターエリアを追加
+        $plugin_name = esc_html(KANTANPRO_PLUGIN_NAME);
+        $plugin_version = esc_html(KANTANPRO_PLUGIN_VERSION);
+        
+        $view .= '<div class="ktp-footer">';
+        $view .= '<div class="ktp-footer-content">';
+        $view .= '<span class="ktp-footer-text">' . $plugin_name . ' v' . $plugin_version . '</span>';
+        $view .= '</div>';
+        $view .= '</div>';
+
     return $view;
     }
 

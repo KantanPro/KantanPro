@@ -738,8 +738,24 @@ function KTPWP_Index(){
                 }
             }
 
+            // 設定からシステム名とシステムの説明を取得
+            $system_name = get_option('ktp_system_name', 'ChaChatWorks');
+            $system_description = get_option('ktp_system_description', 'チャチャと仕事が片付く神システム！');
+            
+            // ロゴマークを取得（デフォルトは既存のicon.png）
+            $default_logo = plugins_url('images/default/icon.png', __FILE__);
+            $logo_url = get_option('ktp_logo_image', $default_logo);
+
             $front_message = '<div class="ktp_header">'
-                . '<div class="parent"><div class="title">' . $icon_img . $plugin_name . '</div><div class="version">v' . $plugin_version . '</div></div>'
+                . '<div class="parent">'
+                . '<div class="logo-and-system-info">'
+                . '<img src="' . esc_url($logo_url) . '" alt="' . esc_attr($system_name) . '" class="header-logo" style="height:40px;vertical-align:middle;margin-right:12px;position:relative;top:-2px;">'
+                . '<div class="system-info">'
+                . '<div class="system-name">' . esc_html($system_name) . '</div>'
+                . '<div class="system-description">' . esc_html($system_description) . '</div>'
+                . '</div>'
+                . '</div>'
+                . '</div>'
                 . '<div style="margin-left: auto; display: flex; align-items: center;">'
                 . $logged_in_users_html
                 . $navigation_links
