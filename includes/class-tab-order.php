@@ -1734,10 +1734,23 @@ $content .= '</div>';
         $html = '<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><title>受注書プレビュー</title></head><body>';
         $html .= '<div class="order-preview-document" style="font-family: \'Noto Sans JP\', \'Hiragino Kaku Gothic ProN\', Meiryo, sans-serif; line-height: 1.4; color: #333; max-width: 210mm; margin: 0 auto; padding: 15mm; background: #fff; min-height: 297mm; box-sizing: border-box;">';
         
-        // 宛先情報（コンパクト）
+        // 宛先情報（住所対応）
         $html .= '<div class="customer-info" style="margin-bottom: 20px;">';
-        $html .= '<div class="company-name" style="font-size: 16px; font-weight: bold; margin-bottom: 4px;">' . esc_html($order_data->customer_name) . '</div>';
-        $html .= '<div class="customer-name" style="font-size: 14px; margin-bottom: 15px;">' . esc_html($order_data->user_name) . ' 様</div>';
+        
+        // 顧客の住所情報を取得（顧客テーブルから）
+        $customer_address = $this->Get_Customer_Address($order_data->customer_name);
+        
+        if (!empty($customer_address)) {
+            // 住所がある場合：住所 → 会社名 → 名前 様
+            $html .= '<div class="customer-address" style="font-size: 14px; margin-bottom: 4px;">' . esc_html($customer_address) . '</div>';
+            $html .= '<div class="company-name" style="font-size: 16px; font-weight: bold; margin-bottom: 4px;">' . esc_html($order_data->customer_name) . '</div>';
+            $html .= '<div class="customer-name" style="font-size: 14px; margin-bottom: 15px;">' . esc_html($order_data->user_name) . ' 様</div>';
+        } else {
+            // 住所がない場合：従来通り
+            $html .= '<div class="company-name" style="font-size: 16px; font-weight: bold; margin-bottom: 4px;">' . esc_html($order_data->customer_name) . '</div>';
+            $html .= '<div class="customer-name" style="font-size: 14px; margin-bottom: 15px;">' . esc_html($order_data->user_name) . ' 様</div>';
+        }
+        
         $html .= '</div>';
 
         // 帳票タイトル（コンパクト）
@@ -1965,26 +1978,19 @@ $content .= '</div>';
                 }
             }
             
-            // 最後のページで総合計を表示、それ以外はページ小計（適切な間隔で配置）
-            if ($page === $total_pages - 1) {
-                // 総合計行（上の行との間隔を追加）
-                $html .= '<div style="display: flex; padding: 10px 8px; background: #e9ecef; font-weight: bold; border-top: 2px solid #ccc; margin-top: 5px; align-items: center;">';
-                $html .= '<div style="width: 30px; text-align: center;">&nbsp;</div>';
-                $html .= '<div style="flex: 1; text-align: right; margin-left: 8px;">総合計</div>';
-                $html .= '<div style="width: 80px; text-align: right;">&nbsp;</div>';
-                $html .= '<div style="width: 60px; text-align: right;">&nbsp;</div>';
-                $html .= '<div style="width: 80px; text-align: right;">¥' . number_format($grand_total) . '</div>';
-                $html .= '<div style="width: 100px; text-align: left; margin-left: 8px;">&nbsp;</div>';
+            // 複数ページの場合、各ページでページ小計を表示
+            if ($total_pages > 1) {
+                // ページ小計行（右寄せで表示）
+                $html .= '<div style="display: flex; padding: 10px 8px; background: #f5f5f5; font-weight: bold; border-top: 1px solid #ccc; margin-top: 5px; align-items: center; justify-content: flex-end;">';
+                $html .= '<div style="text-align: right;">ページ小計　¥' . number_format($page_total) . '</div>';
                 $html .= '</div>';
-            } else if ($total_pages > 1) {
-                // ページ小計行（上の行との間隔を追加）
-                $html .= '<div style="display: flex; padding: 10px 8px; background: #f5f5f5; font-weight: bold; border-top: 1px solid #ccc; margin-top: 5px; align-items: center;">';
-                $html .= '<div style="width: 30px; text-align: center;">&nbsp;</div>';
-                $html .= '<div style="flex: 1; text-align: right; margin-left: 8px;">ページ小計</div>';
-                $html .= '<div style="width: 80px; text-align: right;">&nbsp;</div>';
-                $html .= '<div style="width: 60px; text-align: right;">&nbsp;</div>';
-                $html .= '<div style="width: 80px; text-align: right;">¥' . number_format($page_total) . '</div>';
-                $html .= '<div style="width: 100px; text-align: left; margin-left: 8px;">&nbsp;</div>';
+            }
+            
+            // 最後のページまたは1ページのみの場合、合計金額を表示
+            if ($page == $total_pages - 1) {
+                // 合計金額行（請求金額と同じ値を右寄せで表示）
+                $html .= '<div style="display: flex; padding: 10px 8px; background: #e9ecef; font-weight: bold; border-top: 2px solid #ccc; margin-top: 5px; align-items: center; justify-content: flex-end;">';
+                $html .= '<div style="text-align: right;">合計金額　¥' . number_format($grand_total) . '</div>';
                 $html .= '</div>';
             }
             
@@ -2048,6 +2054,68 @@ $content .= '</div>';
         $html .= '</div>';
 
         return $html;
+    }
+
+    /**
+     * 顧客の住所情報を取得
+     *
+     * @param string $customer_name 顧客名
+     * @return string 住所情報（郵便番号〜番地まで）
+     * @since 1.0.0
+     */
+    private function Get_Customer_Address($customer_name) {
+        if (empty($customer_name)) {
+            return '';
+        }
+
+        global $wpdb;
+        $client_table = $wpdb->prefix . 'ktp_client';
+
+        // 顧客テーブルから住所情報を取得（class-tab-client.phpと同じ方法）
+        $customer = $wpdb->get_row($wpdb->prepare(
+            "SELECT postal_code, prefecture, city, address, building FROM `{$client_table}` WHERE company_name = %s LIMIT 1",
+            $customer_name
+        ));
+
+        if (!$customer) {
+            return '';
+        }
+
+        // 住所フィールドの組み立て（郵便番号〜番地まで）
+        $address_parts = array();
+        
+        // 郵便番号
+        if (!empty($customer->postal_code)) {
+            $address_parts[] = '〒' . $customer->postal_code;
+        }
+        
+        // 都道府県
+        if (!empty($customer->prefecture)) {
+            $address_parts[] = $customer->prefecture;
+        }
+        
+        // 市区町村
+        if (!empty($customer->city)) {
+            $address_parts[] = $customer->city;
+        }
+        
+        // 番地
+        if (!empty($customer->address)) {
+            $address_parts[] = $customer->address;
+        }
+        
+        // 建物名
+        if (!empty($customer->building)) {
+            $address_parts[] = $customer->building;
+        }
+
+        // 住所が何もない場合は空文字を返す
+        if (empty($address_parts)) {
+            return '';
+        }
+
+        // 住所を結合して返す
+        return implode(' ', $address_parts);
     }
 
 } // End of Kntan_Order_Class
