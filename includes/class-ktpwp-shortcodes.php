@@ -404,8 +404,7 @@ class KTPWP_Shortcodes {
             'client' => '',
             'service' => '',
             'supplier' => '',
-            'report' => '',
-            'setting' => ''
+            'report' => ''
         );
 
         // 現在のタブに応じてコンテンツを生成
@@ -434,10 +433,6 @@ class KTPWP_Shortcodes {
                 $tab_contents['report'] = $this->get_report_content($tab_name);
                 break;
 
-            case 'setting':
-                $tab_contents['setting'] = $this->get_setting_content($tab_name);
-                break;
-
             default:
                 // デフォルトでリストタブを表示
                 $tab_name = 'list';
@@ -452,8 +447,7 @@ class KTPWP_Shortcodes {
             $tab_contents['client'],
             $tab_contents['service'],
             $tab_contents['supplier'],
-            $tab_contents['report'],
-            $tab_contents['setting']
+            $tab_contents['report']
         );
     }
 
@@ -466,7 +460,7 @@ class KTPWP_Shortcodes {
         $tab_name = isset($_GET['tab_name']) ? sanitize_text_field($_GET['tab_name']) : 'list';
 
         // 許可されたタブ名のホワイトリスト
-        $allowed_tabs = array('list', 'order', 'client', 'service', 'supplier', 'report', 'setting');
+        $allowed_tabs = array('list', 'order', 'client', 'service', 'supplier', 'report');
 
         if (!in_array($tab_name, $allowed_tabs, true)) {
             $tab_name = 'list';
@@ -701,17 +695,16 @@ class KTPWP_Shortcodes {
      * @param string $service_content サービスコンテンツ
      * @param string $supplier_content 仕入先コンテンツ
      * @param string $report_content レポートコンテンツ
-     * @param string $setting_content 設定コンテンツ
      * @return string タブビューHTML
      */
-    private function render_tabs_view($list_content, $order_content, $client_content, $service_content, $supplier_content, $report_content, $setting_content) {
+    private function render_tabs_view($list_content, $order_content, $client_content, $service_content, $supplier_content, $report_content) {
         if (!class_exists('view_tabs_Class')) {
             $this->load_required_class('class-view-tab.php');
         }
 
         if (class_exists('view_tabs_Class')) {
             $view = new view_tabs_Class();
-            return $view->TabsView($list_content, $order_content, $client_content, $service_content, $supplier_content, $report_content, $setting_content);
+            return $view->TabsView($list_content, $order_content, $client_content, $service_content, $supplier_content, $report_content);
         }
 
         return $this->get_error_content('view_tabs_Class');

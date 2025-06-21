@@ -13,8 +13,7 @@ class view_tabs_Class{
       $client_content,
       $service_content,
       $supplier_content,
-      $report_content,
-      $setting_content
+      $report_content
       ) {
 
         // AJAX設定を確実に出力（編集者権限がある場合のみ）
@@ -32,8 +31,7 @@ class view_tabs_Class{
           'client' => '得意先',
           'service' => 'サービス',
           'supplier' => '協力会社',
-          'report' => 'レポート',
-          'setting' => '設定'
+          'report' => 'レポート'
         ];
 
         // タブの内容を作成（プラグインコンテナクラスを追加してテーマとの競合を防止）
@@ -71,7 +69,6 @@ EOF;
         $view .= $service_content;
         $view .= $supplier_content;
         $view .= $report_content;
-        $view .= $setting_content;
         $view .= <<<EOF
               <div class="tab_content" id="order_content">
               <br />
@@ -86,9 +83,6 @@ EOF;
               <br />
               </div>
               <div class="tab_content" id="report_content">
-              <br />
-              </div>
-              <div class="tab_content" id="setting_content">
               <br />
               </div>
             </div>

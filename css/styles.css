@@ -961,7 +961,7 @@ form > .create-order-btn {
 
 /*タブのスタイル*/
 .tab_item {
-  width: calc(100%/7);
+  width: calc(100%/6);
   height: 50px;
   border-bottom: 5px solid #cdcccc;
   background-color: #eeeeee;
@@ -1001,8 +1001,7 @@ input[name="tab_item"] {
 #client:checked~#client_content,
 #service:checked~#service_content,
 #supplier:checked~#supplier_content,
-#report:checked~#report_content,
-#setting:checked~#setting_content {
+#report:checked~#report_content {
   display: block;
 }
 
@@ -1020,14 +1019,14 @@ input[name="tab_item"] {
     justify-content: flex-start;
   }
   .tab_item {
-    width: 50%;
-    min-width: 50%;
+    width: 33.333%;
+    min-width: 33.333%;
     box-sizing: border-box;
     border-bottom: none;
     border-right: 1px solid #cdcccc;
-    /* 2列に並べる */
+    /* 3列に並べる */
   }
-  .tab_item:nth-child(2n) {
+  .tab_item:nth-child(3n) {
     border-right: none;
   }
   .tab_content {

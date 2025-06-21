@@ -769,7 +769,6 @@ function KTPWP_Index(){
             $service_content  = isset($service_content) ? $service_content : '';
             $supplier_content = isset($supplier_content) ? $supplier_content : '';
             $report_content   = isset($report_content) ? $report_content : '';
-            $setting_content  = isset($setting_content) ? $setting_content : '';
 
             if (!isset($list_content)) {
                 $list_content = '';
@@ -818,14 +817,6 @@ function KTPWP_Index(){
                     $report = new KTPWP_Report_Class();
                     $report_content = $report->Report_Tab_View($tab_name);
                     break;
-                case 'setting':
-                    $setting = new KTPWP_Setting_Class();
-                    if (current_user_can('edit_posts')) {
-                        $setting->Create_Table($tab_name);
-                        // $setting->Update_Table($tab_name);
-                    }
-                    $setting_content = $setting->Setting_Tab_View($tab_name);
-                    break;
                 default:
                     // デフォルトの処理
                     $list = new Kantan_List_Class();
@@ -835,7 +826,7 @@ function KTPWP_Index(){
             }
             // view
             $view = new view_tabs_Class();
-            $tab_view = $view->TabsView($list_content, $order_content, $client_content, $service_content, $supplier_content, $report_content, $setting_content);
+            $tab_view = $view->TabsView($list_content, $order_content, $client_content, $service_content, $supplier_content, $report_content);
             $return_value = $front_message . $tab_view;
             return $return_value;
 
