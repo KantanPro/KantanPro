@@ -58,13 +58,17 @@ class KTPWP_Report_Class {
         $graph_renderer = new KTPWP_Graph_Renderer();
 
         $content = $ui_generator->generate_controller();
-        $content .= $ui_generator->generate_workflow();
 
         if ( empty( $activation_key ) ) {
             $content .= $graph_renderer->render_dummy_graph();
         } else {
             $content .= $graph_renderer->render_graphs();
         }
+
+        // プリンターアイコン（ダミー）
+        $content .= '<button onclick="alert(\'印刷機能は準備中です\')" title="印刷機能は準備中です" style="padding: 6px 10px; font-size: 12px;">';
+        $content .= '<span class="material-symbols-outlined" aria-label="印刷">print</span>';
+        $content .= '</button>';
 
         return $content;
     }

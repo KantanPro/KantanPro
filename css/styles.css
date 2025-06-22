@@ -651,7 +651,7 @@
 #create-order-form > button,
 form > .create-order-btn {
   padding: 8px 16px !important;
-  font-size: 14px !important;
+  font-size: 12px !important;
   font-weight: 500 !important;
 }
 
@@ -677,7 +677,6 @@ form > .create-order-btn {
   /* 左右に表示 */
   text-align: center;
   margin: 0 auto;
-  padding: 20px;
   width: 100%;
 }
 
@@ -968,7 +967,7 @@ form > .create-order-btn {
   line-height: 50px;
   font-size: 16px;
   text-align: center;
-  color: #bbbbbb;
+  color: #444444;
   display: block;
   float: left;
   text-align: center;
@@ -977,10 +976,24 @@ form > .create-order-btn {
   overflow: hidden;
   border-top-left-radius: 10px;
   border-top-right-radius: 10px;
+  text-decoration: none;
+  cursor: pointer;
 }
 
 .tab_item:hover {
   opacity: 0.75;
+  text-decoration: none;
+  color: #444444;
+}
+
+.tab_item:visited {
+  color: #444444;
+  text-decoration: none;
+}
+
+.tab_item:active {
+  color: #444444;
+  text-decoration: none;
 }
 
 /*ラジオボタンを全て消す*/
@@ -1216,7 +1229,7 @@ input[name="tab_item"] {
 
 /* ボタンの間隔 */
 .controller button {
-  margin-right: 10px;
+  margin: 10px;
 }
 
 /* プリンターエリア */
@@ -2485,7 +2498,7 @@ body.ktpwp-modal-open {
     margin-top: 0;
     border-radius: 0 0 4px 4px;
     overflow: hidden;
-    transition: all 0.3s ease;
+       transition: all 0.3s ease;
 }
 
 /* 第1行目を固定表示するためのヘッダー */
@@ -2682,6 +2695,8 @@ body.ktpwp-modal-open {
 
 .staff-chat-submit:disabled {
     background-color: #ccc;
+    color: #fff;
+    border: 1px solid #bbb;
     cursor: not-allowed;
 }
 
@@ -2902,4 +2917,210 @@ body.ktpwp-modal-open {
     .ktp-footer-text {
         font-size: 12px;
     }
+}
+
+/* アイコン専用ボタンの統一スタイル */
+.ktp-admin-wrap .controller button[style*="padding: 0px 3px"] {
+    padding: 0px 3px !important;
+    font-size: 12px !important;
+    border: 1px solid #ddd !important;
+    background: #fff !important;
+    border-radius: 3px !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 28px !important;
+    height: 28px !important;
+}
+
+.ktp-admin-wrap .controller button[style*="padding: 0px 3px"]:hover {
+    background: #f0f0f0 !important;
+    border-color: #0073aa !important;
+}
+
+.ktp-admin-wrap .controller button[style*="padding: 0px 3px"] .material-symbols-outlined {
+    font-size: 16px !important;
+    line-height: 1 !important;
+}
+
+/* 各タブのcontroller内ボタンの統一スタイル（orderMailButtonと同じサイズ） */ */
+.controller button[style*="padding: 6px 10px"] {
+    padding: 6px 10px !important;
+    font-size: 12px !important;
+    border: 1px solid #ddd !important;
+    background: #fff !important;
+    border-radius: 3px !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.controller button[style*="padding: 6px 10px"]:hover {
+    background: #f0f0f0 !important;
+    border-color: #0073aa !important;
+}
+
+.controller button[style*="padding: 6px 10px"] .material-symbols-outlined {
+    font-size: 16px !important;
+    line-height: 1 !important;
+}
+
+/* 仕事リストタブのcontroller内ボタンの統一スタイル（アイコン専用サイズ） */
+.controller button[style*="padding: 0px 3px"] {
+    padding: 0px 3px !important;
+    font-size: 12px !important;
+    border: 1px solid #ddd !important;
+    background: #fff !important;
+    border-radius: 3px !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 28px !important;
+    height: 28px !important;
+}
+
+.controller button[style*="padding: 0px 3px"]:hover {
+    background: #f0f0f0 !important;
+    border-color: #0073aa !important;
+}
+
+.controller button[style*="padding: 0px 3px"] .material-symbols-outlined {
+    font-size: 16px !important;
+    line-height: 1 !important;
+}
+
+/* 得意先タブ controller内ボタンカラー（優先度を上げる） */
+.controller .order-history-btn {
+  background: #1976d2 !important;
+  color: #fff !important;
+  border: 1px solid #1976d2 !important;
+}
+.controller .order-history-btn:hover {
+  background: #1565c0 !important;
+  border-color: #1565c0 !important;
+}
+
+.controller .customer-list-btn {
+  background: #e0e0e0 !important;
+  color: #333 !important;
+  border: 1px solid #bdbdbd !important;
+}
+.controller .customer-list-btn:hover {
+  background: #bdbdbd !important;
+  border-color: #9e9e9e !important;
+}
+
+.controller .create-order-btn {
+  background: #43a047 !important;
+  color: #fff !important;
+  border: 1px solid #388e3c !important;
+}
+.controller .create-order-btn:hover {
+  background: #388e3c !important;
+  border-color: #2e7d32 !important;
+}
+
+/* 得意先タブ controller内ボタンカラー（統一スタイルよりも優先度を上げる） */
+.controller button.view-mode-btn.order-history-btn {
+  background: #1976d2 !important;
+  color: #fff !important;
+  border: 1px solid #1976d2 !important;
+}
+.controller button.view-mode-btn.order-history-btn:hover {
+  background: #1565c0 !important;
+  border-color: #1565c0 !important;
+}
+
+.controller button.view-mode-btn.customer-list-btn {
+  background: #e0e0e0 !important;
+  color: #333 !important;
+  border: 1px solid #bdbdbd !important;
+}
+.controller button.view-mode-btn.customer-list-btn:hover {
+  background: #bdbdbd !important;
+  border-color: #9e9e9e !important;
+}
+
+.controller button.create-order-btn {
+  background: #43a047 !important;
+  color: #fff !important;
+  border: 1px solid #388e3c !important;
+}
+.controller button.create-order-btn:hover {
+  background: #388e3c !important;
+  border-color: #2e7d32 !important;
+}
+
+/* 各タブのcontroller内ボタンの統一スタイル（orderMailButtonと同じサイズ）- 得意先タブのボタンを除外 */
+.controller button[style*="padding: 6px 10px"]:not(.order-history-btn):not(.customer-list-btn):not(.create-order-btn) {
+    padding: 6px 10px !important;
+    font-size: 12px !important;
+    border: 1px solid #ddd !important;
+    background: #fff !important;
+    border-radius: 3px !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.controller button[style*="padding: 6px 10px"]:not(.order-history-btn):not(.customer-list-btn):not(.create-order-btn):hover {
+    background: #f0f0f0 !important;
+    border-color: #0073aa !important;
+}
+
+.controller button[style*="padding: 6px 10px"]:not(.order-history-btn):not(.customer-list-btn):not(.create-order-btn) .material-symbols-outlined {
+    font-size: 16px !important;
+    line-height: 1 !important;
+}
+
+/* 伝票印刷タブ controller内ボタンカラー */
+.controller .print-btn {
+  background: #007bff !important;
+  color: #fff !important;
+  border: 1px solid #007bff !important;
+}
+
+/* 伝票処理タブ controller内ボタンカラー */
+.controller .delete-order-btn {
+  background: #d9534f !important;
+  color: #fff !important;
+  border: 1px solid #d43f3a !important;
+  border-radius: 4px !important;
+  padding: 6px 10px !important;
+  font-size: 12px !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+.controller .delete-order-btn:hover:not(:disabled) {
+  background: #c9302c !important;
+  border-color: #ac2925 !important;
+}
+
+.controller .order-mail-btn {
+  background: #2196f3 !important;
+  color: #fff !important;
+  border: 1px solid #1976d2 !important;
+  border-radius: 4px !important;
+  padding: 6px 10px !important;
+  font-size: 12px !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+.controller .order-mail-btn:disabled {
+  background: #ccc !important;
+  color: #fff !important;
+  border: 1px solid #bbb !important;
+  cursor: not-allowed !important;
+}
+.controller .order-mail-btn:hover:not(:disabled) {
+  background: #1976d2 !important;
+  border-color: #1565c0 !important;
 }

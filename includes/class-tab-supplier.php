@@ -1341,15 +1341,12 @@ class KTPWP_Supplier_Class {
             // }
 
         </script>        <div class="controller">
-            <div class="printer">
-                <button id="previewButton" onclick="togglePreview()" title="プレビュー">
+                <button id="previewButton" onclick="togglePreview()" title="プレビュー" style="padding: 6px 10px; font-size: 12px;">
                     <span class="material-symbols-outlined" aria-label="プレビュー">preview</span>
                 </button>
-                <button onclick="printContent()" title="印刷する">
+                <button onclick="printContent()" title="印刷する" style="padding: 6px 10px; font-size: 12px;">
                     <span class="material-symbols-outlined" aria-label="印刷">print</span>
                 </button>
-            </div>        </div>
-        <div class="workflow">
         </div>
         <div id="previewWindow" style="display: none;"></div>
         END;

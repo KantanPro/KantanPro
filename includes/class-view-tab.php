@@ -54,7 +54,7 @@ class view_tabs_Class{
           // クリーンなベースURLにタブ名のみを追加
           $tab_url = add_query_arg('tab_name', $key, $clean_base_url);
           $view .= "<input id=\"$key\" type=\"radio\" name=\"tab_item\"$checked>";
-          $view .= "<label class=\"tab_item$active_class\"><a href=\"" . esc_url($tab_url) . "\">$value</a></label>";
+          $view .= "<a href=\"" . esc_url($tab_url) . "\" class=\"tab_item$active_class\">$value</a>";
         }
 
         $view .= <<<EOF

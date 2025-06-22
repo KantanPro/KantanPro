@@ -25,14 +25,12 @@ class KTPWP_Setting_UI {
 
         $tab_buttons = <<<BUTTONS
         <div class="controller" data-active-tab="$active_tab">
-            <div class="printer" data-active-tab="$active_tab">
-                <button class="tablinks {$atenaClass}" onclick="switchTab(event, 'Atena');" title="印刷テンプレート">
+                <button class="tablinks {$atenaClass}" onclick="switchTab(event, 'Atena');" title="印刷テンプレート" style="padding: 6px 10px; font-size: 12px;">
                     <span class="material-symbols-outlined" aria-label="印刷テンプレート">print_add</span>
                 </button>
-                <button id="ktpwp-preview-btn" title="プレビュー" style="padding: 8px 12px; font-size: 14px;">
+                <button id="ktpwp-preview-btn" title="プレビュー" style="padding: 6px 10px; font-size: 12px;">
                     <span class="material-symbols-outlined" aria-label="プレビュー">preview</span>
                 </button>
-            </div>
         </div>
 
         <div class="workflow">

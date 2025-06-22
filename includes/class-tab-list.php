@@ -60,13 +60,11 @@ class Kantan_List_Class {
 
         // Controller container display at top
         $content .= '<div class="controller">';
-        $content .= '<div class="printer">';
         
         // Print button with proper escaping
-        $content .= '<button title="' . esc_attr__( 'Print', 'ktpwp' ) . '" onclick="alert(\'' . esc_js( __( 'Print function placeholder', 'ktpwp' ) ) . '\')">';
+        $content .= '<button title="' . esc_attr__( 'Print', 'ktpwp' ) . '" onclick="alert(\'' . esc_js( __( 'Print function placeholder', 'ktpwp' ) ) . '\')" style="padding: 6px 10px; font-size: 12px;">';
         $content .= '<span class="material-symbols-outlined" aria-label="' . esc_attr__( 'Print', 'ktpwp' ) . '">print</span>';
         $content .= '</button>';
-        $content .= '</div>'; // .printer end
 
         // Progress status buttons
         $progress_labels = array(

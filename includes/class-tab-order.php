@@ -1028,10 +1028,34 @@ class Kntan_Order_Class {
             if ($order_data) {
                 // プレビューボタン用のHTML生成は削除（Ajax経由で最新データを取得）
 
-                $content .= '<div class="controller">';
-                $content .= '<div class="printer">';
+                $content .= '<div class="controller" style="display: flex; justify-content: space-between; align-items: center;">';
+                
+                // 左側：削除ボタン（ゴミ箱アイコン付き）
+                $current_url = add_query_arg(NULL, NULL);
+                $content .= '<form method="post" action="' . esc_url($current_url) . '" style="display:inline-block;" onsubmit="return confirm(\'本当にこの受注書を削除しますか？\\nこの操作は元に戻せません。\');">';
+                $content .= '<input type="hidden" name="order_id" value="' . esc_attr($order_data->id) . '">';
+                $content .= '<input type="hidden" name="delete_order" value="1">';
+                // 顧客データの存在有無を記録（デバッグ用）
+                $client_exists = false;
+                if (!empty($order_data->client_id)) {
+                    $client_exists = $wpdb->get_var($wpdb->prepare(
+                        "SELECT COUNT(*) FROM `{$client_table}` WHERE id = %d",
+                        $order_data->client_id
+                    )) > 0;
+                }
+                $content .= '<input type="hidden" name="client_exists" value="' . ($client_exists ? '1' : '0') . '">';
+                // Add nonce to delete form
+                $content .= wp_nonce_field( 'delete_order_action', 'delete_nonce', true, false );
+                $content .= '<button type="submit" class="delete-order-btn">';
+                $content .= '<span class="material-symbols-outlined" aria-label="削除">delete</span>';
+                $content .= '受注書を削除';
+                $content .= '</button>';
+                $content .= '</form>';
+                
+                // 右側：プレビューボタンとメールボタン
+                $content .= '<div style="display: flex; gap: 8px;">';
                 // プレビューボタン（受注書IDのみ保持、最新データはAjaxで取得）
-                $content .= '<button id="orderPreviewButton" data-order-id="' . esc_attr($order_data->id) . '" title="' . esc_attr__('プレビュー', 'ktpwp') . '" style="padding: 8px 12px; font-size: 14px;">';
+                $content .= '<button id="orderPreviewButton" data-order-id="' . esc_attr($order_data->id) . '" title="' . esc_attr__('プレビュー', 'ktpwp') . '" style="padding: 6px 10px; font-size: 12px;">';
                 $content .= '<span class="material-symbols-outlined" aria-label="' . esc_attr__('プレビュー', 'ktpwp') . '">preview</span>';
                 $content .= '</button>';
 
@@ -1039,7 +1063,7 @@ class Kntan_Order_Class {
                 $client = null;
                 $can_send_email = false;
                 $mail_button_title = esc_attr__('メール', 'ktpwp');
-                $mail_button_style = 'padding: 8px 12px; font-size: 14px;';
+                $mail_button_style = 'padding: 6px 10px; font-size: 12px; border: none;';
 
                 // 顧客データを取得
                 if (!empty($order_data->client_id)) {
@@ -1059,10 +1083,10 @@ class Kntan_Order_Class {
                 // メール送信可否の判定（強化版）
                 if (!$client) {
                     $mail_button_title = 'メール送信不可（顧客データなし）';
-                    $mail_button_style = 'padding: 8px 12px; font-size: 14px; background: #ccc; cursor: not-allowed;';
+                    $mail_button_style = 'padding: 6px 10px; font-size: 12px; background: #ccc; cursor: not-allowed; border: none;';
                 } elseif ($client->category === '対象外' || trim($client->category ?: '') === '対象外') {
                     $mail_button_title = 'メール送信不可（対象外顧客）';
-                    $mail_button_style = 'padding: 8px 12px; font-size: 14px; background: #f44336; color: white; cursor: not-allowed;';
+                    $mail_button_style = 'padding: 6px 10px; font-size: 12px; background: #f44336; color: white; cursor: not-allowed; border: none;';
                 } else {
                     // メールアドレスの詳細な検証（強化版） - nameフィールドも考慮
                     $email_raw = $client->email ?? '';
@@ -1091,11 +1115,11 @@ class Kntan_Order_Class {
 
                     if (!$is_valid) {
                         $mail_button_title = 'メール送信不可（メールアドレス未設定または無効）';
-                        $mail_button_style = 'padding: 8px 12px; font-size: 14px; background: #ff9800; color: white; cursor: not-allowed;';
+                        $mail_button_style = 'padding: 6px 10px; font-size: 12px; background: #ff9800; color: white; cursor: not-allowed; border: none;';
                     } else {
                         $can_send_email = true;
                         $mail_button_title = 'メール送信（' . esc_attr($email) . '）';
-                        $mail_button_style = 'padding: 8px 12px; font-size: 14px; background: #2196f3; color: white;';
+                        $mail_button_style = 'padding: 6px 10px; font-size: 12px; background: #2196f3; color: white; border: none;';
                     }
                 }
 
@@ -1110,37 +1134,14 @@ class Kntan_Order_Class {
                 
                 // Email button (opens popup)
                 if ($can_send_email) {
-                    $content .= '<button type="button" id="orderMailButton" onclick="ktpShowEmailPopup(' . esc_attr($order_data->id) . ')" title="' . $mail_button_title . '" style="' . $mail_button_style . '">';
+                    $content .= '<button type="button" id="orderMailButton" class="order-mail-btn" onclick="ktpShowEmailPopup(' . esc_attr($order_data->id) . ')" title="' . $mail_button_title . '">';
                 } else {
-                    $content .= '<button type="button" id="orderMailButton" disabled title="' . $mail_button_title . '" style="' . $mail_button_style . '">';
+                    $content .= '<button type="button" id="orderMailButton" class="order-mail-btn" disabled title="' . $mail_button_title . '">';
                 }
                 $content .= '<span class="material-symbols-outlined" aria-label="' . esc_attr__('メール', 'ktpwp') . '">mail</span>';
                 $content .= '</button>';
-                $content .= '</div>';
-                $content .= '</div>';
-
-                // workflowセクション追加（デザイン統一）
-                $content .= '<div class="workflow">';
-                // 削除ボタンをworkflow内に移動（フォーム送信ベース）
-                // 顧客データが存在しない場合でも削除可能にする
-                $current_url = add_query_arg(NULL, NULL);
-                $content .= '<form method="post" action="' . esc_url($current_url) . '" style="display:inline-block;margin-left:10px;" onsubmit="return confirm(\'本当にこの受注書を削除しますか？\\nこの操作は元に戻せません。\');">';
-                $content .= '<input type="hidden" name="order_id" value="' . esc_attr($order_id) . '">';
-                $content .= '<input type="hidden" name="delete_order" value="1">';
-                // 顧客データの存在有無を記録（デバッグ用）
-                $client_exists = false;
-                if (!empty($order_data->client_id)) {
-                    $client_exists = $wpdb->get_var($wpdb->prepare(
-                        "SELECT COUNT(*) FROM `{$client_table}` WHERE id = %d",
-                        $order_data->client_id
-                    )) > 0;
-                }
-                $content .= '<input type="hidden" name="client_exists" value="' . ($client_exists ? '1' : '0') . '">';
-                // Add nonce to delete form
-                $content .= wp_nonce_field( 'delete_order_action', 'delete_nonce', true, false );
-                $content .= '<button type="submit" style="color:#fff;background:#d9534f;padding: 8px 12px;font-size:14px;border:none;border-radius:4px;cursor:pointer;">受注書を削除</button>';
-                $content .= '</form>';
-                $content .= '</div>';
+                $content .= '</div>'; // 右側のボタン群終了
+                $content .= '</div>'; // controller終了
 
                 // メール編集フォーム導入により、進捗3の質問内容プロンプトは不要になったため削除
 

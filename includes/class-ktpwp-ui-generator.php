@@ -24,7 +24,11 @@ class KTPWP_Ui_Generator {
      * @return string HTML content for the controller section
      */
     public function generate_controller() {
-        return '<div class="controller"></div>';
+        return '<div class="controller">
+            <button onclick="alert(\'印刷機能は準備中です\')" title="印刷する" style="padding: 6px 10px; font-size: 12px;">
+                <span class="material-symbols-outlined" aria-label="印刷">print</span>
+            </button>
+        </div>';
     }
 
     /**

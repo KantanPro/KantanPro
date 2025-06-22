@@ -175,6 +175,31 @@
     background-color: #fff !important;
 }
 
+/* アイコン専用ボタンの統一スタイル */
+.ktp-admin-wrap .controller button[style*="padding: 0px 3px"] {
+    padding: 0px 3px !important;
+    font-size: 12px !important;
+    border: 1px solid #ddd !important;
+    background: #fff !important;
+    border-radius: 3px !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 28px !important;
+    height: 28px !important;
+}
+
+.ktp-admin-wrap .controller button[style*="padding: 0px 3px"]:hover {
+    background: #f0f0f0 !important;
+    border-color: #0073aa !important;
+}
+
+.ktp-admin-wrap .controller button[style*="padding: 0px 3px"] .material-symbols-outlined {
+    font-size: 16px !important;
+    line-height: 1 !important;
+}
+
 /* 印刷時のスタイル */
 @media print {
     #adminmenumain,
