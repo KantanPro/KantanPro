@@ -711,11 +711,19 @@
             deleteRow(currentRow);
         });
 
-        // 行移動ボタン（将来の拡張用）- コスト項目テーブル専用
+        // 行移動ボタン（協力会社選択機能）- コスト項目テーブル専用
+        $(document).off('click', '.cost-items-table .btn-move-row');
         $(document).on('click', '.cost-items-table .btn-move-row', function (e) {
             e.preventDefault();
-            // TODO: ドラッグ&ドロップ機能を実装
-            alert('行移動機能は今後実装予定です。');
+            e.stopPropagation();
+            console.log('[COST-ITEMS] [>]ボタンクリック - 協力会社選択開始');
+            // 協力会社選択ポップアップを表示
+            const currentRow = $(this).closest('tr');
+            if (typeof window.ktpShowSupplierSelector === 'function') {
+                window.ktpShowSupplierSelector(currentRow);
+            } else {
+                alert('協力会社選択機能の読み込みに失敗しました。ページを再読み込みしてください。');
+            }
         });
 
         // フォーカス時の入力欄スタイル調整
