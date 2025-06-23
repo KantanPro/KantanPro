@@ -113,6 +113,16 @@ window.ktpShowSupplierSelector = function(currentRow) {
                         if (res.success) {
                             // hidden input[name*='[id]']にIDをセット
                             $newRow.find('input[name*="[id]"]').val(res.data.id);
+                            // id順でtbodyを並び替え
+                            let $rows = $tbody.find('tr').get();
+                            $rows.sort(function(a, b) {
+                                let idA = parseInt($(a).find('input[name*="[id]"]').val(), 10) || 0;
+                                let idB = parseInt($(b).find('input[name*="[id]"]').val(), 10) || 0;
+                                return idA - idB;
+                            });
+                            $.each($rows, function(idx, row) {
+                                $tbody.append(row);
+                            });
                             $("#ktp-supplier-selector-modal").remove();
                         } else {
                             alert('保存失敗: ' + (res.data || ''));
@@ -175,33 +185,28 @@ window.ktpShowSupplierSelector = function(currentRow) {
 // コスト項目に新規追加
 window.ktpAddCostRowFromSkill = function(skill, currentRow) {
     if (typeof skill === 'string') skill = JSON.parse(decodeURIComponent(skill));
-    // 本体テーブルtrが見つからない場合はtbodyの末尾に追加
     let table = $('.cost-items-table');
-    if (!currentRow || currentRow.length === 0) {
-        if (table.length === 0) return;
-        let $tbody = table.find('tbody');
-        let $newRow = $tbody.find('tr').last().clone();
-        $newRow.find('.product-name').val(skill.product_name);
-        $newRow.find('.price').val(skill.unit_price);
-        $newRow.find('.quantity').val(skill.quantity || 1);
-        $newRow.find('.unit').val(skill.unit);
-        $newRow.find('.amount').val(skill.unit_price);
-        // id hidden inputがあればセット
-        $newRow.find('input[name*="[id]"]').val(skill.id || '');
-        $tbody.append($newRow);
-        if (typeof calculateAmount === 'function') calculateAmount($newRow);
+    let $tbody = table.find('tbody');
+    let $baseRow = null;
+    if (currentRow && currentRow.length > 0) {
+        $baseRow = currentRow;
     } else {
-        const table = currentRow.closest('table');
-        const newRow = currentRow.clone();
-        newRow.find('.product-name').val(skill.product_name);
-        newRow.find('.price').val(skill.unit_price);
-        newRow.find('.quantity').val(skill.quantity || 1);
-        newRow.find('.unit').val(skill.unit);
-        newRow.find('.amount').val(skill.unit_price);
-        newRow.find('input[name*="[id]"]').val(skill.id || '');
-        table.find('tbody tr').eq(currentRow.index()).after(newRow);
-        if (typeof calculateAmount === 'function') calculateAmount(newRow);
+        // 既存行がある場合はその下に追加、なければtbodyの先頭に追加
+        $baseRow = $tbody.find('tr').last();
     }
+    let $newRow = $baseRow.length > 0 ? $baseRow.clone() : $('<tr></tr>');
+    $newRow.find('.product-name').val(skill.product_name);
+    $newRow.find('.price').val(skill.unit_price);
+    $newRow.find('.quantity').val(skill.quantity || 1);
+    $newRow.find('.unit').val(skill.unit);
+    $newRow.find('.amount').val(skill.unit_price);
+    $newRow.find('input[name*="[id]"]').val(skill.id || '');
+    if ($baseRow.length > 0) {
+        $baseRow.after($newRow);
+    } else {
+        $tbody.prepend($newRow);
+    }
+    if (typeof calculateAmount === 'function') calculateAmount($newRow);
 };
 
 // コスト項目を更新
@@ -231,3 +236,17 @@ window.ktpUpdateCostRowFromSkill = function(skill, currentRow) {
         if (typeof calculateAmount === 'function') calculateAmount(currentRow);
     }
 };
+
+// ページロード時にid順でtbodyをソート
+$(function() {
+    let $tbody = $('.cost-items-table').find('tbody');
+    let $rows = $tbody.find('tr').get();
+    $rows.sort(function(a, b) {
+        let idA = parseInt($(a).find('input[name*="[id]"]').val(), 10) || 0;
+        let idB = parseInt($(b).find('input[name*="[id]"]').val(), 10) || 0;
+        return idA - idB;
+    });
+    $.each($rows, function(idx, row) {
+        $tbody.append(row);
+    });
+});
