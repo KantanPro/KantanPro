@@ -36,7 +36,6 @@ class KTPWP_Database {
         'client' => 'Kntan_Client_Class',
         'service' => 'Kntan_Service_Class',
         'supplier' => 'KTPWP_Supplier_Class',
-        'setting' => 'KTPWP_Setting_Class',
     );
 
     /**
@@ -50,7 +49,6 @@ class KTPWP_Database {
         'KTPWP_Supplier_Class' => 'class-tab-supplier.php',
         'KTPWP_Supplier_Security' => 'class-supplier-security.php',
         'KTPWP_Supplier_Data' => 'class-supplier-data.php',
-        'KTPWP_Setting_Class' => 'class-tab-setting.php',
         'Kantan_Login_Error' => 'class-login-error.php',
     );
 

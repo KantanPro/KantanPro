@@ -310,11 +310,6 @@ class KTPWP_Main {
             $supplier = new Kantan_Supplier_Class();
             $supplier->Create_Table( 'supplier' );
         }
-
-        if ( class_exists( 'KTPWP_Setting_Class' ) ) {
-            $setting = new KTPWP_Setting_Class();
-            $setting->Create_Table( 'setting' );
-        }
     }
 
     /**

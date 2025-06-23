@@ -633,25 +633,11 @@ class KTPWP_Shortcodes {
      * @return string コンテンツHTML
      */
     private function get_setting_content($tab_name) {
-        if (!current_user_can('edit_posts') && !current_user_can('ktpwp_access')) {
-            return $this->render_permission_error();
-        }
-        if (!class_exists('KTPWP_Setting_Class')) {
-            $this->load_required_class('class-tab-setting.php');
-        }
-
-        if (class_exists('KTPWP_Setting_Class')) {
-            $setting = new KTPWP_Setting_Class();
-
-            // 管理者権限がある場合のみテーブル操作
-            if (current_user_can('manage_options')) {
-                $setting->Create_Table($tab_name);
-            }
-
-            return $setting->Setting_Tab_View($tab_name);
-        }
-
-        return $this->get_error_content('KTPWP_Setting_Class');
+        // 設定タブは廃止されたため、廃止メッセージを返す
+        return '<div class="ktpwp-notice" style="padding: 20px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; margin: 20px 0;">
+            <h3 style="margin: 0 0 10px 0; color: #6c757d;">設定タブについて</h3>
+            <p style="margin: 0; color: #6c757d;">設定タブは廃止されました。ヘッダー画像などの設定は管理画面の「KantanPro設定」から行ってください。</p>
+        </div>';
     }
 
     /**

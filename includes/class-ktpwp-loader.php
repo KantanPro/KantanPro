@@ -81,25 +81,30 @@ class KTPWP_Loader {
             'KTPWP_Supplier_Skills'  => 'includes/class-ktpwp-supplier-skills.php',
             'KTPWP_Report_Class'     => 'includes/class-tab-report.php',
             'Kntan_Order_Class'      => 'includes/class-tab-order.php',
-            'KTPWP_Setting_Class'    => 'includes/class-tab-setting.php',
-            'Kantan_List_Class'      => 'includes/class-tab-list.php',
-            
-            // ビュー関連クラス
-            'view_tabs_Class'        => 'includes/class-view-tab.php',
-            'Kantan_Login_Error'     => 'includes/class-login-error.php',
-            
-            // 管理機能クラス
             'KTPWP_Plugin_Reference' => 'includes/class-plugin-reference.php',
-            
-            // 新しい分離クラス
-            'KTPWP_Shortcodes'       => 'includes/class-ktpwp-shortcodes.php',
-            'KTPWP_Ajax'             => 'includes/class-ktpwp-ajax.php',
-            'KTPWP_Redirect'         => 'includes/class-ktpwp-redirect.php',
-            'KTPWP_Contact_Form'     => 'includes/class-ktpwp-contact-form.php',
-            'KTPWP_GitHub_Updater'   => 'includes/class-ktpwp-github-updater.php',
-            'KTPWP_Security'         => 'includes/class-ktpwp-security.php',
-            'KTPWP_Database'         => 'includes/class-ktpwp-database.php',
-            'KTPWP_Assets'           => 'includes/class-ktpwp-assets.php',
+            'KTPWP'                 => 'includes/class-ktpwp.php',
+            'KTPWP_Main'            => 'includes/class-ktpwp-main.php',
+            'KTPWP_Loader'          => 'includes/class-ktpwp-loader.php',
+            'KTPWP_Security'        => 'includes/class-ktpwp-security.php',
+            'KTPWP_Ajax'            => 'includes/class-ktpwp-ajax.php',
+            'KTPWP_Assets'          => 'includes/class-ktpwp-assets.php',
+            'KTPWP_Nonce_Manager'   => 'includes/class-ktpwp-nonce-manager.php',
+            'KTPWP_Shortcodes'      => 'includes/class-ktpwp-shortcodes.php',
+            'KTPWP_Redirect'        => 'includes/class-ktpwp-redirect.php',
+            'KTPWP_Contact_Form'    => 'includes/class-ktpwp-contact-form.php',
+            'KTPWP_GitHub_Updater'  => 'includes/class-ktpwp-github-updater.php',
+            'KTPWP_Database'        => 'includes/class-ktpwp-database.php',
+            'KTPWP_Order'           => 'includes/class-ktpwp-order.php',
+            'KTPWP_Order_Items'     => 'includes/class-ktpwp-order-items.php',
+            'KTPWP_Order_UI'        => 'includes/class-ktpwp-order-ui.php',
+            'KTPWP_Staff_Chat'      => 'includes/class-ktpwp-staff-chat.php',
+            'KTPWP_Service_DB'      => 'includes/class-ktpwp-service-db.php',
+            'KTPWP_Service_UI'      => 'includes/class-ktpwp-service-ui.php',
+            'KTPWP_UI_Generator'    => 'includes/class-ktpwp-ui-generator.php',
+            'KTPWP_Graph_Renderer'  => 'includes/class-ktpwp-graph-renderer.php',
+            'KTPWP_Post_Data_Handler' => 'includes/class-ktpwp-post-handler.php',
+            'KTPWP_Client_DB'       => 'includes/class-ktpwp-client-db.php',
+            'KTPWP_Client_UI'       => 'includes/class-ktpwp-client-ui.php',
         );
     }
     

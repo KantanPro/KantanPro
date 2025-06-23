@@ -106,7 +106,6 @@ function ktpwp_autoload_classes() {
         'KTPWP_Supplier_Data'   => 'includes/class-supplier-data.php',
         'KTPWP_Report_Class'    => 'includes/class-tab-report.php',
         'Kntan_Order_Class'     => 'includes/class-tab-order.php',
-        'KTPWP_Setting_Class'   => 'includes/class-tab-setting.php',
         'KTPWP_Plugin_Reference' => 'includes/class-plugin-reference.php',
         // 新しいクラス構造
         'KTPWP'                 => 'includes/class-ktpwp.php',
@@ -554,29 +553,6 @@ function ktpwp_init_ajax_handlers() {
 add_action('init', 'ktpwp_init_ajax_handlers');
 
 function ktp_table_setup() {
-    // プラグイン有効化時にテーブルセットアップを実行
-    // まず必要なクラスファイルを読み込む
-    $class_files = [
-        'class-tab-client.php',
-        'class-tab-service.php',
-        'class-tab-supplier.php',
-        'class-tab-setting.php',
-        'class-login-error.php'
-    ];
-
-    foreach ($class_files as $file) {
-        $file_path = plugin_dir_path(__FILE__) . 'includes/' . $file;
-        if (file_exists($file_path)) {
-            if ($file === 'class-tab-service.php') { // スキップ対象を class-tab-service.php に変更
-                // class-tab-service.php の読み込みをスキップ
-            } else {
-                require_once $file_path;
-            }
-        } else {
-        }
-    }
-
-    // 各クラスでテーブル作成/更新処理を行う
     if (class_exists('Kntan_Client_Class')) {
         $client = new Kntan_Client_Class();
         $client->Create_Table('client');
@@ -587,9 +563,6 @@ function ktp_table_setup() {
         }        if (class_exists('Kantan_Supplier_Class')) {
             $supplier = new Kantan_Supplier_Class();
             $supplier->Create_Table('supplier');
-        }        if (class_exists('KTPWP_Setting_Class')) {
-            $setting = new KTPWP_Setting_Class();
-            $setting->Create_Table('setting');
         }
 }
 register_activation_hook(KANTANPRO_PLUGIN_FILE, 'ktp_table_setup'); // テーブル作成処理
