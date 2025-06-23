@@ -79,21 +79,40 @@ window.ktpShowSupplierSelector = function(currentRow) {
                     skill.supplier_id = $('#ktp-supplier-list').val();
                 }
                 let order_id = $('input[name="order_id"]').val() || $('#order_id').val();
-                // skillにorder_idをセット
                 skill.order_id = order_id;
-                // DB保存Ajax（全項目送信）
+                // ポップアップtr内の値をskillにセット
+                const popupRow = $(this).closest('tr');
+                if (popupRow && popupRow.length > 0) {
+                    skill.product_name = popupRow.find('td').eq(0).text().trim();
+                    skill.unit_price = popupRow.find('td').eq(1).text().trim();
+                    skill.quantity = popupRow.find('td').eq(2).text().trim();
+                    skill.unit = popupRow.find('td').eq(3).text().trim();
+                }
+                // 1. まずUIに新規行を追加
+                window.ktpAddCostRowFromSkill(skill, null);
+                // 2. 追加した行のinput値を取得しAjaxでDB保存
+                let $tbody = $('.cost-items-table').find('tbody');
+                let $newRow = $tbody.find('tr').last();
+                let postData = {
+                    action: 'ktpwp_save_order_cost_item',
+                    force_save: true,
+                    order_id: order_id,
+                    supplier_id: skill.supplier_id,
+                    product_name: $newRow.find('.product-name').val(),
+                    unit_price: $newRow.find('.price').val(),
+                    quantity: $newRow.find('.quantity').val(),
+                    unit: $newRow.find('.unit').val(),
+                    amount: $newRow.find('.amount').val()
+                };
                 $.ajax({
                     url: (typeof ktp_ajax_object !== 'undefined' ? ktp_ajax_object.ajax_url : '/wp-admin/admin-ajax.php'),
                     type: 'POST',
-                    data: Object.assign({
-                        action: 'ktpwp_save_order_cost_item',
-                        force_save: true // 協力会社職能からの追加・更新時は必ずtrue
-                    }, skill),
+                    data: postData,
                     dataType: 'json',
                     success: function(res) {
                         if (res.success) {
-                            skill.id = res.data.id;
-                            window.ktpAddCostRowFromSkill(skill, currentRow);
+                            // hidden input[name*='[id]']にIDをセット
+                            $newRow.find('input[name*="[id]"]').val(res.data.id);
                             $("#ktp-supplier-selector-modal").remove();
                         } else {
                             alert('保存失敗: ' + (res.data || ''));
@@ -113,19 +132,28 @@ window.ktpShowSupplierSelector = function(currentRow) {
                 }
                 let order_id = $('input[name="order_id"]').val() || $('#order_id').val();
                 skill.order_id = order_id;
-                // DB保存Ajax（全項目送信）
+                // --- ポップアップtr内の値をskillにセット ---
+                const popupRow = $(this).closest('tr');
+                if (popupRow && popupRow.length > 0) {
+                    skill.product_name = popupRow.find('td').eq(0).text().trim();
+                    skill.unit_price = popupRow.find('td').eq(1).text().trim();
+                    skill.quantity = popupRow.find('td').eq(2).text().trim();
+                    skill.unit = popupRow.find('td').eq(3).text().trim();
+                }
+                // まずDB保存Ajax（全項目送信）
                 $.ajax({
                     url: (typeof ktp_ajax_object !== 'undefined' ? ktp_ajax_object.ajax_url : '/wp-admin/admin-ajax.php'),
                     type: 'POST',
                     data: Object.assign({
                         action: 'ktpwp_save_order_cost_item',
-                        force_save: true // 協力会社職能からの更新時も必ずtrue
+                        force_save: true
                     }, skill),
                     dataType: 'json',
                     success: function(res) {
                         if (res.success) {
                             skill.id = res.data.id;
-                            window.ktpUpdateCostRowFromSkill(skill, currentRow);
+                            // DB保存成功後にUIへ反映
+                            window.ktpUpdateCostRowFromSkill(skill, null);
                             $("#ktp-supplier-selector-modal").remove();
                         } else {
                             alert('更新失敗: ' + (res.data || ''));
@@ -147,26 +175,59 @@ window.ktpShowSupplierSelector = function(currentRow) {
 // コスト項目に新規追加
 window.ktpAddCostRowFromSkill = function(skill, currentRow) {
     if (typeof skill === 'string') skill = JSON.parse(decodeURIComponent(skill));
-    if (!currentRow || currentRow.length === 0) return;
-    const table = currentRow.closest('table');
-    const newRow = currentRow.clone();
-    newRow.find('.product-name').val(skill.product_name);
-    newRow.find('.price').val(skill.unit_price);
-    newRow.find('.quantity').val(skill.quantity || 1);
-    newRow.find('.unit').val(skill.unit);
-    newRow.find('.amount').val(skill.unit_price);
-    table.find('tbody tr').eq(currentRow.index()).after(newRow);
-    if (typeof calculateAmount === 'function') calculateAmount(newRow);
+    // 本体テーブルtrが見つからない場合はtbodyの末尾に追加
+    let table = $('.cost-items-table');
+    if (!currentRow || currentRow.length === 0) {
+        if (table.length === 0) return;
+        let $tbody = table.find('tbody');
+        let $newRow = $tbody.find('tr').last().clone();
+        $newRow.find('.product-name').val(skill.product_name);
+        $newRow.find('.price').val(skill.unit_price);
+        $newRow.find('.quantity').val(skill.quantity || 1);
+        $newRow.find('.unit').val(skill.unit);
+        $newRow.find('.amount').val(skill.unit_price);
+        // id hidden inputがあればセット
+        $newRow.find('input[name*="[id]"]').val(skill.id || '');
+        $tbody.append($newRow);
+        if (typeof calculateAmount === 'function') calculateAmount($newRow);
+    } else {
+        const table = currentRow.closest('table');
+        const newRow = currentRow.clone();
+        newRow.find('.product-name').val(skill.product_name);
+        newRow.find('.price').val(skill.unit_price);
+        newRow.find('.quantity').val(skill.quantity || 1);
+        newRow.find('.unit').val(skill.unit);
+        newRow.find('.amount').val(skill.unit_price);
+        newRow.find('input[name*="[id]"]').val(skill.id || '');
+        table.find('tbody tr').eq(currentRow.index()).after(newRow);
+        if (typeof calculateAmount === 'function') calculateAmount(newRow);
+    }
 };
 
 // コスト項目を更新
 window.ktpUpdateCostRowFromSkill = function(skill, currentRow) {
     if (typeof skill === 'string') skill = JSON.parse(decodeURIComponent(skill));
-    if (!currentRow || currentRow.length === 0) return;
-    currentRow.find('.product-name').val(skill.product_name);
-    currentRow.find('.price').val(skill.unit_price);
-    currentRow.find('.quantity').val(skill.quantity || 1);
-    currentRow.find('.unit').val(skill.unit);
-    currentRow.find('.amount').val(skill.unit_price);
-    if (typeof calculateAmount === 'function') calculateAmount(currentRow);
+    let table = $('.cost-items-table');
+    // 本体テーブルtrが見つからない場合は新規追加
+    if (!currentRow || currentRow.length === 0) {
+        if (table.length === 0) return;
+        let $tbody = table.find('tbody');
+        let $newRow = $tbody.find('tr').last().clone();
+        $newRow.find('.product-name').val(skill.product_name);
+        $newRow.find('.price').val(skill.unit_price);
+        $newRow.find('.quantity').val(skill.quantity || 1);
+        $newRow.find('.unit').val(skill.unit);
+        $newRow.find('.amount').val(skill.unit_price);
+        $newRow.find('input[name*="[id]"]').val(skill.id || '');
+        $tbody.append($newRow);
+        if (typeof calculateAmount === 'function') calculateAmount($newRow);
+    } else {
+        currentRow.find('.product-name').val(skill.product_name);
+        currentRow.find('.price').val(skill.unit_price);
+        currentRow.find('.quantity').val(skill.quantity || 1);
+        currentRow.find('.unit').val(skill.unit);
+        currentRow.find('.amount').val(skill.unit_price);
+        currentRow.find('input[name*="[id]"]').val(skill.id || '');
+        if (typeof calculateAmount === 'function') calculateAmount(currentRow);
+    }
 };
