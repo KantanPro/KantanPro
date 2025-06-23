@@ -44,6 +44,8 @@ class KTPWP_Assets {
      */
     public function init() {
         $this->init_hooks();
+        // 翻訳ドメインのロードをinitフックで実行
+        add_action('init', array($this, 'load_textdomain_late'));
     }
 
     /**
@@ -182,7 +184,7 @@ class KTPWP_Assets {
             ),
             'ktp-cost-items' => array(
                 'src'       => 'js/ktp-cost-items.js',
-                'deps'      => array( 'jquery', 'jquery-ui-sortable' ),
+                'deps'      => array( 'jquery', 'jquery-ui-sortable', 'ktp-supplier-selector' ),
                 'ver'       => KTPWP_PLUGIN_VERSION,
                 'in_footer' => true,
                 'admin'     => false,
@@ -235,6 +237,20 @@ class KTPWP_Assets {
                 'ver'       => KTPWP_PLUGIN_VERSION,
                 'in_footer' => true,
                 'admin'     => false,
+            ),
+            'ktp-supplier-selector' => array(
+                'src'       => 'js/ktp-supplier-selector.js',
+                'deps'      => array( 'jquery' ),
+                'ver'       => KTPWP_PLUGIN_VERSION,
+                'in_footer' => true,
+                'admin'     => false,
+                'localize'  => array(
+                    'object' => 'ktp_ajax_object',
+                    'data'   => array(
+                        'ajax_url' => admin_url( 'admin-ajax.php' ),
+                        'nonce'    => wp_create_nonce( 'ktp_ajax_nonce' ),
+                    ),
+                ),
             ),
             // 'ktp-skills-list-effects' => array(
             //     'src'       => 'js/skills-list-effects.js',
@@ -537,5 +553,16 @@ class KTPWP_Assets {
         if (defined('WP_DEBUG') && WP_DEBUG) {
             error_log('KTPWP Assets: Fallback AJAX config output in footer (debug mode)');
         }
+    }
+
+    /**
+     * 適切なタイミングで翻訳ドメインをロード
+     */
+    public function load_textdomain_late() {
+        load_plugin_textdomain(
+            'ktpwp',
+            false,
+            dirname(plugin_basename(__FILE__)) . '/languages'
+        );
     }
 }

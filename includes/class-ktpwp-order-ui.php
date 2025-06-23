@@ -190,6 +190,12 @@ class KTPWP_Order_UI {
      * @return string HTML table content
      */
     public function generate_cost_items_table( $order_id ) {
+        // supplier_idカラムがなければ自動追加
+        if (class_exists('KTPWP_Order_Items')) {
+            $order_items = KTPWP_Order_Items::get_instance();
+            $order_items->add_supplier_id_column_if_missing();
+        }
+
         $order_items = KTPWP_Order_Items::get_instance();
         $items = $order_items->get_cost_items( $order_id );
 

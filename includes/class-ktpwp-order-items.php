@@ -313,6 +313,8 @@ class KTPWP_Order_Items {
         global $wpdb;
         $table_name = $wpdb->prefix . 'ktp_order_invoice_items';
         
+        // まず現在のテーブル名で存在チェック
+        $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table_name'");
         // 代替テーブル名もチェック
         $alt_table_name = $wpdb->prefix . 'ktp_invoice_item';
         $alt_table_exists = $wpdb->get_var("SHOW TABLES LIKE '$alt_table_name'");
@@ -500,9 +502,10 @@ class KTPWP_Order_Items {
      * @since 1.0.0
      * @param int $order_id Order ID
      * @param array $items Cost items data
+     * @param bool $force_save 商品名が空でも保存する場合true（協力会社職能からの追加・更新用）
      * @return bool True on success, false on failure
      */
-    public function save_cost_items( $order_id, $items ) {
+    public function save_cost_items( $order_id, $items, $force_save = false ) {
         if ( ! $order_id || $order_id <= 0 || ! is_array( $items ) ) {
             return false;
         }
@@ -510,13 +513,23 @@ class KTPWP_Order_Items {
         global $wpdb;
         $table_name = $wpdb->prefix . 'ktp_order_cost_items';
 
+        // Ajax送信データのキー補正（unit_price→price など）
+        foreach ($items as &$item) {
+            if (isset($item['unit_price']) && !isset($item['price'])) {
+                $item['price'] = $item['unit_price'];
+            }
+            if (isset($item['frequency']) && !isset($item['remarks'])) {
+                $item['remarks'] = 'frequency:' . $item['frequency'];
+            }
+        }
+        unset($item);
+
         // Start transaction
         $wpdb->query( 'START TRANSACTION' );
 
         try {
             $sort_order = 1;
             $submitted_ids = array();
-            // Keep track of existing items that were submitted, even if their product_name became empty
             $existing_submitted_ids = array();
 
             foreach ( $items as $item ) {
@@ -526,11 +539,12 @@ class KTPWP_Order_Items {
                 $price = isset( $item['price'] ) ? floatval( $item['price'] ) : 0;
                 $quantity = isset( $item['quantity'] ) ? floatval( $item['quantity'] ) : 0;
                 $unit = isset( $item['unit'] ) ? sanitize_text_field( $item['unit'] ) : '';
-                $amount = isset( $item['amount'] ) ? floatval( $item['amount'] ) : $price * $quantity; // Recalculate if not provided
+                $amount = isset( $item['amount'] ) ? floatval( $item['amount'] ) : $price * $quantity;
                 $remarks = isset( $item['remarks'] ) ? sanitize_textarea_field( $item['remarks'] ) : '';
+                $supplier_id = isset( $item['supplier_id'] ) ? intval( $item['supplier_id'] ) : null;
 
-                // 商品名が空ならスキップ（商品名があれば必ず保存）
-                if ( empty( $product_name ) ) {
+                // 商品名が空ならスキップ（force_save時は保存）
+                if ( empty( $product_name ) && !$force_save ) {
                     continue;
                 }
 
@@ -545,8 +559,14 @@ class KTPWP_Order_Items {
                     'sort_order' => $sort_order,
                     'updated_at' => current_time( 'mysql' )
                 );
-
                 $format = array( '%d', '%s', '%f', '%s', '%f', '%f', '%s', '%d', '%s' );
+
+                // supplier_idカラムが存在する場合のみ追加
+                $columns = $wpdb->get_col( $wpdb->prepare( "SHOW COLUMNS FROM `{$table_name}` LIKE %s", 'supplier_id' ) );
+                if ( !empty($columns) ) {
+                    $data['supplier_id'] = $supplier_id;
+                    $format[] = '%d';
+                }
 
                 $used_id = 0;
                 if ( $item_id > 0 ) {
@@ -581,11 +601,8 @@ class KTPWP_Order_Items {
                 $sort_order++;
             }
 
-            // Merge $submitted_ids (actually processed) and $existing_submitted_ids (all submitted existing items)
-            // to ensure no existing submitted item gets deleted.
             $final_ids_to_keep = array_unique( array_merge( $submitted_ids, $existing_submitted_ids ) );
 
-            // Remove any items that weren't in the submitted data for this order_id
             if ( ! empty( $final_ids_to_keep ) ) {
                 $ids_placeholder = implode( ',', array_fill( 0, count( $final_ids_to_keep ), '%d' ) );
                 $delete_query = $wpdb->prepare(
@@ -594,25 +611,53 @@ class KTPWP_Order_Items {
                 );
                 $wpdb->query( $delete_query );
             } else {
-                // Delete all items for this order_id ONLY IF the initial $items array was empty.
-                // This prevents deleting all items if $items contained only new rows with empty product_names
-                // which were then skipped.
                 if (empty($items)) {
                     $wpdb->delete( $table_name, array( 'order_id' => $order_id ), array( '%d' ) );
                 }
             }
 
-            // Commit transaction
             $wpdb->query( 'COMMIT' );
             return true;
 
         } catch ( Exception $e ) {
-            // Rollback transaction
             $wpdb->query( 'ROLLBACK' );
             error_log( 'KTPWP: Failed to save cost items: ' . $e->getMessage() );
             return false;
         }
     }
+
+    /**
+     * コスト項目テーブルに supplier_id カラムがなければ自動追加
+     *
+     * @since 1.1.3
+     * @return bool true: 追加済み/既存, false: 追加失敗
+     */
+    public function add_supplier_id_column_if_missing() {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'ktp_order_cost_items';
+        $column = $wpdb->get_results($wpdb->prepare(
+            "SHOW COLUMNS FROM `{$table_name}` LIKE %s",
+            'supplier_id'
+        ));
+        if (empty($column)) {
+            $result = $wpdb->query("ALTER TABLE `{$table_name}` ADD COLUMN supplier_id INT(11) DEFAULT NULL AFTER order_id");
+            if ($result === false) {
+                error_log('KTPWP: supplier_idカラムの自動追加に失敗: ' . $wpdb->last_error);
+                return false;
+            } else {
+                error_log('KTPWP: supplier_idカラムを自動追加しました');
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Get cost items for an order
+     *
+     * @since 1.0.0
+     * @param int $order_id Order ID
+     * @return array Cost items
+     */
 
     /**
      * Create initial invoice item for new order

@@ -1,4 +1,7 @@
 <?php
+// --- Ajaxハンドラ（協力会社・職能リスト取得）を必ず読み込む ---
+require_once __DIR__ . '/includes/ajax-supplier-cost.php';
+
 /**
  * Plugin Name: KantanPro
  * Plugin URI: https://www.kantanpro.com/

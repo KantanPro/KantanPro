@@ -280,6 +280,12 @@ class KTPWP_Main {
             $this->create_tables();
         }
 
+        // supplier_idカラム自動追加（コスト項目テーブル）
+        if (class_exists('KTPWP_Order_Items')) {
+            $order_items = KTPWP_Order_Items::get_instance();
+            $order_items->add_supplier_id_column_if_missing();
+        }
+
         // 設定クラスのアクティベート処理
         if ( class_exists( 'KTP_Settings' ) ) {
             KTP_Settings::activate();
