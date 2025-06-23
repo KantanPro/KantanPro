@@ -1,7 +1,0 @@
-<?xml version="1.0"?>
-<ruleset name="WordPress Plugin Standards">
-  <description>WordPress Coding Standards に準拠した PHP チェック</description>
-  <rule ref="WordPress" />
-  <exclude-pattern>vendor/*</exclude-pattern>
-  <file>./</file>
-</ruleset>
