@@ -1,15 +1,14 @@
 # WP-CLI configuration file for KTPWP project
-path: /Users/kantanpro/KantanProLoalTest/wp
+path: /Users/kantanpro/ktplocal/wp
 
 # Default URL for your WordPress site
 url: http://localhost/wp
 
-# Database configuration for Docker environment
-# Note: Make sure Docker containers are running for database access
+# Database configuration
 core config:
   dbname: wordpress
   dbuser: root
-  dbpass: example password
+  dbpass: 8bee1222
   dbhost: 127.0.0.1:3306
   dbprefix: wp_
 
