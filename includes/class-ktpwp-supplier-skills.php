@@ -70,7 +70,7 @@ class KTPWP_Supplier_Skills {
         global $wpdb;
 
         $table_name = $wpdb->prefix . 'ktp_supplier_skills';
-        $my_table_version = '3.1.0'; // Updated for decimal precision increase
+        $my_table_version = '3.2.0'; // バージョンを更新
         $option_name = 'ktp_supplier_skills_table_version';
 
         // Check if table needs to be created or updated
@@ -83,7 +83,7 @@ class KTPWP_Supplier_Skills {
                 id MEDIUMINT(9) NOT NULL AUTO_INCREMENT,
                 supplier_id MEDIUMINT(9) NOT NULL,
                 product_name VARCHAR(255) NOT NULL DEFAULT '' COMMENT '商品名',
-                unit_price DECIMAL(15,6) NOT NULL DEFAULT 0 COMMENT '単価',
+                unit_price DECIMAL(20,10) NOT NULL DEFAULT 0 COMMENT '単価',
                 quantity INT NOT NULL DEFAULT 1 COMMENT '数量',
                 unit VARCHAR(50) NOT NULL DEFAULT '式' COMMENT '単位',
                 frequency INT NOT NULL DEFAULT 0 COMMENT '頻度',
@@ -142,9 +142,9 @@ class KTPWP_Supplier_Skills {
                 }
             }
             
-            // If version is less than 3.1.0, update unit_price precision
-            if ( version_compare( $installed_version, '3.1.0', '<' ) ) {
-                $alter_column_query = "ALTER TABLE `{$table_name}` MODIFY COLUMN `unit_price` DECIMAL(15,6) NOT NULL DEFAULT 0 COMMENT '単価'";
+            // If version is less than 3.2.0, update unit_price precision
+            if ( version_compare( $installed_version, '3.2.0', '<' ) ) {
+                $alter_column_query = "ALTER TABLE `{$table_name}` MODIFY COLUMN `unit_price` DECIMAL(20,10) NOT NULL DEFAULT 0 COMMENT '単価'";
                 $result = $wpdb->query( $alter_column_query );
                 
                 if ( $result === false ) {
