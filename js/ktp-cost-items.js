@@ -490,6 +490,47 @@
         });
     }
 
+    // サービス項目の単価を正確に表示（末尾の不要な0とピリオドを削除）
+    function displaySupplierServicePrice(row, serviceData) {
+        if (serviceData && typeof serviceData.unit_price !== 'undefined') {
+            // 末尾のピリオドのみの場合は削除
+            let displayPrice = serviceData.unit_price;
+            if (typeof displayPrice === 'string' && displayPrice.match(/^[0-9]+\.$/)) {
+                displayPrice = displayPrice.slice(0, -1);
+            }
+            
+            // 単価を表示
+            row.find('.price').val(displayPrice);
+            
+            // 数量と単位も設定
+            if (serviceData.quantity) {
+                row.find('.quantity').val(serviceData.quantity);
+            }
+            if (serviceData.unit) {
+                row.find('.unit').val(serviceData.unit);
+            }
+            // 金額を再計算
+            calculateAmount(row);
+        }
+    }
+
+    // サービス選択時の処理を更新
+    $(document).on('click', '.supplier-service-item', function() {
+        const serviceData = $(this).data('service');
+        const targetRow = $('#' + $(this).closest('.popup-dialog').data('target-row'));
+        
+        if (serviceData) {
+            targetRow.find('.product-name').val(serviceData.product_name);
+            displaySupplierServicePrice(targetRow, serviceData);
+            
+            // 入力フィールドを有効化
+            targetRow.find('input').prop('disabled', false);
+            
+            // ポップアップを閉じる
+            $(this).closest('.popup-dialog').remove();
+        }
+    });
+
     // ページ読み込み完了時の初期化
     $(document).ready(function () {
         console.log('[COST] 📋 ページ初期化開始');

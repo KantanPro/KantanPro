@@ -33,7 +33,27 @@ add_action('wp_ajax_ktpwp_get_supplier_skills_for_cost', function() {
     }
     global $wpdb;
     $table = $wpdb->prefix . 'ktp_supplier_skills';
-    $sql = $wpdb->prepare("SELECT id, product_name, unit_price, quantity, unit, frequency, updated_at, created_at FROM $table WHERE supplier_id = %d ORDER BY id ASC", $supplier_id);
+    $sql = $wpdb->prepare("
+        SELECT 
+            id, 
+            product_name, 
+            CASE 
+                WHEN CAST(unit_price AS CHAR) REGEXP '^[0-9]+\\.$' THEN 
+                    CAST(unit_price AS UNSIGNED)
+                WHEN CAST(unit_price AS CHAR) REGEXP '^[0-9]+\\.0+$' THEN 
+                    CAST(unit_price AS UNSIGNED)
+                ELSE 
+                    TRIM(TRAILING '0' FROM TRIM(TRAILING '.' FROM CAST(unit_price AS DECIMAL(20,10))))
+            END as unit_price,
+            quantity, 
+            unit, 
+            frequency, 
+            updated_at, 
+            created_at 
+        FROM $table 
+        WHERE supplier_id = %d 
+        ORDER BY id ASC
+    ", $supplier_id);
     error_log('SQL: ' . $sql);
     $skills = $wpdb->get_results($sql, ARRAY_A);
     error_log('wpdb->last_error: ' . $wpdb->last_error);

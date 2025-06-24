@@ -3,6 +3,26 @@ window.ktpShowSupplierSelector = function(currentRow) {
     // 既存のポップアップがあれば削除
     $("#ktp-supplier-selector-modal").remove();
 
+    // 単価の表示形式を整形する関数
+    function formatUnitPrice(price) {
+        if (typeof price === 'undefined' || price === null) return '0';
+        
+        // 数値に変換して処理
+        let numPrice = parseFloat(price);
+        if (isNaN(numPrice)) return '0';
+        
+        // 文字列に変換
+        let priceStr = String(numPrice);
+        
+        // 末尾のピリオドのみの場合は削除
+        if (priceStr.match(/^[0-9]+\.$/)) {
+            return priceStr.slice(0, -1);
+        }
+        
+        // 末尾の不要な0と小数点を削除（ただし整数部分は保持）
+        return priceStr.replace(/\.0+$/, '').replace(/(\.[0-9]*[1-9])0+$/, '$1');
+    }
+
     // 1. 協力会社リスト取得（Ajax）
     $.ajax({
         url: (typeof ktp_ajax_object !== 'undefined' ? ktp_ajax_object.ajax_url : '/wp-admin/admin-ajax.php'),
@@ -47,14 +67,16 @@ window.ktpShowSupplierSelector = function(currentRow) {
                         if (Array.isArray(skills) && skills.length > 0) {
                             html += '<table class="ktp-skill-list-table"><thead><tr><th>商品名</th><th>単価</th><th>数量</th><th>単位</th><th>頻度</th></tr></thead><tbody>';
                             skills.forEach(function(skill) {
+                                // 単価を整形
+                                const formattedPrice = formatUnitPrice(skill.unit_price);
                                 html += '<tr>' +
                                     '<td>' + (skill.product_name || '') + '</td>' +
-                                    '<td>' + (skill.unit_price || '') + '</td>' +
+                                    '<td>' + formattedPrice + '</td>' +
                                     '<td>' + (skill.quantity || '') + '</td>' +
                                     '<td>' + (skill.unit || '') + '</td>' +
                                     '<td>' + (skill.frequency || '') + '</td>' +
-                                    '<td><button class="ktp-skill-add-btn" data-skill="' + encodeURIComponent(JSON.stringify(skill)) + '">追加</button></td>' +
-                                    '<td><button class="ktp-skill-update-btn" data-skill="' + encodeURIComponent(JSON.stringify(skill)) + '">更新</button></td>' +
+                                    '<td><button class="ktp-skill-add-btn" data-skill="' + encodeURIComponent(JSON.stringify(Object.assign({}, skill, {unit_price: formattedPrice}))) + '">追加</button></td>' +
+                                    '<td><button class="ktp-skill-update-btn" data-skill="' + encodeURIComponent(JSON.stringify(Object.assign({}, skill, {unit_price: formattedPrice}))) + '">更新</button></td>' +
                                     '</tr>';
                             });
                             html += '</tbody></table>';

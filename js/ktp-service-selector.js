@@ -228,280 +228,167 @@
         });
     }
 
+    // 単価の表示形式を整形する関数を追加
+    function formatUnitPrice(price) {
+        if (typeof price === 'undefined' || price === null) return '0';
+        
+        // 文字列に変換
+        let priceStr = String(price);
+        
+        // 末尾のピリオドのみの場合は削除
+        if (priceStr.match(/^[0-9]+\.$/)) {
+            return priceStr.slice(0, -1);
+        }
+        
+        // 末尾の不要な0と小数点を削除
+        return priceStr.replace(/\.?0+$/, '');
+    }
+
     // サービスリストの表示
     function renderServiceList(response, targetRow, mode, currentPage = 1) {
-        try {
-            const result = typeof response === 'string' ? JSON.parse(response) : response;
+        console.log('[SERVICE SELECTOR] レンダリング開始', { response, currentPage });
+
+        if (!response.success) {
+            console.error('[SERVICE SELECTOR] サーバーエラー', response);
+            $('#ktp-service-selector-content').html(`
+                <div style="text-align: center; padding: 40px; color: #dc3545;">
+                    <div style="font-size: 16px;">サービスリストの取得に失敗しました</div>
+                    <div style="font-size: 14px; margin-top: 8px;">${escapeHtml(response.data || 'エラーが発生しました')}</div>
+                </div>
+            `);
+            return;
+        }
+
+        const services = response.data.services || [];
+        const pagination = response.data.pagination || {};
+
+        let html = '<div class="service-list" style="margin-bottom: 20px;">';
+        
+        if (services.length === 0) {
+            html += `
+                <div style="text-align: center; padding: 40px; color: #666;">
+                    <div style="font-size: 16px;">サービスが登録されていません</div>
+                </div>
+            `;
+        } else {
+            html += '<div class="service-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; padding: 10px;">';
             
-            if (!result.success || !result.data) {
-                throw new Error('無効なレスポンス形式');
-            }
+            services.forEach(function(service) {
+                const serviceData = {
+                    id: service.id,
+                    product_name: service.product_name,
+                    unit_price: formatUnitPrice(service.unit_price), // 単価の表示形式を整形
+                    quantity: service.quantity || 1,
+                    unit: service.unit || '式'
+                };
 
-            const services = result.data.services || [];
-            const pagination = result.data.pagination || {};
-
-            let html = '';
-
-            // メインコンテナ（縦並びレイアウト）
-            html = `<div style="display: flex; flex-direction: column; width: 100%;">`;
-
-            if (services.length === 0) {
                 html += `
-                    <div class="ktp_data_list_box" style="
-                        border: 1px solid #e5e7eb; 
-                        border-radius: 4px; 
-                        overflow: hidden; 
-                        margin-bottom: 0;
-                        width: 100%;
-                        box-sizing: border-box;
+                    <div class="supplier-service-item" data-service='${JSON.stringify(serviceData)}' style="
+                        border: 1px solid #ddd;
+                        border-radius: 6px;
+                        padding: 15px;
+                        cursor: pointer;
+                        background: white;
+                        transition: all 0.2s ease;
                     ">
-                        <div style="text-align: center; padding: 50px 40px; color: #6b7280; background: #f9fafb;">
-                            <div style="font-size: 18px; font-weight: 500; margin-bottom: 8px;">登録されているサービスがありません</div>
-                            <div style="font-size: 14px;">サービスタブから先にサービスを登録してください</div>
+                        <div style="font-weight: bold; margin-bottom: 8px; color: #333;">${escapeHtml(service.product_name)}</div>
+                        <div style="color: #666; font-size: 0.9em;">
+                            <div>単価: ${formatUnitPrice(service.unit_price)}円</div>
+                            <div>数量: ${service.quantity || 1} ${service.unit || '式'}</div>
                         </div>
                     </div>
                 `;
-                
-                // 空の状態でもページネーション領域を確保（統一されたレイアウト）
-                html += `
-                    <div style="
-                        width: 100%;
-                        border-top: 2px solid #e5e7eb; 
-                        padding: 20px;
-                        background: #f8f9fa;
-                        border-radius: 0 0 4px 4px;
-                        text-align: center;
-                        color: #9ca3af;
-                        font-size: 14px;
-                        box-sizing: border-box;
-                    ">
-                        サービスを登録すると、ここにページネーションが表示されます
-                    </div>
-                `;
-            } else {
-                // サービス一覧をカード型リストで表示
-                html += `
-                    <div class="ktp_data_list_box" style="
-                        border: 1px solid #e5e7eb; 
-                        border-radius: 4px; 
-                        overflow: hidden; 
-                        margin-bottom: 0;
-                        width: 100%;
-                        box-sizing: border-box;
-                    ">
-                `;
-
-                services.forEach(function (service, index) {
-                    const serviceId = service.id;
-                    const serviceName = service.service_name || '';
-                    const price = parseInt(service.price) || 0;
-                    const unit = service.unit || '式';
-                    const category = service.category || '';
-                    const frequency = service.frequency || 0;
-
-                    // 偶数・奇数で背景色を変更
-                    const backgroundColor = index % 2 === 0 ? '#f9fafb' : '#ffffff';
-                    
-                    // 画面サイズに応じてレイアウトを調整
-                    const isSmallScreen = window.innerWidth < 600;
-
-                    html += `
-                        <div class="ktp_data_list_item" style="
-                            line-height: 1.5;
-                            border-bottom: 1px solid #e5e7eb;
-                            margin: 0;
-                            padding: 16px;
-                            background-color: ${backgroundColor};
-                            transition: background-color 0.2s ease, transform 0.1s ease;
-                            position: relative;
-                            font-size: 14px;
-                            display: flex;
-                            width: 100%;
-                            box-sizing: border-box;
-                            ${isSmallScreen ? 'flex-direction: column;' : 'justify-content: space-between;'}
-                            ${isSmallScreen ? 'align-items: stretch;' : 'align-items: center;'}
-                            gap: 15px;
-                            flex-wrap: nowrap;
-                        ">
-                            <div style="
-                                flex: 1; 
-                                min-width: 0;
-                                width: 100%;
-                                ${isSmallScreen ? 'margin-bottom: 10px;' : ''}
-                            ">
-                                <div style="display: flex; align-items: center; gap: ${isSmallScreen ? '8px' : '15px'}; flex-wrap: wrap; line-height: 1.4;">
-                                    <strong style="font-size: ${isSmallScreen ? '14px' : '15px'}; color: #1f2937; word-break: break-word; flex-shrink: 0;">
-                                        ID: ${serviceId} - ${escapeHtml(serviceName)}
-                                    </strong>
-                                    <span style="color: #6b7280; font-size: ${isSmallScreen ? '12px' : '13px'}; flex-shrink: 0;"><strong>価格:</strong> ${price.toLocaleString()}円</span>
-                                    <span style="color: #6b7280; font-size: ${isSmallScreen ? '12px' : '13px'}; flex-shrink: 0;"><strong>単位:</strong> ${escapeHtml(unit)}</span>
-                                    <span style="color: #6b7280; font-size: ${isSmallScreen ? '12px' : '13px'}; flex-shrink: 0;"><strong>カテゴリー:</strong> ${escapeHtml(category)}</span>
-                                    <span style="color: #6b7280; font-size: ${isSmallScreen ? '12px' : '13px'}; flex-shrink: 0;" title="アクセス頻度（クリックされた回数）"><strong>頻度:</strong> ${frequency}</span>
-                                </div>
-                            </div>
-                            <div style="
-                                display: flex; 
-                                gap: 8px; 
-                                flex-shrink: 0;
-                                ${isSmallScreen ? 'width: 100%; justify-content: center;' : 'min-width: 160px; justify-content: flex-end;'}
-                            ">
-                                <button type="button" 
-                                        class="ktp-service-selector-add" 
-                                        data-service-id="${serviceId}"
-                                        data-service-name="${escapeHtml(serviceName)}"
-                                        data-price="${price}"
-                                        data-unit="${escapeHtml(unit)}"
-                                        data-mode="add"
-                                        style="
-                                            background: #28a745; 
-                                            color: white; 
-                                            border: none; 
-                                            padding: 8px ${isSmallScreen ? '20px' : '16px'}; 
-                                            border-radius: 4px; 
-                                            cursor: pointer; 
-                                            font-size: 12px;
-                                            font-weight: 500;
-                                            transition: background-color 0.2s ease;
-                                            white-space: nowrap;
-                                            ${isSmallScreen ? 'flex: 1;' : ''}
-                                        "
-                                        onmouseover="this.style.backgroundColor='#218838'"
-                                        onmouseout="this.style.backgroundColor='#28a745'">
-                                    追加
-                                </button>
-                                <button type="button" 
-                                        class="ktp-service-selector-update" 
-                                        data-service-id="${serviceId}"
-                                        data-service-name="${escapeHtml(serviceName)}"
-                                        data-price="${price}"
-                                        data-unit="${escapeHtml(unit)}"
-                                        data-mode="update"
-                                        style="
-                                            background: #007bff; 
-                                            color: white; 
-                                            border: none; 
-                                            padding: 8px ${isSmallScreen ? '20px' : '16px'}; 
-                                            border-radius: 4px; 
-                                            cursor: pointer; 
-                                            font-size: 12px;
-                                            font-weight: 500;
-                                            transition: background-color 0.2s ease;
-                                            white-space: nowrap;
-                                            ${isSmallScreen ? 'flex: 1;' : ''}
-                                        "
-                                        onmouseover="this.style.backgroundColor='#0056b3'"
-                                        onmouseout="this.style.backgroundColor='#007bff'">
-                                    更新
-                                </button>
-                            </div>
-                        </div>
-                    `;
-                });
-
-                html += `
-                    </div>
-                `;
-            }
-
-            // ページネーション（必ずリストの下に配置）
-            if (pagination.total_pages > 1) {
-                html += `<div style="width: 100%; margin-top: 0;">`;
-                html += renderPagination(pagination, targetRow, mode);
-                html += `</div>`;
-            }
-
-            // メインコンテナを閉じる
-            html += `</div>`;
-
-            $('#ktp-service-selector-content').html(html);
-
-            // ボタンイベントの設定
-            $('.ktp-service-selector-add').on('click', function () {
-                const serviceData = {
-                    id: $(this).data('service-id'),
-                    name: $(this).data('service-name'),
-                    price: $(this).data('price'),
-                    unit: $(this).data('unit')
-                };
-                addServiceToInvoice(serviceData, targetRow);
             });
+            
+            html += '</div>';
+        }
 
-            $('.ktp-service-selector-update').on('click', function () {
-                const serviceData = {
-                    id: $(this).data('service-id'),
-                    name: $(this).data('service-name'),
-                    price: $(this).data('price'),
-                    unit: $(this).data('unit')
-                };
-                updateServiceInInvoice(serviceData, targetRow);
-            });
+        html += '</div>';
 
-            // ページネーションボタンのイベント設定（イベント委譲を使用）
-            $(document).off('click.ktp-pagination').on('click.ktp-pagination', '.ktp-pagination-btn', function (e) {
-                e.preventDefault();
-                const page = parseInt($(this).data('page'));
-                if (page && !$(this).hasClass('disabled') && !$(this).hasClass('current')) {
-                    console.log('[SERVICE SELECTOR] ページネーション: ページ', page, 'に移動');
-                    loadServiceList(targetRow, mode, page);
+        // ページネーション追加
+        if (pagination.total_pages > 1) {
+            html += renderPagination(pagination, targetRow, mode);
+        }
+
+        $('#ktp-service-selector-content').html(html);
+
+        // ボタンイベントの設定
+        $('.ktp-service-selector-add').on('click', function () {
+            const serviceData = {
+                id: $(this).data('service-id'),
+                name: $(this).data('service-name'),
+                price: $(this).data('price'),
+                unit: $(this).data('unit')
+            };
+            addServiceToInvoice(serviceData, targetRow);
+        });
+
+        $('.ktp-service-selector-update').on('click', function () {
+            const serviceData = {
+                id: $(this).data('service-id'),
+                name: $(this).data('service-name'),
+                price: $(this).data('price'),
+                unit: $(this).data('unit')
+            };
+            updateServiceInInvoice(serviceData, targetRow);
+        });
+
+        // ページネーションボタンのイベント設定（イベント委譲を使用）
+        $(document).off('click.ktp-pagination').on('click.ktp-pagination', '.ktp-pagination-btn', function (e) {
+            e.preventDefault();
+            const page = parseInt($(this).data('page'));
+            if (page && !$(this).hasClass('disabled') && !$(this).hasClass('current')) {
+                console.log('[SERVICE SELECTOR] ページネーション: ページ', page, 'に移動');
+                loadServiceList(targetRow, mode, page);
+            }
+        });
+
+        // ページネーションボタンのホバーエフェクト（イベント委譲を使用）
+        $(document).off('mouseenter.ktp-pagination mouseleave.ktp-pagination')
+            .on('mouseenter.ktp-pagination', '.ktp-pagination-btn:not(.disabled):not(.current)', function() {
+                // ホバー時
+                if (!$(this).hasClass('current')) {
+                    $(this).css({
+                        'background': '#005a87',
+                        'transform': 'translateY(-1px)',
+                        'box-shadow': '0 2px 4px rgba(0,0,0,0.2)'
+                    });
+                }
+            })
+            .on('mouseleave.ktp-pagination', '.ktp-pagination-btn:not(.disabled):not(.current)', function() {
+                // ホバー解除時
+                if (!$(this).hasClass('current')) {
+                    const isNavButton = $(this).text().includes('前') || $(this).text().includes('次');
+                    $(this).css({
+                        'background': isNavButton ? '#007cba' : 'white',
+                        'transform': 'translateY(0)',
+                        'box-shadow': 'none'
+                    });
                 }
             });
 
-            // ページネーションボタンのホバーエフェクト（イベント委譲を使用）
-            $(document).off('mouseenter.ktp-pagination mouseleave.ktp-pagination')
-                .on('mouseenter.ktp-pagination', '.ktp-pagination-btn:not(.disabled):not(.current)', function() {
-                    // ホバー時
-                    if (!$(this).hasClass('current')) {
-                        $(this).css({
-                            'background': '#005a87',
-                            'transform': 'translateY(-1px)',
-                            'box-shadow': '0 2px 4px rgba(0,0,0,0.2)'
-                        });
-                    }
-                })
-                .on('mouseleave.ktp-pagination', '.ktp-pagination-btn:not(.disabled):not(.current)', function() {
-                    // ホバー解除時
-                    if (!$(this).hasClass('current')) {
-                        const isNavButton = $(this).text().includes('前') || $(this).text().includes('次');
-                        $(this).css({
-                            'background': isNavButton ? '#007cba' : 'white',
-                            'transform': 'translateY(0)',
-                            'box-shadow': 'none'
-                        });
-                    }
+        // カード型リストアイテムのホバーエフェクト
+        $(document).off('mouseenter.ktp-service-item mouseleave.ktp-service-item')
+            .on('mouseenter.ktp-service-item', '.ktp_data_list_item', function() {
+                // ホバー時のエフェクト
+                $(this).css({
+                    'background-color': '#e3f2fd',
+                    'transform': 'translateY(-2px)',
+                    'box-shadow': '0 4px 12px rgba(0,0,0,0.15)',
+                    'border-radius': '4px'
                 });
-
-            // カード型リストアイテムのホバーエフェクト
-            $(document).off('mouseenter.ktp-service-item mouseleave.ktp-service-item')
-                .on('mouseenter.ktp-service-item', '.ktp_data_list_item', function() {
-                    // ホバー時のエフェクト
-                    $(this).css({
-                        'background-color': '#e3f2fd',
-                        'transform': 'translateY(-2px)',
-                        'box-shadow': '0 4px 12px rgba(0,0,0,0.15)',
-                        'border-radius': '4px'
-                    });
-                })
-                .on('mouseleave.ktp-service-item', '.ktp_data_list_item', function() {
-                    // ホバー解除時
-                    const index = $(this).index();
-                    const originalBg = index % 2 === 0 ? '#f9fafb' : '#ffffff';
-                    $(this).css({
-                        'background-color': originalBg,
-                        'transform': 'translateY(0)',
-                        'box-shadow': 'none',
-                        'border-radius': '0'
-                    });
+            })
+            .on('mouseleave.ktp-service-item', '.ktp_data_list_item', function() {
+                // ホバー解除時
+                const index = $(this).index();
+                const originalBg = index % 2 === 0 ? '#f9fafb' : '#ffffff';
+                $(this).css({
+                    'background-color': originalBg,
+                    'transform': 'translateY(0)',
+                    'box-shadow': 'none',
+                    'border-radius': '0'
                 });
-
-        } catch (e) {
-            console.error('[SERVICE SELECTOR] レスポンス解析エラー', e);
-            $('#ktp-service-selector-content').html(`
-                <div style="text-align: center; padding: 40px; color: #dc3545;">
-                    <div style="font-size: 16px;">データの解析に失敗しました</div>
-                    <div style="font-size: 14px; margin-top: 8px;">再度お試しください</div>
-                </div>
-            `);
-        }
+            });
     }
 
     // ページネーションHTMLの生成（正円ボタンデザイン統一）
