@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>協力会社選択ポップアップテスト</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 0;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .debug-info {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 20px 0;
+            font-family: monospace;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>協力会社選択ポップアップテスト</h1>
+        
+        <div class="debug-info">
+            <h3>デバッグ情報</h3>
+            <div id="debug-output"></div>
+        </div>
+        
+        <button class="test-button" onclick="testSupplierSelector()">
+            協力会社選択ポップアップをテスト
+        </button>
+        
+        <button class="test-button" onclick="checkFunctionExists()">
+            関数の存在確認
+        </button>
+        
+        <button class="test-button" onclick="clearDebug()">
+            デバッグクリア
+        </button>
+    </div>
+
+    <script>
+        // デバッグ出力関数
+        function debugLog(message) {
+            const debugOutput = document.getElementById('debug-output');
+            const timestamp = new Date().toLocaleTimeString();
+            debugOutput.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+            console.log(message);
+        }
+
+        // デバッグクリア
+        function clearDebug() {
+            document.getElementById('debug-output').innerHTML = '';
+        }
+
+        // 関数の存在確認
+        function checkFunctionExists() {
+            debugLog('=== 関数の存在確認 ===');
+            debugLog('jQuery version: ' + (typeof $ !== 'undefined' ? $.fn.jquery : 'jQuery not loaded'));
+            debugLog('window.ktpShowSupplierSelector: ' + typeof window.ktpShowSupplierSelector);
+            debugLog('window.ktpAddCostRowFromSkill: ' + typeof window.ktpAddCostRowFromSkill);
+            debugLog('window.ktpUpdateCostRowFromSkill: ' + typeof window.ktpUpdateCostRowFromSkill);
+            
+            // ktpで始まる関数をすべて表示
+            const ktpFunctions = Object.keys(window).filter(key => key.startsWith('ktp'));
+            debugLog('ktpで始まる関数: ' + ktpFunctions.join(', '));
+        }
+
+        // 協力会社選択ポップアップのテスト
+        function testSupplierSelector() {
+            debugLog('=== 協力会社選択ポップアップテスト開始 ===');
+            
+            if (typeof window.ktpShowSupplierSelector === 'function') {
+                debugLog('ktpShowSupplierSelector関数が見つかりました');
+                try {
+                    // ダミーの行要素を作成
+                    const dummyRow = $('<tr><td>テスト行</td></tr>');
+                    debugLog('ダミー行を作成: ' + dummyRow[0].outerHTML);
+                    
+                    window.ktpShowSupplierSelector(dummyRow);
+                    debugLog('ktpShowSupplierSelector関数を呼び出しました');
+                } catch (error) {
+                    debugLog('エラーが発生しました: ' + error.message);
+                    console.error('Error:', error);
+                }
+            } else {
+                debugLog('ktpShowSupplierSelector関数が見つかりません');
+                debugLog('利用可能なwindow関数: ' + Object.keys(window).filter(key => key.includes('ktp')).join(', '));
+            }
+        }
+
+        // ページ読み込み時の初期化
+        $(document).ready(function() {
+            debugLog('ページ読み込み完了');
+            debugLog('jQuery version: ' + $.fn.jquery);
+            
+            // 外部スクリプトの読み込みを試行
+            loadSupplierSelectorScript();
+        });
+
+        // 外部スクリプトの読み込み
+        function loadSupplierSelectorScript() {
+            debugLog('ktp-supplier-selector.jsの読み込みを試行');
+            
+            const script = document.createElement('script');
+            script.src = 'js/ktp-supplier-selector.js';
+            script.onload = function() {
+                debugLog('ktp-supplier-selector.jsの読み込み成功');
+                checkFunctionExists();
+            };
+            script.onerror = function() {
+                debugLog('ktp-supplier-selector.jsの読み込み失敗');
+            };
+            document.head.appendChild(script);
+        }
+    </script>
+</body>
+</html> 

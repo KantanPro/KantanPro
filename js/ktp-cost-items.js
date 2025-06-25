@@ -758,11 +758,26 @@
             e.preventDefault();
             e.stopPropagation();
             console.log('[COST-ITEMS] [>]ボタンクリック - 協力会社選択開始');
+            console.log('[COST-ITEMS] ktpShowSupplierSelector関数の存在確認:', typeof window.ktpShowSupplierSelector);
+            console.log('[COST-ITEMS] window.ktpShowSupplierSelector:', window.ktpShowSupplierSelector);
+            console.log('[COST-ITEMS] 現在の行:', $(this).closest('tr'));
+            console.log('[COST-ITEMS] 現在の行のHTML:', $(this).closest('tr')[0].outerHTML);
+            console.log('[COST-ITEMS] 読み込まれているスクリプト:', $('script[src*="ktp"]').map(function() { return $(this).attr('src'); }).get());
+            
             // 協力会社選択ポップアップを表示
             const currentRow = $(this).closest('tr');
             if (typeof window.ktpShowSupplierSelector === 'function') {
-                window.ktpShowSupplierSelector(currentRow);
+                console.log('[COST-ITEMS] ktpShowSupplierSelector関数を呼び出し');
+                try {
+                    window.ktpShowSupplierSelector(currentRow);
+                    console.log('[COST-ITEMS] ktpShowSupplierSelector関数呼び出し完了');
+                } catch (error) {
+                    console.error('[COST-ITEMS] ktpShowSupplierSelector関数呼び出しエラー:', error);
+                }
             } else {
+                console.error('[COST-ITEMS] ktpShowSupplierSelector関数が見つかりません');
+                console.error('[COST-ITEMS] window.ktpShowSupplierSelector:', window.ktpShowSupplierSelector);
+                console.error('[COST-ITEMS] 利用可能なwindow関数:', Object.keys(window).filter(key => key.includes('ktp')));
                 alert('協力会社選択機能の読み込みに失敗しました。ページを再読み込みしてください。');
             }
         });

@@ -154,6 +154,34 @@ class KTPWP_Assets {
                     'capability' => 'manage_options',
                 ),
             ),
+            'ktp-supplier-selector' => array(
+                'src'       => 'js/ktp-supplier-selector.js',
+                'deps'      => array( 'jquery' ),
+                'ver'       => KTPWP_PLUGIN_VERSION,
+                'in_footer' => true,
+                'admin'     => false,
+                'localize'  => array(
+                    'object' => 'ktp_ajax_object',
+                    'data'   => array(
+                        'ajax_url' => admin_url( 'admin-ajax.php' ),
+                        'nonce'    => wp_create_nonce( 'ktp_ajax_nonce' ),
+                    ),
+                ),
+            ),
+            'ktp-cost-items' => array(
+                'src'       => 'js/ktp-cost-items.js',
+                'deps'      => array( 'jquery', 'jquery-ui-sortable', 'ktp-supplier-selector' ),
+                'ver'       => KTPWP_PLUGIN_VERSION,
+                'in_footer' => true,
+                'admin'     => false,
+                'localize'  => array(
+                    'object' => 'ktp_ajax_object',
+                    'data'   => array(
+                        'ajax_url' => admin_url( 'admin-ajax.php' ),
+                        'nonce'    => wp_create_nonce( 'ktp_ajax_nonce' ),
+                    ),
+                ),
+            ),
             'ktp-invoice-items' => array(
                 'src'       => 'js/ktp-invoice-items.js',
                 'deps'      => array( 'jquery', 'jquery-ui-sortable' ),
@@ -176,20 +204,6 @@ class KTPWP_Assets {
                 'admin'     => false,
                 'localize'  => array(
                     'object' => 'ktp_service_ajax_object',
-                    'data'   => array(
-                        'ajax_url' => admin_url( 'admin-ajax.php' ),
-                        'nonce'    => wp_create_nonce( 'ktp_ajax_nonce' ),
-                    ),
-                ),
-            ),
-            'ktp-cost-items' => array(
-                'src'       => 'js/ktp-cost-items.js',
-                'deps'      => array( 'jquery', 'jquery-ui-sortable', 'ktp-supplier-selector' ),
-                'ver'       => KTPWP_PLUGIN_VERSION,
-                'in_footer' => true,
-                'admin'     => false,
-                'localize'  => array(
-                    'object' => 'ktp_ajax_object',
                     'data'   => array(
                         'ajax_url' => admin_url( 'admin-ajax.php' ),
                         'nonce'    => wp_create_nonce( 'ktp_ajax_nonce' ),
@@ -238,20 +252,6 @@ class KTPWP_Assets {
                 'in_footer' => true,
                 'admin'     => false,
             ),
-            'ktp-supplier-selector' => array(
-                'src'       => 'js/ktp-supplier-selector.js',
-                'deps'      => array( 'jquery' ),
-                'ver'       => KTPWP_PLUGIN_VERSION,
-                'in_footer' => true,
-                'admin'     => false,
-                'localize'  => array(
-                    'object' => 'ktp_ajax_object',
-                    'data'   => array(
-                        'ajax_url' => admin_url( 'admin-ajax.php' ),
-                        'nonce'    => wp_create_nonce( 'ktp_ajax_nonce' ),
-                    ),
-                ),
-            ),
             // 'ktp-skills-list-effects' => array(
             //     'src'       => 'js/skills-list-effects.js',
             //     'deps'      => array( 'jquery' ),
@@ -284,14 +284,18 @@ class KTPWP_Assets {
      * @param string $hook_suffix 現在の管理画面のフック
      */
     public function enqueue_admin_assets( $hook_suffix ) {
-        // より包括的な条件でアセットを読み込み
-        // KTPWPプラグインの管理画面、または固定ページの編集画面で読み込み
-        if ( strpos( $hook_suffix, 'ktp-' ) !== false || 
-             strpos( $hook_suffix, 'ktpwp-' ) !== false || 
-             in_array( $hook_suffix, array( 'post.php', 'post-new.php', 'edit.php' ) ) ) {
-            $this->enqueue_styles( true );
-            $this->enqueue_scripts( true );
-            $this->localize_frontend_scripts(); // 管理画面でもフロントエンド用のAJAX設定を追加
+        // デバッグ: フック名を出力
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('KTPWP_Assets: Admin assets enqueue called for hook: ' . $hook_suffix);
+        }
+        
+        // 管理画面では常にアセットを読み込み（条件を緩和）
+        $this->enqueue_styles( true );
+        $this->enqueue_scripts( true );
+        $this->localize_frontend_scripts(); // 管理画面でもフロントエンド用のAJAX設定を追加
+        
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('KTPWP_Assets: Admin assets enqueued for hook: ' . $hook_suffix);
         }
     }
 
@@ -346,6 +350,17 @@ class KTPWP_Assets {
                     if (defined('WP_DEBUG') && WP_DEBUG) {
                         error_log('KTPWP Assets: Admin AJAX config added for ktp-js with unified nonce: ' . json_encode($ajax_data));
                     }
+                }
+                
+                // デバッグ用: ktp-supplier-selectorスクリプトの読み込み確認
+                if ( $is_admin && $handle === 'ktp-supplier-selector' ) {
+                    wp_add_inline_script( 'ktp-supplier-selector', 'console.log("Admin: ktp-supplier-selector.js が読み込まれました");', 'after' );
+                    wp_add_inline_script( 'ktp-supplier-selector', 'console.log("Admin: window.ktpShowSupplierSelector =", typeof window.ktpShowSupplierSelector);', 'after' );
+                    wp_add_inline_script( 'ktp-supplier-selector', 'console.log("Admin: 現在のURL =", window.location.href);', 'after' );
+                    wp_add_inline_script( 'ktp-supplier-selector', 'console.log("Admin: jQuery version =", typeof $ !== "undefined" ? $.fn.jquery : "jQuery not loaded");', 'after' );
+                    wp_add_inline_script( 'ktp-supplier-selector', 'console.log("Admin: ktp_ajax_object =", typeof ktp_ajax_object !== "undefined" ? "loaded" : "not loaded");', 'after' );
+                    wp_add_inline_script( 'ktp-supplier-selector', 'console.log("Admin: 読み込まれたスクリプト =", $("script[src*=\\"ktp\\"]").map(function() { return $(this).attr("src"); }).get());', 'after' );
+                    wp_add_inline_script( 'ktp-supplier-selector', 'console.log("Admin: 利用可能なwindow関数 =", Object.keys(window).filter(key => key.includes("ktp")));', 'after' );
                 }
             }
         }
