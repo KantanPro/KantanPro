@@ -229,3 +229,46 @@
         background: white !important;
     }
 }
+
+/* ドラッグ&ドロップ関連のスタイル */
+.dragging {
+    opacity: 0.8;
+    background-color: #f0f8ff !important;
+    border: 2px dashed #0073aa !important;
+}
+
+.sort-success {
+    background-color: #d4edda !important;
+    transition: background-color 0.3s ease;
+}
+
+.drag-handle {
+    cursor: move;
+    color: #666;
+    padding: 2px 4px;
+    border-radius: 3px;
+    background-color: #f5f5f5;
+    border: 1px solid #ddd;
+    display: inline-block;
+    margin-right: 5px;
+}
+
+.drag-handle:hover {
+    background-color: #e5e5e5;
+    color: #333;
+}
+
+/* ドラッグ中のテーブル行のスタイル */
+.cost-items-table tbody tr.ui-sortable-helper {
+    background-color: #f0f8ff !important;
+    border: 2px dashed #0073aa !important;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* ドラッグプレースホルダーのスタイル */
+.cost-items-table tbody tr.ui-sortable-placeholder {
+    visibility: visible !important;
+    background-color: #f8f9fa !important;
+    border: 2px dashed #dee2e6 !important;
+    height: 40px;
+}

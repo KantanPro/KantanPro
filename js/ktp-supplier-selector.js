@@ -577,16 +577,8 @@ $(function() {
         console.log('[SUPPLIER-SELECTOR] ページ読み込み完了');
         console.log('[SUPPLIER-SELECTOR] ktpShowSupplierSelector関数の存在確認:', typeof window.ktpShowSupplierSelector);
         
-    let $tbody = $('.cost-items-table').find('tbody');
-    let $rows = $tbody.find('tr').get();
-    $rows.sort(function(a, b) {
-        let idA = parseInt($(a).find('input[name*="[id]"]').val(), 10) || 0;
-        let idB = parseInt($(b).find('input[name*="[id]"]').val(), 10) || 0;
-        return idA - idB;
-    });
-    $.each($rows, function(idx, row) {
-        $tbody.append(row);
-    });
+    // コスト項目の並び順を変更する処理を削除
+    // データベースから取得された順序を維持するため、JavaScriptでの並び替えは行わない
 });
 
 })(jQuery); 

@@ -99,6 +99,34 @@
     background: #e3f2fd !important;
     opacity: 0.7;
 }
+
+/* 並び替え成功時の視覚的フィードバック */
+.cost-items-table tbody.sort-success {
+    background-color: #d4edda !important;
+    transition: background-color 0.3s ease;
+}
+
+.cost-items-table tbody.sort-success tr {
+    background-color: #d4edda !important;
+}
+
+/* ドラッグハンドルのホバー効果 */
+.drag-handle:hover {
+    color: #007cba;
+    cursor: move;
+    transform: scale(1.1);
+    transition: all 0.2s ease;
+}
+
+/* ドラッグ中の行のスタイル */
+.cost-item-row.dragging {
+    background: #e3f2fd !important;
+    opacity: 0.8;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transform: rotate(2deg);
+    transition: all 0.2s ease;
+}
+
 /* 受注書概要ヘッダーのレイアウト調整 */
 .order-header-flex {
   display: flex;

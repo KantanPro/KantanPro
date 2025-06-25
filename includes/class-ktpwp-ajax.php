@@ -683,7 +683,7 @@ class KTPWP_Ajax {
      * Ajax: アイテムの並び順更新処理
      */
     public function ajax_update_item_order() {
-        error_log('[AJAX_UPDATE_ITEM_ORDER] Received params: ' . print_r($_POST, true));
+        error_log('[AJAX_UPDATE_ITEM_ORDER] リクエスト開始: ' . print_r($_POST, true));
 
         // 編集者以上の権限チェック
         if (!current_user_can('edit_posts') && !current_user_can('ktpwp_access')) {
@@ -695,6 +695,7 @@ class KTPWP_Ajax {
         // セキュリティチェック - 複数のnonce名でチェック
         $nonce_verified = false;
         $nonce_value = '';
+        $verified_field = '';
         
         // 複数のnonce名でチェック
         $nonce_fields = ['nonce', 'ktp_ajax_nonce', '_ajax_nonce', '_wpnonce'];
@@ -703,6 +704,7 @@ class KTPWP_Ajax {
                 $nonce_value = sanitize_text_field($_POST[$field]);
                 if (wp_verify_nonce($nonce_value, 'ktp_ajax_nonce')) {
                     $nonce_verified = true;
+                    $verified_field = $field;
                     error_log("[AJAX_UPDATE_ITEM_ORDER] Nonce verified with field: {$field}, value: " . substr($nonce_value, 0, 10) . "...");
                     break;
                 }
@@ -728,6 +730,7 @@ class KTPWP_Ajax {
 
         // サニタイズされたパラメータのログ
         error_log("[AJAX_UPDATE_ITEM_ORDER] Sanitized params: order_id={$order_id}, item_type={$item_type}, items_count=" . count($items_data));
+        error_log("[AJAX_UPDATE_ITEM_ORDER] Items data: " . print_r($items_data, true));
 
         // バリデーション
         if ($order_id <= 0) {
@@ -745,6 +748,52 @@ class KTPWP_Ajax {
             wp_send_json_error(__( '更新するアイテムデータがありません', 'ktpwp' ));
         }
 
+        // アイテムデータの詳細バリデーション
+        $valid_items = array();
+        $invalid_items = array();
+        
+        foreach ($items_data as $index => $item) {
+            if (!isset($item['id']) || !isset($item['sort_order'])) {
+                $invalid_items[] = array(
+                    'index' => $index,
+                    'item' => $item,
+                    'reason' => 'Missing id or sort_order'
+                );
+                continue;
+            }
+            
+            $item_id = intval($item['id']);
+            $sort_order = intval($item['sort_order']);
+            
+            if ($item_id <= 0) {
+                $invalid_items[] = array(
+                    'index' => $index,
+                    'item' => $item,
+                    'reason' => 'Invalid item ID'
+                );
+                continue;
+            }
+            
+            if ($sort_order <= 0) {
+                $invalid_items[] = array(
+                    'index' => $index,
+                    'item' => $item,
+                    'reason' => 'Invalid sort order'
+                );
+                continue;
+            }
+            
+            $valid_items[] = $item;
+        }
+        
+        if (!empty($invalid_items)) {
+            error_log("[AJAX_UPDATE_ITEM_ORDER] Invalid items found: " . print_r($invalid_items, true));
+            wp_send_json_error(array(
+                'message' => __( '一部のアイテムデータが無効です', 'ktpwp' ),
+                'invalid_items' => $invalid_items
+            ));
+        }
+
         // KTPWP_Order_Items クラスのインスタンスを取得
         if (!class_exists('KTPWP_Order_Items')) {
             $this->log_ajax_error('KTPWP_Order_Items class not found for updating item order');
@@ -755,18 +804,24 @@ class KTPWP_Ajax {
 
         try {
             error_log("[AJAX_UPDATE_ITEM_ORDER] Calling KTPWP_Order_Items::update_items_order({$item_type}, {$order_id}, ...)");
-            $result = $order_items_manager->update_items_order($item_type, $order_id, $items_data);
+            error_log("[AJAX_UPDATE_ITEM_ORDER] Valid items to update: " . print_r($valid_items, true));
+            
+            $result = $order_items_manager->update_items_order($item_type, $order_id, $valid_items);
             error_log("[AJAX_UPDATE_ITEM_ORDER] update_items_order result: " . print_r($result, true));
 
             if ($result) {
+                error_log("[AJAX_UPDATE_ITEM_ORDER] Successfully updated item order for order_id={$order_id}, item_type={$item_type}");
                 wp_send_json_success(array(
-                    'message' => __( 'アイテムの並び順を更新しました', 'ktpwp' )
+                    'message' => __( 'アイテムの並び順を更新しました', 'ktpwp' ),
+                    'updated_count' => count($valid_items),
+                    'order_id' => $order_id,
+                    'item_type' => $item_type
                 ));
             } else {
                 $this->log_ajax_error('Failed to update item order (KTPWP_Order_Items::update_items_order returned false)', array(
                     'item_type' => $item_type,
                     'order_id' => $order_id,
-                    'items_data_count' => count($items_data)
+                    'items_data_count' => count($valid_items)
                 ));
                 wp_send_json_error(__( 'データベースでのアイテム並び順更新に失敗しました（詳細エラーログ確認）', 'ktpwp' ));
             }

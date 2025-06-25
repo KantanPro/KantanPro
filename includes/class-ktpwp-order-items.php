@@ -324,8 +324,9 @@ class KTPWP_Order_Items {
             $table_name = $alt_table_name;
         }
 
+        // id順でソートして取得
         $items = $wpdb->get_results( $wpdb->prepare(
-            "SELECT * FROM `{$table_name}` WHERE order_id = %d ORDER BY sort_order ASC, id ASC",
+            "SELECT * FROM `{$table_name}` WHERE order_id = %d ORDER BY id ASC",
             $order_id
         ), ARRAY_A );
 
@@ -347,8 +348,9 @@ class KTPWP_Order_Items {
         global $wpdb;
         $table_name = $wpdb->prefix . 'ktp_order_cost_items';
 
+        // sort_order順でソートして取得（sort_orderがnullの場合はid順）
         $items = $wpdb->get_results( $wpdb->prepare(
-            "SELECT * FROM `{$table_name}` WHERE order_id = %d ORDER BY sort_order ASC, id ASC",
+            "SELECT * FROM `{$table_name}` WHERE order_id = %d ORDER BY COALESCE(sort_order, id) ASC, id ASC",
             $order_id
         ), ARRAY_A );
 
@@ -556,10 +558,9 @@ class KTPWP_Order_Items {
                     'quantity' => $quantity,
                     'amount' => $amount,
                     'remarks' => $remarks,
-                    'sort_order' => $sort_order,
                     'updated_at' => current_time( 'mysql' )
                 );
-                $format = array( '%d', '%s', '%f', '%s', '%f', '%f', '%s', '%d', '%s' );
+                $format = array( '%d', '%s', '%f', '%s', '%f', '%f', '%s', '%s' );
 
                 // supplier_idカラムが存在する場合のみ追加
                 $columns = $wpdb->get_col( $wpdb->prepare( "SHOW COLUMNS FROM `{$table_name}` LIKE %s", 'supplier_id' ) );
@@ -570,7 +571,9 @@ class KTPWP_Order_Items {
 
                 $used_id = 0;
                 if ( $item_id > 0 ) {
-                    // Update existing item
+                    // Update existing item - sort_orderを設定
+                    $data['sort_order'] = $sort_order;
+                    $format[] = '%d';
                     $result = $wpdb->update(
                         $table_name,
                         $data,
@@ -580,7 +583,7 @@ class KTPWP_Order_Items {
                     );
                     $used_id = $item_id;
                 } else {
-                    // Insert new item
+                    // Insert new item - sort_orderは設定しない（id順で自然に並ぶ）
                     $data['created_at'] = current_time( 'mysql' );
                     $format[] = '%s';
                     $result = $wpdb->insert( $table_name, $data, $format );
@@ -650,14 +653,6 @@ class KTPWP_Order_Items {
         }
         return true;
     }
-
-    /**
-     * Get cost items for an order
-     *
-     * @since 1.0.0
-     * @param int $order_id Order ID
-     * @return array Cost items
-     */
 
     /**
      * Create initial invoice item for new order
@@ -908,7 +903,6 @@ class KTPWP_Order_Items {
             'unit' => '式',
             'amount' => 0,
             'remarks' => '',
-            'sort_order' => 999,
             'created_at' => current_time( 'mysql' ),
             'updated_at' => current_time( 'mysql' )
         );
@@ -916,7 +910,7 @@ class KTPWP_Order_Items {
         $result = $wpdb->insert(
             $table_name,
             $data,
-            array( '%d', '%s', '%d', '%d', '%s', '%d', '%s', '%d', '%s', '%s' )
+            array( '%d', '%s', '%d', '%d', '%s', '%d', '%s', '%s', '%s' )
         );
 
         if ( $result === false ) {
@@ -924,7 +918,8 @@ class KTPWP_Order_Items {
             return false;
         }
 
-        return $wpdb->insert_id;
+        $new_item_id = $wpdb->insert_id;
+        return $new_item_id;
     }
 
     /**
@@ -994,13 +989,14 @@ class KTPWP_Order_Items {
      * Update the sort order of items (for Ajax drag-and-drop)
      *
      * @since 1.0.0
-     * @param string $item_type Item type (\'invoice\' or \'cost\')
+     * @param string $item_type Item type ('invoice' or 'cost')
      * @param int $order_id Order ID
-     * @param array $items An array of items, where each item is an associative array like [\'id\' => \'item_id\', \'sort_order\' => \'new_sort_order\']
+     * @param array $items An array of items, where each item is an associative array like ['id' => 'item_id', 'sort_order' => 'new_sort_order']
      * @return bool True on success, false on failure
      */
     public function update_items_order( $item_type, $order_id, $items ) {
         error_log("[KTPWP_Order_Items] update_items_order called with: item_type={$item_type}, order_id={$order_id}, items_count=" . count($items));
+        error_log("[KTPWP_Order_Items] Items data: " . print_r($items, true));
 
         if ( ! in_array( $item_type, array( 'invoice', 'cost' ) ) ) {
             error_log("[KTPWP_Order_Items] update_items_order: Invalid item_type: {$item_type}");
@@ -1018,11 +1014,22 @@ class KTPWP_Order_Items {
         global $wpdb;
         $table_name = $wpdb->prefix . 'ktp_order_' . $item_type . '_items';
 
+        // テーブルが存在するかチェック
+        $table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$table_name}'") === $table_name;
+        if (!$table_exists) {
+            error_log("[KTPWP_Order_Items] update_items_order: Table {$table_name} does not exist");
+            return false;
+        }
+
+        // トランザクション開始
         $wpdb->query( 'START TRANSACTION' );
         $all_successful = true;
+        $updated_count = 0;
+        $error_details = array();
 
-        foreach ( $items as $item ) {
+        foreach ( $items as $index => $item ) {
             if ( ! isset( $item['id'] ) || ! isset( $item['sort_order'] ) ) {
+                $error_details[] = "Item at index {$index} missing id or sort_order: " . print_r($item, true);
                 error_log("[KTPWP_Order_Items] update_items_order: Skipping item due to missing id or sort_order. Item data: " . print_r($item, true));
                 continue; // Skip if data is incomplete
             }
@@ -1031,12 +1038,34 @@ class KTPWP_Order_Items {
             $sort_order = intval( $item['sort_order'] );
 
             if ( $item_id <= 0 ) {
+                $error_details[] = "Invalid item_id {$item_id} at index {$index}";
                 error_log("[KTPWP_Order_Items] update_items_order: Invalid item_id {$item_id} for order_id {$order_id}.");
                 $all_successful = false;
                 break;
             }
 
+            if ( $sort_order <= 0 ) {
+                $error_details[] = "Invalid sort_order {$sort_order} for item_id {$item_id}";
+                error_log("[KTPWP_Order_Items] update_items_order: Invalid sort_order {$sort_order} for item_id {$item_id}");
+                $all_successful = false;
+                break;
+            }
+
             error_log("[KTPWP_Order_Items] Updating item_id: {$item_id} to sort_order: {$sort_order} in table: {$table_name} for order_id: {$order_id}");
+
+            // アイテムが存在し、指定されたorder_idに属するかどうかを確認
+            $item_exists = $wpdb->get_var( $wpdb->prepare(
+                "SELECT COUNT(*) FROM `{$table_name}` WHERE id = %d AND order_id = %d",
+                $item_id,
+                $order_id
+            ) );
+
+            if ( ! $item_exists ) {
+                $error_details[] = "Item {$item_id} not found or does not belong to order {$order_id}";
+                error_log("[KTPWP_Order_Items] update_items_order: Item {$item_id} not found or does not belong to order {$order_id}");
+                $all_successful = false;
+                break;
+            }
 
             $result = $wpdb->update(
                 $table_name,
@@ -1047,23 +1076,27 @@ class KTPWP_Order_Items {
             );
 
             if ( $result === false ) {
+                $error_details[] = "Database error updating item {$item_id}: " . $wpdb->last_error;
                 error_log("[KTPWP_Order_Items] update_items_order: Failed to update sort_order for item_id={$item_id}, order_id={$order_id}. DB Error: " . $wpdb->last_error);
                 $all_successful = false;
                 break; // Exit loop on first error
             }
-            // Optional: Log if an update affected 0 rows, which might indicate an issue (e.g., item not found for that order_id)
-            // if ( $result === 0 ) {
-            //     error_log("[KTPWP_Order_Items] update_items_order: No rows affected for item_id={$item_id}, order_id={$order_id}. Item might not exist or sort_order was already correct.");
-            // }
+
+            if ( $result === 0 ) {
+                error_log("[KTPWP_Order_Items] update_items_order: No rows affected for item_id={$item_id}, order_id={$order_id}. Item might not exist or sort_order was already correct.");
+            } else {
+                $updated_count++;
+                error_log("[KTPWP_Order_Items] update_items_order: Successfully updated item_id={$item_id} to sort_order={$sort_order}. Rows affected: {$result}");
+            }
         }
 
         if ( $all_successful ) {
             $wpdb->query( 'COMMIT' );
-            error_log("[KTPWP_Order_Items] update_items_order: Successfully updated sort order for all items for order_id={$order_id}.");
+            error_log("[KTPWP_Order_Items] update_items_order: Successfully updated sort order for {$updated_count} items for order_id={$order_id}.");
             return true;
         } else {
             $wpdb->query( 'ROLLBACK' );
-            error_log("[KTPWP_Order_Items] update_items_order: Transaction rolled back due to errors for order_id={$order_id}.");
+            error_log("[KTPWP_Order_Items] update_items_order: Transaction rolled back due to errors for order_id={$order_id}. Error details: " . implode('; ', $error_details));
             return false;
         }
     }

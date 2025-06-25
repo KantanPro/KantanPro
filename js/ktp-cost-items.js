@@ -300,19 +300,43 @@
 
     // 行のインデックスを更新 (Sortable用)
     function updateRowIndexes(table) {
+        console.log('[COST] updateRowIndexes開始');
         const tbody = table.find('tbody');
+        const rowCount = tbody.find('tr').length;
+        console.log('[COST] 更新対象行数:', rowCount);
+        
         tbody.find('tr').each(function (index) {
             const row = $(this);
+            let updatedCount = 0;
+            
             row.find('input, textarea').each(function () {
                 const input = $(this);
                 const name = input.attr('name');
                 if (name && name.match(/^cost_items\[\d+\]/)) {
                     // 先頭の [数字] 部分だけを置換
+                    const oldName = name;
                     const newName = name.replace(/^cost_items\[\d+\]/, `cost_items[${index}]`);
                     input.attr('name', newName);
+                    updatedCount++;
+                    
+                    // デバッグ: 重要なフィールドの更新をログ
+                    if (name.includes('[id]') || name.includes('[sort_order]') || name.includes('[product_name]')) {
+                        console.log('[COST] フィールド名更新:', { 
+                            oldName: oldName, 
+                            newName: newName, 
+                            value: input.val() 
+                        });
+                    }
                 }
             });
+            
+            console.log('[COST] 行' + (index + 1) + 'の更新完了:', { 
+                rowIndex: index, 
+                updatedFields: updatedCount 
+            });
         });
+        
+        console.log('[COST] updateRowIndexes完了');
     }
 
     // 自動追加機能を無効化（[+]ボタンのみで行追加）
@@ -534,6 +558,7 @@
     // ページ読み込み完了時の初期化
     $(document).ready(function () {
         console.log('[COST] 📋 ページ初期化開始');
+        
         // 並び替え（sortable）有効化
         $('.cost-items-table tbody').sortable({
             handle: '.drag-handle',
@@ -541,18 +566,57 @@
             axis: 'y',
             helper: 'clone',
             update: function (event, ui) {
+                console.log('[COST] ドラッグ&ドロップ並び替え完了');
                 const table = $(this).closest('table');
-                updateRowIndexes(table); // これはname属性のインデックスを更新する
-
+                
+                // name属性のインデックスを更新
+                updateRowIndexes(table);
+                
                 // サーバーに並び順を保存
                 const items = [];
                 const orderId = $('input[name="order_id"]').val() || $('#order_id').val();
+                let hasInvalid = false;
+                let invalidItems = [];
+                
                 $(this).find('tr').each(function (index) {
                     const itemId = $(this).find('input[name*="[id]"]').val();
-                    if (itemId && itemId !== '0') {
-                        items.push({ id: itemId, sort_order: index + 1 });
+                    const productName = $(this).find('input[name*="[product_name]"]').val();
+                    
+                    if (!itemId || isNaN(itemId) || itemId === '0') {
+                        hasInvalid = true;
+                        invalidItems.push({
+                            index: index,
+                            itemId: itemId,
+                            productName: productName,
+                            reason: '無効なID'
+                        });
+                        console.warn('[COST] 並び替え: 無効なitemId検出', { 
+                            index: index, 
+                            itemId: itemId, 
+                            productName: productName 
+                        });
+                    } else {
+                        items.push({ 
+                            id: parseInt(itemId, 10), 
+                            sort_order: index + 1 
+                        });
+                        console.log('[COST] 有効なアイテム追加:', { 
+                            id: itemId, 
+                            sort_order: index + 1, 
+                            productName: productName 
+                        });
                     }
                 });
+                
+                if (hasInvalid) {
+                    console.error('[COST] 並び替えエラー: 無効なアイテムが検出されました', invalidItems);
+                    alert('一部のコスト項目IDが不正です。\n\n無効なアイテム:\n' + 
+                          invalidItems.map(item => 
+                            `行${item.index + 1}: "${item.productName}" (ID: ${item.itemId}) - ${item.reason}`
+                          ).join('\n') + 
+                          '\n\n再度ページをリロードしてやり直してください。');
+                    return;
+                }
 
                 if (items.length > 0 && orderId) {
                     let ajaxUrl = ajaxurl;
@@ -561,6 +625,7 @@
                     } else if (!ajaxUrl) {
                         ajaxUrl = '/wp-admin/admin-ajax.php'; // Fallback
                     }
+                    
                     // 統一されたnonce取得方法
                     let nonce = '';
                     if (typeof ktp_ajax_nonce !== 'undefined') {
@@ -573,9 +638,12 @@
                         nonce = window.ktpwp_ajax.nonces.auto_save;
                     }
                     
-                    console.log('[COST] 使用するnonce:', nonce);
+                    console.log('[COST] 並び替え保存開始:', { 
+                        order_id: orderId, 
+                        items_count: items.length, 
+                        nonce_length: nonce ? nonce.length : 0 
+                    });
 
-                    console.log('[COST] updateItemOrder送信', { order_id: orderId, items: items });
                     $.ajax({
                         url: ajaxUrl,
                         type: 'POST',
@@ -585,7 +653,7 @@
                             items: items,
                             item_type: 'cost',
                             nonce: nonce,
-                            ktp_ajax_nonce: nonce  // 追加: PHPでチェックされるフィールド名
+                            ktp_ajax_nonce: nonce
                         },
                         success: function (response) {
                             console.log('[COST] updateItemOrderレスポンス', response);
@@ -593,29 +661,61 @@
                                 const result = typeof response === 'string' ? JSON.parse(response) : response;
                                 if (result.success) {
                                     console.log('[COST] 並び順の保存に成功しました。');
+                                    // 成功時の視覚的フィードバック
+                                    $('.cost-items-table tbody').addClass('sort-success');
+                                    setTimeout(function() {
+                                        $('.cost-items-table tbody').removeClass('sort-success');
+                                    }, 1000);
                                 } else {
                                     console.warn('[COST] 並び順の保存に失敗しました。', result);
-                                    alert('並び順の保存に失敗しました。: ' + (result.data && result.data.message ? result.data.message : 'サーバーエラー'));
+                                    const errorMessage = result.data && result.data.message ? 
+                                        result.data.message : 'サーバーエラー';
+                                    alert('並び順の保存に失敗しました。\n\nエラー: ' + errorMessage);
                                 }
                             } catch (e) {
                                 console.error('[COST] updateItemOrderレスポンスパースエラー', e, response);
-                                alert('並び順保存の応答処理中にエラーが発生しました。');
+                                alert('並び順保存の応答処理中にエラーが発生しました。\n\n詳細: ' + e.message);
                             }
                         },
                         error: function (xhr, status, error) {
-                            console.error('[COST] updateItemOrderエラー', { status, error, responseText: xhr.responseText });
-                            alert('並び順の保存中にサーバーエラーが発生しました。');
+                            console.error('[COST] updateItemOrderエラー', { 
+                                status: status, 
+                                error: error, 
+                                responseText: xhr.responseText,
+                                statusCode: xhr.status
+                            });
+                            let msg = '並び順の保存中にサーバーエラーが発生しました。\n\n';
+                            msg += 'ステータス: ' + status + '\n';
+                            msg += 'エラー: ' + error + '\n';
+                            if (xhr.status) {
+                                msg += 'HTTPステータス: ' + xhr.status + '\n';
+                            }
+                            if (xhr && xhr.responseText) {
+                                msg += 'レスポンス: ' + xhr.responseText.substring(0, 500);
+                                if (xhr.responseText.length > 500) {
+                                    msg += '...';
+                                }
+                            }
+                            alert(msg);
                         }
                     });
                 } else {
-                    console.log('[COST] 保存するアイテムがないか、orderIdがありません。');
+                    console.log('[COST] 保存するアイテムがないか、orderIdがありません。', {
+                        items_count: items.length,
+                        orderId: orderId
+                    });
                 }
             },
             start: function (event, ui) {
+                console.log('[COST] ドラッグ開始');
                 ui.item.addClass('dragging');
+                // ドラッグ中の視覚的フィードバック
+                ui.item.css('opacity', '0.8');
             },
             stop: function (event, ui) {
+                console.log('[COST] ドラッグ終了');
                 ui.item.removeClass('dragging');
+                ui.item.css('opacity', '1');
             }
         }).disableSelection();
 
