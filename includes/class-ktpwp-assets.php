@@ -266,16 +266,28 @@ class KTPWP_Assets {
      * フロントエンドアセット読み込み
      */
     public function enqueue_frontend_assets() {
-        // デバッグ: 一時的にすべてのユーザーに対してアセットを読み込み
+        // デバッグ: 一時的にすべてのページでアセットを読み込み
         $should_load_assets = true;
         
+        // 現在のページURLを取得
+        $current_url = $_SERVER['REQUEST_URI'] ?? '';
+        $current_page = get_query_var('pagename') ?: get_query_var('page_id');
+        
+        // デバッグログ
         if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('KTPWP_Assets: Enqueuing frontend assets (debug mode - all users).');
+            error_log('KTPWP_Assets: Frontend assets check - URL: ' . $current_url . ', Page: ' . $current_page . ', Should load: ' . ($should_load_assets ? 'true' : 'false'));
+            error_log('KTPWP_Assets: GET parameters: ' . print_r($_GET, true));
         }
-
-        $this->enqueue_styles( false );
-        $this->enqueue_scripts( false );
-        $this->localize_frontend_scripts();
+        
+        if ($should_load_assets) {
+            $this->enqueue_styles( false );
+            $this->enqueue_scripts( false );
+            $this->localize_frontend_scripts();
+            
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('KTPWP_Assets: Frontend assets enqueued for order tab');
+            }
+        }
     }
 
     /**
@@ -353,14 +365,14 @@ class KTPWP_Assets {
                 }
                 
                 // デバッグ用: ktp-supplier-selectorスクリプトの読み込み確認
-                if ( $is_admin && $handle === 'ktp-supplier-selector' ) {
-                    wp_add_inline_script( 'ktp-supplier-selector', 'console.log("Admin: ktp-supplier-selector.js が読み込まれました");', 'after' );
-                    wp_add_inline_script( 'ktp-supplier-selector', 'console.log("Admin: window.ktpShowSupplierSelector =", typeof window.ktpShowSupplierSelector);', 'after' );
-                    wp_add_inline_script( 'ktp-supplier-selector', 'console.log("Admin: 現在のURL =", window.location.href);', 'after' );
-                    wp_add_inline_script( 'ktp-supplier-selector', 'console.log("Admin: jQuery version =", typeof $ !== "undefined" ? $.fn.jquery : "jQuery not loaded");', 'after' );
-                    wp_add_inline_script( 'ktp-supplier-selector', 'console.log("Admin: ktp_ajax_object =", typeof ktp_ajax_object !== "undefined" ? "loaded" : "not loaded");', 'after' );
-                    wp_add_inline_script( 'ktp-supplier-selector', 'console.log("Admin: 読み込まれたスクリプト =", $("script[src*=\\"ktp\\"]").map(function() { return $(this).attr("src"); }).get());', 'after' );
-                    wp_add_inline_script( 'ktp-supplier-selector', 'console.log("Admin: 利用可能なwindow関数 =", Object.keys(window).filter(key => key.includes("ktp")));', 'after' );
+                if ( $handle === 'ktp-supplier-selector' ) {
+                    wp_add_inline_script( 'ktp-supplier-selector', 'console.log("' . ($is_admin ? 'Admin' : 'Frontend') . ': ktp-supplier-selector.js が読み込まれました");', 'after' );
+                    wp_add_inline_script( 'ktp-supplier-selector', 'console.log("' . ($is_admin ? 'Admin' : 'Frontend') . ': window.ktpShowSupplierSelector =", typeof window.ktpShowSupplierSelector);', 'after' );
+                    wp_add_inline_script( 'ktp-supplier-selector', 'console.log("' . ($is_admin ? 'Admin' : 'Frontend') . ': 現在のURL =", window.location.href);', 'after' );
+                    wp_add_inline_script( 'ktp-supplier-selector', 'console.log("' . ($is_admin ? 'Admin' : 'Frontend') . ': jQuery version =", typeof $ !== "undefined" ? $.fn.jquery : "jQuery not loaded");', 'after' );
+                    wp_add_inline_script( 'ktp-supplier-selector', 'console.log("' . ($is_admin ? 'Admin' : 'Frontend') . ': ktp_ajax_object =", typeof ktp_ajax_object !== "undefined" ? "loaded" : "not loaded");', 'after' );
+                    wp_add_inline_script( 'ktp-supplier-selector', 'console.log("' . ($is_admin ? 'Admin' : 'Frontend') . ': 読み込まれたスクリプト =", $("script[src*=\\"ktp\\"]").map(function() { return $(this).attr("src"); }).get());', 'after' );
+                    wp_add_inline_script( 'ktp-supplier-selector', 'console.log("' . ($is_admin ? 'Admin' : 'Frontend') . ': 利用可能なwindow関数 =", Object.keys(window).filter(key => key.includes("ktp")));', 'after' );
                 }
             }
         }

@@ -65,6 +65,9 @@
         updateProfitDisplay();
     }
 
+    // calculateAmount関数をグローバルに露出
+    window.calculateAmount = calculateAmount;
+
     // 利益表示を更新
     function updateProfitDisplay() {
         let invoiceTotal = 0;
@@ -104,9 +107,12 @@
         // コスト項目の合計表示も更新（切り上げ後の値を表示）
         const costTotalDisplay = $('.cost-items-total');
         if (costTotalDisplay.length > 0) {
-            costTotalDisplay.html('合計金額 : ' + costTotalCeiled.toLocaleString() + '円');
+            costTotalDisplay.html('コスト項目合計 : ' + costTotalCeiled.toLocaleString() + '円');
         }
     }
+
+    // updateProfitDisplay関数をグローバルに露出
+    window.updateProfitDisplay = updateProfitDisplay;
 
     // 新しい行を追加（重複防止機能付き）
     function addNewRow(currentRow, callId) { // callId を受け取る
@@ -411,6 +417,9 @@
         });
     }
 
+    // autoSaveItem関数をグローバルに露出
+    window.autoSaveItem = autoSaveItem;
+
     // 新規レコード作成機能 (コールバック対応)
     function createNewItem(itemType, fieldName, fieldValue, orderId, $row, callback) {
         // Ajax URLの確認と代替設定
@@ -553,6 +562,185 @@
             // ポップアップを閉じる
             $(this).closest('.popup-dialog').remove();
         }
+    });
+
+    // --- コスト項目用: 協力会社サービス選択ポップアップ内「追加」「更新」ボタン処理 ---
+    // ポップアップ内の「更新」ボタン
+    $(document).off('click', '.popup-dialog .ktp-cost-update-btn').on('click', '.popup-dialog .ktp-cost-update-btn', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        console.log('[COST] 更新ボタンクリック');
+        
+        const $btn = $(this);
+        const $popup = $btn.closest('.popup-dialog');
+        const serviceData = $btn.data('service') || $btn.closest('.supplier-service-item').data('service');
+        const targetRowId = $popup.data('target-row');
+        const $targetRow = $('#' + targetRowId);
+        
+        if (!serviceData || $targetRow.length === 0) {
+            console.error('[COST] 更新対象の行またはサービスデータが見つかりません', {
+                serviceData: serviceData,
+                targetRowId: targetRowId,
+                targetRowExists: $targetRow.length > 0
+            });
+            alert('更新対象の行またはサービスデータが見つかりません。');
+            return;
+        }
+        
+        console.log('[COST] 更新処理開始', {
+            serviceData: serviceData,
+            targetRowId: targetRowId
+        });
+        
+        // UI反映
+        $targetRow.find('.product-name').val(serviceData.product_name);
+        displaySupplierServicePrice($targetRow, serviceData);
+        $targetRow.find('input').prop('disabled', false);
+        
+        // DB即時反映
+        const itemId = $targetRow.find('input[name*="[id]"]').val();
+        const orderId = $('input[name="order_id"]').val() || $('#order_id').val();
+        
+        if (itemId && itemId !== '0' && orderId) {
+            console.log('[COST] DB更新処理開始', {
+                itemId: itemId,
+                orderId: orderId,
+                productName: serviceData.product_name,
+                unitPrice: serviceData.unit_price,
+                quantity: serviceData.quantity,
+                unit: serviceData.unit
+            });
+            
+            // 各フィールドを順次保存
+            autoSaveItem('cost', itemId, 'product_name', serviceData.product_name, orderId);
+            autoSaveItem('cost', itemId, 'price', serviceData.unit_price, orderId);
+            autoSaveItem('cost', itemId, 'quantity', serviceData.quantity, orderId);
+            autoSaveItem('cost', itemId, 'unit', serviceData.unit, orderId);
+            
+            // 金額も再計算・保存
+            calculateAmount($targetRow);
+            
+            console.log('[COST] DB更新処理完了');
+        } else {
+            console.warn('[COST] DB更新スキップ - 条件未満', {
+                itemId: itemId,
+                orderId: orderId
+            });
+        }
+        
+        // ポップアップ自動クローズ
+        $popup.remove();
+        
+        console.log('[COST] 更新処理完了');
+    });
+
+    // ポップアップ内の「追加」ボタン
+    $(document).off('click', '.popup-dialog .ktp-cost-add-btn').on('click', '.popup-dialog .ktp-cost-add-btn', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        console.log('[COST] 追加ボタンクリック');
+        
+        const $btn = $(this);
+        const $popup = $btn.closest('.popup-dialog');
+        const serviceData = $btn.data('service') || $btn.closest('.supplier-service-item').data('service');
+        
+        if (!serviceData) {
+            console.error('[COST] 追加するサービスデータが見つかりません');
+            alert('追加するサービスデータが見つかりません。');
+            return;
+        }
+        
+        console.log('[COST] 追加処理開始', {
+            serviceData: serviceData
+        });
+        
+        // 一番下に新規行を追加
+        const $lastRow = $('.cost-items-table tbody tr').last();
+        const callId = Date.now();
+        const rowAdded = addNewRow($lastRow, callId);
+        
+        if (!rowAdded) {
+            console.error('[COST] 新規行の追加に失敗しました');
+            alert('新規行の追加に失敗しました。');
+            return;
+        }
+        
+        const $newRow = $lastRow.next();
+        
+        console.log('[COST] 新規行追加完了', {
+            newRowIndex: $newRow.index()
+        });
+        
+        // UI反映
+        $newRow.find('.product-name').val(serviceData.product_name);
+        $newRow.find('input').prop('disabled', false);
+        displaySupplierServicePrice($newRow, serviceData);
+        
+        // DB新規作成
+        const orderId = $('input[name="order_id"]').val() || $('#order_id').val();
+        
+        if (orderId) {
+            console.log('[COST] DB新規作成開始', {
+                orderId: orderId,
+                productName: serviceData.product_name,
+                unitPrice: serviceData.unit_price,
+                quantity: serviceData.quantity,
+                unit: serviceData.unit
+            });
+            
+            createNewItem('cost', 'product_name', serviceData.product_name, orderId, $newRow, function(success, newItemId) {
+                if (success && newItemId) {
+                    console.log('[COST] 新規アイテム作成成功', {
+                        newItemId: newItemId
+                    });
+                    
+                    // 各フィールドを順次保存
+                    autoSaveItem('cost', newItemId, 'price', serviceData.unit_price, orderId);
+                    autoSaveItem('cost', newItemId, 'quantity', serviceData.quantity, orderId);
+                    autoSaveItem('cost', newItemId, 'unit', serviceData.unit, orderId);
+                    
+                    // 金額も再計算・保存
+                    calculateAmount($newRow);
+                    
+                    console.log('[COST] DB新規作成完了');
+                } else {
+                    console.error('[COST] 新規コスト項目のDB作成に失敗しました');
+                    alert('新規コスト項目のDB作成に失敗しました。');
+                }
+            });
+        } else {
+            console.warn('[COST] DB新規作成スキップ - orderId未設定');
+        }
+        
+        // ポップアップは閉じない（ユーザーが手動で閉じるまで待つ）
+        console.log('[COST] 追加処理完了 - ポップアップは開いたまま');
+    });
+
+    // --- ポップアップ内の「追加」「更新」ボタンに自動でクラス付与（コスト項目用） ---
+    // ポップアップ表示時にボタンへクラスを自動付与
+    $(document).on('DOMNodeInserted', '.popup-dialog', function(e) {
+        const $popup = $(this);
+        
+        // 少し遅延を入れてDOMの構築を待つ
+        setTimeout(function() {
+            // 「更新」ボタン
+            $popup.find('button, input[type="button"], a.button').each(function() {
+                const $btn = $(this);
+                const btnText = $btn.text().trim();
+                
+                // 既にクラスが付いていなければ付与
+                if (btnText === '更新' && !$btn.hasClass('ktp-cost-update-btn')) {
+                    $btn.addClass('ktp-cost-update-btn');
+                    console.log('[COST] 更新ボタンにクラス付与:', $btn);
+                }
+                if (btnText === '追加' && !$btn.hasClass('ktp-cost-add-btn')) {
+                    $btn.addClass('ktp-cost-add-btn');
+                    console.log('[COST] 追加ボタンにクラス付与:', $btn);
+                }
+            });
+        }, 100);
     });
 
     // ページ読み込み完了時の初期化
@@ -1098,4 +1286,7 @@
 
         console.log('[COST] 📋 ページ初期化完了');
     });
+
+    // createNewItem関数をグローバルに露出
+    window.createNewItem = createNewItem;
 })(jQuery);
