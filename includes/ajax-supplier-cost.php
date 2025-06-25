@@ -108,24 +108,80 @@ add_action('wp_ajax_ktpwp_save_order_cost_item', function() {
     error_log('=== ktpwp_save_order_cost_item called ===');
     error_log('POST data: ' . print_r($_POST, true));
     error_log('User: ' . print_r(wp_get_current_user(), true));
+    error_log('User ID: ' . get_current_user_id());
+    error_log('User capabilities: ' . print_r(wp_get_current_user()->allcaps, true));
     
+    // 権限チェック
     if ( ! current_user_can('edit_posts') ) {
         error_log('権限NG: ユーザーに権限がありません');
+        error_log('Current user can edit_posts: ' . (current_user_can('edit_posts') ? 'true' : 'false'));
         wp_send_json_error('権限がありません');
+        return;
     }
+    
+    error_log('権限チェックOK');
     
     global $wpdb;
     $table = $wpdb->prefix . 'ktp_order_cost_items';
-    $item_id = isset($_POST['id']) ? intval($_POST['id']) : 0;
-    $order_id = isset($_POST['order_id']) ? intval($_POST['order_id']) : 0;
+
+    // items配列で送信された場合の対応
+    $item = null;
+    if (isset($_POST['items'])) {
+        $items = json_decode(stripslashes($_POST['items']), true);
+        if (is_array($items) && isset($items[0])) {
+            $item = $items[0];
+        }
+    }
+    // items配列がなければ従来通り個別キーで取得
+    if (!$item) {
+        $item = $_POST;
+    }
+
+    // 入力データの取得と検証
+    $item_id = isset($item['id']) ? intval($item['id']) : 0;
+    $order_id = isset($item['order_id']) ? intval($item['order_id']) : 0;
     $force_save = isset($_POST['force_save']) && $_POST['force_save'] ? true : false;
-    $product_name = isset($_POST['product_name']) ? sanitize_text_field($_POST['product_name']) : '';
+    $product_name = isset($item['product_name']) ? sanitize_text_field($item['product_name']) : '';
+    $supplier_id = isset($item['supplier_id']) ? intval($item['supplier_id']) : 0;
+    $unit_price = isset($item['unit_price']) ? floatval($item['unit_price']) : 0;
+    $quantity = isset($item['quantity']) ? floatval($item['quantity']) : 0;
+    $unit = isset($item['unit']) ? sanitize_text_field($item['unit']) : '';
+    $amount = isset($item['amount']) ? floatval($item['amount']) : 0;
+    $remarks = isset($item['remarks']) ? sanitize_textarea_field($item['remarks']) : '';
     
     error_log('Parsed data:');
     error_log('- item_id: ' . $item_id);
     error_log('- order_id: ' . $order_id);
     error_log('- force_save: ' . ($force_save ? 'true' : 'false'));
     error_log('- product_name: ' . $product_name);
+    error_log('- supplier_id: ' . $supplier_id);
+    error_log('- unit_price: ' . $unit_price);
+    error_log('- quantity: ' . $quantity);
+    error_log('- unit: ' . $unit);
+    error_log('- amount: ' . $amount);
+    
+    // 必須項目の検証
+    if (empty($product_name)) {
+        error_log('エラー: 商品名が空です');
+        wp_send_json_error('商品名は必須です');
+        return;
+    }
+    
+    if ($order_id <= 0) {
+        error_log('エラー: 注文IDが無効です');
+        wp_send_json_error('注文IDが無効です');
+        return;
+    }
+    
+    // テーブルの存在確認
+    $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table'") === $table;
+    if (!$table_exists) {
+        error_log('エラー: テーブルが存在しません: ' . $table);
+        wp_send_json_error('データベーステーブルが存在しません');
+        return;
+    }
+    
+    error_log('テーブル存在確認OK: ' . $table);
     
     // supplier_idカラムの存在確認
     $columns = $wpdb->get_col($wpdb->prepare("SHOW COLUMNS FROM `{$table}` LIKE %s", 'supplier_id'));
@@ -144,58 +200,114 @@ add_action('wp_ajax_ktpwp_save_order_cost_item', function() {
         }
     }
     
+    // さらに、item_idが指定されていても、実際にそのレコードが存在するか確認
+    if ($item_id > 0) {
+        $existing_item = $wpdb->get_row($wpdb->prepare(
+            "SELECT id FROM `{$table}` WHERE id = %d AND order_id = %d LIMIT 1",
+            $item_id, $order_id
+        ), ARRAY_A);
+        if (!$existing_item) {
+            error_log('指定されたID ' . $item_id . ' のレコードが存在しないため、新規追加として処理');
+            $item_id = 0; // 新規追加として処理
+        }
+    }
+    
+    // 強制的な既存レコード検索（order_id + product_name）
+    if ($item_id <= 0 && !empty($product_name) && $order_id > 0) {
+        error_log('強制的な既存レコード検索を実行: order_id=' . $order_id . ', product_name=' . $product_name);
+        $existing_items = $wpdb->get_results($wpdb->prepare(
+            "SELECT id, product_name FROM `{$table}` WHERE order_id = %d",
+            $order_id
+        ), ARRAY_A);
+        error_log('該当order_idの全レコード: ' . print_r($existing_items, true));
+        
+        foreach ($existing_items as $existing) {
+            if ($existing['product_name'] === $product_name) {
+                $item_id = $existing['id'];
+                error_log('強制検索で既存アイテムを発見、ID: ' . $item_id);
+                break;
+            }
+        }
+    }
+    
     error_log('Final item_id: ' . $item_id);
     
+    // 保存データの準備
     $data = array(
         'order_id'      => $order_id,
         'product_name'  => $product_name,
-        'price'         => isset($_POST['unit_price']) ? floatval($_POST['unit_price']) : (isset($_POST['price']) ? floatval($_POST['price']) : 0),
-        'quantity'      => isset($_POST['quantity']) ? floatval($_POST['quantity']) : 0,
-        'unit'          => isset($_POST['unit']) ? sanitize_text_field($_POST['unit']) : '',
-        'amount'        => isset($_POST['amount']) ? floatval($_POST['amount']) : 0,
-        'remarks'       => isset($_POST['remarks']) ? sanitize_textarea_field($_POST['remarks']) : '',
+        'price'         => $unit_price,
+        'quantity'      => $quantity,
+        'unit'          => $unit,
+        'amount'        => $amount,
+        'remarks'       => $remarks,
         'updated_at'    => current_time('mysql'),
     );
     $format = array('%d','%s','%f','%f','%s','%f','%s','%s');
     
     // supplier_idカラムが存在する場合のみ追加
     if ($has_supplier_id) {
-        $data['supplier_id'] = isset($_POST['supplier_id']) ? intval($_POST['supplier_id']) : null;
+        $data['supplier_id'] = $supplier_id > 0 ? $supplier_id : null;
         $format[] = '%d';
+        error_log('supplier_idを追加: ' . $data['supplier_id']);
     }
     
     error_log('Data to save: ' . print_r($data, true));
     error_log('Format: ' . print_r($format, true));
     
     if ($item_id > 0) {
-        // UPDATE
+        // UPDATE処理
         error_log('=== UPDATE処理開始 ===');
+        error_log('UPDATE条件: id = ' . $item_id);
+        
         $result = $wpdb->update($table, $data, array('id'=>$item_id), $format, array('%d'));
         error_log('UPDATE result: ' . print_r($result, true));
         error_log('wpdb->last_error: ' . $wpdb->last_error);
         error_log('wpdb->last_query: ' . $wpdb->last_query);
         
-        if ($result !== false) {
+        if ($result !== false && $result > 0) {
             error_log('UPDATE成功: ID ' . $item_id);
-            wp_send_json_success(['id'=>$item_id]);
+            wp_send_json_success(['id'=>$item_id, 'message'=>'更新しました']);
         } else {
-            error_log('UPDATE失敗: ' . $wpdb->last_error);
-            wp_send_json_error('更新失敗: ' . $wpdb->last_error);
+            error_log('UPDATE失敗: 0行更新またはエラー');
+            // レコードの存在確認
+            $existing_record = $wpdb->get_row($wpdb->prepare("SELECT id FROM `{$table}` WHERE id = %d", $item_id));
+            if (!$existing_record) {
+                error_log('レコードが存在しないためINSERTを試行');
+                // INSERT処理にフォールバック
+                $data['created_at'] = current_time('mysql');
+                $format[] = '%s';
+                $result = $wpdb->insert($table, $data, $format);
+                if ($result) {
+                    error_log('INSERT成功: 新規ID ' . $wpdb->insert_id);
+                    wp_send_json_success(['id'=>$wpdb->insert_id, 'message'=>'新規追加しました']);
+                } else {
+                    error_log('INSERT失敗: ' . $wpdb->last_error);
+                    wp_send_json_error('新規追加失敗: ' . $wpdb->last_error);
+                }
+            } else {
+                error_log('レコードは存在するが更新条件に合致しない');
+                wp_send_json_error('更新失敗: レコードは存在するが更新条件に合致しません');
+            }
         }
     } else {
-        // INSERT
+        // INSERT処理
         error_log('=== INSERT処理開始 ===');
         if ($force_save || !empty($product_name)) {
             $data['created_at'] = current_time('mysql');
             $format[] = '%s';
+            error_log('INSERT実行');
+            error_log('INSERT data: ' . print_r($data, true));
+            
             $result = $wpdb->insert($table, $data, $format);
             error_log('INSERT result: ' . print_r($result, true));
             error_log('wpdb->last_error: ' . $wpdb->last_error);
             error_log('wpdb->last_query: ' . $wpdb->last_query);
+            error_log('wpdb->insert_id: ' . $wpdb->insert_id);
             
             if ($result) {
                 error_log('INSERT成功: 新規ID ' . $wpdb->insert_id);
-                wp_send_json_success(['id'=>$wpdb->insert_id]);
+                wp_send_json_success(['id'=>$wpdb->insert_id, 'message'=>'追加しました']);
             } else {
                 error_log('INSERT失敗: ' . $wpdb->last_error);
                 wp_send_json_error('追加失敗: ' . $wpdb->last_error);

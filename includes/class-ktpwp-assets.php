@@ -290,9 +290,9 @@ class KTPWP_Assets {
         }
         
         // 管理画面では常にアセットを読み込み（条件を緩和）
-        $this->enqueue_styles( true );
-        $this->enqueue_scripts( true );
-        $this->localize_frontend_scripts(); // 管理画面でもフロントエンド用のAJAX設定を追加
+            $this->enqueue_styles( true );
+            $this->enqueue_scripts( true );
+            $this->localize_frontend_scripts(); // 管理画面でもフロントエンド用のAJAX設定を追加
         
         if (defined('WP_DEBUG') && WP_DEBUG) {
             error_log('KTPWP_Assets: Admin assets enqueued for hook: ' . $hook_suffix);

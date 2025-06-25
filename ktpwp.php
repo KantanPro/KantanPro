@@ -998,3 +998,7 @@ function ktpwp_manual_cleanup_temp_files() {
  *
  * @param WPCF7_ContactForm $contact_form Contact Form 7のフォームオブジェクト.
  */
+
+if ( defined( 'WP_CLI' ) && WP_CLI ) {
+    require_once __DIR__ . '/includes/ktp-migration-cli.php';
+}

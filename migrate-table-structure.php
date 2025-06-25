@@ -11,11 +11,15 @@ if (!defined('WP_USE_THEMES')) {
 }
 
 // WordPress環境をロード
-require_once('/Users/kantanpro/ktplocal/wp/wp-load.php');
+require_once(dirname(__FILE__, 4) . '/wp-load.php');
 
 // 管理者権限チェック
-if (!current_user_can('manage_options')) {
-    wp_die('このスクリプトを実行する権限がありません。');
+if ( defined('WP_CLI') && WP_CLI ) {
+    // WP-CLI実行時は権限チェックをスキップ
+} else {
+    if (!current_user_can('manage_options')) {
+        wp_die('このスクリプトを実行する権限がありません。');
+    }
 }
 
 echo "<h1>職能テーブル構造マイグレーション</h1>\n";
@@ -126,5 +130,38 @@ echo "<li>frequency（頻度、デフォルト値=0）</li>\n";
 echo "<li>created_at</li>\n";
 echo "<li>updated_at</li>\n";
 echo "</ol>\n";
+
+// WordPress環境で安全に実行できるコスト項目テーブルの型変更マイグレーション
+// 実行後は必ず削除してください
+
+define('WP_USE_THEMES', false);
+require_once(dirname(__FILE__) . '/../../../wp-load.php');
+
+global $wpdb;
+$table = $wpdb->prefix . 'ktp_order_cost_items';
+
+$columns = $wpdb->get_col($wpdb->prepare("SHOW COLUMNS FROM `{$table}` LIKE %s", 'price'));
+if (empty($columns)) {
+    echo "priceカラムが見つかりません。\n";
+    exit;
+}
+
+$sqls = [
+    "ALTER TABLE `{$table}` MODIFY `price` DECIMAL(12,2) NOT NULL DEFAULT 0.00",
+    "ALTER TABLE `{$table}` MODIFY `quantity` DECIMAL(12,2) NOT NULL DEFAULT 0.00",
+    "ALTER TABLE `{$table}` MODIFY `amount` DECIMAL(12,2) NOT NULL DEFAULT 0.00"
+];
+
+foreach ($sqls as $sql) {
+    $result = $wpdb->query($sql);
+    if ($result === false) {
+        echo "失敗: {$sql}\n";
+        echo $wpdb->last_error . "\n";
+    } else {
+        echo "成功: {$sql}\n";
+    }
+}
+
+echo "\n完了しました。\n";
 
 ?>
