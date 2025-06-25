@@ -23,6 +23,102 @@ window.ktpShowSupplierSelector = function(currentRow) {
         return priceStr.replace(/\.0+$/, '').replace(/(\.[0-9]*[1-9])0+$/, '$1');
     }
 
+    // HTMLエスケープ関数
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // ポップアップHTML（サービス選択と同じスタイル）
+    const popupHtml = `
+        <div id="ktp-supplier-selector-modal" style="
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 10000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        ">
+            <div style="
+                background: white;
+                border-radius: 8px;
+                padding: 15px;
+                width: 95%;
+                max-width: 1000px;
+                max-height: 85%;
+                overflow-y: auto;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            ">
+                <div style="
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 15px;
+                    border-bottom: 1px solid #eee;
+                    padding-bottom: 10px;
+                ">
+                    <h3 style="margin: 0; color: #333;">協力会社選択</h3>
+                    <button type="button" id="ktp-supplier-selector-close" style="
+                        background: none;
+                        color: #333;
+                        border: none;
+                        cursor: pointer;
+                        font-size: 28px;
+                        padding: 0;
+                        line-height: 1;
+                    ">×</button>
+                </div>
+                <div id="ktp-supplier-selector-content" style="
+                    display: flex;
+                    flex-direction: column;
+                    width: 100%;
+                    box-sizing: border-box;
+                ">
+                    <div style="text-align: center; padding: 40px;">
+                        <div style="font-size: 16px; color: #666;">協力会社一覧を読み込み中...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // ポップアップを追加
+    $("body").append(popupHtml);
+
+    // ポップアップを閉じる関数
+    function closeSupplierSelector() {
+        $("#ktp-supplier-selector-modal").remove();
+        $(document).off('keyup.supplier-selector');
+        $(document).off('click.ktp-pagination mouseenter.ktp-pagination mouseleave.ktp-pagination');
+        $(document).off('mouseenter.ktp-skill-item mouseleave.ktp-skill-item');
+    }
+
+    // 閉じるボタンのイベント
+    $("#ktp-supplier-selector-close").on("click.supplier-selector", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        closeSupplierSelector();
+    });
+
+    // 背景クリックで閉じる
+    $("#ktp-supplier-selector-modal").on("click.supplier-selector", function (e) {
+        if (e.target === this) {
+            closeSupplierSelector();
+        }
+    });
+
+    // ESCキーで閉じる
+    $(document).on('keyup.supplier-selector', function (e) {
+        if (e.key === 'Escape') {
+            closeSupplierSelector();
+        }
+    });
+
     // 1. 協力会社リスト取得（Ajax）
     $.ajax({
         url: (typeof ktp_ajax_object !== 'undefined' ? ktp_ajax_object.ajax_url : '/wp-admin/admin-ajax.php'),
@@ -32,27 +128,55 @@ window.ktpShowSupplierSelector = function(currentRow) {
         },
         dataType: 'json',
         success: function(suppliers) {
-            // ポップアップUI生成
-            let supplierOptions = suppliers.map(function(s) {
-                return '<option value="' + s.id + '">' + s.company_name + '</option>';
-            }).join('');
-            const modal = $(
-                '<div id="ktp-supplier-selector-modal" style="position:fixed;z-index:9999;top:10%;left:50%;transform:translateX(-50%);background:#fff;border:1px solid #ccc;padding:24px;min-width:400px;box-shadow:0 4px 16px rgba(0,0,0,0.2);">' +
-                '<h3>協力会社選択</h3>' +
-                '<select id="ktp-supplier-list">' + supplierOptions + '</select>' +
-                '<div id="ktp-skill-list-area">職能リストを選択してください</div>' +
-                '<button id="ktp-supplier-selector-close">閉じる</button>' +
-                '</div>'
-            );
-            $("body").append(modal);
-            $("#ktp-supplier-selector-close").on("click", function() {
-                $("#ktp-supplier-selector-modal").remove();
+            // 協力会社選択UI生成（サービス選択と同じスタイル）
+            let supplierOptions = '<option value="">協力会社を選択してください</option>';
+            suppliers.forEach(function(s) {
+                supplierOptions += '<option value="' + s.id + '">' + escapeHtml(s.company_name) + '</option>';
             });
+            
+            const supplierSelectorHtml = `
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #333;">協力会社:</label>
+                    <select id="ktp-supplier-list" style="
+                        width: 100%;
+                        padding: 10px 12px;
+                        border: 1px solid #ddd;
+                        border-radius: 4px;
+                        font-size: 14px;
+                        background: white;
+                        box-sizing: border-box;
+                    ">
+                        ${supplierOptions}
+                    </select>
+                </div>
+                <div id="ktp-skill-list-area">
+                    <div style="text-align: center; padding: 40px; color: #666;">
+                        協力会社を選択すると職能リストが表示されます
+                    </div>
+                </div>
+            `;
+            
+            $('#ktp-supplier-selector-content').html(supplierSelectorHtml);
 
             // 2. 協力会社選択時に職能リスト取得
             $("#ktp-supplier-list").on('change', function() {
                 const supplierId = $(this).val();
-                if (!supplierId) return;
+                if (!supplierId) {
+                    $('#ktp-skill-list-area').html(`
+                        <div style="text-align: center; padding: 40px; color: #666;">
+                            協力会社を選択すると職能リストが表示されます
+                        </div>
+                    `);
+                    return;
+                }
+                
+                // ローディング表示
+                $('#ktp-skill-list-area').html(`
+                    <div style="text-align: center; padding: 40px;">
+                        <div style="font-size: 16px; color: #666;">職能リストを読み込み中...</div>
+                    </div>
+                `);
+                
                 $.ajax({
                     url: (typeof ktp_ajax_object !== 'undefined' ? ktp_ajax_object.ajax_url : '/wp-admin/admin-ajax.php'),
                     type: 'POST',
@@ -63,34 +187,163 @@ window.ktpShowSupplierSelector = function(currentRow) {
                     dataType: 'json',
                     success: function(skills) {
                         console.log('skills ajax response:', skills);
-                        let html = '';
-                        if (Array.isArray(skills) && skills.length > 0) {
-                            html += '<table class="ktp-skill-list-table"><thead><tr><th>商品名</th><th>単価</th><th>数量</th><th>単位</th><th>頻度</th></tr></thead><tbody>';
-                            skills.forEach(function(skill) {
-                                // 単価を整形
-                                const formattedPrice = formatUnitPrice(skill.unit_price);
-                                html += '<tr>' +
-                                    '<td>' + (skill.product_name || '') + '</td>' +
-                                    '<td>' + formattedPrice + '</td>' +
-                                    '<td>' + (skill.quantity || '') + '</td>' +
-                                    '<td>' + (skill.unit || '') + '</td>' +
-                                    '<td>' + (skill.frequency || '') + '</td>' +
-                                    '<td><button class="ktp-skill-add-btn" data-skill="' + encodeURIComponent(JSON.stringify(Object.assign({}, skill, {unit_price: formattedPrice}))) + '">追加</button></td>' +
-                                    '<td><button class="ktp-skill-update-btn" data-skill="' + encodeURIComponent(JSON.stringify(Object.assign({}, skill, {unit_price: formattedPrice}))) + '">更新</button></td>' +
-                                    '</tr>';
-                            });
-                            html += '</tbody></table>';
-                        } else {
-                            html = '<div style="color:#888;">職能がありません</div>';
-                        }
-                        $('#ktp-skill-list-area').html(html);
+                        renderSkillList(skills);
                     },
                     error: function(xhr, status, error) {
                         console.error('AJAX ERROR', xhr.status, xhr.responseText);
-                        $('#ktp-skill-list-area').html('<div style="color:red;">職能リストの取得に失敗しました</div>');
+                        $('#ktp-skill-list-area').html(`
+                            <div style="text-align: center; padding: 40px; color: #dc3545;">
+                                <div style="font-size: 16px;">職能リストの取得に失敗しました</div>
+                                <div style="font-size: 14px; margin-top: 8px;">通信エラーが発生しました</div>
+                            </div>
+                        `);
                     }
                 });
-            }).trigger('change');
+            });
+
+            // 職能リストのレンダリング関数
+            function renderSkillList(skills) {
+                let html = '';
+                
+                if (Array.isArray(skills) && skills.length > 0) {
+                    // メインコンテナ（縦並びレイアウト）
+                    html = `<div style="display: flex; flex-direction: column; width: 100%;">`;
+                    
+                    // 職能一覧をカード型リストで表示
+                    html += `
+                        <div class="ktp_data_list_box" style="
+                            border: 1px solid #e5e7eb; 
+                            border-radius: 4px; 
+                            overflow: hidden; 
+                            margin-bottom: 0;
+                            width: 100%;
+                            box-sizing: border-box;
+                        ">
+                    `;
+
+                    skills.forEach(function (skill, index) {
+                        const skillId = skill.id;
+                        const productName = skill.product_name || '';
+                        const unitPrice = formatUnitPrice(skill.unit_price);
+                        const quantity = skill.quantity || '';
+                        const unit = skill.unit || '';
+                        const frequency = skill.frequency || 0;
+
+                        // 偶数・奇数で背景色を変更
+                        const backgroundColor = index % 2 === 0 ? '#f9fafb' : '#ffffff';
+                        
+                        // 画面サイズに応じてレイアウトを調整
+                        const isSmallScreen = window.innerWidth < 600;
+
+                        html += `
+                            <div class="ktp_data_list_item" style="
+                                line-height: 1.5;
+                                border-bottom: 1px solid #e5e7eb;
+                                margin: 0;
+                                padding: 16px;
+                                background-color: ${backgroundColor};
+                                transition: background-color 0.2s ease, transform 0.1s ease;
+                                position: relative;
+                                font-size: 14px;
+                                display: flex;
+                                width: 100%;
+                                box-sizing: border-box;
+                                ${isSmallScreen ? 'flex-direction: column;' : 'justify-content: space-between;'}
+                                ${isSmallScreen ? 'align-items: stretch;' : 'align-items: center;'}
+                                gap: 15px;
+                                flex-wrap: nowrap;
+                            ">
+                                <div style="
+                                    flex: 1; 
+                                    min-width: 0;
+                                    width: 100%;
+                                    ${isSmallScreen ? 'margin-bottom: 10px;' : ''}
+                                ">
+                                    <div style="display: flex; align-items: center; gap: ${isSmallScreen ? '8px' : '15px'}; flex-wrap: wrap; line-height: 1.4;">
+                                        <strong style="font-size: ${isSmallScreen ? '14px' : '15px'}; color: #1f2937; word-break: break-word; flex-shrink: 0;">
+                                            ID: ${skillId} - ${escapeHtml(productName)}
+                                        </strong>
+                                        <span style="color: #6b7280; font-size: ${isSmallScreen ? '12px' : '13px'}; flex-shrink: 0;"><strong>単価:</strong> ${unitPrice}円</span>
+                                        <span style="color: #6b7280; font-size: ${isSmallScreen ? '12px' : '13px'}; flex-shrink: 0;"><strong>数量:</strong> ${escapeHtml(quantity)}</span>
+                                        <span style="color: #6b7280; font-size: ${isSmallScreen ? '12px' : '13px'}; flex-shrink: 0;"><strong>単位:</strong> ${escapeHtml(unit)}</span>
+                                        <span style="color: #6b7280; font-size: ${isSmallScreen ? '12px' : '13px'}; flex-shrink: 0;" title="アクセス頻度（クリックされた回数）"><strong>頻度:</strong> ${frequency}</span>
+                                    </div>
+                                </div>
+                                <div style="
+                                    display: flex; 
+                                    gap: 8px; 
+                                    flex-shrink: 0;
+                                    ${isSmallScreen ? 'width: 100%; justify-content: center;' : 'min-width: 160px; justify-content: flex-end;'}
+                                ">
+                                    <button type="button" 
+                                            class="ktp-skill-add-btn" 
+                                            data-skill="${encodeURIComponent(JSON.stringify(Object.assign({}, skill, {unit_price: unitPrice})))}"
+                                            style="
+                                                background: #28a745; 
+                                                color: white; 
+                                                border: none; 
+                                                padding: 8px ${isSmallScreen ? '20px' : '16px'}; 
+                                                border-radius: 4px; 
+                                                cursor: pointer; 
+                                                font-size: 12px;
+                                                font-weight: 500;
+                                                transition: background-color 0.2s ease;
+                                                white-space: nowrap;
+                                                ${isSmallScreen ? 'flex: 1;' : ''}
+                                            "
+                                            onmouseover="this.style.backgroundColor='#218838'"
+                                            onmouseout="this.style.backgroundColor='#28a745'">
+                                        追加
+                                    </button>
+                                    <button type="button" 
+                                            class="ktp-skill-update-btn" 
+                                            data-skill="${encodeURIComponent(JSON.stringify(Object.assign({}, skill, {unit_price: unitPrice})))}"
+                                            style="
+                                                background: #007bff; 
+                                                color: white; 
+                                                border: none; 
+                                                padding: 8px ${isSmallScreen ? '20px' : '16px'}; 
+                                                border-radius: 4px; 
+                                                cursor: pointer; 
+                                                font-size: 12px;
+                                                font-weight: 500;
+                                                transition: background-color 0.2s ease;
+                                                white-space: nowrap;
+                                                ${isSmallScreen ? 'flex: 1;' : ''}
+                                            "
+                                            onmouseover="this.style.backgroundColor='#0056b3'"
+                                            onmouseout="this.style.backgroundColor='#007bff'">
+                                        更新
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    });
+
+                    html += `</div>`;
+                    
+                    // メインコンテナを閉じる
+                    html += `</div>`;
+                } else {
+                    html = `
+                        <div class="ktp_data_list_box" style="
+                            border: 1px solid #e5e7eb; 
+                            border-radius: 4px; 
+                            overflow: hidden; 
+                            margin-bottom: 0;
+                            width: 100%;
+                            box-sizing: border-box;
+                        ">
+                            <div style="text-align: center; padding: 50px 40px; color: #6b7280; background: #f9fafb;">
+                                <div style="font-size: 18px; font-weight: 500; margin-bottom: 8px;">登録されている職能がありません</div>
+                                <div style="font-size: 14px;">協力会社の職能を先に登録してください</div>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                $('#ktp-skill-list-area').html(html);
+            }
 
             // 3. 追加・更新ボタン処理
             $(document).off('click', '.ktp-skill-add-btn');
@@ -145,7 +398,7 @@ window.ktpShowSupplierSelector = function(currentRow) {
                             $.each($rows, function(idx, row) {
                                 $tbody.append(row);
                             });
-                            $("#ktp-supplier-selector-modal").remove();
+                            closeSupplierSelector();
                         } else {
                             alert('保存失敗: ' + (res.data || ''));
                         }
@@ -186,7 +439,7 @@ window.ktpShowSupplierSelector = function(currentRow) {
                             skill.id = res.data.id;
                             // DB保存成功後にUIへ反映
                             window.ktpUpdateCostRowFromSkill(skill, null);
-                            $("#ktp-supplier-selector-modal").remove();
+                            closeSupplierSelector();
                         } else {
                             alert('更新失敗: ' + (res.data || ''));
                         }
@@ -199,7 +452,12 @@ window.ktpShowSupplierSelector = function(currentRow) {
         },
         error: function(xhr, status, error) {
             console.error('AJAX ERROR', xhr.status, xhr.responseText);
-            alert('協力会社リストの取得に失敗しました');
+            $('#ktp-supplier-selector-content').html(`
+                <div style="text-align: center; padding: 40px; color: #dc3545;">
+                    <div style="font-size: 16px;">協力会社リストの取得に失敗しました</div>
+                    <div style="font-size: 14px; margin-top: 8px;">通信エラーが発生しました</div>
+                </div>
+            `);
         }
     });
 };
