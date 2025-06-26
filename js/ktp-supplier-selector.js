@@ -711,7 +711,11 @@ window.ktpUpdateCostRowFromSkill = function(skill, currentRow) {
                     console.log('[SUPPLIER-SELECTOR] DB更新処理完了');
                     
                     // 成功メッセージ
-                    alert('該当行の更新が完了しました。');
+                    if (typeof window.showSuccessNotification === 'function') {
+                        window.showSuccessNotification('該当行の更新が完了しました。');
+                    } else {
+                        alert('該当行の更新が完了しました。');
+                    }
                     
                 } catch (saveError) {
                     console.error('[SUPPLIER-SELECTOR] DB更新処理中にエラーが発生:', saveError);
@@ -726,7 +730,11 @@ window.ktpUpdateCostRowFromSkill = function(skill, currentRow) {
                 });
                 
                 // UI更新のみ成功メッセージ
-                alert('該当行の更新が完了しました。（データベース保存はスキップされました）');
+                if (typeof window.showSuccessNotification === 'function') {
+                    window.showSuccessNotification('該当行の更新が完了しました。（データベース保存はスキップされました）');
+                } else {
+                    alert('該当行の更新が完了しました。（データベース保存はスキップされました）');
+                }
             }
         } else {
             console.log('[SUPPLIER-SELECTOR] 現在の行が指定されていないため新規追加として処理');
