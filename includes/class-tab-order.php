@@ -1395,7 +1395,8 @@ $content .= '</div>';
         try {
             $sort_order = 1;
             $submitted_ids = array();
-            foreach ( $items as $item ) {
+            foreach ( $items as &$item ) {
+                $item['sort_order'] = $sort_order; // ここでPOST順にsort_orderを付与
                 // Sanitize input data
                 $item_id = isset( $item['id'] ) ? intval( $item['id'] ) : 0;
                 $product_name = isset( $item['product_name'] ) ? sanitize_text_field( $item['product_name'] ) : '';
@@ -1405,8 +1406,9 @@ $content .= '</div>';
                 $amount = isset( $item['amount'] ) ? floatval( $item['amount'] ) : 0;
                 $remarks = isset( $item['remarks'] ) ? sanitize_textarea_field( $item['remarks'] ) : '';
 
-                // サービスが空ならスキップ（サービスがあれば必ず保存）
+                // 商品名が空ならスキップ（商品名があれば必ず保存）
                 if ( empty( $product_name ) ) {
+                    $sort_order++;
                     continue;
                 }
 

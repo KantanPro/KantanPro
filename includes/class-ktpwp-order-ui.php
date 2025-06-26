@@ -67,6 +67,14 @@ class KTPWP_Order_UI {
         $order_items = KTPWP_Order_Items::get_instance();
         $items = $order_items->get_invoice_items( $order_id );
 
+        // sort_orderの昇順でソート
+        usort($items, function($a, $b) {
+            $a_order = isset($a['sort_order']) ? intval($a['sort_order']) : 0;
+            $b_order = isset($b['sort_order']) ? intval($b['sort_order']) : 0;
+            // 昇順
+            return $a_order <=> $b_order;
+        });
+
         // If no items or empty array, create one empty row for display
         if ( empty( $items ) ) {
             $items = array(
@@ -198,6 +206,14 @@ class KTPWP_Order_UI {
 
         $order_items = KTPWP_Order_Items::get_instance();
         $items = $order_items->get_cost_items( $order_id );
+
+        // sort_orderの昇順でソート
+        usort($items, function($a, $b) {
+            $a_order = isset($a['sort_order']) ? intval($a['sort_order']) : 0;
+            $b_order = isset($b['sort_order']) ? intval($b['sort_order']) : 0;
+            // 昇順
+            return $a_order <=> $b_order;
+        });
 
         // If no items or empty array, create one empty row for display
         if ( empty( $items ) ) {

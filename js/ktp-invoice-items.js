@@ -851,6 +851,16 @@
         $('.invoice-items-table tbody tr').each(function () {
             calculateAmount($(this));
         });
+
+        // フォーム送信時にtr順でname属性indexを再構成
+        $(document).on('submit', '.invoice-items-form', function(e) {
+            const $form = $(this);
+            const $table = $form.find('.invoice-items-table');
+            if ($table.length > 0) {
+                updateRowIndexes($table); // tr順でname属性indexを再構成
+            }
+            // ここでtr順とname属性indexが必ず一致する
+        });
     });
 
     // デバッグ用関数をグローバルスコープに追加
