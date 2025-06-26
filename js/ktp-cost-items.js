@@ -22,7 +22,7 @@
         // より厳密な数値変換
         const price = (priceValue === '' || priceValue === null || isNaN(priceValue)) ? 0 : parseFloat(priceValue);
         const quantity = (quantityValue === '' || quantityValue === null || isNaN(quantityValue)) ? 0 : parseFloat(quantityValue);
-        const amount = price * quantity;
+        const amount = Math.ceil(price * quantity);
         
         // NaNチェック
         const finalAmount = isNaN(amount) ? 0 : amount;
@@ -151,16 +151,16 @@
                     <input type="hidden" name="cost_items[${newIndex}][id]" value="0">
                 </td>
                 <td style="text-align:left;">
-                    <input type="number" name="cost_items[${newIndex}][price]" class="cost-item-input price" value="0" step="1" min="0" style="text-align:left;" disabled>
+                    <input type="number" name="cost_items[${newIndex}][price]" class="cost-item-input price" value="0" step="0.01" min="0" style="text-align:left;" disabled>
                 </td>
                 <td style="text-align:left;">
-                    <input type="number" name="cost_items[${newIndex}][quantity]" class="cost-item-input quantity" value="1" step="1" min="0" style="text-align:left;" disabled>
+                    <input type="number" name="cost_items[${newIndex}][quantity]" class="cost-item-input quantity" value="1" step="0.01" min="0" style="text-align:left;" disabled>
                 </td>
                 <td>
                     <input type="text" name="cost_items[${newIndex}][unit]" class="cost-item-input unit" value="式" disabled>
                 </td>
                 <td style="text-align:left;">
-                    <input type="number" name="cost_items[${newIndex}][amount]" class="cost-item-input amount" value="" step="1" readonly style="text-align:left;">
+                    <input type="number" name="cost_items[${newIndex}][amount]" class="cost-item-input amount" value="" step="0.01" readonly style="text-align:left;">
                 </td>
                 <td>
                     <input type="text" name="cost_items[${newIndex}][remarks]" class="cost-item-input remarks" value="" disabled>
@@ -919,34 +919,35 @@
             }
         }).disableSelection();
 
-        // 単価・数量変更時の金額自動計算
-        $(document).on('input', '.cost-items-table .price, .cost-items-table .quantity', function () {
-            const $field = $(this);
-            
-            // disabled フィールドは処理をスキップ
-            if ($field.prop('disabled')) {
-                if (window.ktpDebugMode) {
-                    console.log('[COST] Input event skipped: field is disabled');
-                }
-                return;
-            }
-            
-            const row = $field.closest('tr');
-            const fieldType = $field.hasClass('price') ? 'price' : 'quantity';
-            const value = $field.val();
-            
-            if (window.ktpDebugMode) {
-                console.log('[COST] Input event triggered:', {
-                    fieldType: fieldType,
-                    value: value,
-                    rowIndex: row.index()
-                });
-            }
-            
-            calculateAmount(row);
+        // 単価・数量変更時の金額自動計算（blurイベントでのみ実行）
+        // inputイベントでの即座の計算は削除（小数点入力時のカーソル移動問題を解決）
+        // $(document).on('input', '.cost-items-table .price, .cost-items-table .quantity', function () {
+        //     const $field = $(this);
+        //     
+        //     // disabled フィールドは処理をスキップ
+        //     if ($field.prop('disabled')) {
+        //         if (window.ktpDebugMode) {
+        //             console.log('[COST] Input event skipped: field is disabled');
+        //         }
+        //         return;
+        //     }
+        //     
+        //     const row = $field.closest('tr');
+        //     const fieldType = $field.hasClass('price') ? 'price' : 'quantity';
+        //     const value = $field.val();
+        //     
+        //     if (window.ktpDebugMode) {
+        //         console.log('[COST] Input event triggered:', {
+        //             fieldType: fieldType,
+        //             value: value,
+        //             rowIndex: row.index()
+        //         });
+        //     }
+        //     
+        //     calculateAmount(row);
 
-            // 金額の自動保存は calculateAmount 内で行われる
-        });
+        //     // 金額の自動保存は calculateAmount 内で行われる
+        // });
 
         // 自動追加機能を無効化（コメントアウト）
         // $(document).on('input change', '.cost-items-table .service-name, .cost-items-table .price, .cost-items-table .quantity', function() {
@@ -1088,19 +1089,6 @@
         // 数値フィールドフォーカス時に全選択
         $(document).on('focus', '.cost-items-table input[type="number"]', function () {
             $(this).select();
-        });
-
-        // 数値フィールドで半角数字のみを許可
-        $(document).on('input', '.cost-items-table input[type="number"]', function () {
-            let value = $(this).val();
-            // 半角数字と小数点以外の文字を削除
-            value = value.replace(/[^0-9.]/g, '');
-            // 複数の小数点を最初のもの以外削除
-            const parts = value.split('.');
-            if (parts.length > 2) {
-                value = parts[0] + '.' + parts.slice(1).join('');
-            }
-            $(this).val(value);
         });
 
         // 商品名フィールドのblurイベントで自動保存

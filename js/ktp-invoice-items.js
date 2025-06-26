@@ -611,32 +611,33 @@
             }
         }).disableSelection();
 
-        // 価格・数量変更時の金額自動計算
-        $(document).on('input', '.invoice-items-table .price, .invoice-items-table .quantity', function () {
-            const $field = $(this);
-            
-            // disabled フィールドは処理をスキップ
-            if ($field.prop('disabled')) {
-                if (window.ktpDebugMode) {
-                    console.log('[INVOICE] Input event skipped: field is disabled');
-                }
-                return;
-            }
-            
-            const row = $field.closest('tr');
-            const fieldType = $field.hasClass('price') ? 'price' : 'quantity';
-            const value = $field.val();
-            
-            if (window.ktpDebugMode) {
-                console.log('[INVOICE] Input event triggered:', {
-                    fieldType: fieldType,
-                    value: value,
-                    rowIndex: row.index()
-                });
-            }
-            
-            calculateAmount(row);
-        });
+        // 価格・数量変更時の金額自動計算（blurイベントでのみ実行）
+        // inputイベントでの即座の計算は削除（小数点入力時のカーソル移動問題を解決）
+        // $(document).on('input', '.invoice-items-table .price, .invoice-items-table .quantity', function () {
+        //     const $field = $(this);
+        //     
+        //     // disabled フィールドは処理をスキップ
+        //     if ($field.prop('disabled')) {
+        //         if (window.ktpDebugMode) {
+        //             console.log('[INVOICE] Input event skipped: field is disabled');
+        //         }
+        //         return;
+        //     }
+        //     
+        //     const row = $field.closest('tr');
+        //     const fieldType = $field.hasClass('price') ? 'price' : 'quantity';
+        //     const value = $field.val();
+        //     
+        //     if (window.ktpDebugMode) {
+        //         console.log('[INVOICE] Input event triggered:', {
+        //             fieldType: fieldType,
+        //             value: value,
+        //             rowIndex: row.index()
+        //         });
+        //     }
+        //     
+        //     calculateAmount(row);
+        // });
 
         // 自動追加機能を無効化（コメントアウト）
         // $(document).on('input', '.invoice-items-table .product-name, .invoice-items-table .price, .invoice-items-table .quantity', function() {

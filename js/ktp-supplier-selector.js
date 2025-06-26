@@ -530,16 +530,16 @@ window.ktpAddCostRowFromSkill = function(skill, currentRow) {
                 <input type="hidden" name="cost_items[${newIndex}][id]" value="0">
             </td>
             <td style="text-align:left;">
-                <input type="number" name="cost_items[${newIndex}][price]" class="cost-item-input price" value="${skill.unit_price || ''}" step="1" min="0" style="text-align:left;">
+                <input type="number" name="cost_items[${newIndex}][price]" class="cost-item-input price" value="${skill.unit_price || ''}" step="0.01" min="0" style="text-align:left;">
             </td>
             <td style="text-align:left;">
-                <input type="number" name="cost_items[${newIndex}][quantity]" class="cost-item-input quantity" value="${skill.quantity || 1}" step="1" min="0" style="text-align:left;">
+                <input type="number" name="cost_items[${newIndex}][quantity]" class="cost-item-input quantity" value="${skill.quantity || 1}" step="0.01" min="0" style="text-align:left;">
             </td>
             <td>
                 <input type="text" name="cost_items[${newIndex}][unit]" class="cost-item-input unit" value="${skill.unit || ''}">
             </td>
             <td style="text-align:left;">
-                <input type="number" name="cost_items[${newIndex}][amount]" class="cost-item-input amount" value="" step="1" min="0" style="text-align:left;" readonly>
+                <input type="number" name="cost_items[${newIndex}][amount]" class="cost-item-input amount" value="" step="0.01" min="0" style="text-align:left;" readonly>
             </td>
             <td>
                 <input type="text" name="cost_items[${newIndex}][remarks]" class="cost-item-input remarks" value="">
@@ -609,7 +609,7 @@ window.ktpAddCostRowFromSkill = function(skill, currentRow) {
                     }
                     
                     // 金額も明示的に保存
-                    const calculatedAmount = parseFloat(skill.unit_price || 0) * parseFloat(skill.quantity || 1);
+                    const calculatedAmount = Math.ceil(parseFloat(skill.unit_price || 0) * parseFloat(skill.quantity || 1));
                     autoSaveItem('cost', newItemId, 'amount', calculatedAmount, orderId);
                 }
                 
@@ -680,7 +680,7 @@ window.ktpUpdateCostRowFromSkill = function(skill, currentRow) {
                     if (supplierId && supplierId > 0) {
                         autoSaveItem('cost', itemId, 'supplier_id', supplierId, orderId);
                     }
-                    const calculatedAmount = parseFloat(skill.unit_price || 0) * parseFloat(skill.quantity || 1);
+                    const calculatedAmount = Math.ceil(parseFloat(skill.unit_price || 0) * parseFloat(skill.quantity || 1));
                     autoSaveItem('cost', itemId, 'amount', calculatedAmount, orderId);
                     // --- 成功時のみ通知 ---
                     if (typeof window.showSuccessNotification === 'function') {
