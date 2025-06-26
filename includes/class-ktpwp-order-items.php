@@ -348,7 +348,8 @@ class KTPWP_Order_Items {
         global $wpdb;
         $table_name = $wpdb->prefix . 'ktp_order_cost_items';
 
-        // sort_order順でソートして取得（sort_orderがnullの場合はid順）
+        // sort_orderが設定されている場合はそれを使用し、設定されていない場合はid順でソート
+        // これにより、ドラッグ&ドロップで並び替えた順序が維持され、新規追加項目は最後に表示される
         $items = $wpdb->get_results( $wpdb->prepare(
             "SELECT * FROM `{$table_name}` WHERE order_id = %d ORDER BY COALESCE(sort_order, id) ASC, id ASC",
             $order_id
@@ -583,9 +584,18 @@ class KTPWP_Order_Items {
                     );
                     $used_id = $item_id;
                 } else {
-                    // Insert new item - sort_orderは設定しない（id順で自然に並ぶ）
+                    // Insert new item - 新規作成時は現在の最大sort_order値+1を設定
+                    // まず現在の最大sort_order値を取得
+                    $max_sort_order = $wpdb->get_var($wpdb->prepare(
+                        "SELECT COALESCE(MAX(sort_order), 0) FROM `{$table_name}` WHERE order_id = %d",
+                        $order_id
+                    ));
+                    $new_sort_order = intval($max_sort_order) + 1;
+                    
+                    $data['sort_order'] = $new_sort_order;
                     $data['created_at'] = current_time( 'mysql' );
-                    $format[] = '%s';
+                    $format[] = '%d'; // sort_order
+                    $format[] = '%s'; // created_at
                     $result = $wpdb->insert( $table_name, $data, $format );
                     if ($result === false) {
                         error_log('KTPWP Error: Cost item INSERT failed: ' . $wpdb->last_error);
@@ -855,6 +865,18 @@ class KTPWP_Order_Items {
                 $update_data['remarks'] = sanitize_textarea_field( $field_value );
                 $format[] = '%s';
                 break;
+            case 'sort_order':
+                $update_data['sort_order'] = intval( $field_value );
+                $format[] = '%d';
+                break;
+            case 'supplier_id':
+                // supplier_idカラムが存在する場合のみ更新
+                $columns = $wpdb->get_col( $wpdb->prepare( "SHOW COLUMNS FROM `{$table_name}` LIKE %s", 'supplier_id' ) );
+                if ( !empty($columns) ) {
+                    $update_data['supplier_id'] = intval( $field_value ) ?: null;
+                    $format[] = '%d';
+                }
+                break;
             default:
                 return false;
         }
@@ -895,6 +917,13 @@ class KTPWP_Order_Items {
         global $wpdb;
         $table_name = $wpdb->prefix . 'ktp_order_' . $item_type . '_items';
 
+        // 新規作成時は現在の最大sort_order値+1を設定
+        $max_sort_order = $wpdb->get_var($wpdb->prepare(
+            "SELECT COALESCE(MAX(sort_order), 0) FROM `{$table_name}` WHERE order_id = %d",
+            $order_id
+        ));
+        $new_sort_order = intval($max_sort_order) + 1;
+
         $data = array(
             'order_id' => $order_id,
             'product_name' => '',
@@ -903,6 +932,7 @@ class KTPWP_Order_Items {
             'unit' => '式',
             'amount' => 0,
             'remarks' => '',
+            'sort_order' => $new_sort_order,
             'created_at' => current_time( 'mysql' ),
             'updated_at' => current_time( 'mysql' )
         );
@@ -910,7 +940,7 @@ class KTPWP_Order_Items {
         $result = $wpdb->insert(
             $table_name,
             $data,
-            array( '%d', '%s', '%d', '%d', '%s', '%d', '%s', '%s', '%s' )
+            array( '%d', '%s', '%d', '%d', '%s', '%d', '%s', '%d', '%s', '%s' )
         );
 
         if ( $result === false ) {

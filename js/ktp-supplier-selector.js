@@ -425,6 +425,10 @@ console.log('=== KTP SUPPLIER SELECTOR: SCRIPT STARTED ===');
                 const supplierId = $(this).val();
                     console.log('[SUPPLIER-SELECTOR] 選択された協力会社ID:', supplierId);
                     
+                    // グローバル変数に協力会社IDを保存
+                    window.ktpCurrentSupplierId = supplierId;
+                    console.log('[SUPPLIER-SELECTOR] window.ktpCurrentSupplierIdを設定:', window.ktpCurrentSupplierId);
+                    
                     if (!supplierId) {
                         console.log('[SUPPLIER-SELECTOR] 協力会社が選択されていません');
                         $('#ktp-skill-list-area').html(`
@@ -506,6 +510,12 @@ window.ktpAddCostRowFromSkill = function(skill, currentRow) {
     const $lastRow = $tbody.find('tr').last();
     const newIndex = $tbody.find('tr').length;
     
+    console.log('[SUPPLIER-SELECTOR] 新規行作成開始', {
+        lastRowExists: $lastRow.length > 0,
+        currentRowCount: $tbody.find('tr').length,
+        newIndex: newIndex
+    });
+    
     // 新規行のHTMLを生成
     const newRowHtml = `
         <tr class="cost-item-row" data-row-id="0" data-newly-added="true">
@@ -538,9 +548,19 @@ window.ktpAddCostRowFromSkill = function(skill, currentRow) {
         </tr>
     `;
     
-    // 新規行を追加
-    $tbody.append(newRowHtml);
+    // 新規行を最後の行の後に追加
+    if ($lastRow.length > 0) {
+        $lastRow.after(newRowHtml);
+    } else {
+        // テーブルが空の場合はtbodyに直接追加
+        $tbody.append(newRowHtml);
+    }
     const $newRow = $tbody.find('tr').last();
+    
+    // 行のインデックスを更新（updateRowIndexes関数がある場合）
+    if (typeof updateRowIndexes === 'function') {
+        updateRowIndexes(table);
+    }
     
     console.log('[SUPPLIER-SELECTOR] 新規行追加完了', {
         newRowIndex: $newRow.index(),
@@ -559,10 +579,12 @@ window.ktpAddCostRowFromSkill = function(skill, currentRow) {
     
     // データベースに保存
     const orderId = $('input[name="order_id"]').val() || $('#order_id').val();
+    const supplierId = window.ktpCurrentSupplierId; // 現在選択されている協力会社ID
     
     if (orderId && typeof createNewItem === 'function') {
         console.log('[SUPPLIER-SELECTOR] DB新規作成開始', {
             orderId: orderId,
+            supplierId: supplierId,
             productName: skill.product_name,
             unitPrice: skill.unit_price,
             quantity: skill.quantity,
@@ -580,6 +602,11 @@ window.ktpAddCostRowFromSkill = function(skill, currentRow) {
                     autoSaveItem('cost', newItemId, 'price', skill.unit_price, orderId);
                     autoSaveItem('cost', newItemId, 'quantity', skill.quantity, orderId);
                     autoSaveItem('cost', newItemId, 'unit', skill.unit, orderId);
+                    
+                    // supplier_idも保存
+                    if (supplierId && supplierId > 0) {
+                        autoSaveItem('cost', newItemId, 'supplier_id', supplierId, orderId);
+                    }
                     
                     // 金額も明示的に保存
                     const calculatedAmount = parseFloat(skill.unit_price || 0) * parseFloat(skill.quantity || 1);
@@ -602,6 +629,7 @@ window.ktpAddCostRowFromSkill = function(skill, currentRow) {
     } else {
         console.warn('[SUPPLIER-SELECTOR] DB新規作成スキップ - 条件未満', {
             orderId: orderId,
+            supplierId: supplierId,
             createNewItemExists: typeof createNewItem === 'function'
         });
     }
@@ -643,10 +671,12 @@ window.ktpUpdateCostRowFromSkill = function(skill, currentRow) {
             // データベースに保存
             const itemId = currentRow.find('input[name*="[id]"]').val();
             const orderId = $('input[name="order_id"]').val() || $('#order_id').val();
+            const supplierId = window.ktpCurrentSupplierId; // 現在選択されている協力会社ID
             
             console.log('[SUPPLIER-SELECTOR] DB更新条件チェック', {
                 orderId: orderId,
                 itemId: itemId,
+                supplierId: supplierId,
                 autoSaveItemExists: typeof autoSaveItem === 'function',
                 skill: skill
             });
@@ -655,6 +685,7 @@ window.ktpUpdateCostRowFromSkill = function(skill, currentRow) {
                 console.log('[SUPPLIER-SELECTOR] DB更新処理開始', {
                     itemId: itemId,
                     orderId: orderId,
+                    supplierId: supplierId,
                     productName: skill.product_name,
                     unitPrice: skill.unit_price,
                     quantity: skill.quantity,
@@ -667,6 +698,11 @@ window.ktpUpdateCostRowFromSkill = function(skill, currentRow) {
                     autoSaveItem('cost', itemId, 'price', skill.unit_price, orderId);
                     autoSaveItem('cost', itemId, 'quantity', skill.quantity, orderId);
                     autoSaveItem('cost', itemId, 'unit', skill.unit, orderId);
+                    
+                    // supplier_idも保存
+                    if (supplierId && supplierId > 0) {
+                        autoSaveItem('cost', itemId, 'supplier_id', supplierId, orderId);
+                    }
                     
                     // 金額も明示的に保存
                     const calculatedAmount = parseFloat(skill.unit_price || 0) * parseFloat(skill.quantity || 1);
@@ -685,6 +721,7 @@ window.ktpUpdateCostRowFromSkill = function(skill, currentRow) {
                 console.warn('[SUPPLIER-SELECTOR] DB更新スキップ - 条件未満', {
                     itemId: itemId,
                     orderId: orderId,
+                    supplierId: supplierId,
                     autoSaveItemExists: typeof autoSaveItem === 'function'
                 });
                 

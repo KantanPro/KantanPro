@@ -386,6 +386,7 @@
 
         console.log('Cost items - Sending Ajax request:', ajaxData);
         console.log('Ajax URL:', ajaxUrl);
+        console.log('Field being saved:', fieldName, 'Value:', fieldValue);
 
         $.ajax({
             url: ajaxUrl,
@@ -609,7 +610,8 @@
                 productName: serviceData.product_name,
                 unitPrice: serviceData.unit_price,
                 quantity: serviceData.quantity,
-                unit: serviceData.unit
+                unit: serviceData.unit,
+                supplierId: window.ktpCurrentSupplierId
             });
             
             // 各フィールドを順次保存
@@ -617,6 +619,11 @@
             autoSaveItem('cost', itemId, 'price', serviceData.unit_price, orderId);
             autoSaveItem('cost', itemId, 'quantity', serviceData.quantity, orderId);
             autoSaveItem('cost', itemId, 'unit', serviceData.unit, orderId);
+            
+            // supplier_idも保存（設定されている場合）
+            if (window.ktpCurrentSupplierId) {
+                autoSaveItem('cost', itemId, 'supplier_id', window.ktpCurrentSupplierId, orderId);
+            }
             
             // 金額も再計算・保存
             calculateAmount($targetRow);
@@ -700,6 +707,11 @@
                     autoSaveItem('cost', newItemId, 'price', serviceData.unit_price, orderId);
                     autoSaveItem('cost', newItemId, 'quantity', serviceData.quantity, orderId);
                     autoSaveItem('cost', newItemId, 'unit', serviceData.unit, orderId);
+                    
+                    // supplier_idも保存（設定されている場合）
+                    if (window.ktpCurrentSupplierId) {
+                        autoSaveItem('cost', newItemId, 'supplier_id', window.ktpCurrentSupplierId, orderId);
+                    }
                     
                     // 金額も再計算・保存
                     calculateAmount($newRow);
