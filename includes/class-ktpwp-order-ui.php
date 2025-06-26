@@ -141,14 +141,14 @@ class KTPWP_Order_UI {
             $html .= '<td style="text-align:left;">';
             $html .= '<input type="number" name="invoice_items[' . $index . '][price]" ';
             $html .= 'value="' . esc_attr( $item['price'] ) . '" ';
-            $html .= 'class="invoice-item-input price" step="1" min="0" style="text-align:left;" />';
+            $html .= 'class="invoice-item-input price" step="0.01" min="0" style="text-align:left;" />';
             $html .= '</td>';
 
             // Quantity
             $html .= '<td style="text-align:left;">';
             $html .= '<input type="number" name="invoice_items[' . $index . '][quantity]" ';
             $html .= 'value="' . esc_attr( $item['quantity'] ) . '" ';
-            $html .= 'class="invoice-item-input quantity" step="1" min="0" style="text-align:left;" />';
+            $html .= 'class="invoice-item-input quantity" step="0.01" min="0" style="text-align:left;" />';
             $html .= '</td>';
 
             // Unit
@@ -281,14 +281,14 @@ class KTPWP_Order_UI {
             $html .= '<td style="text-align:left;">';
             $html .= '<input type="number" name="cost_items[' . $index . '][price]" ';
             $html .= 'value="' . esc_attr( $item['price'] ) . '" ';
-            $html .= 'class="cost-item-input price" step="1" min="0" style="text-align:left;" />';
+            $html .= 'class="cost-item-input price" step="0.01" min="0" style="text-align:left;" />';
             $html .= '</td>';
 
             // Quantity
             $html .= '<td style="text-align:left;">';
             $html .= '<input type="number" name="cost_items[' . $index . '][quantity]" ';
             $html .= 'value="' . esc_attr( $item['quantity'] ) . '" ';
-            $html .= 'class="cost-item-input quantity" step="1" min="0" style="text-align:left;" />';
+            $html .= 'class="cost-item-input quantity" step="0.01" min="0" style="text-align:left;" />';
             $html .= '</td>';
 
             // Unit

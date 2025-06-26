@@ -144,6 +144,16 @@
                             setTimeout(function() {
                                 calculateAmount($row);
                                 console.log('[INVOICE] createNewItem: フィールド有効化後の金額計算実行');
+                                
+                                // 新規レコード作成後に金額も保存
+                                const currentAmount = $row.find('.amount').val();
+                                if (currentAmount && currentAmount !== '0') {
+                                    console.log('[INVOICE] createNewItem: 新規レコード作成後の金額保存', {
+                                        newItemId: result.data.item_id,
+                                        amount: currentAmount
+                                    });
+                                    window.ktpInvoiceAutoSaveItem('invoice', result.data.item_id, 'amount', currentAmount, orderId);
+                                }
                             }, 100);
                         }
                         console.log('[INVOICE] createNewItem新規IDセット', result.data.item_id);
@@ -177,7 +187,7 @@
         // より厳密な数値変換
         const price = (priceValue === '' || priceValue === null || isNaN(priceValue)) ? 0 : parseFloat(priceValue);
         const quantity = (quantityValue === '' || quantityValue === null || isNaN(quantityValue)) ? 0 : parseFloat(quantityValue);
-        const amount = price * quantity;
+        const amount = Math.ceil(price * quantity);
         
         // NaNチェック
         const finalAmount = isNaN(amount) ? 0 : amount;
@@ -206,21 +216,39 @@
 
         if (itemId && orderId) {
             if (itemId === '0') {
-                // 新規行の場合は何もしない（商品名入力時に新規作成される）
-                if (window.ktpDebugMode) {
-                    console.log('[INVOICE] calculateAmount: 新規行のため金額保存スキップ');
+                // 新規行の場合：商品名が入力済みなら金額も保存
+                const productName = row.find('.product-name').val().trim();
+                if (productName !== '') {
+                    console.log('[INVOICE] calculateAmount: 新規行だが商品名入力済みのため金額保存実行', {
+                        itemId, 
+                        amount: finalAmount, 
+                        productName: productName
+                    });
+                    // 新規行の場合は商品名入力時にレコードが作成されるので、
+                    // その後に金額を保存するため少し遅延させる
+                    setTimeout(function() {
+                        const currentItemId = row.find('input[name*="[id]"]').val();
+                        if (currentItemId && currentItemId !== '0') {
+                            console.log('[INVOICE] calculateAmount: 遅延実行で金額保存', {
+                                currentItemId, 
+                                amount: finalAmount
+                            });
+                            window.ktpInvoiceAutoSaveItem('invoice', currentItemId, 'amount', finalAmount, orderId);
+                        }
+                    }, 500);
+                } else {
+                    console.log('[INVOICE] calculateAmount: 新規行で商品名未入力のため金額保存スキップ');
                 }
             } else {
-                // 既存行の場合：金額を自動保存
-                if (window.ktpDebugMode) {
-                    console.log('[INVOICE] calculateAmount: 金額自動保存実行', {itemId, amount: finalAmount});
-                }
+                // 既存行の場合：金額を即座に自動保存
+                console.log('[INVOICE] calculateAmount: 既存行の金額自動保存実行', {
+                    itemId, 
+                    amount: finalAmount
+                });
                 window.ktpInvoiceAutoSaveItem('invoice', itemId, 'amount', finalAmount, orderId);
             }
         } else {
-            if (window.ktpDebugMode) {
-                console.log('[INVOICE] calculateAmount: 保存条件未満', {itemId, orderId});
-            }
+            console.warn('[INVOICE] calculateAmount: 保存条件未満', {itemId, orderId});
         }
 
         // 請求項目合計と利益表示を更新
@@ -306,10 +334,10 @@
                     <input type="hidden" name="invoice_items[${newIndex}][id]" value="0">
                 </td>
                 <td style="text-align:left;">
-                    <input type="number" name="invoice_items[${newIndex}][price]" class="invoice-item-input price" value="0" step="1" min="0" style="text-align:left;" disabled>
+                    <input type="number" name="invoice_items[${newIndex}][price]" class="invoice-item-input price" value="0" step="0.01" min="0" style="text-align:left;" disabled>
                 </td>
                 <td style="text-align:left;">
-                    <input type="number" name="invoice_items[${newIndex}][quantity]" class="invoice-item-input quantity" value="1" step="1" min="0" style="text-align:left;" disabled>
+                    <input type="number" name="invoice_items[${newIndex}][quantity]" class="invoice-item-input quantity" value="1" step="0.01" min="0" style="text-align:left;" disabled>
                 </td>
                 <td>
                     <input type="text" name="invoice_items[${newIndex}][unit]" class="invoice-item-input unit" value="式" disabled>
@@ -489,6 +517,10 @@
     // ページ読み込み完了時の初期化
     $(document).ready(function () {
         console.log('[INVOICE] 📋 ページ初期化開始');
+
+        // デバッグモードを有効化（金額計算・保存の詳細ログを表示）
+        window.ktpDebugMode = true;
+        console.log('[INVOICE] デバッグモード有効化: 金額計算・保存の詳細ログを表示します');
 
         // 初期状態の確認
         const initialRowCount = $('.invoice-items-table tbody tr').length;

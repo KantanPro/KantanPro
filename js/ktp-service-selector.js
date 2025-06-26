@@ -675,10 +675,10 @@
                     <input type="hidden" name="invoice_items[${newIndex}][id]" value="0">
                 </td>
                 <td style="text-align:left;">
-                    <input type="number" name="invoice_items[${newIndex}][price]" class="invoice-item-input price" value="${serviceData.price}" step="1" min="0" style="text-align:left;">
+                    <input type="number" name="invoice_items[${newIndex}][price]" class="invoice-item-input price" value="${serviceData.price}" step="0.01" min="0" style="text-align:left;">
                 </td>
                 <td style="text-align:left;">
-                    <input type="number" name="invoice_items[${newIndex}][quantity]" class="invoice-item-input quantity" value="1" step="1" min="0" style="text-align:left;">
+                    <input type="number" name="invoice_items[${newIndex}][quantity]" class="invoice-item-input quantity" value="1" step="0.01" min="0" style="text-align:left;">
                 </td>
                 <td>
                     <input type="text" name="invoice_items[${newIndex}][unit]" class="invoice-item-input unit" value="${serviceData.unit}">
@@ -731,7 +731,7 @@
                         window.ktpInvoiceAutoSaveItem('invoice', newItemId, 'unit', serviceData.unit, orderId);
                         
                         // 金額も明示的に保存
-                        const calculatedAmount = serviceData.price * 1;
+                        const calculatedAmount = Math.ceil(serviceData.price * 1);
                         window.ktpInvoiceAutoSaveItem('invoice', newItemId, 'amount', calculatedAmount, orderId);
                     }
                     
@@ -824,7 +824,7 @@
             window.ktpInvoiceAutoSaveItem('invoice', itemId, 'quantity', 1, orderId);
             
             // 金額も明示的に保存
-            const calculatedAmount = serviceData.price * 1;
+            const calculatedAmount = Math.ceil(serviceData.price * 1);
             window.ktpInvoiceAutoSaveItem('invoice', itemId, 'amount', calculatedAmount, orderId);
             
             // 保存後に金額計算を再実行

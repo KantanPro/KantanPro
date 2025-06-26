@@ -73,7 +73,7 @@ class KTPWP_Order_Items {
      */
     public function create_invoice_items_table() {
         global $wpdb;
-        $my_table_version = '2.0';
+        $my_table_version = '2.1';
         $table_name = $wpdb->prefix . 'ktp_order_invoice_items';
         $charset_collate = $wpdb->get_charset_collate();
 
@@ -81,9 +81,9 @@ class KTPWP_Order_Items {
             'id MEDIUMINT(9) NOT NULL AUTO_INCREMENT',
             'order_id MEDIUMINT(9) NOT NULL',
             'product_name VARCHAR(255) NOT NULL DEFAULT ""',
-            'price INT(11) NOT NULL DEFAULT 0',
+            'price DECIMAL(10,2) NOT NULL DEFAULT 0.00',
             'unit VARCHAR(50) NOT NULL DEFAULT ""',
-            'quantity INT(11) NOT NULL DEFAULT 0',
+            'quantity DECIMAL(10,2) NOT NULL DEFAULT 0.00',
             'amount INT(11) NOT NULL DEFAULT 0',
             'remarks TEXT',
             'sort_order INT NOT NULL DEFAULT 0',
@@ -161,17 +161,19 @@ class KTPWP_Order_Items {
             // Force migration of DECIMAL columns to INT for version 2.0
             $current_version = get_option( 'ktp_invoice_items_table_version', '1.0' );
 
-            if ( version_compare( $current_version, '2.0', '<' ) ) {
+            if ( version_compare( $current_version, '2.1', '<' ) ) {
                 // Check current column types and migrate if needed
-                $column_info = $wpdb->get_results( "SHOW COLUMNS FROM `{$table_name}` WHERE Field IN ('price', 'quantity', 'amount')" );
+                $column_info = $wpdb->get_results( "SHOW COLUMNS FROM `{$table_name}` WHERE Field IN ('price', 'quantity')" );
 
                 foreach ( $column_info as $column ) {
-                    // Always attempt to convert to INT regardless of current type
-                    $alter_query = "ALTER TABLE `{$table_name}` MODIFY `{$column->Field}` INT(11) NOT NULL DEFAULT 0";
+                    // Convert to DECIMAL(10,2) for price and quantity
+                    $alter_query = "ALTER TABLE `{$table_name}` MODIFY `{$column->Field}` DECIMAL(10,2) NOT NULL DEFAULT 0.00";
                     $result = $wpdb->query( $alter_query );
 
                     if ( $result === false ) {
-                        error_log( "KTPWP: Failed to migrate column {$column->Field} to INT in invoice items table. Error: " . $wpdb->last_error );
+                        error_log( "KTPWP: Failed to migrate column {$column->Field} to DECIMAL(10,2) in invoice items table. Error: " . $wpdb->last_error );
+                    } else {
+                        error_log( "KTPWP: Successfully migrated column {$column->Field} to DECIMAL(10,2) in invoice items table." );
                     }
                 }
             }
@@ -190,7 +192,7 @@ class KTPWP_Order_Items {
      */
     public function create_cost_items_table() {
         global $wpdb;
-        $my_table_version = '2.1';
+        $my_table_version = '2.2';
         $table_name = $wpdb->prefix . 'ktp_order_cost_items';
         $charset_collate = $wpdb->get_charset_collate();
 
@@ -198,9 +200,9 @@ class KTPWP_Order_Items {
             'id MEDIUMINT(9) NOT NULL AUTO_INCREMENT',
             'order_id MEDIUMINT(9) NOT NULL',
             'product_name VARCHAR(255) NOT NULL DEFAULT ""',
-            'price INT(11) NOT NULL DEFAULT 0',
+            'price DECIMAL(10,2) NOT NULL DEFAULT 0.00',
             'unit VARCHAR(50) NOT NULL DEFAULT ""',
-            'quantity INT(11) NOT NULL DEFAULT 0',
+            'quantity DECIMAL(10,2) NOT NULL DEFAULT 0.00',
             'amount INT(11) NOT NULL DEFAULT 0',
             'remarks TEXT',
             'sort_order INT NOT NULL DEFAULT 0',
@@ -278,16 +280,18 @@ class KTPWP_Order_Items {
             // Version upgrade migrations
             $current_version = get_option( 'ktp_cost_items_table_version', '1.0' );
 
-            if ( version_compare( $current_version, '2.1', '<' ) ) {
-                // Migrate columns to INT
-                $column_info = $wpdb->get_results( "SHOW COLUMNS FROM `{$table_name}` WHERE Field IN ('price', 'quantity', 'amount')" );
+            if ( version_compare( $current_version, '2.2', '<' ) ) {
+                // Migrate columns to DECIMAL(10,2) for price and quantity
+                $column_info = $wpdb->get_results( "SHOW COLUMNS FROM `{$table_name}` WHERE Field IN ('price', 'quantity')" );
 
                 foreach ( $column_info as $column ) {
-                    $alter_query = "ALTER TABLE `{$table_name}` MODIFY `{$column->Field}` INT(11) NOT NULL DEFAULT 0";
+                    $alter_query = "ALTER TABLE `{$table_name}` MODIFY `{$column->Field}` DECIMAL(10,2) NOT NULL DEFAULT 0.00";
                     $result = $wpdb->query( $alter_query );
 
                     if ( $result === false ) {
-                        error_log( "KTPWP: Failed to migrate column {$column->Field} to INT in cost items table. Error: " . $wpdb->last_error );
+                        error_log( "KTPWP: Failed to migrate column {$column->Field} to DECIMAL(10,2) in cost items table. Error: " . $wpdb->last_error );
+                    } else {
+                        error_log( "KTPWP: Successfully migrated column {$column->Field} to DECIMAL(10,2) in cost items table." );
                     }
                 }
             }
