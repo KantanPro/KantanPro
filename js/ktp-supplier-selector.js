@@ -640,114 +640,88 @@ window.ktpAddCostRowFromSkill = function(skill, currentRow) {
 // コスト項目を更新
 window.ktpUpdateCostRowFromSkill = function(skill, currentRow) {
     console.log('[SUPPLIER-SELECTOR] ===== ktpUpdateCostRowFromSkill関数開始 =====');
-    
+    let originalValues = {};
     try {
         if (typeof skill === 'string') skill = JSON.parse(decodeURIComponent(skill));
-        
         console.log('[SUPPLIER-SELECTOR] 更新処理開始', {
             skill: skill,
             currentRowExists: currentRow && currentRow.length > 0
         });
-        
         if (currentRow && currentRow.length > 0) {
-            console.log('[SUPPLIER-SELECTOR] 既存行を更新');
-            
-            // UI更新
+            // --- UI更新前の値を保存（ロールバック用） ---
+            originalValues = {
+                product_name: currentRow.find('.product-name').val(),
+                price: currentRow.find('.price').val(),
+                quantity: currentRow.find('.quantity').val(),
+                unit: currentRow.find('.unit').val()
+            };
+            // --- UI更新 ---
             currentRow.find('.product-name').val(skill.product_name);
             currentRow.find('.price').val(skill.unit_price);
             currentRow.find('.quantity').val(skill.quantity || 1);
             currentRow.find('.unit').val(skill.unit);
-            
             // 金額を再計算
             if (typeof calculateAmount === 'function') {
                 calculateAmount(currentRow);
             }
-            
-            // 利益表示を更新
             if (typeof updateProfitDisplay === 'function') {
                 updateProfitDisplay();
             }
-            
-            // データベースに保存
+            // --- DB保存 ---
             const itemId = currentRow.find('input[name*="[id]"]').val();
             const orderId = $('input[name="order_id"]').val() || $('#order_id').val();
-            const supplierId = window.ktpCurrentSupplierId; // 現在選択されている協力会社ID
-            
-            console.log('[SUPPLIER-SELECTOR] DB更新条件チェック', {
-                orderId: orderId,
-                itemId: itemId,
-                supplierId: supplierId,
-                autoSaveItemExists: typeof autoSaveItem === 'function',
-                skill: skill
-            });
-            
+            const supplierId = window.ktpCurrentSupplierId;
             if (orderId && itemId && itemId !== '0' && typeof autoSaveItem === 'function') {
-                console.log('[SUPPLIER-SELECTOR] DB更新処理開始', {
-                    itemId: itemId,
-                    orderId: orderId,
-                    supplierId: supplierId,
-                    productName: skill.product_name,
-                    unitPrice: skill.unit_price,
-                    quantity: skill.quantity,
-                    unit: skill.unit
-                });
-                
                 try {
-                    // 各フィールドを順次保存
                     autoSaveItem('cost', itemId, 'product_name', skill.product_name, orderId);
                     autoSaveItem('cost', itemId, 'price', skill.unit_price, orderId);
                     autoSaveItem('cost', itemId, 'quantity', skill.quantity, orderId);
                     autoSaveItem('cost', itemId, 'unit', skill.unit, orderId);
-                    
-                    // supplier_idも保存
                     if (supplierId && supplierId > 0) {
                         autoSaveItem('cost', itemId, 'supplier_id', supplierId, orderId);
                     }
-                    
-                    // 金額も明示的に保存
                     const calculatedAmount = parseFloat(skill.unit_price || 0) * parseFloat(skill.quantity || 1);
                     autoSaveItem('cost', itemId, 'amount', calculatedAmount, orderId);
-                    
-                    console.log('[SUPPLIER-SELECTOR] DB更新処理完了');
-                    
-                    // 成功メッセージ
+                    // --- 成功時のみ通知 ---
                     if (typeof window.showSuccessNotification === 'function') {
                         window.showSuccessNotification('該当行の更新が完了しました。');
-                    } else {
-                        alert('該当行の更新が完了しました。');
                     }
-                    
                 } catch (saveError) {
-                    console.error('[SUPPLIER-SELECTOR] DB更新処理中にエラーが発生:', saveError);
-                    alert('該当行の更新に失敗しました。\nエラー: ' + saveError.message);
+                    // --- DB保存失敗時はUIロールバック ---
+                    currentRow.find('.product-name').val(originalValues.product_name);
+                    currentRow.find('.price').val(originalValues.price);
+                    currentRow.find('.quantity').val(originalValues.quantity);
+                    currentRow.find('.unit').val(originalValues.unit);
+                    if (typeof calculateAmount === 'function') {
+                        calculateAmount(currentRow);
+                    }
+                    if (typeof window.showErrorNotification === 'function') {
+                        window.showErrorNotification('DB保存に失敗しました。\nエラー: ' + saveError.message);
+                    } else {
+                        alert('DB保存に失敗しました。\nエラー: ' + saveError.message);
+                    }
+                    return;
                 }
             } else {
-                console.warn('[SUPPLIER-SELECTOR] DB更新スキップ - 条件未満', {
-                    itemId: itemId,
-                    orderId: orderId,
-                    supplierId: supplierId,
-                    autoSaveItemExists: typeof autoSaveItem === 'function'
-                });
-                
-                // UI更新のみ成功メッセージ
+                // DB保存条件未満
                 if (typeof window.showSuccessNotification === 'function') {
                     window.showSuccessNotification('該当行の更新が完了しました。（データベース保存はスキップされました）');
-                } else {
-                    alert('該当行の更新が完了しました。（データベース保存はスキップされました）');
                 }
             }
+            // --- ポップアップ自動クローズ ---
+            if (typeof closeSupplierSelector === 'function') {
+                closeSupplierSelector();
+            } else {
+                $("#ktp-supplier-selector-modal").remove();
+            }
         } else {
-            console.log('[SUPPLIER-SELECTOR] 現在の行が指定されていないため新規追加として処理');
-            
-            // 新規追加として処理
+            // 行が指定されていない場合は新規追加として処理
             window.ktpAddCostRowFromSkill(skill, null);
         }
-        
     } catch (error) {
         console.error('[SUPPLIER-SELECTOR] ktpUpdateCostRowFromSkill関数でエラーが発生:', error);
         alert('該当行の更新に失敗しました。\nエラー: ' + error.message);
     }
-    
     console.log('[SUPPLIER-SELECTOR] ===== ktpUpdateCostRowFromSkill関数終了 =====');
 };
 
