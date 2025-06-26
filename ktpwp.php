@@ -1,12 +1,9 @@
 <?php
-// --- Ajaxハンドラ（協力会社・職能リスト取得）を必ず読み込む ---
-require_once __DIR__ . '/includes/ajax-supplier-cost.php';
-
 /**
  * Plugin Name: KantanPro
  * Plugin URI: https://www.kantanpro.com/
  * Description: 包括的なビジネス管理プラグイン。ショートコード[ktpwp_all_tab]で7つのタブ（仕事リスト・伝票処理・得意先・サービス・協力会社・レポート・設定）による完全なワークフロー管理を実現。
- * Version: 1.1.2(beta)
+ * Version: 1.2.0(beta)
  * Author: KantanPro
  * Author URI: https://www.kantanpro.com/developer-profile/
  * License: GPL v2 or later
@@ -28,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // プラグイン定数定義
 if ( ! defined( 'KANTANPRO_PLUGIN_VERSION' ) ) {
-    define( 'KANTANPRO_PLUGIN_VERSION', '1.1.2(beta)' );
+    define( 'KANTANPRO_PLUGIN_VERSION', '1.2.0(beta)' );
 }
 if ( ! defined( 'KANTANPRO_PLUGIN_NAME' ) ) {
     define( 'KANTANPRO_PLUGIN_NAME', 'KantanPro' );
@@ -147,6 +144,9 @@ function ktpwp_autoload_classes() {
         }
     }
 }
+
+// --- Ajaxハンドラ（協力会社・職能リスト取得）を必ず読み込む ---
+require_once __DIR__ . '/includes/ajax-supplier-cost.php';
 
 // クラスの読み込み実行
 ktpwp_autoload_classes();
