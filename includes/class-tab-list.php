@@ -151,12 +151,46 @@ class Kantan_List_Class {
         $total_rows = $wpdb->get_var($total_query);
         $total_pages = ceil($total_rows / $query_limit);
         $current_page = floor($page_start / $query_limit) + 1;
-        // データ取得
-        $query = $wpdb->prepare("SELECT * FROM {$table_name} WHERE progress = %d ORDER BY time DESC LIMIT %d, %d", $selected_progress, $page_start, $query_limit);
+        
+        // データ取得（進捗が「作成中」の場合は納期順でソート）
+        if ($selected_progress == 3) {
+            // 作成中の場合は納期が迫っている順でソート
+            $query = $wpdb->prepare(
+                "SELECT *, 
+                    CASE 
+                        WHEN expected_delivery_date IS NULL THEN 999999
+                        WHEN expected_delivery_date <= CURDATE() THEN 0
+                        ELSE DATEDIFF(expected_delivery_date, CURDATE())
+                    END as days_until_delivery
+                FROM {$table_name} 
+                WHERE progress = %d 
+                ORDER BY days_until_delivery ASC, time DESC 
+                LIMIT %d, %d", 
+                $selected_progress, $page_start, $query_limit
+            );
+        } else {
+            // その他の進捗は従来通り時間順でソート
+            $query = $wpdb->prepare(
+                "SELECT * FROM {$table_name} 
+                WHERE progress = %d 
+                ORDER BY time DESC 
+                LIMIT %d, %d", 
+                $selected_progress, $page_start, $query_limit
+            );
+        }
+        
         $order_list = $wpdb->get_results($query);
 
         // --- ここからラッパー追加 ---
         $content .= '<div class="ktp_work_list_box">';
+        
+        // 作成中の場合はソート順を説明
+        if ($selected_progress == 3) {
+            $content .= '<div style="background: #e3f2fd; border-left: 4px solid #1976d2; padding: 10px 15px; margin-bottom: 15px; border-radius: 4px; font-size: 13px; color: #1565c0;">';
+            $content .= '<strong>📅 ソート順:</strong> 納期が迫っている順 → 受注日時順（新しい順）で表示されています。';
+            $content .= '</div>';
+        }
+        
         if ($order_list) {
             // 進捗ラベル
         $progress_labels = [
@@ -179,7 +213,8 @@ class Kantan_List_Class {
                 
                 // 納期警告の判定
                 $show_warning = false;
-                if (!empty($expected_delivery_date) && $progress == 3) {
+                $is_urgent = false; // 緊急案件フラグ
+                if (!empty($expected_delivery_date) && $selected_progress == 3) {
                     // 一般設定から警告日数を取得
                     $warning_days = 3; // デフォルト値
                     if (class_exists('KTP_Settings')) {
@@ -196,6 +231,7 @@ class Kantan_List_Class {
                     $days_left = $diff->invert ? -$diff->days : $diff->days;
                     
                     $show_warning = $days_left <= $warning_days && $days_left >= 0;
+                    $is_urgent = $days_left <= $warning_days && $days_left >= 0;
                     
                     // デバッグ情報（開発時のみ）
                     if (defined('WP_DEBUG') && WP_DEBUG) {
@@ -232,7 +268,8 @@ class Kantan_List_Class {
                 $detail_url = add_query_arg(array('tab_name' => 'order', 'order_id' => $order_id));
 
                 // プルダウンフォーム
-                $content .= "<li class='ktp_work_list_item'>";
+                $urgent_class = $is_urgent ? 'urgent-delivery' : '';
+                $content .= "<li class='ktp_work_list_item {$urgent_class}'>";
                 $content .= "<a href='{$detail_url}'>ID: {$order_id} - {$customer_name} ({$user_name})";
                 if ($project_name !== '') {
                     $content .= " - <span class='project_name'>{$project_name}</span>";
