@@ -215,8 +215,10 @@ class KTPWP_Ajax {
         // 一般設定の値を追加
         if (class_exists('KTP_Settings')) {
             $ajax_data['settings']['work_list_range'] = KTP_Settings::get_work_list_range();
+            $ajax_data['settings']['delivery_warning_days'] = KTP_Settings::get_delivery_warning_days();
         } else {
             $ajax_data['settings']['work_list_range'] = 20;
+            $ajax_data['settings']['delivery_warning_days'] = 3;
         }
 
         // 現在のユーザー情報を追加

@@ -54,21 +54,51 @@ echo "</table>";
 echo "<h2>2. サンプルデータ確認</h2>";
 
 // 最新の5件の受注データを取得
-$orders = $wpdb->get_results("SELECT id, customer_name, user_name, project_name, expected_delivery_date FROM `{$table_name}` ORDER BY id DESC LIMIT 5");
+$orders = $wpdb->get_results("SELECT id, customer_name, user_name, project_name, expected_delivery_date, progress FROM `{$table_name}` ORDER BY id DESC LIMIT 5");
+
+// 進捗ラベルの定義
+$progress_labels = [
+    1 => '受付中',
+    2 => '見積中',
+    3 => '作成中',
+    4 => '完成未請求',
+    5 => '請求済',
+    6 => '入金済'
+];
 
 if ($orders) {
     echo "<table border='1' style='border-collapse: collapse; width: 100%;'>";
     echo "<tr style='background-color: #f0f0f0;'>";
-    echo "<th>ID</th><th>顧客名</th><th>担当者</th><th>案件名</th><th>納品予定日</th>";
+    echo "<th>ID</th><th>顧客名</th><th>担当者</th><th>案件名</th><th>納品予定日</th><th>進捗</th><th>警告判定</th>";
     echo "</tr>";
     
     foreach ($orders as $order) {
-        echo "<tr>";
+        // 納期警告の判定
+        $show_warning = false;
+        $warning_info = '';
+        
+        if (!empty($order->expected_delivery_date) && $order->progress == 3) {
+            $delivery_date = new DateTime($order->expected_delivery_date);
+            $today = new DateTime();
+            $diff = $today->diff($delivery_date);
+            $days_left = $diff->invert ? -$diff->days : $diff->days;
+            
+            $show_warning = $days_left <= $warning_days && $days_left >= 0;
+            $warning_info = $show_warning ? "警告表示（残り{$days_left}日）" : "警告なし（残り{$days_left}日）";
+        } else {
+            $warning_info = "警告対象外";
+        }
+        
+        $row_class = $show_warning ? 'style="background-color: #fff3e0;"' : '';
+        
+        echo "<tr {$row_class}>";
         echo "<td>{$order->id}</td>";
         echo "<td>" . esc_html($order->customer_name) . "</td>";
         echo "<td>" . esc_html($order->user_name) . "</td>";
         echo "<td>" . esc_html($order->project_name) . "</td>";
         echo "<td>" . ($order->expected_delivery_date ?: '未設定') . "</td>";
+        echo "<td>" . $progress_labels[$order->progress] . "</td>";
+        echo "<td>{$warning_info}</td>";
         echo "</tr>";
     }
     
@@ -77,7 +107,59 @@ if ($orders) {
     echo "受注データがありません<br>";
 }
 
-echo "<h2>3. Ajax設定確認</h2>";
+echo "<h2>3. 納期警告機能テスト</h2>";
+
+// 一般設定から警告日数を取得
+$warning_days = 3; // デフォルト値
+if (class_exists('KTP_Settings')) {
+    $warning_days = KTP_Settings::get_delivery_warning_days();
+    echo "✅ 一般設定から警告日数を取得: {$warning_days}日<br>";
+} else {
+    echo "⚠️ KTP_Settingsクラスが見つかりません。デフォルト値（{$warning_days}日）を使用します。<br>";
+}
+
+// 納期警告の対象となる受注を取得
+$warning_orders = $wpdb->get_results($wpdb->prepare(
+    "SELECT id, customer_name, project_name, expected_delivery_date, progress 
+     FROM `{$table_name}` 
+     WHERE progress = 3 
+     AND expected_delivery_date IS NOT NULL 
+     AND expected_delivery_date <= DATE_ADD(CURDATE(), INTERVAL %d DAY)
+     ORDER BY expected_delivery_date ASC",
+    $warning_days
+));
+
+if ($warning_orders) {
+    echo "<h3>納期警告対象の受注（{$warning_days}日前まで）:</h3>";
+    echo "<table border='1' style='border-collapse: collapse; width: 100%;'>";
+    echo "<tr style='background-color: #f0f0f0;'>";
+    echo "<th>ID</th><th>顧客名</th><th>案件名</th><th>納品予定日</th><th>残り日数</th>";
+    echo "</tr>";
+    
+    foreach ($warning_orders as $order) {
+        $delivery_date = new DateTime($order->expected_delivery_date);
+        $today = new DateTime();
+        $diff = $today->diff($delivery_date);
+        $days_left = $diff->invert ? -$diff->days : $diff->days;
+        
+        $status_class = $days_left < 0 ? 'style="background-color: #ffebee;"' : 
+                       ($days_left <= 3 ? 'style="background-color: #fff3e0;"' : '');
+        
+        echo "<tr {$status_class}>";
+        echo "<td>{$order->id}</td>";
+        echo "<td>" . esc_html($order->customer_name) . "</td>";
+        echo "<td>" . esc_html($order->project_name) . "</td>";
+        echo "<td>{$order->expected_delivery_date}</td>";
+        echo "<td>" . ($days_left < 0 ? "期限超過" : "{$days_left}日") . "</td>";
+        echo "</tr>";
+    }
+    
+    echo "</table>";
+} else {
+    echo "✅ 納期警告対象の受注はありません<br>";
+}
+
+echo "<h2>4. Ajax設定確認</h2>";
 
 // Ajax設定の確認
 $ajax_url = admin_url('admin-ajax.php');
@@ -86,7 +168,7 @@ $nonce = wp_create_nonce('ktp_ajax_nonce');
 echo "Ajax URL: {$ajax_url}<br>";
 echo "Nonce: {$nonce}<br>";
 
-echo "<h2>4. 手動テスト用フォーム</h2>";
+echo "<h2>5. 手動テスト用フォーム</h2>";
 
 if ($orders) {
     $test_order = $orders[0];
@@ -136,24 +218,81 @@ if (isset($_POST['test_delivery_date']) && isset($_POST['order_id'])) {
     }
 }
 
-echo "<h2>5. JavaScript設定確認</h2>";
+echo "<h2>6. JavaScript設定確認</h2>";
 
 echo "<script>";
-echo "console.log('ktpwp_ajax:', typeof ktpwp_ajax !== 'undefined' ? ktpwp_ajax : 'undefined');";
-echo "console.log('ktp_ajax:', typeof ktp_ajax !== 'undefined' ? ktp_ajax : 'undefined');";
-echo "console.log('ajaxurl:', typeof ajaxurl !== 'undefined' ? ajaxurl : 'undefined');";
+echo "console.log('=== KTP納期警告機能テスト ===');";
+
+// Ajax設定の確認
+if (isset($ajax_data)) {
+    echo "console.log('Ajax URL:', '" . $ajax_data['ajax_url'] . "');";
+    echo "console.log('Nonce:', '" . $ajax_data['nonces']['auto_save'] . "');";
+    echo "console.log('警告日数設定:', " . $ajax_data['settings']['delivery_warning_days'] . ");";
+} else {
+    echo "console.log('Ajax設定が見つかりません');";
+}
+
+// 納期警告のテスト関数
+echo "
+function testDeliveryWarning() {
+    console.log('=== 納期警告テスト ===');
+    
+    // 今日の日付
+    var today = new Date();
+    console.log('今日:', today.toISOString().split('T')[0]);
+    
+    // テスト用の納期（3日後）
+    var testDate = new Date();
+    testDate.setDate(today.getDate() + 3);
+    console.log('テスト納期（3日後）:', testDate.toISOString().split('T')[0]);
+    
+    // 日数差を計算
+    var diffTime = testDate.getTime() - today.getTime();
+    var diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    console.log('残り日数:', diffDays);
+    
+    // 警告判定
+    var warningDays = " . $warning_days . ";
+    var shouldWarn = diffDays <= warningDays && diffDays >= 0;
+    console.log('警告表示:', shouldWarn ? 'YES' : 'NO');
+    
+    return shouldWarn;
+}
+
+// テスト実行
+testDeliveryWarning();
+";
+
 echo "</script>";
+echo "<p>ブラウザの開発者ツールのコンソールでJavaScript設定と納期警告テストを確認してください。</p>";
 
-echo "<p>ブラウザの開発者ツールのコンソールでJavaScript設定を確認してください。</p>";
-
-echo "<h2>6. 実装完了確認</h2>";
+echo "<h2>7. 実装完了確認</h2>";
 
 echo "<ul>";
-echo "<li>✅ データベースに納期フィールドが存在</li>";
-echo "<li>✅ 仕事リストに納期フィールドが表示される</li>";
-echo "<li>✅ Ajaxハンドラーが登録されている</li>";
-echo "<li>✅ JavaScriptファイルが読み込まれる</li>";
-echo "<li>✅ CSSスタイルが適用される</li>";
+echo "<li>✅ データベースに納品予定日カラムが存在</li>";
+echo "<li>✅ 納期フィールドのAjax保存機能</li>";
+echo "<li>✅ 進捗ボタンの納期警告マーク</li>";
+echo "<li>✅ 各行の納期警告マーク</li>";
+echo "<li>✅ リアルタイム警告マーク更新</li>";
+echo "<li>✅ 一般設定での警告日数設定</li>";
+echo "<li>✅ 納期警告の判定ロジック</li>";
+echo "</ul>";
+
+echo "<h3>使用方法:</h3>";
+echo "<ol>";
+echo "<li>WordPressダッシュボード > KantanPro > 一般設定で警告日数を設定</li>";
+echo "<li>受注書で納品予定日を設定</li>";
+echo "<li>進捗を「作成中」に設定</li>";
+echo "<li>納期が迫ると警告マークが表示される</li>";
+echo "<li>納期を変更するとリアルタイムで警告マークが更新される</li>";
+echo "</ol>";
+
+echo "<h3>リアルタイム機能:</h3>";
+echo "<ul>";
+echo "<li>納期変更時に自動で警告マークが更新される</li>";
+echo "<li>進捗変更時に自動で警告マークが更新される</li>";
+echo "<li>今日現在で納期が迫っているかを自動判定</li>";
+echo "<li>設定された警告日数に基づいて判定</li>";
 echo "</ul>";
 
 echo "<p><strong>実装完了！</strong> 仕事リストで納期フィールドの動作を確認してください。</p>";

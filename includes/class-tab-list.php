@@ -80,6 +80,8 @@ class Kantan_List_Class {
 
         // Get count for each progress status with prepared statements
         $progress_counts = array();
+        $progress_warnings = array(); // 納期警告カウント用
+        
         foreach ( $progress_labels as $num => $label ) {
             $count = $wpdb->get_var( $wpdb->prepare( 
                 "SELECT COUNT(*) FROM `%1s` WHERE progress = %d", 
@@ -87,6 +89,25 @@ class Kantan_List_Class {
                 $num 
             ) );
             $progress_counts[ $num ] = (int) $count;
+            
+            // 作成中（progress = 3）の場合、納期警告の件数を取得
+            if ($num == 3) {
+                // 一般設定から警告日数を取得
+                $warning_days = 3; // デフォルト値
+                if (class_exists('KTP_Settings')) {
+                    $warning_days = KTP_Settings::get_delivery_warning_days();
+                }
+                
+                $warning_count = $wpdb->get_var( $wpdb->prepare( 
+                    "SELECT COUNT(*) FROM `%1s` WHERE progress = %d AND expected_delivery_date IS NOT NULL AND expected_delivery_date <= DATE_ADD(CURDATE(), INTERVAL %d DAY)", 
+                    $table_name, 
+                    $num,
+                    $warning_days
+                ) );
+                $progress_warnings[ $num ] = (int) $warning_count;
+            } else {
+                $progress_warnings[ $num ] = 0;
+            }
         }
 
         $content .= '</div>'; // .controller end
@@ -98,8 +119,15 @@ class Kantan_List_Class {
         foreach ( $progress_labels as $num => $label ) {
             $active = ( $selected_progress === $num ) ? 'style="font-weight:bold;background:#1976d2;color:#fff;"' : '';
             $btn_label = esc_html( $label ) . ' (' . $progress_counts[ $num ] . ')';
+            
+            // 警告マークの追加（作成中で警告がある場合）
+            $warning_mark = '';
+            if ($num == 3 && $progress_warnings[$num] > 0) {
+                $warning_mark = '<span class="delivery-warning-mark" title="納期が迫っています（' . $progress_warnings[$num] . '件）">!</span>';
+            }
+            
             // $content .= '<a href="?tab_name=' . urlencode($tab_name) . '&progress=' . $num . '" class="progress-btn" '.$active.'>' . $btn_label . '</a>';
-            $content .= '<a href="' . add_query_arg(array('tab_name' => $tab_name, 'progress' => $num)) . '" class="progress-btn" '.$active.'>' . $btn_label . '</a>';
+            $content .= '<a href="' . add_query_arg(array('tab_name' => $tab_name, 'progress' => $num)) . '" class="progress-btn" '.$active.'>' . $btn_label . $warning_mark . '</a>';
         }
         $content .= '</div>';
         $content .= '</div>';
@@ -152,6 +180,24 @@ class Kantan_List_Class {
                 // 納期フィールドの値を取得（希望納期は削除、納品予定日のみ）
                 $expected_delivery_date = isset($order->expected_delivery_date) ? $order->expected_delivery_date : '';
                 
+                // 納期警告の判定
+                $show_warning = false;
+                if (!empty($expected_delivery_date) && $progress == 3) {
+                    // 一般設定から警告日数を取得
+                    $warning_days = 3; // デフォルト値
+                    if (class_exists('KTP_Settings')) {
+                        $warning_days = KTP_Settings::get_delivery_warning_days();
+                    }
+                    
+                    // 納期が迫っているかチェック
+                    $delivery_date = new DateTime($expected_delivery_date);
+                    $today = new DateTime();
+                    $diff = $today->diff($delivery_date);
+                    $days_left = $diff->invert ? -$diff->days : $diff->days;
+                    
+                    $show_warning = $days_left <= $warning_days && $days_left >= 0;
+                }
+                
                 // 日時フォーマット変換
                 $raw_time = $order->time;
                 $formatted_time = '';
@@ -190,7 +236,15 @@ class Kantan_List_Class {
                 // 納期フィールドを追加（希望納期は削除、納品予定日のみ）
                 $content .= "<div class='delivery-dates-container'>";
                 $content .= "<span class='delivery-label'>納期</span>";
+                $content .= "<div class='delivery-input-wrapper'>";
                 $content .= "<input type='date' name='expected_delivery_date_{$order_id}' value='{$expected_delivery_date}' class='delivery-date-input' data-order-id='{$order_id}' data-field='expected_delivery_date' placeholder='納品予定日' title='納品予定日'>";
+                
+                // 納期警告マークを追加
+                if ($show_warning) {
+                    $content .= "<span class='delivery-warning-mark-row' title='納期が迫っています'>!</span>";
+                }
+                
+                $content .= "</div>";
                 $content .= "</div>";
                 
                 $content .= "<form method='post' action='' style='margin: 0px 0 0px 0;display:inline;'>";

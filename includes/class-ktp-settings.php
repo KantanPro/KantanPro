@@ -85,6 +85,17 @@ class KTP_Settings {
     }
 
     /**
+     * Get delivery warning days setting
+     *
+     * @since 1.0.0
+     * @return int Delivery warning days setting (default: 3)
+     */
+    public static function get_delivery_warning_days() {
+        $options = get_option( 'ktp_general_settings', array() );
+        return isset( $options['delivery_warning_days'] ) ? intval( $options['delivery_warning_days'] ) : 3;
+    }
+
+    /**
      * Get company information setting
      *
      * @since 1.0.0
@@ -235,6 +246,7 @@ class KTP_Settings {
         if ( false === get_option( $general_option_name ) ) {
             add_option( $general_option_name, array(
                 'work_list_range' => 20,
+                'delivery_warning_days' => 3,
                 'company_info' => ''
             ));
         }
@@ -1101,6 +1113,15 @@ class KTP_Settings {
             'general_setting_section'
         );
 
+        // 納期警告日数
+        add_settings_field(
+            'delivery_warning_days',
+            __( '納期警告日数', 'ktpwp' ),
+            array( $this, 'delivery_warning_days_callback' ),
+            'ktp-general',
+            'general_setting_section'
+        );
+
         // 会社情報
         add_settings_field(
             'company_info',
@@ -1612,6 +1633,12 @@ class KTP_Settings {
             $new_input['work_list_range'] = max( 5, min( 500, $range ) );
         }
 
+        if ( isset( $input['delivery_warning_days'] ) ) {
+            $warning_days = intval( $input['delivery_warning_days'] );
+            // 最小1日、最大365日に制限
+            $new_input['delivery_warning_days'] = max( 1, min( 365, $warning_days ) );
+        }
+
         if ( isset( $input['company_info'] ) ) {
             // HTMLコンテンツを許可し、wp_ksesで安全なHTMLタグのみ保持
             $allowed_html = array(
@@ -1780,6 +1807,29 @@ class KTP_Settings {
         </select>
         <div style="font-size:12px;color:#555;margin-top:4px;">
             <?php echo esc_html__( '※ リストで一度に表示する件数を設定してください。', 'ktpwp' ); ?>
+        </div>
+        <?php
+    }
+
+    /**
+     * 納期警告日数フィールドのコールバック
+     *
+     * @since 1.0.0
+     * @return void
+     */
+    public function delivery_warning_days_callback() {
+        $options = get_option( 'ktp_general_settings' );
+        $value = isset( $options['delivery_warning_days'] ) ? $options['delivery_warning_days'] : 3;
+        ?>
+        <select id="delivery_warning_days" name="ktp_general_settings[delivery_warning_days]">
+            <option value="1" <?php selected( $value, 1 ); ?>>1日</option>
+            <option value="3" <?php selected( $value, 3 ); ?>>3日</option>
+            <option value="7" <?php selected( $value, 7 ); ?>>7日</option>
+            <option value="14" <?php selected( $value, 14 ); ?>>14日</option>
+            <option value="30" <?php selected( $value, 30 ); ?>>30日</option>
+        </select>
+        <div style="font-size:12px;color:#555;margin-top:4px;">
+            <?php echo esc_html__( '※ 納期警告日数を設定してください。', 'ktpwp' ); ?>
         </div>
         <?php
     }

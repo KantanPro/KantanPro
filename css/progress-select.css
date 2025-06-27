@@ -162,3 +162,75 @@ li.ktp_work_list_item {
   padding: 5px;
   font-size: 14px;
 }
+
+/* 納期警告マークのスタイル */
+.delivery-warning-mark {
+  display: inline-block;
+  background-color: #f44336;
+  color: white;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  line-height: 16px;
+  text-align: center;
+  font-size: 10px;
+  font-weight: bold;
+  margin-left: 4px;
+  position: relative;
+  top: -8px;
+  right: -8px;
+  animation: pulse-warning 2s infinite;
+}
+
+/* 警告マークのパルスアニメーション */
+@keyframes pulse-warning {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* 進捗ボタン内の警告マークの位置調整 */
+.progress-btn {
+  position: relative;
+}
+
+.progress-btn .delivery-warning-mark {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  z-index: 10;
+}
+
+/* 納期入力フィールドのラッパー */
+.delivery-input-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+/* 各行の納期警告マークのスタイル */
+.delivery-warning-mark-row {
+  display: inline-block;
+  background-color: #f44336;
+  color: white;
+  border-radius: 50%;
+  width: 14px;
+  height: 14px;
+  line-height: 14px;
+  text-align: center;
+  font-size: 9px;
+  font-weight: bold;
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  z-index: 10;
+  animation: pulse-warning 2s infinite;
+}
