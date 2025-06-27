@@ -166,12 +166,78 @@
   .order-header-title-id {
     font-size: 1em;
     gap: 4px;
+    flex-direction: column;
+    align-items: flex-start;
+    white-space: normal;
   }
   .order-header-projectname {
     min-width: 40px;
     max-width: 100%;
     width: 100%;
-    margin-left: 4px;
+    margin-left: 0;
+    margin-top: 4px;
+  }
+  .delivery-dates-container {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 6px !important;
+    margin-left: 0 !important;
+    width: 100%;
+  }
+  .date-field {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 2px !important;
+    width: 100%;
+  }
+  .order-header-progress-form {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 4px !important;
+    margin-left: 0 !important;
+    width: 100%;
+  }
+}
+
+@media (max-width: 767px) {
+  .order-header-flex {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  .order-header-title-id {
+    font-size: 1em;
+    gap: 4px;
+    flex-direction: column;
+    align-items: flex-start;
+    white-space: normal;
+  }
+  .order-header-projectname {
+    min-width: 40px;
+    max-width: 100%;
+    width: 100%;
+    margin-left: 0;
+    margin-top: 4px;
+  }
+  .delivery-dates-container {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 6px !important;
+    margin-left: 0 !important;
+    width: 100%;
+  }
+  .date-field {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 2px !important;
+    width: 100%;
+  }
+  .order-header-progress-form {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 4px !important;
+    margin-left: 0 !important;
+    width: 100%;
   }
 }
 
