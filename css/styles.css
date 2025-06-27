@@ -986,9 +986,11 @@ form > .create-order-btn {
   align-items: center;
   flex-wrap: wrap;
   gap: 8px;
-  flex: 0 0 50%; /* PC表示では固定幅50% */
+  flex: 1; /* PC表示では利用可能な幅いっぱいに拡張 */
   min-width: 200px;
-  max-width: 50%; /* PC表示ではヘッダー全体の半分に制限 */
+  max-width: 100%; /* PC表示では親要素の幅いっぱいに制限 */
+  justify-content: flex-start; /* PC表示では左寄せ */
+  margin-right: auto; /* 左寄せを確実にする */
 }
 
 .ktp_header .header-logo {
@@ -1028,7 +1030,6 @@ form > .create-order-btn {
   flex-shrink: 0;
   min-width: 120px;
   max-width: none; /* PC表示では制限なし */
-  margin-left: auto; /* 右寄せ */
 }
 
 /* ==========================================================================
@@ -1042,14 +1043,15 @@ form > .create-order-btn {
   
   .ktp_header .logo-and-system-info {
     min-width: 180px;
-    max-width: 50%; /* タブレットでも50%に制限 */
-    flex: 0 0 50%;
+    max-width: 100%; /* タブレットでも親要素の幅いっぱいに制限 */
+    flex: 1; /* 利用可能な幅いっぱいに拡張 */
+    justify-content: flex-start; /* タブレットでも左寄せ */
+    margin-right: auto; /* 左寄せを確実にする */
   }
   
   .ktp_header > *:not(.logo-and-system-info) {
     min-width: 120px;
     max-width: none;
-    margin-left: auto;
   }
 }
 
