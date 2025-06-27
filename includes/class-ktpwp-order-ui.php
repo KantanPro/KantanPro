@@ -103,6 +103,7 @@ class KTPWP_Order_UI {
         $html .= '<input type="hidden" name="order_id" value="' . intval( $order_id ) . '" />';
         $html .= '<input type="hidden" name="save_invoice_items" value="1" />';
         $html .= wp_nonce_field( 'save_invoice_items_action', 'invoice_items_nonce', true, false );
+        $html .= '<div class="invoice-items-scroll-wrapper">';
         $html .= '<table class="invoice-items-table" id="invoice-items-table-' . intval( $order_id ) . '">';
         $html .= '<thead>';
         $html .= '<tr>';
@@ -177,6 +178,7 @@ class KTPWP_Order_UI {
 
         $html .= '</tbody>';
         $html .= '</table>';
+        $html .= '</div>'; // invoice-items-scroll-wrapper
 
         // Total amount display (rounded up)
         $total_amount_ceiled = ceil($total_amount);
@@ -243,6 +245,7 @@ class KTPWP_Order_UI {
         $html .= '<input type="hidden" name="order_id" value="' . intval( $order_id ) . '" />';
         $html .= '<input type="hidden" name="save_cost_items" value="1" />';
         $html .= wp_nonce_field( 'save_cost_items_action', 'cost_items_nonce', true, false );
+        $html .= '<div class="cost-items-scroll-wrapper">';
         $html .= '<table class="cost-items-table" id="cost-items-table-' . intval( $order_id ) . '">';
         $html .= '<thead>';
         $html .= '<tr>';
@@ -317,6 +320,7 @@ class KTPWP_Order_UI {
 
         $html .= '</tbody>';
         $html .= '</table>';
+        $html .= '</div>'; // cost-items-scroll-wrapper
 
         // Profit calculation similar to invoice items
         $invoice_items = $order_items->get_invoice_items( $order_id );

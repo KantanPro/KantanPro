@@ -3183,3 +3183,20 @@ body.ktpwp-modal-open {
     border-color: #d32f2f;
     box-shadow: 0 0 0 2px rgba(244, 67, 54, 0.2);
 }
+
+/* --- モバイル横スクロール対応: コスト・請求テーブル --- */
+@media (max-width: 768px) {
+  .cost-items-scroll-wrapper,
+  .invoice-items-scroll-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    white-space: nowrap;
+    margin-bottom: 12px;
+  }
+  .cost-items-scroll-wrapper .cost-items-table,
+  .invoice-items-scroll-wrapper .invoice-items-table {
+    min-width: 600px;
+    width: max-content;
+  }
+}
