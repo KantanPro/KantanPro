@@ -751,9 +751,9 @@ function KTPWP_Index(){
                 . '</div>'
                 . '</div>'
                 . '</div>'
-                . '<div style="margin-left: auto; display: flex; align-items: center;">'
-                . $logged_in_users_html
-                . $navigation_links
+                . '<div class="header-right-section">'
+                . '<div class="navigation-links">' . $navigation_links . '</div>'
+                . '<div class="user-avatars-section">' . $logged_in_users_html . '</div>'
                 . '</div>'
                 . '</div>';
             $tab_name = isset($_GET['tab_name']) ? $_GET['tab_name'] : 'default_tab'; // URLパラメータからtab_nameを取得

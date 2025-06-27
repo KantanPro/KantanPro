@@ -354,6 +354,22 @@
     flex-wrap: wrap;
 }
 
+/* PC・タブレット表示用：ヘッダー内のユーザーアバター */
+.ktp_header .user-avatars-section .logged-in-staff-avatars {
+    gap: 4px;
+    margin-top: 4px;
+}
+
+.ktp_header .user-avatars-section .user_icon {
+    margin-right: 0;
+    transition: all 0.3s ease;
+}
+
+.ktp_header .user-avatars-section .user_icon:hover {
+    transform: scale(1.05);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
 /* レスポンシブ対応 */
 @media (max-width: 768px) {
     .user_icon {
@@ -364,6 +380,11 @@
     
     .logged-in-staff-avatars {
         gap: 2px;
+    }
+    
+    .ktp_header .user-avatars-section .logged-in-staff-avatars {
+        gap: 3px;
+        margin-top: 2px;
     }
 }
 
@@ -376,6 +397,11 @@
     
     .logged-in-staff-avatars {
         gap: 1px;
+    }
+    
+    .ktp_header .user-avatars-section .logged-in-staff-avatars {
+        gap: 2px;
+        margin-top: 1px;
     }
 }
 
@@ -980,6 +1006,60 @@ form > .create-order-btn {
   min-height: fit-content;
 }
 
+/* PC・タブレット表示用：ヘッダー右側セクション */
+.ktp_header .header-right-section {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  margin-left: auto;
+  min-width: 120px;
+}
+
+/* PC・タブレット表示用：ナビゲーションリンク */
+.ktp_header .navigation-links {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+/* PC・タブレット表示用：ナビゲーションリンク内の要素 */
+.ktp_header .navigation-links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #0073aa;
+  text-decoration: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  font-size: 14px;
+}
+
+.ktp_header .navigation-links a:hover {
+  background-color: rgba(0, 115, 170, 0.1);
+  color: #005a87;
+}
+
+.ktp_header .navigation-links a:focus {
+  outline: 2px solid rgba(0, 115, 170, 0.3);
+  outline-offset: 2px;
+}
+
+/* ヘルプボタンの特別なスタイル */
+.ktp_header .navigation-links .ktpwp-reference-link {
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  font-weight: 500;
+}
+
+.ktp_header .navigation-links .ktpwp-reference-link:hover {
+  background-color: #e9ecef;
+  border-color: #0073aa;
+}
+
 /* PC表示用：システム情報エリア（ヘッダー全体の半分） */
 .ktp_header .logo-and-system-info {
   display: flex;
@@ -1049,6 +1129,11 @@ form > .create-order-btn {
     margin-right: auto; /* 左寄せを確実にする */
   }
   
+  .ktp_header .header-right-section {
+    min-width: 120px;
+    max-width: none;
+  }
+  
   .ktp_header > *:not(.logo-and-system-info) {
     min-width: 120px;
     max-width: none;
@@ -1078,6 +1163,26 @@ form > .create-order-btn {
   .ktp_header .system-info {
     margin-left: 0;
     margin-top: 8px;
+  }
+  
+  /* モバイル時は右側の要素も縦並び */
+  .ktp_header .header-right-section {
+    width: 100%;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    margin-left: 0;
+    min-width: 0;
+    max-width: 100%;
+  }
+  
+  .ktp_header .navigation-links {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+  
+  .ktp_header .user-avatars-section {
+    justify-content: flex-end;
   }
   
   /* モバイル時は右側の要素も縦並び */
@@ -3571,4 +3676,12 @@ body.ktpwp-modal-open {
 /* 職能リストタイトル内のソートドロップダウンを右寄せに */
 .data_skill_list_title .sort-dropdown {
   margin-left: auto !important;
+}
+
+/* PC・タブレット表示用：ユーザーアバターセクション */
+.ktp_header .user-avatars-section {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
 }

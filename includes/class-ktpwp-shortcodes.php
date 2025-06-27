@@ -151,15 +151,15 @@ class KTPWP_Shortcodes {
         $logged_in_users_html = $this->get_logged_in_users_display();
         $navigation_links = $this->get_navigation_links();
 
-        // ヘッダーHTML構築
+        // ヘッダーHTML構築（PC・タブレット表示用）
         $header_html = '<div class="ktp_header">';
         $header_html .= '<div class="parent">';
         $header_html .= '<div class="title">' . $icon_img . $plugin_name . '</div>';
         $header_html .= '<div class="version">v' . $plugin_version . '</div>';
         $header_html .= '</div>';
-        $header_html .= '<div style="margin-left: auto; display: flex; align-items: center;">';
-        $header_html .= $logged_in_users_html;
-        $header_html .= $navigation_links;
+        $header_html .= '<div class="header-right-section">';
+        $header_html .= '<div class="navigation-links">' . $navigation_links . '</div>';
+        $header_html .= '<div class="user-avatars-section">' . $logged_in_users_html . '</div>';
         $header_html .= '</div>';
         $header_html .= '</div>';
 
