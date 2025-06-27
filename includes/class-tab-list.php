@@ -148,6 +148,10 @@ class Kantan_List_Class {
                 $customer_name = esc_html($order->customer_name);
                 $user_name = esc_html($order->user_name);
                 $project_name = isset($order->project_name) ? esc_html($order->project_name) : '';
+                
+                // 納期フィールドの値を取得（希望納期は削除、納品予定日のみ）
+                $expected_delivery_date = isset($order->expected_delivery_date) ? $order->expected_delivery_date : '';
+                
                 // 日時フォーマット変換
                 $raw_time = $order->time;
                 $formatted_time = '';
@@ -182,6 +186,13 @@ class Kantan_List_Class {
                     $content .= " - <span class='project_name'>{$project_name}</span>";
                 }
                 $content .= " - {$time}</a>";
+                
+                // 納期フィールドを追加（希望納期は削除、納品予定日のみ）
+                $content .= "<div class='delivery-dates-container'>";
+                $content .= "<span class='delivery-label'>納期</span>";
+                $content .= "<input type='date' name='expected_delivery_date_{$order_id}' value='{$expected_delivery_date}' class='delivery-date-input' data-order-id='{$order_id}' data-field='expected_delivery_date' placeholder='納品予定日' title='納品予定日'>";
+                $content .= "</div>";
+                
                 $content .= "<form method='post' action='' style='margin: 0px 0 0px 0;display:inline;'>";
                 $content .= "<input type='hidden' name='update_progress_id' value='{$order_id}' />";
                 $content .= "<select name='update_progress' class='progress-select status-{$progress}' onchange='this.form.submit()'>";
@@ -219,6 +230,9 @@ class Kantan_List_Class {
         }
         $content .= '</div>'; // .ktp_work_list_box 終了
         // --- ここまでラッパー追加 ---
+
+        // 納期フィールドのJavaScriptファイルを読み込み
+        wp_enqueue_script('ktp-delivery-dates');
 
         return $content;
     }

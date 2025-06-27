@@ -125,6 +125,11 @@ class KTPWP_Ajax {
         add_action('wp_ajax_ktp_save_delivery_date', array($this, 'ajax_save_delivery_date'));
         add_action('wp_ajax_nopriv_ktp_save_delivery_date', array($this, 'ajax_require_login')); // 非ログインユーザーはエラー
         $this->registered_handlers[] = 'ktp_save_delivery_date';
+
+        // 納期フィールド更新
+        add_action('wp_ajax_ktp_update_delivery_date', array($this, 'ajax_update_delivery_date'));
+        add_action('wp_ajax_nopriv_ktp_update_delivery_date', array($this, 'ajax_require_login')); // 非ログインユーザーはエラー
+        $this->registered_handlers[] = 'ktp_update_delivery_date';
     }
 
     /**
@@ -267,6 +272,14 @@ class KTPWP_Ajax {
         if (isset($wp_scripts->registered['ktp-order-inline-projectname']) && current_user_can('manage_options')) {
             wp_add_inline_script('ktp-order-inline-projectname', 'var ktpwp_inline_edit_nonce = ' . json_encode(array(
                 'nonce' => $ajax_data['nonces']['project_name']
+            )) . ';');
+        }
+
+        // 納期フィールド用のAjax設定
+        if (isset($wp_scripts->registered['ktp-delivery-dates'])) {
+            wp_add_inline_script('ktp-delivery-dates', 'var ktp_ajax = ' . json_encode(array(
+                'ajax_url' => $ajax_data['ajax_url'],
+                'nonce' => $ajax_data['nonces']['auto_save']
             )) . ';');
         }
     }
@@ -2075,5 +2088,72 @@ class KTPWP_Ajax {
                 'message' => $e->getMessage()
             ));
         }
+    }
+
+    /**
+     * 納期フィールドの更新処理
+     */
+    public function ajax_update_delivery_date() {
+        // 権限チェック
+        if (!current_user_can('edit_posts') && !current_user_can('ktpwp_access')) {
+            wp_send_json_error(__('この操作を行う権限がありません。', 'ktpwp'));
+            return;
+        }
+
+        // nonce検証
+        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'ktp_ajax_nonce')) {
+            wp_send_json_error(__('セキュリティ検証に失敗しました', 'ktpwp'));
+            return;
+        }
+
+        // POSTデータの取得とサニタイズ
+        $order_id = $this->sanitize_ajax_input('order_id', 'int');
+        $field = $this->sanitize_ajax_input('field', 'text');
+        $value = $this->sanitize_ajax_input('value', 'text');
+
+        // バリデーション
+        if ($order_id <= 0) {
+            wp_send_json_error(__('無効な受注IDです', 'ktpwp'));
+            return;
+        }
+
+        // フィールド名の検証
+        $allowed_fields = array('expected_delivery_date');
+        if (!in_array($field, $allowed_fields)) {
+            wp_send_json_error(__('無効なフィールド名です', 'ktpwp'));
+            return;
+        }
+
+        // 日付形式の検証（空の場合は許可）
+        if (!empty($value)) {
+            $date_obj = DateTime::createFromFormat('Y-m-d', $value);
+            if (!$date_obj || $date_obj->format('Y-m-d') !== $value) {
+                wp_send_json_error(__('無効な日付形式です', 'ktpwp'));
+                return;
+            }
+        }
+
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'ktp_order';
+
+        // データベース更新
+        $result = $wpdb->update(
+            $table_name,
+            array($field => $value),
+            array('id' => $order_id),
+            array('%s'),
+            array('%d')
+        );
+
+        if ($result === false) {
+            wp_send_json_error(__('データベースの更新に失敗しました', 'ktpwp'));
+            return;
+        }
+
+        wp_send_json_success(array(
+            'message' => __('納期を更新しました', 'ktpwp'),
+            'field' => $field,
+            'value' => $value
+        ));
     }
 }

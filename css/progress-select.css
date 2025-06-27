@@ -1,5 +1,46 @@
 /* 既存のスタイル */
 
+/* 納期フィールド用のスタイル */
+.delivery-dates-container {
+  display: flex;
+  gap: 8px;
+  margin-left: 8px;
+  align-items: center;
+}
+
+.delivery-label {
+  font-size: 12px;
+  font-weight: bold;
+  color: #333;
+  white-space: nowrap;
+  margin-right: 4px;
+}
+
+.delivery-date-input {
+  font-size: 12px;
+  padding: 4px 6px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background-color: #fff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 110px;
+  height: 28px;
+  vertical-align: middle;
+  line-height: 1;
+}
+
+.delivery-date-input:hover {
+  border-color: #bbb;
+  background-color: #f9f9f9;
+}
+
+.delivery-date-input:focus {
+  outline: none;
+  border-color: #1976d2;
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
+}
+
 /* 仕事リストの進捗プルダウン用スタイル */
 .progress-select {
   font-size: 13px;
@@ -74,6 +115,7 @@ li.ktp_work_list_item {
   justify-content: space-between;
   background-color: #f9f9f9;
   font-size: 14px;
+  flex-wrap: wrap;
 }
 
 /* リンクのスタイル - シンプル版 */
@@ -93,9 +135,19 @@ li.ktp_work_list_item {
   color: #0277bd;
 }
 
-/* 仕事リストの進捗プルダウンを右寄せ */
+/* 納期フィールドと進捗プルダウンのコンテナ */
+.ktp_work_list_item .delivery-dates-container,
 .ktp_work_list_item form {
   margin-left: auto;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 仕事リストの進捗プルダウンを右寄せ */
+.ktp_work_list_item form {
+  margin-left: 8px;
   flex-shrink: 0;
 }
 
