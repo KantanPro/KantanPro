@@ -3,7 +3,7 @@
  * Plugin Name: KantanPro
  * Plugin URI: https://www.kantanpro.com/
  * Description: 包括的なビジネス管理プラグイン。ショートコード[ktpwp_all_tab]で7つのタブ（仕事リスト・伝票処理・得意先・サービス・協力会社・レポート・設定）による完全なワークフロー管理を実現。
- * Version: 1.2.0(beta)
+ * Version: 1.2.1(beta)
  * Author: KantanPro
  * Author URI: https://www.kantanpro.com/developer-profile/
  * License: GPL v2 or later
@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // プラグイン定数定義
 if ( ! defined( 'KANTANPRO_PLUGIN_VERSION' ) ) {
-    define( 'KANTANPRO_PLUGIN_VERSION', '1.2.0(beta)' );
+    define( 'KANTANPRO_PLUGIN_VERSION', '1.2.1(beta)' );
 }
 if ( ! defined( 'KANTANPRO_PLUGIN_NAME' ) ) {
     define( 'KANTANPRO_PLUGIN_NAME', 'KantanPro' );
@@ -567,6 +567,25 @@ function ktp_table_setup() {
             $supplier = new Kantan_Supplier_Class();
             $supplier->Create_Table('supplier');
         }
+        
+    // 新しい受注書テーブル作成処理
+    if (class_exists('KTPWP_Order')) {
+        $order_manager = KTPWP_Order::get_instance();
+        $order_manager->create_order_table();
+    }
+    
+    // 受注書関連テーブル作成処理
+    if (class_exists('KTPWP_Order_Items')) {
+        $order_items = KTPWP_Order_Items::get_instance();
+        $order_items->create_invoice_items_table();
+        $order_items->create_cost_items_table();
+    }
+    
+    // スタッフチャットテーブル作成処理
+    if (class_exists('KTPWP_Staff_Chat')) {
+        $staff_chat = KTPWP_Staff_Chat::get_instance();
+        $staff_chat->create_table();
+    }
 }
 register_activation_hook(KANTANPRO_PLUGIN_FILE, 'ktp_table_setup'); // テーブル作成処理
 register_activation_hook(KANTANPRO_PLUGIN_FILE, array('KTP_Settings', 'activate')); // 設定クラスのアクティベート処理

@@ -115,6 +115,16 @@ class KTPWP_Ajax {
         add_action('wp_ajax_ktp_get_order_preview', array($this, 'get_order_preview'));
         add_action('wp_ajax_nopriv_ktp_get_order_preview', array($this, 'ajax_require_login'));
         $this->registered_handlers[] = 'ktp_get_order_preview';
+
+        // アイテム並び順更新
+        add_action('wp_ajax_ktp_update_item_order', array($this, 'ajax_update_item_order'));
+        add_action('wp_ajax_nopriv_ktp_update_item_order', array($this, 'ajax_require_login')); // 非ログインユーザーはエラー
+        $this->registered_handlers[] = 'ktp_update_item_order';
+
+        // 納期フィールド保存
+        add_action('wp_ajax_ktp_save_delivery_date', array($this, 'ajax_save_delivery_date'));
+        add_action('wp_ajax_nopriv_ktp_save_delivery_date', array($this, 'ajax_require_login')); // 非ログインユーザーはエラー
+        $this->registered_handlers[] = 'ktp_save_delivery_date';
     }
 
     /**
@@ -232,6 +242,7 @@ class KTPWP_Ajax {
             wp_add_inline_script('ktp-js', 'var ktp_ajax_object = ' . json_encode($ajax_data) . ';');
             wp_add_inline_script('ktp-js', 'var ktpwp_ajax = ' . json_encode($ajax_data) . ';');
             wp_add_inline_script('ktp-js', 'var ajaxurl = ' . json_encode($ajax_data['ajax_url']) . ';');
+            wp_add_inline_script('ktp-js', 'var ktpwp_ajax_nonce = ' . json_encode($ajax_data['nonces']['general']) . ';');
         }
 
         if (isset($wp_scripts->registered['ktp-invoice-items'])) {
@@ -415,6 +426,12 @@ class KTPWP_Ajax {
         foreach ($nonce_fields as $field) {
             if (isset($_POST[$field])) {
                 $nonce_value = $_POST[$field];
+                
+                // 配列の場合はvalueキーを取得
+                if (is_array($nonce_value) && isset($nonce_value['value'])) {
+                    $nonce_value = $nonce_value['value'];
+                }
+                
                 if (wp_verify_nonce($nonce_value, 'ktp_ajax_nonce')) {
                     $nonce_verified = true;
                     error_log("[AJAX_AUTO_SAVE] Nonce verified with field: {$field}");
@@ -507,6 +524,12 @@ class KTPWP_Ajax {
         foreach ($nonce_fields as $field) {
             if (isset($_POST[$field])) {
                 $nonce_value = $_POST[$field];
+                
+                // 配列の場合はvalueキーを取得
+                if (is_array($nonce_value) && isset($nonce_value['value'])) {
+                    $nonce_value = $nonce_value['value'];
+                }
+                
                 if (wp_verify_nonce($nonce_value, 'ktp_ajax_nonce')) {
                     $nonce_verified = true;
                     error_log("[AJAX_CREATE_NEW_ITEM] Nonce verified with field: {$field}");
@@ -600,6 +623,12 @@ class KTPWP_Ajax {
         foreach ($nonce_fields as $field) {
             if (isset($_POST[$field])) {
                 $nonce_value = $_POST[$field];
+                
+                // 配列の場合はvalueキーを取得
+                if (is_array($nonce_value) && isset($nonce_value['value'])) {
+                    $nonce_value = $nonce_value['value'];
+                }
+                
                 if (wp_verify_nonce($nonce_value, 'ktp_ajax_nonce')) {
                     $nonce_verified = true;
                     error_log("[AJAX_DELETE_ITEM] Nonce verified with field: {$field}");
@@ -701,7 +730,14 @@ class KTPWP_Ajax {
         $nonce_fields = ['nonce', 'ktp_ajax_nonce', '_ajax_nonce', '_wpnonce'];
         foreach ($nonce_fields as $field) {
             if (isset($_POST[$field])) {
-                $nonce_value = sanitize_text_field($_POST[$field]);
+                $nonce_value = $_POST[$field];
+                
+                // 配列の場合はvalueキーを取得
+                if (is_array($nonce_value) && isset($nonce_value['value'])) {
+                    $nonce_value = $nonce_value['value'];
+                }
+                
+                $nonce_value = sanitize_text_field($nonce_value);
                 if (wp_verify_nonce($nonce_value, 'ktp_ajax_nonce')) {
                     $nonce_verified = true;
                     $verified_field = $field;
@@ -1903,6 +1939,141 @@ class KTPWP_Ajax {
             case 'text':
             default:
                 return sanitize_text_field($value);
+        }
+    }
+
+    /**
+     * 納期フィールドの保存処理
+     */
+    public function ajax_save_delivery_date() {
+        try {
+            // デバッグ情報をログに出力
+            error_log('KTPWP Ajax save_delivery_date called with POST data: ' . print_r($_POST, true));
+            
+            // パラメータ取得
+            $order_id = isset($_POST['order_id']) ? absint($_POST['order_id']) : 0;
+            $field_name = isset($_POST['field_name']) ? sanitize_text_field($_POST['field_name']) : '';
+            $field_value = isset($_POST['field_value']) ? sanitize_text_field($_POST['field_value']) : '';
+
+            if ($order_id <= 0) {
+                throw new Exception('無効な受注書IDです。');
+            }
+            
+            // データベース接続のデバッグ情報を最初に出力
+            global $wpdb;
+            $table_name = $wpdb->prefix . 'ktp_order';
+            error_log('KTPWP Ajax: Table name = ' . $table_name);
+            error_log('KTPWP Ajax: wpdb->prefix = ' . $wpdb->prefix);
+            
+            // テーブルの存在確認
+            $table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$table_name}'");
+            error_log('KTPWP Ajax: Table exists = ' . ($table_exists ? 'YES' : 'NO'));
+            
+            // テーブル構造の確認
+            $columns = $wpdb->get_results("DESCRIBE `{$table_name}`");
+            error_log('KTPWP Ajax: Table columns = ' . print_r($columns, true));
+            
+            // 納期カラムの存在確認と追加
+            $column_names = array();
+            foreach ($columns as $column) {
+                $column_names[] = $column->Field;
+            }
+            
+            $delivery_columns = array('desired_delivery_date', 'expected_delivery_date');
+            foreach ($delivery_columns as $delivery_column) {
+                if (!in_array($delivery_column, $column_names)) {
+                    error_log('KTPWP Ajax: Adding missing column: ' . $delivery_column);
+                    $wpdb->query("ALTER TABLE `{$table_name}` ADD COLUMN `{$delivery_column}` DATE NULL");
+                    error_log('KTPWP Ajax: Column added: ' . $delivery_column);
+                }
+            }
+            
+            // 受注書の存在確認
+            $order_exists = $wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(*) FROM `{$table_name}` WHERE id = %d",
+                $order_id
+            ));
+
+            if (!$order_exists) {
+                throw new Exception('受注書が見つかりません。');
+            }
+            
+            // セキュリティチェック - 複数のnonce名を試行
+            $nonce_verified = false;
+            $nonce_names = array('ktp_ajax_nonce', 'ktpwp_ajax_nonce', 'nonce');
+            
+            foreach ($nonce_names as $nonce_name) {
+                if (isset($_POST[$nonce_name])) {
+                    $nonce_value = $_POST[$nonce_name];
+                    
+                    // 配列の場合はvalueキーを取得
+                    if (is_array($nonce_value) && isset($nonce_value['value'])) {
+                        $nonce_value = $nonce_value['value'];
+                    }
+                    
+                    error_log('KTPWP Ajax: Found nonce field: ' . $nonce_name . ' = ' . $nonce_value);
+                    if (wp_verify_nonce($nonce_value, 'ktp_ajax_nonce')) {
+                        $nonce_verified = true;
+                        error_log('KTPWP Ajax: Nonce verified with field: ' . $nonce_name);
+                        break;
+                    } else {
+                        error_log('KTPWP Ajax: Nonce verification failed for field: ' . $nonce_name);
+                    }
+                } else {
+                    error_log('KTPWP Ajax: Nonce field not found: ' . $nonce_name);
+                }
+            }
+            
+            if (!$nonce_verified) {
+                error_log('KTPWP Ajax: Nonce verification failed. Available fields: ' . implode(', ', array_keys($_POST)));
+                throw new Exception('セキュリティ検証に失敗しました。');
+            }
+
+            // 権限チェック
+            if (!current_user_can('edit_posts') && !current_user_can('ktpwp_access')) {
+                throw new Exception('権限がありません。');
+            }
+
+            // フィールド名の検証
+            $allowed_fields = array('desired_delivery_date', 'expected_delivery_date');
+            if (!in_array($field_name, $allowed_fields)) {
+                throw new Exception('無効なフィールド名です。');
+            }
+
+            // 日付形式の検証
+            if (!empty($field_value)) {
+                $date_obj = DateTime::createFromFormat('Y-m-d', $field_value);
+                if (!$date_obj || $date_obj->format('Y-m-d') !== $field_value) {
+                    throw new Exception('無効な日付形式です。');
+                }
+            }
+
+            // データベース更新
+            $update_data = array($field_name => $field_value);
+            $result = $wpdb->update(
+                $table_name,
+                $update_data,
+                array('id' => $order_id),
+                array('%s'),
+                array('%d')
+            );
+
+            if ($result === false) {
+                throw new Exception('データベースの更新に失敗しました: ' . $wpdb->last_error);
+            }
+
+            wp_send_json_success(array(
+                'message' => '納期が正常に保存されました。',
+                'order_id' => $order_id,
+                'field_name' => $field_name,
+                'field_value' => $field_value
+            ));
+
+        } catch (Exception $e) {
+            error_log('KTPWP Ajax save_delivery_date Error: ' . $e->getMessage());
+            wp_send_json_error(array(
+                'message' => $e->getMessage()
+            ));
         }
     }
 }

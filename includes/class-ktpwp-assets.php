@@ -252,6 +252,17 @@ class KTPWP_Assets {
                 'in_footer' => true,
                 'admin'     => false,
             ),
+            'ktp-delivery-dates' => array(
+                'src'       => 'js/ktp-delivery-dates.js',
+                'deps'      => array( 'jquery' ),
+                'ver'       => KTPWP_PLUGIN_VERSION,
+                'in_footer' => true,
+                'admin'     => false,
+                'localize'  => array(
+                    'object' => 'ktp_ajax_nonce',
+                    'data'   => wp_create_nonce( 'ktp_ajax_nonce' ),
+                ),
+            ),
             // 'ktp-skills-list-effects' => array(
             //     'src'       => 'js/skills-list-effects.js',
             //     'deps'      => array( 'jquery' ),

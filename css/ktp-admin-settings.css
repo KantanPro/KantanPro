@@ -272,3 +272,67 @@
     border: 2px dashed #dee2e6 !important;
     height: 40px;
 }
+
+/* 納期フィールドのスタイル */
+.delivery-dates-container {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-left: 20px;
+    flex-wrap: wrap;
+}
+
+.date-field {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.date-field label {
+    white-space: nowrap;
+    font-size: 12px;
+    font-weight: bold;
+    color: #333;
+}
+
+.delivery-date-input {
+    font-size: 12px;
+    padding: 4px 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: #fff;
+    transition: border-color 0.3s ease, background-color 0.3s ease;
+}
+
+.delivery-date-input:focus {
+    outline: none;
+    border-color: #007cba;
+    box-shadow: 0 0 0 1px rgba(0, 124, 186, 0.2);
+}
+
+.delivery-date-input:hover {
+    border-color: #007cba;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+    .delivery-dates-container {
+        margin-left: 10px;
+        gap: 10px;
+    }
+    
+    .date-field {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
+    }
+    
+    .date-field label {
+        font-size: 11px;
+    }
+    
+    .delivery-date-input {
+        font-size: 11px;
+        padding: 3px 6px;
+    }
+}

@@ -1169,6 +1169,22 @@ $content .= '<div class="order-header-flex order-header-inline-summary">';
 $content .= '<span class="order-header-title-id">■ 受注書概要（ID: ' . esc_html($order_data->id) . '）'
     . '<input type="text" class="order_project_name_inline order-header-projectname" name="order_project_name_inline" value="' . (isset($order_data->project_name) ? esc_html($order_data->project_name) : '') . '" data-order-id="' . esc_html($order_data->id) . '" placeholder="案件名" autocomplete="off" />'
     . '</span>';
+
+// 希望納期と納品予定日のフィールドを追加
+$desired_delivery_date = isset($order_data->desired_delivery_date) ? $order_data->desired_delivery_date : '';
+$expected_delivery_date = isset($order_data->expected_delivery_date) ? $order_data->expected_delivery_date : '';
+
+$content .= '<div class="delivery-dates-container" style="display: flex; align-items: center; gap: 15px; margin-left: 20px;">';
+$content .= '<div class="date-field" style="display: flex; align-items: center; gap: 5px;">';
+$content .= '<label for="desired_delivery_date" style="white-space: nowrap; font-size: 12px; font-weight: bold; color: #333;">希望納期：</label>';
+$content .= '<input type="date" id="desired_delivery_date" name="desired_delivery_date" value="' . esc_attr($desired_delivery_date) . '" data-order-id="' . esc_attr($order_data->id) . '" class="delivery-date-input" style="font-size: 12px; padding: 4px 8px; border: 1px solid #ddd; border-radius: 4px;" />';
+$content .= '</div>';
+$content .= '<div class="date-field" style="display: flex; align-items: center; gap: 5px;">';
+$content .= '<label for="expected_delivery_date" style="white-space: nowrap; font-size: 12px; font-weight: bold; color: #333;">納品予定日：</label>';
+$content .= '<input type="date" id="expected_delivery_date" name="expected_delivery_date" value="' . esc_attr($expected_delivery_date) . '" data-order-id="' . esc_attr($order_data->id) . '" class="delivery-date-input" style="font-size: 12px; padding: 4px 8px; border: 1px solid #ddd; border-radius: 4px;" />';
+$content .= '</div>';
+$content .= '</div>';
+
 $content .= '<form method="post" action="" class="progress-filter order-header-progress-form" style="display:flex;align-items:center;gap:8px;flex-wrap:nowrap;margin-left:auto;">';
 $content .= '<input type="hidden" name="update_progress_id" value="' . esc_html($order_data->id) . '" />';
 // Add nonce for progress update
@@ -1181,7 +1197,6 @@ foreach ($progress_labels as $num => $label) {
 }
 $content .= '</select>';
 $content .= '</form>';
-$content .= '</div>';
                 // 顧客IDの表示を改善
                 $client_id_display = '';
                 if (!empty($order_data->client_id)) {
@@ -1368,6 +1383,9 @@ $content .= '</div>';
         // $content .= "</div>"; // .pagination 終了
 
         // デバッグログ追加
+
+        // 納期フィールドのJavaScriptファイルを読み込み
+        wp_enqueue_script('ktp-delivery-dates');
 
         return $content;
     } // End of Order_Tab_View method
@@ -1769,6 +1787,27 @@ $content .= '</div>';
         $html .= '<div class="document-content" style="margin-bottom: 20px; padding: 12px; background: #f9f9f9; border-left: 4px solid #007cba; font-size: 14px;">';
         $html .= sprintf($document_info['content'], '<strong>' . esc_html($project_name) . '</strong>');
         $html .= '</div>';
+
+        // 納期情報を追加
+        $desired_delivery_date = isset($order_data->desired_delivery_date) ? $order_data->desired_delivery_date : '';
+        $expected_delivery_date = isset($order_data->expected_delivery_date) ? $order_data->expected_delivery_date : '';
+        
+        if (!empty($desired_delivery_date) || !empty($expected_delivery_date)) {
+            $html .= '<div class="delivery-info" style="margin-bottom: 20px; padding: 10px; background: #f0f8ff; border: 1px solid #b3d9ff; border-radius: 4px; font-size: 13px;">';
+            $html .= '<div style="font-weight: bold; margin-bottom: 5px; color: #0066cc;">納期情報</div>';
+            
+            if (!empty($desired_delivery_date)) {
+                $formatted_desired = date('Y年m月d日', strtotime($desired_delivery_date));
+                $html .= '<div style="margin-bottom: 3px;"><strong>希望納期：</strong>' . esc_html($formatted_desired) . '</div>';
+            }
+            
+            if (!empty($expected_delivery_date)) {
+                $formatted_expected = date('Y年m月d日', strtotime($expected_delivery_date));
+                $html .= '<div><strong>納品予定日：</strong>' . esc_html($formatted_expected) . '</div>';
+            }
+            
+            $html .= '</div>';
+        }
 
         // 請求項目（メインコンテンツ）
         $html .= '<div class="invoice-items" style="margin-bottom: 20px;">';

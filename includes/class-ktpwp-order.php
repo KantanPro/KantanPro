@@ -73,24 +73,26 @@ class KTPWP_Order {
      */
     public function create_order_table() {
         global $wpdb;
-        $my_table_version = '1.2'; // バージョンアップ: company_nameカラム追加
+        $my_table_version = '2.0'; // バージョンアップ: 新しいテーブル構造
         $table_name = $wpdb->prefix . 'ktp_order';
         $charset_collate = $wpdb->get_charset_collate();
 
         $columns_def = array(
-            'id MEDIUMINT(9) NOT NULL AUTO_INCREMENT',
-            'time BIGINT(11) DEFAULT 0 NOT NULL',
-            'client_id MEDIUMINT(9) DEFAULT NULL',
-            'customer_name VARCHAR(100) NOT NULL',
-            'company_name VARCHAR(100) NOT NULL DEFAULT ""',
-            'user_name TINYTEXT',
-            'project_name VARCHAR(255)',
-            'progress TINYINT(1) NOT NULL DEFAULT 1',
-            'invoice_items TEXT',
-            'cost_items TEXT',
-            'memo TEXT',
-            'search_field TEXT',
-            'UNIQUE KEY id (id)'
+            'id int(11) NOT NULL AUTO_INCREMENT',
+            'order_number varchar(50) NOT NULL COMMENT "受注番号"',
+            'client_id int(11) NOT NULL COMMENT "クライアントID"',
+            'project_name varchar(255) NOT NULL COMMENT "プロジェクト名"',
+            'order_date date NOT NULL COMMENT "受注日"',
+            'desired_delivery_date date NULL DEFAULT NULL COMMENT "希望納期"',
+            'expected_delivery_date date NULL DEFAULT NULL COMMENT "納品予定日"',
+            'total_amount decimal(10,2) NOT NULL DEFAULT 0.00 COMMENT "合計金額"',
+            'status varchar(20) NOT NULL DEFAULT "pending" COMMENT "ステータス"',
+            'created_at timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT "作成日時"',
+            'updated_at timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT "更新日時"',
+            'PRIMARY KEY (id)',
+            'UNIQUE KEY order_number (order_number)',
+            'KEY client_id (client_id)',
+            'KEY order_date (order_date)'
         );
 
         // Check if table exists using prepared statement
@@ -100,7 +102,7 @@ class KTPWP_Order {
         ) );
 
         if ( $table_exists !== $table_name ) {
-            $sql = "CREATE TABLE `{$table_name}` (" . implode( ', ', $columns_def ) . ") {$charset_collate};";
+            $sql = "CREATE TABLE `{$table_name}` (" . implode( ', ', $columns_def ) . ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='受注書テーブル';";
             
             require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
             
@@ -121,6 +123,7 @@ class KTPWP_Order {
         } else {
             // Table exists, check for missing columns
             $existing_columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$table_name}`", 0 );
+            $def_column_names = array();
             
             foreach ( $columns_def as $def ) {
                 if ( preg_match( '/^([a-zA-Z0-9_]+)/', $def, $m ) ) {
@@ -130,7 +133,7 @@ class KTPWP_Order {
             
             foreach ( $def_column_names as $i => $col_name ) {
                 if ( ! in_array( $col_name, $existing_columns, true ) ) {
-                    if ( $col_name === 'UNIQUE' ) {
+                    if ( in_array( $col_name, array( 'PRIMARY', 'UNIQUE', 'KEY' ) ) ) {
                         continue;
                     }
                     $def = $columns_def[ $i ];
@@ -145,15 +148,15 @@ class KTPWP_Order {
             
             // Check and add UNIQUE KEY if not exists
             $indexes = $wpdb->get_results( "SHOW INDEX FROM `{$table_name}`" );
-            $has_unique_id = false;
+            $has_unique_order_number = false;
             foreach ( $indexes as $idx ) {
-                if ( $idx->Key_name === 'id' && $idx->Non_unique == 0 ) {
-                    $has_unique_id = true;
+                if ( $idx->Key_name === 'order_number' && $idx->Non_unique == 0 ) {
+                    $has_unique_order_number = true;
                     break;
                 }
             }
-            if ( ! $has_unique_id ) {
-                $wpdb->query( "ALTER TABLE `{$table_name}` ADD UNIQUE (id)" );
+            if ( ! $has_unique_order_number ) {
+                $wpdb->query( "ALTER TABLE `{$table_name}` ADD UNIQUE KEY order_number (order_number)" );
             }
             
             update_option( 'ktp_order_table_version', $my_table_version );
