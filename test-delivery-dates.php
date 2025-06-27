@@ -259,8 +259,32 @@ function testDeliveryWarning() {
     return shouldWarn;
 }
 
+// 進捗ボタン警告マークのテスト関数
+function testProgressButtonWarning() {
+    console.log('=== 進捗ボタン警告マークテスト ===');
+    
+    // 現在表示されている警告マークの数を取得
+    var warningCount = $('.ktp_work_list_item .delivery-warning-mark-row').length;
+    console.log('現在の警告マーク数:', warningCount);
+    
+    // 進捗ボタンの警告マークをチェック
+    var $progressButton = $('.progress-btn').filter(function() {
+        return $(this).text().indexOf('作成中') !== -1;
+    });
+    
+    var $buttonWarning = $progressButton.find('.delivery-warning-mark');
+    console.log('進捗ボタンの警告マーク:', $buttonWarning.length > 0 ? '表示中' : '非表示');
+    
+    // 警告マークの表示ロジックをテスト
+    var shouldShowButtonWarning = warningCount > 0;
+    console.log('ボタン警告マーク表示:', shouldShowButtonWarning ? 'YES' : 'NO');
+    
+    return shouldShowButtonWarning;
+}
+
 // テスト実行
 testDeliveryWarning();
+testProgressButtonWarning();
 ";
 
 echo "</script>";
@@ -271,9 +295,9 @@ echo "<h2>7. 実装完了確認</h2>";
 echo "<ul>";
 echo "<li>✅ データベースに納品予定日カラムが存在</li>";
 echo "<li>✅ 納期フィールドのAjax保存機能</li>";
-echo "<li>✅ 進捗ボタンの納期警告マーク</li>";
 echo "<li>✅ 各行の納期警告マーク</li>";
 echo "<li>✅ リアルタイム警告マーク更新</li>";
+echo "<li>✅ 進捗ボタンの動的警告マーク</li>";
 echo "<li>✅ 一般設定での警告日数設定</li>";
 echo "<li>✅ 納期警告の判定ロジック</li>";
 echo "</ul>";
@@ -283,8 +307,9 @@ echo "<ol>";
 echo "<li>WordPressダッシュボード > KantanPro > 一般設定で警告日数を設定</li>";
 echo "<li>受注書で納品予定日を設定</li>";
 echo "<li>進捗を「作成中」に設定</li>";
-echo "<li>納期が迫ると警告マークが表示される</li>";
-echo "<li>納期を変更するとリアルタイムで警告マークが更新される</li>";
+echo "<li>納期が迫ると各行に警告マークが表示される</li>";
+echo "<li>各行の警告マークがある場合のみ進捗ボタンに警告マークが表示される</li>";
+echo "<li>納期や進捗を変更するとリアルタイムで警告マークが更新される</li>";
 echo "</ol>";
 
 echo "<h3>リアルタイム機能:</h3>";
@@ -293,6 +318,7 @@ echo "<li>納期変更時に自動で警告マークが更新される</li>";
 echo "<li>進捗変更時に自動で警告マークが更新される</li>";
 echo "<li>今日現在で納期が迫っているかを自動判定</li>";
 echo "<li>設定された警告日数に基づいて判定</li>";
+echo "<li>現在表示されている行の警告マークに基づいて進捗ボタンの警告マークを表示</li>";
 echo "</ul>";
 
 echo "<p><strong>実装完了！</strong> 仕事リストで納期フィールドの動作を確認してください。</p>";

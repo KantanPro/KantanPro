@@ -104,6 +104,40 @@ jQuery(document).ready(function($) {
                 }
             }
         }
+        
+        // 進捗ボタンの警告マークを更新
+        updateProgressButtonWarning();
+    }
+
+    /**
+     * 進捗ボタンの警告マークを更新する関数
+     */
+    function updateProgressButtonWarning() {
+        // 現在表示されている「作成中」の行で警告マークがあるかチェック
+        var hasWarningInCurrentPage = $('.ktp_work_list_item .delivery-warning-mark-row').length > 0;
+        
+        // 進捗ボタンの警告マークを取得
+        var $progressButton = $('.progress-btn').filter(function() {
+            return $(this).text().indexOf('作成中') !== -1;
+        });
+        
+        var $existingButtonWarning = $progressButton.find('.delivery-warning-mark');
+        
+        if (hasWarningInCurrentPage) {
+            // 警告マークがある場合、ボタンにも警告マークを表示
+            if ($existingButtonWarning.length === 0) {
+                var warningCount = $('.ktp_work_list_item .delivery-warning-mark-row').length;
+                var buttonWarningMark = $('<span class="delivery-warning-mark" title="納期が迫っています（' + warningCount + '件）">!</span>');
+                $progressButton.append(buttonWarningMark);
+            } else {
+                // 既存の警告マークの件数を更新
+                var warningCount = $('.ktp_work_list_item .delivery-warning-mark-row').length;
+                $existingButtonWarning.attr('title', '納期が迫っています（' + warningCount + '件）');
+            }
+        } else {
+            // 警告マークがない場合、ボタンの警告マークを削除
+            $existingButtonWarning.remove();
+        }
     }
 
     // ページ読み込み時に既存の警告マークを更新
@@ -115,6 +149,9 @@ jQuery(document).ready(function($) {
                 updateWarningMark($input, value);
             }
         });
+        
+        // 進捗ボタンの警告マークも更新
+        updateProgressButtonWarning();
     }
 
     // ページ読み込み完了後に警告マークを更新
@@ -130,6 +167,9 @@ jQuery(document).ready(function($) {
         if ($deliveryInput.length > 0) {
             var deliveryDate = $deliveryInput.val();
             updateWarningMark($deliveryInput, deliveryDate);
+        } else {
+            // 納期フィールドがない場合でも進捗ボタンの警告マークを更新
+            updateProgressButtonWarning();
         }
     });
 

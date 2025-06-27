@@ -120,11 +120,8 @@ class Kantan_List_Class {
             $active = ( $selected_progress === $num ) ? 'style="font-weight:bold;background:#1976d2;color:#fff;"' : '';
             $btn_label = esc_html( $label ) . ' (' . $progress_counts[ $num ] . ')';
             
-            // 警告マークの追加（作成中で警告がある場合）
+            // 警告マークはJavaScriptで動的に管理するため、初期表示はしない
             $warning_mark = '';
-            if ($num == 3 && $progress_warnings[$num] > 0) {
-                $warning_mark = '<span class="delivery-warning-mark" title="納期が迫っています（' . $progress_warnings[$num] . '件）">!</span>';
-            }
             
             // $content .= '<a href="?tab_name=' . urlencode($tab_name) . '&progress=' . $num . '" class="progress-btn" '.$active.'>' . $btn_label . '</a>';
             $content .= '<a href="' . add_query_arg(array('tab_name' => $tab_name, 'progress' => $num)) . '" class="progress-btn" '.$active.'>' . $btn_label . $warning_mark . '</a>';
