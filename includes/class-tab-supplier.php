@@ -903,7 +903,7 @@ class KTPWP_Supplier_Class {
                 '</button>' .
                 '</form></div>';
                 
-            $current_id_message = '<div class="data_skill_list_title" style="display: flex; align-items: center; justify-content: space-between;">'
+            $current_id_message = '<div class="data_skill_list_title" style="display: flex; align-items: center;">'
                 . '<div style="display: flex; align-items: center; gap: 8px;">'
                 . '■ ' . esc_html($display_company_name) . '（ID: ' . esc_html($query_id) . '）の商品'
                 . '</div>'
