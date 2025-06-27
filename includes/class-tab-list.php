@@ -188,11 +188,20 @@ class Kantan_List_Class {
                     
                     // 納期が迫っているかチェック
                     $delivery_date = new DateTime($expected_delivery_date);
+                    $delivery_date->setTime(0, 0, 0); // 時間を00:00:00に設定
                     $today = new DateTime();
+                    $today->setTime(0, 0, 0); // 時間を00:00:00に設定
+                    
                     $diff = $today->diff($delivery_date);
                     $days_left = $diff->invert ? -$diff->days : $diff->days;
                     
                     $show_warning = $days_left <= $warning_days && $days_left >= 0;
+                    
+                    // デバッグ情報（開発時のみ）
+                    if (defined('WP_DEBUG') && WP_DEBUG) {
+                        $debug_msg = "納期警告判定: 今日=" . $today->format('Y-m-d') . ", 納期=" . $delivery_date->format('Y-m-d') . ", 残り日数=" . $days_left . ", 警告日数=" . $warning_days . ", 表示=" . ($show_warning ? 'YES' : 'NO');
+                        error_log($debug_msg);
+                    }
                 }
                 
                 // 日時フォーマット変換

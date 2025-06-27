@@ -239,20 +239,21 @@ function testDeliveryWarning() {
     
     // 今日の日付
     var today = new Date();
+    today.setHours(0, 0, 0, 0);
     console.log('今日:', today.toISOString().split('T')[0]);
     
-    // テスト用の納期（3日後）
-    var testDate = new Date();
-    testDate.setDate(today.getDate() + 3);
-    console.log('テスト納期（3日後）:', testDate.toISOString().split('T')[0]);
+    // テスト用の納期（2025/07/01）
+    var testDate = new Date('2025-07-01');
+    testDate.setHours(0, 0, 0, 0);
+    console.log('テスト納期（2025/07/01）:', testDate.toISOString().split('T')[0]);
     
     // 日数差を計算
     var diffTime = testDate.getTime() - today.getTime();
-    var diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    var diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
     console.log('残り日数:', diffDays);
     
-    // 警告判定
-    var warningDays = " . $warning_days . ";
+    // 警告判定（7日設定）
+    var warningDays = 7;
     var shouldWarn = diffDays <= warningDays && diffDays >= 0;
     console.log('警告表示:', shouldWarn ? 'YES' : 'NO');
     
@@ -282,9 +283,34 @@ function testProgressButtonWarning() {
     return shouldShowButtonWarning;
 }
 
+// 日付計算の詳細テスト
+function testDateCalculation() {
+    console.log('=== 日付計算詳細テスト ===');
+    
+    var testCases = [
+        { today: '2025-06-27', delivery: '2025-07-01', expected: 4 },
+        { today: '2025-06-27', delivery: '2025-06-30', expected: 3 },
+        { today: '2025-06-27', delivery: '2025-07-05', expected: 8 },
+        { today: '2025-06-27', delivery: '2025-06-26', expected: -1 }
+    ];
+    
+    testCases.forEach(function(testCase) {
+        var today = new Date(testCase.today);
+        today.setHours(0, 0, 0, 0);
+        var delivery = new Date(testCase.delivery);
+        delivery.setHours(0, 0, 0, 0);
+        
+        var diffTime = delivery.getTime() - today.getTime();
+        var diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        
+        console.log('テスト:', testCase.today, '→', testCase.delivery, '=', diffDays, '日（期待値:', testCase.expected, '）', diffDays === testCase.expected ? '✅' : '❌');
+    });
+}
+
 // テスト実行
 testDeliveryWarning();
 testProgressButtonWarning();
+testDateCalculation();
 ";
 
 echo "</script>";
@@ -299,7 +325,8 @@ echo "<li>✅ 各行の納期警告マーク</li>";
 echo "<li>✅ リアルタイム警告マーク更新</li>";
 echo "<li>✅ 進捗ボタンの動的警告マーク</li>";
 echo "<li>✅ 一般設定での警告日数設定</li>";
-echo "<li>✅ 納期警告の判定ロジック</li>";
+echo "<li>✅ 納期警告の判定ロジック（修正済み）</li>";
+echo "<li>✅ 日付計算の正確性（時間を考慮しない）</li>";
 echo "</ul>";
 
 echo "<h3>使用方法:</h3>";
@@ -312,13 +339,20 @@ echo "<li>各行の警告マークがある場合のみ進捗ボタンに警告�
 echo "<li>納期や進捗を変更するとリアルタイムで警告マークが更新される</li>";
 echo "</ol>";
 
-echo "<h3>リアルタイム機能:</h3>";
+echo "<h3>修正内容:</h3>";
 echo "<ul>";
-echo "<li>納期変更時に自動で警告マークが更新される</li>";
-echo "<li>進捗変更時に自動で警告マークが更新される</li>";
-echo "<li>今日現在で納期が迫っているかを自動判定</li>";
-echo "<li>設定された警告日数に基づいて判定</li>";
-echo "<li>現在表示されている行の警告マークに基づいて進捗ボタンの警告マークを表示</li>";
+echo "<li>日付計算で時間を考慮しないように修正（setHours(0,0,0,0)）</li>";
+echo "<li>Math.ceil()からMath.floor()に変更して正確な日数計算</li>";
+echo "<li>デバッグ情報を追加して計算過程を確認可能</li>";
+echo "<li>警告マークのツールチップに残り日数を表示</li>";
+echo "</ul>";
+
+echo "<h3>テストケース:</h3>";
+echo "<ul>";
+echo "<li>今日: 2025/06/27, 納期: 2025/07/01 → 残り4日（警告表示）</li>";
+echo "<li>今日: 2025/06/27, 納期: 2025/06/30 → 残り3日（警告表示）</li>";
+echo "<li>今日: 2025/06/27, 納期: 2025/07/05 → 残り8日（警告非表示）</li>";
+echo "<li>今日: 2025/06/27, 納期: 2025/06/26 → 期限超過（警告非表示）</li>";
 echo "</ul>";
 
 echo "<p><strong>実装完了！</strong> 仕事リストで納期フィールドの動作を確認してください。</p>";

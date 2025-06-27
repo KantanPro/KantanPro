@@ -130,6 +130,11 @@ class KTPWP_Ajax {
         add_action('wp_ajax_ktp_update_delivery_date', array($this, 'ajax_update_delivery_date'));
         add_action('wp_ajax_nopriv_ktp_update_delivery_date', array($this, 'ajax_require_login')); // 非ログインユーザーはエラー
         $this->registered_handlers[] = 'ktp_update_delivery_date';
+
+        // 作成中の納期警告件数取得
+        add_action('wp_ajax_ktp_get_creating_warning_count', array($this, 'ajax_get_creating_warning_count'));
+        add_action('wp_ajax_nopriv_ktp_get_creating_warning_count', array($this, 'ajax_require_login')); // 非ログインユーザーはエラー
+        $this->registered_handlers[] = 'ktp_get_creating_warning_count';
     }
 
     /**
@@ -281,7 +286,10 @@ class KTPWP_Ajax {
         if (isset($wp_scripts->registered['ktp-delivery-dates'])) {
             wp_add_inline_script('ktp-delivery-dates', 'var ktp_ajax = ' . json_encode(array(
                 'ajax_url' => $ajax_data['ajax_url'],
-                'nonce' => $ajax_data['nonces']['auto_save']
+                'nonce' => $ajax_data['nonces']['auto_save'],
+                'settings' => array(
+                    'delivery_warning_days' => KTP_Settings::get_delivery_warning_days()
+                )
             )) . ';');
         }
     }
@@ -2157,5 +2165,68 @@ class KTPWP_Ajax {
             'field' => $field,
             'value' => $value
         ));
+    }
+
+    /**
+     * Ajax: 作成中の納期警告件数を取得
+     */
+    public function ajax_get_creating_warning_count() {
+        try {
+            // デバッグログ
+            error_log('KTPWP Ajax: ajax_get_creating_warning_count called');
+            
+            // 権限チェック
+            if (!current_user_can('edit_posts') && !current_user_can('ktpwp_access')) {
+                error_log('KTPWP Ajax: Permission check failed');
+                wp_send_json_error(__('この操作を行う権限がありません。', 'ktpwp'));
+                return;
+            }
+
+            // nonce検証
+            if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'ktp_ajax_nonce')) {
+                error_log('KTPWP Ajax: Nonce verification failed');
+                wp_send_json_error(__('セキュリティ検証に失敗しました', 'ktpwp'));
+                return;
+            }
+
+            global $wpdb;
+            $table_name = $wpdb->prefix . 'ktp_order';
+
+            // 一般設定から警告日数を取得
+            $warning_days = 3; // デフォルト値
+            if (class_exists('KTP_Settings')) {
+                $warning_days = KTP_Settings::get_delivery_warning_days();
+            }
+
+            error_log('KTPWP Ajax: Warning days: ' . $warning_days . ', Table: ' . $table_name);
+
+            // 作成中（progress = 3）で納期警告の件数を取得
+            $query = $wpdb->prepare(
+                "SELECT COUNT(*) FROM `{$table_name}` WHERE progress = %d AND expected_delivery_date IS NOT NULL AND expected_delivery_date <= DATE_ADD(CURDATE(), INTERVAL %d DAY)",
+                3, // 作成中
+                $warning_days
+            );
+            
+            error_log('KTPWP Ajax: Query: ' . $query);
+            
+            $warning_count = $wpdb->get_var($query);
+            
+            if ($warning_count === null) {
+                error_log('KTPWP Ajax: Database error: ' . $wpdb->last_error);
+                wp_send_json_error(__('データベースエラーが発生しました', 'ktpwp'));
+                return;
+            }
+
+            error_log('KTPWP Ajax: Warning count: ' . $warning_count);
+
+            wp_send_json_success(array(
+                'warning_count' => (int) $warning_count,
+                'warning_days' => $warning_days
+            ));
+            
+        } catch (Exception $e) {
+            error_log('KTPWP Ajax ajax_get_creating_warning_count Error: ' . $e->getMessage());
+            wp_send_json_error(__('エラーが発生しました: ' . $e->getMessage(), 'ktpwp'));
+        }
     }
 }

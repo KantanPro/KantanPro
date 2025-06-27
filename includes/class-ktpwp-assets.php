@@ -259,8 +259,14 @@ class KTPWP_Assets {
                 'in_footer' => true,
                 'admin'     => false,
                 'localize'  => array(
-                    'object' => 'ktp_ajax_nonce',
-                    'data'   => wp_create_nonce( 'ktp_ajax_nonce' ),
+                    'object' => 'ktp_ajax',
+                    'data'   => array(
+                        'ajax_url' => admin_url( 'admin-ajax.php' ),
+                        'nonce'    => wp_create_nonce( 'ktp_ajax_nonce' ),
+                        'settings' => array(
+                            'delivery_warning_days' => KTP_Settings::get_delivery_warning_days()
+                        )
+                    ),
                 ),
             ),
             // 'ktp-skills-list-effects' => array(

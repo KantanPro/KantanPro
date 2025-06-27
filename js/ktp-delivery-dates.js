@@ -8,12 +8,28 @@
 jQuery(document).ready(function($) {
     'use strict';
 
+    console.log('[DELIVERY-DATES] 納期警告機能が読み込まれました');
+    
+    // Ajax設定の確認
+    if (typeof ktp_ajax !== 'undefined') {
+        console.log('[DELIVERY-DATES] Ajax設定確認:', {
+            ajax_url: ktp_ajax.ajax_url,
+            nonce: ktp_ajax.nonce ? '設定済み' : '未設定',
+            settings: ktp_ajax.settings || '未設定'
+        });
+    } else {
+        console.log('[DELIVERY-DATES] 警告: ktp_ajaxオブジェクトが見つかりません');
+    }
+
     // 納期フィールドの変更を監視
     $(document).on('change', '.delivery-date-input', function() {
+        console.log('[DELIVERY-DATES] 納期フィールドが変更されました');
         var $input = $(this);
         var orderId = $input.data('order-id');
         var field = $input.data('field');
         var value = $input.val();
+        
+        console.log('[DELIVERY-DATES] 変更内容:', { orderId: orderId, field: field, value: value });
         
         // 保存中の表示
         $input.prop('disabled', true);
@@ -31,6 +47,7 @@ jQuery(document).ready(function($) {
                 nonce: ktp_ajax.nonce
             },
             success: function(response) {
+                console.log('[DELIVERY-DATES] Ajax応答:', response);
                 if (response.success) {
                     // 成功時の処理
                     $input.css('border-color', '#4caf50');
@@ -38,6 +55,9 @@ jQuery(document).ready(function($) {
                     
                     // 警告マークを更新
                     updateWarningMark($input, value);
+                    
+                    // 進捗ボタンの警告マークも更新（納期変更時）
+                    updateProgressButtonWarning();
                     
                     // 3秒後に元のスタイルに戻す
                     setTimeout(function() {
@@ -87,9 +107,12 @@ jQuery(document).ready(function($) {
             if (currentProgress === 3) { // 作成中
                 // 納期警告の判定
                 var today = new Date();
+                today.setHours(0, 0, 0, 0); // 時間を00:00:00に設定
                 var delivery = new Date(deliveryDate);
+                delivery.setHours(0, 0, 0, 0); // 時間を00:00:00に設定
+                
                 var diffTime = delivery.getTime() - today.getTime();
-                var diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                var diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
                 
                 // 警告日数を取得（デフォルト3日）
                 var warningDays = 3;
@@ -97,80 +120,149 @@ jQuery(document).ready(function($) {
                     warningDays = parseInt(ktp_ajax.settings.delivery_warning_days);
                 }
                 
-                // 警告マークを表示するかどうか判定
+                // デバッグ情報をコンソールに出力
+                console.log('[DELIVERY-DATES] 警告計算:', {
+                    today: today.toISOString().split('T')[0],
+                    delivery: delivery.toISOString().split('T')[0],
+                    diffDays: diffDays,
+                    warningDays: warningDays,
+                    shouldWarn: diffDays <= warningDays && diffDays >= 0
+                });
+                
+                // 警告日数以内で納期が迫っている場合、警告マークを表示
                 if (diffDays <= warningDays && diffDays >= 0) {
-                    var warningMark = $('<span class="delivery-warning-mark-row" title="納期が迫っています">!</span>');
-                    $wrapper.append(warningMark);
+                    $wrapper.append('<span class="delivery-warning-mark-row" title="納期が迫っています">!</span>');
+                    console.log('[DELIVERY-DATES] 警告マークを表示しました');
+                } else {
+                    console.log('[DELIVERY-DATES] 警告マークは表示しません（条件不適合）');
                 }
             }
         }
-        
-        // 進捗ボタンの警告マークを更新
-        updateProgressButtonWarning();
     }
 
     /**
      * 進捗ボタンの警告マークを更新する関数
      */
     function updateProgressButtonWarning() {
-        // 現在表示されている「作成中」の行で警告マークがあるかチェック
-        var hasWarningInCurrentPage = $('.ktp_work_list_item .delivery-warning-mark-row').length > 0;
+        console.log('[DELIVERY-DATES] 進捗ボタン警告マーク更新開始');
         
-        // 進捗ボタンの警告マークを取得
-        var $progressButton = $('.progress-btn').filter(function() {
-            return $(this).text().indexOf('作成中') !== -1;
-        });
-        
-        var $existingButtonWarning = $progressButton.find('.delivery-warning-mark');
-        
-        if (hasWarningInCurrentPage) {
-            // 警告マークがある場合、ボタンにも警告マークを表示
-            if ($existingButtonWarning.length === 0) {
-                var warningCount = $('.ktp_work_list_item .delivery-warning-mark-row').length;
-                var buttonWarningMark = $('<span class="delivery-warning-mark" title="納期が迫っています（' + warningCount + '件）">!</span>');
-                $progressButton.append(buttonWarningMark);
-            } else {
-                // 既存の警告マークの件数を更新
-                var warningCount = $('.ktp_work_list_item .delivery-warning-mark-row').length;
-                $existingButtonWarning.attr('title', '納期が迫っています（' + warningCount + '件）');
+        // Ajaxで作成中の納期警告件数を取得
+        $.ajax({
+            url: ktp_ajax.ajax_url,
+            type: 'POST',
+            data: {
+                action: 'ktp_get_creating_warning_count',
+                nonce: ktp_ajax.nonce
+            },
+            success: function(response) {
+                console.log('[DELIVERY-DATES] 作成中警告件数取得応答:', response);
+                
+                if (response.success) {
+                    var warningCount = response.data.warning_count;
+                    var warningDays = response.data.warning_days;
+                    
+                    console.log('[DELIVERY-DATES] 作成中の納期警告件数:', warningCount, '件（警告日数:', warningDays, '日）');
+                    
+                    // 進捗ボタンの警告マークをチェック
+                    var $progressButton = $('.progress-btn').filter(function() {
+                        return $(this).text().indexOf('作成中') !== -1;
+                    });
+                    
+                    console.log('[DELIVERY-DATES] 作成中ボタン数:', $progressButton.length);
+                    
+                    var $existingButtonWarning = $progressButton.find('.delivery-warning-mark');
+                    
+                    if (warningCount > 0) {
+                        // 警告マークがある場合、ボタンにも警告マークを表示
+                        if ($existingButtonWarning.length === 0) {
+                            $progressButton.append('<span class="delivery-warning-mark" title="納期が迫っている案件があります（' + warningCount + '件）">!</span>');
+                            console.log('[DELIVERY-DATES] 進捗ボタンに警告マークを追加しました（' + warningCount + '件）');
+                        } else {
+                            // 既存の警告マークの件数を更新
+                            $existingButtonWarning.attr('title', '納期が迫っている案件があります（' + warningCount + '件）');
+                            console.log('[DELIVERY-DATES] 進捗ボタンの警告マークを更新しました（' + warningCount + '件）');
+                        }
+                    } else {
+                        // 警告マークがない場合、ボタンの警告マークを削除
+                        $existingButtonWarning.remove();
+                        console.log('[DELIVERY-DATES] 進捗ボタンの警告マークを削除しました');
+                    }
+                } else {
+                    console.log('[DELIVERY-DATES] 警告件数取得に失敗:', response.data);
+                    // エラー時は既存の警告マークを削除
+                    var $progressButton = $('.progress-btn').filter(function() {
+                        return $(this).text().indexOf('作成中') !== -1;
+                    });
+                    $progressButton.find('.delivery-warning-mark').remove();
+                }
+            },
+            error: function(xhr, status, error) {
+                console.log('[DELIVERY-DATES] 警告件数取得で通信エラーが発生しました:', {
+                    status: status,
+                    error: error,
+                    responseText: xhr.responseText
+                });
+                // エラー時は既存の警告マークを削除
+                var $progressButton = $('.progress-btn').filter(function() {
+                    return $(this).text().indexOf('作成中') !== -1;
+                });
+                $progressButton.find('.delivery-warning-mark').remove();
             }
-        } else {
-            // 警告マークがない場合、ボタンの警告マークを削除
-            $existingButtonWarning.remove();
-        }
+        });
     }
 
     // ページ読み込み時に既存の警告マークを更新
     function updateAllWarningMarks() {
-        $('.delivery-date-input').each(function() {
+        console.log('[DELIVERY-DATES] 全警告マーク更新開始');
+        
+        var inputCount = $('.delivery-date-input').length;
+        console.log('[DELIVERY-DATES] 納期入力フィールド数:', inputCount);
+        
+        $('.delivery-date-input').each(function(index) {
             var $input = $(this);
             var value = $input.val();
+            console.log('[DELIVERY-DATES] フィールド', index + 1, ':', value);
+            
             if (value) {
                 updateWarningMark($input, value);
             }
         });
         
-        // 進捗ボタンの警告マークも更新
+        // 進捗ボタンの警告マークも更新（常に作成中の警告件数を取得）
         updateProgressButtonWarning();
+        
+        console.log('[DELIVERY-DATES] 全警告マーク更新完了');
     }
 
     // ページ読み込み完了後に警告マークを更新
-    setTimeout(updateAllWarningMarks, 100);
+    setTimeout(function() {
+        console.log('[DELIVERY-DATES] ページ読み込み後の警告マーク更新を開始');
+        updateAllWarningMarks();
+    }, 100);
 
     // 進捗プルダウンの変更を監視
     $(document).on('change', '.progress-select', function() {
+        console.log('[DELIVERY-DATES] 進捗プルダウンが変更されました');
+        
         var $select = $(this);
         var $listItem = $select.closest('.ktp_work_list_item');
         var $deliveryInput = $listItem.find('.delivery-date-input');
         
+        console.log('[DELIVERY-DATES] 進捗変更:', {
+            newProgress: $select.val(),
+            hasDeliveryInput: $deliveryInput.length > 0
+        });
+        
         // 納期フィールドが存在する場合、警告マークを更新
         if ($deliveryInput.length > 0) {
             var deliveryDate = $deliveryInput.val();
+            console.log('[DELIVERY-DATES] 納期フィールドあり、更新:', deliveryDate);
             updateWarningMark($deliveryInput, deliveryDate);
-        } else {
-            // 納期フィールドがない場合でも進捗ボタンの警告マークを更新
-            updateProgressButtonWarning();
         }
+        
+        // 進捗変更時は常に進捗ボタンの警告マークを更新
+        console.log('[DELIVERY-DATES] 進捗変更後のボタン警告マーク更新');
+        updateProgressButtonWarning();
     });
 
     // 納期フィールドのフォーカス時の処理
