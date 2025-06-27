@@ -1020,22 +1020,24 @@ form > .create-order-btn {
 .ktp_header .navigation-links {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px; /* 8pxから4pxに変更 */
   flex-wrap: wrap;
   justify-content: flex-end;
+  gap: 3px; /* モバイルでも間隔を狭く */
 }
 
 /* PC・タブレット表示用：ナビゲーションリンク内の要素 */
 .ktp_header .navigation-links a {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px; /* 4pxから3pxに変更 */
   color: #0073aa;
   text-decoration: none;
-  padding: 4px 8px;
+  padding: 3px 6px; /* 4px 8pxから3px 6pxに変更 */
   border-radius: 4px;
   transition: all 0.2s ease;
   font-size: 14px;
+  padding: 2px 4px; /* モバイルではさらに小さく */
 }
 
 .ktp_header .navigation-links a:hover {
@@ -1179,6 +1181,12 @@ form > .create-order-btn {
   .ktp_header .navigation-links {
     justify-content: flex-start;
     flex-wrap: wrap;
+    gap: 3px; /* モバイルでも間隔を狭く */
+  }
+  
+  .ktp_header .navigation-links a {
+    padding: 2px 4px; /* モバイルではさらに小さく */
+    font-size: 13px; /* モバイルではフォントサイズも小さく */
   }
   
   .ktp_header .user-avatars-section {

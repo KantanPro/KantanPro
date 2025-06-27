@@ -378,7 +378,7 @@ class KTPWP_Shortcodes {
         $reference_instance = KTPWP_Plugin_Reference::get_instance();
         $links[] = $reference_instance->get_reference_link();
 
-        return '　' . implode('　', $links);
+        return ' ' . implode(' ', $links);
     }
 
     /**
