@@ -967,18 +967,27 @@ form > .create-order-btn {
   text-align: left;
   border: 1px solid;
   padding: 15px;
-  margin-bottom: 30px; /* 20pxから30pxに増加 */
+  margin-bottom: 30px;
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   flex-wrap: wrap;
   position: relative;
-  z-index: 10; /* z-indexを追加 */
+  z-index: 10;
+  width: 100%;
+  box-sizing: border-box;
+  gap: 15px; /* 要素間の間隔 */
+  min-height: fit-content; /* コンテンツに応じて高さ調整 */
 }
 
 .ktp_header .logo-and-system-info {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex: 1;
+  min-width: 200px; /* 最小幅を設定 */
+  max-width: calc(100% - 200px); /* 右側の要素用にスペース確保 */
 }
 
 .ktp_header .header-logo {
@@ -988,6 +997,8 @@ form > .create-order-btn {
 .ktp_header .system-info {
   text-align: left;
   margin-left: 8px;
+  flex: 1;
+  min-width: 0;
 }
 
 .ktp_header .system-name {
@@ -996,12 +1007,88 @@ form > .create-order-btn {
   color: #333;
   line-height: 1.2;
   margin-bottom: 4px;
+  word-break: break-word;
 }
 
 .ktp_header .system-description {
   font-size: 14px;
   color: #666;
   line-height: 1.2;
+  word-break: break-word;
+}
+
+/* ヘッダー右側の要素（参照リンクなど） */
+.ktp_header > *:not(.logo-and-system-info) {
+  flex-shrink: 0;
+  min-width: 150px; /* 右側要素の最小幅 */
+  max-width: 200px; /* 右側要素の最大幅 */
+}
+
+/* タブレットサイズ */
+@media (max-width: 1024px) {
+  .ktp_header {
+    gap: 12px;
+    padding: 12px;
+  }
+  
+  .ktp_header .logo-and-system-info {
+    min-width: 180px;
+    max-width: calc(100% - 180px);
+  }
+  
+  .ktp_header > *:not(.logo-and-system-info) {
+    min-width: 120px;
+    max-width: 180px;
+  }
+}
+
+/* モバイルサイズ */
+@media (max-width: 768px) {
+  .ktp_header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 12px;
+  }
+  
+  .ktp_header .logo-and-system-info {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    justify-content: flex-start;
+    margin-bottom: 8px;
+  }
+  
+  .ktp_header .system-info {
+    margin-left: 0;
+    margin-top: 8px;
+  }
+  
+  /* モバイル時は右側の要素も縦並び */
+  .ktp_header > *:not(.logo-and-system-info) {
+    margin-left: 0;
+    margin-top: 8px;
+    align-self: flex-start;
+    min-width: 0;
+    max-width: 100%;
+    width: 100%;
+  }
+}
+
+/* 小さいモバイルサイズ */
+@media (max-width: 480px) {
+  .ktp_header {
+    padding: 10px;
+    gap: 8px;
+  }
+  
+  .ktp_header .system-name {
+    font-size: 16px;
+  }
+  
+  .ktp_header .system-description {
+    font-size: 13px;
+  }
 }
 
 /* ページネーション */

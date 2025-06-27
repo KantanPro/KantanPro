@@ -357,16 +357,18 @@ class KTPWP_Shortcodes {
         
         // ログアウト
         $links[] = sprintf(
-            '<a href="%s">%s</a>',
+            '<a href="%s" title="%s" style="display: inline-flex; align-items: center; gap: 4px; color: #0073aa; text-decoration: none;">%s</a>',
             $logout_url,
-            esc_html__('ログアウト', 'ktpwp')
+            esc_attr__('ログアウト', 'ktpwp'),
+            '<span class="material-symbols-outlined" style="font-size: 20px; vertical-align: middle;">logout</span>'
         );
         
         // 更新
         $links[] = sprintf(
-            '<a href="%s">%s</a>',
+            '<a href="%s" title="%s" style="display: inline-flex; align-items: center; gap: 4px; color: #0073aa; text-decoration: none;">%s</a>',
             $update_url,
-            esc_html__('更新', 'ktpwp')
+            esc_attr__('更新', 'ktpwp'),
+            '<span class="material-symbols-outlined" style="font-size: 20px; vertical-align: middle;">refresh</span>'
         );
         // アクティベーションキー（空文字列）
         if (!empty($activation_key)) {
