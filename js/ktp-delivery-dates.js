@@ -29,7 +29,20 @@ jQuery(document).ready(function($) {
         var field = $input.data('field');
         var value = $input.val();
         
-        console.log('[DELIVERY-DATES] 変更内容:', { orderId: orderId, field: field, value: value });
+        console.log('[DELIVERY-DATES] 変更内容:', { 
+            orderId: orderId, 
+            field: field, 
+            value: value,
+            inputId: $input.attr('id'),
+            inputName: $input.attr('name')
+        });
+        
+        // フィールド名の検証
+        if (!field) {
+            console.error('[DELIVERY-DATES] エラー: data-field属性が設定されていません');
+            alert('フィールド名が設定されていません。ページを再読み込みしてください。');
+            return;
+        }
         
         // 保存中の表示
         $input.prop('disabled', true);

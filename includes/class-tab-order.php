@@ -1177,11 +1177,11 @@ $expected_delivery_date = isset($order_data->expected_delivery_date) ? $order_da
 $content .= '<div class="delivery-dates-container" style="display: flex; align-items: center; gap: 15px; margin-left: 20px;">';
 $content .= '<div class="date-field" style="display: flex; align-items: center; gap: 5px;">';
 $content .= '<label for="desired_delivery_date" style="white-space: nowrap; font-size: 12px; font-weight: bold; color: #333;">希望納期：</label>';
-$content .= '<input type="date" id="desired_delivery_date" name="desired_delivery_date" value="' . esc_attr($desired_delivery_date) . '" data-order-id="' . esc_attr($order_data->id) . '" class="delivery-date-input" style="font-size: 12px; padding: 4px 8px; border: 1px solid #ddd; border-radius: 4px;" />';
+$content .= '<input type="date" id="desired_delivery_date" name="desired_delivery_date" value="' . esc_attr($desired_delivery_date) . '" data-order-id="' . esc_attr($order_data->id) . '" data-field="desired_delivery_date" class="delivery-date-input" style="font-size: 12px; padding: 4px 8px; border: 1px solid #ddd; border-radius: 4px;" />';
 $content .= '</div>';
 $content .= '<div class="date-field" style="display: flex; align-items: center; gap: 5px;">';
 $content .= '<label for="expected_delivery_date" style="white-space: nowrap; font-size: 12px; font-weight: bold; color: #333;">納品予定日：</label>';
-$content .= '<input type="date" id="expected_delivery_date" name="expected_delivery_date" value="' . esc_attr($expected_delivery_date) . '" data-order-id="' . esc_attr($order_data->id) . '" class="delivery-date-input" style="font-size: 12px; padding: 4px 8px; border: 1px solid #ddd; border-radius: 4px;" />';
+$content .= '<input type="date" id="expected_delivery_date" name="expected_delivery_date" value="' . esc_attr($expected_delivery_date) . '" data-order-id="' . esc_attr($order_data->id) . '" data-field="expected_delivery_date" class="delivery-date-input" style="font-size: 12px; padding: 4px 8px; border: 1px solid #ddd; border-radius: 4px;" />';
 $content .= '</div>';
 $content .= '</div>';
 

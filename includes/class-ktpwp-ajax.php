@@ -2128,7 +2128,7 @@ class KTPWP_Ajax {
         }
 
         // フィールド名の検証
-        $allowed_fields = array('expected_delivery_date');
+        $allowed_fields = array('desired_delivery_date', 'expected_delivery_date');
         if (!in_array($field, $allowed_fields)) {
             wp_send_json_error(__('無効なフィールド名です', 'ktpwp'));
             return;
