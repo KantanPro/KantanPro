@@ -914,7 +914,7 @@ class Kntan_Client_Class {
         // controllerブロックを必ず先頭に追加
         $controller_html = '<div class="controller" style="display: flex; justify-content: space-between; align-items: center;">';
         
-        // 左側：注文履歴ボタンと顧客一覧ボタン
+        // 左側：ボタン群（注文履歴と顧客一覧ボタンを削除）
         $controller_html .= '<div style="display: flex; gap: 0px;">';
         
         // 現在の顧客IDを取得（後で使用するため）
@@ -946,41 +946,8 @@ class Kntan_Client_Class {
                 $current_user_name = esc_html($current_client_data->name);
             }
         }
-
-        // 注文履歴ボタン - 現在の顧客IDを保持して遷移
-        $order_history_active = (isset($view_mode) && $view_mode === 'order_history') ? 'active' : '';
-        $order_history_params = array(
-            'tab_name'  => 'client',
-            'view_mode' => 'order_history',
-            'data_id'   => $current_client_id
-        );
-        $order_history_url = add_query_arg( $order_history_params, $base_page_url );
-        $js_redirect_order_history = sprintf("window.location.href='%s'", esc_url($order_history_url));
-        $controller_html .= '<button type="button" class="view-mode-btn order-history-btn ' . $order_history_active . '" onclick="' . $js_redirect_order_history . '" style="padding: 6px 10px; font-size: 12px;">注文履歴</button>';
-
-        // 顧客一覧ボタン - 現在の顧客IDを保持して遷移
-        $customer_list_active = (isset($view_mode) && $view_mode === 'customer_list') ? 'active' : '';
-        $customer_list_params = array(
-            'tab_name'  => 'client',
-            'view_mode' => 'customer_list',
-            'data_id'   => $current_client_id
-        );
-        $customer_list_url = add_query_arg( $customer_list_params, $base_page_url );
-        $js_redirect_customer_list = sprintf("window.location.href='%s'", esc_url($customer_list_url));
-        $controller_html .= '<button type="button" class="view-mode-btn customer-list-btn ' . $customer_list_active . '" onclick="' . $js_redirect_customer_list . '" style="padding: 6px 10px; font-size: 12px;">顧客一覧</button>';
         
-        $controller_html .= '</div>'; // 左側のボタン群終了
-        
-        // 右側：プレビューボタン、印刷ボタン、受注書作成ボタン
-        $controller_html .= '<div style="display: flex; gap: 0px;">';
-        $controller_html .= '<button id="previewButton" onclick="togglePreview()" title="プレビュー" style="padding: 6px 10px; font-size: 12px;">'
-            . '<span class="material-symbols-outlined" aria-label="プレビュー">preview</span>'
-            . '</button>'
-            . '<button onclick="printContent()" title="印刷する" style="padding: 6px 10px; font-size: 12px;">'
-            . '<span class="material-symbols-outlined" aria-label="印刷">print</span>'
-            . '</button>';
-        
-        // 受注書作成ボタン
+        // 受注書作成ボタン（左端に配置）
         $controller_html .= '<form method="post" action="" id="create-order-form" style="display:inline-block;">';
         $controller_html .= wp_nonce_field('ktp_client_action', 'ktp_client_nonce', true, false);
         $controller_html .= '<input type="hidden" name="tab_name" value="order">';
@@ -999,6 +966,17 @@ class Kntan_Client_Class {
         }
         $controller_html .= '<button type="submit" class="create-order-btn" ' . $disabled_attr . ' style="' . $button_style . '">受注書作成</button>';
         $controller_html .= '</form>';
+        
+        $controller_html .= '</div>'; // 左側のボタン群終了
+        
+        // 右側：プレビューボタン、印刷ボタン
+        $controller_html .= '<div style="display: flex; gap: 0px;">';
+        $controller_html .= '<button id="previewButton" onclick="togglePreview()" title="プレビュー" style="padding: 6px 10px; font-size: 12px;">'
+            . '<span class="material-symbols-outlined" aria-label="プレビュー">preview</span>'
+            . '</button>'
+            . '<button onclick="printContent()" title="印刷する" style="padding: 6px 10px; font-size: 12px;">'
+            . '<span class="material-symbols-outlined" aria-label="印刷">print</span>'
+            . '</button>';
         
         $controller_html .= '</div>'; // 右側のボタン群終了
         $controller_html .= '</div>'; // controller終了
