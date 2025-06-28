@@ -864,6 +864,15 @@ class KTPWP_Supplier_Class {
         if ($query_id) {
             $display_company_name = isset($company_name) && !empty($company_name) ? $company_name : '未設定';
             
+            // 職能データの件数を確認
+            $skills_count = 0;
+            if (class_exists('KTPWP_Supplier_Skills')) {
+                $skills_manager = KTPWP_Supplier_Skills::get_instance();
+                if ($skills_manager) {
+                    $skills_count = $skills_manager->get_supplier_skills_count($query_id);
+                }
+            }
+            
             // 職能ソート用プルダウンを生成
             $skills_sort_by = isset($_GET['skills_sort_by']) ? sanitize_text_field($_GET['skills_sort_by']) : 'frequency';
             $skills_sort_order = isset($_GET['skills_sort_order']) ? sanitize_text_field($_GET['skills_sort_order']) : 'DESC';
@@ -900,13 +909,25 @@ class KTPWP_Supplier_Class {
                 '<span class="material-symbols-outlined" style="font-size:18px;line-height:18px;vertical-align:middle;">check</span>' .
                 '</button>' .
                 '</form></div>';
-                
-            $current_id_message = '<div class="data_skill_list_title" style="display: flex; align-items: center;">'
-                . '<div style="display: flex; align-items: center; gap: 8px;">'
-                . '■ ' . esc_html($display_company_name) . '（ID: ' . esc_html($query_id) . '）の商品'
-                . '</div>'
-                . $skills_sort_dropdown
-                . '</div>';
+            
+            // 職能データの件数に応じてタイトルを変更
+            if ($skills_count > 0) {
+                // 職能データが1件以上ある場合：IDを表示
+                $current_id_message = '<div class="data_skill_list_title" style="display: flex; align-items: center;">'
+                    . '<div style="display: flex; align-items: center; gap: 8px;">'
+                    . '■ ' . esc_html($display_company_name) . '（ID: ' . esc_html($query_id) . '）の商品'
+                    . '</div>'
+                    . $skills_sort_dropdown
+                    . '</div>';
+            } else {
+                // 職能データが0件の場合：IDを非表示
+                $current_id_message = '<div class="data_skill_list_title" style="display: flex; align-items: center;">'
+                    . '<div style="display: flex; align-items: center; gap: 8px;">'
+                    . '■ ' . esc_html($display_company_name) . 'の商品'
+                    . '</div>'
+                    . $skills_sort_dropdown
+                    . '</div>';
+            }
         } else {
             $current_id_message = '<div style="padding: 15px 20px; background: linear-gradient(135deg, #fff3cd 0%, #fff8e1 100%); border-radius: 6px; margin: 15px 0; color: #856404; font-weight: 600; text-align: center; box-shadow: 0 3px 12px rgba(0,0,0,0.07); display: flex; align-items: center; justify-content: center; font-size: 16px; gap: 10px;">'
                 . '<span class="material-symbols-outlined" style="color: #ffc107;">info</span>'

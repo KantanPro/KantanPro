@@ -1013,7 +1013,7 @@ class Kntan_Client_Class {
                 $data_id = $wpdb->insert_id;
 
                 // 詳細表示部分の開始
-            $data_title = '<div class="data_detail_box"><div class="data_detail_title">' . esc_html__('■ 顧客の詳細', 'ktpwp') . '</div>';
+            $data_title = '<div class="data_detail_box"><div class="data_detail_title">' . esc_html__('■ 顧客追加中', 'ktpwp') . '</div>';
 
                 // 追加モード用のフォーム開始
             $data_forms .= '<form method="post" action="">';
