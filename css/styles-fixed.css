@@ -53,8 +53,8 @@
 /* 進捗ステータスの色分け */
 .status-1 { color: #f44336; } /* 受付中 */
 .status-2 { color: #ff9800; } /* 見積中 */
-.status-3 { color: #2196f3; } /* 作成中 */
-.status-4 { color: #4caf50; } /* 完成未請求 */
+.status-3 { color: #2196f3; } /* 受注 */
+.status-4 { color: #4caf50; } /* 完了 */
 .status-5 { color: #9c27b0; } /* 請求済 */
 .status-6 { color: #333333; } /* 入金済 */
 

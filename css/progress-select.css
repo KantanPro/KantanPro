@@ -73,10 +73,10 @@
   background-color: #fff9c4; /* 見積中: 薄い黄色 */
 }
 .progress-select option[value="3"] {
-  background-color: #e8f5e9; /* 作成中: 薄い緑 */
+  background-color: #e8f5e9; /* 受注: 薄い緑 */
 }
 .progress-select option[value="4"] {
-  background-color: #f3e5f5; /* 完成未請求: 薄い紫 */
+  background-color: #f3e5f5; /* 完了: 薄い紫 */
 }
 .progress-select option[value="5"] {
   background-color: #ffebee; /* 請求済: 薄い赤 */

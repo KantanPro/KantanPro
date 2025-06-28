@@ -510,8 +510,8 @@
 /* 進捗状態別の色分け（文字色） */
 .progress-select option[value="1"] { color: #f44336; } /* 受付中 */
 .progress-select option[value="2"] { color: #ff9800; } /* 見積中 */
-.progress-select option[value="3"] { color: #2196f3; } /* 作成中 */
-.progress-select option[value="4"] { color: #4caf50; } /* 完成未請求 */
+.progress-select option[value="3"] { color: #2196f3; } /* 受注 */
+.progress-select option[value="4"] { color: #4caf50; } /* 完了 */
 .progress-select option[value="5"] { color: #9c27b0; } /* 請求済 */
 
 /* 進捗ラベル（例: <label>進捗：</label>） */

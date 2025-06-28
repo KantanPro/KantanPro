@@ -70,8 +70,8 @@ class Kantan_List_Class {
         $progress_labels = array(
             1 => __( '受付中', 'ktpwp' ),
             2 => __( '見積中', 'ktpwp' ),
-            3 => __( '作成中', 'ktpwp' ),
-            4 => __( '完成未請求', 'ktpwp' ),
+            3 => __( '受注', 'ktpwp' ),
+            4 => __( '完了', 'ktpwp' ),
             5 => __( '請求済', 'ktpwp' ),
             6 => __( '入金済', 'ktpwp' )
         );
@@ -90,7 +90,7 @@ class Kantan_List_Class {
             ) );
             $progress_counts[ $num ] = (int) $count;
             
-            // 作成中（progress = 3）の場合、納期警告の件数を取得
+            // 受注（progress = 3）の場合、納期警告の件数を取得
             if ($num == 3) {
                 // 一般設定から警告日数を取得
                 $warning_days = 3; // デフォルト値
@@ -120,8 +120,8 @@ class Kantan_List_Class {
         $progress_icons = array(
             1 => 'receipt',      // 受付中
             2 => 'calculate',    // 見積中
-            3 => 'build',        // 作成中
-            4 => 'check_circle', // 完成未請求
+            3 => 'build',        // 受注
+            4 => 'check_circle', // 完了
             5 => 'payment',      // 請求済
             6 => 'account_balance_wallet' // 入金済
         );
@@ -166,9 +166,9 @@ class Kantan_List_Class {
         $total_pages = ceil($total_rows / $query_limit);
         $current_page = floor($page_start / $query_limit) + 1;
         
-        // データ取得（進捗が「作成中」の場合は納期順でソート）
+        // データ取得（進捗が「受注」の場合は納期順でソート）
         if ($selected_progress == 3) {
-            // 作成中の場合は納期が迫っている順でソート
+            // 受注の場合は納期が迫っている順でソート
             $query = $wpdb->prepare(
                 "SELECT *, 
                     CASE 
@@ -198,7 +198,7 @@ class Kantan_List_Class {
         // --- ここからラッパー追加 ---
         $content .= '<div class="ktp_work_list_box">';
         
-        // 作成中の場合はソート順を説明
+        // 受注の場合はソート順を説明
         if ($selected_progress == 3) {
             $content .= '<div style="background: #e3f2fd; border-left: 4px solid #1976d2; padding: 10px 15px; margin-bottom: 15px; border-radius: 4px; font-size: 13px; color: #1565c0;">';
             $content .= '<strong>📅 ソート順:</strong> 納期が迫っている順 → 受注日時順（新しい順）で表示されています。';
@@ -210,8 +210,8 @@ class Kantan_List_Class {
         $progress_labels = [
             1 => '受付中',
             2 => '見積中',
-            3 => '作成中',
-            4 => '完成未請求',
+            3 => '受注',
+            4 => '完了',
             5 => '請求済',
             6 => '入金済'
         ];

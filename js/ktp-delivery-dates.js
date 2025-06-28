@@ -159,7 +159,7 @@ jQuery(document).ready(function($) {
     function updateProgressButtonWarning() {
         console.log('[DELIVERY-DATES] 進捗ボタン警告マーク更新開始');
         
-        // Ajaxで作成中の納期警告件数を取得
+        // Ajaxで受注の納期警告件数を取得
         $.ajax({
             url: ktp_ajax.ajax_url,
             type: 'POST',
@@ -168,20 +168,20 @@ jQuery(document).ready(function($) {
                 nonce: ktp_ajax.nonce
             },
             success: function(response) {
-                console.log('[DELIVERY-DATES] 作成中警告件数取得応答:', response);
+                console.log('[DELIVERY-DATES] 受注警告件数取得応答:', response);
                 
                 if (response.success) {
                     var warningCount = response.data.warning_count;
                     var warningDays = response.data.warning_days;
                     
-                    console.log('[DELIVERY-DATES] 作成中の納期警告件数:', warningCount, '件（警告日数:', warningDays, '日）');
+                    console.log('[DELIVERY-DATES] 受注の納期警告件数:', warningCount, '件（警告日数:', warningDays, '日）');
                     
                     // 進捗ボタンの警告マークをチェック
                     var $progressButton = $('.progress-btn').filter(function() {
-                        return $(this).data('progress') === 3; // 作成中（progress = 3）
+                        return $(this).data('progress') === 3; // 受注（progress = 3）
                     });
                     
-                    console.log('[DELIVERY-DATES] 作成中ボタン数:', $progressButton.length);
+                    console.log('[DELIVERY-DATES] 受注ボタン数:', $progressButton.length);
                     
                     var $existingButtonWarning = $progressButton.find('.delivery-warning-mark');
                     
