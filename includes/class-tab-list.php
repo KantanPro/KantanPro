@@ -73,7 +73,8 @@ class Kantan_List_Class {
             3 => __( '受注', 'ktpwp' ),
             4 => __( '完了', 'ktpwp' ),
             5 => __( '請求済', 'ktpwp' ),
-            6 => __( '入金済', 'ktpwp' )
+            6 => __( '入金済', 'ktpwp' ),
+            7 => __( 'ボツ', 'ktpwp' )
         );
         
         $selected_progress = isset( $_GET['progress'] ) ? absint( $_GET['progress'] ) : 1;
@@ -123,10 +124,16 @@ class Kantan_List_Class {
             3 => 'build',        // 受注
             4 => 'check_circle', // 完了
             5 => 'payment',      // 請求済
-            6 => 'account_balance_wallet' // 入金済
+            6 => 'account_balance_wallet', // 入金済
+            7 => 'cancel'        // ボツ
         );
         
         foreach ( $progress_labels as $num => $label ) {
+            // ボツ（progress = 7）はワークフローに表示しない
+            if ($num == 7) {
+                continue;
+            }
+            
             $active = ( $selected_progress === $num ) ? 'style="font-weight:bold;background:#1976d2;color:#fff;"' : '';
             $btn_label = esc_html( $label ) . ' (' . $progress_counts[ $num ] . ')';
             $icon = isset($progress_icons[$num]) ? $progress_icons[$num] : 'circle';
@@ -213,7 +220,8 @@ class Kantan_List_Class {
             3 => '受注',
             4 => '完了',
             5 => '請求済',
-            6 => '入金済'
+            6 => '入金済',
+            7 => 'ボツ'
         ];
             $content .= '<ul>';
             foreach ($order_list as $order) {
@@ -328,7 +336,7 @@ class Kantan_List_Class {
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_progress_id'], $_POST['update_progress'])) {
             $update_id = intval($_POST['update_progress_id']);
             $update_progress = intval($_POST['update_progress']);
-            if ($update_id > 0 && $update_progress >= 1 && $update_progress <= 6) {
+            if ($update_id > 0 && $update_progress >= 1 && $update_progress <= 7) {
                 $wpdb->update($table_name, ['progress' => $update_progress], ['id' => $update_id]);
                 // リダイレクトで再読み込み（POSTリダブミット防止）
                 wp_redirect(esc_url_raw($_SERVER['REQUEST_URI']));

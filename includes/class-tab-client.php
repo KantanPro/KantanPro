@@ -403,7 +403,8 @@ class Kntan_Client_Class {
                        3 => esc_html__('受注', 'ktpwp'),
                        4 => esc_html__('完了', 'ktpwp'),
                        5 => esc_html__('請求済', 'ktpwp'),
-                       6 => esc_html__('入金済', 'ktpwp')
+                       6 => esc_html__('入金済', 'ktpwp'),
+                       7 => esc_html__('ボツ', 'ktpwp')
                    ];
 
                    foreach ($order_rows as $order) {
@@ -602,7 +603,8 @@ class Kntan_Client_Class {
                3 => esc_html__('受注', 'ktpwp'),
                4 => esc_html__('完了', 'ktpwp'),
                5 => esc_html__('請求済', 'ktpwp'),
-               6 => esc_html__('入金済', 'ktpwp')
+               6 => esc_html__('入金済', 'ktpwp'),
+               7 => esc_html__('ボツ', 'ktpwp')
            ];
 
            foreach ($order_rows as $order) {

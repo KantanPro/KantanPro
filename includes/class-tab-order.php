@@ -745,7 +745,7 @@ class Kntan_Order_Class {
 
             $update_id = absint($_POST['update_progress_id']);
             $update_progress = absint($_POST['update_progress']);
-            if ($update_id > 0 && $update_progress >= 1 && $update_progress <= 6) {
+            if ($update_id > 0 && $update_progress >= 1 && $update_progress <= 7) {
                 $wpdb->update($table_name, ['progress' => $update_progress], ['id' => $update_id], ['%d'], ['%d']);
                 // リダイレクトで再読み込み（POSTリダブミット防止）
                 $redirect_url = esc_url_raw( $_SERVER['REQUEST_URI'] );
@@ -1158,7 +1158,8 @@ class Kntan_Order_Class {
                     3 => '受注',
                     4 => '完了',
                     5 => '請求済',
-                    6 => '入金済'
+                    6 => '入金済',
+                    7 => 'ボツ'
                 ];
 
                 // 受注書詳細の表示（以前のレイアウト）
@@ -1731,7 +1732,8 @@ $content .= '</form>';
             3 => '受注',
             4 => '完了',
             5 => '請求済',
-            6 => '入金済'
+            6 => '入金済',
+            7 => 'ボツ'
         ];
 
         // 帳票タイトルと内容の定義

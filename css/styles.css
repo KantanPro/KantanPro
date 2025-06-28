@@ -513,6 +513,8 @@
 .progress-select option[value="3"] { color: #2196f3; } /* 受注 */
 .progress-select option[value="4"] { color: #4caf50; } /* 完了 */
 .progress-select option[value="5"] { color: #9c27b0; } /* 請求済 */
+.progress-select option[value="6"] { color: #333333; } /* 入金済 */
+.progress-select option[value="7"] { color: #d32f2f; } /* ボツ */
 
 /* 進捗ラベル（例: <label>進捗：</label>） */
 .progress-filter label {
@@ -741,6 +743,12 @@
 .progress-select option[value="5"] {
   background-color: #ffebee; /* 請求済: 薄い赤 */
 }
+.progress-select option[value="6"] {
+  background-color: #f5f5f5; /* 入金済: 薄いグレー */
+}
+.progress-select option[value="7"] {
+  background-color: #ffebee; /* ボツ: 薄い赤（ボツらしい色） */
+}
 
 /* 選択された進捗状態に応じたセレクトボックスの色 */
 .progress-select.status-1 {
@@ -760,6 +768,14 @@
   border-color: #e1bee7;
 }
 .progress-select.status-5 {
+  background-color: #ffebee;
+  border-color: #ffcdd2;
+}
+.progress-select.status-6 {
+  background-color: #f5f5f5;
+  border-color: #e0e0e0;
+}
+.progress-select.status-7 {
   background-color: #ffebee;
   border-color: #ffcdd2;
 }
