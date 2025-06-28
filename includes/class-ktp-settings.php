@@ -164,6 +164,7 @@ class KTP_Settings {
         add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_styles' ) );
         add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_media_scripts' ) );
         add_action( 'wp_head', array( $this, 'output_custom_styles' ) );
+        add_action( 'admin_head', array( $this, 'output_custom_styles' ) );
         add_action( 'admin_init', array( $this, 'handle_default_settings_actions' ) );
         
         // ユーザーアクティビティの追跡
@@ -2176,6 +2177,16 @@ div.ktp_header > * {
                 $custom_css .= '
 .tab_item {
     border-bottom-color: ' . esc_attr( $tab_border_color ) . ' !important;
+}';
+                
+                // コントローラーの背景色設定（タブの下線色を使用）
+                $custom_css .= '
+/* 各タブのコントローラー背景色設定 - PC/タブレット/モバイル共通 */
+.controller {
+    background-color: ' . esc_attr( $tab_border_color ) . ' !important;
+    padding: 10px !important;
+    border-radius: 4px !important;
+    margin-bottom: 10px !important;
 }';
             }
         }
