@@ -442,7 +442,10 @@ class Kntan_Client_Class {
                        END;
                    }
                } else {
-                   $results[] = '<div class="ktp_data_list_item">' . esc_html__('この顧客の受注データはありません。', 'ktpwp') . '</div>';
+                   $results[] = '<div class="ktp_data_list_item" style="padding: 15px 20px; background: linear-gradient(135deg, #fff3cd 0%, #fff8e1 100%); border-radius: 6px; margin: 15px 0; color: #856404; font-weight: 600; text-align: center; box-shadow: 0 3px 12px rgba(0,0,0,0.07); display: flex; align-items: center; justify-content: center; font-size: 16px; gap: 10px;">'
+                       . '<span class="material-symbols-outlined" style="color: #ffc107;">info</span>'
+                       . 'まだ注文がありません。'
+                       . '</div>';
                }
            } else {
                $results[] = '<div class="ktp_data_list_item">' . esc_html__('顧客データが見つかりません。', 'ktpwp') . '</div>';
@@ -526,7 +529,7 @@ class Kntan_Client_Class {
            // 協力会社タブと同じパターンで「info顧客データがありません」を表示
            $results_f .= '<div style="padding: 15px 20px; background: linear-gradient(135deg, #fff3cd 0%, #fff8e1 100%); border-radius: 6px; margin: 15px 0; color: #856404; font-weight: 600; text-align: center; box-shadow: 0 3px 12px rgba(0,0,0,0.07); display: flex; align-items: center; justify-content: center; font-size: 16px; gap: 10px;">'
                . '<span class="material-symbols-outlined" style="color: #ffc107;">info</span>'
-               . '顧客データがありません'
+               . 'まだ注文がありません。'
                . '</div>';
        } else {
            // 受注履歴セクションを追加（リストBOX内、ページネーションの後）
@@ -654,7 +657,10 @@ class Kntan_Client_Class {
                        . '</a>';
                }
            } else {
-               $results_f .= '<div class="ktp_data_list_item">' . esc_html__('この顧客の受注データはありません。', 'ktpwp') . '</div>';
+               $results_f .= '<div class="ktp_data_list_item" style="padding: 15px 20px; background: linear-gradient(135deg, #fff3cd 0%, #fff8e1 100%); border-radius: 6px; margin: 15px 0; color: #856404; font-weight: 600; text-align: center; box-shadow: 0 3px 12px rgba(0,0,0,0.07); display: flex; align-items: center; justify-content: center; font-size: 16px; gap: 10px;">'
+                   . '<span class="material-symbols-outlined" style="color: #ffc107;">info</span>'
+                   . 'まだ注文がありません。'
+                   . '</div>';
            }
            
            // 注文履歴ページネーション

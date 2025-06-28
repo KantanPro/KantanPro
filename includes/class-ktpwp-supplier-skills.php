@@ -584,8 +584,8 @@ class KTPWP_Supplier_Skills {
             // ページネーションを職能リストの下に表示
             $html .= $this->render_skills_pagination( $current_page, $total_pages, $total_skills, $supplier_id );
         } else {
-            $html .= '<div class="ktp_data_list_item" style="color: #666; font-style: italic; margin-top: 15px; padding: 20px; text-align: center; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 4px;">';
-            $html .= '<span class="material-symbols-outlined" style="font-size: 20px; vertical-align: middle; margin-right: 8px; color: #999;">info</span>';
+            $html .= '<div class="ktp_data_list_item" style="padding: 15px 20px; background: linear-gradient(135deg, #fff3cd 0%, #fff8e1 100%); border-radius: 6px; margin: 15px 0; color: #856404; font-weight: 600; text-align: center; box-shadow: 0 3px 12px rgba(0,0,0,0.07); display: flex; align-items: center; justify-content: center; font-size: 16px; gap: 10px;">';
+            $html .= '<span class="material-symbols-outlined" style="color: #ffc107;">info</span>';
             $html .= 'まだ商品・サービスが登録されていません。';
             $html .= '</div>';
             
