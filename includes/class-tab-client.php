@@ -650,10 +650,11 @@ class Kntan_Client_Class {
        }
        
        // 注文履歴ページネーション
-       if ($order_total_pages > 1) {
+       // どんな場合でもページネーションを表示するため、条件チェックを削除
+       // if ($order_total_pages > 1) {
            // 注文履歴のページネーションではview_modeを設定せず、通常の顧客リスト表示を維持
            $results_f .= $this->render_order_history_pagination($order_current_page, $order_total_pages, $query_limit, $name, $flg, $base_page_url, $order_total_rows, $current_customer_id);
-       }
+       // }
 
        // リストBOXを閉じる
        $results_f .= "</div>";
@@ -1449,9 +1450,10 @@ class Kntan_Client_Class {
      * @return string ページネーションHTML
      */
     private function render_pagination($current_page, $total_pages, $query_limit, $name, $flg, $base_page_url, $total_rows, $view_mode = '', $client_id = null) {
-        if ($total_pages <= 1) {
-            return '';
-        }
+        // データ0でも常にページネーションを表示するため、条件チェックを削除
+        // if ($total_pages <= 1) {
+        //     return '';
+        // }
 
         $pagination_html = '<div class="pagination" style="text-align: center; margin: 20px 0; padding: 20px 0;">';
         
@@ -1634,9 +1636,10 @@ class Kntan_Client_Class {
      * @return string ページネーションHTML
      */
     private function render_order_history_pagination($current_page, $total_pages, $query_limit, $name, $flg, $base_page_url, $total_rows, $client_id) {
-        if ($total_pages <= 1) {
-            return '';
-        }
+        // データ0でも常にページネーションを表示するため、条件チェックを削除
+        // if ($total_pages <= 1) {
+        //     return '';
+        // }
 
         $pagination_html = '<div class="pagination" style="text-align: center; margin: 20px 0; padding: 20px 0;">';
         
