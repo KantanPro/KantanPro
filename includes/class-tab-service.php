@@ -932,8 +932,11 @@ class Kntan_Service_Class {
      * @return string ページネーションHTML
      */
     private function render_pagination($current_page, $total_pages, $query_limit, $name, $flg, $base_page_url, $total_rows) {
-        if ($total_pages <= 1) {
-            return '';
+        // 0データの場合でもページネーションを表示（要件対応）
+        // データが0件の場合はtotal_pagesが0になるため、最低1ページとして扱う
+        if ($total_pages == 0) {
+            $total_pages = 1;
+            $current_page = 1;
         }
 
         $pagination_html = '<div class="pagination" style="text-align: center; margin: 20px 0; padding: 20px 0;">';
@@ -952,15 +955,17 @@ class Kntan_Service_Class {
         $hover_effect = 'onmouseover="this.style.backgroundColor=\'#f5f5f5\'; this.style.transform=\'translateY(-1px)\'; this.style.boxShadow=\'0 2px 5px rgba(0,0,0,0.15)\';" onmouseout="this.style.backgroundColor=\'#fff\'; this.style.transform=\'none\'; this.style.boxShadow=\'0 1px 3px rgba(0,0,0,0.1)\';"';
 
         // 前のページボタン
-        if ($current_page > 1) {
+        if ($current_page > 1 && $total_pages > 1) {
             $prev_args = array(
                 'tab_name' => $name,
                 'page_start' => ($current_page - 2) * $query_limit,
                 'page_stage' => 2,
                 'flg' => $flg
             );
+            // 現在のソート順を維持
             if (isset($_GET['sort_by'])) $prev_args['sort_by'] = $_GET['sort_by'];
             if (isset($_GET['sort_order'])) $prev_args['sort_order'] = $_GET['sort_order'];
+            
             $prev_url = esc_url(add_query_arg($prev_args, $base_page_url));
             $pagination_html .= "<a href=\"{$prev_url}\" style=\"{$button_style}\" {$hover_effect}>‹</a>";
         }
@@ -969,16 +974,18 @@ class Kntan_Service_Class {
         $start_page = max(1, $current_page - 2);
         $end_page = min($total_pages, $current_page + 2);
 
-        // 最初のページを表示
-        if ($start_page > 1) {
+        // 最初のページを表示（データが0件でも1ページ目は表示）
+        if ($start_page > 1 && $total_pages > 1) {
             $first_args = array(
                 'tab_name' => $name,
                 'page_start' => 0,
                 'page_stage' => 2,
                 'flg' => $flg
             );
+            // 現在のソート順を維持
             if (isset($_GET['sort_by'])) $first_args['sort_by'] = $_GET['sort_by'];
             if (isset($_GET['sort_order'])) $first_args['sort_order'] = $_GET['sort_order'];
+            
             $first_url = esc_url(add_query_arg($first_args, $base_page_url));
             $pagination_html .= "<a href=\"{$first_url}\" style=\"{$button_style}\" {$hover_effect}>1</a>";
             
@@ -995,8 +1002,10 @@ class Kntan_Service_Class {
                 'page_stage' => 2,
                 'flg' => $flg
             );
+            // 現在のソート順を維持
             if (isset($_GET['sort_by'])) $page_args['sort_by'] = $_GET['sort_by'];
             if (isset($_GET['sort_order'])) $page_args['sort_order'] = $_GET['sort_order'];
+            
             $page_url = esc_url(add_query_arg($page_args, $base_page_url));
             
             if ($i == $current_page) {
@@ -1007,7 +1016,7 @@ class Kntan_Service_Class {
         }
 
         // 最後のページを表示
-        if ($end_page < $total_pages) {
+        if ($end_page < $total_pages && $total_pages > 1) {
             if ($end_page < $total_pages - 1) {
                 $pagination_html .= "<span style=\"{$button_style} background: transparent; border: none; cursor: default;\">...</span>";
             }
@@ -1018,29 +1027,31 @@ class Kntan_Service_Class {
                 'page_stage' => 2,
                 'flg' => $flg
             );
+            // 現在のソート順を維持
             if (isset($_GET['sort_by'])) $last_args['sort_by'] = $_GET['sort_by'];
             if (isset($_GET['sort_order'])) $last_args['sort_order'] = $_GET['sort_order'];
+            
             $last_url = esc_url(add_query_arg($last_args, $base_page_url));
             $pagination_html .= "<a href=\"{$last_url}\" style=\"{$button_style}\" {$hover_effect}>{$total_pages}</a>";
         }
 
         // 次のページボタン
-        if ($current_page < $total_pages) {
+        if ($current_page < $total_pages && $total_pages > 1) {
             $next_args = array(
                 'tab_name' => $name,
                 'page_start' => $current_page * $query_limit,
                 'page_stage' => 2,
                 'flg' => $flg
             );
+            // 現在のソート順を維持
             if (isset($_GET['sort_by'])) $next_args['sort_by'] = $_GET['sort_by'];
             if (isset($_GET['sort_order'])) $next_args['sort_order'] = $_GET['sort_order'];
+            
             $next_url = esc_url(add_query_arg($next_args, $base_page_url));
             $pagination_html .= "<a href=\"{$next_url}\" style=\"{$button_style}\" {$hover_effect}>›</a>";
         }
 
-        // 2行目のボタン部分の終了
         $pagination_html .= '</div>';
-        
         $pagination_html .= '</div>';
         
         return $pagination_html;

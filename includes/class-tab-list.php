@@ -344,10 +344,9 @@ class Kantan_List_Class {
             }
         }
         // --- ページネーション ---
-        if ($total_pages > 1) {
-            // 統一されたページネーションデザインを使用
-            $content .= $this->render_pagination($current_page, $total_pages, $query_limit, $tab_name, $flg, $selected_progress, $total_rows);
-        }
+        // データ0でも常にページネーションを表示するため、条件チェックを削除
+        // 統一されたページネーションデザインを使用
+        $content .= $this->render_pagination($current_page, $total_pages, $query_limit, $tab_name, $flg, $selected_progress, $total_rows);
         $content .= '</div>'; // .ktp_work_list_box 終了
         // --- ここまでラッパー追加 ---
 
@@ -370,8 +369,11 @@ class Kantan_List_Class {
      * @return string ページネーションHTML
      */
     private function render_pagination($current_page, $total_pages, $query_limit, $tab_name, $flg, $selected_progress, $total_rows) {
-        if ($total_pages <= 1) {
-            return '';
+        // 0データの場合でもページネーションを表示（要件対応）
+        // データが0件の場合はtotal_pagesが0になるため、最低1ページとして扱う
+        if ($total_pages == 0) {
+            $total_pages = 1;
+            $current_page = 1;
         }
 
         $pagination_html = '<div class="pagination" style="text-align: center; margin: 20px 0; padding: 20px 0;">';
@@ -390,7 +392,7 @@ class Kantan_List_Class {
         $hover_effect = 'onmouseover="this.style.backgroundColor=\'#f5f5f5\'; this.style.transform=\'translateY(-1px)\'; this.style.boxShadow=\'0 2px 5px rgba(0,0,0,0.15)\';" onmouseout="this.style.backgroundColor=\'#fff\'; this.style.transform=\'none\'; this.style.boxShadow=\'0 1px 3px rgba(0,0,0,0.1)\';"';
 
         // 前のページボタン
-        if ($current_page > 1) {
+        if ($current_page > 1 && $total_pages > 1) {
             $prev_args = array(
                 'tab_name' => $tab_name,
                 'page_start' => ($current_page - 2) * $query_limit,
@@ -406,8 +408,8 @@ class Kantan_List_Class {
         $start_page = max(1, $current_page - 2);
         $end_page = min($total_pages, $current_page + 2);
 
-        // 最初のページを表示
-        if ($start_page > 1) {
+        // 最初のページを表示（データが0件でも1ページ目は表示）
+        if ($start_page > 1 && $total_pages > 1) {
             $first_args = array(
                 'tab_name' => $tab_name,
                 'page_start' => 0,
@@ -442,7 +444,7 @@ class Kantan_List_Class {
         }
 
         // 最後のページを表示
-        if ($end_page < $total_pages) {
+        if ($end_page < $total_pages && $total_pages > 1) {
             if ($end_page < $total_pages - 1) {
                 $pagination_html .= "<span style=\"{$button_style} background: transparent; border: none; cursor: default;\">...</span>";
             }
@@ -459,7 +461,7 @@ class Kantan_List_Class {
         }
 
         // 次のページボタン
-        if ($current_page < $total_pages) {
+        if ($current_page < $total_pages && $total_pages > 1) {
             $next_args = array(
                 'tab_name' => $tab_name,
                 'page_start' => $current_page * $query_limit,
@@ -471,9 +473,7 @@ class Kantan_List_Class {
             $pagination_html .= "<a href=\"{$next_url}\" style=\"{$button_style}\" {$hover_effect}>›</a>";
         }
 
-        // 2行目のボタン部分の終了
         $pagination_html .= '</div>';
-
         $pagination_html .= '</div>';
         
         return $pagination_html;

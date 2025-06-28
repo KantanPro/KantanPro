@@ -273,65 +273,63 @@ class KTPWP_Service_UI {
         $html .= '</table>';
         
         // ページネーション
-        if ($total_pages > 1) {
-            $html .= '<div class="tablenav bottom">';
-            $html .= '<div class="tablenav-pages">';
-            $html .= '<span class="displaying-num">' . sprintf(_n('%s項目', '%s項目', $total_services, 'ktpwp'), number_format_i18n($total_services)) . '</span>';
-            
-            // ページネーションリンクの生成
-            $page_links = array();
-            
-            // ページネーションベースURL
-            $pagination_args = array(
-                'tab_name' => $name,
-                'sort_by' => $sort_by,
-                'sort_order' => $sort_order
-            );
-            
-            // 検索パラメータを維持
-            if (!empty($search)) {
-                $pagination_args['search'] = $search;
-            }
-            if (!empty($category)) {
-                $pagination_args['category'] = $category;
-            }
-            
-            $pagination_url = add_query_arg($pagination_args, $base_page_url);
-            
-            // 前のページへのリンク
-            if ($paged > 1) {
-                $page_links[] = '<a class="prev-page" href="' . esc_url(add_query_arg('paged', ($paged - 1), $pagination_url)) . '">
-                    <span aria-hidden="true">‹</span>
-                </a>';
-            } else {
-                $page_links[] = '<span class="tablenav-pages-navspan button disabled">‹</span>';
-            }
-            
-            // ページ番号リンク
-            $start_number = max(1, $paged - 2);
-            $end_number = min($total_pages, $paged + 2);
-            
-            for ($i = $start_number; $i <= $end_number; $i++) {
-                if ($i == $paged) {
-                    $page_links[] = '<span class="tablenav-pages-navspan button current">' . $i . '</span>';
-                } else {
-                    $page_links[] = '<a class="page-numbers" href="' . esc_url(add_query_arg('paged', $i, $pagination_url)) . '">' . $i . '</a>';
-                }
-            }
-            
-            // 次のページへのリンク
-            if ($paged < $total_pages) {
-                $page_links[] = '<a class="next-page" href="' . esc_url(add_query_arg('paged', ($paged + 1), $pagination_url)) . '">
-                    <span aria-hidden="true">›</span>
-                </a>';
-            } else {
-                $page_links[] = '<span class="tablenav-pages-navspan button disabled">›</span>';
-            }
-            
-            $html .= join('', $page_links);
-            $html .= '</div>';
-            $html .= '</div>';
+        $html .= '<div class="tablenav bottom">';
+        $html .= '<div class="tablenav-pages">';
+        $html .= '<span class="displaying-num">' . sprintf(_n('%s項目', '%s項目', $total_services, 'ktpwp'), number_format_i18n($total_services)) . '</span>';
+        
+        // ページネーションリンクの生成
+        $page_links = array();
+        
+        // ページネーションベースURL
+        $pagination_args = array(
+            'tab_name' => $name,
+            'sort_by' => $sort_by,
+            'sort_order' => $sort_order
+        );
+        
+        // 検索パラメータを維持
+        if (!empty($search)) {
+            $pagination_args['search'] = $search;
         }
+        if (!empty($category)) {
+            $pagination_args['category'] = $category;
+        }
+        
+        $pagination_url = add_query_arg($pagination_args, $base_page_url);
+        
+        // 前のページへのリンク
+        if ($paged > 1) {
+            $page_links[] = '<a class="prev-page" href="' . esc_url(add_query_arg('paged', ($paged - 1), $pagination_url)) . '">
+                <span aria-hidden="true">‹</span>
+            </a>';
+        } else {
+            $page_links[] = '<span class="tablenav-pages-navspan button disabled">‹</span>';
+        }
+        
+        // ページ番号リンク
+        $start_number = max(1, $paged - 2);
+        $end_number = min($total_pages, $paged + 2);
+        
+        for ($i = $start_number; $i <= $end_number; $i++) {
+            if ($i == $paged) {
+                $page_links[] = '<span class="tablenav-pages-navspan button current">' . $i . '</span>';
+            } else {
+                $page_links[] = '<a class="page-numbers" href="' . esc_url(add_query_arg('paged', $i, $pagination_url)) . '">' . $i . '</a>';
+            }
+        }
+        
+        // 次のページへのリンク
+        if ($paged < $total_pages) {
+            $page_links[] = '<a class="next-page" href="' . esc_url(add_query_arg('paged', ($paged + 1), $pagination_url)) . '">
+                <span aria-hidden="true">›</span>
+            </a>';
+        } else {
+            $page_links[] = '<span class="tablenav-pages-navspan button disabled">›</span>';
+        }
+        
+        $html .= join('', $page_links);
+        $html .= '</div>';
+        $html .= '</div>';
         
         $html .= '</div>'; // .ktp_service_list_container
         
