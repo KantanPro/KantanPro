@@ -1304,50 +1304,49 @@ class Kntan_Client_Class {
         // 変数の初期化（未定義の場合に備えて）
         if (!isset($company_name)) $company_name = '';
         if (!isset($user_name)) $user_name = '';
+        if (!isset($email)) $email = '';
+        if (!isset($url)) $url = '';
         if (!isset($representative_name)) $representative_name = '';
+        if (!isset($phone)) $phone = '';
         if (!isset($postal_code)) $postal_code = '';
         if (!isset($prefecture)) $prefecture = '';
         if (!isset($city)) $city = '';
         if (!isset($address)) $address = '';
         if (!isset($building)) $building = '';
+        if (!isset($closing_day)) $closing_day = '';
+        if (!isset($payment_month)) $payment_month = '';
+        if (!isset($payment_day)) $payment_day = '';
+        if (!isset($payment_method)) $payment_method = '';
+        if (!isset($tax_category)) $tax_category = '';
+        if (!isset($category)) $category = '';
+        if (!isset($client_status)) $client_status = '';
+        if (!isset($memo)) $memo = '';
 
-        // データを指定
-        $data_src = [
+        // 顧客情報のプレビュー用HTMLを生成
+        $customer_preview_html = $this->generateCustomerPreviewHTML([
             'company_name' => $company_name,
             'name' => $user_name,
+            'email' => $email,
+            'url' => $url,
             'representative_name' => $representative_name,
+            'phone' => $phone,
             'postal_code' => $postal_code,
             'prefecture' => $prefecture,
             'city' => $city,
             'address' => $address,
             'building' => $building,
-        ];
-
-        // データを取得
-        $customer = $data_src['company_name'];
-        $user_name = $data_src['name'];
-        $representative_name = $data_src['representative_name'];
-        $postal_code = $data_src['postal_code'];
-        $prefecture = $data_src['prefecture'];
-        $city = $data_src['city'];
-        $address = $data_src['address'];
-               $building = $data_src['building'];
-
-        $data = [
-            'postal_code' => "$postal_code",
-            'prefecture' => "$prefecture",
-            'city' => "$city",
-            'address' => "$address",
-            'building' => "$building",
-            'customer' => "$customer",
-            'user_name' => "$user_name",
-        ];
-
-        $print_html = new Print_Class($data);
-        $print_html = $print_html->generateHTML();
+            'closing_day' => $closing_day,
+            'payment_month' => $payment_month,
+            'payment_day' => $payment_day,
+            'payment_method' => $payment_method,
+            'tax_category' => $tax_category,
+            'category' => $category,
+            'client_status' => $client_status,
+            'memo' => $memo,
+        ]);
 
         // PHP
-        $print_html = json_encode($print_html);   // JSON形式にエンコード
+        $customer_preview_html = json_encode($customer_preview_html);   // JSON形式にエンコード
 
         // Simplified JavaScript - matching Update_Table approach
         $print = <<<END
@@ -1355,10 +1354,10 @@ class Kntan_Client_Class {
             var isPreviewOpen = false;
 
             function printContent() {
-                var printContent = $print_html;
+                var printContent = $customer_preview_html;
                 var printWindow = window.open('', '_blank');
                 printWindow.document.open();
-                printWindow.document.write('<html><head><title>印刷</title></head><body>');
+                printWindow.document.write('<html><head><title>顧客情報印刷</title></head><body>');
                 printWindow.document.write(printContent);
                 printWindow.document.write('<script>window.onafterprint = function(){ window.close(); }<\/script>');
                 printWindow.document.write('</body></html>');
@@ -1379,7 +1378,7 @@ class Kntan_Client_Class {
                     previewButton.innerHTML = '<span class="material-symbols-outlined" aria-label="プレビュー">preview</span>';
                     isPreviewOpen = false;
                 } else {
-                    var printContent = $print_html;
+                    var printContent = $customer_preview_html;
 
                     if (!previewWindow) {
                         previewWindow = document.createElement('div');
@@ -1608,6 +1607,119 @@ class Kntan_Client_Class {
         $pagination_html .= '</div>';
 
         return $pagination_html;
+    }
+
+    /**
+     * 顧客情報のプレビュー用HTMLを生成するメソッド
+     *
+     * @param array $customer_data 顧客データ
+     * @return string 顧客情報のプレビューHTML
+     */
+    private function generateCustomerPreviewHTML($customer_data) {
+        $company_name = $customer_data['company_name'] ?? '';
+        $name = $customer_data['name'] ?? '';
+        $email = $customer_data['email'] ?? '';
+        $url = $customer_data['url'] ?? '';
+        $representative_name = $customer_data['representative_name'] ?? '';
+        $phone = $customer_data['phone'] ?? '';
+        $postal_code = $customer_data['postal_code'] ?? '';
+        $prefecture = $customer_data['prefecture'] ?? '';
+        $city = $customer_data['city'] ?? '';
+        $address = $customer_data['address'] ?? '';
+        $building = $customer_data['building'] ?? '';
+        $closing_day = $customer_data['closing_day'] ?? '';
+        $payment_month = $customer_data['payment_month'] ?? '';
+        $payment_day = $customer_data['payment_day'] ?? '';
+        $payment_method = $customer_data['payment_method'] ?? '';
+        $tax_category = $customer_data['tax_category'] ?? '';
+        $category = $customer_data['category'] ?? '';
+        $client_status = $customer_data['client_status'] ?? '';
+        $memo = $customer_data['memo'] ?? '';
+
+        // 住所の組み立て
+        $full_address = '';
+        if (!empty($prefecture)) $full_address .= $prefecture;
+        if (!empty($city)) $full_address .= $city;
+        if (!empty($address)) $full_address .= $address;
+        if (!empty($building)) $full_address .= $building;
+
+        return '
+        <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 900px; margin: 0 auto;">
+            <div style="text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 20px;">
+                <h1 style="color: #333; margin: 0; font-size: 24px;">顧客情報</h1>
+            </div>
+            
+            <table style="border-collapse: collapse; width: 100%; margin-bottom: 20px;">
+                <tr>
+                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa; width: 25%;">会社名</td>
+                    <td style="border: 1px solid #ddd; padding: 12px;">' . esc_html($company_name) . '</td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">担当者名</td>
+                    <td style="border: 1px solid #ddd; padding: 12px;">' . esc_html($name) . '</td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">メールアドレス</td>
+                    <td style="border: 1px solid #ddd; padding: 12px;">' . esc_html($email) . '</td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">URL</td>
+                    <td style="border: 1px solid #ddd; padding: 12px;">' . esc_html($url) . '</td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">代表者名</td>
+                    <td style="border: 1px solid #ddd; padding: 12px;">' . esc_html($representative_name) . '</td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">電話番号</td>
+                    <td style="border: 1px solid #ddd; padding: 12px;">' . esc_html($phone) . '</td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">郵便番号</td>
+                    <td style="border: 1px solid #ddd; padding: 12px;">' . esc_html($postal_code) . '</td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">住所</td>
+                    <td style="border: 1px solid #ddd; padding: 12px;">' . esc_html($full_address) . '</td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">締め日</td>
+                    <td style="border: 1px solid #ddd; padding: 12px;">' . esc_html($closing_day) . '</td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">支払月</td>
+                    <td style="border: 1px solid #ddd; padding: 12px;">' . esc_html($payment_month) . '</td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">支払日</td>
+                    <td style="border: 1px solid #ddd; padding: 12px;">' . esc_html($payment_day) . '</td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">支払方法</td>
+                    <td style="border: 1px solid #ddd; padding: 12px;">' . esc_html($payment_method) . '</td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">税区分</td>
+                    <td style="border: 1px solid #ddd; padding: 12px;">' . esc_html($tax_category) . '</td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">カテゴリー</td>
+                    <td style="border: 1px solid #ddd; padding: 12px;">' . esc_html($category) . '</td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">対象｜対象外</td>
+                    <td style="border: 1px solid #ddd; padding: 12px;">' . esc_html($client_status) . '</td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">メモ</td>
+                    <td style="border: 1px solid #ddd; padding: 12px; white-space: pre-wrap;">' . esc_html($memo) . '</td>
+                </tr>
+            </table>
+            
+            <div style="text-align: center; margin-top: 30px; color: #666; font-size: 12px;">
+                <p>印刷日時: ' . date('Y年m月d日 H:i') . '</p>
+            </div>
+        </div>';
     }
 }
 // class_exists
