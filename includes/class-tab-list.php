@@ -116,15 +116,29 @@ class Kantan_List_Class {
         $content .= '<div class="workflow" style="width:100%;margin:0px 0 0px 0;">';
         $content .= '<div class="progress-filter" style="display:flex;gap:8px;width:100%;justify-content:center;">';
         
+        // 進捗アイコンの定義
+        $progress_icons = array(
+            1 => 'receipt',      // 受付中
+            2 => 'calculate',    // 見積中
+            3 => 'build',        // 作成中
+            4 => 'check_circle', // 完成未請求
+            5 => 'payment',      // 請求済
+            6 => 'account_balance_wallet' // 入金済
+        );
+        
         foreach ( $progress_labels as $num => $label ) {
             $active = ( $selected_progress === $num ) ? 'style="font-weight:bold;background:#1976d2;color:#fff;"' : '';
             $btn_label = esc_html( $label ) . ' (' . $progress_counts[ $num ] . ')';
+            $icon = isset($progress_icons[$num]) ? $progress_icons[$num] : 'circle';
             
             // 警告マークはJavaScriptで動的に管理するため、初期表示はしない
             $warning_mark = '';
             
-            // $content .= '<a href="?tab_name=' . urlencode($tab_name) . '&progress=' . $num . '" class="progress-btn" '.$active.'>' . $btn_label . '</a>';
-            $content .= '<a href="' . add_query_arg(array('tab_name' => $tab_name, 'progress' => $num)) . '" class="progress-btn" '.$active.'>' . $btn_label . $warning_mark . '</a>';
+            $content .= '<a href="' . add_query_arg(array('tab_name' => $tab_name, 'progress' => $num)) . '" class="progress-btn" data-progress="' . $num . '" data-icon="' . $icon . '" ' . $active . '>';
+            $content .= '<span class="progress-btn-icon material-symbols-outlined">' . $icon . '</span>';
+            $content .= '<span class="progress-btn-text">' . $btn_label . '</span>';
+            $content .= $warning_mark;
+            $content .= '</a>';
         }
         $content .= '</div>';
         $content .= '</div>';

@@ -178,7 +178,7 @@ jQuery(document).ready(function($) {
                     
                     // 進捗ボタンの警告マークをチェック
                     var $progressButton = $('.progress-btn').filter(function() {
-                        return $(this).text().indexOf('作成中') !== -1;
+                        return $(this).data('progress') === 3; // 作成中（progress = 3）
                     });
                     
                     console.log('[DELIVERY-DATES] 作成中ボタン数:', $progressButton.length);
@@ -204,7 +204,7 @@ jQuery(document).ready(function($) {
                     console.log('[DELIVERY-DATES] 警告件数取得に失敗:', response.data);
                     // エラー時は既存の警告マークを削除
                     var $progressButton = $('.progress-btn').filter(function() {
-                        return $(this).text().indexOf('作成中') !== -1;
+                        return $(this).data('progress') === 3;
                     });
                     $progressButton.find('.delivery-warning-mark').remove();
                 }
@@ -217,7 +217,7 @@ jQuery(document).ready(function($) {
                 });
                 // エラー時は既存の警告マークを削除
                 var $progressButton = $('.progress-btn').filter(function() {
-                    return $(this).text().indexOf('作成中') !== -1;
+                    return $(this).data('progress') === 3;
                 });
                 $progressButton.find('.delivery-warning-mark').remove();
             }

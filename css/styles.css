@@ -538,12 +538,100 @@
   border: 1px solid #ccc;
   transition: background 0.2s, color 0.2s;
   font-size: 16px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  position: relative;
 }
 
 /* 進捗ボタンのホバー時 */
 .progress-btn:hover {
   background: #1976d2;
   color: #fff;
+}
+
+/* 進捗ボタン内のアイコン */
+.progress-btn-icon {
+  font-size: 18px;
+  line-height: 1;
+}
+
+/* 進捗ボタン内のテキスト */
+.progress-btn-text {
+  white-space: nowrap;
+}
+
+/* モバイル表示時の進捗ボタンアイコン化 */
+@media screen and (max-width: 768px) {
+  .progress-btn {
+    padding: 8px;
+    border-radius: 50%;
+    width: 48px;
+    height: 48px;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 48px;
+    min-height: 48px;
+  }
+  
+  .progress-btn-icon {
+    font-size: 20px;
+    line-height: 1;
+  }
+  
+  .progress-btn-text {
+    font-size: 10px;
+    line-height: 1;
+    text-align: center;
+    white-space: normal;
+    word-break: break-word;
+    max-width: 40px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+  
+  /* アクティブ状態のモバイル表示 */
+  .progress-btn[style*="background:#1976d2"] {
+    background: #1976d2 !important;
+    color: #fff !important;
+    box-shadow: 0 2px 8px rgba(25, 118, 210, 0.3);
+  }
+  
+  /* 進捗フィルタエリアのモバイル調整 */
+  .progress-filter {
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+}
+
+/* 小さいモバイル表示時の調整 */
+@media screen and (max-width: 480px) {
+  .progress-btn {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 6px;
+  }
+  
+  .progress-btn-icon {
+    font-size: 18px;
+  }
+  
+  .progress-btn-text {
+    font-size: 9px;
+    max-width: 36px;
+  }
+  
+  .progress-filter {
+    gap: 8px;
+  }
 }
 
 /* 仕事リストタブ専用 全幅レイアウト */
@@ -3692,4 +3780,39 @@ body.ktpwp-modal-open {
   align-items: center;
   justify-content: flex-end;
   gap: 4px;
+}
+
+/* 進捗ボタン内の警告マークの位置調整 */
+.progress-btn {
+  position: relative;
+}
+
+.progress-btn .delivery-warning-mark {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  z-index: 10;
+}
+
+/* モバイル表示時の警告マーク位置調整 */
+@media screen and (max-width: 768px) {
+  .progress-btn .delivery-warning-mark {
+    top: -3px;
+    right: -3px;
+    width: 14px;
+    height: 14px;
+    line-height: 14px;
+    font-size: 9px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .progress-btn .delivery-warning-mark {
+    top: -2px;
+    right: -2px;
+    width: 12px;
+    height: 12px;
+    line-height: 12px;
+    font-size: 8px;
+  }
 }
