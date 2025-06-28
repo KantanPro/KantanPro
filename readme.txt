@@ -4,7 +4,7 @@ Contributors: kantanpro
 Tags: workflow, order management, business, client, service, supplier, invoice, report, chat, product management
 Requires at least: 5.0
 Tested up to: 6.5
-Stable tag: 1.2.0(beta)
+Stable tag: 1.2.1(beta)
 License: GPLv2
 licenses URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -30,6 +30,12 @@ KantanPro (KTPWP) は、WordPressで動作する業務管理プラグインで�
 - XSS・CSRF対策
 - ファイルアップロード検証
 - 権限管理・安全なDBアクセス
+
+== システム要件 ==
+* WordPress 5.0 以上
+* PHP 7.4 以上
+* MySQL 5.6 以上 または MariaDB 10.0 以上
+* 推奨メモリ: 256MB 以上
 
 == インストール ==
 1. プラグインを `/wp-content/plugins/` にアップロード、または管理画面からインストール
@@ -69,25 +75,21 @@ KantanPro (KTPWP) は、WordPressで動作する業務管理プラグインで�
    「伝票処理」タブから新規受注書を作成し、顧客とサービスを選択してください。
 7. **進捗管理**
    「仕事リスト」タブで案件の進捗を管理してください。
+
 = 進捗ステータス =
 1. **受付中** - 新規受注、内容確認中
 2. **見積中** - 見積作成・提案中
-3. **作成中** - 作業実行中
-4. **完成未請求** - 作業完了、請求書未発行
+3. **受注** - 作業実行中
+4. **完了** - 作業完了、請求書未発行
 5. **請求済** - 請求書発行済み
 6. **入金済** - 支払い完了
+7. **ボツ** - 復活可能なボツ案件
 
-= データの管理 =
-* **ソート機能**: 各リストはID、名前、日付、カテゴリー等でソート可能
-* **検索機能**: 各タブで条件検索が可能
-* **ページネーション**: 大量データも快適に閲覧
-* **削除管理**: 対象外設定で論理削除による安全な管理
-
-== システム要件 ==
-* WordPress 5.0 以上
-* PHP 7.4 以上
-* MySQL 5.6 以上 または MariaDB 10.0 以上
-* 推奨メモリ: 256MB 以上
+= 1.2.1(beta) =
+* モバイル表示の改善
+* 進捗状況にボツ追加
+* 納期管理機能を実装
+* 得意先タブの構造変更
 
 = 1.2.0(beta) =
 * 設定タブの廃止

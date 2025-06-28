@@ -234,7 +234,7 @@ class KTPWP_Plugin_Reference {
             . '<h4>主な機能</h4>'
             . '<ul>'
             . '<li>6つの管理タブ（仕事リスト・伝票処理・得意先・サービス・協力会社・レポート）</li>'
-            . '<li>受注案件の進捗管理（6段階）</li>'
+            . '<li>受注案件の進捗管理（7段階）</li>'
             . '<li>受注書の作成・編集・印刷・プレビュー</li>'
             . '<li>顧客・サービス・仕入先のマスター管理</li>'
             . '<li>協力会社商品管理（商品名・単価・数量・単位の詳細管理）</li>'
@@ -243,6 +243,7 @@ class KTPWP_Plugin_Reference {
             . '<li>直感的なタブUI・ページネーション・ソート・検索</li>'
             . '<li>案件名インライン編集（リアルタイム更新）</li>'
             . '<li>レスポンシブデザイン</li>'
+            . '<li>納期管理機能</li>'
             . '</ul>'
             . '<h4>インストール</h4>'
             . '<ol>'
@@ -258,12 +259,23 @@ class KTPWP_Plugin_Reference {
             . '<li>MySQL 5.6 以上 または MariaDB 10.0 以上</li>'
             . '<li>推奨メモリ: 256MB 以上</li>'
             . '</ul>'
+            . '<h4>進捗ステータス</h4>'
+            . '<ul>'
+            . '<li><strong>受付中</strong> - 新規受注、内容確認中</li>'
+            . '<li><strong>見積中</strong> - 見積作成・提案中</li>'
+            . '<li><strong>受注</strong> - 作業実行中</li>'
+            . '<li><strong>完了</strong> - 作業完了、請求書未発行</li>'
+            . '<li><strong>請求済</strong> - 請求書発行済み</li>'
+            . '<li><strong>入金済</strong> - 支払い完了</li>'
+            . '<li><strong>ボツ</strong> - 復活可能なボツ案件</li>'
+            . '</ul>'
             . '<h4>変更履歴</h4>'
             . '<ul>'
-            . '<li>1.2.0(beta): 設定タブの廃止、伝票処理タブの最終実装、サービス・協力会社ポップアップの強化、行要素数値の最適化</li>'
-            . '<li>1.1.1(beta): 協力会社機能の大幅拡張、ページネーション機能の強化</li>'
-            . '<li>1.1.0(beta): 職能管理機能の拡張、Ajaxインライン編集、データマイグレーション等</li>'
-            . '<li>1.0.9(beta) 以前: UI/UX改善、セキュリティ強化、スタッフチャット自動スクロール等</li>'
+            . '<li><strong>1.2.1(beta)</strong>: モバイル表示の改善、進捗状況にボツ追加、納期管理機能を実装、得意先タブの構造変更</li>'
+            . '<li><strong>1.2.0(beta)</strong>: 設定タブの廃止、伝票処理タブの最終実装、サービス・協力会社ポップアップの強化、行要素数値の最適化</li>'
+            . '<li><strong>1.1.1(beta)</strong>: 協力会社機能の大幅拡張、ページネーション機能の強化</li>'
+            . '<li><strong>1.1.0(beta)</strong>: 職能管理機能の拡張、Ajaxインライン編集、データマイグレーション等</li>'
+            . '<li><strong>1.0.9(beta)</strong> 以前: UI/UX改善、セキュリティ強化、スタッフチャット自動スクロール等</li>'
             . '</ul>'
             . '</div>';
     }
@@ -280,9 +292,10 @@ class KTPWP_Plugin_Reference {
             . '<p>KantanProは6つのタブで構成され、ビジネスプロセス全体をカバーします。</p>'
             . '<div class="ktpwp-tabs-explanation">'
             . '<div class="ktpwp-tab-item"><h4>1. 仕事リスト</h4><ul>'
-            . '<li>受注案件の進捗管理とステータス追跡（6段階）</li>'
+            . '<li>受注案件の進捗管理とステータス追跡（7段階）</li>'
             . '<li>プロジェクト名・顧客情報・担当者・金額・進捗の一元管理</li>'
             . '<li>案件名インライン編集機能</li>'
+            . '<li>納期管理機能</li>'
             . '</ul></div>'
             . '<div class="ktpwp-tab-item"><h4>2. 伝票処理</h4><ul>'
             . '<li>受注書作成・編集・印刷・請求項目管理</li>'
@@ -291,6 +304,7 @@ class KTPWP_Plugin_Reference {
             . '<div class="ktpwp-tab-item"><h4>3. 得意先</h4><ul>'
             . '<li>顧客情報管理・注文明細履歴表示・印刷テンプレート</li>'
             . '<li>会社名・担当者・連絡先・住所情報の管理</li>'
+            . '<li>構造変更により、より使いやすいインターフェース</li>'
             . '</ul></div>'
             . '<div class="ktpwp-tab-item"><h4>4. サービス</h4><ul>'
             . '<li>サービス・商品マスター管理・価格設定</li>'
@@ -305,6 +319,16 @@ class KTPWP_Plugin_Reference {
             . '<li>顧客別売上分析・月次・年次レポート</li>'
             . '</ul></div>'
             . '</div>'
+            . '<h4>進捗ステータス詳細</h4>'
+            . '<ul>'
+            . '<li><strong>受付中</strong> - 新規受注、内容確認中</li>'
+            . '<li><strong>見積中</strong> - 見積作成・提案中</li>'
+            . '<li><strong>受注</strong> - 作業実行中</li>'
+            . '<li><strong>完了</strong> - 作業完了、請求書未発行</li>'
+            . '<li><strong>請求済</strong> - 請求書発行済み</li>'
+            . '<li><strong>入金済</strong> - 支払い完了</li>'
+            . '<li><strong>ボツ</strong> - 復活可能なボツ案件</li>'
+            . '</ul>'
             . '</div>';
     }
 
@@ -404,6 +428,9 @@ class KTPWP_Plugin_Reference {
             . '<div class="ktpwp-faq-item"><h5>Q: PDF出力ができない</h5><p><strong>A:</strong></p><ul><li>サーバーのPHP拡張機能（mbstring, gd等）を確認してください</li><li>ブラウザのポップアップブロックを無効にしてください</li><li>会社情報の設定が完了しているかを確認してください</li></ul></div>'
             . '<div class="ktpwp-faq-item"><h5>Q: タブが正しく表示されない</h5><p><strong>A:</strong></p><ul><li>ブラウザのキャッシュをクリアしてください</li><li>テーマとの競合がないかを確認してください</li><li>他のプラグインとの競合がないかを確認してください</li></ul></div>'
             . '<div class="ktpwp-faq-item"><h5>Q: メール送信ができない</h5><p><strong>A:</strong></p><ul><li>SMTP設定を確認してください</li><li>テストメール送信機能を使用してください</li><li>レンタルサーバーのメール送信制限を確認してください</li></ul></div>'
+            . '<div class="ktpwp-faq-item"><h5>Q: 納期管理機能が表示されない</h5><p><strong>A:</strong></p><ul><li>プラグインを最新バージョン（1.2.1以上）に更新してください</li><li>データベースのマイグレーションが完了しているかを確認してください</li><li>ブラウザキャッシュをクリアしてください</li></ul></div>'
+            . '<div class="ktpwp-faq-item"><h5>Q: モバイル表示が正しく表示されない</h5><p><strong>A:</strong></p><ul><li>ブラウザのキャッシュをクリアしてください</li><li>CSSファイルが正しく読み込まれているかを確認してください</li><li>テーマのレスポンシブ設定を確認してください</li></ul></div>'
+            . '<div class="ktpwp-faq-item"><h5>Q: ボツ機能が動作しない</h5><p><strong>A:</strong></p><ul><li>プラグインを最新バージョン（1.2.1以上）に更新してください</li><li>進捗ステータスの設定を確認してください</li><li>権限設定を確認してください</li></ul></div>'
             . '<h4>システム要件の確認</h4>'
             . '<ul>'
             . '<li>WordPress 5.0以上</li>'
@@ -503,7 +530,7 @@ class KTPWP_Plugin_Reference {
         
         // Log activation event for debugging
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP: プラグインリファレンスが有効化時に更新されました。バージョン: ' . KANTANPRO_PLUGIN_VERSION );
+            error_log( 'KTPWP: プラグインリファレンスが有効化時に更新されました。バージョン: ' . KANTANPRO_PLUGIN_VERSION . ' (1.2.1 beta)');
         }
         
         // Force regeneration of reference content on next load
@@ -538,7 +565,7 @@ class KTPWP_Plugin_Reference {
         
         // Log the action
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( "KTPWP: Manual cache clear completed. Cleared {$cleared_count} section caches. Version: " . KANTANPRO_PLUGIN_VERSION );
+            error_log( "KTPWP: Manual cache clear completed. Cleared {$cleared_count} section caches. Version: " . KANTANPRO_PLUGIN_VERSION . " (1.2.1 beta)");
         }
         
         return true;
@@ -558,7 +585,7 @@ add_action('wp_ajax_ktpwp_manual_cache_clear', function() {
     
     if (class_exists('KTPWP_Plugin_Reference')) {
         KTPWP_Plugin_Reference::clear_all_cache();
-        wp_die('プラグインリファレンスキャッシュをクリアしました。バージョン: ' . KANTANPRO_PLUGIN_VERSION);
+        wp_die('プラグインリファレンスキャッシュをクリアしました。バージョン: ' . KANTANPRO_PLUGIN_VERSION . ' (1.2.1 beta)');
     } else {
         wp_die('プラグインリファレンスクラスが見つかりません');
     }
@@ -577,13 +604,13 @@ if (defined('WP_DEBUG') && WP_DEBUG) {
                 if (isset($_GET['action']) && $_GET['action'] === 'clear') {
                     if (class_exists('KTPWP_Plugin_Reference')) {
                         KTPWP_Plugin_Reference::clear_all_cache();
-                        echo '<div class="notice notice-success"><p>キャッシュをクリアしました。バージョン: ' . KANTANPRO_PLUGIN_VERSION . '</p></div>';
+                        echo '<div class="notice notice-success"><p>キャッシュをクリアしました。バージョン: ' . KANTANPRO_PLUGIN_VERSION . ' (1.2.1 beta)</p></div>';
                     }
                 }
                 echo '<div class="wrap">';
                 echo '<h1>KantanPro リファレンスキャッシュクリア</h1>';
                 echo '<p><a href="?page=ktpwp-clear-cache&action=clear" class="button button-primary">キャッシュをクリア</a></p>';
-                echo '<p>現在のバージョン: ' . KANTANPRO_PLUGIN_VERSION . '</p>';
+                echo '<p>現在のバージョン: ' . KANTANPRO_PLUGIN_VERSION . ' (1.2.1 beta)</p>';
                 echo '</div>';
             }
         );
