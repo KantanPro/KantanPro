@@ -670,7 +670,7 @@
   .work_list_box ul,
   .ktp_work_list_box ul {
     padding-left: 0;
-    margin: 0;
+    margin: 0 !important;
     list-style: none;
   }
   .work_list_box li,
@@ -691,6 +691,12 @@
   .work_list_box a:hover,
   .ktp_work_list_box a:hover {
     text-decoration: underline;
+  }
+  
+  /* モバイル表示時のulのmarginを強制的に0に設定 */
+  ul {
+    margin: 0 !important;
+    padding-left: 0 !important;
   }
 }
 
@@ -797,7 +803,7 @@
   .data_list_box ul,
   .ktp_data_list_box ul {
     padding-left: 0;
-    margin: 0;
+    margin: 0 !important;
   }
   .data_list_box li,
   .ktp_data_list_box li {
