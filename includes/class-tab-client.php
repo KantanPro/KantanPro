@@ -518,7 +518,136 @@ class Kntan_Client_Class {
        }
 
        // 統一されたページネーションデザインを使用
-       $results_f = $this->render_pagination($current_page, $total_pages, $query_limit, $name, $flg, $base_page_url, $total_rows, $view_mode, $client_id ?? null) . "</div>";
+       $results_f = $this->render_pagination($current_page, $total_pages, $query_limit, $name, $flg, $base_page_url, $total_rows, $view_mode, $client_id ?? null);
+
+       // 受注履歴セクションを追加（リストBOX内、ページネーションの後）
+       // 詳細BOXに表示されている顧客のIDを取得して注文履歴タイトルを生成
+       $current_customer_name = '';
+       $current_customer_id = '';
+       
+       // 詳細BOXに表示されている顧客のIDを取得
+       if (isset($_GET['data_id']) && $_GET['data_id'] !== '') {
+           $current_customer_id = filter_input(INPUT_GET, 'data_id', FILTER_SANITIZE_NUMBER_INT);
+       } elseif (isset($_COOKIE[$cookie_name]) && $_COOKIE[$cookie_name] !== '') {
+           $current_customer_id = filter_input(INPUT_COOKIE, $cookie_name, FILTER_SANITIZE_NUMBER_INT);
+       } else {
+           // data_id未指定時は最大IDを取得
+           $max_id_row = $wpdb->get_row("SELECT id FROM {$table_name} ORDER BY id DESC LIMIT 1");
+           $current_customer_id = $max_id_row ? $max_id_row->id : '';
+       }
+       
+       // 顧客名を取得
+       if ($current_customer_id) {
+           $customer_query = $wpdb->prepare("SELECT company_name FROM {$table_name} WHERE id = %d", $current_customer_id);
+           $customer_data = $wpdb->get_row($customer_query);
+           if ($customer_data) {
+               $current_customer_name = esc_html($customer_data->company_name);
+           }
+       }
+       
+       // 注文履歴タイトル（ソートシステム）
+       $order_sort_dropdown = $this->generate_sort_dropdown($name, 'order_history', $base_page_url, $sort_by, $sort_order, $order_sort_by, $order_sort_order);
+       $results_f .= '<div class="data_list_title">■ ' . esc_html($current_customer_name) . 'の注文履歴';
+       if (!empty($order_sort_dropdown)) {
+           $results_f .= $order_sort_dropdown;
+       }
+       $results_f .= '</div>';
+       
+       // 注文履歴データを取得（注文履歴ボタンと同じロジック）
+       $order_table = $wpdb->prefix . 'ktp_order';
+       
+       // この顧客の受注書を取得
+       $related_client_ids = [$current_customer_id];
+
+       // IDのリストを文字列に変換（safety check）
+       $client_ids_str = implode(',', array_map('intval', $related_client_ids));
+
+       if (empty($client_ids_str)) {
+           $client_ids_str = '0'; // 安全なフォールバック値
+       }
+
+       // IDが複数ある場合、IN句を使用（ソートオプションを適用）
+       $order_sort_column = esc_sql($order_sort_by); // SQLインジェクション対策
+       $order_sort_direction = $order_sort_order === 'ASC' ? 'ASC' : 'DESC'; // SQLインジェクション対策
+
+       // 修正: $order_sort_column 内の % を %% にエスケープして prepare に渡す
+       $order_sort_column_prepared = str_replace('%', '%%', $order_sort_column);
+
+       // 修正: $client_ids_str をプレースホルダーに置き換え
+       $client_ids_array = explode(',', $client_ids_str);
+       $placeholders = implode(',', array_fill(0, count($client_ids_array), '%d'));
+       
+       // 総件数取得
+       $order_total_query = $wpdb->prepare(
+           "SELECT COUNT(*) FROM {$order_table} WHERE client_id IN ($placeholders)", 
+           $client_ids_array
+       );
+       $order_total_rows = $wpdb->get_var($order_total_query);
+       $order_total_pages = ceil($order_total_rows / $query_limit);
+       $order_current_page = floor($page_start / $query_limit) + 1;
+       
+       // 受注書データを取得
+       $order_query = $wpdb->prepare(
+           "SELECT * FROM {$order_table} WHERE client_id IN ($placeholders) ORDER BY {$order_sort_column_prepared} {$order_sort_direction} LIMIT %d, %d",
+           array_merge($client_ids_array, [intval($page_start), intval($query_limit)])
+       );
+       $order_rows = $wpdb->get_results($order_query);
+       
+       // 注文履歴リスト表示（注文履歴ボタンと同じ表示形式）
+       if ($order_rows) {
+           // 進捗ラベル
+           $progress_labels = [
+               1 => esc_html__('受付中', 'ktpwp'),
+               2 => esc_html__('見積中', 'ktpwp'),
+               3 => esc_html__('受注', 'ktpwp'),
+               4 => esc_html__('完了', 'ktpwp'),
+               5 => esc_html__('請求済', 'ktpwp'),
+               6 => esc_html__('入金済', 'ktpwp')
+           ];
+
+           foreach ($order_rows as $order) {
+               $order_id = esc_html($order->id);
+               $project_name = isset($order->project_name) ? esc_html($order->project_name) : '';
+               $progress = intval($order->progress);
+               $progress_label = isset($progress_labels[$progress]) ? $progress_labels[$progress] : '不明';
+
+               // 日時フォーマット変換
+               $raw_time = $order->time;
+               $formatted_time = '';
+               if (!empty($raw_time)) {
+                   if (is_numeric($raw_time) && strlen($raw_time) >= 10) {
+                       $timestamp = (int)$raw_time;
+                       $dt = new DateTime('@' . $timestamp);
+                       $dt->setTimezone(new DateTimeZone('Asia/Tokyo'));
+                   } else {
+                       $dt = date_create($raw_time, new DateTimeZone('Asia/Tokyo'));
+                   }
+                   if ($dt) {
+                       $week = ['日','月','火','水','木','金','土'];
+                       $w = $dt->format('w');
+                       $formatted_time = $dt->format('Y/n/j') . '（' . $week[$w] . '）' . $dt->format(' H:i');
+                   }
+               }
+
+               // 受注書の詳細へのリンク（シンプルなURL生成）
+               $detail_url = add_query_arg(array('tab_name' => 'order', 'order_id' => $order_id), $base_page_url);
+
+               // リスト項目を生成（注文履歴ボタンと同じ形式）
+               $results_f .= '<a href="' . $detail_url . '">'
+                   . '<div class="ktp_data_list_item">ID: ' . $order_id . ' - ' . $project_name . ' <span style="float:right;" class="status-' . $progress . '">' . $progress_label . '</span></div>'
+                   . '</a>';
+           }
+       } else {
+           $results_f .= '<div class="ktp_data_list_item">' . esc_html__('この顧客の受注データはありません。', 'ktpwp') . '</div>';
+       }
+       
+       // 注文履歴ページネーション
+       if ($order_total_pages > 1) {
+           $results_f .= $this->render_pagination($order_current_page, $order_total_pages, $query_limit, $name, $flg, $base_page_url, $order_total_rows, 'order_history', $current_customer_id);
+       }
+
+       // リストBOXを閉じる
+       $results_f .= "</div>";
 
        $data_list = $results_h . implode( $results ) . $results_f;
 
