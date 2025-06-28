@@ -778,42 +778,43 @@ class Kntan_Service_Class {
         // テンプレート印刷
         // -----------------------------
 
-        // Print_Classのパスを指定
-        require_once( dirname( __FILE__ ) . '/class-print.php' );
+        // サービスタブのプレビュー機能を修正
+        // 変数の初期化（未定義の場合に備えて）
+        if (!isset($service_name)) $service_name = '';
+        if (!isset($price)) $price = 0;
+        if (!isset($unit)) $unit = '';
+        if (!isset($memo)) $memo = '';
+        if (!isset($category)) $category = '';
+        if (!isset($image_url)) $image_url = '';
 
-        // データを指定
-        $data_src = [
+        // サービス情報のプレビュー用HTMLを生成
+        $service_preview_html = $this->generateServicePreviewHTML([
             'service_name' => $service_name,
+            'price' => $price,
+            'unit' => $unit,
+            'memo' => $memo,
             'category' => $category,
-            'image_url' => $image_url
-        ];
-
-        $customer = $data_src['service_name'];
-        $data = [
-            'service_name' => $service_name,
-            'category' => $category,
-            'image_url' => $image_url
-        ];
-
-        $print_html = new Print_Class($data);
-        $print_html = $print_html->generateHTML();
+            'image_url' => $image_url,
+        ]);
 
         // PHP
-        $print_html = json_encode($print_html);  // JSON形式にエンコード
+        $service_preview_html = json_encode($service_preview_html);  // JSON形式にエンコード
 
         // JavaScript
         $print = <<<END
         <script>
-            var isPreviewOpen = false;            function printContent() {
-                var printContent = $print_html;
+            var isPreviewOpen = false;
+            
+            function printContent() {
+                var printContent = $service_preview_html;
                 var printWindow = window.open('', '_blank');
                 printWindow.document.open();
-                printWindow.document.write('<html><head><title>印刷</title></head><body>');
+                printWindow.document.write('<html><head><title>サービス情報印刷</title></head><body>');
                 printWindow.document.write(printContent);
                 printWindow.document.write('<script>window.onafterprint = function(){ window.close(); }<\/script>');
                 printWindow.document.write('</body></html>');
                 printWindow.document.close();
-                printWindow.print();  // Add this line
+                printWindow.print();
                 
                 // 印刷後、プレビューが開いていれば閉じる
                 if (isPreviewOpen) {
@@ -829,20 +830,15 @@ class Kntan_Service_Class {
                     previewButton.innerHTML = '<span class="material-symbols-outlined" aria-label="プレビュー">preview</span>';
                     isPreviewOpen = false;
                 } else {
-                    var printContent = $print_html;
+                    var printContent = $service_preview_html;
                     previewWindow.innerHTML = printContent;
                     previewWindow.style.display = 'block';
                     previewButton.innerHTML = '<span class="material-symbols-outlined" aria-label="閉じる">close</span>';
                     isPreviewOpen = true;
                 }
             }
-
-            // about:blankを閉じる
-            // window.onafterprint = function() {
-            //     window.close();
-            // }
-
-        </script>        <div class="controller">
+        </script>
+        <div class="controller">
                 <button id="previewButton" onclick="togglePreview()" title="プレビュー" style="padding: 6px 10px; font-size: 12px;">
                     <span class="material-symbols-outlined" aria-label="プレビュー">preview</span>
                 </button>
@@ -856,6 +852,71 @@ class Kntan_Service_Class {
         // コンテンツを返す
         $content = $message . $print . '<div class="data_contents">' . $data_list . $data_title . $data_forms . $div_end . '</div> <!-- data_contentsの終了 -->';
         return $content;
+    }
+
+    /**
+     * サービス情報のプレビュー用HTMLを生成するメソッド
+     *
+     * @param array $service_data サービスデータ
+     * @return string サービス情報のプレビューHTML
+     */
+    private function generateServicePreviewHTML($service_data) {
+        $service_name = $service_data['service_name'] ?? '';
+        $price = $service_data['price'] ?? 0;
+        $unit = $service_data['unit'] ?? '';
+        $memo = $service_data['memo'] ?? '';
+        $category = $service_data['category'] ?? '';
+        $image_url = $service_data['image_url'] ?? '';
+
+        // 価格の表示形式
+        $price_display = '';
+        if ($price > 0) {
+            $price_display = number_format($price) . '円';
+            if (!empty($unit)) {
+                $price_display .= '/' . $unit;
+            }
+        }
+
+        // 画像の表示部分
+        $image_html = '';
+        if (!empty($image_url)) {
+            $image_html = '
+            <div style="text-align: center; margin-bottom: 20px;">
+                <img src="' . esc_url($image_url) . '" alt="' . esc_attr($service_name) . '" style="max-width: 100%; max-height: 300px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            </div>';
+        }
+
+        return '
+        <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: 0 auto;">
+            <div style="text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 20px;">
+                <h1 style="color: #333; margin: 0; font-size: 24px;">サービス情報</h1>
+            </div>
+            
+            ' . $image_html . '
+            
+            <table style="border-collapse: collapse; width: 100%; margin-bottom: 20px;">
+                <tr>
+                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa; width: 25%;">サービス名</td>
+                    <td style="border: 1px solid #ddd; padding: 12px;">' . esc_html($service_name) . '</td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">価格</td>
+                    <td style="border: 1px solid #ddd; padding: 12px;">' . esc_html($price_display) . '</td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">カテゴリー</td>
+                    <td style="border: 1px solid #ddd; padding: 12px;">' . esc_html($category) . '</td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">メモ</td>
+                    <td style="border: 1px solid #ddd; padding: 12px; white-space: pre-wrap;">' . esc_html($memo) . '</td>
+                </tr>
+            </table>
+            
+            <div style="text-align: center; margin-top: 30px; color: #666; font-size: 12px;">
+                <p>印刷日時: ' . date('Y年m月d日 H:i') . '</p>
+            </div>
+        </div>';
     }
 
     /**
