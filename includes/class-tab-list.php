@@ -290,10 +290,10 @@ class Kantan_List_Class {
                 }
                 $content .= " - {$time}</a>";
                 
-                // 納期フィールドを追加（希望納期は削除、納品予定日のみ）
+                // 納期フィールドと進捗プルダウンを1つのコンテナにまとめる
                 $content .= "<div class='delivery-dates-container'>";
-                $content .= "<span class='delivery-label'>納期</span>";
                 $content .= "<div class='delivery-input-wrapper'>";
+                $content .= "<span class='delivery-label'>納期</span>";
                 $content .= "<input type='date' name='expected_delivery_date_{$order_id}' value='{$expected_delivery_date}' class='delivery-date-input' data-order-id='{$order_id}' data-field='expected_delivery_date' placeholder='納品予定日' title='納品予定日'>";
                 
                 // 納期警告マークを追加
@@ -302,8 +302,8 @@ class Kantan_List_Class {
                 }
                 
                 $content .= "</div>";
-                $content .= "</div>";
                 
+                // 進捗プルダウンを納期コンテナ内に配置
                 $content .= "<form method='post' action='' style='margin: 0px 0 0px 0;display:inline;'>";
                 $content .= "<input type='hidden' name='update_progress_id' value='{$order_id}' />";
                 $content .= "<select name='update_progress' class='progress-select status-{$progress}' onchange='this.form.submit()'>";
@@ -313,6 +313,7 @@ class Kantan_List_Class {
                 }
                 $content .= "</select>";
                 $content .= "</form>";
+                $content .= "</div>";
                 $content .= "</li>";
             }
             $content .= '</ul>';

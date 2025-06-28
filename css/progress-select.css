@@ -6,6 +6,7 @@
   gap: 8px;
   margin-left: 8px;
   align-items: center;
+  flex-wrap: nowrap;
 }
 
 .delivery-label {
@@ -13,7 +14,16 @@
   font-weight: bold;
   color: #333;
   white-space: nowrap;
-  margin-right: 4px;
+  margin-right: 0;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+.delivery-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
 }
 
 .delivery-date-input {
@@ -213,7 +223,11 @@ li.ktp_work_list_item {
 /* 納期入力フィールドのラッパー */
 .delivery-input-wrapper {
   position: relative;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  white-space: nowrap;
+  gap: 4px;
 }
 
 /* 各行の納期警告マークのスタイル */
@@ -233,4 +247,143 @@ li.ktp_work_list_item {
   right: -5px;
   z-index: 10;
   animation: pulse-warning 2s infinite;
+}
+
+/* モバイル表示での調整 */
+@media screen and (max-width: 768px) {
+  /* 仕事リストの行をモバイル対応 - 2行レイアウト */
+  li.ktp_work_list_item {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding: 10px 12px;
+  }
+
+  /* 1行目：ID〜日時のリンク */
+  .ktp_work_list_item a {
+    order: 1;
+    white-space: normal;
+    word-wrap: break-word;
+    line-height: 1.4;
+    margin-bottom: 0;
+  }
+
+  /* 2行目：納期と進捗を1つのコンテナに配置 */
+  .ktp_work_list_item .delivery-dates-container {
+    order: 2;
+    margin-left: 0;
+    justify-content: flex-start;
+    gap: 12px;
+    flex-wrap: nowrap;
+    align-items: center;
+    display: flex;
+  }
+
+  /* 納期ラベルの調整 */
+  .delivery-label {
+    font-size: 12px;
+    font-weight: bold;
+    color: #333;
+    white-space: nowrap;
+    margin-right: 4px;
+    flex-shrink: 0;
+    display: inline-block;
+  }
+
+  /* 納期フィールドのサイズ調整 */
+  .delivery-date-input {
+    min-width: 120px;
+    max-width: 140px;
+    font-size: 12px;
+    padding: 4px 6px;
+    height: 32px;
+  }
+
+  /* 進捗プルダウンのサイズ調整 */
+  .progress-select {
+    min-width: 120px;
+    max-width: 140px;
+    font-size: 12px;
+    padding: 4px 24px 4px 8px;
+    margin-left: 0;
+    height: 32px;
+  }
+
+  /* 納期フィールドコンテナの調整 - ラベルとカレンダーを1行に */
+  .delivery-dates-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+  }
+
+  /* 納期ラベルとカレンダーを強制的に1行に配置 */
+  .delivery-dates-container > * {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  /* 納期入力ラッパーの調整 */
+  .delivery-input-wrapper {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    white-space: nowrap;
+    gap: 4px;
+  }
+
+  /* 進捗プルダウンフォームの調整 - ラベルとプルダウンを1行に */
+  .ktp_work_list_item form {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+    margin-left: 0;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+  }
+
+  /* 進捗ラベルを追加 */
+  .ktp_work_list_item form::before {
+    content: "進捗";
+    font-size: 12px;
+    font-weight: bold;
+    color: #333;
+    white-space: nowrap;
+    margin-right: 4px;
+    flex-shrink: 0;
+    display: inline-block;
+  }
+}
+
+/* さらに小さい画面での調整 */
+@media screen and (max-width: 480px) {
+  li.ktp_work_list_item {
+    padding: 8px 10px;
+    gap: 6px;
+  }
+
+  .delivery-date-input {
+    min-width: 100px;
+    max-width: 120px;
+    font-size: 11px;
+    height: 30px;
+  }
+
+  .progress-select {
+    min-width: 100px;
+    max-width: 120px;
+    font-size: 11px;
+    height: 30px;
+  }
+
+  .delivery-label {
+    font-size: 11px;
+  }
+
+  .ktp_work_list_item form::before {
+    font-size: 11px;
+  }
 }
