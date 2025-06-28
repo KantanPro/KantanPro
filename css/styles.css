@@ -565,15 +565,15 @@
 @media screen and (max-width: 768px) {
   .progress-btn {
     padding: 8px;
-    border-radius: 50%;
+    border-radius: 4px;
     width: 48px;
-    height: 48px;
+    height: 56px;
     justify-content: center;
     align-items: center;
     flex-direction: column;
     gap: 2px;
     min-width: 48px;
-    min-height: 48px;
+    min-height: 56px;
   }
   
   .progress-btn-icon {
@@ -614,10 +614,11 @@
 @media screen and (max-width: 480px) {
   .progress-btn {
     width: 44px;
-    height: 44px;
+    height: 52px;
     min-width: 44px;
-    min-height: 44px;
+    min-height: 52px;
     padding: 6px;
+    border-radius: 4px;
   }
   
   .progress-btn-icon {
