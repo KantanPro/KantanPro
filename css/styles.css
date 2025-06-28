@@ -1647,7 +1647,9 @@ input[name="tab_item"] {
 .controller {
   display: flex;
   justify-content: flex-end;
-  padding: 10px;
+  padding: 10px 10px 0 10px;
+  margin-bottom: 10px;
+  border-radius: 0 0 4px 4px;
 }
 
 /* ボタンの間隔 */
@@ -3417,11 +3419,20 @@ body.ktpwp-modal-open {
 
 /* 得意先タブ controller内ボタンカラー（優先度を上げる） */
 .controller .order-history-btn {
+  background: #e0e0e0 !important;
+  color: #333 !important;
+  border: 1px solid #bdbdbd !important;
+}
+.controller .order-history-btn:hover {
+  background: #bdbdbd !important;
+  border-color: #9e9e9e !important;
+}
+.controller .order-history-btn.active {
   background: #1976d2 !important;
   color: #fff !important;
   border: 1px solid #1976d2 !important;
 }
-.controller .order-history-btn:hover {
+.controller .order-history-btn.active:hover {
   background: #1565c0 !important;
   border-color: #1565c0 !important;
 }
@@ -3434,6 +3445,15 @@ body.ktpwp-modal-open {
 .controller .customer-list-btn:hover {
   background: #bdbdbd !important;
   border-color: #9e9e9e !important;
+}
+.controller .customer-list-btn.active {
+  background: #1976d2 !important;
+  color: #fff !important;
+  border: 1px solid #1976d2 !important;
+}
+.controller .customer-list-btn.active:hover {
+  background: #1565c0 !important;
+  border-color: #1565c0 !important;
 }
 
 .controller .create-order-btn {
@@ -3448,11 +3468,20 @@ body.ktpwp-modal-open {
 
 /* 得意先タブ controller内ボタンカラー（統一スタイルよりも優先度を上げる） */
 .controller button.view-mode-btn.order-history-btn {
+  background: #e0e0e0 !important;
+  color: #333 !important;
+  border: 1px solid #bdbdbd !important;
+}
+.controller button.view-mode-btn.order-history-btn:hover {
+  background: #bdbdbd !important;
+  border-color: #9e9e9e !important;
+}
+.controller button.view-mode-btn.order-history-btn.active {
   background: #1976d2 !important;
   color: #fff !important;
   border: 1px solid #1976d2 !important;
 }
-.controller button.view-mode-btn.order-history-btn:hover {
+.controller button.view-mode-btn.order-history-btn.active:hover {
   background: #1565c0 !important;
   border-color: #1565c0 !important;
 }
@@ -3466,13 +3495,22 @@ body.ktpwp-modal-open {
   background: #bdbdbd !important;
   border-color: #9e9e9e !important;
 }
+.controller button.view-mode-btn.customer-list-btn.active {
+  background: #1976d2 !important;
+  color: #fff !important;
+  border: 1px solid #1976d2 !important;
+}
+.controller button.view-mode-btn.customer-list-btn.active:hover {
+  background: #1565c0 !important;
+  border-color: #1565c0 !important;
+}
 
-.controller button.create-order-btn {
+.controller .create-order-btn {
   background: #43a047 !important;
   color: #fff !important;
   border: 1px solid #388e3c !important;
 }
-.controller button.create-order-btn:hover {
+.controller .create-order-btn:hover {
   background: #388e3c !important;
   border-color: #2e7d32 !important;
 }

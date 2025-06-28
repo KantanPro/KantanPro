@@ -2184,8 +2184,8 @@ div.ktp_header > * {
 /* 各タブのコントローラー背景色設定 - PC/タブレット/モバイル共通 */
 .controller {
     background-color: ' . esc_attr( $tab_border_color ) . ' !important;
-    padding: 10px !important;
-    border-radius: 4px !important;
+    padding: 10px 10px 0 10px !important;
+    border-radius: 0 0 4px 4px !important;
     margin-bottom: 10px !important;
 }';
             }
