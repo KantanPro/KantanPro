@@ -585,12 +585,18 @@ class Kntan_Client_Class {
        );
        $order_total_rows = $wpdb->get_var($order_total_query);
        $order_total_pages = ceil($order_total_rows / $query_limit);
-       $order_current_page = floor($page_start / $query_limit) + 1;
+       
+       // 注文履歴のページを取得（order_pageパラメータを使用）
+       $order_page = isset($_GET['order_page']) ? intval($_GET['order_page']) : 1;
+       $order_page = max(1, $order_page); // 最小値は1
+       $order_page = min($order_page, $order_total_pages); // 最大値は総ページ数
+       $order_start = ($order_page - 1) * $query_limit;
+       $order_current_page = $order_page;
        
        // 受注書データを取得
        $order_query = $wpdb->prepare(
            "SELECT * FROM {$order_table} WHERE client_id IN ($placeholders) ORDER BY {$order_sort_column_prepared} {$order_sort_direction} LIMIT %d, %d",
-           array_merge($client_ids_array, [intval($page_start), intval($query_limit)])
+           array_merge($client_ids_array, [intval($order_start), intval($query_limit)])
        );
        $order_rows = $wpdb->get_results($order_query);
        
@@ -645,7 +651,8 @@ class Kntan_Client_Class {
        
        // 注文履歴ページネーション
        if ($order_total_pages > 1) {
-           $results_f .= $this->render_pagination($order_current_page, $order_total_pages, $query_limit, $name, $flg, $base_page_url, $order_total_rows, 'order_history', $current_customer_id);
+           // 注文履歴のページネーションではview_modeを設定せず、通常の顧客リスト表示を維持
+           $results_f .= $this->render_order_history_pagination($order_current_page, $order_total_pages, $query_limit, $name, $flg, $base_page_url, $order_total_rows, $current_customer_id);
        }
 
        // リストBOXを閉じる
@@ -1465,9 +1472,11 @@ class Kntan_Client_Class {
         if ($current_page > 1) {
             $prev_args = array(
                 'tab_name' => $name,
-                'page_start' => ($current_page - 2) * $query_limit,
+                'page_start' => 0, // 顧客リストは常に1ページ目を表示
                 'page_stage' => 2,
-                'flg' => $flg
+                'flg' => $flg,
+                'data_id' => $client_id,
+                'order_page' => $current_page - 1
             );
             
             // 注文履歴モードの場合
@@ -1598,6 +1607,159 @@ class Kntan_Client_Class {
                 if (isset($_GET['sort_by'])) $next_args['sort_by'] = $_GET['sort_by'];
                 if (isset($_GET['sort_order'])) $next_args['sort_order'] = $_GET['sort_order'];
             }
+            
+            $next_url = esc_url(add_query_arg($next_args, $base_page_url));
+            $pagination_html .= "<a href=\"{$next_url}\" style=\"{$button_style}\" {$hover_effect}>›</a>";
+        }
+
+        // 2行目のボタン部分の終了
+        $pagination_html .= '</div>';
+
+        $pagination_html .= '</div>';
+
+        return $pagination_html;
+    }
+
+    /**
+     * 注文履歴専用のページネーションデザインをレンダリング
+     *
+     * @param int $current_page 現在のページ
+     * @param int $total_pages 総ページ数
+     * @param int $query_limit 1ページあたりの表示件数
+     * @param string $name テーブル名
+     * @param string $flg フラグ
+     * @param string $base_page_url ベースURL
+     * @param int $total_rows 総データ数
+     * @param int $client_id 顧客ID
+     * @return string ページネーションHTML
+     */
+    private function render_order_history_pagination($current_page, $total_pages, $query_limit, $name, $flg, $base_page_url, $total_rows, $client_id) {
+        if ($total_pages <= 1) {
+            return '';
+        }
+
+        $pagination_html = '<div class="pagination" style="text-align: center; margin: 20px 0; padding: 20px 0;">';
+        
+        // 1行目：ページ情報表示
+        $pagination_html .= '<div style="margin-bottom: 18px; color: #4b5563; font-size: 14px; font-weight: 500;">';
+        $pagination_html .= esc_html($current_page) . ' / ' . esc_html($total_pages) . ' ページ（全 ' . esc_html($total_rows) . ' 件）';
+        $pagination_html .= '</div>';
+        
+        // 2行目：ページネーションボタン
+        $pagination_html .= '<div style="display: flex; align-items: center; gap: 4px; flex-wrap: wrap; justify-content: center; width: 100%;">';
+        
+        // ページネーションボタンのスタイル（正円ボタン）
+        $button_style = 'display: inline-block; width: 36px; height: 36px; padding: 0; margin: 0 2px; text-decoration: none; border: 1px solid #ddd; border-radius: 50%; color: #333; background: #fff; transition: all 0.3s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.1); line-height: 34px; text-align: center; vertical-align: middle; font-size: 14px;';
+        $current_style = 'background: #1976d2; color: white; border-color: #1976d2; font-weight: bold; transform: translateY(-1px); box-shadow: 0 2px 5px rgba(0,0,0,0.2);';
+        $hover_effect = 'onmouseover="this.style.backgroundColor=\'#f5f5f5\'; this.style.transform=\'translateY(-1px)\'; this.style.boxShadow=\'0 2px 5px rgba(0,0,0,0.15)\';" onmouseout="this.style.backgroundColor=\'#fff\'; this.style.transform=\'none\'; this.style.boxShadow=\'0 1px 3px rgba(0,0,0,0.1)\';"';
+
+        // 前のページボタン
+        if ($current_page > 1) {
+            $prev_args = array(
+                'tab_name' => $name,
+                'page_start' => 0, // 顧客リストは常に1ページ目を表示
+                'page_stage' => 2,
+                'flg' => $flg,
+                'data_id' => $client_id,
+                'order_page' => $current_page - 1
+            );
+            
+            // 現在のソート順を維持
+            if (isset($_GET['order_sort_by'])) $prev_args['order_sort_by'] = $_GET['order_sort_by'];
+            if (isset($_GET['order_sort_order'])) $prev_args['order_sort_order'] = $_GET['order_sort_order'];
+            
+            $prev_url = esc_url(add_query_arg($prev_args, $base_page_url));
+            $pagination_html .= "<a href=\"{$prev_url}\" style=\"{$button_style}\" {$hover_effect}>‹</a>";
+        }
+
+        // ページ番号ボタン（省略表示対応）
+        $start_page = max(1, $current_page - 2);
+        $end_page = min($total_pages, $current_page + 2);
+
+        // 最初のページを表示
+        if ($start_page > 1) {
+            $first_args = array(
+                'tab_name' => $name,
+                'page_start' => 0,
+                'page_stage' => 2,
+                'flg' => $flg,
+                'data_id' => $client_id,
+                'order_page' => 1
+            );
+            
+            // 現在のソート順を維持
+            if (isset($_GET['order_sort_by'])) $first_args['order_sort_by'] = $_GET['order_sort_by'];
+            if (isset($_GET['order_sort_order'])) $first_args['order_sort_order'] = $_GET['order_sort_order'];
+            
+            $first_url = esc_url(add_query_arg($first_args, $base_page_url));
+            $pagination_html .= "<a href=\"{$first_url}\" style=\"{$button_style}\" {$hover_effect}>1</a>";
+            
+            if ($start_page > 2) {
+                $pagination_html .= "<span style=\"{$button_style} background: transparent; border: none; cursor: default;\">...</span>";
+            }
+        }
+
+        // 中央のページ番号
+        for ($i = $start_page; $i <= $end_page; $i++) {
+            $page_args = array(
+                'tab_name' => $name,
+                'page_start' => 0, // 顧客リストは常に1ページ目を表示
+                'page_stage' => 2,
+                'flg' => $flg,
+                'data_id' => $client_id,
+                'order_page' => $i
+            );
+            
+            // 現在のソート順を維持
+            if (isset($_GET['order_sort_by'])) $page_args['order_sort_by'] = $_GET['order_sort_by'];
+            if (isset($_GET['order_sort_order'])) $page_args['order_sort_order'] = $_GET['order_sort_order'];
+            
+            $page_url = esc_url(add_query_arg($page_args, $base_page_url));
+            
+            if ($i == $current_page) {
+                $pagination_html .= "<span style=\"{$button_style} {$current_style}\">{$i}</span>";
+            } else {
+                $pagination_html .= "<a href=\"{$page_url}\" style=\"{$button_style}\" {$hover_effect}>{$i}</a>";
+            }
+        }
+
+        // 最後のページを表示
+        if ($end_page < $total_pages) {
+            if ($end_page < $total_pages - 1) {
+                $pagination_html .= "<span style=\"{$button_style} background: transparent; border: none; cursor: default;\">...</span>";
+            }
+            
+            $last_args = array(
+                'tab_name' => $name,
+                'page_start' => 0, // 顧客リストは常に1ページ目を表示
+                'page_stage' => 2,
+                'flg' => $flg,
+                'data_id' => $client_id,
+                'order_page' => $total_pages
+            );
+            
+            // 現在のソート順を維持
+            if (isset($_GET['order_sort_by'])) $last_args['order_sort_by'] = $_GET['order_sort_by'];
+            if (isset($_GET['order_sort_order'])) $last_args['order_sort_order'] = $_GET['order_sort_order'];
+            
+            $last_url = esc_url(add_query_arg($last_args, $base_page_url));
+            $pagination_html .= "<a href=\"{$last_url}\" style=\"{$button_style}\" {$hover_effect}>{$total_pages}</a>";
+        }
+
+        // 次のページボタン
+        if ($current_page < $total_pages) {
+            $next_args = array(
+                'tab_name' => $name,
+                'page_start' => 0, // 顧客リストは常に1ページ目を表示
+                'page_stage' => 2,
+                'flg' => $flg,
+                'data_id' => $client_id,
+                'order_page' => $current_page + 1
+            );
+            
+            // 現在のソート順を維持
+            if (isset($_GET['order_sort_by'])) $next_args['order_sort_by'] = $_GET['order_sort_by'];
+            if (isset($_GET['order_sort_order'])) $next_args['order_sort_order'] = $_GET['order_sort_order'];
             
             $next_url = esc_url(add_query_arg($next_args, $base_page_url));
             $pagination_html .= "<a href=\"{$next_url}\" style=\"{$button_style}\" {$hover_effect}>›</a>";
