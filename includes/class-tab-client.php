@@ -915,7 +915,7 @@ class Kntan_Client_Class {
         $controller_html = '<div class="controller" style="display: flex; justify-content: space-between; align-items: center;">';
         
         // 左側：ボタン群（注文履歴と顧客一覧ボタンを削除）
-        $controller_html .= '<div style="display: flex; gap: 0px;">';
+        $controller_html .= '<div style="display: flex; gap: 5px;">';
         
         // 現在の顧客IDを取得（後で使用するため）
         $current_client_id = 0;
@@ -964,18 +964,21 @@ class Kntan_Client_Class {
         if (!$is_data_empty) {
             $button_style = 'padding: 6px 10px; font-size: 12px;';
         }
-        $controller_html .= '<button type="submit" class="create-order-btn" ' . $disabled_attr . ' style="' . $button_style . '">受注書作成</button>';
+        $controller_html .= '<button type="submit" class="create-order-btn" ' . $disabled_attr . ' style="' . $button_style . '">';
+        $controller_html .= '<span class="material-symbols-outlined" aria-label="作成" style="font-size: 16px;">create</span>';
+        $controller_html .= '受注書作成';
+        $controller_html .= '</button>';
         $controller_html .= '</form>';
         
         $controller_html .= '</div>'; // 左側のボタン群終了
         
         // 右側：プレビューボタン、印刷ボタン
-        $controller_html .= '<div style="display: flex; gap: 0px;">';
+        $controller_html .= '<div style="display: flex; gap: 5px;">';
         $controller_html .= '<button id="previewButton" onclick="togglePreview()" title="プレビュー" style="padding: 6px 10px; font-size: 12px;">'
-            . '<span class="material-symbols-outlined" aria-label="プレビュー">preview</span>'
+            . '<span class="material-symbols-outlined" aria-label="プレビュー" style="font-size: 16px;">preview</span>'
             . '</button>'
             . '<button onclick="printContent()" title="印刷する" style="padding: 6px 10px; font-size: 12px;">'
-            . '<span class="material-symbols-outlined" aria-label="印刷">print</span>'
+            . '<span class="material-symbols-outlined" aria-label="印刷" style="font-size: 16px;">print</span>'
             . '</button>';
         
         $controller_html .= '</div>'; // 右側のボタン群終了

@@ -1053,10 +1053,10 @@ class Kntan_Order_Class {
                 $content .= '</form>';
                 
                 // 右側：プレビューボタンとメールボタン
-                $content .= '<div style="display: flex; gap: 8px;">';
+                $content .= '<div style="display: flex; gap: 5px;">';
                 // プレビューボタン（受注書IDのみ保持、最新データはAjaxで取得）
                 $content .= '<button id="orderPreviewButton" data-order-id="' . esc_attr($order_data->id) . '" title="' . esc_attr__('プレビュー', 'ktpwp') . '" style="padding: 6px 10px; font-size: 12px;">';
-                $content .= '<span class="material-symbols-outlined" aria-label="' . esc_attr__('プレビュー', 'ktpwp') . '">preview</span>';
+                $content .= '<span class="material-symbols-outlined" aria-label="' . esc_attr__('プレビュー', 'ktpwp') . '" style="font-size: 16px;">preview</span>';
                 $content .= '</button>';
 
                 // 顧客情報に基づいてメールボタンの状態を制御
@@ -1138,7 +1138,7 @@ class Kntan_Order_Class {
                 } else {
                     $content .= '<button type="button" id="orderMailButton" class="order-mail-btn" disabled title="' . $mail_button_title . '">';
                 }
-                $content .= '<span class="material-symbols-outlined" aria-label="' . esc_attr__('メール', 'ktpwp') . '">mail</span>';
+                $content .= '<span class="material-symbols-outlined" aria-label="' . esc_attr__('メール', 'ktpwp') . '" style="font-size: 14px;">mail</span>';
                 $content .= '</button>';
                 $content .= '</div>'; // 右側のボタン群終了
                 $content .= '</div>'; // controller終了
