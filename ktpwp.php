@@ -785,7 +785,10 @@ function KTPWP_Index(){
                     $client = new Kntan_Client_Class();
                     if (current_user_can('edit_posts')) {
                         $client->Create_Table($tab_name);
-                        $client->Update_Table($tab_name);
+                        // POSTリクエストがある場合のみUpdate_Tableを呼び出す
+                        if (!empty($_POST)) {
+                            $client->Update_Table($tab_name);
+                        }
                     }
                     $client_content = $client->View_Table($tab_name);
                     break;

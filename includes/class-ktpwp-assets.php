@@ -269,6 +269,13 @@ class KTPWP_Assets {
                     ),
                 ),
             ),
+            'ktp-client-delete-popup' => array(
+                'src'       => 'js/ktp-client-delete-popup.js',
+                'deps'      => array( 'jquery' ),
+                'ver'       => KTPWP_PLUGIN_VERSION,
+                'in_footer' => true,
+                'admin'     => false,
+            ),
             // 'ktp-skills-list-effects' => array(
             //     'src'       => 'js/skills-list-effects.js',
             //     'deps'      => array( 'jquery' ),

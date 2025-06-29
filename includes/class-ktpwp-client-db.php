@@ -144,6 +144,13 @@ class KTPWP_Client_DB {
 
         // POST処理の場合のみ実行
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            // デバッグログを追加
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('KTPWP Client Debug: update_table - POST request detected');
+                error_log('KTPWP Client Debug: update_table - REQUEST_METHOD = ' . $_SERVER['REQUEST_METHOD']);
+                error_log('KTPWP Client Debug: update_table - POST data keys = ' . implode(', ', array_keys($_POST)));
+            }
+
             // nonce検証
             if (!isset($_POST['ktp_client_nonce']) || !wp_verify_nonce($_POST['ktp_client_nonce'], 'ktp_client_action')) {
                 wp_die(__('不正なリクエストです。', 'ktpwp'));
@@ -168,6 +175,12 @@ class KTPWP_Client_DB {
                 case 'delete':
                     return $this->handle_delete($table_name, $tab_name, $data_id);
                 case 'insert':
+                    // デバッグログを追加
+                    if (defined('WP_DEBUG') && WP_DEBUG) {
+                        error_log('KTPWP Client Debug: update_table - insert case called');
+                        error_log('KTPWP Client Debug: update_table - query_post = ' . $query_post);
+                        error_log('KTPWP Client Debug: update_table - data_id = ' . $data_id);
+                    }
                     return $this->handle_insert($table_name, $tab_name, $fields_data, $search_field_value);
                 case 'update':
                     return $this->handle_update($table_name, $tab_name, $data_id, $fields_data, $search_field_value);
@@ -184,6 +197,22 @@ class KTPWP_Client_DB {
      * @return array Sanitized data
      */
     private function sanitize_post_data($post_data) {
+        // client_statusの処理を改善
+        $client_status = '';
+        if (isset($post_data['client_status'])) {
+            $client_status = sanitize_text_field($post_data['client_status']);
+        }
+        // 空の場合はデフォルト値「対象」を設定
+        if (empty($client_status)) {
+            $client_status = '対象';
+        }
+
+        // デバッグログを追加
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('KTPWP Client Debug: client_status from POST = ' . (isset($post_data['client_status']) ? $post_data['client_status'] : 'NOT_SET'));
+            error_log('KTPWP Client Debug: client_status after sanitize = ' . $client_status);
+        }
+
         return array(
             'company_name' => isset($post_data['company_name']) ? sanitize_text_field($post_data['company_name']) : '',
             'user_name' => isset($post_data['user_name']) ? sanitize_text_field($post_data['user_name']) : '',
@@ -202,7 +231,7 @@ class KTPWP_Client_DB {
             'payment_method' => isset($post_data['payment_method']) ? sanitize_text_field($post_data['payment_method']) : '',
             'tax_category' => isset($post_data['tax_category']) ? sanitize_text_field($post_data['tax_category']) : '',
             'memo' => isset($post_data['memo']) ? sanitize_textarea_field($post_data['memo']) : '',
-            'client_status' => isset($post_data['client_status']) ? sanitize_text_field($post_data['client_status']) : '',
+            'client_status' => $client_status,
             'category' => isset($post_data['category']) ? sanitize_text_field($post_data['category']) : ''
         );
     }
@@ -218,27 +247,118 @@ class KTPWP_Client_DB {
     private function handle_delete($table_name, $tab_name, $data_id) {
         global $wpdb;
 
+        $delete_type = isset($_POST['delete_type']) ? $_POST['delete_type'] : 'soft';
+
         if ($data_id > 0) {
-            $result = $wpdb->update(
-                $table_name,
-                array('client_status' => '対象外'),
-                array('id' => $data_id),
-                array('%s'),
-                array('%d')
-            );
+            if ($delete_type === 'soft') {
+                // ソフトデリート（対象外）
+                $result = $wpdb->update(
+                    $table_name,
+                    array('client_status' => '対象外'),
+                    array('id' => $data_id),
+                    array('%s'),
+                    array('%d')
+                );
+            } elseif ($delete_type === 'delete') {
+                // 顧客データのみ物理削除（受注書は残す）
+                $result = $wpdb->delete(
+                    $table_name,
+                    array('id' => $data_id),
+                    array('%d')
+                );
+            } elseif ($delete_type === 'complete') {
+                // 顧客データと関連受注書を完全削除
+                try {
+                    // トランザクション開始
+                    $wpdb->query('START TRANSACTION');
+                    
+                    // 1. 受注書テーブルからclient_id一致の受注書IDを取得
+                    $order_table = $wpdb->prefix . 'ktp_order';
+                    $order_ids = $wpdb->get_col($wpdb->prepare("SELECT id FROM {$order_table} WHERE client_id = %d", $data_id));
+                    
+                    if (!empty($order_ids)) {
+                        // 2. 受注書関連データを全削除
+                        foreach ($order_ids as $order_id) {
+                            // KTPWP_Order_Itemsクラスを使用して関連データを削除
+                            if (class_exists('KTPWP_Order_Items')) {
+                                $order_items = KTPWP_Order_Items::get_instance();
+                                $order_items->delete_invoice_items($order_id);
+                                $order_items->delete_cost_items($order_id);
+                            }
+                            
+                            // スタッフチャットメッセージを削除
+                            $wpdb->delete($wpdb->prefix . 'ktp_order_staff_chat', array('order_id' => $order_id), array('%d'));
+                            
+                            // 受注書自体を削除
+                            $wpdb->delete($order_table, array('id' => $order_id), array('%d'));
+                        }
+                    }
+                    
+                    // 3. 顧客データ物理削除
+                    $result = $wpdb->delete(
+                        $table_name,
+                        array('id' => $data_id),
+                        array('%d')
+                    );
+                    
+                    if ($result === false) {
+                        error_log('KTPWP Client Delete Error: Failed to delete client data. Error: ' . $wpdb->last_error);
+                        throw new Exception('顧客データの削除に失敗しました: ' . $wpdb->last_error);
+                    }
+                    
+                    // トランザクションコミット
+                    $wpdb->query('COMMIT');
+                    
+                } catch (Exception $e) {
+                    // トランザクションロールバック
+                    $wpdb->query('ROLLBACK');
+                    error_log('KTPWP Client Delete Error: ' . $e->getMessage());
+                    
+                    // エラーが発生した場合は、ソフトデリートにフォールバック
+                    $result = $wpdb->update(
+                        $table_name,
+                        array('client_status' => '対象外'),
+                        array('id' => $data_id),
+                        array('%s'),
+                        array('%d')
+                    );
+                    
+                    if ($result === false) {
+                        error_log('KTPWP Client Delete Error: Fallback to soft delete also failed. Error: ' . $wpdb->last_error);
+                        return; // 処理を中断
+                    }
+                }
+            } else {
+                // 不明なタイプはソフトデリート
+                $result = $wpdb->update(
+                    $table_name,
+                    array('client_status' => '対象外'),
+                    array('id' => $data_id),
+                    array('%s'),
+                    array('%d')
+                );
+            }
 
             if ($result !== false) {
                 $next_id = $this->get_next_display_id($table_name, $data_id);
-
                 $cookie_name = 'ktp_' . $tab_name . '_id';
                 setcookie($cookie_name, $next_id, time() + (86400 * 30), "/");
-
                 $redirect_url = add_query_arg(array(
                     'tab_name' => $tab_name,
                     'data_id' => $next_id,
                     'message' => 'deleted'
                 ), wp_get_referer());
-
+                wp_redirect($redirect_url);
+                exit;
+            } else {
+                // 削除処理が失敗した場合のエラーハンドリング
+                error_log('KTPWP Client Delete Error: Delete operation failed for client ID: ' . $data_id);
+                // エラーメッセージを表示するためのリダイレクト
+                $redirect_url = add_query_arg(array(
+                    'tab_name' => $tab_name,
+                    'data_id' => $data_id,
+                    'message' => 'delete_error'
+                ), wp_get_referer());
                 wp_redirect($redirect_url);
                 exit;
             }
@@ -256,6 +376,14 @@ class KTPWP_Client_DB {
      */
     private function handle_insert($table_name, $tab_name, $fields_data, $search_field_value) {
         global $wpdb;
+
+        // デバッグログを追加
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('KTPWP Client Debug: handle_insert called');
+            error_log('KTPWP Client Debug: table_name = ' . $table_name);
+            error_log('KTPWP Client Debug: company_name = ' . $fields_data['company_name']);
+            error_log('KTPWP Client Debug: user_name = ' . $fields_data['user_name']);
+        }
 
         $result = $wpdb->insert(
             $table_name,
@@ -288,6 +416,16 @@ class KTPWP_Client_DB {
             )
         );
 
+        // デバッグログを追加
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('KTPWP Client Debug: insert result = ' . ($result !== false ? 'success' : 'failed'));
+            if ($result !== false) {
+                error_log('KTPWP Client Debug: new_id = ' . $wpdb->insert_id);
+            } else {
+                error_log('KTPWP Client Debug: wpdb error = ' . $wpdb->last_error);
+            }
+        }
+
         if ($result !== false) {
             $new_id = $wpdb->insert_id;
             $cookie_name = 'ktp_' . $tab_name . '_id';
@@ -316,6 +454,12 @@ class KTPWP_Client_DB {
      */
     private function handle_update($table_name, $tab_name, $data_id, $fields_data, $search_field_value) {
         global $wpdb;
+
+        // デバッグログを追加
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('KTPWP Client Debug: handle_update - client_status = ' . $fields_data['client_status']);
+            error_log('KTPWP Client Debug: handle_update - data_id = ' . $data_id);
+        }
 
         if ($data_id > 0) {
             $result = $wpdb->update(
@@ -349,6 +493,14 @@ class KTPWP_Client_DB {
                 ),
                 array('%d')
             );
+
+            // デバッグログを追加
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('KTPWP Client Debug: update result = ' . ($result !== false ? 'success' : 'failed'));
+                if ($result === false) {
+                    error_log('KTPWP Client Debug: wpdb error = ' . $wpdb->last_error);
+                }
+            }
 
             if ($result !== false) {
                 $wpdb->query($wpdb->prepare(

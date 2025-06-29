@@ -1016,7 +1016,8 @@ class Kntan_Client_Class {
                 if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
                 }
 
-                $data_id = $wpdb->insert_id;
+                // 追加モードではデータベース挿入は行わず、フォーム表示のみ
+                // $data_id = $wpdb->insert_id; // この行を削除
 
                 // 詳細表示部分の開始
             $data_title = '<div class="data_detail_box"><div class="data_detail_title">' . esc_html__('■ 顧客追加中', 'ktpwp') . '</div>';
@@ -1234,7 +1235,8 @@ class Kntan_Client_Class {
             $button_group_html .= wp_nonce_field('ktp_client_action', 'ktp_client_nonce', true, false);
             $button_group_html .= '<input type="hidden" name="data_id" value="' . esc_attr($data_id) . '">';
             $button_group_html .= '<input type="hidden" name="query_post" value="delete">';
-            $button_group_html .= '<button type="submit" name="send_post" title="' . esc_attr__('削除（無効化）する', 'ktpwp') . '" onclick="return confirm(\"' . esc_js(__('この顧客を削除（無効化）しますか？\\nデータは残りますが、表示ラベルが「対象外」に変更されます。', 'ktpwp')) . '\")" class="button-style delete-submit-btn">';
+            $button_group_html .= '<input type="hidden" name="delete_type" value="soft">';
+            $button_group_html .= '<button type="submit" name="send_post" title="' . esc_attr__('削除（無効化）する', 'ktpwp') . '" onclick="return confirm(\"' . esc_js(__('この顧客を削除（無効化）しますか？\nデータは残りますが、表示ラベルが「対象外」に変更されます。', 'ktpwp')) . '\")" class="button-style delete-submit-btn">';
             $button_group_html .= '<span class="material-symbols-outlined">delete</span>';
             $button_group_html .= '</button>';
             $button_group_html .= '</form>';
