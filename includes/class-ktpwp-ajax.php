@@ -135,6 +135,9 @@ class KTPWP_Ajax {
         add_action('wp_ajax_ktp_get_creating_warning_count', array($this, 'ajax_get_creating_warning_count'));
         add_action('wp_ajax_nopriv_ktp_get_creating_warning_count', array($this, 'ajax_require_login')); // 非ログインユーザーはエラー
         $this->registered_handlers[] = 'ktp_get_creating_warning_count';
+
+        // 顧客IDを受け取り、完了日が締日を超えている案件リストをJSONで返す
+        add_action('wp_ajax_ktp_get_invoice_candidates', 'ktpwp_ajax_get_invoice_candidates');
     }
 
     /**
@@ -2249,4 +2252,104 @@ class KTPWP_Ajax {
             wp_send_json_error(__('エラーが発生しました: ' . $e->getMessage(), 'ktpwp'));
         }
     }
+}
+
+function ktpwp_ajax_get_invoice_candidates() {
+    // 権限チェック（管理者または編集権限）
+    if (!current_user_can('edit_posts') && !current_user_can('ktpwp_access')) {
+        wp_send_json_error(['message' => '権限がありません']);
+    }
+    
+    global $wpdb;
+    $client_id = isset($_POST['client_id']) ? intval($_POST['client_id']) : 0;
+    if ($client_id <= 0) {
+        wp_send_json_error(['message' => '顧客IDが不正です']);
+    }
+    
+    $client_table = $wpdb->prefix . 'ktp_client';
+    $order_table = $wpdb->prefix . 'ktp_order';
+    
+    // 顧客の締日を取得
+    $closing_day = $wpdb->get_var($wpdb->prepare("SELECT closing_day FROM {$client_table} WHERE id = %d", $client_id));
+    if (!$closing_day) {
+        wp_send_json_error(['message' => '締日が取得できません']);
+    }
+    
+    // 完了日が締日を超えている案件を取得
+    $orders = $wpdb->get_results($wpdb->prepare(
+        "SELECT id, project_name, completion_date FROM {$order_table} 
+         WHERE client_id = %d AND progress = 4 AND completion_date IS NOT NULL 
+         ORDER BY completion_date DESC",
+        $client_id
+    ));
+    
+    // デバッグ用：取得件数をログ出力
+    error_log('KTPWP Invoice Candidates - Client ID: ' . $client_id . ', Total completed orders: ' . count($orders));
+    
+    // 完了月の前月締日で比較し、月別にグループ化
+    $monthly_groups = array();
+    $filtered_orders = array();
+    
+    foreach ($orders as $order) {
+        $completion_date = $order->completion_date;
+        $completion_year = date('Y', strtotime($completion_date));
+        $completion_month = date('m', strtotime($completion_date));
+        
+        // 完了月の前月締日を計算
+        if ($closing_day === '末日') {
+            $month_closing_date = date('Y-m-t', strtotime($completion_year . '-' . $completion_month . '-01 -1 month'));
+        } else {
+            $closing_day_num = intval($closing_day);
+            $month_closing_date = date('Y-m-d', strtotime($completion_year . '-' . $completion_month . '-01 -1 month +' . ($closing_day_num - 1) . ' days'));
+        }
+        
+        // デバッグ用：各案件の比較結果をログ出力
+        error_log('KTPWP Invoice Candidates - Order ID: ' . $order->id . ', Completion: ' . $completion_date . ', Month Closing: ' . $month_closing_date . ', Is Over: ' . ($completion_date > $month_closing_date ? 'YES' : 'NO'));
+        
+        // 完了日が前月締日を超えているかチェック
+        if ($completion_date > $month_closing_date) {
+            $filtered_orders[] = $order;
+            
+            // 請求対象月を計算（完了月）
+            $billing_year = $completion_year;
+            $billing_month = $completion_month;
+            $billing_key = $billing_year . '-' . $billing_month;
+            
+            // 月別グループに追加
+            if (!isset($monthly_groups[$billing_key])) {
+                // 請求対象月の締日を計算
+                if ($closing_day === '末日') {
+                    $billing_closing_date = date('Y-m-t', strtotime($billing_year . '-' . $billing_month . '-01'));
+                } else {
+                    $closing_day_num = intval($closing_day);
+                    $billing_closing_date = date('Y-m-d', strtotime($billing_year . '-' . $billing_month . '-01 +' . ($closing_day_num - 1) . ' days'));
+                }
+                
+                $monthly_groups[$billing_key] = array(
+                    'year' => $billing_year,
+                    'month' => $billing_month,
+                    'billing_period' => $billing_year . '年' . $billing_month . '月分',
+                    'closing_date' => $billing_closing_date,
+                    'orders' => array()
+                );
+            }
+            
+            $monthly_groups[$billing_key]['orders'][] = array(
+                'id' => $order->id,
+                'project_name' => $order->project_name,
+                'completion_date' => $order->completion_date,
+            );
+        }
+    }
+    
+    // 月別グループを年月順にソート
+    ksort($monthly_groups);
+    
+    $result = array(
+        'monthly_groups' => array_values($monthly_groups),
+        'total_orders' => count($filtered_orders),
+        'total_groups' => count($monthly_groups)
+    );
+    
+    wp_send_json_success($result);
 }

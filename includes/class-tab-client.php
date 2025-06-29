@@ -445,12 +445,13 @@ class Kntan_Client_Class {
                        // 受注書の詳細へのリンク（シンプルなURL生成）
                        $detail_url = add_query_arg(array('tab_name' => 'order', 'order_id' => $order_id), $base_page_url);
 
-                       // リスト項目を生成（注文履歴ボタンと同じ形式）
-                       $order_info = 'ID: ' . $order_id . ' - ' . $project_name . ' <span style="float:right;" class="status-' . $progress . '">' . $progress_label . '</span>';
+                       // 1行化：ID・案件名・完了日・進捗を同じ行に表示（完了日は「完了日：」ラベル付き）
+                       $order_info = 'ID: ' . $order_id . ' - ' . $project_name;
                        if (!empty($completion_date)) {
-                           $order_info .= '<br><small style="color: #666;">完了日：' . $completion_date . '</small>';
+                           $order_info .= ' <span style="color: #666; margin-left: 12px;">完了日：' . $completion_date . '</span>';
                        }
-                       
+                       $order_info .= ' <span style="float:right;" class="status-' . $progress . '">' . $progress_label . '</span>';
+
                        $results[] = <<<END
                        <a href="{$detail_url}">
                            <div class="ktp_data_list_item">{$order_info}</div>
@@ -692,12 +693,13 @@ class Kntan_Client_Class {
                    // 受注書の詳細へのリンク（シンプルなURL生成）
                    $detail_url = add_query_arg(array('tab_name' => 'order', 'order_id' => $order_id), $base_page_url);
 
-                   // リスト項目を生成（注文履歴ボタンと同じ形式）
-                   $order_info = 'ID: ' . $order_id . ' - ' . $project_name . ' <span style="float:right;" class="status-' . $progress . '">' . $progress_label . '</span>';
+                   // 1行化：ID・案件名・完了日・進捗を同じ行に表示（完了日は「完了日：」ラベル付き）
+                   $order_info = 'ID: ' . $order_id . ' - ' . $project_name;
                    if (!empty($completion_date)) {
-                       $order_info .= '<br><small style="color: #666;">完了日：' . $completion_date . '</small>';
+                       $order_info .= ' <span style="color: #666; margin-left: 12px;">完了日：' . $completion_date . '</span>';
                    }
-                   
+                   $order_info .= ' <span style="float:right;" class="status-' . $progress . '">' . $progress_label . '</span>';
+
                    $results_f .= '<a href="' . $detail_url . '">'
                        . '<div class="ktp_data_list_item">' . $order_info . '</div>'
                        . '</a>';
@@ -1071,7 +1073,79 @@ class Kntan_Client_Class {
         $controller_html .= '受注書作成';
         $controller_html .= '</button>';
         $controller_html .= '</form>';
-        
+
+        // 請求書発行ボタンを追加
+        $controller_html .= '<button type="button" class="issue-invoice-btn" style="margin-left:8px;padding:6px 10px;font-size:12px;background:#4caf50;color:#fff;border:none;border-radius:4px;cursor:pointer;" title="請求書発行">';
+        $controller_html .= '<span class="material-symbols-outlined" aria-label="請求書" style="font-size:16px;vertical-align:middle;">receipt_long</span> 請求書発行';
+        $controller_html .= '</button>';
+
+        // ポップアップHTML（初期は非表示）
+        $controller_html .= '<div id="invoice-popup" style="display:none;position:fixed;top:10%;left:50%;transform:translateX(-50%);z-index:9999;background:#fff;border:2px solid #4caf50;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.18);padding:24px 32px;min-width:340px;max-width:90vw;">';
+        $controller_html .= '<div style="font-size:18px;font-weight:bold;margin-bottom:12px;">請求対象案件リスト</div>';
+        $controller_html .= '<div id="invoice-popup-list">';
+        // 案件リストはJSで動的に挿入
+        $controller_html .= '</div>';
+        $controller_html .= '<div style="text-align:right;margin-top:18px;"><button onclick="document.getElementById(\'invoice-popup\').style.display=\'none\'" style="padding:6px 16px;font-size:13px;background:#888;color:#fff;border:none;border-radius:4px;">閉じる</button></div>';
+        $controller_html .= '</div>';
+
+        // JS: ボタン押下時にAjaxで案件リスト取得＆ポップアップ表示
+        $controller_html .= '<script>
+        (function(){
+          var btn = document.querySelector(".issue-invoice-btn");
+          if(btn){
+            btn.addEventListener("click", function(){
+              var popup = document.getElementById("invoice-popup");
+              var list = document.getElementById("invoice-popup-list");
+              list.innerHTML = "<div style=\'color:#888;\'>読み込み中...</div>";
+              popup.style.display = "block";
+              // Ajaxで案件リスト取得
+              var xhr = new XMLHttpRequest();
+              xhr.open("POST", ajaxurl, true);
+              xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+              xhr.onload = function(){
+                if(xhr.status === 200){
+                  try{
+                    var res = JSON.parse(xhr.responseText);
+                    if(res.success && res.data && res.data.monthly_groups && res.data.monthly_groups.length > 0){
+                      var html = "<div style=\"margin-bottom:20px;\"><strong>請求対象案件リスト（月別グループ）</strong></div>";
+                      
+                      res.data.monthly_groups.forEach(function(group){
+                        html += "<div style=\"margin-bottom:15px;border:1px solid #ddd;border-radius:5px;overflow:hidden;\">";
+                        html += "<div style=\"background-color:#f5f5f5;padding:8px 12px;font-weight:bold;border-bottom:1px solid #ddd;\">";
+                        html += group.billing_period + "（締日：" + group.closing_date + "）";
+                        html += "</div>";
+                        html += "<table style=\"width:100%;border-collapse:collapse;font-size:13px;\">";
+                        html += "<tr style=\"background-color:#f9f9f9;\"><th style=\"border-bottom:1px solid #ccc;padding:6px 8px;text-align:left;\">ID</th><th style=\"border-bottom:1px solid #ccc;padding:6px 8px;text-align:left;\">案件名</th><th style=\"border-bottom:1px solid #ccc;padding:6px 8px;text-align:left;\">完了日</th></tr>";
+                        
+                        group.orders.forEach(function(order){
+                          html += "<tr><td style=\"padding:6px 8px;border-bottom:1px solid #eee;\">" + order.id + "</td><td style=\"padding:6px 8px;border-bottom:1px solid #eee;\">" + order.project_name + "</td><td style=\"padding:6px 8px;border-bottom:1px solid #eee;\">" + order.completion_date + "</td></tr>";
+                        });
+                        
+                        html += "</table>";
+                        html += "</div>";
+                      });
+                      
+                      html += "<div style=\"margin-top:15px;padding:10px;background-color:#e8f4fd;border-radius:5px;font-size:12px;color:#666;\">";
+                      html += "総案件数：" + res.data.total_orders + "件、請求月数：" + res.data.total_groups + "ヶ月";
+                      html += "</div>";
+                      
+                      list.innerHTML = html;
+                    }else{
+                      list.innerHTML = "<div style=\"color:#888;\">該当する案件はありません。</div>";
+                    }
+                  }catch(e){list.innerHTML = "<div style=\"color:#c00;\">データ取得エラー</div>";}
+                }else{
+                  list.innerHTML = "<div style=\"color:#c00;\">通信エラー</div>";
+                }
+              };
+              // 顧客IDを送信
+              var clientId = document.getElementById("client-id-input").value;
+              xhr.send("action=ktp_get_invoice_candidates&client_id="+encodeURIComponent(clientId));
+            });
+          }
+        })();
+        </script>';
+
         $controller_html .= '</div>'; // 左側のボタン群終了
         
         // 右側：プレビューボタン、印刷ボタン
