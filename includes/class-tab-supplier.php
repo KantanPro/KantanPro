@@ -931,7 +931,7 @@ class KTPWP_Supplier_Class {
         } else {
             $current_id_message = '<div style="padding: 15px 20px; background: linear-gradient(135deg, #fff3cd 0%, #fff8e1 100%); border-radius: 6px; margin: 15px 0; color: #856404; font-weight: 600; text-align: center; box-shadow: 0 3px 12px rgba(0,0,0,0.07); display: flex; align-items: center; justify-content: center; font-size: 16px; gap: 10px;">'
                 . '<span class="material-symbols-outlined" style="color: #ffc107;">info</span>'
-                . ($action === 'istmode' ? '新規追加モード' : '協力会社データがありません')
+                . ($action === 'istmode' ? '新規追加モード' : 'まだサービスがありません。')
                 . '</div>';
         }
 
