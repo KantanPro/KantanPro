@@ -1144,9 +1144,21 @@ class Kntan_Client_Class {
                       html += "<div style=\"margin-bottom:5px;\">" + contactDisplay + "</div>";
                       html += "</div>";
                       
+                      // 月別グループの表示
                       res.data.monthly_groups.forEach(function(group){
+                        // 月別グループヘッダーを追加
+                        html += "<div style=\"margin:20px 0 10px 0;padding:8px 12px;background-color:#f0f8ff;border-left:4px solid #0073aa;border-radius:4px;\">";
+                        html += "<div style=\"font-weight:bold;color:#0073aa;font-size:14px;\">";
+                        html += "【" + group.billing_period + "】";
+                        html += "</div>";
+                        html += "<div style=\"font-size:11px;color:#666;margin-top:2px;\">";
+                        html += "締日：" + group.closing_date + "、案件数：" + group.orders.length + "件";
+                        html += "</div>";
+                        html += "</div>";
+                        
+                        // 各案件の表示
                         group.orders.forEach(function(order){
-                          html += "<div style=\"padding:10px;border-bottom:1px solid #eee;\">";
+                          html += "<div style=\"padding:10px;border-bottom:1px solid #eee;margin-left:10px;\">";
                           html += "<div style=\"font-weight:bold;margin-bottom:8px;color:#333;font-size:12px;\">";
                           html += "ID: " + order.id + " - " + order.project_name + "（完了日：" + order.completion_date + "）";
                           html += "</div>";
