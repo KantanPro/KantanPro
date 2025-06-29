@@ -1090,7 +1090,7 @@ class Kntan_Client_Class {
         $controller_html .= '</div>';
         
         // コンテンツ部分（スクロール可能）
-        $controller_html .= '<div id="invoiceList" style="flex:1;overflow-y:scroll;padding-right:10px;">';
+        $controller_html .= '<div id="invoiceList" style="flex:1;overflow-y:scroll;padding-right:10px;padding:50px;">';
         $controller_html .= '<div style="text-align:center;color:#888;">読み込み中...</div>';
         $controller_html .= '</div>';
         
