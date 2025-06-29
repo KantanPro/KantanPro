@@ -973,12 +973,19 @@ class Kntan_Client_Class {
         // 受注書作成用に現在の顧客IDから最新のデータを取得する
         $current_customer_name = '';
         $current_user_name = '';
+        $current_client_status = '';
         if ($current_client_id > 0) {
-            $current_client_data_query = $wpdb->prepare("SELECT company_name, name FROM {$table_name} WHERE id = %d", $current_client_id);
+            $current_client_data_query = $wpdb->prepare("SELECT company_name, name, client_status FROM {$table_name} WHERE id = %d", $current_client_id);
             $current_client_data = $wpdb->get_row($current_client_data_query);
             if ($current_client_data) {
                 $current_customer_name = esc_html($current_client_data->company_name);
                 $current_user_name = esc_html($current_client_data->name);
+                $current_client_status = esc_html($current_client_data->client_status);
+            }
+            
+            // デバッグ情報を追加
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log("KTPWP Debug - Order Button Control: client_id={$current_client_id}, client_status={$current_client_status}, query={$current_client_data_query}");
             }
         }
         
@@ -993,13 +1000,33 @@ class Kntan_Client_Class {
         $controller_html .= '<input type="hidden" name="customer_name" value="' . esc_attr($customer_name_to_use) . '">';
         $controller_html .= '<input type="hidden" name="user_name" value="' . esc_attr($user_name_to_use) . '">';
         $controller_html .= '<input type="hidden" id="client-id-input" name="client_id" value="' . esc_attr($current_client_id) . '">';
+        
+        // 顧客ステータスの情報をHTMLに埋め込み（JavaScriptで確認用）
+        $controller_html .= '<div data-client-status="' . esc_attr($current_client_status) . '" style="display:none;"></div>';
+        
+        // ボタンの無効化条件を拡張（データが空または顧客が対象外の場合）
         $is_data_empty = empty($post_row) && empty($data_id);
-        $disabled_attr = $is_data_empty ? 'disabled style="background:#ccc;color:#888;cursor:not-allowed;"' : '';
+        $is_client_excluded = ($current_client_status === '対象外');
+        $should_disable = $is_data_empty || $is_client_excluded;
+        
+        // デバッグ情報を追加
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log("KTPWP Debug - Button Control: is_data_empty={$is_data_empty}, is_client_excluded={$is_client_excluded}, should_disable={$should_disable}");
+        }
+        
+        $disabled_attr = $should_disable ? 'disabled style="background:#ccc;color:#888;cursor:not-allowed;"' : '';
         $button_style = 'font-size: 12px;';
-        if (!$is_data_empty) {
+        if (!$should_disable) {
             $button_style = 'padding: 6px 10px; font-size: 12px;';
         }
-        $controller_html .= '<button type="submit" class="create-order-btn" ' . $disabled_attr . ' style="' . $button_style . '">';
+        
+        // ボタンのタイトルを設定
+        $button_title = '受注書作成';
+        if ($is_client_excluded) {
+            $button_title = '受注書作成（対象外顧客のため無効）';
+        }
+        
+        $controller_html .= '<button type="submit" class="create-order-btn" ' . $disabled_attr . ' style="' . $button_style . '" title="' . esc_attr($button_title) . '">';
         $controller_html .= '<span class="material-symbols-outlined" aria-label="作成" style="font-size: 16px;">create</span>';
         $controller_html .= '受注書作成';
         $controller_html .= '</button>';

@@ -949,55 +949,75 @@ class Kntan_Order_Class {
                 }
             }
 
-            // 受注書データをデータベースに挿入
-            // 標準的なUNIXタイムスタンプを使用（UTCベース）
-            $timestamp = time(); // 標準のUTC UNIXタイムスタンプを取得
+            // 対象外顧客からの受注書作成を防ぐチェック
+            if ($client_id > 0) {
+                $client_status = $wpdb->get_var($wpdb->prepare(
+                    "SELECT client_status FROM `{$client_table}` WHERE id = %d",
+                    $client_id
+                ));
+                
+                if ($client_status === '対象外') {
+                    $content .= '<div class="error" style="padding: 15px; background: #ffe6e6; border: 1px solid #ff4444; border-radius: 4px; margin: 10px 0; color: #d32f2f;">';
+                    $content .= '<strong>受注書作成エラー</strong><br>';
+                    $content .= '対象外の顧客からは受注書を作成できません。顧客のステータスを「対象」に変更してから再度お試しください。';
+                    $content .= '</div>';
+                    
+                    // エラーメッセージを表示した後は受注書作成処理をスキップ
+                    $from_client = 0;
+                }
+            }
 
-            $insert_data = array(
-                'time' => $timestamp, // 標準のUTC UNIXタイムスタンプで保存
-                'client_id' => $client_id, // 顧客IDを保存
-                'customer_name' => sanitize_text_field( $customer_name ),
-                'user_name' => sanitize_text_field( $user_name ),
-                'project_name' => '※ 入力してください', // 案件名の初期値を設定
-                'invoice_items' => '', // 初期値は空
-                'cost_items' => '', // 初期値は空
-                'memo' => '', // 初期値は空
-                'search_field' => sanitize_text_field( implode(', ', [$customer_name, $user_name]) ), // 検索用フィールド
-            );
+            // 受注書データをデータベースに挿入（対象外チェックを通過した場合のみ）
+            if ($from_client === 1) {
+                // 標準的なUNIXタイムスタンプを使用（UTCベース）
+                $timestamp = time(); // 標準のUTC UNIXタイムスタンプを取得
 
-            $inserted = $wpdb->insert($table_name, $insert_data, array(
-                '%d', // time
-                '%d', // client_id
-                '%s', // customer_name
-                '%s', // user_name
-                '%s', // project_name
-                '%s', // invoice_items
-                '%s', // cost_items
-                '%s', // memo
-                '%s'  // search_field
-            ));
+                $insert_data = array(
+                    'time' => $timestamp, // 標準のUTC UNIXタイムスタンプで保存
+                    'client_id' => $client_id, // 顧客IDを保存
+                    'customer_name' => sanitize_text_field( $customer_name ),
+                    'user_name' => sanitize_text_field( $user_name ),
+                    'project_name' => '※ 入力してください', // 案件名の初期値を設定
+                    'invoice_items' => '', // 初期値は空
+                    'cost_items' => '', // 初期値は空
+                    'memo' => '', // 初期値は空
+                    'search_field' => sanitize_text_field( implode(', ', [$customer_name, $user_name]) ), // 検索用フィールド
+                );
 
-            if ($inserted) {
-                $new_order_id = $wpdb->insert_id; // 挿入された受注書IDを取得
+                $inserted = $wpdb->insert($table_name, $insert_data, array(
+                    '%d', // time
+                    '%d', // client_id
+                    '%s', // customer_name
+                    '%s', // user_name
+                    '%s', // project_name
+                    '%s', // invoice_items
+                    '%s', // cost_items
+                    '%s', // memo
+                    '%s'  // search_field
+                ));
 
-                // 初期請求項目を作成
-                $this->Create_Initial_Invoice_Item( $new_order_id );
+                if ($inserted) {
+                    $new_order_id = $wpdb->insert_id; // 挿入された受注書IDを取得
 
-                // 初期コスト項目を作成
-                $this->Create_Initial_Cost_Item( $new_order_id );
+                    // 初期請求項目を作成
+                    $this->Create_Initial_Invoice_Item( $new_order_id );
 
-                // 初期スタッフチャットエントリを作成
-                $this->Create_Initial_Staff_Chat( $new_order_id );
+                    // 初期コスト項目を作成
+                    $this->Create_Initial_Cost_Item( $new_order_id );
 
-                // リダイレクト処理を無効化 - 代わりにorder_idを直接設定
-                $_GET['order_id'] = $new_order_id;
-                $_GET['from_client'] = null; // from_clientフラグをクリア
-                $order_id = $new_order_id; // ローカル変数も更新
+                    // 初期スタッフチャットエントリを作成
+                    $this->Create_Initial_Staff_Chat( $new_order_id );
 
-                // デバッグ用ログ
-            } else {
-                // 挿入失敗時のエラーハンドリング
-                $content .= '<div class="error">受注書の作成に失敗しました。</div>';
+                    // リダイレクト処理を無効化 - 代わりにorder_idを直接設定
+                    $_GET['order_id'] = $new_order_id;
+                    $_GET['from_client'] = null; // from_clientフラグをクリア
+                    $order_id = $new_order_id; // ローカル変数も更新
+
+                    // デバッグ用ログ
+                } else {
+                    // 挿入失敗時のエラーハンドリング
+                    $content .= '<div class="error">受注書の作成に失敗しました。</div>';
+                }
             }
         }
 

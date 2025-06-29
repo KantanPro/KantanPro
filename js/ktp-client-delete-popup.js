@@ -242,6 +242,18 @@
             }
 
             if (isConfirmed) {
+                // 対象外に変更する場合は、送信前に受注書作成ボタンを無効化
+                if (selectedOption === 'soft') {
+                    const orderButton = document.querySelector('.create-order-btn');
+                    if (orderButton) {
+                        orderButton.disabled = true;
+                        orderButton.style.background = '#ccc';
+                        orderButton.style.color = '#888';
+                        orderButton.style.cursor = 'not-allowed';
+                        orderButton.title = '受注書作成（対象外顧客のため無効）';
+                    }
+                }
+
                 // フォームを作成して送信
                 const form = document.createElement('form');
                 form.method = 'POST';
@@ -286,7 +298,21 @@
                 submitInput.value = '1';
                 form.appendChild(submitInput);
 
+                // 対象外に変更した場合は、送信後に確実にページを再読み込み
+                if (selectedOption === 'soft') {
+                    // セッションストレージに削除フラグを設定
+                    sessionStorage.setItem('ktp_client_deleted', 'true');
+                    
+                    form.addEventListener('submit', function() {
+                        // 送信後に少し待ってからページを再読み込み
+                        setTimeout(function() {
+                            window.location.reload();
+                        }, 100);
+                    });
+                }
+                
                 document.body.appendChild(form);
+                
                 form.submit();
             }
         });
@@ -357,6 +383,141 @@
         document.addEventListener('DOMContentLoaded', setupDeleteButtons);
     } else {
         setupDeleteButtons();
+    }
+
+    // 受注書作成ボタンのクリックを無効化する関数
+    function disableOrderButtonClick() {
+        const orderButton = document.querySelector('.create-order-btn');
+        if (orderButton) {
+            // 既存のイベントリスナーを削除
+            orderButton.removeEventListener('click', preventOrderButtonClick);
+            // 新しいイベントリスナーを追加
+            orderButton.addEventListener('click', preventOrderButtonClick);
+        }
+    }
+
+    // 受注書作成ボタンのクリックを防ぐ関数
+    function preventOrderButtonClick(e) {
+        const statusElement = document.querySelector('[data-client-status]');
+        if (statusElement && statusElement.getAttribute('data-client-status') === '対象外') {
+            e.preventDefault();
+            e.stopPropagation();
+            alert('対象外顧客のため、受注書を作成できません。');
+            return false;
+        }
+    }
+
+    // ページ読み込み完了後にボタン状態を確認
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+            checkOrderButtonState();
+            disableOrderButtonClick();
+            // 定期的チェックを開始（1秒間隔で5回）
+            let checkCount = 0;
+            const checkInterval = setInterval(function() {
+                periodicButtonCheck();
+                disableOrderButtonClick();
+                checkCount++;
+                if (checkCount >= 5) {
+                    clearInterval(checkInterval);
+                }
+            }, 1000);
+        });
+    } else {
+        checkOrderButtonState();
+        disableOrderButtonClick();
+        // 定期的チェックを開始（1秒間隔で5回）
+        let checkCount = 0;
+        const checkInterval = setInterval(function() {
+            periodicButtonCheck();
+            disableOrderButtonClick();
+            checkCount++;
+            if (checkCount >= 5) {
+                clearInterval(checkInterval);
+            }
+        }, 1000);
+    }
+
+    // ページ読み込み後に受注書作成ボタンの状態を確認・修正
+    function checkOrderButtonState() {
+        // 顧客のステータスを確認するためのAJAXリクエスト
+        const urlParams = new URLSearchParams(window.location.search);
+        const clientId = urlParams.get('data_id');
+        const tabName = urlParams.get('tab_name');
+        
+        if (tabName === 'client' && clientId) {
+            // まず、HTMLに埋め込まれた顧客ステータスを確認
+            const statusElement = document.querySelector('[data-client-status]');
+            if (statusElement) {
+                const clientStatus = statusElement.getAttribute('data-client-status');
+                const orderButton = document.querySelector('.create-order-btn');
+                
+                if (orderButton && clientStatus === '対象外') {
+                    // 対象外の場合はボタンを無効化
+                    orderButton.disabled = true;
+                    orderButton.style.background = '#ccc';
+                    orderButton.style.color = '#888';
+                    orderButton.style.cursor = 'not-allowed';
+                    orderButton.title = '受注書作成（対象外顧客のため無効）';
+                    console.log('受注書作成ボタンを無効化しました（対象外顧客）');
+                }
+            } else {
+                // HTMLにステータス情報がない場合は、URLパラメータから確認
+                const messageParam = urlParams.get('message');
+                if (messageParam === 'deleted') {
+                    // 削除処理が完了した場合、ボタンを無効化
+                    const orderButton = document.querySelector('.create-order-btn');
+                    if (orderButton) {
+                        orderButton.disabled = true;
+                        orderButton.style.background = '#ccc';
+                        orderButton.style.color = '#888';
+                        orderButton.style.cursor = 'not-allowed';
+                        orderButton.title = '受注書作成（対象外顧客のため無効）';
+                        console.log('受注書作成ボタンを無効化しました（削除処理完了後）');
+                    }
+                }
+            }
+            
+            // セッションストレージから削除フラグを確認
+            const wasDeleted = sessionStorage.getItem('ktp_client_deleted');
+            if (wasDeleted === 'true') {
+                const orderButton = document.querySelector('.create-order-btn');
+                if (orderButton) {
+                    orderButton.disabled = true;
+                    orderButton.style.background = '#ccc';
+                    orderButton.style.color = '#888';
+                    orderButton.style.cursor = 'not-allowed';
+                    orderButton.title = '受注書作成（対象外顧客のため無効）';
+                    console.log('受注書作成ボタンを無効化しました（セッションストレージ）');
+                }
+                // フラグをクリア
+                sessionStorage.removeItem('ktp_client_deleted');
+            }
+        }
+    }
+
+    // 定期的にボタン状態をチェックする関数
+    function periodicButtonCheck() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const tabName = urlParams.get('tab_name');
+        
+        if (tabName === 'client') {
+            const orderButton = document.querySelector('.create-order-btn');
+            if (orderButton) {
+                // ボタンが有効になっている場合、対象外チェックを実行
+                if (!orderButton.disabled) {
+                    const statusElement = document.querySelector('[data-client-status]');
+                    if (statusElement && statusElement.getAttribute('data-client-status') === '対象外') {
+                        orderButton.disabled = true;
+                        orderButton.style.background = '#ccc';
+                        orderButton.style.color = '#888';
+                        orderButton.style.cursor = 'not-allowed';
+                        orderButton.title = '受注書作成（対象外顧客のため無効）';
+                        console.log('定期的チェックで受注書作成ボタンを無効化しました');
+                    }
+                }
+            }
+        }
     }
 
     // 動的に追加された要素にも対応
