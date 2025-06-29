@@ -325,6 +325,11 @@ class KTPWP_Supplier_Data {
                 // Sanitize all POST data for insert operation
                 $sanitized_data = $this->sanitize_supplier_data( $post_data );
 
+                // 新しいIDを取得（データが完全に0の場合は1から開始）
+                $new_id_query = "SELECT COALESCE(MAX(id), 0) + 1 as new_id FROM {$table_name}";
+                $new_id_result = $wpdb->get_row($new_id_query);
+                $new_id = $new_id_result && isset($new_id_result->new_id) ? intval($new_id_result->new_id) : 1;
+
                 // Build search_field value
                 $search_field_value = implode(', ', [
                     current_time( 'timestamp' ),
@@ -352,6 +357,7 @@ class KTPWP_Supplier_Data {
                 $insert_result = $wpdb->insert(
                     $table_name,
                     array(
+                        'id' => $new_id,
                         'time' => current_time( 'timestamp' ),
                         'company_name' => $sanitized_data['company_name'],
                         'name' => $sanitized_data['user_name'],
@@ -372,6 +378,10 @@ class KTPWP_Supplier_Data {
                         'memo' => $sanitized_data['memo'],
                         'category' => $sanitized_data['category'],
                         'search_field' => $search_field_value
+                    ),
+                    array(
+                        '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s',
+                        '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s'
                     )
                 );
 
@@ -382,28 +392,14 @@ class KTPWP_Supplier_Data {
                     });
                     </script>';
                 } else {
-                    // Get the ID of the inserted record
-                    $new_data_id = $wpdb->insert_id;
-
-                    // Set cookie for the new record
-                    $cookie_name = 'ktp_' . $tab_name . '_id';
-                    setcookie( $cookie_name, $new_data_id, time() + (86400 * 30), "/" );
-
-                    // Prepare redirect URL
-                    global $wp;
-                    $current_page_id = get_queried_object_id();
-                    $base_page_url = get_permalink( $current_page_id );
-                    if ( ! $base_page_url ) {
-                        $base_page_url = home_url( add_query_arg( array(), $wp->request ) );
-                    }
-                    $redirect_url = add_query_arg( array(
+                    // 成功時のリダイレクト処理
+                    $redirect_url = add_query_arg(array(
                         'tab_name' => $tab_name,
-                        'data_id' => $new_data_id,
+                        'data_id' => $new_id,
                         'message' => 'added'
-                    ), $base_page_url );
+                    ), wp_get_referer());
 
-                    // Use WordPress redirect function
-                    wp_safe_redirect( $redirect_url );
+                    wp_redirect($redirect_url);
                     exit;
                 }
                 break;

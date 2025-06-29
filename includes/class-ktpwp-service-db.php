@@ -355,10 +355,10 @@ class KTPWP_Service_DB {
             $original_data = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$table_name} WHERE id = %d", $data_id));
 
             if ($original_data) {
-                // 新しいIDを取得
-                $new_id_query = "SELECT MAX(id) + 1 as new_id FROM {$table_name}";
+                // 新しいIDを取得（データが完全に0の場合は1から開始）
+                $new_id_query = "SELECT COALESCE(MAX(id), 0) + 1 as new_id FROM {$table_name}";
                 $new_id_result = $wpdb->get_row($new_id_query);
-                $new_id = $new_id_result ? $new_id_result->new_id : 1;
+                $new_id = $new_id_result && isset($new_id_result->new_id) ? intval($new_id_result->new_id) : 1;
 
                 // データを複製して挿入
                 $insert_result = $wpdb->insert(

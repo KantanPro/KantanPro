@@ -969,10 +969,16 @@ class Kntan_Order_Class {
 
             // 受注書データをデータベースに挿入（対象外チェックを通過した場合のみ）
             if ($from_client === 1) {
+                // 新しいIDを取得（データが完全に0の場合は1から開始）
+                $new_id_query = "SELECT COALESCE(MAX(id), 0) + 1 as new_id FROM {$table_name}";
+                $new_id_result = $wpdb->get_row($new_id_query);
+                $new_id = $new_id_result && isset($new_id_result->new_id) ? intval($new_id_result->new_id) : 1;
+
                 // 標準的なUNIXタイムスタンプを使用（UTCベース）
                 $timestamp = time(); // 標準のUTC UNIXタイムスタンプを取得
 
                 $insert_data = array(
+                    'id' => $new_id,
                     'time' => $timestamp, // 標準のUTC UNIXタイムスタンプで保存
                     'client_id' => $client_id, // 顧客IDを保存
                     'customer_name' => sanitize_text_field( $customer_name ),
@@ -985,6 +991,7 @@ class Kntan_Order_Class {
                 );
 
                 $inserted = $wpdb->insert($table_name, $insert_data, array(
+                    '%d', // id
                     '%d', // time
                     '%d', // client_id
                     '%s', // customer_name
@@ -997,7 +1004,8 @@ class Kntan_Order_Class {
                 ));
 
                 if ($inserted) {
-                    $new_order_id = $wpdb->insert_id; // 挿入された受注書IDを取得
+                    // 明示的に設定したIDを使用
+                    $new_order_id = $new_id;
 
                     // 初期請求項目を作成
                     $this->Create_Initial_Invoice_Item( $new_order_id );

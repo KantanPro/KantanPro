@@ -347,6 +347,11 @@ class KTPWP_Order {
 
         $data = wp_parse_args( $data, $defaults );
 
+        // 新しいIDを取得（データが完全に0の場合は1から開始）
+        $new_id_query = "SELECT COALESCE(MAX(id), 0) + 1 as new_id FROM {$table_name}";
+        $new_id_result = $wpdb->get_row($new_id_query);
+        $new_id = $new_id_result && isset($new_id_result->new_id) ? intval($new_id_result->new_id) : 1;
+
         // Sanitize data
         $data['customer_name'] = sanitize_text_field( $data['customer_name'] );
         $data['user_name'] = sanitize_text_field( $data['user_name'] );
@@ -354,10 +359,14 @@ class KTPWP_Order {
         $data['memo'] = sanitize_textarea_field( $data['memo'] );
         $data['search_field'] = sanitize_textarea_field( $data['search_field'] );
 
+        // IDを明示的に設定
+        $data['id'] = $new_id;
+
         $result = $wpdb->insert(
             $table_name,
             $data,
             array(
+                '%d', // id
                 '%d', // time
                 '%d', // client_id
                 '%s', // customer_name
@@ -376,7 +385,7 @@ class KTPWP_Order {
             return false;
         }
 
-        return $wpdb->insert_id;
+        return $new_id;
     }
 
     /**

@@ -385,9 +385,15 @@ class KTPWP_Client_DB {
             error_log('KTPWP Client Debug: user_name = ' . $fields_data['user_name']);
         }
 
+        // 新しいIDを取得（データが完全に0の場合は1から開始）
+        $new_id_query = "SELECT COALESCE(MAX(id), 0) + 1 as new_id FROM {$table_name}";
+        $new_id_result = $wpdb->get_row($new_id_query);
+        $new_id = $new_id_result && isset($new_id_result->new_id) ? intval($new_id_result->new_id) : 1;
+
         $result = $wpdb->insert(
             $table_name,
             array(
+                'id' => $new_id,
                 'time' => current_time('mysql'),
                 'company_name' => $fields_data['company_name'],
                 'name' => $fields_data['user_name'],
@@ -411,8 +417,8 @@ class KTPWP_Client_DB {
                 'search_field' => $search_field_value
             ),
             array(
-                '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s',
-                '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s'
+                '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s',
+                '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s'
             )
         );
 
@@ -420,14 +426,13 @@ class KTPWP_Client_DB {
         if (defined('WP_DEBUG') && WP_DEBUG) {
             error_log('KTPWP Client Debug: insert result = ' . ($result !== false ? 'success' : 'failed'));
             if ($result !== false) {
-                error_log('KTPWP Client Debug: new_id = ' . $wpdb->insert_id);
+                error_log('KTPWP Client Debug: new_id = ' . $new_id);
             } else {
                 error_log('KTPWP Client Debug: wpdb error = ' . $wpdb->last_error);
             }
         }
 
         if ($result !== false) {
-            $new_id = $wpdb->insert_id;
             $cookie_name = 'ktp_' . $tab_name . '_id';
             setcookie($cookie_name, $new_id, time() + (86400 * 30), "/");
 

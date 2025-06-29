@@ -355,9 +355,18 @@ class KTPWP_Contact_Form {
         
         $table_name = $wpdb->prefix . 'ktp_order';
         
+        // 新しいIDを取得（データが完全に0の場合は1から開始）
+        $new_id_query = "SELECT COALESCE(MAX(id), 0) + 1 as new_id FROM {$table_name}";
+        $new_id_result = $wpdb->get_row($new_id_query);
+        $new_id = $new_id_result && isset($new_id_result->new_id) ? intval($new_id_result->new_id) : 1;
+
+        // IDを明示的に設定
+        $order_data['id'] = $new_id;
+        
         // wpdb->insert() はキーによるマッピングを使用するため、
         // formatの順序はorder_dataのキーの順序と一致させる
         $format = array(
+            '%d', // id
             '%d', // client_id
             '%s', // customer_name  
             '%s', // company_name
@@ -380,13 +389,11 @@ class KTPWP_Contact_Form {
             return false;
         }
         
-        $order_id = $wpdb->insert_id;
-        
         if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('KTPWP Contact Form: Order data saved with ID ' . $order_id);
+            error_log('KTPWP Contact Form: Order data saved with ID ' . $new_id);
         }
         
-        return $order_id;
+        return $new_id;
     }
     
     /**

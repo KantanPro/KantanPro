@@ -322,9 +322,15 @@ class KTPWP_Supplier_Class {
         // 追加
         elseif( $query_post == 'insert' ) {
 
+            // 新しいIDを取得（データが完全に0の場合は1から開始）
+            $new_id_query = "SELECT COALESCE(MAX(id), 0) + 1 as new_id FROM {$table_name}";
+            $new_id_result = $wpdb->get_row($new_id_query);
+            $new_id = $new_id_result && isset($new_id_result->new_id) ? intval($new_id_result->new_id) : 1;
+
             $insert_result = $wpdb->insert(
                 $table_name,
                     array(
+                        'id' => $new_id,
                         'time' => current_time( 'mysql' ),
                         'company_name' => $company_name,
                         'name' => $user_name,
@@ -345,6 +351,10 @@ class KTPWP_Supplier_Class {
                         'memo' => $memo,
                         'category' => $category,
                         'search_field' => $search_field_value
+                ),
+                array(
+                    '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s',
+                    '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s'
                 )
             );
             if($insert_result === false) {
@@ -358,13 +368,10 @@ class KTPWP_Supplier_Class {
             } else {
                 $wpdb->query("UNLOCK TABLES;");
                 $action = 'update';
-                // 追加直後のIDを $wpdb->insert_id から取得する
-                $data_id = $wpdb->insert_id;
-
 
                 // 追加後のリダイレクト処理
                 $cookie_name = 'ktp_' . $tab_name . '_id';
-                setcookie($cookie_name, $data_id, time() + (86400 * 30), "/");
+                setcookie($cookie_name, $new_id, time() + (86400 * 30), "/");
 
                 global $wp;
                 $current_page_id = get_queried_object_id();
@@ -374,7 +381,7 @@ class KTPWP_Supplier_Class {
                 }
                 $redirect_url = add_query_arg([
                     'tab_name' => $tab_name,
-                    'data_id' => $data_id,
+                    'data_id' => $new_id,
                     'message' => 'added'
                 ], $base_page_url);
 
@@ -386,7 +393,6 @@ class KTPWP_Supplier_Class {
                         }, 1000);
                     });
                 </script>';
-                exit;
                 exit;
             }
 
