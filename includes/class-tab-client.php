@@ -529,7 +529,7 @@ class Kntan_Client_Class {
            // 協力会社タブと同じパターンで「info顧客データがありません」を表示
            $results_f .= '<div style="padding: 15px 20px; background: linear-gradient(135deg, #fff3cd 0%, #fff8e1 100%); border-radius: 6px; margin: 15px 0; color: #856404; font-weight: 600; text-align: center; box-shadow: 0 3px 12px rgba(0,0,0,0.07); display: flex; align-items: center; justify-content: center; font-size: 16px; gap: 10px;">'
                . '<span class="material-symbols-outlined" style="color: #ffc107;">info</span>'
-               . 'まだ注文がありません。'
+               . '顧客データがありません。'
                . '</div>';
        } else {
            // 受注履歴セクションを追加（リストBOX内、ページネーションの後）
@@ -589,13 +589,18 @@ class Kntan_Client_Class {
            $client_ids_array = explode(',', $client_ids_str);
            $placeholders = implode(',', array_fill(0, count($client_ids_array), '%d'));
            
-           // 総件数取得
+           // 総件数取得（顧客のステータスに関係なく注文履歴を取得）
            $order_total_query = $wpdb->prepare(
                "SELECT COUNT(*) FROM {$order_table} WHERE client_id IN ($placeholders)", 
                $client_ids_array
            );
            $order_total_rows = $wpdb->get_var($order_total_query);
            $order_total_pages = ceil($order_total_rows / $query_limit);
+           
+           // デバッグ情報を追加
+           if (defined('WP_DEBUG') && WP_DEBUG) {
+               error_log("KTPWP Debug - Order History: client_id={$current_customer_id}, order_total_rows={$order_total_rows}, order_total_query={$order_total_query}");
+           }
            
            // 注文履歴のページを取得（order_pageパラメータを使用）
            $order_page = isset($_GET['order_page']) ? intval($_GET['order_page']) : 1;
@@ -604,12 +609,17 @@ class Kntan_Client_Class {
            $order_start = ($order_page - 1) * $query_limit;
            $order_current_page = $order_page;
            
-           // 受注書データを取得
+           // 受注書データを取得（顧客のステータスに関係なく注文履歴を取得）
            $order_query = $wpdb->prepare(
                "SELECT * FROM {$order_table} WHERE client_id IN ($placeholders) ORDER BY {$order_sort_column_prepared} {$order_sort_direction} LIMIT %d, %d",
                array_merge($client_ids_array, [intval($order_start), intval($query_limit)])
            );
            $order_rows = $wpdb->get_results($order_query);
+           
+           // デバッグ情報を追加
+           if (defined('WP_DEBUG') && WP_DEBUG) {
+               error_log("KTPWP Debug - Order History: order_rows_count=" . count($order_rows) . ", order_query={$order_query}");
+           }
            
            // 注文履歴リスト表示（注文履歴ボタンと同じ表示形式）
            if ($order_rows) {

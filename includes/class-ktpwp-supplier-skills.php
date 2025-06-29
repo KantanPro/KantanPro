@@ -586,7 +586,7 @@ class KTPWP_Supplier_Skills {
         } else {
             $html .= '<div class="ktp_data_list_item" style="padding: 15px 20px; background: linear-gradient(135deg, #fff3cd 0%, #fff8e1 100%); border-radius: 6px; margin: 15px 0; color: #856404; font-weight: 600; text-align: center; box-shadow: 0 3px 12px rgba(0,0,0,0.07); display: flex; align-items: center; justify-content: center; font-size: 16px; gap: 10px;">';
             $html .= '<span class="material-symbols-outlined" style="color: #ffc107;">info</span>';
-            $html .= 'まだ商品・サービスが登録されていません。';
+            $html .= 'まだサービスがありません。';
             $html .= '</div>';
             
             // 職能が0件の場合はパージネーションを非表示
