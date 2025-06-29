@@ -1075,28 +1075,36 @@ class Kntan_Client_Class {
         $controller_html .= '</form>';
 
         // 請求書発行ボタンを追加
-        $controller_html .= '<button type="button" class="issue-invoice-btn" style="margin-left:8px;padding:6px 10px;font-size:12px;background:#4caf50;color:#fff;border:none;border-radius:4px;cursor:pointer;" title="請求書発行">';
-        $controller_html .= '<span class="material-symbols-outlined" aria-label="請求書" style="font-size:16px;vertical-align:middle;">receipt_long</span> 請求書発行';
-        $controller_html .= '</button>';
+        $controller_html .= '<button id="invoiceButton" title="請求書発行" style="padding: 6px 10px; font-size: 12px; background-color: #28a745 !important; color: white !important; border: none; border-radius: 3px; cursor: pointer;">'
+            . '<span class="material-symbols-outlined" aria-label="請求書" style="font-size: 16px;">receipt_long</span> 請求書発行'
+            . '</button>';
 
-        // ポップアップHTML（初期は非表示）
-        $controller_html .= '<div id="invoice-popup" style="display:none;position:fixed;top:10%;left:50%;transform:translateX(-50%);z-index:9999;background:#fff;border:2px solid #4caf50;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.18);padding:24px 32px;min-width:340px;max-width:90vw;">';
-        $controller_html .= '<div style="font-size:18px;font-weight:bold;margin-bottom:12px;">請求対象案件リスト</div>';
-        $controller_html .= '<div id="invoice-popup-list">';
-        // 案件リストはJSで動的に挿入
+        // 請求書発行ポップアップ
+        $controller_html .= '<div id="invoicePopup" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;">';
+        $controller_html .= '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:white;padding:20px;border-radius:8px;width:90%;max-width:800px;max-height:80vh;display:flex;flex-direction:column;">';
+        
+        // ヘッダー部分（固定）
+        $controller_html .= '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;border-bottom:1px solid #ddd;padding-bottom:10px;">';
+        $controller_html .= '<h3 style="margin:0;color:#333;">請求対象案件リスト</h3>';
+        $controller_html .= '<button onclick="document.getElementById(\'invoicePopup\').style.display=\'none\'" style="background:#dc3545;color:white;border:none;padding:8px 12px;border-radius:4px;cursor:pointer;font-size:14px;">閉じる</button>';
         $controller_html .= '</div>';
-        $controller_html .= '<div style="text-align:right;margin-top:18px;"><button onclick="document.getElementById(\'invoice-popup\').style.display=\'none\'" style="padding:6px 16px;font-size:13px;background:#888;color:#fff;border:none;border-radius:4px;">閉じる</button></div>';
+        
+        // コンテンツ部分（スクロール可能）
+        $controller_html .= '<div id="invoiceList" style="flex:1;overflow-y:scroll;padding-right:10px;">';
+        $controller_html .= '<div style="text-align:center;color:#888;">読み込み中...</div>';
+        $controller_html .= '</div>';
+        
+        $controller_html .= '</div>';
         $controller_html .= '</div>';
 
-        // JS: ボタン押下時にAjaxで案件リスト取得＆ポップアップ表示
         $controller_html .= '<script>
         (function(){
-          var btn = document.querySelector(".issue-invoice-btn");
-          if(btn){
-            btn.addEventListener("click", function(){
-              var popup = document.getElementById("invoice-popup");
-              var list = document.getElementById("invoice-popup-list");
-              list.innerHTML = "<div style=\'color:#888;\'>読み込み中...</div>";
+          var invoiceButton = document.getElementById("invoiceButton");
+          var popup = document.getElementById("invoicePopup");
+          var list = document.getElementById("invoiceList");
+          
+          if(invoiceButton && popup && list){
+            invoiceButton.addEventListener("click", function(){
               popup.style.display = "block";
               // Ajaxで案件リスト取得
               var xhr = new XMLHttpRequest();
@@ -1114,14 +1122,31 @@ class Kntan_Client_Class {
                         html += "<div style=\"background-color:#f5f5f5;padding:8px 12px;font-weight:bold;border-bottom:1px solid #ddd;\">";
                         html += group.billing_period + "（締日：" + group.closing_date + "）";
                         html += "</div>";
-                        html += "<table style=\"width:100%;border-collapse:collapse;font-size:13px;\">";
-                        html += "<tr style=\"background-color:#f9f9f9;\"><th style=\"border-bottom:1px solid #ccc;padding:6px 8px;text-align:left;\">ID</th><th style=\"border-bottom:1px solid #ccc;padding:6px 8px;text-align:left;\">案件名</th><th style=\"border-bottom:1px solid #ccc;padding:6px 8px;text-align:left;\">完了日</th></tr>";
                         
                         group.orders.forEach(function(order){
-                          html += "<tr><td style=\"padding:6px 8px;border-bottom:1px solid #eee;\">" + order.id + "</td><td style=\"padding:6px 8px;border-bottom:1px solid #eee;\">" + order.project_name + "</td><td style=\"padding:6px 8px;border-bottom:1px solid #eee;\">" + order.completion_date + "</td></tr>";
+                          html += "<div style=\"padding:10px;border-bottom:1px solid #eee;\">";
+                          html += "<div style=\"font-weight:bold;margin-bottom:8px;color:#333;\">";
+                          html += "ID: " + order.id + " - " + order.project_name + "（完了日：" + order.completion_date + "）";
+                          html += "</div>";
+                          
+                          if(order.items && order.items.length > 0){
+                            html += "<div style=\"margin-left:20px;\">";
+                            order.items.forEach(function(item){
+                              html += "<div style=\"padding:3px 0;font-size:12px;color:#666;\">";
+                              html += "・" + item.item_name;
+                              if(item.quantity && item.unit_price){
+                                html += "（" + item.quantity + " × ¥" + item.unit_price + " = ¥" + item.total_price + "）";
+                              }
+                              html += "</div>";
+                            });
+                            html += "</div>";
+                          } else {
+                            html += "<div style=\"margin-left:20px;color:#999;font-size:12px;\">請求項目なし</div>";
+                          }
+                          
+                          html += "</div>";
                         });
                         
-                        html += "</table>";
                         html += "</div>";
                       });
                       

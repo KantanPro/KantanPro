@@ -2334,11 +2334,37 @@ function ktpwp_ajax_get_invoice_candidates() {
                 );
             }
             
-            $monthly_groups[$billing_key]['orders'][] = array(
+            // 案件の請求項目を取得
+            $order_items_table = $wpdb->prefix . 'ktp_order_invoice_items';
+            $order_items = $wpdb->get_results($wpdb->prepare(
+                "SELECT id, product_name, quantity, price, amount, unit, remarks 
+                 FROM {$order_items_table} 
+                 WHERE order_id = %d 
+                 ORDER BY sort_order ASC, id ASC",
+                $order->id
+            ));
+            
+            $order_data = array(
                 'id' => $order->id,
                 'project_name' => $order->project_name,
                 'completion_date' => $order->completion_date,
+                'items' => array()
             );
+            
+            // 請求項目を追加
+            foreach ($order_items as $item) {
+                $order_data['items'][] = array(
+                    'id' => $item->id,
+                    'item_name' => $item->product_name,
+                    'quantity' => $item->quantity,
+                    'unit_price' => $item->price,
+                    'total_price' => $item->amount,
+                    'unit' => $item->unit,
+                    'remarks' => $item->remarks
+                );
+            }
+            
+            $monthly_groups[$billing_key]['orders'][] = $order_data;
         }
     }
     
