@@ -746,7 +746,17 @@ class Kntan_Order_Class {
             $update_id = absint($_POST['update_progress_id']);
             $update_progress = absint($_POST['update_progress']);
             if ($update_id > 0 && $update_progress >= 1 && $update_progress <= 7) {
-                $wpdb->update($table_name, ['progress' => $update_progress], ['id' => $update_id], ['%d'], ['%d']);
+                // 現在の進捗を取得
+                $current_order = $wpdb->get_row($wpdb->prepare("SELECT progress FROM {$table_name} WHERE id = %d", $update_id));
+                
+                $update_data = ['progress' => $update_progress];
+                
+                // 進捗が「完了」（progress = 4）に変更された場合、完了日を記録
+                if ($update_progress == 4 && $current_order && $current_order->progress != 4) {
+                    $update_data['completion_date'] = current_time('Y-m-d');
+                }
+                
+                $wpdb->update($table_name, $update_data, ['id' => $update_id], ['%d'], ['%d']);
                 // リダイレクトで再読み込み（POSTリダブミット防止）
                 $redirect_url = esc_url_raw( $_SERVER['REQUEST_URI'] );
                 // wp_redirect( $redirect_url );
@@ -1326,6 +1336,11 @@ $content .= '</form>';
                     }
                 }
                 $content .= '<div>作成日時：<span id="order_created_time">' . esc_html($formatted_time) . '</span></div>';
+                
+                // 完了日の表示と編集フィールド
+                $completion_date = isset($order_data->completion_date) ? $order_data->completion_date : '';
+                $content .= '<div>完了日：<input type="date" id="completion_date" name="completion_date" value="' . esc_attr($completion_date) . '" data-order-id="' . esc_attr($order_data->id) . '" data-field="completion_date" class="completion-date-input" style="font-size: 12px; padding: 4px 8px; border: 1px solid #ddd; border-radius: 4px; width: 140px;" /></div>';
+                
                 // 案件名インライン入力をh4タイトル行に移動
                 $project_name = isset($order_data->project_name) ? esc_html($order_data->project_name) : '';
                 // preg_replaceによる重複input出力を削除（1箇所のみ出力）

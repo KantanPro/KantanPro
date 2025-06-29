@@ -48,19 +48,42 @@ jQuery(document).ready(function($) {
         $input.prop('disabled', true);
         $input.css('opacity', '0.6');
         
+        // nonceの取得（複数の変数から取得を試行）
+        var nonce = null;
+        if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.nonces && ktp_ajax_object.nonces.auto_save) {
+            nonce = ktp_ajax_object.nonces.auto_save;
+        } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.auto_save) {
+            nonce = ktpwp_ajax.nonces.auto_save;
+        } else if (typeof ktp_ajax_nonce !== 'undefined') {
+            nonce = ktp_ajax_nonce;
+        } else if (typeof ktpwp_ajax_nonce !== 'undefined') {
+            nonce = ktpwp_ajax_nonce;
+        }
+        
+        if (!nonce) {
+            console.error('[DELIVERY-DATES] エラー: nonceが取得できません');
+            alert('セキュリティトークンが取得できません。ページを再読み込みしてください。');
+            $input.prop('disabled', false);
+            $input.css('opacity', '1');
+            return;
+        }
+        
         // Ajaxでデータを保存
         $.ajax({
-            url: ktp_ajax.ajax_url,
+            url: (typeof ktp_ajax_object !== 'undefined' ? ktp_ajax_object.ajax_url : 
+                  typeof ktpwp_ajax !== 'undefined' ? ktpwp_ajax.ajax_url : 
+                  typeof ajaxurl !== 'undefined' ? ajaxurl : 
+                  '/wp-admin/admin-ajax.php'),
             type: 'POST',
             data: {
                 action: 'ktp_update_delivery_date',
                 order_id: orderId,
                 field: field,
                 value: value,
-                nonce: ktp_ajax.nonce
+                nonce: nonce
             },
             success: function(response) {
-                console.log('[DELIVERY-DATES] Ajax応答:', response);
+                console.log('[DELIVERY-DATES] 納期Ajax応答:', response);
                 if (response.success) {
                     // 成功時の処理
                     $input.css('border-color', '#4caf50');
@@ -68,9 +91,6 @@ jQuery(document).ready(function($) {
                     
                     // 警告マークを更新
                     updateWarningMark($input, value);
-                    
-                    // 進捗ボタンの警告マークも更新（納期変更時）
-                    updateProgressButtonWarning();
                     
                     // 3秒後に元のスタイルに戻す
                     setTimeout(function() {
@@ -81,7 +101,113 @@ jQuery(document).ready(function($) {
                     // エラー時の処理
                     $input.css('border-color', '#f44336');
                     $input.css('background-color', '#ffebee');
-                    alert('保存に失敗しました: ' + (response.data || 'エラーが発生しました'));
+                    var errorMessage = 'エラーが発生しました';
+                    if (response.data && response.data.message) {
+                        errorMessage = response.data.message;
+                    } else if (response.data) {
+                        errorMessage = response.data;
+                    }
+                    alert('保存に失敗しました: ' + errorMessage);
+                }
+            },
+            error: function() {
+                // 通信エラー時の処理
+                $input.css('border-color', '#f44336');
+                $input.css('background-color', '#ffebee');
+                alert('通信エラーが発生しました');
+            },
+            complete: function() {
+                // 処理完了時の処理
+                $input.prop('disabled', false);
+                $input.css('opacity', '1');
+            }
+        });
+    });
+
+    // 完了日フィールドの変更を監視
+    $(document).on('change', '.completion-date-input', function() {
+        console.log('[DELIVERY-DATES] 完了日フィールドが変更されました');
+        var $input = $(this);
+        var orderId = $input.data('order-id');
+        var field = $input.data('field');
+        var value = $input.val();
+        
+        console.log('[DELIVERY-DATES] 完了日変更内容:', { 
+            orderId: orderId, 
+            field: field, 
+            value: value,
+            inputId: $input.attr('id'),
+            inputName: $input.attr('name')
+        });
+        
+        // フィールド名の検証
+        if (!field) {
+            console.error('[DELIVERY-DATES] エラー: data-field属性が設定されていません');
+            alert('フィールド名が設定されていません。ページを再読み込みしてください。');
+            return;
+        }
+        
+        // 保存中の表示
+        $input.prop('disabled', true);
+        $input.css('opacity', '0.6');
+        
+        // nonceの取得（複数の変数から取得を試行）
+        var nonce = null;
+        if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.nonces && ktp_ajax_object.nonces.auto_save) {
+            nonce = ktp_ajax_object.nonces.auto_save;
+        } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.auto_save) {
+            nonce = ktpwp_ajax.nonces.auto_save;
+        } else if (typeof ktp_ajax_nonce !== 'undefined') {
+            nonce = ktp_ajax_nonce;
+        } else if (typeof ktpwp_ajax_nonce !== 'undefined') {
+            nonce = ktpwp_ajax_nonce;
+        }
+        
+        if (!nonce) {
+            console.error('[DELIVERY-DATES] エラー: nonceが取得できません');
+            alert('セキュリティトークンが取得できません。ページを再読み込みしてください。');
+            $input.prop('disabled', false);
+            $input.css('opacity', '1');
+            return;
+        }
+        
+        // Ajaxでデータを保存
+        $.ajax({
+            url: (typeof ktp_ajax_object !== 'undefined' ? ktp_ajax_object.ajax_url : 
+                  typeof ktpwp_ajax !== 'undefined' ? ktpwp_ajax.ajax_url : 
+                  typeof ajaxurl !== 'undefined' ? ajaxurl : 
+                  '/wp-admin/admin-ajax.php'),
+            type: 'POST',
+            data: {
+                action: 'ktp_update_delivery_date',
+                order_id: orderId,
+                field: field,
+                value: value,
+                nonce: nonce
+            },
+            success: function(response) {
+                console.log('[DELIVERY-DATES] 完了日Ajax応答:', response);
+                if (response.success) {
+                    // 成功時の処理
+                    $input.css('border-color', '#4caf50');
+                    $input.css('background-color', '#f1f8e9');
+                    
+                    // 3秒後に元のスタイルに戻す
+                    setTimeout(function() {
+                        $input.css('border-color', '');
+                        $input.css('background-color', '');
+                    }, 3000);
+                } else {
+                    // エラー時の処理
+                    $input.css('border-color', '#f44336');
+                    $input.css('background-color', '#ffebee');
+                    var errorMessage = 'エラーが発生しました';
+                    if (response.data && response.data.message) {
+                        errorMessage = response.data.message;
+                    } else if (response.data) {
+                        errorMessage = response.data;
+                    }
+                    alert('保存に失敗しました: ' + errorMessage);
                 }
             },
             error: function() {
@@ -159,13 +285,33 @@ jQuery(document).ready(function($) {
     function updateProgressButtonWarning() {
         console.log('[DELIVERY-DATES] 進捗ボタン警告マーク更新開始');
         
+        // nonceの取得（複数の変数から取得を試行）
+        var nonce = null;
+        if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.nonces && ktp_ajax_object.nonces.auto_save) {
+            nonce = ktp_ajax_object.nonces.auto_save;
+        } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.auto_save) {
+            nonce = ktpwp_ajax.nonces.auto_save;
+        } else if (typeof ktp_ajax_nonce !== 'undefined') {
+            nonce = ktp_ajax_nonce;
+        } else if (typeof ktpwp_ajax_nonce !== 'undefined') {
+            nonce = ktpwp_ajax_nonce;
+        }
+        
+        if (!nonce) {
+            console.error('[DELIVERY-DATES] エラー: nonceが取得できません');
+            return;
+        }
+        
         // Ajaxで受注の納期警告件数を取得
         $.ajax({
-            url: ktp_ajax.ajax_url,
+            url: (typeof ktp_ajax_object !== 'undefined' ? ktp_ajax_object.ajax_url : 
+                  typeof ktpwp_ajax !== 'undefined' ? ktpwp_ajax.ajax_url : 
+                  typeof ajaxurl !== 'undefined' ? ajaxurl : 
+                  '/wp-admin/admin-ajax.php'),
             type: 'POST',
             data: {
                 action: 'ktp_get_creating_warning_count',
-                nonce: ktp_ajax.nonce
+                nonce: nonce
             },
             success: function(response) {
                 console.log('[DELIVERY-DATES] 受注警告件数取得応答:', response);

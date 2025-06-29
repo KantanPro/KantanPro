@@ -51,6 +51,32 @@
   box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
 }
 
+/* 完了日フィールド用のスタイル */
+.completion-date-input {
+  font-size: 12px;
+  padding: 4px 6px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background-color: #fff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 110px;
+  height: 28px;
+  vertical-align: middle;
+  line-height: 1;
+}
+
+.completion-date-input:hover {
+  border-color: #bbb;
+  background-color: #f9f9f9;
+}
+
+.completion-date-input:focus {
+  outline: none;
+  border-color: #4caf50;
+  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+}
+
 /* 仕事リストの進捗プルダウン用スタイル */
 .progress-select {
   font-size: 13px;

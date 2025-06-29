@@ -2002,7 +2002,7 @@ class KTPWP_Ajax {
                 $column_names[] = $column->Field;
             }
             
-            $delivery_columns = array('desired_delivery_date', 'expected_delivery_date');
+            $delivery_columns = array('desired_delivery_date', 'expected_delivery_date', 'completion_date');
             foreach ($delivery_columns as $delivery_column) {
                 if (!in_array($delivery_column, $column_names)) {
                     error_log('KTPWP Ajax: Adding missing column: ' . $delivery_column);
@@ -2058,7 +2058,7 @@ class KTPWP_Ajax {
             }
 
             // フィールド名の検証
-            $allowed_fields = array('desired_delivery_date', 'expected_delivery_date');
+            $allowed_fields = array('desired_delivery_date', 'expected_delivery_date', 'completion_date');
             if (!in_array($field_name, $allowed_fields)) {
                 throw new Exception('無効なフィールド名です。');
             }
@@ -2104,67 +2104,87 @@ class KTPWP_Ajax {
      * 納期フィールドの更新処理
      */
     public function ajax_update_delivery_date() {
-        // 権限チェック
-        if (!current_user_can('edit_posts') && !current_user_can('ktpwp_access')) {
-            wp_send_json_error(__('この操作を行う権限がありません。', 'ktpwp'));
-            return;
-        }
-
-        // nonce検証
-        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'ktp_ajax_nonce')) {
-            wp_send_json_error(__('セキュリティ検証に失敗しました', 'ktpwp'));
-            return;
-        }
-
-        // POSTデータの取得とサニタイズ
-        $order_id = $this->sanitize_ajax_input('order_id', 'int');
-        $field = $this->sanitize_ajax_input('field', 'text');
-        $value = $this->sanitize_ajax_input('value', 'text');
-
-        // バリデーション
-        if ($order_id <= 0) {
-            wp_send_json_error(__('無効な受注IDです', 'ktpwp'));
-            return;
-        }
-
-        // フィールド名の検証
-        $allowed_fields = array('desired_delivery_date', 'expected_delivery_date');
-        if (!in_array($field, $allowed_fields)) {
-            wp_send_json_error(__('無効なフィールド名です', 'ktpwp'));
-            return;
-        }
-
-        // 日付形式の検証（空の場合は許可）
-        if (!empty($value)) {
-            $date_obj = DateTime::createFromFormat('Y-m-d', $value);
-            if (!$date_obj || $date_obj->format('Y-m-d') !== $value) {
-                wp_send_json_error(__('無効な日付形式です', 'ktpwp'));
+        try {
+            // 権限チェック
+            if (!current_user_can('edit_posts') && !current_user_can('ktpwp_access')) {
+                wp_send_json_error(array('message' => __('この操作を行う権限がありません。', 'ktpwp')));
                 return;
             }
+
+            // nonce検証
+            if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'ktp_ajax_nonce')) {
+                wp_send_json_error(array('message' => __('セキュリティ検証に失敗しました', 'ktpwp')));
+                return;
+            }
+
+            // POSTデータの取得とサニタイズ
+            $order_id = $this->sanitize_ajax_input('order_id', 'int');
+            $field = $this->sanitize_ajax_input('field', 'text');
+            $value = $this->sanitize_ajax_input('value', 'text');
+
+            // バリデーション
+            if ($order_id <= 0) {
+                wp_send_json_error(array('message' => __('無効な受注IDです', 'ktpwp')));
+                return;
+            }
+
+            // フィールド名の検証
+            $allowed_fields = array('desired_delivery_date', 'expected_delivery_date', 'completion_date');
+            if (!in_array($field, $allowed_fields)) {
+                wp_send_json_error(array('message' => __('無効なフィールド名です', 'ktpwp')));
+                return;
+            }
+
+            // 日付形式の検証（空の場合は許可）
+            if (!empty($value)) {
+                $date_obj = DateTime::createFromFormat('Y-m-d', $value);
+                if (!$date_obj || $date_obj->format('Y-m-d') !== $value) {
+                    wp_send_json_error(array('message' => __('無効な日付形式です', 'ktpwp')));
+                    return;
+                }
+            }
+
+            global $wpdb;
+            $table_name = $wpdb->prefix . 'ktp_order';
+            
+            // デバッグログを追加
+            error_log('KTPWP Ajax: Table name: ' . $table_name);
+            error_log('KTPWP Ajax: Order ID: ' . $order_id);
+            error_log('KTPWP Ajax: Field: ' . $field);
+            error_log('KTPWP Ajax: Value: ' . $value);
+            
+            // テーブルの存在確認
+            $table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$table_name}'");
+            error_log('KTPWP Ajax: Table exists: ' . ($table_exists ? 'YES' : 'NO'));
+            
+            // カラムの存在確認
+            $column_exists = $wpdb->get_var($wpdb->prepare("SHOW COLUMNS FROM `{$table_name}` LIKE %s", $field));
+            error_log('KTPWP Ajax: Column exists: ' . ($column_exists ? 'YES' : 'NO'));
+
+            // データベース更新
+            $result = $wpdb->update(
+                $table_name,
+                array($field => $value),
+                array('id' => $order_id),
+                array('%s'),
+                array('%d')
+            );
+            
+            error_log('KTPWP Ajax: Update result: ' . var_export($result, true));
+            if ($result === false) {
+                error_log('KTPWP Ajax: Last error: ' . $wpdb->last_error);
+            }
+
+            wp_send_json_success(array(
+                'message' => __('納期を更新しました', 'ktpwp'),
+                'field' => $field,
+                'value' => $value
+            ));
+
+        } catch (Exception $e) {
+            error_log('KTPWP Ajax update_delivery_date Error: ' . $e->getMessage());
+            wp_send_json_error(array('message' => $e->getMessage()));
         }
-
-        global $wpdb;
-        $table_name = $wpdb->prefix . 'ktp_order';
-
-        // データベース更新
-        $result = $wpdb->update(
-            $table_name,
-            array($field => $value),
-            array('id' => $order_id),
-            array('%s'),
-            array('%d')
-        );
-
-        if ($result === false) {
-            wp_send_json_error(__('データベースの更新に失敗しました', 'ktpwp'));
-            return;
-        }
-
-        wp_send_json_success(array(
-            'message' => __('納期を更新しました', 'ktpwp'),
-            'field' => $field,
-            'value' => $value
-        ));
     }
 
     /**

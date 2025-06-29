@@ -337,7 +337,17 @@ class Kantan_List_Class {
             $update_id = intval($_POST['update_progress_id']);
             $update_progress = intval($_POST['update_progress']);
             if ($update_id > 0 && $update_progress >= 1 && $update_progress <= 7) {
-                $wpdb->update($table_name, ['progress' => $update_progress], ['id' => $update_id]);
+                // 現在の進捗を取得
+                $current_order = $wpdb->get_row($wpdb->prepare("SELECT progress FROM {$table_name} WHERE id = %d", $update_id));
+                
+                $update_data = ['progress' => $update_progress];
+                
+                // 進捗が「完了」（progress = 4）に変更された場合、完了日を記録
+                if ($update_progress == 4 && $current_order && $current_order->progress != 4) {
+                    $update_data['completion_date'] = current_time('Y-m-d');
+                }
+                
+                $wpdb->update($table_name, $update_data, ['id' => $update_id]);
                 // リダイレクトで再読み込み（POSTリダブミット防止）
                 wp_redirect(esc_url_raw($_SERVER['REQUEST_URI']));
                 exit;

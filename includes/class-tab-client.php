@@ -431,13 +431,29 @@ class Kntan_Client_Class {
                            }
                        }
 
+                       // 完了日のフォーマット
+                       $completion_date = '';
+                       if (!empty($order->completion_date)) {
+                           $completion_dt = date_create($order->completion_date, new DateTimeZone('Asia/Tokyo'));
+                           if ($completion_dt) {
+                               $week = ['日','月','火','水','木','金','土'];
+                               $w = $completion_dt->format('w');
+                               $completion_date = $completion_dt->format('Y/n/j') . '（' . $week[$w] . '）';
+                           }
+                       }
+
                        // 受注書の詳細へのリンク（シンプルなURL生成）
                        $detail_url = add_query_arg(array('tab_name' => 'order', 'order_id' => $order_id), $base_page_url);
 
-                       // リスト項目を生成
+                       // リスト項目を生成（注文履歴ボタンと同じ形式）
+                       $order_info = 'ID: ' . $order_id . ' - ' . $project_name . ' <span style="float:right;" class="status-' . $progress . '">' . $progress_label . '</span>';
+                       if (!empty($completion_date)) {
+                           $order_info .= '<br><small style="color: #666;">完了日：' . $completion_date . '</small>';
+                       }
+                       
                        $results[] = <<<END
                        <a href="{$detail_url}">
-                           <div class="ktp_data_list_item">ID: {$order_id} - {$project_name} <span style="float:right;" class="status-{$progress}">{$progress_label}</span></div>
+                           <div class="ktp_data_list_item">{$order_info}</div>
                        </a>
                        END;
                    }
@@ -662,12 +678,28 @@ class Kntan_Client_Class {
                        }
                    }
 
+                   // 完了日のフォーマット
+                   $completion_date = '';
+                   if (!empty($order->completion_date)) {
+                       $completion_dt = date_create($order->completion_date, new DateTimeZone('Asia/Tokyo'));
+                       if ($completion_dt) {
+                           $week = ['日','月','火','水','木','金','土'];
+                           $w = $completion_dt->format('w');
+                           $completion_date = $completion_dt->format('Y/n/j') . '（' . $week[$w] . '）';
+                       }
+                   }
+
                    // 受注書の詳細へのリンク（シンプルなURL生成）
                    $detail_url = add_query_arg(array('tab_name' => 'order', 'order_id' => $order_id), $base_page_url);
 
                    // リスト項目を生成（注文履歴ボタンと同じ形式）
+                   $order_info = 'ID: ' . $order_id . ' - ' . $project_name . ' <span style="float:right;" class="status-' . $progress . '">' . $progress_label . '</span>';
+                   if (!empty($completion_date)) {
+                       $order_info .= '<br><small style="color: #666;">完了日：' . $completion_date . '</small>';
+                   }
+                   
                    $results_f .= '<a href="' . $detail_url . '">'
-                       . '<div class="ktp_data_list_item">ID: ' . $order_id . ' - ' . $project_name . ' <span style="float:right;" class="status-' . $progress . '">' . $progress_label . '</span></div>'
+                       . '<div class="ktp_data_list_item">' . $order_info . '</div>'
                        . '</a>';
                }
            } else {
