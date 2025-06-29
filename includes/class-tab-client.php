@@ -1166,8 +1166,14 @@ class Kntan_Client_Class {
                         html += "</div>";
                         html += "</div>";
                         
+                        // 月毎の合計金額を計算
+                        var monthlyTotal = 0;
+                        
                         // 各案件の表示
                         group.orders.forEach(function(order){
+                          // 案件の小計を計算
+                          var orderSubtotal = 0;
+                          
                           html += "<div style=\"padding:10px;border-bottom:1px solid #eee;\">";
                           html += "<div style=\"font-weight:bold;margin-bottom:8px;color:#333;font-size:12px;\">";
                           html += "ID: " + order.id + " - " + order.project_name + "（完了日：" + order.completion_date + "）";
@@ -1192,6 +1198,11 @@ class Kntan_Client_Class {
                               var quantity = item.quantity ? item.quantity : "-";
                               var totalPrice = item.total_price ? parseFloat(item.total_price).toLocaleString() + "円" : "-";
                               
+                              // 小計に加算
+                              if(item.total_price) {
+                                orderSubtotal += parseFloat(item.total_price);
+                              }
+                              
                               html += "<tr>";
                               html += "<td style=\"border:1px solid #ddd;padding:6px;text-align:left;font-size:12px;\">" + item.item_name + "</td>";
                               html += "<td style=\"border:1px solid #ddd;padding:6px;text-align:right;font-size:12px;\">" + unitPrice + "</td>";
@@ -1204,12 +1215,27 @@ class Kntan_Client_Class {
                             html += "</tbody>";
                             html += "</table>";
                             html += "</div>";
+                            
+                            // 案件の小計を表示
+                            html += "<div style=\"margin-top:10px;text-align:right;font-weight:bold;font-size:13px;color:#333;\">";
+                            html += "小計：" + orderSubtotal.toLocaleString() + "円";
+                            html += "</div>";
                           } else {
                             html += "<div style=\"color:#999;font-size:12px;\">請求項目なし</div>";
                           }
                           
+                          // 月毎の合計に加算
+                          monthlyTotal += orderSubtotal;
+                          
                           html += "</div>";
                         });
+                        
+                        // 月毎の合計金額を表示
+                        html += "<div style=\"margin:15px 0;padding:12px;background-color:#f8f9fa;border:2px solid #0073aa;border-radius:6px;text-align:right;\">";
+                        html += "<div style=\"font-weight:bold;font-size:15px;color:#0073aa;\">";
+                        html += group.billing_period + " 合計：" + monthlyTotal.toLocaleString() + "円";
+                        html += "</div>";
+                        html += "</div>";
                       });
                       
                       html += "<div style=\"margin-top:15px;padding:10px;background-color:#e8f4fd;border-radius:5px;font-size:12px;color:#666;\">";
