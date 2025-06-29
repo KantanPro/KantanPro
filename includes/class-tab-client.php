@@ -1144,6 +1144,11 @@ class Kntan_Client_Class {
                       html += "<div style=\"margin-bottom:5px;\">" + contactDisplay + "</div>";
                       html += "</div>";
                       
+                      // 請求書タイトルを追加
+                      html += "<div style=\"margin:100px 0 20px 0;padding:15px;border:2px solid #333;border-radius:8px;background-color:#f9f9f9;text-align:center;\">";
+                      html += "<div style=\"font-size:18px;font-weight:bold;color:#333;\">請求書</div>";
+                      html += "</div>";
+                      
                       // 月別グループの表示
                       res.data.monthly_groups.forEach(function(group){
                         // 月別グループヘッダーを追加
