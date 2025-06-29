@@ -312,6 +312,16 @@
                 e.target.closest('.delete-submit-btn') ||
                 (e.target.closest('button') && e.target.closest('button').classList.contains('delete-submit-btn'))
             ) {
+                // 得意先タブ（client）の場合のみポップアップを表示
+                const currentUrl = window.location.href;
+                const urlParams = new URLSearchParams(window.location.search);
+                const tabName = urlParams.get('tab_name');
+                
+                // 得意先タブ以外の場合は通常の削除処理を継続
+                if (tabName !== 'client') {
+                    return;
+                }
+                
                 e.preventDefault();
                 e.stopPropagation();
 
