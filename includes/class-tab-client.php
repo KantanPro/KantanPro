@@ -1115,39 +1115,79 @@ class Kntan_Client_Class {
                   try{
                     var res = JSON.parse(xhr.responseText);
                     if(res.success && res.data && res.data.monthly_groups && res.data.monthly_groups.length > 0){
-                      var html = "<div style=\"margin-bottom:20px;\"><strong>請求対象案件リスト（月別グループ）</strong></div>";
+                      var html = "<div style=\"margin-bottom:20px;font-size:12px;\">";
+                      
+                      // 顧客情報を表示
+                      var address = res.data.client_address || "未設定";
+                      var postalCode = "";
+                      var addressWithoutPostal = address;
+                      
+                      // 郵便番号を抽出
+                      if (address.startsWith("〒")) {
+                        var postalMatch = address.match(/〒(\d{3}-?\d{4})/);
+                        if (postalMatch) {
+                          postalCode = "〒" + postalMatch[1];
+                          addressWithoutPostal = address.replace(/〒\d{3}-?\d{4}\s*/, "");
+                        }
+                      }
+                      
+                      if (postalCode) {
+                        html += "<div style=\"margin-bottom:5px;\">" + postalCode + "</div>";
+                      }
+                      html += "<div style=\"margin-bottom:5px;\">" + addressWithoutPostal + "</div>";
+                      html += "<div style=\"margin-bottom:5px;\">" + (res.data.client_name || "未設定") + "</div>";
+                      
+                      var contactDisplay = res.data.client_contact || "未設定";
+                      if (contactDisplay !== "未設定") {
+                        contactDisplay += " 様";
+                      }
+                      html += "<div style=\"margin-bottom:5px;\">" + contactDisplay + "</div>";
+                      html += "</div>";
                       
                       res.data.monthly_groups.forEach(function(group){
-                        html += "<div style=\"margin-bottom:15px;border:1px solid #ddd;border-radius:5px;overflow:hidden;\">";
-                        html += "<div style=\"background-color:#f5f5f5;padding:8px 12px;font-weight:bold;border-bottom:1px solid #ddd;\">";
-                        html += group.billing_period + "（締日：" + group.closing_date + "）";
-                        html += "</div>";
-                        
                         group.orders.forEach(function(order){
                           html += "<div style=\"padding:10px;border-bottom:1px solid #eee;\">";
-                          html += "<div style=\"font-weight:bold;margin-bottom:8px;color:#333;\">";
+                          html += "<div style=\"font-weight:bold;margin-bottom:8px;color:#333;font-size:12px;\">";
                           html += "ID: " + order.id + " - " + order.project_name + "（完了日：" + order.completion_date + "）";
                           html += "</div>";
                           
                           if(order.items && order.items.length > 0){
-                            html += "<div style=\"margin-left:20px;\">";
+                            html += "<div style=\"margin-top:10px;\">";
+                            html += "<table style=\"width:100%;border-collapse:collapse;font-size:12px;border:1px solid #ddd;\">";
+                            html += "<thead>";
+                            html += "<tr style=\"background-color:#f5f5f5;\">";
+                            html += "<th style=\"border:1px solid #ddd;padding:6px;text-align:left;font-weight:bold;font-size:12px;\">サービス</th>";
+                            html += "<th style=\"border:1px solid #ddd;padding:6px;text-align:right;font-weight:bold;font-size:12px;\">単価</th>";
+                            html += "<th style=\"border:1px solid #ddd;padding:6px;text-align:center;font-weight:bold;font-size:12px;\">数量/単位</th>";
+                            html += "<th style=\"border:1px solid #ddd;padding:6px;text-align:right;font-weight:bold;font-size:12px;\">金額</th>";
+                            html += "<th style=\"border:1px solid #ddd;padding:6px;text-align:center;font-weight:bold;font-size:12px;\">備考</th>";
+                            html += "</tr>";
+                            html += "</thead>";
+                            html += "<tbody>";
+                            
                             order.items.forEach(function(item){
-                              html += "<div style=\"padding:3px 0;font-size:12px;color:#666;\">";
-                              html += "・" + item.item_name;
-                              if(item.quantity && item.unit_price){
-                                html += "（" + item.quantity + " × ¥" + item.unit_price + " = ¥" + item.total_price + "）";
-                              }
-                              html += "</div>";
+                              var unitPrice = item.unit_price ? parseFloat(item.unit_price).toLocaleString() + "円" : "-";
+                              var quantity = item.quantity ? item.quantity : "-";
+                              var totalPrice = item.total_price ? parseFloat(item.total_price).toLocaleString() + "円" : "-";
+                              
+                              html += "<tr>";
+                              html += "<td style=\"border:1px solid #ddd;padding:6px;text-align:left;font-size:12px;\">" + item.item_name + "</td>";
+                              html += "<td style=\"border:1px solid #ddd;padding:6px;text-align:right;font-size:12px;\">" + unitPrice + "</td>";
+                              html += "<td style=\"border:1px solid #ddd;padding:6px;text-align:center;font-size:12px;\">" + quantity + "/式</td>";
+                              html += "<td style=\"border:1px solid #ddd;padding:6px;text-align:right;font-size:12px;\">" + totalPrice + "</td>";
+                              html += "<td style=\"border:1px solid #ddd;padding:6px;text-align:center;font-size:12px;\"></td>";
+                              html += "</tr>";
                             });
+                            
+                            html += "</tbody>";
+                            html += "</table>";
                             html += "</div>";
                           } else {
-                            html += "<div style=\"margin-left:20px;color:#999;font-size:12px;\">請求項目なし</div>";
+                            html += "<div style=\"color:#999;font-size:12px;\">請求項目なし</div>";
                           }
                           
                           html += "</div>";
                         });
-                        
-                        html += "</div>";
                       });
                       
                       html += "<div style=\"margin-top:15px;padding:10px;background-color:#e8f4fd;border-radius:5px;font-size:12px;color:#666;\">";

@@ -2266,12 +2266,63 @@ function ktpwp_ajax_get_invoice_candidates() {
         wp_send_json_error(['message' => '顧客IDが不正です']);
     }
     
+    // デバッグ情報をログに出力
+    error_log('KTPWP Invoice Debug - Client ID: ' . $client_id);
+    
     $client_table = $wpdb->prefix . 'ktp_client';
     $order_table = $wpdb->prefix . 'ktp_order';
     
-    // 顧客の締日を取得
-    $closing_day = $wpdb->get_var($wpdb->prepare("SELECT closing_day FROM {$client_table} WHERE id = %d", $client_id));
+    // 顧客情報を取得
+    $client_info = $wpdb->get_row($wpdb->prepare(
+        "SELECT * FROM {$client_table} WHERE id = %d",
+        $client_id
+    ));
+    
+    if (!$client_info) {
+        error_log('KTPWP Invoice Debug - Client info not found for ID: ' . $client_id);
+        wp_send_json_error(['message' => '顧客情報が取得できません']);
+    }
+    
+    error_log('KTPWP Invoice Debug - Full Client info: ' . json_encode($client_info));
+    
+    // 担当者名を複数のフィールドから探す
+    $contact_name = '';
+    if (!empty(trim($client_info->representative_name))) {
+        $contact_name = $client_info->representative_name;
+    } elseif (!empty(trim($client_info->name))) {
+        $contact_name = $client_info->name;
+    } else {
+        $contact_name = '未設定';
+    }
+    
+    error_log('KTPWP Invoice Debug - Contact name found: ' . $contact_name);
+    
+    // 完全な住所を組み立て
+    $full_address = '';
+    if ($client_info->postal_code) {
+        $full_address .= '〒' . $client_info->postal_code . ' ';
+    }
+    if ($client_info->prefecture) {
+        $full_address .= $client_info->prefecture;
+    }
+    if ($client_info->city) {
+        $full_address .= $client_info->city;
+    }
+    if ($client_info->address) {
+        $full_address .= $client_info->address;
+    }
+    if ($client_info->building) {
+        $full_address .= ' ' . $client_info->building;
+    }
+    
+    // 住所が空の場合は「未設定」を表示
+    if (empty(trim($full_address))) {
+        $full_address = '未設定';
+    }
+    
+    $closing_day = $client_info->closing_day;
     if (!$closing_day) {
+        error_log('KTPWP Invoice Debug - Closing day not found for client ID: ' . $client_id);
         wp_send_json_error(['message' => '締日が取得できません']);
     }
     
@@ -2286,6 +2337,24 @@ function ktpwp_ajax_get_invoice_candidates() {
     // デバッグ用：取得件数をログ出力
     error_log('KTPWP Invoice Candidates - Client ID: ' . $client_id . ', Total completed orders: ' . count($orders));
     
+    if (empty($orders)) {
+        error_log('KTPWP Invoice Debug - No completed orders found for client ID: ' . $client_id);
+        wp_send_json_success(array(
+            'monthly_groups' => array(),
+            'total_orders' => 0,
+            'total_groups' => 0,
+            'client_address' => $full_address,
+            'client_name' => $client_info->company_name,
+            'client_contact' => $contact_name,
+            'debug_info' => array(
+                'client_id' => $client_id,
+                'closing_day' => $closing_day,
+                'completed_orders_count' => 0,
+                'message' => '完了案件がありません'
+            )
+        ));
+    }
+    
     // 完了月の前月締日で比較し、月別にグループ化
     $monthly_groups = array();
     $filtered_orders = array();
@@ -2296,10 +2365,10 @@ function ktpwp_ajax_get_invoice_candidates() {
         $completion_month = date('m', strtotime($completion_date));
         
         // 完了月の前月締日を計算
-        if ($closing_day === '末日') {
+        if ($client_info->closing_day === '末日') {
             $month_closing_date = date('Y-m-t', strtotime($completion_year . '-' . $completion_month . '-01 -1 month'));
         } else {
-            $closing_day_num = intval($closing_day);
+            $closing_day_num = intval($client_info->closing_day);
             $month_closing_date = date('Y-m-d', strtotime($completion_year . '-' . $completion_month . '-01 -1 month +' . ($closing_day_num - 1) . ' days'));
         }
         
@@ -2318,10 +2387,10 @@ function ktpwp_ajax_get_invoice_candidates() {
             // 月別グループに追加
             if (!isset($monthly_groups[$billing_key])) {
                 // 請求対象月の締日を計算
-                if ($closing_day === '末日') {
+                if ($client_info->closing_day === '末日') {
                     $billing_closing_date = date('Y-m-t', strtotime($billing_year . '-' . $billing_month . '-01'));
                 } else {
-                    $closing_day_num = intval($closing_day);
+                    $closing_day_num = intval($client_info->closing_day);
                     $billing_closing_date = date('Y-m-d', strtotime($billing_year . '-' . $billing_month . '-01 +' . ($closing_day_num - 1) . ' days'));
                 }
                 
@@ -2374,8 +2443,19 @@ function ktpwp_ajax_get_invoice_candidates() {
     $result = array(
         'monthly_groups' => array_values($monthly_groups),
         'total_orders' => count($filtered_orders),
-        'total_groups' => count($monthly_groups)
+        'total_groups' => count($monthly_groups),
+        'client_address' => $full_address,
+        'client_name' => $client_info->company_name,
+        'client_contact' => $contact_name,
+        'debug_info' => array(
+            'client_id' => $client_id,
+            'closing_day' => $closing_day,
+            'completed_orders_count' => count($orders),
+            'filtered_orders_count' => count($filtered_orders),
+            'monthly_groups_count' => count($monthly_groups)
+        )
     );
     
+    error_log('KTPWP Invoice Debug - Final result: ' . json_encode($result));
     wp_send_json_success($result);
 }
