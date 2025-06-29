@@ -1158,7 +1158,7 @@ class Kntan_Client_Class {
                         
                         // 各案件の表示
                         group.orders.forEach(function(order){
-                          html += "<div style=\"padding:10px;border-bottom:1px solid #eee;margin-left:10px;\">";
+                          html += "<div style=\"padding:10px;border-bottom:1px solid #eee;\">";
                           html += "<div style=\"font-weight:bold;margin-bottom:8px;color:#333;font-size:12px;\">";
                           html += "ID: " + order.id + " - " + order.project_name + "（完了日：" + order.completion_date + "）";
                           html += "</div>";
