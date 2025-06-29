@@ -494,6 +494,7 @@ class Kntan_Client_Class {
                    $memo = esc_html($row->memo);
                    $client_status = esc_html($row->client_status);
                    $frequency = esc_html($row->frequency);
+                   $category = esc_html($row->category ?? ''); // カテゴリーフィールドを追加
 
                    // リスト項目
                    $cookie_name = 'ktp_' . $name . '_id';
@@ -503,22 +504,25 @@ class Kntan_Client_Class {
                    $list_style = '';
                    $deleted_mark = '';
                    if ($client_status === '対象外') {
-           $list_style = ' style="background-color: #ffe6e6; border-left: 3px solid #ff4444;"';
-           $deleted_mark = '<span style="color: #ff4444; font-weight: bold; margin-right: 5px;">[削除済み]</span>';
-       }
+                       $list_style = ' style="background-color: #ffe6e6; border-left: 3px solid #ff4444;"';
+                       $deleted_mark = '<span style="color: #ff4444; font-weight: bold; margin-right: 5px;">[削除済み]</span>';
+                   }
 
-       $results[] = '<a href="' . $link_url . '" onclick="document.cookie = \'{$cookie_name}=\' + ' . $id . ';">'
-           . '<div class="ktp_data_list_item"' . $list_style . '>' . $deleted_mark . 'ID: ' . $id . ' ' . $company_name . ' : ' . $user_name . ' : ' . $client_status . ' : <span title="アクセス頻度（クリックされた回数）">頻度(' . $frequency . ')</span></div>'
-           . '</a>';
-       }
-   } else {
-       // 新しい0データ案内メッセージ（統一デザイン・ガイダンス）
-       $results[] = '<div class="ktp_data_list_item" style="padding: 15px 20px; background: linear-gradient(135deg, #e3f2fd 0%, #fce4ec 100%); border-radius: 8px; margin: 18px 0; color: #333; font-weight: 600; box-shadow: 0 3px 12px rgba(0,0,0,0.07); display: flex; align-items: center; font-size: 15px; gap: 10px;">'
-           . '<span class="material-symbols-outlined" aria-label="データ作成">add_circle</span>'
-           . '<span style="font-size: 1em; font-weight: 600;">[＋]ボタンを押してデーターを作成してください</span>'
-           . '<span style="margin-left: 18px; font-size: 13px; color: #888;">データがまだ登録されていません</span>'
-           . '</div>';
-   }
+                   // カテゴリーが空の場合は何も表示しない
+                   $display_category = !empty($category) ? $category : '';
+
+                   $results[] = '<a href="' . $link_url . '" onclick="document.cookie = \'{$cookie_name}=\' + ' . $id . ';">'
+                       . '<div class="ktp_data_list_item"' . $list_style . '>' . $deleted_mark . 'D:* ' . $company_name . ' | ' . $user_name . ' | ' . $display_category . ' | 頻度(' . $frequency . ')</div>'
+                       . '</a>';
+               }
+           } else {
+               // 新しい0データ案内メッセージ（統一デザイン・ガイダンス）
+               $results[] = '<div class="ktp_data_list_item" style="padding: 15px 20px; background: linear-gradient(135deg, #e3f2fd 0%, #fce4ec 100%); border-radius: 8px; margin: 18px 0; color: #333; font-weight: 600; box-shadow: 0 3px 12px rgba(0,0,0,0.07); display: flex; align-items: center; font-size: 15px; gap: 10px;">'
+                   . '<span class="material-symbols-outlined" aria-label="データ作成">add_circle</span>'
+                   . '<span style="font-size: 1em; font-weight: 600;">[＋]ボタンを押してデーターを作成してください</span>'
+                   . '<span style="margin-left: 18px; font-size: 13px; color: #888;">データがまだ登録されていません</span>'
+                   . '</div>';
+           }
        }
 
        // 統一されたページネーションデザインを使用
@@ -833,6 +837,8 @@ class Kntan_Client_Class {
                 $tax_category = esc_html($row->tax_category);
                 $memo = esc_html($row->memo);
                 $client_status = esc_html($row->client_status);
+                $frequency = esc_html($row->frequency);
+                $category = esc_html($row->category ?? ''); // カテゴリーフィールドを追加
                 // 受注書作成用のデータを保持
                 $order_customer_name = $company_name;
                 $order_user_name = $user_name;
@@ -861,12 +867,14 @@ class Kntan_Client_Class {
             $tax_category = '';
             $memo = '';
             $client_status = '対象'; // デフォルト値を設定
+            $category = ''; // カテゴリーフィールドを追加
             $order_customer_name = '';
             $order_user_name = '';
         }
 
-        // カテゴリーフィールド用の値を初期化（未定義警告対策）
-        $category_value = '';
+        // カテゴリーフィールド用の値を設定
+        $category_value = isset($category) ? $category : '';
+
         // 表示するフォーム要素を定義
         $fields = [
             // 'ID' => ['type' => 'text', 'name' => 'data_id', 'readonly' => true],
@@ -886,7 +894,7 @@ class Kntan_Client_Class {
             '支払日' => ['type' => 'select', 'name' => 'payment_day', 'options' => ['即日', '5日', '10日', '15日', '20日', '25日', '末日'], 'default' => '即日'],
             '支払方法' => ['type' => 'select', 'name' => 'payment_method', 'options' => ['銀行振込（後）','銀行振込（前）', 'クレジットカード', '現金集金'], 'default' => '銀行振込（前）'],
             '税区分' => ['type' => 'select', 'name' => 'tax_category', 'options' => ['税込', '税抜'], 'default' => '税込'],
-            'カテゴリー' => ['type' => 'text', 'name' => 'category', 'value' => $category_value], // 新しいカテゴリーフィールド
+            'カテゴリー' => ['type' => 'text', 'name' => 'category'], // カテゴリーフィールド（valueは動的に設定）
             '対象｜対象外' => ['type' => 'select', 'name' => 'client_status', 'options' => ['対象', '対象外'], 'default' => '対象'],
             'メモ' => ['type' => 'textarea', 'name' => 'memo'],
         ];
@@ -1043,6 +1051,7 @@ class Kntan_Client_Class {
             . '<span class="material-symbols-outlined" aria-label="印刷" style="font-size: 16px;">print</span>'
             . '</button>';
         
+        
         $controller_html .= '</div>'; // 右側のボタン群終了
         $controller_html .= '</div>'; // controller終了
 
@@ -1070,8 +1079,13 @@ class Kntan_Client_Class {
 
             // 空のフォームフィールドを生成
             foreach ($fields as $label => $field) {
-                // 追加モード（istmode）では常に空の値を設定
-                $value = ($action === 'istmode') ? '' : (isset(${$field['name']}) ? ${$field['name']} : '');
+                // カテゴリーフィールドの特別処理
+                if ($field['name'] === 'category') {
+                    $value = ($action === 'istmode') ? '' : (isset($category) ? $category : '');
+                } else {
+                    // 追加モード（istmode）では常に空の値を設定
+                    $value = ($action === 'istmode') ? '' : (isset(${$field['name']}) ? ${$field['name']} : '');
+                }
 
                 // デバッグ: istmode時のフィールド値をログ出力
                 if ($action === 'istmode') {
@@ -1311,7 +1325,13 @@ class Kntan_Client_Class {
             $data_forms .= '<form method="post" action="">';
             $data_forms .= wp_nonce_field('ktp_client_action', 'ktp_client_nonce', true, false);
             foreach ($fields as $label => $field) {
-                $value = $action === 'update' ? (isset(${$field['name']}) ? ${$field['name']} : '') : '';
+                // カテゴリーフィールドの特別処理
+                if ($field['name'] === 'category') {
+                    $value = isset($category) ? $category : '';
+                } else {
+                    $value = $action === 'update' ? (isset(${$field['name']}) ? ${$field['name']} : '') : '';
+                }
+                
                 $pattern = isset($field['pattern']) ? ' pattern="' . esc_attr($field['pattern']) . '"' : '';
                 $required = isset($field['required']) && $field['required'] ? ' required' : '';
                 $placeholder = isset($field['placeholder']) ? ' placeholder="' . esc_attr($field['placeholder']) . '"' : '';

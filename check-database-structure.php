@@ -138,4 +138,93 @@ if (!$expected_exists) {
 echo "</pre>";
 
 echo "<p><strong>注意:</strong> 実行前に必ずデータベースのバックアップを取得してください。</p>";
+
+echo "<h2>データベース構造確認・修正</h2>";
+
+// テーブル名
+$table_name = $wpdb->prefix . 'ktp_client';
+
+echo "<h3>1. テーブル存在確認</h3>";
+$table_exists = $wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $table_name));
+if ($table_exists) {
+    echo "✅ テーブル {$table_name} は存在します。<br>";
+} else {
+    echo "❌ テーブル {$table_name} は存在しません。<br>";
+    exit;
+}
+
+echo "<h3>2. カラム構造確認</h3>";
+$columns = $wpdb->get_results("SHOW COLUMNS FROM {$table_name}");
+echo "<table border='1' style='border-collapse: collapse;'>";
+echo "<tr><th>カラム名</th><th>型</th><th>NULL</th><th>キー</th><th>デフォルト</th><th>その他</th></tr>";
+
+$has_category = false;
+foreach ($columns as $column) {
+    echo "<tr>";
+    echo "<td>{$column->Field}</td>";
+    echo "<td>{$column->Type}</td>";
+    echo "<td>{$column->Null}</td>";
+    echo "<td>{$column->Key}</td>";
+    echo "<td>{$column->Default}</td>";
+    echo "<td>{$column->Extra}</td>";
+    echo "</tr>";
+    
+    if ($column->Field === 'category') {
+        $has_category = true;
+    }
+}
+echo "</table>";
+
+echo "<h3>3. categoryカラム確認</h3>";
+if ($has_category) {
+    echo "✅ categoryカラムは存在します。<br>";
+} else {
+    echo "❌ categoryカラムが存在しません。追加します...<br>";
+    
+    // categoryカラムを追加
+    $result = $wpdb->query("ALTER TABLE {$table_name} ADD COLUMN category VARCHAR(255) NULL");
+    
+    if ($result !== false) {
+        echo "✅ categoryカラムを正常に追加しました。<br>";
+        
+        // 追加後の確認
+        $columns_after = $wpdb->get_results("SHOW COLUMNS FROM {$table_name}");
+        $has_category_after = false;
+        foreach ($columns_after as $column) {
+            if ($column->Field === 'category') {
+                $has_category_after = true;
+                echo "✅ 追加されたcategoryカラム: {$column->Type}<br>";
+                break;
+            }
+        }
+        
+        if (!$has_category_after) {
+            echo "❌ categoryカラムの追加に失敗しました。<br>";
+        }
+    } else {
+        echo "❌ categoryカラムの追加に失敗しました。エラー: " . $wpdb->last_error . "<br>";
+    }
+}
+
+echo "<h3>4. サンプルデータ確認</h3>";
+$sample_data = $wpdb->get_results("SELECT id, company_name, name, category FROM {$table_name} LIMIT 5");
+if ($sample_data) {
+    echo "<table border='1' style='border-collapse: collapse;'>";
+    echo "<tr><th>ID</th><th>会社名</th><th>担当者名</th><th>カテゴリー</th></tr>";
+    foreach ($sample_data as $row) {
+        echo "<tr>";
+        echo "<td>{$row->id}</td>";
+        echo "<td>" . esc_html($row->company_name) . "</td>";
+        echo "<td>" . esc_html($row->name) . "</td>";
+        echo "<td>" . esc_html($row->category ?? '未設定') . "</td>";
+        echo "</tr>";
+    }
+    echo "</table>";
+} else {
+    echo "データがありません。<br>";
+}
+
+echo "<h3>5. 完了</h3>";
+echo "データベース構造の確認・修正が完了しました。<br>";
+echo "<a href='javascript:history.back()'>戻る</a>";
 ?> 
