@@ -589,8 +589,8 @@ class KTPWP_Supplier_Skills {
             $html .= 'まだ商品・サービスが登録されていません。';
             $html .= '</div>';
             
-            // データが0件でもページネーションを表示（要件対応）
-            $html .= $this->render_skills_pagination( $current_page, $total_pages, $total_skills, $supplier_id );
+            // 職能が0件の場合はパージネーションを非表示
+            // $html .= $this->render_skills_pagination( $current_page, $total_pages, $total_skills, $supplier_id );
         }
 
         // Add JavaScript for delete functionality
@@ -630,7 +630,7 @@ class KTPWP_Supplier_Skills {
      * @return string HTML content for pagination
      */
     private function render_skills_pagination( $current_page, $total_pages, $total_skills, $supplier_id ) {
-        // 0データの場合でもページネーションを表示（要件対応）
+        // 職能が0件の場合はパージネーションを表示しない
         // データが0件の場合はtotal_pagesが0になるため、最低1ページとして扱う
         if ( $total_pages == 0 ) {
             $total_pages = 1;
