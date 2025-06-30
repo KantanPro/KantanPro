@@ -292,7 +292,7 @@ li.ktp_work_list_item {
 /* ▼▼▼ 請求書締日警告マーク ▼▼▼ */
 .invoice-warning-mark-row {
   display: inline-block;
-  background-color: #ff9800;
+  background-color: #f44336;
   color: white;
   border-radius: 50%;
   width: 14px;
