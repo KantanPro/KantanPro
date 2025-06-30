@@ -1224,7 +1224,7 @@ class Kntan_Client_Class {
                           html += "</div>";
                           
                           if(order.items && order.items.length > 0){
-                            html += "<div style=\"margin-top:10px;\">";
+                            html += "<div style=\"margin-top:10px;width:100%;\">";
                             html += "<table style=\"width:100%;border-collapse:collapse;font-size:12px;border:1px solid #ddd;\">";
                             html += "<thead>";
                             html += "<tr style=\"background-color:#f5f5f5;\">";
@@ -1355,7 +1355,50 @@ class Kntan_Client_Class {
           // 請求書の内容を取得
           var invoiceContent = document.getElementById(\'invoiceList\').innerHTML;
           
-          // 印刷用HTMLを作成
+          // 現在のページに印刷用スタイルを一時的に適用
+          var originalBody = document.body.innerHTML;
+          var originalTitle = document.title;
+          
+          // 印刷用のHTMLを作成
+          var printHTML = \'<div style="font-family: \\"Noto Sans JP\\", \\"Hiragino Kaku Gothic ProN\\", \\"Yu Gothic\\", Meiryo, sans-serif; font-size: 12px; line-height: 1.4; color: #333; background: white; padding: 20px;">\';
+          printHTML += \'<div style="width: 210mm; max-width: 210mm; margin: 0 auto; background: white; padding: 15mm;">\';
+          printHTML += invoiceContent;
+          printHTML += \'</div></div>\';
+          
+          // ページの内容を印刷用に変更
+          document.body.innerHTML = printHTML;
+          document.title = \'請求書\';
+          
+          // 印刷用CSSを追加
+          var printStyle = document.createElement(\'style\');
+          printStyle.textContent = \'@page { size: A4; margin: 15mm; } @media print { body { margin: 0; padding: 0; background: white; } } @media print { button, .no-print { display: none !important; } }\';
+          document.head.appendChild(printStyle);
+          
+          // 印刷ダイアログを表示
+          window.print();
+          
+          // 印刷完了後、元の内容に戻す
+          setTimeout(function() {
+            document.body.innerHTML = originalBody;
+            document.title = originalTitle;
+            document.head.removeChild(printStyle);
+            
+            // 請求書ポップアップを閉じる
+            var popup = document.getElementById(\'invoicePopup\');
+            if (popup) {
+              popup.style.display = \'none\';
+            }
+            
+            console.log(\'[請求書印刷] 印刷完了。元のページに戻しました。\');
+          }, 1000);
+        }
+        
+        // 代替方法：新しいウィンドウで印刷（Blob使用）
+        function printInvoiceContentNewWindow() {
+          // 請求書の内容を取得
+          var invoiceContent = document.getElementById(\'invoiceList\').innerHTML;
+          
+          // 印刷用HTMLを作成（シンプルで直接的な方法）
           var printHTML = \'<!DOCTYPE html>\';
           printHTML += \'<html lang="ja">\';
           printHTML += \'<head>\';
@@ -1364,117 +1407,78 @@ class Kntan_Client_Class {
           printHTML += \'<title>請求書</title>\';
           printHTML += \'<style>\';
           printHTML += \'* { margin: 0; padding: 0; box-sizing: border-box; }\';
-          printHTML += \'body { font-family: "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif; font-size: 12px; line-height: 1.4; color: #333; background: #f5f5f5; padding: 20px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }\';
-          printHTML += \'.page-container { width: 210mm; max-width: 210mm; margin: 0 auto; background: white; box-shadow: 0 0 10px rgba(0,0,0,0.1); padding: 15mm; min-height: 297mm; }\';
+          printHTML += \'body { font-family: "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif; font-size: 12px; line-height: 1.4; color: #333; background: white; padding: 20px; }\';
+          printHTML += \'.page-container { width: 210mm; max-width: 210mm; margin: 0 auto; background: white; padding: 15mm; }\';
           printHTML += \'@page { size: A4; margin: 15mm; }\';
-          printHTML += \'@media print { body { margin: 0; padding: 0; background: white; } .page-container { box-shadow: none; margin: 0; padding: 0; width: auto; max-width: none; min-height: auto; } }\';
+          printHTML += \'@media print { body { margin: 0; padding: 0; background: white; } .page-container { box-shadow: none; margin: 0; padding: 0; width: auto; max-width: none; } }\';
           printHTML += \'* { -webkit-print-color-adjust: exact !important; color-adjust: exact !important; print-color-adjust: exact !important; }\';
-          printHTML += \'@media print { button[onclick*="printInvoiceContent"] { display: none !important; } }\';
+          // 印刷時にボタンを非表示
+          printHTML += \'@media print { button, .no-print { display: none !important; } }\';
           printHTML += \'</style>\';
           printHTML += \'</head>\';
           printHTML += \'<body>\';
           printHTML += \'<div class="page-container">\';
           printHTML += invoiceContent;
           printHTML += \'</div>\';
+          printHTML += \'<script>\';
+          printHTML += \'// ページ読み込み完了後に自動で印刷ダイアログを表示\';
+          printHTML += \'window.addEventListener("load", function() {\';
+          printHTML += \'  setTimeout(function() {\';
+          printHTML += \'    window.print();\';
+          printHTML += \'  }, 500);\';
+          printHTML += \'});\';
+          printHTML += \'// 印刷完了後の処理\';
+          printHTML += \'window.addEventListener("afterprint", function() {\';
+          printHTML += \'  setTimeout(function() {\';
+          printHTML += \'    window.close();\';
+          printHTML += \'  }, 1000);\';
+          printHTML += \'});\';
+          printHTML += \'<\/script>\';
           printHTML += \'</body>\';
           printHTML += \'</html>\';
           
-          // 元のウィンドウの参照を保持
-          var originalWindow = window;
+          // Blobを使用して印刷用ウィンドウを作成
+          var blob = new Blob([printHTML], { type: \'text/html\' });
+          var url = URL.createObjectURL(blob);
           
-          // 印刷用ウィンドウを開く
-          var printWindow = window.open(\'\', \'printWindow\', \'width=800,height=600,scrollbars=yes,resizable=yes,menubar=no,toolbar=no,location=no,status=no\');
+          // 新しいウィンドウを開いて印刷ダイアログを直接表示
+          var printWindow = window.open(url, \'_blank\', \'width=800,height=600,scrollbars=yes,resizable=yes\');
           
           if (!printWindow) {
             alert(\'ポップアップがブロックされました。ブラウザの設定でポップアップを許可してください。\');
+            URL.revokeObjectURL(url);
             return;
           }
           
-          // 印刷ウィンドウにHTMLを書き込み
-          printWindow.document.open();
-          printWindow.document.write(printHTML);
-          printWindow.document.close();
+          console.log(\'[請求書印刷] 印刷ウィンドウを作成しました。印刷ダイアログが自動表示されます。\');
           
-          console.log(\'[請求書印刷] 印刷ウィンドウを作成しました。印刷ダイアログの表示準備中...\');
-          
-          // ウィンドウが読み込まれた後に印刷を実行
-          printWindow.onload = function() {
-            // 印刷ウィンドウが完全に読み込まれるまで少し待つ
-            setTimeout(function() {
-              try {
-                // 印刷ウィンドウにフォーカスを移して印刷ダイアログを表示
-                printWindow.focus();
-                printWindow.print();
-                
-                console.log(\'[請求書印刷] 印刷ダイアログを表示しました。ユーザーの操作をお待ちください。\');
-                
-                // 印刷ダイアログが表示された後、元のウィンドウにフォーカスを戻す
-                setTimeout(function() {
-                  try {
-                    originalWindow.focus();
-                    console.log(\'[請求書印刷] フォーカスを元のウィンドウに戻しました\');
-                  } catch (e) {
-                    console.log(\'[請求書印刷] フォーカス制御エラー:\', e);
-                  }
-                }, 1000);
-                
-                // 印刷完了後の処理
-                printWindow.onafterprint = function() {
-                  console.log(\'[請求書印刷] 印刷が完了しました\');
-                  setTimeout(function() {
-                    // 元のウィンドウにフォーカスを戻す
-                    originalWindow.focus();
-                    if (!printWindow.closed) {
-                      printWindow.close();
-                    }
-                    // 請求書ポップアップを閉じる
-                    var popup = document.getElementById(\'invoicePopup\');
-                    if (popup) {
-                      popup.style.display = \'none\';
-                    }
-                  }, 500);
-                };
-                
-              } catch (error) {
-                console.error(\'[請求書印刷] 印刷ダイアログ表示エラー:\', error);
-                printWindow.close();
-                originalWindow.focus(); // エラー時もフォーカスを戻す
-              }
-            }, 1000);
-          };
-          
-          // 追加の自動クローズ機能（フェイルセーフ）
-          var autoCloseTimer = setTimeout(function() {
-            if (printWindow && !printWindow.closed) {
-              try {
-                printWindow.close();
-                originalWindow.focus(); // 自動クローズ時もフォーカスを戻す
-                // 請求書ポップアップを閉じる
-                var popup = document.getElementById(\'invoicePopup\');
-                if (popup) {
-                  popup.style.display = \'none\';
-                }
-              } catch (e) {
-                console.log(\'[請求書印刷] 自動クローズエラー:\', e);
-              }
-            }
-          }, 15000);
-          
-          // ウィンドウが手動で閉じられた場合のタイマークリア
+          // 印刷完了後の処理（フェイルセーフ）
           var checkClosed = setInterval(function() {
             if (printWindow.closed) {
-              clearTimeout(autoCloseTimer);
               clearInterval(checkClosed);
-              originalWindow.focus(); // 手動クローズ時もフォーカスを戻す
+              URL.revokeObjectURL(url);
               // 請求書ポップアップを閉じる
               var popup = document.getElementById(\'invoicePopup\');
               if (popup) {
                 popup.style.display = \'none\';
               }
+              console.log(\'[請求書印刷] 印刷ウィンドウが閉じられました。請求書ポップアップも閉じます。\');
             }
           }, 1000);
           
-          console.log(\'[請求書印刷] 印刷プロセス開始\');
+          // 15秒後に自動クローズ（フェイルセーフ）
+          setTimeout(function() {
+            if (printWindow && !printWindow.closed) {
+              printWindow.close();
+              URL.revokeObjectURL(url);
+              // 請求書ポップアップを閉じる
+              var popup = document.getElementById(\'invoicePopup\');
+              if (popup) {
+                popup.style.display = \'none\';
+              }
+              console.log(\'[請求書印刷] タイムアウトにより印刷ウィンドウを閉じました。\');
+            }
+          }, 15000);
         }
         </script>';
 
@@ -1877,14 +1881,49 @@ class Kntan_Client_Class {
 
             function printContent() {
                 var printContent = $customer_preview_html;
-                var printWindow = window.open('', '_blank');
+                var printHTML = '<!DOCTYPE html>';
+                printHTML += '<html lang="ja">';
+                printHTML += '<head>';
+                printHTML += '<meta charset="UTF-8">';
+                printHTML += '<meta name="viewport" content="width=device-width, initial-scale=1.0">';
+                printHTML += '<title>顧客情報印刷</title>';
+                printHTML += '<style>';
+                printHTML += '* { margin: 0; padding: 0; box-sizing: border-box; }';
+                printHTML += 'body { font-family: "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif; font-size: 12px; line-height: 1.4; color: #333; background: white; padding: 20px; }';
+                printHTML += '@page { size: A4; margin: 15mm; }';
+                printHTML += '@media print { body { margin: 0; padding: 0; background: white; } }';
+                printHTML += '@media print { button, .no-print { display: none !important; } }';
+                printHTML += '</style>';
+                printHTML += '<script>';
+                printHTML += 'window.addEventListener("load", function() {';
+                printHTML += '  setTimeout(function() {';
+                printHTML += '    window.print();';
+                printHTML += '  }, 500);';
+                printHTML += '});';
+                printHTML += 'window.addEventListener("afterprint", function() {';
+                printHTML += '  setTimeout(function() {';
+                printHTML += '    window.close();';
+                printHTML += '  }, 1000);';
+                printHTML += '});';
+                printHTML += '<\/script>';
+                printHTML += '</head>';
+                printHTML += '<body>';
+                printHTML += printContent;
+                printHTML += '</body>';
+                printHTML += '</html>';
+                
+                var printWindow = window.open('', '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
+                
+                if (!printWindow) {
+                    alert('ポップアップがブロックされました。ブラウザの設定でポップアップを許可してください。');
+                    return;
+                }
+                
                 printWindow.document.open();
-                printWindow.document.write('<html><head><title>顧客情報印刷</title></head><body>');
-                printWindow.document.write(printContent);
-                printWindow.document.write('<script>window.onafterprint = function(){ window.close(); }<\/script>');
-                printWindow.document.write('</body></html>');
+                printWindow.document.write(printHTML);
                 printWindow.document.close();
-                printWindow.print();
+                
+                console.log('[顧客印刷] 印刷ウィンドウを作成しました。印刷ダイアログが自動表示されます。');
 
                 if (isPreviewOpen) {
                     togglePreview();
