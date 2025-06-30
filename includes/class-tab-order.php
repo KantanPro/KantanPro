@@ -1348,8 +1348,7 @@ $content .= '</form>';
                 $content .= '</div>'; // .order_info_box 終了
 
                 $content .= '<div class="order_invoice_box box">';
-                $content .= '<h4>■ 請求項目</h4>';
-                // 請求項目テーブルを表示
+                $content .= '<span class="toc2">■ 請求項目</span>';
                 $content .= $this->Generate_Invoice_Items_Table( $order_id );
                 $content .= '</div>'; // .order_invoice_box 終了
                 // コスト項目とメモ項目のセクションを追加
