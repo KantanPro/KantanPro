@@ -1263,10 +1263,6 @@ class Kntan_Client_Class {
                         html += "</div>";
                       });
                       
-                      html += "<div style=\"margin-top:15px;padding:10px;background-color:#e8f4fd;border-radius:5px;font-size:12px;color:#666;\">";
-                      html += "総案件数：" + res.data.total_orders + "件、請求月数：" + res.data.total_groups + "ヶ月";
-                      html += "</div>";
-                      
                       // 会社情報をフッターに追加
                       if (res.data.company_info) {
                         html += "<div style=\"margin-top:30px;padding:20px;border:1px solid #ddd;background:#fafafa;text-align:right;border-radius:6px;\">";
