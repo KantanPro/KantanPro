@@ -342,7 +342,9 @@ function printInvoiceContent() {
         // お支払い期日inputをテキストに置き換え
         var paymentDueDateInputInContent = tempDiv.querySelector('#payment-due-date-input');
         if (paymentDueDateInputInContent) {
-            var paymentDueDateValue = paymentDueDateInputInContent.value;
+            // 最新の値を取得（元のDOMから）
+            var liveInput = document.getElementById('payment-due-date-input');
+            var paymentDueDateValue = liveInput ? liveInput.value : paymentDueDateInputInContent.value;
             // 日付を「YYYY/MM/DD」形式に整形
             var formattedDate = paymentDueDateValue ? paymentDueDateValue.replace(/-/g, "/") : "";
             var paymentDueDateSpan = document.createElement('span');
