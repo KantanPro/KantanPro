@@ -434,6 +434,42 @@ function printInvoiceContent() {
 
         console.log("[請求書印刷] 印刷HTML生成完了");
         
+        // ファイル名生成
+        var clientId = '';
+        var clientName = '';
+        var monthLabels = [];
+        // 顧客ID
+        var urlParams = new URLSearchParams(window.location.search);
+        clientId = urlParams.get('data_id');
+        if (!clientId) {
+            var clientIdInput = document.getElementById('client-id-input');
+            if (clientIdInput) {
+                clientId = clientIdInput.value;
+            }
+        }
+        // 顧客名
+        var clientNameElem = document.querySelector('#invoiceList div[style*="margin-bottom:5px;"]:nth-child(3)');
+        if (clientNameElem) {
+            clientName = clientNameElem.textContent.replace(/\s*様?$/, '');
+        }
+        // 月分（複数対応）
+        var monthElems = document.querySelectorAll('#invoiceList div[style*="font-weight:bold;color:#0073aa;font-size:14px;"]');
+        monthElems.forEach(function(elem) {
+            var match = elem.textContent.match(/\d{4}年\d{1,2}月分/);
+            if (match) {
+                monthLabels.push(match[0]);
+            }
+        });
+        var monthLabel = '';
+        if (monthLabels.length > 0) {
+            monthLabel = monthLabels.join('_');
+        }
+        var filename = '請求書';
+        if (clientId) filename += '：' + clientId;
+        if (clientName) filename += '：' + clientName + '様';
+        if (monthLabel) filename += '（' + monthLabel + '）';
+        filename += '.pdf';
+
         // 印刷用のiframeを作成（非表示）
         var printFrame = document.createElement('iframe');
         printFrame.style.position = 'fixed';
@@ -448,6 +484,9 @@ function printInvoiceContent() {
         printFrame.contentDocument.open();
         printFrame.contentDocument.write(printHTML);
         printFrame.contentDocument.close();
+        
+        // ファイル名をwindowにセット（PDF保存時に参照される場合用）
+        printFrame.contentWindow.document.title = filename;
         
         // iframeの読み込み完了を待ってから印刷
         printFrame.onload = function() {
