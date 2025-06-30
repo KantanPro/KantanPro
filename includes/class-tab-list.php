@@ -111,6 +111,43 @@ class Kantan_List_Class {
             }
         }
 
+        // ▼▼▼ 完了タブの請求書締日警告件数をカウント ▼▼▼
+        $invoice_warning_count = 0;
+        if (isset($progress_labels[4])) {
+            $query_invoice_warning = $wpdb->prepare(
+                "SELECT o.id, o.client_id, o.completion_date, c.closing_day FROM {$table_name} o LEFT JOIN {$wpdb->prefix}ktp_client c ON o.client_id = c.id WHERE o.progress = 4 AND o.completion_date IS NOT NULL AND c.closing_day IS NOT NULL AND c.closing_day != 'なし'"
+            );
+            $orders_for_invoice_warning = $wpdb->get_results($query_invoice_warning);
+            $today = new DateTime();
+            $today->setTime(0, 0, 0);
+            foreach ($orders_for_invoice_warning as $order) {
+                $completion_date = $order->completion_date;
+                if (empty($completion_date)) continue;
+                $completion_dt = new DateTime($completion_date);
+                $year = (int)$completion_dt->format('Y');
+                $month = (int)$completion_dt->format('m');
+                $closing_day = $order->closing_day;
+                if ($closing_day === '末日') {
+                    $closing_dt = new DateTime("$year-$month-01");
+                    $closing_dt->modify('last day of this month');
+                } else {
+                    $closing_day_num = intval($closing_day);
+                    $closing_dt = new DateTime("$year-$month-" . str_pad($closing_day_num, 2, '0', STR_PAD_LEFT));
+                    $last_day = (int)$closing_dt->format('t');
+                    if ($closing_day_num > $last_day) {
+                        $closing_dt->modify('last day of this month');
+                    }
+                }
+                $closing_dt->setTime(0, 0, 0);
+                $diff = $today->diff($closing_dt);
+                $days_left = $diff->invert ? -$diff->days : $diff->days;
+                $invoice_warning_days = 3;
+                if ($days_left <= $invoice_warning_days && $days_left >= 0) {
+                    $invoice_warning_count++;
+                }
+            }
+        }
+
         $content .= '</div>'; // .controller end
 
         // Workflow area to display progress buttons in full width
@@ -140,6 +177,11 @@ class Kantan_List_Class {
             
             // 警告マークはJavaScriptで動的に管理するため、初期表示はしない
             $warning_mark = '';
+            
+            // ▼▼▼ 完了タブに警告マークを表示 ▼▼▼
+            if ($num == 4 && $invoice_warning_count > 0) {
+                $warning_mark = '<span class="invoice-warning-mark-row" title="請求書締日が迫っている案件があります（' . $invoice_warning_count . '件）">!</span>';
+            }
             
             $content .= '<a href="' . add_query_arg(array('tab_name' => $tab_name, 'progress' => $num)) . '" class="progress-btn" data-progress="' . $num . '" data-icon="' . $icon . '" ' . $active . '>';
             $content .= '<span class="progress-btn-icon material-symbols-outlined">' . $icon . '</span>';
