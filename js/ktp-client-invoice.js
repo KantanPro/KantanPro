@@ -122,7 +122,7 @@ jQuery(document).ready(function($) {
                                 // 請求金額・合計金額の表示を修正
                                 html += "<div style=\"margin:20px 0;\">";
                                 html += "<div style=\"font-weight:bold;font-size:18px;color:#333;display:flex;align-items:center;\">";
-                                html += "<span>請求金額&nbsp;" + grandTotal.toLocaleString() + "円</span>";
+                                html += "<span>合計金額&nbsp;" + grandTotal.toLocaleString() + "円</span>";
                                 html += "<span style=\"font-size:16px;margin-left:20px;\">繰越金額：</span>";
                                 html += "<input type=\"number\" id=\"carryover-amount\" name=\"carryover_amount\" value=\"0\" min=\"0\" step=\"1\" style=\"width:120px;padding:4px 8px;border:1px solid #ccc;border-radius:4px;font-size:16px;text-align:right;margin-left:5px;\" onchange=\"updateInvoiceTotal()\">";
                                 html += "<span style=\"font-size:16px;\">円</span>";
@@ -131,7 +131,7 @@ jQuery(document).ready(function($) {
                                 
                                 html += "<div style=\"margin:10px 0 20px 0;\">";
                                 html += "<div style=\"font-weight:bold;font-size:20px;color:#0073aa;display:flex;align-items:center;\">";
-                                html += "<span>合計金額：</span>";
+                                html += "<span>請求金額：</span>";
                                 html += "<span id=\"total-amount\" style=\"margin-left:5px;\">" + grandTotal.toLocaleString() + "</span>";
                                 html += "<span>円</span>";
                                 html += "</div>";
