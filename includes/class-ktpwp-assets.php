@@ -276,6 +276,24 @@ class KTPWP_Assets {
                 'in_footer' => true,
                 'admin'     => false,
             ),
+            'ktp-client-invoice' => array(
+                'src'       => 'js/ktp-client-invoice.js',
+                'deps'      => array( 'jquery' ),
+                'ver'       => KTPWP_PLUGIN_VERSION,
+                'in_footer' => true,
+                'admin'     => false,
+                'localize'  => array(
+                    'object' => 'ktpClientInvoice',
+                    'data'   => array(
+                        'ajax_url' => admin_url( 'admin-ajax.php' ),
+                        'nonce'    => wp_create_nonce( 'ktp_get_invoice_candidates' ),
+                        'design_settings' => array(
+                            'odd_row_color' => '#E7EEFD',
+                            'even_row_color' => '#FFFFFF',
+                        ),
+                    ),
+                ),
+            ),
             // 'ktp-skills-list-effects' => array(
             //     'src'       => 'js/skills-list-effects.js',
             //     'deps'      => array( 'jquery' ),
@@ -397,6 +415,13 @@ class KTPWP_Assets {
                     wp_add_inline_script( 'ktp-supplier-selector', 'console.log("' . ($is_admin ? 'Admin' : 'Frontend') . ': ktp_ajax_object =", typeof ktp_ajax_object !== "undefined" ? "loaded" : "not loaded");', 'after' );
                     wp_add_inline_script( 'ktp-supplier-selector', 'console.log("' . ($is_admin ? 'Admin' : 'Frontend') . ': 読み込まれたスクリプト =", $("script[src*=\\"ktp\\"]").map(function() { return $(this).attr("src"); }).get());', 'after' );
                     wp_add_inline_script( 'ktp-supplier-selector', 'console.log("' . ($is_admin ? 'Admin' : 'Frontend') . ': 利用可能なwindow関数 =", Object.keys(window).filter(key => key.includes("ktp")));', 'after' );
+                }
+                
+                // デバッグ用: ktp-client-invoiceスクリプトの読み込み確認
+                if ( $handle === 'ktp-client-invoice' ) {
+                    wp_add_inline_script( 'ktp-client-invoice', 'console.log("' . ($is_admin ? 'Admin' : 'Frontend') . ': ktp-client-invoice.js が読み込まれました");', 'after' );
+                    wp_add_inline_script( 'ktp-client-invoice', 'console.log("' . ($is_admin ? 'Admin' : 'Frontend') . ': ktpClientInvoice object =", typeof ktpClientInvoice !== "undefined" ? "loaded" : "not loaded");', 'after' );
+                    wp_add_inline_script( 'ktp-client-invoice', 'if (typeof ktpClientInvoice !== "undefined") { console.log("' . ($is_admin ? 'Admin' : 'Frontend') . ': ktpClientInvoice details =", ktpClientInvoice); }', 'after' );
                 }
             }
         }
