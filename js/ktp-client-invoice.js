@@ -208,12 +208,17 @@ jQuery(document).ready(function($) {
                                     html += "</div>";
                                 }
 
-                                html += "<div style=\"margin-top:20px;text-align:center;\">";
-                                html += "<button onclick=\"printInvoiceContent()\" style=\"background-color:#0073aa;color:white;border:none;padding:10px 20px;border-radius:5px;cursor:pointer;font-size:14px;font-weight:500;\">";
-                                html += "<span class=\"material-symbols-outlined\" style=\"font-size:16px;vertical-align:middle;margin-right:5px;\">print</span>";
-                                html += "印刷 PDF保存";
-                                html += "</button>";
-                                html += "</div>";
+                                // 印刷・PDF保存ボタンの上にチェックボックスを追加
+                                html += '<div style="margin-top:20px;text-align:center;">';
+                                html += '<label style="display:inline-flex;align-items:center;font-size:15px;font-weight:500;margin-bottom:12px;">';
+                                html += '<input type="checkbox" id="set-invoice-completed" style="width:18px;height:18px;margin-right:8px;">';
+                                html += '対象受注書の進捗を「請求済」に変更する';
+                                html += '</label><br />';
+                                html += '<button onclick="printInvoiceContent()" style="background-color:#0073aa;color:white;border:none;padding:10px 20px;border-radius:5px;cursor:pointer;font-size:14px;font-weight:500;">';
+                                html += '<span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle;margin-right:5px;">print</span>';
+                                html += '印刷 PDF保存';
+                                html += '</button>';
+                                html += '</div>';
 
                                 list.innerHTML = html;
                             } else {
@@ -292,6 +297,16 @@ jQuery(document).ready(function($) {
 });
 
 function printInvoiceContent() {
+    // チェックボックスの状態を確認
+    var setInvoiceCompleted = document.getElementById('set-invoice-completed');
+    var shouldSetCompleted = false;
+    if (setInvoiceCompleted && setInvoiceCompleted.checked) {
+        var confirmed = window.confirm('本当に対象受注書の進捗を「請求済」に変更しますか？\nこの操作は取り消せません。\nOKで印刷を続行、キャンセルで中止します。');
+        if (!confirmed) {
+            return; // キャンセル時は何もしない
+        }
+        shouldSetCompleted = true;
+    }
     try {
         console.log("[請求書印刷] 印刷開始");
 
@@ -337,6 +352,23 @@ function printInvoiceContent() {
             carryoverSpan.style.fontWeight = 'bold';
             carryoverSpan.textContent = carryoverAmount.toLocaleString();
             carryoverInputInContent.parentNode.replaceChild(carryoverSpan, carryoverInputInContent);
+        }
+
+        // チェックボックスとラベルを印刷用HTMLから除去
+        var invoiceCompletedInput = tempDiv.querySelector('#set-invoice-completed');
+        if (invoiceCompletedInput) {
+            // 親labelごと削除
+            var label = invoiceCompletedInput.closest('label');
+            if (label && label.parentNode) {
+                // labelの直後の<br>も削除
+                var next = label.nextSibling;
+                if (next && next.nodeName === 'BR') {
+                    next.parentNode.removeChild(next);
+                }
+                label.parentNode.removeChild(label);
+            } else {
+                invoiceCompletedInput.parentNode.removeChild(invoiceCompletedInput);
+            }
         }
 
         // お支払い期日inputをテキストに置き換え
@@ -430,6 +462,33 @@ function printInvoiceContent() {
                             printFrame.parentNode.removeChild(printFrame);
                         }
                     }, 1000);
+
+                    // 印刷完了後に進捗変更Ajax
+                    if (shouldSetCompleted) {
+                        // ここでAjaxリクエストを送信（ダミー実装）
+                        var xhr = new XMLHttpRequest();
+                        xhr.open('POST', '/wp-admin/admin-ajax.php');
+                        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+                        // 必要に応じて対象IDやnonceをセット
+                        var clientId = '';
+                        var urlParams = new URLSearchParams(window.location.search);
+                        clientId = urlParams.get('data_id');
+                        if (!clientId) {
+                            var clientIdInput = document.getElementById('client-id-input');
+                            if (clientIdInput) {
+                                clientId = clientIdInput.value;
+                            }
+                        }
+                        var params = 'action=ktp_set_invoice_completed&client_id=' + encodeURIComponent(clientId);
+                        xhr.onload = function() {
+                            if (xhr.status === 200) {
+                                console.log('[進捗変更] 請求済みへの変更成功:', xhr.responseText);
+                            } else {
+                                console.error('[進捗変更] エラー:', xhr.status, xhr.statusText);
+                            }
+                        };
+                        xhr.send(params);
+                    }
                 } catch (error) {
                     console.error("[請求書印刷] 印刷実行エラー:", error);
                     alert("印刷エラーが発生しました: " + error.message);

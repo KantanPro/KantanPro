@@ -141,6 +141,34 @@ class KTPWP_Ajax {
 		add_action( 'wp_ajax_ktp_get_invoice_candidates', 'ktpwp_ajax_get_invoice_candidates' );
 		add_action( 'wp_ajax_nopriv_ktp_get_invoice_candidates', array( $this, 'ajax_require_login' ) ); // 非ログインユーザーはエラー
 		$this->registered_handlers[] = 'ktp_get_invoice_candidates';
+
+		// ▼▼▼ 一括請求書「請求済」進捗変更Ajax ▼▼▼
+		add_action('wp_ajax_ktp_set_invoice_completed', function() {
+			// 権限チェック
+			if ( ! current_user_can('edit_posts') && ! current_user_can('ktpwp_access') ) {
+				wp_send_json_error('権限がありません');
+			}
+			// nonceチェック（必要ならPOSTでnonceも送る）
+			// if ( ! isset($_POST['nonce']) || ! wp_verify_nonce($_POST['nonce'], 'ktp_ajax_nonce') ) {
+			//     wp_send_json_error('セキュリティ検証に失敗しました');
+			// }
+			global $wpdb;
+			$client_id = isset($_POST['client_id']) ? intval($_POST['client_id']) : 0;
+			if (!$client_id) {
+				wp_send_json_error('client_idが指定されていません');
+			}
+			$table_name = $wpdb->prefix . 'ktp_order';
+			// progress=4（完了）→5（請求済）に一括更新
+			$result = $wpdb->query($wpdb->prepare(
+				"UPDATE {$table_name} SET progress = 5 WHERE client_id = %d AND progress = 4",
+				$client_id
+			));
+			if ($result === false) {
+				wp_send_json_error('DB更新に失敗しました: ' . $wpdb->last_error);
+			}
+			wp_send_json_success(['updated' => $result]);
+		});
+		// ▲▲▲ 一括請求書「請求済」進捗変更Ajax ▲▲▲
 	}
 
 	/**
