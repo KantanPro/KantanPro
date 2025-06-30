@@ -1206,10 +1206,7 @@ class Kntan_Client_Class {
                         // 月別グループヘッダーを追加
                         html += "<div style=\"margin:20px 0 10px 0;padding:8px 12px;background-color:#f0f8ff;border-left:4px solid #0073aa;border-radius:4px;\">";
                         html += "<div style=\"font-weight:bold;color:#0073aa;font-size:14px;\">";
-                        html += "【" + group.billing_period + "】";
-                        html += "</div>";
-                        html += "<div style=\"font-size:11px;color:#666;margin-top:2px;\">";
-                        html += "締日：" + group.closing_date + "、案件数：" + group.orders.length + "件";
+                        html += "【" + group.billing_period + "】締日：" + group.closing_date + "　案件数：" + group.orders.length + "件";
                         html += "</div>";
                         html += "</div>";
                         
