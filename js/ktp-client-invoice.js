@@ -119,26 +119,18 @@ jQuery(document).ready(function($) {
                                     grandTotal += monthlyTotal;
                                 });
 
-                                // 請求金額・合計金額の表示を修正
-                                html += "<div style=\"margin:20px 0;\">";
-                                html += "<div style=\"font-weight:bold;font-size:18px;color:#333;display:flex;align-items:center;\">";
+                                // 合計金額・繰越金額を1行で横並び
+                                html += "<div style=\"font-weight:bold;font-size:18px;color:#333;display:flex;align-items:center;margin:20px 0 0 0;\">";
                                 html += "<span>合計金額&nbsp;" + grandTotal.toLocaleString() + "円</span>";
                                 html += "<span style=\"font-size:16px;margin-left:20px;\">繰越金額：</span>";
                                 html += "<input type=\"number\" id=\"carryover-amount\" name=\"carryover_amount\" value=\"0\" min=\"0\" step=\"1\" style=\"width:120px;padding:4px 8px;border:1px solid #ccc;border-radius:4px;font-size:16px;text-align:right;margin-left:5px;\" onchange=\"updateInvoiceTotal()\">";
                                 html += "<span style=\"font-size:16px;\">円</span>";
                                 html += "</div>";
-                                html += "</div>";
-                                
-                                html += "<div style=\"margin:10px 0 20px 0;\">";
-                                html += "<div style=\"font-weight:bold;font-size:20px;color:#0073aa;display:flex;align-items:center;\">";
-                                html += "<span>請求金額：</span>";
-                                html += "<span id=\"total-amount\" style=\"margin-left:5px;\">" + grandTotal.toLocaleString() + "</span>";
-                                html += "<span>円</span>";
-                                // お支払い期日（最初のグループの期日を表示）
-                                if (res.data.monthly_groups && res.data.monthly_groups.length > 0 && res.data.monthly_groups[0].payment_due_date) {
-                                    html += "<span style=\"font-size:16px;margin-left:20px;\">お支払い期日：" + res.data.monthly_groups[0].payment_due_date + "</span>";
-                                }
-                                html += "</div>";
+                                // 請求金額・お支払い期日を1行で横並び
+                                var paymentDueDate = (res.data.monthly_groups && res.data.monthly_groups.length > 0 && res.data.monthly_groups[0].payment_due_date) ? res.data.monthly_groups[0].payment_due_date : '';
+                                html += "<div style=\"font-weight:bold;font-size:20px;color:#0073aa;display:flex;align-items:center;margin:10px 0 0 0;\">";
+                                html += "<span>請求金額：<span id=\"total-amount\">" + grandTotal.toLocaleString() + "</span>円</span>";
+                                html += "<span style=\"margin-left:2em;font-size:16px;\">お支払い期日：<input type=\"date\" id=\"payment-due-date-input\" value=\"" + paymentDueDate + "\" style=\"font-size:16px;padding:4px 8px;border:1px solid #ccc;border-radius:4px;width:180px;max-width:100%;\"></span>";
                                 html += "</div>";
 
                                 window.invoiceGrandTotal = grandTotal;
@@ -452,4 +444,15 @@ function updateInvoiceTotal() {
         totalAmountElement.textContent = totalAmount.toLocaleString();
     }
     window.carryoverAmount = carryoverAmount;
-} 
+}
+
+// 入力変更時に値を即時反映（例：印刷時や他の参照用にwindow.paymentDueDateを更新）
+setTimeout(function() {
+    var paymentDueDateInput = document.getElementById('payment-due-date-input');
+    if (paymentDueDateInput) {
+        window.paymentDueDate = paymentDueDateInput.value;
+        paymentDueDateInput.addEventListener('change', function() {
+            window.paymentDueDate = paymentDueDateInput.value;
+        });
+    }
+}, 100); 

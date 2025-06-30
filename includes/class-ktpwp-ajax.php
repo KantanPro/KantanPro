@@ -2652,6 +2652,48 @@ function ktpwp_ajax_get_invoice_candidates() {
 	// 月別グループを年月順にソート
 	ksort( $monthly_groups );
 
+	// ★最後の締め日を取得
+	$last_closing_date = null;
+	foreach ( $monthly_groups as $group ) {
+		if ( empty( $last_closing_date ) || $group['closing_date'] > $last_closing_date ) {
+			$last_closing_date = $group['closing_date'];
+		}
+	}
+
+	// ★最後の締め日を起点にお支払い期日を再計算
+	$payment_due_date = '';
+	if ( $last_closing_date ) {
+		$base_date = new DateTime( $last_closing_date );
+		$payment_month = $client_info->payment_month;
+		$payment_day = $client_info->payment_day;
+		if ( $payment_month === '今月' ) {
+			// 何もしない
+		} elseif ( $payment_month === '翌月' ) {
+			$base_date->modify( '+1 month' );
+		} elseif ( $payment_month === '翌々月' ) {
+			$base_date->modify( '+2 month' );
+		}
+		if ( $payment_day === '末日' ) {
+			$payment_due_date = $base_date->format( 'Y-m-t' );
+		} elseif ( $payment_day === '即日' ) {
+			$payment_due_date = $last_closing_date;
+		} else {
+			$day_num = intval( $payment_day );
+			$due = $base_date->format( 'Y-m-' ) . str_pad( $day_num, 2, '0', STR_PAD_LEFT );
+			$last_day = $base_date->format( 't' );
+			if ( $day_num > intval( $last_day ) ) {
+				$due = $base_date->format( 'Y-m-t' );
+			}
+			$payment_due_date = $due;
+		}
+	}
+
+	// monthly_groupsの各グループのpayment_due_dateを上書き
+	foreach ( $monthly_groups as &$group ) {
+		$group['payment_due_date'] = $payment_due_date;
+	}
+	unset( $group );
+
 	// 会社情報を取得
 	$company_info_html = '';
 	if ( class_exists( 'KTP_Settings' ) ) {
