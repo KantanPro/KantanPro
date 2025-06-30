@@ -1154,6 +1154,31 @@ class Kntan_Client_Class {
                       html += "平素より大変お世話になっております。下記の通りご請求申し上げます。";
                       html += "</div>";
                       
+                      // 総請求金額を計算
+                      var grandTotal = 0;
+                      res.data.monthly_groups.forEach(function(group){
+                        var monthlyTotal = 0;
+                        group.orders.forEach(function(order){
+                          var orderSubtotal = 0;
+                          if(order.items && order.items.length > 0){
+                            order.items.forEach(function(item){
+                              if(item.total_price) {
+                                orderSubtotal += parseFloat(item.total_price);
+                              }
+                            });
+                          }
+                          monthlyTotal += orderSubtotal;
+                        });
+                        grandTotal += monthlyTotal;
+                      });
+                      
+                      // 請求金額を表示
+                      html += "<div style=\"margin:20px 0;\">";
+                      html += "<div style=\"font-weight:bold;font-size:18px;color:#333;\">";
+                      html += "請求金額　" + grandTotal.toLocaleString() + "円";
+                      html += "</div>";
+                      html += "</div>";
+                      
                       // 月別グループの表示
                       res.data.monthly_groups.forEach(function(group){
                         // 月別グループヘッダーを追加
