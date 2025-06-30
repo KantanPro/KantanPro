@@ -2572,11 +2572,43 @@ function ktpwp_ajax_get_invoice_candidates() {
 					$billing_closing_date = date( 'Y-m-d', strtotime( $billing_year . '-' . $billing_month . '-01 +' . ( $closing_day_num - 1 ) . ' days' ) );
 				}
 
+				// お支払い期日を計算
+				$today = current_time('Y-m-d');
+				$base_date = new DateTime($today);
+				$payment_month = $client_info->payment_month;
+				$payment_day = $client_info->payment_day;
+				// 支払月加算
+				if ($payment_month === '今月') {
+					// 何もしない
+				} elseif ($payment_month === '翌月') {
+					$base_date->modify('+1 month');
+				} elseif ($payment_month === '翌々月') {
+					$base_date->modify('+2 month');
+				} else {
+					// その他→今月扱い
+				}
+				// 支払日セット
+				if ($payment_day === '末日') {
+					$due_date = $base_date->format('Y-m-t');
+				} elseif ($payment_day === '即日') {
+					$due_date = $today;
+				} else {
+					// 5日, 10日, ...
+					$day_num = intval($payment_day);
+					$due_date = $base_date->format('Y-m-') . str_pad($day_num, 2, '0', STR_PAD_LEFT);
+					// 月の日数を超える場合は末日に補正
+					$last_day = $base_date->format('t');
+					if ($day_num > intval($last_day)) {
+						$due_date = $base_date->format('Y-m-t');
+					}
+				}
+
 				$monthly_groups[ $billing_key ] = array(
 					'year'           => $billing_year,
 					'month'          => $billing_month,
 					'billing_period' => $billing_year . '年' . $billing_month . '月分',
 					'closing_date'   => $billing_closing_date,
+					'payment_due_date' => $due_date,
 					'orders'         => array(),
 				);
 			}

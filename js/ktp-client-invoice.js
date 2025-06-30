@@ -134,6 +134,10 @@ jQuery(document).ready(function($) {
                                 html += "<span>請求金額：</span>";
                                 html += "<span id=\"total-amount\" style=\"margin-left:5px;\">" + grandTotal.toLocaleString() + "</span>";
                                 html += "<span>円</span>";
+                                // お支払い期日（最初のグループの期日を表示）
+                                if (res.data.monthly_groups && res.data.monthly_groups.length > 0 && res.data.monthly_groups[0].payment_due_date) {
+                                    html += "<span style=\"font-size:16px;margin-left:20px;\">お支払い期日：" + res.data.monthly_groups[0].payment_due_date + "</span>";
+                                }
                                 html += "</div>";
                                 html += "</div>";
 
