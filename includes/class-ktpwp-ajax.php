@@ -2440,6 +2440,39 @@ function ktpwp_ajax_get_invoice_candidates() {
     // 月別グループを年月順にソート
     ksort($monthly_groups);
     
+    // 会社情報を取得
+    $company_info_html = '';
+    if (class_exists('KTP_Settings')) {
+        $company_info_html = KTP_Settings::get_company_info();
+    }
+
+    // 旧システムからも取得（後方互換性）
+    if (empty($company_info_html)) {
+        $setting_table = $wpdb->prefix . 'ktp_setting';
+        $setting = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM `{$setting_table}` WHERE id = %d",
+            1
+        ));
+        if ($setting && !empty($setting->my_company_content)) {
+            $company_info_html = sanitize_text_field(strip_tags($setting->my_company_content));
+        }
+    }
+
+    // デフォルト値を設定
+    if (empty($company_info_html)) {
+        $company_info_html = '<div style="font-size: 18px; font-weight: bold; margin-bottom: 10px;">株式会社サンプル</div>';
+        $company_info_html .= '<div style="margin-bottom: 5px;">〒000-0000 東京都港区サンプル1-1-1</div>';
+        $company_info_html .= '<div style="margin-bottom: 5px;">TEL: 03-0000-0000</div>';
+        $company_info_html .= '<div>info@sample.com</div>';
+    } else {
+        // HTMLタグが含まれている場合はそのまま使用、プレーンテキストの場合は改行をHTMLに変換
+        if (strip_tags($company_info_html) === $company_info_html) {
+            // プレーンテキストの場合
+            $company_info_html = nl2br(esc_html($company_info_html));
+        }
+        // HTMLタグが含まれている場合はそのまま使用（エスケープしない）
+    }
+    
     $result = array(
         'monthly_groups' => array_values($monthly_groups),
         'total_orders' => count($filtered_orders),
@@ -2447,6 +2480,7 @@ function ktpwp_ajax_get_invoice_candidates() {
         'client_address' => $full_address,
         'client_name' => $client_info->company_name,
         'client_contact' => $contact_name,
+        'company_info' => $company_info_html,  // 会社情報を追加
         'debug_info' => array(
             'client_id' => $client_id,
             'closing_day' => $closing_day,
