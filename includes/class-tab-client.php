@@ -529,7 +529,7 @@ class Kntan_Client_Class {
                    $display_category = !empty($category) ? $category : '';
 
                    $results[] = '<a href="' . $link_url . '" onclick="document.cookie = \'{$cookie_name}=\' + ' . $id . ';">'
-                       . '<div class="ktp_data_list_item"' . $list_style . '>' . $deleted_mark . 'D:* ' . $company_name . ' | ' . $user_name . ' | ' . $display_category . ' | 頻度(' . $frequency . ')</div>'
+                       . '<div class="ktp_data_list_item"' . $list_style . '>' . $deleted_mark . 'D:' . $id . ' ' . $company_name . ' | ' . $user_name . ' | ' . $display_category . ' | 頻度(' . $frequency . ')</div>'
                        . '</a>';
                }
            } else {
