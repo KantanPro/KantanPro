@@ -8,14 +8,14 @@
  * Author URI: https://www.kantanpro.com/developer-profile/
  * License: GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
- * Text Domain: ktpwp
+ * Text Domain: KantanPro
  * Domain Path: /languages
  * Requires at least: 5.0
  * Tested up to: 6.5
  * Requires PHP: 7.4
  * Update URI: https://github.com/KantanPro/freeKTP
  *
- * @package KTPWP
+ * @package KantanPro
  */
 
 // セキュリティ: 直接アクセスを防止
