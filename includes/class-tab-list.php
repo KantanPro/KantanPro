@@ -262,6 +262,53 @@ class Kantan_List_Class {
                     }
                 }
                 
+                // ▼▼▼ 請求書締日警告の判定 ▼▼▼
+                $show_invoice_warning = false;
+                $invoice_warning_message = '';
+                if ($selected_progress == 4) { // 完了
+                    // 顧客IDから締め日を取得
+                    $client_id = isset($order->client_id) ? intval($order->client_id) : 0;
+                    if ($client_id > 0) {
+                        $client_table = $wpdb->prefix . 'ktp_client';
+                        $client_info = $wpdb->get_row($wpdb->prepare("SELECT closing_day FROM {$client_table} WHERE id = %d", $client_id));
+                        if ($client_info && $client_info->closing_day && $client_info->closing_day !== 'なし') {
+                            // 案件の完了日を取得
+                            $completion_date = isset($order->completion_date) ? $order->completion_date : '';
+                            if (!empty($completion_date)) {
+                                // 締め日を計算
+                                $completion_dt = new DateTime($completion_date);
+                                $year = (int)$completion_dt->format('Y');
+                                $month = (int)$completion_dt->format('m');
+                                $closing_day = $client_info->closing_day;
+                                if ($closing_day === '末日') {
+                                    $closing_dt = new DateTime("$year-$month-01");
+                                    $closing_dt->modify('last day of this month');
+                                } else {
+                                    $closing_day_num = intval($closing_day);
+                                    $closing_dt = new DateTime("$year-$month-" . str_pad($closing_day_num, 2, '0', STR_PAD_LEFT));
+                                    // 月末を超える場合は末日に補正
+                                    $last_day = (int)$closing_dt->format('t');
+                                    if ($closing_day_num > $last_day) {
+                                        $closing_dt->modify('last day of this month');
+                                    }
+                                }
+                                // 今日から締め日までの日数
+                                $today = new DateTime();
+                                $today->setTime(0, 0, 0);
+                                $closing_dt->setTime(0, 0, 0);
+                                $diff = $today->diff($closing_dt);
+                                $days_left = $diff->invert ? -$diff->days : $diff->days;
+                                // 警告日数（3日固定）
+                                $invoice_warning_days = 3;
+                                if ($days_left <= $invoice_warning_days && $days_left >= 0) {
+                                    $show_invoice_warning = true;
+                                    $invoice_warning_message = '請求書締日が迫っています（残り' . $days_left . '日）';
+                                }
+                            }
+                        }
+                    }
+                }
+                
                 // 日時フォーマット変換
                 $raw_time = $order->time;
                 $formatted_time = '';
@@ -307,6 +354,11 @@ class Kantan_List_Class {
                 // 納期警告マークを追加
                 if ($show_warning) {
                     $content .= "<span class='delivery-warning-mark-row' title='納期が迫っています'>!</span>";
+                }
+                
+                // ▼▼▼ 請求書締日警告マークを追加 ▼▼▼
+                if ($show_invoice_warning) {
+                    $content .= "<span class='invoice-warning-mark-row' title='" . esc_attr($invoice_warning_message) . "'>!</span>";
                 }
                 
                 $content .= "</div>";
