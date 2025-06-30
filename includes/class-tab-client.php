@@ -1099,18 +1099,40 @@ class Kntan_Client_Class {
 
         $controller_html .= '<script>
         (function(){
+          console.log("[請求書発行] 初期化開始");
+          
+          // ajaxurlの確認
+          if (typeof ajaxurl === "undefined") {
+            console.error("[請求書発行] ajaxurlが定義されていません");
+            if (typeof ktp_ajax_object !== "undefined" && ktp_ajax_object.ajax_url) {
+              window.ajaxurl = ktp_ajax_object.ajax_url;
+              console.log("[請求書発行] ktp_ajax_objectからajaxurlを設定:", window.ajaxurl);
+            } else {
+              window.ajaxurl = "/wp-admin/admin-ajax.php";
+              console.log("[請求書発行] デフォルトのajaxurlを設定:", window.ajaxurl);
+            }
+          }
+          
           var invoiceButton = document.getElementById("invoiceButton");
           var popup = document.getElementById("invoicePopup");
           var list = document.getElementById("invoiceList");
           
+          console.log("[請求書発行] 要素確認:", {
+            invoiceButton: !!invoiceButton,
+            popup: !!popup,
+            list: !!list
+          });
+          
           if(invoiceButton && popup && list){
             invoiceButton.addEventListener("click", function(){
+              console.log("[請求書発行] ボタンがクリックされました");
               popup.style.display = "block";
               // Ajaxで案件リスト取得
               var xhr = new XMLHttpRequest();
               xhr.open("POST", ajaxurl, true);
               xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
               xhr.onload = function(){
+                console.log("[請求書発行] Ajaxレスポンス受信:", xhr.status, xhr.responseText);
                 if(xhr.status === 200){
                   try{
                     var res = JSON.parse(xhr.responseText);
@@ -1270,6 +1292,14 @@ class Kntan_Client_Class {
                         html += "</div>";
                       }
                       
+                      // 印刷ボタンを追加
+                      html += "<div style=\"margin-top:20px;text-align:center;\">";
+                      html += "<button onclick=\"printInvoiceContent()\" style=\"background-color:#0073aa;color:white;border:none;padding:10px 20px;border-radius:5px;cursor:pointer;font-size:14px;font-weight:500;\">";
+                      html += "<span class=\"material-symbols-outlined\" style=\"font-size:16px;vertical-align:middle;margin-right:5px;\">print</span>";
+                      html += "印刷 PDF保存";
+                      html += "</button>";
+                      html += "</div>";
+                      
                       list.innerHTML = html;
                     }else{
                       list.innerHTML = "<div style=\"color:#888;\">該当する案件はありません。</div>";
@@ -1280,11 +1310,175 @@ class Kntan_Client_Class {
                 }
               };
               // 顧客IDを送信
-              var clientId = document.getElementById("client-id-input").value;
+              var clientId = "";
+              // URLパラメータから顧客IDを取得
+              var urlParams = new URLSearchParams(window.location.search);
+              clientId = urlParams.get("data_id");
+              console.log("[請求書発行] URLパラメータから顧客ID:", clientId);
+              
+              // フォームからも取得を試行
+              if (!clientId) {
+                var clientIdInput = document.getElementById("client-id-input");
+                if (clientIdInput) {
+                  clientId = clientIdInput.value;
+                  console.log("[請求書発行] フォームから顧客ID:", clientId);
+                }
+              }
+              
+              // 隠しフィールドからも取得を試行
+              if (!clientId) {
+                var hiddenClientId = document.querySelector("input[name=\"data_id\"]");
+                if (hiddenClientId) {
+                  clientId = hiddenClientId.value;
+                  console.log("[請求書発行] 隠しフィールドから顧客ID:", clientId);
+                }
+              }
+              
+              if (!clientId) {
+                console.error("[請求書発行] 顧客IDが見つかりません");
+                list.innerHTML = "<div style=\"color:#c00;\">顧客IDが見つかりません。</div>";
+                return;
+              }
+              
+              console.log("[請求書発行] 最終的な顧客ID:", clientId);
               xhr.send("action=ktp_get_invoice_candidates&client_id="+encodeURIComponent(clientId));
+            });
+          } else {
+            console.error("[請求書発行] 必要な要素が見つかりません:", {
+              invoiceButton: !!invoiceButton,
+              popup: !!popup,
+              list: !!list
             });
           }
         })();
+        </script>
+        
+        <script>
+        function printInvoiceContent() {
+          // 請求書の内容を取得
+          var invoiceContent = document.getElementById(\'invoiceList\').innerHTML;
+          
+          // 印刷用HTMLを作成
+          var printHTML = \'<!DOCTYPE html>\';
+          printHTML += \'<html lang="ja">\';
+          printHTML += \'<head>\';
+          printHTML += \'<meta charset="UTF-8">\';
+          printHTML += \'<meta name="viewport" content="width=device-width, initial-scale=1.0">\';
+          printHTML += \'<title>請求書</title>\';
+          printHTML += \'<style>\';
+          printHTML += \'* { margin: 0; padding: 0; box-sizing: border-box; }\';
+          printHTML += \'body { font-family: "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif; font-size: 12px; line-height: 1.4; color: #333; background: #f5f5f5; padding: 20px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }\';
+          printHTML += \'.page-container { width: 210mm; max-width: 210mm; margin: 0 auto; background: white; box-shadow: 0 0 10px rgba(0,0,0,0.1); padding: 15mm; min-height: 297mm; }\';
+          printHTML += \'@page { size: A4; margin: 15mm; }\';
+          printHTML += \'@media print { body { margin: 0; padding: 0; background: white; } .page-container { box-shadow: none; margin: 0; padding: 0; width: auto; max-width: none; min-height: auto; } }\';
+          printHTML += \'* { -webkit-print-color-adjust: exact !important; color-adjust: exact !important; print-color-adjust: exact !important; }\';
+          printHTML += \'@media print { button[onclick*="printInvoiceContent"] { display: none !important; } }\';
+          printHTML += \'</style>\';
+          printHTML += \'</head>\';
+          printHTML += \'<body>\';
+          printHTML += \'<div class="page-container">\';
+          printHTML += invoiceContent;
+          printHTML += \'</div>\';
+          printHTML += \'</body>\';
+          printHTML += \'</html>\';
+          
+          // 元のウィンドウの参照を保持
+          var originalWindow = window;
+          
+          // 印刷用ウィンドウを開く
+          var printWindow = window.open(\'\', \'printWindow\', \'width=800,height=600,scrollbars=yes,resizable=yes,menubar=no,toolbar=no,location=no,status=no\');
+          
+          if (!printWindow) {
+            alert(\'ポップアップがブロックされました。ブラウザの設定でポップアップを許可してください。\');
+            return;
+          }
+          
+          // 印刷ウィンドウにHTMLを書き込み
+          printWindow.document.open();
+          printWindow.document.write(printHTML);
+          printWindow.document.close();
+          
+          console.log(\'[請求書印刷] 印刷ウィンドウを作成しました。印刷ダイアログの表示準備中...\');
+          
+          // ウィンドウが読み込まれた後に印刷を実行
+          printWindow.onload = function() {
+            // 印刷ウィンドウが完全に読み込まれるまで少し待つ
+            setTimeout(function() {
+              try {
+                // 印刷ウィンドウにフォーカスを移して印刷ダイアログを表示
+                printWindow.focus();
+                printWindow.print();
+                
+                console.log(\'[請求書印刷] 印刷ダイアログを表示しました。ユーザーの操作をお待ちください。\');
+                
+                // 印刷ダイアログが表示された後、元のウィンドウにフォーカスを戻す
+                setTimeout(function() {
+                  try {
+                    originalWindow.focus();
+                    console.log(\'[請求書印刷] フォーカスを元のウィンドウに戻しました\');
+                  } catch (e) {
+                    console.log(\'[請求書印刷] フォーカス制御エラー:\', e);
+                  }
+                }, 1000);
+                
+                // 印刷完了後の処理
+                printWindow.onafterprint = function() {
+                  console.log(\'[請求書印刷] 印刷が完了しました\');
+                  setTimeout(function() {
+                    // 元のウィンドウにフォーカスを戻す
+                    originalWindow.focus();
+                    if (!printWindow.closed) {
+                      printWindow.close();
+                    }
+                    // 請求書ポップアップを閉じる
+                    var popup = document.getElementById(\'invoicePopup\');
+                    if (popup) {
+                      popup.style.display = \'none\';
+                    }
+                  }, 500);
+                };
+                
+              } catch (error) {
+                console.error(\'[請求書印刷] 印刷ダイアログ表示エラー:\', error);
+                printWindow.close();
+                originalWindow.focus(); // エラー時もフォーカスを戻す
+              }
+            }, 1000);
+          };
+          
+          // 追加の自動クローズ機能（フェイルセーフ）
+          var autoCloseTimer = setTimeout(function() {
+            if (printWindow && !printWindow.closed) {
+              try {
+                printWindow.close();
+                originalWindow.focus(); // 自動クローズ時もフォーカスを戻す
+                // 請求書ポップアップを閉じる
+                var popup = document.getElementById(\'invoicePopup\');
+                if (popup) {
+                  popup.style.display = \'none\';
+                }
+              } catch (e) {
+                console.log(\'[請求書印刷] 自動クローズエラー:\', e);
+              }
+            }
+          }, 15000);
+          
+          // ウィンドウが手動で閉じられた場合のタイマークリア
+          var checkClosed = setInterval(function() {
+            if (printWindow.closed) {
+              clearTimeout(autoCloseTimer);
+              clearInterval(checkClosed);
+              originalWindow.focus(); // 手動クローズ時もフォーカスを戻す
+              // 請求書ポップアップを閉じる
+              var popup = document.getElementById(\'invoicePopup\');
+              if (popup) {
+                popup.style.display = \'none\';
+              }
+            }
+          }, 1000);
+          
+          console.log(\'[請求書印刷] 印刷プロセス開始\');
+        }
         </script>';
 
         $controller_html .= '</div>'; // 左側のボタン群終了
