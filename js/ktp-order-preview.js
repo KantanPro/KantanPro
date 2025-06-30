@@ -483,7 +483,7 @@
             max-width: 210mm;
             margin: 0 auto;
             background: white;
-            padding: 15mm;
+            padding: 50px;
         }
         /* ページ区切り処理 */
         div[style*="page-break-before: always"] {
@@ -491,7 +491,7 @@
         }
         @page {
             size: A4;
-            margin: 15mm;
+            margin: 50px;
         }
         @media print {
             body { 

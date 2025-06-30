@@ -1807,7 +1807,7 @@ $content .= '</form>';
 
         // プレビューHTML生成 - A4サイズに最適化
         $html = '<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><title>受注書プレビュー</title></head><body>';
-        $html .= '<div class="order-preview-document" style="font-family: \'Noto Sans JP\', \'Hiragino Kaku Gothic ProN\', Meiryo, sans-serif; line-height: 1.4; color: #333; max-width: 210mm; margin: 0 auto; padding: 15mm; background: #fff; min-height: 297mm; box-sizing: border-box;">';
+        $html .= '<div class="order-preview-document" style="font-family: \'Noto Sans JP\', \'Hiragino Kaku Gothic ProN\', Meiryo, sans-serif; line-height: 1.4; color: #333; max-width: 210mm; margin: 0 auto; padding: 50px; background: #fff; min-height: 297mm; box-sizing: border-box;">';
         
         // 宛先情報（住所対応）
         $html .= '<div class="customer-info" style="margin-bottom: 20px;">';
