@@ -3473,14 +3473,34 @@ body.ktpwp-modal-open {
   border-color: #1565c0 !important;
 }
 
-.controller .create-order-btn {
-  background: #43a047 !important;
+.controller .create-order-btn,
+.controller #invoiceButton {
+  background: #28a745 !important;
   color: #fff !important;
-  border: 1px solid #388e3c !important;
+  border: 1px solid #1e7e34 !important;
+  border-radius: 3px !important;
+  padding: 6px 10px !important;
+  font-size: 12px !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  transition: all 0.2s ease !important;
 }
-.controller .create-order-btn:hover {
-  background: #388e3c !important;
-  border-color: #2e7d32 !important;
+
+.controller .create-order-btn:hover,
+.controller #invoiceButton:hover {
+  background: #1e7e34 !important;
+  border-color: #155724 !important;
+  color: #fff !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.15) !important;
+}
+
+.controller .create-order-btn .material-symbols-outlined,
+.controller #invoiceButton .material-symbols-outlined {
+  font-size: 16px !important;
+  line-height: 1 !important;
 }
 
 /* 得意先タブ controller内ボタンカラー（統一スタイルよりも優先度を上げる） */
@@ -3521,15 +3541,8 @@ body.ktpwp-modal-open {
   background: #1565c0 !important;
   border-color: #1565c0 !important;
 }
-
-.controller .create-order-btn {
-  background: #43a047 !important;
-  color: #fff !important;
-  border: 1px solid #388e3c !important;
-}
-.controller .create-order-btn:hover {
-  background: #388e3c !important;
-  border-color: #2e7d32 !important;
+  font-size: 16px !important;
+  line-height: 1 !important;
 }
 
 /* 各タブのcontroller内ボタンの統一スタイル（orderMailButtonと同じサイズ）- 得意先タブのボタンを除外 */
@@ -3877,3 +3890,4 @@ body.ktpwp-modal-open {
     font-size: 8px;
   }
 }
+

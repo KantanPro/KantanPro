@@ -1036,47 +1036,25 @@ class Kntan_Client_Class {
         $controller_html .= wp_nonce_field('ktp_client_action', 'ktp_client_nonce', true, false);
         $controller_html .= '<input type="hidden" name="tab_name" value="order">';
         $controller_html .= '<input type="hidden" name="from_client" value="1">';
-        // 常に最新の顧客データを使用する（複製後のデータを反映）
         $customer_name_to_use = !empty($current_customer_name) ? $current_customer_name : $order_customer_name;
         $user_name_to_use = !empty($current_user_name) ? $current_user_name : $order_user_name;
         $controller_html .= '<input type="hidden" name="customer_name" value="' . esc_attr($customer_name_to_use) . '">';
         $controller_html .= '<input type="hidden" name="user_name" value="' . esc_attr($user_name_to_use) . '">';
         $controller_html .= '<input type="hidden" id="client-id-input" name="client_id" value="' . esc_attr($current_client_id) . '">';
-        
-        // 顧客ステータスの情報をHTMLに埋め込み（JavaScriptで確認用）
         $controller_html .= '<div data-client-status="' . esc_attr($current_client_status) . '" style="display:none;"></div>';
-        
-        // ボタンの無効化条件を拡張（データが空または顧客が対象外の場合）
         $is_data_empty = empty($post_row) && empty($data_id);
         $is_client_excluded = ($current_client_status === '対象外');
         $should_disable = $is_data_empty || $is_client_excluded;
-        
-        // デバッグ情報を追加
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log("KTPWP Debug - Button Control: is_data_empty={$is_data_empty}, is_client_excluded={$is_client_excluded}, should_disable={$should_disable}");
-        }
-        
-        $disabled_attr = $should_disable ? 'disabled style="background:#ccc;color:#888;cursor:not-allowed;"' : '';
-        $button_style = 'font-size: 12px;';
-        if (!$should_disable) {
-            $button_style = 'padding: 6px 10px; font-size: 12px;';
-        }
-        
-        // ボタンのタイトルを設定
-        $button_title = '受注書作成';
-        if ($is_client_excluded) {
-            $button_title = '受注書作成（対象外顧客のため無効）';
-        }
-        
-        $controller_html .= '<button type="submit" class="create-order-btn" ' . $disabled_attr . ' style="' . $button_style . '" title="' . esc_attr($button_title) . '">';
-        $controller_html .= '<span class="material-symbols-outlined" aria-label="作成" style="font-size: 16px;">create</span>';
-        $controller_html .= '受注書作成';
+        $disabled_attr = $should_disable ? 'disabled' : '';
+        $button_title = $is_client_excluded ? '受注書作成（対象外顧客のため無効）' : '受注書作成';
+        $controller_html .= '<button type="submit" id="createOrderButton" class="create-order-btn" ' . $disabled_attr . ' title="' . esc_attr($button_title) . '">';
+        $controller_html .= '<span class="material-symbols-outlined" aria-label="作成">create</span> 受注書作成';
         $controller_html .= '</button>';
         $controller_html .= '</form>';
 
         // 請求書発行ボタンを追加
-        $controller_html .= '<button id="invoiceButton" title="請求書発行" style="padding: 6px 10px; font-size: 12px; background-color: #28a745 !important; color: white !important; border: none; border-radius: 3px; cursor: pointer;">'
-            . '<span class="material-symbols-outlined" aria-label="請求書" style="font-size: 16px;">receipt_long</span> 請求書発行'
+        $controller_html .= '<button id="invoiceButton" title="請求書発行">'
+            . '<span class="material-symbols-outlined" aria-label="請求書">receipt_long</span> 請求書発行'
             . '</button>';
 
         // 請求書発行ポップアップ
