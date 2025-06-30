@@ -345,6 +345,7 @@ function printInvoiceContent() {
 
         invoiceContent = tempDiv.innerHTML;
 
+        // 印刷用のスタイルを適用したHTMLを生成
         var printHTML = '<!DOCTYPE html>';
         printHTML += '<html lang="ja">';
         printHTML += '<head>';
@@ -371,21 +372,45 @@ function printInvoiceContent() {
 
         console.log("[請求書印刷] 印刷HTML生成完了");
         
-        var printWindow = window.open('', '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
-            
-        if (!printWindow) {
-            alert('ポップアップがブロックされました。ブラウザの設定でポップアップを許可してください。');
-            return;
-        }
+        // 印刷用のiframeを作成（非表示）
+        var printFrame = document.createElement('iframe');
+        printFrame.style.position = 'fixed';
+        printFrame.style.top = '-9999px';
+        printFrame.style.left = '-9999px';
+        printFrame.style.width = '210mm';
+        printFrame.style.height = '297mm';
+        printFrame.style.border = 'none';
+        document.body.appendChild(printFrame);
         
-        printWindow.document.open();
-        printWindow.document.write(printHTML);
-        printWindow.document.close();
+        // iframeにHTMLを書き込み
+        printFrame.contentDocument.open();
+        printFrame.contentDocument.write(printHTML);
+        printFrame.contentDocument.close();
         
-        setTimeout(function() {
-            printWindow.print();
-            printWindow.close();
-        }, 500);
+        // iframeの読み込み完了を待ってから印刷
+        printFrame.onload = function() {
+            setTimeout(function() {
+                try {
+                    printFrame.contentWindow.print();
+                    console.log("[請求書印刷] 印刷ダイアログを開きました");
+                    
+                    // 印刷完了後にiframeを削除
+                    setTimeout(function() {
+                        if (printFrame && printFrame.parentNode) {
+                            printFrame.parentNode.removeChild(printFrame);
+                        }
+                    }, 1000);
+                } catch (error) {
+                    console.error("[請求書印刷] 印刷実行エラー:", error);
+                    alert("印刷エラーが発生しました: " + error.message);
+                    
+                    // エラー時もiframeを削除
+                    if (printFrame && printFrame.parentNode) {
+                        printFrame.parentNode.removeChild(printFrame);
+                    }
+                }
+            }, 100);
+        };
 
     } catch (error) {
         console.error("[請求書印刷] エラーが発生しました:", error);
