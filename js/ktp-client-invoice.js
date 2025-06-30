@@ -315,6 +315,16 @@ function printInvoiceContent() {
 
         console.log("[請求書印刷] 請求書内容取得完了");
 
+        // デザイン設定を取得
+        var designSettings = window.ktp_design_settings || {};
+        var oddRowColor = designSettings.odd_row_color || "#E7EEFD";
+        var evenRowColor = designSettings.even_row_color || "#FFFFFF";
+        
+        console.log("[請求書印刷] デザイン設定:", {
+            oddRowColor: oddRowColor,
+            evenRowColor: evenRowColor
+        });
+
         var carryoverAmount = window.carryoverAmount || 0;
         var carryoverInput = document.getElementById('carryover-amount');
         if (carryoverInput) {
@@ -342,6 +352,16 @@ function printInvoiceContent() {
             }
             console.log("[請求書印刷] 合計金額更新:", totalAmount);
         }
+
+        // 印刷用にデザイン設定を適用
+        var rows = tempDiv.querySelectorAll('[style*="background"]');
+        rows.forEach(function(row, index) {
+            if (row.style.background && (row.style.background.includes('#E7EEFD') || row.style.background.includes('#FFFFFF'))) {
+                var bgColor = (index % 2 === 0) ? evenRowColor : oddRowColor;
+                row.style.background = bgColor;
+                console.log("[請求書印刷] 行の色を更新:", index, bgColor);
+            }
+        });
 
         invoiceContent = tempDiv.innerHTML;
 

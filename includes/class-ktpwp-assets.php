@@ -284,14 +284,17 @@ class KTPWP_Assets {
                 'admin'     => false,
                 'localize'  => array(
                     'object' => 'ktpClientInvoice',
-                    'data'   => array(
-                        'ajax_url' => admin_url( 'admin-ajax.php' ),
-                        'nonce'    => wp_create_nonce( 'ktp_get_invoice_candidates' ),
-                        'design_settings' => array(
-                            'odd_row_color' => '#E7EEFD',
-                            'even_row_color' => '#FFFFFF',
-                        ),
-                    ),
+                    'data'   => function() {
+                        $design_options = get_option('ktp_design_settings', array());
+                        return array(
+                            'ajax_url' => admin_url( 'admin-ajax.php' ),
+                            'nonce'    => wp_create_nonce( 'ktp_get_invoice_candidates' ),
+                            'design_settings' => array(
+                                'odd_row_color' => isset($design_options['odd_row_color']) ? $design_options['odd_row_color'] : '#E7EEFD',
+                                'even_row_color' => isset($design_options['even_row_color']) ? $design_options['even_row_color'] : '#FFFFFF',
+                            ),
+                        );
+                    },
                 ),
             ),
             // 'ktp-skills-list-effects' => array(
@@ -496,8 +499,14 @@ class KTPWP_Assets {
             }
         } elseif ( isset( $localize_data['object'] ) && isset( $localize_data['data'] ) ) {
             // 単一のローカライズデータ
+            // データが関数の場合は実行して配列を取得
+            $data = $localize_data['data'];
+            if ( is_callable( $data ) ) {
+                $data = call_user_func( $data );
+            }
+            
             // データが配列でない場合は配列に変換
-            $localize_array = is_array( $localize_data['data'] ) ? $localize_data['data'] : array( 'value' => $localize_data['data'] );
+            $localize_array = is_array( $data ) ? $data : array( 'value' => $data );
             wp_localize_script( $handle, $localize_data['object'], $localize_array );
         } else {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
