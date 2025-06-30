@@ -1097,9 +1097,20 @@ class Kntan_Client_Class {
         $controller_html .= '</div>';
         $controller_html .= '</div>';
 
+        // デザイン設定から奇数偶数カラーを取得
+        $design_options = get_option('ktp_design_settings', array());
+        $odd_row_color = isset($design_options['odd_row_color']) ? $design_options['odd_row_color'] : '#E7EEFD';
+        $even_row_color = isset($design_options['even_row_color']) ? $design_options['even_row_color'] : '#FFFFFF';
+
         $controller_html .= '<script>
         (function(){
           console.log("[請求書発行] 初期化開始");
+          
+          // デザイン設定をグローバル変数として設定
+          window.ktp_design_settings = {
+            odd_row_color: "' . esc_js($odd_row_color) . '",
+            even_row_color: "' . esc_js($even_row_color) . '"
+          };
           
           // ajaxurlの確認
           if (typeof ajaxurl === "undefined") {
@@ -1225,19 +1236,32 @@ class Kntan_Client_Class {
                           
                           if(order.items && order.items.length > 0){
                             html += "<div style=\"margin-top:10px;width:100%;\">";
-                            html += "<table style=\"width:100%;border-collapse:collapse;font-size:12px;border:1px solid #ddd;\">";
-                            html += "<thead>";
-                            html += "<tr style=\"background-color:#f5f5f5;\">";
-                            html += "<th style=\"border:1px solid #ddd;padding:6px;text-align:left;font-weight:bold;font-size:12px;\">サービス</th>";
-                            html += "<th style=\"border:1px solid #ddd;padding:6px;text-align:right;font-weight:bold;font-size:12px;\">単価</th>";
-                            html += "<th style=\"border:1px solid #ddd;padding:6px;text-align:center;font-weight:bold;font-size:12px;\">数量/単位</th>";
-                            html += "<th style=\"border:1px solid #ddd;padding:6px;text-align:right;font-weight:bold;font-size:12px;\">金額</th>";
-                            html += "<th style=\"border:1px solid #ddd;padding:6px;text-align:center;font-weight:bold;font-size:12px;\">備考</th>";
-                            html += "</tr>";
-                            html += "</thead>";
-                            html += "<tbody>";
                             
-                            order.items.forEach(function(item){
+                            // ヘッダー行
+                            html += "<div style=\"display: flex; background: #f0f0f0; padding: 8px; font-weight: bold; border-bottom: 1px solid #ccc; align-items: center; font-size: 12px;\">";
+                            html += "<div style=\"width: 30px; text-align: center;\">No.</div>";
+                            html += "<div style=\"flex: 1; text-align: left; margin-left: 8px;\">サービス</div>";
+                            html += "<div style=\"width: 80px; text-align: right;\">単価</div>";
+                            html += "<div style=\"width: 60px; text-align: right;\">数量/単位</div>";
+                            html += "<div style=\"width: 80px; text-align: right;\">金額</div>";
+                            html += "<div style=\"width: 100px; text-align: left; margin-left: 8px;\">備考</div>";
+                            html += "</div>";
+                            
+                            // デザイン設定から奇数偶数の背景色を取得
+                            var oddRowColor = "#E7EEFD";
+                            var evenRowColor = "#FFFFFF";
+                            
+                            // WordPressのデザイン設定から取得
+                            if (typeof window.ktp_design_settings !== "undefined") {
+                              if (window.ktp_design_settings.odd_row_color) {
+                                oddRowColor = window.ktp_design_settings.odd_row_color;
+                              }
+                              if (window.ktp_design_settings.even_row_color) {
+                                evenRowColor = window.ktp_design_settings.even_row_color;
+                              }
+                            }
+                            
+                            order.items.forEach(function(item, index){
                               var unitPrice = item.unit_price ? parseFloat(item.unit_price).toLocaleString() + "円" : "-";
                               var quantity = item.quantity ? item.quantity : "-";
                               var totalPrice = item.total_price ? parseFloat(item.total_price).toLocaleString() + "円" : "-";
@@ -1247,17 +1271,19 @@ class Kntan_Client_Class {
                                 orderSubtotal += parseFloat(item.total_price);
                               }
                               
-                              html += "<tr>";
-                              html += "<td style=\"border:1px solid #ddd;padding:6px;text-align:left;font-size:12px;\">" + item.item_name + "</td>";
-                              html += "<td style=\"border:1px solid #ddd;padding:6px;text-align:right;font-size:12px;\">" + unitPrice + "</td>";
-                              html += "<td style=\"border:1px solid #ddd;padding:6px;text-align:center;font-size:12px;\">" + quantity + "/式</td>";
-                              html += "<td style=\"border:1px solid #ddd;padding:6px;text-align:right;font-size:12px;\">" + totalPrice + "</td>";
-                              html += "<td style=\"border:1px solid #ddd;padding:6px;text-align:center;font-size:12px;\"></td>";
-                              html += "</tr>";
+                              // 奇数偶数カラーを適用
+                              var bgColor = (index % 2 === 0) ? evenRowColor : oddRowColor;
+                              
+                              html += "<div style=\"display: flex; padding: 6px 8px; height: 24px; background: " + bgColor + "; align-items: center; font-size: 12px;\">";
+                              html += "<div style=\"width: 30px; text-align: center;\">" + (index + 1) + "</div>";
+                              html += "<div style=\"flex: 1; text-align: left; margin-left: 8px;\">" + item.item_name + "</div>";
+                              html += "<div style=\"width: 80px; text-align: right;\">" + unitPrice + "</div>";
+                              html += "<div style=\"width: 60px; text-align: right;\">" + quantity + "/式</div>";
+                              html += "<div style=\"width: 80px; text-align: right;\">" + totalPrice + "</div>";
+                              html += "<div style=\"width: 100px; text-align: left; margin-left: 8px;\"></div>";
+                              html += "</div>";
                             });
                             
-                            html += "</tbody>";
-                            html += "</table>";
                             html += "</div>";
                             
                             // 案件の小計を表示
@@ -1359,20 +1385,34 @@ class Kntan_Client_Class {
           var originalBody = document.body.innerHTML;
           var originalTitle = document.title;
           
-          // 印刷用のHTMLを作成
-          var printHTML = \'<div style="font-family: \\"Noto Sans JP\\", \\"Hiragino Kaku Gothic ProN\\", \\"Yu Gothic\\", Meiryo, sans-serif; font-size: 12px; line-height: 1.4; color: #333; background: white; padding: 20px;">\';
-          printHTML += \'<div style="width: 210mm; max-width: 210mm; margin: 0 auto; background: white; padding: 15mm;">\';
+          // 印刷用のHTMLを作成（受注書プレビューと同じスタイル）
+          var printHTML = \'<!DOCTYPE html>\';
+          printHTML += \'<html lang="ja">\';
+          printHTML += \'<head>\';
+          printHTML += \'<meta charset="UTF-8">\';
+          printHTML += \'<meta name="viewport" content="width=device-width, initial-scale=1.0">\';
+          printHTML += \'<title>請求書</title>\';
+          printHTML += \'<style>\';
+          printHTML += \'* { margin: 0; padding: 0; box-sizing: border-box; }\';
+          printHTML += \'body { font-family: "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif; font-size: 12px; line-height: 1.4; color: #333; background: white; padding: 20px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }\';
+          printHTML += \'.page-container { width: 210mm; max-width: 210mm; margin: 0 auto; background: white; padding: 50px; }\';
+          printHTML += \'@page { size: A4; margin: 50px; }\';
+          printHTML += \'@media print { body { margin: 0; padding: 0; background: white; } .page-container { box-shadow: none; margin: 0; padding: 0; width: auto; max-width: none; } }\';
+          printHTML += \'@media print { button, .no-print { display: none !important; } }\';
+          printHTML += \'h1, h2, h3, h4, h5, h6 { font-weight: bold; }\';
+          printHTML += \'* { -webkit-print-color-adjust: exact !important; color-adjust: exact !important; print-color-adjust: exact !important; }\';
+          printHTML += \'</style>\';
+          printHTML += \'</head>\';
+          printHTML += \'<body>\';
+          printHTML += \'<div class="page-container">\';
           printHTML += invoiceContent;
-          printHTML += \'</div></div>\';
+          printHTML += \'</div>\';
+          printHTML += \'</body>\';
+          printHTML += \'</html>\';
           
           // ページの内容を印刷用に変更
           document.body.innerHTML = printHTML;
           document.title = \'請求書\';
-          
-          // 印刷用CSSを追加
-          var printStyle = document.createElement(\'style\');
-          printStyle.textContent = \'@page { size: A4; margin: 15mm; } @media print { body { margin: 0; padding: 0; background: white; } } @media print { button, .no-print { display: none !important; } }\';
-          document.head.appendChild(printStyle);
           
           // 印刷ダイアログを表示
           window.print();
@@ -1381,7 +1421,6 @@ class Kntan_Client_Class {
           setTimeout(function() {
             document.body.innerHTML = originalBody;
             document.title = originalTitle;
-            document.head.removeChild(printStyle);
             
             // 請求書ポップアップを閉じる
             var popup = document.getElementById(\'invoicePopup\');
@@ -1398,7 +1437,7 @@ class Kntan_Client_Class {
           // 請求書の内容を取得
           var invoiceContent = document.getElementById(\'invoiceList\').innerHTML;
           
-          // 印刷用HTMLを作成（シンプルで直接的な方法）
+          // 印刷用HTMLを作成（受注書プレビューと同じスタイル）
           var printHTML = \'<!DOCTYPE html>\';
           printHTML += \'<html lang="ja">\';
           printHTML += \'<head>\';
@@ -1407,13 +1446,13 @@ class Kntan_Client_Class {
           printHTML += \'<title>請求書</title>\';
           printHTML += \'<style>\';
           printHTML += \'* { margin: 0; padding: 0; box-sizing: border-box; }\';
-          printHTML += \'body { font-family: "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif; font-size: 12px; line-height: 1.4; color: #333; background: white; padding: 20px; }\';
-          printHTML += \'.page-container { width: 210mm; max-width: 210mm; margin: 0 auto; background: white; padding: 15mm; }\';
-          printHTML += \'@page { size: A4; margin: 15mm; }\';
+          printHTML += \'body { font-family: "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif; font-size: 12px; line-height: 1.4; color: #333; background: white; padding: 20px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }\';
+          printHTML += \'.page-container { width: 210mm; max-width: 210mm; margin: 0 auto; background: white; padding: 50px; }\';
+          printHTML += \'@page { size: A4; margin: 50px; }\';
           printHTML += \'@media print { body { margin: 0; padding: 0; background: white; } .page-container { box-shadow: none; margin: 0; padding: 0; width: auto; max-width: none; } }\';
-          printHTML += \'* { -webkit-print-color-adjust: exact !important; color-adjust: exact !important; print-color-adjust: exact !important; }\';
-          // 印刷時にボタンを非表示
           printHTML += \'@media print { button, .no-print { display: none !important; } }\';
+          printHTML += \'h1, h2, h3, h4, h5, h6 { font-weight: bold; }\';
+          printHTML += \'* { -webkit-print-color-adjust: exact !important; color-adjust: exact !important; print-color-adjust: exact !important; }\';
           printHTML += \'</style>\';
           printHTML += \'</head>\';
           printHTML += \'<body>\';
