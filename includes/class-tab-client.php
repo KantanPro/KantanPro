@@ -1392,146 +1392,248 @@ class Kntan_Client_Class {
         
         <script>
         function printInvoiceContent() {
-          // 請求書の内容を取得
-          var invoiceContent = document.getElementById(\'invoiceList\').innerHTML;
-          
-          // 現在のページに印刷用スタイルを一時的に適用
-          var originalBody = document.body.innerHTML;
-          var originalTitle = document.title;
-          
-          // 印刷用のHTMLを作成（受注書プレビューと同じスタイル）
-          var printHTML = \'<!DOCTYPE html>\';
-          printHTML += \'<html lang="ja">\';
-          printHTML += \'<head>\';
-          printHTML += \'<meta charset="UTF-8">\';
-          printHTML += \'<meta name="viewport" content="width=device-width, initial-scale=1.0">\';
-          printHTML += \'<title>請求書</title>\';
-          printHTML += \'<style>\';
-          printHTML += \'* { margin: 0; padding: 0; box-sizing: border-box; }\';
-          printHTML += \'body { font-family: "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif; font-size: 12px; line-height: 1.4; color: #333; background: white; padding: 20px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }\';
-          printHTML += \'.page-container { width: 210mm; max-width: 210mm; margin: 0 auto; background: white; padding: 50px; }\';
-          printHTML += \'@page { size: A4; margin: 50px; }\';
-          printHTML += \'@media print { body { margin: 0; padding: 0; background: white; } .page-container { box-shadow: none; margin: 0; padding: 0; width: auto; max-width: none; } }\';
-          printHTML += \'@media print { button, .no-print { display: none !important; } }\';
-          printHTML += \'h1, h2, h3, h4, h5, h6 { font-weight: bold; }\';
-          printHTML += \'* { -webkit-print-color-adjust: exact !important; color-adjust: exact !important; print-color-adjust: exact !important; }\';
-          printHTML += \'</style>\';
-          printHTML += \'</head>\';
-          printHTML += \'<body>\';
-          printHTML += \'<div class="page-container">\';
-          printHTML += invoiceContent;
-          printHTML += \'</div>\';
-          printHTML += \'</body>\';
-          printHTML += \'</html>\';
-          
-          // ページの内容を印刷用に変更
-          document.body.innerHTML = printHTML;
-          document.title = \'請求書\';
-          
-          // 印刷ダイアログを表示
-          window.print();
-          
-          // 印刷完了後、元の内容に戻す
-          setTimeout(function() {
-            document.body.innerHTML = originalBody;
-            document.title = originalTitle;
+          try {
+            console.log("[請求書印刷] 印刷開始");
             
-            // 請求書ポップアップを閉じる
-            var popup = document.getElementById(\'invoicePopup\');
-            if (popup) {
-              popup.style.display = \'none\';
+            // 請求書の内容を取得
+            var invoiceList = document.getElementById(\'invoiceList\');
+            if (!invoiceList) {
+              console.error("[請求書印刷] invoiceList要素が見つかりません");
+              alert("印刷エラー：請求書データが見つかりません");
+              return;
             }
             
-            console.log(\'[請求書印刷] 印刷完了。元のページに戻しました。\');
-          }, 1000);
+            var invoiceContent = invoiceList.innerHTML;
+            if (!invoiceContent || invoiceContent.trim() === "") {
+              console.error("[請求書印刷] 請求書の内容が空です");
+              alert("印刷エラー：請求書の内容が空です");
+              return;
+            }
+            
+            console.log("[請求書印刷] 請求書内容取得完了");
+            
+            // 繰越金額を取得（保存された値または現在の入力値）
+            var carryoverAmount = window.carryoverAmount || 0;
+            var carryoverInput = document.getElementById(\'carryover-amount\');
+            if (carryoverInput) {
+              carryoverAmount = parseInt(carryoverInput.value) || 0;
+              console.log("[請求書印刷] 繰越金額:", carryoverAmount);
+            }
+            
+            // 繰越金額入力フィールドを非表示にする（印刷用）
+            invoiceContent = invoiceContent.replace(
+              /<input[^>]*id="carryover-amount"[^>]*>/g,
+              \'<span style="font-weight: bold;">\' + carryoverAmount.toLocaleString() + \'</span>\'
+            );
+            
+            // 繰越金額の後にある余分な空白を削除（「200　円」→「200円」）
+            invoiceContent = invoiceContent.replace(
+              /(繰越金額：\s*<span[^>]*>[\d,]+<\/span>)\s*円/g,
+              \'$1円\'
+            );
+            
+            // 繰越金額を印刷内容に反映
+            if (window.invoiceGrandTotal) {
+              var totalAmount = window.invoiceGrandTotal + carryoverAmount;
+              invoiceContent = invoiceContent.replace(
+                /<span id="total-amount">[^<]*<\/span>/g,
+                \'<span id="total-amount">\' + totalAmount.toLocaleString() + \'</span>\'
+              );
+              console.log("[請求書印刷] 合計金額更新:", totalAmount);
+            }
+            
+            // 現在のページに印刷用スタイルを一時的に適用
+            var originalBody = document.body.innerHTML;
+            var originalTitle = document.title;
+            
+            // 印刷用のHTMLを作成（受注書プレビューと同じスタイル）
+            var printHTML = \'<!DOCTYPE html>\';
+            printHTML += \'<html lang="ja">\';
+            printHTML += \'<head>\';
+            printHTML += \'<meta charset="UTF-8">\';
+            printHTML += \'<meta name="viewport" content="width=device-width, initial-scale=1.0">\';
+            printHTML += \'<title>請求書</title>\';
+            printHTML += \'<style>\';
+            printHTML += \'* { margin: 0; padding: 0; box-sizing: border-box; }\';
+            printHTML += \'body { font-family: "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif; font-size: 12px; line-height: 1.4; color: #333; background: white; padding: 20px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }\';
+            printHTML += \'.page-container { width: 210mm; max-width: 210mm; margin: 0 auto; background: white; padding: 50px; }\';
+            printHTML += \'@page { size: A4; margin: 50px; }\';
+            printHTML += \'@media print { body { margin: 0; padding: 0; background: white; } .page-container { box-shadow: none; margin: 0; padding: 0; width: auto; max-width: none; } }\';
+            printHTML += \'@media print { button, .no-print { display: none !important; } }\';
+            printHTML += \'h1, h2, h3, h4, h5, h6 { font-weight: bold; }\';
+            printHTML += \'* { -webkit-print-color-adjust: exact !important; color-adjust: exact !important; print-color-adjust: exact !important; }\';
+            printHTML += \'</style>\';
+            printHTML += \'</head>\';
+            printHTML += \'<body>\';
+            printHTML += \'<div class="page-container">\';
+            printHTML += invoiceContent;
+            printHTML += \'</div>\';
+            printHTML += \'</body>\';
+            printHTML += \'</html>\';
+            
+            console.log("[請求書印刷] 印刷HTML生成完了");
+            
+            // ページの内容を印刷用に変更
+            document.body.innerHTML = printHTML;
+            document.title = \'請求書\';
+            
+            // 印刷ダイアログを表示
+            window.print();
+            
+            // 印刷完了後、元の内容に戻す
+            setTimeout(function() {
+              document.body.innerHTML = originalBody;
+              document.title = originalTitle;
+              
+              // 請求書ポップアップを閉じる
+              var popup = document.getElementById(\'invoicePopup\');
+              if (popup) {
+                popup.style.display = \'none\';
+              }
+              
+              console.log(\'[請求書印刷] 印刷完了。元のページに戻しました。\');
+            }, 1000);
+            
+          } catch (error) {
+            console.error("[請求書印刷] エラーが発生しました:", error);
+            alert("印刷エラーが発生しました: " + error.message);
+          }
         }
         
         // 代替方法：新しいウィンドウで印刷（Blob使用）
         function printInvoiceContentNewWindow() {
-          // 請求書の内容を取得
-          var invoiceContent = document.getElementById(\'invoiceList\').innerHTML;
-          
-          // 印刷用HTMLを作成（受注書プレビューと同じスタイル）
-          var printHTML = \'<!DOCTYPE html>\';
-          printHTML += \'<html lang="ja">\';
-          printHTML += \'<head>\';
-          printHTML += \'<meta charset="UTF-8">\';
-          printHTML += \'<meta name="viewport" content="width=device-width, initial-scale=1.0">\';
-          printHTML += \'<title>請求書</title>\';
-          printHTML += \'<style>\';
-          printHTML += \'* { margin: 0; padding: 0; box-sizing: border-box; }\';
-          printHTML += \'body { font-family: "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif; font-size: 12px; line-height: 1.4; color: #333; background: white; padding: 20px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }\';
-          printHTML += \'.page-container { width: 210mm; max-width: 210mm; margin: 0 auto; background: white; padding: 50px; }\';
-          printHTML += \'@page { size: A4; margin: 50px; }\';
-          printHTML += \'@media print { body { margin: 0; padding: 0; background: white; } .page-container { box-shadow: none; margin: 0; padding: 0; width: auto; max-width: none; } }\';
-          printHTML += \'@media print { button, .no-print { display: none !important; } }\';
-          printHTML += \'h1, h2, h3, h4, h5, h6 { font-weight: bold; }\';
-          printHTML += \'* { -webkit-print-color-adjust: exact !important; color-adjust: exact !important; print-color-adjust: exact !important; }\';
-          printHTML += \'</style>\';
-          printHTML += \'</head>\';
-          printHTML += \'<body>\';
-          printHTML += \'<div class="page-container">\';
-          printHTML += invoiceContent;
-          printHTML += \'</div>\';
-          printHTML += \'<script>\';
-          printHTML += \'// ページ読み込み完了後に自動で印刷ダイアログを表示\';
-          printHTML += \'window.addEventListener("load", function() {\';
-          printHTML += \'  setTimeout(function() {\';
-          printHTML += \'    window.print();\';
-          printHTML += \'  }, 500);\';
-          printHTML += \'});\';
-          printHTML += \'// 印刷完了後の処理\';
-          printHTML += \'window.addEventListener("afterprint", function() {\';
-          printHTML += \'  setTimeout(function() {\';
-          printHTML += \'    window.close();\';
-          printHTML += \'  }, 1000);\';
-          printHTML += \'});\';
-          printHTML += \'<\/script>\';
-          printHTML += \'</body>\';
-          printHTML += \'</html>\';
-          
-          // Blobを使用して印刷用ウィンドウを作成
-          var blob = new Blob([printHTML], { type: \'text/html\' });
-          var url = URL.createObjectURL(blob);
-          
-          // 新しいウィンドウを開いて印刷ダイアログを直接表示
-          var printWindow = window.open(url, \'_blank\', \'width=800,height=600,scrollbars=yes,resizable=yes\');
-          
-          if (!printWindow) {
-            alert(\'ポップアップがブロックされました。ブラウザの設定でポップアップを許可してください。\');
-            URL.revokeObjectURL(url);
-            return;
+          try {
+            console.log("[請求書印刷] 新ウィンドウ印刷開始");
+            
+            // 請求書の内容を取得
+            var invoiceList = document.getElementById(\'invoiceList\');
+            if (!invoiceList) {
+              console.error("[請求書印刷] invoiceList要素が見つかりません");
+              alert("印刷エラー：請求書データが見つかりません");
+              return;
+            }
+            
+            var invoiceContent = invoiceList.innerHTML;
+            if (!invoiceContent || invoiceContent.trim() === "") {
+              console.error("[請求書印刷] 請求書の内容が空です");
+              alert("印刷エラー：請求書の内容が空です");
+              return;
+            }
+            
+            console.log("[請求書印刷] 請求書内容取得完了");
+            
+            // 繰越金額を取得（保存された値または現在の入力値）
+            var carryoverAmount = window.carryoverAmount || 0;
+            var carryoverInput = document.getElementById(\'carryover-amount\');
+            if (carryoverInput) {
+              carryoverAmount = parseInt(carryoverInput.value) || 0;
+              console.log("[請求書印刷] 繰越金額:", carryoverAmount);
+            }
+            
+            // 繰越金額入力フィールドを非表示にする（印刷用）
+            invoiceContent = invoiceContent.replace(
+              /<input[^>]*id="carryover-amount"[^>]*>/g,
+              \'<span style="font-weight: bold;">\' + carryoverAmount.toLocaleString() + \'</span>\'
+            );
+            
+            // 繰越金額を印刷内容に反映
+            if (window.invoiceGrandTotal) {
+              var totalAmount = window.invoiceGrandTotal + carryoverAmount;
+              invoiceContent = invoiceContent.replace(
+                /<span id="total-amount">[^<]*<\/span>/g,
+                \'<span id="total-amount">\' + totalAmount.toLocaleString() + \'</span>\'
+              );
+              console.log("[請求書印刷] 合計金額更新:", totalAmount);
+            }
+            
+            // 印刷用HTMLを作成（受注書プレビューと同じスタイル）
+            var printHTML = \'<!DOCTYPE html>\';
+            printHTML += \'<html lang="ja">\';
+            printHTML += \'<head>\';
+            printHTML += \'<meta charset="UTF-8">\';
+            printHTML += \'<meta name="viewport" content="width=device-width, initial-scale=1.0">\';
+            printHTML += \'<title>請求書</title>\';
+            printHTML += \'<style>\';
+            printHTML += \'* { margin: 0; padding: 0; box-sizing: border-box; }\';
+            printHTML += \'body { font-family: "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif; font-size: 12px; line-height: 1.4; color: #333; background: white; padding: 20px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }\';
+            printHTML += \'.page-container { width: 210mm; max-width: 210mm; margin: 0 auto; background: white; padding: 50px; }\';
+            printHTML += \'@page { size: A4; margin: 50px; }\';
+            printHTML += \'@media print { body { margin: 0; padding: 0; background: white; } .page-container { box-shadow: none; margin: 0; padding: 0; width: auto; max-width: none; } }\';
+            printHTML += \'@media print { button, .no-print { display: none !important; } }\';
+            printHTML += \'h1, h2, h3, h4, h5, h6 { font-weight: bold; }\';
+            printHTML += \'* { -webkit-print-color-adjust: exact !important; color-adjust: exact !important; print-color-adjust: exact !important; }\';
+            printHTML += \'</style>\';
+            printHTML += \'</head>\';
+            printHTML += \'<body>\';
+            printHTML += \'<div class="page-container">\';
+            printHTML += invoiceContent;
+            printHTML += \'</div>\';
+            printHTML += \'<script>\';
+            printHTML += \'// ページ読み込み完了後に自動で印刷ダイアログを表示\';
+            printHTML += \'window.addEventListener("load", function() {\';
+            printHTML += \'  setTimeout(function() {\';
+            printHTML += \'    window.print();\';
+            printHTML += \'  }, 500);\';
+            printHTML += \'});\';
+            printHTML += \'// 印刷完了後の処理\';
+            printHTML += \'window.addEventListener("afterprint", function() {\';
+            printHTML += \'  setTimeout(function() {\';
+            printHTML += \'    window.close();\';
+            printHTML += \'  }, 1000);\';
+            printHTML += \'});\';
+            printHTML += \'<\/script>\';
+            printHTML += \'</body>\';
+            printHTML += \'</html>\';
+            
+            console.log("[請求書印刷] 印刷HTML生成完了");
+            
+            // Blobを使用して印刷用ウィンドウを作成
+            var blob = new Blob([printHTML], { type: \'text/html\' });
+            var url = URL.createObjectURL(blob);
+            
+            // 新しいウィンドウを開いて印刷ダイアログを直接表示
+            var printWindow = window.open(url, \'_blank\', \'width=800,height=600,scrollbars=yes,resizable=yes\');
+            
+            if (!printWindow) {
+              alert(\'ポップアップがブロックされました。ブラウザの設定でポップアップを許可してください。\');
+              URL.revokeObjectURL(url);
+              return;
+            }
+            
+            console.log(\'[請求書印刷] 印刷ウィンドウを作成しました。印刷ダイアログが自動表示されます。\');
+            
+            // 印刷完了後の処理（フェイルセーフ）
+            var checkClosed = setInterval(function() {
+              if (printWindow.closed) {
+                clearInterval(checkClosed);
+                URL.revokeObjectURL(url);
+                // 請求書ポップアップを閉じる
+                var popup = document.getElementById(\'invoicePopup\');
+                if (popup) {
+                  popup.style.display = \'none\';
+                }
+                console.log(\'[請求書印刷] 印刷ウィンドウが閉じられました。請求書ポップアップも閉じます。\');
+              }
+            }, 1000);
+            
+            // 15秒後に自動クローズ（フェイルセーフ）
+            setTimeout(function() {
+              if (printWindow && !printWindow.closed) {
+                printWindow.close();
+                URL.revokeObjectURL(url);
+                // 請求書ポップアップを閉じる
+                var popup = document.getElementById(\'invoicePopup\');
+                if (popup) {
+                  popup.style.display = \'none\';
+                }
+                console.log(\'[請求書印刷] タイムアウトにより印刷ウィンドウを閉じました。\');
+              }
+            }, 15000);
+            
+          } catch (error) {
+            console.error("[請求書印刷] エラーが発生しました:", error);
+            alert("印刷エラーが発生しました: " + error.message);
           }
-          
-          console.log(\'[請求書印刷] 印刷ウィンドウを作成しました。印刷ダイアログが自動表示されます。\');
-          
-          // 印刷完了後の処理（フェイルセーフ）
-          var checkClosed = setInterval(function() {
-            if (printWindow.closed) {
-              clearInterval(checkClosed);
-              URL.revokeObjectURL(url);
-              // 請求書ポップアップを閉じる
-              var popup = document.getElementById(\'invoicePopup\');
-              if (popup) {
-                popup.style.display = \'none\';
-              }
-              console.log(\'[請求書印刷] 印刷ウィンドウが閉じられました。請求書ポップアップも閉じます。\');
-            }
-          }, 1000);
-          
-          // 15秒後に自動クローズ（フェイルセーフ）
-          setTimeout(function() {
-            if (printWindow && !printWindow.closed) {
-              printWindow.close();
-              URL.revokeObjectURL(url);
-              // 請求書ポップアップを閉じる
-              var popup = document.getElementById(\'invoicePopup\');
-              if (popup) {
-                popup.style.display = \'none\';
-              }
-              console.log(\'[請求書印刷] タイムアウトにより印刷ウィンドウを閉じました。\');
-            }
-          }, 15000);
         }
         
         // 繰越金額更新用の関数
@@ -1543,6 +1645,8 @@ class Kntan_Client_Class {
           if (totalAmountElement) {
             totalAmountElement.textContent = totalAmount.toLocaleString();
           }
+          // 繰越金額をグローバル変数に保存
+          window.carryoverAmount = carryoverAmount;
         }
         </script>';
 
