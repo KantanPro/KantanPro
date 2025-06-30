@@ -339,6 +339,18 @@ function printInvoiceContent() {
             carryoverInputInContent.parentNode.replaceChild(carryoverSpan, carryoverInputInContent);
         }
 
+        // お支払い期日inputをテキストに置き換え
+        var paymentDueDateInputInContent = tempDiv.querySelector('#payment-due-date-input');
+        if (paymentDueDateInputInContent) {
+            var paymentDueDateValue = paymentDueDateInputInContent.value;
+            // 日付を「YYYY/MM/DD」形式に整形
+            var formattedDate = paymentDueDateValue ? paymentDueDateValue.replace(/-/g, "/") : "";
+            var paymentDueDateSpan = document.createElement('span');
+            paymentDueDateSpan.style.fontWeight = 'bold';
+            paymentDueDateSpan.textContent = formattedDate;
+            paymentDueDateInputInContent.parentNode.replaceChild(paymentDueDateSpan, paymentDueDateInputInContent);
+        }
+
         // 合計金額を更新
         if (window.invoiceGrandTotal) {
             var totalAmount = window.invoiceGrandTotal + carryoverAmount;
