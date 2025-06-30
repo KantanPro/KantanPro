@@ -1207,10 +1207,24 @@ class Kntan_Client_Class {
                       
                       // 請求金額を表示
                       html += "<div style=\"margin:20px 0;\">";
-                      html += "<div style=\"font-weight:bold;font-size:18px;color:#333;\">";
+                      html += "<div style=\"font-weight:bold;font-size:18px;color:#333;display:flex;align-items:center;gap:10px;\">";
                       html += "請求金額　" + grandTotal.toLocaleString() + "円";
+                      html += "<span style=\"font-size:16px;margin-left:20px;\">繰越金額：</span>";
+                      html += "<input type=\"number\" id=\"carryover-amount\" name=\"carryover_amount\" value=\"0\" min=\"0\" step=\"1\" style=\"width:120px;padding:4px 8px;border:1px solid #ccc;border-radius:4px;font-size:16px;text-align:right;\" onchange=\"updateInvoiceTotal()\">";
+                      html += "<span style=\"font-size:16px;\">円</span>";
                       html += "</div>";
                       html += "</div>";
+                      
+                      // 合計金額表示（請求金額 + 繰越金額）
+                      html += "<div style=\"margin:10px 0 20px 0;\">";
+                      html += "<div style=\"font-weight:bold;font-size:20px;color:#0073aa;display:flex;align-items:center;gap:10px;\">";
+                      html += "<span>合計金額：</span>";
+                      html += "<span id=\"total-amount\">" + grandTotal.toLocaleString() + "</span>";
+                      html += "<span>円</span>";
+                      html += "</div>";
+                      html += "</div>";
+                      // window.invoiceGrandTotal の設定はAjax完了後に直接行う
+                      window.invoiceGrandTotal = grandTotal;
                       
                       // 月別グループの表示
                       res.data.monthly_groups.forEach(function(group){
@@ -1518,6 +1532,17 @@ class Kntan_Client_Class {
               console.log(\'[請求書印刷] タイムアウトにより印刷ウィンドウを閉じました。\');
             }
           }, 15000);
+        }
+        
+        // 繰越金額更新用の関数
+        function updateInvoiceTotal() {
+          var carryoverAmount = parseInt(document.getElementById("carryover-amount").value) || 0;
+          var grandTotal = window.invoiceGrandTotal || 0;
+          var totalAmount = grandTotal + carryoverAmount;
+          var totalAmountElement = document.getElementById("total-amount");
+          if (totalAmountElement) {
+            totalAmountElement.textContent = totalAmount.toLocaleString();
+          }
         }
         </script>';
 
