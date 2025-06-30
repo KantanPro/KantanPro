@@ -158,7 +158,7 @@ class KTPWP_Ajax {
 				wp_send_json_error('client_idが指定されていません');
 			}
 			$table_name = $wpdb->prefix . 'ktp_order';
-			// progress=4（完了）→5（請求済）に一括更新
+			// progress=4（完了）→5（請求済）に一括更新（completion_dateは変更しない）
 			$result = $wpdb->query($wpdb->prepare(
 				"UPDATE {$table_name} SET progress = 5 WHERE client_id = %d AND progress = 4",
 				$client_id
