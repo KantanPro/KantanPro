@@ -2,12 +2,14 @@
 /**
  * Plugin Reference class for KTPWP plugin
  *
- * Handles plugin reference/help documentation display
- * with real-time updates and user-friendly interface.
+ * KantanPro（KTPWP）の公式リファレンス・ヘルプを提供。
+ * - モバイル対応UI、PDF出力、サービス選択ポップアップ、アバター、ヘルプボタン、セキュリティ強化など最新機能を網羅。
+ * - 管理タブ・伝票処理・顧客・サービス・協力会社・レポート・チャット等の使い方を解説。
+ * - バージョンアップ履歴・トラブルシューティングも掲載。
  *
  * @package KTPWP
  * @subpackage Includes
- * @since 1.0.0
+ * @since 1.2.2
  * @author Kantan Pro
  * @copyright 2024 Kantan Pro
  * @license GPL-2.0+
@@ -228,55 +230,16 @@ class KTPWP_Plugin_Reference {
      * @return string HTML content
      */
     private function get_overview_content() {
-        return '<div class="ktpwp-reference-content">'
-            . '<h3>KantanProプラグイン リファレンス</h3>'
-            . '<p>KantanProは、WordPressで動作する業務管理プラグインです。仕事リスト・伝票処理・得意先・サービス・協力会社・レポートの6タブで、ビジネスワークフローを一元管理。スタッフ間チャットや現場の声を反映した機能を搭載。</p>'
-            . '<h4>主な機能</h4>'
+        return '<h2>KantanPro（KTPWP）リファレンス概要</h2>'
             . '<ul>'
-            . '<li>6つの管理タブ（仕事リスト・伝票処理・得意先・サービス・協力会社・レポート）</li>'
-            . '<li>受注案件の進捗管理（7段階）</li>'
-            . '<li>受注書の作成・編集・印刷・PDF保存</li>'
-            . '<li>顧客・サービス・仕入先のマスター管理</li>'
-            . '<li>協力会社商品管理（商品名・単価・数量・単位の詳細管理）</li>'
-            . '<li>スタッフ間チャット（自動スクロール・削除連動）</li>'
-            . '<li>売上・進捗・顧客別レポート</li>'
-            . '<li>直感的なタブUI・ページネーション・ソート・検索</li>'
-            . '<li>案件名インライン編集（リアルタイム更新）</li>'
-            . '<li>レスポンシブデザイン</li>'
-            . '<li>納期管理機能・未請求警告マーク</li>'
+            . '<li>モバイル対応の直感的UI・アバター表示</li>'
+            . '<li>受注書・請求書のPDF出力</li>'
+            . '<li>サービス選択ポップアップ（伝票編集時）</li>'
+            . '<li>スタッフチャット・レポート・進捗管理</li>'
+            . '<li>ヘルプボタン・リファレンス機能</li>'
+            . '<li>強固なセキュリティ（XSS/CSRF/SQLi/権限管理/ファイル検証）</li>'
             . '</ul>'
-            . '<h4>インストール</h4>'
-            . '<ol>'
-            . '<li>プラグインを <code>/wp-content/plugins/</code> にアップロード、または管理画面からインストール</li>'
-            . '<li>プラグインを有効化</li>'
-            . '<li>固定ページに <code>[ktpwp_all_tab]</code> を挿入</li>'
-            . '<li>管理画面「KantanPro」から基本設定（一般設定・メール/SMTP・デザイン・ライセンス・スタッフ管理）を行う</li>'
-            . '</ol>'
-            . '<h4>システム要件</h4>'
-            . '<ul>'
-            . '<li>WordPress 5.0 以上</li>'
-            . '<li>PHP 7.4 以上</li>'
-            . '<li>MySQL 5.6 以上 または MariaDB 10.0 以上</li>'
-            . '<li>推奨メモリ: 256MB 以上</li>'
-            . '</ul>'
-            . '<h4>進捗ステータス</h4>'
-            . '<ul>'
-            . '<li><strong>受付中</strong> - 新規受注、内容確認中</li>'
-            . '<li><strong>見積中</strong> - 見積作成・提案中</li>'
-            . '<li><strong>受注</strong> - 作業実行中</li>'
-            . '<li><strong>完了</strong> - 作業完了、請求書未発行</li>'
-            . '<li><strong>請求済</strong> - 請求書発行済み</li>'
-            . '<li><strong>入金済</strong> - 支払い完了</li>'
-            . '<li><strong>ボツ</strong> - 復活可能なボツ案件</li>'
-            . '</ul>'
-            . '<h4>変更履歴</h4>'
-            . '<ul>'
-            . '<li><strong>1.2.2(beta)</strong>: 個別請求書 印刷 PDF保存、一括請求書発行 印刷 PDF保存、納期・未請求警告マーク</li>'
-            . '<li><strong>1.2.1(beta)</strong>: モバイル表示の改善、進捗状況にボツ追加、納期管理機能を実装、得意先タブの構造変更</li>'
-            . '<li><strong>1.2.0(beta)</strong>: 設定タブの廃止、伝票処理タブの最終的実装、サービス・協力会社ポップアップ強化、行要素数値の最適化</li>'
-            . '<li><strong>1.1.1(beta)</strong>: 協力会社機能の大幅拡張、ページネーション機能の強化</li>'
-            . '</ul>'
-            . '</div>';
+            . '<p>各タブ・機能の詳細は「タブ解説」や「トラブルシューティング」も参照してください。</p>';
     }
 
     /**
@@ -286,18 +249,17 @@ class KTPWP_Plugin_Reference {
      * @return string HTML content
      */
     private function get_tabs_content() {
-        return '<div class="ktpwp-reference-content">'
-            . '<h3>タブ機能説明</h3>'
+        return '<h2>タブ別機能解説</h2>'
             . '<ul>'
-            . '<li><strong>仕事リスト</strong>: 受注案件の進捗管理とステータス追跡（7段階）</li>'
-            . '<li><strong>伝票処理</strong>: 受注書作成・編集・印刷・PDF保存、請求管理</li>'
-            . '<li><strong>得意先</strong>: 顧客情報管理・履歴表示・印刷テンプレート</li>'
-            . '<li><strong>サービス</strong>: サービス・商品マスター管理・価格設定</li>'
-            . '<li><strong>協力会社</strong>: 仕入先・外注先情報管理・商品管理</li>'
-            . '<li><strong>レポート</strong>: 売上分析・進捗状況・データ集計</li>'
-            . '<li><strong>スタッフチャット</strong>: スタッフ間の連絡・現場の声共有</li>'
+            . '<li><b>仕事リスト</b>：案件進捗・検索・ソート・ページネーション</li>'
+            . '<li><b>伝票処理</b>：受注書・請求書の作成・編集・PDF出力・サービス選択ポップアップ</li>'
+            . '<li><b>得意先</b>：顧客マスター管理・編集</li>'
+            . '<li><b>サービス</b>：商品・サービスの登録・編集</li>'
+            . '<li><b>協力会社</b>：協力会社・職能管理</li>'
+            . '<li><b>レポート</b>：売上・進捗・顧客別レポート</li>'
+            . '<li><b>スタッフチャット</b>：スタッフ間のチャット・自動スクロール・削除連動</li>'
             . '</ul>'
-            . '</div>';
+            . '<p>各タブの操作方法・注意点は画面上のヘルプボタンからも確認できます。</p>';
     }
 
     /**
