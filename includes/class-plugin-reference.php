@@ -232,12 +232,14 @@ class KTPWP_Plugin_Reference {
     private function get_overview_content() {
         return '<h2>KantanPro（KTPWP）リファレンス概要</h2>'
             . '<ul>'
-            . '<li>モバイル対応の直感的UI・アバター表示</li>'
+            . '<li>モバイル(iOS/Android)実機でも崩れない直感的UI（gap→margin対応）</li>'
             . '<li>受注書・請求書のPDF出力</li>'
             . '<li>サービス選択ポップアップ（伝票編集時）</li>'
-            . '<li>スタッフチャット・レポート・進捗管理</li>'
-            . '<li>ヘルプボタン・リファレンス機能</li>'
-            . '<li>強固なセキュリティ（XSS/CSRF/SQLi/権限管理/ファイル検証）</li>'
+            . '<li>スタッフチャット（自動スクロール・削除連動）</li>'
+            . '<li>ログインユーザーアバター・スタッフ表示</li>'
+            . '<li>ヘルプ（リファレンス）ボタン</li>'
+            . '<li>強固なセキュリティ（XSS/CSRF/SQLi/権限管理/ファイル検証/ノンス/prepare文）</li>'
+            . '<li>ページネーション・検索・ソート・進捗/納期管理・警告マーク</li>'
             . '</ul>'
             . '<p>各タブ・機能の詳細は「タブ解説」や「トラブルシューティング」も参照してください。</p>';
     }
@@ -251,7 +253,7 @@ class KTPWP_Plugin_Reference {
     private function get_tabs_content() {
         return '<h2>タブ別機能解説</h2>'
             . '<ul>'
-            . '<li><b>仕事リスト</b>：案件進捗・検索・ソート・ページネーション</li>'
+            . '<li><b>仕事リスト</b>：案件進捗・検索・ソート・ページネーション・警告マーク</li>'
             . '<li><b>伝票処理</b>：受注書・請求書の作成・編集・PDF出力・サービス選択ポップアップ</li>'
             . '<li><b>得意先</b>：顧客マスター管理・編集</li>'
             . '<li><b>サービス</b>：商品・サービスの登録・編集</li>'
@@ -285,6 +287,7 @@ class KTPWP_Plugin_Reference {
             . '<li>ログインユーザーのみがプラグイン機能にアクセス可能です</li>'
             . '<li>ページのパーマリンクは分かりやすいものに設定することを推奨します</li>'
             . '<li>ページのテンプレートは「デフォルト」または「全幅」を推奨します</li>'
+            . '<li>モバイル実機での表示も必ずご確認ください（gap→margin対応済み）</li>'
             . '</ul>'
             . '</div>';
     }
@@ -302,9 +305,9 @@ class KTPWP_Plugin_Reference {
             . '<ul>'
             . '<li><b>一般設定</b>: プラグインの基本設定</li>'
             . '<li><b>メール・SMTP設定</b>: メール送信に関する基本設定</li>'
-            . '<li><b>デザイン</b>: プラグインの外観とデザイン設定</li>'
+            . '<li><b>デザイン</b>: プラグインの外観とデザイン設定（モバイルUI・gap→margin対応）</li>'
             . '<li><b>ライセンス設定</b>: アクティベーションキー登録</li>'
-            . '<li><b>スタッフ管理</b>: スタッフの追加・削除</li>'
+            . '<li><b>スタッフ管理</b>: スタッフの追加・削除・アバター表示</li>'
             . '</ul>'
             . '<p><a href="' . esc_url( $settings_url ) . '" target="_blank" style="color: #0073aa;">→ 設定ページを開く</a></p>'
             . '</div>';
@@ -325,6 +328,8 @@ class KTPWP_Plugin_Reference {
             . '<li>ファイルアップロード検証</li>'
             . '<li>ユーザー権限の適切な制御</li>'
             . '<li>データベースアクセスの安全な処理</li>'
+            . '<li>ノンス・トークンによるフォーム保護</li>'
+            . '<li>gap→margin対応によるUI崩れ防止（iOS/Android実機）</li>'
             . '</ul>'
             . '</div>';
     }
@@ -342,6 +347,7 @@ class KTPWP_Plugin_Reference {
             . '<div class="ktpwp-faq-item"><h5>Q: ショートコードを挿入してもプラグインが表示されない</h5><p><strong>A:</strong></p><ul><li>ログインしているかを確認してください</li><li>プラグインが有効化されているかを確認してください</li><li>ショートコードが正しく記述されているかを確認してください：[ktpwp_all_tab]</li></ul></div>'
             . '<div class="ktpwp-faq-item"><h5>Q: データが保存されない</h5><p><strong>A:</strong></p><ul><li>データベースの権限を確認してください</li><li>PHPのメモリ制限を確認してください</li><li>プラグインを一度無効化して再有効化してください</li></ul></div>'
             . '<div class="ktpwp-faq-item"><h5>Q: 請求書PDFが出力できない</h5><p><strong>A:</strong></p><ul><li>サーバーのPHP拡張機能（mbstring, gd等）を確認してください</li><li>ブラウザのポップアップブロックを無効にしてください</li><li>会社情報の設定が完了しているかを確認してください</li></ul></div>'
+            . '<div class="ktpwp-faq-item"><h5>Q: モバイル実機で一部UIが崩れる</h5><p><strong>A:</strong></p><ul><li>CSSキャッシュをクリアしてください</li><li>gap→margin対応済みCSSが反映されているか確認してください</li><li>iOS/Androidのバージョンが古い場合は最新化を推奨します</li></ul></div>'
             . '</div>';
     }
 
