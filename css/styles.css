@@ -2466,9 +2466,13 @@ input[name="tab_item"] {
     resize: vertical;
 }
 
-.cost-items-table .purchase {
+.cost-items-table .purchase-display {
+    display: inline-block;
     min-width: 100px;
-    resize: vertical;
+    padding: 4px;
+    font-size: 13px;
+    color: #666;
+    font-style: italic;
 }
 
 .cost-items-table .amount {

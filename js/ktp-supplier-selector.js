@@ -545,6 +545,10 @@ window.ktpAddCostRowFromSkill = function(skill, currentRow) {
                 <input type="text" name="cost_items[${newIndex}][remarks]" class="cost-item-input remarks" value="">
                 <input type="hidden" name="cost_items[${newIndex}][sort_order]" value="${newIndex + 1}">
             </td>
+            <td>
+                <span class="purchase-display">(^^)</span>
+                <input type="hidden" name="cost_items[${newIndex}][purchase]" value="">
+            </td>
         </tr>
     `;
     

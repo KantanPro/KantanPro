@@ -318,9 +318,9 @@ class KTPWP_Order_UI {
 
             // Purchase (仕入)
             $html .= '<td>';
-            $html .= '<input type="text" name="cost_items[' . $index . '][purchase]" ';
-            $html .= 'value="' . esc_attr( isset($item['purchase']) ? $item['purchase'] : '' ) . '" ';
-            $html .= 'class="cost-item-input purchase" />';
+            $html .= '<span class="purchase-display">(^^)</span>';
+            $html .= '<input type="hidden" name="cost_items[' . $index . '][purchase]" ';
+            $html .= 'value="' . esc_attr( isset($item['purchase']) ? $item['purchase'] : '' ) . '" />';
             $html .= '</td>';
 
             $html .= '</tr>';

@@ -167,7 +167,8 @@
                     <input type="hidden" name="cost_items[${newIndex}][sort_order]" value="${newIndex + 1}">
                 </td>
                 <td>
-                    <input type="text" name="cost_items[${newIndex}][purchase]" class="cost-item-input purchase" value="" disabled>
+                    <span class="purchase-display">(^^)</span>
+                    <input type="hidden" name="cost_items[${newIndex}][purchase]" value="">
                 </td>
             </tr>
         `;
