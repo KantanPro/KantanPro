@@ -166,6 +166,9 @@
                     <input type="text" name="cost_items[${newIndex}][remarks]" class="cost-item-input remarks" value="" disabled>
                     <input type="hidden" name="cost_items[${newIndex}][sort_order]" value="${newIndex + 1}">
                 </td>
+                <td>
+                    <input type="text" name="cost_items[${newIndex}][purchase]" class="cost-item-input purchase" value="" disabled>
+                </td>
             </tr>
         `;
 
@@ -1272,6 +1275,35 @@
             } else {
                 if (window.ktpDebugMode) {
                     console.log('Cost remarks auto-save skipped - item not yet created or missing data');
+                }
+            }
+        });
+
+        // 仕入フィールドのblurイベントで自動保存
+        $(document).on('blur', '.cost-item-input.purchase', function () {
+            const $field = $(this);
+            if ($field.prop('disabled')) return;
+
+            const purchase = $field.val();
+            const $row = $field.closest('tr');
+            const itemId = $row.find('input[name*="[id]"]').val();
+            const orderId = $('input[name="order_id"]').val() || $('#order_id').val();
+
+            if (window.ktpDebugMode) {
+                console.log('Cost purchase auto-save debug:', {
+                    purchase: purchase,
+                    itemId: itemId,
+                    orderId: orderId,
+                    hasNonce: typeof ktp_ajax_nonce !== 'undefined',
+                    hasAjaxurl: typeof ajaxurl !== 'undefined'
+                });
+            }
+
+            if (orderId && itemId && itemId !== '0') {
+                autoSaveItem('cost', itemId, 'purchase', purchase, orderId);
+            } else {
+                if (window.ktpDebugMode) {
+                    console.log('Cost purchase auto-save skipped - item not yet created or missing data');
                 }
             }
         });

@@ -256,6 +256,7 @@ class KTPWP_Order_UI {
         $html .= '<th>' . esc_html__( '単位', 'ktpwp' ) . '</th>';
         $html .= '<th style="text-align:left;">' . esc_html__( '金額', 'ktpwp' ) . '</th>';
         $html .= '<th>' . esc_html__( '備考', 'ktpwp' ) . '</th>';
+        $html .= '<th>' . esc_html__( '仕入', 'ktpwp' ) . '</th>';
         $html .= '</tr>';
         $html .= '</thead>';
         $html .= '<tbody>';
@@ -313,6 +314,13 @@ class KTPWP_Order_UI {
             $html .= '<input type="text" name="cost_items[' . $index . '][remarks]" ';
             $html .= 'value="' . esc_attr( $item['remarks'] ) . '" ';
             $html .= 'class="cost-item-input remarks" />';
+            $html .= '</td>';
+
+            // Purchase (仕入)
+            $html .= '<td>';
+            $html .= '<input type="text" name="cost_items[' . $index . '][purchase]" ';
+            $html .= 'value="' . esc_attr( isset($item['purchase']) ? $item['purchase'] : '' ) . '" ';
+            $html .= 'class="cost-item-input purchase" />';
             $html .= '</td>';
 
             $html .= '</tr>';

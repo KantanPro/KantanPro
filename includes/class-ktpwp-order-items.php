@@ -192,7 +192,7 @@ class KTPWP_Order_Items {
      */
     public function create_cost_items_table() {
         global $wpdb;
-        $my_table_version = '2.2';
+        $my_table_version = '2.3';
         $table_name = $wpdb->prefix . 'ktp_order_cost_items';
         $charset_collate = $wpdb->get_charset_collate();
 
@@ -205,6 +205,7 @@ class KTPWP_Order_Items {
             'quantity DECIMAL(10,2) NOT NULL DEFAULT 0.00',
             'amount INT(11) NOT NULL DEFAULT 0',
             'remarks TEXT',
+            'purchase VARCHAR(255)',
             'sort_order INT NOT NULL DEFAULT 0',
             'created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP',
             'updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
@@ -292,6 +293,21 @@ class KTPWP_Order_Items {
                         error_log( "KTPWP: Failed to migrate column {$column->Field} to DECIMAL(10,2) in cost items table. Error: " . $wpdb->last_error );
                     } else {
                         error_log( "KTPWP: Successfully migrated column {$column->Field} to DECIMAL(10,2) in cost items table." );
+                    }
+                }
+            }
+
+            if ( version_compare( $current_version, '2.3', '<' ) ) {
+                // Add purchase column if not exists
+                $purchase_column = $wpdb->get_results( "SHOW COLUMNS FROM `{$table_name}` LIKE 'purchase'" );
+                if ( empty( $purchase_column ) ) {
+                    $alter_query = "ALTER TABLE `{$table_name}` ADD COLUMN purchase VARCHAR(255) AFTER remarks";
+                    $result = $wpdb->query( $alter_query );
+
+                    if ( $result === false ) {
+                        error_log( "KTPWP: Failed to add purchase column to cost items table. Error: " . $wpdb->last_error );
+                    } else {
+                        error_log( "KTPWP: Successfully added purchase column to cost items table." );
                     }
                 }
             }
@@ -548,6 +564,7 @@ class KTPWP_Order_Items {
                 $unit = isset( $item['unit'] ) ? sanitize_text_field( $item['unit'] ) : '';
                 $amount = isset( $item['amount'] ) ? floatval( $item['amount'] ) : $price * $quantity;
                 $remarks = isset( $item['remarks'] ) ? sanitize_textarea_field( $item['remarks'] ) : '';
+                $purchase = isset( $item['purchase'] ) ? sanitize_text_field( $item['purchase'] ) : '';
                 $supplier_id = isset( $item['supplier_id'] ) ? intval( $item['supplier_id'] ) : null;
 
                 // 商品名が空ならスキップ（force_save時は保存）
@@ -563,9 +580,10 @@ class KTPWP_Order_Items {
                     'quantity' => $quantity,
                     'amount' => $amount,
                     'remarks' => $remarks,
+                    'purchase' => $purchase,
                     'updated_at' => current_time( 'mysql' )
                 );
-                $format = array( '%d', '%s', '%f', '%s', '%f', '%f', '%s', '%s' );
+                $format = array( '%d', '%s', '%f', '%s', '%f', '%f', '%s', '%s', '%s' );
 
                 // supplier_idカラムが存在する場合のみ追加
                 $columns = $wpdb->get_col( $wpdb->prepare( "SHOW COLUMNS FROM `{$table_name}` LIKE %s", 'supplier_id' ) );
@@ -733,6 +751,7 @@ class KTPWP_Order_Items {
             'quantity' => 1,
             'amount' => 0,
             'remarks' => '',
+            'purchase' => '',
             'sort_order' => 1,
             'created_at' => current_time( 'mysql' ),
             'updated_at' => current_time( 'mysql' )
@@ -741,7 +760,7 @@ class KTPWP_Order_Items {
         $result = $wpdb->insert(
             $table_name,
             $data,
-            array( '%d', '%s', '%d', '%s', '%d', '%d', '%s', '%d', '%s', '%s' )
+            array( '%d', '%s', '%d', '%s', '%d', '%d', '%s', '%s', '%d', '%s', '%s' )
         );
 
         if ( $result === false ) {
@@ -869,6 +888,10 @@ class KTPWP_Order_Items {
                 $update_data['remarks'] = sanitize_textarea_field( $field_value );
                 $format[] = '%s';
                 break;
+            case 'purchase':
+                $update_data['purchase'] = sanitize_text_field( $field_value );
+                $format[] = '%s';
+                break;
             case 'sort_order':
                 $update_data['sort_order'] = intval( $field_value );
                 $format[] = '%d';
@@ -936,6 +959,7 @@ class KTPWP_Order_Items {
             'unit' => '式',
             'amount' => 0,
             'remarks' => '',
+            'purchase' => '',
             'sort_order' => $new_sort_order,
             'created_at' => current_time( 'mysql' ),
             'updated_at' => current_time( 'mysql' )
@@ -944,7 +968,7 @@ class KTPWP_Order_Items {
         $result = $wpdb->insert(
             $table_name,
             $data,
-            array( '%d', '%s', '%d', '%d', '%s', '%d', '%s', '%d', '%s', '%s' )
+            array( '%d', '%s', '%d', '%d', '%s', '%d', '%s', '%s', '%d', '%s', '%s' )
         );
 
         if ( $result === false ) {

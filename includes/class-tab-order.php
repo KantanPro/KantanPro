@@ -1585,6 +1585,7 @@ $content .= '</form>';
                 $quantity = isset( $item['quantity'] ) ? floatval( $item['quantity'] ) : 0;
                 $amount = isset( $item['amount'] ) ? floatval( $item['amount'] ) : 0;
                 $remarks = isset( $item['remarks'] ) ? sanitize_textarea_field( $item['remarks'] ) : '';
+                $purchase = isset( $item['purchase'] ) ? sanitize_text_field( $item['purchase'] ) : '';
 
                 // 商品名が空ならスキップ（商品名があれば必ず保存）
                 if ( empty( $product_name ) ) {
@@ -1599,11 +1600,12 @@ $content .= '</form>';
                     'quantity' => $quantity,
                     'amount' => $amount,
                     'remarks' => $remarks,
+                    'purchase' => $purchase,
                     'sort_order' => $sort_order,
                     'updated_at' => current_time( 'mysql' )
                 );
 
-                $format = array( '%d', '%s', '%f', '%s', '%f', '%f', '%s', '%d', '%s' );
+                $format = array( '%d', '%s', '%f', '%s', '%f', '%f', '%s', '%s', '%d', '%s' );
 
                 $used_id = 0;
                 if ( $item_id > 0 ) {

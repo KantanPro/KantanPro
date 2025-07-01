@@ -2466,6 +2466,11 @@ input[name="tab_item"] {
     resize: vertical;
 }
 
+.cost-items-table .purchase {
+    min-width: 100px;
+    resize: vertical;
+}
+
 .cost-items-table .amount {
     background-color: #f0f8ff !important;
     color: #333;
