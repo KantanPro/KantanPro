@@ -3901,3 +3901,61 @@ body.ktpwp-modal-open {
   }
 }
 
+/* --- gap→margin対応: ヘッダー内flex要素 --- */
+.ktp_header .navigation-links > * {
+  margin-right: 4px;
+}
+.ktp_header .navigation-links > *:last-child {
+  margin-right: 0;
+}
+
+.ktp_header .user-avatars-section > * {
+  margin-right: 4px;
+}
+.ktp_header .user-avatars-section > *:last-child {
+  margin-right: 0;
+}
+
+.logged-in-staff-avatars > * {
+  margin-right: 3px;
+}
+.logged-in-staff-avatars > *:last-child {
+  margin-right: 0;
+}
+
+/* gap指定を削除（上書き） */
+.ktp_header .navigation-links,
+.ktp_header .user-avatars-section,
+.logged-in-staff-avatars {
+  gap: 0 !important;
+}
+
+@media (max-width: 768px) {
+  .ktp_header .navigation-links > * {
+    margin-right: 3px;
+    margin-bottom: 2px;
+  }
+  .ktp_header .navigation-links > *:last-child {
+    margin-right: 0;
+  }
+  .ktp_header .user-avatars-section > * {
+    margin-right: 3px;
+    margin-bottom: 2px;
+  }
+  .ktp_header .user-avatars-section > *:last-child {
+    margin-right: 0;
+  }
+  .logged-in-staff-avatars > * {
+    margin-right: 2px;
+    margin-bottom: 2px;
+  }
+  .logged-in-staff-avatars > *:last-child {
+    margin-right: 0;
+  }
+  .ktp_header .navigation-links,
+  .ktp_header .user-avatars-section,
+  .logged-in-staff-avatars {
+    gap: 0 !important;
+  }
+}
+
