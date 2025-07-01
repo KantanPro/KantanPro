@@ -486,7 +486,7 @@ function ktpwp_scripts_and_styles() {
     wp_enqueue_style('ktp-setting-tab', plugins_url('css/ktp-setting-tab.css', __FILE__) . '?v=' . time(), array('ktp-css'), KANTANPRO_PLUGIN_VERSION, 'all');
 
     // Material Symbols アイコンフォントをプリロードとして読み込み
-    wp_enqueue_style('material-symbols-outlined', 'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0', array(), '1.0.0', 'all');
+    wp_enqueue_style('ktpwp-material-icons', 'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0', array(), null);
 
     // Google Fontsのプリロード設定
     add_action('wp_head', function() {

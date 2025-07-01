@@ -3891,3 +3891,13 @@ body.ktpwp-modal-open {
   }
 }
 
+@media (max-width: 768px) {
+  .ktp_header .header-right-section,
+  .ktp_header .navigation-links,
+  .ktp_header .user-avatars-section {
+    display: flex !important;
+    visibility: visible !important;
+    z-index: 1000;
+  }
+}
+
