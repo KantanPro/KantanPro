@@ -3959,3 +3959,42 @@ body.ktpwp-modal-open {
   }
 }
 
+@media screen and (max-width: 767px) {
+  .controller .create-order-btn,
+  .controller #invoiceButton {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    max-width: 40px !important;
+    max-height: 40px !important;
+    border-radius: 6px !important;
+    padding: 0 !important;
+    justify-content: center !important;
+    align-items: center !important;
+    flex-direction: column !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08) !important;
+    position: relative;
+    text-align: center !important;
+    line-height: 1 !important;
+  }
+  .controller .create-order-btn .material-symbols-outlined,
+  .controller #invoiceButton .material-symbols-outlined {
+    font-size: 22px !important;
+    margin: 0 !important;
+    line-height: 1 !important;
+    display: block !important;
+  }
+  .controller .create-order-btn .btn-label,
+  .controller #invoiceButton .btn-label {
+    display: none !important;
+  }
+}
+
+@media screen and (max-width: 767px) {
+  .controller .create-order-btn .btn-label,
+  .controller #invoiceButton .btn-label {
+    display: none !important;
+  }
+}
+

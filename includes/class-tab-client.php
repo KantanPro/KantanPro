@@ -1047,15 +1047,11 @@ class Kntan_Client_Class {
         $should_disable = $is_data_empty || $is_client_excluded;
         $disabled_attr = $should_disable ? 'disabled' : '';
         $button_title = $is_client_excluded ? '受注書作成（対象外顧客のため無効）' : '受注書作成';
-        $controller_html .= '<button type="submit" id="createOrderButton" class="create-order-btn" ' . $disabled_attr . ' title="' . esc_attr($button_title) . '">';
-        $controller_html .= '<span class="material-symbols-outlined" aria-label="作成">create</span> 受注書作成';
-        $controller_html .= '</button>';
+        $controller_html .= '<button type="submit" id="createOrderButton" class="create-order-btn" ' . $disabled_attr . ' title="' . esc_attr($button_title) . '"><span class="material-symbols-outlined" aria-label="作成">create</span><span class="btn-label">受注書作成</span></button>';
         $controller_html .= '</form>';
 
         // 請求書発行ボタンを追加
-        $controller_html .= '<button id="invoiceButton" title="請求書発行">'
-            . '<span class="material-symbols-outlined" aria-label="請求書">receipt_long</span> 請求書発行'
-            . '</button>';
+        $controller_html .= '<button id="invoiceButton" title="請求書発行"><span class="material-symbols-outlined" aria-label="請求書">receipt_long</span><span class="btn-label">請求書発行</span></button>';
 
         // 請求書発行ポップアップ
         $controller_html .= '<div id="invoicePopup" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;">';
