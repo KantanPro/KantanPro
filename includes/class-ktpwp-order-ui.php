@@ -317,10 +317,12 @@ class KTPWP_Order_UI {
             $html .= '</td>';
 
             // Purchase (仕入)
+            $purchase_value = isset($item['purchase']) ? $item['purchase'] : '';
+            $display_text = !empty($purchase_value) ? esc_html($purchase_value) : '(^^)';
             $html .= '<td>';
-            $html .= '<span class="purchase-display">(^^)</span>';
+            $html .= '<span class="purchase-display">' . $display_text . '</span>';
             $html .= '<input type="hidden" name="cost_items[' . $index . '][purchase]" ';
-            $html .= 'value="' . esc_attr( isset($item['purchase']) ? $item['purchase'] : '' ) . '" />';
+            $html .= 'value="' . esc_attr($purchase_value) . '" />';
             $html .= '</td>';
 
             $html .= '</tr>';

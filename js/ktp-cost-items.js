@@ -603,6 +603,12 @@
         displaySupplierServicePrice($targetRow, serviceData);
         $targetRow.find('input').prop('disabled', false);
         
+        // 協力会社名を「仕入」フィールドに表示
+        if (window.ktpCurrentSupplierName) {
+            $targetRow.find('.purchase-display').text(window.ktpCurrentSupplierName);
+            $targetRow.find('input[name*="[purchase]"]').val(window.ktpCurrentSupplierName);
+        }
+        
         // DB即時反映
         const itemId = $targetRow.find('input[name*="[id]"]').val();
         const orderId = $('input[name="order_id"]').val() || $('#order_id').val();
@@ -623,6 +629,11 @@
             autoSaveItem('cost', itemId, 'price', serviceData.unit_price, orderId);
             autoSaveItem('cost', itemId, 'quantity', serviceData.quantity, orderId);
             autoSaveItem('cost', itemId, 'unit', serviceData.unit, orderId);
+            
+            // 協力会社名を「仕入」フィールドに保存
+            if (window.ktpCurrentSupplierName) {
+                autoSaveItem('cost', itemId, 'purchase', window.ktpCurrentSupplierName, orderId);
+            }
             
             // supplier_idも保存（設定されている場合）
             if (window.ktpCurrentSupplierId) {
@@ -689,6 +700,12 @@
         $newRow.find('input').prop('disabled', false);
         displaySupplierServicePrice($newRow, serviceData);
         
+        // 協力会社名を「仕入」フィールドに表示
+        if (window.ktpCurrentSupplierName) {
+            $newRow.find('.purchase-display').text(window.ktpCurrentSupplierName);
+            $newRow.find('input[name*="[purchase]"]').val(window.ktpCurrentSupplierName);
+        }
+        
         // DB新規作成
         const orderId = $('input[name="order_id"]').val() || $('#order_id').val();
         
@@ -711,6 +728,11 @@
                     autoSaveItem('cost', newItemId, 'price', serviceData.unit_price, orderId);
                     autoSaveItem('cost', newItemId, 'quantity', serviceData.quantity, orderId);
                     autoSaveItem('cost', newItemId, 'unit', serviceData.unit, orderId);
+                    
+                    // 協力会社名を「仕入」フィールドに保存
+                    if (window.ktpCurrentSupplierName) {
+                        autoSaveItem('cost', newItemId, 'purchase', window.ktpCurrentSupplierName, orderId);
+                    }
                     
                     // supplier_idも保存（設定されている場合）
                     if (window.ktpCurrentSupplierId) {
