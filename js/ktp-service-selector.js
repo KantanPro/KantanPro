@@ -751,7 +751,7 @@
         // ポップアップを閉じる（イベントハンドラーもクリーンアップ）
         $(document).off('click.ktp-pagination mouseenter.ktp-pagination mouseleave.ktp-pagination');
         $(document).off('mouseenter.ktp-service-item mouseleave.ktp-service-item');
-        $('#ktp-service-selector-popup').remove();
+        // $('#ktp-service-selector-popup').remove(); // 追加時は自動で閉じない
 
         // 成功メッセージ
         if (typeof showSuccessNotification === 'function') {
