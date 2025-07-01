@@ -526,6 +526,10 @@ window.ktpAddCostRowFromSkill = function(skill, currentRow) {
     });
     
     // 新規行のHTMLを生成
+    const purchaseDisplayText = window.ktpCurrentSupplierName && skill.product_name ? 
+        `${window.ktpCurrentSupplierName} > ${skill.product_name}` : 
+        (window.ktpCurrentSupplierName || '(^^)');
+    
     const newRowHtml = `
         <tr class="cost-item-row" data-row-id="0" data-newly-added="true">
             <td class="actions-column">
@@ -552,8 +556,8 @@ window.ktpAddCostRowFromSkill = function(skill, currentRow) {
                 <input type="hidden" name="cost_items[${newIndex}][sort_order]" value="${newIndex + 1}">
             </td>
             <td>
-                <span class="purchase-display">${window.ktpCurrentSupplierName || '(^^)'}</span>
-                <input type="hidden" name="cost_items[${newIndex}][purchase]" value="${window.ktpCurrentSupplierName || ''}">
+                <span class="purchase-display">${purchaseDisplayText}</span>
+                <input type="hidden" name="cost_items[${newIndex}][purchase]" value="${purchaseDisplayText}">
             </td>
         </tr>
     `;
@@ -620,7 +624,10 @@ window.ktpAddCostRowFromSkill = function(skill, currentRow) {
                     
                     // 協力会社名を「仕入」フィールドに保存
                     if (window.ktpCurrentSupplierName) {
-                        autoSaveItem('cost', newItemId, 'purchase', window.ktpCurrentSupplierName, orderId);
+                        const purchaseDisplayText = window.ktpCurrentSupplierName && skill.product_name ? 
+                            `${window.ktpCurrentSupplierName} > ${skill.product_name}` : 
+                            window.ktpCurrentSupplierName;
+                        autoSaveItem('cost', newItemId, 'purchase', purchaseDisplayText, orderId);
                     }
                     
                     // 金額も明示的に保存
@@ -678,8 +685,13 @@ window.ktpUpdateCostRowFromSkill = function(skill, currentRow) {
             
             // 協力会社名を「仕入」フィールドに表示
             if (window.ktpCurrentSupplierName) {
-                currentRow.find('.purchase-display').text(window.ktpCurrentSupplierName);
-                currentRow.find('input[name*="[purchase]"]').val(window.ktpCurrentSupplierName);
+                const productName = skill.product_name;
+                const purchaseDisplayText = window.ktpCurrentSupplierName && productName ? 
+                    `${window.ktpCurrentSupplierName} > ${productName}` : 
+                    window.ktpCurrentSupplierName;
+                
+                currentRow.find('.purchase-display').text(purchaseDisplayText);
+                currentRow.find('input[name*="[purchase]"]').val(purchaseDisplayText);
             }
             // 金額を再計算
             if (typeof calculateAmount === 'function') {
@@ -701,7 +713,10 @@ window.ktpUpdateCostRowFromSkill = function(skill, currentRow) {
                     
                     // 協力会社名を「仕入」フィールドに保存
                     if (window.ktpCurrentSupplierName) {
-                        autoSaveItem('cost', itemId, 'purchase', window.ktpCurrentSupplierName, orderId);
+                        const purchaseDisplayText = window.ktpCurrentSupplierName && skill.product_name ? 
+                            `${window.ktpCurrentSupplierName} > ${skill.product_name}` : 
+                            window.ktpCurrentSupplierName;
+                        autoSaveItem('cost', itemId, 'purchase', purchaseDisplayText, orderId);
                     }
                     if (supplierId && supplierId > 0) {
                         autoSaveItem('cost', itemId, 'supplier_id', supplierId, orderId);

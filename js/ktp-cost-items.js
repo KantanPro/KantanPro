@@ -605,8 +605,13 @@
         
         // 協力会社名を「仕入」フィールドに表示
         if (window.ktpCurrentSupplierName) {
-            $targetRow.find('.purchase-display').text(window.ktpCurrentSupplierName);
-            $targetRow.find('input[name*="[purchase]"]').val(window.ktpCurrentSupplierName);
+            const productName = serviceData.product_name;
+            const purchaseDisplayText = window.ktpCurrentSupplierName && productName ? 
+                `${window.ktpCurrentSupplierName} > ${productName}` : 
+                window.ktpCurrentSupplierName;
+            
+            $targetRow.find('.purchase-display').text(purchaseDisplayText);
+            $targetRow.find('input[name*="[purchase]"]').val(purchaseDisplayText);
         }
         
         // DB即時反映
@@ -632,7 +637,11 @@
             
             // 協力会社名を「仕入」フィールドに保存
             if (window.ktpCurrentSupplierName) {
-                autoSaveItem('cost', itemId, 'purchase', window.ktpCurrentSupplierName, orderId);
+                const productName = serviceData.product_name;
+                const purchaseDisplayText = window.ktpCurrentSupplierName && productName ? 
+                    `${window.ktpCurrentSupplierName} > ${productName}` : 
+                    window.ktpCurrentSupplierName;
+                autoSaveItem('cost', itemId, 'purchase', purchaseDisplayText, orderId);
             }
             
             // supplier_idも保存（設定されている場合）
@@ -702,8 +711,13 @@
         
         // 協力会社名を「仕入」フィールドに表示
         if (window.ktpCurrentSupplierName) {
-            $newRow.find('.purchase-display').text(window.ktpCurrentSupplierName);
-            $newRow.find('input[name*="[purchase]"]').val(window.ktpCurrentSupplierName);
+            const productName = serviceData.product_name;
+            const purchaseDisplayText = window.ktpCurrentSupplierName && productName ? 
+                `${window.ktpCurrentSupplierName} > ${productName}` : 
+                window.ktpCurrentSupplierName;
+            
+            $newRow.find('.purchase-display').text(purchaseDisplayText);
+            $newRow.find('input[name*="[purchase]"]').val(purchaseDisplayText);
         }
         
         // DB新規作成
@@ -731,7 +745,11 @@
                     
                     // 協力会社名を「仕入」フィールドに保存
                     if (window.ktpCurrentSupplierName) {
-                        autoSaveItem('cost', newItemId, 'purchase', window.ktpCurrentSupplierName, orderId);
+                        const productName = serviceData.product_name;
+                        const purchaseDisplayText = window.ktpCurrentSupplierName && productName ? 
+                            `${window.ktpCurrentSupplierName} > ${productName}` : 
+                            window.ktpCurrentSupplierName;
+                        autoSaveItem('cost', newItemId, 'purchase', purchaseDisplayText, orderId);
                     }
                     
                     // supplier_idも保存（設定されている場合）
