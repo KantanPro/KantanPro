@@ -1195,6 +1195,18 @@
             }
         });
 
+        // 単価フィールドのinputイベントでリアルタイム計算
+        $(document).on('input', '.cost-item-input.price', function () {
+            const $field = $(this);
+            // フィールドが無効なら何もしない (新規行で商品名入力前の状態)
+            if ($field.prop('disabled')) return;
+
+            const $row = $field.closest('tr');
+            
+            // リアルタイムで金額計算を実行
+            calculateAmount($row);
+        });
+
         // 単価フィールドのblurイベントで自動保存
         $(document).on('blur', '.cost-item-input.price', function () {
             const $field = $(this);
@@ -1205,9 +1217,6 @@
             const $row = $field.closest('tr');
             const itemId = $row.find('input[name*="[id]"]').val();
             const orderId = $('input[name="order_id"]').val() || $('#order_id').val();
-
-            // 金額を再計算 (calculateAmountはinputイベントで呼ばれるが、blurでも念のため)
-            // calculateAmount($row); // これがamountの保存もトリガーする可能性
 
             if (window.ktpDebugMode) {
                 console.log('Cost price auto-save debug:', {
@@ -1229,6 +1238,17 @@
             }
         });
 
+        // 数量フィールドのinputイベントでリアルタイム計算
+        $(document).on('input', '.cost-item-input.quantity', function () {
+            const $field = $(this);
+            if ($field.prop('disabled')) return;
+
+            const $row = $field.closest('tr');
+            
+            // リアルタイムで金額計算を実行
+            calculateAmount($row);
+        });
+
         // 数量フィールドのblurイベントで自動保存
         $(document).on('blur', '.cost-item-input.quantity', function () {
             const $field = $(this);
@@ -1238,9 +1258,6 @@
             const $row = $field.closest('tr');
             const itemId = $row.find('input[name*="[id]"]').val();
             const orderId = $('input[name="order_id"]').val() || $('#order_id').val();
-
-            // 金額を再計算 (calculateAmountはinputイベントで呼ばれるが、blurでも念のため)
-            // calculateAmount($row);
 
             if (window.ktpDebugMode) {
                 console.log('Cost quantity auto-save debug:', {
