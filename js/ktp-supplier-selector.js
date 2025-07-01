@@ -529,10 +529,7 @@ window.ktpAddCostRowFromSkill = function(skill, currentRow) {
     const newRowHtml = `
         <tr class="cost-item-row" data-row-id="0" data-newly-added="true">
             <td class="actions-column">
-                <span class="drag-handle" title="ドラッグして並び替え">&#9776;</span>
-                <button type="button" class="btn-add-row" title="行を追加">+</button>
-                <button type="button" class="btn-delete-row" title="行を削除">×</button>
-                <button type="button" class="btn-move-row" title="協力会社選択">></button>
+                <span class="drag-handle" title="ドラッグして並び替え">&#9776;</span><button type="button" class="btn-add-row" title="行を追加">+</button><button type="button" class="btn-delete-row" title="行を削除">×</button><button type="button" class="btn-move-row" title="協力会社選択">></button>
             </td>
             <td>
                 <input type="text" name="cost_items[${newIndex}][product_name]" class="cost-item-input product-name" value="${skill.product_name || ''}">
