@@ -3,18 +3,18 @@ Contributors: kantanpro
 Tags: workflow, order management, business, client, service, supplier, invoice, report, chat, product management, PDF, mobile, avatar
 Requires at least: 5.0
 Tested up to: 6.5
-Stable tag: 1.2.2(beta)
+Stable tag: 1.2.5(beta)
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
 == 説明 ==
 KantanProは、WordPressで動作する業務管理・受注進捗・請求・顧客・サービス・協力会社・レポート・スタッフチャットまで一元管理できる多機能プラグインです。
-- モバイル(iOS/Android)実機でも崩れない直感的なUI（gap→margin対応）
+- モバイル(iOS/Android)実機でも崩れない直感的UI（gap→margin対応）
 - 受注書・請求書のPDF出力
 - サービス選択ポップアップ（伝票編集時）
+- スタッフチャット（自動スクロール・削除連動）
 - ログインユーザーアバター・スタッフ表示
 - ヘルプ（リファレンス）ボタン
-- スタッフチャット（自動スクロール・削除連動）
 - 強固なセキュリティ（XSS/CSRF/SQLi/権限管理/ファイル検証/ノンス/prepare文）
 - ページネーション・検索・ソート・進捗/納期管理・警告マーク
 
@@ -37,6 +37,7 @@ KantanProは、WordPressで動作する業務管理・受注進捗・請求・�
 - ファイルアップロード検証
 - 権限管理・安全なDBアクセス
 - ノンス・トークンによるフォーム保護
+- gap→margin対応によるUI崩れ防止（iOS/Android実機）
 
 == システム要件 ==
 * WordPress 5.0 以上
@@ -58,6 +59,14 @@ KantanProは、WordPressで動作する業務管理・受注進捗・請求・�
 5. モバイルでも快適に操作可能
 
 == 変更履歴 ==
+= 1.2.5(beta) =
+* PDF出力機能の強化
+* UI/UXの改善（gap→margin対応、アバター表示強化）
+* スタッフチャット機能の安定化
+* サービス選択ポップアップの改善
+* セキュリティ強化
+* その他バグ修正
+
 = 1.2.2(beta) =
 * 個別請求書・一括請求書のPDF保存
 * 納期・未請求警告マーク
