@@ -36,7 +36,7 @@ class KTPWP_Setting_DB {
         );
 
         $columns_sql = array_values( $columns_def );
-        $table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) );
+        $table_exists = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table_name));
 
         if ( $table_exists !== $table_name ) {
             $sql = "CREATE TABLE `{$table_name}` (" . implode( ', ', $columns_sql ) . ", PRIMARY KEY (id)) {$charset_collate};";

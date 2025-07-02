@@ -121,7 +121,7 @@ class KTPWP_Order_Items {
             return false;
         } else {
             // Table exists, check for missing columns
-            $existing_columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$table_name}`", 0 );
+            $existing_columns = $wpdb->get_col($wpdb->prepare("SHOW COLUMNS FROM %s", $table_name), 0);
             $def_column_names = array();
 
             foreach ( $columns_def as $def ) {
@@ -136,7 +136,7 @@ class KTPWP_Order_Items {
                         continue;
                     }
                     $def = $columns_def[ $i ];
-                    $alter_query = "ALTER TABLE `{$table_name}` ADD COLUMN {$def}";
+                    $alter_query = $wpdb->prepare("ALTER TABLE %s ADD COLUMN %s", $table_name, $def);
                     $result = $wpdb->query( $alter_query );
 
                     if ( $result === false ) {
@@ -146,7 +146,7 @@ class KTPWP_Order_Items {
             }
 
             // Check and add UNIQUE KEY if not exists
-            $indexes = $wpdb->get_results( "SHOW INDEX FROM `{$table_name}`" );
+            $indexes = $wpdb->get_results($wpdb->prepare("SHOW INDEX FROM %s", $table_name));
             $has_unique_id = false;
             foreach ( $indexes as $idx ) {
                 if ( $idx->Key_name === 'id' && $idx->Non_unique == 0 ) {
@@ -155,7 +155,7 @@ class KTPWP_Order_Items {
                 }
             }
             if ( ! $has_unique_id ) {
-                $wpdb->query( "ALTER TABLE `{$table_name}` ADD UNIQUE (id)" );
+                $wpdb->query($wpdb->prepare("ALTER TABLE %s ADD UNIQUE (id)", $table_name));
             }
 
             // Force migration of DECIMAL columns to INT for version 2.0
@@ -163,17 +163,17 @@ class KTPWP_Order_Items {
 
             if ( version_compare( $current_version, '2.1', '<' ) ) {
                 // Check current column types and migrate if needed
-                $column_info = $wpdb->get_results( "SHOW COLUMNS FROM `{$table_name}` WHERE Field IN ('price', 'quantity')" );
+                $column_info = $wpdb->get_results( $wpdb->prepare( "SHOW COLUMNS FROM `%s` WHERE Field IN ('price', 'quantity')", $table_name ) );
 
                 foreach ( $column_info as $column ) {
                     // Convert to DECIMAL(10,2) for price and quantity
-                    $alter_query = "ALTER TABLE `{$table_name}` MODIFY `{$column->Field}` DECIMAL(10,2) NOT NULL DEFAULT 0.00";
+                    $alter_query = $wpdb->prepare("ALTER TABLE %s MODIFY `%s` DECIMAL(10,2) NOT NULL DEFAULT 0.00", $table_name, $column->Field);
                     $result = $wpdb->query( $alter_query );
 
                     if ( $result === false ) {
-                        error_log( "KTPWP: Failed to migrate column {$column->Field} to DECIMAL(10,2) in invoice items table. Error: " . $wpdb->last_error );
+                        error_log( $wpdb->prepare("KTPWP: Failed to migrate column %s to DECIMAL(10,2) in invoice items table. Error: %s", $column->Field, $wpdb->last_error) );
                     } else {
-                        error_log( "KTPWP: Successfully migrated column {$column->Field} to DECIMAL(10,2) in invoice items table." );
+                        error_log( $wpdb->prepare("KTPWP: Successfully migrated column %s to DECIMAL(10,2) in invoice items table.", $column->Field) );
                     }
                 }
             }
@@ -242,7 +242,7 @@ class KTPWP_Order_Items {
             return false;
         } else {
             // Table exists, check for missing columns
-            $existing_columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$table_name}`", 0 );
+            $existing_columns = $wpdb->get_col($wpdb->prepare("SHOW COLUMNS FROM %s", $table_name), 0);
             $def_column_names = array();
 
             foreach ( $columns_def as $def ) {
@@ -257,7 +257,7 @@ class KTPWP_Order_Items {
                         continue;
                     }
                     $def = $columns_def[ $i ];
-                    $alter_query = "ALTER TABLE `{$table_name}` ADD COLUMN {$def}";
+                    $alter_query = $wpdb->prepare("ALTER TABLE %s ADD COLUMN %s", $table_name, $def);
                     $result = $wpdb->query( $alter_query );
 
                     if ( $result === false ) {
@@ -267,7 +267,7 @@ class KTPWP_Order_Items {
             }
 
             // Check and add UNIQUE KEY if not exists
-            $indexes = $wpdb->get_results( "SHOW INDEX FROM `{$table_name}`" );
+            $indexes = $wpdb->get_results($wpdb->prepare("SHOW INDEX FROM %s", $table_name));
             $has_unique_id = false;
             foreach ( $indexes as $idx ) {
                 if ( $idx->Key_name === 'id' && $idx->Non_unique == 0 ) {
@@ -276,7 +276,7 @@ class KTPWP_Order_Items {
                 }
             }
             if ( ! $has_unique_id ) {
-                $wpdb->query( "ALTER TABLE `{$table_name}` ADD UNIQUE (id)" );
+                $wpdb->query($wpdb->prepare("ALTER TABLE %s ADD UNIQUE (id)", $table_name));
             }
 
             // Version upgrade migrations
@@ -284,44 +284,44 @@ class KTPWP_Order_Items {
 
             if ( version_compare( $current_version, '2.2', '<' ) ) {
                 // Migrate columns to DECIMAL(10,2) for price and quantity
-                $column_info = $wpdb->get_results( "SHOW COLUMNS FROM `{$table_name}` WHERE Field IN ('price', 'quantity')" );
+                $column_info = $wpdb->get_results( $wpdb->prepare( "SHOW COLUMNS FROM `%s` WHERE Field IN ('price', 'quantity')", $table_name ) );
 
                 foreach ( $column_info as $column ) {
-                    $alter_query = "ALTER TABLE `{$table_name}` MODIFY `{$column->Field}` DECIMAL(10,2) NOT NULL DEFAULT 0.00";
+                    $alter_query = $wpdb->prepare("ALTER TABLE %s MODIFY `%s` DECIMAL(10,2) NOT NULL DEFAULT 0.00", $table_name, $column->Field);
                     $result = $wpdb->query( $alter_query );
 
                     if ( $result === false ) {
-                        error_log( "KTPWP: Failed to migrate column {$column->Field} to DECIMAL(10,2) in cost items table. Error: " . $wpdb->last_error );
+                        error_log( $wpdb->prepare("KTPWP: Failed to migrate column %s to DECIMAL(10,2) in cost items table. Error: %s", $column->Field, $wpdb->last_error) );
                     } else {
-                        error_log( "KTPWP: Successfully migrated column {$column->Field} to DECIMAL(10,2) in cost items table." );
+                        error_log( $wpdb->prepare("KTPWP: Successfully migrated column %s to DECIMAL(10,2) in cost items table.", $column->Field) );
                     }
                 }
             }
 
             if ( version_compare( $current_version, '2.3', '<' ) ) {
                 // Add purchase column if not exists
-                $purchase_column = $wpdb->get_results( "SHOW COLUMNS FROM `{$table_name}` LIKE 'purchase'" );
-                if ( empty( $purchase_column ) ) {
-                    $alter_query = "ALTER TABLE `{$table_name}` ADD COLUMN purchase VARCHAR(255) AFTER remarks";
+                $purchase_column = $wpdb->get_results($wpdb->prepare("SHOW COLUMNS FROM %s LIKE 'purchase'", $table_name));
+                if ( empty($purchase_column) ) {
+                    $alter_query = $wpdb->prepare("ALTER TABLE %s ADD COLUMN purchase VARCHAR(255) AFTER remarks", $table_name);
                     $result = $wpdb->query( $alter_query );
 
                     if ( $result === false ) {
-                        error_log( "KTPWP: Failed to add purchase column to cost items table. Error: " . $wpdb->last_error );
+                        error_log( $wpdb->prepare("KTPWP: Failed to add purchase column to cost items table. Error: %s", $wpdb->last_error) );
                     } else {
-                        error_log( "KTPWP: Successfully added purchase column to cost items table." );
+                        error_log( $wpdb->prepare("KTPWP: Successfully added purchase column to cost items table.") );
                     }
                 }
             }
 
             // 既存テーブルにカラムがなければ追加
-            $ordered_column = $wpdb->get_results( "SHOW COLUMNS FROM `{$table_name}` LIKE 'ordered'" );
-            if ( empty( $ordered_column ) ) {
-                $alter_query = "ALTER TABLE `{$table_name}` ADD COLUMN ordered TINYINT(1) NOT NULL DEFAULT 0 AFTER purchase";
+            $ordered_column = $wpdb->get_results($wpdb->prepare("SHOW COLUMNS FROM %s LIKE 'ordered'", $table_name));
+            if ( empty($ordered_column) ) {
+                $alter_query = $wpdb->prepare("ALTER TABLE %s ADD COLUMN ordered TINYINT(1) NOT NULL DEFAULT 0 AFTER purchase", $table_name);
                 $result = $wpdb->query( $alter_query );
                 if ( $result === false ) {
-                    error_log( "KTPWP: Failed to add ordered column to cost items table. Error: " . $wpdb->last_error );
+                    error_log( $wpdb->prepare("KTPWP: Failed to add ordered column to cost items table. Error: %s", $wpdb->last_error) );
                 } else {
-                    error_log( "KTPWP: Successfully added ordered column to cost items table." );
+                    error_log( $wpdb->prepare("KTPWP: Successfully added ordered column to cost items table.") );
                 }
             }
 
@@ -599,7 +599,7 @@ class KTPWP_Order_Items {
                 $format = array( '%d', '%s', '%f', '%s', '%f', '%f', '%s', '%s', '%s' );
 
                 // supplier_idカラムが存在する場合のみ追加
-                $columns = $wpdb->get_col( $wpdb->prepare( "SHOW COLUMNS FROM `{$table_name}` LIKE %s", 'supplier_id' ) );
+                $columns = $wpdb->get_col($wpdb->prepare("SHOW COLUMNS FROM %s LIKE %s", $table_name, 'supplier_id'), 0);
                 if ( !empty($columns) ) {
                     $data['supplier_id'] = $supplier_id;
                     $format[] = '%d';
@@ -688,7 +688,7 @@ class KTPWP_Order_Items {
             'supplier_id'
         ));
         if (empty($column)) {
-            $result = $wpdb->query("ALTER TABLE `{$table_name}` ADD COLUMN supplier_id INT(11) DEFAULT NULL AFTER order_id");
+            $result = $wpdb->query($wpdb->prepare("ALTER TABLE %s ADD COLUMN supplier_id INT(11) DEFAULT NULL AFTER order_id", $table_name));
             if ($result === false) {
                 error_log('KTPWP: supplier_idカラムの自動追加に失敗: ' . $wpdb->last_error);
                 return false;
@@ -911,7 +911,7 @@ class KTPWP_Order_Items {
                 break;
             case 'supplier_id':
                 // supplier_idカラムが存在する場合のみ更新
-                $columns = $wpdb->get_col( $wpdb->prepare( "SHOW COLUMNS FROM `{$table_name}` LIKE %s", 'supplier_id' ) );
+                $columns = $wpdb->get_col($wpdb->prepare("SHOW COLUMNS FROM %s LIKE %s", $table_name, 'supplier_id'), 0);
                 if ( !empty($columns) ) {
                     $update_data['supplier_id'] = intval( $field_value ) ?: null;
                     $format[] = '%d';

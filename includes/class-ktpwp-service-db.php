@@ -139,7 +139,7 @@ class KTPWP_Service_DB {
         // Get last ID if data_id is 0
         if ( $data_id === 0 ) {
             $last_id = $wpdb->get_var(
-                "SELECT id FROM {$table_name} ORDER BY id DESC LIMIT 1"
+                $wpdb->prepare("SELECT id FROM {$table_name} ORDER BY id DESC LIMIT %d", 1)
             );
             $data_id = $last_id ? $last_id : 1;
         }

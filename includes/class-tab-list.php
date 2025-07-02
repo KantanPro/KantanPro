@@ -123,7 +123,16 @@ class Kantan_List_Class {
             foreach ($orders_for_invoice_warning as $order) {
                 $completion_date = $order->completion_date;
                 if (empty($completion_date)) continue;
-                $completion_dt = new DateTime($completion_date);
+                // 日付フォーマットチェック
+                $dt = DateTime::createFromFormat('Y-m-d', $completion_date);
+                $errors = DateTime::getLastErrors();
+                if ($dt === false || $errors['warning_count'] > 0 || $errors['error_count'] > 0) {
+                    if (defined('WP_DEBUG') && WP_DEBUG) {
+                        error_log("KTPWP: 不正なcompletion_date検出: " . print_r($completion_date, true));
+                    }
+                    continue;
+                }
+                $completion_dt = $dt;
                 $year = (int)$completion_dt->format('Y');
                 $month = (int)$completion_dt->format('m');
                 $closing_day = $order->closing_day;
