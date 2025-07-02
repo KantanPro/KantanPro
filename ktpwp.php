@@ -2,7 +2,7 @@
 /**
  * Plugin Name: KantanPro
  * Plugin URI: https://www.kantanpro.com/
- * Description: あなたのビジネスのハブとなるシステムです。ショートコード[ktpwp_all_tab]を固定ページに設置してください。
+ * Description: ビジネスハブシステム。ショートコード[ktpwp_all_tab]を固定ページに設置してください。
  * Version: 1.2.9(beta)
  * Author: KantanPro
  * Author URI: https://www.kantanpro.com/developer-profile/
@@ -32,7 +32,7 @@ if ( ! defined( 'KANTANPRO_PLUGIN_NAME' ) ) {
 }
 if ( ! defined( 'KANTANPRO_PLUGIN_DESCRIPTION' ) ) {
     // 翻訳読み込み警告を回避するため、initアクションで設定
-    define( 'KANTANPRO_PLUGIN_DESCRIPTION', 'あなたのビジネスのハブとなるシステムです。ショートコード[ktpwp_all_tab]を固定ページに設置してください。' );
+    define( 'KANTANPRO_PLUGIN_DESCRIPTION', 'ビジネスハブシステム。ショートコード[ktpwp_all_tab]を固定ページに設置してください。' );
 }
 
 // Define KTPWP_PLUGIN_VERSION if not already defined, possibly aliasing KANTANPRO_PLUGIN_VERSION

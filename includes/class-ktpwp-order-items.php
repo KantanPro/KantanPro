@@ -124,10 +124,18 @@ class KTPWP_Order_Items {
             $existing_columns = $wpdb->get_col("SHOW COLUMNS FROM `{$table_name}`", 0);
             $def_column_names = array();
 
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('KTPWP: Invoice items table exists. Existing columns: ' . implode(', ', $existing_columns));
+            }
+
             foreach ( $columns_def as $def ) {
                 if ( preg_match( '/^([a-zA-Z0-9_]+)/', $def, $m ) ) {
                     $def_column_names[] = $m[1];
                 }
+            }
+
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('KTPWP: Required columns: ' . implode(', ', $def_column_names));
             }
 
             foreach ( $def_column_names as $i => $col_name ) {
@@ -136,10 +144,13 @@ class KTPWP_Order_Items {
                         continue;
                     }
                     $def = $columns_def[ $i ];
+                    if (defined('WP_DEBUG') && WP_DEBUG) {
+                        error_log("KTPWP: Adding missing column '{$col_name}' to invoice items table with definition: {$def}");
+                    }
                     $result = $wpdb->query("ALTER TABLE `{$table_name}` ADD COLUMN {$def}");
 
                     if ( $result === false ) {
-                        error_log( 'KTPWP: Failed to add column ' . $col_name . ' to invoice items table' );
+                        error_log( 'KTPWP: Failed to add column ' . $col_name . ' to invoice items table. Error: ' . $wpdb->last_error );
                     } else {
                         error_log( 'KTPWP: Successfully added column ' . $col_name . ' to invoice items table' );
                     }
@@ -245,10 +256,18 @@ class KTPWP_Order_Items {
             $existing_columns = $wpdb->get_col("SHOW COLUMNS FROM `{$table_name}`", 0);
             $def_column_names = array();
 
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('KTPWP: Cost items table exists. Existing columns: ' . implode(', ', $existing_columns));
+            }
+
             foreach ( $columns_def as $def ) {
                 if ( preg_match( '/^([a-zA-Z0-9_]+)/', $def, $m ) ) {
                     $def_column_names[] = $m[1];
                 }
+            }
+
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('KTPWP: Required columns: ' . implode(', ', $def_column_names));
             }
 
             foreach ( $def_column_names as $i => $col_name ) {
@@ -257,10 +276,13 @@ class KTPWP_Order_Items {
                         continue;
                     }
                     $def = $columns_def[ $i ];
+                    if (defined('WP_DEBUG') && WP_DEBUG) {
+                        error_log("KTPWP: Adding missing column '{$col_name}' to cost items table with definition: {$def}");
+                    }
                     $result = $wpdb->query("ALTER TABLE `{$table_name}` ADD COLUMN {$def}");
 
                     if ( $result === false ) {
-                        error_log( 'KTPWP: Failed to add column ' . $col_name . ' to cost items table' );
+                        error_log( 'KTPWP: Failed to add column ' . $col_name . ' to cost items table. Error: ' . $wpdb->last_error );
                     } else {
                         error_log( 'KTPWP: Successfully added column ' . $col_name . ' to cost items table' );
                     }

@@ -123,7 +123,7 @@ class Kantan_List_Class {
                 // 日付フォーマットチェック
                 $dt = DateTime::createFromFormat('Y-m-d', $completion_date);
                 $errors = DateTime::getLastErrors();
-                if ($dt === false || $errors['warning_count'] > 0 || $errors['error_count'] > 0) {
+                if ($dt === false || ($errors && ($errors['warning_count'] > 0 || $errors['error_count'] > 0))) {
                     if (defined('WP_DEBUG') && WP_DEBUG) {
                         error_log("KTPWP: 不正なcompletion_date検出: " . print_r($completion_date, true));
                     }
