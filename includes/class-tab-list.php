@@ -183,7 +183,9 @@ class Kantan_List_Class {
                 $warning_mark = '<span class="invoice-warning-mark-row" title="請求書締日が迫っている案件があります（' . $invoice_warning_count . '件）">!</span>';
             }
             
-            $content .= '<a href="' . add_query_arg(array('tab_name' => $tab_name, 'progress' => $num)) . '" class="progress-btn" data-progress="' . $num . '" data-icon="' . $icon . '" ' . $active . '>';
+            // 進捗ボタンはprogressを必ず付与
+            $progress_btn_url = add_query_arg(array('tab_name' => $tab_name, 'progress' => $num));
+            $content .= '<a href="' . $progress_btn_url . '" class="progress-btn" data-progress="' . $num . '" data-icon="' . $icon . '" ' . $active . '>';
             $content .= '<span class="progress-btn-icon material-symbols-outlined">' . $icon . '</span>';
             $content .= '<span class="progress-btn-text">' . $btn_label . '</span>';
             $content .= $warning_mark;
@@ -376,6 +378,7 @@ class Kantan_List_Class {
                 
                 // シンプルなURL生成（パーマリンク設定に依存しない）
                 // $detail_url = '?tab_name=order&order_id=' . $order_id;
+                // progressはリスト詳細リンクには付与しない
                 $detail_url = add_query_arg(array('tab_name' => 'order', 'order_id' => $order_id));
 
                 // プルダウンフォーム
@@ -495,15 +498,18 @@ class Kantan_List_Class {
         $current_style = 'background: #1976d2; color: white; border-color: #1976d2; font-weight: bold; transform: translateY(-1px); box-shadow: 0 2px 5px rgba(0,0,0,0.2);';
         $hover_effect = 'onmouseover="this.style.backgroundColor=\'#f5f5f5\'; this.style.transform=\'translateY(-1px)\'; this.style.boxShadow=\'0 2px 5px rgba(0,0,0,0.15)\';" onmouseout="this.style.backgroundColor=\'#fff\'; this.style.transform=\'none\'; this.style.boxShadow=\'0 1px 3px rgba(0,0,0,0.1)\';"';
 
+        // ページネーションのリンクにはprogressを必ず付与
+        $add_progress = isset($_GET['progress']);
+
         // 前のページボタン
         if ($current_page > 1 && $total_pages > 1) {
             $prev_args = array(
                 'tab_name' => $tab_name,
                 'page_start' => ($current_page - 2) * $query_limit,
                 'page_stage' => 2,
-                'flg' => $flg,
-                'progress' => $selected_progress
+                'flg' => $flg
             );
+            if ($add_progress) $prev_args['progress'] = $selected_progress;
             $prev_url = esc_url(add_query_arg($prev_args));
             $pagination_html .= "<a href=\"{$prev_url}\" style=\"{$button_style}\" {$hover_effect}>‹</a>";
         }
@@ -518,9 +524,9 @@ class Kantan_List_Class {
                 'tab_name' => $tab_name,
                 'page_start' => 0,
                 'page_stage' => 2,
-                'flg' => $flg,
-                'progress' => $selected_progress
+                'flg' => $flg
             );
+            if ($add_progress) $first_args['progress'] = $selected_progress;
             $first_url = esc_url(add_query_arg($first_args));
             $pagination_html .= "<a href=\"{$first_url}\" style=\"{$button_style}\" {$hover_effect}>1</a>";
             
@@ -535,9 +541,9 @@ class Kantan_List_Class {
                 'tab_name' => $tab_name,
                 'page_start' => ($i - 1) * $query_limit,
                 'page_stage' => 2,
-                'flg' => $flg,
-                'progress' => $selected_progress
+                'flg' => $flg
             );
+            if ($add_progress) $page_args['progress'] = $selected_progress;
             $page_url = esc_url(add_query_arg($page_args));
             
             if ($i == $current_page) {
@@ -557,9 +563,9 @@ class Kantan_List_Class {
                 'tab_name' => $tab_name,
                 'page_start' => ($total_pages - 1) * $query_limit,
                 'page_stage' => 2,
-                'flg' => $flg,
-                'progress' => $selected_progress
+                'flg' => $flg
             );
+            if ($add_progress) $last_args['progress'] = $selected_progress;
             $last_url = esc_url(add_query_arg($last_args));
             $pagination_html .= "<a href=\"{$last_url}\" style=\"{$button_style}\" {$hover_effect}>{$total_pages}</a>";
         }
@@ -570,9 +576,9 @@ class Kantan_List_Class {
                 'tab_name' => $tab_name,
                 'page_start' => $current_page * $query_limit,
                 'page_stage' => 2,
-                'flg' => $flg,
-                'progress' => $selected_progress
+                'flg' => $flg
             );
+            if ($add_progress) $next_args['progress'] = $selected_progress;
             $next_url = esc_url(add_query_arg($next_args));
             $pagination_html .= "<a href=\"{$next_url}\" style=\"{$button_style}\" {$hover_effect}>›</a>";
         }
