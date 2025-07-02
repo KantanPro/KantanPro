@@ -1531,7 +1531,7 @@
             emailBody += `担当者 様\n\n`;
         }
         emailBody += `お世話になります。\n\n`;
-        emailBody += `＜発注書＞ ID: ${orderId} [${orderDate}]\n`;
+        emailBody += `＜発注書＞ ID:${orderId} [${orderDate}]\n`;
         emailBody += `以下につきまして発注します。\n\n`;
         
         supplierItems.forEach(item => {
