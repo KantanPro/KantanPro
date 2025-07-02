@@ -1420,6 +1420,34 @@
             return;
         }
         
+        // 協力会社名を抽出
+        const supplierName = purchaseText.split(' > ')[0];
+        
+        // 同一協力会社の他の仕入情報を収集
+        const supplierPurchases = [];
+        $('.cost-items-table .purchase-display').each(function() {
+            const text = $(this).text().trim();
+            if (text && text.indexOf(' > ') !== -1) {
+                const parts = text.split(' > ');
+                if (parts[0] === supplierName) {
+                    supplierPurchases.push(parts[1]);
+                }
+            }
+        });
+        
+        // 重複を除去してソート
+        const uniquePurchases = [...new Set(supplierPurchases)].sort();
+        
+        // ポップアップの内容を生成
+        let popupContent = `<strong>${supplierName}</strong><br><br>`;
+        if (uniquePurchases.length > 0) {
+            uniquePurchases.forEach(purchase => {
+                popupContent += `${purchase}の仕入<br>`;
+            });
+        } else {
+            popupContent += '仕入情報がありません';
+        }
+        
         // ポップアップを作成
         const popupHtml = `
             <div class="popup-dialog purchase-popup" style="
@@ -1465,7 +1493,7 @@
                     color: #333;
                     margin-bottom: 20px;
                 ">
-                    <strong>${purchaseText}</strong>の仕入
+                    ${popupContent}
                 </div>
                 <div style="
                     text-align: center;
