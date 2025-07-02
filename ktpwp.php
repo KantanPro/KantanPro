@@ -151,6 +151,61 @@ require_once __DIR__ . '/includes/ajax-supplier-cost.php';
 // クラスの読み込み実行
 ktpwp_autoload_classes();
 
+// === 自動マイグレーション機能 ===
+function ktpwp_run_auto_migrations() {
+    // 現在のDBバージョンを取得
+    $current_db_version = get_option('ktpwp_db_version', '0.0.0');
+    $plugin_version = KANTANPRO_PLUGIN_VERSION;
+    
+    // DBバージョンが古い場合、または新規インストールの場合
+    if (version_compare($current_db_version, $plugin_version, '<')) {
+        
+        // 基本テーブル作成
+        ktp_table_setup();
+        
+        // マイグレーションファイルの実行
+        $migrations_dir = __DIR__ . '/includes/migrations';
+        if (is_dir($migrations_dir)) {
+            $files = glob($migrations_dir . '/*.php');
+            if ($files) {
+                sort($files);
+                foreach ($files as $file) {
+                    if (file_exists($file)) {
+                        try {
+                            require_once $file;
+                            if (defined('WP_DEBUG') && WP_DEBUG) {
+                                error_log('KTPWP Migration: Executed ' . basename($file));
+                            }
+                        } catch (Exception $e) {
+                            if (defined('WP_DEBUG') && WP_DEBUG) {
+                                error_log('KTPWP Migration Error: ' . $e->getMessage() . ' in ' . basename($file));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // DBバージョンを更新
+        update_option('ktpwp_db_version', $plugin_version);
+        
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('KTPWP Auto Migration: Updated DB version from ' . $current_db_version . ' to ' . $plugin_version);
+        }
+    }
+}
+
+// プラグイン有効化時の自動マイグレーション
+register_activation_hook(KANTANPRO_PLUGIN_FILE, 'ktpwp_run_auto_migrations');
+
+// プラグイン読み込み時の差分マイグレーション（アップデート時）
+add_action('plugins_loaded', function() {
+    // 管理画面またはWP-CLIの場合のみ実行
+    if (is_admin() || (defined('WP_CLI') && WP_CLI)) {
+        ktpwp_run_auto_migrations();
+    }
+}, 1);
+
 // デバッグログ: プラグイン読み込み開始
 if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
     error_log( 'KTPWP Plugin: Loading started' );

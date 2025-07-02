@@ -75,7 +75,7 @@ class KTPWP_Client_DB {
             }
             return false;
         } else {
-            $existing_columns = $wpdb->get_col($wpdb->prepare("SHOW COLUMNS FROM %s", $table_name), 0);
+            $existing_columns = $wpdb->get_col("SHOW COLUMNS FROM `{$table_name}`", 0);
             $def_column_names = [];
             foreach ($columns_def as $def) {
                 if (preg_match('/^([a-zA-Z0-9_]+)/', $def, $m)) {
@@ -86,7 +86,7 @@ class KTPWP_Client_DB {
                 if (!in_array($col_name, $existing_columns)) {
                     if ($col_name === 'UNIQUE' || $col_name === 'category') continue;
                     $def = $columns_def[$i];
-                    $result = $wpdb->query($wpdb->prepare("ALTER TABLE %s ADD COLUMN %s", $table_name, $def));
+                    $result = $wpdb->query("ALTER TABLE `{$table_name}` ADD COLUMN {$def}");
                     if ($result === false) {
                         error_log("KTPWP: Failed to add column {$col_name} to table {$table_name}");
                     }
@@ -94,7 +94,7 @@ class KTPWP_Client_DB {
             }
             update_option('ktp_' . $tab_name . '_table_version', $my_table_version);
         }
-        $indexes = $wpdb->get_results($wpdb->prepare("SHOW INDEX FROM %s", $table_name));
+        $indexes = $wpdb->get_results("SHOW INDEX FROM `{$table_name}`");
         $has_unique_id = false;
         foreach ($indexes as $idx) {
             if ($idx->Key_name === 'id' && $idx->Non_unique == 0) {
@@ -103,7 +103,7 @@ class KTPWP_Client_DB {
             }
         }
         if (!$has_unique_id) {
-            $result = $wpdb->query($wpdb->prepare("ALTER TABLE %s ADD UNIQUE (id)", $table_name));
+            $result = $wpdb->query("ALTER TABLE `{$table_name}` ADD UNIQUE (id)");
             if ($result === false) {
                 error_log("KTPWP: Failed to add unique key to table {$table_name}");
             }
