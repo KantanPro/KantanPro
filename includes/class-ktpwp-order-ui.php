@@ -320,7 +320,14 @@ class KTPWP_Order_UI {
             $purchase_value = isset($item['purchase']) ? $item['purchase'] : '';
             $display_text = !empty($purchase_value) ? esc_html($purchase_value) : '(^^)';
             $html .= '<td>';
-            $html .= '<span class="purchase-display">' . $display_text . '</span>';
+            
+            // 協力会社名 > 職能名の形式かチェック
+            if (!empty($purchase_value) && strpos($purchase_value, ' > ') !== false) {
+                $html .= '<span class="purchase-display purchase-link" data-purchase="' . esc_attr($purchase_value) . '" style="cursor: pointer; color: #007cba; text-decoration: underline;">' . $display_text . '</span>';
+            } else {
+                $html .= '<span class="purchase-display">' . $display_text . '</span>';
+            }
+            
             $html .= '<input type="hidden" name="cost_items[' . $index . '][purchase]" ';
             $html .= 'value="' . esc_attr($purchase_value) . '" />';
             $html .= '</td>';

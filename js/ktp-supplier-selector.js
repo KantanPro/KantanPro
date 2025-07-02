@@ -556,7 +556,7 @@ window.ktpAddCostRowFromSkill = function(skill, currentRow) {
                 <input type="hidden" name="cost_items[${newIndex}][sort_order]" value="${newIndex + 1}">
             </td>
             <td>
-                <span class="purchase-display">${purchaseDisplayText}</span>
+                <span class="purchase-display${purchaseDisplayText.indexOf(' > ') !== -1 ? ' purchase-link' : ''}"${purchaseDisplayText.indexOf(' > ') !== -1 ? ` data-purchase="${purchaseDisplayText}"` : ''}>${purchaseDisplayText}</span>
                 <input type="hidden" name="cost_items[${newIndex}][purchase]" value="${purchaseDisplayText}">
             </td>
         </tr>
@@ -690,7 +690,17 @@ window.ktpUpdateCostRowFromSkill = function(skill, currentRow) {
                     `${window.ktpCurrentSupplierName} > ${productName}` : 
                     window.ktpCurrentSupplierName;
                 
-                currentRow.find('.purchase-display').text(purchaseDisplayText);
+                // リンク付きの仕入フィールドを更新
+                const $purchaseDisplay = currentRow.find('.purchase-display');
+                if (purchaseDisplayText.indexOf(' > ') !== -1) {
+                    $purchaseDisplay.removeClass('purchase-link').addClass('purchase-link')
+                        .attr('data-purchase', purchaseDisplayText)
+                        .text(purchaseDisplayText);
+                } else {
+                    $purchaseDisplay.removeClass('purchase-link')
+                        .removeAttr('data-purchase')
+                        .text(purchaseDisplayText);
+                }
                 currentRow.find('input[name*="[purchase]"]').val(purchaseDisplayText);
             }
             // 金額を再計算

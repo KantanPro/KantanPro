@@ -610,7 +610,17 @@
                 `${window.ktpCurrentSupplierName} > ${productName}` : 
                 window.ktpCurrentSupplierName;
             
-            $targetRow.find('.purchase-display').text(purchaseDisplayText);
+            // リンク付きの仕入フィールドを更新
+            const $purchaseDisplay = $targetRow.find('.purchase-display');
+            if (purchaseDisplayText.indexOf(' > ') !== -1) {
+                $purchaseDisplay.removeClass('purchase-link').addClass('purchase-link')
+                    .attr('data-purchase', purchaseDisplayText)
+                    .text(purchaseDisplayText);
+            } else {
+                $purchaseDisplay.removeClass('purchase-link')
+                    .removeAttr('data-purchase')
+                    .text(purchaseDisplayText);
+            }
             $targetRow.find('input[name*="[purchase]"]').val(purchaseDisplayText);
         }
         
@@ -716,7 +726,17 @@
                 `${window.ktpCurrentSupplierName} > ${productName}` : 
                 window.ktpCurrentSupplierName;
             
-            $newRow.find('.purchase-display').text(purchaseDisplayText);
+            // リンク付きの仕入フィールドを更新
+            const $purchaseDisplay = $newRow.find('.purchase-display');
+            if (purchaseDisplayText.indexOf(' > ') !== -1) {
+                $purchaseDisplay.removeClass('purchase-link').addClass('purchase-link')
+                    .attr('data-purchase', purchaseDisplayText)
+                    .text(purchaseDisplayText);
+            } else {
+                $purchaseDisplay.removeClass('purchase-link')
+                    .removeAttr('data-purchase')
+                    .text(purchaseDisplayText);
+            }
             $newRow.find('input[name*="[purchase]"]').val(purchaseDisplayText);
         }
         
@@ -1388,5 +1408,109 @@
             updateRowIndexes($table); // tr順でname属性indexを再構成
         }
         // ここでtr順とname属性indexが必ず一致する
+    });
+
+    // 仕入リンクのクリックイベントハンドラ
+    $(document).on('click', '.purchase-link', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const purchaseText = $(this).data('purchase');
+        if (!purchaseText || purchaseText.indexOf(' > ') === -1) {
+            return;
+        }
+        
+        // ポップアップを作成
+        const popupHtml = `
+            <div class="popup-dialog purchase-popup" style="
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: white;
+                border: 2px solid #007cba;
+                border-radius: 8px;
+                padding: 20px;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+                z-index: 10000;
+                min-width: 300px;
+                max-width: 500px;
+            ">
+                <div style="
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 15px;
+                    border-bottom: 1px solid #ddd;
+                    padding-bottom: 10px;
+                ">
+                    <h3 style="margin: 0; color: #007cba; font-size: 16px;">仕入詳細</h3>
+                    <button type="button" class="close-popup" style="
+                        background: none;
+                        border: none;
+                        font-size: 20px;
+                        cursor: pointer;
+                        color: #666;
+                        padding: 0;
+                        width: 30px;
+                        height: 30px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                    ">&times;</button>
+                </div>
+                <div style="
+                    font-size: 14px;
+                    line-height: 1.6;
+                    color: #333;
+                    margin-bottom: 20px;
+                ">
+                    <strong>${purchaseText}</strong>の仕入
+                </div>
+                <div style="
+                    text-align: center;
+                    padding-top: 15px;
+                    border-top: 1px solid #ddd;
+                ">
+                    <button type="button" class="close-popup" style="
+                        background: #007cba;
+                        color: white;
+                        border: none;
+                        padding: 8px 20px;
+                        border-radius: 4px;
+                        cursor: pointer;
+                        font-size: 14px;
+                    ">閉じる</button>
+                </div>
+            </div>
+            <div class="popup-overlay" style="
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.5);
+                z-index: 9999;
+            "></div>
+        `;
+        
+        // 既存のポップアップを削除
+        $('.purchase-popup, .popup-overlay').remove();
+        
+        // 新しいポップアップを追加
+        $('body').append(popupHtml);
+        
+        // 閉じるボタンのイベントハンドラ
+        $(document).on('click', '.purchase-popup .close-popup, .popup-overlay', function() {
+            $('.purchase-popup, .popup-overlay').remove();
+        });
+        
+        // ESCキーでポップアップを閉じる
+        $(document).on('keydown.purchase-popup', function(e) {
+            if (e.key === 'Escape') {
+                $('.purchase-popup, .popup-overlay').remove();
+                $(document).off('keydown.purchase-popup');
+            }
+        });
     });
 })(jQuery);

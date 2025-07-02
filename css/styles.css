@@ -2475,6 +2475,18 @@ input[name="tab_item"] {
     font-style: italic;
 }
 
+.cost-items-table .purchase-link {
+    cursor: pointer;
+    color: #007cba !important;
+    text-decoration: underline;
+    transition: color 0.2s ease;
+}
+
+.cost-items-table .purchase-link:hover {
+    color: #005a8b !important;
+    text-decoration: underline;
+}
+
 .cost-items-table .amount {
     background-color: #f0f8ff !important;
     color: #333;
@@ -3550,6 +3562,8 @@ body.ktpwp-modal-open {
   background: #1565c0 !important;
   border-color: #1565c0 !important;
 }
+
+.controller button.view-mode-btn.customer-list-btn .material-symbols-outlined {
   font-size: 16px !important;
   line-height: 1 !important;
 }
