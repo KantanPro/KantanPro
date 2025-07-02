@@ -574,7 +574,7 @@ function ktp_table_setup() {
         $order_manager->create_order_table();
     }
     
-    // 受注書関連テーブル作成処理
+    // 受注明細・原価明細テーブル作成処理
     if (class_exists('KTPWP_Order_Items')) {
         $order_items = KTPWP_Order_Items::get_instance();
         $order_items->create_invoice_items_table();
@@ -1024,3 +1024,75 @@ function ktpwp_manual_cleanup_temp_files() {
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
     require_once __DIR__ . '/includes/ktp-migration-cli.php';
 }
+
+// === 自動マイグレーション処理 ===
+function ktpwp_run_auto_migration() {
+    // 受注テーブル
+    if (class_exists('KTPWP_Order')) {
+        if (method_exists('KTPWP_Order', 'create_order_table')) {
+            KTPWP_Order::get_instance()->create_order_table();
+        } elseif (method_exists('KTPWP_Order', 'create_table')) {
+            KTPWP_Order::get_instance()->create_table();
+        }
+    }
+    // 受注明細・原価明細テーブル
+    if (class_exists('KTPWP_Order_Items')) {
+        $order_items = KTPWP_Order_Items::get_instance();
+        if (method_exists($order_items, 'create_invoice_items_table')) {
+            $order_items->create_invoice_items_table();
+        }
+        if (method_exists($order_items, 'create_cost_items_table')) {
+            $order_items->create_cost_items_table();
+        }
+    }
+    // スタッフチャットテーブル
+    if (class_exists('KTPWP_Staff_Chat')) {
+        $staff_chat = KTPWP_Staff_Chat::get_instance();
+        if (method_exists($staff_chat, 'create_table')) {
+            $staff_chat->create_table();
+        }
+    }
+    // クライアントテーブル
+    if (class_exists('KTPWP_Client_DB')) {
+        $client_db = KTPWP_Client_DB::get_instance();
+        if (method_exists($client_db, 'create_table')) {
+            $client_db->create_table('client');
+        }
+    }
+    // サービステーブル
+    if (class_exists('KTPWP_Service_DB')) {
+        $service_db = KTPWP_Service_DB::get_instance();
+        if (method_exists($service_db, 'create_table')) {
+            $service_db->create_table('service');
+        }
+    }
+    // 協力会社テーブル
+    if (class_exists('KTPWP_Supplier_Data')) {
+        $supplier_data = new KTPWP_Supplier_Data();
+        if (method_exists($supplier_data, 'create_table')) {
+            $supplier_data->create_table('supplier');
+        }
+    }
+    // 協力会社スキルテーブル
+    if (class_exists('KTPWP_Supplier_Skills')) {
+        $supplier_skills = KTPWP_Supplier_Skills::get_instance();
+        if (method_exists($supplier_skills, 'create_table')) {
+            $supplier_skills->create_table();
+        }
+    }
+    // 設定テーブル
+    if (class_exists('KTPWP_Setting_DB')) {
+        if (method_exists('KTPWP_Setting_DB', 'create_table')) {
+            KTPWP_Setting_DB::create_table('setting');
+        }
+    }
+    // その他必要なテーブルがあればここに追加
+}
+
+// プラグイン有効化時にもマイグレーション
+register_activation_hook(__FILE__, 'ktpwp_run_auto_migration');
+
+// プラグイン初期化時にもマイグレーション（initの早い段階で実行）
+add_action('init', function() {
+    ktpwp_run_auto_migration();
+}, 1);
