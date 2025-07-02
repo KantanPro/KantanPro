@@ -206,6 +206,7 @@ class KTPWP_Order_Items {
             'amount INT(11) NOT NULL DEFAULT 0',
             'remarks TEXT',
             'purchase VARCHAR(255)',
+            'ordered TINYINT(1) NOT NULL DEFAULT 0',
             'sort_order INT NOT NULL DEFAULT 0',
             'created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP',
             'updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
@@ -309,6 +310,18 @@ class KTPWP_Order_Items {
                     } else {
                         error_log( "KTPWP: Successfully added purchase column to cost items table." );
                     }
+                }
+            }
+
+            // 既存テーブルにカラムがなければ追加
+            $ordered_column = $wpdb->get_results( "SHOW COLUMNS FROM `{$table_name}` LIKE 'ordered'" );
+            if ( empty( $ordered_column ) ) {
+                $alter_query = "ALTER TABLE `{$table_name}` ADD COLUMN ordered TINYINT(1) NOT NULL DEFAULT 0 AFTER purchase";
+                $result = $wpdb->query( $alter_query );
+                if ( $result === false ) {
+                    error_log( "KTPWP: Failed to add ordered column to cost items table. Error: " . $wpdb->last_error );
+                } else {
+                    error_log( "KTPWP: Successfully added ordered column to cost items table." );
                 }
             }
 

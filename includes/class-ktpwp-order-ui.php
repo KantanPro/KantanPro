@@ -318,9 +318,13 @@ class KTPWP_Order_UI {
 
             // Purchase (仕入)
             $purchase_value = isset($item['purchase']) ? $item['purchase'] : '';
+            $ordered = isset($item['ordered']) ? intval($item['ordered']) : 0;
             if (!empty($purchase_value)) {
                 $html .= '<td>';
                 $html .= '<span class="purchase-display purchase-link" data-purchase="' . esc_attr($purchase_value) . '" style="cursor: pointer; color: #007cba; text-decoration: underline;">' . esc_html($purchase_value) . 'に発注</span>';
+                if ($ordered === 1) {
+                    $html .= '<span class="purchase-checked" style="display:inline-block;margin-left:6px;vertical-align:middle;color:#dc3545;font-size:1.3em;font-weight:bold;">✓</span>';
+                }
                 $html .= '<input type="hidden" name="cost_items[' . $index . '][purchase]" ';
                 $html .= 'value="' . esc_attr($purchase_value) . '" />';
                 $html .= '</td>';

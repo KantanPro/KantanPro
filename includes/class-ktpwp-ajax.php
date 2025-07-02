@@ -189,6 +189,38 @@ class KTPWP_Ajax {
 			wp_send_json_success(['updated' => $result]);
 		});
 		// ▲▲▲ 一括請求書「請求済」進捗変更Ajax ▲▲▲
+
+		// ▼▼▼ コスト項目「注文済」一括更新Ajax ▼▼▼
+		add_action('wp_ajax_ktp_set_cost_items_ordered', function() {
+			// 権限チェック
+			if ( ! current_user_can('edit_posts') && ! current_user_can('ktpwp_access') ) {
+				wp_send_json_error('権限がありません');
+			}
+			// nonceチェック
+			if ( ! isset($_POST['nonce']) || ! wp_verify_nonce($_POST['nonce'], 'ktp_ajax_nonce') ) {
+				wp_send_json_error('セキュリティ検証に失敗しました');
+			}
+			global $wpdb;
+			$order_id = isset($_POST['order_id']) ? intval($_POST['order_id']) : 0;
+			$supplier_name = isset($_POST['supplier_name']) ? sanitize_text_field($_POST['supplier_name']) : '';
+			if (!$order_id || !$supplier_name) {
+				wp_send_json_error('order_idまたはsupplier_nameが指定されていません');
+			}
+			$table_name = $wpdb->prefix . 'ktp_order_cost_items';
+			// purchaseカラムがsupplier_nameと一致する全行を更新
+			$result = $wpdb->update(
+				$table_name,
+				array('ordered' => 1),
+				array('order_id' => $order_id, 'purchase' => $supplier_name),
+				array('%d'),
+				array('%d', '%s')
+			);
+			if ($result === false) {
+				wp_send_json_error('DB更新に失敗しました: ' . $wpdb->last_error);
+			}
+			wp_send_json_success(['updated' => $result]);
+		});
+		// ▲▲▲ コスト項目「注文済」一括更新Ajax ▲▲▲
 	}
 
 	/**

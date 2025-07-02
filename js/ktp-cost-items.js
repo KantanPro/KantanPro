@@ -1833,13 +1833,34 @@
                             alert('発注書メールを送信しました。');
                         }
 
-                        // チェックマークを該当リンクの直後に表示（注文成功時のみ）
-                        $(`.purchase-link`).each(function() {
-                          if (
-                            $(this).text() === `${supplierName}に発注` &&
-                            !$(this).next('.purchase-checked').length
-                          ) {
-                            $(this).after('<span class="purchase-checked" style="display:inline-block;margin-left:6px;vertical-align:middle;color:#dc3545;font-size:1.3em;font-weight:bold;">✓</span>');
+                        // --- 注文済み状態をサーバーに保存 ---
+                        $.ajax({
+                          url: window.ajaxurl || '/wp-admin/admin-ajax.php',
+                          type: 'POST',
+                          dataType: 'json',
+                          data: {
+                            action: 'ktp_set_cost_items_ordered',
+                            order_id: orderId,
+                            supplier_name: supplierName,
+                            nonce: window.ktp_ajax_nonce
+                          },
+                          success: function(res) {
+                            if (res.success) {
+                              // 全該当行に赤いチェックマークを表示
+                              $('.purchase-link').each(function() {
+                                if (
+                                  $(this).data('purchase') === supplierName &&
+                                  !$(this).next('.purchase-checked').length
+                                ) {
+                                  $(this).after('<span class="purchase-checked" style="display:inline-block;margin-left:6px;vertical-align:middle;color:#dc3545;font-size:1.3em;font-weight:bold;">✓</span>');
+                                }
+                              });
+                            } else {
+                              alert('注文済み状態の保存に失敗しました: ' + (res.data || '')); 
+                            }
+                          },
+                          error: function(xhr, status, error) {
+                            alert('注文済み状態の保存通信エラー: ' + error);
                           }
                         });
                     } else {
