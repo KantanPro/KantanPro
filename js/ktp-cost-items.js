@@ -1493,30 +1493,25 @@
         emailBody += `--\n`;
         emailBody += `会社情報`; // 実際の会社情報は後で取得
         
-        // ポップアップの内容を生成
-        let popupContent = `<strong>${supplierName}</strong><br><br>`;
-        if (uniquePurchases.length > 0) {
-            uniquePurchases.forEach(purchase => {
-                popupContent += `${purchase}の仕入<br>`;
-            });
-        } else {
-            popupContent += '仕入情報がありません';
-        }
-        
         // 発注書メールフォームを追加
-        popupContent += `<hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">`;
-        popupContent += `<h4 style="margin: 0 0 15px 0; color: #007cba;">発注書メール送信</h4>`;
-        popupContent += `<form id="purchase-order-form" style="margin-bottom: 15px;">`;
-        popupContent += `<div style="margin-bottom: 10px;"><label style="display: block; font-weight: bold; margin-bottom: 5px;">宛先：</label>`;
+        let popupContent = `<form id="purchase-order-form" style="margin-bottom: 15px;">`;
+        popupContent += `<div style="margin-bottom: 15px;"><label style="display: block; font-weight: bold; margin-bottom: 5px;">宛先：</label>`;
         popupContent += `<input type="email" id="purchase-to" placeholder="協力会社のメールアドレス" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;"></div>`;
-        popupContent += `<div style="margin-bottom: 10px;"><label style="display: block; font-weight: bold; margin-bottom: 5px;">件名：</label>`;
+        popupContent += `<div style="margin-bottom: 15px;"><label style="display: block; font-weight: bold; margin-bottom: 5px;">件名：</label>`;
         popupContent += `<input type="text" id="purchase-subject" value="発注書：${projectName}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;"></div>`;
-        popupContent += `<div style="margin-bottom: 10px;"><label style="display: block; font-weight: bold; margin-bottom: 5px;">本文：</label>`;
+        popupContent += `<div style="margin-bottom: 15px;"><label style="display: block; font-weight: bold; margin-bottom: 5px;">本文：</label>`;
         popupContent += `<textarea id="purchase-body" rows="8" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; resize: vertical; box-sizing: border-box; font-family: monospace;">${emailBody}</textarea></div>`;
-        popupContent += `<div style="margin-bottom: 15px;"><label style="display: block; font-weight: bold; margin-bottom: 5px;">ファイル添付：</label>`;
-        popupContent += `<input type="file" id="purchase-attachments" multiple accept=".pdf,.jpg,.jpeg,.png,.gif,.doc,.docx,.xls,.xlsx,.zip,.rar,.7z" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;"></div>`;
-        popupContent += `<button type="submit" id="purchase-send-btn" style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold;">メール送信</button>`;
-        popupContent += `</form>`;
+        popupContent += `<div style="margin-bottom: 20px;"><label style="display: block; font-weight: bold; margin-bottom: 5px;">ファイル添付：</label>`;
+        popupContent += `<div id="purchase-file-attachment-area" style="border: 2px dashed #ddd; border-radius: 8px; padding: 20px; text-align: center; background: #fafafa; margin-bottom: 10px; transition: all 0.3s ease;">`;
+        popupContent += `<input type="file" id="purchase-attachments" multiple accept=".pdf,.jpg,.jpeg,.png,.gif,.doc,.docx,.xls,.xlsx,.zip,.rar,.7z" style="display: none;">`;
+        popupContent += `<div id="purchase-drop-zone" style="cursor: pointer;">`;
+        popupContent += `<div style="font-size: 18px; color: #666; margin-bottom: 8px;">📎 ファイルをドラッグ&ドロップまたはクリックして選択</div>`;
+        popupContent += `<div style="font-size: 13px; color: #888; line-height: 1.4;">対応形式：PDF, 画像(JPG,PNG,GIF), Word, Excel, 圧縮ファイル等<br><strong>最大ファイルサイズ：10MB/ファイル, 合計50MB</strong></div>`;
+        popupContent += `</div></div>`;
+        popupContent += `<div id="purchase-selected-files" style="max-height: 120px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; padding: 8px; background: white; display: none;"></div></div>`;
+        popupContent += `<div style="text-align: center;">`;
+        popupContent += `<button type="submit" id="purchase-send-btn" style="background: #28a745; color: white; border: none; padding: 12px 24px; border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: bold;">注文する</button>`;
+        popupContent += `</div></form>`;
         
         // 協力会社のメールアドレスを自動取得
         const ajaxUrl = typeof ktp_ajax_object !== 'undefined' ? ktp_ajax_object.ajax_url : '/wp-admin/admin-ajax.php';
@@ -1557,7 +1552,7 @@
                 z-index: 10000;
                 min-width: 400px;
                 max-width: 600px;
-                max-height: 80vh;
+                max-height: 85%;
                 overflow-y: auto;
             ">
                 <div style="
@@ -1568,7 +1563,7 @@
                     border-bottom: 1px solid #ddd;
                     padding-bottom: 10px;
                 ">
-                    <h3 style="margin: 0; color: #007cba; font-size: 16px;">仕入詳細・発注書メール</h3>
+                    <h3 style="margin: 0; color: #007cba; font-size: 16px;">発注メール</h3>
                     <button type="button" class="close-popup" style="
                         background: none;
                         border: none;
@@ -1587,24 +1582,8 @@
                     font-size: 14px;
                     line-height: 1.6;
                     color: #333;
-                    margin-bottom: 20px;
                 ">
                     ${popupContent}
-                </div>
-                <div style="
-                    text-align: center;
-                    padding-top: 15px;
-                    border-top: 1px solid #ddd;
-                ">
-                    <button type="button" class="close-popup" style="
-                        background: #007cba;
-                        color: white;
-                        border: none;
-                        padding: 8px 20px;
-                        border-radius: 4px;
-                        cursor: pointer;
-                        font-size: 14px;
-                    ">閉じる</button>
                 </div>
             </div>
             <div class="popup-overlay" style="
@@ -1624,6 +1603,140 @@
         // 新しいポップアップを追加
         $('body').append(popupHtml);
         
+        // ドラッグ＆ドロップ機能を初期化
+        initPurchaseFileUpload();
+        
+        // ドラッグ＆ドロップ機能の初期化関数
+        function initPurchaseFileUpload() {
+            const dropZone = document.getElementById('purchase-drop-zone');
+            const fileInput = document.getElementById('purchase-attachments');
+            const selectedFilesDiv = document.getElementById('purchase-selected-files');
+            let selectedFiles = [];
+            
+            // クリックでファイル選択
+            dropZone.addEventListener('click', () => {
+                fileInput.click();
+            });
+            
+            // ファイル選択時の処理
+            fileInput.addEventListener('change', (e) => {
+                handleFiles(e.target.files);
+            });
+            
+            // ドラッグ＆ドロップイベント
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.style.borderColor = '#007cba';
+                dropZone.style.background = '#f0f8ff';
+            });
+            
+            dropZone.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                dropZone.style.borderColor = '#ddd';
+                dropZone.style.background = '#fafafa';
+            });
+            
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.style.borderColor = '#ddd';
+                dropZone.style.background = '#fafafa';
+                
+                const files = e.dataTransfer.files;
+                handleFiles(files);
+            });
+            
+            // ファイル処理関数
+            function handleFiles(files) {
+                const maxFileSize = 10 * 1024 * 1024; // 10MB
+                const maxTotalSize = 50 * 1024 * 1024; // 50MB
+                let totalSize = selectedFiles.reduce((sum, file) => sum + file.size, 0);
+                
+                for (let file of files) {
+                    // ファイルサイズチェック
+                    if (file.size > maxFileSize) {
+                        alert(`ファイル「${file.name}」が10MBを超えています。`);
+                        continue;
+                    }
+                    
+                    // 合計サイズチェック
+                    if (totalSize + file.size > maxTotalSize) {
+                        alert('添付ファイルの合計サイズが50MBを超えています。');
+                        break;
+                    }
+                    
+                    // 重複チェック
+                    const isDuplicate = selectedFiles.some(existingFile => 
+                        existingFile.name === file.name && existingFile.size === file.size
+                    );
+                    
+                    if (!isDuplicate) {
+                        selectedFiles.push(file);
+                        totalSize += file.size;
+                    }
+                }
+                
+                updateSelectedFilesDisplay();
+            }
+            
+            // 選択されたファイルの表示を更新
+            function updateSelectedFilesDisplay() {
+                if (selectedFiles.length === 0) {
+                    selectedFilesDiv.style.display = 'none';
+                    return;
+                }
+                
+                selectedFilesDiv.style.display = 'block';
+                let html = '';
+                
+                selectedFiles.forEach((file, index) => {
+                    html += `
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid #eee;">
+                            <div style="flex: 1; overflow: hidden;">
+                                <div style="font-size: 12px; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                    ${file.name}
+                                </div>
+                                <div style="font-size: 11px; color: #666;">
+                                    ${formatFileSize(file.size)}
+                                </div>
+                            </div>
+                            <button type="button" onclick="removePurchaseFile(${index})" style="
+                                background: #dc3545;
+                                color: white;
+                                border: none;
+                                padding: 2px 6px;
+                                border-radius: 3px;
+                                cursor: pointer;
+                                font-size: 11px;
+                                margin-left: 8px;
+                            ">削除</button>
+                        </div>
+                    `;
+                });
+                
+                selectedFilesDiv.innerHTML = html;
+            }
+            
+            // ファイル削除関数（グローバルスコープに配置）
+            window.removePurchaseFile = function(index) {
+                selectedFiles.splice(index, 1);
+                updateSelectedFilesDisplay();
+            };
+            
+            // ファイルサイズフォーマット
+            function formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+            
+            // 選択されたファイルを取得する関数（グローバルスコープに配置）
+            window.getPurchaseSelectedFiles = function() {
+                return selectedFiles;
+            };
+        }
+        
         // 発注書メール送信フォームのイベントハンドラ
         $('#purchase-order-form').on('submit', function(e) {
             e.preventDefault();
@@ -1631,7 +1744,7 @@
             const to = $('#purchase-to').val();
             const subject = $('#purchase-subject').val();
             const body = $('#purchase-body').val();
-            const attachments = $('#purchase-attachments')[0].files;
+            const selectedFiles = window.getPurchaseSelectedFiles ? window.getPurchaseSelectedFiles() : [];
             
             if (!to || !subject || !body) {
                 alert('宛先、件名、本文を入力してください。');
@@ -1644,7 +1757,7 @@
                     <div style="font-size: 16px; margin-bottom: 10px;">
                         発注書メール送信中...
                     </div>
-                    ${attachments.length > 0 ? `<div style="font-size: 14px; color: #888;">${attachments.length}件のファイルを添付中...</div>` : ''}
+                    ${selectedFiles.length > 0 ? `<div style="font-size: 14px; color: #888;">${selectedFiles.length}件のファイルを添付中...</div>` : ''}
                 </div>
             `);
             
@@ -1662,9 +1775,9 @@
             }
 
             // ファイルを追加
-            for (let i = 0; i < attachments.length; i++) {
-                formData.append(`attachments[${i}]`, attachments[i]);
-            }
+            selectedFiles.forEach((file, index) => {
+                formData.append(`attachments[${index}]`, file);
+            });
 
             const ajaxUrl = typeof ktp_ajax_object !== 'undefined' ? ktp_ajax_object.ajax_url : '/wp-admin/admin-ajax.php';
 
@@ -1690,10 +1803,10 @@
                             </div>
                         `;
                         
-                        if (attachments.length > 0) {
+                        if (selectedFiles.length > 0) {
                             successMessage += `
                                 <div style="font-size: 14px; margin-bottom: 15px; color: #666;">
-                                    添付ファイル: ${attachments.length}件
+                                    添付ファイル: ${selectedFiles.length}件
                                 </div>
                             `;
                         }
