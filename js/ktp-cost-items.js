@@ -1841,43 +1841,21 @@
                     console.log('発注書メール送信レスポンス:', response);
                     
                     if (response.success) {
-                        let successMessage = `
-                            <div style="font-size: 18px; font-weight: bold; margin-bottom: 10px; color: #28a745;">
-                                ✓ 発注書メール送信完了
-                            </div>
-                            <div style="font-size: 14px; margin-bottom: 5px;">
-                                宛先: ${to}
-                            </div>
-                            <div style="font-size: 14px; margin-bottom: 5px;">
-                                協力会社: ${supplierName}
-                            </div>
-                        `;
+                        // ポップアップを閉じる
+                        $('.purchase-popup, .popup-overlay').remove();
                         
+                        // 成功通知を表示
+                        let notificationMessage = `発注書メールを送信しました。宛先: ${to}`;
                         if (selectedFiles.length > 0) {
-                            successMessage += `
-                                <div style="font-size: 14px; margin-bottom: 15px; color: #666;">
-                                    添付ファイル: ${selectedFiles.length}件
-                                </div>
-                            `;
+                            notificationMessage += ` (添付ファイル: ${selectedFiles.length}件)`;
                         }
-
-                        $('.purchase-popup .popup-dialog').html(`
-                            <div style="text-align: center; padding: 40px;">
-                                ${successMessage}
-                                <div style="margin-top: 20px;">
-                                    <button type="button" onclick="$('.purchase-popup, .popup-overlay').remove()" style="
-                                        background: #28a745;
-                                        color: white;
-                                        border: none;
-                                        padding: 8px 16px;
-                                        border-radius: 4px;
-                                        cursor: pointer;
-                                    ">
-                                        閉じる
-                                    </button>
-                                </div>
-                            </div>
-                        `);
+                        
+                        if (typeof window.showSuccessNotification === 'function') {
+                            window.showSuccessNotification(notificationMessage);
+                        } else {
+                            // フォールバック: アラート表示
+                            alert('発注書メールを送信しました。');
+                        }
                     } else {
                         $('.purchase-popup .popup-dialog').html(`
                             <div style="text-align: center; padding: 40px; color: #dc3545;">
