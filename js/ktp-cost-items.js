@@ -1472,6 +1472,29 @@
         // 合計金額を計算
         const totalAmount = supplierItems.reduce((sum, item) => sum + item.amount, 0);
         
+        // 会社情報を取得してからメール本文を生成
+        let companyInfo = '会社情報';
+        const companyAjaxUrl = typeof ktp_ajax_object !== 'undefined' ? ktp_ajax_object.ajax_url : '/wp-admin/admin-ajax.php';
+        const companyNonce = typeof ktp_ajax_object !== 'undefined' ? ktp_ajax_object.nonce : '';
+        
+        $.ajax({
+            url: companyAjaxUrl,
+            type: 'POST',
+            data: {
+                action: 'get_company_info',
+                nonce: companyNonce
+            },
+            async: false, // 同期処理で会社情報を取得
+            success: function(response) {
+                if (response.success && response.data.company_info) {
+                    companyInfo = response.data.company_info;
+                }
+            },
+            error: function() {
+                // エラーの場合はデフォルト値を使用
+            }
+        });
+        
         // 発注書メールの内容を生成
         const orderDate = new Date().toLocaleDateString('ja-JP', {
             year: 'numeric',
@@ -1491,7 +1514,7 @@
         emailBody += `--------------------------------------------\n`;
         emailBody += `合計：${totalAmount.toLocaleString()}円\n\n`;
         emailBody += `--\n`;
-        emailBody += `会社情報`; // 実際の会社情報は後で取得
+        emailBody += companyInfo;
         
         // 発注書メールフォームを追加
         let popupContent = `<form id="purchase-order-form" style="margin-bottom: 15px;">`;

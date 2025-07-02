@@ -122,6 +122,11 @@ class KTPWP_Ajax {
 		add_action( 'wp_ajax_nopriv_send_purchase_order_email', array( $this, 'ajax_require_login' ) );
 		$this->registered_handlers[] = 'send_purchase_order_email';
 
+		// 会社情報取得
+		add_action( 'wp_ajax_get_company_info', array( $this, 'ajax_get_company_info' ) );
+		add_action( 'wp_ajax_nopriv_get_company_info', array( $this, 'ajax_require_login' ) );
+		$this->registered_handlers[] = 'get_company_info';
+
 		// 最新の受注書プレビューデータ取得
 		add_action( 'wp_ajax_ktp_get_order_preview', array( $this, 'get_order_preview' ) );
 		add_action( 'wp_ajax_nopriv_ktp_get_order_preview', array( $this, 'ajax_require_login' ) );
@@ -1886,6 +1891,60 @@ class KTPWP_Ajax {
 			}
 		} catch ( Exception $e ) {
 			error_log( 'KTPWP Ajax send_purchase_order_email Error: ' . $e->getMessage() );
+			wp_send_json_error(
+				array(
+					'message' => $e->getMessage(),
+				)
+			);
+		}
+	}
+
+	/**
+	 * Ajax: 会社情報取得
+	 */
+	public function ajax_get_company_info() {
+		try {
+			// セキュリティチェック
+			if ( ! check_ajax_referer( 'ktpwp_ajax_nonce', 'nonce', false ) ) {
+				throw new Exception( 'セキュリティ検証に失敗しました。' );
+			}
+
+			// 権限チェック
+			if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
+				throw new Exception( '権限がありません。' );
+			}
+
+			// 会社情報を取得
+			$company_info = '';
+			if ( class_exists( 'KTP_Settings' ) ) {
+				$company_info = KTP_Settings::get_company_info();
+			}
+
+			// 旧システムからも取得（後方互換性）
+			if ( empty( $company_info ) ) {
+				global $wpdb;
+				$setting_table = $wpdb->prefix . 'ktp_setting';
+				$setting       = $wpdb->get_row( $wpdb->prepare(
+					"SELECT * FROM `{$setting_table}` WHERE id = %d",
+					1
+				) );
+				if ( $setting ) {
+					$company_info = sanitize_text_field( strip_tags( $setting->my_company_content ) );
+				}
+			}
+
+			// デフォルト値
+			if ( empty( $company_info ) ) {
+				$company_info = get_bloginfo( 'name' );
+			}
+
+			wp_send_json_success(
+				array(
+					'company_info' => $company_info,
+				)
+			);
+		} catch ( Exception $e ) {
+			error_log( 'KTPWP Ajax get_company_info Error: ' . $e->getMessage() );
 			wp_send_json_error(
 				array(
 					'message' => $e->getMessage(),
