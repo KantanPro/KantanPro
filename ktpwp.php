@@ -909,13 +909,16 @@ add_action('wp_ajax_ktp_update_project_name', function() {
     $project_name = wp_strip_all_tags($post_data['project_name']);
     if ($order_id > 0) {
         $table = $wpdb->prefix . 'ktp_order';
-        $wpdb->update(
+        $result = $wpdb->update(
             $table,
             ['project_name' => $project_name],
             ['id' => $order_id],
             ['%s'],
             ['%d']
         );
+        if ($result === false && defined('WP_DEBUG') && WP_DEBUG) {
+            error_log("KTPWP: Failed SQL: UPDATE `$table` SET `project_name` = '$project_name' WHERE `id` = $order_id | Error: " . $wpdb->last_error);
+        }
         wp_send_json_success();
     } else {
         wp_send_json_error(__('Invalid order_id', 'ktpwp'));
@@ -1041,7 +1044,10 @@ function ktpwp_run_auto_migration() {
         $existing = $wpdb->get_col("SHOW COLUMNS FROM `$order_table`", 0);
         foreach ($order_columns as $col => $sql) {
             if (!in_array($col, $existing)) {
-                $wpdb->query($sql);
+                $result = $wpdb->query($sql);
+                if ($result === false && defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log("KTPWP: Failed SQL: $sql | Error: " . $wpdb->last_error);
+                }
             }
         }
     }
@@ -1057,7 +1063,10 @@ function ktpwp_run_auto_migration() {
         $existing = $wpdb->get_col("SHOW COLUMNS FROM `$client_table`", 0);
         foreach ($client_columns as $col => $sql) {
             if (!in_array($col, $existing)) {
-                $wpdb->query($sql);
+                $result = $wpdb->query($sql);
+                if ($result === false && defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log("KTPWP: Failed SQL: $sql | Error: " . $wpdb->last_error);
+                }
             }
         }
     }
@@ -1073,10 +1082,15 @@ function ktpwp_run_auto_migration() {
         $existing = $wpdb->get_col("SHOW COLUMNS FROM `$skills_table`", 0);
         foreach ($skills_columns as $col => $sql) {
             if ($col === 'unit_price') {
-                // MODIFYは常に実行
-                $wpdb->query($sql);
+                $result = $wpdb->query($sql);
+                if ($result === false && defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log("KTPWP: Failed SQL: $sql | Error: " . $wpdb->last_error);
+                }
             } elseif (!in_array($col, $existing)) {
-                $wpdb->query($sql);
+                $result = $wpdb->query($sql);
+                if ($result === false && defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log("KTPWP: Failed SQL: $sql | Error: " . $wpdb->last_error);
+                }
             }
         }
     }
@@ -1094,7 +1108,10 @@ function ktpwp_run_auto_migration() {
         $existing = $wpdb->get_col("SHOW COLUMNS FROM `$invoice_table`", 0);
         foreach ($invoice_columns as $col => $sql) {
             if (!in_array($col, $existing)) {
-                $wpdb->query($sql);
+                $result = $wpdb->query($sql);
+                if ($result === false && defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log("KTPWP: Failed SQL: $sql | Error: " . $wpdb->last_error);
+                }
             }
         }
     }
@@ -1112,7 +1129,10 @@ function ktpwp_run_auto_migration() {
         $existing = $wpdb->get_col("SHOW COLUMNS FROM `$cost_table`", 0);
         foreach ($cost_columns as $col => $sql) {
             if (!in_array($col, $existing)) {
-                $wpdb->query($sql);
+                $result = $wpdb->query($sql);
+                if ($result === false && defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log("KTPWP: Failed SQL: $sql | Error: " . $wpdb->last_error);
+                }
             }
         }
     }
@@ -1129,7 +1149,10 @@ function ktpwp_run_auto_migration() {
         $existing = $wpdb->get_col("SHOW COLUMNS FROM `$service_table`", 0);
         foreach ($service_columns as $col => $sql) {
             if (!in_array($col, $existing)) {
-                $wpdb->query($sql);
+                $result = $wpdb->query($sql);
+                if ($result === false && defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log("KTPWP: Failed SQL: $sql | Error: " . $wpdb->last_error);
+                }
             }
         }
     }
@@ -1144,7 +1167,10 @@ function ktpwp_run_auto_migration() {
         $existing = $wpdb->get_col("SHOW COLUMNS FROM `$setting_table`", 0);
         foreach ($setting_columns as $col => $sql) {
             if (!in_array($col, $existing)) {
-                $wpdb->query($sql);
+                $result = $wpdb->query($sql);
+                if ($result === false && defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log("KTPWP: Failed SQL: $sql | Error: " . $wpdb->last_error);
+                }
             }
         }
     }
