@@ -272,12 +272,41 @@ class KTPWP_Main {
      * プラグイン有効化時の処理
      */
     public function activate() {
-        // データベースクラスを使用してテーブル作成
-        if ($this->database) {
-            $this->database->setup_tables();
+        // 新規インストール判定クラスを読み込み
+        if (!class_exists('KTPWP_Fresh_Install_Detector')) {
+            require_once KANTANPRO_PLUGIN_DIR . 'includes/class-ktpwp-fresh-install-detector.php';
+        }
+
+        // 新規インストール判定と初期化
+        if (class_exists('KTPWP_Fresh_Install_Detector')) {
+            $fresh_detector = KTPWP_Fresh_Install_Detector::get_instance();
+            
+            if ($fresh_detector->is_fresh_install()) {
+                // 新規インストール時：基本構造のみで初期化
+                $fresh_detector->initialize_fresh_install();
+                
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log("KTPWP: 新規インストール環境 - 基本構造で初期化完了");
+                }
+            } else {
+                // 既存環境：従来の初期化処理
+                if ($this->database) {
+                    $this->database->setup_tables();
+                } else {
+                    $this->create_tables();
+                }
+                
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log("KTPWP: 既存環境 - 通常の初期化処理実行");
+                }
+            }
         } else {
             // フォールバック: 従来の方法
-            $this->create_tables();
+            if ($this->database) {
+                $this->database->setup_tables();
+            } else {
+                $this->create_tables();
+            }
         }
 
         // supplier_idカラム自動追加（コスト項目テーブル）

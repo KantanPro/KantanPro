@@ -12,6 +12,17 @@ if (!defined('ABSPATH')) {
 
 global $wpdb;
 
+// 新規インストール判定 - 新規インストール時はスキップ
+if (class_exists('KTPWP_Fresh_Install_Detector')) {
+    $fresh_detector = KTPWP_Fresh_Install_Detector::get_instance();
+    if ($fresh_detector->should_skip_migrations()) {
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log("KTPWP Migration: 新規インストール環境のため20250703_add_missing_columns_to_supplier_tableをスキップ");
+        }
+        return;
+    }
+}
+
 // 環境判定（本番かローカルか）
 $is_production = false;
 $table_name = $wpdb->prefix . 'ktp_supplier';

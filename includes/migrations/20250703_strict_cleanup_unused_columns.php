@@ -12,6 +12,17 @@ if (!defined('ABSPATH')) {
 
 global $wpdb;
 
+// 新規インストール判定 - 新規インストール時はスキップ
+if (class_exists('KTPWP_Fresh_Install_Detector')) {
+    $fresh_detector = KTPWP_Fresh_Install_Detector::get_instance();
+    if ($fresh_detector->should_skip_migrations()) {
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log("KTPWP Migration: 新規インストール環境のため20250703_strict_cleanup_unused_columnsをスキップ");
+        }
+        return;
+    }
+}
+
 // マイグレーション実行済みチェック
 $migration_key = 'ktp_strict_cleanup_unused_columns_20250703_completed';
 $migration_completed = get_option($migration_key, false);
