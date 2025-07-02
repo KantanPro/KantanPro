@@ -1438,6 +1438,61 @@
         // 重複を除去してソート
         const uniquePurchases = [...new Set(supplierPurchases)].sort();
         
+        // 発注書メール用のデータを収集
+        const orderId = $('input[name="order_id"]').val() || $('#order_id').val();
+        const projectName = $('input[name="project_name"]').val() || $('#project_name').val() || '案件名未設定';
+        
+        // 同一協力会社のコスト項目を収集
+        const supplierItems = [];
+        $('.cost-items-table tbody tr').each(function() {
+            const $row = $(this);
+            const purchaseText = $row.find('.purchase-display').text().trim();
+            if (purchaseText && purchaseText.indexOf(' > ') !== -1) {
+                const parts = purchaseText.split(' > ');
+                if (parts[0] === supplierName) {
+                    const productName = $row.find('.product-name').val();
+                    const price = parseFloat($row.find('.price').val()) || 0;
+                    const quantity = parseFloat($row.find('.quantity').val()) || 0;
+                    const unit = $row.find('.unit').val() || '';
+                    const amount = parseFloat($row.find('.amount').val()) || 0;
+                    
+                    if (productName && price > 0) {
+                        supplierItems.push({
+                            productName: productName,
+                            price: price,
+                            quantity: quantity,
+                            unit: unit,
+                            amount: amount
+                        });
+                    }
+                }
+            }
+        });
+        
+        // 合計金額を計算
+        const totalAmount = supplierItems.reduce((sum, item) => sum + item.amount, 0);
+        
+        // 発注書メールの内容を生成
+        const orderDate = new Date().toLocaleDateString('ja-JP', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+        
+        let emailBody = `${supplierName}様\n`;
+        emailBody += `お世話になります。\n\n`;
+        emailBody += `＜発注書＞ ID: ${orderId} [${orderDate}]\n`;
+        emailBody += `以下につきまして発注します。\n\n`;
+        
+        supplierItems.forEach(item => {
+            emailBody += `${item.productName}：${item.price.toLocaleString()}円 × ${item.quantity}${item.unit} = ${item.amount.toLocaleString()}円\n`;
+        });
+        
+        emailBody += `--------------------------------------------\n`;
+        emailBody += `合計：${totalAmount.toLocaleString()}円\n\n`;
+        emailBody += `--\n`;
+        emailBody += `会社情報`; // 実際の会社情報は後で取得
+        
         // ポップアップの内容を生成
         let popupContent = `<strong>${supplierName}</strong><br><br>`;
         if (uniquePurchases.length > 0) {
@@ -1446,6 +1501,45 @@
             });
         } else {
             popupContent += '仕入情報がありません';
+        }
+        
+        // 発注書メールフォームを追加
+        popupContent += `<hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">`;
+        popupContent += `<h4 style="margin: 0 0 15px 0; color: #007cba;">発注書メール送信</h4>`;
+        popupContent += `<form id="purchase-order-form" style="margin-bottom: 15px;">`;
+        popupContent += `<div style="margin-bottom: 10px;"><label style="display: block; font-weight: bold; margin-bottom: 5px;">宛先：</label>`;
+        popupContent += `<input type="email" id="purchase-to" placeholder="協力会社のメールアドレス" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;"></div>`;
+        popupContent += `<div style="margin-bottom: 10px;"><label style="display: block; font-weight: bold; margin-bottom: 5px;">件名：</label>`;
+        popupContent += `<input type="text" id="purchase-subject" value="発注書：${projectName}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;"></div>`;
+        popupContent += `<div style="margin-bottom: 10px;"><label style="display: block; font-weight: bold; margin-bottom: 5px;">本文：</label>`;
+        popupContent += `<textarea id="purchase-body" rows="8" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; resize: vertical; box-sizing: border-box; font-family: monospace;">${emailBody}</textarea></div>`;
+        popupContent += `<div style="margin-bottom: 15px;"><label style="display: block; font-weight: bold; margin-bottom: 5px;">ファイル添付：</label>`;
+        popupContent += `<input type="file" id="purchase-attachments" multiple accept=".pdf,.jpg,.jpeg,.png,.gif,.doc,.docx,.xls,.xlsx,.zip,.rar,.7z" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;"></div>`;
+        popupContent += `<button type="submit" id="purchase-send-btn" style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold;">メール送信</button>`;
+        popupContent += `</form>`;
+        
+        // 協力会社のメールアドレスを自動取得
+        const ajaxUrl = typeof ktp_ajax_object !== 'undefined' ? ktp_ajax_object.ajax_url : '/wp-admin/admin-ajax.php';
+        const nonce = typeof ktp_ajax_object !== 'undefined' ? ktp_ajax_object.nonce : '';
+        
+        if (ajaxUrl && nonce) {
+            $.ajax({
+                url: ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'get_supplier_email',
+                    supplier_name: supplierName,
+                    nonce: nonce
+                },
+                success: function(response) {
+                    if (response.success && response.data.email) {
+                        $('#purchase-to').val(response.data.email);
+                    }
+                },
+                error: function() {
+                    console.log('協力会社メールアドレス取得に失敗しました');
+                }
+            });
         }
         
         // ポップアップを作成
@@ -1461,8 +1555,10 @@
                 padding: 20px;
                 box-shadow: 0 4px 20px rgba(0,0,0,0.3);
                 z-index: 10000;
-                min-width: 300px;
-                max-width: 500px;
+                min-width: 400px;
+                max-width: 600px;
+                max-height: 80vh;
+                overflow-y: auto;
             ">
                 <div style="
                     display: flex;
@@ -1472,7 +1568,7 @@
                     border-bottom: 1px solid #ddd;
                     padding-bottom: 10px;
                 ">
-                    <h3 style="margin: 0; color: #007cba; font-size: 16px;">仕入詳細</h3>
+                    <h3 style="margin: 0; color: #007cba; font-size: 16px;">仕入詳細・発注書メール</h3>
                     <button type="button" class="close-popup" style="
                         background: none;
                         border: none;
@@ -1527,6 +1623,150 @@
         
         // 新しいポップアップを追加
         $('body').append(popupHtml);
+        
+        // 発注書メール送信フォームのイベントハンドラ
+        $('#purchase-order-form').on('submit', function(e) {
+            e.preventDefault();
+            
+            const to = $('#purchase-to').val();
+            const subject = $('#purchase-subject').val();
+            const body = $('#purchase-body').val();
+            const attachments = $('#purchase-attachments')[0].files;
+            
+            if (!to || !subject || !body) {
+                alert('宛先、件名、本文を入力してください。');
+                return;
+            }
+            
+            // 送信中表示
+            $('.purchase-popup .popup-dialog').html(`
+                <div style="text-align: center; padding: 40px; color: #666;">
+                    <div style="font-size: 16px; margin-bottom: 10px;">
+                        発注書メール送信中...
+                    </div>
+                    ${attachments.length > 0 ? `<div style="font-size: 14px; color: #888;">${attachments.length}件のファイルを添付中...</div>` : ''}
+                </div>
+            `);
+            
+            // FormDataを使用してファイルと一緒にデータを送信
+            const formData = new FormData();
+            formData.append('action', 'send_purchase_order_email');
+            formData.append('to', to);
+            formData.append('subject', subject);
+            formData.append('body', body);
+            formData.append('supplier_name', supplierName);
+            
+            const nonce = typeof ktp_ajax_object !== 'undefined' ? ktp_ajax_object.nonce : '';
+            if (nonce) {
+                formData.append('nonce', nonce);
+            }
+
+            // ファイルを追加
+            for (let i = 0; i < attachments.length; i++) {
+                formData.append(`attachments[${i}]`, attachments[i]);
+            }
+
+            const ajaxUrl = typeof ktp_ajax_object !== 'undefined' ? ktp_ajax_object.ajax_url : '/wp-admin/admin-ajax.php';
+
+            $.ajax({
+                url: ajaxUrl,
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    console.log('発注書メール送信レスポンス:', response);
+                    
+                    if (response.success) {
+                        let successMessage = `
+                            <div style="font-size: 18px; font-weight: bold; margin-bottom: 10px; color: #28a745;">
+                                ✓ 発注書メール送信完了
+                            </div>
+                            <div style="font-size: 14px; margin-bottom: 5px;">
+                                宛先: ${to}
+                            </div>
+                            <div style="font-size: 14px; margin-bottom: 5px;">
+                                協力会社: ${supplierName}
+                            </div>
+                        `;
+                        
+                        if (attachments.length > 0) {
+                            successMessage += `
+                                <div style="font-size: 14px; margin-bottom: 15px; color: #666;">
+                                    添付ファイル: ${attachments.length}件
+                                </div>
+                            `;
+                        }
+
+                        $('.purchase-popup .popup-dialog').html(`
+                            <div style="text-align: center; padding: 40px;">
+                                ${successMessage}
+                                <div style="margin-top: 20px;">
+                                    <button type="button" onclick="$('.purchase-popup, .popup-overlay').remove()" style="
+                                        background: #28a745;
+                                        color: white;
+                                        border: none;
+                                        padding: 8px 16px;
+                                        border-radius: 4px;
+                                        cursor: pointer;
+                                    ">
+                                        閉じる
+                                    </button>
+                                </div>
+                            </div>
+                        `);
+                    } else {
+                        $('.purchase-popup .popup-dialog').html(`
+                            <div style="text-align: center; padding: 40px; color: #dc3545;">
+                                <div style="font-size: 18px; font-weight: bold; margin-bottom: 10px;">
+                                    ✗ メール送信失敗
+                                </div>
+                                <div style="font-size: 14px; margin-bottom: 15px;">
+                                    ${response.data ? response.data.message : 'エラーが発生しました'}
+                                </div>
+                                <div style="margin-top: 20px;">
+                                    <button type="button" onclick="$('.purchase-popup, .popup-overlay').remove()" style="
+                                        background: #dc3545;
+                                        color: white;
+                                        border: none;
+                                        padding: 8px 16px;
+                                        border-radius: 4px;
+                                        cursor: pointer;
+                                    ">
+                                        閉じる
+                                    </button>
+                                </div>
+                            </div>
+                        `);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('発注書メール送信エラー:', error);
+                    $('.purchase-popup .popup-dialog').html(`
+                        <div style="text-align: center; padding: 40px; color: #dc3545;">
+                            <div style="font-size: 18px; font-weight: bold; margin-bottom: 10px;">
+                                ✗ メール送信失敗
+                            </div>
+                            <div style="font-size: 14px; margin-bottom: 15px;">
+                                通信エラーが発生しました
+                            </div>
+                            <div style="margin-top: 20px;">
+                                <button type="button" onclick="$('.purchase-popup, .popup-overlay').remove()" style="
+                                    background: #dc3545;
+                                    color: white;
+                                    border: none;
+                                    padding: 8px 16px;
+                                    border-radius: 4px;
+                                    cursor: pointer;
+                                ">
+                                    閉じる
+                                </button>
+                            </div>
+                        </div>
+                    `);
+                }
+            });
+        });
         
         // 閉じるボタンのイベントハンドラ
         $(document).on('click', '.purchase-popup .close-popup, .popup-overlay', function() {

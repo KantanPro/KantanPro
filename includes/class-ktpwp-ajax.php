@@ -112,6 +112,16 @@ class KTPWP_Ajax {
 		add_action( 'wp_ajax_nopriv_send_order_email', array( $this, 'ajax_require_login' ) );
 		$this->registered_handlers[] = 'send_order_email';
 
+		// 協力会社メールアドレス取得
+		add_action( 'wp_ajax_get_supplier_email', array( $this, 'ajax_get_supplier_email' ) );
+		add_action( 'wp_ajax_nopriv_get_supplier_email', array( $this, 'ajax_require_login' ) );
+		$this->registered_handlers[] = 'get_supplier_email';
+
+		// 発注書メール送信
+		add_action( 'wp_ajax_send_purchase_order_email', array( $this, 'ajax_send_purchase_order_email' ) );
+		add_action( 'wp_ajax_nopriv_send_purchase_order_email', array( $this, 'ajax_require_login' ) );
+		$this->registered_handlers[] = 'send_purchase_order_email';
+
 		// 最新の受注書プレビューデータ取得
 		add_action( 'wp_ajax_ktp_get_order_preview', array( $this, 'get_order_preview' ) );
 		add_action( 'wp_ajax_nopriv_ktp_get_order_preview', array( $this, 'ajax_require_login' ) );
@@ -1667,6 +1677,215 @@ class KTPWP_Ajax {
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 				error_log( 'KTPWP Ajax send_order_email Error Stack Trace: ' . $e->getTraceAsString() );
 			}
+			wp_send_json_error(
+				array(
+					'message' => $e->getMessage(),
+				)
+			);
+		}
+	}
+
+	/**
+	 * Ajax: 協力会社メールアドレス取得
+	 */
+	public function ajax_get_supplier_email() {
+		try {
+			// セキュリティチェック
+			if ( ! check_ajax_referer( 'ktpwp_ajax_nonce', 'nonce', false ) ) {
+				throw new Exception( 'セキュリティ検証に失敗しました。' );
+			}
+
+			// 権限チェック
+			if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
+				throw new Exception( '権限がありません。' );
+			}
+
+			$supplier_name = isset( $_POST['supplier_name'] ) ? sanitize_text_field( $_POST['supplier_name'] ) : '';
+
+			if ( empty( $supplier_name ) ) {
+				throw new Exception( '協力会社名が指定されていません。' );
+			}
+
+			// 協力会社テーブルからメールアドレスを取得
+			global $wpdb;
+			$table_name = $wpdb->prefix . 'ktp_supplier';
+			$supplier = $wpdb->get_row( $wpdb->prepare(
+				"SELECT email, name FROM {$table_name} WHERE company_name = %s",
+				$supplier_name
+			) );
+
+			if ( $supplier ) {
+				wp_send_json_success(
+					array(
+						'email' => $supplier->email,
+						'name' => $supplier->name,
+					)
+				);
+			} else {
+				wp_send_json_error(
+					array(
+						'message' => '協力会社が見つかりません。',
+					)
+				);
+			}
+		} catch ( Exception $e ) {
+			error_log( 'KTPWP Ajax get_supplier_email Error: ' . $e->getMessage() );
+			wp_send_json_error(
+				array(
+					'message' => $e->getMessage(),
+				)
+			);
+		}
+	}
+
+	/**
+	 * Ajax: 発注書メール送信
+	 */
+	public function ajax_send_purchase_order_email() {
+		try {
+			// セキュリティチェック
+			if ( ! check_ajax_referer( 'ktpwp_ajax_nonce', 'nonce', false ) ) {
+				throw new Exception( 'セキュリティ検証に失敗しました。' );
+			}
+
+			// 権限チェック
+			if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
+				throw new Exception( '権限がありません。' );
+			}
+
+			$to       = isset( $_POST['to'] ) ? sanitize_email( $_POST['to'] ) : '';
+			$subject  = isset( $_POST['subject'] ) ? sanitize_text_field( $_POST['subject'] ) : '';
+			$body     = isset( $_POST['body'] ) ? sanitize_textarea_field( $_POST['body'] ) : '';
+			$supplier_name = isset( $_POST['supplier_name'] ) ? sanitize_text_field( $_POST['supplier_name'] ) : '';
+
+			if ( empty( $to ) || ! filter_var( $to, FILTER_VALIDATE_EMAIL ) ) {
+				throw new Exception( '有効なメールアドレスが指定されていません。' );
+			}
+
+			if ( empty( $subject ) || empty( $body ) ) {
+				throw new Exception( '件名と本文を入力してください。' );
+			}
+
+			// 自社メールアドレスを取得
+			$smtp_settings = get_option( 'ktp_smtp_settings', array() );
+			$my_email      = ! empty( $smtp_settings['email_address'] ) ? sanitize_email( $smtp_settings['email_address'] ) : '';
+
+			// 旧システムからも取得（後方互換性）
+			if ( empty( $my_email ) ) {
+				global $wpdb;
+				$setting_table = $wpdb->prefix . 'ktp_setting';
+				$setting       = $wpdb->get_row( $wpdb->prepare(
+					"SELECT * FROM `{$setting_table}` WHERE id = %d",
+					1
+				) );
+				if ( $setting ) {
+					$my_email = sanitize_email( $setting->email_address );
+				}
+			}
+
+			// 会社情報を取得
+			$my_company = '';
+			if ( class_exists( 'KTP_Settings' ) ) {
+				$my_company = KTP_Settings::get_company_info();
+			}
+
+			// 旧システムからも取得（後方互換性）
+			if ( empty( $my_company ) ) {
+				global $wpdb;
+				$setting_table = $wpdb->prefix . 'ktp_setting';
+				$setting       = $wpdb->get_row( $wpdb->prepare(
+					"SELECT * FROM `{$setting_table}` WHERE id = %d",
+					1
+				) );
+				if ( $setting ) {
+					$my_company = sanitize_text_field( strip_tags( $setting->my_company_content ) );
+				}
+			}
+
+			// 本文の会社情報を実際の会社情報に置換
+			$body = str_replace( '会社情報', $my_company, $body );
+
+			// ヘッダーを設定
+			$headers = array();
+			if ( ! empty( $my_email ) ) {
+				$from_name = ! empty( $smtp_settings['smtp_from_name'] ) ? sanitize_text_field( $smtp_settings['smtp_from_name'] ) : '';
+				if ( ! empty( $from_name ) ) {
+					$headers[] = 'From: ' . $from_name . ' <' . $my_email . '>';
+				} else {
+					$headers[] = 'From: ' . $my_email;
+				}
+			}
+
+			// 添付ファイルの処理
+			$attachments = array();
+			$temp_files  = array();
+
+			if ( ! empty( $_FILES['attachments'] ) ) {
+				$total_size = 0;
+				$max_size   = 50 * 1024 * 1024; // 50MB
+
+				foreach ( $_FILES['attachments']['tmp_name'] as $index => $file_tmp ) {
+					if ( empty( $file_tmp ) || ! is_uploaded_file( $file_tmp ) ) {
+						continue;
+					}
+
+					$file_name = sanitize_file_name( $_FILES['attachments']['name'][ $index ] );
+					$file_size = $_FILES['attachments']['size'][ $index ];
+
+					// ファイルサイズチェック
+					if ( $file_size > 10 * 1024 * 1024 ) { // 10MB per file
+						throw new Exception( "ファイル「{$file_name}」が10MBを超えています。" );
+					}
+
+					$total_size += $file_size;
+					if ( $total_size > $max_size ) {
+						throw new Exception( "添付ファイルの合計サイズが50MBを超えています。" );
+					}
+
+					// 一時ディレクトリに保存
+					$upload_dir = wp_upload_dir();
+					$temp_dir   = $upload_dir['basedir'] . '/ktp-email-temp/';
+
+					if ( ! file_exists( $temp_dir ) ) {
+						wp_mkdir_p( $temp_dir );
+					}
+
+					$unique_filename = uniqid() . '_' . $file_name;
+					$temp_file_path  = $temp_dir . $unique_filename;
+
+					if ( move_uploaded_file( $file_tmp, $temp_file_path ) ) {
+						$attachments[] = $temp_file_path;
+						$temp_files[]  = $temp_file_path;
+					} else {
+						throw new Exception( "ファイル「{$file_name}」の保存に失敗しました。" );
+					}
+				}
+			}
+
+			// メール送信
+			$sent = wp_mail( $to, $subject, $body, $headers, $attachments );
+
+			// 一時ファイルのクリーンアップ
+			foreach ( $temp_files as $temp_file ) {
+				if ( file_exists( $temp_file ) ) {
+					unlink( $temp_file );
+				}
+			}
+
+			if ( $sent ) {
+				wp_send_json_success(
+					array(
+						'message'          => '発注書メールを送信しました。',
+						'to'               => $to,
+						'supplier_name'    => $supplier_name,
+						'attachment_count' => count( $attachments ),
+					)
+				);
+			} else {
+				throw new Exception( 'メール送信に失敗しました。サーバー設定を確認してください。' );
+			}
+		} catch ( Exception $e ) {
+			error_log( 'KTPWP Ajax send_purchase_order_email Error: ' . $e->getMessage() );
 			wp_send_json_error(
 				array(
 					'message' => $e->getMessage(),
