@@ -556,8 +556,8 @@ window.ktpAddCostRowFromSkill = function(skill, currentRow) {
                 <input type="hidden" name="cost_items[${newIndex}][sort_order]" value="${newIndex + 1}">
             </td>
             <td>
-                <span class="purchase-display${purchaseDisplayText.indexOf(' > ') !== -1 ? ' purchase-link' : ''}"${purchaseDisplayText.indexOf(' > ') !== -1 ? ` data-purchase="${purchaseDisplayText}"` : ''}>${purchaseDisplayText}</span>
-                <input type="hidden" name="cost_items[${newIndex}][purchase]" value="${purchaseDisplayText}">
+                <span class="purchase-display">手入力</span>
+                <input type="hidden" name="cost_items[${newIndex}][purchase]" value="">
             </td>
         </tr>
     `;

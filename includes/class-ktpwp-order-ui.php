@@ -318,7 +318,7 @@ class KTPWP_Order_UI {
 
             // Purchase (仕入)
             $purchase_value = isset($item['purchase']) ? $item['purchase'] : '';
-            $display_text = !empty($purchase_value) ? esc_html($purchase_value) : '(^^)';
+            $display_text = !empty($purchase_value) ? esc_html($purchase_value) : '手入力';
             $html .= '<td>';
             
             // 協力会社名 > 職能名の形式かチェック
