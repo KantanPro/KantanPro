@@ -3,7 +3,7 @@ Contributors: kantanpro
 Tags: workflow, order management, business, client, service, supplier, invoice, report, chat, product management, PDF, mobile, avatar
 Requires at least: 5.0
 Tested up to: 6.5
-Stable tag: 1.2.5(beta)
+Stable tag: 1.2.6(beta)
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -59,6 +59,14 @@ KantanProは、WordPressで動作する業務管理・受注進捗・請求・�
 5. モバイルでも快適に操作可能
 
 == 変更履歴 ==
+= 1.2.6(beta) =
+* PDF出力機能のさらなる強化
+* UI/UXの細部改善（gap→margin対応、アバター表示強化）
+* スタッフチャット機能の安定性向上
+* サービス選択ポップアップの利便性向上
+* セキュリティ強化（XSS/CSRF/SQLi/権限管理/ファイル検証/ノンス/prepare文）
+* その他細かなバグ修正
+
 = 1.2.5(beta) =
 * PDF出力機能の強化
 * UI/UXの改善（gap→margin対応、アバター表示強化）
