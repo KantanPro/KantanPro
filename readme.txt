@@ -3,7 +3,7 @@ Contributors: kantanpro
 Tags: workflow, order management, business, client, service, supplier, invoice, report, chat, product management, PDF, mobile, avatar
 Requires at least: 5.0
 Tested up to: 6.5
-Stable tag: 1.2.8(beta)
+Stable tag: 1.2.9(beta)
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -61,6 +61,12 @@ KantanProは、WordPressで動作する業務管理・受注進捗・請求・�
 5. モバイルでも快適に操作可能
 
 == 変更履歴 ==
+= 1.2.9(beta) =
+* WP-CLIベースのマイグレーション管理機能を導入
+* プラグイン有効化時の自動マイグレーション処理を削除
+* DB構造変更はWP-CLIコマンドで安全に実行可能に
+* その他細かなバグ修正・安定性向上
+
 = 1.2.8(beta) =
 * 全テーブルのカラム自動追加（自動マイグレーション）機能を追加
 * プラグイン有効化・初期化時にDB構造を自動アップデート
