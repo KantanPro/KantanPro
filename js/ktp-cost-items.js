@@ -1548,7 +1548,7 @@
         popupContent += `<div style="margin-bottom: 15px;"><label style="display: block; font-weight: bold; margin-bottom: 5px;">宛先：</label>`;
         popupContent += `<input type="email" id="purchase-to" placeholder="協力会社のメールアドレス" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;"></div>`;
         popupContent += `<div style="margin-bottom: 15px;"><label style="display: block; font-weight: bold; margin-bottom: 5px;">件名：</label>`;
-        popupContent += `<input type="text" id="purchase-subject" value="発注書：${projectName}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;"></div>`;
+        popupContent += `<input type="text" id="purchase-subject" value="発注書：ID:${orderId} [${orderDate}]" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;"></div>`;
         popupContent += `<div style="margin-bottom: 15px;"><label style="display: block; font-weight: bold; margin-bottom: 5px;">本文：</label>`;
         popupContent += `<textarea id="purchase-body" rows="8" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; resize: vertical; box-sizing: border-box; font-family: monospace;">${emailBody}</textarea></div>`;
         popupContent += `<div style="margin-bottom: 20px;"><label style="display: block; font-weight: bold; margin-bottom: 5px;">ファイル添付：</label>`;
