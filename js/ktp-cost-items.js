@@ -1830,9 +1830,18 @@
                         if (typeof window.showSuccessNotification === 'function') {
                             window.showSuccessNotification(notificationMessage);
                         } else {
-                            // フォールバック: アラート表示
                             alert('発注書メールを送信しました。');
                         }
+
+                        // チェックマークを該当リンクの直後に表示（注文成功時のみ）
+                        $(`.purchase-link`).each(function() {
+                          if (
+                            $(this).text() === `${supplierName}に発注` &&
+                            !$(this).next('.purchase-checked').length
+                          ) {
+                            $(this).after('<span class="purchase-checked" style="display:inline-block;margin-left:6px;vertical-align:middle;color:#dc3545;font-size:1.3em;font-weight:bold;">✓</span>');
+                          }
+                        });
                     } else {
                         $('.purchase-popup .popup-dialog').html(`
                             <div style="text-align: center; padding: 40px; color: #dc3545;">
@@ -1897,16 +1906,6 @@
                 $('.purchase-popup, .popup-overlay').remove();
                 $(document).off('keydown.purchase-popup');
             }
-        });
-
-        // チェックマークを該当リンクの直後に表示
-        $(`.purchase-link`).each(function() {
-          if (
-            $(this).text() === `${supplierName}に発注` &&
-            !$(this).next('.purchase-checked').length
-          ) {
-            $(this).after('<span class="purchase-checked" style="display:inline-block;margin-left:6px;vertical-align:middle;color:#dc3545;font-size:1.3em;font-weight:bold;">✓</span>');
-          }
         });
     });
 })(jQuery);
