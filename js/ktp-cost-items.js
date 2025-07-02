@@ -1472,22 +1472,44 @@
         // 合計金額を計算
         const totalAmount = supplierItems.reduce((sum, item) => sum + item.amount, 0);
         
-        // 会社情報を取得してからメール本文を生成
+        // 会社情報と協力会社担当者情報を取得してからメール本文を生成
         let companyInfo = '会社情報';
-        const companyAjaxUrl = typeof ktp_ajax_object !== 'undefined' ? ktp_ajax_object.ajax_url : '/wp-admin/admin-ajax.php';
-        const companyNonce = typeof ktp_ajax_object !== 'undefined' ? ktp_ajax_object.nonce : '';
+        let contactPerson = '';
+        const emailAjaxUrl = typeof ktp_ajax_object !== 'undefined' ? ktp_ajax_object.ajax_url : '/wp-admin/admin-ajax.php';
+        const emailNonce = typeof ktp_ajax_object !== 'undefined' ? ktp_ajax_object.nonce : '';
         
+        // 会社情報を取得
         $.ajax({
-            url: companyAjaxUrl,
+            url: emailAjaxUrl,
             type: 'POST',
             data: {
                 action: 'get_company_info',
-                nonce: companyNonce
+                nonce: emailNonce
             },
             async: false, // 同期処理で会社情報を取得
             success: function(response) {
                 if (response.success && response.data.company_info) {
                     companyInfo = response.data.company_info;
+                }
+            },
+            error: function() {
+                // エラーの場合はデフォルト値を使用
+            }
+        });
+        
+        // 協力会社担当者情報を取得
+        $.ajax({
+            url: emailAjaxUrl,
+            type: 'POST',
+            data: {
+                action: 'get_supplier_contact_info',
+                supplier_name: supplierName,
+                nonce: emailNonce
+            },
+            async: false, // 同期処理で担当者情報を取得
+            success: function(response) {
+                if (response.success && response.data.contact_info) {
+                    contactPerson = response.data.contact_info.contact_person;
                 }
             },
             error: function() {
@@ -1502,7 +1524,12 @@
             day: 'numeric'
         });
         
-        let emailBody = `${supplierName}様\n`;
+        let emailBody = `${supplierName}\n`;
+        if (contactPerson) {
+            emailBody += `${contactPerson} 様\n\n`;
+        } else {
+            emailBody += `担当者 様\n\n`;
+        }
         emailBody += `お世話になります。\n\n`;
         emailBody += `＜発注書＞ ID: ${orderId} [${orderDate}]\n`;
         emailBody += `以下につきまして発注します。\n\n`;

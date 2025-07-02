@@ -127,6 +127,11 @@ class KTPWP_Ajax {
 		add_action( 'wp_ajax_nopriv_get_company_info', array( $this, 'ajax_require_login' ) );
 		$this->registered_handlers[] = 'get_company_info';
 
+		// 協力会社担当者情報取得
+		add_action( 'wp_ajax_get_supplier_contact_info', array( $this, 'ajax_get_supplier_contact_info' ) );
+		add_action( 'wp_ajax_nopriv_get_supplier_contact_info', array( $this, 'ajax_require_login' ) );
+		$this->registered_handlers[] = 'get_supplier_contact_info';
+
 		// 最新の受注書プレビューデータ取得
 		add_action( 'wp_ajax_ktp_get_order_preview', array( $this, 'get_order_preview' ) );
 		add_action( 'wp_ajax_nopriv_ktp_get_order_preview', array( $this, 'ajax_require_login' ) );
@@ -1945,6 +1950,68 @@ class KTPWP_Ajax {
 			);
 		} catch ( Exception $e ) {
 			error_log( 'KTPWP Ajax get_company_info Error: ' . $e->getMessage() );
+			wp_send_json_error(
+				array(
+					'message' => $e->getMessage(),
+				)
+			);
+		}
+	}
+
+	/**
+	 * Ajax: 協力会社担当者情報取得
+	 */
+	public function ajax_get_supplier_contact_info() {
+		try {
+			// セキュリティチェック
+			if ( ! check_ajax_referer( 'ktpwp_ajax_nonce', 'nonce', false ) ) {
+				throw new Exception( 'セキュリティ検証に失敗しました。' );
+			}
+
+			// 権限チェック
+			if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
+				throw new Exception( '権限がありません。' );
+			}
+
+			$supplier_name = isset( $_POST['supplier_name'] ) ? sanitize_text_field( $_POST['supplier_name'] ) : '';
+			
+			if ( empty( $supplier_name ) ) {
+				throw new Exception( '協力会社名が指定されていません。' );
+			}
+
+			// 協力会社情報を取得
+			global $wpdb;
+			$supplier_table = $wpdb->prefix . 'ktp_supplier';
+			$supplier = $wpdb->get_row( $wpdb->prepare(
+				"SELECT * FROM `{$supplier_table}` WHERE company_name = %s",
+				$supplier_name
+			) );
+
+			if ( $supplier ) {
+				$contact_info = array(
+					'supplier_name' => $supplier->company_name,
+					'contact_person' => $supplier->name,
+					'email' => $supplier->email,
+					'phone' => $supplier->phone,
+					'address' => $supplier->address
+				);
+			} else {
+				$contact_info = array(
+					'supplier_name' => $supplier_name,
+					'contact_person' => '',
+					'email' => '',
+					'phone' => '',
+					'address' => ''
+				);
+			}
+
+			wp_send_json_success(
+				array(
+					'contact_info' => $contact_info,
+				)
+			);
+		} catch ( Exception $e ) {
+			error_log( 'KTPWP Ajax get_supplier_contact_info Error: ' . $e->getMessage() );
 			wp_send_json_error(
 				array(
 					'message' => $e->getMessage(),
