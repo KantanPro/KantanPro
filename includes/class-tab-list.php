@@ -85,8 +85,7 @@ class Kantan_List_Class {
         
         foreach ( $progress_labels as $num => $label ) {
             $count = $wpdb->get_var( $wpdb->prepare( 
-                "SELECT COUNT(*) FROM `%1s` WHERE progress = %d", 
-                $table_name, 
+                "SELECT COUNT(*) FROM `{$table_name}` WHERE progress = %d", 
                 $num 
             ) );
             $progress_counts[ $num ] = (int) $count;
@@ -100,8 +99,7 @@ class Kantan_List_Class {
                 }
                 
                 $warning_count = $wpdb->get_var( $wpdb->prepare( 
-                    "SELECT COUNT(*) FROM `%1s` WHERE progress = %d AND expected_delivery_date IS NOT NULL AND expected_delivery_date <= DATE_ADD(CURDATE(), INTERVAL %d DAY)", 
-                    $table_name, 
+                    "SELECT COUNT(*) FROM `{$table_name}` WHERE progress = %d AND expected_delivery_date IS NOT NULL AND expected_delivery_date <= DATE_ADD(CURDATE(), INTERVAL %d DAY)", 
                     $num,
                     $warning_days
                 ) );
@@ -114,9 +112,8 @@ class Kantan_List_Class {
         // ▼▼▼ 完了タブの請求書締日警告件数をカウント ▼▼▼
         $invoice_warning_count = 0;
         if (isset($progress_labels[4])) {
-            $query_invoice_warning = $wpdb->prepare(
-                "SELECT o.id, o.client_id, o.completion_date, c.closing_day FROM {$table_name} o LEFT JOIN {$wpdb->prefix}ktp_client c ON o.client_id = c.id WHERE o.progress = 4 AND o.completion_date IS NOT NULL AND c.closing_day IS NOT NULL AND c.closing_day != 'なし'"
-            );
+            // プレースホルダーが不要なクエリなので、直接実行
+            $query_invoice_warning = "SELECT o.id, o.client_id, o.completion_date, c.closing_day FROM {$table_name} o LEFT JOIN {$wpdb->prefix}ktp_client c ON o.client_id = c.id WHERE o.progress = 4 AND o.completion_date IS NOT NULL AND c.closing_day IS NOT NULL AND c.closing_day != 'なし'";
             $orders_for_invoice_warning = $wpdb->get_results($query_invoice_warning);
             $today = new DateTime();
             $today->setTime(0, 0, 0);

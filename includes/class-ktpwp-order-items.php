@@ -140,6 +140,8 @@ class KTPWP_Order_Items {
 
                     if ( $result === false ) {
                         error_log( 'KTPWP: Failed to add column ' . $col_name . ' to invoice items table' );
+                    } else {
+                        error_log( 'KTPWP: Successfully added column ' . $col_name . ' to invoice items table' );
                     }
                 }
             }
@@ -157,7 +159,7 @@ class KTPWP_Order_Items {
                 $wpdb->query("ALTER TABLE `{$table_name}` ADD UNIQUE (id)");
             }
 
-            // Force migration of DECIMAL columns to INT for version 2.0
+            // Force migration of DECIMAL columns for version 2.1
             $current_version = get_option( 'ktp_invoice_items_table_version', '1.0' );
 
             if ( version_compare( $current_version, '2.1', '<' ) ) {
@@ -165,8 +167,8 @@ class KTPWP_Order_Items {
                 $column_info = $wpdb->get_results( "SHOW COLUMNS FROM `{$table_name}` WHERE Field IN ('price', 'quantity')" );
 
                 foreach ( $column_info as $column ) {
-                    // Convert to DECIMAL(10,2) for price and quantity
-                    $result = $wpdb->query( $wpdb->prepare("ALTER TABLE `{$table_name}` MODIFY `%s` DECIMAL(10,2) NOT NULL DEFAULT 0.00", $column->Field) );
+                    // Convert to DECIMAL(10,2) for price and quantity - カラム名を直接指定
+                    $result = $wpdb->query("ALTER TABLE `{$table_name}` MODIFY `{$column->Field}` DECIMAL(10,2) NOT NULL DEFAULT 0.00");
 
                     if ( $result === false ) {
                         error_log( "KTPWP: Failed to migrate column {$column->Field} to DECIMAL(10,2) in invoice items table. Error: " . $wpdb->last_error );
@@ -259,6 +261,8 @@ class KTPWP_Order_Items {
 
                     if ( $result === false ) {
                         error_log( 'KTPWP: Failed to add column ' . $col_name . ' to cost items table' );
+                    } else {
+                        error_log( 'KTPWP: Successfully added column ' . $col_name . ' to cost items table' );
                     }
                 }
             }
@@ -284,7 +288,8 @@ class KTPWP_Order_Items {
                 $column_info = $wpdb->get_results( "SHOW COLUMNS FROM `{$table_name}` WHERE Field IN ('price', 'quantity')" );
 
                 foreach ( $column_info as $column ) {
-                    $result = $wpdb->query( $wpdb->prepare("ALTER TABLE `{$table_name}` MODIFY `%s` DECIMAL(10,2) NOT NULL DEFAULT 0.00", $column->Field) );
+                    // カラム名を直接指定（wpdb->prepare()を使わない）
+                    $result = $wpdb->query("ALTER TABLE `{$table_name}` MODIFY `{$column->Field}` DECIMAL(10,2) NOT NULL DEFAULT 0.00");
 
                     if ( $result === false ) {
                         error_log( "KTPWP: Failed to migrate column {$column->Field} to DECIMAL(10,2) in cost items table. Error: " . $wpdb->last_error );
@@ -308,7 +313,7 @@ class KTPWP_Order_Items {
                 }
             }
 
-            // 既存テーブルにカラムがなければ追加
+            // 既存テーブルにorderedカラムがなければ追加
             $ordered_column = $wpdb->get_results("SHOW COLUMNS FROM `{$table_name}` LIKE 'ordered'");
             if ( empty($ordered_column) ) {
                 $result = $wpdb->query("ALTER TABLE `{$table_name}` ADD COLUMN ordered TINYINT(1) NOT NULL DEFAULT 0 AFTER purchase");
