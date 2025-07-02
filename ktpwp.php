@@ -1027,72 +1027,128 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 
 // === 自動マイグレーション処理 ===
 function ktpwp_run_auto_migration() {
-    // 受注テーブル
-    if (class_exists('KTPWP_Order')) {
-        if (method_exists('KTPWP_Order', 'create_order_table')) {
-            KTPWP_Order::get_instance()->create_order_table();
-        } elseif (method_exists('KTPWP_Order', 'create_table')) {
-            KTPWP_Order::get_instance()->create_table();
+    global $wpdb;
+
+    // 1. 受注テーブル
+    $order_table = $wpdb->prefix . 'ktp_order';
+    $order_columns = [
+        'desired_delivery_date' => "ALTER TABLE `$order_table` ADD COLUMN `desired_delivery_date` DATE NULL DEFAULT NULL COMMENT '希望納期'",
+        'expected_delivery_date' => "ALTER TABLE `$order_table` ADD COLUMN `expected_delivery_date` DATE NULL DEFAULT NULL COMMENT '納品予定日'",
+        'created_at' => "ALTER TABLE `$order_table` ADD COLUMN `created_at` DATETIME NULL DEFAULT NULL COMMENT '作成日時'",
+        'updated_at' => "ALTER TABLE `$order_table` ADD COLUMN `updated_at` DATETIME NULL DEFAULT NULL COMMENT '更新日時'",
+    ];
+    if ($wpdb->get_var("SHOW TABLES LIKE '$order_table'")) {
+        $existing = $wpdb->get_col("SHOW COLUMNS FROM `$order_table`", 0);
+        foreach ($order_columns as $col => $sql) {
+            if (!in_array($col, $existing)) {
+                $wpdb->query($sql);
+            }
         }
     }
-    // 受注明細・原価明細テーブル
-    if (class_exists('KTPWP_Order_Items')) {
-        $order_items = KTPWP_Order_Items::get_instance();
-        if (method_exists($order_items, 'create_invoice_items_table')) {
-            $order_items->create_invoice_items_table();
-        }
-        if (method_exists($order_items, 'create_cost_items_table')) {
-            $order_items->create_cost_items_table();
-        }
-    }
-    // スタッフチャットテーブル
-    if (class_exists('KTPWP_Staff_Chat')) {
-        $staff_chat = KTPWP_Staff_Chat::get_instance();
-        if (method_exists($staff_chat, 'create_table')) {
-            $staff_chat->create_table();
-        }
-    }
-    // クライアントテーブル
-    if (class_exists('KTPWP_Client_DB')) {
-        $client_db = KTPWP_Client_DB::get_instance();
-        if (method_exists($client_db, 'create_table')) {
-            $client_db->create_table('client');
+
+    // 2. 顧客テーブル
+    $client_table = $wpdb->prefix . 'ktp_client';
+    $client_columns = [
+        'category' => "ALTER TABLE `$client_table` ADD COLUMN `category` VARCHAR(255) NULL",
+        'created_at' => "ALTER TABLE `$client_table` ADD COLUMN `created_at` DATETIME NULL DEFAULT NULL COMMENT '作成日時'",
+        'updated_at' => "ALTER TABLE `$client_table` ADD COLUMN `updated_at` DATETIME NULL DEFAULT NULL COMMENT '更新日時'",
+    ];
+    if ($wpdb->get_var("SHOW TABLES LIKE '$client_table'")) {
+        $existing = $wpdb->get_col("SHOW COLUMNS FROM `$client_table`", 0);
+        foreach ($client_columns as $col => $sql) {
+            if (!in_array($col, $existing)) {
+                $wpdb->query($sql);
+            }
         }
     }
-    // サービステーブル
-    if (class_exists('KTPWP_Service_DB')) {
-        $service_db = KTPWP_Service_DB::get_instance();
-        if (method_exists($service_db, 'create_table')) {
-            $service_db->create_table('service');
+
+    // 3. 職能テーブル
+    $skills_table = $wpdb->prefix . 'ktp_supplier_skills';
+    $skills_columns = [
+        'unit_price' => "ALTER TABLE `$skills_table` MODIFY COLUMN `unit_price` DECIMAL(20,10) NOT NULL DEFAULT 0 COMMENT '単価'",
+        'created_at' => "ALTER TABLE `$skills_table` ADD COLUMN `created_at` DATETIME NULL DEFAULT NULL COMMENT '作成日時'",
+        'updated_at' => "ALTER TABLE `$skills_table` ADD COLUMN `updated_at` DATETIME NULL DEFAULT NULL COMMENT '更新日時'",
+    ];
+    if ($wpdb->get_var("SHOW TABLES LIKE '$skills_table'")) {
+        $existing = $wpdb->get_col("SHOW COLUMNS FROM `$skills_table`", 0);
+        foreach ($skills_columns as $col => $sql) {
+            if ($col === 'unit_price') {
+                // MODIFYは常に実行
+                $wpdb->query($sql);
+            } elseif (!in_array($col, $existing)) {
+                $wpdb->query($sql);
+            }
         }
     }
-    // 協力会社テーブル
-    if (class_exists('KTPWP_Supplier_Data')) {
-        $supplier_data = new KTPWP_Supplier_Data();
-        if (method_exists($supplier_data, 'create_table')) {
-            $supplier_data->create_table('supplier');
+
+    // 4. 受注明細テーブル
+    $invoice_table = $wpdb->prefix . 'ktp_order_invoice_items';
+    $invoice_columns = [
+        'purchase' => "ALTER TABLE `$invoice_table` ADD COLUMN `purchase` VARCHAR(255) NULL AFTER remarks",
+        'ordered' => "ALTER TABLE `$invoice_table` ADD COLUMN `ordered` TINYINT(1) NOT NULL DEFAULT 0 AFTER purchase",
+        'sort_order' => "ALTER TABLE `$invoice_table` ADD COLUMN `sort_order` INT NOT NULL DEFAULT 1 AFTER ordered",
+        'created_at' => "ALTER TABLE `$invoice_table` ADD COLUMN `created_at` DATETIME NULL DEFAULT NULL COMMENT '作成日時'",
+        'updated_at' => "ALTER TABLE `$invoice_table` ADD COLUMN `updated_at` DATETIME NULL DEFAULT NULL COMMENT '更新日時'",
+    ];
+    if ($wpdb->get_var("SHOW TABLES LIKE '$invoice_table'")) {
+        $existing = $wpdb->get_col("SHOW COLUMNS FROM `$invoice_table`", 0);
+        foreach ($invoice_columns as $col => $sql) {
+            if (!in_array($col, $existing)) {
+                $wpdb->query($sql);
+            }
         }
     }
-    // 協力会社スキルテーブル
-    if (class_exists('KTPWP_Supplier_Skills')) {
-        $supplier_skills = KTPWP_Supplier_Skills::get_instance();
-        if (method_exists($supplier_skills, 'create_table')) {
-            $supplier_skills->create_table();
+
+    // 5. 原価明細テーブル
+    $cost_table = $wpdb->prefix . 'ktp_order_cost_items';
+    $cost_columns = [
+        'purchase' => "ALTER TABLE `$cost_table` ADD COLUMN `purchase` VARCHAR(255) NULL AFTER remarks",
+        'ordered' => "ALTER TABLE `$cost_table` ADD COLUMN `ordered` TINYINT(1) NOT NULL DEFAULT 0 AFTER purchase",
+        'supplier_id' => "ALTER TABLE `$cost_table` ADD COLUMN `supplier_id` INT(11) DEFAULT NULL AFTER order_id",
+        'created_at' => "ALTER TABLE `$cost_table` ADD COLUMN `created_at` DATETIME NULL DEFAULT NULL COMMENT '作成日時'",
+        'updated_at' => "ALTER TABLE `$cost_table` ADD COLUMN `updated_at` DATETIME NULL DEFAULT NULL COMMENT '更新日時'",
+    ];
+    if ($wpdb->get_var("SHOW TABLES LIKE '$cost_table'")) {
+        $existing = $wpdb->get_col("SHOW COLUMNS FROM `$cost_table`", 0);
+        foreach ($cost_columns as $col => $sql) {
+            if (!in_array($col, $existing)) {
+                $wpdb->query($sql);
+            }
         }
     }
-    // 設定テーブル
-    if (class_exists('KTPWP_Setting_DB')) {
-        if (method_exists('KTPWP_Setting_DB', 'create_table')) {
-            KTPWP_Setting_DB::create_table('setting');
+
+    // 6. サービステーブル
+    $service_table = $wpdb->prefix . 'ktp_service';
+    $service_columns = [
+        'unit' => "ALTER TABLE `$service_table` ADD COLUMN `unit` VARCHAR(50) NOT NULL DEFAULT ''",
+        'category' => "ALTER TABLE `$service_table` ADD COLUMN `category` VARCHAR(100) NOT NULL DEFAULT ''",
+        'created_at' => "ALTER TABLE `$service_table` ADD COLUMN `created_at` DATETIME NULL DEFAULT NULL COMMENT '作成日時'",
+        'updated_at' => "ALTER TABLE `$service_table` ADD COLUMN `updated_at` DATETIME NULL DEFAULT NULL COMMENT '更新日時'",
+    ];
+    if ($wpdb->get_var("SHOW TABLES LIKE '$service_table'")) {
+        $existing = $wpdb->get_col("SHOW COLUMNS FROM `$service_table`", 0);
+        foreach ($service_columns as $col => $sql) {
+            if (!in_array($col, $existing)) {
+                $wpdb->query($sql);
+            }
         }
     }
-    // その他必要なテーブルがあればここに追加
+
+    // 7. 設定テーブル
+    $setting_table = $wpdb->prefix . 'ktp_setting';
+    $setting_columns = [
+        'my_company_content' => "ALTER TABLE `$setting_table` ADD COLUMN `my_company_content` LONGTEXT DEFAULT '' NOT NULL",
+        'template_content' => "ALTER TABLE `$setting_table` ADD COLUMN `template_content` LONGTEXT DEFAULT '' NOT NULL",
+    ];
+    if ($wpdb->get_var("SHOW TABLES LIKE '$setting_table'")) {
+        $existing = $wpdb->get_col("SHOW COLUMNS FROM `$setting_table`", 0);
+        foreach ($setting_columns as $col => $sql) {
+            if (!in_array($col, $existing)) {
+                $wpdb->query($sql);
+            }
+        }
+    }
 }
 
-// プラグイン有効化時にもマイグレーション
 register_activation_hook(__FILE__, 'ktpwp_run_auto_migration');
-
-// プラグイン初期化時にもマイグレーション（initの早い段階で実行）
-add_action('init', function() {
-    ktpwp_run_auto_migration();
-}, 1);
+add_action('init', function() { ktpwp_run_auto_migration(); }, 1);
