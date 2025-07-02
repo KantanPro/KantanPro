@@ -526,10 +526,7 @@ window.ktpAddCostRowFromSkill = function(skill, currentRow) {
     });
     
     // 新規行のHTMLを生成
-    const purchaseDisplayText = window.ktpCurrentSupplierName && skill.product_name ? 
-        `${window.ktpCurrentSupplierName} > ${skill.product_name}` : 
-        (window.ktpCurrentSupplierName || '手入力');
-    const isSupplier = window.ktpCurrentSupplierName && skill.product_name;
+    const isSupplier = !!window.ktpCurrentSupplierName;
     
     const newRowHtml = `
         <tr class="cost-item-row" data-row-id="0" data-newly-added="true">
@@ -553,11 +550,15 @@ window.ktpAddCostRowFromSkill = function(skill, currentRow) {
                 <input type="number" name="cost_items[${newIndex}][amount]" class="cost-item-input amount" value="" step="0.01" min="0" style="text-align:left;" readonly>
             </td>
             <td>
-                <span class="purchase-display" 
-                    ${isSupplier ? `class='purchase-display purchase-link' data-purchase='${window.ktpCurrentSupplierName} > ${skill.product_name}' style='color:#0073aa;cursor:pointer;text-decoration:underline;'` : ''}>
+                <input type="text" name="cost_items[${newIndex}][remarks]" class="cost-item-input remarks" value="">
+                <input type="hidden" name="cost_items[${newIndex}][sort_order]" value="${newIndex + 1}">
+            </td>
+            <td>
+                <span class="purchase-display${isSupplier ? ' purchase-link' : ''}" 
+                    ${isSupplier ? `data-purchase='${window.ktpCurrentSupplierName}' style='color:#0073aa;cursor:pointer;text-decoration:underline;'` : ''}>
                     ${isSupplier ? `${window.ktpCurrentSupplierName}に発注` : '手入力'}
                 </span>
-                <input type="hidden" name="cost_items[${newIndex}][purchase]" value="${isSupplier ? `${window.ktpCurrentSupplierName} > ${skill.product_name}` : ''}">
+                <input type="hidden" name="cost_items[${newIndex}][purchase]" value="${isSupplier ? window.ktpCurrentSupplierName : ''}">
             </td>
         </tr>
     `;
@@ -624,9 +625,7 @@ window.ktpAddCostRowFromSkill = function(skill, currentRow) {
                     
                     // 協力会社名を「仕入」フィールドに保存
                     if (window.ktpCurrentSupplierName) {
-                        const purchaseDisplayText = window.ktpCurrentSupplierName && skill.product_name ? 
-                            `${window.ktpCurrentSupplierName} > ${skill.product_name}` : 
-                            window.ktpCurrentSupplierName;
+                        const purchaseDisplayText = window.ktpCurrentSupplierName;
                         autoSaveItem('cost', newItemId, 'purchase', purchaseDisplayText, orderId);
                     }
                     
@@ -685,12 +684,9 @@ window.ktpUpdateCostRowFromSkill = function(skill, currentRow) {
             
             // 協力会社名を「仕入」フィールドに表示
             if (window.ktpCurrentSupplierName) {
-                const productName = skill.product_name;
-                const purchaseDisplayText = window.ktpCurrentSupplierName && productName ? 
-                    `${window.ktpCurrentSupplierName} > ${productName}` : 
-                    window.ktpCurrentSupplierName;
+                const purchaseDisplayText = window.ktpCurrentSupplierName;
                 const $purchaseDisplay = currentRow.find('.purchase-display');
-                if (window.ktpCurrentSupplierName && productName) {
+                if (window.ktpCurrentSupplierName) {
                     $purchaseDisplay
                         .removeClass('purchase-link')
                         .addClass('purchase-link')
@@ -726,9 +722,7 @@ window.ktpUpdateCostRowFromSkill = function(skill, currentRow) {
                     
                     // 協力会社名を「仕入」フィールドに保存
                     if (window.ktpCurrentSupplierName) {
-                        const purchaseDisplayText = window.ktpCurrentSupplierName && skill.product_name ? 
-                            `${window.ktpCurrentSupplierName} > ${skill.product_name}` : 
-                            window.ktpCurrentSupplierName;
+                        const purchaseDisplayText = window.ktpCurrentSupplierName;
                         autoSaveItem('cost', itemId, 'purchase', purchaseDisplayText, orderId);
                     }
                     if (supplierId && supplierId > 0) {

@@ -1415,56 +1415,33 @@
         e.preventDefault();
         e.stopPropagation();
         
-        const purchaseText = $(this).data('purchase');
-        if (!purchaseText || purchaseText.indexOf(' > ') === -1) {
+        const supplierName = $(this).data('purchase');
+        if (!supplierName) {
             return;
         }
-        
-        // 協力会社名を抽出
-        const supplierName = purchaseText.split(' > ')[0];
-        
-        // 同一協力会社の他の仕入情報を収集
-        const supplierPurchases = [];
-        $('.cost-items-table .purchase-display').each(function() {
-            const text = $(this).text().trim();
-            if (text && text.indexOf(' > ') !== -1) {
-                const parts = text.split(' > ');
-                if (parts[0] === supplierName) {
-                    supplierPurchases.push(parts[1]);
-                }
-            }
-        });
-        
-        // 重複を除去してソート
-        const uniquePurchases = [...new Set(supplierPurchases)].sort();
-        
-        // 発注書メール用のデータを収集
+        // 必要な変数を明示的に取得
         const orderId = $('input[name="order_id"]').val() || $('#order_id').val();
         const projectName = $('input[name="project_name"]').val() || $('#project_name').val() || '案件名未設定';
-        
-        // 同一協力会社のコスト項目を収集
+        // 以降、supplierNameのみで処理
+        // 同一協力会社の他の仕入情報を収集
         const supplierItems = [];
         $('.cost-items-table tbody tr').each(function() {
             const $row = $(this);
             const purchaseText = $row.find('.purchase-display').text().trim();
-            if (purchaseText && purchaseText.indexOf(' > ') !== -1) {
-                const parts = purchaseText.split(' > ');
-                if (parts[0] === supplierName) {
-                    const productName = $row.find('.product-name').val();
-                    const price = parseFloat($row.find('.price').val()) || 0;
-                    const quantity = parseFloat($row.find('.quantity').val()) || 0;
-                    const unit = $row.find('.unit').val() || '';
-                    const amount = parseFloat($row.find('.amount').val()) || 0;
-                    
-                    if (productName && price > 0) {
-                        supplierItems.push({
-                            productName: productName,
-                            price: price,
-                            quantity: quantity,
-                            unit: unit,
-                            amount: amount
-                        });
-                    }
+            if (purchaseText && purchaseText.indexOf(supplierName + 'に発注') !== -1) {
+                const productName = $row.find('.product-name').val();
+                const price = parseFloat($row.find('.price').val()) || 0;
+                const quantity = parseFloat($row.find('.quantity').val()) || 0;
+                const unit = $row.find('.unit').val() || '';
+                const amount = parseFloat($row.find('.amount').val()) || 0;
+                if (productName && price > 0) {
+                    supplierItems.push({
+                        productName: productName,
+                        price: price,
+                        quantity: quantity,
+                        unit: unit,
+                        amount: amount
+                    });
                 }
             }
         });
@@ -1920,6 +1897,16 @@
                 $('.purchase-popup, .popup-overlay').remove();
                 $(document).off('keydown.purchase-popup');
             }
+        });
+
+        // チェックマークを該当リンクの直後に表示
+        $(`.purchase-link`).each(function() {
+          if (
+            $(this).text() === `${supplierName}に発注` &&
+            !$(this).next('.purchase-checked').length
+          ) {
+            $(this).after('<span class="purchase-checked" style="display:inline-block;margin-left:6px;vertical-align:middle;color:#dc3545;font-size:1.3em;font-weight:bold;">✓</span>');
+          }
         });
     });
 })(jQuery);

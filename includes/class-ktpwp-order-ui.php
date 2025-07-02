@@ -318,19 +318,19 @@ class KTPWP_Order_UI {
 
             // Purchase (仕入)
             $purchase_value = isset($item['purchase']) ? $item['purchase'] : '';
-            $display_text = !empty($purchase_value) ? esc_html($purchase_value) : '手入力';
-            $html .= '<td>';
-            
-            // 協力会社名 > 職能名の形式かチェック
-            if (!empty($purchase_value) && strpos($purchase_value, ' > ') !== false) {
-                $html .= '<span class="purchase-display purchase-link" data-purchase="' . esc_attr($purchase_value) . '" style="cursor: pointer; color: #007cba; text-decoration: underline;">' . $display_text . '</span>';
+            if (!empty($purchase_value)) {
+                $html .= '<td>';
+                $html .= '<span class="purchase-display purchase-link" data-purchase="' . esc_attr($purchase_value) . '" style="cursor: pointer; color: #007cba; text-decoration: underline;">' . esc_html($purchase_value) . 'に発注</span>';
+                $html .= '<input type="hidden" name="cost_items[' . $index . '][purchase]" ';
+                $html .= 'value="' . esc_attr($purchase_value) . '" />';
+                $html .= '</td>';
             } else {
-                $html .= '<span class="purchase-display">' . $display_text . '</span>';
+                $html .= '<td>';
+                $html .= '<span class="purchase-display">手入力</span>';
+                $html .= '<input type="hidden" name="cost_items[' . $index . '][purchase]" ';
+                $html .= 'value="" />';
+                $html .= '</td>';
             }
-            
-            $html .= '<input type="hidden" name="cost_items[' . $index . '][purchase]" ';
-            $html .= 'value="' . esc_attr($purchase_value) . '" />';
-            $html .= '</td>';
 
             $html .= '</tr>';
         }
