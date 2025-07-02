@@ -528,7 +528,8 @@ window.ktpAddCostRowFromSkill = function(skill, currentRow) {
     // 新規行のHTMLを生成
     const purchaseDisplayText = window.ktpCurrentSupplierName && skill.product_name ? 
         `${window.ktpCurrentSupplierName} > ${skill.product_name}` : 
-        (window.ktpCurrentSupplierName || '(^^)');
+        (window.ktpCurrentSupplierName || '手入力');
+    const isSupplier = window.ktpCurrentSupplierName && skill.product_name;
     
     const newRowHtml = `
         <tr class="cost-item-row" data-row-id="0" data-newly-added="true">
@@ -552,12 +553,11 @@ window.ktpAddCostRowFromSkill = function(skill, currentRow) {
                 <input type="number" name="cost_items[${newIndex}][amount]" class="cost-item-input amount" value="" step="0.01" min="0" style="text-align:left;" readonly>
             </td>
             <td>
-                <input type="text" name="cost_items[${newIndex}][remarks]" class="cost-item-input remarks" value="">
-                <input type="hidden" name="cost_items[${newIndex}][sort_order]" value="${newIndex + 1}">
-            </td>
-            <td>
-                <span class="purchase-display">手入力</span>
-                <input type="hidden" name="cost_items[${newIndex}][purchase]" value="">
+                <span class="purchase-display" 
+                    ${isSupplier ? `class='purchase-display purchase-link' data-purchase='${window.ktpCurrentSupplierName} > ${skill.product_name}' style='color:#0073aa;cursor:pointer;text-decoration:underline;'` : ''}>
+                    ${isSupplier ? `${window.ktpCurrentSupplierName}に発注` : '手入力'}
+                </span>
+                <input type="hidden" name="cost_items[${newIndex}][purchase]" value="${isSupplier ? `${window.ktpCurrentSupplierName} > ${skill.product_name}` : ''}">
             </td>
         </tr>
     `;
@@ -689,17 +689,20 @@ window.ktpUpdateCostRowFromSkill = function(skill, currentRow) {
                 const purchaseDisplayText = window.ktpCurrentSupplierName && productName ? 
                     `${window.ktpCurrentSupplierName} > ${productName}` : 
                     window.ktpCurrentSupplierName;
-                
-                // リンク付きの仕入フィールドを更新
                 const $purchaseDisplay = currentRow.find('.purchase-display');
-                if (purchaseDisplayText.indexOf(' > ') !== -1) {
-                    $purchaseDisplay.removeClass('purchase-link').addClass('purchase-link')
+                if (window.ktpCurrentSupplierName && productName) {
+                    $purchaseDisplay
+                        .removeClass('purchase-link')
+                        .addClass('purchase-link')
                         .attr('data-purchase', purchaseDisplayText)
-                        .text(purchaseDisplayText);
+                        .css({color:'#0073aa', cursor:'pointer', 'text-decoration':'underline'})
+                        .text(`${window.ktpCurrentSupplierName}に発注`);
                 } else {
-                    $purchaseDisplay.removeClass('purchase-link')
+                    $purchaseDisplay
+                        .removeClass('purchase-link')
                         .removeAttr('data-purchase')
-                        .text(purchaseDisplayText);
+                        .css({color:'', cursor:'', 'text-decoration':''})
+                        .text('手入力');
                 }
                 currentRow.find('input[name*="[purchase]"]').val(purchaseDisplayText);
             }
