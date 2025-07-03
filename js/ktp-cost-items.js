@@ -402,13 +402,31 @@
                     const result = typeof response === 'string' ? JSON.parse(response) : response;
                     if (result.success) {
                         console.log('Cost auto-saved successfully');
+                        
+                        // 成功通知を表示（条件付き）
+                        // 実際に値が変更された場合のみ通知を表示
+                        if (typeof window.showSuccessNotification === 'function' && 
+                            result.data && result.data.value_changed === true) {
+                            window.showSuccessNotification('原価項目が保存されました');
+                        }
+                        
                         // 成功時の視覚的フィードバック（オプション）
                         // showSaveIndicator('saved');
                     } else {
                         console.error('Cost auto-save failed:', result.message);
+                        
+                        // エラー通知を表示
+                        if (typeof window.showErrorNotification === 'function') {
+                            window.showErrorNotification('原価項目の保存に失敗しました: ' + (result.data || '不明なエラー'));
+                        }
                     }
                 } catch (e) {
                     console.error('Cost auto-save response parse error:', e, 'Raw response:', response);
+                    
+                    // エラー通知を表示
+                    if (typeof window.showErrorNotification === 'function') {
+                        window.showErrorNotification('原価項目の保存中にエラーが発生しました');
+                    }
                 }
             },
             error: function (xhr, status, error) {

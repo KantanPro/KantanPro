@@ -6,7 +6,7 @@
  * - モバイル対応UI、PDF出力、サービス選択ポップアップ、アバター、ヘルプボタン、セキュリティ強化など最新機能を網羅。
  * - 管理タブ・伝票処理・顧客・サービス・協力会社・レポート・チャット等の使い方を解説。
  * - バージョンアップ履歴・トラブルシューティングも掲載。
- * - 最新バージョン: 1.2.9(beta)
+ * - 最新バージョン: 1.3.0(beta)
  *
  * @package KTPWP
  * @subpackage Includes
@@ -231,21 +231,36 @@ class KTPWP_Plugin_Reference {
      * @return string HTML content
      */
     private function get_overview_content() {
-        return '<h2>KantanPro（KTPWP）リファレンス概要</h2>'
-            . '<ul>'
-            . '<li>モバイル(iOS/Android)実機でも崩れない直感的UI（gap→margin対応、UI/UX改善）</li>'
-            . '<li>受注書・請求書のPDF出力（個別・一括・強化版）</li>'
-            . '<li>サービス選択ポップアップ（伝票編集時、UI改善）</li>'
-            . '<li>スタッフチャット（自動スクロール・削除連動・安定化）</li>'
-            . '<li>ログインユーザーアバター・スタッフ表示</li>'
-            . '<li>ヘルプ（リファレンス）ボタン</li>'
-            . '<li>強固なセキュリティ（XSS/CSRF/SQLi/権限管理/ファイル検証/ノンス/prepare文）</li>'
-            . '<li>ページネーション・検索・ソート・進捗/納期管理・警告マーク</li>'
-            . '<li><b>【NEW】全テーブルのカラム自動追加（自動マイグレーション）</b></li>'
-            . '<li>【NEW】WP-CLIベースのマイグレーション管理機能を追加（自動マイグレーション処理は廃止）</li>'
-            . '<li>DB構造変更はWP-CLIコマンドで安全に実行可能</li>'
-            . '</ul>'
-            . '<p>各タブ・機能の詳細は「タブ解説」や「トラブルシューティング」も参照してください。</p>';
+        $version = KANTANPRO_PLUGIN_VERSION;
+        
+        return '<div class="ktpwp-reference-section">
+            <h2>KantanPro プラグイン概要</h2>
+            <p><strong>バージョン:</strong> ' . esc_html($version) . '</p>
+            
+            <h3>🎯 プラグインの目的</h3>
+            <p>KantanProは、WordPress上で業務管理・受注進捗・請求・顧客・サービス・協力会社・レポート・スタッフチャットまで一元管理できる多機能プラグインです。</p>
+            
+            <h3>🚀 主要機能</h3>
+            <ul>
+                <li><strong>6つの管理タブ</strong>：仕事リスト・伝票処理・得意先・サービス・協力会社・レポート</li>
+                <li><strong>受注案件の進捗管理</strong>：7段階（受注→進行中→完了→請求→支払い→ボツ）</li>
+                <li><strong>PDF出力機能</strong>：受注書・請求書の個別・一括出力</li>
+                <li><strong>スタッフチャット</strong>：リアルタイムコミュニケーション</li>
+                <li><strong>モバイル対応UI</strong>：レスポンシブデザイン・アバター表示</li>
+                <li><strong>セキュリティ機能</strong>：XSS/CSRF/SQLi対策・権限管理</li>
+                <li><strong>自動マイグレーション</strong>：DB構造の自動更新</li>
+                <li><strong>WP-CLI対応</strong>：コマンドラインでの管理</li>
+            </ul>
+            
+            <h3>📱 モバイル対応</h3>
+            <p>iOS/Android実機でも崩れない直感的UIを提供。gap→margin対応により、モバイルデバイスでの操作性を大幅に改善しています。</p>
+            
+            <h3>🔒 セキュリティ</h3>
+            <p>SQLインジェクション防止、XSS・CSRF対策、ファイルアップロード検証など、強固なセキュリティ機能を実装しています。</p>
+            
+            <h3>🔄 自動化機能</h3>
+            <p>データベース構造の自動マイグレーション、WP-CLIベースの管理機能により、運用負荷を軽減しています。</p>
+        </div>';
     }
 
     /**
@@ -255,18 +270,64 @@ class KTPWP_Plugin_Reference {
      * @return string HTML content
      */
     private function get_tabs_content() {
-        return '<h2>タブ別機能解説</h2>'
-            . '<ul>'
-            . '<li><b>仕事リスト</b>：案件進捗・検索・ソート・ページネーション・警告マーク</li>'
-            . '<li><b>伝票処理</b>：受注書・請求書の作成・編集・PDF出力（個別・一括・強化版）・サービス選択ポップアップ</li>'
-            . '<li><b>得意先</b>：顧客マスター管理・編集</li>'
-            . '<li><b>サービス</b>：商品・サービスの登録・編集</li>'
-            . '<li><b>協力会社</b>：協力会社・職能管理</li>'
-            . '<li><b>レポート</b>：売上・進捗・顧客別レポート</li>'
-            . '<li><b>スタッフチャット</b>：スタッフ間のチャット・自動スクロール・削除連動・安定化</li>'
-            . '<li><b>【NEW】全テーブルのカラム自動追加（自動マイグレーション）</b>：プラグイン有効化・初期化時にDB構造を自動アップデート</li>'
-            . '</ul>'
-            . '<p>各タブの操作方法・注意点は画面上のヘルプボタンからも確認できます。</p>';
+        return '<div class="ktpwp-reference-section">
+            <h2>管理タブの使い方</h2>
+            
+            <h3>📋 仕事リストタブ</h3>
+            <p><strong>機能：</strong>受注案件の一覧表示・進捗管理</p>
+            <ul>
+                <li>受注案件の検索・ソート・ページネーション</li>
+                <li>進捗状況の変更（7段階）</li>
+                <li>納期管理・警告マーク表示</li>
+                <li>PDF出力（個別・一括）</li>
+            </ul>
+            
+            <h3>📄 伝票処理タブ</h3>
+            <p><strong>機能：</strong>受注書・請求書の詳細編集</p>
+            <ul>
+                <li>受注書・請求書の作成・編集</li>
+                <li>サービス選択ポップアップ</li>
+                <li>明細項目の追加・編集・削除</li>
+                <li>スタッフチャット機能</li>
+                <li>PDF出力・保存</li>
+            </ul>
+            
+            <h3>👥 得意先タブ</h3>
+            <p><strong>機能：</strong>顧客情報のマスター管理</p>
+            <ul>
+                <li>顧客情報の登録・編集・削除</li>
+                <li>カテゴリー別管理</li>
+                <li>検索・ソート・ページネーション</li>
+                <li>注文履歴の表示</li>
+            </ul>
+            
+            <h3>🛠️ サービスタブ</h3>
+            <p><strong>機能：</strong>商品・サービスのマスター管理</p>
+            <ul>
+                <li>商品・サービスの登録・編集・削除</li>
+                <li>カテゴリー・価格・単位管理</li>
+                <li>画像アップロード機能</li>
+                <li>検索・ソート・ページネーション</li>
+            </ul>
+            
+            <h3>🤝 協力会社タブ</h3>
+            <p><strong>機能：</strong>協力会社・外注先の管理</p>
+            <ul>
+                <li>協力会社情報の登録・編集・削除</li>
+                <li>職能・スキル管理</li>
+                <li>原価管理機能</li>
+                <li>検索・ソート・ページネーション</li>
+            </ul>
+            
+            <h3>📊 レポートタブ</h3>
+            <p><strong>機能：</strong>売上・進捗の分析・レポート</p>
+            <ul>
+                <li>売上レポート</li>
+                <li>進捗状況の分析</li>
+                <li>グラフ表示機能</li>
+                <li>データエクスポート</li>
+            </ul>
+        </div>';
     }
 
     /**
@@ -276,25 +337,40 @@ class KTPWP_Plugin_Reference {
      * @return string HTML content
      */
     private function get_shortcode_content() {
-        return '<div class="ktpwp-reference-content">'
-            . '<h3>ショートコード使用方法</h3>'
-            . '<p>メインのプラグイン機能を表示するには、以下のショートコードを固定ページに挿入してください：</p>'
-            . '<code>[ktpwp_all_tab]</code>'
-            . '<h4>設置方法</h4>'
-            . '<ol>'
-            . '<li>WordPress管理画面で「固定ページ」→「新規追加」をクリック</li>'
-            . '<li>ページタイトルを入力（例：「ワークフロー管理」など）</li>'
-            . '<li>エディタに <code>[ktpwp_all_tab]</code> を挿入</li>'
-            . '<li>「公開」または「更新」をクリック</li>'
-            . '</ol>'
-            . '<h4>注意事項</h4>'
-            . '<ul>'
-            . '<li>ログインユーザーのみがプラグイン機能にアクセス可能です</li>'
-            . '<li>ページのパーマリンクは分かりやすいものに設定することを推奨します</li>'
-            . '<li>ページのテンプレートは「デフォルト」または「全幅」を推奨します</li>'
-            . '<li>モバイル実機での表示も必ずご確認ください（gap→margin対応済み、UI/UX改善）</li>'
-            . '</ul>'
-            . '</div>';
+        return '<div class="ktpwp-reference-section">
+            <h2>ショートコードの使い方</h2>
+            
+            <h3>🎯 メインショートコード</h3>
+            <p><strong>使用方法：</strong></p>
+            <code>[ktpwp_all_tab]</code>
+            
+            <p><strong>説明：</strong></p>
+            <ul>
+                <li>6つの管理タブを表示するメインショートコード</li>
+                <li>固定ページに挿入して使用</li>
+                <li>ログインユーザーのみアクセス可能</li>
+                <li>権限に応じて機能が制限される</li>
+            </ul>
+            
+            <h3>📝 設置手順</h3>
+            <ol>
+                <li>WordPress管理画面で「固定ページ」→「新規追加」</li>
+                <li>ページタイトルを入力（例：「業務管理」）</li>
+                <li>本文に <code>[ktpwp_all_tab]</code> を挿入</li>
+                <li>「公開」ボタンをクリック</li>
+                <li>公開されたページにアクセスして動作確認</li>
+            </ol>
+            
+            <h3>🔧 カスタマイズ</h3>
+            <p>ショートコードは現在、パラメータなしの基本形式のみ対応しています。</p>
+            
+            <h3>⚠️ 注意事項</h3>
+            <ul>
+                <li>ログインが必要です</li>
+                <li>適切な権限を持つユーザーのみアクセス可能</li>
+                <li>テーマとの競合を避けるため、専用のCSSクラスを使用</li>
+            </ul>
+        </div>';
     }
 
     /**
@@ -304,18 +380,34 @@ class KTPWP_Plugin_Reference {
      * @return string HTML content
      */
     private function get_settings_content() {
-        $settings_url = admin_url( 'admin.php?page=ktp-settings' );
-        return '<div class="ktpwp-reference-content">'
-            . '<h3>管理画面・設定ガイド</h3>'
-            . '<ul>'
-            . '<li><b>一般設定</b>: プラグインの基本設定</li>'
-            . '<li><b>メール・SMTP設定</b>: メール送信に関する基本設定</li>'
-            . '<li><b>デザイン</b>: プラグインの外観とデザイン設定（モバイルUI・gap→margin対応・UI/UX改善）</li>'
-            . '<li><b>ライセンス設定</b>: アクティベーションキー登録</li>'
-            . '<li><b>スタッフ管理</b>: スタッフの追加・削除・アバター表示・チャット管理</li>'
-            . '</ul>'
-            . '<p><a href="' . esc_url( $settings_url ) . '" target="_blank" style="color: #0073aa;">→ 設定ページを開く</a></p>'
-            . '</div>';
+        return '<div class="ktpwp-reference-section">
+            <h2>設定・管理</h2>
+            
+            <h3>⚙️ 基本設定</h3>
+            <p><strong>アクセス方法：</strong>WordPress管理画面 → 「KantanPro」</p>
+            
+            <h3>🔐 権限管理</h3>
+            <ul>
+                <li><strong>管理者</strong>：全機能アクセス可能</li>
+                <li><strong>編集者</strong>：編集・管理機能アクセス可能</li>
+                <li><strong>投稿者</strong>：閲覧・基本編集機能</li>
+                <li><strong>購読者</strong>：閲覧のみ</li>
+            </ul>
+            
+            <h3>🗄️ データベース管理</h3>
+            <ul>
+                <li><strong>自動マイグレーション</strong>：プラグイン有効化時に自動実行</li>
+                <li><strong>WP-CLI管理</strong>：コマンドラインでのDB構造管理</li>
+                <li><strong>バックアップ</strong>：定期的なデータバックアップを推奨</li>
+            </ul>
+            
+            <h3>📊 パフォーマンス設定</h3>
+            <ul>
+                <li><strong>ページネーション</strong>：大量データの効率的表示</li>
+                <li><strong>キャッシュ</strong>：リファレンス情報のキャッシュ</li>
+                <li><strong>画像最適化</strong>：アップロード画像の自動最適化</li>
+            </ul>
+        </div>';
     }
 
     /**
@@ -325,18 +417,48 @@ class KTPWP_Plugin_Reference {
      * @return string HTML content
      */
     private function get_security_content() {
-        return '<div class="ktpwp-reference-content">'
-            . '<h3>セキュリティ機能</h3>'
-            . '<ul>'
-            . '<li>SQLインジェクション防止（prepare文・バインド変数使用）</li>'
-            . '<li>XSS・CSRF対策（データサニタイズ・エスケープ・WordPressノンス検証）</li>'
-            . '<li>ファイルアップロード検証</li>'
-            . '<li>ユーザー権限の適切な制御</li>'
-            . '<li>データベースアクセスの安全な処理</li>'
-            . '<li>ノンス・トークンによるフォーム保護</li>'
-            . '<li>gap→margin対応によるUI崩れ防止（iOS/Android実機、UI/UX改善）</li>'
-            . '</ul>'
-            . '</div>';
+        return '<div class="ktpwp-reference-section">
+            <h2>セキュリティ機能</h2>
+            
+            <h3>🛡️ 実装済みセキュリティ対策</h3>
+            
+            <h4>SQLインジェクション防止</h4>
+            <ul>
+                <li>prepare文の使用</li>
+                <li>バインド変数による安全なクエリ実行</li>
+                <li>WordPress標準のデータベース関数の活用</li>
+            </ul>
+            
+            <h4>XSS・CSRF対策</h4>
+            <ul>
+                <li>データのサニタイズ・エスケープ</li>
+                <li>ノンス（nonce）によるフォーム保護</li>
+                <li>CSRFトークンの検証</li>
+            </ul>
+            
+            <h4>ファイルアップロード検証</h4>
+            <ul>
+                <li>MIME型の検証</li>
+                <li>ファイルサイズの制限</li>
+                <li>危険なファイル形式の除外</li>
+            </ul>
+            
+            <h4>権限管理</h4>
+            <ul>
+                <li>ロールベースアクセス制御</li>
+                <li>機能別権限チェック</li>
+                <li>安全なデータベースアクセス</li>
+            </ul>
+            
+            <h3>🔒 推奨セキュリティ設定</h3>
+            <ul>
+                <li>強力なパスワードの使用</li>
+                <li>定期的なパスワード変更</li>
+                <li>不要なユーザーアカウントの削除</li>
+                <li>WordPress本体・プラグインの最新版維持</li>
+                <li>SSL証明書の導入</li>
+            </ul>
+        </div>';
     }
 
     /**
@@ -346,58 +468,95 @@ class KTPWP_Plugin_Reference {
      * @return string HTML content
      */
     private function get_troubleshooting_content() {
-        return '<div class="ktpwp-reference-content">'
-            . '<h3>トラブルシューティング</h3>'
-            . '<h4>よくある質問と解決方法</h4>'
-            . '<div class="ktpwp-faq-item"><h5>Q: ショートコードを挿入してもプラグインが表示されない</h5><p><strong>A:</strong></p><ul><li>ログインしているかを確認してください</li><li>プラグインが有効化されているかを確認してください</li><li>ショートコードが正しく記述されているかを確認してください：[ktpwp_all_tab]</li></ul></div>'
-            . '<div class="ktpwp-faq-item"><h5>Q: データが保存されない</h5><p><strong>A:</strong></p><ul><li>データベースの権限を確認してください</li><li>PHPのメモリ制限を確認してください</li><li>プラグインを一度無効化して再有効化してください</li></ul></div>'
-            . '<div class="ktpwp-faq-item"><h5>Q: 請求書PDFが出力できない</h5><p><strong>A:</strong></p><ul><li>サーバーのPHP拡張機能（mbstring, gd等）を確認してください</li><li>ブラウザのポップアップブロックを無効にしてください</li><li>会社情報の設定が完了しているかを確認してください</li></ul></div>'
-            . '<div class="ktpwp-faq-item"><h5>Q: モバイル実機で一部UIが崩れる</h5><p><strong>A:</strong></p><ul><li>CSSキャッシュをクリアしてください</li><li>gap→margin対応済みCSSが反映されているか確認してください</li><li>iOS/Androidのバージョンが古い場合は最新化を推奨します</li></ul></div>'
-            . '<div class="ktpwp-faq-item"><h5>Q: スタッフチャットやサービス選択ポップアップが動作しない</h5><p><strong>A:</strong></p><ul><li>JavaScriptが有効か確認してください</li><li>ブラウザのキャッシュをクリアしてください</li><li>プラグインのバージョンが最新か確認してください</li></ul></div>'
-            . '</div>';
+        return '<div class="ktpwp-reference-section">
+            <h2>トラブルシューティング</h2>
+            
+            <h3>❓ よくある問題と解決方法</h3>
+            
+            <h4>Q: ショートコードが表示されない</h4>
+            <p><strong>A:</strong></p>
+            <ul>
+                <li>ログインしているか確認してください</li>
+                <li>適切な権限があるか確認してください</li>
+                <li>プラグインが有効化されているか確認してください</li>
+                <li>テーマとの競合がないか確認してください</li>
+            </ul>
+            
+            <h4>Q: PDF出力ができない</h4>
+            <p><strong>A:</strong></p>
+            <ul>
+                <li>PHP拡張「GD」が有効か確認してください</li>
+                <li>サーバーのメモリ制限を確認してください</li>
+                <li>一時ファイルの書き込み権限を確認してください</li>
+            </ul>
+            
+            <h4>Q: モバイルで表示が崩れる</h4>
+            <p><strong>A:</strong></p>
+            <ul>
+                <li>ブラウザのキャッシュをクリアしてください</li>
+                <li>CSSの競合がないか確認してください</li>
+                <li>最新版のプラグインを使用してください</li>
+            </ul>
+            
+            <h4>Q: データベースエラーが発生する</h4>
+            <p><strong>A:</strong></p>
+            <ul>
+                <li>WP-CLIでマイグレーションを実行してください</li>
+                <li>データベースの権限を確認してください</li>
+                <li>WordPressのデバッグモードを有効にして詳細を確認してください</li>
+            </ul>
+            
+            <h3>🔧 デバッグ方法</h3>
+            <ol>
+                <li>WordPressのデバッグモードを有効化</li>
+                <li>ブラウザの開発者ツールでエラーを確認</li>
+                <li>サーバーのエラーログを確認</li>
+                <li>プラグインのキャッシュをクリア</li>
+            </ol>
+            
+            <h3>📞 サポート</h3>
+            <p>問題が解決しない場合は、以下までご連絡ください：</p>
+            <ul>
+                <li><strong>公式サイト</strong>: <a href="https://www.kantanpro.com/" target="_blank">https://www.kantanpro.com/</a></li>
+                <li><strong>開発者プロフィール</strong>: <a href="https://www.kantanpro.com/developer-profile/" target="_blank">https://www.kantanpro.com/developer-profile/</a></li>
+            </ul>
+        </div>';
     }
 
     /**
-     * Render reference modal HTML
+     * Render modal HTML
      *
      * @since 1.0.0
-     * @return string Modal HTML
+     * @return string HTML content
      */
     public static function render_modal() {
-        if ( ! is_user_logged_in() ) {
-            return '';
-        }
-
-        return '<div id="ktpwp-reference-modal" class="ktpwp-modal" style="display: none;">'
-            . '<div class="ktpwp-modal-overlay">'
-            . '<div class="ktpwp-modal-content">'
-            . '<div class="ktpwp-modal-header">'
-            . '<h3>' . esc_html__( 'KantanProプラグインリファレンス', 'ktpwp' ) . '</h3>'
-            . '<div class="ktpwp-modal-header-actions">'
-            . '<button class="ktpwp-clear-cache-btn" type="button" title="' . esc_attr__( 'キャッシュをクリア', 'ktpwp' ) . '">'
-            . esc_html__( 'キャッシュクリア', 'ktpwp' ) . '</button>'
-            . '<button class="ktpwp-modal-close" type="button">&times;</button>'
-            . '</div>'
-            . '</div>'
-            . '<div class="ktpwp-modal-body">'
-            . '<div class="ktpwp-reference-sidebar">'
-            . '<ul class="ktpwp-reference-nav">'
-            . '<li><a href="#" data-section="overview" class="active">' . esc_html__( '概要', 'ktpwp' ) . '</a></li>'
-            . '<li><a href="#" data-section="tabs">' . esc_html__( 'タブ機能', 'ktpwp' ) . '</a></li>'
-            . '<li><a href="#" data-section="shortcodes">' . esc_html__( 'ショートコード', 'ktpwp' ) . '</a></li>'
-            . '<li><a href="#" data-section="settings">' . esc_html__( '設定', 'ktpwp' ) . '</a></li>'
-            . '<li><a href="#" data-section="security">' . esc_html__( 'セキュリティ', 'ktpwp' ) . '</a></li>'
-            . '<li><a href="#" data-section="troubleshooting">' . esc_html__( 'トラブルシューティング', 'ktpwp' ) . '</a></li>'
-            . '</ul>'
-            . '</div>'
-            . '<div class="ktpwp-reference-content">'
-            . '<div id="ktpwp-reference-loading" style="display: none;">' . esc_html__( '読み込み中...', 'ktpwp' ) . '</div>'
-            . '<div id="ktpwp-reference-text"></div>'
-            . '</div>'
-            . '</div>'
-            . '</div>'
-            . '</div>'
-            . '</div>';
+        $nonce = wp_create_nonce( 'ktpwp_reference_nonce' );
+        
+        return '<div id="ktpwp-reference-modal" class="ktpwp-modal" style="display: none;">
+            <div class="ktpwp-modal-content">
+                <div class="ktpwp-modal-header">
+                    <h2>KantanPro ヘルプ・リファレンス</h2>
+                    <span class="ktpwp-modal-close">&times;</span>
+                </div>
+                <div class="ktpwp-modal-body">
+                    <div class="ktpwp-reference-nav">
+                        <button class="ktpwp-nav-btn active" data-section="overview">概要</button>
+                        <button class="ktpwp-nav-btn" data-section="tabs">管理タブ</button>
+                        <button class="ktpwp-nav-btn" data-section="shortcodes">ショートコード</button>
+                        <button class="ktpwp-nav-btn" data-section="settings">設定</button>
+                        <button class="ktpwp-nav-btn" data-section="security">セキュリティ</button>
+                        <button class="ktpwp-nav-btn" data-section="troubleshooting">トラブルシューティング</button>
+                    </div>
+                    <div id="ktpwp-reference-content">
+                        <!-- コンテンツがここに動的に読み込まれます -->
+                    </div>
+                </div>
+                <div class="ktpwp-modal-footer">
+                    <button id="ktpwp-clear-cache" class="ktpwp-btn">キャッシュクリア</button>
+                    <span class="ktpwp-version">v' . esc_html(KANTANPRO_PLUGIN_VERSION) . '</span>
+                </div>
+            </div>
+        </div>';
     }
 
     /**
@@ -410,123 +569,49 @@ class KTPWP_Plugin_Reference {
         if ( ! is_user_logged_in() ) {
             return;
         }
-
+        
         echo self::render_modal();
     }
 
     /**
-     * Plugin activation hook for reference updates
-     *
-     * This method is called during plugin activation to ensure
-     * reference documentation is properly initialized and updated.
+     * Plugin activation hook
      *
      * @since 1.0.0
      * @return void
      */
     public static function on_plugin_activation() {
-        // Clear ALL cached reference data (individual section caches)
+        // Set flag to refresh reference content
+        update_option( 'ktpwp_reference_needs_refresh', true );
+        
+        // Set initial metadata
+        update_option( 'ktpwp_reference_last_updated', current_time( 'timestamp' ) );
+        update_option( 'ktpwp_reference_version', KANTANPRO_PLUGIN_VERSION );
+        
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP Reference: Plugin activation - reference cache marked for refresh' );
+        }
+    }
+
+    /**
+     * Clear all reference cache
+     *
+     * @since 1.0.0
+     * @return void
+     */
+    public static function clear_all_cache() {
         $sections = array( 'overview', 'tabs', 'shortcodes', 'settings', 'security', 'troubleshooting' );
+        
         foreach ( $sections as $section ) {
             delete_transient( "ktpwp_reference_content_{$section}" );
         }
         
-        // Clear main cache
         delete_transient( 'ktpwp_reference_cache' );
-        
-        // Clear any existing options that might store cached data
-        delete_option( 'ktpwp_reference_last_cleared' );
-        
-        // Update plugin reference metadata with current version
         update_option( 'ktpwp_reference_last_updated', current_time( 'timestamp' ) );
-        update_option( 'ktpwp_reference_version', KANTANPRO_PLUGIN_VERSION );
         
-        // Log activation event for debugging
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP: プラグインリファレンスが有効化時に更新されました。バージョン: ' . KANTANPRO_PLUGIN_VERSION . ' (1.2.1 beta)');
+            error_log( 'KTPWP Reference: All cache cleared' );
         }
-        
-        // Force regeneration of reference content on next load
-        update_option( 'ktpwp_reference_needs_refresh', true );
-    }
-
-    /**
-     * Manual cache clear function for troubleshooting
-     * 
-     * @since 1.0.9
-     * @return bool Success status
-     */
-    public static function clear_all_cache() {
-        // Clear all individual section caches
-        $sections = array( 'overview', 'tabs', 'shortcodes', 'settings', 'security', 'troubleshooting' );
-        $cleared_count = 0;
-        
-        foreach ( $sections as $section ) {
-            if ( delete_transient( "ktpwp_reference_content_{$section}" ) ) {
-                $cleared_count++;
-            }
-        }
-        
-        // Clear main cache
-        delete_transient( 'ktpwp_reference_cache' );
-        
-        // Update metadata to current version
-        update_option( 'ktpwp_reference_last_updated', current_time( 'timestamp' ) );
-        update_option( 'ktpwp_reference_version', KANTANPRO_PLUGIN_VERSION );
-        update_option( 'ktpwp_reference_last_cleared', time() );
-        update_option( 'ktpwp_reference_needs_refresh', true );
-        
-        // Log the action
-        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( "KTPWP: Manual cache clear completed. Cleared {$cleared_count} section caches. Version: " . KANTANPRO_PLUGIN_VERSION . " (1.2.1 beta)");
-        }
-        
-        return true;
     }
 }
 
-// Initialize the plugin reference only after init (not on plugin load)
-add_action('init', function() {
-    KTPWP_Plugin_Reference::get_instance();
-});
-
-// Add admin action to manually clear reference cache
-add_action('wp_ajax_ktpwp_manual_cache_clear', function() {
-    if (!current_user_can('manage_options')) {
-        wp_die('権限がありません');
-    }
-    
-    if (class_exists('KTPWP_Plugin_Reference')) {
-        KTPWP_Plugin_Reference::clear_all_cache();
-        wp_die('プラグインリファレンスキャッシュをクリアしました。バージョン: ' . KANTANPRO_PLUGIN_VERSION . ' (1.2.1 beta)');
-    } else {
-        wp_die('プラグインリファレンスクラスが見つかりません');
-    }
-});
-
-// Add admin menu for cache clearing (for debugging)
-if (defined('WP_DEBUG') && WP_DEBUG) {
-    add_action('admin_menu', function() {
-        add_submenu_page(
-            null, // 非表示メニュー
-            'Clear Reference Cache',
-            'Clear Reference Cache',
-            'manage_options',
-            'ktpwp-clear-cache',
-            function() {
-                if (isset($_GET['action']) && $_GET['action'] === 'clear') {
-                    if (class_exists('KTPWP_Plugin_Reference')) {
-                        KTPWP_Plugin_Reference::clear_all_cache();
-                        echo '<div class="notice notice-success"><p>キャッシュをクリアしました。バージョン: ' . KANTANPRO_PLUGIN_VERSION . ' (1.2.1 beta)</p></div>';
-                    }
-                }
-                echo '<div class="wrap">';
-                echo '<h1>KantanPro リファレンスキャッシュクリア</h1>';
-                echo '<p><a href="?page=ktpwp-clear-cache&action=clear" class="button button-primary">キャッシュをクリア</a></p>';
-                echo '<p>現在のバージョン: ' . KANTANPRO_PLUGIN_VERSION . ' (1.2.1 beta)</p>';
-                echo '</div>';
-            }
-        );
-    });
-}
-
-} // End if class_exists
+} // End if class_exists check

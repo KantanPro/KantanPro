@@ -618,10 +618,11 @@ class KTPWP_Ajax {
 				$result = $order_items->update_item_field( 'cost', $item_id, $field_name, $field_value );
 			}
 
-			if ( $result ) {
+			if ( $result && is_array($result) && $result['success'] ) {
 				wp_send_json_success(
 					array(
 						'message' => __( '正常に保存されました', 'ktpwp' ),
+						'value_changed' => $result['value_changed']
 					)
 				);
 			} else {
@@ -724,7 +725,7 @@ class KTPWP_Ajax {
 			// 指定されたフィールド値を設定（アイテム作成後に更新）
 			if ( ! empty( $field_name ) && ! empty( $field_value ) && $new_item_id ) {
 				$update_result = $order_items->update_item_field( $item_type, $new_item_id, $field_name, $field_value );
-				if ( ! $update_result ) {
+				if ( ! $update_result || (is_array($update_result) && !$update_result['success']) ) {
 					error_log( "KTPWP: Failed to update field {$field_name} for new item {$new_item_id}" );
 				}
 			}

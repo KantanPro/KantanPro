@@ -46,25 +46,12 @@
         let nonce = '';
         if (typeof ktp_ajax_nonce !== 'undefined') {
             nonce = ktp_ajax_nonce;
-            console.log('[INVOICE AUTO-SAVE] Nonce from ktp_ajax_nonce:', nonce);
         } else if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.nonce) {
             nonce = ktp_ajax_object.nonce;
-            console.log('[INVOICE AUTO-SAVE] Nonce from ktp_ajax_object:', nonce);
         } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.auto_save) {
             nonce = ktpwp_ajax.nonces.auto_save;
-            console.log('[INVOICE AUTO-SAVE] Nonce from ktpwp_ajax.nonces.auto_save:', nonce);
         } else if (typeof window.ktpwp_ajax !== 'undefined' && window.ktpwp_ajax.nonces && window.ktpwp_ajax.nonces.auto_save) {
             nonce = window.ktpwp_ajax.nonces.auto_save;
-            console.log('[INVOICE AUTO-SAVE] Nonce from window.ktpwp_ajax.nonces.auto_save:', nonce);
-        }
-
-        if (!nonce) {
-            console.error('[INVOICE AUTO-SAVE] Nonce not found! Available variables:');
-            console.error('  ktp_ajax_nonce:', typeof ktp_ajax_nonce !== 'undefined' ? ktp_ajax_nonce : 'undefined');
-            console.error('  ktp_ajax_object:', typeof ktp_ajax_object !== 'undefined' ? ktp_ajax_object : 'undefined');
-            console.error('  ktpwp_ajax:', typeof ktpwp_ajax !== 'undefined' ? ktpwp_ajax : 'undefined');
-            console.error('  window.ktpwp_ajax:', typeof window.ktpwp_ajax !== 'undefined' ? window.ktpwp_ajax : 'undefined');
-            return;
         }
 
         const ajaxData = {
@@ -77,7 +64,7 @@
             nonce: nonce,
             ktp_ajax_nonce: nonce  // 追加: PHPでチェックされるフィールド名
         };
-
+        
         console.log('[INVOICE AUTO-SAVE] Ajax data:', ajaxData);
         
         $.ajax({
@@ -92,8 +79,10 @@
                     if (result.success) {
                         console.log('[INVOICE AUTO-SAVE] 保存成功 - field:', fieldName, 'value:', fieldValue);
                         
-                        // 成功通知を表示（オプション）
-                        if (typeof window.showSuccessNotification === 'function') {
+                        // 成功通知を表示（条件付き）
+                        // 実際に値が変更された場合のみ通知を表示
+                        if (typeof window.showSuccessNotification === 'function' && 
+                            result.data && result.data.value_changed === true) {
                             window.showSuccessNotification('請求項目が保存されました');
                         }
                     } else {

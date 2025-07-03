@@ -844,6 +844,39 @@ class KTPWP_Order_Items {
             return false;
         }
 
+        // 現在の値を取得して変更があったかチェック
+        $current_value = $wpdb->get_var($wpdb->prepare(
+            "SELECT {$field_name} FROM `{$table_name}` WHERE id = %d",
+            $item_id
+        ));
+
+        // 値の比較（型を考慮）
+        $value_changed = false;
+        switch ( $field_name ) {
+            case 'product_name':
+            case 'unit':
+            case 'remarks':
+            case 'purchase':
+                $value_changed = (string)$current_value !== (string)$field_value;
+                break;
+            case 'price':
+            case 'quantity':
+            case 'amount':
+                $value_changed = abs((float)$current_value - (float)$field_value) > 0.001; // 小数点の誤差を考慮
+                break;
+            case 'sort_order':
+            case 'supplier_id':
+                $value_changed = (int)$current_value !== (int)$field_value;
+                break;
+            default:
+                $value_changed = $current_value !== $field_value;
+        }
+
+        // 値が変更されていない場合は早期リターン
+        if (!$value_changed) {
+            return array('success' => true, 'value_changed' => false);
+        }
+
         // Determine field update data based on field name
         $update_data = array();
         $format = array();
@@ -881,7 +914,7 @@ class KTPWP_Order_Items {
                 } else {
                     // invoice itemsではpurchaseフィールドを無視
                     error_log( 'KTPWP: Attempted to update purchase field for invoice item - ignoring' );
-                    return true;
+                    return array('success' => true, 'value_changed' => false);
                 }
                 break;
             case 'sort_order':
@@ -899,11 +932,11 @@ class KTPWP_Order_Items {
                 } else {
                     // invoice itemsではsupplier_idフィールドを無視
                     error_log( 'KTPWP: Attempted to update supplier_id field for invoice item - ignoring' );
-                    return true;
+                    return array('success' => true, 'value_changed' => false);
                 }
                 break;
             default:
-                return false;
+                return array('success' => false, 'value_changed' => false);
         }
 
         // Always update the updated_at timestamp
@@ -920,10 +953,10 @@ class KTPWP_Order_Items {
 
         if ( $result === false ) {
             error_log( 'KTPWP: Failed to update item field: ' . $wpdb->last_error );
-            return false;
+            return array('success' => false, 'value_changed' => false);
         }
 
-        return true;
+        return array('success' => true, 'value_changed' => true);
     }
 
     /**
