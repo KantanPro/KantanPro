@@ -73,7 +73,7 @@ class KTPWP_Order_Items {
      */
     public function create_invoice_items_table() {
         global $wpdb;
-        $my_table_version = '2.1';
+        $my_table_version = '2.2';
         $table_name = $wpdb->prefix . 'ktp_order_invoice_items';
         $charset_collate = $wpdb->get_charset_collate();
 
@@ -89,110 +89,71 @@ class KTPWP_Order_Items {
             'sort_order INT NOT NULL DEFAULT 0',
             'created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP',
             'updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
-            'UNIQUE KEY id (id)',
+            'PRIMARY KEY (id)',
             'KEY order_id (order_id)',
             'KEY sort_order (sort_order)'
         );
 
-        // Check if table exists using prepared statement
-        $table_exists = $wpdb->get_var( $wpdb->prepare(
-            'SHOW TABLES LIKE %s',
-            $table_name
-        ) );
-
-        if ( $table_exists !== $table_name ) {
-            $sql = "CREATE TABLE `{$table_name}` (" . implode( ', ', $columns_def ) . ") {$charset_collate};";
-
-            require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
-
-            if ( function_exists( 'dbDelta' ) ) {
-                $result = dbDelta( $sql );
-
-                if ( ! empty( $result ) ) {
-                    add_option( 'ktp_invoice_items_table_version', $my_table_version );
-                    return true;
+        // テーブルの存在確認
+        $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table_name'");
+        
+        if (!$table_exists) {
+            // テーブルが存在しない場合は新規作成
+            $sql = "CREATE TABLE `{$table_name}` (" . implode(', ', $columns_def) . ") {$charset_collate};";
+            
+            require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+            $result = dbDelta($sql);
+            
+            if (!empty($result)) {
+                add_option('ktp_invoice_items_table_version', $my_table_version);
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log("KTPWP: Created invoice items table with version {$my_table_version}");
                 }
-
-                error_log( 'KTPWP: Failed to create invoice items table' );
+                return true;
+            } else {
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log("KTPWP: Failed to create invoice items table");
+                }
                 return false;
             }
-
-            error_log( 'KTPWP: dbDelta function not available' );
-            return false;
         } else {
-            // Table exists, check for missing columns
+            // テーブルが存在する場合は構造を確認・修正
             $existing_columns = $wpdb->get_col("SHOW COLUMNS FROM `{$table_name}`", 0);
-            $def_column_names = array();
-
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('KTPWP: Invoice items table exists. Existing columns: ' . implode(', ', $existing_columns));
-            }
-
-            foreach ( $columns_def as $def ) {
-                if ( preg_match( '/^([a-zA-Z0-9_]+)/', $def, $m ) ) {
-                    $def_column_names[] = $m[1];
-                }
-            }
-
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('KTPWP: Required columns: ' . implode(', ', $def_column_names));
-            }
-
-            foreach ( $def_column_names as $i => $col_name ) {
-                if ( ! in_array( $col_name, $existing_columns, true ) ) {
-                    if ( $col_name === 'UNIQUE' || $col_name === 'KEY' ) {
-                        continue;
-                    }
-                    $def = $columns_def[ $i ];
+            
+            // 不要なカラムを削除
+            $unwanted_columns = array('purchase', 'ordered');
+            foreach ($unwanted_columns as $column) {
+                if (in_array($column, $existing_columns)) {
+                    $wpdb->query("ALTER TABLE `{$table_name}` DROP COLUMN `{$column}`");
                     if (defined('WP_DEBUG') && WP_DEBUG) {
-                        error_log("KTPWP: Adding missing column '{$col_name}' to invoice items table with definition: {$def}");
-                    }
-                    $result = $wpdb->query("ALTER TABLE `{$table_name}` ADD COLUMN {$def}");
-
-                    if ( $result === false ) {
-                        error_log( 'KTPWP: Failed to add column ' . $col_name . ' to invoice items table. Error: ' . $wpdb->last_error );
-                    } else {
-                        error_log( 'KTPWP: Successfully added column ' . $col_name . ' to invoice items table' );
+                        error_log("KTPWP: Removed unwanted column '{$column}' from invoice table");
                     }
                 }
             }
-
-            // Check and add UNIQUE KEY if not exists
-            $indexes = $wpdb->get_results("SHOW INDEX FROM `{$table_name}`");
-            $has_unique_id = false;
-            foreach ( $indexes as $idx ) {
-                if ( $idx->Key_name === 'id' && $idx->Non_unique == 0 ) {
-                    $has_unique_id = true;
-                    break;
-                }
-            }
-            if ( ! $has_unique_id ) {
-                $wpdb->query("ALTER TABLE `{$table_name}` ADD UNIQUE (id)");
-            }
-
-            // Force migration of DECIMAL columns for version 2.1
-            $current_version = get_option( 'ktp_invoice_items_table_version', '1.0' );
-
-            if ( version_compare( $current_version, '2.1', '<' ) ) {
-                // Check current column types and migrate if needed
-                $column_info = $wpdb->get_results( "SHOW COLUMNS FROM `{$table_name}` WHERE Field IN ('price', 'quantity')" );
-
-                foreach ( $column_info as $column ) {
-                    // Convert to DECIMAL(10,2) for price and quantity - カラム名を直接指定
-                    $result = $wpdb->query("ALTER TABLE `{$table_name}` MODIFY `{$column->Field}` DECIMAL(10,2) NOT NULL DEFAULT 0.00");
-
-                    if ( $result === false ) {
-                        error_log( "KTPWP: Failed to migrate column {$column->Field} to DECIMAL(10,2) in invoice items table. Error: " . $wpdb->last_error );
-                    } else {
-                        error_log( "KTPWP: Successfully migrated column {$column->Field} to DECIMAL(10,2) in invoice items table." );
+            
+            // 必要なカラムを追加
+            $required_columns = array(
+                'sort_order' => "INT NOT NULL DEFAULT 0",
+                'updated_at' => "TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+            );
+            
+            foreach ($required_columns as $column => $definition) {
+                if (!in_array($column, $existing_columns)) {
+                    $wpdb->query("ALTER TABLE `{$table_name}` ADD COLUMN `{$column}` {$definition}");
+                    if (defined('WP_DEBUG') && WP_DEBUG) {
+                        error_log("KTPWP: Added column '{$column}' to invoice table");
                     }
                 }
             }
-
-            update_option( 'ktp_invoice_items_table_version', $my_table_version );
+            
+            // バージョンを更新
+            update_option('ktp_invoice_items_table_version', $my_table_version);
+            
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log("KTPWP: Updated invoice items table to version {$my_table_version}");
+            }
+            return true;
         }
-
-        return true;
     }
 
     /**
@@ -367,20 +328,16 @@ class KTPWP_Order_Items {
         global $wpdb;
         $table_name = $wpdb->prefix . 'ktp_order_invoice_items';
         
-        // まず現在のテーブル名で存在チェック
+        // テーブルの存在確認
         $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table_name'");
-        // 代替テーブル名もチェック
-        $alt_table_name = $wpdb->prefix . 'ktp_invoice_item';
-        $alt_table_exists = $wpdb->get_var("SHOW TABLES LIKE '$alt_table_name'");
-        
-        // 実際に存在するテーブルを使用
-        if (!$table_exists && $alt_table_exists) {
-            $table_name = $alt_table_name;
+        if (!$table_exists) {
+            error_log("KTPWP: Invoice items table {$table_name} does not exist");
+            return array();
         }
 
-        // id順でソートして取得
+        // sort_orderの昇順でソートして取得
         $items = $wpdb->get_results( $wpdb->prepare(
-            "SELECT * FROM `{$table_name}` WHERE order_id = %d ORDER BY id ASC",
+            "SELECT * FROM `{$table_name}` WHERE order_id = %d ORDER BY COALESCE(sort_order, id) ASC, id ASC",
             $order_id
         ), ARRAY_A );
 
@@ -882,14 +839,9 @@ class KTPWP_Order_Items {
         
         // テーブルの存在確認
         $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table_name'");
-        
-        // 代替テーブル名もチェック
-        if (!$table_exists && $item_type === 'invoice') {
-            $alt_table_name = $wpdb->prefix . 'ktp_invoice_item';
-            $alt_table_exists = $wpdb->get_var("SHOW TABLES LIKE '$alt_table_name'");
-            if ($alt_table_exists) {
-                $table_name = $alt_table_name;
-            }
+        if (!$table_exists) {
+            error_log("KTPWP: Table {$table_name} does not exist");
+            return false;
         }
 
         // Determine field update data based on field name
@@ -922,19 +874,32 @@ class KTPWP_Order_Items {
                 $format[] = '%s';
                 break;
             case 'purchase':
-                $update_data['purchase'] = sanitize_text_field( $field_value );
-                $format[] = '%s';
+                // purchaseフィールドはcost itemsのみで使用
+                if ( $item_type === 'cost' ) {
+                    $update_data['purchase'] = sanitize_text_field( $field_value );
+                    $format[] = '%s';
+                } else {
+                    // invoice itemsではpurchaseフィールドを無視
+                    error_log( 'KTPWP: Attempted to update purchase field for invoice item - ignoring' );
+                    return true;
+                }
                 break;
             case 'sort_order':
                 $update_data['sort_order'] = intval( $field_value );
                 $format[] = '%d';
                 break;
             case 'supplier_id':
-                // supplier_idカラムが存在する場合のみ更新
-                $columns = $wpdb->get_col("SHOW COLUMNS FROM `{$table_name}` LIKE 'supplier_id'", 0);
-                if ( !empty($columns) ) {
-                    $update_data['supplier_id'] = intval( $field_value ) ?: null;
-                    $format[] = '%d';
+                // supplier_idカラムはcost itemsのみで使用
+                if ( $item_type === 'cost' ) {
+                    $columns = $wpdb->get_col("SHOW COLUMNS FROM `{$table_name}` LIKE 'supplier_id'", 0);
+                    if ( !empty($columns) ) {
+                        $update_data['supplier_id'] = intval( $field_value ) ?: null;
+                        $format[] = '%d';
+                    }
+                } else {
+                    // invoice itemsではsupplier_idフィールドを無視
+                    error_log( 'KTPWP: Attempted to update supplier_id field for invoice item - ignoring' );
+                    return true;
                 }
                 break;
             default:
@@ -984,6 +949,7 @@ class KTPWP_Order_Items {
         ));
         $new_sort_order = intval($max_sort_order) + 1;
 
+        // 基本データ
         $data = array(
             'order_id' => $order_id,
             'product_name' => '',
@@ -992,16 +958,22 @@ class KTPWP_Order_Items {
             'unit' => '式',
             'amount' => 0,
             'remarks' => '',
-            'purchase' => '',
             'sort_order' => $new_sort_order,
             'created_at' => current_time( 'mysql' ),
             'updated_at' => current_time( 'mysql' )
         );
 
+        // cost itemsの場合のみ追加フィールドを設定
+        if ( $item_type === 'cost' ) {
+            $data['purchase'] = '';
+        }
+
         $result = $wpdb->insert(
             $table_name,
             $data,
-            array( '%d', '%s', '%d', '%d', '%s', '%d', '%s', '%s', '%d', '%s', '%s' )
+            $item_type === 'cost' ? 
+                array( '%d', '%s', '%d', '%d', '%s', '%d', '%s', '%d', '%s', '%s', '%s' ) :
+                array( '%d', '%s', '%d', '%d', '%s', '%d', '%s', '%d', '%s', '%s' )
         );
 
         if ( $result === false ) {

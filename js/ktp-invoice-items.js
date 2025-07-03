@@ -19,6 +19,22 @@
             orderId: orderId 
         });
         
+        // バリデーション
+        if (!itemId || itemId <= 0) {
+            console.warn('[INVOICE AUTO-SAVE] 無効なitemId:', itemId);
+            return;
+        }
+        
+        if (!orderId || orderId <= 0) {
+            console.warn('[INVOICE AUTO-SAVE] 無効なorderId:', orderId);
+            return;
+        }
+        
+        if (!fieldName) {
+            console.warn('[INVOICE AUTO-SAVE] フィールド名が指定されていません');
+            return;
+        }
+        
         // Ajax URLの確認と代替設定
         let ajaxUrl = ajaxurl;
         if (!ajaxUrl) {
@@ -48,6 +64,7 @@
             console.error('  ktp_ajax_object:', typeof ktp_ajax_object !== 'undefined' ? ktp_ajax_object : 'undefined');
             console.error('  ktpwp_ajax:', typeof ktpwp_ajax !== 'undefined' ? ktpwp_ajax : 'undefined');
             console.error('  window.ktpwp_ajax:', typeof window.ktpwp_ajax !== 'undefined' ? window.ktpwp_ajax : 'undefined');
+            return;
         }
 
         const ajaxData = {
@@ -67,17 +84,33 @@
             url: ajaxUrl,
             type: 'POST',
             data: ajaxData,
+            timeout: 10000, // 10秒のタイムアウト
             success: function (response) {
                 console.log('[INVOICE AUTO-SAVE] Success response:', response);
                 try {
                     const result = typeof response === 'string' ? JSON.parse(response) : response;
                     if (result.success) {
                         console.log('[INVOICE AUTO-SAVE] 保存成功 - field:', fieldName, 'value:', fieldValue);
+                        
+                        // 成功通知を表示（オプション）
+                        if (typeof window.showSuccessNotification === 'function') {
+                            window.showSuccessNotification('請求項目が保存されました');
+                        }
                     } else {
                         console.warn('[INVOICE AUTO-SAVE] 保存失敗 - field:', fieldName, 'response:', result);
+                        
+                        // エラー通知を表示
+                        if (typeof window.showErrorNotification === 'function') {
+                            window.showErrorNotification('請求項目の保存に失敗しました: ' + (result.data || '不明なエラー'));
+                        }
                     }
                 } catch (e) {
                     console.error('[INVOICE AUTO-SAVE] レスポンスパースエラー:', e, 'response:', response);
+                    
+                    // エラー通知を表示
+                    if (typeof window.showErrorNotification === 'function') {
+                        window.showErrorNotification('請求項目の保存中にエラーが発生しました');
+                    }
                 }
             },
             error: function (xhr, status, error) {
@@ -89,6 +122,19 @@
                     responseText: xhr.responseText,
                     statusCode: xhr.status
                 });
+                
+                // エラー通知を表示
+                if (typeof window.showErrorNotification === 'function') {
+                    let errorMessage = '請求項目の保存に失敗しました';
+                    if (status === 'timeout') {
+                        errorMessage += ' (タイムアウト)';
+                    } else if (xhr.status === 403) {
+                        errorMessage += ' (権限エラー)';
+                    } else if (xhr.status === 500) {
+                        errorMessage += ' (サーバーエラー)';
+                    }
+                    window.showErrorNotification(errorMessage);
+                }
             }
         });
     };

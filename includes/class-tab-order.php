@@ -266,8 +266,34 @@ class Kntan_Order_Class {
      * @return bool True on success, false on failure
      */
     public function Create_Initial_Staff_Chat( $order_id, $creator_user_id = null ) {
-        $staff_chat = KTPWP_Staff_Chat::get_instance();
-        return $staff_chat->create_initial_chat( $order_id, $creator_user_id );
+        if ( ! $order_id || $order_id <= 0 ) {
+            error_log( 'KTPWP: Create_Initial_Staff_Chat called with invalid order_id: ' . $order_id );
+            return false;
+        }
+
+        // スタッフチャットクラスが利用可能かチェック
+        if ( ! class_exists( 'KTPWP_Staff_Chat' ) ) {
+            error_log( 'KTPWP: KTPWP_Staff_Chat class not found' );
+            return false;
+        }
+
+        try {
+            $staff_chat = KTPWP_Staff_Chat::get_instance();
+            $result = $staff_chat->create_initial_chat( $order_id, $creator_user_id );
+            
+            if ( $result ) {
+                if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                    error_log( 'KTPWP: Successfully created initial staff chat for order_id: ' . $order_id );
+                }
+                return true;
+            } else {
+                error_log( 'KTPWP: Failed to create initial staff chat for order_id: ' . $order_id );
+                return false;
+            }
+        } catch ( Exception $e ) {
+            error_log( 'KTPWP: Exception in Create_Initial_Staff_Chat: ' . $e->getMessage() . ' for order_id: ' . $order_id );
+            return false;
+        }
     }
 
     /**
@@ -1018,13 +1044,33 @@ class Kntan_Order_Class {
                     $new_order_id = $new_id;
 
                     // 初期請求項目を作成
-                    $this->Create_Initial_Invoice_Item( $new_order_id );
+                    $invoice_result = $this->Create_Initial_Invoice_Item( $new_order_id );
+                    if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                        error_log( 'KTPWP: Initial invoice item creation result: ' . ( $invoice_result ? 'success' : 'failed' ) . ' for order_id: ' . $new_order_id );
+                    }
 
                     // 初期コスト項目を作成
-                    $this->Create_Initial_Cost_Item( $new_order_id );
+                    $cost_result = $this->Create_Initial_Cost_Item( $new_order_id );
+                    if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                        error_log( 'KTPWP: Initial cost item creation result: ' . ( $cost_result ? 'success' : 'failed' ) . ' for order_id: ' . $new_order_id );
+                    }
 
-                    // 初期スタッフチャットエントリを作成
-                    $this->Create_Initial_Staff_Chat( $new_order_id );
+                    // 初期スタッフチャットエントリを作成（重要：確実に実行）
+                    $chat_result = $this->Create_Initial_Staff_Chat( $new_order_id, get_current_user_id() );
+                    if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                        error_log( 'KTPWP: Initial staff chat creation result: ' . ( $chat_result ? 'success' : 'failed' ) . ' for order_id: ' . $new_order_id );
+                    }
+
+                    // スタッフチャットの作成に失敗した場合は再試行
+                    if ( ! $chat_result ) {
+                        error_log( 'KTPWP: Retrying staff chat creation for order_id: ' . $new_order_id );
+                        // 少し待ってから再試行
+                        sleep( 1 );
+                        $chat_result = $this->Create_Initial_Staff_Chat( $new_order_id, get_current_user_id() );
+                        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                            error_log( 'KTPWP: Staff chat creation retry result: ' . ( $chat_result ? 'success' : 'failed' ) . ' for order_id: ' . $new_order_id );
+                        }
+                    }
 
                     // リダイレクト処理を無効化 - 代わりにorder_idを直接設定
                     $_GET['order_id'] = $new_order_id;
@@ -1032,8 +1078,12 @@ class Kntan_Order_Class {
                     $order_id = $new_order_id; // ローカル変数も更新
 
                     // デバッグ用ログ
+                    if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                        error_log( 'KTPWP: New order created successfully with ID: ' . $new_order_id );
+                    }
                 } else {
                     // 挿入失敗時のエラーハンドリング
+                    error_log( 'KTPWP: Failed to create new order: ' . $wpdb->last_error );
                     $content .= '<div class="error">受注書の作成に失敗しました。</div>';
                 }
             }

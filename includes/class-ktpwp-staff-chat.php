@@ -64,7 +64,7 @@ class KTPWP_Staff_Chat {
      */
     public function create_table() {
         global $wpdb;
-        $my_table_version = '1.0';
+        $my_table_version = '1.1';
         $table_name = $wpdb->prefix . 'ktp_order_staff_chat';
         $charset_collate = $wpdb->get_charset_collate();
 
@@ -84,8 +84,11 @@ class KTPWP_Staff_Chat {
             'KEY created_at (created_at)'
         );
 
-        if ( version_compare( $current_version, $my_table_version, '<' ) ) {
-            // Table needs to be created or updated
+        // テーブルの存在確認
+        $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table_name'");
+        
+        if (!$table_exists) {
+            // テーブルが存在しない場合は新規作成
             $sql = "CREATE TABLE `{$table_name}` (" . implode( ', ', $columns_def ) . ") {$charset_collate};";
 
             require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
@@ -95,17 +98,24 @@ class KTPWP_Staff_Chat {
 
                 if ( ! empty( $result ) ) {
                     add_option( 'ktp_staff_chat_table_version', $my_table_version );
+                    if (defined('WP_DEBUG') && WP_DEBUG) {
+                        error_log("KTPWP: Created staff chat table with version {$my_table_version}");
+                    }
                     return true;
                 }
 
-                error_log( 'KTPWP: Failed to create staff chat table' );
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log( 'KTPWP: Failed to create staff chat table' );
+                }
                 return false;
             }
 
-            error_log( 'KTPWP: dbDelta function not available' );
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log( 'KTPWP: dbDelta function not available' );
+            }
             return false;
         } else {
-            // Table exists, check for missing columns
+            // テーブルが存在する場合は構造を確認・修正
             $existing_columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$table_name}`", 0 );
             $def_column_names = array();
 
@@ -127,7 +137,13 @@ class KTPWP_Staff_Chat {
 
                         $result = $wpdb->query( "ALTER TABLE `{$table_name}` ADD COLUMN {$def}" );
                         if ( $result === false ) {
-                            error_log( 'KTPWP: Failed to add column: ' . $def . ' - ' . $wpdb->last_error );
+                            if (defined('WP_DEBUG') && WP_DEBUG) {
+                                error_log( 'KTPWP: Failed to add column: ' . $def . ' - ' . $wpdb->last_error );
+                            }
+                        } else {
+                            if (defined('WP_DEBUG') && WP_DEBUG) {
+                                error_log( 'KTPWP: Successfully added column: ' . $column );
+                            }
                         }
                         break;
                     }
@@ -135,6 +151,10 @@ class KTPWP_Staff_Chat {
             }
 
             update_option( 'ktp_staff_chat_table_version', $my_table_version );
+            
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log("KTPWP: Updated staff chat table to version {$my_table_version}");
+            }
         }
 
         return true;

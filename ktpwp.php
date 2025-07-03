@@ -160,6 +160,10 @@ function ktpwp_run_auto_migrations() {
     // DBバージョンが古い場合、または新規インストールの場合
     if (version_compare($current_db_version, $plugin_version, '<')) {
         
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('KTPWP Auto Migration: Starting migration from ' . $current_db_version . ' to ' . $plugin_version);
+        }
+        
         // 基本テーブル作成
         ktp_table_setup();
         
@@ -186,6 +190,12 @@ function ktpwp_run_auto_migrations() {
             }
         }
         
+        // 追加のテーブル構造修正
+        ktpwp_fix_table_structures();
+        
+        // 既存データの修復
+        ktpwp_repair_existing_data();
+        
         // DBバージョンを更新
         update_option('ktpwp_db_version', $plugin_version);
         
@@ -195,16 +205,288 @@ function ktpwp_run_auto_migrations() {
     }
 }
 
+/**
+ * テーブル構造の修正を実行
+ */
+function ktpwp_fix_table_structures() {
+    global $wpdb;
+    
+    if (defined('WP_DEBUG') && WP_DEBUG) {
+        error_log('KTPWP: Starting table structure fixes');
+    }
+    
+    // 1. 請求項目テーブルの修正
+    $invoice_table = $wpdb->prefix . 'ktp_order_invoice_items';
+    $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$invoice_table'");
+    
+    if ($table_exists) {
+        $existing_columns = $wpdb->get_col("SHOW COLUMNS FROM `{$invoice_table}`", 0);
+        
+        // 不要なカラムを削除
+        $unwanted_columns = array('purchase', 'ordered');
+        foreach ($unwanted_columns as $column) {
+            if (in_array($column, $existing_columns)) {
+                $wpdb->query("ALTER TABLE `{$invoice_table}` DROP COLUMN `{$column}`");
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log("KTPWP: Removed unwanted column '{$column}' from invoice table");
+                }
+            }
+        }
+        
+        // 必要なカラムを追加
+        $required_columns = array(
+            'sort_order' => "INT NOT NULL DEFAULT 0",
+            'updated_at' => "TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+        );
+        
+        foreach ($required_columns as $column => $definition) {
+            if (!in_array($column, $existing_columns)) {
+                $wpdb->query("ALTER TABLE `{$invoice_table}` ADD COLUMN `{$column}` {$definition}");
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log("KTPWP: Added column '{$column}' to invoice table");
+                }
+            }
+        }
+    } else {
+        // テーブルが存在しない場合は作成
+        if (class_exists('KTPWP_Order_Items')) {
+            $order_items = KTPWP_Order_Items::get_instance();
+            $order_items->create_invoice_items_table();
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log("KTPWP: Created invoice items table");
+            }
+        }
+    }
+    
+    // 2. スタッフチャットテーブルの修正
+    $chat_table = $wpdb->prefix . 'ktp_order_staff_chat';
+    $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$chat_table'");
+    
+    if ($table_exists) {
+        $existing_columns = $wpdb->get_col("SHOW COLUMNS FROM `{$chat_table}`", 0);
+        
+        // 必要なカラムを追加
+        $required_columns = array(
+            'is_initial' => "TINYINT(1) NOT NULL DEFAULT 0"
+        );
+        
+        foreach ($required_columns as $column => $definition) {
+            if (!in_array($column, $existing_columns)) {
+                $wpdb->query("ALTER TABLE `{$chat_table}` ADD COLUMN `{$column}` {$definition}");
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log("KTPWP: Added column '{$column}' to staff chat table");
+                }
+            }
+        }
+    } else {
+        // テーブルが存在しない場合は作成
+        if (class_exists('KTPWP_Staff_Chat')) {
+            $staff_chat = KTPWP_Staff_Chat::get_instance();
+            $staff_chat->create_table();
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log("KTPWP: Created staff chat table");
+            }
+        }
+    }
+    
+    if (defined('WP_DEBUG') && WP_DEBUG) {
+        error_log('KTPWP: Table structure fixes completed');
+    }
+}
+
+/**
+ * 既存データの修復を実行
+ */
+function ktpwp_repair_existing_data() {
+    global $wpdb;
+    
+    if (defined('WP_DEBUG') && WP_DEBUG) {
+        error_log('KTPWP: Starting existing data repair');
+    }
+    
+    // 既存の受注書にスタッフチャットの初期メッセージを作成
+    $chat_table = $wpdb->prefix . 'ktp_order_staff_chat';
+    $order_table = $wpdb->prefix . 'ktp_order';
+    
+    if ($wpdb->get_var("SHOW TABLES LIKE '$chat_table'") && $wpdb->get_var("SHOW TABLES LIKE '$order_table'")) {
+        // スタッフチャットが存在しない受注書を取得
+        $orders_without_chat = $wpdb->get_results("
+            SELECT o.id 
+            FROM `{$order_table}` o 
+            LEFT JOIN `{$chat_table}` c ON o.id = c.order_id 
+            WHERE c.order_id IS NULL
+        ");
+        
+        if (!empty($orders_without_chat)) {
+            $success_count = 0;
+            foreach ($orders_without_chat as $order) {
+                // 初期メッセージを作成
+                $result = $wpdb->insert(
+                    $chat_table,
+                    array(
+                        'order_id' => $order->id,
+                        'user_id' => 1, // 管理者ユーザーID
+                        'user_display_name' => 'システム',
+                        'message' => '受注書を作成しました。',
+                        'is_initial' => 1,
+                        'created_at' => current_time('mysql')
+                    ),
+                    array('%d', '%d', '%s', '%s', '%d', '%s')
+                );
+                
+                if ($result !== false) {
+                    $success_count++;
+                }
+            }
+            
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log("KTPWP: Created initial chat messages for {$success_count} orders");
+            }
+        }
+    }
+    
+    if (defined('WP_DEBUG') && WP_DEBUG) {
+        error_log('KTPWP: Existing data repair completed');
+    }
+}
+
 // プラグイン有効化時の自動マイグレーション
-register_activation_hook(KANTANPRO_PLUGIN_FILE, 'ktpwp_run_auto_migrations');
+register_activation_hook(KANTANPRO_PLUGIN_FILE, 'ktpwp_plugin_activation');
+
+/**
+ * プラグイン有効化時の処理
+ */
+function ktpwp_plugin_activation() {
+    if (defined('WP_DEBUG') && WP_DEBUG) {
+        error_log('KTPWP: Plugin activation started');
+    }
+    
+    // 基本テーブル作成
+    ktp_table_setup();
+    
+    // 追加のテーブル構造修正
+    ktpwp_fix_table_structures();
+    
+    // 既存データの修復
+    ktpwp_repair_existing_data();
+    
+    // DBバージョンを設定
+    $plugin_version = KANTANPRO_PLUGIN_VERSION;
+    update_option('ktpwp_db_version', $plugin_version);
+    
+    // 設定クラスのアクティベート処理
+    if (class_exists('KTP_Settings')) {
+        KTP_Settings::activate();
+    }
+    
+    // プラグインリファレンス更新処理
+    if (class_exists('KTPWP_Plugin_Reference')) {
+        KTPWP_Plugin_Reference::on_plugin_activation();
+    }
+    
+    // 一時的なフラグをクリア（次回のチェックを確実に実行）
+    delete_transient('ktpwp_db_integrity_checked');
+    delete_transient('ktpwp_admin_migration_completed');
+    
+    if (defined('WP_DEBUG') && WP_DEBUG) {
+        error_log('KTPWP: Plugin activation completed');
+    }
+}
 
 // プラグイン読み込み時の差分マイグレーション（アップデート時）
-add_action('plugins_loaded', function() {
-    // 管理画面またはWP-CLIの場合のみ実行
-    if (is_admin() || (defined('WP_CLI') && WP_CLI)) {
-        ktpwp_run_auto_migrations();
+add_action('plugins_loaded', 'ktpwp_check_database_integrity', 5);
+
+/**
+ * データベースの整合性をチェックし、必要に応じて修正を実行
+ */
+function ktpwp_check_database_integrity() {
+    // 既にチェック済みの場合はスキップ
+    if (get_transient('ktpwp_db_integrity_checked')) {
+        return;
     }
-}, 1);
+    
+    global $wpdb;
+    
+    if (defined('WP_DEBUG') && WP_DEBUG) {
+        error_log('KTPWP: Checking database integrity');
+    }
+    
+    $needs_fix = false;
+    
+    // 1. 請求項目テーブルのチェック
+    $invoice_table = $wpdb->prefix . 'ktp_order_invoice_items';
+    $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$invoice_table'");
+    
+    if ($table_exists) {
+        $existing_columns = $wpdb->get_col("SHOW COLUMNS FROM `{$invoice_table}`", 0);
+        
+        // 不要なカラムが存在するかチェック
+        $unwanted_columns = array('purchase', 'ordered');
+        foreach ($unwanted_columns as $column) {
+            if (in_array($column, $existing_columns)) {
+                $needs_fix = true;
+                break;
+            }
+        }
+        
+        // 必要なカラムが不足しているかチェック
+        $required_columns = array('sort_order', 'updated_at');
+        foreach ($required_columns as $column) {
+            if (!in_array($column, $existing_columns)) {
+                $needs_fix = true;
+                break;
+            }
+        }
+    } else {
+        $needs_fix = true;
+    }
+    
+    // 2. スタッフチャットテーブルのチェック
+    $chat_table = $wpdb->prefix . 'ktp_order_staff_chat';
+    $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$chat_table'");
+    
+    if ($table_exists) {
+        $existing_columns = $wpdb->get_col("SHOW COLUMNS FROM `{$chat_table}`", 0);
+        
+        // 必要なカラムが不足しているかチェック
+        if (!in_array('is_initial', $existing_columns)) {
+            $needs_fix = true;
+        }
+    } else {
+        $needs_fix = true;
+    }
+    
+    // 3. 既存データのチェック
+    if ($wpdb->get_var("SHOW TABLES LIKE '$chat_table'") && $wpdb->get_var("SHOW TABLES LIKE '$order_table'")) {
+        $orders_without_chat = $wpdb->get_var("
+            SELECT COUNT(*) 
+            FROM `{$order_table}` o 
+            LEFT JOIN `{$chat_table}` c ON o.id = c.order_id 
+            WHERE c.order_id IS NULL
+        ");
+        
+        if ($orders_without_chat > 0) {
+            $needs_fix = true;
+        }
+    }
+    
+    // 修正が必要な場合は実行
+    if ($needs_fix) {
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('KTPWP: Database integrity issues detected, running fixes');
+        }
+        
+        ktpwp_fix_table_structures();
+        ktpwp_repair_existing_data();
+        
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('KTPWP: Database integrity fixes completed');
+        }
+    }
+    
+    // チェック完了を記録（1時間有効）
+    set_transient('ktpwp_db_integrity_checked', true, HOUR_IN_SECONDS);
+}
 
 // デバッグログ: プラグイン読み込み開始
 if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
@@ -636,10 +918,15 @@ function ktp_table_setup() {
         $order_items->create_cost_items_table();
     }
     
-    // スタッフチャットテーブル作成処理
+    // スタッフチャットテーブル作成処理（重要：確実に実行）
     if (class_exists('KTPWP_Staff_Chat')) {
         $staff_chat = KTPWP_Staff_Chat::get_instance();
-        $staff_chat->create_table();
+        $result = $staff_chat->create_table();
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('KTPWP: Staff chat table creation result: ' . ($result ? 'success' : 'failed'));
+        }
+    } else {
+        error_log('KTPWP: KTPWP_Staff_Chat class not found during table setup');
     }
 }
 register_activation_hook(KANTANPRO_PLUGIN_FILE, 'ktp_table_setup'); // テーブル作成処理
@@ -1081,4 +1368,76 @@ function ktpwp_manual_cleanup_temp_files() {
 
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
     require_once __DIR__ . '/includes/ktp-migration-cli.php';
+}
+
+// 管理画面での自動マイグレーション
+add_action('admin_init', 'ktpwp_admin_auto_migrations');
+
+/**
+ * 管理画面での自動マイグレーション実行
+ */
+function ktpwp_admin_auto_migrations() {
+    // 管理画面でのみ実行
+    if (!is_admin()) {
+        return;
+    }
+    
+    // 既に実行済みの場合はスキップ
+    if (get_transient('ktpwp_admin_migration_completed')) {
+        return;
+    }
+    
+    // 現在のDBバージョンを取得
+    $current_db_version = get_option('ktpwp_db_version', '0.0.0');
+    $plugin_version = KANTANPRO_PLUGIN_VERSION;
+    
+    // DBバージョンが古い場合、または新規インストールの場合
+    if (version_compare($current_db_version, $plugin_version, '<')) {
+        
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('KTPWP Admin Migration: Starting migration from ' . $current_db_version . ' to ' . $plugin_version);
+        }
+        
+        // 基本テーブル作成
+        ktp_table_setup();
+        
+        // マイグレーションファイルの実行
+        $migrations_dir = __DIR__ . '/includes/migrations';
+        if (is_dir($migrations_dir)) {
+            $files = glob($migrations_dir . '/*.php');
+            if ($files) {
+                sort($files);
+                foreach ($files as $file) {
+                    if (file_exists($file)) {
+                        try {
+                            require_once $file;
+                            if (defined('WP_DEBUG') && WP_DEBUG) {
+                                error_log('KTPWP Admin Migration: Executed ' . basename($file));
+                            }
+                        } catch (Exception $e) {
+                            if (defined('WP_DEBUG') && WP_DEBUG) {
+                                error_log('KTPWP Admin Migration Error: ' . $e->getMessage() . ' in ' . basename($file));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // 追加のテーブル構造修正
+        ktpwp_fix_table_structures();
+        
+        // 既存データの修復
+        ktpwp_repair_existing_data();
+        
+        // DBバージョンを更新
+        update_option('ktpwp_db_version', $plugin_version);
+        
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('KTPWP Admin Migration: Updated DB version from ' . $current_db_version . ' to ' . $plugin_version);
+        }
+    }
+    
+    // 実行完了を記録（1日有効）
+    set_transient('ktpwp_admin_migration_completed', true, DAY_IN_SECONDS);
 }
