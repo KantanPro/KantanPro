@@ -27,8 +27,8 @@ class view_tabs_Class{
         // タブの内容を配列で定義
         $tabs = [
           'list' => '仕事リスト',
-          'order' => '伝票処理',
-          'client' => '得意先',
+          'order' => '受注書',
+          'client' => '顧客',
           'service' => 'サービス',
           'supplier' => '協力会社',
           'report' => 'レポート'
