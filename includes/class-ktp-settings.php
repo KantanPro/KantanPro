@@ -409,16 +409,6 @@ class KTP_Settings {
             array( $this, 'create_design_page' ) // 表示を処理する関数
         );
         
-        // サブメニュー - ライセンス設定
-        add_submenu_page(
-            'ktp-settings', // 親メニューのスラッグ
-            __( 'ライセンス設定', 'ktpwp' ), // ページタイトル
-            __( 'ライセンス設定', 'ktpwp' ), // メニュータイトル
-            'manage_options', // 権限
-            'ktp-license', // メニューのスラッグ
-            array( $this, 'create_license_page' ) // 表示を処理する関数
-        );
-
         // サブメニュー - スタッフ管理
         add_submenu_page(
             'ktp-settings', // 親メニューのスラッグ
@@ -427,6 +417,16 @@ class KTP_Settings {
             'manage_options', // 権限
             'ktp-staff', // メニューのスラッグ
             array( $this, 'create_staff_page' ) // 表示を処理する関数
+        );
+        
+        // サブメニュー - ライセンス設定
+        add_submenu_page(
+            'ktp-settings', // 親メニューのスラッグ
+            __( 'ライセンス設定', 'ktpwp' ), // ページタイトル
+            __( 'ライセンス設定', 'ktpwp' ), // メニュータイトル
+            'manage_options', // 権限
+            'ktp-license', // メニューのスラッグ
+            array( $this, 'create_license_page' ) // 表示を処理する関数
         );
     }
     /**
@@ -974,15 +974,15 @@ class KTP_Settings {
                 'url' => admin_url( 'admin.php?page=ktp-design-settings' ),
                 'icon' => 'dashicons-admin-appearance'
             ),
-            'license' => array(
-                'name' => __( 'ライセンス設定', 'ktpwp' ),
-                'url' => admin_url( 'admin.php?page=ktp-license' ),
-                'icon' => 'dashicons-admin-network'
-            ),
             'staff' => array(
                 'name' => __( 'スタッフ管理', 'ktpwp' ),
                 'url' => admin_url( 'admin.php?page=ktp-staff' ),
                 'icon' => 'dashicons-groups'
+            ),
+            'license' => array(
+                'name' => __( 'ライセンス設定', 'ktpwp' ),
+                'url' => admin_url( 'admin.php?page=ktp-license' ),
+                'icon' => 'dashicons-admin-network'
             ),
         );
 
