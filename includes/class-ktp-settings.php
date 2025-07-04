@@ -2301,6 +2301,252 @@ div.ktp_header > * {
         }
     }
 
+    /**
+     * 管理画面メニューの追加（デバッグログとREST API設定用）
+     *
+     * @since 1.3.0
+     */
+    public static function add_admin_menu() {
+        add_options_page(
+            'KTPWP設定',
+            'KTPWP設定',
+            'manage_options',
+            'ktpwp-settings',
+            array( __CLASS__, 'admin_page' )
+        );
+    }
+
+    /**
+     * 管理画面ページの表示
+     *
+     * @since 1.3.0
+     */
+    public static function admin_page() {
+        // 設定の保存処理
+        if ( isset( $_POST['submit'] ) && wp_verify_nonce( $_POST['ktpwp_settings_nonce'], 'ktpwp_settings' ) ) {
+            self::save_settings();
+        }
+
+        $current_settings = self::get_all_settings();
+        ?>
+        <div class="wrap">
+            <h1>KTPWP設定</h1>
+            
+            <form method="post" action="">
+                <?php wp_nonce_field( 'ktpwp_settings', 'ktpwp_settings_nonce' ); ?>
+                
+                <table class="form-table">
+                    <tr>
+                        <th scope="row">デバッグログ設定</th>
+                        <td>
+                            <fieldset>
+                                <label>
+                                    <input type="checkbox" name="ktpwp_debug_log_enabled" value="1" 
+                                           <?php checked( $current_settings['debug_log_enabled'], '1' ); ?> />
+                                    デバッグログを有効にする
+                                </label>
+                                <p class="description">
+                                    デバッグログは安全な場所（wp-content/logs/）に保存されます。
+                                </p>
+                            </fieldset>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <th scope="row">REST API制限</th>
+                        <td>
+                            <fieldset>
+                                <label>
+                                    <input type="checkbox" name="ktpwp_rest_api_restricted" value="1" 
+                                           <?php checked( $current_settings['rest_api_restricted'], '1' ); ?> />
+                                    フロントエンドでのREST APIをログインユーザーのみに制限する
+                                </label>
+                                <p class="description">
+                                    管理画面やブロックエディターは常に許可されます。
+                                </p>
+                            </fieldset>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <th scope="row">トラブルシューティング</th>
+                        <td>
+                            <fieldset>
+                                <label>
+                                    <input type="checkbox" name="ktpwp_disable_rest_api_restriction" value="1" 
+                                           <?php checked( $current_settings['disable_rest_api_restriction'], '1' ); ?> />
+                                    REST API制限を完全に無効化する（サイトヘルスエラーが解決されない場合）
+                                </label>
+                                <p class="description">
+                                    <strong>注意:</strong> この設定を有効にすると、セキュリティが低下する可能性があります。
+                                    サイトヘルスエラーが解決されない場合のみ使用してください。
+                                </p>
+                            </fieldset>
+                        </td>
+                    </tr>
+                </table>
+                
+                <?php submit_button(); ?>
+            </form>
+            
+            <h2>現在の設定状況</h2>
+            <table class="form-table">
+                <tr>
+                    <th scope="row">プラグインバージョン</th>
+                    <td><?php echo esc_html( $current_settings['version'] ); ?></td>
+                </tr>
+                <tr>
+                    <th scope="row">インストール日</th>
+                    <td><?php echo esc_html( $current_settings['installed_date'] ); ?></td>
+                </tr>
+                <tr>
+                    <th scope="row">デバッグモード</th>
+                    <td><?php echo esc_html( $current_settings['debug_mode'] ); ?></td>
+                </tr>
+                <tr>
+                    <th scope="row">サイトURL</th>
+                    <td><?php echo esc_html( home_url() ); ?></td>
+                </tr>
+                <tr>
+                    <th scope="row">開発環境</th>
+                    <td><?php echo ( strpos( home_url(), 'localhost' ) !== false || strpos( home_url(), '127.0.0.1' ) !== false ) ? 'はい' : 'いいえ'; ?></td>
+                </tr>
+                <tr>
+                    <th scope="row">REST API制限の状態</th>
+                    <td>
+                        <?php 
+                        $rest_api_status = '有効';
+                        if ( class_exists( 'KTP_Settings' ) ) {
+                            $rest_api_restricted = KTP_Settings::get_setting( 'rest_api_restricted', '1' );
+                            $disable_rest_api_restriction = KTP_Settings::get_setting( 'disable_rest_api_restriction', '0' );
+                            
+                            if ( $disable_rest_api_restriction === '1' ) {
+                                $rest_api_status = '<span style="color: red;">完全無効化</span>';
+                            } elseif ( $rest_api_restricted !== '1' ) {
+                                $rest_api_status = '<span style="color: orange;">無効</span>';
+                            } elseif ( defined( 'WP_DEBUG' ) && WP_DEBUG && ( strpos( home_url(), 'localhost' ) !== false || strpos( home_url(), '127.0.0.1' ) !== false ) ) {
+                                $rest_api_status = '<span style="color: blue;">開発環境で緩和</span>';
+                            }
+                        }
+                        echo $rest_api_status;
+                        ?>
+                    </td>
+                </tr>
+            </table>
+            
+            <h2>推奨設定（wp-config.php）</h2>
+            <div class="notice notice-info">
+                <p><strong>デバッグログの安全な設定:</strong></p>
+                <pre><code>// デバッグモードを有効化
+define( 'WP_DEBUG', true );
+
+// デバッグログを安全な場所に保存
+define( 'WP_DEBUG_LOG', WP_CONTENT_DIR . '/logs/debug.log' );
+
+// デバッグ表示を無効化（本番環境では必須）
+define( 'WP_DEBUG_DISPLAY', false );
+
+// スクリプトエラーの表示を無効化
+@ini_set( 'display_errors', 0 );</code></pre>
+            </div>
+        </div>
+        <?php
+    }
+
+    /**
+     * 設定の保存
+     *
+     * @since 1.3.0
+     */
+    private static function save_settings() {
+        // デバッグログ設定
+        $debug_log_enabled = isset( $_POST['ktpwp_debug_log_enabled'] ) ? '1' : '0';
+        update_option( 'ktpwp_debug_log_enabled', $debug_log_enabled );
+        
+        // REST API制限設定
+        $rest_api_restricted = isset( $_POST['ktpwp_rest_api_restricted'] ) ? '1' : '0';
+        update_option( 'ktpwp_rest_api_restricted', $rest_api_restricted );
+        
+        // REST API制限の完全無効化設定
+        $disable_rest_api_restriction = isset( $_POST['ktpwp_disable_rest_api_restriction'] ) ? '1' : '0';
+        update_option( 'ktpwp_disable_rest_api_restriction', $disable_rest_api_restriction );
+        
+        // 設定保存メッセージ
+        add_action( 'admin_notices', function() {
+            echo '<div class="notice notice-success is-dismissible"><p>設定を保存しました。</p></div>';
+        });
+    }
+
+    /**
+     * すべての設定を取得
+     *
+     * @since 1.3.0
+     * @return array
+     */
+    public static function get_all_settings() {
+        return array(
+            'version' => get_option( 'ktpwp_version', KANTANPRO_PLUGIN_VERSION ),
+            'installed_date' => get_option( 'ktpwp_installed_date', '不明' ),
+            'debug_mode' => get_option( 'ktpwp_debug_mode', 'disabled' ),
+            'debug_log_enabled' => get_option( 'ktpwp_debug_log_enabled', '0' ),
+            'rest_api_restricted' => get_option( 'ktpwp_rest_api_restricted', '1' ),
+            'disable_rest_api_restriction' => get_option( 'ktpwp_disable_rest_api_restriction', '0' ),
+        );
+    }
+
+    /**
+     * プラグインの設定を取得
+     *
+     * @since 1.3.0
+     * @param string $key 設定キー
+     * @param mixed $default デフォルト値
+     * @return mixed
+     */
+    public static function get_setting( $key, $default = null ) {
+        return get_option( 'ktpwp_' . $key, $default );
+    }
+
+    /**
+     * プラグインの設定を保存
+     *
+     * @since 1.3.0
+     * @param string $key 設定キー
+     * @param mixed $value 設定値
+     * @return bool
+     */
+    public static function save_setting( $key, $value ) {
+        return update_option( 'ktpwp_' . $key, $value );
+    }
+
+    /**
+     * デバッグログの書き込み（安全な方法）
+     *
+     * @since 1.3.0
+     * @param string $message ログメッセージ
+     * @param array $context コンテキスト情報
+     */
+    public static function log_debug( $message, $context = array() ) {
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            $log_message = '[' . date( 'Y-m-d H:i:s' ) . '] KTPWP: ' . $message;
+            
+            if ( ! empty( $context ) ) {
+                $log_message .= ' | Context: ' . wp_json_encode( $context );
+            }
+            
+            // 安全なログファイルパスを使用
+            $log_file = defined( 'WP_DEBUG_LOG' ) ? WP_DEBUG_LOG : WP_CONTENT_DIR . '/logs/debug.log';
+            
+            // ログディレクトリが存在しない場合は作成
+            $log_dir = dirname( $log_file );
+            if ( ! is_dir( $log_dir ) ) {
+                wp_mkdir_p( $log_dir );
+            }
+            
+            // ログファイルに書き込み
+            error_log( $log_message );
+        }
+    }
+
 }
 
 // インスタンスを初期化

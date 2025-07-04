@@ -374,6 +374,23 @@ function ktpwp_plugin_activation() {
     $plugin_version = KANTANPRO_PLUGIN_VERSION;
     update_option('ktpwp_db_version', $plugin_version);
     
+    // デフォルト設定の保存
+    if (get_option('ktpwp_version') === false) {
+        add_option('ktpwp_version', $plugin_version);
+    }
+    if (get_option('ktpwp_installed_date') === false) {
+        add_option('ktpwp_installed_date', current_time('mysql'));
+    }
+    if (get_option('ktpwp_debug_mode') === false) {
+        add_option('ktpwp_debug_mode', defined('WP_DEBUG') && WP_DEBUG ? 'enabled' : 'disabled');
+    }
+    if (get_option('ktpwp_debug_log_enabled') === false) {
+        add_option('ktpwp_debug_log_enabled', '0');
+    }
+    if (get_option('ktpwp_rest_api_restricted') === false) {
+        add_option('ktpwp_rest_api_restricted', '1');
+    }
+    
     // 設定クラスのアクティベート処理
     if (class_exists('KTP_Settings')) {
         KTP_Settings::activate();
@@ -493,6 +510,64 @@ if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
     error_log( 'KTPWP Plugin: Loading started' );
 }
 
+// 安全なログディレクトリの自動作成
+function ktpwp_setup_safe_logging() {
+    // wp-config.phpでWP_DEBUG_LOGが設定されている場合のみ実行
+    if ( defined( 'WP_DEBUG' ) && WP_DEBUG && defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG ) {
+        $log_dir = WP_CONTENT_DIR . '/logs';
+        
+        // ログディレクトリが存在しない場合は作成
+        if ( ! is_dir( $log_dir ) ) {
+            wp_mkdir_p( $log_dir );
+            
+            // .htaccessファイルを作成してログディレクトリへのアクセスを制限
+            $htaccess_content = "Order deny,allow\nDeny from all";
+            file_put_contents( $log_dir . '/.htaccess', $htaccess_content );
+            
+            // index.phpファイルを作成してディレクトリリスティングを防止
+            file_put_contents( $log_dir . '/index.php', '<?php // Silence is golden' );
+            
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP: Created secure log directory at ' . $log_dir );
+            }
+        }
+        
+        // 既存のログディレクトリの保護を確認
+        if ( is_dir( $log_dir ) ) {
+            $htaccess_file = $log_dir . '/.htaccess';
+            $index_file = $log_dir . '/index.php';
+            
+            // .htaccessファイルが存在しない場合は作成
+            if ( ! file_exists( $htaccess_file ) ) {
+                $htaccess_content = "Order deny,allow\nDeny from all";
+                file_put_contents( $htaccess_file, $htaccess_content );
+            }
+            
+            // index.phpファイルが存在しない場合は作成
+            if ( ! file_exists( $index_file ) ) {
+                file_put_contents( $index_file, '<?php // Silence is golden' );
+            }
+        }
+    }
+}
+
+// プラグイン読み込み時にログディレクトリを設定
+add_action( 'plugins_loaded', 'ktpwp_setup_safe_logging', 1 );
+
+// プラグイン初期化時のREST API制限を一時的に無効化
+function ktpwp_disable_rest_api_restriction_during_init() {
+    // プラグイン初期化中はREST API制限を無効化
+    remove_filter( 'rest_authentication_errors', 'ktpwp_allow_internal_requests' );
+    
+    // 初期化完了後にREST API制限を再適用
+    add_action( 'init', function() {
+        add_filter( 'rest_authentication_errors', 'ktpwp_allow_internal_requests' );
+    }, 20 );
+}
+
+// プラグイン読み込み時にREST API制限を一時的に無効化
+add_action( 'plugins_loaded', 'ktpwp_disable_rest_api_restriction_during_init', 1 );
+
 // メインクラスの初期化はinit以降に遅延（翻訳エラー防止）
 add_action('init', function() { // Changed from plugins_loaded to init
     if ( class_exists( 'KTPWP_Main' ) ) {
@@ -533,16 +608,31 @@ add_action('init', function() {
  */
 
 /**
- * 未認証ユーザーのREST APIアクセス制限
- *
- * @param WP_Error|null|true $result Authentication result.
- * @return WP_Error|null|true
+ * REST API制限機能（管理画面とブロックエディターを除外）
  */
 function ktpwp_restrict_rest_api( $result ) {
     if ( ! empty( $result ) ) {
         return $result;
     }
 
+    // 管理画面では制限しない
+    if ( is_admin() ) {
+        return $result;
+    }
+
+    // ブロックエディター関連のリクエストは制限しない
+    $request_uri = $_SERVER['REQUEST_URI'] ?? '';
+    if ( strpos( $request_uri, '/wp-json/wp/v2/' ) !== false ) {
+        // 投稿タイプ、タクソノミー、メディアなどの基本的なREST APIは許可
+        return $result;
+    }
+
+    // サイトヘルスチェック用のエンドポイントは制限しない
+    if ( strpos( $request_uri, '/wp-json/wp-site-health/' ) !== false ) {
+        return $result;
+    }
+
+    // その他のREST APIはログインユーザーのみに制限
     if ( ! is_user_logged_in() ) {
         return new WP_Error(
             'rest_forbidden',
@@ -553,7 +643,67 @@ function ktpwp_restrict_rest_api( $result ) {
 
     return $result;
 }
-add_filter( 'rest_authentication_errors', 'ktpwp_restrict_rest_api' );
+
+// === ループバックリクエストとサイトヘルスチェックの改善 ===
+function ktpwp_allow_internal_requests( $result ) {
+    // 既にエラーがある場合はそのまま返す
+    if ( ! empty( $result ) ) {
+        return $result;
+    }
+
+    // 管理画面では制限しない
+    if ( is_admin() ) {
+        return $result;
+    }
+
+    // 設定でREST API制限が無効化されている場合は制限しない
+    if ( class_exists( 'KTP_Settings' ) ) {
+        $rest_api_restricted = KTP_Settings::get_setting( 'rest_api_restricted', '1' );
+        if ( $rest_api_restricted !== '1' ) {
+            return $result;
+        }
+        
+        // REST API制限の完全無効化設定をチェック
+        $disable_rest_api_restriction = KTP_Settings::get_setting( 'disable_rest_api_restriction', '0' );
+        if ( $disable_rest_api_restriction === '1' ) {
+            return $result;
+        }
+    }
+
+    // 開発環境では制限を緩和
+    if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+        // ローカル開発環境では制限しない
+        if ( strpos( home_url(), 'localhost' ) !== false || strpos( home_url(), '127.0.0.1' ) !== false ) {
+            return $result;
+        }
+    }
+
+    // WordPressの内部通信用エンドポイントは制限しない
+    $request_uri = $_SERVER['REQUEST_URI'] ?? '';
+    
+    // すべてのWordPress REST APIエンドポイントを許可
+    if ( strpos( $request_uri, '/wp-json/' ) !== false ) {
+        return $result;
+    }
+
+    // その他のREST APIはログインユーザーのみに制限
+    if ( ! is_user_logged_in() ) {
+        return new WP_Error(
+            'rest_forbidden',
+            'REST APIはログインユーザーのみ利用可能です。',
+            array( 'status' => 403 )
+        );
+    }
+
+    return $result;
+}
+
+// REST API制限の改善版を適用
+remove_filter( 'rest_authentication_errors', 'ktpwp_restrict_rest_api' );
+// REST API制限はinitアクションで適用（プラグイン初期化完了後）
+add_action( 'init', function() {
+    add_filter( 'rest_authentication_errors', 'ktpwp_allow_internal_requests' );
+}, 10 );
 
 /**
  * HTTPセキュリティヘッダー追加
@@ -815,12 +965,49 @@ function ktpwp_scripts_and_styles() {
     wp_add_inline_script('ktp-js', 'var ktpwpStaffChatShowLabel = ' . json_encode('表示') . ';');
     wp_add_inline_script('ktp-js', 'var ktpwpStaffChatHideLabel = ' . json_encode('非表示') . ';');
 
-    wp_register_style('ktp-css', plugins_url('css/styles.css', __FILE__) . '?v=' . time(), array(), KANTANPRO_PLUGIN_VERSION, 'all');
-    wp_enqueue_style('ktp-css');
-    // 進捗プルダウン用のスタイルシートを追加
-    wp_enqueue_style('ktp-progress-select', plugins_url('css/progress-select.css', __FILE__) . '?v=' . time(), array('ktp-css'), KANTANPRO_PLUGIN_VERSION, 'all');
-    // 設定タブ用のスタイルシートを追加
-    wp_enqueue_style('ktp-setting-tab', plugins_url('css/ktp-setting-tab.css', __FILE__) . '?v=' . time(), array('ktp-css'), KANTANPRO_PLUGIN_VERSION, 'all');
+    // サイトヘルスページでのスタイル競合を防ぐため、条件分岐を追加
+    $is_site_health_page = false;
+    
+    // 管理画面でのみチェック
+    if (is_admin()) {
+        // より確実なサイトヘルスページ検出
+        $current_screen = get_current_screen();
+        $current_page = isset($_GET['page']) ? $_GET['page'] : '';
+        $current_action = isset($_GET['action']) ? $_GET['action'] : '';
+        
+        $is_site_health_page = (
+            ($current_screen && (
+                $current_screen->id === 'tools_page_site-health' ||
+                $current_screen->id === 'site-health_page_site-health' ||
+                strpos($current_screen->id, 'site-health') !== false
+            )) ||
+            $current_page === 'site-health' ||
+            $current_action === 'site-health' ||
+            (isset($_SERVER['REQUEST_URI']) && strpos($_SERVER['REQUEST_URI'], 'site-health') !== false)
+        );
+        
+        // デバッグ用（必要に応じてコメントアウト）
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('KTPWP Site Health Check: ' . ($is_site_health_page ? 'true' : 'false') . 
+                     ' | Screen: ' . ($current_screen ? $current_screen->id : 'none') . 
+                     ' | Page: ' . $current_page . 
+                     ' | URI: ' . ($_SERVER['REQUEST_URI'] ?? 'none'));
+        }
+    }
+    
+    // サイトヘルスページでの処理
+    if ($is_site_health_page) {
+        // サイトヘルスページでは専用のリセットCSSのみ読み込み
+        wp_enqueue_style('ktpwp-site-health-reset', plugins_url('css/site-health-reset.css', __FILE__) . '?v=' . time(), array(), KANTANPRO_PLUGIN_VERSION, 'all');
+    } else {
+        // サイトヘルスページ以外では通常のスタイルを読み込み
+        wp_register_style('ktp-css', plugins_url('css/styles.css', __FILE__) . '?v=' . time(), array(), KANTANPRO_PLUGIN_VERSION, 'all');
+        wp_enqueue_style('ktp-css');
+        // 進捗プルダウン用のスタイルシートを追加
+        wp_enqueue_style('ktp-progress-select', plugins_url('css/progress-select.css', __FILE__) . '?v=' . time(), array('ktp-css'), KANTANPRO_PLUGIN_VERSION, 'all');
+        // 設定タブ用のスタイルシートを追加
+        wp_enqueue_style('ktp-setting-tab', plugins_url('css/ktp-setting-tab.css', __FILE__) . '?v=' . time(), array('ktp-css'), KANTANPRO_PLUGIN_VERSION, 'all');
+    }
 
     // Material Symbols アイコンフォントをプリロードとして読み込み
     wp_enqueue_style('ktpwp-material-icons', 'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0', array(), null);
@@ -882,6 +1069,33 @@ function ktpwp_scripts_and_styles() {
         );
     }
 }
+// サイトヘルスページ専用のCSS読み込み
+function ktpwp_site_health_styles() {
+    // サイトヘルスページ専用のリセットCSSを読み込み
+    wp_enqueue_style('ktpwp-site-health-reset', plugins_url('css/site-health-reset.css', __FILE__) . '?v=' . time(), array(), KANTANPRO_PLUGIN_VERSION, 'all');
+}
+
+// サイトヘルスページでのみ実行
+add_action('admin_enqueue_scripts', function($hook) {
+    // より確実なサイトヘルスページ検出
+    $is_site_health = (
+        strpos($hook, 'site-health') !== false || 
+        (isset($_GET['page']) && $_GET['page'] === 'site-health') ||
+        (isset($_GET['action']) && $_GET['action'] === 'site-health') ||
+        (isset($_SERVER['REQUEST_URI']) && strpos($_SERVER['REQUEST_URI'], 'site-health') !== false) ||
+        (isset($_SERVER['REQUEST_URI']) && strpos($_SERVER['REQUEST_URI'], 'tools.php?page=site-health') !== false)
+    );
+    
+    if ($is_site_health) {
+        ktpwp_site_health_styles();
+        
+        // デバッグ用（必要に応じてコメントアウト）
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('KTPWP Site Health Reset CSS loaded for hook: ' . $hook);
+        }
+    }
+});
+
 add_action( 'wp_enqueue_scripts', 'ktpwp_scripts_and_styles' );
 add_action( 'admin_enqueue_scripts', 'ktpwp_scripts_and_styles' );
 
@@ -1372,6 +1586,9 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 
 // 管理画面での自動マイグレーション
 add_action('admin_init', 'ktpwp_admin_auto_migrations');
+
+// 管理画面メニューの登録
+add_action('admin_menu', array('KTP_Settings', 'add_admin_menu'));
 
 /**
  * 管理画面での自動マイグレーション実行
