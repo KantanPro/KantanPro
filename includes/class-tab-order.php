@@ -769,6 +769,10 @@ class Kntan_Order_Class {
         // 進捗更新処理開始前のログ
         // 進捗更新処理（POST時） - Add nonce verification
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_progress_id'], $_POST['update_progress'])) {
+            error_log('KTPWP Order: 進捗更新処理が呼び出されました');
+            error_log('KTPWP Order: POST data: ' . print_r($_POST, true));
+            error_log('KTPWP Order: $_POST[completion_date] = ' . (isset($_POST['completion_date']) ? $_POST['completion_date'] : 'NOT SET'));
+            
             // Verify nonce
             // if ( ! isset( $_POST['progress_nonce'] ) ||
             //      ! wp_verify_nonce( $_POST['progress_nonce'], 'update_progress_action' ) ) {
@@ -782,27 +786,71 @@ class Kntan_Order_Class {
 
             $update_id = absint($_POST['update_progress_id']);
             $update_progress = absint($_POST['update_progress']);
+            
+            error_log('KTPWP Order: 進捗更新 - ID: ' . $update_id . ', 新しい進捗: ' . $update_progress);
+            
             if ($update_id > 0 && $update_progress >= 1 && $update_progress <= 7) {
                 // 現在の進捗を取得
                 $current_order = $wpdb->get_row($wpdb->prepare("SELECT progress FROM {$table_name} WHERE id = %d", $update_id));
                 
+                error_log('KTPWP Order: 現在の進捗: ' . ($current_order ? $current_order->progress : 'null'));
+                
                 $update_data = ['progress' => $update_progress];
+                
+                // 完了日フィールドの値を取得
+                $completion_date = isset($_POST['completion_date']) ? sanitize_text_field($_POST['completion_date']) : '';
+                error_log('KTPWP Order: フォームから完了日を取得: ' . $completion_date);
                 
                 // 進捗が「完了」（progress = 4）に変更された場合、完了日を記録
                 if ($update_progress == 4 && $current_order && $current_order->progress != 4) {
-                    $update_data['completion_date'] = current_time('Y-m-d');
+                    if (!empty($completion_date)) {
+                        // フォームから完了日が送信されている場合はその値を使用
+                        $update_data['completion_date'] = $completion_date;
+                        error_log('KTPWP Order: フォームから完了日を設定: ' . $completion_date);
+                    } else {
+                        // フォームから完了日が送信されていない場合は今日の日付を設定
+                        $update_data['completion_date'] = current_time('Y-m-d');
+                        error_log('KTPWP Order: 完了日を自動設定します: ' . current_time('Y-m-d'));
+                    }
                 }
                 
                 // 進捗が受注以前（受付中、見積中、受注）に変更された場合、完了日をクリア
                 if (in_array($update_progress, [1, 2, 3]) && $current_order && $current_order->progress > 3) {
                     $update_data['completion_date'] = null;
+                    error_log('KTPWP Order: 完了日をクリアします');
                 }
                 
-                $wpdb->update($table_name, $update_data, ['id' => $update_id], ['%d'], ['%d']);
+                error_log('KTPWP Order: 更新データ: ' . print_r($update_data, true));
+                
+                // データベース更新時のフォーマットを適切に設定
+                $update_formats = [];
+                $update_conditions = ['id' => $update_id];
+                $condition_formats = ['%d'];
+                
+                foreach ($update_data as $key => $value) {
+                    if ($key === 'progress') {
+                        $update_formats[] = '%d';
+                    } elseif ($key === 'completion_date') {
+                        $update_formats[] = '%s';
+                    } else {
+                        $update_formats[] = '%s';
+                    }
+                }
+                
+                $result = $wpdb->update($table_name, $update_data, $update_conditions, $update_formats, $condition_formats);
+                
+                error_log('KTPWP Order: データベース更新結果: ' . ($result ? '成功' : '失敗'));
+                if (!$result) {
+                    error_log('KTPWP Order: データベースエラー: ' . $wpdb->last_error);
+                }
+                
                 // リダイレクトで再読み込み（POSTリダブミット防止）
                 $redirect_url = esc_url_raw( $_SERVER['REQUEST_URI'] );
-                // wp_redirect( $redirect_url );
-                // exit;
+                error_log('KTPWP Order: リダイレクト先: ' . $redirect_url);
+                wp_redirect( $redirect_url );
+                exit;
+            } else {
+                error_log('KTPWP Order: 進捗更新条件を満たしません - ID: ' . $update_id . ', 進捗: ' . $update_progress);
             }
         }
 
@@ -1295,12 +1343,16 @@ $content .= '<input type="hidden" name="update_progress_id" value="' . esc_html(
 // Add nonce for progress update
 $content .= wp_nonce_field( 'update_progress_action', 'progress_nonce', true, false );
 $content .= '<label for="order_progress_select" style="white-space:nowrap;margin-right:4px;font-weight:bold;">進捗：</label>';
-$content .= '<select id="order_progress_select" name="update_progress" onchange="this.form.submit()" style="min-width:120px;max-width:200px;width:auto;">';
+$content .= '<select id="order_progress_select" name="update_progress" onchange="handleProgressChange(this)" style="min-width:120px;max-width:200px;width:auto;">';
 foreach ($progress_labels as $num => $label) {
     $selected = ($order_data->progress == $num) ? 'selected' : '';
     $content .= '<option value="' . $num . '" ' . $selected . '>' . $label . '</option>';
 }
 $content .= '</select>';
+
+// 完了日フィールドをフォーム内に追加
+$completion_date = isset($order_data->completion_date) ? $order_data->completion_date : '';
+$content .= '<input type="hidden" name="completion_date" value="' . esc_attr($completion_date) . '" />';
 $content .= '</form>';
                 // 顧客IDの表示を改善
                 $client_id_display = '';
@@ -1416,6 +1468,13 @@ $content .= '</form>';
                 
                 // 完了日の表示と編集フィールド
                 $completion_date = isset($order_data->completion_date) ? $order_data->completion_date : '';
+                
+                // 0000-00-00や無効な日付の場合は空文字にする
+                if ($completion_date === '0000-00-00' || $completion_date === '0000-00-00 00:00:00' || empty($completion_date)) {
+                    $completion_date = '';
+                }
+                
+                error_log('KTPWP Order: 画面表示時の完了日: ' . $completion_date . ' (受注書ID: ' . $order_data->id . ', 元の値: ' . $order_data->completion_date . ')');
                 $content .= '<div>完了日：<input type="date" id="completion_date" name="completion_date" value="' . esc_attr($completion_date) . '" data-order-id="' . esc_attr($order_data->id) . '" data-field="completion_date" class="completion-date-input" style="font-size: 12px; padding: 4px 8px; border: 1px solid #ddd; border-radius: 4px; width: 140px;" /></div>';
                 
                 // 案件名インライン入力をh4タイトル行に移動

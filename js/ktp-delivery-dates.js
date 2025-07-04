@@ -5,6 +5,85 @@
  * @since 1.0.0
  */
 
+// グローバル関数：受注書詳細での進捗変更処理
+window.handleProgressChange = function(selectElement) {
+    console.log('[DELIVERY-DATES] handleProgressChange called');
+    
+    var $select = jQuery(selectElement);
+    var $completionInput = jQuery('#completion_date');
+    var $form = $select.closest('form');
+    
+    var newProgress = parseInt($select.val());
+    
+    console.log('[DELIVERY-DATES] 進捗変更処理:', {
+        newProgress: newProgress,
+        hasCompletionInput: $completionInput.length > 0,
+        completionInputValue: $completionInput.val()
+    });
+    
+    // 進捗が「完了」（progress = 4）に変更された場合、完了日を自動設定
+    if (newProgress === 4 && $completionInput.length > 0) {
+        var currentDate = $completionInput.val();
+        if (!currentDate) {
+            var today = new Date();
+            var dateString = today.getFullYear() + '-' + 
+                           String(today.getMonth() + 1).padStart(2, '0') + '-' + 
+                           String(today.getDate()).padStart(2, '0');
+            
+            console.log('[DELIVERY-DATES] 完了日を自動設定します:', dateString);
+            $completionInput.val(dateString);
+            
+            // フォーム内の隠し完了日フィールドも更新
+            var $hiddenCompletionField = $form.find('input[name="completion_date"]');
+            if ($hiddenCompletionField.length > 0) {
+                $hiddenCompletionField.val(dateString);
+                console.log('[DELIVERY-DATES] フォーム内の隠し完了日フィールドも更新しました:', dateString);
+            }
+            
+            // 視覚的なフィードバック
+            $completionInput.css('border-color', '#4CAF50');
+            setTimeout(function() {
+                $completionInput.css('border-color', '#ddd');
+            }, 2000);
+        }
+    } else if (newProgress < 4 && $completionInput.length > 0) {
+        // 進捗が完了以前に戻された場合、完了日をクリア
+        console.log('[DELIVERY-DATES] 進捗が完了以前に戻されたため、完了日をクリアします');
+        $completionInput.val('');
+        
+        // フォーム内の隠し完了日フィールドもクリア
+        var $hiddenCompletionField = $form.find('input[name="completion_date"]');
+        if ($hiddenCompletionField.length > 0) {
+            $hiddenCompletionField.val('');
+            console.log('[DELIVERY-DATES] フォーム内の隠し完了日フィールドもクリアしました');
+        }
+    }
+    
+    // フォーム送信前の最終確認
+    console.log('[DELIVERY-DATES] フォーム送信前の最終確認:');
+    console.log('[DELIVERY-DATES] - 完了日フィールドの値:', $completionInput.val());
+    
+    var $hiddenCompletionField = $form.find('input[name="completion_date"]');
+    console.log('[DELIVERY-DATES] - 隠し完了日フィールドの値:', $hiddenCompletionField.val());
+    console.log('[DELIVERY-DATES] - フォームのaction:', $form.attr('action'));
+    console.log('[DELIVERY-DATES] - フォームのmethod:', $form.attr('method'));
+    
+    // フォーム内の全てのinput要素をログ出力
+    var formData = {};
+    $form.find('input').each(function() {
+        var name = jQuery(this).attr('name');
+        var value = jQuery(this).val();
+        if (name) {
+            formData[name] = value;
+        }
+    });
+    console.log('[DELIVERY-DATES] - フォームデータ:', formData);
+    
+    // フォームを送信
+    console.log('[DELIVERY-DATES] フォームを送信します');
+    $form.submit();
+};
+
 jQuery(document).ready(function($) {
     'use strict';
 
@@ -413,6 +492,17 @@ jQuery(document).ready(function($) {
             $option.data('old-progress', currentProgress);
             console.log('[DELIVERY-DATES] 受注書詳細進捗初期化:', currentProgress);
         });
+        
+        // 受注書詳細での完了日フィールドの存在確認
+        var $completionInput = $('#completion_date');
+        console.log('[DELIVERY-DATES] 受注書詳細完了日フィールド確認:', {
+            exists: $completionInput.length > 0,
+            id: $completionInput.attr('id'),
+            name: $completionInput.attr('name'),
+            value: $completionInput.val(),
+            orderId: $completionInput.data('order-id'),
+            field: $completionInput.data('field')
+        });
     }, 100);
 
     // 進捗プルダウンの変更を監視（仕事リスト用）
@@ -475,6 +565,7 @@ jQuery(document).ready(function($) {
         
         var $select = $(this);
         var $completionInput = $('#completion_date');
+        var $form = $select.closest('form');
         
         var newProgress = parseInt($select.val());
         var oldProgress = parseInt($select.find('option:selected').data('old-progress') || newProgress);
@@ -482,7 +573,9 @@ jQuery(document).ready(function($) {
         console.log('[DELIVERY-DATES] 受注書詳細進捗変更:', {
             oldProgress: oldProgress,
             newProgress: newProgress,
-            hasCompletionInput: $completionInput.length > 0
+            hasCompletionInput: $completionInput.length > 0,
+            completionInputId: $completionInput.attr('id'),
+            completionInputValue: $completionInput.val()
         });
         
         // 進捗が「完了」（progress = 4）に変更された場合、完了日を自動設定
@@ -492,8 +585,14 @@ jQuery(document).ready(function($) {
             var todayStr = today.toISOString().split('T')[0]; // YYYY-MM-DD形式
             $completionInput.val(todayStr);
             
-            // 完了日フィールドの変更をトリガーして保存
-            $completionInput.trigger('change');
+            // フォーム内の隠しフィールドも更新
+            var $hiddenCompletionField = $form.find('input[name="completion_date"]');
+            if ($hiddenCompletionField.length > 0) {
+                $hiddenCompletionField.val(todayStr);
+                console.log('[DELIVERY-DATES] フォーム内の隠し完了日フィールドも更新しました:', todayStr);
+            }
+            
+            console.log('[DELIVERY-DATES] 完了日を設定しました:', todayStr);
         }
         
         // 進捗が受注以前（受付中、見積中、受注）に変更された場合、完了日をクリア
@@ -501,12 +600,24 @@ jQuery(document).ready(function($) {
             console.log('[DELIVERY-DATES] 受注書詳細：進捗が受注以前に変更されたため、完了日をクリアします');
             $completionInput.val('');
             
-            // 完了日フィールドの変更をトリガーして保存
-            $completionInput.trigger('change');
+            // フォーム内の隠しフィールドもクリア
+            var $hiddenCompletionField = $form.find('input[name="completion_date"]');
+            if ($hiddenCompletionField.length > 0) {
+                $hiddenCompletionField.val('');
+                console.log('[DELIVERY-DATES] フォーム内の隠し完了日フィールドもクリアしました');
+            }
+            
+            console.log('[DELIVERY-DATES] 完了日をクリアしました');
         }
         
         // 現在の進捗をold-progressとして保存
         $select.find('option:selected').data('old-progress', newProgress);
+        
+        console.log('[DELIVERY-DATES] 受注書詳細進捗変更処理完了');
+        
+        // フォームを送信
+        console.log('[DELIVERY-DATES] フォームを送信します');
+        $form.submit();
     });
 
     // 納期フィールドのフォーカス時の処理
@@ -539,6 +650,21 @@ jQuery(document).ready(function($) {
         $(this).css('border-color', '#ddd');
     });
     
+    // 受注書詳細でのフォーム送信前に完了日フィールドを同期
+    $(document).on('submit', '.order-header-progress-form', function() {
+        console.log('[DELIVERY-DATES] 受注書詳細フォーム送信前の処理');
+        
+        var $form = $(this);
+        var $completionInput = $('#completion_date');
+        var $hiddenCompletionField = $form.find('input[name="completion_date"]');
+        
+        if ($completionInput.length > 0 && $hiddenCompletionField.length > 0) {
+            var completionValue = $completionInput.val();
+            $hiddenCompletionField.val(completionValue);
+            console.log('[DELIVERY-DATES] フォーム送信前に完了日フィールドを同期しました:', completionValue);
+        }
+    });
+
     // 完了日フィールドの変更を監視して自動保存（仕事リスト用）
     $(document).on('change', '.completion-date-input', function() {
         var $input = $(this);
@@ -611,8 +737,22 @@ jQuery(document).ready(function($) {
         console.log('[DELIVERY-DATES] 完了日フィールド変更（受注書詳細）:', {
             orderId: orderId,
             fieldName: fieldName,
-            value: value
+            value: value,
+            inputId: $input.attr('id'),
+            inputName: $input.attr('name')
         });
+        
+        // フォーム内の隠しフィールドも同期
+        var $form = $input.closest('form');
+        if ($form.length === 0) {
+            // 完了日フィールドがフォーム外にある場合、近くのフォームを探す
+            $form = $input.closest('.order_contents').find('form');
+        }
+        var $hiddenCompletionField = $form.find('input[name="completion_date"]');
+        if ($hiddenCompletionField.length > 0) {
+            $hiddenCompletionField.val(value);
+            console.log('[DELIVERY-DATES] フォーム内の隠し完了日フィールドを同期しました:', value);
+        }
         
         // nonceの取得
         var nonce = null;
