@@ -41,8 +41,8 @@ function ktp_add_department_ajax() {
     $contact_person = sanitize_text_field($_POST['contact_person']);
     $email = sanitize_email($_POST['email']);
     
-    if (empty($client_id) || empty($department_name) || empty($contact_person) || empty($email)) {
-        wp_send_json_error('必須項目が入力されていません。');
+    if (empty($client_id) || empty($contact_person) || empty($email)) {
+        wp_send_json_error('担当者名とメールアドレスを入力してください。');
     }
     
     // 部署を追加

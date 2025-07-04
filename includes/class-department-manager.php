@@ -65,8 +65,8 @@ class KTPWP_Department_Manager {
         $contact_person = sanitize_text_field($contact_person);
         $email = sanitize_email($email);
         
-        // バリデーション
-        if (empty($client_id) || empty($department_name) || empty($contact_person) || empty($email)) {
+        // バリデーション（部署名は空欄でも可）
+        if (empty($client_id) || empty($contact_person) || empty($email)) {
             return false;
         }
         
@@ -114,8 +114,8 @@ class KTPWP_Department_Manager {
         $contact_person = sanitize_text_field($contact_person);
         $email = sanitize_email($email);
         
-        // バリデーション
-        if (empty($department_id) || empty($department_name) || empty($contact_person) || empty($email)) {
+        // バリデーション（部署名は空欄でも可）
+        if (empty($department_id) || empty($contact_person) || empty($email)) {
             return false;
         }
         

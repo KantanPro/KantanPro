@@ -1375,15 +1375,15 @@ class Kntan_Client_Class {
                 $data_forms .= '<div class="form-group"><label for="' . $fieldId . '">' . esc_html($field_name === 'company_name' ? '会社名' : ($field_name === 'user_name' ? '名前' : 'メール')) . '：</label> <input id="' . $fieldId . '" type="' . esc_attr($field['type']) . '" name="' . esc_attr($field['name']) . '" value="' . esc_attr($value) . '"' . $pattern . $required . $placeholder . '></div>';
             }
             
-            // 部署設定セクション
-            $data_forms .= '<div style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #007cba;">';
-            $data_forms .= '<h4 style="margin: 0 0 15px 0; color: #333; font-size: 16px;">部署設定</h4>';
+            // 部署設定セクション（シンプルデザイン）
+            $data_forms .= '<div style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 6px;">';
+            $data_forms .= '<h4 style="margin: 0 0 15px 0; color: #333; font-size: 14px; font-weight: normal;">部署設定（複数の部署や担当者がある場合は設定してください）</h4>';
             
-            // 部署追加フォーム
+            // 部署追加フォーム（ラベルなし、シンプルデザイン）
             $data_forms .= '<div style="display: flex; gap: 10px; align-items: end; margin-bottom: 15px;">';
-            $data_forms .= '<div style="flex: 1;"><label style="display: block; margin-bottom: 5px; font-size: 12px; color: #666;">部署名</label><input type="text" name="department_name" placeholder="部署名" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;"></div>';
-            $data_forms .= '<div style="flex: 1;"><label style="display: block; margin-bottom: 5px; font-size: 12px; color: #666;">担当者名</label><input type="text" name="contact_person" placeholder="担当者名" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;"></div>';
-            $data_forms .= '<div style="flex: 1;"><label style="display: block; margin-bottom: 5px; font-size: 12px; color: #666;">メールアドレス</label><input type="email" name="department_email" placeholder="メールアドレス" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;"></div>';
+            $data_forms .= '<div style="flex: 1;"><input type="text" name="department_name" placeholder="部署名" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;"></div>';
+            $data_forms .= '<div style="flex: 1;"><input type="text" name="contact_person" placeholder="担当者名" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;"></div>';
+            $data_forms .= '<div style="flex: 1;"><input type="email" name="department_email" placeholder="メールアドレス" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;"></div>';
             $data_forms .= '<div style="flex: 0 0 auto;"><button type="button" onclick="addDepartment()" style="padding: 8px 15px; background: #007cba; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">追加</button></div>';
             $data_forms .= '</div>';
             
@@ -1394,8 +1394,8 @@ class Kntan_Client_Class {
                 if (class_exists('KTPWP_Department_Manager')) {
                     $departments = KTPWP_Department_Manager::get_departments_by_client($data_id);
                     if (!empty($departments)) {
-                        $data_forms .= '<table style="width: 100%; border-collapse: collapse; font-size: 12px;">';
-                        $data_forms .= '<thead><tr style="background: #e9ecef;"><th style="padding: 8px; border: 1px solid #ddd; text-align: center; width: 30px;">選択</th><th style="padding: 8px; border: 1px solid #ddd; text-align: left;">部署名</th><th style="padding: 8px; border: 1px solid #ddd; text-align: left;">担当者名</th><th style="padding: 8px; border: 1px solid #ddd; text-align: left;">メールアドレス</th><th style="padding: 8px; border: 1px solid #ddd; text-align: center; width: 80px;">操作</th></tr></thead>';
+                        $data_forms .= '<table style="width: 100%; border-collapse: collapse; font-size: 12px; border: 1px solid #ddd;">';
+                        $data_forms .= '<thead><tr style="background: #f5f5f5;"><th style="padding: 8px; border: 1px solid #ddd; text-align: center; width: 30px;">✔</th><th style="padding: 8px; border: 1px solid #ddd; text-align: left;">部署名</th><th style="padding: 8px; border: 1px solid #ddd; text-align: left;">担当者名</th><th style="padding: 8px; border: 1px solid #ddd; text-align: left;">メールアドレス</th><th style="padding: 8px; border: 1px solid #ddd; text-align: center; width: 80px;">操作</th></tr></thead>';
                         $data_forms .= '<tbody>';
                         // 現在選択されている部署IDを取得
                         $selected_department_id = $wpdb->get_var($wpdb->prepare(
@@ -1434,9 +1434,9 @@ class Kntan_Client_Class {
                         }
                         $data_forms .= '</tbody></table>';
                         
-                        // 選択された部署の情報を表示
-                        $data_forms .= '<div id="selected-department-info" style="margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 4px; border-left: 4px solid #007cba;">';
-                        $data_forms .= '<h5 style="margin: 0 0 10px 0; color: #333; font-size: 14px;">選択された部署情報</h5>';
+                        // 選択された部署の情報を表示（シンプルデザイン）
+                        $data_forms .= '<div id="selected-department-info" style="margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 4px;">';
+                        $data_forms .= '<h5 style="margin: 0 0 10px 0; color: #333; font-size: 13px; font-weight: normal;">選択された部署</h5>';
                         
                         // 選択された部署の情報を表示
                         $selected_departments = array();
@@ -1535,8 +1535,9 @@ class Kntan_Client_Class {
             var email = document.querySelector("input[name=\'department_email\']").value;
             var clientId = ' . esc_js($data_id) . ';
             
-            if (!departmentName || !contactPerson || !email) {
-                alert("部署名、担当者名、メールアドレスを入力してください。");
+            // 部署設定は空欄でも可
+            if (!contactPerson || !email) {
+                alert("担当者名とメールアドレスを入力してください。");
                 return;
             }
             

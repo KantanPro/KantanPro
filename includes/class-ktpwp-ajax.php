@@ -3297,8 +3297,8 @@ function ktpwp_ajax_add_department() {
 	$contact_person = isset($_POST['contact_person']) ? sanitize_text_field($_POST['contact_person']) : '';
 	$email = isset($_POST['email']) ? sanitize_email($_POST['email']) : '';
 
-	if (empty($client_id) || empty($department_name) || empty($contact_person) || empty($email)) {
-		wp_send_json_error(array('message' => '必要な情報が不足しています'));
+	if (empty($client_id) || empty($contact_person) || empty($email)) {
+		wp_send_json_error(array('message' => '担当者名とメールアドレスを入力してください'));
 	}
 
 	if (class_exists('KTPWP_Department_Manager')) {
