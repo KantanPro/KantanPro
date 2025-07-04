@@ -398,18 +398,26 @@ jQuery(document).ready(function($) {
         console.log('[DELIVERY-DATES] ページ読み込み後の警告マーク更新を開始');
         updateAllWarningMarks();
         
-        // 現在の進捗をold-progressとして保存
+        // 現在の進捗をold-progressとして保存（仕事リスト用）
         $('.progress-select option:selected').each(function() {
             var $option = $(this);
             var currentProgress = parseInt($option.val());
             $option.data('old-progress', currentProgress);
-            console.log('[DELIVERY-DATES] 進捗初期化:', currentProgress);
+            console.log('[DELIVERY-DATES] 仕事リスト進捗初期化:', currentProgress);
+        });
+        
+        // 受注書詳細での進捗初期化
+        $('#order_progress_select option:selected').each(function() {
+            var $option = $(this);
+            var currentProgress = parseInt($option.val());
+            $option.data('old-progress', currentProgress);
+            console.log('[DELIVERY-DATES] 受注書詳細進捗初期化:', currentProgress);
         });
     }, 100);
 
-    // 進捗プルダウンの変更を監視
+    // 進捗プルダウンの変更を監視（仕事リスト用）
     $(document).on('change', '.progress-select', function() {
-        console.log('[DELIVERY-DATES] 進捗プルダウンが変更されました');
+        console.log('[DELIVERY-DATES] 進捗プルダウンが変更されました（仕事リスト）');
         
         var $select = $(this);
         var $listItem = $select.closest('.ktp_work_list_item');
@@ -461,6 +469,46 @@ jQuery(document).ready(function($) {
         updateProgressButtonWarning();
     });
 
+    // 受注書詳細での進捗プルダウンの変更を監視
+    $(document).on('change', '#order_progress_select', function() {
+        console.log('[DELIVERY-DATES] 進捗プルダウンが変更されました（受注書詳細）');
+        
+        var $select = $(this);
+        var $completionInput = $('#completion_date');
+        
+        var newProgress = parseInt($select.val());
+        var oldProgress = parseInt($select.find('option:selected').data('old-progress') || newProgress);
+        
+        console.log('[DELIVERY-DATES] 受注書詳細進捗変更:', {
+            oldProgress: oldProgress,
+            newProgress: newProgress,
+            hasCompletionInput: $completionInput.length > 0
+        });
+        
+        // 進捗が「完了」（progress = 4）に変更された場合、完了日を自動設定
+        if (newProgress === 4 && oldProgress !== 4 && $completionInput.length > 0) {
+            console.log('[DELIVERY-DATES] 受注書詳細：進捗が完了に変更されたため、完了日を自動設定します');
+            var today = new Date();
+            var todayStr = today.toISOString().split('T')[0]; // YYYY-MM-DD形式
+            $completionInput.val(todayStr);
+            
+            // 完了日フィールドの変更をトリガーして保存
+            $completionInput.trigger('change');
+        }
+        
+        // 進捗が受注以前（受付中、見積中、受注）に変更された場合、完了日をクリア
+        if ([1, 2, 3].includes(newProgress) && oldProgress > 3 && $completionInput.length > 0) {
+            console.log('[DELIVERY-DATES] 受注書詳細：進捗が受注以前に変更されたため、完了日をクリアします');
+            $completionInput.val('');
+            
+            // 完了日フィールドの変更をトリガーして保存
+            $completionInput.trigger('change');
+        }
+        
+        // 現在の進捗をold-progressとして保存
+        $select.find('option:selected').data('old-progress', newProgress);
+    });
+
     // 納期フィールドのフォーカス時の処理
     $(document).on('focus', '.delivery-date-input', function() {
         $(this).css('border-color', '#1976d2');
@@ -471,24 +519,34 @@ jQuery(document).ready(function($) {
         $(this).css('border-color', '#ddd');
     });
 
-    // 完了日フィールドのフォーカス時の処理
+    // 完了日フィールドのフォーカス時の処理（仕事リスト用）
     $(document).on('focus', '.completion-date-input', function() {
         $(this).css('border-color', '#4caf50');
     });
 
-    // 完了日フィールドのフォーカスアウト時の処理
+    // 完了日フィールドのフォーカスアウト時の処理（仕事リスト用）
     $(document).on('blur', '.completion-date-input', function() {
         $(this).css('border-color', '#ddd');
     });
+
+    // 受注書詳細での完了日フィールドのフォーカス時の処理
+    $(document).on('focus', '#completion_date', function() {
+        $(this).css('border-color', '#4caf50');
+    });
+
+    // 受注書詳細での完了日フィールドのフォーカスアウト時の処理
+    $(document).on('blur', '#completion_date', function() {
+        $(this).css('border-color', '#ddd');
+    });
     
-    // 完了日フィールドの変更を監視して自動保存
+    // 完了日フィールドの変更を監視して自動保存（仕事リスト用）
     $(document).on('change', '.completion-date-input', function() {
         var $input = $(this);
         var orderId = $input.data('order-id');
         var fieldName = $input.data('field');
         var value = $input.val();
         
-        console.log('[DELIVERY-DATES] 完了日フィールド変更:', {
+        console.log('[DELIVERY-DATES] 完了日フィールド変更（仕事リスト）:', {
             orderId: orderId,
             fieldName: fieldName,
             value: value
@@ -526,15 +584,77 @@ jQuery(document).ready(function($) {
                 nonce: nonce
             },
             success: function(response) {
-                console.log('[DELIVERY-DATES] 完了日保存応答:', response);
+                console.log('[DELIVERY-DATES] 完了日保存応答（仕事リスト）:', response);
                 if (response.success) {
-                    console.log('[DELIVERY-DATES] 完了日が正常に保存されました');
+                    console.log('[DELIVERY-DATES] 完了日が正常に保存されました（仕事リスト）');
                 } else {
-                    console.error('[DELIVERY-DATES] 完了日の保存に失敗しました:', response.data);
+                    console.error('[DELIVERY-DATES] 完了日の保存に失敗しました（仕事リスト）:', response.data);
                 }
             },
             error: function(xhr, status, error) {
-                console.error('[DELIVERY-DATES] 完了日保存で通信エラーが発生しました:', {
+                console.error('[DELIVERY-DATES] 完了日保存で通信エラーが発生しました（仕事リスト）:', {
+                    status: status,
+                    error: error,
+                    responseText: xhr.responseText
+                });
+            }
+        });
+    });
+
+    // 受注書詳細での完了日フィールドの変更を監視して自動保存
+    $(document).on('change', '#completion_date', function() {
+        var $input = $(this);
+        var orderId = $input.data('order-id');
+        var fieldName = $input.data('field');
+        var value = $input.val();
+        
+        console.log('[DELIVERY-DATES] 完了日フィールド変更（受注書詳細）:', {
+            orderId: orderId,
+            fieldName: fieldName,
+            value: value
+        });
+        
+        // nonceの取得
+        var nonce = null;
+        if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.nonces && ktp_ajax_object.nonces.auto_save) {
+            nonce = ktp_ajax_object.nonces.auto_save;
+        } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.auto_save) {
+            nonce = ktpwp_ajax.nonces.auto_save;
+        } else if (typeof ktp_ajax_nonce !== 'undefined') {
+            nonce = ktp_ajax_nonce;
+        } else if (typeof ktpwp_ajax_nonce !== 'undefined') {
+            nonce = ktpwp_ajax_nonce;
+        }
+        
+        if (!nonce) {
+            console.error('[DELIVERY-DATES] エラー: nonceが取得できません');
+            return;
+        }
+        
+        // Ajaxで完了日を保存
+        $.ajax({
+            url: (typeof ktp_ajax_object !== 'undefined' ? ktp_ajax_object.ajax_url : 
+                  typeof ktpwp_ajax !== 'undefined' ? ktpwp_ajax.ajax_url : 
+                  typeof ajaxurl !== 'undefined' ? ajaxurl : 
+                  '/wp-admin/admin-ajax.php'),
+            type: 'POST',
+            data: {
+                action: 'ktp_auto_save_field',
+                order_id: orderId,
+                field_name: fieldName,
+                field_value: value,
+                nonce: nonce
+            },
+            success: function(response) {
+                console.log('[DELIVERY-DATES] 完了日保存応答（受注書詳細）:', response);
+                if (response.success) {
+                    console.log('[DELIVERY-DATES] 完了日が正常に保存されました（受注書詳細）');
+                } else {
+                    console.error('[DELIVERY-DATES] 完了日の保存に失敗しました（受注書詳細）:', response.data);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('[DELIVERY-DATES] 完了日保存で通信エラーが発生しました（受注書詳細）:', {
                     status: status,
                     error: error,
                     responseText: xhr.responseText
