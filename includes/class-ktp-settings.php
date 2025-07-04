@@ -1422,10 +1422,11 @@ class KTP_Settings {
         $activation_key = get_option('ktp_activation_key');
         $has_license = !empty($activation_key);
         ?>
-        <input type="text" id="ktp_activation_key" name="ktp_activation_key" 
+        <input type="password" id="ktp_activation_key" name="ktp_activation_key" 
                value="<?php echo esc_attr($activation_key); ?>" 
                style="width:320px;max-width:100%;"
-               placeholder="XXXX-XXXX-XXXX-XXXX">
+               placeholder="XXXX-XXXX-XXXX-XXXX"
+               autocomplete="off">
         <div class="ktp-license-status <?php echo $has_license ? 'active' : 'inactive'; ?>">
             <?php if ($has_license): ?>
                 <span class="dashicons dashicons-yes-alt"></span> ライセンスキーが登録されています
