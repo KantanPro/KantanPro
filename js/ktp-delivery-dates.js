@@ -426,6 +426,17 @@ jQuery(document).ready(function($) {
             hasCompletionInput: $completionInput.length > 0
         });
         
+        // 進捗が「完了」（progress = 4）に変更された場合、完了日を自動設定
+        if (newProgress === 4 && oldProgress !== 4 && $completionInput.length > 0) {
+            console.log('[DELIVERY-DATES] 進捗が完了に変更されたため、完了日を自動設定します');
+            var today = new Date();
+            var todayStr = today.toISOString().split('T')[0]; // YYYY-MM-DD形式
+            $completionInput.val(todayStr);
+            
+            // 完了日フィールドの変更をトリガーして保存
+            $completionInput.trigger('change');
+        }
+        
         // 進捗が受注以前（受付中、見積中、受注）に変更された場合、完了日をクリア
         if ([1, 2, 3].includes(newProgress) && oldProgress > 3 && $completionInput.length > 0) {
             console.log('[DELIVERY-DATES] 進捗が受注以前に変更されたため、完了日をクリアします');
@@ -468,5 +479,67 @@ jQuery(document).ready(function($) {
     // 完了日フィールドのフォーカスアウト時の処理
     $(document).on('blur', '.completion-date-input', function() {
         $(this).css('border-color', '#ddd');
+    });
+    
+    // 完了日フィールドの変更を監視して自動保存
+    $(document).on('change', '.completion-date-input', function() {
+        var $input = $(this);
+        var orderId = $input.data('order-id');
+        var fieldName = $input.data('field');
+        var value = $input.val();
+        
+        console.log('[DELIVERY-DATES] 完了日フィールド変更:', {
+            orderId: orderId,
+            fieldName: fieldName,
+            value: value
+        });
+        
+        // nonceの取得
+        var nonce = null;
+        if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.nonces && ktp_ajax_object.nonces.auto_save) {
+            nonce = ktp_ajax_object.nonces.auto_save;
+        } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.auto_save) {
+            nonce = ktpwp_ajax.nonces.auto_save;
+        } else if (typeof ktp_ajax_nonce !== 'undefined') {
+            nonce = ktp_ajax_nonce;
+        } else if (typeof ktpwp_ajax_nonce !== 'undefined') {
+            nonce = ktpwp_ajax_nonce;
+        }
+        
+        if (!nonce) {
+            console.error('[DELIVERY-DATES] エラー: nonceが取得できません');
+            return;
+        }
+        
+        // Ajaxで完了日を保存
+        $.ajax({
+            url: (typeof ktp_ajax_object !== 'undefined' ? ktp_ajax_object.ajax_url : 
+                  typeof ktpwp_ajax !== 'undefined' ? ktpwp_ajax.ajax_url : 
+                  typeof ajaxurl !== 'undefined' ? ajaxurl : 
+                  '/wp-admin/admin-ajax.php'),
+            type: 'POST',
+            data: {
+                action: 'ktp_auto_save_field',
+                order_id: orderId,
+                field_name: fieldName,
+                field_value: value,
+                nonce: nonce
+            },
+            success: function(response) {
+                console.log('[DELIVERY-DATES] 完了日保存応答:', response);
+                if (response.success) {
+                    console.log('[DELIVERY-DATES] 完了日が正常に保存されました');
+                } else {
+                    console.error('[DELIVERY-DATES] 完了日の保存に失敗しました:', response.data);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('[DELIVERY-DATES] 完了日保存で通信エラーが発生しました:', {
+                    status: status,
+                    error: error,
+                    responseText: xhr.responseText
+                });
+            }
+        });
     });
 }); 

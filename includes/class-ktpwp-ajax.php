@@ -157,6 +157,11 @@ class KTPWP_Ajax {
 		add_action( 'wp_ajax_nopriv_ktp_get_creating_warning_count', array( $this, 'ajax_require_login' ) ); // 非ログインユーザーはエラー
 		$this->registered_handlers[] = 'ktp_get_creating_warning_count';
 
+		// フィールド自動保存（完了日など）
+		add_action( 'wp_ajax_ktp_auto_save_field', array( $this, 'ajax_auto_save_field' ) );
+		add_action( 'wp_ajax_nopriv_ktp_auto_save_field', array( $this, 'ajax_require_login' ) ); // 非ログインユーザーはエラー
+		$this->registered_handlers[] = 'ktp_auto_save_field';
+
 		// 顧客IDを受け取り、完了日が締日を超えている案件リストをJSONで返す
 		add_action( 'wp_ajax_ktp_get_invoice_candidates', 'ktpwp_ajax_get_invoice_candidates' );
 		add_action( 'wp_ajax_nopriv_ktp_get_invoice_candidates', array( $this, 'ajax_require_login' ) ); // 非ログインユーザーはエラー
@@ -2842,6 +2847,73 @@ class KTPWP_Ajax {
 
 		} catch ( Exception $e ) {
 			error_log( 'KTPWP Ajax ajax_get_creating_warning_count Error: ' . $e->getMessage() );
+			wp_send_json_error( __( 'エラーが発生しました: ' . $e->getMessage(), 'ktpwp' ) );
+		}
+	}
+
+	/**
+	 * フィールド自動保存（完了日など）
+	 */
+	public function ajax_auto_save_field() {
+		try {
+			// デバッグログ
+			error_log( 'KTPWP Ajax: ajax_auto_save_field called' );
+
+			// 権限チェック
+			if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
+				error_log( 'KTPWP Ajax: Permission check failed' );
+				wp_send_json_error( __( 'この操作を行う権限がありません。', 'ktpwp' ) );
+				return;
+			}
+
+			// nonce検証
+			if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( $_POST['nonce'], 'ktp_ajax_nonce' ) ) {
+				error_log( 'KTPWP Ajax: Nonce verification failed' );
+				wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'ktpwp' ) );
+				return;
+			}
+
+			// パラメータ取得
+			$order_id = isset( $_POST['order_id'] ) ? absint( $_POST['order_id'] ) : 0;
+			$field_name = isset( $_POST['field_name'] ) ? sanitize_text_field( $_POST['field_name'] ) : '';
+			$field_value = isset( $_POST['field_value'] ) ? sanitize_text_field( $_POST['field_value'] ) : '';
+
+			if ( $order_id <= 0 ) {
+				wp_send_json_error( '受注書IDが無効です' );
+			}
+
+			if ( empty( $field_name ) ) {
+				wp_send_json_error( 'フィールド名が指定されていません' );
+			}
+
+			// 許可されたフィールド名のみ更新可能
+			$allowed_fields = array( 'completion_date', 'expected_delivery_date' );
+			if ( ! in_array( $field_name, $allowed_fields ) ) {
+				wp_send_json_error( '許可されていないフィールドです' );
+			}
+
+			global $wpdb;
+			$table_name = $wpdb->prefix . 'ktp_order';
+
+			// データベース更新
+			$update_data = array( $field_name => $field_value );
+			$result = $wpdb->update( $table_name, $update_data, array( 'id' => $order_id ) );
+
+			if ( $result === false ) {
+				error_log( 'KTPWP Ajax: Database update failed: ' . $wpdb->last_error );
+				wp_send_json_error( 'データベース更新に失敗しました: ' . $wpdb->last_error );
+			}
+
+			error_log( 'KTPWP Ajax: Field saved successfully - Order ID: ' . $order_id . ', Field: ' . $field_name . ', Value: ' . $field_value );
+
+			wp_send_json_success( array(
+				'message' => 'フィールドが正常に保存されました',
+				'field_name' => $field_name,
+				'field_value' => $field_value
+			) );
+
+		} catch ( Exception $e ) {
+			error_log( 'KTPWP Ajax ajax_auto_save_field Error: ' . $e->getMessage() );
 			wp_send_json_error( __( 'エラーが発生しました: ' . $e->getMessage(), 'ktpwp' ) );
 		}
 	}
