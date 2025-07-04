@@ -77,6 +77,25 @@
   box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
 }
 
+/* 完了日ラベル用のスタイル */
+.completion-label {
+  font-size: 12px;
+  font-weight: bold;
+  color: #333;
+  white-space: nowrap;
+  margin-right: 0;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+/* 完了日入力ラッパー用のスタイル */
+.completion-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
 /* 仕事リストの進捗プルダウン用スタイル */
 .progress-select {
   font-size: 13px;
@@ -358,6 +377,15 @@ li.ktp_work_list_item {
     height: 32px;
   }
 
+  /* 完了日フィールドのサイズ調整 */
+  .completion-date-input {
+    min-width: 120px;
+    max-width: 140px;
+    font-size: 12px;
+    padding: 4px 6px;
+    height: 32px;
+  }
+
   /* 進捗プルダウンのサイズ調整 */
   .progress-select {
     min-width: 120px;
@@ -431,6 +459,13 @@ li.ktp_work_list_item {
     height: 30px;
   }
 
+  .completion-date-input {
+    min-width: 100px;
+    max-width: 120px;
+    font-size: 11px;
+    height: 30px;
+  }
+
   .progress-select {
     min-width: 100px;
     max-width: 120px;
@@ -439,6 +474,10 @@ li.ktp_work_list_item {
   }
 
   .delivery-label {
+    font-size: 11px;
+  }
+
+  .completion-label {
     font-size: 11px;
   }
 

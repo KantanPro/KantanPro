@@ -283,6 +283,9 @@ class Kantan_List_Class {
                 // 納期フィールドの値を取得（希望納期は削除、納品予定日のみ）
                 $expected_delivery_date = isset($order->expected_delivery_date) ? $order->expected_delivery_date : '';
                 
+                // 完了日フィールドの値を取得
+                $completion_date = isset($order->completion_date) ? $order->completion_date : '';
+                
                 // 納期警告の判定
                 $show_warning = false;
                 $is_urgent = false; // 緊急案件フラグ
@@ -412,6 +415,12 @@ class Kantan_List_Class {
                     $content .= "<span class='invoice-warning-mark-row' title='" . esc_attr($invoice_warning_message) . "'>!</span>";
                 }
                 
+                $content .= "</div>";
+                
+                // 完了日カレンダーを納期カレンダーの右側に追加
+                $content .= "<div class='completion-input-wrapper'>";
+                $content .= "<span class='completion-label'>完了日</span>";
+                $content .= "<input type='date' name='completion_date_{$order_id}' value='{$completion_date}' class='completion-date-input' data-order-id='{$order_id}' data-field='completion_date' placeholder='完了日' title='完了日'>";
                 $content .= "</div>";
                 
                 // 進捗プルダウンを納期コンテナ内に配置

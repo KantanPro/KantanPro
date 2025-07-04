@@ -433,4 +433,14 @@ jQuery(document).ready(function($) {
     $(document).on('blur', '.delivery-date-input', function() {
         $(this).css('border-color', '#ddd');
     });
+
+    // 完了日フィールドのフォーカス時の処理
+    $(document).on('focus', '.completion-date-input', function() {
+        $(this).css('border-color', '#4caf50');
+    });
+
+    // 完了日フィールドのフォーカスアウト時の処理
+    $(document).on('blur', '.completion-date-input', function() {
+        $(this).css('border-color', '#ddd');
+    });
 }); 
