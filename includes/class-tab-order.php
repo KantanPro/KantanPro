@@ -782,6 +782,11 @@ class Kntan_Order_Class {
                     $update_data['completion_date'] = current_time('Y-m-d');
                 }
                 
+                // 進捗が受注以前（受付中、見積中、受注）に変更された場合、完了日をクリア
+                if (in_array($update_progress, [1, 2, 3]) && $current_order && $current_order->progress > 3) {
+                    $update_data['completion_date'] = null;
+                }
+                
                 $wpdb->update($table_name, $update_data, ['id' => $update_id], ['%d'], ['%d']);
                 // リダイレクトで再読み込み（POSTリダブミット防止）
                 $redirect_url = esc_url_raw( $_SERVER['REQUEST_URI'] );

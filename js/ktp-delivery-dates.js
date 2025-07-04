@@ -397,6 +397,14 @@ jQuery(document).ready(function($) {
     setTimeout(function() {
         console.log('[DELIVERY-DATES] ページ読み込み後の警告マーク更新を開始');
         updateAllWarningMarks();
+        
+        // 現在の進捗をold-progressとして保存
+        $('.progress-select option:selected').each(function() {
+            var $option = $(this);
+            var currentProgress = parseInt($option.val());
+            $option.data('old-progress', currentProgress);
+            console.log('[DELIVERY-DATES] 進捗初期化:', currentProgress);
+        });
     }, 100);
 
     // 進捗プルダウンの変更を監視
@@ -406,11 +414,29 @@ jQuery(document).ready(function($) {
         var $select = $(this);
         var $listItem = $select.closest('.ktp_work_list_item');
         var $deliveryInput = $listItem.find('.delivery-date-input');
+        var $completionInput = $listItem.find('.completion-date-input');
+        
+        var newProgress = parseInt($select.val());
+        var oldProgress = parseInt($select.find('option:selected').data('old-progress') || newProgress);
         
         console.log('[DELIVERY-DATES] 進捗変更:', {
-            newProgress: $select.val(),
-            hasDeliveryInput: $deliveryInput.length > 0
+            oldProgress: oldProgress,
+            newProgress: newProgress,
+            hasDeliveryInput: $deliveryInput.length > 0,
+            hasCompletionInput: $completionInput.length > 0
         });
+        
+        // 進捗が受注以前（受付中、見積中、受注）に変更された場合、完了日をクリア
+        if ([1, 2, 3].includes(newProgress) && oldProgress > 3 && $completionInput.length > 0) {
+            console.log('[DELIVERY-DATES] 進捗が受注以前に変更されたため、完了日をクリアします');
+            $completionInput.val('');
+            
+            // 完了日フィールドの変更をトリガーして保存
+            $completionInput.trigger('change');
+        }
+        
+        // 現在の進捗をold-progressとして保存
+        $select.find('option:selected').data('old-progress', newProgress);
         
         // 納期フィールドが存在する場合、警告マークを更新
         if ($deliveryInput.length > 0) {
