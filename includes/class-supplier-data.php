@@ -16,59 +16,59 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
 
-/**
- * Class KTPWP_Supplier_Data
- *
- * Handles database operations for supplier data.
- *
- * @since 1.0.0
- */
-class KTPWP_Supplier_Data {
+	/**
+	 * Class KTPWP_Supplier_Data
+	 *
+	 * Handles database operations for supplier data.
+	 *
+	 * @since 1.0.0
+	 */
+	class KTPWP_Supplier_Data {
 
-    /**
-     * Constructor
-     *
-     * @since 1.0.0
-     */
-    public function __construct() {
-        // Load supplier skills class if not already loaded
-        if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
-            require_once dirname( __FILE__ ) . '/class-ktpwp-supplier-skills.php';
-        }
-    }
+		/**
+		 * Constructor
+		 *
+		 * @since 1.0.0
+		 */
+		public function __construct() {
+			// Load supplier skills class if not already loaded
+			if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
+				require_once __DIR__ . '/class-ktpwp-supplier-skills.php';
+			}
+		}
 
-    /**
-     * Create supplier table
-     *
-     * @since 1.0.0
-     * @param string $tab_name The table name suffix
-     * @return bool True on success, false on failure
-     */
-    public function create_table( $tab_name ) {
-        global $wpdb;
+		/**
+		 * Create supplier table
+		 *
+		 * @since 1.0.0
+		 * @param string $tab_name The table name suffix
+		 * @return bool True on success, false on failure
+		 */
+		public function create_table( $tab_name ) {
+			global $wpdb;
 
-        if ( empty( $tab_name ) ) {
-            error_log( 'KTPWP: Empty tab_name provided to create_table method' );
-            return false;
-        }
+			if ( empty( $tab_name ) ) {
+				error_log( 'KTPWP: Empty tab_name provided to create_table method' );
+				return false;
+			}
 
-        $table_name = $wpdb->prefix . 'ktp_' . sanitize_key( $tab_name );
-        $my_table_version = '1.1'; // Increment version for representative_name field
-        $option_name = 'ktp_' . $tab_name . '_table_version';
+			$table_name = $wpdb->prefix . 'ktp_' . sanitize_key( $tab_name );
+			$my_table_version = '1.1'; // Increment version for representative_name field
+			$option_name = 'ktp_' . $tab_name . '_table_version';
 
-        // Check if table needs to be created or updated
-        $installed_version = get_option( $option_name );
+			// Check if table needs to be created or updated
+			$installed_version = get_option( $option_name );
 
-        if ( $installed_version !== $my_table_version ) {
-            $default_company = __( 'Regular Supplier', 'ktpwp' );
-            $default_tax = __( 'Tax Included', 'ktpwp' );
-            $default_category = __( 'General', 'ktpwp' );
+			if ( $installed_version !== $my_table_version ) {
+				$default_company = __( 'Regular Supplier', 'ktpwp' );
+				$default_tax = __( 'Tax Included', 'ktpwp' );
+				$default_category = __( 'General', 'ktpwp' );
 
-            // Get charset collate
-            $charset_collate = $wpdb->get_charset_collate();
+				// Get charset collate
+				$charset_collate = $wpdb->get_charset_collate();
 
-            $sql = $wpdb->prepare(
-                "CREATE TABLE %i (
+				$sql = $wpdb->prepare(
+                    "CREATE TABLE %i (
                     id MEDIUMINT(9) NOT NULL AUTO_INCREMENT,
                     time BIGINT(11) DEFAULT '0' NOT NULL,
                     name TINYTEXT NOT NULL,
@@ -93,118 +93,121 @@ class KTPWP_Supplier_Data {
                     category VARCHAR(100) NOT NULL DEFAULT %s,
                     UNIQUE KEY id (id)
                 ) " . $charset_collate,
-                $table_name,
-                $default_company,
-                $default_tax,
-                $default_category
-            );
+                    $table_name,
+                    $default_company,
+                    $default_tax,
+                    $default_category
+				);
 
-            // Include upgrade functions
-            require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
+				// Include upgrade functions
+				require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 
-            if ( function_exists( 'dbDelta' ) ) {
-                $result = dbDelta( $sql );
+				if ( function_exists( 'dbDelta' ) ) {
+					$result = dbDelta( $sql );
 
-                if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                    error_log( 'KTPWP: Table creation result for ' . $table_name . ': ' . print_r( $result, true ) );
-                }
+					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+						error_log( 'KTPWP: Table creation result for ' . $table_name . ': ' . print_r( $result, true ) );
+					}
 
-                if ( ! empty( $result ) ) {
-                    add_option( 'ktp_' . $tab_name . '_table_version', $my_table_version );
-                    
-                    // Create supplier skills table
-                    $skills_manager = KTPWP_Supplier_Skills::get_instance();
-                    $skills_manager->create_table();
-                    
-                    return true;
-                }
+					if ( ! empty( $result ) ) {
+						add_option( 'ktp_' . $tab_name . '_table_version', $my_table_version );
 
-                error_log( 'KTPWP: Failed to create table ' . $table_name );
-                return false;
-            }
+						// Create supplier skills table
+						$skills_manager = KTPWP_Supplier_Skills::get_instance();
+						$skills_manager->create_table();
 
-            error_log( 'KTPWP: dbDelta function not available' );
-            return false;
-        } else {
-            // Ensure skills table exists even if supplier table already exists
-            $skills_manager = KTPWP_Supplier_Skills::get_instance();
-            $skills_manager->create_table();
-        }
+						return true;
+					}
 
-        return true;
-    }
+					error_log( 'KTPWP: Failed to create table ' . $table_name );
+					return false;
+				}
 
-    /**
-     * Update supplier table data
-     *
-     * @since 1.0.0
-     * @param string $tab_name Table name suffix
-     * @param array $post_data POST data for the operation
-     * @return void
-     */
-    public function update_table( $tab_name, $post_data ) {
-        if ( empty( $tab_name ) ) {
-            error_log( 'KTPWP: Empty tab_name provided to update_table method' );
-            return;
-        }
+				error_log( 'KTPWP: dbDelta function not available' );
+				return false;
+			} else {
+				// Ensure skills table exists even if supplier table already exists
+				$skills_manager = KTPWP_Supplier_Skills::get_instance();
+				$skills_manager->create_table();
+			}
 
-        global $wpdb;
-        $table_name = $wpdb->prefix . 'ktp_' . sanitize_key( $tab_name );
+			return true;
+		}
 
-        // Security: CSRF protection - verify nonce on POST requests
-        if ( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
-            if ( ! isset( $post_data['ktp_supplier_nonce'] ) ||
+		/**
+		 * Update supplier table data
+		 *
+		 * @since 1.0.0
+		 * @param string $tab_name Table name suffix
+		 * @param array  $post_data POST data for the operation
+		 * @return void
+		 */
+		public function update_table( $tab_name, $post_data ) {
+			if ( empty( $tab_name ) ) {
+				error_log( 'KTPWP: Empty tab_name provided to update_table method' );
+				return;
+			}
+
+			global $wpdb;
+			$table_name = $wpdb->prefix . 'ktp_' . sanitize_key( $tab_name );
+
+			// Security: CSRF protection - verify nonce on POST requests
+			if ( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
+				if ( ! isset( $post_data['ktp_supplier_nonce'] ) ||
                  ! wp_verify_nonce( $post_data['ktp_supplier_nonce'], 'ktp_supplier_action' ) ) {
-                error_log( 'KTPWP: Nonce verification failed' );
-                wp_die( __( 'Security check failed. Please refresh the page and try again.', 'ktpwp' ) );
-            }
-        }
+					error_log( 'KTPWP: Nonce verification failed' );
+					wp_die( __( 'Security check failed. Please refresh the page and try again.', 'ktpwp' ) );
+				}
+			}
 
-        // Sanitize and validate input data
-        $data_id = isset( $post_data['data_id'] ) ? absint( $post_data['data_id'] ) : 0;
-        $query_post = isset( $post_data['query_post'] ) ? sanitize_key( $post_data['query_post'] ) : '';
+			// Sanitize and validate input data
+			$data_id = isset( $post_data['data_id'] ) ? absint( $post_data['data_id'] ) : 0;
+			$query_post = isset( $post_data['query_post'] ) ? sanitize_key( $post_data['query_post'] ) : '';
 
-        // Log operation without sensitive data
-        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP: update_table called for tab: ' . $tab_name . ', action: ' . $query_post );
-        }
+			// Log operation without sensitive data
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( 'KTPWP: update_table called for tab: ' . $tab_name . ', action: ' . $query_post );
+			}
 
-        // Handle different operations (update, delete, insert, etc.)
-        switch ( $query_post ) {
-            case 'delete':
-                // Handle delete operation
-                if ( $data_id > 0 ) {
-                    // Fire action hook before deletion for cleanup
-                    do_action( 'ktpwp_supplier_before_delete', $data_id );
-                    
-                    $delete_result = $wpdb->delete( $table_name, array( 'id' => $data_id ), array( '%d' ) );
+			// Handle different operations (update, delete, insert, etc.)
+			switch ( $query_post ) {
+				case 'delete':
+					// Handle delete operation
+					if ( $data_id > 0 ) {
+						// Fire action hook before deletion for cleanup
+						do_action( 'ktpwp_supplier_before_delete', $data_id );
 
-                    if ( $delete_result === false ) {
-                        echo '<script>
+						$delete_result = $wpdb->delete( $table_name, array( 'id' => $data_id ), array( '%d' ) );
+
+						if ( $delete_result === false ) {
+							echo '<script>
                         document.addEventListener("DOMContentLoaded", function() {
                             showErrorNotification("' . esc_js( __( '削除に失敗しました。SQLエラー: ', 'ktpwp' ) ) . esc_js( $wpdb->last_error ) . '");
                         });
                         </script>';
-                    } else {
-                        // Fire action hook after successful deletion
-                        do_action( 'ktpwp_supplier_deleted', $data_id );
-                        
-                        $cookie_name = 'ktp_' . $tab_name . '_id';
-                        setcookie( $cookie_name, '', time() - 3600, "/" );
+						} else {
+							// Fire action hook after successful deletion
+							do_action( 'ktpwp_supplier_deleted', $data_id );
 
-                        // Prepare redirect URL
-                        global $wp;
-                        $current_page_id = get_queried_object_id();
-                        $base_page_url = get_permalink( $current_page_id );
-                        if ( ! $base_page_url ) {
-                            $base_page_url = home_url( add_query_arg( array(), $wp->request ) );
-                        }
-                        $redirect_url = add_query_arg( array(
-                            'tab_name' => $tab_name,
-                            'message' => 'deleted'
-                        ), $base_page_url );
+							$cookie_name = 'ktp_' . $tab_name . '_id';
+							setcookie( $cookie_name, '', time() - 3600, '/' );
 
-                        echo '<script>
+							// Prepare redirect URL
+							global $wp;
+							$current_page_id = get_queried_object_id();
+							$base_page_url = get_permalink( $current_page_id );
+							if ( ! $base_page_url ) {
+								$base_page_url = home_url( add_query_arg( array(), $wp->request ) );
+							}
+							$redirect_url = add_query_arg(
+                                array(
+									'tab_name' => $tab_name,
+									'message' => 'deleted',
+                                ),
+                                $base_page_url
+                            );
+
+							echo '<script>
                             document.addEventListener("DOMContentLoaded", function() {
                                 showSuccessNotification("' . esc_js( esc_html__( '協力会社を削除しました。', 'ktpwp' ) ) . '");
                                 setTimeout(function() {
@@ -212,94 +215,100 @@ class KTPWP_Supplier_Data {
                                 }, 1000);
                             });
                         </script>';
-                        return;
-                    }
-                }
-                break;
+							return;
+						}
+					}
+					break;
 
-            case 'update':
-                // Handle update operation
-                if ( $data_id > 0 ) {
-                    // Sanitize all POST data for update operation
-                    $sanitized_data = $this->sanitize_supplier_data( $post_data );
+				case 'update':
+					// Handle update operation
+					if ( $data_id > 0 ) {
+						// Sanitize all POST data for update operation
+						$sanitized_data = $this->sanitize_supplier_data( $post_data );
 
-                    // Build search_field value
-                    $search_field_value = implode(', ', [
-                        current_time( 'timestamp' ),
-                        $sanitized_data['company_name'],
-                        $sanitized_data['user_name'],
-                        $sanitized_data['email'],
-                        $sanitized_data['url'],
-                        $sanitized_data['representative_name'],
-                        $sanitized_data['phone'],
-                        $sanitized_data['postal_code'],
-                        $sanitized_data['prefecture'],
-                        $sanitized_data['city'],
-                        $sanitized_data['address'],
-                        $sanitized_data['building'],
-                        $sanitized_data['closing_day'],
-                        $sanitized_data['payment_month'],
-                        $sanitized_data['payment_day'],
-                        $sanitized_data['payment_method'],
-                        $sanitized_data['tax_category'],
-                        $sanitized_data['memo'],
-                        $sanitized_data['category']
-                    ]);
+						// Build search_field value
+						$search_field_value = implode(
+                            ', ',
+                            array(
+								current_time( 'timestamp' ),
+								$sanitized_data['company_name'],
+								$sanitized_data['user_name'],
+								$sanitized_data['email'],
+								$sanitized_data['url'],
+								$sanitized_data['representative_name'],
+								$sanitized_data['phone'],
+								$sanitized_data['postal_code'],
+								$sanitized_data['prefecture'],
+								$sanitized_data['city'],
+								$sanitized_data['address'],
+								$sanitized_data['building'],
+								$sanitized_data['closing_day'],
+								$sanitized_data['payment_month'],
+								$sanitized_data['payment_day'],
+								$sanitized_data['payment_method'],
+								$sanitized_data['tax_category'],
+								$sanitized_data['memo'],
+								$sanitized_data['category'],
+                            )
+                        );
 
-                    // Perform database update
-                    $update_result = $wpdb->update(
-                        $table_name,
-                        array(
-                            'time' => current_time( 'timestamp' ),
-                            'company_name' => $sanitized_data['company_name'],
-                            'name' => $sanitized_data['user_name'],
-                            'email' => $sanitized_data['email'],
-                            'url' => $sanitized_data['url'],
-                            'representative_name' => $sanitized_data['representative_name'],
-                            'phone' => $sanitized_data['phone'],
-                            'postal_code' => $sanitized_data['postal_code'],
-                            'prefecture' => $sanitized_data['prefecture'],
-                            'city' => $sanitized_data['city'],
-                            'address' => $sanitized_data['address'],
-                            'building' => $sanitized_data['building'],
-                            'closing_day' => $sanitized_data['closing_day'],
-                            'payment_month' => $sanitized_data['payment_month'],
-                            'payment_day' => $sanitized_data['payment_day'],
-                            'payment_method' => $sanitized_data['payment_method'],
-                            'tax_category' => $sanitized_data['tax_category'],
-                            'memo' => $sanitized_data['memo'],
-                            'category' => $sanitized_data['category'],
-                            'search_field' => $search_field_value
-                        ),
-                        array( 'id' => $data_id ),
-                        array( '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' ),
-                        array( '%d' )
-                    );
+						// Perform database update
+						$update_result = $wpdb->update(
+							$table_name,
+							array(
+								'time' => current_time( 'timestamp' ),
+								'company_name' => $sanitized_data['company_name'],
+								'name' => $sanitized_data['user_name'],
+								'email' => $sanitized_data['email'],
+								'url' => $sanitized_data['url'],
+								'representative_name' => $sanitized_data['representative_name'],
+								'phone' => $sanitized_data['phone'],
+								'postal_code' => $sanitized_data['postal_code'],
+								'prefecture' => $sanitized_data['prefecture'],
+								'city' => $sanitized_data['city'],
+								'address' => $sanitized_data['address'],
+								'building' => $sanitized_data['building'],
+								'closing_day' => $sanitized_data['closing_day'],
+								'payment_month' => $sanitized_data['payment_month'],
+								'payment_day' => $sanitized_data['payment_day'],
+								'payment_method' => $sanitized_data['payment_method'],
+								'tax_category' => $sanitized_data['tax_category'],
+								'memo' => $sanitized_data['memo'],
+								'category' => $sanitized_data['category'],
+								'search_field' => $search_field_value,
+                            ),
+                            array( 'id' => $data_id ),
+                            array( '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' ),
+                            array( '%d' )
+						);
 
-                    if ( $update_result === false ) {
-                        echo '<script>
+						if ( $update_result === false ) {
+							echo '<script>
                         document.addEventListener("DOMContentLoaded", function() {
                             showErrorNotification("' . esc_js( __( '更新に失敗しました。SQLエラー: ', 'ktpwp' ) ) . esc_js( $wpdb->last_error ) . '");
                         });
                         </script>';
-                    } else {
-                        $cookie_name = 'ktp_' . $tab_name . '_id';
-                        setcookie( $cookie_name, $data_id, time() + (86400 * 30), "/" );
+						} else {
+							$cookie_name = 'ktp_' . $tab_name . '_id';
+							setcookie( $cookie_name, $data_id, time() + ( 86400 * 30 ), '/' );
 
-                        // Prepare redirect URL
-                        global $wp;
-                        $current_page_id = get_queried_object_id();
-                        $base_page_url = get_permalink( $current_page_id );
-                        if ( ! $base_page_url ) {
-                            $base_page_url = home_url( add_query_arg( array(), $wp->request ) );
-                        }
-                        $redirect_url = add_query_arg( array(
-                            'tab_name' => $tab_name,
-                            'data_id' => $data_id,
-                            'message' => 'updated'
-                        ), $base_page_url );
+							// Prepare redirect URL
+							global $wp;
+							$current_page_id = get_queried_object_id();
+							$base_page_url = get_permalink( $current_page_id );
+							if ( ! $base_page_url ) {
+								$base_page_url = home_url( add_query_arg( array(), $wp->request ) );
+							}
+							$redirect_url = add_query_arg(
+                                array(
+									'tab_name' => $tab_name,
+									'data_id' => $data_id,
+									'message' => 'updated',
+                                ),
+                                $base_page_url
+                            );
 
-                        echo '<script>
+							echo '<script>
                             document.addEventListener("DOMContentLoaded", function() {
                                 showSuccessNotification("' . esc_js( esc_html__( '協力会社情報を更新しました。', 'ktpwp' ) ) . '");
                                 setTimeout(function() {
@@ -307,137 +316,162 @@ class KTPWP_Supplier_Data {
                                 }, 1000);
                             });
                         </script>';
-                        return;
-                    }
-                }
-                break;
+							return;
+						}
+					}
+					break;
 
-            case 'insert':
-                // Handle insert operation
+				case 'insert':
+					// Handle insert operation
 
-                // Check if table exists before attempting insert
-                $table_exists = $wpdb->get_var( $wpdb->prepare( "SHOW TABLES LIKE %s", $table_name ) ) === $table_name;
-                if ( ! $table_exists ) {
-                    error_log( 'KTPWP ERROR: Table does not exist: ' . $table_name );
-                    wp_die( __( 'Database table does not exist. Please contact the administrator.', 'ktpwp' ) );
-                }
+					// Check if table exists before attempting insert
+					$table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) ) === $table_name;
+					if ( ! $table_exists ) {
+						error_log( 'KTPWP ERROR: Table does not exist: ' . $table_name );
+						wp_die( __( 'Database table does not exist. Please contact the administrator.', 'ktpwp' ) );
+					}
 
-                // Sanitize all POST data for insert operation
-                $sanitized_data = $this->sanitize_supplier_data( $post_data );
+					// Sanitize all POST data for insert operation
+					$sanitized_data = $this->sanitize_supplier_data( $post_data );
 
-                // 新しいIDを取得（データが完全に0の場合は1から開始）
-                $new_id_query = "SELECT COALESCE(MAX(id), 0) + 1 as new_id FROM {$table_name}";
-                $new_id_result = $wpdb->get_row($new_id_query);
-                $new_id = $new_id_result && isset($new_id_result->new_id) ? intval($new_id_result->new_id) : 1;
+					// 新しいIDを取得（データが完全に0の場合は1から開始）
+					$new_id_query = "SELECT COALESCE(MAX(id), 0) + 1 as new_id FROM {$table_name}";
+					$new_id_result = $wpdb->get_row( $new_id_query );
+					$new_id = $new_id_result && isset( $new_id_result->new_id ) ? intval( $new_id_result->new_id ) : 1;
 
-                // Build search_field value
-                $search_field_value = implode(', ', [
-                    current_time( 'timestamp' ),
-                    $sanitized_data['company_name'],
-                    $sanitized_data['user_name'],
-                    $sanitized_data['email'],
-                    $sanitized_data['url'],
-                    $sanitized_data['representative_name'],
-                    $sanitized_data['phone'],
-                    $sanitized_data['postal_code'],
-                    $sanitized_data['prefecture'],
-                    $sanitized_data['city'],
-                    $sanitized_data['address'],
-                    $sanitized_data['building'],
-                    $sanitized_data['closing_day'],
-                    $sanitized_data['payment_month'],
-                    $sanitized_data['payment_day'],
-                    $sanitized_data['payment_method'],
-                    $sanitized_data['tax_category'],
-                    $sanitized_data['memo'],
-                    $sanitized_data['category']
-                ]);
+					// Build search_field value
+					$search_field_value = implode(
+                        ', ',
+                        array(
+							current_time( 'timestamp' ),
+							$sanitized_data['company_name'],
+							$sanitized_data['user_name'],
+							$sanitized_data['email'],
+							$sanitized_data['url'],
+							$sanitized_data['representative_name'],
+							$sanitized_data['phone'],
+							$sanitized_data['postal_code'],
+							$sanitized_data['prefecture'],
+							$sanitized_data['city'],
+							$sanitized_data['address'],
+							$sanitized_data['building'],
+							$sanitized_data['closing_day'],
+							$sanitized_data['payment_month'],
+							$sanitized_data['payment_day'],
+							$sanitized_data['payment_method'],
+							$sanitized_data['tax_category'],
+							$sanitized_data['memo'],
+							$sanitized_data['category'],
+                        )
+                    );
 
-                // Perform database insert
-                $insert_result = $wpdb->insert(
-                    $table_name,
-                    array(
-                        'id' => $new_id,
-                        'time' => current_time( 'timestamp' ),
-                        'company_name' => $sanitized_data['company_name'],
-                        'name' => $sanitized_data['user_name'],
-                        'email' => $sanitized_data['email'],
-                        'url' => $sanitized_data['url'],
-                        'representative_name' => $sanitized_data['representative_name'],
-                        'phone' => $sanitized_data['phone'],
-                        'postal_code' => $sanitized_data['postal_code'],
-                        'prefecture' => $sanitized_data['prefecture'],
-                        'city' => $sanitized_data['city'],
-                        'address' => $sanitized_data['address'],
-                        'building' => $sanitized_data['building'],
-                        'closing_day' => $sanitized_data['closing_day'],
-                        'payment_month' => $sanitized_data['payment_month'],
-                        'payment_day' => $sanitized_data['payment_day'],
-                        'payment_method' => $sanitized_data['payment_method'],
-                        'tax_category' => $sanitized_data['tax_category'],
-                        'memo' => $sanitized_data['memo'],
-                        'category' => $sanitized_data['category'],
-                        'search_field' => $search_field_value
-                    ),
-                    array(
-                        '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s',
-                        '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s'
-                    )
-                );
+					// Perform database insert
+					$insert_result = $wpdb->insert(
+						$table_name,
+						array(
+							'id' => $new_id,
+							'time' => current_time( 'timestamp' ),
+							'company_name' => $sanitized_data['company_name'],
+							'name' => $sanitized_data['user_name'],
+							'email' => $sanitized_data['email'],
+							'url' => $sanitized_data['url'],
+							'representative_name' => $sanitized_data['representative_name'],
+							'phone' => $sanitized_data['phone'],
+							'postal_code' => $sanitized_data['postal_code'],
+							'prefecture' => $sanitized_data['prefecture'],
+							'city' => $sanitized_data['city'],
+							'address' => $sanitized_data['address'],
+							'building' => $sanitized_data['building'],
+							'closing_day' => $sanitized_data['closing_day'],
+							'payment_month' => $sanitized_data['payment_month'],
+							'payment_day' => $sanitized_data['payment_day'],
+							'payment_method' => $sanitized_data['payment_method'],
+							'tax_category' => $sanitized_data['tax_category'],
+							'memo' => $sanitized_data['memo'],
+							'category' => $sanitized_data['category'],
+							'search_field' => $search_field_value,
+                        ),
+                        array(
+							'%d',
+							'%d',
+							'%s',
+							'%s',
+							'%s',
+							'%s',
+							'%s',
+							'%s',
+							'%s',
+							'%s',
+							'%s',
+							'%s',
+							'%s',
+							'%s',
+							'%s',
+							'%s',
+							'%s',
+							'%s',
+							'%s',
+							'%s',
+							'%s',
+                        )
+					);
 
-                if ( $insert_result === false ) {
-                    echo '<script>
+					if ( $insert_result === false ) {
+						echo '<script>
                     document.addEventListener("DOMContentLoaded", function() {
                         showErrorNotification("' . esc_js( __( '追加に失敗しました。SQLエラー: ', 'ktpwp' ) ) . esc_js( $wpdb->last_error ) . '");
                     });
                     </script>';
-                } else {
-                    // 成功時のリダイレクト処理
-                    $redirect_url = add_query_arg(array(
-                        'tab_name' => $tab_name,
-                        'data_id' => $new_id,
-                        'message' => 'added'
-                    ), wp_get_referer());
+					} else {
+						// 成功時のリダイレクト処理
+						$redirect_url = add_query_arg(
+                            array(
+								'tab_name' => $tab_name,
+								'data_id' => $new_id,
+								'message' => 'added',
+                            ),
+                            wp_get_referer()
+                        );
 
-                    wp_redirect($redirect_url);
-                    exit;
-                }
-                break;
+						wp_redirect( $redirect_url );
+						exit;
+					}
+					break;
 
-            default:
-                error_log( 'KTPWP: Invalid query_post action: ' . $query_post );
-                break;
-        }
-    }
+				default:
+					error_log( 'KTPWP: Invalid query_post action: ' . $query_post );
+					break;
+			}
+		}
 
-    /**
-     * Sanitize supplier data for database operations
-     *
-     * @since 1.0.0
-     * @param array $post_data Raw POST data
-     * @return array Sanitized data
-     */
-    private function sanitize_supplier_data( $post_data ) {
-        return array(
-            'company_name' => isset( $post_data['company_name'] ) ? sanitize_text_field( $post_data['company_name'] ) : '',
-            'user_name' => isset( $post_data['user_name'] ) ? sanitize_text_field( $post_data['user_name'] ) : '',
-            'email' => isset( $post_data['email'] ) ? sanitize_email( $post_data['email'] ) : '',
-            'url' => isset( $post_data['url'] ) ? esc_url_raw( $post_data['url'] ) : '',
-            'representative_name' => isset( $post_data['representative_name'] ) ? sanitize_text_field( $post_data['representative_name'] ) : '',
-            'phone' => isset( $post_data['phone'] ) ? sanitize_text_field( $post_data['phone'] ) : '',
-            'postal_code' => isset( $post_data['postal_code'] ) ? sanitize_text_field( $post_data['postal_code'] ) : '',
-            'prefecture' => isset( $post_data['prefecture'] ) ? sanitize_text_field( $post_data['prefecture'] ) : '',
-            'city' => isset( $post_data['city'] ) ? sanitize_text_field( $post_data['city'] ) : '',
-            'address' => isset( $post_data['address'] ) ? sanitize_text_field( $post_data['address'] ) : '',
-            'building' => isset( $post_data['building'] ) ? sanitize_text_field( $post_data['building'] ) : '',
-            'closing_day' => isset( $post_data['closing_day'] ) ? sanitize_text_field( $post_data['closing_day'] ) : '',
-            'payment_month' => isset( $post_data['payment_month'] ) ? sanitize_text_field( $post_data['payment_month'] ) : '',
-            'payment_day' => isset( $post_data['payment_day'] ) ? sanitize_text_field( $post_data['payment_day'] ) : '',
-            'payment_method' => isset( $post_data['payment_method'] ) ? sanitize_text_field( $post_data['payment_method'] ) : '',
-            'tax_category' => isset( $post_data['tax_category'] ) ? sanitize_text_field( $post_data['tax_category'] ) : '',
-            'memo' => isset( $post_data['memo'] ) ? sanitize_textarea_field( $post_data['memo'] ) : '',
-            'category' => isset( $post_data['category'] ) ? sanitize_text_field( $post_data['category'] ) : '',
-        );
-    }
-}
+		/**
+		 * Sanitize supplier data for database operations
+		 *
+		 * @since 1.0.0
+		 * @param array $post_data Raw POST data
+		 * @return array Sanitized data
+		 */
+		private function sanitize_supplier_data( $post_data ) {
+			return array(
+				'company_name' => isset( $post_data['company_name'] ) ? sanitize_text_field( $post_data['company_name'] ) : '',
+				'user_name' => isset( $post_data['user_name'] ) ? sanitize_text_field( $post_data['user_name'] ) : '',
+				'email' => isset( $post_data['email'] ) ? sanitize_email( $post_data['email'] ) : '',
+				'url' => isset( $post_data['url'] ) ? esc_url_raw( $post_data['url'] ) : '',
+				'representative_name' => isset( $post_data['representative_name'] ) ? sanitize_text_field( $post_data['representative_name'] ) : '',
+				'phone' => isset( $post_data['phone'] ) ? sanitize_text_field( $post_data['phone'] ) : '',
+				'postal_code' => isset( $post_data['postal_code'] ) ? sanitize_text_field( $post_data['postal_code'] ) : '',
+				'prefecture' => isset( $post_data['prefecture'] ) ? sanitize_text_field( $post_data['prefecture'] ) : '',
+				'city' => isset( $post_data['city'] ) ? sanitize_text_field( $post_data['city'] ) : '',
+				'address' => isset( $post_data['address'] ) ? sanitize_text_field( $post_data['address'] ) : '',
+				'building' => isset( $post_data['building'] ) ? sanitize_text_field( $post_data['building'] ) : '',
+				'closing_day' => isset( $post_data['closing_day'] ) ? sanitize_text_field( $post_data['closing_day'] ) : '',
+				'payment_month' => isset( $post_data['payment_month'] ) ? sanitize_text_field( $post_data['payment_month'] ) : '',
+				'payment_day' => isset( $post_data['payment_day'] ) ? sanitize_text_field( $post_data['payment_day'] ) : '',
+				'payment_method' => isset( $post_data['payment_method'] ) ? sanitize_text_field( $post_data['payment_method'] ) : '',
+				'tax_category' => isset( $post_data['tax_category'] ) ? sanitize_text_field( $post_data['tax_category'] ) : '',
+				'memo' => isset( $post_data['memo'] ) ? sanitize_textarea_field( $post_data['memo'] ) : '',
+				'category' => isset( $post_data['category'] ) ? sanitize_text_field( $post_data['category'] ) : '',
+			);
+		}
+	}
 }

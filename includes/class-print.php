@@ -3,7 +3,7 @@
 class Print_Class {
     private $data;
 
-    public function __construct($data) {
+    public function __construct( $data ) {
         $this->data = $data;
     }
 
@@ -13,10 +13,10 @@ class Print_Class {
         $table_name = $wpdb->prefix . 'ktp_setting'; // テーブル名を適切に設定してください
 
         // データベースからテンプレートを取得
-        $template_row = $wpdb->get_row("SELECT * FROM $table_name WHERE id = 1");
-        
+        $template_row = $wpdb->get_row( "SELECT * FROM $table_name WHERE id = 1" );
+
         // nullチェックを追加
-        if ($template_row === null) {
+        if ( $template_row === null ) {
             // デフォルトテンプレートを使用
             $template = $this->getDefaultTemplate();
         } else {
@@ -37,17 +37,17 @@ class Print_Class {
 
         // 部署情報を取得
         $department_info = '';
-        if (class_exists('KTPWP_Department_Manager') && !empty($this->data['client_id'])) {
-            $departments = KTPWP_Department_Manager::get_departments_by_client($this->data['client_id']);
-            if (!empty($departments)) {
+        if ( class_exists( 'KTPWP_Department_Manager' ) && ! empty( $this->data['client_id'] ) ) {
+            $departments = KTPWP_Department_Manager::get_departments_by_client( $this->data['client_id'] );
+            if ( ! empty( $departments ) ) {
                 $department_lines = array();
-                foreach ($departments as $dept) {
+                foreach ( $departments as $dept ) {
                     $department_lines[] = $dept->department_name . ' ' . $dept->contact_person . ' 様';
                 }
-                $department_info = implode("\n", $department_lines);
+                $department_info = implode( "\n", $department_lines );
             }
         }
-        
+
         $replacements = array(
             '_%service_name%_' => $service_name,
             '_%category%_' => $category,
@@ -59,10 +59,10 @@ class Print_Class {
             '_%building%_' => $building,
             '_%customer%_' => $customer,
             '_%user_name%_' => $user_name,
-            '_%department_info%_' => $department_info
+            '_%department_info%_' => $department_info,
         );
 
-        $html = strtr($template, $replacements);
+        $html = strtr( $template, $replacements );
 
         return $html;
     }

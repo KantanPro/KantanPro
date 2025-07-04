@@ -39,9 +39,9 @@ function active_ktp_validation( $input ) {
 }
 
 function display_plugin_admin_page() {
-do_settings_sections( 'default' );
-echo '<div class="wrap">';
-echo '<form method="post" action="">';
+	do_settings_sections( 'default' );
+	echo '<div class="wrap">';
+	echo '<form method="post" action="">';
 
     $activation_key = get_site_option( 'ktp_activation_key' );
 
@@ -63,7 +63,7 @@ echo '<form method="post" action="">';
     echo '</tr>';
     echo '</tbody>';
     echo '</table>';
-    submit_button('設定を保存');
+    submit_button( '設定を保存' );
     echo '</form>';
     echo '</div><!-- .wrap -->';
 }

@@ -9,17 +9,17 @@
  */
 
 // セキュリティ: 直接アクセスを防止
-if (!defined('ABSPATH')) {
+if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
 /**
  * KTPWP_Databaseクラス
- * 
+ *
  * プラグインのデータベーステーブルを管理
  */
 class KTPWP_Database {
-    
+
     /**
      * シングルトンインスタンス
      *
@@ -65,7 +65,7 @@ class KTPWP_Database {
      * @return KTPWP_Database
      */
     public static function get_instance() {
-        if (null === self::$instance) {
+        if ( null === self::$instance ) {
             self::$instance = new self();
         }
         return self::$instance;
@@ -79,21 +79,21 @@ class KTPWP_Database {
         $this->load_required_classes();
 
         // 各クラスでテーブル作成処理を行う
-        foreach ($this->table_classes as $table_name => $class_name) {
-            if (class_exists($class_name)) {
+        foreach ( $this->table_classes as $table_name => $class_name ) {
+            if ( class_exists( $class_name ) ) {
                 try {
                     $instance = new $class_name();
-                    if (method_exists($instance, 'Create_Table')) {
-                        $instance->Create_Table($table_name);
-                        if (defined('WP_DEBUG') && WP_DEBUG) {
-                            error_log("KTPWP: Table created for {$table_name} using {$class_name}");
+                    if ( method_exists( $instance, 'Create_Table' ) ) {
+                        $instance->Create_Table( $table_name );
+                        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                            error_log( "KTPWP: Table created for {$table_name} using {$class_name}" );
                         }
                     }
-                } catch (Exception $e) {
-                    error_log("KTPWP Error: Failed to create table {$table_name}: " . $e->getMessage());
+                } catch ( Exception $e ) {
+                    error_log( "KTPWP Error: Failed to create table {$table_name}: " . $e->getMessage() );
                 }
             } else {
-                error_log("KTPWP Error: Class {$class_name} not found for table {$table_name}");
+                error_log( "KTPWP Error: Class {$class_name} not found for table {$table_name}" );
             }
         }
     }
@@ -103,25 +103,25 @@ class KTPWP_Database {
      *
      * @param string $table_name テーブル名
      */
-    public function update_table($table_name) {
-        if (!isset($this->table_classes[$table_name])) {
+    public function update_table( $table_name ) {
+        if ( ! isset( $this->table_classes[ $table_name ] ) ) {
             return false;
         }
 
-        $class_name = $this->table_classes[$table_name];
-        
-        if (class_exists($class_name)) {
+        $class_name = $this->table_classes[ $table_name ];
+
+        if ( class_exists( $class_name ) ) {
             try {
                 $instance = new $class_name();
-                if (method_exists($instance, 'Update_Table')) {
-                    $instance->Update_Table($table_name);
-                    if (defined('WP_DEBUG') && WP_DEBUG) {
-                        error_log("KTPWP: Table updated for {$table_name} using {$class_name}");
+                if ( method_exists( $instance, 'Update_Table' ) ) {
+                    $instance->Update_Table( $table_name );
+                    if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                        error_log( "KTPWP: Table updated for {$table_name} using {$class_name}" );
                     }
                     return true;
                 }
-            } catch (Exception $e) {
-                error_log("KTPWP Error: Failed to update table {$table_name}: " . $e->getMessage());
+            } catch ( Exception $e ) {
+                error_log( "KTPWP Error: Failed to update table {$table_name}: " . $e->getMessage() );
             }
         }
 
@@ -132,23 +132,23 @@ class KTPWP_Database {
      * 必要なクラスファイルを読み込む
      */
     private function load_required_classes() {
-        foreach ($this->class_files as $class_name => $file_name) {
-            if (!class_exists($class_name)) {
+        foreach ( $this->class_files as $class_name => $file_name ) {
+            if ( ! class_exists( $class_name ) ) {
                 $file_path = KANTANPRO_PLUGIN_DIR . 'includes/' . $file_name;
-                
-                if (file_exists($file_path)) {
+
+                if ( file_exists( $file_path ) ) {
                     // class-tab-service.php は現在スキップ
-                    if ($file_name === 'class-tab-service.php') {
+                    if ( $file_name === 'class-tab-service.php' ) {
                         continue;
                     }
-                    
+
                     require_once $file_path;
-                    
-                    if (defined('WP_DEBUG') && WP_DEBUG) {
-                        error_log("KTPWP: Loaded class file {$file_name}");
+
+                    if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                        error_log( "KTPWP: Loaded class file {$file_name}" );
                     }
                 } else {
-                    error_log("KTPWP Error: Class file not found: {$file_path}");
+                    error_log( "KTPWP Error: Class file not found: {$file_path}" );
                 }
             }
         }
@@ -160,11 +160,11 @@ class KTPWP_Database {
      * @param string $table_name テーブル名
      * @return bool
      */
-    public function table_exists($table_name) {
+    public function table_exists( $table_name ) {
         global $wpdb;
         $full_table_name = $wpdb->prefix . 'ktp_' . $table_name;
-        $query = $wpdb->prepare("SHOW TABLES LIKE %s", $full_table_name);
-        return $wpdb->get_var($query) === $full_table_name;
+        $query = $wpdb->prepare( 'SHOW TABLES LIKE %s', $full_table_name );
+        return $wpdb->get_var( $query ) === $full_table_name;
     }
 
     /**
@@ -173,15 +173,15 @@ class KTPWP_Database {
      * @param string $table_name テーブル名
      * @return array|null
      */
-    public function get_table_structure($table_name) {
+    public function get_table_structure( $table_name ) {
         global $wpdb;
         $full_table_name = $wpdb->prefix . 'ktp_' . $table_name;
-        
-        if (!$this->table_exists($table_name)) {
+
+        if ( ! $this->table_exists( $table_name ) ) {
             return null;
         }
 
-        return $wpdb->get_results("DESCRIBE {$full_table_name}", ARRAY_A);
+        return $wpdb->get_results( "DESCRIBE {$full_table_name}", ARRAY_A );
     }
 
     /**
@@ -190,20 +190,20 @@ class KTPWP_Database {
      * @param string $table_name テーブル名
      * @return bool
      */
-    public function drop_table($table_name) {
+    public function drop_table( $table_name ) {
         global $wpdb;
         $full_table_name = $wpdb->prefix . 'ktp_' . $table_name;
-        
+
         $query = "DROP TABLE IF EXISTS {$full_table_name}";
-        $result = $wpdb->query($query);
-        
-        if ($result !== false) {
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log("KTPWP: Table {$full_table_name} dropped successfully");
+        $result = $wpdb->query( $query );
+
+        if ( $result !== false ) {
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( "KTPWP: Table {$full_table_name} dropped successfully" );
             }
             return true;
         } else {
-            error_log("KTPWP Error: Failed to drop table {$full_table_name}");
+            error_log( "KTPWP Error: Failed to drop table {$full_table_name}" );
             return false;
         }
     }
@@ -215,13 +215,13 @@ class KTPWP_Database {
      */
     public function drop_all_tables() {
         $success = true;
-        
-        foreach (array_keys($this->table_classes) as $table_name) {
-            if (!$this->drop_table($table_name)) {
+
+        foreach ( array_keys( $this->table_classes ) as $table_name ) {
+            if ( ! $this->drop_table( $table_name ) ) {
                 $success = false;
             }
         }
-        
+
         return $success;
     }
 
@@ -231,24 +231,24 @@ class KTPWP_Database {
      * @param string $table_name テーブル名
      * @return bool
      */
-    public function clear_table_data($table_name) {
+    public function clear_table_data( $table_name ) {
         global $wpdb;
         $full_table_name = $wpdb->prefix . 'ktp_' . $table_name;
-        
-        if (!$this->table_exists($table_name)) {
+
+        if ( ! $this->table_exists( $table_name ) ) {
             return false;
         }
 
         $query = "TRUNCATE TABLE {$full_table_name}";
-        $result = $wpdb->query($query);
-        
-        if ($result !== false) {
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log("KTPWP: Table data cleared for {$full_table_name}");
+        $result = $wpdb->query( $query );
+
+        if ( $result !== false ) {
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( "KTPWP: Table data cleared for {$full_table_name}" );
             }
             return true;
         } else {
-            error_log("KTPWP Error: Failed to clear table data for {$full_table_name}");
+            error_log( "KTPWP Error: Failed to clear table data for {$full_table_name}" );
             return false;
         }
     }
@@ -258,8 +258,8 @@ class KTPWP_Database {
      *
      * @param string $version バージョン
      */
-    public function update_db_version($version) {
-        update_option('ktpwp_db_version', $version);
+    public function update_db_version( $version ) {
+        update_option( 'ktpwp_db_version', $version );
     }
 
     /**
@@ -268,6 +268,6 @@ class KTPWP_Database {
      * @return string
      */
     public function get_db_version() {
-        return get_option('ktpwp_db_version', '0.0.0');
+        return get_option( 'ktpwp_db_version', '0.0.0' );
     }
 }

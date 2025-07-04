@@ -1,7 +1,7 @@
 <?php
 /**
  * セキュリティ管理クラス
- * 
+ *
  * プラグインのセキュリティ機能を管理
  *
  * @package KTPWP
@@ -17,34 +17,34 @@ if ( ! defined( 'ABSPATH' ) ) {
  * セキュリティ管理クラス
  */
 class KTPWP_Security {
-    
+
     /**
      * 初期化
      */
     public function init() {
         $this->init_hooks();
     }
-    
+
     /**
      * フック初期化
      */
     private function init_hooks() {
         // REST API制限
         add_filter( 'rest_authentication_errors', array( $this, 'restrict_rest_api' ) );
-        
+
         // HTTPセキュリティヘッダー
         add_action( 'admin_init', array( $this, 'add_security_headers' ) );
-        
+
         // ファイルアップロード制限
         add_filter( 'upload_mimes', array( $this, 'restrict_upload_types' ) );
-        
+
         // セキュリティ関連のショートコード無効化
         add_action( 'init', array( $this, 'disable_dangerous_shortcodes' ) );
     }
-    
+
     /**
      * REST API制限
-     * 
+     *
      * @param WP_Error|null|true $result Authentication result.
      * @return WP_Error|null|true
      */
@@ -63,7 +63,7 @@ class KTPWP_Security {
 
         return $result;
     }
-    
+
     /**
      * HTTPセキュリティヘッダー追加
      */
@@ -81,10 +81,10 @@ class KTPWP_Security {
             }
         }
     }
-    
+
     /**
      * ファイルアップロード制限
-     * 
+     *
      * @param array $mime_types 許可されるMIMEタイプ
      * @return array
      */
@@ -98,10 +98,10 @@ class KTPWP_Security {
         unset( $mime_types['scr'] );
         unset( $mime_types['vbs'] );
         unset( $mime_types['php'] );
-        
+
         return $mime_types;
     }
-    
+
     /**
      * 危険なショートコード無効化
      */
@@ -111,11 +111,11 @@ class KTPWP_Security {
         remove_shortcode( 'exec' );
         remove_shortcode( 'eval' );
     }
-    
+
     /**
      * ユーザー入力のサニタイズ
-     * 
-     * @param mixed $input 入力値
+     *
+     * @param mixed  $input 入力値
      * @param string $type サニタイズタイプ
      * @return mixed サニタイズされた値
      */
@@ -142,20 +142,20 @@ class KTPWP_Security {
                 return sanitize_text_field( $input );
         }
     }
-    
+
     /**
      * nonceの生成
-     * 
+     *
      * @param string $action アクション名
      * @return string nonce値
      */
     public function create_nonce( $action ) {
         return wp_create_nonce( 'ktpwp_' . $action );
     }
-    
+
     /**
      * nonceの検証
-     * 
+     *
      * @param string $nonce nonce値
      * @param string $action アクション名
      * @return bool 検証結果
@@ -163,28 +163,28 @@ class KTPWP_Security {
     public function verify_nonce( $nonce, $action ) {
         return wp_verify_nonce( $nonce, 'ktpwp_' . $action );
     }
-    
+
     /**
      * 管理者権限チェック
-     * 
+     *
      * @return bool
      */
     public function check_admin_capability() {
         return current_user_can( 'manage_options' );
     }
-    
+
     /**
      * 編集権限チェック
-     * 
+     *
      * @return bool
      */
     public function check_edit_capability() {
         return current_user_can( 'edit_posts' );
     }
-    
+
     /**
      * IPアドレスの取得
-     * 
+     *
      * @return string
      */
     public function get_client_ip() {
@@ -196,59 +196,59 @@ class KTPWP_Security {
             'HTTP_X_CLUSTER_CLIENT_IP',
             'HTTP_FORWARDED_FOR',
             'HTTP_FORWARDED',
-            'REMOTE_ADDR'
+            'REMOTE_ADDR',
         );
-        
+
         foreach ( $ip_keys as $key ) {
             if ( array_key_exists( $key, $_SERVER ) === true ) {
                 foreach ( explode( ',', $_SERVER[ $key ] ) as $ip ) {
                     $ip = trim( $ip );
-                    
+
                     if ( filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) !== false ) {
                         return $ip;
                     }
                 }
             }
         }
-        
+
         return isset( $_SERVER['REMOTE_ADDR'] ) ? $_SERVER['REMOTE_ADDR'] : '';
     }
-    
+
     /**
      * ログイン試行制限チェック
-     * 
+     *
      * @param string $username ユーザー名
      * @return bool 制限に引っかかっているかどうか
      */
     public function is_login_blocked( $username ) {
         $attempts_key = 'ktpwp_login_attempts_' . sanitize_key( $username );
         $attempts = get_transient( $attempts_key );
-        
+
         // 5回以上失敗している場合は15分間ブロック
         if ( $attempts && $attempts >= 5 ) {
             return true;
         }
-        
+
         return false;
     }
-    
+
     /**
      * ログイン試行回数を記録
-     * 
+     *
      * @param string $username ユーザー名
      */
     public function record_login_attempt( $username ) {
         $attempts_key = 'ktpwp_login_attempts_' . sanitize_key( $username );
         $attempts = get_transient( $attempts_key );
         $attempts = $attempts ? $attempts + 1 : 1;
-        
+
         // 15分間保持
         set_transient( $attempts_key, $attempts, 15 * MINUTE_IN_SECONDS );
     }
-    
+
     /**
      * ログイン試行回数をリセット
-     * 
+     *
      * @param string $username ユーザー名
      */
     public function reset_login_attempts( $username ) {

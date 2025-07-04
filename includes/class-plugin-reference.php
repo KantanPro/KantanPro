@@ -23,219 +23,223 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
 
-/**
- * Plugin Reference class for managing help documentation
- *
- * @since 1.0.0
- */
-class KTPWP_Plugin_Reference {
+	/**
+	 * Plugin Reference class for managing help documentation
+	 *
+	 * @since 1.0.0
+	 */
+	class KTPWP_Plugin_Reference {
 
-    /**
-     * Single instance of the class
-     *
-     * @var KTPWP_Plugin_Reference
-     */
-    private static $instance = null;
+		/**
+		 * Single instance of the class
+		 *
+		 * @var KTPWP_Plugin_Reference
+		 */
+		private static $instance = null;
 
-    /**
-     * Get singleton instance
-     *
-     * @since 1.0.0
-     * @return KTPWP_Plugin_Reference
-     */
-    public static function get_instance() {
-        if ( self::$instance === null ) {
-            self::$instance = new self();
-        }
-        return self::$instance;
-    }
+		/**
+		 * Get singleton instance
+		 *
+		 * @since 1.0.0
+		 * @return KTPWP_Plugin_Reference
+		 */
+		public static function get_instance() {
+			if ( self::$instance === null ) {
+				self::$instance = new self();
+			}
+			return self::$instance;
+		}
 
-    /**
-     * Constructor
-     *
-     * @since 1.0.0
-     */
-    private function __construct() {
-        add_action( 'wp_ajax_ktpwp_get_reference', array( $this, 'ajax_get_reference' ) );
-        add_action( 'wp_ajax_nopriv_ktpwp_get_reference', array( $this, 'ajax_get_reference' ) );
-        add_action( 'wp_ajax_ktpwp_clear_reference_cache', array( $this, 'ajax_clear_reference_cache' ) );
-        add_action( 'wp_ajax_nopriv_ktpwp_clear_reference_cache', array( $this, 'ajax_clear_reference_cache' ) );
-        add_action( 'wp_footer', array( $this, 'add_modal_html' ) );
-    }
+		/**
+		 * Constructor
+		 *
+		 * @since 1.0.0
+		 */
+		private function __construct() {
+			add_action( 'wp_ajax_ktpwp_get_reference', array( $this, 'ajax_get_reference' ) );
+			add_action( 'wp_ajax_nopriv_ktpwp_get_reference', array( $this, 'ajax_get_reference' ) );
+			add_action( 'wp_ajax_ktpwp_clear_reference_cache', array( $this, 'ajax_clear_reference_cache' ) );
+			add_action( 'wp_ajax_nopriv_ktpwp_clear_reference_cache', array( $this, 'ajax_clear_reference_cache' ) );
+			add_action( 'wp_footer', array( $this, 'add_modal_html' ) );
+		}
 
-    /**
-     * Enqueue scripts and styles for reference modal
-     * 
-     * Note: This method is no longer used as scripts are loaded in main ktpwp.php
-     * Kept for backward compatibility
-     *
-     * @since 1.0.0
-     * @return void
-     */
-    public function enqueue_reference_scripts() {
-        // Scripts are now loaded in main ktpwp.php file
-        // This method is kept for backward compatibility
-    }
+		/**
+		 * Enqueue scripts and styles for reference modal
+		 *
+		 * Note: This method is no longer used as scripts are loaded in main ktpwp.php
+		 * Kept for backward compatibility
+		 *
+		 * @since 1.0.0
+		 * @return void
+		 */
+		public function enqueue_reference_scripts() {
+			// Scripts are now loaded in main ktpwp.php file
+			// This method is kept for backward compatibility
+		}
 
-    /**
-     * Generate reference link for header
-     *
-     * @since 1.0.0
-     * @return string HTML for reference link
-     */
-    public function get_reference_link() {
-        if ( ! is_user_logged_in() ) {
-            return '';
-        }
+		/**
+		 * Generate reference link for header
+		 *
+		 * @since 1.0.0
+		 * @return string HTML for reference link
+		 */
+		public function get_reference_link() {
+			if ( ! is_user_logged_in() ) {
+				return '';
+			}
 
-        $reference_icon = '<span class="material-symbols-outlined" style="font-size: 20px; vertical-align: middle;">help</span>';
-        
-        // デバッグ用：リファレンスリンクが生成されることをコンソールに記録
-        $debug_script = '<script>console.log("KTPWP Reference: Link generated");</script>';
-        
-        return $debug_script . '<a href="#" id="ktpwp-reference-trigger" class="ktpwp-reference-link" '
+			$reference_icon = '<span class="material-symbols-outlined" style="font-size: 20px; vertical-align: middle;">help</span>';
+
+			// デバッグ用：リファレンスリンクが生成されることをコンソールに記録
+			$debug_script = '<script>console.log("KTPWP Reference: Link generated");</script>';
+
+			return $debug_script . '<a href="#" id="ktpwp-reference-trigger" class="ktpwp-reference-link" '
             . 'title="' . esc_attr__( 'プラグインの使い方を確認', 'ktpwp' ) . '" '
             . 'style="color: #0073aa; text-decoration: none; margin-left: 8px; display: inline-flex; align-items: center; gap: 4px;">'
             . $reference_icon
             . '<span>' . esc_html__( 'ヘルプ', 'ktpwp' ) . '</span>'
             . '</a>';
-    }
+		}
 
-    /**
-     * Ajax handler for getting reference content
-     *
-     * @since 1.0.0
-     * @return void
-     */
-    public function ajax_get_reference() {
-        // Security check
-        if ( ! wp_verify_nonce( $_POST['nonce'], 'ktpwp_reference_nonce' ) ) {
-            wp_die( esc_html__( 'セキュリティチェックに失敗しました。', 'ktpwp' ) );
-        }
+		/**
+		 * Ajax handler for getting reference content
+		 *
+		 * @since 1.0.0
+		 * @return void
+		 */
+		public function ajax_get_reference() {
+			// Security check
+			if ( ! wp_verify_nonce( $_POST['nonce'], 'ktpwp_reference_nonce' ) ) {
+				wp_die( esc_html__( 'セキュリティチェックに失敗しました。', 'ktpwp' ) );
+			}
 
-        if ( ! is_user_logged_in() ) {
-            wp_die( esc_html__( 'ログインが必要です。', 'ktpwp' ) );
-        }
+			if ( ! is_user_logged_in() ) {
+				wp_die( esc_html__( 'ログインが必要です。', 'ktpwp' ) );
+			}
 
-        $section = isset( $_POST['section'] ) ? sanitize_text_field( $_POST['section'] ) : 'overview';
-        
-        // Check if reference needs refresh after activation
-        if ( get_option( 'ktpwp_reference_needs_refresh', false ) ) {
-            delete_option( 'ktpwp_reference_needs_refresh' );
-            delete_transient( 'ktpwp_reference_cache' );
-        }
-        
-        $content = $this->get_reference_content( $section );
-        
-        wp_send_json_success( array(
-            'content' => $content,
-            'section' => $section,
-            'last_updated' => get_option( 'ktpwp_reference_last_updated', time() ),
-            'version' => KANTANPRO_PLUGIN_VERSION // 常に最新の定数値を使用
-        ) );
-    }
+			$section = isset( $_POST['section'] ) ? sanitize_text_field( $_POST['section'] ) : 'overview';
 
-    /**
-     * Ajax handler for clearing reference cache
-     *
-     * @since 1.0.0
-     * @return void
-     */
-    public function ajax_clear_reference_cache() {
-        // Security check
-        if ( ! wp_verify_nonce( $_POST['nonce'], 'ktpwp_reference_nonce' ) ) {
-            wp_send_json_error( array( 'message' => esc_html__( 'セキュリティチェックに失敗しました。', 'ktpwp' ) ) );
-        }
+			// Check if reference needs refresh after activation
+			if ( get_option( 'ktpwp_reference_needs_refresh', false ) ) {
+				delete_option( 'ktpwp_reference_needs_refresh' );
+				delete_transient( 'ktpwp_reference_cache' );
+			}
 
-        if ( ! is_user_logged_in() ) {
-            wp_send_json_error( array( 'message' => esc_html__( 'ログインが必要です。', 'ktpwp' ) ) );
-        }
+			$content = $this->get_reference_content( $section );
 
-        // Clear all reference cache (including individual section caches)
-        $sections = array( 'overview', 'tabs', 'shortcodes', 'settings', 'security', 'troubleshooting' );
-        
-        foreach ( $sections as $section ) {
-            delete_transient( "ktpwp_reference_content_{$section}" );
-        }
-        
-        // Clear main cache
-        delete_transient( 'ktpwp_reference_cache' );
-        
-        // Update metadata
-        update_option( 'ktpwp_reference_last_updated', current_time( 'timestamp' ) );
-        update_option( 'ktpwp_reference_version', KANTANPRO_PLUGIN_VERSION );
-        
-        // Update last cleared timestamp
-        update_option( 'ktpwp_reference_last_cleared', time() );
-        
-        wp_send_json_success( array( 
-            'message' => esc_html__( 'キャッシュをクリアしました。', 'ktpwp' ),
-            'cleared_at' => current_time( 'mysql' )
-        ) );
-    }
+			wp_send_json_success(
+                array(
+					'content' => $content,
+					'section' => $section,
+					'last_updated' => get_option( 'ktpwp_reference_last_updated', time() ),
+					'version' => KANTANPRO_PLUGIN_VERSION, // 常に最新の定数値を使用
+                )
+            );
+		}
 
-    /**
-     * Get reference content by section
-     *
-     * @since 1.0.0
-     * @param string $section Reference section
-     * @return string HTML content
-     */
-    private function get_reference_content( $section ) {
-        // Check cache first (unless refresh is needed)
-        $cache_key = "ktpwp_reference_content_{$section}";
-        $cached_content = get_transient( $cache_key );
-        
-        if ( $cached_content !== false && ! get_option( 'ktpwp_reference_needs_refresh', false ) ) {
-            return $cached_content;
-        }
-        
-        $content = '';
-        
-        switch ( $section ) {
-            case 'overview':
-                $content = $this->get_overview_content();
-                break;
-            case 'tabs':
-                $content = $this->get_tabs_content();
-                break;
-            case 'shortcodes':
-                $content = $this->get_shortcode_content();
-                break;
-            case 'settings':
-                $content = $this->get_settings_content();
-                break;
-            case 'security':
-                $content = $this->get_security_content();
-                break;
-            case 'troubleshooting':
-                $content = $this->get_troubleshooting_content();
-                break;
-            default:
-                $content = $this->get_overview_content();
-                break;
-        }
-        
-        // Cache the content for 1 hour
-        if ( ! empty( $content ) ) {
-            set_transient( $cache_key, $content, HOUR_IN_SECONDS );
-        }
-        
-        return $content;
-    }
+		/**
+		 * Ajax handler for clearing reference cache
+		 *
+		 * @since 1.0.0
+		 * @return void
+		 */
+		public function ajax_clear_reference_cache() {
+			// Security check
+			if ( ! wp_verify_nonce( $_POST['nonce'], 'ktpwp_reference_nonce' ) ) {
+				wp_send_json_error( array( 'message' => esc_html__( 'セキュリティチェックに失敗しました。', 'ktpwp' ) ) );
+			}
 
-    /**
-     * Get overview content
-     *
-     * @since 1.0.0
-     * @return string HTML content
-     */
-    private function get_overview_content() {
-        $version = KANTANPRO_PLUGIN_VERSION;
-        
-        return '<div class="ktpwp-reference-section">
+			if ( ! is_user_logged_in() ) {
+				wp_send_json_error( array( 'message' => esc_html__( 'ログインが必要です。', 'ktpwp' ) ) );
+			}
+
+			// Clear all reference cache (including individual section caches)
+			$sections = array( 'overview', 'tabs', 'shortcodes', 'settings', 'security', 'troubleshooting' );
+
+			foreach ( $sections as $section ) {
+				delete_transient( "ktpwp_reference_content_{$section}" );
+			}
+
+			// Clear main cache
+			delete_transient( 'ktpwp_reference_cache' );
+
+			// Update metadata
+			update_option( 'ktpwp_reference_last_updated', current_time( 'timestamp' ) );
+			update_option( 'ktpwp_reference_version', KANTANPRO_PLUGIN_VERSION );
+
+			// Update last cleared timestamp
+			update_option( 'ktpwp_reference_last_cleared', time() );
+
+			wp_send_json_success(
+                array(
+					'message' => esc_html__( 'キャッシュをクリアしました。', 'ktpwp' ),
+					'cleared_at' => current_time( 'mysql' ),
+                )
+            );
+		}
+
+		/**
+		 * Get reference content by section
+		 *
+		 * @since 1.0.0
+		 * @param string $section Reference section
+		 * @return string HTML content
+		 */
+		private function get_reference_content( $section ) {
+			// Check cache first (unless refresh is needed)
+			$cache_key = "ktpwp_reference_content_{$section}";
+			$cached_content = get_transient( $cache_key );
+
+			if ( $cached_content !== false && ! get_option( 'ktpwp_reference_needs_refresh', false ) ) {
+				return $cached_content;
+			}
+
+			$content = '';
+
+			switch ( $section ) {
+				case 'overview':
+					$content = $this->get_overview_content();
+					break;
+				case 'tabs':
+					$content = $this->get_tabs_content();
+					break;
+				case 'shortcodes':
+					$content = $this->get_shortcode_content();
+					break;
+				case 'settings':
+					$content = $this->get_settings_content();
+					break;
+				case 'security':
+					$content = $this->get_security_content();
+					break;
+				case 'troubleshooting':
+					$content = $this->get_troubleshooting_content();
+					break;
+				default:
+					$content = $this->get_overview_content();
+					break;
+			}
+
+			// Cache the content for 1 hour
+			if ( ! empty( $content ) ) {
+				set_transient( $cache_key, $content, HOUR_IN_SECONDS );
+			}
+
+			return $content;
+		}
+
+		/**
+		 * Get overview content
+		 *
+		 * @since 1.0.0
+		 * @return string HTML content
+		 */
+		private function get_overview_content() {
+			$version = KANTANPRO_PLUGIN_VERSION;
+
+			return '<div class="ktpwp-reference-section">
             <h2>KantanPro プラグイン概要</h2>
-            <p><strong>バージョン:</strong> ' . esc_html($version) . '</p>
+            <p><strong>バージョン:</strong> ' . esc_html( $version ) . '</p>
             
             <h3>🎯 プラグインの目的</h3>
             <p>KantanProは、WordPress上で業務管理・受注進捗・請求・顧客・サービス・協力会社・レポート・スタッフチャットまで一元管理できる多機能プラグインです。</p>
@@ -261,16 +265,16 @@ class KTPWP_Plugin_Reference {
             <h3>🔄 自動化機能</h3>
             <p>データベース構造の自動マイグレーション、WP-CLIベースの管理機能により、運用負荷を軽減しています。</p>
         </div>';
-    }
+		}
 
-    /**
-     * Get tabs content
-     *
-     * @since 1.0.0
-     * @return string HTML content
-     */
-    private function get_tabs_content() {
-        return '<div class="ktpwp-reference-section">
+		/**
+		 * Get tabs content
+		 *
+		 * @since 1.0.0
+		 * @return string HTML content
+		 */
+		private function get_tabs_content() {
+			return '<div class="ktpwp-reference-section">
             <h2>管理タブの使い方</h2>
             
             <h3>📋 仕事リストタブ</h3>
@@ -328,16 +332,16 @@ class KTPWP_Plugin_Reference {
                 <li>データエクスポート</li>
             </ul>
         </div>';
-    }
+		}
 
-    /**
-     * Get shortcode content
-     *
-     * @since 1.0.0
-     * @return string HTML content
-     */
-    private function get_shortcode_content() {
-        return '<div class="ktpwp-reference-section">
+		/**
+		 * Get shortcode content
+		 *
+		 * @since 1.0.0
+		 * @return string HTML content
+		 */
+		private function get_shortcode_content() {
+			return '<div class="ktpwp-reference-section">
             <h2>ショートコードの使い方</h2>
             
             <h3>🎯 メインショートコード</h3>
@@ -371,16 +375,16 @@ class KTPWP_Plugin_Reference {
                 <li>テーマとの競合を避けるため、専用のCSSクラスを使用</li>
             </ul>
         </div>';
-    }
+		}
 
-    /**
-     * Get settings content
-     *
-     * @since 1.0.0
-     * @return string HTML content
-     */
-    private function get_settings_content() {
-        return '<div class="ktpwp-reference-section">
+		/**
+		 * Get settings content
+		 *
+		 * @since 1.0.0
+		 * @return string HTML content
+		 */
+		private function get_settings_content() {
+			return '<div class="ktpwp-reference-section">
             <h2>設定・管理</h2>
             
             <h3>⚙️ 基本設定</h3>
@@ -408,16 +412,16 @@ class KTPWP_Plugin_Reference {
                 <li><strong>画像最適化</strong>：アップロード画像の自動最適化</li>
             </ul>
         </div>';
-    }
+		}
 
-    /**
-     * Get security content
-     *
-     * @since 1.0.0
-     * @return string HTML content
-     */
-    private function get_security_content() {
-        return '<div class="ktpwp-reference-section">
+		/**
+		 * Get security content
+		 *
+		 * @since 1.0.0
+		 * @return string HTML content
+		 */
+		private function get_security_content() {
+			return '<div class="ktpwp-reference-section">
             <h2>セキュリティ機能</h2>
             
             <h3>🛡️ 実装済みセキュリティ対策</h3>
@@ -459,16 +463,16 @@ class KTPWP_Plugin_Reference {
                 <li>SSL証明書の導入</li>
             </ul>
         </div>';
-    }
+		}
 
-    /**
-     * Get troubleshooting content
-     *
-     * @since 1.0.0
-     * @return string HTML content
-     */
-    private function get_troubleshooting_content() {
-        return '<div class="ktpwp-reference-section">
+		/**
+		 * Get troubleshooting content
+		 *
+		 * @since 1.0.0
+		 * @return string HTML content
+		 */
+		private function get_troubleshooting_content() {
+			return '<div class="ktpwp-reference-section">
             <h2>トラブルシューティング</h2>
             
             <h3>❓ よくある問題と解決方法</h3>
@@ -521,18 +525,18 @@ class KTPWP_Plugin_Reference {
                 <li><strong>開発者プロフィール</strong>: <a href="https://www.kantanpro.com/developer-profile/" target="_blank">https://www.kantanpro.com/developer-profile/</a></li>
             </ul>
         </div>';
-    }
+		}
 
-    /**
-     * Render modal HTML
-     *
-     * @since 1.0.0
-     * @return string HTML content
-     */
-    public static function render_modal() {
-        $nonce = wp_create_nonce( 'ktpwp_reference_nonce' );
-        
-        return '<div id="ktpwp-reference-modal" class="ktpwp-modal" style="display: none;">
+		/**
+		 * Render modal HTML
+		 *
+		 * @since 1.0.0
+		 * @return string HTML content
+		 */
+		public static function render_modal() {
+			$nonce = wp_create_nonce( 'ktpwp_reference_nonce' );
+
+			return '<div id="ktpwp-reference-modal" class="ktpwp-modal" style="display: none;">
             <div class="ktpwp-modal-content">
                 <div class="ktpwp-modal-header">
                     <h2>KantanPro ヘルプ・リファレンス</h2>
@@ -553,65 +557,65 @@ class KTPWP_Plugin_Reference {
                 </div>
                 <div class="ktpwp-modal-footer">
                     <button id="ktpwp-clear-cache" class="ktpwp-btn">キャッシュクリア</button>
-                    <span class="ktpwp-version">v' . esc_html(KANTANPRO_PLUGIN_VERSION) . '</span>
+                    <span class="ktpwp-version">v' . esc_html( KANTANPRO_PLUGIN_VERSION ) . '</span>
                 </div>
             </div>
         </div>';
-    }
+		}
 
-    /**
-     * Add modal HTML to footer
-     *
-     * @since 1.0.0
-     * @return void
-     */
-    public function add_modal_html() {
-        if ( ! is_user_logged_in() ) {
-            return;
-        }
-        
-        echo self::render_modal();
-    }
+		/**
+		 * Add modal HTML to footer
+		 *
+		 * @since 1.0.0
+		 * @return void
+		 */
+		public function add_modal_html() {
+			if ( ! is_user_logged_in() ) {
+				return;
+			}
 
-    /**
-     * Plugin activation hook
-     *
-     * @since 1.0.0
-     * @return void
-     */
-    public static function on_plugin_activation() {
-        // Set flag to refresh reference content
-        update_option( 'ktpwp_reference_needs_refresh', true );
-        
-        // Set initial metadata
-        update_option( 'ktpwp_reference_last_updated', current_time( 'timestamp' ) );
-        update_option( 'ktpwp_reference_version', KANTANPRO_PLUGIN_VERSION );
-        
-        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Reference: Plugin activation - reference cache marked for refresh' );
-        }
-    }
+			echo self::render_modal();
+		}
 
-    /**
-     * Clear all reference cache
-     *
-     * @since 1.0.0
-     * @return void
-     */
-    public static function clear_all_cache() {
-        $sections = array( 'overview', 'tabs', 'shortcodes', 'settings', 'security', 'troubleshooting' );
-        
-        foreach ( $sections as $section ) {
-            delete_transient( "ktpwp_reference_content_{$section}" );
-        }
-        
-        delete_transient( 'ktpwp_reference_cache' );
-        update_option( 'ktpwp_reference_last_updated', current_time( 'timestamp' ) );
-        
-        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Reference: All cache cleared' );
-        }
-    }
-}
+		/**
+		 * Plugin activation hook
+		 *
+		 * @since 1.0.0
+		 * @return void
+		 */
+		public static function on_plugin_activation() {
+			// Set flag to refresh reference content
+			update_option( 'ktpwp_reference_needs_refresh', true );
+
+			// Set initial metadata
+			update_option( 'ktpwp_reference_last_updated', current_time( 'timestamp' ) );
+			update_option( 'ktpwp_reference_version', KANTANPRO_PLUGIN_VERSION );
+
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( 'KTPWP Reference: Plugin activation - reference cache marked for refresh' );
+			}
+		}
+
+		/**
+		 * Clear all reference cache
+		 *
+		 * @since 1.0.0
+		 * @return void
+		 */
+		public static function clear_all_cache() {
+			$sections = array( 'overview', 'tabs', 'shortcodes', 'settings', 'security', 'troubleshooting' );
+
+			foreach ( $sections as $section ) {
+				delete_transient( "ktpwp_reference_content_{$section}" );
+			}
+
+			delete_transient( 'ktpwp_reference_cache' );
+			update_option( 'ktpwp_reference_last_updated', current_time( 'timestamp' ) );
+
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( 'KTPWP Reference: All cache cleared' );
+			}
+		}
+	}
 
 } // End if class_exists check

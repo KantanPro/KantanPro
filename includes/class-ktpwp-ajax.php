@@ -183,63 +183,74 @@ class KTPWP_Ajax {
 		$this->registered_handlers[] = 'ktp_delete_department';
 
 		// ▼▼▼ 一括請求書「請求済」進捗変更Ajax ▼▼▼
-		add_action('wp_ajax_ktp_set_invoice_completed', function() {
-			// 権限チェック
-			if ( ! current_user_can('edit_posts') && ! current_user_can('ktpwp_access') ) {
-				wp_send_json_error('権限がありません');
+		add_action(
+            'wp_ajax_ktp_set_invoice_completed',
+            function () {
+				// 権限チェック
+				if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
+					wp_send_json_error( '権限がありません' );
+				}
+				// nonceチェック（必要ならPOSTでnonceも送る）
+				// if ( ! isset($_POST['nonce']) || ! wp_verify_nonce($_POST['nonce'], 'ktp_ajax_nonce') ) {
+				// wp_send_json_error('セキュリティ検証に失敗しました');
+				// }
+				global $wpdb;
+				$client_id = isset( $_POST['client_id'] ) ? intval( $_POST['client_id'] ) : 0;
+				if ( ! $client_id ) {
+					wp_send_json_error( 'client_idが指定されていません' );
+				}
+				$table_name = $wpdb->prefix . 'ktp_order';
+				// progress=4（完了）→5（請求済）に一括更新（completion_dateは変更しない）
+				$result = $wpdb->query(
+                    $wpdb->prepare(
+                        "UPDATE {$table_name} SET progress = 5 WHERE client_id = %d AND progress = 4",
+                        $client_id
+                    )
+				);
+				if ( $result === false ) {
+					wp_send_json_error( 'DB更新に失敗しました: ' . $wpdb->last_error );
+				}
+				wp_send_json_success( array( 'updated' => $result ) );
 			}
-			// nonceチェック（必要ならPOSTでnonceも送る）
-			// if ( ! isset($_POST['nonce']) || ! wp_verify_nonce($_POST['nonce'], 'ktp_ajax_nonce') ) {
-			//     wp_send_json_error('セキュリティ検証に失敗しました');
-			// }
-			global $wpdb;
-			$client_id = isset($_POST['client_id']) ? intval($_POST['client_id']) : 0;
-			if (!$client_id) {
-				wp_send_json_error('client_idが指定されていません');
-			}
-			$table_name = $wpdb->prefix . 'ktp_order';
-			// progress=4（完了）→5（請求済）に一括更新（completion_dateは変更しない）
-			$result = $wpdb->query($wpdb->prepare(
-				"UPDATE {$table_name} SET progress = 5 WHERE client_id = %d AND progress = 4",
-				$client_id
-			));
-			if ($result === false) {
-				wp_send_json_error('DB更新に失敗しました: ' . $wpdb->last_error);
-			}
-			wp_send_json_success(['updated' => $result]);
-		});
+        );
 		// ▲▲▲ 一括請求書「請求済」進捗変更Ajax ▲▲▲
 
 		// ▼▼▼ コスト項目「注文済」一括更新Ajax ▼▼▼
-		add_action('wp_ajax_ktp_set_cost_items_ordered', function() {
-			// 権限チェック
-			if ( ! current_user_can('edit_posts') && ! current_user_can('ktpwp_access') ) {
-				wp_send_json_error('権限がありません');
+		add_action(
+            'wp_ajax_ktp_set_cost_items_ordered',
+            function () {
+				// 権限チェック
+				if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
+					wp_send_json_error( '権限がありません' );
+				}
+				// nonceチェック
+				if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( $_POST['nonce'], 'ktp_ajax_nonce' ) ) {
+					wp_send_json_error( 'セキュリティ検証に失敗しました' );
+				}
+				global $wpdb;
+				$order_id = isset( $_POST['order_id'] ) ? intval( $_POST['order_id'] ) : 0;
+				$supplier_name = isset( $_POST['supplier_name'] ) ? sanitize_text_field( $_POST['supplier_name'] ) : '';
+				if ( ! $order_id || ! $supplier_name ) {
+					wp_send_json_error( 'order_idまたはsupplier_nameが指定されていません' );
+				}
+				$table_name = $wpdb->prefix . 'ktp_order_cost_items';
+				// purchaseカラムがsupplier_nameと一致する全行を更新
+				$result = $wpdb->update(
+                    $table_name,
+                    array( 'ordered' => 1 ),
+                    array(
+						'order_id' => $order_id,
+						'purchase' => $supplier_name,
+                    ),
+                    array( '%d' ),
+                    array( '%d', '%s' )
+				);
+				if ( $result === false ) {
+					wp_send_json_error( 'DB更新に失敗しました: ' . $wpdb->last_error );
+				}
+				wp_send_json_success( array( 'updated' => $result ) );
 			}
-			// nonceチェック
-			if ( ! isset($_POST['nonce']) || ! wp_verify_nonce($_POST['nonce'], 'ktp_ajax_nonce') ) {
-				wp_send_json_error('セキュリティ検証に失敗しました');
-			}
-			global $wpdb;
-			$order_id = isset($_POST['order_id']) ? intval($_POST['order_id']) : 0;
-			$supplier_name = isset($_POST['supplier_name']) ? sanitize_text_field($_POST['supplier_name']) : '';
-			if (!$order_id || !$supplier_name) {
-				wp_send_json_error('order_idまたはsupplier_nameが指定されていません');
-			}
-			$table_name = $wpdb->prefix . 'ktp_order_cost_items';
-			// purchaseカラムがsupplier_nameと一致する全行を更新
-			$result = $wpdb->update(
-				$table_name,
-				array('ordered' => 1),
-				array('order_id' => $order_id, 'purchase' => $supplier_name),
-				array('%d'),
-				array('%d', '%s')
-			);
-			if ($result === false) {
-				wp_send_json_error('DB更新に失敗しました: ' . $wpdb->last_error);
-			}
-			wp_send_json_success(['updated' => $result]);
-		});
+        );
 		// ▲▲▲ コスト項目「注文済」一括更新Ajax ▲▲▲
 	}
 
@@ -638,11 +649,11 @@ class KTPWP_Ajax {
 				$result = $order_items->update_item_field( 'cost', $item_id, $field_name, $field_value );
 			}
 
-			if ( $result && is_array($result) && $result['success'] ) {
+			if ( $result && is_array( $result ) && $result['success'] ) {
 				wp_send_json_success(
 					array(
 						'message' => __( '正常に保存されました', 'ktpwp' ),
-						'value_changed' => $result['value_changed']
+						'value_changed' => $result['value_changed'],
 					)
 				);
 			} else {
@@ -745,7 +756,7 @@ class KTPWP_Ajax {
 			// 指定されたフィールド値を設定（アイテム作成後に更新）
 			if ( ! empty( $field_name ) && ! empty( $field_value ) && $new_item_id ) {
 				$update_result = $order_items->update_item_field( $item_type, $new_item_id, $field_name, $field_value );
-				if ( ! $update_result || (is_array($update_result) && !$update_result['success']) ) {
+				if ( ! $update_result || ( is_array( $update_result ) && ! $update_result['success'] ) ) {
 					error_log( "KTPWP: Failed to update field {$field_name} for new item {$new_item_id}" );
 				}
 			}
@@ -1506,14 +1517,14 @@ class KTPWP_Ajax {
 			// 部署情報を取得
 			$department_info = '';
 			$customer_display = $customer_name;
-			$user_display = $user_name . " 様";
-			
-			if (class_exists('KTPWP_Department_Manager')) {
-				$selected_department = KTPWP_Department_Manager::get_selected_department_by_client($client->id);
-				if ($selected_department) {
+			$user_display = $user_name . ' 様';
+
+			if ( class_exists( 'KTPWP_Department_Manager' ) ) {
+				$selected_department = KTPWP_Department_Manager::get_selected_department_by_client( $client->id );
+				if ( $selected_department ) {
 					// 部署選択がある場合：会社名、部署名、担当者名を別々に表示
 					$customer_display = $customer_name;
-					$user_display = $selected_department->department_name . "\n" . $selected_department->contact_person . " 様";
+					$user_display = $selected_department->department_name . "\n" . $selected_department->contact_person . ' 様';
 				}
 			}
 
@@ -1786,10 +1797,12 @@ class KTPWP_Ajax {
 			// 協力会社テーブルからメールアドレスを取得
 			global $wpdb;
 			$table_name = $wpdb->prefix . 'ktp_supplier';
-			$supplier = $wpdb->get_row( $wpdb->prepare(
-				"SELECT email, name FROM {$table_name} WHERE company_name = %s",
-				$supplier_name
-			) );
+			$supplier = $wpdb->get_row(
+                $wpdb->prepare(
+                    "SELECT email, name FROM {$table_name} WHERE company_name = %s",
+                    $supplier_name
+                )
+            );
 
 			if ( $supplier ) {
 				wp_send_json_success(
@@ -1851,10 +1864,12 @@ class KTPWP_Ajax {
 			if ( empty( $my_email ) ) {
 				global $wpdb;
 				$setting_table = $wpdb->prefix . 'ktp_setting';
-				$setting       = $wpdb->get_row( $wpdb->prepare(
-					"SELECT * FROM `{$setting_table}` WHERE id = %d",
-					1
-				) );
+				$setting       = $wpdb->get_row(
+                    $wpdb->prepare(
+                        "SELECT * FROM `{$setting_table}` WHERE id = %d",
+                        1
+                    )
+                );
 				if ( $setting ) {
 					$my_email = sanitize_email( $setting->email_address );
 				}
@@ -1870,10 +1885,12 @@ class KTPWP_Ajax {
 			if ( empty( $my_company ) ) {
 				global $wpdb;
 				$setting_table = $wpdb->prefix . 'ktp_setting';
-				$setting       = $wpdb->get_row( $wpdb->prepare(
-					"SELECT * FROM `{$setting_table}` WHERE id = %d",
-					1
-				) );
+				$setting       = $wpdb->get_row(
+                    $wpdb->prepare(
+                        "SELECT * FROM `{$setting_table}` WHERE id = %d",
+                        1
+                    )
+                );
 				if ( $setting ) {
 					$my_company = sanitize_text_field( strip_tags( $setting->my_company_content ) );
 				}
@@ -1916,7 +1933,7 @@ class KTPWP_Ajax {
 
 					$total_size += $file_size;
 					if ( $total_size > $max_size ) {
-						throw new Exception( "添付ファイルの合計サイズが50MBを超えています。" );
+						throw new Exception( '添付ファイルの合計サイズが50MBを超えています。' );
 					}
 
 					// 一時ディレクトリに保存
@@ -1996,10 +2013,12 @@ class KTPWP_Ajax {
 			if ( empty( $company_info ) ) {
 				global $wpdb;
 				$setting_table = $wpdb->prefix . 'ktp_setting';
-				$setting       = $wpdb->get_row( $wpdb->prepare(
-					"SELECT * FROM `{$setting_table}` WHERE id = %d",
-					1
-				) );
+				$setting       = $wpdb->get_row(
+                    $wpdb->prepare(
+                        "SELECT * FROM `{$setting_table}` WHERE id = %d",
+                        1
+                    )
+                );
 				if ( $setting ) {
 					$company_info = sanitize_text_field( strip_tags( $setting->my_company_content ) );
 				}
@@ -2041,7 +2060,7 @@ class KTPWP_Ajax {
 			}
 
 			$supplier_name = isset( $_POST['supplier_name'] ) ? sanitize_text_field( $_POST['supplier_name'] ) : '';
-			
+
 			if ( empty( $supplier_name ) ) {
 				throw new Exception( '協力会社名が指定されていません。' );
 			}
@@ -2049,10 +2068,12 @@ class KTPWP_Ajax {
 			// 協力会社情報を取得
 			global $wpdb;
 			$supplier_table = $wpdb->prefix . 'ktp_supplier';
-			$supplier = $wpdb->get_row( $wpdb->prepare(
-				"SELECT * FROM `{$supplier_table}` WHERE company_name = %s",
-				$supplier_name
-			) );
+			$supplier = $wpdb->get_row(
+                $wpdb->prepare(
+                    "SELECT * FROM `{$supplier_table}` WHERE company_name = %s",
+                    $supplier_name
+                )
+            );
 
 			if ( $supplier ) {
 				$contact_info = array(
@@ -2060,7 +2081,7 @@ class KTPWP_Ajax {
 					'contact_person' => $supplier->name,
 					'email' => $supplier->email,
 					'phone' => $supplier->phone,
-					'address' => $supplier->address
+					'address' => $supplier->address,
 				);
 			} else {
 				$contact_info = array(
@@ -2068,7 +2089,7 @@ class KTPWP_Ajax {
 					'contact_person' => '',
 					'email' => '',
 					'phone' => '',
-					'address' => ''
+					'address' => '',
 				);
 			}
 
@@ -2906,11 +2927,13 @@ class KTPWP_Ajax {
 
 			error_log( 'KTPWP Ajax: Field saved successfully - Order ID: ' . $order_id . ', Field: ' . $field_name . ', Value: ' . $field_value );
 
-			wp_send_json_success( array(
-				'message' => 'フィールドが正常に保存されました',
-				'field_name' => $field_name,
-				'field_value' => $field_value
-			) );
+			wp_send_json_success(
+                array(
+					'message' => 'フィールドが正常に保存されました',
+					'field_name' => $field_name,
+					'field_value' => $field_value,
+                )
+            );
 
 		} catch ( Exception $e ) {
 			error_log( 'KTPWP Ajax ajax_auto_save_field Error: ' . $e->getMessage() );
@@ -3080,33 +3103,33 @@ function ktpwp_ajax_get_invoice_candidates() {
 				}
 
 				// お支払い期日を計算
-				$today = current_time('Y-m-d');
-				$base_date = new DateTime($today);
+				$today = current_time( 'Y-m-d' );
+				$base_date = new DateTime( $today );
 				$payment_month = $client_info->payment_month;
 				$payment_day = $client_info->payment_day;
 				// 支払月加算
-				if ($payment_month === '今月') {
+				if ( $payment_month === '今月' ) {
 					// 何もしない
-				} elseif ($payment_month === '翌月') {
-					$base_date->modify('+1 month');
-				} elseif ($payment_month === '翌々月') {
-					$base_date->modify('+2 month');
+				} elseif ( $payment_month === '翌月' ) {
+					$base_date->modify( '+1 month' );
+				} elseif ( $payment_month === '翌々月' ) {
+					$base_date->modify( '+2 month' );
 				} else {
 					// その他→今月扱い
 				}
 				// 支払日セット
-				if ($payment_day === '末日') {
-					$due_date = $base_date->format('Y-m-t');
-				} elseif ($payment_day === '即日') {
+				if ( $payment_day === '末日' ) {
+					$due_date = $base_date->format( 'Y-m-t' );
+				} elseif ( $payment_day === '即日' ) {
 					$due_date = $today;
 				} else {
 					// 5日, 10日, ...
-					$day_num = intval($payment_day);
-					$due_date = $base_date->format('Y-m-') . str_pad($day_num, 2, '0', STR_PAD_LEFT);
+					$day_num = intval( $payment_day );
+					$due_date = $base_date->format( 'Y-m-' ) . str_pad( $day_num, 2, '0', STR_PAD_LEFT );
 					// 月の日数を超える場合は末日に補正
-					$last_day = $base_date->format('t');
-					if ($day_num > intval($last_day)) {
-						$due_date = $base_date->format('Y-m-t');
+					$last_day = $base_date->format( 't' );
+					if ( $day_num > intval( $last_day ) ) {
+						$due_date = $base_date->format( 'Y-m-t' );
 					}
 				}
 
@@ -3238,26 +3261,26 @@ function ktpwp_ajax_get_invoice_candidates() {
 
 	// 選択された部署情報を取得
 	$selected_department = null;
-	if (class_exists('KTPWP_Department_Manager')) {
-		$selected_department = KTPWP_Department_Manager::get_selected_department_by_client($client_id);
+	if ( class_exists( 'KTPWP_Department_Manager' ) ) {
+		$selected_department = KTPWP_Department_Manager::get_selected_department_by_client( $client_id );
 	}
 
 	// 部署選択がある場合の宛先表示を修正
 	$client_address_formatted = $full_address;
 	$client_contact_formatted = $contact_name;
-	
-	if ($selected_department) {
+
+	if ( $selected_department ) {
 		// 部署選択がある場合：会社名、部署名、担当者名を別々に表示
 		$client_address_formatted = $client_info->company_name;
-		$client_contact_formatted = $selected_department->department_name . "\n" . $selected_department->contact_person . " 様";
+		$client_contact_formatted = $selected_department->department_name . "\n" . $selected_department->contact_person . ' 様';
 	} else {
 		// 部署選択がない場合：現行のまま
 		// 住所情報が設定されていない場合は「未設定」は表示しない
-		if (empty(trim($full_address))) {
+		if ( empty( trim( $full_address ) ) ) {
 			$client_address_formatted = $client_info->company_name;
 		}
 	}
-	
+
 	$result = array(
 		'monthly_groups' => array_values( $monthly_groups ),
 		'total_orders'   => count( $filtered_orders ),
@@ -3268,7 +3291,7 @@ function ktpwp_ajax_get_invoice_candidates() {
 		'selected_department' => $selected_department ? array(
 			'department_name' => $selected_department->department_name,
 			'contact_person' => $selected_department->contact_person,
-			'email' => $selected_department->email
+			'email' => $selected_department->email,
 		) : null,
 		'company_info'   => $company_info_html,  // 会社情報を追加
 		'debug_info'     => array(
@@ -3289,64 +3312,64 @@ function ktpwp_ajax_get_invoice_candidates() {
  */
 function ktpwp_ajax_update_department_selection() {
 	// デバッグログ開始
-	if (defined('WP_DEBUG') && WP_DEBUG) {
-		error_log("KTPWP AJAX: ktpwp_ajax_update_department_selection called");
-		error_log("KTPWP AJAX: POST data: " . json_encode($_POST));
+	if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+		error_log( 'KTPWP AJAX: ktpwp_ajax_update_department_selection called' );
+		error_log( 'KTPWP AJAX: POST data: ' . json_encode( $_POST ) );
 	}
-	
+
 	// 権限チェック
-	if (!current_user_can('edit_posts') && !current_user_can('ktpwp_access')) {
-		if (defined('WP_DEBUG') && WP_DEBUG) {
-			error_log("KTPWP AJAX: Permission denied");
+	if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			error_log( 'KTPWP AJAX: Permission denied' );
 		}
-		wp_send_json_error(array('message' => '権限がありません'));
+		wp_send_json_error( array( 'message' => '権限がありません' ) );
 	}
 
 	// nonce検証
-	if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'ktp_department_nonce')) {
-		if (defined('WP_DEBUG') && WP_DEBUG) {
-			error_log("KTPWP AJAX: Nonce verification failed");
+	if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( $_POST['nonce'], 'ktp_department_nonce' ) ) {
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			error_log( 'KTPWP AJAX: Nonce verification failed' );
 		}
-		wp_send_json_error(array('message' => 'セキュリティチェックに失敗しました'));
+		wp_send_json_error( array( 'message' => 'セキュリティチェックに失敗しました' ) );
 	}
 
-	$department_id = isset($_POST['department_id']) ? intval($_POST['department_id']) : 0;
-	$is_selected = isset($_POST['is_selected']) ? ($_POST['is_selected'] === 'true' || $_POST['is_selected'] === true) : false;
+	$department_id = isset( $_POST['department_id'] ) ? intval( $_POST['department_id'] ) : 0;
+	$is_selected = isset( $_POST['is_selected'] ) ? ( $_POST['is_selected'] === 'true' || $_POST['is_selected'] === true ) : false;
 
-	if (defined('WP_DEBUG') && WP_DEBUG) {
-		error_log("KTPWP AJAX: department_id: {$department_id}, is_selected: " . ($is_selected ? 'true' : 'false'));
+	if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+		error_log( "KTPWP AJAX: department_id: {$department_id}, is_selected: " . ( $is_selected ? 'true' : 'false' ) );
 	}
 
-	if (empty($department_id)) {
-		if (defined('WP_DEBUG') && WP_DEBUG) {
-			error_log("KTPWP AJAX: department_id is empty");
+	if ( empty( $department_id ) ) {
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			error_log( 'KTPWP AJAX: department_id is empty' );
 		}
-		wp_send_json_error(array('message' => '部署IDが指定されていません'));
+		wp_send_json_error( array( 'message' => '部署IDが指定されていません' ) );
 	}
 
-	if (class_exists('KTPWP_Department_Manager')) {
-		if (defined('WP_DEBUG') && WP_DEBUG) {
-			error_log("KTPWP AJAX: Calling KTPWP_Department_Manager::update_department_selection");
+	if ( class_exists( 'KTPWP_Department_Manager' ) ) {
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			error_log( 'KTPWP AJAX: Calling KTPWP_Department_Manager::update_department_selection' );
 		}
-		
-		$result = KTPWP_Department_Manager::update_department_selection($department_id, $is_selected);
-		
-		if ($result) {
-			if (defined('WP_DEBUG') && WP_DEBUG) {
-				error_log("KTPWP AJAX: update_department_selection successful");
+
+		$result = KTPWP_Department_Manager::update_department_selection( $department_id, $is_selected );
+
+		if ( $result ) {
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( 'KTPWP AJAX: update_department_selection successful' );
 			}
-			wp_send_json_success(array('message' => '部署選択状態を更新しました'));
+			wp_send_json_success( array( 'message' => '部署選択状態を更新しました' ) );
 		} else {
-			if (defined('WP_DEBUG') && WP_DEBUG) {
-				error_log("KTPWP AJAX: update_department_selection failed");
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( 'KTPWP AJAX: update_department_selection failed' );
 			}
-			wp_send_json_error(array('message' => '部署選択状態の更新に失敗しました'));
+			wp_send_json_error( array( 'message' => '部署選択状態の更新に失敗しました' ) );
 		}
 	} else {
-		if (defined('WP_DEBUG') && WP_DEBUG) {
-			error_log("KTPWP AJAX: KTPWP_Department_Manager class not found");
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			error_log( 'KTPWP AJAX: KTPWP_Department_Manager class not found' );
 		}
-		wp_send_json_error(array('message' => '部署管理クラスが見つかりません'));
+		wp_send_json_error( array( 'message' => '部署管理クラスが見つかりません' ) );
 	}
 }
 
@@ -3355,34 +3378,34 @@ function ktpwp_ajax_update_department_selection() {
  */
 function ktpwp_ajax_add_department() {
 	// 権限チェック
-	if (!current_user_can('edit_posts') && !current_user_can('ktpwp_access')) {
-		wp_send_json_error(array('message' => '権限がありません'));
+	if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
+		wp_send_json_error( array( 'message' => '権限がありません' ) );
 	}
 
 	// nonce検証
-	if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'ktp_department_nonce')) {
-		wp_send_json_error(array('message' => 'セキュリティチェックに失敗しました'));
+	if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( $_POST['nonce'], 'ktp_department_nonce' ) ) {
+		wp_send_json_error( array( 'message' => 'セキュリティチェックに失敗しました' ) );
 	}
 
-	$client_id = isset($_POST['client_id']) ? intval($_POST['client_id']) : 0;
-	$department_name = isset($_POST['department_name']) ? sanitize_text_field($_POST['department_name']) : '';
-	$contact_person = isset($_POST['contact_person']) ? sanitize_text_field($_POST['contact_person']) : '';
-	$email = isset($_POST['email']) ? sanitize_email($_POST['email']) : '';
+	$client_id = isset( $_POST['client_id'] ) ? intval( $_POST['client_id'] ) : 0;
+	$department_name = isset( $_POST['department_name'] ) ? sanitize_text_field( $_POST['department_name'] ) : '';
+	$contact_person = isset( $_POST['contact_person'] ) ? sanitize_text_field( $_POST['contact_person'] ) : '';
+	$email = isset( $_POST['email'] ) ? sanitize_email( $_POST['email'] ) : '';
 
-	if (empty($client_id) || empty($contact_person) || empty($email)) {
-		wp_send_json_error(array('message' => '担当者名とメールアドレスを入力してください'));
+	if ( empty( $client_id ) || empty( $contact_person ) || empty( $email ) ) {
+		wp_send_json_error( array( 'message' => '担当者名とメールアドレスを入力してください' ) );
 	}
 
-	if (class_exists('KTPWP_Department_Manager')) {
-		$result = KTPWP_Department_Manager::add_department($client_id, $department_name, $contact_person, $email);
-		
-		if ($result) {
-			wp_send_json_success(array('message' => '部署を追加しました'));
+	if ( class_exists( 'KTPWP_Department_Manager' ) ) {
+		$result = KTPWP_Department_Manager::add_department( $client_id, $department_name, $contact_person, $email );
+
+		if ( $result ) {
+			wp_send_json_success( array( 'message' => '部署を追加しました' ) );
 		} else {
-			wp_send_json_error(array('message' => '部署の追加に失敗しました'));
+			wp_send_json_error( array( 'message' => '部署の追加に失敗しました' ) );
 		}
 	} else {
-		wp_send_json_error(array('message' => '部署管理クラスが見つかりません'));
+		wp_send_json_error( array( 'message' => '部署管理クラスが見つかりません' ) );
 	}
 }
 
@@ -3391,30 +3414,30 @@ function ktpwp_ajax_add_department() {
  */
 function ktpwp_ajax_delete_department() {
 	// 権限チェック
-	if (!current_user_can('edit_posts') && !current_user_can('ktpwp_access')) {
-		wp_send_json_error(array('message' => '権限がありません'));
+	if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
+		wp_send_json_error( array( 'message' => '権限がありません' ) );
 	}
 
 	// nonce検証
-	if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'ktp_department_nonce')) {
-		wp_send_json_error(array('message' => 'セキュリティチェックに失敗しました'));
+	if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( $_POST['nonce'], 'ktp_department_nonce' ) ) {
+		wp_send_json_error( array( 'message' => 'セキュリティチェックに失敗しました' ) );
 	}
 
-	$department_id = isset($_POST['department_id']) ? intval($_POST['department_id']) : 0;
+	$department_id = isset( $_POST['department_id'] ) ? intval( $_POST['department_id'] ) : 0;
 
-	if (empty($department_id)) {
-		wp_send_json_error(array('message' => '部署IDが指定されていません'));
+	if ( empty( $department_id ) ) {
+		wp_send_json_error( array( 'message' => '部署IDが指定されていません' ) );
 	}
 
-	if (class_exists('KTPWP_Department_Manager')) {
-		$result = KTPWP_Department_Manager::delete_department($department_id);
-		
-		if ($result) {
-			wp_send_json_success(array('message' => '部署を削除しました'));
+	if ( class_exists( 'KTPWP_Department_Manager' ) ) {
+		$result = KTPWP_Department_Manager::delete_department( $department_id );
+
+		if ( $result ) {
+			wp_send_json_success( array( 'message' => '部署を削除しました' ) );
 		} else {
-			wp_send_json_error(array('message' => '部署の削除に失敗しました'));
+			wp_send_json_error( array( 'message' => '部署の削除に失敗しました' ) );
 		}
 	} else {
-		wp_send_json_error(array('message' => '部署管理クラスが見つかりません'));
+		wp_send_json_error( array( 'message' => '部署管理クラスが見つかりません' ) );
 	}
 }

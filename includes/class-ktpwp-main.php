@@ -106,8 +106,8 @@ class KTPWP_Main {
      * コンストラクタ
      */
     private function __construct() {
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('KTPWP_Main: Constructor called.');
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP_Main: Constructor called.' );
         }
         $this->init_hooks();
         $this->init(); // Call init() directly
@@ -117,8 +117,8 @@ class KTPWP_Main {
      * フック初期化
      */
     private function init_hooks() {
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('KTPWP_Main: init_hooks called.');
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP_Main: init_hooks called.' );
         }
         // プラグイン初期化
         // add_action( 'plugins_loaded', array( $this, 'init' ) ); // Removed this line
@@ -131,8 +131,8 @@ class KTPWP_Main {
      * プラグイン初期化
      */
     public function init() {
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('KTPWP_Main: init() CALLED.');
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP_Main: init() CALLED.' );
         }
         // 専門クラスの初期化
         $this->init_components();
@@ -153,10 +153,10 @@ class KTPWP_Main {
         // AJAX機能は自動的に初期化される（シングルトンパターン）
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
             error_log( 'KTPWP_Main: init() processing, KTPWP_Ajax instance should be available now if initialized in init_components.' );
-            if (isset($this->ajax) && $this->ajax instanceof KTPWP_Ajax) {
-                error_log('KTPWP_Main: KTPWP_Ajax instance IS available.');
+            if ( isset( $this->ajax ) && $this->ajax instanceof KTPWP_Ajax ) {
+                error_log( 'KTPWP_Main: KTPWP_Ajax instance IS available.' );
             } else {
-                error_log('KTPWP_Main: KTPWP_Ajax instance IS NOT available after init_components.');
+                error_log( 'KTPWP_Main: KTPWP_Ajax instance IS NOT available after init_components.' );
             }
         }
 
@@ -171,60 +171,58 @@ class KTPWP_Main {
      * 専門クラスコンポーネントの初期化
      */
     private function init_components() {
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('KTPWP_Main: init_components() CALLED.');
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP_Main: init_components() CALLED.' );
         }
 
         // KTPWP_Ajax は常に初期化する
-        if (class_exists('KTPWP_Ajax')) {
+        if ( class_exists( 'KTPWP_Ajax' ) ) {
             $this->ajax = KTPWP_Ajax::get_instance();
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('KTPWP_Main: KTPWP_Ajax initialized.');
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP_Main: KTPWP_Ajax initialized.' );
             }
         }
 
         // KTPWP_Assets も常に初期化し、フックを登録する
         // アセットを実際にエンキューするかの判断は KTPWP_Assets クラス内で行う
-        if (class_exists('KTPWP_Assets')) {
-            if (method_exists('KTPWP_Assets', 'get_instance')) {
+        if ( class_exists( 'KTPWP_Assets' ) ) {
+            if ( method_exists( 'KTPWP_Assets', 'get_instance' ) ) {
                 $this->assets = KTPWP_Assets::get_instance(); // シングルトンの場合
             } else {
                 $this->assets = new KTPWP_Assets(); // 通常のインスタンス化
             }
             // KTPWP_Assets の init メソッドを呼び出してフックを登録
-            if (isset($this->assets) && method_exists($this->assets, 'init')) {
+            if ( isset( $this->assets ) && method_exists( $this->assets, 'init' ) ) {
                 $this->assets->init();
             }
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('KTPWP_Main: KTPWP_Assets instance created and its init() method called.');
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP_Main: KTPWP_Assets instance created and its init() method called.' );
             }
         }
 
         // 編集者権限に依存するコンポーネントの初期化
-        if (!current_user_can('edit_posts')) {
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('KTPWP_Main: User does not have edit_posts capability. Initializing only non-editor components.');
+        if ( ! current_user_can( 'edit_posts' ) ) {
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP_Main: User does not have edit_posts capability. Initializing only non-editor components.' );
             }
             // Contact Form 7 連携は権限に関係なく初期化する（フロントエンドで必要 な場合があるため）
-            if (class_exists('KTPWP_Contact_Form')) {
-                if (defined('WP_DEBUG') && WP_DEBUG) {
-                    error_log('KTPWP_Main: KTPWP_Contact_Form class found, initializing for non-editor...');
+            if ( class_exists( 'KTPWP_Contact_Form' ) ) {
+                if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                    error_log( 'KTPWP_Main: KTPWP_Contact_Form class found, initializing for non-editor...' );
                 }
                 $this->contact_form = KTPWP_Contact_Form::get_instance();
-                if (defined('WP_DEBUG') && WP_DEBUG) {
-                    error_log('KTPWP_Main: KTPWP_Contact_Form initialized for non-editor.');
+                if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                    error_log( 'KTPWP_Main: KTPWP_Contact_Form initialized for non-editor.' );
                 }
-            } else {
-                if (defined('WP_DEBUG') && WP_DEBUG) {
-                    error_log('KTPWP_Main: KTPWP_Contact_Form class not found (non-editor path).');
-                }
+            } elseif ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                    error_log( 'KTPWP_Main: KTPWP_Contact_Form class not found (non-editor path).' );
             }
             return; // edit_posts 権限がない場合は、ここで処理を終了
         }
 
         // --- edit_posts 権限があるユーザー向けの初期化 ---
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('KTPWP_Main: User has edit_posts capability. Initializing editor-specific components.');
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP_Main: User has edit_posts capability. Initializing editor-specific components.' );
         }
 
         // アセット管理は既に上で初期化済み
@@ -241,10 +239,10 @@ class KTPWP_Main {
 
         // Contact Form 7連携の初期化 (edit_posts 権限があるユーザー向け)
         // 上の non-editor パスで return されるため、ここは edit_posts 権限がある場合のみ実行される
-        if (class_exists('KTPWP_Contact_Form')) {
+        if ( class_exists( 'KTPWP_Contact_Form' ) ) {
             $this->contact_form = KTPWP_Contact_Form::get_instance();
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('KTPWP_Main: KTPWP_Contact_Form initialized for editor.');
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP_Main: KTPWP_Contact_Form initialized for editor.' );
             }
         }
     }
@@ -273,36 +271,36 @@ class KTPWP_Main {
      */
     public function activate() {
         // 新規インストール判定クラスを読み込み
-        if (!class_exists('KTPWP_Fresh_Install_Detector')) {
+        if ( ! class_exists( 'KTPWP_Fresh_Install_Detector' ) ) {
             require_once KANTANPRO_PLUGIN_DIR . 'includes/class-ktpwp-fresh-install-detector.php';
         }
 
         // 新規インストール判定と初期化
-        if (class_exists('KTPWP_Fresh_Install_Detector')) {
+        if ( class_exists( 'KTPWP_Fresh_Install_Detector' ) ) {
             $fresh_detector = KTPWP_Fresh_Install_Detector::get_instance();
-            
-            if ($fresh_detector->is_fresh_install()) {
+
+            if ( $fresh_detector->is_fresh_install() ) {
                 // 新規インストール時：基本構造のみで初期化
                 $fresh_detector->initialize_fresh_install();
-                
-                if (defined('WP_DEBUG') && WP_DEBUG) {
-                    error_log("KTPWP: 新規インストール環境 - 基本構造で初期化完了");
+
+                if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                    error_log( 'KTPWP: 新規インストール環境 - 基本構造で初期化完了' );
                 }
             } else {
                 // 既存環境：従来の初期化処理
-                if ($this->database) {
+                if ( $this->database ) {
                     $this->database->setup_tables();
                 } else {
                     $this->create_tables();
                 }
-                
-                if (defined('WP_DEBUG') && WP_DEBUG) {
-                    error_log("KTPWP: 既存環境 - 通常の初期化処理実行");
+
+                if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                    error_log( 'KTPWP: 既存環境 - 通常の初期化処理実行' );
                 }
             }
         } else {
             // フォールバック: 従来の方法
-            if ($this->database) {
+            if ( $this->database ) {
                 $this->database->setup_tables();
             } else {
                 $this->create_tables();
@@ -310,7 +308,7 @@ class KTPWP_Main {
         }
 
         // supplier_idカラム自動追加（コスト項目テーブル）
-        if (class_exists('KTPWP_Order_Items')) {
+        if ( class_exists( 'KTPWP_Order_Items' ) ) {
             $order_items = KTPWP_Order_Items::get_instance();
             $order_items->add_supplier_id_column_if_missing();
         }

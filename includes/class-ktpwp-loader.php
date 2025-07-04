@@ -1,7 +1,7 @@
 <?php
 /**
  * クラスローダークラス
- * 
+ *
  * プラグインの各クラスファイルの読み込みを管理
  *
  * @package KTPWP
@@ -17,31 +17,31 @@ if ( ! defined( 'ABSPATH' ) ) {
  * クラスローダークラス
  */
 class KTPWP_Loader {
-    
+
     /**
      * シングルトンインスタンス
-     * 
+     *
      * @var KTPWP_Loader|null
      */
     private static $instance = null;
-    
+
     /**
      * 自動読み込み対象クラスマップ
-     * 
+     *
      * @var array
      */
     private $class_map = array();
-    
+
     /**
      * 必須ファイルリスト
-     * 
+     *
      * @var array
      */
     private $required_files = array();
-    
+
     /**
      * シングルトンインスタンス取得
-     * 
+     *
      * @return KTPWP_Loader
      */
     public static function get_instance() {
@@ -50,7 +50,7 @@ class KTPWP_Loader {
         }
         return self::$instance;
     }
-    
+
     /**
      * コンストラクタ
      */
@@ -58,7 +58,7 @@ class KTPWP_Loader {
         $this->setup_class_map();
         $this->setup_required_files();
     }
-    
+
     /**
      * 初期化
      */
@@ -66,7 +66,7 @@ class KTPWP_Loader {
         $this->autoload_classes();
         $this->load_required_files();
     }
-    
+
     /**
      * クラスマップの設定
      */
@@ -107,7 +107,7 @@ class KTPWP_Loader {
             'KTPWP_Client_UI'       => 'includes/class-ktpwp-client-ui.php',
         );
     }
-    
+
     /**
      * 必須ファイルリストの設定
      */
@@ -116,7 +116,7 @@ class KTPWP_Loader {
             'includes/class-ktp-settings.php',
         );
     }
-    
+
     /**
      * クラス自動読み込み
      */
@@ -130,7 +130,7 @@ class KTPWP_Loader {
             }
         }
     }
-    
+
     /**
      * 必須ファイルの読み込み
      */
@@ -142,10 +142,10 @@ class KTPWP_Loader {
             }
         }
     }
-    
+
     /**
      * 特定のクラスファイルを読み込み
-     * 
+     *
      * @param string $class_name クラス名
      * @return bool 読み込み成功の可否
      */
@@ -153,7 +153,7 @@ class KTPWP_Loader {
         if ( class_exists( $class_name ) ) {
             return true;
         }
-        
+
         if ( isset( $this->class_map[ $class_name ] ) ) {
             $file_path = KANTANPRO_PLUGIN_DIR . $this->class_map[ $class_name ];
             if ( file_exists( $file_path ) ) {
@@ -161,13 +161,13 @@ class KTPWP_Loader {
                 return class_exists( $class_name );
             }
         }
-        
+
         return false;
     }
-    
+
     /**
      * 特定のファイルを読み込み
-     * 
+     *
      * @param string $file_path ファイルパス（プラグインディレクトリからの相対パス）
      * @return bool 読み込み成功の可否
      */
@@ -179,20 +179,20 @@ class KTPWP_Loader {
         }
         return false;
     }
-    
+
     /**
      * クラスマップにクラスを追加
-     * 
+     *
      * @param string $class_name クラス名
      * @param string $file_path ファイルパス
      */
     public function add_class( $class_name, $file_path ) {
         $this->class_map[ $class_name ] = $file_path;
     }
-    
+
     /**
      * 必須ファイルリストにファイルを追加
-     * 
+     *
      * @param string $file_path ファイルパス
      */
     public function add_required_file( $file_path ) {
@@ -200,10 +200,10 @@ class KTPWP_Loader {
             $this->required_files[] = $file_path;
         }
     }
-    
+
     /**
      * 読み込み済みクラス一覧を取得
-     * 
+     *
      * @return array
      */
     public function get_loaded_classes() {

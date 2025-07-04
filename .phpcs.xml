@@ -1,0 +1,82 @@
+<?xml version="1.0"?>
+<ruleset name="WordPress Plugin Coding Standards">
+    <description>WordPress Plugin Coding Standards</description>
+
+    <!-- 検査対象のファイル -->
+    <file>.</file>
+
+    <!-- 除外するファイル・ディレクトリ -->
+    <exclude-pattern>*/vendor/*</exclude-pattern>
+    <exclude-pattern>*/node_modules/*</exclude-pattern>
+    <exclude-pattern>*/tests/*</exclude-pattern>
+    <exclude-pattern>*/test-*</exclude-pattern>
+    <exclude-pattern>*/debug-*</exclude-pattern>
+    <exclude-pattern>*/wp-cli*</exclude-pattern>
+    <exclude-pattern>*/migrate-*</exclude-pattern>
+    <exclude-pattern>*/fix-*</exclude-pattern>
+    <exclude-pattern>*/check-*</exclude-pattern>
+    <exclude-pattern>*/auto-*</exclude-pattern>
+    <exclude-pattern>*/manual-*</exclude-pattern>
+    <exclude-pattern>*/direct-*</exclude-pattern>
+    <exclude-pattern>*/clear-*</exclude-pattern>
+    <exclude-pattern>*/admin-migrate.php</exclude-pattern>
+    <exclude-pattern>*/setup-wp-cli.sh</exclude-pattern>
+    <exclude-pattern>*/*.md</exclude-pattern>
+    <exclude-pattern>*/*.html</exclude-pattern>
+    <exclude-pattern>*/*.txt</exclude-pattern>
+    <exclude-pattern>*/*.json</exclude-pattern>
+    <exclude-pattern>*/*.lock</exclude-pattern>
+    <exclude-pattern>*/*.yml</exclude-pattern>
+    <exclude-pattern>*/*.sh</exclude-pattern>
+    <exclude-pattern>*/*.phar</exclude-pattern>
+    <exclude-pattern>*/.git/*</exclude-pattern>
+    <exclude-pattern>*/images/*</exclude-pattern>
+    <exclude-pattern>*/css/*</exclude-pattern>
+    <exclude-pattern>*/js/*</exclude-pattern>
+
+    <!-- 使用するコーディング標準 -->
+    <rule ref="WordPress">
+        <!-- 短い配列記法を許可 -->
+        <exclude name="Generic.Arrays.DisallowShortArraySyntax"/>
+        
+        <!-- ファイル名の規則を緩和 -->
+        <exclude name="WordPress.Files.FileName.InvalidClassFileName"/>
+        <exclude name="WordPress.Files.FileName.NotHyphenatedLowercase"/>
+        
+        <!-- インデントの規則を調整 -->
+        <exclude name="Generic.WhiteSpace.DisallowSpaceIndent"/>
+        
+        <!-- 変数名の規則を緩和 -->
+        <exclude name="WordPress.NamingConventions.ValidVariableName.VariableNotSnakeCase"/>
+        <exclude name="WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase"/>
+        
+        <!-- 直接的なデータベースクエリの警告を無効化（必要に応じて） -->
+        <exclude name="WordPress.DB.DirectDatabaseQuery.DirectQuery"/>
+        <exclude name="WordPress.DB.DirectDatabaseQuery.NoCaching"/>
+        
+        <!-- エスケープ処理の警告を調整 -->
+        <exclude name="WordPress.Security.EscapeOutput.OutputNotEscaped"/>
+    </rule>
+
+    <!-- PHP 7.4以降の機能を許可 -->
+    <config name="testVersion" value="7.4-"/>
+
+    <!-- インデントをスペース4つに設定 -->
+    <arg name="tab-width" value="4"/>
+
+    <!-- 進行状況を表示 -->
+    <arg value="p"/>
+
+    <!-- カラー出力を有効化 -->
+    <arg name="colors"/>
+
+    <!-- 並列処理を有効化 -->
+    <arg value="s"/>
+
+    <!-- 拡張子を指定 -->
+    <arg name="extensions" value="php"/>
+
+    <!-- エラーと警告の両方を表示 -->
+    <arg name="warning-severity" value="0"/>
+    <arg name="error-severity" value="1"/>
+</ruleset> 

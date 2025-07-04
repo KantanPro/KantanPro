@@ -38,7 +38,7 @@ class KTPWP_Nonce_Manager {
      * @return KTPWP_Nonce_Manager
      */
     public static function get_instance() {
-        if (self::$instance === null) {
+        if ( self::$instance === null ) {
             self::$instance = new self();
         }
         return self::$instance;
@@ -67,10 +67,10 @@ class KTPWP_Nonce_Manager {
      * @return string ナンス値
      */
     public function get_staff_chat_nonce() {
-        if (!isset(self::$nonce_cache['staff_chat'])) {
-            self::$nonce_cache['staff_chat'] = wp_create_nonce('ktpwp_staff_chat_nonce');
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('KTPWP Nonce Manager: Created unified staff_chat nonce: ' . self::$nonce_cache['staff_chat']);
+        if ( ! isset( self::$nonce_cache['staff_chat'] ) ) {
+            self::$nonce_cache['staff_chat'] = wp_create_nonce( 'ktpwp_staff_chat_nonce' );
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP Nonce Manager: Created unified staff_chat nonce: ' . self::$nonce_cache['staff_chat'] );
             }
         }
         return self::$nonce_cache['staff_chat'];
@@ -83,10 +83,10 @@ class KTPWP_Nonce_Manager {
      */
     public function get_unified_ajax_config() {
         return array(
-            'ajax_url' => admin_url('admin-ajax.php'),
+            'ajax_url' => admin_url( 'admin-ajax.php' ),
             'nonces' => array(
-                'staff_chat' => $this->get_staff_chat_nonce()
-            )
+                'staff_chat' => $this->get_staff_chat_nonce(),
+            ),
         );
     }
 
@@ -95,8 +95,8 @@ class KTPWP_Nonce_Manager {
      */
     public function clear_cache() {
         self::$nonce_cache = array();
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('KTPWP Nonce Manager: Cache cleared');
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP Nonce Manager: Cache cleared' );
         }
     }
 }

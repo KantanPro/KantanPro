@@ -17,11 +17,11 @@ class KTPWP_Setting_Template {
      * Generate template preview with placeholder replacements
      *
      * @param string $template_content The template content
-     * @param array $customer_data Customer data for replacements
+     * @param array  $customer_data Customer data for replacements
      * @return string Processed template preview
      */
     public static function generate_preview( $template_content, $customer_data ) {
-        $replace_words = [
+        $replace_words = array(
             '_%customer%_' => $customer_data['customer'] ?? 'ダミー顧客名',
             '_%postal_code%_' => $customer_data['postal_code'] ?? '123-4567',
             '_%prefecture%_' => $customer_data['prefecture'] ?? '東京都',
@@ -29,10 +29,10 @@ class KTPWP_Setting_Template {
             '_%address%_' => $customer_data['address'] ?? '1-2-3',
             '_%building%_' => $customer_data['building'] ?? 'サンプルビル',
             '_%user_name%_' => $customer_data['user_name'] ?? '担当 太郎',
-        ];
+        );
 
         // nullや非文字列の場合は空文字列に変換
-        $template_content = is_string($template_content) ? $template_content : '';
+        $template_content = is_string( $template_content ) ? $template_content : '';
 
         return strtr( $template_content, $replace_words );
     }
@@ -49,8 +49,8 @@ class KTPWP_Setting_Template {
 
         $result = $wpdb->update(
             $table_name,
-            [ 'template_content' => $new_template_content ],
-            [ 'id' => 1 ]
+            array( 'template_content' => $new_template_content ),
+            array( 'id' => 1 )
         );
 
         return $result !== false;

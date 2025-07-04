@@ -61,14 +61,13 @@ class KTPWP {
      * マジックメソッド: 存在しないメソッドはメインクラスに移譲
      *
      * @param string $name メソッド名
-     * @param array $arguments 引数
+     * @param array  $arguments 引数
      * @return mixed
      */
-    public function __call($name, $arguments) {
-        if (method_exists($this->main, $name)) {
-            return call_user_func_array(array($this->main, $name), $arguments);
+    public function __call( $name, $arguments ) {
+        if ( method_exists( $this->main, $name ) ) {
+            return call_user_func_array( array( $this->main, $name ), $arguments );
         }
-
 
         return null;
     }
@@ -77,15 +76,14 @@ class KTPWP {
      * マジックメソッド: 存在しないスタティックメソッドはメインクラスに移譲
      *
      * @param string $name メソッド名
-     * @param array $arguments 引数
+     * @param array  $arguments 引数
      * @return mixed
      */
-    public static function __callStatic($name, $arguments) {
+    public static function __callStatic( $name, $arguments ) {
         $instance = KTPWP_Main::get_instance();
-        if (method_exists($instance, $name)) {
-            return call_user_func_array(array($instance, $name), $arguments);
+        if ( method_exists( $instance, $name ) ) {
+            return call_user_func_array( array( $instance, $name ), $arguments );
         }
-
 
         return null;
     }
@@ -96,11 +94,10 @@ class KTPWP {
      * @param string $name プロパティ名
      * @return mixed
      */
-    public function __get($name) {
-        if (property_exists($this->main, $name)) {
+    public function __get( $name ) {
+        if ( property_exists( $this->main, $name ) ) {
             return $this->main->$name;
         }
-
 
         return null;
     }

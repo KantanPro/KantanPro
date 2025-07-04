@@ -23,49 +23,49 @@ require_once plugin_dir_path( __FILE__ ) . 'class-ktpwp-graph-renderer.php';
 
 if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 
-/**
- * Report class for managing reports and analytics
- *
- * @since 1.0.0
- */
-class KTPWP_Report_Class {
+	/**
+	 * Report class for managing reports and analytics
+	 *
+	 * @since 1.0.0
+	 */
+	class KTPWP_Report_Class {
 
-    /**
-     * Constructor
-     *
-     * @since 1.0.0
-     */
-    public function __construct() {
-        // Constructor initialization
-    }
-    
-    /**
-     * Display report tab view
-     *
-     * @since 1.0.0
-     * @param string $tab_name Tab name
-     * @return void
-     */
-    public function Report_Tab_View( $tab_name ) {
-        if ( empty( $tab_name ) ) {
-            error_log( 'KTPWP: Empty tab_name provided to Report_Tab_View method' );
-            return;
-        }
+		/**
+		 * Constructor
+		 *
+		 * @since 1.0.0
+		 */
+		public function __construct() {
+			// Constructor initialization
+		}
 
-        $activation_key = get_option( 'ktp_activation_key' );
+		/**
+		 * Display report tab view
+		 *
+		 * @since 1.0.0
+		 * @param string $tab_name Tab name
+		 * @return void
+		 */
+		public function Report_Tab_View( $tab_name ) {
+			if ( empty( $tab_name ) ) {
+				error_log( 'KTPWP: Empty tab_name provided to Report_Tab_View method' );
+				return;
+			}
 
-        $ui_generator = new KTPWP_Ui_Generator();
-        $graph_renderer = new KTPWP_Graph_Renderer();
+			$activation_key = get_option( 'ktp_activation_key' );
 
-        $content = $ui_generator->generate_controller();
+			$ui_generator = new KTPWP_Ui_Generator();
+			$graph_renderer = new KTPWP_Graph_Renderer();
 
-        if ( empty( $activation_key ) ) {
-            $content .= $graph_renderer->render_dummy_graph();
-        } else {
-            $content .= $graph_renderer->render_graphs();
-        }
+			$content = $ui_generator->generate_controller();
 
-        return $content;
-    }
-}
+			if ( empty( $activation_key ) ) {
+				$content .= $graph_renderer->render_dummy_graph();
+			} else {
+				$content .= $graph_renderer->render_graphs();
+			}
+
+			return $content;
+		}
+	}
 } // class_exists
