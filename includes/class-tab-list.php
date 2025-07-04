@@ -419,7 +419,7 @@ class Kantan_List_Class {
                 
                 // 完了日カレンダーを納期カレンダーの右側に追加
                 $content .= "<div class='completion-input-wrapper'>";
-                $content .= "<span class='completion-label'>完了日</span>";
+                $content .= "<span class='completion-label'><span class='completion-label-desktop'>完了日</span><span class='completion-label-mobile'>完了</span></span>";
                 $content .= "<input type='date' name='completion_date_{$order_id}' value='{$completion_date}' class='completion-date-input' data-order-id='{$order_id}' data-field='completion_date' placeholder='完了日' title='完了日'>";
                 $content .= "</div>";
                 

@@ -88,6 +88,16 @@
   display: inline-block;
 }
 
+/* デスクトップ用ラベル（デフォルトで表示） */
+.completion-label-desktop {
+  display: inline;
+}
+
+/* モバイル用ラベル（デフォルトで非表示） */
+.completion-label-mobile {
+  display: none;
+}
+
 /* 完了日入力ラッパー用のスタイル */
 .completion-input-wrapper {
   display: flex;
@@ -479,6 +489,15 @@ li.ktp_work_list_item {
 
   .completion-label {
     font-size: 11px;
+  }
+
+  /* モバイル表示時にラベルを切り替え（仕事リストのみ） */
+  .ktp_work_list_item .completion-label-desktop {
+    display: none;
+  }
+
+  .ktp_work_list_item .completion-label-mobile {
+    display: inline;
   }
 
   .ktp_work_list_item form::before {
