@@ -454,25 +454,36 @@ class Kntan_Order_Class {
                     }
 
                     $to = '';
-                    if ($client && !empty($client->email)) {
-                        // メールアドレスの詳細な検証（強化版） - 表示用と同じロジック
-                        $email_raw = $client->email ?? '';
+                    $selected_department_email = '';
+                    
+                    // 選択された部署のメールアドレスを取得
+                    if (class_exists('KTPWP_Department_Manager') && !empty($order->client_id)) {
+                        // 選択された部署のメールアドレスを取得（新しい方式）
+                        $selected_department_email = KTPWP_Department_Manager::get_selected_department_email_new($order->client_id);
+                    }
+                    
+                    // 選択された部署のメールアドレスを優先使用
+                    if (!empty($selected_department_email)) {
+                        $to = sanitize_email($selected_department_email);
+                    } else {
+                        // 選択された部署がない場合はメインメールアドレスを使用
+                        if ($client && !empty($client->email)) {
+                            // メールアドレスの詳細な検証（強化版） - 表示用と同じロジック
+                            $email_raw = $client->email ?? '';
 
-                        // シンプルなメールアドレス検証（修正版）
-                        // 過度に厳格な検証が問題の原因だったため、より寛容なロジックに変更
-                        $email = trim($email_raw);
+                            // シンプルなメールアドレス検証（修正版）
+                            // 過度に厳格な検証が問題の原因だったため、より寛容なロジックに変更
+                            $email = trim($email_raw);
 
-                        // 基本的な制御文字のみ除去（最小限）
-                        $email = str_replace(["\0", "\r", "\n", "\t"], '', $email);
+                            // 基本的な制御文字のみ除去（最小限）
+                            $email = str_replace(["\0", "\r", "\n", "\t"], '', $email);
 
-                        // Step 3と4は削除（厳しすぎて有効なメールアドレスが無効になっていた）
+                            // 最終検証のみ実行
+                            $is_valid = !empty($email) && filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
 
-                        // 最終検証のみ実行
-                        $is_valid = !empty($email) && filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
-
-                        if ($is_valid) {
-                            $to = sanitize_email($email);
-                        } else {
+                            if ($is_valid) {
+                                $to = sanitize_email($email);
+                            }
                         }
                     }
 
@@ -1336,7 +1347,7 @@ $content .= '</form>';
                 } else {
                     $client_id_display = '（顧客ID未設定）';
                 }
-                $content .= '<div>会社名：<span id="order_customer_name">' . esc_html($order_data->customer_name) . '</span> <span class="client-id" style="color:#666;font-size:0.9em;">' . $client_id_display . '</span></div>';
+                $content .= '<div><span id="order_customer_name">' . esc_html($order_data->customer_name) . '</span> <span class="client-id" style="color:#666;font-size:0.9em;">' . $client_id_display . '</span></div>';
                 // 担当者名の横に得意先メールアドレスのmailtoリンク（あれば）
                 $client_email = '';
                 $client = null;
@@ -1352,14 +1363,25 @@ $content .= '</form>';
                         $order_data->customer_name, $order_data->user_name));
                 }
 
+                // 部署選択がある場合の担当者名表示を修正
+                $user_display_name = esc_html($order_data->user_name);
+                
+                if (class_exists('KTPWP_Department_Manager') && !empty($order_data->client_id)) {
+                    $selected_department = KTPWP_Department_Manager::get_selected_department_by_client($order_data->client_id);
+                    if ($selected_department) {
+                        // 部署選択がある場合：部署名 担当者名の形式で表示
+                        $user_display_name = esc_html($selected_department->department_name) . ' ' . esc_html($selected_department->contact_person);
+                    }
+                }
+                
                 if ($client && !empty($client->email)) {
                     $client_email = esc_attr($client->email);
-                    $content .= '<div>担当者名：<span id="order_user_name">' . esc_html($order_data->user_name) . '</span>';
+                    $content .= '<div><span id="order_user_name">' . $user_display_name . '</span>';
                     $content .= ' <a href="mailto:' . $client_email . '" style="margin-left:8px;vertical-align:middle;" title="メール送信">';
                     $content .= '<span class="material-symbols-outlined" style="font-size:18px;vertical-align:middle;color:#2196f3;">mail</span>';
                     $content .= '</a></div>';
                 } else {
-                    $content .= '<div>担当者名：<span id="order_user_name">' . esc_html($order_data->user_name) . '</span></div>';
+                    $content .= '<div><span id="order_user_name">' . $user_display_name . '</span></div>';
                 }
                 // 作成日時の表示
                 $raw_time = $order_data->time;
@@ -1390,7 +1412,7 @@ $content .= '</form>';
                         }
                     }
                 }
-                $content .= '<div>作成日時：<span id="order_created_time">' . esc_html($formatted_time) . '</span></div>';
+                $content .= '<div>作成：<span id="order_created_time">' . esc_html($formatted_time) . '</span></div>';
                 
                 // 完了日の表示と編集フィールド
                 $completion_date = isset($order_data->completion_date) ? $order_data->completion_date : '';
@@ -1871,18 +1893,49 @@ $content .= '</form>';
         // 顧客の住所情報を取得（顧客テーブルから）
         $customer_address = $this->Get_Customer_Address($order_data->customer_name);
         
+        // 選択された部署情報を取得
+        $selected_department = null;
+        if (class_exists('KTPWP_Department_Manager') && !empty($order_data->client_id)) {
+            global $wpdb;
+            $client_table = $wpdb->prefix . 'ktp_client';
+            $selected_department_id = $wpdb->get_var($wpdb->prepare(
+                "SELECT selected_department_id FROM `{$client_table}` WHERE id = %d",
+                $order_data->client_id
+            ));
+            
+            if (!empty($selected_department_id)) {
+                $selected_department = KTPWP_Department_Manager::get_selected_department($order_data->client_id, $selected_department_id);
+            }
+        }
+        
         if (!empty($customer_address) && is_array($customer_address)) {
-            // 住所がある場合：住所 → 会社名 → 名前 様
+            // 住所がある場合：住所 → 会社名 → 選択された部署情報 → 名前 様
             $html .= '<div class="customer-address" style="font-size: 14px; margin-bottom: 4px;">';
             foreach ($customer_address as $address_line) {
                 $html .= '<div>' . esc_html($address_line) . '</div>';
             }
             $html .= '</div>';
             $html .= '<div class="company-name" style="font-size: 16px; font-weight: bold; margin-bottom: 4px;">' . esc_html($order_data->customer_name) . '</div>';
+            
+            // 選択された部署情報を表示
+            if ($selected_department) {
+                $html .= '<div class="department-info" style="font-size: 12px; margin-bottom: 4px; color: #666;">';
+                $html .= '<div>' . esc_html($selected_department->department_name) . ' ' . esc_html($selected_department->contact_person) . ' 様</div>';
+                $html .= '</div>';
+            }
+            
             $html .= '<div class="customer-name" style="font-size: 14px; margin-bottom: 100px;">' . esc_html($order_data->user_name) . ' 様</div>';
         } else {
-            // 住所がない場合：従来通り
+            // 住所がない場合：会社名 → 選択された部署情報 → 名前 様
             $html .= '<div class="company-name" style="font-size: 16px; font-weight: bold; margin-bottom: 4px;">' . esc_html($order_data->customer_name) . '</div>';
+            
+            // 選択された部署情報を表示
+            if ($selected_department) {
+                $html .= '<div class="department-info" style="font-size: 12px; margin-bottom: 4px; color: #666;">';
+                $html .= '<div>' . esc_html($selected_department->department_name) . ' ' . esc_html($selected_department->contact_person) . ' 様</div>';
+                $html .= '</div>';
+            }
+            
             $html .= '<div class="customer-name" style="font-size: 14px; margin-bottom: 100px;">' . esc_html($order_data->user_name) . ' 様</div>';
         }
         

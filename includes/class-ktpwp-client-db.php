@@ -232,7 +232,8 @@ class KTPWP_Client_DB {
             'tax_category' => isset($post_data['tax_category']) ? sanitize_text_field($post_data['tax_category']) : '',
             'memo' => isset($post_data['memo']) ? sanitize_textarea_field($post_data['memo']) : '',
             'client_status' => $client_status,
-            'category' => isset($post_data['category']) ? sanitize_text_field($post_data['category']) : ''
+            'category' => isset($post_data['category']) ? sanitize_text_field($post_data['category']) : '',
+            'selected_department_id' => isset($post_data['selected_department_id']) ? intval($post_data['selected_department_id']) : null
         );
     }
 
@@ -414,11 +415,12 @@ class KTPWP_Client_DB {
                 'memo' => $fields_data['memo'],
                 'client_status' => $fields_data['client_status'],
                 'category' => $fields_data['category'],
+                'selected_department_id' => $fields_data['selected_department_id'],
                 'search_field' => $search_field_value
             ),
             array(
                 '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s',
-                '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s'
+                '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d'
             )
         );
 
@@ -489,12 +491,13 @@ class KTPWP_Client_DB {
                     'memo' => $fields_data['memo'],
                     'client_status' => $fields_data['client_status'],
                     'category' => $fields_data['category'],
+                    'selected_department_id' => $fields_data['selected_department_id'],
                     'search_field' => $search_field_value
                 ),
                 array('id' => $data_id),
                 array(
                     '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s',
-                    '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s'
+                    '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d'
                 ),
                 array('%d')
             );

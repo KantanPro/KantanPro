@@ -35,6 +35,19 @@ class Print_Class {
         $customer = $this->data['customer'] ?? '';
         $user_name = $this->data['user_name'] ?? '';
 
+        // 部署情報を取得
+        $department_info = '';
+        if (class_exists('KTPWP_Department_Manager') && !empty($this->data['client_id'])) {
+            $departments = KTPWP_Department_Manager::get_departments_by_client($this->data['client_id']);
+            if (!empty($departments)) {
+                $department_lines = array();
+                foreach ($departments as $dept) {
+                    $department_lines[] = $dept->department_name . ' ' . $dept->contact_person . ' 様';
+                }
+                $department_info = implode("\n", $department_lines);
+            }
+        }
+        
         $replacements = array(
             '_%service_name%_' => $service_name,
             '_%category%_' => $category,
@@ -45,7 +58,8 @@ class Print_Class {
             '_%address%_' => $address,
             '_%building%_' => $building,
             '_%customer%_' => $customer,
-            '_%user_name%_' => $user_name
+            '_%user_name%_' => $user_name,
+            '_%department_info%_' => $department_info
         );
 
         $html = strtr($template, $replacements);
@@ -102,6 +116,10 @@ class Print_Class {
                 <tr>
                     <td style="border: 1px solid #ddd; padding: 8px; font-weight: bold;">ユーザー名:</td>
                     <td style="border: 1px solid #ddd; padding: 8px;">_%user_name%_</td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #ddd; padding: 8px; font-weight: bold;">部署情報:</td>
+                    <td style="border: 1px solid #ddd; padding: 8px;">_%department_info%_</td>
                 </tr>
             </table>
         </div>';

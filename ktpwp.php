@@ -133,6 +133,7 @@ function ktpwp_autoload_classes() {
         // クライアント管理の新クラス
         'KTPWP_Client_DB'       => 'includes/class-ktpwp-client-db.php',
         'KTPWP_Client_UI'       => 'includes/class-ktpwp-client-ui.php',
+        'KTPWP_Department_Manager' => 'includes/class-department-manager.php',
     );
 
     foreach ( $classes as $class_name => $file_path ) {
@@ -147,6 +148,9 @@ function ktpwp_autoload_classes() {
 
 // --- Ajaxハンドラ（協力会社・職能リスト取得）を必ず読み込む ---
 require_once __DIR__ . '/includes/ajax-supplier-cost.php';
+
+// --- 部署管理AJAXハンドラを読み込む ---
+require_once __DIR__ . '/includes/ajax-department.php';
 
 // クラスの読み込み実行
 ktpwp_autoload_classes();
@@ -166,6 +170,15 @@ function ktpwp_run_auto_migrations() {
         
         // 基本テーブル作成
         ktp_table_setup();
+        
+        // 部署テーブルの作成
+        ktpwp_create_department_table();
+        
+        // 部署テーブルに選択状態カラムを追加
+        ktpwp_add_department_selection_column();
+        
+        // 顧客テーブルにselected_department_idカラムを追加
+        ktpwp_add_client_selected_department_column();
         
         // マイグレーションファイルの実行
         $migrations_dir = __DIR__ . '/includes/migrations';
@@ -361,57 +374,370 @@ function ktpwp_plugin_activation() {
         error_log('KTPWP: Plugin activation started');
     }
     
-    // 基本テーブル作成
-    ktp_table_setup();
-    
-    // 追加のテーブル構造修正
-    ktpwp_fix_table_structures();
-    
-    // 既存データの修復
-    ktpwp_repair_existing_data();
-    
-    // DBバージョンを設定
-    $plugin_version = KANTANPRO_PLUGIN_VERSION;
-    update_option('ktpwp_db_version', $plugin_version);
-    
-    // デフォルト設定の保存
-    if (get_option('ktpwp_version') === false) {
-        add_option('ktpwp_version', $plugin_version);
-    }
-    if (get_option('ktpwp_installed_date') === false) {
-        add_option('ktpwp_installed_date', current_time('mysql'));
-    }
-    if (get_option('ktpwp_debug_mode') === false) {
-        add_option('ktpwp_debug_mode', defined('WP_DEBUG') && WP_DEBUG ? 'enabled' : 'disabled');
-    }
-    if (get_option('ktpwp_debug_log_enabled') === false) {
-        add_option('ktpwp_debug_log_enabled', '0');
-    }
-    if (get_option('ktpwp_rest_api_restricted') === false) {
-        add_option('ktpwp_rest_api_restricted', '1');
-    }
-    
-    // 設定クラスのアクティベート処理
-    if (class_exists('KTP_Settings')) {
-        KTP_Settings::activate();
-    }
-    
-    // プラグインリファレンス更新処理
-    if (class_exists('KTPWP_Plugin_Reference')) {
-        KTPWP_Plugin_Reference::on_plugin_activation();
-    }
-    
-    // 一時的なフラグをクリア（次回のチェックを確実に実行）
-    delete_transient('ktpwp_db_integrity_checked');
-    delete_transient('ktpwp_admin_migration_completed');
-    
-    if (defined('WP_DEBUG') && WP_DEBUG) {
-        error_log('KTPWP: Plugin activation completed');
+    try {
+        // 基本テーブル作成
+        ktp_table_setup();
+        
+        // 部署テーブルの作成（確実に実行）
+        $department_table_created = ktpwp_create_department_table();
+        
+        // 部署テーブルに選択状態カラムを追加（確実に実行）
+        $column_added = ktpwp_add_department_selection_column();
+        
+        // 顧客テーブルにselected_department_idカラムを追加（確実に実行）
+        $client_column_added = ktpwp_add_client_selected_department_column();
+        
+        // 追加のテーブル構造修正
+        ktpwp_fix_table_structures();
+        
+        // 既存データの修復
+        ktpwp_repair_existing_data();
+        
+        // 部署選択の自動初期化は無効化（ユーザーが明示的に選択した場合のみ部署が選択される）
+        // ktpwp_initialize_selected_department();
+        
+        // DBバージョンを設定
+        $plugin_version = KANTANPRO_PLUGIN_VERSION;
+        update_option('ktpwp_db_version', $plugin_version);
+        
+        // デフォルト設定の保存
+        if (get_option('ktpwp_version') === false) {
+            add_option('ktpwp_version', $plugin_version);
+        }
+        if (get_option('ktpwp_installed_date') === false) {
+            add_option('ktpwp_installed_date', current_time('mysql'));
+        }
+        if (get_option('ktpwp_debug_mode') === false) {
+            add_option('ktpwp_debug_mode', defined('WP_DEBUG') && WP_DEBUG ? 'enabled' : 'disabled');
+        }
+        if (get_option('ktpwp_debug_log_enabled') === false) {
+            add_option('ktpwp_debug_log_enabled', '0');
+        }
+        if (get_option('ktpwp_rest_api_restricted') === false) {
+            add_option('ktpwp_rest_api_restricted', '1');
+        }
+        
+        // 設定クラスのアクティベート処理
+        if (class_exists('KTP_Settings')) {
+            KTP_Settings::activate();
+        }
+        
+        // プラグインリファレンス更新処理
+        if (class_exists('KTPWP_Plugin_Reference')) {
+            KTPWP_Plugin_Reference::on_plugin_activation();
+        }
+        
+        // 一時的なフラグをクリア（次回のチェックを確実に実行）
+        delete_transient('ktpwp_db_integrity_checked');
+        delete_transient('ktpwp_admin_migration_completed');
+        
+        // マイグレーション完了フラグを設定
+        update_option('ktpwp_department_migration_completed', '1');
+        
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('KTPWP: Plugin activation completed successfully');
+            if ($department_table_created) {
+                error_log('KTPWP: Department table created/verified');
+            }
+            if ($column_added) {
+                error_log('KTPWP: Department selection column added/verified');
+            }
+            if ($client_column_added) {
+                error_log('KTPWP: Client selected_department_id column added/verified');
+            }
+        }
+        
+    } catch (Exception $e) {
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('KTPWP: Plugin activation failed: ' . $e->getMessage());
+        }
+        // エラーが発生してもプラグインは有効化を続行
     }
 }
 
 // プラグイン読み込み時の差分マイグレーション（アップデート時）
 add_action('plugins_loaded', 'ktpwp_check_database_integrity', 5);
+
+// プラグイン読み込み時に部署マイグレーションの完了を確認
+add_action('plugins_loaded', 'ktpwp_ensure_department_migration', 6);
+
+// プラグイン更新時の自動マイグレーション
+add_action('upgrader_process_complete', 'ktpwp_plugin_upgrade_migration', 10, 2);
+
+/**
+ * 部署テーブルを作成する関数
+ */
+function ktpwp_create_department_table() {
+    global $wpdb;
+    
+    $table_name = $wpdb->prefix . 'ktp_department';
+    $charset_collate = $wpdb->get_charset_collate();
+    
+    // テーブルが既に存在するかチェック
+    $table_exists = $wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $table_name));
+    
+    if ($table_exists !== $table_name) {
+        $sql = "CREATE TABLE {$table_name} (
+            id mediumint(9) NOT NULL AUTO_INCREMENT,
+            client_id mediumint(9) NOT NULL COMMENT '顧客ID',
+            department_name varchar(255) NOT NULL COMMENT '部署名',
+            contact_person varchar(255) NOT NULL COMMENT '担当者名',
+            email varchar(100) NOT NULL COMMENT 'メールアドレス',
+            is_selected TINYINT(1) NOT NULL DEFAULT 0 COMMENT '選択状態',
+            created_at datetime DEFAULT CURRENT_TIMESTAMP COMMENT '作成日時',
+            updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新日時',
+            PRIMARY KEY (id),
+            KEY client_id (client_id),
+            KEY email (email),
+            KEY is_selected (is_selected)
+        ) {$charset_collate};";
+        
+        require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+        $result = dbDelta($sql);
+        
+        if (!empty($result)) {
+            // マイグレーション完了フラグを設定
+            update_option('ktp_department_table_version', '1.1.0');
+            
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('KTPWP: 部署テーブルが正常に作成されました（is_selectedカラム付き）。');
+            }
+            
+            return true;
+        }
+        
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('KTPWP: 部署テーブルの作成に失敗しました。エラー: ' . $wpdb->last_error);
+        }
+        
+        return false;
+    }
+    
+    if (defined('WP_DEBUG') && WP_DEBUG) {
+        error_log('KTPWP: 部署テーブルは既に存在します。');
+    }
+    
+    return true;
+}
+
+/**
+ * 部署テーブルに選択状態カラムを追加する関数
+ */
+function ktpwp_add_department_selection_column() {
+    global $wpdb;
+    
+    $department_table = $wpdb->prefix . 'ktp_department';
+    
+    // 部署テーブルが存在するかチェック
+    $table_exists = $wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $department_table));
+    
+    if ($table_exists !== $department_table) {
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('KTPWP: 部署テーブルが存在しないため、選択状態カラムの追加をスキップします。');
+        }
+        return false;
+    }
+    
+    // is_selectedカラムが存在するかチェック
+    $column_exists = $wpdb->get_results($wpdb->prepare("SHOW COLUMNS FROM `{$department_table}` LIKE %s", 'is_selected'));
+    
+    if (empty($column_exists)) {
+        // カラム追加を試行
+        $result = $wpdb->query("ALTER TABLE {$department_table} ADD COLUMN is_selected TINYINT(1) NOT NULL DEFAULT 0 COMMENT '選択状態'");
+        
+        if ($result !== false) {
+            // インデックスも追加
+            $wpdb->query("ALTER TABLE {$department_table} ADD INDEX is_selected (is_selected)");
+            
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('KTPWP: 部署テーブルに選択状態カラムとインデックスを追加しました。');
+            }
+            return true;
+        } else {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('KTPWP: 部署テーブルへの選択状態カラム追加に失敗しました。エラー: ' . $wpdb->last_error);
+            }
+            return false;
+        }
+    }
+    
+    if (defined('WP_DEBUG') && WP_DEBUG) {
+        error_log('KTPWP: 部署テーブルの選択状態カラムは既に存在します。');
+    }
+    
+    return true;
+}
+
+/**
+ * 顧客テーブルにselected_department_idカラムを追加する関数
+ */
+function ktpwp_add_client_selected_department_column() {
+    global $wpdb;
+    
+    $client_table = $wpdb->prefix . 'ktp_client';
+    
+    // 顧客テーブルが存在するかチェック
+    $table_exists = $wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $client_table));
+    
+    if ($table_exists !== $client_table) {
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('KTPWP: 顧客テーブルが存在しないため、selected_department_idカラムの追加をスキップします。');
+        }
+        return false;
+    }
+    
+    // selected_department_idカラムが存在するかチェック
+    $column_exists = $wpdb->get_results($wpdb->prepare("SHOW COLUMNS FROM `{$client_table}` LIKE %s", 'selected_department_id'));
+    
+    if (empty($column_exists)) {
+        // カラム追加を試行
+        $result = $wpdb->query("ALTER TABLE {$client_table} ADD COLUMN selected_department_id INT NULL COMMENT '選択された部署ID'");
+        
+        if ($result !== false) {
+            // インデックスも追加
+            $wpdb->query("ALTER TABLE {$client_table} ADD INDEX selected_department_id (selected_department_id)");
+            
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('KTPWP: 顧客テーブルにselected_department_idカラムとインデックスを追加しました。');
+            }
+            return true;
+        } else {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('KTPWP: 顧客テーブルへのselected_department_idカラム追加に失敗しました。エラー: ' . $wpdb->last_error);
+            }
+            return false;
+        }
+    }
+    
+    if (defined('WP_DEBUG') && WP_DEBUG) {
+        error_log('KTPWP: 顧客テーブルのselected_department_idカラムは既に存在します。');
+    }
+    
+    return true;
+}
+
+/**
+ * 既存顧客データの選択された部署IDを初期化する関数
+ */
+function ktpwp_initialize_selected_department() {
+    global $wpdb;
+    
+    $client_table = $wpdb->prefix . 'ktp_client';
+    $department_table = $wpdb->prefix . 'ktp_department';
+    
+    // 選択された部署IDが設定されていない顧客を取得
+    $clients_without_selection = $wpdb->get_results(
+        "SELECT c.id FROM `{$client_table}` c 
+         LEFT JOIN `{$client_table}` c2 ON c.id = c2.id AND c2.selected_department_id IS NOT NULL 
+         WHERE c2.id IS NULL"
+    );
+    
+    // 自動初期化は無効化（ユーザーが明示的に選択した場合のみ部署が選択される）
+    if (defined('WP_DEBUG') && WP_DEBUG) {
+        error_log("KTPWP: 部署選択の自動初期化は無効化されています（" . count($clients_without_selection) . "件の顧客が選択なし状態）");
+    }
+    
+    return true;
+}
+
+/**
+ * プラグイン更新時の自動マイグレーション処理
+ */
+function ktpwp_plugin_upgrade_migration($upgrader, $hook_extra) {
+    // KantanProプラグインの更新かどうかをチェック
+    if (isset($hook_extra['plugin']) && strpos($hook_extra['plugin'], 'ktpwp.php') !== false) {
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('KTPWP: Plugin upgrade detected, running migration');
+        }
+        
+        try {
+            // 部署テーブルの作成
+            $department_table_created = ktpwp_create_department_table();
+            
+            // 部署テーブルに選択状態カラムを追加
+            $column_added = ktpwp_add_department_selection_column();
+            
+            // 顧客テーブルにselected_department_idカラムを追加
+            $client_column_added = ktpwp_add_client_selected_department_column();
+            
+            // 自動マイグレーション実行
+            ktpwp_run_auto_migrations();
+            
+            // マイグレーション完了フラグを設定
+            update_option('ktpwp_department_migration_completed', '1');
+            
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('KTPWP: Plugin upgrade migration completed successfully');
+                if ($department_table_created) {
+                    error_log('KTPWP: Department table created/verified during upgrade');
+                }
+                if ($column_added) {
+                    error_log('KTPWP: Department selection column added/verified during upgrade');
+                }
+                if ($client_column_added) {
+                    error_log('KTPWP: Client selected_department_id column added/verified during upgrade');
+                }
+            }
+        } catch (Exception $e) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('KTPWP: Plugin upgrade migration failed: ' . $e->getMessage());
+            }
+        }
+    }
+}
+
+/**
+ * 部署マイグレーションの完了状態を確認する関数
+ */
+function ktpwp_check_department_migration_status() {
+    $migration_completed = get_option('ktpwp_department_migration_completed', '0');
+    return $migration_completed === '1';
+}
+
+/**
+ * 部署マイグレーションの完了を確実にする関数
+ */
+function ktpwp_ensure_department_migration() {
+    // 既にマイグレーションが完了している場合はスキップ
+    if (ktpwp_check_department_migration_status()) {
+        return;
+    }
+    
+    if (defined('WP_DEBUG') && WP_DEBUG) {
+        error_log('KTPWP: Ensuring department migration completion');
+    }
+    
+    try {
+        // 部署テーブルの作成
+        $department_table_created = ktpwp_create_department_table();
+        
+        // 部署テーブルに選択状態カラムを追加
+        $column_added = ktpwp_add_department_selection_column();
+        
+        // 顧客テーブルにselected_department_idカラムを追加
+        $client_column_added = ktpwp_add_client_selected_department_column();
+        
+        // マイグレーション完了フラグを設定
+        update_option('ktpwp_department_migration_completed', '1');
+        
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('KTPWP: Department migration ensured successfully');
+            if ($department_table_created) {
+                error_log('KTPWP: Department table created/verified during ensure check');
+            }
+            if ($column_added) {
+                error_log('KTPWP: Department selection column added/verified during ensure check');
+            }
+            if ($client_column_added) {
+                error_log('KTPWP: Client selected_department_id column added/verified during ensure check');
+            }
+        }
+    } catch (Exception $e) {
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('KTPWP: Department migration ensure failed: ' . $e->getMessage());
+        }
+    }
+}
 
 /**
  * データベースの整合性をチェックし、必要に応じて修正を実行
@@ -473,7 +799,32 @@ function ktpwp_check_database_integrity() {
         $needs_fix = true;
     }
     
-    // 3. 既存データのチェック
+    // 3. 部署テーブルのチェック
+    $department_table = $wpdb->prefix . 'ktp_department';
+    $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$department_table'");
+    
+    if (!$table_exists) {
+        $needs_fix = true;
+    } else {
+        // 部署テーブルが存在する場合、選択状態カラムの存在をチェック
+        $existing_columns = $wpdb->get_col("SHOW COLUMNS FROM `{$department_table}`", 0);
+        if (!in_array('is_selected', $existing_columns)) {
+            $needs_fix = true;
+        }
+    }
+    
+    // 4. 顧客テーブルのselected_department_idカラムチェック
+    $client_table = $wpdb->prefix . 'ktp_client';
+    $client_table_exists = $wpdb->get_var("SHOW TABLES LIKE '$client_table'");
+    
+    if ($client_table_exists) {
+        $client_columns = $wpdb->get_col("SHOW COLUMNS FROM `{$client_table}`", 0);
+        if (!in_array('selected_department_id', $client_columns)) {
+            $needs_fix = true;
+        }
+    }
+    
+    // 5. 既存データのチェック
     if ($wpdb->get_var("SHOW TABLES LIKE '$chat_table'") && $wpdb->get_var("SHOW TABLES LIKE '$order_table'")) {
         $orders_without_chat = $wpdb->get_var("
             SELECT COUNT(*) 
@@ -493,11 +844,38 @@ function ktpwp_check_database_integrity() {
             error_log('KTPWP: Database integrity issues detected, running fixes');
         }
         
-        ktpwp_fix_table_structures();
-        ktpwp_repair_existing_data();
-        
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('KTPWP: Database integrity fixes completed');
+        try {
+            // 部署テーブルの作成
+            $department_table_created = ktpwp_create_department_table();
+            
+            // 部署テーブルに選択状態カラムを追加
+            $column_added = ktpwp_add_department_selection_column();
+            
+            // 顧客テーブルにselected_department_idカラムを追加
+            $client_column_added = ktpwp_add_client_selected_department_column();
+            
+            ktpwp_fix_table_structures();
+            ktpwp_repair_existing_data();
+            
+            // マイグレーション完了フラグを設定
+            update_option('ktpwp_department_migration_completed', '1');
+            
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('KTPWP: Database integrity fixes completed successfully');
+                if ($department_table_created) {
+                    error_log('KTPWP: Department table created/verified during integrity check');
+                }
+                if ($column_added) {
+                    error_log('KTPWP: Department selection column added/verified during integrity check');
+                }
+                if ($client_column_added) {
+                    error_log('KTPWP: Client selected_department_id column added/verified during integrity check');
+                }
+            }
+        } catch (Exception $e) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('KTPWP: Database integrity fixes failed: ' . $e->getMessage());
+            }
         }
     }
     
@@ -1584,6 +1962,9 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
     require_once __DIR__ . '/includes/ktp-migration-cli.php';
 }
 
+// プラグイン初期化時のマイグレーション実行
+add_action('init', 'ktpwp_ensure_department_migration');
+
 // 管理画面での自動マイグレーション
 add_action('admin_init', 'ktpwp_admin_auto_migrations');
 
@@ -1617,6 +1998,15 @@ function ktpwp_admin_auto_migrations() {
         
         // 基本テーブル作成
         ktp_table_setup();
+        
+        // 部署テーブルの作成
+        $department_table_created = ktpwp_create_department_table();
+        
+        // 部署テーブルに選択状態カラムを追加
+        $column_added = ktpwp_add_department_selection_column();
+        
+        // 顧客テーブルにselected_department_idカラムを追加
+        $client_column_added = ktpwp_add_client_selected_department_column();
         
         // マイグレーションファイルの実行
         $migrations_dir = __DIR__ . '/includes/migrations';
@@ -1652,6 +2042,15 @@ function ktpwp_admin_auto_migrations() {
         
         if (defined('WP_DEBUG') && WP_DEBUG) {
             error_log('KTPWP Admin Migration: Updated DB version from ' . $current_db_version . ' to ' . $plugin_version);
+            if ($department_table_created) {
+                error_log('KTPWP Admin Migration: Department table created/verified');
+            }
+            if ($column_added) {
+                error_log('KTPWP Admin Migration: Department selection column added/verified');
+            }
+            if ($client_column_added) {
+                error_log('KTPWP Admin Migration: Client selected_department_id column added/verified');
+            }
         }
     }
     

@@ -1360,7 +1360,139 @@ class Kntan_Client_Class {
             // メイン更新フォーム
             $data_forms .= '<form method="post" action="">';
             $data_forms .= wp_nonce_field('ktp_client_action', 'ktp_client_nonce', true, false);
-            foreach ($fields as $label => $field) {
+            
+            // 基本情報フィールド（メールまで）
+            $basic_fields = ['company_name', 'user_name', 'email'];
+            foreach ($basic_fields as $field_name) {
+                $field = $fields[$field_name === 'company_name' ? '会社名' : ($field_name === 'user_name' ? '名前' : 'メール')];
+                $value = $action === 'update' ? (isset(${$field_name}) ? ${$field_name} : '') : '';
+                
+                $pattern = isset($field['pattern']) ? ' pattern="' . esc_attr($field['pattern']) . '"' : '';
+                $required = isset($field['required']) && $field['required'] ? ' required' : '';
+                $placeholder = isset($field['placeholder']) ? ' placeholder="' . esc_attr($field['placeholder']) . '"' : '';
+                
+                $fieldId = 'ktp-client-' . preg_replace('/[^a-zA-Z0-9_-]/', '', $field['name']);
+                $data_forms .= '<div class="form-group"><label for="' . $fieldId . '">' . esc_html($field_name === 'company_name' ? '会社名' : ($field_name === 'user_name' ? '名前' : 'メール')) . '：</label> <input id="' . $fieldId . '" type="' . esc_attr($field['type']) . '" name="' . esc_attr($field['name']) . '" value="' . esc_attr($value) . '"' . $pattern . $required . $placeholder . '></div>';
+            }
+            
+            // 部署設定セクション
+            $data_forms .= '<div style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #007cba;">';
+            $data_forms .= '<h4 style="margin: 0 0 15px 0; color: #333; font-size: 16px;">部署設定</h4>';
+            
+            // 部署追加フォーム
+            $data_forms .= '<div style="display: flex; gap: 10px; align-items: end; margin-bottom: 15px;">';
+            $data_forms .= '<div style="flex: 1;"><label style="display: block; margin-bottom: 5px; font-size: 12px; color: #666;">部署名</label><input type="text" name="department_name" placeholder="部署名" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;"></div>';
+            $data_forms .= '<div style="flex: 1;"><label style="display: block; margin-bottom: 5px; font-size: 12px; color: #666;">担当者名</label><input type="text" name="contact_person" placeholder="担当者名" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;"></div>';
+            $data_forms .= '<div style="flex: 1;"><label style="display: block; margin-bottom: 5px; font-size: 12px; color: #666;">メールアドレス</label><input type="email" name="department_email" placeholder="メールアドレス" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;"></div>';
+            $data_forms .= '<div style="flex: 0 0 auto;"><button type="button" onclick="addDepartment()" style="padding: 8px 15px; background: #007cba; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">追加</button></div>';
+            $data_forms .= '</div>';
+            
+            // 部署リスト表示
+            $data_forms .= '<div id="department-list" style="margin-top: 15px;">';
+            if ($action === 'update' && !empty($data_id)) {
+                // 既存の部署を取得して表示
+                if (class_exists('KTPWP_Department_Manager')) {
+                    $departments = KTPWP_Department_Manager::get_departments_by_client($data_id);
+                    if (!empty($departments)) {
+                        $data_forms .= '<table style="width: 100%; border-collapse: collapse; font-size: 12px;">';
+                        $data_forms .= '<thead><tr style="background: #e9ecef;"><th style="padding: 8px; border: 1px solid #ddd; text-align: center; width: 30px;">選択</th><th style="padding: 8px; border: 1px solid #ddd; text-align: left;">部署名</th><th style="padding: 8px; border: 1px solid #ddd; text-align: left;">担当者名</th><th style="padding: 8px; border: 1px solid #ddd; text-align: left;">メールアドレス</th><th style="padding: 8px; border: 1px solid #ddd; text-align: center; width: 80px;">操作</th></tr></thead>';
+                        $data_forms .= '<tbody>';
+                        // 現在選択されている部署IDを取得
+                        $selected_department_id = $wpdb->get_var($wpdb->prepare(
+                            "SELECT selected_department_id FROM `{$table_name}` WHERE id = %d",
+                            $data_id
+                        ));
+                        
+                        // selected_department_idがNULLまたは空の場合は選択なし状態
+                        if (empty($selected_department_id)) {
+                            $selected_department_id = null;
+                        }
+                        
+                        if (defined('WP_DEBUG') && WP_DEBUG) {
+                            error_log("KTPWP Client Tab: 顧客ID {$data_id} の選択された部署ID: " . ($selected_department_id ?: 'NULL'));
+                            error_log("KTPWP Client Tab: 部署数: " . count($departments));
+                            error_log("KTPWP Client Tab: ページリロード時の状態確認完了");
+                        }
+                        
+                        foreach ($departments as $dept) {
+                            // 部署IDと選択された部署IDを比較してチェック状態を決定
+                            // selected_department_idがNULLの場合は選択されていない
+                            $is_checked = (!empty($selected_department_id) && $dept->id == $selected_department_id);
+                            $checked = $is_checked ? ' checked' : '';
+                            
+                            if (defined('WP_DEBUG') && WP_DEBUG) {
+                                error_log("KTPWP Client Tab: 部署ID {$dept->id} のチェック状態: " . ($is_checked ? 'true' : 'false'));
+                            }
+                            
+                            $data_forms .= '<tr>';
+                            $data_forms .= '<td style="padding: 8px; border: 1px solid #ddd; text-align: center;"><input type="checkbox" name="department_selection[]" value="' . $dept->id . '" id="dept_' . $dept->id . '"' . $checked . ' class="department-checkbox" data-department-id="' . $dept->id . '" onchange="updateDepartmentSelection(' . $dept->id . ', this.checked)"></td>';
+                            $data_forms .= '<td style="padding: 8px; border: 1px solid #ddd;">' . esc_html($dept->department_name) . '</td>';
+                            $data_forms .= '<td style="padding: 8px; border: 1px solid #ddd;">' . esc_html($dept->contact_person) . '</td>';
+                            $data_forms .= '<td style="padding: 8px; border: 1px solid #ddd;">' . esc_html($dept->email) . '</td>';
+                            $data_forms .= '<td style="padding: 8px; border: 1px solid #ddd; text-align: center;"><button type="button" onclick="deleteDepartment(' . $dept->id . ')" style="padding: 4px 8px; background: #dc3545; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 11px;">削除</button></td>';
+                            $data_forms .= '</tr>';
+                        }
+                        $data_forms .= '</tbody></table>';
+                        
+                        // 選択された部署の情報を表示
+                        $data_forms .= '<div id="selected-department-info" style="margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 4px; border-left: 4px solid #007cba;">';
+                        $data_forms .= '<h5 style="margin: 0 0 10px 0; color: #333; font-size: 14px;">選択された部署情報</h5>';
+                        
+                        // 選択された部署の情報を表示
+                        $selected_departments = array();
+                        if (!empty($selected_department_id)) {
+                            $selected_departments = array_filter($departments, function($dept) use ($selected_department_id) {
+                                return $dept->id == $selected_department_id;
+                            });
+                        }
+                        
+                        if (!empty($selected_departments)) {
+                            foreach ($selected_departments as $selected_dept) {
+                                $data_forms .= '<div class="selected-dept-detail" style="margin-bottom: 10px; padding: 8px; background: white; border-radius: 3px; font-size: 12px; color: #666;">';
+                                $data_forms .= '<strong>部署名:</strong> ' . esc_html($selected_dept->department_name) . '<br>';
+                                $data_forms .= '<strong>担当者名:</strong> ' . esc_html($selected_dept->contact_person) . '<br>';
+                                $data_forms .= '<strong>メールアドレス:</strong> ' . esc_html($selected_dept->email);
+                                $data_forms .= '</div>';
+                            }
+                        } else {
+                            $data_forms .= '<div class="selected-dept-detail" style="font-size: 12px; color: #666;">部署を選択してください</div>';
+                        }
+                        $data_forms .= '</div>';
+                    } else {
+                        $data_forms .= '<p style="color: #666; font-size: 12px; margin: 0;">部署が登録されていません。</p>';
+                    }
+                }
+            } else {
+                $data_forms .= '<p style="color: #666; font-size: 12px; margin: 0;">顧客を保存後に部署を追加できます。</p>';
+            }
+            $data_forms .= '</div>';
+            $data_forms .= '</div>';
+            
+            // 残りのフィールド
+            $remaining_fields = ['url', 'representative_name', 'phone', 'postal_code', 'prefecture', 'city', 'address', 'building', 'closing_day', 'payment_month', 'payment_day', 'payment_method', 'tax_category', 'category', 'client_status', 'memo'];
+            foreach ($remaining_fields as $field_name) {
+                $field_key = '';
+                switch ($field_name) {
+                    case 'url': $field_key = 'URL'; break;
+                    case 'representative_name': $field_key = '代表者名'; break;
+                    case 'phone': $field_key = '電話番号'; break;
+                    case 'postal_code': $field_key = '郵便番号'; break;
+                    case 'prefecture': $field_key = '都道府県'; break;
+                    case 'city': $field_key = '市区町村'; break;
+                    case 'address': $field_key = '番地'; break;
+                    case 'building': $field_key = '建物名'; break;
+                    case 'closing_day': $field_key = '締め日'; break;
+                    case 'payment_month': $field_key = '支払月'; break;
+                    case 'payment_day': $field_key = '支払日'; break;
+                    case 'payment_method': $field_key = '支払方法'; break;
+                    case 'tax_category': $field_key = '税区分'; break;
+                    case 'category': $field_key = 'カテゴリー'; break;
+                    case 'client_status': $field_key = '対象｜対象外'; break;
+                    case 'memo': $field_key = 'メモ'; break;
+                }
+                
+                $field = $fields[$field_key];
+                
                 // カテゴリーフィールドの特別処理
                 if ($field['name'] === 'category') {
                     $value = isset($category) ? $category : '';
@@ -1371,9 +1503,10 @@ class Kntan_Client_Class {
                 $pattern = isset($field['pattern']) ? ' pattern="' . esc_attr($field['pattern']) . '"' : '';
                 $required = isset($field['required']) && $field['required'] ? ' required' : '';
                 $placeholder = isset($field['placeholder']) ? ' placeholder="' . esc_attr($field['placeholder']) . '"' : '';
+                
                 if ($field['type'] === 'textarea') {
                     $fieldId = 'ktp-client-' . preg_replace('/[^a-zA-Z0-9_-]/', '', $field['name']);
-                    $data_forms .= '<div class="form-group"><label for="' . $fieldId . '">' . esc_html($label) . '：</label> <textarea id="' . $fieldId . '" name="' . esc_attr($field['name']) . '"' . $pattern . $required . '>' . esc_textarea($value) . '</textarea></div>';
+                    $data_forms .= '<div class="form-group"><label for="' . $fieldId . '">' . esc_html($field_key) . '：</label> <textarea id="' . $fieldId . '" name="' . esc_attr($field['name']) . '"' . $pattern . $required . '>' . esc_textarea($value) . '</textarea></div>';
                 } elseif ($field['type'] === 'select') {
                     $options = '';
                     foreach ($field['options'] as $option) {
@@ -1381,10 +1514,10 @@ class Kntan_Client_Class {
                         $options .= '<option value="' . esc_attr($option) . '"' . $selected . '>' . esc_html($option) . '</option>';
                     }
                     $fieldId = 'ktp-client-' . preg_replace('/[^a-zA-Z0-9_-]/', '', $field['name']);
-                    $data_forms .= '<div class="form-group"><label for="' . $fieldId . '">' . esc_html($label) . '：</label> <select id="' . $fieldId . '" name="' . esc_attr($field['name']) . '"' . $required . '>' . $options . '</select></div>';
+                    $data_forms .= '<div class="form-group"><label for="' . $fieldId . '">' . esc_html($field_key) . '：</label> <select id="' . $fieldId . '" name="' . esc_attr($field['name']) . '"' . $required . '>' . $options . '</select></div>';
                 } else {
                     $fieldId = 'ktp-client-' . preg_replace('/[^a-zA-Z0-9_-]/', '', $field['name']);
-                    $data_forms .= '<div class="form-group"><label for="' . $fieldId . '">' . esc_html($label) . '：</label> <input id="' . $fieldId . '" type="' . esc_attr($field['type']) . '" name="' . esc_attr($field['name']) . '" value="' . esc_attr($value) . '"' . $pattern . $required . $placeholder . '></div>';
+                    $data_forms .= '<div class="form-group"><label for="' . $fieldId . '">' . esc_html($field_key) . '：</label> <input id="' . $fieldId . '" type="' . esc_attr($field['type']) . '" name="' . esc_attr($field['name']) . '" value="' . esc_attr($value) . '"' . $pattern . $required . $placeholder . '></div>';
                 }
             }
             $data_forms .= '<input type="hidden" name="query_post" value="update">';
@@ -1393,6 +1526,192 @@ class Kntan_Client_Class {
             $data_forms .= '<button type="submit" name="send_post" title="' . esc_attr__('更新する', 'ktpwp') . '" class="update-submit-btn"><span class="material-symbols-outlined">cached</span></button>';
             $data_forms .= '</div>';
             $data_forms .= '</form>';
+        
+        // 部署管理用JavaScript
+        $data_forms .= '<script>
+        function addDepartment() {
+            var departmentName = document.querySelector("input[name=\'department_name\']").value;
+            var contactPerson = document.querySelector("input[name=\'contact_person\']").value;
+            var email = document.querySelector("input[name=\'department_email\']").value;
+            var clientId = ' . esc_js($data_id) . ';
+            
+            if (!departmentName || !contactPerson || !email) {
+                alert("部署名、担当者名、メールアドレスを入力してください。");
+                return;
+            }
+            
+            var formData = new FormData();
+            formData.append("action", "ktp_add_department");
+            formData.append("client_id", clientId);
+            formData.append("department_name", departmentName);
+            formData.append("contact_person", contactPerson);
+            formData.append("email", email);
+            formData.append("nonce", "' . wp_create_nonce('ktp_department_nonce') . '");
+            
+            fetch(ajaxurl, {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert("部署の追加に失敗しました: " + data.data);
+                }
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                alert("部署の追加に失敗しました。");
+            });
+        }
+        
+        function deleteDepartment(departmentId) {
+            if (!confirm("この部署を削除しますか？")) {
+                return;
+            }
+            
+            var formData = new FormData();
+            formData.append("action", "ktp_delete_department");
+            formData.append("department_id", departmentId);
+            formData.append("nonce", "' . wp_create_nonce('ktp_department_nonce') . '");
+            
+            fetch(ajaxurl, {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert("部署の削除に失敗しました: " + data.data);
+                }
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                alert("部署の削除に失敗しました。");
+            });
+        }
+        
+        function updateDepartmentSelection(departmentId, isSelected) {
+            console.log("updateDepartmentSelection called - departmentId:", departmentId, "isSelected:", isSelected);
+            
+            // 重複実行を防ぐため、処理中の場合はスキップ
+            if (window.departmentUpdateInProgress) {
+                console.log("Department update already in progress, skipping...");
+                return;
+            }
+            
+            window.departmentUpdateInProgress = true;
+            
+            // 他の部署のチェックを外す（単一選択のため）
+            if (isSelected) {
+                var allCheckboxes = document.querySelectorAll(\'input[name="department_selection[]"]\');
+                allCheckboxes.forEach(function(checkbox) {
+                    if (checkbox.dataset.departmentId != departmentId) {
+                        checkbox.checked = false;
+                    }
+                });
+            }
+            // 選択解除時は他の部署のチェックはそのまま（自動選択しない）
+            
+            // AJAXで部署選択状態を更新
+            var formData = new FormData();
+            formData.append("action", "ktp_update_department_selection");
+            formData.append("department_id", departmentId);
+            formData.append("is_selected", isSelected);
+            formData.append("nonce", "' . wp_create_nonce('ktp_department_nonce') . '");
+            
+            console.log("Sending AJAX request for department selection update");
+            
+            fetch(ajaxurl, {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log("Department selection update successful");
+                    // 選択された部署情報を更新
+                    updateSelectedDepartmentInfo();
+                } else {
+                    console.log("Department selection update failed:", data.data);
+                    alert("部署選択状態の更新に失敗しました: " + data.data);
+                    // チェックボックスの状態を元に戻す
+                    var checkbox = document.querySelector(\'input[data-department-id="\' + departmentId + \'"]\');
+                    if (checkbox) {
+                        checkbox.checked = !isSelected;
+                    }
+                }
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                alert("部署選択状態の更新に失敗しました。");
+                // チェックボックスの状態を元に戻す
+                var checkbox = document.querySelector(\'input[data-department-id="\' + departmentId + \'"]\');
+                if (checkbox) {
+                    checkbox.checked = !isSelected;
+                }
+            })
+            .finally(function() {
+                // 処理完了後、フラグをリセット
+                window.departmentUpdateInProgress = false;
+            });
+        }
+        
+        function updateSelectedDepartmentInfo() {
+            // 選択された部署の情報を表示エリアに反映
+            var selectedCheckboxes = document.querySelectorAll(\'input[name="department_selection[]"]:checked\');
+            var infoDiv = document.getElementById("selected-department-info");
+            
+            console.log("updateSelectedDepartmentInfo called - selected checkboxes:", selectedCheckboxes.length);
+            
+            if (infoDiv) {
+                // 既存の詳細表示要素を全て削除
+                var existingDetails = infoDiv.querySelectorAll(".selected-dept-detail");
+                existingDetails.forEach(function(detail) {
+                    detail.remove();
+                });
+                
+                if (selectedCheckboxes.length > 0) {
+                    selectedCheckboxes.forEach(function(checkbox) {
+                        var row = checkbox.closest("tr");
+                        var departmentName = row.cells[1].textContent;
+                        var contactPerson = row.cells[2].textContent;
+                        var email = row.cells[3].textContent;
+                        
+                        var detailDiv = document.createElement("div");
+                        detailDiv.className = "selected-dept-detail";
+                        detailDiv.style.marginBottom = "10px";
+                        detailDiv.style.padding = "8px";
+                        detailDiv.style.background = "white";
+                        detailDiv.style.borderRadius = "3px";
+                        detailDiv.style.fontSize = "12px";
+                        detailDiv.style.color = "#666";
+                        
+                        detailDiv.innerHTML = \'<strong>部署名:</strong> \' + departmentName + \'<br>\';
+                        detailDiv.innerHTML += \'<strong>担当者名:</strong> \' + contactPerson + \'<br>\';
+                        detailDiv.innerHTML += \'<strong>メールアドレス:</strong> \' + email;
+                        
+                        infoDiv.appendChild(detailDiv);
+                    });
+                    console.log("Updated with selected department info");
+                } else {
+                    // 選択された部署がない場合は「選択なし」を表示
+                    var noSelectionDiv = document.createElement("div");
+                    noSelectionDiv.className = "selected-dept-detail";
+                    noSelectionDiv.style.fontSize = "12px";
+                    noSelectionDiv.style.color = "#666";
+                    noSelectionDiv.textContent = "部署を選択してください";
+                    infoDiv.appendChild(noSelectionDiv);
+                    console.log("Updated with no selection message");
+                }
+            } else {
+                console.log("selected-department-info div not found");
+            }
+        }
+        </script>';
 
             // ボタン群は既にタイトル内に配置済み
 

@@ -69,29 +69,45 @@ jQuery(document).ready(function($) {
                             if (res.success && res.data && res.data.monthly_groups && res.data.monthly_groups.length > 0) {
                                 var html = "<div style=\"margin-bottom:20px;font-size:12px;\">";
 
-                                var address = res.data.client_address || "未設定";
+                                // 部署選択がある場合の宛先表示を修正
+                                var address = res.data.client_address || "";
                                 var postalCode = "";
                                 var addressWithoutPostal = address;
+                                var companyName = res.data.client_name || "未設定";
+                                var contactDisplay = res.data.client_contact || "";
 
-                                if (address.startsWith("〒")) {
-                                    var postalMatch = address.match(/〒(\d{3}-?\d{4})/);
-                                    if (postalMatch) {
-                                        postalCode = "〒" + postalMatch[1];
-                                        addressWithoutPostal = address.replace(/〒\d{3}-?\d{4}\s*/, "");
+                                // 部署選択がある場合
+                                if (res.data.selected_department) {
+                                    // 会社名を表示
+                                    html += "<div style=\"margin-bottom:5px;\">" + companyName + "</div>";
+                                    // 部署名を表示
+                                    html += "<div style=\"margin-bottom:5px;\">" + res.data.selected_department.department_name + "</div>";
+                                    // 担当者名を表示
+                                    html += "<div style=\"margin-bottom:5px;\">" + res.data.selected_department.contact_person + " 様</div>";
+                                } else {
+                                    // 部署選択がない場合：現行のまま
+                                    if (address.startsWith("〒")) {
+                                        var postalMatch = address.match(/〒(\d{3}-?\d{4})/);
+                                        if (postalMatch) {
+                                            postalCode = "〒" + postalMatch[1];
+                                            addressWithoutPostal = address.replace(/〒\d{3}-?\d{4}\s*/, "");
+                                        }
+                                    }
+
+                                    // 住所情報が設定されていない場合は「未設定」は表示しない
+                                    if (address && address.trim() !== "" && address !== "未設定") {
+                                        if (postalCode) {
+                                            html += "<div style=\"margin-bottom:5px;\">" + postalCode + "</div>";
+                                        }
+                                        html += "<div style=\"margin-bottom:5px;\">" + addressWithoutPostal + "</div>";
+                                    }
+                                    html += "<div style=\"margin-bottom:5px;\">" + companyName + "</div>";
+
+                                    if (contactDisplay && contactDisplay.trim() !== "" && contactDisplay !== "未設定") {
+                                        contactDisplay += " 様";
+                                        html += "<div style=\"margin-bottom:5px;\">" + contactDisplay + "</div>";
                                     }
                                 }
-
-                                if (postalCode) {
-                                    html += "<div style=\"margin-bottom:5px;\">" + postalCode + "</div>";
-                                }
-                                html += "<div style=\"margin-bottom:5px;\">" + addressWithoutPostal + "</div>";
-                                html += "<div style=\"margin-bottom:5px;\">" + (res.data.client_name || "未設定") + "</div>";
-
-                                var contactDisplay = res.data.client_contact || "未設定";
-                                if (contactDisplay !== "未設定") {
-                                    contactDisplay += " 様";
-                                }
-                                html += "<div style=\"margin-bottom:5px;\">" + contactDisplay + "</div>";
                                 html += "</div>";
 
                                 html += "<div style=\"margin:100px 0 20px 0;padding:15px;border:2px solid #333;border-radius:8px;background-color:#f9f9f9;text-align:center;\">";

@@ -162,6 +162,21 @@ class KTPWP_Ajax {
 		add_action( 'wp_ajax_nopriv_ktp_get_invoice_candidates', array( $this, 'ajax_require_login' ) ); // 非ログインユーザーはエラー
 		$this->registered_handlers[] = 'ktp_get_invoice_candidates';
 
+		// 部署選択状態更新
+		add_action( 'wp_ajax_ktp_update_department_selection', 'ktpwp_ajax_update_department_selection' );
+		add_action( 'wp_ajax_nopriv_ktp_update_department_selection', array( $this, 'ajax_require_login' ) );
+		$this->registered_handlers[] = 'ktp_update_department_selection';
+
+		// 部署追加
+		add_action( 'wp_ajax_ktp_add_department', 'ktpwp_ajax_add_department' );
+		add_action( 'wp_ajax_nopriv_ktp_add_department', array( $this, 'ajax_require_login' ) );
+		$this->registered_handlers[] = 'ktp_add_department';
+
+		// 部署削除
+		add_action( 'wp_ajax_ktp_delete_department', 'ktpwp_ajax_delete_department' );
+		add_action( 'wp_ajax_nopriv_ktp_delete_department', array( $this, 'ajax_require_login' ) );
+		$this->registered_handlers[] = 'ktp_delete_department';
+
 		// ▼▼▼ 一括請求書「請求済」進捗変更Ajax ▼▼▼
 		add_action('wp_ajax_ktp_set_invoice_completed', function() {
 			// 権限チェック
@@ -1483,9 +1498,23 @@ class KTPWP_Ajax {
 			// 日付フォーマット
 			$order_date = date( 'Y年m月d日', $order->time );
 
+			// 部署情報を取得
+			$department_info = '';
+			$customer_display = $customer_name;
+			$user_display = $user_name . " 様";
+			
+			if (class_exists('KTPWP_Department_Manager')) {
+				$selected_department = KTPWP_Department_Manager::get_selected_department_by_client($client->id);
+				if ($selected_department) {
+					// 部署選択がある場合：会社名、部署名、担当者名を別々に表示
+					$customer_display = $customer_name;
+					$user_display = $selected_department->department_name . "\n" . $selected_department->contact_person . " 様";
+				}
+			}
+
 			// 件名と本文の統一フォーマット
 			$subject = "{$document_title}：{$project_name}";
-			$body    = "{$customer_name}\n{$user_name} 様\n\nお世話になります。\n\n＜{$document_title}＞ ID: {$order->id} [{$order_date}]\n「{$project_name}」{$document_message}\n\n請求項目\n{$invoice_list}\n\n--\n{$my_company}";
+			$body    = "{$customer_display}\n{$user_display}\n\nお世話になります。\n\n＜{$document_title}＞ ID: {$order->id} [{$order_date}]\n「{$project_name}」{$document_message}\n\n請求項目\n{$invoice_list}\n\n--\n{$my_company}";
 
 			wp_send_json_success(
 				array(
@@ -3135,13 +3164,40 @@ function ktpwp_ajax_get_invoice_candidates() {
 		// HTMLタグが含まれている場合はそのまま使用（エスケープしない）
 	}
 
+	// 選択された部署情報を取得
+	$selected_department = null;
+	if (class_exists('KTPWP_Department_Manager')) {
+		$selected_department = KTPWP_Department_Manager::get_selected_department_by_client($client_id);
+	}
+
+	// 部署選択がある場合の宛先表示を修正
+	$client_address_formatted = $full_address;
+	$client_contact_formatted = $contact_name;
+	
+	if ($selected_department) {
+		// 部署選択がある場合：会社名、部署名、担当者名を別々に表示
+		$client_address_formatted = $client_info->company_name;
+		$client_contact_formatted = $selected_department->department_name . "\n" . $selected_department->contact_person . " 様";
+	} else {
+		// 部署選択がない場合：現行のまま
+		// 住所情報が設定されていない場合は「未設定」は表示しない
+		if (empty(trim($full_address))) {
+			$client_address_formatted = $client_info->company_name;
+		}
+	}
+	
 	$result = array(
 		'monthly_groups' => array_values( $monthly_groups ),
 		'total_orders'   => count( $filtered_orders ),
 		'total_groups'   => count( $monthly_groups ),
-		'client_address' => $full_address,
+		'client_address' => $client_address_formatted,
 		'client_name'    => $client_info->company_name,
-		'client_contact' => $contact_name,
+		'client_contact' => $client_contact_formatted,
+		'selected_department' => $selected_department ? array(
+			'department_name' => $selected_department->department_name,
+			'contact_person' => $selected_department->contact_person,
+			'email' => $selected_department->email
+		) : null,
 		'company_info'   => $company_info_html,  // 会社情報を追加
 		'debug_info'     => array(
 			'client_id'              => $client_id,
@@ -3154,4 +3210,139 @@ function ktpwp_ajax_get_invoice_candidates() {
 
 	error_log( 'KTPWP Invoice Debug - Final result: ' . json_encode( $result ) );
 	wp_send_json_success( $result );
+}
+
+/**
+ * 部署選択状態を更新するAjaxハンドラー
+ */
+function ktpwp_ajax_update_department_selection() {
+	// デバッグログ開始
+	if (defined('WP_DEBUG') && WP_DEBUG) {
+		error_log("KTPWP AJAX: ktpwp_ajax_update_department_selection called");
+		error_log("KTPWP AJAX: POST data: " . json_encode($_POST));
+	}
+	
+	// 権限チェック
+	if (!current_user_can('edit_posts') && !current_user_can('ktpwp_access')) {
+		if (defined('WP_DEBUG') && WP_DEBUG) {
+			error_log("KTPWP AJAX: Permission denied");
+		}
+		wp_send_json_error(array('message' => '権限がありません'));
+	}
+
+	// nonce検証
+	if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'ktp_department_nonce')) {
+		if (defined('WP_DEBUG') && WP_DEBUG) {
+			error_log("KTPWP AJAX: Nonce verification failed");
+		}
+		wp_send_json_error(array('message' => 'セキュリティチェックに失敗しました'));
+	}
+
+	$department_id = isset($_POST['department_id']) ? intval($_POST['department_id']) : 0;
+	$is_selected = isset($_POST['is_selected']) ? ($_POST['is_selected'] === 'true' || $_POST['is_selected'] === true) : false;
+
+	if (defined('WP_DEBUG') && WP_DEBUG) {
+		error_log("KTPWP AJAX: department_id: {$department_id}, is_selected: " . ($is_selected ? 'true' : 'false'));
+	}
+
+	if (empty($department_id)) {
+		if (defined('WP_DEBUG') && WP_DEBUG) {
+			error_log("KTPWP AJAX: department_id is empty");
+		}
+		wp_send_json_error(array('message' => '部署IDが指定されていません'));
+	}
+
+	if (class_exists('KTPWP_Department_Manager')) {
+		if (defined('WP_DEBUG') && WP_DEBUG) {
+			error_log("KTPWP AJAX: Calling KTPWP_Department_Manager::update_department_selection");
+		}
+		
+		$result = KTPWP_Department_Manager::update_department_selection($department_id, $is_selected);
+		
+		if ($result) {
+			if (defined('WP_DEBUG') && WP_DEBUG) {
+				error_log("KTPWP AJAX: update_department_selection successful");
+			}
+			wp_send_json_success(array('message' => '部署選択状態を更新しました'));
+		} else {
+			if (defined('WP_DEBUG') && WP_DEBUG) {
+				error_log("KTPWP AJAX: update_department_selection failed");
+			}
+			wp_send_json_error(array('message' => '部署選択状態の更新に失敗しました'));
+		}
+	} else {
+		if (defined('WP_DEBUG') && WP_DEBUG) {
+			error_log("KTPWP AJAX: KTPWP_Department_Manager class not found");
+		}
+		wp_send_json_error(array('message' => '部署管理クラスが見つかりません'));
+	}
+}
+
+/**
+ * 部署を追加するAjaxハンドラー
+ */
+function ktpwp_ajax_add_department() {
+	// 権限チェック
+	if (!current_user_can('edit_posts') && !current_user_can('ktpwp_access')) {
+		wp_send_json_error(array('message' => '権限がありません'));
+	}
+
+	// nonce検証
+	if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'ktp_department_nonce')) {
+		wp_send_json_error(array('message' => 'セキュリティチェックに失敗しました'));
+	}
+
+	$client_id = isset($_POST['client_id']) ? intval($_POST['client_id']) : 0;
+	$department_name = isset($_POST['department_name']) ? sanitize_text_field($_POST['department_name']) : '';
+	$contact_person = isset($_POST['contact_person']) ? sanitize_text_field($_POST['contact_person']) : '';
+	$email = isset($_POST['email']) ? sanitize_email($_POST['email']) : '';
+
+	if (empty($client_id) || empty($department_name) || empty($contact_person) || empty($email)) {
+		wp_send_json_error(array('message' => '必要な情報が不足しています'));
+	}
+
+	if (class_exists('KTPWP_Department_Manager')) {
+		$result = KTPWP_Department_Manager::add_department($client_id, $department_name, $contact_person, $email);
+		
+		if ($result) {
+			wp_send_json_success(array('message' => '部署を追加しました'));
+		} else {
+			wp_send_json_error(array('message' => '部署の追加に失敗しました'));
+		}
+	} else {
+		wp_send_json_error(array('message' => '部署管理クラスが見つかりません'));
+	}
+}
+
+/**
+ * 部署を削除するAjaxハンドラー
+ */
+function ktpwp_ajax_delete_department() {
+	// 権限チェック
+	if (!current_user_can('edit_posts') && !current_user_can('ktpwp_access')) {
+		wp_send_json_error(array('message' => '権限がありません'));
+	}
+
+	// nonce検証
+	if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'ktp_department_nonce')) {
+		wp_send_json_error(array('message' => 'セキュリティチェックに失敗しました'));
+	}
+
+	$department_id = isset($_POST['department_id']) ? intval($_POST['department_id']) : 0;
+
+	if (empty($department_id)) {
+		wp_send_json_error(array('message' => '部署IDが指定されていません'));
+	}
+
+	if (class_exists('KTPWP_Department_Manager')) {
+		$result = KTPWP_Department_Manager::delete_department($department_id);
+		
+		if ($result) {
+			wp_send_json_success(array('message' => '部署を削除しました'));
+		} else {
+			wp_send_json_error(array('message' => '部署の削除に失敗しました'));
+		}
+	} else {
+		wp_send_json_error(array('message' => '部署管理クラスが見つかりません'));
+	}
 }
