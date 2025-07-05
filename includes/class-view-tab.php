@@ -111,10 +111,12 @@ EOF;
         // フッターエリアを追加
         $plugin_name = esc_html( KANTANPRO_PLUGIN_NAME );
         $plugin_version = esc_html( KANTANPRO_PLUGIN_VERSION );
+        $terms_url = admin_url( 'admin.php?page=ktp-terms&view=public' );
 
         $view .= '<div class="ktp-footer">';
         $view .= '<div class="ktp-footer-content">';
         $view .= '<span class="ktp-footer-text">' . $plugin_name . ' v' . $plugin_version . '</span>';
+        $view .= ' <a href="' . esc_url($terms_url) . '" target="_blank" style="margin-left:10px;font-size:12px;color:#666;text-decoration:none;">利用規約</a>';
         $view .= '</div>';
         $view .= '</div>';
 

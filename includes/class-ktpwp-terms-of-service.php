@@ -51,6 +51,7 @@ class KTPWP_Terms_Of_Service {
         add_action( 'admin_footer', array( $this, 'add_terms_footer_link' ) );
         add_action( 'wp_ajax_ktpwp_agree_terms', array( $this, 'handle_terms_agreement' ) );
         add_action( 'wp_ajax_nopriv_ktpwp_agree_terms', array( $this, 'handle_terms_agreement' ) );
+        add_action( 'init', array( $this, 'handle_public_terms_view' ) );
     }
 
     /**
@@ -559,25 +560,144 @@ kantanpro22@gmail.com
     }
 
     /**
+     * 公開利用規約ページの処理
+     */
+    public function handle_public_terms_view() {
+        if ( isset( $_GET['page'] ) && $_GET['page'] === 'ktp-terms' && isset( $_GET['view'] ) && $_GET['view'] === 'public' ) {
+            $this->display_public_terms_page();
+            exit;
+        }
+    }
+
+    /**
+     * 公開利用規約ページを表示
+     */
+    private function display_public_terms_page() {
+        $terms_content = $this->get_terms_content();
+        ?>
+        <!DOCTYPE html>
+        <html lang="ja">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>KantanPro利用規約</title>
+            <style>
+                body {
+                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+                    line-height: 1.6;
+                    color: #333;
+                    max-width: 800px;
+                    margin: 0 auto;
+                    padding: 20px;
+                    background-color: #f9f9f9;
+                }
+                .container {
+                    background: white;
+                    padding: 40px;
+                    border-radius: 8px;
+                    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                }
+                h1 {
+                    color: #2c3e50;
+                    border-bottom: 2px solid #3498db;
+                    padding-bottom: 10px;
+                }
+                h2 {
+                    color: #34495e;
+                    margin-top: 30px;
+                }
+                h3 {
+                    color: #2c3e50;
+                    margin-top: 25px;
+                }
+                p {
+                    margin-bottom: 15px;
+                }
+                ol, ul {
+                    margin-bottom: 15px;
+                    padding-left: 20px;
+                }
+                li {
+                    margin-bottom: 5px;
+                }
+                strong {
+                    color: #2c3e50;
+                }
+                .back-link {
+                    margin-top: 30px;
+                    padding-top: 20px;
+                    border-top: 1px solid #eee;
+                    text-align: center;
+                }
+                .back-link a {
+                    color: #3498db;
+                    text-decoration: none;
+                }
+                .back-link a:hover {
+                    text-decoration: underline;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <?php echo $this->format_terms_content( $terms_content ); ?>
+                
+                <div class="back-link">
+                    <a href="javascript:window.close();">このウィンドウを閉じる</a>
+                </div>
+            </div>
+        </body>
+        </html>
+        <?php
+    }
+
+    /**
      * フッターに利用規約リンクを追加
      */
     public function add_terms_footer_link() {
-        // 管理画面でのみ表示
-        if ( ! is_admin() ) {
+        // フロントエンドでのみ表示
+        if ( is_admin() ) {
             return;
         }
 
-        // KantanProの管理画面でのみ表示
-        $current_screen = get_current_screen();
-        if ( ! $current_screen || strpos( $current_screen->id, 'ktp' ) === false ) {
+        // KantanProのショートコードが使用されているページでのみ表示
+        global $post;
+        if ( ! $post || ! has_shortcode( $post->post_content, 'ktpwp_all_tab' ) ) {
             return;
         }
 
-        $terms_url = admin_url( 'admin.php?page=ktp-terms' );
+        $terms_url = admin_url( 'admin.php?page=ktp-terms&view=public' );
         ?>
-        <div style="text-align: center; margin: 20px 0; font-size: 12px; color: #666;">
-            <a href="<?php echo esc_url( $terms_url ); ?>" target="_blank"><?php echo esc_html__( '利用規約', 'ktpwp' ); ?></a>
-        </div>
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // フッターのKantanProバージョン表示を探す
+            var footerElements = document.querySelectorAll('*');
+            for (var i = 0; i < footerElements.length; i++) {
+                var element = footerElements[i];
+                if (element.textContent && element.textContent.includes('KantanPro v1.3.0(beta)')) {
+                    // 既に利用規約リンクが追加されているかチェック
+                    if (element.querySelector('a[href*="ktp-terms"]')) {
+                        return;
+                    }
+                    
+                    // 利用規約リンクを追加
+                    var termsLink = document.createElement('a');
+                    termsLink.href = '<?php echo esc_url( $terms_url ); ?>';
+                    termsLink.target = '_blank';
+                    termsLink.textContent = '利用規約';
+                    termsLink.style.marginLeft = '10px';
+                    termsLink.style.color = '#666';
+                    termsLink.style.textDecoration = 'none';
+                    termsLink.style.fontSize = '12px';
+                    
+                    // 既存のテキストの後に追加
+                    element.appendChild(document.createTextNode(' '));
+                    element.appendChild(termsLink);
+                    break;
+                }
+            }
+        });
+        </script>
         <?php
     }
 
