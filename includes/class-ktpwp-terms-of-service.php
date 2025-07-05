@@ -212,29 +212,13 @@ kantanpro22@gmail.com
                 echo '<div class="notice notice-error is-dismissible"><p>' . esc_html__( 'パスワードが正しくありません。', 'ktpwp' ) . '</p></div>';
             }
             ?>
-            <form method="post" style="max-width: 400px;">
-                <table class="form-table">
-                    <tr>
-                        <th scope="row">
-                            <label for="developer_password"><?php echo esc_html__( '開発者パスワード', 'ktpwp' ); ?></label>
-                        </th>
-                        <td>
-                            <input type="password" name="developer_password" id="developer_password" class="regular-text" required />
-                        </td>
-                    </tr>
-                </table>
-                <?php submit_button( __( '認証', 'ktpwp' ) ); ?>
+            <form method="post" style="max-width: 600px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <label for="developer_password" style="white-space: nowrap;"><?php echo esc_html__( '開発者パスワード', 'ktpwp' ); ?></label>
+                    <input type="password" name="developer_password" id="developer_password" class="regular-text" required style="flex: 1;" />
+                    <?php submit_button( __( '認証', 'ktpwp' ), 'primary', 'submit', false ); ?>
+                </div>
             </form>
-            
-            <?php
-            // デバッグ用：パスワード情報を表示
-            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                echo '<div style="margin-top: 20px; padding: 10px; background: #f0f0f0; border: 1px solid #ccc;">';
-                echo '<h3>デバッグ情報</h3>';
-                echo '<p><strong>開発者パスワード:</strong> 8bee1222</p>';
-                echo '</div>';
-            }
-            ?>
         </div>
         <?php
     }
