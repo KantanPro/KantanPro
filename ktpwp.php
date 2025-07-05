@@ -5,7 +5,7 @@
  * Description: ビジネスハブシステム。ショートコード[ktpwp_all_tab]を固定ページに設置してください。
  * Version: 1.3.4(beta)
  * Author: KantanPro
- * Author URI: https://www.kantanpro.com/developer-profile/
+ * Author URI: https://www.kantanpro.com/kantanpro-page
  * License: GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: KantanPro
@@ -93,8 +93,32 @@ if ( file_exists( __DIR__ . '/vendor/plugin-update-checker/plugin-update-checker
         // グローバル変数に保存（手動更新チェック用）
         $GLOBALS['kantanpro_update_checker'] = $kantanpro_update_checker;
 
-        // 「アップデートを確認」リンクを有効化（手動更新チェックも可能にする）
-        // add_filter( 'puc_manual_check_link-ktpwp', '__return_false' );
+        // Plugin Update Checkerの「詳細を表示」リンクを無効化
+        add_filter( 'puc_view_details_link-ktpwp', '__return_empty_string' );
+
+        // Plugin Update Checkerの「アップデートを確認」リンクを無効化
+        add_filter( 'puc_manual_check_link-ktpwp', '__return_empty_string' );
+
+        // Plugin Update Checkerの手動チェック結果通知を無効化
+        add_filter( 'puc_manual_check_message-ktpwp', '__return_empty_string' );
+
+        // Plugin Update CheckerのUI機能を完全に無効化
+        add_action( 'admin_init', function() use ( $kantanpro_update_checker ) {
+            // UIクラスのフックを削除してメッセージ枠も表示させない
+            if ( isset( $kantanpro_update_checker->extraUi ) && $kantanpro_update_checker->extraUi ) {
+                $kantanpro_update_checker->extraUi->removeHooks();
+            }
+        }, 11 );
+
+        // URLパラメータに基づく通知を完全に抑制
+        add_action( 'admin_init', function() {
+            if ( isset( $_GET['puc_update_check_result'] ) && isset( $_GET['puc_slug'] ) && $_GET['puc_slug'] === 'ktpwp' ) {
+                // リダイレクトしてURLパラメータを削除
+                $clean_url = remove_query_arg( array( 'puc_update_check_result', 'puc_slug' ) );
+                wp_redirect( $clean_url );
+                exit;
+            }
+        }, 5 );
 
         // デバッグログを有効化（必要に応じて）
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
@@ -2530,7 +2554,7 @@ function ktpwp_admin_update_notice() {
         }
     }
 }
-add_action( 'admin_notices', 'ktpwp_admin_update_notice' );
+// add_action( 'admin_notices', 'ktpwp_admin_update_notice' );
 
 /**
  * 更新チェッカーが有効かどうかを確認
@@ -2589,3 +2613,269 @@ function ktpwp_manual_update_check() {
     }
 }
 add_action( 'wp_ajax_ktpwp_manual_update_check', 'ktpwp_manual_update_check' );
+
+/**
+ * プラグイン詳細情報を提供
+ */
+function ktpwp_plugin_information( $res, $action, $args ) {
+    // プラグイン情報の要求でない場合は処理しない
+    if ( $action !== 'plugin_information' ) {
+        return $res;
+    }
+
+    // 対象プラグインでない場合は処理しない（複数のスラッグパターンに対応）
+    $target_slugs = array( 'KantanPro', 'kantanpro', 'ktpwp' );
+    if ( ! isset( $args->slug ) || ! in_array( $args->slug, $target_slugs ) ) {
+        return $res;
+    }
+
+    // プラグイン情報を構築
+    $plugin_info = new stdClass();
+    $plugin_info->name = 'KantanPro';
+    $plugin_info->slug = 'KantanPro';
+    $plugin_info->version = KANTANPRO_PLUGIN_VERSION;
+    $plugin_info->author = '<a href="https://www.kantanpro.com/kantanpro-page">KantanPro</a>';
+    $plugin_info->homepage = 'https://www.kantanpro.com/';
+    $plugin_info->requires = '5.0';
+    $plugin_info->tested = '6.5';
+    $plugin_info->requires_php = '7.4';
+    $plugin_info->last_updated = date( 'Y-m-d', filemtime( __FILE__ ) );
+    $plugin_info->active_installs = false;
+    $plugin_info->downloaded = false;
+
+    // ヘッダー画像を設定
+    $plugin_info->banners = array(
+        'high' => KANTANPRO_PLUGIN_URL . 'images/default/header_bg_image.png',
+        'low' => KANTANPRO_PLUGIN_URL . 'images/default/header_bg_image.png',
+    );
+
+    // アイコンを設定
+    $plugin_info->icons = array(
+        '1x' => KANTANPRO_PLUGIN_URL . 'images/default/icon.png',
+        '2x' => KANTANPRO_PLUGIN_URL . 'images/default/icon.png',
+    );
+
+    // セクション情報を設定
+    $plugin_info->sections = array(
+        'description' => ktpwp_get_plugin_description(),
+        'changelog' => ktpwp_get_plugin_changelog(),
+    );
+
+    return $plugin_info;
+}
+add_filter( 'plugins_api', 'ktpwp_plugin_information', 10, 3 );
+
+/**
+ * プラグインの説明を取得
+ */
+function ktpwp_get_plugin_description() {
+    $description = '
+    <h3>KantanPro - ビジネスハブシステム</h3>
+    <p>KantanProは、中小企業から大企業まで対応可能な包括的なビジネスハブシステムです。業務効率化、プロジェクト管理、顧客関係管理を一つのプラットフォームで実現します。</p>
+    
+    <h4>🚀 主な機能</h4>
+    <ul>
+        <li><strong>📊 顧客管理</strong> - 顧客情報の一元管理、履歴追跡、分析機能</li>
+        <li><strong>📋 案件管理</strong> - プロジェクトの進捗管理、タスク管理、期限管理</li>
+        <li><strong>🤝 協力会社管理</strong> - 外部パートナーとの連携、スキル管理</li>
+        <li><strong>📈 レポート機能</strong> - 業務データの可視化、グラフ表示、分析ツール</li>
+        <li><strong>🏢 部署管理</strong> - 組織構造の管理、権限設定</li>
+        <li><strong>📄 利用規約管理</strong> - 規約の同意管理、バージョン管理</li>
+        <li><strong>🔒 セキュリティ機能</strong> - データ保護、アクセス制御、監査ログ</li>
+        <li><strong>📱 レスポンシブデザイン</strong> - PC、タブレット、スマートフォン対応</li>
+    </ul>
+    
+    <h4>💡 特徴</h4>
+    <ul>
+        <li>直感的で使いやすいユーザーインターフェース</li>
+        <li>高いカスタマイズ性と拡張性</li>
+        <li>自動更新機能による最新機能の提供</li>
+        <li>詳細なログ機能とデバッグサポート</li>
+        <li>WordPressの標準機能との完全な互換性</li>
+    </ul>
+    
+    <h4>🔧 使用方法</h4>
+    <p>プラグインを有効化後、ショートコード <code>[ktpwp_all_tab]</code> を固定ページに設置してご利用ください。初回利用時には利用規約への同意が必要です。</p>
+    
+    <h4>⚙️ システム要件</h4>
+    <ul>
+        <li>WordPress 5.0以上（推奨: 最新版）</li>
+        <li>PHP 7.4以上（推奨: PHP 8.0以上）</li>
+        <li>MySQL 5.6以上 または MariaDB 10.0以上</li>
+        <li>メモリ: 最低128MB（推奨: 256MB以上）</li>
+    </ul>
+    
+    <h4>🆕 最新の改善点</h4>
+    <ul>
+        <li>自動更新機能の有効化</li>
+        <li>シングルトンパターンによるパフォーマンス向上</li>
+        <li>利用規約管理システムの完全実装</li>
+        <li>セキュリティ機能の強化</li>
+    </ul>
+    
+    <h4>📞 サポート</h4>
+    <p>技術サポート、カスタマイズのご相談については、<a href="https://www.kantanpro.com/kantanpro-page" target="_blank">公式サイト</a>をご確認ください。</p>
+    
+    <h4>🎯 対象ユーザー</h4>
+    <p>中小企業、フリーランス、プロジェクトマネージャー、営業チーム、カスタマーサポートチームなど、業務効率化を求めるあらゆる組織に最適です。</p>
+    ';
+    
+    return $description;
+}
+
+/**
+ * プラグインの更新履歴を取得
+ */
+function ktpwp_get_plugin_changelog() {
+    $changelog = '
+    <h4>バージョン 1.3.4(beta) - 2025-07-05</h4>
+    <ul>
+        <li>自動更新機能を有効化</li>
+        <li>利用規約同意通知メールの重複送信問題を修正</li>
+        <li>シングルトンパターンの導入によるメモリ効率の改善</li>
+        <li>プラグイン詳細情報表示機能を追加</li>
+        <li>更新チェッカーの安定性向上</li>
+    </ul>
+    
+    <h4>バージョン 1.3.3(beta) - 2025-06-30</h4>
+    <ul>
+        <li>利用規約機能の実装</li>
+        <li>利用規約同意ダイアログの追加</li>
+        <li>管理画面での利用規約管理機能</li>
+        <li>初回利用時の利用規約同意チェック</li>
+    </ul>
+    
+    <h4>バージョン 1.3.2(beta) - 2025-06-25</h4>
+    <ul>
+        <li>部署管理機能の改善</li>
+        <li>データベース構造の最適化</li>
+        <li>セキュリティ機能の強化</li>
+        <li>パフォーマンスの向上</li>
+    </ul>
+    
+    <h4>バージョン 1.3.1(beta) - 2025-06-20</h4>
+    <ul>
+        <li>新しいUI/UXの実装</li>
+        <li>レスポンシブデザインの改善</li>
+        <li>Ajax処理の最適化</li>
+        <li>バグ修正と安定性向上</li>
+    </ul>
+    
+    <h4>バージョン 1.3.0(beta) - 2025-06-15</h4>
+    <ul>
+        <li>メジャーアップデート</li>
+        <li>新しいアーキテクチャの採用</li>
+        <li>モジュール化の推進</li>
+        <li>コードの品質向上</li>
+    </ul>
+    
+    <h4>バージョン 1.2.9 - 2025-06-01</h4>
+    <ul>
+        <li>新規インストール検出機能</li>
+        <li>自動マイグレーション機能の改善</li>
+        <li>データベース整合性チェック</li>
+        <li>ログ機能の強化</li>
+    </ul>
+    
+    <h4>バージョン 1.2.8 - 2025-05-25</h4>
+    <ul>
+        <li>協力会社管理機能の追加</li>
+        <li>スキル管理システムの実装</li>
+        <li>ページネーション機能の改善</li>
+        <li>検索機能の最適化</li>
+    </ul>
+    
+    <h4>バージョン 1.2.7 - 2025-05-20</h4>
+    <ul>
+        <li>レポート機能の拡張</li>
+        <li>グラフ表示機能の追加</li>
+        <li>データエクスポート機能</li>
+        <li>フィルタリング機能の改善</li>
+    </ul>
+    
+    <h4>バージョン 1.2.6 - 2025-05-15</h4>
+    <ul>
+        <li>案件管理機能の改善</li>
+        <li>進捗管理システムの実装</li>
+        <li>完了日自動設定機能</li>
+        <li>通知機能の追加</li>
+    </ul>
+    
+    <h4>バージョン 1.2.5 - 2025-05-10</h4>
+    <ul>
+        <li>顧客管理機能の拡張</li>
+        <li>データ検証機能の強化</li>
+        <li>セキュリティ対策の改善</li>
+        <li>パフォーマンス最適化</li>
+    </ul>
+    ';
+    
+    return $changelog;
+}
+
+
+
+/**
+ * 管理画面用のスタイルを追加（プラグイン詳細モーダル用）
+ */
+function ktpwp_admin_plugin_styles() {
+    $screen = get_current_screen();
+    if ( $screen && $screen->id === 'plugins' ) {
+        ?>
+        <style>
+        .plugin-card-KantanPro .plugin-icon img,
+        .plugin-card-kantanpro .plugin-icon img {
+            width: 128px;
+            height: 128px;
+            object-fit: cover;
+        }
+        
+        #plugin-information-content .plugin-version-author-uri {
+            margin-bottom: 15px;
+        }
+        
+        #plugin-information-content .plugin-version-author-uri a {
+            color: #0073aa;
+            text-decoration: none;
+        }
+        
+        #plugin-information-content .plugin-version-author-uri a:hover {
+            text-decoration: underline;
+        }
+        
+        #plugin-information-header {
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+        
+        #plugin-information-header.with-banner {
+            background-image: url('<?php echo esc_url( KANTANPRO_PLUGIN_URL . 'images/default/header_bg_image.png' ); ?>');
+        }
+        </style>
+        <?php
+    }
+}
+add_action( 'admin_head', 'ktpwp_admin_plugin_styles' );
+
+/**
+ * プラグイン詳細モーダルのヘッダー画像を設定
+ */
+function ktpwp_plugin_information_header() {
+    ?>
+    <script>
+    jQuery(document).ready(function($) {
+        // プラグイン詳細モーダルが開かれた時の処理
+        $(document).on('click', '.open-plugin-details-modal', function(e) {
+            var href = $(this).attr('href');
+            if (href && (href.indexOf('plugin=KantanPro') !== -1 || href.indexOf('plugin=kantanpro') !== -1)) {
+                setTimeout(function() {
+                    $('#plugin-information-header').addClass('with-banner');
+                }, 100);
+            }
+        });
+    });
+    </script>
+    <?php
+}
+add_action( 'admin_footer', 'ktpwp_plugin_information_header' );
