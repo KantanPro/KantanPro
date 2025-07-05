@@ -314,20 +314,104 @@ kantanpro22@gmail.com
      * 利用規約内容をフォーマット
      */
     private function format_terms_content( $content ) {
-        // Markdown風の変換
-        $content = preg_replace( '/^## (.*$)/m', '<h2>$1</h2>', $content );
-        $content = preg_replace( '/^### (.*$)/m', '<h3>$1</h3>', $content );
-        $content = preg_replace( '/^1\. (.*$)/m', '<ol><li>$1</li></ol>', $content );
-        $content = preg_replace( '/^(\d+)\. (.*$)/m', '<li>$2</li>', $content );
-        $content = preg_replace( '/^\- (.*$)/m', '<ul><li>$1</li></ul>', $content );
-        $content = preg_replace( '/\*\*(.*?)\*\*/s', '<strong>$1</strong>', $content );
-        $content = preg_replace( '/\*(.*?)\*/s', '<em>$1</em>', $content );
+        // 行ごとに処理
+        $lines = explode( "\n", $content );
+        $formatted_lines = array();
+        $in_list = false;
+        $list_type = '';
         
-        // 段落の処理
-        $content = '<p>' . str_replace( "\n\n", '</p><p>', $content ) . '</p>';
-        $content = str_replace( '<p></p>', '', $content );
+        foreach ( $lines as $line ) {
+            $line = trim( $line );
+            
+            if ( empty( $line ) ) {
+                if ( $in_list ) {
+                    $formatted_lines[] = '</' . $list_type . '>';
+                    $in_list = false;
+                }
+                // 段落の区切りを追加
+                $formatted_lines[] = '</p><p>';
+                continue;
+            }
+            
+            // 見出しの処理
+            if ( preg_match( '/^## (.+)$/', $line, $matches ) ) {
+                if ( $in_list ) {
+                    $formatted_lines[] = '</' . $list_type . '>';
+                    $in_list = false;
+                }
+                $formatted_lines[] = '<h2>' . esc_html( $matches[1] ) . '</h2>';
+                continue;
+            }
+            
+            if ( preg_match( '/^### (.+)$/', $line, $matches ) ) {
+                if ( $in_list ) {
+                    $formatted_lines[] = '</' . $list_type . '>';
+                    $in_list = false;
+                }
+                $formatted_lines[] = '<h3>' . esc_html( $matches[1] ) . '</h3>';
+                continue;
+            }
+            
+            // 番号付きリストの処理
+            if ( preg_match( '/^(\d+)\. (.+)$/', $line, $matches ) ) {
+                if ( ! $in_list || $list_type !== 'ol' ) {
+                    if ( $in_list ) {
+                        $formatted_lines[] = '</' . $list_type . '>';
+                    }
+                    $formatted_lines[] = '<ol>';
+                    $in_list = true;
+                    $list_type = 'ol';
+                }
+                $formatted_lines[] = '<li>' . esc_html( $matches[2] ) . '</li>';
+                continue;
+            }
+            
+            // 箇条書きリストの処理
+            if ( preg_match( '/^\- (.+)$/', $line, $matches ) ) {
+                if ( ! $in_list || $list_type !== 'ul' ) {
+                    if ( $in_list ) {
+                        $formatted_lines[] = '</' . $list_type . '>';
+                    }
+                    $formatted_lines[] = '<ul>';
+                    $in_list = true;
+                    $list_type = 'ul';
+                }
+                $formatted_lines[] = '<li>' . esc_html( $matches[1] ) . '</li>';
+                continue;
+            }
+            
+            // 通常のテキスト処理
+            if ( $in_list ) {
+                $formatted_lines[] = '</' . $list_type . '>';
+                $in_list = false;
+            }
+            
+            // 太字と斜体の処理
+            $line = preg_replace( '/\*\*(.*?)\*\*/s', '<strong>$1</strong>', $line );
+            $line = preg_replace( '/\*(.*?)\*/s', '<em>$1</em>', $line );
+            
+            $formatted_lines[] = esc_html( $line );
+        }
         
-        return $content;
+        // 最後のリストを閉じる
+        if ( $in_list ) {
+            $formatted_lines[] = '</' . $list_type . '>';
+        }
+        
+        // 結果を結合
+        $result = implode( ' ', $formatted_lines );
+        
+        // 段落タグを適切に処理
+        $result = preg_replace( '/<\/p><p>\s*<\/p><p>/', '</p><p>', $result );
+        $result = str_replace( '<p></p>', '', $result );
+        $result = str_replace( '<p> </p>', '', $result );
+        
+        // 最初と最後の段落タグを追加
+        if ( ! empty( $result ) ) {
+            $result = '<p>' . $result . '</p>';
+        }
+        
+        return $result;
     }
 
     /**
