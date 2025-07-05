@@ -2,8 +2,8 @@
 /**
  * Plugin Name: KantanPro
  * Plugin URI: https://www.kantanpro.com/
- * Description: ビジネスハブシステム。ショートコード[ktpwp_all_tab]を固定ページに設置してください。
- * Version: 1.3.4(beta)
+ * Description: 仕事効率化システム。ショートコード[ktpwp_all_tab]を固定ページに設置してください。
+ * Version: 1.3.5(beta)
  * Author: KantanPro
  * Author URI: https://www.kantanpro.com/kantanpro-page
  * License: GPL v2 or later
@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // プラグイン定数定義
 if ( ! defined( 'KANTANPRO_PLUGIN_VERSION' ) ) {
-    define( 'KANTANPRO_PLUGIN_VERSION', '1.3.4(beta)' );
+    define( 'KANTANPRO_PLUGIN_VERSION', '1.3.5(beta)' );
 }
 if ( ! defined( 'KANTANPRO_PLUGIN_NAME' ) ) {
     define( 'KANTANPRO_PLUGIN_NAME', 'KantanPro' );
