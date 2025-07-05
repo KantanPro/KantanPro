@@ -1,9 +1,9 @@
 === KantanPro (KTPWP) ===
 Contributors: kantanpro
-Tags: workflow, order management, business, client, service, supplier, invoice, report, chat, product management, PDF, mobile, avatar, staff chat, automation, migration
+Tags: workflow, order management, business, client, service, supplier, invoice, report, chat, product management, PDF, mobile, avatar, staff chat, automation, migration, department management, terms of service
 Requires at least: 5.0
 Tested up to: 6.5
-Stable tag: 1.3.0(beta)
+Stable tag: 1.3.1(beta)
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -19,6 +19,8 @@ KantanProは、WordPressで動作する業務管理・受注進捗・請求・�
 - ヘルプ（リファレンス）ボタン
 - 強固なセキュリティ（XSS/CSRF/SQLi/権限管理/ファイル検証/ノンス/prepare文）
 - ページネーション・検索・ソート・進捗/納期管理・警告マーク
+- **【NEW】部署管理機能**（顧客ごとの部署・担当者管理）
+- **【NEW】利用規約管理機能**（同意ダイアログ・管理画面）
 - **【NEW】全テーブルのカラム自動追加（自動マイグレーション）**
 - **【NEW】WP-CLIベースのマイグレーション管理機能**
 
@@ -34,6 +36,8 @@ KantanProは、WordPressで動作する業務管理・受注進捗・請求・�
 * **データ検索・ソート・ページネーション**（大量データの効率的管理）
 * **進捗・納期管理・警告マーク**（期限管理・アラート機能）
 * **権限管理・安全なDBアクセス**（ロールベースアクセス制御）
+* **【NEW】部署管理機能**（顧客ごとの部署・担当者管理）
+* **【NEW】利用規約管理機能**（同意ダイアログ・管理画面）
 * **【NEW】全テーブルのカラム自動追加（自動マイグレーション）**
 * **【NEW】WP-CLIベースのマイグレーション管理機能**
 
@@ -66,6 +70,20 @@ KantanProは、WordPressで動作する業務管理・受注進捗・請求・�
 5. **モバイルでも快適に操作可能**（レスポンシブデザイン）
 6. **スタッフチャットでリアルタイムコミュニケーション**
 7. **ヘルプボタンで使用方法を確認**
+8. **顧客管理で部署・担当者を管理**
+9. **利用規約に同意してから利用開始**
+
+== 部署管理機能 ==
+- 顧客ごとに複数の部署・担当者を管理
+- 部署ごとのメールアドレス管理
+- 選択された部署の情報を請求書に反映
+- 部署の追加・編集・削除機能
+
+== 利用規約管理機能 ==
+- 利用規約の同意ダイアログ表示
+- 管理画面での利用規約編集
+- 利用規約バージョン管理
+- 同意状態の追跡
 
 == WP-CLIマイグレーション管理 ==
 KantanPro 1.3.0(beta) から、DB構造の変更はWP-CLIコマンドで安全に管理できます。
@@ -77,6 +95,14 @@ KantanPro 1.3.0(beta) から、DB構造の変更はWP-CLIコマンドで安全�
 プラグイン有効化時の自動マイグレーション処理は廃止されました。
 
 == 変更履歴 ==
+= 1.3.1(beta) =
+* 部署管理機能を追加（顧客ごとの部署・担当者管理）
+* 利用規約管理機能を追加（同意ダイアログ・管理画面）
+* スタッフチャット機能の安定性向上
+* モバイルUIのさらなる改善
+* セキュリティ機能の強化
+* その他細かなバグ修正・安定性向上
+
 = 1.3.0(beta) =
 * WP-CLIベースのマイグレーション管理機能を導入
 * プラグイン有効化時の自動マイグレーション処理を削除
