@@ -2362,6 +2362,11 @@ kantanpro22@gmail.com
  * 利用規約同意チェック
  */
 function ktpwp_check_terms_agreement() {
+    // 最優先条件: ユーザーがログインしていること
+    if ( ! is_user_logged_in() ) {
+        return;
+    }
+
     // 利用規約管理クラスが存在しない場合はスキップ
     if ( ! class_exists( 'KTPWP_Terms_Of_Service' ) ) {
         return;
@@ -2401,6 +2406,11 @@ function ktpwp_check_terms_agreement() {
  * ショートコード実行時の利用規約チェック
  */
 function ktpwp_check_terms_on_shortcode() {
+    // 最優先条件: ユーザーがログインしていること
+    if ( ! is_user_logged_in() ) {
+        return;
+    }
+
     // 利用規約管理クラスが存在しない場合はスキップ
     if ( ! class_exists( 'KTPWP_Terms_Of_Service' ) ) {
         return;
