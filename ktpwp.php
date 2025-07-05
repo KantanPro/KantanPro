@@ -2384,21 +2384,16 @@ function ktpwp_check_terms_agreement() {
         return;
     }
 
-    // 管理画面の場合
+    // 管理画面の場合は利用規約を表示しない
     if ( is_admin() ) {
-        // 管理者以外はチェックしない
-        if ( ! current_user_can( 'manage_options' ) ) {
-            return;
-        }
+        return;
+    }
+
+    // フロントエンドの場合、ショートコードが使用されているページでのみ表示
+    global $post;
+    if ( $post && has_shortcode( $post->post_content, 'ktpwp_all_tab' ) ) {
         // 利用規約同意ダイアログを表示
-        add_action( 'admin_footer', array( $terms_service, 'display_terms_dialog' ) );
-    } else {
-        // フロントエンドの場合、ショートコードが使用されているページでのみ表示
-        global $post;
-        if ( $post && has_shortcode( $post->post_content, 'ktpwp_all_tab' ) ) {
-            // 利用規約同意ダイアログを表示
-            add_action( 'wp_footer', array( $terms_service, 'display_terms_dialog' ) );
-        }
+        add_action( 'wp_footer', array( $terms_service, 'display_terms_dialog' ) );
     }
 }
 
