@@ -134,6 +134,7 @@ function ktpwp_autoload_classes() {
         'KTPWP_Client_DB'       => 'includes/class-ktpwp-client-db.php',
         'KTPWP_Client_UI'       => 'includes/class-ktpwp-client-ui.php',
         'KTPWP_Department_Manager' => 'includes/class-department-manager.php',
+        'KTPWP_Terms_Of_Service' => 'includes/class-ktpwp-terms-of-service.php',
     );
 
     foreach ( $classes as $class_name => $file_path ) {
@@ -424,6 +425,11 @@ function ktpwp_plugin_activation() {
             KTP_Settings::activate();
         }
 
+        // 利用規約テーブルの作成
+        if ( class_exists( 'KTPWP_Terms_Of_Service' ) ) {
+            KTPWP_Terms_Of_Service::create_table();
+        }
+
         // プラグインリファレンス更新処理
         if ( class_exists( 'KTPWP_Plugin_Reference' ) ) {
             KTPWP_Plugin_Reference::on_plugin_activation();
@@ -461,6 +467,9 @@ add_action( 'plugins_loaded', 'ktpwp_check_database_integrity', 5 );
 
 // プラグイン読み込み時に部署マイグレーションの完了を確認
 add_action( 'plugins_loaded', 'ktpwp_ensure_department_migration', 6 );
+
+// 利用規約同意チェック
+add_action( 'admin_init', 'ktpwp_check_terms_agreement' );
 
 // プラグイン更新時の自動マイグレーション
 add_action( 'upgrader_process_complete', 'ktpwp_plugin_upgrade_migration', 10, 2 );
@@ -2058,6 +2067,36 @@ add_action( 'admin_menu', array( 'KTP_Settings', 'add_admin_menu' ) );
 /**
  * 管理画面での自動マイグレーション実行
  */
+/**
+ * 利用規約同意チェック
+ */
+function ktpwp_check_terms_agreement() {
+    // 管理者以外はチェックしない
+    if ( ! current_user_can( 'manage_options' ) ) {
+        return;
+    }
+
+    // 利用規約管理クラスが存在しない場合はスキップ
+    if ( ! class_exists( 'KTPWP_Terms_Of_Service' ) ) {
+        return;
+    }
+
+    $terms_service = new KTPWP_Terms_Of_Service();
+    
+    // 既に同意済みの場合はスキップ
+    if ( $terms_service->has_user_agreed_to_terms() ) {
+        return;
+    }
+
+    // 利用規約が存在しない場合はスキップ
+    if ( empty( $terms_service->get_terms_content() ) ) {
+        return;
+    }
+
+    // 利用規約同意ダイアログを表示
+    add_action( 'admin_footer', array( $terms_service, 'display_terms_dialog' ) );
+}
+
 function ktpwp_admin_auto_migrations() {
     // 管理画面でのみ実行
     if ( ! is_admin() ) {

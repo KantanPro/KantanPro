@@ -434,7 +434,45 @@ class KTP_Settings {
             'ktp-license', // メニューのスラッグ
             array( $this, 'create_license_page' ) // 表示を処理する関数
         );
+
+        // サブメニュー - 利用規約管理
+        add_submenu_page(
+            'ktp-settings', // 親メニューのスラッグ
+            __( '利用規約管理', 'ktpwp' ), // ページタイトル
+            __( '利用規約管理', 'ktpwp' ), // メニュータイトル
+            'manage_options', // 権限
+            'ktp-terms', // メニューのスラッグ
+            array( $this, 'create_terms_page' ) // 表示を処理する関数
+        );
     }
+    /**
+     * 利用規約管理ページの表示
+     */
+    public function create_terms_page() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_die( __( 'この設定ページにアクセスする権限がありません。', 'ktpwp' ) );
+        }
+
+        ?>
+        <div class="wrap ktp-admin-wrap">
+            <h1><span class="dashicons dashicons-text-page"></span> <?php echo esc_html__( '利用規約管理', 'ktpwp' ); ?></h1>
+
+            <?php $this->display_settings_tabs( 'terms' ); ?>
+
+            <?php
+            // 利用規約管理クラスが存在する場合は委譲
+            if ( class_exists( 'KTPWP_Terms_Of_Service' ) ) {
+                $terms_service = new KTPWP_Terms_Of_Service();
+                $terms_service->create_terms_page();
+            } else {
+                // フォールバック
+                echo '<div class="ktp-settings-container"><div class="ktp-settings-section"><p>' . esc_html__( '利用規約管理機能が利用できません。', 'ktpwp' ) . '</p></div></div>';
+            }
+            ?>
+        </div>
+        <?php
+    }
+
     /**
      * スタッフ管理ページの表示
      */
@@ -998,6 +1036,11 @@ class KTP_Settings {
                 'name' => __( 'ライセンス設定', 'ktpwp' ),
                 'url' => admin_url( 'admin.php?page=ktp-license' ),
                 'icon' => 'dashicons-admin-network',
+            ),
+            'terms' => array(
+                'name' => __( '利用規約管理', 'ktpwp' ),
+                'url' => admin_url( 'admin.php?page=ktp-terms' ),
+                'icon' => 'dashicons-text-page',
             ),
         );
 
