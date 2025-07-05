@@ -764,7 +764,7 @@ kantanpro22@gmail.com
             left: 50%;
             transform: translate(-50%, -50%);
             background: white;
-            padding: 0;
+            padding: 0 50px;
             border-radius: 8px;
             width: 600px;
             max-height: 80vh;
@@ -790,6 +790,8 @@ kantanpro22@gmail.com
             overflow-y: auto;
             line-height: 1.6;
             border-bottom: 1px solid #ddd;
+            font-size: 14px;
+            background-color: #f8f8f8;
         }
         .ktpwp-terms-footer {
             padding: 20px;
