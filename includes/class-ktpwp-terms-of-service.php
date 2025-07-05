@@ -22,10 +22,25 @@ class KTPWP_Terms_Of_Service {
     const DEVELOPER_PASSWORD_HASH = '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi'; // 8bee1222
 
     /**
+     * シングルトンインスタンス
+     */
+    private static $instance = null;
+
+    /**
      * パスワードハッシュを生成（デバッグ用）
      */
     public static function generate_password_hash( $password ) {
         return wp_hash_password( $password );
+    }
+
+    /**
+     * シングルトンインスタンス取得
+     */
+    public static function get_instance() {
+        if ( self::$instance === null ) {
+            self::$instance = new self();
+        }
+        return self::$instance;
     }
 
     /**
@@ -34,9 +49,9 @@ class KTPWP_Terms_Of_Service {
     private $table_name;
 
     /**
-     * コンストラクタ
+     * コンストラクタ（private）
      */
-    public function __construct() {
+    private function __construct() {
         global $wpdb;
         $this->table_name = $wpdb->prefix . 'ktp_terms_of_service';
 
@@ -53,6 +68,18 @@ class KTPWP_Terms_Of_Service {
         add_action( 'wp_ajax_nopriv_ktpwp_terms_agreement', array( $this, 'handle_terms_agreement' ) );
         add_action( 'init', array( $this, 'handle_public_terms_view' ) );
         add_action( 'admin_notices', array( $this, 'display_admin_notices' ) );
+    }
+
+    /**
+     * クローンを禁止
+     */
+    private function __clone() {}
+
+    /**
+     * シリアライズを禁止
+     */
+    public function __wakeup() {
+        throw new Exception( 'Cannot unserialize singleton' );
     }
 
     /**
@@ -506,27 +533,47 @@ kantanpro22@gmail.com
 
         $user_id = get_current_user_id();
         if ( $user_id ) {
+            // 既に同意済みかチェック（重複防止）
+            if ( $this->has_user_agreed_to_terms( $user_id ) ) {
+                wp_send_json_success( array( 'message' => __( '既に利用規約に同意済みです。', 'ktpwp' ) ) );
+                return;
+            }
+
+            // 同意状態を保存
             update_user_meta( $user_id, 'ktpwp_terms_agreed', current_time( 'mysql' ) );
             update_user_meta( $user_id, 'ktpwp_terms_version', $this->get_current_terms_version() );
             
-            // 開発者にメール通知
-            $mail_sent = $this->send_developer_notification( $user_id );
-            
-            $response_message = __( '利用規約に同意しました。', 'ktpwp' );
-            
-            // デバッグモードでは通知状況を表示
-            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                if ( $mail_sent ) {
-                    $response_message .= ' 開発者への通知メールを送信しました。';
-                } else {
-                    $response_message .= ' （開発者への通知メール送信に失敗しました）';
+            // メール送信の重複防止用トランジェントをチェック
+            $mail_transient_key = 'ktpwp_terms_mail_sent_' . $user_id;
+            if ( ! get_transient( $mail_transient_key ) ) {
+                // 開発者にメール通知
+                $mail_sent = $this->send_developer_notification( $user_id );
+                
+                // メール送信完了をマーク（5分間有効）
+                set_transient( $mail_transient_key, true, 300 );
+                
+                $response_message = __( '利用規約に同意しました。', 'ktpwp' );
+                
+                // デバッグモードでは通知状況を表示
+                if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                    if ( $mail_sent ) {
+                        $response_message .= ' 開発者への通知メールを送信しました。';
+                    } else {
+                        $response_message .= ' （開発者への通知メール送信に失敗しました）';
+                    }
                 }
+                
+                wp_send_json_success( array( 
+                    'message' => $response_message,
+                    'mail_sent' => $mail_sent
+                ) );
+            } else {
+                // メール送信済みの場合
+                wp_send_json_success( array( 
+                    'message' => __( '利用規約に同意しました。', 'ktpwp' ),
+                    'mail_sent' => true
+                ) );
             }
-            
-            wp_send_json_success( array( 
-                'message' => $response_message,
-                'mail_sent' => $mail_sent
-            ) );
         } else {
             wp_send_json_error( array( 'message' => __( 'ユーザー認証に失敗しました。', 'ktpwp' ) ) );
         }
@@ -536,6 +583,11 @@ kantanpro22@gmail.com
      * 開発者にメール通知を送信
      */
     private function send_developer_notification( $user_id ) {
+        // 重複送信防止のためのログ出力
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP Terms Agreement: メール送信処理開始 (User ID: ' . $user_id . ')' );
+        }
+
         $user = get_userdata( $user_id );
         if ( ! $user ) {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
@@ -1028,5 +1080,5 @@ kantanpro22@gmail.com
     }
 }
 
-// クラスのインスタンス化
-new KTPWP_Terms_Of_Service(); 
+// シングルトンインスタンスの初期化
+KTPWP_Terms_Of_Service::get_instance(); 

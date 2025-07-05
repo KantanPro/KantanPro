@@ -462,7 +462,7 @@ class KTP_Settings {
             <?php
             // 利用規約管理クラスが存在する場合は委譲
             if ( class_exists( 'KTPWP_Terms_Of_Service' ) ) {
-                $terms_service = new KTPWP_Terms_Of_Service();
+                $terms_service = KTPWP_Terms_Of_Service::get_instance();
                 $terms_service->create_terms_page();
             } else {
                 // フォールバック

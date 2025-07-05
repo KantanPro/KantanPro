@@ -1667,7 +1667,7 @@ function KTPWP_Index() {
             return '<div class="notice notice-error"><p>利用規約管理機能が利用できません。</p></div>';
         }
 
-        $terms_service = new KTPWP_Terms_Of_Service();
+        $terms_service = KTPWP_Terms_Of_Service::get_instance();
         // 利用規約に同意していない場合は、同意ダイアログが表示されるが、プラグインの機能は通常通り表示
 
         // ログイン中のユーザーは全員ヘッダーを表示（権限による制限を緩和）
@@ -2340,7 +2340,7 @@ function ktpwp_check_terms_agreement() {
         return;
     }
 
-    $terms_service = new KTPWP_Terms_Of_Service();
+    $terms_service = KTPWP_Terms_Of_Service::get_instance();
     
     // 既に同意済みの場合はスキップ
     if ( $terms_service->has_user_agreed_to_terms() ) {
@@ -2379,7 +2379,7 @@ function ktpwp_check_terms_on_shortcode() {
         return;
     }
 
-    $terms_service = new KTPWP_Terms_Of_Service();
+    $terms_service = KTPWP_Terms_Of_Service::get_instance();
     
     // 既に同意済みの場合はスキップ
     if ( $terms_service->has_user_agreed_to_terms() ) {
