@@ -750,12 +750,16 @@ kantanpro22@gmail.com
                     <?php echo $this->format_terms_content( $terms_content ); ?>
                 </div>
                 <div class="ktpwp-terms-footer">
-                    <button type="button" id="ktpwp-agree-terms" class="button button-primary">
-                        <?php echo esc_html__( '同意する', 'ktpwp' ); ?>
+                    <div class="ktpwp-terms-checkbox-container">
+                        <input type="checkbox" id="ktpwp-terms-checkbox" />
+                        <label for="ktpwp-terms-checkbox">確認しました</label>
+                    </div>
+                    <button type="button" id="ktpwp-start-usage" class="ktpwp-start-btn" disabled>
+                        利用開始する
                     </button>
-                    <button type="button" id="ktpwp-decline-terms" class="button">
-                        <?php echo esc_html__( '同意しない', 'ktpwp' ); ?>
-                    </button>
+                    <div class="ktpwp-home-link">
+                        <a href="<?php echo esc_url( home_url( '/' ) ); ?>">ホームへ</a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -776,37 +780,101 @@ kantanpro22@gmail.com
             left: 50%;
             transform: translate(-50%, -50%);
             background: white;
-            padding: 20px;
+            padding: 0;
             border-radius: 8px;
-            max-width: 600px;
+            width: 600px;
             max-height: 80vh;
-            overflow-y: auto;
             z-index: 10000;
+            display: flex;
+            flex-direction: column;
         }
         .ktpwp-terms-header {
             border-bottom: 1px solid #ddd;
-            padding-bottom: 10px;
-            margin-bottom: 15px;
+            padding: 20px 20px 10px 20px;
+            margin-bottom: 0;
+            position: relative;
+            text-align: center;
+        }
+        .ktpwp-terms-header h2 {
+            margin: 0;
+            font-size: 18px;
+            color: #333;
         }
         .ktpwp-terms-content {
-            margin-bottom: 20px;
+            padding: 20px;
+            height: 500px;
+            overflow-y: auto;
             line-height: 1.6;
+            border-bottom: 1px solid #ddd;
         }
         .ktpwp-terms-footer {
+            padding: 20px;
             text-align: center;
-            border-top: 1px solid #ddd;
-            padding-top: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
         }
-        .ktpwp-terms-footer button {
-            margin: 0 10px;
+        .ktpwp-terms-checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
+        .ktpwp-terms-checkbox-container input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+        }
+        .ktpwp-terms-checkbox-container label {
+            font-size: 14px;
+            color: #333;
+            cursor: pointer;
+        }
+        .ktpwp-start-btn {
+            background-color: #0073aa;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .ktpwp-start-btn:hover:not(:disabled) {
+            background-color: #005a87;
+        }
+        .ktpwp-start-btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .ktpwp-home-link {
+            margin-top: 10px;
+        }
+        .ktpwp-home-link a {
+            color: #0073aa;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        .ktpwp-home-link a:hover {
+            text-decoration: underline;
+        }
+
         </style>
 
         <script>
         jQuery(document).ready(function($) {
             $('#ktpwp-terms-dialog').show();
             
-            $('#ktpwp-agree-terms').click(function() {
+            // チェックボックスの状態に応じてボタンの有効/無効を切り替え
+            $('#ktpwp-terms-checkbox').change(function() {
+                $('#ktpwp-start-usage').prop('disabled', !this.checked);
+            });
+            
+            // 利用開始するボタンクリック
+            $('#ktpwp-start-usage').click(function() {
+                if (!$('#ktpwp-terms-checkbox').is(':checked')) {
+                    return;
+                }
+                
                 $.ajax({
                     url: '<?php echo admin_url( 'admin-ajax.php' ); ?>',
                     type: 'POST',
@@ -828,15 +896,7 @@ kantanpro22@gmail.com
                 });
             });
             
-            $('#ktpwp-decline-terms').click(function() {
-                if (confirm('<?php echo esc_js( __( '利用規約に同意しない場合、プラグインを利用できません。本当に同意しませんか？', 'ktpwp' ) ); ?>')) {
-                    <?php if ( is_admin() ) : ?>
-                    window.location.href = '<?php echo esc_url( admin_url( 'plugins.php' ) ); ?>';
-                    <?php else : ?>
-                    window.location.href = '<?php echo esc_url( home_url() ); ?>';
-                    <?php endif; ?>
-                }
-            });
+
         });
         </script>
         <?php
