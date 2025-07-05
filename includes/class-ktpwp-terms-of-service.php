@@ -110,9 +110,7 @@ class KTPWP_Terms_Of_Service {
      * デフォルトの利用規約内容を取得
      */
     private static function get_default_terms_content() {
-        return '## KantanPro利用規約
-
-### 第1条（適用）
+        return '### 第1条（適用）
 本規約は、KantanProプラグイン（以下「本プラグイン」）の利用に関して適用されます。
 
 ### 第2条（利用条件）
@@ -304,6 +302,7 @@ kantanpro22@gmail.com
 
                 <h3><?php echo esc_html__( '利用規約の表示', 'ktpwp' ); ?></h3>
                 <div style="background: #f9f9f9; padding: 20px; border: 1px solid #ddd; border-radius: 4px;">
+                    <h2 style="color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; margin-bottom: 20px;">KantanPro<?php echo KANTANPRO_PLUGIN_VERSION; ?>利用規約</h2>
                     <?php echo $this->format_terms_content( $terms ? $terms->terms_content : '' ); ?>
                 </div>
             </div>
@@ -580,7 +579,7 @@ kantanpro22@gmail.com
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>KantanPro利用規約</title>
+            <title>KantanPro<?php echo KANTANPRO_PLUGIN_VERSION; ?>利用規約</title>
             <style>
                 body {
                     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -640,6 +639,7 @@ kantanpro22@gmail.com
         </head>
         <body>
             <div class="container">
+                <h1>KantanPro<?php echo KANTANPRO_PLUGIN_VERSION; ?>利用規約</h1>
                 <?php echo $this->format_terms_content( $terms_content ); ?>
                 
                 <div class="back-link">
@@ -684,7 +684,7 @@ kantanpro22@gmail.com
                     var termsLink = document.createElement('a');
                     termsLink.href = '<?php echo esc_url( $terms_url ); ?>';
                     termsLink.target = '_blank';
-                    termsLink.textContent = '利用規約';
+                    termsLink.textContent = 'KantanPro<?php echo KANTANPRO_PLUGIN_VERSION; ?>利用規約';
                     termsLink.style.marginLeft = '10px';
                     termsLink.style.color = '#666';
                     termsLink.style.textDecoration = 'none';
@@ -719,7 +719,7 @@ kantanpro22@gmail.com
             <div class="ktpwp-terms-overlay"></div>
             <div class="ktpwp-terms-modal">
                 <div class="ktpwp-terms-header">
-                    <h2><?php echo esc_html__( '利用規約', 'ktpwp' ); ?></h2>
+                    <h2><?php echo esc_html__( 'KantanPro' . KANTANPRO_PLUGIN_VERSION . '利用規約', 'ktpwp' ); ?></h2>
                 </div>
                 <div class="ktpwp-terms-content">
                     <?php echo $this->format_terms_content( $terms_content ); ?>
