@@ -425,9 +425,27 @@ function ktpwp_plugin_activation() {
             KTP_Settings::activate();
         }
 
-        // 利用規約テーブルの作成
-        if ( class_exists( 'KTPWP_Terms_Of_Service' ) ) {
-            KTPWP_Terms_Of_Service::create_table();
+        // 利用規約テーブルの作成（確実に実行）
+        try {
+            if ( class_exists( 'KTPWP_Terms_Of_Service' ) ) {
+                KTPWP_Terms_Of_Service::create_table();
+                if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                    error_log( 'KTPWP: Terms of service table creation attempted during activation' );
+                }
+            } else {
+                // クラスが見つからない場合は直接作成
+                ktpwp_create_terms_table_directly();
+                if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                    error_log( 'KTPWP: Terms of service table created directly during activation' );
+                }
+            }
+        } catch ( Exception $e ) {
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP: Error during terms table creation: ' . $e->getMessage() );
+            }
+            
+            // エラーが発生した場合は直接作成を試行
+            ktpwp_create_terms_table_directly();
         }
 
         // プラグインリファレンス更新処理
@@ -467,6 +485,9 @@ add_action( 'plugins_loaded', 'ktpwp_check_database_integrity', 5 );
 
 // プラグイン読み込み時に部署マイグレーションの完了を確認
 add_action( 'plugins_loaded', 'ktpwp_ensure_department_migration', 6 );
+
+// 利用規約テーブル存在チェック（自動修復）
+add_action( 'plugins_loaded', 'ktpwp_ensure_terms_table', 7 );
 
 // 利用規約同意チェック
 add_action( 'admin_init', 'ktpwp_check_terms_agreement' );
@@ -2079,6 +2100,226 @@ add_action( 'admin_menu', array( 'KTP_Settings', 'add_admin_menu' ) );
 /**
  * 管理画面での自動マイグレーション実行
  */
+/**
+ * 利用規約テーブルの存在を確認して自動修復
+ */
+function ktpwp_ensure_terms_table() {
+    global $wpdb;
+    
+    $terms_table = $wpdb->prefix . 'ktp_terms_of_service';
+    $table_exists = $wpdb->get_var( "SHOW TABLES LIKE '$terms_table'" );
+    
+    if ( ! $table_exists ) {
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP: Terms table not found, attempting to create' );
+        }
+        
+        // 利用規約テーブルを直接作成
+        ktpwp_create_terms_table_directly();
+    } else {
+        // テーブルは存在するが、データが空の場合をチェック
+        $terms_count = $wpdb->get_var( "SELECT COUNT(*) FROM $terms_table WHERE is_active = 1" );
+        
+        if ( $terms_count == 0 ) {
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP: Terms table exists but no active terms found, attempting to insert default' );
+            }
+            
+            // デフォルトの利用規約を直接挿入
+            ktpwp_insert_default_terms_directly();
+        } else {
+            // 利用規約の内容が空でないかチェック
+            $terms_data = $wpdb->get_row( "SELECT * FROM $terms_table WHERE is_active = 1 ORDER BY id DESC LIMIT 1" );
+            if ( $terms_data && empty( trim( $terms_data->terms_content ) ) ) {
+                if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                    error_log( 'KTPWP: Terms content is empty, attempting to fix automatically' );
+                }
+                
+                // 空の利用規約を修復
+                ktpwp_fix_empty_terms_content( $terms_data->id );
+            }
+        }
+    }
+}
+
+/**
+ * 利用規約テーブルを直接作成
+ */
+function ktpwp_create_terms_table_directly() {
+    global $wpdb;
+    
+    $terms_table = $wpdb->prefix . 'ktp_terms_of_service';
+    $charset_collate = $wpdb->get_charset_collate();
+    
+    $sql = "CREATE TABLE {$terms_table} (
+        id mediumint(9) NOT NULL AUTO_INCREMENT,
+        terms_content longtext NOT NULL,
+        version varchar(20) NOT NULL DEFAULT '1.0',
+        is_active tinyint(1) NOT NULL DEFAULT 1,
+        created_at datetime DEFAULT CURRENT_TIMESTAMP,
+        updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        KEY is_active (is_active),
+        KEY version (version)
+    ) {$charset_collate};";
+    
+    require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+    $result = dbDelta( $sql );
+    
+    if ( ! empty( $result ) ) {
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP: Terms table created successfully during runtime' );
+        }
+        
+        // テーブル作成後、デフォルトデータを挿入
+        ktpwp_insert_default_terms_directly();
+    } else {
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP: Failed to create terms table during runtime' );
+        }
+    }
+}
+
+/**
+ * デフォルトの利用規約を直接挿入
+ */
+function ktpwp_insert_default_terms_directly() {
+    global $wpdb;
+    
+    $terms_table = $wpdb->prefix . 'ktp_terms_of_service';
+    
+    $default_terms = '### 第1条（適用）
+本規約は、KantanProプラグイン（以下「本プラグイン」）の利用に関して適用されます。
+
+### 第2条（利用条件）
+1. 本プラグインは、WordPress環境での利用を前提としています。
+2. 利用者は、本プラグインの利用にあたり、適切な権限を有する必要があります。
+
+### 第3条（禁止事項）
+利用者は、本プラグインの利用にあたり、以下の行為を行ってはなりません：
+1. 法令または公序良俗に違反する行為
+2. 犯罪行為に関連する行為
+3. 本プラグインの運営を妨害する行為
+4. 他の利用者に迷惑をかける行為
+5. その他、当社が不適切と判断する行為
+
+### 第4条（本プラグインの提供の停止等）
+当社は、以下のいずれかの事由があると判断した場合、利用者に事前に通知することなく本プラグインの全部または一部の提供を停止または中断することができるものとします。
+1. 本プラグインにかかるコンピュータシステムの保守点検または更新を行う場合
+2. 地震、落雷、火災、停電または天災などの不可抗力により、本プラグインの提供が困難となった場合
+3. その他、当社が本プラグインの提供が困難と判断した場合
+
+### 第5条（免責事項）
+1. 当社は、本プラグインに関して、利用者と他の利用者または第三者との間において生じた取引、連絡または紛争等について一切責任を負いません。
+2. 当社は、本プラグインの利用により生じる損害について一切の責任を負いません。
+3. 当社は、本プラグインの利用により生じるデータの損失について一切の責任を負いません。
+
+### 第6条（サービス内容の変更等）
+当社は、利用者に通知することなく、本プラグインの内容を変更しまたは本プラグインの提供を中止することができるものとし、これによって利用者に生じた損害について一切の責任を負いません。
+
+### 第7条（利用規約の変更）
+当社は、必要と判断した場合には、利用者に通知することなくいつでも本規約を変更することができるものとします。
+
+### 第8条（準拠法・裁判管轄）
+1. 本規約の解釈にあたっては、日本法を準拠法とします。
+2. 本プラグインに関して紛争が生じた場合には、当社の本店所在地を管轄する裁判所を専属的合意管轄とします。
+
+### 第9条（お問い合わせ）
+本規約に関するお問い合わせは、以下のメールアドレスまでお願いいたします。
+kantanpro22@gmail.com
+
+以上';
+    
+    $result = $wpdb->insert(
+        $terms_table,
+        array(
+            'terms_content' => $default_terms,
+            'version' => '1.0',
+            'is_active' => 1
+        ),
+        array( '%s', '%s', '%d' )
+    );
+    
+    if ( $result ) {
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP: Default terms inserted successfully during runtime' );
+        }
+    } else {
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP: Failed to insert default terms during runtime: ' . $wpdb->last_error );
+        }
+    }
+}
+
+/**
+ * 空の利用規約内容を修復
+ */
+function ktpwp_fix_empty_terms_content( $terms_id ) {
+    global $wpdb;
+    
+    $terms_table = $wpdb->prefix . 'ktp_terms_of_service';
+    
+    $default_terms = '### 第1条（適用）
+本規約は、KantanProプラグイン（以下「本プラグイン」）の利用に関して適用されます。
+
+### 第2条（利用条件）
+1. 本プラグインは、WordPress環境での利用を前提としています。
+2. 利用者は、本プラグインの利用にあたり、適切な権限を有する必要があります。
+
+### 第3条（禁止事項）
+利用者は、本プラグインの利用にあたり、以下の行為を行ってはなりません：
+1. 法令または公序良俗に違反する行為
+2. 犯罪行為に関連する行為
+3. 本プラグインの運営を妨害する行為
+4. 他の利用者に迷惑をかける行為
+5. その他、当社が不適切と判断する行為
+
+### 第4条（本プラグインの提供の停止等）
+当社は、以下のいずれかの事由があると判断した場合、利用者に事前に通知することなく本プラグインの全部または一部の提供を停止または中断することができるものとします。
+1. 本プラグインにかかるコンピュータシステムの保守点検または更新を行う場合
+2. 地震、落雷、火災、停電または天災などの不可抗力により、本プラグインの提供が困難となった場合
+3. その他、当社が本プラグインの提供が困難と判断した場合
+
+### 第5条（免責事項）
+1. 当社は、本プラグインに関して、利用者と他の利用者または第三者との間において生じた取引、連絡または紛争等について一切責任を負いません。
+2. 当社は、本プラグインの利用により生じる損害について一切の責任を負いません。
+3. 当社は、本プラグインの利用により生じるデータの損失について一切の責任を負いません。
+
+### 第6条（サービス内容の変更等）
+当社は、利用者に通知することなく、本プラグインの内容を変更しまたは本プラグインの提供を中止することができるものとし、これによって利用者に生じた損害について一切の責任を負いません。
+
+### 第7条（利用規約の変更）
+当社は、必要と判断した場合には、利用者に通知することなくいつでも本規約を変更することができるものとします。
+
+### 第8条（準拠法・裁判管轄）
+1. 本規約の解釈にあたっては、日本法を準拠法とします。
+2. 本プラグインに関して紛争が生じた場合には、当社の本店所在地を管轄する裁判所を専属的合意管轄とします。
+
+### 第9条（お問い合わせ）
+本規約に関するお問い合わせは、以下のメールアドレスまでお願いいたします。
+kantanpro22@gmail.com
+
+以上';
+    
+    $result = $wpdb->update(
+        $terms_table,
+        array( 'terms_content' => $default_terms ),
+        array( 'id' => $terms_id ),
+        array( '%s' ),
+        array( '%d' )
+    );
+    
+    if ( $result !== false ) {
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP: Empty terms content fixed successfully during runtime' );
+        }
+    } else {
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP: Failed to fix empty terms content during runtime: ' . $wpdb->last_error );
+        }
+    }
+}
+
 /**
  * 利用規約同意チェック
  */

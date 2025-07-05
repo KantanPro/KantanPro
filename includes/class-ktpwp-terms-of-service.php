@@ -84,7 +84,7 @@ class KTPWP_Terms_Of_Service {
     /**
      * デフォルトの利用規約を挿入
      */
-    private static function insert_default_terms() {
+    public static function insert_default_terms() {
         global $wpdb;
         $table_name = $wpdb->prefix . 'ktp_terms_of_service';
 
@@ -109,7 +109,7 @@ class KTPWP_Terms_Of_Service {
     /**
      * デフォルトの利用規約内容を取得
      */
-    private static function get_default_terms_content() {
+    public static function get_default_terms_content() {
         return '### 第1条（適用）
 本規約は、KantanProプラグイン（以下「本プラグイン」）の利用に関して適用されます。
 
@@ -563,8 +563,36 @@ kantanpro22@gmail.com
         global $wpdb;
         $table_name = $wpdb->prefix . 'ktp_terms_of_service';
         
+        // テーブルの存在確認
+        $table_exists = $wpdb->get_var( "SHOW TABLES LIKE '$table_name'" );
+        
+        if ( ! $table_exists ) {
+            // テーブルが存在しない場合は自動修復を試行
+            if ( function_exists( 'ktpwp_ensure_terms_table' ) ) {
+                ktpwp_ensure_terms_table();
+            }
+            
+            // 修復後に再取得を試行
+            $table_exists = $wpdb->get_var( "SHOW TABLES LIKE '$table_name'" );
+            if ( ! $table_exists ) {
+                // それでも失敗した場合はデフォルトの利用規約を返す
+                return self::get_default_terms_content();
+            }
+        }
+        
         $terms = $wpdb->get_row( "SELECT * FROM {$table_name} WHERE is_active = 1 ORDER BY id DESC LIMIT 1" );
-        return $terms ? $terms->terms_content : '';
+        
+        if ( ! $terms ) {
+            // データが存在しない場合はデフォルトの利用規約を返す
+            return self::get_default_terms_content();
+        }
+        
+        if ( empty( trim( $terms->terms_content ) ) ) {
+            // 内容が空の場合はデフォルトの利用規約を返す
+            return self::get_default_terms_content();
+        }
+        
+        return $terms->terms_content;
     }
 
     /**
