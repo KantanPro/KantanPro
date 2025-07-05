@@ -49,9 +49,10 @@ class KTPWP_Terms_Of_Service {
         add_action( 'admin_init', array( $this, 'handle_terms_actions' ) );
         add_action( 'wp_footer', array( $this, 'add_terms_footer_link' ) );
         add_action( 'admin_footer', array( $this, 'add_terms_footer_link' ) );
-        add_action( 'wp_ajax_ktpwp_agree_terms', array( $this, 'handle_terms_agreement' ) );
-        add_action( 'wp_ajax_nopriv_ktpwp_agree_terms', array( $this, 'handle_terms_agreement' ) );
+        add_action( 'wp_ajax_ktpwp_terms_agreement', array( $this, 'handle_terms_agreement' ) );
+        add_action( 'wp_ajax_nopriv_ktpwp_terms_agreement', array( $this, 'handle_terms_agreement' ) );
         add_action( 'init', array( $this, 'handle_public_terms_view' ) );
+        add_action( 'admin_notices', array( $this, 'display_admin_notices' ) );
     }
 
     /**
@@ -158,6 +159,28 @@ kantanpro22@gmail.com
      */
     public function add_terms_menu() {
         // メニューは既にKTP_Settingsクラスで追加されているため、ここでは何もしない
+    }
+
+    /**
+     * 管理者通知を表示
+     */
+    public function display_admin_notices() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
+
+        // 利用規約同意通知をチェック
+        $user_id = get_current_user_id();
+        $notice = get_transient( 'ktpwp_terms_agreement_notice_' . $user_id );
+        
+        if ( $notice ) {
+            echo '<div class="notice notice-warning is-dismissible">';
+            echo '<p><strong>KantanPro:</strong> ' . esc_html( $notice ) . '</p>';
+            echo '</div>';
+            
+            // 通知を削除
+            delete_transient( 'ktpwp_terms_agreement_notice_' . $user_id );
+        }
     }
 
     /**
@@ -487,9 +510,23 @@ kantanpro22@gmail.com
             update_user_meta( $user_id, 'ktpwp_terms_version', $this->get_current_terms_version() );
             
             // 開発者にメール通知
-            $this->send_developer_notification( $user_id );
+            $mail_sent = $this->send_developer_notification( $user_id );
             
-            wp_send_json_success( array( 'message' => __( '利用規約に同意しました。', 'ktpwp' ) ) );
+            $response_message = __( '利用規約に同意しました。', 'ktpwp' );
+            
+            // デバッグモードでは通知状況を表示
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                if ( $mail_sent ) {
+                    $response_message .= ' 開発者への通知メールを送信しました。';
+                } else {
+                    $response_message .= ' （開発者への通知メール送信に失敗しました）';
+                }
+            }
+            
+            wp_send_json_success( array( 
+                'message' => $response_message,
+                'mail_sent' => $mail_sent
+            ) );
         } else {
             wp_send_json_error( array( 'message' => __( 'ユーザー認証に失敗しました。', 'ktpwp' ) ) );
         }
@@ -501,6 +538,9 @@ kantanpro22@gmail.com
     private function send_developer_notification( $user_id ) {
         $user = get_userdata( $user_id );
         if ( ! $user ) {
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP Terms Agreement: ユーザー情報の取得に失敗しました (User ID: ' . $user_id . ')' );
+            }
             return false;
         }
 
@@ -513,17 +553,88 @@ kantanpro22@gmail.com
             "メールアドレス: %s\n" .
             "ユーザーID: %d\n" .
             "同意日時: %s\n" .
-            "利用規約バージョン: %s",
+            "利用規約バージョン: %s\n" .
+            "サイトURL: %s",
             $user->display_name,
             $user->user_email,
             $user_id,
             current_time( 'mysql' ),
-            $this->get_current_terms_version()
+            $this->get_current_terms_version(),
+            home_url()
         );
 
-        $headers = array( 'Content-Type: text/plain; charset=UTF-8' );
+        // SMTP設定を取得
+        $smtp_settings = get_option( 'ktp_smtp_settings', array() );
+        $from_email = ! empty( $smtp_settings['email_address'] ) ? sanitize_email( $smtp_settings['email_address'] ) : get_option( 'admin_email' );
+        $from_name = ! empty( $smtp_settings['smtp_from_name'] ) ? sanitize_text_field( $smtp_settings['smtp_from_name'] ) : get_bloginfo( 'name' );
 
-        return wp_mail( $to, $subject, $message, $headers );
+        // ヘッダーを設定
+        $headers = array( 'Content-Type: text/plain; charset=UTF-8' );
+        if ( ! empty( $from_email ) ) {
+            if ( ! empty( $from_name ) ) {
+                $headers[] = 'From: ' . $from_name . ' <' . $from_email . '>';
+            } else {
+                $headers[] = 'From: ' . $from_email;
+            }
+        }
+
+        // メール送信を実行
+        $sent = wp_mail( $to, $subject, $message, $headers );
+
+        // 詳細なログ出力
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            if ( $sent ) {
+                error_log( 'KTPWP Terms Agreement: 開発者通知メールを送信しました (User: ' . $user->display_name . ', Email: ' . $user->user_email . ', To: ' . $to . ')' );
+            } else {
+                // PHPMailerのエラー情報を取得
+                global $phpmailer;
+                $error_message = '';
+                if ( isset( $phpmailer ) && is_object( $phpmailer ) && ! empty( $phpmailer->ErrorInfo ) ) {
+                    $error_message = $phpmailer->ErrorInfo;
+                }
+                error_log( 'KTPWP Terms Agreement: 開発者通知メールの送信に失敗しました (User: ' . $user->display_name . ', Email: ' . $user->user_email . ', To: ' . $to . ', Error: ' . $error_message . ')' );
+            }
+        }
+
+        // メール送信が失敗した場合のフォールバック処理
+        if ( ! $sent ) {
+            // 管理者に通知（WordPressの管理画面通知として）
+            $admin_notice = sprintf(
+                'KantanPro利用規約同意通知: %s（%s）が利用規約に同意しましたが、開発者への通知メール送信に失敗しました。',
+                $user->display_name,
+                $user->user_email
+            );
+            
+            // 管理者通知を一時的に保存
+            set_transient( 'ktpwp_terms_agreement_notice_' . $user_id, $admin_notice, DAY_IN_SECONDS );
+            
+            // 管理者にメール通知を試行（別の宛先として）
+            $admin_email = get_option( 'admin_email' );
+            if ( $admin_email && $admin_email !== $to ) {
+                $admin_subject = '[' . get_bloginfo( 'name' ) . '] KantanPro利用規約同意通知（メール送信失敗）';
+                $admin_message = sprintf(
+                    "KantanProプラグインの利用規約に新しいユーザーが同意しました。\n\n" .
+                    "※ 開発者への通知メール送信に失敗したため、管理者宛に送信しています。\n\n" .
+                    "ユーザー情報:\n" .
+                    "表示名: %s\n" .
+                    "メールアドレス: %s\n" .
+                    "ユーザーID: %d\n" .
+                    "同意日時: %s\n" .
+                    "利用規約バージョン: %s\n" .
+                    "サイトURL: %s",
+                    $user->display_name,
+                    $user->user_email,
+                    $user_id,
+                    current_time( 'mysql' ),
+                    $this->get_current_terms_version(),
+                    home_url()
+                );
+                
+                wp_mail( $admin_email, $admin_subject, $admin_message, $headers );
+            }
+        }
+
+        return $sent;
     }
 
     /**
@@ -893,7 +1004,7 @@ kantanpro22@gmail.com
                     url: '<?php echo admin_url( 'admin-ajax.php' ); ?>',
                     type: 'POST',
                     data: {
-                        action: 'ktpwp_agree_terms',
+                        action: 'ktpwp_terms_agreement',
                         nonce: '<?php echo wp_create_nonce( 'ktpwp_terms_agreement' ); ?>'
                     },
                     success: function(response) {
