@@ -7,7 +7,7 @@
  * - 管理タブ・伝票処理・顧客・サービス・協力会社・レポート・チャット等の使い方を解説。
  * - 部署管理機能・利用規約管理機能の詳細説明を追加。
  * - バージョンアップ履歴・トラブルシューティングも掲載。
- * - 最新バージョン: 1.3.1(beta)
+ * - 最新バージョン: 1.3.6(beta)
  *
  * @package KTPWP
  * @subpackage Includes
@@ -509,14 +509,14 @@ if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
 		/**
 		 * Get terms content
 		 *
-		 * @since 1.3.1
+		 * @since 1.3.6
 		 * @return string HTML content
 		 */
 		private function get_terms_content() {
 			return '<h2>利用規約管理機能</h2>
 			
 			<h3>概要</h3>
-			<p>プラグイン利用時の利用規約同意機能です。初回利用時に同意ダイアログが表示されます。</p>
+			<p>プラグイン利用時の利用規約同意機能です。ログイン済みユーザーのみに同意ダイアログが表示されます。</p>
 			
 			<h3>利用規約の編集</h3>
 			
@@ -537,8 +537,10 @@ if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
 			
 			<h3>同意ダイアログ</h3>
 			
-			<h4>1. 表示タイミング</h4>
+			<h4>1. 表示条件</h4>
 			<ul>
+				<li>ユーザーがログインしていること（最優先条件）</li>
+				<li>ショートコード[ktpwp_all_tab]が設置されたページでのみ表示</li>
 				<li>初回利用時</li>
 				<li>利用規約更新時</li>
 				<li>同意状態がリセットされた時</li>
@@ -571,6 +573,7 @@ if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
 				<li>利用規約の変更は慎重に行う</li>
 				<li>同意状態のリセットはデバッグ用</li>
 				<li>メール通知は開発者のみに送信</li>
+				<li>管理画面では利用規約ダイアログは表示されません</li>
 			</ul>';
 		}
 

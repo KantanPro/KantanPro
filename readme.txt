@@ -3,7 +3,7 @@ Contributors: kantanpro
 Tags: workflow, order management, business, client, service, supplier, invoice, report, chat, product management, PDF, mobile, avatar, staff chat, automation, migration, department management, terms of service
 Requires at least: 5.0
 Tested up to: 6.5
-Stable tag: 1.3.1(beta)
+Stable tag: 1.3.6(beta)
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -20,7 +20,7 @@ KantanProは、WordPressで動作する業務管理・受注進捗・請求・�
 - 強固なセキュリティ（XSS/CSRF/SQLi/権限管理/ファイル検証/ノンス/prepare文）
 - ページネーション・検索・ソート・進捗/納期管理・警告マーク
 - **【NEW】部署管理機能**（顧客ごとの部署・担当者管理）
-- **【NEW】利用規約管理機能**（同意ダイアログ・管理画面）
+- **【NEW】利用規約管理機能**（同意ダイアログ・管理画面・ログイン条件）
 - **【NEW】全テーブルのカラム自動追加（自動マイグレーション）**
 - **【NEW】WP-CLIベースのマイグレーション管理機能**
 
@@ -37,7 +37,7 @@ KantanProは、WordPressで動作する業務管理・受注進捗・請求・�
 * **進捗・納期管理・警告マーク**（期限管理・アラート機能）
 * **権限管理・安全なDBアクセス**（ロールベースアクセス制御）
 * **【NEW】部署管理機能**（顧客ごとの部署・担当者管理）
-* **【NEW】利用規約管理機能**（同意ダイアログ・管理画面）
+* **【NEW】利用規約管理機能**（同意ダイアログ・管理画面・ログイン条件）
 * **【NEW】全テーブルのカラム自動追加（自動マイグレーション）**
 * **【NEW】WP-CLIベースのマイグレーション管理機能**
 
@@ -80,10 +80,11 @@ KantanProは、WordPressで動作する業務管理・受注進捗・請求・�
 - 部署の追加・編集・削除機能
 
 == 利用規約管理機能 ==
-- 利用規約の同意ダイアログ表示
+- 利用規約の同意ダイアログ表示（ログイン済みユーザーのみ）
 - 管理画面での利用規約編集
 - 利用規約バージョン管理
 - 同意状態の追跡
+- ショートコード設置ページでのみ表示
 
 == WP-CLIマイグレーション管理 ==
 KantanPro 1.3.0(beta) から、DB構造の変更はWP-CLIコマンドで安全に管理できます。
@@ -95,6 +96,11 @@ KantanPro 1.3.0(beta) から、DB構造の変更はWP-CLIコマンドで安全�
 プラグイン有効化時の自動マイグレーション処理は廃止されました。
 
 == 変更履歴 ==
+= 1.3.6(beta) ==
+* 利用規約表示条件を改善（ログイン済みユーザーのみ、ショートコード設置ページでのみ表示）
+* 管理画面での利用規約表示を無効化
+* 利用規約同意チェックの最優先条件としてログイン状態を追加
+
 = 1.3.5(beta) ==
 * 有効化とプラグインリストでの問題修正
 
