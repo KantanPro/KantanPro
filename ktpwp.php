@@ -3,7 +3,7 @@
  * Plugin Name: KantanPro
  * Plugin URI: https://www.kantanpro.com/
  * Description: ビジネスハブシステム。ショートコード[ktpwp_all_tab]を固定ページに設置してください。
- * Version: 1.3.2(beta)
+ * Version: 1.3.3(beta)
  * Author: KantanPro
  * Author URI: https://www.kantanpro.com/developer-profile/
  * License: GPL v2 or later
@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // プラグイン定数定義
 if ( ! defined( 'KANTANPRO_PLUGIN_VERSION' ) ) {
-    define( 'KANTANPRO_PLUGIN_VERSION', '1.3.2(beta)' );
+    define( 'KANTANPRO_PLUGIN_VERSION', '1.3.3(beta)' );
 }
 if ( ! defined( 'KANTANPRO_PLUGIN_NAME' ) ) {
     define( 'KANTANPRO_PLUGIN_NAME', 'KantanPro' );
@@ -77,20 +77,31 @@ if ( ! defined( 'MY_PLUGIN_URL' ) ) {
 if ( file_exists( __DIR__ . '/vendor/plugin-update-checker/plugin-update-checker.php' ) ) {
     require_once __DIR__ . '/vendor/plugin-update-checker/plugin-update-checker.php';
 
-    $kantanpro_update_checker = \YahnisElsts\PluginUpdateChecker\v5\PucFactory::buildUpdateChecker(
-        'https://github.com/KantanPro/freeKTP', // GitHubリポジトリURL (.gitを削除)
-        __FILE__,                              // プラグインのメインファイル
-        'KantanPro'                           // プラグインのスラッグ
-    );
-    $kantanpro_update_checker->setBranch( 'main' );
-    $kantanpro_update_checker->getVcsApi()->enableReleaseAssets();
+    // 有効なGitHubリポジトリが設定されている場合のみ更新チェッカーを初期化
+    $github_repo_url = 'https://github.com/KantanPro/freeKTP'; // 実際のリポジトリURLに変更が必要
+    $enable_update_checker = false; // 現在は無効化（リポジトリが存在しないため）
 
-    // 「アップデートを確認」リンクを無効化（自動更新機能が実装済みのため）
-    add_filter( 'puc_manual_check_link-KantanPro', '__return_false' );
+    if ( $enable_update_checker ) {
+        $kantanpro_update_checker = \YahnisElsts\PluginUpdateChecker\v5\PucFactory::buildUpdateChecker(
+            $github_repo_url,                     // GitHubリポジトリURL
+            __FILE__,                              // プラグインのメインファイル
+            'ktpwp'                               // プラグインのスラッグ（ファイル名に基づく）
+        );
+        $kantanpro_update_checker->setBranch( 'main' );
+        $kantanpro_update_checker->getVcsApi()->enableReleaseAssets();
 
-    // デバッグログを有効化（必要に応じて）
-    if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-        error_log( 'KantanPro Update Checker initialized' );
+        // 「アップデートを確認」リンクを無効化（自動更新機能が実装済みのため）
+        add_filter( 'puc_manual_check_link-ktpwp', '__return_false' );
+
+        // デバッグログを有効化（必要に応じて）
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KantanPro Update Checker initialized for: ' . $github_repo_url );
+        }
+    } else {
+        // 更新チェッカーが無効化されている場合のログ
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KantanPro Update Checker disabled: Repository not configured or not available' );
+        }
     }
 }
 
@@ -2467,3 +2478,89 @@ function ktpwp_admin_auto_migrations() {
     // 実行完了を記録（1日有効）
     set_transient( 'ktpwp_admin_migration_completed', true, DAY_IN_SECONDS );
 }
+
+/**
+ * 管理者向けの更新通知を表示
+ */
+function ktpwp_admin_update_notice() {
+    if ( ! current_user_can( 'manage_options' ) ) {
+        return;
+    }
+
+    // 更新チェッカーが無効化されている場合の通知
+    if ( ! ktpwp_is_update_checker_enabled() ) {
+        $screen = get_current_screen();
+        if ( $screen && ( strpos( $screen->id, 'ktpwp' ) !== false || $screen->id === 'plugins' ) ) {
+            ?>
+            <div class="notice notice-info is-dismissible">
+                <p>
+                    <strong>KantanPro 更新通知:</strong> 
+                    自動更新機能は現在無効化されています。新しいバージョンが利用可能になった場合は、手動でプラグインを更新してください。
+                </p>
+                <p>
+                    <small>
+                        現在のバージョン: <?php echo esc_html( KANTANPRO_PLUGIN_VERSION ); ?>
+                        | 最終更新: <?php echo esc_html( date( 'Y-m-d H:i:s', filemtime( __FILE__ ) ) ); ?>
+                    </small>
+                </p>
+            </div>
+            <?php
+        }
+    }
+}
+add_action( 'admin_notices', 'ktpwp_admin_update_notice' );
+
+/**
+ * 更新チェッカーが有効かどうかを確認
+ */
+function ktpwp_is_update_checker_enabled() {
+    // 更新チェッカーの設定を確認
+    $enable_update_checker = false; // 現在の設定値
+    
+    // 設定ファイルから動的に取得する場合
+    if ( defined( 'KTPWP_ENABLE_UPDATE_CHECKER' ) ) {
+        $enable_update_checker = KTPWP_ENABLE_UPDATE_CHECKER;
+    }
+    
+    return $enable_update_checker;
+}
+
+/**
+ * 手動更新チェック用のAJAXハンドラ
+ */
+function ktpwp_manual_update_check() {
+    // 権限チェック
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_die( 'Insufficient permissions' );
+    }
+
+    // nonce確認
+    if ( ! wp_verify_nonce( $_POST['nonce'], 'ktpwp_manual_update_check' ) ) {
+        wp_die( 'Security check failed' );
+    }
+
+    // 更新チェッカーが有効な場合のみ実行
+    if ( ktpwp_is_update_checker_enabled() ) {
+        // 更新チェックを強制実行
+        if ( isset( $GLOBALS['kantanpro_update_checker'] ) ) {
+            $update = $GLOBALS['kantanpro_update_checker']->checkForUpdates();
+            if ( $update ) {
+                wp_send_json_success( array(
+                    'message' => '新しいバージョンが利用可能です: ' . $update->version,
+                    'version' => $update->version,
+                    'url' => $update->homepage
+                ) );
+            } else {
+                wp_send_json_success( array(
+                    'message' => '最新バージョンを使用しています。',
+                    'version' => KANTANPRO_PLUGIN_VERSION
+                ) );
+            }
+        } else {
+            wp_send_json_error( '更新チェッカーが初期化されていません。' );
+        }
+    } else {
+        wp_send_json_error( '自動更新機能は無効化されています。' );
+    }
+}
+add_action( 'wp_ajax_ktpwp_manual_update_check', 'ktpwp_manual_update_check' );
