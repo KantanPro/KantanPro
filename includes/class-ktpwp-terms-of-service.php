@@ -246,6 +246,12 @@ kantanpro22@gmail.com
         global $wpdb;
         $table_name = $wpdb->prefix . 'ktp_terms_of_service';
 
+        // --- 追加: 同意状態リセット処理 ---
+        if ( isset($_POST['ktp_terms_reset_nonce']) && wp_verify_nonce($_POST['ktp_terms_reset_nonce'], 'ktp_terms_reset') ) {
+            $this->reset_user_terms_agreement();
+            echo '<div class="notice notice-success is-dismissible"><p>利用規約同意状態をリセットしました（このユーザーのみ）。</p></div>';
+        }
+
         // 認証成功メッセージ
         if ( isset( $_GET['authenticated'] ) && $_GET['authenticated'] === '1' ) {
             echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( '認証に成功しました。利用規約の編集が可能です。', 'ktpwp' ) . '</p></div>';
@@ -308,6 +314,25 @@ kantanpro22@gmail.com
             </div>
         </div>
         <?php
+        ?>
+        <form method="post" style="margin-top:20px;">
+            <?php wp_nonce_field('ktp_terms_reset', 'ktp_terms_reset_nonce'); ?>
+            <button type="submit" class="button button-secondary" onclick="return confirm('本当にこのユーザーの同意状態をリセットしますか？')">同意状態リセット（このユーザーのみ）</button>
+        </form>
+        <?php
+    }
+
+    /**
+     * 現在のユーザーの利用規約同意状態をリセット（デバッグ用）
+     */
+    public function reset_user_terms_agreement( $user_id = null ) {
+        if ( ! $user_id ) {
+            $user_id = get_current_user_id();
+        }
+        if ( $user_id ) {
+            delete_user_meta( $user_id, 'ktpwp_terms_agreed' );
+            delete_user_meta( $user_id, 'ktpwp_terms_version' );
+        }
     }
 
     /**
@@ -805,7 +830,11 @@ kantanpro22@gmail.com
             
             $('#ktpwp-decline-terms').click(function() {
                 if (confirm('<?php echo esc_js( __( '利用規約に同意しない場合、プラグインを利用できません。本当に同意しませんか？', 'ktpwp' ) ); ?>')) {
+                    <?php if ( is_admin() ) : ?>
                     window.location.href = '<?php echo esc_url( admin_url( 'plugins.php' ) ); ?>';
+                    <?php else : ?>
+                    window.location.href = '<?php echo esc_url( home_url() ); ?>';
+                    <?php endif; ?>
                 }
             });
         });

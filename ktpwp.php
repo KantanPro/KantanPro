@@ -470,6 +470,7 @@ add_action( 'plugins_loaded', 'ktpwp_ensure_department_migration', 6 );
 
 // 利用規約同意チェック
 add_action( 'admin_init', 'ktpwp_check_terms_agreement' );
+add_action( 'wp', 'ktpwp_check_terms_agreement' );
 
 // プラグイン更新時の自動マイグレーション
 add_action( 'upgrader_process_complete', 'ktpwp_plugin_upgrade_migration', 10, 2 );
@@ -1626,6 +1627,17 @@ function KTPWP_Index() {
     // すべてのタブのショートコード[kantanAllTab]
     function kantanAllTab() {
 
+        // 利用規約同意チェック
+        ktpwp_check_terms_on_shortcode();
+
+        // 利用規約管理クラスが存在しない場合はエラー表示
+        if ( ! class_exists( 'KTPWP_Terms_Of_Service' ) ) {
+            return '<div class="notice notice-error"><p>利用規約管理機能が利用できません。</p></div>';
+        }
+
+        $terms_service = new KTPWP_Terms_Of_Service();
+        // 利用規約に同意していない場合は、同意ダイアログが表示されるが、プラグインの機能は通常通り表示
+
         // ログイン中のユーザーは全員ヘッダーを表示（権限による制限を緩和）
         if ( is_user_logged_in() ) {
             // XSS対策: 画面に出力する変数は必ずエスケープ
@@ -2071,11 +2083,45 @@ add_action( 'admin_menu', array( 'KTP_Settings', 'add_admin_menu' ) );
  * 利用規約同意チェック
  */
 function ktpwp_check_terms_agreement() {
-    // 管理者以外はチェックしない
-    if ( ! current_user_can( 'manage_options' ) ) {
+    // 利用規約管理クラスが存在しない場合はスキップ
+    if ( ! class_exists( 'KTPWP_Terms_Of_Service' ) ) {
         return;
     }
 
+    $terms_service = new KTPWP_Terms_Of_Service();
+    
+    // 既に同意済みの場合はスキップ
+    if ( $terms_service->has_user_agreed_to_terms() ) {
+        return;
+    }
+
+    // 利用規約が存在しない場合はスキップ
+    if ( empty( $terms_service->get_terms_content() ) ) {
+        return;
+    }
+
+    // 管理画面の場合
+    if ( is_admin() ) {
+        // 管理者以外はチェックしない
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
+        // 利用規約同意ダイアログを表示
+        add_action( 'admin_footer', array( $terms_service, 'display_terms_dialog' ) );
+    } else {
+        // フロントエンドの場合、ショートコードが使用されているページでのみ表示
+        global $post;
+        if ( $post && has_shortcode( $post->post_content, 'ktpwp_all_tab' ) ) {
+            // 利用規約同意ダイアログを表示
+            add_action( 'wp_footer', array( $terms_service, 'display_terms_dialog' ) );
+        }
+    }
+}
+
+/**
+ * ショートコード実行時の利用規約チェック
+ */
+function ktpwp_check_terms_on_shortcode() {
     // 利用規約管理クラスが存在しない場合はスキップ
     if ( ! class_exists( 'KTPWP_Terms_Of_Service' ) ) {
         return;
@@ -2094,7 +2140,7 @@ function ktpwp_check_terms_agreement() {
     }
 
     // 利用規約同意ダイアログを表示
-    add_action( 'admin_footer', array( $terms_service, 'display_terms_dialog' ) );
+    add_action( 'wp_footer', array( $terms_service, 'display_terms_dialog' ) );
 }
 
 function ktpwp_admin_auto_migrations() {
