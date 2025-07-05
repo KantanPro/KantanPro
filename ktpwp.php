@@ -2422,6 +2422,132 @@ function ktpwp_check_terms_on_shortcode() {
     add_action( 'wp_footer', array( $terms_service, 'display_terms_dialog' ) );
 }
 
+/**
+ * セッション管理ヘルパー関数
+ */
+
+/**
+ * 安全にセッションを開始
+ */
+function ktpwp_safe_session_start() {
+    // 既にセッションが開始されている場合は何もしない
+    if ( session_status() === PHP_SESSION_ACTIVE ) {
+        return true;
+    }
+    
+    // REST APIリクエストの場合はセッションを開始しない
+    if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
+        return false;
+    }
+    
+    // AJAXリクエストの場合はセッションを開始しない（必要な場合のみ）
+    if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
+        return false;
+    }
+    
+    // CLIの場合はセッションを開始しない
+    if ( defined( 'WP_CLI' ) && WP_CLI ) {
+        return false;
+    }
+    
+    // ヘッダーが既に送信されている場合はセッションを開始しない
+    if ( headers_sent() ) {
+        return false;
+    }
+    
+    return session_start();
+}
+
+/**
+ * 安全にセッションを閉じる
+ */
+function ktpwp_safe_session_close() {
+    if ( session_status() === PHP_SESSION_ACTIVE ) {
+        session_write_close();
+        return true;
+    }
+    return false;
+}
+
+/**
+ * セッションデータを取得
+ */
+function ktpwp_get_session_data( $key, $default = null ) {
+    if ( session_status() !== PHP_SESSION_ACTIVE ) {
+        return $default;
+    }
+    
+    return isset( $_SESSION[ $key ] ) ? $_SESSION[ $key ] : $default;
+}
+
+/**
+ * セッションデータを設定
+ */
+function ktpwp_set_session_data( $key, $value ) {
+    if ( session_status() !== PHP_SESSION_ACTIVE ) {
+        return false;
+    }
+    
+    $_SESSION[ $key ] = $value;
+    return true;
+}
+
+/**
+ * REST APIリクエスト前にセッションを閉じる
+ */
+function ktpwp_close_session_before_rest() {
+    ktpwp_safe_session_close();
+}
+add_action( 'rest_api_init', 'ktpwp_close_session_before_rest', 1 );
+
+/**
+ * AJAXリクエスト前にセッションを閉じる（必要に応じて）
+ */
+function ktpwp_close_session_before_ajax() {
+    // 特定のAJAXアクションでのみセッションを閉じる
+    $close_session_actions = array(
+        'wp_ajax_ktpwp_manual_update_check',
+        'wp_ajax_nopriv_ktpwp_manual_update_check',
+    );
+    
+    $current_action = 'wp_ajax_' . ( $_POST['action'] ?? '' );
+    $current_action_nopriv = 'wp_ajax_nopriv_' . ( $_POST['action'] ?? '' );
+    
+    if ( in_array( $current_action, $close_session_actions ) || in_array( $current_action_nopriv, $close_session_actions ) ) {
+        ktpwp_safe_session_close();
+    }
+}
+add_action( 'wp_ajax_init', 'ktpwp_close_session_before_ajax', 1 );
+
+/**
+ * HTTPリクエスト前にセッションを閉じる
+ */
+function ktpwp_close_session_before_http_request( $parsed_args, $url ) {
+    // 内部リクエストの場合はセッションを閉じる
+    if ( strpos( $url, site_url() ) === 0 || strpos( $url, home_url() ) === 0 ) {
+        ktpwp_safe_session_close();
+    }
+    
+    return $parsed_args;
+}
+add_filter( 'http_request_args', 'ktpwp_close_session_before_http_request', 1, 2 );
+
+/**
+ * WP_Cronジョブ実行前にセッションを閉じる
+ */
+function ktpwp_close_session_before_cron() {
+    ktpwp_safe_session_close();
+}
+add_action( 'wp_cron', 'ktpwp_close_session_before_cron', 1 );
+
+/**
+ * プラグインのアップデート処理前にセッションを閉じる
+ */
+function ktpwp_close_session_before_plugin_update() {
+    ktpwp_safe_session_close();
+}
+add_action( 'upgrader_process_complete', 'ktpwp_close_session_before_plugin_update', 1 );
+
 function ktpwp_admin_auto_migrations() {
     // 管理画面でのみ実行
     if ( ! is_admin() ) {

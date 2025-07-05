@@ -55,10 +55,8 @@ class KTPWP_Terms_Of_Service {
         global $wpdb;
         $this->table_name = $wpdb->prefix . 'ktp_terms_of_service';
 
-        // セッション開始
-        if ( ! session_id() ) {
-            session_start();
-        }
+        // セッション開始（安全な方法で）
+        ktpwp_safe_session_start();
 
         // フックの設定
         add_action( 'admin_init', array( $this, 'handle_terms_actions' ) );

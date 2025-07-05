@@ -444,7 +444,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 			}
 
 			if ( ! session_id() ) {
-				session_start();
+				ktpwp_safe_session_start();
 			}
 
 			if ( $query_post === 'search' ) {

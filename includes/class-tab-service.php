@@ -202,7 +202,7 @@ if ( ! class_exists( 'Kntan_Service_Class' ) ) {
 			$search_mode = false;
 			$search_message = '';
 			if ( ! session_id() ) {
-				session_start();
+				ktpwp_safe_session_start();
 			}
 			if ( isset( $_SESSION['ktp_service_search_mode'] ) && $_SESSION['ktp_service_search_mode'] ) {
 				$search_mode = true;

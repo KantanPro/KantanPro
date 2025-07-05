@@ -1041,7 +1041,7 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 			if ( $from_client === 1 && $customer_name !== '' && ! $deletion_completed ) {
 				// セッションスタート（複製情報にアクセスするため - 下位互換性のため）
 				if ( session_status() !== PHP_SESSION_ACTIVE ) {
-					session_start();
+					ktpwp_safe_session_start();
 				}
 
 				// 顧客IDを取得（優先順位：GET > DB > SESSION > COOKIE > POST）

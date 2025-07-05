@@ -1068,7 +1068,7 @@ if ( ! class_exists( 'Kntan_Client_Class' ) ) {
 
 			// セッションメッセージの確認と表示
 			if ( ! session_id() ) {
-				session_start();
+				ktpwp_safe_session_start();
 			}
 			if ( isset( $_SESSION['ktp_search_message'] ) ) {
 				$message_id = 'ktp-message-' . uniqid();

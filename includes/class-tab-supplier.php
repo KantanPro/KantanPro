@@ -320,9 +320,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 				// 検索結果が0件の場合の処理
 				else {
 					// サプライヤも得意先タブと同じくセッションメッセージ＋リダイレクト方式に統一
-					if ( ! session_id() ) {
-						session_start();
-					}
+					ktpwp_safe_session_start();
 					$_SESSION['ktp_search_message'] = '検索結果がありませんでした。';
 					// 検索語とno_results=1を付与してsrcmodeにリダイレクト
 					global $wp;
@@ -566,8 +564,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 			$form_action_base_url = $base_page_url;
 
 			// --- DBエラー表示（セッションから） ---
-			if ( ! session_id() ) {
-				session_start(); }
+			ktpwp_safe_session_start();
 			if ( isset( $_SESSION['ktp_db_error_message'] ) ) {
 				echo '<div class="ktp-db-error" style="background:#ffeaea;color:#b30000;padding:14px 20px;margin:18px 0 20px 0;border:2px solid #b30000;border-radius:7px;font-weight:bold;font-size:1.1em;">'
                 . '<span style="font-size:1.2em;">⚠️ <b>DBエラー</b></span><br>'
