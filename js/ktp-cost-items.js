@@ -1995,4 +1995,60 @@
         
         calculateAmount(row);
     });
+
+    // スピンアップ・ダウンイベントの処理
+    $(document).on('input', '.cost-items-table .price, .cost-items-table .quantity', function () {
+        const $field = $(this);
+        
+        // disabled フィールドは処理をスキップ
+        if ($field.prop('disabled')) {
+            return;
+        }
+        
+        const value = $field.val();
+        const row = $field.closest('tr');
+        const fieldType = $field.hasClass('price') ? 'price' : 'quantity';
+        
+        if (window.ktpDebugMode) {
+            console.log('[COST] Input event triggered (spin):', {
+                fieldType: fieldType,
+                value: value,
+                rowIndex: row.index()
+            });
+        }
+        
+        // スピンイベントの場合は即座に金額計算を実行
+        calculateAmount(row);
+    });
+
+    // スピンアップ・ダウンイベントの専用処理（changeイベント）
+    $(document).on('change', '.cost-items-table .price, .cost-items-table .quantity', function () {
+        const $field = $(this);
+        
+        // disabled フィールドは処理をスキップ
+        if ($field.prop('disabled')) {
+            return;
+        }
+        
+        const value = $field.val();
+        const row = $field.closest('tr');
+        const fieldType = $field.hasClass('price') ? 'price' : 'quantity';
+        
+        if (window.ktpDebugMode) {
+            console.log('[COST] Change event triggered (spin):', {
+                fieldType: fieldType,
+                value: value,
+                rowIndex: row.index()
+            });
+        }
+        
+        // スピンイベントの場合は即座に金額計算を実行
+        calculateAmount(row);
+        
+        // 小数点以下の表示を即座に適用
+        const formattedValue = formatDecimalDisplay(value);
+        if (formattedValue !== value) {
+            $field.val(formattedValue);
+        }
+    });
 })(jQuery);

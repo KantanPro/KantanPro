@@ -694,6 +694,62 @@
             calculateAmount(row);
         });
 
+        // スピンアップ・ダウンイベントの処理
+        $(document).on('input', '.invoice-items-table .price, .invoice-items-table .quantity', function () {
+            const $field = $(this);
+            
+            // disabled フィールドは処理をスキップ
+            if ($field.prop('disabled')) {
+                return;
+            }
+            
+            const value = $field.val();
+            const row = $field.closest('tr');
+            const fieldType = $field.hasClass('price') ? 'price' : 'quantity';
+            
+            if (window.ktpDebugMode) {
+                console.log('[INVOICE] Input event triggered (spin):', {
+                    fieldType: fieldType,
+                    value: value,
+                    rowIndex: row.index()
+                });
+            }
+            
+            // スピンイベントの場合は即座に金額計算を実行
+            calculateAmount(row);
+        });
+
+        // スピンアップ・ダウンイベントの専用処理（changeイベント）
+        $(document).on('change', '.invoice-items-table .price, .invoice-items-table .quantity', function () {
+            const $field = $(this);
+            
+            // disabled フィールドは処理をスキップ
+            if ($field.prop('disabled')) {
+                return;
+            }
+            
+            const value = $field.val();
+            const row = $field.closest('tr');
+            const fieldType = $field.hasClass('price') ? 'price' : 'quantity';
+            
+            if (window.ktpDebugMode) {
+                console.log('[INVOICE] Change event triggered (spin):', {
+                    fieldType: fieldType,
+                    value: value,
+                    rowIndex: row.index()
+                });
+            }
+            
+            // スピンイベントの場合は即座に金額計算を実行
+            calculateAmount(row);
+            
+            // 小数点以下の表示を即座に適用
+            const formattedValue = formatDecimalDisplay(value);
+            if (formattedValue !== value) {
+                $field.val(formattedValue);
+            }
+        });
+
         // 自動追加機能を無効化（コメントアウト）
         // $(document).on('input', '.invoice-items-table .product-name, .invoice-items-table .price, .invoice-items-table .quantity', function() {
         //     const row = $(this).closest('tr');
