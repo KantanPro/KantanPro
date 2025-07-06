@@ -99,6 +99,12 @@ jQuery(document).ready(function($) {
     } else {
         console.log('[DELIVERY-DATES] 警告: ktp_ajaxオブジェクトが見つかりません');
     }
+    
+    // 即座に進捗ボタンの警告マークを更新（DOMContentLoaded後）
+    console.log('[DELIVERY-DATES] DOMContentLoaded後の進捗ボタン警告マーク更新');
+    setTimeout(function() {
+        updateProgressButtonWarning();
+    }, 50);
 
     // 納期フィールドの変更を監視
     $(document).on('change', '.delivery-date-input', function() {
@@ -318,11 +324,11 @@ jQuery(document).ready(function($) {
         
         // 納期が設定されている場合のみ警告判定を行う
         if (deliveryDate && deliveryDate.trim() !== '') {
-            // 進捗が「作成中」かどうかを確認
+            // 進捗が「受注」かどうかを確認
             var $progressSelect = $input.closest('.ktp_work_list_item').find('.progress-select');
             var currentProgress = parseInt($progressSelect.val());
             
-            if (currentProgress === 3) { // 作成中
+            if (currentProgress === 3) { // 受注
                 // 納期警告の判定
                 var today = new Date();
                 today.setHours(0, 0, 0, 0); // 時間を00:00:00に設定
@@ -356,6 +362,10 @@ jQuery(document).ready(function($) {
                 }
             }
         }
+        
+        // 納期フィールドの変更時に進捗ボタンの警告マークを即時更新
+        console.log('[DELIVERY-DATES] 納期変更により進捗ボタンの警告マークを更新');
+        updateProgressButtonWarning();
     }
 
     /**
@@ -503,6 +513,10 @@ jQuery(document).ready(function($) {
             orderId: $completionInput.data('order-id'),
             field: $completionInput.data('field')
         });
+        
+        // 初期化完了後に進捗ボタンの警告マークを即時更新
+        console.log('[DELIVERY-DATES] 初期化完了後の進捗ボタン警告マーク更新');
+        updateProgressButtonWarning();
     }, 100);
 
     // 進捗プルダウンの変更を監視（仕事リスト用）
@@ -552,11 +566,11 @@ jQuery(document).ready(function($) {
             var deliveryDate = $deliveryInput.val();
             console.log('[DELIVERY-DATES] 納期フィールドあり、更新:', deliveryDate);
             updateWarningMark($deliveryInput, deliveryDate);
+        } else {
+            // 納期フィールドがない場合でも、進捗変更時は進捗ボタンの警告マークを更新
+            console.log('[DELIVERY-DATES] 進捗変更後のボタン警告マーク更新');
+            updateProgressButtonWarning();
         }
-        
-        // 進捗変更時は常に進捗ボタンの警告マークを更新
-        console.log('[DELIVERY-DATES] 進捗変更後のボタン警告マーク更新');
-        updateProgressButtonWarning();
     });
 
     // 受注書詳細での進捗プルダウンの変更を監視
