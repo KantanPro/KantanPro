@@ -14,6 +14,19 @@
     // 重複追加防止フラグ (コスト項目専用)
     window.ktpAddingCostRow = false;
 
+    // 小数点以下の不要な0を削除する関数
+    function formatDecimalDisplay(value) {
+        if (value === '' || value === null || value === undefined) {
+            return '';
+        }
+        const num = parseFloat(value);
+        if (isNaN(num)) {
+            return value;
+        }
+        // 小数点以下6桁まで表示し、末尾の0とピリオドを削除
+        return num.toFixed(6).replace(/\.?0+$/, '');
+    }
+
     // 単価×数量の自動計算
     function calculateAmount(row) {
         const priceValue = row.find('.price').val();
@@ -1946,5 +1959,40 @@
                 $(document).off('keydown.purchase-popup');
             }
         });
+    });
+
+    // 価格・数量変更時の金額自動計算（blurイベントでのみ実行）
+    $(document).on('blur', '.cost-items-table .price, .cost-items-table .quantity', function () {
+        const $field = $(this);
+        
+        // disabled フィールドは処理をスキップ
+        if ($field.prop('disabled')) {
+            if (window.ktpDebugMode) {
+                console.log('[COST] Blur event skipped: field is disabled');
+            }
+            return;
+        }
+        
+        const value = $field.val();
+        
+        // 小数点以下の不要な0を削除して表示
+        const formattedValue = formatDecimalDisplay(value);
+        if (formattedValue !== value) {
+            $field.val(formattedValue);
+        }
+        
+        const row = $field.closest('tr');
+        const fieldType = $field.hasClass('price') ? 'price' : 'quantity';
+        
+        if (window.ktpDebugMode) {
+            console.log('[COST] Blur event triggered:', {
+                fieldType: fieldType,
+                originalValue: value,
+                formattedValue: formattedValue,
+                rowIndex: row.index()
+            });
+        }
+        
+        calculateAmount(row);
     });
 })(jQuery);

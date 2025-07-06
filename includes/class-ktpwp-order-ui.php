@@ -143,15 +143,19 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 
 				// Price
 				$html .= '<td style="text-align:left;">';
+				$price_raw = floatval( $item['price'] );
+				$price_display = rtrim( rtrim( number_format( $price_raw, 6, '.', '' ), '0' ), '.' );
 				$html .= '<input type="number" name="invoice_items[' . $index . '][price]" ';
-				$html .= 'value="' . esc_attr( $item['price'] ) . '" ';
+				$html .= 'value="' . esc_attr( $price_display ) . '" ';
 				$html .= 'class="invoice-item-input price" step="0.01" min="0" style="text-align:left;" />';
 				$html .= '</td>';
 
 				// Quantity
 				$html .= '<td style="text-align:left;">';
+				$quantity_raw = floatval( $item['quantity'] );
+				$quantity_display = rtrim( rtrim( number_format( $quantity_raw, 6, '.', '' ), '0' ), '.' );
 				$html .= '<input type="number" name="invoice_items[' . $index . '][quantity]" ';
-				$html .= 'value="' . esc_attr( $item['quantity'] ) . '" ';
+				$html .= 'value="' . esc_attr( $quantity_display ) . '" ';
 				$html .= 'class="invoice-item-input quantity" step="0.01" min="0" style="text-align:left;" />';
 				$html .= '</td>';
 
@@ -289,15 +293,19 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 
 				// Price
 				$html .= '<td style="text-align:left;">';
+				$price_raw = floatval( $item['price'] );
+				$price_display = rtrim( rtrim( number_format( $price_raw, 6, '.', '' ), '0' ), '.' );
 				$html .= '<input type="number" name="cost_items[' . $index . '][price]" ';
-				$html .= 'value="' . esc_attr( $item['price'] ) . '" ';
+				$html .= 'value="' . esc_attr( $price_display ) . '" ';
 				$html .= 'class="cost-item-input price" step="0.01" min="0" style="text-align:left;" />';
 				$html .= '</td>';
 
 				// Quantity
 				$html .= '<td style="text-align:left;">';
+				$quantity_raw = floatval( $item['quantity'] );
+				$quantity_display = rtrim( rtrim( number_format( $quantity_raw, 6, '.', '' ), '0' ), '.' );
 				$html .= '<input type="number" name="cost_items[' . $index . '][quantity]" ';
-				$html .= 'value="' . esc_attr( $item['quantity'] ) . '" ';
+				$html .= 'value="' . esc_attr( $quantity_display ) . '" ';
 				$html .= 'class="cost-item-input quantity" step="0.01" min="0" style="text-align:left;" />';
 				$html .= '</td>';
 
@@ -415,14 +423,18 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 					$unit = isset( $item['unit'] ) ? sanitize_text_field( $item['unit'] ) : '';
 					$remarks = isset( $item['remarks'] ) ? sanitize_text_field( $item['remarks'] ) : '';
 
+					// 小数点以下の不要な0を削除
+					$price_display = rtrim( rtrim( number_format( $price, 6, '.', '' ), '0' ), '.' );
+					$quantity_display = rtrim( rtrim( number_format( $quantity, 6, '.', '' ), '0' ), '.' );
+
 					$amount += $item_amount;
 
 					if ( $product_name ) {
 						$line = sprintf(
                             '%s  %s円 x %s%s = %s円',
                             $product_name,
-                            number_format( $price ),
-                            number_format( $quantity ),
+                            $price_display,
+                            $quantity_display,
                             $unit,
                             number_format( $item_amount )
 						);
@@ -452,12 +464,16 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 							$unit = isset( $item['unit'] ) ? sanitize_text_field( $item['unit'] ) : '';
 							$remarks = isset( $item['remarks'] ) ? sanitize_text_field( $item['remarks'] ) : '';
 
+							// 小数点以下の不要な0を削除
+							$price_display = rtrim( rtrim( number_format( $price, 6, '.', '' ), '0' ), '.' );
+							$quantity_display = rtrim( rtrim( number_format( $quantity, 6, '.', '' ), '0' ), '.' );
+
 							if ( $product_name ) {
 								$invoice_list .= sprintf(
                                     '%s  %s円 x %s%s = %s円',
                                     $product_name,
-                                    number_format( $price ),
-                                    number_format( $quantity ),
+                                    $price_display,
+                                    $quantity_display,
                                     $unit,
                                     number_format( $price * $quantity )
 								);

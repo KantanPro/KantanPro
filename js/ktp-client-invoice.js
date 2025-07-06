@@ -204,8 +204,21 @@ jQuery(document).ready(function($) {
                                             var evenRowColor = window.ktp_design_settings.even_row_color || "#FFFFFF";
 
                                             order.items.forEach(function(item, index) {
-                                                var unitPrice = item.unit_price ? parseFloat(item.unit_price).toLocaleString() + "円" : "-";
-                                                var quantity = item.quantity ? item.quantity : "-";
+                                                // 小数点以下の不要な0を削除する関数
+                                                function formatDecimalDisplay(value) {
+                                                    if (value === '' || value === null || value === undefined) {
+                                                        return '';
+                                                    }
+                                                    const num = parseFloat(value);
+                                                    if (isNaN(num)) {
+                                                        return value;
+                                                    }
+                                                    // 小数点以下6桁まで表示し、末尾の0とピリオドを削除
+                                                    return num.toFixed(6).replace(/\.?0+$/, '');
+                                                }
+                                                
+                                                var unitPrice = item.unit_price ? formatDecimalDisplay(item.unit_price) + "円" : "-";
+                                                var quantity = item.quantity ? formatDecimalDisplay(item.quantity) : "-";
                                                 var totalPrice = item.total_price ? parseFloat(item.total_price).toLocaleString() + "円" : "-";
 
                                                 if (item.total_price) {

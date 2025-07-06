@@ -1451,8 +1451,12 @@ class KTPWP_Ajax {
 					$unit         = isset( $item['unit'] ) ? sanitize_text_field( $item['unit'] ) : '';
 					$amount      += $item_amount;
 
+					// 小数点以下の不要な0を削除
+					$price_display = rtrim( rtrim( number_format( $price, 6, '.', '' ), '0' ), '.' );
+					$quantity_display = rtrim( rtrim( number_format( $quantity, 6, '.', '' ), '0' ), '.' );
+
 					if ( ! empty( trim( $product_name ) ) ) {
-						$line         = $product_name . '：' . number_format( $price ) . '円 × ' . $quantity . $unit . ' = ' . number_format( $item_amount ) . '円';
+						$line         = $product_name . '：' . $price_display . '円 × ' . $quantity_display . $unit . ' = ' . number_format( $item_amount ) . '円';
 						$item_lines[] = $line;
 						$line_length  = mb_strlen( $line, 'UTF-8' );
 						if ( $line_length > $max_length ) {

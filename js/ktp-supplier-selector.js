@@ -31,6 +31,19 @@ console.log('=== KTP SUPPLIER SELECTOR: SCRIPT STARTED ===');
         return priceStr.replace(/\.0+$/, '').replace(/(\.[0-9]*[1-9])0+$/, '$1');
     }
 
+    // 小数点以下の不要な0を削除する関数
+    function formatDecimalDisplay(value) {
+        if (value === '' || value === null || value === undefined) {
+            return '';
+        }
+        const num = parseFloat(value);
+        if (isNaN(num)) {
+            return value;
+        }
+        // 小数点以下6桁まで表示し、末尾の0とピリオドを削除
+        return num.toFixed(6).replace(/\.?0+$/, '');
+    }
+
         // HTMLエスケープ関数
         function escapeHtml(text) {
             const div = document.createElement('div');
@@ -538,10 +551,10 @@ window.ktpAddCostRowFromSkill = function(skill, currentRow) {
                 <input type="hidden" name="cost_items[${newIndex}][id]" value="0">
             </td>
             <td style="text-align:left;">
-                <input type="number" name="cost_items[${newIndex}][price]" class="cost-item-input price" value="${skill.unit_price || ''}" step="0.01" min="0" style="text-align:left;">
+                <input type="number" name="cost_items[${newIndex}][price]" class="cost-item-input price" value="${formatDecimalDisplay(skill.unit_price || '')}" step="0.01" min="0" style="text-align:left;">
             </td>
             <td style="text-align:left;">
-                <input type="number" name="cost_items[${newIndex}][quantity]" class="cost-item-input quantity" value="${skill.quantity || 1}" step="0.01" min="0" style="text-align:left;">
+                <input type="number" name="cost_items[${newIndex}][quantity]" class="cost-item-input quantity" value="${formatDecimalDisplay(skill.quantity || 1)}" step="0.01" min="0" style="text-align:left;">
             </td>
             <td>
                 <input type="text" name="cost_items[${newIndex}][unit]" class="cost-item-input unit" value="${skill.unit || ''}">
@@ -678,8 +691,8 @@ window.ktpUpdateCostRowFromSkill = function(skill, currentRow) {
             };
             // --- UI更新 ---
             currentRow.find('.product-name').val(skill.product_name);
-            currentRow.find('.price').val(skill.unit_price);
-            currentRow.find('.quantity').val(skill.quantity || 1);
+            currentRow.find('.price').val(formatDecimalDisplay(skill.unit_price));
+            currentRow.find('.quantity').val(formatDecimalDisplay(skill.quantity || 1));
             currentRow.find('.unit').val(skill.unit);
             
             // 協力会社名を「仕入」フィールドに表示

@@ -2242,6 +2242,10 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 					$unit = isset( $item['unit'] ) ? $item['unit'] : '';
 					$remarks = isset( $item['remarks'] ) ? $item['remarks'] : ''; // 備考フィールドを追加
 
+					// 小数点以下の不要な0を削除
+					$price_display = rtrim( rtrim( number_format( $price, 6, '.', '' ), '0' ), '.' );
+					$quantity_display = rtrim( rtrim( number_format( $quantity, 6, '.', '' ), '0' ), '.' );
+
 					// 金額計算
 					if ( $price == 0 && $amount > 0 && $quantity > 0 ) {
 						$price = $amount / $quantity;
@@ -2258,8 +2262,8 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 					$html .= '<div style="display: flex; padding: 6px 8px; height: 24px; background: ' . esc_attr( $bg_color ) . '; align-items: center;">';
 					$html .= '<div style="width: 30px; text-align: center;">' . $item_no . '</div>';
 					$html .= '<div style="flex: 1; text-align: left; margin-left: 8px;">' . esc_html( $product_name ) . '</div>';
-					$html .= '<div style="width: 80px; text-align: right;">¥' . number_format( $price ) . '</div>';
-					$html .= '<div style="width: 60px; text-align: right;">' . number_format( $quantity ) . $unit . '</div>';
+					$html .= '<div style="width: 80px; text-align: right;">¥' . $price_display . '</div>';
+					$html .= '<div style="width: 60px; text-align: right;">' . $quantity_display . $unit . '</div>';
 					$html .= '<div style="width: 80px; text-align: right;">¥' . number_format( $amount ) . '</div>';
 					$html .= '<div style="width: 100px; text-align: left; margin-left: 8px;">' . esc_html( $remarks ) . '</div>';
 					$html .= '</div>';

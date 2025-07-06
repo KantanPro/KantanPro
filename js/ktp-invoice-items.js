@@ -214,6 +214,19 @@
         });
     };
 
+    // 小数点以下の不要な0を削除する関数
+    function formatDecimalDisplay(value) {
+        if (value === '' || value === null || value === undefined) {
+            return '';
+        }
+        const num = parseFloat(value);
+        if (isNaN(num)) {
+            return value;
+        }
+        // 小数点以下6桁まで表示し、末尾の0とピリオドを削除
+        return num.toFixed(6).replace(/\.?0+$/, '');
+    }
+
     // 価格×数量の自動計算
     function calculateAmount(row) {
         const priceValue = row.find('.price').val();
@@ -647,32 +660,39 @@
         }).disableSelection();
 
         // 価格・数量変更時の金額自動計算（blurイベントでのみ実行）
-        // inputイベントでの即座の計算は削除（小数点入力時のカーソル移動問題を解決）
-        // $(document).on('input', '.invoice-items-table .price, .invoice-items-table .quantity', function () {
-        //     const $field = $(this);
-        //     
-        //     // disabled フィールドは処理をスキップ
-        //     if ($field.prop('disabled')) {
-        //         if (window.ktpDebugMode) {
-        //             console.log('[INVOICE] Input event skipped: field is disabled');
-        //         }
-        //         return;
-        //     }
-        //     
-        //     const row = $field.closest('tr');
-        //     const fieldType = $field.hasClass('price') ? 'price' : 'quantity';
-        //     const value = $field.val();
-        //     
-        //     if (window.ktpDebugMode) {
-        //         console.log('[INVOICE] Input event triggered:', {
-        //             fieldType: fieldType,
-        //             value: value,
-        //             rowIndex: row.index()
-        //         });
-        //     }
-        //     
-        //     calculateAmount(row);
-        // });
+        $(document).on('blur', '.invoice-items-table .price, .invoice-items-table .quantity', function () {
+            const $field = $(this);
+            
+            // disabled フィールドは処理をスキップ
+            if ($field.prop('disabled')) {
+                if (window.ktpDebugMode) {
+                    console.log('[INVOICE] Blur event skipped: field is disabled');
+                }
+                return;
+            }
+            
+            const value = $field.val();
+            
+            // 小数点以下の不要な0を削除して表示
+            const formattedValue = formatDecimalDisplay(value);
+            if (formattedValue !== value) {
+                $field.val(formattedValue);
+            }
+            
+            const row = $field.closest('tr');
+            const fieldType = $field.hasClass('price') ? 'price' : 'quantity';
+            
+            if (window.ktpDebugMode) {
+                console.log('[INVOICE] Blur event triggered:', {
+                    fieldType: fieldType,
+                    originalValue: value,
+                    formattedValue: formattedValue,
+                    rowIndex: row.index()
+                });
+            }
+            
+            calculateAmount(row);
+        });
 
         // 自動追加機能を無効化（コメントアウト）
         // $(document).on('input', '.invoice-items-table .product-name, .invoice-items-table .price, .invoice-items-table .quantity', function() {
