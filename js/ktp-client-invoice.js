@@ -538,8 +538,60 @@ function printInvoiceContent() {
                         xhr.onload = function() {
                             if (xhr.status === 200) {
                                 console.log('[進捗変更] 請求済みへの変更成功:', xhr.responseText);
+                                
+                                // ★ 注文履歴リストのUIを即座に更新
+                                try {
+                                    var response = JSON.parse(xhr.responseText);
+                                    if (response.success) {
+                                        console.log('[進捗変更] UI更新開始 - 更新件数:', response.data.updated);
+                                        updateOrderHistoryProgress(clientId, 4, 5); // 完了→請求済
+                                        
+                                        // 成功メッセージを表示
+                                        if (typeof window.showSuccessNotification === 'function') {
+                                            window.showSuccessNotification('対象受注書の進捗を「請求済」に変更しました');
+                                        } else {
+                                            console.log('[進捗変更] 成功: ' + response.data.updated + '件の受注書を「請求済」に変更しました');
+                                        }
+                                        
+                                        // ★ ポップアップを自動的に閉じる
+                                        setTimeout(function() {
+                                            var popup = document.getElementById('invoicePopup');
+                                            if (popup) {
+                                                popup.style.display = 'none';
+                                                console.log('[UI更新] 請求書ポップアップを閉じました');
+                                            }
+                                        }, 1500); // 1.5秒後に閉じる
+                                    } else {
+                                        console.error('[進捗変更] サーバーエラー:', response.data);
+                                        if (typeof window.showErrorNotification === 'function') {
+                                            window.showErrorNotification('進捗変更に失敗しました: ' + response.data);
+                                        } else {
+                                            alert('進捗変更に失敗しました: ' + response.data);
+                                        }
+                                    }
+                                } catch (e) {
+                                    console.error('[進捗変更] レスポンス解析エラー:', e, xhr.responseText);
+                                    if (typeof window.showErrorNotification === 'function') {
+                                        window.showErrorNotification('進捗変更処理でエラーが発生しました');
+                                    } else {
+                                        alert('進捗変更処理でエラーが発生しました');
+                                    }
+                                }
                             } else {
                                 console.error('[進捗変更] エラー:', xhr.status, xhr.statusText);
+                                if (typeof window.showErrorNotification === 'function') {
+                                    window.showErrorNotification('進捗変更に失敗しました (HTTP ' + xhr.status + ')');
+                                } else {
+                                    alert('進捗変更に失敗しました (HTTP ' + xhr.status + ')');
+                                }
+                            }
+                        };
+                        xhr.onerror = function() {
+                            console.error('[進捗変更] 通信エラー');
+                            if (typeof window.showErrorNotification === 'function') {
+                                window.showErrorNotification('進捗変更の通信でエラーが発生しました');
+                            } else {
+                                alert('進捗変更の通信でエラーが発生しました');
                             }
                         };
                         xhr.send(params);
@@ -584,3 +636,124 @@ setTimeout(function() {
         });
     }
 }, 100); 
+
+/**
+ * 注文履歴リストの進捗表示を即座に更新
+ * @param {string} clientId - 顧客ID
+ * @param {number} oldProgress - 変更前の進捗
+ * @param {number} newProgress - 変更後の進捗
+ */
+function updateOrderHistoryProgress(clientId, oldProgress, newProgress) {
+    console.log('[UI更新] 注文履歴リストの進捗更新開始:', {
+        clientId: clientId,
+        oldProgress: oldProgress,
+        newProgress: newProgress
+    });
+    
+    // 進捗ラベルの定義
+    var progressLabels = {
+        1: '受付中',
+        2: '見積中',
+        3: '受注',
+        4: '完了',
+        5: '請求済',
+        6: '入金済',
+        7: 'ボツ'
+    };
+    
+    // 注文履歴リストの各項目を確認・更新
+    var orderListItems = document.querySelectorAll('.ktp_data_list_item');
+    var updatedCount = 0;
+    
+    orderListItems.forEach(function(item) {
+        // 進捗表示要素を探す
+        var progressElement = item.querySelector('.status-' + oldProgress);
+        if (progressElement) {
+            console.log('[UI更新] 進捗要素発見:', progressElement.textContent);
+            
+            // 進捗表示を更新
+            progressElement.textContent = progressLabels[newProgress] || '不明';
+            progressElement.className = progressElement.className.replace('status-' + oldProgress, 'status-' + newProgress);
+            
+            updatedCount++;
+            console.log('[UI更新] 進捗更新完了:', progressElement.textContent);
+        }
+    });
+    
+    // 代替方法: spanタグで進捗が表示されている場合
+    if (updatedCount === 0) {
+        var progressSpans = document.querySelectorAll('span[class*="status-"]');
+        progressSpans.forEach(function(span) {
+            if (span.className.includes('status-' + oldProgress)) {
+                span.textContent = progressLabels[newProgress] || '不明';
+                span.className = span.className.replace('status-' + oldProgress, 'status-' + newProgress);
+                updatedCount++;
+                console.log('[UI更新] span進捗更新完了:', span.textContent);
+            }
+        });
+    }
+    
+    // より広範囲な検索: 「完了」テキストを含む要素を探す
+    if (updatedCount === 0 && oldProgress === 4) {
+        var allSpans = document.querySelectorAll('span');
+        allSpans.forEach(function(span) {
+            if (span.textContent.trim() === progressLabels[oldProgress]) {
+                // 親要素がリストアイテムかどうか確認
+                var listItem = span.closest('.ktp_data_list_item');
+                if (listItem) {
+                    span.textContent = progressLabels[newProgress] || '不明';
+                    // クラスが存在する場合は更新
+                    if (span.className.includes('status-')) {
+                        span.className = span.className.replace('status-' + oldProgress, 'status-' + newProgress);
+                    }
+                    updatedCount++;
+                    console.log('[UI更新] テキスト検索による進捗更新完了:', span.textContent);
+                }
+            }
+        });
+    }
+    
+    console.log('[UI更新] 注文履歴リスト更新完了:', {
+        updatedCount: updatedCount,
+        totalItems: orderListItems.length
+    });
+    
+    // 更新できなかった場合の警告
+    if (updatedCount === 0) {
+        console.warn('[UI更新] 注文履歴リストの進捗要素が見つかりませんでした。ページリロードが必要かもしれません。');
+        
+        // 代替案: 注文履歴リストの部分的な再読み込みを試行
+        refreshOrderHistoryList(clientId);
+    }
+    
+    return updatedCount;
+}
+
+/**
+ * 注文履歴リストの部分的な再読み込み
+ * @param {string} clientId - 顧客ID
+ */
+function refreshOrderHistoryList(clientId) {
+    console.log('[UI更新] 注文履歴リストの再読み込み開始:', clientId);
+    
+    if (!clientId) {
+        console.warn('[UI更新] 顧客IDが不明のため、再読み込みをスキップします');
+        return;
+    }
+    
+    // 現在のページURLを取得
+    var currentUrl = window.location.href;
+    
+    // 5秒後にページを再読み込み（ユーザーに時間を与える）
+    setTimeout(function() {
+        console.log('[UI更新] ページを再読み込みします');
+        window.location.reload();
+    }, 5000);
+    
+    // ユーザーに通知
+    if (typeof window.showInfoNotification === 'function') {
+        window.showInfoNotification('注文履歴を最新の状態に更新するため、5秒後にページを再読み込みします');
+    } else {
+        console.log('[UI更新] 注文履歴を最新の状態に更新するため、5秒後にページを再読み込みします');
+    }
+} 
