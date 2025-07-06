@@ -5,9 +5,10 @@
  * KantanPro（KTPWP）の公式リファレンス・ヘルプを提供。
  * - モバイル対応UI、PDF出力、サービス選択ポップアップ、アバター、ヘルプボタン、セキュリティ強化など最新機能を網羅。
  * - 管理タブ・伝票処理・顧客・サービス・協力会社・レポート・チャット等の使い方を解説。
- * - 部署管理機能・利用規約管理機能の詳細説明を追加。
+ * - 部署管理機能・利用規約管理機能・自動更新機能の詳細説明を追加。
+ * - シングルトンパターン・セッション管理最適化などの技術的改善を反映。
  * - バージョンアップ履歴・トラブルシューティングも掲載。
- * - 最新バージョン: 1.3.6(beta)
+ * - 最新バージョン: 1.3.7(beta)
  *
  * @package KTPWP
  * @subpackage Includes
@@ -251,6 +252,9 @@ if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
 				<li><strong>スタッフチャット</strong>：自動スクロール・削除連動・安定化</li>
 				<li><strong>部署管理機能</strong>：顧客ごとの部署・担当者管理</li>
 				<li><strong>利用規約管理機能</strong>：同意ダイアログ・管理画面</li>
+				<li><strong>自動更新機能</strong>：GitHub連携による最新版の自動配信</li>
+				<li><strong>シングルトンパターン</strong>：メモリ効率とパフォーマンス向上</li>
+				<li><strong>セッション管理最適化</strong>：REST API・AJAX・内部リクエスト対応</li>
 				<li><strong>モバイルUI・アバター表示</strong>：レスポンシブデザイン</li>
 				<li><strong>ヘルプ（リファレンス）機能</strong>：使用方法の詳細解説</li>
 				<li><strong>WP-CLIベースのマイグレーション管理</strong>：DB構造変更の安全な管理</li>
@@ -262,6 +266,8 @@ if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
 				<li>XSS・CSRF対策（サニタイズ・エスケープ・ノンス）</li>
 				<li>ファイルアップロード検証（MIME型・サイズ制限）</li>
 				<li>権限管理・安全なDBアクセス（ロールベースアクセス制御）</li>
+				<li>REST API制限（ログインユーザーのみアクセス可能）</li>
+				<li>セッション管理最適化（内部リクエスト・API呼び出し時の自動クローズ）</li>
 				<li>gap→margin対応によるUI崩れ防止（iOS/Android実機対応）</li>
 			</ul>';
 		}
@@ -372,6 +378,14 @@ if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
 				<li>バージョン管理機能</li>
 			</ul>
 			
+			<h3>自動更新機能</h3>
+			<p>GitHub連携による最新版の自動配信機能が有効化されています。</p>
+			<ul>
+				<li>プラグイン詳細情報の表示</li>
+				<li>セキュリティを重視した更新プロセス</li>
+				<li>更新通知の管理画面表示</li>
+			</ul>
+			
 			<h3>WP-CLIマイグレーション</h3>
 			<p>DB構造の変更はWP-CLIコマンドで安全に管理できます。</p>
 			<ul>
@@ -396,7 +410,9 @@ if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
 				<li><strong>CSRF対策</strong>：ノンス・トークンによるフォーム保護</li>
 				<li><strong>ファイルアップロード検証</strong>：MIME型・サイズ制限</li>
 				<li><strong>権限管理</strong>：ロールベースアクセス制御</li>
-				<li><strong>REST API制限</strong>：不要なAPIアクセスの制限</li>
+				<li><strong>REST API制限</strong>：ログインユーザーのみアクセス可能</li>
+				<li><strong>セッション管理最適化</strong>：内部リクエスト・API呼び出し時の自動クローズ</li>
+				<li><strong>シングルトンパターン</strong>：メモリ効率とパフォーマンス向上</li>
 			</ul>
 			
 			<h3>推奨設定</h3>
@@ -405,6 +421,7 @@ if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
 				<li>強力なパスワードを使用</li>
 				<li>定期的なバックアップを実行</li>
 				<li>セキュリティプラグインとの併用</li>
+				<li>自動更新機能を有効化（GitHub連携）</li>
 			</ul>';
 		}
 

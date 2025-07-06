@@ -1,9 +1,9 @@
 === KantanPro (KTPWP) ===
 Contributors: kantanpro
-Tags: workflow, order management, business, client, service, supplier, invoice, report, chat, product management, PDF, mobile, avatar, staff chat, automation, migration, department management, terms of service
+Tags: workflow, order management, business, client, service, supplier, invoice, report, chat, product management, PDF, mobile, avatar, staff chat, automation, migration, department management, terms of service, singleton pattern, security
 Requires at least: 5.0
 Tested up to: 6.5
-Stable tag: 1.3.6(beta)
+Stable tag: 1.3.7(beta)
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -21,7 +21,9 @@ KantanProは、WordPressで動作する業務管理・受注進捗・請求・�
 - ページネーション・検索・ソート・進捗/納期管理・警告マーク
 - **【NEW】部署管理機能**（顧客ごとの部署・担当者管理）
 - **【NEW】利用規約管理機能**（同意ダイアログ・管理画面・ログイン条件）
-- **【NEW】全テーブルのカラム自動追加（自動マイグレーション）**
+- **【NEW】自動更新機能**（GitHub連携による最新版の自動配信）
+- **【NEW】シングルトンパターン**（メモリ効率とパフォーマンス向上）
+- **【NEW】セッション管理最適化**（REST API・AJAX・内部リクエスト対応）
 - **【NEW】WP-CLIベースのマイグレーション管理機能**
 
 == 主な機能 ==
@@ -38,7 +40,9 @@ KantanProは、WordPressで動作する業務管理・受注進捗・請求・�
 * **権限管理・安全なDBアクセス**（ロールベースアクセス制御）
 * **【NEW】部署管理機能**（顧客ごとの部署・担当者管理）
 * **【NEW】利用規約管理機能**（同意ダイアログ・管理画面・ログイン条件）
-* **【NEW】全テーブルのカラム自動追加（自動マイグレーション）**
+* **【NEW】自動更新機能**（GitHub連携による最新版の自動配信）
+* **【NEW】シングルトンパターン**（メモリ効率とパフォーマンス向上）
+* **【NEW】セッション管理最適化**（REST API・AJAX・内部リクエスト対応）
 * **【NEW】WP-CLIベースのマイグレーション管理機能**
 
 == セキュリティ対策 ==
@@ -47,6 +51,8 @@ KantanProは、WordPressで動作する業務管理・受注進捗・請求・�
 - **ファイルアップロード検証**（MIME型・サイズ制限）
 - **権限管理・安全なDBアクセス**（ロールベースアクセス制御）
 - **ノンス・トークンによるフォーム保護**（CSRF攻撃防止）
+- **REST API制限**（ログインユーザーのみアクセス可能）
+- **セッション管理最適化**（内部リクエスト・API呼び出し時の自動クローズ）
 - **gap→margin対応によるUI崩れ防止**（iOS/Android実機対応）
 
 == システム要件 ==
@@ -86,6 +92,12 @@ KantanProは、WordPressで動作する業務管理・受注進捗・請求・�
 - 同意状態の追跡
 - ショートコード設置ページでのみ表示
 
+== 自動更新機能 ==
+- GitHub連携による最新版の自動配信
+- プラグイン詳細情報の表示
+- セキュリティを重視した更新プロセス
+- 更新通知の管理画面表示
+
 == WP-CLIマイグレーション管理 ==
 KantanPro 1.3.0(beta) から、DB構造の変更はWP-CLIコマンドで安全に管理できます。
 
@@ -96,6 +108,15 @@ KantanPro 1.3.0(beta) から、DB構造の変更はWP-CLIコマンドで安全�
 プラグイン有効化時の自動マイグレーション処理は廃止されました。
 
 == 変更履歴 ==
+= 1.3.7(beta) ==
+* 自動更新機能を有効化（GitHub連携）
+* シングルトンパターンの導入によるメモリ効率の改善
+* プラグイン詳細情報表示機能を追加
+* セッション管理の最適化（REST API・AJAX・内部リクエスト対応）
+* データベース整合性チェック機能の強化
+* 利用規約テーブルの自動修復機能を追加
+* 更新チェッカーの安定性向上
+
 = 1.3.6(beta) ==
 * 利用規約表示条件を改善（ログイン済みユーザーのみ、ショートコード設置ページでのみ表示）
 * 管理画面での利用規約表示を無効化
