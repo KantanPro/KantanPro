@@ -76,8 +76,30 @@ jQuery(document).ready(function($) {
                                 var companyName = res.data.client_name || "未設定";
                                 var contactDisplay = res.data.client_contact || "";
 
+
+
                                 // 部署選択がある場合
                                 if (res.data.selected_department) {
+                                    // 住所情報を処理
+                                    if (address && address.startsWith("〒")) {
+                                        var postalMatch = address.match(/〒(\d{3}-?\d{4})/);
+                                        if (postalMatch) {
+                                            postalCode = "〒" + postalMatch[1];
+                                            addressWithoutPostal = address.replace(/〒\d{3}-?\d{4}\s*/, "");
+                                        }
+                                    }
+
+
+
+                                    // 住所情報が設定されていない場合は「未設定」は表示しない
+                                    if (address && address.trim() !== "" && address !== "未設定") {
+                                        if (postalCode) {
+                                            html += "<div style=\"margin-bottom:5px;\">" + postalCode + "</div>";
+                                        }
+                                        if (addressWithoutPostal && addressWithoutPostal.trim() !== "") {
+                                            html += "<div style=\"margin-bottom:5px;\">" + addressWithoutPostal + "</div>";
+                                        }
+                                    }
                                     // 会社名を表示
                                     html += "<div style=\"margin-bottom:5px;\">" + companyName + "</div>";
                                     // 部署名を表示

@@ -3270,8 +3270,13 @@ function ktpwp_ajax_get_invoice_candidates() {
 	$client_contact_formatted = $contact_name;
 
 	if ( $selected_department ) {
-		// 部署選択がある場合：会社名、部署名、担当者名を別々に表示
-		$client_address_formatted = $client_info->company_name;
+		// 部署選択がある場合：住所情報（設定されている場合）、会社名、部署名、担当者名を表示
+		// 住所情報が設定されている場合は住所を使用、そうでなければ会社名のみ
+		if ( empty( trim( $full_address ) ) || $full_address === '未設定' ) {
+			$client_address_formatted = $client_info->company_name;
+		} else {
+			$client_address_formatted = $full_address;
+		}
 		$client_contact_formatted = $selected_department->department_name . "\n" . $selected_department->contact_person . ' 様';
 	} else {
 		// 部署選択がない場合：現行のまま
