@@ -334,7 +334,7 @@ if ( ! class_exists( 'Kntan_Service_Class' ) ) {
 				foreach ( $post_row as $row ) {
 					$id = esc_html( $row->id );
 					$service_name = esc_html( $row->service_name );
-					$price = isset( $row->price ) ? intval( $row->price ) : 0;
+					$price = isset( $row->price ) ? floatval( $row->price ) : 0;
 					$unit = isset( $row->unit ) ? esc_html( $row->unit ) : '';
 					$category = esc_html( $row->category );
 					$frequency = esc_html( $row->frequency );
@@ -354,8 +354,8 @@ if ( ! class_exists( 'Kntan_Service_Class' ) ) {
 						}
 					}
 					$results[] = '<a href="' . esc_url( add_query_arg( $item_link_args, $base_page_url ) ) . '">' .
-                    '<div class="ktp_data_list_item">' . esc_html__( 'ID', 'ktpwp' ) . ': ' . $id . ' ' . $service_name . ' : ' . number_format( $price ) . '円' . ( $unit ? '/' . $unit : '' ) . ' : ' . $category . ' : ' . esc_html__( '頻度', 'ktpwp' ) . '(' . $frequency . ')</div>' .
-					'</a>';
+                    '<div class="ktp_data_list_item">' . esc_html__( 'ID', 'ktpwp' ) . ': ' . $id . ' ' . $service_name . ' : ' . $this->format_price_display( $price ) . '円' . ( $unit ? '/' . $unit : '' ) . ' : ' . $category . ' : ' . esc_html__( '頻度', 'ktpwp' ) . '(' . $frequency . ')</div>' .
+					'</a><!-- DEBUG: price=' . $price . ' formatted=' . $this->format_price_display( $price ) . ' -->';
 				}
 				$query_max_num = $wpdb->num_rows;
 			} else {
@@ -450,7 +450,7 @@ if ( ! class_exists( 'Kntan_Service_Class' ) ) {
 					$data_id = esc_html( $row->id );
 					$time = esc_html( $row->time );
 					$service_name = esc_html( $row->service_name );
-					$price = isset( $row->price ) ? intval( $row->price ) : 0;
+					$price = isset( $row->price ) ? floatval( $row->price ) : 0;
 					$unit = isset( $row->unit ) ? esc_html( $row->unit ) : '';
 					$memo = esc_html( $row->memo );
 					$category = esc_html( $row->category );
@@ -470,6 +470,8 @@ if ( ! class_exists( 'Kntan_Service_Class' ) ) {
 					'type' => 'number',
 					'name' => 'price',
 					'placeholder' => esc_attr__( '価格（円）', 'ktpwp' ),
+					'step' => '0.01',
+					'min' => '0',
 				),
 				esc_html__( '単位', 'ktpwp' ) => array(
 					'type' => 'text',
@@ -769,7 +771,9 @@ if ( ! class_exists( 'Kntan_Service_Class' ) ) {
 						$default = isset( $field['default'] ) ? esc_html__( $field['default'], 'ktpwp' ) : '';
 						$data_forms .= "<div class=\"form-group\"><label>{$label_i18n}：</label> <select name=\"{$fieldName}\"{$required}><option value=\"\">{$default}</option>{$options}</select></div>";
 					} else {
-						$data_forms .= "<div class=\"form-group\"><label>{$label_i18n}：</label> <input type=\"{$field['type']}\" name=\"{$fieldName}\" value=\"" . esc_attr( $value ) . "\"{$pattern}{$required}{$placeholder}></div>";
+						$step = isset( $field['step'] ) ? ' step="' . esc_attr( $field['step'] ) . '"' : '';
+						$min = isset( $field['min'] ) ? ' min="' . esc_attr( $field['min'] ) . '"' : '';
+						$data_forms .= "<div class=\"form-group\"><label>{$label_i18n}：</label> <input type=\"{$field['type']}\" name=\"{$fieldName}\" value=\"" . esc_attr( $value ) . "\"{$pattern}{$required}{$placeholder}{$step}{$min}></div>";
 					}
 				}
 				$data_forms .= '<input type="hidden" name="query_post" value="update">';
@@ -884,6 +888,21 @@ if ( ! class_exists( 'Kntan_Service_Class' ) ) {
 		}
 
 		/**
+		 * 価格表示を適切にフォーマットする
+		 *
+		 * @param float $price 価格
+		 * @return string フォーマットされた価格
+		 */
+		private function format_price_display( $price ) {
+			// 小数点以下がある場合は2桁まで表示（末尾の0は消す）
+			if ( is_numeric($price) ) {
+				$formatted = rtrim(rtrim(number_format($price, 2, '.', ''), '0'), '.');
+				return $formatted;
+			}
+			return $price;
+		}
+
+		/**
 		 * サービス情報のプレビュー用HTMLを生成するメソッド
 		 *
 		 * @param array $service_data サービスデータ
@@ -900,7 +919,7 @@ if ( ! class_exists( 'Kntan_Service_Class' ) ) {
 			// 価格の表示形式
 			$price_display = '';
 			if ( $price > 0 ) {
-				$price_display = number_format( $price ) . '円';
+				$price_display = $this->format_price_display( $price ) . '円';
 				if ( ! empty( $unit ) ) {
 					$price_display .= '/' . $unit;
 				}

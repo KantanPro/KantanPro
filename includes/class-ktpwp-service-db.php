@@ -54,7 +54,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 			}
 
 			global $wpdb;
-			$my_table_version = '1.0.2'; // バージョンアップ：価格・単位フィールド追加
+			$my_table_version = '1.0.3'; // バージョンアップ：価格フィールドを小数点対応に変更
 			$table_name = $wpdb->prefix . 'ktp_' . sanitize_key( $tab_name );
 			$charset_collate = $wpdb->get_charset_collate();
 
@@ -63,7 +63,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 				'id' => 'MEDIUMINT(9) NOT NULL AUTO_INCREMENT',
 				'time' => 'DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL',
 				'service_name' => 'TINYTEXT',
-				'price' => 'DECIMAL(10,0) DEFAULT 0 NOT NULL',
+				'price' => 'DECIMAL(10,2) DEFAULT 0.00 NOT NULL',
 				'unit' => 'VARCHAR(50) NOT NULL DEFAULT \'\'',
 				'image_url' => 'VARCHAR(255)',
 				'memo' => 'TEXT',
@@ -87,6 +87,12 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 
 			require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 			dbDelta( $sql );
+
+			// 既存のテーブルがある場合は、priceカラムをDECIMAL(10,2)に変更
+			$table_exists = $wpdb->get_var( "SHOW TABLES LIKE '$table_name'" );
+			if ( $table_exists ) {
+				$wpdb->query( "ALTER TABLE `$table_name` MODIFY `price` DECIMAL(10,2) NOT NULL DEFAULT 0.00" );
+			}
 
 			update_option( $table_name . '_version', $my_table_version );
 
@@ -128,7 +134,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 
 			// Sanitize form fields
 			$service_name = isset( $_POST['service_name'] ) ? sanitize_text_field( $_POST['service_name'] ) : '';
-			$price = isset( $_POST['price'] ) ? intval( $_POST['price'] ) : 0;
+			$price = isset( $_POST['price'] ) ? floatval( $_POST['price'] ) : 0;
 			$unit = isset( $_POST['unit'] ) ? sanitize_text_field( $_POST['unit'] ) : '';
 			$memo = isset( $_POST['memo'] ) ? sanitize_textarea_field( $_POST['memo'] ) : '';
 			$category = isset( $_POST['category'] ) ? sanitize_text_field( $_POST['category'] ) : '';
@@ -171,7 +177,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
                             $table_name,
                             $data,
                             array( 'id' => $data_id ),
-                            array( '%s', '%d', '%s', '%s', '%s', '%s' ),
+                            array( '%s', '%f', '%s', '%s', '%s', '%s' ),
                             array( '%d' )
 						);
 					}
@@ -228,7 +234,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 
 			// フォームからのデータを取得
 			$service_name = isset( $_POST['service_name'] ) ? sanitize_text_field( $_POST['service_name'] ) : esc_html__( '新しいサービス', 'ktpwp' );
-			$price = isset( $_POST['price'] ) ? intval( $_POST['price'] ) : 0;
+			$price = isset( $_POST['price'] ) ? floatval( $_POST['price'] ) : 0;
 			$unit = isset( $_POST['unit'] ) ? sanitize_text_field( $_POST['unit'] ) : '';
 			$memo = isset( $_POST['memo'] ) ? sanitize_textarea_field( $_POST['memo'] ) : '';
 			$category = isset( $_POST['category'] ) ? sanitize_text_field( $_POST['category'] ) : '';
@@ -261,7 +267,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 					'frequency' => 0,
 					'search_field' => $search_field_value,
                 ),
-                array( '%d', '%s', '%s', '%d', '%s', '%s', '%s', '%s', '%d', '%s' )
+                array( '%d', '%s', '%s', '%f', '%s', '%s', '%s', '%s', '%d', '%s' )
 			);
 
 			if ( $insert_result === false ) {
@@ -394,7 +400,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 							'frequency' => $original_data->frequency,
 							'search_field' => $original_data->service_name . esc_html__( ' (複製)', 'ktpwp' ) . ', ' . $original_data->price . ', ' . $original_data->unit . ', ' . $original_data->category,
                         ),
-                        array( '%d', '%s', '%s', '%d', '%s', '%s', '%s', '%s', '%s', '%s' )
+                        array( '%d', '%s', '%s', '%f', '%s', '%s', '%s', '%s', '%s', '%s' )
 					);
 
 					if ( $insert_result === false ) {

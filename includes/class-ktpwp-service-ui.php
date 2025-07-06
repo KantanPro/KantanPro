@@ -229,7 +229,7 @@ if ( ! class_exists( 'KTPWP_Service_UI' ) ) {
 					$html .= '</td>';
 
 					// 価格列
-					$html .= '<td class="column-price">' . number_format( $service->price ) . '</td>';
+					$html .= '<td class="column-price">' . $this->format_price_display( $service->price ) . '</td>';
 
 					// 単位列
 					$html .= '<td class="column-unit">' . esc_html( $service->unit ) . '</td>';
@@ -356,7 +356,7 @@ if ( ! class_exists( 'KTPWP_Service_UI' ) ) {
 				$html .= '<div class="form-row">';
 				$html .= '<div class="form-group half">';
 				$html .= '<label for="price">' . esc_html__( '価格', 'ktpwp' ) . '</label>';
-				$html .= '<input type="number" id="price" name="price" min="0" value="0">';
+				$html .= '<input type="number" id="price" name="price" min="0" step="0.01" value="0">';
 				$html .= '</div>';
 
 				$html .= '<div class="form-group half">';
@@ -395,6 +395,21 @@ if ( ! class_exists( 'KTPWP_Service_UI' ) ) {
 			$html .= '</div>'; // .ktp_data_contents
 
 			return $html;
+		}
+
+		/**
+		 * 価格表示を適切にフォーマットする
+		 *
+		 * @param float $price 価格
+		 * @return string フォーマットされた価格
+		 */
+		private function format_price_display( $price ) {
+			// 小数点以下が0の場合は整数として表示
+			if ( $price == (int) $price ) {
+				return number_format( $price );
+			}
+			// 小数点以下がある場合は小数点以下を表示
+			return number_format( $price, 2 );
 		}
 
 		/**
