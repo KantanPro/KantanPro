@@ -106,12 +106,12 @@
                                         font-weight: 600;
                                         color: #333;
                                         margin-bottom: 5px;
-                                    ">2. 削除</div>
+                                    ">2. 通常削除</div>
                                     <div style="
                                         font-size: 13px;
                                         color: #666;
                                         line-height: 1.4;
-                                    ">顧客データは削除されますが受注書は削除されません</div>
+                                    ">顧客データと部署データを削除（受注書は残す）</div>
                                 </div>
                                 <span class="material-symbols-outlined" style="
                                     color: #ff9800;
@@ -232,7 +232,7 @@
                     isConfirmed = confirm('対象外に変更しますか？\n受注書は残り、顧客データは復元可能です。');
                     break;
                 case 'delete':
-                    confirmMessage = '顧客データを削除しますか？\n\n⚠️ 注意：\n• 顧客データは完全に削除されます\n• 受注書は残りますが、顧客情報は失われます\n• この操作は元に戻せません';
+                    confirmMessage = '顧客データと部署データを削除しますか？\n\n⚠️ 注意：\n• 顧客データと部署データが完全に削除されます\n• 受注書は残りますが、顧客情報は失われます\n• この操作は元に戻せません';
                     isConfirmed = confirm(confirmMessage);
                     break;
                 case 'complete':

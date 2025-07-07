@@ -265,6 +265,7 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 			if ( $data_id > 0 ) {
 				if ( $delete_type === 'soft' ) {
 					// ソフトデリート（対象外）
+					// 部署データは復活可能にするため削除しない
 					$result = $wpdb->update(
                         $table_name,
                         array( 'client_status' => '対象外' ),
@@ -273,7 +274,10 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
                         array( '%d' )
 					);
 				} elseif ( $delete_type === 'delete' ) {
-					// 顧客データのみ物理削除（受注書は残す）
+					// 通常削除：顧客データと部署データを物理削除（受注書は残す）
+					// 部署データを先に削除
+					$this->delete_client_departments( $data_id );
+					
 					$result = $wpdb->delete(
                         $table_name,
                         array( 'id' => $data_id ),
@@ -307,7 +311,10 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 							}
 						}
 
-						// 3. 顧客データ物理削除
+						// 3. 部署データを削除
+						$this->delete_client_departments( $data_id );
+
+						// 4. 顧客データ物理削除
 						$result = $wpdb->delete(
                             $table_name,
                             array( 'id' => $data_id ),
@@ -328,6 +335,7 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 						error_log( 'KTPWP Client Delete Error: ' . $e->getMessage() );
 
 						// エラーが発生した場合は、ソフトデリートにフォールバック
+						// 部署データは復活可能にするため削除しない
 						$result = $wpdb->update(
                             $table_name,
                             array( 'client_status' => '対象外' ),
@@ -343,6 +351,7 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 					}
 				} else {
 					// 不明なタイプはソフトデリート
+					// 部署データは復活可能にするため削除しない
 					$result = $wpdb->update(
                         $table_name,
                         array( 'client_status' => '対象外' ),
@@ -382,6 +391,66 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 					exit;
 				}
 			}
+		}
+
+		/**
+		 * 顧客の部署データを削除
+		 *
+		 * @param int $client_id 顧客ID
+		 * @return bool 削除成功時はtrue
+		 */
+		private function delete_client_departments( $client_id ) {
+			global $wpdb;
+
+			if ( empty( $client_id ) || $client_id <= 0 ) {
+				return false;
+			}
+
+			// 部署管理クラスが利用可能かチェック
+			if ( ! class_exists( 'KTPWP_Department_Manager' ) ) {
+				// クラスが利用できない場合は直接削除
+				$department_table = $wpdb->prefix . 'ktp_department';
+				$table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $department_table ) );
+				
+				if ( $table_exists ) {
+					$result = $wpdb->delete(
+						$department_table,
+						array( 'client_id' => $client_id ),
+						array( '%d' )
+					);
+					
+					if ( $result !== false ) {
+						if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+							error_log( "KTPWP Client Delete: 顧客ID {$client_id} の部署データ {$result} 件を削除しました（直接削除）" );
+						}
+						return true;
+					} else {
+						if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+							error_log( "KTPWP Client Delete: 顧客ID {$client_id} の部署データ削除に失敗しました: " . $wpdb->last_error );
+						}
+						return false;
+					}
+				}
+				return true; // テーブルが存在しない場合は成功とみなす
+			}
+
+			// 部署管理クラスを使用して削除
+			$departments = KTPWP_Department_Manager::get_departments_by_client( $client_id );
+			$deleted_count = 0;
+			
+			if ( ! empty( $departments ) ) {
+				foreach ( $departments as $department ) {
+					if ( KTPWP_Department_Manager::delete_department( $department->id ) ) {
+						$deleted_count++;
+					}
+				}
+			}
+
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( "KTPWP Client Delete: 顧客ID {$client_id} の部署データ {$deleted_count} 件を削除しました" );
+			}
+
+			return true;
 		}
 
 		/**
