@@ -6,9 +6,9 @@
  * - モバイル対応UI、PDF出力、サービス選択ポップアップ、アバター、ヘルプボタン、セキュリティ強化など最新機能を網羅。
  * - 管理タブ・伝票処理・顧客・サービス・協力会社・レポート・チャット等の使い方を解説。
  * - 部署管理機能・利用規約管理機能・自動更新機能の詳細説明を追加。
- * - シングルトンパターン・セッション管理最適化などの技術的改善を反映。
+ * - 動的更新履歴システム・セッション管理最適化などの技術的改善を反映。
  * - バージョンアップ履歴・トラブルシューティングも掲載。
- * - 最新バージョン: 1.3.7(beta)
+ * - 最新バージョン: 1.0.0(preview)
  *
  * @package KTPWP
  * @subpackage Includes
@@ -156,7 +156,7 @@ if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
 			}
 
 			// Clear all reference cache (including individual section caches)
-			$sections = array( 'overview', 'tabs', 'shortcodes', 'settings', 'security', 'troubleshooting', 'departments', 'terms' );
+			$sections = array( 'overview', 'tabs', 'shortcodes', 'settings', 'security', 'troubleshooting', 'departments', 'terms', 'changelog' );
 
 			foreach ( $sections as $section ) {
 				delete_transient( "ktpwp_reference_content_{$section}" );
@@ -223,8 +223,12 @@ if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
 				case 'terms':
 					$content = $this->get_terms_content();
 					break;
+				case 'changelog':
+					$content = $this->get_changelog_content();
+					break;
 				default:
 					$content = $this->get_overview_content();
+					break;
 			}
 
 			// Cache the content for 1 hour
@@ -241,35 +245,42 @@ if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
 		 */
 		private function get_overview_content() {
 			return '<h2>KantanPro プラグイン概要</h2>
-			<p>KantanProは、WordPressで動作する業務管理・受注進捗・請求・顧客・サービス・協力会社・レポート・スタッフチャットまで一元管理できる多機能プラグインです。</p>
 			
-			<h3>主要機能</h3>
+			<h3>プラグインの特徴</h3>
+			<p>KantanProは、WordPress上で以下の業務を一元管理できる多機能プラグインです。</p>
+			
+			<h4>主要機能</h4>
 			<ul>
-				<li><strong>6つの管理タブ</strong>：仕事リスト・伝票処理・得意先・サービス・協力会社・レポート</li>
-				<li><strong>受注案件の進捗管理</strong>：7段階（受注→進行中→完了→請求→支払い→ボツ）</li>
-				<li><strong>受注書・請求書のPDF出力</strong>：個別・一括出力対応</li>
-				<li><strong>顧客・サービス・協力会社のマスター管理</strong>：検索・ソート・ページネーション</li>
-				<li><strong>スタッフチャット</strong>：自動スクロール・削除連動・安定化</li>
-				<li><strong>部署管理機能</strong>：顧客ごとの部署・担当者管理</li>
-				<li><strong>利用規約管理機能</strong>：同意ダイアログ・管理画面</li>
-				<li><strong>自動更新機能</strong>：GitHub連携による最新版の自動配信</li>
-				<li><strong>シングルトンパターン</strong>：メモリ効率とパフォーマンス向上</li>
-				<li><strong>セッション管理最適化</strong>：REST API・AJAX・内部リクエスト対応</li>
-				<li><strong>モバイルUI・アバター表示</strong>：レスポンシブデザイン</li>
-				<li><strong>ヘルプ（リファレンス）機能</strong>：使用方法の詳細解説</li>
-				<li><strong>WP-CLIベースのマイグレーション管理</strong>：DB構造変更の安全な管理</li>
+				<li><strong>6つの管理タブ</strong>（仕事リスト・伝票処理・得意先・サービス・協力会社・レポート）</li>
+				<li><strong>受注案件の進捗管理</strong>（7段階：受注→進行中→完了→請求→支払い→ボツ）</li>
+				<li><strong>受注書・請求書の作成・編集・PDF保存</strong>（個別・一括出力対応）</li>
+				<li><strong>顧客・サービス・協力会社のマスター管理</strong>（検索・ソート・ページネーション）</li>
+				<li><strong>スタッフチャット</strong>（自動スクロール・削除連動・安定化）</li>
+				<li><strong>モバイル対応UI</strong>（gap→margin対応、iOS/Android実機対応）</li>
+				<li><strong>部署管理機能</strong>（顧客ごとの部署・担当者管理）</li>
+				<li><strong>利用規約管理機能</strong>（同意ダイアログ・管理画面）</li>
+				<li><strong>自動更新機能</strong>（GitHub連携による最新版の自動配信）</li>
+				<li><strong>動的更新履歴システム</strong>（データベースベースの管理）</li>
+				<li><strong>セキュリティ機能</strong>（XSS/CSRF/SQLi/権限管理/ファイル検証/ノンス/prepare文）</li>
+				<li><strong>セッション管理最適化</strong>（REST API・AJAX・内部リクエスト対応）</li>
 			</ul>
 			
-			<h3>セキュリティ対策</h3>
+			<h3>システム要件</h3>
 			<ul>
-				<li>SQLインジェクション防止（prepare文・バインド変数）</li>
-				<li>XSS・CSRF対策（サニタイズ・エスケープ・ノンス）</li>
-				<li>ファイルアップロード検証（MIME型・サイズ制限）</li>
-				<li>権限管理・安全なDBアクセス（ロールベースアクセス制御）</li>
-				<li>REST API制限（ログインユーザーのみアクセス可能）</li>
-				<li>セッション管理最適化（内部リクエスト・API呼び出し時の自動クローズ）</li>
-				<li>gap→margin対応によるUI崩れ防止（iOS/Android実機対応）</li>
-			</ul>';
+				<li>WordPress 5.0 以上</li>
+				<li>PHP 7.4 以上</li>
+				<li>MySQL 5.6 以上 または MariaDB 10.0 以上</li>
+				<li>推奨メモリ: 256MB 以上</li>
+				<li>推奨PHP拡張: GD（画像処理用）</li>
+			</ul>
+			
+			<h3>インストール方法</h3>
+			<ol>
+				<li>プラグインを `/wp-content/plugins/` にアップロード、または管理画面からインストール</li>
+				<li>プラグインを有効化（自動マイグレーションが実行されます）</li>
+				<li>固定ページに `[ktpwp_all_tab]` を挿入</li>
+				<li>管理画面「KantanPro」から基本設定を行ってください</li>
+			</ol>';
 		}
 
 		/**
@@ -365,32 +376,27 @@ if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
 		 * @return string HTML content
 		 */
 		private function get_settings_content() {
-			return '<h2>設定画面の使い方</h2>
+			return '<h2>設定・管理機能</h2>
 			
-			<h3>基本設定</h3>
-			<p>管理画面「KantanPro」から各種設定を行います。</p>
+			<h3>管理画面での設定</h3>
+			<p>WordPress管理画面の「KantanPro」メニューから各種設定が可能です。</p>
 			
-			<h3>利用規約管理</h3>
-			<p>管理画面「KantanPro」→「利用規約管理」で利用規約の編集が可能です。</p>
+			<h4>利用可能な設定項目</h4>
 			<ul>
-				<li>開発者パスワード認証が必要</li>
-				<li>Markdown形式で記述可能</li>
-				<li>バージョン管理機能</li>
+				<li><strong>一般設定</strong>：基本設定・システム情報</li>
+				<li><strong>メール・SMTP設定</strong>：メール送信設定</li>
+				<li><strong>デザイン</strong>：UI・UX設定</li>
+				<li><strong>スタッフ管理</strong>：スタッフ情報・権限管理</li>
+				<li><strong>ライセンス設定</strong>：ライセンス情報</li>
+				<li><strong>利用規約管理</strong>：利用規約の編集・管理</li>
 			</ul>
 			
 			<h3>自動更新機能</h3>
-			<p>GitHub連携による最新版の自動配信機能が有効化されています。</p>
+			<p>GitHub連携による最新版の自動配信機能が利用できます。</p>
 			<ul>
 				<li>プラグイン詳細情報の表示</li>
 				<li>セキュリティを重視した更新プロセス</li>
 				<li>更新通知の管理画面表示</li>
-			</ul>
-			
-			<h3>WP-CLIマイグレーション</h3>
-			<p>DB構造の変更はWP-CLIコマンドで安全に管理できます。</p>
-			<ul>
-				<li>一括実行: <code>wp ktpwp migrate_all</code></li>
-				<li>個別実行: <code>wp ktpwp migrate_YYYYMMDD_...</code></li>
 			</ul>';
 		}
 
@@ -405,23 +411,13 @@ if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
 			
 			<h3>実装されているセキュリティ対策</h3>
 			<ul>
-				<li><strong>SQLインジェクション防止</strong>：prepare文・バインド変数を使用</li>
-				<li><strong>XSS対策</strong>：サニタイズ・エスケープ処理</li>
-				<li><strong>CSRF対策</strong>：ノンス・トークンによるフォーム保護</li>
-				<li><strong>ファイルアップロード検証</strong>：MIME型・サイズ制限</li>
-				<li><strong>権限管理</strong>：ロールベースアクセス制御</li>
-				<li><strong>REST API制限</strong>：ログインユーザーのみアクセス可能</li>
-				<li><strong>セッション管理最適化</strong>：内部リクエスト・API呼び出し時の自動クローズ</li>
-				<li><strong>シングルトンパターン</strong>：メモリ効率とパフォーマンス向上</li>
-			</ul>
-			
-			<h3>推奨設定</h3>
-			<ul>
-				<li>WordPressの最新版を使用</li>
-				<li>強力なパスワードを使用</li>
-				<li>定期的なバックアップを実行</li>
-				<li>セキュリティプラグインとの併用</li>
-				<li>自動更新機能を有効化（GitHub連携）</li>
+				<li>SQLインジェクション防止（prepare文・バインド変数）</li>
+				<li>XSS・CSRF対策（サニタイズ・エスケープ・ノンス）</li>
+				<li>ファイルアップロード検証（MIME型・サイズ制限）</li>
+				<li>権限管理・安全なDBアクセス（ロールベースアクセス制御）</li>
+				<li>REST API制限（ログインユーザーのみアクセス可能）</li>
+				<li>セッション管理最適化（内部リクエスト・API呼び出し時の自動クローズ）</li>
+				<li>gap→margin対応によるUI崩れ防止（iOS/Android実機対応）</li>
 			</ul>';
 		}
 
@@ -436,46 +432,39 @@ if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
 			
 			<h3>よくある問題と解決方法</h3>
 			
-			<h4>1. ショートコードが表示されない</h4>
+			<h4>1. プラグインが表示されない</h4>
 			<ul>
-				<li>ログインしているか確認</li>
+				<li>ショートコード <code>[ktpwp_all_tab]</code> が正しく挿入されているか確認</li>
+				<li>ログイン状態を確認</li>
 				<li>適切な権限があるか確認</li>
-				<li>固定ページに正しく挿入されているか確認</li>
 			</ul>
 			
 			<h4>2. PDF出力ができない</h4>
 			<ul>
-				<li>PHP拡張GDが有効か確認</li>
-				<li>メモリ制限を確認</li>
+				<li>PHP拡張GDが有効になっているか確認</li>
+				<li>メモリ制限を確認（推奨：256MB以上）</li>
 				<li>一時ファイルの書き込み権限を確認</li>
 			</ul>
 			
 			<h4>3. モバイルで表示が崩れる</h4>
 			<ul>
 				<li>ブラウザのキャッシュをクリア</li>
-				<li>CSSのgap→margin対応を確認</li>
-				<li>レスポンシブデザインの確認</li>
+				<li>CSSファイルが正しく読み込まれているか確認</li>
+				<li>gap→margin対応が適用されているか確認</li>
 			</ul>
 			
-			<h4>4. データベースエラー</h4>
+			<h4>4. データベースエラーが発生する</h4>
 			<ul>
-				<li>WP-CLIマイグレーションを実行</li>
-				<li>データベース接続を確認</li>
-				<li>テーブル構造を確認</li>
-			</ul>
-			
-			<h3>デバッグ方法</h3>
-			<ul>
-				<li>WP_DEBUGを有効にしてログを確認</li>
-				<li>ブラウザの開発者ツールでエラーを確認</li>
-				<li>プラグインの競合を確認</li>
+				<li>プラグインを無効化してから再度有効化</li>
+				<li>データベースの権限を確認</li>
+				<li>WordPressのデバッグモードを有効化して詳細を確認</li>
 			</ul>';
 		}
 
 		/**
 		 * Get departments content
 		 *
-		 * @since 1.3.1
+		 * @since 1.0.0
 		 * @return string HTML content
 		 */
 		private function get_departments_content() {
@@ -526,71 +515,81 @@ if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
 		/**
 		 * Get terms content
 		 *
-		 * @since 1.3.6
+		 * @since 1.0.0
 		 * @return string HTML content
 		 */
 		private function get_terms_content() {
 			return '<h2>利用規約管理機能</h2>
 			
 			<h3>概要</h3>
-			<p>プラグイン利用時の利用規約同意機能です。ログイン済みユーザーのみに同意ダイアログが表示されます。</p>
+			<p>利用規約の同意ダイアログ表示と管理画面での編集機能を提供します。</p>
 			
-			<h3>利用規約の編集</h3>
+			<h3>機能</h3>
+			<ul>
+				<li>利用規約の同意ダイアログ表示（ログイン済みユーザーのみ）</li>
+				<li>管理画面での利用規約編集</li>
+				<li>利用規約バージョン管理</li>
+				<li>同意状態の追跡</li>
+				<li>ショートコード設置ページでのみ表示</li>
+			</ul>
 			
-			<h4>1. 管理画面での編集</h4>
+			<h3>管理画面での設定</h3>
 			<ol>
-				<li>管理画面「KantanPro」→「利用規約管理」を選択</li>
-				<li>開発者パスワードを入力して認証</li>
-				<li>利用規約内容を編集</li>
-				<li>「保存」ボタンをクリック</li>
+				<li>WordPress管理画面 → KantanPro → 利用規約管理</li>
+				<li>利用規約の内容を編集</li>
+				<li>バージョン情報を設定</li>
+				<li>保存ボタンをクリック</li>
 			</ol>
 			
-			<h4>2. 利用規約の形式</h4>
+			<h3>表示条件</h3>
 			<ul>
-				<li>Markdown形式で記述可能</li>
-				<li>見出し・リスト・太字・斜体に対応</li>
-				<li>バージョン管理機能あり</li>
+				<li>ログイン済みユーザーのみ表示</li>
+				<li>ショートコード設置ページでのみ表示</li>
+				<li>管理画面では表示されません</li>
+			</ul>';
+		}
+
+		/**
+		 * Get changelog content
+		 *
+		 * @since 1.0.0
+		 * @return string HTML content
+		 */
+		private function get_changelog_content() {
+			return '<h2>動的更新履歴システム</h2>
+			
+			<h3>概要</h3>
+			<p>データベースベースの更新履歴管理システムです。管理画面から更新履歴を編集できます。</p>
+			
+			<h3>機能</h3>
+			<ul>
+				<li>データベースベースの更新履歴管理</li>
+				<li>管理画面からの更新履歴編集機能</li>
+				<li>リアルタイムでの更新履歴表示</li>
+				<li>最大20エントリまで保持</li>
 			</ul>
 			
-			<h3>同意ダイアログ</h3>
-			
-			<h4>1. 表示条件</h4>
-			<ul>
-				<li>ユーザーがログインしていること（最優先条件）</li>
-				<li>ショートコード[ktpwp_all_tab]が設置されたページでのみ表示</li>
-				<li>初回利用時</li>
-				<li>利用規約更新時</li>
-				<li>同意状態がリセットされた時</li>
-			</ul>
-			
-			<h4>2. 同意手順</h4>
+			<h3>管理画面での編集</h3>
 			<ol>
-				<li>利用規約を読む</li>
-				<li>「確認しました」チェックボックスをクリック</li>
-				<li>「利用開始する」ボタンをクリック</li>
+				<li>WordPress管理画面 → KantanPro → 更新履歴管理</li>
+				<li>「新しいエントリを追加」ボタンで新しい更新履歴を追加</li>
+				<li>既存エントリの「編集」「削除」ボタンで管理</li>
+				<li>「デフォルトにリセット」で初期状態に戻す</li>
 			</ol>
 			
-			<h3>同意状態の管理</h3>
+			<h3>API機能</h3>
 			<ul>
-				<li>ユーザーメタデータで同意状態を保存</li>
-				<li>同意日時・利用規約バージョンを記録</li>
-				<li>開発者にメール通知が送信</li>
+				<li><code>ktpwp_add_changelog_entry()</code> - エントリ追加</li>
+				<li><code>ktpwp_remove_changelog_entry()</code> - エントリ削除</li>
+				<li><code>ktpwp_update_changelog_entry()</code> - エントリ更新</li>
+				<li><code>ktpwp_reset_changelog()</code> - デフォルトにリセット</li>
 			</ul>
 			
-			<h3>公開利用規約ページ</h3>
+			<h3>セキュリティ機能</h3>
 			<ul>
-				<li>フッターに利用規約リンクが表示</li>
-				<li>新しいウィンドウで利用規約を表示</li>
-				<li>印刷・保存に対応</li>
-			</ul>
-			
-			<h3>注意事項</h4>
-			<ul>
-				<li>開発者パスワードは厳重に管理</li>
-				<li>利用規約の変更は慎重に行う</li>
-				<li>同意状態のリセットはデバッグ用</li>
-				<li>メール通知は開発者のみに送信</li>
-				<li>管理画面では利用規約ダイアログは表示されません</li>
+				<li>権限チェック（管理者のみ）</li>
+				<li>nonce認証</li>
+				<li>データサニタイゼーション</li>
 			</ul>';
 		}
 
@@ -601,31 +600,8 @@ if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
 		 * @return void
 		 */
 		public static function render_modal() {
-			?>
-			<div id="ktpwp-reference-modal" class="ktpwp-modal" style="display: none;">
-				<div class="ktpwp-modal-content">
-					<div class="ktpwp-modal-header">
-						<h2>KantanPro ヘルプ</h2>
-						<span class="ktpwp-modal-close">&times;</span>
-					</div>
-					<div class="ktpwp-modal-body">
-						<div class="ktpwp-reference-nav">
-							<button class="ktpwp-nav-btn active" data-section="overview">概要</button>
-							<button class="ktpwp-nav-btn" data-section="tabs">管理タブ</button>
-							<button class="ktpwp-nav-btn" data-section="shortcodes">ショートコード</button>
-							<button class="ktpwp-nav-btn" data-section="settings">設定</button>
-							<button class="ktpwp-nav-btn" data-section="departments">部署管理</button>
-							<button class="ktpwp-nav-btn" data-section="terms">利用規約</button>
-							<button class="ktpwp-nav-btn" data-section="security">セキュリティ</button>
-							<button class="ktpwp-nav-btn" data-section="troubleshooting">トラブルシューティング</button>
-						</div>
-						<div class="ktpwp-reference-content">
-							<div class="ktpwp-loading">読み込み中...</div>
-						</div>
-					</div>
-				</div>
-			</div>
-			<?php
+			// Modal HTML is now rendered in main ktpwp.php file
+			// This method is kept for backward compatibility
 		}
 
 		/**
@@ -635,7 +611,8 @@ if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
 		 * @return void
 		 */
 		public function add_modal_html() {
-			self::render_modal();
+			// Modal HTML is now rendered in main ktpwp.php file
+			// This method is kept for backward compatibility
 		}
 
 		/**
@@ -645,7 +622,7 @@ if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
 		 * @return void
 		 */
 		public static function on_plugin_activation() {
-			// Set flag to refresh reference cache
+			// Set flag to refresh reference cache on next load
 			update_option( 'ktpwp_reference_needs_refresh', true );
 		}
 
@@ -656,7 +633,7 @@ if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
 		 * @return void
 		 */
 		public static function clear_all_cache() {
-			$sections = array( 'overview', 'tabs', 'shortcodes', 'settings', 'security', 'troubleshooting', 'departments', 'terms' );
+			$sections = array( 'overview', 'tabs', 'shortcodes', 'settings', 'security', 'troubleshooting', 'departments', 'terms', 'changelog' );
 
 			foreach ( $sections as $section ) {
 				delete_transient( "ktpwp_reference_content_{$section}" );

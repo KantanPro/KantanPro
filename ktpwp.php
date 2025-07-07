@@ -3,7 +3,7 @@
  * Plugin Name: KantanPro
  * Plugin URI: https://www.kantanpro.com/
  * Description: 仕事効率化システム。ショートコード[ktpwp_all_tab]を固定ページに設置してください。
- * Version: 1.3.7(beta)
+ * Version: 1.0.0(preview)
  * Author: KantanPro
  * Author URI: https://www.kantanpro.com/kantanpro-page
  * License: GPL v2 or later
@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // プラグイン定数定義
 if ( ! defined( 'KANTANPRO_PLUGIN_VERSION' ) ) {
-    define( 'KANTANPRO_PLUGIN_VERSION', '1.3.7(beta)' );
+    define( 'KANTANPRO_PLUGIN_VERSION', '1.0.0(preview)' );
 }
 if ( ! defined( 'KANTANPRO_PLUGIN_NAME' ) ) {
     define( 'KANTANPRO_PLUGIN_NAME', 'KantanPro' );
@@ -411,110 +411,94 @@ register_activation_hook( KANTANPRO_PLUGIN_FILE, 'ktpwp_plugin_activation' );
  * プラグイン有効化時の処理
  */
 function ktpwp_plugin_activation() {
-    if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-        error_log( 'KTPWP: Plugin activation started' );
+    // データベーステーブルの作成
+    ktp_table_setup();
+    
+    // 部署テーブルの作成
+    ktpwp_create_department_table();
+    
+    // 部署テーブルに選択状態カラムを追加
+    ktpwp_add_department_selection_column();
+    
+    // 顧客テーブルにselected_department_idカラムを追加
+    ktpwp_add_client_selected_department_column();
+    
+    // 選択された部署の初期化
+    ktpwp_initialize_selected_department();
+    
+    // 利用規約テーブルの作成
+    ktpwp_ensure_terms_table();
+    
+    // 更新履歴の初期データを設定
+    ktpwp_initialize_changelog();
+    
+    // プラグインのバージョン情報を保存
+    update_option( 'ktpwp_version', KANTANPRO_PLUGIN_VERSION );
+    
+    // データベースバージョンを更新
+    update_option( 'ktpwp_db_version', KANTANPRO_PLUGIN_VERSION );
+    
+    // フラッシュメッセージを設定
+    set_transient( 'ktpwp_activation_message', 'KantanProプラグインが正常に有効化されました。', 60 );
+    
+    // リダイレクトフラグを設定
+    add_option( 'ktpwp_activation_redirect', true );
+}
+
+/**
+ * 更新履歴の初期化処理
+ */
+function ktpwp_initialize_changelog() {
+    // 現在のバージョンと本日の日付を取得
+    $current_version = KANTANPRO_PLUGIN_VERSION;
+    $current_date = date('Y-m-d');
+    
+    // 既存の更新履歴を取得
+    $existing_changelog = get_option('ktpwp_changelog_entries', array());
+    
+    // 最新のエントリが現在のバージョンと一致するかチェック
+    $needs_update = true;
+    if (!empty($existing_changelog)) {
+        $latest_entry = $existing_changelog[0];
+        if (isset($latest_entry['version']) && $latest_entry['version'] === $current_version) {
+            $needs_update = false;
+        }
     }
-
-    try {
-        // 基本テーブル作成
-        ktp_table_setup();
-
-        // 部署テーブルの作成（確実に実行）
-        $department_table_created = ktpwp_create_department_table();
-
-        // 部署テーブルに選択状態カラムを追加（確実に実行）
-        $column_added = ktpwp_add_department_selection_column();
-
-        // 顧客テーブルにselected_department_idカラムを追加（確実に実行）
-        $client_column_added = ktpwp_add_client_selected_department_column();
-
-        // 追加のテーブル構造修正
-        ktpwp_fix_table_structures();
-
-        // 既存データの修復
-        ktpwp_repair_existing_data();
-
-        // 部署選択の自動初期化は無効化（ユーザーが明示的に選択した場合のみ部署が選択される）
-        // ktpwp_initialize_selected_department();
-
-        // DBバージョンを設定
-        $plugin_version = KANTANPRO_PLUGIN_VERSION;
-        update_option( 'ktpwp_db_version', $plugin_version );
-
-        // デフォルト設定の保存
-        if ( get_option( 'ktpwp_version' ) === false ) {
-            add_option( 'ktpwp_version', $plugin_version );
+    
+    // 更新が必要な場合のみ処理を実行
+    if ($needs_update) {
+        // デフォルトの更新履歴を取得
+        $default_entries = ktpwp_get_default_changelog_entries();
+        
+        // 最新のエントリの日付を本日に更新
+        if (!empty($default_entries)) {
+            $default_entries[0]['date'] = $current_date;
         }
-        if ( get_option( 'ktpwp_installed_date' ) === false ) {
-            add_option( 'ktpwp_installed_date', current_time( 'mysql' ) );
-        }
-        if ( get_option( 'ktpwp_debug_mode' ) === false ) {
-            add_option( 'ktpwp_debug_mode', defined( 'WP_DEBUG' ) && WP_DEBUG ? 'enabled' : 'disabled' );
-        }
-        if ( get_option( 'ktpwp_debug_log_enabled' ) === false ) {
-            add_option( 'ktpwp_debug_log_enabled', '0' );
-        }
-        if ( get_option( 'ktpwp_rest_api_restricted' ) === false ) {
-            add_option( 'ktpwp_rest_api_restricted', '1' );
-        }
-
-        // 設定クラスのアクティベート処理
-        if ( class_exists( 'KTP_Settings' ) ) {
-            KTP_Settings::activate();
-        }
-
-        // 利用規約テーブルの作成（確実に実行）
-        try {
-            if ( class_exists( 'KTPWP_Terms_Of_Service' ) ) {
-                KTPWP_Terms_Of_Service::create_table();
-                if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                    error_log( 'KTPWP: Terms of service table creation attempted during activation' );
-                }
-            } else {
-                // クラスが見つからない場合は直接作成
-                ktpwp_create_terms_table_directly();
-                if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                    error_log( 'KTPWP: Terms of service table created directly during activation' );
-                }
-            }
-        } catch ( Exception $e ) {
-            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP: Error during terms table creation: ' . $e->getMessage() );
-            }
-            
-            // エラーが発生した場合は直接作成を試行
-            ktpwp_create_terms_table_directly();
-        }
-
-        // プラグインリファレンス更新処理
-        if ( class_exists( 'KTPWP_Plugin_Reference' ) ) {
-            KTPWP_Plugin_Reference::on_plugin_activation();
-        }
-
-        // 一時的なフラグをクリア（次回のチェックを確実に実行）
-        delete_transient( 'ktpwp_db_integrity_checked' );
-        delete_transient( 'ktpwp_admin_migration_completed' );
-
-        // マイグレーション完了フラグを設定
-        update_option( 'ktpwp_department_migration_completed', '1' );
-
-        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP: Plugin activation completed successfully' );
-            if ( $department_table_created ) {
-                error_log( 'KTPWP: Department table created/verified' );
-            }
-            if ( $column_added ) {
-                error_log( 'KTPWP: Department selection column added/verified' );
-            }
-            if ( $client_column_added ) {
-                error_log( 'KTPWP: Client selected_department_id column added/verified' );
+        
+        // 既存のエントリと新しいエントリをマージ
+        $merged_entries = array_merge($default_entries, $existing_changelog);
+        
+        // 重複を除去（バージョンが同じ場合は新しいものを優先）
+        $unique_entries = array();
+        $seen_versions = array();
+        
+        foreach ($merged_entries as $entry) {
+            if (!in_array($entry['version'], $seen_versions)) {
+                $unique_entries[] = $entry;
+                $seen_versions[] = $entry['version'];
             }
         }
-	} catch ( Exception $e ) {
-        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP: Plugin activation failed: ' . $e->getMessage() );
-		}
-        // エラーが発生してもプラグインは有効化を続行
+        
+        // 最大20エントリまで保持
+        if (count($unique_entries) > 20) {
+            $unique_entries = array_slice($unique_entries, 0, 20);
+        }
+        
+        update_option('ktpwp_changelog_entries', $unique_entries);
+        
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('KTPWP: 更新履歴を更新しました - バージョン: ' . $current_version . ', 日付: ' . $current_date);
+        }
     }
 }
 
@@ -526,6 +510,9 @@ add_action( 'plugins_loaded', 'ktpwp_ensure_department_migration', 6 );
 
 // 利用規約テーブル存在チェック（自動修復）
 add_action( 'plugins_loaded', 'ktpwp_ensure_terms_table', 7 );
+
+// 更新履歴の初期化（プラグイン読み込み時）
+add_action( 'plugins_loaded', 'ktpwp_initialize_changelog', 8 );
 
 // 利用規約同意チェック
 add_action( 'admin_init', 'ktpwp_check_terms_agreement' );
@@ -2802,18 +2789,22 @@ add_filter( 'plugins_api', 'ktpwp_plugin_information', 10, 3 );
 function ktpwp_get_plugin_description() {
     $description = '
     <h3>KantanPro - ビジネスハブシステム</h3>
-    <p>KantanProは、中小企業から大企業まで対応可能な包括的なビジネスハブシステムです。業務効率化、プロジェクト管理、顧客関係管理を一つのプラットフォームで実現します。</p>
+    <p>KantanProは、WordPress上で以下の業務を一元管理できる多機能プラグインです。中小企業から大企業まで対応可能な包括的なビジネスハブシステムです。</p>
     
     <h4>🚀 主な機能</h4>
     <ul>
-        <li><strong>📊 顧客管理</strong> - 顧客情報の一元管理、履歴追跡、分析機能</li>
-        <li><strong>📋 案件管理</strong> - プロジェクトの進捗管理、タスク管理、期限管理</li>
-        <li><strong>🤝 協力会社管理</strong> - 外部パートナーとの連携、スキル管理</li>
-        <li><strong>📈 レポート機能</strong> - 業務データの可視化、グラフ表示、分析ツール</li>
-        <li><strong>🏢 部署管理</strong> - 組織構造の管理、権限設定</li>
-        <li><strong>📄 利用規約管理</strong> - 規約の同意管理、バージョン管理</li>
-        <li><strong>🔒 セキュリティ機能</strong> - データ保護、アクセス制御、監査ログ</li>
-        <li><strong>📱 レスポンシブデザイン</strong> - PC、タブレット、スマートフォン対応</li>
+        <li><strong>📊 6つの管理タブ</strong> - 仕事リスト・伝票処理・得意先・サービス・協力会社・レポート</li>
+        <li><strong>�� 受注案件の進捗管理</strong> - 7段階（受注→進行中→完了→請求→支払い→ボツ）</li>
+        <li><strong>📄 受注書・請求書の作成・編集・PDF保存</strong> - 個別・一括出力対応</li>
+        <li><strong>👥 顧客・サービス・協力会社のマスター管理</strong> - 検索・ソート・ページネーション</li>
+        <li><strong>💬 スタッフチャット</strong> - 自動スクロール・削除連動・安定化</li>
+        <li><strong>📱 モバイル対応UI</strong> - gap→margin対応、iOS/Android実機対応</li>
+        <li><strong>🏢 部署管理機能</strong> - 顧客ごとの部署・担当者管理</li>
+        <li><strong>📋 利用規約管理機能</strong> - 同意ダイアログ・管理画面</li>
+        <li><strong>🔄 自動更新機能</strong> - GitHub連携による最新版の自動配信</li>
+        <li><strong>📝 動的更新履歴システム</strong> - データベースベースの管理</li>
+        <li><strong>🔒 セキュリティ機能</strong> - XSS/CSRF/SQLi/権限管理/ファイル検証/ノンス/prepare文</li>
+        <li><strong>⚡ セッション管理最適化</strong> - REST API・AJAX・内部リクエスト対応</li>
     </ul>
     
     <h4>💡 特徴</h4>
@@ -2823,6 +2814,7 @@ function ktpwp_get_plugin_description() {
         <li>自動更新機能による最新機能の提供</li>
         <li>詳細なログ機能とデバッグサポート</li>
         <li>WordPressの標準機能との完全な互換性</li>
+        <li>レスポンシブデザインでモバイル対応</li>
     </ul>
     
     <h4>🔧 使用方法</h4>
@@ -2834,14 +2826,24 @@ function ktpwp_get_plugin_description() {
         <li>PHP 7.4以上（推奨: PHP 8.0以上）</li>
         <li>MySQL 5.6以上 または MariaDB 10.0以上</li>
         <li>メモリ: 最低128MB（推奨: 256MB以上）</li>
+        <li>推奨PHP拡張: GD（画像処理用）</li>
     </ul>
     
-    <h4>🆕 最新の改善点</h4>
+    <h4>🆕 最新の改善点（1.0.0(preview)）</h4>
     <ul>
-        <li>自動更新機能の有効化</li>
-        <li>シングルトンパターンによるパフォーマンス向上</li>
-        <li>利用規約管理システムの完全実装</li>
+        <li>プレビュー版リリース</li>
+        <li>6つの管理タブの完全実装</li>
+        <li>受注案件の進捗管理（7段階）</li>
+        <li>受注書・請求書のPDF出力機能</li>
+        <li>顧客・サービス・協力会社のマスター管理</li>
+        <li>スタッフチャット機能</li>
+        <li>モバイル対応UI（レスポンシブデザイン）</li>
+        <li>部署管理機能</li>
+        <li>利用規約管理機能</li>
+        <li>自動更新機能（GitHub連携）</li>
+        <li>動的更新履歴システム</li>
         <li>セキュリティ機能の強化</li>
+        <li>セッション管理最適化</li>
     </ul>
     
     <h4>📞 サポート</h4>
@@ -2855,96 +2857,151 @@ function ktpwp_get_plugin_description() {
 }
 
 /**
- * プラグインの更新履歴を取得
+ * プラグインの更新履歴を取得（動的システム）
  */
 function ktpwp_get_plugin_changelog() {
-    $changelog = '
-    <h4>バージョン 1.3.4(beta) - 2025-07-05</h4>
-    <ul>
-        <li>自動更新機能を有効化</li>
-        <li>利用規約同意通知メールの重複送信問題を修正</li>
-        <li>シングルトンパターンの導入によるメモリ効率の改善</li>
-        <li>プラグイン詳細情報表示機能を追加</li>
-        <li>更新チェッカーの安定性向上</li>
-    </ul>
+    // データベースから更新履歴を取得
+    $changelog_entries = get_option('ktpwp_changelog_entries', array());
     
-    <h4>バージョン 1.3.3(beta) - 2025-06-30</h4>
-    <ul>
-        <li>利用規約機能の実装</li>
-        <li>利用規約同意ダイアログの追加</li>
-        <li>管理画面での利用規約管理機能</li>
-        <li>初回利用時の利用規約同意チェック</li>
-    </ul>
+    // デフォルトの更新履歴（データベースにエントリがない場合のフォールバック）
+    if (empty($changelog_entries)) {
+        $changelog_entries = ktpwp_get_default_changelog_entries();
+        // デフォルトエントリをデータベースに保存
+        update_option('ktpwp_changelog_entries', $changelog_entries);
+    }
     
-    <h4>バージョン 1.3.2(beta) - 2025-06-25</h4>
-    <ul>
-        <li>部署管理機能の改善</li>
-        <li>データベース構造の最適化</li>
-        <li>セキュリティ機能の強化</li>
-        <li>パフォーマンスの向上</li>
-    </ul>
-    
-    <h4>バージョン 1.3.1(beta) - 2025-06-20</h4>
-    <ul>
-        <li>新しいUI/UXの実装</li>
-        <li>レスポンシブデザインの改善</li>
-        <li>Ajax処理の最適化</li>
-        <li>バグ修正と安定性向上</li>
-    </ul>
-    
-    <h4>バージョン 1.3.0(beta) - 2025-06-15</h4>
-    <ul>
-        <li>メジャーアップデート</li>
-        <li>新しいアーキテクチャの採用</li>
-        <li>モジュール化の推進</li>
-        <li>コードの品質向上</li>
-    </ul>
-    
-    <h4>バージョン 1.2.9 - 2025-06-01</h4>
-    <ul>
-        <li>新規インストール検出機能</li>
-        <li>自動マイグレーション機能の改善</li>
-        <li>データベース整合性チェック</li>
-        <li>ログ機能の強化</li>
-    </ul>
-    
-    <h4>バージョン 1.2.8 - 2025-05-25</h4>
-    <ul>
-        <li>協力会社管理機能の追加</li>
-        <li>スキル管理システムの実装</li>
-        <li>ページネーション機能の改善</li>
-        <li>検索機能の最適化</li>
-    </ul>
-    
-    <h4>バージョン 1.2.7 - 2025-05-20</h4>
-    <ul>
-        <li>レポート機能の拡張</li>
-        <li>グラフ表示機能の追加</li>
-        <li>データエクスポート機能</li>
-        <li>フィルタリング機能の改善</li>
-    </ul>
-    
-    <h4>バージョン 1.2.6 - 2025-05-15</h4>
-    <ul>
-        <li>案件管理機能の改善</li>
-        <li>進捗管理システムの実装</li>
-        <li>完了日自動設定機能</li>
-        <li>通知機能の追加</li>
-    </ul>
-    
-    <h4>バージョン 1.2.5 - 2025-05-10</h4>
-    <ul>
-        <li>顧客管理機能の拡張</li>
-        <li>データ検証機能の強化</li>
-        <li>セキュリティ対策の改善</li>
-        <li>パフォーマンス最適化</li>
-    </ul>
-    ';
+    // 更新履歴をHTML形式で構築
+    $changelog = '';
+    foreach ($changelog_entries as $entry) {
+        $changelog .= '<h4>バージョン ' . esc_html($entry['version']) . ' - ' . esc_html($entry['date']) . '</h4>';
+        $changelog .= '<ul>';
+        foreach ($entry['changes'] as $change) {
+            $changelog .= '<li>' . esc_html($change) . '</li>';
+        }
+        $changelog .= '</ul>';
+    }
     
     return $changelog;
 }
 
+/**
+ * デフォルトの更新履歴エントリを取得
+ */
+function ktpwp_get_default_changelog_entries() {
+    return array(
+        array(
+            'version' => '1.0.0(preview)',
+            'date' => '2025-01-XX',
+            'changes' => array(
+                'プレビュー版リリース',
+                '6つの管理タブ（仕事リスト・伝票処理・得意先・サービス・協力会社・レポート）',
+                '受注案件の進捗管理（7段階）',
+                '受注書・請求書のPDF出力機能',
+                '顧客・サービス・協力会社のマスター管理',
+                'スタッフチャット機能',
+                'モバイル対応UI（レスポンシブデザイン）',
+                '部署管理機能',
+                '利用規約管理機能',
+                '自動更新機能（GitHub連携）',
+                '動的更新履歴システム',
+                'セキュリティ機能の強化',
+                'セッション管理最適化'
+            )
+        )
+    );
+}
 
+/**
+ * 更新履歴エントリを追加
+ */
+function ktpwp_add_changelog_entry($version, $date, $changes) {
+    $changelog_entries = get_option('ktpwp_changelog_entries', array());
+    
+    // 新しいエントリを先頭に追加
+    array_unshift($changelog_entries, array(
+        'version' => $version,
+        'date' => $date,
+        'changes' => $changes
+    ));
+    
+    // 最大20エントリまで保持
+    if (count($changelog_entries) > 20) {
+        $changelog_entries = array_slice($changelog_entries, 0, 20);
+    }
+    
+    update_option('ktpwp_changelog_entries', $changelog_entries);
+    
+    return true;
+}
+
+/**
+ * 更新履歴エントリを削除
+ */
+function ktpwp_remove_changelog_entry($version) {
+    $changelog_entries = get_option('ktpwp_changelog_entries', array());
+    
+    foreach ($changelog_entries as $key => $entry) {
+        if ($entry['version'] === $version) {
+            unset($changelog_entries[$key]);
+            break;
+        }
+    }
+    
+    // インデックスを再構築
+    $changelog_entries = array_values($changelog_entries);
+    
+    update_option('ktpwp_changelog_entries', $changelog_entries);
+    
+    return true;
+}
+
+/**
+ * 更新履歴エントリを更新
+ */
+function ktpwp_update_changelog_entry($version, $date, $changes) {
+    $changelog_entries = get_option('ktpwp_changelog_entries', array());
+    
+    foreach ($changelog_entries as $key => $entry) {
+        if ($entry['version'] === $version) {
+            $changelog_entries[$key] = array(
+                'version' => $version,
+                'date' => $date,
+                'changes' => $changes
+            );
+            break;
+        }
+    }
+    
+    update_option('ktpwp_changelog_entries', $changelog_entries);
+    
+    return true;
+}
+
+/**
+ * 更新履歴をリセット（デフォルトに戻す）
+ */
+function ktpwp_reset_changelog() {
+    // 現在のバージョンと本日の日付を取得
+    $current_version = KANTANPRO_PLUGIN_VERSION;
+    $current_date = date('Y-m-d');
+    
+    // デフォルトの更新履歴を取得
+    $default_entries = ktpwp_get_default_changelog_entries();
+    
+    // 最新のエントリの日付を本日に更新
+    if (!empty($default_entries)) {
+        $default_entries[0]['date'] = $current_date;
+    }
+    
+    // データベースに保存
+    update_option('ktpwp_changelog_entries', $default_entries);
+    
+    if (defined('WP_DEBUG') && WP_DEBUG) {
+        error_log('KTPWP: 更新履歴をリセットしました - バージョン: ' . $current_version . ', 日付: ' . $current_date);
+    }
+    
+    return true;
+}
 
 /**
  * 管理画面用のスタイルを追加（プラグイン詳細モーダル用）
@@ -3010,3 +3067,9 @@ function ktpwp_plugin_information_header() {
     <?php
 }
 add_action( 'admin_footer', 'ktpwp_plugin_information_header' );
+
+
+
+
+
+
