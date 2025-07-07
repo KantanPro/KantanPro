@@ -3,7 +3,7 @@
  * Plugin Name: KantanPro
  * Plugin URI: https://www.kantanpro.com/
  * Description: 仕事効率化システム。ショートコード[ktpwp_all_tab]を固定ページに設置してください。
- * Version: 1.0.0(preview)
+ * Version: 1.0.0
  * Author: KantanPro
  * Author URI: https://www.kantanpro.com/kantanpro-page
  * License: GPL v2 or later
@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // プラグイン定数定義
 if ( ! defined( 'KANTANPRO_PLUGIN_VERSION' ) ) {
-    define( 'KANTANPRO_PLUGIN_VERSION', '1.0.0(preview)' );
+    define( 'KANTANPRO_PLUGIN_VERSION', '1.0.0' );
 }
 if ( ! defined( 'KANTANPRO_PLUGIN_NAME' ) ) {
     define( 'KANTANPRO_PLUGIN_NAME', 'KantanPro' );
@@ -89,6 +89,9 @@ if ( file_exists( __DIR__ . '/vendor/plugin-update-checker/plugin-update-checker
         );
         $kantanpro_update_checker->setBranch( 'main' );
         $kantanpro_update_checker->getVcsApi()->enableReleaseAssets();
+        
+        // Plugin Update Checkerで自動更新機能を有効化
+        add_filter( 'puc_enable_auto_update-ktpwp', '__return_true' );
 
         // グローバル変数に保存（手動更新チェック用）
         $GLOBALS['kantanpro_update_checker'] = $kantanpro_update_checker;
@@ -193,6 +196,89 @@ require_once __DIR__ . '/includes/ajax-department.php';
 
 // クラスの読み込み実行
 ktpwp_autoload_classes();
+
+// === WordPress標準自動更新機能のサポート ===
+add_filter( 'auto_update_plugin', 'ktpwp_enable_auto_updates', 10, 2 );
+function ktpwp_enable_auto_updates( $update, $item ) {
+    // このプラグインの場合のみ自動更新を許可
+    if ( isset( $item->plugin ) && $item->plugin === plugin_basename( __FILE__ ) ) {
+        return true;
+    }
+    return $update;
+}
+
+// 自動更新が利用可能であることをWordPressに通知
+add_filter( 'plugins_auto_update_enabled', '__return_true' );
+
+// プラグインリストページで自動更新リンクを表示
+add_filter( 'plugin_auto_update_setting_html', 'ktpwp_auto_update_setting_html', 10, 3 );
+function ktpwp_auto_update_setting_html( $html, $plugin_file, $plugin_data ) {
+    if ( $plugin_file === plugin_basename( __FILE__ ) ) {
+        $auto_updates_enabled = (bool) get_site_option( 'auto_update_plugins', array() );
+        $auto_update_plugins = (array) get_site_option( 'auto_update_plugins', array() );
+        
+        if ( in_array( $plugin_file, $auto_update_plugins, true ) ) {
+            $action = 'disable';
+            $text = __( '自動更新を無効化' );
+            $aria_label = esc_attr( sprintf( __( '%s の自動更新を無効化' ), $plugin_data['Name'] ) );
+        } else {
+            $action = 'enable';
+            $text = __( '自動更新を有効化' );
+            $aria_label = esc_attr( sprintf( __( '%s の自動更新を有効化' ), $plugin_data['Name'] ) );
+        }
+        
+        $url = wp_nonce_url(
+            add_query_arg(
+                array(
+                    'action' => $action . '-auto-update',
+                    'plugin' => $plugin_file,
+                ),
+                admin_url( 'plugins.php' )
+            ),
+            'updates'
+        );
+        
+        $html = sprintf(
+            '<a href="%s" class="toggle-auto-update" aria-label="%s" data-wp-toggle-auto-update="%s">%s</a>',
+            esc_url( $url ),
+            $aria_label,
+            esc_attr( $action ),
+            $text
+        );
+    }
+    return $html;
+}
+
+// 自動更新の有効/無効を処理
+add_action( 'admin_init', 'ktpwp_handle_auto_update_toggle' );
+function ktpwp_handle_auto_update_toggle() {
+    if ( ! current_user_can( 'update_plugins' ) ) {
+        return;
+    }
+    
+    $action = isset( $_GET['action'] ) ? $_GET['action'] : '';
+    $plugin = isset( $_GET['plugin'] ) ? $_GET['plugin'] : '';
+    
+    if ( ! wp_verify_nonce( $_GET['_wpnonce'] ?? '', 'updates' ) ) {
+        return;
+    }
+    
+    if ( $plugin === plugin_basename( __FILE__ ) ) {
+        $auto_update_plugins = (array) get_site_option( 'auto_update_plugins', array() );
+        
+        if ( $action === 'enable-auto-update' ) {
+            $auto_update_plugins[] = $plugin;
+            $auto_update_plugins = array_unique( $auto_update_plugins );
+        } elseif ( $action === 'disable-auto-update' ) {
+            $auto_update_plugins = array_diff( $auto_update_plugins, array( $plugin ) );
+        }
+        
+        update_site_option( 'auto_update_plugins', $auto_update_plugins );
+        
+        wp_redirect( admin_url( 'plugins.php' ) );
+        exit;
+    }
+}
 
 // === 自動マイグレーション機能 ===
 function ktpwp_run_auto_migrations() {
