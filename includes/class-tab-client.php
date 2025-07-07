@@ -918,9 +918,9 @@ if ( ! class_exists( 'Kntan_Client_Class' ) ) {
 				$city = '';
 				$address = '';
 				$building = '';
-				$closing_day = '';
-				$payment_month = '';
-				$payment_day = '';
+				$closing_day = '末日';
+				$payment_month = '翌月';
+				$payment_day = '末日';
 				$payment_method = '';
 				$tax_category = '';
 				$memo = '';
@@ -993,19 +993,19 @@ if ( ! class_exists( 'Kntan_Client_Class' ) ) {
 					'type' => 'select',
 					'name' => 'closing_day',
 					'options' => array( '5日', '10日', '15日', '20日', '25日', '末日', 'なし' ),
-					'default' => 'なし',
+					'default' => '末日',
 				),
 				'支払月' => array(
 					'type' => 'select',
 					'name' => 'payment_month',
 					'options' => array( '今月', '翌月', '翌々月', 'その他' ),
-					'default' => 'その他',
+					'default' => '翌月',
 				),
 				'支払日' => array(
 					'type' => 'select',
 					'name' => 'payment_day',
 					'options' => array( '即日', '5日', '10日', '15日', '20日', '25日', '末日' ),
-					'default' => '即日',
+					'default' => '末日',
 				),
 				'支払方法' => array(
 					'type' => 'select',
