@@ -294,10 +294,24 @@
                 services.forEach(function (service, index) {
                     const serviceId = service.id;
                     const serviceName = service.service_name || '';
-                    const price = parseInt(service.price) || 0;
+                    const price = parseFloat(service.price) || 0;
                     const unit = service.unit || '式';
                     const category = service.category || '';
                     const frequency = service.frequency || 0;
+
+                    // 価格表示用のフォーマット関数
+                    function formatPriceDisplay(price) {
+                        if (price === 0) return '0';
+                        // 小数点以下が0の場合は整数として表示
+                        if (price === Math.floor(price)) {
+                            return price.toLocaleString();
+                        }
+                        // 小数点以下がある場合は小数点以下を表示（末尾の0は削除）
+                        return price.toLocaleString('ja-JP', {
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 2
+                        });
+                    }
 
                     // 偶数・奇数で背景色を変更
                     const backgroundColor = index % 2 === 0 ? '#f9fafb' : '#ffffff';
@@ -312,7 +326,7 @@
                             margin: 0;
                             padding: 16px;
                             background-color: ${backgroundColor};
-                            transition: background-color 0.2s ease, transform 0.1s ease;
+                            transition: background-color 0.2s ease, transform: 0.1s ease;
                             position: relative;
                             font-size: 14px;
                             display: flex;
@@ -333,7 +347,7 @@
                                     <strong style="font-size: ${isSmallScreen ? '14px' : '15px'}; color: #1f2937; word-break: break-word; flex-shrink: 0;">
                                         ID: ${serviceId} - ${escapeHtml(serviceName)}
                                     </strong>
-                                    <span style="color: #6b7280; font-size: ${isSmallScreen ? '12px' : '13px'}; flex-shrink: 0;"><strong>価格:</strong> ${price.toLocaleString()}円</span>
+                                    <span style="color: #6b7280; font-size: ${isSmallScreen ? '12px' : '13px'}; flex-shrink: 0;"><strong>価格:</strong> ${formatPriceDisplay(price)}円</span>
                                     <span style="color: #6b7280; font-size: ${isSmallScreen ? '12px' : '13px'}; flex-shrink: 0;"><strong>単位:</strong> ${escapeHtml(unit)}</span>
                                     <span style="color: #6b7280; font-size: ${isSmallScreen ? '12px' : '13px'}; flex-shrink: 0;"><strong>カテゴリー:</strong> ${escapeHtml(category)}</span>
                                     <span style="color: #6b7280; font-size: ${isSmallScreen ? '12px' : '13px'}; flex-shrink: 0;" title="アクセス頻度（クリックされた回数）"><strong>頻度:</strong> ${frequency}</span>
@@ -730,8 +744,8 @@
                         window.ktpInvoiceAutoSaveItem('invoice', newItemId, 'quantity', 1, orderId);
                         window.ktpInvoiceAutoSaveItem('invoice', newItemId, 'unit', serviceData.unit, orderId);
                         
-                        // 金額も明示的に保存
-                        const calculatedAmount = Math.ceil(serviceData.price * 1);
+                        // 金額も明示的に保存（小数点以下も保持）
+                        const calculatedAmount = serviceData.price * 1;
                         window.ktpInvoiceAutoSaveItem('invoice', newItemId, 'amount', calculatedAmount, orderId);
                     }
                     
@@ -823,8 +837,8 @@
             window.ktpInvoiceAutoSaveItem('invoice', itemId, 'unit', serviceData.unit, orderId);
             window.ktpInvoiceAutoSaveItem('invoice', itemId, 'quantity', 1, orderId);
             
-            // 金額も明示的に保存
-            const calculatedAmount = Math.ceil(serviceData.price * 1);
+            // 金額も明示的に保存（小数点以下も保持）
+            const calculatedAmount = serviceData.price * 1;
             window.ktpInvoiceAutoSaveItem('invoice', itemId, 'amount', calculatedAmount, orderId);
             
             // 保存後に金額計算を再実行
