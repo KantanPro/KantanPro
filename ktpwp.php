@@ -2755,7 +2755,7 @@ function ktpwp_plugin_information( $res, $action, $args ) {
     $plugin_info->author = '<a href="https://www.kantanpro.com/kantanpro-page">KantanPro</a>';
     $plugin_info->homepage = 'https://www.kantanpro.com/';
     $plugin_info->requires = '5.0';
-    $plugin_info->tested = '6.5';
+    $plugin_info->tested = '6.8.1';
     $plugin_info->requires_php = '7.4';
     $plugin_info->last_updated = date( 'Y-m-d', filemtime( __FILE__ ) );
     $plugin_info->active_installs = false;
@@ -2794,7 +2794,7 @@ function ktpwp_get_plugin_description() {
     <h4>🚀 主な機能</h4>
     <ul>
         <li><strong>📊 6つの管理タブ</strong> - 仕事リスト・伝票処理・得意先・サービス・協力会社・レポート</li>
-        <li><strong>�� 受注案件の進捗管理</strong> - 7段階（受注→進行中→完了→請求→支払い→ボツ）</li>
+        <li><strong>📈 受注案件の進捗管理</strong> - 7段階（受注→進行中→完了→請求→支払い→ボツ）</li>
         <li><strong>📄 受注書・請求書の作成・編集・PDF保存</strong> - 個別・一括出力対応</li>
         <li><strong>👥 顧客・サービス・協力会社のマスター管理</strong> - 検索・ソート・ページネーション</li>
         <li><strong>💬 スタッフチャット</strong> - 自動スクロール・削除連動・安定化</li>
@@ -3040,6 +3040,89 @@ function ktpwp_admin_plugin_styles() {
         #plugin-information-header.with-banner {
             background-image: url('<?php echo esc_url( KANTANPRO_PLUGIN_URL . 'images/default/header_bg_image.png' ); ?>');
         }
+        
+        /* WordPress標準のプラグイン詳細ポップアップのスタイル */
+        #TB_window {
+            max-width: 772px !important;
+            max-height: 600px !important;
+        }
+        
+        #TB_ajaxContent {
+            width: 100% !important;
+            height: 100% !important;
+            overflow: auto;
+        }
+        
+        #plugin-information {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        
+        #plugin-information-content {
+            height: calc(100% - 200px);
+            overflow-y: auto;
+            padding: 20px;
+        }
+        
+        #plugin-information-header {
+            height: 200px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+        }
+        
+        #plugin-information-header .plugin-icon {
+            margin-right: 20px;
+        }
+        
+        #plugin-information-header .plugin-icon img {
+            width: 80px;
+            height: 80px;
+            border-radius: 8px;
+        }
+        
+        #plugin-information-header .plugin-info h2 {
+            margin: 0 0 10px 0;
+            font-size: 24px;
+            color: white;
+        }
+        
+        #plugin-information-header .plugin-info p {
+            margin: 5px 0;
+            opacity: 0.9;
+        }
+        
+        #plugin-information-content h3 {
+            color: #333;
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        
+        #plugin-information-content p {
+            line-height: 1.6;
+            color: #555;
+        }
+        
+        #plugin-information-content ul {
+            margin: 15px 0;
+            padding-left: 20px;
+        }
+        
+        #plugin-information-content li {
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+        
+        #plugin-information-content code {
+            background: #f1f1f1;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
         </style>
         <?php
     }
@@ -3055,18 +3138,53 @@ function ktpwp_plugin_information_header() {
     jQuery(document).ready(function($) {
         // プラグイン詳細モーダルが開かれた時の処理
         $(document).on('click', '.open-plugin-details-modal', function(e) {
-            var href = $(this).attr('href');
-            if (href && (href.indexOf('plugin=KantanPro') !== -1 || href.indexOf('plugin=kantanpro') !== -1)) {
+            var plugin = $(this).data('plugin');
+            
+            if (plugin === 'KantanPro') {
+                // モーダルが開かれた後の処理を設定
                 setTimeout(function() {
                     $('#plugin-information-header').addClass('with-banner');
-                }, 100);
+                }, 200);
             }
+        });
+        
+        // ThickBoxが開かれた時の処理
+        $(document).on('tb_show', function() {
+            setTimeout(function() {
+                $('#plugin-information-header').addClass('with-banner');
+            }, 100);
         });
     });
     </script>
     <?php
 }
 add_action( 'admin_footer', 'ktpwp_plugin_information_header' );
+
+// === プラグインリスト表示の修正 ===
+add_filter( 'plugin_row_meta', 'ktpwp_plugin_row_meta', 10, 2 );
+
+function ktpwp_plugin_row_meta( $links, $file ) {
+    if ( plugin_basename( __FILE__ ) === $file ) {
+        // 既存のリンクをフィルタリングして「プラグインのサイトを表示」を削除
+        $filtered_links = array();
+        foreach ( $links as $link ) {
+            // 「プラグインのサイトを表示」リンクを除外
+            if ( strpos( $link, 'plugin-install.php' ) === false && 
+                 strpos( $link, 'プラグインのサイトを表示' ) === false ) {
+                $filtered_links[] = $link;
+            }
+        }
+        
+        // WordPress標準の詳細ポップアップを使用するリンクを追加
+        $details_link = '<a href="' . admin_url( 'plugin-install.php?tab=plugin-information&plugin=KantanPro&TB_iframe=true&width=772&height=600' ) . '" class="thickbox open-plugin-details-modal" data-plugin="KantanPro">詳細を表示</a>';
+        $filtered_links[] = $details_link;
+        
+        return $filtered_links;
+    }
+    return $links;
+}
+
+// 既存の ktpwp_plugin_information 関数が使用されます
 
 
 
