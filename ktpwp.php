@@ -2,7 +2,7 @@
 /**
  * Plugin Name: KantanPro
  * Plugin URI: https://www.kantanpro.com/
- * Description: 仕事効率化システム。ショートコード[ktpwp_all_tab]を固定ページに設置してください。
+ * Description: スモールビジネス向けの仕事効率化システム。ショートコード[ktpwp_all_tab]を固定ページに設置してください。
  * Version: 1.0.0(preview)
  * Author: KantanPro
  * Author URI: https://www.kantanpro.com/kantanpro-page
