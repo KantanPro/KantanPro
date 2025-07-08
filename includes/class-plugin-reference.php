@@ -7,14 +7,15 @@
  * - 管理タブ・伝票処理・顧客・サービス・協力会社・レポート・チャット等の使い方を解説。
  * - 部署管理機能・利用規約管理機能・自動更新機能の詳細説明を追加。
  * - 動的更新履歴システム・セッション管理最適化などの技術的改善を反映。
+ * - ページネーション機能・ファイル添付機能・完了日自動設定機能・納期警告機能・商品管理機能を追加。
  * - バージョンアップ履歴・トラブルシューティングも掲載。
- * - 最新バージョン: 1.0.0(preview)
+ * - 最新バージョン: 1.0.1(preview)
  *
  * @package KTPWP
  * @subpackage Includes
  * @since 1.2.2
  * @author Kantan Pro
- * @copyright 2024 Kantan Pro
+ * @copyright 2025 Kantan Pro
  * @license GPL-2.0+
  */
 
@@ -252,23 +253,28 @@ if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
 			<h4>主要機能</h4>
 			<ul>
 				<li><strong>6つの管理タブ</strong>（仕事リスト・伝票処理・得意先・サービス・協力会社・レポート）</li>
-				<li><strong>受注案件の進捗管理</strong>（7段階：受注→進行中→完了→請求→支払い→ボツ）</li>
+				<li><strong>受注案件の進捗管理</strong>（7段階：受注→進行中→完了→請求→支払い→ボツ→見積中）</li>
 				<li><strong>受注書・請求書の作成・編集・PDF保存</strong>（個別・一括出力対応）</li>
 				<li><strong>顧客・サービス・協力会社のマスター管理</strong>（検索・ソート・ページネーション）</li>
-				<li><strong>スタッフチャット</strong>（自動スクロール・削除連動・安定化）</li>
+				<li><strong>スタッフチャット</strong>（自動スクロール・削除連動・AJAX送信・キーボードショートカット）</li>
 				<li><strong>モバイル対応UI</strong>（gap→margin対応、iOS/Android実機対応）</li>
 				<li><strong>部署管理機能</strong>（顧客ごとの部署・担当者管理）</li>
-				<li><strong>利用規約管理機能</strong>（同意ダイアログ・管理画面）</li>
+				<li><strong>利用規約管理機能</strong>（同意ダイアログ・管理画面・バージョン管理）</li>
 				<li><strong>自動更新機能</strong>（GitHub連携による最新版の自動配信）</li>
-				<li><strong>動的更新履歴システム</strong>（データベースベースの管理）</li>
+				<li><strong>動的更新履歴システム</strong>（データベースベースの管理・最大20エントリ保持）</li>
 				<li><strong>セキュリティ機能</strong>（XSS/CSRF/SQLi/権限管理/ファイル検証/ノンス/prepare文）</li>
 				<li><strong>セッション管理最適化</strong>（REST API・AJAX・内部リクエスト対応）</li>
+				<li><strong>ページネーション機能</strong>（全タブ・ポップアップ対応・一般設定連携）</li>
+				<li><strong>ファイル添付機能</strong>（ドラッグ&ドロップ・複数ファイル・自動クリーンアップ）</li>
+				<li><strong>完了日自動設定機能</strong>（進捗変更時の自動処理）</li>
+				<li><strong>納期警告機能</strong>（期限管理・アラート表示）</li>
+				<li><strong>商品管理機能</strong>（価格・数量・単位管理）</li>
 			</ul>
 			
 			<h3>システム要件</h3>
 			<ul>
-				<li>WordPress 5.0 以上</li>
-				<li>PHP 7.4 以上</li>
+				<li>WordPress 5.0 以上（推奨：最新版）</li>
+				<li>PHP 7.4 以上（推奨：PHP 8.0以上）</li>
 				<li>MySQL 5.6 以上 または MariaDB 10.0 以上</li>
 				<li>推奨メモリ: 256MB 以上</li>
 				<li>推奨PHP拡張: GD（画像処理用）</li>
@@ -299,15 +305,18 @@ if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
 				<li>顧客名・案件名での検索</li>
 				<li>納期・金額でのソート</li>
 				<li>ページネーション機能</li>
+				<li>納期警告マーク表示</li>
+				<li>完了日自動設定</li>
 			</ul>
 			
 			<h3>2. 伝票処理タブ</h3>
 			<p>受注書・請求書の作成・編集・PDF出力</p>
 			<ul>
-				<li>サービス選択ポップアップで商品追加</li>
+				<li>サービス選択ポップアップで商品追加（ページネーション対応）</li>
 				<li>個別・一括PDF出力</li>
 				<li>メール送信機能（ファイル添付対応）</li>
 				<li>進捗状況の更新</li>
+				<li>スタッフチャット機能（自動スクロール・AJAX送信）</li>
 			</ul>
 			
 			<h3>3. 得意先タブ</h3>
@@ -317,22 +326,26 @@ if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
 				<li>部署・担当者の追加・管理</li>
 				<li>選択された部署の情報を請求書に反映</li>
 				<li>顧客ごとのメールアドレス管理</li>
+				<li>ページネーション対応</li>
 			</ul>
 			
 			<h3>4. サービスタブ</h3>
 			<p>商品・サービスのマスター管理</p>
 			<ul>
 				<li>商品・サービスの登録・編集・削除</li>
-				<li>カテゴリー・価格・単位管理</li>
+				<li>カテゴリー・価格・数量・単位管理</li>
 				<li>検索・ソート・ページネーション</li>
+				<li>小数点対応の価格設定</li>
 			</ul>
 			
 			<h3>5. 協力会社タブ</h3>
 			<p>協力会社・仕入先の管理</p>
 			<ul>
 				<li>協力会社情報の登録・編集・削除</li>
+				<li>商品・サービス管理（価格・数量・単位）</li>
 				<li>支払い条件の管理</li>
 				<li>連絡先情報の管理</li>
+				<li>ページネーション対応</li>
 			</ul>
 			
 			<h3>6. レポートタブ</h3>
@@ -383,9 +396,9 @@ if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
 			
 			<h4>利用可能な設定項目</h4>
 			<ul>
-				<li><strong>一般設定</strong>：基本設定・システム情報</li>
-				<li><strong>メール・SMTP設定</strong>：メール送信設定</li>
-				<li><strong>デザイン</strong>：UI・UX設定</li>
+				<li><strong>一般設定</strong>：基本設定・システム情報・表示件数設定</li>
+				<li><strong>メール・SMTP設定</strong>：メール送信設定・ファイル添付設定</li>
+				<li><strong>デザイン</strong>：UI・UX設定・カスタムCSS</li>
 				<li><strong>スタッフ管理</strong>：スタッフ情報・権限管理</li>
 				<li><strong>ライセンス設定</strong>：ライセンス情報</li>
 				<li><strong>利用規約管理</strong>：利用規約の編集・管理</li>
@@ -397,6 +410,14 @@ if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
 				<li>プラグイン詳細情報の表示</li>
 				<li>セキュリティを重視した更新プロセス</li>
 				<li>更新通知の管理画面表示</li>
+			</ul>
+			
+			<h3>ページネーション設定</h3>
+			<p>一般設定の「仕事リスト表示件数」で全タブの表示件数を制御できます。</p>
+			<ul>
+				<li>仕事リスト・得意先・サービス・協力会社タブに適用</li>
+				<li>サービス選択ポップアップにも適用</li>
+				<li>レスポンシブデザイン対応</li>
 			</ul>';
 		}
 
@@ -413,11 +434,19 @@ if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
 			<ul>
 				<li>SQLインジェクション防止（prepare文・バインド変数）</li>
 				<li>XSS・CSRF対策（サニタイズ・エスケープ・ノンス）</li>
-				<li>ファイルアップロード検証（MIME型・サイズ制限）</li>
+				<li>ファイルアップロード検証（MIME型・サイズ制限・自動クリーンアップ）</li>
 				<li>権限管理・安全なDBアクセス（ロールベースアクセス制御）</li>
 				<li>REST API制限（ログインユーザーのみアクセス可能）</li>
 				<li>セッション管理最適化（内部リクエスト・API呼び出し時の自動クローズ）</li>
 				<li>gap→margin対応によるUI崩れ防止（iOS/Android実機対応）</li>
+			</ul>
+			
+			<h3>ファイル添付セキュリティ</h3>
+			<ul>
+				<li>許可されたファイル形式のみ受付（PDF、画像、Office文書、圧縮ファイル）</li>
+				<li>ファイルサイズ制限（1ファイル10MB、合計50MB）</li>
+				<li>自動クリーンアップによる一時ファイル管理</li>
+				<li>MIME型検証による偽装ファイル防止</li>
 			</ul>';
 		}
 
@@ -458,6 +487,20 @@ if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
 				<li>プラグインを無効化してから再度有効化</li>
 				<li>データベースの権限を確認</li>
 				<li>WordPressのデバッグモードを有効化して詳細を確認</li>
+			</ul>
+			
+			<h4>5. ファイル添付ができない</h4>
+			<ul>
+				<li>ファイルサイズが制限内か確認（1ファイル10MB、合計50MB）</li>
+				<li>対応ファイル形式か確認（PDF、画像、Office文書、圧縮ファイル）</li>
+				<li>サーバーの一時ディレクトリの書き込み権限を確認</li>
+			</ul>
+			
+			<h4>6. ページネーションが動作しない</h4>
+			<ul>
+				<li>一般設定で表示件数が正しく設定されているか確認</li>
+				<li>JavaScriptエラーがないかブラウザのコンソールを確認</li>
+				<li>キャッシュプラグインを無効化してテスト</li>
 			</ul>';
 		}
 
@@ -471,44 +514,32 @@ if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
 			return '<h2>部署管理機能</h2>
 			
 			<h3>概要</h3>
-			<p>顧客ごとに複数の部署・担当者を管理できる機能です。請求書に部署情報を反映できます。</p>
+			<p>顧客ごとに複数の部署・担当者を管理できる機能です。</p>
 			
-			<h3>使い方</h3>
-			
-			<h4>1. 部署の追加</h4>
-			<ol>
-				<li>得意先タブで顧客を選択・編集</li>
-				<li>部署管理セクションで部署名・担当者名・メールアドレスを入力</li>
-				<li>「追加」ボタンをクリック</li>
-			</ol>
-			
-			<h4>2. 部署の選択</h4>
-			<ol>
-				<li>部署一覧のチェックボックスをクリック</li>
-				<li>選択された部署の情報が請求書に反映されます</li>
-				<li>一度に1つの部署のみ選択可能</li>
-			</ol>
-			
-			<h4>3. 部署の編集・削除</h4>
+			<h3>機能</h3>
 			<ul>
-				<li>部署名・担当者名・メールアドレスは編集可能</li>
-				<li>「削除」ボタンで部署を削除</li>
-				<li>削除時は確認ダイアログが表示されます</li>
+				<li>顧客ごとに複数の部署・担当者を管理</li>
+				<li>部署ごとのメールアドレス管理</li>
+				<li>選択された部署の情報を請求書に反映</li>
+				<li>部署の追加・編集・削除機能</li>
+				<li>AJAX対応のリアルタイム更新</li>
 			</ul>
+			
+			<h3>使用方法</h3>
+			<ol>
+				<li>得意先タブで顧客を選択</li>
+				<li>「部署管理」セクションで部署を追加</li>
+				<li>部署名・担当者名・メールアドレスを入力</li>
+				<li>「追加」ボタンで保存</li>
+				<li>伝票作成時に部署を選択可能</li>
+			</ol>
 			
 			<h3>請求書への反映</h3>
+			<p>選択された部署の情報は自動的に請求書に反映されます：</p>
 			<ul>
-				<li>選択された部署の情報が請求書の宛先に反映</li>
-				<li>部署名・担当者名が適切に表示</li>
-				<li>メール送信時も選択された部署のメールアドレスが使用</li>
-			</ul>
-			
-			<h3>注意事項</h4>
-			<ul>
-				<li>部署名は空欄でも登録可能</li>
-				<li>担当者名・メールアドレスは必須</li>
-				<li>部署の削除は取り消しできません</li>
-				<li>選択された部署が削除された場合、選択状態はリセットされます</li>
+				<li>部署名が請求書に表示</li>
+				<li>担当者名が宛先として使用</li>
+				<li>部署のメールアドレスが送信先に設定</li>
 			</ul>';
 		}
 
@@ -577,6 +608,19 @@ if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
 				<li>「デフォルトにリセット」で初期状態に戻す</li>
 			</ol>
 			
+			<h3>最新の更新内容（1.0.1 preview）</h3>
+			<ul>
+				<li>ページネーション機能の全面実装（全タブ・ポップアップ対応）</li>
+				<li>ファイル添付機能追加（ドラッグ&ドロップ・複数ファイル対応）</li>
+				<li>完了日自動設定機能実装（進捗変更時の自動処理）</li>
+				<li>納期警告機能実装（期限管理・アラート表示）</li>
+				<li>商品管理機能改善（価格・数量・単位管理強化）</li>
+				<li>スタッフチャット機能強化（AJAX送信・自動スクロール・キーボードショートカット）</li>
+				<li>レスポンシブデザイン改善（モバイル対応強化）</li>
+				<li>セキュリティ機能の追加強化</li>
+				<li>パフォーマンス最適化</li>
+			</ul>
+			
 			<h3>API機能</h3>
 			<ul>
 				<li><code>ktpwp_add_changelog_entry()</code> - エントリ追加</li>
@@ -622,8 +666,10 @@ if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
 		 * @return void
 		 */
 		public static function on_plugin_activation() {
-			// Set flag to refresh reference cache on next load
+			// Mark that reference cache needs refresh
 			update_option( 'ktpwp_reference_needs_refresh', true );
+			update_option( 'ktpwp_reference_last_updated', current_time( 'timestamp' ) );
+			update_option( 'ktpwp_reference_version', KANTANPRO_PLUGIN_VERSION );
 		}
 
 		/**
