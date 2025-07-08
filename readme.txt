@@ -4,7 +4,7 @@ Tags: business, management, orders, invoices, customers, services, suppliers, re
 Requires at least: 5.0
 Tested up to: 6.8.1
 Requires PHP: 7.4
-Stable tag: 1.0.1(preview)
+Stable tag: 1.0.2(preview)
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -174,6 +174,16 @@ KantanProは、WordPress上で以下の業務を一元管理できる多機能�
 * 推奨PHP拡張: GD（画像処理用）
 
 == 変更履歴 ==
+
+= 1.0.2(preview) =
+* GitHub更新通知機能の修復・強化
+* 管理画面更新チェックツールの追加（ツール > KantanPro更新チェック）
+* プラグインリストでの更新通知表示機能
+* GitHubリポジトリURLの修正（https://github.com/KantanPro/freeKTP）
+* デバッグツールの追加・強化（GitHub API連携状況確認）
+* プラグイン更新キャッシュクリア機能
+* 手動更新チェック機能（ワンクリック確認）
+* 更新通知バナーの改善（管理画面表示）
 
 = 1.0.1(preview) =
 * 最新プレビュー版リリース
