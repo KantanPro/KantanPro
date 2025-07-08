@@ -473,15 +473,19 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 				error_log( 'KTPWP Client Debug: user_name = ' . $fields_data['user_name'] );
 			}
 
-			// 新しいIDを取得（データが完全に0の場合は1から開始）
-			$new_id_query = "SELECT COALESCE(MAX(id), 0) + 1 as new_id FROM {$table_name}";
-			$new_id_result = $wpdb->get_row( $new_id_query );
-			$new_id = $new_id_result && isset( $new_id_result->new_id ) ? intval( $new_id_result->new_id ) : 1;
+			// データが完全に0の場合、AUTO_INCREMENTカウンターを1にリセット
+			$row_count = $wpdb->get_var( "SELECT COUNT(*) FROM {$table_name}" );
+			if ( $row_count == 0 ) {
+				$wpdb->query( "ALTER TABLE {$table_name} AUTO_INCREMENT = 1" );
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					error_log( 'KTPWP Client Debug: AUTO_INCREMENT reset to 1' );
+				}
+			}
 
+			// IDを手動設定せず、AUTO_INCREMENTに任せる
 			$result = $wpdb->insert(
-                $table_name,
-                array(
-					'id' => $new_id,
+				$table_name,
+				array(
 					'time' => current_time( 'mysql' ),
 					'company_name' => $fields_data['company_name'],
 					'name' => $fields_data['user_name'],
@@ -504,37 +508,38 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 					'category' => $fields_data['category'],
 					'selected_department_id' => $fields_data['selected_department_id'],
 					'search_field' => $search_field_value,
-                ),
-                array(
-					'%d',
-					'%s',
-					'%s',
-					'%s',
-					'%s',
-					'%s',
-					'%s',
-					'%s',
-					'%s',
-					'%s',
-					'%s',
-					'%s',
-					'%s',
-					'%s',
-					'%s',
-					'%s',
-					'%s',
-					'%s',
-					'%s',
-					'%s',
-					'%s',
-					'%d',
-                )
+				),
+				array(
+					'%s', // time
+					'%s', // company_name
+					'%s', // name
+					'%s', // email
+					'%s', // url
+					'%s', // representative_name
+					'%s', // phone
+					'%s', // postal_code
+					'%s', // prefecture
+					'%s', // city
+					'%s', // address
+					'%s', // building
+					'%s', // closing_day
+					'%s', // payment_month
+					'%s', // payment_day
+					'%s', // payment_method
+					'%s', // tax_category
+					'%s', // memo
+					'%s', // client_status
+					'%s', // category
+					'%d', // selected_department_id
+					'%s', // search_field
+				)
 			);
 
 			// デバッグログを追加
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 				error_log( 'KTPWP Client Debug: insert result = ' . ( $result !== false ? 'success' : 'failed' ) );
 				if ( $result !== false ) {
+					$new_id = $wpdb->insert_id;
 					error_log( 'KTPWP Client Debug: new_id = ' . $new_id );
 				} else {
 					error_log( 'KTPWP Client Debug: wpdb error = ' . $wpdb->last_error );
@@ -542,17 +547,18 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 			}
 
 			if ( $result !== false ) {
+				$new_id = $wpdb->insert_id;
 				$cookie_name = 'ktp_' . $tab_name . '_id';
 				setcookie( $cookie_name, $new_id, time() + ( 86400 * 30 ), '/' );
 
 				$redirect_url = add_query_arg(
-                    array(
+					array(
 						'tab_name' => $tab_name,
 						'data_id' => $new_id,
 						'message' => 'added',
-                    ),
-                    wp_get_referer()
-                );
+					),
+					wp_get_referer()
+				);
 
 				wp_redirect( $redirect_url );
 				exit;

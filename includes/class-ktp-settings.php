@@ -357,6 +357,18 @@ class KTP_Settings {
         ) $charset_collate;";
         dbDelta( $sql_order );
 
+        // テーブル作成後、AUTO_INCREMENTカウンターを確実に1に設定
+        $order_row_count = $wpdb->get_var( "SELECT COUNT(*) FROM {$table_name_order}" );
+        if ( $order_row_count == 0 ) {
+            $wpdb->query( "ALTER TABLE {$table_name_order} AUTO_INCREMENT = 1" );
+        }
+
+        // 顧客テーブルのAUTO_INCREMENTカウンターも確実に1に設定
+        $client_row_count = $wpdb->get_var( "SELECT COUNT(*) FROM {$table_name_client}" );
+        if ( $client_row_count == 0 ) {
+            $wpdb->query( "ALTER TABLE {$table_name_client} AUTO_INCREMENT = 1" );
+        }
+
         // 既存テーブルにカラムを追加
         if ( $wpdb->get_var( "SHOW TABLES LIKE '$table_name_order'" ) == $table_name_order ) {
             $column_exists = $wpdb->get_results( "SHOW COLUMNS FROM $table_name_order LIKE 'company_name'" );

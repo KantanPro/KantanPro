@@ -434,6 +434,15 @@ class KTPWP_Contact_Form {
 
         $table_name = $wpdb->prefix . 'ktp_client';
 
+        // データが完全に0の場合、AUTO_INCREMENTカウンターを1にリセット
+        $row_count = $wpdb->get_var( "SELECT COUNT(*) FROM {$table_name}" );
+        if ( $row_count == 0 ) {
+            $wpdb->query( "ALTER TABLE {$table_name} AUTO_INCREMENT = 1" );
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP CF7: Client table AUTO_INCREMENT reset to 1' );
+            }
+        }
+
         $format = array(
             '%s', // company_name
             '%s', // name
@@ -476,6 +485,15 @@ class KTPWP_Contact_Form {
         global $wpdb;
 
         $table_name = $wpdb->prefix . 'ktp_order';
+
+        // データが完全に0の場合、AUTO_INCREMENTカウンターを1にリセット
+        $row_count = $wpdb->get_var( "SELECT COUNT(*) FROM {$table_name}" );
+        if ( $row_count == 0 ) {
+            $wpdb->query( "ALTER TABLE {$table_name} AUTO_INCREMENT = 1" );
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP CF7: Order table AUTO_INCREMENT reset to 1' );
+            }
+        }
 
         // 受注書番号を自動生成（order_numberが設定されていない場合）
         if ( empty( $order_data['order_number'] ) ) {

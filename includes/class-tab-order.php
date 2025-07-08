@@ -1090,6 +1090,15 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 
 				// 受注書データをデータベースに挿入（対象外チェックを通過した場合のみ）
 				if ( $from_client === 1 ) {
+					// データが完全に0の場合、AUTO_INCREMENTカウンターを1にリセット
+					$row_count = $wpdb->get_var( "SELECT COUNT(*) FROM {$table_name}" );
+					if ( $row_count == 0 ) {
+						$wpdb->query( "ALTER TABLE {$table_name} AUTO_INCREMENT = 1" );
+						if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+							error_log( 'KTPWP Order Tab: Order table AUTO_INCREMENT reset to 1' );
+						}
+					}
+
 					// AUTO_INCREMENTを使用してIDを自動生成
 					// 標準的なUNIXタイムスタンプを使用（UTCベース）
 					$timestamp = time(); // 標準のUTC UNIXタイムスタンプを取得
