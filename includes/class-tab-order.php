@@ -1442,7 +1442,44 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 					} else {
 						$client_id_display = '（顧客ID未設定）';
 					}
-					$content .= '<div><span id="order_customer_name">' . esc_html( $order_data->customer_name ) . '</span> <span class="client-id" style="color:#666;font-size:0.9em;">' . $client_id_display . '</span></div>';
+					
+					// 会社名のフォールバック処理: Contact Form 7で「0」になった場合の対策
+					$display_customer_name = $order_data->customer_name;
+					if ( $display_customer_name === '0' || empty( $display_customer_name ) ) {
+						// 顧客IDがある場合は顧客テーブルから会社名を取得
+						if ( ! empty( $order_data->client_id ) ) {
+							$client_company_name = $wpdb->get_var(
+								$wpdb->prepare(
+									"SELECT company_name FROM `{$client_table}` WHERE id = %d",
+									$order_data->client_id
+								)
+							);
+							if ( ! empty( $client_company_name ) ) {
+								$display_customer_name = $client_company_name;
+								
+								// デバッグログ
+								if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+									error_log( 'KTPWP Order Display: 会社名をデータベースから取得しました: ' . $display_customer_name . ' (受注書ID: ' . $order_data->id . ')' );
+								}
+							} else {
+								// 顧客テーブルからも取得できない場合は担当者名を使用
+								$display_customer_name = $order_data->user_name;
+								
+								if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+									error_log( 'KTPWP Order Display: 会社名が見つからないため、担当者名を使用: ' . $display_customer_name . ' (受注書ID: ' . $order_data->id . ')' );
+								}
+							}
+						} else {
+							// 顧客IDがない場合は担当者名を使用
+							$display_customer_name = $order_data->user_name;
+							
+							if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+								error_log( 'KTPWP Order Display: 顧客IDがないため、担当者名を使用: ' . $display_customer_name . ' (受注書ID: ' . $order_data->id . ')' );
+							}
+						}
+					}
+					
+					$content .= '<div><span id="order_customer_name">' . esc_html( $display_customer_name ) . '</span> <span class="client-id" style="color:#666;font-size:0.9em;">' . $client_id_display . '</span></div>';
 					// 担当者名の横に得意先メールアドレスのmailtoリンク（あれば）
 					$client_email = '';
 					$client = null;
@@ -1999,8 +2036,34 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 			// 宛先情報（住所対応）
 			$html .= '<div class="customer-info" style="margin-bottom: 20px;">';
 
+			// 会社名のフォールバック処理（プレビュー用）
+			$display_customer_name = $order_data->customer_name;
+			if ( $display_customer_name === '0' || empty( $display_customer_name ) ) {
+				global $wpdb;
+				$client_table = $wpdb->prefix . 'ktp_client';
+				
+				// 顧客IDがある場合は顧客テーブルから会社名を取得
+				if ( ! empty( $order_data->client_id ) ) {
+					$client_company_name = $wpdb->get_var(
+						$wpdb->prepare(
+							"SELECT company_name FROM `{$client_table}` WHERE id = %d",
+							$order_data->client_id
+						)
+					);
+					if ( ! empty( $client_company_name ) ) {
+						$display_customer_name = $client_company_name;
+					} else {
+						// 顧客テーブルからも取得できない場合は担当者名を使用
+						$display_customer_name = $order_data->user_name;
+					}
+				} else {
+					// 顧客IDがない場合は担当者名を使用
+					$display_customer_name = $order_data->user_name;
+				}
+			}
+
 			// 顧客の住所情報を取得（顧客テーブルから）
-			$customer_address = $this->Get_Customer_Address( $order_data->customer_name );
+			$customer_address = $this->Get_Customer_Address( $display_customer_name );
 
 			// 選択された部署情報を取得
 			$selected_department = null;
@@ -2026,7 +2089,7 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 					$html .= '<div>' . esc_html( $address_line ) . '</div>';
 				}
 				$html .= '</div>';
-				$html .= '<div class="company-name" style="font-size: 16px; font-weight: bold; margin-bottom: 4px;">' . esc_html( $order_data->customer_name ) . '</div>';
+				$html .= '<div class="company-name" style="font-size: 16px; font-weight: bold; margin-bottom: 4px;">' . esc_html( $display_customer_name ) . '</div>';
 
 				// 選択された部署情報を表示
 				if ( $selected_department ) {
@@ -2036,9 +2099,9 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 				}
 
 				$html .= '<div class="customer-name" style="font-size: 14px; margin-bottom: 100px;">' . esc_html( $order_data->user_name ) . ' 様</div>';
-			} else {
+			} else {			
 				// 住所がない場合：会社名 → 選択された部署情報 → 名前 様
-				$html .= '<div class="company-name" style="font-size: 16px; font-weight: bold; margin-bottom: 4px;">' . esc_html( $order_data->customer_name ) . '</div>';
+				$html .= '<div class="company-name" style="font-size: 16px; font-weight: bold; margin-bottom: 4px;">' . esc_html( $display_customer_name ) . '</div>';
 
 				// 選択された部署情報を表示
 				if ( $selected_department ) {

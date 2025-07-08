@@ -72,14 +72,21 @@ class KTPWP_Contact_Form {
      * 設定初期化
      */
     private function init_config() {
-        // フィールドマッピング設定
+        // フィールドマッピング設定（より多くのパターンに対応）
         $this->field_mapping = array(
-            'company_name' => array( 'your_company_name', 'company-name' ),
-            'name' => array( 'your-name' ),
-            'email' => array( 'your-email' ),
-            'subject' => array( 'your-subject' ),
-            'message' => array( 'your-message' ),
-            'category' => array( 'select-996' ),
+            'company_name' => array( 
+                'your_company_name', 
+                'company-name', 
+                'company_name', 
+                'your-company', 
+                'company',
+                'your-company-name'
+            ),
+            'name' => array( 'your-name', 'name', 'your_name' ),
+            'email' => array( 'your-email', 'email', 'your_email' ),
+            'subject' => array( 'your-subject', 'subject', 'your_subject' ),
+            'message' => array( 'your-message', 'message', 'your_message' ),
+            'category' => array( 'select-996', 'category', 'your-category' ),
         );
 
         // デフォルト値設定
@@ -154,18 +161,28 @@ class KTPWP_Contact_Form {
 
         if ( empty( $posted_data ) ) {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP CF7: Posted data is empty' );
+                error_log( 'KTPWP CF7: No posted data found' );
             }
             return;
         }
 
-        // デバッグログ: 受信データを記録
+        // 送信されたフィールドキーの一覧をログ出力
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP CF7 Posted Data: ' . print_r( $posted_data, true ) );
+            error_log( 'KTPWP CF7: Posted data keys: ' . implode( ', ', array_keys( $posted_data ) ) );
+            error_log( 'KTPWP CF7: Complete posted data: ' . print_r( $posted_data, true ) );
         }
 
-        // データを処理してデータベースに保存
+        // フィールドマッピングを動的に調整
+        $this->adjust_field_mapping( $posted_data );
+
+        // 顧客データの準備と保存
         $client_data = $this->prepare_client_data( $posted_data );
+        
+        // デバッグログ: 準備された顧客データを記録
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP CF7 Prepared Client Data: ' . print_r( $client_data, true ) );
+        }
+
         $client_id = $this->save_client_data( $client_data );
 
         if ( $client_id ) {
@@ -181,6 +198,81 @@ class KTPWP_Contact_Form {
 
             // クッキー設定
             $this->set_client_cookie( $client_id );
+        }
+    }
+
+    /**
+     * フィールドマッピングを動的に調整
+     *
+     * @param array $posted_data 送信されたデータ
+     */
+    private function adjust_field_mapping( $posted_data ) {
+        $field_keys = array_keys( $posted_data );
+        
+        // 会社名フィールドの自動検出
+        $company_name_candidates = array();
+        foreach ( $field_keys as $key ) {
+            if ( preg_match( '/^(.*company.*|.*会社.*|.*法人.*)$/i', $key ) ) {
+                $company_name_candidates[] = $key;
+            }
+        }
+        
+        // 担当者名フィールドの自動検出
+        $name_candidates = array();
+        foreach ( $field_keys as $key ) {
+            if ( preg_match( '/^(.*name.*|.*名前.*|.*氏名.*)$/i', $key ) && ! in_array( $key, $company_name_candidates ) ) {
+                $name_candidates[] = $key;
+            }
+        }
+        
+        // メールアドレスフィールドの自動検出
+        $email_candidates = array();
+        foreach ( $field_keys as $key ) {
+            if ( preg_match( '/^(.*email.*|.*mail.*|.*メール.*)$/i', $key ) ) {
+                $email_candidates[] = $key;
+            }
+        }
+        
+        // 件名フィールドの自動検出
+        $subject_candidates = array();
+        foreach ( $field_keys as $key ) {
+            if ( preg_match( '/^(.*subject.*|.*件名.*|.*title.*)$/i', $key ) ) {
+                $subject_candidates[] = $key;
+            }
+        }
+        
+        // フィールドマッピングを更新（既存の設定に追加）
+        if ( ! empty( $company_name_candidates ) ) {
+            $this->field_mapping['company_name'] = array_merge( 
+                $this->field_mapping['company_name'], 
+                $company_name_candidates 
+            );
+        }
+        
+        if ( ! empty( $name_candidates ) ) {
+            $this->field_mapping['name'] = array_merge( 
+                $this->field_mapping['name'], 
+                $name_candidates 
+            );
+        }
+        
+        if ( ! empty( $email_candidates ) ) {
+            $this->field_mapping['email'] = array_merge( 
+                $this->field_mapping['email'], 
+                $email_candidates 
+            );
+        }
+        
+        if ( ! empty( $subject_candidates ) ) {
+            $this->field_mapping['subject'] = array_merge( 
+                $this->field_mapping['subject'], 
+                $subject_candidates 
+            );
+        }
+
+        // デバッグログ: 調整されたフィールドマッピングを記録
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP CF7 Adjusted Field Mapping: ' . print_r( $this->field_mapping, true ) );
         }
     }
 
@@ -251,11 +343,38 @@ class KTPWP_Contact_Form {
             error_log( '  - field_mapping[subject]: ' . print_r( $this->field_mapping['subject'], true ) );
         }
 
+        // 会社名が空の場合は、データベースから取得または個人名を使用
+        if ( empty( $company_name ) ) {
+            // 顧客IDから会社名を取得
+            global $wpdb;
+            $client_table = $wpdb->prefix . 'ktp_client';
+            $client_data = $wpdb->get_row(
+                $wpdb->prepare(
+                    "SELECT company_name FROM `{$client_table}` WHERE id = %d",
+                    $client_id
+                )
+            );
+            
+            if ( $client_data && ! empty( $client_data->company_name ) ) {
+                $company_name = $client_data->company_name;
+                
+                if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                    error_log( 'KTPWP CF7: 会社名をデータベースから取得しました: ' . $company_name );
+                }
+            } else {
+                // それでも会社名が取得できない場合は、個人名を使用
+                $company_name = $customer_name;
+                
+                if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                    error_log( 'KTPWP CF7: 会社名が見つからないため、個人名を使用: ' . $company_name );
+                }
+            }
+        }
+
         return array(
             'client_id' => $client_id,
-            'customer_name' => sanitize_text_field( $company_name ),
-            'company_name' => sanitize_text_field( $company_name ),
-            'user_name' => sanitize_text_field( $customer_name ),
+            'customer_name' => sanitize_text_field( $company_name ),  // 会社名を設定
+            'user_name' => sanitize_text_field( $customer_name ),     // 担当者名を設定
             'project_name' => ! empty( $subject ) ? sanitize_text_field( $subject ) : $this->default_values['project_name'],
             'progress' => $this->default_values['progress'],
             'time' => time(),
@@ -382,7 +501,6 @@ class KTPWP_Contact_Form {
             '%s', // order_number
             '%d', // client_id
             '%s', // customer_name
-            '%s', // company_name
             '%s', // user_name
             '%s', // project_name
             '%d', // progress
