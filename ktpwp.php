@@ -3,13 +3,12 @@
  * Plugin Name: KantanPro
  * Plugin URI: https://www.kantanpro.com/
  * Description: スモールビジネス向けの仕事効率化システム。ショートコード[ktpwp_all_tab]を固定ページに設置してください。
- * Version: 1.0.1(preview)
+ * Version: 1.0.3(preview)
  * Author: KantanPro
  * Author URI: https://www.kantanpro.com/kantanpro-page
  * License: GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: KantanPro
- * Version: 1.0.3(preview)
  * Domain Path: /languages
  * Requires at least: 5.0
  * Tested up to: 6.5
