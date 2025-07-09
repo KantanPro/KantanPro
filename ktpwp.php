@@ -74,12 +74,12 @@ if ( ! defined( 'MY_PLUGIN_URL' ) ) {
 }
 
 // === WordPress標準更新システム ===
-// Contact Form 7スタイルのシンプルなバージョン管理
+// シンプルなバージョン管理
 
 add_action( 'admin_init', 'ktpwp_upgrade', 10, 0 );
 
 /**
- * Contact Form 7スタイルのシンプルなアップグレード処理
+ * シンプルなアップグレード処理
  */
 function ktpwp_upgrade() {
     $old_ver = get_option( 'ktpwp_version', '0' );
@@ -118,7 +118,6 @@ function ktpwp_autoload_classes() {
         'KTPWP_Shortcodes'      => 'includes/class-ktpwp-shortcodes.php',
         'KTPWP_Redirect'        => 'includes/class-ktpwp-redirect.php',
         'KTPWP_Contact_Form'    => 'includes/class-ktpwp-contact-form.php',
-        'KTPWP_GitHub_Updater'  => 'includes/class-ktpwp-github-updater.php',
         'KTPWP_Database'        => 'includes/class-ktpwp-database.php',
         'KTPWP_Order'           => 'includes/class-ktpwp-order.php',
         'KTPWP_Order_Items'     => 'includes/class-ktpwp-order-items.php',
@@ -1918,9 +1917,6 @@ add_action(
 	}
 );
 
-// GitHub Updater
-
-
 // プラグインリファレンス更新処理（バージョン1.0.9対応）
 add_action(
     'init',
@@ -2724,7 +2720,7 @@ function ktpwp_get_plugin_description() {
     
     <h4>🆕 最新の改善点（1.0.3(preview)）</h4>
     <ul>
-        <li>Contact Form 7スタイルのシンプルな更新システムに変更</li>
+        				<li>シンプルな更新システムを実装</li>
         <li>WordPress標準の更新システムに完全対応</li>
         <li>複雑なGitHub連携システムを削除し、軽量化を実現</li>
         <li>安定性とパフォーマンスの向上</li>
@@ -2746,7 +2742,7 @@ function ktpwp_get_plugin_description() {
  * プラグインの更新履歴を取得（動的システム）
  */
 function ktpwp_get_plugin_changelog() {
-    // Contact Form 7スタイルのシンプルな更新履歴
+    			// シンプルな更新履歴
     return '<h4>現在のバージョン: ' . esc_html( KANTANPRO_PLUGIN_VERSION ) . '</h4>
             <p>WordPress標準の更新システムをご利用ください。</p>';
 }

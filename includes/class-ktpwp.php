@@ -166,21 +166,12 @@ class KTPWP {
     }
 
     /**
-     * Contact Formインスタンスを取得
+     * Contact Formインスタンス取得
      *
      * @return KTPWP_Contact_Form
      */
     public function get_contact_form() {
         return $this->main->get_contact_form();
-    }
-
-    /**
-     * GitHub Updaterインスタンスを取得
-     *
-     * @return KTPWP_GitHub_Updater
-     */
-    public function get_github_updater() {
-        return $this->main->get_github_updater();
     }
 
     /**

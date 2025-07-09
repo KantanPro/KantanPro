@@ -92,7 +92,6 @@ class KTPWP_Loader {
             'KTPWP_Shortcodes'      => 'includes/class-ktpwp-shortcodes.php',
             'KTPWP_Redirect'        => 'includes/class-ktpwp-redirect.php',
             'KTPWP_Contact_Form'    => 'includes/class-ktpwp-contact-form.php',
-            'KTPWP_GitHub_Updater'  => 'includes/class-ktpwp-github-updater.php',
             'KTPWP_Database'        => 'includes/class-ktpwp-database.php',
             'KTPWP_Order'           => 'includes/class-ktpwp-order.php',
             'KTPWP_Order_Items'     => 'includes/class-ktpwp-order-items.php',

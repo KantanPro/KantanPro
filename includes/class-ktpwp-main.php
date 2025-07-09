@@ -77,13 +77,6 @@ class KTPWP_Main {
     private $contact_form;
 
     /**
-     * GitHub Updaterクラスインスタンス
-     *
-     * @var KTPWP_GitHub_Updater
-     */
-    private $github_updater;
-
-    /**
      * データベース管理クラスインスタンス
      *
      * @var KTPWP_Database
@@ -233,7 +226,6 @@ class KTPWP_Main {
         $this->security = KTPWP_Security::get_instance();
         $this->shortcodes = KTPWP_Shortcodes::get_instance();
         $this->redirect = KTPWP_Redirect::get_instance();
-        $this->github_updater = KTPWP_GitHub_Updater::get_instance();
         $this->database = KTPWP_Database::get_instance();
         */
 
@@ -413,15 +405,6 @@ class KTPWP_Main {
      */
     public function get_contact_form() {
         return $this->contact_form;
-    }
-
-    /**
-     * GitHub Updaterインスタンスを取得
-     *
-     * @return KTPWP_GitHub_Updater
-     */
-    public function get_github_updater() {
-        return $this->github_updater;
     }
 
     /**
