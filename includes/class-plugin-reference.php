@@ -5,12 +5,12 @@
  * KantanPro（KTPWP）の公式リファレンス・ヘルプを提供。
  * - モバイル対応UI、PDF出力、サービス選択ポップアップ、アバター、ヘルプボタン、セキュリティ強化など最新機能を網羅。
  * - 管理タブ・伝票処理・顧客・サービス・協力会社・レポート・チャット等の使い方を解説。
- * - 部署管理機能・利用規約管理機能・自動更新機能の詳細説明を追加。
- * - 動的更新履歴システム・セッション管理最適化などの技術的改善を反映。
+ * - 部署管理機能・利用規約管理機能の詳細説明を追加。
+ * - セッション管理最適化などの技術的改善を反映。
  * - ページネーション機能・ファイル添付機能・完了日自動設定機能・納期警告機能・商品管理機能を追加。
- * - GitHub更新通知機能・管理画面更新チェックツール・デバッグツールを追加。
+ * - Contact Form 7スタイルのシンプル更新システムを実装。
  * - バージョンアップ履歴・トラブルシューティングも掲載。
- * - 最新バージョン: 1.0.2(preview)
+ * - 最新バージョン: 1.0.3(preview)
  *
  * @package KTPWP
  * @subpackage Includes
@@ -261,8 +261,7 @@ if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
 				<li><strong>モバイル対応UI</strong>（gap→margin対応、iOS/Android実機対応）</li>
 				<li><strong>部署管理機能</strong>（顧客ごとの部署・担当者管理）</li>
 				<li><strong>利用規約管理機能</strong>（同意ダイアログ・管理画面・バージョン管理）</li>
-				<li><strong>自動更新機能</strong>（GitHub連携による最新版の自動配信）</li>
-				<li><strong>動的更新履歴システム</strong>（データベースベースの管理・最大20エントリ保持）</li>
+				<li><strong>シンプル更新システム</strong>（WordPress標準の更新システムに最適化）</li>
 				<li><strong>セキュリティ機能</strong>（XSS/CSRF/SQLi/権限管理/ファイル検証/ノンス/prepare文）</li>
 				<li><strong>セッション管理最適化</strong>（REST API・AJAX・内部リクエスト対応）</li>
 				<li><strong>ページネーション機能</strong>（全タブ・ポップアップ対応・一般設定連携）</li>
@@ -589,49 +588,38 @@ if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
 		 * @return string HTML content
 		 */
 		private function get_changelog_content() {
-			return '<h2>動的更新履歴システム</h2>
+			return '<h2>更新履歴・バージョン管理</h2>
 			
 			<h3>概要</h3>
-			<p>データベースベースの更新履歴管理システムです。管理画面から更新履歴を編集できます。</p>
+			<p>Contact Form 7スタイルのシンプルな更新システムを採用しています。WordPress標準の更新システムと完全に連携し、安定性を重視した設計となっています。</p>
 			
-			<h3>機能</h3>
+			<h3>更新システムの特徴</h3>
 			<ul>
-				<li>データベースベースの更新履歴管理</li>
-				<li>管理画面からの更新履歴編集機能</li>
-				<li>リアルタイムでの更新履歴表示</li>
-				<li>最大20エントリまで保持</li>
+				<li>WordPress標準の更新システムに完全対応</li>
+				<li>Contact Form 7スタイルのシンプルなバージョン管理</li>
+				<li>軽量で安定性を重視した設計</li>
+				<li>自動マイグレーション機能搭載</li>
 			</ul>
 			
-			<h3>管理画面での編集</h3>
-			<ol>
-				<li>WordPress管理画面 → KantanPro → 更新履歴管理</li>
-				<li>「新しいエントリを追加」ボタンで新しい更新履歴を追加</li>
-				<li>既存エントリの「編集」「削除」ボタンで管理</li>
-				<li>「デフォルトにリセット」で初期状態に戻す</li>
-			</ol>
+			<h3>最新の更新内容（1.0.3 preview）</h3>
+			<ul>
+				<li>Contact Form 7スタイルのシンプルな更新システムに変更</li>
+				<li>WordPress標準の更新システムに完全対応</li>
+				<li>複雑なGitHub連携システムを削除し、軽量化を実現</li>
+				<li>安定性とパフォーマンスの向上</li>
+				<li>シンプルなバージョン管理システムの実装</li>
+			</ul>
 			
-			<h3>最新の更新内容（1.0.2 preview）</h3>
+			<h3>過去のアップデート履歴</h3>
+			<h4>1.0.2 preview</h4>
 			<ul>
 				<li>GitHub更新通知機能の修復・強化</li>
-				<li>管理画面更新チェックツールの追加（ツール > KantanPro更新チェック）</li>
+				<li>管理画面更新チェックツールの追加</li>
 				<li>プラグインリストでの更新通知表示機能</li>
-				<li>GitHubリポジトリURLの修正（https://github.com/KantanPro/freeKTP）</li>
-				<li>デバッグツールの追加・強化（GitHub API連携状況確認）</li>
-				<li>プラグイン更新キャッシュクリア機能</li>
-				<li>手動更新チェック機能（ワンクリック確認）</li>
-				<li>更新通知バナーの改善（管理画面表示）</li>
+				<li>デバッグツールの追加・強化</li>
 			</ul>
 			
-			<h3>GitHub更新機能の使い方</h3>
-			<ol>
-				<li>管理画面 → ツール → KantanPro更新チェックにアクセス</li>
-				<li>「手動更新チェック」ボタンをクリック</li>
-				<li>GitHub APIとの接続状況を確認</li>
-				<li>新しいバージョンが利用可能な場合は通知が表示</li>
-				<li>キャッシュクリアが必要な場合は「キャッシュクリア」ボタンを使用</li>
-			</ol>
-			
-			<h3>アップデート履歴（1.0.1 preview）</h3>
+			<h4>1.0.1 preview</h4>
 			<ul>
 				<li>ページネーション機能の全面実装（全タブ・ポップアップ対応）</li>
 				<li>ファイル添付機能追加（ドラッグ&ドロップ・複数ファイル対応）</li>
@@ -644,12 +632,12 @@ if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
 				<li>パフォーマンス最適化</li>
 			</ul>
 			
-			<h3>API機能</h3>
+			<h3>技術的特徴</h3>
 			<ul>
-				<li><code>ktpwp_add_changelog_entry()</code> - エントリ追加</li>
-				<li><code>ktpwp_remove_changelog_entry()</code> - エントリ削除</li>
-				<li><code>ktpwp_update_changelog_entry()</code> - エントリ更新</li>
-				<li><code>ktpwp_reset_changelog()</code> - デフォルトにリセット</li>
+				<li>WordPress標準の<code>update_option()</code>を使用したバージョン管理</li>
+				<li><code>ktpwp_upgrade()</code>関数による自動マイグレーション</li>
+				<li>Contact Form 7と同様のシンプルで信頼性の高い設計</li>
+				<li>メモリ使用量の最適化</li>
 			</ul>
 			
 			<h3>セキュリティ機能</h3>
@@ -657,6 +645,7 @@ if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
 				<li>権限チェック（管理者のみ）</li>
 				<li>nonce認証</li>
 				<li>データサニタイゼーション</li>
+				<li>WordPress標準のセキュリティ機能を活用</li>
 			</ul>';
 		}
 

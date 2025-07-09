@@ -9,7 +9,7 @@
  * License: GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: KantanPro
- * Version: 1.0.2(preview)
+ * Version: 1.0.3(preview)
  * Domain Path: /languages
  * Requires at least: 5.0
  * Tested up to: 6.5
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // プラグイン定数定義
 if ( ! defined( 'KANTANPRO_PLUGIN_VERSION' ) ) {
-    define( 'KANTANPRO_PLUGIN_VERSION', '1.0.2(preview)' );
+    define( 'KANTANPRO_PLUGIN_VERSION', '1.0.3(preview)' );
 }
 if ( ! defined( 'KANTANPRO_PLUGIN_NAME' ) ) {
     define( 'KANTANPRO_PLUGIN_NAME', 'KantanPro' );
@@ -74,93 +74,25 @@ if ( ! defined( 'MY_PLUGIN_URL' ) ) {
     define( 'MY_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 }
 
-// === GitHub自動アップデート: plugin-update-checker を利用 ===
-if ( file_exists( __DIR__ . '/vendor/plugin-update-checker/plugin-update-checker.php' ) ) {
-    require_once __DIR__ . '/vendor/plugin-update-checker/plugin-update-checker.php';
+// === WordPress標準更新システム ===
+// Contact Form 7スタイルのシンプルなバージョン管理
 
-    // GitHubリポジトリURL（実際のリポジトリに変更）
-    $github_repo_url = 'https://github.com/KantanPro/freeKTP'; // 実際のリポジトリURLに変更
-    $enable_update_checker = true; // 自動更新機能を有効化
+add_action( 'admin_init', 'ktpwp_upgrade', 10, 0 );
 
-    if ( $enable_update_checker ) {
-        $kantanpro_update_checker = \YahnisElsts\PluginUpdateChecker\v5\PucFactory::buildUpdateChecker(
-            $github_repo_url,                     // GitHubリポジトリURL
-            __FILE__,                              // プラグインのメインファイル
-            'ktpwp'                               // プラグインのスラッグ（ファイル名に基づく）
-        );
-        $kantanpro_update_checker->setBranch( 'main' );
-        $kantanpro_update_checker->getVcsApi()->enableReleaseAssets();
-        
-        // Plugin Update Checkerで自動更新機能を有効化
-        add_filter( 'puc_enable_auto_update-ktpwp', '__return_true' );
+/**
+ * Contact Form 7スタイルのシンプルなアップグレード処理
+ */
+function ktpwp_upgrade() {
+    $old_ver = get_option( 'ktpwp_version', '0' );
+    $new_ver = KANTANPRO_PLUGIN_VERSION;
 
-        // グローバル変数に保存（手動更新チェック用）
-        $GLOBALS['kantanpro_update_checker'] = $kantanpro_update_checker;
-
-        // Plugin Update Checkerで更新通知を有効化
-        // 更新が利用可能な場合にプラグインリストで通知を表示
-        
-        // 手動更新チェック機能を有効化
-        add_action( 'admin_init', function() use ( $kantanpro_update_checker ) {
-            // 管理画面でのみ更新チェック機能を有効化
-            if ( is_admin() && current_user_can( 'update_plugins' ) ) {
-                // プラグインリストページでの表示を許可
-                if ( isset( $_GET['page'] ) && $_GET['page'] === 'plugins.php' ) {
-                    // 更新通知の表示を許可
-                }
-            }
-        }, 10 );
-
-        // プラグインリストページでの更新表示を有効化
-        add_filter( 'plugin_row_meta', function( $plugin_meta, $plugin_file ) use ( $kantanpro_update_checker ) {
-            if ( $plugin_file === plugin_basename( __FILE__ ) ) {
-                $update = $kantanpro_update_checker->getUpdate();
-                if ( $update ) {
-                    $plugin_meta[] = '<strong style="color: #d63638;">更新利用可能: ' . esc_html( $update->version ) . '</strong>';
-                }
-            }
-            return $plugin_meta;
-        }, 10, 2 );
-        
-        // 管理画面での更新通知を表示
-        add_action( 'admin_notices', function() use ( $kantanpro_update_checker ) {
-            if ( current_user_can( 'update_plugins' ) ) {
-                // プラグインページでのみ表示
-                $screen = get_current_screen();
-                if ( $screen && $screen->id === 'plugins' ) {
-                    $update_info = $kantanpro_update_checker->getUpdate();
-                    if ( $update_info ) {
-                        $current_version = $kantanpro_update_checker->getInstalledVersion();
-                        $new_version = $update_info->version;
-                        
-                        if ( version_compare( $current_version, $new_version, '<' ) ) {
-                            echo '<div class="notice notice-warning is-dismissible">';
-                            echo '<p><strong>🚀 KantanPro:</strong> 新しいバージョン <strong>' . esc_html( $new_version ) . '</strong> が利用可能です。';
-                            echo ' 現在のバージョン: ' . esc_html( $current_version );
-                            echo ' | <a href="' . esc_url( admin_url( 'tools.php?page=ktpwp-update-check' ) ) . '">詳細確認</a></p>';
-                            echo '</div>';
-                        }
-                    }
-                }
-            }
-        } );
-        
-        // WordPressの自動更新チェックと統合
-        add_action( 'wp_update_plugins', function() use ( $kantanpro_update_checker ) {
-            // プラグイン更新チェック時にKantanProの更新もチェック
-            $kantanpro_update_checker->checkForUpdates();
-        } );
-
-        // デバッグログを有効化（必要に応じて）
-        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KantanPro Update Checker initialized for: ' . $github_repo_url );
-        }
-    } else {
-        // 更新チェッカーが無効化されている場合のログ
-        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KantanPro Update Checker disabled: Repository not configured or not available' );
-        }
+    if ( $old_ver === $new_ver ) {
+        return;
     }
+
+    do_action( 'ktpwp_upgrade', $new_ver, $old_ver );
+
+    update_option( 'ktpwp_version', $new_ver );
 }
 
 /**
@@ -543,8 +475,7 @@ function ktpwp_plugin_activation() {
     // 利用規約テーブルの作成
     ktpwp_ensure_terms_table();
     
-    // 更新履歴の初期データを設定
-    ktpwp_initialize_changelog();
+
     
     // プラグインのバージョン情報を保存
     update_option( 'ktpwp_version', KANTANPRO_PLUGIN_VERSION );
@@ -562,59 +493,7 @@ function ktpwp_plugin_activation() {
 /**
  * 更新履歴の初期化処理
  */
-function ktpwp_initialize_changelog() {
-    // 現在のバージョンと本日の日付を取得
-    $current_version = KANTANPRO_PLUGIN_VERSION;
-    $current_date = date('Y-m-d');
-    
-    // 既存の更新履歴を取得
-    $existing_changelog = get_option('ktpwp_changelog_entries', array());
-    
-    // 最新のエントリが現在のバージョンと一致するかチェック
-    $needs_update = true;
-    if (!empty($existing_changelog)) {
-        $latest_entry = $existing_changelog[0];
-        if (isset($latest_entry['version']) && $latest_entry['version'] === $current_version) {
-            $needs_update = false;
-        }
-    }
-    
-    // 更新が必要な場合のみ処理を実行
-    if ($needs_update) {
-        // デフォルトの更新履歴を取得
-        $default_entries = ktpwp_get_default_changelog_entries();
-        
-        // 最新のエントリの日付を本日に更新
-        if (!empty($default_entries)) {
-            $default_entries[0]['date'] = $current_date;
-        }
-        
-        // 既存のエントリと新しいエントリをマージ
-        $merged_entries = array_merge($default_entries, $existing_changelog);
-        
-        // 重複を除去（バージョンが同じ場合は新しいものを優先）
-        $unique_entries = array();
-        $seen_versions = array();
-        
-        foreach ($merged_entries as $entry) {
-            if (!in_array($entry['version'], $seen_versions)) {
-                $unique_entries[] = $entry;
-                $seen_versions[] = $entry['version'];
-            }
-        }
-        
-        // 最大20エントリまで保持
-        if (count($unique_entries) > 20) {
-            $unique_entries = array_slice($unique_entries, 0, 20);
-        }
-        
-        update_option('ktpwp_changelog_entries', $unique_entries);
-        
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('KTPWP: 更新履歴を更新しました - バージョン: ' . $current_version . ', 日付: ' . $current_date);
-        }
-    }
-}
+
 
 // プラグイン読み込み時の差分マイグレーション（アップデート時）
 add_action( 'plugins_loaded', 'ktpwp_check_database_integrity', 5 );
@@ -625,8 +504,7 @@ add_action( 'plugins_loaded', 'ktpwp_ensure_department_migration', 6 );
 // 利用規約テーブル存在チェック（自動修復）
 add_action( 'plugins_loaded', 'ktpwp_ensure_terms_table', 7 );
 
-// 更新履歴の初期化（プラグイン読み込み時）
-add_action( 'plugins_loaded', 'ktpwp_initialize_changelog', 8 );
+
 
 // 利用規約同意チェック
 add_action( 'admin_init', 'ktpwp_check_terms_agreement' );
@@ -2738,295 +2616,9 @@ function ktpwp_admin_auto_migrations() {
     set_transient( 'ktpwp_admin_migration_completed', true, DAY_IN_SECONDS );
 }
 
-/**
- * 管理者向けの更新通知を表示
- */
-function ktpwp_admin_update_notice() {
-    if ( ! current_user_can( 'manage_options' ) ) {
-        return;
-    }
 
-    // 更新チェッカーが有効化されている場合の通知
-    if ( ktpwp_is_update_checker_enabled() ) {
-        $screen = get_current_screen();
-        if ( $screen && ( strpos( $screen->id, 'ktpwp' ) !== false || $screen->id === 'plugins' ) ) {
-            ?>
-            <div class="notice notice-success is-dismissible">
-                <p>
-                    <strong>KantanPro 更新通知:</strong> 
-                    自動更新機能が有効になっています。新しいバージョンが利用可能になった場合、自動的に更新通知が表示されます。
-                </p>
-                <p>
-                    <small>
-                        現在のバージョン: <?php echo esc_html( KANTANPRO_PLUGIN_VERSION ); ?>
-                        | 最終更新: <?php echo esc_html( date( 'Y-m-d H:i:s', filemtime( __FILE__ ) ) ); ?>
-                    </small>
-                </p>
-            </div>
-            <?php
-        }
-    } else {
-        // 更新チェッカーが無効化されている場合の通知
-        $screen = get_current_screen();
-        if ( $screen && ( strpos( $screen->id, 'ktpwp' ) !== false || $screen->id === 'plugins' ) ) {
-            ?>
-            <div class="notice notice-info is-dismissible">
-                <p>
-                    <strong>KantanPro 更新通知:</strong> 
-                    自動更新機能は現在無効化されています。新しいバージョンが利用可能になった場合は、手動でプラグインを更新してください。
-                </p>
-                <p>
-                    <small>
-                        現在のバージョン: <?php echo esc_html( KANTANPRO_PLUGIN_VERSION ); ?>
-                        | 最終更新: <?php echo esc_html( date( 'Y-m-d H:i:s', filemtime( __FILE__ ) ) ); ?>
-                    </small>
-                </p>
-            </div>
-            <?php
-        }
-    }
-}
-// add_action( 'admin_notices', 'ktpwp_admin_update_notice' );
 
-/**
- * 更新チェッカーが有効かどうかを確認
- */
-function ktpwp_is_update_checker_enabled() {
-    // 更新チェッカーの設定を確認
-    $enable_update_checker = true; // 自動更新機能を有効化
-    
-    // 設定ファイルから動的に取得する場合
-    if ( defined( 'KTPWP_ENABLE_UPDATE_CHECKER' ) ) {
-        $enable_update_checker = KTPWP_ENABLE_UPDATE_CHECKER;
-    }
-    
-    return $enable_update_checker;
-}
 
-/**
- * 手動更新チェック用のAJAXハンドラ
- */
-function ktpwp_manual_update_check() {
-    // 権限チェック
-    if ( ! current_user_can( 'manage_options' ) ) {
-        wp_die( 'Insufficient permissions' );
-    }
-
-    // nonce確認
-    if ( ! wp_verify_nonce( $_POST['nonce'], 'ktpwp_manual_update_check' ) ) {
-        wp_die( 'Security check failed' );
-    }
-
-    // キャッシュをクリア
-    delete_site_transient('update_plugins');
-    if ( function_exists( 'wp_clean_update_cache' ) ) {
-        wp_clean_update_cache();
-    }
-
-    // 更新チェッカーが有効な場合のみ実行
-    if ( ktpwp_is_update_checker_enabled() ) {
-        // 更新チェックを強制実行
-        if ( isset( $GLOBALS['kantanpro_update_checker'] ) ) {
-            $update = $GLOBALS['kantanpro_update_checker']->checkForUpdates();
-            if ( $update ) {
-                wp_send_json_success( array(
-                    'message' => '新しいバージョンが利用可能です: ' . $update->version,
-                    'version' => $update->version,
-                    'url' => $update->homepage,
-                    'download_url' => $update->download_url,
-                    'has_update' => true
-                ) );
-            } else {
-                wp_send_json_success( array(
-                    'message' => '最新バージョンを使用しています。',
-                    'version' => KANTANPRO_PLUGIN_VERSION,
-                    'has_update' => false
-                ) );
-            }
-        } else {
-            wp_send_json_success( array(
-                'message' => '更新チェッカーが初期化されています。プラグインページで更新を確認してください。',
-                'version' => KANTANPRO_PLUGIN_VERSION,
-                'has_update' => false
-            ) );
-        }
-    } else {
-        wp_send_json_error( '自動更新機能は無効化されています。' );
-    }
-}
-add_action( 'wp_ajax_ktpwp_manual_update_check', 'ktpwp_manual_update_check' );
-
-/**
- * KantanPro管理画面での更新チェック機能
- */
-function ktpwp_add_update_check_to_admin() {
-    // 管理画面のKantanPro設定ページに更新チェック機能を追加
-    add_action( 'admin_menu', function() {
-        add_submenu_page(
-            'tools.php',
-            'KantanPro 更新チェック',
-            'KantanPro 更新チェック',
-            'manage_options',
-            'ktpwp-update-check',
-            'ktpwp_update_check_page'
-        );
-    });
-}
-add_action( 'init', 'ktpwp_add_update_check_to_admin' );
-
-/**
- * 更新チェックページの表示
- */
-function ktpwp_update_check_page() {
-    ?>
-    <div class="wrap">
-        <h1>KantanPro 更新チェック</h1>
-        
-        <div class="card">
-            <h2>📋 現在の状況</h2>
-            <table class="form-table">
-                <tr>
-                    <th>現在のバージョン</th>
-                    <td><?php echo esc_html( KANTANPRO_PLUGIN_VERSION ); ?></td>
-                </tr>
-                                 <tr>
-                     <th>GitHubリポジトリ</th>
-                     <td><a href="https://github.com/KantanPro/freeKTP" target="_blank">https://github.com/KantanPro/freeKTP</a></td>
-                 </tr>
-                <tr>
-                    <th>更新チェッカー状況</th>
-                    <td>
-                        <?php if ( ktpwp_is_update_checker_enabled() ): ?>
-                            <span style="color: green;">✅ 有効</span>
-                        <?php else: ?>
-                            <span style="color: red;">❌ 無効</span>
-                        <?php endif; ?>
-                    </td>
-                </tr>
-            </table>
-        </div>
-
-        <div class="card">
-            <h2>🔄 更新チェック</h2>
-            <p>GitHubの最新リリースをチェックして、更新が利用可能かどうかを確認します。</p>
-            
-            <p>
-                <button type="button" id="check-updates" class="button button-primary">更新をチェック</button>
-                <button type="button" id="clear-cache" class="button">キャッシュクリア</button>
-                <a href="<?php echo admin_url('plugins.php'); ?>" class="button">プラグインページ</a>
-            </p>
-            
-            <div id="update-result" style="margin-top: 20px;"></div>
-        </div>
-
-        <div class="card">
-            <h2>💡 トラブルシューティング</h2>
-            <h3>更新通知が表示されない場合の対処法：</h3>
-            <ol>
-                                 <li><strong>GitHubリリース確認:</strong> <a href="https://github.com/KantanPro/freeKTP/releases" target="_blank">GitHubリリースページ</a>で最新リリースが公開されているか確認</li>
-                <li><strong>ZIPファイル確認:</strong> リリースにプラグインのZIPファイルが添付されているか確認</li>
-                <li><strong>バージョン確認:</strong> GitHubのタグ名とプラグインのVersionヘッダーが一致しているか確認</li>
-                <li><strong>キャッシュクリア:</strong> 上記「キャッシュクリア」ボタンを押してWordPressの更新キャッシュをクリア</li>
-                <li><strong>詳細デバッグ:</strong> 問題が解決しない場合は、<a href="<?php echo plugin_dir_url(KANTANPRO_PLUGIN_FILE) . 'debug-github-update-status.php'; ?>" target="_blank">詳細デバッグツール</a>を実行</li>
-            </ol>
-        </div>
-    </div>
-
-    <style>
-    .card { background: #fff; border: 1px solid #ccd0d4; padding: 20px; margin: 20px 0; box-shadow: 0 1px 1px rgba(0,0,0,.04); }
-    .form-table th { width: 200px; }
-    #update-result { padding: 10px; border-radius: 4px; display: none; }
-    .success-result { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
-    .error-result { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
-    .info-result { background: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
-    </style>
-
-    <script>
-    jQuery(document).ready(function($) {
-        $('#check-updates').click(function() {
-            var button = $(this);
-            var result = $('#update-result');
-            
-            button.prop('disabled', true).text('チェック中...');
-            result.hide();
-            
-            $.post(ajaxurl, {
-                action: 'ktpwp_manual_update_check',
-                nonce: '<?php echo wp_create_nonce('ktpwp_manual_update_check'); ?>'
-            }, function(response) {
-                if (response.success) {
-                    var data = response.data;
-                    if (data.has_update) {
-                        result.removeClass().addClass('success-result').html(
-                            '<h3>✅ 更新が利用可能です！</h3>' +
-                            '<p><strong>新しいバージョン:</strong> ' + data.version + '</p>' +
-                            '<p><a href="<?php echo admin_url('plugins.php'); ?>" class="button button-primary">プラグインページで更新</a></p>'
-                        ).show();
-                    } else {
-                        result.removeClass().addClass('info-result').html(
-                            '<h3>ℹ️ ' + data.message + '</h3>' +
-                            '<p>現在のバージョン: ' + data.version + '</p>'
-                        ).show();
-                    }
-                } else {
-                    result.removeClass().addClass('error-result').html(
-                        '<h3>❌ エラーが発生しました</h3>' +
-                        '<p>' + response.data + '</p>'
-                    ).show();
-                }
-            }).fail(function() {
-                result.removeClass().addClass('error-result').html(
-                    '<h3>❌ 通信エラー</h3>' +
-                    '<p>サーバーとの通信に失敗しました。</p>'
-                ).show();
-            }).always(function() {
-                button.prop('disabled', false).text('更新をチェック');
-            });
-        });
-
-        $('#clear-cache').click(function() {
-            var button = $(this);
-            var result = $('#update-result');
-            
-            button.prop('disabled', true).text('クリア中...');
-            
-            $.post(ajaxurl, {
-                action: 'ktpwp_clear_update_cache',
-                nonce: '<?php echo wp_create_nonce('ktpwp_clear_cache'); ?>'
-            }, function(response) {
-                result.removeClass().addClass('success-result').html(
-                    '<h3>✅ キャッシュをクリアしました</h3>' +
-                    '<p>プラグインの更新キャッシュをクリアしました。再度更新をチェックしてください。</p>'
-                ).show();
-            }).always(function() {
-                button.prop('disabled', false).text('キャッシュクリア');
-            });
-        });
-    });
-    </script>
-    <?php
-}
-
-/**
- * キャッシュクリア用のAJAXハンドラ
- */
-function ktpwp_clear_update_cache() {
-    if ( ! current_user_can( 'manage_options' ) ) {
-        wp_die( 'Insufficient permissions' );
-    }
-
-    if ( ! wp_verify_nonce( $_POST['nonce'], 'ktpwp_clear_cache' ) ) {
-        wp_die( 'Security check failed' );
-    }
-
-    delete_site_transient('update_plugins');
-    if ( function_exists( 'wp_clean_update_cache' ) ) {
-        wp_clean_update_cache();
-    }
-
-    wp_send_json_success( array( 'message' => 'キャッシュをクリアしました。' ) );
-}
-add_action( 'wp_ajax_ktpwp_clear_update_cache', 'ktpwp_clear_update_cache' );
 
 /**
  * プラグイン詳細情報を提供
@@ -3097,8 +2689,7 @@ function ktpwp_get_plugin_description() {
         <li><strong>📱 モバイル対応UI</strong> - gap→margin対応、iOS/Android実機対応</li>
         <li><strong>🏢 部署管理機能</strong> - 顧客ごとの部署・担当者管理</li>
         <li><strong>📋 利用規約管理機能</strong> - 同意ダイアログ・管理画面</li>
-        <li><strong>🔄 自動更新機能</strong> - GitHub連携による最新版の自動配信</li>
-        <li><strong>📝 動的更新履歴システム</strong> - データベースベースの管理</li>
+        <li><strong>🔄 シンプル更新システム</strong> - WordPress標準の更新システムに最適化</li>
         <li><strong>🔒 セキュリティ機能</strong> - XSS/CSRF/SQLi/権限管理/ファイル検証/ノンス/prepare文</li>
         <li><strong>⚡ セッション管理最適化</strong> - REST API・AJAX・内部リクエスト対応</li>
         <li><strong>📦 ページネーション機能</strong> - 全タブ・ポップアップ対応・一般設定連携</li>
@@ -3106,7 +2697,6 @@ function ktpwp_get_plugin_description() {
         <li><strong>📅 完了日自動設定機能</strong> - 進捗変更時の自動処理</li>
         <li><strong>⚠️ 納期警告機能</strong> - 期限管理・アラート表示</li>
         <li><strong>💰 商品管理機能</strong> - 価格・数量・単位管理</li>
-        <li><strong>🔔 GitHub更新通知機能</strong> - 管理画面通知・手動チェック・デバッグツール</li>
     </ul>
     
     <h4>💡 特徴</h4>
@@ -3117,8 +2707,8 @@ function ktpwp_get_plugin_description() {
         <li>詳細なログ機能とデバッグサポート</li>
         <li>WordPressの標準機能との完全な互換性</li>
         <li>レスポンシブデザインでモバイル対応</li>
-        <li>GitHub連携による継続的なアップデート</li>
-        <li>プラグイン更新状況の可視化とトラブルシューティング</li>
+        <li>WordPress標準の更新システムに完全対応</li>
+        <li>軽量で安定性を重視した設計</li>
     </ul>
     
     <h4>🔧 使用方法</h4>
@@ -3133,16 +2723,14 @@ function ktpwp_get_plugin_description() {
         <li>推奨PHP拡張: GD（画像処理用）</li>
     </ul>
     
-    <h4>🆕 最新の改善点（1.0.2(preview)）</h4>
+    <h4>🆕 最新の改善点（1.0.3(preview)）</h4>
     <ul>
-        <li>GitHub更新通知機能の修復・強化</li>
-        <li>管理画面更新チェックツールの追加（ツール > KantanPro更新チェック）</li>
-        <li>プラグインリストでの更新通知表示機能</li>
-        <li>GitHubリポジトリURLの修正（https://github.com/KantanPro/freeKTP）</li>
-        <li>デバッグツールの追加・強化（GitHub API連携状況確認）</li>
-        <li>プラグイン更新キャッシュクリア機能</li>
-        <li>手動更新チェック機能（ワンクリック確認）</li>
-        <li>更新通知バナーの改善（管理画面表示）</li>
+        <li>Contact Form 7スタイルのシンプルな更新システムに変更</li>
+        <li>WordPress標準の更新システムに完全対応</li>
+        <li>複雑なGitHub連携システムを削除し、軽量化を実現</li>
+        <li>安定性とパフォーマンスの向上</li>
+        <li>シンプルなバージョン管理システムの実装</li>
+        <li>メモリ使用量の最適化</li>
     </ul>
     
     <h4>📞 サポート</h4>
@@ -3159,177 +2747,16 @@ function ktpwp_get_plugin_description() {
  * プラグインの更新履歴を取得（動的システム）
  */
 function ktpwp_get_plugin_changelog() {
-    // データベースから更新履歴を取得
-    $changelog_entries = get_option('ktpwp_changelog_entries', array());
-    
-    // デフォルトの更新履歴（データベースにエントリがない場合のフォールバック）
-    if (empty($changelog_entries)) {
-        $changelog_entries = ktpwp_get_default_changelog_entries();
-        // デフォルトエントリをデータベースに保存
-        update_option('ktpwp_changelog_entries', $changelog_entries);
-    }
-    
-    // 更新履歴をHTML形式で構築
-    $changelog = '';
-    foreach ($changelog_entries as $entry) {
-        $changelog .= '<h4>バージョン ' . esc_html($entry['version']) . ' - ' . esc_html($entry['date']) . '</h4>';
-        $changelog .= '<ul>';
-        foreach ($entry['changes'] as $change) {
-            $changelog .= '<li>' . esc_html($change) . '</li>';
-        }
-        $changelog .= '</ul>';
-    }
-    
-    return $changelog;
+    // Contact Form 7スタイルのシンプルな更新履歴
+    return '<h4>現在のバージョン: ' . esc_html( KANTANPRO_PLUGIN_VERSION ) . '</h4>
+            <p>WordPress標準の更新システムをご利用ください。</p>';
 }
 
-/**
- * デフォルトの更新履歴エントリを取得
- */
-function ktpwp_get_default_changelog_entries() {
-    return array(
-        array(
-            'version' => '1.0.2(preview)',
-            'date' => '2025-01-08',
-            'changes' => array(
-                'GitHub更新通知機能の修復・強化',
-                '管理画面更新チェックツールの追加（ツール > KantanPro更新チェック）',
-                'プラグインリストでの更新通知表示機能',
-                'GitHubリポジトリURLの修正（https://github.com/KantanPro/freeKTP）',
-                'デバッグツールの追加・強化（GitHub API連携状況確認）',
-                'プラグイン更新キャッシュクリア機能',
-                '手動更新チェック機能（ワンクリック確認）',
-                '更新通知バナーの改善（管理画面表示）'
-            )
-        ),
-        array(
-            'version' => '1.0.1(preview)',
-            'date' => '2025-01-XX',
-            'changes' => array(
-                'ページネーション機能の全面実装（全タブ・ポップアップ対応）',
-                'ファイル添付機能追加（ドラッグ&ドロップ・複数ファイル対応）',
-                '完了日自動設定機能実装（進捗変更時の自動処理）',
-                '納期警告機能実装（期限管理・アラート表示）',
-                '商品管理機能改善（価格・数量・単位管理強化）',
-                'スタッフチャット機能強化（AJAX送信・自動スクロール・キーボードショートカット）',
-                'レスポンシブデザイン改善（モバイル対応強化）',
-                'セキュリティ機能の追加強化',
-                'パフォーマンス最適化'
-            )
-        ),
-        array(
-            'version' => '1.0.0(preview)',
-            'date' => '2025-01-XX',
-            'changes' => array(
-                'プレビュー版リリース',
-                '6つの管理タブ（仕事リスト・伝票処理・得意先・サービス・協力会社・レポート）',
-                '受注案件の進捗管理（7段階）',
-                '受注書・請求書のPDF出力機能',
-                '顧客・サービス・協力会社のマスター管理',
-                'スタッフチャット機能',
-                'モバイル対応UI（レスポンシブデザイン）',
-                '部署管理機能',
-                '利用規約管理機能',
-                '自動更新機能（GitHub連携）',
-                '動的更新履歴システム',
-                'セキュリティ機能の強化',
-                'セッション管理最適化'
-            )
-        )
-    );
-}
 
-/**
- * 更新履歴エントリを追加
- */
-function ktpwp_add_changelog_entry($version, $date, $changes) {
-    $changelog_entries = get_option('ktpwp_changelog_entries', array());
-    
-    // 新しいエントリを先頭に追加
-    array_unshift($changelog_entries, array(
-        'version' => $version,
-        'date' => $date,
-        'changes' => $changes
-    ));
-    
-    // 最大20エントリまで保持
-    if (count($changelog_entries) > 20) {
-        $changelog_entries = array_slice($changelog_entries, 0, 20);
-    }
-    
-    update_option('ktpwp_changelog_entries', $changelog_entries);
-    
-    return true;
-}
 
-/**
- * 更新履歴エントリを削除
- */
-function ktpwp_remove_changelog_entry($version) {
-    $changelog_entries = get_option('ktpwp_changelog_entries', array());
-    
-    foreach ($changelog_entries as $key => $entry) {
-        if ($entry['version'] === $version) {
-            unset($changelog_entries[$key]);
-            break;
-        }
-    }
-    
-    // インデックスを再構築
-    $changelog_entries = array_values($changelog_entries);
-    
-    update_option('ktpwp_changelog_entries', $changelog_entries);
-    
-    return true;
-}
 
-/**
- * 更新履歴エントリを更新
- */
-function ktpwp_update_changelog_entry($version, $date, $changes) {
-    $changelog_entries = get_option('ktpwp_changelog_entries', array());
-    
-    foreach ($changelog_entries as $key => $entry) {
-        if ($entry['version'] === $version) {
-            $changelog_entries[$key] = array(
-                'version' => $version,
-                'date' => $date,
-                'changes' => $changes
-            );
-            break;
-        }
-    }
-    
-    update_option('ktpwp_changelog_entries', $changelog_entries);
-    
-    return true;
-}
 
-/**
- * 更新履歴をリセット（デフォルトに戻す）
- */
-function ktpwp_reset_changelog() {
-    // 現在のバージョンと本日の日付を取得
-    $current_version = KANTANPRO_PLUGIN_VERSION;
-    $current_date = date('Y-m-d');
-    
-    // デフォルトの更新履歴を取得
-    $default_entries = ktpwp_get_default_changelog_entries();
-    
-    // 最新のエントリの日付を本日に更新
-    if (!empty($default_entries)) {
-        $default_entries[0]['date'] = $current_date;
-    }
-    
-    // データベースに保存
-    update_option('ktpwp_changelog_entries', $default_entries);
-    
-    if (defined('WP_DEBUG') && WP_DEBUG) {
-        error_log('KTPWP: 更新履歴をリセットしました - バージョン: ' . $current_version . ', 日付: ' . $current_date);
-    }
-    
-    return true;
-}
+
 
 /**
  * 管理画面用のスタイルを追加（プラグイン詳細モーダル用）
