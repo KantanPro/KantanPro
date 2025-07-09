@@ -134,6 +134,7 @@ function ktpwp_autoload_classes() {
         'KTPWP_Client_UI'       => 'includes/class-ktpwp-client-ui.php',
         'KTPWP_Department_Manager' => 'includes/class-department-manager.php',
         'KTPWP_Terms_Of_Service' => 'includes/class-ktpwp-terms-of-service.php',
+        'KTPWP_Update_Checker'  => 'includes/class-ktpwp-update-checker.php',
     );
 
     foreach ( $classes as $class_name => $file_path ) {
@@ -154,6 +155,24 @@ require_once __DIR__ . '/includes/ajax-department.php';
 
 // クラスの読み込み実行
 ktpwp_autoload_classes();
+
+// === 独自更新チェッカーの初期化 ===
+function ktpwp_init_update_checker() {
+    if ( class_exists( 'KTPWP_Update_Checker' ) ) {
+        global $ktpwp_update_checker;
+        $ktpwp_update_checker = new KTPWP_Update_Checker();
+        error_log( 'KantanPro: 更新チェッカーが初期化されました' );
+    } else {
+        error_log( 'KantanPro: 更新チェッカークラスが見つかりません' );
+    }
+}
+
+// プラグインが完全に読み込まれた後に実行
+add_action( 'plugins_loaded', 'ktpwp_init_update_checker' );
+
+// プラグインアクションリンクは更新チェッカークラスで管理
+
+// スクリプト読み込みも更新チェッカークラスで管理
 
 // === WordPress標準自動更新機能のサポート ===
 add_filter( 'auto_update_plugin', 'ktpwp_enable_auto_updates', 10, 2 );
