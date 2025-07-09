@@ -3,7 +3,7 @@
  * Plugin Name: KantanPro
  * Plugin URI: https://www.kantanpro.com/
  * Description: スモールビジネス向けの仕事効率化システム。ショートコード[ktpwp_all_tab]を固定ページに設置してください。
- * Version: 1.0.3(preview)
+ * Version: 1.0.4(preview)
  * Author: KantanPro
  * Author URI: https://www.kantanpro.com/kantanpro-page
  * License: GPL v2 or later
@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // プラグイン定数定義
 if ( ! defined( 'KANTANPRO_PLUGIN_VERSION' ) ) {
-    define( 'KANTANPRO_PLUGIN_VERSION', '1.0.3(preview)' );
+    define( 'KANTANPRO_PLUGIN_VERSION', '1.0.4(preview)' );
 }
 if ( ! defined( 'KANTANPRO_PLUGIN_NAME' ) ) {
     define( 'KANTANPRO_PLUGIN_NAME', 'KantanPro' );
@@ -2692,6 +2692,7 @@ function ktpwp_get_plugin_description() {
         <li><strong>📅 完了日自動設定機能</strong> - 進捗変更時の自動処理</li>
         <li><strong>⚠️ 納期警告機能</strong> - 期限管理・アラート表示</li>
         <li><strong>💰 商品管理機能</strong> - 価格・数量・単位管理</li>
+        <li><strong>👤 スタッフアバター表示機能</strong> - ログイン中スタッフの可視化</li>
     </ul>
     
     <h4>💡 特徴</h4>
@@ -2718,14 +2719,18 @@ function ktpwp_get_plugin_description() {
         <li>推奨PHP拡張: GD（画像処理用）</li>
     </ul>
     
-    <h4>🆕 最新の改善点（1.0.3(preview)）</h4>
+    <h4>🆕 最新の改善点（1.0.4(preview)）</h4>
     <ul>
-        				<li>シンプルな更新システムを実装</li>
-        <li>WordPress標準の更新システムに完全対応</li>
-        <li>複雑なGitHub連携システムを削除し、軽量化を実現</li>
-        <li>安定性とパフォーマンスの向上</li>
-        <li>シンプルなバージョン管理システムの実装</li>
-        <li>メモリ使用量の最適化</li>
+        <li>スタッフアバター表示機能の追加</li>
+        <li>完了日自動設定機能の実装（進捗変更時の自動処理）</li>
+        <li>納期警告機能の実装（期限管理・アラート表示）</li>
+        <li>商品管理機能の大幅改善（DECIMAL型・インデックス最適化）</li>
+        <li>ページネーション機能の全面実装（サービス選択ポップアップ対応）</li>
+        <li>ファイル添付機能の追加（ドラッグ&ドロップ・複数ファイル対応）</li>
+        <li>スタッフチャット機能の強化（自動スクロール・AJAX送信・キーボードショートカット）</li>
+        <li>レスポンシブデザインの改善（モバイル対応強化）</li>
+        <li>セキュリティ機能の追加強化</li>
+        <li>パフォーマンス最適化とUI/UX改善</li>
     </ul>
     
     <h4>📞 サポート</h4>
@@ -2739,12 +2744,94 @@ function ktpwp_get_plugin_description() {
 }
 
 /**
- * プラグインの更新履歴を取得（動的システム）
+ * プラグインの更新履歴を取得（詳細版）
  */
 function ktpwp_get_plugin_changelog() {
-    			// シンプルな更新履歴
-    return '<h4>現在のバージョン: ' . esc_html( KANTANPRO_PLUGIN_VERSION ) . '</h4>
-            <p>WordPress標準の更新システムをご利用ください。</p>';
+    $changelog = '
+    <h3>変更履歴</h3>
+    <p>KantanProプラグインの主要な更新履歴をご紹介します。</p>
+    
+    <h4>1.0.4(preview) - 2024年12月</h4>
+    <ul>
+        <li><strong>スタッフアバター表示機能の追加</strong> - ログイン中スタッフの可視化</li>
+        <li><strong>完了日自動設定機能の実装</strong> - 進捗変更時の自動処理</li>
+        <li><strong>納期警告機能の実装</strong> - 期限管理・アラート表示</li>
+        <li><strong>商品管理機能の大幅改善</strong> - DECIMAL型・インデックス最適化</li>
+        <li><strong>ページネーション機能の全面実装</strong> - サービス選択ポップアップ対応</li>
+        <li><strong>ファイル添付機能の追加</strong> - ドラッグ&ドロップ・複数ファイル対応</li>
+        <li><strong>スタッフチャット機能の強化</strong> - 自動スクロール・AJAX送信・キーボードショートカット</li>
+        <li><strong>レスポンシブデザインの改善</strong> - モバイル対応強化</li>
+        <li><strong>セキュリティ機能の追加強化</strong> - XSS/CSRF/SQLi対策</li>
+        <li><strong>パフォーマンス最適化とUI/UX改善</strong> - 操作性向上</li>
+    </ul>
+    
+    <h4>1.0.3(preview) - 2024年12月</h4>
+    <ul>
+        <li><strong>シンプルな更新システムを実装</strong></li>
+        <li><strong>WordPress標準の更新システムに完全対応</strong></li>
+        <li><strong>軽量化を実現し大幅なパフォーマンス向上</strong></li>
+        <li><strong>不要なライブラリを削除</strong>（約90%のサイズ削減）</li>
+        <li><strong>安定性とパフォーマンスの大幅向上</strong></li>
+        <li><strong>保守性の高いアーキテクチャを実現</strong></li>
+    </ul>
+    
+    <h4>1.0.2(preview) - 2024年11月</h4>
+    <ul>
+        <li>GitHub更新通知機能の修復・強化</li>
+        <li>管理画面更新チェックツールの追加（ツール > KantanPro更新チェック）</li>
+        <li>プラグインリストでの更新通知表示機能</li>
+        <li>GitHubリポジトリURLの修正（https://github.com/KantanPro/freeKTP）</li>
+        <li>デバッグツールの追加・強化（GitHub API連携状況確認）</li>
+        <li>プラグイン更新キャッシュクリア機能</li>
+        <li>手動更新チェック機能（ワンクリック確認）</li>
+        <li>更新通知バナーの改善（管理画面表示）</li>
+    </ul>
+    
+    <h4>1.0.1(preview) - 2024年10月</h4>
+    <ul>
+        <li>最新プレビュー版リリース</li>
+        <li>ページネーション機能の全面実装（全タブ・ポップアップ対応）</li>
+        <li>ファイル添付機能追加（ドラッグ&ドロップ・複数ファイル対応）</li>
+        <li>完了日自動設定機能実装（進捗変更時の自動処理）</li>
+        <li>納期警告機能実装（期限管理・アラート表示）</li>
+        <li>商品管理機能改善（価格・数量・単位管理強化）</li>
+        <li>スタッフチャット機能強化（AJAX送信・自動スクロール・キーボードショートカット）</li>
+        <li>レスポンシブデザイン改善（モバイル対応強化）</li>
+        <li>セキュリティ機能の追加強化</li>
+        <li>パフォーマンス最適化</li>
+    </ul>
+    
+    <h4>1.0.0(preview) - 2024年9月</h4>
+    <ul>
+        <li>プレビュー版リリース</li>
+        <li>6つの管理タブ（仕事リスト・伝票処理・得意先・サービス・協力会社・レポート）</li>
+        <li>受注案件の進捗管理（7段階）</li>
+        <li>受注書・請求書のPDF出力機能</li>
+        <li>顧客・サービス・協力会社のマスター管理</li>
+        <li>スタッフチャット機能</li>
+        <li>モバイル対応UI（レスポンシブデザイン）</li>
+        <li>部署管理機能</li>
+        <li>利用規約管理機能</li>
+        <li>自動更新機能（GitHub連携）</li>
+        <li>動的更新履歴システム</li>
+        <li>セキュリティ機能の強化</li>
+        <li>セッション管理最適化</li>
+    </ul>
+    
+    <h4>🔧 技術的な改善点</h4>
+    <ul>
+        <li><strong>WordPress標準準拠</strong> - コーディング規約に完全準拠</li>
+        <li><strong>セキュリティ強化</strong> - nonce認証、データサニタイゼーション、権限チェック</li>
+        <li><strong>パフォーマンス最適化</strong> - キャッシュ機能、効率的なクエリ、メモリ使用量削減</li>
+        <li><strong>レスポンシブデザイン</strong> - すべてのデバイスで最適な表示</li>
+        <li><strong>アクセシビリティ向上</strong> - WAI-ARIA対応、キーボード操作対応</li>
+    </ul>
+    
+    <p><strong>現在のバージョン:</strong> ' . esc_html( KANTANPRO_PLUGIN_VERSION ) . '</p>
+    <p><em>継続的な改善により、より使いやすく安定したプラグインを提供いたします。</em></p>
+    ';
+    
+    return $changelog;
 }
 
 
