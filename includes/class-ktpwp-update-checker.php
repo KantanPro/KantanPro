@@ -43,6 +43,11 @@ class KTPWP_Update_Checker {
     private $check_interval = 86400; // 24時間
     
     /**
+     * フロントエンド通知の実行フラグ
+     */
+    private $frontend_notice_shown = false;
+    
+    /**
      * コンストラクタ
      */
     public function __construct() {
@@ -61,6 +66,7 @@ class KTPWP_Update_Checker {
         // フック設定
         add_action( 'init', array( $this, 'init' ) );
         add_action( 'admin_init', array( $this, 'admin_init' ) );
+        add_action( 'wp_body_open', array( $this, 'check_frontend_update' ) );
         add_action( 'wp_footer', array( $this, 'check_frontend_update' ) );
         
         // プラグインメタ行にリンクを追加（即座に登録）
@@ -73,6 +79,7 @@ class KTPWP_Update_Checker {
         // AJAX処理
         add_action( 'wp_ajax_ktpwp_dismiss_update_notice', array( $this, 'dismiss_update_notice' ) );
         add_action( 'wp_ajax_ktpwp_check_github_update', array( $this, 'ajax_check_github_update' ) );
+        add_action( 'wp_ajax_ktpwp_perform_update', array( $this, 'perform_plugin_update' ) );
         
         // デバッグ用のログ出力
         error_log( 'KantanPro Update Checker: 初期化完了 - basename: ' . $this->plugin_basename );
@@ -247,6 +254,13 @@ class KTPWP_Update_Checker {
             update_option( 'ktpwp_update_available', $update_data );
             delete_option( 'ktpwp_update_notice_dismissed' );
             
+            // 新しいバージョンの場合はフロントエンドの無視フラグもリセット
+            $previous_dismissed_version = get_option( 'ktpwp_frontend_dismissed_version', '' );
+            if ( $previous_dismissed_version !== $latest_version ) {
+                delete_option( 'ktpwp_frontend_update_notice_dismissed' );
+                delete_option( 'ktpwp_frontend_dismissed_version' );
+            }
+            
             return true;
         } else {
             // 更新情報をクリア
@@ -284,15 +298,13 @@ class KTPWP_Update_Checker {
         
         $plugin_name = get_plugin_data( KANTANPRO_PLUGIN_FILE )['Name'];
         $new_version = $update_data['new_version'];
-        $github_url = 'https://github.com/' . $this->github_repo . '/releases/tag/' . $new_version;
         
         ?>
         <div class="notice notice-warning is-dismissible" id="ktpwp-update-notice">
             <p>
                 <strong><?php echo esc_html( $plugin_name ); ?></strong> の新しいバージョン 
                 <strong><?php echo esc_html( $new_version ); ?></strong> が利用可能です。
-                <a href="<?php echo esc_url( $github_url ); ?>" target="_blank">更新内容を確認</a> | 
-                <a href="<?php echo esc_url( $github_url ); ?>" target="_blank">今すぐ更新</a>
+                <a href="#" id="ktpwp-perform-update" data-version="<?php echo esc_attr( $new_version ); ?>">今すぐ更新</a>
             </p>
         </div>
         <script>
@@ -302,6 +314,39 @@ class KTPWP_Update_Checker {
                     action: 'ktpwp_dismiss_update_notice',
                     nonce: '<?php echo wp_create_nonce( 'ktpwp_dismiss_update_notice' ); ?>'
                 });
+            });
+            
+            $('#ktpwp-perform-update').on('click', function(e) {
+                e.preventDefault();
+                
+                var $link = $(this);
+                var originalText = $link.text();
+                var version = $link.data('version');
+                
+                if (confirm('プラグインを更新しますか？更新中はサイトが一時的に利用できなくなる可能性があります。')) {
+                    $link.text('更新中...');
+                    
+                    $.post(ajaxurl, {
+                        action: 'ktpwp_perform_update',
+                        version: version,
+                        nonce: '<?php echo wp_create_nonce( 'ktpwp_perform_update' ); ?>'
+                    }, function(response) {
+                        if (response.success) {
+                            $link.text('更新完了');
+                            $('#ktpwp-update-notice').addClass('notice-success').removeClass('notice-warning');
+                            $('#ktpwp-update-notice p').html('<strong>更新が完了しました！</strong> ページを再読み込みしてください。');
+                            setTimeout(function() {
+                                window.location.reload();
+                            }, 2000);
+                        } else {
+                            alert('更新に失敗しました: ' + response.data);
+                            $link.text(originalText);
+                        }
+                    }).fail(function() {
+                        alert('更新に失敗しました。ネットワークエラーが発生しました。');
+                        $link.text(originalText);
+                    });
+                }
             });
         });
         </script>
@@ -329,6 +374,11 @@ class KTPWP_Update_Checker {
      * フロントエンドでの更新チェック
      */
     public function check_frontend_update() {
+        // 既に実行済みの場合はスキップ
+        if ( $this->frontend_notice_shown ) {
+            return;
+        }
+        
         // 管理者でない場合は何もしない
         if ( ! current_user_can( 'update_plugins' ) ) {
             return;
@@ -345,6 +395,11 @@ class KTPWP_Update_Checker {
         $current_time = time();
         
         if ( ( $current_time - $last_frontend_check ) < $this->check_interval ) {
+            // チェック間隔内でも、更新が利用可能な場合は通知を表示
+            $update_data = get_option( 'ktpwp_update_available', false );
+            if ( $update_data ) {
+                $this->show_frontend_update_notice();
+            }
             return;
         }
         
@@ -360,7 +415,7 @@ class KTPWP_Update_Checker {
     }
     
     /**
-     * フロントエンドでの更新通知表示
+     * フロントエンドでの更新通知表示（WordPress標準の1行通知スタイル）
      */
     private function show_frontend_update_notice() {
         // 通知が無視されているかチェック
@@ -373,22 +428,53 @@ class KTPWP_Update_Checker {
             return;
         }
         
+        // 過去に無視されたバージョンと同じ場合は表示しない
+        $dismissed_version = get_option( 'ktpwp_frontend_dismissed_version', '' );
+        if ( $dismissed_version === $update_data['new_version'] ) {
+            return;
+        }
+        
+        // 実行フラグを設定
+        $this->frontend_notice_shown = true;
+        
         $plugin_name = get_plugin_data( KANTANPRO_PLUGIN_FILE )['Name'];
         $new_version = $update_data['new_version'];
-        $github_url = 'https://github.com/' . $this->github_repo . '/releases/tag/' . $new_version;
         
         ?>
-        <div id="ktpwp-frontend-update-notice" style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 10px; margin: 10px 0; border-radius: 4px; position: relative;">
-            <button type="button" style="position: absolute; top: 5px; right: 5px; background: none; border: none; font-size: 16px; cursor: pointer;" onclick="ktpwpDismissFrontendNotice()">&times;</button>
-            <p style="margin: 0; color: #856404;">
+        <div id="ktpwp-frontend-update-notice" style="
+            background: #fff; 
+            border-left: 4px solid #0073aa; 
+            margin: 0; 
+            padding: 8px 12px; 
+            box-shadow: 0 1px 1px rgba(0,0,0,0.04);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 999999;
+        ">
+            <button type="button" style="
+                position: absolute; 
+                top: 4px; 
+                right: 8px; 
+                background: none; 
+                border: none; 
+                font-size: 18px; 
+                cursor: pointer;
+                color: #666;
+                line-height: 1;
+            " onclick="ktpwpDismissFrontendNotice()" title="非表示にする">&times;</button>
+            <p style="margin: 0; color: #0073aa; font-size: 14px; line-height: 1.4;">
                 <strong><?php echo esc_html( $plugin_name ); ?></strong> の新しいバージョン 
                 <strong><?php echo esc_html( $new_version ); ?></strong> が利用可能です。
-                <a href="<?php echo esc_url( admin_url( 'plugins.php' ) ); ?>" style="color: #0073aa;">管理画面で更新</a>
+                <a href="<?php echo esc_url( admin_url( 'plugins.php' ) ); ?>" style="color: #0073aa; text-decoration: none;">管理画面で更新</a>
             </p>
         </div>
         <script>
         function ktpwpDismissFrontendNotice() {
             document.getElementById('ktpwp-frontend-update-notice').style.display = 'none';
+            // bodyのマージンを削除
+            document.body.style.marginTop = '';
             // AJAX で無視フラグを設定
             if (typeof jQuery !== 'undefined') {
                 jQuery.post('<?php echo admin_url( 'admin-ajax.php' ); ?>', {
@@ -398,6 +484,11 @@ class KTPWP_Update_Checker {
             }
         }
         </script>
+        <style>
+        body {
+            margin-top: 45px !important;
+        }
+        </style>
         <?php
         
         // フロントエンド通知の無視処理
@@ -414,8 +505,157 @@ class KTPWP_Update_Checker {
             wp_die( 'セキュリティチェックに失敗しました。' );
         }
         
+        // 現在の更新バージョンを記録して、同じバージョンでは再度通知しないようにする
+        $update_data = get_option( 'ktpwp_update_available', false );
+        if ( $update_data ) {
+            update_option( 'ktpwp_frontend_dismissed_version', $update_data['new_version'] );
+        }
+        
         update_option( 'ktpwp_frontend_update_notice_dismissed', true );
         wp_die();
+    }
+    
+    /**
+     * プラグイン更新の実行
+     */
+    public function perform_plugin_update() {
+        // セキュリティチェック
+        if ( ! wp_verify_nonce( $_POST['nonce'], 'ktpwp_perform_update' ) ) {
+            wp_send_json_error( 'セキュリティチェックに失敗しました。' );
+        }
+        
+        if ( ! current_user_can( 'update_plugins' ) ) {
+            wp_send_json_error( 'この操作を実行する権限がありません。' );
+        }
+        
+        $version = sanitize_text_field( $_POST['version'] );
+        
+        // 更新情報を取得
+        $update_data = get_option( 'ktpwp_update_available', false );
+        if ( ! $update_data || $update_data['new_version'] !== $version ) {
+            wp_send_json_error( '更新情報が見つかりません。' );
+        }
+        
+        // WordPress標準の更新システムを使用
+        require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
+        require_once ABSPATH . 'wp-admin/includes/plugin-install.php';
+        
+        // カスタム更新処理
+        $result = $this->download_and_install_update( $update_data );
+        
+        if ( is_wp_error( $result ) ) {
+            wp_send_json_error( $result->get_error_message() );
+        }
+        
+        if ( $result ) {
+            // 更新成功時の処理
+            delete_option( 'ktpwp_update_available' );
+            delete_option( 'ktpwp_update_notice_dismissed' );
+            delete_option( 'ktpwp_frontend_update_notice_dismissed' );
+            
+            wp_send_json_success( '更新が完了しました。' );
+        } else {
+            wp_send_json_error( '更新に失敗しました。' );
+        }
+    }
+    
+    /**
+     * GitHubからダウンロードして更新を実行
+     */
+    private function download_and_install_update( $update_data ) {
+        $download_url = $update_data['download_url'];
+        $plugin_slug = $this->plugin_slug;
+        
+        // 一時ディレクトリを作成
+        $temp_dir = WP_PLUGIN_DIR . '/ktpwp_temp_' . time();
+        if ( ! wp_mkdir_p( $temp_dir ) ) {
+            return new WP_Error( 'temp_dir_failed', '一時ディレクトリの作成に失敗しました。' );
+        }
+        
+        // 一時ファイルにダウンロード
+        $temp_file = download_url( $download_url );
+        if ( is_wp_error( $temp_file ) ) {
+            $this->recursive_rmdir( $temp_dir );
+            return new WP_Error( 'download_failed', 'ファイルのダウンロードに失敗しました: ' . $temp_file->get_error_message() );
+        }
+        
+        // ZIPファイルを一時ディレクトリに解凍
+        $unzip_result = unzip_file( $temp_file, $temp_dir );
+        if ( is_wp_error( $unzip_result ) ) {
+            @unlink( $temp_file );
+            $this->recursive_rmdir( $temp_dir );
+            return new WP_Error( 'unzip_failed', 'ファイルの解凍に失敗しました: ' . $unzip_result->get_error_message() );
+        }
+        
+        // 解凍されたフォルダを見つける（GitHubのzipballは特殊な構造）
+        $extracted_dirs = glob( $temp_dir . '/*', GLOB_ONLYDIR );
+        if ( empty( $extracted_dirs ) ) {
+            @unlink( $temp_file );
+            $this->recursive_rmdir( $temp_dir );
+            return new WP_Error( 'extract_failed', '解凍されたフォルダが見つかりません。' );
+        }
+        
+        $source_dir = $extracted_dirs[0]; // 最初のディレクトリを使用
+        
+        // プラグインファイルの存在確認
+        if ( ! file_exists( $source_dir . '/ktpwp.php' ) ) {
+            @unlink( $temp_file );
+            $this->recursive_rmdir( $temp_dir );
+            return new WP_Error( 'invalid_plugin', 'プラグインファイルが見つかりません。' );
+        }
+        
+        // 古いプラグインフォルダをバックアップ
+        $plugin_dir = WP_PLUGIN_DIR . '/' . $plugin_slug;
+        $backup_dir = $plugin_dir . '_backup_' . date( 'Y-m-d_H-i-s' );
+        
+        if ( is_dir( $plugin_dir ) ) {
+            if ( ! rename( $plugin_dir, $backup_dir ) ) {
+                @unlink( $temp_file );
+                $this->recursive_rmdir( $temp_dir );
+                return new WP_Error( 'backup_failed', 'バックアップの作成に失敗しました。' );
+            }
+        }
+        
+        // 新しいプラグインフォルダを配置
+        if ( ! rename( $source_dir, $plugin_dir ) ) {
+            // 失敗時はバックアップを復元
+            if ( is_dir( $backup_dir ) ) {
+                rename( $backup_dir, $plugin_dir );
+            }
+            @unlink( $temp_file );
+            $this->recursive_rmdir( $temp_dir );
+            return new WP_Error( 'install_failed', 'プラグインの配置に失敗しました。' );
+        }
+        
+        // 成功時はバックアップを削除
+        if ( is_dir( $backup_dir ) ) {
+            $this->recursive_rmdir( $backup_dir );
+        }
+        
+        // 一時ファイルとディレクトリを削除
+        @unlink( $temp_file );
+        $this->recursive_rmdir( $temp_dir );
+        
+        return true;
+    }
+    
+    /**
+     * ディレクトリを再帰的に削除
+     */
+    private function recursive_rmdir( $dir ) {
+        if ( is_dir( $dir ) ) {
+            $objects = scandir( $dir );
+            foreach ( $objects as $object ) {
+                if ( $object != '.' && $object != '..' ) {
+                    if ( is_dir( $dir . '/' . $object ) ) {
+                        $this->recursive_rmdir( $dir . '/' . $object );
+                    } else {
+                        unlink( $dir . '/' . $object );
+                    }
+                }
+            }
+            rmdir( $dir );
+        }
     }
     
     /**
@@ -447,6 +687,7 @@ class KTPWP_Update_Checker {
         delete_option( 'ktpwp_last_frontend_check' );
         delete_option( 'ktpwp_update_notice_dismissed' );
         delete_option( 'ktpwp_frontend_update_notice_dismissed' );
+        delete_option( 'ktpwp_frontend_dismissed_version' );
         delete_option( 'ktpwp_update_available' );
     }
 }
