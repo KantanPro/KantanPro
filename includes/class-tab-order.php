@@ -2038,6 +2038,12 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 			// 自社情報の取得（設定から）
 			$company_info_html = $this->Get_Company_Info_HTML();
 
+			// 適格請求書番号を取得
+			$qualified_invoice_number = '';
+			if ( class_exists( 'KTP_Settings' ) ) {
+				$qualified_invoice_number = KTP_Settings::get_qualified_invoice_number();
+			}
+
 			// プレビューHTML生成 - A4サイズに最適化
 			$html = '<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><title>受注書プレビュー</title></head><body>';
 			$html .= '<div class="order-preview-document" style="font-family: \'Noto Sans JP\', \'Hiragino Kaku Gothic ProN\', Meiryo, sans-serif; line-height: 1.4; color: #333; max-width: 210mm; margin: 0 auto; padding: 50px; background: #fff; min-height: 297mm; box-sizing: border-box;">';
@@ -2127,6 +2133,10 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 			// 帳票タイトル（コンパクト）
 			$html .= '<div class="document-title" style="text-align: center; margin-bottom: 15px; padding: 12px; border: 2px solid #333; font-size: 18px; font-weight: bold;">';
 			$html .= '＜' . esc_html( $document_info['title'] ) . '＞';
+			// 適格請求書番号を表示（設定されている場合のみ）
+			if ( ! empty( $qualified_invoice_number ) ) {
+				$html .= '<div style="font-size: 14px; font-weight: normal; margin-top: 5px; color: #333;">適格請求書番号：' . esc_html( $qualified_invoice_number ) . '</div>';
+			}
 			$html .= '</div>';
 
 			// 帳票内容（コンパクト）
