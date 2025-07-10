@@ -429,26 +429,26 @@
 
             $('#ktp-service-selector-content').html(html);
 
-            // ボタンイベントの設定
-            $('.ktp-service-selector-add').on('click', function () {
-                const serviceData = {
-                    id: $(this).data('service-id'),
-                    name: $(this).data('service-name'),
-                    price: $(this).data('price'),
-                    unit: $(this).data('unit')
-                };
-                addServiceToInvoice(serviceData, targetRow);
-            });
-
-            $('.ktp-service-selector-update').on('click', function () {
-                const serviceData = {
-                    id: $(this).data('service-id'),
-                    name: $(this).data('service-name'),
-                    price: $(this).data('price'),
-                    unit: $(this).data('unit')
-                };
-                updateServiceInInvoice(serviceData, targetRow);
-            });
+            // ボタンイベントの設定（イベント委譲を使用して再レンダリング後も動作するように修正）
+            $(document).off('click.ktp-service-add click.ktp-service-update')
+                .on('click.ktp-service-add', '.ktp-service-selector-add', function () {
+                    const serviceData = {
+                        id: $(this).data('service-id'),
+                        name: $(this).data('service-name'),
+                        price: $(this).data('price'),
+                        unit: $(this).data('unit')
+                    };
+                    addServiceToInvoice(serviceData, targetRow);
+                })
+                .on('click.ktp-service-update', '.ktp-service-selector-update', function () {
+                    const serviceData = {
+                        id: $(this).data('service-id'),
+                        name: $(this).data('service-name'),
+                        price: $(this).data('price'),
+                        unit: $(this).data('unit')
+                    };
+                    updateServiceInInvoice(serviceData, targetRow);
+                });
 
             // ページネーションボタンのイベント設定（イベント委譲を使用）
             $(document).off('click.ktp-pagination').on('click.ktp-pagination', '.ktp-pagination-btn', function (e) {
