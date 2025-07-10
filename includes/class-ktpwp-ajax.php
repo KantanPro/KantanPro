@@ -733,6 +733,7 @@ class KTPWP_Ajax {
 		$field_name  = $this->sanitize_ajax_input( 'field_name', 'text' );
 		$field_value = $this->sanitize_ajax_input( 'field_value', 'text' );
 		$order_id    = $this->sanitize_ajax_input( 'order_id', 'int' );
+		$request_id  = $this->sanitize_ajax_input( 'request_id', 'text' );
 
 		// バリデーション
 		if ( ! in_array( $item_type, array( 'invoice', 'cost' ), true ) ) {
@@ -750,8 +751,10 @@ class KTPWP_Ajax {
 
 		try {
 
-			// 新しいアイテムを作成
-			$new_item_id = $order_items->create_new_item( $item_type, $order_id );
+			// 新しいアイテムを作成（リクエストIDを渡して重複防止）
+			$new_item_id = $order_items->create_new_item( $item_type, $order_id, $request_id );
+			
+			error_log( "[AJAX_CREATE_NEW_ITEM] create_new_item result: item_type={$item_type}, order_id={$order_id}, request_id={$request_id}, new_item_id={$new_item_id}" );
 
 			// 指定されたフィールド値を設定（アイテム作成後に更新）
 			if ( ! empty( $field_name ) && ! empty( $field_value ) && $new_item_id ) {

@@ -1000,13 +1000,26 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 		 * @param int    $order_id Order ID
 		 * @return int|false Item ID on success, false on failure
 		 */
-		public function create_new_item( $item_type, $order_id ) {
+		public function create_new_item( $item_type, $order_id, $request_id = null ) {
 			if ( ! in_array( $item_type, array( 'invoice', 'cost' ) ) || ! $order_id || $order_id <= 0 ) {
 				return false;
 			}
 
+			// 重複リクエスト防止（リクエストIDが提供された場合）
+			if ( $request_id ) {
+				$transient_key = 'ktp_create_item_' . md5( $request_id );
+				if ( get_transient( $transient_key ) ) {
+					error_log( "[KTPWP] Duplicate create_new_item request blocked: {$request_id}" );
+					return false;
+				}
+				// 30秒間のロックを設定
+				set_transient( $transient_key, time(), 30 );
+			}
+
 			global $wpdb;
 			$table_name = $wpdb->prefix . 'ktp_order_' . $item_type . '_items';
+			
+			error_log( "[KTPWP] create_new_item called: item_type={$item_type}, order_id={$order_id}, request_id={$request_id}" );
 
 			// 新規作成時は現在の最大sort_order値+1を設定
 			$max_sort_order = $wpdb->get_var(
@@ -1046,10 +1059,25 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 
 			if ( $result === false ) {
 				error_log( 'KTPWP: Failed to create new item: ' . $wpdb->last_error );
+				// 失敗時はトランジェントを削除
+				if ( $request_id ) {
+					$transient_key = 'ktp_create_item_' . md5( $request_id );
+					delete_transient( $transient_key );
+				}
 				return false;
 			}
 
 			$new_item_id = $wpdb->insert_id;
+			
+			// 成功時のログ
+			error_log( "[KTPWP] create_new_item success: new_item_id={$new_item_id}, item_type={$item_type}, order_id={$order_id}" );
+			
+			// 成功時はトランジェントを即座に削除（処理完了のため）
+			if ( $request_id ) {
+				$transient_key = 'ktp_create_item_' . md5( $request_id );
+				delete_transient( $transient_key );
+			}
+			
 			return $new_item_id;
 		}
 

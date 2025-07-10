@@ -489,9 +489,15 @@
             ktp_ajax_nonce: nonce  // 追加: PHPでチェックされるフィールド名
         };
 
-        if (window.ktpDebugMode) {
-            console.log('Creating new cost item:', ajaxData);
-        }
+        // 重複実行チェック用のユニークID
+        const requestId = 'createNewItem_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        ajaxData.request_id = requestId;
+        
+        console.log('[COST] createNewItem AJAX送信', {
+            requestId: requestId,
+            ajaxData: ajaxData,
+            timestamp: new Date().toISOString()
+        });
 
         $.ajax({
             url: ajaxUrl,
@@ -601,26 +607,78 @@
     });
 
     // --- コスト項目用: 協力会社サービス選択ポップアップ内「追加」「更新」ボタン処理 ---
-    // ポップアップ内の「更新」ボタン
-    $(document).off('click', '.popup-dialog .ktp-cost-update-btn').on('click', '.popup-dialog .ktp-cost-update-btn', function(e) {
+    // ポップアップ内の「更新」ボタン（協力会社選択と従来ポップアップの両方に対応）
+    $(document).off('click', '.ktp-cost-update-btn').on('click', '.ktp-cost-update-btn', function(e) {
         e.preventDefault();
         e.stopPropagation();
         
+        // 協力会社選択専用ボタンは除外（新しいハンドラーで処理される）
+        if ($(this).hasClass('ktp-supplier-update-btn')) {
+            console.log('[COST] 協力会社選択専用ボタンのため処理をスキップ');
+            return;
+        }
+        
+        // 重複実行防止フラグをチェック
+        const $btn = $(this);
+        if ($btn.data('processing')) {
+            console.log('[COST] 更新処理中のため、重複実行をブロック');
+            return;
+        }
+        
+        // 処理中フラグを設定
+        $btn.data('processing', true);
+        $btn.prop('disabled', true);
+        
+        // ボタンのテキストを変更して処理中であることを明示
+        const originalUpdateText = $btn.text();
+        $btn.data('original-text', originalUpdateText);
+        $btn.text('処理中...');
+        
         console.log('[COST] 更新ボタンクリック');
         
-        const $btn = $(this);
-        const $popup = $btn.closest('.popup-dialog');
-        const serviceData = $btn.data('service') || $btn.closest('.supplier-service-item').data('service');
-        const targetRowId = $popup.data('target-row');
-        const $targetRow = $('#' + targetRowId);
+        const $popup = $btn.closest('.popup-dialog, #ktp-supplier-selector-modal');
         
-        if (!serviceData || $targetRow.length === 0) {
+        // 協力会社選択ポップアップからのデータを取得（JSON形式のdata-service属性から）
+        let serviceData = $btn.data('service');
+        if (typeof serviceData === 'string') {
+            try {
+                serviceData = JSON.parse(serviceData);
+            } catch (e) {
+                console.error('[COST] サービスデータのJSONパースエラー:', e);
+            }
+        }
+        
+        // 従来のポップアップ形式への対応も維持
+        if (!serviceData) {
+            serviceData = $btn.closest('.supplier-service-item').data('service');
+        }
+        
+        // 協力会社選択の場合は window.ktpCurrentRow を使用
+        let $targetRow;
+        const targetRowId = $popup.data('target-row');
+        if (targetRowId) {
+            $targetRow = $('#' + targetRowId);
+        } else if (window.ktpCurrentRow) {
+            $targetRow = window.ktpCurrentRow;
+        }
+        
+        if (!serviceData || !$targetRow || $targetRow.length === 0) {
             console.error('[COST] 更新対象の行またはサービスデータが見つかりません', {
                 serviceData: serviceData,
                 targetRowId: targetRowId,
-                targetRowExists: $targetRow.length > 0
+                hasCurrentRow: !!window.ktpCurrentRow,
+                targetRowExists: $targetRow && $targetRow.length > 0
             });
             alert('更新対象の行またはサービスデータが見つかりません。');
+            // エラー時にフラグを解除
+            $btn.data('processing', false);
+            $btn.prop('disabled', false);
+            
+            // ボタンテキストを元に戻す
+            const originalUpdateText1 = $btn.data('original-text');
+            if (originalUpdateText1) {
+                $btn.text(originalUpdateText1);
+            }
             return;
         }
         
@@ -629,14 +687,23 @@
             targetRowId: targetRowId
         });
         
-        // UI反映
-        $targetRow.find('.product-name').val(serviceData.product_name);
-        displaySupplierServicePrice($targetRow, serviceData);
+        // UI反映（協力会社選択と従来ポップアップの両方に対応）
+        const productName = serviceData.product_name || serviceData.name || '';
+        const unitPrice = serviceData.unit_price || serviceData.price || 0;
+        const quantity = serviceData.quantity || 1;
+        const unit = serviceData.unit || '';
+        
+        $targetRow.find('.product-name').val(productName);
+        $targetRow.find('.price').val(unitPrice);
+        $targetRow.find('.quantity').val(quantity);
+        $targetRow.find('.unit').val(unit);
         $targetRow.find('input').prop('disabled', false);
+        
+        // 金額を再計算
+        calculateAmount($targetRow);
         
         // 協力会社名を「仕入」フィールドに表示
         if (window.ktpCurrentSupplierName) {
-            const productName = serviceData.product_name;
             const purchaseDisplayText = window.ktpCurrentSupplierName && productName ? 
                 `${window.ktpCurrentSupplierName} > ${productName}` : 
                 window.ktpCurrentSupplierName;
@@ -670,15 +737,14 @@
                 supplierId: window.ktpCurrentSupplierId
             });
             
-            // 各フィールドを順次保存
-            autoSaveItem('cost', itemId, 'product_name', serviceData.product_name, orderId);
-            autoSaveItem('cost', itemId, 'price', serviceData.unit_price, orderId);
-            autoSaveItem('cost', itemId, 'quantity', serviceData.quantity, orderId);
-            autoSaveItem('cost', itemId, 'unit', serviceData.unit, orderId);
+            // 各フィールドを順次保存（協力会社選択と従来ポップアップの両方に対応）
+            autoSaveItem('cost', itemId, 'product_name', productName, orderId);
+            autoSaveItem('cost', itemId, 'price', unitPrice, orderId);
+            autoSaveItem('cost', itemId, 'quantity', quantity, orderId);
+            autoSaveItem('cost', itemId, 'unit', unit, orderId);
             
             // 協力会社名を「仕入」フィールドに保存
             if (window.ktpCurrentSupplierName) {
-                const productName = serviceData.product_name;
                 const purchaseDisplayText = window.ktpCurrentSupplierName && productName ? 
                     `${window.ktpCurrentSupplierName} > ${productName}` : 
                     window.ktpCurrentSupplierName;
@@ -701,31 +767,100 @@
             });
         }
         
-        // ポップアップ自動クローズ
-        $popup.remove();
+        // ポップアップ自動クローズ（協力会社選択と従来ポップアップの両方に対応）
+        if ($popup.length > 0) {
+            $popup.remove();
+        }
+        // 協力会社選択ポップアップの場合
+        if ($('#ktp-supplier-selector-modal').length > 0) {
+            $('#ktp-supplier-selector-modal').remove();
+        }
+        
+        // 処理完了後、フラグを解除してボタンを再有効化
+        $btn.data('processing', false);
+        $btn.prop('disabled', false);
+        
+        // ボタンテキストを元に戻す
+        const originalUpdateText2 = $btn.data('original-text');
+        if (originalUpdateText2) {
+            $btn.text(originalUpdateText2);
+        }
         
         console.log('[COST] 更新処理完了');
     });
 
-    // ポップアップ内の「追加」ボタン
-    $(document).off('click', '.popup-dialog .ktp-cost-add-btn').on('click', '.popup-dialog .ktp-cost-add-btn', function(e) {
+    // ポップアップ内の「追加」ボタン（協力会社選択と従来ポップアップの両方に対応）
+    $(document).off('click', '.ktp-cost-add-btn').on('click', '.ktp-cost-add-btn', function(e) {
         e.preventDefault();
         e.stopPropagation();
         
+        // 協力会社選択専用ボタンは除外（新しいハンドラーで処理される）
+        if ($(this).hasClass('ktp-supplier-add-btn')) {
+            console.log('[COST] 協力会社選択専用ボタンのため処理をスキップ');
+            return;
+        }
+        
+        // 重複実行防止フラグをチェック
+        const $btn = $(this);
+        console.log('[COST] 追加ボタンクリック開始', {
+            btnElement: $btn[0],
+            processing: $btn.data('processing'),
+            timestamp: new Date().toISOString(),
+            version: '2025-01-10-v2.0'
+        });
+        
+        if ($btn.data('processing')) {
+            console.log('[COST] 追加処理中のため、重複実行をブロック');
+            return;
+        }
+        
+        // 処理中フラグを設定
+        $btn.data('processing', true);
+        $btn.prop('disabled', true);
+        
+        // ボタンのテキストを変更して処理中であることを明示
+        const originalAddText = $btn.text();
+        $btn.data('original-text', originalAddText);
+        $btn.text('処理中...');
+        
         console.log('[COST] 追加ボタンクリック');
         
-        const $btn = $(this);
-        const $popup = $btn.closest('.popup-dialog');
-        const serviceData = $btn.data('service') || $btn.closest('.supplier-service-item').data('service');
+        const $popup = $btn.closest('.popup-dialog, #ktp-supplier-selector-modal');
+        
+        // 協力会社選択ポップアップからのデータを取得（JSON形式のdata-service属性から）
+        let serviceData = $btn.data('service');
+        if (typeof serviceData === 'string') {
+            try {
+                serviceData = JSON.parse(serviceData);
+            } catch (e) {
+                console.error('[COST] サービスデータのJSONパースエラー:', e);
+            }
+        }
+        
+        // 従来のポップアップ形式への対応も維持
+        if (!serviceData) {
+            serviceData = $btn.closest('.supplier-service-item').data('service');
+        }
         
         if (!serviceData) {
             console.error('[COST] 追加するサービスデータが見つかりません');
             alert('追加するサービスデータが見つかりません。');
+            // エラー時にフラグを解除
+            $btn.data('processing', false);
+            $btn.prop('disabled', false);
+            
+            // ボタンテキストを元に戻す
+            const originalAddText2 = $btn.data('original-text');
+            if (originalAddText2) {
+                $btn.text(originalAddText2);
+            }
             return;
         }
         
         console.log('[COST] 追加処理開始', {
-            serviceData: serviceData
+            serviceData: serviceData,
+            timestamp: new Date().toISOString(),
+            buttonElement: $btn[0]
         });
         
         // 一番下に新規行を追加
@@ -736,6 +871,15 @@
         if (!rowAdded) {
             console.error('[COST] 新規行の追加に失敗しました');
             alert('新規行の追加に失敗しました。');
+            // 新規行追加失敗時にフラグを解除
+            $btn.data('processing', false);
+            $btn.prop('disabled', false);
+            
+            // ボタンテキストを元に戻す
+            const originalAddText3 = $btn.data('original-text');
+            if (originalAddText3) {
+                $btn.text(originalAddText3);
+            }
             return;
         }
         
@@ -745,14 +889,23 @@
             newRowIndex: $newRow.index()
         });
         
-        // UI反映
-        $newRow.find('.product-name').val(serviceData.product_name);
+        // UI反映（協力会社選択と従来ポップアップの両方に対応）
+        const productName = serviceData.product_name || serviceData.name || '';
+        const unitPrice = serviceData.unit_price || serviceData.price || 0;
+        const quantity = serviceData.quantity || 1;
+        const unit = serviceData.unit || '';
+        
+        $newRow.find('.product-name').val(productName);
+        $newRow.find('.price').val(unitPrice);
+        $newRow.find('.quantity').val(quantity);
+        $newRow.find('.unit').val(unit);
         $newRow.find('input').prop('disabled', false);
-        displaySupplierServicePrice($newRow, serviceData);
+        
+        // 金額を再計算
+        calculateAmount($newRow);
         
         // 協力会社名を「仕入」フィールドに表示
         if (window.ktpCurrentSupplierName) {
-            const productName = serviceData.product_name;
             const purchaseDisplayText = window.ktpCurrentSupplierName && productName ? 
                 `${window.ktpCurrentSupplierName} > ${productName}` : 
                 window.ktpCurrentSupplierName;
@@ -783,20 +936,27 @@
                 unit: serviceData.unit
             });
             
-            createNewItem('cost', 'product_name', serviceData.product_name, orderId, $newRow, function(success, newItemId) {
+            console.log('[COST] createNewItem呼び出し直前', {
+                orderId: orderId,
+                productName: productName,
+                timestamp: new Date().toISOString(),
+                stackTrace: new Error().stack
+            });
+            
+            createNewItem('cost', 'product_name', productName, orderId, $newRow, function(success, newItemId) {
                 if (success && newItemId) {
                     console.log('[COST] 新規アイテム作成成功', {
-                        newItemId: newItemId
+                        newItemId: newItemId,
+                        timestamp: new Date().toISOString()
                     });
                     
-                    // 各フィールドを順次保存
-                    autoSaveItem('cost', newItemId, 'price', serviceData.unit_price, orderId);
-                    autoSaveItem('cost', newItemId, 'quantity', serviceData.quantity, orderId);
-                    autoSaveItem('cost', newItemId, 'unit', serviceData.unit, orderId);
+                    // 各フィールドを順次保存（協力会社選択と従来ポップアップの両方に対応）
+                    autoSaveItem('cost', newItemId, 'price', unitPrice, orderId);
+                    autoSaveItem('cost', newItemId, 'quantity', quantity, orderId);
+                    autoSaveItem('cost', newItemId, 'unit', unit, orderId);
                     
                     // 協力会社名を「仕入」フィールドに保存
                     if (window.ktpCurrentSupplierName) {
-                        const productName = serviceData.product_name;
                         const purchaseDisplayText = window.ktpCurrentSupplierName && productName ? 
                             `${window.ktpCurrentSupplierName} > ${productName}` : 
                             window.ktpCurrentSupplierName;
@@ -816,13 +976,44 @@
                     console.error('[COST] 新規コスト項目のDB作成に失敗しました');
                     alert('新規コスト項目のDB作成に失敗しました。');
                 }
+                
+                // 処理完了後、フラグを解除してボタンを再有効化
+                $btn.data('processing', false);
+                $btn.prop('disabled', false);
+                
+                // ボタンテキストを元に戻す
+                const originalAddText1 = $btn.data('original-text');
+                if (originalAddText1) {
+                    $btn.text(originalAddText1);
+                }
             });
         } else {
             console.warn('[COST] DB新規作成スキップ - orderId未設定');
+            // orderId未設定の場合もフラグを解除
+            $btn.data('processing', false);
+            $btn.prop('disabled', false);
+            
+            // ボタンテキストを元に戻す
+            const originalAddText4 = $btn.data('original-text');
+            if (originalAddText4) {
+                $btn.text(originalAddText4);
+            }
         }
         
-        // ポップアップは閉じない（ユーザーが手動で閉じるまで待つ）
-        console.log('[COST] 追加処理完了 - ポップアップは開いたまま');
+        // ポップアップを強制的に閉じる（重複実行防止のため）
+        setTimeout(function() {
+            // 協力会社選択ポップアップを閉じる
+            if ($popup.length > 0) {
+                $popup.remove();
+            }
+            if ($('#ktp-supplier-selector-modal').length > 0) {
+                $('#ktp-supplier-selector-modal').remove();
+            }
+            
+            console.log('[COST] 追加処理完了 - ポップアップ強制クローズ');
+        }, 1000);
+        
+        console.log('[COST] 追加処理完了');
     });
 
     // --- ポップアップ内の「追加」「更新」ボタンに自動でクラス付与（コスト項目用） ---
@@ -1446,25 +1637,56 @@
         e.preventDefault();
         e.stopPropagation();
         
-        const supplierName = $(this).data('purchase');
+        let supplierName = $(this).data('purchase');
         if (!supplierName) {
             return;
         }
+        
+        // 新形式（テスト１会社 > サービス名）から協力会社名のみを抽出
+        if (supplierName.includes(' > ')) {
+            supplierName = supplierName.split(' > ')[0];
+        }
+        
         // 必要な変数を明示的に取得
         const orderId = $('input[name="order_id"]').val() || $('#order_id').val();
         const projectName = $('input[name="project_name"]').val() || $('#project_name').val() || '案件名未設定';
-        // 以降、supplierNameのみで処理
+        console.log('[PURCHASE-EMAIL] 発注メール生成開始', {
+            supplierName: supplierName,
+            orderId: orderId
+        });
         // 同一協力会社の他の仕入情報を収集
         const supplierItems = [];
         $('.cost-items-table tbody tr').each(function() {
             const $row = $(this);
             const purchaseText = $row.find('.purchase-display').text().trim();
-            if (purchaseText && purchaseText.indexOf(supplierName + 'に発注') !== -1) {
+            
+            // 新形式（テスト１会社 > サービス名に発注）と旧形式（テスト１会社に発注）の両方に対応
+            const isNewFormat = purchaseText && purchaseText.startsWith(supplierName + ' >') && purchaseText.endsWith('に発注');
+            const isOldFormat = purchaseText && purchaseText === (supplierName + 'に発注');
+            
+            console.log('[PURCHASE-EMAIL] 行チェック:', {
+                purchaseText: purchaseText,
+                supplierName: supplierName,
+                isNewFormat: isNewFormat,
+                isOldFormat: isOldFormat,
+                matched: isNewFormat || isOldFormat
+            });
+            
+            if (isNewFormat || isOldFormat) {
                 const productName = $row.find('.product-name').val();
                 const price = parseFloat($row.find('.price').val()) || 0;
                 const quantity = parseFloat($row.find('.quantity').val()) || 0;
                 const unit = $row.find('.unit').val() || '';
                 const amount = parseFloat($row.find('.amount').val()) || 0;
+                
+                console.log('[PURCHASE-EMAIL] マッチした行のデータ:', {
+                    productName: productName,
+                    price: price,
+                    quantity: quantity,
+                    unit: unit,
+                    amount: amount
+                });
+                
                 if (productName && price > 0) {
                     supplierItems.push({
                         productName: productName,
@@ -1473,9 +1695,19 @@
                         unit: unit,
                         amount: amount
                     });
+                    console.log('[PURCHASE-EMAIL] 発注項目に追加しました:', productName);
                 }
             }
         });
+        
+        console.log('[PURCHASE-EMAIL] 収集した発注項目:', supplierItems);
+        
+        // 発注項目が見つからない場合の処理
+        if (supplierItems.length === 0) {
+            alert(`${supplierName}への発注項目が見つかりません。\n\n対象の行で「${supplierName}に発注」または「${supplierName} > サービス名に発注」と表示されている必要があります。`);
+            console.log('[PURCHASE-EMAIL] 発注項目が見つからないため処理を終了します');
+            return;
+        }
         
         // 合計金額を計算
         const totalAmount = supplierItems.reduce((sum, item) => sum + item.amount, 0);
@@ -1542,8 +1774,9 @@
         emailBody += `＜発注書＞ ID:${orderId} [${orderDate}]\n`;
         emailBody += `以下につきまして発注します。\n\n`;
         
-        supplierItems.forEach(item => {
-            emailBody += `${item.productName}：${item.price.toLocaleString()}円 × ${item.quantity}${item.unit} = ${item.amount.toLocaleString()}円\n`;
+        supplierItems.forEach((item, index) => {
+            console.log('[PURCHASE-EMAIL] 発注項目追加:', item);
+            emailBody += `${index + 1}. ${item.productName}：${item.price.toLocaleString()}円 × ${item.quantity}${item.unit} = ${item.amount.toLocaleString()}円\n`;
         });
         
         emailBody += `--------------------------------------------\n`;

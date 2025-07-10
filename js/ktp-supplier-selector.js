@@ -5,6 +5,38 @@ console.log('=== KTP SUPPLIER SELECTOR: SCRIPT STARTED ===');
     console.log('[SUPPLIER-SELECTOR] jQuery version:', typeof $ !== 'undefined' ? $.fn.jquery : 'jQuery not loaded');
     console.log('[SUPPLIER-SELECTOR] ktp_ajax_object:', typeof ktp_ajax_object !== 'undefined' ? 'loaded' : 'not loaded');
 
+    // 単価の表示形式を整形する関数（グローバルスコープ）
+    window.formatUnitPrice = function(price) {
+        if (typeof price === 'undefined' || price === null) return '0';
+        let numPrice = parseFloat(price);
+        if (isNaN(numPrice)) return '0';
+        let priceStr = String(numPrice);
+        if (priceStr.match(/^[0-9]+\.$/)) {
+            return priceStr.slice(0, -1);
+        }
+        return priceStr.replace(/\.0+$/, '').replace(/(\.[0-9]*[1-9])0+$/, '$1');
+    }
+
+    // 小数点以下の不要な0を削除する関数（グローバルスコープ）
+    window.formatDecimalDisplay = function(value) {
+        if (value === '' || value === null || value === undefined) {
+            return '';
+        }
+        const num = parseFloat(value);
+        if (isNaN(num)) {
+            return value;
+        }
+        // 小数点以下6桁まで表示し、末尾の0とピリオドを削除
+        return num.toFixed(6).replace(/\.?0+$/, '');
+    }
+
+    // HTMLエスケープ関数（グローバルスコープ）
+    window.escapeHtml = function(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
     // 即座に関数を定義してグローバルに露出
     window.ktpShowSupplierSelector = function(currentRow) {
         console.log('[SUPPLIER-SELECTOR] ===== ktpShowSupplierSelector関数開始 =====');
@@ -18,39 +50,6 @@ console.log('=== KTP SUPPLIER SELECTOR: SCRIPT STARTED ===');
     // 既存のポップアップがあれば削除
     $("#ktp-supplier-selector-modal").remove();
         console.log('[SUPPLIER-SELECTOR] 既存のポップアップを削除しました');
-
-    // 単価の表示形式を整形する関数
-    function formatUnitPrice(price) {
-        if (typeof price === 'undefined' || price === null) return '0';
-        let numPrice = parseFloat(price);
-        if (isNaN(numPrice)) return '0';
-        let priceStr = String(numPrice);
-        if (priceStr.match(/^[0-9]+\.$/)) {
-            return priceStr.slice(0, -1);
-        }
-        return priceStr.replace(/\.0+$/, '').replace(/(\.[0-9]*[1-9])0+$/, '$1');
-    }
-
-    // 小数点以下の不要な0を削除する関数
-    function formatDecimalDisplay(value) {
-        if (value === '' || value === null || value === undefined) {
-            return '';
-        }
-        const num = parseFloat(value);
-        if (isNaN(num)) {
-            return value;
-        }
-        // 小数点以下6桁まで表示し、末尾の0とピリオドを削除
-        return num.toFixed(6).replace(/\.?0+$/, '');
-    }
-
-        // HTMLエスケープ関数
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
         // ポップアップHTML
         const popupHtml = `
             <div id="ktp-supplier-selector-modal" style="
@@ -161,7 +160,7 @@ console.log('=== KTP SUPPLIER SELECTOR: SCRIPT STARTED ===');
                 skills.forEach(function (skill, index) {
                     const skillId = skill.id;
                     const productName = skill.product_name || '';
-                    const unitPrice = formatUnitPrice(skill.unit_price);
+                    const unitPrice = window.formatUnitPrice(skill.unit_price);
                     const quantity = skill.quantity || '';
                     const unit = skill.unit || '';
                     const frequency = skill.frequency || 0;
@@ -213,11 +212,11 @@ console.log('=== KTP SUPPLIER SELECTOR: SCRIPT STARTED ===');
                             ">
                                 <div style="display: flex; align-items: center; gap: ${isSmallScreen ? '8px' : '15px'}; flex-wrap: wrap; line-height: 1.4;">
                                     <strong style="font-size: ${isSmallScreen ? '14px' : '15px'}; color: #1f2937; word-break: break-word; flex-shrink: 0;">
-                                        ID: ${skillId} - ${escapeHtml(productName)}
+                                        ID: ${skillId} - ${window.escapeHtml(productName)}
                                     </strong>
                                     <span style="color: #6b7280; font-size: ${isSmallScreen ? '12px' : '13px'}; flex-shrink: 0;"><strong>単価:</strong> ${unitPrice}円</span>
-                                    <span style="color: #6b7280; font-size: ${isSmallScreen ? '12px' : '13px'}; flex-shrink: 0;"><strong>数量:</strong> ${escapeHtml(quantity)}</span>
-                                    <span style="color: #6b7280; font-size: ${isSmallScreen ? '12px' : '13px'}; flex-shrink: 0;"><strong>単位:</strong> ${escapeHtml(unit)}</span>
+                                    <span style="color: #6b7280; font-size: ${isSmallScreen ? '12px' : '13px'}; flex-shrink: 0;"><strong>数量:</strong> ${window.escapeHtml(quantity)}</span>
+                                    <span style="color: #6b7280; font-size: ${isSmallScreen ? '12px' : '13px'}; flex-shrink: 0;"><strong>単位:</strong> ${window.escapeHtml(unit)}</span>
                                     <span style="color: #6b7280; font-size: ${isSmallScreen ? '12px' : '13px'}; flex-shrink: 0;" title="アクセス頻度（クリックされた回数）"><strong>頻度:</strong> ${frequency}</span>
                                 </div>
                             </div>
@@ -228,8 +227,8 @@ console.log('=== KTP SUPPLIER SELECTOR: SCRIPT STARTED ===');
                                 ${isSmallScreen ? 'width: 100%; justify-content: center;' : 'min-width: 160px; justify-content: flex-end;'}
                             ">
                                 <button type="button" 
-                                        class="ktp-skill-add-btn" 
-                                        data-skill='${skillData}'
+                                        class="ktp-supplier-add-btn" 
+                                        data-service='${skillData}'
                                         style="
                                             background: #28a745; 
                                             color: white; 
@@ -248,8 +247,8 @@ console.log('=== KTP SUPPLIER SELECTOR: SCRIPT STARTED ===');
                                     追加
                                 </button>
                                 <button type="button" 
-                                        class="ktp-skill-update-btn" 
-                                        data-skill='${skillData}'
+                                        class="ktp-supplier-update-btn" 
+                                        data-service='${skillData}'
                                         style="
                                             background: #007bff; 
                                             color: white; 
@@ -294,100 +293,21 @@ console.log('=== KTP SUPPLIER SELECTOR: SCRIPT STARTED ===');
             $('#ktp-skill-list-area').html(html);
             
             console.log('[SUPPLIER-SELECTOR] 生成されたHTML:', html);
-            console.log('[SUPPLIER-SELECTOR] 更新ボタンの数:', $('.ktp-skill-update-btn').length);
-            console.log('[SUPPLIER-SELECTOR] 追加ボタンの数:', $('.ktp-skill-add-btn').length);
+            console.log('[SUPPLIER-SELECTOR] 新しい追加ボタン数:', $('.ktp-supplier-add-btn').length);
+            console.log('[SUPPLIER-SELECTOR] 新しい更新ボタン数:', $('.ktp-supplier-update-btn').length);
             
-            // ボタンの存在確認
-            $('.ktp-skill-update-btn').each(function(index) {
-                console.log(`[SUPPLIER-SELECTOR] 更新ボタン${index + 1}:`, this);
-                console.log(`[SUPPLIER-SELECTOR] 更新ボタン${index + 1}のdata-skill:`, $(this).attr('data-skill'));
+            // ボタンの存在確認（新しいクラス名）
+            $('.ktp-supplier-add-btn').each(function(index) {
+                console.log(`[SUPPLIER-SELECTOR] 追加ボタン${index + 1}:`, this);
+                console.log(`[SUPPLIER-SELECTOR] 追加ボタン${index + 1}のdata-service:`, $(this).attr('data-service'));
             });
             
-            // イベントハンドラーを遅延実行で設定
-            setTimeout(function() {
-                console.log('[SUPPLIER-SELECTOR] 遅延実行でイベントハンドラーを設定中...');
-                console.log('[SUPPLIER-SELECTOR] 更新ボタンの数:', $('.ktp-skill-update-btn').length);
-                
-                // 既存のイベントハンドラーを削除
-                $(document).off('click', '.ktp-skill-update-btn');
-                $(document).off('click', '.ktp-skill-add-btn');
-                
-                // 「更新」ボタンのイベントハンドラー
-                $(document).on('click', '.ktp-skill-update-btn', function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    
-                    console.log('[SUPPLIER-SELECTOR] 更新ボタンクリック');
-                    
-                    const skillData = $(this).attr('data-skill');
-                    const currentRow = window.ktpCurrentRow;
-                    
-                    if (skillData && currentRow) {
-                        console.log('[SUPPLIER-SELECTOR] 更新処理開始', {
-                            skillData: skillData,
-                            currentRowExists: currentRow.length > 0
-                        });
-                        
-                        // 更新処理を実行
-                        if (typeof window.ktpUpdateCostRowFromSkill === 'function') {
-                            window.ktpUpdateCostRowFromSkill(skillData, currentRow);
-                        } else {
-                            console.error('[SUPPLIER-SELECTOR] ktpUpdateCostRowFromSkill関数が見つかりません');
-                        }
-                        
-                        // ポップアップを閉じる
-                        closeSupplierSelector();
-                        
-                        console.log('[SUPPLIER-SELECTOR] 更新処理完了');
-                    } else {
-                        console.error('[SUPPLIER-SELECTOR] 更新に必要なデータが不足しています', {
-                            skillData: skillData,
-                            currentRowExists: currentRow && currentRow.length > 0
-                        });
-                    }
-                });
-                
-                // 「追加」ボタンのイベントハンドラー
-                $(document).on('click', '.ktp-skill-add-btn', function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    
-                    console.log('[SUPPLIER-SELECTOR] 追加ボタンクリック');
-                    
-                    const skillData = $(this).attr('data-skill');
-                    
-                    if (skillData) {
-                        console.log('[SUPPLIER-SELECTOR] 追加処理開始', {
-                            skillData: skillData
-                        });
-                        
-                        // 追加処理を実行
-                        if (typeof window.ktpAddCostRowFromSkill === 'function') {
-                            window.ktpAddCostRowFromSkill(skillData, null);
-                        } else {
-                            console.error('[SUPPLIER-SELECTOR] ktpAddCostRowFromSkill関数が見つかりません');
-                        }
-                        
-                        // 追加の場合はポップアップは閉じない（ユーザーが手動で閉じるまで待つ）
-                        console.log('[SUPPLIER-SELECTOR] 追加処理完了 - ポップアップは開いたまま');
-                    } else {
-                        console.error('[SUPPLIER-SELECTOR] 追加に必要なデータが不足しています', {
-                            skillData: skillData
-                        });
-                    }
-                });
-                
-                // イベントハンドラーの設定確認
-                setTimeout(function() {
-                    console.log('[SUPPLIER-SELECTOR] イベントハンドラー設定確認');
-                    $('.ktp-skill-update-btn').each(function(index) {
-                        console.log(`[SUPPLIER-SELECTOR] 更新ボタン${index + 1}:`, this);
-                        console.log(`[SUPPLIER-SELECTOR] 更新ボタン${index + 1}のイベント数:`, $._data(this, 'events') ? Object.keys($._data(this, 'events')).length : 0);
-                    });
-                }, 100);
-                
-                console.log('[SUPPLIER-SELECTOR] 遅延実行でイベントハンドラー設定完了');
-            }, 200); // 200ms遅延
+            $('.ktp-supplier-update-btn').each(function(index) {
+                console.log(`[SUPPLIER-SELECTOR] 更新ボタン${index + 1}:`, this);
+                console.log(`[SUPPLIER-SELECTOR] 更新ボタン${index + 1}のdata-service:`, $(this).attr('data-service'));
+            });
+            
+            console.log('[SUPPLIER-SELECTOR] スキルリスト表示完了 - イベント委譲により自動処理される');
         }
         
     $.ajax({
@@ -551,10 +471,10 @@ window.ktpAddCostRowFromSkill = function(skill, currentRow) {
                 <input type="hidden" name="cost_items[${newIndex}][id]" value="0">
             </td>
             <td style="text-align:left;">
-                <input type="number" name="cost_items[${newIndex}][price]" class="cost-item-input price" value="${formatDecimalDisplay(skill.unit_price || '')}" step="0.01" min="0" style="text-align:left;">
+                <input type="number" name="cost_items[${newIndex}][price]" class="cost-item-input price" value="${window.formatDecimalDisplay(skill.unit_price || '')}" step="0.01" min="0" style="text-align:left;">
             </td>
             <td style="text-align:left;">
-                <input type="number" name="cost_items[${newIndex}][quantity]" class="cost-item-input quantity" value="${formatDecimalDisplay(skill.quantity || 1)}" step="0.01" min="0" style="text-align:left;">
+                <input type="number" name="cost_items[${newIndex}][quantity]" class="cost-item-input quantity" value="${window.formatDecimalDisplay(skill.quantity || 1)}" step="0.01" min="0" style="text-align:left;">
             </td>
             <td>
                 <input type="text" name="cost_items[${newIndex}][unit]" class="cost-item-input unit" value="${skill.unit || ''}">
@@ -691,8 +611,8 @@ window.ktpUpdateCostRowFromSkill = function(skill, currentRow) {
             };
             // --- UI更新 ---
             currentRow.find('.product-name').val(skill.product_name);
-            currentRow.find('.price').val(formatDecimalDisplay(skill.unit_price));
-            currentRow.find('.quantity').val(formatDecimalDisplay(skill.quantity || 1));
+            currentRow.find('.price').val(window.formatDecimalDisplay(skill.unit_price));
+            currentRow.find('.quantity').val(window.formatDecimalDisplay(skill.quantity || 1));
             currentRow.find('.unit').val(skill.unit);
             
             // 協力会社名を「仕入」フィールドに表示
@@ -793,6 +713,127 @@ $(function() {
         
     // コスト項目の並び順を変更する処理を削除
     // データベースから取得された順序を維持するため、JavaScriptでの並び替えは行わない
+    
+    // 【重要】イベント委譲による協力会社選択ボタンの処理
+    // 動的に生成されるボタンに対して確実に動作する方式
+    console.log('[SUPPLIER-SELECTOR] イベント委譲ハンドラー設定開始');
+    
+    // 追加ボタンのイベント委譲
+    $(document).off('click.supplier-add-delegation').on('click.supplier-add-delegation', '.ktp-supplier-add-btn', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        console.log('[SUPPLIER-SELECTOR] 【イベント委譲】追加ボタンクリック検出！');
+        console.log('[SUPPLIER-SELECTOR] クリックされた要素:', this);
+        console.log('[SUPPLIER-SELECTOR] 要素のクラス:', $(this).attr('class'));
+        
+        const $btn = $(this);
+        const serviceData = $btn.data('service');
+        
+        console.log('[SUPPLIER-SELECTOR] サービスデータ:', serviceData);
+        
+        if (!serviceData) {
+            console.error('[SUPPLIER-SELECTOR] サービスデータが見つかりません');
+            alert('追加するサービスデータが見つかりません。');
+            return;
+        }
+        
+        // ktpAddCostRowFromSkill関数を呼び出し（新規追加）
+        console.log('[SUPPLIER-SELECTOR] ktpAddCostRowFromSkill関数の存在確認:', typeof window.ktpAddCostRowFromSkill);
+        if (typeof window.ktpAddCostRowFromSkill === 'function') {
+            console.log('[SUPPLIER-SELECTOR] ktpAddCostRowFromSkill関数を呼び出します');
+            try {
+                window.ktpAddCostRowFromSkill(serviceData, null);
+                console.log('[SUPPLIER-SELECTOR] ktpAddCostRowFromSkill関数呼び出し成功');
+                
+                // 追加処理では自動でポップアップを閉じない（ユーザーが手動で閉じるまで開いたまま）
+                console.log('[SUPPLIER-SELECTOR] 追加処理完了 - ポップアップは開いたままにします');
+            } catch (error) {
+                console.error('[SUPPLIER-SELECTOR] ktpAddCostRowFromSkill関数実行エラー:', error);
+                alert('追加処理中にエラーが発生しました: ' + error.message);
+            }
+        } else {
+            console.error('[SUPPLIER-SELECTOR] ktpAddCostRowFromSkill関数が見つかりません');
+            alert('追加処理に必要な関数が見つかりません。');
+        }
+    });
+    
+    // 更新ボタンのイベント委譲
+    $(document).off('click.supplier-update-delegation').on('click.supplier-update-delegation', '.ktp-supplier-update-btn', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        console.log('[SUPPLIER-SELECTOR] 【イベント委譲】更新ボタンクリック検出！');
+        console.log('[SUPPLIER-SELECTOR] クリックされた要素:', this);
+        console.log('[SUPPLIER-SELECTOR] 要素のクラス:', $(this).attr('class'));
+        
+        const $btn = $(this);
+        const serviceData = $btn.data('service');
+        
+        console.log('[SUPPLIER-SELECTOR] サービスデータ:', serviceData);
+        
+        if (!serviceData) {
+            console.error('[SUPPLIER-SELECTOR] サービスデータが見つかりません');
+            alert('更新するサービスデータが見つかりません。');
+            return;
+        }
+        
+        // 現在選択されている行を取得
+        const currentRow = window.ktpCurrentSelectedRow || window.ktpCurrentRow || null;
+        console.log('[SUPPLIER-SELECTOR] 現在選択されている行:', currentRow);
+        
+        // ktpUpdateCostRowFromSkill関数を呼び出し（行更新）
+        console.log('[SUPPLIER-SELECTOR] ktpUpdateCostRowFromSkill関数の存在確認:', typeof window.ktpUpdateCostRowFromSkill);
+        if (typeof window.ktpUpdateCostRowFromSkill === 'function') {
+            console.log('[SUPPLIER-SELECTOR] ktpUpdateCostRowFromSkill関数を呼び出します');
+            try {
+                window.ktpUpdateCostRowFromSkill(serviceData, currentRow);
+                console.log('[SUPPLIER-SELECTOR] ktpUpdateCostRowFromSkill関数呼び出し成功');
+            } catch (error) {
+                console.error('[SUPPLIER-SELECTOR] ktpUpdateCostRowFromSkill関数実行エラー:', error);
+                alert('更新処理中にエラーが発生しました: ' + error.message);
+            }
+        } else {
+            console.error('[SUPPLIER-SELECTOR] ktpUpdateCostRowFromSkill関数が見つかりません');
+            alert('更新処理に必要な関数が見つかりません。');
+        }
+    });
+    
+    console.log('[SUPPLIER-SELECTOR] イベント委譲ハンドラー設定完了');
+    
+    // テスト用：ボタンクリックの検出テスト
+    setTimeout(function() {
+        if ($('.ktp-supplier-add-btn').length > 0) {
+            console.log('[SUPPLIER-SELECTOR] 追加ボタンが存在します - イベント委譲が動作するはずです');
+        }
+        if ($('.ktp-supplier-update-btn').length > 0) {
+            console.log('[SUPPLIER-SELECTOR] 更新ボタンが存在します - イベント委譲が動作するはずです');
+        }
+        
+        // デバッグ用：手動でボタンクリックをテストする関数をグローバルに公開
+        window.testSupplierButtonClick = function() {
+            const addBtn = $('.ktp-supplier-add-btn').first();
+            if (addBtn.length > 0) {
+                console.log('[SUPPLIER-SELECTOR] デバッグ：追加ボタンの手動クリックテスト');
+                addBtn.trigger('click');
+            } else {
+                console.log('[SUPPLIER-SELECTOR] デバッグ：追加ボタンが見つかりません');
+            }
+        };
+        
+        // ボタンの詳細情報を表示
+        $('.ktp-supplier-add-btn').each(function(index) {
+            const $btn = $(this);
+            console.log(`[SUPPLIER-SELECTOR] 追加ボタン${index + 1}詳細:`, {
+                element: this,
+                classes: $btn.attr('class'),
+                dataService: $btn.attr('data-service'),
+                text: $btn.text(),
+                visible: $btn.is(':visible'),
+                parent: $btn.parent()[0]
+            });
+        });
+    }, 2000);
 });
 
 })(jQuery); 
