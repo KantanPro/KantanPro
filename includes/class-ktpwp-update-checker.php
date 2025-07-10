@@ -56,7 +56,7 @@ class KTPWP_Update_Checker {
         }
         
         $this->plugin_slug = dirname( $this->plugin_basename );
-        $this->current_version = defined( 'KANTANPRO_PLUGIN_VERSION' ) ? KANTANPRO_PLUGIN_VERSION : '1.0.4';
+        $this->current_version = defined( 'KANTANPRO_PLUGIN_VERSION' ) ? KANTANPRO_PLUGIN_VERSION : '1.0.5';
         
         // フック設定
         add_action( 'init', array( $this, 'init' ) );

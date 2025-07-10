@@ -3,7 +3,7 @@
  * Plugin Name: KantanPro
  * Plugin URI: https://www.kantanpro.com/
  * Description: スモールビジネス向けの仕事効率化システム。ショートコード[ktpwp_all_tab]を固定ページに設置してください。
- * Version: 1.0.4(preview)
+ * Version: 1.0.5(preview)
  * Author: KantanPro
  * Author URI: https://www.kantanpro.com/kantanpro-page
  * License: GPL v2 or later
@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // プラグイン定数定義
 if ( ! defined( 'KANTANPRO_PLUGIN_VERSION' ) ) {
-    define( 'KANTANPRO_PLUGIN_VERSION', '1.0.4(preview)' );
+    define( 'KANTANPRO_PLUGIN_VERSION', '1.0.5(preview)' );
 }
 if ( ! defined( 'KANTANPRO_PLUGIN_NAME' ) ) {
     define( 'KANTANPRO_PLUGIN_NAME', 'KantanPro' );
@@ -2738,7 +2738,7 @@ function ktpwp_get_plugin_description() {
         <li>推奨PHP拡張: GD（画像処理用）</li>
     </ul>
     
-    <h4>🆕 最新の改善点（1.0.4(preview)）</h4>
+    <h4>🆕 最新の改善点（1.0.5(preview)）</h4>
     <ul>
         <li>スタッフアバター表示機能の追加</li>
         <li>完了日自動設定機能の実装（進捗変更時の自動処理）</li>
@@ -2770,7 +2770,7 @@ function ktpwp_get_plugin_changelog() {
     <h3>変更履歴</h3>
     <p>KantanProプラグインの主要な更新履歴をご紹介します。</p>
     
-    <h4>1.0.4(preview) - 2024年12月</h4>
+    <h4>1.0.5(preview) - 2025年1月</h4>
     <ul>
         <li><strong>スタッフアバター表示機能の追加</strong> - ログイン中スタッフの可視化</li>
         <li><strong>完了日自動設定機能の実装</strong> - 進捗変更時の自動処理</li>
