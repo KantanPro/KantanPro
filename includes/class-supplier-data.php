@@ -53,7 +53,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
 			}
 
 			$table_name = $wpdb->prefix . 'ktp_' . sanitize_key( $tab_name );
-			$my_table_version = '1.1'; // Increment version for representative_name field
+			$my_table_version = '1.2'; // Increment version for qualified_invoice_number field
 			$option_name = 'ktp_' . $tab_name . '_table_version';
 
 			// Check if table needs to be created or updated
@@ -88,6 +88,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
                     payment_method TINYTEXT NOT NULL,
                     tax_category VARCHAR(100) NOT NULL DEFAULT %s,
                     memo TEXT NOT NULL,
+                    qualified_invoice_number VARCHAR(100) NOT NULL DEFAULT '',
                     search_field TEXT NOT NULL,
                     frequency INT NOT NULL DEFAULT 0,
                     category VARCHAR(100) NOT NULL DEFAULT %s,
@@ -129,6 +130,27 @@ if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
 				// Ensure skills table exists even if supplier table already exists
 				$skills_manager = KTPWP_Supplier_Skills::get_instance();
 				$skills_manager->create_table();
+				
+				// Check if qualified_invoice_number column exists and add if missing
+				$column_exists = $wpdb->get_var( 
+					$wpdb->prepare( 
+						"SHOW COLUMNS FROM `{$table_name}` LIKE %s", 
+						'qualified_invoice_number' 
+					) 
+				);
+				
+				if ( ! $column_exists ) {
+					$sql = "ALTER TABLE `{$table_name}` ADD COLUMN `qualified_invoice_number` VARCHAR(100) NOT NULL DEFAULT '' AFTER `memo`";
+					$result = $wpdb->query( $sql );
+					
+					if ( $result !== false ) {
+						error_log( 'KTPWP: Successfully added qualified_invoice_number column to ' . $table_name );
+						// Update version to reflect the change
+						update_option( $option_name, $my_table_version );
+					} else {
+						error_log( 'KTPWP: Failed to add qualified_invoice_number column to ' . $table_name . '. Error: ' . $wpdb->last_error );
+					}
+				}
 			}
 
 			return true;
@@ -248,6 +270,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
 								$sanitized_data['payment_method'],
 								$sanitized_data['tax_category'],
 								$sanitized_data['memo'],
+								$sanitized_data['qualified_invoice_number'],
 								$sanitized_data['category'],
                             )
                         );
@@ -274,11 +297,12 @@ if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
 								'payment_method' => $sanitized_data['payment_method'],
 								'tax_category' => $sanitized_data['tax_category'],
 								'memo' => $sanitized_data['memo'],
+								'qualified_invoice_number' => $sanitized_data['qualified_invoice_number'],
 								'category' => $sanitized_data['category'],
 								'search_field' => $search_field_value,
                             ),
                             array( 'id' => $data_id ),
-                            array( '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' ),
+                            array( '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' ),
                             array( '%d' )
 						);
 
@@ -361,6 +385,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
 							$sanitized_data['payment_method'],
 							$sanitized_data['tax_category'],
 							$sanitized_data['memo'],
+							$sanitized_data['qualified_invoice_number'],
 							$sanitized_data['category'],
                         )
                     );
@@ -388,12 +413,14 @@ if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
 							'payment_method' => $sanitized_data['payment_method'],
 							'tax_category' => $sanitized_data['tax_category'],
 							'memo' => $sanitized_data['memo'],
+							'qualified_invoice_number' => $sanitized_data['qualified_invoice_number'],
 							'category' => $sanitized_data['category'],
 							'search_field' => $search_field_value,
                         ),
                         array(
 							'%d',
 							'%d',
+							'%s',
 							'%s',
 							'%s',
 							'%s',
@@ -470,6 +497,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
 				'payment_method' => isset( $post_data['payment_method'] ) ? sanitize_text_field( $post_data['payment_method'] ) : '',
 				'tax_category' => isset( $post_data['tax_category'] ) ? sanitize_text_field( $post_data['tax_category'] ) : '',
 				'memo' => isset( $post_data['memo'] ) ? sanitize_textarea_field( $post_data['memo'] ) : '',
+				'qualified_invoice_number' => isset( $post_data['qualified_invoice_number'] ) ? sanitize_text_field( $post_data['qualified_invoice_number'] ) : '',
 				'category' => isset( $post_data['category'] ) ? sanitize_text_field( $post_data['category'] ) : '',
 			);
 		}

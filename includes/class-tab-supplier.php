@@ -892,6 +892,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 					$payment_method = esc_html( $row->payment_method );
 					$tax_category = esc_html( $row->tax_category );
 					$memo = esc_html( $row->memo );
+					$qualified_invoice_number = esc_html( $row->qualified_invoice_number );
 					$category = esc_html( $row->category );
 				}
 			} else {
@@ -915,6 +916,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 				$payment_method = '';
 				$tax_category = '';
 				$memo = '';
+				$qualified_invoice_number = '';
 				$category = '';
 			}
 
@@ -1088,6 +1090,11 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 				'メモ' => array(
 					'type' => 'textarea',
 					'name' => 'memo',
+				),
+				'適格請求書番号' => array(
+					'type' => 'text',
+					'name' => 'qualified_invoice_number',
+					'placeholder' => 'T1234567890123',
 				),
 				'カテゴリー' => array(
 					'type' => 'text',
@@ -1428,6 +1435,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 					'payment_day' => $payment_day,
 					'payment_method' => $payment_method,
 					'tax_category' => $tax_category,
+					'qualified_invoice_number' => $qualified_invoice_number,
 					'category' => $category,
 					'frequency' => $frequency,
 					'memo' => $memo,
@@ -1831,6 +1839,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 			$payment_day = $supplier_data['payment_day'] ?? '';
 			$payment_method = $supplier_data['payment_method'] ?? '';
 			$tax_category = $supplier_data['tax_category'] ?? '';
+			$qualified_invoice_number = $supplier_data['qualified_invoice_number'] ?? '';
 			$category = $supplier_data['category'] ?? '';
 			$frequency = $supplier_data['frequency'] ?? '';
 			$memo = $supplier_data['memo'] ?? '';
@@ -1908,6 +1917,10 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
                 <tr>
                     <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">税区分</td>
                     <td style="border: 1px solid #ddd; padding: 12px;">' . esc_html( $tax_category ) . '</td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">適格請求書番号</td>
+                    <td style="border: 1px solid #ddd; padding: 12px;">' . esc_html( $qualified_invoice_number ) . '</td>
                 </tr>
                 <tr>
                     <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">カテゴリー</td>
