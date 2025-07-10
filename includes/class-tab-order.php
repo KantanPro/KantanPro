@@ -629,6 +629,28 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 								$customer_name = sanitize_text_field( $order->customer_name );
 								$user_name = sanitize_text_field( $order->user_name );
 
+								// 会社名が0や空の場合のフォールバック処理
+								if ( $customer_name === '0' || empty( $customer_name ) ) {
+									// 顧客IDがある場合は顧客テーブルから会社名を取得
+									if ( ! empty( $order->client_id ) ) {
+										$client_company_name = $wpdb->get_var(
+											$wpdb->prepare(
+												"SELECT company_name FROM `{$client_table}` WHERE id = %d",
+												$order->client_id
+											)
+										);
+										if ( ! empty( $client_company_name ) ) {
+											$customer_name = $client_company_name;
+										} else {
+											// 顧客テーブルからも取得できない場合は担当者名を使用
+											$customer_name = $user_name;
+										}
+									} else {
+										// 顧客IDがない場合は担当者名を使用
+										$customer_name = $user_name;
+									}
+								}
+
 								// 顧客IDの取得と表示
 								$client_id_display = ! empty( $order->client_id ) ? intval( $order->client_id ) : '未設定';
 
@@ -654,6 +676,14 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 								$document_title = isset( $document_titles[ $progress ] ) ? $document_titles[ $progress ] : '受注書';
 								$document_message = isset( $document_messages[ $progress ] ) ? $document_messages[ $progress ] : $project_name;
 
+								// 適格請求書番号を取得し、請求書の場合に追加
+								if ( $progress === 4 && class_exists( 'KTP_Settings' ) ) {
+									$qualified_invoice_number = KTP_Settings::get_qualified_invoice_number();
+									if ( ! empty( $qualified_invoice_number ) ) {
+										$document_title = $document_title . ' 適格請求書番号：' . $qualified_invoice_number;
+									}
+								}
+
 								// 日付フォーマット（年月日）
 								$order_date = date( 'Y年m月d日', $order->time );
 
@@ -664,7 +694,8 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 								$body = "{$customer_name}\n";
 								$body .= "{$user_name} 様\n\n";
 								$body .= "お世話になります。\n\n";
-								$body .= "＜{$document_title}＞ ID: {$order->id} [{$order_date}]\n";
+								$body .= "＜{$document_title}＞\n";
+								$body .= "ID: {$order->id} [{$order_date}]\n\n";
 								$body .= "「{$project_name}」{$document_message}\n\n";
 								$body .= "請求項目\n";
 								$body .= "{$invoice_list}\n\n";
@@ -673,22 +704,22 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 								$body = $subject = '';
 								if ( $progress === 1 ) {
 									$subject = "{$document_title}：{$project_name}";
-									$body = "{$customer_name}\n{$user_name} 様\n\nお世話になります。\n\n＜{$document_title}＞ ID: {$order->id} [{$order_date}]\n「{$project_name}」{$document_message}\n\n請求項目\n{$invoice_list}\n\n--\n{$my_company}";
+									$body = "{$customer_name}\n{$user_name} 様\n\nお世話になります。\n\n＜{$document_title}＞\nID: {$order->id} [{$order_date}]\n\n「{$project_name}」{$document_message}\n\n請求項目\n{$invoice_list}\n\n--\n{$my_company}";
 								} elseif ( $progress === 2 ) {
 									$subject = "{$document_title}：{$project_name}";
-									$body = "{$customer_name}\n{$user_name} 様\n\nお世話になります。\n\n＜{$document_title}＞ ID: {$order->id} [{$order_date}]\n「{$project_name}」{$document_message}\n\n請求項目\n{$invoice_list}\n\n--\n{$my_company}";
+									$body = "{$customer_name}\n{$user_name} 様\n\nお世話になります。\n\n＜{$document_title}＞\nID: {$order->id} [{$order_date}]\n\n「{$project_name}」{$document_message}\n\n請求項目\n{$invoice_list}\n\n--\n{$my_company}";
 								} elseif ( $progress === 3 ) {
 									$subject = "{$document_title}：{$project_name}";
-									$body = "{$customer_name}\n{$user_name} 様\n\nお世話になります。\n\n＜{$document_title}＞ ID: {$order->id} [{$order_date}]\n「{$project_name}」{$document_message}\n\n請求項目\n{$invoice_list}\n\n--\n{$my_company}";
+									$body = "{$customer_name}\n{$user_name} 様\n\nお世話になります。\n\n＜{$document_title}＞\nID: {$order->id} [{$order_date}]\n\n「{$project_name}」{$document_message}\n\n請求項目\n{$invoice_list}\n\n--\n{$my_company}";
 								} elseif ( $progress === 4 ) {
 									$subject = "{$document_title}：{$project_name}";
-									$body = "{$customer_name}\n{$user_name} 様\n\nお世話になります。\n\n＜{$document_title}＞ ID: {$order->id} [{$order_date}]\n「{$project_name}」{$document_message}\n\n請求項目\n{$invoice_list}\n\n--\n{$my_company}";
+									$body = "{$customer_name}\n{$user_name} 様\n\nお世話になります。\n\n＜{$document_title}＞\nID: {$order->id} [{$order_date}]\n\n「{$project_name}」{$document_message}\n\n請求項目\n{$invoice_list}\n\n--\n{$my_company}";
 								} elseif ( $progress === 5 ) {
 									$subject = "{$document_title}：{$project_name}";
-									$body = "{$customer_name}\n{$user_name} 様\n\nお世話になります。\n\n＜{$document_title}＞ ID: {$order->id} [{$order_date}]\n「{$project_name}」{$document_message}\n\n請求項目\n{$invoice_list}\n\n--\n{$my_company}";
+									$body = "{$customer_name}\n{$user_name} 様\n\nお世話になります。\n\n＜{$document_title}＞\nID: {$order->id} [{$order_date}]\n\n「{$project_name}」{$document_message}\n\n請求項目\n{$invoice_list}\n\n--\n{$my_company}";
 								} elseif ( $progress === 6 ) {
 									$subject = "{$document_title}：{$project_name}";
-									$body = "{$customer_name}\n{$user_name} 様\n\nお世話になります。\n\n＜{$document_title}＞ ID: {$order->id} [{$order_date}]\n「{$project_name}」{$document_message}\n\n請求項目\n{$invoice_list}\n\n--\n{$my_company}";
+									$body = "{$customer_name}\n{$user_name} 様\n\nお世話になります。\n\n＜{$document_title}＞\nID: {$order->id} [{$order_date}]\n\n「{$project_name}」{$document_message}\n\n請求項目\n{$invoice_list}\n\n--\n{$my_company}";
 								}
 
 								// Sanitize email content input

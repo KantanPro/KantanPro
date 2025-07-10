@@ -497,6 +497,31 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 			$customer_name = sanitize_text_field( $order->customer_name );
 			$user_name = sanitize_text_field( $order->user_name );
 
+			// 会社名が0や空の場合のフォールバック処理
+			if ( $customer_name === '0' || empty( $customer_name ) ) {
+				global $wpdb;
+				$client_table = $wpdb->prefix . 'ktp_client';
+				
+				// 顧客IDがある場合は顧客テーブルから会社名を取得
+				if ( ! empty( $order->client_id ) ) {
+					$client_company_name = $wpdb->get_var(
+						$wpdb->prepare(
+							"SELECT company_name FROM `{$client_table}` WHERE id = %d",
+							$order->client_id
+						)
+					);
+					if ( ! empty( $client_company_name ) ) {
+						$customer_name = $client_company_name;
+					} else {
+						// 顧客テーブルからも取得できない場合は担当者名を使用
+						$customer_name = $user_name;
+					}
+				} else {
+					// 顧客IDがない場合は担当者名を使用
+					$customer_name = $user_name;
+				}
+			}
+
 			// 進捗に応じた帳票タイトルと件名を設定
 			$document_titles = array(
 				1 => '見積り書',
@@ -519,12 +544,20 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 			$document_title = isset( $document_titles[ $progress ] ) ? $document_titles[ $progress ] : '受注書';
 			$document_message = isset( $document_messages[ $progress ] ) ? $document_messages[ $progress ] : '';
 
+			// 適格請求書番号を取得し、請求書の場合に追加
+			if ( $progress === 4 && class_exists( 'KTP_Settings' ) ) {
+				$qualified_invoice_number = KTP_Settings::get_qualified_invoice_number();
+				if ( ! empty( $qualified_invoice_number ) ) {
+					$document_title = $document_title . ' 適格請求書番号：' . $qualified_invoice_number;
+				}
+			}
+
 			// 日付フォーマット
 			$order_date = date( 'Y年m月d日', $order->time );
 
 			// 件名と本文の統一フォーマット
 			$subject = "{$document_title}：{$project_name}";
-			$body = "{$customer_name}\n{$user_name} 様\n\nお世話になります。\n\n＜{$document_title}＞ ID: {$order->id} [{$order_date}]\n「{$project_name}」{$document_message}\n\n請求項目\n{$invoice_list}\n\n--\n{$my_company}";
+			$body = "{$customer_name}\n{$user_name} 様\n\nお世話になります。\n\n＜{$document_title}＞\nID: {$order->id} [{$order_date}]\n\n「{$project_name}」{$document_message}\n\n請求項目\n{$invoice_list}\n\n--\n{$my_company}";
 
 			return array(
 				'subject' => $subject,
