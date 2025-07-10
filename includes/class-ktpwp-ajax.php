@@ -3044,6 +3044,12 @@ function ktpwp_ajax_get_invoice_candidates() {
 		)
 	);
 
+	// 適格請求書番号を取得
+	$qualified_invoice_number = '';
+	if ( class_exists( 'KTP_Settings' ) ) {
+		$qualified_invoice_number = KTP_Settings::get_qualified_invoice_number();
+	}
+
 	// デバッグ用：取得件数をログ出力
 	error_log( 'KTPWP Invoice Candidates - Client ID: ' . $client_id . ', Total completed orders: ' . count( $orders ) );
 
@@ -3303,6 +3309,7 @@ function ktpwp_ajax_get_invoice_candidates() {
 			'email' => $selected_department->email,
 		) : null,
 		'company_info'   => $company_info_html,  // 会社情報を追加
+		'qualified_invoice_number' => $qualified_invoice_number,  // 適格請求書番号を追加
 		'debug_info'     => array(
 			'client_id'              => $client_id,
 			'closing_day'            => $closing_day,

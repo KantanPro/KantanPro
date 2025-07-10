@@ -134,6 +134,10 @@ jQuery(document).ready(function($) {
 
                                 html += "<div style=\"margin:100px 0 20px 0;padding:15px;border:2px solid #333;border-radius:8px;background-color:#f9f9f9;text-align:center;\">";
                                 html += "<div style=\"font-size:18px;font-weight:bold;color:#333;\">請求書</div>";
+                                // 適格請求書番号を表示（設定されている場合のみ）
+                                if (res.data.qualified_invoice_number && res.data.qualified_invoice_number.trim() !== '') {
+                                    html += "<div style=\"font-size:14px;color:#333;margin-top:5px;\">適格請求書番号：" + res.data.qualified_invoice_number + "</div>";
+                                }
                                 html += "</div>";
 
                                 html += "<div style=\"margin:20px 0;padding:10px;font-size:14px;line-height:1.6;color:#333;\">";

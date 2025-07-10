@@ -96,10 +96,21 @@ class KTP_Settings {
     }
 
     /**
-     * Get company information setting
+     * Get qualified invoice number setting
      *
      * @since 1.0.0
-     * @return string Company information content (default: empty string)
+     * @return string Qualified invoice number setting
+     */
+    public static function get_qualified_invoice_number() {
+        $options = get_option( 'ktp_general_settings', array() );
+        return isset( $options['qualified_invoice_number'] ) ? $options['qualified_invoice_number'] : '';
+    }
+
+    /**
+     * Get company info setting
+     *
+     * @since 1.0.0
+     * @return string Company info setting
      */
     public static function get_company_info() {
         $options = get_option( 'ktp_general_settings', array() );
@@ -253,9 +264,24 @@ class KTP_Settings {
                 array(
 					'work_list_range' => 20,
 					'delivery_warning_days' => 3,
+					'qualified_invoice_number' => '',
 					'company_info' => '',
                 )
             );
+        } else {
+            // 既存設定に新しいフィールドが不足している場合は追加
+            $existing_general = get_option( $general_option_name );
+            $general_updated = false;
+
+            // 適格請求書番号フィールドが存在しない場合は追加
+            if ( ! array_key_exists( 'qualified_invoice_number', $existing_general ) ) {
+                $existing_general['qualified_invoice_number'] = '';
+                $general_updated = true;
+            }
+
+            if ( $general_updated ) {
+                update_option( $general_option_name, $existing_general );
+            }
         }
 
         // デザイン設定のデフォルト値を設定
@@ -1193,6 +1219,15 @@ class KTP_Settings {
             'general_setting_section'
         );
 
+        // 適格請求書番号
+        add_settings_field(
+            'qualified_invoice_number',
+            __( '適格請求書番号', 'ktpwp' ),
+            array( $this, 'qualified_invoice_number_callback' ),
+            'ktp-general',
+            'general_setting_section'
+        );
+
         // 会社情報
         add_settings_field(
             'company_info',
@@ -1720,6 +1755,14 @@ class KTP_Settings {
             $new_input['delivery_warning_days'] = max( 1, min( 365, $warning_days ) );
         }
 
+        if ( isset( $input['qualified_invoice_number'] ) ) {
+            // 適格請求書番号のサニタイズ：半角英数字、ハイフン、スペースのみ許可
+            $qualified_invoice_number = sanitize_text_field( $input['qualified_invoice_number'] );
+            // 英数字、ハイフン、スペースのみ許可（全角文字は半角に変換）
+            $qualified_invoice_number = preg_replace( '/[^a-zA-Z0-9\-\s]/', '', $qualified_invoice_number );
+            $new_input['qualified_invoice_number'] = $qualified_invoice_number;
+        }
+
         if ( isset( $input['company_info'] ) ) {
             // HTMLコンテンツを許可し、wp_ksesで安全なHTMLタグのみ保持
             $allowed_html = array(
@@ -1911,6 +1954,23 @@ class KTP_Settings {
         </select>
         <div style="font-size:12px;color:#555;margin-top:4px;">
             <?php echo esc_html__( '※ 納期警告日数を設定してください。', 'ktpwp' ); ?>
+        </div>
+        <?php
+    }
+
+    /**
+     * 適格請求書番号フィールドのコールバック
+     *
+     * @since 1.0.0
+     * @return void
+     */
+    public function qualified_invoice_number_callback() {
+        $options = get_option( 'ktp_general_settings' );
+        $value = isset( $options['qualified_invoice_number'] ) ? $options['qualified_invoice_number'] : '';
+        ?>
+        <input type="text" id="qualified_invoice_number" name="ktp_general_settings[qualified_invoice_number]" value="<?php echo esc_attr( $value ); ?>" class="regular-text" />
+        <div style="font-size:12px;color:#555;margin-top:4px;">
+            <?php echo esc_html__( '※ 適格請求書発行事業者の登録番号を入力してください。（例：T1234567890123）', 'ktpwp' ); ?>
         </div>
         <?php
     }
