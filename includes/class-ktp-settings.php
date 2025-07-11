@@ -334,12 +334,80 @@ class KTP_Settings {
         $payment_option_name = 'ktp_payment_settings';
         $payment_defaults = array(
             'stripe_publishable_key' => 'pk_live_51RiD7U09Cs900UhV74cscfgq2LbjWJgec9X3HdKTdMAryOMeno9tgBhbe6UchBqyUX7qUa1fhgTSoqwSjbg78kjv005XjrsP1q',
-            'stripe_secret_key'      => base64_encode('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'),
-            'edd_api_key'            => '58c310e565651392890a7a28cd6527b6',
-            'edd_api_token'          => '45055ce430c876042c6b9571508d5977',
+            'stripe_secret_key'      => self::strong_encrypt_static('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'),
+            'edd_api_key'            => self::strong_encrypt_static('58c310e565651392890a7a28cd6527b6'),
+            'edd_api_token'          => self::strong_encrypt_static('45055ce430c876042c6b9571508d5977'),
         );
+        
         if ( false === get_option( $payment_option_name ) ) {
             add_option( $payment_option_name, $payment_defaults );
+        } else {
+            // 既存設定がある場合は、強固な暗号化で更新
+            $existing_payment = get_option( $payment_option_name );
+            $payment_updated = false;
+            
+            // EDD APIキーがbase64暗号化または平文の場合は強固な暗号化に移行
+            if ( isset( $existing_payment['edd_api_key'] ) && ! empty( $existing_payment['edd_api_key'] ) ) {
+                $decrypted_key = self::strong_decrypt_static( $existing_payment['edd_api_key'] );
+                if ( empty( $decrypted_key ) ) {
+                    // base64暗号化または平文の場合
+                    $maybe_old = base64_decode( $existing_payment['edd_api_key'] );
+                    if ( $maybe_old && preg_match('/^[0-9a-f]{32}$/', $maybe_old) ) {
+                        $existing_payment['edd_api_key'] = self::strong_encrypt_static( $maybe_old );
+                        $payment_updated = true;
+                    } elseif ( preg_match('/^[0-9a-f]{32}$/', $existing_payment['edd_api_key'] ) ) {
+                        // 平文の場合
+                        $existing_payment['edd_api_key'] = self::strong_encrypt_static( $existing_payment['edd_api_key'] );
+                        $payment_updated = true;
+                    }
+                }
+            } else {
+                // 設定が空の場合はデフォルト値を設定
+                $existing_payment['edd_api_key'] = self::strong_encrypt_static('58c310e565651392890a7a28cd6527b6');
+                $payment_updated = true;
+            }
+            
+            // EDD APIトークンがbase64暗号化または平文の場合は強固な暗号化に移行
+            if ( isset( $existing_payment['edd_api_token'] ) && ! empty( $existing_payment['edd_api_token'] ) ) {
+                $decrypted_token = self::strong_decrypt_static( $existing_payment['edd_api_token'] );
+                if ( empty( $decrypted_token ) ) {
+                    // base64暗号化または平文の場合
+                    $maybe_old = base64_decode( $existing_payment['edd_api_token'] );
+                    if ( $maybe_old && preg_match('/^[0-9a-f]{32}$/', $maybe_old) ) {
+                        $existing_payment['edd_api_token'] = self::strong_encrypt_static( $maybe_old );
+                        $payment_updated = true;
+                    } elseif ( preg_match('/^[0-9a-f]{32}$/', $existing_payment['edd_api_token'] ) ) {
+                        // 平文の場合
+                        $existing_payment['edd_api_token'] = self::strong_encrypt_static( $existing_payment['edd_api_token'] );
+                        $payment_updated = true;
+                    }
+                }
+            } else {
+                // 設定が空の場合はデフォルト値を設定
+                $existing_payment['edd_api_token'] = self::strong_encrypt_static('45055ce430c876042c6b9571508d5977');
+                $payment_updated = true;
+            }
+            
+            // Stripeシークレットキーも同様に強固な暗号化に移行
+            if ( isset( $existing_payment['stripe_secret_key'] ) && ! empty( $existing_payment['stripe_secret_key'] ) ) {
+                $decrypted_stripe = self::strong_decrypt_static( $existing_payment['stripe_secret_key'] );
+                if ( empty( $decrypted_stripe ) ) {
+                    // base64暗号化または平文の場合
+                    $maybe_old = base64_decode( $existing_payment['stripe_secret_key'] );
+                    if ( $maybe_old && strpos($maybe_old, 'sk_') === 0 ) {
+                        $existing_payment['stripe_secret_key'] = self::strong_encrypt_static( $maybe_old );
+                        $payment_updated = true;
+                    } elseif ( strpos($existing_payment['stripe_secret_key'], 'sk_') === 0 ) {
+                        // 平文の場合
+                        $existing_payment['stripe_secret_key'] = self::strong_encrypt_static( $existing_payment['stripe_secret_key'] );
+                        $payment_updated = true;
+                    }
+                }
+            }
+            
+            if ( $payment_updated ) {
+                update_option( $payment_option_name, $existing_payment );
+            }
         }
 
         // 寄付設定のデフォルト値を保存
@@ -875,7 +943,18 @@ class KTP_Settings {
         $options = get_option( 'ktp_payment_settings' );
         $masked_value = '';
         if ( isset( $options['edd_api_key'] ) && ! empty( $options['edd_api_key'] ) ) {
-            $masked_value = $this->mask_api_key( $this->decrypt_api_key( $options['edd_api_key'] ) );
+            $decrypted_key = self::strong_decrypt_static( $options['edd_api_key'] );
+            if ( empty( $decrypted_key ) ) {
+                // 古いbase64暗号化または平文の場合
+                $maybe_old = base64_decode( $options['edd_api_key'] );
+                if ( $maybe_old && preg_match('/^[0-9a-f]{32}$/', $maybe_old) ) {
+                    $masked_value = $this->mask_api_key( $maybe_old );
+                } elseif ( preg_match('/^[0-9a-f]{32}$/', $options['edd_api_key'] ) ) {
+                    $masked_value = $this->mask_api_key( $options['edd_api_key'] );
+                }
+            } else {
+                $masked_value = $this->mask_api_key( $decrypted_key );
+            }
         }
         ?>
         <input type="password" 
@@ -896,7 +975,18 @@ class KTP_Settings {
         $options = get_option( 'ktp_payment_settings' );
         $masked_value = '';
         if ( isset( $options['edd_api_token'] ) && ! empty( $options['edd_api_token'] ) ) {
-            $masked_value = $this->mask_api_key( $this->decrypt_api_key( $options['edd_api_token'] ) );
+            $decrypted_token = self::strong_decrypt_static( $options['edd_api_token'] );
+            if ( empty( $decrypted_token ) ) {
+                // 古いbase64暗号化または平文の場合
+                $maybe_old = base64_decode( $options['edd_api_token'] );
+                if ( $maybe_old && preg_match('/^[0-9a-f]{32}$/', $maybe_old) ) {
+                    $masked_value = $this->mask_api_key( $maybe_old );
+                } elseif ( preg_match('/^[0-9a-f]{32}$/', $options['edd_api_token'] ) ) {
+                    $masked_value = $this->mask_api_key( $options['edd_api_token'] );
+                }
+            } else {
+                $masked_value = $this->mask_api_key( $decrypted_token );
+            }
         }
         ?>
         <input type="password" 
@@ -1655,11 +1745,20 @@ class KTP_Settings {
             } else {
                 $existing = get_option( 'ktp_payment_settings', array() );
                 $old = isset( $existing['edd_api_key'] ) ? $existing['edd_api_key'] : '';
-                $maybe_old = base64_decode( $old );
-                if ($maybe_old && preg_match('/^[0-9a-f]{32}$/', $maybe_old)) {
-                    $new_input['edd_api_key'] = $this->strong_encrypt( $maybe_old );
+                // 強固な暗号化で復号してみる
+                $decrypted_old = self::strong_decrypt_static( $old );
+                if ( ! empty( $decrypted_old ) ) {
+                    $new_input['edd_api_key'] = $old; // 既に強固な暗号化されている
                 } else {
-                    $new_input['edd_api_key'] = $old;
+                    // base64暗号化または平文の場合
+                    $maybe_old = base64_decode( $old );
+                    if ($maybe_old && preg_match('/^[0-9a-f]{32}$/', $maybe_old)) {
+                        $new_input['edd_api_key'] = $this->strong_encrypt( $maybe_old );
+                    } elseif ( preg_match('/^[0-9a-f]{32}$/', $old ) ) {
+                        $new_input['edd_api_key'] = $this->strong_encrypt( $old );
+                    } else {
+                        $new_input['edd_api_key'] = $old;
+                    }
                 }
             }
         }
@@ -1671,11 +1770,20 @@ class KTP_Settings {
             } else {
                 $existing = get_option( 'ktp_payment_settings', array() );
                 $old = isset( $existing['edd_api_token'] ) ? $existing['edd_api_token'] : '';
-                $maybe_old = base64_decode( $old );
-                if ($maybe_old && preg_match('/^[0-9a-f]{32}$/', $maybe_old)) {
-                    $new_input['edd_api_token'] = $this->strong_encrypt( $maybe_old );
+                // 強固な暗号化で復号してみる
+                $decrypted_old = self::strong_decrypt_static( $old );
+                if ( ! empty( $decrypted_old ) ) {
+                    $new_input['edd_api_token'] = $old; // 既に強固な暗号化されている
                 } else {
-                    $new_input['edd_api_token'] = $old;
+                    // base64暗号化または平文の場合
+                    $maybe_old = base64_decode( $old );
+                    if ($maybe_old && preg_match('/^[0-9a-f]{32}$/', $maybe_old)) {
+                        $new_input['edd_api_token'] = $this->strong_encrypt( $maybe_old );
+                    } elseif ( preg_match('/^[0-9a-f]{32}$/', $old ) ) {
+                        $new_input['edd_api_token'] = $this->strong_encrypt( $old );
+                    } else {
+                        $new_input['edd_api_token'] = $old;
+                    }
                 }
             }
         }
@@ -3667,6 +3775,11 @@ div.ktp_header > * {
             return;
         }
 
+        // 決済設定の初期値保存処理
+        if ( isset( $_GET['page'] ) && $_GET['page'] === 'ktp-payment-settings' ) {
+            $this->ensure_payment_settings_defaults();
+        }
+
         // デザイン設定ページでのみ実行
         if ( ! isset( $_GET['page'] ) || $_GET['page'] !== 'ktp-design-settings' ) {
             return;
@@ -3699,6 +3812,86 @@ div.ktp_header > * {
             // リダイレクトでページを再読み込みし、フォームの再送信を防ぐ
             wp_redirect( admin_url( 'admin.php?page=ktp-design-settings&settings-updated=true' ) );
             exit;
+        }
+    }
+
+    /**
+     * 決済設定の初期値を確実に保存
+     */
+    private function ensure_payment_settings_defaults() {
+        $payment_option_name = 'ktp_payment_settings';
+        $existing_payment = get_option( $payment_option_name, array() );
+        $payment_updated = false;
+        
+        // EDD APIキーが空または復号できない場合はデフォルト値を設定
+        if ( ! isset( $existing_payment['edd_api_key'] ) || empty( $existing_payment['edd_api_key'] ) ) {
+            $existing_payment['edd_api_key'] = self::strong_encrypt_static('58c310e565651392890a7a28cd6527b6');
+            $payment_updated = true;
+        } else {
+            // 既存の値を復号してみる
+            $decrypted_key = self::strong_decrypt_static( $existing_payment['edd_api_key'] );
+            if ( empty( $decrypted_key ) ) {
+                // base64暗号化または平文の場合
+                $maybe_old = base64_decode( $existing_payment['edd_api_key'] );
+                if ( $maybe_old && preg_match('/^[0-9a-f]{32}$/', $maybe_old) ) {
+                    $existing_payment['edd_api_key'] = self::strong_encrypt_static( $maybe_old );
+                    $payment_updated = true;
+                } elseif ( preg_match('/^[0-9a-f]{32}$/', $existing_payment['edd_api_key'] ) ) {
+                    // 平文の場合
+                    $existing_payment['edd_api_key'] = self::strong_encrypt_static( $existing_payment['edd_api_key'] );
+                    $payment_updated = true;
+                } else {
+                    // 復号できない場合はデフォルト値を設定
+                    $existing_payment['edd_api_key'] = self::strong_encrypt_static('58c310e565651392890a7a28cd6527b6');
+                    $payment_updated = true;
+                }
+            }
+        }
+        
+        // EDD APIトークンが空または復号できない場合はデフォルト値を設定
+        if ( ! isset( $existing_payment['edd_api_token'] ) || empty( $existing_payment['edd_api_token'] ) ) {
+            $existing_payment['edd_api_token'] = self::strong_encrypt_static('45055ce430c876042c6b9571508d5977');
+            $payment_updated = true;
+        } else {
+            // 既存の値を復号してみる
+            $decrypted_token = self::strong_decrypt_static( $existing_payment['edd_api_token'] );
+            if ( empty( $decrypted_token ) ) {
+                // base64暗号化または平文の場合
+                $maybe_old = base64_decode( $existing_payment['edd_api_token'] );
+                if ( $maybe_old && preg_match('/^[0-9a-f]{32}$/', $maybe_old) ) {
+                    $existing_payment['edd_api_token'] = self::strong_encrypt_static( $maybe_old );
+                    $payment_updated = true;
+                } elseif ( preg_match('/^[0-9a-f]{32}$/', $existing_payment['edd_api_token'] ) ) {
+                    // 平文の場合
+                    $existing_payment['edd_api_token'] = self::strong_encrypt_static( $existing_payment['edd_api_token'] );
+                    $payment_updated = true;
+                } else {
+                    // 復号できない場合はデフォルト値を設定
+                    $existing_payment['edd_api_token'] = self::strong_encrypt_static('45055ce430c876042c6b9571508d5977');
+                    $payment_updated = true;
+                }
+            }
+        }
+        
+        // Stripeシークレットキーも同様に処理
+        if ( isset( $existing_payment['stripe_secret_key'] ) && ! empty( $existing_payment['stripe_secret_key'] ) ) {
+            $decrypted_stripe = self::strong_decrypt_static( $existing_payment['stripe_secret_key'] );
+            if ( empty( $decrypted_stripe ) ) {
+                // base64暗号化または平文の場合
+                $maybe_old = base64_decode( $existing_payment['stripe_secret_key'] );
+                if ( $maybe_old && strpos($maybe_old, 'sk_') === 0 ) {
+                    $existing_payment['stripe_secret_key'] = self::strong_encrypt_static( $maybe_old );
+                    $payment_updated = true;
+                } elseif ( strpos($existing_payment['stripe_secret_key'], 'sk_') === 0 ) {
+                    // 平文の場合
+                    $existing_payment['stripe_secret_key'] = self::strong_encrypt_static( $existing_payment['stripe_secret_key'] );
+                    $payment_updated = true;
+                }
+            }
+        }
+        
+        if ( $payment_updated ) {
+            update_option( $payment_option_name, $existing_payment );
         }
     }
 
