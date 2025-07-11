@@ -364,6 +364,22 @@ class KTPWP_Donation {
      */
     public function create_payment_intent() {
         try {
+            // StripeライブラリがAJAX経由で読み込まれない問題の対策
+            $autoload_path = KANTANPRO_PLUGIN_DIR . 'vendor/autoload.php';
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP Donation Debug: KANTANPRO_PLUGIN_DIR = ' . KANTANPRO_PLUGIN_DIR );
+                error_log( 'KTPWP Donation Debug: Autoload path = ' . $autoload_path );
+                error_log( 'KTPWP Donation Debug: file_exists check = ' . ( file_exists( $autoload_path ) ? 'true' : 'false' ) );
+            }
+
+            if ( file_exists( $autoload_path ) ) {
+                require_once $autoload_path;
+                if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                    error_log( 'KTPWP Donation Debug: autoload.php included.' );
+                    error_log( 'KTPWP Donation Debug: class_exists("Stripe\\Stripe") = ' . ( class_exists('Stripe\\Stripe') ? 'true' : 'false' ) );
+                }
+            }
+            
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
                 error_log( 'KTPWP Donation: create_payment_intent started' );
             }
