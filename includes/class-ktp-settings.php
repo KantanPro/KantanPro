@@ -4171,33 +4171,103 @@ define( 'WP_DEBUG_DISPLAY', false );
     }
 
     /**
-     * 強固な暗号化（AES-256-CBC + WordPress SALT）
+     * 強固な暗号化（AES-256-CBC + サイト固有キー）
      */
     private function strong_encrypt( $plain_text ) {
-        $key = defined('AUTH_KEY') ? AUTH_KEY : 'default_key';
-        $iv = substr(hash('sha256', SECURE_AUTH_KEY), 0, 16); // 16バイトIV
-        return base64_encode(openssl_encrypt($plain_text, 'AES-256-CBC', $key, 0, $iv));
+        if ( empty( $plain_text ) ) {
+            return '';
+        }
+        
+        $key = self::get_encryption_key();
+        $iv = self::get_encryption_iv();
+        
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP Encryption: Using site-specific encryption key' );
+        }
+        
+        return base64_encode( openssl_encrypt( $plain_text, 'AES-256-CBC', $key, 0, $iv ) );
     }
 
     /**
      * 強固な復号
      */
     private function strong_decrypt( $encrypted_text ) {
-        $key = defined('AUTH_KEY') ? AUTH_KEY : 'default_key';
-        $iv = substr(hash('sha256', SECURE_AUTH_KEY), 0, 16);
-        return openssl_decrypt(base64_decode($encrypted_text), 'AES-256-CBC', $key, 0, $iv);
+        if ( empty( $encrypted_text ) ) {
+            return '';
+        }
+        
+        $key = self::get_encryption_key();
+        $iv = self::get_encryption_iv();
+        
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP Decryption: Using site-specific encryption key' );
+        }
+        
+        $decrypted = openssl_decrypt( base64_decode( $encrypted_text ), 'AES-256-CBC', $key, 0, $iv );
+        return $decrypted === false ? '' : $decrypted;
     }
 
     // 静的に使える強固な暗号化
     public static function strong_encrypt_static( $plain_text ) {
-        $key = defined('AUTH_KEY') ? AUTH_KEY : 'default_key';
-        $iv = substr(hash('sha256', SECURE_AUTH_KEY), 0, 16);
-        return base64_encode(openssl_encrypt($plain_text, 'AES-256-CBC', $key, 0, $iv));
+        if ( empty( $plain_text ) ) {
+            return '';
+        }
+        
+        $key = self::get_encryption_key();
+        $iv = self::get_encryption_iv();
+        
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP Encryption Static: Using site-specific encryption key' );
+        }
+        
+        return base64_encode( openssl_encrypt( $plain_text, 'AES-256-CBC', $key, 0, $iv ) );
     }
+    
     public static function strong_decrypt_static( $encrypted_text ) {
-        $key = defined('AUTH_KEY') ? AUTH_KEY : 'default_key';
-        $iv = substr(hash('sha256', SECURE_AUTH_KEY), 0, 16);
-        return openssl_decrypt(base64_decode($encrypted_text), 'AES-256-CBC', $key, 0, $iv);
+        if ( empty( $encrypted_text ) ) {
+            return '';
+        }
+        
+        $key = self::get_encryption_key();
+        $iv = self::get_encryption_iv();
+        
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP Decryption Static: Using site-specific encryption key' );
+        }
+        
+        $decrypted = openssl_decrypt( base64_decode( $encrypted_text ), 'AES-256-CBC', $key, 0, $iv );
+        return $decrypted === false ? '' : $decrypted;
+    }
+
+    /**
+     * 暗号化キーの取得（サイト固有）
+     */
+    private static function get_encryption_key() {
+        // WordPressのSALT定数をチェック
+        if ( defined( 'AUTH_KEY' ) && ! empty( AUTH_KEY ) ) {
+            return AUTH_KEY;
+        }
+        
+        // フォールバック：サイトURLとDBプレフィックスを使用
+        $site_url = get_site_url();
+        global $wpdb;
+        $prefix = $wpdb->prefix;
+        return hash( 'sha256', $site_url . $prefix . 'ktpwp_key' );
+    }
+    
+    /**
+     * 初期化ベクトル（IV）の取得（サイト固有）
+     */
+    private static function get_encryption_iv() {
+        if ( defined( 'SECURE_AUTH_KEY' ) && ! empty( SECURE_AUTH_KEY ) ) {
+            return substr( hash( 'sha256', SECURE_AUTH_KEY ), 0, 16 );
+        }
+        
+        // フォールバック：サイトURLとDBプレフィックスを使用
+        $site_url = get_site_url();
+        global $wpdb;
+        $prefix = $wpdb->prefix;
+        return substr( hash( 'sha256', $site_url . $prefix . 'ktpwp_iv' ), 0, 16 );
     }
 }
 

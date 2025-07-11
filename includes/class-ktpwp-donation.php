@@ -383,10 +383,25 @@ class KTPWP_Donation {
             
             // Stripe設定を取得
             $stripe_settings = get_option( 'ktp_payment_settings', array() );
-            $secret_key = $this->decrypt_api_key( $stripe_settings['stripe_secret_key'] ?? '' );
+            $encrypted_key = $stripe_settings['stripe_secret_key'] ?? '';
+            
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP Donation: Encrypted Stripe key exists: ' . ( ! empty( $encrypted_key ) ? 'yes' : 'no' ) );
+            }
+            
+            $secret_key = $this->decrypt_api_key( $encrypted_key );
+            
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP Donation: Decrypted Stripe key exists: ' . ( ! empty( $secret_key ) ? 'yes' : 'no' ) );
+                error_log( 'KTPWP Donation: Decrypted key starts with sk_: ' . ( strpos( $secret_key, 'sk_' ) === 0 ? 'yes' : 'no' ) );
+            }
             
             if ( empty( $secret_key ) ) {
-                throw new Exception( 'Stripe設定が完了していません。' );
+                throw new Exception( 'Stripe設定が完了していません。シークレットキーが取得できません。' );
+            }
+            
+            if ( strpos( $secret_key, 'sk_' ) !== 0 ) {
+                throw new Exception( 'Stripeシークレットキーの形式が正しくありません。' );
             }
             
             // Stripe SDK初期化
@@ -420,6 +435,10 @@ class KTPWP_Donation {
             ]);
             
         } catch ( Exception $e ) {
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP Donation Error: ' . $e->getMessage() );
+                error_log( 'KTPWP Donation Error Stack Trace: ' . $e->getTraceAsString() );
+            }
             wp_send_json_error( $e->getMessage() );
         }
     }
@@ -913,11 +932,27 @@ KantanPro開発チーム
         
         // Stripe設定を取得
         $stripe_settings = get_option( 'ktp_payment_settings', array() );
-        $secret_key = $this->decrypt_api_key( $stripe_settings['stripe_secret_key'] ?? '' );
+        $encrypted_key = $stripe_settings['stripe_secret_key'] ?? '';
+        
+        if ( empty( $encrypted_key ) ) {
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP Donation: Stripe secret key not found' );
+            }
+            return false;
+        }
+        
+        $secret_key = $this->decrypt_api_key( $encrypted_key );
         
         if ( empty( $secret_key ) ) {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP Donation: Stripe secret key not found' );
+                error_log( 'KTPWP Donation: Decrypted Stripe key is empty' );
+            }
+            return false;
+        }
+        
+        if ( strpos( $secret_key, 'sk_' ) !== 0 ) {
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP Donation: Decrypted key does not start with sk_' );
             }
             return false;
         }
