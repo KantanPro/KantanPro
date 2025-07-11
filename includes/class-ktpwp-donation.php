@@ -969,48 +969,23 @@ KantanPro開発チーム
      */
     private function user_has_dismissed_notice( $user_id ) {
         $dismissed_time = get_user_meta( $user_id, 'ktpwp_donation_notice_dismissed', true );
-        
-        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Donation: dismissed_time for user ' . $user_id . ' = ' . ( $dismissed_time ? $dismissed_time : 'not set' ) );
-        }
-        
         if ( empty( $dismissed_time ) ) {
-            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP Donation: no dismissal record found' );
-            }
             return false;
         }
-        
         $donation_settings = get_option( 'ktp_donation_settings', array() );
         $interval_days = isset( $donation_settings['notice_display_interval'] ) ? intval( $donation_settings['notice_display_interval'] ) : 30;
-        
-        // デバッグログ
-        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Donation: interval_days = ' . $interval_days . ' (type: ' . gettype( $interval_days ) . ')' );
+        // --- ここからカスタム分岐 ---
+        // 通知表示間隔が0かつ寄付していない場合は30日ごとに再表示
+        if ( $interval_days === 0 && ! $this->user_has_donated( $user_id ) ) {
+            $interval_days = 30;
         }
-        
-        // 通知表示間隔が0の場合は常時表示（拒否しても即座に再表示）
+        // --- ここまでカスタム分岐 ---
         if ( $interval_days === 0 ) {
-            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP Donation: interval is 0, always show notice' );
-            }
             return false;
         }
-        
-        // 拒否してから指定日数が経過していない場合
         $time_since_dismissed = time() - $dismissed_time;
         $interval_seconds = $interval_days * DAY_IN_SECONDS;
-        
-        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Donation: time since dismissed = ' . $time_since_dismissed . ', interval seconds = ' . $interval_seconds );
-        }
-        
         $has_dismissed = $time_since_dismissed < $interval_seconds;
-        
-        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Donation: has_dismissed = ' . ( $has_dismissed ? 'true' : 'false' ) );
-        }
-        
         return $has_dismissed;
     }
 

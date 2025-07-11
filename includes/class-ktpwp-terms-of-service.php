@@ -228,18 +228,20 @@ kantanpro22@gmail.com
         // パスワード認証処理
         if ( isset( $_POST['developer_password'] ) ) {
             $password = sanitize_text_field( $_POST['developer_password'] );
-            // 直接比較（簡易認証）
-            if ( $password === '8bee1222' ) {
+            $encrypted = get_option( 'ktp_developer_password' );
+            if ( class_exists('KTP_Settings') ) {
+                $plain = KTP_Settings::strong_decrypt_static( $encrypted );
+            } else {
+                $plain = $password; // fallback（理論上到達しない）
+            }
+            if ( $password === $plain ) {
                 $_SESSION['ktp_developer_authenticated'] = true;
-                // 認証成功後、同じページにリダイレクト
                 wp_redirect( admin_url( 'admin.php?page=ktp-terms&authenticated=1' ) );
                 exit;
             } else {
-                // 認証失敗
                 $_SESSION['ktp_developer_authenticated'] = false;
             }
         }
-
         // セッションから認証状態を確認
         return isset( $_SESSION['ktp_developer_authenticated'] ) && $_SESSION['ktp_developer_authenticated'] === true;
     }
@@ -255,9 +257,18 @@ kantanpro22@gmail.com
                 <p><?php echo esc_html__( '開発者パスワードが必要です。', 'ktpwp' ); ?></p>
             </div>
             <?php
-            // 認証失敗メッセージ
-            if ( isset( $_POST['developer_password'] ) && sanitize_text_field( $_POST['developer_password'] ) !== '8bee1222' ) {
-                echo '<div class="notice notice-error is-dismissible"><p>' . esc_html__( 'パスワードが正しくありません。', 'ktpwp' ) . '</p></div>';
+            // パスワード入力フォームのエラーメッセージも修正
+            if ( isset( $_POST['developer_password'] ) ) {
+                $password = sanitize_text_field( $_POST['developer_password'] );
+                $encrypted = get_option( 'ktp_developer_password' );
+                if ( class_exists('KTP_Settings') ) {
+                    $plain = KTP_Settings::strong_decrypt_static( $encrypted );
+                } else {
+                    $plain = $password;
+                }
+                if ( $password !== $plain ) {
+                    echo '<div class="notice notice-error is-dismissible"><p>' . esc_html__( 'パスワードが正しくありません。', 'ktpwp' ) . '</p></div>';
+                }
             }
             ?>
             <form method="post" style="max-width: 600px;">

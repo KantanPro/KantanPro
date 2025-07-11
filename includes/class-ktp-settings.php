@@ -330,6 +330,33 @@ class KTP_Settings {
             }
         }
 
+        // 決済設定のデフォルト値を保存
+        $payment_option_name = 'ktp_payment_settings';
+        $payment_defaults = array(
+            'stripe_publishable_key' => 'pk_live_51RiD7U09Cs900UhV74cscfgq2LbjWJgec9X3HdKTdMAryOMeno9tgBhbe6UchBqyUX7qUa1fhgTSoqwSjbg78kjv005XjrsP1q',
+            'stripe_secret_key'      => base64_encode('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'),
+            'edd_api_key'            => '58c310e565651392890a7a28cd6527b6',
+            'edd_api_token'          => '45055ce430c876042c6b9571508d5977',
+        );
+        if ( false === get_option( $payment_option_name ) ) {
+            add_option( $payment_option_name, $payment_defaults );
+        }
+
+        // 寄付設定のデフォルト値を保存
+        $donation_option_name = 'ktp_donation_settings';
+        $donation_defaults = array(
+            'enabled'                 => true, // 寄付機能を有効化
+            'monthly_goal'            => 10000,
+            'suggested_amounts'       => '500,1000,3000,5000',
+            'frontend_notice_enabled' => true,
+            'notice_display_interval' => 30, // 30日ごとに再表示
+            'notice_message'          => 'システム開発を継続するために費用がかかります。よろしければご寄付をお願いいたします。',
+            'donation_url'            => 'https://www.kantanpro.com/donation',
+        );
+        if ( false === get_option( $donation_option_name ) ) {
+            add_option( $donation_option_name, $donation_defaults );
+        }
+
         // 旧システムから新システムへのデータ移行処理
         self::migrate_company_info_from_old_system();
 
@@ -599,14 +626,13 @@ class KTP_Settings {
         // パスワード認証処理
         if ( isset( $_POST['developer_password'] ) ) {
             $password = sanitize_text_field( $_POST['developer_password'] );
-            // 利用規約管理と同じパスワードを使用
-            if ( $password === '8bee1222' ) {
+            $encrypted = get_option( 'ktp_developer_password' );
+            $plain = self::strong_decrypt_static( $encrypted );
+            if ( $password === $plain ) {
                 ktpwp_set_session_data( 'ktp_payment_authenticated', true );
-                // 認証成功後、同じページにリダイレクト
                 wp_redirect( admin_url( 'admin.php?page=ktp-payment-settings&authenticated=1' ) );
                 exit;
             } else {
-                // 認証失敗
                 ktpwp_set_session_data( 'ktp_payment_authenticated', false );
             }
         }
@@ -1600,45 +1626,59 @@ class KTP_Settings {
      */
     public function sanitize_payment_settings( $input ) {
         $new_input = array();
-        
-        // Stripe設定
+        // Stripe公開キーはそのまま
         if ( isset( $input['stripe_publishable_key'] ) ) {
             $new_input['stripe_publishable_key'] = sanitize_text_field( $input['stripe_publishable_key'] );
         }
-        
+        // Stripeシークレットキー
         if ( isset( $input['stripe_secret_key'] ) ) {
             $secret_key = sanitize_text_field( $input['stripe_secret_key'] );
-            // マスクされた値でない場合のみ暗号化
             if ( ! empty( $secret_key ) && strpos( $secret_key, '*' ) === false ) {
-                $new_input['stripe_secret_key'] = $this->encrypt_api_key( $secret_key );
+                $new_input['stripe_secret_key'] = $this->strong_encrypt( $secret_key );
             } else {
-                // 既存の値を保持
                 $existing = get_option( 'ktp_payment_settings', array() );
-                $new_input['stripe_secret_key'] = isset( $existing['stripe_secret_key'] ) ? $existing['stripe_secret_key'] : '';
+                $old = isset( $existing['stripe_secret_key'] ) ? $existing['stripe_secret_key'] : '';
+                // base64方式なら自動移行
+                $maybe_old = base64_decode( $old );
+                if ($maybe_old && strpos($maybe_old, 'sk_') === 0) {
+                    $new_input['stripe_secret_key'] = $this->strong_encrypt( $maybe_old );
+                } else {
+                    $new_input['stripe_secret_key'] = $old;
+                }
             }
         }
-        
-        // EDD設定
+        // EDD APIキー
         if ( isset( $input['edd_api_key'] ) ) {
             $api_key = sanitize_text_field( $input['edd_api_key'] );
             if ( ! empty( $api_key ) && strpos( $api_key, '*' ) === false ) {
-                $new_input['edd_api_key'] = $this->encrypt_api_key( $api_key );
+                $new_input['edd_api_key'] = $this->strong_encrypt( $api_key );
             } else {
                 $existing = get_option( 'ktp_payment_settings', array() );
-                $new_input['edd_api_key'] = isset( $existing['edd_api_key'] ) ? $existing['edd_api_key'] : '';
+                $old = isset( $existing['edd_api_key'] ) ? $existing['edd_api_key'] : '';
+                $maybe_old = base64_decode( $old );
+                if ($maybe_old && preg_match('/^[0-9a-f]{32}$/', $maybe_old)) {
+                    $new_input['edd_api_key'] = $this->strong_encrypt( $maybe_old );
+                } else {
+                    $new_input['edd_api_key'] = $old;
+                }
             }
         }
-        
+        // EDD APIトークン
         if ( isset( $input['edd_api_token'] ) ) {
             $api_token = sanitize_text_field( $input['edd_api_token'] );
             if ( ! empty( $api_token ) && strpos( $api_token, '*' ) === false ) {
-                $new_input['edd_api_token'] = $this->encrypt_api_key( $api_token );
+                $new_input['edd_api_token'] = $this->strong_encrypt( $api_token );
             } else {
                 $existing = get_option( 'ktp_payment_settings', array() );
-                $new_input['edd_api_token'] = isset( $existing['edd_api_token'] ) ? $existing['edd_api_token'] : '';
+                $old = isset( $existing['edd_api_token'] ) ? $existing['edd_api_token'] : '';
+                $maybe_old = base64_decode( $old );
+                if ($maybe_old && preg_match('/^[0-9a-f]{32}$/', $maybe_old)) {
+                    $new_input['edd_api_token'] = $this->strong_encrypt( $maybe_old );
+                } else {
+                    $new_input['edd_api_token'] = $old;
+                }
             }
         }
-        
         return $new_input;
     }
 
@@ -3935,6 +3975,36 @@ define( 'WP_DEBUG_DISPLAY', false );
             <?php $this->donation_stats_dashboard_callback(); ?>
         </div>
         <?php
+    }
+
+    /**
+     * 強固な暗号化（AES-256-CBC + WordPress SALT）
+     */
+    private function strong_encrypt( $plain_text ) {
+        $key = defined('AUTH_KEY') ? AUTH_KEY : 'default_key';
+        $iv = substr(hash('sha256', SECURE_AUTH_KEY), 0, 16); // 16バイトIV
+        return base64_encode(openssl_encrypt($plain_text, 'AES-256-CBC', $key, 0, $iv));
+    }
+
+    /**
+     * 強固な復号
+     */
+    private function strong_decrypt( $encrypted_text ) {
+        $key = defined('AUTH_KEY') ? AUTH_KEY : 'default_key';
+        $iv = substr(hash('sha256', SECURE_AUTH_KEY), 0, 16);
+        return openssl_decrypt(base64_decode($encrypted_text), 'AES-256-CBC', $key, 0, $iv);
+    }
+
+    // 静的に使える強固な暗号化
+    public static function strong_encrypt_static( $plain_text ) {
+        $key = defined('AUTH_KEY') ? AUTH_KEY : 'default_key';
+        $iv = substr(hash('sha256', SECURE_AUTH_KEY), 0, 16);
+        return base64_encode(openssl_encrypt($plain_text, 'AES-256-CBC', $key, 0, $iv));
+    }
+    public static function strong_decrypt_static( $encrypted_text ) {
+        $key = defined('AUTH_KEY') ? AUTH_KEY : 'default_key';
+        $iv = substr(hash('sha256', SECURE_AUTH_KEY), 0, 16);
+        return openssl_decrypt(base64_decode($encrypted_text), 'AES-256-CBC', $key, 0, $iv);
     }
 }
 
