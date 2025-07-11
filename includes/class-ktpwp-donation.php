@@ -646,9 +646,22 @@ class KTPWP_Donation {
         if ( empty( $encrypted_key ) ) {
             return '';
         }
-        
-        // 簡単な復号化（実際の実装では より強固な暗号化を使用）
-        return base64_decode( $encrypted_key );
+        // 強固な暗号化方式で復号を試行
+        $decrypted = KTP_Settings::strong_decrypt_static( $encrypted_key );
+        if ( $decrypted !== false && ! empty( $decrypted ) ) {
+            return $decrypted;
+        }
+        // 古いbase64方式の場合は自動移行
+        $maybe_old = base64_decode( $encrypted_key );
+        if ( $maybe_old && strpos($maybe_old, 'sk_') === 0 ) {
+            // 新しい強固な暗号化で再保存
+            $new_encrypted = KTP_Settings::strong_encrypt_static( $maybe_old );
+            $stripe_settings = get_option( 'ktp_payment_settings', array() );
+            $stripe_settings['stripe_secret_key'] = $new_encrypted;
+            update_option( 'ktp_payment_settings', $stripe_settings );
+            return $maybe_old;
+        }
+        return '';
     }
     
     /**
