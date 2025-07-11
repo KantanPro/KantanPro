@@ -80,6 +80,10 @@ class KTPWP_Donation {
         add_action( 'wp_ajax_ktpwp_dismiss_donation_notice', array( $this, 'dismiss_donation_notice' ) );
         add_action( 'wp_ajax_nopriv_ktpwp_dismiss_donation_notice', array( $this, 'dismiss_donation_notice' ) );
         
+        // 寄付完了確認のAJAX処理
+        add_action( 'wp_ajax_ktpwp_check_donation_completion', array( $this, 'check_donation_completion' ) );
+        add_action( 'wp_ajax_nopriv_ktpwp_check_donation_completion', array( $this, 'check_donation_completion' ) );
+        
         // 寄付完了後のフック
         add_action( 'ktpwp_donation_completed', array( $this, 'send_thank_you_email' ) );
         
@@ -168,8 +172,21 @@ class KTPWP_Donation {
      * @since 1.0.0
      */
     public function enqueue_frontend_notice_scripts() {
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP Donation: enqueue_frontend_notice_scripts() called' );
+            error_log( 'KTPWP Donation: is_admin() = ' . ( is_admin() ? 'true' : 'false' ) );
+            error_log( 'KTPWP Donation: should_show_frontend_notice() = ' . ( $this->should_show_frontend_notice() ? 'true' : 'false' ) );
+        }
+        
         // 管理画面以外で寄付通知が有効な場合のみ読み込み
-        if ( ! is_admin() && $this->should_show_frontend_notice() ) {
+        $should_enqueue = ! is_admin() && $this->should_show_frontend_notice();
+        
+        if ( $should_enqueue ) {
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP Donation: enqueuing frontend notice scripts' );
+            }
+            
+            // 寄付通知用スクリプト
             wp_enqueue_script( 
                 'ktpwp-donation-notice', 
                 plugin_dir_url( __DIR__ ) . 'js/ktpwp-donation-notice.js', 
@@ -187,12 +204,17 @@ class KTPWP_Donation {
                 'admin_only' => true
             ) );
             
+            // 寄付通知用スタイル
             wp_enqueue_style( 
                 'ktpwp-donation-notice', 
                 plugin_dir_url( __DIR__ ) . 'css/ktpwp-donation-notice.css', 
                 array(), 
                 KTPWP_PLUGIN_VERSION 
             );
+        } else {
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP Donation: not enqueuing frontend notice scripts' );
+            }
         }
     }
     
@@ -459,6 +481,56 @@ class KTPWP_Donation {
     }
     
     /**
+     * 寄付完了確認（AJAX用）
+     *
+     * @since 1.0.0
+     */
+    public function check_donation_completion() {
+        try {
+            if ( ! wp_verify_nonce( $_POST['nonce'], 'ktpwp_donation_notice_nonce' ) ) {
+                throw new Exception( 'セキュリティ検証に失敗しました。' );
+            }
+            
+            // ログインユーザーのみ対象
+            if ( ! is_user_logged_in() ) {
+                wp_send_json_error( 'ゲストユーザーは対象外です。' );
+                return;
+            }
+            
+            $user_id = get_current_user_id();
+            $user = get_userdata( $user_id );
+            
+            // KantanPro管理権限または管理者権限がない場合はエラー
+            if ( ! $user->has_cap( 'ktpwp_access' ) && ! $user->has_cap( 'manage_options' ) ) {
+                wp_send_json_error( '権限がありません。' );
+                return;
+            }
+            
+            // Stripeでの実際の入金確認を実行
+            $has_donated = $this->verify_stripe_payment( $user_id );
+            
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP Donation: check_donation_completion for user ' . $user_id . ', has_donated = ' . ( $has_donated ? 'true' : 'false' ) );
+            }
+            
+            if ( $has_donated ) {
+                wp_send_json_success([
+                    'message' => 'ご寄付ありがとうございました！',
+                    'has_donated' => true
+                ]);
+            } else {
+                wp_send_json_success([
+                    'message' => '',
+                    'has_donated' => false
+                ]);
+            }
+            
+        } catch ( Exception $e ) {
+            wp_send_json_error( $e->getMessage() );
+        }
+    }
+    
+    /**
      * 寄付レコードの作成
      *
      * @since 1.0.0
@@ -623,46 +695,141 @@ KantanPro開発チーム
     }
 
     /**
+     * 現在のページにKantanProが設置されているかチェック
+     *
+     * @since 1.0.0
+     * @return bool
+     */
+    private function has_ktpwp_content() {
+        global $post;
+        
+        if ( ! is_a( $post, 'WP_Post' ) ) {
+            return false;
+        }
+        
+        // KantanProのショートコードが含まれているかチェック
+        $ktpwp_shortcodes = array(
+            'ktpwp_all_tab',
+            'ktpwp_client_tab',
+            'ktpwp_order_tab',
+            'ktpwp_service_tab',
+            'ktpwp_supplier_tab',
+            'ktpwp_report_tab',
+            'ktpwp_donation'
+        );
+        
+        foreach ( $ktpwp_shortcodes as $shortcode ) {
+            if ( has_shortcode( $post->post_content, $shortcode ) ) {
+                if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                    error_log( 'KTPWP Donation: found shortcode ' . $shortcode . ' in post ' . $post->ID );
+                }
+                return true;
+            }
+        }
+        
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP Donation: no KantanPro shortcodes found in post ' . $post->ID );
+        }
+        
+        return false;
+    }
+
+    /**
      * フロントエンド通知を表示すべきかどうかを判定
      *
      * @since 1.0.0
      * @return bool
      */
     private function should_show_frontend_notice() {
+        // デバッグログ
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP Donation: should_show_frontend_notice() called' );
+        }
+        
         // 寄付設定を取得
         $donation_settings = get_option( 'ktp_donation_settings', array() );
         
+        // デバッグログ
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP Donation: donation_settings = ' . wp_json_encode( $donation_settings ) );
+        }
+        
         // 寄付機能が無効またはフロントエンド通知が無効の場合
         if ( empty( $donation_settings['enabled'] ) || empty( $donation_settings['frontend_notice_enabled'] ) ) {
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP Donation: donation disabled or frontend notice disabled' );
+                error_log( 'KTPWP Donation: enabled = ' . ( isset( $donation_settings['enabled'] ) ? $donation_settings['enabled'] : 'not set' ) );
+                error_log( 'KTPWP Donation: frontend_notice_enabled = ' . ( isset( $donation_settings['frontend_notice_enabled'] ) ? $donation_settings['frontend_notice_enabled'] : 'not set' ) );
+            }
             return false;
         }
         
         // Stripe設定を確認
         if ( empty( $this->get_stripe_publishable_key() ) ) {
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP Donation: Stripe publishable key not found' );
+                $stripe_settings = get_option( 'ktp_payment_settings', array() );
+                error_log( 'KTPWP Donation: stripe_settings = ' . wp_json_encode( $stripe_settings ) );
+            }
             return false;
         }
         
-        // ログインユーザーでKantanPro管理権限があるユーザーのみ対象
+        // ログインユーザーのみ対象
         if ( ! is_user_logged_in() ) {
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP Donation: user not logged in' );
+            }
             return false;
         }
         
         $user_id = get_current_user_id();
         $user = get_userdata( $user_id );
         
-        // KantanPro管理権限（ktpwp_access）または管理者権限がない場合は表示しない
+        // KantanPro管理権限（ktpwp_access）または管理者権限を持つユーザーのみ対象
         if ( ! $user->has_cap( 'ktpwp_access' ) && ! $user->has_cap( 'manage_options' ) ) {
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP Donation: user does not have required capabilities' );
+                error_log( 'KTPWP Donation: user_id = ' . $user_id . ', user_login = ' . $user->user_login );
+                error_log( 'KTPWP Donation: has ktpwp_access = ' . ( $user->has_cap( 'ktpwp_access' ) ? 'true' : 'false' ) );
+                error_log( 'KTPWP Donation: has manage_options = ' . ( $user->has_cap( 'manage_options' ) ? 'true' : 'false' ) );
+            }
+            return false;
+        }
+        
+        // フロントエンド通知が有効でない場合は表示しない
+        if ( empty( $donation_settings['frontend_notice_enabled'] ) ) {
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP Donation: frontend notice disabled' );
+            }
             return false;
         }
         
         // ユーザーが寄付したことがある場合は表示しない
         if ( $this->user_has_donated( $user_id ) ) {
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP Donation: user has already donated' );
+            }
             return false;
         }
         
         // ユーザーが通知を拒否している場合は表示しない
         if ( $this->user_has_dismissed_notice( $user_id ) ) {
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP Donation: user has dismissed notice' );
+            }
             return false;
+        }
+        
+        // 現在のページにKantanProが設置されているかチェック
+        if ( ! $this->has_ktpwp_content() ) {
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP Donation: no KantanPro content found on current page' );
+            }
+            return false;
+        }
+        
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP Donation: should show frontend notice = true' );
         }
         
         return true;
@@ -680,6 +847,9 @@ KantanPro開発チーム
         
         $user = get_userdata( $user_id );
         if ( ! $user ) {
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP Donation: user not found for user_id = ' . $user_id );
+            }
             return false;
         }
         
@@ -689,9 +859,107 @@ KantanPro開発チーム
             $user->user_email
         ) );
         
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP Donation: donation count for user ' . $user->user_email . ' = ' . $count );
+        }
+        
         return $count > 0;
     }
 
+    /**
+     * Stripeでの実際の入金確認を実行
+     *
+     * @since 1.0.0
+     * @param int $user_id User ID
+     * @return bool
+     */
+    private function verify_stripe_payment( $user_id ) {
+        global $wpdb;
+        
+        $user = get_userdata( $user_id );
+        if ( ! $user ) {
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP Donation: user not found for user_id = ' . $user_id );
+            }
+            return false;
+        }
+        
+        // 最近の寄付レコードを取得（過去1時間以内）
+        $table_name = $wpdb->prefix . 'ktp_donations';
+        $recent_donation = $wpdb->get_row( $wpdb->prepare( 
+            "SELECT * FROM $table_name WHERE donor_email = %s AND created_at >= DATE_SUB(NOW(), INTERVAL 1 HOUR) ORDER BY created_at DESC LIMIT 1",
+            $user->user_email
+        ) );
+        
+        if ( ! $recent_donation ) {
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP Donation: no recent donation found for user ' . $user->user_email );
+            }
+            return false;
+        }
+        
+        // Stripe設定を取得
+        $stripe_settings = get_option( 'ktp_payment_settings', array() );
+        $secret_key = $this->decrypt_api_key( $stripe_settings['stripe_secret_key'] ?? '' );
+        
+        if ( empty( $secret_key ) ) {
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP Donation: Stripe secret key not found' );
+            }
+            return false;
+        }
+        
+        try {
+            // Stripe SDK初期化
+            if ( file_exists( KTPWP_PLUGIN_DIR . 'vendor/autoload.php' ) ) {
+                require_once KTPWP_PLUGIN_DIR . 'vendor/autoload.php';
+            } else {
+                if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                    error_log( 'KTPWP Donation: Stripe SDK not found' );
+                }
+                return false;
+            }
+            
+            \Stripe\Stripe::setApiKey( $secret_key );
+            
+            // Payment Intentの状態を確認
+            $payment_intent = \Stripe\PaymentIntent::retrieve( $recent_donation->stripe_payment_intent_id );
+            
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP Donation: Payment Intent status = ' . $payment_intent->status );
+            }
+            
+            // 支払いが成功している場合
+            if ( $payment_intent->status === 'succeeded' ) {
+                // データベースのステータスも更新
+                if ( $recent_donation->status !== 'completed' ) {
+                    $this->update_donation_status( $recent_donation->id, 'completed' );
+                    
+                    // 寄付完了フック実行
+                    do_action( 'ktpwp_donation_completed', $recent_donation->id );
+                }
+                
+                if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                    error_log( 'KTPWP Donation: Payment confirmed for user ' . $user->user_email );
+                }
+                
+                return true;
+            }
+            
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP Donation: Payment not succeeded, status = ' . $payment_intent->status );
+            }
+            
+            return false;
+            
+        } catch ( Exception $e ) {
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP Donation: Error verifying Stripe payment: ' . $e->getMessage() );
+            }
+            return false;
+        }
+    }
+    
     /**
      * ユーザーが通知を拒否しているかチェック
      *
@@ -702,15 +970,48 @@ KantanPro開発チーム
     private function user_has_dismissed_notice( $user_id ) {
         $dismissed_time = get_user_meta( $user_id, 'ktpwp_donation_notice_dismissed', true );
         
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP Donation: dismissed_time for user ' . $user_id . ' = ' . ( $dismissed_time ? $dismissed_time : 'not set' ) );
+        }
+        
         if ( empty( $dismissed_time ) ) {
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP Donation: no dismissal record found' );
+            }
             return false;
         }
         
         $donation_settings = get_option( 'ktp_donation_settings', array() );
-        $interval_days = isset( $donation_settings['notice_display_interval'] ) ? $donation_settings['notice_display_interval'] : 30;
+        $interval_days = isset( $donation_settings['notice_display_interval'] ) ? intval( $donation_settings['notice_display_interval'] ) : 30;
+        
+        // デバッグログ
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP Donation: interval_days = ' . $interval_days . ' (type: ' . gettype( $interval_days ) . ')' );
+        }
+        
+        // 通知表示間隔が0の場合は常時表示（拒否しても即座に再表示）
+        if ( $interval_days === 0 ) {
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP Donation: interval is 0, always show notice' );
+            }
+            return false;
+        }
         
         // 拒否してから指定日数が経過していない場合
-        return ( time() - $dismissed_time ) < ( $interval_days * DAY_IN_SECONDS );
+        $time_since_dismissed = time() - $dismissed_time;
+        $interval_seconds = $interval_days * DAY_IN_SECONDS;
+        
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP Donation: time since dismissed = ' . $time_since_dismissed . ', interval seconds = ' . $interval_seconds );
+        }
+        
+        $has_dismissed = $time_since_dismissed < $interval_seconds;
+        
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP Donation: has_dismissed = ' . ( $has_dismissed ? 'true' : 'false' ) );
+        }
+        
+        return $has_dismissed;
     }
 
     /**
@@ -719,15 +1020,30 @@ KantanPro開発チーム
      * @since 1.0.0
      */
     public function display_frontend_notice() {
-        if ( ! $this->should_show_frontend_notice() ) {
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP Donation: display_frontend_notice() called' );
+        }
+        
+        $should_display = $this->should_show_frontend_notice();
+        
+        if ( ! $should_display ) {
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP Donation: should_show_frontend_notice() returned false' );
+            }
             return;
+        }
+        
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP Donation: displaying frontend notice' );
         }
         
         $donation_settings = get_option( 'ktp_donation_settings', array() );
         $message = isset( $donation_settings['notice_message'] ) ? $donation_settings['notice_message'] : 'このサイトの運営にご協力いただける方は、寄付をお願いいたします。';
         
-        // 寄付ページのURLを生成（動的に対応）
-        $donation_url = $this->get_donation_url();
+        // 寄付URLを取得（設定されていない場合はデフォルトURLを使用）
+        $donation_url = isset( $donation_settings['donation_url'] ) && ! empty( $donation_settings['donation_url'] ) 
+            ? $donation_settings['donation_url'] 
+            : 'https://www.kantanpro.com/donation';
         
         ?>
         <div id="ktpwp-donation-notice" class="ktpwp-donation-notice" style="display: none;">
@@ -735,7 +1051,7 @@ KantanPro開発チーム
                 <span class="ktpwp-notice-icon">💝</span>
                 <span class="ktpwp-notice-message"><?php echo esc_html( $message ); ?></span>
                 <div class="ktpwp-notice-actions">
-                    <a href="<?php echo esc_url( $donation_url ); ?>" class="ktpwp-notice-donate-btn">
+                    <a href="<?php echo esc_url( $donation_url ); ?>" class="ktpwp-notice-donate-btn" target="_blank" rel="noopener">
                         <?php esc_html_e( '寄付する', 'ktpwp' ); ?>
                     </a>
                     <button type="button" class="ktpwp-notice-dismiss-btn" aria-label="<?php esc_attr_e( '閉じる', 'ktpwp' ); ?>">
@@ -744,38 +1060,33 @@ KantanPro開発チーム
                 </div>
             </div>
         </div>
+        
+        <!-- 寄付完了メッセージ -->
+        <div id="ktpwp-donation-thanks" class="ktpwp-donation-thanks" style="display: none;">
+            <div class="ktpwp-thanks-content">
+                <span class="ktpwp-thanks-icon">🎉</span>
+                <span class="ktpwp-thanks-message"><?php esc_html_e( 'ご寄付ありがとうございました！', 'ktpwp' ); ?></span>
+                <button type="button" class="ktpwp-thanks-close" aria-label="<?php esc_attr_e( '閉じる', 'ktpwp' ); ?>">
+                    ×
+                </button>
+            </div>
+        </div>
+        
+        <!-- 確認中のアニメーション -->
+        <div id="ktpwp-donation-checking" class="ktpwp-donation-checking" style="display: none;">
+            <div class="ktpwp-checking-content">
+                <div class="ktpwp-checking-spinner"></div>
+                <span class="ktpwp-checking-message">確認中・・・</span>
+            </div>
+        </div>
+        
+
         <?php
     }
 
-    /**
-     * 寄付ページのURLを取得
-     *
-     * @since 1.0.0
-     * @return string
-     */
-    private function get_donation_url() {
-        // 寄付ショートコードがあるページを検索
-        $pages = get_posts( array(
-            'post_type' => 'page',
-            'post_status' => 'publish',
-            'posts_per_page' => -1,
-            'meta_query' => array(
-                array(
-                    'key' => '_wp_page_template',
-                    'compare' => 'EXISTS'
-                )
-            )
-        ) );
-        
-        foreach ( $pages as $page ) {
-            if ( has_shortcode( $page->post_content, 'ktpwp_donation' ) ) {
-                return get_permalink( $page->ID );
-            }
-        }
-        
-        // 寄付ページが見つからない場合は一般設定ページにリダイレクト
-        return admin_url( 'admin.php?page=ktp-settings' );
-    }
+
+
+
 
     /**
      * 通知拒否のAJAX処理

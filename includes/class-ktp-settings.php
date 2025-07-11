@@ -566,9 +566,19 @@ class KTP_Settings {
                     <?php
                     settings_fields( 'ktp_payment_settings' );
                     do_settings_sections( 'ktp-payment-settings' );
-                    submit_button();
                     ?>
+                    <p class="submit">
+                        <input type="submit" name="submit" id="submit" class="button button-primary" value="<?php esc_attr_e( '設定を保存', 'ktpwp' ); ?>">
+                    </p>
                 </form>
+                
+                <?php
+                // 寄付通知プレビューセクション（表示専用）
+                $this->display_donation_preview_section();
+                
+                // 寄付統計セクション（表示専用）
+                $this->display_donation_stats_section();
+                ?>
                 
                 <div class="ktp-settings-section">
                     <h3>寄付実績</h3>
@@ -762,6 +772,14 @@ class KTP_Settings {
             'ktp-payment-settings',
             'donation_settings'
         );
+
+        add_settings_field(
+            'donation_url',
+            __( '寄付URL', 'ktpwp' ),
+            array( $this, 'donation_url_callback' ),
+            'ktp-payment-settings',
+            'donation_settings'
+        );
     }
 
     /**
@@ -784,6 +802,8 @@ class KTP_Settings {
     public function print_donation_section_info() {
         echo '<p>' . esc_html__( '寄付機能の基本設定を行います。通知設定は開発者専用です。', 'ktpwp' ) . '</p>';
     }
+
+
 
     /**
      * Stripe公開可能キーのコールバック
@@ -926,9 +946,11 @@ class KTP_Settings {
                    <?php checked( isset( $options['frontend_notice_enabled'] ) ? $options['frontend_notice_enabled'] : false, 1 ); ?>>
             <?php esc_html_e( 'フロントエンドで寄付通知を表示する', 'ktpwp' ); ?>
         </label>
-        <p class="description"><?php esc_html_e( '有効にすると、KantanPro管理権限を持つユーザー向けにサイト上部に寄付の案内が表示されます', 'ktpwp' ); ?></p>
+        <p class="description"><?php esc_html_e( '有効にすると、KantanPro管理権限を持つユーザーがKantanProを設置したページにアクセスした際に寄付の案内が表示されます', 'ktpwp' ); ?></p>
         <?php
     }
+
+
 
     /**
      * 通知表示間隔のコールバック
@@ -940,11 +962,15 @@ class KTP_Settings {
                id="notice_display_interval" 
                name="ktp_donation_settings[notice_display_interval]" 
                value="<?php echo isset( $options['notice_display_interval'] ) ? esc_attr( $options['notice_display_interval'] ) : '30'; ?>" 
-               min="1" 
+               min="0" 
                max="365"
                class="small-text">
         <span><?php esc_html_e( '日', 'ktpwp' ); ?></span>
-        <p class="description"><?php esc_html_e( 'KantanPro管理権限を持つユーザーが寄付を拒否した場合に再表示されるまでの間隔', 'ktpwp' ); ?></p>
+        <p class="description">
+            <?php esc_html_e( 'KantanPro管理権限を持つユーザーが寄付を拒否した場合に再表示されるまでの間隔', 'ktpwp' ); ?>
+            <br>
+            <strong><?php esc_html_e( '0に設定すると、拒否しても即座に再表示されます（常時通知表示）', 'ktpwp' ); ?></strong>
+        </p>
         <?php
     }
 
@@ -961,6 +987,119 @@ class KTP_Settings {
                   cols="50" 
                   class="large-text"><?php echo isset( $options['notice_message'] ) ? esc_textarea( $options['notice_message'] ) : $default_message; ?></textarea>
         <p class="description"><?php esc_html_e( 'KantanPro管理権限を持つユーザー向けにフロントエンドで表示される寄付通知のメッセージ', 'ktpwp' ); ?></p>
+        <?php
+    }
+
+    /**
+     * 寄付URLのコールバック
+     */
+    public function donation_url_callback() {
+        $options = get_option( 'ktp_donation_settings' );
+        ?>
+        <input type="url" 
+               id="donation_url" 
+               name="ktp_donation_settings[donation_url]" 
+               value="<?php echo isset( $options['donation_url'] ) ? esc_url( $options['donation_url'] ) : ''; ?>" 
+               class="regular-text" 
+               placeholder="https://example.com/donation">
+        <p class="description"><?php esc_html_e( '寄付通知の「寄付する」ボタンをクリックした際に遷移するURL', 'ktpwp' ); ?></p>
+        <p class="description"><?php esc_html_e( '空欄の場合は https://www.kantanpro.com/donation が使用されます', 'ktpwp' ); ?></p>
+        <?php
+    }
+
+    /**
+     * 寄付通知プレビューのコールバック
+     */
+    public function donation_notice_preview_callback() {
+        $donation_settings = get_option( 'ktp_donation_settings', array() );
+        $message = isset( $donation_settings['notice_message'] ) ? $donation_settings['notice_message'] : 'このサイトの運営にご協力いただける方は、寄付をお願いいたします。';
+        
+        ?>
+        <div class="ktpwp-notice-preview-container">
+            <h4><?php esc_html_e( '現在の設定での通知表示例：', 'ktpwp' ); ?></h4>
+            
+            <div id="ktpwp-notice-preview" class="ktpwp-donation-notice" style="position: relative; top: auto; left: auto; right: auto; z-index: 1; margin: 10px 0;">
+                <div class="ktpwp-notice-content">
+                    <span class="ktpwp-notice-icon">💝</span>
+                    <span class="ktpwp-notice-message"><?php echo esc_html( $message ); ?></span>
+                    <div class="ktpwp-notice-actions">
+                        <a href="#" class="ktpwp-notice-donate-btn"><?php esc_html_e( '寄付する', 'ktpwp' ); ?></a>
+                        <button type="button" class="ktpwp-notice-dismiss-btn" aria-label="<?php esc_attr_e( '閉じる', 'ktpwp' ); ?>">×</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="ktpwp-preview-controls">
+                <button type="button" class="button" onclick="testNoticeDisplay()">
+                    <?php esc_html_e( '通知表示テスト', 'ktpwp' ); ?>
+                </button>
+                <button type="button" class="button" onclick="testNoticeDismiss()">
+                    <?php esc_html_e( '閉じるテスト', 'ktpwp' ); ?>
+                </button>
+            </div>
+            
+            <div class="ktpwp-preview-info">
+                <p><strong><?php esc_html_e( '表示条件：', 'ktpwp' ); ?></strong></p>
+                <ul>
+                    <li><?php esc_html_e( 'KantanPro管理権限を持つログインユーザーのみ', 'ktpwp' ); ?></li>
+                    <li><?php esc_html_e( 'KantanProが設置されているページにアクセス', 'ktpwp' ); ?></li>
+                    <li><?php esc_html_e( '寄付機能が有効', 'ktpwp' ); ?></li>
+                    <li><?php esc_html_e( 'フロントエンド通知が有効', 'ktpwp' ); ?></li>
+                    <li><?php esc_html_e( 'Stripe設定が完了', 'ktpwp' ); ?></li>
+                    <li><?php esc_html_e( 'ユーザーがまだ寄付していない', 'ktpwp' ); ?></li>
+                    <li><?php esc_html_e( 'ユーザーが通知を拒否していない（間隔0の場合は常時表示）', 'ktpwp' ); ?></li>
+                </ul>
+            </div>
+        </div>
+
+        <script>
+        function testNoticeDisplay() {
+            var $preview = jQuery('#ktpwp-notice-preview');
+            $preview.fadeOut(300, function() {
+                setTimeout(function() {
+                    $preview.fadeIn(500);
+                }, 100);
+            });
+        }
+        
+        function testNoticeDismiss() {
+            var $preview = jQuery('#ktpwp-notice-preview');
+            $preview.fadeOut(300);
+        }
+        </script>
+
+        <style>
+        .ktpwp-notice-preview-container {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        
+        .ktpwp-preview-controls {
+            margin: 15px 0;
+        }
+        
+        .ktpwp-preview-controls .button {
+            margin-right: 10px;
+        }
+        
+        .ktpwp-preview-info {
+            margin-top: 15px;
+            padding: 15px;
+            background: #fff;
+            border-left: 4px solid #0073aa;
+        }
+        
+        .ktpwp-preview-info ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        
+        .ktpwp-preview-info li {
+            margin: 5px 0;
+        }
+        </style>
         <?php
     }
 
@@ -1000,6 +1139,226 @@ class KTP_Settings {
             </div>
         </div>
         <?php
+    }
+
+    /**
+     * 寄付統計ダッシュボードのコールバック
+     */
+    public function donation_stats_dashboard_callback() {
+        if ( ! class_exists( 'KTPWP_Donation' ) ) {
+            echo '<p>' . esc_html__( '寄付機能が利用できません。', 'ktpwp' ) . '</p>';
+            return;
+        }
+
+        $donation_instance = KTPWP_Donation::get_instance();
+        $monthly_total = $donation_instance->get_monthly_total();
+        $monthly_progress = $donation_instance->get_monthly_progress();
+        $donation_settings = get_option( 'ktp_donation_settings', array() );
+        $monthly_goal = isset( $donation_settings['monthly_goal'] ) ? intval( $donation_settings['monthly_goal'] ) : 10000;
+
+        // 過去3ヶ月のデータを取得
+        $last_3_months = array();
+        for ( $i = 0; $i < 3; $i++ ) {
+            $month = date( 'Y-m', strtotime( "-{$i} months" ) );
+            $last_3_months[] = array(
+                'month' => $month,
+                'total' => $this->get_monthly_total_by_date( $month ),
+                'goal' => $monthly_goal
+            );
+        }
+
+        ?>
+        <div class="ktpwp-stats-dashboard">
+            <div class="ktpwp-stats-grid">
+                <div class="ktpwp-stat-card">
+                    <h4><?php esc_html_e( '今月の寄付総額', 'ktpwp' ); ?></h4>
+                    <div class="ktpwp-stat-value">¥<?php echo number_format( $monthly_total ); ?></div>
+                    <div class="ktpwp-stat-progress">
+                        <div class="ktpwp-progress-bar">
+                            <div class="ktpwp-progress-fill" style="width: <?php echo esc_attr( $monthly_progress ); ?>%"></div>
+                        </div>
+                        <span><?php echo number_format( $monthly_progress, 1 ); ?>%</span>
+                    </div>
+                </div>
+                
+                <div class="ktpwp-stat-card">
+                    <h4><?php esc_html_e( '月間目標', 'ktpwp' ); ?></h4>
+                    <div class="ktpwp-stat-value">¥<?php echo number_format( $monthly_goal ); ?></div>
+                    <div class="ktpwp-stat-remaining">
+                        <?php 
+                        $remaining = $monthly_goal - $monthly_total;
+                        if ( $remaining > 0 ) {
+                            echo '<span class="ktpwp-remaining">残り ¥' . number_format( $remaining ) . '</span>';
+                        } else {
+                            echo '<span class="ktpwp-achieved">目標達成！</span>';
+                        }
+                        ?>
+                    </div>
+                </div>
+                
+                <div class="ktpwp-stat-card">
+                    <h4><?php esc_html_e( '過去3ヶ月の推移', 'ktpwp' ); ?></h4>
+                    <div class="ktpwp-monthly-chart">
+                        <?php foreach ( $last_3_months as $month_data ): ?>
+                        <div class="ktpwp-monthly-bar">
+                            <div class="ktpwp-bar-label"><?php echo esc_html( date( 'M', strtotime( $month_data['month'] . '-01' ) ) ); ?></div>
+                            <div class="ktpwp-bar-container">
+                                <div class="ktpwp-bar-fill" style="width: <?php echo esc_attr( min( 100, ( $month_data['total'] / $month_data['goal'] ) * 100 ) ); ?>%"></div>
+                            </div>
+                            <div class="ktpwp-bar-value">¥<?php echo number_format( $month_data['total'] ); ?></div>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="ktpwp-stats-actions">
+                <button type="button" class="button" onclick="refreshDonationStats()">
+                    <?php esc_html_e( '統計を更新', 'ktpwp' ); ?>
+                </button>
+                <button type="button" class="button" onclick="exportDonationData()">
+                    <?php esc_html_e( 'データをエクスポート', 'ktpwp' ); ?>
+                </button>
+            </div>
+        </div>
+
+        <style>
+        .ktpwp-stats-dashboard {
+            background: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .ktpwp-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .ktpwp-stat-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            border-left: 4px solid #0073aa;
+        }
+        
+        .ktpwp-stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #0073aa;
+            margin: 10px 0;
+        }
+        
+        .ktpwp-stat-progress {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .ktpwp-progress-bar {
+            flex: 1;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .ktpwp-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #0073aa, #00a0d2);
+            transition: width 0.3s ease;
+        }
+        
+        .ktpwp-monthly-chart {
+            margin-top: 15px;
+        }
+        
+        .ktpwp-monthly-bar {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+            gap: 10px;
+        }
+        
+        .ktpwp-bar-label {
+            width: 30px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .ktpwp-bar-container {
+            flex: 1;
+            height: 20px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .ktpwp-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #0073aa, #00a0d2);
+            transition: width 0.3s ease;
+        }
+        
+        .ktpwp-bar-value {
+            width: 80px;
+            font-size: 12px;
+            text-align: right;
+        }
+        
+        .ktpwp-remaining {
+            color: #d63638;
+            font-weight: bold;
+        }
+        
+        .ktpwp-achieved {
+            color: #00a32a;
+            font-weight: bold;
+        }
+        
+        .ktpwp-stats-actions {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+        }
+        
+        .ktpwp-stats-actions .button {
+            margin-right: 10px;
+        }
+        </style>
+
+        <script>
+        function refreshDonationStats() {
+            location.reload();
+        }
+        
+        function exportDonationData() {
+            // 将来的にCSVエクスポート機能を実装
+            alert('<?php esc_js_e( 'エクスポート機能は今後実装予定です。', 'ktpwp' ); ?>');
+        }
+        </script>
+        <?php
+    }
+
+    /**
+     * 指定月の寄付総額を取得
+     */
+    private function get_monthly_total_by_date( $month ) {
+        global $wpdb;
+        
+        $table_name = $wpdb->prefix . 'ktp_donations';
+        $start_date = $month . '-01';
+        $end_date = date( 'Y-m-t', strtotime( $start_date ) );
+        
+        $total = $wpdb->get_var( $wpdb->prepare(
+            "SELECT SUM(amount) FROM $table_name WHERE status = 'completed' AND created_at >= %s AND created_at <= %s",
+            $start_date,
+            $end_date
+        ) );
+        
+        return intval( $total );
     }
 
     /**
@@ -1306,11 +1665,16 @@ class KTP_Settings {
         }
         
         if ( isset( $input['notice_display_interval'] ) ) {
-            $new_input['notice_display_interval'] = max( 1, min( 365, absint( $input['notice_display_interval'] ) ) );
+            $new_input['notice_display_interval'] = max( 0, min( 365, absint( $input['notice_display_interval'] ) ) );
         }
         
         if ( isset( $input['notice_message'] ) ) {
             $new_input['notice_message'] = sanitize_textarea_field( $input['notice_message'] );
+        }
+        
+        if ( isset( $input['donation_url'] ) ) {
+            $donation_url = esc_url_raw( $input['donation_url'] );
+            $new_input['donation_url'] = $donation_url;
         }
         
         return $new_input;
@@ -2129,6 +2493,9 @@ class KTP_Settings {
             array( $this, 'print_design_section_info' ),
             'ktp-design'
         );
+
+        // 決済設定の初期化
+        $this->init_payment_settings();
 
         // アクティベーションキー
         add_settings_field(
@@ -3542,6 +3909,32 @@ define( 'WP_DEBUG_DISPLAY', false );
             // ログファイルに書き込み
             error_log( $log_message );
         }
+    }
+
+    /**
+     * 寄付通知プレビューセクションの表示
+     */
+    public function display_donation_preview_section() {
+        ?>
+        <div class="ktp-settings-section">
+            <h3><?php esc_html_e( '寄付通知プレビュー', 'ktpwp' ); ?></h3>
+            <p><?php esc_html_e( 'フロントエンドで表示される寄付通知のプレビューを確認できます。', 'ktpwp' ); ?></p>
+            <?php $this->donation_notice_preview_callback(); ?>
+        </div>
+        <?php
+    }
+
+    /**
+     * 寄付統計セクションの表示
+     */
+    public function display_donation_stats_section() {
+        ?>
+        <div class="ktp-settings-section">
+            <h3><?php esc_html_e( '寄付統計', 'ktpwp' ); ?></h3>
+            <p><?php esc_html_e( '寄付の統計情報と分析データを確認できます。', 'ktpwp' ); ?></p>
+            <?php $this->donation_stats_dashboard_callback(); ?>
+        </div>
+        <?php
     }
 }
 

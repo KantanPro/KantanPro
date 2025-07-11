@@ -351,6 +351,16 @@ class KTPWP_Assets {
             $this->enqueue_scripts( true );
             $this->localize_frontend_scripts(); // 管理画面でもフロントエンド用のAJAX設定を追加
 
+        // 決済設定ページで寄付通知のCSSを読み込み
+        if ( strpos( $hook_suffix, 'ktp-payment-settings' ) !== false ) {
+            wp_enqueue_style( 
+                'ktpwp-donation-notice-admin', 
+                plugin_dir_url( __DIR__ ) . 'css/ktpwp-donation-notice.css', 
+                array(), 
+                KTPWP_PLUGIN_VERSION 
+            );
+        }
+
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
             error_log( 'KTPWP_Assets: Admin assets enqueued for hook: ' . $hook_suffix );
         }

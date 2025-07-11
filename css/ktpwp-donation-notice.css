@@ -81,6 +81,8 @@
     display: inline-flex;
     align-items: center;
     white-space: nowrap;
+    cursor: pointer;
+    border: none;
 }
 
 .ktpwp-notice-donate-btn:hover {
@@ -268,5 +270,247 @@
 @media print {
     .ktpwp-donation-notice {
         display: none !important;
+    }
+}
+
+/* 寄付完了メッセージのスタイル */
+.ktpwp-donation-thanks {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 999998;
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    color: #ffffff;
+    padding: 0;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    line-height: 1.4;
+    transform: translateX(100%);
+    transition: transform 0.3s ease-in-out;
+    max-width: 350px;
+    min-width: 280px;
+}
+
+/* 表示されている状態 */
+.ktpwp-donation-thanks:not([style*="display: none"]) {
+    transform: translateX(0);
+}
+
+/* 寄付完了メッセージの内容 */
+.ktpwp-thanks-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    gap: 12px;
+}
+
+/* 寄付完了アイコン */
+.ktpwp-thanks-icon {
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+/* 寄付完了メッセージ */
+.ktpwp-thanks-message {
+    flex-grow: 1;
+    font-weight: 600;
+    font-size: 14px;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* 寄付確認失敗時のエラースタイル */
+.ktpwp-thanks-error {
+    background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+}
+
+.ktpwp-thanks-error .ktpwp-thanks-icon {
+    content: "⚠️";
+}
+
+/* 閉じるボタン */
+.ktpwp-thanks-close {
+    background: transparent;
+    color: #ffffff;
+    border: none;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    line-height: 1;
+    opacity: 0.8;
+    flex-shrink: 0;
+}
+
+/* 寄付完了メッセージのアニメーション */
+@keyframes ktpwp-thanks-slide-down {
+    from {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.ktpwp-donation-thanks[style*="display: block"] {
+    animation: ktpwp-thanks-slide-down 0.5s ease-out;
+}
+
+/* 寄付完了メッセージのレスポンシブ対応 */
+@media (max-width: 768px) {
+    .ktpwp-thanks-content {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 15px;
+    }
+    
+    .ktpwp-thanks-message {
+        margin-right: 0;
+        margin-bottom: 5px;
+    }
+}
+
+@media (max-width: 480px) {
+    .ktpwp-thanks-content {
+        padding: 12px 15px;
+    }
+    
+    .ktpwp-thanks-message {
+        font-size: 13px;
+        line-height: 1.5;
+    }
+    
+    .ktpwp-thanks-close {
+        font-size: 18px;
+        padding: 6px 10px;
+    }
+}
+
+/* WordPress管理バーとの競合を防ぐ（寄付完了メッセージ） */
+.admin-bar .ktpwp-donation-thanks {
+    top: 32px;
+}
+
+@media screen and (max-width: 782px) {
+    .admin-bar .ktpwp-donation-thanks {
+        top: 46px;
+    }
+}
+
+@media print {
+    .ktpwp-donation-thanks {
+        display: none !important;
+    }
+} 
+
+/* 確認中のアニメーション */
+.ktpwp-donation-checking {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 999999;
+    background: rgba(0, 0, 0, 0.8);
+    color: #ffffff;
+    padding: 30px 40px;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    line-height: 1.4;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* 確認中コンテンツ */
+.ktpwp-checking-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    text-align: center;
+}
+
+/* スピナーアニメーション */
+.ktpwp-checking-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(255, 255, 255, 0.3);
+    border-top: 4px solid #ffffff;
+    border-radius: 50%;
+    animation: ktpwp-spin 1s linear infinite;
+}
+
+/* 確認中メッセージ */
+.ktpwp-checking-message {
+    font-weight: 600;
+    font-size: 16px;
+    color: #ffffff;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* スピンアニメーション */
+@keyframes ktpwp-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* タブレット対応 */
+@media (max-width: 768px) {
+    .ktpwp-donation-checking {
+        padding: 25px 30px;
+        margin: 0 20px;
+    }
+    
+    .ktpwp-checking-spinner {
+        width: 35px;
+        height: 35px;
+    }
+    
+    .ktpwp-checking-message {
+        font-size: 15px;
+    }
+}
+
+/* モバイル対応 */
+@media (max-width: 480px) {
+    .ktpwp-donation-checking {
+        padding: 20px 25px;
+        margin: 0 15px;
+    }
+    
+    .ktpwp-checking-spinner {
+        width: 30px;
+        height: 30px;
+    }
+    
+    .ktpwp-checking-message {
+        font-size: 14px;
+    }
+}
+
+/* 高コントラストモード対応 */
+@media (prefers-contrast: high) {
+    .ktpwp-donation-checking {
+        background: #000000;
+        border: 2px solid #ffffff;
+    }
+    
+    .ktpwp-checking-spinner {
+        border-color: #ffffff;
+        border-top-color: #000000;
+    }
+}
+
+/* 動きを抑制したい場合 */
+@media (prefers-reduced-motion: reduce) {
+    .ktpwp-checking-spinner {
+        animation: none;
     }
 } 

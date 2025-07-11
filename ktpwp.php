@@ -168,8 +168,24 @@ function ktpwp_init_update_checker() {
     }
 }
 
+// === 寄付通知クラスの初期化 ===
+function ktpwp_init_donation() {
+    if ( class_exists( 'KTPWP_Donation' ) ) {
+        global $ktpwp_donation;
+        $ktpwp_donation = KTPWP_Donation::get_instance();
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP Donation: 寄付通知クラスが初期化されました' );
+        }
+    } else {
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP Donation: 寄付通知クラスが見つかりません' );
+        }
+    }
+}
+
 // プラグインが完全に読み込まれた後に実行
 add_action( 'plugins_loaded', 'ktpwp_init_update_checker' );
+add_action( 'plugins_loaded', 'ktpwp_init_donation' );
 
 // プラグインアクションリンクは更新チェッカークラスで管理
 
