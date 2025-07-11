@@ -981,24 +981,32 @@ KantanPro開発チーム
      * @return bool
      */
     private function user_has_dismissed_notice( $user_id ) {
+        $donation_settings = get_option( 'ktp_donation_settings', array() );
+        $interval_days = isset( $donation_settings['notice_display_interval'] ) ? intval( $donation_settings['notice_display_interval'] ) : 30;
+        
+        // 通知表示間隔が0の場合は常に表示（拒否状態を無視）
+        if ( $interval_days === 0 ) {
+            return false;
+        }
+        
         $dismissed_time = get_user_meta( $user_id, 'ktpwp_donation_notice_dismissed', true );
         if ( empty( $dismissed_time ) ) {
             return false;
         }
-        $donation_settings = get_option( 'ktp_donation_settings', array() );
-        $interval_days = isset( $donation_settings['notice_display_interval'] ) ? intval( $donation_settings['notice_display_interval'] ) : 30;
-        // --- ここからカスタム分岐 ---
-        // 通知表示間隔が0かつ寄付していない場合は30日ごとに再表示
-        if ( $interval_days === 0 && ! $this->user_has_donated( $user_id ) ) {
+        
+        // 寄付していないユーザーの場合は30日ごとに再表示
+        if ( ! $this->user_has_donated( $user_id ) ) {
             $interval_days = 30;
         }
-        // --- ここまでカスタム分岐 ---
-        if ( $interval_days === 0 ) {
-            return false;
-        }
+        
         $time_since_dismissed = time() - $dismissed_time;
         $interval_seconds = $interval_days * DAY_IN_SECONDS;
         $has_dismissed = $time_since_dismissed < $interval_seconds;
+        
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP Donation: user_has_dismissed_notice for user ' . $user_id . ', interval_days = ' . $interval_days . ', has_dismissed = ' . ( $has_dismissed ? 'true' : 'false' ) );
+        }
+        
         return $has_dismissed;
     }
 
