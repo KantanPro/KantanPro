@@ -270,7 +270,7 @@ class KTPWP_Donation {
     public function render_donation_form( $atts = array() ) {
         $atts = shortcode_atts( array(
             'title' => 'KantanProの開発を支援する',
-            'description' => 'このプラグインが役に立った場合、継続的な開発のためにご寄付をお願いします。',
+            'description' => '継続的な開発のためにご寄付をお願いします。',
             'amounts' => '500,1000,3000,5000',
             'show_progress' => 'true'
         ), $atts );
@@ -293,16 +293,6 @@ class KTPWP_Donation {
                 <h3><?php echo esc_html( $atts['title'] ); ?></h3>
                 <p><?php echo esc_html( $atts['description'] ); ?></p>
             </div>
-            
-            <?php if ( $atts['show_progress'] === 'true' ): ?>
-            <div class="ktpwp-donation-progress">
-                <h4>今月の目標達成状況</h4>
-                <div class="ktpwp-progress-bar">
-                    <div class="ktpwp-progress-fill" style="width: <?php echo esc_attr( $this->get_monthly_progress() ); ?>%"></div>
-                </div>
-                <p>¥<?php echo number_format( $this->get_monthly_total() ); ?> / ¥<?php echo number_format( $donation_settings['monthly_goal'] ?? 10000 ); ?></p>
-            </div>
-            <?php endif; ?>
             
             <form id="ktpwp-donation-form-element">
                 <div class="ktpwp-donation-amounts">
@@ -327,8 +317,8 @@ class KTPWP_Donation {
                 </div>
                 
                 <div class="ktpwp-donor-info">
-                    <input type="text" id="ktpwp-donor-name" placeholder="お名前（任意）">
-                    <input type="email" id="ktpwp-donor-email" placeholder="メールアドレス（任意）">
+                    <input type="text" id="ktpwp-donor-name" placeholder="お名前（任意）" autocomplete="name">
+                    <input type="email" id="ktpwp-donor-email" placeholder="メールアドレス（任意）" autocomplete="email">
                     <textarea id="ktpwp-donor-message" placeholder="メッセージ（任意）"></textarea>
                 </div>
                 
@@ -343,15 +333,6 @@ class KTPWP_Donation {
                 <div id="ktpwp-donation-messages"></div>
             </form>
             
-            <div class="ktpwp-donation-usage">
-                <h4>寄付金の使途</h4>
-                <ul>
-                    <li>サーバー運営費</li>
-                    <li>開発・保守費用</li>
-                    <li>新機能追加</li>
-                    <li>セキュリティアップデート</li>
-                </ul>
-            </div>
         </div>
         <?php
         return ob_get_clean();
@@ -364,22 +345,6 @@ class KTPWP_Donation {
      */
     public function create_payment_intent() {
         try {
-            // StripeライブラリがAJAX経由で読み込まれない問題の対策
-            $autoload_path = KANTANPRO_PLUGIN_DIR . 'vendor/autoload.php';
-            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP Donation Debug: KANTANPRO_PLUGIN_DIR = ' . KANTANPRO_PLUGIN_DIR );
-                error_log( 'KTPWP Donation Debug: Autoload path = ' . $autoload_path );
-                error_log( 'KTPWP Donation Debug: file_exists check = ' . ( file_exists( $autoload_path ) ? 'true' : 'false' ) );
-            }
-
-            if ( file_exists( $autoload_path ) ) {
-                require_once $autoload_path;
-                if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                    error_log( 'KTPWP Donation Debug: autoload.php included.' );
-                    error_log( 'KTPWP Donation Debug: class_exists("Stripe\\Stripe") = ' . ( class_exists('Stripe\\Stripe') ? 'true' : 'false' ) );
-                }
-            }
-            
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
                 error_log( 'KTPWP Donation: create_payment_intent started' );
             }
@@ -825,6 +790,14 @@ KantanPro開発チーム
         // デバッグログ
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
             error_log( 'KTPWP Donation: should_show_frontend_notice() called' );
+        }
+        
+        // 寄付ページでは通知を表示しない
+        if ( $this->has_donation_shortcode() ) {
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP Donation: on donation page, notice hidden.' );
+            }
+            return false;
         }
         
         // 寄付設定を取得
