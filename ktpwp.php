@@ -23,6 +23,11 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+// Composer autoload を読み込みます。これは Stripe ライブラリや他の依存関係に必要です。
+if ( file_exists( plugin_dir_path( __FILE__ ) . 'vendor/autoload.php' ) ) {
+    require_once plugin_dir_path( __FILE__ ) . 'vendor/autoload.php';
+}
+
 // プラグイン定数定義
 if ( ! defined( 'KANTANPRO_PLUGIN_VERSION' ) ) {
     define( 'KANTANPRO_PLUGIN_VERSION', '1.0.6(preview)' );
@@ -71,6 +76,30 @@ if ( ! defined( 'MY_PLUGIN_PATH' ) ) {
 }
 if ( ! defined( 'MY_PLUGIN_URL' ) ) {
     define( 'MY_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
+}
+
+/**
+ * プラグイン有効化フック（寄付機能用）
+ * 寄付機能に必要なデータベーステーブルを作成します。
+ */
+register_activation_hook( __FILE__, 'ktpwp_donation_activation' );
+function ktpwp_donation_activation() {
+    // KTPWP_Donationクラスを読み込み
+    if ( ! class_exists( 'KTPWP_Donation' ) ) {
+        require_once KANTANPRO_PLUGIN_DIR . 'includes/class-ktpwp-donation.php';
+    }
+    
+    // テーブル作成メソッドを呼び出し
+    if ( class_exists( 'KTPWP_Donation' ) ) {
+        $donation_instance = KTPWP_Donation::get_instance();
+        if ( method_exists( $donation_instance, 'create_donation_tables' ) ) {
+            $donation_instance->create_donation_tables();
+
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP Donation: `create_donation_tables` executed on activation.' );
+            }
+        }
+    }
 }
 
 // === WordPress標準更新システム ===

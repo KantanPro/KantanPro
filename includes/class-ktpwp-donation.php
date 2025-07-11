@@ -60,9 +60,6 @@ class KTPWP_Donation {
      * @since 1.0.0
      */
     private function init_hooks() {
-        // 寄付データテーブル作成
-        add_action( 'ktpwp_upgrade', array( $this, 'create_donation_tables' ) );
-        
         // ショートコード登録
         add_shortcode( 'ktpwp_donation', array( $this, 'render_donation_form' ) );
         
@@ -431,15 +428,6 @@ class KTPWP_Donation {
                 throw new Exception( 'Stripeシークレットキーの形式が正しくありません。' );
             }
             
-            // Stripe SDK初期化
-            if ( ! file_exists( KTPWP_PLUGIN_DIR . 'vendor/autoload.php' ) ) {
-                if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                    error_log( 'KTPWP Donation Error: Stripe SDK autoload.php not found' );
-                }
-                throw new Exception( 'Stripe SDKが見つかりません。' );
-            }
-            
-            require_once KTPWP_PLUGIN_DIR . 'vendor/autoload.php';
             \Stripe\Stripe::setApiKey( $secret_key );
             
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
@@ -1004,15 +992,6 @@ KantanPro開発チーム
         
         try {
             // Stripe SDK初期化
-            if ( file_exists( KTPWP_PLUGIN_DIR . 'vendor/autoload.php' ) ) {
-                require_once KTPWP_PLUGIN_DIR . 'vendor/autoload.php';
-            } else {
-                if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                    error_log( 'KTPWP Donation: Stripe SDK not found' );
-                }
-                return false;
-            }
-            
             \Stripe\Stripe::setApiKey( $secret_key );
             
             // Payment Intentの状態を確認
