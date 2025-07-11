@@ -24,9 +24,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Composer autoload を読み込みます。これは Stripe ライブラリや他の依存関係に必要です。
-if ( file_exists( plugin_dir_path( __FILE__ ) . 'vendor/autoload.php' ) ) {
-    require_once plugin_dir_path( __FILE__ ) . 'vendor/autoload.php';
-}
+require_once plugin_dir_path( __FILE__ ) . 'vendor/autoload.php';
 
 // プラグイン定数定義
 if ( ! defined( 'KANTANPRO_PLUGIN_VERSION' ) ) {
