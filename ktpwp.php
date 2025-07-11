@@ -135,6 +135,7 @@ function ktpwp_autoload_classes() {
         'KTPWP_Department_Manager' => 'includes/class-department-manager.php',
         'KTPWP_Terms_Of_Service' => 'includes/class-ktpwp-terms-of-service.php',
         'KTPWP_Update_Checker'  => 'includes/class-ktpwp-update-checker.php',
+        'KTPWP_Donation'        => 'includes/class-ktpwp-donation.php',
     );
 
     foreach ( $classes as $class_name => $file_path ) {

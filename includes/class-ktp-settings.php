@@ -177,6 +177,7 @@ class KTP_Settings {
         add_action( 'wp_head', array( $this, 'output_custom_styles' ) );
         add_action( 'admin_head', array( $this, 'output_custom_styles' ) );
         add_action( 'admin_init', array( $this, 'handle_default_settings_actions' ) );
+        add_action( 'admin_init', array( $this, 'init_payment_settings' ) );
 
         // ユーザーアクティビティの追跡
         add_action( 'wp_login', array( $this, 'record_user_last_login' ), 10, 2 );
@@ -482,6 +483,16 @@ class KTP_Settings {
             'ktp-terms', // メニューのスラッグ
             array( $this, 'create_terms_page' ) // 表示を処理する関数
         );
+
+        // サブメニュー - 決済設定
+        add_submenu_page(
+            'ktp-settings', // 親メニューのスラッグ
+            __( '決済設定', 'ktpwp' ), // ページタイトル
+            __( '決済設定', 'ktpwp' ), // メニュータイトル
+            'manage_options', // 権限
+            'ktp-payment-settings', // メニューのスラッグ
+            array( $this, 'create_payment_settings_page' ) // 表示を処理する関数
+        );
     }
     /**
      * 利用規約管理ページの表示
@@ -509,6 +520,837 @@ class KTP_Settings {
             ?>
         </div>
         <?php
+    }
+
+    /**
+     * 決済設定ページの表示
+     */
+    public function create_payment_settings_page() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_die( __( 'この設定ページにアクセスする権限がありません。', 'ktpwp' ) );
+        }
+
+        // 開発者パスワード認証
+        if ( ! $this->verify_developer_password() ) {
+            $this->display_payment_password_form();
+            return;
+        }
+
+        ?>
+        <div class="wrap ktp-admin-wrap">
+            <h1><span class="dashicons dashicons-money-alt"></span> <?php echo esc_html__( '決済設定', 'ktpwp' ); ?></h1>
+
+            <?php $this->display_settings_tabs( 'payment' ); ?>
+
+            <?php
+            // 認証成功メッセージ
+            if ( isset( $_GET['authenticated'] ) && $_GET['authenticated'] === '1' ) {
+                echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( '認証に成功しました。決済設定の編集が可能です。', 'ktpwp' ) . '</p></div>';
+            }
+
+            // ログアウト処理
+            if ( isset( $_GET['logout'] ) && $_GET['logout'] === '1' ) {
+                ktpwp_set_session_data( 'ktp_payment_authenticated', false );
+                echo '<div class="notice notice-info is-dismissible"><p>' . esc_html__( '認証を解除しました。', 'ktpwp' ) . '</p></div>';
+            }
+            ?>
+
+            <div class="ktp-settings-container">
+                <div style="margin-bottom: 20px;">
+                    <a href="<?php echo esc_url( admin_url( 'admin.php?page=ktp-payment-settings&logout=1' ) ); ?>" class="button">
+                        <?php esc_html_e( '認証解除', 'ktpwp' ); ?>
+                    </a>
+                </div>
+                
+                <form method="post" action="options.php">
+                    <?php
+                    settings_fields( 'ktp_payment_settings' );
+                    do_settings_sections( 'ktp-payment-settings' );
+                    submit_button();
+                    ?>
+                </form>
+                
+                <div class="ktp-settings-section">
+                    <h3>寄付実績</h3>
+                    <?php $this->display_donation_stats(); ?>
+                </div>
+            </div>
+        </div>
+        <?php
+    }
+
+    /**
+     * 開発者パスワード認証（決済設定用）
+     */
+    private function verify_developer_password() {
+        // セッション開始
+        ktpwp_safe_session_start();
+
+        // パスワード認証処理
+        if ( isset( $_POST['developer_password'] ) ) {
+            $password = sanitize_text_field( $_POST['developer_password'] );
+            // 利用規約管理と同じパスワードを使用
+            if ( $password === '8bee1222' ) {
+                ktpwp_set_session_data( 'ktp_payment_authenticated', true );
+                // 認証成功後、同じページにリダイレクト
+                wp_redirect( admin_url( 'admin.php?page=ktp-payment-settings&authenticated=1' ) );
+                exit;
+            } else {
+                // 認証失敗
+                ktpwp_set_session_data( 'ktp_payment_authenticated', false );
+            }
+        }
+
+        // セッションから認証状態を確認
+        return ktpwp_get_session_data( 'ktp_payment_authenticated', false ) === true;
+    }
+
+    /**
+     * 決済設定用パスワード入力フォームを表示
+     */
+    private function display_payment_password_form() {
+        ?>
+        <div class="wrap ktp-admin-wrap">
+            <h1><span class="dashicons dashicons-money-alt"></span> <?php echo esc_html__( '決済設定', 'ktpwp' ); ?></h1>
+
+            <?php $this->display_settings_tabs( 'payment' ); ?>
+
+            <div class="ktp-settings-container">
+                <div class="notice notice-warning">
+                    <p><?php echo esc_html__( '決済設定にアクセスするには開発者パスワードが必要です。', 'ktpwp' ); ?></p>
+                </div>
+                <?php
+                // 認証失敗メッセージ
+                if ( isset( $_POST['developer_password'] ) && sanitize_text_field( $_POST['developer_password'] ) !== '8bee1222' ) {
+                    echo '<div class="notice notice-error is-dismissible"><p>' . esc_html__( 'パスワードが正しくありません。', 'ktpwp' ) . '</p></div>';
+                }
+                ?>
+                <form method="post" style="max-width: 600px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <label for="developer_password" style="white-space: nowrap;"><?php echo esc_html__( '開発者パスワード', 'ktpwp' ); ?></label>
+                        <input type="password" name="developer_password" id="developer_password" class="regular-text" required style="flex: 1;" />
+                        <?php submit_button( __( '認証', 'ktpwp' ), 'primary', 'submit', false ); ?>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <?php
+    }
+
+    /**
+     * 決済設定の初期化
+     */
+    public function init_payment_settings() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
+
+        // 決済設定グループの登録
+        register_setting(
+            'ktp_payment_settings',
+            'ktp_payment_settings',
+            array( $this, 'sanitize_payment_settings' )
+        );
+
+        // 寄付設定グループの登録
+        register_setting(
+            'ktp_payment_settings',
+            'ktp_donation_settings',
+            array( $this, 'sanitize_donation_settings' )
+        );
+
+        // Stripe設定セクション
+        add_settings_section(
+            'stripe_settings',
+            __( 'Stripe設定', 'ktpwp' ),
+            array( $this, 'print_stripe_section_info' ),
+            'ktp-payment-settings'
+        );
+
+        add_settings_field(
+            'stripe_publishable_key',
+            __( 'Stripe 公開可能キー', 'ktpwp' ),
+            array( $this, 'stripe_publishable_key_callback' ),
+            'ktp-payment-settings',
+            'stripe_settings'
+        );
+
+        add_settings_field(
+            'stripe_secret_key',
+            __( 'Stripe シークレットキー', 'ktpwp' ),
+            array( $this, 'stripe_secret_key_callback' ),
+            'ktp-payment-settings',
+            'stripe_settings'
+        );
+
+        // EDD設定セクション
+        add_settings_section(
+            'edd_settings',
+            __( 'EDD連携設定', 'ktpwp' ),
+            array( $this, 'print_edd_section_info' ),
+            'ktp-payment-settings'
+        );
+
+        add_settings_field(
+            'edd_api_key',
+            __( 'EDD API キー', 'ktpwp' ),
+            array( $this, 'edd_api_key_callback' ),
+            'ktp-payment-settings',
+            'edd_settings'
+        );
+
+        add_settings_field(
+            'edd_api_token',
+            __( 'EDD API トークン', 'ktpwp' ),
+            array( $this, 'edd_api_token_callback' ),
+            'ktp-payment-settings',
+            'edd_settings'
+        );
+
+        // 寄付設定セクション
+        add_settings_section(
+            'donation_settings',
+            __( '寄付設定', 'ktpwp' ),
+            array( $this, 'print_donation_section_info' ),
+            'ktp-payment-settings'
+        );
+
+        add_settings_field(
+            'donation_enabled',
+            __( '寄付機能を有効化', 'ktpwp' ),
+            array( $this, 'donation_enabled_callback' ),
+            'ktp-payment-settings',
+            'donation_settings'
+        );
+
+        add_settings_field(
+            'monthly_goal',
+            __( '月間目標金額', 'ktpwp' ),
+            array( $this, 'monthly_goal_callback' ),
+            'ktp-payment-settings',
+            'donation_settings'
+        );
+
+        add_settings_field(
+            'suggested_amounts',
+            __( '推奨寄付金額', 'ktpwp' ),
+            array( $this, 'suggested_amounts_callback' ),
+            'ktp-payment-settings',
+            'donation_settings'
+        );
+
+        add_settings_field(
+            'frontend_notice_enabled',
+            __( 'フロントエンド通知を有効化', 'ktpwp' ),
+            array( $this, 'frontend_notice_enabled_callback' ),
+            'ktp-payment-settings',
+            'donation_settings'
+        );
+
+        add_settings_field(
+            'notice_display_interval',
+            __( '通知表示間隔（日）', 'ktpwp' ),
+            array( $this, 'notice_display_interval_callback' ),
+            'ktp-payment-settings',
+            'donation_settings'
+        );
+
+        add_settings_field(
+            'notice_message',
+            __( '通知メッセージ', 'ktpwp' ),
+            array( $this, 'notice_message_callback' ),
+            'ktp-payment-settings',
+            'donation_settings'
+        );
+    }
+
+    /**
+     * Stripe設定セクションの説明
+     */
+    public function print_stripe_section_info() {
+        echo '<p>' . esc_html__( 'Stripeアカウントで取得したAPIキーを入力してください。', 'ktpwp' ) . '</p>';
+    }
+
+    /**
+     * EDD設定セクションの説明
+     */
+    public function print_edd_section_info() {
+        echo '<p>' . esc_html__( '販売サイトのEasy Digital Downloads設定を入力してください。', 'ktpwp' ) . '</p>';
+    }
+
+    /**
+     * 寄付設定セクションの説明
+     */
+    public function print_donation_section_info() {
+        echo '<p>' . esc_html__( '寄付機能の基本設定を行います。通知設定は開発者専用です。', 'ktpwp' ) . '</p>';
+    }
+
+    /**
+     * Stripe公開可能キーのコールバック
+     */
+    public function stripe_publishable_key_callback() {
+        $options = get_option( 'ktp_payment_settings' );
+        ?>
+        <input type="text" 
+               id="stripe_publishable_key" 
+               name="ktp_payment_settings[stripe_publishable_key]" 
+               value="<?php echo isset( $options['stripe_publishable_key'] ) ? esc_attr( $options['stripe_publishable_key'] ) : ''; ?>" 
+               class="regular-text" 
+               placeholder="pk_test_... または pk_live_...">
+        <p class="description"><?php esc_html_e( 'Stripeダッシュボードで取得した公開可能キー', 'ktpwp' ); ?></p>
+        <?php
+    }
+
+    /**
+     * Stripeシークレットキーのコールバック
+     */
+    public function stripe_secret_key_callback() {
+        $options = get_option( 'ktp_payment_settings' );
+        $masked_value = '';
+        if ( isset( $options['stripe_secret_key'] ) && ! empty( $options['stripe_secret_key'] ) ) {
+            $masked_value = $this->mask_api_key( $this->decrypt_api_key( $options['stripe_secret_key'] ) );
+        }
+        ?>
+        <input type="password" 
+               id="stripe_secret_key" 
+               name="ktp_payment_settings[stripe_secret_key]" 
+               value="<?php echo esc_attr( $masked_value ); ?>" 
+               class="regular-text" 
+               placeholder="sk_test_... または sk_live_..."
+               autocomplete="off">
+        <p class="description">⚠️ <?php esc_html_e( '機密情報：Stripeダッシュボードで取得したシークレットキー', 'ktpwp' ); ?></p>
+        <?php
+    }
+
+    /**
+     * EDD API キーのコールバック
+     */
+    public function edd_api_key_callback() {
+        $options = get_option( 'ktp_payment_settings' );
+        $masked_value = '';
+        if ( isset( $options['edd_api_key'] ) && ! empty( $options['edd_api_key'] ) ) {
+            $masked_value = $this->mask_api_key( $this->decrypt_api_key( $options['edd_api_key'] ) );
+        }
+        ?>
+        <input type="password" 
+               id="edd_api_key" 
+               name="ktp_payment_settings[edd_api_key]" 
+               value="<?php echo esc_attr( $masked_value ); ?>" 
+               class="regular-text" 
+               placeholder="EDD API キー"
+               autocomplete="off">
+        <p class="description"><?php esc_html_e( '販売サイトのEDD API キー', 'ktpwp' ); ?></p>
+        <?php
+    }
+
+    /**
+     * EDD API トークンのコールバック
+     */
+    public function edd_api_token_callback() {
+        $options = get_option( 'ktp_payment_settings' );
+        $masked_value = '';
+        if ( isset( $options['edd_api_token'] ) && ! empty( $options['edd_api_token'] ) ) {
+            $masked_value = $this->mask_api_key( $this->decrypt_api_key( $options['edd_api_token'] ) );
+        }
+        ?>
+        <input type="password" 
+               id="edd_api_token" 
+               name="ktp_payment_settings[edd_api_token]" 
+               value="<?php echo esc_attr( $masked_value ); ?>" 
+               class="regular-text" 
+               placeholder="EDD API トークン"
+               autocomplete="off">
+        <p class="description"><?php esc_html_e( '販売サイトのEDD API トークン', 'ktpwp' ); ?></p>
+        <?php
+    }
+
+    /**
+     * 寄付機能有効化のコールバック
+     */
+    public function donation_enabled_callback() {
+        $options = get_option( 'ktp_donation_settings' );
+        ?>
+        <label>
+            <input type="checkbox" 
+                   name="ktp_donation_settings[enabled]" 
+                   value="1" 
+                   <?php checked( isset( $options['enabled'] ) ? $options['enabled'] : false, 1 ); ?>>
+            <?php esc_html_e( '寄付機能を有効にする', 'ktpwp' ); ?>
+        </label>
+        <?php
+    }
+
+    /**
+     * 月間目標金額のコールバック
+     */
+    public function monthly_goal_callback() {
+        $options = get_option( 'ktp_donation_settings' );
+        ?>
+        <input type="number" 
+               id="monthly_goal" 
+               name="ktp_donation_settings[monthly_goal]" 
+               value="<?php echo isset( $options['monthly_goal'] ) ? esc_attr( $options['monthly_goal'] ) : '10000'; ?>" 
+               min="1000" 
+               step="1000"
+               class="small-text">
+        <span><?php esc_html_e( '円', 'ktpwp' ); ?></span>
+        <p class="description"><?php esc_html_e( 'サーバー運営費などの月間目標額', 'ktpwp' ); ?></p>
+        <?php
+    }
+
+    /**
+     * 推奨寄付金額のコールバック
+     */
+    public function suggested_amounts_callback() {
+        $options = get_option( 'ktp_donation_settings' );
+        ?>
+        <input type="text" 
+               id="suggested_amounts" 
+               name="ktp_donation_settings[suggested_amounts]" 
+               value="<?php echo isset( $options['suggested_amounts'] ) ? esc_attr( $options['suggested_amounts'] ) : '500,1000,3000,5000'; ?>" 
+               class="regular-text">
+        <p class="description"><?php esc_html_e( 'カンマ区切りで複数金額を設定（例：500,1000,3000,5000）', 'ktpwp' ); ?></p>
+        <?php
+    }
+
+    /**
+     * フロントエンド通知有効化のコールバック
+     */
+    public function frontend_notice_enabled_callback() {
+        $options = get_option( 'ktp_donation_settings' );
+        ?>
+        <label>
+            <input type="checkbox" 
+                   name="ktp_donation_settings[frontend_notice_enabled]" 
+                   value="1" 
+                   <?php checked( isset( $options['frontend_notice_enabled'] ) ? $options['frontend_notice_enabled'] : false, 1 ); ?>>
+            <?php esc_html_e( 'フロントエンドで寄付通知を表示する', 'ktpwp' ); ?>
+        </label>
+        <p class="description"><?php esc_html_e( '有効にすると、KantanPro管理権限を持つユーザー向けにサイト上部に寄付の案内が表示されます', 'ktpwp' ); ?></p>
+        <?php
+    }
+
+    /**
+     * 通知表示間隔のコールバック
+     */
+    public function notice_display_interval_callback() {
+        $options = get_option( 'ktp_donation_settings' );
+        ?>
+        <input type="number" 
+               id="notice_display_interval" 
+               name="ktp_donation_settings[notice_display_interval]" 
+               value="<?php echo isset( $options['notice_display_interval'] ) ? esc_attr( $options['notice_display_interval'] ) : '30'; ?>" 
+               min="1" 
+               max="365"
+               class="small-text">
+        <span><?php esc_html_e( '日', 'ktpwp' ); ?></span>
+        <p class="description"><?php esc_html_e( 'KantanPro管理権限を持つユーザーが寄付を拒否した場合に再表示されるまでの間隔', 'ktpwp' ); ?></p>
+        <?php
+    }
+
+    /**
+     * 通知メッセージのコールバック
+     */
+    public function notice_message_callback() {
+        $options = get_option( 'ktp_donation_settings' );
+        $default_message = 'このサイトの運営にご協力いただける方は、寄付をお願いいたします。';
+        ?>
+        <textarea id="notice_message" 
+                  name="ktp_donation_settings[notice_message]" 
+                  rows="3" 
+                  cols="50" 
+                  class="large-text"><?php echo isset( $options['notice_message'] ) ? esc_textarea( $options['notice_message'] ) : $default_message; ?></textarea>
+        <p class="description"><?php esc_html_e( 'KantanPro管理権限を持つユーザー向けにフロントエンドで表示される寄付通知のメッセージ', 'ktpwp' ); ?></p>
+        <?php
+    }
+
+    /**
+     * 寄付統計の表示
+     */
+    private function display_donation_stats() {
+        if ( ! class_exists( 'KTPWP_Donation' ) ) {
+            echo '<p>' . esc_html__( '寄付機能が利用できません。', 'ktpwp' ) . '</p>';
+            return;
+        }
+
+        $donation_instance = KTPWP_Donation::get_instance();
+        $monthly_total = $donation_instance->get_monthly_total();
+        $monthly_progress = $donation_instance->get_monthly_progress();
+        $donation_settings = get_option( 'ktp_donation_settings', array() );
+        $monthly_goal = isset( $donation_settings['monthly_goal'] ) ? intval( $donation_settings['monthly_goal'] ) : 10000;
+
+        ?>
+        <div class="ktpwp-donation-stats">
+            <div class="ktpwp-stat-box">
+                <h4><?php esc_html_e( '今月の寄付総額', 'ktpwp' ); ?></h4>
+                <p class="ktpwp-stat-amount">¥<?php echo number_format( $monthly_total ); ?></p>
+            </div>
+            
+            <div class="ktpwp-stat-box">
+                <h4><?php esc_html_e( '目標達成率', 'ktpwp' ); ?></h4>
+                <p class="ktpwp-stat-progress"><?php echo number_format( $monthly_progress, 1 ); ?>%</p>
+                <div class="ktpwp-progress-bar">
+                    <div class="ktpwp-progress-fill" style="width: <?php echo esc_attr( $monthly_progress ); ?>%"></div>
+                </div>
+            </div>
+            
+            <div class="ktpwp-stat-box">
+                <h4><?php esc_html_e( '月間目標', 'ktpwp' ); ?></h4>
+                <p class="ktpwp-stat-amount">¥<?php echo number_format( $monthly_goal ); ?></p>
+            </div>
+        </div>
+        <?php
+    }
+
+    /**
+     * 寄付セクションの表示
+     */
+    private function display_donation_section() {
+        // 寄付設定を取得
+        $donation_settings = get_option( 'ktp_donation_settings', array() );
+        $payment_settings = get_option( 'ktp_payment_settings', array() );
+        
+        // 寄付機能が無効の場合は表示しない
+        if ( empty( $donation_settings['enabled'] ) ) {
+            return;
+        }
+
+        // Stripe設定が完了していない場合は表示しない
+        if ( empty( $payment_settings['stripe_publishable_key'] ) ) {
+            return;
+        }
+
+        // 寄付クラスが利用できない場合は表示しない
+        if ( ! class_exists( 'KTPWP_Donation' ) ) {
+            return;
+        }
+
+        $donation_instance = KTPWP_Donation::get_instance();
+        $monthly_total = $donation_instance->get_monthly_total();
+        $monthly_progress = $donation_instance->get_monthly_progress();
+        $monthly_goal = isset( $donation_settings['monthly_goal'] ) ? intval( $donation_settings['monthly_goal'] ) : 10000;
+        $suggested_amounts = isset( $donation_settings['suggested_amounts'] ) ? $donation_settings['suggested_amounts'] : '500,1000,3000,5000';
+
+        ?>
+        <div class="ktp-settings-section ktpwp-donation-section" style="margin-top: 30px;">
+            <h3><span class="dashicons dashicons-heart"></span> <?php esc_html_e( 'KantanPro開発支援', 'ktpwp' ); ?></h3>
+            
+            <div class="ktpwp-donation-intro">
+                <p><?php esc_html_e( 'KantanProプラグインは無料で提供していますが、継続的な開発・保守にはサーバー運営費などの固定費が発生します。', 'ktpwp' ); ?></p>
+                <p><?php esc_html_e( 'このプラグインがお役に立った場合、開発継続のためのご支援をお願いします。', 'ktpwp' ); ?></p>
+            </div>
+
+            <div class="ktpwp-donation-progress" style="margin-bottom: 20px;">
+                <h4><?php esc_html_e( '今月の目標達成状況', 'ktpwp' ); ?></h4>
+                <div class="ktpwp-progress-bar">
+                    <div class="ktpwp-progress-fill" style="width: <?php echo esc_attr( $monthly_progress ); ?>%"></div>
+                </div>
+                <p><strong>¥<?php echo number_format( $monthly_total ); ?></strong> / ¥<?php echo number_format( $monthly_goal ); ?> (<?php echo number_format( $monthly_progress, 1 ); ?>%)</p>
+            </div>
+
+            <div id="ktpwp-admin-donation-form" class="ktpwp-donation-container">
+                <div class="ktpwp-donation-amounts">
+                    <?php 
+                    $amounts = explode( ',', $suggested_amounts );
+                    foreach ( $amounts as $amount ): 
+                        $amount = intval( trim( $amount ) );
+                        if ( $amount > 0 ):
+                    ?>
+                    <button type="button" class="ktpwp-amount-btn" data-amount="<?php echo esc_attr( $amount ); ?>">
+                        ¥<?php echo number_format( $amount ); ?>
+                    </button>
+                    <?php 
+                        endif;
+                    endforeach; 
+                    ?>
+                </div>
+                
+                <div class="ktpwp-custom-amount">
+                    <label for="ktpwp-custom-amount"><?php esc_html_e( 'カスタム金額：', 'ktpwp' ); ?></label>
+                    <input type="number" id="ktpwp-custom-amount" min="100" step="100" placeholder="100" style="width: 120px;">
+                    <span><?php esc_html_e( '円', 'ktpwp' ); ?></span>
+                </div>
+                
+                <div class="ktpwp-donor-info">
+                    <input type="text" id="ktpwp-donor-name" placeholder="<?php esc_attr_e( 'お名前（任意）', 'ktpwp' ); ?>">
+                    <input type="email" id="ktpwp-donor-email" placeholder="<?php esc_attr_e( 'メールアドレス（任意）', 'ktpwp' ); ?>">
+                    <textarea id="ktpwp-donor-message" placeholder="<?php esc_attr_e( 'メッセージ（任意）', 'ktpwp' ); ?>"></textarea>
+                </div>
+                
+                <div id="ktpwp-card-element">
+                    <!-- Stripe Elements will create form elements here -->
+                </div>
+                
+                <button type="button" id="ktpwp-donate-btn" class="button button-primary ktpwp-btn-primary">
+                    <?php esc_html_e( '寄付する', 'ktpwp' ); ?>
+                </button>
+                
+                <div id="ktpwp-donation-messages"></div>
+            </div>
+            
+            <div class="ktpwp-donation-usage">
+                <h4><?php esc_html_e( 'ご支援の使途', 'ktpwp' ); ?></h4>
+                <ul>
+                    <li><?php esc_html_e( 'サーバー運営費', 'ktpwp' ); ?></li>
+                    <li><?php esc_html_e( '開発・保守費用', 'ktpwp' ); ?></li>
+                    <li><?php esc_html_e( '新機能の追加', 'ktpwp' ); ?></li>
+                    <li><?php esc_html_e( 'セキュリティアップデート', 'ktpwp' ); ?></li>
+                </ul>
+            </div>
+        </div>
+
+        <script>
+        jQuery(document).ready(function($) {
+            // 管理画面用の寄付フォーム処理
+            var currentAmount = 0;
+            
+            $('#ktpwp-admin-donation-form').on('click', '.ktpwp-amount-btn', function() {
+                $('.ktpwp-amount-btn').removeClass('active');
+                $(this).addClass('active');
+                currentAmount = parseInt($(this).data('amount'));
+                $('#ktpwp-custom-amount').val('');
+            });
+
+            $('#ktpwp-custom-amount').on('input', function() {
+                $('.ktpwp-amount-btn').removeClass('active');
+                currentAmount = parseInt($(this).val()) || 0;
+            });
+
+            $('#ktpwp-donate-btn').on('click', function() {
+                var amount = currentAmount;
+                
+                if (amount < 100) {
+                    alert('<?php esc_js_e( '最小寄付額は100円です。', 'ktpwp' ); ?>');
+                    return;
+                }
+                
+                // 寄付処理を実行
+                if (typeof Stripe !== 'undefined' && typeof ktpwp_donation !== 'undefined') {
+                    processAdminDonation(amount);
+                } else {
+                    alert('<?php esc_js_e( '寄付機能を初期化中です。ページを再読み込みしてください。', 'ktpwp' ); ?>');
+                }
+            });
+            
+            function processAdminDonation(amount) {
+                var $button = $('#ktpwp-donate-btn');
+                var $messages = $('#ktpwp-donation-messages');
+                
+                // ボタンを無効化
+                $button.prop('disabled', true).text('<?php esc_js_e( '処理中...', 'ktpwp' ); ?>');
+                
+                // 寄付情報を取得
+                var donationData = {
+                    amount: amount,
+                    donor_name: $('#ktpwp-donor-name').val().trim(),
+                    donor_email: $('#ktpwp-donor-email').val().trim(),
+                    donor_message: $('#ktpwp-donor-message').val().trim(),
+                    nonce: ktpwp_donation.nonce
+                };
+                
+                // PaymentIntentを作成
+                $.ajax({
+                    url: ktpwp_donation.ajax_url,
+                    type: 'POST',
+                    data: {
+                        action: 'ktpwp_create_payment_intent',
+                        ...donationData
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            // Stripe決済処理
+                            var stripe = Stripe(ktpwp_donation.stripe_publishable_key);
+                            var elements = stripe.elements();
+                            var cardElement = elements.create('card');
+                            cardElement.mount('#ktpwp-card-element');
+                            
+                            stripe.confirmCardPayment(response.data.client_secret, {
+                                payment_method: {
+                                    card: cardElement,
+                                    billing_details: {
+                                        name: donationData.donor_name,
+                                        email: donationData.donor_email
+                                    }
+                                }
+                            }).then(function(result) {
+                                if (result.error) {
+                                    showMessage(result.error.message, 'error');
+                                } else {
+                                    // 寄付成功
+                                    confirmDonationSuccess(response.data.donation_id, result.paymentIntent.id);
+                                }
+                            });
+                        } else {
+                            showMessage(response.data || '<?php esc_js_e( '決済の準備中にエラーが発生しました。', 'ktpwp' ); ?>', 'error');
+                        }
+                        
+                        // ボタンを有効化
+                        $button.prop('disabled', false).text('<?php esc_js_e( '寄付する', 'ktpwp' ); ?>');
+                    },
+                    error: function() {
+                        showMessage('<?php esc_js_e( '決済の準備中にエラーが発生しました。', 'ktpwp' ); ?>', 'error');
+                        $button.prop('disabled', false).text('<?php esc_js_e( '寄付する', 'ktpwp' ); ?>');
+                    }
+                });
+            }
+            
+            function confirmDonationSuccess(donationId, paymentIntentId) {
+                $.ajax({
+                    url: ktpwp_donation.ajax_url,
+                    type: 'POST',
+                    data: {
+                        action: 'ktpwp_confirm_donation',
+                        donation_id: donationId,
+                        payment_intent_id: paymentIntentId,
+                        nonce: ktpwp_donation.nonce
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            showMessage('<?php esc_js_e( 'ご寄付ありがとうございます！', 'ktpwp' ); ?>', 'success');
+                            // フォームをリセット
+                            $('#ktpwp-donor-name, #ktpwp-donor-email, #ktpwp-donor-message, #ktpwp-custom-amount').val('');
+                            $('.ktpwp-amount-btn').removeClass('active');
+                            currentAmount = 0;
+                            
+                            // 進捗バーを更新
+                            setTimeout(function() {
+                                location.reload();
+                            }, 2000);
+                        } else {
+                            showMessage(response.data || '<?php esc_js_e( '寄付の確認中にエラーが発生しました。', 'ktpwp' ); ?>', 'error');
+                        }
+                    },
+                    error: function() {
+                        showMessage('<?php esc_js_e( '寄付の確認中にエラーが発生しました。', 'ktpwp' ); ?>', 'error');
+                    }
+                });
+            }
+            
+            function showMessage(message, type) {
+                var $messages = $('#ktpwp-donation-messages');
+                $messages.removeClass('success error').addClass(type);
+                $messages.text(message).show();
+            }
+        });
+        </script>
+        <?php
+    }
+
+    /**
+     * 決済設定のサニタイズ
+     */
+    public function sanitize_payment_settings( $input ) {
+        $new_input = array();
+        
+        // Stripe設定
+        if ( isset( $input['stripe_publishable_key'] ) ) {
+            $new_input['stripe_publishable_key'] = sanitize_text_field( $input['stripe_publishable_key'] );
+        }
+        
+        if ( isset( $input['stripe_secret_key'] ) ) {
+            $secret_key = sanitize_text_field( $input['stripe_secret_key'] );
+            // マスクされた値でない場合のみ暗号化
+            if ( ! empty( $secret_key ) && strpos( $secret_key, '*' ) === false ) {
+                $new_input['stripe_secret_key'] = $this->encrypt_api_key( $secret_key );
+            } else {
+                // 既存の値を保持
+                $existing = get_option( 'ktp_payment_settings', array() );
+                $new_input['stripe_secret_key'] = isset( $existing['stripe_secret_key'] ) ? $existing['stripe_secret_key'] : '';
+            }
+        }
+        
+        // EDD設定
+        if ( isset( $input['edd_api_key'] ) ) {
+            $api_key = sanitize_text_field( $input['edd_api_key'] );
+            if ( ! empty( $api_key ) && strpos( $api_key, '*' ) === false ) {
+                $new_input['edd_api_key'] = $this->encrypt_api_key( $api_key );
+            } else {
+                $existing = get_option( 'ktp_payment_settings', array() );
+                $new_input['edd_api_key'] = isset( $existing['edd_api_key'] ) ? $existing['edd_api_key'] : '';
+            }
+        }
+        
+        if ( isset( $input['edd_api_token'] ) ) {
+            $api_token = sanitize_text_field( $input['edd_api_token'] );
+            if ( ! empty( $api_token ) && strpos( $api_token, '*' ) === false ) {
+                $new_input['edd_api_token'] = $this->encrypt_api_key( $api_token );
+            } else {
+                $existing = get_option( 'ktp_payment_settings', array() );
+                $new_input['edd_api_token'] = isset( $existing['edd_api_token'] ) ? $existing['edd_api_token'] : '';
+            }
+        }
+        
+        return $new_input;
+    }
+
+    /**
+     * 寄付設定のサニタイズ
+     */
+    public function sanitize_donation_settings( $input ) {
+        $new_input = array();
+        
+        if ( isset( $input['enabled'] ) ) {
+            $new_input['enabled'] = (bool) $input['enabled'];
+        }
+        
+        if ( isset( $input['monthly_goal'] ) ) {
+            $new_input['monthly_goal'] = max( 1000, absint( $input['monthly_goal'] ) );
+        }
+        
+        if ( isset( $input['suggested_amounts'] ) ) {
+            $new_input['suggested_amounts'] = sanitize_text_field( $input['suggested_amounts'] );
+        }
+        
+        if ( isset( $input['frontend_notice_enabled'] ) ) {
+            $new_input['frontend_notice_enabled'] = (bool) $input['frontend_notice_enabled'];
+        }
+        
+        if ( isset( $input['notice_display_interval'] ) ) {
+            $new_input['notice_display_interval'] = max( 1, min( 365, absint( $input['notice_display_interval'] ) ) );
+        }
+        
+        if ( isset( $input['notice_message'] ) ) {
+            $new_input['notice_message'] = sanitize_textarea_field( $input['notice_message'] );
+        }
+        
+        return $new_input;
+    }
+
+    /**
+     * API キーの暗号化
+     */
+    private function encrypt_api_key( $key ) {
+        if ( empty( $key ) ) {
+            return '';
+        }
+        
+        return base64_encode( $key );
+    }
+
+    /**
+     * API キーの復号化
+     */
+    private function decrypt_api_key( $encrypted_key ) {
+        if ( empty( $encrypted_key ) ) {
+            return '';
+        }
+        
+        return base64_decode( $encrypted_key );
+    }
+
+    /**
+     * API キーのマスク表示
+     */
+    private function mask_api_key( $key ) {
+        if ( empty( $key ) ) {
+            return '';
+        }
+        
+        if ( strlen( $key ) <= 8 ) {
+            return str_repeat( '*', strlen( $key ) );
+        }
+        
+        return substr( $key, 0, 4 ) . str_repeat( '*', strlen( $key ) - 8 ) . substr( $key, -4 );
     }
 
     /**
@@ -910,6 +1752,11 @@ class KTP_Settings {
                         </div>
                     </form>
                 </div>
+
+                <?php
+                // 寄付フォームの表示
+                $this->display_donation_section();
+                ?>
             </div>
         </div>
         <?php
@@ -1079,6 +1926,11 @@ class KTP_Settings {
                 'name' => __( '利用規約管理', 'ktpwp' ),
                 'url' => admin_url( 'admin.php?page=ktp-terms' ),
                 'icon' => 'dashicons-text-page',
+            ),
+            'payment' => array(
+                'name' => __( '決済設定', 'ktpwp' ),
+                'url' => admin_url( 'admin.php?page=ktp-payment-settings' ),
+                'icon' => 'dashicons-money-alt',
             ),
         );
 
