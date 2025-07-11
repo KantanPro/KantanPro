@@ -286,6 +286,16 @@ class KTPWP_Donation {
             return '<p>寄付機能の設定が完了していません。</p>';
         }
         
+        // ログイン中のユーザー情報を取得
+        $user_name = '';
+        $user_email = '';
+        $is_user_logged_in = is_user_logged_in();
+        if ( $is_user_logged_in ) {
+            $current_user = wp_get_current_user();
+            $user_name = $current_user->display_name;
+            $user_email = $current_user->user_email;
+        }
+        
         ob_start();
         ?>
         <div id="ktpwp-donation-form" class="ktpwp-donation-container">
@@ -317,8 +327,8 @@ class KTPWP_Donation {
                 </div>
                 
                 <div class="ktpwp-donor-info">
-                    <input type="text" id="ktpwp-donor-name" placeholder="お名前（任意）" autocomplete="name">
-                    <input type="email" id="ktpwp-donor-email" placeholder="メールアドレス（任意）" autocomplete="email">
+                    <input type="text" id="ktpwp-donor-name" placeholder="お名前（任意）" autocomplete="name" value="<?php echo esc_attr( $user_name ); ?>">
+                    <input type="email" id="ktpwp-donor-email" placeholder="メールアドレス（任意）" autocomplete="email" value="<?php echo esc_attr( $user_email ); ?>" <?php echo $is_user_logged_in ? 'readonly' : ''; ?>>
                     <textarea id="ktpwp-donor-message" placeholder="メッセージ（任意）"></textarea>
                 </div>
                 
@@ -891,6 +901,7 @@ KantanPro開発チーム
 
     /**
      * ユーザーが寄付したことがあるかチェック
+     * 最後の寄付から3ヶ月以内の場合は true (通知を非表示) を返す
      *
      * @since 1.0.0
      * @param int $user_id User ID
@@ -908,16 +919,33 @@ KantanPro開発チーム
         }
         
         $table_name = $wpdb->prefix . 'ktp_donations';
-        $count = $wpdb->get_var( $wpdb->prepare( 
-            "SELECT COUNT(*) FROM $table_name WHERE donor_email = %s AND status = 'completed'",
+        
+        // 最後に完了した寄付の日時を取得
+        $last_donation_date = $wpdb->get_var( $wpdb->prepare( 
+            "SELECT MAX(created_at) FROM $table_name WHERE donor_email = %s AND status = 'completed'",
             $user->user_email
         ) );
         
-        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Donation: donation count for user ' . $user->user_email . ' = ' . $count );
+        // 寄付履歴がない場合は false を返す
+        if ( ! $last_donation_date ) {
+            return false;
         }
         
-        return $count > 0;
+        // 最後の寄付から3ヶ月以内かチェック
+        try {
+            $last_donation_time = new DateTime( $last_donation_date );
+            $three_months_ago = new DateTime( '-3 months' );
+            
+            // 3ヶ月以内なら true (通知非表示)、3ヶ月以上経過していたら false (通知表示)
+            return $last_donation_time > $three_months_ago;
+            
+        } catch ( Exception $e ) {
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP Donation: Error comparing dates: ' . $e->getMessage() );
+            }
+            // エラー時は安全のため非表示にする
+            return true;
+        }
     }
 
     /**
