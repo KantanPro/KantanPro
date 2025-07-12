@@ -3,7 +3,7 @@
  * Plugin Name: KantanPro
  * Plugin URI: https://www.kantanpro.com/
  * Description: スモールビジネス向けの仕事効率化システム。ショートコード[ktpwp_all_tab]を固定ページに設置してください。
- * Version: 1.0.6(preview)
+ * Version: 1.0.8(preview)
  * Author: KantanPro
  * Author URI: https://www.kantanpro.com/kantanpro-page
  * License: GPL v2 or later
@@ -30,7 +30,7 @@ if ( file_exists( plugin_dir_path( __FILE__ ) . 'vendor/autoload.php' ) ) {
 
 // プラグイン定数定義
 if ( ! defined( 'KANTANPRO_PLUGIN_VERSION' ) ) {
-    define( 'KANTANPRO_PLUGIN_VERSION', '1.0.6(preview)' );
+    define( 'KANTANPRO_PLUGIN_VERSION', '1.0.8(preview)' );
 }
 if ( ! defined( 'KANTANPRO_PLUGIN_NAME' ) ) {
     define( 'KANTANPRO_PLUGIN_NAME', 'KantanPro' );
@@ -2812,6 +2812,29 @@ function ktpwp_get_plugin_changelog() {
     $changelog = '
     <h3>変更履歴</h3>
     <p>KantanProプラグインの主要な更新履歴をご紹介します。</p>
+    
+    <h4>1.0.8(preview) - 2025年7月</h4>
+    <ul>
+        <li><strong>寄付機能の実装</strong> - Stripe決済システム</li>
+        <li><strong>寄付進捗管理機能の追加</strong> - リアルタイム進捗表示</li>
+        <li><strong>寄付完了後の自動メール送信機能</strong> - 自動通知システム</li>
+        <li><strong>フロントエンド通知システムの実装</strong> - ユーザー体験向上</li>
+        <li><strong>管理画面での寄付履歴確認機能</strong> - 管理機能強化</li>
+        <li><strong>セキュリティ機能のさらなる強化</strong> - セキュリティ向上</li>
+        <li><strong>パフォーマンス最適化とUI/UX改善</strong> - 操作性向上</li>
+        <li><strong>エラーハンドリングの強化</strong> - 安定性向上</li>
+        <li><strong>データベース構造の最適化</strong> - パフォーマンス向上</li>
+    </ul>
+    
+    <h4>1.0.7(preview) - 2025年3月</h4>
+    <ul>
+        <li><strong>管理画面でのプラグイン情報表示の最適化</strong> - ユーザビリティ向上</li>
+        <li><strong>プラグインリファレンス機能の強化</strong> - ヘルプシステム改善</li>
+        <li><strong>セキュリティ機能のさらなる改善</strong> - セキュリティ強化</li>
+        <li><strong>パフォーマンス最適化とUI/UX改善</strong> - 操作性向上</li>
+        <li><strong>エラーハンドリングの強化</strong> - 安定性向上</li>
+        <li><strong>データベース構造の最適化</strong> - パフォーマンス向上</li>
+    </ul>
     
     <h4>1.0.6(preview) - 2025年1月</h4>
     <ul>
