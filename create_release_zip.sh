@@ -2,7 +2,7 @@
 
 # --- 設定 ---
 # プラグインのソースコードが格納されているディレクトリ
-SOURCE_DIR="/Users/kantanpro/ktplocal/wp/wp-content/plugins/KantanPro"
+SOURCE_DIR="/Users/kantanpro/Desktop/ktpwp/wordpress/wp-content/plugins/KantanPro"
 # 生成したZIPファイルの保存先
 DEST_PARENT_DIR="/Users/kantanpro/Desktop"
 # 保存先フォルダ名
