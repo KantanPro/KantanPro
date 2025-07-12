@@ -280,8 +280,8 @@ class KTPWP_Update_Checker {
             return;
         }
         
-        // 権限チェック
-        if ( ! current_user_can( 'update_plugins' ) ) {
+        // ログイン中の管理者のみ表示
+        if ( ! is_user_logged_in() || ! current_user_can( 'administrator' ) ) {
             return;
         }
         
@@ -291,16 +291,28 @@ class KTPWP_Update_Checker {
             return;
         }
         
-        // 通知が無視されているかチェック
-        if ( get_option( 'ktpwp_update_notice_dismissed', false ) ) {
+        // 現在のページを判定
+        $current_screen = get_current_screen();
+        $is_plugins_page = ( $current_screen && $current_screen->id === 'plugins' );
+        $is_ktpwp_page = $this->is_ktpwp_page();
+        
+        // KantanPro設置ページとプラグインリストでのみ表示
+        if ( ! $is_plugins_page && ! $is_ktpwp_page ) {
             return;
         }
+        
+        // KantanPro設置ページの場合、通知が無視されているかチェック
+        if ( $is_ktpwp_page && get_option( 'ktpwp_update_notice_dismissed', false ) ) {
+            return;
+        }
+        
+        // プラグインリストの場合は常に表示（無視フラグはチェックしない）
         
         $plugin_name = get_plugin_data( KANTANPRO_PLUGIN_FILE )['Name'];
         $new_version = $update_data['new_version'];
         
         ?>
-        <div class="notice notice-warning is-dismissible" id="ktpwp-update-notice">
+        <div class="notice notice-warning is-dismissible" id="ktpwp-update-notice" data-page-type="<?php echo esc_attr( $is_ktpwp_page ? 'ktpwp' : 'plugins' ); ?>">
             <p>
                 <strong><?php echo esc_html( $plugin_name ); ?></strong> の新しいバージョン 
                 <strong><?php echo esc_html( $new_version ); ?></strong> が利用可能です。
@@ -310,8 +322,11 @@ class KTPWP_Update_Checker {
         <script>
         jQuery(document).ready(function($) {
             $('#ktpwp-update-notice').on('click', '.notice-dismiss', function() {
+                var pageType = $('#ktpwp-update-notice').data('page-type');
+                
                 $.post(ajaxurl, {
                     action: 'ktpwp_dismiss_update_notice',
+                    page_type: pageType,
                     nonce: '<?php echo wp_create_nonce( 'ktpwp_dismiss_update_notice' ); ?>'
                 });
             });
@@ -354,6 +369,22 @@ class KTPWP_Update_Checker {
     }
     
     /**
+     * 現在のページがKantanPro設置ページかどうかを判定
+     */
+    private function is_ktpwp_page() {
+        global $post;
+        
+        // 投稿ページでない場合はfalse
+        if ( ! is_a( $post, 'WP_Post' ) ) {
+            return false;
+        }
+        
+        // KantanProショートコードが含まれているかチェック
+        return has_shortcode( $post->post_content, 'ktpwp_all_tab' ) || 
+               has_shortcode( $post->post_content, 'kantanAllTab' );
+    }
+    
+    /**
      * 更新通知の無視
      */
     public function dismiss_update_notice() {
@@ -366,7 +397,14 @@ class KTPWP_Update_Checker {
             wp_die( 'この操作を実行する権限がありません。' );
         }
         
-        update_option( 'ktpwp_update_notice_dismissed', true );
+        $page_type = isset( $_POST['page_type'] ) ? sanitize_text_field( $_POST['page_type'] ) : '';
+        
+        // KantanPro設置ページの場合のみ無視フラグを設定
+        if ( $page_type === 'ktpwp' ) {
+            update_option( 'ktpwp_update_notice_dismissed', true );
+        }
+        // プラグインリストの場合は無視フラグを設定しない（再表示される）
+        
         wp_die();
     }
     
@@ -379,8 +417,8 @@ class KTPWP_Update_Checker {
             return;
         }
         
-        // 管理者でない場合は何もしない
-        if ( ! current_user_can( 'update_plugins' ) ) {
+        // ログイン中の管理者のみ表示
+        if ( ! is_user_logged_in() || ! current_user_can( 'administrator' ) ) {
             return;
         }
         
@@ -418,7 +456,11 @@ class KTPWP_Update_Checker {
      * フロントエンドでの更新通知表示（WordPress標準の1行通知スタイル）
      */
     private function show_frontend_update_notice() {
-        // 通知が無視されているかチェック
+        // ログイン中の管理者のみ表示
+        if ( ! is_user_logged_in() || ! current_user_can( 'administrator' ) ) {
+            return;
+        }
+        // 通知が無視されているかチェック（KantanPro設置ページでのみ適用）
         if ( get_option( 'ktpwp_frontend_update_notice_dismissed', false ) ) {
             return;
         }
@@ -475,7 +517,7 @@ class KTPWP_Update_Checker {
             document.getElementById('ktpwp-frontend-update-notice').style.display = 'none';
             // bodyのマージンを削除
             document.body.style.marginTop = '';
-            // AJAX で無視フラグを設定
+            // AJAX で無視フラグを設定（KantanPro設置ページでのみ）
             if (typeof jQuery !== 'undefined') {
                 jQuery.post('<?php echo admin_url( 'admin-ajax.php' ); ?>', {
                     action: 'ktpwp_dismiss_frontend_update_notice',
@@ -511,6 +553,7 @@ class KTPWP_Update_Checker {
             update_option( 'ktpwp_frontend_dismissed_version', $update_data['new_version'] );
         }
         
+        // KantanPro設置ページでのみ無視フラグを設定
         update_option( 'ktpwp_frontend_update_notice_dismissed', true );
         wp_die();
     }
