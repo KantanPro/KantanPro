@@ -3,7 +3,7 @@
 # Source this file in your shell: source wp-cli-aliases.sh
 
 # Base WP-CLI command
-WP_BASE="php /Users/kantanpro/ktplocal/wp/wp-content/plugins/KantanPro/wp-cli.phar --path=/Users/kantanpro/ktplocal/wp"
+WP_BASE="php /Users/kantanpro/Desktop/ktpwp/wordpress/wp-content/plugins/KantanPro/wp-cli.phar --path=/Users/kantanpro/Desktop/ktpwp/wordpress"
 # Basic aliases
 alias wp="$WP_BASE"
 alias wpcli="$WP_BASE"

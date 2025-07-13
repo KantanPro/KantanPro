@@ -1,8 +1,8 @@
 # WP-CLI configuration file for KTPWP project
-path: /Users/kantanpro/ktplocal/wp
+path: /Users/kantanpro/Desktop/ktpwp/wordpress
 
 # Default URL for your WordPress site
-url: http://localhost/wp
+url: http://localhost
 
 # Database configuration
 core config:

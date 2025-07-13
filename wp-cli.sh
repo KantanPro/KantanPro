@@ -3,8 +3,8 @@
 # Usage: ./wp-cli.sh [wp-cli commands]
 
 # Set the WordPress path
-WP_PATH="/Users/kantanpro/KantanProLoalTest/wp"
-WP_CLI_PHAR="/Users/kantanpro/KantanProLoalTest/wp/wp-content/plugins/KTPWP/wp-cli.phar"
+WP_PATH="/Users/kantanpro/Desktop/ktpwp/wordpress"
+WP_CLI_PHAR="/Users/kantanpro/Desktop/ktpwp/wordpress/wp-content/plugins/KantanPro/wp-cli.phar"
 
 # Check if wp-cli.phar exists
 if [ ! -f "$WP_CLI_PHAR" ]; then
