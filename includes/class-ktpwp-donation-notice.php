@@ -116,6 +116,16 @@ class KTPWP_Donation_Notice {
         
         // 寄付URLを取得（空欄の場合はデフォルトURLを使用）
         $donation_url = ! empty( $donation_settings['donation_url'] ) ? esc_url( $donation_settings['donation_url'] ) : 'https://www.kantanpro.com/donation';
+        
+        // 管理者情報を取得
+        $admin_email = get_option( 'admin_email' );
+        $admin_name = get_option( 'blogname' );
+        
+        // POSTパラメータを追加
+        $donation_url_with_params = add_query_arg( array(
+            'admin_email' => urlencode( $admin_email ),
+            'admin_name' => urlencode( $admin_name )
+        ), $donation_url );
 
         ?>
         <div id="ktpwp-donation-notice" class="ktpwp-donation-notice" style="display: none;">
@@ -123,7 +133,7 @@ class KTPWP_Donation_Notice {
                 <span class="ktpwp-notice-icon">💝</span>
                 <span class="ktpwp-notice-message"><?php echo esc_html( $message ); ?></span>
                 <div class="ktpwp-notice-actions">
-                    <a href="<?php echo esc_url( $donation_url ); ?>" class="ktpwp-notice-donate-btn" target="_blank" rel="noopener"><?php esc_html_e( '寄付する', 'ktpwp' ); ?></a>
+                    <a href="<?php echo esc_url( $donation_url_with_params ); ?>" class="ktpwp-notice-donate-btn" target="_blank" rel="noopener"><?php esc_html_e( '寄付する', 'ktpwp' ); ?></a>
                     <button type="button" class="ktpwp-notice-dismiss-btn" aria-label="<?php esc_attr_e( '閉じる', 'ktpwp' ); ?>">×</button>
                 </div>
             </div>

@@ -337,9 +337,20 @@ class KTPWP_Shortcodes {
         // 寄付ボタンを最初に追加（常時表示）
         $donation_settings = get_option('ktp_donation_settings', array());
         $donation_url = !empty($donation_settings['donation_url']) ? esc_url($donation_settings['donation_url']) : 'https://www.kantanpro.com/donation';
+        
+        // 管理者情報を取得
+        $admin_email = get_option('admin_email');
+        $admin_name = get_option('blogname');
+        
+        // POSTパラメータを追加
+        $donation_url_with_params = add_query_arg(array(
+            'admin_email' => urlencode($admin_email),
+            'admin_name' => urlencode($admin_name)
+        ), $donation_url);
+        
         $links[] = sprintf(
             '<a href="%s" target="_blank" rel="noopener noreferrer" title="%s" style="display: inline-flex; align-items: center; gap: 4px; color: #0073aa; text-decoration: none;"><span class="material-symbols-outlined" style="font-size: 20px; vertical-align: middle;">favorite</span><span>%s</span></a>',
-            $donation_url,
+            $donation_url_with_params,
             esc_attr__('寄付する', 'ktpwp'),
             esc_html__('寄付する', 'ktpwp')
         );

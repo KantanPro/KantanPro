@@ -975,7 +975,23 @@ class KTP_Settings {
                     <span class="ktpwp-notice-icon">💝</span>
                     <span class="ktpwp-notice-message"><?php echo esc_html( $message ); ?></span>
                     <div class="ktpwp-notice-actions">
-                        <a href="#" class="ktpwp-notice-donate-btn"><?php esc_html_e( '寄付する', 'ktpwp' ); ?></a>
+                        <?php
+        // 管理者情報を取得
+        $admin_email = get_option( 'admin_email' );
+        $admin_name = get_option( 'blogname' );
+        
+        // プレビュー用のURL（実際の設定値またはデフォルト）
+        $preview_url = isset( $options['donation_url'] ) && ! empty( $options['donation_url'] ) 
+            ? $options['donation_url'] 
+            : 'https://www.kantanpro.com/donation';
+        
+        // POSTパラメータを追加
+        $preview_url_with_params = add_query_arg( array(
+            'admin_email' => urlencode( $admin_email ),
+            'admin_name' => urlencode( $admin_name )
+        ), $preview_url );
+        ?>
+        <a href="<?php echo esc_url( $preview_url_with_params ); ?>" class="ktpwp-notice-donate-btn" target="_blank" rel="noopener"><?php esc_html_e( '寄付する', 'ktpwp' ); ?></a>
                         <button type="button" class="ktpwp-notice-dismiss-btn" aria-label="<?php esc_attr_e( '閉じる', 'ktpwp' ); ?>">×</button>
                     </div>
                 </div>

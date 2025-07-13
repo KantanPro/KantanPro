@@ -1117,13 +1117,23 @@ KantanPro開発チーム
             ? $donation_settings['donation_url'] 
             : 'https://www.kantanpro.com/donation';
         
+        // 管理者情報を取得
+        $admin_email = get_option( 'admin_email' );
+        $admin_name = get_option( 'blogname' );
+        
+        // POSTパラメータを追加
+        $donation_url_with_params = add_query_arg( array(
+            'admin_email' => urlencode( $admin_email ),
+            'admin_name' => urlencode( $admin_name )
+        ), $donation_url );
+        
         ?>
         <div id="ktpwp-donation-notice" class="ktpwp-donation-notice" style="display: none;">
             <div class="ktpwp-notice-content">
                 <span class="ktpwp-notice-icon">💝</span>
                 <span class="ktpwp-notice-message"><?php echo esc_html( $message ); ?></span>
                 <div class="ktpwp-notice-actions">
-                    <a href="<?php echo esc_url( $donation_url ); ?>" class="ktpwp-notice-donate-btn" target="_blank" rel="noopener">
+                    <a href="<?php echo esc_url( $donation_url_with_params ); ?>" class="ktpwp-notice-donate-btn" target="_blank" rel="noopener">
                         <?php esc_html_e( '寄付する', 'ktpwp' ); ?>
                     </a>
                     <button type="button" class="ktpwp-notice-dismiss-btn" aria-label="<?php esc_attr_e( '閉じる', 'ktpwp' ); ?>">

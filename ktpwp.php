@@ -1844,7 +1844,18 @@ function KTPWP_Index() {
                     // 寄付ボタンを最初に追加（常時表示）
                     $donation_settings = get_option( 'ktp_donation_settings', array() );
                     $donation_url = ! empty( $donation_settings['donation_url'] ) ? esc_url( $donation_settings['donation_url'] ) : 'https://www.kantanpro.com/donation';
-                    $navigation_links .= ' <a href="' . $donation_url . '" target="_blank" rel="noopener noreferrer" title="寄付する" style="display: inline-flex; align-items: center; gap: 4px; color: #0073aa; text-decoration: none;"><span class="material-symbols-outlined" style="font-size: 20px; vertical-align: middle;">favorite</span><span>寄付する</span></a>';
+                    
+                    // 管理者情報を取得
+                    $admin_email = get_option( 'admin_email' );
+                    $admin_name = get_option( 'blogname' );
+                    
+                    // POSTパラメータを追加
+                    $donation_url_with_params = add_query_arg( array(
+                        'admin_email' => urlencode( $admin_email ),
+                        'admin_name' => urlencode( $admin_name )
+                    ), $donation_url );
+                    
+                    $navigation_links .= ' <a href="' . $donation_url_with_params . '" target="_blank" rel="noopener noreferrer" title="寄付する" style="display: inline-flex; align-items: center; gap: 4px; color: #0073aa; text-decoration: none;"><span class="material-symbols-outlined" style="font-size: 20px; vertical-align: middle;">favorite</span><span>寄付する</span></a>';
                     
                     // ログアウトボタン
                     $navigation_links .= ' <a href="' . $logout_link . '" title="ログアウト" style="display: inline-flex; align-items: center; gap: 4px; color: #0073aa; text-decoration: none;"><span class="material-symbols-outlined" style="font-size: 20px; vertical-align: middle;">logout</span></a>';
