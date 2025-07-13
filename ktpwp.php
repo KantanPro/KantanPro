@@ -937,6 +937,7 @@ function ktpwp_check_database_integrity() {
     }
 
     // 5. 既存データのチェック
+    $order_table = $wpdb->prefix . 'ktp_order';
     if ( $wpdb->get_var( "SHOW TABLES LIKE '$chat_table'" ) && $wpdb->get_var( "SHOW TABLES LIKE '$order_table'" ) ) {
         $orders_without_chat = $wpdb->get_var(
             "
