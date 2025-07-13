@@ -334,6 +334,16 @@ class KTPWP_Shortcodes {
             'community' => 'https://www.kantanpro.com/community/'
         );
 
+        // 寄付ボタンを最初に追加（常時表示）
+        $donation_settings = get_option('ktp_donation_settings', array());
+        $donation_url = !empty($donation_settings['donation_url']) ? esc_url($donation_settings['donation_url']) : 'https://www.kantanpro.com/donation';
+        $links[] = sprintf(
+            '<a href="%s" target="_blank" rel="noopener noreferrer" title="%s" style="display: inline-flex; align-items: center; gap: 4px; color: #0073aa; text-decoration: none;"><span class="material-symbols-outlined" style="font-size: 20px; vertical-align: middle;">favorite</span><span>%s</span></a>',
+            $donation_url,
+            esc_attr__('寄付する', 'ktpwp'),
+            esc_html__('寄付する', 'ktpwp')
+        );
+
         // 公式サイト（KantanPro）
         $links[] = sprintf(
             '<a href="%s" target="_blank" rel="noopener noreferrer">%s</a>',

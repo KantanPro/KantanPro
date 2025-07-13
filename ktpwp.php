@@ -1841,12 +1841,20 @@ function KTPWP_Index() {
                 // セッションの有効性も確認
                 $user_sessions = WP_Session_Tokens::get_instance( $current_user->ID );
                 if ( $user_sessions && ! empty( $user_sessions->get_all() ) ) {
+                    // 寄付ボタンを最初に追加（常時表示）
+                    $donation_settings = get_option( 'ktp_donation_settings', array() );
+                    $donation_url = ! empty( $donation_settings['donation_url'] ) ? esc_url( $donation_settings['donation_url'] ) : 'https://www.kantanpro.com/donation';
+                    $navigation_links .= ' <a href="' . $donation_url . '" target="_blank" rel="noopener noreferrer" title="寄付する" style="display: inline-flex; align-items: center; gap: 4px; color: #0073aa; text-decoration: none;"><span class="material-symbols-outlined" style="font-size: 20px; vertical-align: middle;">favorite</span><span>寄付する</span></a>';
+                    
+                    // ログアウトボタン
                     $navigation_links .= ' <a href="' . $logout_link . '" title="ログアウト" style="display: inline-flex; align-items: center; gap: 4px; color: #0073aa; text-decoration: none;"><span class="material-symbols-outlined" style="font-size: 20px; vertical-align: middle;">logout</span></a>';
+                    
                     // 更新リンクは編集者権限がある場合のみ
                     if ( current_user_can( 'edit_posts' ) ) {
                         $navigation_links .= ' <a href="' . $update_link_url . '" title="更新" style="display: inline-flex; align-items: center; gap: 4px; color: #0073aa; text-decoration: none;"><span class="material-symbols-outlined" style="font-size: 20px; vertical-align: middle;">refresh</span></a>';
                         $navigation_links .= ' ' . $act_key;
                     }
+                    
                     // リファレンスボタンはログインユーザー全員に表示
                     $reference_instance = KTPWP_Plugin_Reference::get_instance();
                     $navigation_links .= $reference_instance->get_reference_link();

@@ -1161,6 +1161,22 @@ form > .create-order-btn {
   outline-offset: 2px;
 }
 
+/* 寄付ボタンの特別なスタイル */
+.ktp_header .navigation-links a[href*="donation"],
+.ktp_header .navigation-links a[title*="寄付する"] {
+  background-color: #fff3cd;
+  border: 1px solid #ffeaa7;
+  color: #856404 !important;
+  font-weight: 500;
+}
+
+.ktp_header .navigation-links a[href*="donation"]:hover,
+.ktp_header .navigation-links a[title*="寄付する"]:hover {
+  background-color: #ffeaa7;
+  border-color: #fdcb6e;
+  color: #6c5ce7 !important;
+}
+
 /* ヘルプボタンの特別なスタイル */
 .ktp_header .navigation-links .ktpwp-reference-link {
   background-color: #f8f9fa;
