@@ -3,7 +3,7 @@
  * Plugin Name: KantanPro
  * Plugin URI: https://www.kantanpro.com/
  * Description: スモールビジネス向けの仕事効率化システム。ショートコード[ktpwp_all_tab]を固定ページに設置してください。
- * Version: 1.0.8(preview)
+ * Version: 1.0.9(preview)
  * Author: KantanPro
  * Author URI: https://www.kantanpro.com/kantanpro-page
  * License: GPL v2 or later
@@ -30,7 +30,7 @@ if ( file_exists( plugin_dir_path( __FILE__ ) . 'vendor/autoload.php' ) ) {
 
 // プラグイン定数定義
 if ( ! defined( 'KANTANPRO_PLUGIN_VERSION' ) ) {
-    define( 'KANTANPRO_PLUGIN_VERSION', '1.0.8(preview)' );
+    define( 'KANTANPRO_PLUGIN_VERSION', '1.0.9(preview)' );
 }
 if ( ! defined( 'KANTANPRO_PLUGIN_NAME' ) ) {
     define( 'KANTANPRO_PLUGIN_NAME', 'KantanPro' );
@@ -2804,7 +2804,7 @@ function ktpwp_get_plugin_description() {
         <li>推奨PHP拡張: GD（画像処理用）</li>
     </ul>
     
-    <h4>🆕 最新の改善点（1.0.6(preview)）</h4>
+    <h4>🆕 最新の改善点（1.0.9(preview)）</h4>
     <ul>
         <li>プラグイン説明文の大幅改善（機能詳細の追加）</li>
         <li>管理画面でのプラグイン情報表示の最適化</li>
@@ -2813,6 +2813,9 @@ function ktpwp_get_plugin_description() {
         <li>パフォーマンス最適化とUI/UX改善</li>
         <li>エラーハンドリングの強化</li>
         <li>データベース構造の最適化</li>
+        <li>寄付機能の安定化と改善</li>
+        <li>セッション管理の最適化</li>
+        <li>ファイル添付機能の強化</li>
     </ul>
     
     <h4>📞 サポート</h4>
@@ -2832,6 +2835,20 @@ function ktpwp_get_plugin_changelog() {
     $changelog = '
     <h3>変更履歴</h3>
     <p>KantanProプラグインの主要な更新履歴をご紹介します。</p>
+    
+    <h4>1.0.9(preview) - 2025年7月13日</h4>
+    <ul>
+        <li><strong>プラグイン説明文の大幅改善</strong> - 機能詳細の追加</li>
+        <li><strong>管理画面でのプラグイン情報表示の最適化</strong> - ユーザビリティ向上</li>
+        <li><strong>プラグインリファレンス機能の強化</strong> - ヘルプシステム改善</li>
+        <li><strong>セキュリティ機能のさらなる改善</strong> - セキュリティ強化</li>
+        <li><strong>パフォーマンス最適化とUI/UX改善</strong> - 操作性向上</li>
+        <li><strong>エラーハンドリングの強化</strong> - 安定性向上</li>
+        <li><strong>データベース構造の最適化</strong> - パフォーマンス向上</li>
+        <li><strong>寄付機能の安定化と改善</strong> - 機能強化</li>
+        <li><strong>セッション管理の最適化</strong> - パフォーマンス向上</li>
+        <li><strong>ファイル添付機能の強化</strong> - 機能改善</li>
+    </ul>
     
     <h4>1.0.8(preview) - 2025年7月</h4>
     <ul>
