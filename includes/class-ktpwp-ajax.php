@@ -192,6 +192,11 @@ class KTPWP_Ajax {
 		add_action( 'wp_ajax_nopriv_ktp_get_supplier_tax_category', array( $this, 'ajax_require_login' ) );
 		$this->registered_handlers[] = 'ktp_get_supplier_tax_category';
 
+		// 協力会社適格請求書ナンバー取得
+		add_action( 'wp_ajax_ktp_get_supplier_qualified_invoice_number', array( $this, 'ajax_get_supplier_qualified_invoice_number' ) );
+		add_action( 'wp_ajax_nopriv_ktp_get_supplier_qualified_invoice_number', array( $this, 'ajax_require_login' ) );
+		$this->registered_handlers[] = 'ktp_get_supplier_qualified_invoice_number';
+
 		// ▼▼▼ 一括請求書「請求済」進捗変更Ajax ▼▼▼
 		add_action(
             'wp_ajax_ktp_set_invoice_completed',
@@ -3289,6 +3294,68 @@ class KTPWP_Ajax {
 			$log_message .= ' Context: ' . print_r( $context, true );
 		}
 		error_log( $log_message );
+	}
+
+	/**
+	 * 協力会社の適格請求書ナンバーを取得
+	 */
+	public function ajax_get_supplier_qualified_invoice_number() {
+		try {
+			// デバッグログ
+			error_log( 'KTPWP Ajax: ajax_get_supplier_qualified_invoice_number called' );
+
+			// 権限チェック
+			if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
+				error_log( 'KTPWP Ajax: Permission check failed' );
+				wp_send_json_error( __( 'この操作を行う権限がありません。', 'ktpwp' ) );
+				return;
+			}
+
+			// nonce検証
+			if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( $_POST['nonce'], 'ktp_ajax_nonce' ) ) {
+				error_log( 'KTPWP Ajax: Nonce verification failed' );
+				wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'ktpwp' ) );
+				return;
+			}
+
+			// パラメータ取得
+			$supplier_id = isset( $_POST['supplier_id'] ) ? absint( $_POST['supplier_id'] ) : 0;
+
+			if ( $supplier_id <= 0 ) {
+				wp_send_json_error( '協力会社IDが無効です' );
+			}
+
+			global $wpdb;
+			$supplier_table = $wpdb->prefix . 'ktp_supplier';
+
+			// 協力会社の適格請求書ナンバーを取得
+			$qualified_invoice_number = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT qualified_invoice_number FROM `{$supplier_table}` WHERE id = %d",
+					$supplier_id
+				)
+			);
+
+			if ( $qualified_invoice_number === null ) {
+				error_log( 'KTPWP Ajax: Database error: ' . $wpdb->last_error );
+				wp_send_json_error( __( 'データベースエラーが発生しました', 'ktpwp' ) );
+				return;
+			}
+
+			$qualified_invoice_number = $qualified_invoice_number ? trim( $qualified_invoice_number ) : '';
+
+			error_log( 'KTPWP Ajax: Qualified invoice number for supplier ' . $supplier_id . ': ' . $qualified_invoice_number );
+
+			wp_send_json_success(
+				array(
+					'qualified_invoice_number' => $qualified_invoice_number,
+				)
+			);
+
+		} catch ( Exception $e ) {
+			error_log( 'KTPWP Ajax ajax_get_supplier_qualified_invoice_number Error: ' . $e->getMessage() );
+			wp_send_json_error( __( 'エラーが発生しました: ' . $e->getMessage(), 'ktpwp' ) );
+		}
 	}
 }
 

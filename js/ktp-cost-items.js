@@ -111,6 +111,91 @@
         });
     }
 
+    // 協力会社の適格請求書ナンバーを取得する関数
+    function getSupplierQualifiedInvoiceNumber(supplierId, callback) {
+        if (!supplierId || supplierId <= 0) {
+            callback('');
+            return;
+        }
+
+        $.ajax({
+            url: ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'ktp_get_supplier_qualified_invoice_number',
+                supplier_id: supplierId,
+                nonce: window.ktp_ajax_nonce
+            },
+            success: function(response) {
+                if (response.success && response.data && response.data.qualified_invoice_number) {
+                    callback(response.data.qualified_invoice_number);
+                } else {
+                    callback('');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('[COST] 協力会社適格請求書ナンバー取得エラー:', error);
+                callback('');
+            }
+        });
+    }
+
+    // 適格請求書ナンバーを考慮した利益計算
+    function calculateProfitWithQualifiedInvoice(invoiceTotal, costItems, callback) {
+        let totalCost = 0;
+        let qualifiedInvoiceCost = 0;
+        let nonQualifiedInvoiceCost = 0;
+        let processedItems = 0;
+        const totalItems = costItems.length;
+
+        if (totalItems === 0) {
+            callback(invoiceTotal, 0, 0, 0);
+            return;
+        }
+
+        costItems.forEach(function(item) {
+            const supplierId = item.supplierId || 0;
+            const amount = parseFloat(item.amount) || 0;
+            const taxRate = parseFloat(item.taxRate) || 10.0;
+
+            getSupplierQualifiedInvoiceNumber(supplierId, function(qualifiedInvoiceNumber) {
+                const hasQualifiedInvoice = qualifiedInvoiceNumber && qualifiedInvoiceNumber.trim() !== '';
+
+                if (hasQualifiedInvoice) {
+                    // 適格請求書がある場合：税抜金額のみをコストとする（仕入税額控除可能）
+                    const taxAmount = amount * (taxRate / 100) / (1 + taxRate / 100);
+                    const costAmount = amount - taxAmount;
+                    qualifiedInvoiceCost += costAmount;
+                    totalCost += costAmount;
+
+                    if (window.ktpDebugMode) {
+                        console.log('[COST] Profit Calculation - Supplier ID ' + supplierId + ' has qualified invoice: ' + qualifiedInvoiceNumber + ', Amount: ' + amount + ', Tax: ' + taxAmount + ', Cost: ' + costAmount);
+                    }
+                } else {
+                    // 適格請求書がない場合：税込金額をコストとする（仕入税額控除不可）
+                    nonQualifiedInvoiceCost += amount;
+                    totalCost += amount;
+
+                    if (window.ktpDebugMode) {
+                        console.log('[COST] Profit Calculation - Supplier ID ' + supplierId + ' has no qualified invoice, Amount: ' + amount + ', Cost: ' + amount);
+                    }
+                }
+
+                processedItems++;
+
+                if (processedItems === totalItems) {
+                    const profit = invoiceTotal - totalCost;
+
+                    if (window.ktpDebugMode) {
+                        console.log('[COST] Profit Calculation Summary - Invoice Total: ' + invoiceTotal + ', Qualified Cost: ' + qualifiedInvoiceCost + ', Non-Qualified Cost: ' + nonQualifiedInvoiceCost + ', Total Cost: ' + totalCost + ', Profit: ' + profit);
+                    }
+
+                    callback(profit, qualifiedInvoiceCost, nonQualifiedInvoiceCost, totalCost);
+                }
+            });
+        });
+    }
+
     // 利益表示を更新（修正版）
     function updateProfitDisplay() {
         let invoiceTotal = 0;
@@ -119,13 +204,14 @@
         let hasOuttax = false;
         let processedRows = 0;
         let totalRows = $('.cost-items-table tbody tr').length;
+        let costItems = [];
 
         // 請求項目の合計を計算
         $('.invoice-items-table .amount').each(function () {
             invoiceTotal += parseFloat($(this).val()) || 0;
         });
 
-        // コスト項目の合計と消費税を計算（各行ごとに協力会社の税区分で計算）
+        // コスト項目のデータを収集
         $('.cost-items-table tbody tr').each(function () {
             const $row = $(this);
             const amount = parseFloat($row.find('.amount').val()) || 0;
@@ -133,6 +219,11 @@
             const supplierId = $row.find('input[name*="[supplier_id]"]').val() || 0;
             
             costTotal += amount;
+            costItems.push({
+                supplierId: supplierId,
+                amount: amount,
+                taxRate: taxRate
+            });
             
             // 各行ごとに協力会社の税区分を取得して計算
             getSupplierTaxCategory(supplierId, function(taxCategory) {
@@ -148,6 +239,12 @@
                 // 全ての行の処理が完了したら表示を更新
                 if (processedRows === totalRows) {
                     updateCostDisplay(invoiceTotal, costTotal, costTotalTaxAmount, hasOuttax);
+                    
+                    // 適格請求書ナンバーを考慮した利益計算
+                    const invoiceTotalCeiled = Math.ceil(invoiceTotal);
+                    calculateProfitWithQualifiedInvoice(invoiceTotalCeiled, costItems, function(profit, qualifiedCost, nonQualifiedCost, totalCost) {
+                        updateProfitDisplayWithQualifiedInvoice(profit, qualifiedCost, nonQualifiedCost, totalCost);
+                    });
                 }
             });
         });
@@ -155,60 +252,24 @@
         // 行がない場合は即座に表示を更新
         if (totalRows === 0) {
             updateCostDisplay(invoiceTotal, costTotal, costTotalTaxAmount, hasOuttax);
+            updateProfitDisplayWithQualifiedInvoice(invoiceTotal, 0, 0, 0);
         }
     }
 
-    // コスト項目の表示を更新する関数
-    function updateCostDisplay(invoiceTotal, costTotal, costTotalTaxAmount, hasOuttax) {
-        const invoiceTotalCeiled = Math.ceil(invoiceTotal);
-        const costTotalCeiled = Math.ceil(costTotal);
-        const costTotalTaxAmountCeiled = Math.ceil(costTotalTaxAmount);
-        const costTotalWithTax = costTotalCeiled + costTotalTaxAmountCeiled;
-
-        // コスト項目の合計表示を更新
-        const costTotalDisplay = $('.cost-items-total');
-        if (costTotalDisplay.length > 0) {
-            console.log('[COST] 税区分判定:', {
-                hasOuttax: hasOuttax,
-                costTotalCeiled: costTotalCeiled,
-                costTotalTaxAmountCeiled: costTotalTaxAmountCeiled
-            });
-            
-            if (hasOuttax) {
-                // 外税行が1つでもあれば外税3行表示
-                costTotalDisplay.html('金額合計 : ' + costTotalCeiled.toLocaleString() + '円');
-                costTotalDisplay.show();
-                
-                const costTaxDisplay = $('.cost-items-tax');
-                if (costTaxDisplay.length > 0) {
-                    costTaxDisplay.html('消費税 : ' + costTotalTaxAmountCeiled.toLocaleString() + '円');
-                    costTaxDisplay.show();
-                }
-
-                const costTotalWithTaxDisplay = $('.cost-items-total-with-tax');
-                if (costTotalWithTaxDisplay.length > 0) {
-                    costTotalWithTaxDisplay.html('税込合計 : ' + costTotalWithTax.toLocaleString() + '円');
-                    costTotalWithTaxDisplay.show();
-                }
-            } else {
-                // 全て内税なら内税1行表示
-                costTotalDisplay.html('金額合計：' + costTotalCeiled.toLocaleString() + '円　（内税：' + costTotalTaxAmountCeiled.toLocaleString() + '円）');
-                costTotalDisplay.show();
-                
-                $('.cost-items-tax, .cost-items-total-with-tax').hide();
-            }
-        }
-
-        // 利益計算（請求項目からコスト項目税込合計を引く）
-        const profit = invoiceTotalCeiled - costTotalWithTax;
-
-        // 利益表示を更新
+    // 適格請求書ナンバーを考慮した利益表示を更新
+    function updateProfitDisplayWithQualifiedInvoice(profit, qualifiedCost, nonQualifiedCost, totalCost) {
         const profitDisplay = $('.profit-display');
         if (profitDisplay.length > 0) {
             const profitColor = profit >= 0 ? '#28a745' : '#dc3545';
-            profitDisplay.html('利益 : ' + profit.toLocaleString() + '円');
+            let profitText = '利益 : ' + profit.toLocaleString() + '円';
+            
+            // デバッグモードの場合は詳細情報も表示
+            if (window.ktpDebugMode && (qualifiedCost > 0 || nonQualifiedCost > 0)) {
+                profitText += ' (適格請求書コスト: ' + Math.ceil(qualifiedCost).toLocaleString() + '円, 非適格請求書コスト: ' + Math.ceil(nonQualifiedCost).toLocaleString() + '円)';
+            }
+            
+            profitDisplay.html(profitText);
             profitDisplay.css('color', profitColor);
-
             profitDisplay.removeClass('positive negative');
             profitDisplay.addClass(profit >= 0 ? 'positive' : 'negative');
         }
@@ -2499,4 +2560,46 @@
             }
         }, 100);
     });
+
+    // コスト項目の表示を更新する関数
+    function updateCostDisplay(invoiceTotal, costTotal, costTotalTaxAmount, hasOuttax) {
+        const invoiceTotalCeiled = Math.ceil(invoiceTotal);
+        const costTotalCeiled = Math.ceil(costTotal);
+        const costTotalTaxAmountCeiled = Math.ceil(costTotalTaxAmount);
+        const costTotalWithTax = costTotalCeiled + costTotalTaxAmountCeiled;
+
+        // コスト項目の合計表示を更新
+        const costTotalDisplay = $('.cost-items-total');
+        if (costTotalDisplay.length > 0) {
+            console.log('[COST] 税区分判定:', {
+                hasOuttax: hasOuttax,
+                costTotalCeiled: costTotalCeiled,
+                costTotalTaxAmountCeiled: costTotalTaxAmountCeiled
+            });
+            
+            if (hasOuttax) {
+                // 外税行が1つでもあれば外税3行表示
+                costTotalDisplay.html('金額合計 : ' + costTotalCeiled.toLocaleString() + '円');
+                costTotalDisplay.show();
+                
+                const costTaxDisplay = $('.cost-items-tax');
+                if (costTaxDisplay.length > 0) {
+                    costTaxDisplay.html('消費税 : ' + costTotalTaxAmountCeiled.toLocaleString() + '円');
+                    costTaxDisplay.show();
+                }
+
+                const costTotalWithTaxDisplay = $('.cost-items-total-with-tax');
+                if (costTotalWithTaxDisplay.length > 0) {
+                    costTotalWithTaxDisplay.html('税込合計 : ' + costTotalWithTax.toLocaleString() + '円');
+                    costTotalWithTaxDisplay.show();
+                }
+            } else {
+                // 全て内税なら内税1行表示
+                costTotalDisplay.html('金額合計：' + costTotalCeiled.toLocaleString() + '円　（内税：' + costTotalTaxAmountCeiled.toLocaleString() + '円）');
+                costTotalDisplay.show();
+                
+                $('.cost-items-tax, .cost-items-total-with-tax').hide();
+            }
+        }
+    }
 })(jQuery);

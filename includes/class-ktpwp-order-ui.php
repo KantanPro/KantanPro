@@ -542,7 +542,8 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 			$invoice_tax_total_ceiled = ceil( $invoice_tax_total );
 			$invoice_total_with_tax_ceiled = ceil( $invoice_total_with_tax );
 			
-			$profit = $invoice_total_with_tax_ceiled - $total_with_tax_ceiled;
+			// 適格請求書ナンバーを考慮した利益計算
+			$profit = $this->calculate_profit_with_qualified_invoice( $order_id, $items, $invoice_total_with_tax_ceiled );
 
 			// Profit display (using tax-inclusive values)
 			$profit_color = $profit >= 0 ? '#28a745' : '#dc3545';  // Green for profit, red for loss
@@ -627,6 +628,85 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 			}
 
 			return '内税'; // デフォルト値
+		}
+
+		/**
+		 * Get supplier qualified invoice number
+		 *
+		 * @since 1.0.0
+		 * @param int $supplier_id Supplier ID
+		 * @return string Qualified invoice number or empty string
+		 */
+		private function get_supplier_qualified_invoice_number( $supplier_id ) {
+			if ( ! $supplier_id || $supplier_id <= 0 ) {
+				return '';
+			}
+
+			global $wpdb;
+			$supplier_table = $wpdb->prefix . 'ktp_supplier';
+			
+			$qualified_invoice_number = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT qualified_invoice_number FROM `{$supplier_table}` WHERE id = %d",
+					$supplier_id
+				)
+			);
+
+			return $qualified_invoice_number ? trim( $qualified_invoice_number ) : '';
+		}
+
+		/**
+		 * Calculate profit considering qualified invoice numbers
+		 *
+		 * @since 1.0.0
+		 * @param int $order_id Order ID
+		 * @param array $cost_items Cost items array
+		 * @param float $invoice_total_with_tax Invoice total with tax
+		 * @return float Calculated profit
+		 */
+		private function calculate_profit_with_qualified_invoice( $order_id, $cost_items, $invoice_total_with_tax ) {
+			$total_cost = 0;
+			$qualified_invoice_cost = 0;
+			$non_qualified_invoice_cost = 0;
+			
+			foreach ( $cost_items as $item ) {
+				$supplier_id = isset( $item['supplier_id'] ) ? intval( $item['supplier_id'] ) : 0;
+				$amount = isset( $item['amount'] ) ? floatval( $item['amount'] ) : 0;
+				$tax_rate = isset( $item['tax_rate'] ) ? floatval( $item['tax_rate'] ) : 10.00;
+				
+				// 協力会社の適格請求書ナンバーを確認
+				$qualified_invoice_number = $this->get_supplier_qualified_invoice_number( $supplier_id );
+				$has_qualified_invoice = ! empty( $qualified_invoice_number );
+				
+				if ( $has_qualified_invoice ) {
+					// 適格請求書がある場合：税抜金額のみをコストとする（仕入税額控除可能）
+					$tax_amount = $amount * ( $tax_rate / 100 ) / ( 1 + $tax_rate / 100 );
+					$cost_amount = $amount - $tax_amount;
+					$qualified_invoice_cost += $cost_amount;
+					$total_cost += $cost_amount;
+					
+					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+						error_log( "KTPWP Profit Calculation - Supplier ID {$supplier_id} has qualified invoice: {$qualified_invoice_number}, Amount: {$amount}, Tax: {$tax_amount}, Cost: {$cost_amount}" );
+					}
+				} else {
+					// 適格請求書がない場合：税込金額をコストとする（仕入税額控除不可）
+					$non_qualified_invoice_cost += $amount;
+					$total_cost += $amount;
+					
+					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+						error_log( "KTPWP Profit Calculation - Supplier ID {$supplier_id} has no qualified invoice, Amount: {$amount}, Cost: {$amount}" );
+					}
+				}
+			}
+			
+			// 利益計算
+			$profit = $invoice_total_with_tax - $total_cost;
+			
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( "KTPWP Profit Calculation Summary - Order ID: {$order_id}, Invoice Total: {$invoice_total_with_tax}, Qualified Cost: {$qualified_invoice_cost}, Non-Qualified Cost: {$non_qualified_invoice_cost}, Total Cost: {$total_cost}, Profit: {$profit}" );
+			}
+			
+			return $profit;
 		}
 
 		/**
