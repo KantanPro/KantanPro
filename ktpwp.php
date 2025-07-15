@@ -656,7 +656,7 @@ function ktpwp_plugin_activation() {
 add_action( 'plugins_loaded', 'ktpwp_check_database_integrity', 5 );
 
 // プラグイン読み込み時に部署マイグレーションの完了を確認
-add_action( 'plugins_loaded', 'ktpwp_ensure_department_migration', 6 );
+// add_action( 'plugins_loaded', 'ktpwp_ensure_department_migration', 6 );
 
 // 利用規約テーブル存在チェック（自動修復）
 add_action( 'plugins_loaded', 'ktpwp_ensure_terms_table', 7 );
@@ -2306,7 +2306,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 }
 
 // プラグイン初期化時のマイグレーション実行
-add_action( 'init', 'ktpwp_ensure_department_migration' );
+// add_action( 'init', 'ktpwp_ensure_department_migration' );
 
 // 管理画面での自動マイグレーション
 add_action( 'admin_init', 'ktpwp_admin_auto_migrations' );
