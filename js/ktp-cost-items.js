@@ -175,6 +175,12 @@
                 <td style="text-align:left;">
                     <input type="number" name="cost_items[${newIndex}][amount]" class="cost-item-input amount" value="" step="0.01" readonly style="text-align:left;">
                 </td>
+                <td style="text-align:left;">
+                    <div style="display:inline-flex;align-items:center;margin-left:0;padding-left:0;">
+                        <input type="number" name="cost_items[${newIndex}][tax_rate]" class="cost-item-input tax-rate" value="10" step="1" min="0" max="100" style="width:50px; text-align:right; display:inline-block; margin-left:0; padding-left:0;" disabled>
+                        <span style="margin-left:2px; white-space:nowrap;">%</span>
+                    </div>
+                </td>
                 <td>
                     <input type="text" name="cost_items[${newIndex}][remarks]" class="cost-item-input remarks" value="" disabled>
                     <input type="hidden" name="cost_items[${newIndex}][sort_order]" value="${newIndex + 1}">
@@ -692,11 +698,13 @@
         const unitPrice = serviceData.unit_price || serviceData.price || 0;
         const quantity = serviceData.quantity || 1;
         const unit = serviceData.unit || '';
+        const taxRate = serviceData.tax_rate || 10.00;
         
         $targetRow.find('.product-name').val(productName);
         $targetRow.find('.price').val(unitPrice);
         $targetRow.find('.quantity').val(quantity);
         $targetRow.find('.unit').val(unit);
+        $targetRow.find('.tax-rate').val(taxRate);
         $targetRow.find('input').prop('disabled', false);
         
         // 金額を再計算
@@ -894,11 +902,13 @@
         const unitPrice = serviceData.unit_price || serviceData.price || 0;
         const quantity = serviceData.quantity || 1;
         const unit = serviceData.unit || '';
+        const taxRate = serviceData.tax_rate || 10.00;
         
         $newRow.find('.product-name').val(productName);
         $newRow.find('.price').val(unitPrice);
         $newRow.find('.quantity').val(quantity);
         $newRow.find('.unit').val(unit);
+        $newRow.find('.tax-rate').val(taxRate);
         $newRow.find('input').prop('disabled', false);
         
         // 金額を再計算
@@ -954,6 +964,9 @@
                     autoSaveItem('cost', newItemId, 'price', unitPrice, orderId);
                     autoSaveItem('cost', newItemId, 'quantity', quantity, orderId);
                     autoSaveItem('cost', newItemId, 'unit', unit, orderId);
+                    
+                    // 税率も保存（協力会社選択と従来ポップアップの両方に対応）
+                    autoSaveItem('cost', newItemId, 'tax_rate', taxRate, orderId);
                     
                     // 協力会社名を「仕入」フィールドに保存
                     if (window.ktpCurrentSupplierName) {

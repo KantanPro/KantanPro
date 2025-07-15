@@ -167,7 +167,7 @@ console.log('=== KTP SUPPLIER SELECTOR: SCRIPT STARTED ===');
                     const backgroundColor = index % 2 === 0 ? '#f9fafb' : '#ffffff';
                     const isSmallScreen = window.innerWidth < 600;
 
-                    // スキルデータを安全にJSON化（supplier_idも含める）
+                    // スキルデータを安全にJSON化（supplier_idと税率も含める）
                     let skillData;
                     try {
                         skillData = JSON.stringify({
@@ -176,6 +176,7 @@ console.log('=== KTP SUPPLIER SELECTOR: SCRIPT STARTED ===');
                             unit_price: unitPrice,
                             quantity: quantity,
                             unit: unit,
+                            tax_rate: Math.round(skill.tax_rate || 10),
                             frequency: frequency,
                             supplier_id: supplierId
                         });
@@ -217,6 +218,7 @@ console.log('=== KTP SUPPLIER SELECTOR: SCRIPT STARTED ===');
                                     <span style="color: #6b7280; font-size: ${isSmallScreen ? '12px' : '13px'}; flex-shrink: 0;"><strong>単価:</strong> ${unitPrice}円</span>
                                     <span style="color: #6b7280; font-size: ${isSmallScreen ? '12px' : '13px'}; flex-shrink: 0;"><strong>数量:</strong> ${window.escapeHtml(quantity)}</span>
                                     <span style="color: #6b7280; font-size: ${isSmallScreen ? '12px' : '13px'}; flex-shrink: 0;"><strong>単位:</strong> ${window.escapeHtml(unit)}</span>
+                                    <span style="color: #6b7280; font-size: ${isSmallScreen ? '12px' : '13px'}; flex-shrink: 0;"><strong>税率:</strong> ${Math.round(skill.tax_rate || 10)}%</span>
                                     <span style="color: #6b7280; font-size: ${isSmallScreen ? '12px' : '13px'}; flex-shrink: 0;" title="アクセス頻度（クリックされた回数）"><strong>頻度:</strong> ${frequency}</span>
                                 </div>
                             </div>
@@ -482,6 +484,12 @@ window.ktpAddCostRowFromSkill = function(skill, currentRow) {
             <td style="text-align:left;">
                 <input type="number" name="cost_items[${newIndex}][amount]" class="cost-item-input amount" value="" step="0.01" min="0" style="text-align:left;" readonly>
             </td>
+            <td style="text-align:left;">
+                <div style="display:inline-flex;align-items:center;margin-left:0;padding-left:0;">
+                    <input type="number" name="cost_items[${newIndex}][tax_rate]" class="cost-item-input tax-rate" value="${Math.round(skill.tax_rate || 10)}" step="1" min="0" max="100" style="width:50px; text-align:right; display:inline-block; margin-left:0; padding-left:0;">
+                    <span style="margin-left:2px; white-space:nowrap;">%</span>
+                </div>
+            </td>
             <td>
                 <input type="text" name="cost_items[${newIndex}][remarks]" class="cost-item-input remarks" value="">
                 <input type="hidden" name="cost_items[${newIndex}][sort_order]" value="${newIndex + 1}">
@@ -550,6 +558,7 @@ window.ktpAddCostRowFromSkill = function(skill, currentRow) {
                     autoSaveItem('cost', newItemId, 'price', skill.unit_price, orderId);
                     autoSaveItem('cost', newItemId, 'quantity', skill.quantity, orderId);
                     autoSaveItem('cost', newItemId, 'unit', skill.unit, orderId);
+                    autoSaveItem('cost', newItemId, 'tax_rate', Math.round(skill.tax_rate || 10), orderId);
                     
                     // supplier_idも保存
                     if (supplierId && supplierId > 0) {
@@ -607,13 +616,15 @@ window.ktpUpdateCostRowFromSkill = function(skill, currentRow) {
                 product_name: currentRow.find('.product-name').val(),
                 price: currentRow.find('.price').val(),
                 quantity: currentRow.find('.quantity').val(),
-                unit: currentRow.find('.unit').val()
+                unit: currentRow.find('.unit').val(),
+                tax_rate: currentRow.find('.tax-rate').val()
             };
             // --- UI更新 ---
             currentRow.find('.product-name').val(skill.product_name);
             currentRow.find('.price').val(window.formatDecimalDisplay(skill.unit_price));
             currentRow.find('.quantity').val(window.formatDecimalDisplay(skill.quantity || 1));
             currentRow.find('.unit').val(skill.unit);
+            currentRow.find('.tax-rate').val(Math.round(skill.tax_rate || 10));
             
             // 協力会社名を「仕入」フィールドに表示
             if (window.ktpCurrentSupplierName) {
@@ -652,6 +663,7 @@ window.ktpUpdateCostRowFromSkill = function(skill, currentRow) {
                     autoSaveItem('cost', itemId, 'price', skill.unit_price, orderId);
                     autoSaveItem('cost', itemId, 'quantity', skill.quantity, orderId);
                     autoSaveItem('cost', itemId, 'unit', skill.unit, orderId);
+                    autoSaveItem('cost', itemId, 'tax_rate', Math.round(skill.tax_rate || 10), orderId);
                     
                     // 協力会社名を「仕入」フィールドに保存
                     if (window.ktpCurrentSupplierName) {
@@ -673,6 +685,7 @@ window.ktpUpdateCostRowFromSkill = function(skill, currentRow) {
                     currentRow.find('.price').val(originalValues.price);
                     currentRow.find('.quantity').val(originalValues.quantity);
                     currentRow.find('.unit').val(originalValues.unit);
+                    currentRow.find('.tax-rate').val(originalValues.tax_rate);
                     if (typeof calculateAmount === 'function') {
                         calculateAmount(currentRow);
                     }

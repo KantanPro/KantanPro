@@ -164,7 +164,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 		 */
 		public function create_cost_items_table() {
 			global $wpdb;
-			$my_table_version = '2.3';
+			$my_table_version = '2.4'; // バージョンを更新（税率対応）
 			$table_name = $wpdb->prefix . 'ktp_order_cost_items';
 			$charset_collate = $wpdb->get_charset_collate();
 
@@ -176,6 +176,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 				'unit VARCHAR(50) NOT NULL DEFAULT ""',
 				'quantity DECIMAL(10,2) NOT NULL DEFAULT 0.00',
 				'amount INT(11) NOT NULL DEFAULT 0',
+				'tax_rate DECIMAL(5,2) NOT NULL DEFAULT 10.00', // 税率カラムを追加
 				'remarks TEXT',
 				'purchase VARCHAR(255)',
 				'ordered TINYINT(1) NOT NULL DEFAULT 0',
@@ -294,6 +295,20 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 							error_log( 'KTPWP: Failed to add purchase column to cost items table. Error: ' . $wpdb->last_error );
 						} else {
 							error_log( 'KTPWP: Successfully added purchase column to cost items table.' );
+						}
+					}
+				}
+
+				if ( version_compare( $current_version, '2.4', '<' ) ) {
+					// Add tax_rate column if not exists
+					$tax_rate_column = $wpdb->get_results( "SHOW COLUMNS FROM `{$table_name}` LIKE 'tax_rate'" );
+					if ( empty( $tax_rate_column ) ) {
+						$result = $wpdb->query( "ALTER TABLE `{$table_name}` ADD COLUMN tax_rate DECIMAL(5,2) NOT NULL DEFAULT 10.00 AFTER amount" );
+
+						if ( $result === false ) {
+							error_log( 'KTPWP: Failed to add tax_rate column to cost items table. Error: ' . $wpdb->last_error );
+						} else {
+							error_log( 'KTPWP: Successfully added tax_rate column to cost items table.' );
 						}
 					}
 				}
@@ -567,6 +582,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 					$quantity = isset( $item['quantity'] ) ? floatval( $item['quantity'] ) : 0;
 					$unit = isset( $item['unit'] ) ? sanitize_text_field( $item['unit'] ) : '';
 					$amount = isset( $item['amount'] ) ? floatval( $item['amount'] ) : $price * $quantity;
+					$tax_rate = isset( $item['tax_rate'] ) ? floatval( $item['tax_rate'] ) : 10.00; // 税率対応
 					$remarks = isset( $item['remarks'] ) ? sanitize_textarea_field( $item['remarks'] ) : '';
 					$purchase = isset( $item['purchase'] ) ? sanitize_text_field( $item['purchase'] ) : '';
 					$supplier_id = isset( $item['supplier_id'] ) ? intval( $item['supplier_id'] ) : null;
@@ -583,11 +599,12 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 						'unit' => $unit,
 						'quantity' => $quantity,
 						'amount' => $amount,
+						'tax_rate' => $tax_rate, // 税率対応
 						'remarks' => $remarks,
 						'purchase' => $purchase,
 						'updated_at' => current_time( 'mysql' ),
 					);
-					$format = array( '%d', '%s', '%f', '%s', '%f', '%f', '%s', '%s', '%s' );
+					$format = array( '%d', '%s', '%f', '%s', '%f', '%f', '%f', '%s', '%s', '%s' );
 
 					// supplier_idカラムが存在する場合のみ追加
 					$columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$table_name}` LIKE 'supplier_id'", 0 );
@@ -756,8 +773,8 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 				'unit' => '式',
 				'quantity' => 1,
 				'amount' => 0,
+				'tax_rate' => 10.00, // 税率対応
 				'remarks' => '',
-				'purchase' => '',
 				'sort_order' => 1,
 				'created_at' => current_time( 'mysql' ),
 				'updated_at' => current_time( 'mysql' ),
@@ -766,7 +783,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 			$result = $wpdb->insert(
                 $table_name,
                 $data,
-                array( '%d', '%s', '%d', '%s', '%d', '%d', '%s', '%s', '%d', '%s', '%s' )
+                array( '%d', '%s', '%f', '%s', '%f', '%f', '%f', '%s', '%d', '%s', '%s' )
 			);
 
 			if ( $result === false ) {

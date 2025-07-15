@@ -56,6 +56,7 @@ add_action(
             END as unit_price,
             quantity, 
             unit, 
+            tax_rate,
             frequency, 
             updated_at, 
             created_at 
@@ -89,10 +90,11 @@ add_action(
 			'unit_price'    => floatval( $_POST['unit_price'] ),
 			'quantity'      => intval( $_POST['quantity'] ),
 			'unit'          => sanitize_text_field( $_POST['unit'] ),
+			'tax_rate'      => floatval( $_POST['tax_rate'] ),
 			'frequency'     => sanitize_text_field( $_POST['frequency'] ),
 			'updated_at'    => current_time( 'mysql' ),
 		);
-		$format = array( '%d', '%s', '%f', '%d', '%s', '%s', '%s' );
+		$format = array( '%d', '%s', '%f', '%d', '%s', '%f', '%s', '%s' );
 		if ( ! empty( $_POST['id'] ) ) {
 			// 更新
 			$result = $wpdb->update( $table, $data, array( 'id' => intval( $_POST['id'] ) ), $format, array( '%d' ) );
