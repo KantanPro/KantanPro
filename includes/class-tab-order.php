@@ -563,8 +563,8 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 
 										// サービスが空でない項目のみリストに追加
 										if ( ! empty( trim( $product_name ) ) ) {
-											// 詳細形式：サービス：単価 × 数量/単位 = 金額円
-											$line = $product_name . '：' . number_format( $price ) . '円 × ' . $quantity . $unit . ' = ' . number_format( $item_amount ) . '円';
+											// 詳細形式：サービス：単価 × 数量/単位 = 金額円（税率X%）
+											$line = $product_name . '：' . number_format( $price ) . '円 × ' . $quantity . $unit . ' = ' . number_format( $item_amount ) . '円（税率' . $tax_rate . '%）';
 											$item_lines[] = $line;
 											// 最大文字数を計算（日本語文字も考慮）
 											$line_length = mb_strlen( $line, 'UTF-8' );
@@ -629,8 +629,8 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 												$total_tax_amount += $tax_amount;
 
 												if ( ! empty( trim( $product_name ) ) ) {
-													// 詳細形式：サービス：単価 × 数量/単位 = 金額円
-													$invoice_list .= $product_name . '：' . number_format( $price ) . '円 × ' . $quantity . $unit . ' = ' . number_format( $item_amount ) . "円\n";
+													// 詳細形式：サービス：単価 × 数量/単位 = 金額円（税率X%）
+													$invoice_list .= $product_name . '：' . number_format( $price ) . '円 × ' . $quantity . $unit . ' = ' . number_format( $item_amount ) . "円（税率{$tax_rate}%）\n";
 												}
 											}
 											$amount_ceiled = ceil( $amount );

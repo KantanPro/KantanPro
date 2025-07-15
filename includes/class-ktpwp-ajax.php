@@ -1564,7 +1564,7 @@ class KTPWP_Ajax {
 					$quantity_display = rtrim( rtrim( number_format( $quantity, 6, '.', '' ), '0' ), '.' );
 
 					if ( ! empty( trim( $product_name ) ) ) {
-						$line         = $product_name . '：' . $price_display . '円 × ' . $quantity_display . $unit . ' = ' . number_format( $item_amount ) . '円';
+						$line         = $product_name . '：' . $price_display . '円 × ' . $quantity_display . $unit . ' = ' . number_format( $item_amount ) . '円（税率' . $tax_rate . '%）';
 						$item_lines[] = $line;
 						$line_length  = mb_strlen( $line, 'UTF-8' );
 						if ( $line_length > $max_length ) {
