@@ -591,7 +591,7 @@ if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
 		private function get_changelog_content() {
 			return '<h2>変更履歴</h2>
 			
-			<h3>1.0.10(preview) - 2025年7月15日</h3>
+			<h3>1.1.0(preview) - 2025年7月15日</h3>
 			<ul>
 				<li>プラグイン説明文の大幅改善（機能詳細の追加）</li>
 				<li>管理画面でのプラグイン情報表示の最適化</li>
@@ -611,7 +611,7 @@ if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
 				<li>消費税計算ロジックの最適化（計算精度の向上）</li>
 			</ul>
 			
-			<h3>1.0.9(preview) - 2025年7月13日</h3>
+			<h3>1.0.10(preview) - 2025年7月13日</h3>
 			<ul>
 				<li>プラグイン説明文の大幅改善（機能詳細の追加）</li>
 				<li>管理画面でのプラグイン情報表示の最適化</li>
@@ -625,7 +625,7 @@ if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
 				<li>ファイル添付機能の強化</li>
 			</ul>
 			
-			<h3>1.0.8(preview) - 2025年7月</h3>
+			<h3>1.0.9(preview) - 2025年7月</h3>
 			<ul>
 				<li>寄付機能の実装（Stripe決済システム）</li>
 				<li>寄付進捗管理機能の追加</li>
@@ -638,7 +638,7 @@ if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
 				<li>データベース構造の最適化</li>
 			</ul>
 			
-			<h3>1.0.7(preview) - 2025年3月</h3>
+			<h3>1.0.8(preview) - 2025年3月</h3>
 			<ul>
 				<li>管理画面でのプラグイン情報表示の最適化</li>
 				<li>プラグインリファレンス機能の強化</li>
@@ -648,7 +648,7 @@ if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
 				<li>データベース構造の最適化</li>
 			</ul>
 			
-			<h3>1.0.6(preview) - 2025年1月</h3>
+			<h3>1.0.7(preview) - 2025年1月</h3>
 			<ul>
 				<li>管理画面でのプラグイン情報表示の最適化</li>
 				<li>プラグインリファレンス機能の強化</li>
@@ -666,19 +666,7 @@ if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
 				<li>消費税表示の最適化（請求書・受注書での表示改善）</li>
 			</ul>
 			
-			<h3>1.0.5(preview)</h3>
-			<ul>
-				<li>商品管理システムの大幅改善（職能管理から商品管理への移行）</li>
-				<li>データマイグレーション機能の追加（既存データの安全な移行）</li>
-				<li>プラグインリファレンス（ヘルプ）システムの強化</li>
-				<li>データベース構造の最適化とパフォーマンス向上</li>
-				<li>管理画面UIの改善とユーザビリティ向上</li>
-				<li>セキュリティ機能のさらなる強化</li>
-				<li>キャッシュシステムの実装</li>
-				<li>エラーハンドリングの改善</li>
-			</ul>
-			
-			<h3>1.0.4(preview)</h3>
+			<h3>1.0.6(preview) - 2024年12月</h3>
 			<ul>
 				<li>スタッフアバター表示機能の追加</li>
 				<li>完了日自動設定機能の実装（進捗変更時の自動処理）</li>
@@ -692,7 +680,7 @@ if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
 				<li>パフォーマンス最適化とUI/UX改善</li>
 			</ul>
 			
-			<h3>1.0.3(preview)</h3>
+			<h3>1.0.5(preview) - 2024年11月</h3>
 			<ul>
 				<li>シンプルな更新システムを実装</li>
 				<li>WordPress標準の更新システムに完全対応</li>
@@ -702,7 +690,7 @@ if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
 				<li>保守性の高いアーキテクチャを実現</li>
 			</ul>
 			
-			<h3>1.0.2(preview)</h3>
+			<h3>1.0.4(preview) - 2024年10月</h3>
 			<ul>
 				<li>GitHub更新通知機能の修復・強化</li>
 				<li>管理画面更新チェックツールの追加（ツール > KantanPro更新チェック）</li>
@@ -714,7 +702,7 @@ if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
 				<li>更新通知バナーの改善（管理画面表示）</li>
 			</ul>
 			
-			<h3>1.0.1(preview)</h3>
+			<h3>1.0.3(preview) - 2024年9月</h3>
 			<ul>
 				<li>最新プレビュー版リリース</li>
 				<li>ページネーション機能の全面実装（全タブ・ポップアップ対応）</li>
@@ -728,10 +716,21 @@ if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
 				<li>パフォーマンス最適化</li>
 			</ul>
 			
-			<h3>1.0.0(preview)</h3>
+			<h3>1.0.2(preview) - 2024年8月</h3>
 			<ul>
 				<li>プレビュー版リリース</li>
 				<li>6つの管理タブ（仕事リスト・伝票処理・得意先・サービス・協力会社・レポート）</li>
+				<li>受注案件の進捗管理（7段階）</li>
+				<li>受注書・請求書のPDF出力機能</li>
+				<li>顧客・サービス・協力会社のマスター管理</li>
+				<li>スタッフチャット機能</li>
+				<li>モバイル対応UI（レスポンシブデザイン）</li>
+				<li>部署管理機能</li>
+				<li>利用規約管理機能</li>
+				<li>自動更新機能（GitHub連携）</li>
+				<li>動的更新履歴システム</li>
+				<li>セキュリティ機能の強化</li>
+				<li>セッション管理最適化</li>
 			</ul>';
 		}
 
