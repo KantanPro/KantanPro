@@ -782,7 +782,7 @@
                     <input type="number" name="invoice_items[${newIndex}][price]" class="invoice-item-input price" value="${serviceData.price}" step="0.01" min="0" style="text-align:left;">
                 </td>
                 <td style="text-align:left;">
-                    <input type="number" name="invoice_items[${newIndex}][quantity]" class="invoice-item-input quantity" value="1" step="0.01" min="0" style="text-align:left;">
+                    <input type="number" name="invoice_items[${newIndex}][quantity]" class="invoice-item-input quantity" value="1" step="1" min="0" style="text-align:left;">
                 </td>
                 <td>
                     <input type="text" name="invoice_items[${newIndex}][unit]" class="invoice-item-input unit" value="${serviceData.unit}">

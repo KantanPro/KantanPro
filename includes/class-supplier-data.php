@@ -501,5 +501,25 @@ if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
 				'category' => isset( $post_data['category'] ) ? sanitize_text_field( $post_data['category'] ) : '',
 			);
 		}
+
+		/**
+		 * 指定したsupplier_idの税区分（tax_category）を取得
+		 *
+		 * @since 1.0.0
+		 * @param int $supplier_id 協力会社ID
+		 * @return string 税区分（'外税' または '内税'）
+		 */
+		public function get_tax_category_by_supplier_id( $supplier_id ) {
+			global $wpdb;
+			if ( empty( $supplier_id ) || $supplier_id <= 0 ) {
+				return '内税'; // デフォルト
+			}
+			$table_name = $wpdb->prefix . 'ktp_supplier';
+			$tax_category = $wpdb->get_var( $wpdb->prepare( "SELECT tax_category FROM {$table_name} WHERE id = %d", $supplier_id ) );
+			if ( $tax_category === '外税' ) {
+				return '外税';
+			}
+			return '内税';
+		}
 	}
 }
