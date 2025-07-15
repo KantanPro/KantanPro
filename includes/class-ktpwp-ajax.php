@@ -1529,6 +1529,20 @@ class KTPWP_Ajax {
 			$total_tax_amount      = 0;
 			$invoice_list          = '';
 			
+			// 顧客の税区分を取得
+			$tax_category = '内税'; // デフォルト値
+			if ( ! empty( $order->client_id ) ) {
+				$client_tax_category = $wpdb->get_var(
+					$wpdb->prepare(
+						"SELECT tax_category FROM `{$client_table}` WHERE id = %d",
+						$order->client_id
+					)
+				);
+				if ( $client_tax_category ) {
+					$tax_category = $client_tax_category;
+				}
+			}
+			
 			try {
 				$order_items = KTPWP_Order_Items::get_instance();
 				$invoice_items_from_db = $order_items->get_invoice_items( $order->id );
@@ -1555,8 +1569,14 @@ class KTPWP_Ajax {
 					$tax_rate     = isset( $item['tax_rate'] ) ? floatval( $item['tax_rate'] ) : 10.00;
 					$amount      += $item_amount;
 
-					// 消費税計算（税抜表示の場合）
-					$tax_amount = ceil( $item_amount * ( $tax_rate / 100 ) );
+					// 消費税計算（税区分に応じて）
+					if ( $tax_category === '外税' ) {
+						// 外税表示の場合：税抜金額から税額を計算
+						$tax_amount = ceil( $item_amount * ( $tax_rate / 100 ) );
+					} else {
+						// 内税表示の場合：税込金額から税額を計算
+						$tax_amount = ceil( $item_amount * ( $tax_rate / 100 ) / ( 1 + $tax_rate / 100 ) );
+					}
 					$total_tax_amount += $tax_amount;
 
 					// 小数点以下の不要な0を削除
@@ -1581,10 +1601,16 @@ class KTPWP_Ajax {
 				$total_tax_amount_ceiled = ceil( $total_tax_amount );
 				$total_with_tax = $amount_ceiled + $total_tax_amount_ceiled;
 
-				// 合計行の最大文字数を計算
-				$total_line = '合計金額：' . number_format( $amount_ceiled ) . '円';
-				$tax_line = '消費税：' . number_format( $total_tax_amount_ceiled ) . '円';
-				$total_with_tax_line = '税込合計：' . number_format( $total_with_tax ) . '円';
+				// 税区分に応じた合計行の表示
+				if ( $tax_category === '外税' ) {
+					$total_line = '外税合計：' . number_format( $amount_ceiled ) . '円';
+					$tax_line = '消費税：' . number_format( $total_tax_amount_ceiled ) . '円';
+					$total_with_tax_line = '内税合計：' . number_format( $total_with_tax ) . '円';
+				} else {
+					$total_line = '金額合計：' . number_format( $amount_ceiled ) . '円（内税：' . number_format( $total_tax_amount_ceiled ) . '円）';
+					$tax_line = ''; // 内税の場合は消費税行を非表示
+					$total_with_tax_line = ''; // 内税の場合は税込合計行を非表示
+				}
 				
 				$total_length = mb_strlen( $total_line, 'UTF-8' );
 				$tax_length = mb_strlen( $tax_line, 'UTF-8' );
@@ -1600,8 +1626,10 @@ class KTPWP_Ajax {
 
 				$invoice_list .= str_repeat( '-', $line_length ) . "\n";
 				$invoice_list .= $total_line . "\n";
-				$invoice_list .= $tax_line . "\n";
-				$invoice_list .= $total_with_tax_line;
+				if ( $tax_category === '外税' ) {
+					$invoice_list .= $tax_line . "\n";
+					$invoice_list .= $total_with_tax_line;
+				}
 			} else {
 				$invoice_list = '（請求項目未入力）';
 			}
@@ -3329,11 +3357,11 @@ function ktpwp_ajax_get_invoice_candidates() {
 				);
 			}
 
-			// 案件の請求項目を取得
+			// 案件の請求項目を取得（税率情報も含める）
 			$order_items_table = $wpdb->prefix . 'ktp_order_invoice_items';
 			$order_items       = $wpdb->get_results(
 				$wpdb->prepare(
-					"SELECT id, product_name, quantity, price, amount, unit, remarks 
+					"SELECT id, product_name, quantity, price, amount, unit, remarks, tax_rate 
                  FROM {$order_items_table} 
                  WHERE order_id = %d 
                  ORDER BY sort_order ASC, id ASC",
@@ -3346,19 +3374,60 @@ function ktpwp_ajax_get_invoice_candidates() {
 				'project_name'    => $order->project_name,
 				'completion_date' => $order->completion_date,
 				'items'           => array(),
+				'subtotal'        => 0, // 税抜合計
+				'tax_amount'      => 0, // 消費税額
+				'total_amount'    => 0, // 税込合計
 			);
 
-			// 請求項目を追加
+			// 請求項目を追加（消費税計算を含む）
 			foreach ( $order_items as $item ) {
+				$item_amount = floatval( $item->amount );
+				
+				// 税率の取得とデフォルト値処理を強化
+				$tax_rate = 10.00; // デフォルト税率
+				if ( isset( $item->tax_rate ) && $item->tax_rate !== null && $item->tax_rate !== '' ) {
+					$tax_rate = floatval( $item->tax_rate );
+					// 税率が0以下の場合や無効な値の場合はデフォルト値を使用
+					if ( $tax_rate <= 0 || is_nan( $tax_rate ) ) {
+						$tax_rate = 10.00;
+					}
+				}
+				
+				// 顧客の税区分に応じて消費税計算
+				$tax_amount = 0;
+				$display_amount = $item_amount;
+				
+				if ( $client_info->tax_category === '税抜' ) {
+					// 税抜表示の場合：金額に消費税を加算
+					$tax_amount = ceil( $item_amount * ( $tax_rate / 100 ) );
+					$display_amount = $item_amount + $tax_amount;
+				} else {
+					// 税込表示の場合：金額から消費税を算出
+					$tax_amount = ceil( $item_amount * ( $tax_rate / 100 ) / ( 1 + $tax_rate / 100 ) );
+					$display_amount = $item_amount;
+				}
+
 				$order_data['items'][] = array(
 					'id'          => $item->id,
 					'item_name'   => $item->product_name,
 					'quantity'    => $item->quantity,
 					'unit_price'  => $item->price,
-					'total_price' => $item->amount,
+					'total_price' => $display_amount, // 表示用金額
+					'tax_rate'    => floatval( $tax_rate ), // 確実に数値型で送信
+					'tax_amount'  => $tax_amount,
 					'unit'        => $item->unit,
 					'remarks'     => $item->remarks,
 				);
+				
+				// デバッグ用ログ（開発時のみ）
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG && defined( 'KTPWP_DEBUG_MODE' ) && KTPWP_DEBUG_MODE ) {
+					error_log( "税率デバッグ - 商品: {$item->product_name}, DB税率: " . ( $item->tax_rate ?? 'NULL' ) . ", 処理後税率: {$tax_rate}" );
+				}
+
+				// 合計金額を累積
+				$order_data['subtotal'] += $item_amount;
+				$order_data['tax_amount'] += $tax_amount;
+				$order_data['total_amount'] += $display_amount;
 			}
 
 			$monthly_groups[ $billing_key ]['orders'][] = $order_data;
@@ -3407,6 +3476,20 @@ function ktpwp_ajax_get_invoice_candidates() {
 	// monthly_groupsの各グループのpayment_due_dateを上書き
 	foreach ( $monthly_groups as &$group ) {
 		$group['payment_due_date'] = $payment_due_date;
+	}
+	unset( $group );
+
+	// 月別グループの合計計算を追加（消費税対応）
+	foreach ( $monthly_groups as &$group ) {
+		$group['subtotal'] = 0;
+		$group['tax_amount'] = 0;
+		$group['total_amount'] = 0;
+		
+		foreach ( $group['orders'] as $order ) {
+			$group['subtotal'] += $order['subtotal'];
+			$group['tax_amount'] += $order['tax_amount'];
+			$group['total_amount'] += $order['total_amount'];
+		}
 	}
 	unset( $group );
 
@@ -3479,6 +3562,7 @@ function ktpwp_ajax_get_invoice_candidates() {
 		'client_address' => $client_address_formatted,
 		'client_name'    => $client_info->company_name,
 		'client_contact' => $client_contact_formatted,
+		'tax_category'   => $client_info->tax_category, // 税区分を追加
 		'selected_department' => $selected_department ? array(
 			'department_name' => $selected_department->department_name,
 			'contact_person' => $selected_department->contact_person,

@@ -83,6 +83,4 @@ if ( $wpdb->get_var( "SHOW TABLES LIKE '$cost_items_table'" ) == $cost_items_tab
             error_log( "KTPWP Migration: tax_rate column already exists in $cost_items_table" );
         }
     }
-}
-
-echo "請求項目テーブルへの税率カラム追加が完了しました。\n"; 
+} 

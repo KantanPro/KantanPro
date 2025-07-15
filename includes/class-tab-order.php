@@ -541,6 +541,20 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 								$amount = 0;
 								$total_tax_amount = 0;
 								$invoice_list = '';
+								
+								// 顧客の税区分を取得
+								$tax_category = '内税'; // デフォルト値
+								if ( ! empty( $order->client_id ) ) {
+									$client_tax_category = $wpdb->get_var(
+										$wpdb->prepare(
+											"SELECT tax_category FROM `{$client_table}` WHERE id = %d",
+											$order->client_id
+										)
+									);
+									if ( $client_tax_category ) {
+										$tax_category = $client_tax_category;
+									}
+								}
 
 								if ( ! empty( $invoice_items_from_db ) ) {
 									// 実際の請求項目データがある場合
@@ -557,8 +571,14 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 										$tax_rate = isset( $item['tax_rate'] ) ? floatval( $item['tax_rate'] ) : 10.0;
 										$amount += $item_amount;
 
-										// 消費税計算（税抜表示の場合）
-										$tax_amount = ceil( $item_amount * ( $tax_rate / 100 ) );
+										// 消費税計算（税区分に応じて）
+										if ( $tax_category === '外税' ) {
+											// 外税表示の場合：税抜金額から税額を計算
+											$tax_amount = ceil( $item_amount * ( $tax_rate / 100 ) );
+										} else {
+											// 内税表示の場合：税込金額から税額を計算
+											$tax_amount = ceil( $item_amount * ( $tax_rate / 100 ) / ( 1 + $tax_rate / 100 ) );
+										}
 										$total_tax_amount += $tax_amount;
 
 										// サービスが空でない項目のみリストに追加
@@ -584,10 +604,16 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 									$total_tax_amount_ceiled = ceil( $total_tax_amount );
 									$total_with_tax = $amount_ceiled + $total_tax_amount_ceiled;
 
-									// 合計行の最大文字数を計算
-									$total_line = '合計金額：' . number_format( $amount_ceiled ) . '円';
-									$tax_line = '消費税：' . number_format( $total_tax_amount_ceiled ) . '円';
-									$total_with_tax_line = '税込合計：' . number_format( $total_with_tax ) . '円';
+									// 税区分に応じた合計行の表示
+									if ( $tax_category === '外税' ) {
+										$total_line = '外税合計：' . number_format( $amount_ceiled ) . '円';
+										$tax_line = '消費税：' . number_format( $total_tax_amount_ceiled ) . '円';
+										$total_with_tax_line = '内税合計：' . number_format( $total_with_tax ) . '円';
+									} else {
+										$total_line = '金額合計：' . number_format( $amount_ceiled ) . '円（内税：' . number_format( $total_tax_amount_ceiled ) . '円）';
+										$tax_line = ''; // 内税の場合は消費税行を非表示
+										$total_with_tax_line = ''; // 内税の場合は税込合計行を非表示
+									}
 									
 									$total_length = mb_strlen( $total_line, 'UTF-8' );
 									$tax_length = mb_strlen( $tax_line, 'UTF-8' );
@@ -605,8 +631,10 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 									// 罫線を追加
 									$invoice_list .= str_repeat( '-', $line_length ) . "\n";
 									$invoice_list .= $total_line . "\n";
-									$invoice_list .= $tax_line . "\n";
-									$invoice_list .= $total_with_tax_line;
+									if ( $tax_category === '外税' ) {
+										$invoice_list .= $tax_line . "\n";
+										$invoice_list .= $total_with_tax_line;
+									}
 								} else {
 									// 請求項目データがない場合はJSONデータ（旧形式）を試す
 									$invoice_items_json = $order->invoice_items ? sanitize_textarea_field( $order->invoice_items ) : '';
@@ -624,8 +652,14 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 												$item_amount = isset( $item['amount'] ) ? floatval( $item['amount'] ) : 0;
 												$tax_rate = isset( $item['tax_rate'] ) ? floatval( $item['tax_rate'] ) : 10.0;
 
-												// 消費税計算（税抜表示の場合）
-												$tax_amount = ceil( $item_amount * ( $tax_rate / 100 ) );
+												// 消費税計算（税区分に応じて）
+												if ( $tax_category === '外税' ) {
+													// 外税表示の場合：税抜金額から税額を計算
+													$tax_amount = ceil( $item_amount * ( $tax_rate / 100 ) );
+												} else {
+													// 内税表示の場合：税込金額から税額を計算
+													$tax_amount = ceil( $item_amount * ( $tax_rate / 100 ) / ( 1 + $tax_rate / 100 ) );
+												}
 												$total_tax_amount += $tax_amount;
 
 												if ( ! empty( trim( $product_name ) ) ) {
@@ -636,9 +670,15 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 											$amount_ceiled = ceil( $amount );
 											$total_tax_amount_ceiled = ceil( $total_tax_amount );
 											$total_with_tax = $amount_ceiled + $total_tax_amount_ceiled;
-											$invoice_list .= "\n合計金額：" . number_format( $amount_ceiled ) . '円';
-											$invoice_list .= "\n消費税：" . number_format( $total_tax_amount_ceiled ) . '円';
-											$invoice_list .= "\n税込合計：" . number_format( $total_with_tax ) . '円';
+											
+											// 税区分に応じた合計表示
+											if ( $tax_category === '外税' ) {
+												$invoice_list .= "\n外税合計：" . number_format( $amount_ceiled ) . '円';
+												$invoice_list .= "\n消費税：" . number_format( $total_tax_amount_ceiled ) . '円';
+												$invoice_list .= "\n内税合計：" . number_format( $total_with_tax ) . '円';
+											} else {
+												$invoice_list .= "\n金額合計：" . number_format( $amount_ceiled ) . '円（内税：' . number_format( $total_tax_amount_ceiled ) . '円）';
+											}
 										} else {
 											$invoice_list = sanitize_textarea_field( $invoice_items_json );
 										}
@@ -2315,6 +2355,9 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 		private function Generate_Invoice_Items_For_Preview( $order_id ) {
 			// メール生成と同じ方法でデータを取得
 			$invoice_items = $this->Get_Invoice_Items( $order_id );
+			
+			// 顧客の税区分を取得
+			$tax_category = $this->get_client_tax_category( $order_id );
 
 			// デザイン設定から奇数偶数の背景色を取得
 			$design_options = get_option( 'ktp_design_settings', array() );
@@ -2361,18 +2404,17 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 					// 1ページ目：請求金額、消費税、税込合計を表示
 					// 消費税計算
 					$tax_amount = 0;
-					$tax_inclusive = class_exists( 'KTP_Settings' ) ? KTP_Settings::get_tax_inclusive() : false;
 					
 					foreach ( $invoice_items as $item ) {
 						$item_amount = isset( $item['amount'] ) ? floatval( $item['amount'] ) : 0;
 						$item_tax_rate = isset( $item['tax_rate'] ) ? floatval( $item['tax_rate'] ) : 10.00;
 						
-						if ( $tax_inclusive ) {
-							// 税込表示の場合：税込金額から税額を計算
-							$tax_amount += $item_amount * ( $item_tax_rate / 100 ) / ( 1 + $item_tax_rate / 100 );
-						} else {
-							// 税抜表示の場合：税抜金額から税額を計算
+						if ( $tax_category === '外税' ) {
+							// 外税表示の場合：税抜金額から税額を計算
 							$tax_amount += $item_amount * ( $item_tax_rate / 100 );
+						} else {
+							// 内税表示の場合（デフォルト）：税込金額から税額を計算
+							$tax_amount += $item_amount * ( $item_tax_rate / 100 ) / ( 1 + $item_tax_rate / 100 );
 						}
 					}
 					
@@ -2380,7 +2422,12 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 					$tax_amount_ceiled = ceil( $tax_amount );
 					$total_with_tax_ceiled = ceil( $total_with_tax );
 					
-					$html .= '<h3 style="font-size: 16px; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #333;">請求項目（' . ( $page + 1 ) . '/' . $total_pages . 'p）　合計金額 ¥' . number_format( $grand_total ) . '　消費税 ¥' . number_format( $tax_amount_ceiled ) . '　税込合計 ¥' . number_format( $total_with_tax_ceiled ) . '</h3>';
+					// 税区分に応じた表示
+					if ( $tax_category === '外税' ) {
+						$html .= '<h3 style="font-size: 16px; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #333;">請求項目（' . ( $page + 1 ) . '/' . $total_pages . 'p）　外税合計 ¥' . number_format( $grand_total ) . '　消費税 ¥' . number_format( $tax_amount_ceiled ) . '　内税合計 ¥' . number_format( $total_with_tax_ceiled ) . '</h3>';
+					} else {
+						$html .= '<h3 style="font-size: 16px; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #333;">請求項目（' . ( $page + 1 ) . '/' . $total_pages . 'p）　金額合計 ¥' . number_format( $grand_total ) . '（内税 ¥' . number_format( $tax_amount_ceiled ) . '）</h3>';
+					}
 				}
 
 				// リスト表示開始（枠線なし、設定された奇数偶数背景カラー）
@@ -2478,18 +2525,17 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 				if ( $page == $total_pages - 1 ) {
 					// 消費税計算
 					$tax_amount = 0;
-					$tax_inclusive = class_exists( 'KTP_Settings' ) ? KTP_Settings::get_tax_inclusive() : false;
 					
 					foreach ( $invoice_items as $item ) {
 						$item_amount = isset( $item['amount'] ) ? floatval( $item['amount'] ) : 0;
 						$item_tax_rate = isset( $item['tax_rate'] ) ? floatval( $item['tax_rate'] ) : 10.00;
 						
-						if ( $tax_inclusive ) {
-							// 税込表示の場合：税込金額から税額を計算
-							$tax_amount += $item_amount * ( $item_tax_rate / 100 ) / ( 1 + $item_tax_rate / 100 );
-						} else {
-							// 税抜表示の場合：税抜金額から税額を計算
+						if ( $tax_category === '外税' ) {
+							// 外税表示の場合：税抜金額から税額を計算
 							$tax_amount += $item_amount * ( $item_tax_rate / 100 );
+						} else {
+							// 内税表示の場合（デフォルト）：税込金額から税額を計算
+							$tax_amount += $item_amount * ( $item_tax_rate / 100 ) / ( 1 + $item_tax_rate / 100 );
 						}
 					}
 					
@@ -2497,20 +2543,26 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 					$tax_amount_ceiled = ceil( $tax_amount );
 					$total_with_tax_ceiled = ceil( $total_with_tax );
 					
-					// 合計金額行
-					$html .= '<div style="display: flex; padding: 10px 8px; background: #e9ecef; font-weight: bold; border-top: 2px solid #ccc; margin-top: 5px; align-items: center; justify-content: flex-end;">';
-					$html .= '<div style="text-align: right;">合計金額　¥' . number_format( $grand_total ) . '</div>';
-					$html .= '</div>';
-					
-					// 消費税行
-					$html .= '<div style="display: flex; padding: 10px 8px; background: #e9ecef; font-weight: bold; border-top: 1px solid #ccc; align-items: center; justify-content: flex-end;">';
-					$html .= '<div style="text-align: right;">消費税　¥' . number_format( $tax_amount_ceiled ) . '</div>';
-					$html .= '</div>';
-					
-					// 税込合計行
-					$html .= '<div style="display: flex; padding: 10px 8px; background: #e9ecef; font-weight: bold; border-top: 1px solid #ccc; align-items: center; justify-content: flex-end;">';
-					$html .= '<div style="text-align: right;">税込合計　¥' . number_format( $total_with_tax_ceiled ) . '</div>';
-					$html .= '</div>';
+					// 税区分に応じた表示
+					if ( $tax_category === '外税' ) {
+						// 外税表示の場合
+						$html .= '<div style="display: flex; padding: 10px 8px; background: #e9ecef; font-weight: bold; border-top: 2px solid #ccc; margin-top: 5px; align-items: center; justify-content: flex-end;">';
+						$html .= '<div style="text-align: right;">外税合計　¥' . number_format( $grand_total ) . '</div>';
+						$html .= '</div>';
+						
+						$html .= '<div style="display: flex; padding: 10px 8px; background: #e9ecef; font-weight: bold; border-top: 1px solid #ccc; align-items: center; justify-content: flex-end;">';
+						$html .= '<div style="text-align: right;">消費税　¥' . number_format( $tax_amount_ceiled ) . '</div>';
+						$html .= '</div>';
+						
+						$html .= '<div style="display: flex; padding: 10px 8px; background: #e9ecef; font-weight: bold; border-top: 1px solid #ccc; align-items: center; justify-content: flex-end;">';
+						$html .= '<div style="text-align: right;">内税合計　¥' . number_format( $total_with_tax_ceiled ) . '</div>';
+						$html .= '</div>';
+					} else {
+						// 内税表示の場合（デフォルト）
+						$html .= '<div style="display: flex; padding: 10px 8px; background: #e9ecef; font-weight: bold; border-top: 2px solid #ccc; margin-top: 5px; align-items: center; justify-content: flex-end;">';
+						$html .= '<div style="text-align: right;">金額合計　¥' . number_format( $grand_total ) . '（内税 ¥' . number_format( $tax_amount_ceiled ) . '）</div>';
+						$html .= '</div>';
+					}
 				}
 
 				$html .= '</div>'; // リスト表示終了
@@ -2520,6 +2572,45 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 				'html' => $html,
 				'total' => $grand_total,
 			);
+		}
+
+		/**
+		 * 受注書に関連する顧客の税区分を取得
+		 *
+		 * @param int $order_id 受注書ID
+		 * @return string 税区分（内税または外税）
+		 * @since 1.0.0
+		 */
+		private function get_client_tax_category( $order_id ) {
+			global $wpdb;
+			
+			// 受注書から顧客IDを取得
+			$order_table = $wpdb->prefix . 'ktp_order';
+			$order = $wpdb->get_row(
+				$wpdb->prepare(
+					"SELECT client_id FROM {$order_table} WHERE id = %d",
+					$order_id
+				)
+			);
+			
+			if ( ! $order || ! $order->client_id ) {
+				return '内税'; // デフォルト値
+			}
+			
+			// 顧客テーブルから税区分を取得
+			$client_table = $wpdb->prefix . 'ktp_client';
+			$client = $wpdb->get_row(
+				$wpdb->prepare(
+					"SELECT tax_category FROM {$client_table} WHERE id = %d",
+					$order->client_id
+				)
+			);
+			
+			if ( ! $client ) {
+				return '内税'; // デフォルト値
+			}
+			
+			return $client->tax_category ?: '内税';
 		}
 
 		/**

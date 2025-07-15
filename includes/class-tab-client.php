@@ -1020,8 +1020,8 @@ if ( ! class_exists( 'Kntan_Client_Class' ) ) {
 				'税区分' => array(
 					'type' => 'select',
 					'name' => 'tax_category',
-					'options' => array( '税込', '税抜' ),
-					'default' => '税込',
+					'options' => array( '内税', '外税' ),
+					'default' => '内税',
 				),
 				'カテゴリー' => array(
 					'type' => 'text',

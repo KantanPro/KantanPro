@@ -342,22 +342,52 @@
         // 利益計算（税込合計からコスト項目を引く）
         const profit = totalWithTax - costTotalCeiled;
 
-        // 請求項目の合計表示を更新（切り上げ後の値を表示）
+        // 顧客の税区分を取得（デフォルトは内税）
+        let taxCategory = '内税';
+        const orderId = $('input[name="order_id"]').val() || $('#order_id').val();
+        
+        // 受注書IDがある場合は顧客の税区分を取得
+        if (orderId) {
+            // 既存の税区分情報があれば使用
+            if (typeof window.ktpClientTaxCategory !== 'undefined') {
+                taxCategory = window.ktpClientTaxCategory;
+            }
+        }
+
+        // 請求項目の合計表示を更新（税区分に応じて）
         const invoiceTotalDisplay = $('.invoice-items-total');
         if (invoiceTotalDisplay.length > 0) {
-            invoiceTotalDisplay.html('合計金額 : ' + invoiceTotalCeiled.toLocaleString() + '円');
-        }
+            if (taxCategory === '外税') {
+                // 外税表示の場合：3行表示
+                invoiceTotalDisplay.html('合計金額 : ' + invoiceTotalCeiled.toLocaleString() + '円');
+                
+                // 消費税表示を更新
+                const taxDisplay = $('.invoice-items-tax');
+                if (taxDisplay.length > 0) {
+                    taxDisplay.html('消費税 : ' + totalTaxAmountCeiled.toLocaleString() + '円');
+                }
 
-        // 消費税表示を更新
-        const taxDisplay = $('.invoice-items-tax');
-        if (taxDisplay.length > 0) {
-            taxDisplay.html('消費税 : ' + totalTaxAmountCeiled.toLocaleString() + '円');
-        }
+                // 税込合計表示を更新
+                const totalWithTaxDisplay = $('.invoice-items-total-with-tax');
+                if (totalWithTaxDisplay.length > 0) {
+                    totalWithTaxDisplay.html('税込合計 : ' + totalWithTax.toLocaleString() + '円');
+                }
+            } else {
+                // 内税表示の場合：1行表示
+                invoiceTotalDisplay.html('金額合計：' + invoiceTotalCeiled.toLocaleString() + '円　（内税：' + totalTaxAmountCeiled.toLocaleString() + '円）');
+                
+                // 消費税表示を非表示
+                const taxDisplay = $('.invoice-items-tax');
+                if (taxDisplay.length > 0) {
+                    taxDisplay.html('');
+                }
 
-        // 税込合計表示を更新
-        const totalWithTaxDisplay = $('.invoice-items-total-with-tax');
-        if (totalWithTaxDisplay.length > 0) {
-            totalWithTaxDisplay.html('税込合計 : ' + totalWithTax.toLocaleString() + '円');
+                // 税込合計表示を非表示
+                const totalWithTaxDisplay = $('.invoice-items-total-with-tax');
+                if (totalWithTaxDisplay.length > 0) {
+                    totalWithTaxDisplay.html('');
+                }
+            }
         }
 
         // 利益表示を更新

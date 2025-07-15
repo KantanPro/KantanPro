@@ -66,6 +66,33 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 		public function generate_invoice_items_table( $order_id ) {
 			$order_items = KTPWP_Order_Items::get_instance();
 			$items = $order_items->get_invoice_items( $order_id );
+			
+			// 顧客の税区分を取得
+			$tax_category = '内税'; // デフォルト値
+			if ( ! empty( $order_id ) ) {
+				global $wpdb;
+				$order_table = $wpdb->prefix . 'ktp_order';
+				$client_table = $wpdb->prefix . 'ktp_client';
+				
+				$order_data = $wpdb->get_row(
+					$wpdb->prepare(
+						"SELECT client_id FROM `{$order_table}` WHERE id = %d",
+						$order_id
+					)
+				);
+				
+				if ( $order_data && ! empty( $order_data->client_id ) ) {
+					$client_tax_category = $wpdb->get_var(
+						$wpdb->prepare(
+							"SELECT tax_category FROM `{$client_table}` WHERE id = %d",
+							$order_data->client_id
+						)
+					);
+					if ( $client_tax_category ) {
+						$tax_category = $client_tax_category;
+					}
+				}
+			}
 
 			// sort_orderの昇順でソート
 			usort(
@@ -106,7 +133,9 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 			$html .= '<form method="post" action="" class="invoice-items-form">';
 			$html .= '<input type="hidden" name="order_id" value="' . intval( $order_id ) . '" />';
 			$html .= '<input type="hidden" name="save_invoice_items" value="1" />';
+			$html .= '<input type="hidden" name="tax_category" value="' . esc_attr( $tax_category ) . '" />';
 			$html .= wp_nonce_field( 'save_invoice_items_action', 'invoice_items_nonce', true, false );
+			$html .= '<script>window.ktpClientTaxCategory = "' . esc_js( $tax_category ) . '";</script>';
 			$html .= '<div class="invoice-items-scroll-wrapper">';
 			$html .= '<table class="invoice-items-table" id="invoice-items-table-' . intval( $order_id ) . '">';
 			$html .= '<thead>';
@@ -202,18 +231,17 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 
 			// Calculate tax amount and total with tax
 			$tax_amount = 0;
-			$tax_inclusive = KTP_Settings::get_tax_inclusive();
 			
 			foreach ( $items as $item ) {
 				$item_amount = isset( $item['amount'] ) ? floatval( $item['amount'] ) : 0;
 				$item_tax_rate = isset( $item['tax_rate'] ) ? floatval( $item['tax_rate'] ) : 10.00;
 				
-				if ( $tax_inclusive ) {
-					// 税込表示の場合：税込金額から税額を計算
-					$tax_amount += $item_amount * ( $item_tax_rate / 100 ) / ( 1 + $item_tax_rate / 100 );
-				} else {
-					// 税抜表示の場合：税抜金額から税額を計算
+				if ( $tax_category === '外税' ) {
+					// 外税表示の場合：税抜金額から税額を計算
 					$tax_amount += $item_amount * ( $item_tax_rate / 100 );
+				} else {
+					// 内税表示の場合：税込金額から税額を計算
+					$tax_amount += $item_amount * ( $item_tax_rate / 100 ) / ( 1 + $item_tax_rate / 100 );
 				}
 			}
 			
@@ -222,20 +250,34 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 			$tax_amount_ceiled = ceil( $tax_amount );
 			$total_with_tax_ceiled = ceil( $total_with_tax );
 			
-			// Total amount display (rounded up)
-			$html .= '<div class="invoice-items-total" style="text-align:right;margin-top:8px;font-weight:bold;">';
-			$html .= esc_html__( '合計金額', 'ktpwp' ) . ' : ' . esc_html( number_format( $total_amount_ceiled ) ) . esc_html__( '円', 'ktpwp' );
-			$html .= '</div>';
-			
-			// Tax amount display
-			$html .= '<div class="invoice-items-tax" style="text-align:right;margin-top:4px;color:#666;">';
-			$html .= esc_html__( '消費税', 'ktpwp' ) . ' : ' . esc_html( number_format( $tax_amount_ceiled ) ) . esc_html__( '円', 'ktpwp' );
-			$html .= '</div>';
-			
-			// Total with tax display
-			$html .= '<div class="invoice-items-total-with-tax" style="text-align:right;margin-top:4px;font-weight:bold;color:#d32f2f;">';
-			$html .= esc_html__( '税込合計', 'ktpwp' ) . ' : ' . esc_html( number_format( $total_with_tax_ceiled ) ) . esc_html__( '円', 'ktpwp' );
-			$html .= '</div>';
+			// 税区分に応じた合計表示
+			if ( $tax_category === '外税' ) {
+				// 外税表示の場合：3行表示
+				$html .= '<div class="invoice-items-total" style="text-align:right;margin-top:8px;font-weight:bold;">';
+				$html .= esc_html__( '合計金額', 'ktpwp' ) . ' : ' . esc_html( number_format( $total_amount_ceiled ) ) . esc_html__( '円', 'ktpwp' );
+				$html .= '</div>';
+				
+				// Tax amount display
+				$html .= '<div class="invoice-items-tax" style="text-align:right;margin-top:4px;color:#666;">';
+				$html .= esc_html__( '消費税', 'ktpwp' ) . ' : ' . esc_html( number_format( $tax_amount_ceiled ) ) . esc_html__( '円', 'ktpwp' );
+				$html .= '</div>';
+				
+				// Total with tax display
+				$html .= '<div class="invoice-items-total-with-tax" style="text-align:right;margin-top:4px;font-weight:bold;color:#d32f2f;">';
+				$html .= esc_html__( '税込合計', 'ktpwp' ) . ' : ' . esc_html( number_format( $total_with_tax_ceiled ) ) . esc_html__( '円', 'ktpwp' );
+				$html .= '</div>';
+			} else {
+				// 内税表示の場合：1行表示
+				$html .= '<div class="invoice-items-total" style="text-align:right;margin-top:8px;font-weight:bold;">';
+				$html .= '金額合計：' . esc_html( number_format( $total_amount_ceiled ) ) . '円　（内税：' . esc_html( number_format( $tax_amount_ceiled ) ) . '円）';
+				$html .= '</div>';
+				
+				// Tax amount display (非表示)
+				$html .= '<div class="invoice-items-tax" style="text-align:right;margin-top:4px;color:#666;display:none;"></div>';
+				
+				// Total with tax display (非表示)
+				$html .= '<div class="invoice-items-total-with-tax" style="text-align:right;margin-top:4px;font-weight:bold;color:#d32f2f;display:none;"></div>';
+			}
 
 			$html .= '</form>';
 			$html .= '</div>';

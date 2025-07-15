@@ -56,7 +56,7 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 				'payment_month TINYTEXT',
 				'payment_day TINYTEXT',
 				'payment_method TINYTEXT',
-				"tax_category VARCHAR(100) NOT NULL DEFAULT '" . __( '税込', 'ktpwp' ) . "'",
+				"tax_category VARCHAR(100) NOT NULL DEFAULT '" . __( '内税', 'ktpwp' ) . "'",
 				'memo TEXT',
 				'search_field TEXT',
 				'frequency INT NOT NULL DEFAULT 0',

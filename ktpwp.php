@@ -338,8 +338,24 @@ function ktpwp_run_auto_migrations() {
                     if ( file_exists( $file ) ) {
                         try {
                             require_once $file;
-                            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                                error_log( 'KTPWP Migration: Executed ' . basename( $file ) );
+                            
+                            // クラスベースのマイグレーションを実行
+                            $filename = basename( $file, '.php' );
+                            $class_name = 'KTPWP_Migration_' . str_replace( '-', '_', $filename );
+                            
+                            if ( class_exists( $class_name ) && method_exists( $class_name, 'up' ) ) {
+                                $result = $class_name::up();
+                                if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                                    if ( $result ) {
+                                        error_log( 'KTPWP Migration: Successfully executed ' . basename( $file ) );
+                                    } else {
+                                        error_log( 'KTPWP Migration: Failed to execute ' . basename( $file ) );
+                                    }
+                                }
+                            } else {
+                                if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                                    error_log( 'KTPWP Migration: Loaded ' . basename( $file ) . ' (no class-based migration)' );
+                                }
                             }
                         } catch ( Exception $e ) {
                             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
@@ -538,7 +554,8 @@ function ktpwp_plugin_activation() {
     // 利用規約テーブルの作成
     ktpwp_ensure_terms_table();
     
-
+    // 自動マイグレーションの実行
+    ktpwp_run_auto_migrations();
     
     // プラグインのバージョン情報を保存
     update_option( 'ktpwp_version', KANTANPRO_PLUGIN_VERSION );
@@ -566,6 +583,9 @@ add_action( 'plugins_loaded', 'ktpwp_ensure_department_migration', 6 );
 
 // 利用規約テーブル存在チェック（自動修復）
 add_action( 'plugins_loaded', 'ktpwp_ensure_terms_table', 7 );
+
+// プラグイン読み込み時の自動マイグレーション
+add_action( 'plugins_loaded', 'ktpwp_run_auto_migrations', 8 );
 
 
 

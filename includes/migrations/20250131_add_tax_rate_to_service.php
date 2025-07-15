@@ -35,12 +35,18 @@ function ktpwp_add_tax_rate_to_service_table() {
         $result = $wpdb->query( $sql );
         
         if ( $result !== false ) {
-            echo "Successfully added tax_rate column to {$table_name} table.\n";
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( "KTPWP Migration: Successfully added tax_rate column to {$table_name} table" );
+            }
         } else {
-            echo "Error adding tax_rate column to {$table_name} table: " . $wpdb->last_error . "\n";
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( "KTPWP Migration: Error adding tax_rate column to {$table_name} table: " . $wpdb->last_error );
+            }
         }
     } else {
-        echo "tax_rate column already exists in {$table_name} table.\n";
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( "KTPWP Migration: tax_rate column already exists in {$table_name} table" );
+        }
     }
 }
 
