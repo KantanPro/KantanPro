@@ -655,6 +655,9 @@ function ktpwp_plugin_activation() {
 // プラグイン読み込み時の差分マイグレーション（アップデート時）
 add_action( 'plugins_loaded', 'ktpwp_check_database_integrity', 5 );
 
+// データベースバージョンの同期（既存インストール対応）
+add_action( 'plugins_loaded', 'ktpwp_sync_database_version', 6 );
+
 // プラグイン読み込み時に部署マイグレーションの完了を確認
 // add_action( 'plugins_loaded', 'ktpwp_ensure_department_migration', 6 );
 
@@ -898,10 +901,22 @@ function ktpwp_check_migration_status() {
     $current_db_version = get_option( 'ktpwp_db_version', '0.0.0' );
     $plugin_version = KANTANPRO_PLUGIN_VERSION;
     
+    // 新規インストールの場合、データベースバージョンを更新
+    if ( $current_db_version === '0.0.0' || empty( $current_db_version ) ) {
+        update_option( 'ktpwp_db_version', $plugin_version );
+        $current_db_version = $plugin_version;
+    }
+    
+    // バージョンが同じ場合は更新不要
+    $needs_migration = false;
+    if ( $current_db_version !== $plugin_version ) {
+        $needs_migration = version_compare( $current_db_version, $plugin_version, '<' );
+    }
+    
     $status = array(
         'current_db_version' => $current_db_version,
         'plugin_version' => $plugin_version,
-        'needs_migration' => version_compare( $current_db_version, $plugin_version, '<' ),
+        'needs_migration' => $needs_migration,
         'last_migration' => get_option( 'ktpwp_last_migration_timestamp', 'Never' ),
         'activation_completed' => get_option( 'ktpwp_activation_completed', false ),
         'upgrade_completed' => get_option( 'ktpwp_upgrade_completed', false ),
@@ -3406,6 +3421,25 @@ function ktpwp_cli_reset_migration( $args, $assoc_args ) {
     
     WP_CLI::success( 'マイグレーション状態がリセットされました。' );
     WP_CLI::log( '次回のプラグイン読み込み時にマイグレーションが再実行されます。' );
+}
+
+/**
+ * データベースバージョンの同期処理
+ */
+function ktpwp_sync_database_version() {
+    $current_db_version = get_option( 'ktpwp_db_version', '0.0.0' );
+    $plugin_version = KANTANPRO_PLUGIN_VERSION;
+    
+    // データベースバージョンが設定されていない場合、またはプラグインバージョンと異なる場合
+    if ( $current_db_version === '0.0.0' || empty( $current_db_version ) || $current_db_version !== $plugin_version ) {
+        // プラグインが正常に動作している場合は、バージョンを同期
+        if ( get_option( 'ktpwp_activation_completed', false ) ) {
+            update_option( 'ktpwp_db_version', $plugin_version );
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP: データベースバージョンを同期しました: ' . $plugin_version );
+            }
+        }
+    }
 }
 
 
