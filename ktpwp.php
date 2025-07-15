@@ -3,7 +3,7 @@
  * Plugin Name: KantanPro
  * Plugin URI: https://www.kantanpro.com/
  * Description: スモールビジネス向けの仕事効率化システム。ショートコード[ktpwp_all_tab]を固定ページに設置してください。
- * Version: 1.0.10(preview)
+ * Version: 1.0.11(preview)
  * Author: KantanPro
  * Author URI: https://www.kantanpro.com/kantanpro-page
  * License: GPL v2 or later
@@ -30,7 +30,7 @@ if ( file_exists( plugin_dir_path( __FILE__ ) . 'vendor/autoload.php' ) ) {
 
 // プラグイン定数定義
 if ( ! defined( 'KANTANPRO_PLUGIN_VERSION' ) ) {
-    define( 'KANTANPRO_PLUGIN_VERSION', '1.0.10(preview)' );
+    define( 'KANTANPRO_PLUGIN_VERSION', '1.0.11(preview)' );
 }
 if ( ! defined( 'KANTANPRO_PLUGIN_NAME' ) ) {
     define( 'KANTANPRO_PLUGIN_NAME', 'KantanPro' );
@@ -332,13 +332,16 @@ function ktpwp_run_auto_migrations() {
             // 3. マイグレーションファイルの実行（順序付き）
             ktpwp_run_migration_files( $current_db_version, $plugin_version );
 
-            // 4. 追加のテーブル構造修正
+            // 4. 適格請求書ナンバー機能のマイグレーション（確実に実行）
+            ktpwp_run_qualified_invoice_migration();
+
+            // 5. 追加のテーブル構造修正
             ktpwp_fix_table_structures();
 
-            // 5. 既存データの修復
+            // 6. 既存データの修復
             ktpwp_repair_existing_data();
 
-            // 6. DBバージョンを更新
+            // 7. DBバージョンを更新
             update_option( 'ktpwp_db_version', $plugin_version );
             update_option( 'ktpwp_last_migration_timestamp', current_time( 'mysql' ) );
 
@@ -441,6 +444,60 @@ function ktpwp_run_migration_files( $from_version, $to_version ) {
 
     if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
         error_log( 'KTPWP Migration: Completed ' . $executed_count . ' migrations with ' . $error_count . ' errors' );
+    }
+}
+
+/**
+ * 適格請求書ナンバー機能のマイグレーションを実行
+ */
+function ktpwp_run_qualified_invoice_migration() {
+    // 適格請求書ナンバー機能のマイグレーションが既に完了しているかチェック
+    $migration_completed = get_option( 'ktpwp_qualified_invoice_profit_calculation_migrated', false );
+    
+    if ( $migration_completed ) {
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP: Qualified invoice profit calculation migration already completed' );
+        }
+        return true;
+    }
+
+    if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+        error_log( 'KTPWP: Starting qualified invoice profit calculation migration' );
+    }
+
+    try {
+        // マイグレーションファイルを直接実行
+        $migration_file = __DIR__ . '/includes/migrations/20250131_add_qualified_invoice_profit_calculation.php';
+        
+        if ( file_exists( $migration_file ) ) {
+            require_once $migration_file;
+            
+            $class_name = 'KTPWP_Migration_20250131_Add_Qualified_Invoice_Profit_Calculation';
+            
+            if ( class_exists( $class_name ) && method_exists( $class_name, 'up' ) ) {
+                $result = $class_name::up();
+                
+                if ( $result ) {
+                    if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                        error_log( 'KTPWP: Successfully completed qualified invoice profit calculation migration' );
+                    }
+                    return true;
+                } else {
+                    error_log( 'KTPWP: Failed to execute qualified invoice profit calculation migration' );
+                    return false;
+                }
+            } else {
+                error_log( 'KTPWP: Qualified invoice profit calculation migration class not found' );
+                return false;
+            }
+        } else {
+            error_log( 'KTPWP: Qualified invoice profit calculation migration file not found: ' . $migration_file );
+            return false;
+        }
+        
+    } catch ( Exception $e ) {
+        error_log( 'KTPWP Qualified Invoice Migration Error: ' . $e->getMessage() );
+        return false;
     }
 }
 
@@ -615,21 +672,23 @@ function ktpwp_plugin_activation() {
         // 3. 利用規約テーブルの作成
         ktpwp_ensure_terms_table();
         
-        // 4. 自動マイグレーションの実行
+        // 4. 適格請求書ナンバー機能のマイグレーション（確実に実行）
+        ktpwp_run_qualified_invoice_migration();
+        
+        // 5. 自動マイグレーションの実行
         ktpwp_run_auto_migrations();
         
-        // 5. プラグインのバージョン情報を保存
+        // 6. プラグインのバージョン情報を保存
         update_option( 'ktpwp_version', KANTANPRO_PLUGIN_VERSION );
         update_option( 'ktpwp_db_version', KANTANPRO_PLUGIN_VERSION );
         
-        // 6. 有効化完了フラグを設定
+        // 7. 有効化完了フラグを設定
         update_option( 'ktpwp_activation_completed', true );
         update_option( 'ktpwp_activation_timestamp', current_time( 'mysql' ) );
         
-        // 7. フラッシュメッセージを設定
-        set_transient( 'ktpwp_activation_message', 'KantanProプラグインが正常に有効化されました。', 60 );
+        // 8. フラッシュメッセージを設定（WordPress標準の通知があるため削除）
         
-        // 8. リダイレクトフラグを設定
+        // 9. リダイレクトフラグを設定
         add_option( 'ktpwp_activation_redirect', true );
         
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
@@ -870,6 +929,9 @@ function ktpwp_plugin_upgrade_migration( $upgrader, $hook_extra ) {
         $old_version = get_option( 'ktpwp_version', '0.0.0' );
         update_option( 'ktpwp_previous_version', $old_version );
         
+        // 適格請求書ナンバー機能のマイグレーション（確実に実行）
+        ktpwp_run_qualified_invoice_migration();
+        
         // 自動マイグレーション実行
         ktpwp_run_auto_migrations();
         
@@ -878,7 +940,7 @@ function ktpwp_plugin_upgrade_migration( $upgrader, $hook_extra ) {
         update_option( 'ktpwp_upgrade_timestamp', current_time( 'mysql' ) );
         
         // アップデート通知を設定
-        set_transient( 'ktpwp_upgrade_message', 'KantanProプラグインが正常に更新されました。', 60 );
+        set_transient( 'ktpwp_upgrade_message', 'KantanProプラグインが正常に更新されました。適格請求書ナンバー機能も含まれています。', 60 );
 
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
             error_log( 'KTPWP: Plugin upgrade migration completed successfully' );
@@ -913,6 +975,11 @@ function ktpwp_check_migration_status() {
         $needs_migration = version_compare( $current_db_version, $plugin_version, '<' );
     }
     
+    // 適格請求書ナンバー機能の状態をチェック
+    $qualified_invoice_migrated = get_option( 'ktpwp_qualified_invoice_profit_calculation_migrated', false );
+    $qualified_invoice_version = get_option( 'ktpwp_qualified_invoice_profit_calculation_version', '0.0.0' );
+    $qualified_invoice_enabled = get_option( 'ktpwp_qualified_invoice_enabled', false );
+    
     $status = array(
         'current_db_version' => $current_db_version,
         'plugin_version' => $plugin_version,
@@ -920,7 +987,13 @@ function ktpwp_check_migration_status() {
         'last_migration' => get_option( 'ktpwp_last_migration_timestamp', 'Never' ),
         'activation_completed' => get_option( 'ktpwp_activation_completed', false ),
         'upgrade_completed' => get_option( 'ktpwp_upgrade_completed', false ),
-        'migration_error' => get_option( 'ktpwp_migration_error', null )
+        'migration_error' => get_option( 'ktpwp_migration_error', null ),
+        'qualified_invoice' => array(
+            'migrated' => $qualified_invoice_migrated,
+            'version' => $qualified_invoice_version,
+            'enabled' => $qualified_invoice_enabled,
+            'timestamp' => get_option( 'ktpwp_qualified_invoice_profit_calculation_timestamp', 'Never' )
+        )
     );
     
     return $status;
@@ -951,6 +1024,14 @@ function ktpwp_admin_migration_status() {
     if ( $status['migration_error'] ) {
         echo '<div class="notice notice-error is-dismissible">';
         echo '<p><strong>KantanPro:</strong> マイグレーション中にエラーが発生しました: ' . esc_html( $status['migration_error'] ) . '</p>';
+        echo '</div>';
+    }
+    
+    // 適格請求書ナンバー機能の状態表示
+    $qualified_invoice = $status['qualified_invoice'];
+    if ( ! $qualified_invoice['migrated'] ) {
+        echo '<div class="notice notice-warning is-dismissible">';
+        echo '<p><strong>KantanPro:</strong> 適格請求書ナンバー機能のマイグレーションが必要です。プラグインを再有効化してください。</p>';
         echo '</div>';
     }
 }
