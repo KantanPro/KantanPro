@@ -82,7 +82,12 @@ if ( ! defined( 'MY_PLUGIN_URL' ) ) {
  * プラグイン有効化フック（寄付機能用）
  * 寄付機能に必要なデータベーステーブルを作成します。
  */
-register_activation_hook( __FILE__, 'ktpwp_donation_activation' );
+register_activation_hook( __FILE__, function() {
+    ktpwp_donation_activation();
+    if ( function_exists('ktpwp_run_auto_migrations') ) {
+        ktpwp_run_auto_migrations();
+    }
+});
 function ktpwp_donation_activation() {
     // KTPWP_Donationクラスを読み込み
     if ( ! class_exists( 'KTPWP_Donation' ) ) {
@@ -119,6 +124,11 @@ function ktpwp_upgrade() {
     }
 
     do_action( 'ktpwp_upgrade', $new_ver, $old_ver );
+
+    // ★ここで自動マイグレーションを必ず実行
+    if ( function_exists('ktpwp_run_auto_migrations') ) {
+        ktpwp_run_auto_migrations();
+    }
 
     update_option( 'ktpwp_version', $new_ver );
 }
