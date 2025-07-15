@@ -490,7 +490,7 @@ if ( ! class_exists( 'Kntan_Service_Class' ) ) {
 					'type' => 'number',
 					'name' => 'tax_rate',
 					'placeholder' => esc_attr__( '税率（%）', 'ktpwp' ),
-					'step' => '0.01',
+					'step' => '1',
 					'min' => '0',
 					'max' => '100',
 				),

@@ -791,7 +791,7 @@
                     <input type="number" name="invoice_items[${newIndex}][amount]" class="invoice-item-input amount" value="0" step="1" readonly style="text-align:left;">
                 </td>
                 <td style="text-align:left;">
-                    <input type="number" name="invoice_items[${newIndex}][tax_rate]" class="invoice-item-input tax-rate-input" value="${serviceData.tax_rate !== undefined ? Math.round(serviceData.tax_rate) : ''}" step="0.01" min="0" max="100" style="width: 50px; max-width: 60px; text-align: center !important;"> %
+                    <input type="number" name="invoice_items[${newIndex}][tax_rate]" class="invoice-item-input tax-rate-input" value="${serviceData.tax_rate !== undefined ? Math.round(serviceData.tax_rate) : ''}" step="1" min="0" max="100" style="width: 50px; max-width: 60px; text-align: center !important;"> %
                 </td>
                 <td>
                     <input type="text" name="invoice_items[${newIndex}][remarks]" class="invoice-item-input remarks" value="${serviceData.remarks ? serviceData.remarks : ''}">

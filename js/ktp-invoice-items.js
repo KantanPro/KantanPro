@@ -307,10 +307,19 @@
     function updateTotalAndProfit() {
         let invoiceTotal = 0;
         let costTotal = 0;
+        let totalTaxAmount = 0;
 
-        // 請求項目の合計を計算
-        $('.invoice-items-table .amount').each(function () {
-            invoiceTotal += parseFloat($(this).val()) || 0;
+        // 請求項目の合計と消費税を計算
+        $('.invoice-items-table tbody tr').each(function () {
+            const $row = $(this);
+            const amount = parseFloat($row.find('.amount').val()) || 0;
+            const taxRate = parseFloat($row.find('.tax-rate').val()) || 10.0;
+            
+            invoiceTotal += amount;
+            
+            // 消費税計算（税抜表示の場合）
+            const taxAmount = Math.ceil(amount * (taxRate / 100));
+            totalTaxAmount += taxAmount;
         });
 
         // コスト項目の合計を計算
@@ -324,13 +333,31 @@
         // コスト項目合計を切り上げ
         const costTotalCeiled = Math.ceil(costTotal);
 
-        // 利益計算（切り上げ後の値を使用）
-        const profit = invoiceTotalCeiled - costTotalCeiled;
+        // 消費税合計を切り上げ
+        const totalTaxAmountCeiled = Math.ceil(totalTaxAmount);
+
+        // 税込合計を計算
+        const totalWithTax = invoiceTotalCeiled + totalTaxAmountCeiled;
+
+        // 利益計算（税込合計からコスト項目を引く）
+        const profit = totalWithTax - costTotalCeiled;
 
         // 請求項目の合計表示を更新（切り上げ後の値を表示）
         const invoiceTotalDisplay = $('.invoice-items-total');
         if (invoiceTotalDisplay.length > 0) {
             invoiceTotalDisplay.html('合計金額 : ' + invoiceTotalCeiled.toLocaleString() + '円');
+        }
+
+        // 消費税表示を更新
+        const taxDisplay = $('.invoice-items-tax');
+        if (taxDisplay.length > 0) {
+            taxDisplay.html('消費税 : ' + totalTaxAmountCeiled.toLocaleString() + '円');
+        }
+
+        // 税込合計表示を更新
+        const totalWithTaxDisplay = $('.invoice-items-total-with-tax');
+        if (totalWithTaxDisplay.length > 0) {
+            totalWithTaxDisplay.html('税込合計 : ' + totalWithTax.toLocaleString() + '円');
         }
 
         // 利益表示を更新
@@ -394,7 +421,7 @@
                     <input type="number" name="invoice_items[${newIndex}][amount]" class="invoice-item-input amount" value="" step="1" readonly style="text-align:left;">
                 </td>
                 <td style="text-align:left;">
-                    <input type="number" name="invoice_items[${newIndex}][tax_rate]" class="invoice-item-input tax-rate-input" value="10" step="0.01" min="0" max="100" style="width: 50px; max-width: 60px; text-align: center !important;"> %
+                    <input type="number" name="invoice_items[${newIndex}][tax_rate]" class="invoice-item-input tax-rate-input" value="10" step="1" min="0" max="100" style="width: 50px; max-width: 60px; text-align: center !important;"> %
                 </td>
                 <td>
                     <input type="text" name="invoice_items[${newIndex}][remarks]" class="invoice-item-input remarks" value="" disabled>
@@ -1038,6 +1065,20 @@
                     itemIdNotZero: itemId !== '0'
                 });
             }
+        });
+
+        // 税率フィールドのinputイベントでリアルタイム計算
+        $(document).on('input', '.invoice-item-input.tax-rate', function () {
+            const $field = $(this);
+            const $row = $field.closest('tr');
+            
+            console.log('[INVOICE] 税率フィールドinputイベント発火:', {
+                taxRate: $field.val(),
+                rowIndex: $row.index()
+            });
+            
+            // リアルタイムで合計金額、消費税、税込合計を再計算
+            updateTotalAndProfit();
         });
 
         // 初期状態で既存の行に対して金額計算を実行
