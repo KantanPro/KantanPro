@@ -4037,5 +4037,14 @@ body.ktpwp-modal-open {
   }
 }
 
+/* 税率フィールドの右寄せスタイル */
+.invoice-item-input.tax-rate,
+.invoice-item-input.tax-rate-input,
+.cost-item-input.tax-rate {
+    text-align: right !important;
+}
 
-
+/* 税率フィールドの表示用スタイル */
+.column-tax-rate {
+    text-align: right;
+}

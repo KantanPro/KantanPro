@@ -309,6 +309,7 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 			$html .= '<th style="text-align:left;">' . esc_html__( '数量', 'ktpwp' ) . '</th>';
 			$html .= '<th>' . esc_html__( '単位', 'ktpwp' ) . '</th>';
 			$html .= '<th style="text-align:left;">' . esc_html__( '金額', 'ktpwp' ) . '</th>';
+			$html .= '<th style="text-align:left;">' . esc_html__( '税率', 'ktpwp' ) . '</th>';
 			$html .= '<th>' . esc_html__( '備考', 'ktpwp' ) . '</th>';
 			$html .= '<th>' . esc_html__( '仕入', 'ktpwp' ) . '</th>';
 			$html .= '</tr>';
@@ -365,6 +366,17 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 				$html .= '<input type="number" name="cost_items[' . $index . '][amount]" ';
 				$html .= 'value="' . esc_attr( $item['amount'] ) . '" ';
 				$html .= 'class="cost-item-input amount" step="1" readonly style="text-align:left;" />';
+				$html .= '</td>';
+
+				// Tax Rate
+				$tax_rate = isset( $item['tax_rate'] ) ? floatval( $item['tax_rate'] ) : 10.00;
+				$html .= '<td style="text-align:left;">';
+				$html .= '<div style="display:inline-flex;align-items:center;margin-left:0;padding-left:0;">';
+				$html .= '<input type="number" name="cost_items[' . $index . '][tax_rate]" ';
+				$html .= 'value="' . esc_attr( $tax_rate ) . '" ';
+				$html .= 'class="cost-item-input tax-rate" step="1" min="0" max="100" style="width:50px; text-align:right; display:inline-block; margin-left:0; padding-left:0;" />';
+				$html .= '<span style="margin-left:2px; white-space:nowrap;">%</span>';
+				$html .= '</div>';
 				$html .= '</td>';
 
 				// Remarks
