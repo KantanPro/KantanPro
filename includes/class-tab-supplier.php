@@ -867,6 +867,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 					$tax_category = '';
 					$memo = '';
 					$category = '';
+					$frequency = '';
 					// $post_row を空配列にして以降のフォーム生成処理を通す
 					$post_row = array();
 					// リスト部分にだけ「データがありません」メッセージを出す（デザインは既に統一済み）
@@ -897,6 +898,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 					$memo = esc_html( $row->memo );
 					$qualified_invoice_number = esc_html( $row->qualified_invoice_number );
 					$category = esc_html( $row->category );
+					$frequency = esc_html( $row->frequency );
 				}
 			} else {
 				// 追加モードの場合は全ての変数を空で初期化
@@ -921,6 +923,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 				$memo = '';
 				$qualified_invoice_number = '';
 				$category = '';
+				$frequency = '';
 			}
 
 			// データ取得完了後、協力会社ID表示メッセージを生成
