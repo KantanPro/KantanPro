@@ -308,6 +308,7 @@
         let invoiceTotal = 0;
         let costTotal = 0;
         let totalTaxAmount = 0;
+        let costTotalTaxAmount = 0;
 
         // 請求項目の合計と消費税を計算
         $('.invoice-items-table tbody tr').each(function () {
@@ -322,9 +323,17 @@
             totalTaxAmount += taxAmount;
         });
 
-        // コスト項目の合計を計算
-        $('.cost-items-table .amount').each(function () {
-            costTotal += parseFloat($(this).val()) || 0;
+        // コスト項目の合計と消費税を計算
+        $('.cost-items-table tbody tr').each(function () {
+            const $row = $(this);
+            const amount = parseFloat($row.find('.amount').val()) || 0;
+            const taxRate = parseFloat($row.find('.tax-rate').val()) || 10.0;
+            
+            costTotal += amount;
+            
+            // 消費税計算（税抜表示の場合）
+            const taxAmount = Math.ceil(amount * (taxRate / 100));
+            costTotalTaxAmount += taxAmount;
         });
 
         // 請求項目合計を切り上げ
@@ -336,11 +345,17 @@
         // 消費税合計を切り上げ
         const totalTaxAmountCeiled = Math.ceil(totalTaxAmount);
 
+        // コスト項目消費税合計を切り上げ
+        const costTotalTaxAmountCeiled = Math.ceil(costTotalTaxAmount);
+
         // 税込合計を計算
         const totalWithTax = invoiceTotalCeiled + totalTaxAmountCeiled;
 
-        // 利益計算（税込合計からコスト項目を引く）
-        const profit = totalWithTax - costTotalCeiled;
+        // コスト項目税込合計を計算
+        const costTotalWithTax = costTotalCeiled + costTotalTaxAmountCeiled;
+
+        // 利益計算（税込合計からコスト項目税込合計を引く）
+        const profit = totalWithTax - costTotalWithTax;
 
         // 顧客の税区分を取得（デフォルトは内税）
         let taxCategory = '内税';

@@ -171,7 +171,7 @@ class KTPWP_Assets {
             'ktp-cost-items' => array(
                 'src'       => 'js/ktp-cost-items.js',
                 'deps'      => array( 'jquery', 'jquery-ui-sortable', 'ktp-supplier-selector' ),
-                'ver'       => KTPWP_PLUGIN_VERSION,
+                'ver'       => KTPWP_PLUGIN_VERSION . '&fver=' . date('YmdHis'),
                 'in_footer' => true,
                 'admin'     => false,
                 'localize'  => array(

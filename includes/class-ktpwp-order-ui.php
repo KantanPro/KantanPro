@@ -305,6 +305,11 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 			// 顧客の税区分を取得
 			$tax_category = $this->get_client_tax_category( $order_id );
 
+			// デバッグログを追加
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( 'KTPWP Cost Items Debug - Order ID: ' . $order_id . ', Tax Category: ' . $tax_category . ', Type: ' . gettype($tax_category) . ', Length: ' . strlen($tax_category) );
+			}
+
 			// sort_orderの昇順でソート
 			usort(
                 $items,
@@ -362,6 +367,18 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 			$html .= '<input type="hidden" name="order_id" value="' . intval( $order_id ) . '" />';
 			$html .= '<input type="hidden" name="save_cost_items" value="1" />';
 			$html .= wp_nonce_field( 'save_cost_items_action', 'cost_items_nonce', true, false );
+			$html .= '<script>window.ktpClientTaxCategory = "' . esc_js( $tax_category ) . '";</script>';
+			
+			// デバッグ用のスクリプトを追加
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				$html .= '<script>console.log("[PHP] コスト項目税区分設定:", {';
+				$html .= 'orderId: "' . intval( $order_id ) . '", ';
+				$html .= 'taxCategory: "' . esc_js( $tax_category ) . '", ';
+				$html .= 'taxCategoryType: "' . gettype($tax_category) . '", ';
+				$html .= 'taxCategoryLength: ' . strlen($tax_category) . ', ';
+				$html .= 'isOutTax: "' . esc_js( $tax_category ) . '" === "外税"';
+				$html .= '});</script>';
+			}
 			$html .= '<div class="cost-items-scroll-wrapper">';
 			$html .= '<table class="cost-items-table" id="cost-items-table-' . intval( $order_id ) . '">';
 			$html .= '<thead>';
@@ -480,7 +497,7 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 			if ( $tax_category === '外税' ) {
 				// 外税表示の場合：3行表示
 				$html .= '<div class="cost-items-total" style="text-align:right;margin-top:8px;font-weight:bold;">';
-				$html .= esc_html__( '合計金額', 'ktpwp' ) . ' : ' . esc_html( number_format( $total_amount_ceiled ) ) . esc_html__( '円', 'ktpwp' );
+				$html .= '金額合計 : ' . esc_html( number_format( $total_amount_ceiled ) ) . esc_html__( '円', 'ktpwp' );
 				$html .= '</div>';
 				
 				// Tax amount display
@@ -554,31 +571,60 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 			global $wpdb;
 			
 			if ( ! $order_id || $order_id <= 0 ) {
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					error_log( 'KTPWP Tax Category Debug - Invalid order ID: ' . $order_id );
+				}
 				return '内税'; // デフォルト値
 			}
 
-			// 受注書から顧客情報を取得
+			// 受注書から顧客IDを取得
 			$order_table = $wpdb->prefix . 'ktp_order';
 			$order = $wpdb->get_row(
 				$wpdb->prepare(
-					"SELECT customer_name, user_name FROM {$order_table} WHERE id = %d",
+					"SELECT client_id, customer_name, user_name FROM {$order_table} WHERE id = %d",
 					$order_id
 				)
 			);
 
 			if ( ! $order ) {
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					error_log( 'KTPWP Tax Category Debug - Order not found for ID: ' . $order_id );
+				}
 				return '内税'; // デフォルト値
 			}
 
-			// 顧客テーブルから税区分を取得
+			// 顧客テーブルから税区分を取得（client_idを優先、なければ会社名と担当者名で検索）
 			$client_table = $wpdb->prefix . 'ktp_client';
-			$client = $wpdb->get_row(
-				$wpdb->prepare(
-					"SELECT tax_category FROM {$client_table} WHERE company_name = %s AND name = %s",
-					$order->customer_name,
-					$order->user_name
-				)
-			);
+			$client = null;
+
+			// client_idがある場合はそれを使用
+			if ( ! empty( $order->client_id ) ) {
+				$client = $wpdb->get_row(
+					$wpdb->prepare(
+						"SELECT tax_category FROM {$client_table} WHERE id = %d",
+						$order->client_id
+					)
+				);
+				
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					error_log( 'KTPWP Tax Category Debug - Using client_id: ' . $order->client_id . ', Tax Category: ' . ( $client ? $client->tax_category : 'not found' ) );
+				}
+			}
+
+			// client_idで見つからない場合は会社名と担当者名で検索
+			if ( ! $client && ! empty( $order->customer_name ) && ! empty( $order->user_name ) ) {
+				$client = $wpdb->get_row(
+					$wpdb->prepare(
+						"SELECT tax_category FROM {$client_table} WHERE company_name = %s AND name = %s",
+						$order->customer_name,
+						$order->user_name
+					)
+				);
+				
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					error_log( 'KTPWP Tax Category Debug - Using company_name/name: ' . $order->customer_name . '/' . $order->user_name . ', Tax Category: ' . ( $client ? $client->tax_category : 'not found' ) );
+				}
+			}
 
 			if ( $client && ! empty( $client->tax_category ) ) {
 				return $client->tax_category;

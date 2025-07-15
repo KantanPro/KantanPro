@@ -8,6 +8,12 @@
 (function ($) {
     'use strict';
 
+    // ファイル読み込み確認用のデバッグログ
+    alert('=== [COST] ktp-cost-items.js ファイルが読み込まれました ===');
+    console.log('=== [COST] ktp-cost-items.js ファイルが読み込まれました ===');
+    console.log('[COST] 現在のwindow.ktpClientTaxCategory:', window.ktpClientTaxCategory);
+    console.log('[COST] ファイル読み込み時刻:', new Date().toLocaleString());
+    
     // デバッグモードを有効化
     window.ktpDebugMode = true;
 
@@ -85,25 +91,95 @@
     function updateProfitDisplay() {
         let invoiceTotal = 0;
         let costTotal = 0;
+        let costTotalTaxAmount = 0;
 
         // 請求項目の合計を計算
         $('.invoice-items-table .amount').each(function () {
             invoiceTotal += parseFloat($(this).val()) || 0;
         });
 
-        // コスト項目の合計を計算
-        $('.cost-items-table .amount').each(function () {
-            costTotal += parseFloat($(this).val()) || 0;
+        // コスト項目の合計と消費税を計算
+        $('.cost-items-table tbody tr').each(function () {
+            const $row = $(this);
+            const amount = parseFloat($row.find('.amount').val()) || 0;
+            const taxRate = parseFloat($row.find('.tax-rate').val()) || 10.0;
+            
+            costTotal += amount;
+            
+            // 消費税計算（税抜表示の場合）
+            const taxAmount = Math.ceil(amount * (taxRate / 100));
+            costTotalTaxAmount += taxAmount;
         });
 
         // 請求項目合計を切り上げ
         const invoiceTotalCeiled = Math.ceil(invoiceTotal);
-
-        // コスト項目合計を切り上げ
         const costTotalCeiled = Math.ceil(costTotal);
+        const costTotalTaxAmountCeiled = Math.ceil(costTotalTaxAmount);
 
-        // 利益計算（切り上げ後の値を使用）
-        const profit = invoiceTotalCeiled - costTotalCeiled;
+        // 顧客の税区分を取得（デフォルトは内税）
+        let taxCategory = '内税';
+        const orderId = $('input[name="order_id"]').val() || $('#order_id').val();
+        
+        // 受注書IDがある場合は顧客の税区分を取得
+        if (orderId) {
+            // 既存の税区分情報があれば使用
+            if (typeof window.ktpClientTaxCategory !== 'undefined') {
+                taxCategory = window.ktpClientTaxCategory;
+            }
+        }
+
+        // デバッグログを追加
+        console.log('[COST] updateProfitDisplay - 詳細デバッグ情報:', {
+            orderId: orderId,
+            windowKtpClientTaxCategory: window.ktpClientTaxCategory,
+            finalTaxCategory: taxCategory,
+            costTotalCeiled: costTotalCeiled,
+            costTotalTaxAmountCeiled: costTotalTaxAmountCeiled,
+            taxCategoryType: typeof taxCategory,
+            isTaxCategoryString: typeof taxCategory === 'string',
+            taxCategoryLength: taxCategory ? taxCategory.length : 0,
+            taxCategoryTrimmed: taxCategory ? taxCategory.trim() : '',
+            taxCategoryComparison: taxCategory === '外税'
+        });
+
+        // コスト項目の合計表示を更新（税区分に応じて）
+        const costTotalDisplay = $('.cost-items-total');
+        if (costTotalDisplay.length > 0) {
+            console.log('[COST] 税区分判定:', {
+                taxCategory: taxCategory,
+                isOutTax: taxCategory === '外税',
+                displayElement: costTotalDisplay.length
+            });
+            
+            if (taxCategory === '外税') {
+                // 外税表示の場合：3行表示
+                costTotalDisplay.html('金額合計 : ' + costTotalCeiled.toLocaleString() + '円');
+                
+                // コスト項目消費税表示を更新
+                const costTaxDisplay = $('.cost-items-tax');
+                if (costTaxDisplay.length > 0) {
+                    costTaxDisplay.html('コスト項目消費税 : ' + costTotalTaxAmountCeiled.toLocaleString() + '円');
+                }
+
+                // コスト項目税込合計表示を更新
+                const costTotalWithTaxDisplay = $('.cost-items-total-with-tax');
+                if (costTotalWithTaxDisplay.length > 0) {
+                    costTotalWithTaxDisplay.html('コスト項目税込合計 : ' + (costTotalCeiled + costTotalTaxAmountCeiled).toLocaleString() + '円');
+                }
+            } else {
+                // 内税表示の場合：1行表示
+                costTotalDisplay.html('金額合計：' + costTotalCeiled.toLocaleString() + '円　（内税：' + costTotalTaxAmountCeiled.toLocaleString() + '円）');
+                
+                // 外税表示用の要素を非表示にする
+                $('.cost-items-tax, .cost-items-total-with-tax').hide();
+            }
+        }
+
+        // コスト項目税込合計を計算
+        const costTotalWithTax = costTotalCeiled + costTotalTaxAmountCeiled;
+
+        // 利益計算（請求項目からコスト項目税込合計を引く）
+        const profit = invoiceTotalCeiled - costTotalWithTax;
 
         // 利益表示を更新
         const profitDisplay = $('.profit-display');
@@ -115,12 +191,6 @@
             // CSSクラスを更新
             profitDisplay.removeClass('positive negative');
             profitDisplay.addClass(profit >= 0 ? 'positive' : 'negative');
-        }
-
-        // コスト項目の合計表示も更新（切り上げ後の値を表示）
-        const costTotalDisplay = $('.cost-items-total');
-        if (costTotalDisplay.length > 0) {
-            costTotalDisplay.html('コスト項目合計 : ' + costTotalCeiled.toLocaleString() + '円');
         }
     }
 
@@ -2296,5 +2366,82 @@
         if (formattedValue !== value) {
             $field.val(formattedValue);
         }
+    });
+
+    // 税率変更時の合計表示更新
+    $(document).on('blur', '.cost-items-table .tax-rate', function () {
+        const $field = $(this);
+        
+        // disabled フィールドは処理をスキップ
+        if ($field.prop('disabled')) {
+            return;
+        }
+        
+        const value = $field.val();
+        const row = $field.closest('tr');
+        
+        if (window.ktpDebugMode) {
+            console.log('[COST] Tax rate blur event triggered:', {
+                value: value,
+                rowIndex: row.index()
+            });
+        }
+        
+        // 税率変更時に合計表示を更新
+        updateProfitDisplay();
+    });
+
+    // 税率変更時の即座更新（inputイベント）
+    $(document).on('input', '.cost-items-table .tax-rate', function () {
+        const $field = $(this);
+        
+        // disabled フィールドは処理をスキップ
+        if ($field.prop('disabled')) {
+            return;
+        }
+        
+        const value = $field.val();
+        const row = $field.closest('tr');
+        
+        if (window.ktpDebugMode) {
+            console.log('[COST] Tax rate input event triggered:', {
+                value: value,
+                rowIndex: row.index()
+            });
+        }
+        
+        // 税率変更時に合計表示を更新
+        updateProfitDisplay();
+    });
+
+    // ページ読み込み時のデバッグ情報表示
+    $(function() {
+        alert('=== [COST] ページ読み込み時のデバッグ開始 ===');
+        console.log('=== [COST] ページ読み込み時のデバッグ開始 ===');
+        
+        // 少し遅延させてからデバッグ情報を確認（税区分の設定が遅れる可能性があるため）
+        setTimeout(function() {
+            alert('=== [COST] ページ読み込み時の税区分情報（遅延実行） ===');
+            console.log('=== [COST] ページ読み込み時の税区分情報（遅延実行） ===');
+            console.log('[COST] 詳細情報:', {
+                windowKtpClientTaxCategory: window.ktpClientTaxCategory,
+                orderId: $('input[name="order_id"]').val() || $('#order_id').val(),
+                taxCategoryType: typeof window.ktpClientTaxCategory,
+                isTaxCategoryString: typeof window.ktpClientTaxCategory === 'string',
+                taxCategoryLength: window.ktpClientTaxCategory ? window.ktpClientTaxCategory.length : 0,
+                taxCategoryTrimmed: window.ktpClientTaxCategory ? window.ktpClientTaxCategory.trim() : '',
+                taxCategoryComparison: window.ktpClientTaxCategory === '外税',
+                costItemsTableExists: $('.cost-items-table').length > 0,
+                costItemsTotalExists: $('.cost-items-total').length > 0
+            });
+            
+            // 税区分が設定されている場合は即座に表示を更新
+            if (typeof window.ktpClientTaxCategory !== 'undefined') {
+                console.log('[COST] 初期表示更新を実行');
+                updateProfitDisplay();
+            } else {
+                console.log('[COST] window.ktpClientTaxCategory が未定義です');
+            }
+        }, 100);
     });
 })(jQuery);
