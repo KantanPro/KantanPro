@@ -178,10 +178,12 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 				// Tax Rate
 				$tax_rate = isset( $item['tax_rate'] ) ? floatval( $item['tax_rate'] ) : 10.00;
 				$html .= '<td style="text-align:left;">';
+				$html .= '<div style="display:inline-flex;align-items:center;margin-left:0;padding-left:0;">';
 				$html .= '<input type="number" name="invoice_items[' . $index . '][tax_rate]" ';
 				$html .= 'value="' . esc_attr( $tax_rate ) . '" ';
-				$html .= 'class="invoice-item-input tax-rate" step="0.01" min="0" max="100" style="width:50px; text-align:right; display:inline-block;" />';
+				$html .= 'class="invoice-item-input tax-rate" step="0.01" min="0" max="100" style="width:50px; text-align:right; display:inline-block; margin-left:0; padding-left:0;" />';
 				$html .= '<span style="margin-left:2px; white-space:nowrap;">%</span>';
+				$html .= '</div>';
 				$html .= '</td>';
 
 				// Remarks
