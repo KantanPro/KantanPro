@@ -1774,7 +1774,13 @@
             const $field = $(this);
             if ($field.prop('disabled')) return;
 
-            const remarks = $field.val();
+            let remarks = $field.val();
+            // 備考欄が「0」の場合は空文字列として扱う
+            if (remarks === '0') {
+                remarks = '';
+                $field.val(''); // フィールドの値も空に更新
+            }
+            
             const $row = $field.closest('tr');
             const itemId = $row.find('input[name*="[id]"]').val();
             const orderId = $('input[name="order_id"]').val() || $('#order_id').val();

@@ -464,9 +464,14 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 				$html .= '</td>';
 
 				// Remarks
+				$remarks_value = isset( $item['remarks'] ) ? $item['remarks'] : '';
+				// NULL値や空文字列の場合は空文字列として扱う
+				if ( $remarks_value === null || $remarks_value === '0' ) {
+					$remarks_value = '';
+				}
 				$html .= '<td>';
 				$html .= '<input type="text" name="cost_items[' . $index . '][remarks]" ';
-				$html .= 'value="' . esc_attr( $item['remarks'] ) . '" ';
+				$html .= 'value="' . esc_attr( $remarks_value ) . '" ';
 				$html .= 'class="cost-item-input remarks" />';
 				$html .= '</td>';
 

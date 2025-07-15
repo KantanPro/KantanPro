@@ -1154,37 +1154,28 @@ class KTPWP_Ajax {
 	 * Ajax: サービス一覧取得
 	 */
 	public function ajax_get_service_list() {
-		// デバッグログを最初に追加
-		error_log( '[AJAX_GET_SERVICE_LIST] リクエスト受信開始' );
-		error_log( '[AJAX_GET_SERVICE_LIST] $_POST: ' . print_r( $_POST, true ) );
-		error_log( '[AJAX_GET_SERVICE_LIST] $_REQUEST: ' . print_r( $_REQUEST, true ) );
-		error_log( '[AJAX_GET_SERVICE_LIST] リクエストメソッド: ' . $_SERVER['REQUEST_METHOD'] );
-		error_log( '[AJAX_GET_SERVICE_LIST] リクエストURI: ' . $_SERVER['REQUEST_URI'] );
-		error_log( '[AJAX_GET_SERVICE_LIST] ユーザーエージェント: ' . ( isset( $_SERVER['HTTP_USER_AGENT'] ) ? $_SERVER['HTTP_USER_AGENT'] : 'N/A' ) );
-		error_log( '[AJAX_GET_SERVICE_LIST] action: ' . ( isset( $_REQUEST['action'] ) ? $_REQUEST['action'] : 'NOT_SET' ) );
-		error_log( '[AJAX_GET_SERVICE_LIST] wp_doing_ajax: ' . ( wp_doing_ajax() ? 'true' : 'false' ) );
-		error_log( '[AJAX_GET_SERVICE_LIST] 現在のユーザー: ' . ( is_user_logged_in() ? wp_get_current_user()->user_login : 'NOT_LOGGED_IN' ) );
-		error_log( '[AJAX_GET_SERVICE_LIST] ユーザー権限: edit_posts=' . ( current_user_can( 'edit_posts' ) ? 'true' : 'false' ) . ', ktpwp_access=' . ( current_user_can( 'ktpwp_access' ) ? 'true' : 'false' ) );
-		error_log( '[AJAX_GET_SERVICE_LIST] リクエスト開始時刻: ' . date( 'Y-m-d H:i:s' ) );
+		// 最小限のデバッグログのみ
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			error_log( '[AJAX_GET_SERVICE_LIST] リクエスト開始: ' . date( 'Y-m-d H:i:s' ) );
+		}
 
 		// 権限チェック
 		if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
-			error_log( '[AJAX] サービス一覧取得: 権限不足' );
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( '[AJAX] サービス一覧取得: 権限不足' );
+			}
 			wp_send_json_error( __( 'この操作を行う権限がありません', 'ktpwp' ) );
 			return;
 		}
 
-		// デバッグログ
-		error_log( '[AJAX] サービス一覧取得開始: ' . print_r( $_POST, true ) );
-
 		// 簡単なnonceチェック
 		if ( ! check_ajax_referer( 'ktp_ajax_nonce', 'nonce', false ) ) {
-			error_log( '[AJAX] サービス一覧取得: nonce検証失敗' );
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( '[AJAX] サービス一覧取得: nonce検証失敗' );
+			}
 			wp_send_json_error( __( 'セキュリティチェックに失敗しました', 'ktpwp' ) );
 			return;
 		}
-
-		error_log( '[AJAX] サービス一覧取得: nonce検証成功' );
 
 		// パラメータ取得
 		$page = isset( $_POST['page'] ) ? absint( $_POST['page'] ) : 1;
@@ -1194,14 +1185,11 @@ class KTPWP_Ajax {
 			// 一般設定から表示件数を取得（設定クラスが利用可能な場合）
 			if ( class_exists( 'KTP_Settings' ) ) {
 				$limit = KTP_Settings::get_work_list_range();
-				error_log( '[AJAX] 一般設定から表示件数を取得: ' . $limit );
 			} else {
 				$limit = 20; // フォールバック値
-				error_log( '[AJAX] KTP_Settingsクラスなし - フォールバック値を使用: ' . $limit );
 			}
 		} else {
 			$limit = isset( $_POST['limit'] ) ? absint( $_POST['limit'] ) : 20;
-			error_log( '[AJAX] POSTパラメータから表示件数を取得: ' . $limit );
 		}
 
 		$search   = isset( $_POST['search'] ) ? sanitize_text_field( $_POST['search'] ) : '';
@@ -1213,27 +1201,27 @@ class KTPWP_Ajax {
 
 		$offset = ( $page - 1 ) * $limit;
 
-		error_log( '[AJAX] パラメータ取得完了: page=' . $page . ', limit=' . $limit );
-
 		try {
-			error_log( '[AJAX] サービスDB処理開始' );
 
 			// サービスDBクラスのインスタンスを取得
 			if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 				$service_db_file = KTPWP_PLUGIN_DIR . 'includes/class-ktpwp-service-db.php';
-				error_log( '[AJAX] サービスDBファイル: ' . $service_db_file . ' (存在: ' . ( file_exists( $service_db_file ) ? 'Yes' : 'No' ) . ')' );
 				require_once $service_db_file;
 			}
 
 			if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
-				error_log( '[AJAX] KTPWP_Service_DBクラスが見つかりません' );
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					error_log( '[AJAX] KTPWP_Service_DBクラスが見つかりません' );
+				}
 				wp_send_json_error( __( 'サービスDBクラスが見つかりません', 'ktpwp' ) );
 				return;
 			}
 
 			$service_db = KTPWP_Service_DB::get_instance();
 			if ( ! $service_db ) {
-				error_log( '[AJAX] サービスDBインスタンスの取得に失敗' );
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					error_log( '[AJAX] サービスDBインスタンスの取得に失敗' );
+				}
 
 				// ダミーデータで代替
 				$dummy_services = array(
@@ -1257,12 +1245,9 @@ class KTPWP_Ajax {
 					'debug_message' => 'DBインスタンス取得失敗のためダミーデータを使用',
 				);
 
-				error_log( '[AJAX] ダミーデータ送信（DBエラー時）: ' . print_r( $response_data, true ) );
 				wp_send_json_success( $response_data );
 				return;
 			}
-
-			error_log( '[AJAX] 検索パラメータ: page=' . $page . ', limit=' . $limit . ', search=' . $search . ', category=' . $category );
 
 			// 検索条件の配列
 			$search_args = array(
@@ -1275,15 +1260,13 @@ class KTPWP_Ajax {
 			);
 
 			// サービス一覧を取得
-			error_log( '[AJAX] サービス一覧取得呼び出し' );
 			$services = $service_db->get_services( 'service', $search_args );
-			error_log( '[AJAX] サービス一覧取得結果: ' . print_r( $services, true ) );
-
 			$total_services = $service_db->get_services_count( 'service', $search_args );
-			error_log( '[AJAX] サービス総数: ' . $total_services );
 
 			if ( $services === null || empty( $services ) ) {
-				error_log( '[AJAX] サービス一覧が空のためダミーデータに切り替え' );
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					error_log( '[AJAX] サービス一覧が空のためダミーデータに切り替え' );
+				}
 
 				// テスト用のダミーデータを返す
 				$dummy_services = array(
@@ -1333,7 +1316,6 @@ class KTPWP_Ajax {
 					// 必要に応じて他のフィールドも追加
 				);
 				
-				error_log( '[AJAX] サービスデータ配列化: ' . print_r( $service_data, true ) );
 				$services_array[] = $service_data;
 			}
 

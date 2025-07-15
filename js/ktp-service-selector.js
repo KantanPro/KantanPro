@@ -136,8 +136,16 @@
         // ローディング表示
         $('#ktp-service-selector-content').html(`
             <div style="text-align: center; padding: 40px;">
-                <div style="font-size: 16px; color: #666;">サービス一覧を読み込み中...</div>
+                <div style="font-size: 16px; color: #666; margin-bottom: 15px;">サービス一覧を読み込み中...</div>
+                <div style="display: inline-block; width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #007cba; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                <div style="font-size: 12px; color: #999; margin-top: 10px;">最大30秒お待ちください</div>
             </div>
+            <style>
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+            </style>
         `);
 
         // Ajax設定の取得
@@ -186,7 +194,7 @@
             url: ajaxUrl,
             type: 'POST',
             data: ajaxData,
-            timeout: 5000, // 5秒のタイムアウトに短縮
+            timeout: 30000, // 30秒のタイムアウトに延長
             success: function (response) {
                 console.log('[SERVICE SELECTOR] サービスリスト取得成功', response);
                 try {
@@ -212,28 +220,44 @@
                 });
                 
                 let errorMessage = 'サービス一覧の取得に失敗しました';
+                let errorDetails = `${status} - ${error}`;
+                
                 if (status === 'timeout') {
                     errorMessage = 'リクエストがタイムアウトしました';
+                    errorDetails = 'サーバーの応答が30秒以内にありませんでした。ネットワーク接続を確認してください。';
                 } else if (xhr.status === 500) {
                     errorMessage = 'サーバーエラーが発生しました';
+                    errorDetails = 'サーバー内部でエラーが発生しました。しばらく時間をおいてから再試行してください。';
                 } else if (xhr.status === 403) {
                     errorMessage = 'アクセス権限がありません';
+                    errorDetails = 'この操作を実行する権限がありません。管理者に連絡してください。';
+                } else if (xhr.status === 0) {
+                    errorMessage = 'ネットワークエラーが発生しました';
+                    errorDetails = 'サーバーに接続できません。ネットワーク接続を確認してください。';
                 }
                 
                 $('#ktp-service-selector-content').html(`
                     <div style="text-align: center; padding: 40px; color: #dc3545;">
-                        <div style="font-size: 16px;">${errorMessage}</div>
-                        <div style="font-size: 14px; margin-top: 8px;">エラー詳細: ${status} - ${error}</div>
+                        <div style="font-size: 16px; font-weight: bold; margin-bottom: 10px;">${errorMessage}</div>
+                        <div style="font-size: 14px; margin-bottom: 15px; color: #666;">${errorDetails}</div>
                         <div style="font-size: 12px; margin-top: 8px; color: #666;">
-                            <button type="button" onclick="location.reload()" style="
+                            <button type="button" onclick="window.ktpShowServiceSelector && window.ktpShowServiceSelector(${targetRow ? targetRow.attr('id') || 'null' : 'null'}, '${mode}')" style="
                                 background: #007cba; 
                                 color: white; 
                                 border: none; 
                                 padding: 8px 16px; 
                                 border-radius: 4px; 
                                 cursor: pointer;
-                                margin-top: 10px;
-                            ">再読み込み</button>
+                                margin-right: 10px;
+                            ">再試行</button>
+                            <button type="button" onclick="$('#ktp-service-selector-popup').remove()" style="
+                                background: #6c757d; 
+                                color: white; 
+                                border: none; 
+                                padding: 8px 16px; 
+                                border-radius: 4px; 
+                                cursor: pointer;
+                            ">閉じる</button>
                         </div>
                     </div>
                 `);

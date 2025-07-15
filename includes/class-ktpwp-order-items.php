@@ -584,6 +584,10 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 					$amount = isset( $item['amount'] ) ? floatval( $item['amount'] ) : $price * $quantity;
 					$tax_rate = isset( $item['tax_rate'] ) ? floatval( $item['tax_rate'] ) : 10.00; // 税率対応
 					$remarks = isset( $item['remarks'] ) ? sanitize_textarea_field( $item['remarks'] ) : '';
+					// 備考欄が「0」の場合は空文字列として扱う
+					if ( $remarks === '0' ) {
+						$remarks = '';
+					}
 					$purchase = isset( $item['purchase'] ) ? sanitize_text_field( $item['purchase'] ) : '';
 					$supplier_id = isset( $item['supplier_id'] ) ? intval( $item['supplier_id'] ) : null;
 
@@ -948,7 +952,12 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 					$format[] = '%f';
 					break;
 				case 'remarks':
-					$update_data['remarks'] = sanitize_textarea_field( $field_value );
+					$remarks_value = sanitize_textarea_field( $field_value );
+					// 備考欄が「0」の場合は空文字列として扱う
+					if ( $remarks_value === '0' ) {
+						$remarks_value = '';
+					}
+					$update_data['remarks'] = $remarks_value;
 					$format[] = '%s';
 					break;
 				case 'purchase':
