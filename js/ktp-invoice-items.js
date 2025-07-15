@@ -1006,6 +1006,40 @@
             }
         });
 
+        // 税率フィールドのblurイベントで自動保存
+        $(document).on('blur', '.invoice-item-input.tax-rate', function () {
+            const $field = $(this);
+            const taxRate = $field.val();
+            const $row = $field.closest('tr');
+            const itemId = $row.find('input[name*="[id]"]').val();
+            const orderId = $('input[name="order_id"]').val() || $('#order_id').val();
+            
+            console.log('[INVOICE] 税率フィールドblurイベント発火:', {
+                taxRate: taxRate,
+                itemId: itemId,
+                orderId: orderId,
+                fieldElement: $field[0],
+                rowElement: $row[0]
+            });
+            
+            if (orderId && itemId && itemId !== '0') {
+                console.log('[INVOICE] blur: tax_rate - 既存更新/新規作成後', { taxRate, itemId, orderId });
+                console.log('[INVOICE] ktpInvoiceAutoSaveItem呼び出し開始');
+                window.ktpInvoiceAutoSaveItem('invoice', itemId, 'tax_rate', taxRate, orderId);
+                console.log('[INVOICE] ktpInvoiceAutoSaveItem呼び出し完了');
+            } else if (itemId === '0') {
+                console.log('[INVOICE] blur: tax_rate - item_idが0のため保存スキップ。product_nameの入力/保存待ち。');
+            } else {
+                console.warn('[INVOICE] blur: tax_rate - 保存条件未満', {
+                    orderId: orderId,
+                    itemId: itemId,
+                    hasOrderId: !!orderId,
+                    hasItemId: !!itemId,
+                    itemIdNotZero: itemId !== '0'
+                });
+            }
+        });
+
         // 初期状態で既存の行に対して金額計算を実行
         $('.invoice-items-table tbody tr').each(function () {
             calculateAmount($(this));
