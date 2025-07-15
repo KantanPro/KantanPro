@@ -3,7 +3,7 @@
  * Plugin Name: KantanPro
  * Plugin URI: https://www.kantanpro.com/
  * Description: スモールビジネス向けの仕事効率化システム。ショートコード[ktpwp_all_tab]を固定ページに設置してください。
- * Version: 1.0.9(preview)
+ * Version: 1.0.10(preview)
  * Author: KantanPro
  * Author URI: https://www.kantanpro.com/kantanpro-page
  * License: GPL v2 or later
@@ -30,7 +30,7 @@ if ( file_exists( plugin_dir_path( __FILE__ ) . 'vendor/autoload.php' ) ) {
 
 // プラグイン定数定義
 if ( ! defined( 'KANTANPRO_PLUGIN_VERSION' ) ) {
-    define( 'KANTANPRO_PLUGIN_VERSION', '1.0.9(preview)' );
+    define( 'KANTANPRO_PLUGIN_VERSION', '1.0.10(preview)' );
 }
 if ( ! defined( 'KANTANPRO_PLUGIN_NAME' ) ) {
     define( 'KANTANPRO_PLUGIN_NAME', 'KantanPro' );
@@ -2798,6 +2798,8 @@ function ktpwp_get_plugin_description() {
         <li><strong>⚠️ 納期警告機能</strong> - 期限管理・アラート表示</li>
         <li><strong>💰 商品管理機能</strong> - 価格・数量・単位管理</li>
         <li><strong>👤 スタッフアバター表示機能</strong> - ログイン中スタッフの可視化</li>
+        <li><strong>📚 プラグインリファレンス機能</strong> - 包括的なヘルプシステム</li>
+        <li><strong>💝 寄付機能</strong> - Stripe決済・セキュアな決済処理・進捗管理・自動メール送信</li>
     </ul>
     
     <h4>💡 特徴</h4>
@@ -2810,6 +2812,8 @@ function ktpwp_get_plugin_description() {
         <li>レスポンシブデザインでモバイル対応</li>
         <li>WordPress標準の更新システムに完全対応</li>
         <li>軽量で安定性を重視した設計</li>
+        <li>包括的なセキュリティ対策</li>
+        <li>リアルタイムコミュニケーション機能</li>
     </ul>
     
     <h4>🔧 使用方法</h4>
@@ -2824,7 +2828,7 @@ function ktpwp_get_plugin_description() {
         <li>推奨PHP拡張: GD（画像処理用）</li>
     </ul>
     
-    <h4>🆕 最新の改善点（1.0.9(preview)）</h4>
+    <h4>🆕 最新の改善点（1.0.10(preview)）</h4>
     <ul>
         <li>プラグイン説明文の大幅改善（機能詳細の追加）</li>
         <li>管理画面でのプラグイン情報表示の最適化</li>
@@ -2836,6 +2840,8 @@ function ktpwp_get_plugin_description() {
         <li>寄付機能の安定化と改善</li>
         <li>セッション管理の最適化</li>
         <li>ファイル添付機能の強化</li>
+        <li>自動マイグレーション機能の改善</li>
+        <li>データベース整合性チェック機能の強化</li>
     </ul>
     
     <h4>📞 サポート</h4>
@@ -2855,6 +2861,26 @@ function ktpwp_get_plugin_changelog() {
     $changelog = '
     <h3>変更履歴</h3>
     <p>KantanProプラグインの主要な更新履歴をご紹介します。</p>
+    
+    <h4>1.0.10(preview) - 2025年7月15日</h4>
+    <ul>
+        <li><strong>プラグイン説明文の大幅改善</strong> - 機能詳細の追加</li>
+        <li><strong>管理画面でのプラグイン情報表示の最適化</strong> - ユーザビリティ向上</li>
+        <li><strong>プラグインリファレンス機能の強化</strong> - ヘルプシステム改善</li>
+        <li><strong>セキュリティ機能のさらなる改善</strong> - セキュリティ強化</li>
+        <li><strong>パフォーマンス最適化とUI/UX改善</strong> - 操作性向上</li>
+        <li><strong>エラーハンドリングの強化</strong> - 安定性向上</li>
+        <li><strong>データベース構造の最適化</strong> - パフォーマンス向上</li>
+        <li><strong>寄付機能の安定化と改善</strong> - 機能強化</li>
+        <li><strong>セッション管理の最適化</strong> - パフォーマンス向上</li>
+        <li><strong>ファイル添付機能の強化</strong> - 機能改善</li>
+        <li><strong>自動マイグレーション機能の改善</strong> - データベース更新の安定化</li>
+        <li><strong>データベース整合性チェック機能の強化</strong> - データ品質向上</li>
+        <li><strong>消費税対応機能の包括的改善</strong> - 軽減税率・税区分対応の強化</li>
+        <li><strong>内税顧客の請求項目表示修正</strong> - 表示形式の統一化</li>
+        <li><strong>税区分ラベルの統一</strong> - 「内税｜外税」表示への変更</li>
+        <li><strong>消費税計算ロジックの最適化</strong> - 計算精度の向上</li>
+    </ul>
     
     <h4>1.0.9(preview) - 2025年7月13日</h4>
     <ul>
@@ -2902,6 +2928,14 @@ function ktpwp_get_plugin_changelog() {
         <li><strong>パフォーマンス最適化とUI/UX改善</strong> - 操作性向上</li>
         <li><strong>エラーハンドリングの強化</strong> - 安定性向上</li>
         <li><strong>データベース構造の最適化</strong> - パフォーマンス向上</li>
+        <li><strong>消費税対応機能の実装</strong> - 軽減税率（8%・10%）対応</li>
+        <li><strong>税区分管理機能の追加</strong> - 内税・外税の管理</li>
+        <li><strong>一括請求書の消費税対応</strong> - 顧客タブでの消費税計算</li>
+        <li><strong>税率カラムの追加</strong> - 商品・サービス・請求項目への税率設定</li>
+        <li><strong>消費税計算ロジックの実装</strong> - 内税・外税の正確な計算</li>
+        <li><strong>税区分ラベルの統一</strong> - 「内税｜外税」表示への変更</li>
+        <li><strong>内税顧客の請求項目表示修正</strong> - 表示形式の統一化</li>
+        <li><strong>消費税表示の最適化</strong> - 請求書・受注書での表示改善</li>
     </ul>
     
     <h4>1.0.5(preview) - 2024年12月</h4>
