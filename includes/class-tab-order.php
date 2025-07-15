@@ -539,6 +539,7 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 								// 請求項目リスト・金額を実際のデータベースから取得
 								$invoice_items_from_db = $this->Get_Invoice_Items( $order->id );
 								$amount = 0;
+								$total_tax_amount = 0;
 								$invoice_list = '';
 
 								if ( ! empty( $invoice_items_from_db ) ) {
@@ -553,7 +554,12 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 										$price = isset( $item['price'] ) ? floatval( $item['price'] ) : 0;
 										$quantity = isset( $item['quantity'] ) ? floatval( $item['quantity'] ) : 0;
 										$unit = isset( $item['unit'] ) ? sanitize_text_field( $item['unit'] ) : '';
+										$tax_rate = isset( $item['tax_rate'] ) ? floatval( $item['tax_rate'] ) : 10.0;
 										$amount += $item_amount;
+
+										// 消費税計算（税抜表示の場合）
+										$tax_amount = ceil( $item_amount * ( $tax_rate / 100 ) );
+										$total_tax_amount += $tax_amount;
 
 										// サービスが空でない項目のみリストに追加
 										if ( ! empty( trim( $product_name ) ) ) {
@@ -575,11 +581,20 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 
 									// 合計金額を切り上げ
 									$amount_ceiled = ceil( $amount );
-									$total_line = '合計：' . number_format( $amount_ceiled ) . '円';
+									$total_tax_amount_ceiled = ceil( $total_tax_amount );
+									$total_with_tax = $amount_ceiled + $total_tax_amount_ceiled;
+
+									// 合計行の最大文字数を計算
+									$total_line = '合計金額：' . number_format( $amount_ceiled ) . '円';
+									$tax_line = '消費税：' . number_format( $total_tax_amount_ceiled ) . '円';
+									$total_with_tax_line = '税込合計：' . number_format( $total_with_tax ) . '円';
+									
 									$total_length = mb_strlen( $total_line, 'UTF-8' );
+									$tax_length = mb_strlen( $tax_line, 'UTF-8' );
+									$total_with_tax_length = mb_strlen( $total_with_tax_line, 'UTF-8' );
 
 									// 罫線の長さを決定（項目と合計行の最大文字数）
-									$line_length = max( $max_length, $total_length );
+									$line_length = max( $max_length, $total_length, $tax_length, $total_with_tax_length );
 									if ( $line_length < 30 ) {
 										$line_length = 30; // 最小長を拡大
 									}
@@ -589,7 +604,9 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 
 									// 罫線を追加
 									$invoice_list .= str_repeat( '-', $line_length ) . "\n";
-									$invoice_list .= $total_line;
+									$invoice_list .= $total_line . "\n";
+									$invoice_list .= $tax_line . "\n";
+									$invoice_list .= $total_with_tax_line;
 								} else {
 									// 請求項目データがない場合はJSONデータ（旧形式）を試す
 									$invoice_items_json = $order->invoice_items ? sanitize_textarea_field( $order->invoice_items ) : '';
@@ -597,6 +614,7 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 										$items = @json_decode( $invoice_items_json, true );
 										if ( is_array( $items ) ) {
 											$invoice_list = "\n";
+											$total_tax_amount = 0;
 											foreach ( $items as $item ) {
 												$amount += isset( $item['amount'] ) ? floatval( $item['amount'] ) : 0;
 												$product_name = isset( $item['name'] ) ? sanitize_text_field( $item['name'] ) : '';
@@ -604,6 +622,11 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 												$quantity = isset( $item['quantity'] ) ? floatval( $item['quantity'] ) : 1;
 												$unit = isset( $item['unit'] ) ? sanitize_text_field( $item['unit'] ) : '';
 												$item_amount = isset( $item['amount'] ) ? floatval( $item['amount'] ) : 0;
+												$tax_rate = isset( $item['tax_rate'] ) ? floatval( $item['tax_rate'] ) : 10.0;
+
+												// 消費税計算（税抜表示の場合）
+												$tax_amount = ceil( $item_amount * ( $tax_rate / 100 ) );
+												$total_tax_amount += $tax_amount;
 
 												if ( ! empty( trim( $product_name ) ) ) {
 													// 詳細形式：サービス：単価 × 数量/単位 = 金額円
@@ -611,7 +634,11 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 												}
 											}
 											$amount_ceiled = ceil( $amount );
-											$invoice_list .= "\n合計：" . number_format( $amount_ceiled ) . '円';
+											$total_tax_amount_ceiled = ceil( $total_tax_amount );
+											$total_with_tax = $amount_ceiled + $total_tax_amount_ceiled;
+											$invoice_list .= "\n合計金額：" . number_format( $amount_ceiled ) . '円';
+											$invoice_list .= "\n消費税：" . number_format( $total_tax_amount_ceiled ) . '円';
+											$invoice_list .= "\n税込合計：" . number_format( $total_with_tax ) . '円';
 										} else {
 											$invoice_list = sanitize_textarea_field( $invoice_items_json );
 										}

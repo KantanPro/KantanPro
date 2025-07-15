@@ -1526,6 +1526,7 @@ class KTPWP_Ajax {
 			// 請求項目リストを取得
 			$invoice_items_from_db = array();
 			$amount                = 0;
+			$total_tax_amount      = 0;
 			$invoice_list          = '';
 			
 			try {
@@ -1554,6 +1555,10 @@ class KTPWP_Ajax {
 					$tax_rate     = isset( $item['tax_rate'] ) ? floatval( $item['tax_rate'] ) : 10.00;
 					$amount      += $item_amount;
 
+					// 消費税計算（税抜表示の場合）
+					$tax_amount = ceil( $item_amount * ( $tax_rate / 100 ) );
+					$total_tax_amount += $tax_amount;
+
 					// 小数点以下の不要な0を削除
 					$price_display = rtrim( rtrim( number_format( $price, 6, '.', '' ), '0' ), '.' );
 					$quantity_display = rtrim( rtrim( number_format( $quantity, 6, '.', '' ), '0' ), '.' );
@@ -1573,10 +1578,19 @@ class KTPWP_Ajax {
 				}
 
 				$amount_ceiled = ceil( $amount );
-				$total_line    = '合計：' . number_format( $amount_ceiled ) . '円';
-				$total_length  = mb_strlen( $total_line, 'UTF-8' );
+				$total_tax_amount_ceiled = ceil( $total_tax_amount );
+				$total_with_tax = $amount_ceiled + $total_tax_amount_ceiled;
 
-				$line_length = max( $max_length, $total_length );
+				// 合計行の最大文字数を計算
+				$total_line = '合計金額：' . number_format( $amount_ceiled ) . '円';
+				$tax_line = '消費税：' . number_format( $total_tax_amount_ceiled ) . '円';
+				$total_with_tax_line = '税込合計：' . number_format( $total_with_tax ) . '円';
+				
+				$total_length = mb_strlen( $total_line, 'UTF-8' );
+				$tax_length = mb_strlen( $tax_line, 'UTF-8' );
+				$total_with_tax_length = mb_strlen( $total_with_tax_line, 'UTF-8' );
+
+				$line_length = max( $max_length, $total_length, $tax_length, $total_with_tax_length );
 				if ( $line_length < 30 ) {
 					$line_length = 30;
 				}
@@ -1585,7 +1599,9 @@ class KTPWP_Ajax {
 				}
 
 				$invoice_list .= str_repeat( '-', $line_length ) . "\n";
-				$invoice_list .= $total_line;
+				$invoice_list .= $total_line . "\n";
+				$invoice_list .= $tax_line . "\n";
+				$invoice_list .= $total_with_tax_line;
 			} else {
 				$invoice_list = '（請求項目未入力）';
 			}
