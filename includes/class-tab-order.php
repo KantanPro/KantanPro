@@ -2358,8 +2358,29 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 					$html .= '<div style="page-break-before: always; margin-top: 30px;"></div>';
 					$html .= '<h3 style="font-size: 16px; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #333;">請求項目（' . ( $page + 1 ) . '/' . $total_pages . 'p）</h3>';
 				} else {
-					// 1ページ目：請求金額を表示
-					$html .= '<h3 style="font-size: 16px; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #333;">請求項目（' . ( $page + 1 ) . '/' . $total_pages . 'p）　請求金額 ¥' . number_format( $grand_total ) . '</h3>';
+					// 1ページ目：請求金額、消費税、税込合計を表示
+					// 消費税計算
+					$tax_amount = 0;
+					$tax_inclusive = class_exists( 'KTP_Settings' ) ? KTP_Settings::get_tax_inclusive() : false;
+					
+					foreach ( $invoice_items as $item ) {
+						$item_amount = isset( $item['amount'] ) ? floatval( $item['amount'] ) : 0;
+						$item_tax_rate = isset( $item['tax_rate'] ) ? floatval( $item['tax_rate'] ) : 10.00;
+						
+						if ( $tax_inclusive ) {
+							// 税込表示の場合：税込金額から税額を計算
+							$tax_amount += $item_amount * ( $item_tax_rate / 100 ) / ( 1 + $item_tax_rate / 100 );
+						} else {
+							// 税抜表示の場合：税抜金額から税額を計算
+							$tax_amount += $item_amount * ( $item_tax_rate / 100 );
+						}
+					}
+					
+					$total_with_tax = $grand_total + $tax_amount;
+					$tax_amount_ceiled = ceil( $tax_amount );
+					$total_with_tax_ceiled = ceil( $total_with_tax );
+					
+					$html .= '<h3 style="font-size: 16px; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #333;">請求項目（' . ( $page + 1 ) . '/' . $total_pages . 'p）　合計金額 ¥' . number_format( $grand_total ) . '　消費税 ¥' . number_format( $tax_amount_ceiled ) . '　税込合計 ¥' . number_format( $total_with_tax_ceiled ) . '</h3>';
 				}
 
 				// リスト表示開始（枠線なし、設定された奇数偶数背景カラー）
@@ -2453,11 +2474,42 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 					$html .= '</div>';
 				}
 
-				// 最後のページまたは1ページのみの場合、合計金額を表示
+				// 最後のページまたは1ページのみの場合、合計金額、消費税、税込合計を表示
 				if ( $page == $total_pages - 1 ) {
-					// 合計金額行（請求金額と同じ値を右寄せで表示）
+					// 消費税計算
+					$tax_amount = 0;
+					$tax_inclusive = class_exists( 'KTP_Settings' ) ? KTP_Settings::get_tax_inclusive() : false;
+					
+					foreach ( $invoice_items as $item ) {
+						$item_amount = isset( $item['amount'] ) ? floatval( $item['amount'] ) : 0;
+						$item_tax_rate = isset( $item['tax_rate'] ) ? floatval( $item['tax_rate'] ) : 10.00;
+						
+						if ( $tax_inclusive ) {
+							// 税込表示の場合：税込金額から税額を計算
+							$tax_amount += $item_amount * ( $item_tax_rate / 100 ) / ( 1 + $item_tax_rate / 100 );
+						} else {
+							// 税抜表示の場合：税抜金額から税額を計算
+							$tax_amount += $item_amount * ( $item_tax_rate / 100 );
+						}
+					}
+					
+					$total_with_tax = $grand_total + $tax_amount;
+					$tax_amount_ceiled = ceil( $tax_amount );
+					$total_with_tax_ceiled = ceil( $total_with_tax );
+					
+					// 合計金額行
 					$html .= '<div style="display: flex; padding: 10px 8px; background: #e9ecef; font-weight: bold; border-top: 2px solid #ccc; margin-top: 5px; align-items: center; justify-content: flex-end;">';
 					$html .= '<div style="text-align: right;">合計金額　¥' . number_format( $grand_total ) . '</div>';
+					$html .= '</div>';
+					
+					// 消費税行
+					$html .= '<div style="display: flex; padding: 10px 8px; background: #e9ecef; font-weight: bold; border-top: 1px solid #ccc; align-items: center; justify-content: flex-end;">';
+					$html .= '<div style="text-align: right;">消費税　¥' . number_format( $tax_amount_ceiled ) . '</div>';
+					$html .= '</div>';
+					
+					// 税込合計行
+					$html .= '<div style="display: flex; padding: 10px 8px; background: #e9ecef; font-weight: bold; border-top: 1px solid #ccc; align-items: center; justify-content: flex-end;">';
+					$html .= '<div style="text-align: right;">税込合計　¥' . number_format( $total_with_tax_ceiled ) . '</div>';
 					$html .= '</div>';
 				}
 
