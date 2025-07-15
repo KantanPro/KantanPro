@@ -1680,6 +1680,7 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 			// ページネーションロジック（表示はしないが計算は残す）
 			$query_limit = 20; // 1ページあたりの表示件数
 			$page_start = isset( $_GET['page_start'] ) ? intval( $_GET['page_start'] ) : 0; // 表示開始位置
+			$page_start = max( 0, $page_start ); // 負の値を防ぐ安全対策
 
 			// 全データ数を取得 - Use prepared statement
 			$total_query = "SELECT COUNT(*) FROM `{$table_name}`";
@@ -1734,6 +1735,7 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 					$unit = isset( $item['unit'] ) ? sanitize_text_field( $item['unit'] ) : '';
 					$quantity = isset( $item['quantity'] ) ? floatval( $item['quantity'] ) : 0;
 					$amount = isset( $item['amount'] ) ? floatval( $item['amount'] ) : 0;
+					$tax_rate = isset( $item['tax_rate'] ) ? floatval( $item['tax_rate'] ) : 10.00;
 					$remarks = isset( $item['remarks'] ) ? sanitize_textarea_field( $item['remarks'] ) : '';
 
 					// 商品名が空ならスキップ（商品名があれば必ず保存）
@@ -1749,12 +1751,13 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 						'unit' => $unit,
 						'quantity' => $quantity,
 						'amount' => $amount,
+						'tax_rate' => $tax_rate,
 						'remarks' => $remarks,
 						'sort_order' => $sort_order,
 						'updated_at' => current_time( 'mysql' ),
 					);
 
-					$format = array( '%d', '%s', '%f', '%s', '%f', '%f', '%s', '%d', '%s' );
+					$format = array( '%d', '%s', '%f', '%s', '%f', '%f', '%f', '%s', '%d', '%s' );
 
 					$used_id = 0;
 					if ( $item_id > 0 ) {

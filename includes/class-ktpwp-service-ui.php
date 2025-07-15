@@ -67,7 +67,7 @@ if ( ! class_exists( 'KTPWP_Service_UI' ) ) {
 			if ( isset( $_GET['sort_by'] ) ) {
 				$sort_by = sanitize_text_field( $_GET['sort_by'] );
 				// 安全なカラム名のみ許可（SQLインジェクション対策）
-				$allowed_columns = array( 'id', 'service_name', 'price', 'unit', 'frequency', 'time', 'category' );
+				$allowed_columns = array( 'id', 'service_name', 'price', 'unit', 'frequency', 'time', 'category', 'tax_rate' );
 				if ( ! in_array( $sort_by, $allowed_columns ) ) {
 					$sort_by = 'id'; // 不正な値の場合はデフォルトに戻す
 				}
@@ -191,6 +191,7 @@ if ( ! class_exists( 'KTPWP_Service_UI' ) ) {
                 <th class="manage-column column-image">' . esc_html__( '画像', 'ktpwp' ) . '</th>
                 <th class="manage-column column-service-name">' . esc_html__( 'サービス名', 'ktpwp' ) . '</th>
                 <th class="manage-column column-price">' . esc_html__( '価格', 'ktpwp' ) . '</th>
+                <th class="manage-column column-tax-rate">' . esc_html__( '税率', 'ktpwp' ) . '</th>
                 <th class="manage-column column-unit">' . esc_html__( '単位', 'ktpwp' ) . '</th>
                 <th class="manage-column column-category">' . esc_html__( 'カテゴリー', 'ktpwp' ) . '</th>
                 <th class="manage-column column-actions">' . esc_html__( '操作', 'ktpwp' ) . '</th>
@@ -230,6 +231,10 @@ if ( ! class_exists( 'KTPWP_Service_UI' ) ) {
 
 					// 価格列
 					$html .= '<td class="column-price">' . $this->format_price_display( $service->price ) . '</td>';
+
+					// 税率列
+					$tax_rate = isset($service->tax_rate) ? floatval($service->tax_rate) : 10.00;
+					$html .= '<td class="column-tax-rate">' . esc_html( number_format($tax_rate, 1) ) . '%</td>';
 
 					// 単位列
 					$html .= '<td class="column-unit">' . esc_html( $service->unit ) . '</td>';

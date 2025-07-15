@@ -850,16 +850,28 @@
             e.preventDefault();
             e.stopPropagation();
             console.log('[INVOICE-ITEMS] [>]ボタンクリック - サービス選択開始');
+            console.log('[INVOICE-ITEMS] クリックされた要素:', this);
+            console.log('[INVOICE-ITEMS] 要素のクラス:', $(this).attr('class'));
             
             // サービス選択ポップアップを表示
             const currentRow = $(this).closest('tr');
+            console.log('[INVOICE-ITEMS] currentRow:', currentRow);
             
             // ktpShowServiceSelector関数の存在確認
+            console.log('[INVOICE-ITEMS] ktpShowServiceSelector関数の存在確認:', typeof window.ktpShowServiceSelector);
+            console.log('[INVOICE-ITEMS] window.ktpShowServiceSelector:', window.ktpShowServiceSelector);
+            
             if (typeof window.ktpShowServiceSelector === 'function') {
                 console.log('[INVOICE-ITEMS] ktpShowServiceSelector関数を呼び出し');
-                window.ktpShowServiceSelector(currentRow);
+                try {
+                    window.ktpShowServiceSelector(currentRow);
+                    console.log('[INVOICE-ITEMS] ktpShowServiceSelector関数呼び出し完了');
+                } catch (error) {
+                    console.error('[INVOICE-ITEMS] ktpShowServiceSelector関数呼び出しエラー:', error);
+                }
             } else {
                 console.error('[INVOICE-ITEMS] ktpShowServiceSelector関数が見つかりません');
+                console.error('[INVOICE-ITEMS] 利用可能なwindow関数:', Object.keys(window).filter(key => key.includes('ktp')));
                 alert('サービス選択機能の読み込みに失敗しました。ページを再読み込みしてください。');
             }
         });

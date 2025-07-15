@@ -199,7 +199,7 @@ class KTPWP_Assets {
             'ktp-service-selector' => array(
                 'src'       => 'js/ktp-service-selector.js',
                 'deps'      => array( 'jquery', 'ktp-invoice-items' ),
-                'ver'       => KTPWP_PLUGIN_VERSION,
+                'ver'       => KTPWP_PLUGIN_VERSION . '.' . filemtime( KTPWP_PLUGIN_DIR . 'js/ktp-service-selector.js' ),
                 'in_footer' => true,
                 'admin'     => false,
                 'localize'  => array(

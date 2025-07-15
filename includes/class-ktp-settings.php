@@ -118,6 +118,39 @@ class KTP_Settings {
     }
 
     /**
+     * Get default tax rate setting
+     *
+     * @since 1.0.0
+     * @return float Default tax rate setting (default: 10.00)
+     */
+    public static function get_default_tax_rate() {
+        $options = get_option( 'ktp_general_settings', array() );
+        return isset( $options['default_tax_rate'] ) ? floatval( $options['default_tax_rate'] ) : 10.00;
+    }
+
+    /**
+     * Get reduced tax rate setting
+     *
+     * @since 1.0.0
+     * @return float Reduced tax rate setting (default: 8.00)
+     */
+    public static function get_reduced_tax_rate() {
+        $options = get_option( 'ktp_general_settings', array() );
+        return isset( $options['reduced_tax_rate'] ) ? floatval( $options['reduced_tax_rate'] ) : 8.00;
+    }
+
+    /**
+     * Get tax inclusive setting
+     *
+     * @since 1.0.0
+     * @return bool Tax inclusive setting (default: false)
+     */
+    public static function get_tax_inclusive() {
+        $options = get_option( 'ktp_general_settings', array() );
+        return isset( $options['tax_inclusive'] ) ? (bool) $options['tax_inclusive'] : false;
+    }
+
+    /**
      * Get design settings
      *
      * @since 1.0.0
@@ -1765,6 +1798,24 @@ class KTP_Settings {
                                 echo '</table>';
                             }
                         }
+
+                        // 消費税設定セクションの出力
+                        if ( isset( $wp_settings_sections['ktp-general']['tax_setting_section'] ) ) {
+                            $section = $wp_settings_sections['ktp-general']['tax_setting_section'];
+                            echo '<h2>' . esc_html( $section['title'] ) . '</h2>';
+                            if ( $section['callback'] ) {
+                                call_user_func( $section['callback'], $section );
+                            }
+                            if ( isset( $wp_settings_fields['ktp-general']['tax_setting_section'] ) ) {
+                                echo '<table class="form-table">';
+                                foreach ( $wp_settings_fields['ktp-general']['tax_setting_section'] as $field ) {
+                                    echo '<tr><th scope="row">' . esc_html( $field['title'] ) . '</th><td>';
+                                    call_user_func( $field['callback'], $field['args'] );
+                                    echo '</td></tr>';
+                                }
+                                echo '</table>';
+                            }
+                        }
                         ?>
                         
                         <div class="ktp-submit-button">
@@ -2118,6 +2169,41 @@ class KTP_Settings {
             array( $this, 'company_info_callback' ),
             'ktp-general',
             'general_setting_section'
+        );
+
+        // 消費税設定セクション
+        add_settings_section(
+            'tax_setting_section',
+            __( '消費税設定', 'ktpwp' ),
+            array( $this, 'print_tax_section_info' ),
+            'ktp-general'
+        );
+
+        // 基本税率
+        add_settings_field(
+            'default_tax_rate',
+            __( '基本税率（%）', 'ktpwp' ),
+            array( $this, 'default_tax_rate_callback' ),
+            'ktp-general',
+            'tax_setting_section'
+        );
+
+        // 軽減税率
+        add_settings_field(
+            'reduced_tax_rate',
+            __( '軽減税率（%）', 'ktpwp' ),
+            array( $this, 'reduced_tax_rate_callback' ),
+            'ktp-general',
+            'tax_setting_section'
+        );
+
+        // 税込/税抜き表示設定
+        add_settings_field(
+            'tax_inclusive',
+            __( '税込/税抜き表示', 'ktpwp' ),
+            array( $this, 'tax_inclusive_callback' ),
+            'ktp-general',
+            'tax_setting_section'
         );
 
         // 寄付設定セクション
@@ -3768,6 +3854,78 @@ define( 'WP_DEBUG_DISPLAY', false );
         global $wpdb;
         $prefix = $wpdb->prefix;
         return substr( hash( 'sha256', $site_url . $prefix . 'ktpwp_iv' ), 0, 16 );
+    }
+
+    /**
+     * 消費税設定セクションの説明
+     */
+    public function print_tax_section_info() {
+        echo '<p>' . esc_html__( '消費税の基本設定を行います。', 'ktpwp' ) . '</p>';
+    }
+
+    /**
+     * 基本税率フィールドのコールバック
+     */
+    public function default_tax_rate_callback() {
+        $options = get_option( 'ktp_general_settings' );
+        $value = isset( $options['default_tax_rate'] ) ? $options['default_tax_rate'] : 10.00;
+        ?>
+        <input type="number" 
+               id="default_tax_rate" 
+               name="ktp_general_settings[default_tax_rate]" 
+               value="<?php echo esc_attr( $value ); ?>" 
+               step="0.01" 
+               min="0" 
+               max="100" 
+               style="width: 100px;" />
+        <span>%</span>
+        <p class="description">
+            <?php esc_html_e( '基本税率を設定してください。例：10.00', 'ktpwp' ); ?>
+        </p>
+        <?php
+    }
+
+    /**
+     * 軽減税率フィールドのコールバック
+     */
+    public function reduced_tax_rate_callback() {
+        $options = get_option( 'ktp_general_settings' );
+        $value = isset( $options['reduced_tax_rate'] ) ? $options['reduced_tax_rate'] : 8.00;
+        ?>
+        <input type="number" 
+               id="reduced_tax_rate" 
+               name="ktp_general_settings[reduced_tax_rate]" 
+               value="<?php echo esc_attr( $value ); ?>" 
+               step="0.01" 
+               min="0" 
+               max="100" 
+               style="width: 100px;" />
+        <span>%</span>
+        <p class="description">
+            <?php esc_html_e( '軽減税率を設定してください。例：8.00', 'ktpwp' ); ?>
+        </p>
+        <?php
+    }
+
+    /**
+     * 税込/税抜き表示フィールドのコールバック
+     */
+    public function tax_inclusive_callback() {
+        $options = get_option( 'ktp_general_settings' );
+        $value = isset( $options['tax_inclusive'] ) ? $options['tax_inclusive'] : false;
+        ?>
+        <select id="tax_inclusive" name="ktp_general_settings[tax_inclusive]">
+            <option value="0" <?php selected( $value, false ); ?>>
+                <?php esc_html_e( '税抜き表示', 'ktpwp' ); ?>
+            </option>
+            <option value="1" <?php selected( $value, true ); ?>>
+                <?php esc_html_e( '税込表示', 'ktpwp' ); ?>
+            </option>
+        </select>
+        <p class="description">
+            <?php esc_html_e( '金額の表示方法を選択してください。', 'ktpwp' ); ?>
+        </p>
+        <?php
     }
 }
 

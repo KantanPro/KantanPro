@@ -139,6 +139,8 @@
             dataType: 'json',
             success: function (response) {
                 console.log('[EMAIL POPUP] メール内容取得成功', response);
+                console.log('[EMAIL POPUP] レスポンスタイプ:', typeof response);
+                console.log('[EMAIL POPUP] レスポンス構造:', JSON.stringify(response, null, 2));
                 
                 if (response.success && response.data) {
                     renderEmailForm(response.data, orderId);
@@ -159,20 +161,47 @@
                     responseText: xhr.responseText,
                     statusCode: xhr.status
                 });
+                console.error('[EMAIL POPUP] レスポンスヘッダー:', xhr.getAllResponseHeaders());
+                console.error('[EMAIL POPUP] レスポンステキスト詳細:', xhr.responseText);
                 
                 let errorMessage = 'メール内容の読み込みに失敗しました';
+                let errorDetails = '';
+                
+                // レスポンステキストからJSON部分を抽出して解析を試行
+                try {
+                    const responseText = xhr.responseText;
+                    const jsonStart = responseText.indexOf('{"');
+                    if (jsonStart !== -1) {
+                        const jsonPart = responseText.substring(jsonStart);
+                        const jsonData = JSON.parse(jsonPart);
+                        if (jsonData.success && jsonData.data) {
+                            // JSONデータが正常に取得できた場合は成功として処理
+                            console.log('[EMAIL POPUP] JSON部分を正常に解析:', jsonData);
+                            renderEmailForm(jsonData.data, orderId);
+                            return;
+                        }
+                    }
+                } catch (parseError) {
+                    console.error('[EMAIL POPUP] JSON解析エラー:', parseError);
+                }
+                
+                // エラーメッセージの詳細化
                 if (xhr.status === 403) {
                     errorMessage = '権限がありません。ログインを確認してください。';
                 } else if (xhr.status === 404) {
                     errorMessage = '受注書が見つかりませんでした。';
                 } else if (xhr.status === 500) {
                     errorMessage = 'サーバーエラーが発生しました。';
+                } else if (status === 'parsererror') {
+                    errorMessage = 'レスポンスの解析に失敗しました。';
+                    errorDetails = 'HTMLエラーメッセージが混在している可能性があります。';
                 }
                 
                 $('#ktp-email-popup-content').html(`
                     <div style="text-align: center; padding: 40px; color: #dc3545;">
                         <div style="font-size: 16px;">${errorMessage}</div>
                         <div style="font-size: 14px; margin-top: 8px;">ステータス: ${xhr.status} ${status}</div>
+                        ${errorDetails ? `<div style="font-size: 14px; margin-top: 4px; color: #666;">${errorDetails}</div>` : ''}
                         <div style="font-size: 14px; margin-top: 4px;">再度お試しください</div>
                     </div>
                 `);

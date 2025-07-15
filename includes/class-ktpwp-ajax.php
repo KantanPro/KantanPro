@@ -317,10 +317,43 @@ class KTPWP_Ajax {
 	 * サービス関連Ajaxハンドラー初期化
 	 */
 	private function init_service_ajax_handlers() {
+		error_log( '[AJAX] サービスAjaxハンドラー初期化開始' );
+		
 		// サービス一覧取得
 		add_action( 'wp_ajax_ktp_get_service_list', array( $this, 'ajax_get_service_list' ) );
 		add_action( 'wp_ajax_nopriv_ktp_get_service_list', array( $this, 'ajax_get_service_list' ) );
 		$this->registered_handlers[] = 'ktp_get_service_list';
+		
+		error_log( '[AJAX] サービスAjaxハンドラー登録完了: ktp_get_service_list' );
+		error_log( '[AJAX] 登録されたハンドラー: ' . print_r( $this->registered_handlers, true ) );
+		
+		// デバッグ用：アクションが正しく登録されているか確認
+		error_log( '[AJAX] wp_ajax_ktp_get_service_list アクション登録確認: ' . ( has_action( 'wp_ajax_ktp_get_service_list' ) ? '登録済み' : '未登録' ) );
+		error_log( '[AJAX] wp_ajax_nopriv_ktp_get_service_list アクション登録確認: ' . ( has_action( 'wp_ajax_nopriv_ktp_get_service_list' ) ? '登録済み' : '未登録' ) );
+		
+		// デバッグ用：Ajaxリクエスト全体を監視
+		add_action( 'wp_ajax_ktp_get_service_list', function() {
+			error_log( '[AJAX_DEBUG] wp_ajax_ktp_get_service_list アクションが呼び出されました' );
+		}, 1 );
+		add_action( 'wp_ajax_nopriv_ktp_get_service_list', function() {
+			error_log( '[AJAX_DEBUG] wp_ajax_nopriv_ktp_get_service_list アクションが呼び出されました' );
+		}, 1 );
+		
+		// デバッグ用：すべてのAjaxリクエストを監視
+		add_action( 'wp_ajax_ktp_get_service_list', function() {
+			error_log( '[AJAX_DEBUG_ALL] すべてのAjaxリクエスト: ' . print_r( $_REQUEST, true ) );
+		}, 0 );
+		add_action( 'wp_ajax_nopriv_ktp_get_service_list', function() {
+			error_log( '[AJAX_DEBUG_ALL] すべてのAjaxリクエスト（非ログイン）: ' . print_r( $_REQUEST, true ) );
+		}, 0 );
+		
+		// デバッグ用：WordPressのAjax処理全体を監視
+		add_action( 'init', function() {
+			error_log( '[AJAX_DEBUG_INIT] WordPress init フック実行中' );
+			if ( wp_doing_ajax() ) {
+				error_log( '[AJAX_DEBUG_INIT] Ajax処理中: action=' . ( isset( $_REQUEST['action'] ) ? $_REQUEST['action'] : 'NOT_SET' ) );
+			}
+		}, 1 );
 	}
 
 	/**
@@ -751,16 +784,20 @@ class KTPWP_Ajax {
 
 		try {
 
-			// 新しいアイテムを作成（リクエストIDを渡して重複防止）
-			$new_item_id = $order_items->create_new_item( $item_type, $order_id, $request_id );
+			// 新しいアイテムを作成（初期値とリクエストIDを渡して重複防止）
+			$new_item_id = $order_items->create_new_item( $item_type, $order_id, $field_name, $field_value, $request_id );
 			
-			error_log( "[AJAX_CREATE_NEW_ITEM] create_new_item result: item_type={$item_type}, order_id={$order_id}, request_id={$request_id}, new_item_id={$new_item_id}" );
+			error_log( "[AJAX_CREATE_NEW_ITEM] create_new_item result: item_type={$item_type}, order_id={$order_id}, field_name={$field_name}, field_value={$field_value}, request_id={$request_id}, new_item_id={$new_item_id}" );
 
-			// 指定されたフィールド値を設定（アイテム作成後に更新）
+			// 指定されたフィールド値が初期値として設定されていない場合は、アイテム作成後に更新
 			if ( ! empty( $field_name ) && ! empty( $field_value ) && $new_item_id ) {
-				$update_result = $order_items->update_item_field( $item_type, $new_item_id, $field_name, $field_value );
-				if ( ! $update_result || ( is_array( $update_result ) && ! $update_result['success'] ) ) {
-					error_log( "KTPWP: Failed to update field {$field_name} for new item {$new_item_id}" );
+				// 初期値として設定されていない場合のみ更新
+				$current_value = $order_items->get_item_field_value( $item_type, $new_item_id, $field_name );
+				if ( $current_value !== $field_value ) {
+					$update_result = $order_items->update_item_field( $item_type, $new_item_id, $field_name, $field_value );
+					if ( ! $update_result || ( is_array( $update_result ) && ! $update_result['success'] ) ) {
+						error_log( "KTPWP: Failed to update field {$field_name} for new item {$new_item_id}" );
+					}
 				}
 			}
 
@@ -1102,6 +1139,18 @@ class KTPWP_Ajax {
 	 * Ajax: サービス一覧取得
 	 */
 	public function ajax_get_service_list() {
+		// デバッグログを最初に追加
+		error_log( '[AJAX_GET_SERVICE_LIST] リクエスト受信開始' );
+		error_log( '[AJAX_GET_SERVICE_LIST] $_POST: ' . print_r( $_POST, true ) );
+		error_log( '[AJAX_GET_SERVICE_LIST] $_REQUEST: ' . print_r( $_REQUEST, true ) );
+		error_log( '[AJAX_GET_SERVICE_LIST] リクエストメソッド: ' . $_SERVER['REQUEST_METHOD'] );
+		error_log( '[AJAX_GET_SERVICE_LIST] リクエストURI: ' . $_SERVER['REQUEST_URI'] );
+		error_log( '[AJAX_GET_SERVICE_LIST] ユーザーエージェント: ' . ( isset( $_SERVER['HTTP_USER_AGENT'] ) ? $_SERVER['HTTP_USER_AGENT'] : 'N/A' ) );
+		error_log( '[AJAX_GET_SERVICE_LIST] action: ' . ( isset( $_REQUEST['action'] ) ? $_REQUEST['action'] : 'NOT_SET' ) );
+		error_log( '[AJAX_GET_SERVICE_LIST] wp_doing_ajax: ' . ( wp_doing_ajax() ? 'true' : 'false' ) );
+		error_log( '[AJAX_GET_SERVICE_LIST] 現在のユーザー: ' . ( is_user_logged_in() ? wp_get_current_user()->user_login : 'NOT_LOGGED_IN' ) );
+		error_log( '[AJAX_GET_SERVICE_LIST] ユーザー権限: edit_posts=' . ( current_user_can( 'edit_posts' ) ? 'true' : 'false' ) . ', ktpwp_access=' . ( current_user_can( 'ktpwp_access' ) ? 'true' : 'false' ) );
+		error_log( '[AJAX_GET_SERVICE_LIST] リクエスト開始時刻: ' . date( 'Y-m-d H:i:s' ) );
 
 		// 権限チェック
 		if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
@@ -1229,6 +1278,7 @@ class KTPWP_Ajax {
 						'price'        => 10000,
 						'unit'         => '個',
 						'category'     => 'カテゴリ1',
+						'remarks'      => '',
 					),
 					array(
 						'id'           => 2,
@@ -1236,6 +1286,7 @@ class KTPWP_Ajax {
 						'price'        => 20000,
 						'unit'         => '時間',
 						'category'     => 'カテゴリ2',
+						'remarks'      => '',
 					),
 					array(
 						'id'           => 3,
@@ -1243,6 +1294,7 @@ class KTPWP_Ajax {
 						'price'        => 5000,
 						'unit'         => '回',
 						'category'     => 'カテゴリ1',
+						'remarks'      => '',
 					),
 				);
 
@@ -1252,9 +1304,27 @@ class KTPWP_Ajax {
 
 			$total_pages = ceil( $total_services / $limit );
 
+			// サービス一覧を配列化（tax_rate含む）
+			$services_array = array();
+			foreach ( $services as $service ) {
+				$service_data = array(
+					'id'           => $service->id,
+					'service_name' => $service->service_name,
+					'price'        => $service->price,
+					'unit'         => $service->unit,
+					'category'     => $service->category,
+					'tax_rate'     => isset($service->tax_rate) ? $service->tax_rate : 10.0,
+					'remarks'      => isset($service->remarks) ? $service->remarks : '',
+					// 必要に応じて他のフィールドも追加
+				);
+				
+				error_log( '[AJAX] サービスデータ配列化: ' . print_r( $service_data, true ) );
+				$services_array[] = $service_data;
+			}
+
 			// レスポンスデータ
 			$response_data = array(
-				'services'   => $services,
+				'services'   => $services_array,
 				'pagination' => array(
 					'current_page'   => $page,
 					'total_pages'    => $total_pages,
@@ -1264,6 +1334,8 @@ class KTPWP_Ajax {
 			);
 
 			error_log( '[AJAX] サービス一覧取得成功: ' . count( $services ) . '件' );
+			error_log( '[AJAX] レスポンスデータ: ' . print_r( $response_data, true ) );
+			error_log( '[AJAX] 最初のサービスのservice_name: ' . ( isset( $services_array[0]['service_name'] ) ? $services_array[0]['service_name'] : 'NOT_SET' ) );
 			wp_send_json_success( $response_data );
 
 		} catch ( Exception $e ) {
@@ -1299,6 +1371,10 @@ class KTPWP_Ajax {
 	 * メール内容取得のAJAX処理
 	 */
 	public function ajax_get_email_content() {
+		// エラー出力を抑制してHTMLエラーメッセージを防ぐ
+		$error_reporting = error_reporting();
+		error_reporting(0);
+		
 		try {
 			// セキュリティチェック
 			if ( ! check_ajax_referer( 'ktpwp_ajax_nonce', 'nonce', false ) ) {
@@ -1419,27 +1495,50 @@ class KTPWP_Ajax {
 
 			// 旧システムからも取得（後方互換性）
 			if ( empty( $my_company ) ) {
+				// wp_ktp_settingテーブルが存在する場合のみ参照
 				$setting_table = $wpdb->prefix . 'ktp_setting';
-				$setting       = $wpdb->get_row(
-					$wpdb->prepare(
-						"SELECT * FROM `{$setting_table}` WHERE id = %d",
-						1
-					)
-				);
-				if ( $setting ) {
-					$my_company = sanitize_text_field( strip_tags( $setting->my_company_content ) );
+				try {
+					$table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $setting_table ) );
+					
+					if ( $table_exists === $setting_table ) {
+						$setting = $wpdb->get_row(
+							$wpdb->prepare(
+								"SELECT * FROM `{$setting_table}` WHERE id = %d",
+								1
+							)
+						);
+						if ( $setting ) {
+							$my_company = sanitize_text_field( strip_tags( $setting->my_company_content ) );
+						}
+						
+						if ( empty( $my_email ) && $setting ) {
+							$my_email = sanitize_email( $setting->email_address );
+						}
+					}
+				} catch ( Exception $e ) {
+					// テーブルが存在しない場合のエラーを無視
+					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+						error_log( 'KTPWP Ajax get_email_content: wp_ktp_setting table not accessible: ' . $e->getMessage() );
+					}
 				}
 			}
 
-			if ( empty( $my_email ) && $setting ) {
-				$my_email = sanitize_email( $setting->email_address );
-			}
-
 			// 請求項目リストを取得
-			$order_class           = new Kntan_Order_Class();
-			$invoice_items_from_db = $order_class->Get_Invoice_Items( $order->id );
+			$invoice_items_from_db = array();
 			$amount                = 0;
 			$invoice_list          = '';
+			
+			try {
+				$order_items = KTPWP_Order_Items::get_instance();
+				$invoice_items_from_db = $order_items->get_invoice_items( $order->id );
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					error_log( 'KTPWP Ajax get_email_content: Successfully got invoice items - count: ' . count( $invoice_items_from_db ) );
+				}
+			} catch ( Exception $e ) {
+				error_log( 'KTPWP Ajax get_email_content: Failed to get invoice items - ' . $e->getMessage() );
+				// エラーが発生した場合は空の配列を使用
+				$invoice_items_from_db = array();
+			}
 
 			if ( ! empty( $invoice_items_from_db ) ) {
 				$invoice_list = "\n";
@@ -1452,6 +1551,7 @@ class KTPWP_Ajax {
 					$price        = isset( $item['price'] ) ? floatval( $item['price'] ) : 0;
 					$quantity     = isset( $item['quantity'] ) ? floatval( $item['quantity'] ) : 0;
 					$unit         = isset( $item['unit'] ) ? sanitize_text_field( $item['unit'] ) : '';
+					$tax_rate     = isset( $item['tax_rate'] ) ? floatval( $item['tax_rate'] ) : 10.00;
 					$amount      += $item_amount;
 
 					// 小数点以下の不要な0を削除
@@ -1572,6 +1672,10 @@ class KTPWP_Ajax {
 			$subject = "{$document_title}：{$project_name}";
 			$body    = "{$customer_display}\n{$user_display}\n\nお世話になります。\n\n＜{$document_title}＞\nID: {$order->id} [{$order_date}]\n\n「{$project_name}」{$document_message}\n\n請求項目\n{$invoice_list}\n\n--\n{$my_company}";
 
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( 'KTPWP Ajax get_email_content: Preparing JSON response - to: ' . $to . ', subject: ' . $subject );
+			}
+
 			wp_send_json_success(
 				array(
 					'to'           => $to,
@@ -1584,11 +1688,17 @@ class KTPWP_Ajax {
 
 		} catch ( Exception $e ) {
 			error_log( 'KTPWP Ajax get_email_content Error: ' . $e->getMessage() );
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( 'KTPWP Ajax get_email_content Error Stack Trace: ' . $e->getTraceAsString() );
+			}
 			wp_send_json_error(
 				array(
 					'message' => $e->getMessage(),
 				)
 			);
+		} finally {
+			// エラー出力設定を復元
+			error_reporting($error_reporting);
 		}
 	}
 
@@ -2979,6 +3089,20 @@ class KTPWP_Ajax {
 			error_log( 'KTPWP Ajax ajax_auto_save_field Error: ' . $e->getMessage() );
 			wp_send_json_error( __( 'エラーが発生しました: ' . $e->getMessage(), 'ktpwp' ) );
 		}
+	}
+
+	/**
+	 * Log Ajax errors
+	 *
+	 * @param string $message Error message
+	 * @param array  $context Additional context data
+	 */
+	private function log_ajax_error( $message, $context = array() ) {
+		$log_message = 'KTPWP Ajax Error: ' . $message;
+		if ( ! empty( $context ) ) {
+			$log_message .= ' Context: ' . print_r( $context, true );
+		}
+		error_log( $log_message );
 	}
 }
 

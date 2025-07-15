@@ -294,6 +294,9 @@ if ( ! class_exists( 'Kntan_Client_Class' ) ) {
 			if ( $page_stage == '' ) {
 				$page_start = 0;
 			}
+			
+			// 負の値を防ぐ安全対策
+			$page_start = max( 0, intval( $page_start ) );
 
 			// 表示件数を取得
 			$query_limit = 20; // デフォルト値
@@ -646,6 +649,7 @@ if ( ! class_exists( 'Kntan_Client_Class' ) ) {
 				$order_page = max( 1, $order_page ); // 最小値は1
 				$order_page = min( $order_page, $order_total_pages ); // 最大値は総ページ数
 				$order_start = ( $order_page - 1 ) * $query_limit;
+				$order_start = max( 0, $order_start ); // 負の値を防ぐ安全対策
 				$order_current_page = $order_page;
 
 				// 受注書データを取得（顧客のステータスに関係なく注文履歴を取得）

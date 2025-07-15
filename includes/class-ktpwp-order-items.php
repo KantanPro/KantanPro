@@ -412,6 +412,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 					$amount = isset( $item['amount'] ) ? floatval( $item['amount'] ) : $price * $quantity; // Recalculate if not provided
 					$remarks = isset( $item['remarks'] ) ? sanitize_text_field( $item['remarks'] ) : '';
 					$is_provisional = isset( $item['is_provisional'] ) ? rest_sanitize_boolean( $item['is_provisional'] ) : 0;
+					$tax_rate = isset( $item['tax_rate'] ) ? floatval( $item['tax_rate'] ) : 10.00;
 
 					if ( $item_id > 0 ) {
 						// This is an existing item. Add its ID to existing_submitted_ids
@@ -433,6 +434,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 						'quantity' => $quantity,
 						'unit' => $unit,
 						'amount' => $amount,
+						'tax_rate' => $tax_rate,
 						'remarks' => $remarks,
 						'is_provisional' => $is_provisional,
 						'sort_order' => $sort_order,
@@ -446,6 +448,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 						'%f', // quantity
 						'%s', // unit
 						'%f', // amount
+						'%f', // tax_rate
 						'%s', // remarks
 						'%d', // is_provisional
 						'%d', // sort_order
@@ -879,6 +882,9 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 				case 'amount':
 					$value_changed = abs( (float) $current_value - (float) $field_value ) > 0.001; // 小数点の誤差を考慮
 					break;
+				case 'tax_rate':
+					$value_changed = (float) $current_value !== (float) $field_value;
+					break;
 				case 'sort_order':
 				case 'supplier_id':
 					$value_changed = (int) $current_value !== (int) $field_value;
@@ -918,6 +924,10 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 					break;
 				case 'amount':
 					$update_data['amount'] = floatval( $field_value );
+					$format[] = '%f';
+					break;
+				case 'tax_rate':
+					$update_data['tax_rate'] = floatval( $field_value );
 					$format[] = '%f';
 					break;
 				case 'remarks':
@@ -993,14 +1003,58 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 		}
 
 		/**
+		 * Get item field value
+		 *
+		 * @since 1.0.0
+		 * @param string $item_type Item type ('invoice' or 'cost')
+		 * @param int    $item_id Item ID
+		 * @param string $field_name Field name
+		 * @return mixed Field value or null if not found
+		 */
+		public function get_item_field_value( $item_type, $item_id, $field_name ) {
+			if ( ! in_array( $item_type, array( 'invoice', 'cost' ) ) || ! $item_id || $item_id <= 0 ) {
+				return null;
+			}
+
+			global $wpdb;
+			$table_name = $wpdb->prefix . 'ktp_order_' . $item_type . '_items';
+
+			// テーブルの存在確認
+			$table_exists = $wpdb->get_var( "SHOW TABLES LIKE '$table_name'" );
+			if ( ! $table_exists ) {
+				error_log( "KTPWP: Table {$table_name} does not exist" );
+				return null;
+			}
+
+			// フィールドの存在確認
+			$columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$table_name}`", 0 );
+			if ( ! in_array( $field_name, $columns ) ) {
+				error_log( "KTPWP: Field {$field_name} does not exist in table {$table_name}" );
+				return null;
+			}
+
+			$value = $wpdb->get_var(
+                $wpdb->prepare(
+                    "SELECT {$field_name} FROM `{$table_name}` WHERE id = %d",
+                    $item_id
+                )
+            );
+
+			return $value;
+		}
+
+		/**
 		 * Create new item (for Ajax)
 		 *
 		 * @since 1.0.0
 		 * @param string $item_type Item type ('invoice' or 'cost')
 		 * @param int    $order_id Order ID
+		 * @param string $initial_field_name Initial field name (e.g., 'product_name')
+		 * @param string $initial_field_value Initial field value
+		 * @param string $request_id Request ID for duplicate prevention
 		 * @return int|false Item ID on success, false on failure
 		 */
-		public function create_new_item( $item_type, $order_id, $request_id = null ) {
+		public function create_new_item( $item_type, $order_id, $initial_field_name = null, $initial_field_value = null, $request_id = null ) {
 			if ( ! in_array( $item_type, array( 'invoice', 'cost' ) ) || ! $order_id || $order_id <= 0 ) {
 				return false;
 			}
@@ -1019,7 +1073,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 			global $wpdb;
 			$table_name = $wpdb->prefix . 'ktp_order_' . $item_type . '_items';
 			
-			error_log( "[KTPWP] create_new_item called: item_type={$item_type}, order_id={$order_id}, request_id={$request_id}" );
+			error_log( "[KTPWP] create_new_item called: item_type={$item_type}, order_id={$order_id}, initial_field_name={$initial_field_name}, initial_field_value={$initial_field_value}, request_id={$request_id}" );
 
 			// 新規作成時は現在の最大sort_order値+1を設定
 			$max_sort_order = $wpdb->get_var(
@@ -1038,11 +1092,36 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 				'quantity' => 1,
 				'unit' => '式',
 				'amount' => 0,
+				'tax_rate' => 10.00,
 				'remarks' => '',
 				'sort_order' => $new_sort_order,
 				'created_at' => current_time( 'mysql' ),
 				'updated_at' => current_time( 'mysql' ),
 			);
+
+			// 初期値が指定されている場合は設定
+			if ( $initial_field_name && $initial_field_value !== null ) {
+				switch ( $initial_field_name ) {
+					case 'product_name':
+						$data['product_name'] = sanitize_text_field( $initial_field_value );
+						break;
+					case 'price':
+						$data['price'] = floatval( $initial_field_value );
+						break;
+					case 'unit':
+						$data['unit'] = sanitize_text_field( $initial_field_value );
+						break;
+					case 'quantity':
+						$data['quantity'] = floatval( $initial_field_value );
+						break;
+					case 'tax_rate':
+						$data['tax_rate'] = floatval( $initial_field_value );
+						break;
+					case 'remarks':
+						$data['remarks'] = sanitize_textarea_field( $initial_field_value );
+						break;
+				}
+			}
 
 			// cost itemsの場合のみ追加フィールドを設定
 			if ( $item_type === 'cost' ) {

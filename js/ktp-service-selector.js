@@ -3,13 +3,14 @@
  *
  * @package KTPWP
  * @since 1.0.0
+ * @updated 2025-07-15 10:15:00 - デバッグログ追加
  */
 
 (function ($) {
     'use strict';
 
     // デバッグ用のコンソールログを追加
-    console.log('[SERVICE-SELECTOR] スクリプトが読み込まれました');
+    console.log('[SERVICE-SELECTOR] スクリプトが読み込まれました - バージョン: 2025-07-15 10:15:00');
 
     // 依存関係チェック
     $(document).ready(function() {
@@ -180,10 +181,12 @@
             ktp_ajax_nonce: typeof ktp_ajax_nonce
         });
 
+        console.log('[SERVICE SELECTOR] Ajaxリクエスト送信開始...');
         $.ajax({
             url: ajaxUrl,
             type: 'POST',
             data: ajaxData,
+            timeout: 5000, // 5秒のタイムアウトに短縮
             success: function (response) {
                 console.log('[SERVICE SELECTOR] サービスリスト取得成功', response);
                 try {
@@ -199,29 +202,39 @@
                 }
             },
             error: function (xhr, status, error) {
-                console.error('[SERVICE SELECTOR] サービスリスト取得エラー', { 
-                    status, 
-                    error, 
+                console.error('[SERVICE SELECTOR] Ajaxエラー:', {
+                    status: status,
+                    error: error,
+                    xhr: xhr,
                     responseText: xhr.responseText,
-                    statusCode: xhr.status,
-                    ajaxData: ajaxData,
-                    ajaxUrl: ajaxUrl
+                    statusText: xhr.statusText,
+                    readyState: xhr.readyState
                 });
                 
-                let errorMessage = 'サービスリストの読み込みに失敗しました';
-                if (xhr.status === 403) {
-                    errorMessage = '権限がありません。ログインを確認してください。';
-                } else if (xhr.status === 404) {
-                    errorMessage = 'サービスが見つかりませんでした。';
+                let errorMessage = 'サービス一覧の取得に失敗しました';
+                if (status === 'timeout') {
+                    errorMessage = 'リクエストがタイムアウトしました';
                 } else if (xhr.status === 500) {
-                    errorMessage = 'サーバーエラーが発生しました。';
+                    errorMessage = 'サーバーエラーが発生しました';
+                } else if (xhr.status === 403) {
+                    errorMessage = 'アクセス権限がありません';
                 }
                 
                 $('#ktp-service-selector-content').html(`
                     <div style="text-align: center; padding: 40px; color: #dc3545;">
                         <div style="font-size: 16px;">${errorMessage}</div>
-                        <div style="font-size: 14px; margin-top: 8px;">ステータス: ${xhr.status} ${status}</div>
-                        <div style="font-size: 14px; margin-top: 4px;">再度お試しください</div>
+                        <div style="font-size: 14px; margin-top: 8px;">エラー詳細: ${status} - ${error}</div>
+                        <div style="font-size: 12px; margin-top: 8px; color: #666;">
+                            <button type="button" onclick="location.reload()" style="
+                                background: #007cba; 
+                                color: white; 
+                                border: none; 
+                                padding: 8px 16px; 
+                                border-radius: 4px; 
+                                cursor: pointer;
+                                margin-top: 10px;
+                            ">再読み込み</button>
+                        </div>
                     </div>
                 `);
             }
@@ -239,6 +252,14 @@
 
             const services = result.data.services || [];
             const pagination = result.data.pagination || {};
+
+            // サービスデータをグローバル変数に保存（サービス選択時に使用）
+            window.ktpServiceSelectorLastServices = services;
+            console.log('[SERVICE SELECTOR] サービスデータを保存:', {
+                servicesCount: services.length,
+                services: services,
+                firstService: services.length > 0 ? services[0] : null
+            });
 
             let html = '';
 
@@ -429,24 +450,76 @@
 
             $('#ktp-service-selector-content').html(html);
 
+            // サービスデータをグローバル変数に保存（追加・更新ボタンで使用）
+            window.ktpServiceSelectorLastServices = services;
+            console.log('[SERVICE SELECTOR] サービスデータを保存:', {
+                services: window.ktpServiceSelectorLastServices,
+                servicesCount: window.ktpServiceSelectorLastServices ? window.ktpServiceSelectorLastServices.length : 0,
+                firstService: window.ktpServiceSelectorLastServices && window.ktpServiceSelectorLastServices.length > 0 ? window.ktpServiceSelectorLastServices[0] : null,
+                firstServiceName: window.ktpServiceSelectorLastServices && window.ktpServiceSelectorLastServices.length > 0 ? window.ktpServiceSelectorLastServices[0].service_name : 'N/A'
+            });
+
             // ボタンイベントの設定（イベント委譲を使用して再レンダリング後も動作するように修正）
             $(document).off('click.ktp-service-add click.ktp-service-update')
                 .on('click.ktp-service-add', '.ktp-service-selector-add', function () {
+                    console.log('[SERVICE SELECTOR] サービス追加ボタンクリック検出');
+                    
+                    const serviceId = $(this).data('service-id');
+                    const services = typeof window.ktpServiceSelectorLastServices === 'object' ? window.ktpServiceSelectorLastServices : [];
+                    const found = services.find(s => String(s.id) === String(serviceId));
+                    
+                    console.log('[SERVICE SELECTOR] サービス追加ボタン押下:', {
+                        serviceId: serviceId,
+                        services: services,
+                        found: found,
+                        foundServiceName: found ? found.service_name : 'NOT_FOUND',
+                        buttonData: {
+                            serviceName: $(this).data('service-name'),
+                            price: $(this).data('price'),
+                            unit: $(this).data('unit')
+                        }
+                    });
+                    
                     const serviceData = {
-                        id: $(this).data('service-id'),
-                        name: $(this).data('service-name'),
+                        id: serviceId,
+                        service_name: found && found.service_name ? found.service_name : $(this).data('service-name') || '',
                         price: $(this).data('price'),
-                        unit: $(this).data('unit')
+                        unit: $(this).data('unit'),
+                        tax_rate: found && found.tax_rate !== undefined ? found.tax_rate : 10.0,
+                        remarks: found && found.remarks ? found.remarks : ''
                     };
+                    
+                    console.log('[SERVICE SELECTOR] サービス追加時のserviceData:', serviceData);
+                    console.log('[SERVICE SELECTOR] serviceData.service_nameの値:', serviceData.service_name);
+                    console.log('[SERVICE SELECTOR] serviceData.service_nameの型:', typeof serviceData.service_name);
+                    console.log('[SERVICE SELECTOR] serviceData.service_nameの長さ:', serviceData.service_name ? serviceData.service_name.length : 0);
+                    
                     addServiceToInvoice(serviceData, targetRow);
                 })
                 .on('click.ktp-service-update', '.ktp-service-selector-update', function () {
+                    console.log('[SERVICE SELECTOR] サービス更新ボタンクリック検出');
+                    
+                    const serviceId = $(this).data('service-id');
+                    const services = typeof window.ktpServiceSelectorLastServices === 'object' ? window.ktpServiceSelectorLastServices : [];
+                    const found = services.find(s => String(s.id) === String(serviceId));
+                    
+                    console.log('[SERVICE SELECTOR] サービス更新ボタン押下:', {
+                        serviceId: serviceId,
+                        services: services,
+                        found: found,
+                        foundServiceName: found ? found.service_name : 'NOT_FOUND'
+                    });
+                    
                     const serviceData = {
-                        id: $(this).data('service-id'),
-                        name: $(this).data('service-name'),
+                        id: serviceId,
+                        service_name: found && found.service_name ? found.service_name : $(this).data('service-name') || '',
                         price: $(this).data('price'),
-                        unit: $(this).data('unit')
+                        unit: $(this).data('unit'),
+                        tax_rate: found && found.tax_rate !== undefined ? found.tax_rate : 10.0,
+                        remarks: found && found.remarks ? found.remarks : ''
                     };
+                    
+                    console.log('[SERVICE SELECTOR] サービス更新時のserviceData:', serviceData);
                     updateServiceInInvoice(serviceData, targetRow);
                 });
 
@@ -673,11 +746,26 @@
 
     // サービスを新規行に追加
     function addServiceToInvoice(serviceData, targetRow) {
-        console.log('[SERVICE SELECTOR] サービス追加', { serviceData, targetRow });
+        console.log('[SERVICE SELECTOR] サービス追加開始', { serviceData, targetRow });
+        console.log('[SERVICE SELECTOR] serviceData.service_name:', serviceData.service_name);
+        console.log('[SERVICE SELECTOR] serviceData.service_nameの詳細:', {
+            value: serviceData.service_name,
+            type: typeof serviceData.service_name,
+            length: serviceData.service_name ? serviceData.service_name.length : 0,
+            isEmpty: serviceData.service_name === '',
+            isUndefined: serviceData.service_name === undefined,
+            isNull: serviceData.service_name === null
+        });
 
         // 新しい行を作成
         const tbody = targetRow.closest('tbody');
         const newIndex = tbody.find('tr').length;
+        
+        console.log('[SERVICE SELECTOR] 新規行作成:', {
+            newIndex: newIndex,
+            serviceNameForHTML: serviceData.service_name,
+            serviceNameEscaped: escapeHtml(serviceData.service_name)
+        });
         
         const newRowHtml = `
             <tr class="invoice-item-row" data-row-id="0" data-newly-added="true">
@@ -685,7 +773,7 @@
                     <span class="drag-handle" title="ドラッグして並び替え">&#9776;</span><button type="button" class="btn-add-row" title="行を追加">+</button><button type="button" class="btn-delete-row" title="行を削除">×</button><button type="button" class="btn-move-row" title="サービス選択">></button>
                 </td>
                 <td>
-                    <input type="text" name="invoice_items[${newIndex}][product_name]" class="invoice-item-input product-name" value="${serviceData.name}">
+                    <input type="text" name="invoice_items[${newIndex}][product_name]" class="invoice-item-input product-name" value="${serviceData.service_name}">
                     <input type="hidden" name="invoice_items[${newIndex}][id]" value="0">
                 </td>
                 <td style="text-align:left;">
@@ -700,8 +788,11 @@
                 <td style="text-align:left;">
                     <input type="number" name="invoice_items[${newIndex}][amount]" class="invoice-item-input amount" value="0" step="1" readonly style="text-align:left;">
                 </td>
+                <td style="text-align: center;">
+                    <input type="number" name="invoice_items[${newIndex}][tax_rate]" class="invoice-item-input tax-rate-input" value="${serviceData.tax_rate !== undefined ? Math.round(serviceData.tax_rate) : ''}" step="0.01" min="0" max="100" style="width: 50px; max-width: 60px; text-align: center !important;"> %
+                </td>
                 <td>
-                    <input type="text" name="invoice_items[${newIndex}][remarks]" class="invoice-item-input remarks" value="">
+                    <input type="text" name="invoice_items[${newIndex}][remarks]" class="invoice-item-input remarks" value="${serviceData.remarks ? serviceData.remarks : ''}">
                     <input type="hidden" name="invoice_items[${newIndex}][sort_order]" value="${newIndex + 1}">
                 </td>
             </tr>
@@ -710,6 +801,12 @@
         // 新しい行を追加
         tbody.append(newRowHtml);
         const $newRow = tbody.find('tr').last();
+        
+        console.log('[SERVICE SELECTOR] 新規行追加完了:', {
+            newRow: $newRow,
+            productNameInput: $newRow.find('.product-name'),
+            productNameValue: $newRow.find('.product-name').val()
+        });
 
         // 最初に金額を計算（単価 × 数量）
         if (typeof calculateAmount === 'function') {
@@ -724,9 +821,19 @@
         // データベースに保存
         const orderId = $('input[name="order_id"]').val() || $('#order_id').val();
         if (orderId && typeof window.ktpInvoiceCreateNewItem === 'function') {
-            console.log('[SERVICE SELECTOR] サービス追加データ保存開始', serviceData);
+            console.log('[SERVICE SELECTOR] サービス追加データ保存開始', {
+                serviceData: serviceData,
+                orderId: orderId,
+                serviceNameForDB: serviceData.service_name
+            });
             
-            window.ktpInvoiceCreateNewItem('invoice', 'product_name', serviceData.name, orderId, $newRow, function(success, newItemId) {
+            window.ktpInvoiceCreateNewItem('invoice', 'product_name', serviceData.service_name, orderId, $newRow, function(success, newItemId) {
+                console.log('[SERVICE SELECTOR] ktpInvoiceCreateNewItemコールバック:', {
+                    success: success,
+                    newItemId: newItemId,
+                    serviceNameUsed: serviceData.service_name
+                });
+                
                 if (success && newItemId) {
                     $newRow.find('input[name*="[id]"]').val(newItemId);
                     $newRow.removeAttr('data-newly-added');
@@ -734,19 +841,31 @@
                     
                     // 各フィールドを個別に保存
                     if (typeof window.ktpInvoiceAutoSaveItem === 'function') {
-                        console.log('[SERVICE SELECTOR] 単価・数量・単位を保存中...', {
+                        console.log('[SERVICE SELECTOR] 単価・数量・単位・税率を保存中...', {
                             price: serviceData.price,
                             quantity: 1,
-                            unit: serviceData.unit
+                            unit: serviceData.unit,
+                            tax_rate: serviceData.tax_rate,
+                            product_name: serviceData.service_name
                         });
                         
+                        // product_nameも明示的に保存（新規作成時は空で作成されるため）
+                        console.log('[SERVICE SELECTOR] product_name保存開始:', serviceData.service_name);
+                        window.ktpInvoiceAutoSaveItem('invoice', newItemId, 'product_name', serviceData.service_name, orderId);
                         window.ktpInvoiceAutoSaveItem('invoice', newItemId, 'price', serviceData.price, orderId);
                         window.ktpInvoiceAutoSaveItem('invoice', newItemId, 'quantity', 1, orderId);
                         window.ktpInvoiceAutoSaveItem('invoice', newItemId, 'unit', serviceData.unit, orderId);
-                        
+                        // 税率も保存
+                        if (serviceData.tax_rate !== undefined) {
+                            window.ktpInvoiceAutoSaveItem('invoice', newItemId, 'tax_rate', serviceData.tax_rate, orderId);
+                        }
                         // 金額も明示的に保存（小数点以下も保持）
                         const calculatedAmount = serviceData.price * 1;
                         window.ktpInvoiceAutoSaveItem('invoice', newItemId, 'amount', calculatedAmount, orderId);
+                        // 備考も保存
+                        if (serviceData.remarks !== undefined) {
+                            window.ktpInvoiceAutoSaveItem('invoice', newItemId, 'remarks', serviceData.remarks, orderId);
+                        }
                     }
                     
                     // 保存後に再度金額計算を実行
@@ -758,7 +877,18 @@
                             updateTotalAndProfit();
                         }
                     }, 100);
+                } else {
+                    console.error('[SERVICE SELECTOR] 新規サービス保存失敗:', {
+                        success: success,
+                        newItemId: newItemId,
+                        serviceName: serviceData.service_name
+                    });
                 }
+            });
+        } else {
+            console.error('[SERVICE SELECTOR] データベース保存条件不満足:', {
+                orderId: orderId,
+                ktpInvoiceCreateNewItem: typeof window.ktpInvoiceCreateNewItem
             });
         }
 
@@ -800,9 +930,11 @@
         console.log('[SERVICE SELECTOR] サービス更新', { serviceData, targetRow });
 
         // 対象行のフィールドを更新
-        targetRow.find('.product-name').val(serviceData.name);
+        targetRow.find('.product-name').val(serviceData.service_name);
         targetRow.find('.price').val(serviceData.price);
         targetRow.find('.unit').val(serviceData.unit);
+        // 備考も反映
+        targetRow.find('.remarks').val(serviceData.remarks ? serviceData.remarks : '');
         
         // 数量はデフォルトで1に設定
         targetRow.find('.quantity').val(1);
@@ -832,7 +964,7 @@
             });
             
             // 各フィールドを順次保存
-            window.ktpInvoiceAutoSaveItem('invoice', itemId, 'product_name', serviceData.name, orderId);
+            window.ktpInvoiceAutoSaveItem('invoice', itemId, 'product_name', serviceData.service_name, orderId);
             window.ktpInvoiceAutoSaveItem('invoice', itemId, 'price', serviceData.price, orderId);
             window.ktpInvoiceAutoSaveItem('invoice', itemId, 'unit', serviceData.unit, orderId);
             window.ktpInvoiceAutoSaveItem('invoice', itemId, 'quantity', 1, orderId);
@@ -841,6 +973,11 @@
             const calculatedAmount = serviceData.price * 1;
             window.ktpInvoiceAutoSaveItem('invoice', itemId, 'amount', calculatedAmount, orderId);
             
+            // 備考も保存
+            if (serviceData.remarks !== undefined) {
+                window.ktpInvoiceAutoSaveItem('invoice', itemId, 'remarks', serviceData.remarks, orderId);
+            }
+
             // 保存後に金額計算を再実行
             setTimeout(function() {
                 if (typeof calculateAmount === 'function') {
@@ -873,6 +1010,19 @@
             "'": '&#039;'
         };
         return text.replace(/[&<>"']/g, function (m) { return map[m]; });
+    }
+
+    // グローバルスコープに関数を公開
+    window.ktpShowServiceSelector = ktpShowServiceSelector;
+    window.ktpCloseServiceSelector = closeServiceSelector;
+    
+    // デバッグログを追加
+    console.log('[SERVICE SELECTOR] 初期化完了');
+    console.log('[SERVICE SELECTOR] ktpShowServiceSelector関数をグローバルスコープに追加:', typeof window.ktpShowServiceSelector);
+    console.log('[SERVICE SELECTOR] ktpCloseServiceSelector関数をグローバルスコープに追加:', typeof window.ktpCloseServiceSelector);
+    console.log('[SERVICE SELECTOR] ktp_service_ajax_object available:', typeof ktp_service_ajax_object !== 'undefined');
+    if (typeof ktp_service_ajax_object !== 'undefined') {
+        console.log('[SERVICE SELECTOR] ktp_service_ajax_object:', ktp_service_ajax_object);
     }
 
 })(jQuery);

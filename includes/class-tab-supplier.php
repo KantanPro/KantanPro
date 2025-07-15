@@ -714,6 +714,9 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 			if ( $page_stage == '' ) {
 				$page_start = 0;
 			}
+			
+			// 負の値を防ぐ安全対策
+			$page_start = max( 0, intval( $page_start ) );
 
 			// 全データ数を取得
 			$total_query = "SELECT COUNT(*) FROM {$table_name}";

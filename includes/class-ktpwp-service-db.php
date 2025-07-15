@@ -135,6 +135,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 			// Sanitize form fields
 			$service_name = isset( $_POST['service_name'] ) ? sanitize_text_field( $_POST['service_name'] ) : '';
 			$price = isset( $_POST['price'] ) ? floatval( $_POST['price'] ) : 0;
+			$tax_rate = isset( $_POST['tax_rate'] ) ? floatval( $_POST['tax_rate'] ) : 10.00;
 			$unit = isset( $_POST['unit'] ) ? sanitize_text_field( $_POST['unit'] ) : '';
 			$memo = isset( $_POST['memo'] ) ? sanitize_textarea_field( $_POST['memo'] ) : '';
 			$category = isset( $_POST['category'] ) ? sanitize_text_field( $_POST['category'] ) : '';
@@ -146,6 +147,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 					current_time( 'mysql' ),
 					$service_name,
 					$price,
+					$tax_rate,
 					$unit,
 					$memo,
 					$category,
@@ -167,6 +169,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 						$data = array(
 							'service_name' => $service_name,
 							'price' => $price,
+							'tax_rate' => $tax_rate,
 							'unit' => $unit,
 							'memo' => $memo,
 							'category' => $category,
@@ -177,7 +180,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
                             $table_name,
                             $data,
                             array( 'id' => $data_id ),
-                            array( '%s', '%f', '%s', '%s', '%s', '%s' ),
+                            array( '%s', '%f', '%f', '%s', '%s', '%s', '%s' ),
                             array( '%d' )
 						);
 					}
@@ -235,6 +238,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 			// フォームからのデータを取得
 			$service_name = isset( $_POST['service_name'] ) ? sanitize_text_field( $_POST['service_name'] ) : esc_html__( '新しいサービス', 'ktpwp' );
 			$price = isset( $_POST['price'] ) ? floatval( $_POST['price'] ) : 0;
+			$tax_rate = isset( $_POST['tax_rate'] ) ? floatval( $_POST['tax_rate'] ) : 10.00;
 			$unit = isset( $_POST['unit'] ) ? sanitize_text_field( $_POST['unit'] ) : '';
 			$memo = isset( $_POST['memo'] ) ? sanitize_textarea_field( $_POST['memo'] ) : '';
 			$category = isset( $_POST['category'] ) ? sanitize_text_field( $_POST['category'] ) : '';
@@ -246,6 +250,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 					current_time( 'mysql' ),
 					$service_name,
 					$price,
+					$tax_rate,
 					$unit,
 					$memo,
 					$category,
@@ -260,6 +265,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 					'time' => current_time( 'mysql' ),
 					'service_name' => $service_name,
 					'price' => $price,
+					'tax_rate' => $tax_rate,
 					'unit' => $unit,
 					'memo' => $memo,
 					'category' => $category,
@@ -267,7 +273,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 					'frequency' => 0,
 					'search_field' => $search_field_value,
                 ),
-                array( '%d', '%s', '%s', '%f', '%s', '%s', '%s', '%s', '%d', '%s' )
+                array( '%d', '%s', '%s', '%f', '%f', '%s', '%s', '%s', '%s', '%d', '%s' )
 			);
 
 			if ( $insert_result === false ) {
@@ -780,7 +786,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 			}
 
 			// ORDER BY句の検証とサニタイズ
-			$allowed_order_by = array( 'id', 'service_name', 'price', 'unit', 'frequency', 'time', 'category' );
+			$allowed_order_by = array( 'id', 'service_name', 'price', 'unit', 'frequency', 'time', 'category', 'tax_rate' );
 			if ( ! in_array( $args['order_by'], $allowed_order_by ) ) {
 				$args['order_by'] = 'id';
 			}
