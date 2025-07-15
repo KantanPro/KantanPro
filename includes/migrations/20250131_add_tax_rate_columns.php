@@ -133,10 +133,7 @@ class KTPWP_Migration_20250131_Add_Tax_Rate_Columns {
             $tax_settings_added = true;
         }
         
-        if ( ! isset( $general_settings['tax_inclusive'] ) ) {
-            $general_settings['tax_inclusive'] = false; // 税抜き表示がデフォルト
-            $tax_settings_added = true;
-        }
+
         
         if ( $tax_settings_added ) {
             $result = update_option( 'ktp_general_settings', $general_settings );
@@ -261,10 +258,7 @@ class KTPWP_Migration_20250131_Add_Tax_Rate_Columns {
             $tax_settings_removed = true;
         }
         
-        if ( isset( $general_settings['tax_inclusive'] ) ) {
-            unset( $general_settings['tax_inclusive'] );
-            $tax_settings_removed = true;
-        }
+
         
         if ( $tax_settings_removed ) {
             $result = update_option( 'ktp_general_settings', $general_settings );

@@ -139,16 +139,7 @@ class KTP_Settings {
         return isset( $options['reduced_tax_rate'] ) ? floatval( $options['reduced_tax_rate'] ) : 8.00;
     }
 
-    /**
-     * Get tax inclusive setting
-     *
-     * @since 1.0.0
-     * @return bool Tax inclusive setting (default: false)
-     */
-    public static function get_tax_inclusive() {
-        $options = get_option( 'ktp_general_settings', array() );
-        return isset( $options['tax_inclusive'] ) ? (bool) $options['tax_inclusive'] : false;
-    }
+
 
     /**
      * Get design settings
@@ -2197,15 +2188,6 @@ class KTP_Settings {
             'tax_setting_section'
         );
 
-        // 税込/税抜き表示設定
-        add_settings_field(
-            'tax_inclusive',
-            __( '税込/税抜き表示', 'ktpwp' ),
-            array( $this, 'tax_inclusive_callback' ),
-            'ktp-general',
-            'tax_setting_section'
-        );
-
         // 寄付設定セクション
         add_settings_section(
             'donation_setting_section',
@@ -3907,26 +3889,6 @@ define( 'WP_DEBUG_DISPLAY', false );
         <?php
     }
 
-    /**
-     * 税込/税抜き表示フィールドのコールバック
-     */
-    public function tax_inclusive_callback() {
-        $options = get_option( 'ktp_general_settings' );
-        $value = isset( $options['tax_inclusive'] ) ? $options['tax_inclusive'] : false;
-        ?>
-        <select id="tax_inclusive" name="ktp_general_settings[tax_inclusive]">
-            <option value="0" <?php selected( $value, false ); ?>>
-                <?php esc_html_e( '税抜き表示', 'ktpwp' ); ?>
-            </option>
-            <option value="1" <?php selected( $value, true ); ?>>
-                <?php esc_html_e( '税込表示', 'ktpwp' ); ?>
-            </option>
-        </select>
-        <p class="description">
-            <?php esc_html_e( '金額の表示方法を選択してください。', 'ktpwp' ); ?>
-        </p>
-        <?php
-    }
 }
 
 // インスタンスを初期化

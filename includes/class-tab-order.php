@@ -2440,6 +2440,7 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 				$html .= '<div style="width: 80px; text-align: right;">単価</div>';
 				$html .= '<div style="width: 60px; text-align: right;">数量</div>';
 				$html .= '<div style="width: 80px; text-align: right;">金額</div>';
+				$html .= '<div style="width: 60px; text-align: center;">税率</div>';
 				$html .= '<div style="width: 100px; text-align: left; margin-left: 8px;">備考</div>';
 				$html .= '</div>';
 
@@ -2460,6 +2461,7 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 					$price = isset( $item['price'] ) ? floatval( $item['price'] ) : 0;
 					$amount = isset( $item['amount'] ) ? floatval( $item['amount'] ) : 0;
 					$unit = isset( $item['unit'] ) ? $item['unit'] : '';
+					$tax_rate = isset( $item['tax_rate'] ) ? floatval( $item['tax_rate'] ) : 10.00;
 					$remarks = isset( $item['remarks'] ) ? $item['remarks'] : ''; // 備考フィールドを追加
 
 					// 小数点以下の不要な0を削除
@@ -2485,6 +2487,7 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 					$html .= '<div style="width: 80px; text-align: right;">¥' . $price_display . '</div>';
 					$html .= '<div style="width: 60px; text-align: right;">' . $quantity_display . $unit . '</div>';
 					$html .= '<div style="width: 80px; text-align: right;">¥' . number_format( $amount ) . '</div>';
+					$html .= '<div style="width: 60px; text-align: center;">' . $tax_rate . '%</div>';
 					$html .= '<div style="width: 100px; text-align: left; margin-left: 8px;">' . esc_html( $remarks ) . '</div>';
 					$html .= '</div>';
 
@@ -2505,6 +2508,7 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 						$html .= '<div style="width: 80px; text-align: right;">&nbsp;</div>';
 						$html .= '<div style="width: 60px; text-align: right;">&nbsp;</div>';
 						$html .= '<div style="width: 80px; text-align: right;">&nbsp;</div>';
+						$html .= '<div style="width: 60px; text-align: center;">&nbsp;</div>';
 						$html .= '<div style="width: 100px; text-align: left; margin-left: 8px;">&nbsp;</div>';
 						$html .= '</div>';
 
