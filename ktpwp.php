@@ -2088,7 +2088,17 @@ function KTPWP_Index() {
                     
                     // 更新リンクは編集者権限がある場合のみ
                     if ( current_user_can( 'edit_posts' ) ) {
-                        $navigation_links .= ' <a href="' . $update_link_url . '" title="更新" style="display: inline-flex; align-items: center; gap: 4px; color: #0073aa; text-decoration: none;"><span class="material-symbols-outlined" style="font-size: 20px; vertical-align: middle;">refresh</span></a>';
+                        // 更新通知設定を確認
+                        $update_settings = get_option( 'ktp_update_notification_settings', array() );
+                        $enable_notifications = isset( $update_settings['enable_notifications'] ) ? $update_settings['enable_notifications'] : true;
+                        
+                        if ( $enable_notifications ) {
+                            // 更新通知機能付きのリンク
+                            $navigation_links .= ' <a href="#" id="ktpwp-header-update-check" title="更新チェック" style="display: inline-flex; align-items: center; gap: 4px; color: #0073aa; text-decoration: none; cursor: pointer;"><span class="material-symbols-outlined" style="font-size: 20px; vertical-align: middle;">refresh</span></a>';
+                        } else {
+                            // 通常のページリロードリンク
+                            $navigation_links .= ' <a href="' . $update_link_url . '" title="更新" style="display: inline-flex; align-items: center; gap: 4px; color: #0073aa; text-decoration: none;"><span class="material-symbols-outlined" style="font-size: 20px; vertical-align: middle;">refresh</span></a>';
+                        }
                         $navigation_links .= ' ' . $act_key;
                     }
                     
@@ -2106,6 +2116,19 @@ function KTPWP_Index() {
             $default_logo = plugins_url( 'images/default/icon.png', __FILE__ );
             $logo_url = get_option( 'ktp_logo_image', $default_logo );
 
+            // 更新通知設定を確認
+            $update_settings = get_option( 'ktp_update_notification_settings', array() );
+            $enable_notifications = isset( $update_settings['enable_notifications'] ) ? $update_settings['enable_notifications'] : true;
+            
+            // 更新情報を取得
+            $update_data = null;
+            if ( $enable_notifications && class_exists( 'KTPWP_Update_Checker' ) ) {
+                global $ktpwp_update_checker;
+                if ( $ktpwp_update_checker ) {
+                    $update_data = $ktpwp_update_checker->check_header_update();
+                }
+            }
+            
             $front_message = '<div class="ktp_header">'
                 . '<div class="parent">'
                 . '<div class="logo-and-system-info">'
@@ -2121,6 +2144,50 @@ function KTPWP_Index() {
                 . '<div class="user-avatars-section">' . $logged_in_users_html . '</div>'
                 . '</div>'
                 . '</div>';
+            
+            // 更新通知用のスクリプトとスタイルを追加（常に読み込み）
+            $front_message .= '<link rel="stylesheet" href="' . esc_url( plugins_url( 'css/ktpwp-update-balloon.css', __FILE__ ) ) . '?v=' . KANTANPRO_PLUGIN_VERSION . '">';
+            
+            // AJAX用の変数を設定（常に設定）- JavaScriptファイルの読み込み前に設定
+            $ajax_data = array(
+                'ajax_url' => admin_url( 'admin-ajax.php' ),
+                'nonce' => wp_create_nonce( 'ktpwp_header_update_check' ),
+                'dismiss_nonce' => wp_create_nonce( 'ktpwp_header_update_notice' ),
+                'admin_url' => admin_url(),
+                'notifications_enabled' => $enable_notifications
+            );
+            
+            // デバッグ用のログを追加
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KantanPro: JavaScript変数設定 - nonce: ' . $ajax_data['nonce'] );
+                error_log( 'KantanPro: JavaScript変数設定 - notifications_enabled: ' . ( $enable_notifications ? 'true' : 'false' ) );
+                error_log( 'KantanPro: JavaScript変数設定 - ajax_url: ' . $ajax_data['ajax_url'] );
+                error_log( 'KantanPro: JavaScript変数設定 - admin_url: ' . $ajax_data['admin_url'] );
+            }
+            
+            $front_message .= '<script>var ktpwp_update_ajax = ' . wp_json_encode( $ajax_data ) . ';</script>';
+            
+            // デバッグ用のHTMLコメントを追加
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                $front_message .= '<!-- KantanPro Debug: JavaScript variables set -->';
+            }
+            
+            // 更新情報をJavaScript変数として設定
+            if ( $update_data ) {
+                $front_message .= '<script>var ktpwp_update_data = ' . wp_json_encode( array(
+                    'has_update' => true,
+                    'message' => '新しいバージョンが利用可能です！',
+                    'update_data' => $update_data
+                ) ) . ';</script>';
+            }
+            
+            // JavaScriptファイルを読み込み
+            $front_message .= '<script src="' . esc_url( plugins_url( 'js/ktpwp-update-balloon.js', __FILE__ ) ) . '?v=' . KANTANPRO_PLUGIN_VERSION . '"></script>';
+            
+            // デバッグ用のHTMLコメントを追加
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                $front_message .= '<!-- KantanPro Debug: JavaScript file loaded -->';
+            }
             $tab_name = isset( $_GET['tab_name'] ) ? $_GET['tab_name'] : 'default_tab'; // URLパラメータからtab_nameを取得
 
             // $order_content など未定義変数の初期化

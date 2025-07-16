@@ -353,6 +353,44 @@ class KTP_Settings {
             }
         }
 
+        // 更新通知設定のデフォルト値を設定
+        $update_notification_option_name = 'ktp_update_notification_settings';
+        if ( false === get_option( $update_notification_option_name ) ) {
+            add_option(
+                $update_notification_option_name,
+                array(
+                    'enable_notifications' => true,
+                    'enable_admin_notifications' => true,
+                    'enable_frontend_notifications' => true,
+                    'check_interval' => 24,
+                    'notification_roles' => array( 'administrator' )
+                )
+            );
+        } else {
+            // 既存設定に新しいフィールドが不足している場合は追加
+            $existing_update_notification = get_option( $update_notification_option_name );
+            $update_notification_updated = false;
+
+            $update_notification_defaults = array(
+                'enable_notifications' => true,
+                'enable_admin_notifications' => true,
+                'enable_frontend_notifications' => true,
+                'check_interval' => 24,
+                'notification_roles' => array( 'administrator' )
+            );
+
+            foreach ( $update_notification_defaults as $key => $default_value ) {
+                if ( ! array_key_exists( $key, $existing_update_notification ) ) {
+                    $existing_update_notification[ $key ] = $default_value;
+                    $update_notification_updated = true;
+                }
+            }
+
+            if ( $update_notification_updated ) {
+                update_option( $update_notification_option_name, $existing_update_notification );
+            }
+        }
+
 
 
         // 旧システムから新システムへのデータ移行処理
@@ -595,6 +633,17 @@ class KTP_Settings {
                         }
                         ?>
                     </div>
+                <?php elseif ( $current_tab === 'updates' ) : ?>
+                    <!-- 更新通知設定 -->
+                    <div class="ktp-settings-section">
+                        <form method="post" action="options.php">
+                        <?php
+                        settings_fields( 'ktp_update_notification_group' );
+                        do_settings_sections( 'ktp-update-notification-settings' );
+                        submit_button();
+                        ?>
+                        </form>
+                    </div>
                 <?php endif; ?>
             </div>
         </div>
@@ -613,6 +662,10 @@ class KTP_Settings {
             'terms' => array(
                 'name' => __( '利用規約管理', 'ktpwp' ),
                 'icon' => 'dashicons-text-page',
+            ),
+            'updates' => array(
+                'name' => __( '更新通知設定', 'ktpwp' ),
+                'icon' => 'dashicons-update',
             ),
         );
 
@@ -2084,6 +2137,23 @@ class KTP_Settings {
             )
         );
 
+        // 更新通知設定グループの登録
+        register_setting(
+            'ktp_update_notification_group',
+            'ktp_update_notification_settings',
+            array(
+                'sanitize_callback' => array( $this, 'sanitize_update_notification_settings' ),
+                'type' => 'object',
+                'default' => array(
+                    'enable_notifications' => true,
+                    'enable_admin_notifications' => true,
+                    'enable_frontend_notifications' => true,
+                    'check_interval' => 24,
+                    'notification_roles' => array( 'administrator' )
+                )
+            )
+        );
+
         // 寄付設定のオプションページを許可リストに追加（後方互換性を保つ）
         add_filter( 'allowed_options', array( $this, 'add_donation_settings_to_whitelist' ) );
         // WordPress 5.5.0未満のバージョン用（非推奨だが後方互換性のため）
@@ -2196,7 +2266,60 @@ class KTP_Settings {
             'ktp-developer-settings'
         );
 
+        // 更新通知設定セクション
+        add_settings_section(
+            'update_notification_setting_section',
+            __( '更新通知設定', 'ktpwp' ),
+            array( $this, 'print_update_notification_section_info' ),
+            'ktp-developer-settings'
+        );
 
+
+
+        // 更新通知の有効化
+        add_settings_field(
+            'enable_notifications',
+            __( '更新通知の有効化', 'ktpwp' ),
+            array( $this, 'enable_notifications_callback' ),
+            'ktp-developer-settings',
+            'update_notification_setting_section'
+        );
+
+        // 管理画面通知の有効化
+        add_settings_field(
+            'enable_admin_notifications',
+            __( '管理画面通知の有効化', 'ktpwp' ),
+            array( $this, 'enable_admin_notifications_callback' ),
+            'ktp-developer-settings',
+            'update_notification_setting_section'
+        );
+
+        // フロントエンド通知の有効化
+        add_settings_field(
+            'enable_frontend_notifications',
+            __( 'フロントエンド通知の有効化', 'ktpwp' ),
+            array( $this, 'enable_frontend_notifications_callback' ),
+            'ktp-developer-settings',
+            'update_notification_setting_section'
+        );
+
+        // チェック間隔の設定
+        add_settings_field(
+            'check_interval',
+            __( '更新チェック間隔（時間）', 'ktpwp' ),
+            array( $this, 'check_interval_callback' ),
+            'ktp-developer-settings',
+            'update_notification_setting_section'
+        );
+
+        // 通知対象ユーザー権限の設定
+        add_settings_field(
+            'notification_roles',
+            __( '通知対象ユーザー権限', 'ktpwp' ),
+            array( $this, 'notification_roles_callback' ),
+            'ktp-developer-settings',
+            'update_notification_setting_section'
+        );
 
         // フロントエンド通知の有効化
         add_settings_field(
@@ -3887,6 +4010,150 @@ define( 'WP_DEBUG_DISPLAY', false );
             <?php esc_html_e( '軽減税率を設定してください。例：8.00', 'ktpwp' ); ?>
         </p>
         <?php
+    }
+
+    /**
+     * 更新通知設定セクション情報を表示
+     */
+    public function print_update_notification_section_info() {
+        echo '<p>' . esc_html__( 'プラグインの更新通知に関する設定を行います。', 'ktpwp' ) . '</p>';
+    }
+
+    /**
+     * 更新通知の有効化コールバック
+     */
+    public function enable_notifications_callback() {
+        $options = get_option( 'ktp_update_notification_settings', array() );
+        $value = isset( $options['enable_notifications'] ) ? $options['enable_notifications'] : true;
+        ?>
+        <label>
+            <input type="checkbox" 
+                   id="enable_notifications" 
+                   name="ktp_update_notification_settings[enable_notifications]" 
+                   value="1" 
+                   <?php checked( $value, true ); ?> />
+            <?php esc_html_e( '更新通知を有効にする', 'ktpwp' ); ?>
+        </label>
+        <p class="description"><?php esc_html_e( 'この設定を無効にすると、すべての更新通知が表示されなくなります。', 'ktpwp' ); ?></p>
+        <?php
+    }
+
+    /**
+     * 管理画面通知の有効化コールバック
+     */
+    public function enable_admin_notifications_callback() {
+        $options = get_option( 'ktp_update_notification_settings', array() );
+        $value = isset( $options['enable_admin_notifications'] ) ? $options['enable_admin_notifications'] : true;
+        ?>
+        <label>
+            <input type="checkbox" 
+                   id="enable_admin_notifications" 
+                   name="ktp_update_notification_settings[enable_admin_notifications]" 
+                   value="1" 
+                   <?php checked( $value, true ); ?> />
+            <?php esc_html_e( '管理画面での更新通知を有効にする', 'ktpwp' ); ?>
+        </label>
+        <p class="description"><?php esc_html_e( '管理画面のプラグインリストページとKantanPro設置ページで更新通知を表示します。', 'ktpwp' ); ?></p>
+        <?php
+    }
+
+    /**
+     * フロントエンド通知の有効化コールバック
+     */
+    public function enable_frontend_notifications_callback() {
+        $options = get_option( 'ktp_update_notification_settings', array() );
+        $value = isset( $options['enable_frontend_notifications'] ) ? $options['enable_frontend_notifications'] : true;
+        ?>
+        <label>
+            <input type="checkbox" 
+                   id="enable_frontend_notifications" 
+                   name="ktp_update_notification_settings[enable_frontend_notifications]" 
+                   value="1" 
+                   <?php checked( $value, true ); ?> />
+            <?php esc_html_e( 'フロントエンドでの更新通知を有効にする', 'ktpwp' ); ?>
+        </label>
+        <p class="description"><?php esc_html_e( 'KantanProが表示されているページで更新通知を表示します。', 'ktpwp' ); ?></p>
+        <?php
+    }
+
+    /**
+     * チェック間隔コールバック
+     */
+    public function check_interval_callback() {
+        $options = get_option( 'ktp_update_notification_settings', array() );
+        $value = isset( $options['check_interval'] ) ? $options['check_interval'] : 24;
+        ?>
+        <input type="number" 
+               id="check_interval" 
+               name="ktp_update_notification_settings[check_interval]" 
+               value="<?php echo esc_attr( $value ); ?>" 
+               min="1" 
+               max="168" 
+               style="width: 100px;" />
+        <p class="description"><?php esc_html_e( '更新チェックの間隔を時間単位で設定してください（1-168時間）。', 'ktpwp' ); ?></p>
+        <?php
+    }
+
+    /**
+     * 通知対象ユーザー権限コールバック
+     */
+    public function notification_roles_callback() {
+        $options = get_option( 'ktp_update_notification_settings', array() );
+        $selected_roles = isset( $options['notification_roles'] ) ? $options['notification_roles'] : array( 'administrator' );
+        
+        $available_roles = array(
+            'administrator' => __( '管理者', 'ktpwp' ),
+            'editor' => __( '編集者', 'ktpwp' ),
+            'author' => __( '投稿者', 'ktpwp' ),
+            'contributor' => __( '寄稿者', 'ktpwp' ),
+            'subscriber' => __( '購読者', 'ktpwp' )
+        );
+        
+        foreach ( $available_roles as $role => $label ) {
+            ?>
+            <label style="display: block; margin-bottom: 5px;">
+                <input type="checkbox" 
+                       name="ktp_update_notification_settings[notification_roles][]" 
+                       value="<?php echo esc_attr( $role ); ?>" 
+                       <?php checked( in_array( $role, $selected_roles ), true ); ?> />
+                <?php echo esc_html( $label ); ?>
+            </label>
+            <?php
+        }
+        ?>
+        <p class="description"><?php esc_html_e( '更新通知を表示するユーザー権限を選択してください。', 'ktpwp' ); ?></p>
+        <?php
+    }
+
+    /**
+     * 更新通知設定のサニタイズ
+     */
+    public function sanitize_update_notification_settings( $input ) {
+        $sanitized = array();
+        
+        // 更新通知の有効化
+        $sanitized['enable_notifications'] = isset( $input['enable_notifications'] ) ? true : false;
+        
+        // 管理画面通知の有効化
+        $sanitized['enable_admin_notifications'] = isset( $input['enable_admin_notifications'] ) ? true : false;
+        
+        // フロントエンド通知の有効化
+        $sanitized['enable_frontend_notifications'] = isset( $input['enable_frontend_notifications'] ) ? true : false;
+        
+        // チェック間隔
+        $sanitized['check_interval'] = isset( $input['check_interval'] ) ? intval( $input['check_interval'] ) : 24;
+        if ( $sanitized['check_interval'] < 1 ) {
+            $sanitized['check_interval'] = 1;
+        } elseif ( $sanitized['check_interval'] > 168 ) {
+            $sanitized['check_interval'] = 168;
+        }
+        
+        // 通知対象ユーザー権限
+        $sanitized['notification_roles'] = isset( $input['notification_roles'] ) && is_array( $input['notification_roles'] ) 
+            ? array_map( 'sanitize_text_field', $input['notification_roles'] ) 
+            : array( 'administrator' );
+        
+        return $sanitized;
     }
 
 }

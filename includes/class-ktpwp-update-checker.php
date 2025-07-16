@@ -40,7 +40,7 @@ class KTPWP_Update_Checker {
     /**
      * 更新チェックの間隔（秒）
      */
-    private $check_interval = 86400; // 24時間
+    private $check_interval;
     
     /**
      * フロントエンド通知の実行フラグ
@@ -63,6 +63,11 @@ class KTPWP_Update_Checker {
         $this->plugin_slug = dirname( $this->plugin_basename );
         $this->current_version = defined( 'KANTANPRO_PLUGIN_VERSION' ) ? KANTANPRO_PLUGIN_VERSION : '1.0.5';
         
+        // チェック間隔を設定から取得
+        $update_settings = $this->get_update_notification_settings();
+        $check_interval_hours = isset( $update_settings['check_interval'] ) ? intval( $update_settings['check_interval'] ) : 24;
+        $this->check_interval = $check_interval_hours * 3600; // 時間を秒に変換
+        
         // フック設定
         add_action( 'init', array( $this, 'init' ) );
         add_action( 'admin_init', array( $this, 'admin_init' ) );
@@ -80,6 +85,10 @@ class KTPWP_Update_Checker {
         add_action( 'wp_ajax_ktpwp_dismiss_update_notice', array( $this, 'dismiss_update_notice' ) );
         add_action( 'wp_ajax_ktpwp_check_github_update', array( $this, 'ajax_check_github_update' ) );
         add_action( 'wp_ajax_ktpwp_perform_update', array( $this, 'perform_plugin_update' ) );
+        
+        // ヘッダー更新通知用のAJAX処理
+        add_action( 'wp_ajax_ktpwp_dismiss_header_update_notice', array( $this, 'dismiss_header_update_notice' ) );
+        add_action( 'wp_ajax_ktpwp_check_header_update', array( $this, 'ajax_check_header_update' ) );
         
         // デバッグ用のログ出力
         error_log( 'KantanPro Update Checker: 初期化完了 - basename: ' . $this->plugin_basename );
@@ -166,13 +175,32 @@ class KTPWP_Update_Checker {
      * AJAX更新チェック
      */
     public function ajax_check_github_update() {
+        // POSTデータの存在チェック
+        if ( ! isset( $_POST['nonce'] ) ) {
+            error_log( 'KantanPro: ajax_check_github_update - nonceが送信されていません' );
+            wp_send_json_error( array(
+                'message' => 'セキュリティトークンが送信されていません。',
+                'error_type' => 'missing_nonce'
+            ) );
+            return;
+        }
+        
         // セキュリティチェック
         if ( ! wp_verify_nonce( $_POST['nonce'], 'ktpwp_update_checker' ) ) {
-            wp_die( 'セキュリティチェックに失敗しました。' );
+            error_log( 'KantanPro: ajax_check_github_update - nonce検証に失敗しました' );
+            wp_send_json_error( array(
+                'message' => 'セキュリティチェックに失敗しました。',
+                'error_type' => 'security'
+            ) );
+            return;
         }
         
         if ( ! current_user_can( 'update_plugins' ) ) {
-            wp_die( 'この操作を実行する権限がありません。' );
+            wp_send_json_error( array(
+                'message' => 'この操作を実行する権限がありません。',
+                'error_type' => 'permission'
+            ) );
+            return;
         }
         
         // 更新チェック実行
@@ -195,44 +223,78 @@ class KTPWP_Update_Checker {
      * GitHubから更新情報をチェック
      */
     public function check_github_updates() {
+        // 更新通知が無効の場合は実行しない
+        if ( ! $this->is_update_notification_enabled() ) {
+            error_log( 'KantanPro: 更新通知が無効化されています' );
+            return false;
+        }
+        
         // レート制限チェック
         $last_check = get_option( 'ktpwp_last_update_check', 0 );
         $current_time = time();
         
         if ( ( $current_time - $last_check ) < 3600 ) { // 1時間未満の場合はスキップ
+            error_log( 'KantanPro: レート制限により更新チェックをスキップしました' );
             return false;
         }
         
         // GitHub API URL
         $api_url = 'https://api.github.com/repos/' . $this->github_repo . '/releases/latest';
         
+        error_log( 'KantanPro: GitHub API リクエスト開始: ' . $api_url );
+        
         // GitHub APIからリリース情報を取得
         $response = wp_remote_get( $api_url, array(
             'timeout' => 30,
-            'user-agent' => 'KantanPro/' . $this->current_version . '; ' . get_bloginfo( 'url' )
+            'user-agent' => 'KantanPro/' . $this->current_version . '; ' . get_bloginfo( 'url' ),
+            'headers' => array(
+                'Accept' => 'application/vnd.github.v3+json'
+            )
         ) );
         
         if ( is_wp_error( $response ) ) {
-            error_log( 'KantanPro: GitHub API エラー: ' . $response->get_error_message() );
+            $error_message = $response->get_error_message();
+            error_log( 'KantanPro: GitHub API エラー: ' . $error_message );
             return false;
         }
         
         $response_code = wp_remote_retrieve_response_code( $response );
+        $response_headers = wp_remote_retrieve_headers( $response );
+        
+        error_log( 'KantanPro: GitHub API レスポンスコード: ' . $response_code );
+        
         if ( $response_code !== 200 ) {
-            error_log( 'KantanPro: GitHub API HTTPエラー: ' . $response_code );
+            $error_body = wp_remote_retrieve_body( $response );
+            error_log( 'KantanPro: GitHub API HTTPエラー: ' . $response_code . ' - ' . $error_body );
+            
+            // レート制限の場合は特別な処理
+            if ( $response_code === 403 ) {
+                $rate_limit_remaining = $response_headers->get( 'X-RateLimit-Remaining' );
+                $rate_limit_reset = $response_headers->get( 'X-RateLimit-Reset' );
+                error_log( 'KantanPro: GitHub API レート制限 - 残り: ' . $rate_limit_remaining . ', リセット: ' . $rate_limit_reset );
+            }
+            
             return false;
         }
         
         $body = wp_remote_retrieve_body( $response );
         $data = json_decode( $body, true );
         
+        if ( json_last_error() !== JSON_ERROR_NONE ) {
+            error_log( 'KantanPro: JSONデコードエラー: ' . json_last_error_msg() );
+            return false;
+        }
+        
         if ( empty( $data['tag_name'] ) ) {
             error_log( 'KantanPro: GitHub APIレスポンスにtag_nameがありません' );
+            error_log( 'KantanPro: レスポンス内容: ' . print_r( $data, true ) );
             return false;
         }
         
         $latest_version = $data['tag_name'];
         $download_url = $data['zipball_url'];
+        
+        error_log( 'KantanPro: 最新バージョン: ' . $latest_version . ', 現在バージョン: ' . $this->current_version );
         
         // 最後のチェック時刻を更新
         update_option( 'ktpwp_last_update_check', $current_time );
@@ -240,6 +302,8 @@ class KTPWP_Update_Checker {
         // バージョン比較（プレビューバージョンの処理）
         $clean_current_version = $this->clean_version( $this->current_version );
         $clean_latest_version = $this->clean_version( $latest_version );
+        
+        error_log( 'KantanPro: バージョン比較 - 現在: ' . $clean_current_version . ', 最新: ' . $clean_latest_version );
         
         if ( version_compare( $clean_current_version, $clean_latest_version, '<' ) ) {
             // 更新情報を保存
@@ -261,56 +325,135 @@ class KTPWP_Update_Checker {
                 delete_option( 'ktpwp_frontend_dismissed_version' );
             }
             
+            error_log( 'KantanPro: 更新が利用可能です: ' . $latest_version );
             return true;
         } else {
             // 更新情報をクリア
             delete_option( 'ktpwp_update_available' );
             delete_option( 'ktpwp_update_notice_dismissed' );
             
+            error_log( 'KantanPro: 最新バージョンです' );
             return false;
         }
     }
     
     /**
+     * 更新通知設定を取得（デフォルト値付き）
+     */
+    private function get_update_notification_settings() {
+        $update_settings = get_option( 'ktp_update_notification_settings', array() );
+        
+        // デフォルト値を設定
+        $defaults = array(
+            'enable_notifications' => true,
+            'enable_admin_notifications' => true,
+            'enable_frontend_notifications' => true,
+            'check_interval' => 24,
+            'notification_roles' => array( 'administrator' )
+        );
+        
+        // 設定が存在しない場合はデフォルト値を保存
+        if ( empty( $update_settings ) ) {
+            update_option( 'ktp_update_notification_settings', $defaults );
+            return $defaults;
+        }
+        
+        // 既存設定にデフォルト値をマージ
+        $merged_settings = wp_parse_args( $update_settings, $defaults );
+        
+        // 設定が更新された場合は保存
+        if ( $merged_settings !== $update_settings ) {
+            update_option( 'ktp_update_notification_settings', $merged_settings );
+        }
+        
+        return $merged_settings;
+    }
+
+    /**
+     * 更新通知が有効かどうかを確認
+     */
+    public function is_update_notification_enabled() {
+        $update_settings = $this->get_update_notification_settings();
+        return ! empty( $update_settings['enable_notifications'] );
+    }
+
+    /**
+     * 管理画面通知が有効かどうかを確認
+     */
+    public function is_admin_notification_enabled() {
+        $update_settings = $this->get_update_notification_settings();
+        return ! empty( $update_settings['enable_admin_notifications'] );
+    }
+
+    /**
+     * フロントエンド通知が有効かどうかを確認
+     */
+    public function is_frontend_notification_enabled() {
+        $update_settings = $this->get_update_notification_settings();
+        return ! empty( $update_settings['enable_frontend_notifications'] );
+    }
+
+    /**
+     * ユーザーが通知対象権限を持っているかどうかを確認
+     */
+    public function user_has_notification_permission() {
+        $update_settings = $this->get_update_notification_settings();
+        $notification_roles = isset( $update_settings['notification_roles'] ) ? $update_settings['notification_roles'] : array( 'administrator' );
+        
+        foreach ( $notification_roles as $role ) {
+            if ( current_user_can( $role ) ) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+
+    /**
      * 更新通知を表示
      */
     public function show_update_notice() {
+        // 更新通知が無効の場合は表示しない
+        if ( ! $this->is_update_notification_enabled() || ! $this->is_admin_notification_enabled() ) {
+            return;
+        }
+
         // 管理画面でのみ表示
         if ( ! is_admin() ) {
             return;
         }
-        
-        // ログイン中の管理者のみ表示
-        if ( ! is_user_logged_in() || ! current_user_can( 'administrator' ) ) {
+
+        // ログイン中のユーザーで、通知対象権限を持つユーザーのみ表示
+        if ( ! is_user_logged_in() || ! $this->user_has_notification_permission() ) {
             return;
         }
-        
+
         // 更新情報を取得
         $update_data = get_option( 'ktpwp_update_available', false );
         if ( ! $update_data ) {
             return;
         }
-        
+
         // 現在のページを判定
         $current_screen = get_current_screen();
         $is_plugins_page = ( $current_screen && $current_screen->id === 'plugins' );
         $is_ktpwp_page = $this->is_ktpwp_page();
-        
+
         // KantanPro設置ページとプラグインリストでのみ表示
         if ( ! $is_plugins_page && ! $is_ktpwp_page ) {
             return;
         }
-        
+
         // KantanPro設置ページの場合、通知が無視されているかチェック
         if ( $is_ktpwp_page && get_option( 'ktpwp_update_notice_dismissed', false ) ) {
             return;
         }
-        
+
         // プラグインリストの場合は常に表示（無視フラグはチェックしない）
         
         $plugin_name = get_plugin_data( KANTANPRO_PLUGIN_FILE )['Name'];
         $new_version = $update_data['new_version'];
-        
+
         ?>
         <div class="notice notice-warning is-dismissible" id="ktpwp-update-notice" data-page-type="<?php echo esc_attr( $is_ktpwp_page ? 'ktpwp' : 'plugins' ); ?>">
             <p>
@@ -388,13 +531,32 @@ class KTPWP_Update_Checker {
      * 更新通知の無視
      */
     public function dismiss_update_notice() {
+        // POSTデータの存在チェック
+        if ( ! isset( $_POST['nonce'] ) ) {
+            error_log( 'KantanPro: dismiss_update_notice - nonceが送信されていません' );
+            wp_send_json_error( array(
+                'message' => 'セキュリティトークンが送信されていません。',
+                'error_type' => 'missing_nonce'
+            ) );
+            return;
+        }
+        
         // セキュリティチェック
         if ( ! wp_verify_nonce( $_POST['nonce'], 'ktpwp_dismiss_update_notice' ) ) {
-            wp_die( 'セキュリティチェックに失敗しました。' );
+            error_log( 'KantanPro: dismiss_update_notice - nonce検証に失敗しました' );
+            wp_send_json_error( array(
+                'message' => 'セキュリティチェックに失敗しました。',
+                'error_type' => 'security'
+            ) );
+            return;
         }
         
         if ( ! current_user_can( 'update_plugins' ) ) {
-            wp_die( 'この操作を実行する権限がありません。' );
+            wp_send_json_error( array(
+                'message' => 'この操作を実行する権限がありません。',
+                'error_type' => 'permission'
+            ) );
+            return;
         }
         
         $page_type = isset( $_POST['page_type'] ) ? sanitize_text_field( $_POST['page_type'] ) : '';
@@ -405,29 +567,36 @@ class KTPWP_Update_Checker {
         }
         // プラグインリストの場合は無視フラグを設定しない（再表示される）
         
-        wp_die();
+        wp_send_json_success( array(
+            'message' => '更新通知を無視しました。'
+        ) );
     }
     
     /**
      * フロントエンドでの更新チェック
      */
     public function check_frontend_update() {
+        // 更新通知が無効の場合は実行しない
+        if ( ! $this->is_update_notification_enabled() || ! $this->is_frontend_notification_enabled() ) {
+            return;
+        }
+
         // 既に実行済みの場合はスキップ
         if ( $this->frontend_notice_shown ) {
             return;
         }
         
-        // ログイン中の管理者のみ表示
-        if ( ! is_user_logged_in() || ! current_user_can( 'administrator' ) ) {
+        // ログイン中のユーザーで、通知対象権限を持つユーザーのみ表示
+        if ( ! is_user_logged_in() || ! $this->user_has_notification_permission() ) {
             return;
         }
-        
+
         // KantanProが表示されているページでのみ実行
         global $post;
         if ( ! is_a( $post, 'WP_Post' ) || ! has_shortcode( $post->post_content, 'ktpwp_all_tab' ) ) {
             return;
         }
-        
+
         // 1日1回のみチェック
         $last_frontend_check = get_option( 'ktpwp_last_frontend_check', 0 );
         $current_time = time();
@@ -440,7 +609,7 @@ class KTPWP_Update_Checker {
             }
             return;
         }
-        
+
         // 更新チェック実行
         $update_available = $this->check_github_updates();
         
@@ -456,8 +625,8 @@ class KTPWP_Update_Checker {
      * フロントエンドでの更新通知表示（WordPress標準の1行通知スタイル）
      */
     private function show_frontend_update_notice() {
-        // ログイン中の管理者のみ表示
-        if ( ! is_user_logged_in() || ! current_user_can( 'administrator' ) ) {
+        // ログイン中のユーザーで、通知対象権限を持つユーザーのみ表示
+        if ( ! is_user_logged_in() || ! $this->user_has_notification_permission() ) {
             return;
         }
         // 通知が無視されているかチェック（KantanPro設置ページでのみ適用）
@@ -542,9 +711,24 @@ class KTPWP_Update_Checker {
      * フロントエンド更新通知の無視
      */
     public function dismiss_frontend_update_notice() {
+        // POSTデータの存在チェック
+        if ( ! isset( $_POST['nonce'] ) ) {
+            error_log( 'KantanPro: dismiss_frontend_update_notice - nonceが送信されていません' );
+            wp_send_json_error( array(
+                'message' => 'セキュリティトークンが送信されていません。',
+                'error_type' => 'missing_nonce'
+            ) );
+            return;
+        }
+        
         // セキュリティチェック
         if ( ! wp_verify_nonce( $_POST['nonce'], 'ktpwp_dismiss_frontend_update_notice' ) ) {
-            wp_die( 'セキュリティチェックに失敗しました。' );
+            error_log( 'KantanPro: dismiss_frontend_update_notice - nonce検証に失敗しました' );
+            wp_send_json_error( array(
+                'message' => 'セキュリティチェックに失敗しました。',
+                'error_type' => 'security'
+            ) );
+            return;
         }
         
         // 現在の更新バージョンを記録して、同じバージョンでは再度通知しないようにする
@@ -555,20 +739,41 @@ class KTPWP_Update_Checker {
         
         // KantanPro設置ページでのみ無視フラグを設定
         update_option( 'ktpwp_frontend_update_notice_dismissed', true );
-        wp_die();
+        wp_send_json_success( array(
+            'message' => 'フロントエンド更新通知を無視しました。'
+        ) );
     }
     
     /**
      * プラグイン更新の実行
      */
     public function perform_plugin_update() {
+        // POSTデータの存在チェック
+        if ( ! isset( $_POST['nonce'] ) ) {
+            error_log( 'KantanPro: perform_plugin_update - nonceが送信されていません' );
+            wp_send_json_error( array(
+                'message' => 'セキュリティトークンが送信されていません。',
+                'error_type' => 'missing_nonce'
+            ) );
+            return;
+        }
+        
         // セキュリティチェック
         if ( ! wp_verify_nonce( $_POST['nonce'], 'ktpwp_perform_update' ) ) {
-            wp_send_json_error( 'セキュリティチェックに失敗しました。' );
+            error_log( 'KantanPro: perform_plugin_update - nonce検証に失敗しました' );
+            wp_send_json_error( array(
+                'message' => 'セキュリティチェックに失敗しました。',
+                'error_type' => 'security'
+            ) );
+            return;
         }
         
         if ( ! current_user_can( 'update_plugins' ) ) {
-            wp_send_json_error( 'この操作を実行する権限がありません。' );
+            wp_send_json_error( array(
+                'message' => 'この操作を実行する権限がありません。',
+                'error_type' => 'permission'
+            ) );
+            return;
         }
         
         $version = sanitize_text_field( $_POST['version'] );
@@ -576,7 +781,10 @@ class KTPWP_Update_Checker {
         // 更新情報を取得
         $update_data = get_option( 'ktpwp_update_available', false );
         if ( ! $update_data || $update_data['new_version'] !== $version ) {
-            wp_send_json_error( '更新情報が見つかりません。' );
+            wp_send_json_error( array(
+                'message' => '更新情報が見つかりません。',
+                'error_type' => 'no_update_data'
+            ) );
         }
         
         // WordPress標準の更新システムを使用
@@ -587,7 +795,10 @@ class KTPWP_Update_Checker {
         $result = $this->download_and_install_update( $update_data );
         
         if ( is_wp_error( $result ) ) {
-            wp_send_json_error( $result->get_error_message() );
+            wp_send_json_error( array(
+                'message' => $result->get_error_message(),
+                'error_type' => 'update_failed'
+            ) );
         }
         
         if ( $result ) {
@@ -596,9 +807,14 @@ class KTPWP_Update_Checker {
             delete_option( 'ktpwp_update_notice_dismissed' );
             delete_option( 'ktpwp_frontend_update_notice_dismissed' );
             
-            wp_send_json_success( '更新が完了しました。' );
+            wp_send_json_success( array(
+                'message' => '更新が完了しました。'
+            ) );
         } else {
-            wp_send_json_error( '更新に失敗しました。' );
+            wp_send_json_error( array(
+                'message' => '更新に失敗しました。',
+                'error_type' => 'update_failed'
+            ) );
         }
     }
     
@@ -716,6 +932,158 @@ class KTPWP_Update_Checker {
         $version = trim( $version );
         
         return $version;
+    }
+    
+    /**
+     * ヘッダー更新リンク用の更新チェック
+     */
+    public function check_header_update() {
+        // 更新通知が無効の場合は実行しない
+        if ( ! $this->is_update_notification_enabled() ) {
+            return false;
+        }
+        
+        // ログイン中のユーザーで、通知対象権限を持つユーザーのみ実行
+        if ( ! is_user_logged_in() || ! $this->user_has_notification_permission() ) {
+            return false;
+        }
+        
+        // 更新情報を取得
+        $update_data = get_option( 'ktpwp_update_available', false );
+        if ( ! $update_data ) {
+            return false;
+        }
+        
+        // 通知が無視されているかチェック
+        if ( get_option( 'ktpwp_header_update_notice_dismissed', false ) ) {
+            return false;
+        }
+        
+        // 過去に無視されたバージョンと同じ場合は表示しない
+        $dismissed_version = get_option( 'ktpwp_header_dismissed_version', '' );
+        if ( $dismissed_version === $update_data['new_version'] ) {
+            return false;
+        }
+        
+        return $update_data;
+    }
+
+    /**
+     * ヘッダー更新通知の無視
+     */
+    public function dismiss_header_update_notice() {
+        // POSTデータの存在チェック
+        if ( ! isset( $_POST['nonce'] ) ) {
+            error_log( 'KantanPro: dismiss_header_update_notice - nonceが送信されていません' );
+            wp_send_json_error( array(
+                'message' => 'セキュリティトークンが送信されていません。',
+                'error_type' => 'missing_nonce'
+            ) );
+            return;
+        }
+        
+        // セキュリティチェック
+        if ( ! wp_verify_nonce( $_POST['nonce'], 'ktpwp_header_update_notice' ) ) {
+            error_log( 'KantanPro: dismiss_header_update_notice - nonce検証に失敗しました' );
+            wp_send_json_error( array(
+                'message' => 'セキュリティチェックに失敗しました。',
+                'error_type' => 'invalid_nonce'
+            ) );
+            return;
+        }
+        
+        // 現在の更新バージョンを記録
+        $update_data = get_option( 'ktpwp_update_available', false );
+        if ( $update_data ) {
+            update_option( 'ktpwp_header_dismissed_version', $update_data['new_version'] );
+        }
+        
+        update_option( 'ktpwp_header_update_notice_dismissed', true );
+        wp_send_json_success( array(
+            'message' => '更新通知を無視しました。'
+        ) );
+    }
+
+    /**
+     * ヘッダー更新リンク用のAJAX更新チェック
+     */
+    public function ajax_check_header_update() {
+        try {
+            error_log( 'KantanPro: ajax_check_header_update 開始' );
+            error_log( 'KantanPro: POSTデータ: ' . print_r( $_POST, true ) );
+            
+            // POSTデータの存在チェック
+            if ( ! isset( $_POST['nonce'] ) ) {
+                error_log( 'KantanPro: ajax_check_header_update - nonceが送信されていません' );
+                wp_send_json_error( array(
+                    'message' => 'セキュリティトークンが送信されていません。',
+                    'error_type' => 'missing_nonce'
+                ) );
+                return;
+            }
+            
+            // セキュリティチェック
+            error_log( 'KantanPro: nonce検証開始 - 受信nonce: ' . $_POST['nonce'] );
+            if ( ! wp_verify_nonce( $_POST['nonce'], 'ktpwp_header_update_check' ) ) {
+                error_log( 'KantanPro: ajax_check_header_update - nonce検証に失敗しました' );
+                error_log( 'KantanPro: 期待されるnonce: ' . wp_create_nonce( 'ktpwp_header_update_check' ) );
+                wp_send_json_error( array(
+                    'message' => 'セキュリティチェックに失敗しました。',
+                    'error_type' => 'security'
+                ) );
+                return;
+            }
+            error_log( 'KantanPro: nonce検証成功' );
+            
+            error_log( 'KantanPro: 権限チェック開始' );
+            if ( ! $this->user_has_notification_permission() ) {
+                error_log( 'KantanPro: 権限チェック失敗' );
+                wp_send_json_error( array(
+                    'message' => 'この操作を実行する権限がありません。',
+                    'error_type' => 'permission'
+                ) );
+                return;
+            }
+            error_log( 'KantanPro: 権限チェック成功' );
+            
+            // 更新通知が無効の場合は即座に返す
+            if ( ! $this->is_update_notification_enabled() ) {
+                wp_send_json_success( array(
+                    'message' => '更新通知が無効化されています。',
+                    'has_update' => false,
+                    'notifications_disabled' => true
+                ) );
+                return;
+            }
+            
+            // 更新チェック実行
+            error_log( 'KantanPro: 更新チェック実行開始' );
+            $update_available = $this->check_github_updates();
+            error_log( 'KantanPro: 更新チェック結果: ' . ( $update_available ? 'true' : 'false' ) );
+            
+            if ( $update_available ) {
+                $update_data = get_option( 'ktpwp_update_available', false );
+                error_log( 'KantanPro: 更新あり - 更新データ: ' . print_r( $update_data, true ) );
+                wp_send_json_success( array(
+                    'message' => __( '新しいバージョンが利用可能です！', 'KantanPro' ),
+                    'has_update' => true,
+                    'update_data' => $update_data
+                ) );
+            } else {
+                error_log( 'KantanPro: 更新なし' );
+                wp_send_json_success( array(
+                    'message' => __( '最新バージョンです。', 'KantanPro' ),
+                    'has_update' => false
+                ) );
+            }
+            
+        } catch ( Exception $e ) {
+            error_log( 'KantanPro: AJAX更新チェックで例外が発生: ' . $e->getMessage() );
+            wp_send_json_error( array(
+                'message' => '更新チェック中にエラーが発生しました: ' . $e->getMessage(),
+                'error_type' => 'exception'
+            ) );
+        }
     }
     
     /**
