@@ -137,22 +137,25 @@ class KTPWP_Donation {
     public function enqueue_scripts() {
         // 寄付フォームがあるページでのみ読み込み
         if ( $this->has_donation_shortcode() ) {
-            wp_enqueue_script( 'stripe-js', 'https://js.stripe.com/v3/', array(), null, true );
-            wp_enqueue_script( 
-                'ktpwp-donation', 
-                plugin_dir_url( __DIR__ ) . 'js/ktpwp-donation.js', 
-                array( 'jquery', 'stripe-js' ), 
-                KTPWP_PLUGIN_VERSION, 
-                true 
-            );
-            
-            // Ajax URLとnonceを渡す
-            wp_localize_script( 'ktpwp-donation', 'ktpwp_donation', array(
-                'ajax_url' => admin_url( 'admin-ajax.php' ),
-                'nonce' => wp_create_nonce( 'ktpwp_donation_nonce' ),
-                'stripe_publishable_key' => $this->get_stripe_publishable_key(),
-                'currency' => 'jpy'
-            ) );
+            // Stripeが利用可能な場合のみStripeスクリプトを読み込み
+            if ( class_exists( '\Stripe\Stripe' ) ) {
+                wp_enqueue_script( 'stripe-js', 'https://js.stripe.com/v3/', array(), null, true );
+                wp_enqueue_script( 
+                    'ktpwp-donation', 
+                    plugin_dir_url( __DIR__ ) . 'js/ktpwp-donation.js', 
+                    array( 'jquery', 'stripe-js' ), 
+                    KTPWP_PLUGIN_VERSION, 
+                    true 
+                );
+                
+                // Ajax URLとnonceを渡す
+                wp_localize_script( 'ktpwp-donation', 'ktpwp_donation', array(
+                    'ajax_url' => admin_url( 'admin-ajax.php' ),
+                    'nonce' => wp_create_nonce( 'ktpwp_donation_nonce' ),
+                    'stripe_publishable_key' => $this->get_stripe_publishable_key(),
+                    'currency' => 'jpy'
+                ) );
+            }
             
             wp_enqueue_style( 
                 'ktpwp-donation', 
@@ -223,22 +226,25 @@ class KTPWP_Donation {
     public function enqueue_admin_scripts( $hook ) {
         // KantanProの設定ページでのみ読み込み
         if ( strpos( $hook, 'ktp-settings' ) !== false || strpos( $hook, 'ktp-' ) !== false ) {
-            wp_enqueue_script( 'stripe-js', 'https://js.stripe.com/v3/', array(), null, true );
-            wp_enqueue_script( 
-                'ktpwp-donation', 
-                plugin_dir_url( __DIR__ ) . 'js/ktpwp-donation.js', 
-                array( 'jquery', 'stripe-js' ), 
-                KTPWP_PLUGIN_VERSION, 
-                true 
-            );
-            
-            // Ajax URLとnonceを渡す
-            wp_localize_script( 'ktpwp-donation', 'ktpwp_donation', array(
-                'ajax_url' => admin_url( 'admin-ajax.php' ),
-                'nonce' => wp_create_nonce( 'ktpwp_donation_nonce' ),
-                'stripe_publishable_key' => $this->get_stripe_publishable_key(),
-                'currency' => 'jpy'
-            ) );
+            // Stripeが利用可能な場合のみStripeスクリプトを読み込み
+            if ( class_exists( '\Stripe\Stripe' ) ) {
+                wp_enqueue_script( 'stripe-js', 'https://js.stripe.com/v3/', array(), null, true );
+                wp_enqueue_script( 
+                    'ktpwp-donation', 
+                    plugin_dir_url( __DIR__ ) . 'js/ktpwp-donation.js', 
+                    array( 'jquery', 'stripe-js' ), 
+                    KTPWP_PLUGIN_VERSION, 
+                    true 
+                );
+                
+                // Ajax URLとnonceを渡す
+                wp_localize_script( 'ktpwp-donation', 'ktpwp_donation', array(
+                    'ajax_url' => admin_url( 'admin-ajax.php' ),
+                    'nonce' => wp_create_nonce( 'ktpwp_donation_nonce' ),
+                    'stripe_publishable_key' => $this->get_stripe_publishable_key(),
+                    'currency' => 'jpy'
+                ) );
+            }
             
             wp_enqueue_style( 
                 'ktpwp-donation', 
@@ -417,6 +423,11 @@ class KTPWP_Donation {
                     error_log( 'KTPWP Donation Error: Invalid Stripe secret key format' );
                 }
                 throw new Exception( 'Stripeシークレットキーの形式が正しくありません。' );
+            }
+            
+            // Stripeが利用可能かチェック
+            if ( ! class_exists( '\Stripe\Stripe' ) ) {
+                throw new Exception( 'Stripe決済機能は現在利用できません。' );
             }
             
             \Stripe\Stripe::setApiKey( $secret_key );
@@ -1008,6 +1019,11 @@ KantanPro開発チーム
         }
         
         try {
+            // Stripeが利用可能かチェック
+            if ( ! class_exists( '\Stripe\Stripe' ) ) {
+                return false;
+            }
+            
             // Stripe SDK初期化
             \Stripe\Stripe::setApiKey( $secret_key );
             

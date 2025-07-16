@@ -446,7 +446,16 @@ class KTPWP_Update_Checker {
         // プラグインリストの場合は常に表示（無視フラグはチェックしない）
         
         $plugin_name = get_plugin_data( KANTANPRO_PLUGIN_FILE )['Name'];
-        $new_version = $update_data['version']; // 更新データからversionを取得
+        
+        // $update_dataが配列か文字列かをチェック
+        if ( is_array( $update_data ) && isset( $update_data['version'] ) ) {
+            $new_version = $update_data['version'];
+        } elseif ( is_string( $update_data ) ) {
+            $new_version = $update_data;
+        } else {
+            // 予期しない形式の場合は処理を中断
+            return;
+        }
 
         ?>
         <div class="notice notice-warning is-dismissible" id="ktpwp-update-notice" data-page-type="<?php echo esc_attr( $is_ktpwp_page ? 'ktpwp' : 'plugins' ); ?>">
@@ -633,9 +642,19 @@ class KTPWP_Update_Checker {
             return;
         }
         
+        // $update_dataが配列か文字列かをチェック
+        if ( is_array( $update_data ) && isset( $update_data['version'] ) ) {
+            $new_version = $update_data['version'];
+        } elseif ( is_string( $update_data ) ) {
+            $new_version = $update_data;
+        } else {
+            // 予期しない形式の場合は処理を中断
+            return;
+        }
+        
         // 過去に無視されたバージョンと同じ場合は表示しない
         $dismissed_version = get_option( 'ktpwp_frontend_dismissed_version', '' );
-        if ( $dismissed_version === $update_data['version'] ) { // 更新データからversionを取得
+        if ( $dismissed_version === $new_version ) {
             return;
         }
         
@@ -643,7 +662,6 @@ class KTPWP_Update_Checker {
         $this->frontend_notice_shown = true;
         
         $plugin_name = get_plugin_data( KANTANPRO_PLUGIN_FILE )['Name'];
-        $new_version = $update_data['version']; // 更新データからversionを取得
         
         ?>
         <div id="ktpwp-frontend-update-notice" style="
@@ -728,7 +746,11 @@ class KTPWP_Update_Checker {
         // 現在の更新バージョンを記録して、同じバージョンでは再度通知しないようにする
         $update_data = get_option( 'ktpwp_update_available', false );
         if ( $update_data ) {
-            update_option( 'ktpwp_frontend_dismissed_version', $update_data['version'] ); // 更新データからversionを取得
+            if ( is_array( $update_data ) && isset( $update_data['version'] ) ) {
+                update_option( 'ktpwp_frontend_dismissed_version', $update_data['version'] );
+            } elseif ( is_string( $update_data ) ) {
+                update_option( 'ktpwp_frontend_dismissed_version', $update_data );
+            }
         }
         
         // KantanPro設置ページでのみ無視フラグを設定
@@ -774,7 +796,27 @@ class KTPWP_Update_Checker {
         
         // 更新情報を取得
         $update_data = get_option( 'ktpwp_update_available', false );
-        if ( ! $update_data || $update_data['version'] !== $version ) { // 更新データからversionを取得
+        if ( ! $update_data ) {
+            wp_send_json_error( array(
+                'message' => '更新情報が見つかりません。',
+                'error_type' => 'no_update_data'
+            ) );
+        }
+        
+        // $update_dataが配列か文字列かをチェック
+        $update_version = '';
+        if ( is_array( $update_data ) && isset( $update_data['version'] ) ) {
+            $update_version = $update_data['version'];
+        } elseif ( is_string( $update_data ) ) {
+            $update_version = $update_data;
+        } else {
+            wp_send_json_error( array(
+                'message' => '更新情報の形式が正しくありません。',
+                'error_type' => 'invalid_update_data'
+            ) );
+        }
+        
+        if ( $update_version !== $version ) {
             wp_send_json_error( array(
                 'message' => '更新情報が見つかりません。',
                 'error_type' => 'no_update_data'

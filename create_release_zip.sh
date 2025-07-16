@@ -40,9 +40,9 @@ rm -rf "${BUILD_DIR}"
 rm -f "${FINAL_ZIP_PATH}"
 echo "  - 完了"
 
-# 3. ソースファイルをビルドディレクトリにコピー (vendor を除く)
-echo "\n[3/6] ソースファイルをコピー中 (vendorディレクトリを除く)..."
-# コピー除外リスト
+# 3. ソースファイルをビルドディレクトリにコピー
+echo "\n[3/6] ソースファイルをコピー中..."
+# コピー除外リスト（vendorディレクトリは不要なため除外）
 EXCLUDE_LIST=(".git" ".vscode" ".idea" "KantanPro_build_temp" "KantanPro_temp" "wp" "node_modules" "vendor")
 EXCLUDE_OPTS=""
 for item in "${EXCLUDE_LIST[@]}"; do
@@ -52,14 +52,14 @@ done
 eval rsync -a ${EXCLUDE_OPTS} "\"${SOURCE_DIR}/\"" "\"${BUILD_DIR}/\""
 echo "  - 完了"
 
-# 4. 本番用の依存関係をインストール
-echo "\n[4/6] Composerを使用して本番用の依存関係をインストール中..."
+# 4. Composer依存関係の処理（現在は不要な依存関係なし）
+echo "\n[4/6] Composer依存関係を確認中..."
 if [ -f "${BUILD_DIR}/composer.json" ]; then
-    # composer.lock が composer.json と乖離している場合があるため update を実行する
+    # 現在は外部依存関係がないため、composer.lockのみコピー
     if [ -f "${BUILD_DIR}/composer.lock" ]; then
-        (cd "${BUILD_DIR}" && composer update --no-dev --optimize-autoloader)
+        echo "  - composer.lock を保持しました"
     else
-        (cd "${BUILD_DIR}" && composer install --no-dev --optimize-autoloader)
+        echo "  - composer.lock が見つかりません"
     fi
     echo "  - 完了"
 else
@@ -68,19 +68,26 @@ fi
 
 # 5. 不要なファイルを削除
 echo "\n[5/6] 不要な開発用ファイルを削除中..."
+# 設定ファイルと開発ツール
 find "${BUILD_DIR}" -type f -name ".DS_Store" -delete
 find "${BUILD_DIR}" -type f -name ".phpcs.xml" -delete
 find "${BUILD_DIR}" -type f -name ".editorconfig" -delete
 find "${BUILD_DIR}" -type f -name ".cursorrules" -delete
 find "${BUILD_DIR}" -type f -name ".gitignore" -delete
+# WP-CLI関連ファイル
 find "${BUILD_DIR}" -type f -name "wp-cli.phar" -delete
 find "${BUILD_DIR}" -type f -name "wp-cli.yml" -delete
 find "${BUILD_DIR}" -type f -name "wp-cli.sh" -delete
 find "${BUILD_DIR}" -type f -name "wp-cli-aliases.sh" -delete
 find "${BUILD_DIR}" -type f -name "setup-wp-cli.sh" -delete
 find "${BUILD_DIR}" -type f -name "WP-CLI-README.md" -delete
-find "${BUILD_DIR}" -type f \( -name "test-*.php" -o -name "debug-*.php" -o -name "check-*.php" -o -name "fix-*.php" -o -name "migrate-*.php" -o -name "auto-*.php" -o -name "manual-*.php" -o -name "direct-*.php" -o -name "clear-*.php" -o -name "admin-migrate.php" \) -delete
+# 開発用PHPファイル
+find "${BUILD_DIR}" -type f \( -name "test-*.php" -o -name "test_*.php" -o -name "debug-*.php" -o -name "debug_*.php" -o -name "check-*.php" -o -name "check_*.php" -o -name "fix-*.php" -o -name "fix_*.php" -o -name "migrate-*.php" -o -name "migrate_*.php" -o -name "auto-*.php" -o -name "auto_*.php" -o -name "manual-*.php" -o -name "manual_*.php" -o -name "direct-*.php" -o -name "direct_*.php" -o -name "clear-*.php" -o -name "clear_*.php" -o -name "run-*.php" -o -name "run_*.php" -o -name "admin-migrate.php" \) -delete
+# ドキュメントファイル
 find "${BUILD_DIR}" -type f \( -name "README.md" -o -name "*.md" -o -name "*.html" \) -delete
+# 開発用JS/CSSファイル
+find "${BUILD_DIR}" -type f \( -name "*-test.js" -o -name "*-debug.js" -o -name "*-fixed.js" -o -name "*-test.css" -o -name "*-debug.css" -o -name "*-fixed.css" -o -name "test-*.js" -o -name "debug-*.js" -o -name "fix-*.js" -o -name "test-*.css" -o -name "debug-*.css" -o -name "fix-*.css" -o -name "service-fix.*" \) -delete
+# 不要なディレクトリ
 find "${BUILD_DIR}" -type d -name "KantanPro_temp" -exec rm -rf {} +
 find "${BUILD_DIR}" -type d -name "wp" -exec rm -rf {} +
 find "${BUILD_DIR}/images/upload" -mindepth 1 -delete

@@ -1,5 +1,4 @@
 <?php
-error_log( 'ajax-supplier-cost.php loaded' );
 /**
  * Ajax: コスト項目用 協力会社・職能リスト取得
  *
@@ -12,15 +11,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 add_action(
     'wp_ajax_ktpwp_get_suppliers_for_cost',
     function () {
-		error_log( 'ktpwp_get_suppliers_for_cost called' );
 		if ( ! current_user_can( 'edit_posts' ) ) {
-			error_log( '権限NG: ' . print_r( wp_get_current_user(), true ) );
 			wp_send_json_error( '権限がありません' );
 		}
 		global $wpdb;
 		$table = $wpdb->prefix . 'ktp_supplier';
 		$suppliers = $wpdb->get_results( "SELECT id, company_name FROM $table WHERE 1 ORDER BY company_name ASC", ARRAY_A );
-		error_log( 'ktpwp_get_suppliers_for_cost result: ' . print_r( $suppliers, true ) );
 		wp_send_json( $suppliers );
 	}
 );
@@ -28,15 +24,11 @@ add_action(
 add_action(
     'wp_ajax_ktpwp_get_supplier_skills_for_cost',
     function () {
-		error_log( 'ktpwp_get_supplier_skills_for_cost called' );
-		error_log( 'POST: ' . print_r( $_POST, true ) );
 		if ( ! current_user_can( 'edit_posts' ) ) {
-			error_log( '権限NG: ' . print_r( wp_get_current_user(), true ) );
 			wp_send_json_error( '権限がありません' );
 		}
 		$supplier_id = isset( $_POST['supplier_id'] ) ? intval( $_POST['supplier_id'] ) : 0;
 		if ( ! $supplier_id ) {
-			error_log( 'supplier_idが不正: ' . print_r( $_POST, true ) );
 			wp_send_json_error( 'supplier_idが不正です' );
 		}
 		global $wpdb;
@@ -66,10 +58,7 @@ add_action(
     ",
             $supplier_id
 		);
-		error_log( 'SQL: ' . $sql );
 		$skills = $wpdb->get_results( $sql, ARRAY_A );
-		error_log( 'wpdb->last_error: ' . $wpdb->last_error );
-		error_log( 'ktpwp_get_supplier_skills_for_cost result: ' . print_r( $skills, true ) );
 		wp_send_json( $skills );
 	}
 );
@@ -77,8 +66,6 @@ add_action(
 add_action(
     'wp_ajax_ktpwp_save_supplier_skill_for_cost',
     function () {
-		error_log( 'ktpwp_save_supplier_skill_for_cost called' );
-		error_log( 'POST: ' . print_r( $_POST, true ) );
 		if ( ! current_user_can( 'edit_posts' ) ) {
 			wp_send_json_error( '権限がありません' );
 		}
@@ -98,8 +85,6 @@ add_action(
 		if ( ! empty( $_POST['id'] ) ) {
 			// 更新
 			$result = $wpdb->update( $table, $data, array( 'id' => intval( $_POST['id'] ) ), $format, array( '%d' ) );
-			error_log( 'UPDATE result: ' . print_r( $result, true ) );
-			error_log( 'wpdb->last_error: ' . $wpdb->last_error );
 			if ( $result !== false ) {
 				wp_send_json_success( array( 'id' => intval( $_POST['id'] ) ) );
 			} else {
@@ -110,8 +95,6 @@ add_action(
 			$data['created_at'] = current_time( 'mysql' );
 			$format[] = '%s';
 			$result = $wpdb->insert( $table, $data, $format );
-			error_log( 'INSERT result: ' . print_r( $result, true ) );
-			error_log( 'wpdb->last_error: ' . $wpdb->last_error );
 			if ( $result ) {
 				wp_send_json_success( array( 'id' => $wpdb->insert_id ) );
 			} else {
@@ -124,21 +107,11 @@ add_action(
 add_action(
     'wp_ajax_ktpwp_save_order_cost_item',
     function () {
-		error_log( '=== ktpwp_save_order_cost_item called ===' );
-		error_log( 'POST data: ' . print_r( $_POST, true ) );
-		error_log( 'User: ' . print_r( wp_get_current_user(), true ) );
-		error_log( 'User ID: ' . get_current_user_id() );
-		error_log( 'User capabilities: ' . print_r( wp_get_current_user()->allcaps, true ) );
-
 		// 権限チェック
 		if ( ! current_user_can( 'edit_posts' ) ) {
-			error_log( '権限NG: ユーザーに権限がありません' );
-			error_log( 'Current user can edit_posts: ' . ( current_user_can( 'edit_posts' ) ? 'true' : 'false' ) );
 			wp_send_json_error( '権限がありません' );
 			return;
 		}
-
-		error_log( '権限チェックOK' );
 
 		global $wpdb;
 		$table = $wpdb->prefix . 'ktp_order_cost_items';
@@ -168,26 +141,13 @@ add_action(
 		$amount = isset( $item['amount'] ) ? floatval( $item['amount'] ) : 0;
 		$remarks = isset( $item['remarks'] ) ? sanitize_textarea_field( $item['remarks'] ) : '';
 
-		error_log( 'Parsed data:' );
-		error_log( '- item_id: ' . $item_id );
-		error_log( '- order_id: ' . $order_id );
-		error_log( '- force_save: ' . ( $force_save ? 'true' : 'false' ) );
-		error_log( '- product_name: ' . $product_name );
-		error_log( '- supplier_id: ' . $supplier_id );
-		error_log( '- unit_price: ' . $unit_price );
-		error_log( '- quantity: ' . $quantity );
-		error_log( '- unit: ' . $unit );
-		error_log( '- amount: ' . $amount );
-
 		// 必須項目の検証
 		if ( empty( $product_name ) ) {
-			error_log( 'エラー: 商品名が空です' );
 			wp_send_json_error( '商品名は必須です' );
 			return;
 		}
 
 		if ( $order_id <= 0 ) {
-			error_log( 'エラー: 注文IDが無効です' );
 			wp_send_json_error( '注文IDが無効です' );
 			return;
 		}
@@ -195,17 +155,13 @@ add_action(
 		// テーブルの存在確認
 		$table_exists = $wpdb->get_var( "SHOW TABLES LIKE '$table'" ) === $table;
 		if ( ! $table_exists ) {
-			error_log( 'エラー: テーブルが存在しません: ' . $table );
 			wp_send_json_error( 'データベーステーブルが存在しません' );
 			return;
 		}
 
-		error_log( 'テーブル存在確認OK: ' . $table );
-
 		// supplier_idカラムの存在確認
 		$columns = $wpdb->get_col( $wpdb->prepare( "SHOW COLUMNS FROM `{$table}` LIKE %s", 'supplier_id' ) );
 		$has_supplier_id = ! empty( $columns );
-		error_log( 'Has supplier_id column: ' . ( $has_supplier_id ? 'true' : 'false' ) );
 
 		// 既存アイテムのIDを確認（product_nameとorder_idで検索）
 		if ( $item_id <= 0 && ! empty( $product_name ) && $order_id > 0 ) {
@@ -219,7 +175,6 @@ add_action(
             );
 			if ( $existing_item ) {
 				$item_id = $existing_item['id'];
-				error_log( '既存アイテムを発見、ID: ' . $item_id );
 			}
 		}
 
@@ -234,14 +189,12 @@ add_action(
                 ARRAY_A
             );
 			if ( ! $existing_item ) {
-				error_log( '指定されたID ' . $item_id . ' のレコードが存在しないため、新規追加として処理' );
 				$item_id = 0; // 新規追加として処理
 			}
 		}
 
 		// 強制的な既存レコード検索（order_id + product_name）
 		if ( $item_id <= 0 && ! empty( $product_name ) && $order_id > 0 ) {
-			error_log( '強制的な既存レコード検索を実行: order_id=' . $order_id . ', product_name=' . $product_name );
 			$existing_items = $wpdb->get_results(
                 $wpdb->prepare(
                     "SELECT id, product_name FROM `{$table}` WHERE order_id = %d",
@@ -249,18 +202,14 @@ add_action(
                 ),
                 ARRAY_A
             );
-			error_log( '該当order_idの全レコード: ' . print_r( $existing_items, true ) );
 
 			foreach ( $existing_items as $existing ) {
 				if ( $existing['product_name'] === $product_name ) {
 					$item_id = $existing['id'];
-					error_log( '強制検索で既存アイテムを発見、ID: ' . $item_id );
 					break;
 				}
 			}
 		}
-
-		error_log( 'Final item_id: ' . $item_id );
 
 		// 保存データの準備
 		$data = array(

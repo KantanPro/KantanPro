@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-// Composer autoload を読み込みます。これは Stripe ライブラリや他の依存関係に必要です。
+// Composer autoload を読み込みます（現在は外部依存関係なし）
 if ( file_exists( plugin_dir_path( __FILE__ ) . 'vendor/autoload.php' ) ) {
     require_once plugin_dir_path( __FILE__ ) . 'vendor/autoload.php';
 }
@@ -1327,10 +1327,10 @@ function ktpwp_disable_rest_api_restriction_during_init() {
 add_action( 'plugins_loaded', 'ktpwp_disable_rest_api_restriction_during_init', 1 );
 
 // メインクラスの初期化はinit以降に遅延（翻訳エラー防止）
+// KTPWP_Mainクラスの初期化（一度だけ実行）
 add_action(
     'init',
     function () {
-		// Changed from plugins_loaded to init
 		if ( class_exists( 'KTPWP_Main' ) ) {
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 				error_log( 'KTPWP Plugin: KTPWP_Main class found, initializing on init hook...' );
@@ -1340,14 +1340,13 @@ add_action(
             error_log( 'KTPWP Plugin: KTPWP_Main class not found on init hook' );
 		}
 	},
-    0
-); // Run early on init hook
+    10
+); // Run after init
 
 // Contact Form 7連携クラスも必ず初期化
 add_action(
-    'plugins_loaded',
+    'init',
     function () {
-		// Changed from 'init' to 'plugins_loaded'
 		if ( class_exists( 'KTPWP_Contact_Form' ) ) {
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 				error_log( 'KTPWP Plugin: KTPWP_Contact_Form class found, initializing...' );
@@ -1356,8 +1355,9 @@ add_action(
 		} elseif ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
             error_log( 'KTPWP Plugin: KTPWP_Contact_Form class not found' );
 		}
-	}
-);
+	},
+    20
+); // Run after KTPWP_Main initialization
 
 // プラグインリファレンス機能の初期化はinit以降に遅延（翻訳エラー防止）
 add_action(
