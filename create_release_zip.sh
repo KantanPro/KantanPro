@@ -23,7 +23,7 @@ echo "--------------------------------------------------"
 
 # 1. バージョンと日付の取得
 echo "[1/6] バージョン情報を取得中..."
-# ktpwp.phpからバージョンを抽出 (例: "1.0.6(preview)" -> "1.0.6")
+# ktpwp.phpからバージョンを抽出 (例: "1.1.1(preview)" -> "1.1.1")
 VERSION=$(grep -i "Version:" "$SOURCE_DIR/ktpwp.php" | head -n 1 | sed -E 's/.*Version:[[:space:]]*([0-9]+\.[0-9]+\.[0-9]+).*/\1/')
 DATE=$(date +%Y%m%d)
 ZIP_FILE_NAME="KantanPro_${VERSION}_${DATE}.zip"
@@ -43,7 +43,7 @@ echo "  - 完了"
 # 3. ソースファイルをビルドディレクトリにコピー (vendor を除く)
 echo "\n[3/6] ソースファイルをコピー中 (vendorディレクトリを除く)..."
 # コピー除外リスト
-EXCLUDE_LIST=(".git" ".vscode" ".idea" "KantanPro_build_temp" "KantanPro_temp" "wp" "node_modules" "vendor")
+EXCLUDE_LIST=(".git" ".vscode" ".idea" "KantanPro_build_temp" "KantanPro_temp" "wp" "node_modules" "vendor" "wp-content")
 EXCLUDE_OPTS=""
 for item in "${EXCLUDE_LIST[@]}"; do
     EXCLUDE_OPTS+="--exclude=${item} "
@@ -68,22 +68,38 @@ fi
 
 # 5. 不要なファイルを削除
 echo "\n[5/6] 不要な開発用ファイルを削除中..."
+# システムファイル
 find "${BUILD_DIR}" -type f -name ".DS_Store" -delete
 find "${BUILD_DIR}" -type f -name ".phpcs.xml" -delete
 find "${BUILD_DIR}" -type f -name ".editorconfig" -delete
 find "${BUILD_DIR}" -type f -name ".cursorrules" -delete
 find "${BUILD_DIR}" -type f -name ".gitignore" -delete
+
+# WP-CLI関連ファイル
 find "${BUILD_DIR}" -type f -name "wp-cli.phar" -delete
 find "${BUILD_DIR}" -type f -name "wp-cli.yml" -delete
 find "${BUILD_DIR}" -type f -name "wp-cli.sh" -delete
 find "${BUILD_DIR}" -type f -name "wp-cli-aliases.sh" -delete
 find "${BUILD_DIR}" -type f -name "setup-wp-cli.sh" -delete
 find "${BUILD_DIR}" -type f -name "WP-CLI-README.md" -delete
-find "${BUILD_DIR}" -type f \( -name "test-*.php" -o -name "debug-*.php" -o -name "check-*.php" -o -name "fix-*.php" -o -name "migrate-*.php" -o -name "auto-*.php" -o -name "manual-*.php" -o -name "direct-*.php" -o -name "clear-*.php" -o -name "admin-migrate.php" \) -delete
+
+# テスト・デバッグ・マイグレーション関連ファイル
+find "${BUILD_DIR}" -type f \( -name "test-*.php" -o -name "debug-*.php" -o -name "check-*.php" -o -name "fix-*.php" -o -name "migrate-*.php" -o -name "auto-*.php" -o -name "manual-*.php" -o -name "direct-*.php" -o -name "clear-*.php" -o -name "admin-migrate.php" -o -name "run_*.php" \) -delete
+
+# ドキュメントファイル（readme.txtは除く）
 find "${BUILD_DIR}" -type f \( -name "README.md" -o -name "*.md" -o -name "*.html" \) -delete
+
+# 一時ディレクトリ
 find "${BUILD_DIR}" -type d -name "KantanPro_temp" -exec rm -rf {} +
 find "${BUILD_DIR}" -type d -name "wp" -exec rm -rf {} +
+find "${BUILD_DIR}" -type d -name "wp-content" -exec rm -rf {} +
+
+# アップロード画像をクリア（ディレクトリ構造は保持）
 find "${BUILD_DIR}/images/upload" -mindepth 1 -delete
+
+# 開発用のコピーファイル
+find "${BUILD_DIR}" -type f -name "*のコピー*" -delete
+
 echo "  - 完了"
 
 # 6. ZIP圧縮
