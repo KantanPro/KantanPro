@@ -68,31 +68,38 @@ class KTPWP_Update_Checker {
         $check_interval_hours = isset( $update_settings['check_interval'] ) ? intval( $update_settings['check_interval'] ) : 24;
         $this->check_interval = $check_interval_hours * 3600; // 時間を秒に変換
         
-        // フック設定
-        add_action( 'init', array( $this, 'init' ) );
-        add_action( 'admin_init', array( $this, 'admin_init' ) );
-        add_action( 'wp_body_open', array( $this, 'check_frontend_update' ) );
-        add_action( 'wp_footer', array( $this, 'check_frontend_update' ) );
+        // WordPress.orgとの接続エラーを防ぐため、管理画面でのみフックを設定
+        if ( is_admin() ) {
+            // フック設定
+            add_action( 'init', array( $this, 'init' ) );
+            add_action( 'admin_init', array( $this, 'admin_init' ) );
+            
+            // プラグインメタ行にリンクを追加（即座に登録）
+            add_filter( 'plugin_row_meta', array( $this, 'add_check_update_meta_link' ), 10, 2 );
+            add_action( 'admin_post_ktpwp_check_update', array( $this, 'handle_manual_update_check' ) );
+            
+            // 更新通知の表示
+            add_action( 'admin_notices', array( $this, 'show_update_notice' ) );
+            
+            // AJAX処理
+            add_action( 'wp_ajax_ktpwp_dismiss_update_notice', array( $this, 'dismiss_update_notice' ) );
+            add_action( 'wp_ajax_ktpwp_check_github_update', array( $this, 'ajax_check_github_update' ) );
+            add_action( 'wp_ajax_ktpwp_perform_update', array( $this, 'perform_plugin_update' ) );
+            
+            // ヘッダー更新通知用のAJAX処理
+            add_action( 'wp_ajax_ktpwp_dismiss_header_update_notice', array( $this, 'dismiss_header_update_notice' ) );
+            add_action( 'wp_ajax_ktpwp_check_header_update', array( $this, 'ajax_check_header_update' ) );
+        }
         
-        // プラグインメタ行にリンクを追加（即座に登録）
-        add_filter( 'plugin_row_meta', array( $this, 'add_check_update_meta_link' ), 10, 2 );
-        add_action( 'admin_post_ktpwp_check_update', array( $this, 'handle_manual_update_check' ) );
-        
-        // 更新通知の表示
-        add_action( 'admin_notices', array( $this, 'show_update_notice' ) );
-        
-        // AJAX処理
-        add_action( 'wp_ajax_ktpwp_dismiss_update_notice', array( $this, 'dismiss_update_notice' ) );
-        add_action( 'wp_ajax_ktpwp_check_github_update', array( $this, 'ajax_check_github_update' ) );
-        add_action( 'wp_ajax_ktpwp_perform_update', array( $this, 'perform_plugin_update' ) );
-        
-        // ヘッダー更新通知用のAJAX処理
-        add_action( 'wp_ajax_ktpwp_dismiss_header_update_notice', array( $this, 'dismiss_header_update_notice' ) );
-        add_action( 'wp_ajax_ktpwp_check_header_update', array( $this, 'ajax_check_header_update' ) );
+        // フロントエンド通知は条件付きで設定
+        if ( $this->is_frontend_notification_enabled() ) {
+            add_action( 'wp_body_open', array( $this, 'check_frontend_update' ) );
+            add_action( 'wp_footer', array( $this, 'check_frontend_update' ) );
+        }
         
         // デバッグ用のログ出力
         error_log( 'KantanPro Update Checker: 初期化完了 - basename: ' . $this->plugin_basename );
-        error_log( 'KantanPro Update Checker: フック名: plugin_row_meta' );
+        error_log( 'KantanPro Update Checker: 管理画面: ' . ( is_admin() ? 'はい' : 'いいえ' ) );
     }
     
     /**
@@ -220,120 +227,96 @@ class KTPWP_Update_Checker {
     }
     
     /**
-     * GitHubから更新情報をチェック
+     * GitHub更新チェック
      */
     public function check_github_updates() {
-        // 更新通知が無効の場合は実行しない
+        // 更新通知が無効の場合は何もしない
         if ( ! $this->is_update_notification_enabled() ) {
-            error_log( 'KantanPro: 更新通知が無効化されています' );
+            error_log( 'KantanPro: 更新通知が無効のため、更新チェックをスキップします' );
             return false;
         }
-        
-        // レート制限チェック
-        $last_check = get_option( 'ktpwp_last_update_check', 0 );
-        $current_time = time();
-        
-        if ( ( $current_time - $last_check ) < 3600 ) { // 1時間未満の場合はスキップ
-            error_log( 'KantanPro: レート制限により更新チェックをスキップしました' );
+
+        // 最後のチェックから一定時間経過していない場合はスキップ
+        $last_check = get_transient( 'ktpwp_last_update_check' );
+        if ( $last_check && ( time() - $last_check ) < $this->check_interval ) {
+            error_log( 'KantanPro: 更新チェック間隔が短すぎるため、スキップします' );
             return false;
         }
-        
-        // GitHub API URL
-        $api_url = 'https://api.github.com/repos/' . $this->github_repo . '/releases/latest';
-        
-        error_log( 'KantanPro: GitHub API リクエスト開始: ' . $api_url );
-        
-        // GitHub APIからリリース情報を取得
-        $response = wp_remote_get( $api_url, array(
-            'timeout' => 30,
-            'user-agent' => 'KantanPro/' . $this->current_version . '; ' . get_bloginfo( 'url' ),
-            'headers' => array(
-                'Accept' => 'application/vnd.github.v3+json'
-            )
-        ) );
-        
-        if ( is_wp_error( $response ) ) {
-            $error_message = $response->get_error_message();
-            error_log( 'KantanPro: GitHub API エラー: ' . $error_message );
-            return false;
-        }
-        
-        $response_code = wp_remote_retrieve_response_code( $response );
-        $response_headers = wp_remote_retrieve_headers( $response );
-        
-        error_log( 'KantanPro: GitHub API レスポンスコード: ' . $response_code );
-        
-        if ( $response_code !== 200 ) {
-            $error_body = wp_remote_retrieve_body( $response );
-            error_log( 'KantanPro: GitHub API HTTPエラー: ' . $response_code . ' - ' . $error_body );
-            
-            // レート制限の場合は特別な処理
-            if ( $response_code === 403 ) {
-                $rate_limit_remaining = $response_headers->get( 'X-RateLimit-Remaining' );
-                $rate_limit_reset = $response_headers->get( 'X-RateLimit-Reset' );
-                error_log( 'KantanPro: GitHub API レート制限 - 残り: ' . $rate_limit_remaining . ', リセット: ' . $rate_limit_reset );
-            }
-            
-            return false;
-        }
-        
-        $body = wp_remote_retrieve_body( $response );
-        $data = json_decode( $body, true );
-        
-        if ( json_last_error() !== JSON_ERROR_NONE ) {
-            error_log( 'KantanPro: JSONデコードエラー: ' . json_last_error_msg() );
-            return false;
-        }
-        
-        if ( empty( $data['tag_name'] ) ) {
-            error_log( 'KantanPro: GitHub APIレスポンスにtag_nameがありません' );
-            error_log( 'KantanPro: レスポンス内容: ' . print_r( $data, true ) );
-            return false;
-        }
-        
-        $latest_version = $data['tag_name'];
-        $download_url = $data['zipball_url'];
-        
-        error_log( 'KantanPro: 最新バージョン: ' . $latest_version . ', 現在バージョン: ' . $this->current_version );
-        
-        // 最後のチェック時刻を更新
-        update_option( 'ktpwp_last_update_check', $current_time );
-        
-        // バージョン比較（プレビューバージョンの処理）
-        $clean_current_version = $this->clean_version( $this->current_version );
-        $clean_latest_version = $this->clean_version( $latest_version );
-        
-        error_log( 'KantanPro: バージョン比較 - 現在: ' . $clean_current_version . ', 最新: ' . $clean_latest_version );
-        
-        if ( version_compare( $clean_current_version, $clean_latest_version, '<' ) ) {
-            // 更新情報を保存
-            $update_data = array(
-                'new_version' => $latest_version,
-                'download_url' => $download_url,
-                'changelog' => $data['body'],
-                'published_at' => $data['published_at'],
-                'checked_at' => $current_time
+
+        // エラーハンドリングを強化
+        try {
+            // WordPress.orgとの接続エラーを防ぐため、タイムアウトを設定
+            $timeout = 30;
+            $args = array(
+                'timeout' => $timeout,
+                'user-agent' => 'KantanPro-Plugin/' . $this->current_version,
+                'headers' => array(
+                    'Accept' => 'application/vnd.github.v3+json',
+                ),
             );
+
+            // GitHub API URL
+            $api_url = 'https://api.github.com/repos/' . $this->github_repo . '/releases/latest';
             
-            update_option( 'ktpwp_update_available', $update_data );
-            delete_option( 'ktpwp_update_notice_dismissed' );
+            error_log( 'KantanPro: GitHub APIに接続中: ' . $api_url );
             
-            // 新しいバージョンの場合はフロントエンドの無視フラグもリセット
-            $previous_dismissed_version = get_option( 'ktpwp_frontend_dismissed_version', '' );
-            if ( $previous_dismissed_version !== $latest_version ) {
-                delete_option( 'ktpwp_frontend_update_notice_dismissed' );
-                delete_option( 'ktpwp_frontend_dismissed_version' );
+            // wp_remote_getを使用してGitHub APIに接続
+            $response = wp_remote_get( $api_url, $args );
+            
+            // レスポンスエラーチェック
+            if ( is_wp_error( $response ) ) {
+                error_log( 'KantanPro: GitHub API接続エラー: ' . $response->get_error_message() );
+                return false;
             }
             
-            error_log( 'KantanPro: 更新が利用可能です: ' . $latest_version );
-            return true;
-        } else {
-            // 更新情報をクリア
-            delete_option( 'ktpwp_update_available' );
-            delete_option( 'ktpwp_update_notice_dismissed' );
+            $response_code = wp_remote_retrieve_response_code( $response );
+            if ( $response_code !== 200 ) {
+                error_log( 'KantanPro: GitHub API エラーレスポンス: ' . $response_code );
+                return false;
+            }
             
-            error_log( 'KantanPro: 最新バージョンです' );
+            $body = wp_remote_retrieve_body( $response );
+            $data = json_decode( $body, true );
+            
+            if ( ! $data || ! isset( $data['tag_name'] ) ) {
+                error_log( 'KantanPro: GitHub APIレスポンスの解析に失敗しました' );
+                return false;
+            }
+            
+            $latest_version = $this->clean_version( $data['tag_name'] );
+            $current_version = $this->clean_version( $this->current_version );
+            
+            error_log( 'KantanPro: 現在のバージョン: ' . $current_version . ', 最新バージョン: ' . $latest_version );
+            
+            // バージョン比較
+            if ( version_compare( $latest_version, $current_version, '>' ) ) {
+                // 更新が利用可能
+                $update_data = array(
+                    'version' => $latest_version,
+                    'download_url' => $data['zipball_url'],
+                    'changelog' => isset( $data['body'] ) ? $data['body'] : '',
+                    'published_at' => isset( $data['published_at'] ) ? $data['published_at'] : '',
+                );
+                
+                // 更新情報を保存
+                update_option( 'ktpwp_latest_version', $update_data );
+                update_option( 'ktpwp_update_available', true );
+                
+                error_log( 'KantanPro: 更新が利用可能です - バージョン: ' . $latest_version );
+                return $update_data;
+            } else {
+                // 更新なし
+                update_option( 'ktpwp_update_available', false );
+                error_log( 'KantanPro: 更新は利用できません - 最新版です' );
+                return false;
+            }
+            
+        } catch ( Exception $e ) {
+            error_log( 'KantanPro: 更新チェック中に例外が発生: ' . $e->getMessage() );
             return false;
+        } finally {
+            // 最後のチェック時刻を更新
+            set_transient( 'ktpwp_last_update_check', time(), DAY_IN_SECONDS );
         }
     }
     
@@ -452,7 +435,7 @@ class KTPWP_Update_Checker {
         // プラグインリストの場合は常に表示（無視フラグはチェックしない）
         
         $plugin_name = get_plugin_data( KANTANPRO_PLUGIN_FILE )['Name'];
-        $new_version = $update_data['new_version'];
+        $new_version = $update_data['version']; // 更新データからversionを取得
 
         ?>
         <div class="notice notice-warning is-dismissible" id="ktpwp-update-notice" data-page-type="<?php echo esc_attr( $is_ktpwp_page ? 'ktpwp' : 'plugins' ); ?>">
@@ -641,7 +624,7 @@ class KTPWP_Update_Checker {
         
         // 過去に無視されたバージョンと同じ場合は表示しない
         $dismissed_version = get_option( 'ktpwp_frontend_dismissed_version', '' );
-        if ( $dismissed_version === $update_data['new_version'] ) {
+        if ( $dismissed_version === $update_data['version'] ) { // 更新データからversionを取得
             return;
         }
         
@@ -649,7 +632,7 @@ class KTPWP_Update_Checker {
         $this->frontend_notice_shown = true;
         
         $plugin_name = get_plugin_data( KANTANPRO_PLUGIN_FILE )['Name'];
-        $new_version = $update_data['new_version'];
+        $new_version = $update_data['version']; // 更新データからversionを取得
         
         ?>
         <div id="ktpwp-frontend-update-notice" style="
@@ -734,7 +717,7 @@ class KTPWP_Update_Checker {
         // 現在の更新バージョンを記録して、同じバージョンでは再度通知しないようにする
         $update_data = get_option( 'ktpwp_update_available', false );
         if ( $update_data ) {
-            update_option( 'ktpwp_frontend_dismissed_version', $update_data['new_version'] );
+            update_option( 'ktpwp_frontend_dismissed_version', $update_data['version'] ); // 更新データからversionを取得
         }
         
         // KantanPro設置ページでのみ無視フラグを設定
@@ -780,7 +763,7 @@ class KTPWP_Update_Checker {
         
         // 更新情報を取得
         $update_data = get_option( 'ktpwp_update_available', false );
-        if ( ! $update_data || $update_data['new_version'] !== $version ) {
+        if ( ! $update_data || $update_data['version'] !== $version ) { // 更新データからversionを取得
             wp_send_json_error( array(
                 'message' => '更新情報が見つかりません。',
                 'error_type' => 'no_update_data'
@@ -961,7 +944,7 @@ class KTPWP_Update_Checker {
         
         // 過去に無視されたバージョンと同じ場合は表示しない
         $dismissed_version = get_option( 'ktpwp_header_dismissed_version', '' );
-        if ( $dismissed_version === $update_data['new_version'] ) {
+        if ( $dismissed_version === $update_data['version'] ) { // 更新データからversionを取得
             return false;
         }
         
@@ -995,7 +978,7 @@ class KTPWP_Update_Checker {
         // 現在の更新バージョンを記録
         $update_data = get_option( 'ktpwp_update_available', false );
         if ( $update_data ) {
-            update_option( 'ktpwp_header_dismissed_version', $update_data['new_version'] );
+            update_option( 'ktpwp_header_dismissed_version', $update_data['version'] ); // 更新データからversionを取得
         }
         
         update_option( 'ktpwp_header_update_notice_dismissed', true );
