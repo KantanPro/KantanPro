@@ -3,7 +3,7 @@
  * Plugin Name: KantanPro
  * Plugin URI: https://www.kantanpro.com/
  * Description: スモールビジネス向けの仕事効率化システム。ショートコード[ktpwp_all_tab]を固定ページに設置してください。
- * Version: 1.1.2(preview)
+ * Version: 1.1.3(preview)
  * Author: KantanPro
  * Author URI: https://www.kantanpro.com/kantanpro-page
  * License: GPL v2 or later
@@ -30,7 +30,7 @@ if ( file_exists( plugin_dir_path( __FILE__ ) . 'vendor/autoload.php' ) ) {
 
 // プラグイン定数定義
 if ( ! defined( 'KANTANPRO_PLUGIN_VERSION' ) ) {
-    define( 'KANTANPRO_PLUGIN_VERSION', '1.1.2(preview)' );
+    define( 'KANTANPRO_PLUGIN_VERSION', '1.1.3(preview)' );
 }
 if ( ! defined( 'KANTANPRO_PLUGIN_NAME' ) ) {
     define( 'KANTANPRO_PLUGIN_NAME', 'KantanPro' );
@@ -3177,6 +3177,14 @@ function ktpwp_get_plugin_changelog() {
     $changelog = '
     <h3>変更履歴</h3>
     <p>KantanProプラグインの主要な更新履歴をご紹介します。</p>
+    
+    <h4>1.1.3(preview) - 2025年7月16日</h4>
+    <ul>
+        <li><strong>更新通知の改善</strong> - WordPress 6.9.1対応の強化</li>
+        <li><strong>プラグイン更新チェック機能の最適化</strong> - 更新確認の安定性向上</li>
+        <li><strong>管理画面での更新情報表示の改善</strong> - ユーザビリティ向上</li>
+        <li><strong>更新通知の安定性向上</strong> - エラーハンドリングの強化</li>
+    </ul>
     
     <h4>1.1.2(preview) - 2025年7月16日</h4>
     <ul>
