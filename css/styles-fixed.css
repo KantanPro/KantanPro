@@ -86,7 +86,7 @@
   cursor: not-allowed !important;
 }
 
-/* 得意先タブ controller内ボタンカラー（最優先） */
+/* 顧客タブ controller内ボタンカラー（最優先） */
 .controller .order-history-btn {
   background: #e0e0e0 !important;
   color: #333 !important;

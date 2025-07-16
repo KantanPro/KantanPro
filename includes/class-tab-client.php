@@ -821,7 +821,7 @@ if ( ! class_exists( 'Kntan_Client_Class' ) ) {
 						$query_id = $max_id_row ? $max_id_row->id : '';
 					}
 				} else {
-					// data_id未指定時は必ずID最大の得意先を表示
+					// data_id未指定時は必ずID最大の顧客を表示
 					// $max_id_row = $wpdb->get_row("SELECT id FROM {$table_name} ORDER BY id DESC LIMIT 1");
 					$query_max_id_no_get_cookie = "SELECT id FROM {$table_name} ORDER BY id DESC LIMIT 1";
 					$max_id_row = $wpdb->get_row( $query_max_id_no_get_cookie );

@@ -405,7 +405,7 @@
     }
 }
 
-/* operation（得意先タブ上部の操作ボタン用） */
+/* operation（顧客タブ上部の操作ボタン用） */
 .operation {
   display: flex;
   justify-content: flex-end;
@@ -3471,7 +3471,7 @@ body.ktpwp-modal-open {
     line-height: 1 !important;
 }
 
-/* 得意先タブ controller内ボタンカラー（優先度を上げる） */
+/* 顧客タブ controller内ボタンカラー（優先度を上げる） */
 .controller .order-history-btn {
   background: #e0e0e0 !important;
   color: #333 !important;
@@ -3540,7 +3540,7 @@ body.ktpwp-modal-open {
   line-height: 1 !important;
 }
 
-/* 得意先タブ controller内ボタンカラー（統一スタイルよりも優先度を上げる） */
+/* 顧客タブ controller内ボタンカラー（統一スタイルよりも優先度を上げる） */
 .controller button.view-mode-btn.order-history-btn {
   background: #e0e0e0 !important;
   color: #333 !important;
@@ -3584,7 +3584,7 @@ body.ktpwp-modal-open {
   line-height: 1 !important;
 }
 
-/* 各タブのcontroller内ボタンの統一スタイル（orderMailButtonと同じサイズ）- 得意先タブのボタンを除外 */
+/* 各タブのcontroller内ボタンの統一スタイル（orderMailButtonと同じサイズ）- 顧客タブのボタンを除外 */
 .controller button[style*="padding: 6px 10px"]:not(.order-history-btn):not(.customer-list-btn):not(.create-order-btn) {
     padding: 6px 10px !important;
     font-size: 12px !important;

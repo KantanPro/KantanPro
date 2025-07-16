@@ -1023,10 +1023,10 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 
 			// 重要なチェックポイント4を追加
 
-			// URLパラメータから得意先情報を取得 - Sanitize input
+			// URLパラメータから顧客情報を取得 - Sanitize input
 			$customer_name = isset( $_GET['customer_name'] ) ? sanitize_text_field( $_GET['customer_name'] ) : '';
 			$user_name = isset( $_GET['user_name'] ) ? sanitize_text_field( $_GET['user_name'] ) : '';
-			$from_client = isset( $_GET['from_client'] ) ? absint( $_GET['from_client'] ) : 0; // 得意先タブからの遷移フラグ
+			$from_client = isset( $_GET['from_client'] ) ? absint( $_GET['from_client'] ) : 0; // 顧客タブからの遷移フラグ
 			$order_id = isset( $_GET['order_id'] ) ? absint( $_GET['order_id'] ) : 0; // 表示する受注書ID
 
 			$content = ''; // 表示するHTMLコンテンツ
@@ -1136,7 +1136,7 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 			// 削除処理が完了した場合は新規受注書作成をスキップ
 			$deletion_completed = isset( $_GET['message'] ) && ( $_GET['message'] === 'deleted' || $_GET['message'] === 'deleted_all' );
 
-			// 得意先タブから遷移してきた場合（新規受注書作成）
+			// 顧客タブから遷移してきた場合（新規受注書作成）
 			if ( $from_client === 1 && $customer_name !== '' && ! $deletion_completed ) {
 				// セッションスタート（複製情報にアクセスするため - 下位互換性のため）
 				if ( session_status() !== PHP_SESSION_ACTIVE ) {
@@ -1588,7 +1588,7 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 					}
 					
 					$content .= '<div><span id="order_customer_name">' . esc_html( $display_customer_name ) . '</span> <span class="client-id" style="color:#666;font-size:0.9em;">' . $client_id_display . '</span></div>';
-					// 担当者名の横に得意先メールアドレスのmailtoリンク（あれば）
+					// 担当者名の横に顧客メールアドレスのmailtoリンク（あれば）
 					$client_email = '';
 					$client = null;
 
@@ -1713,7 +1713,7 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 					$content .= '<div class="ktp_data_list_item" style="padding: 15px 20px; background: linear-gradient(135deg, #ffeef1 0%, #ffeff2 100%); border-radius: 6px; margin: 15px 0; color: #333333; font-weight: 500; box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08); display: flex; align-items: center; font-size: 14px;">'
                     . '<span class="material-symbols-outlined" aria-label="データなし">search_off</span>'
                     . '<span style="font-size: 1em; font-weight: 600;">' . esc_html__( '指定された受注書は見つかりませんでした。', 'ktpwp' ) . '</span>'
-                    . '<span style="margin-left: 18px; font-size: 13px; color: #888;">' . esc_html__( '得意先タブで顧客情報を入力し受注書を作成してください', 'ktpwp' ) . '</span>'
+                    . '<span style="margin-left: 18px; font-size: 13px; color: #888;">' . esc_html__( '顧客タブで顧客情報を入力し受注書を作成してください', 'ktpwp' ) . '</span>'
                     . '</div>';
 				}
 			} else {
@@ -1741,7 +1741,7 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 				$content .= '<div class="ktp_data_list_item" style="padding: 15px 20px; background: linear-gradient(135deg, #e3f2fd 0%, #fce4ec 100%); border-radius: 8px; margin: 18px 0; color: #333; font-weight: 600; box-shadow: 0 3px 12px rgba(0,0,0,0.07); display: flex; align-items: center; font-size: 15px; gap: 10px;">'
                 . '<span class="material-symbols-outlined" aria-label="データなし">search_off</span>'
                 . '<span style="font-size: 1em; font-weight: 600;">' . esc_html__( '受注書データがありません。', 'ktpwp' ) . '</span>'
-                . '<span style="margin-left: 18px; font-size: 13px; color: #888;">' . esc_html__( '得意先タブで顧客情報を入力し受注書を作成してください', 'ktpwp' ) . '</span>'
+                . '<span style="margin-left: 18px; font-size: 13px; color: #888;">' . esc_html__( '顧客タブで顧客情報を入力し受注書を作成してください', 'ktpwp' ) . '</span>'
                 . '</div>';
 			}
 

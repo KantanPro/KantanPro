@@ -247,7 +247,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 				}
 				// 検索結果が複数ある場合の処理
 				elseif ( count( $results ) > 1 ) {
-					// 得意先タブと同じく、base_page_urlを使い絶対パスでリンク生成
+					// 顧客タブと同じく、base_page_urlを使い絶対パスでリンク生成
 					global $wp;
 					$current_page_id = get_queried_object_id();
 					$base_page_url = add_query_arg( array( 'page_id' => $current_page_id ), home_url( $wp->request ) );
@@ -319,7 +319,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 				}
 				// 検索結果が0件の場合の処理
 				else {
-					// サプライヤも得意先タブと同じくセッションメッセージ＋リダイレクト方式に統一
+					// サプライヤも顧客タブと同じくセッションメッセージ＋リダイレクト方式に統一
 					ktpwp_safe_session_start();
 					$_SESSION['ktp_search_message'] = '検索結果がありませんでした。';
 					// 検索語とno_results=1を付与してsrcmodeにリダイレクト
@@ -1197,7 +1197,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 				$data_title = '<div class="data_detail_box search-mode">' .
                           '<div class="data_detail_title">■ ' . esc_html__( '協力会社の詳細（検索モード）', 'ktpwp' ) . '</div>';
 
-				// 検索モード用のフォーム（得意先タブと同じ構造・装飾に）
+				// 検索モード用のフォーム（顧客タブと同じ構造・装飾に）
 				$data_forms = '<div class="search-mode-form ktpwp-search-form" style="background-color: #f8f9fa !important; border: 2px solid #0073aa !important; border-radius: 8px !important; padding: 20px !important; margin: 10px 0 !important; box-shadow: 0 2px 8px rgba(0, 115, 170, 0.1) !important;">';
 				$data_forms .= '<form method="post" action="' . esc_url( $form_action_base_url ) . '">';
 				$data_forms .= function_exists( 'wp_nonce_field' ) ? wp_nonce_field( 'ktp_supplier_action', 'ktp_supplier_nonce', true, false ) : '';
