@@ -1718,7 +1718,7 @@ class KTPWP_Ajax {
 
 			// 件名と本文の統一フォーマット
 			$subject = "{$document_title}：{$project_name}";
-			$body    = "{$customer_display}\n{$user_display}\n\nお世話になります。\n\n＜{$document_title}＞\nID: {$order->id} [{$order_date}]\n\n「{$project_name}」{$document_message}\n\n請求項目\n{$invoice_list}\n\n--\n{$my_company}";
+			$body    = "{$customer_display}\n{$user_display}\n\nお世話になります。\n\n＜{$document_title}＞\nID: {$order->id} [{$order_date}]\n\n「{$project_name}」{$document_message}\n{$invoice_list}\n\n--\n{$my_company}";
 
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 				error_log( 'KTPWP Ajax get_email_content: Preparing JSON response - to: ' . $to . ', subject: ' . $subject );

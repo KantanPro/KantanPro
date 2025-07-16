@@ -763,30 +763,29 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 								$body .= "お世話になります。\n\n";
 								$body .= "＜{$document_title}＞\n";
 								$body .= "ID: {$order->id} [{$order_date}]\n\n";
-								$body .= "「{$project_name}」{$document_message}\n\n";
-								$body .= "請求項目\n";
+								$body .= "「{$project_name}」{$document_message}\n";
 								$body .= "{$invoice_list}\n\n";
 								$body .= "--\n{$my_company}";
 
 								$body = $subject = '';
 								if ( $progress === 1 ) {
 									$subject = "{$document_title}：{$project_name}";
-									$body = "{$customer_name}\n{$user_name} 様\n\nお世話になります。\n\n＜{$document_title}＞\nID: {$order->id} [{$order_date}]\n\n「{$project_name}」{$document_message}\n\n請求項目\n{$invoice_list}\n\n--\n{$my_company}";
+									$body = "{$customer_name}\n{$user_name} 様\n\nお世話になります。\n\n＜{$document_title}＞\nID: {$order->id} [{$order_date}]\n\n「{$project_name}」{$document_message}\n{$invoice_list}\n\n--\n{$my_company}";
 								} elseif ( $progress === 2 ) {
 									$subject = "{$document_title}：{$project_name}";
-									$body = "{$customer_name}\n{$user_name} 様\n\nお世話になります。\n\n＜{$document_title}＞\nID: {$order->id} [{$order_date}]\n\n「{$project_name}」{$document_message}\n\n請求項目\n{$invoice_list}\n\n--\n{$my_company}";
+									$body = "{$customer_name}\n{$user_name} 様\n\nお世話になります。\n\n＜{$document_title}＞\nID: {$order->id} [{$order_date}]\n\n「{$project_name}」{$document_message}\n{$invoice_list}\n\n--\n{$my_company}";
 								} elseif ( $progress === 3 ) {
-									$subject = "{$document_title}：{$project_name}";
-									$body = "{$customer_name}\n{$user_name} 様\n\nお世話になります。\n\n＜{$document_title}＞\nID: {$order->id} [{$order_date}]\n\n「{$project_name}」{$document_message}\n\n請求項目\n{$invoice_list}\n\n--\n{$my_company}";
+									$subject = "{$document_title}：{$project_title}";
+									$body = "{$customer_name}\n{$user_name} 様\n\nお世話になります。\n\n＜{$document_title}＞\nID: {$order->id} [{$order_date}]\n\n「{$project_name}」{$document_message}\n{$invoice_list}\n\n--\n{$my_company}";
 								} elseif ( $progress === 4 ) {
 									$subject = "{$document_title}：{$project_name}";
-									$body = "{$customer_name}\n{$user_name} 様\n\nお世話になります。\n\n＜{$document_title}＞\nID: {$order->id} [{$order_date}]\n\n「{$project_name}」{$document_message}\n\n請求項目\n{$invoice_list}\n\n--\n{$my_company}";
+									$body = "{$customer_name}\n{$user_name} 様\n\nお世話になります。\n\n＜{$document_title}＞\nID: {$order->id} [{$order_date}]\n\n「{$project_name}」{$document_message}\n{$invoice_list}\n\n--\n{$my_company}";
 								} elseif ( $progress === 5 ) {
 									$subject = "{$document_title}：{$project_name}";
-									$body = "{$customer_name}\n{$user_name} 様\n\nお世話になります。\n\n＜{$document_title}＞\nID: {$order->id} [{$order_date}]\n\n「{$project_name}」{$document_message}\n\n請求項目\n{$invoice_list}\n\n--\n{$my_company}";
+									$body = "{$customer_name}\n{$user_name} 様\n\nお世話になります。\n\n＜{$document_title}＞\nID: {$order->id} [{$order_date}]\n\n「{$project_name}」{$document_message}\n{$invoice_list}\n\n--\n{$my_company}";
 								} elseif ( $progress === 6 ) {
 									$subject = "{$document_title}：{$project_name}";
-									$body = "{$customer_name}\n{$user_name} 様\n\nお世話になります。\n\n＜{$document_title}＞\nID: {$order->id} [{$order_date}]\n\n「{$project_name}」{$document_message}\n\n請求項目\n{$invoice_list}\n\n--\n{$my_company}";
+									$body = "{$customer_name}\n{$user_name} 様\n\nお世話になります。\n\n＜{$document_title}＞\nID: {$order->id} [{$order_date}]\n\n「{$project_name}」{$document_message}\n{$invoice_list}\n\n--\n{$my_company}";
 								}
 
 								// Sanitize email content input
