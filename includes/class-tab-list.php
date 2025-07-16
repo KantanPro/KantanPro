@@ -153,8 +153,8 @@ if ( ! class_exists( 'Kantan_List_Class' ) ) {
 					$closing_dt->setTime( 0, 0, 0 );
 					$diff = $today->diff( $closing_dt );
 					$days_left = $diff->invert ? -$diff->days : $diff->days;
-					$invoice_warning_days = 3;
-					if ( $days_left <= $invoice_warning_days && $days_left >= 0 ) {
+					// 請求日当日以降の場合に警告マークを表示
+					if ( $days_left <= 0 ) {
 						$invoice_warning_count++;
 					}
 				}
@@ -192,7 +192,7 @@ if ( ! class_exists( 'Kantan_List_Class' ) ) {
 
 				// ▼▼▼ 完了タブに警告マークを表示 ▼▼▼
 				if ( $num == 4 && $invoice_warning_count > 0 ) {
-					$warning_mark = '<span class="invoice-warning-mark-row" title="請求書締日が迫っている案件があります（' . $invoice_warning_count . '件）">!</span>';
+					$warning_mark = '<span class="invoice-warning-mark-row">!</span>';
 				}
 
 				// 進捗ボタンはprogressを必ず付与
@@ -366,11 +366,9 @@ if ( ! class_exists( 'Kantan_List_Class' ) ) {
 									$closing_dt->setTime( 0, 0, 0 );
 									$diff = $today->diff( $closing_dt );
 									$days_left = $diff->invert ? -$diff->days : $diff->days;
-									// 警告日数（3日固定）
-									$invoice_warning_days = 3;
-									if ( $days_left <= $invoice_warning_days && $days_left >= 0 ) {
+									// 請求日当日以降の場合に警告マークを表示
+									if ( $days_left <= 0 ) {
 										$show_invoice_warning = true;
-										$invoice_warning_message = '請求書締日が迫っています（残り' . $days_left . '日）';
 									}
 								}
 							}
@@ -432,7 +430,7 @@ if ( ! class_exists( 'Kantan_List_Class' ) ) {
 
 					// ▼▼▼ 請求書締日警告マークを追加 ▼▼▼
 					if ( $show_invoice_warning ) {
-						$content .= "<span class='invoice-warning-mark-row' title='" . esc_attr( $invoice_warning_message ) . "'>!</span>";
+						$content .= "<span class='invoice-warning-mark-row'>!</span>";
 					}
 
 					$content .= '</div>';
