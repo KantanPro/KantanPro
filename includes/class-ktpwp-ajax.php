@@ -188,6 +188,11 @@ class KTPWP_Ajax {
 		add_action( 'wp_ajax_nopriv_ktp_get_client_tax_category', array( $this, 'ajax_require_login' ) );
 		$this->registered_handlers[] = 'ktp_get_client_tax_category';
 
+		// 受注書IDから顧客税区分取得
+		add_action( 'wp_ajax_ktp_get_client_tax_category_by_order', array( $this, 'ajax_get_client_tax_category_by_order' ) );
+		add_action( 'wp_ajax_nopriv_ktp_get_client_tax_category_by_order', array( $this, 'ajax_require_login' ) );
+		$this->registered_handlers[] = 'ktp_get_client_tax_category_by_order';
+
 		// 協力会社税区分取得
 		add_action( 'wp_ajax_ktp_get_supplier_tax_category', array( $this, 'ajax_get_supplier_tax_category' ) );
 		add_action( 'wp_ajax_nopriv_ktp_get_supplier_tax_category', array( $this, 'ajax_require_login' ) );
@@ -3132,6 +3137,100 @@ class KTPWP_Ajax {
 
 		} catch ( Exception $e ) {
 			error_log( 'KTPWP Ajax ajax_get_client_tax_category Error: ' . $e->getMessage() );
+			wp_send_json_error( __( 'エラーが発生しました: ' . $e->getMessage(), 'ktpwp' ) );
+		}
+	}
+
+	/**
+	 * 受注書IDから顧客税区分取得
+	 */
+	public function ajax_get_client_tax_category_by_order() {
+		try {
+			// デバッグログ
+			error_log( 'KTPWP Ajax: ajax_get_client_tax_category_by_order called' );
+
+			// 権限チェック
+			if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
+				error_log( 'KTPWP Ajax: Permission check failed' );
+				wp_send_json_error( __( 'この操作を行う権限がありません。', 'ktpwp' ) );
+				return;
+			}
+
+			// nonce検証
+			if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( $_POST['nonce'], 'ktp_ajax_nonce' ) ) {
+				error_log( 'KTPWP Ajax: Nonce verification failed' );
+				wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'ktpwp' ) );
+				return;
+			}
+
+			// パラメータ取得
+			$order_id = isset( $_POST['order_id'] ) ? absint( $_POST['order_id'] ) : 0;
+
+			if ( $order_id <= 0 ) {
+				wp_send_json_error( '受注書IDが無効です' );
+			}
+
+			global $wpdb;
+			$order_table = $wpdb->prefix . 'ktp_order';
+			$client_table = $wpdb->prefix . 'ktp_client';
+
+			// 受注書から顧客IDを取得
+			$client_id = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT client_id FROM `{$order_table}` WHERE id = %d",
+					$order_id
+				)
+			);
+
+			if ( $client_id === null ) {
+				error_log( 'KTPWP Ajax: Order not found or database error: ' . $wpdb->last_error );
+				wp_send_json_error( __( '受注書が見つからないか、データベースエラーが発生しました', 'ktpwp' ) );
+				return;
+			}
+
+			if ( $client_id <= 0 ) {
+				// 顧客IDが設定されていない場合はデフォルト値を返す
+				wp_send_json_success(
+					array(
+						'tax_category' => '内税',
+						'client_id'    => 0,
+						'order_id'     => $order_id,
+					)
+				);
+				return;
+			}
+
+			// 顧客の税区分を取得
+			$tax_category = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT tax_category FROM `{$client_table}` WHERE id = %d",
+					$client_id
+				)
+			);
+
+			if ( $tax_category === null ) {
+				error_log( 'KTPWP Ajax: Client not found or database error: ' . $wpdb->last_error );
+				wp_send_json_error( __( '顧客が見つからないか、データベースエラーが発生しました', 'ktpwp' ) );
+				return;
+			}
+
+			// デフォルト値の設定
+			if ( empty( $tax_category ) ) {
+				$tax_category = '内税';
+			}
+
+			error_log( 'KTPWP Ajax: Tax category retrieved by order: ' . $tax_category . ' (Order ID: ' . $order_id . ', Client ID: ' . $client_id . ')' );
+
+			wp_send_json_success(
+				array(
+					'tax_category' => $tax_category,
+					'client_id'    => $client_id,
+					'order_id'     => $order_id,
+				)
+			);
+
+		} catch ( Exception $e ) {
+			error_log( 'KTPWP Ajax ajax_get_client_tax_category_by_order Error: ' . $e->getMessage() );
 			wp_send_json_error( __( 'エラーが発生しました: ' . $e->getMessage(), 'ktpwp' ) );
 		}
 	}

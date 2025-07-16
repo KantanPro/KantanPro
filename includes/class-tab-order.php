@@ -2425,9 +2425,9 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 					
 					// 税区分に応じた表示
 					if ( $tax_category === '外税' ) {
-						$html .= '<h3 style="font-size: 16px; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #333;">請求項目（' . ( $page + 1 ) . '/' . $total_pages . 'p）　外税合計 ¥' . number_format( $grand_total ) . '　消費税 ¥' . number_format( $tax_amount_ceiled ) . '　内税合計 ¥' . number_format( $total_with_tax_ceiled ) . '</h3>';
+						$html .= '<h3 style="font-size: 16px; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #333;">請求項目（' . ( $page + 1 ) . '/' . $total_pages . 'p）　合計金額 : ' . number_format( $grand_total ) . '円　消費税 : ' . number_format( $tax_amount_ceiled ) . '円　税込合計 : ' . number_format( $total_with_tax_ceiled ) . '円</h3>';
 					} else {
-						$html .= '<h3 style="font-size: 16px; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #333;">請求項目（' . ( $page + 1 ) . '/' . $total_pages . 'p）　金額合計 ¥' . number_format( $grand_total ) . '（内税 ¥' . number_format( $tax_amount_ceiled ) . '）</h3>';
+						$html .= '<h3 style="font-size: 16px; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #333;">請求項目（' . ( $page + 1 ) . '/' . $total_pages . 'p）　合計金額 : ' . number_format( $grand_total ) . '円（内税 ' . number_format( $tax_amount_ceiled ) . '円）</h3>';
 					}
 				}
 
@@ -2552,20 +2552,20 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 					if ( $tax_category === '外税' ) {
 						// 外税表示の場合
 						$html .= '<div style="display: flex; padding: 10px 8px; background: #e9ecef; font-weight: bold; border-top: 2px solid #ccc; margin-top: 5px; align-items: center; justify-content: flex-end;">';
-						$html .= '<div style="text-align: right;">外税合計　¥' . number_format( $grand_total ) . '</div>';
+						$html .= '<div style="text-align: right;">合計金額 : ' . number_format( $grand_total ) . '円</div>';
 						$html .= '</div>';
 						
 						$html .= '<div style="display: flex; padding: 10px 8px; background: #e9ecef; font-weight: bold; border-top: 1px solid #ccc; align-items: center; justify-content: flex-end;">';
-						$html .= '<div style="text-align: right;">消費税　¥' . number_format( $tax_amount_ceiled ) . '</div>';
+						$html .= '<div style="text-align: right;">消費税 : ' . number_format( $tax_amount_ceiled ) . '円</div>';
 						$html .= '</div>';
 						
 						$html .= '<div style="display: flex; padding: 10px 8px; background: #e9ecef; font-weight: bold; border-top: 1px solid #ccc; align-items: center; justify-content: flex-end;">';
-						$html .= '<div style="text-align: right;">内税合計　¥' . number_format( $total_with_tax_ceiled ) . '</div>';
+						$html .= '<div style="text-align: right;">税込合計 : ' . number_format( $total_with_tax_ceiled ) . '円</div>';
 						$html .= '</div>';
 					} else {
 						// 内税表示の場合（デフォルト）
 						$html .= '<div style="display: flex; padding: 10px 8px; background: #e9ecef; font-weight: bold; border-top: 2px solid #ccc; margin-top: 5px; align-items: center; justify-content: flex-end;">';
-						$html .= '<div style="text-align: right;">金額合計　¥' . number_format( $grand_total ) . '（内税 ¥' . number_format( $tax_amount_ceiled ) . '）</div>';
+						$html .= '<div style="text-align: right;">合計金額 : ' . number_format( $grand_total ) . '円（内税 ' . number_format( $tax_amount_ceiled ) . '円）</div>';
 						$html .= '</div>';
 					}
 				}

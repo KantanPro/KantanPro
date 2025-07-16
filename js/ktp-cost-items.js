@@ -140,62 +140,6 @@
         });
     }
 
-    // 適格請求書ナンバーを考慮した利益計算
-    function calculateProfitWithQualifiedInvoice(invoiceTotal, costItems, callback) {
-        let totalCost = 0;
-        let qualifiedInvoiceCost = 0;
-        let nonQualifiedInvoiceCost = 0;
-        let processedItems = 0;
-        const totalItems = costItems.length;
-
-        if (totalItems === 0) {
-            callback(invoiceTotal, 0, 0, 0);
-            return;
-        }
-
-        costItems.forEach(function(item) {
-            const supplierId = item.supplierId || 0;
-            const amount = parseFloat(item.amount) || 0;
-            const taxRate = parseFloat(item.taxRate) || 10.0;
-
-            getSupplierQualifiedInvoiceNumber(supplierId, function(qualifiedInvoiceNumber) {
-                const hasQualifiedInvoice = qualifiedInvoiceNumber && qualifiedInvoiceNumber.trim() !== '';
-
-                if (hasQualifiedInvoice) {
-                    // 適格請求書がある場合：税抜金額のみをコストとする（仕入税額控除可能）
-                    const taxAmount = amount * (taxRate / 100) / (1 + taxRate / 100);
-                    const costAmount = amount - taxAmount;
-                    qualifiedInvoiceCost += costAmount;
-                    totalCost += costAmount;
-
-                    if (window.ktpDebugMode) {
-                        console.log('[COST] Profit Calculation - Supplier ID ' + supplierId + ' has qualified invoice: ' + qualifiedInvoiceNumber + ', Amount: ' + amount + ', Tax: ' + taxAmount + ', Cost: ' + costAmount);
-                    }
-                } else {
-                    // 適格請求書がない場合：税込金額をコストとする（仕入税額控除不可）
-                    nonQualifiedInvoiceCost += amount;
-                    totalCost += amount;
-
-                    if (window.ktpDebugMode) {
-                        console.log('[COST] Profit Calculation - Supplier ID ' + supplierId + ' has no qualified invoice, Amount: ' + amount + ', Cost: ' + amount);
-                    }
-                }
-
-                processedItems++;
-
-                if (processedItems === totalItems) {
-                    const profit = invoiceTotal - totalCost;
-
-                    if (window.ktpDebugMode) {
-                        console.log('[COST] Profit Calculation Summary - Invoice Total: ' + invoiceTotal + ', Qualified Cost: ' + qualifiedInvoiceCost + ', Non-Qualified Cost: ' + nonQualifiedInvoiceCost + ', Total Cost: ' + totalCost + ', Profit: ' + profit);
-                    }
-
-                    callback(profit, qualifiedInvoiceCost, nonQualifiedInvoiceCost, totalCost);
-                }
-            });
-        });
-    }
-
     // 利益表示を更新（修正版）
     function updateProfitDisplay() {
         let invoiceTotal = 0;
@@ -240,10 +184,13 @@
                 if (processedRows === totalRows) {
                     updateCostDisplay(invoiceTotal, costTotal, costTotalTaxAmount, hasOuttax);
                     
-                    // 適格請求書ナンバーを考慮した利益計算
-                    const invoiceTotalCeiled = Math.ceil(invoiceTotal);
-                    calculateProfitWithQualifiedInvoice(invoiceTotalCeiled, costItems, function(profit, qualifiedCost, nonQualifiedCost, totalCost) {
-                        updateProfitDisplayWithQualifiedInvoice(profit, qualifiedCost, nonQualifiedCost, totalCost);
+                    // 顧客の税区分を取得して利益計算
+                    getClientTaxCategory(function(clientTaxCategory) {
+                        // 適格請求書ナンバーを考慮した利益計算
+                        const invoiceTotalCeiled = Math.ceil(invoiceTotal);
+                        calculateProfitWithQualifiedInvoice(invoiceTotalCeiled, costItems, clientTaxCategory, function(profit, qualifiedCost, nonQualifiedCost, totalCost) {
+                            updateProfitDisplayWithQualifiedInvoice(profit, qualifiedCost, nonQualifiedCost, totalCost);
+                        });
                     });
                 }
             });
@@ -252,7 +199,9 @@
         // 行がない場合は即座に表示を更新
         if (totalRows === 0) {
             updateCostDisplay(invoiceTotal, costTotal, costTotalTaxAmount, hasOuttax);
-            updateProfitDisplayWithQualifiedInvoice(invoiceTotal, 0, 0, 0);
+            getClientTaxCategory(function(clientTaxCategory) {
+                updateProfitDisplayWithQualifiedInvoice(invoiceTotal, 0, 0, 0);
+            });
         }
     }
 
@@ -261,7 +210,9 @@
         const profitDisplay = $('.profit-display');
         if (profitDisplay.length > 0) {
             const profitColor = profit >= 0 ? '#28a745' : '#dc3545';
-            let profitText = '利益 : ' + profit.toLocaleString() + '円';
+            // 利益を整数で切り捨て
+            const profitInteger = Math.floor(profit);
+            let profitText = '利益 : ' + profitInteger.toLocaleString() + '円';
             
             // デバッグモードの場合は詳細情報も表示
             if (window.ktpDebugMode && (qualifiedCost > 0 || nonQualifiedCost > 0)) {
@@ -2607,5 +2558,131 @@
                 $('.cost-items-tax, .cost-items-total-with-tax').hide();
             }
         }
+    }
+
+    // 顧客の税区分を取得する関数
+    function getClientTaxCategory(callback) {
+        // まずグローバル変数から取得を試行
+        if (window.ktpClientTaxCategory) {
+            callback(window.ktpClientTaxCategory);
+            return;
+        }
+
+        // 受注書IDから顧客IDを取得して税区分を取得
+        const orderId = $('input[name="order_id"]').val() || $('#order_id').val();
+        if (!orderId) {
+            callback('内税'); // デフォルト
+            return;
+        }
+
+        $.ajax({
+            url: ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'ktp_get_client_tax_category_by_order',
+                order_id: orderId,
+                nonce: window.ktp_ajax_nonce
+            },
+            success: function(response) {
+                if (response.success && response.data && response.data.tax_category) {
+                    callback(response.data.tax_category);
+                } else {
+                    console.log('[COST] 顧客税区分取得失敗:', response);
+                    callback('内税'); // デフォルト
+                }
+            },
+            error: function(xhr, status, error) {
+                console.log('[COST] 顧客税区分取得エラー:', error);
+                callback('内税'); // デフォルト
+            }
+        });
+    }
+
+    // 適格請求書ナンバーを考慮した利益計算（顧客税区分対応版）
+    function calculateProfitWithQualifiedInvoice(invoiceTotal, costItems, clientTaxCategory, callback) {
+        let totalCost = 0;
+        let qualifiedInvoiceCost = 0;
+        let nonQualifiedInvoiceCost = 0;
+        let processedItems = 0;
+        const totalItems = costItems.length;
+
+        if (totalItems === 0) {
+            // 請求金額を顧客の税区分に応じて調整
+            let adjustedInvoiceTotal = invoiceTotal;
+            if (clientTaxCategory === '内税') {
+                // 内税の場合：請求金額から消費税を差し引く
+                // 請求項目の消費税を計算
+                let invoiceTaxAmount = 0;
+                $('.invoice-items-table tbody tr').each(function() {
+                    const $row = $(this);
+                    const amount = parseFloat($row.find('.amount').val()) || 0;
+                    const taxRate = parseFloat($row.find('.tax-rate').val()) || 10.0;
+                    invoiceTaxAmount += amount * (taxRate / 100) / (1 + taxRate / 100);
+                });
+                adjustedInvoiceTotal = invoiceTotal - Math.ceil(invoiceTaxAmount);
+            }
+            // 外税の場合は請求金額をそのまま使用
+
+            callback(adjustedInvoiceTotal, 0, 0, 0);
+            return;
+        }
+
+        costItems.forEach(function(item) {
+            const supplierId = item.supplierId || 0;
+            const amount = parseFloat(item.amount) || 0;
+            const taxRate = parseFloat(item.taxRate) || 10.0;
+
+            getSupplierQualifiedInvoiceNumber(supplierId, function(qualifiedInvoiceNumber) {
+                const hasQualifiedInvoice = qualifiedInvoiceNumber && qualifiedInvoiceNumber.trim() !== '';
+
+                if (hasQualifiedInvoice) {
+                    // 適格請求書がある場合：税抜金額のみをコストとする（仕入税額控除可能）
+                    const taxAmount = amount * (taxRate / 100) / (1 + taxRate / 100);
+                    const costAmount = amount - taxAmount;
+                    qualifiedInvoiceCost += costAmount;
+                    totalCost += costAmount;
+
+                    if (window.ktpDebugMode) {
+                        console.log('[COST] Profit Calculation - Supplier ID ' + supplierId + ' has qualified invoice: ' + qualifiedInvoiceNumber + ', Amount: ' + amount + ', Tax: ' + taxAmount + ', Cost: ' + costAmount);
+                    }
+                } else {
+                    // 適格請求書がない場合：税込金額をコストとする（仕入税額控除不可）
+                    nonQualifiedInvoiceCost += amount;
+                    totalCost += amount;
+
+                    if (window.ktpDebugMode) {
+                        console.log('[COST] Profit Calculation - Supplier ID ' + supplierId + ' has no qualified invoice, Amount: ' + amount + ', Cost: ' + amount);
+                    }
+                }
+
+                processedItems++;
+
+                if (processedItems === totalItems) {
+                    // 請求金額を顧客の税区分に応じて調整
+                    let adjustedInvoiceTotal = invoiceTotal;
+                    if (clientTaxCategory === '内税') {
+                        // 内税の場合：請求金額から消費税を差し引く
+                        // 請求項目の消費税を計算
+                        let invoiceTaxAmount = 0;
+                        $('.invoice-items-table tbody tr').each(function() {
+                            const $row = $(this);
+                            const amount = parseFloat($row.find('.amount').val()) || 0;
+                            const taxRate = parseFloat($row.find('.tax-rate').val()) || 10.0;
+                            invoiceTaxAmount += amount * (taxRate / 100) / (1 + taxRate / 100);
+                        });
+                        adjustedInvoiceTotal = invoiceTotal - Math.ceil(invoiceTaxAmount);
+                    }
+                    // 外税の場合は請求金額をそのまま使用
+
+                    const profit = adjustedInvoiceTotal - totalCost;
+
+                    if (window.ktpDebugMode) {
+                        console.log('[COST] Profit Calculation Summary - Client Tax Category: ' + clientTaxCategory + ', Original Invoice Total: ' + invoiceTotal + ', Adjusted Invoice Total: ' + adjustedInvoiceTotal + ', Qualified Cost: ' + qualifiedInvoiceCost + ', Non-Qualified Cost: ' + nonQualifiedInvoiceCost + ', Total Cost: ' + totalCost + ', Profit: ' + profit);
+                    }
+
+                    callback(profit, qualifiedInvoiceCost, nonQualifiedInvoiceCost, totalCost);
+                }
+            });
+        });
     }
 })(jQuery);

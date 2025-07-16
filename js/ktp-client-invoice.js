@@ -154,7 +154,8 @@ jQuery(document).ready(function($) {
                                         // 外税表示の場合
                                         grandSubtotal += (group.subtotal || 0);
                                         grandTaxAmount += (group.tax_amount || 0);
-                                        grandTotal += (group.total_amount || 0);
+                                        // 外税の場合、税込合計 = 合計金額 + 消費税
+                                        grandTotal += (group.subtotal || 0) + (group.tax_amount || 0);
                                     } else {
                                         // 内税表示の場合（デフォルト）
                                         var monthlyTotal = 0;
@@ -183,9 +184,9 @@ jQuery(document).ready(function($) {
                                 if (res.data.tax_category === '外税') {
                                     // 外税表示の場合
                                     html += "<div style=\"font-weight:bold;font-size:16px;color:#333;margin:20px 0 0 0;text-align:right;\">";
-                                    html += "外税合計：" + displaySubtotal.toLocaleString() + "円";
+                                    html += "合計金額：" + displaySubtotal.toLocaleString() + "円";
                                     html += "　消費税：" + displayTaxAmount.toLocaleString() + "円";
-                                    html += "　内税合計：" + displayTotal.toLocaleString() + "円";
+                                    html += "　税込合計：" + displayTotal.toLocaleString() + "円";
                                     html += "</div>";
                                 } else {
                                     // 内税表示の場合（デフォルト）
@@ -297,10 +298,11 @@ jQuery(document).ready(function($) {
                                                 // 外税表示の場合
                                                 var orderSubtotalEx = order.subtotal || orderSubtotal;
                                                 var orderTaxAmount = order.tax_amount || 0;
-                                                var orderTotalAmount = order.total_amount || orderSubtotal;
-                                                html += "外税小計：" + orderSubtotalEx.toLocaleString() + "円";
+                                                // 外税の場合、税込合計 = 合計金額 + 消費税
+                                                var orderTotalAmount = orderSubtotalEx + orderTaxAmount;
+                                                html += "合計金額：" + orderSubtotalEx.toLocaleString() + "円";
                                                 html += "　消費税：" + orderTaxAmount.toLocaleString() + "円";
-                                                html += "　内税小計：" + orderTotalAmount.toLocaleString() + "円";
+                                                html += "　税込合計：" + orderTotalAmount.toLocaleString() + "円";
                                             } else {
                                                 // 内税表示の場合（デフォルト）
                                                 var orderSubtotalEx = order.subtotal || orderSubtotal;
@@ -325,10 +327,11 @@ jQuery(document).ready(function($) {
                                         // 外税表示の場合
                                         var groupSubtotal = group.subtotal || monthlyTotal;
                                         var groupTaxAmount = group.tax_amount || 0;
-                                        var groupTotalAmount = group.total_amount || monthlyTotal;
-                                        html += group.billing_period + " 外税合計：" + groupSubtotal.toLocaleString() + "円";
+                                        // 外税の場合、税込合計 = 合計金額 + 消費税
+                                        var groupTotalAmount = groupSubtotal + groupTaxAmount;
+                                        html += group.billing_period + " 合計金額：" + groupSubtotal.toLocaleString() + "円";
                                         html += "　消費税：" + groupTaxAmount.toLocaleString() + "円";
-                                        html += "　内税合計：" + groupTotalAmount.toLocaleString() + "円";
+                                        html += "　税込合計：" + groupTotalAmount.toLocaleString() + "円";
                                     } else {
                                         // 内税表示の場合（デフォルト）
                                         var groupSubtotal = group.subtotal || monthlyTotal;
