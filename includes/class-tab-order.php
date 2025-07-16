@@ -875,8 +875,9 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 
 			// 重要なチェックポイント2を追加
 
-			// 進捗更新処理開始前のログ
+			// 進捗更新処理はAjaxで処理するため、POST処理をコメントアウト
 			// 進捗更新処理（POST時） - Add nonce verification
+			/*
 			if ( $_SERVER['REQUEST_METHOD'] === 'POST' && isset( $_POST['update_progress_id'], $_POST['update_progress'] ) ) {
 				error_log( 'KTPWP Order: 進捗更新処理が呼び出されました' );
 				error_log( 'KTPWP Order: POST data: ' . print_r( $_POST, true ) );
@@ -962,6 +963,7 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 					error_log( 'KTPWP Order: 進捗更新条件を満たしません - ID: ' . $update_id . ', 進捗: ' . $update_progress );
 				}
 			}
+			*/
 
 			// 重要なチェックポイント3を追加
 
@@ -1491,7 +1493,7 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 					// Add nonce for progress update
 					$content .= wp_nonce_field( 'update_progress_action', 'progress_nonce', true, false );
 					$content .= '<label for="order_progress_select" style="white-space:nowrap;margin-right:4px;font-weight:bold;">進捗：</label>';
-					$content .= '<select id="order_progress_select" name="update_progress" onchange="handleProgressChange(this)" style="min-width:120px;max-width:200px;width:auto;">';
+					$content .= '<select id="order_progress_select" name="update_progress" style="min-width:120px;max-width:200px;width:auto;">';
 					foreach ( $progress_labels as $num => $label ) {
 									$selected = ( $order_data->progress == $num ) ? 'selected' : '';
 									$content .= '<option value="' . $num . '" ' . $selected . '>' . $label . '</option>';

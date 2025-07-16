@@ -14,8 +14,10 @@ window.handleProgressChange = function(selectElement) {
     var $form = $select.closest('form');
     
     var newProgress = parseInt($select.val());
+    var orderId = $form.find('input[name="update_progress_id"]').val();
     
     console.log('[DELIVERY-DATES] 進捗変更処理:', {
+        orderId: orderId,
         newProgress: newProgress,
         hasCompletionInput: $completionInput.length > 0,
         completionInputValue: $completionInput.val()
@@ -59,29 +61,86 @@ window.handleProgressChange = function(selectElement) {
         }
     }
     
-    // フォーム送信前の最終確認
-    console.log('[DELIVERY-DATES] フォーム送信前の最終確認:');
-    console.log('[DELIVERY-DATES] - 完了日フィールドの値:', $completionInput.val());
+    // nonceの取得
+    var nonce = null;
+    if (typeof ktp_ajax !== 'undefined' && ktp_ajax.progress_nonce) {
+        nonce = ktp_ajax.progress_nonce;
+    } else if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.nonce) {
+        nonce = ktp_ajax_object.nonce;
+    } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonce) {
+        nonce = ktpwp_ajax.nonce;
+    } else if (typeof ktp_ajax_nonce !== 'undefined') {
+        nonce = ktp_ajax_nonce;
+    } else if (typeof ktpwp_ajax_nonce !== 'undefined') {
+        nonce = ktpwp_ajax_nonce;
+    }
     
-    var $hiddenCompletionField = $form.find('input[name="completion_date"]');
-    console.log('[DELIVERY-DATES] - 隠し完了日フィールドの値:', $hiddenCompletionField.val());
-    console.log('[DELIVERY-DATES] - フォームのaction:', $form.attr('action'));
-    console.log('[DELIVERY-DATES] - フォームのmethod:', $form.attr('method'));
+    if (!nonce) {
+        console.error('[DELIVERY-DATES] エラー: nonceが取得できません');
+        alert('セキュリティトークンが取得できません。ページを再読み込みしてください。');
+        return;
+    }
     
-    // フォーム内の全てのinput要素をログ出力
-    var formData = {};
-    $form.find('input').each(function() {
-        var name = jQuery(this).attr('name');
-        var value = jQuery(this).val();
-        if (name) {
-            formData[name] = value;
+    // Ajaxで進捗更新
+    console.log('[DELIVERY-DATES] Ajaxで進捗更新を実行します');
+    jQuery.ajax({
+        url: (typeof ktp_ajax_object !== 'undefined' ? ktp_ajax_object.ajax_url : 
+              typeof ktpwp_ajax !== 'undefined' ? ktpwp_ajax.ajax_url : 
+              typeof ajaxurl !== 'undefined' ? ajaxurl : 
+              '/wp-admin/admin-ajax.php'),
+        type: 'POST',
+        data: {
+            action: 'ktp_update_progress',
+            order_id: orderId,
+            progress: newProgress,
+            completion_date: $completionInput.val(),
+            nonce: nonce
+        },
+        success: function(response) {
+            console.log('[DELIVERY-DATES] 進捗更新Ajax応答:', response);
+            if (response.success) {
+                // 成功時の処理
+                console.log('[DELIVERY-DATES] 進捗更新が完了しました');
+                
+                // 視覚的なフィードバック
+                $select.css('border-color', '#4CAF50');
+                setTimeout(function() {
+                    $select.css('border-color', '');
+                }, 2000);
+                
+                // 完了日フィールドの値を更新（サーバーから返された値で）
+                if (response.data && response.data.completion_date) {
+                    $completionInput.val(response.data.completion_date);
+                    var $hiddenCompletionField = $form.find('input[name="completion_date"]');
+                    if ($hiddenCompletionField.length > 0) {
+                        $hiddenCompletionField.val(response.data.completion_date);
+                    }
+                }
+            } else {
+                // エラー時の処理
+                console.error('[DELIVERY-DATES] 進捗更新に失敗しました:', response.data);
+                $select.css('border-color', '#f44336');
+                setTimeout(function() {
+                    $select.css('border-color', '');
+                }, 3000);
+                
+                var errorMessage = '進捗更新に失敗しました';
+                if (response.data) {
+                    errorMessage = response.data;
+                }
+                alert(errorMessage);
+            }
+        },
+        error: function(xhr, status, error) {
+            // 通信エラー時の処理
+            console.error('[DELIVERY-DATES] 進捗更新通信エラー:', error);
+            $select.css('border-color', '#f44336');
+            setTimeout(function() {
+                $select.css('border-color', '');
+            }, 3000);
+            alert('進捗更新の通信でエラーが発生しました');
         }
     });
-    console.log('[DELIVERY-DATES] - フォームデータ:', formData);
-    
-    // フォームを送信
-    console.log('[DELIVERY-DATES] フォームを送信します');
-    $form.submit();
 };
 
 jQuery(document).ready(function($) {
@@ -577,61 +636,8 @@ jQuery(document).ready(function($) {
     $(document).on('change', '#order_progress_select', function() {
         console.log('[DELIVERY-DATES] 進捗プルダウンが変更されました（受注書詳細）');
         
-        var $select = $(this);
-        var $completionInput = $('#completion_date');
-        var $form = $select.closest('form');
-        
-        var newProgress = parseInt($select.val());
-        var oldProgress = parseInt($select.find('option:selected').data('old-progress') || newProgress);
-        
-        console.log('[DELIVERY-DATES] 受注書詳細進捗変更:', {
-            oldProgress: oldProgress,
-            newProgress: newProgress,
-            hasCompletionInput: $completionInput.length > 0,
-            completionInputId: $completionInput.attr('id'),
-            completionInputValue: $completionInput.val()
-        });
-        
-        // 進捗が「完了」（progress = 4）に変更された場合、完了日を自動設定
-        if (newProgress === 4 && oldProgress !== 4 && $completionInput.length > 0) {
-            console.log('[DELIVERY-DATES] 受注書詳細：進捗が完了に変更されたため、完了日を自動設定します');
-            var today = new Date();
-            var todayStr = today.toISOString().split('T')[0]; // YYYY-MM-DD形式
-            $completionInput.val(todayStr);
-            
-            // フォーム内の隠しフィールドも更新
-            var $hiddenCompletionField = $form.find('input[name="completion_date"]');
-            if ($hiddenCompletionField.length > 0) {
-                $hiddenCompletionField.val(todayStr);
-                console.log('[DELIVERY-DATES] フォーム内の隠し完了日フィールドも更新しました:', todayStr);
-            }
-            
-            console.log('[DELIVERY-DATES] 完了日を設定しました:', todayStr);
-        }
-        
-        // 進捗が受注以前（受付中、見積中、受注）に変更された場合、完了日をクリア
-        if ([1, 2, 3].includes(newProgress) && oldProgress > 3 && $completionInput.length > 0) {
-            console.log('[DELIVERY-DATES] 受注書詳細：進捗が受注以前に変更されたため、完了日をクリアします');
-            $completionInput.val('');
-            
-            // フォーム内の隠しフィールドもクリア
-            var $hiddenCompletionField = $form.find('input[name="completion_date"]');
-            if ($hiddenCompletionField.length > 0) {
-                $hiddenCompletionField.val('');
-                console.log('[DELIVERY-DATES] フォーム内の隠し完了日フィールドもクリアしました');
-            }
-            
-            console.log('[DELIVERY-DATES] 完了日をクリアしました');
-        }
-        
-        // 現在の進捗をold-progressとして保存
-        $select.find('option:selected').data('old-progress', newProgress);
-        
-        console.log('[DELIVERY-DATES] 受注書詳細進捗変更処理完了');
-        
-        // フォームを送信
-        console.log('[DELIVERY-DATES] フォームを送信します');
-        $form.submit();
+        // handleProgressChange関数を呼び出し
+        handleProgressChange(this);
     });
 
     // 納期フィールドのフォーカス時の処理

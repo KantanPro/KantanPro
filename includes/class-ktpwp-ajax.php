@@ -42,6 +42,7 @@ class KTPWP_Ajax {
 		'general'      => 'ktpwp_ajax_nonce',
 		'staff_chat'   => 'ktpwp_staff_chat_nonce',
 		'invoice_candidates' => 'ktp_get_invoice_candidates',
+		'progress_update' => 'ktp_ajax_nonce',
 	);
 
 	/**
@@ -196,6 +197,11 @@ class KTPWP_Ajax {
 		add_action( 'wp_ajax_ktp_get_supplier_qualified_invoice_number', array( $this, 'ajax_get_supplier_qualified_invoice_number' ) );
 		add_action( 'wp_ajax_nopriv_ktp_get_supplier_qualified_invoice_number', array( $this, 'ajax_require_login' ) );
 		$this->registered_handlers[] = 'ktp_get_supplier_qualified_invoice_number';
+
+		// 進捗更新Ajax
+		add_action( 'wp_ajax_ktp_update_progress', array( $this, 'ajax_update_progress' ) );
+		add_action( 'wp_ajax_nopriv_ktp_update_progress', array( $this, 'ajax_require_login' ) );
+		$this->registered_handlers[] = 'ktp_update_progress';
 
 		// ▼▼▼ 一括請求書「請求済」進捗変更Ajax ▼▼▼
 		add_action(
@@ -465,6 +471,7 @@ class KTPWP_Ajax {
 					array(
 						'ajax_url' => $ajax_data['ajax_url'],
 						'nonce'    => $ajax_data['nonces']['auto_save'],
+						'progress_nonce' => $ajax_data['nonces']['progress_update'],
 						'settings' => array(
 							'delivery_warning_days' => KTP_Settings::get_delivery_warning_days(),
 						),
@@ -3337,6 +3344,69 @@ class KTPWP_Ajax {
 		} catch ( Exception $e ) {
 			error_log( 'KTPWP Ajax ajax_get_supplier_qualified_invoice_number Error: ' . $e->getMessage() );
 			wp_send_json_error( __( 'エラーが発生しました: ' . $e->getMessage(), 'ktpwp' ) );
+		}
+	}
+
+	/**
+	 * 進捗更新Ajaxハンドラー
+	 */
+	public function ajax_update_progress() {
+		// セキュリティチェック
+		if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
+			wp_send_json_error( '権限がありません' );
+		}
+
+		// nonceチェック
+		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( $_POST['nonce'], 'ktp_ajax_nonce' ) ) {
+			wp_send_json_error( 'セキュリティ検証に失敗しました' );
+		}
+
+		global $wpdb;
+		$table_name = $wpdb->prefix . 'ktp_order';
+
+		$order_id = isset( $_POST['order_id'] ) ? absint( $_POST['order_id'] ) : 0;
+		$new_progress = isset( $_POST['progress'] ) ? absint( $_POST['progress'] ) : 0;
+		$completion_date = isset( $_POST['completion_date'] ) ? sanitize_text_field( $_POST['completion_date'] ) : '';
+
+		if ( $order_id <= 0 || $new_progress < 1 || $new_progress > 7 ) {
+			wp_send_json_error( 'パラメータが不正です' );
+		}
+
+		// 現在の進捗を取得
+		$current_order = $wpdb->get_row( $wpdb->prepare( "SELECT progress FROM {$table_name} WHERE id = %d", $order_id ) );
+		if ( ! $current_order ) {
+			wp_send_json_error( '受注書が見つかりません' );
+		}
+
+		$update_data = array( 'progress' => $new_progress );
+
+		// 進捗が「完了」（progress = 4）に変更された場合、完了日を記録
+		if ( $new_progress == 4 && $current_order->progress != 4 ) {
+			if ( ! empty( $completion_date ) ) {
+				// フォームから完了日が送信されている場合はその値を使用
+				$update_data['completion_date'] = $completion_date;
+			} else {
+				// フォームから完了日が送信されていない場合は今日の日付を設定
+				$update_data['completion_date'] = current_time( 'Y-m-d' );
+			}
+		}
+
+		// 進捗が受注以前（受付中、見積中、受注）に変更された場合、完了日をクリア
+		if ( in_array( $new_progress, array( 1, 2, 3 ) ) && $current_order->progress > 3 ) {
+			$update_data['completion_date'] = null;
+		}
+
+		// データベース更新
+		$result = $wpdb->update( $table_name, $update_data, array( 'id' => $order_id ) );
+
+		if ( $result !== false ) {
+			wp_send_json_success( array(
+				'message' => '進捗を更新しました',
+				'progress' => $new_progress,
+				'completion_date' => isset( $update_data['completion_date'] ) ? $update_data['completion_date'] : null
+			) );
+		} else {
+			wp_send_json_error( 'データベース更新に失敗しました' );
 		}
 	}
 }
