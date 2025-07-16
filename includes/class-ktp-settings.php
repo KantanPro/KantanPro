@@ -353,6 +353,48 @@ class KTP_Settings {
             }
         }
 
+        // 寄付設定のデフォルト値を設定
+        $donation_option_name = 'ktp_donation_settings';
+        if ( false === get_option( $donation_option_name ) ) {
+            add_option(
+                $donation_option_name,
+                array(
+                    'enabled' => false,
+                    'monthly_goal' => 10000,
+                    'suggested_amounts' => '1000,3000,5000,10000',
+                    'frontend_notice_enabled' => false,
+                    'notice_display_interval' => 7,
+                    'notice_message' => 'KantanProの開発を支援してください。',
+                    'donation_url' => ''
+                )
+            );
+        } else {
+            // 既存設定に新しいフィールドが不足している場合は追加
+            $existing_donation = get_option( $donation_option_name );
+            $donation_updated = false;
+
+            $donation_defaults = array(
+                'enabled' => false,
+                'monthly_goal' => 10000,
+                'suggested_amounts' => '1000,3000,5000,10000',
+                'frontend_notice_enabled' => false,
+                'notice_display_interval' => 7,
+                'notice_message' => 'KantanProの開発を支援してください。',
+                'donation_url' => ''
+            );
+
+            foreach ( $donation_defaults as $key => $default_value ) {
+                if ( ! array_key_exists( $key, $existing_donation ) ) {
+                    $existing_donation[ $key ] = $default_value;
+                    $donation_updated = true;
+                }
+            }
+
+            if ( $donation_updated ) {
+                update_option( $donation_option_name, $existing_donation );
+            }
+        }
+
         // 更新通知設定のデフォルト値を設定
         $update_notification_option_name = 'ktp_update_notification_settings';
         if ( false === get_option( $update_notification_option_name ) ) {
@@ -639,7 +681,7 @@ class KTP_Settings {
                         <form method="post" action="options.php">
                         <?php
                         settings_fields( 'ktp_update_notification_group' );
-                        do_settings_sections( 'ktp-update-notification-settings' );
+                        do_settings_sections( 'ktp-developer-settings' );
                         submit_button();
                         ?>
                         </form>
@@ -947,6 +989,23 @@ class KTP_Settings {
      */
     public function print_donation_section_info() {
         echo '<p>' . esc_html__( '寄付通知の表示設定を行います。ktpdoneプラグインで寄付機能を制御します。', 'ktpwp' ) . '</p>';
+    }
+
+    /**
+     * 寄付機能の有効化コールバック
+     */
+    public function enabled_callback() {
+        $options = get_option( 'ktp_donation_settings' );
+        $enabled = isset( $options['enabled'] ) ? $options['enabled'] : false;
+        ?>
+        <input type="checkbox" 
+               id="enabled" 
+               name="ktp_donation_settings[enabled]" 
+               value="1" 
+               <?php checked( $enabled, true ); ?>>
+        <label for="enabled"><?php esc_html_e( '寄付機能を有効にする', 'ktpwp' ); ?></label>
+        <p class="description"><?php esc_html_e( 'このオプションを有効にすると、寄付機能が利用可能になります。', 'ktpwp' ); ?></p>
+        <?php
     }
 
 
@@ -2264,6 +2323,15 @@ class KTP_Settings {
             __( '寄付機能設定', 'ktpwp' ),
             array( $this, 'print_donation_section_info' ),
             'ktp-developer-settings'
+        );
+
+        // 寄付機能の有効化
+        add_settings_field(
+            'enabled',
+            __( '寄付機能の有効化', 'ktpwp' ),
+            array( $this, 'enabled_callback' ),
+            'ktp-developer-settings',
+            'donation_setting_section'
         );
 
         // 更新通知設定セクション
