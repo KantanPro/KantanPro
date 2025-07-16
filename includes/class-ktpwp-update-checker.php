@@ -240,7 +240,8 @@ class KTPWP_Update_Checker {
         $last_check = get_transient( 'ktpwp_last_update_check' );
         if ( $last_check && ( time() - $last_check ) < $this->check_interval ) {
             error_log( 'KantanPro: 更新チェック間隔が短すぎるため、スキップします' );
-            return false;
+            // デバッグ用: 間隔制限を一時的に無効化
+            // return false;
         }
 
         // エラーハンドリングを強化
@@ -286,28 +287,38 @@ class KTPWP_Update_Checker {
             $latest_version = $this->clean_version( $data['tag_name'] );
             $current_version = $this->clean_version( $this->current_version );
             
-            error_log( 'KantanPro: 現在のバージョン: ' . $current_version . ', 最新バージョン: ' . $latest_version );
+            error_log( 'KantanPro: 元のバージョン文字列 - 現在: ' . $this->current_version . ', 最新: ' . $data['tag_name'] );
+            error_log( 'KantanPro: クリーン後のバージョン - 現在: ' . $current_version . ', 最新: ' . $latest_version );
             
             // バージョン比較
-            if ( version_compare( $latest_version, $current_version, '>' ) ) {
+            $comparison_result = version_compare( $latest_version, $current_version, '>' );
+            error_log( 'KantanPro: バージョン比較結果: ' . $latest_version . ' > ' . $current_version . ' = ' . ( $comparison_result ? 'true' : 'false' ) );
+            
+            if ( $comparison_result ) {
                 // 更新が利用可能
                 $update_data = array(
                     'version' => $latest_version,
+                    'new_version' => $data['tag_name'], // 元のバージョン文字列も保存
                     'download_url' => $data['zipball_url'],
                     'changelog' => isset( $data['body'] ) ? $data['body'] : '',
                     'published_at' => isset( $data['published_at'] ) ? $data['published_at'] : '',
+                    'current_version' => $this->current_version, // 現在のバージョンも保存
+                    'cleaned_current_version' => $current_version, // クリーン後の現在バージョンも保存
+                    'cleaned_latest_version' => $latest_version, // クリーン後の最新バージョンも保存
                 );
                 
                 // 更新情報を保存
                 update_option( 'ktpwp_latest_version', $update_data );
-                update_option( 'ktpwp_update_available', true );
+                update_option( 'ktpwp_update_available', $update_data ); // 配列全体を保存
                 
                 error_log( 'KantanPro: 更新が利用可能です - バージョン: ' . $latest_version );
+                error_log( 'KantanPro: 保存された更新データ: ' . print_r( $update_data, true ) );
                 return $update_data;
             } else {
                 // 更新なし
                 update_option( 'ktpwp_update_available', false );
                 error_log( 'KantanPro: 更新は利用できません - 最新版です' );
+                error_log( 'KantanPro: 比較詳細 - 現在: ' . $current_version . ', 最新: ' . $latest_version . ', 比較結果: ' . $comparison_result );
                 return false;
             }
             
@@ -907,12 +918,33 @@ class KTPWP_Update_Checker {
      * @return string クリーンなバージョン文字列
      */
     private function clean_version( $version ) {
+        // プレビューバージョンの判定
+        $is_preview = false;
+        if ( preg_match( '/\(preview\)/i', $version ) ) {
+            $is_preview = true;
+        }
+        
         // (preview)や(beta)などの文字を削除
         $version = preg_replace( '/\([^)]*\)/', '', $version );
         // 先頭の'v'を削除
         $version = ltrim( $version, 'v' );
         // 空白を削除
         $version = trim( $version );
+        
+        // プレビューバージョンの場合は、バージョン番号を少し下げて比較
+        // 例: 1.1.2(preview) → 1.1.1.999 として扱う
+        if ( $is_preview ) {
+            $version_parts = explode( '.', $version );
+            if ( count( $version_parts ) >= 3 ) {
+                // 最後の数字を1つ減らして、.999を追加
+                $last_part = intval( $version_parts[count( $version_parts ) - 1] );
+                $version_parts[count( $version_parts ) - 1] = max( 0, $last_part - 1 );
+                $version = implode( '.', $version_parts ) . '.999';
+            } else {
+                // 3つ未満の場合は.999を追加
+                $version .= '.999';
+            }
+        }
         
         return $version;
     }
@@ -1043,6 +1075,10 @@ class KTPWP_Update_Checker {
             error_log( 'KantanPro: 更新チェック実行開始' );
             $update_available = $this->check_github_updates();
             error_log( 'KantanPro: 更新チェック結果: ' . ( $update_available ? 'true' : 'false' ) );
+            
+            // 更新データを取得して詳細ログを出力
+            $update_data = get_option( 'ktpwp_update_available', false );
+            error_log( 'KantanPro: 保存された更新データ: ' . print_r( $update_data, true ) );
             
             if ( $update_available ) {
                 $update_data = get_option( 'ktpwp_update_available', false );

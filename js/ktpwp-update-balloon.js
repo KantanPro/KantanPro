@@ -236,6 +236,8 @@
         
         if (hasUpdate && updateData && updateData.new_version) {
             versionInfo = '<div class="ktpwp-update-balloon-version">新しいバージョン: <strong>' + updateData.new_version + '</strong></div>';
+        } else if (hasUpdate && updateData && updateData.version) {
+            versionInfo = '<div class="ktpwp-update-balloon-version">新しいバージョン: <strong>' + updateData.version + '</strong></div>';
         }
         
         var actions = '';
