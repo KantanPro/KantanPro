@@ -2,9 +2,9 @@
 Contributors: KantanPro
 Tags: business, management, orders, invoices, customers, services, suppliers, reports, chat, mobile, responsive
 Requires at least: 5.0
-Tested up to: 6.8.1
+Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.1.0(preview)
+Stable tag: 1.1.1(preview)
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -217,6 +217,25 @@ KantanProは、WordPress上で以下の業務を一元管理できる多機能�
 
 == 変更履歴 ==
 
+= 1.1.1(preview) - 2025年7月16日 =
+* 更新通知の改善（WordPress 6.9.1対応）
+* プラグイン説明文の大幅改善（機能詳細の追加）
+* 管理画面でのプラグイン情報表示の最適化
+* プラグインリファレンス機能の強化
+* セキュリティ機能のさらなる改善
+* パフォーマンス最適化とUI/UX改善
+* エラーハンドリングの強化
+* データベース構造の最適化
+* 寄付機能の安定化と改善
+* セッション管理の最適化
+* ファイル添付機能の強化
+* 自動マイグレーション機能の改善（データベース更新の安定化）
+* データベース整合性チェック機能の強化（データ品質向上）
+* 消費税対応機能の包括的改善（軽減税率・税区分対応の強化）
+* 内税顧客の請求項目表示修正（表示形式の統一化）
+* 税区分ラベルの統一（「内税｜外税」表示への変更）
+* 消費税計算ロジックの最適化（計算精度の向上）
+
 = 1.1.0(preview) - 2025年7月15日 =
 * プラグイン説明文の大幅改善（機能詳細の追加）
 * 管理画面でのプラグイン情報表示の最適化
@@ -267,6 +286,7 @@ KantanProは、WordPress上で以下の業務を一元管理できる多機能�
 * データベース構造の最適化
 
 = 1.0.7(preview) - 2025年1月 =
+* プラグイン説明文の大幅改善（機能詳細の追加）
 * 管理画面でのプラグイン情報表示の最適化
 * プラグインリファレンス機能の強化
 * セキュリティ機能のさらなる改善

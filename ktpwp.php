@@ -3,7 +3,7 @@
  * Plugin Name: KantanPro
  * Plugin URI: https://www.kantanpro.com/
  * Description: スモールビジネス向けの仕事効率化システム。ショートコード[ktpwp_all_tab]を固定ページに設置してください。
- * Version: 1.1.0(preview)
+ * Version: 1.1.1(preview)
  * Author: KantanPro
  * Author URI: https://www.kantanpro.com/kantanpro-page
  * License: GPL v2 or later
@@ -30,7 +30,7 @@ if ( file_exists( plugin_dir_path( __FILE__ ) . 'vendor/autoload.php' ) ) {
 
 // プラグイン定数定義
 if ( ! defined( 'KANTANPRO_PLUGIN_VERSION' ) ) {
-    define( 'KANTANPRO_PLUGIN_VERSION', '1.1.0(preview)' );
+    define( 'KANTANPRO_PLUGIN_VERSION', '1.1.1(preview)' );
 }
 if ( ! defined( 'KANTANPRO_PLUGIN_NAME' ) ) {
     define( 'KANTANPRO_PLUGIN_NAME', 'KantanPro' );
@@ -3142,6 +3142,27 @@ function ktpwp_get_plugin_changelog() {
     $changelog = '
     <h3>変更履歴</h3>
     <p>KantanProプラグインの主要な更新履歴をご紹介します。</p>
+    
+    <h4>1.1.1(preview) - 2025年7月16日</h4>
+    <ul>
+        <li><strong>更新通知の改善</strong> - WordPress 6.9.1対応</li>
+        <li><strong>プラグイン説明文の大幅改善</strong> - 機能詳細の追加</li>
+        <li><strong>管理画面でのプラグイン情報表示の最適化</strong> - ユーザビリティ向上</li>
+        <li><strong>プラグインリファレンス機能の強化</strong> - ヘルプシステム改善</li>
+        <li><strong>セキュリティ機能のさらなる改善</strong> - セキュリティ強化</li>
+        <li><strong>パフォーマンス最適化とUI/UX改善</strong> - 操作性向上</li>
+        <li><strong>エラーハンドリングの強化</strong> - 安定性向上</li>
+        <li><strong>データベース構造の最適化</strong> - パフォーマンス向上</li>
+        <li><strong>寄付機能の安定化と改善</strong> - 機能強化</li>
+        <li><strong>セッション管理の最適化</strong> - パフォーマンス向上</li>
+        <li><strong>ファイル添付機能の強化</strong> - 機能改善</li>
+        <li><strong>自動マイグレーション機能の改善</strong> - データベース更新の安定化</li>
+        <li><strong>データベース整合性チェック機能の強化</strong> - データ品質向上</li>
+        <li><strong>消費税対応機能の包括的改善</strong> - 軽減税率・税区分対応の強化</li>
+        <li><strong>内税顧客の請求項目表示修正</strong> - 表示形式の統一化</li>
+        <li><strong>税区分ラベルの統一</strong> - 「内税｜外税」表示への変更</li>
+        <li><strong>消費税計算ロジックの最適化</strong> - 計算精度の向上</li>
+    </ul>
     
     <h4>1.1.0(preview) - 2025年7月15日</h4>
     <ul>

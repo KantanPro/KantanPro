@@ -3,3 +3,4 @@
 # アップロード画像ファイルを追跡対象外にする
 images/upload/
 images/upload/*
+create_release_zipのコピー.sh
