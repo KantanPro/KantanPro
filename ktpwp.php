@@ -730,6 +730,48 @@ function ktpwp_plugin_activation() {
 }
 
 /**
+ * プラグイン無効化時の処理
+ */
+function ktpwp_plugin_deactivation() {
+    if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+        error_log( 'KTPWP: プラグイン無効化処理を開始' );
+    }
+
+    try {
+        // 一時ファイルのクリーンアップをスケジュール
+        if ( function_exists('ktpwp_unschedule_temp_file_cleanup') ) {
+            ktpwp_unschedule_temp_file_cleanup();
+        }
+        
+        // セッション関連のクリーンアップ
+        if ( function_exists('ktpwp_safe_session_close') ) {
+            ktpwp_safe_session_close();
+        }
+        
+        // 無効化完了フラグを設定
+        update_option( 'ktpwp_deactivation_completed', true );
+        update_option( 'ktpwp_deactivation_timestamp', current_time( 'mysql' ) );
+        
+        // 有効化フラグをクリア
+        delete_option( 'ktpwp_activation_completed' );
+        delete_option( 'ktpwp_activation_redirect' );
+        
+        // 一時的な通知をクリア
+        delete_transient( 'ktpwp_activation_message' );
+        delete_transient( 'ktpwp_activation_error' );
+        
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP: プラグイン無効化処理が正常に完了' );
+        }
+        
+    } catch ( Exception $e ) {
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP: プラグイン無効化処理でエラーが発生: ' . $e->getMessage() );
+        }
+    }
+}
+
+/**
  * 更新履歴の初期化処理
  */
 
