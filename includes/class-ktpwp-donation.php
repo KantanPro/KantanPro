@@ -829,6 +829,15 @@ KantanPro開発チーム
             error_log( 'KTPWP Donation: donation_settings = ' . wp_json_encode( $donation_settings ) );
         }
         
+        // 通知表示日数が0の場合はテスト用として他の条件を無視
+        $interval = isset( $donation_settings['notice_display_interval'] ) ? intval( $donation_settings['notice_display_interval'] ) : 7;
+        if ( $interval === 0 ) {
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP Donation: 通知表示日数が0のため、テスト用として表示' );
+            }
+            return true;
+        }
+        
         // 寄付機能が無効またはフロントエンド通知が無効の場合
         if ( empty( $donation_settings['enabled'] ) || empty( $donation_settings['frontend_notice_enabled'] ) ) {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {

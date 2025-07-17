@@ -1021,7 +1021,7 @@ class KTP_Settings {
                min="0" 
                max="365" 
                class="small-text">
-        <p class="description"><?php esc_html_e( '0を設定すると常時表示されます。', 'ktpwp' ); ?></p>
+        <p class="description"><?php esc_html_e( '通知を表示する間隔を日数で設定してください。0を設定すると他の条件に優先して常時表示されます（ローカル開発環境でのテスト用）。', 'ktpwp' ); ?></p>
         <?php
     }
 
