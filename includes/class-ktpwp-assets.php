@@ -619,6 +619,7 @@ class KTPWP_Assets {
         echo '<script type="text/javascript">';
         echo 'window.ktpwp_ajax = ' . json_encode( $ajax_data ) . ';';
         echo 'window.ktp_ajax_object = ' . json_encode( $ajax_data ) . ';';
+        echo 'window.ktp_ajax_nonce = ' . json_encode( $ajax_data['nonce'] ) . ';';
         echo 'window.ajaxurl = ' . json_encode( $ajax_data['ajax_url'] ) . ';';
         echo 'console.log("Head: AJAX設定を出力 (debug mode)", window.ktpwp_ajax);';
         echo '</script>';
@@ -638,6 +639,7 @@ class KTPWP_Assets {
         $ajax_data = $this->get_unified_ajax_config();
         echo 'window.ktpwp_ajax = ' . json_encode( $ajax_data ) . ';';
         echo 'window.ktp_ajax_object = ' . json_encode( $ajax_data ) . ';';
+        echo 'window.ktp_ajax_nonce = ' . json_encode( $ajax_data['nonce'] ) . ';';
         echo 'window.ajaxurl = ' . json_encode( $ajax_data['ajax_url'] ) . ';';
         echo 'console.log("Footer fallback: AJAX設定を出力 (debug mode)", window.ktpwp_ajax);';
         echo '}';

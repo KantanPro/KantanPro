@@ -409,7 +409,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                 }
                             }
                             alert(msg);
-                            if (window.ktpDebugMode) console.error('スタッフチャット送信エラー詳細:', xhr.responseText);
+                            console.error('スタッフチャット送信エラー詳細:', xhr.responseText);
                         }
                     }
                 };
@@ -573,12 +573,12 @@ window.testStaffChatToggle = function () {
     if (window.ktpDebugMode) console.log('コンテンツ:', staffContent);
 
     if (!staffToggleBtn) {
-        if (window.ktpDebugMode) console.error('スタッフチャットトグルボタンが見つかりません');
+        console.error('スタッフチャットトグルボタンが見つかりません');
         return false;
     }
 
     if (!staffContent) {
-        if (window.ktpDebugMode) console.error('スタッフチャットコンテンツが見つかりません');
+        console.error('スタッフチャットコンテンツが見つかりません');
         return false;
     }
 
@@ -618,7 +618,7 @@ window.testAllToggles = function () {
     if (costResult && staffResult) {
         window.showSuccessNotification('全てのトグル機能が正常に動作しています');
     } else {
-        if (window.ktpDebugMode) console.error('一部のトグル機能に問題があります');
+        console.error('一部のトグル機能に問題があります');
     }
 
     if (window.ktpDebugMode) console.log('=== 全テスト完了 ===');
@@ -636,12 +636,12 @@ window.testCostToggle = function () {
     if (window.ktpDebugMode) console.log('コンテンツ:', costContent);
 
     if (!costToggleBtn) {
-        if (window.ktpDebugMode) console.error('トグルボタンが見つかりません');
+        console.error('トグルボタンが見つかりません');
         return false;
     }
 
     if (!costContent) {
-        if (window.ktpDebugMode) console.error('コストコンテンツが見つかりません');
+        console.error('コストコンテンツが見つかりません');
         return false;
     }
 

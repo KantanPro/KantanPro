@@ -174,6 +174,19 @@ class KTPWP_Main {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
                 error_log( 'KTPWP_Main: KTPWP_Ajax initialized.' );
             }
+            
+            // AJAXハンドラーが確実に登録されるように、initアクションの後に確認
+            add_action( 'init', function() {
+                if ( $this->ajax && method_exists( $this->ajax, 'register_ajax_handlers' ) ) {
+                    // AJAXハンドラーが登録されているかチェック
+                    if ( !has_action( 'wp_ajax_ktp_get_supplier_qualified_invoice_number' ) ) {
+                        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                            error_log( 'KTPWP_Main: AJAX handlers not registered, registering manually.' );
+                        }
+                        $this->ajax->register_ajax_handlers();
+                    }
+                }
+            }, 15 ); // KTPWP_Ajax's init (priority 5) より後に実行
         }
 
         // KTPWP_Assets も常に初期化し、フックを登録する

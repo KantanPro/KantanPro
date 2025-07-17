@@ -401,7 +401,8 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 
 			foreach ( $items as $index => $item ) {
 				$row_id = isset( $item['id'] ) ? intval( $item['id'] ) : 0;
-				$html .= '<tr class="cost-item-row" data-row-id="' . $row_id . '">';
+				$supplier_id_for_row = isset( $item['supplier_id'] ) ? intval( $item['supplier_id'] ) : 0;
+				$html .= '<tr class="cost-item-row" data-row-id="' . $row_id . '" data-supplier-id="' . $supplier_id_for_row . '">';
 				// Actions column with drag handle and buttons
 				$html .= '<td class="actions-column">';
 				$html .= '<span class="drag-handle" title="' . esc_attr__( 'ドラッグして並び替え', 'ktpwp' ) . '">&#9776;</span>';
@@ -417,7 +418,7 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 				$html .= 'value="' . esc_attr( $item['product_name'] ) . '" ';
 				$html .= 'class="cost-item-input product-name" />';
 				$html .= '<input type="hidden" name="cost_items[' . $index . '][id]" value="' . $row_id . '" />';
-				$html .= '<input type="hidden" name="cost_items[' . $index . '][supplier_id]" value="' . esc_attr( isset( $item['supplier_id'] ) ? $item['supplier_id'] : 0 ) . '" />';
+				$html .= '<input type="hidden" name="cost_items[' . $index . '][supplier_id]" value="' . esc_attr( $supplier_id_for_row ) . '" class="supplier-id" />';
 				$html .= '</td>';
 
 				// Price

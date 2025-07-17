@@ -106,7 +106,7 @@
                         }
                     }
                 } catch (e) {
-                    if (window.ktpDebugMode) console.error('INVOICE AUTO-SAVE] レスポンスパースエラー:', e, 'response:', response);
+                    console.error('INVOICE AUTO-SAVE] レスポンスパースエラー:', e, 'response:', response);
                     
                     // エラー通知を表示
                     if (typeof window.showErrorNotification === 'function') {
@@ -115,7 +115,7 @@
                 }
             },
             error: function (xhr, status, error) {
-                if (window.ktpDebugMode) console.error('INVOICE AUTO-SAVE] Ajax エラー:', {
+                console.error('INVOICE AUTO-SAVE] Ajax エラー:', {
                     field: fieldName,
                     value: fieldValue,
                     status: status,
@@ -211,12 +211,12 @@
                         if (callback) callback(false, null); // コールバック呼び出し
                     }
                 } catch (e) {
-                    if (window.ktpDebugMode) console.error('[INVOICE] createNewItemレスポンスパースエラー', e, response);
+                    console.error('[INVOICE] createNewItemレスポンスパースエラー', e, response);
                     if (callback) callback(false, null); // コールバック呼び出し
                 }
             },
             error: function (xhr, status, error) {
-                if (window.ktpDebugMode) console.error('[INVOICE] createNewItemエラー', {
+                console.error('[INVOICE] createNewItemエラー', {
                     status: status,
                     error: error,
                     responseText: xhr.responseText,
@@ -501,11 +501,11 @@
                 $newRow.find('.product-name').focus();
                 success = true;
             } else {
-                if (window.ktpDebugMode) console.error(`[INVOICE][${callId}] 新しい行の追加に失敗したか、見つかりませんでした。`);
+                console.error(`[INVOICE][${callId}] 新しい行の追加に失敗したか、見つかりませんでした。`);
                 success = false;
             }
         } catch (error) {
-            if (window.ktpDebugMode) console.error(`[INVOICE][${callId}] addNewRow エラー:`, error);
+            console.error(`[INVOICE][${callId}] addNewRow エラー:`, error);
             success = false;
         } finally {
             // window.ktpAddingInvoiceRow = false; // フラグ解除は呼び出し元の finally で
@@ -590,12 +590,12 @@
                                 alert(errorMessage);
                             }
                         } catch (e) {
-                            if (window.ktpDebugMode) console.error('[INVOICE] deleteRowレスポンスパースエラー', e, response);
+                            console.error('[INVOICE] deleteRowレスポンスパースエラー', e, response);
                             alert('行削除の応答処理中にエラーが発生しました。\n詳細: ' + (typeof response === 'string' ? response : JSON.stringify(response)));
                         }
                     },
                     error: function (xhr, status, error) {
-                        if (window.ktpDebugMode) console.error('[INVOICE] deleteRowエラー', { status, error, responseText: xhr.responseText, statusCode: xhr.status });
+                        console.error('[INVOICE] deleteRowエラー', { status, error, responseText: xhr.responseText, statusCode: xhr.status });
                         let errorDetail = 'サーバーエラーが発生しました。';
                         if (xhr.responseText) {
                             try {
@@ -725,12 +725,12 @@
                                     alert('並び順の保存に失敗しました。: ' + (result.data && result.data.message ? result.data.message : 'サーバーエラー'));
                                 }
                             } catch (e) {
-                                if (window.ktpDebugMode) console.error('[INVOICE] updateItemOrderレスポンスパースエラー', e, response);
+                                console.error('[INVOICE] updateItemOrderレスポンスパースエラー', e, response);
                                 alert('並び順保存の応答処理中にエラーが発生しました。');
                             }
                         },
                         error: function (xhr, status, error) {
-                            if (window.ktpDebugMode) console.error('[INVOICE] updateItemOrderエラー', { status, error, responseText: xhr.responseText });
+                            console.error('[INVOICE] updateItemOrderエラー', { status, error, responseText: xhr.responseText });
                             alert('並び順の保存中にサーバーエラーが発生しました。');
                         }
                     });
@@ -911,7 +911,7 @@
                     if (window.ktpDebugMode) console.log(`[INVOICE][${clickId}] addNewRow が true を返しました。`);
                 }
             } catch (error) {
-                if (window.ktpDebugMode) console.error(`[INVOICE][${clickId}] addNewRow 呼び出し中またはその前後でエラー:`, error);
+                console.error(`[INVOICE][${clickId}] addNewRow 呼び出し中またはその前後でエラー:`, error);
                 rowAddedSuccessfully = false;
             } finally {
                 window.ktpAddingInvoiceRow = false;
@@ -954,11 +954,11 @@
                     window.ktpShowServiceSelector(currentRow);
                     if (window.ktpDebugMode) console.log('[INVOICE-ITEMS] ktpShowServiceSelector関数呼び出し完了');
                 } catch (error) {
-                    if (window.ktpDebugMode) console.error('[INVOICE-ITEMS] ktpShowServiceSelector関数呼び出しエラー:', error);
+                    console.error('[INVOICE-ITEMS] ktpShowServiceSelector関数呼び出しエラー:', error);
                 }
             } else {
-                if (window.ktpDebugMode) console.error('[INVOICE-ITEMS] ktpShowServiceSelector関数が見つかりません');
-                if (window.ktpDebugMode) console.error('[INVOICE-ITEMS] 利用可能なwindow関数:', Object.keys(window).filter(key => key.includes('ktp')));
+                console.error('[INVOICE-ITEMS] ktpShowServiceSelector関数が見つかりません');
+                console.error('[INVOICE-ITEMS] 利用可能なwindow関数:', Object.keys(window).filter(key => key.includes('ktp')));
                 alert('サービス選択機能の読み込みに失敗しました。ページを再読み込みしてください。');
             }
         });
@@ -1221,7 +1221,7 @@
                         // 即座に重複チェック
                         const duplicates = window.detectDuplicateRows();
                         if (duplicates.length > 0) {
-                            if (window.ktpDebugMode) console.error('[INVOICE MONITOR] 重複行検出 - 緊急対応が必要');
+                            console.error('[INVOICE MONITOR] 重複行検出 - 緊急対応が必要');
                             // 重複行を削除
                             addedRows.forEach((row, index) => {
                                 if (index > 0) { // 最初の行以外を削除

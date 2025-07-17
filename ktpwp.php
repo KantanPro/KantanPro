@@ -1832,13 +1832,33 @@ function ktpwp_scripts_and_styles() {
     // ajaxurl をフロントエンドに渡す
     wp_add_inline_script( 'ktp-js', 'var ktp_ajax_object = ' . json_encode( array( 'ajax_url' => admin_url( 'admin-ajax.php' ) ) ) . ';' );
 
-    // Ajax nonceを追加
-    wp_add_inline_script( 'ktp-invoice-items', 'var ktp_ajax_nonce = ' . json_encode( wp_create_nonce( 'ktp_ajax_nonce' ) ) . ';' );
-    wp_add_inline_script( 'ktp-cost-items', 'var ktp_ajax_nonce = ' . json_encode( wp_create_nonce( 'ktp_ajax_nonce' ) ) . ';' );
+    // Ajax nonceを追加 - AJAXクラスで管理されるため、ここでは設定しない
+    // wp_add_inline_script( 'ktp-invoice-items', 'var ktp_ajax_nonce = ' . json_encode( wp_create_nonce( 'ktp_ajax_nonce' ) ) . ';' );
+    // wp_add_inline_script( 'ktp-cost-items', 'var ktp_ajax_nonce = ' . json_encode( wp_create_nonce( 'ktp_ajax_nonce' ) ) . ';' );
 
-    // ajaxurlをJavaScriptで利用可能にする
-    wp_add_inline_script( 'ktp-invoice-items', 'var ajaxurl = ' . json_encode( admin_url( 'admin-ajax.php' ) ) . ';' );
-    wp_add_inline_script( 'ktp-cost-items', 'var ajaxurl = ' . json_encode( admin_url( 'admin-ajax.php' ) ) . ';' );
+    // ajaxurlをJavaScriptで利用可能にする - AJAXクラスで管理されるため、ここでは設定しない
+    // wp_add_inline_script( 'ktp-invoice-items', 'var ajaxurl = ' . json_encode( admin_url( 'admin-ajax.php' ) ) . ';' );
+    // wp_add_inline_script( 'ktp-cost-items', 'var ajaxurl = ' . json_encode( admin_url( 'admin-ajax.php' ) ) . ';' );
+
+    // デバッグモードでAJAXデバッグスクリプトを読み込み
+    if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+        wp_enqueue_script(
+            'ktp-ajax-debug',
+            plugins_url( 'debug-ajax.js', __FILE__ ),
+            array( 'jquery' ),
+            KANTANPRO_PLUGIN_VERSION,
+            true
+        );
+        
+        // デバッグ用nonce をスクリプトに渡す
+        wp_localize_script( 'ktp-ajax-debug', 'ktp_ajax_debug', array(
+            'nonce' => wp_create_nonce( 'ktp_ajax_debug_nonce' ),
+            'ajaxurl' => admin_url( 'admin-ajax.php' )
+        ) );
+        
+        // PHP側のAJAXデバッグハンドラーを読み込み
+        require_once KANTANPRO_PLUGIN_DIR . 'debug-ajax-handler.php';
+    }
 
     // リファレンス機能のスクリプトを読み込み（ログイン済みユーザーのみ）
     if ( is_user_logged_in() ) {
