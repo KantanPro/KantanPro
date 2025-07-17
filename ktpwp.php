@@ -1907,8 +1907,8 @@ function ktpwp_scripts_and_styles() {
     // wp_add_inline_script( 'ktp-invoice-items', 'var ajaxurl = ' . json_encode( admin_url( 'admin-ajax.php' ) ) . ';' );
     // wp_add_inline_script( 'ktp-cost-items', 'var ajaxurl = ' . json_encode( admin_url( 'admin-ajax.php' ) ) . ';' );
 
-    // デバッグモードでAJAXデバッグスクリプトを読み込み
-    if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+    // デバッグモードでAJAXデバッグスクリプトを読み込み（ファイルが存在する場合のみ）
+    if ( defined( 'WP_DEBUG' ) && WP_DEBUG && file_exists( plugin_dir_path( __FILE__ ) . 'debug-ajax.js' ) ) {
         wp_enqueue_script(
             'ktp-ajax-debug',
             plugins_url( 'debug-ajax.js', __FILE__ ),
