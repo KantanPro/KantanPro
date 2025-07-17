@@ -3,7 +3,7 @@
  * Plugin Name: KantanPro
  * Plugin URI: https://www.kantanpro.com/
  * Description: スモールビジネス向けの仕事効率化システム。ショートコード[ktpwp_all_tab]を固定ページに設置してください。
- * Version: 1.1.4(preview)
+ * Version: 1.1.4
  * Author: KantanPro
  * Author URI: https://www.kantanpro.com/kantanpro-page
  * License: GPL v2 or later
@@ -30,7 +30,7 @@ if ( file_exists( plugin_dir_path( __FILE__ ) . 'vendor/autoload.php' ) ) {
 
 // プラグイン定数定義
 if ( ! defined( 'KANTANPRO_PLUGIN_VERSION' ) ) {
-    define( 'KANTANPRO_PLUGIN_VERSION', '1.1.4(preview)' );
+    define( 'KANTANPRO_PLUGIN_VERSION', '1.1.4' );
 }
 if ( ! defined( 'KANTANPRO_PLUGIN_NAME' ) ) {
     define( 'KANTANPRO_PLUGIN_NAME', 'KantanPro' );
@@ -696,8 +696,10 @@ function ktpwp_plugin_activation() {
     }
 
     try {
-        // 完全マイグレーションを実行
-        ktpwp_run_complete_migration();
+        // 自動マイグレーションを実行
+        if ( function_exists('ktpwp_run_auto_migrations') ) {
+            ktpwp_run_auto_migrations();
+        }
         
         // 有効化完了フラグを設定
         update_option( 'ktpwp_activation_completed', true );
@@ -1921,8 +1923,10 @@ function ktpwp_scripts_and_styles() {
             'ajaxurl' => admin_url( 'admin-ajax.php' )
         ) );
         
-        // PHP側のAJAXデバッグハンドラーを読み込み
-        require_once KANTANPRO_PLUGIN_DIR . 'debug-ajax-handler.php';
+        // PHP側のAJAXデバッグハンドラーを読み込み（デバッグファイルが存在する場合のみ）
+        if ( file_exists( KANTANPRO_PLUGIN_DIR . 'debug-ajax-handler.php' ) ) {
+            require_once KANTANPRO_PLUGIN_DIR . 'debug-ajax-handler.php';
+        }
     }
 
     // リファレンス機能のスクリプトを読み込み（ログイン済みユーザーのみ）
@@ -3190,16 +3194,13 @@ function ktpwp_comprehensive_activation() {
 
     try {
         // 1. 寄付機能テーブルの作成
-        ktpwp_donation_activation();
+        if ( function_exists('ktpwp_donation_activation') ) {
+            ktpwp_donation_activation();
+        }
         
-        // 2. 完全マイグレーションの実行
-        if ( function_exists('ktpwp_run_complete_migration') ) {
-            ktpwp_run_complete_migration();
-        } else {
-            // フォールバック: 基本的なマイグレーション
-            if ( function_exists('ktpwp_run_auto_migrations') ) {
-                ktpwp_run_auto_migrations();
-            }
+        // 2. 自動マイグレーションの実行
+        if ( function_exists('ktpwp_run_auto_migrations') ) {
+            ktpwp_run_auto_migrations();
         }
         
         // 3. 有効化完了フラグの設定
