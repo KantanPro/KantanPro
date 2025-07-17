@@ -234,7 +234,7 @@ if ( ! class_exists( 'KTPWP_Service_UI' ) ) {
 
 					// 税率列
 					$tax_rate = isset($service->tax_rate) ? floatval($service->tax_rate) : 10.00;
-					$html .= '<td class="column-tax-rate">' . esc_html( number_format($tax_rate, 1) ) . '%</td>';
+					$html .= '<td class="column-tax-rate">' . esc_html( round($tax_rate) ) . '%</td>';
 
 					// 単位列
 					$html .= '<td class="column-unit">' . esc_html( $service->unit ) . '</td>';
