@@ -79,15 +79,10 @@ if ( ! defined( 'MY_PLUGIN_URL' ) ) {
 }
 
 /**
- * プラグイン有効化フック（寄付機能用）
- * 寄付機能に必要なデータベーステーブルを作成します。
+ * プラグイン有効化フック（包括的マイグレーション）
+ * 新規インストール・再有効化時に必要なデータベーステーブルを作成し、マイグレーションを実行します。
  */
-register_activation_hook( __FILE__, function() {
-    ktpwp_donation_activation();
-    if ( function_exists('ktpwp_run_auto_migrations') ) {
-        ktpwp_run_auto_migrations();
-    }
-});
+register_activation_hook( __FILE__, 'ktpwp_comprehensive_activation' );
 function ktpwp_donation_activation() {
     // KTPWP_Donationクラスを読み込み
     if ( ! class_exists( 'KTPWP_Donation' ) ) {
@@ -113,7 +108,8 @@ function ktpwp_donation_activation() {
 add_action( 'admin_init', 'ktpwp_upgrade', 10, 0 );
 
 /**
- * シンプルなアップグレード処理
+ * 改善されたアップグレード処理
+ * バージョン変更時に確実にマイグレーションを実行
  */
 function ktpwp_upgrade() {
     $old_ver = get_option( 'ktpwp_version', '0' );
@@ -123,14 +119,35 @@ function ktpwp_upgrade() {
         return;
     }
 
+    if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+        error_log( 'KTPWP: アップグレード処理開始 - ' . $old_ver . ' → ' . $new_ver );
+    }
+
     do_action( 'ktpwp_upgrade', $new_ver, $old_ver );
 
-    // ★ここで自動マイグレーションを必ず実行
-    if ( function_exists('ktpwp_run_auto_migrations') ) {
-        ktpwp_run_auto_migrations();
+    // アップグレード時の自動マイグレーションを確実に実行
+    try {
+        if ( function_exists('ktpwp_run_auto_migrations') ) {
+            ktpwp_run_auto_migrations();
+        }
+        
+        // 適格請求書ナンバー機能のマイグレーション（確実に実行）
+        if ( function_exists('ktpwp_run_qualified_invoice_migration') ) {
+            ktpwp_run_qualified_invoice_migration();
+        }
+        
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP: アップグレード処理正常完了' );
+        }
+        
+    } catch ( Exception $e ) {
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP: アップグレード処理でエラー発生: ' . $e->getMessage() );
+        }
     }
 
     update_option( 'ktpwp_version', $new_ver );
+    update_option( 'ktpwp_upgrade_timestamp', current_time( 'mysql' ) );
 }
 
 /**
@@ -728,22 +745,20 @@ add_action( 'plugins_loaded', 'ktpwp_ensure_terms_table', 7 );
 add_action( 'plugins_loaded', 'ktpwp_run_auto_migrations', 8 );
 
 // プラグイン再有効化時の自動マイグレーション
-add_action( 'admin_init', 'ktpwp_check_reactivation_migration' );
+// add_action( 'admin_init', 'ktpwp_check_reactivation_migration' ); // 関数が未定義のため一時的にコメントアウト
 
 // プラグイン更新時の自動マイグレーション
 add_action( 'upgrader_process_complete', 'ktpwp_plugin_upgrade_migration', 10, 2 );
 
 // 新規インストール検出と自動マイグレーション
-add_action( 'admin_init', 'ktpwp_detect_new_installation' );
-
-
+// add_action( 'admin_init', 'ktpwp_detect_new_installation' ); // 関数が未定義のため一時的にコメントアウト
 
 // 利用規約同意チェック
 add_action( 'admin_init', 'ktpwp_check_terms_agreement' );
 add_action( 'wp', 'ktpwp_check_terms_agreement' );
 
-// プラグイン更新時の自動マイグレーション
-add_action( 'upgrader_process_complete', 'ktpwp_plugin_upgrade_migration', 10, 2 );
+// 配布用の追加安全チェック
+add_action( 'init', 'ktpwp_distribution_safety_check', 1 );
 
 /**
  * 部署テーブルを作成する関数
@@ -970,11 +985,11 @@ function ktpwp_plugin_upgrade_migration( $upgrader, $hook_extra ) {
  * マイグレーション状態をチェックする関数
  */
 function ktpwp_check_migration_status() {
-    $current_db_version = get_option( 'ktpwp_db_version', '0.0.0' );
+    $current_db_version = get_option( 'ktpwp_db_version', '0.0' );
     $plugin_version = KANTANPRO_PLUGIN_VERSION;
     
     // 新規インストールの場合、データベースバージョンを更新
-    if ( $current_db_version === '0.0.0' || empty( $current_db_version ) ) {
+    if ( $current_db_version === '0.0' || empty( $current_db_version ) ) {
         update_option( 'ktpwp_db_version', $plugin_version );
         $current_db_version = $plugin_version;
     }
@@ -1257,6 +1272,56 @@ function ktpwp_check_database_integrity() {
 
     // チェック完了を記録（1時間有効）
     set_transient( 'ktpwp_db_integrity_checked', true, HOUR_IN_SECONDS );
+}
+
+/**
+ * データベースバージョンの同期（既存インストール対応）
+ */
+function ktpwp_sync_database_version() {
+    // 既に同期済みの場合はスキップ
+    if ( get_transient( 'ktpwp_db_version_synced' ) ) {
+        return;
+    }
+
+    $current_db_version = get_option( 'ktpwp_db_version', '0.0.0' );
+    $plugin_version = KANTANPRO_PLUGIN_VERSION;
+
+    if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+        error_log( 'KTPWP: Syncing database version. Current DB version: ' . $current_db_version . ', Plugin version: ' . $plugin_version );
+    }
+
+    // データベースバージョンが設定されていない場合、プラグインバージョンに同期
+    if ( $current_db_version === '0.0.0' || empty( $current_db_version ) ) {
+        // 既存のテーブルが存在するかチェック
+        global $wpdb;
+        $main_table = $wpdb->prefix . 'ktp_order';
+        $table_exists = $wpdb->get_var( "SHOW TABLES LIKE '$main_table'" );
+
+        if ( $table_exists ) {
+            // テーブルが存在する場合、既存インストールと判断してバージョンを同期
+            update_option( 'ktpwp_db_version', $plugin_version );
+            
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP: Database version synchronized to plugin version: ' . $plugin_version );
+            }
+        } else {
+            // テーブルが存在しない場合、新規インストール
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP: New installation detected, database version will be set during migration' );
+            }
+        }
+    } else {
+        // データベースバージョンが設定されている場合、比較チェック
+        if ( version_compare( $current_db_version, $plugin_version, '>' ) ) {
+            // データベースバージョンがプラグインバージョンより新しい場合、警告ログ
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP: Warning - Database version (' . $current_db_version . ') is newer than plugin version (' . $plugin_version . ')' );
+            }
+        }
+    }
+
+    // 同期完了フラグを設定（1時間有効）
+    set_transient( 'ktpwp_db_version_synced', true, HOUR_IN_SECONDS );
 }
 
 // デバッグログ: プラグイン読み込み開始
@@ -2533,7 +2598,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
     require_once __DIR__ . '/includes/ktp-migration-cli.php';
 }
 
-// プラグイン初期化時のマイグレーション実行
+// プラグイン初期化時のマイグレーション
 // add_action( 'init', 'ktpwp_ensure_department_migration' );
 
 // 管理画面での自動マイグレーション
@@ -2835,6 +2900,79 @@ function ktpwp_check_terms_on_shortcode() {
 }
 
 /**
+ * 配布用安全チェック機能
+ */
+function ktpwp_distribution_safety_check() {
+    // 1時間に1回だけ実行
+    if ( get_transient( 'ktpwp_distribution_safety_checked' ) ) {
+        return;
+    }
+
+    global $wpdb;
+
+    if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+        error_log( 'KTPWP: Running distribution safety check' );
+    }
+
+    $issues_found = false;
+
+    // 必須テーブルの存在チェック
+    $required_tables = array( 'ktp_order', 'ktp_client', 'ktp_staff', 'ktp_department' );
+    foreach ( $required_tables as $table_name ) {
+        $full_table_name = $wpdb->prefix . $table_name;
+        $table_exists = $wpdb->get_var( "SHOW TABLES LIKE '$full_table_name'" );
+        if ( ! $table_exists ) {
+            $issues_found = true;
+            break;
+        }
+    }
+
+    // バージョン同期チェック
+    $current_db_version = get_option( 'ktpwp_db_version', '0.0.0' );
+    $plugin_version = KANTANPRO_PLUGIN_VERSION;
+    
+    if ( version_compare( $current_db_version, $plugin_version, '<' ) ) {
+        $issues_found = true;
+    }
+
+    // 問題が見つかった場合の自動修復
+    if ( $issues_found ) {
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP Distribution Safety: Issues found, attempting repair' );
+        }
+
+        try {
+            // 基本テーブルの作成
+            if ( function_exists( 'ktp_table_setup' ) ) {
+                ktp_table_setup();
+            }
+
+            // 部署テーブル関連の修正
+            if ( function_exists( 'ktpwp_create_department_table' ) ) {
+                ktpwp_create_department_table();
+            }
+
+            // バージョン同期
+            if ( $current_db_version === '0.0.0' || version_compare( $current_db_version, $plugin_version, '<' ) ) {
+                update_option( 'ktpwp_db_version', $plugin_version );
+            }
+
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP Distribution Safety: Repair completed' );
+            }
+
+        } catch ( Exception $e ) {
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP Distribution Safety: Repair failed: ' . $e->getMessage() );
+            }
+        }
+    }
+
+    // チェック完了フラグを設定（1時間有効）
+    set_transient( 'ktpwp_distribution_safety_checked', true, HOUR_IN_SECONDS );
+}
+
+/**
  * セッション管理ヘルパー関数
  */
 
@@ -2985,15 +3123,15 @@ function ktpwp_admin_auto_migrations() {
         // 基本テーブル作成
         ktp_table_setup();
 
-        // 部署テーブルの作成
-        $department_table_created = ktpwp_create_department_table();
-
-        // 部署テーブルに選択状態カラムを追加
-        $column_added = ktpwp_add_department_selection_column();
-
-        // 顧客テーブルにselected_department_idカラムを追加
-        $client_column_added = ktpwp_add_client_selected_department_column();
-
+        // 部署関連テーブルの作成
+        ktpwp_create_department_table();
+        ktpwp_add_department_selection_column();
+        ktpwp_add_client_selected_department_column();
+        ktpwp_initialize_selected_department();
+        
+        // 利用規約テーブルの作成
+        ktpwp_ensure_terms_table();
+        
         // マイグレーションファイルの実行
         $migrations_dir = __DIR__ . '/includes/migrations';
         if ( is_dir( $migrations_dir ) ) {
@@ -3044,840 +3182,130 @@ function ktpwp_admin_auto_migrations() {
     set_transient( 'ktpwp_admin_migration_completed', true, DAY_IN_SECONDS );
 }
 
-
-
-
-
-/**
- * プラグイン詳細情報を提供
- */
-function ktpwp_plugin_information( $res, $action, $args ) {
-    // プラグイン情報の要求でない場合は処理しない
-    if ( $action !== 'plugin_information' ) {
-        return $res;
-    }
-
-    // 対象プラグインでない場合は処理しない（複数のスラッグパターンに対応）
-    $target_slugs = array( 'KantanPro', 'kantanpro', 'ktpwp' );
-    if ( ! isset( $args->slug ) || ! in_array( $args->slug, $target_slugs ) ) {
-        return $res;
-    }
-
-    // プラグイン情報を構築
-    $plugin_info = new stdClass();
-    $plugin_info->name = 'KantanPro';
-    $plugin_info->slug = 'KantanPro';
-    $plugin_info->version = KANTANPRO_PLUGIN_VERSION;
-    $plugin_info->author = '<a href="https://www.kantanpro.com/kantanpro-page">KantanPro</a>';
-    $plugin_info->homepage = 'https://www.kantanpro.com/';
-    $plugin_info->requires = '5.0';
-    $plugin_info->tested = '6.8.1';
-    $plugin_info->requires_php = '7.4';
-    $plugin_info->last_updated = date( 'Y-m-d', filemtime( __FILE__ ) );
-    $plugin_info->active_installs = false;
-    $plugin_info->downloaded = false;
-
-    // ヘッダー画像を設定
-    $plugin_info->banners = array(
-        'high' => KANTANPRO_PLUGIN_URL . 'images/default/header_bg_image.png',
-        'low' => KANTANPRO_PLUGIN_URL . 'images/default/header_bg_image.png',
-    );
-
-    // アイコンを設定
-    $plugin_info->icons = array(
-        '1x' => KANTANPRO_PLUGIN_URL . 'images/default/icon.png',
-        '2x' => KANTANPRO_PLUGIN_URL . 'images/default/icon.png',
-    );
-
-    // セクション情報を設定
-    $plugin_info->sections = array(
-        'description' => ktpwp_get_plugin_description(),
-        'changelog' => ktpwp_get_plugin_changelog(),
-    );
-
-    return $plugin_info;
-}
-add_filter( 'plugins_api', 'ktpwp_plugin_information', 10, 3 );
-
-/**
- * プラグインの説明を取得
- */
-function ktpwp_get_plugin_description() {
-    $description = '
-    <h3>KantanPro - ビジネスハブシステム</h3>
-    <p>KantanProは、WordPress上で以下の業務を一元管理できる多機能プラグインです。中小企業から大企業まで対応可能な包括的なビジネスハブシステムです。</p>
-    
-    <h4>🚀 主な機能</h4>
-    <ul>
-        <li><strong>📊 6つの管理タブ</strong> - 仕事リスト・伝票処理・顧客・サービス・協力会社・レポート</li>
-        <li><strong>📈 受注案件の進捗管理</strong> - 7段階（受注→進行中→完了→請求→支払い→ボツ）</li>
-        <li><strong>📄 受注書・請求書の作成・編集・PDF保存</strong> - 個別・一括出力対応</li>
-        <li><strong>👥 顧客・サービス・協力会社のマスター管理</strong> - 検索・ソート・ページネーション</li>
-        <li><strong>💬 スタッフチャット</strong> - 自動スクロール・削除連動・安定化</li>
-        <li><strong>📱 モバイル対応UI</strong> - gap→margin対応、iOS/Android実機対応</li>
-        <li><strong>🏢 部署管理機能</strong> - 顧客ごとの部署・担当者管理</li>
-        <li><strong>📋 利用規約管理機能</strong> - 同意ダイアログ・管理画面</li>
-        <li><strong>🔄 シンプル更新システム</strong> - WordPress標準の更新システムに最適化</li>
-        <li><strong>🔒 セキュリティ機能</strong> - XSS/CSRF/SQLi/権限管理/ファイル検証/ノンス/prepare文</li>
-        <li><strong>⚡ セッション管理最適化</strong> - REST API・AJAX・内部リクエスト対応</li>
-        <li><strong>📦 ページネーション機能</strong> - 全タブ・ポップアップ対応・一般設定連携</li>
-        <li><strong>📎 ファイル添付機能</strong> - ドラッグ&ドロップ・複数ファイル・自動クリーンアップ</li>
-        <li><strong>📅 完了日自動設定機能</strong> - 進捗変更時の自動処理</li>
-        <li><strong>⚠️ 納期警告機能</strong> - 期限管理・アラート表示</li>
-        <li><strong>💰 商品管理機能</strong> - 価格・数量・単位管理</li>
-        <li><strong>👤 スタッフアバター表示機能</strong> - ログイン中スタッフの可視化</li>
-        <li><strong>📚 プラグインリファレンス機能</strong> - 包括的なヘルプシステム</li>
-        <li><strong>💝 寄付機能</strong> - Stripe決済・セキュアな決済処理・進捗管理・自動メール送信</li>
-        <li><strong>🔄 自動マイグレーション機能</strong> - データベース更新の安定化</li>
-        <li><strong>🔍 データベース整合性チェック機能</strong> - データ品質向上</li>
-        <li><strong>💰 消費税対応機能</strong> - 軽減税率・税区分対応の強化</li>
-    </ul>
-    
-    <h4>💡 特徴</h4>
-    <ul>
-        <li>直感的で使いやすいユーザーインターフェース</li>
-        <li>高いカスタマイズ性と拡張性</li>
-        <li>自動更新機能による最新機能の提供</li>
-        <li>詳細なログ機能とデバッグサポート</li>
-        <li>WordPressの標準機能との完全な互換性</li>
-        <li>レスポンシブデザインでモバイル対応</li>
-        <li>WordPress標準の更新システムに完全対応</li>
-        <li>軽量で安定性を重視した設計</li>
-        <li>包括的なセキュリティ対策</li>
-        <li>リアルタイムコミュニケーション機能</li>
-        <li>消費税計算の自動化と精度向上</li>
-    </ul>
-    
-    <h4>🔧 使用方法</h4>
-    <p>プラグインを有効化後、ショートコード <code>[ktpwp_all_tab]</code> を固定ページに設置してご利用ください。初回利用時には利用規約への同意が必要です。</p>
-    
-    <h4>⚙️ システム要件</h4>
-    <ul>
-        <li>WordPress 5.0以上（推奨: 最新版）</li>
-        <li>PHP 7.4以上（推奨: PHP 8.0以上）</li>
-        <li>MySQL 5.6以上 または MariaDB 10.0以上</li>
-        <li>メモリ: 最低128MB（推奨: 256MB以上）</li>
-        <li>推奨PHP拡張: GD（画像処理用）</li>
-    </ul>
-    
-    <h4>🆕 最新の改善点（1.1.0(preview)）</h4>
-    <ul>
-        <li>プラグイン説明文の大幅改善（機能詳細の追加）</li>
-        <li>管理画面でのプラグイン情報表示の最適化</li>
-        <li>プラグインリファレンス機能の強化</li>
-        <li>セキュリティ機能のさらなる改善</li>
-        <li>パフォーマンス最適化とUI/UX改善</li>
-        <li>エラーハンドリングの強化</li>
-        <li>データベース構造の最適化</li>
-        <li>寄付機能の安定化と改善</li>
-        <li>セッション管理の最適化</li>
-        <li>ファイル添付機能の強化</li>
-        <li>自動マイグレーション機能の改善</li>
-        <li>データベース整合性チェック機能の強化</li>
-        <li>消費税対応機能の包括的改善</li>
-        <li>内税顧客の請求項目表示修正</li>
-        <li>税区分ラベルの統一</li>
-        <li>消費税計算ロジックの最適化</li>
-    </ul>
-    
-    <h4>📞 サポート</h4>
-    <p>技術サポート、カスタマイズのご相談については、<a href="https://www.kantanpro.com/kantanpro-page" target="_blank">公式サイト</a>をご確認ください。</p>
-    
-    <h4>🎯 対象ユーザー</h4>
-    <p>中小企業、フリーランス、プロジェクトマネージャー、営業チーム、カスタマーサポートチームなど、業務効率化を求めるあらゆる組織に最適です。</p>
-    ';
-    
-    return $description;
-}
-
-/**
- * プラグインの更新履歴を取得（詳細版）
- */
-function ktpwp_get_plugin_changelog() {
-    $changelog = '
-    <h3>変更履歴</h3>
-    <p>KantanProプラグインの主要な更新履歴をご紹介します。</p>
-    
-    <h4>1.1.3(preview) - 2025年7月16日</h4>
-    <ul>
-        <li><strong>更新通知の改善</strong> - WordPress 6.9.1対応の強化</li>
-        <li><strong>プラグイン更新チェック機能の最適化</strong> - 更新確認の安定性向上</li>
-        <li><strong>管理画面での更新情報表示の改善</strong> - ユーザビリティ向上</li>
-        <li><strong>更新通知の安定性向上</strong> - エラーハンドリングの強化</li>
-    </ul>
-    
-    <h4>1.1.2(preview) - 2025年7月16日</h4>
-    <ul>
-        <li><strong>利益計算の改善</strong> - 計算精度の向上</li>
-        <li><strong>請求書発行警告マークの表示タイミングの改善</strong> - ユーザビリティ向上</li>
-    </ul>
-    
-    <h4>1.1.1(preview) - 2025年7月16日</h4>
-    <ul>
-        <li><strong>利益計算の改善</strong> - 計算精度の向上</li>
-        <li><strong>請求書発行警告マークの表示タイミングの改善</strong> - ユーザビリティ向上</li>
-        <li><strong>更新通知の改善</strong> - WordPress 6.9.1対応</li>
-        <li><strong>プラグイン説明文の大幅改善</strong> - 機能詳細の追加</li>
-        <li><strong>管理画面でのプラグイン情報表示の最適化</strong> - ユーザビリティ向上</li>
-        <li><strong>プラグインリファレンス機能の強化</strong> - ヘルプシステム改善</li>
-        <li><strong>セキュリティ機能のさらなる改善</strong> - セキュリティ強化</li>
-        <li><strong>パフォーマンス最適化とUI/UX改善</strong> - 操作性向上</li>
-        <li><strong>エラーハンドリングの強化</strong> - 安定性向上</li>
-        <li><strong>データベース構造の最適化</strong> - パフォーマンス向上</li>
-        <li><strong>寄付機能の安定化と改善</strong> - 機能強化</li>
-        <li><strong>セッション管理の最適化</strong> - パフォーマンス向上</li>
-        <li><strong>ファイル添付機能の強化</strong> - 機能改善</li>
-        <li><strong>自動マイグレーション機能の改善</strong> - データベース更新の安定化</li>
-        <li><strong>データベース整合性チェック機能の強化</strong> - データ品質向上</li>
-        <li><strong>消費税対応機能の包括的改善</strong> - 軽減税率・税区分対応の強化</li>
-        <li><strong>内税顧客の請求項目表示修正</strong> - 表示形式の統一化</li>
-        <li><strong>税区分ラベルの統一</strong> - 「内税｜外税」表示への変更</li>
-        <li><strong>消費税計算ロジックの最適化</strong> - 計算精度の向上</li>
-    </ul>
-    
-    <h4>1.1.0(preview) - 2025年7月15日</h4>
-    <ul>
-        <li><strong>プラグイン説明文の大幅改善</strong> - 機能詳細の追加</li>
-        <li><strong>管理画面でのプラグイン情報表示の最適化</strong> - ユーザビリティ向上</li>
-        <li><strong>プラグインリファレンス機能の強化</strong> - ヘルプシステム改善</li>
-        <li><strong>セキュリティ機能のさらなる改善</strong> - セキュリティ強化</li>
-        <li><strong>パフォーマンス最適化とUI/UX改善</strong> - 操作性向上</li>
-        <li><strong>エラーハンドリングの強化</strong> - 安定性向上</li>
-        <li><strong>データベース構造の最適化</strong> - パフォーマンス向上</li>
-        <li><strong>寄付機能の安定化と改善</strong> - 機能強化</li>
-        <li><strong>セッション管理の最適化</strong> - パフォーマンス向上</li>
-        <li><strong>ファイル添付機能の強化</strong> - 機能改善</li>
-        <li><strong>自動マイグレーション機能の改善</strong> - データベース更新の安定化</li>
-        <li><strong>データベース整合性チェック機能の強化</strong> - データ品質向上</li>
-        <li><strong>消費税対応機能の包括的改善</strong> - 軽減税率・税区分対応の強化</li>
-        <li><strong>内税顧客の請求項目表示修正</strong> - 表示形式の統一化</li>
-        <li><strong>税区分ラベルの統一</strong> - 「内税｜外税」表示への変更</li>
-        <li><strong>消費税計算ロジックの最適化</strong> - 計算精度の向上</li>
-    </ul>
-    
-    <h4>1.0.10(preview) - 2025年7月13日</h4>
-    <ul>
-        <li><strong>プラグイン説明文の大幅改善</strong> - 機能詳細の追加</li>
-        <li><strong>管理画面でのプラグイン情報表示の最適化</strong> - ユーザビリティ向上</li>
-        <li><strong>プラグインリファレンス機能の強化</strong> - ヘルプシステム改善</li>
-        <li><strong>セキュリティ機能のさらなる改善</strong> - セキュリティ強化</li>
-        <li><strong>パフォーマンス最適化とUI/UX改善</strong> - 操作性向上</li>
-        <li><strong>エラーハンドリングの強化</strong> - 安定性向上</li>
-        <li><strong>データベース構造の最適化</strong> - パフォーマンス向上</li>
-        <li><strong>寄付機能の安定化と改善</strong> - 機能強化</li>
-        <li><strong>セッション管理の最適化</strong> - パフォーマンス向上</li>
-        <li><strong>ファイル添付機能の強化</strong> - 機能改善</li>
-    </ul>
-    
-    <h4>1.0.9(preview) - 2025年7月</h4>
-    <ul>
-        <li><strong>寄付機能の実装</strong> - Stripe決済システム</li>
-        <li><strong>寄付進捗管理機能の追加</strong> - リアルタイム進捗表示</li>
-        <li><strong>寄付完了後の自動メール送信機能</strong> - 自動通知システム</li>
-        <li><strong>フロントエンド通知システムの実装</strong> - ユーザー体験向上</li>
-        <li><strong>管理画面での寄付履歴確認機能</strong> - 管理機能強化</li>
-        <li><strong>セキュリティ機能のさらなる強化</strong> - セキュリティ向上</li>
-        <li><strong>パフォーマンス最適化とUI/UX改善</strong> - 操作性向上</li>
-        <li><strong>エラーハンドリングの強化</strong> - 安定性向上</li>
-        <li><strong>データベース構造の最適化</strong> - パフォーマンス向上</li>
-    </ul>
-    
-    <h4>1.0.8(preview) - 2025年3月</h4>
-    <ul>
-        <li><strong>管理画面でのプラグイン情報表示の最適化</strong> - ユーザビリティ向上</li>
-        <li><strong>プラグインリファレンス機能の強化</strong> - ヘルプシステム改善</li>
-        <li><strong>セキュリティ機能のさらなる改善</strong> - セキュリティ強化</li>
-        <li><strong>パフォーマンス最適化とUI/UX改善</strong> - 操作性向上</li>
-        <li><strong>エラーハンドリングの強化</strong> - 安定性向上</li>
-        <li><strong>データベース構造の最適化</strong> - パフォーマンス向上</li>
-    </ul>
-    
-    <h4>1.0.7(preview) - 2025年1月</h4>
-    <ul>
-        <li><strong>プラグイン説明文の大幅改善</strong> - 機能詳細の追加</li>
-        <li><strong>管理画面でのプラグイン情報表示の最適化</strong> - ユーザビリティ向上</li>
-        <li><strong>プラグインリファレンス機能の強化</strong> - ヘルプシステム改善</li>
-        <li><strong>セキュリティ機能のさらなる改善</strong> - セキュリティ強化</li>
-        <li><strong>パフォーマンス最適化とUI/UX改善</strong> - 操作性向上</li>
-        <li><strong>エラーハンドリングの強化</strong> - 安定性向上</li>
-        <li><strong>データベース構造の最適化</strong> - パフォーマンス向上</li>
-        <li><strong>消費税対応機能の実装</strong> - 軽減税率（8%・10%）対応</li>
-        <li><strong>税区分管理機能の追加</strong> - 内税・外税の管理</li>
-        <li><strong>一括請求書の消費税対応</strong> - 顧客タブでの消費税計算</li>
-        <li><strong>税率カラムの追加</strong> - 商品・サービス・請求項目への税率設定</li>
-        <li><strong>消費税計算ロジックの実装</strong> - 内税・外税の正確な計算</li>
-        <li><strong>税区分ラベルの統一</strong> - 「内税｜外税」表示への変更</li>
-        <li><strong>内税顧客の請求項目表示修正</strong> - 表示形式の統一化</li>
-        <li><strong>消費税表示の最適化</strong> - 請求書・受注書での表示改善</li>
-    </ul>
-    
-    <h4>1.0.6(preview) - 2024年12月</h4>
-    <ul>
-        <li><strong>スタッフアバター表示機能の追加</strong> - ログイン中スタッフの可視化</li>
-        <li><strong>完了日自動設定機能の実装</strong> - 進捗変更時の自動処理</li>
-        <li><strong>納期警告機能の実装</strong> - 期限管理・アラート表示</li>
-        <li><strong>商品管理機能の大幅改善</strong> - DECIMAL型・インデックス最適化</li>
-        <li><strong>ページネーション機能の全面実装</strong> - サービス選択ポップアップ対応</li>
-        <li><strong>ファイル添付機能の追加</strong> - ドラッグ&ドロップ・複数ファイル対応</li>
-        <li><strong>スタッフチャット機能の強化</strong> - 自動スクロール・AJAX送信・キーボードショートカット</li>
-        <li><strong>レスポンシブデザインの改善</strong> - モバイル対応強化</li>
-        <li><strong>セキュリティ機能の追加強化</strong> - XSS/CSRF/SQLi対策</li>
-        <li><strong>パフォーマンス最適化とUI/UX改善</strong> - 操作性向上</li>
-    </ul>
-    
-    <h4>1.0.5(preview) - 2024年11月</h4>
-    <ul>
-        <li><strong>シンプルな更新システムを実装</strong></li>
-        <li><strong>WordPress標準の更新システムに完全対応</strong></li>
-        <li><strong>軽量化を実現し大幅なパフォーマンス向上</strong></li>
-        <li><strong>不要なライブラリを削除</strong>（約90%のサイズ削減）</li>
-        <li><strong>安定性とパフォーマンスの大幅向上</strong></li>
-        <li><strong>保守性の高いアーキテクチャを実現</strong></li>
-    </ul>
-    
-    <h4>1.0.4(preview) - 2024年10月</h4>
-    <ul>
-        <li>GitHub更新通知機能の修復・強化</li>
-        <li>管理画面更新チェックツールの追加（ツール > KantanPro更新チェック）</li>
-        <li>プラグインリストでの更新通知表示機能</li>
-        <li>GitHubリポジトリURLの修正（https://github.com/KantanPro/freeKTP）</li>
-        <li>デバッグツールの追加・強化（GitHub API連携状況確認）</li>
-        <li>プラグイン更新キャッシュクリア機能</li>
-        <li>手動更新チェック機能（ワンクリック確認）</li>
-        <li>更新通知バナーの改善（管理画面表示）</li>
-    </ul>
-    
-    <h4>1.0.3(preview) - 2024年9月</h4>
-    <ul>
-        <li>最新プレビュー版リリース</li>
-        <li>ページネーション機能の全面実装（全タブ・ポップアップ対応）</li>
-        <li>ファイル添付機能追加（ドラッグ&ドロップ・複数ファイル対応）</li>
-        <li>完了日自動設定機能実装（進捗変更時の自動処理）</li>
-        <li>納期警告機能実装（期限管理・アラート表示）</li>
-        <li>商品管理機能改善（価格・数量・単位管理強化）</li>
-        <li>スタッフチャット機能強化（AJAX送信・自動スクロール・キーボードショートカット）</li>
-        <li>レスポンシブデザイン改善（モバイル対応強化）</li>
-        <li>セキュリティ機能の追加強化</li>
-        <li>パフォーマンス最適化</li>
-    </ul>
-    
-    <h4>1.0.2(preview) - 2024年8月</h4>
-    <ul>
-        <li>プレビュー版リリース</li>
-        <li>6つの管理タブ（仕事リスト・伝票処理・顧客・サービス・協力会社・レポート）</li>
-        <li>受注案件の進捗管理（7段階）</li>
-        <li>受注書・請求書のPDF出力機能</li>
-        <li>顧客・サービス・協力会社のマスター管理</li>
-        <li>スタッフチャット機能</li>
-        <li>モバイル対応UI（レスポンシブデザイン）</li>
-        <li>部署管理機能</li>
-        <li>利用規約管理機能</li>
-        <li>自動更新機能（GitHub連携）</li>
-        <li>動的更新履歴システム</li>
-        <li>セキュリティ機能の強化</li>
-        <li>セッション管理最適化</li>
-    </ul>
-    
-    <h4>🔧 技術的な改善点</h4>
-    <ul>
-        <li><strong>WordPress標準準拠</strong> - コーディング規約に完全準拠</li>
-        <li><strong>セキュリティ強化</strong> - nonce認証、データサニタイゼーション、権限チェック</li>
-        <li><strong>パフォーマンス最適化</strong> - キャッシュ機能、効率的なクエリ、メモリ使用量削減</li>
-        <li><strong>レスポンシブデザイン</strong> - すべてのデバイスで最適な表示</li>
-        <li><strong>アクセシビリティ向上</strong> - WAI-ARIA対応、キーボード操作対応</li>
-        <li><strong>消費税計算の精度向上</strong> - 軽減税率・税区分対応の強化</li>
-    </ul>
-    
-    <p><strong>現在のバージョン:</strong> ' . esc_html( KANTANPRO_PLUGIN_VERSION ) . '</p>
-    <p><em>継続的な改善により、より使いやすく安定したプラグインを提供いたします。</em></p>
-    ';
-    
-    return $changelog;
-}
-
-
-
-
-
-
-
-/**
- * 管理画面用のスタイルを追加（プラグイン詳細モーダル用）
- */
-function ktpwp_admin_plugin_styles() {
-    $screen = get_current_screen();
-    if ( $screen && $screen->id === 'plugins' ) {
-        ?>
-        <style>
-        .plugin-card-KantanPro .plugin-icon img,
-        .plugin-card-kantanpro .plugin-icon img {
-            width: 128px;
-            height: 128px;
-            object-fit: cover;
-        }
-        
-        #plugin-information-content .plugin-version-author-uri {
-            margin-bottom: 15px;
-        }
-        
-        #plugin-information-content .plugin-version-author-uri a {
-            color: #0073aa;
-            text-decoration: none;
-        }
-        
-        #plugin-information-content .plugin-version-author-uri a:hover {
-            text-decoration: underline;
-        }
-        
-        #plugin-information-header {
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-        }
-        
-        #plugin-information-header.with-banner {
-            background-image: url('<?php echo esc_url( KANTANPRO_PLUGIN_URL . 'images/default/header_bg_image.png' ); ?>');
-        }
-        
-        /* WordPress標準のプラグイン詳細ポップアップのスタイル */
-        #TB_window {
-            max-width: 772px !important;
-            max-height: 600px !important;
-        }
-        
-        #TB_ajaxContent {
-            width: 100% !important;
-            height: 100% !important;
-            overflow: auto;
-        }
-        
-        #plugin-information {
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-        }
-        
-        #plugin-information-content {
-            height: calc(100% - 200px);
-            overflow-y: auto;
-            padding: 20px;
-        }
-        
-        #plugin-information-header {
-            height: 200px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px;
-            display: flex;
-            align-items: center;
-        }
-        
-        #plugin-information-header .plugin-icon {
-            margin-right: 20px;
-        }
-        
-        #plugin-information-header .plugin-icon img {
-            width: 80px;
-            height: 80px;
-            border-radius: 8px;
-        }
-        
-        #plugin-information-header .plugin-info h2 {
-            margin: 0 0 10px 0;
-            font-size: 24px;
-            color: white;
-        }
-        
-        #plugin-information-header .plugin-info p {
-            margin: 5px 0;
-            opacity: 0.9;
-        }
-        
-        #plugin-information-content h3 {
-            color: #333;
-            margin-top: 0;
-            margin-bottom: 15px;
-            font-size: 18px;
-        }
-        
-        #plugin-information-content p {
-            line-height: 1.6;
-            color: #555;
-        }
-        
-        #plugin-information-content ul {
-            margin: 15px 0;
-            padding-left: 20px;
-        }
-        
-        #plugin-information-content li {
-            margin-bottom: 8px;
-            line-height: 1.5;
-        }
-        
-        #plugin-information-content code {
-            background: #f1f1f1;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-family: monospace;
-        }
-        </style>
-        <?php
-    }
-}
-add_action( 'admin_head', 'ktpwp_admin_plugin_styles' );
-
-/**
- * プラグイン詳細モーダルのヘッダー画像を設定
- */
-function ktpwp_plugin_information_header() {
-    ?>
-    <script>
-    jQuery(document).ready(function($) {
-        // プラグイン詳細モーダルが開かれた時の処理
-        $(document).on('click', '.open-plugin-details-modal', function(e) {
-            var plugin = $(this).data('plugin');
-            
-            if (plugin === 'KantanPro') {
-                // モーダルが開かれた後の処理を設定
-                setTimeout(function() {
-                    $('#plugin-information-header').addClass('with-banner');
-                }, 200);
-            }
-        });
-        
-        // ThickBoxが開かれた時の処理
-        $(document).on('tb_show', function() {
-            setTimeout(function() {
-                $('#plugin-information-header').addClass('with-banner');
-            }, 100);
-        });
-    });
-    </script>
-    <?php
-}
-add_action( 'admin_footer', 'ktpwp_plugin_information_header' );
-
-// === プラグインリスト表示の修正 ===
-add_filter( 'plugin_row_meta', 'ktpwp_plugin_row_meta', 10, 2 );
-
-function ktpwp_plugin_row_meta( $links, $file ) {
-    if ( plugin_basename( __FILE__ ) === $file ) {
-        // 既存のリンクをフィルタリングして「プラグインのサイトを表示」を削除
-        $filtered_links = array();
-        foreach ( $links as $link ) {
-            // 「プラグインのサイトを表示」リンクを除外
-            if ( strpos( $link, 'plugin-install.php' ) === false && 
-                 strpos( $link, 'プラグインのサイトを表示' ) === false ) {
-                $filtered_links[] = $link;
-            }
-        }
-        
-        // WordPress標準の詳細ポップアップを使用するリンクを追加
-        $details_link = '<a href="' . admin_url( 'plugin-install.php?tab=plugin-information&plugin=KantanPro&TB_iframe=true&width=772&height=600' ) . '" class="thickbox open-plugin-details-modal" data-plugin="KantanPro">詳細を表示</a>';
-        $filtered_links[] = $details_link;
-        
-        return $filtered_links;
-    }
-    return $links;
-}
-
-// 既存の ktpwp_plugin_information 関数が使用されます
-
-// === WP-CLIコマンド ===
-
-/**
- * WP-CLIコマンドの登録
- */
-if ( defined( 'WP_CLI' ) && WP_CLI ) {
-    WP_CLI::add_command( 'ktpwp migration', 'ktpwp_cli_migration' );
-    WP_CLI::add_command( 'ktpwp status', 'ktpwp_cli_status' );
-    WP_CLI::add_command( 'ktpwp reset-migration', 'ktpwp_cli_reset_migration' );
-}
-
-/**
- * WP-CLI: マイグレーション実行コマンド
- */
-function ktpwp_cli_migration( $args, $assoc_args ) {
-    WP_CLI::log( 'KantanPro マイグレーションを開始します...' );
-    
-    try {
-        ktpwp_run_auto_migrations();
-        
-        $status = ktpwp_check_migration_status();
-        
-        if ( ! $status['needs_migration'] ) {
-            WP_CLI::success( 'マイグレーションが正常に完了しました。' );
-            WP_CLI::log( '現在のDBバージョン: ' . $status['current_db_version'] );
-            WP_CLI::log( 'プラグインバージョン: ' . $status['plugin_version'] );
-        } else {
-            WP_CLI::warning( 'マイグレーションが完了しましたが、まだ更新が必要な可能性があります。' );
-        }
-        
-    } catch ( Exception $e ) {
-        WP_CLI::error( 'マイグレーション中にエラーが発生しました: ' . $e->getMessage() );
-    }
-}
-
-/**
- * WP-CLI: マイグレーション状態確認コマンド
- */
-function ktpwp_cli_status( $args, $assoc_args ) {
-    $status = ktpwp_check_migration_status();
-    
-    WP_CLI::log( '=== KantanPro マイグレーション状態 ===' );
-    WP_CLI::log( '現在のDBバージョン: ' . $status['current_db_version'] );
-    WP_CLI::log( 'プラグインバージョン: ' . $status['plugin_version'] );
-    WP_CLI::log( 'マイグレーション必要: ' . ( $status['needs_migration'] ? 'はい' : 'いいえ' ) );
-    WP_CLI::log( '最終マイグレーション: ' . $status['last_migration'] );
-    WP_CLI::log( '有効化完了: ' . ( $status['activation_completed'] ? 'はい' : 'いいえ' ) );
-    WP_CLI::log( 'アップデート完了: ' . ( $status['upgrade_completed'] ? 'はい' : 'いいえ' ) );
-    
-    if ( $status['migration_error'] ) {
-        WP_CLI::warning( 'マイグレーションエラー: ' . $status['migration_error'] );
-    }
-    
-    // マイグレーションファイルの状態を表示
-    $migrations_dir = __DIR__ . '/includes/migrations';
-    if ( is_dir( $migrations_dir ) ) {
-        $files = glob( $migrations_dir . '/*.php' );
-        if ( $files ) {
-            WP_CLI::log( '=== マイグレーションファイル ===' );
-            sort( $files );
-            foreach ( $files as $file ) {
-                $filename = basename( $file, '.php' );
-                $migration_key = 'ktpwp_migration_' . $filename . '_completed';
-                $completed = get_option( $migration_key, false );
-                WP_CLI::log( $filename . ': ' . ( $completed ? '完了' : '未実行' ) );
-            }
-        }
-    }
-}
-
-/**
- * WP-CLI: マイグレーション状態リセットコマンド
- */
-function ktpwp_cli_reset_migration( $args, $assoc_args ) {
-    if ( ! isset( $assoc_args['confirm'] ) || $assoc_args['confirm'] !== 'yes' ) {
-        WP_CLI::error( 'このコマンドは危険です。実行するには --confirm=yes を追加してください。' );
-        return;
-    }
-    
-    WP_CLI::log( 'マイグレーション状態をリセットします...' );
-    
-    // マイグレーション完了フラグを削除
-    global $wpdb;
-    $options = $wpdb->get_results( "SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE 'ktpwp_migration_%_completed'" );
-    
-    foreach ( $options as $option ) {
-        delete_option( $option->option_name );
-    }
-    
-    // その他のマイグレーション関連オプションをリセット
-    delete_option( 'ktpwp_db_version' );
-    delete_option( 'ktpwp_last_migration_timestamp' );
-    delete_option( 'ktpwp_migration_error' );
-    
-    WP_CLI::success( 'マイグレーション状態がリセットされました。' );
-    WP_CLI::log( '次回のプラグイン読み込み時にマイグレーションが再実行されます。' );
-}
-
-/**
- * データベースバージョンの同期処理
- */
-function ktpwp_sync_database_version() {
-    $current_db_version = get_option( 'ktpwp_db_version', '0.0.0' );
-    $plugin_version = KANTANPRO_PLUGIN_VERSION;
-    
-    // データベースバージョンが設定されていない場合、またはプラグインバージョンと異なる場合
-    if ( $current_db_version === '0.0.0' || empty( $current_db_version ) || $current_db_version !== $plugin_version ) {
-        // プラグインが正常に動作している場合は、バージョンを同期
-        if ( get_option( 'ktpwp_activation_completed', false ) ) {
-            update_option( 'ktpwp_db_version', $plugin_version );
-            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP: データベースバージョンを同期しました: ' . $plugin_version );
-            }
-        }
-    }
-}
-
-/**
- * 新規インストールを検出し、自動マイグレーションを実行
- */
-function ktpwp_detect_new_installation() {
-    // 既にチェック済みの場合はスキップ
-    if ( get_transient( 'ktpwp_new_installation_checked' ) ) {
-        return;
-    }
-
-    // 新規インストールかどうかをチェック
-    $activation_completed = get_option( 'ktpwp_activation_completed', false );
-    $db_version = get_option( 'ktpwp_db_version', '0.0.0' );
-    
-    if ( ! $activation_completed || $db_version === '0.0.0' ) {
-        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP: New installation detected, running initial migration' );
-        }
-
-        try {
-            // 新規インストール用の完全マイグレーションを実行
-            ktpwp_run_complete_migration();
-            
-            // 新規インストール完了フラグを設定
-            update_option( 'ktpwp_activation_completed', true );
-            update_option( 'ktpwp_db_version', KANTANPRO_PLUGIN_VERSION );
-            update_option( 'ktpwp_installation_timestamp', current_time( 'mysql' ) );
-            
-            // 新規インストール通知を設定
-            set_transient( 'ktpwp_new_installation_message', 'KantanProプラグインが正常にインストールされました。すべての機能が利用可能です。', 60 );
-            
-            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP: New installation migration completed successfully' );
-            }
-            
-        } catch ( Exception $e ) {
-            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP: New installation migration failed: ' . $e->getMessage() );
-            }
-            
-            // エラー通知を設定
-            set_transient( 'ktpwp_new_installation_error', 'プラグインの初期化中にエラーが発生しました。プラグインを再有効化してください。', 60 );
-        }
-    }
-    
-    // チェック完了フラグを設定（1時間有効）
-    set_transient( 'ktpwp_new_installation_checked', true, HOUR_IN_SECONDS );
-}
-
-/**
- * プラグイン再有効化時の自動マイグレーション
- */
-function ktpwp_check_reactivation_migration() {
-    // 再有効化フラグをチェック
-    $reactivation_flag = get_transient( 'ktpwp_reactivation_required' );
-    
-    if ( $reactivation_flag ) {
-        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP: Reactivation detected, running migration' );
-        }
-
-        try {
-            // 再有効化時の完全マイグレーションを実行
-            ktpwp_run_complete_migration();
-            
-            // 再有効化完了フラグを設定
-            update_option( 'ktpwp_reactivation_completed', true );
-            update_option( 'ktpwp_reactivation_timestamp', current_time( 'mysql' ) );
-            
-            // 再有効化通知を設定
-            set_transient( 'ktpwp_reactivation_message', 'KantanProプラグインが正常に再有効化されました。データベースが最新の状態に更新されました。', 60 );
-            
-            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP: Reactivation migration completed successfully' );
-            }
-            
-        } catch ( Exception $e ) {
-            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP: Reactivation migration failed: ' . $e->getMessage() );
-            }
-            
-            // エラー通知を設定
-            set_transient( 'ktpwp_reactivation_error', 'プラグインの再有効化中にエラーが発生しました。詳細はログを確認してください。', 60 );
-        }
-        
-        // 再有効化フラグを削除
-        delete_transient( 'ktpwp_reactivation_required' );
-    }
-}
-
-/**
- * 完全マイグレーションを実行（新規インストール・再有効化・アップデート用）
- */
-function ktpwp_run_complete_migration() {
+// 包括的プラグイン有効化処理
+function ktpwp_comprehensive_activation() {
     if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-        error_log( 'KTPWP: Starting complete migration' );
+        error_log( 'KTPWP: 包括的プラグイン有効化処理を開始' );
     }
 
     try {
-        // 1. 基本テーブル作成
-        ktp_table_setup();
+        // 1. 寄付機能テーブルの作成
+        ktpwp_donation_activation();
         
-        // 2. 部署関連テーブルの作成
-        ktpwp_create_department_table();
-        ktpwp_add_department_selection_column();
-        ktpwp_add_client_selected_department_column();
-        ktpwp_initialize_selected_department();
+        // 2. 完全マイグレーションの実行
+        if ( function_exists('ktpwp_run_complete_migration') ) {
+            ktpwp_run_complete_migration();
+        } else {
+            // フォールバック: 基本的なマイグレーション
+            if ( function_exists('ktpwp_run_auto_migrations') ) {
+                ktpwp_run_auto_migrations();
+            }
+        }
         
-        // 3. 利用規約テーブルの作成
-        ktpwp_ensure_terms_table();
-        
-        // 4. 適格請求書ナンバー機能のマイグレーション（確実に実行）
-        ktpwp_run_qualified_invoice_migration();
-        
-        // 5. 自動マイグレーションの実行
-        ktpwp_run_auto_migrations();
-        
-        // 6. データベース整合性チェックと修復
-        ktpwp_check_database_integrity();
-        
-        // 7. 追加のテーブル構造修正
-        ktpwp_fix_table_structures();
-        
-        // 8. 既存データの修復
-        ktpwp_repair_existing_data();
-        
-        // 9. プラグインのバージョン情報を保存
+        // 3. 有効化完了フラグの設定
+        update_option( 'ktpwp_activation_completed', true );
+        update_option( 'ktpwp_activation_timestamp', current_time( 'mysql' ) );
         update_option( 'ktpwp_version', KANTANPRO_PLUGIN_VERSION );
         update_option( 'ktpwp_db_version', KANTANPRO_PLUGIN_VERSION );
-        update_option( 'ktpwp_last_migration_timestamp', current_time( 'mysql' ) );
+        
+        // 4. 有効化成功通知の設定
+        set_transient( 'ktpwp_activation_success', 'KantanProプラグインが正常に有効化されました。', 60 );
         
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP: Complete migration finished successfully' );
+            error_log( 'KTPWP: 包括的プラグイン有効化処理が正常に完了' );
         }
-        
-        return true;
         
     } catch ( Exception $e ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP: Complete migration failed: ' . $e->getMessage() );
+            error_log( 'KTPWP: プラグイン有効化処理でエラーが発生: ' . $e->getMessage() );
         }
         
         // エラーが発生した場合でも基本的な設定は保存
         update_option( 'ktpwp_version', KANTANPRO_PLUGIN_VERSION );
         update_option( 'ktpwp_db_version', KANTANPRO_PLUGIN_VERSION );
-        update_option( 'ktpwp_migration_error', $e->getMessage() );
         
-        return false;
+        // エラー通知を設定
+        set_transient( 'ktpwp_activation_error', 'プラグインの有効化中にエラーが発生しました。管理者にお問い合わせください。', 300 );
     }
 }
 
 /**
- * プラグイン無効化時の処理
+ * 配布版用の管理画面通知機能
+ * マイグレーション状態と手動実行オプションを提供
  */
-function ktpwp_plugin_deactivation() {
-    if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-        error_log( 'KTPWP: プラグイン無効化処理を開始' );
-    }
+add_action( 'admin_notices', 'ktpwp_distribution_admin_notices' );
 
-    try {
-        // 無効化フラグを設定
-        update_option( 'ktpwp_deactivation_timestamp', current_time( 'mysql' ) );
-        
-        // 再有効化時にマイグレーションを実行するためのフラグを設定
-        set_transient( 'ktpwp_reactivation_required', true, DAY_IN_SECONDS );
-        
-        // 一時的なクリーンアップ処理
-        ktpwp_unschedule_temp_file_cleanup();
-        
-        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP: プラグイン無効化処理が正常に完了' );
+function ktpwp_distribution_admin_notices() {
+    if ( ! current_user_can( 'manage_options' ) ) {
+        return;
+    }
+    
+    // 有効化成功通知
+    if ( $success_message = get_transient( 'ktpwp_activation_success' ) ) {
+        echo '<div class="notice notice-success is-dismissible">';
+        echo '<p><strong>KantanPro:</strong> ' . esc_html( $success_message ) . '</p>';
+        echo '</div>';
+        delete_transient( 'ktpwp_activation_success' );
+    }
+    
+    // 有効化エラー通知
+    if ( $error_message = get_transient( 'ktpwp_activation_error' ) ) {
+        echo '<div class="notice notice-error is-dismissible">';
+        echo '<p><strong>KantanPro:</strong> ' . esc_html( $error_message ) . '</p>';
+        echo '<p><a href="' . esc_url( add_query_arg( 'ktpwp_manual_migration', '1' ) ) . '" class="button">手動マイグレーション実行</a></p>';
+        echo '</div>';
+        delete_transient( 'ktpwp_activation_error' );
+    }
+    
+    // 手動マイグレーション実行
+    if ( isset( $_GET['ktpwp_manual_migration'] ) && $_GET['ktpwp_manual_migration'] === '1' ) {
+        if ( wp_verify_nonce( $_GET['_wpnonce'] ?? '', 'ktpwp_manual_migration' ) ) {
+            ktpwp_execute_manual_migration();
+        } else {
+            // nonceが無い場合は確認画面を表示
+            echo '<div class="notice notice-warning">';
+            echo '<p><strong>KantanPro:</strong> 手動マイグレーションを実行しますか？</p>';
+            echo '<p><a href="' . esc_url( wp_nonce_url( add_query_arg( 'ktpwp_manual_migration', '1' ), 'ktpwp_manual_migration' ) ) . '" class="button button-primary">実行する</a></p>';
+            echo '</div>';
         }
+    }
+    
+    // マイグレーション状態チェック
+    $migration_status = ktpwp_check_migration_status();
+    if ( $migration_status['needs_migration'] ) {
+        echo '<div class="notice notice-warning">';
+        echo '<p><strong>KantanPro:</strong> データベースの更新が必要です。</p>';
+        echo '<p>現在のDBバージョン: ' . esc_html( $migration_status['current_db_version'] ) . '</p>';
+        echo '<p>必要なバージョン: ' . esc_html( $migration_status['plugin_version'] ) . '</p>';
+        echo '<p><a href="' . esc_url( wp_nonce_url( add_query_arg( 'ktpwp_manual_migration', '1' ), 'ktpwp_manual_migration' ) ) . '" class="button button-primary">今すぐ更新</a></p>';
+        echo '</div>';
+    }
+}
+
+/**
+ * 手動マイグレーション実行機能
+ */
+function ktpwp_execute_manual_migration() {
+    if ( ! current_user_can( 'manage_options' ) ) {
+        return;
+    }
+    
+    try {
+        if ( function_exists( 'ktpwp_run_complete_migration' ) ) {
+            ktpwp_run_complete_migration();
+        } else {
+            ktpwp_run_auto_migrations();
+        }
+        
+        set_transient( 'ktpwp_manual_migration_success', 'マイグレーションが正常に完了しました。', 60 );
         
     } catch ( Exception $e ) {
-        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP: プラグイン無効化処理でエラーが発生: ' . $e->getMessage() );
-        }
+        set_transient( 'ktpwp_manual_migration_error', 'マイグレーション中にエラーが発生しました: ' . $e->getMessage(), 300 );
     }
+    
+    // リダイレクトして重複実行を防ぐ
+    wp_redirect( admin_url( 'admin.php?page=ktp-settings' ) );
+    exit;
 }
 
 
