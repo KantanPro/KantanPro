@@ -3,6 +3,104 @@ document.addEventListener('DOMContentLoaded', function () {
     window.ktpDebugMode = window.ktpDebugMode || false;
     
     // =============================
+    // 受注書状態記憶機能
+    // =============================
+    
+    // 現在のタブ名を取得
+    function getCurrentTabName() {
+        var urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get('tab_name') || 'list';
+    }
+    
+    // 現在の受注書IDを取得
+    function getCurrentOrderId() {
+        var urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get('order_id');
+    }
+    
+    // 受注書IDをローカルストレージに保存
+    function saveOrderId(orderId) {
+        if (orderId && orderId !== '') {
+            localStorage.setItem('ktp_last_order_id', orderId);
+            if (window.ktpDebugMode) {
+                console.log('KTPWP: 受注書IDを保存しました:', orderId);
+            }
+        }
+    }
+    
+    // 保存された受注書IDを取得
+    function getSavedOrderId() {
+        return localStorage.getItem('ktp_last_order_id');
+    }
+    
+    // 受注書タブに戻った時に記憶されたIDを復元
+    function restoreOrderId() {
+        var currentTab = getCurrentTabName();
+        var currentOrderId = getCurrentOrderId();
+        
+        // 受注書タブで、かつ現在のURLにorder_idが指定されていない場合
+        if (currentTab === 'order' && !currentOrderId) {
+            var savedOrderId = getSavedOrderId();
+            if (savedOrderId) {
+                // 記憶された受注書IDでURLを更新
+                var newUrl = new URL(window.location);
+                newUrl.searchParams.set('order_id', savedOrderId);
+                newUrl.searchParams.set('tab_name', 'order');
+                
+                if (window.ktpDebugMode) {
+                    console.log('KTPWP: 記憶された受注書IDを復元します:', savedOrderId);
+                }
+                
+                // ページをリロードして受注書を表示
+                window.location.href = newUrl.toString();
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    // ページ読み込み時に受注書IDの復元を試行
+    if (getCurrentTabName() === 'order') {
+        restoreOrderId();
+    }
+    
+    // タブ切り替え時の受注書ID保存
+    var tabLinks = document.querySelectorAll('.tab_item');
+    tabLinks.forEach(function(tabLink) {
+        tabLink.addEventListener('click', function() {
+            var href = this.getAttribute('href');
+            if (href) {
+                var url = new URL(href, window.location.origin);
+                var tabName = url.searchParams.get('tab_name');
+                
+                // 受注書タブから他のタブに移動する場合、現在の受注書IDを保存
+                if (getCurrentTabName() === 'order' && tabName !== 'order') {
+                    var currentOrderId = getCurrentOrderId();
+                    if (currentOrderId) {
+                        saveOrderId(currentOrderId);
+                    }
+                }
+            }
+        });
+    });
+    
+    // 受注書タブ内での受注書切り替え時にもIDを保存
+    document.addEventListener('click', function(e) {
+        // 受注書リストのリンクをクリックした場合
+        if (e.target.closest('a[href*="tab_name=order"]')) {
+            var link = e.target.closest('a[href*="tab_name=order"]');
+            var href = link.getAttribute('href');
+            if (href) {
+                var url = new URL(href, window.location.origin);
+                var orderId = url.searchParams.get('order_id');
+                if (orderId) {
+                    saveOrderId(orderId);
+                }
+            }
+        }
+    });
+    
+    // =============================
     // 古いグローバル行追加・削除機能は無効化
     // 専用のハンドラ（ktp-invoice-items.js、ktp-cost-items.js）を使用
     // =============================

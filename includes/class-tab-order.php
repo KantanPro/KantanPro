@@ -369,6 +369,11 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 			// Initialize staff chat table
 			$this->Create_Staff_Chat_Table();
 
+			// セッション開始（受注書状態記憶のため）
+			if ( session_status() !== PHP_SESSION_ACTIVE ) {
+				ktpwp_safe_session_start();
+			}
+
 			// Handle form submissions
 			$mail_form_html = '';
 			$request_method = isset( $_SERVER['REQUEST_METHOD'] ) ? $_SERVER['REQUEST_METHOD'] : 'NOT_SET';
@@ -1300,19 +1305,47 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 			// 削除処理完了後は受注書の自動取得をスキップ
 			$deletion_completed = isset( $_GET['message'] ) && ( $_GET['message'] === 'deleted' || $_GET['message'] === 'deleted_all' );
 
-			// 受注書IDが指定されていない場合は最新の受注書IDを取得（削除完了後は除く）
+			// 受注書IDの決定ロジック（優先順位：GET > セッション記憶 > 最新）
 			if ( $order_id === 0 && ! $deletion_completed ) {
-				$latest_order = $wpdb->get_row(
-                    $wpdb->prepare(
-                        "SELECT id FROM `{$table_name}` ORDER BY time DESC LIMIT %d",
-                        1
-                    )
-                );
-				if ( $latest_order ) {
-					$order_id = $latest_order->id;
-				} else {
+				// 1. GETパラメータで指定された受注書IDを優先
+				if ( isset( $_GET['order_id'] ) && ! empty( $_GET['order_id'] ) ) {
+					$order_id = absint( $_GET['order_id'] );
+					// 有効な受注書IDの場合、セッションに記憶
+					if ( $order_id > 0 ) {
+						$_SESSION['ktp_last_order_id'] = $order_id;
+					}
+				}
+				// 2. セッションに記憶された受注書IDを確認
+				elseif ( isset( $_SESSION['ktp_last_order_id'] ) && ! empty( $_SESSION['ktp_last_order_id'] ) ) {
+					$session_order_id = absint( $_SESSION['ktp_last_order_id'] );
+					// 記憶されたIDが有効な受注書かチェック
+					$valid_order = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM `{$table_name}` WHERE id = %d", $session_order_id ) );
+					if ( $valid_order ) {
+						$order_id = $session_order_id;
+					} else {
+						// 無効なIDの場合はセッションから削除
+						unset( $_SESSION['ktp_last_order_id'] );
+					}
+				}
+				// 3. 最新の受注書IDを取得
+				if ( $order_id === 0 ) {
+					$latest_order = $wpdb->get_row(
+						$wpdb->prepare(
+							"SELECT id FROM `{$table_name}` ORDER BY time DESC LIMIT %d",
+							1
+						)
+					);
+					if ( $latest_order ) {
+						$order_id = $latest_order->id;
+						// 最新の受注書IDもセッションに記憶
+						$_SESSION['ktp_last_order_id'] = $order_id;
+					}
 				}
 			} else {
+				// order_idが既に設定されている場合（GETパラメータなど）、セッションに記憶
+				if ( $order_id > 0 ) {
+					$_SESSION['ktp_last_order_id'] = $order_id;
+				}
 			}
 
 			// 重要なチェックポイント8を追加
@@ -1322,6 +1355,9 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 				$order_data = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM `{$table_name}` WHERE id = %d", $order_id ) );
 
 				if ( $order_data ) {
+					// 現在表示中の受注書IDをセッションに記憶（確実に保存）
+					$_SESSION['ktp_last_order_id'] = $order_id;
+
 					// プレビューボタン用のHTML生成は削除（Ajax経由で最新データを取得）
 
 					$content .= '<div class="controller" style="display: flex; justify-content: space-between; align-items: center;">';
