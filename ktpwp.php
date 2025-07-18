@@ -262,7 +262,25 @@ function ktpwp_init_cache() {
     }
 }
 
-// プラグインが完全に読み込まれた後に実行
+/**
+ * フックマネージャーの初期化
+ */
+function ktpwp_init_hook_manager() {
+    if ( class_exists( 'KTPWP_Hook_Manager' ) ) {
+        global $ktpwp_hook_manager;
+        $ktpwp_hook_manager = KTPWP_Hook_Manager::get_instance();
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP Hook Manager: フックマネージャーが初期化されました' );
+        }
+    } else {
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP Hook Manager: フックマネージャークラスが見つかりません' );
+        }
+    }
+}
+
+// プラグインが完全に読み込まれた後に実行（最初に実行してフック最適化を行う）
+add_action( 'plugins_loaded', 'ktpwp_init_hook_manager', 0 );
 add_action( 'plugins_loaded', 'ktpwp_init_update_checker' );
 add_action( 'plugins_loaded', 'ktpwp_init_donation' );
 add_action( 'plugins_loaded', 'ktpwp_init_cache' );
@@ -842,17 +860,25 @@ function ktpwp_plugin_deactivation() {
  */
 
 
-// プラグイン読み込み時の差分マイグレーション（アップデート時）
-add_action( 'plugins_loaded', 'ktpwp_check_database_integrity', 5 );
+// プラグイン読み込み時の差分マイグレーション（管理画面またはバージョン変更時のみ）
+if ( is_admin() || get_option( 'ktpwp_version', '0' ) !== KANTANPRO_PLUGIN_VERSION ) {
+    add_action( 'plugins_loaded', 'ktpwp_check_database_integrity', 5 );
+}
 
-// データベースバージョンの同期（既存インストール対応）
-add_action( 'plugins_loaded', 'ktpwp_sync_database_version', 6 );
+// データベースバージョンの同期（管理画面でのみ実行）
+if ( is_admin() ) {
+    add_action( 'plugins_loaded', 'ktpwp_sync_database_version', 6 );
+}
 
-// 利用規約テーブル存在チェック（自動修復）
-add_action( 'plugins_loaded', 'ktpwp_ensure_terms_table', 7 );
+// 利用規約テーブル存在チェック（管理画面でのみ実行）
+if ( is_admin() ) {
+    add_action( 'plugins_loaded', 'ktpwp_ensure_terms_table', 7 );
+}
 
-// プラグイン読み込み時の自動マイグレーション（優先度を上げて確実に実行）
-add_action( 'plugins_loaded', 'ktpwp_run_auto_migrations', 8 );
+// プラグイン読み込み時の自動マイグレーション（バージョン変更時のみ）
+if ( get_option( 'ktpwp_version', '0' ) !== KANTANPRO_PLUGIN_VERSION ) {
+    add_action( 'plugins_loaded', 'ktpwp_run_auto_migrations', 8 );
+}
 
 // プラグイン再有効化時の自動マイグレーション
 // add_action( 'admin_init', 'ktpwp_check_reactivation_migration' ); // 関数が未定義のため一時的にコメントアウト
@@ -863,9 +889,10 @@ add_action( 'upgrader_process_complete', 'ktpwp_plugin_upgrade_migration', 10, 2
 // 新規インストール検出と自動マイグレーション
 // add_action( 'admin_init', 'ktpwp_detect_new_installation' ); // 関数が未定義のため一時的にコメントアウト
 
-// 利用規約同意チェック
-add_action( 'admin_init', 'ktpwp_check_terms_agreement' );
-add_action( 'wp', 'ktpwp_check_terms_agreement' );
+// 利用規約同意チェック（管理画面でのみ実行 - パフォーマンス最適化）
+if ( is_admin() ) {
+    add_action( 'admin_init', 'ktpwp_check_terms_agreement' );
+}
 
 // 配布用の追加安全チェック
 add_action( 'init', 'ktpwp_distribution_safety_check', 1 );
@@ -1171,8 +1198,10 @@ function ktpwp_admin_migration_status() {
     }
 }
 
-// 管理画面でのマイグレーション状態表示
-add_action( 'admin_notices', 'ktpwp_admin_migration_status' );
+// 管理画面でのマイグレーション状態表示（KantanPro設定ページでのみ実行）
+if ( is_admin() && isset( $_GET['page'] ) && strpos( $_GET['page'], 'ktp-' ) === 0 ) {
+    add_action( 'admin_notices', 'ktpwp_admin_migration_status' );
+}
 
 /**
  * 管理画面での通知表示
@@ -1235,7 +1264,10 @@ function ktpwp_admin_notices() {
     }
 }
 
-add_action( 'admin_notices', 'ktpwp_admin_notices' );
+// 管理画面での通知表示（管理画面でのみ実行）
+if ( is_admin() ) {
+    add_action( 'admin_notices', 'ktpwp_admin_notices' );
+}
 
 /**
  * データベースの整合性をチェックし、必要に応じて修正を実行
@@ -1480,8 +1512,10 @@ function ktpwp_setup_safe_logging() {
     }
 }
 
-// プラグイン読み込み時にログディレクトリを設定
-add_action( 'plugins_loaded', 'ktpwp_setup_safe_logging', 1 );
+// プラグイン読み込み時にログディレクトリを設定（デバッグ時のみ）
+if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+    add_action( 'plugins_loaded', 'ktpwp_setup_safe_logging', 1 );
+}
 
 // プラグイン初期化時のREST API制限を一時的に無効化
 function ktpwp_disable_rest_api_restriction_during_init() {
@@ -1498,8 +1532,10 @@ function ktpwp_disable_rest_api_restriction_during_init() {
     );
 }
 
-// プラグイン読み込み時にREST API制限を一時的に無効化
-add_action( 'plugins_loaded', 'ktpwp_disable_rest_api_restriction_during_init', 1 );
+// プラグイン読み込み時にREST API制限を一時的に無効化（デバッグ時のみ）
+if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+    add_action( 'plugins_loaded', 'ktpwp_disable_rest_api_restriction_during_init', 1 );
+}
 
 // メインクラスの初期化はinit以降に遅延（翻訳エラー防止）
 // KTPWP_Mainクラスの初期化（一度だけ実行）
@@ -3537,6 +3573,68 @@ function ktpwp_clear_cache_pattern( $pattern ) {
     if ( $cache ) {
         $cache->clear_cache_by_pattern( $pattern );
     }
+}
+
+// ============================================================================
+// フックマネージャーヘルパー関数
+// ============================================================================
+
+/**
+ * KantanProフックマネージャーのインスタンスを取得
+ * 
+ * @return KTPWP_Hook_Manager|null フックマネージャーインスタンス
+ */
+function ktpwp_hook_manager() {
+    global $ktpwp_hook_manager;
+    return $ktpwp_hook_manager instanceof KTPWP_Hook_Manager ? $ktpwp_hook_manager : null;
+}
+
+/**
+ * 条件付きでアクションフックを追加
+ * 
+ * @param string $hook_name フック名
+ * @param callable $callback コールバック関数
+ * @param array $conditions 実行条件
+ * @param int $priority 優先度
+ * @param int $accepted_args 引数数
+ */
+function ktpwp_add_conditional_action( $hook_name, $callback, $conditions = array(), $priority = 10, $accepted_args = 1 ) {
+    $hook_manager = ktpwp_hook_manager();
+    if ( $hook_manager ) {
+        $hook_manager->add_conditional_action( $hook_name, $callback, $conditions, $priority, $accepted_args );
+    } else {
+        // フォールバック: 通常のadd_action
+        add_action( $hook_name, $callback, $priority, $accepted_args );
+    }
+}
+
+/**
+ * 条件付きでフィルターフックを追加
+ * 
+ * @param string $hook_name フック名
+ * @param callable $callback コールバック関数
+ * @param array $conditions 実行条件
+ * @param int $priority 優先度
+ * @param int $accepted_args 引数数
+ */
+function ktpwp_add_conditional_filter( $hook_name, $callback, $conditions = array(), $priority = 10, $accepted_args = 1 ) {
+    $hook_manager = ktpwp_hook_manager();
+    if ( $hook_manager ) {
+        $hook_manager->add_conditional_filter( $hook_name, $callback, $conditions, $priority, $accepted_args );
+    } else {
+        // フォールバック: 通常のadd_filter
+        add_filter( $hook_name, $callback, $priority, $accepted_args );
+    }
+}
+
+/**
+ * フック最適化統計を取得
+ * 
+ * @return array フック最適化統計
+ */
+function ktpwp_get_hook_optimization_stats() {
+    $hook_manager = ktpwp_hook_manager();
+    return $hook_manager ? $hook_manager->get_optimization_stats() : array();
 }
 
 

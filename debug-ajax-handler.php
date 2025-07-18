@@ -26,10 +26,10 @@ class KTP_AJAX_Debug_Logger {
     private static $debug_enabled = null;
     
     /**
-     * 初期化
+     * 初期化（デバッグ時かつ管理画面でのみ実行）
      */
     public static function init() {
-        if ( self::is_debug_enabled() ) {
+        if ( self::is_debug_enabled() && is_admin() ) {
             // AJAX リクエストの監視
             add_action( 'wp_ajax_*', array( __CLASS__, 'monitor_ajax_request' ), 1 );
             add_action( 'wp_ajax_nopriv_*', array( __CLASS__, 'monitor_ajax_request' ), 1 );
@@ -42,7 +42,7 @@ class KTP_AJAX_Debug_Logger {
             add_action( 'wp_ajax_*', array( __CLASS__, 'monitor_http_response' ), 999 );
             add_action( 'wp_ajax_nopriv_*', array( __CLASS__, 'monitor_http_response' ), 999 );
             
-            // PHP エラーのキャッチ
+            // PHP エラーのキャッチ（管理画面でのみ）
             add_action( 'init', array( __CLASS__, 'setup_error_handling' ) );
         }
     }
@@ -318,36 +318,44 @@ class KTP_AJAX_Debug_Logger {
 // 初期化
 KTP_AJAX_Debug_Logger::init();
 
-// デバッグ用のAJAXハンドラー
-add_action( 'wp_ajax_ktp_get_ajax_debug_log', function() {
-    if ( ! current_user_can( 'manage_options' ) ) {
-        wp_die( 'Permission denied' );
-    }
-    
-    // nonce チェック（オプション）
-    if ( isset( $_POST['_wpnonce'] ) && ! wp_verify_nonce( $_POST['_wpnonce'], 'ktp_ajax_debug_nonce' ) ) {
-        wp_send_json_error( 'Invalid nonce' );
-    }
-    
-    $lines = isset( $_POST['lines'] ) ? intval( $_POST['lines'] ) : 100;
-    $log_contents = KTP_AJAX_Debug_Logger::get_log_contents( $lines );
-    
-    wp_send_json_success( array(
-        'log' => $log_contents,
-        'log_file' => KTP_AJAX_Debug_Logger::get_log_file()
-    ) );
-} );
+// デバッグ用のAJAXハンドラー（デバッグモードかつ管理画面でのみ登録）
+if ( defined( 'WP_DEBUG' ) && WP_DEBUG && is_admin() ) {
+    add_action( 'wp_ajax_ktp_get_ajax_debug_log', function() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_die( 'Permission denied' );
+        }
+        
+        // nonce チェック（オプション）
+        if ( isset( $_POST['_wpnonce'] ) && ! wp_verify_nonce( $_POST['_wpnonce'], 'ktp_ajax_debug_nonce' ) ) {
+            wp_send_json_error( 'Invalid nonce' );
+        }
+        
+        $lines = isset( $_POST['lines'] ) ? intval( $_POST['lines'] ) : 100;
+        $log_contents = KTP_AJAX_Debug_Logger::get_log_contents( $lines );
+        
+        wp_send_json_success( array(
+            'log' => $log_contents,
+            'log_file' => KTP_AJAX_Debug_Logger::get_log_file()
+        ) );
+    } );
+}
 
-add_action( 'wp_ajax_ktp_clear_ajax_debug_log', function() {
-    if ( ! current_user_can( 'manage_options' ) ) {
-        wp_die( 'Permission denied' );
-    }
-    
-    // nonce チェック（オプション）
-    if ( isset( $_POST['_wpnonce'] ) && ! wp_verify_nonce( $_POST['_wpnonce'], 'ktp_ajax_debug_nonce' ) ) {
-        wp_send_json_error( 'Invalid nonce' );
-    }
-    
-    KTP_AJAX_Debug_Logger::clear_log();
-    wp_send_json_success( 'ログがクリアされました' );
-} );
+if ( defined( 'WP_DEBUG' ) && WP_DEBUG && is_admin() ) {
+    add_action( 'wp_ajax_ktp_clear_ajax_debug_log', function() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_die( 'Permission denied' );
+        }
+        
+        // nonce チェック（オプション）
+        if ( isset( $_POST['_wpnonce'] ) && ! wp_verify_nonce( $_POST['_wpnonce'], 'ktp_ajax_debug_nonce' ) ) {
+            wp_send_json_error( 'Invalid nonce' );
+        }
+        
+        KTP_AJAX_Debug_Logger::clear_log();
+        
+        wp_send_json_success( array(
+            'message' => 'Debug log cleared successfully',
+            'log_file' => KTP_AJAX_Debug_Logger::get_log_file()
+        ) );
+    } );
+}
