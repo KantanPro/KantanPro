@@ -14,9 +14,21 @@ add_action(
 		if ( ! current_user_can( 'edit_posts' ) ) {
 			wp_send_json_error( '権限がありません' );
 		}
-		global $wpdb;
-		$table = $wpdb->prefix . 'ktp_supplier';
-		$suppliers = $wpdb->get_results( "SELECT id, company_name FROM $table WHERE 1 ORDER BY company_name ASC", ARRAY_A );
+		
+		// キャッシュから取得を試行
+		$cache_key = 'suppliers_for_cost_list';
+		$suppliers = ktpwp_cache_get( $cache_key );
+		
+		if ( false === $suppliers ) {
+			// キャッシュにない場合はDBから取得
+			global $wpdb;
+			$table = $wpdb->prefix . 'ktp_supplier';
+			$suppliers = $wpdb->get_results( "SELECT id, company_name FROM $table WHERE 1 ORDER BY company_name ASC", ARRAY_A );
+			
+			// 結果をキャッシュに保存（15分間）
+			ktpwp_cache_set( $cache_key, $suppliers, 900 );
+		}
+		
 		wp_send_json( $suppliers );
 	}
 );
@@ -31,34 +43,46 @@ add_action(
 		if ( ! $supplier_id ) {
 			wp_send_json_error( 'supplier_idが不正です' );
 		}
-		global $wpdb;
-		$table = $wpdb->prefix . 'ktp_supplier_skills';
-		$sql = $wpdb->prepare(
-            "
-        SELECT 
-            id, 
-            product_name, 
-            CASE 
-                WHEN CAST(unit_price AS CHAR) REGEXP '^[0-9]+\\.$' THEN 
-                    CAST(unit_price AS UNSIGNED)
-                WHEN CAST(unit_price AS CHAR) REGEXP '^[0-9]+\\.0+$' THEN 
-                    CAST(unit_price AS UNSIGNED)
-                ELSE 
-                    TRIM(TRAILING '0' FROM TRIM(TRAILING '.' FROM CAST(unit_price AS DECIMAL(20,10))))
-            END as unit_price,
-            quantity, 
-            unit, 
-            tax_rate,
-            frequency, 
-            updated_at, 
-            created_at 
-        FROM $table 
-        WHERE supplier_id = %d 
-        ORDER BY id ASC
-    ",
-            $supplier_id
-		);
-		$skills = $wpdb->get_results( $sql, ARRAY_A );
+		
+		// キャッシュから取得を試行
+		$cache_key = "supplier_skills_for_cost_{$supplier_id}";
+		$skills = ktpwp_cache_get( $cache_key );
+		
+		if ( false === $skills ) {
+			// キャッシュにない場合はDBから取得
+			global $wpdb;
+			$table = $wpdb->prefix . 'ktp_supplier_skills';
+			$sql = $wpdb->prepare(
+				"
+			SELECT 
+				id, 
+				product_name, 
+				CASE 
+					WHEN CAST(unit_price AS CHAR) REGEXP '^[0-9]+\\.$' THEN 
+						CAST(unit_price AS UNSIGNED)
+					WHEN CAST(unit_price AS CHAR) REGEXP '^[0-9]+\\.0+$' THEN 
+						CAST(unit_price AS UNSIGNED)
+					ELSE 
+						TRIM(TRAILING '0' FROM TRIM(TRAILING '.' FROM CAST(unit_price AS DECIMAL(20,10))))
+				END as unit_price,
+				quantity, 
+				unit, 
+				tax_rate,
+				frequency, 
+				updated_at, 
+				created_at 
+			FROM $table 
+			WHERE supplier_id = %d 
+			ORDER BY id ASC
+		",
+				$supplier_id
+			);
+			$skills = $wpdb->get_results( $sql, ARRAY_A );
+			
+			// 結果をキャッシュに保存（10分間）
+			ktpwp_cache_set( $cache_key, $skills, 600 );
+		}
+		
 		wp_send_json( $skills );
 	}
 );
@@ -86,6 +110,10 @@ add_action(
 			// 更新
 			$result = $wpdb->update( $table, $data, array( 'id' => intval( $_POST['id'] ) ), $format, array( '%d' ) );
 			if ( $result !== false ) {
+				// 関連キャッシュを削除
+				$supplier_id = intval( $_POST['supplier_id'] );
+				ktpwp_cache_delete( "supplier_skills_for_cost_{$supplier_id}" );
+				
 				wp_send_json_success( array( 'id' => intval( $_POST['id'] ) ) );
 			} else {
 				wp_send_json_error( '更新失敗: ' . $wpdb->last_error );
@@ -96,6 +124,10 @@ add_action(
 			$format[] = '%s';
 			$result = $wpdb->insert( $table, $data, $format );
 			if ( $result ) {
+				// 関連キャッシュを削除
+				$supplier_id = intval( $_POST['supplier_id'] );
+				ktpwp_cache_delete( "supplier_skills_for_cost_{$supplier_id}" );
+				
 				wp_send_json_success( array( 'id' => $wpdb->insert_id ) );
 			} else {
 				wp_send_json_error( '追加失敗: ' . $wpdb->last_error );

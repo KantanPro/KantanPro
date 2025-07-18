@@ -155,33 +155,63 @@ class KTPWP_Database {
     }
 
     /**
-     * テーブルが存在するかチェック
+     * テーブルが存在するかチェック（キャッシュ対応）
      *
      * @param string $table_name テーブル名
      * @return bool
      */
     public function table_exists( $table_name ) {
+        // キャッシュキーを生成
+        $cache_key = "table_exists_{$table_name}";
+        
+        // キャッシュから取得を試行
+        $cached_result = ktpwp_cache_get( $cache_key );
+        if ( false !== $cached_result ) {
+            return (bool) $cached_result;
+        }
+        
+        // キャッシュにない場合はDBから取得
         global $wpdb;
         $full_table_name = $wpdb->prefix . 'ktp_' . $table_name;
         $query = $wpdb->prepare( 'SHOW TABLES LIKE %s', $full_table_name );
-        return $wpdb->get_var( $query ) === $full_table_name;
+        $exists = $wpdb->get_var( $query ) === $full_table_name;
+        
+        // 結果をキャッシュに保存（5分間）
+        ktpwp_cache_set( $cache_key, $exists, 300 );
+        
+        return $exists;
     }
 
     /**
-     * テーブル構造を取得
+     * テーブル構造を取得（キャッシュ対応）
      *
      * @param string $table_name テーブル名
      * @return array|null
      */
     public function get_table_structure( $table_name ) {
-        global $wpdb;
-        $full_table_name = $wpdb->prefix . 'ktp_' . $table_name;
-
+        // キャッシュキーを生成
+        $cache_key = "table_structure_{$table_name}";
+        
+        // キャッシュから取得を試行
+        $cached_result = ktpwp_cache_get( $cache_key );
+        if ( false !== $cached_result ) {
+            return $cached_result;
+        }
+        
+        // テーブルの存在チェック
         if ( ! $this->table_exists( $table_name ) ) {
             return null;
         }
-
-        return $wpdb->get_results( "DESCRIBE {$full_table_name}", ARRAY_A );
+        
+        // キャッシュにない場合はDBから取得
+        global $wpdb;
+        $full_table_name = $wpdb->prefix . 'ktp_' . $table_name;
+        $structure = $wpdb->get_results( "DESCRIBE {$full_table_name}", ARRAY_A );
+        
+        // 結果をキャッシュに保存（10分間）
+        ktpwp_cache_set( $cache_key, $structure, 600 );
+        
+        return $structure;
     }
 
     /**

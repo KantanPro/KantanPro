@@ -245,9 +245,75 @@ function ktpwp_init_donation() {
     }
 }
 
+/**
+ * キャッシュマネージャーの初期化
+ */
+function ktpwp_init_cache() {
+    if ( class_exists( 'KTPWP_Cache' ) ) {
+        global $ktpwp_cache;
+        $ktpwp_cache = KTPWP_Cache::get_instance();
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP Cache: キャッシュマネージャーが初期化されました' );
+        }
+    } else {
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP Cache: キャッシュマネージャークラスが見つかりません' );
+        }
+    }
+}
+
 // プラグインが完全に読み込まれた後に実行
 add_action( 'plugins_loaded', 'ktpwp_init_update_checker' );
 add_action( 'plugins_loaded', 'ktpwp_init_donation' );
+add_action( 'plugins_loaded', 'ktpwp_init_cache' );
+
+// キャッシュクリア処理のAJAXハンドラー
+add_action( 'wp_ajax_ktpwp_clear_cache', 'ktpwp_handle_clear_cache_ajax' );
+function ktpwp_handle_clear_cache_ajax() {
+    // 権限チェック
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_send_json_error( '権限がありません' );
+    }
+    
+    // ナンスチェック
+    if ( ! wp_verify_nonce( $_POST['nonce'], 'ktpwp_clear_cache' ) ) {
+        wp_send_json_error( 'セキュリティチェックに失敗しました' );
+    }
+    
+    try {
+        // すべてのキャッシュをクリア
+        ktpwp_clear_all_cache();
+        
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP Cache: 管理画面からキャッシュをクリアしました' );
+        }
+        
+        wp_send_json_success( 'キャッシュが正常にクリアされました' );
+    } catch ( Exception $e ) {
+        wp_send_json_error( 'キャッシュのクリアに失敗しました: ' . $e->getMessage() );
+    }
+}
+
+// 管理画面でキャッシュ管理スクリプトを読み込み
+add_action( 'admin_enqueue_scripts', 'ktpwp_enqueue_cache_admin_scripts' );
+function ktpwp_enqueue_cache_admin_scripts( $hook ) {
+    // KantanPro設定ページでのみ読み込み
+    if ( 'toplevel_page_ktp-settings' === $hook || 'settings_page_ktp-settings' === $hook ) {
+        wp_enqueue_script(
+            'ktpwp-cache-admin',
+            KANTANPRO_PLUGIN_URL . 'js/ktpwp-cache-admin.js',
+            array( 'jquery' ),
+            KANTANPRO_PLUGIN_VERSION,
+            true
+        );
+        
+        // ナンスを JavaScript に渡す
+        wp_localize_script( 'ktpwp-cache-admin', 'ktpwp_cache_admin', array(
+            'nonce' => wp_create_nonce( 'ktpwp_clear_cache' ),
+            'ajaxurl' => admin_url( 'admin-ajax.php' )
+        ) );
+    }
+}
 
 // プラグインアクションリンクは更新チェッカークラスで管理
 
@@ -3349,6 +3415,128 @@ function ktpwp_execute_manual_migration() {
     // リダイレクトして重複実行を防ぐ
     wp_redirect( admin_url( 'admin.php?page=ktp-settings' ) );
     exit;
+}
+
+// ============================================================================
+// キャッシュヘルパー関数
+// ============================================================================
+
+/**
+ * KantanProキャッシュマネージャーのインスタンスを取得
+ * 
+ * @return KTPWP_Cache|null キャッシュマネージャーインスタンス
+ */
+function ktpwp_cache() {
+    global $ktpwp_cache;
+    return $ktpwp_cache instanceof KTPWP_Cache ? $ktpwp_cache : null;
+}
+
+/**
+ * キャッシュからデータを取得
+ * 
+ * @param string $key キャッシュキー
+ * @param string $group キャッシュグループ（オプション）
+ * @return mixed キャッシュされたデータ、存在しない場合はfalse
+ */
+function ktpwp_cache_get( $key, $group = null ) {
+    $cache = ktpwp_cache();
+    return $cache ? $cache->get( $key, $group ) : false;
+}
+
+/**
+ * データをキャッシュに保存
+ * 
+ * @param string $key キャッシュキー
+ * @param mixed $data 保存するデータ
+ * @param int $expiration 有効期限（秒）
+ * @param string $group キャッシュグループ（オプション）
+ * @return bool 成功時true、失敗時false
+ */
+function ktpwp_cache_set( $key, $data, $expiration = null, $group = null ) {
+    $cache = ktpwp_cache();
+    return $cache ? $cache->set( $key, $data, $expiration, $group ) : false;
+}
+
+/**
+ * キャッシュからデータを削除
+ * 
+ * @param string $key キャッシュキー
+ * @param string $group キャッシュグループ（オプション）
+ * @return bool 成功時true、失敗時false
+ */
+function ktpwp_cache_delete( $key, $group = null ) {
+    $cache = ktpwp_cache();
+    return $cache ? $cache->delete( $key, $group ) : false;
+}
+
+/**
+ * データベースクエリ結果をキャッシュから取得または実行
+ * 
+ * @param string $key キャッシュキー
+ * @param callable $callback データを取得するコールバック関数
+ * @param int $expiration キャッシュ有効期限（秒）
+ * @return mixed キャッシュされたデータまたはコールバックの実行結果
+ */
+function ktpwp_cache_remember( $key, $callback, $expiration = null ) {
+    $cache = ktpwp_cache();
+    return $cache ? $cache->remember( $key, $callback, $expiration ) : ( is_callable( $callback ) ? call_user_func( $callback ) : false );
+}
+
+/**
+ * KantanPro Transientを取得
+ * 
+ * @param string $key Transientキー
+ * @return mixed 保存されたデータ、存在しない場合はfalse
+ */
+function ktpwp_get_transient( $key ) {
+    $cache = ktpwp_cache();
+    return $cache ? $cache->get_transient( $key ) : false;
+}
+
+/**
+ * KantanPro Transientを設定
+ * 
+ * @param string $key Transientキー
+ * @param mixed $data 保存するデータ
+ * @param int $expiration 有効期限（秒）
+ * @return bool 成功時true、失敗時false
+ */
+function ktpwp_set_transient( $key, $data, $expiration = null ) {
+    $cache = ktpwp_cache();
+    return $cache ? $cache->set_transient( $key, $data, $expiration ) : false;
+}
+
+/**
+ * KantanPro Transientを削除
+ * 
+ * @param string $key Transientキー
+ * @return bool 成功時true、失敗時false
+ */
+function ktpwp_delete_transient( $key ) {
+    $cache = ktpwp_cache();
+    return $cache ? $cache->delete_transient( $key ) : false;
+}
+
+/**
+ * すべてのKantanProキャッシュをクリア
+ */
+function ktpwp_clear_all_cache() {
+    $cache = ktpwp_cache();
+    if ( $cache ) {
+        $cache->clear_all_cache();
+    }
+}
+
+/**
+ * パターンに一致するキャッシュを削除
+ * 
+ * @param string $pattern キーパターン（ワイルドカード*使用可能）
+ */
+function ktpwp_clear_cache_pattern( $pattern ) {
+    $cache = ktpwp_cache();
+    if ( $cache ) {
+        $cache->clear_cache_by_pattern( $pattern );
+    }
 }
 
 
