@@ -11,9 +11,9 @@
  * - シンプル更新システムを実装。
  * - 寄付機能（Stripe決済・進捗管理・自動メール送信）を追加。
  * - バージョンアップ履歴・トラブルシューティングも掲載。
- 		 * - 最新バージョン: 1.1.4(preview) - 2025年7月16日更新
-		 * - 更新通知の改善（WordPress 6.9.1対応の強化）
-		 * - 利益計算のバグ修正
+ 		 * - 最新バージョン: 1.1.5(preview) - 2025年7月18日更新
+		 * - パフォーマンスの改善
+		 * - キャッシュシステムの最適化
  *
  * @package KTPWP
  * @subpackage Includes
@@ -273,6 +273,7 @@ if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
 				<li><strong>納期警告機能</strong>（期限管理・アラート表示）</li>
 				<li><strong>商品管理機能</strong>（価格・数量・単位管理）</li>
 				<li><strong>スタッフアバター表示機能</strong>（ログイン中スタッフの可視化）</li>
+				<li><strong>パフォーマンス最適化機能</strong>（キャッシュ・クエリ最適化・メモリ効率化）</li>
 			</ul>
 			
 			<h3>システム要件</h3>
@@ -592,6 +593,18 @@ if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
 		 */
 		private function get_changelog_content() {
 			return '<h2>変更履歴</h2>
+			
+			<h3>1.1.5(preview) - 2025年7月18日</h3>
+			<ul>
+				<li>パフォーマンスの改善</li>
+				<li>キャッシュシステムの最適化</li>
+				<li>データベースクエリの効率化</li>
+				<li>メモリ使用量の最適化</li>
+				<li>画像処理の高速化</li>
+				<li>JavaScript・CSSの最適化</li>
+				<li>セッション管理の改善</li>
+				<li>Ajax通信の最適化</li>
+			</ul>
 			
 			<h3>1.1.4(preview) - 2025年7月16日</h3>
 			<ul>
