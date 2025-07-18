@@ -279,11 +279,29 @@ function ktpwp_init_hook_manager() {
     }
 }
 
+/**
+ * 画像最適化機能の初期化
+ */
+function ktpwp_init_image_optimizer() {
+    if ( class_exists( 'KTPWP_Image_Optimizer' ) ) {
+        global $ktpwp_image_optimizer;
+        $ktpwp_image_optimizer = KTPWP_Image_Optimizer::get_instance();
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP Image Optimizer: 画像最適化機能が初期化されました' );
+        }
+    } else {
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP Image Optimizer: 画像最適化クラスが見つかりません' );
+        }
+    }
+}
+
 // プラグインが完全に読み込まれた後に実行（最初に実行してフック最適化を行う）
 add_action( 'plugins_loaded', 'ktpwp_init_hook_manager', 0 );
 add_action( 'plugins_loaded', 'ktpwp_init_update_checker' );
 add_action( 'plugins_loaded', 'ktpwp_init_donation' );
 add_action( 'plugins_loaded', 'ktpwp_init_cache' );
+add_action( 'plugins_loaded', 'ktpwp_init_image_optimizer' );
 
 // キャッシュクリア処理のAJAXハンドラー
 add_action( 'wp_ajax_ktpwp_clear_cache', 'ktpwp_handle_clear_cache_ajax' );
@@ -312,6 +330,57 @@ function ktpwp_handle_clear_cache_ajax() {
     }
 }
 
+// 一括画像変換処理のAJAXハンドラー
+add_action( 'wp_ajax_ktpwp_convert_all_images', 'ktpwp_handle_convert_all_images_ajax' );
+function ktpwp_handle_convert_all_images_ajax() {
+    // 権限チェック
+    if ( ! current_user_can( 'upload_files' ) ) {
+        wp_send_json_error( '権限がありません' );
+    }
+    
+    // ナンスチェック
+    if ( ! wp_verify_nonce( $_POST['nonce'], 'ktpwp_image_optimization' ) ) {
+        wp_send_json_error( 'セキュリティチェックに失敗しました' );
+    }
+    
+    try {
+        // 画像最適化インスタンスを取得
+        global $ktpwp_image_optimizer;
+        
+        if ( ! $ktpwp_image_optimizer ) {
+            wp_send_json_error( '画像最適化機能が利用できません' );
+        }
+        
+        // すべての画像添付ファイルを取得
+        $attachments = get_posts( array(
+            'post_type' => 'attachment',
+            'post_mime_type' => array( 'image/jpeg', 'image/png', 'image/gif' ),
+            'posts_per_page' => 100, // 最初の100件のみ（パフォーマンス考慮）
+            'post_status' => 'inherit',
+        ) );
+        
+        $converted_count = 0;
+        $total_count = count( $attachments );
+        
+        foreach ( $attachments as $attachment ) {
+            $image_path = get_attached_file( $attachment->ID );
+            
+            if ( $image_path && file_exists( $image_path ) ) {
+                $webp_file = $ktpwp_image_optimizer->convert_to_webp( $image_path );
+                
+                if ( $webp_file ) {
+                    $converted_count++;
+                }
+            }
+        }
+        
+        wp_send_json_success( "{$converted_count} / {$total_count} 個の画像をWebPに変換しました" );
+        
+    } catch ( Exception $e ) {
+        wp_send_json_error( '一括変換に失敗しました: ' . $e->getMessage() );
+    }
+}
+
 // 管理画面でキャッシュ管理スクリプトを読み込み
 add_action( 'admin_enqueue_scripts', 'ktpwp_enqueue_cache_admin_scripts' );
 function ktpwp_enqueue_cache_admin_scripts( $hook ) {
@@ -328,6 +397,29 @@ function ktpwp_enqueue_cache_admin_scripts( $hook ) {
         // ナンスを JavaScript に渡す
         wp_localize_script( 'ktpwp-cache-admin', 'ktpwp_cache_admin', array(
             'nonce' => wp_create_nonce( 'ktpwp_clear_cache' ),
+            'ajaxurl' => admin_url( 'admin-ajax.php' )
+        ) );
+    }
+}
+
+// 管理画面で画像最適化スクリプトを読み込み
+add_action( 'admin_enqueue_scripts', 'ktpwp_enqueue_image_optimizer_scripts' );
+function ktpwp_enqueue_image_optimizer_scripts( $hook ) {
+    // メディアライブラリまたは設定ページで読み込み
+    if ( 'upload.php' === $hook || 'post.php' === $hook || 'post-new.php' === $hook || 
+         'toplevel_page_ktp-settings' === $hook || 'settings_page_ktp-settings' === $hook ) {
+        
+        wp_enqueue_script(
+            'ktpwp-image-optimizer',
+            KANTANPRO_PLUGIN_URL . 'js/ktpwp-image-optimizer.js',
+            array( 'jquery' ),
+            KANTANPRO_PLUGIN_VERSION,
+            true
+        );
+        
+        // ナンスを JavaScript に渡す
+        wp_localize_script( 'ktpwp-image-optimizer', 'ktpwp_image_optimizer', array(
+            'nonce' => wp_create_nonce( 'ktpwp_image_optimization' ),
             'ajaxurl' => admin_url( 'admin-ajax.php' )
         ) );
     }
@@ -3635,6 +3727,63 @@ function ktpwp_add_conditional_filter( $hook_name, $callback, $conditions = arra
 function ktpwp_get_hook_optimization_stats() {
     $hook_manager = ktpwp_hook_manager();
     return $hook_manager ? $hook_manager->get_optimization_stats() : array();
+}
+
+// ============================================================================
+// 画像最適化ヘルパー関数
+// ============================================================================
+
+/**
+ * KantanPro画像最適化インスタンスを取得
+ * 
+ * @return KTPWP_Image_Optimizer|null 画像最適化インスタンス
+ */
+function ktpwp_image_optimizer() {
+    global $ktpwp_image_optimizer;
+    return $ktpwp_image_optimizer instanceof KTPWP_Image_Optimizer ? $ktpwp_image_optimizer : null;
+}
+
+/**
+ * 画像をWebPに変換
+ * 
+ * @param string $image_path 画像ファイルパス
+ * @return string|false WebPファイルパス、失敗時はfalse
+ */
+function ktpwp_convert_to_webp( $image_path ) {
+    $optimizer = ktpwp_image_optimizer();
+    return $optimizer ? $optimizer->convert_to_webp( $image_path ) : false;
+}
+
+/**
+ * 画像最適化統計を取得
+ * 
+ * @return array 最適化統計
+ */
+function ktpwp_get_image_optimization_stats() {
+    $optimizer = ktpwp_image_optimizer();
+    return $optimizer ? $optimizer->get_optimization_stats() : array();
+}
+
+/**
+ * WebPサポート状況を確認
+ * 
+ * @return array サポート状況の詳細
+ */
+function ktpwp_check_webp_support() {
+    $support_info = array(
+        'server_support' => function_exists( 'imagewebp' ),
+        'gd_extension' => extension_loaded( 'gd' ),
+        'gd_version' => extension_loaded( 'gd' ) ? gd_info()['GD Version'] : 'Not available',
+        'webp_support' => false,
+    );
+    
+    // GD拡張のWebPサポートチェック
+    if ( $support_info['gd_extension'] ) {
+        $gd_info = gd_info();
+        $support_info['webp_support'] = isset( $gd_info['WebP Support'] ) && $gd_info['WebP Support'];
+    }
+    
+    return $support_info;
 }
 
 
