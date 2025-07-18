@@ -360,7 +360,11 @@ if ( ! class_exists( 'Kntan_Service_Class' ) ) {
 						}
 					}
 					$results[] = '<a href="' . esc_url( add_query_arg( $item_link_args, $base_page_url ) ) . '">' .
+<<<<<<< HEAD
                     '<div class="ktp_data_list_item">' . esc_html__( 'ID', 'ktpwp' ) . ': ' . $id . ' ' . $service_name . ' | ' . $this->format_price_display( $price ) . '円' . ( $unit ? '/' . $unit : '' ) . ' | 税率' . intval( $tax_rate ) . '% | ' . $category . ' | ' . esc_html__( '頻度', 'ktpwp' ) . '(' . $frequency . ')</div>' .
+=======
+                    '<div class="ktp_data_list_item">' . esc_html__( 'ID', 'ktpwp' ) . ': ' . $id . ' ' . $service_name . ' : ' . $this->format_price_display( $price ) . '円' . ( $unit ? '/' . $unit : '' ) . ' : 税率' . round( $tax_rate ) . '% : ' . $category . ' : ' . esc_html__( '頻度', 'ktpwp' ) . '(' . $frequency . ')</div>' .
+>>>>>>> 88c2be925c8d603cd87288121689f4ead7c06357
 					'</a><!-- DEBUG: price=' . $price . ' formatted=' . $this->format_price_display( $price ) . ' -->';
 				}
 				$query_max_num = $wpdb->num_rows;
@@ -949,7 +953,7 @@ if ( ! class_exists( 'Kntan_Service_Class' ) ) {
 			// 税率の表示形式
 			$tax_display = '';
 			if ( $tax_rate > 0 ) {
-				$tax_display = number_format( $tax_rate, 1 ) . '%';
+				$tax_display = round( $tax_rate ) . '%';
 			}
 
 			// 画像の表示部分
