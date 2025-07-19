@@ -1309,10 +1309,18 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 			if ( $order_id === 0 && ! $deletion_completed ) {
 				// 1. GETパラメータで指定された受注書IDを優先
 				if ( isset( $_GET['order_id'] ) && ! empty( $_GET['order_id'] ) ) {
-					$order_id = absint( $_GET['order_id'] );
-					// 有効な受注書IDの場合、セッションに記憶
-					if ( $order_id > 0 ) {
+					$get_order_id = absint( $_GET['order_id'] );
+					// 有効な受注書IDかチェック
+					$valid_order = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM `{$table_name}` WHERE id = %d", $get_order_id ) );
+					if ( $valid_order ) {
+						$order_id = $get_order_id;
+						// 有効な受注書IDの場合、セッションに記憶
 						$_SESSION['ktp_last_order_id'] = $order_id;
+					} else {
+						// 無効なIDの場合はGETパラメータをクリア
+						$current_url = remove_query_arg( 'order_id', $_SERVER['REQUEST_URI'] );
+						wp_redirect( $current_url );
+						exit;
 					}
 				}
 				// 2. セッションに記憶された受注書IDを確認
@@ -1344,7 +1352,15 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 			} else {
 				// order_idが既に設定されている場合（GETパラメータなど）、セッションに記憶
 				if ( $order_id > 0 ) {
-					$_SESSION['ktp_last_order_id'] = $order_id;
+					// 有効な受注書IDかチェック
+					$valid_order = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM `{$table_name}` WHERE id = %d", $order_id ) );
+					if ( $valid_order ) {
+						$_SESSION['ktp_last_order_id'] = $order_id;
+					} else {
+						// 無効なIDの場合はリセット
+						$order_id = 0;
+						unset( $_SESSION['ktp_last_order_id'] );
+					}
 				}
 			}
 
@@ -1794,7 +1810,7 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 				$content .= '</div>'; // controller終了
 
 				// 仕事リストタブと統一されたデータ0の時の案内表示
-				$content .= '<div class="ktp_data_list_item" style="padding: 15px 20px; background: linear-gradient(135deg, #e3f2fd 0%, #fce4ec 100%); border-radius: 8px; margin: 18px 0; color: #333; font-weight: 600; box-shadow: 0 3px 12px rgba(0,0,0,0.07); display: flex; align-items: center; font-size: 15px; gap: 10px;">'
+				$content .= '<div class="ktp_order_content ktp-no-order-data" style="padding: 15px 20px; background: linear-gradient(135deg, #e3f2fd 0%, #fce4ec 100%); border-radius: 8px; margin: 18px 0; color: #333; font-weight: 600; box-shadow: 0 3px 12px rgba(0,0,0,0.07); display: flex; align-items: center; font-size: 15px; gap: 10px;">'
                 . '<span class="material-symbols-outlined" aria-label="データなし">search_off</span>'
                 . '<span style="font-size: 1em; font-weight: 600;">' . esc_html__( '受注書データがありません。', 'ktpwp' ) . '</span>'
                 . '<span style="margin-left: 18px; font-size: 13px; color: #888;">' . esc_html__( '顧客タブで顧客情報を入力し受注書を作成してください', 'ktpwp' ) . '</span>'

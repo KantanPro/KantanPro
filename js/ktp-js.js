@@ -38,12 +38,39 @@ document.addEventListener('DOMContentLoaded', function () {
         var currentTab = getCurrentTabName();
         var currentOrderId = getCurrentOrderId();
         
+        if (window.ktpDebugMode) {
+            console.log('KTPWP: restoreOrderId - currentTab:', currentTab, 'currentOrderId:', currentOrderId);
+        }
+        
         // 受注書タブで、かつ現在のURLにorder_idが指定されていない場合
         if (currentTab === 'order' && !currentOrderId) {
             var savedOrderId = getSavedOrderId();
+            if (window.ktpDebugMode) {
+                console.log('KTPWP: restoreOrderId - savedOrderId:', savedOrderId);
+            }
+            
             if (savedOrderId) {
-                // 記憶された受注書IDでURLを更新
+                // 記憶された受注書IDが有効かどうかを確認
+                // まず、現在のページに受注書データが表示されているかチェック
+                var orderContent = document.querySelector('.ktp_order_content');
+                var noOrderData = document.querySelector('.ktp-no-order-data');
+                var hasOrderData = orderContent && orderContent.innerHTML.trim() !== '' && !noOrderData;
+                
+                if (window.ktpDebugMode) {
+                    console.log('KTPWP: restoreOrderId - hasOrderData:', hasOrderData, 'noOrderData:', !!noOrderData);
+                }
+                
+                // 受注書データが既に表示されている場合はリロードしない
+                if (hasOrderData) {
+                    if (window.ktpDebugMode) {
+                        console.log('KTPWP: 受注書データが既に表示されているため、リロードをスキップします');
+                    }
+                    return false;
+                }
+                
+                // 無効なIDが記憶されている可能性があるため、URLパラメータをクリアしてから復元
                 var newUrl = new URL(window.location);
+                newUrl.searchParams.delete('order_id'); // 既存のorder_idをクリア
                 newUrl.searchParams.set('order_id', savedOrderId);
                 newUrl.searchParams.set('tab_name', 'order');
                 
@@ -59,8 +86,48 @@ document.addEventListener('DOMContentLoaded', function () {
         return false;
     }
     
-    // ページ読み込み時に受注書IDの復元を試行
+    // 無効な受注書IDをローカルストレージからクリアする関数
+    function clearInvalidOrderId() {
+        var noOrderData = document.querySelector('.ktp-no-order-data');
+        if (noOrderData) {
+            // 受注書データが存在しない場合、記憶されたIDをクリア
+            localStorage.removeItem('ktp_last_order_id');
+            if (window.ktpDebugMode) {
+                console.log('KTPWP: 無効な受注書IDをローカルストレージからクリアしました');
+            }
+        }
+    }
+    
+    // 受注書IDが無効な場合の処理を監視する関数
+    function monitorInvalidOrderId() {
+        // URLパラメータにorder_idがあるが、データが表示されていない場合
+        var currentOrderId = getCurrentOrderId();
+        if (currentOrderId) {
+            var noOrderData = document.querySelector('.ktp-no-order-data');
+            if (noOrderData) {
+                // 無効なIDが指定されている場合、ローカルストレージからクリア
+                localStorage.removeItem('ktp_last_order_id');
+                if (window.ktpDebugMode) {
+                    console.log('KTPWP: 無効な受注書IDを検出し、ローカルストレージからクリアしました:', currentOrderId);
+                }
+                
+                // URLからorder_idパラメータを削除してリロード
+                var newUrl = new URL(window.location);
+                newUrl.searchParams.delete('order_id');
+                window.location.href = newUrl.toString();
+            }
+        }
+    }
+    
+    // ページ読み込み時に無効なIDをクリア
     if (getCurrentTabName() === 'order') {
+        // 少し遅延してからクリア処理を実行（DOMの読み込みを待つ）
+        setTimeout(function() {
+            clearInvalidOrderId();
+            monitorInvalidOrderId();
+        }, 100);
+        
+        // 受注書IDの復元を試行
         restoreOrderId();
     }
     
