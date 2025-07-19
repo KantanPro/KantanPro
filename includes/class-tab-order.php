@@ -1764,7 +1764,7 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 					// 指定された受注書が見つからない場合もコントローラーと案内を表示
 					$content .= '<div class="controller" style="display: flex; justify-content: space-between; align-items: center;">';
 
-					// 左側：削除ボタン（無効化）
+					// 左側：削除ボタン（無効化）- Material Symbolsは既に読み込み済み
 					$content .= '<button type="button" class="delete-order-btn" disabled title="受注書がありません">';
 					$content .= '<span class="material-symbols-outlined" aria-label="削除">delete</span>';
 					$content .= '受注書を削除';
@@ -1792,7 +1792,7 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 				// 受注書データが存在しない場合でもレイアウトを維持
 				$content .= '<div class="controller" style="display: flex; justify-content: space-between; align-items: center;">';
 
-				// 左側：削除ボタン（無効化）
+				// 左側：削除ボタン（無効化）- Material Symbolsは既に読み込み済み
 				$content .= '<button type="button" class="delete-order-btn" disabled title="受注書がありません">';
 				$content .= '<span class="material-symbols-outlined" aria-label="削除">delete</span>';
 				$content .= '受注書を削除';

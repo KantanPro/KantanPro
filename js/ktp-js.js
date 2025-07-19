@@ -68,22 +68,115 @@ document.addEventListener('DOMContentLoaded', function () {
                     return false;
                 }
                 
-                // 無効なIDが記憶されている可能性があるため、URLパラメータをクリアしてから復元
-                var newUrl = new URL(window.location);
-                newUrl.searchParams.delete('order_id'); // 既存のorder_idをクリア
-                newUrl.searchParams.set('order_id', savedOrderId);
-                newUrl.searchParams.set('tab_name', 'order');
-                
+                // Ajaxで受注書データを取得して表示（ページリロードを避ける）
                 if (window.ktpDebugMode) {
-                    console.log('KTPWP: 記憶された受注書IDを復元します:', savedOrderId);
+                    console.log('KTPWP: 記憶された受注書IDをAjaxで復元します:', savedOrderId);
                 }
                 
-                // ページをリロードして受注書を表示
-                window.location.href = newUrl.toString();
+                // URLを更新（履歴に追加しない）
+                var newUrl = new URL(window.location);
+                newUrl.searchParams.set('order_id', savedOrderId);
+                newUrl.searchParams.set('tab_name', 'order');
+                window.history.replaceState({}, '', newUrl.toString());
+                
+                // Ajaxで受注書データを取得
+                loadOrderDataAjax(savedOrderId);
                 return true;
             }
         }
         return false;
+    }
+    
+    // Ajaxで受注書データを取得する関数
+    function loadOrderDataAjax(orderId) {
+        if (!orderId) return;
+        
+        // Ajax設定を取得
+        var ajaxUrl = '';
+        var nonce = '';
+        
+        if (typeof ktpwp_ajax !== 'undefined') {
+            ajaxUrl = ktpwp_ajax.ajax_url;
+            nonce = ktpwp_ajax.nonce;
+        } else if (typeof ktp_ajax_object !== 'undefined') {
+            ajaxUrl = ktp_ajax_object.ajax_url;
+            nonce = ktp_ajax_object.nonce;
+        } else if (typeof ajaxurl !== 'undefined') {
+            ajaxUrl = ajaxurl;
+        }
+        
+        if (!ajaxUrl) {
+            if (window.ktpDebugMode) {
+                console.error('KTPWP: Ajax URLが取得できません');
+            }
+            return;
+        }
+        
+        // Ajaxリクエストを送信
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', ajaxUrl, true);
+        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+        
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4) {
+                if (xhr.status === 200) {
+                    try {
+                        var response = JSON.parse(xhr.responseText);
+                        if (response.success && response.data) {
+                            // 受注書データを表示
+                            updateOrderDisplay(response.data);
+                            if (window.ktpDebugMode) {
+                                console.log('KTPWP: 受注書データをAjaxで正常に取得しました');
+                            }
+                        } else {
+                            if (window.ktpDebugMode) {
+                                console.error('KTPWP: 受注書データの取得に失敗しました:', response);
+                            }
+                            // 失敗した場合は無効なIDとしてクリア
+                            localStorage.removeItem('ktp_last_order_id');
+                        }
+                    } catch (e) {
+                        if (window.ktpDebugMode) {
+                            console.error('KTPWP: レスポンスの解析に失敗しました:', e);
+                        }
+                        localStorage.removeItem('ktp_last_order_id');
+                    }
+                } else {
+                    if (window.ktpDebugMode) {
+                        console.error('KTPWP: Ajaxリクエストが失敗しました:', xhr.status);
+                    }
+                    localStorage.removeItem('ktp_last_order_id');
+                }
+            }
+        };
+        
+        var data = 'action=ktp_get_order_data&order_id=' + encodeURIComponent(orderId);
+        if (nonce) {
+            data += '&nonce=' + encodeURIComponent(nonce);
+        }
+        
+        xhr.send(data);
+    }
+    
+    // 受注書表示を更新する関数
+    function updateOrderDisplay(orderData) {
+        // 受注書コンテンツエリアを取得
+        var orderContent = document.querySelector('.ktp_order_content');
+        if (!orderContent) {
+            // コンテンツエリアがない場合は、ページ全体を更新
+            window.location.reload();
+            return;
+        }
+        
+        // 受注書データを表示
+        if (orderData.html) {
+            orderContent.innerHTML = orderData.html;
+        }
+        
+        // イベントリスナーを再設定
+        if (typeof setupOrderEventListeners === 'function') {
+            setupOrderEventListeners();
+        }
     }
     
     // 無効な受注書IDをローカルストレージからクリアする関数
@@ -111,10 +204,14 @@ document.addEventListener('DOMContentLoaded', function () {
                     console.log('KTPWP: 無効な受注書IDを検出し、ローカルストレージからクリアしました:', currentOrderId);
                 }
                 
-                // URLからorder_idパラメータを削除してリロード
+                // URLからorder_idパラメータを削除（履歴に追加しない）
                 var newUrl = new URL(window.location);
                 newUrl.searchParams.delete('order_id');
-                window.location.href = newUrl.toString();
+                window.history.replaceState({}, '', newUrl.toString());
+                
+                if (window.ktpDebugMode) {
+                    console.log('KTPWP: URLから無効な受注書IDを削除しました');
+                }
             }
         }
     }
@@ -722,6 +819,41 @@ document.addEventListener('DOMContentLoaded', function () {
                 setupStaffChatToggle(retryStaffToggleBtn, retryStaffContent);
             }
         }, 2000);
+    }
+
+    // 受注書イベントリスナーを設定する関数
+    function setupOrderEventListeners() {
+        // 既存のイベントリスナーを再設定
+        if (window.ktpDebugMode) {
+            console.log('KTPWP: 受注書イベントリスナーを再設定しています');
+        }
+        
+        // コスト項目トグルの再設定
+        var costToggleBtn = document.querySelector('.toggle-cost-items');
+        var costContent = document.getElementById('cost-items-content');
+        if (costToggleBtn && costContent) {
+            setupCostToggle(costToggleBtn, costContent);
+        }
+        
+        // スタッフチャットトグルの再設定
+        var staffChatToggleBtn = document.querySelector('.toggle-staff-chat');
+        var staffChatContent = document.getElementById('staff-chat-content');
+        if (staffChatToggleBtn && staffChatContent) {
+            setupStaffChatToggle(staffChatToggleBtn, staffChatContent);
+        }
+        
+        // その他の受注書関連イベントリスナーを再設定
+        if (typeof ktpInvoiceSetupEventListeners === 'function') {
+            ktpInvoiceSetupEventListeners();
+        }
+        
+        if (typeof ktpCostSetupEventListeners === 'function') {
+            ktpCostSetupEventListeners();
+        }
+        
+        if (window.ktpDebugMode) {
+            console.log('KTPWP: 受注書イベントリスナーの再設定が完了しました');
+        }
     }
 
     if (window.ktpDebugMode) console.log('KTPWP: Initialization complete');

@@ -1619,6 +1619,13 @@ input[name="tab_item"] {
     'opsz' 24;
   font-size: 22px; /* アイコンサイズを統一 */
   vertical-align: middle; /* 垂直方向の位置を中央に */
+  font-display: swap; /* フォント読み込み最適化 */
+  font-family: 'Material Symbols Outlined', sans-serif; /* フォントファミリーを明示 */
+}
+
+/* Material Symbolsの重複読み込み防止 */
+.material-symbols-outlined[data-loaded="true"] {
+  /* 既に読み込み済みの場合は追加読み込みを防ぐ */
 }
 
 /* タイトルとバージョンのレイアウト */

@@ -113,6 +113,8 @@ class KTPWP_Assets {
                 'ver'    => KTPWP_PLUGIN_VERSION,
                 'media'  => 'all',
                 'admin'  => false,
+                'cache'  => true, // キャッシュ有効
+                'preload' => true, // プリロード有効
             ),
         );
     }
@@ -375,7 +377,19 @@ class KTPWP_Assets {
         foreach ( $this->styles as $handle => $style ) {
             if ( $style['admin'] === $is_admin || ! $style['admin'] ) {
                 $src = $this->get_asset_url( $style['src'] );
-                wp_enqueue_style( $handle, $src, $style['deps'], $style['ver'], $style['media'] );
+                
+                // Material Symbolsの場合は重複読み込みを防ぐ
+                if ( $handle === 'material-symbols-outlined' ) {
+                    // 既にプリロードされている場合はスキップ
+                    if ( isset( $style['preload'] ) && $style['preload'] ) {
+                        continue;
+                    }
+                }
+                
+                // バージョン管理
+                $version = isset( $style['ver'] ) ? $style['ver'] : KTPWP_PLUGIN_VERSION;
+                
+                wp_enqueue_style( $handle, $src, $style['deps'], $version, $style['media'] );
             }
         }
     }
@@ -550,12 +564,21 @@ class KTPWP_Assets {
      * プリロードリンクの追加
      */
     public function add_preload_links() {
-        // Google Fontsのプリロード
-        echo '<link rel="preconnect" href="https://fonts.googleapis.com">' . "\n";
-        echo '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>' . "\n";
-        echo '<link rel="preload" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" as="style" onload="this.onload=null;this.rel=\'stylesheet\'">' . "\n";
-
-        // FontAwesome Webfont のプリロードは不要なため削除
+        // Material Symbolsのキャッシュ状態をチェック
+        $material_symbols_cached = get_transient('ktpwp_material_symbols_cached');
+        
+        if (!$material_symbols_cached) {
+            // 初回読み込み時のみプリロード
+            echo '<link rel="preconnect" href="https://fonts.googleapis.com">' . "\n";
+            echo '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>' . "\n";
+            echo '<link rel="preload" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" as="style" onload="this.onload=null;this.rel=\'stylesheet\'">' . "\n";
+            
+            // キャッシュフラグを設定（24時間有効）
+            set_transient('ktpwp_material_symbols_cached', true, DAY_IN_SECONDS);
+        } else {
+            // キャッシュ済みの場合は直接読み込み
+            echo '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0">' . "\n";
+        }
     }
 
     /**
