@@ -166,7 +166,10 @@ if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
 		 */
 		public function update_table( $tab_name, $post_data ) {
 			if ( empty( $tab_name ) ) {
-				error_log( 'KTPWP: Empty tab_name provided to update_table method' );
+				// エラーログはサーバーサイドのみに記録（ヘッダーに表示されない）
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					error_log( 'KTPWP: Empty tab_name provided to update_table method' );
+				}
 				return;
 			}
 
@@ -177,7 +180,10 @@ if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
 			if ( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
 				if ( ! isset( $post_data['ktp_supplier_nonce'] ) ||
                  ! wp_verify_nonce( $post_data['ktp_supplier_nonce'], 'ktp_supplier_action' ) ) {
-					error_log( 'KTPWP: Nonce verification failed' );
+					// エラーログはサーバーサイドのみに記録（ヘッダーに表示されない）
+					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+						error_log( 'KTPWP: Nonce verification failed' );
+					}
 					wp_die( __( 'Security check failed. Please refresh the page and try again.', 'ktpwp' ) );
 				}
 			}
@@ -186,7 +192,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
 			$data_id = isset( $post_data['data_id'] ) ? absint( $post_data['data_id'] ) : 0;
 			$query_post = isset( $post_data['query_post'] ) ? sanitize_key( $post_data['query_post'] ) : '';
 
-			// Log operation without sensitive data
+			// Log operation without sensitive data (サーバーサイドのみ)
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 				error_log( 'KTPWP: update_table called for tab: ' . $tab_name . ', action: ' . $query_post );
 			}
@@ -202,9 +208,15 @@ if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
 						$delete_result = $wpdb->delete( $table_name, array( 'id' => $data_id ), array( '%d' ) );
 
 						if ( $delete_result === false ) {
+							// エラーログはサーバーサイドのみに記録
+							if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+								error_log( 'KTPWP: Supplier deletion failed. SQL Error: ' . $wpdb->last_error );
+							}
+							
+							// ユーザーには適切なエラーメッセージのみ表示
 							echo '<script>
                         document.addEventListener("DOMContentLoaded", function() {
-                            showErrorNotification("' . esc_js( __( '削除に失敗しました。SQLエラー: ', 'ktpwp' ) ) . esc_js( $wpdb->last_error ) . '");
+                            showErrorNotification("' . esc_js( __( '削除に失敗しました。', 'ktpwp' ) ) . '");
                         });
                         </script>';
 						} else {
@@ -229,6 +241,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
                                 $base_page_url
                             );
 
+							// 成功メッセージのみ表示（デバッグログは含めない）
 							echo '<script>
                             document.addEventListener("DOMContentLoaded", function() {
                                 showSuccessNotification("' . esc_js( esc_html__( '協力会社を削除しました。', 'ktpwp' ) ) . '");

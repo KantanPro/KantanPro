@@ -1004,6 +1004,12 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 					. '</div>';
 			}
 
+			// 変数の初期化を確実に行う（未定義変数エラーを防ぐ）
+			$qualified_invoice_number = isset( $qualified_invoice_number ) ? $qualified_invoice_number : '';
+			$category = isset( $category ) ? $category : '';
+			$frequency = isset( $frequency ) ? $frequency : '';
+			$memo = isset( $memo ) ? $memo : '';
+
 			// data_listに協力会社ID表示メッセージを追加 - 協力会社リストBOXを継続（職能セクションを含むため）
 			$data_list = $results_h . implode( $results ) . $results_f . $current_id_message;
 

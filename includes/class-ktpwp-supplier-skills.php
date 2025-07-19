@@ -451,10 +451,14 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 		);
 
 		if ( $result === false ) {
-			error_log( 'KTPWP: Failed to delete supplier skills: ' . $wpdb->last_error );
+			// エラーログはサーバーサイドのみに記録（ヘッダーに表示されない）
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( 'KTPWP: Failed to delete supplier skills: ' . $wpdb->last_error );
+			}
 			return false;
 		}
 
+		// 成功時のログはサーバーサイドのみに記録（ヘッダーに表示されない）
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 			error_log( "KTPWP: Deleted {$result} skills for supplier ID {$supplier_id}" );
 		}
