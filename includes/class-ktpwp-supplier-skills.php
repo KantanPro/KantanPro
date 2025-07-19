@@ -284,44 +284,47 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 		 * @param int    $frequency Frequency (default: 0)
 		 * @return int|false Product ID on success, false on failure
 		 */
-		public function add_skill( $supplier_id, $product_name, $unit_price = 0, $quantity = 1, $unit = '式', $tax_rate = 10.00, $frequency = 0 ) {
-			global $wpdb;
+	public function add_skill( $supplier_id, $product_name, $unit_price = 0, $quantity = 1, $unit = '式', $tax_rate = 10.00, $frequency = 0 ) {
+		global $wpdb;
 
-			if ( empty( $supplier_id ) || $supplier_id <= 0 || empty( $product_name ) ) {
-				return false;
-			}
-
-			$table_name = $wpdb->prefix . 'ktp_supplier_skills';
-			$supplier_id = absint( $supplier_id );
-
-			// Sanitize product data
-			$sanitized_data = array(
-				'supplier_id' => $supplier_id,
-				'product_name' => sanitize_text_field( $product_name ),
-				'unit_price' => floatval( $unit_price ),
-				'quantity' => absint( $quantity ) ?: 1,
-				'unit' => sanitize_text_field( $unit ) ?: '式',
-				'tax_rate' => floatval( $tax_rate ),
-				'frequency' => absint( $frequency ),
-				'created_at' => current_time( 'mysql' ),
-				'updated_at' => current_time( 'mysql' ),
-			);
-
-			$result = $wpdb->insert(
-                $table_name,
-                $sanitized_data,
-                array( '%d', '%s', '%f', '%d', '%s', '%f', '%d', '%s', '%s' )
-			);
-
-			if ( $result === false ) {
-				error_log( 'KTPWP: Failed to add supplier product: ' . $wpdb->last_error );
-				return false;
-			}
-
-			return $wpdb->insert_id;
+		if ( empty( $supplier_id ) || $supplier_id <= 0 || empty( $product_name ) ) {
+			return false;
 		}
 
-		/**
+		$table_name = $wpdb->prefix . 'ktp_supplier_skills';
+		$supplier_id = absint( $supplier_id );
+
+		// Sanitize product data
+		$sanitized_data = array(
+			'supplier_id' => $supplier_id,
+			'product_name' => sanitize_text_field( $product_name ),
+			'unit_price' => floatval( $unit_price ),
+			'quantity' => absint( $quantity ) ?: 1,
+			'unit' => sanitize_text_field( $unit ) ?: '式',
+			'tax_rate' => floatval( $tax_rate ),
+			'frequency' => absint( $frequency ),
+			'created_at' => current_time( 'mysql' ),
+			'updated_at' => current_time( 'mysql' ),
+		);
+
+		$result = $wpdb->insert(
+            $table_name,
+            $sanitized_data,
+            array( '%d', '%s', '%f', '%d', '%s', '%f', '%d', '%s', '%s' )
+		);
+
+		if ( $result === false ) {
+			error_log( 'KTPWP: Failed to add supplier product: ' . $wpdb->last_error );
+			return false;
+		}
+
+		// Clear cache for this supplier after successful addition
+		if ( function_exists( 'ktpwp_cache_delete' ) ) {
+			ktpwp_cache_delete( "supplier_skills_for_cost_{$supplier_id}" );
+		}
+
+		return $wpdb->insert_id;
+	}		/**
 		 * Update a product
 		 *
 		 * @since 1.0.0
@@ -334,110 +337,135 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 		 * @param int    $frequency Frequency (default: 0)
 		 * @return bool True on success, false on failure
 		 */
-		public function update_skill( $skill_id, $product_name, $unit_price = 0, $quantity = 1, $unit = '式', $tax_rate = 10.00, $frequency = 0 ) {
-			global $wpdb;
+	public function update_skill( $skill_id, $product_name, $unit_price = 0, $quantity = 1, $unit = '式', $tax_rate = 10.00, $frequency = 0 ) {
+		global $wpdb;
 
-			if ( empty( $skill_id ) || $skill_id <= 0 || empty( $product_name ) ) {
-				return false;
-			}
-
-			$table_name = $wpdb->prefix . 'ktp_supplier_skills';
-			$skill_id = absint( $skill_id );
-
-			// Sanitize product data
-			$sanitized_data = array(
-				'product_name' => sanitize_text_field( $product_name ),
-				'unit_price' => floatval( $unit_price ),
-				'quantity' => absint( $quantity ) ?: 1,
-				'unit' => sanitize_text_field( $unit ) ?: '式',
-				'tax_rate' => floatval( $tax_rate ),
-				'frequency' => absint( $frequency ),
-				'updated_at' => current_time( 'mysql' ),
-			);
-
-			$result = $wpdb->update(
-                $table_name,
-                $sanitized_data,
-                array( 'id' => $skill_id ),
-                array( '%s', '%f', '%d', '%s', '%f', '%d', '%s' ),
-                array( '%d' )
-			);
-
-			if ( $result === false ) {
-				error_log( 'KTPWP: Failed to update supplier product: ' . $wpdb->last_error );
-				return false;
-			}
-
-			return true;
+		if ( empty( $skill_id ) || $skill_id <= 0 || empty( $product_name ) ) {
+			return false;
 		}
 
-		/**
-		 * Delete a product (physical delete)
-		 *
-		 * @since 1.0.0
-		 * @param int $skill_id Product ID
-		 * @return bool True on success, false on failure
-		 */
-		public function delete_skill( $skill_id ) {
-			global $wpdb;
+		$table_name = $wpdb->prefix . 'ktp_supplier_skills';
+		$skill_id = absint( $skill_id );
 
-			if ( empty( $skill_id ) || $skill_id <= 0 ) {
-				return false;
-			}
+		// Get supplier_id before update to clear cache
+		$supplier_id = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT supplier_id FROM {$table_name} WHERE id = %d",
+				$skill_id
+			)
+		);
 
-			$table_name = $wpdb->prefix . 'ktp_supplier_skills';
-			$skill_id = absint( $skill_id );
+		// Sanitize product data
+		$sanitized_data = array(
+			'product_name' => sanitize_text_field( $product_name ),
+			'unit_price' => floatval( $unit_price ),
+			'quantity' => absint( $quantity ) ?: 1,
+			'unit' => sanitize_text_field( $unit ) ?: '式',
+			'tax_rate' => floatval( $tax_rate ),
+			'frequency' => absint( $frequency ),
+			'updated_at' => current_time( 'mysql' ),
+		);
 
-			$result = $wpdb->delete(
-                $table_name,
-                array( 'id' => $skill_id ),
-                array( '%d' )
-			);
+		$result = $wpdb->update(
+            $table_name,
+            $sanitized_data,
+            array( 'id' => $skill_id ),
+            array( '%s', '%f', '%d', '%s', '%f', '%d', '%s' ),
+            array( '%d' )
+		);
 
-			if ( $result === false ) {
-				error_log( 'KTPWP: Failed to delete supplier skill: ' . $wpdb->last_error );
-				return false;
-			}
-
-			return true;
+		if ( $result === false ) {
+			error_log( 'KTPWP: Failed to update supplier product: ' . $wpdb->last_error );
+			return false;
 		}
 
-		/**
+		// Clear cache for this supplier after successful update
+		if ( $supplier_id && function_exists( 'ktpwp_cache_delete' ) ) {
+			ktpwp_cache_delete( "supplier_skills_for_cost_{$supplier_id}" );
+		}
+
+		return true;
+	}	/**
+	 * Delete a product (physical delete)
+	 *
+	 * @since 1.0.0
+	 * @param int $skill_id Product ID
+	 * @return bool True on success, false on failure
+	 */
+	public function delete_skill( $skill_id ) {
+		global $wpdb;
+
+		if ( empty( $skill_id ) || $skill_id <= 0 ) {
+			return false;
+		}
+
+		$table_name = $wpdb->prefix . 'ktp_supplier_skills';
+		$skill_id = absint( $skill_id );
+
+		// Get supplier_id before deletion to clear cache
+		$supplier_id = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT supplier_id FROM {$table_name} WHERE id = %d",
+				$skill_id
+			)
+		);
+
+		$result = $wpdb->delete(
+            $table_name,
+            array( 'id' => $skill_id ),
+            array( '%d' )
+		);
+
+		if ( $result === false ) {
+			error_log( 'KTPWP: Failed to delete supplier skill: ' . $wpdb->last_error );
+			return false;
+		}
+
+		// Clear cache for this supplier after successful deletion
+		if ( $supplier_id && function_exists( 'ktpwp_cache_delete' ) ) {
+			ktpwp_cache_delete( "supplier_skills_for_cost_{$supplier_id}" );
+		}
+
+		return true;
+	}		/**
 		 * Delete all products for a supplier (called when supplier is deleted)
 		 *
 		 * @since 1.0.0
 		 * @param int $supplier_id Supplier ID
 		 * @return bool True on success, false on failure
 		 */
-		public function delete_supplier_skills( $supplier_id ) {
-			global $wpdb;
+	public function delete_supplier_skills( $supplier_id ) {
+		global $wpdb;
 
-			if ( empty( $supplier_id ) || $supplier_id <= 0 ) {
-				return false;
-			}
-
-			$table_name = $wpdb->prefix . 'ktp_supplier_skills';
-			$supplier_id = absint( $supplier_id );
-
-			$result = $wpdb->delete(
-                $table_name,
-                array( 'supplier_id' => $supplier_id ),
-                array( '%d' )
-			);
-
-			if ( $result === false ) {
-				error_log( 'KTPWP: Failed to delete supplier skills: ' . $wpdb->last_error );
-				return false;
-			}
-
-			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( "KTPWP: Deleted {$result} skills for supplier ID {$supplier_id}" );
-			}
-
-			return true;
+		if ( empty( $supplier_id ) || $supplier_id <= 0 ) {
+			return false;
 		}
 
-		/**
+		$table_name = $wpdb->prefix . 'ktp_supplier_skills';
+		$supplier_id = absint( $supplier_id );
+
+		$result = $wpdb->delete(
+            $table_name,
+            array( 'supplier_id' => $supplier_id ),
+            array( '%d' )
+		);
+
+		if ( $result === false ) {
+			error_log( 'KTPWP: Failed to delete supplier skills: ' . $wpdb->last_error );
+			return false;
+		}
+
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			error_log( "KTPWP: Deleted {$result} skills for supplier ID {$supplier_id}" );
+		}
+
+		// Clear cache for this supplier after successful deletion
+		if ( function_exists( 'ktpwp_cache_delete' ) ) {
+			ktpwp_cache_delete( "supplier_skills_for_cost_{$supplier_id}" );
+		}
+
+		return true;
+	}		/**
 		 * Get product by ID
 		 *
 		 * @since 1.0.0
