@@ -658,7 +658,20 @@ window.ktpUpdateCostRowFromSkill = function(skill, currentRow) {
             const itemId = currentRow.find('input[name*="[id]"]').val();
             const orderId = $('input[name="order_id"]').val() || $('#order_id').val();
             const supplierId = window.ktpCurrentSupplierId;
-            if (orderId && itemId && itemId !== '0' && typeof autoSaveItem === 'function') {
+            
+            // デバッグ情報を出力
+            console.log('[SUPPLIER-SELECTOR] DB保存条件チェック:', {
+                orderId: orderId,
+                itemId: itemId,
+                itemIdType: typeof itemId,
+                itemIdIsZero: itemId === '0',
+                itemIdIsZeroNumber: itemId === 0,
+                autoSaveItemExists: typeof autoSaveItem === 'function',
+                createNewItemExists: typeof createNewItem === 'function',
+                currentRow: currentRow[0] ? currentRow[0].outerHTML.substring(0, 200) + '...' : 'null'
+            });
+            
+            if (orderId && itemId && itemId !== '0' && itemId !== 0 && typeof autoSaveItem === 'function') {
                 try {
                     autoSaveItem('cost', itemId, 'product_name', skill.product_name, orderId);
                     autoSaveItem('cost', itemId, 'price', skill.unit_price, orderId);
@@ -698,9 +711,67 @@ window.ktpUpdateCostRowFromSkill = function(skill, currentRow) {
                     return;
                 }
             } else {
-                // DB保存条件未満
+                // DB保存条件未満の場合の処理
+                const skipReason = [];
+                if (!orderId) skipReason.push('受注書IDが取得できません');
+                if (!itemId || itemId === '0' || itemId === 0) {
+                    skipReason.push('アイテムIDが無効です（ID: ' + itemId + '）');
+                    
+                    // 新規行の場合は、まず新規アイテムを作成してから更新を試行
+                    if (orderId && typeof createNewItem === 'function') {
+                        console.log('[SUPPLIER-SELECTOR] 新規アイテム作成を試行します');
+                        try {
+                            createNewItem('cost', 'product_name', skill.product_name, orderId, currentRow, function(success, newItemId) {
+                                if (success && newItemId) {
+                                    console.log('[SUPPLIER-SELECTOR] 新規アイテム作成成功、各フィールドを保存します', { newItemId: newItemId });
+                                    
+                                    // 新規作成されたアイテムIDで各フィールドを保存
+                                    if (typeof autoSaveItem === 'function') {
+                                        autoSaveItem('cost', newItemId, 'price', skill.unit_price, orderId);
+                                        autoSaveItem('cost', newItemId, 'quantity', skill.quantity, orderId);
+                                        autoSaveItem('cost', newItemId, 'unit', skill.unit, orderId);
+                                        autoSaveItem('cost', newItemId, 'tax_rate', Math.round(skill.tax_rate || 10), orderId);
+                                        
+                                        // 協力会社名を「仕入」フィールドに保存
+                                        if (window.ktpCurrentSupplierName) {
+                                            autoSaveItem('cost', newItemId, 'purchase', window.ktpCurrentSupplierName, orderId);
+                                        }
+                                        if (supplierId && supplierId > 0) {
+                                            autoSaveItem('cost', newItemId, 'supplier_id', supplierId, orderId);
+                                        }
+                                        
+                                        const calculatedAmount = Math.ceil(parseFloat(skill.unit_price || 0) * parseFloat(skill.quantity || 1));
+                                        autoSaveItem('cost', newItemId, 'amount', calculatedAmount, orderId);
+                                        
+                                                                            // 新規作成されたアイテムIDをDOMに反映
+                                    currentRow.find('input[name*="[id]"]').val(newItemId);
+                                    currentRow.attr('data-row-id', newItemId);
+                                    
+                                    // 成功通知
+                                    if (typeof window.showSuccessNotification === 'function') {
+                                        window.showSuccessNotification('該当行の更新が完了しました。');
+                                    }
+                                    }
+                                } else {
+                                    console.error('[SUPPLIER-SELECTOR] 新規アイテム作成に失敗しました');
+                                    if (typeof window.showErrorNotification === 'function') {
+                                        window.showErrorNotification('新規アイテムの作成に失敗しました。');
+                                    }
+                                }
+                            });
+                            return; // 新規作成処理を実行したので、ここで終了
+                        } catch (createError) {
+                            console.error('[SUPPLIER-SELECTOR] 新規アイテム作成中にエラーが発生:', createError);
+                            skipReason.push('新規アイテム作成エラー: ' + createError.message);
+                        }
+                    }
+                }
+                if (typeof autoSaveItem !== 'function') skipReason.push('autoSaveItem関数が見つかりません');
+                
+                console.warn('[SUPPLIER-SELECTOR] DB保存スキップ理由:', skipReason);
+                
                 if (typeof window.showSuccessNotification === 'function') {
-                    window.showSuccessNotification('該当行の更新が完了しました。（データベース保存はスキップされました）');
+                    window.showSuccessNotification('該当行の更新が完了しました。（データベース保存はスキップされました）\n理由: ' + skipReason.join(', '));
                 }
             }
             // --- ポップアップ自動クローズ ---
