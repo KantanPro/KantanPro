@@ -1610,22 +1610,24 @@ input[name="tab_item"] {
   background-color: #45a049;
 }
 
-/* Googleフォント用アイコン */
+/* Material Symbolsを無効化し、SVGアイコンに置き換え */
 .material-symbols-outlined {
-  font-variation-settings:
-    'FILL' 0,
-    'wght' 400,
-    'GRAD' 0,
-    'opsz' 24;
-  font-size: 22px; /* アイコンサイズを統一 */
-  vertical-align: middle; /* 垂直方向の位置を中央に */
-  font-display: swap; /* フォント読み込み最適化 */
-  font-family: 'Material Symbols Outlined', sans-serif; /* フォントファミリーを明示 */
+  display: none; /* Material Symbolsを非表示 */
 }
 
-/* Material Symbolsの重複読み込み防止 */
-.material-symbols-outlined[data-loaded="true"] {
-  /* 既に読み込み済みの場合は追加読み込みを防ぐ */
+/* SVGアイコンのスタイル */
+.ktp-svg-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  font-size: 22px; /* アイコンサイズを統一 */
+}
+
+.ktp-svg-icon svg {
+  width: 1em;
+  height: 1em;
+  fill: currentColor;
 }
 
 /* タイトルとバージョンのレイアウト */
@@ -1801,7 +1803,7 @@ input[name="tab_item"] {
     min-height: 32px; /* 高さを少し小さく */
   }
   
-  .material-symbols-outlined {
+  .ktp-svg-icon {
     font-size: 20px; /* アイコンサイズを少し小さく */
   }
 }

@@ -77,7 +77,7 @@
         }
         
         // ローディング状態に変更
-        $link.html('<span class="material-symbols-outlined" style="font-size: 20px; vertical-align: middle; animation: spin 1s linear infinite;">refresh</span>');
+        $link.html(typeof KTPSvgIcons !== 'undefined' ? KTPSvgIcons.getIcon('refresh', {'style': 'font-size: 20px; vertical-align: middle; animation: spin 1s linear infinite;'}) : '<span class="material-symbols-outlined" style="font-size: 20px; vertical-align: middle; animation: spin 1s linear infinite;">refresh</span>');
         $link.css('pointer-events', 'none');
         
         console.log('KantanPro: 更新チェック開始');

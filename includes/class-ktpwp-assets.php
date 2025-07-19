@@ -57,6 +57,7 @@ class KTPWP_Assets {
         add_action( 'wp_head', array( $this, 'add_preload_links' ), 1 );
         add_action( 'wp_head', array( $this, 'output_ajax_config' ), 99 );
         add_action( 'wp_footer', array( $this, 'output_ajax_config_fallback' ), 1 );
+        add_action( 'wp_head', array( $this, 'output_svg_icon_styles' ), 100 );
     }
 
     /**
@@ -107,15 +108,16 @@ class KTPWP_Assets {
                 'media'  => 'all',
                 'admin'  => true,
             ),
-            'material-symbols-outlined' => array(
-                'src'    => 'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0',
-                'deps'   => array(),
-                'ver'    => KTPWP_PLUGIN_VERSION,
-                'media'  => 'all',
-                'admin'  => false,
-                'cache'  => true, // キャッシュ有効
-                'preload' => true, // プリロード有効
-            ),
+            // Material Symbolsを無効化し、SVGアイコンに置き換え
+            // 'material-symbols-outlined' => array(
+            //     'src'    => 'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0',
+            //     'deps'   => array(),
+            //     'ver'    => KTPWP_PLUGIN_VERSION,
+            //     'media'  => 'all',
+            //     'admin'  => false,
+            //     'cache'  => true, // キャッシュ有効
+            //     'preload' => true, // プリロード有効
+            // ),
         );
     }
 
@@ -249,7 +251,7 @@ class KTPWP_Assets {
             ),
             'ktp-order-preview' => array(
                 'src'       => 'js/ktp-order-preview.js',
-                'deps'      => array( 'jquery' ),
+                'deps'      => array( 'jquery', 'ktp-svg-icons' ),
                 'ver'       => KTPWP_PLUGIN_VERSION,
                 'in_footer' => true,
                 'admin'     => false,
@@ -278,9 +280,16 @@ class KTPWP_Assets {
                 'in_footer' => true,
                 'admin'     => false,
             ),
+            'ktp-svg-icons' => array(
+                'src'       => 'js/ktp-svg-icons.js',
+                'deps'      => array( 'jquery' ),
+                'ver'       => KTPWP_PLUGIN_VERSION,
+                'in_footer' => true,
+                'admin'     => false,
+            ),
             'ktp-client-invoice' => array(
                 'src'       => 'js/ktp-client-invoice.js',
-                'deps'      => array( 'jquery' ),
+                'deps'      => array( 'jquery', 'ktp-svg-icons' ),
                 'ver'       => KTPWP_PLUGIN_VERSION,
                 'in_footer' => true,
                 'admin'     => false,
@@ -564,7 +573,9 @@ class KTPWP_Assets {
      * プリロードリンクの追加
      */
     public function add_preload_links() {
-        // Material Symbolsのキャッシュ状態をチェック
+        // Material Symbolsを無効化し、SVGアイコンに置き換え
+        // Material Symbolsのプリロードは不要になったため、コメントアウト
+        /*
         $material_symbols_cached = get_transient('ktpwp_material_symbols_cached');
         
         if (!$material_symbols_cached) {
@@ -579,6 +590,7 @@ class KTPWP_Assets {
             // キャッシュ済みの場合は直接読み込み
             echo '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0">' . "\n";
         }
+        */
     }
 
     /**
@@ -682,5 +694,14 @@ class KTPWP_Assets {
             false,
             dirname( plugin_basename( __FILE__ ) ) . '/languages'
         );
+    }
+
+    /**
+     * SVGアイコンのスタイルを出力
+     */
+    public function output_svg_icon_styles() {
+        if (class_exists('KTPWP_SVG_Icons')) {
+            KTPWP_SVG_Icons::output_styles();
+        }
     }
 }

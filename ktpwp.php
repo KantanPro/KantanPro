@@ -192,6 +192,7 @@ function ktpwp_autoload_classes() {
         'KTPWP_Terms_Of_Service' => 'includes/class-ktpwp-terms-of-service.php',
         'KTPWP_Update_Checker'  => 'includes/class-ktpwp-update-checker.php',
         'KTPWP_Donation'        => 'includes/class-ktpwp-donation.php',
+        'KTPWP_SVG_Icons'       => 'includes/class-ktpwp-svg-icons.php',
     );
 
     foreach ( $classes as $class_name => $file_path ) {
@@ -2105,19 +2106,19 @@ function ktpwp_scripts_and_styles() {
         wp_enqueue_style( 'ktp-setting-tab', plugins_url( 'css/ktp-setting-tab.css', __FILE__ ) . '?v=' . time(), array( 'ktp-css' ), KANTANPRO_PLUGIN_VERSION, 'all' );
     }
 
-    // Material Symbols アイコンフォントをプリロードとして読み込み
-    wp_enqueue_style( 'ktpwp-material-icons', 'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0', array(), null );
+    // Material Symbolsを無効化し、SVGアイコンに置き換え
+    // wp_enqueue_style( 'ktpwp-material-icons', 'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0', array(), null );
 
-    // Google Fontsのプリロード設定
-    add_action(
-        'wp_head',
-        function () {
-			echo '<link rel="preconnect" href="https://fonts.googleapis.com">' . "\n";
-			echo '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>' . "\n";
-			echo '<link rel="preload" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" as="style" onload="this.onload=null;this.rel=\'stylesheet\'">' . "\n";
-		},
-        1
-    );
+    // Google Fontsのプリロード設定も無効化
+    // add_action(
+    //     'wp_head',
+    //     function () {
+    //         echo '<link rel="preconnect" href="https://fonts.googleapis.com">' . "\n";
+    //         echo '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>' . "\n";
+    //         echo '<link rel="preload" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" as="style" onload="this.onload=null;this.rel=\'stylesheet\'">' . "\n";
+    //     },
+    //     1
+    // );
     wp_enqueue_script( 'jquery', 'https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js', array(), '3.5.1', true );
     wp_enqueue_script( 'ktp-order-inline-projectname', plugins_url( 'js/ktp-order-inline-projectname.js', __FILE__ ), array( 'jquery' ), KANTANPRO_PLUGIN_VERSION, true );
     // Nonceをjsに渡す（案件名インライン編集用）
@@ -2487,6 +2488,11 @@ function KTPWP_Index() {
                 if ( $ktpwp_update_checker ) {
                     $update_data = $ktpwp_update_checker->check_header_update();
                 }
+            }
+            
+            // SVGアイコンに置換
+            if (class_exists('KTPWP_SVG_Icons')) {
+                $navigation_links = KTPWP_SVG_Icons::replace_material_symbols($navigation_links);
             }
             
             $front_message = '<div class="ktp_header">'

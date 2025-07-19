@@ -66,7 +66,7 @@ if ( ! class_exists( 'Kntan_Client_Class' ) ) {
                 '<option value="DESC" ' . selected( $sort_order, 'DESC', false ) . '>' . esc_html__( '降順', 'ktpwp' ) . '</option>' .
                 '</select>' .
                 '<button type="submit" style="margin-left:5px;padding:4px 8px;background:#f0f0f0;border:1px solid #ccc;border-radius:3px;cursor:pointer;" title="' . esc_attr__( '適用', 'ktpwp' ) . '">' .
-                '<span class="material-symbols-outlined" style="font-size:18px;line-height:18px;vertical-align:middle;">check</span>' .
+                (class_exists('KTPWP_SVG_Icons') ? KTPWP_SVG_Icons::get_icon('check', array('style' => 'font-size:18px;line-height:18px;vertical-align:middle;')) : '<span class="material-symbols-outlined" style="font-size:18px;line-height:18px;vertical-align:middle;">check</span>') .
                 '</button>' .
                 '</form></div>';
 			}
@@ -115,7 +115,7 @@ if ( ! class_exists( 'Kntan_Client_Class' ) ) {
                 '<option value="DESC" ' . selected( $order_sort_order, 'DESC', false ) . '>' . esc_html__( '降順', 'ktpwp' ) . '</option>' .
                 '</select>' .
                 '<button type="submit" style="margin-left:5px;padding:4px 8px;background:#f0f0f0;border:1px solid #ccc;border-radius:3px;cursor:pointer;" title="' . esc_attr__( '適用', 'ktpwp' ) . '">' .
-                '<span class="material-symbols-outlined" style="font-size:18px;line-height:18px;vertical-align:middle;">check</span>' .
+                (class_exists('KTPWP_SVG_Icons') ? KTPWP_SVG_Icons::get_icon('check', array('style' => 'font-size:18px;line-height:18px;vertical-align:middle;')) : '<span class="material-symbols-outlined" style="font-size:18px;line-height:18px;vertical-align:middle;">check</span>') .
                 '</button>' .
                 '</form></div>';
 			}

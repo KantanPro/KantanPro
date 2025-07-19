@@ -1,13 +1,22 @@
 /* 設定タブのボタンスタイル調整 */
 
-/* Material Symbols フォントの最適化 */
+/* Material Symbolsを無効化し、SVGアイコンに置き換え */
 .material-symbols-outlined {
-    font-display: swap; /* フォント読み込み中はフォールバックテキストを表示 */
-    font-variation-settings:
-        'FILL' 0,
-        'wght' 400,
-        'GRAD' 0,
-        'opsz' 24;
+    display: none; /* Material Symbolsを非表示 */
+}
+
+/* SVGアイコンのスタイル */
+.ktp-svg-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+}
+
+.ktp-svg-icon svg {
+    width: 1em;
+    height: 1em;
+    fill: currentColor;
 }
 
 /* 設定タブのprinterボタンに統一スタイルを適用 */
@@ -38,15 +47,14 @@
     color: #1976d2;
 }
 
-/* マテリアルアイコンのサイズ調整 */
-.controller .printer .material-symbols-outlined {
+/* SVGアイコンのサイズ調整 */
+.controller .printer .ktp-svg-icon {
     font-size: 24px;
     width: 24px;
     height: 24px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-display: swap; /* フォント読み込み最適化 */
 }
 
 /* タブリンク用特別スタイル - 設定タブ用 */

@@ -358,7 +358,7 @@ jQuery(document).ready(function($) {
                                 html += '対象受注書の進捗を「請求済」に変更する';
                                 html += '</label><br />';
                                 html += '<button onclick="printInvoiceContent()" style="background-color:#0073aa;color:white;border:none;padding:10px 20px;border-radius:5px;cursor:pointer;font-size:14px;font-weight:500;">';
-                                html += '<span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle;margin-right:5px;">print</span>';
+                                html += (typeof KTPSvgIcons !== 'undefined' ? KTPSvgIcons.getIcon('print', {'style': 'font-size:16px;vertical-align:middle;margin-right:5px;'}) : '<span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle;margin-right:5px;">print</span>');
                                 html += '印刷 PDF保存';
                                 html += '</button>';
                                 html += '</div>';

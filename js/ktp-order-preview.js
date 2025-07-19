@@ -103,7 +103,7 @@
             }
 
             // ローディング表示
-            $(this).prop('disabled', true).html('<span class="material-symbols-outlined">hourglass_empty</span>');
+            $(this).prop('disabled', true).html(typeof KTPSvgIcons !== 'undefined' ? KTPSvgIcons.getIcon('hourglass_empty') : '<span class="material-symbols-outlined">hourglass_empty</span>');
             
             // Ajaxで最新のプレビューデータを取得
             $.ajax({
@@ -143,7 +143,7 @@
                 },
                 complete: function() {
                     // ボタンを元に戻す
-                    $('#orderPreviewButton').prop('disabled', false).html('<span class="material-symbols-outlined" aria-label="プレビュー">preview</span>');
+                    $('#orderPreviewButton').prop('disabled', false).html(typeof KTPSvgIcons !== 'undefined' ? KTPSvgIcons.getIcon('preview', {'aria-label': 'プレビュー'}) : '<span class="material-symbols-outlined" aria-label="プレビュー">preview</span>');
                 }
             });
         });
@@ -249,7 +249,7 @@
                             align-items: center;
                             gap: 8px;
                         ">
-                            <span class="material-symbols-outlined">print</span>
+                            ${typeof KTPSvgIcons !== 'undefined' ? KTPSvgIcons.getIcon('print') : '<span class="material-symbols-outlined">print</span>'}
                             印刷 PDF保存
                         </button>
                     </div>

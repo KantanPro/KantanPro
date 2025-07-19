@@ -192,8 +192,8 @@
     border-bottom: 2px solid #e5e7eb;
 }
 
-/* Material アイコンの調整 */
-.material-symbols-outlined {
+/* SVGアイコンの調整 */
+.ktp-svg-icon {
     vertical-align: middle;
     font-size: 18px;
     line-height: 1;
