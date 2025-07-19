@@ -11,7 +11,8 @@
  * - シンプル更新システムを実装。
  * - 寄付機能（Stripe決済・進捗管理・自動メール送信）を追加。
  * - バージョンアップ履歴・トラブルシューティングも掲載。
- * - 最新バージョン: 1.1.6(preview) - 2025年7月19日更新
+ * - 最新バージョン: 1.1.7(preview) - 2025年7月19日更新
+ * - アイコンのSVG化（Material SymbolsからSVGアイコンへの完全移行）
  * - 協力会社職能選択の改善
  * - パフォーマンスの改善
  * - キャッシュシステムの最適化
@@ -97,6 +98,11 @@ if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
 			}
 
 			$reference_icon = '<span class="material-symbols-outlined" style="font-size: 20px; vertical-align: middle;">help</span>';
+
+			// SVGアイコンに置換
+			if (class_exists('KTPWP_SVG_Icons')) {
+				$reference_icon = KTPWP_SVG_Icons::get_icon('help', array('style' => 'font-size: 20px; vertical-align: middle;'));
+			}
 
 			// デバッグ用：リファレンスリンクが生成されることをコンソールに記録
 			$debug_script = '<script>console.log("KTPWP Reference: Link generated");</script>';
