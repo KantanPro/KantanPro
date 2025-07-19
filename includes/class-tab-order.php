@@ -1745,12 +1745,32 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 					// 削除ボタンはworkflow内に移動済み
 
 				} else {
-					// 指定された受注書が見つからない場合も統一されたスタイルで表示
-					$content .= '<div class="ktp_data_list_item" style="padding: 15px 20px; background: linear-gradient(135deg, #ffeef1 0%, #ffeff2 100%); border-radius: 6px; margin: 15px 0; color: #333333; font-weight: 500; box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08); display: flex; align-items: center; font-size: 14px;">'
-                    . '<span class="material-symbols-outlined" aria-label="データなし">search_off</span>'
-                    . '<span style="font-size: 1em; font-weight: 600;">' . esc_html__( '指定された受注書は見つかりませんでした。', 'ktpwp' ) . '</span>'
-                    . '<span style="margin-left: 18px; font-size: 13px; color: #888;">' . esc_html__( '顧客タブで顧客情報を入力し受注書を作成してください', 'ktpwp' ) . '</span>'
-                    . '</div>';
+					// 指定された受注書が見つからない場合もコントローラーと案内を表示
+					$content .= '<div class="controller" style="display: flex; justify-content: space-between; align-items: center;">';
+
+					// 左側：削除ボタン（無効化）
+					$content .= '<button type="button" class="delete-order-btn" disabled title="受注書がありません">';
+					$content .= '<span class="material-symbols-outlined" aria-label="削除">delete</span>';
+					$content .= '受注書を削除';
+					$content .= '</button>';
+
+					// 右側：プレビューボタンと印刷ボタン（無効化）
+					$content .= '<div style="display: flex; gap: 5px;">';
+					$content .= '<button id="orderPreviewButton" disabled title="' . esc_attr__( 'プレビュー', 'ktpwp' ) . '" style="padding: 6px 10px; font-size: 12px;">';
+					$content .= '<span class="material-symbols-outlined" aria-label="' . esc_attr__( 'プレビュー', 'ktpwp' ) . '" style="font-size: 16px;">preview</span>';
+					$content .= '</button>';
+					$content .= '<button disabled title="' . esc_attr__( '印刷する', 'ktpwp' ) . '" style="padding: 6px 10px; font-size: 12px;">';
+					$content .= '<span class="material-symbols-outlined" aria-label="' . esc_attr__( '印刷', 'ktpwp' ) . '" style="font-size: 16px;">print</span>';
+					$content .= '</button>';
+					$content .= '</div>'; // 右側のボタン群終了
+					$content .= '</div>'; // controller終了
+
+					// 統一された案内表示
+					$content .= '<div class="ktp_data_list_item" style="padding: 15px 20px; background: linear-gradient(135deg, #e3f2fd 0%, #fce4ec 100%); border-radius: 8px; margin: 18px 0; color: #333; font-weight: 600; box-shadow: 0 3px 12px rgba(0,0,0,0.07); display: flex; align-items: center; font-size: 15px; gap: 10px;">'
+					. '<span class="material-symbols-outlined" aria-label="データなし">search_off</span>'
+					. '<span style="font-size: 1em; font-weight: 600;">' . esc_html__( '受注書データがありません。', 'ktpwp' ) . '</span>'
+					. '<span style="margin-left: 18px; font-size: 13px; color: #888;">' . esc_html__( '顧客タブで顧客情報を入力し受注書を作成してください', 'ktpwp' ) . '</span>'
+					. '</div>';
 				}
 			} else {
 				// 受注書データが存在しない場合でもレイアウトを維持
