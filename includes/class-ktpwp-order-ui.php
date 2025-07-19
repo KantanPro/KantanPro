@@ -178,7 +178,7 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 				$price_display = rtrim( rtrim( number_format( $price_raw, 6, '.', '' ), '0' ), '.' );
 				$html .= '<input type="number" name="invoice_items[' . $index . '][price]" ';
 				$html .= 'value="' . esc_attr( $price_display ) . '" ';
-				$html .= 'class="invoice-item-input price" step="0.01" min="0" style="text-align:left;" />';
+				$html .= 'class="invoice-item-input price" step="1" min="0" style="text-align:left;" />';
 				$html .= '</td>';
 
 				// Quantity
@@ -427,7 +427,7 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 				$price_display = rtrim( rtrim( number_format( $price_raw, 6, '.', '' ), '0' ), '.' );
 				$html .= '<input type="number" name="cost_items[' . $index . '][price]" ';
 				$html .= 'value="' . esc_attr( $price_display ) . '" ';
-				$html .= 'class="cost-item-input price" step="0.01" min="0" style="text-align:left;" />';
+				$html .= 'class="cost-item-input price" step="1" min="0" style="text-align:left;" />';
 				$html .= '</td>';
 
 				// Quantity

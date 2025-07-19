@@ -474,7 +474,7 @@ window.ktpAddCostRowFromSkill = function(skill, currentRow) {
                 <input type="hidden" name="cost_items[${newIndex}][supplier_id]" value="${window.ktpCurrentSupplierId || 0}" class="supplier-id">
             </td>
             <td style="text-align:left;">
-                <input type="number" name="cost_items[${newIndex}][price]" class="cost-item-input price" value="${window.formatDecimalDisplay(skill.unit_price || '')}" step="0.01" min="0" style="text-align:left;">
+                <input type="number" name="cost_items[${newIndex}][price]" class="cost-item-input price" value="${window.formatDecimalDisplay(skill.unit_price || '')}" step="1" min="0" style="text-align:left;">
             </td>
             <td style="text-align:left;">
                 <input type="number" name="cost_items[${newIndex}][quantity]" class="cost-item-input quantity" value="${window.formatDecimalDisplay(skill.quantity || 1)}" step="1" min="0" style="text-align:left;">

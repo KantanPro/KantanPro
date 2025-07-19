@@ -466,7 +466,7 @@
                     <input type="hidden" name="invoice_items[${newIndex}][id]" value="0">
                 </td>
                 <td style="text-align:left;">
-                    <input type="number" name="invoice_items[${newIndex}][price]" class="invoice-item-input price" value="0" step="0.01" min="0" style="text-align:left;" disabled>
+                    <input type="number" name="invoice_items[${newIndex}][price]" class="invoice-item-input price" value="0" step="1" min="0" style="text-align:left;" disabled>
                 </td>
                 <td style="text-align:left;">
                     <input type="number" name="invoice_items[${newIndex}][quantity]" class="invoice-item-input quantity" value="1" step="1" min="0" style="text-align:left;" disabled>

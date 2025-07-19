@@ -557,7 +557,7 @@
                     <input type="hidden" name="cost_items[${newIndex}][supplier_id]" value="0" class="supplier-id">
                 </td>
                 <td style="text-align:left;">
-                    <input type="number" name="cost_items[${newIndex}][price]" class="cost-item-input price" value="0" step="0.01" min="0" style="text-align:left;" disabled>
+                    <input type="number" name="cost_items[${newIndex}][price]" class="cost-item-input price" value="0" step="1" min="0" style="text-align:left;" disabled>
                 </td>
                 <td style="text-align:left;">
                     <input type="number" name="cost_items[${newIndex}][quantity]" class="cost-item-input quantity" value="1" step="1" min="0" style="text-align:left;" disabled>
