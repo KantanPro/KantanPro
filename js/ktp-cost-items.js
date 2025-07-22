@@ -2235,13 +2235,15 @@
                 const quantity = parseFloat($row.find('.quantity').val()) || 0;
                 const unit = $row.find('.unit').val() || '';
                 const amount = parseFloat($row.find('.amount').val()) || 0;
+                const taxRate = parseFloat($row.find('.tax-rate').val()) || 0;
                 
                 console.log('[PURCHASE-EMAIL] マッチした行のデータ:', {
                     productName: productName,
                     price: price,
                     quantity: quantity,
                     unit: unit,
-                    amount: amount
+                    amount: amount,
+                    taxRate: taxRate
                 });
                 
                 if (productName && price > 0) {
@@ -2250,7 +2252,8 @@
                         price: price,
                         quantity: quantity,
                         unit: unit,
-                        amount: amount
+                        amount: amount,
+                        taxRate: taxRate
                     });
                     console.log('[PURCHASE-EMAIL] 発注項目に追加しました:', productName);
                 }
@@ -2333,7 +2336,16 @@
         
         supplierItems.forEach((item, index) => {
             console.log('[PURCHASE-EMAIL] 発注項目追加:', item);
-            emailBody += `${index + 1}. ${item.productName}：${item.price.toLocaleString()}円 × ${item.quantity}${item.unit} = ${item.amount.toLocaleString()}円\n`;
+            let itemLine = `${index + 1}. ${item.productName}：${item.price.toLocaleString()}円 × ${item.quantity}${item.unit} = ${item.amount.toLocaleString()}円`;
+            
+            // 税率が0%の場合は表示、税率が設定されていない（null/undefined/空文字）場合は非表示
+            if (item.taxRate === 0) {
+                itemLine += ` (税率0%)`;
+            } else if (item.taxRate && item.taxRate > 0) {
+                itemLine += ` (税率${item.taxRate}%)`;
+            }
+            
+            emailBody += itemLine + '\n';
         });
         
         emailBody += `--------------------------------------------\n`;
