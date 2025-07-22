@@ -1178,7 +1178,7 @@
         const unitPrice = serviceData.unit_price || serviceData.price || 0;
         const quantity = serviceData.quantity || 1;
         const unit = serviceData.unit || '';
-        const taxRate = serviceData.tax_rate || 10.00;
+        const taxRate = serviceData.tax_rate !== null && serviceData.tax_rate !== undefined && serviceData.tax_rate !== '' ? serviceData.tax_rate : '';
         
         $targetRow.find('.product-name').val(productName);
         $targetRow.find('.price').val(unitPrice);
@@ -1382,7 +1382,7 @@
         const unitPrice = serviceData.unit_price || serviceData.price || 0;
         const quantity = serviceData.quantity || 1;
         const unit = serviceData.unit || '';
-        const taxRate = serviceData.tax_rate || 10.00;
+        const taxRate = serviceData.tax_rate !== null && serviceData.tax_rate !== undefined && serviceData.tax_rate !== '' ? serviceData.tax_rate : '';
         
         $newRow.find('.product-name').val(productName);
         $newRow.find('.price').val(unitPrice);

@@ -116,7 +116,7 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 						'unit' => '式',
 						'quantity' => 1,
 						'amount' => 0,
-						'tax_rate' => 10.00,
+						'tax_rate' => null,
 						'remarks' => '',
 						'sort_order' => 1,
 					),
@@ -205,11 +205,15 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 				$html .= '</td>';
 
 				// Tax Rate
-				$tax_rate = isset( $item['tax_rate'] ) ? floatval( $item['tax_rate'] ) : 10.00;
+				$tax_rate_raw = isset( $item['tax_rate'] ) ? $item['tax_rate'] : null;
+				$tax_rate_display = '';
+				if ( $tax_rate_raw !== null && $tax_rate_raw !== '' && is_numeric( $tax_rate_raw ) ) {
+					$tax_rate_display = floatval( $tax_rate_raw );
+				}
 				$html .= '<td style="text-align:left;">';
 				$html .= '<div style="display:inline-flex;align-items:center;margin-left:0;padding-left:0;">';
 				$html .= '<input type="number" name="invoice_items[' . $index . '][tax_rate]" ';
-				$html .= 'value="' . esc_attr( $tax_rate ) . '" ';
+				$html .= 'value="' . esc_attr( $tax_rate_display ) . '" ';
 				$html .= 'class="invoice-item-input tax-rate" step="1" min="0" max="100" style="width:50px; text-align:right; display:inline-block; margin-left:0; padding-left:0;" />';
 				$html .= '<span style="margin-left:2px; white-space:nowrap;">%</span>';
 				$html .= '</div>';
@@ -236,14 +240,38 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 				// 外税表示の場合：各項目の税抜金額から税額を計算（切り上げ）
 				foreach ( $items as $item ) {
 					$item_amount = isset( $item['amount'] ) ? floatval( $item['amount'] ) : 0;
-					$item_tax_rate = isset( $item['tax_rate'] ) ? floatval( $item['tax_rate'] ) : 10.00;
-					// 統一ルール：外税計算で切り上げ
-					$tax_amount += ceil( $item_amount * ( $item_tax_rate / 100 ) );
+					$item_tax_rate_raw = isset( $item['tax_rate'] ) ? $item['tax_rate'] : null;
+					
+					// 税率がNULL、空文字、または数値でない場合は税額計算をスキップ
+					if ( $item_tax_rate_raw !== null && $item_tax_rate_raw !== '' && is_numeric( $item_tax_rate_raw ) ) {
+						$item_tax_rate = floatval( $item_tax_rate_raw );
+						// 統一ルール：外税計算で切り上げ
+						$tax_amount += ceil( $item_amount * ( $item_tax_rate / 100 ) );
+					}
 				}
 			} else {
-				// 内税表示の場合：合計金額から税額を一括計算（小数点以下切り上げ）
-				$total_tax_rate = 10.00; // デフォルト税率
-				$tax_amount = ceil( $total_amount * ( $total_tax_rate / 100 ) / ( 1 + $total_tax_rate / 100 ) );
+				// 内税表示の場合：税率別に集計して税額を計算
+				$tax_rate_groups = array();
+				foreach ( $items as $item ) {
+					$item_amount = isset( $item['amount'] ) ? floatval( $item['amount'] ) : 0;
+					$item_tax_rate_raw = isset( $item['tax_rate'] ) ? $item['tax_rate'] : null;
+					
+					// 税率がNULL、空文字、または数値でない場合は非課税として扱う
+					if ( $item_tax_rate_raw !== null && $item_tax_rate_raw !== '' && is_numeric( $item_tax_rate_raw ) ) {
+						$item_tax_rate = floatval( $item_tax_rate_raw );
+						$tax_rate_key = number_format( $item_tax_rate, 1 );
+						if ( ! isset( $tax_rate_groups[ $tax_rate_key ] ) ) {
+							$tax_rate_groups[ $tax_rate_key ] = 0;
+						}
+						$tax_rate_groups[ $tax_rate_key ] += $item_amount;
+					}
+				}
+				
+				// 各税率グループごとに税額を計算（切り上げ）
+				foreach ( $tax_rate_groups as $tax_rate => $group_amount ) {
+					$rate = floatval( $tax_rate );
+					$tax_amount += ceil( $group_amount * ( $rate / 100 ) / ( 1 + $rate / 100 ) );
+				}
 			}
 			
 			$total_with_tax = $total_amount + $tax_amount;
