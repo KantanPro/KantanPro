@@ -1230,6 +1230,7 @@
             autoSaveItem('cost', itemId, 'price', unitPrice, orderId);
             autoSaveItem('cost', itemId, 'quantity', quantity, orderId);
             autoSaveItem('cost', itemId, 'unit', unit, orderId);
+            autoSaveItem('cost', itemId, 'tax_rate', taxRate, orderId);
             
             // 協力会社名を「仕入」フィールドに保存
             if (window.ktpCurrentSupplierName) {

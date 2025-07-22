@@ -376,19 +376,24 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
             $has_outtax = false;
             foreach ( $items as $item ) {
                 $item_amount = isset( $item['amount'] ) ? floatval( $item['amount'] ) : 0;
-                $item_tax_rate = isset( $item['tax_rate'] ) ? floatval( $item['tax_rate'] ) : 10.00;
+                $item_tax_rate_raw = isset( $item['tax_rate'] ) ? $item['tax_rate'] : null;
                 $supplier_id = isset( $item['supplier_id'] ) ? intval( $item['supplier_id'] ) : 0;
                 $item_tax_category = $supplier_data->get_tax_category_by_supplier_id( $supplier_id );
                 if ( $item_tax_category === '外税' ) {
                     $has_outtax = true;
                 }
                 $total_amount += $item_amount;
-                if ( $item_tax_category === '外税' ) {
-                    // 統一ルール：外税計算で切り上げ
-                    $total_tax_amount += ceil( $item_amount * ( $item_tax_rate / 100 ) );
-                } else {
-                    // 統一ルール：内税計算で切り上げ
-                    $total_tax_amount += ceil( $item_amount * ( $item_tax_rate / 100 ) / ( 1 + $item_tax_rate / 100 ) );
+                
+                // 税率がNULL、空文字、または数値でない場合は税額計算をスキップ
+                if ( $item_tax_rate_raw !== null && $item_tax_rate_raw !== '' && is_numeric( $item_tax_rate_raw ) ) {
+                    $item_tax_rate = floatval( $item_tax_rate_raw );
+                    if ( $item_tax_category === '外税' ) {
+                        // 統一ルール：外税計算で切り上げ
+                        $total_tax_amount += ceil( $item_amount * ( $item_tax_rate / 100 ) );
+                    } else {
+                        // 統一ルール：内税計算で切り上げ
+                        $total_tax_amount += ceil( $item_amount * ( $item_tax_rate / 100 ) / ( 1 + $item_tax_rate / 100 ) );
+                    }
                 }
             }
             $total_with_tax = $total_amount + $total_tax_amount;
@@ -485,11 +490,15 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 				$html .= '</td>';
 
 				// Tax Rate
-				$tax_rate = isset( $item['tax_rate'] ) ? floatval( $item['tax_rate'] ) : 10.00;
+				$tax_rate_raw = isset( $item['tax_rate'] ) ? $item['tax_rate'] : null;
+				$tax_rate_display = '';
+				if ( $tax_rate_raw !== null && $tax_rate_raw !== '' && is_numeric( $tax_rate_raw ) ) {
+					$tax_rate_display = floatval( $tax_rate_raw );
+				}
 				$html .= '<td style="text-align:left;">';
 				$html .= '<div style="display:inline-flex;align-items:center;margin-left:0;padding-left:0;">';
 				$html .= '<input type="number" name="cost_items[' . $index . '][tax_rate]" ';
-				$html .= 'value="' . esc_attr( $tax_rate ) . '" ';
+				$html .= 'value="' . esc_attr( $tax_rate_display ) . '" ';
 				$html .= 'class="cost-item-input tax-rate" step="1" min="0" max="100" style="width:50px; text-align:right; display:inline-block; margin-left:0; padding-left:0;" />';
 				$html .= '<span style="margin-left:2px; white-space:nowrap;">%</span>';
 				$html .= '</div>';
