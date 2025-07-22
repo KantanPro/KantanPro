@@ -2236,7 +2236,8 @@
                 const quantity = parseFloat($row.find('.quantity').val()) || 0;
                 const unit = $row.find('.unit').val() || '';
                 const amount = parseFloat($row.find('.amount').val()) || 0;
-                const taxRate = parseFloat($row.find('.tax-rate').val()) || 0;
+                const taxRateRaw = $row.find('.tax-rate').val();
+                const taxRate = (taxRateRaw !== null && taxRateRaw !== undefined && taxRateRaw !== '') ? parseFloat(taxRateRaw) : null;
                 
                 console.log('[PURCHASE-EMAIL] マッチした行のデータ:', {
                     productName: productName,
@@ -2339,10 +2340,8 @@
             console.log('[PURCHASE-EMAIL] 発注項目追加:', item);
             let itemLine = `${index + 1}. ${item.productName}：${item.price.toLocaleString()}円 × ${item.quantity}${item.unit} = ${item.amount.toLocaleString()}円`;
             
-            // 税率が0%の場合は表示、税率が設定されていない（null/undefined/空文字）場合は非表示
-            if (item.taxRate === 0) {
-                itemLine += ` (税率0%)`;
-            } else if (item.taxRate && item.taxRate > 0) {
+            // 税率表示ロジック：税率があれば表示（0%も含む）、税率がnull/undefined/空文字の場合は非表示
+            if (item.taxRate !== null && item.taxRate !== undefined && item.taxRate !== '') {
                 itemLine += ` (税率${item.taxRate}%)`;
             }
             
