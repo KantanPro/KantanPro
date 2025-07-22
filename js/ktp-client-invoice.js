@@ -182,7 +182,7 @@ jQuery(document).ready(function($) {
                                     html += "<div style=\"font-weight:bold;font-size:14px;color:#333;display:flex;align-items:center;margin:10px 0 0 0;\">";
                                     html += "<span>合計金額：" + grandTotal.toLocaleString() + "円";
                                     if (grandTaxAmount > 0) {
-                                        html += "（内消費税：" + grandTaxAmount.toLocaleString() + "円）";
+                                        html += "（内消費税：" + Math.round(grandTaxAmount).toLocaleString() + "円）";
                                     }
                                     html += "</span>";
                                     html += "<span style=\"margin-left:15px;\">繰越金額：</span>";
