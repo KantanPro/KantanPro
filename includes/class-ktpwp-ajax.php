@@ -1594,6 +1594,9 @@ class KTPWP_Ajax {
 				$invoice_list = "\n";
 				$max_length   = 0;
 				$item_lines   = array();
+				
+				// 税率別の集計用配列
+				$tax_rate_groups = array();
 
 				foreach ( $invoice_items_from_db as $item ) {
 					$product_name = isset( $item['product_name'] ) ? sanitize_text_field( $item['product_name'] ) : '';
@@ -1604,13 +1607,20 @@ class KTPWP_Ajax {
 					$tax_rate     = isset( $item['tax_rate'] ) ? floatval( $item['tax_rate'] ) : 10.00;
 					$amount      += $item_amount;
 
+					// 税率別の集計
+					$tax_rate_key = number_format( $tax_rate, 1 );
+					if ( ! isset( $tax_rate_groups[ $tax_rate_key ] ) ) {
+						$tax_rate_groups[ $tax_rate_key ] = 0;
+					}
+					$tax_rate_groups[ $tax_rate_key ] += $item_amount;
+
 					// 消費税計算（税区分に応じて）
 					if ( $tax_category === '外税' ) {
 						// 外税表示の場合：税抜金額から税額を計算
 						$tax_amount = ceil( $item_amount * ( $tax_rate / 100 ) );
 						$total_tax_amount += $tax_amount;
 					}
-					// 内税の場合は後で合計金額から一括計算
+					// 内税の場合は後で税率別に計算
 
 					// 小数点以下の不要な0を削除
 					$price_display = rtrim( rtrim( number_format( $price, 6, '.', '' ), '0' ), '.' );
@@ -1630,10 +1640,17 @@ class KTPWP_Ajax {
 					$invoice_list .= $line . "\n";
 				}
 
-				// 内税の場合は合計金額から一括計算
+				// 内税の場合は税率別に計算
 				if ( $tax_category !== '外税' ) {
-					$total_tax_rate = 10.0; // デフォルト税率
-					$total_tax_amount = ceil( $amount * ( $total_tax_rate / 100 ) / ( 1 + $total_tax_rate / 100 ) );
+					$total_tax_amount = 0;
+					$tax_rate_details = array();
+					
+					foreach ( $tax_rate_groups as $tax_rate => $group_amount ) {
+						$tax_rate_value = floatval( $tax_rate );
+						$tax_amount = ceil( $group_amount * ( $tax_rate_value / 100 ) / ( 1 + $tax_rate_value / 100 ) );
+						$total_tax_amount += $tax_amount;
+						$tax_rate_details[] = $tax_rate . '%: ' . number_format( $tax_amount ) . '円';
+					}
 				}
 				
 				$amount_ceiled = ceil( $amount );
@@ -1646,7 +1663,13 @@ class KTPWP_Ajax {
 					$tax_line = '消費税：' . number_format( $total_tax_amount_ceiled ) . '円';
 					$total_with_tax_line = '内税合計：' . number_format( $total_with_tax ) . '円';
 				} else {
-					$total_line = '金額合計：' . number_format( $amount_ceiled ) . '円（内税：' . number_format( $total_tax_amount_ceiled ) . '円）';
+					// 内税の場合は税率別の内訳を表示
+					if ( count( $tax_rate_groups ) > 1 ) {
+						$tax_detail_text = '（内税：' . implode( ', ', $tax_rate_details ) . '）';
+					} else {
+						$tax_detail_text = '（内税：' . number_format( $total_tax_amount_ceiled ) . '円）';
+					}
+					$total_line = '金額合計：' . number_format( $amount_ceiled ) . '円' . $tax_detail_text;
 					$tax_line = ''; // 内税の場合は消費税行を非表示
 					$total_with_tax_line = ''; // 内税の場合は税込合計行を非表示
 				}
