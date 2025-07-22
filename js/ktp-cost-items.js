@@ -1447,7 +1447,9 @@
                     autoSaveItem('cost', newItemId, 'unit', unit, orderId);
                     
                     // 税率も保存（協力会社選択と従来ポップアップの両方に対応）
-                    autoSaveItem('cost', newItemId, 'tax_rate', taxRate, orderId);
+                    // 税率の処理：null、空文字、0の場合はnullとして送信
+                    const taxRateForDB = (taxRate === null || taxRate === '' || taxRate === 0) ? null : Math.round(taxRate);
+                    autoSaveItem('cost', newItemId, 'tax_rate', taxRateForDB, orderId);
                     
                     // 協力会社名を「仕入」フィールドに保存
                     if (window.ktpCurrentSupplierName) {

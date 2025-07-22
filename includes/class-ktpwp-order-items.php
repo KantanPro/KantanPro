@@ -967,10 +967,10 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 					// 税率の処理（空文字、null、0の場合はNULLとして扱う）
 					if ( $field_value === null || $field_value === '' || $field_value === '0' ) {
 						$update_data['tax_rate'] = null;
-						$format[] = null; // NULL値の場合はフォーマットもnull
+						// NULL値の場合はフォーマットを指定しない（MySQLが自動的にNULLとして扱う）
 					} else {
-					$update_data['tax_rate'] = floatval( $field_value );
-					$format[] = '%f';
+						$update_data['tax_rate'] = floatval( $field_value );
+						$format[] = '%f';
 					}
 					break;
 				case 'remarks':
@@ -1167,7 +1167,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 						if ( $initial_field_value === null || $initial_field_value === '' || $initial_field_value === '0' ) {
 							$data['tax_rate'] = null;
 						} else {
-						$data['tax_rate'] = floatval( $initial_field_value );
+							$data['tax_rate'] = floatval( $initial_field_value );
 						}
 						break;
 					case 'remarks':
@@ -1198,7 +1198,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 			$format = array();
 			foreach ( $data as $value ) {
 				if ( $value === null ) {
-					$format[] = null;
+					$format[] = null; // NULL値の場合はフォーマットもnull
 				} else {
 					$format[] = '%s'; // デフォルトは文字列
 				}
@@ -1218,7 +1218,10 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 						case 'quantity':
 						case 'amount':
 						case 'tax_rate':
-							$format[$index] = '%f';
+							// 税率がNULLの場合はフォーマットもNULLのままにする
+							if ( $value !== null ) {
+								$format[$index] = '%f';
+							}
 							break;
 						case 'supplier_id':
 							$format[$index] = '%d';
