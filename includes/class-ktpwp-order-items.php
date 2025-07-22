@@ -917,9 +917,9 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 					$value_changed = abs( (float) $current_value - (float) $field_value ) > 0.001; // 小数点の誤差を考慮
 					break;
 				case 'tax_rate':
-					// 税率の比較（NULL値と空文字を適切に処理）
+					// 税率の比較（NULL値と空文字を適切に処理、0は0として扱う）
 					$current_tax_rate = ( $current_value === null || $current_value === '' ) ? null : (float) $current_value;
-					$new_tax_rate = ( $field_value === null || $field_value === '' || $field_value === '0' ) ? null : (float) $field_value;
+					$new_tax_rate = ( $field_value === null || $field_value === '' ) ? null : (float) $field_value;
 					$value_changed = $current_tax_rate !== $new_tax_rate;
 					break;
 				case 'sort_order':

@@ -181,6 +181,19 @@ add_action(
 		$unit = isset( $item['unit'] ) ? sanitize_text_field( $item['unit'] ) : '';
 		$amount = isset( $item['amount'] ) ? floatval( $item['amount'] ) : 0;
 		$remarks = isset( $item['remarks'] ) ? sanitize_textarea_field( $item['remarks'] ) : '';
+		
+		// 税率の処理 - 0とNULLを適切に区別
+		$tax_rate_raw = isset( $item['tax_rate'] ) ? $item['tax_rate'] : null;
+		$tax_rate = null;
+		if ( $tax_rate_raw !== null && $tax_rate_raw !== '' ) {
+			if ( is_numeric( $tax_rate_raw ) ) {
+				$tax_rate = floatval( $tax_rate_raw );
+				// 税率0は0として保存（NULLではない）
+			}
+		} else {
+			// 空文字またはnullの場合はNULLとして保存
+			$tax_rate = null;
+		}
 
 		// 必須項目の検証
 		if ( empty( $product_name ) ) {
@@ -260,10 +273,11 @@ add_action(
 			'quantity'      => $quantity,
 			'unit'          => $unit,
 			'amount'        => $amount,
+			'tax_rate'      => $tax_rate,
 			'remarks'       => $remarks,
 			'updated_at'    => current_time( 'mysql' ),
 		);
-		$format = array( '%d', '%s', '%f', '%f', '%s', '%f', '%s', '%s' );
+		$format = array( '%d', '%s', '%f', '%f', '%s', '%f', ( $tax_rate !== null ? '%f' : null ), '%s', '%s' );
 
 		// supplier_idカラムが存在する場合のみ追加
 		if ( $has_supplier_id ) {
