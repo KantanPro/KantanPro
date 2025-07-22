@@ -3826,44 +3826,19 @@ class KTPWP_Ajax {
 				);
 			}
 			
-			// 受注書の合計金額を計算
-			$order_total = 0;
-			$order_tax = 0;
+			// 請求項目を取得
+			$invoice_items_table = $wpdb->prefix . 'ktp_order_invoice_items';
+			$invoice_items = $wpdb->get_results($wpdb->prepare(
+				"SELECT * FROM `{$invoice_items_table}` WHERE order_id = %d ORDER BY COALESCE(sort_order, id) ASC, id ASC",
+				$order->id
+			));
 			
-					// 請求項目を取得
-		$invoice_items_table = $wpdb->prefix . 'ktp_order_invoice_items';
-		$invoice_items = $wpdb->get_results($wpdb->prepare(
-			"SELECT * FROM `{$invoice_items_table}` WHERE order_id = %d ORDER BY COALESCE(sort_order, id) ASC, id ASC",
-			$order->id
-		));
-		
-		if ($wpdb->last_error) {
-			error_log("KTPWP Invoice AJAX: 請求項目取得エラー - " . $wpdb->last_error);
-		}
-			
-			foreach ($invoice_items as $item) {
-				$price = floatval($item->price);
-				$quantity = floatval($item->quantity);
-				$amount = floatval($item->amount);
-				$total_price = $amount > 0 ? $amount : ($price * $quantity);
-				$order_total += $total_price;
-				
-				// 税率計算
-				$tax_rate = floatval($item->tax_rate);
-				if ($tax_rate > 0) {
-					$order_tax += $total_price * ($tax_rate / 100);
-				}
+			if ($wpdb->last_error) {
+				error_log("KTPWP Invoice AJAX: 請求項目取得エラー - " . $wpdb->last_error);
 			}
 			
-			$order->total_amount = $order_total;
-			$order->tax_amount = $order_tax;
 			$order->invoice_items = $invoice_items;
-			
-
-			
 			$monthly_groups[$key]['orders'][] = $order;
-			$monthly_groups[$key]['subtotal'] += $order_total;
-			$monthly_groups[$key]['tax_amount'] += $order_tax;
 		}
 		
 		// 配列のキーをリセット
@@ -3885,6 +3860,59 @@ class KTPWP_Ajax {
 		
 		// 顧客の税区分を取得
 		$tax_category = $client_data->tax_category ?: '内税';
+		
+		// 税区分に応じた消費税計算の修正
+		foreach ($monthly_groups as $key => $group) {
+			$group_subtotal = 0;
+			$group_tax_amount = 0;
+			
+			foreach ($group['orders'] as $order) {
+				$order_subtotal = 0;
+				$order_tax_amount = 0;
+				
+				foreach ($order->invoice_items as $item) {
+					$price = floatval($item->price);
+					$quantity = floatval($item->quantity);
+					$amount = floatval($item->amount);
+					$total_price = $amount > 0 ? $amount : ($price * $quantity);
+					
+					if ($tax_category === '外税') {
+						// 外税の場合：税抜き価格 + 消費税
+						$tax_rate = floatval($item->tax_rate);
+						if ($tax_rate > 0) {
+							$item_tax = $total_price * ($tax_rate / 100);
+							$order_subtotal += $total_price; // 税抜き価格
+							$order_tax_amount += $item_tax;
+						} else {
+							$order_subtotal += $total_price; // 税抜き価格
+						}
+					} else {
+						// 内税の場合：税込価格から消費税を逆算
+						$tax_rate = floatval($item->tax_rate);
+						if ($tax_rate > 0) {
+							$item_subtotal = $total_price / (1 + ($tax_rate / 100)); // 税抜き価格を逆算
+							$item_tax = $total_price - $item_subtotal; // 消費税を計算
+							$order_subtotal += $item_subtotal; // 税抜き価格
+							$order_tax_amount += $item_tax;
+						} else {
+							$order_subtotal += $total_price; // 税抜き価格
+						}
+					}
+				}
+				
+				// 受注書の合計を更新
+				$order->total_amount = $order_subtotal + $order_tax_amount;
+				$order->subtotal_amount = $order_subtotal;
+				$order->tax_amount = $order_tax_amount;
+				
+				$group_subtotal += $order_subtotal;
+				$group_tax_amount += $order_tax_amount;
+			}
+			
+			// 月別グループの合計を更新
+			$monthly_groups[$key]['subtotal'] = $group_subtotal;
+			$monthly_groups[$key]['tax_amount'] = $group_tax_amount;
+		}
 		
 		// 支払期日を計算
 		$payment_due_date = $this->calculate_payment_due_date($client_data);

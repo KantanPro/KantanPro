@@ -161,17 +161,35 @@ jQuery(document).ready(function($) {
                                     grandTotal += (group.subtotal || 0) + (group.tax_amount || 0);
                                 });
 
-                                // 消費税・税込合計・繰越金額を1行で表示
-                                html += "<div style=\"font-weight:bold;font-size:14px;color:#333;display:flex;align-items:center;margin:10px 0 0 0;\">";
-                                html += "<span>合計金額：" + grandSubtotal.toLocaleString() + "円</span>";
-                                if (grandTaxAmount > 0) {
-                                    html += "<span style=\"margin-left:15px;\">消費税：" + grandTaxAmount.toLocaleString() + "円</span>";
-                                    html += "<span style=\"margin-left:15px;\">税込合計：" + grandTotal.toLocaleString() + "円</span>";
+                                // 税区分に応じた表示
+                                var taxCategory = res.data.tax_category || '内税';
+                                console.log("[請求書発行] 税区分:", taxCategory);
+                                
+                                if (taxCategory === '外税') {
+                                    // 外税の場合：合計金額（税抜）→消費税→税込合計
+                                    html += "<div style=\"font-weight:bold;font-size:14px;color:#333;display:flex;align-items:center;margin:10px 0 0 0;\">";
+                                    html += "<span>合計金額：" + grandSubtotal.toLocaleString() + "円</span>";
+                                    if (grandTaxAmount > 0) {
+                                        html += "<span style=\"margin-left:15px;\">消費税：" + grandTaxAmount.toLocaleString() + "円</span>";
+                                        html += "<span style=\"margin-left:15px;\">税込合計：" + grandTotal.toLocaleString() + "円</span>";
+                                    }
+                                    html += "<span style=\"margin-left:15px;\">繰越金額：</span>";
+                                    html += "<input type=\"number\" id=\"carryover-amount\" name=\"carryover_amount\" value=\"0\" min=\"0\" step=\"1\" style=\"width:100px;padding:3px 6px;border:1px solid #ccc;border-radius:4px;font-size:14px;text-align:right;margin-left:5px;\" onchange=\"updateInvoiceTotal()\">";
+                                    html += "<span style=\"font-size:14px;\">円</span>";
+                                    html += "</div>";
+                                } else {
+                                    // 内税の場合：合計金額（税込）に内消費税を表示
+                                    html += "<div style=\"font-weight:bold;font-size:14px;color:#333;display:flex;align-items:center;margin:10px 0 0 0;\">";
+                                    html += "<span>合計金額：" + grandTotal.toLocaleString() + "円";
+                                    if (grandTaxAmount > 0) {
+                                        html += "（内消費税：" + grandTaxAmount.toLocaleString() + "円）";
+                                    }
+                                    html += "</span>";
+                                    html += "<span style=\"margin-left:15px;\">繰越金額：</span>";
+                                    html += "<input type=\"number\" id=\"carryover-amount\" name=\"carryover_amount\" value=\"0\" min=\"0\" step=\"1\" style=\"width:100px;padding:3px 6px;border:1px solid #ccc;border-radius:4px;font-size:14px;text-align:right;margin-left:5px;\" onchange=\"updateInvoiceTotal()\">";
+                                    html += "<span style=\"font-size:14px;\">円</span>";
+                                    html += "</div>";
                                 }
-                                html += "<span style=\"margin-left:15px;\">繰越金額：</span>";
-                                html += "<input type=\"number\" id=\"carryover-amount\" name=\"carryover_amount\" value=\"0\" min=\"0\" step=\"1\" style=\"width:100px;padding:3px 6px;border:1px solid #ccc;border-radius:4px;font-size:14px;text-align:right;margin-left:5px;\" onchange=\"updateInvoiceTotal()\">";
-                                html += "<span style=\"font-size:14px;\">円</span>";
-                                html += "</div>";
                                 
                                 // 請求金額・お支払い期日を1行で横並び
                                 var paymentDueDate = res.data.payment_due_date || '';
@@ -466,17 +484,35 @@ function printInvoiceContent() {
             paymentDueDateInputInContent.parentNode.replaceChild(paymentDueDateSpan, paymentDueDateInputInContent);
         }
 
-        // 合計金額を更新
+        // 合計金額を更新（税区分に応じた計算）
         if (window.invoiceGrandTotal) {
-            var baseTotal = window.invoiceGrandTotal + carryoverAmount;
             var totalAmountElement = tempDiv.querySelector('#total-amount');
             if(totalAmountElement) {
-                // PHP側から計算された消費税を使用
+                var taxCategory = window.invoiceTaxCategory || '内税';
                 var taxAmount = window.invoiceTaxAmount || 0;
-                var totalWithTax = baseTotal + taxAmount;
-                totalAmountElement.textContent = totalWithTax.toLocaleString();
+                
+                if (taxCategory === '外税') {
+                    // 外税の場合：税抜き合計 + 消費税 + 繰越金額
+                    var subtotal = window.invoiceGrandTotal - taxAmount; // 税抜き合計を計算
+                    var totalWithTax = subtotal + taxAmount + carryoverAmount;
+                    totalAmountElement.textContent = totalWithTax.toLocaleString();
+                    console.log("[請求書印刷] 外税計算:", {
+                        subtotal: subtotal,
+                        taxAmount: taxAmount,
+                        carryoverAmount: carryoverAmount,
+                        totalWithTax: totalWithTax
+                    });
+                } else {
+                    // 内税の場合：税込合計 + 繰越金額
+                    var totalWithCarryover = window.invoiceGrandTotal + carryoverAmount;
+                    totalAmountElement.textContent = totalWithCarryover.toLocaleString();
+                    console.log("[請求書印刷] 内税計算:", {
+                        grandTotal: window.invoiceGrandTotal,
+                        carryoverAmount: carryoverAmount,
+                        totalWithCarryover: totalWithCarryover
+                    });
+                }
             }
-            console.log("[請求書印刷] 合計金額更新:", totalWithTax);
         }
 
         // 印刷用にデザイン設定を適用
@@ -701,14 +737,20 @@ function updateInvoiceTotal() {
     var carryoverAmount = parseInt(document.getElementById("carryover-amount").value) || 0;
     var grandTotal = window.invoiceGrandTotal || 0;
     var taxAmount = window.invoiceTaxAmount || 0;
-    var subtotal = grandTotal - taxAmount; // 税抜き合計を計算
-    
-    // 繰越金額を含めた税込合計を計算
-    var totalWithTax = subtotal + taxAmount + carryoverAmount;
+    var taxCategory = window.invoiceTaxCategory || '内税';
     
     var totalAmountElement = document.getElementById("total-amount");
     if (totalAmountElement) {
-        totalAmountElement.textContent = totalWithTax.toLocaleString();
+        if (taxCategory === '外税') {
+            // 外税の場合：税抜き合計 + 消費税 + 繰越金額
+            var subtotal = grandTotal - taxAmount; // 税抜き合計を計算
+            var totalWithTax = subtotal + taxAmount + carryoverAmount;
+            totalAmountElement.textContent = totalWithTax.toLocaleString();
+        } else {
+            // 内税の場合：税込合計 + 繰越金額
+            var totalWithCarryover = grandTotal + carryoverAmount;
+            totalAmountElement.textContent = totalWithCarryover.toLocaleString();
+        }
     }
     window.carryoverAmount = carryoverAmount;
 }
