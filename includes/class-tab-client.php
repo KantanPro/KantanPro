@@ -1166,7 +1166,7 @@ if ( ! class_exists( 'Kntan_Client_Class' ) ) {
 			// ヘッダー部分（固定）
 			$controller_html .= '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;border-bottom:1px solid #ddd;padding-bottom:10px;">';
 			$controller_html .= '<h3 style="margin:0;color:#333;">請求書プレビュー</h3>';
-			$controller_html .= '<button type="button" id="ktp-order-preview-close" onclick="document.getElementById(\'invoicePopup\').style.display=\'none\'" style="background: none; color: #333; border: none; cursor: pointer; font-size: 28px; padding: 0; line-height: 1;">×</button>';
+			$controller_html .= '<button type="button" id="ktp-order-preview-close" style="background: none; color: #333; border: none; cursor: pointer; font-size: 28px; padding: 0; line-height: 1;">×</button>';
 			$controller_html .= '</div>';
 
 			// コンテンツ部分（スクロール可能）

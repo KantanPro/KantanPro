@@ -53,6 +53,32 @@ jQuery(document).ready(function($) {
         });
 
         if (invoiceButton && popup && list) {
+            // ポップアップを閉じる関数
+            function closeInvoicePopup() {
+                popup.style.display = "none";
+            }
+
+            // ポップアップ外クリックで閉じる機能
+            popup.addEventListener("click", function(e) {
+                if (e.target === popup) {
+                    closeInvoicePopup();
+                }
+            });
+
+            // Escapeキーで閉じる機能
+            document.addEventListener("keydown", function(e) {
+                if (e.key === "Escape" && popup.style.display === "block") {
+                    closeInvoicePopup();
+                }
+            });
+
+            // 閉じるボタンのイベントハンドラー
+            document.addEventListener("click", function(e) {
+                if (e.target && e.target.id === "ktp-order-preview-close") {
+                    closeInvoicePopup();
+                }
+            });
+
             invoiceButton.addEventListener("click", function() {
                 console.log("[請求書発行] ボタンがクリックされました");
                 popup.style.display = "block";
