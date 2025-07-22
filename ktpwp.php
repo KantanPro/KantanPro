@@ -84,6 +84,9 @@ if ( ! defined( 'MY_PLUGIN_URL' ) ) {
  */
 register_activation_hook( __FILE__, 'ktpwp_comprehensive_activation' );
 function ktpwp_donation_activation() {
+    // 出力バッファリングを開始（予期しない出力を防ぐ）
+    ob_start();
+    
     // KTPWP_Donationクラスを読み込み
     if ( ! class_exists( 'KTPWP_Donation' ) ) {
         require_once KANTANPRO_PLUGIN_DIR . 'includes/class-ktpwp-donation.php';
@@ -99,6 +102,14 @@ function ktpwp_donation_activation() {
                 error_log( 'KTPWP Donation: `create_donation_tables` executed on activation.' );
             }
         }
+    }
+    
+    // 出力バッファをクリア（予期しない出力を除去）
+    $output = ob_get_clean();
+    
+    // デバッグ時のみ、予期しない出力があればログに記録
+    if ( defined( 'WP_DEBUG' ) && WP_DEBUG && ! empty( $output ) ) {
+        error_log( 'KTPWP: ktpwp_donation_activation中に予期しない出力を検出: ' . substr( $output, 0, 1000 ) );
     }
 }
 
@@ -519,6 +530,9 @@ function ktpwp_handle_auto_update_toggle() {
  * 改善された自動マイグレーション実行関数
  */
 function ktpwp_run_auto_migrations() {
+    // 出力バッファリングを開始（予期しない出力を防ぐ）
+    ob_start();
+    
     // 現在のDBバージョンを取得
     $current_db_version = get_option( 'ktpwp_db_version', '0.0.0' );
     $plugin_version = KANTANPRO_PLUGIN_VERSION;
@@ -568,6 +582,14 @@ function ktpwp_run_auto_migrations() {
             update_option( 'ktpwp_db_version', $plugin_version );
             update_option( 'ktpwp_migration_error', $e->getMessage() );
         }
+    }
+    
+    // 出力バッファをクリア（予期しない出力を除去）
+    $output = ob_get_clean();
+    
+    // デバッグ時のみ、予期しない出力があればログに記録
+    if ( defined( 'WP_DEBUG' ) && WP_DEBUG && ! empty( $output ) ) {
+        error_log( 'KTPWP: ktpwp_run_auto_migrations中に予期しない出力を検出: ' . substr( $output, 0, 1000 ) );
     }
 }
 
@@ -859,7 +881,8 @@ function ktpwp_repair_existing_data() {
 }
 
 // プラグイン有効化時の自動マイグレーション
-register_activation_hook( KANTANPRO_PLUGIN_FILE, 'ktpwp_plugin_activation' );
+// 重複を避けるため、包括的アクティベーションのみを使用
+// register_activation_hook( KANTANPRO_PLUGIN_FILE, 'ktpwp_plugin_activation' );
 
 // プラグイン無効化時の処理
 register_deactivation_hook( KANTANPRO_PLUGIN_FILE, 'ktpwp_plugin_deactivation' );
@@ -925,6 +948,9 @@ function ktpwp_plugin_deactivation() {
             ktpwp_safe_session_close();
         }
         
+        // 再有効化フラグを設定（プラグイン再有効化時にマイグレーションを実行するため）
+        update_option( 'ktpwp_reactivation_required', true );
+        
         // 無効化完了フラグを設定
         update_option( 'ktpwp_deactivation_completed', true );
         update_option( 'ktpwp_deactivation_timestamp', current_time( 'mysql' ) );
@@ -938,7 +964,7 @@ function ktpwp_plugin_deactivation() {
         delete_transient( 'ktpwp_activation_error' );
         
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP: プラグイン無効化処理が正常に完了' );
+            error_log( 'KTPWP: プラグイン無効化処理が正常に完了（再有効化フラグを設定）' );
         }
         
     } catch ( Exception $e ) {
@@ -974,13 +1000,13 @@ if ( get_option( 'ktpwp_version', '0' ) !== KANTANPRO_PLUGIN_VERSION ) {
 }
 
 // プラグイン再有効化時の自動マイグレーション
-// add_action( 'admin_init', 'ktpwp_check_reactivation_migration' ); // 関数が未定義のため一時的にコメントアウト
+add_action( 'admin_init', 'ktpwp_check_reactivation_migration' );
 
 // プラグイン更新時の自動マイグレーション
 add_action( 'upgrader_process_complete', 'ktpwp_plugin_upgrade_migration', 10, 2 );
 
 // 新規インストール検出と自動マイグレーション
-// add_action( 'admin_init', 'ktpwp_detect_new_installation' ); // 関数が未定義のため一時的にコメントアウト
+add_action( 'admin_init', 'ktpwp_detect_new_installation' );
 
 // 利用規約同意チェック（管理画面でのみ実行 - パフォーマンス最適化）
 if ( is_admin() ) {
@@ -1242,6 +1268,8 @@ function ktpwp_check_migration_status() {
         'last_migration' => get_option( 'ktpwp_last_migration_timestamp', 'Never' ),
         'activation_completed' => get_option( 'ktpwp_activation_completed', false ),
         'upgrade_completed' => get_option( 'ktpwp_upgrade_completed', false ),
+        'reactivation_completed' => get_option( 'ktpwp_reactivation_completed', false ),
+        'new_installation_completed' => get_option( 'ktpwp_new_installation_completed', false ),
         'migration_error' => get_option( 'ktpwp_migration_error', null ),
         'qualified_invoice' => array(
             'migrated' => $qualified_invoice_migrated,
@@ -1797,7 +1825,8 @@ function ktpwp_add_security_headers() {
 }
 add_action( 'admin_init', 'ktpwp_add_security_headers' );
 
-register_activation_hook( KANTANPRO_PLUGIN_FILE, array( 'KTP_Settings', 'activate' ) );
+// 包括的アクティベーションで処理されるため、個別のフックは不要
+// register_activation_hook( KANTANPRO_PLUGIN_FILE, array( 'KTP_Settings', 'activate' ) );
 
 
 
@@ -2240,6 +2269,9 @@ function ktpwp_init_ajax_handlers() {
 add_action( 'init', 'ktpwp_init_ajax_handlers' );
 
 function ktp_table_setup() {
+    // 出力バッファリングを開始（予期しない出力を防ぐ）
+    ob_start();
+    
     if ( class_exists( 'Kntan_Client_Class' ) ) {
         $client = new Kntan_Client_Class();
         $client->Create_Table( 'client' );
@@ -2275,10 +2307,19 @@ function ktp_table_setup() {
     } else {
         error_log( 'KTPWP: KTPWP_Staff_Chat class not found during table setup' );
     }
+    
+    // 出力バッファをクリア（予期しない出力を除去）
+    $output = ob_get_clean();
+    
+    // デバッグ時のみ、予期しない出力があればログに記録
+    if ( defined( 'WP_DEBUG' ) && WP_DEBUG && ! empty( $output ) ) {
+        error_log( 'KTPWP: ktp_table_setup中に予期しない出力を検出: ' . substr( $output, 0, 1000 ) );
+    }
 }
-register_activation_hook( KANTANPRO_PLUGIN_FILE, 'ktp_table_setup' ); // テーブル作成処理
-register_activation_hook( KANTANPRO_PLUGIN_FILE, array( 'KTP_Settings', 'activate' ) ); // 設定クラスのアクティベート処理
-register_activation_hook( KANTANPRO_PLUGIN_FILE, array( 'KTPWP_Plugin_Reference', 'on_plugin_activation' ) ); // プラグインリファレンス更新処理
+// 包括的アクティベーションで処理されるため、個別のフックは不要
+// register_activation_hook( KANTANPRO_PLUGIN_FILE, 'ktp_table_setup' ); // テーブル作成処理
+// register_activation_hook( KANTANPRO_PLUGIN_FILE, array( 'KTP_Settings', 'activate' ) ); // 設定クラスのアクティベート処理
+// register_activation_hook( KANTANPRO_PLUGIN_FILE, array( 'KTPWP_Plugin_Reference', 'on_plugin_activation' ) ); // プラグインリファレンス更新処理
 
 // プラグインアップデート時の処理
 add_action(
@@ -3430,29 +3471,67 @@ function ktpwp_admin_auto_migrations() {
 
 // 包括的プラグイン有効化処理
 function ktpwp_comprehensive_activation() {
+    // 出力バッファリングを開始（予期しない出力を防ぐ）
+    ob_start();
+    
     if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
         error_log( 'KTPWP: 包括的プラグイン有効化処理を開始' );
     }
 
     try {
-        // 1. 寄付機能テーブルの作成
+        // 新規インストール判定
+        $is_new_installation = false;
+        $existing_version = get_option( 'ktpwp_version', '0' );
+        
+        if ( $existing_version === '0' || empty( $existing_version ) ) {
+            $is_new_installation = true;
+            update_option( 'ktpwp_new_installation_detected', true );
+            
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP: 新規インストールを検出' );
+            }
+        }
+        
+        // 1. 基本テーブル作成処理
+        if ( function_exists('ktp_table_setup') ) {
+            ktp_table_setup();
+        }
+        
+        // 2. 設定クラスのアクティベート処理
+        if ( class_exists( 'KTP_Settings' ) && method_exists( 'KTP_Settings', 'activate' ) ) {
+            KTP_Settings::activate();
+        }
+        
+        // 3. プラグインリファレンス更新処理
+        if ( class_exists( 'KTPWP_Plugin_Reference' ) && method_exists( 'KTPWP_Plugin_Reference', 'on_plugin_activation' ) ) {
+            KTPWP_Plugin_Reference::on_plugin_activation();
+        }
+        
+        // 4. 寄付機能テーブルの作成
         if ( function_exists('ktpwp_donation_activation') ) {
             ktpwp_donation_activation();
         }
         
-        // 2. 自動マイグレーションの実行
+        // 5. 自動マイグレーションの実行
         if ( function_exists('ktpwp_run_auto_migrations') ) {
             ktpwp_run_auto_migrations();
         }
         
-        // 3. 有効化完了フラグの設定
+        // 6. 有効化完了フラグの設定
         update_option( 'ktpwp_activation_completed', true );
         update_option( 'ktpwp_activation_timestamp', current_time( 'mysql' ) );
         update_option( 'ktpwp_version', KANTANPRO_PLUGIN_VERSION );
         update_option( 'ktpwp_db_version', KANTANPRO_PLUGIN_VERSION );
         
-        // 4. 有効化成功通知の設定
-        set_transient( 'ktpwp_activation_success', 'KantanProプラグインが正常に有効化されました。', 60 );
+        // 7. 再有効化フラグをクリア（正常に有効化された場合）
+        delete_option( 'ktpwp_reactivation_required' );
+        
+        // 8. 有効化成功通知の設定
+        if ( $is_new_installation ) {
+            set_transient( 'ktpwp_activation_success', 'KantanProプラグインが正常にインストールされました。', 60 );
+        } else {
+            set_transient( 'ktpwp_activation_success', 'KantanProプラグインが正常に有効化されました。', 60 );
+        }
         
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
             error_log( 'KTPWP: 包括的プラグイン有効化処理が正常に完了' );
@@ -3469,6 +3548,14 @@ function ktpwp_comprehensive_activation() {
         
         // エラー通知を設定
         set_transient( 'ktpwp_activation_error', 'プラグインの有効化中にエラーが発生しました。管理者にお問い合わせください。', 300 );
+    }
+    
+    // 出力バッファをクリア（予期しない出力を除去）
+    $output = ob_get_clean();
+    
+    // デバッグ時のみ、予期しない出力があればログに記録
+    if ( defined( 'WP_DEBUG' ) && WP_DEBUG && ! empty( $output ) ) {
+        error_log( 'KTPWP: プラグイン有効化処理中に予期しない出力を検出: ' . substr( $output, 0, 1000 ) );
     }
 }
 
@@ -3491,6 +3578,22 @@ function ktpwp_distribution_admin_notices() {
         delete_transient( 'ktpwp_activation_success' );
     }
     
+    // 再有効化成功通知
+    if ( $success_message = get_transient( 'ktpwp_reactivation_success' ) ) {
+        echo '<div class="notice notice-success is-dismissible">';
+        echo '<p><strong>KantanPro:</strong> ' . esc_html( $success_message ) . '</p>';
+        echo '</div>';
+        delete_transient( 'ktpwp_reactivation_success' );
+    }
+    
+    // 新規インストール成功通知
+    if ( $success_message = get_transient( 'ktpwp_new_installation_success' ) ) {
+        echo '<div class="notice notice-success is-dismissible">';
+        echo '<p><strong>KantanPro:</strong> ' . esc_html( $success_message ) . '</p>';
+        echo '</div>';
+        delete_transient( 'ktpwp_new_installation_success' );
+    }
+    
     // 有効化エラー通知
     if ( $error_message = get_transient( 'ktpwp_activation_error' ) ) {
         echo '<div class="notice notice-error is-dismissible">';
@@ -3498,6 +3601,24 @@ function ktpwp_distribution_admin_notices() {
         echo '<p><a href="' . esc_url( add_query_arg( 'ktpwp_manual_migration', '1' ) ) . '" class="button">手動マイグレーション実行</a></p>';
         echo '</div>';
         delete_transient( 'ktpwp_activation_error' );
+    }
+    
+    // 再有効化エラー通知
+    if ( $error_message = get_transient( 'ktpwp_reactivation_error' ) ) {
+        echo '<div class="notice notice-error is-dismissible">';
+        echo '<p><strong>KantanPro:</strong> ' . esc_html( $error_message ) . '</p>';
+        echo '<p><a href="' . esc_url( add_query_arg( 'ktpwp_manual_migration', '1' ) ) . '" class="button">手動マイグレーション実行</a></p>';
+        echo '</div>';
+        delete_transient( 'ktpwp_reactivation_error' );
+    }
+    
+    // 新規インストールエラー通知
+    if ( $error_message = get_transient( 'ktpwp_new_installation_error' ) ) {
+        echo '<div class="notice notice-error is-dismissible">';
+        echo '<p><strong>KantanPro:</strong> ' . esc_html( $error_message ) . '</p>';
+        echo '<p><a href="' . esc_url( add_query_arg( 'ktpwp_manual_migration', '1' ) ) . '" class="button">手動マイグレーション実行</a></p>';
+        echo '</div>';
+        delete_transient( 'ktpwp_new_installation_error' );
     }
     
     // 手動マイグレーション実行
@@ -3790,6 +3911,101 @@ function ktpwp_check_webp_support() {
     }
     
     return $support_info;
+}
+
+/**
+ * プラグイン再有効化時のマイグレーション処理
+ */
+function ktpwp_check_reactivation_migration() {
+    // 再有効化フラグをチェック
+    $reactivation_flag = get_option( 'ktpwp_reactivation_required', false );
+    
+    if ( ! $reactivation_flag ) {
+        return;
+    }
+    
+    if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+        error_log( 'KTPWP: プラグイン再有効化時のマイグレーションを実行' );
+    }
+    
+    try {
+        // 自動マイグレーションを実行
+        if ( function_exists('ktpwp_run_auto_migrations') ) {
+            ktpwp_run_auto_migrations();
+        }
+        
+        // 適格請求書ナンバー機能のマイグレーション
+        if ( function_exists('ktpwp_run_qualified_invoice_migration') ) {
+            ktpwp_run_qualified_invoice_migration();
+        }
+        
+        // 再有効化フラグをクリア
+        delete_option( 'ktpwp_reactivation_required' );
+        
+        // 再有効化完了フラグを設定
+        update_option( 'ktpwp_reactivation_completed', true );
+        update_option( 'ktpwp_reactivation_timestamp', current_time( 'mysql' ) );
+        
+        // 成功通知を設定
+        set_transient( 'ktpwp_reactivation_success', 'プラグインの再有効化が正常に完了しました。', 60 );
+        
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP: プラグイン再有効化時のマイグレーションが正常に完了' );
+        }
+        
+    } catch ( Exception $e ) {
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP: プラグイン再有効化時のマイグレーションでエラー: ' . $e->getMessage() );
+        }
+        
+        // エラー通知を設定
+        set_transient( 'ktpwp_reactivation_error', 'プラグインの再有効化中にエラーが発生しました。', 300 );
+    }
+}
+
+/**
+ * 新規インストール検出とマイグレーション処理
+ */
+function ktpwp_detect_new_installation() {
+    // 新規インストールフラグをチェック
+    $new_installation_flag = get_option( 'ktpwp_new_installation_detected', false );
+    
+    if ( ! $new_installation_flag ) {
+        return;
+    }
+    
+    if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+        error_log( 'KTPWP: 新規インストール検出 - マイグレーションを実行' );
+    }
+    
+    try {
+        // 新規インストール用の基本マイグレーションを実行
+        if ( function_exists('ktpwp_run_auto_migrations') ) {
+            ktpwp_run_auto_migrations();
+        }
+        
+        // 新規インストールフラグをクリア
+        delete_option( 'ktpwp_new_installation_detected' );
+        
+        // 新規インストール完了フラグを設定
+        update_option( 'ktpwp_new_installation_completed', true );
+        update_option( 'ktpwp_new_installation_timestamp', current_time( 'mysql' ) );
+        
+        // 成功通知を設定
+        set_transient( 'ktpwp_new_installation_success', '新規インストールの初期化が正常に完了しました。', 60 );
+        
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP: 新規インストールのマイグレーションが正常に完了' );
+        }
+        
+    } catch ( Exception $e ) {
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP: 新規インストールのマイグレーションでエラー: ' . $e->getMessage() );
+        }
+        
+        // エラー通知を設定
+        set_transient( 'ktpwp_new_installation_error', '新規インストールの初期化中にエラーが発生しました。', 300 );
+    }
 }
 
 

@@ -264,6 +264,9 @@ class KTP_Settings {
      * @return void
      */
     public static function activate() {
+        // 出力バッファリングを開始（予期しない出力を防ぐ）
+        ob_start();
+        
         $option_name = 'ktp_smtp_settings';
         if ( false === get_option( $option_name ) ) {
             add_option(
@@ -439,6 +442,14 @@ class KTP_Settings {
         self::migrate_company_info_from_old_system();
 
         self::create_or_update_tables(); // テーブル作成/更新処理を呼び出す
+        
+        // 出力バッファをクリア（予期しない出力を除去）
+        $output = ob_get_clean();
+        
+        // デバッグ時のみ、予期しない出力があればログに記録
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG && ! empty( $output ) ) {
+            error_log( 'KTPWP: KTP_Settings::activate中に予期しない出力を検出: ' . substr( $output, 0, 1000 ) );
+        }
     }
 
     /**
