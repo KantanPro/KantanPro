@@ -340,7 +340,7 @@ if ( ! class_exists( 'Kntan_Service_Class' ) ) {
 					$id = esc_html( $row->id );
 					$service_name = esc_html( $row->service_name );
 					$price = isset( $row->price ) ? floatval( $row->price ) : 0;
-					$tax_rate = isset( $row->tax_rate ) ? floatval( $row->tax_rate ) : 10.00;
+					$tax_rate = isset( $row->tax_rate ) && $row->tax_rate !== null ? floatval( $row->tax_rate ) : null;
 					$unit = isset( $row->unit ) ? esc_html( $row->unit ) : '';
 					$category = esc_html( $row->category );
 					$frequency = esc_html( $row->frequency );
@@ -359,8 +359,9 @@ if ( ! class_exists( 'Kntan_Service_Class' ) ) {
 							$item_link_args[ $getKey ] = $getValue;
 						}
 					}
+					$tax_display = $tax_rate !== null ? intval( $tax_rate ) . '%' : '非課税';
 					$results[] = '<a href="' . esc_url( add_query_arg( $item_link_args, $base_page_url ) ) . '">' .
-                    '<div class="ktp_data_list_item">' . esc_html__( 'ID', 'ktpwp' ) . ': ' . $id . ' ' . $service_name . ' | ' . $this->format_price_display( $price ) . '円' . ( $unit ? '/' . $unit : '' ) . ' | 税率' . intval( $tax_rate ) . '% | ' . $category . ' | ' . esc_html__( '頻度', 'ktpwp' ) . '(' . $frequency . ')</div>' .
+                    '<div class="ktp_data_list_item">' . esc_html__( 'ID', 'ktpwp' ) . ': ' . $id . ' ' . $service_name . ' | ' . $this->format_price_display( $price ) . '円' . ( $unit ? '/' . $unit : '' ) . ' | 税率' . $tax_display . ' | ' . $category . ' | ' . esc_html__( '頻度', 'ktpwp' ) . '(' . $frequency . ')</div>' .
 					'</a><!-- DEBUG: price=' . $price . ' formatted=' . $this->format_price_display( $price ) . ' -->';
 				}
 				$query_max_num = $wpdb->num_rows;
@@ -458,7 +459,7 @@ if ( ! class_exists( 'Kntan_Service_Class' ) ) {
 					$time = esc_html( $row->time );
 					$service_name = esc_html( $row->service_name );
 					$price = isset( $row->price ) ? floatval( $row->price ) : 0;
-					$tax_rate = isset( $row->tax_rate ) ? floatval( $row->tax_rate ) : 10.00;
+					$tax_rate = isset( $row->tax_rate ) && $row->tax_rate !== null ? floatval( $row->tax_rate ) : '';
 					$unit = isset( $row->unit ) ? esc_html( $row->unit ) : '';
 					$memo = esc_html( $row->memo );
 					$category = esc_html( $row->category );
@@ -489,7 +490,7 @@ if ( ! class_exists( 'Kntan_Service_Class' ) ) {
 				esc_html__( '税率', 'ktpwp' ) => array(
 					'type' => 'number',
 					'name' => 'tax_rate',
-					'placeholder' => esc_attr__( '税率（%）', 'ktpwp' ),
+					'placeholder' => esc_attr__( '税率（%）空白で非課税', 'ktpwp' ),
 					'step' => '1',
 					'min' => '0',
 					'max' => '100',
@@ -929,7 +930,7 @@ if ( ! class_exists( 'Kntan_Service_Class' ) ) {
 		private function generateServicePreviewHTML( $service_data ) {
 			$service_name = $service_data['service_name'] ?? '';
 			$price = $service_data['price'] ?? 0;
-			$tax_rate = $service_data['tax_rate'] ?? 10.00;
+			$tax_rate = $service_data['tax_rate'] ?? null;
 			$unit = $service_data['unit'] ?? '';
 			$memo = $service_data['memo'] ?? '';
 			$category = $service_data['category'] ?? '';
@@ -946,8 +947,10 @@ if ( ! class_exists( 'Kntan_Service_Class' ) ) {
 
 			// 税率の表示形式
 			$tax_display = '';
-			if ( $tax_rate > 0 ) {
+			if ( $tax_rate !== null && $tax_rate > 0 ) {
 				$tax_display = round( $tax_rate ) . '%';
+			} elseif ( $tax_rate === null ) {
+				$tax_display = '非課税';
 			}
 
 			// 画像の表示部分

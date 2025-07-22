@@ -343,7 +343,7 @@
                     const unit = service.unit || '式';
                     const category = service.category || '';
                     const frequency = service.frequency || 0;
-                    const taxRate = parseFloat(service.tax_rate) || 10.0;
+                    const taxRate = service.tax_rate !== null && service.tax_rate !== undefined ? parseFloat(service.tax_rate) : null;
 
                     // 価格表示用のフォーマット関数
                     function formatPriceDisplay(price) {
@@ -395,7 +395,7 @@
                                     </strong>
                                     <span style="color: #6b7280; font-size: ${isSmallScreen ? '12px' : '13px'}; flex-shrink: 0;"><strong>価格:</strong> ${formatPriceDisplay(price)}円</span>
                                     <span style="color: #6b7280; font-size: ${isSmallScreen ? '12px' : '13px'}; flex-shrink: 0;"><strong>単位:</strong> ${escapeHtml(unit)}</span>
-                                    <span style="color: #6b7280; font-size: ${isSmallScreen ? '12px' : '13px'}; flex-shrink: 0;"><strong>税率:</strong> ${Math.floor(taxRate)}%</span>
+                                    <span style="color: #6b7280; font-size: ${isSmallScreen ? '12px' : '13px'}; flex-shrink: 0;"><strong>税率:</strong> ${taxRate !== null ? Math.floor(taxRate) + '%' : '非課税'}</span>
                                     <span style="color: #6b7280; font-size: ${isSmallScreen ? '12px' : '13px'}; flex-shrink: 0;"><strong>カテゴリー:</strong> ${escapeHtml(category)}</span>
                                     <span style="color: #6b7280; font-size: ${isSmallScreen ? '12px' : '13px'}; flex-shrink: 0;" title="アクセス頻度（クリックされた回数）"><strong>頻度:</strong> ${frequency}</span>
                                 </div>
@@ -815,7 +815,7 @@
                     <input type="number" name="invoice_items[${newIndex}][amount]" class="invoice-item-input amount" value="0" step="1" readonly style="text-align:left;">
                 </td>
                 <td style="text-align:left;">
-                    <input type="number" name="invoice_items[${newIndex}][tax_rate]" class="invoice-item-input tax-rate" value="${serviceData.tax_rate !== undefined ? Math.round(serviceData.tax_rate) : ''}" step="1" min="0" max="100" style="width: 50px; max-width: 60px; text-align: right !important;"> %
+                    <input type="number" name="invoice_items[${newIndex}][tax_rate]" class="invoice-item-input tax-rate" value="${serviceData.tax_rate !== undefined && serviceData.tax_rate !== null ? Math.round(serviceData.tax_rate) : ''}" step="1" min="0" max="100" style="width: 50px; max-width: 60px; text-align: right !important;"> %
                 </td>
                 <td>
                     <input type="text" name="invoice_items[${newIndex}][remarks]" class="invoice-item-input remarks" value="${serviceData.remarks ? serviceData.remarks : ''}">
@@ -882,7 +882,7 @@
                         window.ktpInvoiceAutoSaveItem('invoice', newItemId, 'quantity', 1, orderId);
                         window.ktpInvoiceAutoSaveItem('invoice', newItemId, 'unit', serviceData.unit, orderId);
                         // 税率も保存
-                        if (serviceData.tax_rate !== undefined) {
+                        if (serviceData.tax_rate !== undefined && serviceData.tax_rate !== null) {
                             window.ktpInvoiceAutoSaveItem('invoice', newItemId, 'tax_rate', serviceData.tax_rate, orderId);
                         }
                         // 金額も明示的に保存（小数点以下も保持）

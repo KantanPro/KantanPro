@@ -64,6 +64,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 				'time' => 'DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL',
 				'service_name' => 'TINYTEXT',
 				'price' => 'DECIMAL(10,2) DEFAULT 0.00 NOT NULL',
+				'tax_rate' => 'DECIMAL(5,2) NULL DEFAULT NULL',
 				'unit' => 'VARCHAR(50) NOT NULL DEFAULT \'\'',
 				'image_url' => 'VARCHAR(255)',
 				'memo' => 'TEXT',
@@ -135,7 +136,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 			// Sanitize form fields
 			$service_name = isset( $_POST['service_name'] ) ? sanitize_text_field( $_POST['service_name'] ) : '';
 			$price = isset( $_POST['price'] ) ? floatval( $_POST['price'] ) : 0;
-			$tax_rate = isset( $_POST['tax_rate'] ) ? floatval( $_POST['tax_rate'] ) : 10.00;
+			$tax_rate = isset( $_POST['tax_rate'] ) && $_POST['tax_rate'] !== '' ? floatval( $_POST['tax_rate'] ) : null;
 			$unit = isset( $_POST['unit'] ) ? sanitize_text_field( $_POST['unit'] ) : '';
 			$memo = isset( $_POST['memo'] ) ? sanitize_textarea_field( $_POST['memo'] ) : '';
 			$category = isset( $_POST['category'] ) ? sanitize_text_field( $_POST['category'] ) : '';
@@ -238,7 +239,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 			// フォームからのデータを取得
 			$service_name = isset( $_POST['service_name'] ) ? sanitize_text_field( $_POST['service_name'] ) : esc_html__( '新しいサービス', 'ktpwp' );
 			$price = isset( $_POST['price'] ) ? floatval( $_POST['price'] ) : 0;
-			$tax_rate = isset( $_POST['tax_rate'] ) ? floatval( $_POST['tax_rate'] ) : 10.00;
+			$tax_rate = isset( $_POST['tax_rate'] ) && $_POST['tax_rate'] !== '' ? floatval( $_POST['tax_rate'] ) : null;
 			$unit = isset( $_POST['unit'] ) ? sanitize_text_field( $_POST['unit'] ) : '';
 			$memo = isset( $_POST['memo'] ) ? sanitize_textarea_field( $_POST['memo'] ) : '';
 			$category = isset( $_POST['category'] ) ? sanitize_text_field( $_POST['category'] ) : '';
@@ -399,14 +400,15 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 							'time' => current_time( 'mysql' ),
 							'service_name' => $original_data->service_name . esc_html__( ' (複製)', 'ktpwp' ),
 							'price' => $original_data->price,
+							'tax_rate' => $original_data->tax_rate,
 							'unit' => $original_data->unit,
 							'memo' => $original_data->memo,
 							'category' => $original_data->category,
 							'image_url' => $original_data->image_url,
 							'frequency' => $original_data->frequency,
-							'search_field' => $original_data->service_name . esc_html__( ' (複製)', 'ktpwp' ) . ', ' . $original_data->price . ', ' . $original_data->unit . ', ' . $original_data->category,
+							'search_field' => $original_data->service_name . esc_html__( ' (複製)', 'ktpwp' ) . ', ' . $original_data->price . ', ' . ( $original_data->tax_rate ?? '' ) . ', ' . $original_data->unit . ', ' . $original_data->category,
                         ),
-                        array( '%d', '%s', '%s', '%f', '%s', '%s', '%s', '%s', '%s', '%s' )
+                        array( '%d', '%s', '%s', '%f', '%f', '%s', '%s', '%s', '%s', '%s', '%s' )
 					);
 
 					if ( $insert_result === false ) {
