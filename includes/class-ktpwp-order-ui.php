@@ -232,17 +232,18 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 			// Calculate tax amount and total with tax
 			$tax_amount = 0;
 			
-			foreach ( $items as $item ) {
-				$item_amount = isset( $item['amount'] ) ? floatval( $item['amount'] ) : 0;
-				$item_tax_rate = isset( $item['tax_rate'] ) ? floatval( $item['tax_rate'] ) : 10.00;
-				
-				if ( $tax_category === '外税' ) {
-					// 外税表示の場合：税抜金額から税額を計算
-					$tax_amount += $item_amount * ( $item_tax_rate / 100 );
-				} else {
-					// 内税表示の場合：税込金額から税額を計算
-					$tax_amount += $item_amount * ( $item_tax_rate / 100 ) / ( 1 + $item_tax_rate / 100 );
+			if ( $tax_category === '外税' ) {
+				// 外税表示の場合：各項目の税抜金額から税額を計算（切り上げ）
+				foreach ( $items as $item ) {
+					$item_amount = isset( $item['amount'] ) ? floatval( $item['amount'] ) : 0;
+					$item_tax_rate = isset( $item['tax_rate'] ) ? floatval( $item['tax_rate'] ) : 10.00;
+					// 統一ルール：外税計算で切り上げ
+					$tax_amount += ceil( $item_amount * ( $item_tax_rate / 100 ) );
 				}
+			} else {
+				// 内税表示の場合：合計金額から税額を一括計算（小数点以下切り上げ）
+				$total_tax_rate = 10.00; // デフォルト税率
+				$tax_amount = ceil( $total_amount * ( $total_tax_rate / 100 ) / ( 1 + $total_tax_rate / 100 ) );
 			}
 			
 			$total_with_tax = $total_amount + $tax_amount;
@@ -355,9 +356,11 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
                 }
                 $total_amount += $item_amount;
                 if ( $item_tax_category === '外税' ) {
-                    $total_tax_amount += $item_amount * ( $item_tax_rate / 100 );
+                    // 統一ルール：外税計算で切り上げ
+                    $total_tax_amount += ceil( $item_amount * ( $item_tax_rate / 100 ) );
                 } else {
-                    $total_tax_amount += $item_amount * ( $item_tax_rate / 100 ) / ( 1 + $item_tax_rate / 100 );
+                    // 統一ルール：内税計算で切り上げ
+                    $total_tax_amount += ceil( $item_amount * ( $item_tax_rate / 100 ) / ( 1 + $item_tax_rate / 100 ) );
                 }
             }
             $total_with_tax = $total_amount + $total_tax_amount;

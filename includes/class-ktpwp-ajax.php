@@ -1608,11 +1608,9 @@ class KTPWP_Ajax {
 					if ( $tax_category === '外税' ) {
 						// 外税表示の場合：税抜金額から税額を計算
 						$tax_amount = ceil( $item_amount * ( $tax_rate / 100 ) );
-					} else {
-						// 内税表示の場合：税込金額から税額を計算
-						$tax_amount = ceil( $item_amount * ( $tax_rate / 100 ) / ( 1 + $tax_rate / 100 ) );
+						$total_tax_amount += $tax_amount;
 					}
-					$total_tax_amount += $tax_amount;
+					// 内税の場合は後で合計金額から一括計算
 
 					// 小数点以下の不要な0を削除
 					$price_display = rtrim( rtrim( number_format( $price, 6, '.', '' ), '0' ), '.' );
@@ -1632,6 +1630,12 @@ class KTPWP_Ajax {
 					$invoice_list .= $line . "\n";
 				}
 
+				// 内税の場合は合計金額から一括計算
+				if ( $tax_category !== '外税' ) {
+					$total_tax_rate = 10.0; // デフォルト税率
+					$total_tax_amount = ceil( $amount * ( $total_tax_rate / 100 ) / ( 1 + $total_tax_rate / 100 ) );
+				}
+				
 				$amount_ceiled = ceil( $amount );
 				$total_tax_amount_ceiled = ceil( $total_tax_amount );
 				$total_with_tax = $amount_ceiled + $total_tax_amount_ceiled;

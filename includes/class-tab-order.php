@@ -580,11 +580,9 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 										if ( $tax_category === '外税' ) {
 											// 外税表示の場合：税抜金額から税額を計算
 											$tax_amount = ceil( $item_amount * ( $tax_rate / 100 ) );
-										} else {
-											// 内税表示の場合：税込金額から税額を計算
-											$tax_amount = ceil( $item_amount * ( $tax_rate / 100 ) / ( 1 + $tax_rate / 100 ) );
+											$total_tax_amount += $tax_amount;
 										}
-										$total_tax_amount += $tax_amount;
+										// 内税の場合は後で合計金額から一括計算
 
 										// サービスが空でない項目のみリストに追加
 										if ( ! empty( trim( $product_name ) ) ) {
@@ -604,6 +602,12 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 										$invoice_list .= $line . "\n";
 									}
 
+									// 内税の場合は合計金額から一括計算
+									if ( $tax_category !== '外税' ) {
+										$total_tax_rate = 10.0; // デフォルト税率
+										$total_tax_amount = ceil( $amount * ( $total_tax_rate / 100 ) / ( 1 + $total_tax_rate / 100 ) );
+									}
+									
 									// 合計金額を切り上げ
 									$amount_ceiled = ceil( $amount );
 									$total_tax_amount_ceiled = ceil( $total_tax_amount );
@@ -661,11 +665,9 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 												if ( $tax_category === '外税' ) {
 													// 外税表示の場合：税抜金額から税額を計算
 													$tax_amount = ceil( $item_amount * ( $tax_rate / 100 ) );
-												} else {
-													// 内税表示の場合：税込金額から税額を計算
-													$tax_amount = ceil( $item_amount * ( $tax_rate / 100 ) / ( 1 + $tax_rate / 100 ) );
+													$total_tax_amount += $tax_amount;
 												}
-												$total_tax_amount += $tax_amount;
+												// 内税の場合は後で合計金額から一括計算
 
 												if ( ! empty( trim( $product_name ) ) ) {
 													// 詳細形式：サービス：単価 × 数量/単位 = 金額円（税率X%）
@@ -675,6 +677,13 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 											$amount_ceiled = ceil( $amount );
 											$total_tax_amount_ceiled = ceil( $total_tax_amount );
 											$total_with_tax = $amount_ceiled + $total_tax_amount_ceiled;
+											
+											// 内税の場合は合計金額から一括計算
+											if ( $tax_category !== '外税' ) {
+												$total_tax_rate = 10.0; // デフォルト税率
+												$total_tax_amount = ceil( $amount * ( $total_tax_rate / 100 ) / ( 1 + $total_tax_rate / 100 ) );
+												$total_tax_amount_ceiled = ceil( $total_tax_amount );
+											}
 											
 											// 税区分に応じた合計表示
 											if ( $tax_category === '外税' ) {
@@ -2483,11 +2492,11 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 						$item_tax_rate = isset( $item['tax_rate'] ) ? floatval( $item['tax_rate'] ) : 10.00;
 						
 						if ( $tax_category === '外税' ) {
-							// 外税表示の場合：税抜金額から税額を計算
-							$tax_amount += $item_amount * ( $item_tax_rate / 100 );
+							// 外税表示の場合：税抜金額から税額を計算（切り上げ）
+							$tax_amount += ceil( $item_amount * ( $item_tax_rate / 100 ) );
 						} else {
-							// 内税表示の場合（デフォルト）：税込金額から税額を計算
-							$tax_amount += $item_amount * ( $item_tax_rate / 100 ) / ( 1 + $item_tax_rate / 100 );
+							// 内税表示の場合（デフォルト）：税込金額から税額を計算（小数点以下切り上げ）
+							$tax_amount += ceil( $item_amount * ( $item_tax_rate / 100 ) / ( 1 + $item_tax_rate / 100 ) );
 						}
 					}
 					
@@ -2608,11 +2617,11 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 						$item_tax_rate = isset( $item['tax_rate'] ) ? floatval( $item['tax_rate'] ) : 10.00;
 						
 						if ( $tax_category === '外税' ) {
-							// 外税表示の場合：税抜金額から税額を計算
-							$tax_amount += $item_amount * ( $item_tax_rate / 100 );
+							// 外税表示の場合：税抜金額から税額を計算（切り上げ）
+							$tax_amount += ceil( $item_amount * ( $item_tax_rate / 100 ) );
 						} else {
-							// 内税表示の場合（デフォルト）：税込金額から税額を計算
-							$tax_amount += $item_amount * ( $item_tax_rate / 100 ) / ( 1 + $item_tax_rate / 100 );
+							// 内税表示の場合（デフォルト）：税込金額から税額を計算（小数点以下切り上げ）
+							$tax_amount += ceil( $item_amount * ( $item_tax_rate / 100 ) / ( 1 + $item_tax_rate / 100 ) );
 						}
 					}
 					

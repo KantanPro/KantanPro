@@ -323,6 +323,18 @@
         let totalTaxAmount = 0;
         let costTotalTaxAmount = 0;
 
+        // 顧客の税区分を取得（デフォルトは内税）
+        let taxCategory = '内税';
+        
+        // 受注書IDがある場合は顧客の税区分を取得
+        const orderId = $('input[name="order_id"]').val() || $('#order_id').val();
+        if (orderId) {
+            // 既存の税区分情報があれば使用
+            if (typeof window.ktpClientTaxCategory !== 'undefined') {
+                taxCategory = window.ktpClientTaxCategory;
+            }
+        }
+
         // 請求項目の合計と消費税を計算
         $('.invoice-items-table tbody tr').each(function () {
             const $row = $(this);
@@ -330,11 +342,24 @@
             const taxRate = parseFloat($row.find('.tax-rate').val()) || 10.0;
             
             invoiceTotal += amount;
-            
-            // 消費税計算（税抜表示の場合）
-            const taxAmount = Math.ceil(amount * (taxRate / 100));
-            totalTaxAmount += taxAmount;
         });
+
+        // 内税計算は合計金額で一括計算（コンサルタントの指摘に従う）
+        if (taxCategory === '外税') {
+            // 外税表示の場合：各項目の税抜金額から税額を計算
+            $('.invoice-items-table tbody tr').each(function () {
+                const $row = $(this);
+                const amount = parseFloat($row.find('.amount').val()) || 0;
+                const taxRate = parseFloat($row.find('.tax-rate').val()) || 10.0;
+                // 外税計算：税抜金額から税額を計算（切り上げ）
+                const taxAmount = Math.ceil(amount * (taxRate / 100));
+                totalTaxAmount += taxAmount;
+            });
+        } else {
+            // 内税表示の場合：合計金額から税額を一括計算（小数点以下切り上げ）
+            const totalTaxRate = 10.0; // デフォルト税率
+            totalTaxAmount = Math.ceil(invoiceTotal * (totalTaxRate / 100) / (1 + totalTaxRate / 100));
+        }
 
         // コスト項目の合計と消費税を計算
         $('.cost-items-table tbody tr').each(function () {
@@ -344,8 +369,9 @@
             
             costTotal += amount;
             
-            // 消費税計算（税抜表示の場合）
-            const taxAmount = Math.ceil(amount * (taxRate / 100));
+            // コスト項目は常に内税計算（仕入先の税区分に関係なく）
+            // 統一ルール：内税計算で切り上げ
+            const taxAmount = Math.ceil(amount * (taxRate / 100) / (1 + taxRate / 100));
             costTotalTaxAmount += taxAmount;
         });
 
@@ -369,18 +395,6 @@
 
         // 利益計算（税込合計からコスト項目税込合計を引く）
         const profit = totalWithTax - costTotalWithTax;
-
-        // 顧客の税区分を取得（デフォルトは内税）
-        let taxCategory = '内税';
-        const orderId = $('input[name="order_id"]').val() || $('#order_id').val();
-        
-        // 受注書IDがある場合は顧客の税区分を取得
-        if (orderId) {
-            // 既存の税区分情報があれば使用
-            if (typeof window.ktpClientTaxCategory !== 'undefined') {
-                taxCategory = window.ktpClientTaxCategory;
-            }
-        }
 
         // 請求項目の合計表示を更新（税区分に応じて）
         const invoiceTotalDisplay = $('.invoice-items-total');
