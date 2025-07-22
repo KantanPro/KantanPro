@@ -586,25 +586,25 @@
                     <input type="hidden" name="cost_items[${newIndex}][supplier_id]" value="0" class="supplier-id">
                 </td>
                 <td style="text-align:left;">
-                    <input type="number" name="cost_items[${newIndex}][price]" class="cost-item-input price" value="0" step="1" min="0" style="text-align:left;" disabled>
+                    <input type="number" name="cost_items[${newIndex}][price]" class="cost-item-input price" value="0" step="1" min="0" style="text-align:left;">
                 </td>
                 <td style="text-align:left;">
-                    <input type="number" name="cost_items[${newIndex}][quantity]" class="cost-item-input quantity" value="1" step="1" min="0" style="text-align:left;" disabled>
+                    <input type="number" name="cost_items[${newIndex}][quantity]" class="cost-item-input quantity" value="1" step="1" min="0" style="text-align:left;">
                 </td>
                 <td>
-                    <input type="text" name="cost_items[${newIndex}][unit]" class="cost-item-input unit" value="式" disabled>
+                    <input type="text" name="cost_items[${newIndex}][unit]" class="cost-item-input unit" value="式">
                 </td>
                 <td style="text-align:left;">
                     <input type="number" name="cost_items[${newIndex}][amount]" class="cost-item-input amount" value="" step="0.01" readonly style="text-align:left;">
                 </td>
                 <td style="text-align:left;">
                     <div style="display:inline-flex;align-items:center;margin-left:0;padding-left:0;">
-                        <input type="number" name="cost_items[${newIndex}][tax_rate]" class="cost-item-input tax-rate" value="10" step="1" min="0" max="100" style="width:50px; text-align:right; display:inline-block; margin-left:0; padding-left:0;" disabled>
+                        <input type="number" name="cost_items[${newIndex}][tax_rate]" class="cost-item-input tax-rate" value="10" step="1" min="0" max="100" style="width:50px; text-align:right; display:inline-block; margin-left:0; padding-left:0;">
                         <span style="margin-left:2px; white-space:nowrap;">%</span>
                     </div>
                 </td>
                 <td>
-                    <input type="text" name="cost_items[${newIndex}][remarks]" class="cost-item-input remarks" value="" disabled>
+                    <input type="text" name="cost_items[${newIndex}][remarks]" class="cost-item-input remarks" value="">
                     <input type="hidden" name="cost_items[${newIndex}][sort_order]" value="${newIndex + 1}">
                 </td>
                 <td>

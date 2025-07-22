@@ -85,6 +85,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 				'unit VARCHAR(50) NOT NULL DEFAULT ""',
 				'quantity DECIMAL(10,2) NOT NULL DEFAULT 0.00',
 				'amount INT(11) NOT NULL DEFAULT 0',
+				'tax_rate DECIMAL(5,2) NULL DEFAULT NULL', // 税率カラムを追加
 				'remarks TEXT',
 				'sort_order INT NOT NULL DEFAULT 0',
 				'created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP',
@@ -133,6 +134,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 
 				// 必要なカラムを追加
 				$required_columns = array(
+					'tax_rate' => 'DECIMAL(5,2) NULL DEFAULT NULL',
 					'sort_order' => 'INT NOT NULL DEFAULT 0',
 					'updated_at' => 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
 				);
@@ -1177,18 +1179,68 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 			// cost itemsの場合のみ追加フィールドを設定
 			if ( $item_type === 'cost' ) {
 				$data['purchase'] = '';
+				$data['ordered'] = 0;
+				
+				// supplier_idカラムが存在する場合のみ追加
+				$columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$table_name}` LIKE 'supplier_id'", 0 );
+				if ( ! empty( $columns ) ) {
+					$data['supplier_id'] = null;
+				}
+			}
+			
+			// 税率カラムが存在するかチェックし、存在しない場合は削除
+			$columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$table_name}`", 0 );
+			if ( ! in_array( 'tax_rate', $columns ) ) {
+				unset( $data['tax_rate'] );
 			}
 
+			// フォーマット配列を動的に生成
+			$format = array();
+			foreach ( $data as $value ) {
+				if ( $value === null ) {
+					$format[] = null;
+				} else {
+					$format[] = '%s'; // デフォルトは文字列
+				}
+			}
+			
+			// 特定のフィールドのフォーマットを調整
+			foreach ( $data as $key => $value ) {
+				$index = array_search( $key, array_keys( $data ) );
+				if ( $index !== false ) {
+					switch ( $key ) {
+						case 'order_id':
+						case 'sort_order':
+						case 'ordered':
+							$format[$index] = '%d';
+							break;
+						case 'price':
+						case 'quantity':
+						case 'amount':
+						case 'tax_rate':
+							$format[$index] = '%f';
+							break;
+						case 'supplier_id':
+							$format[$index] = '%d';
+							break;
+						default:
+							$format[$index] = '%s';
+							break;
+					}
+				}
+			}
+			
+			error_log( "[KTPWP] create_new_item INSERT debug: table={$table_name}, data_count=" . count($data) . ", format_count=" . count($format) . ", data=" . print_r($data, true) . ", format=" . print_r($format, true) );
+			
 			$result = $wpdb->insert(
                 $table_name,
                 $data,
-                $item_type === 'cost' ?
-                array( '%d', '%s', '%d', '%d', '%s', '%d', '%s', '%d', '%s', '%s', '%s' ) :
-                array( '%d', '%s', '%d', '%d', '%s', '%d', '%s', '%d', '%s', '%s' )
+                $format
 			);
 
 			if ( $result === false ) {
 				error_log( 'KTPWP: Failed to create new item: ' . $wpdb->last_error );
+				error_log( 'KTPWP: Last SQL Query: ' . $wpdb->last_query );
 				// 失敗時はトランジェントを削除
 				if ( $request_id ) {
 					$transient_key = 'ktp_create_item_' . md5( $request_id );

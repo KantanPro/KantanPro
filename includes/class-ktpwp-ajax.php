@@ -293,30 +293,57 @@ class KTPWP_Ajax {
 
 		if ( file_exists( $order_class_file ) ) {
 			require_once $order_class_file;
-
-			if ( class_exists( 'Kntan_Order_Class' ) ) {
-				// 直接このクラスのメソッドを使用して循環参照を回避
-				// 自動保存
-				add_action( 'wp_ajax_ktp_auto_save_item', array( $this, 'ajax_auto_save_item' ) );
-				add_action( 'wp_ajax_nopriv_ktp_auto_save_item', array( $this, 'ajax_auto_save_item' ) );
-				$this->registered_handlers[] = 'ktp_auto_save_item';
-
-				// 新規アイテム作成
-				add_action( 'wp_ajax_ktp_create_new_item', array( $this, 'ajax_create_new_item' ) );
-				add_action( 'wp_ajax_nopriv_ktp_create_new_item', array( $this, 'ajax_create_new_item' ) );
-				$this->registered_handlers[] = 'ktp_create_new_item';
-
-				// アイテム削除
-				add_action( 'wp_ajax_ktp_delete_item', array( $this, 'ajax_delete_item' ) );
-				add_action( 'wp_ajax_nopriv_ktp_delete_item', array( $this, 'ajax_require_login' ) ); // 非ログインユーザーはエラー
-				$this->registered_handlers[] = 'ktp_delete_item';
-
-				// アイテム並び順更新
-				add_action( 'wp_ajax_ktp_update_item_order', array( $this, 'ajax_update_item_order' ) );
-				add_action( 'wp_ajax_nopriv_ktp_update_item_order', array( $this, 'ajax_require_login' ) ); // 非ログインユーザーはエラー
-				$this->registered_handlers[] = 'ktp_update_item_order';
-			}
 		}
+
+		// クラス存在チェックを削除して強制的に登録
+		error_log( '[AJAX] 強制的にAjaxハンドラーを登録します' );
+		
+		// 自動保存
+		add_action( 'wp_ajax_ktp_auto_save_item', array( $this, 'ajax_auto_save_item' ) );
+		add_action( 'wp_ajax_nopriv_ktp_auto_save_item', array( $this, 'ajax_auto_save_item' ) );
+		$this->registered_handlers[] = 'ktp_auto_save_item';
+
+		// 新規アイテム作成
+		add_action( 'wp_ajax_ktp_create_new_item', array( $this, 'ajax_create_new_item' ) );
+		add_action( 'wp_ajax_nopriv_ktp_create_new_item', array( $this, 'ajax_create_new_item' ) );
+		$this->registered_handlers[] = 'ktp_create_new_item';
+		error_log( '[AJAX] ktp_create_new_item handler registered' );
+
+		// アイテム削除
+		add_action( 'wp_ajax_ktp_delete_item', array( $this, 'ajax_delete_item' ) );
+		add_action( 'wp_ajax_nopriv_ktp_delete_item', array( $this, 'ajax_require_login' ) ); // 非ログインユーザーはエラー
+		$this->registered_handlers[] = 'ktp_delete_item';
+
+		// アイテム並び順更新
+		add_action( 'wp_ajax_ktp_update_item_order', array( $this, 'ajax_update_item_order' ) );
+		add_action( 'wp_ajax_nopriv_ktp_update_item_order', array( $this, 'ajax_require_login' ) ); // 非ログインユーザーはエラー
+		$this->registered_handlers[] = 'ktp_update_item_order';
+		
+		error_log( '[AJAX] 全Ajaxハンドラー登録完了: ' . print_r($this->registered_handlers, true) );
+		
+		// デバッグ用：すべてのAjaxリクエストを監視
+		add_action( 'wp_ajax_ktp_create_new_item', function() {
+			error_log( '[AJAX_DEBUG] wp_ajax_ktp_create_new_item アクションが呼び出されました' );
+		}, 1 );
+		add_action( 'wp_ajax_nopriv_ktp_create_new_item', function() {
+			error_log( '[AJAX_DEBUG] wp_ajax_nopriv_ktp_create_new_item アクションが呼び出されました' );
+		}, 1 );
+		
+		// デバッグ用：すべてのAjaxリクエストを監視
+		add_action( 'wp_ajax_ktp_create_new_item', function() {
+			error_log( '[AJAX_DEBUG_ALL] すべてのAjaxリクエスト: ' . print_r( $_REQUEST, true ) );
+		}, 0 );
+		add_action( 'wp_ajax_nopriv_ktp_create_new_item', function() {
+			error_log( '[AJAX_DEBUG_ALL] すべてのAjaxリクエスト（非ログイン）: ' . print_r( $_REQUEST, true ) );
+		}, 0 );
+		
+		// デバッグ用：WordPressのAjax処理全体を監視
+		add_action( 'init', function() {
+			error_log( '[AJAX_DEBUG_INIT] WordPress init フック実行中' );
+			if ( wp_doing_ajax() ) {
+				error_log( '[AJAX_DEBUG_INIT] Ajax処理中: action=' . ( isset( $_REQUEST['action'] ) ? $_REQUEST['action'] : 'NOT_SET' ) );
+			}
+		}, 1 );
 	}
 
 	/**
@@ -770,6 +797,8 @@ class KTPWP_Ajax {
 	 * Ajax: 新規アイテム作成処理（強化版）
 	 */
 	public function ajax_create_new_item() {
+		error_log( '[AJAX_CREATE_NEW_ITEM] Method called - POST data: ' . print_r($_POST, true) );
+		
 		// 編集者以上の権限チェック
 		if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
 			$this->log_ajax_error( 'Create new item permission check failed' );
