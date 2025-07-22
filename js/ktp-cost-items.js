@@ -9,9 +9,9 @@
     'use strict';
 
     // デバッグモードを有効化（本番では false に設定）
-    window.ktpDebugMode = true;
+    window.ktpDebugMode = false; // 本番環境では false に設定
 
-    // 利用可能な変数を確認
+    // 利用可能な変数を確認（デバッグモード時のみ）
     if (window.ktpDebugMode) {
         console.log('[COST] Available variables check:');
         console.log('  - ajaxurl:', typeof ajaxurl !== 'undefined' ? ajaxurl : 'undefined');
@@ -128,14 +128,14 @@
         let ajaxUrl = '';
         if (typeof ajaxurl !== 'undefined') {
             ajaxUrl = ajaxurl;
-        } else if (typeof ktp_ajax !== 'undefined' && ktp_ajax.ajax_url) {
-            ajaxUrl = ktp_ajax.ajax_url;
+        } else if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.ajax_url) {
+            ajaxUrl = ktp_ajax_object.ajax_url;
         } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) {
             ajaxUrl = ktpwp_ajax.ajax_url;
-        }
-
-        if (window.ktpDebugMode) {
-            console.log('[COST] Ajax URL:', ajaxUrl);
+        } else if (typeof window.ktpwp_ajax !== 'undefined' && window.ktpwp_ajax.ajax_url) {
+            ajaxUrl = window.ktpwp_ajax.ajax_url;
+        } else {
+            ajaxUrl = '/wp-admin/admin-ajax.php';
         }
 
         $.ajax({
@@ -144,166 +144,116 @@
             data: {
                 action: 'ktp_get_supplier_tax_category',
                 supplier_id: supplierId,
-                nonce: nonce,
-                _wpnonce: nonce,
-                _ajax_nonce: nonce,
-                ktp_ajax_nonce: nonce,
-                security: nonce
+                nonce: nonce
             },
             success: function(response) {
                 if (window.ktpDebugMode) {
-                    console.log('[COST] Tax category response:', response);
+                    console.log('[COST] getSupplierTaxCategory response:', response);
                 }
-                if (response.success && response.data && response.data.tax_category) {
-                    callback(response.data.tax_category);
-                } else {
+                try {
+                    const result = typeof response === 'string' ? JSON.parse(response) : response;
+                    if (result.success && result.data && result.data.tax_category) {
+                        callback(result.data.tax_category);
+                    } else {
+                        if (window.ktpDebugMode) {
+                            console.warn('[COST] getSupplierTaxCategory failed:', result);
+                        }
+                        callback('内税'); // デフォルト
+                    }
+                } catch (e) {
                     if (window.ktpDebugMode) {
-                        console.log('[COST] 協力会社税区分取得失敗:', response);
+                        console.error('[COST] getSupplierTaxCategory parse error:', e, response);
                     }
                     callback('内税'); // デフォルト
                 }
             },
             error: function(xhr, status, error) {
                 if (window.ktpDebugMode) {
-                    console.error('[COST] 協力会社税区分取得エラー:', {
-                        status: status,
-                        error: error,
-                        responseText: xhr.responseText,
-                        responseJSON: xhr.responseJSON,
-                        statusCode: xhr.status,
-                        statusText: xhr.statusText,
-                        supplierId: supplierId,
-                        nonce: nonce,
-                        ajaxUrl: ajaxUrl
-                    });
+                    console.warn('[COST] getSupplierTaxCategory error (using default):', {xhr, status, error});
                 }
                 callback('内税'); // デフォルト
             }
         });
     }
 
-    // 協力会社の適格請求書ナンバーを取得する関数
+    // 協力会社の適格請求書番号を取得する関数
     function getSupplierQualifiedInvoiceNumber(supplierId, callback) {
         if (!supplierId || supplierId <= 0) {
             if (window.ktpDebugMode) {
                 console.log('[COST] Invalid supplier ID for qualified invoice number:', supplierId);
             }
-            callback('');
+            callback(''); // デフォルト（適格請求書なし）
             return;
         }
 
-        // 統一されたnonce取得方法（より堅牢）
+        // 統一されたnonce取得方法
         let nonce = '';
-        const nonceCheckOrder = [
-            () => $('input[name="ktp_ajax_nonce"]').val() || null,
-            () => $('meta[name="ktp_ajax_nonce"]').attr('content') || null,
-            () => typeof ktp_ajax_nonce !== 'undefined' ? ktp_ajax_nonce : null,
-            () => typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.nonce ? ktp_ajax_object.nonce : null,
-            () => typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.auto_save ? ktpwp_ajax.nonces.auto_save : null,
-            () => typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.general ? ktpwp_ajax.nonces.general : null,
-            () => typeof window.ktpwp_ajax !== 'undefined' && window.ktpwp_ajax.nonces && window.ktpwp_ajax.nonces.auto_save ? window.ktpwp_ajax.nonces.auto_save : null,
-            () => typeof window.ktpwp_ajax !== 'undefined' && window.ktpwp_ajax.nonces && window.ktpwp_ajax.nonces.general ? window.ktpwp_ajax.nonces.general : null,
-            () => $('input[name="_wpnonce"]').val() || null,
-            () => $('input[name="_ajax_nonce"]').val() || null,
-            () => wp && wp.ajax && wp.ajax.settings && wp.ajax.settings.nonce ? wp.ajax.settings.nonce : null
-        ];
-
-        for (let i = 0; i < nonceCheckOrder.length; i++) {
-            try {
-                const result = nonceCheckOrder[i]();
-                if (result) {
-                    nonce = result;
-                    break;
-                }
-            } catch (e) {
-                // 無視して次を試す
-            }
+        if (typeof ktp_ajax_nonce !== 'undefined') {
+            nonce = ktp_ajax_nonce;
+        } else if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.nonce) {
+            nonce = ktp_ajax_object.nonce;
+        } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.auto_save) {
+            nonce = ktpwp_ajax.nonces.auto_save;
+        } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.general) {
+            nonce = ktpwp_ajax.nonces.general;
+        } else if (typeof window.ktpwp_ajax !== 'undefined' && window.ktpwp_ajax.nonces && window.ktpwp_ajax.nonces.auto_save) {
+            nonce = window.ktpwp_ajax.nonces.auto_save;
+        } else if (typeof window.ktpwp_ajax !== 'undefined' && window.ktpwp_ajax.nonces && window.ktpwp_ajax.nonces.general) {
+            nonce = window.ktpwp_ajax.nonces.general;
         }
 
-        // デバッグ情報を常に出力（一時的な修正）
-        console.log('[COST] getSupplierQualifiedInvoiceNumber - nonce:', nonce, 'supplierId:', supplierId);
+        if (window.ktpDebugMode) {
+            console.log('[COST] getSupplierQualifiedInvoiceNumber - nonce:', nonce, 'supplierId:', supplierId);
+        }
 
         // 統一されたajax_url取得
         let ajaxUrl = '';
         if (typeof ajaxurl !== 'undefined') {
             ajaxUrl = ajaxurl;
-        } else if (typeof ktp_ajax !== 'undefined' && ktp_ajax.ajax_url) {
-            ajaxUrl = ktp_ajax.ajax_url;
+        } else if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.ajax_url) {
+            ajaxUrl = ktp_ajax_object.ajax_url;
         } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) {
             ajaxUrl = ktpwp_ajax.ajax_url;
+        } else if (typeof window.ktpwp_ajax !== 'undefined' && window.ktpwp_ajax.ajax_url) {
+            ajaxUrl = window.ktpwp_ajax.ajax_url;
         } else {
-            // フォールバック：デフォルトのWordPress AJAX URL
             ajaxUrl = '/wp-admin/admin-ajax.php';
         }
-
-        if (!ajaxUrl) {
-            console.error('[COST] AJAX URL not available');
-            callback('');
-            return;
-        }
-
-        if (!nonce) {
-            console.error('[COST] Nonce not available, trying without nonce...');
-            // nonce が取得できない場合、一時的に空文字列で試行
-            nonce = '';
-        }
-
-        const ajaxData = {
-            action: 'ktp_get_supplier_qualified_invoice_number',
-            supplier_id: supplierId,
-            nonce: nonce,
-            _wpnonce: nonce,
-            _ajax_nonce: nonce,
-            ktp_ajax_nonce: nonce,
-            security: nonce
-        };
-
-        // デバッグ情報を常に出力（一時的な修正）
-        console.log('[COST] Ajax request data:', ajaxData);
-        console.log('[COST] Ajax URL:', ajaxUrl);
 
         $.ajax({
             url: ajaxUrl,
             type: 'POST',
-            data: ajaxData,
-            timeout: 10000, // 10秒のタイムアウト
+            data: {
+                action: 'ktp_get_supplier_qualified_invoice_number',
+                supplier_id: supplierId,
+                nonce: nonce
+            },
             success: function(response) {
-                // デバッグ情報を常に出力（一時的な修正）
-                console.log('[COST] Ajax response:', response);
-                
-                if (response && response.success && response.data && response.data.qualified_invoice_number) {
-                    callback(response.data.qualified_invoice_number);
-                } else {
-                    console.log('[COST] No qualified invoice number found or invalid response:', response);
-                    callback('');
+                if (window.ktpDebugMode) {
+                    console.log('[COST] getSupplierQualifiedInvoiceNumber response:', response);
+                }
+                try {
+                    const result = typeof response === 'string' ? JSON.parse(response) : response;
+                    if (result.success && result.data && result.data.qualified_invoice_number !== undefined) {
+                        callback(result.data.qualified_invoice_number);
+                    } else {
+                        if (window.ktpDebugMode) {
+                            console.warn('[COST] getSupplierQualifiedInvoiceNumber failed (using default):', result);
+                        }
+                        callback(''); // デフォルト（適格請求書なし）
+                    }
+                } catch (e) {
+                    if (window.ktpDebugMode) {
+                        console.error('[COST] getSupplierQualifiedInvoiceNumber parse error (using default):', e, response);
+                    }
+                    callback(''); // デフォルト（適格請求書なし）
                 }
             },
             error: function(xhr, status, error) {
-                // エラーが発生した場合は常に詳細な情報をログに出力
-                console.error('[COST] 協力会社適格請求書ナンバー取得エラー:', {
-                    status: status,
-                    error: error,
-                    responseText: xhr.responseText,
-                    responseJSON: xhr.responseJSON,
-                    statusCode: xhr.status,
-                    statusText: xhr.statusText,
-                    supplierId: supplierId,
-                    nonce: nonce,
-                    ajaxUrl: ajaxUrl,
-                    ajaxData: ajaxData,
-                    responseHeaders: xhr.getAllResponseHeaders()
-                });
-                
-                // Try to parse the response if it's JSON
-                try {
-                    const parsedResponse = JSON.parse(xhr.responseText);
-                    console.error('[COST] Parsed error response:', parsedResponse);
-                } catch (e) {
-                    console.error('[COST] Response is not JSON:', xhr.responseText);
+                if (window.ktpDebugMode) {
+                    console.warn('[COST] getSupplierQualifiedInvoiceNumber error (using default):', {xhr, status, error});
                 }
-                
-                // エラーが発生した場合は空文字列を返す（適格請求書なしとして扱う）
-                callback('');
+                callback(''); // デフォルト（適格請求書なし）
             }
         });
     }
@@ -338,25 +288,38 @@
                 taxRate = parseFloat(taxRateInput);
             }
             
-            // 協力会社IDの取得を複数の方法で試行
-            let supplierId = $row.find('input[name*="[supplier_id]"]').val() || 
-                           $row.find('.supplier-id').val() || 
-                           $row.find('[data-supplier-id]').attr('data-supplier-id') || 
-                           $row.attr('data-supplier-id');
+            // 協力会社IDの取得を改善
+            let supplierId = 0;
             
-            // 別の方法：select要素から取得
-            if (!supplierId) {
-                supplierId = $row.find('select[name*="[supplier_id]"]').val() || 
-                           $row.find('select.supplier-id').val();
+            // 1. 隠しフィールドから取得（最優先）
+            const hiddenSupplierId = $row.find('input[name*="[supplier_id]"]').val();
+            if (hiddenSupplierId && !isNaN(parseInt(hiddenSupplierId, 10))) {
+                supplierId = parseInt(hiddenSupplierId, 10);
             }
             
-            // 別の方法：hidden inputから取得
+            // 2. data属性から取得
             if (!supplierId) {
-                supplierId = $row.find('input[type="hidden"][name*="supplier"]').val();
+                const dataSupplierId = $row.attr('data-supplier-id');
+                if (dataSupplierId && !isNaN(parseInt(dataSupplierId, 10))) {
+                    supplierId = parseInt(dataSupplierId, 10);
+                }
             }
             
-            // 文字列の場合は数値に変換
-            supplierId = parseInt(supplierId, 10) || 0;
+            // 3. クラス付き要素から取得
+            if (!supplierId) {
+                const classSupplierId = $row.find('.supplier-id').val();
+                if (classSupplierId && !isNaN(parseInt(classSupplierId, 10))) {
+                    supplierId = parseInt(classSupplierId, 10);
+                }
+            }
+            
+            // 4. select要素から取得
+            if (!supplierId) {
+                const selectSupplierId = $row.find('select[name*="[supplier_id]"]').val();
+                if (selectSupplierId && !isNaN(parseInt(selectSupplierId, 10))) {
+                    supplierId = parseInt(selectSupplierId, 10);
+                }
+            }
             
             // 税率別に集計（税率なしの場合は'no_tax_rate'として扱う）
             const taxRateKey = taxRate !== null ? taxRate.toString() : 'no_tax_rate';
@@ -365,22 +328,15 @@
             }
             costTaxRateGroups[taxRateKey] += amount;
             
-            // デバッグ情報を常に出力（一時的な修正）
-            console.log('[COST] Row data collected:', {
-                supplierId: supplierId,
-                amount: amount,
-                taxRate: taxRate,
-                supplierIdSourceDetails: {
-                    inputSupplierIdField: $row.find('input[name*="[supplier_id]"]').val(),
-                    supplierIdClass: $row.find('.supplier-id').val(),
-                    dataSupplierIdAttr: $row.find('[data-supplier-id]').attr('data-supplier-id'),
-                    rowDataSupplierIdAttr: $row.attr('data-supplier-id'),
-                    allInputs: $row.find('input').map(function() { return $(this).attr('name') + '=' + $(this).val(); }).get(),
-                    rowText: $row.text().trim().substring(0, 100),
-                    supplierId_raw: $row.find('input[name*="[supplier_id]"]').val(),
-                    supplierId_parsed: parseInt($row.find('input[name*="[supplier_id]"]').val(), 10) || 0
-                }
-            });
+            // デバッグ情報（デバッグモード時のみ）
+            if (window.ktpDebugMode) {
+                console.log('[COST] Row data collected:', {
+                    supplierId: supplierId,
+                    amount: amount,
+                    taxRate: taxRate,
+                    rowIndex: $row.index()
+                });
+            }
             
             costTotal += amount;
             costItems.push({
@@ -393,11 +349,11 @@
             getSupplierTaxCategory(supplierId, function(taxCategory) {
                 // 税率が設定されている場合のみ税額を計算
                 if (taxRate !== null) {
-                if (taxCategory === '外税') {
-                    hasOuttax = true;
+                    if (taxCategory === '外税') {
+                        hasOuttax = true;
                         // 外税計算：税抜金額から税額を計算（切り上げ）
                         costTotalTaxAmount += Math.ceil(amount * (taxRate / 100));
-                } else {
+                    } else {
                         // 内税計算：各税率グループごとに税額を計算（切り上げ）
                         costTotalTaxAmount += Math.ceil(amount * (taxRate / 100) / (1 + taxRate / 100));
                     }
@@ -433,7 +389,8 @@
         if (window.ktpDebugMode) {
             console.log('[COST] 税率別集計:', {
                 costTaxRateGroups: costTaxRateGroups,
-                costTotalTaxAmount: costTotalTaxAmount
+                costTotalTaxAmount: costTotalTaxAmount,
+                hasOuttax: hasOuttax
             });
         }
     }
@@ -2903,14 +2860,18 @@
     });
 
     // ページ読み込み時の初期化
-    $(function() {
-        // 少し遅延させてから初期表示を更新（税区分の設定が遅れる可能性があるため）
-        setTimeout(function() {
-            // 税区分が設定されている場合は即座に表示を更新
-            if (typeof window.ktpClientTaxCategory !== 'undefined') {
-                updateProfitDisplay();
-            }
-        }, 100);
+    $(document).ready(function() {
+        // 既存のデバッグボタンを削除
+        $('#ktp-debug-toggle, #ktp-cost-debug-button').remove();
+        
+        // デバッグモードの初期化
+        if (typeof window.ktpDebugMode === 'undefined') {
+            window.ktpDebugMode = false;
+        }
+        
+        if (window.ktpDebugMode) {
+            console.log('[COST] Debug mode is enabled on page load');
+        }
     });
 
     // コスト項目の表示を更新する関数
@@ -3027,11 +2988,14 @@
             const taxRate = parseFloat(item.taxRate) || 10.0;
 
             // 供給業者IDが無効な場合は適格請求書がないものとして処理
-            if (!supplierId || supplierId <= 0) {                    // 適格請求書がない場合：税込金額をコストとする（仕入税額控除不可）
-                    nonQualifiedInvoiceCost += amount;
-                    totalCost += amount;
+            if (!supplierId || supplierId <= 0) {
+                // 適格請求書がない場合：税込金額をコストとする（仕入税額控除不可）
+                nonQualifiedInvoiceCost += amount;
+                totalCost += amount;
 
+                if (window.ktpDebugMode) {
                     console.log('[COST] Profit Calculation - Invalid supplier ID ' + supplierId + ', treating as no qualified invoice, Amount: ' + amount + ', Cost: ' + amount);
+                }
 
                 processedItems++;
 
@@ -3041,45 +3005,81 @@
                     
                     const profit = adjustedInvoiceTotal - totalCost;
 
-                    console.log('[COST] Profit Calculation Summary - Client Tax Category: ' + clientTaxCategory + ', Original Invoice Total: ' + invoiceTotal + ', Adjusted Invoice Total: ' + adjustedInvoiceTotal + ', Qualified Cost: ' + qualifiedInvoiceCost + ', Non-Qualified Cost: ' + nonQualifiedInvoiceCost + ', Total Cost: ' + totalCost + ', Profit: ' + profit);
+                    if (window.ktpDebugMode) {
+                        console.log('[COST] Profit Calculation Summary - Client Tax Category: ' + clientTaxCategory + ', Original Invoice Total: ' + invoiceTotal + ', Adjusted Invoice Total: ' + adjustedInvoiceTotal + ', Qualified Cost: ' + qualifiedInvoiceCost + ', Non-Qualified Cost: ' + nonQualifiedInvoiceCost + ', Total Cost: ' + totalCost + ', Profit: ' + profit);
+                    }
 
                     callback(profit, qualifiedInvoiceCost, nonQualifiedInvoiceCost, totalCost);
                 }
                 return;
             }
 
-            getSupplierQualifiedInvoiceNumber(supplierId, function(qualifiedInvoiceNumber) {
-                const hasQualifiedInvoice = qualifiedInvoiceNumber && qualifiedInvoiceNumber.trim() !== '';
+            // 協力会社の税区分を取得して適切な税額計算を行う
+            getSupplierTaxCategory(supplierId, function(taxCategory) {
+                getSupplierQualifiedInvoiceNumber(supplierId, function(qualifiedInvoiceNumber) {
+                    const hasQualifiedInvoice = qualifiedInvoiceNumber && qualifiedInvoiceNumber.trim() !== '';
 
-                if (hasQualifiedInvoice) {
-                    // 適格請求書がある場合：税抜金額のみをコストとする（仕入税額控除可能）
-                    const taxAmount = amount * (taxRate / 100) / (1 + taxRate / 100);
-                    const costAmount = amount - taxAmount;
-                    qualifiedInvoiceCost += costAmount;
-                    totalCost += costAmount;
+                    if (hasQualifiedInvoice) {
+                        // 適格請求書がある場合：税抜金額のみをコストとする（仕入税額控除可能）
+                        let taxAmount = 0;
+                        let costAmount = 0;
+                        
+                        if (taxCategory === '外税') {
+                            // 外税の場合：税込金額から税額を計算
+                            taxAmount = amount * (taxRate / 100);
+                            costAmount = amount - taxAmount;
+                        } else {
+                            // 内税の場合：税込金額から税額を計算
+                            taxAmount = amount * (taxRate / 100) / (1 + taxRate / 100);
+                            costAmount = amount - taxAmount;
+                        }
+                        
+                        qualifiedInvoiceCost += costAmount;
+                        totalCost += costAmount;
 
-                    console.log('[COST] Profit Calculation - Supplier ID ' + supplierId + ' has qualified invoice: ' + qualifiedInvoiceNumber + ', Amount: ' + amount + ', Tax: ' + taxAmount + ', Cost: ' + costAmount);
-                } else {
-                    // 適格請求書がない場合：税込金額をコストとする（仕入税額控除不可）
-                    nonQualifiedInvoiceCost += amount;
-                    totalCost += amount;
+                        if (window.ktpDebugMode) {
+                            console.log('[COST] Profit Calculation - Supplier ID ' + supplierId + ' has qualified invoice: ' + qualifiedInvoiceNumber + ', Tax Category: ' + taxCategory + ', Amount: ' + amount + ', Tax: ' + taxAmount + ', Cost: ' + costAmount);
+                        }
+                    } else {
+                        // 適格請求書がない場合：税込金額をコストとする（仕入税額控除不可）
+                        nonQualifiedInvoiceCost += amount;
+                        totalCost += amount;
 
-                    console.log('[COST] Profit Calculation - Supplier ID ' + supplierId + ' has no qualified invoice, Amount: ' + amount + ', Cost: ' + amount);
-                }
+                        if (window.ktpDebugMode) {
+                            console.log('[COST] Profit Calculation - Supplier ID ' + supplierId + ' has no qualified invoice, Tax Category: ' + taxCategory + ', Amount: ' + amount + ', Cost: ' + amount);
+                        }
+                    }
 
-                processedItems++;
+                    processedItems++;
 
-                if (processedItems === totalItems) {
-                    // 請求金額をそのまま使用（内税・外税の区分は請求側で処理済み）
-                    let adjustedInvoiceTotal = invoiceTotal;
-                    
-                    const profit = adjustedInvoiceTotal - totalCost;
+                    if (processedItems === totalItems) {
+                        // 請求金額をそのまま使用（内税・外税の区分は請求側で処理済み）
+                        let adjustedInvoiceTotal = invoiceTotal;
+                        
+                        const profit = adjustedInvoiceTotal - totalCost;
 
-                    console.log('[COST] Profit Calculation Summary - Client Tax Category: ' + clientTaxCategory + ', Original Invoice Total: ' + invoiceTotal + ', Adjusted Invoice Total: ' + adjustedInvoiceTotal + ', Qualified Cost: ' + qualifiedInvoiceCost + ', Non-Qualified Cost: ' + nonQualifiedInvoiceCost + ', Total Cost: ' + totalCost + ', Profit: ' + profit);
+                        if (window.ktpDebugMode) {
+                            console.log('[COST] Profit Calculation Summary - Client Tax Category: ' + clientTaxCategory + ', Original Invoice Total: ' + invoiceTotal + ', Adjusted Invoice Total: ' + adjustedInvoiceTotal + ', Qualified Cost: ' + qualifiedInvoiceCost + ', Non-Qualified Cost: ' + nonQualifiedInvoiceCost + ', Total Cost: ' + totalCost + ', Profit: ' + profit);
+                        }
 
-                    callback(profit, qualifiedInvoiceCost, nonQualifiedInvoiceCost, totalCost);
-                }
+                        callback(profit, qualifiedInvoiceCost, nonQualifiedInvoiceCost, totalCost);
+                    }
+                });
             });
         });
     }
+
+    // ページ読み込み時の初期化
+    $(document).ready(function() {
+        // デバッグモードの初期化
+        if (typeof window.ktpDebugMode === 'undefined') {
+            window.ktpDebugMode = false;
+        }
+        
+        if (window.ktpDebugMode) {
+            console.log('[COST] Debug mode is enabled on page load');
+        }
+    });
+
+
 })(jQuery);

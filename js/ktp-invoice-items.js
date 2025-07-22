@@ -8,36 +8,33 @@
 (function ($) {
     'use strict';
 
-    // デバッグモードの設定
-    window.ktpDebugMode = window.ktpDebugMode || false;
+    // デバッグモードを有効化（本番では false に設定）
+    window.ktpDebugMode = false; // 本番環境では false に設定
+
+    // 進行中のAJAXリクエストを追跡するオブジェクト
+    window.ktpInvoicePendingRequests = {};
+
+    // 利用可能な変数を確認（デバッグモード時のみ）
+    if (window.ktpDebugMode) {
+        console.log('[INVOICE] Available variables check:');
+        console.log('  - ajaxurl:', typeof ajaxurl !== 'undefined' ? ajaxurl : 'undefined');
+        console.log('  - ktp_ajax:', typeof ktp_ajax !== 'undefined' ? ktp_ajax : 'undefined');
+        console.log('  - ktpwp_ajax:', typeof ktpwp_ajax !== 'undefined' ? ktpwp_ajax : 'undefined');
+        console.log('  - ktp_ajax_nonce:', typeof ktp_ajax_nonce !== 'undefined' ? ktp_ajax_nonce : 'undefined');
+        console.log('  - ktp_ajax_object:', typeof ktp_ajax_object !== 'undefined' ? ktp_ajax_object : 'undefined');
+    }
 
     // グローバルスコープに関数を定義
     window.ktpInvoiceAutoSaveItem = function (itemType, itemId, fieldName, fieldValue, orderId) {
-        if (window.ktpDebugMode) {
-            if (window.ktpDebugMode) console.log('[INVOICE AUTO-SAVE] === 自動保存開始 ===');
-            if (window.ktpDebugMode) console.log('[INVOICE AUTO-SAVE] Parameters:', { 
-                itemType: itemType, 
-                itemId: itemId, 
-                fieldName: fieldName, 
-                fieldValue: fieldValue + ' (type: ' + typeof fieldValue + ')', 
-                orderId: orderId 
-            });
-        }
+        if (window.ktpDebugMode) console.log('[INVOICE AUTO-SAVE] 呼び出し', { itemType, itemId, fieldName, fieldValue, orderId });
         
-        // バリデーション
-        if (!itemId || itemId <= 0) {
-            if (window.ktpDebugMode) console.warn('[INVOICE AUTO-SAVE] 無効なitemId:', itemId);
-            return;
-        }
+        // リクエストキーを作成
+        const requestKey = `${itemType}_${itemId}_${fieldName}`;
         
-        if (!orderId || orderId <= 0) {
-            if (window.ktpDebugMode) console.warn('[INVOICE AUTO-SAVE] 無効なorderId:', orderId);
-            return;
-        }
-        
-        if (!fieldName) {
-            if (window.ktpDebugMode) console.warn('[INVOICE AUTO-SAVE] フィールド名が指定されていません');
-            return;
+        // 既存のリクエストがあればキャンセル
+        if (window.ktpInvoicePendingRequests[requestKey]) {
+            if (window.ktpDebugMode) console.log('[INVOICE AUTO-SAVE] 既存のリクエストをキャンセル:', requestKey);
+            window.ktpInvoicePendingRequests[requestKey].abort();
         }
         
         // Ajax URLの確認と代替設定
@@ -45,8 +42,7 @@
         if (!ajaxUrl) {
             ajaxUrl = '/wp-admin/admin-ajax.php';
         }
-        if (window.ktpDebugMode) console.log('[INVOICE AUTO-SAVE] Ajax URL:', ajaxUrl);
-
+        
         // 統一されたnonce取得方法
         let nonce = '';
         if (typeof ktp_ajax_nonce !== 'undefined') {
@@ -58,8 +54,6 @@
         } else if (typeof window.ktpwp_ajax !== 'undefined' && window.ktpwp_ajax.nonces && window.ktpwp_ajax.nonces.auto_save) {
             nonce = window.ktpwp_ajax.nonces.auto_save;
         }
-
-        if (window.ktpDebugMode) console.log('[INVOICE AUTO-SAVE] nonce value:', nonce);
 
         const ajaxData = {
             action: 'ktp_auto_save_item',
@@ -75,21 +69,22 @@
         if (window.ktpDebugMode) console.log('[INVOICE AUTO-SAVE] Ajax data:', ajaxData);
         if (window.ktpDebugMode) console.log('[INVOICE AUTO-SAVE] Ajax URL:', ajaxUrl);
         
-        $.ajax({
+        // AJAXリクエストを実行し、進行中のリクエストとして記録
+        const xhr = $.ajax({
             url: ajaxUrl,
             type: 'POST',
             data: ajaxData,
-            timeout: 10000, // 10秒のタイムアウト
+            timeout: 30000, // 30秒のタイムアウトに延長
             beforeSend: function(xhr) {
-                if (window.ktpDebugMode) console.log('INVOICE AUTO-SAVE] Sending request with data:', ajaxData);
+                if (window.ktpDebugMode) console.log('[INVOICE AUTO-SAVE] Sending request with data:', ajaxData);
             },
             success: function (response) {
-                if (window.ktpDebugMode) console.log('INVOICE AUTO-SAVE] Raw response:', response);
+                if (window.ktpDebugMode) console.log('[INVOICE AUTO-SAVE] Raw response:', response);
                 try {
                     const result = typeof response === 'string' ? JSON.parse(response) : response;
-                    if (window.ktpDebugMode) console.log('INVOICE AUTO-SAVE] Parsed response:', result);
+                    if (window.ktpDebugMode) console.log('[INVOICE AUTO-SAVE] Parsed response:', result);
                     if (result.success) {
-                        if (window.ktpDebugMode) console.log('INVOICE AUTO-SAVE] 保存成功 - field:', fieldName, 'value:', fieldValue);
+                        if (window.ktpDebugMode) console.log('[INVOICE AUTO-SAVE] 保存成功 - field:', fieldName, 'value:', fieldValue);
                         
                         // 成功通知を表示（条件付き）
                         // 実際に値が変更された場合のみ通知を表示
@@ -98,15 +93,16 @@
                             window.showSuccessNotification('請求項目が保存されました');
                         }
                     } else {
-                        if (window.ktpDebugMode) console.warn('INVOICE AUTO-SAVE] 保存失敗 - field:', fieldName, 'response:', result);
+                        if (window.ktpDebugMode) console.warn('[INVOICE AUTO-SAVE] 保存失敗 - field:', fieldName, 'response:', result);
                         
-                        // エラー通知を表示
-                        if (typeof window.showErrorNotification === 'function') {
+                        // エラー通知を表示（タイムアウト以外のエラーのみ）
+                        if (typeof window.showErrorNotification === 'function' && 
+                            result.data && result.data !== 'timeout') {
                             window.showErrorNotification('請求項目の保存に失敗しました: ' + (result.data || '不明なエラー'));
                         }
                     }
                 } catch (e) {
-                    if (window.ktpDebugMode) console.error('INVOICE AUTO-SAVE] レスポンスパースエラー:', e, 'response:', response);
+                    if (window.ktpDebugMode) console.error('[INVOICE AUTO-SAVE] レスポンスパースエラー:', e, 'response:', response);
                     
                     // エラー通知を表示
                     if (typeof window.showErrorNotification === 'function') {
@@ -115,30 +111,41 @@
                 }
             },
             error: function (xhr, status, error) {
-                if (window.ktpDebugMode) console.error('INVOICE AUTO-SAVE] Ajax エラー:', {
-                    field: fieldName,
-                    value: fieldValue,
-                    status: status,
-                    error: error,
-                    responseText: xhr.responseText,
-                    statusCode: xhr.status,
-                    readyState: xhr.readyState
-                });
+                // タイムアウトエラーの場合は警告レベルでログ出力
+                if (status === 'timeout') {
+                    if (window.ktpDebugMode) console.warn('[INVOICE AUTO-SAVE] タイムアウト (30秒) - field:', fieldName, 'value:', fieldValue);
+                } else {
+                    if (window.ktpDebugMode) console.error('[INVOICE AUTO-SAVE] Ajax エラー:', {
+                        field: fieldName,
+                        value: fieldValue,
+                        status: status,
+                        error: error,
+                        responseText: xhr.responseText,
+                        statusCode: xhr.status,
+                        readyState: xhr.readyState
+                    });
+                }
                 
-                // エラー通知を表示
-                if (typeof window.showErrorNotification === 'function') {
+                // エラー通知を表示（タイムアウト以外のエラーのみ）
+                if (typeof window.showErrorNotification === 'function' && status !== 'timeout') {
                     let errorMessage = '請求項目の保存に失敗しました';
-                    if (status === 'timeout') {
-                        errorMessage += ' (タイムアウト)';
-                    } else if (xhr.status === 403) {
+                    if (xhr.status === 403) {
                         errorMessage += ' (権限エラー)';
                     } else if (xhr.status === 500) {
                         errorMessage += ' (サーバーエラー)';
                     }
                     window.showErrorNotification(errorMessage);
                 }
+            },
+            complete: function() {
+                // リクエスト完了時に進行中のリクエストから削除
+                delete window.ktpInvoicePendingRequests[requestKey];
+                if (window.ktpDebugMode) console.log('[INVOICE AUTO-SAVE] リクエスト完了:', requestKey);
             }
         });
+        
+        // 進行中のリクエストとして記録
+        window.ktpInvoicePendingRequests[requestKey] = xhr;
     };
     // createNewItem関数にcallback引数を追加し、成功/失敗と新しいitem_idを返すように変更
     window.ktpInvoiceCreateNewItem = function (itemType, fieldName, fieldValue, orderId, $row, callback) {

@@ -118,6 +118,11 @@ class KTPWP_Ajax {
 		add_action( 'wp_ajax_nopriv_get_supplier_email', array( $this, 'ajax_require_login' ) );
 		$this->registered_handlers[] = 'get_supplier_email';
 
+		// 発注書メール内容取得
+		add_action( 'wp_ajax_get_purchase_order_email_content', array( $this, 'ajax_get_purchase_order_email_content' ) );
+		add_action( 'wp_ajax_nopriv_get_purchase_order_email_content', array( $this, 'ajax_require_login' ) );
+		$this->registered_handlers[] = 'get_purchase_order_email_content';
+
 		// 発注書メール送信
 		add_action( 'wp_ajax_send_purchase_order_email', array( $this, 'ajax_send_purchase_order_email' ) );
 		add_action( 'wp_ajax_nopriv_send_purchase_order_email', array( $this, 'ajax_require_login' ) );
@@ -198,7 +203,7 @@ class KTPWP_Ajax {
 		add_action( 'wp_ajax_nopriv_ktp_get_supplier_tax_category', array( $this, 'ajax_require_login' ) );
 		$this->registered_handlers[] = 'ktp_get_supplier_tax_category';
 
-		// 協力会社適格請求書ナンバー取得
+		// 協力会社適格請求書番号取得
 		add_action( 'wp_ajax_ktp_get_supplier_qualified_invoice_number', array( $this, 'ajax_get_supplier_qualified_invoice_number' ) );
 		add_action( 'wp_ajax_nopriv_ktp_get_supplier_qualified_invoice_number', array( $this, 'ajax_require_login' ) );
 		$this->registered_handlers[] = 'ktp_get_supplier_qualified_invoice_number';
@@ -692,8 +697,10 @@ class KTPWP_Ajax {
 		$nonce_verified = false;
 		$nonce_value    = '';
 
-		// デバッグ: POSTデータの詳細をログ出力
-		error_log( '[AJAX_AUTO_SAVE] POST data received: ' . print_r( $_POST, true ) );
+		// デバッグモード時のみ詳細ログを出力
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			error_log( '[AJAX_AUTO_SAVE] POST data received: ' . print_r( $_POST, true ) );
+		}
 
 		// 複数のnonce名でチェック
 		$nonce_fields = array( 'nonce', 'ktp_ajax_nonce', '_ajax_nonce', '_wpnonce' );
@@ -706,24 +713,34 @@ class KTPWP_Ajax {
 					$nonce_value = $nonce_value['value'];
 				}
 
-				error_log( "[AJAX_AUTO_SAVE] Checking nonce field '{$field}': '{$nonce_value}" );
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					error_log( "[AJAX_AUTO_SAVE] Checking nonce field '{$field}': '{$nonce_value}" );
+				}
 
 				if ( wp_verify_nonce( $nonce_value, 'ktp_ajax_nonce' ) ) {
 					$nonce_verified = true;
-					error_log( "[AJAX_AUTO_SAVE] Nonce verified with field: {$field}" );
+					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+						error_log( "[AJAX_AUTO_SAVE] Nonce verified with field: {$field}" );
+					}
 					break;
 				} else {
-					error_log( "[AJAX_AUTO_SAVE] Nonce verification failed for field: {$field}" );
+					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+						error_log( "[AJAX_AUTO_SAVE] Nonce verification failed for field: {$field}" );
+					}
 				}
 			} else {
-				error_log( "[AJAX_AUTO_SAVE] Nonce field '{$field}' not found in POST data" );
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					error_log( "[AJAX_AUTO_SAVE] Nonce field '{$field}' not found in POST data" );
+				}
 			}
 		}
 
 		if ( ! $nonce_verified ) {
-			error_log( '[AJAX_AUTO_SAVE] Security check failed - tried fields: ' . implode( ', ', $nonce_fields ) );
-			error_log( '[AJAX_AUTO_SAVE] Available POST fields: ' . implode( ', ', array_keys( $_POST ) ) );
-			error_log( '[AJAX_AUTO_SAVE] All POST values: ' . print_r( $_POST, true ) );
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( '[AJAX_AUTO_SAVE] Security check failed - tried fields: ' . implode( ', ', $nonce_fields ) );
+				error_log( '[AJAX_AUTO_SAVE] Available POST fields: ' . implode( ', ', array_keys( $_POST ) ) );
+				error_log( '[AJAX_AUTO_SAVE] All POST values: ' . print_r( $_POST, true ) );
+			}
 			$this->log_ajax_error( 'Auto-save security check failed', $_POST );
 			wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'ktpwp' ) );
 		}
@@ -763,6 +780,9 @@ class KTPWP_Ajax {
 			}
 
 			if ( $result && is_array( $result ) && $result['success'] ) {
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					error_log( "[AJAX_AUTO_SAVE] Successfully updated {$item_type} item {$item_id}, field: {$field_name}" );
+				}
 				wp_send_json_success(
 					array(
 						'message' => __( '正常に保存されました', 'ktpwp' ),
@@ -3418,10 +3438,20 @@ class KTPWP_Ajax {
 				)
 			);
 
-			if ( $tax_category === null ) {
-				error_log( 'KTPWP Ajax: Supplier not found or database error: ' . $wpdb->last_error );
-				wp_send_json_error( __( '協力会社が見つからないか、データベースエラーが発生しました', 'ktpwp' ) );
+			// データベースエラーのチェック
+			if ( $wpdb->last_error ) {
+				error_log( 'KTPWP Ajax: Database error when getting tax category: ' . $wpdb->last_error );
+				wp_send_json_error( __( 'データベースエラーが発生しました', 'ktpwp' ) );
 				return;
+			}
+
+			// 協力会社が見つからない場合
+			if ( $tax_category === null ) {
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					error_log( 'KTPWP Ajax: Supplier not found for tax category lookup, supplier ID: ' . $supplier_id );
+				}
+				// デフォルト値として内税を返す
+				$tax_category = '内税';
 			}
 
 			// デフォルト値の設定
@@ -3429,7 +3459,9 @@ class KTPWP_Ajax {
 				$tax_category = '内税';
 			}
 
-			error_log( 'KTPWP Ajax: Supplier tax category retrieved: ' . $tax_category );
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( 'KTPWP Ajax: Supplier tax category retrieved: ' . $tax_category . ' for supplier ID: ' . $supplier_id );
+			}
 
 			wp_send_json_success(
 				array(
@@ -3528,14 +3560,12 @@ class KTPWP_Ajax {
 	}
 
 	/**
-	 * 協力会社の適格請求書ナンバーを取得
+	 * 協力会社の適格請求書番号を取得
 	 */
 	public function ajax_get_supplier_qualified_invoice_number() {
 		try {
 			// デバッグログ
 			error_log( 'KTPWP Ajax: ajax_get_supplier_qualified_invoice_number called' );
-			error_log( 'KTPWP Ajax: POST data: ' . print_r($_POST, true) );
-			error_log( 'KTPWP Ajax: User capabilities: ' . (current_user_can('edit_posts') ? 'edit_posts: yes' : 'edit_posts: no') . ', ' . (current_user_can('ktpwp_access') ? 'ktpwp_access: yes' : 'ktpwp_access: no') );
 
 			// 権限チェック
 			if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
@@ -3544,7 +3574,7 @@ class KTPWP_Ajax {
 				return;
 			}
 
-			// セキュリティチェック - 複数のnonce形式を試行
+			// nonce検証（一時的に緩和版）
 			$nonce_verified = false;
 			$nonce_value = '';
 			$nonce_sources = [
@@ -3615,7 +3645,7 @@ class KTPWP_Ajax {
 				return;
 			}
 
-			// 協力会社の適格請求書ナンバーを取得
+			// 協力会社の適格請求書番号を取得
 			$qualified_invoice_number = $wpdb->get_var(
 				$wpdb->prepare(
 					"SELECT qualified_invoice_number FROM `{$supplier_table}` WHERE id = %d",
@@ -3623,15 +3653,27 @@ class KTPWP_Ajax {
 				)
 			);
 
+			// データベースエラーのチェック
+			if ( $wpdb->last_error ) {
+				error_log( 'KTPWP Ajax: Database error when getting qualified invoice number: ' . $wpdb->last_error );
+				wp_send_json_error( __( 'データベースエラーが発生しました', 'ktpwp' ) );
+				return;
+			}
+
+			// 協力会社が見つからない場合
 			if ( $qualified_invoice_number === null ) {
-				error_log( 'KTPWP Ajax: Database error or supplier not found: ' . $wpdb->last_error );
-				// エラーではなく、適格請求書ナンバーがない場合として扱う
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					error_log( 'KTPWP Ajax: Supplier not found or no qualified invoice number set for supplier ID: ' . $supplier_id );
+				}
+				// エラーではなく、適格請求書番号がない場合として扱う
 				$qualified_invoice_number = '';
 			}
 
 			$qualified_invoice_number = $qualified_invoice_number ? trim( $qualified_invoice_number ) : '';
 
-			error_log( 'KTPWP Ajax: Qualified invoice number for supplier ' . $supplier_id . ': ' . $qualified_invoice_number );
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( 'KTPWP Ajax: Qualified invoice number for supplier ' . $supplier_id . ': ' . ($qualified_invoice_number ?: 'なし') );
+			}
 
 			wp_send_json_success(
 				array(
@@ -4069,5 +4111,288 @@ class KTPWP_Ajax {
 		$formatted_due_date = date('Y年m月d日', strtotime($payment_due_date));
 		
 		return $formatted_due_date;
+	}
+
+	/**
+	 * Ajax: 発注書メール内容取得
+	 */
+	public function ajax_get_purchase_order_email_content() {
+		try {
+			// セキュリティチェック
+			if ( ! check_ajax_referer( 'ktpwp_ajax_nonce', 'nonce', false ) ) {
+				throw new Exception( 'セキュリティ検証に失敗しました。' );
+			}
+
+			// 権限チェック
+			if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
+				throw new Exception( '権限がありません。' );
+			}
+
+			$order_id = isset( $_POST['order_id'] ) ? absint( $_POST['order_id'] ) : 0;
+			$supplier_name = isset( $_POST['supplier_name'] ) ? sanitize_text_field( $_POST['supplier_name'] ) : '';
+
+			if ( $order_id <= 0 ) {
+				throw new Exception( '無効な受注書IDです。' );
+			}
+
+			if ( empty( $supplier_name ) ) {
+				throw new Exception( '協力会社名が指定されていません。' );
+			}
+
+			global $wpdb;
+
+			// 受注書データを取得
+			$order_table = $wpdb->prefix . 'ktp_order';
+			$order = $wpdb->get_row(
+				$wpdb->prepare(
+					"SELECT * FROM `{$order_table}` WHERE id = %d",
+					$order_id
+				)
+			);
+
+			if ( ! $order ) {
+				throw new Exception( '受注書が見つかりません。' );
+			}
+
+			// 協力会社データを取得
+			$supplier_table = $wpdb->prefix . 'ktp_supplier';
+			$supplier = $wpdb->get_row(
+				$wpdb->prepare(
+					"SELECT * FROM `{$supplier_table}` WHERE company_name = %s",
+					$supplier_name
+				)
+			);
+
+			if ( ! $supplier ) {
+				throw new Exception( '協力会社が見つかりません。' );
+			}
+
+			// 顧客データを取得
+			$client_table = $wpdb->prefix . 'ktp_client';
+			$client = null;
+			if ( ! empty( $order->client_id ) ) {
+				$client = $wpdb->get_row(
+					$wpdb->prepare(
+						"SELECT * FROM `{$client_table}` WHERE id = %d",
+						$order->client_id
+					)
+				);
+			}
+
+			// コスト項目を取得
+			$order_items = KTPWP_Order_Items::get_instance();
+			$cost_items = $order_items->get_cost_items( $order_id );
+
+			// 該当する協力会社のコスト項目のみをフィルタリング
+			$filtered_cost_items = array();
+			$total_amount = 0;
+			$total_tax_amount = 0;
+			$qualified_invoice_cost = 0;
+			$non_qualified_invoice_cost = 0;
+
+			foreach ( $cost_items as $item ) {
+				if ( $item['supplier_name'] === $supplier_name ) {
+					$filtered_cost_items[] = $item;
+					$amount = floatval( $item['amount'] );
+					$total_amount += $amount;
+
+					// 税額計算
+					$tax_rate = floatval( $item['tax_rate'] ) ?: 10.0;
+					$supplier_tax_category = $item['tax_category'] ?: '内税';
+					$has_qualified_invoice = ! empty( $item['qualified_invoice_number'] );
+
+					if ( $has_qualified_invoice ) {
+						// 適格請求書あり：税抜金額をコストとする
+						if ( $supplier_tax_category === '外税' ) {
+							$tax_amount = ceil( $amount * ( $tax_rate / 100 ) );
+							$cost_amount = $amount - $tax_amount;
+						} else {
+							$tax_amount = ceil( $amount * ( $tax_rate / 100 ) / ( 1 + $tax_rate / 100 ) );
+							$cost_amount = $amount - $tax_amount;
+						}
+						$qualified_invoice_cost += $cost_amount;
+					} else {
+						// 適格請求書なし：税込金額をコストとする
+						$cost_amount = $amount;
+						$non_qualified_invoice_cost += $cost_amount;
+					}
+
+					$total_tax_amount += $tax_amount ?? 0;
+				}
+			}
+
+			// 自社情報を取得
+			$smtp_settings = get_option( 'ktp_smtp_settings', array() );
+			$my_email = ! empty( $smtp_settings['email_address'] ) ? sanitize_email( $smtp_settings['email_address'] ) : '';
+			$my_company = '';
+			if ( class_exists( 'KTP_Settings' ) ) {
+				$my_company = KTP_Settings::get_company_info();
+			}
+
+			// 旧システムからも取得（後方互換性）
+			if ( empty( $my_company ) ) {
+				$setting_table = $wpdb->prefix . 'ktp_setting';
+				$setting = $wpdb->get_row(
+					$wpdb->prepare(
+						"SELECT * FROM `{$setting_table}` WHERE id = %d",
+						1
+					)
+				);
+				if ( $setting ) {
+					$my_company = sanitize_text_field( strip_tags( $setting->my_company_content ) );
+				}
+			}
+
+			// 発注書メール内容を生成
+			$subject = '【発注書】' . $order->project_name . ' - ' . $my_company;
+
+			// メール本文を生成
+			$body = $this->generate_purchase_order_email_body(
+				$order,
+				$supplier,
+				$client,
+				$filtered_cost_items,
+				$my_company,
+				$total_amount,
+				$total_tax_amount,
+				$qualified_invoice_cost,
+				$non_qualified_invoice_cost
+			);
+
+			wp_send_json_success(
+				array(
+					'subject' => $subject,
+					'body' => $body,
+					'supplier_email' => $supplier->email,
+					'supplier_name' => $supplier->name,
+					'order_info' => array(
+						'project_name' => $order->project_name,
+						'order_date' => $order->order_date,
+						'delivery_date' => $order->delivery_date,
+						'client_name' => $client ? $client->company_name : $order->customer_name,
+					),
+					'cost_summary' => array(
+						'total_amount' => $total_amount,
+						'total_tax_amount' => $total_tax_amount,
+						'qualified_invoice_cost' => $qualified_invoice_cost,
+						'non_qualified_invoice_cost' => $non_qualified_invoice_cost,
+						'item_count' => count( $filtered_cost_items ),
+					),
+				)
+			);
+
+		} catch ( Exception $e ) {
+			error_log( 'KTPWP Ajax get_purchase_order_email_content Error: ' . $e->getMessage() );
+			wp_send_json_error(
+				array(
+					'message' => $e->getMessage(),
+				)
+			);
+		}
+	}
+
+	/**
+	 * 発注書メール本文を生成
+	 */
+	private function generate_purchase_order_email_body( $order, $supplier, $client, $cost_items, $my_company, $total_amount, $total_tax_amount, $qualified_invoice_cost, $non_qualified_invoice_cost ) {
+		$body = '';
+
+		// ヘッダー
+		$body .= $my_company . "\n";
+		$body .= "発注書\n\n";
+
+		// 基本情報
+		$body .= "発注日：" . date( 'Y年n月j日', strtotime( $order->order_date ) ) . "\n";
+		$body .= "プロジェクト名：" . $order->project_name . "\n";
+		if ( $client ) {
+			$body .= "顧客名：" . $client->company_name . "\n";
+		}
+		$body .= "納期：" . ( $order->delivery_date ? date( 'Y年n月j日', strtotime( $order->delivery_date ) ) : '未定' ) . "\n\n";
+
+		// 協力会社情報
+		$body .= "【発注先】\n";
+		$body .= $supplier->company_name . "\n";
+		if ( ! empty( $supplier->name ) ) {
+			$body .= $supplier->name . " 様\n";
+		}
+		$body .= "\n";
+
+		// 適格請求書番号の表示
+		if ( ! empty( $supplier->qualified_invoice_number ) ) {
+			$body .= "※ 適格請求書番号：" . $supplier->qualified_invoice_number . "\n\n";
+		}
+
+		// 発注内容
+		$body .= "【発注内容】\n";
+		$body .= str_repeat( '-', 50 ) . "\n";
+
+		$max_length = 0;
+		foreach ( $cost_items as $item ) {
+			$product_name_length = mb_strlen( $item['product_name'] );
+			if ( $product_name_length > $max_length ) {
+				$max_length = $product_name_length;
+			}
+		}
+
+		foreach ( $cost_items as $item ) {
+			$product_name = $item['product_name'];
+			$price = floatval( $item['price'] );
+			$quantity = floatval( $item['quantity'] );
+			$unit = $item['unit'] ?: '';
+			$amount = floatval( $item['amount'] );
+			$tax_rate = floatval( $item['tax_rate'] ) ?: 10.0;
+			$tax_category = $item['tax_category'] ?: '内税';
+			$remarks = $item['remarks'] ?: '';
+
+			// 品名を左寄せで表示
+			$product_name_padded = str_pad( $product_name, $max_length + 2, ' ' );
+			
+			// 詳細形式：品名　単価 × 数量/単位 = 金額円（税率X%・税区分）※ 備考
+			$tax_info = "（税率{$tax_rate}%・{$tax_category}）";
+			$remarks_text = ( ! empty( trim( $remarks ) ) ) ? '　※ ' . $remarks : '';
+			
+			$body .= $product_name_padded . number_format( $price ) . '円 × ' . $quantity . $unit . ' = ' . number_format( $amount ) . "円{$tax_info}{$remarks_text}\n";
+		}
+
+		$body .= str_repeat( '-', 50 ) . "\n";
+
+		// 合計金額
+		$body .= "小計：" . number_format( $total_amount ) . "円\n";
+		if ( $total_tax_amount > 0 ) {
+			$body .= "消費税：" . number_format( $total_tax_amount ) . "円\n";
+		}
+		$body .= "合計：" . number_format( $total_amount + $total_tax_amount ) . "円\n\n";
+
+		// 適格請求書の有無による内訳
+		if ( $qualified_invoice_cost > 0 || $non_qualified_invoice_cost > 0 ) {
+			$body .= "【計算根拠】\n";
+			if ( $qualified_invoice_cost > 0 ) {
+				$body .= "・適格請求書対象：" . number_format( $qualified_invoice_cost ) . "円（税抜金額）\n";
+			}
+			if ( $non_qualified_invoice_cost > 0 ) {
+				$body .= "・適格請求書対象外：" . number_format( $non_qualified_invoice_cost ) . "円（税込金額）\n";
+			}
+			$body .= "\n";
+		}
+
+		// 支払条件
+		$body .= "【支払条件】\n";
+		$body .= "支払方法：銀行振込\n";
+		$body .= "支払期日：月末締め翌月末払い\n\n";
+
+		// 備考
+		$body .= "【備考】\n";
+		$body .= "・納品書と請求書を同封してください。\n";
+		if ( ! empty( $supplier->qualified_invoice_number ) ) {
+			$body .= "・適格請求書の交付をお願いします。\n";
+		}
+		$body .= "・ご不明な点がございましたら、お気軽にお問い合わせください。\n\n";
+
+		// フッター
+		$body .= "よろしくお願いいたします。\n\n";
+		$body .= $my_company . "\n";
+		$body .= "担当者\n";
+
+		return $body;
 	}
 }

@@ -186,6 +186,20 @@ class KTPWP_Assets {
                     ),
                 ),
             ),
+            'ktp-purchase-order-email' => array(
+                'src'       => 'js/ktp-purchase-order-email.js',
+                'deps'      => array( 'jquery', 'ktp-cost-items' ),
+                'ver'       => KTPWP_PLUGIN_VERSION,
+                'in_footer' => true,
+                'admin'     => false,
+                'localize'  => array(
+                    'object' => 'ktp_ajax_object',
+                    'data'   => array(
+                        'ajax_url' => admin_url( 'admin-ajax.php' ),
+                        'nonce'    => wp_create_nonce( 'ktp_ajax_nonce' ),
+                    ),
+                ),
+            ),
             'ktp-invoice-items' => array(
                 'src'       => 'js/ktp-invoice-items.js',
                 'deps'      => array( 'jquery', 'jquery-ui-sortable' ),

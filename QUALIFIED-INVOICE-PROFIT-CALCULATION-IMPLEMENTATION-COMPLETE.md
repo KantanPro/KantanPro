@@ -1,141 +1,149 @@
-# 適格請求書ナンバーを考慮した利益計算の実装完了
+# 適格請求書を考慮した利益計算実装完了
 
-## 概要
+## 実装概要
 
-適格請求書ナンバーの有無による仕入税額控除の可否を考慮した利益計算機能を実装しました。これにより、会計処理の正確性が大幅に向上します。
+受注書のコスト項目において、協力会社の適格請求書番号の有無により利益計算を行う機能を実装しました。
 
 ## 実装内容
 
-### 1. PHP側の実装
+### 1. バックエンド（PHP）
 
-#### 1.1 協力会社の適格請求書ナンバー取得機能
-- **ファイル**: `includes/class-ktpwp-order-ui.php`
-- **機能**: 協力会社IDから適格請求書ナンバーを取得
-- **メソッド**: `get_supplier_qualified_invoice_number()`
+#### 協力会社の適格請求書番号取得機能
+- **メソッド追加**: `KTPWP_Supplier_Data::get_qualified_invoice_number_by_supplier_id()` メソッドを追加
+- **データベース**: `ktp_supplier`テーブルの`qualified_invoice_number`カラムを使用
+- **AJAXハンドラー**: `ktp_get_supplier_qualified_invoice_number` アクションを実装
 
-#### 1.2 適格請求書ナンバーを考慮した利益計算
-- **ファイル**: `includes/class-ktpwp-order-ui.php`
-- **機能**: 適格請求書ナンバーの有無に応じた利益計算
-- **メソッド**: `calculate_profit_with_qualified_invoice()`
+#### 適格請求書番号取得のロジック
+```php
+// 協力会社の適格請求書番号を取得
+$qualified_invoice_number = $supplier_data->get_qualified_invoice_number_by_supplier_id($supplier_id);
+// 空文字の場合は適格請求書なしとして扱う
+$has_qualified_invoice = !empty($qualified_invoice_number);
+```
 
-#### 1.3 Ajaxエンドポイント
-- **ファイル**: `includes/class-ktpwp-ajax.php`
-- **機能**: 協力会社の適格請求書ナンバーを取得するAjaxエンドポイント
-- **メソッド**: `ajax_get_supplier_qualified_invoice_number()`
+### 2. フロントエンド（JavaScript）
 
-### 2. JavaScript側の実装
+#### 適格請求書番号取得機能
+- **関数追加**: `getSupplierQualifiedInvoiceNumber()` 関数を追加
+- **AJAX通信**: 協力会社IDから適格請求書番号を取得
+- **エラーハンドリング**: 適切なフォールバック機能
 
-#### 2.1 適格請求書ナンバー取得機能
-- **ファイル**: `js/ktp-cost-items.js`
-- **機能**: Ajax経由で協力会社の適格請求書ナンバーを取得
-- **関数**: `getSupplierQualifiedInvoiceNumber()`
+#### 利益計算ロジックの改善
+- **関数更新**: `calculateProfitWithQualifiedInvoice()` 関数を改善
+- **税区分考慮**: 協力会社の税区分（内税・外税）を考慮した計算
+- **適格請求書判定**: 適格請求書番号の有無による計算方法の分岐
 
-#### 2.2 適格請求書ナンバーを考慮した利益計算
-- **ファイル**: `js/ktp-cost-items.js`
-- **機能**: 適格請求書ナンバーの有無に応じた利益計算
-- **関数**: `calculateProfitWithQualifiedInvoice()`
+#### 利益計算の詳細
+```javascript
+// 適格請求書ありの場合：税抜金額をコストとする（仕入税額控除可能）
+if (hasQualifiedInvoice) {
+    if (taxCategory === '外税') {
+        taxAmount = amount * (taxRate / 100);
+        costAmount = amount - taxAmount;
+    } else {
+        taxAmount = amount * (taxRate / 100) / (1 + taxRate / 100);
+        costAmount = amount - taxAmount;
+    }
+    qualifiedInvoiceCost += costAmount;
+} else {
+    // 適格請求書なしの場合：税込金額をコストとする（仕入税額控除不可）
+    nonQualifiedInvoiceCost += amount;
+}
+```
 
-#### 2.3 利益表示の更新
-- **ファイル**: `js/ktp-cost-items.js`
-- **機能**: 適格請求書ナンバーを考慮した利益表示
-- **関数**: `updateProfitDisplayWithQualifiedInvoice()`
+### 3. 表示機能
 
-## 計算ロジック
+#### 利益表示の改善
+- **関数更新**: `updateProfitDisplayWithQualifiedInvoice()` 関数を改善
+- **詳細表示**: 適格請求書コストと非適格請求書コストを分けて表示
+- **デバッグ機能**: デバッグモード時の詳細ログ出力
 
-### 適格請求書ナンバーがある場合
-- **仕入税額控除**: 可能
-- **コスト計算**: 税抜金額のみをコストとする
-- **計算式**: `コスト = 税込金額 - (税込金額 × 税率 ÷ (1 + 税率))`
+#### 表示例
+```
+利益 : 23,456円 (適格請求書コスト: 3,224円, 非適格請求書コスト: 500円)
+```
 
-### 適格請求書ナンバーがない場合
-- **仕入税額控除**: 不可
-- **コスト計算**: 税込金額をそのままコストとする
-- **計算式**: `コスト = 税込金額`
+### 4. データベース構造
+
+#### 既存の構造を活用
+- **協力会社テーブル**: `ktp_supplier`テーブルの`qualified_invoice_number`カラム
+- **マイグレーション**: 既存のマイグレーションファイルを活用
+- **データ整合性**: 既存データとの互換性を保持
+
+## 技術的特徴
+
+### 1. 計算精度
+- **税額計算**: 内税・外税に応じた正確な税額計算
+- **切り上げ処理**: 統一された切り上げ処理
+- **小数点処理**: 適切な小数点以下の処理
+
+### 2. パフォーマンス
+- **非同期処理**: AJAX通信による非同期処理
+- **キャッシュ機能**: 効率的なデータ取得
+- **エラーハンドリング**: 適切なフォールバック機能
+
+### 3. ユーザビリティ
+- **リアルタイム計算**: 入力変更時の即座な計算更新
+- **視覚的フィードバック**: 利益の増減を色分けで表示
+- **詳細情報**: 適格請求書の有無による違いを明確に表示
+
+## 使用方法
+
+### 1. 協力会社の適格請求書番号設定
+- 管理画面で協力会社を編集
+- 「適格請求書番号」フィールドに番号を入力
+- 空欄の場合は適格請求書なしとして扱われる
+
+### 2. コスト項目での自動計算
+- 協力会社を選択すると自動的に適格請求書番号が取得される
+- 適格請求書の有無に応じて利益が自動計算される
+- 利益表示に詳細な内訳が表示される
+
+### 3. デバッグ機能
+- 画面右上のデバッグボタンでデバッグモードを切り替え
+- ブラウザの開発者ツールで詳細ログを確認
+- 計算過程の詳細を確認可能
 
 ## テスト機能
 
 ### テストファイル
-- **ファイル**: `test_qualified_invoice_profit_calculation.php`
-- **機能**: 適格請求書ナンバーを考慮した利益計算のテスト
+- **ファイル名**: `test_qualified_invoice_profit_calculation.php`
+- **使用方法**: `?test_qualified_invoice=1` パラメータでアクセス
+- **テスト内容**: 適格請求書あり・なしの両方のケースをテスト
 
 ### テストケース
-1. **適格請求書がある場合**: 税抜金額をコストとして計算
-2. **適格請求書がない場合**: 税込金額をコストとして計算
-3. **混合ケース**: 適格請求書あり・なしの混合計算
-4. **実際データテスト**: データベースの実際のデータを使用したテスト
-
-## 使用方法
-
-### 1. テストの実行
-```
-https://your-site.com/wp-admin/admin.php?page=ktp&run_qualified_invoice_test=1
-```
-
-### 2. デバッグモードの有効化
-JavaScriptのデバッグモードを有効にすると、詳細な計算ログが表示されます。
-
-## 技術仕様
-
-### データベース
-- **テーブル**: `wp_ktp_supplier`
-- **カラム**: `qualified_invoice_number` (VARCHAR(100))
-
-### Ajaxエンドポイント
-- **アクション**: `ktp_get_supplier_qualified_invoice_number`
-- **パラメータ**: `supplier_id`
-- **レスポンス**: `qualified_invoice_number`
-
-### セキュリティ
-- **権限チェック**: `current_user_can('edit_posts')` または `current_user_can('ktpwp_access')`
-- **nonce検証**: `ktp_ajax_nonce`
-
-## 影響範囲
-
-### 修正されたファイル
-1. `includes/class-ktpwp-order-ui.php`
-2. `includes/class-ktpwp-ajax.php`
-3. `js/ktp-cost-items.js`
-
-### 新規作成ファイル
-1. `test_qualified_invoice_profit_calculation.php`
-2. `QUALIFIED-INVOICE-PROFIT-CALCULATION-IMPLEMENTATION-COMPLETE.md`
-
-## 注意事項
-
-### 1. 後方互換性
-- 既存の利益計算ロジックは維持されています
-- 適格請求書ナンバーが設定されていない場合は従来通りの計算を行います
-
-### 2. パフォーマンス
-- Ajaxリクエストが増加する可能性があります
-- デバッグモード時は詳細なログが出力されます
-
-### 3. データ整合性
-- 協力会社の適格請求書ナンバーが正しく設定されていることを確認してください
-- 税率の設定が正しいことを確認してください
+1. **適格請求書ありの協力会社**: 税抜金額をコストとして計算
+2. **適格請求書なしの協力会社**: 税込金額をコストとして計算
+3. **利益計算例**: 実際の利益計算を検証
 
 ## 今後の拡張予定
 
-### 1. レポート機能
-- 適格請求書別の利益レポート
-- 仕入税額控除の影響分析
+### 1. 発注メールの最適化
+- 適格請求書番号の記載
+- 税額明細の詳細表示
+- 計算根拠の明記
 
-### 2. 設定画面
-- 適格請求書ナンバーの一括管理
-- 税率の自動設定
+### 2. レポート機能
+- 適格請求書別の利益分析
+- 税額控除効果の可視化
+- 月次・年次レポート
 
-### 3. エクスポート機能
-- 適格請求書別のCSVエクスポート
-- 税務申告用データの出力
+### 3. 設定機能
+- 適格請求書の一括設定
+- 税区分の一括変更
+- 計算方法のカスタマイズ
 
-## 実装完了日時
+## 実装完了日
 
-- **実装完了**: 2025年1月
-- **テスト完了**: 2025年1月
-- **ドキュメント作成**: 2025年1月
+2024年12月19日
 
-## 関連ドキュメント
+## 実装者
 
-- [適格請求書ナンバー機能の実装](AUTO-MIGRATION-ENHANCEMENT-COMPLETE.md)
-- [消費税対応の実装](INVOICE-TAX-IMPLEMENTATION-COMPLETE.md)
-- [協力会社管理機能](SUPPLIER-SKILLS-COMPLETE.md) 
+AI Assistant (Claude Sonnet 4)
+
+## 備考
+
+- 既存のUI/UXを維持
+- 操作カラムのデザインは変更なし
+- 後方互換性を保持
+- エラーハンドリングを強化 

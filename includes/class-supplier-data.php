@@ -534,5 +534,22 @@ if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
 			}
 			return '内税';
 		}
+
+		/**
+		 * 指定したsupplier_idの適格請求書番号を取得
+		 *
+		 * @since 1.0.0
+		 * @param int $supplier_id 協力会社ID
+		 * @return string 適格請求書番号（空文字の場合は適格請求書なし）
+		 */
+		public function get_qualified_invoice_number_by_supplier_id( $supplier_id ) {
+			global $wpdb;
+			if ( empty( $supplier_id ) || $supplier_id <= 0 ) {
+				return ''; // デフォルト
+			}
+			$table_name = $wpdb->prefix . 'ktp_supplier';
+			$qualified_invoice_number = $wpdb->get_var( $wpdb->prepare( "SELECT qualified_invoice_number FROM {$table_name} WHERE id = %d", $supplier_id ) );
+			return $qualified_invoice_number ? $qualified_invoice_number : '';
+		}
 	}
 }
