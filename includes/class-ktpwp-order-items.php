@@ -429,10 +429,10 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 					$amount = isset( $item['amount'] ) ? floatval( $item['amount'] ) : $price * $quantity; // Recalculate if not provided
 					$remarks = isset( $item['remarks'] ) ? sanitize_text_field( $item['remarks'] ) : '';
 					$is_provisional = isset( $item['is_provisional'] ) ? rest_sanitize_boolean( $item['is_provisional'] ) : 0;
-					// 税率の処理（空文字、null、0の場合はNULLとして扱う）
+					// 税率の処理（空文字、nullの場合はNULLとして扱う、0の場合は0として扱う）
 					$tax_rate_raw = isset( $item['tax_rate'] ) ? $item['tax_rate'] : null;
 					$tax_rate = null;
-					if ( $tax_rate_raw !== null && $tax_rate_raw !== '' && $tax_rate_raw !== '0' && is_numeric( $tax_rate_raw ) ) {
+					if ( $tax_rate_raw !== null && $tax_rate_raw !== '' && is_numeric( $tax_rate_raw ) ) {
 						$tax_rate = floatval( $tax_rate_raw );
 					}
 
@@ -589,10 +589,10 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 					$quantity = isset( $item['quantity'] ) ? floatval( $item['quantity'] ) : 0;
 					$unit = isset( $item['unit'] ) ? sanitize_text_field( $item['unit'] ) : '';
 					$amount = isset( $item['amount'] ) ? floatval( $item['amount'] ) : $price * $quantity;
-					// 税率の処理（空文字、null、0の場合はNULLとして扱う）
+					// 税率の処理（空文字、nullの場合はNULLとして扱う、0の場合は0として扱う）
 					$tax_rate_raw = isset( $item['tax_rate'] ) ? $item['tax_rate'] : null;
 					$tax_rate = null;
-					if ( $tax_rate_raw !== null && $tax_rate_raw !== '' && $tax_rate_raw !== '0' && is_numeric( $tax_rate_raw ) ) {
+					if ( $tax_rate_raw !== null && $tax_rate_raw !== '' && is_numeric( $tax_rate_raw ) ) {
 						$tax_rate = floatval( $tax_rate_raw );
 					}
 					$remarks = isset( $item['remarks'] ) ? sanitize_textarea_field( $item['remarks'] ) : '';
@@ -964,8 +964,8 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 					$format[] = '%f';
 					break;
 				case 'tax_rate':
-					// 税率の処理（空文字、null、0の場合はNULLとして扱う）
-					if ( $field_value === null || $field_value === '' || $field_value === '0' ) {
+					// 税率の処理（空文字、nullの場合はNULLとして扱う、0の場合は0として扱う）
+					if ( $field_value === null || $field_value === '' ) {
 						$update_data['tax_rate'] = null;
 						// NULL値の場合はフォーマットを指定しない（MySQLが自動的にNULLとして扱う）
 					} else {

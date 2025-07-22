@@ -625,8 +625,8 @@ window.ktpUpdateCostRowFromSkill = function(skill, currentRow) {
             currentRow.find('.price').val(window.formatDecimalDisplay(skill.unit_price));
             currentRow.find('.quantity').val(window.formatDecimalDisplay(skill.quantity || 1));
             currentRow.find('.unit').val(skill.unit);
-            // 税率の処理：null、空文字、0の場合は空文字を設定
-            const taxRateValue = (skill.tax_rate === null || skill.tax_rate === '' || skill.tax_rate === 0) ? '' : Math.round(skill.tax_rate);
+            // 税率の処理：null、空文字の場合は空文字を設定、0の場合は0を設定
+            const taxRateValue = (skill.tax_rate === null || skill.tax_rate === '') ? '' : Math.round(skill.tax_rate);
             currentRow.find('.tax-rate').val(taxRateValue);
             
             // 協力会社名を「仕入」フィールドに表示
@@ -679,8 +679,8 @@ window.ktpUpdateCostRowFromSkill = function(skill, currentRow) {
                     autoSaveItem('cost', itemId, 'price', skill.unit_price, orderId);
                     autoSaveItem('cost', itemId, 'quantity', skill.quantity, orderId);
                     autoSaveItem('cost', itemId, 'unit', skill.unit, orderId);
-                    // 税率の保存：null、空文字、0の場合はnullとして送信
-                    const taxRateForDB = (skill.tax_rate === null || skill.tax_rate === '' || skill.tax_rate === 0) ? null : Math.round(skill.tax_rate);
+                    // 税率の保存：null、空文字の場合はnullとして送信、0の場合は0として送信
+                    const taxRateForDB = (skill.tax_rate === null || skill.tax_rate === '') ? null : Math.round(skill.tax_rate);
                     autoSaveItem('cost', itemId, 'tax_rate', taxRateForDB, orderId);
                     
                     // 協力会社名を「仕入」フィールドに保存
@@ -734,9 +734,9 @@ window.ktpUpdateCostRowFromSkill = function(skill, currentRow) {
                                         autoSaveItem('cost', newItemId, 'price', skill.unit_price, orderId);
                                         autoSaveItem('cost', newItemId, 'quantity', skill.quantity, orderId);
                                         autoSaveItem('cost', newItemId, 'unit', skill.unit, orderId);
-                                        // 税率の保存：null、空文字、0の場合はnullとして送信
-                    const taxRateForDB = (skill.tax_rate === null || skill.tax_rate === '' || skill.tax_rate === 0) ? null : Math.round(skill.tax_rate);
-                    autoSaveItem('cost', newItemId, 'tax_rate', taxRateForDB, orderId);
+                                        // 税率の保存：null、空文字の場合はnullとして送信、0の場合は0として送信
+                                        const taxRateForDB = (skill.tax_rate === null || skill.tax_rate === '') ? null : Math.round(skill.tax_rate);
+                                        autoSaveItem('cost', newItemId, 'tax_rate', taxRateForDB, orderId);
                                         
                                         // 協力会社名を「仕入」フィールドに保存
                                         if (window.ktpCurrentSupplierName) {
