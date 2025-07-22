@@ -1585,7 +1585,10 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 			$unit_price = isset( $post_data['unit_price'] ) ? floatval( $post_data['unit_price'] ) : 0;
 			$quantity = isset( $post_data['quantity'] ) ? absint( $post_data['quantity'] ) : 1;
 			$unit = isset( $post_data['unit'] ) ? sanitize_text_field( $post_data['unit'] ) : '式';
-			$tax_rate = isset( $post_data['tax_rate'] ) ? floatval( $post_data['tax_rate'] ) : 10.00;
+			
+			// Handle tax_rate - allow NULL values
+			$tax_rate = isset( $post_data['tax_rate'] ) ? $post_data['tax_rate'] : '';
+			$tax_rate = ( $tax_rate === '' || $tax_rate === null ) ? null : floatval( $tax_rate );
 
 			// Validate required fields
 			if ( empty( $supplier_id ) || empty( $product_name ) ) {

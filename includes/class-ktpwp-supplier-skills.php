@@ -70,7 +70,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 			global $wpdb;
 
 			$table_name = $wpdb->prefix . 'ktp_supplier_skills';
-			$my_table_version = '3.3.0'; // バージョンを更新（税率対応）
+			$my_table_version = '3.4.0'; // バージョンを更新（税率NULL許可対応）
 			$option_name = 'ktp_supplier_skills_table_version';
 
 			// Check if table needs to be created or updated
@@ -86,7 +86,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
                 unit_price DECIMAL(20,10) NOT NULL DEFAULT 0 COMMENT '単価',
                 quantity INT NOT NULL DEFAULT 1 COMMENT '数量',
                 unit VARCHAR(50) NOT NULL DEFAULT '式' COMMENT '単位',
-                tax_rate DECIMAL(5,2) NOT NULL DEFAULT 10.00 COMMENT '税率',
+                tax_rate DECIMAL(5,2) NULL DEFAULT 10.00 COMMENT '税率',
                 frequency INT NOT NULL DEFAULT 0 COMMENT '頻度',
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
@@ -164,6 +164,21 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 							error_log( 'KTPWP: Failed to add tax_rate column to supplier skills table' );
 						} elseif ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 							error_log( 'KTPWP: Successfully added tax_rate column to supplier skills table' );
+						}
+					}
+				}
+
+				// If version is less than 3.4.0, allow NULL values for tax_rate column
+				if ( version_compare( $installed_version, '3.4.0', '<' ) ) {
+					$tax_rate_column = $wpdb->get_row( "SHOW COLUMNS FROM `{$table_name}` WHERE Field = 'tax_rate'" );
+					if ( $tax_rate_column && $tax_rate_column->Null === 'NO' ) {
+						$alter_column_query = "ALTER TABLE `{$table_name}` MODIFY COLUMN `tax_rate` DECIMAL(5,2) NULL DEFAULT 10.00 COMMENT '税率'";
+						$result = $wpdb->query( $alter_column_query );
+
+						if ( $result === false ) {
+							error_log( 'KTPWP: Failed to modify tax_rate column to allow NULL values in supplier skills table' );
+						} elseif ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+							error_log( 'KTPWP: Successfully modified tax_rate column to allow NULL values in supplier skills table' );
 						}
 					}
 				}
@@ -301,16 +316,22 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 			'unit_price' => floatval( $unit_price ),
 			'quantity' => absint( $quantity ) ?: 1,
 			'unit' => sanitize_text_field( $unit ) ?: '式',
-			'tax_rate' => floatval( $tax_rate ),
+			'tax_rate' => ( $tax_rate === null || $tax_rate === '' ) ? null : floatval( $tax_rate ),
 			'frequency' => absint( $frequency ),
 			'created_at' => current_time( 'mysql' ),
 			'updated_at' => current_time( 'mysql' ),
 		);
 
+		// Prepare format array based on whether tax_rate is NULL
+		$format_array = array( '%d', '%s', '%f', '%d', '%s', '%f', '%d', '%s', '%s' );
+		if ( $sanitized_data['tax_rate'] === null ) {
+			$format_array[5] = null; // tax_rate position
+		}
+
 		$result = $wpdb->insert(
             $table_name,
             $sanitized_data,
-            array( '%d', '%s', '%f', '%d', '%s', '%f', '%d', '%s', '%s' )
+            $format_array
 		);
 
 		if ( $result === false ) {
@@ -361,16 +382,22 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 			'unit_price' => floatval( $unit_price ),
 			'quantity' => absint( $quantity ) ?: 1,
 			'unit' => sanitize_text_field( $unit ) ?: '式',
-			'tax_rate' => floatval( $tax_rate ),
+			'tax_rate' => ( $tax_rate === null || $tax_rate === '' ) ? null : floatval( $tax_rate ),
 			'frequency' => absint( $frequency ),
 			'updated_at' => current_time( 'mysql' ),
 		);
+
+		// Prepare format array based on whether tax_rate is NULL
+		$format_array = array( '%s', '%f', '%d', '%s', '%f', '%d', '%s' );
+		if ( $sanitized_data['tax_rate'] === null ) {
+			$format_array[4] = null; // tax_rate position
+		}
 
 		$result = $wpdb->update(
             $table_name,
             $sanitized_data,
             array( 'id' => $skill_id ),
-            array( '%s', '%f', '%d', '%s', '%f', '%d', '%s' ),
+            $format_array,
             array( '%d' )
 		);
 
@@ -576,10 +603,10 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 			$html .= '<input type="text" name="unit" value="式" placeholder="単位" style="width: 100%; padding: 8px 10px; border: 1px solid #ced4da; border-radius: 4px; font-size: 14px; box-sizing: border-box;">';
 			$html .= '</div>';
 
-			// 税率フィールド
+			// 税率フィールド（NULL許可）
 			$html .= '<div style="flex: 0.8; min-width: 70px;">';
 			$html .= '<div style="display: flex; align-items: center; gap: 2px;">';
-			$html .= '<input type="number" name="tax_rate" min="0" max="100" step="1" value="10" placeholder="税率" style="width: 100%; padding: 8px 10px; border: 1px solid #ced4da; border-radius: 4px; font-size: 14px; box-sizing: border-box;">';
+			$html .= '<input type="number" name="tax_rate" min="0" max="100" step="1" value="10" placeholder="税率" style="width: 100%; padding: 8px 10px; border: 1px solid #ced4da; border-radius: 4px; font-size: 14px; box-sizing: border-box;" title="空欄にすると税率なし（非課税）になります">';
 			$html .= '<span style="font-size: 12px; color: #666; white-space: nowrap;">%</span>';
 			$html .= '</div>';
 			$html .= '</div>';
@@ -607,7 +634,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 					$unit_price = rtrim( rtrim( number_format( $unit_price_raw, 6, '.', '' ), '0' ), '.' );
 					$quantity = absint( $skill['quantity'] );
 					$unit = esc_html( $skill['unit'] );
-					$tax_rate = isset( $skill['tax_rate'] ) ? floatval( $skill['tax_rate'] ) : 10.00;
+					$tax_rate = isset( $skill['tax_rate'] ) ? $skill['tax_rate'] : null;
 					$frequency = isset( $skill['frequency'] ) ? absint( $skill['frequency'] ) : 0;
 
 					$html .= '<div class="ktp_data_list_item skill-item" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; line-height: 1.2; min-height: 48px;">';
@@ -620,7 +647,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 					$html .= '単価: <strong>' . $unit_price . '円</strong> | ';
 					$html .= '数量: <strong>' . $quantity . '</strong> | ';
 					$html .= '単位: <strong>' . $unit . '</strong> | ';
-					$html .= '税率: <strong>' . round($tax_rate) . '%</strong>';
+					$html .= '税率: <strong>' . ( $tax_rate === null ? 'なし（非課税）' : round($tax_rate) . '%' ) . '</strong>';
 					$html .= '</span>';
 					$html .= '<span style="color: #666; font-size: 13px; font-weight: normal; flex-shrink: 0; margin-left: auto;" title="アクセス頻度（クリックされた回数）">頻度(' . $frequency . ')</span>';
 					$html .= '</div>';

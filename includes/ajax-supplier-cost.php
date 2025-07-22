@@ -95,17 +95,26 @@ add_action(
 		}
 		global $wpdb;
 		$table = $wpdb->prefix . 'ktp_supplier_skills';
+		// Handle tax_rate - allow NULL values
+		$tax_rate = isset( $_POST['tax_rate'] ) ? $_POST['tax_rate'] : '';
+		$tax_rate = ( $tax_rate === '' || $tax_rate === null ) ? null : floatval( $tax_rate );
+
 		$data = array(
 			'supplier_id'   => intval( $_POST['supplier_id'] ),
 			'product_name'  => sanitize_text_field( $_POST['product_name'] ),
 			'unit_price'    => floatval( $_POST['unit_price'] ),
 			'quantity'      => intval( $_POST['quantity'] ),
 			'unit'          => sanitize_text_field( $_POST['unit'] ),
-			'tax_rate'      => floatval( $_POST['tax_rate'] ),
+			'tax_rate'      => $tax_rate,
 			'frequency'     => sanitize_text_field( $_POST['frequency'] ),
 			'updated_at'    => current_time( 'mysql' ),
 		);
+		
+		// Prepare format array based on whether tax_rate is NULL
 		$format = array( '%d', '%s', '%f', '%d', '%s', '%f', '%s', '%s' );
+		if ( $data['tax_rate'] === null ) {
+			$format[5] = null; // tax_rate position
+		}
 		if ( ! empty( $_POST['id'] ) ) {
 			// 更新
 			$result = $wpdb->update( $table, $data, array( 'id' => intval( $_POST['id'] ) ), $format, array( '%d' ) );
