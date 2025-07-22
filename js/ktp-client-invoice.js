@@ -78,6 +78,8 @@ jQuery(document).ready(function($) {
                                 var postalCode = "";
                                 var addressWithoutPostal = address;
                                 var companyName = res.data.client_name || "未設定";
+                                // グローバル変数に顧客名を保存（印刷時のファイル名生成用）
+                                window.invoiceClientName = companyName;
                                 var contactDisplay = res.data.client_contact || "";
 
 
@@ -489,18 +491,105 @@ function printInvoiceContent() {
 
         invoiceContent = tempDiv.innerHTML;
 
+        // ファイル名生成
+        var clientId = '';
+        var clientName = '';
+        
+        // 顧客IDを取得
+        var urlParams = new URLSearchParams(window.location.search);
+        clientId = urlParams.get('data_id');
+        if (!clientId) {
+            var clientIdInput = document.getElementById('client-id-input');
+            if (clientIdInput) {
+                clientId = clientIdInput.value;
+            }
+        }
+        
+        // 顧客名を取得（優先順位順）
+        // 方法0: グローバル変数から取得（最も確実）
+        if (window.invoiceClientName && window.invoiceClientName !== '未設定') {
+            clientName = window.invoiceClientName;
+        }
+        
+        // 方法1: DOMから会社名を直接取得
+        if (!clientName || clientName === '顧客' || clientName === '未設定') {
+            var companyNameElem = document.querySelector('#invoiceList div[style*="font-size:16px;font-weight:bold;margin-bottom:4px;"]');
+            if (companyNameElem) {
+                clientName = companyNameElem.textContent.trim();
+            }
+        }
+        
+        // 方法2: 宛先情報から取得
+        if (!clientName || clientName === '顧客' || clientName === '未設定') {
+            var addressElems = document.querySelectorAll('#invoiceList div[style*="font-size:14px;margin-bottom:4px;"]');
+            for (var i = 0; i < addressElems.length; i++) {
+                var text = addressElems[i].textContent.trim();
+                if (text && text.length > 0 && !text.includes('様') && !text.includes('〒') && !text.includes('電話') && text !== '未設定') {
+                    clientName = text;
+                    break;
+                }
+            }
+        }
+        
+        // 方法3: 請求書タイトル周辺から取得
+        if (!clientName || clientName === '顧客' || clientName === '未設定') {
+            var titleElems = document.querySelectorAll('#invoiceList div');
+            for (var i = 0; i < titleElems.length; i++) {
+                var text = titleElems[i].textContent.trim();
+                if (text && text.includes('様') && text.length < 50) {
+                    clientName = text.replace(/\s*様?$/, '');
+                    break;
+                }
+            }
+        }
+        
+        // 方法4: 古い方法（後方互換性）
+        if (!clientName || clientName === '顧客' || clientName === '未設定') {
+            var clientNameElem = document.querySelector('#invoiceList div[style*="margin-bottom:5px;"]:nth-child(3)');
+            if (clientNameElem) {
+                clientName = clientNameElem.textContent.replace(/\s*様?$/, '');
+            }
+        }
+        
+        console.log("[請求書印刷] 顧客情報:", {
+            clientId: clientId,
+            clientName: clientName,
+            todayStr: todayStr
+        });
+        
+        // 顧客名取得のデバッグ情報
+        console.log("[請求書印刷] 顧客名取得デバッグ:");
+        console.log("- グローバル変数:", window.invoiceClientName);
+        console.log("- 方法1要素:", document.querySelector('#invoiceList div[style*="font-size:16px;font-weight:bold;margin-bottom:4px;"]'));
+        console.log("- 方法2要素数:", document.querySelectorAll('#invoiceList div[style*="font-size:14px;margin-bottom:4px;"]').length);
+        console.log("- 方法3要素数:", document.querySelectorAll('#invoiceList div').length);
+        console.log("- 最終的な顧客名:", clientName);
+        
+        // 今日の日付を取得（YYYY-MM-DD形式）
+        var today = new Date();
+        var year = today.getFullYear();
+        var month = String(today.getMonth() + 1).padStart(2, '0');
+        var day = String(today.getDate()).padStart(2, '0');
+        var todayStr = year + '-' + month + '-' + day;
+        
+        // ファイル名を生成: 請求書_{顧客名}_ID-{顧客ID}_{今日の日付}.pdf
+        var filename = '請求書_' + (clientName || '顧客') + '_ID-' + (clientId || '0') + '_' + todayStr + '.pdf';
+        
         // 印刷用のスタイルを適用したHTMLを生成
         var printHTML = '<!DOCTYPE html>';
         printHTML += '<html lang="ja">';
         printHTML += '<head>';
         printHTML += '<meta charset="UTF-8">';
         printHTML += '<meta name="viewport" content="width=device-width, initial-scale=1.0">';
-        printHTML += '<title>請求書</title>';
+        printHTML += '<title>' + filename + '</title>';
+        printHTML += '<meta name="title" content="' + filename + '">';
+        printHTML += '<meta name="filename" content="' + filename + '">';
         printHTML += '<style>';
         printHTML += '* { margin: 0; padding: 0; box-sizing: border-box; }';
         printHTML += 'body { font-family: "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif; font-size: 12px; line-height: 1.4; color: #333; background: white; padding: 20px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }';
         printHTML += '.page-container { width: 210mm; max-width: 210mm; margin: 0 auto; background: white; padding: 50px; }';
         printHTML += '@page { size: A4; margin: 50px; }';
+        printHTML += '@page :first { size: A4; margin: 50px; }';
         printHTML += '@media print { body { margin: 0; padding: 0; background: white; } .page-container { box-shadow: none; margin: 0; padding: 0; width: auto; max-width: none; } }';
         printHTML += '@media print { button, .no-print { display: none !important; } }';
         printHTML += 'h1, h2, h3, h4, h5, h6 { font-weight: bold; }';
@@ -515,73 +604,40 @@ function printInvoiceContent() {
         printHTML += '</html>';
 
         console.log("[請求書印刷] 印刷HTML生成完了");
-        
-        // ファイル名生成
-        var clientId = '';
-        var clientName = '';
-        var monthLabels = [];
-        // 顧客ID
-        var urlParams = new URLSearchParams(window.location.search);
-        clientId = urlParams.get('data_id');
-        if (!clientId) {
-            var clientIdInput = document.getElementById('client-id-input');
-            if (clientIdInput) {
-                clientId = clientIdInput.value;
-            }
-        }
-        // 顧客名
-        var clientNameElem = document.querySelector('#invoiceList div[style*="margin-bottom:5px;"]:nth-child(3)');
-        if (clientNameElem) {
-            clientName = clientNameElem.textContent.replace(/\s*様?$/, '');
-        }
-        // 月分（複数対応）
-        var monthElems = document.querySelectorAll('#invoiceList div[style*="font-weight:bold;color:#0073aa;font-size:14px;"]');
-        monthElems.forEach(function(elem) {
-            var match = elem.textContent.match(/\d{4}年\d{1,2}月分/);
-            if (match) {
-                monthLabels.push(match[0]);
-            }
-        });
-        var monthLabel = '';
-        if (monthLabels.length > 0) {
-            monthLabel = monthLabels.join('_');
-        }
-        var filename = '請求書';
-        if (clientId) filename += '：' + clientId;
-        if (clientName) filename += '：' + clientName + '様';
-        if (monthLabel) filename += '（' + monthLabel + '）';
-        filename += '.pdf';
+        console.log("[請求書印刷] ファイル名:", filename);
 
-        // 印刷用のiframeを作成（非表示）
-        var printFrame = document.createElement('iframe');
-        printFrame.style.position = 'fixed';
-        printFrame.style.top = '-9999px';
-        printFrame.style.left = '-9999px';
-        printFrame.style.width = '210mm';
-        printFrame.style.height = '297mm';
-        printFrame.style.border = 'none';
-        document.body.appendChild(printFrame);
+        // 新しいウィンドウで印刷用HTMLを開く
+        var printWindow = window.open('', '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
+        if (!printWindow) {
+            alert('ポップアップがブロックされています。ポップアップを許可してから再度お試しください。');
+            return;
+        }
         
-        // iframeにHTMLを書き込み
-        printFrame.contentDocument.open();
-        printFrame.contentDocument.write(printHTML);
-        printFrame.contentDocument.close();
+        // 新しいウィンドウにHTMLを書き込み
+        printWindow.document.open();
+        printWindow.document.write(printHTML);
+        printWindow.document.close();
         
-        // ファイル名をwindowにセット（PDF保存時に参照される場合用）
-        printFrame.contentWindow.document.title = filename;
+        // ファイル名を確実に設定
+        printWindow.document.title = filename;
+        console.log("[請求書印刷] ウィンドウタイトル設定:", filename);
         
-        // iframeの読み込み完了を待ってから印刷
-        printFrame.onload = function() {
+        // 追加でタイトルを設定（確実性のため）
+        setTimeout(function() {
+            printWindow.document.title = filename;
+            console.log("[請求書印刷] タイトル再設定完了:", printWindow.document.title);
+        }, 100);
+        
+        // 新しいウィンドウの読み込み完了を待ってから印刷
+        printWindow.onload = function() {
             setTimeout(function() {
                 try {
-                    printFrame.contentWindow.print();
+                    printWindow.print();
                     console.log("[請求書印刷] 印刷ダイアログを開きました");
                     
-                    // 印刷完了後にiframeを削除
+                    // 印刷完了後にウィンドウを閉じる
                     setTimeout(function() {
-                        if (printFrame && printFrame.parentNode) {
-                            printFrame.parentNode.removeChild(printFrame);
-                        }
+                        printWindow.close();
                     }, 1000);
 
                     // 印刷完了後に進捗変更Ajax
