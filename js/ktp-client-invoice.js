@@ -60,6 +60,10 @@ jQuery(document).ready(function($) {
                 var xhr = new XMLHttpRequest();
                 xhr.open("POST", ajaxurl, true);
                 xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+                xhr.onerror = function() {
+                    console.error("[請求書発行] Ajax通信エラー");
+                    list.innerHTML = "<div style=\"color:#c00;\">通信エラーが発生しました。ページを再読み込みして再度お試しください。</div>";
+                };
                 xhr.onload = function() {
                     console.log("[請求書発行] Ajaxレスポンス受信:", xhr.status, xhr.responseText);
                     if (xhr.status === 200) {
@@ -369,11 +373,13 @@ jQuery(document).ready(function($) {
                             }
                         } catch (e) {
                             console.error("[請求書発行] JSON解析エラー:", e);
-                            list.innerHTML = "<div style=\"color:#c00;\">データ取得エラー: " + e.message + "</div>";
+                            console.error("[請求書発行] レスポンス内容:", xhr.responseText);
+                            list.innerHTML = "<div style=\"color:#c00;\">データ取得エラー: " + e.message + "<br>レスポンス: " + xhr.responseText.substring(0, 200) + "</div>";
                         }
                     } else {
                         console.error("[請求書発行] HTTPエラー:", xhr.status, xhr.statusText);
-                        list.innerHTML = "<div style=\"color:#c00;\">通信エラー (HTTP " + xhr.status + "): " + xhr.statusText + "</div>";
+                        console.error("[請求書発行] レスポンス内容:", xhr.responseText);
+                        list.innerHTML = "<div style=\"color:#c00;\">通信エラー (HTTP " + xhr.status + "): " + xhr.statusText + "<br>レスポンス: " + xhr.responseText.substring(0, 200) + "</div>";
                     }
                 };
                 var clientId = "";
@@ -412,9 +418,9 @@ jQuery(document).ready(function($) {
                     if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.nonce) {
                         nonce = ktp_ajax_object.nonce;
                         console.log("[請求書発行] ktp_ajax_object から nonce を取得");
-                    } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.invoice_candidates) {
-                        nonce = ktpwp_ajax.nonces.invoice_candidates;
-                        console.log("[請求書発行] ktpwp_ajax から nonce を取得");
+                    } else if (typeof ktp_ajax_nonce !== 'undefined') {
+                        nonce = ktp_ajax_nonce;
+                        console.log("[請求書発行] ktp_ajax_nonce から nonce を取得");
                     } else if (typeof window.ktpwp_ajax_nonce !== 'undefined') {
                         nonce = window.ktpwp_ajax_nonce;
                         console.log("[請求書発行] window.ktpwp_ajax_nonce から nonce を取得");
@@ -425,7 +431,7 @@ jQuery(document).ready(function($) {
                     }
                 }
                 
-                var params = "action=ktp_get_invoice_candidates&client_id=" + encodeURIComponent(clientId) + "&_wpnonce=" + encodeURIComponent(nonce);
+                var params = "action=ktp_get_invoice_candidates&client_id=" + encodeURIComponent(clientId) + "&nonce=" + encodeURIComponent(nonce);
                 console.log("[請求書発行] 送信パラメータ:", params);
                 xhr.send(params);
             });

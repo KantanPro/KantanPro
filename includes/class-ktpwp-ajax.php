@@ -164,7 +164,7 @@ class KTPWP_Ajax {
 		$this->registered_handlers[] = 'ktp_auto_save_field';
 
 		// 顧客IDを受け取り、完了日が締日を超えている案件リストをJSONで返す
-		add_action( 'wp_ajax_ktp_get_invoice_candidates', 'ktpwp_ajax_get_invoice_candidates' );
+		add_action( 'wp_ajax_ktp_get_invoice_candidates', array( $this, 'ajax_get_invoice_candidates' ) );
 		add_action( 'wp_ajax_nopriv_ktp_get_invoice_candidates', array( $this, 'ajax_require_login' ) ); // 非ログインユーザーはエラー
 		$this->registered_handlers[] = 'ktp_get_invoice_candidates';
 
@@ -3679,5 +3679,144 @@ class KTPWP_Ajax {
 		} else {
 			wp_send_json_error('受注書クラスが見つかりません。');
 		}
+	}
+
+	/**
+	 * 請求書候補データを取得
+	 */
+	public function ajax_get_invoice_candidates() {
+		// セキュリティチェック
+		if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'ktp_ajax_nonce')) {
+			wp_send_json_error('セキュリティチェックに失敗しました。');
+			return;
+		}
+		
+		// 顧客IDを取得
+		$client_id = isset($_POST['client_id']) ? absint($_POST['client_id']) : 0;
+		if (!$client_id) {
+			wp_send_json_error('顧客IDが指定されていません。');
+			return;
+		}
+		
+		global $wpdb;
+		
+		// 顧客情報を取得
+		$client_table = $wpdb->prefix . 'ktp_client';
+		$client_data = $wpdb->get_row($wpdb->prepare(
+			"SELECT * FROM `{$client_table}` WHERE id = %d",
+			$client_id
+		));
+		
+		if (!$client_data) {
+			wp_send_json_error('指定された顧客が見つかりません。');
+			return;
+		}
+		
+		// 受注書データを取得（完了済みで請求済みでないもの）
+		$order_table = $wpdb->prefix . 'ktp_order';
+		$orders = $wpdb->get_results($wpdb->prepare(
+			"SELECT * FROM `{$order_table}` 
+			WHERE client_id = %d 
+			AND progress = 4 
+			AND completion_date IS NOT NULL
+			ORDER BY completion_date ASC",
+			$client_id
+		));
+		
+		if (empty($orders)) {
+			wp_send_json_error('請求対象の受注書が見つかりません。');
+			return;
+		}
+		
+		// 月別グループに分類
+		$monthly_groups = array();
+		foreach ($orders as $order) {
+			$completion_date = new DateTime($order->completion_date);
+			$year = $completion_date->format('Y');
+			$month = $completion_date->format('m');
+			$key = $year . '-' . $month;
+			
+			if (!isset($monthly_groups[$key])) {
+				$monthly_groups[$key] = array(
+					'billing_period' => $year . '年' . intval($month) . '月分',
+					'closing_date' => $completion_date->format('Y年m月d日'),
+					'orders' => array(),
+					'subtotal' => 0,
+					'tax_amount' => 0
+				);
+			}
+			
+			// 受注書の合計金額を計算
+			$order_total = 0;
+			$order_tax = 0;
+			
+					// 請求項目を取得
+		$invoice_items_table = $wpdb->prefix . 'ktp_invoice_items';
+		$invoice_items = $wpdb->get_results($wpdb->prepare(
+			"SELECT * FROM `{$invoice_items_table}` WHERE order_id = %d",
+			$order->id
+		));
+		
+		// デバッグ用：請求項目が取得できない場合のログ
+		if ($wpdb->last_error) {
+			error_log("KTPWP Invoice AJAX: 請求項目取得エラー - " . $wpdb->last_error);
+		}
+			
+			foreach ($invoice_items as $item) {
+				$unit_price = floatval($item->unit_price);
+				$quantity = floatval($item->quantity);
+				$total_price = $unit_price * $quantity;
+				$order_total += $total_price;
+				
+				// 税率計算
+				$tax_rate = floatval($item->tax_rate);
+				if ($tax_rate > 0) {
+					$order_tax += $total_price * ($tax_rate / 100);
+				}
+			}
+			
+			$order->total_amount = $order_total;
+			$order->tax_amount = $order_tax;
+			$order->invoice_items = $invoice_items;
+			
+			$monthly_groups[$key]['orders'][] = $order;
+			$monthly_groups[$key]['subtotal'] += $order_total;
+			$monthly_groups[$key]['tax_amount'] += $order_tax;
+		}
+		
+		// 配列のキーをリセット
+		$monthly_groups = array_values($monthly_groups);
+		
+		// 部署情報を取得
+		$department_table = $wpdb->prefix . 'ktp_department';
+		$departments = $wpdb->get_results($wpdb->prepare(
+			"SELECT * FROM `{$department_table}` WHERE client_id = %d",
+			$client_id
+		));
+		
+		// 適格請求書番号を取得
+		$qualified_invoice_number = '';
+		$supplier_table = $wpdb->prefix . 'ktp_supplier';
+		$supplier_data = $wpdb->get_row("SELECT qualified_invoice_number FROM `{$supplier_table}` WHERE id = 1");
+		if ($supplier_data && !empty($supplier_data->qualified_invoice_number)) {
+			$qualified_invoice_number = $supplier_data->qualified_invoice_number;
+		}
+		
+		// 顧客の税区分を取得
+		$tax_category = $client_data->tax_category ?: '内税';
+		
+		// レスポンスデータを構築
+		$response_data = array(
+			'client_name' => $client_data->company_name,
+			'client_address' => $client_data->address,
+			'client_contact' => $client_data->contact_person,
+			'monthly_groups' => $monthly_groups,
+			'departments' => $departments,
+			'qualified_invoice_number' => $qualified_invoice_number,
+			'tax_category' => $tax_category,
+			'selected_department' => null // デフォルトでは部署選択なし
+		);
+		
+		wp_send_json_success($response_data);
 	}
 }

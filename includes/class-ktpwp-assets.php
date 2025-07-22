@@ -299,7 +299,7 @@ class KTPWP_Assets {
                         $design_options = get_option( 'ktp_design_settings', array() );
                         return array(
                             'ajax_url' => admin_url( 'admin-ajax.php' ),
-                            'nonce'    => wp_create_nonce( 'ktp_get_invoice_candidates' ),
+                            'nonce'    => wp_create_nonce( 'ktp_ajax_nonce' ),
                             'design_settings' => array(
                                 'odd_row_color' => isset( $design_options['odd_row_color'] ) ? $design_options['odd_row_color'] : '#E7EEFD',
                                 'even_row_color' => isset( $design_options['even_row_color'] ) ? $design_options['even_row_color'] : '#FFFFFF',
