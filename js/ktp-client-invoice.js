@@ -606,129 +606,89 @@ function printInvoiceContent() {
         console.log("[請求書印刷] 印刷HTML生成完了");
         console.log("[請求書印刷] ファイル名:", filename);
 
-        // 新しいウィンドウで印刷用HTMLを開く
-        var printWindow = window.open('', '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
-        if (!printWindow) {
-            alert('ポップアップがブロックされています。ポップアップを許可してから再度お試しください。');
-            return;
-        }
+        // プリントアイコンの方法を参考に、現在のページの内容を印刷用HTMLに置き換えて印刷
+        var originalBody = document.body.innerHTML;
+        var originalTitle = document.title;
         
-        // 新しいウィンドウにHTMLを書き込み
-        printWindow.document.open();
-        printWindow.document.write(printHTML);
-        printWindow.document.close();
+        // ページの内容を印刷用に変更
+        document.body.innerHTML = printHTML;
+        document.title = filename;
         
-        // ファイル名を確実に設定
-        printWindow.document.title = filename;
-        console.log("[請求書印刷] ウィンドウタイトル設定:", filename);
+        console.log("[請求書印刷] 印刷用HTMLに置き換え完了");
+        console.log("[請求書印刷] ファイル名:", filename);
         
-        // 追加でタイトルを設定（確実性のため）
+        // 印刷ダイアログを表示
+        window.print();
+        
+        // 印刷完了後、元の内容に戻す（プリントアイコンと同じ方法）
         setTimeout(function() {
-            printWindow.document.title = filename;
-            console.log("[請求書印刷] タイトル再設定完了:", printWindow.document.title);
-        }, 100);
-        
-        // 新しいウィンドウの読み込み完了を待ってから印刷
-        printWindow.onload = function() {
-            setTimeout(function() {
-                try {
-                    printWindow.print();
-                    console.log("[請求書印刷] 印刷ダイアログを開きました");
-                    
-                    // 印刷完了後にウィンドウを閉じる
-                    setTimeout(function() {
-                        printWindow.close();
-                    }, 1000);
-
-                    // 印刷完了後に進捗変更Ajax
-                    if (shouldSetCompleted) {
-                        // ここでAjaxリクエストを送信（ダミー実装）
-                        var xhr = new XMLHttpRequest();
-                        xhr.open('POST', '/wp-admin/admin-ajax.php');
-                        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-                        // 必要に応じて対象IDやnonceをセット
-                        var clientId = '';
-                        var urlParams = new URLSearchParams(window.location.search);
-                        clientId = urlParams.get('data_id');
-                        if (!clientId) {
-                            var clientIdInput = document.getElementById('client-id-input');
-                            if (clientIdInput) {
-                                clientId = clientIdInput.value;
-                            }
-                        }
-                        var params = 'action=ktp_set_invoice_completed&client_id=' + encodeURIComponent(clientId);
-                        xhr.onload = function() {
-                            if (xhr.status === 200) {
-                                console.log('[進捗変更] 請求済みへの変更成功:', xhr.responseText);
-                                
-                                // ★ 注文履歴リストのUIを即座に更新
-                                try {
-                                    var response = JSON.parse(xhr.responseText);
-                                    if (response.success) {
-                                        console.log('[進捗変更] UI更新開始 - 更新件数:', response.data.updated);
-                                        updateOrderHistoryProgress(clientId, 4, 5); // 完了→請求済
-                                        
-                                        // 成功メッセージを表示
-                                        if (typeof window.showSuccessNotification === 'function') {
-                                            window.showSuccessNotification('対象受注書の進捗を「請求済」に変更しました');
-                                        } else {
-                                            console.log('[進捗変更] 成功: ' + response.data.updated + '件の受注書を「請求済」に変更しました');
-                                        }
-                                        
-                                        // ★ ポップアップを自動的に閉じる
-                                        setTimeout(function() {
-                                            var popup = document.getElementById('invoicePopup');
-                                            if (popup) {
-                                                popup.style.display = 'none';
-                                                console.log('[UI更新] 請求書ポップアップを閉じました');
-                                            }
-                                        }, 1500); // 1.5秒後に閉じる
-                                    } else {
-                                        console.error('[進捗変更] サーバーエラー:', response.data);
-                                        if (typeof window.showErrorNotification === 'function') {
-                                            window.showErrorNotification('進捗変更に失敗しました: ' + response.data);
-                                        } else {
-                                            alert('進捗変更に失敗しました: ' + response.data);
-                                        }
-                                    }
-                                } catch (e) {
-                                    console.error('[進捗変更] レスポンス解析エラー:', e, xhr.responseText);
-                                    if (typeof window.showErrorNotification === 'function') {
-                                        window.showErrorNotification('進捗変更処理でエラーが発生しました');
-                                    } else {
-                                        alert('進捗変更処理でエラーが発生しました');
-                                    }
-                                }
-                            } else {
-                                console.error('[進捗変更] エラー:', xhr.status, xhr.statusText);
-                                if (typeof window.showErrorNotification === 'function') {
-                                    window.showErrorNotification('進捗変更に失敗しました (HTTP ' + xhr.status + ')');
-                                } else {
-                                    alert('進捗変更に失敗しました (HTTP ' + xhr.status + ')');
-                                }
-                            }
-                        };
-                        xhr.onerror = function() {
-                            console.error('[進捗変更] 通信エラー');
-                            if (typeof window.showErrorNotification === 'function') {
-                                window.showErrorNotification('進捗変更の通信でエラーが発生しました');
-                            } else {
-                                alert('進捗変更の通信でエラーが発生しました');
-                            }
-                        };
-                        xhr.send(params);
-                    }
-                } catch (error) {
-                    console.error("[請求書印刷] 印刷実行エラー:", error);
-                    alert("印刷エラーが発生しました: " + error.message);
-                    
-                    // エラー時もiframeを削除
-                    if (printFrame && printFrame.parentNode) {
-                        printFrame.parentNode.removeChild(printFrame);
+            document.body.innerHTML = originalBody;
+            document.title = originalTitle;
+            
+            console.log("[請求書印刷] 印刷完了。元のページに戻しました。");
+            
+            // 請求書プレビューポップアップを再表示（必要に応じて）
+            if (window.refreshInvoicePreview) {
+                window.refreshInvoicePreview();
+            }
+            
+            // 印刷完了後に進捗変更Ajax
+            if (shouldSetCompleted) {
+                // ここでAjaxリクエストを送信
+                var xhr = new XMLHttpRequest();
+                xhr.open('POST', '/wp-admin/admin-ajax.php');
+                xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+                // 必要に応じて対象IDやnonceをセット
+                var clientId = '';
+                var urlParams = new URLSearchParams(window.location.search);
+                clientId = urlParams.get('data_id');
+                if (!clientId) {
+                    var clientIdInput = document.getElementById('client-id-input');
+                    if (clientIdInput) {
+                        clientId = clientIdInput.value;
                     }
                 }
-            }, 100);
-        };
+                var params = 'action=ktp_set_invoice_completed&client_id=' + encodeURIComponent(clientId);
+                xhr.onload = function() {
+                    if (xhr.status === 200) {
+                        console.log('[進捗変更] 請求済みへの変更成功:', xhr.responseText);
+                        
+                        // ★ 注文履歴リストのUIを即座に更新
+                        try {
+                            var response = JSON.parse(xhr.responseText);
+                            if (response.success) {
+                                console.log('[進捗変更] UI更新開始 - 更新件数:', response.data.updated);
+                                updateOrderHistoryProgress(clientId, 4, 5); // 完了→請求済
+                                
+                                // 成功メッセージを表示
+                                if (typeof window.showSuccessNotification === 'function') {
+                                    window.showSuccessNotification('対象受注書の進捗を「請求済」に変更しました');
+                                } else {
+                                    console.log('[進捗変更] 成功: ' + response.data.updated + '件の受注書を「請求済」に変更しました');
+                                }
+                                
+                                // ★ ポップアップを自動的に閉じる
+                                setTimeout(function() {
+                                    var popup = document.getElementById('invoicePopup');
+                                    if (popup) {
+                                        popup.style.display = 'none';
+                                        console.log('[UI更新] 請求書ポップアップを閉じました');
+                                    }
+                                }, 2000);
+                            }
+                        } catch (e) {
+                            console.error('[進捗変更] レスポンス解析エラー:', e);
+                        }
+                    } else {
+                        console.error('[進捗変更] リクエスト失敗:', xhr.status);
+                    }
+                };
+                xhr.onerror = function() {
+                    console.error('[進捗変更] ネットワークエラー');
+                };
+                xhr.send(params);
+            }
+        }, 1000);
 
     } catch (error) {
         console.error("[請求書印刷] エラーが発生しました:", error);
