@@ -203,7 +203,15 @@ if ( ! class_exists( 'Kantan_List_Class' ) ) {
                     )
                 );
 				$content .= '<a href="' . $progress_btn_url . '" class="progress-btn" data-progress="' . $num . '" data-icon="' . $icon . '" ' . $active . '>';
-				$content .= '<span class="progress-btn-icon material-symbols-outlined">' . $icon . '</span>';
+				
+				// SVGアイコンを使用
+				if (class_exists('KTPWP_SVG_Icons')) {
+					$content .= KTPWP_SVG_Icons::get_icon($icon, array('class' => 'progress-btn-icon ktp-svg-icon'));
+				} else {
+					// フォールバック: Material Symbols
+					$content .= '<span class="progress-btn-icon material-symbols-outlined">' . $icon . '</span>';
+				}
+				
 				$content .= '<span class="progress-btn-text">' . $btn_label . '</span>';
 				$content .= $warning_mark;
 				$content .= '</a>';

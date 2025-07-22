@@ -558,6 +558,25 @@
   line-height: 1;
 }
 
+/* SVGアイコンのスタイル */
+.ktp-svg-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ktp-svg-icon svg {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+}
+
+/* 進捗ボタン内のSVGアイコン */
+.progress-btn .ktp-svg-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
 /* 進捗ボタン内のテキスト */
 .progress-btn-text {
   white-space: nowrap;
@@ -581,6 +600,12 @@
   .progress-btn-icon {
     font-size: 20px;
     line-height: 1;
+  }
+  
+  /* モバイル表示時のSVGアイコン */
+  .progress-btn .ktp-svg-icon svg {
+    width: 20px;
+    height: 20px;
   }
   
   .progress-btn-text {
@@ -625,6 +650,12 @@
   
   .progress-btn-icon {
     font-size: 18px;
+  }
+  
+  /* 小さいモバイル表示時のSVGアイコン */
+  .progress-btn .ktp-svg-icon svg {
+    width: 18px;
+    height: 18px;
   }
   
   .progress-btn-text {
