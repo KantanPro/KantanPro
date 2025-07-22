@@ -1090,8 +1090,8 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 				'支払方法' => array(
 					'type' => 'select',
 					'name' => 'payment_method',
-					'options' => array( '銀行振込（後）', '銀行振込（前）', 'クレジットカード', '現金集金' ),
-					'default' => '銀行振込（前）',
+					'options' => array( '銀行振込', 'クレジット', '現金集金' ),
+					'default' => '銀行振込',
 				),
 				'税区分' => array(
 					'type' => 'select',

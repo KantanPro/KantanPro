@@ -3808,6 +3808,9 @@ class KTPWP_Ajax {
 		// 顧客の税区分を取得
 		$tax_category = $client_data->tax_category ?: '内税';
 		
+		// 支払期日を計算
+		$payment_due_date = $this->calculate_payment_due_date($client_data);
+		
 		// レスポンスデータを構築
 		$response_data = array(
 			'client_name' => $client_data->company_name,
@@ -3817,9 +3820,148 @@ class KTPWP_Ajax {
 			'departments' => $departments,
 			'qualified_invoice_number' => $qualified_invoice_number,
 			'tax_category' => $tax_category,
-			'selected_department' => null // デフォルトでは部署選択なし
+			'selected_department' => null, // デフォルトでは部署選択なし
+			'payment_due_date' => $payment_due_date
 		);
 		
 		wp_send_json_success($response_data);
+	}
+	
+	/**
+	 * 顧客の支払条件に基づいて支払期日を計算
+	 *
+	 * @param object $client_data 顧客データ
+	 * @return string 支払期日（Y-m-d形式）
+	 */
+	private function calculate_payment_due_date($client_data) {
+		// デフォルト値
+		$closing_day = $client_data->closing_day ?: '末日';
+		$payment_month = $client_data->payment_month ?: '翌月';
+		$payment_day = $client_data->payment_day ?: '末日';
+		
+		// 今日の日付を基準に計算
+		$today = new DateTime();
+		$current_year = (int)$today->format('Y');
+		$current_month = (int)$today->format('m');
+		$current_day = (int)$today->format('d');
+		
+		// 支払日が即日の場合は今日の日付を返す
+		if ($payment_day === '即日') {
+			return $today->format('Y-m-d');
+		}
+		
+		// 締め日を数値に変換
+		$closing_day_num = 0;
+		if ($closing_day === '末日') {
+			$closing_day_num = 31; // 月末を表す特別な値
+		} elseif ($closing_day === 'なし') {
+			$closing_day_num = 0; // 締め日なし
+		} else {
+			$closing_day_num = (int)str_replace('日', '', $closing_day);
+		}
+		
+		// 締め日を考慮した請求月を決定
+		$billing_year = $current_year;
+		$billing_month = $current_month;
+		
+		if ($closing_day_num > 0) {
+			// 締め日がある場合
+			$closing_date = new DateTime();
+			if ($closing_day_num === 31) {
+				$closing_date->modify('last day of this month');
+			} else {
+				$closing_date->setDate($current_year, $current_month, $closing_day_num);
+				// 指定日が月末を超える場合は末日に補正
+				$last_day = (int)$closing_date->format('t');
+				if ($closing_day_num > $last_day) {
+					$closing_date->modify('last day of this month');
+				}
+			}
+			
+			// 今日が締め日を過ぎている場合は翌月の締め日を請求対象とする
+			if ($today > $closing_date) {
+				$billing_month++;
+				if ($billing_month > 12) {
+					$billing_month = 1;
+					$billing_year++;
+				}
+			}
+		} else {
+			// 締め日なしの場合は、現在の月を請求対象とする
+			$billing_year = $current_year;
+			$billing_month = $current_month;
+		}
+		
+		// 支払月を計算
+		$payment_year = $billing_year;
+		$payment_month_num = $billing_month;
+		
+		switch ($payment_month) {
+			case '今月':
+				$payment_month_num = $billing_month;
+				break;
+			case '翌月':
+				$payment_month_num = $billing_month + 1;
+				if ($payment_month_num > 12) {
+					$payment_month_num = 1;
+					$payment_year++;
+				}
+				break;
+			case '翌々月':
+				$payment_month_num = $billing_month + 2;
+				if ($payment_month_num > 12) {
+					$payment_month_num = $payment_month_num - 12;
+					$payment_year++;
+				}
+				break;
+			default:
+				$payment_month_num = $billing_month + 1;
+				if ($payment_month_num > 12) {
+					$payment_month_num = 1;
+					$payment_year++;
+				}
+		}
+		
+		// 支払日を計算
+		$payment_day_num = 0;
+		if ($payment_day === '末日') {
+			$payment_day_num = 31; // 月末を表す特別な値
+		} else {
+			$payment_day_num = (int)str_replace('日', '', $payment_day);
+		}
+		
+		// 支払期日を計算
+		$payment_due_date = new DateTime();
+		$payment_due_date->setDate($payment_year, $payment_month_num, 1);
+		
+		if ($payment_day_num === 31) {
+			// 末日の場合
+			$payment_due_date->modify('last day of this month');
+		} else {
+			// 指定日の場合
+			$payment_due_date->setDate($payment_year, $payment_month_num, $payment_day_num);
+			
+			// 指定日が月末を超える場合は末日に補正
+			$last_day = (int)$payment_due_date->format('t');
+			if ($payment_day_num > $last_day) {
+				$payment_due_date->modify('last day of this month');
+			}
+		}
+		
+		return $payment_due_date->format('Y-m-d');
+	}
+	
+	/**
+	 * 顧客の支払条件の説明テキストを生成
+	 *
+	 * @param object $client_data 顧客データ
+	 * @return string 支払条件の説明テキスト
+	 */
+	private function generate_payment_terms_text($client_data) {
+		// 計算された支払期日のみを返す
+		$payment_due_date = $this->calculate_payment_due_date($client_data);
+		$formatted_due_date = date('Y年m月d日', strtotime($payment_due_date));
+		
+		return $formatted_due_date;
 	}
 }

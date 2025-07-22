@@ -154,69 +154,34 @@ jQuery(document).ready(function($) {
                                 var grandTaxAmount = 0;
                                 
                                 res.data.monthly_groups.forEach(function(group) {
-                                    if (res.data.tax_category === '外税') {
-                                        // 外税表示の場合
-                                        grandSubtotal += (group.subtotal || 0);
-                                        grandTaxAmount += (group.tax_amount || 0);
-                                        // 外税の場合、税込合計 = 合計金額 + 消費税
-                                        grandTotal += (group.subtotal || 0) + (group.tax_amount || 0);
-                                    } else {
-                                        // 内税表示の場合（デフォルト）
-                                        var monthlyTotal = 0;
-                                        group.orders.forEach(function(order) {
-                                            var orderSubtotal = 0;
-                                            if (order.invoice_items && order.invoice_items.length > 0) {
-                                                order.invoice_items.forEach(function(item) {
-                                                    if (item.total_price) {
-                                                        orderSubtotal += parseFloat(item.total_price);
-                                                    }
-                                                });
-                                            }
-                                            monthlyTotal += orderSubtotal;
-                                        });
-                                        grandTotal += monthlyTotal;
-                                        grandSubtotal += (group.subtotal || 0);
-                                        grandTaxAmount += (group.tax_amount || 0);
-                                    }
+                                    grandSubtotal += (group.subtotal || 0);
+                                    grandTaxAmount += (group.tax_amount || 0);
+                                    grandTotal += (group.subtotal || 0) + (group.tax_amount || 0);
                                 });
 
-                                // 消費税対応の合計金額表示
-                                var displayTotal = grandTotal;
-                                var displaySubtotal = grandSubtotal;
-                                var displayTaxAmount = grandTaxAmount;
-                                
-                                if (res.data.tax_category === '外税') {
-                                    // 外税表示の場合
-                                    html += "<div style=\"font-weight:bold;font-size:16px;color:#333;margin:20px 0 0 0;text-align:right;\">";
-                                    html += "合計金額：" + displaySubtotal.toLocaleString() + "円";
-                                    html += "　消費税：" + displayTaxAmount.toLocaleString() + "円";
-                                    html += "　税込合計：" + displayTotal.toLocaleString() + "円";
-                                    html += "</div>";
-                                } else {
-                                    // 内税表示の場合（デフォルト）
-                                    if (displayTaxAmount > 0) {
-                                        html += "<div style=\"font-weight:bold;font-size:16px;color:#333;margin:20px 0 0 0;text-align:right;\">";
-                                        html += "金額合計：" + displayTotal.toLocaleString() + "円";
-                                        html += "　（内税：" + displayTaxAmount.toLocaleString() + "円）";
-                                        html += "</div>";
-                                    }
+                                // 消費税・税込合計・繰越金額を1行で表示
+                                html += "<div style=\"font-weight:bold;font-size:14px;color:#333;display:flex;align-items:center;margin:10px 0 0 0;\">";
+                                html += "<span>合計金額：" + grandSubtotal.toLocaleString() + "円</span>";
+                                if (grandTaxAmount > 0) {
+                                    html += "<span style=\"margin-left:15px;\">消費税：" + grandTaxAmount.toLocaleString() + "円</span>";
+                                    html += "<span style=\"margin-left:15px;\">税込合計：" + grandTotal.toLocaleString() + "円</span>";
                                 }
-                                
-                                // 合計金額・繰越金額を1行で横並び
-                                html += "<div style=\"font-weight:bold;font-size:18px;color:#333;display:flex;align-items:center;margin:10px 0 0 0;\">";
-                                html += "<span>合計金額&nbsp;" + displayTotal.toLocaleString() + "円</span>";
-                                html += "<span style=\"font-size:16px;margin-left:20px;\">繰越金額：</span>";
-                                html += "<input type=\"number\" id=\"carryover-amount\" name=\"carryover_amount\" value=\"0\" min=\"0\" step=\"1\" style=\"width:120px;padding:4px 8px;border:1px solid #ccc;border-radius:4px;font-size:16px;text-align:right;margin-left:5px;\" onchange=\"updateInvoiceTotal()\">";
-                                html += "<span style=\"font-size:16px;\">円</span>";
+                                html += "<span style=\"margin-left:15px;\">繰越金額：</span>";
+                                html += "<input type=\"number\" id=\"carryover-amount\" name=\"carryover_amount\" value=\"0\" min=\"0\" step=\"1\" style=\"width:100px;padding:3px 6px;border:1px solid #ccc;border-radius:4px;font-size:14px;text-align:right;margin-left:5px;\" onchange=\"updateInvoiceTotal()\">";
+                                html += "<span style=\"font-size:14px;\">円</span>";
                                 html += "</div>";
+                                
                                 // 請求金額・お支払い期日を1行で横並び
-                                var paymentDueDate = (res.data.monthly_groups && res.data.monthly_groups.length > 0 && res.data.monthly_groups[0].payment_due_date) ? res.data.monthly_groups[0].payment_due_date : '';
+                                var paymentDueDate = res.data.payment_due_date || '';
+                                
                                 html += "<div style=\"font-weight:bold;font-size:20px;color:#0073aa;display:flex;align-items:center;margin:10px 0 0 0;\">";
-                                html += "<span>請求金額：<span id=\"total-amount\">" + displayTotal.toLocaleString() + "</span>円</span>";
+                                html += "<span>請求金額：<span id=\"total-amount\">" + grandTotal.toLocaleString() + "</span>円</span>";
                                 html += "<span style=\"margin-left:2em;font-size:16px;\">お支払い期日：<input type=\"date\" id=\"payment-due-date-input\" value=\"" + paymentDueDate + "\" style=\"font-size:16px;padding:4px 8px;border:1px solid #ccc;border-radius:4px;width:180px;max-width:100%;\"></span>";
                                 html += "</div>";
 
                                 window.invoiceGrandTotal = grandTotal;
+                                window.invoiceTaxAmount = grandTaxAmount; // 消費税をグローバルに設定
+                                window.invoiceTaxCategory = res.data.tax_category; // 税区分をグローバルに設定
 
                                 res.data.monthly_groups.forEach(function(group) {
                                     html += "<div style=\"margin:20px 0 10px 0;padding:8px 12px;background-color:#f0f8ff;border-left:4px solid #0073aa;border-radius:4px;\">";
@@ -297,25 +262,7 @@ jQuery(document).ready(function($) {
 
                                             html += "</div>";
                                             html += "<div style=\"margin-top:10px;text-align:right;font-weight:bold;font-size:13px;color:#333;\">";
-                                            // 消費税対応の小計表示
-                                            if (res.data.tax_category === '外税') {
-                                                // 外税表示の場合
-                                                var orderSubtotalEx = order.subtotal || orderSubtotal;
-                                                var orderTaxAmount = order.tax_amount || 0;
-                                                // 外税の場合、税込合計 = 合計金額 + 消費税
-                                                var orderTotalAmount = orderSubtotalEx + orderTaxAmount;
-                                                html += "合計金額：" + orderSubtotalEx.toLocaleString() + "円";
-                                                html += "　消費税：" + orderTaxAmount.toLocaleString() + "円";
-                                                html += "　税込合計：" + orderTotalAmount.toLocaleString() + "円";
-                                            } else {
-                                                // 内税表示の場合（デフォルト）
-                                                var orderSubtotalEx = order.subtotal || orderSubtotal;
-                                                var orderTaxAmount = order.tax_amount || 0;
-                                                html += "内税小計：" + orderSubtotal.toLocaleString() + "円";
-                                                if (orderTaxAmount > 0) {
-                                                    html += "　（内税：" + orderTaxAmount.toLocaleString() + "円）";
-                                                }
-                                            }
+                                            html += "案件合計：" + orderSubtotal.toLocaleString() + "円";
                                             html += "</div>";
                                         } else {
                                             html += "<div style=\"color:#999;font-size:12px;\">請求項目なし</div>";
@@ -326,25 +273,7 @@ jQuery(document).ready(function($) {
 
                                     html += "<div style=\"margin:15px 0;padding:12px;background-color:#f8f9fa;border:2px solid #0073aa;border-radius:6px;text-align:right;\">";
                                     html += "<div style=\"font-weight:bold;font-size:15px;color:#0073aa;\">";
-                                    // 消費税対応の月別合計表示
-                                    if (res.data.tax_category === '外税') {
-                                        // 外税表示の場合
-                                        var groupSubtotal = group.subtotal || monthlyTotal;
-                                        var groupTaxAmount = group.tax_amount || 0;
-                                        // 外税の場合、税込合計 = 合計金額 + 消費税
-                                        var groupTotalAmount = groupSubtotal + groupTaxAmount;
-                                        html += group.billing_period + " 合計金額：" + groupSubtotal.toLocaleString() + "円";
-                                        html += "　消費税：" + groupTaxAmount.toLocaleString() + "円";
-                                        html += "　税込合計：" + groupTotalAmount.toLocaleString() + "円";
-                                    } else {
-                                        // 内税表示の場合（デフォルト）
-                                        var groupSubtotal = group.subtotal || monthlyTotal;
-                                        var groupTaxAmount = group.tax_amount || 0;
-                                        html += group.billing_period + " 内税合計：" + monthlyTotal.toLocaleString() + "円";
-                                        if (groupTaxAmount > 0) {
-                                            html += "　（内税：" + groupTaxAmount.toLocaleString() + "円）";
-                                        }
-                                    }
+                                    html += group.billing_period + " 月別合計：" + monthlyTotal.toLocaleString() + "円";
                                     html += "</div>";
                                     html += "</div>";
                                 });
@@ -536,12 +465,15 @@ function printInvoiceContent() {
 
         // 合計金額を更新
         if (window.invoiceGrandTotal) {
-            var totalAmount = window.invoiceGrandTotal + carryoverAmount;
+            var baseTotal = window.invoiceGrandTotal + carryoverAmount;
             var totalAmountElement = tempDiv.querySelector('#total-amount');
             if(totalAmountElement) {
-                totalAmountElement.textContent = totalAmount.toLocaleString();
+                // PHP側から計算された消費税を使用
+                var taxAmount = window.invoiceTaxAmount || 0;
+                var totalWithTax = baseTotal + taxAmount;
+                totalAmountElement.textContent = totalWithTax.toLocaleString();
             }
-            console.log("[請求書印刷] 合計金額更新:", totalAmount);
+            console.log("[請求書印刷] 合計金額更新:", totalWithTax);
         }
 
         // 印刷用にデザイン設定を適用
@@ -751,10 +683,15 @@ function printInvoiceContent() {
 function updateInvoiceTotal() {
     var carryoverAmount = parseInt(document.getElementById("carryover-amount").value) || 0;
     var grandTotal = window.invoiceGrandTotal || 0;
-    var totalAmount = grandTotal + carryoverAmount;
+    var taxAmount = window.invoiceTaxAmount || 0;
+    var subtotal = grandTotal - taxAmount; // 税抜き合計を計算
+    
+    // 繰越金額を含めた税込合計を計算
+    var totalWithTax = subtotal + taxAmount + carryoverAmount;
+    
     var totalAmountElement = document.getElementById("total-amount");
     if (totalAmountElement) {
-        totalAmountElement.textContent = totalAmount.toLocaleString();
+        totalAmountElement.textContent = totalWithTax.toLocaleString();
     }
     window.carryoverAmount = carryoverAmount;
 }
