@@ -838,7 +838,7 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
                                     number_format( $price * $quantity )
 								);
 								if ( $remarks ) {
-									$invoice_list .= ' (' . $remarks . ')';
+									$invoice_list .= '　※ ' . $remarks;
 								}
 								$invoice_list .= "\n";
 							}

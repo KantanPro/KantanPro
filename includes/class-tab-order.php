@@ -700,6 +700,7 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 												$unit = isset( $item['unit'] ) ? sanitize_text_field( $item['unit'] ) : '';
 												$item_amount = isset( $item['amount'] ) ? floatval( $item['amount'] ) : 0;
 												$tax_rate = isset( $item['tax_rate'] ) ? floatval( $item['tax_rate'] ) : 10.0;
+												$remarks = isset( $item['remarks'] ) ? sanitize_text_field( $item['remarks'] ) : '';
 
 													// 税率別の集計
 													$tax_rate_key = number_format( $tax_rate, 1 );
@@ -717,8 +718,9 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 													// 内税の場合は後で税率別に計算
 
 												if ( ! empty( trim( $product_name ) ) ) {
-													// 詳細形式：サービス：単価 × 数量/単位 = 金額円（税率X%）
-													$invoice_list .= $product_name . '：' . number_format( $price ) . '円 × ' . $quantity . $unit . ' = ' . number_format( $item_amount ) . "円（税率{$tax_rate}%）\n";
+													// 詳細形式：サービス：単価 × 数量/単位 = 金額円（税率X%）※ 備考
+													$remarks_text = ( ! empty( trim( $remarks ) ) ) ? '　※ ' . $remarks : '';
+													$invoice_list .= $product_name . '：' . number_format( $price ) . '円 × ' . $quantity . $unit . ' = ' . number_format( $item_amount ) . "円（税率{$tax_rate}%）" . $remarks_text . "\n";
 												}
 											}
 											

@@ -1605,6 +1605,7 @@ class KTPWP_Ajax {
 					$quantity     = isset( $item['quantity'] ) ? floatval( $item['quantity'] ) : 0;
 					$unit         = isset( $item['unit'] ) ? sanitize_text_field( $item['unit'] ) : '';
 					$tax_rate_raw = isset( $item['tax_rate'] ) ? $item['tax_rate'] : null;
+					$remarks      = isset( $item['remarks'] ) ? sanitize_text_field( $item['remarks'] ) : '';
 					$amount      += $item_amount;
 
 					// 税率の処理（NULL、空文字、NaNの場合は税率なしとして扱う）
@@ -1636,7 +1637,8 @@ class KTPWP_Ajax {
 
 					if ( ! empty( trim( $product_name ) ) ) {
 						$tax_rate_text = ( $tax_rate !== null ) ? '（税率' . $tax_rate . '%）' : '';
-						$line         = $product_name . '：' . $price_display . '円 × ' . $quantity_display . $unit . ' = ' . number_format( $item_amount ) . '円' . $tax_rate_text;
+						$remarks_text = ( ! empty( trim( $remarks ) ) ) ? '　※ ' . $remarks : '';
+						$line         = $product_name . '：' . $price_display . '円 × ' . $quantity_display . $unit . ' = ' . number_format( $item_amount ) . '円' . $tax_rate_text . $remarks_text;
 						$item_lines[] = $line;
 						$line_length  = mb_strlen( $line, 'UTF-8' );
 						if ( $line_length > $max_length ) {
