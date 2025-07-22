@@ -228,9 +228,10 @@ jQuery(document).ready(function($) {
                                                     return num.toFixed(6).replace(/\.?0+$/, '');
                                                 }
                                                 
-                                                var unitPrice = item.unit_price ? formatDecimalDisplay(item.unit_price) + "円" : "-";
+                                                var unitPrice = item.price ? formatDecimalDisplay(item.price) + "円" : "-";
                                                 var quantity = item.quantity ? formatDecimalDisplay(item.quantity) : "-";
-                                                var totalPrice = item.total_price ? parseFloat(item.total_price).toLocaleString() + "円" : "-";
+                                                var amount = item.amount ? parseFloat(item.amount) : 0;
+                                                var totalPrice = amount > 0 ? amount.toLocaleString() + "円" : "-";
                                                 
                                                 // 税率表示（全ての税率を表示）
                                                 var taxRateDisplay = "-";
@@ -242,18 +243,18 @@ jQuery(document).ready(function($) {
                                                 
                                                 // デバッグ用ログ（開発時のみ）
                                                 if (typeof console !== 'undefined' && console.log && typeof ktpwpDebugMode !== 'undefined' && ktpwpDebugMode) {
-                                                    console.log("税率デバッグ - 商品:", item.item_name, "税率:", item.tax_rate, "数値変換:", itemTaxRate, "表示:", taxRateDisplay);
+                                                    console.log("税率デバッグ - 商品:", item.product_name, "税率:", item.tax_rate, "数値変換:", itemTaxRate, "表示:", taxRateDisplay);
                                                 }
 
-                                                if (item.total_price) {
-                                                    orderSubtotal += parseFloat(item.total_price);
+                                                if (amount > 0) {
+                                                    orderSubtotal += amount;
                                                 }
                                                 var bgColor = (index % 2 === 0) ? evenRowColor : oddRowColor;
                                                 html += "<div style=\"display: flex; padding: 6px 8px; height: 24px; background: " + bgColor + "; align-items: center; font-size: 12px;\">";
                                                 html += "<div style=\"width: 30px; text-align: center;\">" + (index + 1) + "</div>";
-                                                html += "<div style=\"flex: 1; text-align: left; margin-left: 8px;\">" + item.item_name + "</div>";
+                                                html += "<div style=\"flex: 1; text-align: left; margin-left: 8px;\">" + item.product_name + "</div>";
                                                 html += "<div style=\"width: 80px; text-align: right;\">" + unitPrice + "</div>";
-                                                html += "<div style=\"width: 60px; text-align: right;\">" + quantity + "/式</div>";
+                                                html += "<div style=\"width: 60px; text-align: right;\">" + quantity + "/" + (item.unit || "式") + "</div>";
                                                 html += "<div style=\"width: 80px; text-align: right;\">" + totalPrice + "</div>";
                                                 html += "<div style=\"width: 60px; text-align: center;\">" + taxRateDisplay + "</div>";
                                                 html += "<div style=\"width: 100px; text-align: left; margin-left: 8px;\"></div>";

@@ -3831,9 +3831,9 @@ class KTPWP_Ajax {
 			$order_tax = 0;
 			
 					// 請求項目を取得
-		$invoice_items_table = $wpdb->prefix . 'ktp_invoice_items';
+		$invoice_items_table = $wpdb->prefix . 'ktp_order_invoice_items';
 		$invoice_items = $wpdb->get_results($wpdb->prepare(
-			"SELECT * FROM `{$invoice_items_table}` WHERE order_id = %d",
+			"SELECT * FROM `{$invoice_items_table}` WHERE order_id = %d ORDER BY COALESCE(sort_order, id) ASC, id ASC",
 			$order->id
 		));
 		
@@ -3842,9 +3842,10 @@ class KTPWP_Ajax {
 		}
 			
 			foreach ($invoice_items as $item) {
-				$unit_price = floatval($item->unit_price);
+				$price = floatval($item->price);
 				$quantity = floatval($item->quantity);
-				$total_price = $unit_price * $quantity;
+				$amount = floatval($item->amount);
+				$total_price = $amount > 0 ? $amount : ($price * $quantity);
 				$order_total += $total_price;
 				
 				// 税率計算
