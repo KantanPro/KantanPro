@@ -323,6 +323,10 @@
         let totalTaxAmount = 0;
         let costTotalTaxAmount = 0;
 
+        // 税率別の集計用オブジェクト
+        let taxRateGroups = {};
+        let costTaxRateGroups = {};
+
         // 顧客の税区分を取得（デフォルトは内税）
         let taxCategory = '内税';
         
@@ -335,16 +339,22 @@
             }
         }
 
-        // 請求項目の合計と消費税を計算
+        // 請求項目の合計と消費税を計算（税率別に集計）
         $('.invoice-items-table tbody tr').each(function () {
             const $row = $(this);
             const amount = parseFloat($row.find('.amount').val()) || 0;
             const taxRate = parseFloat($row.find('.tax-rate').val()) || 10.0;
             
             invoiceTotal += amount;
+            
+            // 税率別に集計
+            if (!taxRateGroups[taxRate]) {
+                taxRateGroups[taxRate] = 0;
+            }
+            taxRateGroups[taxRate] += amount;
         });
 
-        // 内税計算は合計金額で一括計算（コンサルタントの指摘に従う）
+        // 税区分に応じて消費税を計算
         if (taxCategory === '外税') {
             // 外税表示の場合：各項目の税抜金額から税額を計算
             $('.invoice-items-table tbody tr').each(function () {
@@ -356,18 +366,29 @@
                 totalTaxAmount += taxAmount;
             });
         } else {
-            // 内税表示の場合：合計金額から税額を一括計算（小数点以下切り上げ）
-            const totalTaxRate = 10.0; // デフォルト税率
-            totalTaxAmount = Math.ceil(invoiceTotal * (totalTaxRate / 100) / (1 + totalTaxRate / 100));
+            // 内税表示の場合：税率別に税額を計算
+            Object.keys(taxRateGroups).forEach(taxRate => {
+                const groupAmount = taxRateGroups[taxRate];
+                const rate = parseFloat(taxRate);
+                // 内税計算：各税率グループごとに税額を計算（切り上げ）
+                const taxAmount = Math.ceil(groupAmount * (rate / 100) / (1 + rate / 100));
+                totalTaxAmount += taxAmount;
+            });
         }
 
-        // コスト項目の合計と消費税を計算
+        // コスト項目の合計と消費税を計算（税率別に集計）
         $('.cost-items-table tbody tr').each(function () {
             const $row = $(this);
             const amount = parseFloat($row.find('.amount').val()) || 0;
             const taxRate = parseFloat($row.find('.tax-rate').val()) || 10.0;
             
             costTotal += amount;
+            
+            // 税率別に集計
+            if (!costTaxRateGroups[taxRate]) {
+                costTaxRateGroups[taxRate] = 0;
+            }
+            costTaxRateGroups[taxRate] += amount;
             
             // コスト項目は常に内税計算（仕入先の税区分に関係なく）
             // 統一ルール：内税計算で切り上げ
@@ -403,10 +424,27 @@
                 // 外税表示の場合：3行表示
                 invoiceTotalDisplay.html('合計金額 : ' + invoiceTotalCeiled.toLocaleString() + '円');
                 
-                // 消費税表示を更新
+                // 消費税表示を更新（税率別の内訳を表示）
                 const taxDisplay = $('.invoice-items-tax');
                 if (taxDisplay.length > 0) {
-                    taxDisplay.html('消費税 : ' + totalTaxAmountCeiled.toLocaleString() + '円');
+                    let taxDetailHtml = '消費税 : ' + totalTaxAmountCeiled.toLocaleString() + '円';
+                    
+                    // 税率別の内訳を追加
+                    const taxRateDetails = [];
+                    Object.keys(taxRateGroups).sort((a, b) => parseFloat(b) - parseFloat(a)).forEach(taxRate => {
+                        const rate = parseFloat(taxRate);
+                        const groupAmount = taxRateGroups[taxRate];
+                        const taxAmount = Math.ceil(groupAmount * (rate / 100));
+                        if (groupAmount > 0) {
+                            taxRateDetails.push(`${rate}%: ${taxAmount.toLocaleString()}円`);
+                        }
+                    });
+                    
+                    if (taxRateDetails.length > 1) {
+                        taxDetailHtml += ' (' + taxRateDetails.join(', ') + ')';
+                    }
+                    
+                    taxDisplay.html(taxDetailHtml);
                 }
 
                 // 税込合計表示を更新
@@ -415,8 +453,25 @@
                     totalWithTaxDisplay.html('税込合計 : ' + totalWithTax.toLocaleString() + '円');
                 }
             } else {
-                // 内税表示の場合：1行表示
-                invoiceTotalDisplay.html('金額合計：' + invoiceTotalCeiled.toLocaleString() + '円　（内税：' + totalTaxAmountCeiled.toLocaleString() + '円）');
+                // 内税表示の場合：税率別の内訳を表示
+                let totalDisplayHtml = '金額合計：' + invoiceTotalCeiled.toLocaleString() + '円';
+                
+                // 税率別の内訳を追加
+                const taxRateDetails = [];
+                Object.keys(taxRateGroups).sort((a, b) => parseFloat(b) - parseFloat(a)).forEach(taxRate => {
+                    const rate = parseFloat(taxRate);
+                    const groupAmount = taxRateGroups[taxRate];
+                    const taxAmount = Math.ceil(groupAmount * (rate / 100) / (1 + rate / 100));
+                    if (groupAmount > 0) {
+                        taxRateDetails.push(`${rate}%: ${taxAmount.toLocaleString()}円`);
+                    }
+                });
+                
+                if (taxRateDetails.length > 0) {
+                    totalDisplayHtml += '　（内税：' + taxRateDetails.join(', ') + '）';
+                }
+                
+                invoiceTotalDisplay.html(totalDisplayHtml);
                 
                 // 消費税表示を非表示
                 const taxDisplay = $('.invoice-items-tax');
@@ -442,6 +497,17 @@
             // CSSクラスを更新
             profitDisplay.removeClass('positive negative');
             profitDisplay.addClass(profit >= 0 ? 'positive' : 'negative');
+        }
+
+        // デバッグログ（税率別の集計情報）
+        if (window.ktpDebugMode) {
+            console.log('[INVOICE] 税率別集計:', {
+                taxCategory: taxCategory,
+                invoiceTaxRateGroups: taxRateGroups,
+                costTaxRateGroups: costTaxRateGroups,
+                totalTaxAmount: totalTaxAmount,
+                totalTaxAmountCeiled: totalTaxAmountCeiled
+            });
         }
     }
 
@@ -849,6 +915,61 @@
             if (formattedValue !== value) {
                 $field.val(formattedValue);
             }
+        });
+
+        // 税率変更時のリアルタイム再計算
+        $(document).on('change', '.invoice-items-table .tax-rate-input', function () {
+            const $field = $(this);
+            
+            // disabled フィールドは処理をスキップ
+            if ($field.prop('disabled')) {
+                return;
+            }
+            
+            const value = $field.val();
+            const row = $field.closest('tr');
+            const itemId = row.find('input[name*="[id]"]').val();
+            const orderId = $('input[name="order_id"]').val() || $('#order_id').val();
+            
+            if (window.ktpDebugMode) {
+                console.log('[INVOICE] 税率変更イベント:', {
+                    value: value,
+                    rowIndex: row.index(),
+                    itemId: itemId,
+                    orderId: orderId
+                });
+            }
+            
+            // 税率を自動保存
+            if (itemId && itemId !== '0' && orderId) {
+                window.ktpInvoiceAutoSaveItem('invoice', itemId, 'tax_rate', value, orderId);
+            }
+            
+            // 合計と利益を再計算
+            updateTotalAndProfit();
+        });
+
+        // 税率入力時のリアルタイム再計算（inputイベント）
+        $(document).on('input', '.invoice-items-table .tax-rate-input', function () {
+            const $field = $(this);
+            
+            // disabled フィールドは処理をスキップ
+            if ($field.prop('disabled')) {
+                return;
+            }
+            
+            const value = $field.val();
+            const row = $field.closest('tr');
+            
+            if (window.ktpDebugMode) {
+                console.log('[INVOICE] 税率入力イベント:', {
+                    value: value,
+                    rowIndex: row.index()
+                });
+            }
+            
+            // 入力中でも合計と利益を再計算（リアルタイム表示）
+            updateTotalAndProfit();
         });
 
         // 自動追加機能を無効化（コメントアウト）

@@ -318,12 +318,15 @@
         let totalRows = $('.cost-items-table tbody tr').length;
         let costItems = [];
 
+        // 税率別の集計用オブジェクト
+        let costTaxRateGroups = {};
+
         // 請求項目の合計を計算
         $('.invoice-items-table .amount').each(function () {
             invoiceTotal += parseFloat($(this).val()) || 0;
         });
 
-        // コスト項目のデータを収集
+        // コスト項目のデータを収集（税率別に集計）
         $('.cost-items-table tbody tr').each(function () {
             const $row = $(this);
             const amount = parseFloat($row.find('.amount').val()) || 0;
@@ -348,6 +351,12 @@
             
             // 文字列の場合は数値に変換
             supplierId = parseInt(supplierId, 10) || 0;
+            
+            // 税率別に集計
+            if (!costTaxRateGroups[taxRate]) {
+                costTaxRateGroups[taxRate] = 0;
+            }
+            costTaxRateGroups[taxRate] += amount;
             
             // デバッグ情報を常に出力（一時的な修正）
             console.log('[COST] Row data collected:', {
@@ -377,9 +386,11 @@
             getSupplierTaxCategory(supplierId, function(taxCategory) {
                 if (taxCategory === '外税') {
                     hasOuttax = true;
-                    costTotalTaxAmount += amount * (taxRate / 100);
+                    // 外税計算：税抜金額から税額を計算（切り上げ）
+                    costTotalTaxAmount += Math.ceil(amount * (taxRate / 100));
                 } else {
-                    costTotalTaxAmount += amount * (taxRate / 100) / (1 + taxRate / 100);
+                    // 内税計算：各税率グループごとに税額を計算（切り上げ）
+                    costTotalTaxAmount += Math.ceil(amount * (taxRate / 100) / (1 + taxRate / 100));
                 }
                 
                 processedRows++;
@@ -405,6 +416,14 @@
             updateCostDisplay(invoiceTotal, costTotal, costTotalTaxAmount, hasOuttax);
             getClientTaxCategory(function(clientTaxCategory) {
                 updateProfitDisplayWithQualifiedInvoice(invoiceTotal, 0, 0, 0);
+            });
+        }
+
+        // デバッグログ（税率別の集計情報）
+        if (window.ktpDebugMode) {
+            console.log('[COST] 税率別集計:', {
+                costTaxRateGroups: costTaxRateGroups,
+                costTotalTaxAmount: costTotalTaxAmount
             });
         }
     }
@@ -1670,34 +1689,92 @@
         }).disableSelection();
 
         // 単価・数量変更時の金額自動計算（blurイベントでのみ実行）
-        // inputイベントでの即座の計算は削除（小数点入力時のカーソル移動問題を解決）
-        // $(document).on('input', '.cost-items-table .price, .cost-items-table .quantity', function () {
-        //     const $field = $(this);
-        //     
-        //     // disabled フィールドは処理をスキップ
-        //     if ($field.prop('disabled')) {
-        //         if (window.ktpDebugMode) {
-        //             console.log('[COST] Input event skipped: field is disabled');
-        //         }
-        //         return;
-        //     }
-        //     
-        //     const row = $field.closest('tr');
-        //     const fieldType = $field.hasClass('price') ? 'price' : 'quantity';
-        //     const value = $field.val();
-        //     
-        //     if (window.ktpDebugMode) {
-        //         console.log('[COST] Input event triggered:', {
-        //             fieldType: fieldType,
-        //             value: value,
-        //             rowIndex: row.index()
-        //         });
-        //     }
-        //     
-        //     calculateAmount(row);
+        $(document).on('blur', '.cost-items-table .price, .cost-items-table .quantity', function () {
+            const $field = $(this);
+            
+            // disabled フィールドは処理をスキップ
+            if ($field.prop('disabled')) {
+                if (window.ktpDebugMode) {
+                    console.log('[COST] Blur event skipped: field is disabled');
+                }
+                return;
+            }
+            
+            const value = $field.val();
+            const row = $field.closest('tr');
+            const fieldType = $field.hasClass('price') ? 'price' : 'quantity';
+            
+            if (window.ktpDebugMode) {
+                console.log('[COST] Blur event triggered:', {
+                    fieldType: fieldType,
+                    value: value,
+                    rowIndex: row.index()
+                });
+            }
+            
+            // 小数点以下の不要な0を削除して表示
+            const formattedValue = formatDecimalDisplay(value);
+            if (formattedValue !== value) {
+                $field.val(formattedValue);
+            }
+            
+            calculateAmount(row);
+        });
 
-        //     // 金額の自動保存は calculateAmount 内で行われる
-        // });
+        // 税率変更時のリアルタイム再計算
+        $(document).on('change', '.cost-items-table .tax-rate', function () {
+            const $field = $(this);
+            
+            // disabled フィールドは処理をスキップ
+            if ($field.prop('disabled')) {
+                return;
+            }
+            
+            const value = $field.val();
+            const row = $field.closest('tr');
+            const itemId = row.find('input[name*="[id]"]').val();
+            const orderId = $('input[name="order_id"]').val() || $('#order_id').val();
+            
+            if (window.ktpDebugMode) {
+                console.log('[COST] 税率変更イベント:', {
+                    value: value,
+                    rowIndex: row.index(),
+                    itemId: itemId,
+                    orderId: orderId
+                });
+            }
+            
+            // 税率を自動保存
+            if (itemId && itemId !== '0' && orderId) {
+                autoSaveItem('cost', itemId, 'tax_rate', value, orderId);
+            }
+            
+            // 利益計算を更新
+            updateProfitDisplay();
+        });
+
+        // 税率入力時のリアルタイム再計算（inputイベント）
+        $(document).on('input', '.cost-items-table .tax-rate', function () {
+            const $field = $(this);
+            
+            // disabled フィールドは処理をスキップ
+            if ($field.prop('disabled')) {
+                return;
+            }
+            
+            const value = $field.val();
+            const row = $field.closest('tr');
+            
+            if (window.ktpDebugMode) {
+                console.log('[COST] 税率入力イベント:', {
+                    value: value,
+                    rowIndex: row.index()
+                });
+            }
+            
+            // 入力中でも利益計算を更新（リアルタイム表示）
+            updateProfitDisplay();
+        });
 
         // 自動追加機能を無効化（コメントアウト）
         // $(document).on('input change', '.cost-items-table .service-name, .cost-items-table .price, .cost-items-table .quantity', function() {
