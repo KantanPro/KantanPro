@@ -1460,7 +1460,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 			// JavaScript
 			$print = <<<END
         <script>
-            var isPreviewOpen = false;
+            // var isPreviewOpen = false; // プレビュー機能は廃止
             
             function printContent() {
                 var printContent = $supplier_preview_html;
@@ -1473,37 +1473,35 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
                 printWindow.document.close();
                 printWindow.print();
 
-                // 印刷後、プレビューが開いていれば閉じる
-                if (isPreviewOpen) {
-                    togglePreview();
-                }
+                // プレビュー機能は廃止
+                // if (isPreviewOpen) {
+                //     togglePreview();
+                // }
             }
 
-            function togglePreview() {
-                var previewWindow = document.getElementById('previewWindow');
-                var previewButton = document.getElementById('previewButton');
-                if (isPreviewOpen) {
-                    previewWindow.style.display = 'none';
-                    previewButton.innerHTML = '<span class="material-symbols-outlined" aria-label="プレビュー">preview</span>';
-                    isPreviewOpen = false;
-                } else {
-                    var printContent = $supplier_preview_html;
-                    previewWindow.innerHTML = printContent;
-                    previewWindow.style.display = 'block';
-                    previewButton.innerHTML = '<span class="material-symbols-outlined" aria-label="閉じる">close</span>';
-                    isPreviewOpen = true;
-                }
-            }
+            // プレビュー機能（廃止）
+            // function togglePreview() {
+            //     var previewWindow = document.getElementById('previewWindow');
+            //     var previewButton = document.getElementById('previewButton');
+            //     if (isPreviewOpen) {
+            //         previewWindow.style.display = 'none';
+            //         previewButton.innerHTML = '<span class="material-symbols-outlined" aria-label="プレビュー">preview</span>';
+            //         isPreviewOpen = false;
+            //     } else {
+            //         var printContent = $supplier_preview_html;
+            //         previewWindow.innerHTML = printContent;
+            //         previewWindow.style.display = 'block';
+            //         previewButton.innerHTML = '<span class="material-symbols-outlined" aria-label="閉じる">close</span>';
+            //         isPreviewOpen = true;
+            //     }
+            // }
         </script>
+        <!-- コントローラー/プレビューアイコン（プレビューは廃止） -->
         <div class="controller">
-                <button id="previewButton" onclick="togglePreview()" title="プレビュー" style="padding: 6px 10px; font-size: 12px;">
-                    <span class="material-symbols-outlined" aria-label="プレビュー">preview</span>
-                </button>
                 <button onclick="printContent()" title="印刷する" style="padding: 6px 10px; font-size: 12px;">
                     <span class="material-symbols-outlined" aria-label="印刷">print</span>
                 </button>
         </div>
-        <div id="previewWindow" style="display: none;"></div>
         END;
 
 			// コンテンツを返す - 協力会社職能BOXを協力会社リストBOXの内部に配置

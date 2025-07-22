@@ -1184,12 +1184,9 @@ if ( ! class_exists( 'Kntan_Client_Class' ) ) {
 
 			$controller_html .= '</div>'; // 左側のボタン群終了
 
-			// 右側：プレビューボタン、印刷ボタン
+			// 右側：印刷ボタン（プレビューは廃止）
 			$controller_html .= '<div style="display: flex; gap: 5px;">';
-			$controller_html .= '<button id="previewButton" onclick="togglePreview()" title="プレビュー" style="padding: 8px 12px; font-size: 12px; background: #fff; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; transition: all 0.2s ease;">'
-            . '<span class="material-symbols-outlined" aria-label="プレビュー" style="font-size: 18px; color: #333;">preview</span>'
-            . '</button>'
-            . '<button onclick="printContent()" title="印刷する" style="padding: 8px 12px; font-size: 12px; background: #fff; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; transition: all 0.2s ease;">'
+			$controller_html .= '<button onclick="printContent()" title="印刷する" style="padding: 8px 12px; font-size: 12px; background: #fff; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; transition: all 0.2s ease;">'
             . '<span class="material-symbols-outlined" aria-label="印刷" style="font-size: 18px; color: #333;">print</span>'
             . '</button>';
 
@@ -1967,7 +1964,7 @@ if ( ! class_exists( 'Kntan_Client_Class' ) ) {
 			// Simplified JavaScript - matching Update_Table approach
 			$print = <<<END
         <script>
-            var isPreviewOpen = false;
+            // var isPreviewOpen = false; // プレビュー機能は廃止
 
             function printContent() {
                 var printContent = $customer_preview_html;
@@ -2015,47 +2012,49 @@ if ( ! class_exists( 'Kntan_Client_Class' ) ) {
                 
                 console.log('[顧客印刷] 印刷ウィンドウを作成しました。印刷ダイアログが自動表示されます。');
 
-                if (isPreviewOpen) {
-                    togglePreview();
-                }
+                // プレビュー機能は廃止
+                // if (isPreviewOpen) {
+                //     togglePreview();
+                // }
             }
 
-            function togglePreview() {
-                var previewWindow = document.getElementById('previewWindow');
-                var previewButton = document.getElementById('previewButton');
+            // プレビュー機能（廃止）
+            // function togglePreview() {
+            //     var previewWindow = document.getElementById('previewWindow');
+            //     var previewButton = document.getElementById('previewButton');
 
-                if (isPreviewOpen) {
-                    previewWindow.style.display = 'none';
-                    previewButton.innerHTML = '<span class="material-symbols-outlined" aria-label="プレビュー" style="font-size: 18px; color: #333;">preview</span>';
-                    previewButton.style.background = '#fff';
-                    previewButton.style.borderColor = '#ddd';
-                    isPreviewOpen = false;
-                } else {
-                    var printContent = $customer_preview_html;
+            //     if (isPreviewOpen) {
+            //         previewWindow.style.display = 'none';
+            //         previewButton.innerHTML = '<span class="material-symbols-outlined" aria-label="プレビュー" style="font-size: 18px; color: #333;">preview</span>';
+            //         previewButton.style.background = '#fff';
+            //         previewButton.style.borderColor = '#ddd';
+            //         isPreviewOpen = false;
+            //     } else {
+            //         var printContent = $customer_preview_html;
 
-                    if (!previewWindow) {
-                        previewWindow = document.createElement('div');
-                        previewWindow.id = 'previewWindow';
-                        previewWindow.style.cssText = 'display:none;position:relative;z-index:100;background:#fff;padding:25px;border:2px solid #ddd;border-radius:8px;margin:15px 0;box-shadow:0 4px 12px rgba(0,0,0,0.1);';
+            //         if (!previewWindow) {
+            //             previewWindow = document.createElement('div');
+            //             previewWindow.id = 'previewWindow';
+            //             previewWindow.style.cssText = 'display:none;position:relative;z-index:100;background:#fff;padding:25px;border:2px solid #ddd;border-radius:8px;margin:15px 0;box-shadow:0 4px 12px rgba(0,0,0,0.1);';
 
-                        var controllerDiv = document.querySelector('.controller');
-                        if (controllerDiv) {
-                            controllerDiv.parentNode.insertBefore(previewWindow, controllerDiv.nextSibling);
-                        } else {
-                            document.querySelector('.box').appendChild(previewWindow);
-                        }
-                    }
+            //             var controllerDiv = document.querySelector('.controller');
+            //             if (controllerDiv) {
+            //                 controllerDiv.parentNode.insertBefore(previewWindow, controllerDiv.nextSibling);
+            //         } else {
+            //                 document.querySelector('.box').appendChild(previewWindow);
+            //             }
+            //         }
 
-                    // プレビューウィンドウに閉じるボタンを追加
-                    var closeButton = '<div style="text-align: right; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #eee;"><button type="button" onclick="togglePreview()" style="background: none; border: none; font-size: 28px; cursor: pointer; color: #333; padding: 5px; line-height: 1; font-weight: bold;">×</button></div>';
-                    previewWindow.innerHTML = closeButton + printContent;
-                    previewWindow.style.display = 'block';
-                    previewButton.innerHTML = '<span class="material-symbols-outlined" aria-label="閉じる" style="font-size: 18px; color: #d32f2f;">close</span>';
-                    previewButton.style.background = '#ffebee';
-                    previewButton.style.borderColor = '#d32f2f';
-                    isPreviewOpen = true;
-                }
-            }
+            //         // プレビューウィンドウに閉じるボタンを追加
+            //         var closeButton = '<div style="text-align: right; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #eee;"><button type="button" onclick="togglePreview()" style="background: none; border: none; font-size: 28px; cursor: pointer; color: #333; padding: 5px; line-height: 1; font-weight: bold;">×</button></div>';
+            //         previewWindow.innerHTML = closeButton + printContent;
+            //         previewWindow.style.display = 'block';
+            //         previewButton.innerHTML = '<span class="material-symbols-outlined" aria-label="閉じる" style="font-size: 18px; color: #d32f2f;">close</span>';
+            //         previewButton.style.background = '#ffebee';
+            //         previewButton.style.borderColor = '#d32f2f';
+            //         isPreviewOpen = true;
+            //     }
+            // }
         </script>
         END;
 
