@@ -3797,12 +3797,11 @@ class KTPWP_Ajax {
 			$client_id
 		));
 		
-		// 適格請求書番号を取得
+		// 適格請求書番号を取得（一般設定から）
 		$qualified_invoice_number = '';
-		$supplier_table = $wpdb->prefix . 'ktp_supplier';
-		$supplier_data = $wpdb->get_row("SELECT qualified_invoice_number FROM `{$supplier_table}` WHERE id = 1");
-		if ($supplier_data && !empty($supplier_data->qualified_invoice_number)) {
-			$qualified_invoice_number = $supplier_data->qualified_invoice_number;
+		$general_settings = get_option('ktp_general_settings', array());
+		if (isset($general_settings['qualified_invoice_number']) && !empty($general_settings['qualified_invoice_number'])) {
+			$qualified_invoice_number = $general_settings['qualified_invoice_number'];
 		}
 		
 		// 顧客の税区分を取得
