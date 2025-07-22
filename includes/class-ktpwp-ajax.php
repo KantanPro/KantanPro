@@ -3723,6 +3723,8 @@ class KTPWP_Ajax {
 			$client_id
 		));
 		
+
+		
 		if (empty($orders)) {
 			wp_send_json_error('請求対象の受注書が見つかりません。');
 			return;
@@ -3757,7 +3759,6 @@ class KTPWP_Ajax {
 			$order->id
 		));
 		
-		// デバッグ用：請求項目が取得できない場合のログ
 		if ($wpdb->last_error) {
 			error_log("KTPWP Invoice AJAX: 請求項目取得エラー - " . $wpdb->last_error);
 		}
@@ -3778,6 +3779,8 @@ class KTPWP_Ajax {
 			$order->total_amount = $order_total;
 			$order->tax_amount = $order_tax;
 			$order->invoice_items = $invoice_items;
+			
+
 			
 			$monthly_groups[$key]['orders'][] = $order;
 			$monthly_groups[$key]['subtotal'] += $order_total;

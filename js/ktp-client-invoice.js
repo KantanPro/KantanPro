@@ -165,8 +165,8 @@ jQuery(document).ready(function($) {
                                         var monthlyTotal = 0;
                                         group.orders.forEach(function(order) {
                                             var orderSubtotal = 0;
-                                            if (order.items && order.items.length > 0) {
-                                                order.items.forEach(function(item) {
+                                            if (order.invoice_items && order.invoice_items.length > 0) {
+                                                order.invoice_items.forEach(function(item) {
                                                     if (item.total_price) {
                                                         orderSubtotal += parseFloat(item.total_price);
                                                     }
@@ -234,7 +234,7 @@ jQuery(document).ready(function($) {
                                         html += "ID: " + order.id + " - " + order.project_name + "（完了日：" + order.completion_date + "）";
                                         html += "</div>";
 
-                                        if (order.items && order.items.length > 0) {
+                                        if (order.invoice_items && order.invoice_items.length > 0) {
                                             html += "<div style=\"margin-top:10px;width:100%;\">";
                                             html += "<div style=\"display: flex; background: #f0f0f0; padding: 8px; font-weight: bold; border-bottom: 1px solid #ccc; align-items: center; font-size: 12px;\">";
                                             html += "<div style=\"width: 30px; text-align: center;\">No.</div>";
@@ -249,7 +249,7 @@ jQuery(document).ready(function($) {
                                             var oddRowColor = window.ktp_design_settings.odd_row_color || "#E7EEFD";
                                             var evenRowColor = window.ktp_design_settings.even_row_color || "#FFFFFF";
 
-                                            order.items.forEach(function(item, index) {
+                                            order.invoice_items.forEach(function(item, index) {
                                                 // 小数点以下の不要な0を削除する関数
                                                 function formatDecimalDisplay(value) {
                                                     if (value === '' || value === null || value === undefined) {
