@@ -1186,11 +1186,11 @@ if ( ! class_exists( 'Kntan_Client_Class' ) ) {
 
 			// 右側：プレビューボタン、印刷ボタン
 			$controller_html .= '<div style="display: flex; gap: 5px;">';
-			$controller_html .= '<button id="previewButton" onclick="togglePreview()" title="プレビュー" style="padding: 6px 10px; font-size: 12px;">'
-            . '<span class="material-symbols-outlined" aria-label="プレビュー" style="font-size: 16px;">preview</span>'
+			$controller_html .= '<button id="previewButton" onclick="togglePreview()" title="プレビュー" style="padding: 8px 12px; font-size: 12px; background: #fff; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; transition: all 0.2s ease;">'
+            . '<span class="material-symbols-outlined" aria-label="プレビュー" style="font-size: 18px; color: #333;">preview</span>'
             . '</button>'
-            . '<button onclick="printContent()" title="印刷する" style="padding: 6px 10px; font-size: 12px;">'
-            . '<span class="material-symbols-outlined" aria-label="印刷" style="font-size: 16px;">print</span>'
+            . '<button onclick="printContent()" title="印刷する" style="padding: 8px 12px; font-size: 12px; background: #fff; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; transition: all 0.2s ease;">'
+            . '<span class="material-symbols-outlined" aria-label="印刷" style="font-size: 18px; color: #333;">print</span>'
             . '</button>';
 
 			$controller_html .= '</div>'; // 右側のボタン群終了
@@ -2026,7 +2026,9 @@ if ( ! class_exists( 'Kntan_Client_Class' ) ) {
 
                 if (isPreviewOpen) {
                     previewWindow.style.display = 'none';
-                    previewButton.innerHTML = '<span class="material-symbols-outlined" aria-label="プレビュー">preview</span>';
+                    previewButton.innerHTML = '<span class="material-symbols-outlined" aria-label="プレビュー" style="font-size: 18px; color: #333;">preview</span>';
+                    previewButton.style.background = '#fff';
+                    previewButton.style.borderColor = '#ddd';
                     isPreviewOpen = false;
                 } else {
                     var printContent = $customer_preview_html;
@@ -2034,7 +2036,7 @@ if ( ! class_exists( 'Kntan_Client_Class' ) ) {
                     if (!previewWindow) {
                         previewWindow = document.createElement('div');
                         previewWindow.id = 'previewWindow';
-                        previewWindow.style.cssText = 'display:none;position:relative;z-index:100;background:#fff;padding:20px;border:1px solid #ccc;margin:10px 0;';
+                        previewWindow.style.cssText = 'display:none;position:relative;z-index:100;background:#fff;padding:25px;border:2px solid #ddd;border-radius:8px;margin:15px 0;box-shadow:0 4px 12px rgba(0,0,0,0.1);';
 
                         var controllerDiv = document.querySelector('.controller');
                         if (controllerDiv) {
@@ -2044,9 +2046,13 @@ if ( ! class_exists( 'Kntan_Client_Class' ) ) {
                         }
                     }
 
-                    previewWindow.innerHTML = printContent;
+                    // プレビューウィンドウに閉じるボタンを追加
+                    var closeButton = '<div style="text-align: right; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #eee;"><button type="button" onclick="togglePreview()" style="background: none; border: none; font-size: 28px; cursor: pointer; color: #333; padding: 5px; line-height: 1; font-weight: bold;">×</button></div>';
+                    previewWindow.innerHTML = closeButton + printContent;
                     previewWindow.style.display = 'block';
-                    previewButton.innerHTML = '<span class="material-symbols-outlined" aria-label="閉じる">close</span>';
+                    previewButton.innerHTML = '<span class="material-symbols-outlined" aria-label="閉じる" style="font-size: 18px; color: #d32f2f;">close</span>';
+                    previewButton.style.background = '#ffebee';
+                    previewButton.style.borderColor = '#d32f2f';
                     isPreviewOpen = true;
                 }
             }
