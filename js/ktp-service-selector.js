@@ -412,6 +412,7 @@
                                         data-service-name="${escapeHtml(serviceName)}"
                                         data-price="${price}"
                                         data-unit="${escapeHtml(unit)}"
+                                        data-tax-rate="${taxRate !== null ? taxRate : ''}"
                                         data-mode="add"
                                         style="
                                             background: #28a745; 
@@ -436,6 +437,7 @@
                                         data-service-name="${escapeHtml(serviceName)}"
                                         data-price="${price}"
                                         data-unit="${escapeHtml(unit)}"
+                                        data-tax-rate="${taxRate !== null ? taxRate : ''}"
                                         data-mode="update"
                                         style="
                                             background: #007bff; 
@@ -494,7 +496,7 @@
                     const services = typeof window.ktpServiceSelectorLastServices === 'object' ? window.ktpServiceSelectorLastServices : [];
                     const found = services.find(s => String(s.id) === String(serviceId));
                     
-                    console.log('[SERVICE SELECTOR] サービス追加ボタン押下:', {
+                                            console.log('[SERVICE SELECTOR] サービス追加ボタン押下:', {
                         serviceId: serviceId,
                         services: services,
                         found: found,
@@ -502,7 +504,8 @@
                         buttonData: {
                             serviceName: $(this).data('service-name'),
                             price: $(this).data('price'),
-                            unit: $(this).data('unit')
+                            unit: $(this).data('unit'),
+                            taxRate: $(this).data('tax-rate')
                         }
                     });
                     
@@ -511,7 +514,7 @@
                         service_name: found && found.service_name ? found.service_name : $(this).data('service-name') || '',
                         price: $(this).data('price'),
                         unit: $(this).data('unit'),
-                        tax_rate: found && found.tax_rate !== undefined ? found.tax_rate : 10.0,
+                        tax_rate: found && found.tax_rate !== undefined && found.tax_rate !== null ? found.tax_rate : ($(this).data('tax-rate') !== '' ? parseFloat($(this).data('tax-rate')) : null),
                         remarks: found && found.remarks ? found.remarks : ''
                     };
                     
@@ -533,7 +536,13 @@
                         serviceId: serviceId,
                         services: services,
                         found: found,
-                        foundServiceName: found ? found.service_name : 'NOT_FOUND'
+                        foundServiceName: found ? found.service_name : 'NOT_FOUND',
+                        buttonData: {
+                            serviceName: $(this).data('service-name'),
+                            price: $(this).data('price'),
+                            unit: $(this).data('unit'),
+                            taxRate: $(this).data('tax-rate')
+                        }
                     });
                     
                     const serviceData = {
@@ -541,7 +550,7 @@
                         service_name: found && found.service_name ? found.service_name : $(this).data('service-name') || '',
                         price: $(this).data('price'),
                         unit: $(this).data('unit'),
-                        tax_rate: found && found.tax_rate !== undefined ? found.tax_rate : 10.0,
+                        tax_rate: found && found.tax_rate !== undefined && found.tax_rate !== null ? found.tax_rate : ($(this).data('tax-rate') !== '' ? parseFloat($(this).data('tax-rate')) : null),
                         remarks: found && found.remarks ? found.remarks : ''
                     };
                     

@@ -1378,7 +1378,7 @@ class KTPWP_Ajax {
 					'price'        => $service->price,
 					'unit'         => $service->unit,
 					'category'     => $service->category,
-					'tax_rate'     => isset($service->tax_rate) ? $service->tax_rate : 10.0,
+					'tax_rate'     => (isset($service->tax_rate) && $service->tax_rate !== null) ? $service->tax_rate : null,
 					'remarks'      => isset($service->remarks) ? $service->remarks : '',
 					// 必要に応じて他のフィールドも追加
 				);
