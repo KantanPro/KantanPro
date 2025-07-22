@@ -427,7 +427,12 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 					$amount = isset( $item['amount'] ) ? floatval( $item['amount'] ) : $price * $quantity; // Recalculate if not provided
 					$remarks = isset( $item['remarks'] ) ? sanitize_text_field( $item['remarks'] ) : '';
 					$is_provisional = isset( $item['is_provisional'] ) ? rest_sanitize_boolean( $item['is_provisional'] ) : 0;
-					$tax_rate = isset( $item['tax_rate'] ) ? floatval( $item['tax_rate'] ) : 10.00;
+					// 税率の処理（空文字、null、0の場合はNULLとして扱う）
+					$tax_rate_raw = isset( $item['tax_rate'] ) ? $item['tax_rate'] : null;
+					$tax_rate = null;
+					if ( $tax_rate_raw !== null && $tax_rate_raw !== '' && $tax_rate_raw !== '0' && is_numeric( $tax_rate_raw ) ) {
+						$tax_rate = floatval( $tax_rate_raw );
+					}
 
 					if ( $item_id > 0 ) {
 						// This is an existing item. Add its ID to existing_submitted_ids
@@ -463,7 +468,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 						'%f', // quantity
 						'%s', // unit
 						'%f', // amount
-						'%f', // tax_rate
+						( $tax_rate !== null ? '%f' : null ), // tax_rate
 						'%s', // remarks
 						'%d', // is_provisional
 						'%d', // sort_order
@@ -582,7 +587,12 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 					$quantity = isset( $item['quantity'] ) ? floatval( $item['quantity'] ) : 0;
 					$unit = isset( $item['unit'] ) ? sanitize_text_field( $item['unit'] ) : '';
 					$amount = isset( $item['amount'] ) ? floatval( $item['amount'] ) : $price * $quantity;
-					$tax_rate = isset( $item['tax_rate'] ) ? floatval( $item['tax_rate'] ) : 10.00; // 税率対応
+					// 税率の処理（空文字、null、0の場合はNULLとして扱う）
+					$tax_rate_raw = isset( $item['tax_rate'] ) ? $item['tax_rate'] : null;
+					$tax_rate = null;
+					if ( $tax_rate_raw !== null && $tax_rate_raw !== '' && $tax_rate_raw !== '0' && is_numeric( $tax_rate_raw ) ) {
+						$tax_rate = floatval( $tax_rate_raw );
+					}
 					$remarks = isset( $item['remarks'] ) ? sanitize_textarea_field( $item['remarks'] ) : '';
 					// 備考欄が「0」の場合は空文字列として扱う
 					if ( $remarks === '0' ) {
@@ -608,7 +618,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 						'purchase' => $purchase,
 						'updated_at' => current_time( 'mysql' ),
 					);
-					$format = array( '%d', '%s', '%f', '%s', '%f', '%f', '%f', '%s', '%s', '%s' );
+					$format = array( '%d', '%s', '%f', '%s', '%f', '%f', ( $tax_rate !== null ? '%f' : null ), '%s', '%s', '%s' );
 
 					// supplier_idカラムが存在する場合のみ追加
 					$columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$table_name}` LIKE 'supplier_id'", 0 );
@@ -735,6 +745,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 				'unit' => '式',
 				'quantity' => 1,
 				'amount' => 0,
+				'tax_rate' => null, // デフォルトは税率なし
 				'remarks' => '',
 				'sort_order' => 1,
 				'created_at' => current_time( 'mysql' ),
@@ -744,7 +755,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 			$result = $wpdb->insert(
                 $table_name,
                 $data,
-                array( '%d', '%s', '%d', '%s', '%d', '%d', '%s', '%d', '%s', '%s' )
+                array( '%d', '%s', '%f', '%s', '%f', '%f', null, '%s', '%d', '%s', '%s' )
 			);
 
 			if ( $result === false ) {
@@ -777,7 +788,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 				'unit' => '式',
 				'quantity' => 1,
 				'amount' => 0,
-				'tax_rate' => 10.00, // 税率対応
+				'tax_rate' => null, // デフォルトは税率なし
 				'remarks' => '',
 				'sort_order' => 1,
 				'created_at' => current_time( 'mysql' ),
@@ -787,7 +798,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 			$result = $wpdb->insert(
                 $table_name,
                 $data,
-                array( '%d', '%s', '%f', '%s', '%f', '%f', '%f', '%s', '%d', '%s', '%s' )
+                array( '%d', '%s', '%f', '%s', '%f', '%f', null, '%s', '%d', '%s', '%s' )
 			);
 
 			if ( $result === false ) {
@@ -904,7 +915,10 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 					$value_changed = abs( (float) $current_value - (float) $field_value ) > 0.001; // 小数点の誤差を考慮
 					break;
 				case 'tax_rate':
-					$value_changed = (float) $current_value !== (float) $field_value;
+					// 税率の比較（NULL値と空文字を適切に処理）
+					$current_tax_rate = ( $current_value === null || $current_value === '' ) ? null : (float) $current_value;
+					$new_tax_rate = ( $field_value === null || $field_value === '' || $field_value === '0' ) ? null : (float) $field_value;
+					$value_changed = $current_tax_rate !== $new_tax_rate;
 					break;
 				case 'sort_order':
 				case 'supplier_id':
@@ -948,8 +962,14 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 					$format[] = '%f';
 					break;
 				case 'tax_rate':
+					// 税率の処理（空文字、null、0の場合はNULLとして扱う）
+					if ( $field_value === null || $field_value === '' || $field_value === '0' ) {
+						$update_data['tax_rate'] = null;
+						$format[] = null; // NULL値の場合はフォーマットもnull
+					} else {
 					$update_data['tax_rate'] = floatval( $field_value );
 					$format[] = '%f';
+					}
 					break;
 				case 'remarks':
 					$remarks_value = sanitize_textarea_field( $field_value );
@@ -1118,7 +1138,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 				'quantity' => 1,
 				'unit' => '式',
 				'amount' => 0,
-				'tax_rate' => 10.00,
+				'tax_rate' => null, // デフォルトは税率なし
 				'remarks' => '',
 				'sort_order' => $new_sort_order,
 				'created_at' => current_time( 'mysql' ),
@@ -1141,7 +1161,12 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 						$data['quantity'] = floatval( $initial_field_value );
 						break;
 					case 'tax_rate':
+						// 税率の処理（空文字、null、0の場合はNULLとして扱う）
+						if ( $initial_field_value === null || $initial_field_value === '' || $initial_field_value === '0' ) {
+							$data['tax_rate'] = null;
+						} else {
 						$data['tax_rate'] = floatval( $initial_field_value );
+						}
 						break;
 					case 'remarks':
 						$data['remarks'] = sanitize_textarea_field( $initial_field_value );

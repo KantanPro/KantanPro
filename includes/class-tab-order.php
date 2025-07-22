@@ -562,80 +562,93 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 								}
 
 								if ( ! empty( $invoice_items_from_db ) ) {
-																	// 実際の請求項目データがある場合
-								$invoice_list = "\n";
-								$max_length = 0;
-								$item_lines = array();
-								
+									// 実際の請求項目データがある場合
+									$invoice_list = "\n";
+									$max_length = 0;
+									$item_lines = array();
+
 								// 税率別の集計用配列
 								$tax_rate_groups = array();
 
-								foreach ( $invoice_items_from_db as $item ) {
-									$product_name = isset( $item['product_name'] ) ? sanitize_text_field( $item['product_name'] ) : '';
-									$item_amount = isset( $item['amount'] ) ? floatval( $item['amount'] ) : 0;
-									$price = isset( $item['price'] ) ? floatval( $item['price'] ) : 0;
-									$quantity = isset( $item['quantity'] ) ? floatval( $item['quantity'] ) : 0;
-									$unit = isset( $item['unit'] ) ? sanitize_text_field( $item['unit'] ) : '';
-									$tax_rate = isset( $item['tax_rate'] ) ? floatval( $item['tax_rate'] ) : 10.0;
-									$amount += $item_amount;
+									foreach ( $invoice_items_from_db as $item ) {
+										$product_name = isset( $item['product_name'] ) ? sanitize_text_field( $item['product_name'] ) : '';
+										$item_amount = isset( $item['amount'] ) ? floatval( $item['amount'] ) : 0;
+										$price = isset( $item['price'] ) ? floatval( $item['price'] ) : 0;
+										$quantity = isset( $item['quantity'] ) ? floatval( $item['quantity'] ) : 0;
+										$unit = isset( $item['unit'] ) ? sanitize_text_field( $item['unit'] ) : '';
+									$tax_rate_raw = isset( $item['tax_rate'] ) ? $item['tax_rate'] : null;
+										$amount += $item_amount;
 
-									// 税率別の集計
-									$tax_rate_key = number_format( $tax_rate, 1 );
+									// 税率の処理（NULL、空文字、NaNの場合は非課税として扱う）
+									$tax_rate = null;
+									if ( $tax_rate_raw !== null && $tax_rate_raw !== '' && is_numeric( $tax_rate_raw ) ) {
+										$tax_rate = floatval( $tax_rate_raw );
+									}
+
+									// 税率別の集計（非課税の場合は'non_taxable'として扱う）
+									$tax_rate_key = $tax_rate !== null ? number_format( $tax_rate, 1 ) : 'non_taxable';
 									if ( ! isset( $tax_rate_groups[ $tax_rate_key ] ) ) {
 										$tax_rate_groups[ $tax_rate_key ] = 0;
 									}
 									$tax_rate_groups[ $tax_rate_key ] += $item_amount;
 
-									// 消費税計算（税区分に応じて）
-									if ( $tax_category === '外税' ) {
-										// 外税表示の場合：税抜金額から税額を計算
-										$tax_amount = ceil( $item_amount * ( $tax_rate / 100 ) );
-										$total_tax_amount += $tax_amount;
+										// 消費税計算（税区分に応じて）
+										if ( $tax_category === '外税' ) {
+											// 外税表示の場合：税抜金額から税額を計算
+										if ( $tax_rate !== null ) {
+											$tax_amount = ceil( $item_amount * ( $tax_rate / 100 ) );
+											$total_tax_amount += $tax_amount;
+										}
 									}
 									// 内税の場合は後で税率別に計算
 
-									// サービスが空でない項目のみリストに追加
-									if ( ! empty( trim( $product_name ) ) ) {
-										// 詳細形式：サービス：単価 × 数量/単位 = 金額円（税率X%）
-										$line = $product_name . '：' . number_format( $price ) . '円 × ' . $quantity . $unit . ' = ' . number_format( $item_amount ) . '円（税率' . $tax_rate . '%）';
-										$item_lines[] = $line;
-										// 最大文字数を計算（日本語文字も考慮）
-										$line_length = mb_strlen( $line, 'UTF-8' );
-										if ( $line_length > $max_length ) {
-											$max_length = $line_length;
+										// サービスが空でない項目のみリストに追加
+										if ( ! empty( trim( $product_name ) ) ) {
+											// 詳細形式：サービス：単価 × 数量/単位 = 金額円（税率X%）
+											$line = $product_name . '：' . number_format( $price ) . '円 × ' . $quantity . $unit . ' = ' . number_format( $item_amount ) . '円（税率' . $tax_rate . '%）';
+											$item_lines[] = $line;
+											// 最大文字数を計算（日本語文字も考慮）
+											$line_length = mb_strlen( $line, 'UTF-8' );
+											if ( $line_length > $max_length ) {
+												$max_length = $line_length;
+											}
 										}
 									}
-								}
 
-								// 項目を出力
-								foreach ( $item_lines as $line ) {
-									$invoice_list .= $line . "\n";
-								}
+									// 項目を出力
+									foreach ( $item_lines as $line ) {
+										$invoice_list .= $line . "\n";
+									}
 
 								// 内税の場合は税率別に計算
-								if ( $tax_category !== '外税' ) {
+									if ( $tax_category !== '外税' ) {
 									$total_tax_amount = 0;
 									$tax_rate_details = array();
 									
 									foreach ( $tax_rate_groups as $tax_rate => $group_amount ) {
-										$tax_rate_value = floatval( $tax_rate );
-										$tax_amount = ceil( $group_amount * ( $tax_rate_value / 100 ) / ( 1 + $tax_rate_value / 100 ) );
-										$total_tax_amount += $tax_amount;
-										$tax_rate_details[] = $tax_rate . '%: ' . number_format( $tax_amount ) . '円';
+										if ( $tax_rate === 'non_taxable' ) {
+											// 非課税の場合は税額を0とする
+											$tax_rate_details[] = '非課税: 0円';
+										} else {
+											$tax_rate_value = floatval( $tax_rate );
+											$tax_amount = ceil( $group_amount * ( $tax_rate_value / 100 ) / ( 1 + $tax_rate_value / 100 ) );
+											$total_tax_amount += $tax_amount;
+											$tax_rate_details[] = $tax_rate . '%: ' . number_format( $tax_amount ) . '円';
+										}
 									}
-								}
-								
-								// 合計金額を切り上げ
-								$amount_ceiled = ceil( $amount );
-								$total_tax_amount_ceiled = ceil( $total_tax_amount );
-								$total_with_tax = $amount_ceiled + $total_tax_amount_ceiled;
+									}
+									
+									// 合計金額を切り上げ
+									$amount_ceiled = ceil( $amount );
+									$total_tax_amount_ceiled = ceil( $total_tax_amount );
+									$total_with_tax = $amount_ceiled + $total_tax_amount_ceiled;
 
-								// 税区分に応じた合計行の表示
-								if ( $tax_category === '外税' ) {
-									$total_line = '外税合計：' . number_format( $amount_ceiled ) . '円';
-									$tax_line = '消費税：' . number_format( $total_tax_amount_ceiled ) . '円';
-									$total_with_tax_line = '内税合計：' . number_format( $total_with_tax ) . '円';
-								} else {
+									// 税区分に応じた合計行の表示
+									if ( $tax_category === '外税' ) {
+										$total_line = '外税合計：' . number_format( $amount_ceiled ) . '円';
+										$tax_line = '消費税：' . number_format( $total_tax_amount_ceiled ) . '円';
+										$total_with_tax_line = '内税合計：' . number_format( $total_with_tax ) . '円';
+									} else {
 									// 内税の場合は税率別の内訳を表示
 									if ( count( $tax_rate_groups ) > 1 ) {
 										$tax_detail_text = '（内税：' . implode( ', ', $tax_rate_details ) . '）';
@@ -643,9 +656,9 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 										$tax_detail_text = '（内税：' . number_format( $total_tax_amount_ceiled ) . '円）';
 									}
 									$total_line = '金額合計：' . number_format( $amount_ceiled ) . '円' . $tax_detail_text;
-									$tax_line = ''; // 内税の場合は消費税行を非表示
-									$total_with_tax_line = ''; // 内税の場合は税込合計行を非表示
-								}
+										$tax_line = ''; // 内税の場合は消費税行を非表示
+										$total_with_tax_line = ''; // 内税の場合は税込合計行を非表示
+									}
 									
 									$total_length = mb_strlen( $total_line, 'UTF-8' );
 									$tax_length = mb_strlen( $tax_line, 'UTF-8' );
@@ -667,26 +680,26 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 										$invoice_list .= $tax_line . "\n";
 										$invoice_list .= $total_with_tax_line;
 									}
-																	} else {
-										// 請求項目データがない場合はJSONデータ（旧形式）を試す
-										$invoice_items_json = $order->invoice_items ? sanitize_textarea_field( $order->invoice_items ) : '';
-										if ( $invoice_items_json ) {
-											$items = @json_decode( $invoice_items_json, true );
-											if ( is_array( $items ) ) {
-												$invoice_list = "\n";
-												$total_tax_amount = 0;
+								} else {
+									// 請求項目データがない場合はJSONデータ（旧形式）を試す
+									$invoice_items_json = $order->invoice_items ? sanitize_textarea_field( $order->invoice_items ) : '';
+									if ( $invoice_items_json ) {
+										$items = @json_decode( $invoice_items_json, true );
+										if ( is_array( $items ) ) {
+											$invoice_list = "\n";
+											$total_tax_amount = 0;
 												
 												// 税率別の集計用配列
 												$tax_rate_groups = array();
 												
-												foreach ( $items as $item ) {
-													$amount += isset( $item['amount'] ) ? floatval( $item['amount'] ) : 0;
-													$product_name = isset( $item['name'] ) ? sanitize_text_field( $item['name'] ) : '';
-													$price = isset( $item['price'] ) ? floatval( $item['price'] ) : 0;
-													$quantity = isset( $item['quantity'] ) ? floatval( $item['quantity'] ) : 1;
-													$unit = isset( $item['unit'] ) ? sanitize_text_field( $item['unit'] ) : '';
-													$item_amount = isset( $item['amount'] ) ? floatval( $item['amount'] ) : 0;
-													$tax_rate = isset( $item['tax_rate'] ) ? floatval( $item['tax_rate'] ) : 10.0;
+											foreach ( $items as $item ) {
+												$amount += isset( $item['amount'] ) ? floatval( $item['amount'] ) : 0;
+												$product_name = isset( $item['name'] ) ? sanitize_text_field( $item['name'] ) : '';
+												$price = isset( $item['price'] ) ? floatval( $item['price'] ) : 0;
+												$quantity = isset( $item['quantity'] ) ? floatval( $item['quantity'] ) : 1;
+												$unit = isset( $item['unit'] ) ? sanitize_text_field( $item['unit'] ) : '';
+												$item_amount = isset( $item['amount'] ) ? floatval( $item['amount'] ) : 0;
+												$tax_rate = isset( $item['tax_rate'] ) ? floatval( $item['tax_rate'] ) : 10.0;
 
 													// 税率別の集計
 													$tax_rate_key = number_format( $tax_rate, 1 );
@@ -695,22 +708,22 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 													}
 													$tax_rate_groups[ $tax_rate_key ] += $item_amount;
 
-													// 消費税計算（税区分に応じて）
-													if ( $tax_category === '外税' ) {
-														// 外税表示の場合：税抜金額から税額を計算
-														$tax_amount = ceil( $item_amount * ( $tax_rate / 100 ) );
-														$total_tax_amount += $tax_amount;
-													}
+												// 消費税計算（税区分に応じて）
+												if ( $tax_category === '外税' ) {
+													// 外税表示の場合：税抜金額から税額を計算
+													$tax_amount = ceil( $item_amount * ( $tax_rate / 100 ) );
+													$total_tax_amount += $tax_amount;
+												}
 													// 内税の場合は後で税率別に計算
 
-													if ( ! empty( trim( $product_name ) ) ) {
-														// 詳細形式：サービス：単価 × 数量/単位 = 金額円（税率X%）
-														$invoice_list .= $product_name . '：' . number_format( $price ) . '円 × ' . $quantity . $unit . ' = ' . number_format( $item_amount ) . "円（税率{$tax_rate}%）\n";
-													}
+												if ( ! empty( trim( $product_name ) ) ) {
+													// 詳細形式：サービス：単価 × 数量/単位 = 金額円（税率X%）
+													$invoice_list .= $product_name . '：' . number_format( $price ) . '円 × ' . $quantity . $unit . ' = ' . number_format( $item_amount ) . "円（税率{$tax_rate}%）\n";
 												}
-												
+											}
+											
 												// 内税の場合は税率別に計算
-												if ( $tax_category !== '外税' ) {
+											if ( $tax_category !== '外税' ) {
 													$total_tax_amount = 0;
 													$tax_rate_details = array();
 													
@@ -725,13 +738,13 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 												$amount_ceiled = ceil( $amount );
 												$total_tax_amount_ceiled = ceil( $total_tax_amount );
 												$total_with_tax = $amount_ceiled + $total_tax_amount_ceiled;
-												
-												// 税区分に応じた合計表示
-												if ( $tax_category === '外税' ) {
-													$invoice_list .= "\n外税合計：" . number_format( $amount_ceiled ) . '円';
-													$invoice_list .= "\n消費税：" . number_format( $total_tax_amount_ceiled ) . '円';
-													$invoice_list .= "\n内税合計：" . number_format( $total_with_tax ) . '円';
-												} else {
+											
+											// 税区分に応じた合計表示
+											if ( $tax_category === '外税' ) {
+												$invoice_list .= "\n外税合計：" . number_format( $amount_ceiled ) . '円';
+												$invoice_list .= "\n消費税：" . number_format( $total_tax_amount_ceiled ) . '円';
+												$invoice_list .= "\n内税合計：" . number_format( $total_with_tax ) . '円';
+											} else {
 													// 内税の場合は税率別の内訳を表示
 													if ( count( $tax_rate_groups ) > 1 ) {
 														$tax_detail_text = '（内税：' . implode( ', ', $tax_rate_details ) . '）';
@@ -739,7 +752,7 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 														$tax_detail_text = '（内税：' . number_format( $total_tax_amount_ceiled ) . '円）';
 													}
 													$invoice_list .= "\n金額合計：" . number_format( $amount_ceiled ) . '円' . $tax_detail_text;
-												}
+											}
 										} else {
 											$invoice_list = sanitize_textarea_field( $invoice_items_json );
 										}
@@ -1931,7 +1944,12 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 					$unit = isset( $item['unit'] ) ? sanitize_text_field( $item['unit'] ) : '';
 					$quantity = isset( $item['quantity'] ) ? floatval( $item['quantity'] ) : 0;
 					$amount = isset( $item['amount'] ) ? floatval( $item['amount'] ) : 0;
-					$tax_rate = isset( $item['tax_rate'] ) ? floatval( $item['tax_rate'] ) : 10.00;
+					// 税率の処理（空文字、null、0の場合はNULLとして扱う）
+					$tax_rate_raw = isset( $item['tax_rate'] ) ? $item['tax_rate'] : null;
+					$tax_rate = null;
+					if ( $tax_rate_raw !== null && $tax_rate_raw !== '' && $tax_rate_raw !== '0' && is_numeric( $tax_rate_raw ) ) {
+						$tax_rate = floatval( $tax_rate_raw );
+					}
 					$remarks = isset( $item['remarks'] ) ? sanitize_textarea_field( $item['remarks'] ) : '';
 
 					// 商品名が空ならスキップ（商品名があれば必ず保存）
@@ -2045,6 +2063,12 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 					$unit = isset( $item['unit'] ) ? sanitize_text_field( $item['unit'] ) : '';
 					$quantity = isset( $item['quantity'] ) ? floatval( $item['quantity'] ) : 0;
 					$amount = isset( $item['amount'] ) ? floatval( $item['amount'] ) : 0;
+					// 税率の処理（空文字、null、0の場合はNULLとして扱う）
+					$tax_rate_raw = isset( $item['tax_rate'] ) ? $item['tax_rate'] : null;
+					$tax_rate = null;
+					if ( $tax_rate_raw !== null && $tax_rate_raw !== '' && $tax_rate_raw !== '0' && is_numeric( $tax_rate_raw ) ) {
+						$tax_rate = floatval( $tax_rate_raw );
+					}
 					$remarks = isset( $item['remarks'] ) ? sanitize_textarea_field( $item['remarks'] ) : '';
 					$purchase = isset( $item['purchase'] ) ? sanitize_text_field( $item['purchase'] ) : '';
 
@@ -2060,13 +2084,14 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 						'unit' => $unit,
 						'quantity' => $quantity,
 						'amount' => $amount,
+						'tax_rate' => $tax_rate,
 						'remarks' => $remarks,
 						'purchase' => $purchase,
 						'sort_order' => $sort_order,
 						'updated_at' => current_time( 'mysql' ),
 					);
 
-					$format = array( '%d', '%s', '%f', '%s', '%f', '%f', '%s', '%s', '%d', '%s' );
+					$format = array( '%d', '%s', '%f', '%s', '%f', '%f', '%f', '%s', '%s', '%d', '%s' );
 
 					$used_id = 0;
 					if ( $item_id > 0 ) {
@@ -2537,10 +2562,16 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 					
 					foreach ( $invoice_items as $item ) {
 						$item_amount = isset( $item['amount'] ) ? floatval( $item['amount'] ) : 0;
-						$item_tax_rate = isset( $item['tax_rate'] ) ? floatval( $item['tax_rate'] ) : 10.00;
+						$tax_rate_raw = isset( $item['tax_rate'] ) ? $item['tax_rate'] : null;
 						
-						// 税率別の集計
-						$tax_rate_key = number_format( $item_tax_rate, 1 );
+						// 税率の処理（NULL、空文字、NaNの場合は税率なしとして扱う）
+						$item_tax_rate = null;
+						if ( $tax_rate_raw !== null && $tax_rate_raw !== '' && is_numeric( $tax_rate_raw ) ) {
+							$item_tax_rate = floatval( $tax_rate_raw );
+						}
+						
+						// 税率別の集計（税率なしの場合は'no_tax_rate'として扱う）
+						$tax_rate_key = $item_tax_rate !== null ? number_format( $item_tax_rate, 1 ) : 'no_tax_rate';
 						if ( ! isset( $tax_rate_groups[ $tax_rate_key ] ) ) {
 							$tax_rate_groups[ $tax_rate_key ] = 0;
 						}
@@ -2548,10 +2579,14 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 						
 						if ( $tax_category === '外税' ) {
 							// 外税表示の場合：税抜金額から税額を計算（切り上げ）
+							if ( $item_tax_rate !== null ) {
 							$tax_amount += ceil( $item_amount * ( $item_tax_rate / 100 ) );
+							}
 						} else {
 							// 内税表示の場合（デフォルト）：税込金額から税額を計算（小数点以下切り上げ）
+							if ( $item_tax_rate !== null ) {
 							$tax_amount += ceil( $item_amount * ( $item_tax_rate / 100 ) / ( 1 + $item_tax_rate / 100 ) );
+							}
 						}
 					}
 					
@@ -2568,13 +2603,24 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 						if ( count( $tax_rate_groups ) > 1 ) {
 							$tax_rate_details = array();
 							foreach ( $tax_rate_groups as $tax_rate => $group_amount ) {
-								$tax_rate_value = floatval( $tax_rate );
-								$group_tax_amount = ceil( $group_amount * ( $tax_rate_value / 100 ) / ( 1 + $tax_rate_value / 100 ) );
-								$tax_rate_details[] = $tax_rate . '%: ' . number_format( $group_tax_amount ) . '円';
+								if ( $tax_rate === 'no_tax_rate' ) {
+									// 税率なしの場合は表示しない
+									continue;
+								} else {
+									$tax_rate_value = floatval( $tax_rate );
+									$group_tax_amount = ceil( $group_amount * ( $tax_rate_value / 100 ) / ( 1 + $tax_rate_value / 100 ) );
+									$tax_rate_details[] = $tax_rate . '%: ' . number_format( $group_tax_amount ) . '円';
+								}
 							}
 							$tax_detail_text = '（内税：' . implode( ', ', $tax_rate_details ) . '）';
 						} else {
-							$tax_detail_text = '（内税：' . number_format( $tax_amount_ceiled ) . '円）';
+							// 単一税率の場合
+							if ( array_key_first( $tax_rate_groups ) === 'no_tax_rate' ) {
+								// 税率なしの場合は内税表示をしない
+								$tax_detail_text = '';
+							} else {
+								$tax_detail_text = '（内税：' . number_format( $tax_amount_ceiled ) . '円）';
+							}
 						}
 						$html .= '<h3 style="font-size: 16px; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #333;">請求項目（' . ( $page + 1 ) . '/' . $total_pages . 'p）　合計金額 : ' . number_format( $grand_total ) . '円' . $tax_detail_text . '</h3>';
 					}
@@ -2611,8 +2657,14 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 					$price = isset( $item['price'] ) ? floatval( $item['price'] ) : 0;
 					$amount = isset( $item['amount'] ) ? floatval( $item['amount'] ) : 0;
 					$unit = isset( $item['unit'] ) ? $item['unit'] : '';
-					$tax_rate = isset( $item['tax_rate'] ) ? floatval( $item['tax_rate'] ) : 10.00;
+					$tax_rate_raw = isset( $item['tax_rate'] ) ? $item['tax_rate'] : null;
 					$remarks = isset( $item['remarks'] ) ? $item['remarks'] : ''; // 備考フィールドを追加
+
+					// 税率の処理（NULL、空文字、NaNの場合は税率なしとして扱う）
+					$tax_rate = null;
+					if ( $tax_rate_raw !== null && $tax_rate_raw !== '' && is_numeric( $tax_rate_raw ) ) {
+						$tax_rate = floatval( $tax_rate_raw );
+					}
 
 					// 小数点以下の不要な0を削除
 					$price_display = rtrim( rtrim( number_format( $price, 6, '.', '' ), '0' ), '.' );
@@ -2637,7 +2689,7 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 					$html .= '<div style="width: 80px; text-align: right;">¥' . $price_display . '</div>';
 					$html .= '<div style="width: 60px; text-align: right;">' . $quantity_display . $unit . '</div>';
 					$html .= '<div style="width: 80px; text-align: right;">¥' . number_format( $amount ) . '</div>';
-					$html .= '<div style="width: 60px; text-align: center;">' . $tax_rate . '%</div>';
+					$html .= '<div style="width: 60px; text-align: center;">' . ( $tax_rate !== null ? $tax_rate . '%' : '' ) . '</div>';
 					$html .= '<div style="width: 100px; text-align: left; margin-left: 8px;">' . esc_html( $remarks ) . '</div>';
 					$html .= '</div>';
 
@@ -2682,14 +2734,24 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 					
 					foreach ( $invoice_items as $item ) {
 						$item_amount = isset( $item['amount'] ) ? floatval( $item['amount'] ) : 0;
-						$item_tax_rate = isset( $item['tax_rate'] ) ? floatval( $item['tax_rate'] ) : 10.00;
+						$tax_rate_raw = isset( $item['tax_rate'] ) ? $item['tax_rate'] : null;
+						
+						// 税率の処理（NULL、空文字、NaNの場合は税率なしとして扱う）
+						$item_tax_rate = null;
+						if ( $tax_rate_raw !== null && $tax_rate_raw !== '' && is_numeric( $tax_rate_raw ) ) {
+							$item_tax_rate = floatval( $tax_rate_raw );
+						}
 						
 						if ( $tax_category === '外税' ) {
 							// 外税表示の場合：税抜金額から税額を計算（切り上げ）
+							if ( $item_tax_rate !== null ) {
 							$tax_amount += ceil( $item_amount * ( $item_tax_rate / 100 ) );
+							}
 						} else {
 							// 内税表示の場合（デフォルト）：税込金額から税額を計算（小数点以下切り上げ）
+							if ( $item_tax_rate !== null ) {
 							$tax_amount += ceil( $item_amount * ( $item_tax_rate / 100 ) / ( 1 + $item_tax_rate / 100 ) );
+							}
 						}
 					}
 					

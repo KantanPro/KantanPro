@@ -343,15 +343,22 @@
         $('.invoice-items-table tbody tr').each(function () {
             const $row = $(this);
             const amount = parseFloat($row.find('.amount').val()) || 0;
-            const taxRate = parseFloat($row.find('.tax-rate').val()) || 10.0;
+            const taxRateInput = $row.find('.tax-rate').val();
+            
+            // 税率の処理（NULL、空文字、NaNの場合は税率なしとして扱う）
+            let taxRate = null;
+            if (taxRateInput !== null && taxRateInput !== '' && !isNaN(parseFloat(taxRateInput))) {
+                taxRate = parseFloat(taxRateInput);
+            }
             
             invoiceTotal += amount;
             
-            // 税率別に集計
-            if (!taxRateGroups[taxRate]) {
-                taxRateGroups[taxRate] = 0;
+            // 税率別に集計（税率なしの場合は'no_tax_rate'として扱う）
+            const taxRateKey = taxRate !== null ? taxRate.toString() : 'no_tax_rate';
+            if (!taxRateGroups[taxRateKey]) {
+                taxRateGroups[taxRateKey] = 0;
             }
-            taxRateGroups[taxRate] += amount;
+            taxRateGroups[taxRateKey] += amount;
         });
 
         // 税区分に応じて消費税を計算
@@ -360,19 +367,33 @@
             $('.invoice-items-table tbody tr').each(function () {
                 const $row = $(this);
                 const amount = parseFloat($row.find('.amount').val()) || 0;
-                const taxRate = parseFloat($row.find('.tax-rate').val()) || 10.0;
+                const taxRateInput = $row.find('.tax-rate').val();
+                
+                // 税率の処理（NULL、空文字、NaNの場合は税率なしとして扱う）
+                let taxRate = null;
+                if (taxRateInput !== null && taxRateInput !== '' && !isNaN(parseFloat(taxRateInput))) {
+                    taxRate = parseFloat(taxRateInput);
+                }
+                
+                // 税率が設定されている場合のみ税額を計算
+                if (taxRate !== null) {
                 // 外税計算：税抜金額から税額を計算（切り上げ）
                 const taxAmount = Math.ceil(amount * (taxRate / 100));
                 totalTaxAmount += taxAmount;
+                }
             });
         } else {
             // 内税表示の場合：税率別に税額を計算
-            Object.keys(taxRateGroups).forEach(taxRate => {
-                const groupAmount = taxRateGroups[taxRate];
-                const rate = parseFloat(taxRate);
-                // 内税計算：各税率グループごとに税額を計算（切り上げ）
-                const taxAmount = Math.ceil(groupAmount * (rate / 100) / (1 + rate / 100));
-                totalTaxAmount += taxAmount;
+            Object.keys(taxRateGroups).forEach(taxRateKey => {
+                const groupAmount = taxRateGroups[taxRateKey];
+                
+                // 税率が設定されている場合のみ税額を計算
+                if (taxRateKey !== 'no_tax_rate') {
+                    const rate = parseFloat(taxRateKey);
+                    // 内税計算：各税率グループごとに税額を計算（切り上げ）
+                    const taxAmount = Math.ceil(groupAmount * (rate / 100) / (1 + rate / 100));
+                    totalTaxAmount += taxAmount;
+                }
             });
         }
 
@@ -380,20 +401,29 @@
         $('.cost-items-table tbody tr').each(function () {
             const $row = $(this);
             const amount = parseFloat($row.find('.amount').val()) || 0;
-            const taxRate = parseFloat($row.find('.tax-rate').val()) || 10.0;
+            const taxRateInput = $row.find('.tax-rate').val();
+            
+            // 税率の処理（NULL、空文字、NaNの場合は税率なしとして扱う）
+            let taxRate = null;
+            if (taxRateInput !== null && taxRateInput !== '' && !isNaN(parseFloat(taxRateInput))) {
+                taxRate = parseFloat(taxRateInput);
+            }
             
             costTotal += amount;
             
-            // 税率別に集計
-            if (!costTaxRateGroups[taxRate]) {
-                costTaxRateGroups[taxRate] = 0;
+            // 税率別に集計（税率なしの場合は'no_tax_rate'として扱う）
+            const taxRateKey = taxRate !== null ? taxRate.toString() : 'no_tax_rate';
+            if (!costTaxRateGroups[taxRateKey]) {
+                costTaxRateGroups[taxRateKey] = 0;
             }
-            costTaxRateGroups[taxRate] += amount;
+            costTaxRateGroups[taxRateKey] += amount;
             
             // コスト項目は常に内税計算（仕入先の税区分に関係なく）
-            // 統一ルール：内税計算で切り上げ
+            // 税率が設定されている場合のみ税額を計算
+            if (taxRate !== null) {
             const taxAmount = Math.ceil(amount * (taxRate / 100) / (1 + taxRate / 100));
             costTotalTaxAmount += taxAmount;
+            }
         });
 
         // 請求項目合計を切り上げ
@@ -429,16 +459,26 @@
                 if (taxDisplay.length > 0) {
                     let taxDetailHtml = '消費税 : ' + totalTaxAmountCeiled.toLocaleString() + '円';
                     
-                    // 税率別の内訳を追加
-                    const taxRateDetails = [];
-                    Object.keys(taxRateGroups).sort((a, b) => parseFloat(b) - parseFloat(a)).forEach(taxRate => {
-                        const rate = parseFloat(taxRate);
-                        const groupAmount = taxRateGroups[taxRate];
+                                    // 税率別の内訳を追加
+                const taxRateDetails = [];
+                Object.keys(taxRateGroups).sort((a, b) => {
+                    // 税率なしを最後に表示
+                    if (a === 'no_tax_rate') return 1;
+                    if (b === 'no_tax_rate') return -1;
+                    return parseFloat(b) - parseFloat(a);
+                }).forEach(taxRateKey => {
+                    if (taxRateKey === 'no_tax_rate') {
+                        // 税率なしの場合は表示しない
+                        return;
+                    } else {
+                        const rate = parseFloat(taxRateKey);
+                        const groupAmount = taxRateGroups[taxRateKey];
                         const taxAmount = Math.ceil(groupAmount * (rate / 100));
                         if (groupAmount > 0) {
                             taxRateDetails.push(`${rate}%: ${taxAmount.toLocaleString()}円`);
                         }
-                    });
+                    }
+                });
                     
                     if (taxRateDetails.length > 1) {
                         taxDetailHtml += ' (' + taxRateDetails.join(', ') + ')';
@@ -458,12 +498,22 @@
                 
                 // 税率別の内訳を追加
                 const taxRateDetails = [];
-                Object.keys(taxRateGroups).sort((a, b) => parseFloat(b) - parseFloat(a)).forEach(taxRate => {
-                    const rate = parseFloat(taxRate);
-                    const groupAmount = taxRateGroups[taxRate];
-                    const taxAmount = Math.ceil(groupAmount * (rate / 100) / (1 + rate / 100));
-                    if (groupAmount > 0) {
-                        taxRateDetails.push(`${rate}%: ${taxAmount.toLocaleString()}円`);
+                Object.keys(taxRateGroups).sort((a, b) => {
+                    // 税率なしを最後に表示
+                    if (a === 'no_tax_rate') return 1;
+                    if (b === 'no_tax_rate') return -1;
+                    return parseFloat(b) - parseFloat(a);
+                }).forEach(taxRateKey => {
+                    if (taxRateKey === 'no_tax_rate') {
+                        // 税率なしの場合は表示しない
+                        return;
+                    } else {
+                        const rate = parseFloat(taxRateKey);
+                        const groupAmount = taxRateGroups[taxRateKey];
+                        const taxAmount = Math.ceil(groupAmount * (rate / 100) / (1 + rate / 100));
+                        if (groupAmount > 0) {
+                            taxRateDetails.push(`${rate}%: ${taxAmount.toLocaleString()}円`);
+                        }
                     }
                 });
                 

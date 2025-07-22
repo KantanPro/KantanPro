@@ -330,7 +330,13 @@
         $('.cost-items-table tbody tr').each(function () {
             const $row = $(this);
             const amount = parseFloat($row.find('.amount').val()) || 0;
-            const taxRate = parseFloat($row.find('.tax-rate').val()) || 10.0;
+            const taxRateInput = $row.find('.tax-rate').val();
+            
+            // 税率の処理（NULL、空文字、NaNの場合は税率なしとして扱う）
+            let taxRate = null;
+            if (taxRateInput !== null && taxRateInput !== '' && !isNaN(parseFloat(taxRateInput))) {
+                taxRate = parseFloat(taxRateInput);
+            }
             
             // 協力会社IDの取得を複数の方法で試行
             let supplierId = $row.find('input[name*="[supplier_id]"]').val() || 
@@ -352,11 +358,12 @@
             // 文字列の場合は数値に変換
             supplierId = parseInt(supplierId, 10) || 0;
             
-            // 税率別に集計
-            if (!costTaxRateGroups[taxRate]) {
-                costTaxRateGroups[taxRate] = 0;
+            // 税率別に集計（税率なしの場合は'no_tax_rate'として扱う）
+            const taxRateKey = taxRate !== null ? taxRate.toString() : 'no_tax_rate';
+            if (!costTaxRateGroups[taxRateKey]) {
+                costTaxRateGroups[taxRateKey] = 0;
             }
-            costTaxRateGroups[taxRate] += amount;
+            costTaxRateGroups[taxRateKey] += amount;
             
             // デバッグ情報を常に出力（一時的な修正）
             console.log('[COST] Row data collected:', {
@@ -384,13 +391,16 @@
             
             // 各行ごとに協力会社の税区分を取得して計算
             getSupplierTaxCategory(supplierId, function(taxCategory) {
+                // 税率が設定されている場合のみ税額を計算
+                if (taxRate !== null) {
                 if (taxCategory === '外税') {
                     hasOuttax = true;
-                    // 外税計算：税抜金額から税額を計算（切り上げ）
-                    costTotalTaxAmount += Math.ceil(amount * (taxRate / 100));
+                        // 外税計算：税抜金額から税額を計算（切り上げ）
+                        costTotalTaxAmount += Math.ceil(amount * (taxRate / 100));
                 } else {
-                    // 内税計算：各税率グループごとに税額を計算（切り上げ）
-                    costTotalTaxAmount += Math.ceil(amount * (taxRate / 100) / (1 + taxRate / 100));
+                        // 内税計算：各税率グループごとに税額を計算（切り上げ）
+                        costTotalTaxAmount += Math.ceil(amount * (taxRate / 100) / (1 + taxRate / 100));
+                    }
                 }
                 
                 processedRows++;
@@ -1756,7 +1766,7 @@
         // 税率入力時のリアルタイム再計算（inputイベント）
         $(document).on('input', '.cost-items-table .tax-rate', function () {
             const $field = $(this);
-            
+
             // disabled フィールドは処理をスキップ
             if ($field.prop('disabled')) {
                 return;
