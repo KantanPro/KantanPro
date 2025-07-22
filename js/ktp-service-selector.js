@@ -437,7 +437,7 @@
                                         data-service-name="${escapeHtml(serviceName)}"
                                         data-price="${price}"
                                         data-unit="${escapeHtml(unit)}"
-                                        data-tax-rate="${taxRate !== null ? taxRate : ''}"
+                                        data-tax-rate="${taxRate !== null && taxRate !== undefined ? taxRate : ''}"
                                         data-mode="update"
                                         style="
                                             background: #007bff; 
@@ -550,7 +550,7 @@
                         service_name: found && found.service_name ? found.service_name : $(this).data('service-name') || '',
                         price: $(this).data('price'),
                         unit: $(this).data('unit'),
-                        tax_rate: found && found.tax_rate !== undefined && found.tax_rate !== null ? found.tax_rate : ($(this).data('tax-rate') !== '' ? parseFloat($(this).data('tax-rate')) : null),
+                        tax_rate: found && found.tax_rate !== undefined && found.tax_rate !== null ? found.tax_rate : ($(this).data('tax-rate') !== '' && $(this).data('tax-rate') !== null ? parseFloat($(this).data('tax-rate')) : null),
                         remarks: found && found.remarks ? found.remarks : ''
                     };
                     
@@ -890,9 +890,12 @@
                         window.ktpInvoiceAutoSaveItem('invoice', newItemId, 'price', serviceData.price, orderId);
                         window.ktpInvoiceAutoSaveItem('invoice', newItemId, 'quantity', 1, orderId);
                         window.ktpInvoiceAutoSaveItem('invoice', newItemId, 'unit', serviceData.unit, orderId);
-                        // 税率も保存
-                        if (serviceData.tax_rate !== undefined && serviceData.tax_rate !== null) {
+                        // 税率も保存（非課税の場合はnullを明示的に保存）
+                        if (serviceData.tax_rate !== undefined) {
                             window.ktpInvoiceAutoSaveItem('invoice', newItemId, 'tax_rate', serviceData.tax_rate, orderId);
+                        } else {
+                            // 税率が未定義の場合は明示的にnullを保存
+                            window.ktpInvoiceAutoSaveItem('invoice', newItemId, 'tax_rate', null, orderId);
                         }
                         // 金額も明示的に保存（小数点以下も保持）
                         const calculatedAmount = serviceData.price * 1;
@@ -968,6 +971,8 @@
         targetRow.find('.product-name').val(serviceData.service_name);
         targetRow.find('.price').val(serviceData.price);
         targetRow.find('.unit').val(serviceData.unit);
+        // 税率も更新
+        targetRow.find('.tax-rate').val(serviceData.tax_rate !== undefined && serviceData.tax_rate !== null ? Math.round(serviceData.tax_rate) : '');
         // 備考も反映
         targetRow.find('.remarks').val(serviceData.remarks ? serviceData.remarks : '');
         
@@ -990,8 +995,17 @@
         const itemId = targetRow.find('input[name*="[id]"]').val();
         const orderId = $('input[name="order_id"]').val() || $('#order_id').val();
         
+        console.log('[SERVICE SELECTOR] DB保存条件チェック:', {
+            orderId: orderId,
+            itemId: itemId,
+            itemIdType: typeof itemId,
+            itemIdIsZero: itemId === '0',
+            ktpInvoiceAutoSaveItemExists: typeof window.ktpInvoiceAutoSaveItem === 'function',
+            willSave: orderId && itemId && itemId !== '0' && typeof window.ktpInvoiceAutoSaveItem === 'function'
+        });
+        
         if (orderId && itemId && itemId !== '0' && typeof window.ktpInvoiceAutoSaveItem === 'function') {
-            console.log('[SERVICE SELECTOR] サービス更新データ保存中...', {
+            console.log('[SERVICE SELECTOR] 既存行のサービス更新データ保存中...', {
                 itemId: itemId,
                 price: serviceData.price,
                 quantity: 1,
@@ -1003,6 +1017,13 @@
             window.ktpInvoiceAutoSaveItem('invoice', itemId, 'price', serviceData.price, orderId);
             window.ktpInvoiceAutoSaveItem('invoice', itemId, 'unit', serviceData.unit, orderId);
             window.ktpInvoiceAutoSaveItem('invoice', itemId, 'quantity', 1, orderId);
+            // 税率も保存（非課税の場合はnullを明示的に保存）
+            if (serviceData.tax_rate !== undefined) {
+                window.ktpInvoiceAutoSaveItem('invoice', itemId, 'tax_rate', serviceData.tax_rate, orderId);
+            } else {
+                // 税率が未定義の場合は明示的にnullを保存
+                window.ktpInvoiceAutoSaveItem('invoice', itemId, 'tax_rate', null, orderId);
+            }
             
             // 金額も明示的に保存（小数点以下も保持）
             const calculatedAmount = serviceData.price * 1;
@@ -1022,6 +1043,64 @@
                     updateTotalAndProfit();
                 }
             }, 200);
+        } else if (orderId && itemId === '0' && typeof window.ktpInvoiceCreateNewItem === 'function') {
+            // 新規作成された行の場合、新規作成処理を実行
+            console.log('[SERVICE SELECTOR] 新規行のサービス更新データ保存中...', {
+                serviceData: serviceData,
+                orderId: orderId
+            });
+            
+            window.ktpInvoiceCreateNewItem('invoice', 'product_name', serviceData.service_name, orderId, targetRow, function(success, newItemId) {
+                console.log('[SERVICE SELECTOR] ktpInvoiceCreateNewItemコールバック:', {
+                    success: success,
+                    newItemId: newItemId,
+                    serviceNameUsed: serviceData.service_name
+                });
+                
+                if (success && newItemId) {
+                    targetRow.find('input[name*="[id]"]').val(newItemId);
+                    targetRow.removeAttr('data-newly-added');
+                    console.log('[SERVICE SELECTOR] 新規サービス保存成功', newItemId);
+                    
+                    // 各フィールドを個別に保存
+                    if (typeof window.ktpInvoiceAutoSaveItem === 'function') {
+                        console.log('[SERVICE SELECTOR] 単価・数量・単位・税率を保存中...', {
+                            price: serviceData.price,
+                            quantity: 1,
+                            unit: serviceData.unit,
+                            tax_rate: serviceData.tax_rate,
+                            product_name: serviceData.service_name
+                        });
+                        
+                        // product_nameも明示的に保存（新規作成時は空で作成されるため）
+                        console.log('[SERVICE SELECTOR] product_name保存開始:', serviceData.service_name);
+                        window.ktpInvoiceAutoSaveItem('invoice', newItemId, 'product_name', serviceData.service_name, orderId);
+                        window.ktpInvoiceAutoSaveItem('invoice', newItemId, 'price', serviceData.price, orderId);
+                        window.ktpInvoiceAutoSaveItem('invoice', newItemId, 'quantity', 1, orderId);
+                        window.ktpInvoiceAutoSaveItem('invoice', newItemId, 'unit', serviceData.unit, orderId);
+                        // 税率も保存（非課税の場合はnullを明示的に保存）
+                        if (serviceData.tax_rate !== undefined && serviceData.tax_rate !== null) {
+                            window.ktpInvoiceAutoSaveItem('invoice', newItemId, 'tax_rate', serviceData.tax_rate, orderId);
+                        } else {
+                            window.ktpInvoiceAutoSaveItem('invoice', newItemId, 'tax_rate', null, orderId);
+                        }
+                        // 金額も明示的に保存（小数点以下も保持）
+                        const calculatedAmount = serviceData.price * 1;
+                        window.ktpInvoiceAutoSaveItem('invoice', newItemId, 'amount', calculatedAmount, orderId);
+                        // 備考も保存
+                        if (serviceData.remarks !== undefined) {
+                            window.ktpInvoiceAutoSaveItem('invoice', newItemId, 'remarks', serviceData.remarks, orderId);
+                        }
+                    }
+                }
+            });
+        } else {
+            console.warn('[SERVICE SELECTOR] DB保存スキップ:', {
+                orderId: orderId,
+                itemId: itemId,
+                ktpInvoiceAutoSaveItemExists: typeof window.ktpInvoiceAutoSaveItem === 'function',
+                ktpInvoiceCreateNewItemExists: typeof window.ktpInvoiceCreateNewItem === 'function'
+            });
         }
 
         // ポップアップを閉じる（イベントハンドラーもクリーンアップ）
