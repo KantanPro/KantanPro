@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.1.9(preview)
+Stable tag: 1.1.10(preview)
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -42,7 +42,7 @@ KantanProは、WordPress上で以下の業務を一元管理できる多機能�
 - **アイコンのSVG化**（Material SymbolsからSVGアイコンへの完全移行）
 - **進捗アイコンのSVG化**（仕事リストタブの進捗フィルターアイコンをSVG化）
 - **消費税対応の改善**（税率計算・表示の最適化）
-- **受注書の請求項目更新処理の改善**（リアルタイム保存・値変更検知・エラーハンドリング強化）
+- **受注書のコスト項目更新処理の改善**（リアルタイム保存・値変更検知・エラーハンドリング強化）
 
 == インストール ==
 
@@ -229,6 +229,18 @@ KantanProは、WordPress上で以下の業務を一元管理できる多機能�
 * 推奨PHP拡張: GD（画像処理用）
 
 == 変更履歴 ==
+
+= 1.1.10(preview) - 2025年7月22日 =
+* 受注書のコスト項目更新処理の改善
+  - リアルタイム自動保存機能の強化
+  - 値の変更検知による効率的なデータベース更新
+  - 包括的なエラーハンドリングとログ出力
+  - セキュリティ強化（nonce検証・権限チェック）
+  - データ型の適切な処理（数値・文字列・NULL値）
+  - 税率フィールドの改善（空文字・null・0の適切な処理）
+  - 備考欄の改善（「0」の場合は空文字列として処理）
+  - 成功通知の条件付き表示（実際に値が変更された場合のみ）
+  - Ajax通信の最適化（タイムアウト設定・レスポンス処理）
 
 = 1.1.9(preview) - 2025年7月22日 =
 * 受注書の請求項目更新処理の改善
