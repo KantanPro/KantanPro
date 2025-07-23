@@ -4414,7 +4414,12 @@ class KTPWP_Ajax {
 		$body = '';
 
 		// 協力会社情報
-		$body .= $supplier->company_name . "　様\n";
+		$body .= $supplier->company_name . "\n";
+		if ( ! empty( $supplier->name ) ) {
+			$body .= $supplier->name . "　様\n";
+		} else {
+			$body .= "　様\n";
+		}
 		$body .= "\n";
 
 		// 挨拶文
@@ -4452,10 +4457,10 @@ class KTPWP_Ajax {
 			$remarks = $item['remarks'] ?: '';
 			$has_qualified_invoice = ! empty( $item['qualified_invoice_number'] );
 
-			// 品名を左寄せで表示
+			// 品名を左寄せで表示（商品名と単価の間に半角スペース2つを追加）
 			$product_name_padded = str_pad( $product_name, $max_length + 2, ' ' );
 			
-			// 詳細形式：品名　単価 × 数量/単位 = 金額円（税率X%・税区分）※ 備考
+			// 詳細形式：品名  単価 × 数量/単位 = 金額円（税率X%・税区分）※ 備考
 			if ( $is_tax_free ) {
 				$tax_info = "（非課税取引）";
 			} elseif ( $tax_rate == 0 ) {
@@ -4465,7 +4470,7 @@ class KTPWP_Ajax {
 			}
 			$remarks_text = ( ! empty( trim( $remarks ) ) ) ? '　※ ' . $remarks : '';
 			
-			$body .= $product_name_padded . number_format( $price ) . '円 × ' . $quantity . $unit . ' = ' . number_format( $amount ) . "円{$tax_info}{$remarks_text}\n";
+			$body .= $product_name_padded . "  " . number_format( $price ) . '円 × ' . $quantity . $unit . ' = ' . number_format( $amount ) . "円{$tax_info}{$remarks_text}\n";
 
 			// 税率別集計
 			$tax_rate_key = number_format( $tax_rate, 1 );
