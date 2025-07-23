@@ -168,42 +168,6 @@
     // 発注メールフォームを表示
     function displayPurchaseOrderEmailForm(data) {
         const content = `
-            <div style="margin-bottom: 20px;">
-                <h4 style="margin: 0 0 10px 0; color: #333;">発注情報</h4>
-                <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 15px;">
-                    <div style="margin-bottom: 5px;"><strong>プロジェクト名:</strong> ${data.order_info.project_name}</div>
-                    <div style="margin-bottom: 5px;"><strong>協力会社:</strong> ${data.supplier_name}</div>
-                    <div style="margin-bottom: 5px;"><strong>顧客名:</strong> ${data.order_info.client_name}</div>
-                    <div style="margin-bottom: 5px;"><strong>発注日:</strong> ${formatDate(data.order_info.order_date)}</div>
-                    <div style="margin-bottom: 5px;"><strong>納期:</strong> ${data.order_info.delivery_date ? formatDate(data.order_info.delivery_date) : '未定'}</div>
-                    <div><strong>発注項目数:</strong> ${data.cost_summary.item_count}件</div>
-                </div>
-            </div>
-
-            <div style="margin-bottom: 20px;">
-                <h4 style="margin: 0 0 10px 0; color: #333;">金額内訳</h4>
-                <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 15px;">
-                    <div style="margin-bottom: 5px;"><strong>小計:</strong> ${numberFormat(data.cost_summary.total_amount)}円</div>
-                    <div style="margin-bottom: 5px;"><strong>消費税:</strong> ${numberFormat(data.cost_summary.total_tax_amount)}円</div>
-                    <div style="margin-bottom: 5px;"><strong>合計:</strong> ${numberFormat(data.cost_summary.total_amount + data.cost_summary.total_tax_amount)}円</div>
-                    ${data.cost_summary.qualified_invoice_cost > 0 ? `<div style="margin-bottom: 5px; color: #28a745;"><strong>適格請求書対象:</strong> ${numberFormat(data.cost_summary.qualified_invoice_cost)}円（税抜金額）</div>` : ''}
-                    ${data.cost_summary.non_qualified_invoice_cost > 0 ? `<div style="color: #dc3545;"><strong>適格請求書対象外:</strong> ${numberFormat(data.cost_summary.non_qualified_invoice_cost)}円（税込金額）</div>` : ''}
-                </div>
-            </div>
-
-            <div style="margin-bottom: 20px;">
-                <h4 style="margin: 0 0 10px 0; color: #333;">適格請求書対応状況</h4>
-                <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 15px;">
-                    ${data.supplier_qualified_invoice_number ? 
-                        `<div style="color: #28a745; margin-bottom: 5px;"><strong>✓ 適格請求書対応済み</strong></div>
-                         <div style="margin-bottom: 5px;"><strong>適格請求書番号:</strong> ${data.supplier_qualified_invoice_number}</div>
-                         <div style="font-size: 12px; color: #666;">税抜金額での計算となります</div>` :
-                        `<div style="color: #dc3545; margin-bottom: 5px;"><strong>⚠ 適格請求書未対応</strong></div>
-                         <div style="font-size: 12px; color: #666;">税込金額での計算となります</div>`
-                    }
-                </div>
-            </div>
-
             <form id="ktp-purchase-order-email-form">
                 <div style="margin-bottom: 15px;">
                     <label for="email-to" style="display: block; margin-bottom: 5px; font-weight: bold;">送信先メールアドレス:</label>
