@@ -1114,7 +1114,31 @@ function ktpwp_check_reactivation_migration() {
 }
 
 /**
- * 配布環境用の新規インストール検出とマイグレーション処理
+ * 新規インストール判定関数
+ * 
+ * @return bool 新規インストールの場合true、既存インストールの場合false
+ */
+function ktpwp_is_new_installation() {
+    global $wpdb;
+    
+    // メインテーブルが存在するかチェック
+    $main_table = $wpdb->prefix . 'ktp_order';
+    $table_exists = $wpdb->get_var( "SHOW TABLES LIKE '$main_table'" );
+    
+    // テーブルが存在しない場合は新規インストール
+    if ( ! $table_exists ) {
+        return true;
+    }
+    
+    // テーブルが存在する場合、データがあるかチェック
+    $has_data = $wpdb->get_var( "SELECT COUNT(*) FROM `{$main_table}`" );
+    
+    // データがない場合は新規インストールとみなす
+    return ( $has_data == 0 );
+}
+
+/**
+ * 新規インストール検出とマイグレーション実行
  */
 function ktpwp_detect_new_installation() {
     // 新規インストールフラグをチェック
