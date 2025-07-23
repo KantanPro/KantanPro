@@ -4306,13 +4306,13 @@ class KTPWP_Ajax {
 					$tax_rate = $item['tax_rate'];
 					$is_tax_free = empty( $tax_rate ) || $tax_rate === null;
 					$tax_rate = $is_tax_free ? 0.0 : floatval( $tax_rate );
-					$supplier_tax_category = isset( $item['tax_category'] ) ? $item['tax_category'] : '内税';
+					$item_tax_category = isset( $item['tax_category'] ) ? $item['tax_category'] : '内税';
 					$has_qualified_invoice = ! empty( $item['qualified_invoice_number'] );
 
 					// 税額計算（非課税取引の場合は0円）
 					if ( $is_tax_free ) {
 						$tax_amount = 0;
-					} elseif ( $supplier_tax_category === '外税' ) {
+					} elseif ( $item_tax_category === '外税' ) {
 						$tax_amount = ceil( $amount * ( $tax_rate / 100 ) );
 					} else {
 						$tax_amount = ceil( $amount * ( $tax_rate / 100 ) / ( 1 + $tax_rate / 100 ) );
@@ -4320,7 +4320,7 @@ class KTPWP_Ajax {
 
 					if ( $has_qualified_invoice ) {
 						// 適格請求書あり：税抜金額をコストとする
-						if ( $supplier_tax_category === '外税' ) {
+						if ( $item_tax_category === '外税' ) {
 							$cost_amount = $amount - $tax_amount;
 						} else {
 							$cost_amount = $amount - $tax_amount;
@@ -4453,7 +4453,7 @@ class KTPWP_Ajax {
 			// 税率がNULLまたは空の場合は非課税取引
 			$is_tax_free = empty( $tax_rate ) || $tax_rate === null;
 			$tax_rate = $is_tax_free ? 0.0 : floatval( $tax_rate );
-			$tax_category = $item['tax_category'] ?: '内税';
+			$tax_category = isset($item['tax_category']) ? $item['tax_category'] : '内税';
 			$remarks = $item['remarks'] ?: '';
 			$has_qualified_invoice = ! empty( $item['qualified_invoice_number'] );
 
@@ -4506,11 +4506,147 @@ class KTPWP_Ajax {
 
 		$body .= str_repeat( '-', 60 ) . "\n";
 
-		// 合計金額（詳細表示）
-		$body .= "金額合計：" . number_format( $total_amount ) . "円\n";
-		// 内税の場合、表示金額は税込なので税抜価格を計算
-		$tax_excluded_amount = $total_amount - $total_tax_amount;
-		$body .= "税込合計：" . number_format( $total_amount ) . "円（税抜価格：" . number_format( $tax_excluded_amount ) . "円＋消費税額：" . number_format( $total_tax_amount ) . "円）\n\n";
+		// 協力会社の税区分を取得
+		$supplier_tax_category = '内税'; // デフォルト値（内税に設定）
+		try {
+			// デバッグ用：税区分取得プロセスを記録
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( 'KTPWP Purchase Order Email: === TAX CATEGORY RETRIEVAL START ===' );
+				error_log( 'KTPWP Purchase Order Email: Supplier object tax_category: ' . (isset($supplier->tax_category) ? '"' . $supplier->tax_category . '"' : 'NOT_SET') );
+				error_log( 'KTPWP Purchase Order Email: Supplier object tax_category empty: ' . (empty($supplier->tax_category) ? 'true' : 'false') );
+			}
+			
+			// まず、協力会社オブジェクトから直接取得を試行
+			if ( isset( $supplier->tax_category ) && ! empty( $supplier->tax_category ) ) {
+				$supplier_tax_category = trim( $supplier->tax_category );
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					error_log( 'KTPWP Purchase Order Email: Retrieved from supplier object: "' . $supplier_tax_category . '"' );
+				}
+			} 
+			// 次に、KTPWP_Supplier_Dataクラスを使用して取得を試行
+			elseif ( class_exists( 'KTPWP_Supplier_Data' ) && method_exists( 'KTPWP_Supplier_Data', 'get_instance' ) ) {
+				$supplier_data = KTPWP_Supplier_Data::get_instance();
+				if ( method_exists( $supplier_data, 'get_tax_category_by_supplier_id' ) ) {
+					$supplier_tax_category = trim( $supplier_data->get_tax_category_by_supplier_id( $supplier->id ) );
+					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+						error_log( 'KTPWP Purchase Order Email: Retrieved from KTPWP_Supplier_Data: "' . $supplier_tax_category . '"' );
+					}
+				} else {
+					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+						error_log( 'KTPWP Purchase Order Email: KTPWP_Supplier_Data method not found' );
+					}
+				}
+			} else {
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					error_log( 'KTPWP Purchase Order Email: KTPWP_Supplier_Data class not found' );
+				}
+			}
+			// 最後に、直接データベースから取得を試行
+			if ( empty( $supplier_tax_category ) || $supplier_tax_category === '内税' ) {
+				global $wpdb;
+				$supplier_table = $wpdb->prefix . 'ktp_supplier';
+				$tax_category = $wpdb->get_var(
+					$wpdb->prepare(
+						"SELECT tax_category FROM `{$supplier_table}` WHERE id = %d",
+						$supplier->id
+					)
+				);
+				if ( $tax_category ) {
+					$supplier_tax_category = trim( $tax_category );
+					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+						error_log( 'KTPWP Purchase Order Email: Retrieved from database: "' . $supplier_tax_category . '"' );
+					}
+				} else {
+					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+						error_log( 'KTPWP Purchase Order Email: No tax_category found in database' );
+					}
+				}
+			}
+			
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( 'KTPWP Purchase Order Email: Final supplier_tax_category: "' . $supplier_tax_category . '"' );
+				error_log( 'KTPWP Purchase Order Email: === TAX CATEGORY RETRIEVAL END ===' );
+			}
+		} catch ( Exception $e ) {
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( 'KTPWP Purchase Order Email: Error getting supplier tax category: ' . $e->getMessage() );
+			}
+			$supplier_tax_category = '内税'; // エラー時はデフォルト値を使用
+		}
+		
+
+		
+		// 合計金額（協力会社の税区分に応じて表示）
+		// 税区分の比較を堅牢にするため、空白を除去して比較
+		$clean_tax_category = trim($supplier_tax_category);
+		// 空文字、NULL、または「内税」以外の場合は内税として扱う（デフォルト）
+		$is_inclusive_tax = ( empty($clean_tax_category) || $clean_tax_category === '内税' || strtolower($clean_tax_category) === '内税' );
+		
+		// デバッグ用ログ
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			error_log( 'KTPWP Purchase Order Email: Supplier tax category: ' . $supplier_tax_category . ' for supplier ID: ' . $supplier->id );
+			error_log( 'KTPWP Purchase Order Email: Total amount: ' . $total_amount . ', Total tax amount: ' . $total_tax_amount );
+			error_log( 'KTPWP Purchase Order Email: About to check tax category. Value: "' . $supplier_tax_category . '"' );
+			error_log( 'KTPWP Purchase Order Email: Clean tax category: "' . $clean_tax_category . '"' );
+			error_log( 'KTPWP Purchase Order Email: Is inclusive tax: ' . ( $is_inclusive_tax ? 'true' : 'false' ) );
+			error_log( 'KTPWP Purchase Order Email: Tax category length: ' . strlen($supplier_tax_category) );
+			error_log( 'KTPWP Purchase Order Email: Tax category type: ' . gettype($supplier_tax_category) );
+			error_log( 'KTPWP Purchase Order Email: Tax category bytes: ' . bin2hex($supplier_tax_category) );
+			error_log( 'KTPWP Purchase Order Email: Clean tax category length: ' . strlen($clean_tax_category) );
+			error_log( 'KTPWP Purchase Order Email: Clean tax category bytes: ' . bin2hex($clean_tax_category) );
+		}
+		
+		// デバッグ用：実際の値を詳細に記録
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			error_log( 'KTPWP Purchase Order Email: === TAX CATEGORY DEBUG START ===' );
+			error_log( 'KTPWP Purchase Order Email: Supplier company name: ' . $supplier->company_name );
+			error_log( 'KTPWP Purchase Order Email: Supplier ID: ' . $supplier->id );
+			error_log( 'KTPWP Purchase Order Email: Original supplier_tax_category: "' . $supplier_tax_category . '"' );
+			error_log( 'KTPWP Purchase Order Email: Clean supplier_tax_category: "' . $clean_tax_category . '"' );
+			error_log( 'KTPWP Purchase Order Email: Clean tax category length: ' . strlen($clean_tax_category) );
+			error_log( 'KTPWP Purchase Order Email: Clean tax category bytes: ' . bin2hex($clean_tax_category) );
+			error_log( 'KTPWP Purchase Order Email: Is empty: ' . (empty($clean_tax_category) ? 'true' : 'false') );
+			error_log( 'KTPWP Purchase Order Email: Is equal to 内税: ' . ($clean_tax_category === '内税' ? 'true' : 'false') );
+			error_log( 'KTPWP Purchase Order Email: Is inclusive tax: ' . ($is_inclusive_tax ? 'true' : 'false') );
+			error_log( 'KTPWP Purchase Order Email: === TAX CATEGORY DEBUG END ===' );
+		}
+		
+		if ( $is_inclusive_tax ) {
+			// 内税の場合：税込金額を表示し、税抜価格と消費税額を内訳で表示
+			// 要求された形式に合わせて、税抜価格と消費税額を計算
+			$tax_excluded_amount = $total_amount - $total_tax_amount;
+			$body .= "金額合計：" . number_format( $total_amount ) . "円（税抜価格：" . number_format( $tax_excluded_amount ) . "円＋消費税額：" . number_format( $total_tax_amount ) . "円）\n\n";
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( 'KTPWP Purchase Order Email: Using 内税 format' );
+			}
+		} else {
+			// 外税の場合：税抜金額、消費税額、税込金額を別々に表示
+			// 外税の場合、$total_amountは税抜金額なので、実際の税率に基づいて消費税額を計算し直す
+			$correct_tax_amount = 0;
+			
+			// 各商品の税率に基づいて消費税額を計算
+			foreach ( $cost_items as $item ) {
+				$amount = floatval( $item['amount'] );
+				$tax_rate = $item['tax_rate'];
+				$is_tax_free = empty( $tax_rate ) || $tax_rate === null;
+				
+				if ( ! $is_tax_free ) {
+					$tax_rate = floatval( $tax_rate );
+					// 外税の場合の消費税額計算
+					$correct_tax_amount += ceil( $amount * ( $tax_rate / 100 ) );
+				}
+			}
+			
+			$tax_included_amount = $total_amount + $correct_tax_amount;
+			
+			$body .= "金額合計：" . number_format( $total_amount ) . "円\n";
+			$body .= "消費税額：" . number_format( $correct_tax_amount ) . "円\n";
+			$body .= "税込金額：" . number_format( $tax_included_amount ) . "円\n\n";
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( 'KTPWP Purchase Order Email: Using 外税 format' );
+				error_log( 'KTPWP Purchase Order Email: Correct tax amount for 外税: ' . $correct_tax_amount );
+			}
+		}
 
 		// 税率別内訳は削除（不要）
 
