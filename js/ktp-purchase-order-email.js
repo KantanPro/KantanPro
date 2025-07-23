@@ -217,15 +217,7 @@
                     "></div>
                 </div>
 
-                <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                    <button type="button" id="ktp-purchase-order-email-cancel" style="
-                        padding: 10px 20px;
-                        background: #6c757d;
-                        color: white;
-                        border: none;
-                        border-radius: 4px;
-                        cursor: pointer;
-                    ">キャンセル</button>
+                <div style="display: flex; justify-content: center;">
                     <button type="submit" id="ktp-purchase-order-email-send" style="
                         padding: 10px 20px;
                         background: #007cba;
@@ -241,10 +233,6 @@
         $('#ktp-purchase-order-email-popup-content').html(content);
 
         // イベントハンドラーを設定
-        $('#ktp-purchase-order-email-cancel').on('click', function() {
-            $('#ktp-purchase-order-email-popup').remove();
-        });
-
         $('#ktp-purchase-order-email-form').on('submit', function(e) {
             e.preventDefault();
             sendPurchaseOrderEmail(orderId, supplierName);
