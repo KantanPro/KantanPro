@@ -47,10 +47,10 @@
                 <div style="
                     background: white;
                     border-radius: 8px;
-                    padding: 15px;
+                    padding: 20px;
                     width: 95%;
-                    max-width: 600px;
-                    max-height: 85%;
+                    max-width: 800px;
+                    max-height: 90%;
                     overflow-y: auto;
                     box-shadow: 0 4px 20px rgba(0,0,0,0.3);
                 ">
@@ -58,9 +58,9 @@
                         display: flex;
                         justify-content: space-between;
                         align-items: center;
-                        margin-bottom: 15px;
+                        margin-bottom: 20px;
                         border-bottom: 1px solid #eee;
-                        padding-bottom: 10px;
+                        padding-bottom: 15px;
                     ">
                         <h3 style="margin: 0; color: #333;">メール送信</h3>
                         <button type="button" id="ktp-email-popup-close" style="
