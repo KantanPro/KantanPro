@@ -181,13 +181,40 @@
 
                 <div style="margin-bottom: 15px;">
                     <label for="email-body" style="display: block; margin-bottom: 5px; font-weight: bold;">本文:</label>
-                    <textarea id="email-body" name="body" rows="25" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-family: monospace; font-size: 12px;" required>${data.body}</textarea>
+                    <textarea id="email-body" name="body" rows="20" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-family: monospace; font-size: 12px;" required>${data.body}</textarea>
                 </div>
 
-                <div style="margin-bottom: 15px;">
-                    <label for="email-attachments" style="display: block; margin-bottom: 5px; font-weight: bold;">添付ファイル:</label>
-                    <input type="file" id="email-attachments" name="attachments[]" multiple style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
-                    <small style="color: #666;">複数ファイル選択可能（各ファイル10MB以下、合計50MB以下）</small>
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; font-weight: bold; margin-bottom: 5px;">ファイル添付：</label>
+                    <div id="file-attachment-area" style="
+                        border: 2px dashed #ddd;
+                        border-radius: 8px;
+                        padding: 20px;
+                        text-align: center;
+                        background: #fafafa;
+                        margin-bottom: 10px;
+                        transition: all 0.3s ease;
+                    ">
+                        <input type="file" id="email-attachments" multiple accept=".pdf,.jpg,.jpeg,.png,.gif,.doc,.docx,.xls,.xlsx,.zip,.rar,.7z" style="display: none;">
+                        <div id="drop-zone" style="cursor: pointer;">
+                            <div style="font-size: 18px; color: #666; margin-bottom: 8px;">
+                                📎 ファイルをドラッグ&ドロップまたはクリックして選択
+                            </div>
+                            <div style="font-size: 13px; color: #888; line-height: 1.4;">
+                                対応形式：PDF, 画像(JPG,PNG,GIF), Word, Excel, 圧縮ファイル等<br>
+                                <strong>最大ファイルサイズ：10MB/ファイル, 合計50MB</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="selected-files" style="
+                        max-height: 120px;
+                        overflow-y: auto;
+                        border: 1px solid #ddd;
+                        border-radius: 4px;
+                        padding: 8px;
+                        background: white;
+                        display: none;
+                    "></div>
                 </div>
 
                 <div style="display: flex; gap: 10px; justify-content: flex-end;">
@@ -222,6 +249,233 @@
             e.preventDefault();
             sendPurchaseOrderEmail(orderId, supplierName);
         });
+
+        // ファイル添付機能のイベントハンドラー
+        setupFileAttachment();
+    }
+
+    // ファイル添付機能のセットアップ
+    function setupFileAttachment() {
+        const fileInput = $('#email-attachments');
+        const dropZone = $('#drop-zone');
+        const selectedFilesDiv = $('#selected-files');
+        let selectedFiles = [];
+
+        // ドロップゾーンクリック
+        dropZone.on('click', function() {
+            fileInput.click();
+        });
+
+        // ファイル選択
+        fileInput.on('change', function(e) {
+            const files = Array.from(e.target.files);
+            addFiles(files);
+        });
+
+        // ドラッグ&ドロップ
+        dropZone.on('dragover', function(e) {
+            e.preventDefault();
+            $('#file-attachment-area').css({
+                'background': '#e3f2fd',
+                'border-color': '#2196f3',
+                'transform': 'scale(1.02)'
+            });
+        });
+
+        dropZone.on('dragleave', function(e) {
+            e.preventDefault();
+            $('#file-attachment-area').css({
+                'background': '#fafafa',
+                'border-color': '#ddd',
+                'transform': 'scale(1.0)'
+            });
+        });
+
+        dropZone.on('drop', function(e) {
+            e.preventDefault();
+            $('#file-attachment-area').css({
+                'background': '#fafafa',
+                'border-color': '#ddd',
+                'transform': 'scale(1.0)'
+            });
+            const files = Array.from(e.originalEvent.dataTransfer.files);
+            addFiles(files);
+        });
+
+        // ファイル追加
+        function addFiles(files) {
+            const maxFileSize = 10 * 1024 * 1024; // 10MB
+            const maxTotalSize = 50 * 1024 * 1024; // 50MB
+            const allowedTypes = [
+                'application/pdf',
+                'image/jpeg', 'image/jpg', 'image/png', 'image/gif',
+                'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'application/zip', 'application/x-rar-compressed', 'application/x-zip-compressed'
+            ];
+
+            let totalSize = selectedFiles.reduce((sum, file) => sum + file.size, 0);
+            let hasError = false;
+
+            files.forEach(file => {
+                // ファイルサイズチェック
+                if (file.size > maxFileSize) {
+                    alert(`ファイル "${file.name}" は10MBを超えています。\n最大ファイルサイズ：10MB`);
+                    hasError = true;
+                    return;
+                }
+
+                // 合計サイズチェック
+                if (totalSize + file.size > maxTotalSize) {
+                    alert(`合計ファイルサイズが50MBを超えます。\nファイルを減らしてください。`);
+                    hasError = true;
+                    return;
+                }
+
+                // ファイル形式チェック
+                const fileExt = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+                const isAllowedType = allowedTypes.includes(file.type);
+                const isAllowedExt = isAllowedExtension(file.name);
+
+                if (!isAllowedType && !isAllowedExt) {
+                    alert(`ファイル "${file.name}" は対応していない形式です。\n対応形式：PDF, 画像, Word, Excel, 圧縮ファイル等`);
+                    hasError = true;
+                    return;
+                }
+
+                // 重複チェック
+                if (selectedFiles.find(f => f.name === file.name && f.size === file.size)) {
+                    return; // スキップ
+                }
+
+                selectedFiles.push(file);
+                totalSize += file.size;
+            });
+
+            if (!hasError) {
+                updateFileList();
+            }
+        }
+
+        // 拡張子による許可チェック
+        function isAllowedExtension(filename) {
+            const allowedExtensions = [
+                '.pdf', '.jpg', '.jpeg', '.png', '.gif',
+                '.doc', '.docx', '.xls', '.xlsx',
+                '.zip', '.rar', '.7z'
+            ];
+            const ext = filename.toLowerCase().substring(filename.lastIndexOf('.'));
+            return allowedExtensions.includes(ext);
+        }
+
+        // ファイルリスト更新
+        function updateFileList() {
+            if (selectedFiles.length === 0) {
+                selectedFilesDiv.hide();
+                return;
+            }
+
+            const totalSize = selectedFiles.reduce((sum, file) => sum + file.size, 0);
+            const totalSizePercent = Math.min((totalSize / (50 * 1024 * 1024)) * 100, 100);
+            const progressColor = totalSizePercent > 80 ? '#ff6b6b' : totalSizePercent > 60 ? '#ffa726' : '#4caf50';
+
+            let html = '';
+            selectedFiles.forEach((file, index) => {
+                const fileIcon = getFileIcon(file.name);
+                const fileSize = formatFileSize(file.size);
+                html += `
+                    <div style="
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        padding: 8px;
+                        border-bottom: 1px solid #eee;
+                        background: #f9f9f9;
+                        margin-bottom: 4px;
+                        border-radius: 4px;
+                    ">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="font-size: 16px;">${fileIcon}</span>
+                            <div>
+                                <div style="font-size: 12px; font-weight: bold; color: #333;">${file.name}</div>
+                                <div style="font-size: 11px; color: #666;">${fileSize}</div>
+                            </div>
+                        </div>
+                        <button type="button" onclick="removeFile(${index})" style="
+                            background: #ff6b6b;
+                            color: white;
+                            border: none;
+                            border-radius: 50%;
+                            width: 24px;
+                            height: 24px;
+                            cursor: pointer;
+                            font-size: 12px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                        ">×</button>
+                    </div>
+                `;
+            });
+
+            html += `
+                <div style="margin-top: 8px; padding: 8px; background: #f0f0f0; border-radius: 4px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                        <span style="font-size: 11px; color: #666;">合計サイズ: ${formatFileSize(totalSize)}</span>
+                        <span style="font-size: 11px; color: #666;">${totalSizePercent.toFixed(1)}%</span>
+                    </div>
+                    <div style="
+                        width: 100%;
+                        height: 4px;
+                        background: #ddd;
+                        border-radius: 2px;
+                        overflow: hidden;
+                    ">
+                        <div style="
+                            background: ${progressColor};
+                            height: 100%;
+                            width: ${totalSizePercent}%;
+                            transition: width 0.3s ease;
+                        "></div>
+                    </div>
+                </div>
+            `;
+
+            selectedFilesDiv.html(html).show();
+        }
+
+        // ファイルアイコン取得
+        function getFileIcon(filename) {
+            const ext = filename.toLowerCase().substring(filename.lastIndexOf('.'));
+            const iconMap = {
+                '.pdf': '📄',
+                '.jpg': '🖼️', '.jpeg': '🖼️', '.png': '🖼️', '.gif': '🖼️',
+                '.doc': '📝', '.docx': '📝',
+                '.xls': '📊', '.xlsx': '📊',
+                '.zip': '🗜️', '.rar': '🗜️', '.7z': '🗜️'
+            };
+            return iconMap[ext] || '📎';
+        }
+
+        // ファイル削除（グローバル関数として定義）
+        window.removeFile = function(index) {
+            selectedFiles.splice(index, 1);
+            updateFileList();
+        };
+
+        // ファイルサイズフォーマット
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // 選択されたファイルを取得する関数
+        window.getSelectedFiles = function() {
+            return selectedFiles;
+        };
     }
 
     // 発注メールを送信
@@ -250,16 +504,26 @@
         formData.append('nonce', nonce);
         formData.append('ktpwp_ajax_nonce', nonce);  // 追加: サーバー側で期待されるフィールド名
 
-        // 添付ファイルを追加
-        const fileInput = $('#email-attachments')[0];
-        if (fileInput.files.length > 0) {
-            for (let i = 0; i < fileInput.files.length; i++) {
-                formData.append('attachments[]', fileInput.files[i]);
-            }
-        }
+        // 選択されたファイルを追加
+        const selectedFiles = window.getSelectedFiles ? window.getSelectedFiles() : [];
+        selectedFiles.forEach((file, index) => {
+            formData.append(`attachments[${index}]`, file);
+        });
 
         // 送信ボタンを無効化
         $('#ktp-purchase-order-email-send').prop('disabled', true).text('送信中...');
+
+        // 送信中表示を更新（ファイル数を表示）
+        let loadingMessage = '発注メール送信中...';
+        if (selectedFiles.length > 0) {
+            loadingMessage += `<br><small style="color: #666;">${selectedFiles.length}件のファイルを添付中...</small>`;
+        }
+
+        $('#ktp-purchase-order-email-popup-content').html(`
+            <div style="text-align: center; padding: 40px;">
+                <div style="font-size: 16px; color: #666;">${loadingMessage}</div>
+            </div>
+        `);
 
         // Ajax URLの確認と代替設定
         let ajaxUrl = '';
