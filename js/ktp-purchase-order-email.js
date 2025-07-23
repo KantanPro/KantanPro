@@ -112,14 +112,26 @@
 
         // 統一されたnonce取得方法
         let nonce = '';
-        if (typeof ktp_ajax_nonce !== 'undefined') {
+        if (typeof ktpwp_ajax_nonce !== 'undefined') {
+            nonce = ktpwp_ajax_nonce;
+        } else if (typeof ktp_ajax_nonce !== 'undefined') {
             nonce = ktp_ajax_nonce;
         } else if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.nonce) {
             nonce = ktp_ajax_object.nonce;
-        } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.auto_save) {
-            nonce = ktpwp_ajax.nonces.auto_save;
         } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.general) {
             nonce = ktpwp_ajax.nonces.general;
+        } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.auto_save) {
+            nonce = ktpwp_ajax.nonces.auto_save;
+        }
+
+        // nonceが取得できない場合のデバッグ情報
+        if (!nonce) {
+            console.error('[PURCHASE-ORDER-EMAIL] nonceが取得できません:', {
+                ktpwp_ajax_nonce: typeof ktpwp_ajax_nonce !== 'undefined' ? 'defined' : 'undefined',
+                ktp_ajax_nonce: typeof ktp_ajax_nonce !== 'undefined' ? 'defined' : 'undefined',
+                ktp_ajax_object: typeof ktp_ajax_object !== 'undefined' ? 'defined' : 'undefined',
+                ktpwp_ajax: typeof ktpwp_ajax !== 'undefined' ? 'defined' : 'undefined'
+            });
         }
 
         $.ajax({
@@ -129,7 +141,8 @@
                 action: 'get_purchase_order_email_content',
                 order_id: orderId,
                 supplier_name: supplierName,
-                nonce: nonce
+                nonce: nonce,
+                ktpwp_ajax_nonce: nonce  // 追加: サーバー側で期待されるフィールド名
             },
             success: function(response) {
                 console.log('[PURCHASE-ORDER-EMAIL] レスポンス受信:', response);
@@ -173,8 +186,21 @@
                     <div style="margin-bottom: 5px;"><strong>小計:</strong> ${numberFormat(data.cost_summary.total_amount)}円</div>
                     <div style="margin-bottom: 5px;"><strong>消費税:</strong> ${numberFormat(data.cost_summary.total_tax_amount)}円</div>
                     <div style="margin-bottom: 5px;"><strong>合計:</strong> ${numberFormat(data.cost_summary.total_amount + data.cost_summary.total_tax_amount)}円</div>
-                    ${data.cost_summary.qualified_invoice_cost > 0 ? `<div style="margin-bottom: 5px; color: #28a745;"><strong>適格請求書対象:</strong> ${numberFormat(data.cost_summary.qualified_invoice_cost)}円（税抜）</div>` : ''}
-                    ${data.cost_summary.non_qualified_invoice_cost > 0 ? `<div style="color: #dc3545;"><strong>適格請求書対象外:</strong> ${numberFormat(data.cost_summary.non_qualified_invoice_cost)}円（税込）</div>` : ''}
+                    ${data.cost_summary.qualified_invoice_cost > 0 ? `<div style="margin-bottom: 5px; color: #28a745;"><strong>適格請求書対象:</strong> ${numberFormat(data.cost_summary.qualified_invoice_cost)}円（税抜金額）</div>` : ''}
+                    ${data.cost_summary.non_qualified_invoice_cost > 0 ? `<div style="color: #dc3545;"><strong>適格請求書対象外:</strong> ${numberFormat(data.cost_summary.non_qualified_invoice_cost)}円（税込金額）</div>` : ''}
+                </div>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <h4 style="margin: 0 0 10px 0; color: #333;">適格請求書対応状況</h4>
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 15px;">
+                    ${data.supplier_qualified_invoice_number ? 
+                        `<div style="color: #28a745; margin-bottom: 5px;"><strong>✓ 適格請求書対応済み</strong></div>
+                         <div style="margin-bottom: 5px;"><strong>適格請求書番号:</strong> ${data.supplier_qualified_invoice_number}</div>
+                         <div style="font-size: 12px; color: #666;">税抜金額での計算となります</div>` :
+                        `<div style="color: #dc3545; margin-bottom: 5px;"><strong>⚠ 適格請求書未対応</strong></div>
+                         <div style="font-size: 12px; color: #666;">税込金額での計算となります</div>`
+                    }
                 </div>
             </div>
 
@@ -191,7 +217,7 @@
 
                 <div style="margin-bottom: 15px;">
                     <label for="email-body" style="display: block; margin-bottom: 5px; font-weight: bold;">本文:</label>
-                    <textarea id="email-body" name="body" rows="20" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-family: monospace; font-size: 12px;" required>${data.body}</textarea>
+                    <textarea id="email-body" name="body" rows="25" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-family: monospace; font-size: 12px;" required>${data.body}</textarea>
                 </div>
 
                 <div style="margin-bottom: 15px;">
@@ -246,16 +272,19 @@
 
         // nonceを追加
         let nonce = '';
-        if (typeof ktp_ajax_nonce !== 'undefined') {
+        if (typeof ktpwp_ajax_nonce !== 'undefined') {
+            nonce = ktpwp_ajax_nonce;
+        } else if (typeof ktp_ajax_nonce !== 'undefined') {
             nonce = ktp_ajax_nonce;
         } else if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.nonce) {
             nonce = ktp_ajax_object.nonce;
-        } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.auto_save) {
-            nonce = ktpwp_ajax.nonces.auto_save;
         } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.general) {
             nonce = ktpwp_ajax.nonces.general;
+        } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.auto_save) {
+            nonce = ktpwp_ajax.nonces.auto_save;
         }
         formData.append('nonce', nonce);
+        formData.append('ktpwp_ajax_nonce', nonce);  // 追加: サーバー側で期待されるフィールド名
 
         // 添付ファイルを追加
         const fileInput = $('#email-attachments')[0];

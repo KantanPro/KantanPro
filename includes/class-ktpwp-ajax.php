@@ -479,6 +479,13 @@ class KTPWP_Ajax {
 			wp_add_inline_script( 'ktp-cost-items', 'var ajaxurl = ' . json_encode( $ajax_data['ajax_url'] ) . ';' );
 		}
 
+		// 発注メール用のnonce設定
+		if ( isset( $wp_scripts->registered['ktp-purchase-order-email'] ) ) {
+			wp_add_inline_script( 'ktp-purchase-order-email', 'var ktpwp_ajax_nonce = ' . json_encode( $ajax_data['nonces']['general'] ) . ';' );
+			wp_add_inline_script( 'ktp-purchase-order-email', 'var ktp_ajax_nonce = ' . json_encode( $ajax_data['nonces']['auto_save'] ) . ';' );
+			wp_add_inline_script( 'ktp-purchase-order-email', 'var ajaxurl = ' . json_encode( $ajax_data['ajax_url'] ) . ';' );
+		}
+
 		// サービス選択機能専用のAJAX設定
 		if ( isset( $wp_scripts->registered['ktp-service-selector'] ) ) {
 			wp_add_inline_script(
@@ -4191,14 +4198,26 @@ class KTPWP_Ajax {
 			$non_qualified_invoice_cost = 0;
 
 			foreach ( $cost_items as $item ) {
-				if ( $item['supplier_name'] === $supplier_name ) {
+				// 協力会社名フィールドの確認（複数の可能性）
+				$item_supplier_name = '';
+				if ( isset( $item['purchase'] ) ) {
+					$item_supplier_name = $item['purchase'];
+				} elseif ( isset( $item['supplier_name'] ) ) {
+					$item_supplier_name = $item['supplier_name'];
+				} elseif ( isset( $item['supplier'] ) ) {
+					$item_supplier_name = $item['supplier'];
+				} elseif ( isset( $item['company_name'] ) ) {
+					$item_supplier_name = $item['company_name'];
+				}
+
+				if ( $item_supplier_name === $supplier_name ) {
 					$filtered_cost_items[] = $item;
 					$amount = floatval( $item['amount'] );
 					$total_amount += $amount;
 
 					// 税額計算
 					$tax_rate = floatval( $item['tax_rate'] ) ?: 10.0;
-					$supplier_tax_category = $item['tax_category'] ?: '内税';
+					$supplier_tax_category = isset( $item['tax_category'] ) ? $item['tax_category'] : '内税';
 					$has_qualified_invoice = ! empty( $item['qualified_invoice_number'] );
 
 					if ( $has_qualified_invoice ) {
@@ -4265,10 +4284,11 @@ class KTPWP_Ajax {
 					'body' => $body,
 					'supplier_email' => $supplier->email,
 					'supplier_name' => $supplier->name,
+					'supplier_qualified_invoice_number' => $supplier->qualified_invoice_number,
 					'order_info' => array(
 						'project_name' => $order->project_name,
 						'order_date' => $order->order_date,
-						'delivery_date' => $order->delivery_date,
+						'delivery_date' => isset( $order->delivery_date ) ? $order->delivery_date : null,
 						'client_name' => $client ? $client->company_name : $order->customer_name,
 					),
 					'cost_summary' => array(
@@ -4307,7 +4327,7 @@ class KTPWP_Ajax {
 		if ( $client ) {
 			$body .= "顧客名：" . $client->company_name . "\n";
 		}
-		$body .= "納期：" . ( $order->delivery_date ? date( 'Y年n月j日', strtotime( $order->delivery_date ) ) : '未定' ) . "\n\n";
+		$body .= "納期：" . ( isset( $order->delivery_date ) && $order->delivery_date ? date( 'Y年n月j日', strtotime( $order->delivery_date ) ) : '未定' ) . "\n\n";
 
 		// 協力会社情報
 		$body .= "【発注先】\n";
@@ -4317,14 +4337,18 @@ class KTPWP_Ajax {
 		}
 		$body .= "\n";
 
-		// 適格請求書番号の表示
+		// 適格請求書番号の表示（強化）
 		if ( ! empty( $supplier->qualified_invoice_number ) ) {
-			$body .= "※ 適格請求書番号：" . $supplier->qualified_invoice_number . "\n\n";
+			$body .= "※ 適格請求書番号：" . $supplier->qualified_invoice_number . "\n";
+			$body .= "※ 適格請求書対応により、税抜金額での計算となります。\n\n";
+		} else {
+			$body .= "※ 適格請求書番号：未登録\n";
+			$body .= "※ 適格請求書未対応のため、税込金額での計算となります。\n\n";
 		}
 
 		// 発注内容
 		$body .= "【発注内容】\n";
-		$body .= str_repeat( '-', 50 ) . "\n";
+		$body .= str_repeat( '-', 60 ) . "\n";
 
 		$max_length = 0;
 		foreach ( $cost_items as $item ) {
@@ -4333,6 +4357,11 @@ class KTPWP_Ajax {
 				$max_length = $product_name_length;
 			}
 		}
+
+		// 税率別の集計用配列
+		$tax_rate_groups = array();
+		$qualified_items = array();
+		$non_qualified_items = array();
 
 		foreach ( $cost_items as $item ) {
 			$product_name = $item['product_name'];
@@ -4343,6 +4372,7 @@ class KTPWP_Ajax {
 			$tax_rate = floatval( $item['tax_rate'] ) ?: 10.0;
 			$tax_category = $item['tax_category'] ?: '内税';
 			$remarks = $item['remarks'] ?: '';
+			$has_qualified_invoice = ! empty( $item['qualified_invoice_number'] );
 
 			// 品名を左寄せで表示
 			$product_name_padded = str_pad( $product_name, $max_length + 2, ' ' );
@@ -4352,39 +4382,106 @@ class KTPWP_Ajax {
 			$remarks_text = ( ! empty( trim( $remarks ) ) ) ? '　※ ' . $remarks : '';
 			
 			$body .= $product_name_padded . number_format( $price ) . '円 × ' . $quantity . $unit . ' = ' . number_format( $amount ) . "円{$tax_info}{$remarks_text}\n";
+
+			// 税率別集計
+			$tax_rate_key = number_format( $tax_rate, 1 );
+			if ( ! isset( $tax_rate_groups[ $tax_rate_key ] ) ) {
+				$tax_rate_groups[ $tax_rate_key ] = array(
+					'amount' => 0,
+					'qualified_amount' => 0,
+					'non_qualified_amount' => 0,
+					'tax_amount' => 0
+				);
+			}
+			$tax_rate_groups[ $tax_rate_key ]['amount'] += $amount;
+
+			// 適格請求書の有無で分類
+			if ( $has_qualified_invoice ) {
+				$qualified_items[] = $item;
+				$tax_rate_groups[ $tax_rate_key ]['qualified_amount'] += $amount;
+			} else {
+				$non_qualified_items[] = $item;
+				$tax_rate_groups[ $tax_rate_key ]['non_qualified_amount'] += $amount;
+			}
+
+			// 税額計算
+			if ( $tax_category === '外税' ) {
+				$tax_amount = ceil( $amount * ( $tax_rate / 100 ) );
+			} else {
+				$tax_amount = ceil( $amount * ( $tax_rate / 100 ) / ( 1 + $tax_rate / 100 ) );
+			}
+			$tax_rate_groups[ $tax_rate_key ]['tax_amount'] += $tax_amount;
 		}
 
-		$body .= str_repeat( '-', 50 ) . "\n";
+		$body .= str_repeat( '-', 60 ) . "\n";
 
-		// 合計金額
+		// 合計金額（詳細表示）
 		$body .= "小計：" . number_format( $total_amount ) . "円\n";
 		if ( $total_tax_amount > 0 ) {
 			$body .= "消費税：" . number_format( $total_tax_amount ) . "円\n";
 		}
 		$body .= "合計：" . number_format( $total_amount + $total_tax_amount ) . "円\n\n";
 
-		// 適格請求書の有無による内訳
-		if ( $qualified_invoice_cost > 0 || $non_qualified_invoice_cost > 0 ) {
-			$body .= "【計算根拠】\n";
-			if ( $qualified_invoice_cost > 0 ) {
-				$body .= "・適格請求書対象：" . number_format( $qualified_invoice_cost ) . "円（税抜金額）\n";
-			}
-			if ( $non_qualified_invoice_cost > 0 ) {
-				$body .= "・適格請求書対象外：" . number_format( $non_qualified_invoice_cost ) . "円（税込金額）\n";
+		// 税率別内訳（詳細表示）
+		if ( count( $tax_rate_groups ) > 0 ) {
+			$body .= "【税率別内訳】\n";
+			foreach ( $tax_rate_groups as $tax_rate => $group_data ) {
+				$body .= "・{$tax_rate}%：" . number_format( $group_data['amount'] ) . "円";
+				if ( $group_data['tax_amount'] > 0 ) {
+					$body .= "（税額：" . number_format( $group_data['tax_amount'] ) . "円）";
+				}
+				$body .= "\n";
 			}
 			$body .= "\n";
 		}
+
+		// 適格請求書の有無による内訳（詳細表示）
+		if ( $qualified_invoice_cost > 0 || $non_qualified_invoice_cost > 0 ) {
+			$body .= "【適格請求書対応による計算根拠】\n";
+			if ( $qualified_invoice_cost > 0 ) {
+				$body .= "・適格請求書対象：" . number_format( $qualified_invoice_cost ) . "円（税抜金額）\n";
+				$body .= "  → 税抜金額をコストとして計算\n";
+			}
+			if ( $non_qualified_invoice_cost > 0 ) {
+				$body .= "・適格請求書対象外：" . number_format( $non_qualified_invoice_cost ) . "円（税込金額）\n";
+				$body .= "  → 税込金額をコストとして計算\n";
+			}
+			$body .= "\n";
+		}
+
+		// 税区分別の計算方法説明
+		$body .= "【税額計算方法】\n";
+		$has_outtax = false;
+		$has_intax = false;
+		foreach ( $cost_items as $item ) {
+			if ( $item['tax_category'] === '外税' ) {
+				$has_outtax = true;
+			} else {
+				$has_intax = true;
+			}
+		}
+		
+		if ( $has_outtax ) {
+			$body .= "・外税項目：税抜金額 × 税率 = 税額（切り上げ）\n";
+		}
+		if ( $has_intax ) {
+			$body .= "・内税項目：税込金額 × 税率 ÷ (1 + 税率) = 税額（切り上げ）\n";
+		}
+		$body .= "\n";
 
 		// 支払条件
 		$body .= "【支払条件】\n";
 		$body .= "支払方法：銀行振込\n";
 		$body .= "支払期日：月末締め翌月末払い\n\n";
 
-		// 備考
+		// 備考（強化）
 		$body .= "【備考】\n";
 		$body .= "・納品書と請求書を同封してください。\n";
 		if ( ! empty( $supplier->qualified_invoice_number ) ) {
 			$body .= "・適格請求書の交付をお願いします。\n";
+			$body .= "・適格請求書番号：" . $supplier->qualified_invoice_number . "\n";
+		} else {
+			$body .= "・適格請求書番号の登録をお願いします。\n";
 		}
 		$body .= "・ご不明な点がございましたら、お気軽にお問い合わせください。\n\n";
 

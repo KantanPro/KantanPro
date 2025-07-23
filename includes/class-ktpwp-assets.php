@@ -196,7 +196,7 @@ class KTPWP_Assets {
                     'object' => 'ktp_ajax_object',
                     'data'   => array(
                         'ajax_url' => admin_url( 'admin-ajax.php' ),
-                        'nonce'    => wp_create_nonce( 'ktp_ajax_nonce' ),
+                        'nonce'    => wp_create_nonce( 'ktpwp_ajax_nonce' ),
                     ),
                 ),
             ),
