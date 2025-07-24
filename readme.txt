@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.1.11(preview)
+Stable tag: 1.1.12(preview)
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -44,6 +44,7 @@ KantanProは、WordPress上で以下の業務を一元管理できる多機能�
 - **消費税対応の改善**（税率計算・表示の最適化）
 - **受注書のコスト項目更新処理の改善**（リアルタイム保存・値変更検知・エラーハンドリング強化）
 - **受注書のコスト項目発注メールの改善**（適格請求書対応・詳細な税額内訳・計算根拠明示）
+- **請求書プレビューが閉じない問題を修正**
 
 == インストール ==
 
@@ -493,6 +494,13 @@ A: XSS・CSRF・SQLインジェクション対策、ファイルアップロー�
 5. レポート画面
 
 == チャンジェログ ==
+
+= 1.1.12(preview) - 2025年7月24日 =
+* 請求書プレビューが閉じない問題を修正
+
+= 1.1.11(preview) - 2025年7月23日 =
+* 受注書のコスト項目発注メールの改善（適格請求書対応・詳細な税額内訳・計算根拠明示）
+* 受注書のコスト項目更新処理の改善（リアルタイム保存・値変更検知・エラーハンドリング強化）
 
 詳細な変更履歴は、プラグイン内のヘルプ機能で確認できます。
 

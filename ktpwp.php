@@ -3,7 +3,7 @@
  * Plugin Name: KantanPro
  * Plugin URI: https://www.kantanpro.com/
  * Description: スモールビジネス向けの仕事効率化システム。ショートコード[ktpwp_all_tab]を固定ページに設置してください。
- * Version: 1.1.11(preview)
+ * Version: 1.1.12(preview)
  * Author: KantanPro
  * Author URI: https://www.kantanpro.com/kantanpro-page
  * License: GPL v2 or later
@@ -30,7 +30,7 @@ if ( file_exists( plugin_dir_path( __FILE__ ) . 'vendor/autoload.php' ) ) {
 
 // プラグイン定数定義
 if ( ! defined( 'KANTANPRO_PLUGIN_VERSION' ) ) {
-    define( 'KANTANPRO_PLUGIN_VERSION', '1.1.11(preview)' );
+    define( 'KANTANPRO_PLUGIN_VERSION', '1.1.12(preview)' );
 }
 if ( ! defined( 'KANTANPRO_PLUGIN_NAME' ) ) {
     define( 'KANTANPRO_PLUGIN_NAME', 'KantanPro' );
@@ -564,46 +564,30 @@ function ktpwp_run_auto_migrations() {
                 throw new Exception( 'マイグレーション安全性チェックに失敗しました' );
             }
 
-            // 1. 基本テーブル作成（確実に実行）
-            ktpwp_safe_table_setup();
-
-            // 2. 部署テーブルの作成（確実に実行）
-            ktpwp_safe_create_department_table();
-            ktpwp_safe_add_department_selection_column();
-            ktpwp_safe_add_client_selected_department_column();
-
-            // 3. マイグレーションファイルの実行（順序付き・安全実行）
-            ktpwp_safe_run_migration_files( $current_db_version, $plugin_version );
-
-            // 4. 適格請求書ナンバー機能のマイグレーション（確実に実行）
-            ktpwp_safe_run_qualified_invoice_migration();
-
-            // 5. 追加のテーブル構造修正（安全実行）
-            ktpwp_safe_fix_table_structures();
-
-            // 6. 既存データの修復（安全実行）
-            ktpwp_safe_repair_existing_data();
-
-            // 7. データベース整合性チェック
-            if ( ! ktpwp_verify_database_integrity() ) {
-                throw new Exception( 'データベース整合性チェックに失敗しました' );
+            // 新規インストール判定の強化
+            $is_new_installation = ktpwp_is_new_installation();
+            
+            if ( $is_new_installation ) {
+                if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                    error_log( 'KTPWP Auto Migration: 新規インストールを検出 - 基本構造のみで初期化' );
+                }
+                
+                // 新規インストール時は基本構造のみで初期化
+                ktpwp_initialize_new_installation();
+            } else {
+                // 既存環境での段階的マイグレーション
+                ktpwp_run_staged_migrations( $current_db_version, $plugin_version );
             }
 
-            // 8. DBバージョンを更新
+            // データベースバージョンを更新
             update_option( 'ktpwp_db_version', $plugin_version );
             update_option( 'ktpwp_last_migration_timestamp', current_time( 'mysql' ) );
-            update_option( 'ktpwp_migration_completed', true );
             update_option( 'ktpwp_migration_success_count', get_option( 'ktpwp_migration_success_count', 0 ) + 1 );
 
-            // マイグレーション完了フラグをクリア
-            delete_option( 'ktpwp_migration_in_progress' );
-            delete_option( 'ktpwp_migration_error' );
-            delete_option( 'ktpwp_migration_error_timestamp' );
-
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP Auto Migration: Successfully updated DB version from ' . $current_db_version . ' to ' . $plugin_version );
+                error_log( 'KTPWP Auto Migration: Migration completed successfully' );
             }
-            
+
         } catch ( Exception $e ) {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
                 error_log( 'KTPWP Auto Migration Error: ' . $e->getMessage() );
@@ -614,14 +598,11 @@ function ktpwp_run_auto_migrations() {
             update_option( 'ktpwp_migration_error_timestamp', current_time( 'mysql' ) );
             update_option( 'ktpwp_migration_error_count', get_option( 'ktpwp_migration_error_count', 0 ) + 1 );
             
-            // エラーが発生した場合でもDBバージョンは更新（部分的な成功を記録）
-            update_option( 'ktpwp_db_version', $plugin_version );
-            
+            // 管理者に通知
+            ktpwp_notify_migration_error( '自動マイグレーションエラー: ' . $e->getMessage() );
+        } finally {
             // マイグレーション進行中フラグをクリア
             delete_option( 'ktpwp_migration_in_progress' );
-            
-            // 管理者に通知
-            ktpwp_notify_migration_error( $e->getMessage() );
         }
     }
     
@@ -630,7 +611,78 @@ function ktpwp_run_auto_migrations() {
     
     // デバッグ時のみ、予期しない出力があればログに記録
     if ( defined( 'WP_DEBUG' ) && WP_DEBUG && ! empty( $output ) ) {
-        error_log( 'KTPWP: ktpwp_run_auto_migrations中に予期しない出力を検出: ' . substr( $output, 0, 1000 ) );
+        error_log( 'KTPWP Auto Migration: 予期しない出力を検出: ' . substr( $output, 0, 1000 ) );
+    }
+}
+
+/**
+ * 新規インストール時の基本構造初期化
+ */
+function ktpwp_initialize_new_installation() {
+    try {
+        // 1. 基本テーブル作成（確実に実行）
+        ktpwp_safe_table_setup();
+
+        // 2. 部署テーブルの作成（確実に実行）
+        ktpwp_safe_create_department_table();
+        ktpwp_safe_add_department_selection_column();
+        ktpwp_safe_add_client_selected_department_column();
+
+        // 3. 新規インストール完了フラグを設定
+        update_option( 'ktpwp_new_installation_completed', true );
+        update_option( 'ktpwp_new_installation_timestamp', current_time( 'mysql' ) );
+        
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP: 新規インストールの基本構造初期化が完了' );
+        }
+        
+    } catch ( Exception $e ) {
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP New Installation Error: ' . $e->getMessage() );
+        }
+        throw $e;
+    }
+}
+
+/**
+ * 段階的マイグレーション実行（既存環境用）
+ */
+function ktpwp_run_staged_migrations( $from_version, $to_version ) {
+    try {
+        // 1. 基本テーブル作成（確実に実行）
+        ktpwp_safe_table_setup();
+
+        // 2. 部署テーブルの作成（確実に実行）
+        ktpwp_safe_create_department_table();
+        ktpwp_safe_add_department_selection_column();
+        ktpwp_safe_add_client_selected_department_column();
+
+        // 3. マイグレーションファイルの実行（順序付き・安全実行）
+        ktpwp_safe_run_migration_files( $from_version, $to_version );
+
+        // 4. 適格請求書マイグレーション（確実に実行）
+        ktpwp_safe_run_qualified_invoice_migration();
+
+        // 5. テーブル構造修正（安全実行）
+        ktpwp_safe_fix_table_structures();
+
+        // 6. 既存データ修復（安全実行）
+        ktpwp_safe_repair_existing_data();
+
+        // 7. データベース整合性の最終チェック
+        if ( ! ktpwp_verify_database_integrity() ) {
+            throw new Exception( 'マイグレーション後のデータベース整合性チェックに失敗しました' );
+        }
+        
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP: 段階的マイグレーションが正常に完了' );
+        }
+        
+    } catch ( Exception $e ) {
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP Staged Migration Error: ' . $e->getMessage() );
+        }
+        throw $e;
     }
 }
 
@@ -692,6 +744,94 @@ function ktpwp_verify_migration_safety() {
             error_log( 'KTPWP Migration Safety: メモリ制限が低すぎます: ' . $memory_limit );
         }
         return false;
+    }
+    
+    // 実行時間制限チェック
+    $max_execution_time = ini_get( 'max_execution_time' );
+    if ( $max_execution_time > 0 && $max_execution_time < 30 ) { // 30秒未満
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP Migration Safety: 実行時間制限が短すぎます: ' . $max_execution_time . '秒' );
+        }
+        return false;
+    }
+    
+    // ディスク容量チェック
+    $upload_dir = wp_upload_dir();
+    $disk_free_space = disk_free_space( $upload_dir['basedir'] );
+    if ( $disk_free_space !== false && $disk_free_space < 50 * 1024 * 1024 ) { // 50MB未満
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP Migration Safety: ディスク容量が不足しています: ' . round( $disk_free_space / 1024 / 1024, 2 ) . 'MB' );
+        }
+        return false;
+    }
+    
+    // WordPressバージョンチェック
+    global $wp_version;
+    if ( version_compare( $wp_version, '5.0', '<' ) ) {
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP Migration Safety: WordPressバージョンが古すぎます: ' . $wp_version );
+        }
+        return false;
+    }
+    
+    // PHPバージョンチェック
+    if ( version_compare( PHP_VERSION, '7.4', '<' ) ) {
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP Migration Safety: PHPバージョンが古すぎます: ' . PHP_VERSION );
+        }
+        return false;
+    }
+    
+    // 必須PHP拡張機能チェック
+    $required_extensions = array( 'mysqli', 'json', 'mbstring' );
+    foreach ( $required_extensions as $ext ) {
+        if ( ! extension_loaded( $ext ) ) {
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP Migration Safety: 必須PHP拡張機能が不足しています: ' . $ext );
+            }
+            return false;
+        }
+    }
+    
+    // データベース権限チェック
+    try {
+        $test_table = $wpdb->prefix . 'ktpwp_migration_test_' . time();
+        $create_result = $wpdb->query( "CREATE TABLE IF NOT EXISTS `{$test_table}` (id INT PRIMARY KEY)" );
+        if ( $create_result === false ) {
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP Migration Safety: テーブル作成権限エラー' );
+            }
+            return false;
+        }
+        
+        $drop_result = $wpdb->query( "DROP TABLE IF EXISTS `{$test_table}`" );
+        if ( $drop_result === false ) {
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP Migration Safety: テーブル削除権限エラー' );
+            }
+            return false;
+        }
+    } catch ( Exception $e ) {
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP Migration Safety: データベース権限チェックエラー: ' . $e->getMessage() );
+        }
+        return false;
+    }
+    
+    // プラグイン競合チェック
+    $conflicting_plugins = array(
+        'woocommerce/woocommerce.php',
+        'easy-digital-downloads/easy-digital-downloads.php'
+    );
+    
+    $active_plugins = get_option( 'active_plugins', array() );
+    foreach ( $conflicting_plugins as $plugin ) {
+        if ( in_array( $plugin, $active_plugins ) ) {
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP Migration Safety: 競合プラグインが検出されました: ' . $plugin );
+            }
+            // 競合プラグインがあっても警告のみで続行
+        }
     }
     
     return true;
@@ -1086,6 +1226,11 @@ function ktpwp_check_reactivation_migration() {
     }
     
     try {
+        // 配布環境での安全性チェック
+        if ( ! ktpwp_verify_migration_safety() ) {
+            throw new Exception( '再有効化時のマイグレーション安全性チェックに失敗しました' );
+        }
+        
         // 配布環境用の自動マイグレーションを実行
         ktpwp_distribution_auto_migration();
         
@@ -1108,156 +1253,210 @@ function ktpwp_check_reactivation_migration() {
             error_log( 'KTPWP: プラグイン再有効化時のマイグレーションでエラー: ' . $e->getMessage() );
         }
         
+        // エラー情報を詳細に記録
+        update_option( 'ktpwp_reactivation_error', $e->getMessage() );
+        update_option( 'ktpwp_reactivation_error_timestamp', current_time( 'mysql' ) );
+        update_option( 'ktpwp_reactivation_error_count', get_option( 'ktpwp_reactivation_error_count', 0 ) + 1 );
+        
         // エラー通知を設定
         set_transient( 'ktpwp_reactivation_error', 'プラグインの再有効化中にエラーが発生しました。', 300 );
+        
+        // 管理者に通知
+        ktpwp_notify_migration_error( '再有効化エラー: ' . $e->getMessage() );
     }
 }
 
 /**
  * 新規インストール判定関数
+ * 配布環境対応の強化版
  * 
  * @return bool 新規インストールの場合true、既存インストールの場合false
  */
 function ktpwp_is_new_installation() {
+    // 既に判定済みの場合はキャッシュを使用
+    $cached_result = get_transient( 'ktpwp_new_installation_check' );
+    if ( $cached_result !== false ) {
+        return $cached_result;
+    }
+    
     global $wpdb;
     
-    // メインテーブルが存在するかチェック
-    $main_table = $wpdb->prefix . 'ktp_order';
-    $table_exists = $wpdb->get_var( "SHOW TABLES LIKE '$main_table'" );
-    
-    // テーブルが存在しない場合は新規インストール
-    if ( ! $table_exists ) {
+    // 1. メインテーブルの存在確認
+    $main_tables = array(
+        $wpdb->prefix . 'ktp_order',
+        $wpdb->prefix . 'ktp_supplier',
+        $wpdb->prefix . 'ktp_client',
+        $wpdb->prefix . 'ktp_service'
+    );
+
+    $existing_tables = array();
+    foreach ( $main_tables as $table ) {
+        if ( $wpdb->get_var( "SHOW TABLES LIKE '{$table}'" ) === $table ) {
+            $existing_tables[] = $table;
+        }
+    }
+
+    // テーブルが1つも存在しない場合は確実に新規インストール
+    if ( empty( $existing_tables ) ) {
+        set_transient( 'ktpwp_new_installation_check', true, HOUR_IN_SECONDS );
         return true;
     }
+
+    // 2. データの存在確認
+    $has_data = false;
+    foreach ( $existing_tables as $table ) {
+        $count = $wpdb->get_var( "SELECT COUNT(*) FROM `{$table}`" );
+        if ( $count > 0 ) {
+            $has_data = true;
+            break;
+        }
+    }
+
+    // データが存在しない場合は新規インストール
+    if ( ! $has_data ) {
+        set_transient( 'ktpwp_new_installation_check', true, HOUR_IN_SECONDS );
+        return true;
+    }
+
+    // 3. プラグイン設定の存在確認
+    $plugin_options = array(
+        'ktpwp_design_settings',
+        'ktpwp_company_info',
+        'ktp_order_table_version',
+        'ktpwp_version',
+        'ktpwp_db_version'
+    );
+
+    foreach ( $plugin_options as $option ) {
+        if ( get_option( $option, false ) !== false ) {
+            set_transient( 'ktpwp_new_installation_check', false, HOUR_IN_SECONDS );
+            return false; // 既存環境
+        }
+    }
+
+    // 4. マイグレーション履歴の確認
+    $migration_options = $wpdb->get_results( 
+        "SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE 'ktpwp_migration_%_completed' LIMIT 1" 
+    );
     
-    // テーブルが存在する場合、データがあるかチェック
-    $has_data = $wpdb->get_var( "SELECT COUNT(*) FROM `{$main_table}`" );
-    
-    // データがない場合は新規インストールとみなす
-    return ( $has_data == 0 );
+    if ( ! empty( $migration_options ) ) {
+        set_transient( 'ktpwp_new_installation_check', false, HOUR_IN_SECONDS );
+        return false; // 既存環境（マイグレーション履歴あり）
+    }
+
+    // 5. データベースバージョンの確認
+    $db_version = get_option( 'ktpwp_db_version', '0.0.0' );
+    if ( $db_version !== '0.0.0' && ! empty( $db_version ) ) {
+        set_transient( 'ktpwp_new_installation_check', false, HOUR_IN_SECONDS );
+        return false; // 既存環境（DBバージョン設定済み）
+    }
+
+    // 全ての条件をクリアした場合は新規インストール
+    set_transient( 'ktpwp_new_installation_check', true, HOUR_IN_SECONDS );
+    return true;
 }
 
 /**
- * 新規インストール検出とマイグレーション実行
+ * 新規インストール検出と自動マイグレーション
+ * 配布環境対応の強化版
  */
 function ktpwp_detect_new_installation() {
-    // 新規インストールフラグをチェック
-    $new_installation_flag = get_option( 'ktpwp_new_installation_detected', false );
-    
-    if ( ! $new_installation_flag ) {
+    // 既に検出済みの場合はスキップ
+    if ( get_transient( 'ktpwp_new_installation_detected' ) ) {
         return;
     }
     
-    if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-        error_log( 'KTPWP: 新規インストール検出 - マイグレーションを実行' );
-    }
+    $is_new_installation = ktpwp_is_new_installation();
     
-    try {
-        // 配布環境用の自動マイグレーションを実行
-        ktpwp_distribution_auto_migration();
-        
-        // 新規インストールフラグをクリア
-        delete_option( 'ktpwp_new_installation_detected' );
-        
-        // 新規インストール完了フラグを設定
-        update_option( 'ktpwp_new_installation_completed', true );
-        update_option( 'ktpwp_new_installation_timestamp', current_time( 'mysql' ) );
+    if ( $is_new_installation ) {
+        // 新規インストールフラグを設定
+        update_option( 'ktpwp_new_installation_detected', true );
+        set_transient( 'ktpwp_new_installation_detected', true, DAY_IN_SECONDS );
         
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP: 新規インストール検出とマイグレーションが正常に完了' );
+            error_log( 'KTPWP: 新規インストールを検出しました' );
         }
         
-    } catch ( Exception $e ) {
-        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP: 新規インストール検出とマイグレーションでエラー: ' . $e->getMessage() );
+        // 新規インストール時の基本構造初期化
+        try {
+            ktpwp_initialize_new_installation();
+            
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP: 新規インストールの基本構造初期化が完了しました' );
+            }
+        } catch ( Exception $e ) {
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP: 新規インストール初期化エラー: ' . $e->getMessage() );
+            }
+        }
+    } else {
+        // 既存環境の場合、マイグレーション必要性をチェック
+        if ( ktpwp_needs_migration() ) {
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP: 既存環境でマイグレーションが必要です' );
+            }
+            
+            // 自動マイグレーションを実行
+            try {
+                ktpwp_run_auto_migrations();
+            } catch ( Exception $e ) {
+                if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                    error_log( 'KTPWP: 既存環境マイグレーションエラー: ' . $e->getMessage() );
+                }
+            }
         }
     }
 }
 
 /**
- * マイグレーションファイルを順序付きで実行
+ * マイグレーションのバージョン互換性をチェック
  */
-function ktpwp_run_migration_files( $from_version, $to_version ) {
-    $migrations_dir = __DIR__ . '/includes/migrations';
+function ktpwp_check_migration_compatibility( $filename, $from_version, $to_version ) {
+    // 基本的な互換性チェック
+    // 必要に応じて詳細なバージョンチェックロジックを追加
     
-    if ( ! is_dir( $migrations_dir ) ) {
-        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Migration: Migrations directory not found: ' . $migrations_dir );
-        }
-        return;
-    }
-
-    // マイグレーションファイルを取得してソート
-    $files = glob( $migrations_dir . '/*.php' );
-    if ( ! $files ) {
-        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Migration: No migration files found' );
-        }
-        return;
-    }
-
-    sort( $files );
+    // 環境判定（本番/ローカル）
+    global $wpdb;
+    $is_production = false;
     
-    $executed_count = 0;
-    $error_count = 0;
+    // 本番環境の判定
+    $production_order_table = 'top_ktp_order';
+    $production_exists = $wpdb->get_var( "SHOW TABLES LIKE '{$production_order_table}'" );
+    if ( $production_exists === $production_order_table ) {
+        $is_production = true;
+    }
+    
+    // 本番環境専用マイグレーションのチェック
+    if ( strpos( $filename, 'production' ) !== false && ! $is_production ) {
+        return false;
+    }
+    
+    // ローカル環境専用マイグレーションのチェック
+    if ( strpos( $filename, 'local' ) !== false && $is_production ) {
+        return false;
+    }
+    
+    return true;
+}
 
-    foreach ( $files as $file ) {
-        if ( ! file_exists( $file ) ) {
-            continue;
-        }
-
-        $filename = basename( $file, '.php' );
-        
-        // マイグレーション実行済みチェック
-        $migration_key = 'ktpwp_migration_' . $filename . '_completed';
-        if ( get_option( $migration_key, false ) ) {
-            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP Migration: Skipping ' . $filename . ' (already executed)' );
-            }
-            continue;
-        }
-
-        try {
-            require_once $file;
-            
-            // クラスベースのマイグレーションを実行
-            $class_name = 'KTPWP_Migration_' . str_replace( '-', '_', $filename );
-            
-            if ( class_exists( $class_name ) && method_exists( $class_name, 'up' ) ) {
-                $result = $class_name::up();
-                
-                if ( $result ) {
-                    update_option( $migration_key, true );
-                    $executed_count++;
-                    
-                    if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                        error_log( 'KTPWP Migration: Successfully executed ' . $filename );
-                    }
-                } else {
-                    $error_count++;
-                    if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                        error_log( 'KTPWP Migration: Failed to execute ' . $filename );
-                    }
-                }
-            } else {
-                // クラスベースでないマイグレーション（直接実行される）
-                $executed_count++;
-                if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                    error_log( 'KTPWP Migration: Loaded ' . $filename . ' (direct execution)' );
-                }
-            }
-            
-        } catch ( Exception $e ) {
-            $error_count++;
-            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP Migration Error: ' . $e->getMessage() . ' in ' . $filename );
-            }
+/**
+ * 致命的なマイグレーションエラーかどうかを判定
+ */
+function ktpwp_is_critical_migration_error( $exception, $filename ) {
+    $critical_patterns = array(
+        'table_creation',
+        'basic_structure',
+        'department_table',
+        'qualified_invoice'
+    );
+    
+    foreach ( $critical_patterns as $pattern ) {
+        if ( strpos( $filename, $pattern ) !== false ) {
+            return true;
         }
     }
-
-    if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-        error_log( 'KTPWP Migration: Completed ' . $executed_count . ' migrations with ' . $error_count . ' errors' );
-    }
+    
+    return false;
 }
 
 /**
@@ -1461,9 +1660,33 @@ function ktpwp_repair_existing_data() {
     }
 }
 
+// === 配布環境対応の自動マイグレーション機能 ===
+
 // プラグイン有効化時の自動マイグレーション
-// 重複を避けるため、包括的アクティベーションのみを使用
-// register_activation_hook( KANTANPRO_PLUGIN_FILE, 'ktpwp_plugin_activation' );
+add_action( 'plugins_loaded', 'ktpwp_run_auto_migrations', 8 );
+
+// プラグイン再有効化時の自動マイグレーション
+add_action( 'admin_init', 'ktpwp_check_reactivation_migration' );
+
+// プラグイン更新時の自動マイグレーション
+add_action( 'upgrader_process_complete', 'ktpwp_plugin_upgrade_migration', 10, 2 );
+
+// 新規インストール検出と自動マイグレーション
+add_action( 'admin_init', 'ktpwp_detect_new_installation' );
+
+// データベース整合性チェック（定期的実行）
+add_action( 'admin_init', 'ktpwp_check_database_integrity' );
+
+// データベースバージョン同期（既存インストール対応）
+add_action( 'admin_init', 'ktpwp_sync_database_version' );
+
+// 利用規約同意チェック（管理画面でのみ実行 - パフォーマンス最適化）
+if ( is_admin() ) {
+    add_action( 'admin_init', 'ktpwp_check_terms_agreement' );
+}
+
+// 配布用の追加安全チェック
+add_action( 'init', 'ktpwp_distribution_safety_check', 1 );
 
 // プラグイン無効化時の処理
 register_deactivation_hook( KANTANPRO_PLUGIN_FILE, 'ktpwp_plugin_deactivation' );
@@ -1775,6 +1998,7 @@ function ktpwp_initialize_selected_department() {
 
 /**
  * プラグイン更新時の自動マイグレーション処理
+ * 配布環境対応の強化版
  */
 function ktpwp_plugin_upgrade_migration( $upgrader, $hook_extra ) {
     // KantanProプラグインの更新かどうかをチェック
@@ -1796,11 +2020,26 @@ function ktpwp_plugin_upgrade_migration( $upgrader, $hook_extra ) {
             throw new Exception( 'アップグレード時のマイグレーション安全性チェックに失敗しました' );
         }
         
+        // 新規インストール判定
+        $is_new_installation = ktpwp_is_new_installation();
+        
+        if ( $is_new_installation ) {
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP: アップグレード時に新規インストールを検出 - 基本構造のみで初期化' );
+            }
+            
+            // 新規インストール時は基本構造のみで初期化
+            ktpwp_initialize_new_installation();
+        } else {
+            // 既存環境での段階的マイグレーション
+            $current_db_version = get_option( 'ktpwp_db_version', '0.0.0' );
+            $plugin_version = KANTANPRO_PLUGIN_VERSION;
+            
+            ktpwp_run_staged_migrations( $current_db_version, $plugin_version );
+        }
+        
         // 適格請求書ナンバー機能のマイグレーション（確実に実行）
         ktpwp_safe_run_qualified_invoice_migration();
-        
-        // 強化された自動マイグレーション実行
-        ktpwp_run_auto_migrations();
         
         // データベース整合性の最終チェック
         if ( ! ktpwp_verify_database_integrity() ) {
@@ -1841,11 +2080,11 @@ function ktpwp_plugin_upgrade_migration( $upgrader, $hook_extra ) {
  * マイグレーション状態をチェックする関数
  */
 function ktpwp_check_migration_status() {
-    $current_db_version = get_option( 'ktpwp_db_version', '0.0' );
+    $current_db_version = get_option( 'ktpwp_db_version', '0.0.0' );
     $plugin_version = KANTANPRO_PLUGIN_VERSION;
     
     // 新規インストールの場合、データベースバージョンを更新
-    if ( $current_db_version === '0.0' || empty( $current_db_version ) ) {
+    if ( $current_db_version === '0.0.0' || empty( $current_db_version ) ) {
         update_option( 'ktpwp_db_version', $plugin_version );
         $current_db_version = $plugin_version;
     }
