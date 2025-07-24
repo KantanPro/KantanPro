@@ -554,9 +554,6 @@ function ktpwp_run_auto_migrations() {
             update_option( 'ktpwp_migration_error', $e->getMessage() );
             update_option( 'ktpwp_migration_error_timestamp', current_time( 'mysql' ) );
             update_option( 'ktpwp_migration_error_count', get_option( 'ktpwp_migration_error_count', 0 ) + 1 );
-            
-            // 管理者に通知
-            ktpwp_notify_migration_error( '自動マイグレーションエラー: ' . $e->getMessage() );
         } finally {
             // マイグレーション進行中フラグをクリア
             delete_option( 'ktpwp_migration_in_progress' );
@@ -957,31 +954,7 @@ function ktpwp_verify_database_integrity() {
     }
 }
 
-/**
- * マイグレーションエラー通知
- */
-function ktpwp_notify_migration_error( $error_message ) {
-    // 管理者に通知
-    $admin_email = get_option( 'admin_email' );
-    if ( $admin_email ) {
-        $subject = 'KantanPro マイグレーションエラー通知';
-        $message = sprintf(
-            "KantanProプラグインのマイグレーション中にエラーが発生しました。\n\n" .
-            "エラー内容: %s\n" .
-            "発生時刻: %s\n" .
-            "サイトURL: %s\n\n" .
-            "詳細はWordPressのデバッグログを確認してください。",
-            $error_message,
-            current_time( 'mysql' ),
-            home_url()
-        );
-        
-        wp_mail( $admin_email, $subject, $message );
-    }
-    
-    // 管理画面に通知を表示
-    set_transient( 'ktpwp_migration_error_notice', 'マイグレーション中にエラーが発生しました。詳細はログを確認してください。', 300 );
-}
+
 
 /**
  * 基本的なテーブル作成（フォールバック用）
@@ -1149,9 +1122,6 @@ function ktpwp_comprehensive_activation() {
         
         // エラー通知を設定
         set_transient( 'ktpwp_activation_error', 'プラグインの有効化中にエラーが発生しました。管理者にお問い合わせください。', 300 );
-        
-        // 管理者に通知
-        ktpwp_notify_migration_error( '有効化エラー: ' . $e->getMessage() );
     }
     
     // 出力バッファをクリア（予期しない出力を除去）
@@ -1215,9 +1185,6 @@ function ktpwp_check_reactivation_migration() {
         
         // エラー通知を設定
         set_transient( 'ktpwp_reactivation_error', 'プラグインの再有効化中にエラーが発生しました。', 300 );
-        
-        // 管理者に通知
-        ktpwp_notify_migration_error( '再有効化エラー: ' . $e->getMessage() );
     }
 }
 
@@ -2025,9 +1992,6 @@ function ktpwp_plugin_upgrade_migration( $upgrader, $hook_extra ) {
         
         // エラー通知を設定
         set_transient( 'ktpwp_upgrade_error', 'プラグインの更新中にエラーが発生しました。詳細はログを確認してください。', 60 );
-        
-        // 管理者に通知
-        ktpwp_notify_migration_error( 'アップグレードエラー: ' . $e->getMessage() );
     }
 }
 
