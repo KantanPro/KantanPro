@@ -3,7 +3,7 @@
  * Plugin Name: KantanPro
  * Plugin URI: https://www.kantanpro.com/
  * Description: スモールビジネス向けの仕事効率化システム。ショートコード[ktpwp_all_tab]を固定ページに設置してください。
- * Version: 1.1.12(preview)
+ * Version: 1.1.13(preview)
  * Author: KantanPro
  * Author URI: https://www.kantanpro.com/kantanpro-page
  * License: GPL v2 or later
@@ -30,7 +30,7 @@ if ( file_exists( plugin_dir_path( __FILE__ ) . 'vendor/autoload.php' ) ) {
 
 // プラグイン定数定義
 if ( ! defined( 'KANTANPRO_PLUGIN_VERSION' ) ) {
-    define( 'KANTANPRO_PLUGIN_VERSION', '1.1.12(preview)' );
+    define( 'KANTANPRO_PLUGIN_VERSION', '1.1.13(preview)' );
 }
 if ( ! defined( 'KANTANPRO_PLUGIN_NAME' ) ) {
     define( 'KANTANPRO_PLUGIN_NAME', 'KantanPro' );
@@ -83,35 +83,7 @@ if ( ! defined( 'MY_PLUGIN_URL' ) ) {
  * 新規インストール・再有効化時に必要なデータベーステーブルを作成し、マイグレーションを実行します。
  */
 register_activation_hook( __FILE__, 'ktpwp_comprehensive_activation' );
-function ktpwp_donation_activation() {
-    // 出力バッファリングを開始（予期しない出力を防ぐ）
-    ob_start();
-    
-    // KTPWP_Donationクラスを読み込み
-    if ( ! class_exists( 'KTPWP_Donation' ) ) {
-        require_once KANTANPRO_PLUGIN_DIR . 'includes/class-ktpwp-donation.php';
-    }
-    
-    // テーブル作成メソッドを呼び出し
-    if ( class_exists( 'KTPWP_Donation' ) ) {
-        $donation_instance = KTPWP_Donation::get_instance();
-        if ( method_exists( $donation_instance, 'create_donation_tables' ) ) {
-            $donation_instance->create_donation_tables();
 
-            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP Donation: `create_donation_tables` executed on activation.' );
-            }
-        }
-    }
-    
-    // 出力バッファをクリア（予期しない出力を除去）
-    $output = ob_get_clean();
-    
-    // デバッグ時のみ、予期しない出力があればログに記録
-    if ( defined( 'WP_DEBUG' ) && WP_DEBUG && ! empty( $output ) ) {
-        error_log( 'KTPWP: ktpwp_donation_activation中に予期しない出力を検出: ' . substr( $output, 0, 1000 ) );
-    }
-}
 
 // === WordPress標準更新システム ===
 // シンプルなバージョン管理
@@ -202,7 +174,6 @@ function ktpwp_autoload_classes() {
         'KTPWP_Department_Manager' => 'includes/class-department-manager.php',
         'KTPWP_Terms_Of_Service' => 'includes/class-ktpwp-terms-of-service.php',
         'KTPWP_Update_Checker'  => 'includes/class-ktpwp-update-checker.php',
-        'KTPWP_Donation'        => 'includes/class-ktpwp-donation.php',
         'KTPWP_SVG_Icons'       => 'includes/class-ktpwp-svg-icons.php',
     );
 
@@ -242,20 +213,7 @@ function ktpwp_init_update_checker() {
     }
 }
 
-// === 寄付通知クラスの初期化 ===
-function ktpwp_init_donation() {
-    if ( class_exists( 'KTPWP_Donation' ) ) {
-        global $ktpwp_donation;
-        $ktpwp_donation = KTPWP_Donation::get_instance();
-        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Donation: 寄付通知クラスが初期化されました' );
-        }
-    } else {
-        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Donation: 寄付通知クラスが見つかりません' );
-        }
-    }
-}
+
 
 /**
  * キャッシュマネージャーの初期化
@@ -311,7 +269,6 @@ function ktpwp_init_image_optimizer() {
 // プラグインが完全に読み込まれた後に実行（最初に実行してフック最適化を行う）
 add_action( 'plugins_loaded', 'ktpwp_init_hook_manager', 0 );
 add_action( 'plugins_loaded', 'ktpwp_init_update_checker' );
-add_action( 'plugins_loaded', 'ktpwp_init_donation' );
 add_action( 'plugins_loaded', 'ktpwp_init_cache' );
 add_action( 'plugins_loaded', 'ktpwp_init_image_optimizer' );
 
@@ -1146,9 +1103,7 @@ function ktpwp_comprehensive_activation() {
         }
         
         // 4. 寄付機能テーブルの作成
-        if ( function_exists('ktpwp_donation_activation') ) {
-            ktpwp_donation_activation();
-        }
+
         
         // 5. 配布環境用の自動マイグレーションの実行
         ktpwp_distribution_auto_migration();
@@ -3311,28 +3266,22 @@ function KTPWP_Index() {
                     // 寄付ボタンを最初に追加（常時表示）
                     $donation_settings = get_option( 'ktp_donation_settings', array() );
                     $donation_url = ! empty( $donation_settings['donation_url'] ) ? esc_url( $donation_settings['donation_url'] ) : 'https://www.kantanpro.com/donation';
-                    
                     // 管理者情報を取得
                     $admin_email = get_option( 'admin_email' );
                     $admin_name = get_option( 'blogname' );
-                    
                     // POSTパラメータを追加
                     $donation_url_with_params = add_query_arg( array(
                         'admin_email' => urlencode( $admin_email ),
                         'admin_name' => urlencode( $admin_name )
                     ), $donation_url );
-                    
                     $navigation_links .= ' <a href="' . $donation_url_with_params . '" target="_blank" rel="noopener noreferrer" title="寄付する" style="display: inline-flex; align-items: center; gap: 4px; color: #0073aa; text-decoration: none;"><span class="material-symbols-outlined" style="font-size: 20px; vertical-align: middle;">favorite</span><span>寄付する</span></a>';
-                    
                     // ログアウトボタン
                     $navigation_links .= ' <a href="' . $logout_link . '" title="ログアウト" style="display: inline-flex; align-items: center; gap: 4px; color: #0073aa; text-decoration: none;"><span class="material-symbols-outlined" style="font-size: 20px; vertical-align: middle;">logout</span></a>';
-                    
                     // 更新リンクは編集者権限がある場合のみ
                     if ( current_user_can( 'edit_posts' ) ) {
                         // 更新通知設定を確認
                         $update_settings = get_option( 'ktp_update_notification_settings', array() );
                         $enable_notifications = isset( $update_settings['enable_notifications'] ) ? $update_settings['enable_notifications'] : true;
-                        
                         if ( $enable_notifications ) {
                             // 更新通知機能付きのリンク
                             $navigation_links .= ' <a href="#" id="ktpwp-header-update-check" title="更新チェック" style="display: inline-flex; align-items: center; gap: 4px; color: #0073aa; text-decoration: none; cursor: pointer;"><span class="material-symbols-outlined" style="font-size: 20px; vertical-align: middle;">refresh</span></a>';
@@ -3342,7 +3291,6 @@ function KTPWP_Index() {
                         }
                         $navigation_links .= ' ' . $act_key;
                     }
-                    
                     // リファレンスボタンはログインユーザー全員に表示
                     $reference_instance = KTPWP_Plugin_Reference::get_instance();
                     $navigation_links .= $reference_instance->get_reference_link();
