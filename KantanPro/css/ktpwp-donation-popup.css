@@ -1,0 +1,394 @@
+/**
+ * KantanPro Donation Popup Styles
+ *
+ * 寄付フォームポップアップのスタイル定義
+ *
+ * @package KTPWP
+ * @subpackage CSS
+ * @since 1.0.0
+ */
+
+/* ポップアップオーバーレイ */
+.ktpwp-donation-popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 999999;
+    display: none;
+}
+
+.ktpwp-popup-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+}
+
+/* ポップアップコンテンツ */
+.ktpwp-popup-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    max-width: 500px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: ktpwp-popup-fade-in 0.3s ease-out;
+}
+
+/* ポップアップヘッダー */
+.ktpwp-popup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 25px 15px;
+    border-bottom: 1px solid #e5e7eb;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #ffffff;
+    border-radius: 12px 12px 0 0;
+}
+
+.ktpwp-popup-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.ktpwp-popup-close {
+    background: none;
+    border: none;
+    color: #ffffff;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.2s ease;
+}
+
+.ktpwp-popup-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* ポップアップボディ */
+.ktpwp-popup-body {
+    padding: 25px;
+}
+
+/* 寄付フォームコンテナ */
+.ktpwp-donation-form-container {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.ktpwp-donation-description {
+    margin: 0 0 20px 0;
+    color: #6b7280;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+/* 寄付金額ボタン */
+.ktpwp-donation-amounts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.ktpwp-amount-btn {
+    background: #f8fafc;
+    border: 2px solid #e2e8f0;
+    color: #374151;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+}
+
+.ktpwp-amount-btn:hover {
+    background: #e0e7ff;
+    border-color: #6366f1;
+    color: #4338ca;
+}
+
+.ktpwp-amount-btn.selected {
+    background: #6366f1;
+    border-color: #6366f1;
+    color: #ffffff;
+}
+
+/* カスタム金額入力 */
+.ktpwp-custom-amount {
+    margin-bottom: 20px;
+}
+
+.ktpwp-custom-amount label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #374151;
+    font-size: 14px;
+}
+
+.ktpwp-custom-amount input {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: border-color 0.2s ease;
+    background: #ffffff;
+}
+
+.ktpwp-custom-amount input:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.ktpwp-custom-amount input:valid {
+    border-color: #10b981;
+}
+
+.ktpwp-custom-amount input:invalid {
+    border-color: #ef4444;
+}
+
+.ktpwp-custom-amount-help {
+    display: block;
+    margin-top: 4px;
+    font-size: 12px;
+    color: #6b7280;
+    font-style: italic;
+}
+
+/* 寄付者情報 */
+.ktpwp-donor-info {
+    margin-bottom: 20px;
+}
+
+.ktpwp-donor-info input,
+.ktpwp-donor-info textarea {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 14px;
+    margin-bottom: 10px;
+    transition: border-color 0.2s ease;
+}
+
+.ktpwp-donor-info input:focus,
+.ktpwp-donor-info textarea:focus {
+    outline: none;
+    border-color: #6366f1;
+}
+
+.ktpwp-donor-info textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+/* Stripeカード要素 */
+#ktpwp-card-element {
+    margin-bottom: 20px;
+    padding: 12px;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    background: #ffffff;
+}
+
+/* 寄付ボタン */
+.ktpwp-btn-primary {
+    width: 100%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #ffffff;
+    border: none;
+    padding: 14px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-bottom: 15px;
+}
+
+.ktpwp-btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.ktpwp-btn-primary:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* メッセージ表示エリア */
+#ktpwp-donation-messages {
+    margin-top: 15px;
+}
+
+.ktpwp-message {
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    font-size: 14px;
+}
+
+.ktpwp-message.success {
+    background: #d1fae5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+}
+
+.ktpwp-message.error {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fca5a5;
+}
+
+.ktpwp-message.info {
+    background: #dbeafe;
+    color: #1e40af;
+    border: 1px solid #93c5fd;
+}
+
+/* アニメーション */
+@keyframes ktpwp-popup-fade-in {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+    .ktpwp-popup-content {
+        width: 95%;
+        max-height: 95vh;
+    }
+    
+    .ktpwp-popup-header {
+        padding: 15px 20px 10px;
+    }
+    
+    .ktpwp-popup-header h3 {
+        font-size: 16px;
+    }
+    
+    .ktpwp-popup-body {
+        padding: 20px;
+    }
+    
+    .ktpwp-donation-amounts {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* 高コントラストモード対応 */
+@media (prefers-contrast: high) {
+    .ktpwp-popup-content {
+        border: 2px solid #000000;
+    }
+    
+    .ktpwp-popup-header {
+        background: #000000;
+        color: #ffffff;
+    }
+    
+    .ktpwp-amount-btn {
+        border: 2px solid #000000;
+    }
+    
+    .ktpwp-amount-btn.selected {
+        background: #000000;
+        color: #ffffff;
+    }
+}
+
+/* 動きを抑制したい場合 */
+@media (prefers-reduced-motion: reduce) {
+    .ktpwp-popup-content {
+        animation: none;
+    }
+    
+    .ktpwp-btn-primary:hover {
+        transform: none;
+    }
+}
+
+/* ポップアップ表示時のbodyスタイル */
+body.ktpwp-popup-open {
+    overflow: hidden;
+}
+
+/* ダークモード対応 */
+@media (prefers-color-scheme: dark) {
+    .ktpwp-popup-content {
+        background: #1f2937;
+        color: #f9fafb;
+    }
+    
+    .ktpwp-popup-header {
+        background: linear-gradient(135deg, #374151 0%, #4b5563 100%);
+    }
+    
+    .ktpwp-donation-description {
+        color: #d1d5db;
+    }
+    
+    .ktpwp-amount-btn {
+        background: #374151;
+        border-color: #4b5563;
+        color: #f9fafb;
+    }
+    
+    .ktpwp-amount-btn:hover {
+        background: #4b5563;
+        border-color: #6366f1;
+    }
+    
+    .ktpwp-amount-btn.selected {
+        background: #6366f1;
+        border-color: #6366f1;
+        color: #ffffff;
+    }
+    
+    .ktpwp-custom-amount input,
+    .ktpwp-donor-info input,
+    .ktpwp-donor-info textarea,
+    #ktpwp-card-element {
+        background: #374151;
+        border-color: #4b5563;
+        color: #f9fafb;
+    }
+    
+    .ktpwp-custom-amount input:focus,
+    .ktpwp-donor-info input:focus,
+    .ktpwp-donor-info textarea:focus {
+        border-color: #6366f1;
+    }
+} 

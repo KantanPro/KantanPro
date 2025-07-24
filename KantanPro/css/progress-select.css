@@ -1,0 +1,506 @@
+/* 既存のスタイル */
+
+/* 納期フィールド用のスタイル */
+.delivery-dates-container {
+  display: flex;
+  gap: 8px;
+  margin-left: 8px;
+  align-items: center;
+  flex-wrap: nowrap;
+}
+
+.delivery-label {
+  font-size: 12px;
+  font-weight: bold;
+  color: #333;
+  white-space: nowrap;
+  margin-right: 0;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+.delivery-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.delivery-date-input {
+  font-size: 12px;
+  padding: 4px 6px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background-color: #fff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 110px;
+  height: 28px;
+  vertical-align: middle;
+  line-height: 1;
+}
+
+.delivery-date-input:hover {
+  border-color: #bbb;
+  background-color: #f9f9f9;
+}
+
+.delivery-date-input:focus {
+  outline: none;
+  border-color: #1976d2;
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
+}
+
+/* 完了日フィールド用のスタイル */
+.completion-date-input {
+  font-size: 12px;
+  padding: 4px 6px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background-color: #fff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 110px;
+  height: 28px;
+  vertical-align: middle;
+  line-height: 1;
+}
+
+.completion-date-input:hover {
+  border-color: #bbb;
+  background-color: #f9f9f9;
+}
+
+.completion-date-input:focus {
+  outline: none;
+  border-color: #4caf50;
+  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+}
+
+/* 完了日ラベル用のスタイル */
+.completion-label {
+  font-size: 12px;
+  font-weight: bold;
+  color: #333;
+  white-space: nowrap;
+  margin-right: 0;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+/* デスクトップ用ラベル（デフォルトで表示） */
+.completion-label-desktop {
+  display: inline;
+}
+
+/* モバイル用ラベル（デフォルトで非表示） */
+.completion-label-mobile {
+  display: none;
+}
+
+/* 完了日入力ラッパー用のスタイル */
+.completion-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+/* 仕事リストの進捗プルダウン用スタイル */
+.progress-select {
+  font-size: 13px;
+  padding: 4px 24px 4px 8px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+  background-color: #f9f9f9;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23333'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 4px center;
+  background-size: 16px;
+  cursor: pointer;
+  margin-left: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  min-width: 110px;
+  max-width: 120px;
+  height: 28px;
+  vertical-align: middle;
+  line-height: 1;
+}
+
+/* 進捗状態に応じた色分け */
+.progress-select option[value="1"] {
+  background-color: #e3f2fd; /* 受付中: 薄い青 */
+}
+.progress-select option[value="2"] {
+  background-color: #fff9c4; /* 見積中: 薄い黄色 */
+}
+.progress-select option[value="3"] {
+  background-color: #e8f5e9; /* 受注: 薄い緑 */
+}
+.progress-select option[value="4"] {
+  background-color: #f3e5f5; /* 完了: 薄い紫 */
+}
+.progress-select option[value="5"] {
+  background-color: #ffebee; /* 請求済: 薄い赤 */
+}
+.progress-select option[value="6"] {
+  background-color: #f5f5f5; /* 入金済: 薄いグレー */
+}
+.progress-select option[value="7"] {
+  background-color: #ffebee; /* ボツ: 薄い赤（ボツらしい色） */
+}
+
+/* 選択された進捗状態に応じたセレクトボックスの色 */
+.progress-select.status-1 {
+  background-color: #e3f2fd;
+  border-color: #bbdefb;
+}
+.progress-select.status-2 {
+  background-color: #fff9c4;
+  border-color: #fff59d;
+}
+.progress-select.status-3 {
+  background-color: #e8f5e9;
+  border-color: #c8e6c9;
+}
+.progress-select.status-4 {
+  background-color: #f3e5f5;
+  border-color: #e1bee7;
+}
+.progress-select.status-5 {
+  background-color: #ffebee;
+  border-color: #ffcdd2;
+}
+.progress-select.status-6 {
+  background-color: #f5f5f5;
+  border-color: #e0e0e0;
+}
+.progress-select.status-7 {
+  background-color: #ffebee;
+  border-color: #ffcdd2;
+}
+
+/* 仕事リストの行スタイル - 顧客リストと同等のシンプルスタイル */
+li.ktp_work_list_item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 15px 5px 5px;
+  list-style: none;
+  margin: 0;
+  justify-content: space-between;
+  background-color: #f9f9f9;
+  font-size: 14px;
+  flex-wrap: wrap;
+}
+
+/* リンクのスタイル - シンプル版 */
+.ktp_work_list_item a {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #2c3e50;
+  text-decoration: none;
+}
+
+/* プロジェクト名のスタイル - シンプル版 */
+.project_name {
+  font-weight: 600;
+  color: #0277bd;
+}
+
+/* 納期フィールドと進捗プルダウンのコンテナ */
+.ktp_work_list_item .delivery-dates-container,
+.ktp_work_list_item form {
+  margin-left: auto;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 仕事リストの進捗プルダウンを右寄せ */
+.ktp_work_list_item form {
+  margin-left: 8px;
+  flex-shrink: 0;
+}
+
+/* .article ul li, .article ol li のマージンを上書き */
+.article ul li.ktp_work_list_item,
+.article ol li.ktp_work_list_item {
+  margin: 0 !important;
+}
+
+/* 顧客リスト（データリスト）のアイテムにパディング5px追加 */
+.ktp_data_list_item {
+  padding: 5px;
+  font-size: 14px;
+}
+
+/* 納期警告マークのスタイル */
+.delivery-warning-mark {
+  display: inline-block;
+  background-color: #f44336;
+  color: white;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  line-height: 16px;
+  text-align: center;
+  font-size: 10px;
+  font-weight: bold;
+  margin-left: 4px;
+  position: relative;
+  top: -8px;
+  right: -8px;
+  animation: pulse-warning 2s infinite;
+}
+
+/* 警告マークのパルスアニメーション */
+@keyframes pulse-warning {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* 進捗ボタン内の警告マークの位置調整 */
+.progress-btn {
+  position: relative;
+}
+
+.progress-btn .delivery-warning-mark {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  z-index: 10;
+}
+
+/* 納期入力フィールドのラッパー */
+.delivery-input-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  white-space: nowrap;
+  gap: 4px;
+}
+
+/* 各行の納期警告マークのスタイル */
+.delivery-warning-mark-row {
+  display: inline-block;
+  background-color: #f44336;
+  color: white;
+  border-radius: 50%;
+  width: 14px;
+  height: 14px;
+  line-height: 14px;
+  text-align: center;
+  font-size: 9px;
+  font-weight: bold;
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  z-index: 10;
+  animation: pulse-warning 2s infinite;
+}
+
+/* ▼▼▼ 請求書締日警告マーク ▼▼▼ */
+.invoice-warning-mark-row {
+  display: inline-block;
+  background-color: #f44336;
+  color: white;
+  border-radius: 50%;
+  width: 14px;
+  height: 14px;
+  line-height: 14px;
+  text-align: center;
+  font-size: 9px;
+  font-weight: bold;
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  z-index: 10;
+  animation: pulse-warning 2s infinite;
+}
+
+/* モバイル表示での調整 */
+@media screen and (max-width: 768px) {
+  /* 仕事リストの行をモバイル対応 - 2行レイアウト */
+  li.ktp_work_list_item {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding: 10px 12px;
+  }
+
+  /* 1行目：ID〜日時のリンク */
+  .ktp_work_list_item a {
+    order: 1;
+    white-space: normal;
+    word-wrap: break-word;
+    line-height: 1.4;
+    margin-bottom: 0;
+  }
+
+  /* 2行目：納期と進捗を1つのコンテナに配置 */
+  .ktp_work_list_item .delivery-dates-container {
+    order: 2;
+    margin-left: 0;
+    justify-content: flex-start;
+    gap: 12px;
+    flex-wrap: nowrap;
+    align-items: center;
+    display: flex;
+  }
+
+  /* 納期ラベルの調整 */
+  .delivery-label {
+    font-size: 12px;
+    font-weight: bold;
+    color: #333;
+    white-space: nowrap;
+    margin-right: 4px;
+    flex-shrink: 0;
+    display: inline-block;
+  }
+
+  /* 納期フィールドのサイズ調整 */
+  .delivery-date-input {
+    min-width: 120px;
+    max-width: 140px;
+    font-size: 12px;
+    padding: 4px 6px;
+    height: 32px;
+  }
+
+  /* 完了日フィールドのサイズ調整 */
+  .completion-date-input {
+    min-width: 120px;
+    max-width: 140px;
+    font-size: 12px;
+    padding: 4px 6px;
+    height: 32px;
+  }
+
+  /* 進捗プルダウンのサイズ調整 */
+  .progress-select {
+    min-width: 120px;
+    max-width: 140px;
+    font-size: 12px;
+    padding: 4px 24px 4px 8px;
+    margin-left: 0;
+    height: 32px;
+  }
+
+  /* 納期フィールドコンテナの調整 - ラベルとカレンダーを1行に */
+  .delivery-dates-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+  }
+
+  /* 納期ラベルとカレンダーを強制的に1行に配置 */
+  .delivery-dates-container > * {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  /* 納期入力ラッパーの調整 */
+  .delivery-input-wrapper {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    white-space: nowrap;
+    gap: 4px;
+  }
+
+  /* 進捗プルダウンフォームの調整 - ラベルとプルダウンを1行に */
+  .ktp_work_list_item form {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+    margin-left: 0;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+  }
+
+  /* 進捗ラベルを追加 */
+  .ktp_work_list_item form::before {
+    content: "進捗";
+    font-size: 12px;
+    font-weight: bold;
+    color: #333;
+    white-space: nowrap;
+    margin-right: 4px;
+    flex-shrink: 0;
+    display: inline-block;
+  }
+}
+
+/* さらに小さい画面での調整 */
+@media screen and (max-width: 480px) {
+  li.ktp_work_list_item {
+    padding: 8px 10px;
+    gap: 6px;
+  }
+
+  .delivery-date-input {
+    min-width: 100px;
+    max-width: 120px;
+    font-size: 11px;
+    height: 30px;
+  }
+
+  .completion-date-input {
+    min-width: 100px;
+    max-width: 120px;
+    font-size: 11px;
+    height: 30px;
+  }
+
+  .progress-select {
+    min-width: 100px;
+    max-width: 120px;
+    font-size: 11px;
+    height: 30px;
+  }
+
+  .delivery-label {
+    font-size: 11px;
+  }
+
+  .completion-label {
+    font-size: 11px;
+  }
+
+  /* モバイル表示時にラベルを切り替え（仕事リストのみ） */
+  .ktp_work_list_item .completion-label-desktop {
+    display: none;
+  }
+
+  .ktp_work_list_item .completion-label-mobile {
+    display: inline;
+  }
+
+  .ktp_work_list_item form::before {
+    font-size: 11px;
+  }
+}
