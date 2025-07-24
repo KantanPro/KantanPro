@@ -2401,27 +2401,6 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 			$html .= sprintf( $document_info['content'], '<strong>' . esc_html( $project_name ) . '</strong>' );
 			$html .= '</div>';
 
-			// 納期情報を追加
-			$desired_delivery_date = isset( $order_data->desired_delivery_date ) ? $order_data->desired_delivery_date : '';
-			$expected_delivery_date = isset( $order_data->expected_delivery_date ) ? $order_data->expected_delivery_date : '';
-
-			if ( ! empty( $desired_delivery_date ) || ! empty( $expected_delivery_date ) ) {
-				$html .= '<div class="delivery-info" style="margin-bottom: 20px; padding: 10px; background: #f0f8ff; border: 1px solid #b3d9ff; border-radius: 4px; font-size: 13px;">';
-				$html .= '<div style="font-weight: bold; margin-bottom: 5px; color: #0066cc;">納期情報</div>';
-
-				if ( ! empty( $desired_delivery_date ) ) {
-					$formatted_desired = date( 'Y年m月d日', strtotime( $desired_delivery_date ) );
-					$html .= '<div style="margin-bottom: 3px;"><strong>希望納期：</strong>' . esc_html( $formatted_desired ) . '</div>';
-				}
-
-				if ( ! empty( $expected_delivery_date ) ) {
-					$formatted_expected = date( 'Y年m月d日', strtotime( $expected_delivery_date ) );
-					$html .= '<div><strong>納品予定日：</strong>' . esc_html( $formatted_expected ) . '</div>';
-				}
-
-				$html .= '</div>';
-			}
-
 			// 請求項目（メインコンテンツ）
 			$html .= '<div class="invoice-items" style="margin-bottom: 20px;">';
 			$html .= $invoice_items_html;
