@@ -2,7 +2,7 @@
 /**
  * Plugin Name: KantanPro
  * Plugin URI: https://www.kantanpro.com/
- * Description: スモールビジネス向けの仕事効率化システム。ショートコード[ktpwp_all_tab]を固定ページに設置してください。
+ * Description: フリーランス・スモールビジネス向けの仕事効率化システム。ショートコード[ktpwp_all_tab]を固定ページに設置してください。
  * Version: 1.1.13(preview)
  * Author: KantanPro
  * Author URI: https://www.kantanpro.com/kantanpro-page
@@ -37,7 +37,7 @@ if ( ! defined( 'KANTANPRO_PLUGIN_NAME' ) ) {
 }
 if ( ! defined( 'KANTANPRO_PLUGIN_DESCRIPTION' ) ) {
     // 翻訳読み込み警告を回避するため、initアクションで設定
-    define( 'KANTANPRO_PLUGIN_DESCRIPTION', 'スモールビジネス向けの仕事効率化システム。ショートコード[ktpwp_all_tab]を固定ページに設置してください。' );
+    define( 'KANTANPRO_PLUGIN_DESCRIPTION', 'フリーランス・スモールビジネス向けの仕事効率化システム。ショートコード[ktpwp_all_tab]を固定ページに設置してください。' );
 }
 
 // Define KTPWP_PLUGIN_VERSION if not already defined, possibly aliasing KANTANPRO_PLUGIN_VERSION
