@@ -683,6 +683,18 @@ function printInvoiceContent() {
         console.log("[請求書印刷] 印刷用HTMLに置き換え完了");
         console.log("[請求書印刷] ファイル名:", filename);
         
+        // 印刷完了イベントを設定
+        window.addEventListener('afterprint', function() {
+            console.log('[印刷完了] afterprintイベントが発火しました');
+            setTimeout(function() {
+                var popup = document.getElementById('ktp-invoice-preview-popup');
+                if (popup) {
+                    popup.style.display = 'none';
+                    console.log('[印刷完了] afterprintイベントでポップアップを閉じました');
+                }
+            }, 1000);
+        });
+        
         // 印刷ダイアログを表示
         window.print();
         
@@ -697,6 +709,28 @@ function printInvoiceContent() {
             if (window.refreshInvoicePreview) {
                 window.refreshInvoicePreview();
             }
+            
+            // 印刷完了後にポップアップを閉じる（進捗変更の有無に関係なく）
+            setTimeout(function() {
+                var popup = document.getElementById('ktp-invoice-preview-popup');
+                if (popup) {
+                    popup.style.display = 'none';
+                    console.log('[印刷完了] 請求書ポップアップを閉じました');
+                } else {
+                    console.warn('[印刷完了] 請求書ポップアップ要素が見つかりません');
+                }
+                
+                // イベントリスナーを再設定
+                setTimeout(function() {
+                    var invoiceButton = document.getElementById("invoiceButton");
+                    var popup = document.getElementById("ktp-invoice-preview-popup");
+                    var list = document.getElementById("invoiceList");
+                    
+                    if (invoiceButton && popup && list) {
+                        console.log('[印刷完了] イベントリスナーを再設定しました');
+                    }
+                }, 100);
+            }, 500);
             
             // 印刷完了後に進捗変更Ajax
             if (shouldSetCompleted) {
@@ -735,7 +769,7 @@ function printInvoiceContent() {
                                 
                                 // ★ ポップアップを自動的に閉じる
                                 setTimeout(function() {
-                                    var popup = document.getElementById('invoicePopup');
+                                    var popup = document.getElementById('ktp-invoice-preview-popup');
                                     if (popup) {
                                         popup.style.display = 'none';
                                         console.log('[UI更新] 請求書ポップアップを閉じました');
