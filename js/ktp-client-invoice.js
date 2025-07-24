@@ -1,20 +1,14 @@
 // KTP Client Invoice Script
 
 jQuery(document).ready(function($) {
-    console.log("[請求書発行] スクリプト読み込み確認");
-    console.log("[請求書発行] ktpClientInvoice object:", typeof ktpClientInvoice, ktpClientInvoice);
-    
     //
     // 請求書発行機能
     //
     (function() {
         if (typeof ktpClientInvoice === 'undefined') {
             console.error("[請求書発行] Localized script object 'ktpClientInvoice' not found.");
-            console.error("[請求書発行] Available window objects:", Object.keys(window).filter(key => key.includes('ktp')));
             return;
         }
-
-        console.log("[請求書発行] 初期化開始");
 
         // デザイン設定をグローバル変数として設定
         window.ktp_design_settings = ktpClientInvoice.design_settings;
@@ -23,46 +17,30 @@ jQuery(document).ready(function($) {
         
         // フォールバック: ktpClientInvoiceが利用できない場合の代替手段
         if (!ajaxurl) {
-            console.warn("[請求書発行] ktpClientInvoice.ajax_url が利用できません。代替手段を試行します。");
             if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.ajax_url) {
                 ajaxurl = ktp_ajax_object.ajax_url;
-                console.log("[請求書発行] ktp_ajax_object から AJAX URL を取得:", ajaxurl);
             } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) {
                 ajaxurl = ktpwp_ajax.ajax_url;
-                console.log("[請求書発行] ktpwp_ajax から AJAX URL を取得:", ajaxurl);
             } else if (typeof window.ajaxurl !== 'undefined') {
                 ajaxurl = window.ajaxurl;
-                console.log("[請求書発行] window.ajaxurl から AJAX URL を取得:", ajaxurl);
             } else {
                 ajaxurl = '/wp-admin/admin-ajax.php';
-                console.warn("[請求書発行] デフォルトの AJAX URL を使用:", ajaxurl);
             }
         }
-        
-        console.log("[請求書発行] AJAX URL:", ajaxurl);
-        console.log("[請求書発行] Nonce:", ktpClientInvoice.nonce);
 
         var invoiceButton = document.getElementById("invoiceButton");
         var popup = document.getElementById("ktp-invoice-preview-popup");
         var list = document.getElementById("invoiceList");
 
-        console.log("[請求書発行] 要素確認:", {
-            invoiceButton: !!invoiceButton,
-            popup: !!popup,
-            list: !!list
-        });
-
         if (invoiceButton && popup && list) {
             // ポップアップを閉じる関数
             function closeInvoicePopup() {
-                console.log("[請求書発行] ポップアップを閉じます");
                 popup.style.display = "none";
             }
 
             // ポップアップ外クリックで閉じる機能
             popup.addEventListener("click", function(e) {
                 if (e.target === popup) {
-                    console.log("[請求書発行] ポップアップ外クリックで閉じます");
                     closeInvoicePopup();
                 }
             });
@@ -70,7 +48,6 @@ jQuery(document).ready(function($) {
             // Escapeキーで閉じる機能
             document.addEventListener("keydown", function(e) {
                 if (e.key === "Escape" && popup.style.display === "block") {
-                    console.log("[請求書発行] Escapeキーで閉じます");
                     closeInvoicePopup();
                 }
             });
@@ -78,13 +55,11 @@ jQuery(document).ready(function($) {
             // 閉じるボタンのイベントハンドラー
             document.addEventListener("click", function(e) {
                 if (e.target && e.target.id === "ktp-invoice-preview-close") {
-                    console.log("[請求書発行] 閉じるボタンがクリックされました");
                     closeInvoicePopup();
                 }
             });
 
             invoiceButton.addEventListener("click", function() {
-                console.log("[請求書発行] ボタンがクリックされました");
                 popup.style.display = "block";
                 
                 var xhr = new XMLHttpRequest();

@@ -10,8 +10,6 @@
 
     // 発注メールポップアップを表示
     window.ktpShowPurchaseOrderEmailPopup = function(orderId, supplierName) {
-        console.log('[PURCHASE-ORDER-EMAIL] ポップアップ表示開始', { orderId, supplierName });
-
         if (!orderId || !supplierName) {
             alert('受注書IDまたは協力会社名が指定されていません。');
             return;
@@ -145,7 +143,6 @@
                 ktpwp_ajax_nonce: nonce  // 追加: サーバー側で期待されるフィールド名
             },
             success: function(response) {
-                console.log('[PURCHASE-ORDER-EMAIL] レスポンス受信:', response);
                 try {
                     const result = typeof response === 'string' ? JSON.parse(response) : response;
                     if (result.success && result.data) {

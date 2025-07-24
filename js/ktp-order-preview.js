@@ -8,14 +8,10 @@
 (function ($) {
     'use strict';
 
-    console.log('[ORDER-PREVIEW] スクリプトが読み込まれました - Version: 2024-06-18');
-    console.log('[ORDER-PREVIEW] window.ktpShowOrderPreview定義を開始');
-
     // PDF生成ライブラリの動的ロード
     function loadPDFLibraries() {
         return new Promise((resolve, reject) => {
             if (typeof html2canvas !== 'undefined' && typeof jsPDF !== 'undefined') {
-                console.log('[ORDER-PREVIEW] PDF生成ライブラリは既にロード済み');
                 resolve();
                 return;
             }
@@ -28,7 +24,6 @@
                 const html2canvasScript = document.createElement('script');
                 html2canvasScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
                 html2canvasScript.onload = function() {
-                    console.log('[ORDER-PREVIEW] html2canvas読み込み完了');
                     html2canvasLoaded = true;
                     if (jsPDFLoaded) resolve();
                 };
@@ -44,7 +39,6 @@
                 const jsPDFScript = document.createElement('script');
                 jsPDFScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
                 jsPDFScript.onload = function() {
-                    console.log('[ORDER-PREVIEW] jsPDF読み込み完了');
                     // jsPDFをグローバルに設定
                     if (typeof window.jspdf !== 'undefined') {
                         window.jsPDF = window.jspdf.jsPDF;
@@ -74,27 +68,11 @@
 
     // 依存関係チェック
     $(document).ready(function() {
-        console.log('[ORDER-PREVIEW] DOM準備完了');
-        console.log('[ORDER-PREVIEW] jQuery available:', typeof $ !== 'undefined');
-        console.log('[ORDER-PREVIEW] ktpShowOrderPreview function available:', typeof window.ktpShowOrderPreview !== 'undefined');
-        
-        // ボタンの存在確認
-        const orderPreviewButton = document.getElementById('orderPreviewButton');
-        console.log('[ORDER-PREVIEW] orderPreviewButton found:', !!orderPreviewButton);
-        if (orderPreviewButton) {
-            console.log('[ORDER-PREVIEW] orderPreviewButton onclick:', orderPreviewButton.getAttribute('onclick'));
-            console.log('[ORDER-PREVIEW] orderPreviewButton data-order-id:', orderPreviewButton.getAttribute('data-order-id'));
-            console.log('[ORDER-PREVIEW] orderPreviewButton data-preview-content length:', orderPreviewButton.getAttribute('data-preview-content') ? orderPreviewButton.getAttribute('data-preview-content').length : 'なし');
-        }
-        
         // ボタンクリックイベントを設定 - 最新データをAjaxで取得
         $(document).on('click', '#orderPreviewButton', function(e) {
             e.preventDefault();
-            console.log('[ORDER-PREVIEW] ボタンがクリックされました！');
             
             const orderId = $(this).data('order-id');
-            
-            console.log('[ORDER-PREVIEW] データ取得 - OrderID:', orderId);
             
             if (!orderId) {
                 console.error('[ORDER-PREVIEW] 受注書IDが見つかりません');
@@ -116,13 +94,10 @@
                           typeof ktp_ajax_object !== 'undefined' ? ktp_ajax_object.nonce : ''
                 },
                 success: function(response) {
-                    console.log('[ORDER-PREVIEW] Ajax成功:', response);
-                    
                     try {
                         const result = typeof response === 'string' ? JSON.parse(response) : response;
                         
                         if (result.success && result.data && result.data.preview_html) {
-                            console.log('[ORDER-PREVIEW] 最新プレビュー取得成功');
                             // プレビューデータに進捗情報とタイトル情報を含める
                             window.ktpShowOrderPreview(orderId, result.data.preview_html, {
                                 progress: result.data.progress,
@@ -151,14 +126,8 @@
 
     // 受注書プレビューポップアップの表示
     window.ktpShowOrderPreview = function (orderId, previewContent, orderInfo) {
-        console.log('[ORDER PREVIEW] ===== ktpShowOrderPreview 関数が呼び出されました =====');
-        console.log('[ORDER PREVIEW] 引数 orderId:', orderId);
-        console.log('[ORDER PREVIEW] 引数 previewContent:', previewContent ? 'データあり (' + previewContent.length + ' 文字)' : 'データなし');
-        console.log('[ORDER PREVIEW] 引数 orderInfo:', orderInfo);
-        
         // グローバル変数として保存（PDF保存時に使用）
         window.currentOrderInfo = orderInfo || {};
-        console.log('[ORDER PREVIEW] 関数が正常に呼び出されました');
 
         if (!orderId) {
             console.error('[ORDER PREVIEW] エラー: orderIdが見つかりません');
@@ -293,8 +262,6 @@
 
     // デバッグ用: Ajaxハンドラーのテスト関数
     window.ktpTestOrderPreview = function(orderId) {
-        console.log('[ORDER PREVIEW TEST] テスト開始 - OrderID:', orderId);
-        
         $.ajax({
             url: typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php',
             type: 'POST',
@@ -312,10 +279,9 @@
             }
         });
     };
+    
     // PDF保存機能 - 印刷ダイアログ経由でPDF保存
     function saveOrderPreviewAsPDF(orderId) {
-        console.log('[ORDER PREVIEW] PDF保存開始', { orderId });
-        
         const saveContent = $('#ktp-order-preview-content').html();
         
         // ファイル名を要求された形式で生成
@@ -327,8 +293,6 @@
 
     // 直接ダウンロード方式でPDF生成（フォールバック用）
     function generatePDFDirectDownload(content, filename, orderId) {
-        console.log('[ORDER PREVIEW] 直接ダウンロード方式でPDF生成開始');
-        
         // 一時的な印刷用要素を作成
         const printElement = document.createElement('div');
         printElement.innerHTML = content;
@@ -381,8 +345,6 @@
                 // 一時要素を削除
                 document.body.removeChild(printElement);
                 
-                console.log('[ORDER PREVIEW] PDF保存完了');
-                
             }).catch(function(error) {
                 console.error('[ORDER PREVIEW] Canvas生成エラー:', error);
                 document.body.removeChild(printElement);
@@ -391,7 +353,6 @@
                 printOrderPreviewDirect(content, filename, orderId);
             });
         } else {
-            console.log('[ORDER PREVIEW] html2canvas/jsPDF未対応、直接印刷方式にフォールバック');
             document.body.removeChild(printElement);
             
             // フォールバック: 直接印刷方式
@@ -401,8 +362,6 @@
 
     // 現在のページで直接印刷する方法
     function printOrderPreviewDirect(content, filename, orderId) {
-        console.log('[ORDER PREVIEW] 直接印刷開始', { filename });
-        
         // 現在のページの状態を保存
         const originalBody = document.body.innerHTML;
         const originalTitle = document.title;
@@ -427,8 +386,6 @@
             if (popup) {
                 popup.remove();
             }
-            
-            console.log('[ORDER PREVIEW] 印刷完了。元のページに戻しました。');
         }, 1000);
     }
 
@@ -450,7 +407,6 @@
         // macOSでコロン（：）が問題になるため除去
         const filename = `${documentTitle}_ID${orderId}_${dateString}`;
         
-        console.log('[ORDER PREVIEW] 生成されたファイル名:', filename);
         return filename;
     }
 

@@ -3,29 +3,13 @@
  *
  * @package KTPWP
  * @since 1.0.0
- * @updated 2025-07-15 10:15:00 - デバッグログ追加
  */
 
 (function ($) {
     'use strict';
 
-    // デバッグ用のコンソールログを追加
-    console.log('[SERVICE-SELECTOR] スクリプトが読み込まれました - バージョン: 2025-07-15 10:15:00');
-
-    // 依存関係チェック
-    $(document).ready(function() {
-        console.log('[SERVICE-SELECTOR] DOM準備完了');
-        console.log('[SERVICE-SELECTOR] jQuery available:', typeof $ !== 'undefined');
-        console.log('[SERVICE-SELECTOR] ktp_service_ajax_object available:', typeof ktp_service_ajax_object !== 'undefined');
-        if (typeof ktp_service_ajax_object !== 'undefined') {
-            console.log('[SERVICE-SELECTOR] Ajax URL:', ktp_service_ajax_object.ajax_url);
-            console.log('[SERVICE-SELECTOR] Nonce:', ktp_service_ajax_object.nonce);
-        }
-    });
-
     // サービス選択ポップアップの表示
     window.ktpShowServiceSelector = function (targetRow, mode = 'add') {
-        console.log('[SERVICE SELECTOR] ポップアップ表示開始', { targetRow, mode });
 
         const orderId = $('input[name="order_id"]').val() || $('#order_id').val();
         if (!orderId) {

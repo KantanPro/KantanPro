@@ -1,9 +1,5 @@
-console.log('=== KTP SUPPLIER SELECTOR: SCRIPT STARTED ===');
 // 協力会社選択ポップアップの表示関数
 (function($) {
-    console.log('[SUPPLIER-SELECTOR] ファイル読み込み完了');
-    console.log('[SUPPLIER-SELECTOR] jQuery version:', typeof $ !== 'undefined' ? $.fn.jquery : 'jQuery not loaded');
-    console.log('[SUPPLIER-SELECTOR] ktp_ajax_object:', typeof ktp_ajax_object !== 'undefined' ? 'loaded' : 'not loaded');
 
     // 単価の表示形式を整形する関数（グローバルスコープ）
     window.formatUnitPrice = function(price) {
@@ -39,17 +35,11 @@ console.log('=== KTP SUPPLIER SELECTOR: SCRIPT STARTED ===');
 
     // 即座に関数を定義してグローバルに露出
     window.ktpShowSupplierSelector = function(currentRow) {
-        console.log('[SUPPLIER-SELECTOR] ===== ktpShowSupplierSelector関数開始 =====');
-        console.log('[SUPPLIER-SELECTOR] 引数currentRow:', currentRow);
-        console.log('[SUPPLIER-SELECTOR] 関数が呼び出されました');
-        
         // グローバル変数としてcurrentRowを保持
         window.ktpCurrentRow = currentRow;
-        console.log('[SUPPLIER-SELECTOR] window.ktpCurrentRowを設定:', window.ktpCurrentRow);
         
     // 既存のポップアップがあれば削除
     $("#ktp-supplier-selector-modal").remove();
-        console.log('[SUPPLIER-SELECTOR] 既存のポップアップを削除しました');
         // ポップアップHTML
         const popupHtml = `
             <div id="ktp-supplier-selector-modal" style="

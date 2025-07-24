@@ -449,30 +449,14 @@ class KTPWP_Assets {
                     wp_add_inline_script( 'ktp-js', 'window.ktpwp_ajax = ' . json_encode( $ajax_data ) . ';', 'after' );
                     wp_add_inline_script( 'ktp-js', 'window.ktp_ajax_object = ' . json_encode( $ajax_data ) . ';', 'after' );
                     wp_add_inline_script( 'ktp-js', 'window.ajaxurl = ' . json_encode( $ajax_data['ajax_url'] ) . ';', 'after' );
-                    wp_add_inline_script( 'ktp-js', 'console.log("Admin: AJAX設定を出力 (unified nonce)", window.ktpwp_ajax);', 'after' );
+
 
                     if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
                         error_log( 'KTPWP Assets: Admin AJAX config added for ktp-js with unified nonce: ' . json_encode( $ajax_data ) );
                     }
                 }
 
-                // デバッグ用: ktp-supplier-selectorスクリプトの読み込み確認
-                if ( $handle === 'ktp-supplier-selector' ) {
-                    wp_add_inline_script( 'ktp-supplier-selector', 'console.log("' . ( $is_admin ? 'Admin' : 'Frontend' ) . ': ktp-supplier-selector.js が読み込まれました");', 'after' );
-                    wp_add_inline_script( 'ktp-supplier-selector', 'console.log("' . ( $is_admin ? 'Admin' : 'Frontend' ) . ': window.ktpShowSupplierSelector =", typeof window.ktpShowSupplierSelector);', 'after' );
-                    wp_add_inline_script( 'ktp-supplier-selector', 'console.log("' . ( $is_admin ? 'Admin' : 'Frontend' ) . ': 現在のURL =", window.location.href);', 'after' );
-                    wp_add_inline_script( 'ktp-supplier-selector', 'console.log("' . ( $is_admin ? 'Admin' : 'Frontend' ) . ': jQuery version =", typeof $ !== "undefined" ? $.fn.jquery : "jQuery not loaded");', 'after' );
-                    wp_add_inline_script( 'ktp-supplier-selector', 'console.log("' . ( $is_admin ? 'Admin' : 'Frontend' ) . ': ktp_ajax_object =", typeof ktp_ajax_object !== "undefined" ? "loaded" : "not loaded");', 'after' );
-                    wp_add_inline_script( 'ktp-supplier-selector', 'console.log("' . ( $is_admin ? 'Admin' : 'Frontend' ) . ': 読み込まれたスクリプト =", $("script[src*=\\"ktp\\"]").map(function() { return $(this).attr("src"); }).get());', 'after' );
-                    wp_add_inline_script( 'ktp-supplier-selector', 'console.log("' . ( $is_admin ? 'Admin' : 'Frontend' ) . ': 利用可能なwindow関数 =", Object.keys(window).filter(key => key.includes("ktp")));', 'after' );
-                }
 
-                // デバッグ用: ktp-client-invoiceスクリプトの読み込み確認
-                if ( $handle === 'ktp-client-invoice' ) {
-                    wp_add_inline_script( 'ktp-client-invoice', 'console.log("' . ( $is_admin ? 'Admin' : 'Frontend' ) . ': ktp-client-invoice.js が読み込まれました");', 'after' );
-                    wp_add_inline_script( 'ktp-client-invoice', 'console.log("' . ( $is_admin ? 'Admin' : 'Frontend' ) . ': ktpClientInvoice object =", typeof ktpClientInvoice !== "undefined" ? "loaded" : "not loaded");', 'after' );
-                    wp_add_inline_script( 'ktp-client-invoice', 'if (typeof ktpClientInvoice !== "undefined") { console.log("' . ( $is_admin ? 'Admin' : 'Frontend' ) . ': ktpClientInvoice details =", ktpClientInvoice); }', 'after' );
-                }
             }
         }
     }
@@ -504,7 +488,7 @@ class KTPWP_Assets {
         wp_add_inline_script( 'ktp-js', 'var ktpwpStaffChatHideLabel = ' . json_encode( esc_html__( '非表示', 'ktpwp' ) ) . ';' );
 
         // デバッグ情報
-        wp_add_inline_script( 'ktp-js', 'console.log("Assets: AJAX設定を出力 (unified nonce)", window.ktpwp_ajax);' );
+
 
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
             error_log( 'KTPWP Assets: Inline scripts added with unified nonce' );

@@ -2167,10 +2167,7 @@
         // 必要な変数を明示的に取得
         const orderId = $('input[name="order_id"]').val() || $('#order_id').val();
         const projectName = $('input[name="project_name"]').val() || $('#project_name').val() || '案件名未設定';
-        console.log('[PURCHASE-EMAIL] 発注メール生成開始', {
-            supplierName: supplierName,
-            orderId: orderId
-        });
+        
         // 同一協力会社の他の仕入情報を収集
         const supplierItems = [];
         $('.cost-items-table tbody tr').each(function() {
@@ -2181,14 +2178,6 @@
             const isNewFormat = purchaseText && purchaseText.startsWith(supplierName + ' >') && purchaseText.endsWith('に発注');
             const isOldFormat = purchaseText && purchaseText === (supplierName + 'に発注');
             
-            console.log('[PURCHASE-EMAIL] 行チェック:', {
-                purchaseText: purchaseText,
-                supplierName: supplierName,
-                isNewFormat: isNewFormat,
-                isOldFormat: isOldFormat,
-                matched: isNewFormat || isOldFormat
-            });
-            
             if (isNewFormat || isOldFormat) {
                 const productName = $row.find('.product-name').val();
                 const price = parseFloat($row.find('.price').val()) || 0;
@@ -2197,15 +2186,6 @@
                 const amount = parseFloat($row.find('.amount').val()) || 0;
                 const taxRateRaw = $row.find('.tax-rate').val();
                 const taxRate = (taxRateRaw !== null && taxRateRaw !== undefined && taxRateRaw !== '') ? parseFloat(taxRateRaw) : null;
-                
-                console.log('[PURCHASE-EMAIL] マッチした行のデータ:', {
-                    productName: productName,
-                    price: price,
-                    quantity: quantity,
-                    unit: unit,
-                    amount: amount,
-                    taxRate: taxRate
-                });
                 
                 if (productName && price > 0) {
                     supplierItems.push({
@@ -2216,23 +2196,18 @@
                         amount: amount,
                         taxRate: taxRate
                     });
-                    console.log('[PURCHASE-EMAIL] 発注項目に追加しました:', productName);
                 }
             }
         });
         
-        console.log('[PURCHASE-EMAIL] 収集した発注項目:', supplierItems);
-        
         // 発注項目が見つからない場合の処理
         if (supplierItems.length === 0) {
             alert(`${supplierName}への発注項目が見つかりません。\n\n対象の行で「${supplierName}に発注」または「${supplierName} > サービス名に発注」と表示されている必要があります。`);
-            console.log('[PURCHASE-EMAIL] 発注項目が見つからないため処理を終了します');
             return;
         }
         
         // 新しい発注メールポップアップ機能を使用
         if (typeof window.ktpShowPurchaseOrderEmailPopup === 'function') {
-            console.log('[PURCHASE-EMAIL] 新しい発注メールポップアップを呼び出し');
             window.ktpShowPurchaseOrderEmailPopup(orderId, supplierName);
         } else {
             console.error('[PURCHASE-EMAIL] ktpShowPurchaseOrderEmailPopup関数が見つかりません');

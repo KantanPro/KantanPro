@@ -23,8 +23,6 @@
 
     // メール送信ポップアップの表示
     window.ktpShowEmailPopup = function (orderId) {
-        console.log('[EMAIL POPUP] ポップアップ表示開始', { orderId });
-
         if (!orderId) {
             alert('受注書IDが見つかりません。');
             return;
@@ -130,17 +128,12 @@
             nonce: nonce
         };
 
-        console.log('[EMAIL POPUP] メール内容取得開始', ajaxData);
-
         $.ajax({
             url: ajaxUrl,
             type: 'POST',
             data: ajaxData,
             dataType: 'json',
             success: function (response) {
-                console.log('[EMAIL POPUP] メール内容取得成功', response);
-                console.log('[EMAIL POPUP] レスポンスタイプ:', typeof response);
-                console.log('[EMAIL POPUP] レスポンス構造:', JSON.stringify(response, null, 2));
                 
                 if (response.success && response.data) {
                     renderEmailForm(response.data, orderId);

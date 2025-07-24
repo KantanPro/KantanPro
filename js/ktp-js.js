@@ -823,11 +823,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // 受注書イベントリスナーを設定する関数
     function setupOrderEventListeners() {
-        // 既存のイベントリスナーを再設定
-        if (window.ktpDebugMode) {
-            console.log('KTPWP: 受注書イベントリスナーを再設定しています');
-        }
-        
         // コスト項目トグルの再設定
         var costToggleBtn = document.querySelector('.toggle-cost-items');
         var costContent = document.getElementById('cost-items-content');
@@ -850,13 +845,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (typeof ktpCostSetupEventListeners === 'function') {
             ktpCostSetupEventListeners();
         }
-        
-        if (window.ktpDebugMode) {
-            console.log('KTPWP: 受注書イベントリスナーの再設定が完了しました');
-        }
     }
-
-    if (window.ktpDebugMode) console.log('KTPWP: Initialization complete');
 });
 
 // グローバル関数：スタッフチャットトグルをテスト
