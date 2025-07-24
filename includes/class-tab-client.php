@@ -1160,13 +1160,13 @@ if ( ! class_exists( 'Kntan_Client_Class' ) ) {
 			$controller_html .= '<button id="invoiceButton" title="請求書発行"><span class="material-symbols-outlined" aria-label="請求書">receipt_long</span><span class="btn-label">請求書発行</span></button>';
 
 			// 請求書発行ポップアップ
-			$controller_html .= '<div id="invoicePopup" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;">';
+			$controller_html .= '<div id="ktp-invoice-preview-popup" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;">';
 			$controller_html .= '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:white;padding:20px;border-radius:8px;width:90%;max-width:800px;max-height:80vh;display:flex;flex-direction:column;">';
 
 			// ヘッダー部分（固定）
 			$controller_html .= '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;border-bottom:1px solid #ddd;padding-bottom:10px;">';
 			$controller_html .= '<h3 style="margin:0;color:#333;">請求書プレビュー</h3>';
-			$controller_html .= '<button type="button" id="ktp-order-preview-close" style="background: none; color: #333; border: none; cursor: pointer; font-size: 28px; padding: 0; line-height: 1;">×</button>';
+			$controller_html .= '<button type="button" id="ktp-invoice-preview-close" style="background: none; color: #333; border: none; cursor: pointer; font-size: 28px; padding: 0; line-height: 1;">×</button>';
 			$controller_html .= '</div>';
 
 			// コンテンツ部分（スクロール可能）

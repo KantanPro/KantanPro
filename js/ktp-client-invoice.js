@@ -43,7 +43,7 @@ jQuery(document).ready(function($) {
         console.log("[請求書発行] Nonce:", ktpClientInvoice.nonce);
 
         var invoiceButton = document.getElementById("invoiceButton");
-        var popup = document.getElementById("invoicePopup");
+        var popup = document.getElementById("ktp-invoice-preview-popup");
         var list = document.getElementById("invoiceList");
 
         console.log("[請求書発行] 要素確認:", {
@@ -55,12 +55,14 @@ jQuery(document).ready(function($) {
         if (invoiceButton && popup && list) {
             // ポップアップを閉じる関数
             function closeInvoicePopup() {
+                console.log("[請求書発行] ポップアップを閉じます");
                 popup.style.display = "none";
             }
 
             // ポップアップ外クリックで閉じる機能
             popup.addEventListener("click", function(e) {
                 if (e.target === popup) {
+                    console.log("[請求書発行] ポップアップ外クリックで閉じます");
                     closeInvoicePopup();
                 }
             });
@@ -68,13 +70,15 @@ jQuery(document).ready(function($) {
             // Escapeキーで閉じる機能
             document.addEventListener("keydown", function(e) {
                 if (e.key === "Escape" && popup.style.display === "block") {
+                    console.log("[請求書発行] Escapeキーで閉じます");
                     closeInvoicePopup();
                 }
             });
 
             // 閉じるボタンのイベントハンドラー
             document.addEventListener("click", function(e) {
-                if (e.target && e.target.id === "ktp-order-preview-close") {
+                if (e.target && e.target.id === "ktp-invoice-preview-close") {
+                    console.log("[請求書発行] 閉じるボタンがクリックされました");
                     closeInvoicePopup();
                 }
             });
