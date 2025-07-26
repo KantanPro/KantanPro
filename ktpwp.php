@@ -3,7 +3,7 @@
  * Plugin Name: KantanPro
  * Plugin URI: https://www.kantanpro.com/
  * Description: フリーランス・スモールビジネス向けの仕事効率化システム。ショートコード[ktpwp_all_tab]を固定ページに設置してください。
- * Version: 1.1.13(preview)
+ * Version: 1.1.14(preview)
  * Author: KantanPro
  * Author URI: https://www.kantanpro.com/kantanpro-page
  * License: GPL v2 or later
@@ -30,7 +30,7 @@ if ( file_exists( plugin_dir_path( __FILE__ ) . 'vendor/autoload.php' ) ) {
 
 // プラグイン定数定義
 if ( ! defined( 'KANTANPRO_PLUGIN_VERSION' ) ) {
-    define( 'KANTANPRO_PLUGIN_VERSION', '1.1.13(preview)' );
+    define( 'KANTANPRO_PLUGIN_VERSION', '1.1.14(preview)' );
 }
 if ( ! defined( 'KANTANPRO_PLUGIN_NAME' ) ) {
     define( 'KANTANPRO_PLUGIN_NAME', 'KantanPro' );
@@ -671,6 +671,124 @@ function ktpwp_distribution_auto_migration() {
 function ktpwp_verify_migration_safety() {
     global $wpdb;
     
+    // データベース接続チェック
+    if ( ! $wpdb->check_connection() ) {
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP Migration Safety: データベース接続エラー' );
+        }
+        return false;
+    }
+    
+    // 書き込み権限チェック
+    $test_option = 'ktpwp_migration_test_' . time();
+    $test_result = update_option( $test_option, 'test' );
+    if ( ! $test_result ) {
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP Migration Safety: オプションテーブル書き込み権限エラー' );
+        }
+        return false;
+    }
+    delete_option( $test_option );
+    
+    // メモリ制限チェック
+    $memory_limit = ini_get( 'memory_limit' );
+    $memory_limit_bytes = wp_convert_hr_to_bytes( $memory_limit );
+    if ( $memory_limit_bytes < 64 * 1024 * 1024 ) { // 64MB未満
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP Migration Safety: メモリ制限が低すぎます: ' . $memory_limit );
+        }
+        return false;
+    }
+    
+    // 実行時間制限チェック
+    $max_execution_time = ini_get( 'max_execution_time' );
+    if ( $max_execution_time > 0 && $max_execution_time < 30 ) { // 30秒未満
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP Migration Safety: 実行時間制限が短すぎます: ' . $max_execution_time . '秒' );
+        }
+        return false;
+    }
+    
+    // ディスク容量チェック
+    $upload_dir = wp_upload_dir();
+    $disk_free_space = disk_free_space( $upload_dir['basedir'] );
+    if ( $disk_free_space !== false && $disk_free_space < 50 * 1024 * 1024 ) { // 50MB未満
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP Migration Safety: ディスク容量が不足しています: ' . round( $disk_free_space / 1024 / 1024, 2 ) . 'MB' );
+        }
+        return false;
+    }
+    
+    // WordPressバージョンチェック
+    global $wp_version;
+    if ( version_compare( $wp_version, '5.0', '<' ) ) {
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP Migration Safety: WordPressバージョンが古すぎます: ' . $wp_version );
+        }
+        return false;
+    }
+    
+    // PHPバージョンチェック
+    if ( version_compare( PHP_VERSION, '7.4', '<' ) ) {
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP Migration Safety: PHPバージョンが古すぎます: ' . PHP_VERSION );
+        }
+        return false;
+    }
+    
+    // 必須PHP拡張機能チェック
+    $required_extensions = array( 'mysqli', 'json', 'mbstring' );
+    foreach ( $required_extensions as $ext ) {
+        if ( ! extension_loaded( $ext ) ) {
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP Migration Safety: 必須PHP拡張機能が不足しています: ' . $ext );
+            }
+            return false;
+        }
+    }
+    
+    // データベース権限チェック
+    try {
+        $test_table = $wpdb->prefix . 'ktpwp_migration_test_' . time();
+        $create_result = $wpdb->query( "CREATE TABLE IF NOT EXISTS `{$test_table}` (id INT PRIMARY KEY)" );
+        if ( $create_result === false ) {
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP Migration Safety: テーブル作成権限エラー' );
+            }
+            return false;
+        }
+        
+        $drop_result = $wpdb->query( "DROP TABLE IF EXISTS `{$test_table}`" );
+        if ( $drop_result === false ) {
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP Migration Safety: テーブル削除権限エラー' );
+            }
+            return false;
+        }
+    } catch ( Exception $e ) {
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP Migration Safety: データベース権限チェックエラー: ' . $e->getMessage() );
+        }
+        return false;
+    }
+    
+    // プラグイン競合チェック
+    $conflicting_plugins = array(
+        'woocommerce/woocommerce.php',
+        'easy-digital-downloads/easy-digital-downloads.php'
+    );
+    
+    $active_plugins = get_option( 'active_plugins', array() );
+    foreach ( $conflicting_plugins as $plugin ) {
+        if ( in_array( $plugin, $active_plugins ) ) {
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP Migration Safety: 競合プラグインが検出されました: ' . $plugin );
+            }
+            // 競合プラグインがあっても警告のみで続行
+        }
+    }
+    
+    return true;
     // データベース接続チェック
     if ( ! $wpdb->check_connection() ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
