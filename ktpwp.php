@@ -540,6 +540,16 @@ function ktpwp_run_auto_migrations() {
             update_option( 'ktpwp_db_version', $plugin_version );
             update_option( 'ktpwp_last_migration_timestamp', current_time( 'mysql' ) );
             update_option( 'ktpwp_migration_success_count', get_option( 'ktpwp_migration_success_count', 0 ) + 1 );
+            
+            // 配布環境での確実なバージョン同期
+            $updated_db_version = get_option( 'ktpwp_db_version', '0.0.0' );
+            if ( $updated_db_version !== $plugin_version ) {
+                // 強制的に再設定
+                update_option( 'ktpwp_db_version', $plugin_version );
+                if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                    error_log( 'KTPWP Auto Migration: バージョン同期を強制実行しました' );
+                }
+            }
 
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
                 error_log( 'KTPWP Auto Migration: Migration completed successfully' );
@@ -2255,6 +2265,15 @@ function ktpwp_admin_migration_status() {
     
     $status = ktpwp_check_migration_status();
     
+    // 配布環境での誤った通知表示を防ぐための追加チェック
+    $current_db_version = get_option( 'ktpwp_db_version', '0.0.0' );
+    $plugin_version = KANTANPRO_PLUGIN_VERSION;
+    
+    // バージョンが実際に一致している場合は通知を表示しない
+    if ( $current_db_version === $plugin_version ) {
+        return;
+    }
+    
     if ( $status['needs_migration'] ) {
         $message = sprintf(
             'データベースの更新が必要です。現在のバージョン: %s、プラグインバージョン: %s',
@@ -2264,7 +2283,40 @@ function ktpwp_admin_migration_status() {
         
         echo '<div class="notice notice-warning is-dismissible">';
         echo '<p><strong>KantanPro:</strong> ' . esc_html( $message ) . '</p>';
+        echo '<p><button type="button" class="button button-primary" id="ktpwp-manual-db-update">今すぐ更新</button></p>';
         echo '</div>';
+        
+        // JavaScript for manual database update
+        ?>
+        <script>
+        jQuery(document).ready(function($) {
+            $('#ktpwp-manual-db-update').on('click', function() {
+                var $button = $(this);
+                var originalText = $button.text();
+                
+                $button.text('更新中...').prop('disabled', true);
+                
+                $.post(ajaxurl, {
+                    action: 'ktpwp_manual_db_update',
+                    nonce: '<?php echo wp_create_nonce( 'ktpwp_manual_db_update' ); ?>'
+                }, function(response) {
+                    if (response.success) {
+                        $button.text('更新完了').removeClass('button-primary').addClass('button-secondary');
+                        setTimeout(function() {
+                            window.location.reload();
+                        }, 2000);
+                    } else {
+                        alert('更新に失敗しました: ' + (response.data || '不明なエラー'));
+                        $button.text(originalText).prop('disabled', false);
+                    }
+                }).fail(function() {
+                    alert('更新に失敗しました。ネットワークエラーが発生しました。');
+                    $button.text(originalText).prop('disabled', false);
+                });
+            });
+        });
+        </script>
+        <?php
     }
     
     // 適格請求書ナンバー機能の状態表示
@@ -2282,6 +2334,59 @@ if ( is_admin() && isset( $_GET['page'] ) && strpos( $_GET['page'], 'ktp-' ) ===
     
     // エンドユーザー向け: 管理画面アクセス時に自動的にエラーをクリア
     add_action( 'admin_init', 'ktpwp_auto_clear_migration_error_for_end_users' );
+}
+
+// 手動データベース更新のAJAXハンドラー
+add_action( 'wp_ajax_ktpwp_manual_db_update', 'ktpwp_handle_manual_db_update' );
+
+/**
+ * 手動データベース更新のAJAXハンドラー
+ */
+function ktpwp_handle_manual_db_update() {
+    // セキュリティチェック
+    if ( ! wp_verify_nonce( $_POST['nonce'], 'ktpwp_manual_db_update' ) ) {
+        wp_send_json_error( 'セキュリティチェックに失敗しました。' );
+    }
+    
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_send_json_error( 'この操作を実行する権限がありません。' );
+    }
+    
+    try {
+        // 現在のバージョン情報を取得
+        $current_db_version = get_option( 'ktpwp_db_version', '0.0.0' );
+        $plugin_version = KANTANPRO_PLUGIN_VERSION;
+        
+        // マイグレーション進行中フラグをクリア（手動更新のため）
+        delete_option( 'ktpwp_migration_in_progress' );
+        
+        // マイグレーション実行
+        ktpwp_run_auto_migrations();
+        
+        // データベースバージョンを強制的に更新
+        update_option( 'ktpwp_db_version', $plugin_version );
+        update_option( 'ktpwp_last_migration_timestamp', current_time( 'mysql' ) );
+        update_option( 'ktpwp_migration_success_count', get_option( 'ktpwp_migration_success_count', 0 ) + 1 );
+        
+        // マイグレーションエラーをクリア
+        delete_option( 'ktpwp_migration_error' );
+        delete_option( 'ktpwp_migration_error_timestamp' );
+        
+        // バージョン同期の確認
+        $updated_db_version = get_option( 'ktpwp_db_version', '0.0.0' );
+        if ( $updated_db_version !== $plugin_version ) {
+            // 強制的に再設定
+            update_option( 'ktpwp_db_version', $plugin_version );
+        }
+        
+        // キャッシュをクリア
+        wp_cache_flush();
+        
+        wp_send_json_success( 'データベースの更新が完了しました。' );
+        
+    } catch ( Exception $e ) {
+        wp_send_json_error( '更新に失敗しました: ' . $e->getMessage() );
+    }
 }
 
 /**
