@@ -556,6 +556,12 @@ kantanpro22@gmail.com
     public function handle_terms_agreement() {
         check_ajax_referer( 'ktpwp_terms_agreement', 'nonce' );
 
+        // 管理者権限チェック（管理者のみ処理）
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( array( 'message' => __( '管理者権限が必要です。', 'ktpwp' ) ) );
+            return;
+        }
+
         $user_id = get_current_user_id();
         if ( $user_id ) {
             // 既に同意済みかチェック（重複防止）
@@ -729,6 +735,11 @@ kantanpro22@gmail.com
      * 利用規約に同意済みかチェック
      */
     public function has_user_agreed_to_terms( $user_id = null ) {
+        // 管理者権限チェック（管理者のみチェック）
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return true; // 管理者以外は常に同意済みとみなす
+        }
+
         if ( ! $user_id ) {
             $user_id = get_current_user_id();
         }
@@ -930,6 +941,11 @@ kantanpro22@gmail.com
      * 利用規約同意ダイアログを表示
      */
     public function display_terms_dialog() {
+        // 管理者権限チェック（管理者のみに表示）
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
+
         if ( $this->has_user_agreed_to_terms() ) {
             return;
         }

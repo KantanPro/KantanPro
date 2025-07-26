@@ -4101,6 +4101,11 @@ function ktpwp_check_terms_agreement() {
         return;
     }
 
+    // 管理者権限チェック（管理者のみに表示）
+    if ( ! current_user_can( 'manage_options' ) ) {
+        return;
+    }
+
     // 利用規約管理クラスが存在しない場合はスキップ
     if ( ! class_exists( 'KTPWP_Terms_Of_Service' ) ) {
         return;
@@ -4137,6 +4142,11 @@ function ktpwp_check_terms_agreement() {
 function ktpwp_check_terms_on_shortcode() {
     // 最優先条件: ユーザーがログインしていること
     if ( ! is_user_logged_in() ) {
+        return;
+    }
+
+    // 管理者権限チェック（管理者のみに表示）
+    if ( ! current_user_can( 'manage_options' ) ) {
         return;
     }
 
