@@ -550,10 +550,33 @@ function ktpwp_run_auto_migrations() {
                 error_log( 'KTPWP Auto Migration Error: ' . $e->getMessage() );
             }
             
-            // エラー情報を詳細に記録
-            update_option( 'ktpwp_migration_error', $e->getMessage() );
-            update_option( 'ktpwp_migration_error_timestamp', current_time( 'mysql' ) );
-            update_option( 'ktpwp_migration_error_count', get_option( 'ktpwp_migration_error_count', 0 ) + 1 );
+            // 配布環境での誤ったエラー設定を防ぐためのチェック
+            $should_record_error = true;
+            
+            // マイグレーションが実際に成功している場合はエラーを記録しない
+            $migration_success_count = get_option( 'ktpwp_migration_success_count', 0 );
+            $last_migration_timestamp = get_option( 'ktpwp_last_migration_timestamp', '' );
+            
+            if ( $migration_success_count > 0 && ! empty( $last_migration_timestamp ) ) {
+                // 最終マイグレーションから1時間以内の場合はエラーを記録しない
+                $last_migration_time = strtotime( $last_migration_timestamp );
+                $current_time = current_time( 'timestamp' );
+                
+                if ( $current_time - $last_migration_time <= 3600 ) { // 1時間 = 3600秒
+                    $should_record_error = false;
+                    
+                    if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                        error_log( 'KTPWP: 配布環境での誤ったマイグレーションエラー記録を防止しました' );
+                    }
+                }
+            }
+            
+            // エラー情報を詳細に記録（配布環境での誤記録を防ぐ）
+            if ( $should_record_error ) {
+                update_option( 'ktpwp_migration_error', $e->getMessage() );
+                update_option( 'ktpwp_migration_error_timestamp', current_time( 'mysql' ) );
+                update_option( 'ktpwp_migration_error_count', get_option( 'ktpwp_migration_error_count', 0 ) + 1 );
+            }
         } finally {
             // マイグレーション進行中フラグをクリア
             delete_option( 'ktpwp_migration_in_progress' );
@@ -1740,6 +1763,14 @@ function ktpwp_plugin_activation() {
     }
 
     try {
+        // 配布環境での誤ったエラー表示を防ぐため、既存のマイグレーションエラーをクリア
+        delete_option( 'ktpwp_migration_error' );
+        delete_option( 'ktpwp_migration_error_timestamp' );
+        
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP: プラグイン有効化時に既存のマイグレーションエラーをクリアしました' );
+        }
+        
         // 自動マイグレーションを実行
         if ( function_exists('ktpwp_run_auto_migrations') ) {
             ktpwp_run_auto_migrations();
@@ -2132,6 +2163,62 @@ function ktpwp_check_migration_status() {
         $needs_migration = version_compare( $current_db_version, $plugin_version, '<' );
     }
     
+    // マイグレーションエラーの確認と配布環境での修正
+    $migration_error = get_option( 'ktpwp_migration_error', null );
+    
+    // 配布環境での誤ったエラー表示を防ぐためのチェック
+    if ( $migration_error ) {
+        // マイグレーションが実際に成功している場合はエラーをクリア
+        $migration_success_count = get_option( 'ktpwp_migration_success_count', 0 );
+        $last_migration_timestamp = get_option( 'ktpwp_last_migration_timestamp', '' );
+        $migration_in_progress = get_option( 'ktpwp_migration_in_progress', false );
+        
+        // エンドユーザー向けの自動クリア条件（より積極的）
+        $should_clear_error = false;
+        
+        // 条件1: マイグレーションが進行中でない、かつ成功回数が1以上
+        if ( ! $migration_in_progress && $migration_success_count > 0 ) {
+            $should_clear_error = true;
+        }
+        
+        // 条件2: 最終マイグレーションが最近（30分以内）の場合
+        if ( ! empty( $last_migration_timestamp ) ) {
+            $last_migration_time = strtotime( $last_migration_timestamp );
+            $current_time = current_time( 'timestamp' );
+            
+            if ( $current_time - $last_migration_time <= 1800 ) { // 30分 = 1800秒
+                $should_clear_error = true;
+            }
+        }
+        
+        // 条件3: データベースバージョンが最新の場合
+        if ( $current_db_version === $plugin_version ) {
+            $should_clear_error = true;
+        }
+        
+        // 条件4: エラーが古い場合（24時間以上経過）
+        $error_timestamp = get_option( 'ktpwp_migration_error_timestamp', '' );
+        if ( ! empty( $error_timestamp ) ) {
+            $error_time = strtotime( $error_timestamp );
+            $current_time = current_time( 'timestamp' );
+            
+            if ( $current_time - $error_time > 86400 ) { // 24時間 = 86400秒
+                $should_clear_error = true;
+            }
+        }
+        
+        // エラーをクリア
+        if ( $should_clear_error ) {
+            delete_option( 'ktpwp_migration_error' );
+            delete_option( 'ktpwp_migration_error_timestamp' );
+            $migration_error = null;
+            
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP: エンドユーザー向けにマイグレーションエラーを自動クリアしました' );
+            }
+        }
+    }
+    
     // 適格請求書ナンバー機能の状態をチェック
     $qualified_invoice_migrated = get_option( 'ktpwp_qualified_invoice_profit_calculation_migrated', false );
     $qualified_invoice_version = get_option( 'ktpwp_qualified_invoice_profit_calculation_version', '0.0.0' );
@@ -2146,7 +2233,7 @@ function ktpwp_check_migration_status() {
         'upgrade_completed' => get_option( 'ktpwp_upgrade_completed', false ),
         'reactivation_completed' => get_option( 'ktpwp_reactivation_completed', false ),
         'new_installation_completed' => get_option( 'ktpwp_new_installation_completed', false ),
-        'migration_error' => get_option( 'ktpwp_migration_error', null ),
+        'migration_error' => $migration_error,
         'qualified_invoice' => array(
             'migrated' => $qualified_invoice_migrated,
             'version' => $qualified_invoice_version,
@@ -2180,12 +2267,6 @@ function ktpwp_admin_migration_status() {
         echo '</div>';
     }
     
-    if ( $status['migration_error'] ) {
-        echo '<div class="notice notice-error is-dismissible">';
-        echo '<p><strong>KantanPro:</strong> マイグレーション中にエラーが発生しました: ' . esc_html( $status['migration_error'] ) . '</p>';
-        echo '</div>';
-    }
-    
     // 適格請求書ナンバー機能の状態表示
     $qualified_invoice = $status['qualified_invoice'];
     if ( ! $qualified_invoice['migrated'] ) {
@@ -2198,6 +2279,31 @@ function ktpwp_admin_migration_status() {
 // 管理画面でのマイグレーション状態表示（KantanPro設定ページでのみ実行）
 if ( is_admin() && isset( $_GET['page'] ) && strpos( $_GET['page'], 'ktp-' ) === 0 ) {
     add_action( 'admin_notices', 'ktpwp_admin_migration_status' );
+    
+    // エンドユーザー向け: 管理画面アクセス時に自動的にエラーをクリア
+    add_action( 'admin_init', 'ktpwp_auto_clear_migration_error_for_end_users' );
+}
+
+/**
+ * エンドユーザー向け: 管理画面アクセス時に自動的にマイグレーションエラーをクリア
+ */
+function ktpwp_auto_clear_migration_error_for_end_users() {
+    // マイグレーションエラーが存在する場合
+    $migration_error = get_option( 'ktpwp_migration_error', null );
+    if ( $migration_error ) {
+        // データベースバージョンが最新の場合、エラーを自動クリア
+        $current_db_version = get_option( 'ktpwp_db_version', '0.0.0' );
+        $plugin_version = KANTANPRO_PLUGIN_VERSION;
+        
+        if ( $current_db_version === $plugin_version ) {
+            delete_option( 'ktpwp_migration_error' );
+            delete_option( 'ktpwp_migration_error_timestamp' );
+            
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP: 管理画面アクセス時にマイグレーションエラーを自動クリアしました' );
+            }
+        }
+    }
 }
 
 /**
