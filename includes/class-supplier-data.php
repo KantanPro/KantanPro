@@ -227,12 +227,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
 							setcookie( $cookie_name, '', time() - 3600, '/' );
 
 							// Prepare redirect URL
-							global $wp;
-							$current_page_id = get_queried_object_id();
-							$base_page_url = get_permalink( $current_page_id );
-							if ( ! $base_page_url ) {
-								$base_page_url = home_url( add_query_arg( array(), $wp->request ) );
-							}
+							$base_page_url = KTPWP_Main::get_current_page_base_url();
 							$redirect_url = add_query_arg(
                                 array(
 									'tab_name' => $tab_name,
@@ -332,10 +327,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
 							// Prepare redirect URL
 							global $wp;
 							$current_page_id = get_queried_object_id();
-							$base_page_url = get_permalink( $current_page_id );
-							if ( ! $base_page_url ) {
-								$base_page_url = home_url( add_query_arg( array(), $wp->request ) );
-							}
+							$base_page_url = KTPWP_Main::get_current_page_base_url();
 							$redirect_url = add_query_arg(
                                 array(
 									'tab_name' => $tab_name,

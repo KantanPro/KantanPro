@@ -251,11 +251,8 @@ if ( ! class_exists( 'Kntan_Client_Class' ) ) {
 				$order_sort_order = ( $order_sort_order_param === 'ASC' ) ? 'ASC' : 'DESC';
 			}
 
-			// 現在のページのURLを生成
-			global $wp;
-			$current_page_id = get_queried_object_id();
-			// home_url() と $wp->request を使用して、現在のURLを取得し、page_idを追加
-			$base_page_url = add_query_arg( array( 'page_id' => $current_page_id ), home_url( $wp->request ) );
+			// 現在のページのURLを生成（動的パーマリンク取得）
+			$base_page_url = KTPWP_Main::get_current_page_base_url();
 
 			// 表示タイトルの設定（国際化対応）
 			$list_title = ( $view_mode === 'order_history' )

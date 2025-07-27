@@ -3547,8 +3547,7 @@ function KTPWP_Index() {
             // プラグイン名とバージョンを定数から取得
             $plugin_name = esc_html( KANTANPRO_PLUGIN_NAME );
             $plugin_version = esc_html( KANTANPRO_PLUGIN_VERSION );
-            $current_page_id = get_queried_object_id();
-            $update_link_url = esc_url( get_permalink( $current_page_id ) );
+            $update_link_url = esc_url( KTPWP_Main::get_current_page_base_url() );
 
             // ログインしているユーザーのみにナビゲーションリンクを表示
             $navigation_links = '';

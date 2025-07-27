@@ -284,14 +284,8 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 				// 元のページ（ショートコードが配置された固定ページ）にリダイレクト
 				$current_page_url = wp_get_referer();
 				if ( ! $current_page_url ) {
-					// refererが取得できない場合は、現在のページIDを取得してURLを構築
-					global $wp;
-					$current_page_id = get_queried_object_id();
-					if ( $current_page_id ) {
-						$current_page_url = get_permalink( $current_page_id );
-					} else {
-						$current_page_url = home_url( $wp->request );
-					}
+					// refererが取得できない場合は、動的パーマリンク取得を使用
+					$current_page_url = KTPWP_Main::get_current_page_base_url();
 				}
 
 				$redirect_url = add_query_arg(
@@ -415,12 +409,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 						// エラー処理は最小限に
 					} else {
 						// 成功時は複製されたレコードにリダイレクト
-						global $wp;
-						$current_page_id = get_queried_object_id();
-						$base_page_url = get_permalink( $current_page_id );
-						if ( ! $base_page_url ) {
-							$base_page_url = home_url( add_query_arg( array(), $wp->request ) );
-						}
+						$base_page_url = KTPWP_Main::get_current_page_base_url();
 						$redirect_url = add_query_arg(
                             array(
 								'tab_name' => $tab_name, // tab_nameを維持
@@ -472,12 +461,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 				unset( $_SESSION['ktp_service_search_mode'] );
 				unset( $_SESSION['ktp_service_search_message'] );
 
-				global $wp;
-				$current_page_id = get_queried_object_id();
-				$base_page_url = get_permalink( $current_page_id );
-				if ( ! $base_page_url ) {
-					 $base_page_url = home_url( add_query_arg( array(), $wp->request ) );
-				}
+				$base_page_url = KTPWP_Main::get_current_page_base_url();
 				$url = add_query_arg(
                     array(
 						'tab_name' => $tab_name,
@@ -610,14 +594,8 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 			// 元のページ（ショートコードが配置された固定ページ）にリダイレクト
 			$current_page_url = wp_get_referer();
 			if ( ! $current_page_url ) {
-				// refererが取得できない場合は、現在のページIDを取得してURLを構築
-				global $wp;
-				$current_page_id = get_queried_object_id();
-				if ( $current_page_id ) {
-					$current_page_url = get_permalink( $current_page_id );
-				} else {
-					$current_page_url = home_url( $wp->request );
-				}
+				// refererが取得できない場合は、動的パーマリンク取得を使用
+				$current_page_url = KTPWP_Main::get_current_page_base_url();
 			}
 
 			$redirect_url = add_query_arg(
@@ -676,14 +654,8 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 			// 元のページ（ショートコードが配置された固定ページ）にリダイレクト
 			$current_page_url = wp_get_referer();
 			if ( ! $current_page_url ) {
-				// refererが取得できない場合は、現在のページIDを取得してURLを構築
-				global $wp;
-				$current_page_id = get_queried_object_id();
-				if ( $current_page_id ) {
-					$current_page_url = get_permalink( $current_page_id );
-				} else {
-					$current_page_url = home_url( $wp->request );
-				}
+				// refererが取得できない場合は、動的パーマリンク取得を使用
+				$current_page_url = KTPWP_Main::get_current_page_base_url();
 			}
 
 			$redirect_url = add_query_arg(

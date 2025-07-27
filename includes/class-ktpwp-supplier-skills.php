@@ -740,11 +740,9 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 			// 2行目：ページネーションボタン
 			$pagination_html .= '<div style="display: flex; align-items: center; gap: 4px; flex-wrap: wrap; justify-content: center; width: 100%;">';
 
-			// 現在のURLを取得
-			global $wp;
-			$current_page_id = get_queried_object_id();
+			// 現在のURLを取得（動的パーマリンク取得）
 			$tab_name = 'supplier'; // 動的に取得する場合は適切な変数や関数を使用
-			$base_page_url = add_query_arg( array( 'tab_name' => $tab_name ), get_permalink( $current_page_id ) );
+			$base_page_url = add_query_arg( array( 'tab_name' => $tab_name ), KTPWP_Main::get_current_page_base_url() );
 
 			// ページネーションボタンのスタイル（正円ボタン）
 			$button_style = 'display: inline-block; width: 36px; height: 36px; padding: 0; margin: 0 2px; text-decoration: none; border: 1px solid #ddd; border-radius: 50%; color: #333; background: #fff; transition: all 0.3s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.1); line-height: 34px; text-align: center; vertical-align: middle; font-size: 14px;';

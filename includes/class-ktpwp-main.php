@@ -428,4 +428,31 @@ class KTPWP_Main {
     public function get_database() {
         return $this->database;
     }
+
+    /**
+     * 現在のページのベースURLを動的に取得するヘルパー関数
+     * パーマリンク設定に関係なく、適切なURLを生成します
+     *
+     * @return string ベースURL
+     */
+    public static function get_current_page_base_url() {
+        global $wp;
+        
+        // 現在のページIDを取得
+        $current_page_id = get_queried_object_id();
+        
+        // パーマリンクを取得
+        $permalink = get_permalink($current_page_id);
+        
+        // パーマリンクが取得できない場合のフォールバック
+        if (!$permalink) {
+            // home_url()と$wp->requestを使用
+            $permalink = home_url($wp->request);
+        }
+        
+        // page_idパラメータを追加
+        $base_url = add_query_arg(array('page_id' => $current_page_id), $permalink);
+        
+        return $base_url;
+    }
 }

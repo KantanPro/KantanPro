@@ -1162,13 +1162,8 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
                         )
                     );
 
-					// 現在のページの基本URLを取得（from_clientなどのパラメータを除外）
-					global $wp;
-					$current_page_id = get_queried_object_id();
-					$base_url = get_permalink( $current_page_id );
-					if ( ! $base_url ) {
-						$base_url = home_url( add_query_arg( array(), $wp->request ) );
-					}
+					// 現在のページの基本URLを取得（動的パーマリンク取得）
+					$base_url = KTPWP_Main::get_current_page_base_url();
 
 					if ( $latest_order ) {
 						$next_order_id = $latest_order->id;
@@ -1648,15 +1643,7 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 
 								global $wp;
 
-								$current_page_id = get_queried_object_id();
-
-								$base_url = get_permalink( $current_page_id );
-
-								if ( ! $base_url ) {
-
-									$base_url = home_url( add_query_arg( array(), $wp->request ) );
-
-								}
+								$base_url = KTPWP_Main::get_current_page_base_url();
 								$client_url = add_query_arg(
                                     array(
 										'tab_name' => 'client',

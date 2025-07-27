@@ -79,10 +79,8 @@ if ( ! class_exists( 'KTPWP_Service_UI' ) ) {
 				$sort_order = ( $sort_order_param === 'ASC' ) ? 'ASC' : 'DESC';
 			}
 
-			// 現在のページのURLを生成
-			global $wp;
-			$current_page_id = get_queried_object_id();
-			$base_page_url = add_query_arg( array( 'page_id' => $current_page_id ), home_url( $wp->request ) );
+			// 現在のページのURLを生成（動的パーマリンク取得）
+			$base_page_url = KTPWP_Main::get_current_page_base_url();
 
 			// 表示範囲
 			// 一般設定から表示件数を取得（設定クラスが利用可能な場合）
