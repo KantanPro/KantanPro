@@ -448,7 +448,9 @@ class KTPWP_Update_Checker {
         $plugin_name = get_plugin_data( KANTANPRO_PLUGIN_FILE )['Name'];
         
         // $update_dataが配列か文字列かをチェック
-        if ( is_array( $update_data ) && isset( $update_data['version'] ) ) {
+        if ( is_array( $update_data ) && isset( $update_data['new_version'] ) ) {
+            $new_version = $update_data['new_version'];
+        } elseif ( is_array( $update_data ) && isset( $update_data['version'] ) ) {
             $new_version = $update_data['version'];
         } elseif ( is_string( $update_data ) ) {
             $new_version = $update_data;
@@ -643,7 +645,9 @@ class KTPWP_Update_Checker {
         }
         
         // $update_dataが配列か文字列かをチェック
-        if ( is_array( $update_data ) && isset( $update_data['version'] ) ) {
+        if ( is_array( $update_data ) && isset( $update_data['new_version'] ) ) {
+            $new_version = $update_data['new_version'];
+        } elseif ( is_array( $update_data ) && isset( $update_data['version'] ) ) {
             $new_version = $update_data['version'];
         } elseif ( is_string( $update_data ) ) {
             $new_version = $update_data;
