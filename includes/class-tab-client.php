@@ -1733,6 +1733,7 @@ if ( ! class_exists( 'Kntan_Client_Class' ) ) {
         
         function updateDepartmentSelection(departmentId, isSelected) {
             console.log("updateDepartmentSelection called - departmentId:", departmentId, "isSelected:", isSelected);
+            console.log("ajaxurl available:", typeof ajaxurl !== "undefined" ? ajaxurl : "undefined");
             
             // 重複実行を防ぐため、処理中の場合はスキップ
             if (window.departmentUpdateInProgress) {
@@ -1761,12 +1762,21 @@ if ( ! class_exists( 'Kntan_Client_Class' ) ) {
             formData.append("nonce", "' . wp_create_nonce( 'ktp_department_nonce' ) . '");
             
             console.log("Sending AJAX request for department selection update");
+            console.log("FormData contents:");
+            console.log("action:", formData.get("action"));
+            console.log("department_id:", formData.get("department_id"));
+            console.log("is_selected:", formData.get("is_selected"));
+            console.log("nonce:", formData.get("nonce"));
             
             fetch(ajaxurl, {
                 method: "POST",
                 body: formData
             })
-            .then(response => response.json())
+            .then(response => {
+                console.log("Response status:", response.status);
+                console.log("Response ok:", response.ok);
+                return response.json();
+            })
             .then(data => {
                 if (data.success) {
                     console.log("Department selection update successful");
@@ -1783,7 +1793,9 @@ if ( ! class_exists( 'Kntan_Client_Class' ) ) {
                 }
             })
             .catch(error => {
-                console.error("Error:", error);
+                console.error("Fetch error:", error);
+                console.error("Error name:", error.name);
+                console.error("Error message:", error.message);
                 alert("部署選択状態の更新に失敗しました。");
                 // チェックボックスの状態を元に戻す
                 var checkbox = document.querySelector(\'input[data-department-id="\' + departmentId + \'"]\');

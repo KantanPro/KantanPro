@@ -173,8 +173,8 @@ class KTPWP_Ajax {
 		add_action( 'wp_ajax_nopriv_ktp_get_invoice_candidates', array( $this, 'ajax_require_login' ) ); // 非ログインユーザーはエラー
 		$this->registered_handlers[] = 'ktp_get_invoice_candidates';
 
-		// 部署選択状態更新
-		add_action( 'wp_ajax_ktp_update_department_selection', 'ktpwp_ajax_update_department_selection' );
+		// 部署選択状態更新（ajax-department.phpで登録済み）
+		// add_action( 'wp_ajax_ktp_update_department_selection', 'ktp_update_department_selection_ajax' );
 		add_action( 'wp_ajax_nopriv_ktp_update_department_selection', array( $this, 'ajax_require_login' ) );
 		$this->registered_handlers[] = 'ktp_update_department_selection';
 

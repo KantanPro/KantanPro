@@ -100,8 +100,16 @@ function ktp_delete_department_ajax() {
  * 部署選択状態更新AJAX処理
  */
 function ktp_update_department_selection_ajax() {
+    if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+        error_log( 'KTPWP AJAX: ktp_update_department_selection_ajax called' );
+        error_log( 'KTPWP AJAX: POST data: ' . print_r( $_POST, true ) );
+    }
+    
     // セキュリティチェック
     if ( ! wp_verify_nonce( $_POST['nonce'], 'ktp_department_nonce' ) ) {
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP AJAX: Nonce verification failed' );
+        }
         wp_die( 'セキュリティチェックに失敗しました。' );
     }
 
@@ -112,12 +120,33 @@ function ktp_update_department_selection_ajax() {
 
     // 部署管理クラスが存在するかチェック
     if ( ! class_exists( 'KTPWP_Department_Manager' ) ) {
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP AJAX: KTPWP_Department_Manager class not found' );
+        }
         wp_send_json_error( '部署管理クラスが見つかりません。' );
     }
 
     // 部署テーブルが存在するかチェック
     if ( ! KTPWP_Department_Manager::table_exists() ) {
-        wp_send_json_error( '部署テーブルが存在しません。' );
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP AJAX: Department table does not exist, attempting to create it' );
+        }
+        
+        // テーブル作成を試行
+        if ( function_exists( 'ktpwp_create_department_table' ) ) {
+            $table_created = ktpwp_create_department_table();
+            if ( ! $table_created ) {
+                if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                    error_log( 'KTPWP AJAX: Failed to create department table' );
+                }
+                wp_send_json_error( '部署テーブルの作成に失敗しました。' );
+            }
+        } else {
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP AJAX: ktpwp_create_department_table function not found' );
+            }
+            wp_send_json_error( '部署テーブル作成関数が見つかりません。' );
+        }
     }
 
     // パラメータの取得とバリデーション
@@ -151,5 +180,8 @@ function ktp_update_department_selection_ajax() {
 // AJAXアクションを登録
 add_action( 'wp_ajax_ktp_add_department', 'ktp_add_department_ajax' );
 add_action( 'wp_ajax_ktp_delete_department', 'ktp_delete_department_ajax' );
-// 部署選択更新は class-ktpwp-ajax.php で処理されるため、ここでは登録しない
-// add_action('wp_ajax_ktp_update_department_selection', 'ktp_update_department_selection_ajax');
+add_action( 'wp_ajax_ktp_update_department_selection', 'ktp_update_department_selection_ajax' );
+
+if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+    error_log( 'KTPWP AJAX: Department AJAX handlers registered' );
+}

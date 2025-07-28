@@ -265,6 +265,10 @@ class KTPWP_Department_Manager {
         $table_name = self::get_table_name();
         $table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) );
 
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( "KTPWP Department: table_exists check - table_name: {$table_name}, exists: " . ( $table_exists === $table_name ? 'true' : 'false' ) );
+        }
+
         return $table_exists === $table_name;
     }
 

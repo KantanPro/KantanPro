@@ -182,6 +182,9 @@ function ktpwp_autoload_classes() {
             $full_path = MY_PLUGIN_PATH . $file_path;
             if ( file_exists( $full_path ) ) {
                 require_once $full_path;
+                if ( defined( 'WP_DEBUG' ) && WP_DEBUG && $class_name === 'KTPWP_Department_Manager' ) {
+                    error_log( "KTPWP: Loaded {$class_name} from {$file_path}" );
+                }
             }
         }
     }
@@ -195,6 +198,14 @@ require_once __DIR__ . '/includes/ajax-department.php';
 
 // クラスの読み込み実行
 ktpwp_autoload_classes();
+
+// 部署テーブルの存在確認と作成
+if ( function_exists( 'ktpwp_create_department_table' ) ) {
+    $department_table_created = ktpwp_create_department_table();
+    if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+        error_log( "KTPWP: Department table creation result: " . ( $department_table_created ? 'success' : 'failed' ) );
+    }
+}
 
 /**
  * 更新チェッカーの初期化
