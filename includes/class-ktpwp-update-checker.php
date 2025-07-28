@@ -85,6 +85,7 @@ class KTPWP_Update_Checker {
             add_action( 'wp_ajax_ktpwp_dismiss_update_notice', array( $this, 'dismiss_update_notice' ) );
             add_action( 'wp_ajax_ktpwp_check_github_update', array( $this, 'ajax_check_github_update' ) );
             add_action( 'wp_ajax_ktpwp_perform_update', array( $this, 'perform_plugin_update' ) );
+            add_action( 'wp_ajax_ktpwp_clear_plugin_cache', array( $this, 'ajax_clear_plugin_cache' ) );
             
             // ヘッダー更新通知用のAJAX処理
             add_action( 'wp_ajax_ktpwp_dismiss_header_update_notice', array( $this, 'dismiss_header_update_notice' ) );
@@ -95,6 +96,14 @@ class KTPWP_Update_Checker {
         if ( $this->is_frontend_notification_enabled() ) {
             add_action( 'wp_body_open', array( $this, 'check_frontend_update' ) );
             add_action( 'wp_footer', array( $this, 'check_frontend_update' ) );
+        }
+        
+        // バージョン更新時の自動キャッシュクリアを実行
+        $this->auto_clear_cache_on_version_update();
+        
+        // 配布先での確実な更新チェックのため、初期化時に強制更新チェックを実行
+        if ( is_admin() ) {
+            add_action( 'admin_init', array( $this, 'force_update_check_on_init' ), 5 );
         }
         
         // デバッグ用のログ出力
@@ -261,7 +270,7 @@ class KTPWP_Update_Checker {
         $last_check = get_transient( 'ktpwp_last_update_check' );
         if ( $last_check && ( time() - $last_check ) < $this->check_interval ) {
             error_log( 'KantanPro: 更新チェック間隔が短すぎるため、スキップします' );
-            // デバッグ用: 間隔制限を一時的に無効化
+            // 配布先での確実な更新チェックのため、間隔制限を緩和
             // return false;
         }
 
@@ -315,7 +324,17 @@ class KTPWP_Update_Checker {
             $comparison_result = version_compare( $latest_version, $current_version, '>' );
             error_log( 'KantanPro: バージョン比較結果: ' . $latest_version . ' > ' . $current_version . ' = ' . ( $comparison_result ? 'true' : 'false' ) );
             
-            if ( $comparison_result ) {
+            // 配布先での確実な更新検出のため、プレビューバージョンの場合は強制更新チェック
+            $force_update = false;
+            if ( preg_match( '/\(preview\)/i', $data['tag_name'] ) && preg_match( '/\(preview\)/i', $this->current_version ) ) {
+                // 両方ともプレビューバージョンの場合、バージョン番号のみで比較
+                $latest_version_number = preg_replace( '/\(preview\)/i', '', $data['tag_name'] );
+                $current_version_number = preg_replace( '/\(preview\)/i', '', $this->current_version );
+                $force_update = version_compare( $latest_version_number, $current_version_number, '>' );
+                error_log( 'KantanPro: プレビューバージョン強制比較 - 最新: ' . $latest_version_number . ', 現在: ' . $current_version_number . ', 結果: ' . ( $force_update ? 'true' : 'false' ) );
+            }
+            
+            if ( $comparison_result || $force_update ) {
                 // 更新が利用可能
                 $update_data = array(
                     'version' => $latest_version,
@@ -1044,18 +1063,16 @@ class KTPWP_Update_Checker {
         // 空白を削除
         $version = trim( $version );
         
-        // プレビューバージョンの場合は、バージョン番号を少し下げて比較
-        // 例: 1.1.2(preview) → 1.1.1.999 として扱う
+        // プレビューバージョンの場合は、バージョン番号を少し上げて比較
+        // 例: 1.1.22(preview) → 1.1.22.1 として扱う（通常版より上位）
         if ( $is_preview ) {
             $version_parts = explode( '.', $version );
             if ( count( $version_parts ) >= 3 ) {
-                // 最後の数字を1つ減らして、.999を追加
-                $last_part = intval( $version_parts[count( $version_parts ) - 1] );
-                $version_parts[count( $version_parts ) - 1] = max( 0, $last_part - 1 );
-                $version = implode( '.', $version_parts ) . '.999';
+                // .1を追加してプレビューバージョンを通常版より上位にする
+                $version = implode( '.', $version_parts ) . '.1';
             } else {
-                // 3つ未満の場合は.999を追加
-                $version .= '.999';
+                // 3つ未満の場合は.1を追加
+                $version .= '.1';
             }
         }
         
@@ -1216,6 +1233,69 @@ class KTPWP_Update_Checker {
                 'error_type' => 'exception'
             ) );
         }
+    }
+    
+    /**
+     * プラグイン情報キャッシュをクリア
+     */
+    public function clear_plugin_cache() {
+        // WordPressのプラグイン情報キャッシュをクリア
+        wp_clean_plugins_cache();
+        
+        // サイトトランジェントキャッシュをクリア
+        delete_site_transient( 'update_plugins' );
+        
+        // ローカルトランジェントキャッシュをクリア
+        delete_transient( 'update_plugins' );
+        
+        // プラグインリストキャッシュをクリア
+        if ( function_exists( 'wp_cache_flush' ) ) {
+            wp_cache_flush();
+        }
+        
+        // オブジェクトキャッシュをクリア（利用可能な場合）
+        if ( function_exists( 'wp_cache_flush_group' ) ) {
+            wp_cache_flush_group( 'plugins' );
+        }
+        
+        error_log( 'KantanPro: プラグイン情報キャッシュをクリアしました' );
+    }
+
+    /**
+     * バージョン更新時の自動キャッシュクリア
+     */
+    public function auto_clear_cache_on_version_update() {
+        $old_version = get_option( 'ktpwp_version', '0' );
+        $new_version = KANTANPRO_PLUGIN_VERSION;
+        
+        // バージョンが変更された場合
+        if ( $old_version !== $new_version ) {
+            $this->clear_plugin_cache();
+            
+            // 新しいバージョンを保存
+            update_option( 'ktpwp_version', $new_version );
+            
+            error_log( 'KantanPro: バージョン更新を検出 - ' . $old_version . ' → ' . $new_version . ' (キャッシュクリア完了)' );
+        }
+    }
+
+    /**
+     * 初期化時の強制更新チェック
+     */
+    public function force_update_check_on_init() {
+        // 1日1回のみ実行
+        $last_force_check = get_transient( 'ktpwp_last_force_check' );
+        if ( $last_force_check && ( time() - $last_force_check ) < DAY_IN_SECONDS ) {
+            return;
+        }
+        
+        // 強制更新チェックを実行
+        $this->check_github_updates();
+        
+        // 最後の強制チェック時刻を記録
+        set_transient( 'ktpwp_last_force_check', time(), DAY_IN_SECONDS );
+        
+        error_log( 'KantanPro: 強制更新チェックを実行しました' );
     }
     
     /**
