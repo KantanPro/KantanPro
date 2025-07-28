@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.1.22(preview)
+Stable tag: 1.1.23(preview)
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -50,7 +50,7 @@ KantanProは、WordPress上で以下の業務を一元管理できる多機能�
 - **利用規約の表示対象を修正**（より適切な対象への変更）
 - **URL生成問題１−１の修正**（動的パーマリンク取得による環境非依存のURL生成）
 - **モバイル表示の改善**（レスポンシブデザイン強化・タッチ操作最適化・モバイル専用UI改善）
-- **アップデートテスト３**（機能改善・バグ修正・パフォーマンス最適化）
+- **更新チェック問題テスト**（更新システムの安定性向上・バグ修正・パフォーマンス最適化）
 
 == インストール ==
 
@@ -237,6 +237,12 @@ KantanProは、WordPress上で以下の業務を一元管理できる多機能�
 * 推奨PHP拡張: GD（画像処理用）
 
 == 変更履歴 ==
+
+= 1.1.23(preview) - 2025年7月28日 =
+* 更新チェック問題テスト
+  - 更新システムの安定性向上
+  - バグ修正・パフォーマンス最適化
+  - 更新チェック機能の改善
 
 = 1.1.22(preview) - 2025年7月28日 =
 * 部署選択エラーの修正
