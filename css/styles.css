@@ -1311,7 +1311,7 @@ form > .create-order-btn {
     padding: 12px;
   }
   
-  .ktp_header .logo-and-system-info {
+  .ktp_header .parent {
     width: 100%; /* モバイルでは全幅 */
     max-width: 100%; /* モバイルでは全幅 */
     min-width: 0;
@@ -1320,7 +1320,7 @@ form > .create-order-btn {
     margin-bottom: 8px;
   }
   
-  .ktp_header .system-info {
+  .ktp_header .title {
     margin-left: 0;
     margin-top: 8px;
   }
@@ -1328,31 +1328,44 @@ form > .create-order-btn {
   /* モバイル時は右側の要素も縦並び */
   .ktp_header .header-right-section {
     width: 100%;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: stretch;
     margin-left: 0;
     min-width: 0;
     max-width: 100%;
+    gap: 8px;
   }
   
   .ktp_header .navigation-links {
     justify-content: flex-start;
     flex-wrap: wrap;
-    gap: 3px; /* モバイルでも間隔を狭く */
+    gap: 4px; /* モバイルでも適度な間隔 */
+    width: 100%;
   }
   
   .ktp_header .navigation-links a {
-    padding: 2px 4px; /* モバイルではさらに小さく */
-    font-size: 13px; /* モバイルではフォントサイズも小さく */
+    padding: 6px 8px; /* モバイルでもタップしやすいサイズ */
+    font-size: 14px; /* モバイルでも読みやすいサイズ */
+    white-space: nowrap;
+    border-radius: 4px;
+    background-color: rgba(0, 115, 170, 0.05);
+    border: 1px solid rgba(0, 115, 170, 0.1);
+    transition: all 0.2s ease;
+  }
+  
+  .ktp_header .navigation-links a:hover {
+    background-color: rgba(0, 115, 170, 0.1);
+    border-color: rgba(0, 115, 170, 0.2);
   }
   
   .ktp_header .user-avatars-section {
-    justify-content: flex-end;
+    justify-content: flex-start;
+    width: 100%;
   }
   
   /* モバイル時は右側の要素も縦並び */
-  .ktp_header > *:not(.logo-and-system-info) {
+  .ktp_header > *:not(.parent) {
     margin-left: 0; /* 左寄せにリセット */
     margin-top: 8px;
     align-self: flex-start;
@@ -1371,12 +1384,34 @@ form > .create-order-btn {
     gap: 8px;
   }
   
-  .ktp_header .system-name {
+  .ktp_header .title {
     font-size: 16px;
   }
   
-  .ktp_header .system-description {
+  .ktp_header .version {
     font-size: 13px;
+  }
+  
+  .ktp_header .navigation-links {
+    gap: 3px;
+  }
+  
+  .ktp_header .navigation-links a {
+    padding: 4px 6px;
+    font-size: 13px;
+    border-radius: 3px;
+    background-color: rgba(0, 115, 170, 0.05);
+    border: 1px solid rgba(0, 115, 170, 0.1);
+    transition: all 0.2s ease;
+  }
+  
+  .ktp_header .navigation-links a:hover {
+    background-color: rgba(0, 115, 170, 0.1);
+    border-color: rgba(0, 115, 170, 0.2);
+  }
+  
+  .ktp_header .header-right-section {
+    gap: 6px;
   }
 }
 
@@ -3977,6 +4012,20 @@ body.ktpwp-modal-open {
     display: flex !important;
     visibility: visible !important;
     z-index: 1000;
+    opacity: 1 !important;
+  }
+  
+  /* モバイル表示でのヘッダー要素の強制表示 */
+  .ktp_header .navigation-links a {
+    display: inline-flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+  
+  .ktp_header .user-avatars-section .logged-in-staff-avatars {
+    display: inline-flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
   }
 }
 
