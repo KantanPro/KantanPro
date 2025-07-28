@@ -4137,3 +4137,70 @@ body.ktpwp-modal-open {
 .column-tax-rate {
     text-align: right;
 }
+
+/* モバイル表示時のみ顧客詳細のボタンでMaterial Symbolsアイコンを表示 */
+@media (max-width: 767px) {
+  .data_detail_title .button-style .material-symbols-outlined {
+    display: inline-block !important;
+    font-size: 16px;
+    line-height: 1;
+    vertical-align: middle;
+  }
+  
+  /* 顧客詳細のボタンスタイル調整 */
+  .data_detail_title .button-style {
+    padding: 8px 12px !important;
+    font-size: 12px !important;
+    border: 1px solid #ddd !important;
+    background: #fff !important;
+    border-radius: 4px !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 4px !important;
+    min-width: 36px !important;
+    height: 36px !important;
+  }
+  
+  .data_detail_title .button-style:hover {
+    background: #f0f0f0 !important;
+    border-color: #0073aa !important;
+  }
+  
+  /* 削除ボタンの特別なスタイル */
+  .data_detail_title .delete-submit-btn {
+    background: #fff !important;
+    border-color: #dc3545 !important;
+    color: #dc3545 !important;
+  }
+  
+  .data_detail_title .delete-submit-btn:hover {
+    background: #dc3545 !important;
+    color: #fff !important;
+  }
+  
+  /* 追加ボタンの特別なスタイル */
+  .data_detail_title .add-submit-btn {
+    background: #fff !important;
+    border-color: #28a745 !important;
+    color: #28a745 !important;
+  }
+  
+  .data_detail_title .add-submit-btn:hover {
+    background: #28a745 !important;
+    color: #fff !important;
+  }
+  
+  /* 検索ボタンの特別なスタイル */
+  .data_detail_title .search-mode-btn {
+    background: #fff !important;
+    border-color: #007cba !important;
+    color: #007cba !important;
+  }
+  
+  .data_detail_title .search-mode-btn:hover {
+    background: #007cba !important;
+    color: #fff !important;
+  }
+}
