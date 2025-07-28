@@ -477,6 +477,7 @@ class KTPWP_Update_Checker {
             $new_version = $update_data;
         } else {
             // 予期しない形式の場合は処理を中断
+            error_log( 'KantanPro: 更新データの形式が不正です: ' . print_r( $update_data, true ) );
             return;
         }
 
@@ -853,6 +854,7 @@ class KTPWP_Update_Checker {
         
         // 更新情報を取得
         $update_data = get_option( 'ktpwp_update_available', false );
+        error_log( 'KantanPro: 更新実行時の更新データ: ' . print_r( $update_data, true ) );
         if ( ! $update_data ) {
             wp_send_json_error( array(
                 'message' => '更新情報が見つかりません。',
@@ -862,23 +864,35 @@ class KTPWP_Update_Checker {
         
         // $update_dataが配列か文字列かをチェック
         $update_version = '';
-        if ( is_array( $update_data ) && isset( $update_data['version'] ) ) {
+        if ( is_array( $update_data ) && isset( $update_data['new_version'] ) ) {
+            $update_version = $update_data['new_version'];
+        } elseif ( is_array( $update_data ) && isset( $update_data['version'] ) ) {
             $update_version = $update_data['version'];
         } elseif ( is_string( $update_data ) ) {
             $update_version = $update_data;
         } else {
+            error_log( 'KantanPro: 更新データの形式が不正です: ' . print_r( $update_data, true ) );
             wp_send_json_error( array(
                 'message' => '更新情報の形式が正しくありません。',
                 'error_type' => 'invalid_update_data'
             ) );
         }
         
-        if ( $update_version !== $version ) {
+        // バージョン比較を緩和（プレビューバージョンの場合）
+        $cleaned_update_version = $this->clean_version( $update_version );
+        $cleaned_requested_version = $this->clean_version( $version );
+        
+        error_log( 'KantanPro: バージョン比較詳細 - 更新: ' . $update_version . ' (' . $cleaned_update_version . '), 要求: ' . $version . ' (' . $cleaned_requested_version . ')' );
+        
+        if ( $cleaned_update_version !== $cleaned_requested_version ) {
+            error_log( 'KantanPro: バージョン比較失敗' );
             wp_send_json_error( array(
                 'message' => '更新情報が見つかりません。',
-                'error_type' => 'no_update_data'
+                'error_type' => 'version_mismatch'
             ) );
         }
+        
+        error_log( 'KantanPro: バージョン比較成功' );
         
         // WordPress標準の更新システムを使用
         require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
