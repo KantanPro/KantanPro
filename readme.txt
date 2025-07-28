@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.1.17(preview)
+Stable tag: 1.1.19(preview)
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -521,6 +521,14 @@ A: XSS・CSRF・SQLインジェクション対策、ファイルアップロー�
 5. レポート画面
 
 == チャンジェログ ==
+
+= 1.1.19(preview) - 2025年7月28日 =
+* アップデートテスト
+  - プラグイン機能の安定性向上
+  - パフォーマンス最適化の継続改善
+  - セキュリティ機能の強化
+  - ユーザビリティの改善
+  - バグ修正と安定性向上
 
 = 1.1.17(preview) - 2025年7月28日 =
 * URL生成問題１−１の修正
