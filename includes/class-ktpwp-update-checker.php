@@ -136,6 +136,27 @@ class KTPWP_Update_Checker {
                 'error_text' => __( 'エラーが発生しました', 'KantanPro' ),
             ) );
         }
+        
+        // フロントエンド更新チェック用のスクリプト設定を追加
+        if ( $this->is_frontend_notification_enabled() && ! wp_script_is( 'ktpwp-update-balloon', 'enqueued' ) ) {
+            wp_enqueue_script( 'ktpwp-update-balloon', KANTANPRO_PLUGIN_URL . 'js/ktpwp-update-balloon.js', array( 'jquery' ), $this->current_version, true );
+            wp_localize_script( 'ktpwp-update-balloon', 'ktpwp_update_ajax', array(
+                'ajax_url' => admin_url( 'admin-ajax.php' ),
+                'nonce' => wp_create_nonce( 'ktpwp_header_update_check' ),
+                'admin_url' => admin_url(),
+                'notifications_enabled' => $this->is_update_notification_enabled()
+            ) );
+            
+            // 更新データがある場合は設定
+            $update_data = get_option( 'ktpwp_update_available', false );
+            if ( $update_data ) {
+                wp_localize_script( 'ktpwp-update-balloon', 'ktpwp_update_data', array(
+                    'has_update' => true,
+                    'message' => __( '新しいバージョンが利用可能です！', 'KantanPro' ),
+                    'update_data' => $update_data
+                ) );
+            }
+        }
     }
     
     /**
@@ -502,7 +523,18 @@ class KTPWP_Update_Checker {
                                 window.location.reload();
                             }, 2000);
                         } else {
-                            alert('更新に失敗しました: ' + response.data);
+                            // エラーメッセージの修正
+                            var errorMessage = '更新に失敗しました';
+                            if (response.data) {
+                                if (typeof response.data === 'string') {
+                                    errorMessage = response.data;
+                                } else if (response.data.message) {
+                                    errorMessage = response.data.message;
+                                } else {
+                                    errorMessage = '更新に失敗しました: ' + JSON.stringify(response.data);
+                                }
+                            }
+                            alert(errorMessage);
                             $link.text(originalText);
                         }
                     }).fail(function() {
@@ -602,6 +634,17 @@ class KTPWP_Update_Checker {
             return;
         }
 
+        // フロントエンド更新チェック用のスクリプトを読み込み（まだ読み込まれていない場合のみ）
+        if ( ! wp_script_is( 'ktpwp-update-balloon', 'enqueued' ) ) {
+            wp_enqueue_script( 'ktpwp-update-balloon', KANTANPRO_PLUGIN_URL . 'js/ktpwp-update-balloon.js', array( 'jquery' ), $this->current_version, true );
+            wp_localize_script( 'ktpwp-update-balloon', 'ktpwp_update_ajax', array(
+                'ajax_url' => admin_url( 'admin-ajax.php' ),
+                'nonce' => wp_create_nonce( 'ktpwp_header_update_check' ),
+                'admin_url' => admin_url(),
+                'notifications_enabled' => $this->is_update_notification_enabled()
+            ) );
+        }
+
         // 1日1回のみチェック
         $last_frontend_check = get_option( 'ktpwp_last_frontend_check', 0 );
         $current_time = time();
@@ -698,6 +741,16 @@ class KTPWP_Update_Checker {
             </p>
         </div>
         <script>
+        // フロントエンド更新チェック用のスクリプト設定を追加
+        if (typeof ktpwp_update_ajax === 'undefined') {
+            var ktpwp_update_ajax = {
+                ajax_url: '<?php echo admin_url( 'admin-ajax.php' ); ?>',
+                nonce: '<?php echo wp_create_nonce( 'ktpwp_header_update_check' ); ?>',
+                admin_url: '<?php echo admin_url(); ?>',
+                notifications_enabled: <?php echo $this->is_update_notification_enabled() ? 'true' : 'false'; ?>
+            };
+        }
+        
         function ktpwpDismissFrontendNotice() {
             document.getElementById('ktpwp-frontend-update-notice').style.display = 'none';
             // bodyのマージンを削除
