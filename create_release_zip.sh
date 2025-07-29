@@ -6,7 +6,7 @@ SOURCE_DIR="/Users/kantanpro/Desktop/ktpwp/wordpress/wp-content/plugins/KantanPr
 # 生成したZIPファイルの保存先
 DEST_PARENT_DIR="/Users/kantanpro/Desktop"
 # 保存先フォルダ名
-DEST_DIR_NAME="KantanPro_TEST_UP"
+DEST_DIR_NAME="ktpa_TEST_UP"
 # --- 設定ここまで ---
 
 # ビルド用の変数を設定
