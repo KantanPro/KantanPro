@@ -20,7 +20,7 @@ class KTPWP_Update_Checker {
     /**
      * GitHubリポジトリURL
      */
-    private $github_repo = 'KantanPro/freeKTP';
+    private $github_repo = 'KantanPro/KantanPro-a-';
     
     /**
      * プラグインファイルのベース名
