@@ -4,3 +4,5 @@
 images/upload/
 images/upload/*
 create_release_zipのコピー.sh
+.DS_Store
+images/.DS_Store
