@@ -903,7 +903,7 @@ class KTP_Settings {
         <div class="wrap ktp-admin-wrap">
             <h1><span class="dashicons dashicons-admin-tools"></span> <?php echo esc_html__( '開発者設定', 'ktpwp' ); ?></h1>
 
-            <?php $this->display_settings_tabs( 'developer' ); ?>
+            <?php $this->display_developer_tabs( 'developer' ); ?>
 
             <div class="ktp-settings-container">
                 <div class="ktp-settings-section">
@@ -943,7 +943,7 @@ class KTP_Settings {
         <div class="wrap ktp-admin-wrap">
             <h1><span class="dashicons dashicons-money-alt"></span> <?php echo esc_html__( '決済設定', 'ktpwp' ); ?></h1>
 
-            <?php $this->display_settings_tabs( 'payment' ); ?>
+            <?php $this->display_developer_tabs( 'payment' ); ?>
 
             <div class="ktp-settings-container">
                 <div class="ktp-settings-section">
