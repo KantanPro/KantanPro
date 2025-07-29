@@ -1,0 +1,200 @@
+/* KTPWP Service Styles Fix */
+/* サービスリストのスタイル修正 */
+
+.ktp_data_contents, 
+.data_contents {
+    margin-top: 20px;
+    width: 100%;
+}
+
+.ktp_data_list_box,
+.data_list_box {
+    border: 1px solid #e0e0e0;
+    border-radius: 5px;
+    margin-bottom: 20px;
+    overflow: hidden;
+    max-width: 100%;
+    display: block;
+}
+
+.data_list_title {
+    background-color: #f5f5f5;
+    padding: 10px 15px;
+    border-bottom: 1px solid #e0e0e0;
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* データリストアイテムのスタイル */
+.ktp_data_list_item,
+.data_list_item {
+    line-height: 1.5;
+    border-bottom: 1px solid #e5e7eb;
+    margin: 0;
+    padding: 12px 16px;
+    transition: background-color 0.2s ease;
+    position: relative;
+    font-size: 14px;
+}
+
+/* データリストの交互の行に色を付ける */
+.ktp_data_list_box > a:nth-of-type(odd) .ktp_data_list_item,
+.data_list_box > a:nth-of-type(odd) .data_list_item {
+    background-color: #f9fafb;
+}
+
+.ktp_data_list_box > a:nth-of-type(even) .ktp_data_list_item,
+.data_list_box > a:nth-of-type(even) .data_list_item {
+    background-color: #ffffff;
+}
+
+/* 直接データリストアイテムだけの場合（エラーメッセージなど） */
+.ktp_data_list_box > .ktp_data_list_item:nth-of-type(odd),
+.data_list_box > .data_list_item:nth-of-type(odd) {
+    background-color: #f9fafb;
+}
+
+.ktp_data_list_box > .ktp_data_list_item:nth-of-type(even),
+.data_list_box > .data_list_item:nth-of-type(even) {
+    background-color: #ffffff;
+}
+
+/* ホバー時の背景色と微妙な変化 */
+.ktp_data_list_box a:hover .ktp_data_list_item,
+.data_list_box a:hover .data_list_item {
+    background-color: #f0f7ff;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
+    z-index: 1;
+}
+
+/* ページネーションのスタイル */
+.pagination,
+.ktp_pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 15px 0;
+    padding: 10px;
+}
+
+.pagination a, .pagination span,
+.ktp_pagination a, .ktp_pagination span {
+    margin: 0 5px;
+    padding: 5px 10px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    text-decoration: none;
+    color: #333;
+}
+
+.pagination a:hover,
+.ktp_pagination a:hover {
+    background-color: #f5f5f5;
+}
+
+.pagination .stage,
+.ktp_pagination .stage {
+    margin-left: 10px;
+    color: #666;
+}
+
+/* フォームスタイルの調整 */
+.sort-dropdown {
+    display: flex;
+    align-items: center;
+}
+
+.sort-dropdown select {
+    padding: 4px 8px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    margin-right: 5px;
+}
+
+/* サービスリストの強制修正 - レイアウトを改善 */
+.ktp_data_list_box {
+    width: 100% !important;
+    box-sizing: border-box !important;
+    display: block !important;
+}
+
+.data_contents, .ktp_data_contents {
+    width: 100% !important;
+    box-sizing: border-box !important;
+    display: block !important;
+}
+
+/* テーブルスタイル */
+.ktp-service-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1em;
+}
+
+.ktp-service-table th,
+.ktp-service-table td {
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.ktp-service-table th {
+    background-color: #f5f5f5;
+    font-weight: bold;
+}
+
+.ktp-service-table tr:nth-child(odd) {
+    background-color: #f9fafb;
+}
+
+.ktp-service-table tr:nth-child(even) {
+    background-color: #ffffff;
+}
+
+.ktp-service-table tr:hover {
+    background-color: #f0f7ff;
+}
+
+/* フォーム関連のスタイル */
+.ktp-service-form {
+    margin-top: 20px;
+    padding: 15px;
+    background: #f9f9f9;
+    border-radius: 5px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.form-group input[type="text"],
+.form-group input[type="number"],
+.form-group textarea,
+.form-group select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.ktp_new_service_form h3 {
+    margin-top: 30px;
+    margin-bottom: 15px;
+    padding-bottom: 5px;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+/* SVGアイコンの調整 */
+.ktp-svg-icon {
+    vertical-align: middle;
+    font-size: 18px;
+    line-height: 1;
+}

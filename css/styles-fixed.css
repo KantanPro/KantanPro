@@ -1,0 +1,136 @@
+/* 顧客リスト・注文履歴のリストアイテムを統一したスタイルにする */
+.data_list_item,
+.ktp_data_list_item {
+  line-height: 1.5;
+  border-bottom: 1px solid #e5e7eb;
+  margin: 0;
+  padding: 12px 16px;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  position: relative;
+  font-size: 14px;
+}
+
+/* データリストの交互の行に色を付ける - アンカータグに対して適用 */
+.data_list_box > a:nth-of-type(odd) .data_list_item,
+.ktp_data_list_box > a:nth-of-type(odd) .data_list_item,
+.data_list_box > a:nth-of-type(odd) .ktp_data_list_item,
+.ktp_data_list_box > a:nth-of-type(odd) .ktp_data_list_item {
+  background-color: #f9fafb; /* 薄いグレーブルー */
+}
+
+.data_list_box > a:nth-of-type(even) .data_list_item,
+.ktp_data_list_box > a:nth-of-type(even) .data_list_item,
+.data_list_box > a:nth-of-type(even) .ktp_data_list_item,
+.ktp_data_list_box > a:nth-of-type(even) .ktp_data_list_item {
+  background-color: #ffffff; /* 白 */
+}
+
+/* 直接データリストアイテムだけの場合（エラーメッセージなど） */
+.data_list_box > .data_list_item:nth-of-type(odd),
+.ktp_data_list_box > .data_list_item:nth-of-type(odd),
+.data_list_box > .ktp_data_list_item:nth-of-type(odd),
+.ktp_data_list_box > .ktp_data_list_item:nth-of-type(odd) {
+  background-color: #f9fafb; /* 薄いグレーブルー */
+}
+
+.data_list_box > .data_list_item:nth-of-type(even),
+.ktp_data_list_box > .data_list_item:nth-of-type(even),
+.data_list_box > .ktp_data_list_item:nth-of-type(even),
+.ktp_data_list_box > .ktp_data_list_item:nth-of-type(even) {
+  background-color: #ffffff; /* 白 */
+}
+
+/* ホバー時の背景色と微妙な変化 */
+.data_list_box a:hover .data_list_item,
+.ktp_data_list_box a:hover .data_list_item,
+.data_list_box a:hover .ktp_data_list_item,
+.ktp_data_list_box a:hover .ktp_data_list_item {
+  background-color: #f0f7ff; /* 薄い青 */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03); /* 微妙な影を追加 */
+  z-index: 1; /* ホバー時に前面に */
+}
+
+/* 進捗ステータスの色分け */
+.status-1 { color: #f44336; } /* 受付中 */
+.status-2 { color: #ff9800; } /* 見積中 */
+.status-3 { color: #2196f3; } /* 受注 */
+.status-4 { color: #4caf50; } /* 完了 */
+.status-5 { color: #9c27b0; } /* 請求済 */
+.status-6 { color: #333333; } /* 入金済 */
+.status-7 { color: #d32f2f; } /* ボツ */
+
+/* 伝票処理タブ controller内ボタンカラー（最優先） */
+.controller .delete-order-btn {
+  background: #dc3545 !important;
+  color: #fff !important;
+  border: 1px solid #dc3545 !important;
+}
+.controller .delete-order-btn:hover {
+  background: #c82333 !important;
+  border-color: #c82333 !important;
+}
+
+.controller .order-mail-btn {
+  background: #007bff !important;
+  color: #fff !important;
+  border: 1px solid #007bff !important;
+}
+.controller .order-mail-btn:hover {
+  background: #0056b3 !important;
+  border-color: #0056b3 !important;
+}
+.controller .order-mail-btn:disabled {
+  background: #6c757d !important;
+  color: #fff !important;
+  border: 1px solid #6c757d !important;
+  cursor: not-allowed !important;
+}
+
+/* 顧客タブ controller内ボタンカラー（最優先） */
+.controller .order-history-btn {
+  background: #e0e0e0 !important;
+  color: #333 !important;
+  border: 1px solid #bdbdbd !important;
+}
+.controller .order-history-btn:hover {
+  background: #bdbdbd !important;
+  border-color: #9e9e9e !important;
+}
+.controller .order-history-btn.active {
+  background: #1976d2 !important;
+  color: #fff !important;
+  border: 1px solid #1976d2 !important;
+}
+.controller .order-history-btn.active:hover {
+  background: #1565c0 !important;
+  border-color: #1565c0 !important;
+}
+
+.controller .customer-list-btn {
+  background: #e0e0e0 !important;
+  color: #333 !important;
+  border: 1px solid #bdbdbd !important;
+}
+.controller .customer-list-btn:hover {
+  background: #bdbdbd !important;
+  border-color: #9e9e9e !important;
+}
+.controller .customer-list-btn.active {
+  background: #1976d2 !important;
+  color: #fff !important;
+  border: 1px solid #1976d2 !important;
+}
+.controller .customer-list-btn.active:hover {
+  background: #1565c0 !important;
+  border-color: #1565c0 !important;
+}
+
+.controller .create-order-btn {
+  background: #43a047 !important;
+  color: #fff !important;
+  border: 1px solid #388e3c !important;
+}
+.controller .create-order-btn:hover {
+  background: #388e3c !important;
+  border-color: #2e7d32 !important;
+}
