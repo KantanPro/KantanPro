@@ -1,8 +1,8 @@
 #!/bin/zsh
 
 # --- 設定 ---
-# プラグインのソースコードが格納されているディレクトリ
-SOURCE_DIR="/Users/kantanpro/Desktop/ktpwp/wordpress/wp-content/plugins/KantanPro"
+# プラグインのソースコードが格納されているディレクトリ（現在のディレクトリを使用）
+SOURCE_DIR="$(pwd)"
 # 生成したZIPファイルの保存先
 DEST_PARENT_DIR="/Users/kantanpro/Desktop"
 # 保存先フォルダ名
@@ -23,8 +23,10 @@ echo "--------------------------------------------------"
 
 # 1. バージョンと日付の取得
 echo "[1/6] バージョン情報を取得中..."
-# ktpwp.phpからバージョンを抽出 (例: "1.0.6(preview)" -> "1.0.6")
-VERSION=$(grep -i "Version:" "$SOURCE_DIR/ktpwp.php" | head -n 1 | sed -E 's/.*Version:[[:space:]]*([0-9]+\.[0-9]+\.[0-9]+).*/\1/')
+# ktpwp.phpからバージョンを抽出 (例: "1.0.6(preview)" -> "1.0.6", "1.0.0(a)" -> "1.0.0a")
+VERSION_RAW=$(grep -i "Version:" "$SOURCE_DIR/ktpwp.php" | head -n 1)
+echo "  - 生のバージョン情報: ${VERSION_RAW}"
+VERSION=$(echo "$VERSION_RAW" | sed -E 's/.*Version:[[:space:]]*([0-9]+\.[0-9]+\.[0-9]+)\(?([a-zA-Z0-9]*)\)?.*/\1\2/')
 DATE=$(date +%Y%m%d)
 ZIP_FILE_NAME="KantanPro_${VERSION}_${DATE}.zip"
 FINAL_ZIP_PATH="${DEST_DIR}/${ZIP_FILE_NAME}"
