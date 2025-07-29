@@ -1,0 +1,83 @@
+/* 設定タブのボタンスタイル調整 */
+
+/* Material Symbolsを無効化し、SVGアイコンに置き換え */
+.material-symbols-outlined {
+    display: none; /* Material Symbolsを非表示 */
+}
+
+/* SVGアイコンのスタイル */
+.ktp-svg-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+}
+
+.ktp-svg-icon svg {
+    width: 1em;
+    height: 1em;
+    fill: currentColor;
+}
+
+/* 設定タブのprinterボタンに統一スタイルを適用 */
+.controller .printer button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    margin: 0 4px;
+    border-radius: 4px;
+    color: #555;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    outline: none;
+}
+
+/* ボタンホバー時のスタイル */
+.controller .printer button:hover {
+    background-color: #f0f0f0;
+    color: #333;
+}
+
+/* アクティブなタブのボタンスタイル */
+.controller .printer button.active {
+    background-color: #e0e0e0;
+    color: #1976d2;
+}
+
+/* SVGアイコンのサイズ調整 */
+.controller .printer .ktp-svg-icon {
+    font-size: 24px;
+    width: 24px;
+    height: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* タブリンク用特別スタイル - 設定タブ用 */
+.controller .printer .tablinks {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    margin: 0 4px;
+    border-radius: 4px;
+    color: #555;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.controller .printer .tablinks:hover {
+    background-color: #f0f0f0;
+    color: #333;
+}
+
+.controller .printer .tablinks.active {
+    background-color: #e0e0e0;
+    color: #1976d2;
+}
