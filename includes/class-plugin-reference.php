@@ -12,7 +12,7 @@
  * - シンプル更新システムを実装。
  * - 寄付機能（Stripe決済・進捗管理・自動メール送信）を追加。
  * - バージョンアップ履歴・トラブルシューティングも掲載。
- * - 最新バージョン: 1.1.23(preview) - 2025年7月28日更新
+ * - 最新バージョン: 1.1.25(preview) - 2025年7月29日更新
  * - 部署選択エラーの修正（部署選択時のエラーハンドリング強化・部署データの整合性チェック機能追加・部署選択UIの安定性向上・部署関連のデータベース処理最適化・部署管理機能の全体的な改善）
  * - パフォーマンスの向上（キャッシュシステム最適化・データベースクエリ効率化・メモリ使用量最適化・画像最適化・JavaScript・CSS最適化・セッション管理最適化・Ajax通信最適化・フック管理最適化）
  * - 受注書のコスト項目発注メールの改善（適格請求書対応・詳細な税額内訳・計算根拠明示）
@@ -299,6 +299,8 @@ if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
 				<li><strong>部署選択エラーの修正</strong>：部署選択時のエラーハンドリング強化・部署データの整合性チェック機能追加・部署選択UIの安定性向上・部署関連のデータベース処理最適化・部署管理機能の全体的な改善</li>
 				<li><strong>マイグレーション中にエラー解消</strong>：データベース更新処理の安定化・エラーハンドリング強化</li>
 				<li><strong>モバイル表示の改善</strong>：レスポンシブデザイン強化・タッチ操作最適化・モバイル専用UI改善</li>
+				<li><strong>KantanPro License Managerプラグインの連携１−１</strong>：ライセンス管理システムとの統合・ライセンス検証機能・ライセンス情報管理・レート制限機能・セキュアなAPI通信</li>
+				<li><strong>管理メニュータブの廃止</strong>：管理画面のメニュー構造の簡素化・設定項目の統合・最適化・ユーザビリティの向上</li>
 			</ul>
 			
 			<h3>モバイル表示の改善（最新機能）</h3>
@@ -333,6 +335,8 @@ if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
 				<li><strong>利用規約に同意してから利用開始</strong>（表示対象の最適化）</li>
 				<li><strong>ファイル添付でメール送信も可能</strong></li>
 				<li><strong>寄付機能でプラグイン開発をサポート</strong></li>
+				<li><strong>ライセンス管理システムでプラグインの利用を管理</strong></li>
+				<li><strong>管理画面のメニュー構造が簡素化されました</strong></li>
 			</ol>
 			
 			<h3>システム要件</h3>
@@ -457,7 +461,8 @@ if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
 				<li><strong>メール・SMTP設定</strong>：メール送信設定・ファイル添付設定</li>
 				<li><strong>デザイン</strong>：UI・UX設定・カスタムCSS</li>
 				<li><strong>スタッフ管理</strong>：スタッフ情報・権限管理</li>
-				<li><strong>ライセンス設定</strong>：ライセンス情報</li>
+				<li><strong>ライセンス設定</strong>：ライセンス情報・ライセンス検証・ライセンス管理</li>
+				<li><strong>管理メニュー最適化</strong>：メニュー構造の簡素化・設定項目の統合</li>
 				<li><strong>利用規約管理</strong>：利用規約の編集・管理・表示対象の最適化</li>
 			</ul>
 			
@@ -651,6 +656,28 @@ if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
 			<div class="ktpwp-reference-section">
 				<h3>📋 バージョン履歴</h3>
 				
+				<div class="ktpwp-changelog-item">
+					<h4>1.1.25(preview) - 2025年7月29日</h4>
+					<ul>
+						<li><strong>KantanPro License Managerプラグインの連携１−１</strong>
+							<ul>
+								<li>ライセンス管理システムとの統合</li>
+								<li>ライセンス検証機能</li>
+								<li>ライセンス情報管理</li>
+								<li>レート制限機能</li>
+								<li>セキュアなAPI通信</li>
+							</ul>
+						</li>
+						<li><strong>管理メニュータブの廃止</strong>
+							<ul>
+								<li>管理画面のメニュー構造の簡素化</li>
+								<li>設定項目の統合・最適化</li>
+								<li>ユーザビリティの向上</li>
+							</ul>
+						</li>
+					</ul>
+				</div>
+
 				<div class="ktpwp-changelog-item">
 					<h4>1.1.22(preview) - 2025年7月28日</h4>
 					<ul>
@@ -1034,7 +1061,7 @@ if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
 			</ul>
 			
 			<h3>最終更新日</h3>
-			<p>2025年7月28日</p>
+			<p>2025年7月29日</p>
 			';
 		}
 
