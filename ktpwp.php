@@ -548,6 +548,11 @@ function ktpwp_run_auto_migrations() {
                 ktpwp_run_staged_migrations( $current_db_version, $plugin_version );
             }
 
+            // 適格請求書ナンバー機能のマイグレーション（確実に実行）
+            if ( function_exists('ktpwp_run_qualified_invoice_migration') ) {
+                ktpwp_run_qualified_invoice_migration();
+            }
+
             // データベースバージョンを更新
             update_option( 'ktpwp_db_version', $plugin_version );
             update_option( 'ktpwp_last_migration_timestamp', current_time( 'mysql' ) );
@@ -701,6 +706,11 @@ function ktpwp_distribution_auto_migration() {
         
         // 自動マイグレーションを実行
         ktpwp_run_auto_migrations();
+        
+        // 適格請求書ナンバー機能のマイグレーション（確実に実行）
+        if ( function_exists('ktpwp_run_qualified_invoice_migration') ) {
+            ktpwp_run_qualified_invoice_migration();
+        }
         
         // 新規インストールの場合は完了フラグを設定
         if ( $is_new_installation ) {
@@ -1244,7 +1254,12 @@ function ktpwp_comprehensive_activation() {
         // 5. 配布環境用の自動マイグレーションの実行
         ktpwp_distribution_auto_migration();
         
-        // 6. データベース整合性チェック
+        // 6. 適格請求書ナンバー機能のマイグレーション（確実に実行）
+        if ( function_exists('ktpwp_run_qualified_invoice_migration') ) {
+            ktpwp_run_qualified_invoice_migration();
+        }
+        
+        // 7. データベース整合性チェック
         if ( ! ktpwp_verify_database_integrity() ) {
             throw new Exception( '有効化後のデータベース整合性チェックに失敗しました' );
         }
@@ -1575,6 +1590,10 @@ function ktpwp_run_qualified_invoice_migration() {
                 $result = $class_name::up();
                 
                 if ( $result ) {
+                    // マイグレーション完了フラグを設定
+                    update_option( 'ktpwp_qualified_invoice_profit_calculation_migrated', true );
+                    update_option( 'ktpwp_qualified_invoice_profit_calculation_timestamp', current_time( 'mysql' ) );
+                    
                     if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
                         error_log( 'KTPWP: Successfully completed qualified invoice profit calculation migration' );
                     }
@@ -2336,7 +2355,40 @@ function ktpwp_admin_migration_status() {
     if ( ! $qualified_invoice['migrated'] ) {
         echo '<div class="notice notice-warning is-dismissible">';
         echo '<p><strong>KantanPro:</strong> 適格請求書ナンバー機能のマイグレーションが必要です。プラグインを再有効化してください。</p>';
+        echo '<p><button type="button" class="button button-primary" id="ktpwp-run-qualified-invoice-migration">適格請求書機能を有効化</button></p>';
         echo '</div>';
+        
+        // JavaScript for qualified invoice migration
+        ?>
+        <script>
+        jQuery(document).ready(function($) {
+            $('#ktpwp-run-qualified-invoice-migration').on('click', function() {
+                var $button = $(this);
+                var originalText = $button.text();
+                
+                $button.text('有効化中...').prop('disabled', true);
+                
+                $.post(ajaxurl, {
+                    action: 'ktpwp_run_qualified_invoice_migration',
+                    nonce: '<?php echo wp_create_nonce( 'ktpwp_run_qualified_invoice_migration' ); ?>'
+                }, function(response) {
+                    if (response.success) {
+                        $button.text('有効化完了').removeClass('button-primary').addClass('button-secondary');
+                        setTimeout(function() {
+                            window.location.reload();
+                        }, 2000);
+                    } else {
+                        alert('有効化に失敗しました: ' + (response.data || '不明なエラー'));
+                        $button.text(originalText).prop('disabled', false);
+                    }
+                }).fail(function() {
+                    alert('有効化に失敗しました。ネットワークエラーが発生しました。');
+                    $button.text(originalText).prop('disabled', false);
+                });
+            });
+        });
+        </script>
+        <?php
     }
 }
 
@@ -2350,6 +2402,7 @@ if ( is_admin() && isset( $_GET['page'] ) && strpos( $_GET['page'], 'ktp-' ) ===
 
 // 手動データベース更新のAJAXハンドラー
 add_action( 'wp_ajax_ktpwp_manual_db_update', 'ktpwp_handle_manual_db_update' );
+add_action( 'wp_ajax_ktpwp_run_qualified_invoice_migration', 'ktpwp_handle_qualified_invoice_migration' );
 
 /**
  * 手動データベース更新のAJAXハンドラー
@@ -2375,6 +2428,11 @@ function ktpwp_handle_manual_db_update() {
         // マイグレーション実行
         ktpwp_run_auto_migrations();
         
+        // 適格請求書ナンバー機能のマイグレーション（確実に実行）
+        if ( function_exists('ktpwp_run_qualified_invoice_migration') ) {
+            ktpwp_run_qualified_invoice_migration();
+        }
+        
         // データベースバージョンを強制的に更新
         update_option( 'ktpwp_db_version', $plugin_version );
         update_option( 'ktpwp_last_migration_timestamp', current_time( 'mysql' ) );
@@ -2398,6 +2456,38 @@ function ktpwp_handle_manual_db_update() {
         
     } catch ( Exception $e ) {
         wp_send_json_error( '更新に失敗しました: ' . $e->getMessage() );
+    }
+}
+
+/**
+ * 適格請求書ナンバー機能のマイグレーションを実行するAJAXハンドラー
+ */
+function ktpwp_handle_qualified_invoice_migration() {
+    // セキュリティチェック
+    if ( ! wp_verify_nonce( $_POST['nonce'], 'ktpwp_run_qualified_invoice_migration' ) ) {
+        wp_send_json_error( 'セキュリティチェックに失敗しました。' );
+    }
+    
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_send_json_error( 'この操作を実行する権限がありません。' );
+    }
+    
+    try {
+        // 適格請求書ナンバー機能のマイグレーションを実行
+        if ( function_exists('ktpwp_run_qualified_invoice_migration') ) {
+            $result = ktpwp_run_qualified_invoice_migration();
+            
+            if ( $result ) {
+                wp_send_json_success( '適格請求書ナンバー機能の有効化が完了しました。' );
+            } else {
+                wp_send_json_error( '適格請求書ナンバー機能の有効化に失敗しました。' );
+            }
+        } else {
+            wp_send_json_error( '適格請求書ナンバー機能のマイグレーション関数が見つかりません。' );
+        }
+        
+    } catch ( Exception $e ) {
+        wp_send_json_error( '有効化に失敗しました: ' . $e->getMessage() );
     }
 }
 
