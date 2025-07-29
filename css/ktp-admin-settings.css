@@ -20,10 +20,7 @@
     height: 24px !important;
 }
 
-/* タブナビゲーション */
-.ktp-admin-wrap .nav-tab-wrapper {
-    margin-bottom: 20px !important;
-}
+
 
 /* メインコンテナのスタイル統一 - 最高優先度 */
 .wp-admin .ktp-admin-wrap .ktp-settings-container {
@@ -67,6 +64,45 @@
 /* ボタンエリア */
 .ktp-admin-wrap .ktp-submit-button {
     margin-top: 20px !important;
+}
+
+/* フォーム要素のz-index調整 */
+.ktp-admin-wrap form {
+    position: relative !important;
+    z-index: 1 !important;
+    pointer-events: auto !important;
+}
+
+.ktp-admin-wrap .form-table {
+    position: relative !important;
+    z-index: 1 !important;
+    pointer-events: auto !important;
+}
+
+/* ライセンス設定ページの特別な調整 */
+.ktp-admin-wrap .ktp-settings-container {
+    position: relative !important;
+    z-index: 1 !important;
+    pointer-events: auto !important;
+}
+
+.ktp-admin-wrap .ktp-settings-section {
+    position: relative !important;
+    z-index: 1 !important;
+    pointer-events: auto !important;
+}
+
+/* タブナビゲーションの優先度を最高に */
+.ktp-admin-wrap .nav-tab-wrapper {
+    position: relative !important;
+    z-index: 100 !important;
+    pointer-events: auto !important;
+    overflow: visible !important;
+}
+
+/* タブナビゲーション内のすべての要素をクリック可能に */
+.ktp-admin-wrap .nav-tab-wrapper * {
+    pointer-events: auto !important;
 }
 
 /* ライセンスステータス */

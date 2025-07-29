@@ -1310,7 +1310,7 @@ class KTP_Settings {
         <div class="wrap ktp-admin-wrap">
             <h1><span class="dashicons dashicons-groups"></span> <?php echo esc_html__( 'スタッフ管理', 'ktpwp' ); ?></h1>
 
-            <?php $this->display_settings_tabs( 'staff' ); ?>
+
 
             <div class="ktp-settings-container">
                 <div class="ktp-settings-section">
@@ -1523,9 +1523,6 @@ class KTP_Settings {
             <h1><span class="dashicons dashicons-email-alt"></span> <?php echo esc_html__( 'メール・SMTP設定', 'ktpwp' ); ?></h1>
             
             <?php
-            // タブナビゲーション
-            $this->display_settings_tabs( 'mail' );
-
             // 通知表示
             settings_errors( 'ktp_settings' );
 
@@ -1619,9 +1616,6 @@ class KTP_Settings {
             <h1><span class="dashicons dashicons-admin-settings"></span> <?php echo esc_html__( '一般設定', 'ktpwp' ); ?></h1>
             
             <?php
-            // タブナビゲーション
-            $this->display_settings_tabs( 'general' );
-
             // 通知表示
             settings_errors( 'ktp_general_settings' );
             ?>
@@ -1694,9 +1688,6 @@ class KTP_Settings {
             <h1><span class="dashicons dashicons-admin-network"></span> <?php echo esc_html__( 'ライセンス設定', 'ktpwp' ); ?></h1>
             
             <?php
-            // タブナビゲーション
-            $this->display_settings_tabs( 'license' );
-
             // 通知表示
             settings_errors( 'ktp_activation_key' );
             ?>
@@ -1737,9 +1728,6 @@ class KTP_Settings {
                         <p>KTPWPプラグインを利用するには有効なライセンスキーが必要です。ライセンスキーに関する問題がございましたら、サポートまでお問い合わせください。</p>
                         <p><a href="mailto:support@example.com" class="button button-secondary">サポートに問い合わせる</a></p>
                     </div>
-                    
-                    <!-- 印刷ボタンセクション -->
-                    <!-- 印刷機能は削除されました -->
                 </div>
             </div>
         </div>
@@ -1758,9 +1746,6 @@ class KTP_Settings {
             <h1><span class="dashicons dashicons-admin-appearance"></span> <?php echo esc_html__( 'デザイン設定', 'ktpwp' ); ?></h1>
             
             <?php
-            // タブナビゲーション
-            $this->display_settings_tabs( 'design' );
-
             // 通知表示
             settings_errors( 'ktp_design_settings' );
             ?>
@@ -1810,56 +1795,7 @@ class KTP_Settings {
         <?php
     }
 
-    /**
-     * 設定ページのタブナビゲーションを表示
-     *
-     * @param string $current_tab 現在選択されているタブ
-     */
-    private function display_settings_tabs( $current_tab ) {
-        $tabs = array(
-            'general' => array(
-                'name' => __( '一般設定', 'ktpwp' ),
-                'url' => admin_url( 'admin.php?page=ktp-settings' ),
-                'icon' => 'dashicons-admin-settings',
-            ),
-            'mail' => array(
-                'name' => __( 'メール・SMTP設定', 'ktpwp' ),
-                'url' => admin_url( 'admin.php?page=ktp-mail-settings' ),
-                'icon' => 'dashicons-email-alt',
-            ),
-            'design' => array(
-                'name' => __( 'デザイン', 'ktpwp' ),
-                'url' => admin_url( 'admin.php?page=ktp-design-settings' ),
-                'icon' => 'dashicons-admin-appearance',
-            ),
-            'staff' => array(
-                'name' => __( 'スタッフ管理', 'ktpwp' ),
-                'url' => admin_url( 'admin.php?page=ktp-staff' ),
-                'icon' => 'dashicons-groups',
-            ),
-            'license' => array(
-                'name' => __( 'ライセンス設定', 'ktpwp' ),
-                'url' => admin_url( 'admin.php?page=ktp-license' ),
-                'icon' => 'dashicons-admin-network',
-            ),
-            'developer' => array(
-                'name' => __( '開発者設定', 'ktpwp' ),
-                'url' => admin_url( 'admin.php?page=ktp-developer-settings' ),
-                'icon' => 'dashicons-admin-tools',
-            ),
 
-        );
-
-        echo '<h2 class="nav-tab-wrapper">';
-        foreach ( $tabs as $tab_id => $tab ) {
-            $active = ( $current_tab === $tab_id ) ? 'nav-tab-active' : '';
-            echo '<a href="' . esc_url( $tab['url'] ) . '" class="nav-tab ' . esc_attr( $active ) . '">';
-            echo '<span class="dashicons ' . esc_attr( $tab['icon'] ) . '"></span> ';
-            echo esc_html( $tab['name'] );
-            echo '</a>';
-        }
-        echo '</h2>';
-    }
 
     public function page_init() {
 
