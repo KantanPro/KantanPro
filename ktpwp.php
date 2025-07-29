@@ -3,7 +3,7 @@
  * Plugin Name: KantanPro
  * Plugin URI: https://www.kantanpro.com/
  * Description: フリーランス・スモールビジネス向けの仕事効率化システム。ショートコード[ktpwp_all_tab]を固定ページに設置してください。
- * Version: 1.1.23(preview)
+ * Version: 1.1.24(preview)
  * Author: KantanPro
  * Author URI: https://www.kantanpro.com/kantanpro-page
  * License: GPL v2 or later
@@ -30,7 +30,7 @@ if ( file_exists( plugin_dir_path( __FILE__ ) . 'vendor/autoload.php' ) ) {
 
 // プラグイン定数定義
 if ( ! defined( 'KANTANPRO_PLUGIN_VERSION' ) ) {
-    define( 'KANTANPRO_PLUGIN_VERSION', '1.1.23(preview)' );
+    define( 'KANTANPRO_PLUGIN_VERSION', '1.1.24(preview)' );
 }
 if ( ! defined( 'KANTANPRO_PLUGIN_NAME' ) ) {
     define( 'KANTANPRO_PLUGIN_NAME', 'KantanPro' );
@@ -165,6 +165,7 @@ function ktpwp_autoload_classes() {
         'KTPWP_Service_DB'      => 'includes/class-ktpwp-service-db.php',
         'KTPWP_Service_UI'      => 'includes/class-ktpwp-service-ui.php',
         'KTPWP_UI_Generator'    => 'includes/class-ktpwp-ui-generator.php',
+        'KTPWP_License_Manager' => 'includes/class-ktpwp-license-manager.php',
         'KTPWP_Graph_Renderer'  => 'includes/class-ktpwp-graph-renderer.php',
         // POSTデータ安全処理クラス（Adminer警告対策）
         'KTPWP_Post_Data_Handler' => 'includes/class-ktpwp-post-handler.php',
