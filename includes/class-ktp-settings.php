@@ -203,6 +203,9 @@ class KTP_Settings {
         add_action( 'admin_head', array( $this, 'output_custom_styles' ) );
         add_action( 'admin_init', array( $this, 'handle_default_settings_actions' ) );
 
+        // ロゴマークのデフォルト値チェック
+        add_action( 'init', array( $this, 'ensure_logo_default_value' ) );
+
         // ユーザーアクティビティの追跡
         add_action( 'wp_login', array( $this, 'record_user_last_login' ), 10, 2 );
     }
@@ -380,6 +383,12 @@ class KTP_Settings {
             if ( $updated ) {
                 update_option( $design_option_name, $existing_design );
             }
+        }
+
+        // ロゴマークのデフォルト値を設定
+        $default_logo = plugins_url( 'images/default/icon.png', KANTANPRO_PLUGIN_FILE );
+        if ( false === get_option( 'ktp_logo_image' ) ) {
+            add_option( 'ktp_logo_image', $default_logo );
         }
 
         // 寄付設定のデフォルト値を設定
@@ -2747,6 +2756,20 @@ class KTP_Settings {
     }
 
     /**
+     * ロゴマークのデフォルト値を確実に設定
+     *
+     * @since 1.0.0
+     * @return void
+     */
+    public function ensure_logo_default_value() {
+        $current_logo = get_option( 'ktp_logo_image' );
+        if ( empty( $current_logo ) ) {
+            $default_logo = plugins_url( 'images/default/icon.png', KANTANPRO_PLUGIN_FILE );
+            update_option( 'ktp_logo_image', $default_logo );
+        }
+    }
+
+    /**
      * ロゴマークフィールドのコールバック
      *
      * @since 1.0.0
@@ -2755,12 +2778,25 @@ class KTP_Settings {
     public function logo_image_callback() {
         $default_logo = plugins_url( 'images/default/icon.png', KANTANPRO_PLUGIN_FILE );
         $value = get_option( 'ktp_logo_image', $default_logo );
+        
+        // デバッグ情報を追加
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            echo '<!-- Debug: Default logo URL: ' . esc_html( $default_logo ) . ' -->';
+            echo '<!-- Debug: Current value: ' . esc_html( $value ) . ' -->';
+            echo '<!-- Debug: KANTANPRO_PLUGIN_FILE: ' . esc_html( KANTANPRO_PLUGIN_FILE ) . ' -->';
+            echo '<!-- Debug: File exists: ' . ( file_exists( plugin_dir_path( KANTANPRO_PLUGIN_FILE ) . 'images/default/icon.png' ) ? 'true' : 'false' ) . ' -->';
+            echo '<!-- Debug: Plugin dir path: ' . esc_html( plugin_dir_path( KANTANPRO_PLUGIN_FILE ) ) . ' -->';
+        }
         ?>
         <div class="logo-upload-field">
             <input type="hidden" id="ktp_logo_image" name="ktp_logo_image" value="<?php echo esc_attr( $value ); ?>" />
             <div class="logo-preview" style="margin-bottom: 10px;">
                 <?php if ( ! empty( $value ) ) : ?>
-                    <img src="<?php echo esc_url( $value ); ?>" alt="<?php echo esc_attr__( 'ロゴマーク', 'ktpwp' ); ?>" style="max-width: 200px; max-height: 100px; display: block;" />
+                    <img src="<?php echo esc_url( $value ); ?>" alt="<?php echo esc_attr__( 'ロゴマーク', 'ktpwp' ); ?>" style="max-width: 200px; max-height: 100px; display: block;" onerror="console.log('Image failed to load:', this.src); this.style.display='none'; this.nextElementSibling.style.display='block';" />
+                    <div class="image-error-placeholder" style="width: 200px; height: 100px; border: 2px dashed #ff6b6b; display: none; background: #fff5f5; color: #ff6b6b; font-size: 12px; text-align: center; padding: 20px; box-sizing: border-box;">
+                        <div>画像の読み込みに失敗しました</div>
+                        <div style="margin-top: 5px;">URL: <?php echo esc_html( $value ); ?></div>
+                    </div>
                 <?php else : ?>
                     <div class="no-logo-placeholder" style="width: 200px; height: 100px; border: 2px dashed #ccc; display: flex; align-items: center; justify-content: center; color: #999; font-size: 14px;">
                         <?php echo esc_html__( 'ロゴマークが設定されていません', 'ktpwp' ); ?>
