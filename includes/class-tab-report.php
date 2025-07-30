@@ -511,27 +511,14 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 			$period = isset( $_GET['period'] ) ? sanitize_text_field( $_GET['period'] ) : 'current_year';
 			$where_clause = $this->get_period_where_clause( $period );
 
-			// サービス別売上TOP5（invoice_itemsテーブルが存在しない場合の代替クエリ）
-			$table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$wpdb->prefix}ktp_invoice_items'");
-			
-			if ($table_exists) {
-				// invoice_itemsテーブルが存在する場合
-				$service_query = "SELECT s.service_name, SUM(oi.quantity * oi.unit_price) as total_sales, COUNT(DISTINCT o.id) as order_count 
-								 FROM {$wpdb->prefix}ktp_order o 
-								 LEFT JOIN {$wpdb->prefix}ktp_invoice_items oi ON o.id = oi.order_id 
-								 LEFT JOIN {$wpdb->prefix}ktp_service s ON oi.service_id = s.id 
-								 WHERE 1=1 {$where_clause} 
-								 GROUP BY s.id 
-								 ORDER BY total_sales DESC 
-								 LIMIT 5";
-			} else {
-				// invoice_itemsテーブルが存在しない場合、orderテーブルのtotal_amountを使用
-				$service_query = "SELECT 'サービス別売上' as service_name, SUM(o.total_amount) as total_sales, COUNT(o.id) as order_count 
-								 FROM {$wpdb->prefix}ktp_order o 
-								 WHERE 1=1 {$where_clause} 
-								 ORDER BY total_sales DESC 
-								 LIMIT 5";
-			}
+			// サービス別売上TOP5
+			$service_query = "SELECT s.service_name, SUM(o.total_amount) as total_sales, COUNT(o.id) as order_count 
+							 FROM {$wpdb->prefix}ktp_order o 
+							 LEFT JOIN {$wpdb->prefix}ktp_service s ON o.service_id = s.id 
+							 WHERE 1=1 {$where_clause} AND o.service_id IS NOT NULL 
+							 GROUP BY s.id 
+							 ORDER BY total_sales DESC 
+							 LIMIT 5";
 			$service_results = $wpdb->get_results( $service_query );
 
 			$content = '<div style="background:#f8f9fa;padding:20px;border-radius:8px;margin-bottom:24px;">';
