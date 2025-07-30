@@ -84,6 +84,9 @@ if ( ! defined( 'MY_PLUGIN_URL' ) ) {
  */
 register_activation_hook( __FILE__, 'ktpwp_comprehensive_activation' );
 
+// ダミーデータ作成機能の初期化
+add_action( 'admin_menu', 'ktpwp_add_dummy_data_menu' );
+
 
 // === WordPress標準更新システム ===
 // シンプルなバージョン管理
@@ -3454,6 +3457,29 @@ add_action( 'admin_enqueue_scripts', 'ktpwp_scripts_and_styles' );
  * Ajax ハンドラーを初期化（旧システム用）
  */
 function ktpwp_init_ajax_handlers() {
+    // ダミーデータ作成AJAXハンドラー
+    if (function_exists('ktpwp_handle_create_dummy_data_ajax')) {
+        add_action( 'wp_ajax_ktpwp_create_dummy_data', 'ktpwp_handle_create_dummy_data_ajax' );
+    } else {
+        error_log('KTPWP: ktpwp_handle_create_dummy_data_ajax function not found');
+    }
+    
+    // サンプルデータ追加AJAXハンドラー
+    if (function_exists('ktpwp_handle_add_sample_data_ajax')) {
+        add_action( 'wp_ajax_ktpwp_add_sample_data', 'ktpwp_handle_add_sample_data_ajax' );
+    } else {
+        error_log('KTPWP: ktpwp_handle_add_sample_data_ajax function not found');
+    }
+    
+    // データクリアAJAXハンドラー
+    if (function_exists('ktpwp_handle_clear_data_ajax')) {
+        add_action( 'wp_ajax_ktpwp_clear_data', 'ktpwp_handle_clear_data_ajax' );
+    } else {
+        error_log('KTPWP: ktpwp_handle_clear_data_ajax function not found');
+    }
+    
+    // テスト用AJAXハンドラー
+    add_action( 'wp_ajax_ktpwp_test_ajax', 'ktpwp_test_ajax_handler' );
 }
 add_action( 'init', 'ktpwp_init_ajax_handlers' );
 
@@ -5111,7 +5137,801 @@ function ktpwp_get_distribution_migration_status() {
     return $status;
 }
 
+/**
+ * ダミーデータ作成メニューを追加
+ */
+function ktpwp_add_dummy_data_menu() {
+    add_submenu_page(
+        'tools.php',
+        'KantanPro ダミーデータ作成',
+        'KantanPro ダミーデータ',
+        'manage_options',
+        'ktpwp-dummy-data',
+        'ktpwp_dummy_data_page'
+    );
+}
 
+/**
+ * ダミーデータ作成ページの表示
+ */
+function ktpwp_dummy_data_page() {
+    // CSSファイルを読み込み
+    wp_enqueue_style('ktp-dummy-data', plugins_url('css/ktp-dummy-data.css', __FILE__), array(), KANTANPRO_PLUGIN_VERSION);
+    
+    // jQueryを確実に読み込み
+    wp_enqueue_script('jquery');
+    
+    ?>
+    <div class="wrap ktp-dummy-data-wrap">
+        <h1>KantanPro ダミーデータ作成</h1>
+        
+        <div class="ktp-dummy-data-info">
+            <p><strong>作成されるデータ:</strong></p>
+            <ul>
+                <li>顧客: 6件（メールアドレス: info@kantanpro.com）</li>
+                <li>受注書: 18件（顧客×6件 × ステータス3パターン：受付中・受注・完成）</li>
+                <li>協力会社: 6件（メールアドレス: info@kantanpro.com）</li>
+                <li>職能: 18件（協力会社×6件 × 税率3パターン：10%・8%・非課税）</li>
+                <li>サービス: 6件（一般：税率10%・食品：税率8%・不動産：非課税）各×2</li>
+                <li>請求項目・コスト項目: 受注書に自動追加</li>
+            </ul>
+        </div>
+        
+        <div class="ktp-dummy-data-card">
+            <h2>ダミーデータ作成</h2>
+            <p>テスト用のダミーデータを作成します。既存データがある場合は確認メッセージが表示されます。</p>
+            
+            <div class="ktp-dummy-data-buttons">
+                <button type="button" id="create-dummy-data" class="ktp-dummy-data-button">
+                    ダミーデータを作成
+                </button>
+                
+                <button type="button" id="clear-data" class="ktp-dummy-data-button clear-button">
+                    データをクリア
+                </button>
+            </div>
+            
+            <div id="dummy-data-result"></div>
+        </div>
+    </div>
+    
+    <script>
+    jQuery(document).ready(function($) {
+        // ダミーデータ作成ボタン
+        $('#create-dummy-data').on('click', function() {
+            var button = $(this);
+            var resultDiv = $('#dummy-data-result');
+            
+            button.prop('disabled', true).text('作成中...');
+            resultDiv.html('<div class="ktp-dummy-data-result info"><p>ダミーデータを作成中...</p></div>');
+            
+            $.ajax({
+                url: ajaxurl,
+                type: 'POST',
+                data: {
+                    action: 'ktpwp_create_dummy_data',
+                    nonce: '<?php echo wp_create_nonce('ktpwp_dummy_data_nonce'); ?>'
+                },
+                success: function(response) {
+                    console.log('AJAX Response:', response);
+                    if (response.success) {
+                        resultDiv.html('<div class="ktp-dummy-data-result success"><p>' + response.data.message + '</p></div>');
+                    } else {
+                        resultDiv.html('<div class="ktp-dummy-data-result error"><p>エラー: ' + (response.data ? response.data.message : '不明なエラー') + '</p></div>');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('AJAX Error:', {xhr: xhr, status: status, error: error});
+                    var errorMessage = '通信エラーが発生しました。';
+                    if (xhr.responseText) {
+                        try {
+                            var response = JSON.parse(xhr.responseText);
+                            if (response.data && response.data.message) {
+                                errorMessage = response.data.message;
+                            }
+                        } catch (e) {
+                            errorMessage = 'サーバーエラー: ' + xhr.status + ' ' + xhr.statusText;
+                        }
+                    }
+                    resultDiv.html('<div class="ktp-dummy-data-result error"><p>' + errorMessage + '</p></div>');
+                },
+                complete: function() {
+                    button.prop('disabled', false).text('ダミーデータを作成');
+                }
+            });
+        });
+        
+        // データクリアボタン
+        $('#clear-data').on('click', function() {
+            if (!confirm('本当にデータをクリアしますか？\nこの操作は元に戻せません。')) {
+                return;
+            }
+            
+            var button = $(this);
+            var resultDiv = $('#dummy-data-result');
+            
+            button.prop('disabled', true).text('クリア中...');
+            resultDiv.html('<div class="ktp-dummy-data-result info"><p>データをクリア中...</p></div>');
+            
+            $.ajax({
+                url: ajaxurl,
+                type: 'POST',
+                data: {
+                    action: 'ktpwp_clear_data',
+                    nonce: '<?php echo wp_create_nonce('ktpwp_clear_data_nonce'); ?>'
+                },
+                success: function(response) {
+                    console.log('Clear Data AJAX Response:', response);
+                    if (response.success) {
+                        resultDiv.html('<div class="ktp-dummy-data-result success"><p>' + response.data.message + '</p></div>');
+                    } else {
+                        resultDiv.html('<div class="ktp-dummy-data-result error"><p>エラー: ' + (response.data ? response.data.message : '不明なエラー') + '</p></div>');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Clear Data AJAX Error:', {xhr: xhr, status: status, error: error});
+                    var errorMessage = '通信エラーが発生しました。';
+                    if (xhr.responseText) {
+                        try {
+                            var response = JSON.parse(xhr.responseText);
+                            if (response.data && response.data.message) {
+                                errorMessage = response.data.message;
+                            }
+                        } catch (e) {
+                            errorMessage = 'サーバーエラー: ' + xhr.status + ' ' + xhr.statusText;
+                        }
+                    }
+                    resultDiv.html('<div class="ktp-dummy-data-result error"><p>' + errorMessage + '</p></div>');
+                },
+                complete: function() {
+                    button.prop('disabled', false).text('データをクリア');
+                }
+            });
+        });
+    });
+    </script>
+    <?php
+}
 
+/**
+ * ダミーデータ作成AJAXハンドラー
+ */
+function ktpwp_handle_create_dummy_data_ajax() {
+    // 出力バッファリングを開始（予期しない出力を防ぐ）
+    ob_start();
+    
+    // デバッグ情報をログに記録
+    if (defined('WP_DEBUG') && WP_DEBUG) {
+        error_log('KTPWP: ダミーデータ作成AJAXハンドラーが呼び出されました');
+    }
+    
+    try {
+        // セキュリティチェック
+        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'ktpwp_dummy_data_nonce')) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('KTPWP: セキュリティチェックに失敗しました');
+            }
+            wp_send_json_error(array('message' => 'セキュリティチェックに失敗しました。'));
+            return;
+        }
+        
+        if (!current_user_can('manage_options')) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('KTPWP: 権限がありません');
+            }
+            wp_send_json_error(array('message' => '権限がありません。'));
+            return;
+        }
+        
+        global $wpdb;
+        
+        // 既存データのチェック
+        $existing_clients = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}ktp_client");
+        $existing_orders = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}ktp_order");
+        $existing_suppliers = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}ktp_supplier");
+        $existing_services = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}ktp_service");
+        
+        if ($existing_clients > 0 || $existing_orders > 0 || $existing_suppliers > 0 || $existing_services > 0) {
+            wp_send_json_error(array(
+                'message' => '既存のデータが存在します。データを削除してから再実行してください。'
+            ));
+            return;
+        }
+        
+        $created_data = array();
+        
+        // 1. 顧客データの作成（6件）
+        $clients = array(
+            array('company_name' => '株式会社サンプルA', 'name' => '田中太郎', 'email' => 'info@kantanpro.com', 'phone' => '03-1234-5678', 'address' => '東京都渋谷区サンプル1-1-1'),
+            array('company_name' => '有限会社サンプルB', 'name' => '佐藤花子', 'email' => 'info@kantanpro.com', 'phone' => '03-2345-6789', 'address' => '東京都新宿区サンプル2-2-2'),
+            array('company_name' => '合同会社サンプルC', 'name' => '鈴木一郎', 'email' => 'info@kantanpro.com', 'phone' => '03-3456-7890', 'address' => '東京都港区サンプル3-3-3'),
+            array('company_name' => '株式会社サンプルD', 'name' => '高橋美咲', 'email' => 'info@kantanpro.com', 'phone' => '03-4567-8901', 'address' => '東京都品川区サンプル4-4-4'),
+            array('company_name' => '有限会社サンプルE', 'name' => '渡辺健太', 'email' => 'info@kantanpro.com', 'phone' => '03-5678-9012', 'address' => '東京都目黒区サンプル5-5-5'),
+            array('company_name' => '株式会社サンプルF', 'name' => '伊藤麻衣', 'email' => 'info@kantanpro.com', 'phone' => '03-6789-0123', 'address' => '東京都世田谷区サンプル6-6-6')
+        );
+        
+        $client_ids = array();
+        foreach ($clients as $client) {
+            $result = $wpdb->insert(
+                $wpdb->prefix . 'ktp_client',
+                array(
+                    'company_name' => $client['company_name'],
+                    'name' => $client['name'],
+                    'email' => $client['email'],
+                    'phone' => $client['phone'],
+                    'address' => $client['address']
+                ),
+                array('%s', '%s', '%s', '%s', '%s')
+            );
+            
+            if ($result) {
+                $client_ids[] = $wpdb->insert_id;
+            }
+        }
+        $created_data['clients'] = count($client_ids);
+        
+        // 2. 受注書データの作成（顧客×6件 × ステータス3パターン = 18件）
+        $order_statuses = array('受付中', '受注', '完成');
+        $project_names = array('ウェブサイトリニューアル', 'システム開発プロジェクト', 'マーケティング支援', 'デザイン制作', 'コンサルティング業務', 'データ分析プロジェクト');
+        
+        $order_ids = array();
+        foreach ($client_ids as $client_id) {
+            foreach ($order_statuses as $status) {
+                $project_name = $project_names[array_rand($project_names)];
+                $order_date = date('Y-m-d', strtotime('-' . rand(0, 365) . ' days'));
+                $delivery_date = date('Y-m-d', strtotime('+' . rand(1, 90) . ' days'));
+                $total_amount = rand(100000, 1000000);
+                $order_number = 'ORD-' . date('Ymd') . '-' . sprintf('%04d', rand(1, 9999));
+                
+                $result = $wpdb->insert(
+                    $wpdb->prefix . 'ktp_order',
+                    array(
+                        'client_id' => $client_id,
+                        'project_name' => $project_name,
+                        'order_date' => $order_date,
+                        'expected_delivery_date' => $delivery_date,
+                        'total_amount' => $total_amount,
+                        'status' => $status,
+                        'memo' => 'ダミーデータ',
+                        'order_number' => $order_number
+                    ),
+                    array('%d', '%s', '%s', '%s', '%f', '%s', '%s', '%s')
+                );
+                
+                if ($result) {
+                    $order_ids[] = $wpdb->insert_id;
+                }
+            }
+        }
+        $created_data['orders'] = count($order_ids);
+        
+        // 3. 協力会社データの作成（6件）
+        $suppliers = array(
+            array('company_name' => '株式会社フリーランスネット', 'name' => '山田次郎', 'email' => 'info@kantanpro.com', 'memo' => 'フリーランス専門'),
+            array('company_name' => '有限会社デジタルクリエイター', 'name' => '中村由美', 'email' => 'info@kantanpro.com', 'memo' => 'デジタル制作'),
+            array('company_name' => '合同会社システム開発', 'name' => '小林正男', 'email' => 'info@kantanpro.com', 'memo' => 'システム開発'),
+            array('company_name' => '株式会社ウェブデザイン', 'name' => '加藤真理', 'email' => 'info@kantanpro.com', 'memo' => 'ウェブデザイン'),
+            array('company_name' => '有限会社コンサルティング', 'name' => '松本和也', 'email' => 'info@kantanpro.com', 'memo' => '経営コンサル'),
+            array('company_name' => '株式会社ロジスティクス', 'name' => '井上智子', 'email' => 'info@kantanpro.com', 'memo' => '物流サービス')
+        );
+        
+        $supplier_ids = array();
+        foreach ($suppliers as $supplier) {
+            $result = $wpdb->insert(
+                $wpdb->prefix . 'ktp_supplier',
+                array(
+                    'company_name' => $supplier['company_name'],
+                    'name' => $supplier['name'],
+                    'email' => $supplier['email'],
+                    'memo' => $supplier['memo']
+                ),
+                array('%s', '%s', '%s', '%s')
+            );
+            
+            if ($result) {
+                $supplier_ids[] = $wpdb->insert_id;
+            }
+        }
+        $created_data['suppliers'] = count($supplier_ids);
+        
+        // 4. 職能データの作成（協力会社×6件 × 税率3パターン = 18件）
+        $skill_names = array('プログラミング', 'デザイン', 'ライティング', 'マーケティング', 'コンサルティング', 'データ分析', '翻訳', '動画編集', '写真撮影', 'SEO対策', 'SNS運用', '動画制作');
+        $tax_rates = array(10.00, 8.00, null); // 税率10%、税率8%、非課税
+        
+        $skills_created = 0;
+        foreach ($supplier_ids as $supplier_id) {
+            foreach ($tax_rates as $tax_rate) {
+                $product_name = $skill_names[array_rand($skill_names)];
+                $unit_price = rand(5000, 50000);
+                $quantity = rand(1, 10);
+                $unit = '時間';
+                
+                $result = $wpdb->insert(
+                    $wpdb->prefix . 'ktp_supplier_skills',
+                    array(
+                        'supplier_id' => $supplier_id,
+                        'product_name' => $product_name,
+                        'unit_price' => $unit_price,
+                        'quantity' => $quantity,
+                        'unit' => $unit,
+                        'tax_rate' => $tax_rate,
+                        'frequency' => rand(1, 100)
+                    ),
+                    array('%d', '%s', '%f', '%d', '%s', '%f', '%d')
+                );
+                
+                if ($result) {
+                    $skills_created++;
+                }
+            }
+        }
+        $created_data['skills'] = $skills_created;
+        
+        // 5. サービスデータの作成（一般：税率10%・食品：税率8%・不動産：非課税）各×2 = 6件
+        $services = array(
+            // 一般（税率10%）
+            array('service_name' => 'ウェブサイト制作', 'price' => 150000, 'unit' => '件', 'tax_rate' => 10.00, 'category' => '一般'),
+            array('service_name' => 'システム開発', 'price' => 500000, 'unit' => '件', 'tax_rate' => 10.00, 'category' => '一般'),
+            // 食品（税率8%）
+            array('service_name' => '食品配送サービス', 'price' => 3000, 'unit' => '回', 'tax_rate' => 8.00, 'category' => '食品'),
+            array('service_name' => 'ケータリングサービス', 'price' => 50000, 'unit' => '回', 'tax_rate' => 8.00, 'category' => '食品'),
+            // 不動産（非課税）
+            array('service_name' => '不動産仲介', 'price' => 100000, 'unit' => '件', 'tax_rate' => null, 'category' => '不動産'),
+            array('service_name' => '不動産管理', 'price' => 20000, 'unit' => '月', 'tax_rate' => null, 'category' => '不動産')
+        );
+        
+        $services_created = 0;
+        foreach ($services as $service) {
+            $result = $wpdb->insert(
+                $wpdb->prefix . 'ktp_service',
+                array(
+                    'service_name' => $service['service_name'],
+                    'price' => $service['price'],
+                    'unit' => $service['unit'],
+                    'tax_rate' => $service['tax_rate'],
+                    'category' => $service['category']
+                ),
+                array('%s', '%f', '%s', '%f', '%s')
+            );
+            
+            if ($result) {
+                $services_created++;
+            }
+        }
+        $created_data['services'] = $services_created;
+        
+        // 6. 受注書に請求項目とコスト項目を追加
+        $invoice_items_added = 0;
+        $cost_items_added = 0;
+        
+        foreach ($order_ids as $order_id) {
+            // 請求項目を追加（サービスから3件）
+            $services_for_order = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}ktp_service ORDER BY RAND() LIMIT 3");
+            foreach ($services_for_order as $service) {
+                $max_sort_order = $wpdb->get_var($wpdb->prepare(
+                    "SELECT COALESCE(MAX(sort_order), 0) FROM {$wpdb->prefix}ktp_order_invoice_items WHERE order_id = %d",
+                    $order_id
+                ));
+                $new_sort_order = intval($max_sort_order) + 1;
+                
+                $quantity = rand(1, 3);
+                $amount = $service->price * $quantity;
+                
+                $result = $wpdb->insert(
+                    $wpdb->prefix . 'ktp_order_invoice_items',
+                    array(
+                        'order_id' => $order_id,
+                        'product_name' => $service->service_name,
+                        'price' => $service->price,
+                        'quantity' => $quantity,
+                        'unit' => $service->unit,
+                        'amount' => $amount,
+                        'tax_rate' => $service->tax_rate,
+                        'remarks' => 'ダミーデータ',
+                        'sort_order' => $new_sort_order
+                    ),
+                    array('%d', '%s', '%f', '%d', '%s', '%f', '%f', '%s', '%d')
+                );
+                
+                if ($result) {
+                    $invoice_items_added++;
+                }
+            }
+            
+            // コスト項目を追加（協力会社職能から4件）
+            $supplier_skills_for_order = $wpdb->get_results("
+                SELECT ss.*, s.company_name 
+                FROM {$wpdb->prefix}ktp_supplier_skills ss
+                JOIN {$wpdb->prefix}ktp_supplier s ON ss.supplier_id = s.id
+                ORDER BY RAND() 
+                LIMIT 4
+            ");
+            
+            foreach ($supplier_skills_for_order as $skill) {
+                $max_sort_order = $wpdb->get_var($wpdb->prepare(
+                    "SELECT COALESCE(MAX(sort_order), 0) FROM {$wpdb->prefix}ktp_order_cost_items WHERE order_id = %d",
+                    $order_id
+                ));
+                $new_sort_order = intval($max_sort_order) + 1;
+                
+                $amount = $skill->unit_price * $skill->quantity;
+                
+                $result = $wpdb->insert(
+                    $wpdb->prefix . 'ktp_order_cost_items',
+                    array(
+                        'order_id' => $order_id,
+                        'product_name' => $skill->product_name,
+                        'price' => $skill->unit_price,
+                        'quantity' => $skill->quantity,
+                        'unit' => $skill->unit,
+                        'amount' => $amount,
+                        'tax_rate' => $skill->tax_rate,
+                        'remarks' => "協力会社: {$skill->company_name}",
+                        'sort_order' => $new_sort_order,
+                        'supplier_id' => $skill->supplier_id
+                    ),
+                    array('%d', '%s', '%f', '%d', '%s', '%f', '%f', '%s', '%d', '%d')
+                );
+                
+                if ($result) {
+                    $cost_items_added++;
+                }
+            }
+        }
+        
+        $created_data['invoice_items'] = $invoice_items_added;
+        $created_data['cost_items'] = $cost_items_added;
+        
+        $success_message = sprintf(
+            'ダミーデータの作成が完了しました！<br><br>作成されたデータ:<br>• 顧客: %d件<br>• 受注書: %d件<br>• 協力会社: %d件<br>• 職能: %d件<br>• サービス: %d件<br>• 請求項目: %d件<br>• コスト項目: %d件',
+            $created_data['clients'],
+            $created_data['orders'],
+            $created_data['suppliers'],
+            $created_data['skills'],
+            $created_data['services'],
+            $created_data['invoice_items'],
+            $created_data['cost_items']
+        );
+        
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('KTPWP: ダミーデータ作成成功 - ' . $success_message);
+        }
+        
+        wp_send_json_success(array(
+            'message' => $success_message,
+            'data' => $created_data
+        ));
+        
+    } catch (Exception $e) {
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('KTPWP: ダミーデータ作成エラー - ' . $e->getMessage());
+        }
+        
+        wp_send_json_error(array(
+            'message' => 'エラーが発生しました: ' . $e->getMessage()
+        ));
+    } finally {
+        // 出力バッファをクリア（予期しない出力を除去）
+        $output = ob_get_clean();
+        
+        // デバッグ時のみ、予期しない出力があればログに記録
+        if (defined('WP_DEBUG') && WP_DEBUG && !empty($output)) {
+            error_log('KTPWP: ダミーデータ作成AJAX中に予期しない出力を検出: ' . substr($output, 0, 1000));
+        }
+    }
+}
 
+/**
+ * 既存受注書にサンプルデータを追加するAJAXハンドラー
+ */
+function ktpwp_handle_add_sample_data_ajax() {
+    // 出力バッファリングを開始（予期しない出力を防ぐ）
+    ob_start();
+    
+    // デバッグ情報をログに記録
+    if (defined('WP_DEBUG') && WP_DEBUG) {
+        error_log('KTPWP: サンプルデータ追加AJAXハンドラーが呼び出されました');
+    }
+    
+    try {
+        // セキュリティチェック
+        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'ktpwp_sample_data_nonce')) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('KTPWP: セキュリティチェックに失敗しました');
+            }
+            wp_send_json_error(array('message' => 'セキュリティチェックに失敗しました。'));
+            return;
+        }
+        
+        if (!current_user_can('manage_options')) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('KTPWP: 権限がありません');
+            }
+            wp_send_json_error(array('message' => '権限がありません。'));
+            return;
+        }
+        
+        global $wpdb;
+        
+        // 受注書IDの取得
+        $order_id = isset($_POST['order_id']) ? intval($_POST['order_id']) : 0;
+        if (!$order_id) {
+            wp_send_json_error(array('message' => '受注書IDが指定されていません。'));
+            return;
+        }
+        
+        // 受注書の存在確認
+        $order_exists = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$wpdb->prefix}ktp_order WHERE id = %d",
+            $order_id
+        ));
+        
+        if (!$order_exists) {
+            wp_send_json_error(array('message' => '指定された受注書が見つかりません。'));
+            return;
+        }
+        
+        $added_items = array();
+        
+        // 1. サービスから請求項目を追加
+        $services = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}ktp_service ORDER BY RAND() LIMIT 3");
+        $invoice_items_added = 0;
+        
+        foreach ($services as $service) {
+            $max_sort_order = $wpdb->get_var($wpdb->prepare(
+                "SELECT COALESCE(MAX(sort_order), 0) FROM {$wpdb->prefix}ktp_order_invoice_items WHERE order_id = %d",
+                $order_id
+            ));
+            $new_sort_order = intval($max_sort_order) + 1;
+            
+            $quantity = rand(1, 3);
+            $amount = $service->price * $quantity;
+            
+            $result = $wpdb->insert(
+                $wpdb->prefix . 'ktp_order_invoice_items',
+                array(
+                    'order_id' => $order_id,
+                    'product_name' => $service->service_name,
+                    'price' => $service->price,
+                    'quantity' => $quantity,
+                    'unit' => $service->unit,
+                    'amount' => $amount,
+                    'tax_rate' => $service->tax_rate,
+                    'remarks' => 'サンプルデータ',
+                    'sort_order' => $new_sort_order
+                ),
+                array('%d', '%s', '%f', '%d', '%s', '%f', '%f', '%s', '%d')
+            );
+            
+            if ($result) {
+                $invoice_items_added++;
+                $added_items[] = "請求項目: {$service->service_name}";
+            }
+        }
+        
+        // 2. 協力会社の職能からコスト項目を追加
+        $supplier_skills = $wpdb->get_results("
+            SELECT ss.*, s.company_name 
+            FROM {$wpdb->prefix}ktp_supplier_skills ss
+            JOIN {$wpdb->prefix}ktp_supplier s ON ss.supplier_id = s.id
+            ORDER BY RAND() 
+            LIMIT 4
+        ");
+        $cost_items_added = 0;
+        
+        foreach ($supplier_skills as $skill) {
+            $max_sort_order = $wpdb->get_var($wpdb->prepare(
+                "SELECT COALESCE(MAX(sort_order), 0) FROM {$wpdb->prefix}ktp_order_cost_items WHERE order_id = %d",
+                $order_id
+            ));
+            $new_sort_order = intval($max_sort_order) + 1;
+            
+            $amount = $skill->unit_price * $skill->quantity;
+            
+            $result = $wpdb->insert(
+                $wpdb->prefix . 'ktp_order_cost_items',
+                array(
+                    'order_id' => $order_id,
+                    'product_name' => $skill->product_name,
+                    'price' => $skill->unit_price,
+                    'quantity' => $skill->quantity,
+                    'unit' => $skill->unit,
+                    'amount' => $amount,
+                    'tax_rate' => $skill->tax_rate,
+                    'remarks' => "協力会社: {$skill->company_name}",
+                    'sort_order' => $new_sort_order,
+                    'supplier_id' => $skill->supplier_id
+                ),
+                array('%d', '%s', '%f', '%d', '%s', '%f', '%f', '%s', '%d', '%d')
+            );
+            
+            if ($result) {
+                $cost_items_added++;
+                $added_items[] = "コスト項目: {$skill->product_name} ({$skill->company_name})";
+            }
+        }
+        
+        $success_message = sprintf(
+            'サンプルデータの追加が完了しました！<br><br>追加されたデータ:<br>• 請求項目: %d件<br>• コスト項目: %d件<br><br>追加された項目:<br>%s',
+            $invoice_items_added,
+            $cost_items_added,
+            implode('<br>', $added_items)
+        );
+        
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('KTPWP: サンプルデータ追加成功 - ' . $success_message);
+        }
+        
+        wp_send_json_success(array(
+            'message' => $success_message,
+            'invoice_items_added' => $invoice_items_added,
+            'cost_items_added' => $cost_items_added
+        ));
+        
+    } catch (Exception $e) {
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('KTPWP: サンプルデータ追加エラー - ' . $e->getMessage());
+        }
+        
+        wp_send_json_error(array(
+            'message' => 'エラーが発生しました: ' . $e->getMessage()
+        ));
+    } finally {
+        // 出力バッファをクリア（予期しない出力を除去）
+        $output = ob_get_clean();
+        
+        // デバッグ時のみ、予期しない出力があればログに記録
+        if (defined('WP_DEBUG') && WP_DEBUG && !empty($output)) {
+            error_log('KTPWP: サンプルデータ追加AJAX中に予期しない出力を検出: ' . substr($output, 0, 1000));
+        }
+    }
+}
 
+/**
+ * データクリアAJAXハンドラー
+ */
+function ktpwp_handle_clear_data_ajax() {
+    // 出力バッファリングを開始（予期しない出力を防ぐ）
+    ob_start();
+    
+    // デバッグ情報をログに記録
+    if (defined('WP_DEBUG') && WP_DEBUG) {
+        error_log('KTPWP: データクリアAJAXハンドラーが呼び出されました');
+    }
+    
+    try {
+        // セキュリティチェック
+        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'ktpwp_clear_data_nonce')) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('KTPWP: セキュリティチェックに失敗しました');
+            }
+            wp_send_json_error(array('message' => 'セキュリティチェックに失敗しました。'));
+            return;
+        }
+        
+        if (!current_user_can('manage_options')) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('KTPWP: 権限がありません');
+            }
+            wp_send_json_error(array('message' => '権限がありません。'));
+            return;
+        }
+        
+        global $wpdb;
+        
+        $cleared_tables = array();
+        $total_cleared = 0;
+        
+        // 1. 受注書関連テーブルをクリア（外部キー制約のため順序が重要）
+        $cost_items_count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}ktp_order_cost_items");
+        if ($cost_items_count > 0) {
+            $result = $wpdb->query("DELETE FROM {$wpdb->prefix}ktp_order_cost_items");
+            if ($result !== false) {
+                $cleared_tables[] = "コスト項目: {$cost_items_count}件";
+                $total_cleared += $cost_items_count;
+            }
+        }
+        
+        $invoice_items_count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}ktp_order_invoice_items");
+        if ($invoice_items_count > 0) {
+            $result = $wpdb->query("DELETE FROM {$wpdb->prefix}ktp_order_invoice_items");
+            if ($result !== false) {
+                $cleared_tables[] = "請求項目: {$invoice_items_count}件";
+                $total_cleared += $invoice_items_count;
+            }
+        }
+        
+        // 2. 受注書テーブルをクリア
+        $order_count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}ktp_order");
+        if ($order_count > 0) {
+            $result = $wpdb->query("DELETE FROM {$wpdb->prefix}ktp_order");
+            if ($result !== false) {
+                $cleared_tables[] = "受注書: {$order_count}件";
+                $total_cleared += $order_count;
+            }
+        }
+        
+        // 3. 顧客テーブルをクリア
+        $client_count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}ktp_client");
+        if ($client_count > 0) {
+            $result = $wpdb->query("DELETE FROM {$wpdb->prefix}ktp_client");
+            if ($result !== false) {
+                $cleared_tables[] = "顧客: {$client_count}件";
+                $total_cleared += $client_count;
+            }
+        }
+        
+        // 4. 協力会社職能テーブルをクリア
+        $supplier_skills_count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}ktp_supplier_skills");
+        if ($supplier_skills_count > 0) {
+            $result = $wpdb->query("DELETE FROM {$wpdb->prefix}ktp_supplier_skills");
+            if ($result !== false) {
+                $cleared_tables[] = "協力会社職能: {$supplier_skills_count}件";
+                $total_cleared += $supplier_skills_count;
+            }
+        }
+        
+        // 5. 協力会社テーブルをクリア
+        $supplier_count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}ktp_supplier");
+        if ($supplier_count > 0) {
+            $result = $wpdb->query("DELETE FROM {$wpdb->prefix}ktp_supplier");
+            if ($result !== false) {
+                $cleared_tables[] = "協力会社: {$supplier_count}件";
+                $total_cleared += $supplier_count;
+            }
+        }
+        
+        // 6. サービステーブルをクリア
+        $service_count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}ktp_service");
+        if ($service_count > 0) {
+            $result = $wpdb->query("DELETE FROM {$wpdb->prefix}ktp_service");
+            if ($result !== false) {
+                $cleared_tables[] = "サービス: {$service_count}件";
+                $total_cleared += $service_count;
+            }
+        }
+        
+        if ($total_cleared > 0) {
+            $success_message = sprintf(
+                'データクリアが完了しました！<br><br>クリアされたデータ:<br>• %s<br><br>合計: %d件のデータを削除しました。',
+                implode('<br>• ', $cleared_tables),
+                $total_cleared
+            );
+        } else {
+            $success_message = 'クリアするデータがありませんでした。';
+        }
+        
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('KTPWP: データクリア成功 - ' . $success_message);
+        }
+        
+        wp_send_json_success(array(
+            'message' => $success_message,
+            'cleared_count' => $total_cleared
+        ));
+        
+    } catch (Exception $e) {
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('KTPWP: データクリアエラー - ' . $e->getMessage());
+        }
+        
+        wp_send_json_error(array(
+            'message' => 'エラーが発生しました: ' . $e->getMessage()
+        ));
+    } finally {
+        // 出力バッファをクリア（予期しない出力を除去）
+        $output = ob_get_clean();
+        
+        // デバッグ時のみ、予期しない出力があればログに記録
+        if (defined('WP_DEBUG') && WP_DEBUG && !empty($output)) {
+            error_log('KTPWP: データクリアAJAX中に予期しない出力を検出: ' . substr($output, 0, 1000));
+        }
+    }
+}
+
+/**
+ * テスト用AJAXハンドラー
+ */
+add_action('wp_ajax_ktpwp_test_ajax', function() {
+    wp_send_json_success(['message' => 'AJAX OK']);
+});

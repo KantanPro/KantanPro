@@ -4384,7 +4384,7 @@ class KTPWP_Ajax {
 					'order_info' => array(
 						'project_name' => $order->project_name,
 						'order_date' => $order->order_date,
-						'delivery_date' => isset( $order->delivery_date ) ? $order->delivery_date : null,
+						'expected_delivery_date' => isset( $order->expected_delivery_date ) ? $order->expected_delivery_date : null,
 						'client_name' => $client ? $client->company_name : $order->customer_name,
 					),
 					'cost_summary' => array(
