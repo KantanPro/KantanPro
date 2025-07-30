@@ -5154,6 +5154,33 @@ function ktpwp_add_dummy_data_menu() {
 }
 
 /**
+ * ダミーデータ作成スクリプトのバージョンを取得
+ */
+function ktpwp_get_dummy_data_script_version() {
+    $script_path = KANTANPRO_PLUGIN_DIR . 'create_dummy_data.php';
+    
+    if (!file_exists($script_path)) {
+        return 'スクリプトが見つかりません';
+    }
+    
+    $content = file_get_contents($script_path);
+    
+    // バージョン情報を抽出
+    if (preg_match('/バージョン:\s*([0-9]+\.[0-9]+\.[0-9]+)/', $content, $matches)) {
+        $version = $matches[1];
+        
+        // 説明文も抽出
+        if (preg_match('/バージョン:\s*[0-9]+\.[0-9]+\.[0-9]+\s*\(([^)]+)\)/', $content, $desc_matches)) {
+            return $version . ' (' . $desc_matches[1] . ')';
+        }
+        
+        return $version;
+    }
+    
+    return 'バージョン情報が見つかりません';
+}
+
+/**
  * ダミーデータ作成ページの表示
  */
 function ktpwp_dummy_data_page() {
@@ -5168,7 +5195,8 @@ function ktpwp_dummy_data_page() {
         <h1>KantanPro ダミーデータ作成</h1>
         
         <div class="ktp-dummy-data-version">
-            <p><strong>バージョン:</strong> <?php echo esc_html(KANTANPRO_PLUGIN_VERSION); ?></p>
+            <p><strong>プラグインバージョン:</strong> <?php echo esc_html(KANTANPRO_PLUGIN_VERSION); ?></p>
+            <p><strong>ダミーデータ作成スクリプトバージョン:</strong> <?php echo esc_html(ktpwp_get_dummy_data_script_version()); ?></p>
         </div>
         
         <div class="ktp-dummy-data-info">
