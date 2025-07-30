@@ -58,6 +58,47 @@
             });
         });
         
+        // キャッシュクリアリンクのクリックイベント
+        $('#ktpwp-cache-clear').on('click', function(e) {
+            e.preventDefault();
+            
+            var $link = $(this);
+            var originalText = $link.text();
+            
+            // リンクを無効化し、テキストを変更
+            $link.text('キャッシュクリア中...')
+                 .addClass('disabled')
+                 .css('pointer-events', 'none');
+            
+            // AJAX リクエストを送信
+            $.ajax({
+                url: ktpwp_update_checker.ajax_url,
+                type: 'POST',
+                data: {
+                    action: 'ktpwp_clear_plugin_cache',
+                    nonce: ktpwp_update_checker.nonce
+                },
+                success: function(response) {
+                    if (response.success) {
+                        showUpdateResult(response.data.message, 'success');
+                    } else {
+                        showUpdateResult(response.data.message || 'キャッシュクリアに失敗しました', 'error');
+                    }
+                },
+                error: function() {
+                    showUpdateResult('キャッシュクリア中にエラーが発生しました', 'error');
+                },
+                complete: function() {
+                    // リンクを元に戻す
+                    setTimeout(function() {
+                        $link.text(originalText)
+                             .removeClass('disabled')
+                             .css('pointer-events', 'auto');
+                    }, 2000);
+                }
+            });
+        });
+        
         /**
          * 更新結果を表示
          */
