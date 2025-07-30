@@ -152,7 +152,7 @@ document.addEventListener('DOMContentLoaded', function () {
         
         var data = 'action=ktp_get_order_data&order_id=' + encodeURIComponent(orderId);
         if (nonce) {
-            data += '&nonce=' + encodeURIComponent(nonce);
+            data += '&ktp_ajax_nonce=' + encodeURIComponent(nonce);
         }
         
         xhr.send(data);

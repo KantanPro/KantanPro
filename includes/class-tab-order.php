@@ -1723,9 +1723,28 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
                         );
 					}
 
-					// 部署選択がある場合の担当者名表示を修正
-					$user_display_name = esc_html( $order_data->user_name );
+					// 担当者名の表示を修正
+					$user_display_name = '';
+					
+					// まず受注書テーブルの担当者名を確認
+					if ( ! empty( $order_data->user_name ) ) {
+						$user_display_name = esc_html( $order_data->user_name );
+					} else {
+						// 受注書テーブルに担当者名がない場合は顧客テーブルから取得
+						if ( ! empty( $order_data->client_id ) ) {
+							$client_contact = $wpdb->get_var(
+								$wpdb->prepare(
+									"SELECT name FROM `{$client_table}` WHERE id = %d",
+									$order_data->client_id
+								)
+							);
+							if ( ! empty( $client_contact ) ) {
+								$user_display_name = esc_html( $client_contact );
+							}
+						}
+					}
 
+					// 部署選択がある場合の担当者名表示を修正
 					if ( class_exists( 'KTPWP_Department_Manager' ) && ! empty( $order_data->client_id ) ) {
 						$selected_department = KTPWP_Department_Manager::get_selected_department_by_client( $order_data->client_id );
 						if ( $selected_department ) {

@@ -3325,6 +3325,8 @@ function ktpwp_scripts_and_styles() {
         wp_enqueue_style( 'ktp-progress-select', plugins_url( 'css/progress-select.css', __FILE__ ) . '?v=' . time(), array( 'ktp-css' ), KANTANPRO_PLUGIN_VERSION, 'all' );
         // 設定タブ用のスタイルシートを追加
         wp_enqueue_style( 'ktp-setting-tab', plugins_url( 'css/ktp-setting-tab.css', __FILE__ ) . '?v=' . time(), array( 'ktp-css' ), KANTANPRO_PLUGIN_VERSION, 'all' );
+        // レポートタブ用のスタイルシートを追加
+        wp_enqueue_style( 'ktp-report', plugins_url( 'css/ktp-report.css', __FILE__ ) . '?v=' . time(), array( 'ktp-css' ), KANTANPRO_PLUGIN_VERSION, 'all' );
     }
 
     // Material Symbolsを無効化し、SVGアイコンに置き換え
