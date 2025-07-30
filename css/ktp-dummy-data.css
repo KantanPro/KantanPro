@@ -1,0 +1,144 @@
+/* KantanPro ダミーデータ作成ページ用スタイル */
+
+.ktp-dummy-data-wrap {
+    max-width: 800px;
+    margin: 20px 0;
+}
+
+.ktp-dummy-data-card {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    border-radius: 4px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+.ktp-dummy-data-card h2 {
+    margin-top: 0;
+    color: #23282d;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.ktp-dummy-data-info {
+    background: #f0f6fc;
+    border-left: 4px solid #2271b1;
+    padding: 12px 16px;
+    margin: 20px 0;
+}
+
+.ktp-dummy-data-info ul {
+    margin: 10px 0 0 20px;
+}
+
+.ktp-dummy-data-info li {
+    margin-bottom: 5px;
+    color: #50575e;
+}
+
+.ktp-dummy-data-button {
+    background: #2271b1;
+    border-color: #2271b1;
+    color: #fff;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.ktp-dummy-data-button:hover {
+    background: #135e96;
+    border-color: #135e96;
+}
+
+.ktp-dummy-data-button:disabled {
+    background: #a0a5aa;
+    border-color: #a0a5aa;
+    cursor: not-allowed;
+}
+
+.ktp-dummy-data-buttons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.ktp-dummy-data-button.clear-button {
+    background: #d63638;
+    border-color: #d63638;
+}
+
+.ktp-dummy-data-button.clear-button:hover {
+    background: #b32d2e;
+    border-color: #b32d2e;
+}
+
+.ktp-dummy-data-result {
+    margin-top: 20px;
+    padding: 15px;
+    border-radius: 4px;
+    border-left: 4px solid;
+}
+
+.ktp-dummy-data-result.success {
+    background: #f0f6fc;
+    border-left-color: #00a32a;
+}
+
+.ktp-dummy-data-result.error {
+    background: #fcf0f1;
+    border-left-color: #d63638;
+}
+
+.ktp-dummy-data-result.info {
+    background: #f0f6fc;
+    border-left-color: #2271b1;
+}
+
+.ktp-dummy-data-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.ktp-dummy-data-stat {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 4px;
+    text-align: center;
+    border: 1px solid #dcdcde;
+}
+
+.ktp-dummy-data-stat-number {
+    font-size: 24px;
+    font-weight: bold;
+    color: #2271b1;
+    display: block;
+}
+
+.ktp-dummy-data-stat-label {
+    font-size: 12px;
+    color: #646970;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 5px;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+    .ktp-dummy-data-wrap {
+        margin: 10px 0;
+    }
+    
+    .ktp-dummy-data-card {
+        padding: 15px;
+    }
+    
+    .ktp-dummy-data-stats {
+        grid-template-columns: 1fr;
+    }
+} 

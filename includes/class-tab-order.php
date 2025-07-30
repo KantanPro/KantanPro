@@ -1468,11 +1468,16 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 					$content .= '</button>';
 					$content .= '</form>';
 
-					// 右側：プレビューボタンとメールボタン
+					// 右側：プレビューボタン、サンプルデータ追加ボタン、メールボタン
 					$content .= '<div style="display: flex; gap: 5px;">';
 					// プレビューボタン（受注書IDのみ保持、最新データはAjaxで取得）
 					$content .= '<button id="orderPreviewButton" data-order-id="' . esc_attr( $order_data->id ) . '" title="' . esc_attr__( 'プレビュー', 'ktpwp' ) . '" style="padding: 6px 10px; font-size: 12px;">';
 					$content .= '<span class="material-symbols-outlined" aria-label="' . esc_attr__( 'プレビュー', 'ktpwp' ) . '" style="font-size: 16px;">preview</span>';
+					$content .= '</button>';
+					
+					// サンプルデータ追加ボタン
+					$content .= '<button id="addSampleDataButton" data-order-id="' . esc_attr( $order_data->id ) . '" title="サンプルデータを追加" style="padding: 6px 10px; font-size: 12px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">';
+					$content .= '<span class="material-symbols-outlined" aria-label="サンプルデータ追加" style="font-size: 16px;">add_circle</span>';
 					$content .= '</button>';
 
 					// 顧客情報に基づいてメールボタンの状態を制御
@@ -1897,6 +1902,50 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 
 			// 納期フィールドのJavaScriptファイルを読み込み
 			wp_enqueue_script( 'ktp-delivery-dates' );
+
+			// サンプルデータ追加ボタンのJavaScript
+			$content .= '<script>
+			jQuery(document).ready(function($) {
+				$("#addSampleDataButton").on("click", function() {
+					var orderId = $(this).data("order-id");
+					var $button = $(this);
+					
+					// ボタンを無効化
+					$button.prop("disabled", true);
+					$button.html(\'<span class="material-symbols-outlined" style="font-size: 16px;">hourglass_empty</span>\');
+					$button.attr("title", "処理中...");
+					
+					$.ajax({
+						url: ajaxurl,
+						type: "POST",
+						data: {
+							action: "ktpwp_add_sample_data",
+							order_id: orderId,
+							nonce: "' . wp_create_nonce('ktpwp_sample_data_nonce') . '"
+						},
+						success: function(response) {
+							if (response.success) {
+								alert("サンプルデータの追加が完了しました！\\n\\n" + response.data.message);
+								// ページをリロードして新しいデータを表示
+								location.reload();
+							} else {
+								alert("エラーが発生しました: " + response.data.message);
+							}
+						},
+						error: function(xhr, status, error) {
+							console.error("AJAX Error:", xhr.status, xhr.responseText);
+							alert("通信エラーが発生しました。");
+						},
+						complete: function() {
+							// ボタンを元に戻す
+							$button.prop("disabled", false);
+							$button.html(\'<span class="material-symbols-outlined" aria-label="サンプルデータ追加" style="font-size: 16px;">add_circle</span>\');
+							$button.attr("title", "サンプルデータを追加");
+						}
+					});
+				});
+			});
+			</script>';
 
 			return $content;
 		} // End of Order_Tab_View method
