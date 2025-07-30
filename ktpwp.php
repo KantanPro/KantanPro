@@ -847,124 +847,6 @@ function ktpwp_verify_migration_safety() {
     }
     
     return true;
-    // データベース接続チェック
-    if ( ! $wpdb->check_connection() ) {
-        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Migration Safety: データベース接続エラー' );
-        }
-        return false;
-    }
-    
-    // 書き込み権限チェック
-    $test_option = 'ktpwp_migration_test_' . time();
-    $test_result = update_option( $test_option, 'test' );
-    if ( ! $test_result ) {
-        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Migration Safety: オプションテーブル書き込み権限エラー' );
-        }
-        return false;
-    }
-    delete_option( $test_option );
-    
-    // メモリ制限チェック
-    $memory_limit = ini_get( 'memory_limit' );
-    $memory_limit_bytes = wp_convert_hr_to_bytes( $memory_limit );
-    if ( $memory_limit_bytes < 64 * 1024 * 1024 ) { // 64MB未満
-        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Migration Safety: メモリ制限が低すぎます: ' . $memory_limit );
-        }
-        return false;
-    }
-    
-    // 実行時間制限チェック
-    $max_execution_time = ini_get( 'max_execution_time' );
-    if ( $max_execution_time > 0 && $max_execution_time < 30 ) { // 30秒未満
-        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Migration Safety: 実行時間制限が短すぎます: ' . $max_execution_time . '秒' );
-        }
-        return false;
-    }
-    
-    // ディスク容量チェック
-    $upload_dir = wp_upload_dir();
-    $disk_free_space = disk_free_space( $upload_dir['basedir'] );
-    if ( $disk_free_space !== false && $disk_free_space < 50 * 1024 * 1024 ) { // 50MB未満
-        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Migration Safety: ディスク容量が不足しています: ' . round( $disk_free_space / 1024 / 1024, 2 ) . 'MB' );
-        }
-        return false;
-    }
-    
-    // WordPressバージョンチェック
-    global $wp_version;
-    if ( version_compare( $wp_version, '5.0', '<' ) ) {
-        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Migration Safety: WordPressバージョンが古すぎます: ' . $wp_version );
-        }
-        return false;
-    }
-    
-    // PHPバージョンチェック
-    if ( version_compare( PHP_VERSION, '7.4', '<' ) ) {
-        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Migration Safety: PHPバージョンが古すぎます: ' . PHP_VERSION );
-        }
-        return false;
-    }
-    
-    // 必須PHP拡張機能チェック
-    $required_extensions = array( 'mysqli', 'json', 'mbstring' );
-    foreach ( $required_extensions as $ext ) {
-        if ( ! extension_loaded( $ext ) ) {
-            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP Migration Safety: 必須PHP拡張機能が不足しています: ' . $ext );
-            }
-            return false;
-        }
-    }
-    
-    // データベース権限チェック
-    try {
-        $test_table = $wpdb->prefix . 'ktpwp_migration_test_' . time();
-        $create_result = $wpdb->query( "CREATE TABLE IF NOT EXISTS `{$test_table}` (id INT PRIMARY KEY)" );
-        if ( $create_result === false ) {
-            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP Migration Safety: テーブル作成権限エラー' );
-            }
-            return false;
-        }
-        
-        $drop_result = $wpdb->query( "DROP TABLE IF EXISTS `{$test_table}`" );
-        if ( $drop_result === false ) {
-            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP Migration Safety: テーブル削除権限エラー' );
-            }
-            return false;
-        }
-    } catch ( Exception $e ) {
-        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Migration Safety: データベース権限チェックエラー: ' . $e->getMessage() );
-        }
-        return false;
-    }
-    
-    // プラグイン競合チェック
-    $conflicting_plugins = array(
-        'woocommerce/woocommerce.php',
-        'easy-digital-downloads/easy-digital-downloads.php'
-    );
-    
-    $active_plugins = get_option( 'active_plugins', array() );
-    foreach ( $conflicting_plugins as $plugin ) {
-        if ( in_array( $plugin, $active_plugins ) ) {
-            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP Migration Safety: 競合プラグインが検出されました: ' . $plugin );
-            }
-            // 競合プラグインがあっても警告のみで続行
-        }
-    }
-    
-    return true;
 }
 
 /**
@@ -5383,22 +5265,93 @@ function ktpwp_handle_create_dummy_data_ajax() {
         // 出力をキャプチャするために出力バッファリングを使用
         ob_start();
         
-        // ダミーデータ作成スクリプトをインクルード
-        include_once $dummy_data_script;
+        // エラーハンドリングを強化
+        $old_error_reporting = error_reporting();
+        error_reporting(E_ALL);
         
-        $output = ob_get_clean();
+        // エラーハンドラーを設定
+        $error_handler = function($errno, $errstr, $errfile, $errline) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log("KTPWP: ダミーデータ作成中にエラー: [$errno] $errstr in $errfile on line $errline");
+            }
+            return false; // 標準のエラーハンドラーも実行
+        };
+        set_error_handler($error_handler);
         
-        // 成功メッセージを返す
-        wp_send_json_success(array(
-            'message' => 'ダミーデータが正常に作成されました。',
-            'output' => $output
-        ));
+        try {
+            // データベース接続を確認
+            if (!$wpdb->check_connection()) {
+                throw new Exception('データベース接続エラー');
+            }
+            
+            // メモリ制限を一時的に増加
+            $old_memory_limit = ini_get('memory_limit');
+            ini_set('memory_limit', '256M');
+            
+            // 実行時間制限を一時的に増加
+            $old_max_execution_time = ini_get('max_execution_time');
+            set_time_limit(300); // 5分
+            
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('KTPWP: ダミーデータ作成開始 - メモリ制限: ' . ini_get('memory_limit') . ', 実行時間制限: ' . ini_get('max_execution_time'));
+            }
+            
+            // ダミーデータ作成スクリプトをインクルード
+            include_once $dummy_data_script;
+            
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('KTPWP: ダミーデータ作成スクリプト実行完了');
+            }
+            
+            // 設定を復元
+            ini_set('memory_limit', $old_memory_limit);
+            set_time_limit($old_max_execution_time);
+            
+            // エラーハンドラーを復元
+            restore_error_handler();
+            error_reporting($old_error_reporting);
+            
+            $output = ob_get_clean();
+            
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('KTPWP: ダミーデータ作成成功 - 出力長: ' . strlen($output));
+            }
+            
+            // 成功メッセージを返す
+            wp_send_json_success(array(
+                'message' => 'ダミーデータが正常に作成されました。',
+                'output' => $output
+            ));
+            
+        } catch (Exception $e) {
+            // 設定を復元
+            ini_set('memory_limit', $old_memory_limit);
+            set_time_limit($old_max_execution_time);
+            
+            // エラーハンドラーを復元
+            restore_error_handler();
+            error_reporting($old_error_reporting);
+            
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('KTPWP: ダミーデータ作成中に例外が発生しました: ' . $e->getMessage());
+                error_log('KTPWP: 例外の詳細: ' . $e->getTraceAsString());
+            }
+            wp_send_json_error(array('message' => 'ダミーデータ作成中にエラーが発生しました: ' . $e->getMessage()));
+        }
         
     } catch (Exception $e) {
         if (defined('WP_DEBUG') && WP_DEBUG) {
             error_log('KTPWP: ダミーデータ作成中にエラーが発生しました: ' . $e->getMessage());
         }
         wp_send_json_error(array('message' => 'ダミーデータ作成中にエラーが発生しました: ' . $e->getMessage()));
+    } finally {
+        // 出力バッファをクリア（予期しない出力を除去）
+        $output = ob_get_clean();
+        
+        // デバッグ時のみ、予期しない出力があればログに記録
+        if (defined('WP_DEBUG') && WP_DEBUG && !empty($output)) {
+            error_log('KTPWP: ダミーデータ作成AJAX中に予期しない出力を検出: ' . substr($output, 0, 1000));
+        }
     }
 }
 
