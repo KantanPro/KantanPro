@@ -303,6 +303,30 @@ if ( ! class_exists( 'Kantan_List_Class' ) ) {
 					$user_name = esc_html( $order->user_name );
 					$project_name = isset( $order->project_name ) ? esc_html( $order->project_name ) : '';
 
+					// 会社名と担当者名のフォールバック処理
+					if ( empty( $customer_name ) || empty( $user_name ) ) {
+						global $wpdb;
+						$client_table = $wpdb->prefix . 'ktp_client';
+						
+						// 顧客IDがある場合は顧客テーブルから情報を取得
+						if ( ! empty( $order->client_id ) ) {
+							$client_info = $wpdb->get_row(
+								$wpdb->prepare(
+									"SELECT company_name, name FROM `{$client_table}` WHERE id = %d",
+									$order->client_id
+								)
+							);
+							if ( $client_info ) {
+								if ( empty( $customer_name ) ) {
+									$customer_name = esc_html( $client_info->company_name );
+								}
+								if ( empty( $user_name ) ) {
+									$user_name = esc_html( $client_info->name );
+								}
+							}
+						}
+					}
+
 					// 納期フィールドの値を取得（希望納期は削除、納品予定日のみ）
 					$expected_delivery_date = isset( $order->expected_delivery_date ) ? $order->expected_delivery_date : '';
 

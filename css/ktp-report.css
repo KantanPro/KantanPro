@@ -1,0 +1,411 @@
+/**
+ * KTP Report Tab Styles
+ * 
+ * Styles for the report tab functionality
+ * 
+ * @package KTPWP
+ * @since 1.0.0
+ */
+
+/* レポートコンテナ */
+#report_content {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    line-height: 1.6;
+}
+
+/* レポートセレクター */
+.report-selector {
+    border: 1px solid #e0e0e0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.report-selector h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 16px;
+}
+
+.report-btn {
+    display: inline-block;
+    padding: 8px 16px;
+    border-radius: 6px;
+    text-decoration: none;
+    border: 1px solid #ddd;
+    transition: all 0.3s ease;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.report-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    text-decoration: none;
+}
+
+.report-btn[style*="background:#1976d2"] {
+    box-shadow: 0 2px 4px rgba(25, 118, 210, 0.3);
+}
+
+/* 期間セレクター */
+.period-btn {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 4px;
+    text-decoration: none;
+    border: 1px solid #ddd;
+    transition: all 0.3s ease;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.period-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    text-decoration: none;
+}
+
+.period-btn[style*="background:#1976d2"] {
+    box-shadow: 0 2px 4px rgba(25, 118, 210, 0.3);
+}
+
+/* サマリーカード */
+.sales-summary,
+.progress-summary,
+.client-summary,
+.service-summary,
+.supplier-summary {
+    margin-bottom: 24px;
+}
+
+/* グラフコンテナ */
+.graph-container {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    max-height: 500px;
+    overflow: hidden;
+}
+
+.graph-container h4 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: #333;
+}
+
+/* ランキングカード */
+.ranking-card {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+    margin-bottom: 24px;
+}
+
+.ranking-card h4 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: #333;
+}
+
+.ranking-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background: #fff;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    border: 1px solid #f0f0f0;
+    transition: all 0.3s ease;
+}
+
+.ranking-item:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transform: translateY(-1px);
+}
+
+.ranking-item:last-child {
+    margin-bottom: 0;
+}
+
+.ranking-rank {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+    color: #fff;
+    margin-right: 12px;
+}
+
+.ranking-name {
+    font-weight: 600;
+    color: #333;
+    flex: 1;
+}
+
+.ranking-amount {
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.ranking-count {
+    font-size: 12px;
+    color: #666;
+    margin-top: 2px;
+}
+
+/* 進捗カード */
+.progress-card {
+    background: linear-gradient(135deg, var(--progress-color-start), var(--progress-color-end));
+    color: #fff;
+    padding: 16px;
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+.progress-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+}
+
+.progress-card h4 {
+    margin: 0 0 4px 0;
+    font-size: 12px;
+    font-weight: 500;
+    opacity: 0.9;
+}
+
+.progress-card .progress-count {
+    font-size: 20px;
+    font-weight: bold;
+    margin: 0;
+}
+
+/* 統計カード */
+.stat-card {
+    background: linear-gradient(135deg, var(--stat-color-start), var(--stat-color-end));
+    color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+}
+
+.stat-card h4 {
+    margin: 0 0 8px 0;
+    font-size: 14px;
+    font-weight: 500;
+    opacity: 0.9;
+}
+
+.stat-card .stat-value {
+    font-size: 24px;
+    font-weight: bold;
+    margin: 0;
+}
+
+/* グラフキャンバス */
+canvas {
+    max-width: 100%;
+    max-height: 400px;
+    height: auto;
+}
+
+/* レスポンシブデザイン */
+@media screen and (max-width: 768px) {
+    #report_content {
+        padding: 16px 8px;
+        margin: 16px auto;
+    }
+    
+    .report-selector {
+        padding: 12px;
+    }
+    
+    .report-btn {
+        padding: 6px 12px;
+        font-size: 13px;
+        margin-bottom: 4px;
+    }
+    
+    .period-btn {
+        padding: 4px 8px;
+        font-size: 12px;
+        margin-bottom: 4px;
+    }
+    
+    .stat-card {
+        padding: 16px;
+        margin-bottom: 12px;
+    }
+    
+    .stat-card .stat-value {
+        font-size: 20px;
+    }
+    
+    .progress-card {
+        padding: 12px;
+        margin-bottom: 8px;
+    }
+    
+    .progress-card .progress-count {
+        font-size: 18px;
+    }
+    
+    .ranking-item {
+        padding: 8px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    
+    .ranking-item > div:last-child {
+        align-self: flex-end;
+    }
+    
+    .graph-container {
+        padding: 16px;
+        margin-bottom: 16px;
+    }
+    
+    .graph-container h4 {
+        font-size: 14px;
+        margin-bottom: 12px;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .report-selector h3 {
+        font-size: 16px;
+    }
+    
+    .stat-card .stat-value {
+        font-size: 18px;
+    }
+    
+    .progress-card .progress-count {
+        font-size: 16px;
+    }
+    
+    .ranking-rank {
+        width: 20px;
+        height: 20px;
+        font-size: 10px;
+    }
+    
+    .ranking-name {
+        font-size: 14px;
+    }
+    
+    .ranking-amount {
+        font-size: 14px;
+    }
+}
+
+/* アニメーション */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.report-content {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+/* ローディング状態 */
+.report-loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+    color: #666;
+}
+
+.report-loading::after {
+    content: '';
+    width: 20px;
+    height: 20px;
+    border: 2px solid #ddd;
+    border-top: 2px solid #1976d2;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-left: 10px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* エラーメッセージ */
+.error-message {
+    background: #ffebee;
+    color: #c62828;
+    padding: 16px;
+    border-radius: 8px;
+    border: 1px solid #ffcdd2;
+    margin: 16px 0;
+    text-align: center;
+    font-weight: 500;
+}
+
+/* 成功メッセージ */
+.success-message {
+    background: #e8f5e8;
+    color: #2e7d32;
+    padding: 16px;
+    border-radius: 8px;
+    border: 1px solid #c8e6c9;
+    margin: 16px 0;
+    text-align: center;
+    font-weight: 500;
+}
+
+/* 印刷用スタイル */
+@media print {
+    .report-selector,
+    .period-btn,
+    .report-btn {
+        display: none;
+    }
+    
+    #report_content {
+        box-shadow: none;
+        border: 1px solid #000;
+    }
+    
+    .stat-card,
+    .progress-card,
+    .ranking-card {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+    
+    canvas {
+        max-width: 100%;
+        height: auto;
+    }
+} 

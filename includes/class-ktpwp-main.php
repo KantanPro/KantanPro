@@ -175,6 +175,11 @@ class KTPWP_Main {
                 error_log( 'KTPWP_Main: KTPWP_Ajax initialized.' );
             }
             
+            // レポート用のAJAXハンドラーを初期化
+            if ( method_exists( $this->ajax, 'init' ) ) {
+                $this->ajax->init();
+            }
+            
             // AJAXハンドラーが確実に登録されるように、initアクションの後に確認
             add_action( 'init', function() {
                 if ( $this->ajax && method_exists( $this->ajax, 'register_ajax_handlers' ) ) {
