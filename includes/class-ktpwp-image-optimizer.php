@@ -151,11 +151,14 @@ class KTPWP_Image_Optimizer {
             return $webp_path;
         }
         
-        // キャッシュから変換結果を確認
+        // 配布先での表示速度向上のため、より長いキャッシュ時間を使用
         $cache_key = 'webp_conversion_' . md5( $image_path );
-        $cached_result = ktpwp_cache_get( $cache_key );
+        $cached_result = ktpwp_distribution_cache( $cache_key, function() use ($image_path) {
+            // 実際の変換処理は後で実行
+            return null; // キャッシュにない場合はnullを返す
+        }, 86400 ); // 24時間
         
-        if ( false !== $cached_result ) {
+        if ( false !== $cached_result && null !== $cached_result ) {
             $this->optimization_stats['cache_hits']++;
             return $cached_result;
         }
@@ -197,8 +200,8 @@ class KTPWP_Image_Optimizer {
                     $this->optimization_stats['size_reductions'] += $size_reduction;
                 }
                 
-                // 結果をキャッシュに保存
-                ktpwp_cache_set( $cache_key, $webp_path, 86400 ); // 24時間
+                // 結果をキャッシュに保存（配布先での表示速度向上のため延長）
+                ktpwp_cache_set( $cache_key, $webp_path, 172800 ); // 48時間
                 
                 if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
                     $reduction_percent = round( ( $size_reduction / $original_size ) * 100, 2 );
@@ -210,7 +213,7 @@ class KTPWP_Image_Optimizer {
         }
         
         // 失敗した場合もキャッシュに記録（再試行を避けるため）
-        ktpwp_cache_set( $cache_key, false, 3600 ); // 1時間
+        ktpwp_cache_set( $cache_key, false, 7200 ); // 2時間
         
         return false;
     }

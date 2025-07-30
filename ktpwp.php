@@ -4814,6 +4814,39 @@ function ktpwp_clear_cache_pattern( $pattern ) {
     }
 }
 
+/**
+ * 配布先での表示速度向上のための特別なキャッシュ関数
+ * 
+ * @param string $key キャッシュキー
+ * @param callable $callback データ取得コールバック
+ * @param int $expiration 有効期限
+ * @return mixed キャッシュされたデータ
+ */
+function ktpwp_distribution_cache( $key, $callback, $expiration = null ) {
+    $cache = ktpwp_cache();
+    return $cache ? $cache->distribution_cache( $key, $callback, $expiration ) : false;
+}
+
+/**
+ * キャッシュの自動有効化を実行
+ */
+function ktpwp_auto_enable_cache() {
+    $cache = ktpwp_cache();
+    if ( $cache ) {
+        $cache->auto_enable_cache();
+    }
+}
+
+/**
+ * パフォーマンス監視を実行
+ */
+function ktpwp_monitor_performance() {
+    $cache = ktpwp_cache();
+    if ( $cache ) {
+        $cache->monitor_performance();
+    }
+}
+
 // ============================================================================
 // フックマネージャーヘルパー関数
 // ============================================================================

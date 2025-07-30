@@ -15,19 +15,13 @@ add_action(
 			wp_send_json_error( '権限がありません' );
 		}
 		
-		// キャッシュから取得を試行
+		// 配布先での表示速度向上のため、より長いキャッシュ時間を使用
 		$cache_key = 'suppliers_for_cost_list';
-		$suppliers = ktpwp_cache_get( $cache_key );
-		
-		if ( false === $suppliers ) {
-			// キャッシュにない場合はDBから取得
+		$suppliers = ktpwp_distribution_cache( $cache_key, function() {
 			global $wpdb;
 			$table = $wpdb->prefix . 'ktp_supplier';
-			$suppliers = $wpdb->get_results( "SELECT id, company_name FROM $table WHERE 1 ORDER BY company_name ASC", ARRAY_A );
-			
-			// 結果をキャッシュに保存（15分間）
-			ktpwp_cache_set( $cache_key, $suppliers, 900 );
-		}
+			return $wpdb->get_results( "SELECT id, company_name FROM $table WHERE 1 ORDER BY company_name ASC", ARRAY_A );
+		}, 7200 ); // 2時間に延長
 		
 		wp_send_json( $suppliers );
 	}
@@ -44,12 +38,9 @@ add_action(
 			wp_send_json_error( 'supplier_idが不正です' );
 		}
 		
-		// キャッシュから取得を試行
+		// 配布先での表示速度向上のため、より長いキャッシュ時間を使用
 		$cache_key = "supplier_skills_for_cost_{$supplier_id}";
-		$skills = ktpwp_cache_get( $cache_key );
-		
-		if ( false === $skills ) {
-			// キャッシュにない場合はDBから取得
+		$skills = ktpwp_distribution_cache( $cache_key, function() use ($supplier_id) {
 			global $wpdb;
 			$table = $wpdb->prefix . 'ktp_supplier_skills';
 			$sql = $wpdb->prepare(
@@ -77,11 +68,8 @@ add_action(
 		",
 				$supplier_id
 			);
-			$skills = $wpdb->get_results( $sql, ARRAY_A );
-			
-			// 結果をキャッシュに保存（10分間）
-			ktpwp_cache_set( $cache_key, $skills, 600 );
-		}
+			return $wpdb->get_results( $sql, ARRAY_A );
+		}, 3600 ); // 1時間に延長
 		
 		wp_send_json( $skills );
 	}
