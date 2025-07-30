@@ -1,7 +1,7 @@
 <?php
 /**
  * 強化版ダミーデータ作成スクリプト
- * バージョン: 2.2.4
+ * バージョン: 2.2.6
  * 
  * 以下のデータを作成します：
  * - 顧客×6件
@@ -58,7 +58,21 @@ function weighted_random_choice($weights) {
 }
 
 echo "強化版ダミーデータ作成を開始します...\n";
-echo "バージョン: 2.2.4 (職能作成順序修正)\n";
+echo "バージョン: 2.2.6 (警告表示対応)\n";
+echo "==========================================\n";
+
+// 警告メッセージの表示
+echo "⚠️  警告: ダミーデータ作成について\n";
+echo "==========================================\n";
+echo "• 既存のダミーデータは完全に削除されます\n";
+echo "• 本番環境での実行は絶対に避けてください\n";
+echo "• 実行前にデータベースのバックアップを推奨します\n";
+echo "• この操作は取り消しできません\n";
+echo "==========================================\n";
+
+// 既存のダミーデータをクリアしてIDをリセット
+echo "既存のダミーデータをクリアしてIDをリセットします...\n";
+clear_dummy_data();
 echo "==========================================\n";
 
 // 1. 顧客データの作成
@@ -394,7 +408,7 @@ foreach ($client_ids as $client_id) {
 
 echo "\n==========================================\n";
 echo "強化版ダミーデータ作成が完了しました！\n";
-echo "バージョン: 2.2.4 (職能作成順序修正)\n";
+echo "バージョン: 2.2.6 (警告表示対応)\n";
 echo "作成されたデータ:\n";
 echo "- 顧客: " . count($client_ids) . "件\n";
 echo "- 協力会社: " . count($supplier_ids) . "件\n";
@@ -410,6 +424,7 @@ echo "- 完了日設定: 完成・請求済の注文には適切な完了日を�
 echo "- 職能: 各協力会社に税率10%、税率8%、非課税の3パターン\n";
 echo "- サービス: 一般（税率10%）×2、食品（税率8%）×2、不動産（非課税）×2\n";
 echo "- 各受注書に請求項目とコスト項目を自動追加\n";
+echo "\n注意: このデータはテスト用です。本番環境では使用しないでください。\n";
 
 /**
  * 受注書に請求項目を追加
@@ -477,13 +492,13 @@ function add_cost_items_to_order($order_id, $supplier_ids) {
     
     if ($table_exists) {
         echo "DEBUG: コスト項目テーブルが存在します\n";
-        
-        // 1-3個の協力会社をランダムに選択
+    
+    // 1-3個の協力会社をランダムに選択
         $num_items = min(rand(1, 3), count($supplier_ids));
         echo "DEBUG: 選択する協力会社数: {$num_items}\n";
         
         if ($num_items > 0 && !empty($supplier_ids)) {
-            $selected_suppliers = array_rand(array_flip($supplier_ids), $num_items);
+    $selected_suppliers = array_rand(array_flip($supplier_ids), $num_items);
             
             // 単一の値の場合は配列に変換
             if (!is_array($selected_suppliers)) {
@@ -491,41 +506,41 @@ function add_cost_items_to_order($order_id, $supplier_ids) {
             }
             
             echo "DEBUG: 選択された協力会社ID: " . implode(', ', $selected_suppliers) . "\n";
-            
-            foreach ($selected_suppliers as $supplier_id) {
+    
+    foreach ($selected_suppliers as $supplier_id) {
                 echo "DEBUG: 協力会社ID {$supplier_id} の職能を検索中...\n";
                 
-                // 協力会社の職能をランダムに選択
-                $skill = $wpdb->get_row($wpdb->prepare(
-                    "SELECT * FROM {$wpdb->prefix}ktp_supplier_skills WHERE supplier_id = %d ORDER BY RAND() LIMIT 1",
-                    $supplier_id
-                ));
-                
-                if ($skill) {
+        // 協力会社の職能をランダムに選択
+        $skill = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}ktp_supplier_skills WHERE supplier_id = %d ORDER BY RAND() LIMIT 1",
+            $supplier_id
+        ));
+        
+        if ($skill) {
                     echo "DEBUG: 職能が見つかりました: {$skill->product_name}\n";
                     
-                    $quantity = rand(1, 10);
-                    $unit_price = $skill->unit_price;
-                    $total_cost = $quantity * $unit_price;
-                    
+            $quantity = rand(1, 10);
+            $unit_price = $skill->unit_price;
+            $total_cost = $quantity * $unit_price;
+            
                     $result = $wpdb->insert(
                         $wpdb->prefix . 'ktp_order_cost_items',
-                        array(
-                            'order_id' => $order_id,
-                            'supplier_id' => $supplier_id,
+                array(
+                    'order_id' => $order_id,
+                    'supplier_id' => $supplier_id,
                             'product_name' => $skill->product_name,
                             'price' => $unit_price,
-                            'quantity' => $quantity,
+                    'quantity' => $quantity,
                             'unit' => $skill->unit,
                             'amount' => $total_cost,
-                            'tax_rate' => $skill->tax_rate,
+                    'tax_rate' => $skill->tax_rate,
                             'remarks' => 'ダミーデータ',
                             'sort_order' => 1,
                             'created_at' => current_time('mysql'),
                             'updated_at' => current_time('mysql')
-                        ),
+                ),
                         array('%d', '%d', '%s', '%f', '%f', '%s', '%f', '%f', '%s', '%d', '%s', '%s')
-                    );
+            );
                     
                     if ($result) {
                         echo "DEBUG: コスト項目作成成功: {$skill->product_name} (数量: {$quantity}, 金額: ¥{$total_cost})\n";
@@ -550,12 +565,12 @@ function add_cost_items_to_order($order_id, $supplier_ids) {
 function clear_dummy_data() {
     global $wpdb;
     
-    echo "ダミーデータのクリアを開始します...\n";
+    echo "⚠️  データクリア警告: 既存のダミーデータを削除します...\n";
     
     // 外部キー制約を無効化
     $wpdb->query("SET FOREIGN_KEY_CHECKS = 0");
     
-    // 関連テーブルから削除
+    // 関連テーブルから削除（IDリセット対象）
     $tables_to_clear = array(
         'ktp_order_cost_items',
         'ktp_order_invoice_items',
@@ -568,18 +583,28 @@ function clear_dummy_data() {
     
     foreach ($tables_to_clear as $table) {
         $table_name = $wpdb->prefix . $table;
+        
+        // データを削除
         $result = $wpdb->query("DELETE FROM {$table_name}");
         if ($result !== false) {
             echo "テーブル {$table} をクリアしました\n";
         } else {
             echo "テーブル {$table} のクリアに失敗しました: " . $wpdb->last_error . "\n";
         }
+        
+        // AUTO_INCREMENTをリセット
+        $reset_result = $wpdb->query("ALTER TABLE {$table_name} AUTO_INCREMENT = 1");
+        if ($reset_result !== false) {
+            echo "テーブル {$table} のAUTO_INCREMENTをリセットしました\n";
+        } else {
+            echo "テーブル {$table} のAUTO_INCREMENTリセットに失敗しました: " . $wpdb->last_error . "\n";
+        }
     }
     
     // 外部キー制約を再有効化
     $wpdb->query("SET FOREIGN_KEY_CHECKS = 1");
     
-    echo "ダミーデータのクリアが完了しました！\n";
+    echo "✅ ダミーデータのクリアが完了しました！\n";
 }
 
 // コマンドライン引数でクリア機能を実行

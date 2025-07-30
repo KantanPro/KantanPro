@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.0.0(a)
+Stable tag: 1.0.1(a)
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -52,6 +52,8 @@ KantanProは、WordPress上で以下の業務を一元管理できる多機能�
 - **モバイル表示の改善**（レスポンシブデザイン強化・タッチ操作最適化・モバイル専用UI改善）
 - **更新チェック問題テスト**（更新システムの安定性向上・バグ修正・パフォーマンス最適化）
 - **KantanPro License Managerプラグインの連携１−１**（ライセンス管理システムとの統合・ライセンス検証機能・ライセンス情報管理・レート制限機能・セキュアなAPI通信）
+- **ダミーデータツール機能**（管理画面でのテストデータ作成・顧客・サービス・協力会社・受注データの一括生成）
+- **基本的レポート機能**（月別売上レポート・進捗状況の統計・グラフ表示機能・データエクスポート機能）
 
 == インストール ==
 
@@ -238,6 +240,10 @@ KantanProは、WordPress上で以下の業務を一元管理できる多機能�
 * 推奨PHP拡張: GD（画像処理用）
 
 == 変更履歴 ==
+
+= 1.0.1(a) - 2025年7月30日 =
+* ダミーデーターツール実装
+* 基本的レポート機能実装
 
 = 1.0.0(a) - 2025年7月29日 =
 * ktpa開発開始
