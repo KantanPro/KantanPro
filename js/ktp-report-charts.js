@@ -99,66 +99,71 @@
             // nonce設定後にグラフを初期化
             initializeCharts();
         } else {
-            console.error('ktp_ajax_objectが利用できません');
+            console.error('ktp_ajax_objectが見つかりません');
         }
     });
 
-    /**
-     * 現在の期間を取得
-     */
+    // 現在の期間を取得
     function getCurrentPeriod() {
         const urlParams = new URLSearchParams(window.location.search);
         return urlParams.get('period') || 'all_time';
     }
 
-    /**
-     * グラフの初期化
-     */
+    // グラフの初期化
     function initializeCharts() {
-        // 売上レポートのグラフ
-        initializeSalesCharts();
+        const currentReport = getCurrentReportType();
+        const currentPeriod = getCurrentPeriod();
         
-        // 進捗レポートのグラフ
-        initializeProgressCharts();
+        console.log('グラフ初期化:', { report: currentReport, period: currentPeriod });
         
-        // 顧客レポートのグラフ
-        initializeClientCharts();
-        
-        // サービスレポートのグラフ
-        initializeServiceCharts();
-        
-        // 協力会社レポートのグラフ
-        initializeSupplierCharts();
+        // レポートタイプに応じてグラフを初期化
+        switch (currentReport) {
+            case 'sales':
+                initializeSalesCharts(currentPeriod);
+                break;
+            case 'progress':
+                initializeProgressCharts(currentPeriod);
+                break;
+            case 'client':
+                initializeClientCharts(currentPeriod);
+                break;
+            case 'service':
+                initializeServiceCharts(currentPeriod);
+                break;
+            case 'supplier':
+                initializeSupplierCharts(currentPeriod);
+                break;
+            default:
+                initializeSalesCharts(currentPeriod);
+                break;
+        }
     }
 
-    /**
-     * 売上レポートのグラフ初期化
-     */
-    function initializeSalesCharts() {
-        const period = getCurrentPeriod();
+    // 売上レポートのグラフ初期化
+    function initializeSalesCharts(period = 'all_time') {
+        console.log('売上レポートグラフ初期化開始:', period);
         
-        // AJAXでデータを取得してグラフを描画
-        fetchReportData('sales', period).then(data => {
-            console.log('売上レポートデータ:', data);
+        fetchReportData('sales', period).then(function(data) {
+            console.log('売上データ取得成功:', data);
             
             // 月別売上推移グラフ
-            const monthlySalesCanvas = document.getElementById('monthlySalesChart');
-            if (monthlySalesCanvas && data.monthly) {
-                const labels = data.monthly.map(item => item.label);
-                const values = data.monthly.map(item => item.value);
-                
-                new Chart(monthlySalesCanvas, {
+            const monthlySalesCtx = document.getElementById('monthlySalesChart');
+            if (monthlySalesCtx && data.monthly_sales) {
+                new Chart(monthlySalesCtx, {
                     type: 'line',
                     data: {
-                        labels: labels,
+                        labels: data.monthly_sales.labels,
                         datasets: [{
-                            label: '月別売上',
-                            data: values,
+                            label: '売上金額',
+                            data: data.monthly_sales.data,
                             borderColor: chartColors.primary,
-                            backgroundColor: chartColors.primary + '20',
-                            borderWidth: 3,
+                            backgroundColor: 'rgba(25, 118, 210, 0.1)',
+                            tension: 0.4,
                             fill: true,
-                            tension: 0.4
+                            pointBackgroundColor: chartColors.primary,
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            pointRadius: 6
                         }]
                     },
                     options: {
@@ -169,9 +174,19 @@
                                 display: true,
                                 text: '月別売上推移',
                                 color: chartColors.dark,
-                                font: {
-                                    size: 16,
-                                    weight: 'bold'
+                                font: { size: 16, weight: 'bold' }
+                            }
+                        },
+                        scales: {
+                            ...commonOptions.scales,
+                            y: {
+                                ...commonOptions.scales.y,
+                                beginAtZero: true,
+                                ticks: {
+                                    ...commonOptions.scales.y.ticks,
+                                    callback: function(value) {
+                                        return '¥' + value.toLocaleString();
+                                    }
                                 }
                             }
                         }
@@ -180,22 +195,76 @@
             }
 
             // 進捗別売上グラフ
-            const progressSalesCanvas = document.getElementById('progressSalesChart');
-            if (progressSalesCanvas && data.progress) {
-                const labels = data.progress.map(item => item.label);
-                const values = data.progress.map(item => item.value);
-                
-                new Chart(progressSalesCanvas, {
+            const progressSalesCtx = document.getElementById('progressSalesChart');
+            if (progressSalesCtx && data.progress_sales) {
+                new Chart(progressSalesCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: data.progress_sales.labels,
+                        datasets: [{
+                            label: '売上金額',
+                            data: data.progress_sales.data,
+                            backgroundColor: data.progress_sales.labels.map((_, index) => 
+                                getGradientColor(chartColors.gradients[index % chartColors.gradients.length])
+                            ),
+                            borderColor: '#fff',
+                            borderWidth: 2,
+                            borderRadius: 8
+                        }]
+                    },
+                    options: {
+                        ...barChartOptions,
+                        plugins: {
+                            ...barChartOptions.plugins,
+                            title: {
+                                display: true,
+                                text: '進捗別売上',
+                                color: chartColors.dark,
+                                font: { size: 16, weight: 'bold' }
+                            }
+                        },
+                        scales: {
+                            ...barChartOptions.scales,
+                            y: {
+                                ...barChartOptions.scales.y,
+                                beginAtZero: true,
+                                ticks: {
+                                    ...barChartOptions.scales.y.ticks,
+                                    callback: function(value) {
+                                        return '¥' + value.toLocaleString();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }).catch(function(error) {
+            console.error('売上データ取得エラー:', error);
+        });
+    }
+
+    // 進捗レポートのグラフ初期化
+    function initializeProgressCharts(period = 'all_time') {
+        console.log('進捗レポートグラフ初期化開始:', period);
+        
+        fetchReportData('progress', period).then(function(data) {
+            console.log('進捗データ取得成功:', data);
+            
+            // 進捗状況分布グラフ
+            const progressDistributionCtx = document.getElementById('progressDistributionChart');
+            if (progressDistributionCtx && data.progress_distribution) {
+                new Chart(progressDistributionCtx, {
                     type: 'doughnut',
                     data: {
-                        labels: labels,
+                        labels: data.progress_distribution.labels,
                         datasets: [{
-                            data: values,
-                            backgroundColor: chartColors.gradients.map(gradient => {
-                                return getGradientColor(gradient);
-                            }),
-                            borderWidth: 2,
-                            borderColor: '#fff'
+                            data: data.progress_distribution.data,
+                            backgroundColor: data.progress_distribution.labels.map((_, index) => 
+                                getGradientColor(chartColors.gradients[index % chartColors.gradients.length])
+                            ),
+                            borderColor: '#fff',
+                            borderWidth: 3
                         }]
                     },
                     options: {
@@ -206,77 +275,15 @@
                                 position: 'bottom',
                                 labels: {
                                     color: chartColors.dark,
-                                    font: {
-                                        size: 12
-                                    }
+                                    font: { size: 12 },
+                                    padding: 20
                                 }
                             },
                             title: {
                                 display: true,
-                                text: '進捗別売上',
-                                color: chartColors.dark,
-                                font: {
-                                    size: 16,
-                                    weight: 'bold'
-                                }
-                            }
-                        }
-                    }
-                });
-            }
-        });
-    }
-
-    /**
-     * 進捗レポートのグラフ初期化
-     */
-    function initializeProgressCharts() {
-        const period = getCurrentPeriod();
-        
-        // AJAXでデータを取得してグラフを描画
-        fetchReportData('progress', period).then(data => {
-            // 進捗状況分布グラフ
-            const progressDistributionCanvas = document.getElementById('progressDistributionChart');
-            if (progressDistributionCanvas && data.progress) {
-                const labels = data.progress.map(item => item.label);
-                const values = data.progress.map(item => item.value);
-                
-                new Chart(progressDistributionCanvas, {
-                    type: 'bar',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: '案件数',
-                            data: values,
-                            backgroundColor: chartColors.gradients.map(gradient => {
-                                return getGradientColor(gradient);
-                            }),
-                            borderColor: '#fff',
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        ...commonOptions,
-                        plugins: {
-                            ...commonOptions.plugins,
-                            title: {
-                                display: true,
                                 text: '進捗状況分布',
                                 color: chartColors.dark,
-                                font: {
-                                    size: 16,
-                                    weight: 'bold'
-                                }
-                            }
-                        },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                ticks: {
-                                    callback: function(value) {
-                                        return value + '件';
-                                    }
-                                }
+                                font: { size: 16, weight: 'bold' }
                             }
                         }
                     }
@@ -284,48 +291,43 @@
             }
 
             // 納期管理グラフ
-            const deadlineCanvas = document.getElementById('deadlineChart');
-            if (deadlineCanvas && data.deadline) {
-                const labels = data.deadline.map(item => item.label);
-                const overdue = data.deadline.map(item => item.overdue);
-                const onTime = data.deadline.map(item => item.on_time);
-                
-                new Chart(deadlineCanvas, {
+            const deadlineCtx = document.getElementById('deadlineChart');
+            if (deadlineCtx && data.deadline_management) {
+                new Chart(deadlineCtx, {
                     type: 'bar',
                     data: {
-                        labels: labels,
+                        labels: data.deadline_management.labels,
                         datasets: [{
-                            label: '納期超過',
-                            data: overdue,
-                            backgroundColor: chartColors.warning,
+                            label: '案件数',
+                            data: data.deadline_management.data,
+                            backgroundColor: data.deadline_management.labels.map((label, index) => {
+                                if (label === '期限超過') return '#f44336';
+                                if (label === '期限間近') return '#ff9800';
+                                return '#4caf50';
+                            }),
                             borderColor: '#fff',
-                            borderWidth: 1
-                        }, {
-                            label: '納期内',
-                            data: onTime,
-                            backgroundColor: chartColors.success,
-                            borderColor: '#fff',
-                            borderWidth: 1
+                            borderWidth: 2,
+                            borderRadius: 8
                         }]
                     },
                     options: {
-                        ...commonOptions,
+                        ...barChartOptions,
                         plugins: {
-                            ...commonOptions.plugins,
+                            ...barChartOptions.plugins,
                             title: {
                                 display: true,
-                                text: '納期管理',
+                                text: '納期管理状況',
                                 color: chartColors.dark,
-                                font: {
-                                    size: 16,
-                                    weight: 'bold'
-                                }
+                                font: { size: 16, weight: 'bold' }
                             }
                         },
                         scales: {
+                            ...barChartOptions.scales,
                             y: {
+                                ...barChartOptions.scales.y,
                                 beginAtZero: true,
                                 ticks: {
+                                    ...barChartOptions.scales.y.ticks,
                                     callback: function(value) {
                                         return value + '件';
                                     }
@@ -335,33 +337,34 @@
                     }
                 });
             }
+        }).catch(function(error) {
+            console.error('進捗データ取得エラー:', error);
         });
     }
 
-    /**
-     * 顧客レポートのグラフ初期化
-     */
-    function initializeClientCharts() {
-        const period = getCurrentPeriod();
+    // 顧客レポートのグラフ初期化
+    function initializeClientCharts(period = 'all_time') {
+        console.log('顧客レポートグラフ初期化開始:', period);
         
-        // AJAXでデータを取得してグラフを描画
-        fetchReportData('client', period).then(data => {
+        fetchReportData('client', period).then(function(data) {
+            console.log('顧客データ取得成功:', data);
+            
             // 顧客別売上グラフ
-            const clientSalesCanvas = document.getElementById('clientSalesChart');
-            if (clientSalesCanvas && data.sales) {
-                const labels = data.sales.map(item => item.label);
-                const values = data.sales.map(item => item.value);
-                
-                new Chart(clientSalesCanvas, {
+            const clientSalesCtx = document.getElementById('clientSalesChart');
+            if (clientSalesCtx && data.client_sales) {
+                new Chart(clientSalesCtx, {
                     type: 'bar',
                     data: {
-                        labels: labels,
+                        labels: data.client_sales.labels,
                         datasets: [{
-                            label: '売上',
-                            data: values,
-                            backgroundColor: chartColors.primary,
+                            label: '売上金額',
+                            data: data.client_sales.data,
+                            backgroundColor: data.client_sales.labels.map((_, index) => 
+                                getGradientColor(chartColors.gradients[index % chartColors.gradients.length])
+                            ),
                             borderColor: '#fff',
-                            borderWidth: 1
+                            borderWidth: 2,
+                            borderRadius: 8
                         }]
                     },
                     options: {
@@ -372,9 +375,19 @@
                                 display: true,
                                 text: '顧客別売上',
                                 color: chartColors.dark,
-                                font: {
-                                    size: 16,
-                                    weight: 'bold'
+                                font: { size: 16, weight: 'bold' }
+                            }
+                        },
+                        scales: {
+                            ...barChartOptions.scales,
+                            y: {
+                                ...barChartOptions.scales.y,
+                                beginAtZero: true,
+                                ticks: {
+                                    ...barChartOptions.scales.y.ticks,
+                                    callback: function(value) {
+                                        return '¥' + value.toLocaleString();
+                                    }
                                 }
                             }
                         }
@@ -383,22 +396,19 @@
             }
 
             // 顧客別案件数グラフ
-            const clientOrderCanvas = document.getElementById('clientOrderChart');
-            if (clientOrderCanvas && data.orders) {
-                const labels = data.orders.map(item => item.label);
-                const values = data.orders.map(item => item.value);
-                
-                new Chart(clientOrderCanvas, {
+            const clientOrderCtx = document.getElementById('clientOrderChart');
+            if (clientOrderCtx && data.client_orders) {
+                new Chart(clientOrderCtx, {
                     type: 'pie',
                     data: {
-                        labels: labels,
+                        labels: data.client_orders.labels,
                         datasets: [{
-                            data: values,
-                            backgroundColor: chartColors.gradients.map(gradient => {
-                                return getGradientColor(gradient);
-                            }),
+                            data: data.client_orders.data,
+                            backgroundColor: data.client_orders.labels.map((_, index) => 
+                                getGradientColor(chartColors.gradients[index % chartColors.gradients.length])
+                            ),
                             borderColor: '#fff',
-                            borderWidth: 2
+                            borderWidth: 3
                         }]
                     },
                     options: {
@@ -409,51 +419,48 @@
                                 position: 'bottom',
                                 labels: {
                                     color: chartColors.dark,
-                                    font: {
-                                        size: 12
-                                    }
+                                    font: { size: 12 },
+                                    padding: 20
                                 }
                             },
                             title: {
                                 display: true,
                                 text: '顧客別案件数',
                                 color: chartColors.dark,
-                                font: {
-                                    size: 16,
-                                    weight: 'bold'
-                                }
+                                font: { size: 16, weight: 'bold' }
                             }
                         }
                     }
                 });
             }
+        }).catch(function(error) {
+            console.error('顧客データ取得エラー:', error);
         });
     }
 
-    /**
-     * サービスレポートのグラフ初期化
-     */
-    function initializeServiceCharts() {
-        const period = getCurrentPeriod();
+    // サービスレポートのグラフ初期化
+    function initializeServiceCharts(period = 'all_time') {
+        console.log('サービスレポートグラフ初期化開始:', period);
         
-        // AJAXでデータを取得してグラフを描画
-        fetchReportData('service', period).then(data => {
+        fetchReportData('service', period).then(function(data) {
+            console.log('サービスデータ取得成功:', data);
+            
             // サービス別売上グラフ
-            const serviceSalesCanvas = document.getElementById('serviceSalesChart');
-            if (serviceSalesCanvas && data.sales) {
-                const labels = data.sales.map(item => item.label);
-                const values = data.sales.map(item => item.value);
-                
-                new Chart(serviceSalesCanvas, {
+            const serviceSalesCtx = document.getElementById('serviceSalesChart');
+            if (serviceSalesCtx && data.service_sales) {
+                new Chart(serviceSalesCtx, {
                     type: 'bar',
                     data: {
-                        labels: labels,
+                        labels: data.service_sales.labels,
                         datasets: [{
-                            label: '売上',
-                            data: values,
-                            backgroundColor: chartColors.secondary,
+                            label: '売上金額',
+                            data: data.service_sales.data,
+                            backgroundColor: data.service_sales.labels.map((_, index) => 
+                                getGradientColor(chartColors.gradients[index % chartColors.gradients.length])
+                            ),
                             borderColor: '#fff',
-                            borderWidth: 1
+                            borderWidth: 2,
+                            borderRadius: 8
                         }]
                     },
                     options: {
@@ -464,9 +471,19 @@
                                 display: true,
                                 text: 'サービス別売上',
                                 color: chartColors.dark,
-                                font: {
-                                    size: 16,
-                                    weight: 'bold'
+                                font: { size: 16, weight: 'bold' }
+                            }
+                        },
+                        scales: {
+                            ...barChartOptions.scales,
+                            y: {
+                                ...barChartOptions.scales.y,
+                                beginAtZero: true,
+                                ticks: {
+                                    ...barChartOptions.scales.y.ticks,
+                                    callback: function(value) {
+                                        return '¥' + value.toLocaleString();
+                                    }
                                 }
                             }
                         }
@@ -474,78 +491,81 @@
                 });
             }
 
-            // サービス利用率グラフ
-            const serviceUsageCanvas = document.getElementById('serviceUsageChart');
-            if (serviceUsageCanvas && data.usage) {
-                const labels = data.usage.map(item => item.label);
-                const values = data.usage.map(item => item.value);
-                
-                new Chart(serviceUsageCanvas, {
-                    type: 'doughnut',
+            // サービス別数量グラフ
+            const serviceQuantityCtx = document.getElementById('serviceQuantityChart');
+            if (serviceQuantityCtx && data.service_quantity) {
+                new Chart(serviceQuantityCtx, {
+                    type: 'line',
                     data: {
-                        labels: labels,
+                        labels: data.service_quantity.labels,
                         datasets: [{
-                            data: values,
-                            backgroundColor: chartColors.gradients.map(gradient => {
-                                return getGradientColor(gradient);
-                            }),
-                            borderColor: '#fff',
-                            borderWidth: 2
+                            label: '数量',
+                            data: data.service_quantity.data,
+                            borderColor: chartColors.secondary,
+                            backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                            tension: 0.4,
+                            fill: true,
+                            pointBackgroundColor: chartColors.secondary,
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            pointRadius: 6
                         }]
                     },
                     options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
+                        ...commonOptions,
                         plugins: {
-                            legend: {
-                                position: 'bottom',
-                                labels: {
-                                    color: chartColors.dark,
-                                    font: {
-                                        size: 12
-                                    }
-                                }
-                            },
+                            ...commonOptions.plugins,
                             title: {
                                 display: true,
-                                text: 'サービス利用率',
+                                text: 'サービス別数量',
                                 color: chartColors.dark,
-                                font: {
-                                    size: 16,
-                                    weight: 'bold'
+                                font: { size: 16, weight: 'bold' }
+                            }
+                        },
+                        scales: {
+                            ...commonOptions.scales,
+                            y: {
+                                ...commonOptions.scales.y,
+                                beginAtZero: true,
+                                ticks: {
+                                    ...commonOptions.scales.y.ticks,
+                                    callback: function(value) {
+                                        return value + '個';
+                                    }
                                 }
                             }
                         }
                     }
                 });
             }
+        }).catch(function(error) {
+            console.error('サービスデータ取得エラー:', error);
         });
     }
 
-    /**
-     * 協力会社レポートのグラフ初期化
-     */
-    function initializeSupplierCharts() {
-        const period = getCurrentPeriod();
+    // 協力会社レポートのグラフ初期化
+    function initializeSupplierCharts(period = 'all_time') {
+        console.log('協力会社レポートグラフ初期化開始:', period);
         
-        // AJAXでデータを取得してグラフを描画
-        fetchReportData('supplier', period).then(data => {
-            // 協力会社別貢献度グラフ
-            const supplierContributionCanvas = document.getElementById('supplierContributionChart');
-            if (supplierContributionCanvas && data.contribution) {
-                const labels = data.contribution.map(item => item.label);
-                const values = data.contribution.map(item => item.value);
-                
-                new Chart(supplierContributionCanvas, {
+        fetchReportData('supplier', period).then(function(data) {
+            console.log('協力会社データ取得成功:', data);
+            
+            // 協力会社別スキル数グラフ
+            const supplierSkillsCtx = document.getElementById('supplierSkillsChart');
+            if (supplierSkillsCtx && data.supplier_skills) {
+                new Chart(supplierSkillsCtx, {
                     type: 'bar',
                     data: {
-                        labels: labels,
+                        labels: data.supplier_skills.labels,
                         datasets: [{
-                            label: '貢献度',
-                            data: values,
-                            backgroundColor: chartColors.accent,
+                            label: 'スキル数',
+                            data: data.supplier_skills.data,
+                            backgroundColor: data.supplier_skills.labels.map((_, index) => 
+                                getGradientColor(chartColors.gradients[index % chartColors.gradients.length])
+                            ),
                             borderColor: '#fff',
-                            borderWidth: 1
+                            borderWidth: 2,
+                            borderRadius: 8
                         }]
                     },
                     options: {
@@ -554,11 +574,21 @@
                             ...barChartOptions.plugins,
                             title: {
                                 display: true,
-                                text: '協力会社別貢献度',
+                                text: '協力会社別スキル数',
                                 color: chartColors.dark,
-                                font: {
-                                    size: 16,
-                                    weight: 'bold'
+                                font: { size: 16, weight: 'bold' }
+                            }
+                        },
+                        scales: {
+                            ...barChartOptions.scales,
+                            y: {
+                                ...barChartOptions.scales.y,
+                                beginAtZero: true,
+                                ticks: {
+                                    ...barChartOptions.scales.y.ticks,
+                                    callback: function(value) {
+                                        return value + '個';
+                                    }
                                 }
                             }
                         }
@@ -566,23 +596,20 @@
                 });
             }
 
-            // スキル別分布グラフ
-            const skillDistributionCanvas = document.getElementById('skillDistributionChart');
-            if (skillDistributionCanvas && data.skills) {
-                const labels = data.skills.map(item => item.label);
-                const values = data.skills.map(item => item.value);
-                
-                new Chart(skillDistributionCanvas, {
-                    type: 'pie',
+            // スキル別協力会社数グラフ
+            const skillSuppliersCtx = document.getElementById('skillSuppliersChart');
+            if (skillSuppliersCtx && data.skill_suppliers) {
+                new Chart(skillSuppliersCtx, {
+                    type: 'doughnut',
                     data: {
-                        labels: labels,
+                        labels: data.skill_suppliers.labels,
                         datasets: [{
-                            data: values,
-                            backgroundColor: chartColors.gradients.map(gradient => {
-                                return getGradientColor(gradient);
-                            }),
+                            data: data.skill_suppliers.data,
+                            backgroundColor: data.skill_suppliers.labels.map((_, index) => 
+                                getGradientColor(chartColors.gradients[index % chartColors.gradients.length])
+                            ),
                             borderColor: '#fff',
-                            borderWidth: 2
+                            borderWidth: 3
                         }]
                     },
                     options: {
@@ -593,115 +620,88 @@
                                 position: 'bottom',
                                 labels: {
                                     color: chartColors.dark,
-                                    font: {
-                                        size: 12
-                                    }
+                                    font: { size: 12 },
+                                    padding: 20
                                 }
                             },
                             title: {
                                 display: true,
-                                text: 'スキル別分布',
+                                text: 'スキル別協力会社数',
                                 color: chartColors.dark,
-                                font: {
-                                    size: 16,
-                                    weight: 'bold'
-                                }
+                                font: { size: 16, weight: 'bold' }
                             }
                         }
                     }
                 });
             }
+        }).catch(function(error) {
+            console.error('協力会社データ取得エラー:', error);
         });
     }
 
-    /**
-     * AJAXデータ取得関数群
-     */
-    
-    /**
-     * AJAXでレポートデータを取得
-     */
+    // レポートデータを取得
     function fetchReportData(reportType, period = 'all_time') {
-        return new Promise((resolve, reject) => {
+        console.log('レポートデータ取得開始:', { reportType, period });
+        
+        return new Promise(function(resolve, reject) {
             if (typeof ktp_ajax_object === 'undefined') {
-                // AJAXが利用できない場合は空のデータを返す
-                console.warn('AJAXオブジェクトが利用できません');
-                resolve({});
+                reject(new Error('AJAX設定が見つかりません'));
                 return;
             }
 
             const formData = new FormData();
-            formData.append('action', 'ktp_get_report_data');
+            formData.append('action', 'ktpwp_get_report_data');
             formData.append('report_type', reportType);
             formData.append('period', period);
-            // nonceが空の場合はktp_ajax_objectから直接取得
-            const nonce = window.ktp_report_nonce || (typeof ktp_ajax_object !== 'undefined' ? ktp_ajax_object.nonce : '');
-            formData.append('nonce', nonce);
-            
-            console.log('AJAXリクエスト送信:', {
-                action: 'ktp_get_report_data',
-                report_type: reportType,
-                period: period,
-                nonce: nonce
-            });
+            formData.append('nonce', window.ktp_report_nonce || ktp_ajax_object.nonce);
 
             fetch(ktp_ajax_object.ajax_url, {
                 method: 'POST',
                 body: formData
             })
-            .then(response => {
-                console.log('AJAXレスポンス:', {
-                    status: response.status,
-                    statusText: response.statusText,
-                    url: response.url
-                });
-                
-                // レスポンスのテキストを取得してログ出力
-                return response.text().then(text => {
-                    console.log('AJAXレスポンス本文:', text.substring(0, 500) + (text.length > 500 ? '...' : ''));
-                    
-                    try {
-                        return JSON.parse(text);
-                    } catch (parseError) {
-                        console.error('JSON解析エラー:', parseError);
-                        console.error('レスポンス本文:', text);
-                        throw new Error('Invalid JSON response');
-                    }
-                });
+            .then(function(response) {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
             })
-            .then(data => {
-                console.log('AJAXレスポンス解析結果:', data);
+            .then(function(data) {
+                console.log('AJAXレスポンス:', data);
                 if (data.success) {
-                    console.log('レポートデータ取得成功:', data.data);
                     resolve(data.data);
                 } else {
-                    console.warn('レポートデータの取得に失敗しました:', data);
-                    resolve({});
+                    reject(new Error(data.data || 'データ取得に失敗しました'));
                 }
             })
-            .catch(error => {
+            .catch(function(error) {
                 console.error('AJAXエラー:', error);
-                resolve({});
+                reject(error);
             });
         });
     }
 
-    // ダミーデータ関数は削除（実際のデータのみを使用）
+    // 現在のレポートタイプを取得
+    function getCurrentReportType() {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get('report_type') || 'sales';
+    }
 
-    /**
-     * グラデーション文字列から色を取得（簡易版）
-     */
+    // グラデーション色を取得
     function getGradientColor(gradient) {
-        const colorMap = {
-            'linear-gradient(135deg, #667eea 0%, #764ba2 100%)': '#667eea',
-            'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)': '#f093fb',
-            'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)': '#4facfe',
-            'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)': '#43e97b',
-            'linear-gradient(135deg, #fa709a 0%, #fee140 100%)': '#fa709a',
-            'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)': '#a8edea',
-            'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)': '#ff9a9e'
-        };
-        return colorMap[gradient] || '#667eea';
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const gradientObj = ctx.createLinearGradient(0, 0, 0, 400);
+        
+        if (gradient.includes('linear-gradient')) {
+            // グラデーション文字列から色を抽出
+            const colors = gradient.match(/#[a-fA-F0-9]{6}/g);
+            if (colors && colors.length >= 2) {
+                gradientObj.addColorStop(0, colors[0]);
+                gradientObj.addColorStop(1, colors[1]);
+            }
+        }
+        
+        return gradientObj;
     }
 
     // グローバルスコープに公開（必要に応じて）

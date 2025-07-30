@@ -286,8 +286,8 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 			$content .= '</div>';
 			
 			$content .= '<div style="background:#f8f9fa;padding:20px;border-radius:8px;">';
-			$content .= '<h4 style="margin:0 0 16px 0;">サービス利用率</h4>';
-			$content .= '<canvas id="serviceUsageChart" width="400" height="300"></canvas>';
+			$content .= '<h4 style="margin:0 0 16px 0;">サービス別数量</h4>';
+			$content .= '<canvas id="serviceQuantityChart" width="400" height="300"></canvas>';
 			$content .= '</div>';
 			$content .= '</div>';
 
@@ -312,13 +312,13 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 			// グラフエリア
 			$content .= '<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:24px;">';
 			$content .= '<div style="background:#f8f9fa;padding:20px;border-radius:8px;">';
-			$content .= '<h4 style="margin:0 0 16px 0;">協力会社別貢献度</h4>';
-			$content .= '<canvas id="supplierContributionChart" width="400" height="300"></canvas>';
+			$content .= '<h4 style="margin:0 0 16px 0;">協力会社別スキル数</h4>';
+			$content .= '<canvas id="supplierSkillsChart" width="400" height="300"></canvas>';
 			$content .= '</div>';
 			
 			$content .= '<div style="background:#f8f9fa;padding:20px;border-radius:8px;">';
-			$content .= '<h4 style="margin:0 0 16px 0;">スキル別分布</h4>';
-			$content .= '<canvas id="skillDistributionChart" width="400" height="300"></canvas>';
+			$content .= '<h4 style="margin:0 0 16px 0;">スキル別協力会社数</h4>';
+			$content .= '<canvas id="skillSuppliersChart" width="400" height="300"></canvas>';
 			$content .= '</div>';
 			$content .= '</div>';
 
@@ -337,11 +337,13 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 			$current_period = isset( $_GET['period'] ) ? sanitize_text_field( $_GET['period'] ) : 'all_time';
 			
 			$periods = array(
-				'current_year' => '今年',
+				'all_time' => '全期間',
+				'this_year' => '今年',
 				'last_year' => '去年',
-				'current_month' => '今月',
+				'this_month' => '今月',
 				'last_month' => '先月',
-				'all_time' => '全期間'
+				'last_3_months' => '過去3ヶ月',
+				'last_6_months' => '過去6ヶ月'
 			);
 
 			$content = '<div style="margin-bottom:24px;padding:16px;background:#f8f9fa;border-radius:8px;">';
