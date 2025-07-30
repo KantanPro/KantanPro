@@ -1,14 +1,27 @@
 <?php
 /**
  * 強化版ダミーデータ作成スクリプト
+ * バージョン: 2.1.0
  * 
  * 以下のデータを作成します：
  * - 顧客×6件
  * - 協力会社×6件
  * - サービス×6件（一般：税率10%・食品：税率8%・不動産：非課税）
- * - 受注書×18件（顧客×6件 × 進捗3ステータス：受付中・受注・完成）
+ * - 受注書×ランダム件数（顧客ごとに2-8件、進捗は重み付きランダム分布）
  * - 職能×18件（協力会社×6件 × 税率3パターン：税率10%・税率8%・非課税）
  * - 請求項目とコスト項目を各受注書に追加
+ * 
+ * 進捗分布：
+ * - 受付中: 15%
+ * - 見積中: 20%
+ * - 受注: 25%
+ * - 進行中: 20%
+ * - 完成: 15%
+ * - 請求済: 5%
+ * 
+ * 日付設定：
+ * - 受注・進行中: 将来の納期を設定
+ * - 完成・請求済: 過去の納期と適切な完了日を設定
  */
 
 // WordPress環境の読み込み
@@ -27,7 +40,26 @@ if (!defined('ABSPATH')) {
 
 global $wpdb;
 
+// 重み付きランダム選択関数
+function weighted_random_choice($weights) {
+    $total_weight = array_sum($weights);
+    $random = mt_rand(1, $total_weight);
+    $current_weight = 0;
+    
+    foreach ($weights as $key => $weight) {
+        $current_weight += $weight;
+        if ($random <= $current_weight) {
+            return $key;
+        }
+    }
+    
+    // フォールバック
+    return array_keys($weights)[0];
+}
+
 echo "強化版ダミーデータ作成を開始します...\n";
+echo "バージョン: 2.1.0 (ランダム進捗分布対応)\n";
+echo "==========================================\n";
 
 // 1. 顧客データの作成
 $clients = array(
@@ -125,51 +157,76 @@ foreach ($services as $service) {
     }
 }
 
-// 4. 受注書データの作成（顧客×6件 × 進捗6ステータス：受付中・見積中・受注・進行中・完成・請求済）
+// 4. 受注書データの作成（ランダムな進捗分布）
 $order_statuses = array(1, 2, 3, 4, 5, 6); // 受付中、見積中、受注、進行中、完成、請求済
 $order_names = array('Webサイトリニューアル', 'ECサイト構築', '業務システム開発', 'マーケティング戦略策定', 'ロゴデザイン制作', 'データ分析サービス', 'モバイルアプリ開発', 'SEO対策サービス', 'SNS運用代行', '動画制作');
 
 $order_ids = array();
 foreach ($client_ids as $client_id) {
-    // 顧客ごとに3件の注文を作成（受付中・受注・完成）
-    foreach ($order_statuses as $status) {
+    // 顧客ごとにランダムな数の注文を作成（2-8件）
+    $order_count = rand(2, 8);
+    for ($i = 0; $i < $order_count; $i++) {
+        // 進捗をランダムに選択（重み付きランダム）
+        $status_weights = array(
+            1 => 15, // 受付中: 15%
+            2 => 20, // 見積中: 20%
+            3 => 25, // 受注: 25%
+            4 => 20, // 進行中: 20%
+            5 => 15, // 完成: 15%
+            6 => 5   // 請求済: 5%
+        );
+        
+        $status = weighted_random_choice($status_weights);
         $project_name = $order_names[array_rand($order_names)];
         
         // 進捗に応じて日付を設定
         switch ($status) {
             case 1: // 受付中 - 最近（1-30日前）
                 $days_ago = rand(1, 30);
+                $delivery_days_from_now = rand(30, 120); // 将来の納期
                 break;
             case 2: // 見積中 - 最近（1-60日前）
                 $days_ago = rand(1, 60);
+                $delivery_days_from_now = rand(30, 150); // 将来の納期
                 break;
             case 3: // 受注 - 中程度（30-120日前）
                 $days_ago = rand(30, 120);
+                $delivery_days_from_now = rand(30, 180); // 将来の納期
                 break;
             case 4: // 進行中 - 中程度（60-150日前）
                 $days_ago = rand(60, 150);
+                $delivery_days_from_now = rand(7, 90); // 近い将来の納期
                 break;
             case 5: // 完成 - 過去（90-180日前）
                 $days_ago = rand(90, 180);
+                $delivery_days_from_now = rand(-60, 30); // 過去から近い将来の納期
                 break;
             case 6: // 請求済 - 過去（120-200日前）
                 $days_ago = rand(120, 200);
+                $delivery_days_from_now = rand(-120, -30); // 過去の納期
                 break;
             default:
                 $days_ago = rand(1, 365);
+                $delivery_days_from_now = rand(30, 180);
         }
         
         $order_date = date('Y-m-d', strtotime('-' . $days_ago . ' days'));
-        $delivery_date = date('Y-m-d', strtotime('+' . rand(1, 90) . ' days'));
+        $delivery_date = date('Y-m-d', strtotime($delivery_days_from_now . ' days'));
         $total_amount = rand(100000, 2000000);
-        
-
         
         // 完了済みの注文には完了日を設定
         $completion_date = null;
-        if ($status == 5) { // 完成
-            $completion_days_ago = rand(1, $days_ago - 30); // 注文日より後、現在より前
-            $completion_date = date('Y-m-d', strtotime('-' . $completion_days_ago . ' days'));
+        if ($status == 5 || $status == 6) { // 完成または請求済
+            // 注文日より後、納期より前または同時の完了日を設定
+            $order_to_delivery_days = (strtotime($delivery_date) - strtotime($order_date)) / (24 * 60 * 60);
+            if ($order_to_delivery_days > 0) {
+                $completion_days_before_delivery = rand(0, min(30, $order_to_delivery_days)); // 納期の0-30日前に完了
+                $completion_date = date('Y-m-d', strtotime($delivery_date . ' -' . $completion_days_before_delivery . ' days'));
+            } else {
+                // 納期が過去の場合は、注文日から適切な期間後に完了
+                $completion_days_after_order = rand(30, 90);
+                $completion_date = date('Y-m-d', strtotime($order_date . ' +' . $completion_days_after_order . ' days'));
+            }
         }
         
         // ステータスラベルの定義
@@ -333,7 +390,9 @@ foreach ($supplier_ids as $supplier_id) {
     }
 }
 
-echo "\n強化版ダミーデータ作成が完了しました！\n";
+echo "\n==========================================\n";
+echo "強化版ダミーデータ作成が完了しました！\n";
+echo "バージョン: 2.1.0 (ランダム進捗分布対応)\n";
 echo "作成されたデータ:\n";
 echo "- 顧客: " . count($client_ids) . "件\n";
 echo "- 協力会社: " . count($supplier_ids) . "件\n";
@@ -343,7 +402,9 @@ echo "- 職能: " . (count($supplier_ids) * 3) . "件\n";
 echo "\n詳細:\n";
 echo "- 顧客: 各社のメールアドレスは全て info@kantanpro.com\n";
 echo "- 協力会社: 各社のメールアドレスは全て info@kantanpro.com\n";
-echo "- 受注書: 過去365日以内のランダムな日付で作成（受付中・受注・完成の3ステータス）\n";
+echo "- 受注書: ランダムな進捗分布で作成（受付中15%、見積中20%、受注25%、進行中20%、完成15%、請求済5%）\n";
+echo "- 納期設定: 進捗に応じて適切な納期を設定（受注・進行中は将来、完成・請求済は過去）\n";
+echo "- 完了日設定: 完成・請求済の注文には適切な完了日を設定\n";
 echo "- 職能: 各協力会社に税率10%、税率8%、非課税の3パターン\n";
 echo "- サービス: 一般（税率10%）×2、食品（税率8%）×2、不動産（非課税）×2\n";
 echo "- 各受注書に請求項目とコスト項目を自動追加\n";
@@ -401,10 +462,16 @@ function add_cost_items_to_order($order_id, $supplier_ids) {
     global $wpdb;
     
     // 1-3個の協力会社をランダムに選択
-    $num_items = rand(1, 3);
-    $selected_suppliers = array_rand(array_flip($supplier_ids), $num_items);
-    
-    foreach ($selected_suppliers as $supplier_id) {
+    $num_items = min(rand(1, 3), count($supplier_ids));
+    if ($num_items > 0 && !empty($supplier_ids)) {
+        $selected_suppliers = array_rand(array_flip($supplier_ids), $num_items);
+        
+        // 単一の値の場合は配列に変換
+        if (!is_array($selected_suppliers)) {
+            $selected_suppliers = array($selected_suppliers);
+        }
+        
+        foreach ($selected_suppliers as $supplier_id) {
         // 協力会社の職能をランダムに選択
         $skill = $wpdb->get_row($wpdb->prepare(
             "SELECT * FROM {$wpdb->prefix}ktp_supplier_skills WHERE supplier_id = %d ORDER BY RAND() LIMIT 1",
@@ -433,6 +500,7 @@ function add_cost_items_to_order($order_id, $supplier_ids) {
                 array('%d', '%d', '%d', '%s', '%d', '%f', '%f', '%f', '%s', '%s')
             );
         }
+    }
     }
 }
 

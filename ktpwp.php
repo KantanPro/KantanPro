@@ -5167,6 +5167,10 @@ function ktpwp_dummy_data_page() {
     <div class="wrap ktp-dummy-data-wrap">
         <h1>KantanPro ダミーデータ作成</h1>
         
+        <div class="ktp-dummy-data-version">
+            <p><strong>バージョン:</strong> <?php echo esc_html(KANTANPRO_PLUGIN_VERSION); ?></p>
+        </div>
+        
         <div class="ktp-dummy-data-info">
             <p><strong>作成されるデータ:</strong></p>
             <ul>
@@ -5340,286 +5344,33 @@ function ktpwp_handle_create_dummy_data_ajax() {
             return;
         }
         
-        $created_data = array();
+        // 新しいダミーデータ作成スクリプトを実行
+        $dummy_data_script = plugin_dir_path(__FILE__) . 'create_dummy_data.php';
         
-        // 1. 顧客データの作成（6件）
-        $clients = array(
-            array('company_name' => '株式会社サンプルA', 'name' => '田中太郎', 'email' => 'info@kantanpro.com', 'phone' => '03-1234-5678', 'address' => '東京都渋谷区サンプル1-1-1'),
-            array('company_name' => '有限会社サンプルB', 'name' => '佐藤花子', 'email' => 'info@kantanpro.com', 'phone' => '03-2345-6789', 'address' => '東京都新宿区サンプル2-2-2'),
-            array('company_name' => '合同会社サンプルC', 'name' => '鈴木一郎', 'email' => 'info@kantanpro.com', 'phone' => '03-3456-7890', 'address' => '東京都港区サンプル3-3-3'),
-            array('company_name' => '株式会社サンプルD', 'name' => '高橋美咲', 'email' => 'info@kantanpro.com', 'phone' => '03-4567-8901', 'address' => '東京都品川区サンプル4-4-4'),
-            array('company_name' => '有限会社サンプルE', 'name' => '渡辺健太', 'email' => 'info@kantanpro.com', 'phone' => '03-5678-9012', 'address' => '東京都目黒区サンプル5-5-5'),
-            array('company_name' => '株式会社サンプルF', 'name' => '伊藤麻衣', 'email' => 'info@kantanpro.com', 'phone' => '03-6789-0123', 'address' => '東京都世田谷区サンプル6-6-6')
-        );
-        
-        $client_ids = array();
-        foreach ($clients as $client) {
-            $result = $wpdb->insert(
-                $wpdb->prefix . 'ktp_client',
-                array(
-                    'company_name' => $client['company_name'],
-                    'name' => $client['name'],
-                    'email' => $client['email'],
-                    'phone' => $client['phone'],
-                    'address' => $client['address']
-                ),
-                array('%s', '%s', '%s', '%s', '%s')
-            );
-            
-            if ($result) {
-                $client_ids[] = $wpdb->insert_id;
-            }
-        }
-        $created_data['clients'] = count($client_ids);
-        
-        // 2. 受注書データの作成（顧客×6件 × ステータス3パターン = 18件）
-        $order_statuses = array('受付中', '受注', '完成');
-        $project_names = array('ウェブサイトリニューアル', 'システム開発プロジェクト', 'マーケティング支援', 'デザイン制作', 'コンサルティング業務', 'データ分析プロジェクト');
-        
-        $order_ids = array();
-        foreach ($client_ids as $client_id) {
-            foreach ($order_statuses as $status) {
-                $project_name = $project_names[array_rand($project_names)];
-                $order_date = date('Y-m-d', strtotime('-' . rand(0, 365) . ' days'));
-                $delivery_date = date('Y-m-d', strtotime('+' . rand(1, 90) . ' days'));
-                $total_amount = rand(100000, 1000000);
-                $order_number = 'ORD-' . date('Ymd') . '-' . sprintf('%04d', rand(1, 9999));
-                
-                $result = $wpdb->insert(
-                    $wpdb->prefix . 'ktp_order',
-                    array(
-                        'client_id' => $client_id,
-                        'project_name' => $project_name,
-                        'order_date' => $order_date,
-                        'expected_delivery_date' => $delivery_date,
-                        'total_amount' => $total_amount,
-                        'status' => $status,
-                        'memo' => 'ダミーデータ',
-                        'order_number' => $order_number
-                    ),
-                    array('%d', '%s', '%s', '%s', '%f', '%s', '%s', '%s')
-                );
-                
-                if ($result) {
-                    $order_ids[] = $wpdb->insert_id;
-                }
-            }
-        }
-        $created_data['orders'] = count($order_ids);
-        
-        // 3. 協力会社データの作成（6件）
-        $suppliers = array(
-            array('company_name' => '株式会社フリーランスネット', 'name' => '山田次郎', 'email' => 'info@kantanpro.com', 'memo' => 'フリーランス専門'),
-            array('company_name' => '有限会社デジタルクリエイター', 'name' => '中村由美', 'email' => 'info@kantanpro.com', 'memo' => 'デジタル制作'),
-            array('company_name' => '合同会社システム開発', 'name' => '小林正男', 'email' => 'info@kantanpro.com', 'memo' => 'システム開発'),
-            array('company_name' => '株式会社ウェブデザイン', 'name' => '加藤真理', 'email' => 'info@kantanpro.com', 'memo' => 'ウェブデザイン'),
-            array('company_name' => '有限会社コンサルティング', 'name' => '松本和也', 'email' => 'info@kantanpro.com', 'memo' => '経営コンサル'),
-            array('company_name' => '株式会社ロジスティクス', 'name' => '井上智子', 'email' => 'info@kantanpro.com', 'memo' => '物流サービス')
-        );
-        
-        $supplier_ids = array();
-        foreach ($suppliers as $supplier) {
-            $result = $wpdb->insert(
-                $wpdb->prefix . 'ktp_supplier',
-                array(
-                    'company_name' => $supplier['company_name'],
-                    'name' => $supplier['name'],
-                    'email' => $supplier['email'],
-                    'memo' => $supplier['memo']
-                ),
-                array('%s', '%s', '%s', '%s')
-            );
-            
-            if ($result) {
-                $supplier_ids[] = $wpdb->insert_id;
-            }
-        }
-        $created_data['suppliers'] = count($supplier_ids);
-        
-        // 4. 職能データの作成（協力会社×6件 × 税率3パターン = 18件）
-        $skill_names = array('プログラミング', 'デザイン', 'ライティング', 'マーケティング', 'コンサルティング', 'データ分析', '翻訳', '動画編集', '写真撮影', 'SEO対策', 'SNS運用', '動画制作');
-        $tax_rates = array(10.00, 8.00, null); // 税率10%、税率8%、非課税
-        
-        $skills_created = 0;
-        foreach ($supplier_ids as $supplier_id) {
-            foreach ($tax_rates as $tax_rate) {
-                $product_name = $skill_names[array_rand($skill_names)];
-                $unit_price = rand(5000, 50000);
-                $quantity = rand(1, 10);
-                $unit = '時間';
-                
-                $result = $wpdb->insert(
-                    $wpdb->prefix . 'ktp_supplier_skills',
-                    array(
-                        'supplier_id' => $supplier_id,
-                        'product_name' => $product_name,
-                        'unit_price' => $unit_price,
-                        'quantity' => $quantity,
-                        'unit' => $unit,
-                        'tax_rate' => $tax_rate,
-                        'frequency' => rand(1, 100)
-                    ),
-                    array('%d', '%s', '%f', '%d', '%s', '%f', '%d')
-                );
-                
-                if ($result) {
-                    $skills_created++;
-                }
-            }
-        }
-        $created_data['skills'] = $skills_created;
-        
-        // 5. サービスデータの作成（一般：税率10%・食品：税率8%・不動産：非課税）各×2 = 6件
-        $services = array(
-            // 一般（税率10%）
-            array('service_name' => 'ウェブサイト制作', 'price' => 150000, 'unit' => '件', 'tax_rate' => 10.00, 'category' => '一般'),
-            array('service_name' => 'システム開発', 'price' => 500000, 'unit' => '件', 'tax_rate' => 10.00, 'category' => '一般'),
-            // 食品（税率8%）
-            array('service_name' => '食品配送サービス', 'price' => 3000, 'unit' => '回', 'tax_rate' => 8.00, 'category' => '食品'),
-            array('service_name' => 'ケータリングサービス', 'price' => 50000, 'unit' => '回', 'tax_rate' => 8.00, 'category' => '食品'),
-            // 不動産（非課税）
-            array('service_name' => '不動産仲介', 'price' => 100000, 'unit' => '件', 'tax_rate' => null, 'category' => '不動産'),
-            array('service_name' => '不動産管理', 'price' => 20000, 'unit' => '月', 'tax_rate' => null, 'category' => '不動産')
-        );
-        
-        $services_created = 0;
-        foreach ($services as $service) {
-            $result = $wpdb->insert(
-                $wpdb->prefix . 'ktp_service',
-                array(
-                    'service_name' => $service['service_name'],
-                    'price' => $service['price'],
-                    'unit' => $service['unit'],
-                    'tax_rate' => $service['tax_rate'],
-                    'category' => $service['category']
-                ),
-                array('%s', '%f', '%s', '%f', '%s')
-            );
-            
-            if ($result) {
-                $services_created++;
-            }
-        }
-        $created_data['services'] = $services_created;
-        
-        // 6. 受注書に請求項目とコスト項目を追加
-        $invoice_items_added = 0;
-        $cost_items_added = 0;
-        
-        foreach ($order_ids as $order_id) {
-            // 請求項目を追加（サービスから3件）
-            $services_for_order = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}ktp_service ORDER BY RAND() LIMIT 3");
-            foreach ($services_for_order as $service) {
-                $max_sort_order = $wpdb->get_var($wpdb->prepare(
-                    "SELECT COALESCE(MAX(sort_order), 0) FROM {$wpdb->prefix}ktp_order_invoice_items WHERE order_id = %d",
-                    $order_id
-                ));
-                $new_sort_order = intval($max_sort_order) + 1;
-                
-                $quantity = rand(1, 3);
-                $amount = $service->price * $quantity;
-                
-                $result = $wpdb->insert(
-                    $wpdb->prefix . 'ktp_order_invoice_items',
-                    array(
-                        'order_id' => $order_id,
-                        'product_name' => $service->service_name,
-                        'price' => $service->price,
-                        'quantity' => $quantity,
-                        'unit' => $service->unit,
-                        'amount' => $amount,
-                        'tax_rate' => $service->tax_rate,
-                        'remarks' => 'ダミーデータ',
-                        'sort_order' => $new_sort_order
-                    ),
-                    array('%d', '%s', '%f', '%d', '%s', '%f', '%f', '%s', '%d')
-                );
-                
-                if ($result) {
-                    $invoice_items_added++;
-                }
-            }
-            
-            // コスト項目を追加（協力会社職能から4件）
-            $supplier_skills_for_order = $wpdb->get_results("
-                SELECT ss.*, s.company_name 
-                FROM {$wpdb->prefix}ktp_supplier_skills ss
-                JOIN {$wpdb->prefix}ktp_supplier s ON ss.supplier_id = s.id
-                ORDER BY RAND() 
-                LIMIT 4
-            ");
-            
-            foreach ($supplier_skills_for_order as $skill) {
-                $max_sort_order = $wpdb->get_var($wpdb->prepare(
-                    "SELECT COALESCE(MAX(sort_order), 0) FROM {$wpdb->prefix}ktp_order_cost_items WHERE order_id = %d",
-                    $order_id
-                ));
-                $new_sort_order = intval($max_sort_order) + 1;
-                
-                $amount = $skill->unit_price * $skill->quantity;
-                
-                $result = $wpdb->insert(
-                    $wpdb->prefix . 'ktp_order_cost_items',
-                    array(
-                        'order_id' => $order_id,
-                        'product_name' => $skill->product_name,
-                        'price' => $skill->unit_price,
-                        'quantity' => $skill->quantity,
-                        'unit' => $skill->unit,
-                        'amount' => $amount,
-                        'tax_rate' => $skill->tax_rate,
-                        'remarks' => "協力会社: {$skill->company_name}",
-                        'sort_order' => $new_sort_order,
-                        'supplier_id' => $skill->supplier_id
-                    ),
-                    array('%d', '%s', '%f', '%d', '%s', '%f', '%f', '%s', '%d', '%d')
-                );
-                
-                if ($result) {
-                    $cost_items_added++;
-                }
-            }
+        if (!file_exists($dummy_data_script)) {
+            wp_send_json_error(array('message' => 'ダミーデータ作成スクリプトが見つかりません。'));
+            return;
         }
         
-        $created_data['invoice_items'] = $invoice_items_added;
-        $created_data['cost_items'] = $cost_items_added;
+        // 出力をキャプチャするために出力バッファリングを使用
+        ob_start();
         
-        $success_message = sprintf(
-            'ダミーデータの作成が完了しました！<br><br>作成されたデータ:<br>• 顧客: %d件<br>• 受注書: %d件<br>• 協力会社: %d件<br>• 職能: %d件<br>• サービス: %d件<br>• 請求項目: %d件<br>• コスト項目: %d件',
-            $created_data['clients'],
-            $created_data['orders'],
-            $created_data['suppliers'],
-            $created_data['skills'],
-            $created_data['services'],
-            $created_data['invoice_items'],
-            $created_data['cost_items']
-        );
+        // ダミーデータ作成スクリプトをインクルード
+        include_once $dummy_data_script;
         
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('KTPWP: ダミーデータ作成成功 - ' . $success_message);
-        }
+        $output = ob_get_clean();
         
+        // 成功メッセージを返す
         wp_send_json_success(array(
-            'message' => $success_message,
-            'data' => $created_data
+            'message' => 'ダミーデータが正常に作成されました。',
+            'output' => $output
         ));
         
     } catch (Exception $e) {
         if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('KTPWP: ダミーデータ作成エラー - ' . $e->getMessage());
+            error_log('KTPWP: ダミーデータ作成中にエラーが発生しました: ' . $e->getMessage());
         }
-        
-        wp_send_json_error(array(
-            'message' => 'エラーが発生しました: ' . $e->getMessage()
-        ));
-    } finally {
-        // 出力バッファをクリア（予期しない出力を除去）
-        $output = ob_get_clean();
-        
-        // デバッグ時のみ、予期しない出力があればログに記録
-        if (defined('WP_DEBUG') && WP_DEBUG && !empty($output)) {
-            error_log('KTPWP: ダミーデータ作成AJAX中に予期しない出力を検出: ' . substr($output, 0, 1000));
-        }
+        wp_send_json_error(array('message' => 'ダミーデータ作成中にエラーが発生しました: ' . $e->getMessage()));
     }
 }
 

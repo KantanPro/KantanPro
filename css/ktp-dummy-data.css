@@ -21,6 +21,20 @@
     font-weight: 600;
 }
 
+.ktp-dummy-data-version {
+    background: #fff3cd;
+    border-left: 4px solid #ffc107;
+    padding: 8px 12px;
+    margin: 15px 0;
+    border-radius: 3px;
+}
+
+.ktp-dummy-data-version p {
+    margin: 0;
+    color: #856404;
+    font-size: 14px;
+}
+
 .ktp-dummy-data-info {
     background: #f0f6fc;
     border-left: 4px solid #2271b1;
