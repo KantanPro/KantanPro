@@ -29,7 +29,22 @@ class KTPWP_Cache {
     /**
      * デフォルトキャッシュ有効期限（秒）
      */
-    const DEFAULT_EXPIRATION = 3600; // 1時間
+    const DEFAULT_EXPIRATION = 7200; // 2時間（配布先での表示速度向上のため延長）
+    
+    /**
+     * 長時間キャッシュ有効期限（秒）
+     */
+    const LONG_EXPIRATION = 86400; // 24時間
+    
+    /**
+     * 短時間キャッシュ有効期限（秒）
+     */
+    const SHORT_EXPIRATION = 1800; // 30分
+    
+    /**
+     * キャッシュ自動有効化フラグ
+     */
+    const AUTO_ENABLE_CACHE = true;
     
     /**
      * シングルトンインスタンス
@@ -80,6 +95,15 @@ class KTPWP_Cache {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG && is_admin() ) {
             add_action( 'admin_footer', array( $this, 'display_cache_stats' ) );
         }
+        
+        // 配布先での表示速度向上のため、キャッシュを自動有効化
+        if ( self::AUTO_ENABLE_CACHE ) {
+            add_action( 'init', array( $this, 'auto_enable_cache' ) );
+        }
+        
+        // パフォーマンス監視
+        add_action( 'wp_footer', array( $this, 'monitor_performance' ) );
+        add_action( 'admin_footer', array( $this, 'monitor_performance' ) );
     }
 
     /**
@@ -406,6 +430,129 @@ class KTPWP_Cache {
             
             // 結果をTransientに保存
             if ( false !== $data ) {
+                $this->set_transient( $key, $data, $expiration );
+            }
+        }
+        
+        return $data;
+    }
+
+    /**
+     * キャッシュを自動有効化（配布先での表示速度向上）
+     */
+    public function auto_enable_cache() {
+        // オブジェクトキャッシュが利用可能かチェック
+        if ( ! wp_using_ext_object_cache() ) {
+            // 外部オブジェクトキャッシュがない場合は、WordPressの内部キャッシュを最適化
+            $this->optimize_internal_cache();
+        }
+        
+        // キャッシュ統計の初期化
+        $this->initialize_cache_stats();
+        
+        // デバッグログ
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP Cache: 自動有効化が実行されました' );
+        }
+    }
+
+    /**
+     * 内部キャッシュを最適化
+     */
+    private function optimize_internal_cache() {
+        // WordPressの内部キャッシュ設定を最適化
+        if ( ! defined( 'WP_CACHE' ) ) {
+            define( 'WP_CACHE', true );
+        }
+        
+        // キャッシュディレクトリの確認と作成
+        $cache_dir = WP_CONTENT_DIR . '/cache';
+        if ( ! is_dir( $cache_dir ) ) {
+            wp_mkdir_p( $cache_dir );
+        }
+        
+        // キャッシュファイルのパーミッション設定
+        if ( is_dir( $cache_dir ) ) {
+            chmod( $cache_dir, 0755 );
+        }
+    }
+
+    /**
+     * キャッシュ統計を初期化
+     */
+    private function initialize_cache_stats() {
+        // キャッシュ統計をTransientに保存
+        $stats = $this->get_cache_stats();
+        $this->set_transient( 'ktpwp_cache_stats', $stats, self::LONG_EXPIRATION );
+    }
+
+    /**
+     * パフォーマンス監視
+     */
+    public function monitor_performance() {
+        // 管理者のみに表示
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
+        
+        // パフォーマンス統計を取得
+        $stats = $this->get_cache_stats();
+        $total_requests = $stats['hits'] + $stats['misses'];
+        $hit_rate = $total_requests > 0 ? round( ( $stats['hits'] / $total_requests ) * 100, 2 ) : 0;
+        
+        // メモリ使用量を取得
+        $memory_usage = memory_get_usage( true );
+        $memory_limit = ini_get( 'memory_limit' );
+        
+        // 実行時間を取得
+        $execution_time = microtime( true ) - $_SERVER['REQUEST_TIME_FLOAT'];
+        
+        // パフォーマンス警告を表示
+        if ( $hit_rate < 50 && $total_requests > 10 ) {
+            echo '<div style="position: fixed; bottom: 10px; left: 10px; background: #fff3cd; border: 1px solid #ffeaa7; padding: 10px; font-size: 12px; z-index: 9999; max-width: 300px;">';
+            echo '<strong>⚠️ パフォーマンス警告</strong><br>';
+            echo "キャッシュヒット率: {$hit_rate}%<br>";
+            echo "メモリ使用量: " . size_format( $memory_usage ) . "<br>";
+            echo "実行時間: " . round( $execution_time, 3 ) . "秒<br>";
+            echo '<button onclick="this.parentElement.style.display=\'none\'" style="margin-top: 5px;">閉じる</button>';
+            echo '</div>';
+        }
+    }
+
+    /**
+     * 配布先での表示速度向上のための特別なキャッシュ戦略
+     * 
+     * @param string $key キャッシュキー
+     * @param callable $callback データ取得コールバック
+     * @param int $expiration 有効期限
+     * @return mixed キャッシュされたデータ
+     */
+    public function distribution_cache( $key, $callback, $expiration = null ) {
+        // 配布先ではより長いキャッシュ時間を使用
+        if ( null === $expiration ) {
+            $expiration = self::LONG_EXPIRATION;
+        }
+        
+        // 複数のキャッシュレイヤーを使用
+        $data = $this->get( $key );
+        if ( false !== $data ) {
+            return $data;
+        }
+        
+        $data = $this->get_transient( $key );
+        if ( false !== $data ) {
+            // Transientから取得したデータをオブジェクトキャッシュにも保存
+            $this->set( $key, $data, $expiration );
+            return $data;
+        }
+        
+        // データが存在しない場合はコールバックを実行
+        if ( is_callable( $callback ) ) {
+            $data = call_user_func( $callback );
+            
+            if ( false !== $data ) {
+                // 両方のキャッシュレイヤーに保存
+                $this->set( $key, $data, $expiration );
                 $this->set_transient( $key, $data, $expiration );
             }
         }
