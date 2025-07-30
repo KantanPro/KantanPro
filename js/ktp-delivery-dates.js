@@ -48,9 +48,9 @@ window.handleProgressChange = function(selectElement) {
                 $completionInput.css('border-color', '#ddd');
             }, 2000);
         }
-    } else if (newProgress < 4 && $completionInput.length > 0) {
-        // 進捗が完了以前に戻された場合、完了日をクリア
-        console.log('[DELIVERY-DATES] 進捗が完了以前に戻されたため、完了日をクリアします');
+    } else if ([1, 2, 3].includes(newProgress) && $completionInput.length > 0) {
+        // 進捗が受注以前（受付中、見積中、受注）に変更された場合のみ、完了日をクリア
+        console.log('[DELIVERY-DATES] 進捗が受注以前に変更されたため、完了日をクリアします');
         $completionInput.val('');
         
         // フォーム内の隠し完了日フィールドもクリア
