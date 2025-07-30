@@ -234,18 +234,22 @@ foreach ($client_ids as $client_id) {
             echo "WARNING: client_idが設定されていません。\n";
         }
         
+        // ランダムにサービスを選択
+        $service_id = $service_ids[array_rand($service_ids)];
+        
         // まず基本的なデータを挿入
         $sql = $wpdb->prepare(
             "INSERT INTO {$wpdb->prefix}ktp_order (
-                order_number, client_id, project_name, order_date, 
+                order_number, client_id, service_id, project_name, order_date, 
                 desired_delivery_date, expected_delivery_date, total_amount, 
                 status, updated_at, time, customer_name, user_name, company_name, search_field,
                 progress, memo, completion_date
             ) VALUES (
-                %s, %d, %s, %s, %s, %s, %f, %s, %s, %d, %s, %s, %s, %s, %d, %s, %s
+                %s, %d, %d, %s, %s, %s, %s, %f, %s, %s, %d, %s, %s, %s, %s, %d, %s, %s
             )",
             $order_number,
             $client_id,
+            $service_id,
             $project_name,
             $order_date,
             $delivery_date,

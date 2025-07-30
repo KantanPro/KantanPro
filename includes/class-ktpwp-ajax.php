@@ -5024,57 +5024,31 @@ class KTPWP_Ajax {
 
 			$where_clause = $this->get_period_where_clause( $period );
 
-			// invoice_itemsテーブルの存在確認
-			$table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$wpdb->prefix}ktp_invoice_items'");
+			// サービス別売上TOP5
+			$sales_query = "SELECT 
+				s.service_name,
+				SUM(o.total_amount) as total_sales
+				FROM {$wpdb->prefix}ktp_order o 
+				LEFT JOIN {$wpdb->prefix}ktp_service s ON o.service_id = s.id 
+				WHERE 1=1 {$where_clause} AND o.service_id IS NOT NULL
+				GROUP BY s.id 
+				ORDER BY total_sales DESC 
+				LIMIT 5";
 
-			if ($table_exists) {
-				// invoice_itemsテーブルが存在する場合
-				// サービス別売上TOP10
-				$sales_query = "SELECT 
-					s.service_name,
-					SUM(oi.quantity * oi.unit_price) as total_sales
-					FROM {$wpdb->prefix}ktp_order o 
-					LEFT JOIN {$wpdb->prefix}ktp_invoice_items oi ON o.id = oi.order_id 
-					LEFT JOIN {$wpdb->prefix}ktp_service s ON oi.service_id = s.id 
-					WHERE 1=1 {$where_clause} 
-					GROUP BY s.id 
-					ORDER BY total_sales DESC 
-					LIMIT 10";
+			$sales_results = $wpdb->get_results( $sales_query );
 
-				$sales_results = $wpdb->get_results( $sales_query );
+			// サービス別数量TOP5
+			$usage_query = "SELECT 
+				s.service_name,
+				COUNT(o.id) as usage_count
+				FROM {$wpdb->prefix}ktp_order o 
+				LEFT JOIN {$wpdb->prefix}ktp_service s ON o.service_id = s.id 
+				WHERE 1=1 {$where_clause} AND o.service_id IS NOT NULL
+				GROUP BY s.id 
+				ORDER BY usage_count DESC 
+				LIMIT 5";
 
-				// サービス利用率
-				$usage_query = "SELECT 
-					s.service_name,
-					COUNT(DISTINCT o.id) as usage_count
-					FROM {$wpdb->prefix}ktp_order o 
-					LEFT JOIN {$wpdb->prefix}ktp_invoice_items oi ON o.id = oi.order_id 
-					LEFT JOIN {$wpdb->prefix}ktp_service s ON oi.service_id = s.id 
-					WHERE 1=1 {$where_clause} 
-					GROUP BY s.id 
-					ORDER BY usage_count DESC 
-					LIMIT 10";
-
-				$usage_results = $wpdb->get_results( $usage_query );
-			} else {
-				// invoice_itemsテーブルが存在しない場合、orderテーブルのtotal_amountを使用
-				$sales_query = "SELECT 
-					'総売上' as service_name,
-					SUM(o.total_amount) as total_sales
-					FROM {$wpdb->prefix}ktp_order o 
-					WHERE 1=1 {$where_clause}";
-
-				$sales_results = $wpdb->get_results( $sales_query );
-
-				// 案件数
-				$usage_query = "SELECT 
-					'総案件数' as service_name,
-					COUNT(o.id) as usage_count
-					FROM {$wpdb->prefix}ktp_order o 
-					WHERE 1=1 {$where_clause}";
-
-				$usage_results = $wpdb->get_results( $usage_query );
-			}
+			$usage_results = $wpdb->get_results( $usage_query );
 
 			$sales_data = array();
 			$usage_data = array();
