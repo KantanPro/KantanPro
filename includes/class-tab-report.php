@@ -312,7 +312,7 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 			// グラフエリア
 			$content .= '<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:24px;">';
 			$content .= '<div style="background:#f8f9fa;padding:20px;border-radius:8px;">';
-			$content .= '<h4 style="margin:0 0 16px 0;">協力会社別スキル数</h4>';
+			$content .= '<h4 style="margin:0 0 16px 0;">協力会社別貢献度</h4>';
 			$content .= '<canvas id="supplierSkillsChart" width="400" height="300"></canvas>';
 			$content .= '</div>';
 			
@@ -556,27 +556,15 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 			$period = isset( $_GET['period'] ) ? sanitize_text_field( $_GET['period'] ) : 'current_year';
 			$where_clause = $this->get_period_where_clause( $period );
 
-			// 協力会社別貢献度TOP5（invoice_itemsテーブルが存在しない場合の代替クエリ）
-			$table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$wpdb->prefix}ktp_invoice_items'");
-			
-			if ($table_exists) {
-				// invoice_itemsテーブルが存在する場合
-				$supplier_query = "SELECT s.company_name, COUNT(DISTINCT o.id) as order_count, SUM(oi.quantity * oi.unit_price) as total_contribution 
-								  FROM {$wpdb->prefix}ktp_order o 
-								  LEFT JOIN {$wpdb->prefix}ktp_invoice_items oi ON o.id = oi.order_id 
-								  LEFT JOIN {$wpdb->prefix}ktp_supplier s ON oi.supplier_id = s.id 
-								  WHERE 1=1 {$where_clause} AND oi.supplier_id IS NOT NULL 
-								  GROUP BY s.id 
-								  ORDER BY total_contribution DESC 
-								  LIMIT 5";
-			} else {
-				// invoice_itemsテーブルが存在しない場合、orderテーブルのtotal_amountを使用
-				$supplier_query = "SELECT '協力会社貢献度' as company_name, COUNT(o.id) as order_count, SUM(o.total_amount) as total_contribution 
-								  FROM {$wpdb->prefix}ktp_order o 
-								  WHERE 1=1 {$where_clause} 
-								  ORDER BY total_contribution DESC 
-								  LIMIT 5";
-			}
+			// 協力会社別貢献度TOP5
+			$supplier_query = "SELECT s.company_name, COUNT(DISTINCT o.id) as order_count, SUM(oci.amount) as total_contribution 
+							  FROM {$wpdb->prefix}ktp_order o 
+							  LEFT JOIN {$wpdb->prefix}ktp_order_cost_items oci ON o.id = oci.order_id 
+							  LEFT JOIN {$wpdb->prefix}ktp_supplier s ON oci.supplier_id = s.id 
+							  WHERE 1=1 {$where_clause} AND oci.supplier_id IS NOT NULL 
+							  GROUP BY s.id 
+							  ORDER BY total_contribution DESC 
+							  LIMIT 5";
 			$supplier_results = $wpdb->get_results( $supplier_query );
 
 			$content = '<div style="background:#f8f9fa;padding:20px;border-radius:8px;margin-bottom:24px;">';

@@ -5091,62 +5091,32 @@ class KTPWP_Ajax {
 
 			$where_clause = $this->get_period_where_clause( $period );
 
-			// invoice_itemsテーブルの存在確認
-			$table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$wpdb->prefix}ktp_invoice_items'");
+			// 協力会社別貢献度TOP5
+			$contribution_query = "SELECT 
+				s.company_name,
+				SUM(oci.amount) as total_contribution
+				FROM {$wpdb->prefix}ktp_order o 
+				LEFT JOIN {$wpdb->prefix}ktp_order_cost_items oci ON o.id = oci.order_id 
+				LEFT JOIN {$wpdb->prefix}ktp_supplier s ON oci.supplier_id = s.id 
+				WHERE 1=1 {$where_clause} AND oci.supplier_id IS NOT NULL 
+				GROUP BY s.id 
+				ORDER BY total_contribution DESC 
+				LIMIT 5";
 
-			if ($table_exists) {
-				// invoice_itemsテーブルが存在する場合
-				// 協力会社別貢献度TOP10
-				$contribution_query = "SELECT 
-					s.company_name,
-					SUM(oi.quantity * oi.unit_price) as total_contribution
-					FROM {$wpdb->prefix}ktp_order o 
-					LEFT JOIN {$wpdb->prefix}ktp_invoice_items oi ON o.id = oi.order_id 
-					LEFT JOIN {$wpdb->prefix}ktp_supplier s ON oi.supplier_id = s.id 
-					WHERE 1=1 {$where_clause} AND oi.supplier_id IS NOT NULL 
-					GROUP BY s.id 
-					ORDER BY total_contribution DESC 
-					LIMIT 10";
+			$contribution_results = $wpdb->get_results( $contribution_query );
 
-				$contribution_results = $wpdb->get_results( $contribution_query );
-			} else {
-				// invoice_itemsテーブルが存在しない場合、orderテーブルのtotal_amountを使用
-				$contribution_query = "SELECT 
-					'総貢献度' as company_name,
-					SUM(o.total_amount) as total_contribution
-					FROM {$wpdb->prefix}ktp_order o 
-					WHERE 1=1 {$where_clause}";
+			// スキル別協力会社数TOP5
+			$skill_query = "SELECT 
+				ss.product_name,
+				COUNT(*) as skill_count
+				FROM {$wpdb->prefix}ktp_supplier_skills ss
+				LEFT JOIN {$wpdb->prefix}ktp_supplier s ON ss.supplier_id = s.id
+				WHERE ss.product_name IS NOT NULL
+				GROUP BY ss.product_name
+				ORDER BY skill_count DESC
+				LIMIT 5";
 
-				$contribution_results = $wpdb->get_results( $contribution_query );
-			}
-
-			// スキル別分布（supplier_skillsテーブルの存在確認）
-			$skills_table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$wpdb->prefix}ktp_supplier_skills'");
-			
-			if ($skills_table_exists) {
-				// skill_nameカラムの存在確認
-				$skill_name_exists = $wpdb->get_var("SHOW COLUMNS FROM {$wpdb->prefix}ktp_supplier_skills LIKE 'skill_name'");
-				
-				if ($skill_name_exists) {
-					$skill_query = "SELECT 
-						ss.skill_name,
-						COUNT(*) as skill_count
-						FROM {$wpdb->prefix}ktp_supplier_skills ss
-						LEFT JOIN {$wpdb->prefix}ktp_supplier s ON ss.supplier_id = s.id
-						WHERE ss.skill_name IS NOT NULL
-						GROUP BY ss.skill_name
-						ORDER BY skill_count DESC
-						LIMIT 10";
-
-					$skill_results = $wpdb->get_results( $skill_query );
-				} else {
-					// skill_nameカラムが存在しない場合
-					$skill_results = array();
-				}
-			} else {
-				// supplier_skillsテーブルが存在しない場合
-				$skill_results = array();
-			}
+			$skill_results = $wpdb->get_results( $skill_query );
 
 			$contribution_data = array();
 			$skill_data = array();
@@ -5160,7 +5130,7 @@ class KTPWP_Ajax {
 
 			foreach ( $skill_results as $result ) {
 				$skill_data[] = array(
-					'label' => $result->skill_name ?: '不明',
+					'label' => $result->product_name ?: '不明',
 					'value' => (int) $result->skill_count
 				);
 			}
