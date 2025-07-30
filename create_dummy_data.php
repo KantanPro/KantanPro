@@ -1,7 +1,7 @@
 <?php
 /**
  * 強化版ダミーデータ作成スクリプト
- * バージョン: 2.2.7
+ * バージョン: 2.2.8
  * 
  * 以下のデータを作成します：
  * - 顧客×6件
@@ -10,6 +10,10 @@
  * - 受注書×ランダム件数（顧客ごとに2-8件、進捗は重み付きランダム分布）
  * - 職能×18件（協力会社×6件 × 税率3パターン：税率10%・税率8%・非課税）
  * - 請求項目とコスト項目を各受注書に追加
+ * 
+ * 修正内容（v2.2.8）:
+ * - テーブル構造の不一致を修正（service_id、total_amountカラムを削除）
+ * - 受注書作成エラーの解決
  * 
  * 進捗分布：
  * - 受付中: 15%
@@ -113,7 +117,7 @@ function safe_echo($message) {
 }
 
 safe_echo("強化版ダミーデータ作成を開始します...");
-safe_echo("バージョン: 2.2.7 (配布先サイト対応)");
+safe_echo("バージョン: 2.2.8 (配布先サイト対応・テーブル構造修正版)");
 safe_echo("==========================================");
 
 // 警告メッセージの表示
@@ -312,7 +316,6 @@ foreach ($client_ids as $client_id) {
         
         $order_date = date('Y-m-d', strtotime('-' . $days_ago . ' days'));
         $delivery_date = date('Y-m-d', strtotime($delivery_days_from_now . ' days'));
-        $total_amount = rand(100000, 2000000);
         
         // 完了済みの注文には完了日を設定
         $completion_date = null;
@@ -391,27 +394,24 @@ foreach ($client_ids as $client_id) {
             safe_echo("WARNING: client_idが設定されていません。");
         }
         
-        // ランダムにサービスを選択
-        $service_id = $service_ids[array_rand($service_ids)];
+        // サービスIDは使用しない（テーブル構造に存在しないため）
         
         // まず基本的なデータを挿入
         $sql = $wpdb->prepare(
             "INSERT INTO {$wpdb->prefix}ktp_order (
-                order_number, client_id, service_id, project_name, order_date, 
-                desired_delivery_date, expected_delivery_date, total_amount, 
+                order_number, client_id, project_name, order_date, 
+                desired_delivery_date, expected_delivery_date, 
                 status, updated_at, time, customer_name, user_name, company_name, search_field,
                 progress, memo, completion_date
             ) VALUES (
-                %s, %d, %d, %s, %s, %s, %s, %f, %s, %s, %d, %s, %s, %s, %s, %d, %s, %s
+                %s, %d, %s, %s, %s, %s, %s, %s, %d, %s, %s, %s, %s, %d, %s, %s
             )",
             $order_number,
             $client_id,
-            $service_id,
             $project_name,
             $order_date,
             $delivery_date,
             $delivery_date,
-            $total_amount,
             $status_labels[$status],
             $current_datetime,
             $order_timestamp,
@@ -454,7 +454,7 @@ foreach ($client_ids as $client_id) {
             
             $completion_info = $completion_date ? ", 完了日: {$completion_date}" : "";
             $customer_info = $customer_name ? " (顧客: {$customer_name})" : " (顧客情報なし)";
-            safe_echo("受注書作成: {$project_name}{$customer_info} (進捗: {$status_labels[$status]}, 作成日: {$created_time}{$completion_info}, 金額: ¥" . number_format($total_amount) . ")");
+            safe_echo("受注書作成: {$project_name}{$customer_info} (進捗: {$status_labels[$status]}, 作成日: {$created_time}{$completion_info})");
         }
     }
 }
@@ -463,7 +463,7 @@ foreach ($client_ids as $client_id) {
 
 safe_echo("==========================================");
 safe_echo("強化版ダミーデータ作成が完了しました！");
-safe_echo("バージョン: 2.2.7 (配布先サイト対応)");
+safe_echo("バージョン: 2.2.8 (配布先サイト対応・テーブル構造修正版)");
 safe_echo("作成されたデータ:");
 safe_echo("- 顧客: " . count($client_ids) . "件");
 safe_echo("- 協力会社: " . count($supplier_ids) . "件");
@@ -480,6 +480,11 @@ safe_echo("- 完了日設定: 完成・請求済の注文には適切な完了�
 safe_echo("- 職能: 各協力会社に税率10%、税率8%、非課税の3パターン");
 safe_echo("- サービス: 一般（税率10%）×2、食品（税率8%）×2、不動産（非課税）×2");
 safe_echo("- 各受注書に請求項目とコスト項目を自動追加");
+safe_echo("");
+safe_echo("修正内容（v2.2.8）:");
+safe_echo("- テーブル構造の不一致を修正（service_id、total_amountカラムを削除）");
+safe_echo("- 受注書作成エラーの解決");
+safe_echo("- 配布先サイトでの正常動作を確認");
 safe_echo("");
 safe_echo("注意: このデータはテスト用です。本番環境では使用しないでください。");
 
