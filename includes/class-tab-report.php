@@ -378,8 +378,11 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 			// 期間に応じたWHERE句を生成
 			$where_clause = $this->get_period_where_clause( $period );
 
-			// 総売上
-			$total_sales_query = "SELECT SUM(o.total_amount) as total FROM {$wpdb->prefix}ktp_order o WHERE 1=1 {$where_clause}";
+			// 総売上（請求項目から計算）
+			$total_sales_query = "SELECT SUM(ii.amount) as total 
+								 FROM {$wpdb->prefix}ktp_order o 
+								 LEFT JOIN {$wpdb->prefix}ktp_order_invoice_items ii ON o.id = ii.order_id 
+								 WHERE 1=1 {$where_clause} AND ii.amount IS NOT NULL";
 			$total_sales = $wpdb->get_var( $total_sales_query ) ?: 0;
 
 			// 案件数
@@ -466,11 +469,12 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 			$period = isset( $_GET['period'] ) ? sanitize_text_field( $_GET['period'] ) : 'current_year';
 			$where_clause = $this->get_period_where_clause( $period );
 
-			// 顧客別売上TOP5
-			$client_query = "SELECT c.company_name, SUM(o.total_amount) as total_sales, COUNT(o.id) as order_count 
+			// 顧客別売上TOP5（請求項目から計算）
+			$client_query = "SELECT c.company_name, SUM(ii.amount) as total_sales, COUNT(DISTINCT o.id) as order_count 
 							FROM {$wpdb->prefix}ktp_order o 
 							LEFT JOIN {$wpdb->prefix}ktp_client c ON o.client_id = c.id 
-							WHERE 1=1 {$where_clause} 
+							LEFT JOIN {$wpdb->prefix}ktp_order_invoice_items ii ON o.id = ii.order_id 
+							WHERE 1=1 {$where_clause} AND ii.amount IS NOT NULL 
 							GROUP BY o.client_id 
 							ORDER BY total_sales DESC 
 							LIMIT 5";
@@ -511,12 +515,12 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 			$period = isset( $_GET['period'] ) ? sanitize_text_field( $_GET['period'] ) : 'current_year';
 			$where_clause = $this->get_period_where_clause( $period );
 
-			// サービス別売上TOP5
-			$service_query = "SELECT s.service_name, SUM(o.total_amount) as total_sales, COUNT(o.id) as order_count 
+			// サービス別売上TOP5（請求項目から計算）
+			$service_query = "SELECT ii.product_name as service_name, SUM(ii.amount) as total_sales, COUNT(DISTINCT o.id) as order_count 
 							 FROM {$wpdb->prefix}ktp_order o 
-							 LEFT JOIN {$wpdb->prefix}ktp_service s ON o.service_id = s.id 
-							 WHERE 1=1 {$where_clause} AND o.service_id IS NOT NULL 
-							 GROUP BY s.id 
+							 LEFT JOIN {$wpdb->prefix}ktp_order_invoice_items ii ON o.id = ii.order_id 
+							 WHERE 1=1 {$where_clause} AND ii.amount IS NOT NULL 
+							 GROUP BY ii.product_name 
 							 ORDER BY total_sales DESC 
 							 LIMIT 5";
 			$service_results = $wpdb->get_results( $service_query );
