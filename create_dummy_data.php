@@ -1,7 +1,7 @@
 <?php
 /**
  * 強化版ダミーデータ作成スクリプト
- * バージョン: 2.1.0
+ * バージョン: 2.2.4
  * 
  * 以下のデータを作成します：
  * - 顧客×6件
@@ -58,7 +58,7 @@ function weighted_random_choice($weights) {
 }
 
 echo "強化版ダミーデータ作成を開始します...\n";
-echo "バージョン: 2.1.0 (ランダム進捗分布対応)\n";
+echo "バージョン: 2.2.4 (職能作成順序修正)\n";
 echo "==========================================\n";
 
 // 1. 顧客データの作成
@@ -157,7 +157,38 @@ foreach ($services as $service) {
     }
 }
 
-// 4. 受注書データの作成（ランダムな進捗分布）
+// 4. 職能データの作成（協力会社×6件 × 税率3パターン：税率10%・税率8%・非課税）
+$skill_names = array('プログラミング', 'デザイン', 'ライティング', 'マーケティング', 'コンサルティング', 'データ分析', '翻訳', '動画編集', '写真撮影', 'SEO対策', 'SNS運用', '動画制作');
+$tax_rates = array(10.00, 8.00, null); // 税率10%、税率8%、非課税
+
+foreach ($supplier_ids as $supplier_id) {
+    foreach ($tax_rates as $tax_rate) {
+        $product_name = $skill_names[array_rand($skill_names)];
+        $unit_price = rand(5000, 50000);
+        $quantity = rand(1, 10);
+        $unit = '時間';
+        
+        $result = $wpdb->insert(
+            $wpdb->prefix . 'ktp_supplier_skills',
+            array(
+                'supplier_id' => $supplier_id,
+                'product_name' => $product_name,
+                'unit_price' => $unit_price,
+                'quantity' => $quantity,
+                'unit' => $unit,
+                'tax_rate' => $tax_rate,
+                'frequency' => rand(1, 100)
+            ),
+            array("%d", "%s", "%f", "%d", "%s", "%f", "%d")
+        );
+        
+        if ($result) {
+            echo "職能作成: {$product_name} (税率: " . ($tax_rate ?? '非課税') . "%)\n";
+        }
+    }
+}
+
+// 5. 受注書データの作成（ランダムな進捗分布）
 $order_statuses = array(1, 2, 3, 4, 5, 6); // 受付中、見積中、受注、進行中、完成、請求済
 $order_names = array('Webサイトリニューアル', 'ECサイト構築', '業務システム開発', 'マーケティング戦略策定', 'ロゴデザイン制作', 'データ分析サービス', 'モバイルアプリ開発', 'SEO対策サービス', 'SNS運用代行', '動画制作');
 
@@ -359,40 +390,11 @@ foreach ($client_ids as $client_id) {
     }
 }
 
-// 5. 職能データの作成（協力会社×6件 × 税率3パターン：税率10%・税率8%・非課税）
-$skill_names = array('プログラミング', 'デザイン', 'ライティング', 'マーケティング', 'コンサルティング', 'データ分析', '翻訳', '動画編集', '写真撮影', 'SEO対策', 'SNS運用', '動画制作');
-$tax_rates = array(10.00, 8.00, null); // 税率10%、税率8%、非課税
-
-foreach ($supplier_ids as $supplier_id) {
-    foreach ($tax_rates as $tax_rate) {
-        $product_name = $skill_names[array_rand($skill_names)];
-        $unit_price = rand(5000, 50000);
-        $quantity = rand(1, 10);
-        $unit = '時間';
-        
-        $result = $wpdb->insert(
-            $wpdb->prefix . 'ktp_supplier_skills',
-            array(
-                'supplier_id' => $supplier_id,
-                'product_name' => $product_name,
-                'unit_price' => $unit_price,
-                'quantity' => $quantity,
-                'unit' => $unit,
-                'tax_rate' => $tax_rate,
-                'frequency' => rand(1, 100)
-            ),
-            array("%d", "%s", "%f", "%d", "%s", "%f", "%d")
-        );
-        
-        if ($result) {
-            echo "職能作成: {$product_name} (税率: " . ($tax_rate ?? '非課税') . "%)\n";
-        }
-    }
-}
+// 5. 受注書データの作成（ランダムな進捗分布）
 
 echo "\n==========================================\n";
 echo "強化版ダミーデータ作成が完了しました！\n";
-echo "バージョン: 2.1.0 (ランダム進捗分布対応)\n";
+echo "バージョン: 2.2.4 (職能作成順序修正)\n";
 echo "作成されたデータ:\n";
 echo "- 顧客: " . count($client_ids) . "件\n";
 echo "- 協力会社: " . count($supplier_ids) . "件\n";
@@ -415,13 +417,18 @@ echo "- 各受注書に請求項目とコスト項目を自動追加\n";
 function add_invoice_items_to_order($order_id, $service_ids) {
     global $wpdb;
     
-    // invoice_itemsテーブルが存在するかチェック
-    $table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$wpdb->prefix}ktp_invoice_items'");
+    // order_invoice_itemsテーブルが存在するかチェック
+    $table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$wpdb->prefix}ktp_order_invoice_items'");
     
     if ($table_exists) {
         // 1-3個のサービスをランダムに選択
         $num_items = rand(1, 3);
         $selected_services = array_rand(array_flip($service_ids), $num_items);
+        
+        // 単一の値の場合は配列に変換
+        if (!is_array($selected_services)) {
+            $selected_services = array($selected_services);
+        }
         
         foreach ($selected_services as $service_id) {
             // サービス情報を取得
@@ -436,19 +443,21 @@ function add_invoice_items_to_order($order_id, $service_ids) {
                 $total_price = $quantity * $unit_price;
                 
                 $wpdb->insert(
-                    $wpdb->prefix . 'ktp_invoice_items',
+                    $wpdb->prefix . 'ktp_order_invoice_items',
                     array(
                         'order_id' => $order_id,
-                        'service_id' => $service_id,
-                        'item_name' => $service->service_name,
+                        'product_name' => $service->service_name,
+                        'price' => $unit_price,
                         'quantity' => $quantity,
-                        'unit_price' => $unit_price,
-                        'total_price' => $total_price,
-                        'tax_rate' => $service->tax_rate,
                         'unit' => $service->unit,
-                        'created_at' => current_time('mysql')
+                        'amount' => $total_price,
+                        'tax_rate' => $service->tax_rate,
+                        'remarks' => 'ダミーデータ',
+                        'sort_order' => 1,
+                        'created_at' => current_time('mysql'),
+                        'updated_at' => current_time('mysql')
                     ),
-                    array('%d', '%d', '%s', '%d', '%f', '%f', '%f', '%s', '%s')
+                    array('%d', '%s', '%f', '%f', '%s', '%f', '%f', '%s', '%d', '%s', '%s')
                 );
             }
         }
@@ -461,46 +470,77 @@ function add_invoice_items_to_order($order_id, $service_ids) {
 function add_cost_items_to_order($order_id, $supplier_ids) {
     global $wpdb;
     
-    // 1-3個の協力会社をランダムに選択
-    $num_items = min(rand(1, 3), count($supplier_ids));
-    if ($num_items > 0 && !empty($supplier_ids)) {
-        $selected_suppliers = array_rand(array_flip($supplier_ids), $num_items);
+    echo "DEBUG: コスト項目作成開始 - 受注書ID: {$order_id}, 協力会社数: " . count($supplier_ids) . "\n";
+    
+    // order_cost_itemsテーブルが存在するかチェック
+    $table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$wpdb->prefix}ktp_order_cost_items'");
+    
+    if ($table_exists) {
+        echo "DEBUG: コスト項目テーブルが存在します\n";
         
-        // 単一の値の場合は配列に変換
-        if (!is_array($selected_suppliers)) {
-            $selected_suppliers = array($selected_suppliers);
-        }
+        // 1-3個の協力会社をランダムに選択
+        $num_items = min(rand(1, 3), count($supplier_ids));
+        echo "DEBUG: 選択する協力会社数: {$num_items}\n";
         
-        foreach ($selected_suppliers as $supplier_id) {
-        // 協力会社の職能をランダムに選択
-        $skill = $wpdb->get_row($wpdb->prepare(
-            "SELECT * FROM {$wpdb->prefix}ktp_supplier_skills WHERE supplier_id = %d ORDER BY RAND() LIMIT 1",
-            $supplier_id
-        ));
-        
-        if ($skill) {
-            $quantity = rand(1, 10);
-            $unit_price = $skill->unit_price;
-            $total_cost = $quantity * $unit_price;
+        if ($num_items > 0 && !empty($supplier_ids)) {
+            $selected_suppliers = array_rand(array_flip($supplier_ids), $num_items);
             
-            $wpdb->insert(
-                $wpdb->prefix . 'ktp_supplier_cost',
-                array(
-                    'order_id' => $order_id,
-                    'supplier_id' => $supplier_id,
-                    'skill_id' => $skill->id,
-                    'item_name' => $skill->product_name,
-                    'quantity' => $quantity,
-                    'unit_price' => $unit_price,
-                    'total_cost' => $total_cost,
-                    'tax_rate' => $skill->tax_rate,
-                    'unit' => $skill->unit,
-                    'created_at' => current_time('mysql')
-                ),
-                array('%d', '%d', '%d', '%s', '%d', '%f', '%f', '%f', '%s', '%s')
-            );
+            // 単一の値の場合は配列に変換
+            if (!is_array($selected_suppliers)) {
+                $selected_suppliers = array($selected_suppliers);
+            }
+            
+            echo "DEBUG: 選択された協力会社ID: " . implode(', ', $selected_suppliers) . "\n";
+            
+            foreach ($selected_suppliers as $supplier_id) {
+                echo "DEBUG: 協力会社ID {$supplier_id} の職能を検索中...\n";
+                
+                // 協力会社の職能をランダムに選択
+                $skill = $wpdb->get_row($wpdb->prepare(
+                    "SELECT * FROM {$wpdb->prefix}ktp_supplier_skills WHERE supplier_id = %d ORDER BY RAND() LIMIT 1",
+                    $supplier_id
+                ));
+                
+                if ($skill) {
+                    echo "DEBUG: 職能が見つかりました: {$skill->product_name}\n";
+                    
+                    $quantity = rand(1, 10);
+                    $unit_price = $skill->unit_price;
+                    $total_cost = $quantity * $unit_price;
+                    
+                    $result = $wpdb->insert(
+                        $wpdb->prefix . 'ktp_order_cost_items',
+                        array(
+                            'order_id' => $order_id,
+                            'supplier_id' => $supplier_id,
+                            'product_name' => $skill->product_name,
+                            'price' => $unit_price,
+                            'quantity' => $quantity,
+                            'unit' => $skill->unit,
+                            'amount' => $total_cost,
+                            'tax_rate' => $skill->tax_rate,
+                            'remarks' => 'ダミーデータ',
+                            'sort_order' => 1,
+                            'created_at' => current_time('mysql'),
+                            'updated_at' => current_time('mysql')
+                        ),
+                        array('%d', '%d', '%s', '%f', '%f', '%s', '%f', '%f', '%s', '%d', '%s', '%s')
+                    );
+                    
+                    if ($result) {
+                        echo "DEBUG: コスト項目作成成功: {$skill->product_name} (数量: {$quantity}, 金額: ¥{$total_cost})\n";
+                    } else {
+                        echo "DEBUG: コスト項目作成失敗: " . $wpdb->last_error . "\n";
+                    }
+                } else {
+                    echo "DEBUG: 協力会社ID {$supplier_id} の職能が見つかりませんでした\n";
+                }
+            }
+        } else {
+            echo "DEBUG: 協力会社が選択されませんでした (num_items: {$num_items}, supplier_ids: " . implode(', ', $supplier_ids) . ")\n";
         }
-    }
+    } else {
+        echo "DEBUG: コスト項目テーブルが存在しません\n";
     }
 }
 
@@ -517,8 +557,8 @@ function clear_dummy_data() {
     
     // 関連テーブルから削除
     $tables_to_clear = array(
-        'ktp_supplier_cost',
-        'ktp_invoice_items',
+        'ktp_order_cost_items',
+        'ktp_order_invoice_items',
         'ktp_order',
         'ktp_supplier_skills',
         'ktp_service',
