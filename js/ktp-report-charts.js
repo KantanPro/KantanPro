@@ -558,7 +558,7 @@
                     data: {
                         labels: data.supplier_skills.labels,
                         datasets: [{
-                            label: 'スキル数',
+                            label: '貢献度',
                             data: data.supplier_skills.data,
                             backgroundColor: data.supplier_skills.labels.map((_, index) => 
                                 getGradientColor(chartColors.gradients[index % chartColors.gradients.length])
@@ -574,7 +574,7 @@
                             ...barChartOptions.plugins,
                             title: {
                                 display: true,
-                                text: '協力会社別スキル数',
+                                text: '協力会社別貢献度',
                                 color: chartColors.dark,
                                 font: { size: 16, weight: 'bold' }
                             }
@@ -587,7 +587,7 @@
                                 ticks: {
                                     ...barChartOptions.scales.y.ticks,
                                     callback: function(value) {
-                                        return value + '個';
+                                        return '¥' + value.toLocaleString();
                                     }
                                 }
                             }
