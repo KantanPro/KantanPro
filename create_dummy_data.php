@@ -1,7 +1,7 @@
 <?php
 /**
  * 強化版ダミーデータ作成スクリプト
- * バージョン: 2.2.6
+ * バージョン: 2.2.7
  * 
  * 以下のデータを作成します：
  * - 顧客×6件
@@ -24,6 +24,11 @@
  * - 完成・請求済: 過去の納期と適切な完了日を設定
  */
 
+// エラーハンドリングを強化
+error_reporting(E_ALL);
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
+
 // WordPress環境の読み込み
 $wp_config_path = dirname(__FILE__) . '/../../../wp-config.php';
 if (file_exists($wp_config_path)) {
@@ -39,6 +44,49 @@ if (!defined('ABSPATH')) {
 }
 
 global $wpdb;
+
+// データベース接続チェック
+if (!$wpdb->check_connection()) {
+    error_log('KTPWP: データベース接続エラー');
+    return false;
+}
+
+// テーブル存在チェック
+$required_tables = array(
+    'ktp_client',
+    'ktp_supplier', 
+    'ktp_service',
+    'ktp_supplier_skills',
+    'ktp_order',
+    'ktp_order_invoice_items',
+    'ktp_order_cost_items'
+);
+
+foreach ($required_tables as $table) {
+    $table_name = $wpdb->prefix . $table;
+    $table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$table_name}'");
+    if (!$table_exists) {
+        error_log("KTPWP: 必要なテーブルが存在しません: {$table_name}");
+        return false;
+    }
+}
+
+// 安全なデータベース操作関数
+function safe_db_insert($table, $data, $format = null) {
+    global $wpdb;
+    
+    try {
+        $result = $wpdb->insert($table, $data, $format);
+        if ($result === false) {
+            error_log("KTPWP: データベース挿入エラー - テーブル: {$table}, エラー: " . $wpdb->last_error);
+            return false;
+        }
+        return $wpdb->insert_id;
+    } catch (Exception $e) {
+        error_log("KTPWP: データベース挿入例外 - テーブル: {$table}, エラー: " . $e->getMessage());
+        return false;
+    }
+}
 
 // 重み付きランダム選択関数
 function weighted_random_choice($weights) {
@@ -57,23 +105,30 @@ function weighted_random_choice($weights) {
     return array_keys($weights)[0];
 }
 
-echo "強化版ダミーデータ作成を開始します...\n";
-echo "バージョン: 2.2.6 (警告表示対応)\n";
-echo "==========================================\n";
+// 安全な出力関数
+function safe_echo($message) {
+    if (defined('WP_DEBUG') && WP_DEBUG) {
+        echo $message . "\n";
+    }
+}
+
+safe_echo("強化版ダミーデータ作成を開始します...");
+safe_echo("バージョン: 2.2.7 (配布先サイト対応)");
+safe_echo("==========================================");
 
 // 警告メッセージの表示
-echo "⚠️  警告: ダミーデータ作成について\n";
-echo "==========================================\n";
-echo "• 既存のダミーデータは完全に削除されます\n";
-echo "• 本番環境での実行は絶対に避けてください\n";
-echo "• 実行前にデータベースのバックアップを推奨します\n";
-echo "• この操作は取り消しできません\n";
-echo "==========================================\n";
+safe_echo("⚠️  警告: ダミーデータ作成について");
+safe_echo("==========================================");
+safe_echo("• 既存のダミーデータは完全に削除されます");
+safe_echo("• 本番環境での実行は絶対に避けてください");
+safe_echo("• 実行前にデータベースのバックアップを推奨します");
+safe_echo("• この操作は取り消しできません");
+safe_echo("==========================================");
 
 // 既存のダミーデータをクリアしてIDをリセット
-echo "既存のダミーデータをクリアしてIDをリセットします...\n";
+safe_echo("既存のダミーデータをクリアしてIDをリセットします...");
 clear_dummy_data();
-echo "==========================================\n";
+safe_echo("==========================================");
 
 // 1. 顧客データの作成
 $clients = array(
@@ -87,7 +142,7 @@ $clients = array(
 
 $client_ids = array();
 foreach ($clients as $client) {
-    $result = $wpdb->insert(
+    $insert_id = safe_db_insert(
         $wpdb->prefix . 'ktp_client',
         array(
             'company_name' => $client['company_name'],
@@ -99,9 +154,9 @@ foreach ($clients as $client) {
         array("%s", "%s", "%s", "%s", "%d")
     );
     
-    if ($result) {
-        $client_ids[] = $wpdb->insert_id;
-        echo "顧客作成: {$client['company_name']}\n";
+    if ($insert_id) {
+        $client_ids[] = $insert_id;
+        safe_echo("顧客作成: {$client['company_name']}");
     }
 }
 
@@ -117,7 +172,7 @@ $suppliers = array(
 
 $supplier_ids = array();
 foreach ($suppliers as $supplier) {
-    $result = $wpdb->insert(
+    $insert_id = safe_db_insert(
         $wpdb->prefix . 'ktp_supplier',
         array(
             'company_name' => $supplier['company_name'],
@@ -129,9 +184,9 @@ foreach ($suppliers as $supplier) {
         array("%s", "%s", "%s", "%s", "%d")
     );
     
-    if ($result) {
-        $supplier_ids[] = $wpdb->insert_id;
-        echo "協力会社作成: {$supplier['company_name']}\n";
+    if ($insert_id) {
+        $supplier_ids[] = $insert_id;
+        safe_echo("協力会社作成: {$supplier['company_name']}");
     }
 }
 
@@ -152,7 +207,7 @@ $services = array(
 
 $service_ids = array();
 foreach ($services as $service) {
-    $result = $wpdb->insert(
+    $insert_id = safe_db_insert(
         $wpdb->prefix . 'ktp_service',
         array(
             'service_name' => $service['service_name'],
@@ -165,9 +220,9 @@ foreach ($services as $service) {
         array('%s', '%f', '%f', '%s', '%s', '%d')
     );
     
-    if ($result) {
-        $service_ids[] = $wpdb->insert_id;
-        echo "サービス作成: {$service['service_name']} (税率: " . ($service['tax_rate'] ?? '非課税') . "%)\n";
+    if ($insert_id) {
+        $service_ids[] = $insert_id;
+        safe_echo("サービス作成: {$service['service_name']} (税率: " . ($service['tax_rate'] ?? '非課税') . "%)");
     }
 }
 
@@ -182,7 +237,7 @@ foreach ($supplier_ids as $supplier_id) {
         $quantity = rand(1, 10);
         $unit = '時間';
         
-        $result = $wpdb->insert(
+        $insert_id = safe_db_insert(
             $wpdb->prefix . 'ktp_supplier_skills',
             array(
                 'supplier_id' => $supplier_id,
@@ -196,8 +251,8 @@ foreach ($supplier_ids as $supplier_id) {
             array("%d", "%s", "%f", "%d", "%s", "%f", "%d")
         );
         
-        if ($result) {
-            echo "職能作成: {$product_name} (税率: " . ($tax_rate ?? '非課税') . "%)\n";
+        if ($insert_id) {
+            safe_echo("職能作成: {$product_name} (税率: " . ($tax_rate ?? '非課税') . "%)");
         }
     }
 }
@@ -326,14 +381,14 @@ foreach ($client_ids as $client_id) {
                 // 画面表示用の形式: "会社名 (担当者名)"
                 $display_name = $client_info->company_name . ' (' . $client_info->name . ')';
                 $search_field = $client_info->company_name . ', ' . $client_info->name;
-                echo "DEBUG: 顧客ID {$client_id} の情報を取得しました: {$customer_name}, {$user_name}\n";
+                safe_echo("DEBUG: 顧客ID {$client_id} の情報を取得しました: {$customer_name}, {$user_name}");
             } else {
                 // 顧客情報が見つからない場合のフォールバック
-                echo "WARNING: 顧客ID {$client_id} の情報が見つかりませんでした。\n";
+                safe_echo("WARNING: 顧客ID {$client_id} の情報が見つかりませんでした。");
                 $display_name = '';
             }
         } else {
-            echo "WARNING: client_idが設定されていません。\n";
+            safe_echo("WARNING: client_idが設定されていません。");
         }
         
         // ランダムにサービスを選択
@@ -372,7 +427,7 @@ foreach ($client_ids as $client_id) {
         $result = $wpdb->query($sql);
         
         if ($result === false) {
-            echo "ERROR: 受注書作成に失敗しました: " . $wpdb->last_error . "\n";
+            safe_echo("ERROR: 受注書作成に失敗しました: " . $wpdb->last_error);
         } else {
             // 挿入後にcreated_atフィールドを更新（強制的に値を設定）
             $update_sql = $wpdb->prepare(
@@ -383,7 +438,7 @@ foreach ($client_ids as $client_id) {
             
             $update_result = $wpdb->query($update_sql);
             if ($update_result === false) {
-                echo "WARNING: created_atフィールドの更新に失敗しました: " . $wpdb->last_error . "\n";
+                safe_echo("WARNING: created_atフィールドの更新に失敗しました: " . $wpdb->last_error);
             }
         }
         
@@ -399,32 +454,34 @@ foreach ($client_ids as $client_id) {
             
             $completion_info = $completion_date ? ", 完了日: {$completion_date}" : "";
             $customer_info = $customer_name ? " (顧客: {$customer_name})" : " (顧客情報なし)";
-            echo "受注書作成: {$project_name}{$customer_info} (進捗: {$status_labels[$status]}, 作成日: {$created_time}{$completion_info}, 金額: ¥" . number_format($total_amount) . ")\n";
+            safe_echo("受注書作成: {$project_name}{$customer_info} (進捗: {$status_labels[$status]}, 作成日: {$created_time}{$completion_info}, 金額: ¥" . number_format($total_amount) . ")");
         }
     }
 }
 
 // 5. 受注書データの作成（ランダムな進捗分布）
 
-echo "\n==========================================\n";
-echo "強化版ダミーデータ作成が完了しました！\n";
-echo "バージョン: 2.2.6 (警告表示対応)\n";
-echo "作成されたデータ:\n";
-echo "- 顧客: " . count($client_ids) . "件\n";
-echo "- 協力会社: " . count($supplier_ids) . "件\n";
-echo "- サービス: " . count($service_ids) . "件\n";
-echo "- 受注書: " . count($order_ids) . "件\n";
-echo "- 職能: " . (count($supplier_ids) * 3) . "件\n";
-echo "\n詳細:\n";
-echo "- 顧客: 各社のメールアドレスは全て info@kantanpro.com\n";
-echo "- 協力会社: 各社のメールアドレスは全て info@kantanpro.com\n";
-echo "- 受注書: ランダムな進捗分布で作成（受付中15%、見積中20%、受注25%、進行中20%、完成15%、請求済5%）\n";
-echo "- 納期設定: 進捗に応じて適切な納期を設定（受注・進行中は将来、完成・請求済は過去）\n";
-echo "- 完了日設定: 完成・請求済の注文には適切な完了日を設定\n";
-echo "- 職能: 各協力会社に税率10%、税率8%、非課税の3パターン\n";
-echo "- サービス: 一般（税率10%）×2、食品（税率8%）×2、不動産（非課税）×2\n";
-echo "- 各受注書に請求項目とコスト項目を自動追加\n";
-echo "\n注意: このデータはテスト用です。本番環境では使用しないでください。\n";
+safe_echo("==========================================");
+safe_echo("強化版ダミーデータ作成が完了しました！");
+safe_echo("バージョン: 2.2.7 (配布先サイト対応)");
+safe_echo("作成されたデータ:");
+safe_echo("- 顧客: " . count($client_ids) . "件");
+safe_echo("- 協力会社: " . count($supplier_ids) . "件");
+safe_echo("- サービス: " . count($service_ids) . "件");
+safe_echo("- 受注書: " . count($order_ids) . "件");
+safe_echo("- 職能: " . (count($supplier_ids) * 3) . "件");
+safe_echo("");
+safe_echo("詳細:");
+safe_echo("- 顧客: 各社のメールアドレスは全て info@kantanpro.com");
+safe_echo("- 協力会社: 各社のメールアドレスは全て info@kantanpro.com");
+safe_echo("- 受注書: ランダムな進捗分布で作成（受付中15%、見積中20%、受注25%、進行中20%、完成15%、請求済5%）");
+safe_echo("- 納期設定: 進捗に応じて適切な納期を設定（受注・進行中は将来、完成・請求済は過去）");
+safe_echo("- 完了日設定: 完成・請求済の注文には適切な完了日を設定");
+safe_echo("- 職能: 各協力会社に税率10%、税率8%、非課税の3パターン");
+safe_echo("- サービス: 一般（税率10%）×2、食品（税率8%）×2、不動産（非課税）×2");
+safe_echo("- 各受注書に請求項目とコスト項目を自動追加");
+safe_echo("");
+safe_echo("注意: このデータはテスト用です。本番環境では使用しないでください。");
 
 /**
  * 受注書に請求項目を追加
@@ -517,7 +574,7 @@ function add_cost_items_to_order($order_id, $supplier_ids) {
         ));
         
         if ($skill) {
-                    echo "DEBUG: 職能が見つかりました: {$skill->product_name}\n";
+                    safe_echo("DEBUG: 職能が見つかりました: {$skill->product_name}");
                     
             $quantity = rand(1, 10);
             $unit_price = $skill->unit_price;
@@ -543,19 +600,19 @@ function add_cost_items_to_order($order_id, $supplier_ids) {
             );
                     
                     if ($result) {
-                        echo "DEBUG: コスト項目作成成功: {$skill->product_name} (数量: {$quantity}, 金額: ¥{$total_cost})\n";
+                        safe_echo("DEBUG: コスト項目作成成功: {$skill->product_name} (数量: {$quantity}, 金額: ¥{$total_cost})");
                     } else {
-                        echo "DEBUG: コスト項目作成失敗: " . $wpdb->last_error . "\n";
+                        safe_echo("DEBUG: コスト項目作成失敗: " . $wpdb->last_error);
                     }
                 } else {
-                    echo "DEBUG: 協力会社ID {$supplier_id} の職能が見つかりませんでした\n";
+                    safe_echo("DEBUG: 協力会社ID {$supplier_id} の職能が見つかりませんでした");
                 }
             }
         } else {
-            echo "DEBUG: 協力会社が選択されませんでした (num_items: {$num_items}, supplier_ids: " . implode(', ', $supplier_ids) . ")\n";
+            safe_echo("DEBUG: 協力会社が選択されませんでした (num_items: {$num_items}, supplier_ids: " . implode(', ', $supplier_ids) . ")");
         }
     } else {
-        echo "DEBUG: コスト項目テーブルが存在しません\n";
+        safe_echo("DEBUG: コスト項目テーブルが存在しません");
     }
 }
 
@@ -565,7 +622,7 @@ function add_cost_items_to_order($order_id, $supplier_ids) {
 function clear_dummy_data() {
     global $wpdb;
     
-    echo "⚠️  データクリア警告: 既存のダミーデータを削除します...\n";
+    safe_echo("⚠️  データクリア警告: 既存のダミーデータを削除します...");
     
     // 外部キー制約を無効化
     $wpdb->query("SET FOREIGN_KEY_CHECKS = 0");
@@ -587,24 +644,24 @@ function clear_dummy_data() {
         // データを削除
         $result = $wpdb->query("DELETE FROM {$table_name}");
         if ($result !== false) {
-            echo "テーブル {$table} をクリアしました\n";
+            safe_echo("テーブル {$table} をクリアしました");
         } else {
-            echo "テーブル {$table} のクリアに失敗しました: " . $wpdb->last_error . "\n";
+            safe_echo("テーブル {$table} のクリアに失敗しました: " . $wpdb->last_error);
         }
         
         // AUTO_INCREMENTをリセット
         $reset_result = $wpdb->query("ALTER TABLE {$table_name} AUTO_INCREMENT = 1");
         if ($reset_result !== false) {
-            echo "テーブル {$table} のAUTO_INCREMENTをリセットしました\n";
+            safe_echo("テーブル {$table} のAUTO_INCREMENTをリセットしました");
         } else {
-            echo "テーブル {$table} のAUTO_INCREMENTリセットに失敗しました: " . $wpdb->last_error . "\n";
+            safe_echo("テーブル {$table} のAUTO_INCREMENTリセットに失敗しました: " . $wpdb->last_error);
         }
     }
     
     // 外部キー制約を再有効化
     $wpdb->query("SET FOREIGN_KEY_CHECKS = 1");
     
-    echo "✅ ダミーデータのクリアが完了しました！\n";
+    safe_echo("✅ ダミーデータのクリアが完了しました！");
 }
 
 // コマンドライン引数でクリア機能を実行
