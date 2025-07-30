@@ -657,6 +657,27 @@ if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
 				<h3>📋 バージョン履歴</h3>
 				
 				<div class="ktpwp-changelog-item">
+					<h4>1.0.1(a) - 2025年7月30日</h4>
+					<ul>
+						<li><strong>ダミーデーターツール実装</strong>
+							<ul>
+								<li>管理画面でのテストデータ作成機能</li>
+								<li>顧客・サービス・協力会社・受注データの一括生成</li>
+								<li>開発・テスト環境での効率的なデータ作成</li>
+							</ul>
+						</li>
+						<li><strong>基本的レポート機能実装</strong>
+							<ul>
+								<li>月別売上レポート機能</li>
+								<li>進捗状況の統計表示</li>
+								<li>グラフ表示機能（Chart.js対応）</li>
+								<li>データエクスポート機能</li>
+							</ul>
+						</li>
+					</ul>
+				</div>
+
+				<div class="ktpwp-changelog-item">
 					<h4>1.0.0(a) - 2025年7月29日</h4>
 					<ul>
 						<li>ktpa開発開始</li>
