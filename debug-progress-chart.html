@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>進捗レポートデバッグ</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .chart-container { width: 400px; height: 300px; margin: 20px; border: 1px solid #ccc; }
+        .debug-info { background: #f0f0f0; padding: 10px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>進捗レポートデバッグ</h1>
+    
+    <div class="debug-info">
+        <h3>テストデータ</h3>
+        <pre id="testData"></pre>
+    </div>
+
+    <div class="chart-container">
+        <canvas id="progressDistributionChart"></canvas>
+    </div>
+
+    <div class="chart-container">
+        <canvas id="deadlineChart"></canvas>
+    </div>
+
+    <script>
+        // テストデータ
+        const testData = {
+            "progress_distribution": {
+                "labels": ["受付中", "受注", "完成", "見積中", "請求済", "進行中"],
+                "data": [24, 24, 24, 6, 6, 6]
+            },
+            "deadline_management": {
+                "labels": ["期限内", "期限間近", "期限超過"],
+                "data": [10, 3, 1]
+            }
+        };
+
+        // デバッグ情報を表示
+        document.getElementById('testData').textContent = JSON.stringify(testData, null, 2);
+
+        // グラデーション色を取得する関数
+        function getGradientColor(gradient) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const gradientObj = ctx.createLinearGradient(0, 0, 0, 400);
+            
+            if (gradient.includes('linear-gradient')) {
+                const colors = gradient.match(/#[a-fA-F0-9]{6}/g);
+                if (colors && colors.length >= 2) {
+                    gradientObj.addColorStop(0, colors[0]);
+                    gradientObj.addColorStop(1, colors[1]);
+                }
+            }
+            
+            return gradientObj;
+        }
+
+        // チャート色設定
+        const chartColors = {
+            dark: '#333',
+            gradients: [
+                'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+                'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+                'linear-gradient(135deg, #fa709a 0%, #fee140 100%)'
+            ]
+        };
+
+        // 進捗状況分布グラフ
+        const progressDistributionCtx = document.getElementById('progressDistributionChart');
+        if (progressDistributionCtx && testData.progress_distribution) {
+            console.log('進捗状況分布グラフ作成開始');
+            new Chart(progressDistributionCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: testData.progress_distribution.labels,
+                    datasets: [{
+                        data: testData.progress_distribution.data,
+                        backgroundColor: testData.progress_distribution.labels.map((_, index) => 
+                            getGradientColor(chartColors.gradients[index % chartColors.gradients.length])
+                        ),
+                        borderColor: '#fff',
+                        borderWidth: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: chartColors.dark,
+                                font: { size: 12 },
+                                padding: 20
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: '進捗状況分布',
+                            color: chartColors.dark,
+                            font: { size: 16, weight: 'bold' }
+                        }
+                    }
+                }
+            });
+            console.log('進捗状況分布グラフ作成完了');
+        }
+
+        // 納期管理グラフ
+        const deadlineCtx = document.getElementById('deadlineChart');
+        if (deadlineCtx && testData.deadline_management) {
+            console.log('納期管理グラフ作成開始');
+            new Chart(deadlineCtx, {
+                type: 'bar',
+                data: {
+                    labels: testData.deadline_management.labels,
+                    datasets: [{
+                        label: '案件数',
+                        data: testData.deadline_management.data,
+                        backgroundColor: testData.deadline_management.labels.map((label, index) => {
+                            if (label === '期限超過') return '#f44336';
+                            if (label === '期限間近') return '#ff9800';
+                            return '#4caf50';
+                        }),
+                        borderColor: '#fff',
+                        borderWidth: 2,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        title: {
+                            display: true,
+                            text: '納期管理状況',
+                            color: chartColors.dark,
+                            font: { size: 16, weight: 'bold' }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '件';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            console.log('納期管理グラフ作成完了');
+        }
+    </script>
+</body>
+</html> 

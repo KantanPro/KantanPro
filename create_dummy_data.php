@@ -125,8 +125,8 @@ foreach ($services as $service) {
     }
 }
 
-// 4. 受注書データの作成（顧客×6件 × 進捗3ステータス：受付中・受注・完成）
-$order_statuses = array(1, 3, 4); // 受付中、受注、完成
+// 4. 受注書データの作成（顧客×6件 × 進捗6ステータス：受付中・見積中・受注・進行中・完成・請求済）
+$order_statuses = array(1, 2, 3, 4, 5, 6); // 受付中、見積中、受注、進行中、完成、請求済
 $order_names = array('Webサイトリニューアル', 'ECサイト構築', '業務システム開発', 'マーケティング戦略策定', 'ロゴデザイン制作', 'データ分析サービス', 'モバイルアプリ開発', 'SEO対策サービス', 'SNS運用代行', '動画制作');
 
 $order_ids = array();
@@ -140,11 +140,20 @@ foreach ($client_ids as $client_id) {
             case 1: // 受付中 - 最近（1-30日前）
                 $days_ago = rand(1, 30);
                 break;
+            case 2: // 見積中 - 最近（1-60日前）
+                $days_ago = rand(1, 60);
+                break;
             case 3: // 受注 - 中程度（30-120日前）
                 $days_ago = rand(30, 120);
                 break;
-            case 4: // 完成 - 過去（60-180日前）
-                $days_ago = rand(60, 180);
+            case 4: // 進行中 - 中程度（60-150日前）
+                $days_ago = rand(60, 150);
+                break;
+            case 5: // 完成 - 過去（90-180日前）
+                $days_ago = rand(90, 180);
+                break;
+            case 6: // 請求済 - 過去（120-200日前）
+                $days_ago = rand(120, 200);
                 break;
             default:
                 $days_ago = rand(1, 365);
@@ -158,7 +167,7 @@ foreach ($client_ids as $client_id) {
         
         // 完了済みの注文には完了日を設定
         $completion_date = null;
-        if ($status == 4) { // 完成
+        if ($status == 5) { // 完成
             $completion_days_ago = rand(1, $days_ago - 30); // 注文日より後、現在より前
             $completion_date = date('Y-m-d', strtotime('-' . $completion_days_ago . ' days'));
         }
@@ -166,8 +175,11 @@ foreach ($client_ids as $client_id) {
         // ステータスラベルの定義
         $status_labels = array(
             1 => '受付中',
+            2 => '見積中',
             3 => '受注',
-            4 => '完成'
+            4 => '進行中',
+            5 => '完成',
+            6 => '請求済'
         );
         
         // 作成日時を設定
