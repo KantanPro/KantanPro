@@ -1976,7 +1976,8 @@ class KTP_Settings {
                     'enable_admin_notifications' => true,
                     'enable_frontend_notifications' => true,
                     'check_interval' => 24,
-                    'notification_roles' => array( 'administrator' )
+                    'notification_roles' => array( 'administrator' ),
+                    'github_token' => ''
                 )
             )
         );
@@ -2187,6 +2188,15 @@ class KTP_Settings {
             'notification_roles',
             __( '通知対象ユーザー権限', 'ktpwp' ),
             array( $this, 'notification_roles_callback' ),
+            'ktp-developer-settings',
+            'update_notification_setting_section'
+        );
+
+        // GitHubトークンの設定
+        add_settings_field(
+            'github_token',
+            __( 'GitHub Personal Access Token', 'ktpwp' ),
+            array( $this, 'github_token_callback' ),
             'ktp-developer-settings',
             'update_notification_setting_section'
         );
@@ -3958,6 +3968,33 @@ define( 'WP_DEBUG_DISPLAY', false );
     }
 
     /**
+     * GitHubトークンコールバック
+     */
+    public function github_token_callback() {
+        $options = get_option( 'ktp_update_notification_settings', array() );
+        $value = isset( $options['github_token'] ) ? $options['github_token'] : '';
+        ?>
+        <input type="password" 
+               id="github_token" 
+               name="ktp_update_notification_settings[github_token]" 
+               value="<?php echo esc_attr( $value ); ?>" 
+               style="width: 400px;" />
+        <p class="description">
+            <strong style="color: #28a745;">✅ 公開リポジトリ用に最適化済み</strong><br>
+            <?php esc_html_e( '現在のプラグインは公開リポジトリ用に設定されています。', 'ktpwp' ); ?>
+            <br>
+            <?php esc_html_e( '非公開リポジトリを使用する場合のみ、GitHub Personal Access Tokenを設定してください。', 'ktpwp' ); ?>
+            <br>
+            <a href="https://github.com/settings/tokens" target="_blank">GitHub Personal Access Tokenの作成</a>
+            <br>
+            <?php esc_html_e( '必要な権限: repo (プライベートリポジトリへのアクセス)', 'ktpwp' ); ?>
+            <br><br>
+            <strong>現在の設定:</strong> 公開リポジトリ「KantanPro/KantanPro-a-」を使用
+        </p>
+        <?php
+    }
+
+    /**
      * 更新通知設定のサニタイズ
      */
     public function sanitize_update_notification_settings( $input ) {
@@ -3984,6 +4021,9 @@ define( 'WP_DEBUG_DISPLAY', false );
         $sanitized['notification_roles'] = isset( $input['notification_roles'] ) && is_array( $input['notification_roles'] ) 
             ? array_map( 'sanitize_text_field', $input['notification_roles'] ) 
             : array( 'administrator' );
+        
+        // GitHubトークン
+        $sanitized['github_token'] = isset( $input['github_token'] ) ? sanitize_text_field( $input['github_token'] ) : '';
         
         return $sanitized;
     }

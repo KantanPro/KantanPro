@@ -23,6 +23,12 @@ class KTPWP_Update_Checker {
     private $github_repo = 'KantanPro/KantanPro-a-';
     
     /**
+     * GitHub Personal Access Token（非公開リポジトリ用）
+     * 注意: 配布用プラグインでは使用しない
+     */
+    private $github_token = '';
+    
+    /**
      * プラグインファイルのベース名
      */
     private $plugin_basename;
@@ -63,8 +69,11 @@ class KTPWP_Update_Checker {
         $this->plugin_slug = dirname( $this->plugin_basename );
         $this->current_version = defined( 'KANTANPRO_PLUGIN_VERSION' ) ? KANTANPRO_PLUGIN_VERSION : '1.0.5';
         
-        // チェック間隔を設定から取得
+        // GitHubトークンを設定から取得
         $update_settings = $this->get_update_notification_settings();
+        $this->github_token = isset( $update_settings['github_token'] ) ? $update_settings['github_token'] : '';
+        
+        // チェック間隔を設定から取得
         $check_interval_hours = isset( $update_settings['check_interval'] ) ? intval( $update_settings['check_interval'] ) : 24;
         $this->check_interval = $check_interval_hours * 3600; // 時間を秒に変換
         
@@ -105,6 +114,9 @@ class KTPWP_Update_Checker {
         if ( is_admin() ) {
             add_action( 'admin_init', array( $this, 'force_update_check_on_init' ), 5 );
         }
+        
+        // 設定変更時にトークンを再読み込み
+        add_action( 'update_option_ktp_update_notification_settings', array( $this, 'reload_github_token' ), 10, 2 );
         
         // デバッグ用のログ出力
         error_log( 'KantanPro Update Checker: 初期化完了 - basename: ' . $this->plugin_basename );
@@ -182,7 +194,14 @@ class KTPWP_Update_Checker {
                 esc_attr( $this->plugin_basename ),
                 __( '更新をチェック', 'KantanPro' )
             );
-            array_push( $plugin_meta, $check_link );
+            
+            $cache_clear_link = sprintf(
+                '<a href="#" id="ktpwp-cache-clear" data-plugin="%s">%s</a>',
+                esc_attr( $this->plugin_basename ),
+                __( 'キャッシュクリア', 'KantanPro' )
+            );
+            
+            array_push( $plugin_meta, $check_link, $cache_clear_link );
         }
         return $plugin_meta;
     }
@@ -243,15 +262,28 @@ class KTPWP_Update_Checker {
         // 更新チェック実行
         $update_available = $this->check_github_updates();
         
+                    // デバッグ情報を追加
+            $debug_info = array(
+                'current_version' => $this->current_version,
+                'github_repo' => $this->github_repo,
+                'github_token_set' => ! empty( $this->github_token ),
+                'last_check' => get_transient( 'ktpwp_last_update_check' ),
+                'update_available' => get_option( 'ktpwp_update_available' ),
+                'latest_version' => get_option( 'ktpwp_latest_version' ),
+                'check_result' => $update_available
+            );
+        
         if ( $update_available ) {
             wp_send_json_success( array(
                 'message' => __( '新しいバージョンが利用可能です！', 'KantanPro' ),
-                'reload' => true
+                'reload' => true,
+                'debug_info' => $debug_info
             ) );
         } else {
             wp_send_json_success( array(
                 'message' => __( '最新バージョンです。', 'KantanPro' ),
-                'reload' => false
+                'reload' => false,
+                'debug_info' => $debug_info
             ) );
         }
     }
@@ -278,12 +310,18 @@ class KTPWP_Update_Checker {
         try {
             // WordPress.orgとの接続エラーを防ぐため、タイムアウトを設定
             $timeout = 30;
+            $headers = array(
+                'Accept' => 'application/vnd.github.v3+json',
+            );
+            
+            // 公開リポジトリ用のため、トークン認証は無効化
+            // 配布用プラグインではセキュリティ上の理由でトークンを使用しない
+            error_log( 'KantanPro: 公開リポジトリとしてAPIに接続します' );
+            
             $args = array(
                 'timeout' => $timeout,
                 'user-agent' => 'KantanPro-Plugin/' . $this->current_version,
-                'headers' => array(
-                    'Accept' => 'application/vnd.github.v3+json',
-                ),
+                'headers' => $headers,
             );
 
             // GitHub API URL
@@ -302,7 +340,18 @@ class KTPWP_Update_Checker {
             
             $response_code = wp_remote_retrieve_response_code( $response );
             if ( $response_code !== 200 ) {
-                error_log( 'KantanPro: GitHub API エラーレスポンス: ' . $response_code );
+                $response_body = wp_remote_retrieve_body( $response );
+                error_log( 'KantanPro: GitHub API エラーレスポンス: ' . $response_code . ' - ' . $response_body );
+                
+                // 公開リポジトリ用のエラーハンドリング
+                if ( $response_code === 404 ) {
+                    error_log( 'KantanPro: リポジトリが見つかりません。リポジトリ名またはURLを確認してください。' );
+                } elseif ( $response_code === 403 ) {
+                    error_log( 'KantanPro: GitHub APIレート制限に達しました。しばらく時間をおいて再試行してください。' );
+                } elseif ( $response_code === 401 ) {
+                    error_log( 'KantanPro: GitHub API認証エラー。公開リポジトリの場合は認証は不要です。' );
+                }
+                
                 return false;
             }
             
@@ -383,7 +432,8 @@ class KTPWP_Update_Checker {
             'enable_admin_notifications' => true,
             'enable_frontend_notifications' => true,
             'check_interval' => 24,
-            'notification_roles' => array( 'administrator' )
+            'notification_roles' => array( 'administrator' ),
+            'github_token' => ''
         );
         
         // 設定が存在しない場合はデフォルト値を保存
@@ -1258,7 +1308,18 @@ class KTPWP_Update_Checker {
             wp_cache_flush_group( 'plugins' );
         }
         
-        error_log( 'KantanPro: プラグイン情報キャッシュをクリアしました' );
+        // KantanPro固有のキャッシュをクリア
+        delete_transient( 'ktpwp_last_update_check' );
+        delete_transient( 'ktpwp_last_force_check' );
+        delete_option( 'ktpwp_update_available' );
+        delete_option( 'ktpwp_latest_version' );
+        delete_option( 'ktpwp_update_notice_dismissed' );
+        delete_option( 'ktpwp_frontend_update_notice_dismissed' );
+        delete_option( 'ktpwp_header_update_notice_dismissed' );
+        delete_option( 'ktpwp_header_dismissed_version' );
+        delete_option( 'ktpwp_last_frontend_check' );
+        
+        error_log( 'KantanPro: プラグイン情報キャッシュとKantanPro固有キャッシュをクリアしました' );
     }
 
     /**
@@ -1276,6 +1337,55 @@ class KTPWP_Update_Checker {
             update_option( 'ktpwp_version', $new_version );
             
             error_log( 'KantanPro: バージョン更新を検出 - ' . $old_version . ' → ' . $new_version . ' (キャッシュクリア完了)' );
+        }
+    }
+
+    /**
+     * AJAXキャッシュクリア処理
+     */
+    public function ajax_clear_plugin_cache() {
+        // 権限チェック
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( array(
+                'message' => '権限がありません。',
+                'error_type' => 'permission_denied'
+            ) );
+            return;
+        }
+        
+        // ナンスチェック
+        if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( $_POST['nonce'], 'ktpwp_update_checker' ) ) {
+            wp_send_json_error( array(
+                'message' => 'セキュリティチェックに失敗しました。',
+                'error_type' => 'invalid_nonce'
+            ) );
+            return;
+        }
+        
+        try {
+            // キャッシュをクリア
+            $this->clear_plugin_cache();
+            
+            // デバッグ情報を追加
+            $debug_info = array(
+                'current_version' => $this->current_version,
+                'github_repo' => $this->github_repo,
+                'last_check' => get_transient( 'ktpwp_last_update_check' ),
+                'update_available' => get_option( 'ktpwp_update_available' ),
+                'latest_version' => get_option( 'ktpwp_latest_version' ),
+                'cache_cleared' => true
+            );
+            
+            wp_send_json_success( array(
+                'message' => 'キャッシュが正常にクリアされました。更新チェックを再実行してください。',
+                'debug_info' => $debug_info
+            ) );
+            
+        } catch ( Exception $e ) {
+            wp_send_json_error( array(
+                'message' => 'キャッシュクリアに失敗しました: ' . $e->getMessage(),
+                'error_type' => 'cache_clear_failed'
+            ) );
         }
     }
 
@@ -1298,6 +1408,16 @@ class KTPWP_Update_Checker {
         error_log( 'KantanPro: 強制更新チェックを実行しました' );
     }
     
+    /**
+     * GitHubトークンの再読み込み
+     */
+    public function reload_github_token( $old_value, $new_value ) {
+        if ( isset( $new_value['github_token'] ) ) {
+            $this->github_token = $new_value['github_token'];
+            error_log( 'KantanPro: GitHubトークンが更新されました' );
+        }
+    }
+
     /**
      * プラグイン無効化時のクリーンアップ
      */
