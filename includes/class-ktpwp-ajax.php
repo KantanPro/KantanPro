@@ -4775,12 +4775,13 @@ class KTPWP_Ajax {
 			error_log( '期間別件数: ' . $period_count );
 		}
 
-		// 月別売上データ
+		// 月別売上データ（請求項目から計算）
 		$monthly_query = "SELECT 
 			DATE_FORMAT(o.created_at, '%Y-%m') as month,
-			SUM(o.total_amount) as total_sales
+			SUM(ii.amount) as total_sales
 			FROM {$wpdb->prefix}ktp_order o
-			WHERE 1=1 {$where_clause}
+			LEFT JOIN {$wpdb->prefix}ktp_order_invoice_items ii ON o.id = ii.order_id
+			WHERE 1=1 {$where_clause} AND ii.amount IS NOT NULL
 			GROUP BY DATE_FORMAT(o.created_at, '%Y-%m')
 			ORDER BY month";
 
@@ -4794,12 +4795,13 @@ class KTPWP_Ajax {
 			error_log( '月別売上結果: ' . json_encode( $monthly_results ) );
 		}
 
-		// 進捗別売上データ
+		// 進捗別売上データ（請求項目から計算）
 		$progress_query = "SELECT 
 			o.status,
-			SUM(o.total_amount) as total_sales
+			SUM(ii.amount) as total_sales
 			FROM {$wpdb->prefix}ktp_order o
-			WHERE 1=1 {$where_clause}
+			LEFT JOIN {$wpdb->prefix}ktp_order_invoice_items ii ON o.id = ii.order_id
+			WHERE 1=1 {$where_clause} AND ii.amount IS NOT NULL
 			GROUP BY o.status
 			ORDER BY o.status";
 
@@ -4959,12 +4961,13 @@ class KTPWP_Ajax {
 
 		$where_clause = $this->get_period_where_clause( $period );
 
-		// 顧客別売上TOP10
+		// 顧客別売上TOP10（請求項目から計算）
 		$sales_query = "SELECT 
 			o.customer_name,
-			SUM(o.total_amount) as total_sales
+			SUM(ii.amount) as total_sales
 			FROM {$wpdb->prefix}ktp_order o
-			WHERE 1=1 {$where_clause}
+			LEFT JOIN {$wpdb->prefix}ktp_order_invoice_items ii ON o.id = ii.order_id
+			WHERE 1=1 {$where_clause} AND ii.amount IS NOT NULL
 			GROUP BY o.customer_name
 			ORDER BY total_sales DESC
 			LIMIT 10";
@@ -5024,27 +5027,27 @@ class KTPWP_Ajax {
 
 			$where_clause = $this->get_period_where_clause( $period );
 
-			// サービス別売上TOP5
+			// サービス別売上TOP5（請求項目から計算）
 			$sales_query = "SELECT 
-				s.service_name,
-				SUM(o.total_amount) as total_sales
+				ii.product_name as service_name,
+				SUM(ii.amount) as total_sales
 				FROM {$wpdb->prefix}ktp_order o 
-				LEFT JOIN {$wpdb->prefix}ktp_service s ON o.service_id = s.id 
-				WHERE 1=1 {$where_clause} AND o.service_id IS NOT NULL
-				GROUP BY s.id 
+				LEFT JOIN {$wpdb->prefix}ktp_order_invoice_items ii ON o.id = ii.order_id 
+				WHERE 1=1 {$where_clause} AND ii.amount IS NOT NULL
+				GROUP BY ii.product_name 
 				ORDER BY total_sales DESC 
 				LIMIT 5";
 
 			$sales_results = $wpdb->get_results( $sales_query );
 
-			// サービス別数量TOP5
+			// サービス別数量TOP5（請求項目から計算）
 			$usage_query = "SELECT 
-				s.service_name,
-				COUNT(o.id) as usage_count
+				ii.product_name as service_name,
+				COUNT(DISTINCT o.id) as usage_count
 				FROM {$wpdb->prefix}ktp_order o 
-				LEFT JOIN {$wpdb->prefix}ktp_service s ON o.service_id = s.id 
-				WHERE 1=1 {$where_clause} AND o.service_id IS NOT NULL
-				GROUP BY s.id 
+				LEFT JOIN {$wpdb->prefix}ktp_order_invoice_items ii ON o.id = ii.order_id 
+				WHERE 1=1 {$where_clause} AND ii.amount IS NOT NULL
+				GROUP BY ii.product_name 
 				ORDER BY usage_count DESC 
 				LIMIT 5";
 
