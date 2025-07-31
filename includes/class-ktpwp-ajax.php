@@ -4775,13 +4775,13 @@ class KTPWP_Ajax {
 			error_log( '期間別件数: ' . $period_count );
 		}
 
-		// 月別売上データ（請求項目から計算）
+		// 月別売上データ（請求済以降の進捗で、請求項目がある案件のみ）
 		$monthly_query = "SELECT 
 			DATE_FORMAT(o.created_at, '%Y-%m') as month,
 			SUM(ii.amount) as total_sales
 			FROM {$wpdb->prefix}ktp_order o
 			LEFT JOIN {$wpdb->prefix}ktp_order_invoice_items ii ON o.id = ii.order_id
-			WHERE 1=1 {$where_clause} AND ii.amount IS NOT NULL
+			WHERE 1=1 {$where_clause} AND ii.amount IS NOT NULL AND o.progress >= 5 AND o.progress != 7
 			GROUP BY DATE_FORMAT(o.created_at, '%Y-%m')
 			ORDER BY month";
 
@@ -4795,7 +4795,7 @@ class KTPWP_Ajax {
 			error_log( '月別売上結果: ' . json_encode( $monthly_results ) );
 		}
 
-		// 利益推移データ（売上とコストを時系列で取得）
+		// 利益推移データ（請求済以降の進捗で、売上とコストを時系列で取得）
 		$profit_query = "SELECT 
 			DATE_FORMAT(o.created_at, '%Y-%m') as month,
 			SUM(ii.amount) as total_sales,
@@ -4811,7 +4811,7 @@ class KTPWP_Ajax {
 				FROM {$wpdb->prefix}ktp_order_cost_items 
 				GROUP BY order_id
 			) oci ON o.id = oci.order_id
-			WHERE 1=1 {$where_clause} AND ii.amount IS NOT NULL
+			WHERE 1=1 {$where_clause} AND ii.amount IS NOT NULL AND o.progress >= 5 AND o.progress != 7
 			GROUP BY DATE_FORMAT(o.created_at, '%Y-%m')
 			ORDER BY month";
 
