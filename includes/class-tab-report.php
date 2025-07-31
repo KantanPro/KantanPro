@@ -395,17 +395,17 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 			$content = '<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:16px;margin-bottom:24px;">';
 			
 			$content .= '<div style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);color:#fff;padding:20px;border-radius:8px;text-align:center;">';
-			$content .= '<h4 style="margin:0 0 8px 0;font-size:14px;">総売上</h4>';
+			$content .= '<div style="margin:0 0 8px 0;font-size:16px;font-weight:bold;color:#000;text-shadow:2px 2px 4px rgba(255,255,255,0.8),-1px -1px 0 #fff,1px -1px 0 #fff,-1px 1px 0 #fff,1px 1px 0 #fff;">総売上</div>';
 			$content .= '<div style="font-size:24px;font-weight:bold;">¥' . number_format( $total_sales ) . '</div>';
 			$content .= '</div>';
 
 			$content .= '<div style="background:linear-gradient(135deg, #f093fb 0%, #f5576c 100%);color:#fff;padding:20px;border-radius:8px;text-align:center;">';
-			$content .= '<h4 style="margin:0 0 8px 0;font-size:14px;">案件数</h4>';
+			$content .= '<div style="margin:0 0 8px 0;font-size:16px;font-weight:bold;color:#000;text-shadow:2px 2px 4px rgba(255,255,255,0.8),-1px -1px 0 #fff,1px -1px 0 #fff,-1px 1px 0 #fff,1px 1px 0 #fff;">案件数</div>';
 			$content .= '<div style="font-size:24px;font-weight:bold;">' . number_format( $order_count ) . '件</div>';
 			$content .= '</div>';
 
 			$content .= '<div style="background:linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);color:#fff;padding:20px;border-radius:8px;text-align:center;">';
-			$content .= '<h4 style="margin:0 0 8px 0;font-size:14px;">平均単価</h4>';
+			$content .= '<div style="margin:0 0 8px 0;font-size:16px;font-weight:bold;color:#000;text-shadow:2px 2px 4px rgba(255,255,255,0.8),-1px -1px 0 #fff,1px -1px 0 #fff,-1px 1px 0 #fff,1px 1px 0 #fff;">平均単価</div>';
 			$content .= '<div style="font-size:24px;font-weight:bold;">¥' . number_format( $avg_amount ) . '</div>';
 			$content .= '</div>';
 
