@@ -7,3 +7,8 @@ create_release_zipのコピー.sh
 .DS_Store
 images/.DS_Store
 .DS_Store
+
+# 開発環境用ファイル（本番環境にアップロードしない）
+development-config.php
+test-license-reset.php
+DEVELOPMENT-README.md

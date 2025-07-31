@@ -14,6 +14,11 @@ if ( ! defined( 'ABSPATH' ) ) {
     require_once( dirname( __FILE__ ) . '/../../../wp-load.php' );
 }
 
+// 開発環境設定を読み込み
+if ( file_exists( __DIR__ . '/development-config.php' ) ) {
+    require_once __DIR__ . '/development-config.php';
+}
+
 // Check if user has admin privileges
 if ( ! current_user_can( 'manage_options' ) ) {
     wp_die( 'このスクリプトを実行する権限がありません。' );
@@ -23,6 +28,14 @@ echo '<h1>ライセンス状態リセットテスト</h1>';
 
 // Get license manager instance
 $license_manager = KTPWP_License_Manager::get_instance();
+
+// Show development environment info
+echo '<h2>開発環境情報</h2>';
+$dev_info = $license_manager->get_development_info();
+echo '<p><strong>開発環境:</strong> ' . ( $dev_info['is_development'] ? 'はい' : 'いいえ' ) . '</p>';
+echo '<p><strong>ホスト名:</strong> ' . $dev_info['host'] . '</p>';
+echo '<p><strong>開発用ライセンスキー:</strong> ' . $dev_info['dev_license_key'] . '</p>';
+echo '<p><strong>開発用ライセンス有効:</strong> ' . ( $dev_info['is_dev_license_active'] ? 'はい' : 'いいえ' ) . '</p>';
 
 // Show current license state
 echo '<h2>現在のライセンス状態</h2>';
@@ -39,13 +52,26 @@ echo '<h2>ライセンス有効性チェック</h2>';
 $is_valid = $license_manager->is_license_valid();
 echo '<p><strong>is_license_valid():</strong> ' . ( $is_valid ? 'true' : 'false' ) . '</p>';
 
-// Reset license to invalid state
-echo '<h2>ライセンス状態をリセット</h2>';
-$license_manager->reset_license_for_testing();
+// Development license setup
+echo '<h2>開発用ライセンス設定</h2>';
+if ( $dev_info['is_development'] ) {
+    $result = $license_manager->set_development_license();
+    if ( $result ) {
+        echo '<p style="color: green;"><strong>✓ 開発用ライセンスが設定されました</strong></p>';
+    } else {
+        echo '<p style="color: red;"><strong>✗ 開発用ライセンスの設定に失敗しました</strong></p>';
+    }
+} else {
+    echo '<p style="color: orange;"><strong>⚠ 開発環境ではありません。開発用ライセンスは設定されません。</strong></p>';
+    
+    // Reset license to invalid state
+    echo '<h2>ライセンス状態をリセット</h2>';
+    $license_manager->reset_license_for_testing();
 
-// Also clear all license data for thorough testing
-echo '<h2>ライセンスデータを完全クリア</h2>';
-$license_manager->clear_all_license_data();
+    // Also clear all license data for thorough testing
+    echo '<h2>ライセンスデータを完全クリア</h2>';
+    $license_manager->clear_all_license_data();
+}
 
 // Show updated license state
 echo '<h2>リセット後のライセンス状態</h2>';
@@ -78,5 +104,4 @@ if ( class_exists( 'KTPWP_Report_Class' ) ) {
 
 echo '<h2>テスト完了</h2>';
 echo '<p>WordPressの管理画面でレポートタブを確認してください。</p>';
-echo '<p><a href="' . admin_url( 'admin.php?page=ktp-settings&tab=report' ) . '">レポートタブを開く</a></p>';
-?> 
+echo '<p><a href="' . admin_url( 'admin.php?page=ktp-settings&tab=report' ) . '">レポートタブを開く</a></p>'; 

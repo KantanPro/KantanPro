@@ -28,6 +28,11 @@ if ( file_exists( plugin_dir_path( __FILE__ ) . 'vendor/autoload.php' ) ) {
     require_once plugin_dir_path( __FILE__ ) . 'vendor/autoload.php';
 }
 
+// 開発環境設定を読み込み
+if ( file_exists( plugin_dir_path( __FILE__ ) . 'development-config.php' ) ) {
+    require_once plugin_dir_path( __FILE__ ) . 'development-config.php';
+}
+
 // プラグイン定数定義
 if ( ! defined( 'KANTANPRO_PLUGIN_VERSION' ) ) {
     define( 'KANTANPRO_PLUGIN_VERSION', '1.0.4(a)' );
@@ -199,6 +204,8 @@ require_once __DIR__ . '/includes/ajax-supplier-cost.php';
 
 // --- 部署管理AJAXハンドラを読み込む ---
 require_once __DIR__ . '/includes/ajax-department.php';
+
+
 
 // クラスの読み込み実行
 ktpwp_autoload_classes();
