@@ -243,6 +243,12 @@ class KTPWP_License_Manager {
      * @return bool True if license is valid
      */
     public function is_license_valid() {
+        // 開発環境用万能ライセンスキーのチェック
+        if ( $this->is_development_license_valid() ) {
+            error_log( 'KTPWP License Check: Development license is valid' );
+            return true;
+        }
+
         $license_key = get_option( 'ktp_license_key' );
         $license_status = get_option( 'ktp_license_status' );
         $verified_at = get_option( 'ktp_license_verified_at' );
@@ -284,6 +290,80 @@ class KTPWP_License_Manager {
 
         error_log( 'KTPWP License Check: License is valid' );
         return true;
+    }
+
+    /**
+     * Check if development license is valid
+     *
+     * @since 1.0.0
+     * @return bool True if development license is valid
+     */
+    private function is_development_license_valid() {
+        // 開発環境の判定
+        if ( ! $this->is_development_environment() ) {
+            return false;
+        }
+
+        // 開発用万能ライセンスキーのチェック
+        $dev_license_key = $this->get_development_license_key();
+        $current_license_key = get_option( 'ktp_license_key' );
+
+        if ( ! empty( $dev_license_key ) && $current_license_key === $dev_license_key ) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if current environment is development
+     *
+     * @since 1.0.0
+     * @return bool True if development environment
+     */
+    private function is_development_environment() {
+        // 環境変数で判定
+        if ( defined( 'WP_ENV' ) && WP_ENV === 'development' ) {
+            return true;
+        }
+
+        // ホスト名で判定（localhost, .local, .test など）
+        $host = $_SERVER['HTTP_HOST'] ?? '';
+        if ( in_array( $host, ['localhost', '127.0.0.1'] ) || 
+             strpos( $host, '.local' ) !== false || 
+             strpos( $host, '.test' ) !== false ||
+             strpos( $host, '.dev' ) !== false ) {
+            return true;
+        }
+
+        // wp-config.phpで定義された定数で判定
+        if ( defined( 'KTPWP_DEVELOPMENT_MODE' ) && KTPWP_DEVELOPMENT_MODE === true ) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Get development license key
+     *
+     * @since 1.0.0
+     * @return string Development license key
+     */
+    private function get_development_license_key() {
+        // 環境変数から取得
+        $dev_key = getenv( 'KTPWP_DEV_LICENSE_KEY' );
+        if ( ! empty( $dev_key ) ) {
+            return $dev_key;
+        }
+
+        // wp-config.phpで定義された定数から取得
+        if ( defined( 'KTPWP_DEV_LICENSE_KEY' ) ) {
+            return KTPWP_DEV_LICENSE_KEY;
+        }
+
+        // デフォルトの開発用キー（本番環境では使用されない）
+        return 'DEV-KTPWP-2024-UNIVERSAL-KEY';
     }
 
     /**
@@ -450,6 +530,50 @@ class KTPWP_License_Manager {
         delete_option( 'ktp_license_info' );
         delete_option( 'ktp_license_verified_at' );
         error_log( 'KTPWP License: All license data cleared for testing' );
+    }
+
+    /**
+     * Set development license for testing
+     *
+     * @since 1.0.0
+     */
+    public function set_development_license() {
+        if ( ! $this->is_development_environment() ) {
+            error_log( 'KTPWP License: Cannot set development license in production environment' );
+            return false;
+        }
+
+        $dev_license_key = $this->get_development_license_key();
+        
+        update_option( 'ktp_license_key', $dev_license_key );
+        update_option( 'ktp_license_status', 'active' );
+        update_option( 'ktp_license_info', array(
+            'type' => 'development',
+            'expires' => '2099-12-31',
+            'sites' => 'unlimited',
+            'features' => 'all'
+        ) );
+        update_option( 'ktp_license_verified_at', current_time( 'timestamp' ) );
+        
+        error_log( 'KTPWP License: Development license set successfully' );
+        return true;
+    }
+
+    /**
+     * Get development environment info
+     *
+     * @since 1.0.0
+     * @return array Development environment information
+     */
+    public function get_development_info() {
+        return array(
+            'is_development' => $this->is_development_environment(),
+            'host' => $_SERVER['HTTP_HOST'] ?? 'unknown',
+            'dev_license_key' => $this->get_development_license_key(),
+            'current_license_key' => get_option( 'ktp_license_key' ),
+            'license_status' => get_option( 'ktp_license_status' ),
+            'is_dev_license_active' => $this->is_development_license_valid()
+        );
     }
 }
 
