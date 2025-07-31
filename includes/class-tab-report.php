@@ -217,7 +217,12 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 		 */
 		private function render_client_report() {
 			$content = '<div class="client-report">';
-			$content .= '<h3 style="margin-bottom:24px;color:#333;">顧客別レポート</h3>';
+			$content .= '<h3 style="margin-bottom:8px;color:#333;">顧客別レポート</h3>';
+			
+			// 期間の説明を追加
+			$period = isset( $_GET['period'] ) ? sanitize_text_field( $_GET['period'] ) : 'all_time';
+			$period_description = $this->get_period_description( $period );
+			$content .= '<p style="margin:0 0 24px 0;color:#666;font-size:14px;">売上は「請求済」以降の進捗状況の案件のみを対象としています。「ボツ」案件は売上計算から除外されています。対象期間：' . esc_html( $period_description ) . '</p>';
 
 			// 顧客サマリー
 			$content .= $this->render_client_summary();
@@ -248,7 +253,12 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 		 */
 		private function render_service_report() {
 			$content = '<div class="service-report">';
-			$content .= '<h3 style="margin-bottom:24px;color:#333;">サービス別レポート</h3>';
+			$content .= '<h3 style="margin-bottom:8px;color:#333;">サービス別レポート</h3>';
+			
+			// 期間の説明を追加
+			$period = isset( $_GET['period'] ) ? sanitize_text_field( $_GET['period'] ) : 'all_time';
+			$period_description = $this->get_period_description( $period );
+			$content .= '<p style="margin:0 0 24px 0;color:#666;font-size:14px;">売上は「請求済」以降の進捗状況の案件のみを対象としています。「ボツ」案件は売上計算から除外されています。対象期間：' . esc_html( $period_description ) . '</p>';
 
 			// サービスサマリー
 			$content .= $this->render_service_summary();
@@ -279,7 +289,12 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 		 */
 		private function render_supplier_report() {
 			$content = '<div class="supplier-report">';
-			$content .= '<h3 style="margin-bottom:24px;color:#333;">協力会社レポート</h3>';
+			$content .= '<h3 style="margin-bottom:8px;color:#333;">協力会社レポート</h3>';
+			
+			// 期間の説明を追加
+			$period = isset( $_GET['period'] ) ? sanitize_text_field( $_GET['period'] ) : 'all_time';
+			$period_description = $this->get_period_description( $period );
+			$content .= '<p style="margin:0 0 24px 0;color:#666;font-size:14px;">貢献度は「請求済」以降の進捗状況の案件のみを対象としています。「ボツ」案件は計算から除外されています。対象期間：' . esc_html( $period_description ) . '</p>';
 
 			// 協力会社サマリー
 			$content .= $this->render_supplier_summary();
@@ -401,15 +416,18 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 			$period = isset( $_GET['period'] ) ? sanitize_text_field( $_GET['period'] ) : 'current_year';
 			$where_clause = $this->get_period_where_clause( $period );
 
-			// 顧客別売上TOP5（請求項目から計算）
-			$client_query = "SELECT c.company_name, SUM(ii.amount) as total_sales, COUNT(DISTINCT o.id) as order_count 
-							FROM {$wpdb->prefix}ktp_order o 
-							LEFT JOIN {$wpdb->prefix}ktp_client c ON o.client_id = c.id 
-							LEFT JOIN {$wpdb->prefix}ktp_order_invoice_items ii ON o.id = ii.order_id 
-							WHERE 1=1 {$where_clause} AND ii.amount IS NOT NULL 
-							GROUP BY o.client_id 
-							ORDER BY total_sales DESC 
-							LIMIT 5";
+					// 顧客別売上TOP5（請求済以降の進捗状況の案件のみ）
+		$client_query = "SELECT c.company_name, SUM(ii.amount) as total_sales, COUNT(DISTINCT o.id) as order_count 
+						FROM {$wpdb->prefix}ktp_order o 
+						LEFT JOIN {$wpdb->prefix}ktp_client c ON o.client_id = c.id 
+						LEFT JOIN {$wpdb->prefix}ktp_order_invoice_items ii ON o.id = ii.order_id 
+						WHERE 1=1 {$where_clause} 
+						AND ii.amount IS NOT NULL 
+						AND o.progress >= 5 
+						AND o.progress != 7 
+						GROUP BY o.client_id 
+						ORDER BY total_sales DESC 
+						LIMIT 5";
 			$client_results = $wpdb->get_results( $client_query );
 
 			$content = '<div style="background:#f8f9fa;padding:20px;border-radius:8px;margin-bottom:24px;">';
@@ -447,14 +465,17 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 			$period = isset( $_GET['period'] ) ? sanitize_text_field( $_GET['period'] ) : 'current_year';
 			$where_clause = $this->get_period_where_clause( $period );
 
-			// サービス別売上TOP5（請求項目から計算）
-			$service_query = "SELECT ii.product_name as service_name, SUM(ii.amount) as total_sales, COUNT(DISTINCT o.id) as order_count 
-							 FROM {$wpdb->prefix}ktp_order o 
-							 LEFT JOIN {$wpdb->prefix}ktp_order_invoice_items ii ON o.id = ii.order_id 
-							 WHERE 1=1 {$where_clause} AND ii.amount IS NOT NULL 
-							 GROUP BY ii.product_name 
-							 ORDER BY total_sales DESC 
-							 LIMIT 5";
+					// サービス別売上TOP5（請求済以降の進捗状況の案件のみ）
+		$service_query = "SELECT ii.product_name as service_name, SUM(ii.amount) as total_sales, COUNT(DISTINCT o.id) as order_count 
+						 FROM {$wpdb->prefix}ktp_order o 
+						 LEFT JOIN {$wpdb->prefix}ktp_order_invoice_items ii ON o.id = ii.order_id 
+						 WHERE 1=1 {$where_clause} 
+						 AND ii.amount IS NOT NULL 
+						 AND o.progress >= 5 
+						 AND o.progress != 7 
+						 GROUP BY ii.product_name 
+						 ORDER BY total_sales DESC 
+						 LIMIT 5";
 			$service_results = $wpdb->get_results( $service_query );
 
 			$content = '<div style="background:#f8f9fa;padding:20px;border-radius:8px;margin-bottom:24px;">';
@@ -492,15 +513,18 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 			$period = isset( $_GET['period'] ) ? sanitize_text_field( $_GET['period'] ) : 'current_year';
 			$where_clause = $this->get_period_where_clause( $period );
 
-			// 協力会社別貢献度TOP5
-			$supplier_query = "SELECT s.company_name, COUNT(DISTINCT o.id) as order_count, SUM(oci.amount) as total_contribution 
-							  FROM {$wpdb->prefix}ktp_order o 
-							  LEFT JOIN {$wpdb->prefix}ktp_order_cost_items oci ON o.id = oci.order_id 
-							  LEFT JOIN {$wpdb->prefix}ktp_supplier s ON oci.supplier_id = s.id 
-							  WHERE 1=1 {$where_clause} AND oci.supplier_id IS NOT NULL 
-							  GROUP BY s.id 
-							  ORDER BY total_contribution DESC 
-							  LIMIT 5";
+					// 協力会社別貢献度TOP5（請求済以降の進捗状況の案件のみ）
+		$supplier_query = "SELECT s.company_name, COUNT(DISTINCT o.id) as order_count, SUM(oci.amount) as total_contribution 
+						  FROM {$wpdb->prefix}ktp_order o 
+						  LEFT JOIN {$wpdb->prefix}ktp_order_cost_items oci ON o.id = oci.order_id 
+						  LEFT JOIN {$wpdb->prefix}ktp_supplier s ON oci.supplier_id = s.id 
+						  WHERE 1=1 {$where_clause} 
+						  AND oci.supplier_id IS NOT NULL 
+						  AND o.progress >= 5 
+						  AND o.progress != 7
+						  GROUP BY s.id 
+						  ORDER BY total_contribution DESC 
+						  LIMIT 5";
 			$supplier_results = $wpdb->get_results( $supplier_query );
 
 			$content = '<div style="background:#f8f9fa;padding:20px;border-radius:8px;margin-bottom:24px;">';
@@ -526,37 +550,68 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 			return $content;
 		}
 
-		/**
-		 * Get period WHERE clause
-		 *
-		 * @since 1.0.0
-		 * @param string $period Period type
-		 * @return string WHERE clause
-		 */
-		private function get_period_where_clause( $period ) {
-			$where_clause = '';
+			/**
+	 * Get period description
+	 *
+	 * @since 1.0.0
+	 * @param string $period Period type
+	 * @return string Period description
+	 */
+	private function get_period_description( $period ) {
+		$periods = array(
+			'all_time' => '全期間',
+			'this_year' => '今年',
+			'last_year' => '去年',
+			'this_month' => '今月',
+			'last_month' => '先月',
+			'last_3_months' => '過去3ヶ月',
+			'last_6_months' => '過去6ヶ月',
+			'current_year' => '今年',
+			'current_month' => '今月'
+		);
 
-			switch ( $period ) {
-				case 'current_year':
-					$where_clause = " AND YEAR(o.created_at) = YEAR(CURDATE())";
-					break;
-				case 'last_year':
-					$where_clause = " AND YEAR(o.created_at) = YEAR(CURDATE()) - 1";
-					break;
-				case 'current_month':
-					$where_clause = " AND YEAR(o.created_at) = YEAR(CURDATE()) AND MONTH(o.created_at) = MONTH(CURDATE())";
-					break;
-				case 'last_month':
-					$where_clause = " AND YEAR(o.created_at) = YEAR(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)) AND MONTH(o.created_at) = MONTH(DATE_SUB(CURDATE(), INTERVAL 1 MONTH))";
-					break;
-				case 'all_time':
-				default:
-					$where_clause = "";
-					break;
-			}
+		return isset( $periods[ $period ] ) ? $periods[ $period ] : '全期間';
+	}
 
-			return $where_clause;
+	/**
+	 * Get period WHERE clause
+	 *
+	 * @since 1.0.0
+	 * @param string $period Period type
+	 * @return string WHERE clause
+	 */
+	private function get_period_where_clause( $period ) {
+		$where_clause = '';
+
+		switch ( $period ) {
+			case 'current_year':
+			case 'this_year':
+				$where_clause = " AND YEAR(o.created_at) = YEAR(CURDATE())";
+				break;
+			case 'last_year':
+				$where_clause = " AND YEAR(o.created_at) = YEAR(CURDATE()) - 1";
+				break;
+			case 'current_month':
+			case 'this_month':
+				$where_clause = " AND YEAR(o.created_at) = YEAR(CURDATE()) AND MONTH(o.created_at) = MONTH(CURDATE())";
+				break;
+			case 'last_month':
+				$where_clause = " AND YEAR(o.created_at) = YEAR(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)) AND MONTH(o.created_at) = MONTH(DATE_SUB(CURDATE(), INTERVAL 1 MONTH))";
+				break;
+			case 'last_3_months':
+				$where_clause = " AND o.created_at >= DATE_SUB(CURDATE(), INTERVAL 3 MONTH)";
+				break;
+			case 'last_6_months':
+				$where_clause = " AND o.created_at >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)";
+				break;
+			case 'all_time':
+			default:
+				$where_clause = "";
+				break;
 		}
+
+		return $where_clause;
+	}
 
 
 	}

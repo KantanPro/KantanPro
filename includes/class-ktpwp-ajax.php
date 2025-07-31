@@ -4873,25 +4873,30 @@ class KTPWP_Ajax {
 
 		$where_clause = $this->get_period_where_clause( $period );
 
-		// 顧客別売上TOP10（請求項目から計算）
+		// 顧客別売上TOP10（請求済以降の進捗状況の案件のみ）
 		$sales_query = "SELECT 
 			o.customer_name,
 			SUM(ii.amount) as total_sales
 			FROM {$wpdb->prefix}ktp_order o
 			LEFT JOIN {$wpdb->prefix}ktp_order_invoice_items ii ON o.id = ii.order_id
-			WHERE 1=1 {$where_clause} AND ii.amount IS NOT NULL
+			WHERE 1=1 {$where_clause} 
+			AND ii.amount IS NOT NULL 
+			AND o.progress >= 5 
+			AND o.progress != 7
 			GROUP BY o.customer_name
 			ORDER BY total_sales DESC
 			LIMIT 10";
 
 		$sales_results = $wpdb->get_results( $sales_query );
 
-		// 顧客別案件数TOP10
+		// 顧客別案件数TOP10（請求済以降の進捗状況の案件のみ）
 		$order_query = "SELECT 
 			o.customer_name,
 			COUNT(o.id) as order_count
 			FROM {$wpdb->prefix}ktp_order o
-			WHERE 1=1 {$where_clause}
+			WHERE 1=1 {$where_clause} 
+			AND o.progress >= 5 
+			AND o.progress != 7
 			GROUP BY o.customer_name
 			ORDER BY order_count DESC
 			LIMIT 10";
@@ -4939,26 +4944,32 @@ class KTPWP_Ajax {
 
 			$where_clause = $this->get_period_where_clause( $period );
 
-			// サービス別売上TOP5（請求項目から計算）
+			// サービス別売上TOP5（請求済以降の進捗状況の案件のみ）
 			$sales_query = "SELECT 
 				ii.product_name as service_name,
 				SUM(ii.amount) as total_sales
 				FROM {$wpdb->prefix}ktp_order o 
 				LEFT JOIN {$wpdb->prefix}ktp_order_invoice_items ii ON o.id = ii.order_id 
-				WHERE 1=1 {$where_clause} AND ii.amount IS NOT NULL
+				WHERE 1=1 {$where_clause} 
+				AND ii.amount IS NOT NULL 
+				AND o.progress >= 5 
+				AND o.progress != 7
 				GROUP BY ii.product_name 
 				ORDER BY total_sales DESC 
 				LIMIT 5";
 
 			$sales_results = $wpdb->get_results( $sales_query );
 
-			// サービス別数量TOP5（請求項目から計算）
+			// サービス別数量TOP5（請求済以降の進捗状況の案件のみ）
 			$usage_query = "SELECT 
 				ii.product_name as service_name,
 				COUNT(DISTINCT o.id) as usage_count
 				FROM {$wpdb->prefix}ktp_order o 
 				LEFT JOIN {$wpdb->prefix}ktp_order_invoice_items ii ON o.id = ii.order_id 
-				WHERE 1=1 {$where_clause} AND ii.amount IS NOT NULL
+				WHERE 1=1 {$where_clause} 
+				AND ii.amount IS NOT NULL 
+				AND o.progress >= 5 
+				AND o.progress != 7
 				GROUP BY ii.product_name 
 				ORDER BY usage_count DESC 
 				LIMIT 5";
@@ -5006,14 +5017,17 @@ class KTPWP_Ajax {
 
 			$where_clause = $this->get_period_where_clause( $period );
 
-			// 協力会社別貢献度TOP5
+			// 協力会社別貢献度TOP5（請求済以降の進捗状況の案件のみ）
 			$contribution_query = "SELECT 
 				s.company_name,
 				SUM(oci.amount) as total_contribution
 				FROM {$wpdb->prefix}ktp_order o 
 				LEFT JOIN {$wpdb->prefix}ktp_order_cost_items oci ON o.id = oci.order_id 
 				LEFT JOIN {$wpdb->prefix}ktp_supplier s ON oci.supplier_id = s.id 
-				WHERE 1=1 {$where_clause} AND oci.supplier_id IS NOT NULL 
+				WHERE 1=1 {$where_clause} 
+				AND oci.supplier_id IS NOT NULL 
+				AND o.progress >= 5 
+				AND o.progress != 7
 				GROUP BY s.id 
 				ORDER BY total_contribution DESC 
 				LIMIT 5";
