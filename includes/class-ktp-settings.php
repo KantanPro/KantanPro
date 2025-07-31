@@ -1982,6 +1982,17 @@ class KTP_Settings {
                         </div>
                     </form>
                     
+                    <!-- ライセンス状態再確認フォーム -->
+                    <?php if ( ! empty( get_option( 'ktp_license_key' ) ) ) : ?>
+                        <form method="post" action="" style="margin-top: 20px;">
+                            <?php wp_nonce_field( 'ktp_license_recheck', 'ktp_license_recheck_nonce' ); ?>
+                            <input type="hidden" name="ktp_license_recheck" value="1">
+                            <div class="ktp-submit-button">
+                                <?php submit_button( __( 'ライセンス状態を再確認', 'ktpwp' ), 'secondary', 'recheck_license', false ); ?>
+                            </div>
+                        </form>
+                    <?php endif; ?>
+                    
                     <!-- ライセンス情報 -->
                     <div class="ktp-license-info" style="margin-top: 30px; padding: 20px; background: #f9f9f9; border-radius: 5px;">
                         <h3><?php echo esc_html__( 'ライセンスについて', 'ktpwp' ); ?></h3>
@@ -2000,10 +2011,80 @@ class KTP_Settings {
                             </a>
                         </p>
                     </div>
+                    
+                    <!-- デバッグ情報（開発環境のみ表示） -->
+                    <?php if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) : ?>
+                        <div class="ktp-license-debug" style="margin-top: 30px; padding: 20px; background: #f0f0f0; border: 1px solid #ccc; border-radius: 5px;">
+                            <h3><?php echo esc_html__( 'デバッグ情報', 'ktpwp' ); ?></h3>
+                            <?php
+                            $license_manager = KTPWP_License_Manager::get_instance();
+                            $debug_info = $license_manager->get_development_info();
+                            ?>
+                            <table class="form-table" style="margin: 0;">
+                                <tr>
+                                    <th style="padding: 5px 0; font-weight: normal;"><?php echo esc_html__( '開発環境', 'ktpwp' ); ?></th>
+                                    <td style="padding: 5px 0;"><?php echo $debug_info['is_development'] ? 'はい' : 'いいえ'; ?></td>
+                                </tr>
+                                <tr>
+                                    <th style="padding: 5px 0; font-weight: normal;"><?php echo esc_html__( 'ホスト名', 'ktpwp' ); ?></th>
+                                    <td style="padding: 5px 0;"><?php echo esc_html( $debug_info['host'] ); ?></td>
+                                </tr>
+                                <tr>
+                                    <th style="padding: 5px 0; font-weight: normal;"><?php echo esc_html__( '現在のライセンスキー', 'ktpwp' ); ?></th>
+                                    <td style="padding: 5px 0;"><?php echo esc_html( $debug_info['current_license_key'] ?: '未設定' ); ?></td>
+                                </tr>
+                                <tr>
+                                    <th style="padding: 5px 0; font-weight: normal;"><?php echo esc_html__( 'ライセンスステータス', 'ktpwp' ); ?></th>
+                                    <td style="padding: 5px 0;"><?php echo esc_html( $debug_info['license_status'] ?: '未設定' ); ?></td>
+                                </tr>
+                                <tr>
+                                    <th style="padding: 5px 0; font-weight: normal;"><?php echo esc_html__( '開発用ライセンス有効', 'ktpwp' ); ?></th>
+                                    <td style="padding: 5px 0;"><?php echo $debug_info['is_dev_license_active'] ? 'はい' : 'いいえ'; ?></td>
+                                </tr>
+                                <tr>
+                                    <th style="padding: 5px 0; font-weight: normal;"><?php echo esc_html__( '最終検証時刻', 'ktpwp' ); ?></th>
+                                    <td style="padding: 5px 0;"><?php echo esc_html( get_option( 'ktp_license_verified_at' ) ? date( 'Y-m-d H:i:s', get_option( 'ktp_license_verified_at' ) ) : '未検証' ); ?></td>
+                                </tr>
+                            </table>
+                        </div>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
         <?php
+    }
+
+    /**
+     * ライセンス状態再確認の処理
+     */
+    private function handle_license_recheck() {
+        $license_key = get_option( 'ktp_license_key' );
+        
+        if ( empty( $license_key ) ) {
+            add_settings_error( 'ktp_license', 'no_license_key', __( 'ライセンスキーが設定されていません。', 'ktpwp' ), 'error' );
+            return;
+        }
+
+        // ライセンスマネージャーのインスタンスを取得
+        $license_manager = KTPWP_License_Manager::get_instance();
+        
+        // 強制的にライセンスを再検証
+        $result = $license_manager->verify_license( $license_key );
+        
+        if ( $result['success'] ) {
+            // ライセンスが有効な場合、情報を更新
+            update_option( 'ktp_license_status', 'active' );
+            update_option( 'ktp_license_info', $result['data'] );
+            update_option( 'ktp_license_verified_at', current_time( 'timestamp' ) );
+            
+            add_settings_error( 'ktp_license', 'recheck_success', __( 'ライセンス状態の再確認が完了しました。ライセンスは有効です。', 'ktpwp' ), 'success' );
+        } else {
+            // ライセンスが無効な場合、ステータスを更新
+            update_option( 'ktp_license_status', 'invalid' );
+            error_log( 'KTPWP License: License recheck failed: ' . $result['message'] );
+            
+            add_settings_error( 'ktp_license', 'recheck_failed', __( 'ライセンス状態の再確認が完了しました。ライセンスは無効です。', 'ktpwp' ) . ' (' . $result['message'] . ')', 'error' );
+        }
     }
 
     /**
@@ -2077,6 +2158,13 @@ class KTP_Settings {
             wp_enqueue_script( 'media-upload' );
             wp_enqueue_script( 'thickbox' );
             wp_enqueue_style( 'thickbox' );
+        }
+
+        // ライセンス状態再確認の処理
+        if ( isset( $_POST['ktp_license_recheck'] ) && wp_verify_nonce( $_POST['ktp_license_recheck_nonce'], 'ktp_license_recheck' ) ) {
+            if ( current_user_can( 'manage_options' ) ) {
+                $this->handle_license_recheck();
+            }
         }
 
         // アクティベーションキー保存時の通知
