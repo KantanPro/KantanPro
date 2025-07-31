@@ -4795,40 +4795,38 @@ class KTPWP_Ajax {
 			error_log( '月別売上結果: ' . json_encode( $monthly_results ) );
 		}
 
-		// 進捗別売上データ（請求項目から計算）
-		$progress_query = "SELECT 
-			o.status,
-			SUM(ii.amount) as total_sales
+		// 利益推移データ（売上とコストを時系列で取得）
+		$profit_query = "SELECT 
+			DATE_FORMAT(o.created_at, '%Y-%m') as month,
+			SUM(ii.amount) as total_sales,
+			SUM(COALESCE(oci.amount, 0)) as total_cost
 			FROM {$wpdb->prefix}ktp_order o
-			LEFT JOIN {$wpdb->prefix}ktp_order_invoice_items ii ON o.id = ii.order_id
+			LEFT JOIN (
+				SELECT order_id, SUM(amount) as amount 
+				FROM {$wpdb->prefix}ktp_order_invoice_items 
+				GROUP BY order_id
+			) ii ON o.id = ii.order_id
+			LEFT JOIN (
+				SELECT order_id, SUM(amount) as amount 
+				FROM {$wpdb->prefix}ktp_order_cost_items 
+				GROUP BY order_id
+			) oci ON o.id = oci.order_id
 			WHERE 1=1 {$where_clause} AND ii.amount IS NOT NULL
-			GROUP BY o.status
-			ORDER BY o.status";
+			GROUP BY DATE_FORMAT(o.created_at, '%Y-%m')
+			ORDER BY month";
 
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			error_log( '進捗別売上クエリ: ' . $progress_query );
+			error_log( '利益推移クエリ: ' . $profit_query );
 		}
 
-		$progress_results = $wpdb->get_results( $progress_query );
+		$profit_results = $wpdb->get_results( $profit_query );
 
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			error_log( '進捗別売上結果: ' . json_encode( $progress_results ) );
+			error_log( '利益推移結果: ' . json_encode( $profit_results ) );
 		}
-
-		$progress_labels = array(
-			'受付中' => '受付中',
-			'見積中' => '見積中',
-			'受注' => '受注',
-			'進行中' => '進行中',
-			'完成' => '完成',
-			'請求済' => '請求済',
-			'完了' => '完了',
-			'入金済' => '入金済',
-			'ボツ' => 'ボツ'
-		);
 
 		$monthly_data = array();
-		$progress_data = array();
+		$profit_data = array();
 
 		foreach ( $monthly_results as $result ) {
 			$monthly_data[] = array(
@@ -4837,11 +4835,16 @@ class KTPWP_Ajax {
 			);
 		}
 
-		foreach ( $progress_results as $result ) {
-			$label = isset( $progress_labels[ $result->status ] ) ? $progress_labels[ $result->status ] : '不明';
-			$progress_data[] = array(
-				'label' => $label,
-				'value' => (int) $result->total_sales
+		foreach ( $profit_results as $result ) {
+			$sales = (int) $result->total_sales;
+			$cost = (int) $result->total_cost;
+			$profit = $sales - $cost;
+			
+			$profit_data[] = array(
+				'label' => $result->month,
+				'sales' => $sales,
+				'cost' => $cost,
+				'profit' => $profit
 			);
 		}
 
@@ -4850,9 +4853,11 @@ class KTPWP_Ajax {
 				'labels' => array_column($monthly_data, 'label'),
 				'data' => array_column($monthly_data, 'value')
 			),
-			'progress_sales' => array(
-				'labels' => array_column($progress_data, 'label'),
-				'data' => array_column($progress_data, 'value')
+			'profit_trend' => array(
+				'labels' => array_column($profit_data, 'label'),
+				'sales' => array_column($profit_data, 'sales'),
+				'cost' => array_column($profit_data, 'cost'),
+				'profit' => array_column($profit_data, 'profit')
 			)
 		);
 	}
