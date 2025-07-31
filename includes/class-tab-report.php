@@ -457,7 +457,7 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 				$color = $this->get_progress_color( $result->progress );
 				
 				$content .= '<div style="background:' . $color . ';color:#fff;padding:16px;border-radius:8px;text-align:center;">';
-				$content .= '<h4 style="margin:0 0 4px 0;font-size:12px;">' . esc_html( $label ) . '</h4>';
+				$content .= '<div style="margin:0 0 4px 0;font-size:16px;font-weight:bold;color:#000;text-shadow:2px 2px 4px rgba(255,255,255,0.8),-1px -1px 0 #fff,1px -1px 0 #fff,-1px 1px 0 #fff,1px 1px 0 #fff;">' . esc_html( $label ) . '</div>';
 				$content .= '<div style="font-size:20px;font-weight:bold;">' . number_format( $result->count ?? 0 ) . '件</div>';
 				$content .= '</div>';
 			}
