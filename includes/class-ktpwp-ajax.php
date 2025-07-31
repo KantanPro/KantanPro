@@ -4728,9 +4728,6 @@ class KTPWP_Ajax {
 			case 'sales':
 				$data = $this->get_sales_chart_data( $period );
 				break;
-			case 'progress':
-				$data = $this->get_progress_chart_data( $period );
-				break;
 			case 'client':
 				$data = $this->get_client_chart_data( $period );
 				break;
@@ -4862,97 +4859,7 @@ class KTPWP_Ajax {
 		);
 	}
 
-	/**
-	 * Get progress chart data
-	 *
-	 * @since 1.0.0
-	 * @param string $period Period type
-	 * @return array Chart data
-	 */
-	private function get_progress_chart_data( $period ) {
-		global $wpdb;
 
-		$where_clause = $this->get_period_where_clause( $period );
-
-		// 進捗別案件数
-		$progress_query = "SELECT 
-			o.status,
-			COUNT(*) as count
-			FROM {$wpdb->prefix}ktp_order o
-			WHERE 1=1 {$where_clause}
-			GROUP BY o.status
-			ORDER BY o.status";
-
-		$progress_results = $wpdb->get_results( $progress_query );
-
-		// delivery_dateカラムの存在確認
-		$delivery_date_exists = $wpdb->get_var("SHOW COLUMNS FROM {$wpdb->prefix}ktp_order LIKE 'delivery_date'");
-
-		if ($delivery_date_exists) {
-			// delivery_dateカラムが存在する場合
-			$deadline_query = "SELECT 
-				DATE_FORMAT(o.created_at, '%Y-%m') as month,
-				SUM(CASE WHEN o.delivery_date < CURDATE() THEN 1 ELSE 0 END) as overdue,
-				SUM(CASE WHEN o.delivery_date >= CURDATE() THEN 1 ELSE 0 END) as on_time
-				FROM {$wpdb->prefix}ktp_order o
-				WHERE 1=1 {$where_clause} AND o.delivery_date IS NOT NULL
-				GROUP BY DATE_FORMAT(o.created_at, '%Y-%m')
-				ORDER BY month";
-		} else {
-			// delivery_dateカラムが存在しない場合、作成日ベースの簡易データ
-			$deadline_query = "SELECT 
-				DATE_FORMAT(o.created_at, '%Y-%m') as month,
-				0 as overdue,
-				COUNT(*) as on_time
-				FROM {$wpdb->prefix}ktp_order o
-				WHERE 1=1 {$where_clause}
-				GROUP BY DATE_FORMAT(o.created_at, '%Y-%m')
-				ORDER BY month";
-		}
-
-		$deadline_results = $wpdb->get_results( $deadline_query );
-
-		$progress_labels = array(
-			'受付中' => '受付中',
-			'見積中' => '見積中',
-			'受注' => '受注',
-			'進行中' => '進行中',
-			'完成' => '完成',
-			'請求済' => '請求済',
-			'完了' => '完了',
-			'入金済' => '入金済',
-			'ボツ' => 'ボツ'
-		);
-
-		$progress_data = array();
-		$deadline_data = array();
-
-		foreach ( $progress_results as $result ) {
-			$label = isset( $progress_labels[ $result->status ] ) ? $progress_labels[ $result->status ] : '不明';
-			$progress_data[] = array(
-				'label' => $label,
-				'value' => (int) $result->count
-			);
-		}
-
-		// 納期管理データを簡易的に作成
-		$deadline_data = array(
-			array('label' => '期限内', 'value' => 10),
-			array('label' => '期限間近', 'value' => 3),
-			array('label' => '期限超過', 'value' => 1)
-		);
-
-		return array(
-			'progress_distribution' => array(
-				'labels' => array_column($progress_data, 'label'),
-				'data' => array_column($progress_data, 'value')
-			),
-			'deadline_management' => array(
-				'labels' => array_column($deadline_data, 'label'),
-				'data' => array_column($deadline_data, 'value')
-			)
-		);
-	}
 
 	/**
 	 * Get client chart data

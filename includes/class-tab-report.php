@@ -96,9 +96,6 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 				case 'sales':
 					$content .= $this->render_sales_report();
 					break;
-				case 'progress':
-					$content .= $this->render_progress_report();
-					break;
 				case 'client':
 					$content .= $this->render_client_report();
 					break;
@@ -143,7 +140,6 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 			
 			$reports = array(
 				'sales' => '売上レポート',
-				'progress' => '進捗状況',
 				'client' => '顧客別レポート',
 				'service' => 'サービス別レポート',
 				'supplier' => '協力会社レポート'
@@ -205,37 +201,6 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 			$content .= '<div style="background:#f8f9fa;padding:20px;border-radius:8px;">';
 			$content .= '<h4 style="margin:0 0 16px 0;">月別利益コスト比較</h4>';
 			$content .= '<canvas id="profitTrendChart" width="400" height="300"></canvas>';
-			$content .= '</div>';
-			$content .= '</div>';
-
-			$content .= '</div>';
-
-			return $content;
-		}
-
-		/**
-		 * Render progress report
-		 *
-		 * @since 1.0.0
-		 * @return string HTML content
-		 */
-		private function render_progress_report() {
-			$content = '<div class="progress-report">';
-			$content .= '<h3 style="margin-bottom:24px;color:#333;">進捗状況レポート</h3>';
-
-			// 進捗サマリー
-			$content .= $this->render_progress_summary();
-
-			// グラフエリア
-			$content .= '<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:24px;">';
-			$content .= '<div style="background:#f8f9fa;padding:20px;border-radius:8px;">';
-			$content .= '<h4 style="margin:0 0 16px 0;">進捗状況分布</h4>';
-			$content .= '<canvas id="progressDistributionChart" width="400" height="300"></canvas>';
-			$content .= '</div>';
-			
-			$content .= '<div style="background:#f8f9fa;padding:20px;border-radius:8px;">';
-			$content .= '<h4 style="margin:0 0 16px 0;">納期管理</h4>';
-			$content .= '<canvas id="deadlineChart" width="400" height="300"></canvas>';
 			$content .= '</div>';
 			$content .= '</div>';
 
@@ -425,49 +390,6 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 		}
 
 		/**
-		 * Render progress summary
-		 *
-		 * @since 1.0.0
-		 * @return string HTML content
-		 */
-		private function render_progress_summary() {
-			global $wpdb;
-
-			$period = isset( $_GET['period'] ) ? sanitize_text_field( $_GET['period'] ) : 'all_time';
-			$where_clause = $this->get_period_where_clause( $period );
-
-			// 進捗別案件数
-			$progress_query = "SELECT o.progress, COUNT(*) as count FROM {$wpdb->prefix}ktp_order o WHERE 1=1 {$where_clause} GROUP BY o.progress ORDER BY o.progress";
-			$progress_results = $wpdb->get_results( $progress_query );
-
-			$progress_labels = array(
-				1 => '受付中',
-				2 => '見積中',
-				3 => '受注',
-				4 => '完了',
-				5 => '請求済',
-				6 => '入金済',
-				7 => 'ボツ'
-			);
-
-			$content = '<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(150px, 1fr));gap:12px;margin-bottom:24px;">';
-
-			foreach ( $progress_results as $result ) {
-				$label = isset( $progress_labels[ $result->progress ] ) ? $progress_labels[ $result->progress ] : '不明';
-				$color = $this->get_progress_color( $result->progress );
-				
-				$content .= '<div style="background:' . $color . ';color:#fff;padding:16px;border-radius:8px;text-align:center;">';
-				$content .= '<div style="margin:0 0 4px 0;font-size:16px;font-weight:bold;color:#000;text-shadow:2px 2px 4px rgba(255,255,255,0.8),-1px -1px 0 #fff,1px -1px 0 #fff,-1px 1px 0 #fff,1px 1px 0 #fff;">' . esc_html( $label ) . '</div>';
-				$content .= '<div style="font-size:20px;font-weight:bold;">' . number_format( $result->count ?? 0 ) . '件</div>';
-				$content .= '</div>';
-			}
-
-			$content .= '</div>';
-
-			return $content;
-		}
-
-		/**
 		 * Render client summary
 		 *
 		 * @since 1.0.0
@@ -636,25 +558,6 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 			return $where_clause;
 		}
 
-		/**
-		 * Get progress color
-		 *
-		 * @since 1.0.0
-		 * @param int $progress Progress number
-		 * @return string Color code
-		 */
-		private function get_progress_color( $progress ) {
-			$colors = array(
-				1 => 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', // 受付中
-				2 => 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', // 見積中
-				3 => 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', // 受注
-				4 => 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)', // 完了
-				5 => 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)', // 請求済
-				6 => 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)', // 入金済
-				7 => 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)', // ボツ
-			);
 
-			return isset( $colors[ $progress ] ) ? $colors[ $progress ] : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
-		}
 	}
 } // class_exists

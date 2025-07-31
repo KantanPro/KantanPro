@@ -121,9 +121,6 @@
             case 'sales':
                 initializeSalesCharts(currentPeriod);
                 break;
-            case 'progress':
-                initializeProgressCharts(currentPeriod);
-                break;
             case 'client':
                 initializeClientCharts(currentPeriod);
                 break;
@@ -274,103 +271,7 @@
         });
     }
 
-    // 進捗レポートのグラフ初期化
-    function initializeProgressCharts(period = 'all_time') {
-        console.log('進捗レポートグラフ初期化開始:', period);
-        
-        fetchReportData('progress', period).then(function(data) {
-            console.log('進捗データ取得成功:', data);
-            
-            // 進捗状況分布グラフ
-            const progressDistributionCtx = document.getElementById('progressDistributionChart');
-            if (progressDistributionCtx && data.progress_distribution) {
-                new Chart(progressDistributionCtx, {
-                    type: 'doughnut',
-                    data: {
-                        labels: data.progress_distribution.labels,
-                        datasets: [{
-                            data: data.progress_distribution.data,
-                            backgroundColor: data.progress_distribution.labels.map((_, index) => 
-                                getGradientColor(chartColors.gradients[index % chartColors.gradients.length])
-                            ),
-                            borderColor: '#fff',
-                            borderWidth: 3
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                position: 'bottom',
-                                labels: {
-                                    color: chartColors.dark,
-                                    font: { size: 12 },
-                                    padding: 20
-                                }
-                            },
-                            title: {
-                                display: true,
-                                text: '進捗状況分布',
-                                color: chartColors.dark,
-                                font: { size: 16, weight: 'bold' }
-                            }
-                        }
-                    }
-                });
-            }
 
-            // 納期管理グラフ
-            const deadlineCtx = document.getElementById('deadlineChart');
-            if (deadlineCtx && data.deadline_management) {
-                new Chart(deadlineCtx, {
-                    type: 'bar',
-                    data: {
-                        labels: data.deadline_management.labels,
-                        datasets: [{
-                            label: '案件数',
-                            data: data.deadline_management.data,
-                            backgroundColor: data.deadline_management.labels.map((label, index) => {
-                                if (label === '期限超過') return '#f44336';
-                                if (label === '期限間近') return '#ff9800';
-                                return '#4caf50';
-                            }),
-                            borderColor: '#fff',
-                            borderWidth: 2,
-                            borderRadius: 8
-                        }]
-                    },
-                    options: {
-                        ...barChartOptions,
-                        plugins: {
-                            ...barChartOptions.plugins,
-                            title: {
-                                display: true,
-                                text: '納期管理状況',
-                                color: chartColors.dark,
-                                font: { size: 16, weight: 'bold' }
-                            }
-                        },
-                        scales: {
-                            ...barChartOptions.scales,
-                            y: {
-                                ...barChartOptions.scales.y,
-                                beginAtZero: true,
-                                ticks: {
-                                    ...barChartOptions.scales.y.ticks,
-                                    callback: function(value) {
-                                        return value + '件';
-                                    }
-                                }
-                            }
-                        }
-                    }
-                });
-            }
-        }).catch(function(error) {
-            console.error('進捗データ取得エラー:', error);
-        });
-    }
 
     // 顧客レポートのグラフ初期化
     function initializeClientCharts(period = 'all_time') {
