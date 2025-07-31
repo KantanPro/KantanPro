@@ -183,12 +183,14 @@ class KTPWP_License_Manager {
         }
 
         if ( isset( $data['success'] ) && $data['success'] ) {
+            error_log( 'KTPWP License: Verification successful - ' . json_encode( $data ) );
             return array(
                 'success' => true,
                 'data'    => $data['data'] ?? array(),
                 'message' => $data['message'] ?? __( 'ライセンスが正常に認証されました。', 'ktpwp' )
             );
         } else {
+            error_log( 'KTPWP License: Verification failed - ' . json_encode( $data ) );
             return array(
                 'success' => false,
                 'message' => $data['message'] ?? __( 'ライセンスの認証に失敗しました。', 'ktpwp' )
@@ -466,6 +468,57 @@ class KTPWP_License_Manager {
                 'icon' => 'dashicons-warning',
                 'color' => '#f56e28'
             );
+        }
+
+        // 開発環境用万能ライセンスキーのチェック
+        if ( $this->is_development_license_valid() ) {
+            return array(
+                'status' => 'active',
+                'message' => __( 'ライセンスが有効です。（開発環境）', 'ktpwp' ),
+                'icon' => 'dashicons-yes-alt',
+                'color' => '#46b450',
+                'info' => array_merge( $license_info, array(
+                    'type' => 'development',
+                    'environment' => 'development'
+                ) )
+            );
+        }
+
+        // ライセンスステータスがactiveの場合、KLMサーバーで最新の状態を確認
+        if ( $license_status === 'active' ) {
+            // 検証が24時間以上古い場合、または強制再検証が必要な場合
+            $needs_verification = false;
+            
+            if ( ! $verified_at || ( current_time( 'timestamp' ) - $verified_at ) > 86400 ) {
+                $needs_verification = true;
+            }
+            
+            // 設定ページでの表示時は常に最新状態を確認（KLMでの無効化を検出するため）
+            if ( isset( $_GET['page'] ) && $_GET['page'] === 'ktp-license' ) {
+                $needs_verification = true;
+            }
+            
+            if ( $needs_verification ) {
+                $result = $this->verify_license( $license_key );
+                
+                if ( $result['success'] ) {
+                    // ライセンスが有効な場合、情報を更新
+                    update_option( 'ktp_license_info', $result['data'] );
+                    update_option( 'ktp_license_verified_at', current_time( 'timestamp' ) );
+                    $license_info = $result['data'];
+                } else {
+                    // ライセンスが無効な場合、ステータスを更新
+                    update_option( 'ktp_license_status', 'invalid' );
+                    error_log( 'KTPWP License: License verification failed in get_license_status: ' . $result['message'] );
+                    
+                    return array(
+                        'status' => 'invalid',
+                        'message' => __( 'ライセンスが無効です。', 'ktpwp' ) . ' (' . $result['message'] . ')',
+                        'icon' => 'dashicons-no-alt',
+                        'color' => '#dc3232'
+                    );
+                }
+            }
         }
 
         if ( $license_status === 'active' ) {
