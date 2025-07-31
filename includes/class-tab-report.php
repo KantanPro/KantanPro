@@ -179,6 +179,16 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 			$content = '<div class="sales-report">';
 			$content .= '<h3 style="margin-bottom:24px;color:#333;">売上レポート</h3>';
 
+			// 売上計算条件の説明
+			$content .= '<div style="background:#e3f2fd;border-left:4px solid #2196f3;padding:16px;margin-bottom:24px;border-radius:4px;">';
+			$content .= '<div style="font-weight:bold;color:#1976d2;margin-bottom:8px;">📊 売上計算について</div>';
+			$content .= '<div style="color:#333;font-size:14px;line-height:1.5;">';
+			$content .= '売上は「請求済」以降の進捗状況の案件のみを対象としています。<br>';
+			$content .= '※ 請求項目があっても進捗が「完了」以前の場合は売上に含まれません。<br>';
+			$content .= '※ 「ボツ」案件は売上計算から除外されています。';
+			$content .= '</div>';
+			$content .= '</div>';
+
 			// 期間選択
 			$content .= $this->render_period_selector();
 
@@ -378,15 +388,15 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 			// 期間に応じたWHERE句を生成
 			$where_clause = $this->get_period_where_clause( $period );
 
-			// 総売上（請求項目から計算）
+			// 総売上（請求済以降の進捗で、請求項目がある案件のみ）
 			$total_sales_query = "SELECT SUM(ii.amount) as total 
 								 FROM {$wpdb->prefix}ktp_order o 
 								 LEFT JOIN {$wpdb->prefix}ktp_order_invoice_items ii ON o.id = ii.order_id 
-								 WHERE 1=1 {$where_clause} AND ii.amount IS NOT NULL";
+								 WHERE 1=1 {$where_clause} AND ii.amount IS NOT NULL AND o.progress >= 5 AND o.progress != 7";
 			$total_sales = $wpdb->get_var( $total_sales_query ) ?: 0;
 
-			// 案件数
-			$order_count_query = "SELECT COUNT(*) as count FROM {$wpdb->prefix}ktp_order o WHERE 1=1 {$where_clause}";
+			// 案件数（請求済以降の進捗のみ）
+			$order_count_query = "SELECT COUNT(*) as count FROM {$wpdb->prefix}ktp_order o WHERE 1=1 {$where_clause} AND o.progress >= 5 AND o.progress != 7";
 			$order_count = $wpdb->get_var( $order_count_query ) ?: 0;
 
 			// 平均単価
