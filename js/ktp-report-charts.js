@@ -422,46 +422,48 @@
                 });
             }
 
-            // サービス別数量グラフ
+            // サービス別比率（受注ベース）グラフ
             const serviceQuantityCtx = document.getElementById('serviceQuantityChart');
             if (serviceQuantityCtx && data.service_quantity) {
                 new Chart(serviceQuantityCtx, {
-                    type: 'line',
+                    type: 'pie',
                     data: {
                         labels: data.service_quantity.labels,
                         datasets: [{
-                            label: '数量',
                             data: data.service_quantity.data,
-                            borderColor: chartColors.secondary,
-                            backgroundColor: 'rgba(76, 175, 80, 0.1)',
-                            tension: 0.4,
-                            fill: true,
-                            pointBackgroundColor: chartColors.secondary,
-                            pointBorderColor: '#fff',
-                            pointBorderWidth: 2,
-                            pointRadius: 6
+                            backgroundColor: data.service_quantity.labels.map((_, index) => 
+                                getGradientColor(chartColors.gradients[index % chartColors.gradients.length])
+                            ),
+                            borderColor: '#fff',
+                            borderWidth: 3
                         }]
                     },
                     options: {
-                        ...commonOptions,
+                        responsive: true,
+                        maintainAspectRatio: false,
                         plugins: {
-                            ...commonOptions.plugins,
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    color: chartColors.dark,
+                                    font: { size: 12 },
+                                    padding: 20
+                                }
+                            },
                             title: {
                                 display: true,
-                                text: 'サービス別数量',
+                                text: 'サービス別比率（受注ベース）',
                                 color: chartColors.dark,
                                 font: { size: 16, weight: 'bold' }
-                            }
-                        },
-                        scales: {
-                            ...commonOptions.scales,
-                            y: {
-                                ...commonOptions.scales.y,
-                                beginAtZero: true,
-                                ticks: {
-                                    ...commonOptions.scales.y.ticks,
-                                    callback: function(value) {
-                                        return value + '個';
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const label = context.label || '';
+                                        const value = context.parsed;
+                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                        const percentage = ((value / total) * 100).toFixed(1);
+                                        return label + ': ' + value + '件 (' + percentage + '%)';
                                     }
                                 }
                             }

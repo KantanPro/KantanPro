@@ -4960,7 +4960,7 @@ class KTPWP_Ajax {
 
 			$sales_results = $wpdb->get_results( $sales_query );
 
-			// サービス別数量TOP5（請求済以降の進捗状況の案件のみ）
+			// サービス別比率（受注以降の進捗状況の案件のみ）
 			$usage_query = "SELECT 
 				ii.product_name as service_name,
 				COUNT(DISTINCT o.id) as usage_count
@@ -4968,7 +4968,7 @@ class KTPWP_Ajax {
 				LEFT JOIN {$wpdb->prefix}ktp_order_invoice_items ii ON o.id = ii.order_id 
 				WHERE 1=1 {$where_clause} 
 				AND ii.amount IS NOT NULL 
-				AND o.progress >= 5 
+				AND o.progress >= 3 
 				AND o.progress != 7
 				GROUP BY ii.product_name 
 				ORDER BY usage_count DESC 
