@@ -258,7 +258,7 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 			// 期間の説明を追加
 			$period = isset( $_GET['period'] ) ? sanitize_text_field( $_GET['period'] ) : 'all_time';
 			$period_description = $this->get_period_description( $period );
-			$content .= '<p style="margin:0 0 24px 0;color:#666;font-size:14px;">売上は「請求済」以降の進捗状況の案件のみを対象としています。「ボツ」案件は売上計算から除外されています。対象期間：' . esc_html( $period_description ) . '</p>';
+			$content .= '<p style="margin:0 0 24px 0;color:#666;font-size:14px;">売上は「請求済」以降の進捗状況の案件のみを対象としています。サービス別比率は「受注」以降の進捗状況の案件を対象としています。「ボツ」案件は計算から除外されています。対象期間：' . esc_html( $period_description ) . '</p>';
 
 			// サービスサマリー
 			$content .= $this->render_service_summary();
@@ -271,7 +271,7 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 			$content .= '</div>';
 			
 			$content .= '<div style="background:#f8f9fa;padding:20px;border-radius:8px;">';
-			$content .= '<h4 style="margin:0 0 16px 0;">サービス別数量</h4>';
+			$content .= '<h4 style="margin:0 0 16px 0;">サービス別比率（受注ベース）</h4>';
 			$content .= '<canvas id="serviceQuantityChart" width="400" height="300"></canvas>';
 			$content .= '</div>';
 			$content .= '</div>';
