@@ -194,46 +194,76 @@
                 });
             }
 
-            // 進捗別売上グラフ
-            const progressSalesCtx = document.getElementById('progressSalesChart');
-            if (progressSalesCtx && data.progress_sales) {
-                new Chart(progressSalesCtx, {
+            // 利益推移グラフ
+            const profitTrendCtx = document.getElementById('profitTrendChart');
+            if (profitTrendCtx && data.profit_trend) {
+                new Chart(profitTrendCtx, {
                     type: 'bar',
                     data: {
-                        labels: data.progress_sales.labels,
-                        datasets: [{
-                            label: '売上金額',
-                            data: data.progress_sales.data,
-                            backgroundColor: data.progress_sales.labels.map((_, index) => 
-                                getGradientColor(chartColors.gradients[index % chartColors.gradients.length])
-                            ),
-                            borderColor: '#fff',
-                            borderWidth: 2,
-                            borderRadius: 8
-                        }]
+                        labels: data.profit_trend.labels,
+                        datasets: [
+                            {
+                                label: 'コスト',
+                                data: data.profit_trend.cost,
+                                backgroundColor: chartColors.warning,
+                                borderColor: chartColors.warning,
+                                borderWidth: 1,
+                                borderRadius: 4,
+                                yAxisID: 'y'
+                            },
+                            {
+                                label: '利益',
+                                data: data.profit_trend.profit,
+                                backgroundColor: chartColors.success,
+                                borderColor: chartColors.success,
+                                borderWidth: 1,
+                                borderRadius: 4,
+                                yAxisID: 'y'
+                            }
+                        ]
                     },
                     options: {
-                        ...barChartOptions,
+                        responsive: true,
+                        maintainAspectRatio: false,
                         plugins: {
-                            ...barChartOptions.plugins,
+                            legend: {
+                                labels: {
+                                    color: chartColors.dark,
+                                    font: { size: 12 }
+                                }
+                            },
                             title: {
                                 display: true,
-                                text: '進捗別売上',
+                                text: '月別利益コスト比較',
                                 color: chartColors.dark,
                                 font: { size: 16, weight: 'bold' }
                             }
                         },
                         scales: {
-                            ...barChartOptions.scales,
-                            y: {
-                                ...barChartOptions.scales.y,
-                                beginAtZero: true,
+                            x: {
+                                stacked: true,
+                                grid: {
+                                    color: '#eee'
+                                },
                                 ticks: {
-                                    ...barChartOptions.scales.y.ticks,
+                                    color: chartColors.dark
+                                }
+                            },
+                            y: {
+                                stacked: true,
+                                type: 'linear',
+                                display: true,
+                                position: 'left',
+                                grid: {
+                                    color: '#eee'
+                                },
+                                ticks: {
+                                    color: chartColors.dark,
                                     callback: function(value) {
                                         return '¥' + value.toLocaleString();
                                     }
-                                }
+                                },
+                                beginAtZero: true
                             }
                         }
                     }
@@ -708,7 +738,7 @@
     window.KTPReportCharts = {
         initializeCharts: initializeCharts,
         getMonthlySalesData: getMonthlySalesData,
-        getProgressSalesData: getProgressSalesData
+        getProfitTrendData: getProfitTrendData
     };
 
 })(); 

@@ -193,8 +193,8 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 			$content .= '</div>';
 			
 			$content .= '<div style="background:#f8f9fa;padding:20px;border-radius:8px;">';
-			$content .= '<h4 style="margin:0 0 16px 0;">進捗別売上</h4>';
-			$content .= '<canvas id="progressSalesChart" width="400" height="300"></canvas>';
+			$content .= '<h4 style="margin:0 0 16px 0;">月別利益コスト比較</h4>';
+			$content .= '<canvas id="profitTrendChart" width="400" height="300"></canvas>';
 			$content .= '</div>';
 			$content .= '</div>';
 
