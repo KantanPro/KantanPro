@@ -75,6 +75,27 @@ class KTPWP_License_Manager {
         add_action( 'admin_init', array( $this, 'handle_license_activation' ) );
         add_action( 'wp_ajax_ktpwp_verify_license', array( $this, 'ajax_verify_license' ) );
         add_action( 'wp_ajax_ktpwp_get_license_info', array( $this, 'ajax_get_license_info' ) );
+        
+        // ライセンス状態の初期化
+        $this->initialize_license_state();
+    }
+
+    /**
+     * Initialize license state
+     *
+     * @since 1.0.0
+     */
+    private function initialize_license_state() {
+        $license_key = get_option( 'ktp_license_key' );
+        $license_status = get_option( 'ktp_license_status' );
+        
+        // ライセンスキーが設定されていない場合、明示的に無効な状態にする
+        if ( empty( $license_key ) ) {
+            if ( $license_status !== 'not_set' ) {
+                update_option( 'ktp_license_status', 'not_set' );
+                error_log( 'KTPWP License: Initializing license status to not_set (no license key)' );
+            }
+        }
     }
 
     /**
@@ -226,7 +247,26 @@ class KTPWP_License_Manager {
         $license_status = get_option( 'ktp_license_status' );
         $verified_at = get_option( 'ktp_license_verified_at' );
 
-        if ( empty( $license_key ) || $license_status !== 'active' ) {
+        // ライセンスキーが空の場合、ステータスを確実に'not_set'にする
+        if ( empty( $license_key ) ) {
+            if ( $license_status !== 'not_set' ) {
+                update_option( 'ktp_license_status', 'not_set' );
+                error_log( 'KTPWP License Check: License key is empty, setting status to not_set' );
+            }
+            return false;
+        }
+
+        // デバッグログを追加
+        error_log( 'KTPWP License Check: license_key = set, status = ' . $license_status );
+
+        if ( $license_status !== 'active' ) {
+            error_log( 'KTPWP License Check: License status is not active: ' . $license_status );
+            return false;
+        }
+
+        // not_setステータスの場合も明示的に無効とする
+        if ( $license_status === 'not_set' ) {
+            error_log( 'KTPWP License Check: License status is not_set' );
             return false;
         }
 
@@ -236,11 +276,13 @@ class KTPWP_License_Manager {
             $result = $this->verify_license( $license_key );
             if ( ! $result['success'] ) {
                 update_option( 'ktp_license_status', 'invalid' );
+                error_log( 'KTPWP License Check: License verification failed' );
                 return false;
             }
             update_option( 'ktp_license_verified_at', current_time( 'timestamp' ) );
         }
 
+        error_log( 'KTPWP License Check: License is valid' );
         return true;
     }
 
@@ -346,7 +388,7 @@ class KTPWP_License_Manager {
             );
         }
 
-        if ( $license_status === 'active' && $this->is_license_valid() ) {
+        if ( $license_status === 'active' ) {
             return array(
                 'status' => 'active',
                 'message' => __( 'ライセンスが有効です。', 'ktpwp' ),
@@ -384,6 +426,30 @@ class KTPWP_License_Manager {
         delete_option( 'ktp_license_status' );
         delete_option( 'ktp_license_info' );
         delete_option( 'ktp_license_verified_at' );
+        error_log( 'KTPWP License: License deactivated' );
+    }
+
+    /**
+     * Reset license to invalid state for testing
+     *
+     * @since 1.0.0
+     */
+    public function reset_license_for_testing() {
+        update_option( 'ktp_license_status', 'not_set' );
+        error_log( 'KTPWP License: License reset to not_set for testing' );
+    }
+
+    /**
+     * Clear all license data for testing
+     *
+     * @since 1.0.0
+     */
+    public function clear_all_license_data() {
+        delete_option( 'ktp_license_key' );
+        delete_option( 'ktp_license_status' );
+        delete_option( 'ktp_license_info' );
+        delete_option( 'ktp_license_verified_at' );
+        error_log( 'KTPWP License: All license data cleared for testing' );
     }
 }
 

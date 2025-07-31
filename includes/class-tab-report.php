@@ -61,14 +61,24 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 			$license_manager = KTPWP_License_Manager::get_instance();
 			$is_license_valid = $license_manager->is_license_valid();
 
+			// デバッグログを追加
+			error_log( 'KTPWP Report: License check result = ' . ( $is_license_valid ? 'true' : 'false' ) );
+			
+			// 現在のライセンス状態を詳細にログ出力
+			$license_key = get_option( 'ktp_license_key' );
+			$license_status = get_option( 'ktp_license_status' );
+			error_log( 'KTPWP Report: Current license key = ' . ( empty( $license_key ) ? 'empty' : 'set' ) . ', status = ' . $license_status );
+
 			$ui_generator = new KTPWP_Ui_Generator();
 			$graph_renderer = new KTPWP_Graph_Renderer();
 
 			$content = $ui_generator->generate_controller();
 
 			if ( ! $is_license_valid ) {
+				error_log( 'KTPWP Report: Rendering dummy graph (license invalid)' );
 				$content .= $graph_renderer->render_dummy_graph();
 			} else {
+				error_log( 'KTPWP Report: Rendering comprehensive reports (license valid)' );
 				$content .= $this->render_comprehensive_reports();
 			}
 
