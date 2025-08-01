@@ -663,7 +663,8 @@ if ( ! class_exists( 'Kntan_Service_Class' ) ) {
 
 				// 追加モードボタン
 				$add_action = 'istmode';
-				$button_group_html .= '<form method="post" action="" style="margin: 0;">';
+				$form_action_url = add_query_arg(array('tab_name' => $name), $base_page_url);
+				$button_group_html .= '<form method="post" action="' . esc_url( $form_action_url ) . '" style="margin: 0;">';
 				if ( function_exists( 'wp_nonce_field' ) ) {
 					$button_group_html .= wp_nonce_field( 'ktp_service_action', '_ktp_service_nonce', true, false );
 				}
@@ -676,7 +677,8 @@ if ( ! class_exists( 'Kntan_Service_Class' ) ) {
 
 				// 複製ボタン
 				if ( $data_id ) {
-					$button_group_html .= '<form method="post" action="" style="margin: 0;">';
+					$form_action_url = add_query_arg(array('tab_name' => $name), $base_page_url);
+					$button_group_html .= '<form method="post" action="' . esc_url( $form_action_url ) . '" style="margin: 0;">';
 					if ( function_exists( 'wp_nonce_field' ) ) {
 						$button_group_html .= wp_nonce_field( 'ktp_service_action', '_ktp_service_nonce', true, false );
 					}
@@ -690,7 +692,8 @@ if ( ! class_exists( 'Kntan_Service_Class' ) ) {
 
 				// 検索モードボタン
 				$search_action = 'srcmode';
-				$button_group_html .= '<form method="post" action="" style="margin: 0;">';
+				$form_action_url = add_query_arg(array('tab_name' => $name), $base_page_url);
+				$button_group_html .= '<form method="post" action="' . esc_url( $form_action_url ) . '" style="margin: 0;">';
 				if ( function_exists( 'wp_nonce_field' ) ) {
 					$button_group_html .= wp_nonce_field( 'ktp_service_action', '_ktp_service_nonce', true, false );
 				}
@@ -734,7 +737,8 @@ if ( ! class_exists( 'Kntan_Service_Class' ) ) {
 
 				// サービス画像アップロードフォーム
 				$nonce_field_upload = function_exists( 'wp_nonce_field' ) ? wp_nonce_field( 'ktp_service_action', '_ktp_service_nonce', true, false ) : '';
-				$image_section_html .= '<form action="" method="post" enctype="multipart/form-data" onsubmit="return checkImageUpload(this);">';
+				$form_action_url = add_query_arg(array('tab_name' => $name), $base_page_url);
+				$image_section_html .= '<form action="' . esc_url( $form_action_url ) . '" method="post" enctype="multipart/form-data" onsubmit="return checkImageUpload(this);">';
 				$image_section_html .= $nonce_field_upload;
 				$image_section_html .= '<div class="file-upload-container">';
 				$image_section_html .= '<input type="file" name="image" class="file-input">';
@@ -749,7 +753,8 @@ if ( ! class_exists( 'Kntan_Service_Class' ) ) {
 
 				// サービス画像削除ボタン
 				$nonce_field_delete = function_exists( 'wp_nonce_field' ) ? wp_nonce_field( 'ktp_service_action', '_ktp_service_nonce', true, false ) : '';
-				$image_section_html .= '<form method="post" action="">';
+				$form_action_url = add_query_arg(array('tab_name' => $name), $base_page_url);
+				$image_section_html .= '<form method="post" action="' . esc_url( $form_action_url ) . '">';
 				$image_section_html .= $nonce_field_delete;
 				$image_section_html .= '<input type="hidden" name="data_id" value="' . esc_attr( $data_id ) . '">';
 				$image_section_html .= '<input type="hidden" name="query_post" value="delete_image">';
@@ -761,11 +766,18 @@ if ( ! class_exists( 'Kntan_Service_Class' ) ) {
 				$image_section_html .= '</div>'; // 画像セクション終了
 
 				// 表題にボタングループと画像セクションを含める
+				// デバッグ用：data_idの値を確認
+				if (defined('WP_DEBUG') && WP_DEBUG) {
+					error_log('KTPWP Service Tab: data_id = ' . var_export($data_id, true));
+					error_log('KTPWP Service Tab: data_id type = ' . gettype($data_id));
+				}
+				$id_display = (!empty($data_id) && $data_id !== '0' && $data_id !== 0 && $data_id !== '1' && $data_id !== 1) ? '（ ID： ' . $data_id . ' ）' : '';
 				$data_title = '<div class="data_detail_box"><div class="data_detail_title" style="display: flex; align-items: center; justify-content: space-between;">
-        <div>■ サービスの詳細（ ID： ' . $data_id . ' ）</div>' . $button_group_html . '</div>' . $image_section_html;
+        <div>■ サービスの詳細' . $id_display . '</div>' . $button_group_html . '</div>' . $image_section_html;
 
 				// 更新フォームの開始
-				$data_forms .= "<form name='service_form' method='post' action=''>";
+				$form_action_url = add_query_arg(array('tab_name' => $name), $base_page_url);
+				$data_forms .= "<form name='service_form' method='post' action='" . esc_url( $form_action_url ) . "'>";
 				if ( function_exists( 'wp_nonce_field' ) ) {
 					$data_forms .= wp_nonce_field( 'ktp_service_action', '_ktp_service_nonce', true, false ); }
 				foreach ( $fields as $label => $field ) {
