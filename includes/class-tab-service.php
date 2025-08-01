@@ -771,7 +771,7 @@ if ( ! class_exists( 'Kntan_Service_Class' ) ) {
 					error_log('KTPWP Service Tab: data_id = ' . var_export($data_id, true));
 					error_log('KTPWP Service Tab: data_id type = ' . gettype($data_id));
 				}
-				$id_display = (!empty($data_id) && $data_id !== '0' && $data_id !== 0 && $data_id !== '1' && $data_id !== 1) ? '（ ID： ' . $data_id . ' ）' : '';
+				$id_display = (!empty($data_id) && $data_id !== '0' && $data_id !== 0) ? '（ ID： ' . $data_id . ' ）' : '';
 				$data_title = '<div class="data_detail_box"><div class="data_detail_title" style="display: flex; align-items: center; justify-content: space-between;">
         <div>■ サービスの詳細' . $id_display . '</div>' . $button_group_html . '</div>' . $image_section_html;
 
