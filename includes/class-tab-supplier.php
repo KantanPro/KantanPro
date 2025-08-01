@@ -1354,7 +1354,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 				$button_group_html .= '</div>'; // ボタングループ終了
 
 				// 表題にボタングループを含める
-				$id_display = (!empty($query_id) && $query_id !== '0' && $query_id !== 0 && $query_id !== '1' && $query_id !== 1) ? '（ ID: ' . esc_html( $query_id ) . ' ）' : '';
+				$id_display = (!empty($query_id) && $query_id !== '0' && $query_id !== 0) ? '（ ID: ' . esc_html( $query_id ) . ' ）' : '';
 				$data_title = '<div class="data_detail_box"><div class="data_detail_title" style="display: flex; align-items: center; justify-content: space-between;">
             <div>■ 協力会社の詳細' . $id_display . '</div>' . $button_group_html . '</div>';
 
