@@ -382,9 +382,8 @@ foreach ($client_ids as $client_id) {
                 $user_name = $client_info->name;
                 $company_name = $client_info->company_name;
                 // 画面表示用の形式: "会社名 (担当者名)"
-                $display_name = $client_info->company_name . ' (' . $client_info->name . ')';
-                $search_field = $client_info->company_name . ', ' . $client_info->name;
-                safe_echo("DEBUG: 顧客ID {$client_id} の情報を取得しました: {$customer_name}, {$user_name}");
+                            $search_field = $client_info->company_name . ', ' . $client_info->name;
+            safe_echo("DEBUG: 顧客ID {$client_id} の情報を取得しました: {$customer_name}, {$user_name}");
             } else {
                 // 顧客情報が見つからない場合のフォールバック
                 safe_echo("WARNING: 顧客ID {$client_id} の情報が見つかりませんでした。");
@@ -415,7 +414,7 @@ foreach ($client_ids as $client_id) {
             $status_labels[$status],
             $current_datetime,
             $order_timestamp,
-            $display_name, // 画面表示用の形式を使用
+            $customer_name, // 会社名のみを使用
             $user_name,
             $company_name,
             $search_field,
