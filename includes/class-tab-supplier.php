@@ -1354,7 +1354,13 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 				$button_group_html .= '</div>'; // ボタングループ終了
 
 				// 表題にボタングループを含める
-				$id_display = (!empty($query_id) && $query_id !== '0' && $query_id !== 0) ? '（ ID: ' . esc_html( $query_id ) . ' ）' : '';
+				// デバッグ用：query_idの値を確認
+				if (defined('WP_DEBUG') && WP_DEBUG) {
+					error_log('KTPWP Supplier Tab: query_id = ' . var_export($query_id, true));
+					error_log('KTPWP Supplier Tab: query_id type = ' . gettype($query_id));
+					error_log('KTPWP Supplier Tab: id_display condition = ' . (!empty($query_id) && $query_id !== '0' && $query_id !== 0 ? 'true' : 'false'));
+				}
+				$id_display = (empty($query_id) || $query_id === '0' || $query_id === 0) ? '' : '（ ID: ' . esc_html( $query_id ) . ' ）';
 				$data_title = '<div class="data_detail_box"><div class="data_detail_title" style="display: flex; align-items: center; justify-content: space-between;">
             <div>■ 協力会社の詳細' . $id_display . '</div>' . $button_group_html . '</div>';
 
