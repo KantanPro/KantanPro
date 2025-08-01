@@ -1456,7 +1456,13 @@ if ( ! class_exists( 'Kntan_Client_Class' ) ) {
 				$button_group_html .= '</div>'; // ボタングループ終了
 
 				// 表題にボタングループを含める
-				$id_display = (!empty($data_id) && $data_id !== '0' && $data_id !== 0) ? '（ ID: ' . esc_html( $data_id ) . ' ）' : '';
+				// デバッグ用：data_idの値を確認
+				if (defined('WP_DEBUG') && WP_DEBUG) {
+					error_log('KTPWP Client Tab: data_id = ' . var_export($data_id, true));
+					error_log('KTPWP Client Tab: data_id type = ' . gettype($data_id));
+					error_log('KTPWP Client Tab: id_display condition = ' . (!empty($data_id) && $data_id !== '0' && $data_id !== 0 ? 'true' : 'false'));
+				}
+				$id_display = (empty($data_id) || $data_id === '0' || $data_id === 0) ? '' : '（ ID: ' . esc_html( $data_id ) . ' ）';
 				$data_title = '<div class="data_detail_box"><div class="data_detail_title" style="display: flex; align-items: center; justify-content: space-between;">
             <div>■ 顧客の詳細' . $id_display . '</div>' . $button_group_html . '</div>';
 

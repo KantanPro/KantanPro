@@ -644,6 +644,14 @@ if ( ! class_exists( 'Kntan_Service_Class' ) ) {
 					$data_id = $last_id_row ? $last_id_row->id : null;
 				}
 
+				// データが存在するかチェックし、存在しない場合は空に設定
+				if ( $data_id ) {
+					$exists = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table_name} WHERE id = %d", $data_id ) );
+					if ( ! $exists ) {
+						$data_id = '';
+					}
+				}
+
 				// ボタン群HTMLの準備
 				$button_group_html = '<div class="button-group" style="display: flex; gap: 8px; margin-left: auto;">';
 
@@ -770,8 +778,13 @@ if ( ! class_exists( 'Kntan_Service_Class' ) ) {
 				if (defined('WP_DEBUG') && WP_DEBUG) {
 					error_log('KTPWP Service Tab: data_id = ' . var_export($data_id, true));
 					error_log('KTPWP Service Tab: data_id type = ' . gettype($data_id));
+					error_log('KTPWP Service Tab: id_display condition = ' . (!empty($data_id) && $data_id !== '0' && $data_id !== 0 ? 'true' : 'false'));
 				}
-				$id_display = (!empty($data_id) && $data_id !== '0' && $data_id !== 0) ? '（ ID： ' . $data_id . ' ）' : '';
+				$id_display = (empty($data_id) || $data_id === '0' || $data_id === 0) ? '' : '（ ID： ' . $data_id . ' ）';
+				// デバッグ用：実際の表示内容を確認
+				if (defined('WP_DEBUG') && WP_DEBUG) {
+					error_log('KTPWP Service Tab: Final id_display = ' . $id_display);
+				}
 				$data_title = '<div class="data_detail_box"><div class="data_detail_title" style="display: flex; align-items: center; justify-content: space-between;">
         <div>■ サービスの詳細' . $id_display . '</div>' . $button_group_html . '</div>' . $image_section_html;
 
