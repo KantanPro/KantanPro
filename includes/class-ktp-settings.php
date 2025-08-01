@@ -1941,12 +1941,26 @@ class KTP_Settings {
                             <div class="ktp-license-info-details" style="margin-top: 15px; padding: 15px; background: #f9f9f9; border-radius: 3px;">
                                 <h4 style="margin-top: 0;"><?php echo esc_html__( 'ライセンス詳細', 'ktpwp' ); ?></h4>
                                 <table class="form-table" style="margin: 0;">
-                                    <?php foreach ( $license_status['info'] as $key => $value ) : ?>
+                                    <?php
+                                    // 表示する項目を制限
+                                    $display_fields = array(
+                                        'user_email' => 'User email',
+                                        'start_date' => '開始',
+                                        'end_date' => '終了',
+                                        'remaining_days' => '残り日数'
+                                    );
+                                    
+                                    foreach ( $display_fields as $key => $label ) :
+                                        if ( isset( $license_status['info'][$key] ) ) :
+                                    ?>
                                         <tr>
-                                            <th style="padding: 5px 0; font-weight: normal;"><?php echo esc_html( ucfirst( str_replace( '_', ' ', $key ) ) ); ?></th>
-                                            <td style="padding: 5px 0;"><?php echo esc_html( $value ); ?></td>
+                                            <th style="padding: 5px 0; font-weight: normal;"><?php echo esc_html( $label ); ?></th>
+                                            <td style="padding: 5px 0;"><?php echo esc_html( $license_status['info'][$key] ); ?></td>
                                         </tr>
-                                    <?php endforeach; ?>
+                                    <?php 
+                                        endif;
+                                    endforeach; 
+                                    ?>
                                 </table>
                             </div>
                         <?php endif; ?>
@@ -2012,42 +2026,7 @@ class KTP_Settings {
                         </p>
                     </div>
                     
-                    <!-- デバッグ情報（開発環境のみ表示） -->
-                    <?php if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) : ?>
-                        <div class="ktp-license-debug" style="margin-top: 30px; padding: 20px; background: #f0f0f0; border: 1px solid #ccc; border-radius: 5px;">
-                            <h3><?php echo esc_html__( 'デバッグ情報', 'ktpwp' ); ?></h3>
-                            <?php
-                            $license_manager = KTPWP_License_Manager::get_instance();
-                            $debug_info = $license_manager->get_development_info();
-                            ?>
-                            <table class="form-table" style="margin: 0;">
-                                <tr>
-                                    <th style="padding: 5px 0; font-weight: normal;"><?php echo esc_html__( '開発環境', 'ktpwp' ); ?></th>
-                                    <td style="padding: 5px 0;"><?php echo $debug_info['is_development'] ? 'はい' : 'いいえ'; ?></td>
-                                </tr>
-                                <tr>
-                                    <th style="padding: 5px 0; font-weight: normal;"><?php echo esc_html__( 'ホスト名', 'ktpwp' ); ?></th>
-                                    <td style="padding: 5px 0;"><?php echo esc_html( $debug_info['host'] ); ?></td>
-                                </tr>
-                                <tr>
-                                    <th style="padding: 5px 0; font-weight: normal;"><?php echo esc_html__( '現在のライセンスキー', 'ktpwp' ); ?></th>
-                                    <td style="padding: 5px 0;"><?php echo esc_html( $debug_info['current_license_key'] ?: '未設定' ); ?></td>
-                                </tr>
-                                <tr>
-                                    <th style="padding: 5px 0; font-weight: normal;"><?php echo esc_html__( 'ライセンスステータス', 'ktpwp' ); ?></th>
-                                    <td style="padding: 5px 0;"><?php echo esc_html( $debug_info['license_status'] ?: '未設定' ); ?></td>
-                                </tr>
-                                <tr>
-                                    <th style="padding: 5px 0; font-weight: normal;"><?php echo esc_html__( '開発用ライセンス有効', 'ktpwp' ); ?></th>
-                                    <td style="padding: 5px 0;"><?php echo $debug_info['is_dev_license_active'] ? 'はい' : 'いいえ'; ?></td>
-                                </tr>
-                                <tr>
-                                    <th style="padding: 5px 0; font-weight: normal;"><?php echo esc_html__( '最終検証時刻', 'ktpwp' ); ?></th>
-                                    <td style="padding: 5px 0;"><?php echo esc_html( get_option( 'ktp_license_verified_at' ) ? date( 'Y-m-d H:i:s', get_option( 'ktp_license_verified_at' ) ) : '未検証' ); ?></td>
-                                </tr>
-                            </table>
-                        </div>
-                    <?php endif; ?>
+
                 </div>
             </div>
         </div>
