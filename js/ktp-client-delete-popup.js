@@ -363,10 +363,13 @@
                 const customerNameElement = document.querySelector('#order_customer_name, .data_detail_title');
                 if (customerNameElement) {
                     const nameText = customerNameElement.textContent;
-                    const nameMatch = nameText.match(/顧客の詳細.*?（.*?ID:\s*(\d+).*?）/);
-                    if (nameMatch) {
-                        clientName = '顧客ID: ' + clientId;
-                    }
+                                    const nameMatch = nameText.match(/顧客の詳細.*?（.*?ID:\s*(\d+).*?）/);
+                if (nameMatch) {
+                    clientName = '顧客ID: ' + clientId;
+                } else {
+                    // IDが表示されていない場合でも顧客名を設定
+                    clientName = '顧客ID: ' + clientId;
+                }
                 }
                 // ポップアップを表示
                 const { popupId, popupHTML } = createDeletePopup(clientId, clientName);

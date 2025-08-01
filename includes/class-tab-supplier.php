@@ -1318,7 +1318,8 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 				$button_group_html = '<div class="button-group" style="display: flex; gap: 10px; margin-left: auto;">';
 
 				// 削除ボタン
-				$button_group_html .= '<form method="post" action="" style="margin: 0;">';
+				$form_action_url = add_query_arg(array('tab_name' => $name), $form_action_base_url);
+				$button_group_html .= '<form method="post" action="' . esc_url( $form_action_url ) . '" style="margin: 0;">';
 				$button_group_html .= wp_nonce_field( 'ktp_supplier_action', 'ktp_supplier_nonce', true, false );
 				$button_group_html .= '<input type="hidden" name="data_id" value="' . esc_attr( $query_id ) . '">';
 				$button_group_html .= '<input type="hidden" name="query_post" value="delete">';
@@ -1329,7 +1330,8 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 
 				// 追加モードボタン
 				$add_action = 'istmode';
-				$button_group_html .= '<form method="post" action="" style="margin: 0;">';
+				$form_action_url = add_query_arg(array('tab_name' => $name), $form_action_base_url);
+				$button_group_html .= '<form method="post" action="' . esc_url( $form_action_url ) . '" style="margin: 0;">';
 				$button_group_html .= wp_nonce_field( 'ktp_supplier_action', 'ktp_supplier_nonce', true, false );
 				$button_group_html .= '<input type="hidden" name="data_id" value="">';
 				$button_group_html .= '<input type="hidden" name="query_post" value="' . esc_attr( $add_action ) . '">';
@@ -1340,7 +1342,8 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 
 				// 検索モードボタン
 				$search_action = 'srcmode';
-				$button_group_html .= '<form method="post" action="" style="margin: 0;">';
+				$form_action_url = add_query_arg(array('tab_name' => $name), $form_action_base_url);
+				$button_group_html .= '<form method="post" action="' . esc_url( $form_action_url ) . '" style="margin: 0;">';
 				$button_group_html .= wp_nonce_field( 'ktp_supplier_action', 'ktp_supplier_nonce', true, false );
 				$button_group_html .= '<input type="hidden" name="query_post" value="' . esc_attr( $search_action ) . '">';
 				$button_group_html .= '<button type="submit" name="send_post" title="' . esc_attr__( '検索する', 'ktpwp' ) . '" class="button-style search-mode-btn">';
@@ -1351,8 +1354,9 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 				$button_group_html .= '</div>'; // ボタングループ終了
 
 				// 表題にボタングループを含める
+				$id_display = (!empty($query_id) && $query_id !== '0' && $query_id !== 0 && $query_id !== '1' && $query_id !== 1) ? '（ ID: ' . esc_html( $query_id ) . ' ）' : '';
 				$data_title = '<div class="data_detail_box"><div class="data_detail_title" style="display: flex; align-items: center; justify-content: space-between;">
-            <div>■ 協力会社の詳細（ ID: ' . esc_html( $query_id ) . ' ）</div>' . $button_group_html . '</div>';
+            <div>■ 協力会社の詳細' . $id_display . '</div>' . $button_group_html . '</div>';
 
 				// メイン更新フォーム
 				$data_forms .= '<form method="post" action="' . esc_url( $form_action_base_url ) . '">';
