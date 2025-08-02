@@ -358,9 +358,10 @@ if ( ! class_exists( 'Kntan_Service_Class' ) ) {
 						}
 					}
 					$tax_display = $tax_rate !== null ? intval( $tax_rate ) . '%' : '非課税';
+					$formatted_price = number_format( $price, 0, '.', ',' );
 					$results[] = '<a href="' . esc_url( add_query_arg( $item_link_args, $base_page_url ) ) . '">' .
-                    '<div class="ktp_data_list_item">' . esc_html__( 'ID', 'ktpwp' ) . ': ' . $id . ' ' . $service_name . ' | ' . $this->format_price_display( $price ) . '円' . ( $unit ? '/' . $unit : '' ) . ' | 税率' . $tax_display . ' | ' . $category . ' | ' . esc_html__( '頻度', 'ktpwp' ) . '(' . $frequency . ')</div>' .
-					'</a><!-- DEBUG: price=' . $price . ' formatted=' . $this->format_price_display( $price ) . ' -->';
+                    '<div class="ktp_data_list_item">' . esc_html__( 'ID', 'ktpwp' ) . ': ' . $id . ' ' . $service_name . ' | ' . $formatted_price . '円' . ( $unit ? '/' . $unit : '' ) . ' | 税率' . $tax_display . ' | ' . $category . ' | ' . esc_html__( '頻度', 'ktpwp' ) . '(' . $frequency . ')</div>' .
+					'</a><!-- DEBUG: price=' . $price . ' formatted=' . $formatted_price . ' -->';
 				}
 				$query_max_num = $wpdb->num_rows;
 			} else {
