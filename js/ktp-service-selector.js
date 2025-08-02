@@ -805,7 +805,8 @@
                     <input type="text" name="invoice_items[${newIndex}][unit]" class="invoice-item-input unit" value="${serviceData.unit}">
                 </td>
                 <td style="text-align:left;">
-                    <input type="number" name="invoice_items[${newIndex}][amount]" class="invoice-item-input amount" value="0" step="1" readonly style="text-align:left;">
+                    <span class="invoice-item-amount" data-amount="${serviceData.price * 1}" style="display:inline-block;min-width:80px;text-align:left;">${(serviceData.price * 1).toLocaleString()}</span>
+                    <input type="hidden" name="invoice_items[${newIndex}][amount]" value="${serviceData.price * 1}">
                 </td>
                 <td style="text-align:left;">
                     <input type="number" name="invoice_items[${newIndex}][tax_rate]" class="invoice-item-input tax-rate" value="${serviceData.tax_rate !== undefined && serviceData.tax_rate !== null ? Math.round(serviceData.tax_rate) : ''}" step="1" min="0" max="100" style="width: 50px; max-width: 60px; text-align: right !important;"> %
@@ -829,7 +830,10 @@
 
         // 最初に金額を計算（単価 × 数量）
         if (typeof calculateAmount === 'function') {
-            calculateAmount($newRow);
+            // 金額計算を確実に実行
+            setTimeout(function() {
+                calculateAmount($newRow);
+            }, 100);
         }
 
         // 合計と利益を更新
@@ -881,20 +885,14 @@
                             // 税率が未定義の場合は明示的にnullを保存
                             window.ktpInvoiceAutoSaveItem('invoice', newItemId, 'tax_rate', null, orderId);
                         }
-                        // 金額も明示的に保存（小数点以下も保持）
-                        const calculatedAmount = serviceData.price * 1;
-                        window.ktpInvoiceAutoSaveItem('invoice', newItemId, 'amount', calculatedAmount, orderId);
                         // 備考も保存
                         if (serviceData.remarks !== undefined) {
                             window.ktpInvoiceAutoSaveItem('invoice', newItemId, 'remarks', serviceData.remarks, orderId);
                         }
                     }
                     
-                    // 保存後に再度金額計算を実行
+                    // 保存後に合計と利益を更新（金額計算は既に完了済み）
                     setTimeout(function() {
-                        if (typeof calculateAmount === 'function') {
-                            calculateAmount($newRow);
-                        }
                         if (typeof updateTotalAndProfit === 'function') {
                             updateTotalAndProfit();
                         }
@@ -906,7 +904,7 @@
                         serviceName: serviceData.service_name
                     });
                 }
-            });
+            }, true);
         } else {
             console.error('[SERVICE SELECTOR] データベース保存条件不満足:', {
                 orderId: orderId,
@@ -963,11 +961,17 @@
         // 数量はデフォルトで1に設定
         targetRow.find('.quantity').val(1);
         
-        // 金額フィールドは直接設定せず、計算で自動設定される
+        // 金額フィールドの表示を即座に更新
+        const calculatedAmount = serviceData.price * 1;
+        targetRow.find('.invoice-item-amount').text(calculatedAmount.toLocaleString()).attr('data-amount', calculatedAmount);
+        targetRow.find('input[name*="[amount]"]').val(calculatedAmount);
 
         // 金額を再計算（これで正しい金額が設定される）
         if (typeof calculateAmount === 'function') {
-            calculateAmount(targetRow);
+            // 金額計算を確実に実行
+            setTimeout(function() {
+                calculateAmount(targetRow);
+            }, 100);
         }
 
         // 合計と利益を更新
@@ -1009,20 +1013,13 @@
                 window.ktpInvoiceAutoSaveItem('invoice', itemId, 'tax_rate', null, orderId);
             }
             
-            // 金額も明示的に保存（小数点以下も保持）
-            const calculatedAmount = serviceData.price * 1;
-            window.ktpInvoiceAutoSaveItem('invoice', itemId, 'amount', calculatedAmount, orderId);
-            
             // 備考も保存
             if (serviceData.remarks !== undefined) {
                 window.ktpInvoiceAutoSaveItem('invoice', itemId, 'remarks', serviceData.remarks, orderId);
             }
 
-            // 保存後に金額計算を再実行
+            // 保存後に合計と利益を更新（金額計算は既に完了済み）
             setTimeout(function() {
-                if (typeof calculateAmount === 'function') {
-                    calculateAmount(targetRow);
-                }
                 if (typeof updateTotalAndProfit === 'function') {
                     updateTotalAndProfit();
                 }
@@ -1068,16 +1065,13 @@
                         } else {
                             window.ktpInvoiceAutoSaveItem('invoice', newItemId, 'tax_rate', null, orderId);
                         }
-                        // 金額も明示的に保存（小数点以下も保持）
-                        const calculatedAmount = serviceData.price * 1;
-                        window.ktpInvoiceAutoSaveItem('invoice', newItemId, 'amount', calculatedAmount, orderId);
                         // 備考も保存
                         if (serviceData.remarks !== undefined) {
                             window.ktpInvoiceAutoSaveItem('invoice', newItemId, 'remarks', serviceData.remarks, orderId);
                         }
                     }
                 }
-            });
+            }, true);
         } else {
             console.warn('[SERVICE SELECTOR] DB保存スキップ:', {
                 orderId: orderId,

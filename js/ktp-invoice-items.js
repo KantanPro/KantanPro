@@ -167,7 +167,7 @@
         window.ktpInvoicePendingRequests[requestKey] = xhr;
     };
     // createNewItem関数にcallback引数を追加し、成功/失敗と新しいitem_idを返すように変更
-    window.ktpInvoiceCreateNewItem = function (itemType, fieldName, fieldValue, orderId, $row, callback) {
+    window.ktpInvoiceCreateNewItem = function (itemType, fieldName, fieldValue, orderId, $row, callback, skipAmountCalculation = false) {
         if (window.ktpDebugMode) console.log('[INVOICE] createNewItem呼び出し', { itemType, fieldName, fieldValue, orderId, $row });
         // Ajax URLの確認と代替設定
         let ajaxUrl = ajaxurl;
@@ -214,22 +214,26 @@
                             $row.find('.invoice-item-input').not('.product-name').not('.amount').prop('disabled', false);
                             if (window.ktpDebugMode) console.log('[INVOICE] createNewItem: 他のフィールドを有効化', $row);
                             
-                            // フィールド有効化後に金額計算を実行
-                            setTimeout(function() {
-                                calculateAmount($row);
-                                if (window.ktpDebugMode) console.log('[INVOICE] createNewItem: フィールド有効化後の金額計算実行');
-                                
-                                // 新規レコード作成後に金額も保存
-                                const currentAmountValue = $row.find('.invoice-item-amount').attr('data-amount') || $row.find('.invoice-item-amount').text().replace(/,/g, '');
-                                const currentAmount = parseFloat(currentAmountValue) || 0;
-                                if (currentAmount && currentAmount !== '0') {
-                                    if (window.ktpDebugMode) console.log('[INVOICE] createNewItem: 新規レコード作成後の金額保存', {
-                                        newItemId: result.data.item_id,
-                                        amount: currentAmount
-                                    });
-                                    window.ktpInvoiceAutoSaveItem('invoice', result.data.item_id, 'amount', currentAmount, orderId);
-                                }
-                            }, 100);
+                            // フィールド有効化後に金額計算を実行（スキップフラグがfalseの場合のみ）
+                            if (!skipAmountCalculation) {
+                                setTimeout(function() {
+                                    calculateAmount($row);
+                                    if (window.ktpDebugMode) console.log('[INVOICE] createNewItem: フィールド有効化後の金額計算実行');
+                                    
+                                    // 新規レコード作成後に金額も保存
+                                    const currentAmountValue = $row.find('.invoice-item-amount').attr('data-amount') || $row.find('.invoice-item-amount').text().replace(/,/g, '');
+                                    const currentAmount = parseFloat(currentAmountValue) || 0;
+                                    if (currentAmount && currentAmount !== '0') {
+                                        if (window.ktpDebugMode) console.log('[INVOICE] createNewItem: 新規レコード作成後の金額保存', {
+                                            newItemId: result.data.item_id,
+                                            amount: currentAmount
+                                        });
+                                        window.ktpInvoiceAutoSaveItem('invoice', result.data.item_id, 'amount', currentAmount, orderId);
+                                    }
+                                }, 100);
+                            } else {
+                                if (window.ktpDebugMode) console.log('[INVOICE] createNewItem: 金額計算をスキップ（サービス選択から追加）');
+                            }
                         }
                         if (window.ktpDebugMode) console.log('[INVOICE] createNewItem新規IDセット', result.data.item_id);
                         if (callback) callback(true, result.data.item_id); // コールバック呼び出し
@@ -498,7 +502,7 @@
         const costTotalWithTax = costTotalCeiled + costTotalTaxAmountCeiled;
 
         // 利益計算（PHP側の計算結果を使用）
-        // const profit = totalWithTax - costTotalWithTax; // JavaScript側での利益計算を無効化
+        const profit = totalWithTax - costTotalWithTax; // JavaScript側での利益計算を無効化
 
         // 請求項目の合計表示を更新（税区分に応じて）
         const invoiceTotalDisplay = $('.invoice-items-total');
@@ -1260,7 +1264,7 @@
                                     $row.find('.invoice-item-input').not('.product-name').not('.amount').prop('disabled', false);
                                     if (window.ktpDebugMode) console.log('[INVOICE] product-name blur: 他のフィールドを有効化（再確認）', $row);
                                 }
-                                // price フィールドにフォーカスを移動
+                                // 単価フィールドにフォーカスを移動
                                 if ($row.find('.price').prop('disabled') === false) {
                                     $row.find('.price').focus();
                                 }
