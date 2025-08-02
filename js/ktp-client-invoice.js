@@ -253,7 +253,19 @@ jQuery(document).ready(function($) {
                                                     return num.toFixed(6).replace(/\.?0+$/, '');
                                                 }
                                                 
-                                                var unitPrice = item.price ? formatDecimalDisplay(item.price) + "円" : "-";
+                                                // 金額を3桁区切りでフォーマットする関数
+                                                function formatCurrency(value) {
+                                                    if (value === '' || value === null || value === undefined) {
+                                                        return '';
+                                                    }
+                                                    const num = parseFloat(value);
+                                                    if (isNaN(num)) {
+                                                        return value;
+                                                    }
+                                                    return num.toLocaleString();
+                                                }
+                                                
+                                                var unitPrice = item.price ? formatCurrency(item.price) + "円" : "-";
                                                 var quantity = item.quantity ? formatDecimalDisplay(item.quantity) : "-";
                                                 var amount = item.amount ? parseFloat(item.amount) : 0;
                                                 var totalPrice = amount > 0 ? amount.toLocaleString() + "円" : "-";
