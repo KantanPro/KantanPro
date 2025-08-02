@@ -1,19 +1,29 @@
 <?php
 /**
  * 強化版ダミーデータ作成スクリプト
- * バージョン: 2.2.8
+ * バージョン: 2.4.0
  * 
  * 以下のデータを作成します：
- * - 顧客×6件
+ * - 顧客×6件（カテゴリー別）
  * - 協力会社×6件
- * - サービス×6件（一般：税率10%・食品：税率8%・不動産：非課税）
+ * - サービス×6件（カテゴリー別・税率自動設定）
  * - 受注書×ランダム件数（顧客ごとに2-8件、進捗は重み付きランダム分布）
  * - 職能×18件（協力会社×6件 × 税率3パターン：税率10%・税率8%・非課税）
  * - 請求項目とコスト項目を各受注書に追加
  * 
- * 修正内容（v2.2.8）:
- * - テーブル構造の不一致を修正（service_id、total_amountカラムを削除）
- * - 受注書作成エラーの解決
+ * 修正内容（v2.4.0）:
+ * - 品名に基づく税率設定に変更（食品関連品名は税率8%、その他は10%）
+ * - 食品関連品名の場合は必ず税率8%を1つ含めるように修正
+ * - より現実的な税率設定
+ * 
+ * 修正内容（v2.3.1）:
+ * - 食品カテゴリーの協力会社に必ず税率8%の職能を1つ含めるように修正
+ * - 税率パターンの最適化
+ * 
+ * 修正内容（v2.3.0）:
+ * - カテゴリー機能を追加
+ * - 税率の自動設定（食品8%、不動産非課税、その他10%）
+ * - 顧客・サービス・職能にカテゴリーを適用
  * 
  * 進捗分布：
  * - 受付中: 15%
@@ -75,6 +85,86 @@ foreach ($required_tables as $table) {
     }
 }
 
+// カテゴリー定義
+$categories = array(
+    'テック' => array(
+        'tax_rate' => 10.00,
+        'description' => 'IT・テクノロジー関連'
+    ),
+    '不動産' => array(
+        'tax_rate' => null, // 非課税
+        'description' => '不動産・建設関連'
+    ),
+    '一般' => array(
+        'tax_rate' => 10.00,
+        'description' => '一般的なサービス'
+    ),
+    'ロジスティック' => array(
+        'tax_rate' => 10.00,
+        'description' => '物流・輸送関連'
+    ),
+    '食品' => array(
+        'tax_rate' => 8.00,
+        'description' => '食品・飲食関連'
+    ),
+    '医療' => array(
+        'tax_rate' => 10.00,
+        'description' => '医療・ヘルスケア関連'
+    ),
+    '教育' => array(
+        'tax_rate' => 10.00,
+        'description' => '教育・研修関連'
+    ),
+    '金融' => array(
+        'tax_rate' => 10.00,
+        'description' => '金融・保険関連'
+    )
+);
+
+// カテゴリー別データ定義
+$category_data = array(
+    'テック' => array(
+        'companies' => array('株式会社テックソリューション', '有限会社デジタルクリエイター', '合同会社システム開発', '株式会社ウェブデザイン'),
+        'services' => array('ウェブサイト制作', 'システム開発', 'モバイルアプリ開発', 'クラウド構築', 'データベース設計', 'API開発'),
+        'skills' => array('プログラミング', 'システム設計', 'データベース管理', 'クラウドインフラ', 'セキュリティ対策', 'AI・機械学習')
+    ),
+    '不動産' => array(
+        'companies' => array('株式会社不動産コンサルティング', '有限会社建設工業', '合同会社建築設計', '株式会社プロパティマネジメント'),
+        'services' => array('不動産仲介', '物件管理', '建築設計', '建設工事', '不動産投資相談', '物件査定'),
+        'skills' => array('建築設計', '不動産鑑定', '施工管理', 'CAD設計', '不動産法務', 'プロジェクトマネジメント')
+    ),
+    '一般' => array(
+        'companies' => array('株式会社サンプル商事', '有限会社コンサルティング', '合同会社デザイン工房', '株式会社マーケティングプロ'),
+        'services' => array('経営コンサルティング', 'マーケティング戦略', 'デザイン制作', '翻訳サービス', 'イベント企画', '調査・分析'),
+        'skills' => array('経営コンサル', 'マーケティング', 'デザイン', '翻訳', 'イベント企画', 'データ分析')
+    ),
+    'ロジスティック' => array(
+        'companies' => array('株式会社ロジスティクス', '有限会社輸送サービス', '合同会社倉庫管理', '株式会社配送センター'),
+        'services' => array('物流管理', '配送サービス', '倉庫管理', '輸出入手続き', 'サプライチェーン管理', '配送ルート最適化'),
+        'skills' => array('物流管理', '配送計画', '倉庫運営', '通関手続き', 'ルート最適化', '在庫管理')
+    ),
+    '食品' => array(
+        'companies' => array('株式会社フードサービス', '有限会社ケータリング', '合同会社食材配送', '株式会社レストラン運営'),
+        'services' => array('食品', 'ケータリングサービス', '食材配送', 'レストラン運営', '食品加工', '栄養管理', '食品安全管理'),
+        'skills' => array('食品', '食品品質管理', '栄養管理', '食品安全', '食材調達', 'メニュー開発', '衛生管理')
+    ),
+    '医療' => array(
+        'companies' => array('株式会社メディカルサービス', '有限会社ヘルスケア', '合同会社医療コンサル', '株式会社薬局運営'),
+        'services' => array('医療コンサルティング', '健康診断', '薬局運営', '医療機器管理', '看護サービス', '医療事務'),
+        'skills' => array('医療コンサル', '看護', '薬剤師', '医療事務', '健康管理', '医療機器操作')
+    ),
+    '教育' => array(
+        'companies' => array('株式会社教育サービス', '有限会社研修センター', '合同会社オンライン教育', '株式会社スクール運営'),
+        'services' => array('研修サービス', 'オンライン教育', 'スクール運営', '教材開発', '資格取得支援', '教育コンサル'),
+        'skills' => array('講師', '教材開発', '教育コンサル', 'オンライン教育', '資格指導', 'カリキュラム設計')
+    ),
+    '金融' => array(
+        'companies' => array('株式会社フィナンシャルサービス', '有限会社保険代理店', '合同会社投資コンサル', '株式会社会計事務所'),
+        'services' => array('投資コンサルティング', '保険相談', '会計サービス', '税務相談', '資産運用', 'リスク管理'),
+        'skills' => array('投資コンサル', '保険設計', '会計', '税務', '資産運用', 'リスク管理')
+    )
+);
+
 // 安全なデータベース操作関数
 function safe_db_insert($table, $data, $format = null) {
     global $wpdb;
@@ -109,6 +199,12 @@ function weighted_random_choice($weights) {
     return array_keys($weights)[0];
 }
 
+// カテゴリーに基づく税率取得関数
+function get_tax_rate_by_category($category) {
+    global $categories;
+    return isset($categories[$category]) ? $categories[$category]['tax_rate'] : 10.00;
+}
+
 // 安全な出力関数
 function safe_echo($message) {
     if (defined('WP_DEBUG') && WP_DEBUG) {
@@ -117,7 +213,7 @@ function safe_echo($message) {
 }
 
 safe_echo("強化版ダミーデータ作成を開始します...");
-safe_echo("バージョン: 2.2.8 (配布先サイト対応・テーブル構造修正版)");
+safe_echo("バージョン: 2.4.0 (品名ベース税率設定版)");
 safe_echo("==========================================");
 
 // 警告メッセージの表示
@@ -134,15 +230,24 @@ safe_echo("既存のダミーデータをクリアしてIDをリセットしま�
 clear_dummy_data();
 safe_echo("==========================================");
 
-// 1. 顧客データの作成
-$clients = array(
-    array('company_name' => '株式会社サンプル商事', 'name' => '田中太郎', 'email' => 'info@kantanpro.com', 'memo' => '大手商社'),
-    array('company_name' => '有限会社テックソリューション', 'name' => '佐藤花子', 'email' => 'info@kantanpro.com', 'memo' => 'IT企業'),
-    array('company_name' => '合同会社デザイン工房', 'name' => '鈴木一郎', 'email' => 'info@kantanpro.com', 'memo' => 'デザイン会社'),
-    array('company_name' => '株式会社マーケティングプロ', 'name' => '高橋美咲', 'email' => 'info@kantanpro.com', 'memo' => 'マーケティング会社'),
-    array('company_name' => '有限会社建設工業', 'name' => '渡辺健太', 'email' => 'info@kantanpro.com', 'memo' => '建設会社'),
-    array('company_name' => '株式会社フードサービス', 'name' => '伊藤恵子', 'email' => 'info@kantanpro.com', 'memo' => '飲食会社')
-);
+// 1. 顧客データの作成（カテゴリー別）
+$clients = array();
+$client_categories = array('テック', '不動産', '一般', 'ロジスティック', '食品', '医療');
+
+foreach ($client_categories as $category) {
+    $companies = $category_data[$category]['companies'];
+    $company_name = $companies[array_rand($companies)];
+    $names = array('田中太郎', '佐藤花子', '鈴木一郎', '高橋美咲', '渡辺健太', '伊藤恵子');
+    $name = $names[array_rand($names)];
+    
+    $clients[] = array(
+        'company_name' => $company_name,
+        'name' => $name,
+        'email' => 'info@kantanpro.com',
+        'memo' => $categories[$category]['description'],
+        'category' => $category
+    );
+}
 
 $client_ids = array();
 foreach ($clients as $client) {
@@ -153,26 +258,38 @@ foreach ($clients as $client) {
             'name' => $client['name'],
             'email' => $client['email'],
             'memo' => $client['memo'],
+            'category' => $client['category'],
             'time' => time()
         ),
-        array("%s", "%s", "%s", "%s", "%d")
+        array("%s", "%s", "%s", "%s", "%s", "%d")
     );
     
     if ($insert_id) {
         $client_ids[] = $insert_id;
-        safe_echo("顧客作成: {$client['company_name']}");
+        $tax_rate = get_tax_rate_by_category($client['category']);
+        $tax_info = $tax_rate ? "税率{$tax_rate}%" : "非課税";
+        safe_echo("顧客作成: {$client['company_name']} (カテゴリー: {$client['category']}, {$tax_info})");
     }
 }
 
-// 2. 協力会社データの作成
-$suppliers = array(
-    array('company_name' => '株式会社フリーランスネット', 'name' => '山田次郎', 'email' => 'info@kantanpro.com', 'memo' => 'フリーランス専門'),
-    array('company_name' => '有限会社デジタルクリエイター', 'name' => '中村由美', 'email' => 'info@kantanpro.com', 'memo' => 'デジタル制作'),
-    array('company_name' => '合同会社システム開発', 'name' => '小林正男', 'email' => 'info@kantanpro.com', 'memo' => 'システム開発'),
-    array('company_name' => '株式会社ウェブデザイン', 'name' => '加藤真理', 'email' => 'info@kantanpro.com', 'memo' => 'ウェブデザイン'),
-    array('company_name' => '有限会社コンサルティング', 'name' => '松本和也', 'email' => 'info@kantanpro.com', 'memo' => '経営コンサル'),
-    array('company_name' => '株式会社ロジスティクス', 'name' => '井上智子', 'email' => 'info@kantanpro.com', 'memo' => '物流サービス')
-);
+// 2. 協力会社データの作成（カテゴリー別）
+$suppliers = array();
+$supplier_categories = array('テック', '不動産', '一般', 'ロジスティック', '食品', '教育');
+
+foreach ($supplier_categories as $category) {
+    $companies = $category_data[$category]['companies'];
+    $company_name = $companies[array_rand($companies)];
+    $names = array('山田次郎', '中村由美', '小林正男', '加藤真理', '松本和也', '井上智子');
+    $name = $names[array_rand($names)];
+    
+    $suppliers[] = array(
+        'company_name' => $company_name,
+        'name' => $name,
+        'email' => 'info@kantanpro.com',
+        'memo' => $categories[$category]['description'],
+        'category' => $category
+    );
+}
 
 $supplier_ids = array();
 foreach ($suppliers as $supplier) {
@@ -183,31 +300,55 @@ foreach ($suppliers as $supplier) {
             'name' => $supplier['name'],
             'email' => $supplier['email'],
             'memo' => $supplier['memo'],
+            'category' => $supplier['category'],
             'time' => time()
         ),
-        array("%s", "%s", "%s", "%s", "%d")
+        array("%s", "%s", "%s", "%s", "%s", "%d")
     );
     
     if ($insert_id) {
         $supplier_ids[] = $insert_id;
-        safe_echo("協力会社作成: {$supplier['company_name']}");
+        $tax_rate = get_tax_rate_by_category($supplier['category']);
+        $tax_info = $tax_rate ? "税率{$tax_rate}%" : "非課税";
+        safe_echo("協力会社作成: {$supplier['company_name']} (カテゴリー: {$supplier['category']}, {$tax_info})");
     }
 }
 
-// 3. サービスデータの作成（一般：税率10%・食品：税率8%・不動産：非課税）各×2
-$services = array(
-    // 一般（税率10%）
-    array('service_name' => 'ウェブサイト制作', 'price' => 500000, 'tax_rate' => 10.00, 'unit' => '式', 'category' => '一般'),
-    array('service_name' => 'システム開発', 'price' => 800000, 'tax_rate' => 10.00, 'unit' => '式', 'category' => '一般'),
+// 3. サービスデータの作成（カテゴリー別・税率自動設定）
+$services = array();
+$service_categories = array('テック', '不動産', '一般', 'ロジスティック', '食品', '金融');
+
+foreach ($service_categories as $category) {
+    $service_names = $category_data[$category]['services'];
+    // 各カテゴリーから2つのサービスを選択
+    $selected_services = array_rand($service_names, 2);
+    if (!is_array($selected_services)) {
+        $selected_services = array($selected_services);
+    }
     
-    // 食品（税率8%）
-    array('service_name' => 'ケータリングサービス', 'price' => 150000, 'tax_rate' => 8.00, 'unit' => '式', 'category' => '食品'),
-    array('service_name' => '食材配送', 'price' => 50000, 'tax_rate' => 8.00, 'unit' => '式', 'category' => '食品'),
-    
-    // 不動産（非課税）
-    array('service_name' => '不動産仲介', 'price' => 300000, 'tax_rate' => null, 'unit' => '式', 'category' => '不動産'),
-    array('service_name' => '物件管理', 'price' => 100000, 'tax_rate' => null, 'unit' => '月', 'category' => '不動産')
-);
+    foreach ($selected_services as $index) {
+        $service_name = $service_names[$index];
+        
+        // 品名に基づいて税率を決定
+        if ($service_name === '食品') {
+            $tax_rate = 8.00; // サービス名「食品」のみ税率8%
+        } else {
+            $tax_rate = 10.00; // その他は一般税率10%
+        }
+        
+        $price = rand(50000, 800000);
+        $units = array('式', '月', '時間', '件', '回');
+        $unit = $units[array_rand($units)];
+        
+        $services[] = array(
+            'service_name' => $service_name,
+            'price' => $price,
+            'tax_rate' => $tax_rate,
+            'unit' => $unit,
+            'category' => $category
+        );
+    }
+}
 
 $service_ids = array();
 foreach ($services as $service) {
@@ -226,37 +367,125 @@ foreach ($services as $service) {
     
     if ($insert_id) {
         $service_ids[] = $insert_id;
-        safe_echo("サービス作成: {$service['service_name']} (税率: " . ($service['tax_rate'] ?? '非課税') . "%)");
+        $tax_info = $service['tax_rate'] ? "税率{$service['tax_rate']}%" : "非課税";
+        safe_echo("サービス作成: {$service['service_name']} (カテゴリー: {$service['category']}, {$tax_info})");
     }
 }
 
-// 4. 職能データの作成（協力会社×6件 × 税率3パターン：税率10%・税率8%・非課税）
-$skill_names = array('プログラミング', 'デザイン', 'ライティング', 'マーケティング', 'コンサルティング', 'データ分析', '翻訳', '動画編集', '写真撮影', 'SEO対策', 'SNS運用', '動画制作');
-$tax_rates = array(10.00, 8.00, null); // 税率10%、税率8%、非課税
+// 4. 職能データの作成（カテゴリー別・税率自動設定）
+$skill_categories = array('テック', '不動産', '一般', 'ロジスティック', '食品', '医療');
+
+safe_echo("職能作成を開始します...");
+safe_echo("協力会社数: " . count($supplier_ids));
 
 foreach ($supplier_ids as $supplier_id) {
-    foreach ($tax_rates as $tax_rate) {
-        $product_name = $skill_names[array_rand($skill_names)];
+    safe_echo("協力会社ID {$supplier_id} の職能を作成中...");
+    
+    // 協力会社のカテゴリーを取得
+    $supplier_info = $wpdb->get_row(
+        $wpdb->prepare(
+            "SELECT category FROM {$wpdb->prefix}ktp_supplier WHERE id = %d",
+            $supplier_id
+        )
+    );
+    
+    if (!$supplier_info) {
+        safe_echo("ERROR: 協力会社ID {$supplier_id} の情報が見つかりません");
+        continue;
+    }
+    
+    $supplier_category = $supplier_info->category;
+    safe_echo("協力会社のカテゴリー: {$supplier_category}");
+    
+    if (!isset($category_data[$supplier_category])) {
+        safe_echo("ERROR: カテゴリー '{$supplier_category}' のデータが定義されていません");
+        $supplier_category = '一般';
+    }
+    
+    $skill_names = $category_data[$supplier_category]['skills'];
+    safe_echo("職能名リスト: " . implode(', ', $skill_names));
+    
+    // 各協力会社に3つの職能を作成（品名に基づく税率設定）
+    $tax_patterns = array();
+    
+    // 品名に基づいて税率を決定
+    $has_food_skill = false;
+    
+    // 職能名「食品」があるかチェック
+    foreach ($skill_names as $skill_name) {
+        if ($skill_name === '食品') {
+            $has_food_skill = true;
+            break;
+        }
+    }
+    
+    if ($has_food_skill) {
+        // 職能名「食品」がある場合は、必ず税率8%を含める
+        $tax_patterns = array(
+            8.00, // 食品税率（必ず含める）
+            10.00, // 一般税率
+            10.00  // 一般税率
+        );
+        
+        // 職能名「食品」を必ず1つ含めるように修正
+        $skill_names_for_tax_8 = array('食品'); // 税率8%用の職能名リスト
+        $skill_names_for_tax_10 = array_diff($skill_names, array('食品')); // 税率10%用の職能名リスト（食品以外）
+        
+        safe_echo("税率8%用職能名: " . implode(', ', $skill_names_for_tax_8));
+        safe_echo("税率10%用職能名: " . implode(', ', $skill_names_for_tax_10));
+    } else {
+        // 職能名「食品」がない場合は、基本的に一般税率
+        $tax_patterns = array(
+            10.00, // 一般税率
+            10.00, // 一般税率
+            null   // 非課税（一部）
+        );
+        
+        $skill_names_for_tax_8 = array();
+        $skill_names_for_tax_10 = $skill_names;
+    }
+    
+    safe_echo("税率パターン: " . implode(', ', array_map(function($rate) { return $rate ? $rate . '%' : '非課税'; }, $tax_patterns)));
+    
+    foreach ($tax_patterns as $index => $tax_rate) {
+        // 税率に応じて職能名を選択
+        if ($tax_rate == 8.00 && !empty($skill_names_for_tax_8)) {
+            // 税率8%の場合は「食品」を必ず選択
+            $skill_name = $skill_names_for_tax_8[array_rand($skill_names_for_tax_8)];
+            safe_echo("税率8%用職能名から選択: {$skill_name}");
+        } else {
+            // その他の税率の場合は食品以外から選択
+            $skill_name = $skill_names_for_tax_10[array_rand($skill_names_for_tax_10)];
+            safe_echo("税率{$tax_rate}%用職能名から選択: {$skill_name}");
+        }
+        
         $unit_price = rand(5000, 50000);
         $quantity = rand(1, 10);
         $unit = '時間';
         
+        $skill_data = array(
+            'supplier_id' => $supplier_id,
+            'product_name' => $skill_name,
+            'unit_price' => $unit_price,
+            'quantity' => $quantity,
+            'unit' => $unit,
+            'tax_rate' => $tax_rate,
+            'frequency' => rand(1, 100)
+        );
+        
+        safe_echo("職能データ: " . json_encode($skill_data, JSON_UNESCAPED_UNICODE));
+        
         $insert_id = safe_db_insert(
             $wpdb->prefix . 'ktp_supplier_skills',
-            array(
-                'supplier_id' => $supplier_id,
-                'product_name' => $product_name,
-                'unit_price' => $unit_price,
-                'quantity' => $quantity,
-                'unit' => $unit,
-                'tax_rate' => $tax_rate,
-                'frequency' => rand(1, 100)
-            ),
+            $skill_data,
             array("%d", "%s", "%f", "%d", "%s", "%f", "%d")
         );
         
         if ($insert_id) {
-            safe_echo("職能作成: {$product_name} (税率: " . ($tax_rate ?? '非課税') . "%)");
+            $tax_info = $tax_rate ? "税率{$tax_rate}%" : "非課税";
+            safe_echo("✓ 職能作成成功: {$skill_name} (カテゴリー: {$supplier_category}, {$tax_info})");
+        } else {
+            safe_echo("✗ 職能作成失敗: {$skill_name} - " . $wpdb->last_error);
         }
     }
 }
@@ -462,7 +691,7 @@ foreach ($client_ids as $client_id) {
 
 safe_echo("==========================================");
 safe_echo("強化版ダミーデータ作成が完了しました！");
-safe_echo("バージョン: 2.2.8 (配布先サイト対応・テーブル構造修正版)");
+safe_echo("バージョン: 2.4.0 (品名ベース税率設定版)");
 safe_echo("作成されたデータ:");
 safe_echo("- 顧客: " . count($client_ids) . "件");
 safe_echo("- 協力会社: " . count($supplier_ids) . "件");
@@ -476,13 +705,24 @@ safe_echo("- 協力会社: 各社のメールアドレスは全て info@kantanpr
 safe_echo("- 受注書: ランダムな進捗分布で作成（受付中15%、見積中20%、受注25%、進行中20%、完成15%、請求済5%）");
 safe_echo("- 納期設定: 進捗に応じて適切な納期を設定（受注・進行中は将来、完成・請求済は過去）");
 safe_echo("- 完了日設定: 完成・請求済の注文には適切な完了日を設定");
-safe_echo("- 職能: 各協力会社に税率10%、税率8%、非課税の3パターン");
-safe_echo("- サービス: 一般（税率10%）×2、食品（税率8%）×2、不動産（非課税）×2");
+safe_echo("- カテゴリー別税率: 食品8%、不動産非課税、その他10%");
+safe_echo("- サービス: カテゴリー別に自動生成（テック、不動産、一般、ロジスティック、食品、金融）");
+safe_echo("- 職能: 協力会社のカテゴリーに応じて適切な職能を生成");
 safe_echo("- 各受注書に請求項目とコスト項目を自動追加");
 safe_echo("");
-safe_echo("修正内容（v2.2.8）:");
-safe_echo("- テーブル構造の不一致を修正（service_id、total_amountカラムを削除）");
-safe_echo("- 受注書作成エラーの解決");
+safe_echo("修正内容（v2.4.0）:");
+safe_echo("- 品名に基づく税率設定に変更（食品関連品名は税率8%、その他は10%）");
+safe_echo("- 食品関連品名の場合は必ず税率8%を1つ含めるように修正");
+safe_echo("- より現実的な税率設定");
+safe_echo("");
+safe_echo("修正内容（v2.3.1）:");
+safe_echo("- 食品カテゴリーの協力会社に必ず税率8%の職能を1つ含めるように修正");
+safe_echo("- 税率パターンの最適化");
+safe_echo("");
+safe_echo("修正内容（v2.3.0）:");
+safe_echo("- カテゴリー機能を追加");
+safe_echo("- 税率の自動設定（食品8%、不動産非課税、その他10%）");
+safe_echo("- 顧客・サービス・職能にカテゴリーを適用");
 safe_echo("- 配布先サイトでの正常動作を確認");
 safe_echo("");
 safe_echo("注意: このデータはテスト用です。本番環境では使用しないでください。");
@@ -524,8 +764,8 @@ function add_invoice_items_to_order($order_id, $service_ids) {
                         'order_id' => $order_id,
                         'product_name' => $service->service_name,
                         'price' => $unit_price,
-                        'quantity' => $quantity,
                         'unit' => $service->unit,
+                        'quantity' => $quantity,
                         'amount' => $total_price,
                         'tax_rate' => $service->tax_rate,
                         'remarks' => 'ダミーデータ',
@@ -533,7 +773,7 @@ function add_invoice_items_to_order($order_id, $service_ids) {
                         'created_at' => current_time('mysql'),
                         'updated_at' => current_time('mysql')
                     ),
-                    array('%d', '%s', '%f', '%f', '%s', '%f', '%f', '%s', '%d', '%s', '%s')
+                    array('%d', '%s', '%f', '%s', '%f', '%d', '%f', '%s', '%d', '%s', '%s')
                 );
             }
         }
@@ -588,7 +828,6 @@ function add_cost_items_to_order($order_id, $supplier_ids) {
                         $wpdb->prefix . 'ktp_order_cost_items',
                 array(
                     'order_id' => $order_id,
-                    'supplier_id' => $supplier_id,
                             'product_name' => $skill->product_name,
                             'price' => $unit_price,
                     'quantity' => $quantity,
@@ -596,11 +835,13 @@ function add_cost_items_to_order($order_id, $supplier_ids) {
                             'amount' => $total_cost,
                     'tax_rate' => $skill->tax_rate,
                             'remarks' => 'ダミーデータ',
+                            'purchase' => 'ダミーデータ',
+                            'ordered' => 0,
                             'sort_order' => 1,
                             'created_at' => current_time('mysql'),
                             'updated_at' => current_time('mysql')
                 ),
-                        array('%d', '%d', '%s', '%f', '%f', '%s', '%f', '%f', '%s', '%d', '%s', '%s')
+                        array('%d', '%s', '%f', '%f', '%s', '%d', '%f', '%s', '%s', '%d', '%d', '%s', '%s')
             );
                     
                     if ($result) {
