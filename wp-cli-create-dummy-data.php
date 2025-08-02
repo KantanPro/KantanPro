@@ -209,6 +209,9 @@ class KTP_Create_Dummy_Data_Command {
 
         $supplier_ids = array();
         foreach ($suppliers as $supplier) {
+            // ダミーデータ用の適格請求書番号を生成
+            $qualified_invoice_number = 'T' . str_pad(rand(1, 999999), 6, '0', STR_PAD_LEFT);
+            
             $result = $wpdb->insert(
                 $wpdb->prefix . 'ktp_supplier',
                 array(
@@ -217,16 +220,17 @@ class KTP_Create_Dummy_Data_Command {
                     'email' => $supplier['email'],
                     'memo' => $supplier['memo'],
                     'category' => $supplier['category'],
+                    'qualified_invoice_number' => $qualified_invoice_number,
                     'time' => time()
                 ),
-                array('%s', '%s', '%s', '%s', '%s', '%d')
+                array('%s', '%s', '%s', '%s', '%s', '%s', '%d')
             );
             
             if ($result) {
                 $supplier_ids[] = $wpdb->insert_id;
                 $tax_rate = $this->get_tax_rate_by_category($supplier['category']);
                 $tax_info = $tax_rate ? "税率{$tax_rate}%" : "非課税";
-                WP_CLI::log("✓ 協力会社作成: {$supplier['company_name']} (カテゴリー: {$supplier['category']}, {$tax_info})");
+                WP_CLI::log("✓ 協力会社作成: {$supplier['company_name']} (カテゴリー: {$supplier['category']}, {$tax_info}, 適格請求書番号: {$qualified_invoice_number})");
             }
         }
 

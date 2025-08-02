@@ -497,8 +497,8 @@
         // コスト項目税込合計を計算
         const costTotalWithTax = costTotalCeiled + costTotalTaxAmountCeiled;
 
-        // 利益計算（税込合計からコスト項目税込合計を引く）
-        const profit = totalWithTax - costTotalWithTax;
+        // 利益計算（PHP側の計算結果を使用）
+        // const profit = totalWithTax - costTotalWithTax; // JavaScript側での利益計算を無効化
 
         // 請求項目の合計表示を更新（税区分に応じて）
         const invoiceTotalDisplay = $('.invoice-items-total');
@@ -590,17 +590,17 @@
             }
         }
 
-        // 利益表示を更新
-        const profitDisplay = $('.profit-display');
-        if (profitDisplay.length > 0) {
-            const profitColor = profit >= 0 ? '#28a745' : '#dc3545';
-            profitDisplay.html('利益 : ' + profit.toLocaleString() + '円');
-            profitDisplay.css('color', profitColor);
-
-            // CSSクラスを更新
-            profitDisplay.removeClass('positive negative');
-            profitDisplay.addClass(profit >= 0 ? 'positive' : 'negative');
-        }
+        // 利益表示を更新（PHP側の計算結果を使用）
+        // const profitDisplay = $('.profit-display');
+        // if (profitDisplay.length > 0) {
+        //     const profitColor = profit >= 0 ? '#28a745' : '#dc3545';
+        //     profitDisplay.html('利益 : ' + profit.toLocaleString() + '円');
+        //     profitDisplay.css('color', profitColor);
+        // 
+        //     // CSSクラスを更新
+        //     profitDisplay.removeClass('positive negative');
+        //     profitDisplay.addClass(profit >= 0 ? 'positive' : 'negative');
+        // }
 
         // デバッグログ（利益計算の詳細）
         if (window.ktpDebugMode) {

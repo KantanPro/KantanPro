@@ -166,7 +166,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 		 */
 		public function create_cost_items_table() {
 			global $wpdb;
-			$my_table_version = '2.4'; // バージョンを更新（税率対応）
+			$my_table_version = '2.5'; // バージョンを更新（適格請求書番号対応）
 			$table_name = $wpdb->prefix . 'ktp_order_cost_items';
 			$charset_collate = $wpdb->get_charset_collate();
 
@@ -181,6 +181,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 				'tax_rate DECIMAL(5,2) NOT NULL DEFAULT 10.00', // 税率カラムを追加
 				'remarks TEXT',
 				'purchase VARCHAR(255)',
+				'qualified_invoice_number VARCHAR(255)', // 適格請求書番号カラムを追加
 				'ordered TINYINT(1) NOT NULL DEFAULT 0',
 				'sort_order INT NOT NULL DEFAULT 0',
 				'created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP',

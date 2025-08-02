@@ -249,28 +249,8 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 					}
 				}
 			} else {
-				// 内税表示の場合：税率別に集計して税額を計算
-				$tax_rate_groups = array();
-				foreach ( $items as $item ) {
-					$item_amount = isset( $item['amount'] ) ? floatval( $item['amount'] ) : 0;
-					$item_tax_rate_raw = isset( $item['tax_rate'] ) ? $item['tax_rate'] : null;
-					
-					// 税率がNULL、空文字、または数値でない場合は非課税として扱う
-					if ( $item_tax_rate_raw !== null && $item_tax_rate_raw !== '' && is_numeric( $item_tax_rate_raw ) ) {
-						$item_tax_rate = floatval( $item_tax_rate_raw );
-						$tax_rate_key = number_format( $item_tax_rate, 1 );
-						if ( ! isset( $tax_rate_groups[ $tax_rate_key ] ) ) {
-							$tax_rate_groups[ $tax_rate_key ] = 0;
-						}
-						$tax_rate_groups[ $tax_rate_key ] += $item_amount;
-					}
-				}
-				
-				// 各税率グループごとに税額を計算（切り上げ）
-				foreach ( $tax_rate_groups as $tax_rate => $group_amount ) {
-					$rate = floatval( $tax_rate );
-					$tax_amount += ceil( $group_amount * ( $rate / 100 ) / ( 1 + $rate / 100 ) );
-				}
+				// 内税表示の場合：合計金額から内税を計算
+				$tax_amount = ceil( $total_amount * 0.10 / 1.10 );
 			}
 			
 			$total_with_tax = $total_amount + $tax_amount;
@@ -367,7 +347,7 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 				);
 			}
 
-			// Calculate total amount and tax（ここから修正）
+			            // Calculate total amount and tax（ここから修正）
             require_once __DIR__ . '/class-supplier-data.php';
             $supplier_data = new KTPWP_Supplier_Data();
             $total_amount = 0;
@@ -377,7 +357,15 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
                 $item_amount = isset( $item['amount'] ) ? floatval( $item['amount'] ) : 0;
                 $item_tax_rate_raw = isset( $item['tax_rate'] ) ? $item['tax_rate'] : null;
                 $supplier_id = isset( $item['supplier_id'] ) ? intval( $item['supplier_id'] ) : 0;
-                $item_tax_category = $supplier_data->get_tax_category_by_supplier_id( $supplier_id );
+                $purchase = isset( $item['purchase'] ) ? $item['purchase'] : '';
+                
+                // ダミーデータの場合は内税として扱う
+                if ( $purchase === 'ダミーデータ' ) {
+                    $item_tax_category = '内税';
+                } else {
+                    $item_tax_category = $supplier_data->get_tax_category_by_supplier_id( $supplier_id );
+                }
+                
                 if ( $item_tax_category === '外税' ) {
                     $has_outtax = true;
                 }
@@ -565,34 +553,29 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 			// Profit calculation similar to invoice items
 			$invoice_items = $order_items->get_invoice_items( $order_id );
 			$invoice_total = 0;
-			$invoice_tax_total = 0;
 			foreach ( $invoice_items as $invoice_item ) {
 				$invoice_amount = isset( $invoice_item['amount'] ) ? floatval( $invoice_item['amount'] ) : 0;
-				$invoice_tax_rate = isset( $invoice_item['tax_rate'] ) ? floatval( $invoice_item['tax_rate'] ) : 10.00;
-				
 				$invoice_total += $invoice_amount;
-				
-				// 請求項目の消費税計算
-				if ( $tax_category === '外税' ) {
-					$invoice_tax_total += $invoice_amount * ( $invoice_tax_rate / 100 );
-				} else {
-					$invoice_tax_total += $invoice_amount * ( $invoice_tax_rate / 100 ) / ( 1 + $invoice_tax_rate / 100 );
-				}
 			}
 
-			// 税込合計での利益計算
-			$invoice_total_with_tax = $invoice_total + $invoice_tax_total;
+			// 請求項目の税込合計（内税の場合は請求金額自体が税込）
+			$invoice_total_with_tax = $invoice_total;
 			$invoice_total_ceiled = ceil( $invoice_total );
-			$invoice_tax_total_ceiled = ceil( $invoice_tax_total );
 			$invoice_total_with_tax_ceiled = ceil( $invoice_total_with_tax );
 			
 			// 適格請求書ナンバーを考慮した利益計算
-			$profit = $this->calculate_profit_with_qualified_invoice( $order_id, $items, $invoice_total_with_tax_ceiled );
+			$profit_data = $this->calculate_profit_with_qualified_invoice( $order_id, $items, $invoice_total_with_tax_ceiled );
+			$profit = $profit_data['profit'];
+			$qualified_invoice_cost = $profit_data['qualified_invoice_cost'];
+			$non_qualified_invoice_cost = $profit_data['non_qualified_invoice_cost'];
+
+
 
 			// Profit display (using tax-inclusive values)
 			$profit_color = $profit >= 0 ? '#28a745' : '#dc3545';  // Green for profit, red for loss
 			$html .= '<div class="profit-display" style="text-align:right;margin-top:8px;font-weight:bold;color:' . $profit_color . ';">';
 			$html .= esc_html__( '利益', 'ktpwp' ) . ' : ' . esc_html( number_format( $profit ) ) . esc_html__( '円', 'ktpwp' );
+			$html .= ' (適格請求書コスト: ' . number_format( ceil( $qualified_invoice_cost ) ) . '円, 非適格請求書コスト: ' . number_format( ceil( $non_qualified_invoice_cost ) ) . '円)';
 			$html .= '</div>';
 
 			$html .= '</form>';
@@ -716,11 +699,19 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 			foreach ( $cost_items as $item ) {
 				$supplier_id = isset( $item['supplier_id'] ) ? intval( $item['supplier_id'] ) : 0;
 				$amount = isset( $item['amount'] ) ? floatval( $item['amount'] ) : 0;
-				$tax_rate = isset( $item['tax_rate'] ) ? floatval( $item['tax_rate'] ) : 10.00;
+				$tax_rate_raw = isset( $item['tax_rate'] ) ? $item['tax_rate'] : null;
+				$tax_rate = ( $tax_rate_raw !== null && $tax_rate_raw !== '' && is_numeric( $tax_rate_raw ) ) ? floatval( $tax_rate_raw ) : 10.00;
+				$purchase = isset( $item['purchase'] ) ? $item['purchase'] : '';
+				$qualified_invoice_number = isset( $item['qualified_invoice_number'] ) ? $item['qualified_invoice_number'] : '';
 				
-				// 協力会社の適格請求書ナンバーを確認
-				$qualified_invoice_number = $this->get_supplier_qualified_invoice_number( $supplier_id );
-				$has_qualified_invoice = ! empty( $qualified_invoice_number );
+				// ダミーデータ仕入れ先の場合は、適格請求書の有無に関係なく税込金額をそのままコストとする
+				if ( strpos( $purchase, 'ダミーデータ' ) !== false ) {
+					$has_qualified_invoice = false; // ダミーデータは常に税込金額をコストとする
+				} else {
+					// 通常の協力会社の場合は、協力会社の適格請求書ナンバーを確認
+					$qualified_invoice_number = $this->get_supplier_qualified_invoice_number( $supplier_id );
+					$has_qualified_invoice = ! empty( $qualified_invoice_number );
+				}
 				
 				if ( $has_qualified_invoice ) {
 					// 適格請求書がある場合：税抜金額のみをコストとする（仕入税額控除可能）
@@ -729,28 +720,28 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 					$qualified_invoice_cost += $cost_amount;
 					$total_cost += $cost_amount;
 					
-					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-						error_log( "KTPWP Profit Calculation - Supplier ID {$supplier_id} has qualified invoice: {$qualified_invoice_number}, Amount: {$amount}, Tax: {$tax_amount}, Cost: {$cost_amount}" );
-					}
+
 				} else {
 					// 適格請求書がない場合：税込金額をコストとする（仕入税額控除不可）
 					$non_qualified_invoice_cost += $amount;
 					$total_cost += $amount;
 					
-					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-						error_log( "KTPWP Profit Calculation - Supplier ID {$supplier_id} has no qualified invoice, Amount: {$amount}, Cost: {$amount}" );
-					}
+
 				}
 			}
 			
 			// 利益計算
 			$profit = $invoice_total_with_tax - $total_cost;
 			
-			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( "KTPWP Profit Calculation Summary - Order ID: {$order_id}, Invoice Total: {$invoice_total_with_tax}, Qualified Cost: {$qualified_invoice_cost}, Non-Qualified Cost: {$non_qualified_invoice_cost}, Total Cost: {$total_cost}, Profit: {$profit}" );
-			}
+
 			
-			return $profit;
+			// 利益と内訳情報を配列で返す
+			return array(
+				'profit' => $profit,
+				'qualified_invoice_cost' => $qualified_invoice_cost,
+				'non_qualified_invoice_cost' => $non_qualified_invoice_cost,
+				'total_cost' => $total_cost
+			);
 		}
 
 		/**
