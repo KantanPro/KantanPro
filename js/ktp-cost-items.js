@@ -9,7 +9,10 @@
     'use strict';
 
     // デバッグモードを有効化（本番では false に設定）
-    window.ktpDebugMode = false; // 本番環境では false に設定
+    window.ktpDebugMode = true; // 本番環境では false に設定
+    
+    // 金額自動保存のデバウンス用タイマー
+    window.ktpCostAmountSaveTimers = {};
 
     // 利用可能な変数を確認（デバッグモード時のみ）
     if (window.ktpDebugMode) {
@@ -19,6 +22,22 @@
         console.log('  - ktpwp_ajax:', typeof ktpwp_ajax !== 'undefined' ? ktpwp_ajax : 'undefined');
         console.log('  - ktp_ajax_nonce:', typeof ktp_ajax_nonce !== 'undefined' ? ktp_ajax_nonce : 'undefined');
         console.log('  - ktp_ajax_object:', typeof ktp_ajax_object !== 'undefined' ? ktp_ajax_object : 'undefined');
+    }
+
+    // デバウンス機能付きの金額保存関数
+    function debouncedAmountSave(itemType, itemId, amount, orderId) {
+        const timerKey = `${itemType}_${itemId}_amount`;
+        
+        // 既存のタイマーをクリア
+        if (window.ktpCostAmountSaveTimers[timerKey]) {
+            clearTimeout(window.ktpCostAmountSaveTimers[timerKey]);
+        }
+        
+        // 新しいタイマーを設定（500ms後に実行）
+        window.ktpCostAmountSaveTimers[timerKey] = setTimeout(function() {
+            if (window.ktpDebugMode) console.log('[COST] debouncedAmountSave: 実行', {itemType, itemId, amount, orderId});
+            autoSaveItem(itemType, itemId, 'amount', amount, orderId);
+        }, 500);
     }
 
     // 重複追加防止フラグ (コスト項目専用)
@@ -69,18 +88,29 @@
             });
         }
         
-        row.find('.amount').val(finalAmount);
+        // span要素とhidden inputの両方を更新
+        const $amountSpan = row.find('.cost-item-amount');
+        const $amountInput = row.find('input[name*="[amount]"]');
+        
+        if ($amountSpan.length > 0) {
+            $amountSpan.text(finalAmount.toLocaleString());
+            $amountSpan.attr('data-amount', finalAmount);
+        }
+        
+        if ($amountInput.length > 0) {
+            $amountInput.val(finalAmount);
+        }
 
         // 金額を自動保存
         const itemId = row.find('input[name*="[id]"]').val();
         const orderId = $('input[name="order_id"]').val() || $('#order_id').val();
 
         if (itemId && orderId && itemId !== '0') {
-            // 既存行の場合：金額を自動保存
+            // 既存行の場合：デバウンス機能付きで金額を自動保存
             if (window.ktpDebugMode) {
                 console.log('[COST] calculateAmount: 金額自動保存実行', {itemId, amount: finalAmount});
             }
-            autoSaveItem('cost', itemId, 'amount', finalAmount, orderId);
+            debouncedAmountSave('cost', itemId, finalAmount, orderId);
         } else {
             if (window.ktpDebugMode) {
                 console.log('[COST] calculateAmount: 保存条件未満', {itemId, orderId});
@@ -272,14 +302,16 @@
         let costTaxRateGroups = {};
 
         // 請求項目の合計を計算
-        $('.invoice-items-table .amount').each(function () {
-            invoiceTotal += parseFloat($(this).val()) || 0;
+        $('.invoice-items-table .invoice-item-amount').each(function () {
+            const amountValue = $(this).attr('data-amount') || $(this).text().replace(/,/g, '');
+            invoiceTotal += parseFloat(amountValue) || 0;
         });
 
         // コスト項目のデータを収集（税率別に集計）
         $('.cost-items-table tbody tr').each(function () {
             const $row = $(this);
-            const amount = parseFloat($row.find('.amount').val()) || 0;
+            const amountValue = $row.find('.cost-item-amount').attr('data-amount') || $row.find('.cost-item-amount').text().replace(/,/g, '');
+            const amount = parseFloat(amountValue) || 0;
             const taxRateInput = $row.find('.tax-rate').val();
             
             // 税率の処理（NULL、空文字、NaNの場合は税率なしとして扱う）
@@ -552,7 +584,8 @@
                     <input type="text" name="cost_items[${newIndex}][unit]" class="cost-item-input unit" value="式">
                 </td>
                 <td style="text-align:left;">
-                    <input type="number" name="cost_items[${newIndex}][amount]" class="cost-item-input amount" value="" step="0.01" readonly style="text-align:left;">
+                    <span class="cost-item-amount" data-amount="0" style="display:inline-block;min-width:80px;text-align:left;">0</span>
+                    <input type="hidden" name="cost_items[${newIndex}][amount]" value="0">
                 </td>
                 <td style="text-align:left;">
                     <div style="display:inline-flex;align-items:center;margin-left:0;padding-left:0;">
@@ -2183,7 +2216,8 @@
                 const price = parseFloat($row.find('.price').val()) || 0;
                 const quantity = parseFloat($row.find('.quantity').val()) || 0;
                 const unit = $row.find('.unit').val() || '';
-                const amount = parseFloat($row.find('.amount').val()) || 0;
+                const amountValue = $row.find('.cost-item-amount').attr('data-amount') || $row.find('.cost-item-amount').text().replace(/,/g, '');
+                const amount = parseFloat(amountValue) || 0;
                 const taxRateRaw = $row.find('.tax-rate').val();
                 const taxRate = (taxRateRaw !== null && taxRateRaw !== undefined && taxRateRaw !== '') ? parseFloat(taxRateRaw) : null;
                 

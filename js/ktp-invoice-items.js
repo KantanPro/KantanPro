@@ -9,10 +9,13 @@
     'use strict';
 
     // デバッグモードを有効化（本番では false に設定）
-    window.ktpDebugMode = false; // 本番環境では false に設定
+    window.ktpDebugMode = true; // 本番環境では false に設定
 
     // 進行中のAJAXリクエストを追跡するオブジェクト
     window.ktpInvoicePendingRequests = {};
+    
+    // 金額自動保存のデバウンス用タイマー
+    window.ktpInvoiceAmountSaveTimers = {};
 
     // 利用可能な変数を確認（デバッグモード時のみ）
     if (window.ktpDebugMode) {
@@ -22,6 +25,22 @@
         console.log('  - ktpwp_ajax:', typeof ktpwp_ajax !== 'undefined' ? ktpwp_ajax : 'undefined');
         console.log('  - ktp_ajax_nonce:', typeof ktp_ajax_nonce !== 'undefined' ? ktp_ajax_nonce : 'undefined');
         console.log('  - ktp_ajax_object:', typeof ktp_ajax_object !== 'undefined' ? ktp_ajax_object : 'undefined');
+    }
+
+    // デバウンス機能付きの金額保存関数
+    function debouncedAmountSave(itemType, itemId, amount, orderId) {
+        const timerKey = `${itemType}_${itemId}_amount`;
+        
+        // 既存のタイマーをクリア
+        if (window.ktpInvoiceAmountSaveTimers[timerKey]) {
+            clearTimeout(window.ktpInvoiceAmountSaveTimers[timerKey]);
+        }
+        
+        // 新しいタイマーを設定（500ms後に実行）
+        window.ktpInvoiceAmountSaveTimers[timerKey] = setTimeout(function() {
+            if (window.ktpDebugMode) console.log('[INVOICE] debouncedAmountSave: 実行', {itemType, itemId, amount, orderId});
+            window.ktpInvoiceAutoSaveItem(itemType, itemId, 'amount', amount, orderId);
+        }, 500);
     }
 
     // グローバルスコープに関数を定義
@@ -201,7 +220,8 @@
                                 if (window.ktpDebugMode) console.log('[INVOICE] createNewItem: フィールド有効化後の金額計算実行');
                                 
                                 // 新規レコード作成後に金額も保存
-                                const currentAmount = $row.find('.amount').val();
+                                const currentAmountValue = $row.find('.invoice-item-amount').attr('data-amount') || $row.find('.invoice-item-amount').text().replace(/,/g, '');
+                                const currentAmount = parseFloat(currentAmountValue) || 0;
                                 if (currentAmount && currentAmount !== '0') {
                                     if (window.ktpDebugMode) console.log('[INVOICE] createNewItem: 新規レコード作成後の金額保存', {
                                         newItemId: result.data.item_id,
@@ -276,9 +296,20 @@
             });
         }
         
-        row.find('.amount').val(finalAmount);
+        // span要素とhidden inputの両方を更新
+        const $amountSpan = row.find('.invoice-item-amount');
+        const $amountInput = row.find('input[name*="[amount]"]');
+        
+        if ($amountSpan.length > 0) {
+            $amountSpan.text(finalAmount.toLocaleString());
+            $amountSpan.attr('data-amount', finalAmount);
+        }
+        
+        if ($amountInput.length > 0) {
+            $amountInput.val(finalAmount);
+        }
 
-        // 金額を自動保存
+        // 金額を自動保存（デバウンス機能付き）
         const itemId = row.find('input[name*="[id]"]').val();
         const orderId = $('input[name="order_id"]').val() || $('#order_id').val();
 
@@ -301,19 +332,20 @@
                                 currentItemId, 
                                 amount: finalAmount
                             });
-                            window.ktpInvoiceAutoSaveItem('invoice', currentItemId, 'amount', finalAmount, orderId);
+                            // デバウンス機能付きで金額保存
+                            debouncedAmountSave('invoice', currentItemId, finalAmount, orderId);
                         }
                     }, 500);
                 } else {
                     if (window.ktpDebugMode) console.log('[INVOICE] calculateAmount: 新規行で商品名未入力のため金額保存スキップ');
                 }
             } else {
-                // 既存行の場合：金額を即座に自動保存
+                // 既存行の場合：デバウンス機能付きで金額を自動保存
                 if (window.ktpDebugMode) console.log('[INVOICE] calculateAmount: 既存行の金額自動保存実行', {
                     itemId, 
                     amount: finalAmount
                 });
-                window.ktpInvoiceAutoSaveItem('invoice', itemId, 'amount', finalAmount, orderId);
+                debouncedAmountSave('invoice', itemId, finalAmount, orderId);
             }
         } else {
             if (window.ktpDebugMode) console.warn('[INVOICE] calculateAmount: 保存条件未満', {itemId, orderId});
@@ -349,7 +381,8 @@
         // 請求項目の合計と消費税を計算（税率別に集計）
         $('.invoice-items-table tbody tr').each(function () {
             const $row = $(this);
-            const amount = parseFloat($row.find('.amount').val()) || 0;
+            const amountValue = $row.find('.invoice-item-amount').attr('data-amount') || $row.find('.invoice-item-amount').text().replace(/,/g, '');
+            const amount = parseFloat(amountValue) || 0;
             const taxRateInput = $row.find('.tax-rate').val();
             
             // 税率の処理（NULL、空文字、NaNの場合は税率なしとして扱う）
@@ -366,6 +399,17 @@
                 taxRateGroups[taxRateKey] = 0;
             }
             taxRateGroups[taxRateKey] += amount;
+
+            // デバッグログ（各行の金額）
+            if (window.ktpDebugMode) {
+                console.log('[INVOICE] 請求項目行:', {
+                    rowIndex: $row.index(),
+                    amountValue: amountValue,
+                    amount: amount,
+                    taxRate: taxRate,
+                    runningTotal: invoiceTotal
+                });
+            }
         });
 
         // 税区分に応じて消費税を計算
@@ -373,7 +417,8 @@
             // 外税表示の場合：各項目の税抜金額から税額を計算
             $('.invoice-items-table tbody tr').each(function () {
                 const $row = $(this);
-                const amount = parseFloat($row.find('.amount').val()) || 0;
+                const amountValue = $row.find('.invoice-item-amount').attr('data-amount') || $row.find('.invoice-item-amount').text().replace(/,/g, '');
+                const amount = parseFloat(amountValue) || 0;
                 const taxRateInput = $row.find('.tax-rate').val();
                 
                 // 税率の処理（NULL、空文字、NaNの場合は税率なしとして扱う）
@@ -407,7 +452,8 @@
         // コスト項目の合計と消費税を計算（税率別に集計）
         $('.cost-items-table tbody tr').each(function () {
             const $row = $(this);
-            const amount = parseFloat($row.find('.amount').val()) || 0;
+            const amountValue = $row.find('.cost-item-amount').attr('data-amount') || $row.find('.cost-item-amount').text().replace(/,/g, '');
+            const amount = parseFloat(amountValue) || 0;
             const taxRateInput = $row.find('.tax-rate').val();
             
             // 税率の処理（NULL、空文字、NaNの場合は税率なしとして扱う）
@@ -556,6 +602,24 @@
             profitDisplay.addClass(profit >= 0 ? 'positive' : 'negative');
         }
 
+        // デバッグログ（利益計算の詳細）
+        if (window.ktpDebugMode) {
+            console.log('[INVOICE] 利益計算詳細:', {
+                invoiceTotal: invoiceTotal,
+                invoiceTotalCeiled: invoiceTotalCeiled,
+                costTotal: costTotal,
+                costTotalCeiled: costTotalCeiled,
+                totalTaxAmount: totalTaxAmount,
+                totalTaxAmountCeiled: totalTaxAmountCeiled,
+                costTotalTaxAmount: costTotalTaxAmount,
+                costTotalTaxAmountCeiled: costTotalTaxAmountCeiled,
+                totalWithTax: totalWithTax,
+                costTotalWithTax: costTotalWithTax,
+                profit: profit,
+                taxCategory: taxCategory
+            });
+        }
+
         // デバッグログ（税率別の集計情報）
         if (window.ktpDebugMode) {
             console.log('[INVOICE] 税率別集計:', {
@@ -612,7 +676,8 @@
                     <input type="text" name="invoice_items[${newIndex}][unit]" class="invoice-item-input unit" value="式" disabled>
                 </td>
                 <td style="text-align:left;">
-                    <input type="number" name="invoice_items[${newIndex}][amount]" class="invoice-item-input amount" value="" step="1" readonly style="text-align:left;">
+                    <span class="invoice-item-amount" data-amount="0" style="display:inline-block;min-width:80px;text-align:left;">0</span>
+                    <input type="hidden" name="invoice_items[${newIndex}][amount]" value="0">
                 </td>
                 <td style="text-align:left;">
                     <input type="number" name="invoice_items[${newIndex}][tax_rate]" class="invoice-item-input tax-rate" value="10" step="1" min="0" max="100" style="width: 50px; max-width: 60px; text-align: right !important;"> %

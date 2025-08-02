@@ -473,7 +473,8 @@ window.ktpAddCostRowFromSkill = function(skill, currentRow) {
                 <input type="text" name="cost_items[${newIndex}][unit]" class="cost-item-input unit" value="${skill.unit || ''}">
             </td>
             <td style="text-align:left;">
-                <input type="number" name="cost_items[${newIndex}][amount]" class="cost-item-input amount" value="" step="0.01" min="0" style="text-align:left;" readonly>
+                <span class="cost-item-amount" data-amount="0" style="display:inline-block;min-width:80px;text-align:left;">0</span>
+                <input type="hidden" name="cost_items[${newIndex}][amount]" value="0">
             </td>
             <td style="text-align:left;">
                 <div style="display:inline-flex;align-items:center;margin-left:0;padding-left:0;">
