@@ -3355,7 +3355,9 @@ function ktpwp_init_ajax_handlers() {
         error_log('KTPWP: ktpwp_handle_create_dummy_data_ajax function not found');
     }
     
-
+    // 協力会社関連AJAXハンドラー（ajax-supplier-cost.phpで定義済み）
+    // これらのハンドラーはajax-supplier-cost.phpファイルで直接add_actionされているため、
+    // ここでの追加は不要です。
     
     // データクリアAJAXハンドラー
     if (function_exists('ktpwp_handle_clear_data_ajax')) {

@@ -35,6 +35,12 @@
 
     // 即座に関数を定義してグローバルに露出
     window.ktpShowSupplierSelector = function(currentRow) {
+        console.log('[SUPPLIER-SELECTOR] ===== 協力会社選択開始 =====');
+        console.log('[SUPPLIER-SELECTOR] currentRow:', currentRow);
+        console.log('[SUPPLIER-SELECTOR] jQuery version:', $.fn.jquery);
+        console.log('[SUPPLIER-SELECTOR] ktp_ajax_object:', typeof ktp_ajax_object !== 'undefined' ? ktp_ajax_object : 'undefined');
+        console.log('[SUPPLIER-SELECTOR] ajaxurl:', typeof ajaxurl !== 'undefined' ? ajaxurl : 'undefined');
+        
         // グローバル変数としてcurrentRowを保持
         window.ktpCurrentRow = currentRow;
         
@@ -129,6 +135,18 @@
 
         // 協力会社リスト取得
         console.log('[SUPPLIER-SELECTOR] 協力会社リスト取得開始');
+        
+        // AJAX URLの設定（複数のフォールバック）
+        let ajaxUrl = '/wp-admin/admin-ajax.php';
+        if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.ajax_url) {
+            ajaxUrl = ktp_ajax_object.ajax_url;
+        } else if (typeof ajaxurl !== 'undefined') {
+            ajaxUrl = ajaxurl;
+        } else if (typeof window.ktpwp_ajax !== 'undefined' && window.ktpwp_ajax.ajax_url) {
+            ajaxUrl = window.ktpwp_ajax.ajax_url;
+        }
+        
+        console.log('[SUPPLIER-SELECTOR] 使用するAJAX URL:', ajaxUrl);
         
         // 職能リストのレンダリング関数（AJAXの外に移動）
         function renderSkillList(skills, supplierId) {
@@ -303,21 +321,31 @@
         }
         
     $.ajax({
-        url: (typeof ktp_ajax_object !== 'undefined' ? ktp_ajax_object.ajax_url : '/wp-admin/admin-ajax.php'),
+        url: ajaxUrl,
         type: 'POST',
         data: {
             action: 'ktpwp_get_suppliers_for_cost'
         },
         dataType: 'json',
+        timeout: 30000, // 30秒タイムアウト
+        beforeSend: function() {
+            console.log('[SUPPLIER-SELECTOR] 協力会社リスト取得開始 - AJAXリクエスト送信');
+            console.log('[SUPPLIER-SELECTOR] AJAX URL:', ajaxUrl);
+            console.log('[SUPPLIER-SELECTOR] リクエストデータ:', {
+                action: 'ktpwp_get_suppliers_for_cost'
+            });
+        },
         success: function(suppliers) {
                 console.log('[SUPPLIER-SELECTOR] 協力会社リスト取得成功:', suppliers);
                 console.log('[SUPPLIER-SELECTOR] 協力会社数:', suppliers ? suppliers.length : 0);
                 
                 // 協力会社選択UI生成（サービス選択と同じスタイル）
                 let supplierOptions = '<option value="">協力会社を選択してください</option>';
-                suppliers.forEach(function(s) {
-                    supplierOptions += '<option value="' + s.id + '">' + escapeHtml(s.company_name) + '</option>';
-                });
+                if (Array.isArray(suppliers) && suppliers.length > 0) {
+                    suppliers.forEach(function(s) {
+                        supplierOptions += '<option value="' + s.id + '">' + escapeHtml(s.company_name) + '</option>';
+                    });
+                }
                 
                 const supplierSelectorHtml = `
                     <div style="margin-bottom: 20px;">
@@ -383,13 +411,21 @@
                     `);
                     
                 $.ajax({
-                    url: (typeof ktp_ajax_object !== 'undefined' ? ktp_ajax_object.ajax_url : '/wp-admin/admin-ajax.php'),
+                    url: ajaxUrl,
                     type: 'POST',
                     data: {
                         action: 'ktpwp_get_supplier_skills_for_cost',
                         supplier_id: supplierId
                     },
                     dataType: 'json',
+                    timeout: 30000, // 30秒タイムアウト
+                    beforeSend: function() {
+                        console.log('[SUPPLIER-SELECTOR] 職能リスト取得開始 - AJAXリクエスト送信');
+                        console.log('[SUPPLIER-SELECTOR] リクエストデータ:', {
+                            action: 'ktpwp_get_supplier_skills_for_cost',
+                            supplier_id: supplierId
+                        });
+                    },
                     success: function(skills) {
                         console.log('skills ajax response:', skills);
                             console.log('[SUPPLIER-SELECTOR] 職能リスト取得成功:', skills);
@@ -399,10 +435,13 @@
                     error: function(xhr, status, error) {
                         console.error('AJAX ERROR', xhr.status, xhr.responseText);
                             console.error('[SUPPLIER-SELECTOR] 職能リスト取得失敗:', error);
+                            console.error('[SUPPLIER-SELECTOR] ステータス:', status);
+                            console.error('[SUPPLIER-SELECTOR] レスポンス:', xhr.responseText);
                             $('#ktp-skill-list-area').html(`
                                 <div style="text-align: center; padding: 40px; color: #dc3545;">
                                     <div style="font-size: 16px;">職能リストの取得に失敗しました</div>
                                     <div style="font-size: 14px; margin-top: 8px;">通信エラーが発生しました</div>
+                                    <div style="font-size: 12px; margin-top: 8px; color: #999;">エラー: ${error}</div>
                                 </div>
                             `);
                     }
@@ -411,10 +450,15 @@
         },
         error: function(xhr, status, error) {
             console.error('AJAX ERROR', xhr.status, xhr.responseText);
+            console.error('[SUPPLIER-SELECTOR] 協力会社リスト取得失敗:', error);
+            console.error('[SUPPLIER-SELECTOR] ステータス:', status);
+            console.error('[SUPPLIER-SELECTOR] レスポンス:', xhr.responseText);
                 $('#ktp-supplier-selector-content').html(`
                     <div style="text-align: center; padding: 40px; color: #dc3545;">
                         <div style="font-size: 16px;">協力会社リストの取得に失敗しました</div>
                         <div style="font-size: 14px; margin-top: 8px;">通信エラーが発生しました</div>
+                        <div style="font-size: 12px; margin-top: 8px; color: #999;">エラー: ${error}</div>
+                        <div style="font-size: 12px; margin-top: 8px; color: #999;">ステータス: ${status}</div>
                     </div>
                 `);
         }

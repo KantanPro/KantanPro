@@ -629,9 +629,9 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 				foreach ( $skills as $skill ) {
 					$skill_id = esc_attr( $skill['id'] );
 					$product_name = esc_html( $skill['product_name'] );
-					// Format unit price to remove unnecessary trailing zeros
+					// Format unit price to remove unnecessary trailing zeros and add thousand separators
 					$unit_price_raw = floatval( $skill['unit_price'] );
-					$unit_price = rtrim( rtrim( number_format( $unit_price_raw, 6, '.', '' ), '0' ), '.' );
+					$unit_price = rtrim( rtrim( number_format( $unit_price_raw, 6, '.', ',' ), '0' ), '.' );
 					$quantity = absint( $skill['quantity'] );
 					$unit = esc_html( $skill['unit'] );
 					$tax_rate = isset( $skill['tax_rate'] ) ? $skill['tax_rate'] : null;
