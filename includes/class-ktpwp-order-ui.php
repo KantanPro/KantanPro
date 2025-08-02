@@ -199,9 +199,8 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 
 				// Amount
 				$html .= '<td style="text-align:left;">';
-				$html .= '<input type="number" name="invoice_items[' . $index . '][amount]" ';
-				$html .= 'value="' . esc_attr( $item['amount'] ) . '" ';
-				$html .= 'class="invoice-item-input amount" step="1" readonly style="text-align:left;" />';
+				$html .= '<span class="invoice-item-amount" data-amount="' . esc_attr( $item['amount'] ) . '" style="display:inline-block;min-width:80px;text-align:left;">' . esc_html( number_format( $item['amount'] ) ) . '</span>';
+				$html .= '<input type="hidden" name="invoice_items[' . $index . '][amount]" value="' . esc_attr( $item['amount'] ) . '" />';
 				$html .= '</td>';
 
 				// Tax Rate
@@ -484,9 +483,8 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 
 				// Amount
 				$html .= '<td style="text-align:left;">';
-				$html .= '<input type="number" name="cost_items[' . $index . '][amount]" ';
-				$html .= 'value="' . esc_attr( $item['amount'] ) . '" ';
-				$html .= 'class="cost-item-input amount" step="1" readonly style="text-align:left;" />';
+				$html .= '<span class="cost-item-amount" data-amount="' . esc_attr( $item['amount'] ) . '" style="display:inline-block;min-width:80px;text-align:left;">' . esc_html( number_format( $item['amount'] ) ) . '</span>';
+				$html .= '<input type="hidden" name="cost_items[' . $index . '][amount]" value="' . esc_attr( $item['amount'] ) . '" />';
 				$html .= '</td>';
 
 				// Tax Rate

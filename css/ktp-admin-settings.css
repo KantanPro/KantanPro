@@ -372,3 +372,39 @@
         padding: 3px 6px;
     }
 }
+
+/* 受注書の金額表示スタイル */
+.invoice-item-amount,
+.cost-item-amount {
+    display: inline-block;
+    min-width: 80px;
+    text-align: left;
+    font-weight: bold;
+    color: #333;
+    background-color: #f8f9fa;
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid #dee2e6;
+    user-select: none;
+    cursor: default;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+}
+
+.invoice-item-amount:hover,
+.cost-item-amount:hover {
+    background-color: #e9ecef;
+}
+
+/* 金額が0の場合のスタイル */
+.invoice-item-amount[data-amount="0"],
+.cost-item-amount[data-amount="0"] {
+    color: #6c757d;
+    font-weight: normal;
+}
+
+/* 金額表示の左寄せ */
+.invoice-item-amount,
+.cost-item-amount {
+    text-align: left !important;
+}
