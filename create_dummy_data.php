@@ -1,7 +1,7 @@
 <?php
 /**
  * 強化版ダミーデータ作成スクリプト
- * バージョン: 2.4.0
+ * バージョン: 2.5.2
  * 
  * 以下のデータを作成します：
  * - 顧客×6件（カテゴリー別）
@@ -10,6 +10,20 @@
  * - 受注書×ランダム件数（顧客ごとに2-8件、進捗は重み付きランダム分布）
  * - 職能×18件（協力会社×6件 × 税率3パターン：税率10%・税率8%・非課税）
  * - 請求項目とコスト項目を各受注書に追加
+ * 
+ * 修正内容（v2.5.2）:
+ * - コスト項目の税率がnullの場合のデフォルト値設定（10%）
+ * - 利益計算時の税率空欄対応
+ * 
+ * 修正内容（v2.5.1）:
+ * - コスト項目作成時のカラム存在チェック対応
+ * - 適格請求書番号カラムが存在しない場合でも正常動作
+ * 
+ * 修正内容（v2.5.0）:
+ * - ダミーデータ仕入れ先の適格請求書対応
+ * - 協力会社作成時に適格請求書番号を自動生成
+ * - コスト項目作成時に適格請求書番号を設定（カラム存在チェック対応）
+ * - 利益計算でダミーデータ仕入れ先を内税でインボイスありとして計算
  * 
  * 修正内容（v2.4.0）:
  * - 品名に基づく税率設定に変更（食品関連品名は税率8%、その他は10%）
@@ -293,6 +307,9 @@ foreach ($supplier_categories as $category) {
 
 $supplier_ids = array();
 foreach ($suppliers as $supplier) {
+    // ダミーデータ用の適格請求書番号を生成
+    $qualified_invoice_number = 'T' . str_pad(rand(1, 999999), 6, '0', STR_PAD_LEFT);
+    
     $insert_id = safe_db_insert(
         $wpdb->prefix . 'ktp_supplier',
         array(
@@ -301,16 +318,17 @@ foreach ($suppliers as $supplier) {
             'email' => $supplier['email'],
             'memo' => $supplier['memo'],
             'category' => $supplier['category'],
+            'qualified_invoice_number' => $qualified_invoice_number,
             'time' => time()
         ),
-        array("%s", "%s", "%s", "%s", "%s", "%d")
+        array("%s", "%s", "%s", "%s", "%s", "%s", "%d")
     );
     
     if ($insert_id) {
         $supplier_ids[] = $insert_id;
         $tax_rate = get_tax_rate_by_category($supplier['category']);
         $tax_info = $tax_rate ? "税率{$tax_rate}%" : "非課税";
-        safe_echo("協力会社作成: {$supplier['company_name']} (カテゴリー: {$supplier['category']}, {$tax_info})");
+        safe_echo("協力会社作成: {$supplier['company_name']} (カテゴリー: {$supplier['category']}, {$tax_info}, 適格請求書番号: {$qualified_invoice_number})");
     }
 }
 
@@ -463,13 +481,16 @@ foreach ($supplier_ids as $supplier_id) {
         $quantity = rand(1, 10);
         $unit = '時間';
         
+        // 税率がnullの場合は10%をデフォルトとして設定
+        $default_tax_rate = $tax_rate !== null ? $tax_rate : 10.00;
+        
         $skill_data = array(
             'supplier_id' => $supplier_id,
             'product_name' => $skill_name,
             'unit_price' => $unit_price,
             'quantity' => $quantity,
             'unit' => $unit,
-            'tax_rate' => $tax_rate,
+            'tax_rate' => $default_tax_rate,
             'frequency' => rand(1, 100)
         );
         
@@ -824,24 +845,48 @@ function add_cost_items_to_order($order_id, $supplier_ids) {
             $unit_price = $skill->unit_price;
             $total_cost = $quantity * $unit_price;
             
-                    $result = $wpdb->insert(
-                        $wpdb->prefix . 'ktp_order_cost_items',
-                array(
-                    'order_id' => $order_id,
-                            'product_name' => $skill->product_name,
-                            'price' => $unit_price,
-                    'quantity' => $quantity,
-                            'unit' => $skill->unit,
-                            'amount' => $total_cost,
-                    'tax_rate' => $skill->tax_rate,
-                            'remarks' => 'ダミーデータ',
-                            'purchase' => 'ダミーデータ',
-                            'ordered' => 0,
-                            'sort_order' => 1,
-                            'created_at' => current_time('mysql'),
-                            'updated_at' => current_time('mysql')
-                ),
-                        array('%d', '%s', '%f', '%f', '%s', '%d', '%f', '%s', '%s', '%d', '%d', '%s', '%s')
+                                // ダミーデータ用の適格請求書番号を生成
+            $dummy_qualified_invoice_number = 'T' . str_pad(rand(1, 999999), 6, '0', STR_PAD_LEFT);
+            
+            // 適格請求書番号カラムが存在するかチェック
+            $qualified_invoice_column_exists = $wpdb->get_var(
+                $wpdb->prepare(
+                    "SHOW COLUMNS FROM {$wpdb->prefix}ktp_order_cost_items LIKE %s",
+                    'qualified_invoice_number'
+                )
+            );
+            
+            // 税率がnullの場合は10%をデフォルトとして設定
+            $default_tax_rate = $skill->tax_rate !== null ? $skill->tax_rate : 10.00;
+            
+            $insert_data = array(
+                'order_id' => $order_id,
+                'product_name' => $skill->product_name,
+                'price' => $unit_price,
+                'quantity' => $quantity,
+                'unit' => $skill->unit,
+                'amount' => $total_cost,
+                'tax_rate' => $default_tax_rate,
+                'remarks' => 'ダミーデータ',
+                'purchase' => 'ダミーデータ',
+                'ordered' => 0,
+                'sort_order' => 1,
+                'created_at' => current_time('mysql'),
+                'updated_at' => current_time('mysql')
+            );
+            
+            $format_array = array('%d', '%s', '%f', '%f', '%s', '%d', '%f', '%s', '%s', '%d', '%d', '%s', '%s');
+            
+            // 適格請求書番号カラムが存在する場合は追加
+            if ($qualified_invoice_column_exists) {
+                $insert_data['qualified_invoice_number'] = $dummy_qualified_invoice_number;
+                $format_array = array('%d', '%s', '%f', '%f', '%s', '%d', '%f', '%s', '%s', '%s', '%d', '%d', '%s', '%s');
+            }
+            
+            $result = $wpdb->insert(
+                $wpdb->prefix . 'ktp_order_cost_items',
+                $insert_data,
+                $format_array
             );
                     
                     if ($result) {

@@ -127,6 +127,11 @@ function ktpwp_upgrade() {
             ktpwp_run_qualified_invoice_migration();
         }
         
+        // コスト項目テーブルに適格請求書番号カラムを追加
+        if ( function_exists('ktpwp_run_qualified_invoice_number_cost_items_migration') ) {
+            ktpwp_run_qualified_invoice_number_cost_items_migration();
+        }
+        
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
             error_log( 'KTPWP: アップグレード処理正常完了' );
         }
@@ -1505,6 +1510,60 @@ function ktpwp_run_qualified_invoice_migration() {
         
     } catch ( Exception $e ) {
         error_log( 'KTPWP Qualified Invoice Migration Error: ' . $e->getMessage() );
+        return false;
+    }
+}
+
+/**
+ * コスト項目テーブルに適格請求書番号カラムを追加するマイグレーションを実行
+ */
+function ktpwp_run_qualified_invoice_number_cost_items_migration() {
+    // マイグレーションが既に完了しているかチェック
+    $migration_completed = get_option( 'ktpwp_qualified_invoice_number_cost_items_migrated', false );
+    
+    if ( $migration_completed ) {
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP: Qualified invoice number cost items migration already completed' );
+        }
+        return true;
+    }
+
+    if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+        error_log( 'KTPWP: Starting qualified invoice number cost items migration' );
+    }
+
+    try {
+        // マイグレーションファイルを直接実行
+        $migration_file = __DIR__ . '/includes/migrations/20250131_add_qualified_invoice_number_to_cost_items.php';
+        
+        if ( file_exists( $migration_file ) ) {
+            require_once $migration_file;
+            
+            $class_name = 'KTPWP_Migration_20250131_Add_Qualified_Invoice_Number_To_Cost_Items';
+            
+            if ( class_exists( $class_name ) && method_exists( $class_name, 'up' ) ) {
+                $result = $class_name::up();
+                
+                if ( $result ) {
+                    if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                        error_log( 'KTPWP: Successfully completed qualified invoice number cost items migration' );
+                    }
+                    return true;
+                } else {
+                    error_log( 'KTPWP: Failed to execute qualified invoice number cost items migration' );
+                    return false;
+                }
+            } else {
+                error_log( 'KTPWP: Qualified invoice number cost items migration class not found' );
+                return false;
+            }
+        } else {
+            error_log( 'KTPWP: Qualified invoice number cost items migration file not found: ' . $migration_file );
+            return false;
+        }
+        
+    } catch ( Exception $e ) {
+        error_log( 'KTPWP Qualified Invoice Number Cost Items Migration Error: ' . $e->getMessage() );
         return false;
     }
 }
