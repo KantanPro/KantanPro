@@ -2011,14 +2011,25 @@ class KTP_Settings {
                     <div class="ktp-license-info" style="margin-top: 30px; padding: 20px; background: #f9f9f9; border-radius: 5px;">
                         <h3><?php echo esc_html__( 'ライセンスについて', 'ktpwp' ); ?></h3>
                         <p><?php echo esc_html__( 'KantanProプラグインのレポート機能を利用するには有効なライセンスキーが必要です。', 'ktpwp' ); ?></p>
+                        
+                        <!-- 利用可能なライセンスプラン -->
+                        <div style="margin: 20px 0; padding: 15px; background: #fff; border-radius: 5px; border-left: 4px solid #0073aa;">
+                            <h4 style="margin-top: 0; color: #0073aa;"><?php echo esc_html__( '利用可能なライセンスプラン', 'ktpwp' ); ?></h4>
+                            <ul style="margin-left: 20px; line-height: 1.8;">
+                                <li><strong><?php echo esc_html__( '月額プラン', 'ktpwp' ); ?></strong>: 980円/月</li>
+                                <li><strong><?php echo esc_html__( '年額プラン', 'ktpwp' ); ?></strong>: 9,980円/年</li>
+                                <li><strong><?php echo esc_html__( '買い切りプラン', 'ktpwp' ); ?></strong>: 49,900円</li>
+                            </ul>
+                        </div>
+                        
                         <ul style="margin-left: 20px;">
                             <li><?php echo esc_html__( 'ライセンスキーはKantanPro公式サイトから購入できます。', 'ktpwp' ); ?></li>
                             <li><?php echo esc_html__( 'ライセンス認証により、レポート機能が有効になります。', 'ktpwp' ); ?></li>
                             <li><?php echo esc_html__( 'ライセンスキーに関する問題がございましたら、サポートまでお問い合わせください。', 'ktpwp' ); ?></li>
                         </ul>
                         <p>
-                            <a href="https://www.kantanpro.com/" target="_blank" class="button button-secondary">
-                                <?php echo esc_html__( 'KantanPro公式サイト', 'ktpwp' ); ?>
+                            <a href="https://www.kantanpro.com/" target="_blank" class="button button-primary">
+                                <?php echo esc_html__( 'ライセンスを購入', 'ktpwp' ); ?>
                             </a>
                             <a href="mailto:support@kantanpro.com" class="button button-secondary">
                                 <?php echo esc_html__( 'サポートに問い合わせる', 'ktpwp' ); ?>

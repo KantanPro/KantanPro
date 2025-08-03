@@ -75,14 +75,41 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 			$content = $ui_generator->generate_controller();
 
 			if ( ! $is_license_valid ) {
-				error_log( 'KTPWP Report: Rendering dummy graph (license invalid)' );
-				$content .= $graph_renderer->render_dummy_graph();
+				error_log( 'KTPWP Report: Rendering license required message (license invalid)' );
+				$content .= $this->get_license_required_message();
 			} else {
 				error_log( 'KTPWP Report: Rendering comprehensive reports (license valid)' );
 				$content .= $this->render_comprehensive_reports();
 			}
 
 			return $content;
+		}
+
+		/**
+		 * Get license required message
+		 *
+		 * @since 1.0.11
+		 * @return string HTML content
+		 */
+		private function get_license_required_message() {
+			$message = '<div class="ktp-license-required" style="text-align: center; padding: 40px 20px; background: #fff; border-radius: 10px; box-shadow: 0 2px 8px #eee; margin: 32px auto; max-width: 800px;">';
+			$message .= '<h3 style="color: #d32f2f; margin-bottom: 20px; font-size: 24px;">レポート機能の利用にはライセンスが必要です</h3>';
+			$message .= '<p style="margin-bottom: 20px; font-size: 16px; line-height: 1.6;">詳細な分析とレポート機能を利用するには、ライセンスキーを購入して設定してください。</p>';
+			$message .= '<div style="margin-bottom: 20px;">';
+			$message .= '<a href="' . admin_url( 'admin.php?page=ktp-settings&tab=license' ) . '" class="button button-primary" style="padding: 12px 24px; font-size: 16px; text-decoration: none; background: #0073aa; color: #fff; border-radius: 5px; display: inline-block;">ライセンス設定へ</a>';
+			$message .= '</div>';
+			$message .= '<p style="font-size: 14px; color: #666; line-height: 1.5;">ライセンスキーは<a href="https://www.kantanpro.com/" target="_blank" style="color: #0073aa;">KantanPro公式サイト</a>で購入できます。</p>';
+			$message .= '<div style="margin-top: 30px; padding: 20px; background: #f9f9f9; border-radius: 5px;">';
+			$message .= '<h4 style="margin-bottom: 15px; color: #333;">利用可能なライセンスプラン</h4>';
+			$message .= '<ul style="text-align: left; max-width: 400px; margin: 0 auto; line-height: 1.8;">';
+			$message .= '<li><strong>月額プラン</strong>: 980円/月</li>';
+			$message .= '<li><strong>年額プラン</strong>: 9,980円/年</li>';
+			$message .= '<li><strong>買い切りプラン</strong>: 49,900円</li>';
+			$message .= '</ul>';
+			$message .= '</div>';
+			$message .= '</div>';
+			
+			return $message;
 		}
 
 		/**
