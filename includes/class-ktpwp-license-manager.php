@@ -93,6 +93,13 @@ class KTPWP_License_Manager {
         if ( empty( $license_key ) ) {
             if ( $license_status !== 'not_set' ) {
                 update_option( 'ktp_license_status', 'not_set' );
+                update_option( 'ktp_license_info', array(
+                    'message' => 'レポート機能を利用するにはライセンスキーが必要です。',
+                    'features' => array(
+                        'reports' => false,
+                        'analytics' => false
+                    )
+                ));
                 error_log( 'KTPWP License: Initializing license status to not_set (no license key)' );
             }
         }
@@ -259,6 +266,13 @@ class KTPWP_License_Manager {
         if ( empty( $license_key ) ) {
             if ( $license_status !== 'not_set' ) {
                 update_option( 'ktp_license_status', 'not_set' );
+                update_option( 'ktp_license_info', array(
+                    'message' => 'レポート機能を利用するにはライセンスキーが必要です。',
+                    'features' => array(
+                        'reports' => false,
+                        'analytics' => false
+                    )
+                ));
                 error_log( 'KTPWP License Check: License key is empty, setting status to not_set' );
             }
             return false;
