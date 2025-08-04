@@ -15,3 +15,4 @@ DEVELOPMENT-README.md
 
 # 注意: .local-development ファイルは意図的にgitで管理されます
 # 開発環境判定に使用され、配布時に自動除外されます
+.DS_Store
