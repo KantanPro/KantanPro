@@ -667,6 +667,20 @@ if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
 				</div>
 
 				<div class="ktpwp-changelog-item">
+					<h4>1.0.14 - 2025年8月4日</h4>
+					<ul>
+						<li><strong>自動マイグレーション機能の改善</strong>
+							<ul>
+								<li>データベース更新処理の安定化</li>
+								<li>エラーハンドリングの強化</li>
+								<li>マイグレーション安全性の向上</li>
+								<li>バージョン管理の最適化</li>
+							</ul>
+						</li>
+					</ul>
+				</div>
+
+				<div class="ktpwp-changelog-item">
 					<h4>1.0.13 - 2025年8月4日</h4>
 					<ul>
 						<li><strong>自動マイグレーション機能の改善</strong></li>
