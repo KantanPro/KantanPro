@@ -3,7 +3,7 @@
  * Plugin Name: KantanPro
  * Plugin URI: https://www.kantanpro.com/
  * Description: フリーランス・スモールビジネス向けの仕事効率化システム。ショートコード[ktpwp_all_tab]を固定ページに設置してください。
- * Version: 1.0.12
+ * Version: 1.0.13
  * Author: KantanPro
  * Author URI: https://www.kantanpro.com/kantanpro-page
  * License: GPL v2 or later
@@ -35,7 +35,7 @@ if ( file_exists( plugin_dir_path( __FILE__ ) . 'development-config.php' ) ) {
 
 // プラグイン定数定義
 if ( ! defined( 'KANTANPRO_PLUGIN_VERSION' ) ) {
-    define( 'KANTANPRO_PLUGIN_VERSION', '1.0.12' );
+    define( 'KANTANPRO_PLUGIN_VERSION', '1.0.13' );
 }
 if ( ! defined( 'KANTANPRO_PLUGIN_NAME' ) ) {
     define( 'KANTANPRO_PLUGIN_NAME', 'KantanPro' );
@@ -933,12 +933,86 @@ function ktpwp_safe_run_migration_files( $from_version, $to_version ) {
     try {
         if ( function_exists( 'ktpwp_run_migration_files' ) ) {
             ktpwp_run_migration_files( $from_version, $to_version );
+        } else {
+            // マイグレーションファイルを直接実行
+            ktpwp_run_migration_files_directly( $from_version, $to_version );
         }
     } catch ( Exception $e ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
             error_log( 'KTPWP Safe Migration Files Error: ' . $e->getMessage() );
         }
         throw $e;
+    }
+}
+
+/**
+ * マイグレーションファイルを直接実行する関数
+ */
+function ktpwp_run_migration_files_directly( $from_version, $to_version ) {
+    global $wpdb;
+    
+    if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+        error_log( 'KTPWP: マイグレーションファイルを直接実行します: ' . $from_version . ' -> ' . $to_version );
+    }
+    
+    // マイグレーションディレクトリのパス
+    $migration_dir = plugin_dir_path( __FILE__ ) . 'includes/migrations/';
+    
+    // マイグレーションファイルが存在するかチェック
+    if ( ! is_dir( $migration_dir ) ) {
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP: マイグレーションディレクトリが存在しません: ' . $migration_dir );
+        }
+        return;
+    }
+    
+    // マイグレーションファイルを取得
+    $migration_files = glob( $migration_dir . '*.php' );
+    
+    if ( empty( $migration_files ) ) {
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP: マイグレーションファイルが見つかりません' );
+        }
+        return;
+    }
+    
+    // ファイル名でソート
+    sort( $migration_files );
+    
+    foreach ( $migration_files as $migration_file ) {
+        $filename = basename( $migration_file );
+        
+        // 既に実行済みかチェック
+        $migration_key = 'ktp_migration_' . md5( $filename );
+        if ( get_option( $migration_key, false ) ) {
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP: マイグレーションファイルは既に実行済みです: ' . $filename );
+            }
+            continue;
+        }
+        
+        try {
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP: マイグレーションファイルを実行中: ' . $filename );
+            }
+            
+            // マイグレーションファイルを読み込み
+            require_once $migration_file;
+            
+            // 実行完了フラグを設定
+            update_option( $migration_key, true );
+            update_option( $migration_key . '_timestamp', current_time( 'mysql' ) );
+            
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP: マイグレーションファイルが正常に実行されました: ' . $filename );
+            }
+            
+        } catch ( Exception $e ) {
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP Migration File Error: ' . $filename . ' - ' . $e->getMessage() );
+            }
+            // マイグレーションファイルのエラーは致命的ではないため、ログのみ記録して続行
+        }
     }
 }
 
@@ -5592,10 +5666,3 @@ function ktpwp_handle_clear_data_ajax() {
         }
     }
 }
-
-/**
- * テスト用AJAXハンドラー
- */
-add_action('wp_ajax_ktpwp_test_ajax', function() {
-    wp_send_json_success(['message' => 'AJAX OK']);
-});

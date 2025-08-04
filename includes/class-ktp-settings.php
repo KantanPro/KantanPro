@@ -713,8 +713,7 @@ class KTP_Settings {
                         } else {
                             // フォールバック
                             echo '<div class="ktp-settings-container"><div class="ktp-settings-section"><p>' . esc_html__( '利用規約管理機能が利用できません。', 'ktpwp' ) . '</p></div></div>';
-                        }
-                        ?>
+                        } ?>
                     </div>
                 <?php elseif ( $current_tab === 'updates' ) : ?>
                     <!-- 更新通知設定 -->
@@ -817,8 +816,7 @@ class KTP_Settings {
                 'icon' => 'dashicons-warning',
                 'color' => '#f56e28'
             );
-        }
-        ?>
+        } ?>
 
         <div class="card">
             <h2><?php esc_html_e( '環境情報', 'ktpwp' ); ?></h2>
@@ -905,8 +903,7 @@ class KTP_Settings {
                     <span class="description"><?php esc_html_e( '詳細なライセンス状態を確認します。', 'ktpwp' ); ?></span>
                 </p>
             </div>
-        <?php endif; ?>
-        <?php
+        <?php endif; ?><?php
     }
 
     /**
@@ -1603,8 +1600,7 @@ class KTP_Settings {
                                         echo esc_html( date_i18n( 'Y-m-d H:i', strtotime( $last_modified ) ) );
                                     } else {
                                         echo esc_html__( '未記録', 'ktpwp' );
-                                    }
-                                    ?>
+                                    } ?>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -1839,8 +1835,7 @@ class KTP_Settings {
     public function create_general_page() {
         if ( ! current_user_can( 'manage_options' ) ) {
             wp_die( __( 'この設定ページにアクセスする権限がありません。', 'ktpwp' ) );
-        }
-        ?>
+        } ?>
         <div class="wrap ktp-admin-wrap">
             <h1><span class="dashicons dashicons-admin-settings"></span> <?php echo esc_html__( '一般設定', 'ktpwp' ); ?></h1>
             
@@ -1890,8 +1885,7 @@ class KTP_Settings {
                                 }
                                 echo '</table>';
                             }
-                        }
-                        ?>
+                        } ?>
                         
                         <div class="ktp-submit-button">
                             <?php submit_button( __( '設定を保存', 'ktpwp' ), 'primary', 'submit', false ); ?>
@@ -1947,8 +1941,7 @@ class KTP_Settings {
                                     <span class="spinner" style="float: none; margin-left: 5px;"></span>
                                 </p>
                             </div>
-                        <?php endif; ?>
-                        <?php if ( isset( $license_status['info'] ) && ! empty( $license_status['info'] ) ) : ?>
+                        <?php endif; ?><?php if ( isset( $license_status['info'] ) && ! empty( $license_status['info'] ) ) : ?>
                             <div class="ktp-license-info-details" style="margin-top: 15px; padding: 15px; background: #f9f9f9; border-radius: 3px;">
                                 <h4 style="margin-top: 0;"><?php echo esc_html__( 'ライセンス詳細', 'ktpwp' ); ?></h4>
                                 <table class="form-table" style="margin: 0;">
@@ -2086,8 +2079,7 @@ class KTP_Settings {
     public function create_design_page() {
         if ( ! current_user_can( 'manage_options' ) ) {
             wp_die( __( 'この設定ページにアクセスする権限がありません。', 'ktpwp' ) );
-        }
-        ?>
+        } ?>
         <div class="wrap ktp-admin-wrap">
             <h1><span class="dashicons dashicons-admin-appearance"></span> <?php echo esc_html__( 'デザイン設定', 'ktpwp' ); ?></h1>
             
@@ -2119,8 +2111,7 @@ class KTP_Settings {
                                 }
                                 echo '</table>';
                             }
-                        }
-                        ?>
+                        } ?>
                         
                         <div class="ktp-submit-button">
                             <?php submit_button( __( '設定を保存', 'ktpwp' ), 'primary', 'submit', false ); ?>
@@ -3071,8 +3062,7 @@ class KTP_Settings {
             echo '<!-- Debug: KANTANPRO_PLUGIN_FILE: ' . esc_html( KANTANPRO_PLUGIN_FILE ) . ' -->';
             echo '<!-- Debug: File exists: ' . ( file_exists( plugin_dir_path( KANTANPRO_PLUGIN_FILE ) . 'images/default/icon.png' ) ? 'true' : 'false' ) . ' -->';
             echo '<!-- Debug: Plugin dir path: ' . esc_html( plugin_dir_path( KANTANPRO_PLUGIN_FILE ) ) . ' -->';
-        }
-        ?>
+        } ?>
         <div class="logo-upload-field">
             <input type="hidden" id="ktp_logo_image" name="ktp_logo_image" value="<?php echo esc_attr( $value ); ?>" />
             <div class="logo-preview" style="margin-bottom: 10px;">
@@ -3431,8 +3421,7 @@ class KTP_Settings {
             } else {
                 $image_url = $image_path;
             }
-        }
-        ?>
+        } ?>
         <div class="ktp-image-upload-field">
             <input type="hidden" id="header_bg_image" name="ktp_design_settings[header_bg_image]" value="<?php echo esc_attr( $image_value ); ?>" data-default-url="<?php echo esc_url( plugin_dir_url( __DIR__ ) . 'images/default/header_bg_image.png' ); ?>" />
             
@@ -4236,8 +4225,7 @@ define( 'WP_DEBUG_DISPLAY', false );
                 <?php echo esc_html( $label ); ?>
             </label>
             <?php
-        }
-        ?>
+        } ?>
         <p class="description"><?php esc_html_e( '更新通知を表示するユーザー権限を選択してください。', 'ktpwp' ); ?></p>
         <?php
     }

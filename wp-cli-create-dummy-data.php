@@ -403,6 +403,4 @@ class KTP_Create_Dummy_Data_Command {
     }
 }
 
-WP_CLI::add_command('ktp create-dummy-data', 'KTP_Create_Dummy_Data_Command');
-?> 
-?> 
+WP_CLI::add_command('ktp create-dummy-data', 'KTP_Create_Dummy_Data_Command'); 

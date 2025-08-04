@@ -285,8 +285,7 @@ kantanpro22@gmail.com
                 if ( ! wp_check_password( $password, $developer_password_hash ) ) {
                     echo '<div class="notice notice-error is-dismissible"><p>' . esc_html__( 'パスワードが正しくありません。', 'ktpwp' ) . '</p></div>';
                 }
-            }
-            ?>
+            } ?>
             <form method="post" style="max-width: 600px;">
                 <div style="display: flex; align-items: center; gap: 10px;">
                     <label for="developer_password" style="white-space: nowrap;"><?php echo esc_html__( '開発者パスワード', 'ktpwp' ); ?></label>

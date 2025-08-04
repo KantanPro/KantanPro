@@ -958,5 +958,4 @@ function clear_dummy_data() {
 if (isset($argv[1]) && $argv[1] === 'clear') {
     clear_dummy_data();
     exit;
-}
-?> 
+} 
