@@ -98,6 +98,11 @@ find "${BUILD_DIR}" -type f \( -name "test-*.sh" -o -name "test_*.sh" -o -name "
 # ドキュメントファイル
 find "${BUILD_DIR}" -type f \( -name "README.md" -o -name "*.md" -o -name "*.html" \) -delete
 
+# 開発環境関連ファイル（重要：本番環境への配布を防ぐ）
+find "${BUILD_DIR}" -type f -name ".local-development" -delete
+find "${BUILD_DIR}" -type f -name "DEVELOPMENT-ENVIRONMENT-SETUP.md" -delete
+find "${BUILD_DIR}" -type f -name "development-config.php" -delete
+
 # 開発用JS/CSSファイル
 find "${BUILD_DIR}" -type f \( -name "*-test.js" -o -name "*-debug.js" -o -name "*-fixed.js" -o -name "*-test.css" -o -name "*-debug.css" -o -name "*-fixed.css" -o -name "test-*.js" -o -name "debug-*.js" -o -name "fix-*.js" -o -name "test-*.css" -o -name "debug-*.css" -o -name "fix-*.css" -o -name "service-fix.*" -o -name "*debug-helper.js" \) -delete
 
@@ -155,6 +160,20 @@ if [ $? -eq 0 ]; then
         echo "  ✅ デバッグファイル: 適切に除外"
     else
         echo "  ⚠️  デバッグファイル: 一部が残っています"
+    fi
+    
+    # 開発環境ファイルが除外されているかチェック
+    if ! unzip -l "${FINAL_ZIP_PATH}" | grep -q ".local-development"; then
+        echo "  ✅ 開発環境マーカー: 適切に除外"
+    else
+        echo "  ❌ 開発環境マーカー: 含まれています（セキュリティリスク）"
+        exit 1
+    fi
+    
+    if ! unzip -l "${FINAL_ZIP_PATH}" | grep -q "DEVELOPMENT-ENVIRONMENT-SETUP.md"; then
+        echo "  ✅ 開発環境ドキュメント: 適切に除外"
+    else
+        echo "  ⚠️  開発環境ドキュメント: 含まれています"
     fi
     
     # クリーンアップ
