@@ -75,6 +75,7 @@ class KTPWP_License_Manager {
         add_action( 'admin_init', array( $this, 'handle_license_activation' ) );
         add_action( 'wp_ajax_ktpwp_verify_license', array( $this, 'ajax_verify_license' ) );
         add_action( 'wp_ajax_ktpwp_get_license_info', array( $this, 'ajax_get_license_info' ) );
+        add_action( 'wp_ajax_ktpwp_toggle_dev_license', array( $this, 'ajax_toggle_dev_license' ) );
         
         // ライセンス状態の初期化
         $this->initialize_license_state();
@@ -252,6 +253,12 @@ class KTPWP_License_Manager {
      * @return bool True if license is valid
      */
     public function is_license_valid() {
+        // 開発環境では、開発ライセンスの有効/無効設定を確認
+        if ( $this->is_development_environment() && ! $this->is_dev_license_enabled() ) {
+            error_log( 'KTPWP License Check: Development license is disabled by setting' );
+            return false;
+        }
+
         // 開発環境用万能ライセンスキーのチェック
         if ( $this->is_development_license_valid() ) {
             error_log( 'KTPWP License Check: Development license is valid' );
@@ -464,6 +471,41 @@ class KTPWP_License_Manager {
     }
 
     /**
+     * AJAX handler for toggling development license status
+     *
+     * @since 1.0.0
+     */
+    public function ajax_toggle_dev_license() {
+        check_ajax_referer( 'ktp_license_nonce', 'nonce' );
+
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( __( 'この操作を実行する権限がありません。', 'ktpwp' ) );
+        }
+
+        if ( ! $this->is_development_environment() ) {
+            wp_send_json_error( __( 'この機能は開発環境でのみ利用可能です。', 'ktpwp' ) );
+        }
+
+        $enabled = $this->is_dev_license_enabled();
+        update_option( 'ktp_dev_license_enabled', $enabled ? '0' : '1' );
+
+        wp_send_json_success( array(
+            'new_status' => ! $enabled
+        ) );
+    }
+
+    /**
+     * Check if development license is enabled via settings
+     *
+     * @since 1.0.0
+     * @return bool True if enabled
+     */
+    public function is_dev_license_enabled() {
+        // オプションが存在しない場合や '1' の場合は有効とみなす
+        return get_option( 'ktp_dev_license_enabled', '1' ) === '1';
+    }
+
+    /**
      * Get license status for display
      *
      * @since 1.0.0
@@ -484,19 +526,32 @@ class KTPWP_License_Manager {
             );
         }
 
-        // 開発環境用万能ライセンスキーのチェック
-        if ( $this->is_development_license_valid() ) {
-            return array(
-                'status' => 'active',
-                'message' => __( 'ライセンスが有効です。（開発環境）', 'ktpwp' ),
-                'icon' => 'dashicons-yes-alt',
-                'color' => '#46b450',
-                'info' => array_merge( $license_info, array(
-                    'type' => 'development',
-                    'environment' => 'development'
-                ) )
-            );
+        // 開発環境の特別な処理
+        if ( $this->is_development_environment() ) {
+            if ( $this->is_dev_license_enabled() ) {
+                return array(
+                    'status' => 'active_dev',
+                    'message' => __( 'ライセンスが有効です。（開発環境）', 'ktpwp' ),
+                    'icon' => 'dashicons-yes-alt',
+                    'color' => '#46b450',
+                    'info' => array_merge( $license_info, array(
+                        'type' => 'development',
+                        'environment' => 'development'
+                    ) ),
+                    'is_dev_mode' => true
+                );
+            } else {
+                return array(
+                    'status' => 'inactive_dev',
+                    'message' => __( 'ライセンスが無効です。（開発環境モードで無効化中）', 'ktpwp' ),
+                    'icon' => 'dashicons-warning',
+                    'color' => '#f56e28',
+                    'is_dev_mode' => true
+                );
+            }
         }
+
+        // 本番環境、または開発用ライセンスキーが設定されていない場合
 
         // ライセンスステータスがactiveの場合、KLMサーバーで最新の状態を確認
         if ( $license_status === 'active' ) {
