@@ -345,23 +345,41 @@ class KTPWP_License_Manager {
      * @return bool True if development environment
      */
     private function is_development_environment() {
-        // 環境変数で判定
-        if ( defined( 'WP_ENV' ) && WP_ENV === 'development' ) {
+        /**
+         * 開発環境かどうかを判定します。
+         * 判定の優先順位:
+         * 1. KTPWP_DEVELOPMENT_MODE 定数による明示的な指定
+         * 2. WP_ENV 定数による指定
+         * 3. Docker環境マーカー (/.dockerenv)
+         * 4. WP_DEBUG が true の場合のホスト名による判定
+         */
+
+        // 1. KTPWP_DEVELOPMENT_MODE 定数による明示的な上書き
+        if ( defined( 'KTPWP_DEVELOPMENT_MODE' ) ) {
+            return KTPWP_DEVELOPMENT_MODE === true;
+        }
+
+        // 2. WP_ENV 定数による判定
+        if ( defined( 'WP_ENV' ) && 'development' === WP_ENV ) {
             return true;
         }
 
-        // ホスト名で判定（localhost, .local, .test など）
-        $host = $_SERVER['HTTP_HOST'] ?? '';
-        if ( in_array( $host, ['localhost', '127.0.0.1'] ) || 
-             strpos( $host, '.local' ) !== false || 
-             strpos( $host, '.test' ) !== false ||
-             strpos( $host, '.dev' ) !== false ) {
+        // 3. Docker環境マーカー (/.dockerenv) の存在チェック
+        if ( file_exists( '/.dockerenv' ) ) {
             return true;
         }
 
-        // wp-config.phpで定義された定数で判定
-        if ( defined( 'KTPWP_DEVELOPMENT_MODE' ) && KTPWP_DEVELOPMENT_MODE === true ) {
-            return true;
+        // 4. WP_DEBUG とホスト名による判定
+        if ( defined( 'WP_DEBUG' ) && true === WP_DEBUG ) {
+            $host = $_SERVER['HTTP_HOST'] ?? '';
+
+            if ( in_array( $host, [ 'localhost', '127.0.0.1', '[::1]' ], true ) ) {
+                return true;
+            }
+
+            if ( preg_match( '/\.(local|test)$/', $host ) ) {
+                return true;
+            }
         }
 
         return false;
