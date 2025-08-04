@@ -72,5 +72,4 @@ if ($reflection->hasMethod('get_sales_chart_data')) {
     echo "get_sales_chart_dataメソッドが見つかりません\n";
 }
 
-echo "\n=== テスト完了 ===\n";
-?> 
+echo "\n=== テスト完了 ===\n"; 
