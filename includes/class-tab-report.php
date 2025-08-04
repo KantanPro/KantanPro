@@ -76,7 +76,8 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 
 			if ( ! $is_license_valid ) {
 				error_log( 'KTPWP Report: Rendering license required message (license invalid)' );
-				$content .= $this->get_license_required_message();
+				// グラフ背景＋メッセージ重ね表示
+				$content .= $this->render_license_required_with_graph();
 			} else {
 				error_log( 'KTPWP Report: Rendering comprehensive reports (license valid)' );
 				$content .= $this->render_comprehensive_reports();
@@ -86,30 +87,24 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 		}
 
 		/**
-		 * Get license required message
+		 * ライセンス無効時にグラフを背景に重ねてメッセージを表示
 		 *
-		 * @since 1.0.11
-		 * @return string HTML content
+		 * @return string
 		 */
-		private function get_license_required_message() {
-			$message = '<div class="ktp-license-required" style="text-align: center; padding: 40px 20px; background: #fff; border-radius: 10px; box-shadow: 0 2px 8px #eee; margin: 32px auto; max-width: 800px;">';
-			$message .= '<h3 style="color: #d32f2f; margin-bottom: 20px; font-size: 24px;">レポート機能の利用にはライセンスが必要です</h3>';
-			$message .= '<p style="margin-bottom: 20px; font-size: 16px; line-height: 1.6;">詳細な分析とレポート機能を利用するには、ライセンスキーを購入して設定してください。</p>';
-			$message .= '<div style="margin-bottom: 20px;">';
-			$message .= '<a href="' . admin_url( 'admin.php?page=ktp-settings&tab=license' ) . '" class="button button-primary" style="padding: 12px 24px; font-size: 16px; text-decoration: none; background: #0073aa; color: #fff; border-radius: 5px; display: inline-block;">ライセンス設定へ</a>';
-			$message .= '</div>';
-			$message .= '<p style="font-size: 14px; color: #666; line-height: 1.5;">ライセンスキーは<a href="https://www.kantanpro.com/" target="_blank" style="color: #0073aa;">KantanPro公式サイト</a>で購入できます。</p>';
-			$message .= '<div style="margin-top: 30px; padding: 20px; background: #f9f9f9; border-radius: 5px;">';
-			$message .= '<h4 style="margin-bottom: 15px; color: #333;">利用可能なライセンスプラン</h4>';
-			$message .= '<ul style="text-align: left; max-width: 400px; margin: 0 auto; line-height: 1.8;">';
-			$message .= '<li><strong>月額プラン</strong>: 980円/月</li>';
-			$message .= '<li><strong>年額プラン</strong>: 9,980円/年</li>';
-			$message .= '<li><strong>買い切りプラン</strong>: 49,900円</li>';
-			$message .= '</ul>';
-			$message .= '</div>';
-			$message .= '</div>';
-			
-			return $message;
+		private function render_license_required_with_graph() {
+			$graph_renderer = new KTPWP_Graph_Renderer();
+			$dummy_graph_url = esc_url( plugins_url( '../images/default/dummy_graph.png', __FILE__ ) );
+			return '<div style="position:relative;max-width:800px;margin:30px auto;">
+				<img src="' . $dummy_graph_url . '" alt="' . esc_attr__( 'Report Graph', 'ktpwp' ) . '" style="width:100%;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.1);filter:blur(3px);opacity:0.7;">
+				<div style="position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,0.3);border-radius:8px;display:flex;flex-direction:column;justify-content:flex-start;align-items:center;text-align:center;padding:20px;">
+					<h3 style="margin:50px 0 15px;color:#d32f2f;font-size:24px;text-shadow:0 1px 2px rgba(255,255,255,0.8);">レポート機能の利用にはライセンスが必要です</h3>
+					<p style="margin-bottom:20px;font-size:16px;line-height:1.6;color:#555;text-shadow:0 1px 2px rgba(255,255,255,0.8);">詳細な分析とレポート機能を利用するには、ライセンスキーを購入して設定してください。</p>
+					<div style="margin-bottom:20px;">
+						<a href="' . esc_url( admin_url( 'admin.php?page=ktp-license' ) ) . '" class="button button-primary" style="padding:12px 24px;font-size:16px;text-decoration:none;background:#0073aa;color:#fff;border-radius:5px;display:inline-block;">ライセンス設定へ</a>
+					</div>
+					<p style="font-size:18px;font-weight:bold;color:#0073aa;line-height:1.5;">ライセンスキーは<a href=\"https://www.kantanpro.com/klm\" target=\"_blank\" style=\"color:#0073aa;text-decoration:underline;\">KantanPro公式サイト</a>で購入できます。</p>
+				</div>
+			</div>';
 		}
 
 		/**
