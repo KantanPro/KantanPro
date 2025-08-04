@@ -350,39 +350,311 @@ class KTPWP_License_Manager {
          * 判定の優先順位:
          * 1. KTPWP_DEVELOPMENT_MODE 定数による明示的な指定
          * 2. WP_ENV 定数による指定
-         * 3. Docker環境マーカー (/.dockerenv)
-         * 4. WP_DEBUG が true の場合のホスト名による判定
+         * 3. 厳格なローカル開発環境の判定
+         * 4. Docker環境でのローカル開発環境マーカー
          */
+
+        $debug_info = array();
+        $is_dev = false;
 
         // 1. KTPWP_DEVELOPMENT_MODE 定数による明示的な上書き
         if ( defined( 'KTPWP_DEVELOPMENT_MODE' ) ) {
-            return KTPWP_DEVELOPMENT_MODE === true;
+            $is_dev = KTPWP_DEVELOPMENT_MODE === true;
+            $debug_info[] = 'KTPWP_DEVELOPMENT_MODE: ' . ( $is_dev ? 'true' : 'false' );
+            if ( $is_dev ) {
+                error_log( 'KTPWP Dev Environment Check: Detected by KTPWP_DEVELOPMENT_MODE constant' );
+                return true;
+            }
         }
 
         // 2. WP_ENV 定数による判定
         if ( defined( 'WP_ENV' ) && 'development' === WP_ENV ) {
+            $debug_info[] = 'WP_ENV: development';
+            error_log( 'KTPWP Dev Environment Check: Detected by WP_ENV constant' );
             return true;
+        } else {
+            $debug_info[] = 'WP_ENV: ' . ( defined( 'WP_ENV' ) ? WP_ENV : 'undefined' );
         }
 
-        // 3. Docker環境マーカー (/.dockerenv) の存在チェック
-        if ( file_exists( '/.dockerenv' ) ) {
+        // 3. 厳格なローカル開発環境の判定
+        if ( $this->is_strict_local_environment() ) {
+            $debug_info[] = 'strict_local_environment: true';
+            error_log( 'KTPWP Dev Environment Check: Detected by strict local environment check' );
             return true;
+        } else {
+            $debug_info[] = 'strict_local_environment: false';
         }
 
-        // 4. WP_DEBUG とホスト名による判定
-        if ( defined( 'WP_DEBUG' ) && true === WP_DEBUG ) {
-            $host = $_SERVER['HTTP_HOST'] ?? '';
-
-            if ( in_array( $host, [ 'localhost', '127.0.0.1', '[::1]' ], true ) ) {
-                return true;
-            }
-
-            if ( preg_match( '/\.(local|test)$/', $host ) ) {
-                return true;
-            }
+        // 4. Docker環境でのローカル開発環境マーカー
+        if ( $this->is_docker_local_development() ) {
+            $debug_info[] = 'docker_local_development: true';
+            error_log( 'KTPWP Dev Environment Check: Detected by Docker local development markers' );
+            return true;
+        } else {
+            $debug_info[] = 'docker_local_development: false';
         }
+
+        // デバッグ情報をログに記録
+        error_log( 'KTPWP Dev Environment Check: NOT development environment - ' . implode( ', ', $debug_info ) );
 
         return false;
+    }
+
+    /**
+     * Check if environment is strictly local development
+     *
+     * @since 1.0.0
+     * @return bool True if strictly local development
+     */
+    private function is_strict_local_environment() {
+        // ローカル開発環境の厳格な判定
+        
+        // 1. ローカルホスト名の確認
+        $host = $_SERVER['HTTP_HOST'] ?? '';
+        $server_name = $_SERVER['SERVER_NAME'] ?? '';
+        
+        // 完全なローカルホスト名のみを許可
+        $local_hosts = [
+            'localhost',
+            '127.0.0.1',
+            '[::1]'
+        ];
+        
+        $is_local_host = in_array( $host, $local_hosts, true ) || 
+                        in_array( $server_name, $local_hosts, true );
+        
+        if ( $is_local_host ) {
+            // さらに、WP_DEBUGが有効であることを確認
+            if ( defined( 'WP_DEBUG' ) && true === WP_DEBUG ) {
+                return true;
+            }
+            
+            // または、明示的にローカル開発を示すマーカーファイルが存在する
+            if ( file_exists( ABSPATH . '.local-development' ) ) {
+                return true;
+            }
+        }
+        
+        // .localや.testドメインの場合も、追加条件を満たす場合のみ
+        if ( preg_match( '/\.(local|test)$/', $host ) || preg_match( '/\.(local|test)$/', $server_name ) ) {
+            // WP_DEBUGが有効かつ、サーバーIPがローカル範囲内
+            if ( defined( 'WP_DEBUG' ) && true === WP_DEBUG && $this->is_local_ip() ) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+
+    /**
+     * Check if current environment is Docker local development
+     *
+     * @since 1.0.0
+     * @return bool True if Docker local development
+     */
+    private function is_docker_local_development() {
+        // Docker環境かどうかを確認
+        if ( ! file_exists( '/.dockerenv' ) ) {
+            return false;
+        }
+        
+        // Docker環境でも、以下の条件を全て満たす場合のみローカル開発環境とみなす
+        $conditions = [
+            // 1. WP_DEBUGが有効
+            defined( 'WP_DEBUG' ) && true === WP_DEBUG,
+            
+            // 2. ローカル開発を示す環境変数が設定されている
+            $this->has_local_development_markers(),
+            
+            // 3. サーバーIPがローカル範囲内
+            $this->is_local_ip(),
+            
+            // 4. ホスト名がローカル開発環境を示している
+            $this->is_local_development_hostname()
+        ];
+        
+        // 全ての条件を満たす場合のみtrueを返す
+        return count( array_filter( $conditions ) ) >= 3;
+    }
+
+    /**
+     * Check if local development markers exist
+     *
+     * @since 1.0.0
+     * @return bool True if local development markers exist
+     */
+    private function has_local_development_markers() {
+        // 環境変数による判定
+        $env_markers = [
+            'DOCKER_LOCAL_DEV',
+            'KTPWP_LOCAL_DEV',
+            'LOCAL_DEVELOPMENT',
+            'COMPOSE_PROJECT_NAME' // docker-composeプロジェクト名
+        ];
+        
+        foreach ( $env_markers as $marker ) {
+            if ( getenv( $marker ) ) {
+                return true;
+            }
+        }
+        
+        // ファイルマーカーによる判定
+        $file_markers = [
+            ABSPATH . '.local-development',
+            ABSPATH . 'docker-compose.yml',
+            ABSPATH . 'docker-compose.yaml',
+            ABSPATH . '../docker-compose.yml',
+            ABSPATH . '../docker-compose.yaml'
+        ];
+        
+        foreach ( $file_markers as $file ) {
+            if ( file_exists( $file ) ) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+
+    /**
+     * Check if server IP is in local range
+     *
+     * @since 1.0.0
+     * @return bool True if server IP is local
+     */
+    private function is_local_ip() {
+        $server_ip = $_SERVER['SERVER_ADDR'] ?? '';
+        
+        if ( empty( $server_ip ) ) {
+            return false;
+        }
+        
+        // ローカルIPの範囲
+        $local_ranges = [
+            '127.0.0.0/8',    // 127.0.0.1
+            '10.0.0.0/8',     // 10.x.x.x
+            '172.16.0.0/12',  // 172.16.x.x - 172.31.x.x
+            '192.168.0.0/16', // 192.168.x.x
+            '::1/128'         // IPv6 localhost
+        ];
+        
+        foreach ( $local_ranges as $range ) {
+            if ( $this->ip_in_range( $server_ip, $range ) ) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+
+    /**
+     * Check if hostname indicates local development
+     *
+     * @since 1.0.0
+     * @return bool True if hostname indicates local development
+     */
+    private function is_local_development_hostname() {
+        $host = $_SERVER['HTTP_HOST'] ?? '';
+        
+        // 明確にローカル開発を示すパターン
+        $local_patterns = [
+            '/^localhost(:\d+)?$/',
+            '/^127\.0\.0\.1(:\d+)?$/',
+            '/^.*\.local(:\d+)?$/',
+            '/^.*\.test(:\d+)?$/',
+            '/^.*\.dev(:\d+)?$/',
+            '/^.*-local\./',
+            '/^dev-.*\./',
+            '/^local-.*\./'
+        ];
+        
+        foreach ( $local_patterns as $pattern ) {
+            if ( preg_match( $pattern, $host ) ) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+
+    /**
+     * Check if IP is in given range
+     *
+     * @since 1.0.0
+     * @param string $ip IP address to check
+     * @param string $range IP range in CIDR notation
+     * @return bool True if IP is in range
+     */
+    private function ip_in_range( $ip, $range ) {
+        if ( strpos( $range, '/' ) === false ) {
+            return $ip === $range;
+        }
+        
+        list( $subnet, $mask ) = explode( '/', $range );
+        
+        if ( filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6 ) ) {
+            return $this->ipv6_in_range( $ip, $subnet, $mask );
+        } else {
+            return $this->ipv4_in_range( $ip, $subnet, $mask );
+        }
+    }
+
+    /**
+     * Check if IPv4 is in range
+     *
+     * @since 1.0.0
+     * @param string $ip IPv4 address
+     * @param string $subnet Subnet
+     * @param int $mask Mask bits
+     * @return bool True if IP is in range
+     */
+    private function ipv4_in_range( $ip, $subnet, $mask ) {
+        $ip_long = ip2long( $ip );
+        $subnet_long = ip2long( $subnet );
+        $mask_long = -1 << ( 32 - $mask );
+        
+        if ( $ip_long === false || $subnet_long === false ) {
+            return false;
+        }
+        
+        return ( $ip_long & $mask_long ) === ( $subnet_long & $mask_long );
+    }
+
+    /**
+     * Check if IPv6 is in range
+     *
+     * @since 1.0.0
+     * @param string $ip IPv6 address
+     * @param string $subnet Subnet
+     * @param int $mask Mask bits
+     * @return bool True if IP is in range
+     */
+    private function ipv6_in_range( $ip, $subnet, $mask ) {
+        $ip_bin = inet_pton( $ip );
+        $subnet_bin = inet_pton( $subnet );
+        
+        if ( $ip_bin === false || $subnet_bin === false ) {
+            return false;
+        }
+        
+        $mask_bytes = intval( $mask / 8 );
+        $mask_bits = $mask % 8;
+        
+        // Compare full bytes
+        if ( $mask_bytes > 0 && substr( $ip_bin, 0, $mask_bytes ) !== substr( $subnet_bin, 0, $mask_bytes ) ) {
+            return false;
+        }
+        
+        // Compare remaining bits
+        if ( $mask_bits > 0 && $mask_bytes < strlen( $ip_bin ) ) {
+            $ip_byte = ord( $ip_bin[$mask_bytes] );
+            $subnet_byte = ord( $subnet_bin[$mask_bytes] );
+            $bit_mask = 0xFF << ( 8 - $mask_bits );
+            
+            return ( $ip_byte & $bit_mask ) === ( $subnet_byte & $bit_mask );
+        }
+        
+        return true;
     }
 
     /**

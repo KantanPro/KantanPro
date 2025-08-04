@@ -1,0 +1,15 @@
+# KantanPro Local Development Environment Marker
+# このファイルの存在により、このWordPress環境がローカル開発環境であることを明示します
+# 本番環境には絶対にこのファイルをアップロードしないでください
+
+ENVIRONMENT=local_development
+CREATED_DATE=2025-01-31
+PURPOSE=ktpwp_local_dev_detection
+DOCKER_ENV=true
+
+# このファイルの役割:
+# - KantanProプラグインの開発環境判定に使用
+# - 本番環境での誤動作を防止
+# - セキュリティ強化のため
+
+# 重要: 本番環境では必ずこのファイルを削除してください 
