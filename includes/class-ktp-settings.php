@@ -1978,51 +1978,43 @@ class KTP_Settings {
                     </div>
 
                     <!-- ライセンス認証フォーム -->
-                    <form method="post" action="" id="ktp-license-form">
-                        <?php wp_nonce_field( 'ktp_license_activation', 'ktp_license_nonce' ); ?>
-                        <input type="hidden" name="ktp_license_activation" value="1">
-                        
-                        <table class="form-table">
-                            <tr>
-                                <th scope="row">
-                                    <label for="ktp_license_key"><?php echo esc_html__( 'ライセンスキー', 'ktpwp' ); ?></label>
-                                </th>
-                                <td>
-                                    <input type="password" 
-                                           id="ktp_license_key" 
-                                           name="ktp_license_key" 
-                                           value="<?php echo esc_attr( get_option( 'ktp_license_key' ) ); ?>" 
-                                           style="width: 400px; max-width: 100%;"
-                                           placeholder="KTPA-XXXXXX-XXXXXX-XXXX"
-                                           autocomplete="off">
-                                    <p class="description">
-                                        <?php echo esc_html__( 'KantanPro License Managerから取得したライセンスキーを入力してください。', 'ktpwp' ); ?>
-                                    </p>
-                                </td>
-                            </tr>
-                        </table>
-                        
-                        <div class="ktp-submit-button">
-                            <?php submit_button( __( 'ライセンスを認証', 'ktpwp' ), 'primary', 'submit', false ); ?>
-                        </div>
-                    </form>
-                    
-                    <!-- ライセンス状態再確認フォーム -->
-                    <?php if ( ! empty( get_option( 'ktp_license_key' ) ) ) : ?>
-                        <form method="post" action="" style="margin-top: 20px;">
-                            <?php wp_nonce_field( 'ktp_license_recheck', 'ktp_license_recheck_nonce' ); ?>
-                            <input type="hidden" name="ktp_license_recheck" value="1">
-                            <div class="ktp-submit-button">
-                                <?php submit_button( __( 'ライセンス状態を再確認', 'ktpwp' ), 'secondary', 'recheck_license', false ); ?>
-                            </div>
+                    <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                        <form method="post" action="" id="ktp-license-form" style="display: flex; align-items: center; gap: 10px; margin: 0;">
+                            <?php wp_nonce_field( 'ktp_license_activation', 'ktp_license_nonce' ); ?>
+                            <input type="hidden" name="ktp_license_activation" value="1">
+
+                            <label for="ktp_license_key" style="margin-bottom: 0;"><?php echo esc_html__( 'ライセンスキー', 'ktpwp' ); ?></label>
+
+                            <input type="password"
+                                   id="ktp_license_key"
+                                   name="ktp_license_key"
+                                   value="<?php echo esc_attr( get_option( 'ktp_license_key' ) ); ?>"
+                                   style="width: 400px;"
+                                   placeholder="KTPA-XXXXXX-XXXXXX-XXXX"
+                                   autocomplete="off">
+
+                            <?php submit_button( __( 'ライセンスを認証', 'ktpwp' ), 'primary', 'submit', false, ['style' => 'margin: 0;'] ); ?>
                         </form>
-                    <?php endif; ?>
-                    
+
+                        <!-- ライセンス状態再確認フォーム -->
+                        <?php if ( ! empty( get_option( 'ktp_license_key' ) ) ) : ?>
+                            <form method="post" action="" style="margin: 0;">
+                                <?php wp_nonce_field( 'ktp_license_recheck', 'ktp_license_recheck_nonce' ); ?>
+                                <input type="hidden" name="ktp_license_recheck" value="1">
+                                <?php submit_button( __( 'ライセンス状態を再確認', 'ktpwp' ), 'secondary', 'recheck_license', false, ['style' => 'margin: 0;'] ); ?>
+                            </form>
+                        <?php endif; ?>
+                    </div>
+
+                    <p class="description" style="padding-left: 8px; margin-top: 5px;">
+                        <?php echo esc_html__( 'KantanPro License Managerから取得したライセンスキーを入力してください。', 'ktpwp' ); ?>
+                    </p>
+
                     <!-- ライセンス情報 -->
-                    <div class="ktp-license-info" style="margin-top: 30px; padding: 20px; background: #f9f9f9; border-radius: 5px;">
+                    <div class="ktp-license-info" style="margin-top: 30px; padding: 20px; background: #f9f9f9; border-radius: 5px; display: none;">
                         <h3><?php echo esc_html__( 'ライセンスについて', 'ktpwp' ); ?></h3>
                         <p><?php echo esc_html__( 'KantanProプラグインのレポート機能を利用するには有効なライセンスキーが必要です。', 'ktpwp' ); ?></p>
-                        
+
                         <!-- 利用可能なライセンスプラン -->
                         <div style="margin: 20px 0; padding: 15px; background: #fff; border-radius: 5px; border-left: 4px solid #0073aa;">
                             <h4 style="margin-top: 0; color: #0073aa;"><?php echo esc_html__( '利用可能なライセンスプラン', 'ktpwp' ); ?></h4>
@@ -2032,7 +2024,7 @@ class KTP_Settings {
                                 <li><strong><?php echo esc_html__( '買い切りプラン', 'ktpwp' ); ?></strong>: 49,900円</li>
                             </ul>
                         </div>
-                        
+
                         <ul style="margin-left: 20px;">
                             <li><?php echo esc_html__( 'ライセンスキーはKantanPro公式サイトから購入できます。', 'ktpwp' ); ?></li>
                             <li><?php echo esc_html__( 'ライセンス認証により、レポート機能が有効になります。', 'ktpwp' ); ?></li>
