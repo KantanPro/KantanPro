@@ -1937,6 +1937,17 @@ class KTP_Settings {
                         <p style="font-size: 16px; margin: 10px 0;">
                             <strong><?php echo esc_html( $license_status['message'] ); ?></strong>
                         </p>
+                        <?php if ( ! empty( $license_status['is_dev_mode'] ) ) : ?>
+                            <div class="ktp-dev-mode-toggle" style="margin-top: 15px; padding: 10px; background-color: #fff8e1; border: 1px solid #ffecb3; border-radius: 4px;">
+                                <p style="margin: 0; display: flex; align-items: center; justify-content: space-between;">
+                                    <span><span class="dashicons dashicons-info-outline"></span> 開発環境モードで動作中です。</span>
+                                    <button id="toggle-dev-license" class="button button-secondary">
+                                        <?php echo $license_manager->is_dev_license_enabled() ? '開発用ライセンスを無効化' : '開発用ライセンスを有効化'; ?>
+                                    </button>
+                                    <span class="spinner" style="float: none; margin-left: 5px;"></span>
+                                </p>
+                            </div>
+                        <?php endif; ?>
                         <?php if ( isset( $license_status['info'] ) && ! empty( $license_status['info'] ) ) : ?>
                             <div class="ktp-license-info-details" style="margin-top: 15px; padding: 15px; background: #f9f9f9; border-radius: 3px;">
                                 <h4 style="margin-top: 0;"><?php echo esc_html__( 'ライセンス詳細', 'ktpwp' ); ?></h4>

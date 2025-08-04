@@ -41,6 +41,9 @@
             
             // Refresh license status
             $(document).on('click', '.ktp-refresh-license', this.refreshLicenseStatus.bind(this));
+            
+            // Toggle development license
+            $(document).on('click', '#toggle-dev-license', this.toggleDevLicense.bind(this));
         }
 
         /**
@@ -71,7 +74,7 @@
                 data: {
                     action: 'ktpwp_verify_license',
                     license_key: licenseKey,
-                    nonce: ktp_license_ajax.nonce
+                    nonce: ktp_license_manager_vars.nonce
                 },
                 success: (response) => {
                     if (response.success) {
@@ -146,7 +149,7 @@
                 type: 'POST',
                 data: {
                     action: 'ktpwp_get_license_info',
-                    nonce: ktp_license_ajax.nonce
+                    nonce: ktp_license_manager_vars.nonce
                 },
                 success: (response) => {
                     if (response.success) {
@@ -239,11 +242,46 @@
             };
             return colors[type] || colors.info;
         }
+
+        /**
+         * Toggle development license
+         */
+        toggleDevLicense(e) {
+            e.preventDefault();
+            const $button = $(e.target);
+            const $spinner = $button.siblings('.spinner');
+
+            $button.prop('disabled', true);
+            $spinner.addClass('is-active');
+
+            $.ajax({
+                url: ajaxurl,
+                type: 'POST',
+                data: {
+                    action: 'ktpwp_toggle_dev_license',
+                    nonce: ktp_license_manager_vars.nonce
+                },
+                success: (response) => {
+                    if (response.success) {
+                        location.reload();
+                    } else {
+                        alert(response.data);
+                        $button.prop('disabled', false);
+                        $spinner.removeClass('is-active');
+                    }
+                },
+                error: () => {
+                    alert(ktp_license_manager_vars.messages.ajax_error);
+                    $button.prop('disabled', false);
+                    $spinner.removeClass('is-active');
+                }
+            });
+        }
     }
 
     // Initialize license manager when document is ready
     $(document).ready(function() {
-        if (typeof ktp_license_ajax !== 'undefined') {
+        if (typeof ktp_license_manager_vars !== 'undefined') {
             new KTPLicenseManager();
         }
     });

@@ -371,6 +371,22 @@ class KTPWP_Assets {
             error_log( 'KTPWP_Assets: Admin assets enqueue called for hook: ' . $hook_suffix );
         }
 
+        // ライセンス管理ページ用の特別な処理
+        if ( $hook_suffix === 'kantanpro_page_ktp-license' || $hook_suffix === 'toplevel_page_ktp-license' || $hook_suffix === 'ktp-settings_page_ktp-license' ) {
+            $script_path = KTPWP_PLUGIN_DIR . 'js/ktp-license-manager.js';
+            $version = KANTANPRO_PLUGIN_VERSION . '.' . filemtime( $script_path );
+            wp_enqueue_script( 'ktp-license-manager', plugin_dir_url( __DIR__ ) . 'js/ktp-license-manager.js', array( 'jquery' ), $version, true );
+            
+            wp_localize_script( 'ktp-license-manager', 'ktp_license_manager_vars', array(
+                'ajaxurl' => admin_url( 'admin-ajax.php' ),
+                'nonce'   => wp_create_nonce( 'ktp_license_nonce' ),
+                'messages' => array(
+                    'ajax_error' => __( '通信エラーが発生しました。', 'ktpwp' ),
+                    'not_set'   => __( 'ライセンスキーが設定されていません。', 'ktpwp' )
+                )
+            ) );
+        }
+
         // 管理画面では常にアセットを読み込み（条件を緩和）
             $this->enqueue_styles( true );
             $this->enqueue_scripts( true );
