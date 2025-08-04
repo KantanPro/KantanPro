@@ -434,11 +434,27 @@ class KTPWP_License_Manager {
             wp_send_json_error( __( 'ライセンスキーを入力してください。', 'ktpwp' ) );
         }
 
+        // フロントエンドの正規表現と一致させる
+        $pattern = '/^KTPA-[A-Z0-9]{6}-[A-Z0-9]{6}-[A-Z0-9]{4}$/';
+        if ( ! preg_match( $pattern, $license_key ) ) {
+            wp_send_json_error( __( 'ライセンスキーの形式が正しくありません。', 'ktpwp' ) );
+        }
+
         $result = $this->verify_license( $license_key );
         
         if ( $result['success'] ) {
-            wp_send_json_success( $result );
+            // ライセンスキーとステータスを保存
+            update_option( 'ktp_license_key', $license_key );
+            update_option( 'ktp_license_status', 'active' );
+            update_option( 'ktp_license_info', $result['data'] ?? array() );
+            update_option( 'ktp_license_verified_at', current_time( 'timestamp' ) );
+
+            wp_send_json_success( array(
+                'message' => $result['message'] ?? __( 'ライセンスが正常に認証されました。', 'ktpwp' )
+            ) );
         } else {
+            // 失敗した場合もステータスを更新
+            update_option( 'ktp_license_status', 'invalid' );
             wp_send_json_error( $result['message'] );
         }
     }
