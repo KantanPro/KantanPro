@@ -253,17 +253,20 @@ class KTPWP_License_Manager {
      * @return bool True if license is valid
      */
     public function is_license_valid() {
-        // 開発環境では、開発ライセンスの有効/無効設定を確認
-        if ( $this->is_development_environment() && ! $this->is_dev_license_enabled() ) {
-            error_log( 'KTPWP License Check: Development license is disabled by setting' );
-            return false;
-        }
-
-        // 開発環境用万能ライセンスキーのチェック
-        if ( $this->is_development_license_valid() ) {
-            error_log( 'KTPWP License Check: Development license is valid' );
+        // 開発環境の判定
+        if ( $this->is_development_environment() ) {
+            // 開発ライセンスが無効化されている場合は false
+            if ( ! $this->is_dev_license_enabled() ) {
+                error_log( 'KTPWP License Check: Development license is disabled by setting.' );
+                return false;
+            }
+            
+            // 開発環境であれば、ライセンスキーの検証をスキップして常に有効とみなす
+            error_log( 'KTPWP License Check: Development environment active, license assumed valid.' );
             return true;
         }
+
+        // --- 以下、本番環境のライセンスチェックロジック ---
 
         $license_key = get_option( 'ktp_license_key' );
         $license_status = get_option( 'ktp_license_status' );
