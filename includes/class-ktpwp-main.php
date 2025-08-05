@@ -374,13 +374,13 @@ class KTPWP_Main {
      */
     private function create_tables() {
         // 各クラスでテーブル作成
-        if ( class_exists( 'Kntan_Client_Class' ) ) {
-            $client = new Kntan_Client_Class();
+        if ( class_exists( 'Kantan_Client_Class' ) ) {
+            $client = new Kantan_Client_Class();
             $client->Create_Table( 'client' );
         }
 
-        if ( class_exists( 'Kntan_Service_Class' ) ) {
-            $service = new Kntan_Service_Class();
+        if ( class_exists( 'Kantan_Service_Class' ) ) {
+            $service = new Kantan_Service_Class();
             $service->Create_Table( 'service' );
         }
 

@@ -121,7 +121,7 @@ if ( ! class_exists( 'KTPWP_Client_UI' ) ) {
 
 			// ここに顧客リスト・ページネーションのHTML生成処理を追加する予定
 
-			// 現在は元のクラス(Kntan_Client_Class)のView_Tableメソッドに委譲して動作させる
+			// 現在は元のクラス(Kantan_Client_Class)のView_Tableメソッドに委譲して動作させる
 			return $html;
 		}
 

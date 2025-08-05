@@ -297,7 +297,7 @@ class KTPWP_Ajax {
 	 */
 	private function init_order_ajax_handlers() {
 		// 受注クラスファイルの読み込み
-		$order_class_file = KTPWP_PLUGIN_DIR . 'includes/class-tab-order.php';
+		$order_class_file = KTPWP_PLUGIN_DIR . 'includes/class-kantan-order.php';
 
 		if ( file_exists( $order_class_file ) ) {
 			require_once $order_class_file;
@@ -1487,6 +1487,9 @@ class KTPWP_Ajax {
 				throw new Exception( '無効な受注書IDです。' );
 			}
 
+			// メール送信前に最新の金額をデータベースに保存
+			$this->update_latest_amounts_before_email($order_id);
+
 			global $wpdb;
 			$table_name   = $wpdb->prefix . 'ktp_order';
 			$client_table = $wpdb->prefix . 'ktp_client';
@@ -1888,6 +1891,94 @@ class KTPWP_Ajax {
 		} finally {
 			// エラー出力設定を復元
 			error_reporting($error_reporting);
+		}
+	}
+
+	/**
+	 * メール送信前に最新の金額をデータベースに保存
+	 *
+	 * @param int $order_id 受注書ID
+	 * @since 1.0.19
+	 */
+	private function update_latest_amounts_before_email($order_id) {
+		try {
+			global $wpdb;
+			
+			// 請求項目の最新金額を取得してデータベースに保存
+			$invoice_items_table = $wpdb->prefix . 'ktp_invoice_items';
+			
+			// 現在の請求項目を取得
+			$current_items = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT * FROM `{$invoice_items_table}` WHERE order_id = %d ORDER BY sort_order ASC",
+					$order_id
+				)
+			);
+			
+			if ($current_items) {
+				foreach ($current_items as $item) {
+					// 単価と数量から金額を再計算
+					$price = floatval($item->price);
+					$quantity = floatval($item->quantity);
+					$calculated_amount = ceil($price * $quantity);
+					
+					// 現在の金額と異なる場合のみ更新
+					if (floatval($item->amount) !== $calculated_amount) {
+						$wpdb->update(
+							$invoice_items_table,
+							array('amount' => $calculated_amount),
+							array('id' => $item->id),
+							array('%f'),
+							array('%d')
+						);
+						
+						if (defined('WP_DEBUG') && WP_DEBUG) {
+							error_log("KTPWP Email: Updated invoice item amount - ID: {$item->id}, Old: {$item->amount}, New: {$calculated_amount}");
+						}
+					}
+				}
+			}
+			
+			// コスト項目の最新金額を取得してデータベースに保存
+			$cost_items_table = $wpdb->prefix . 'ktp_cost_items';
+			
+			// 現在のコスト項目を取得
+			$current_cost_items = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT * FROM `{$cost_items_table}` WHERE order_id = %d ORDER BY sort_order ASC",
+					$order_id
+				)
+			);
+			
+			if ($current_cost_items) {
+				foreach ($current_cost_items as $item) {
+					// 単価と数量から金額を再計算
+					$price = floatval($item->price);
+					$quantity = floatval($item->quantity);
+					$calculated_amount = ceil($price * $quantity);
+					
+					// 現在の金額と異なる場合のみ更新
+					if (floatval($item->amount) !== $calculated_amount) {
+						$wpdb->update(
+							$cost_items_table,
+							array('amount' => $calculated_amount),
+							array('id' => $item->id),
+							array('%f'),
+							array('%d')
+						);
+						
+						if (defined('WP_DEBUG') && WP_DEBUG) {
+							error_log("KTPWP Email: Updated cost item amount - ID: {$item->id}, Old: {$item->amount}, New: {$calculated_amount}");
+						}
+					}
+				}
+			}
+			
+		} catch (Exception $e) {
+			// エラーが発生してもメール送信は続行
+			if (defined('WP_DEBUG') && WP_DEBUG) {
+				error_log("KTPWP Email: Error updating amounts before email - " . $e->getMessage());
+			}
 		}
 	}
 
@@ -2806,11 +2897,11 @@ class KTPWP_Ajax {
 			}
 
 			// Order クラスのインスタンスを作成してプレビューHTML生成を利用
-			if ( ! class_exists( 'Kntan_Order_Class' ) ) {
-				require_once KTPWP_PLUGIN_DIR . 'includes/class-tab-order.php';
+			if ( ! class_exists( 'Kantan_Order_Class' ) ) {
+				require_once KTPWP_PLUGIN_DIR . 'includes/class-kantan-order.php';
 			}
 
-			$order_class = new Kntan_Order_Class();
+			$order_class = new Kantan_Order_Class();
 
 			// パブリックメソッドを使用して最新のプレビューHTMLを生成
 			$preview_html = $order_class->Generate_Order_Preview_HTML_Public( $order );
@@ -3883,8 +3974,8 @@ class KTPWP_Ajax {
 		}
 		
 		// 受注書タブクラスのインスタンスを作成
-		if (class_exists('Kntan_Order_Class')) {
-			$order_tab = new Kntan_Order_Class();
+		if (class_exists('Kantan_Order_Class')) {
+			$order_tab = new Kantan_Order_Class();
 			
 			// 受注書のHTMLを生成
 			ob_start();

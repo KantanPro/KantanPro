@@ -49,7 +49,7 @@ public static function get_current_page_base_url() {
 - `includes/class-tab-client.php` - 顧客タブ
 - `includes/class-tab-service.php` - サービスタブ  
 - `includes/class-tab-supplier.php` - 協力会社タブ
-- `includes/class-tab-order.php` - 受注書タブ
+- `includes/class-kantan-order.php` - 受注書タブ
 
 #### UIクラス
 - `includes/class-ktpwp-client-ui.php` - 顧客UI

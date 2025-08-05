@@ -47,6 +47,24 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
     );
 }
 
+// invoice_itemsカラム修正のWP-CLIコマンド
+if ( defined( 'WP_CLI' ) && WP_CLI ) {
+    WP_CLI::add_command(
+        'ktpwp fix_invoice_items',
+        function () {
+			$migration_file = __DIR__ . '/migrations/20250108_fix_invoice_items_column.php';
+			if ( ! file_exists( $migration_file ) ) {
+				WP_CLI::error( 'マイグレーションファイルが見つかりません: ' . $migration_file );
+				return;
+			}
+			
+			WP_CLI::log( 'invoice_itemsカラム修正マイグレーションを実行中...' );
+			require_once $migration_file;
+			WP_CLI::success( 'invoice_itemsカラム修正が完了しました。' );
+		}
+    );
+}
+
 // ダミーデータ受注書の作成日時修正コマンド
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
     WP_CLI::add_command(

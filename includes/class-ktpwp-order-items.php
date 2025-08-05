@@ -66,271 +66,80 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 		}
 
 		/**
-		 * Create invoice items table
+		 * Get the schema for both invoice and cost items tables.
 		 *
-		 * @since 1.0.0
-		 * @return bool True on success, false on failure
+		 * @return string The SQL for creating the tables.
 		 */
-		public function create_invoice_items_table() {
+		public function get_schema() {
 			global $wpdb;
-			$my_table_version = '2.2';
-			$table_name = $wpdb->prefix . 'ktp_order_invoice_items';
 			$charset_collate = $wpdb->get_charset_collate();
 
-			$columns_def = array(
-				'id MEDIUMINT(9) NOT NULL AUTO_INCREMENT',
-				'order_id MEDIUMINT(9) NOT NULL',
-				'product_name VARCHAR(255) NOT NULL DEFAULT ""',
-				'price DECIMAL(10,2) NOT NULL DEFAULT 0.00',
-				'unit VARCHAR(50) NOT NULL DEFAULT ""',
-				'quantity DECIMAL(10,2) NOT NULL DEFAULT 0.00',
-				'amount INT(11) NOT NULL DEFAULT 0',
-				'tax_rate DECIMAL(5,2) NULL DEFAULT NULL', // 税率カラムを追加
-				'remarks TEXT',
-				'sort_order INT NOT NULL DEFAULT 0',
-				'created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP',
-				'updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
-				'PRIMARY KEY (id)',
-				'KEY order_id (order_id)',
-				'KEY sort_order (sort_order)',
-			);
+			// Schema for invoice_items table
+			$table_name_invoice = $wpdb->prefix . 'ktp_order_invoice_items';
+			$sql_invoice = "CREATE TABLE {$table_name_invoice} (
+				id MEDIUMINT(9) NOT NULL AUTO_INCREMENT,
+				order_id MEDIUMINT(9) NOT NULL,
+				product_name VARCHAR(255) NOT NULL DEFAULT '',
+				price DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+				unit VARCHAR(50) NOT NULL DEFAULT '',
+				quantity DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+				amount INT(11) NOT NULL DEFAULT 0,
+				tax_rate DECIMAL(5,2) NULL DEFAULT NULL,
+				remarks TEXT,
+				sort_order INT NOT NULL DEFAULT 0,
+				created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+				updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+				PRIMARY KEY  (id),
+				KEY order_id (order_id),
+				KEY sort_order (sort_order)
+			) {$charset_collate};";
 
-			// テーブルの存在確認
-			$table_exists = $wpdb->get_var( "SHOW TABLES LIKE '$table_name'" );
+			// Schema for cost_items table
+			$table_name_cost = $wpdb->prefix . 'ktp_order_cost_items';
+			$sql_cost = "CREATE TABLE {$table_name_cost} (
+				id MEDIUMINT(9) NOT NULL AUTO_INCREMENT,
+				order_id MEDIUMINT(9) NOT NULL,
+				product_name VARCHAR(255) NOT NULL DEFAULT '',
+				price DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+				unit VARCHAR(50) NOT NULL DEFAULT '',
+				quantity DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+				amount INT(11) NOT NULL DEFAULT 0,
+				tax_rate DECIMAL(5,2) NOT NULL DEFAULT 10.00,
+				remarks TEXT,
+				purchase VARCHAR(255),
+				qualified_invoice_number VARCHAR(255),
+				ordered TINYINT(1) NOT NULL DEFAULT 0,
+				sort_order INT NOT NULL DEFAULT 0,
+				created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+				updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+				PRIMARY KEY  (id),
+				KEY order_id (order_id),
+				KEY sort_order (sort_order)
+			) {$charset_collate};";
 
-			if ( ! $table_exists ) {
-				// テーブルが存在しない場合は新規作成
-				$sql = "CREATE TABLE `{$table_name}` (" . implode( ', ', $columns_def ) . ") {$charset_collate};";
-
-				require_once ABSPATH . 'wp-admin/includes/upgrade.php';
-				$result = dbDelta( $sql );
-
-				if ( ! empty( $result ) ) {
-					add_option( 'ktp_invoice_items_table_version', $my_table_version );
-					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-						error_log( "KTPWP: Created invoice items table with version {$my_table_version}" );
-					}
-					return true;
-				} else {
-					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-						error_log( 'KTPWP: Failed to create invoice items table' );
-					}
-					return false;
-				}
-			} else {
-				// テーブルが存在する場合は構造を確認・修正
-				$existing_columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$table_name}`", 0 );
-
-				// 不要なカラムを削除
-				$unwanted_columns = array( 'purchase', 'ordered' );
-				foreach ( $unwanted_columns as $column ) {
-					if ( in_array( $column, $existing_columns ) ) {
-						$wpdb->query( "ALTER TABLE `{$table_name}` DROP COLUMN `{$column}`" );
-						if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-							error_log( "KTPWP: Removed unwanted column '{$column}' from invoice table" );
-						}
-					}
-				}
-
-				// 必要なカラムを追加
-				$required_columns = array(
-					'tax_rate' => 'DECIMAL(5,2) NULL DEFAULT NULL',
-					'sort_order' => 'INT NOT NULL DEFAULT 0',
-					'updated_at' => 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
-				);
-
-				foreach ( $required_columns as $column => $definition ) {
-					if ( ! in_array( $column, $existing_columns ) ) {
-						$wpdb->query( "ALTER TABLE `{$table_name}` ADD COLUMN `{$column}` {$definition}" );
-						if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-							error_log( "KTPWP: Added column '{$column}' to invoice table" );
-						}
-					}
-				}
-
-				// バージョンを更新
-				update_option( 'ktp_invoice_items_table_version', $my_table_version );
-
-				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					error_log( "KTPWP: Updated invoice items table to version {$my_table_version}" );
-				}
-				return true;
-			}
+			return $sql_invoice . "\n" . $sql_cost;
 		}
 
 		/**
-		 * Create cost items table
-		 *
-		 * @since 1.0.0
-		 * @return bool True on success, false on failure
+		 * Create or update the invoice items table.
+		 */
+		public function create_invoice_items_table() {
+			if ( ! function_exists( 'dbDelta' ) ) {
+				require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+			}
+			$schema = $this->get_schema();
+			dbDelta( $schema );
+		}
+
+		/**
+		 * Create or update the cost items table.
 		 */
 		public function create_cost_items_table() {
-			global $wpdb;
-			$my_table_version = '2.5'; // バージョンを更新（適格請求書番号対応）
-			$table_name = $wpdb->prefix . 'ktp_order_cost_items';
-			$charset_collate = $wpdb->get_charset_collate();
-
-			$columns_def = array(
-				'id MEDIUMINT(9) NOT NULL AUTO_INCREMENT',
-				'order_id MEDIUMINT(9) NOT NULL',
-				'product_name VARCHAR(255) NOT NULL DEFAULT ""',
-				'price DECIMAL(10,2) NOT NULL DEFAULT 0.00',
-				'unit VARCHAR(50) NOT NULL DEFAULT ""',
-				'quantity DECIMAL(10,2) NOT NULL DEFAULT 0.00',
-				'amount INT(11) NOT NULL DEFAULT 0',
-				'tax_rate DECIMAL(5,2) NOT NULL DEFAULT 10.00', // 税率カラムを追加
-				'remarks TEXT',
-				'purchase VARCHAR(255)',
-				'qualified_invoice_number VARCHAR(255)', // 適格請求書番号カラムを追加
-				'ordered TINYINT(1) NOT NULL DEFAULT 0',
-				'sort_order INT NOT NULL DEFAULT 0',
-				'created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP',
-				'updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
-				'UNIQUE KEY id (id)',
-				'KEY order_id (order_id)',
-				'KEY sort_order (sort_order)',
-			);
-
-			// Check if table exists using prepared statement
-			$table_exists = $wpdb->get_var(
-                $wpdb->prepare(
-                    'SHOW TABLES LIKE %s',
-                    $table_name
-                )
-            );
-
-			if ( $table_exists !== $table_name ) {
-				$sql = "CREATE TABLE `{$table_name}` (" . implode( ', ', $columns_def ) . ") {$charset_collate};";
-
+			if ( ! function_exists( 'dbDelta' ) ) {
 				require_once ABSPATH . 'wp-admin/includes/upgrade.php';
-
-				if ( function_exists( 'dbDelta' ) ) {
-					$result = dbDelta( $sql );
-
-					if ( ! empty( $result ) ) {
-						add_option( 'ktp_cost_items_table_version', $my_table_version );
-						return true;
-					}
-
-					error_log( 'KTPWP: Failed to create cost items table' );
-					return false;
-				}
-
-				error_log( 'KTPWP: dbDelta function not available' );
-				return false;
-			} else {
-				// Table exists, check for missing columns
-				$existing_columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$table_name}`", 0 );
-				$def_column_names = array();
-
-				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					error_log( 'KTPWP: Cost items table exists. Existing columns: ' . implode( ', ', $existing_columns ) );
-				}
-
-				foreach ( $columns_def as $def ) {
-					if ( preg_match( '/^([a-zA-Z0-9_]+)/', $def, $m ) ) {
-						$def_column_names[] = $m[1];
-					}
-				}
-
-				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					error_log( 'KTPWP: Required columns: ' . implode( ', ', $def_column_names ) );
-				}
-
-				foreach ( $def_column_names as $i => $col_name ) {
-					if ( ! in_array( $col_name, $existing_columns, true ) ) {
-						if ( $col_name === 'UNIQUE' || $col_name === 'KEY' ) {
-							continue;
-						}
-						$def = $columns_def[ $i ];
-						if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-							error_log( "KTPWP: Adding missing column '{$col_name}' to cost items table with definition: {$def}" );
-						}
-						$result = $wpdb->query( "ALTER TABLE `{$table_name}` ADD COLUMN {$def}" );
-
-						if ( $result === false ) {
-							error_log( 'KTPWP: Failed to add column ' . $col_name . ' to cost items table. Error: ' . $wpdb->last_error );
-						} else {
-							error_log( 'KTPWP: Successfully added column ' . $col_name . ' to cost items table' );
-						}
-					}
-				}
-
-				// Check and add UNIQUE KEY if not exists
-				$indexes = $wpdb->get_results( "SHOW INDEX FROM `{$table_name}`" );
-				$has_unique_id = false;
-				foreach ( $indexes as $idx ) {
-					if ( $idx->Key_name === 'id' && $idx->Non_unique == 0 ) {
-						$has_unique_id = true;
-						break;
-					}
-				}
-				if ( ! $has_unique_id ) {
-					$wpdb->query( "ALTER TABLE `{$table_name}` ADD UNIQUE (id)" );
-				}
-
-				// Version upgrade migrations
-				$current_version = get_option( 'ktp_cost_items_table_version', '1.0' );
-
-				if ( version_compare( $current_version, '2.2', '<' ) ) {
-					// Migrate columns to DECIMAL(10,2) for price and quantity
-					$column_info = $wpdb->get_results( "SHOW COLUMNS FROM `{$table_name}` WHERE Field IN ('price', 'quantity')" );
-
-					foreach ( $column_info as $column ) {
-						// カラム名を直接指定（wpdb->prepare()を使わない）
-						$result = $wpdb->query( "ALTER TABLE `{$table_name}` MODIFY `{$column->Field}` DECIMAL(10,2) NOT NULL DEFAULT 0.00" );
-
-						if ( $result === false ) {
-							error_log( "KTPWP: Failed to migrate column {$column->Field} to DECIMAL(10,2) in cost items table. Error: " . $wpdb->last_error );
-						} else {
-							error_log( "KTPWP: Successfully migrated column {$column->Field} to DECIMAL(10,2) in cost items table." );
-						}
-					}
-				}
-
-				if ( version_compare( $current_version, '2.3', '<' ) ) {
-					// Add purchase column if not exists
-					$purchase_column = $wpdb->get_results( "SHOW COLUMNS FROM `{$table_name}` LIKE 'purchase'" );
-					if ( empty( $purchase_column ) ) {
-						$result = $wpdb->query( "ALTER TABLE `{$table_name}` ADD COLUMN purchase VARCHAR(255) AFTER remarks" );
-
-						if ( $result === false ) {
-							error_log( 'KTPWP: Failed to add purchase column to cost items table. Error: ' . $wpdb->last_error );
-						} else {
-							error_log( 'KTPWP: Successfully added purchase column to cost items table.' );
-						}
-					}
-				}
-
-				if ( version_compare( $current_version, '2.4', '<' ) ) {
-					// Add tax_rate column if not exists
-					$tax_rate_column = $wpdb->get_results( "SHOW COLUMNS FROM `{$table_name}` LIKE 'tax_rate'" );
-					if ( empty( $tax_rate_column ) ) {
-						$result = $wpdb->query( "ALTER TABLE `{$table_name}` ADD COLUMN tax_rate DECIMAL(5,2) NOT NULL DEFAULT 10.00 AFTER amount" );
-
-						if ( $result === false ) {
-							error_log( 'KTPWP: Failed to add tax_rate column to cost items table. Error: ' . $wpdb->last_error );
-						} else {
-							error_log( 'KTPWP: Successfully added tax_rate column to cost items table.' );
-						}
-					}
-				}
-
-				// 既存テーブルにorderedカラムがなければ追加
-				$ordered_column = $wpdb->get_results( "SHOW COLUMNS FROM `{$table_name}` LIKE 'ordered'" );
-				if ( empty( $ordered_column ) ) {
-					$result = $wpdb->query( "ALTER TABLE `{$table_name}` ADD COLUMN ordered TINYINT(1) NOT NULL DEFAULT 0 AFTER purchase" );
-					if ( $result === false ) {
-						error_log( 'KTPWP: Failed to add ordered column to cost items table. Error: ' . $wpdb->last_error );
-					} else {
-						error_log( 'KTPWP: Successfully added ordered column to cost items table.' );
-					}
-				}
-
-				update_option( 'ktp_cost_items_table_version', $my_table_version );
 			}
-
-			return true;
+			$schema = $this->get_schema();
+			dbDelta( $schema );
 		}
 
 		/**

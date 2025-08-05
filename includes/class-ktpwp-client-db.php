@@ -24,94 +24,58 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 		}
 
 		/**
-		 * Create client table
+		 * Get the client table schema.
 		 *
-		 * @param string $tab_name Table name suffix (sanitized)
-		 * @return bool Success status
+		 * @return string The SQL for creating the client table.
 		 */
-		public function create_table( $tab_name ) {
+		public function get_schema() {
 			global $wpdb;
-			$tab_name = sanitize_key( $tab_name );
-			if ( empty( $tab_name ) ) {
-				return false;
-			}
-			$my_table_version = '1.0.2';
-			$table_name = $wpdb->prefix . 'ktp_' . $tab_name;
+			$table_name = $wpdb->prefix . 'ktp_client';
 			$charset_collate = $wpdb->get_charset_collate();
-			$columns_def = array(
-				'id MEDIUMINT(9) NOT NULL AUTO_INCREMENT',
-				"time BIGINT(11) DEFAULT '0' NOT NULL",
-				'name TINYTEXT',
-				'url VARCHAR(55)',
-				"company_name VARCHAR(100) NOT NULL DEFAULT '" . __( '初めてのお客様', 'ktpwp' ) . "'",
-				'representative_name TINYTEXT',
-				'email VARCHAR(100)',
-				'phone VARCHAR(20)',
-				'postal_code VARCHAR(10)',
-				'prefecture TINYTEXT',
-				'city TINYTEXT',
-				'address TEXT',
-				'building TINYTEXT',
-				'closing_day TINYTEXT',
-				'payment_month TINYTEXT',
-				'payment_day TINYTEXT',
-				'payment_method TINYTEXT',
-				"tax_category VARCHAR(100) NOT NULL DEFAULT '" . __( '内税', 'ktpwp' ) . "'",
-				'memo TEXT',
-				'search_field TEXT',
-				'frequency INT NOT NULL DEFAULT 0',
-				"client_status VARCHAR(100) NOT NULL DEFAULT '" . __( '対象', 'ktpwp' ) . "'",
-				'category VARCHAR(255) NULL',
-				'UNIQUE KEY id (id)',
-			);
-			$existing_table = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) );
-			if ( $existing_table !== $table_name ) {
-				$sql = "CREATE TABLE {$table_name} (" . implode( ', ', $columns_def ) . ") {$charset_collate};";
-				require_once ABSPATH . 'wp-admin/includes/upgrade.php';
-				$result = dbDelta( $sql );
-				if ( ! empty( $result ) ) {
-					add_option( 'ktp_' . $tab_name . '_table_version', $my_table_version );
-					return true;
-				}
-				return false;
-			} else {
-				$existing_columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$table_name}`", 0 );
-				$def_column_names = array();
-				foreach ( $columns_def as $def ) {
-					if ( preg_match( '/^([a-zA-Z0-9_]+)/', $def, $m ) ) {
-						$def_column_names[] = $m[1];
-					}
-				}
-				foreach ( $def_column_names as $i => $col_name ) {
-					if ( ! in_array( $col_name, $existing_columns ) ) {
-						if ( $col_name === 'UNIQUE' || $col_name === 'category' ) {
-							continue;
-						}
-						$def = $columns_def[ $i ];
-						$result = $wpdb->query( "ALTER TABLE `{$table_name}` ADD COLUMN {$def}" );
-						if ( $result === false ) {
-							error_log( "KTPWP: Failed to add column {$col_name} to table {$table_name}" );
-						}
-					}
-				}
-				update_option( 'ktp_' . $tab_name . '_table_version', $my_table_version );
-			}
-			$indexes = $wpdb->get_results( "SHOW INDEX FROM `{$table_name}`" );
-			$has_unique_id = false;
-			foreach ( $indexes as $idx ) {
-				if ( $idx->Key_name === 'id' && $idx->Non_unique == 0 ) {
-					$has_unique_id = true;
-					break;
-				}
-			}
-			if ( ! $has_unique_id ) {
-				$result = $wpdb->query( "ALTER TABLE `{$table_name}` ADD UNIQUE (id)" );
-				if ( $result === false ) {
-					error_log( "KTPWP: Failed to add unique key to table {$table_name}" );
-				}
-			}
-			return true;
+
+			$sql = "CREATE TABLE {$table_name} (
+				id MEDIUMINT(9) NOT NULL AUTO_INCREMENT,
+				time BIGINT(11) DEFAULT '0' NOT NULL,
+				name TINYTEXT,
+				url VARCHAR(55),
+				company_name VARCHAR(100) NOT NULL DEFAULT '" . __( '初めてのお客様', 'ktpwp' ) . "',
+				representative_name TINYTEXT,
+				email VARCHAR(100),
+				phone VARCHAR(20),
+				postal_code VARCHAR(10),
+				prefecture TINYTEXT,
+				city TINYTEXT,
+				address TEXT,
+				building TINYTEXT,
+				closing_day TINYTEXT,
+				payment_month TINYTEXT,
+				payment_day TINYTEXT,
+				payment_method TINYTEXT,
+				tax_category VARCHAR(100) NOT NULL DEFAULT '" . __( '内税', 'ktpwp' ) . "',
+				memo TEXT,
+				search_field TEXT,
+				frequency INT NOT NULL DEFAULT 0,
+				client_status VARCHAR(100) NOT NULL DEFAULT '" . __( '対象', 'ktpwp' ) . "',
+				category VARCHAR(255) NULL,
+				PRIMARY KEY  (id)
+			) {$charset_collate};";
+
+			return $sql;
 		}
+
+		/**
+		 * Create or update the client table.
+		 * This method is kept for backward compatibility and direct calls,
+		 * but the main activation hook now uses get_schema().
+		 */
+		public function create_table() {
+			if ( ! function_exists( 'dbDelta' ) ) {
+				require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+			}
+			$schema = $this->get_schema();
+			dbDelta( $schema );
+		}
+
 
 		/**
 		 * Update table and handle POST operations

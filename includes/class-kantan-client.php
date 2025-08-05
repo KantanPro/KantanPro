@@ -14,8 +14,8 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-if ( ! class_exists( 'Kntan_Client_Class' ) ) {
-	class Kntan_Client_Class {
+if ( ! class_exists( 'Kantan_Client_Class' ) ) {
+	class Kantan_Client_Class {
 
 		public function __construct() {
 		}

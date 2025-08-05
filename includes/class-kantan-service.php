@@ -22,14 +22,14 @@ require_once 'class-image_processor.php';
 require_once 'class-ktpwp-service-ui.php';
 require_once 'class-ktpwp-service-db.php';
 
-if ( ! class_exists( 'Kntan_Service_Class' ) ) {
+if ( ! class_exists( 'Kantan_Service_Class' ) ) {
 
 	/**
 	 * Service class for managing service data
 	 *
 	 * @since 1.0.0
 	 */
-	class Kntan_Service_Class {
+	class Kantan_Service_Class {
 
 		/**
 		 * UI helper instance

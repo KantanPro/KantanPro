@@ -18,14 +18,14 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-if ( ! class_exists( 'Kntan_Order_Class' ) ) {
+if ( ! class_exists( 'Kantan_Order_Class' ) ) {
 
 	/**
 	 * Order class for managing order data
 	 *
 	 * @since 1.0.0
 	 */
-	class Kntan_Order_Class {
+	class Kantan_Order_Class {
 
 		/**
 		 * Constructor
@@ -2968,6 +2968,6 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 
 			return $lines;
 		}
-	} // End of Kntan_Order_Class
+	} // End of Kantan_Order_Class
 
 } // class_exists check

@@ -14,7 +14,7 @@
 **変更ファイル:**
 - `js/ktp-js.js` - メインJavaScript機能
 - `includes/class-ktpwp-ajax.php` - ユーザー情報追加
-- `includes/class-tab-order.php` - POST処理をコメントアウト
+- `includes/class-kantan-order.php` - POST処理をコメントアウト
 
 ### 2. スタッフチャットデータ削除機能 ✅
 **実装内容:**
@@ -23,7 +23,7 @@
 - `Delete_Staff_Chat_Messages()` メソッド追加
 
 **変更ファイル:**
-- `includes/class-tab-order.php` - `Delete_Staff_Chat_Messages()` 追加
+- `includes/class-kantan-order.php` - `Delete_Staff_Chat_Messages()` 追加
 - `includes/class-ktpwp-order.php` - `delete_order_related_data()` 内で削除処理
 
 ### 3. オーダー削除後の自動作成問題修正 ✅
@@ -44,7 +44,7 @@ if ($from_client === 1 && $customer_name !== '' && !$deletion_completed) {
 ```
 
 **変更ファイル:**
-- `includes/class-tab-order.php` - メインロジック修正
+- `includes/class-kantan-order.php` - メインロジック修正
 - `ktpwp.php` - クリーンURL生成
 - `includes/class-ktpwp-redirect.php` - パラメータ処理
 

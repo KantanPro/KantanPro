@@ -33,8 +33,8 @@ class KTPWP_Database {
      * @var array
      */
     private $table_classes = array(
-        'client' => 'Kntan_Client_Class',
-        'service' => 'Kntan_Service_Class',
+        'client' => 'Kantan_Client_Class',
+        'service' => 'Kantan_Service_Class',
         'supplier' => 'KTPWP_Supplier_Class',
     );
 
@@ -44,8 +44,8 @@ class KTPWP_Database {
      * @var array
      */
     private $class_files = array(
-        'Kntan_Client_Class' => 'class-tab-client.php',
-        'Kntan_Service_Class' => 'class-tab-service.php',
+        'Kantan_Client_Class' => 'class-kantan-client.php',
+        'Kantan_Service_Class' => 'class-kantan-service.php',
         'KTPWP_Supplier_Class' => 'class-tab-supplier.php',
         'KTPWP_Supplier_Security' => 'class-supplier-security.php',
         'KTPWP_Supplier_Data' => 'class-supplier-data.php',

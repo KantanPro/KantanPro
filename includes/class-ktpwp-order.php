@@ -66,106 +66,50 @@ if ( ! class_exists( 'KTPWP_Order' ) ) {
 		}
 
 		/**
-		 * Create order table
+		 * Get the order table schema.
 		 *
-		 * @since 1.0.0
-		 * @return bool True on success, false on failure
+		 * @return string The SQL for creating the order table.
 		 */
-		public function create_order_table() {
+		public function get_schema() {
 			global $wpdb;
-			$my_table_version = '2.0'; // バージョンアップ: 新しいテーブル構造
 			$table_name = $wpdb->prefix . 'ktp_order';
 			$charset_collate = $wpdb->get_charset_collate();
 
-			$columns_def = array(
-				'id int(11) NOT NULL AUTO_INCREMENT',
-				'order_number varchar(50) NOT NULL COMMENT "受注番号"',
-				'client_id int(11) NOT NULL COMMENT "クライアントID"',
-				'project_name varchar(255) NOT NULL COMMENT "プロジェクト名"',
-				'order_date date NOT NULL COMMENT "受注日"',
-				'desired_delivery_date date NULL DEFAULT NULL COMMENT "希望納期"',
-				'expected_delivery_date date NULL DEFAULT NULL COMMENT "納品予定日"',
-				'total_amount decimal(10,2) NOT NULL DEFAULT 0.00 COMMENT "合計金額"',
-				'status varchar(20) NOT NULL DEFAULT "pending" COMMENT "ステータス"',
-				'created_at timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT "作成日時"',
-				'updated_at timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT "更新日時"',
-				'PRIMARY KEY (id)',
-				'UNIQUE KEY order_number (order_number)',
-				'KEY client_id (client_id)',
-				'KEY order_date (order_date)',
-			);
+			$sql = "CREATE TABLE {$table_name} (
+				id int(11) NOT NULL AUTO_INCREMENT,
+				order_number varchar(50) NOT NULL COMMENT '受注番号',
+				client_id int(11) NOT NULL COMMENT 'クライアントID',
+				project_name varchar(255) NOT NULL COMMENT 'プロジェクト名',
+				order_date date NOT NULL COMMENT '受注日',
+				desired_delivery_date date NULL DEFAULT NULL COMMENT '希望納期',
+				expected_delivery_date date NULL DEFAULT NULL COMMENT '納品予定日',
+				total_amount decimal(10,2) NOT NULL DEFAULT 0.00 COMMENT '合計金額',
+				status varchar(20) NOT NULL DEFAULT 'pending' COMMENT 'ステータス',
+				created_at timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '作成日時',
+				updated_at timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新日時',
+				PRIMARY KEY  (id),
+				UNIQUE KEY order_number (order_number),
+				KEY client_id (client_id),
+				KEY order_date (order_date)
+			) {$charset_collate};";
 
-			// Check if table exists using prepared statement
-			$table_exists = $wpdb->get_var(
-                $wpdb->prepare(
-                    'SHOW TABLES LIKE %s',
-                    $table_name
-                )
-            );
-
-			if ( $table_exists !== $table_name ) {
-				$sql = "CREATE TABLE `{$table_name}` (" . implode( ', ', $columns_def ) . ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='受注書テーブル';";
-
-				require_once ABSPATH . 'wp-admin/includes/upgrade.php';
-
-				if ( function_exists( 'dbDelta' ) ) {
-					$result = dbDelta( $sql );
-
-					if ( ! empty( $result ) ) {
-						add_option( 'ktp_order_table_version', $my_table_version );
-						return true;
-					}
-
-					error_log( 'KTPWP: Failed to create order table' );
-					return false;
-				}
-
-				error_log( 'KTPWP: dbDelta function not available' );
-				return false;
-			} else {
-				// Table exists, check for missing columns
-				$existing_columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$table_name}`", 0 );
-				$def_column_names = array();
-
-				foreach ( $columns_def as $def ) {
-					if ( preg_match( '/^([a-zA-Z0-9_]+)/', $def, $m ) ) {
-						$def_column_names[] = $m[1];
-					}
-				}
-
-				foreach ( $def_column_names as $i => $col_name ) {
-					if ( ! in_array( $col_name, $existing_columns, true ) ) {
-						if ( in_array( $col_name, array( 'PRIMARY', 'UNIQUE', 'KEY' ) ) ) {
-							continue;
-						}
-						$def = $columns_def[ $i ];
-						$alter_query = "ALTER TABLE `{$table_name}` ADD COLUMN {$def}";
-						$result = $wpdb->query( $alter_query );
-
-						if ( $result === false ) {
-							error_log( 'KTPWP: Failed to add column ' . $col_name . ' to order table' );
-						}
-					}
-				}
-
-				// Check and add UNIQUE KEY if not exists
-				$indexes = $wpdb->get_results( "SHOW INDEX FROM `{$table_name}`" );
-				$has_unique_order_number = false;
-				foreach ( $indexes as $idx ) {
-					if ( $idx->Key_name === 'order_number' && $idx->Non_unique == 0 ) {
-						$has_unique_order_number = true;
-						break;
-					}
-				}
-				if ( ! $has_unique_order_number ) {
-					$wpdb->query( "ALTER TABLE `{$table_name}` ADD UNIQUE KEY order_number (order_number)" );
-				}
-
-				update_option( 'ktp_order_table_version', $my_table_version );
-			}
-
-			return true;
+			return $sql;
 		}
+
+		/**
+		 * Create or update the order table.
+		 *
+		 * @since 1.0.0
+		 * @return void
+		 */
+		public function create_order_table() {
+			if ( ! function_exists( 'dbDelta' ) ) {
+				require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+			}
+			$schema = $this->get_schema();
+			dbDelta( $schema );
+		}
+
 
 		/**
 		 * Get order by ID

@@ -650,10 +650,10 @@ foreach ($client_ids as $client_id) {
             "INSERT INTO {$wpdb->prefix}ktp_order (
                 order_number, client_id, project_name, order_date, 
                 desired_delivery_date, expected_delivery_date, 
-                status, updated_at, time, customer_name, user_name, company_name, search_field,
+                status, updated_at, time, customer_name, user_name, search_field,
                 progress, memo, completion_date
             ) VALUES (
-                %s, %d, %s, %s, %s, %s, %s, %s, %d, %s, %s, %s, %s, %d, %s, %s
+                %s, %d, %s, %s, %s, %s, %s, %s, %d, %s, %s, %s, %d, %s, %s
             )",
             $order_number,
             $client_id,
@@ -666,7 +666,6 @@ foreach ($client_ids as $client_id) {
             $order_timestamp,
             $customer_name, // 会社名のみを使用
             $user_name,
-            $company_name,
             $search_field,
             $status,
             'ダミーデータ',
