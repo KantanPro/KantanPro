@@ -2787,6 +2787,10 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 		 * @since 1.0.0
 		 */
 		private function get_client_tax_category( $order_id ) {
+			// KTPWP_Client_DBクラスを必ずロード
+			if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
+				require_once KTPWP_PLUGIN_DIR . 'includes/class-ktpwp-client-db.php';
+			}
 			global $wpdb;
 			
 			// 受注書から顧客IDを取得
@@ -2831,20 +2835,31 @@ if ( ! class_exists( 'Kntan_Order_Class' ) ) {
 				$company_info = KTP_Settings::get_company_info();
 			}
 
-			// 旧システムからも取得（後方互換性）
-			if ( empty( $company_info ) ) {
-				global $wpdb;
-				$setting_table = $wpdb->prefix . 'ktp_setting';
+					// 旧システムからも取得（後方互換性）
+		if ( empty( $company_info ) ) {
+			global $wpdb;
+			$setting_table = $wpdb->prefix . 'ktp_setting';
+			
+			// テーブルの存在確認
+			$table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $setting_table ) );
+			
+			if ( $table_exists ) {
 				$setting = $wpdb->get_row(
-                    $wpdb->prepare(
-                        "SELECT * FROM `{$setting_table}` WHERE id = %d",
-                        1
-                    )
-                );
+	                $wpdb->prepare(
+	                    "SELECT * FROM `{$setting_table}` WHERE id = %d",
+	                    1
+	                )
+	            );
 				if ( $setting && ! empty( $setting->my_company_content ) ) {
 					$company_info = sanitize_text_field( strip_tags( $setting->my_company_content ) );
 				}
+			} else {
+				// テーブルが存在しない場合はログに記録
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					error_log( 'KTPWP: ktp_setting テーブルが存在しません。デフォルト会社情報を使用します。' );
+				}
 			}
+		}
 
 			// デフォルト値を設定
 			if ( empty( $company_info ) ) {

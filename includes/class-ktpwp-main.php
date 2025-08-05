@@ -328,6 +328,41 @@ class KTPWP_Main {
             KTP_Settings::activate();
         }
 
+        // 設定テーブルが存在しない場合は即座に作成
+        global $wpdb;
+        $setting_table = $wpdb->prefix . 'ktp_setting';
+        $table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $setting_table ) );
+        
+        if ( ! $table_exists ) {
+            if ( class_exists( 'KTPWP_Setting_DB' ) ) {
+                KTPWP_Setting_DB::create_table( 'setting' );
+                KTPWP_Setting_DB::update_table( 'setting' );
+                
+                // 初期データの挿入
+                $existing_row = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM `{$setting_table}` WHERE id = %d", 1 ) );
+                if ( ! $existing_row ) {
+                    $wpdb->insert(
+                        $setting_table,
+                        array(
+                            'id' => 1,
+                            'email_address' => '',
+                            'tax_rate' => '10',
+                            'closing_date' => '',
+                            'invoice' => '',
+                            'bank_account' => '',
+                            'my_company_content' => '',
+                            'template_content' => '',
+                        ),
+                        array( '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s' )
+                    );
+                }
+                
+                if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                    error_log( 'KTPWP: 設定テーブルを緊急作成しました' );
+                }
+            }
+        }
+
         // プラグインリファレンス更新処理
         if ( class_exists( 'KTPWP_Plugin_Reference' ) ) {
             KTPWP_Plugin_Reference::on_plugin_activation();
@@ -352,6 +387,38 @@ class KTPWP_Main {
         if ( class_exists( 'Kantan_Supplier_Class' ) ) {
             $supplier = new Kantan_Supplier_Class();
             $supplier->Create_Table( 'supplier' );
+        }
+
+        // 設定テーブルの作成
+        if ( class_exists( 'KTPWP_Setting_DB' ) ) {
+            KTPWP_Setting_DB::create_table( 'setting' );
+            KTPWP_Setting_DB::update_table( 'setting' );
+            
+            // 初期データの挿入（存在しない場合のみ）
+            global $wpdb;
+            $setting_table = $wpdb->prefix . 'ktp_setting';
+            $existing_row = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM `{$setting_table}` WHERE id = %d", 1 ) );
+            
+            if ( ! $existing_row ) {
+                $wpdb->insert(
+                    $setting_table,
+                    array(
+                        'id' => 1,
+                        'email_address' => '',
+                        'tax_rate' => '10',
+                        'closing_date' => '',
+                        'invoice' => '',
+                        'bank_account' => '',
+                        'my_company_content' => '',
+                        'template_content' => '',
+                    ),
+                    array( '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s' )
+                );
+                
+                if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                    error_log( 'KTPWP: 設定テーブルに初期データを挿入しました' );
+                }
+            }
         }
     }
 

@@ -777,7 +777,7 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 
 		public function get_client_by_id( $client_id ) {
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_clients';
+			$table_name = $wpdb->prefix . 'ktp_client';
 			return $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table_name WHERE id = %d", $client_id ) );
 		}
 
