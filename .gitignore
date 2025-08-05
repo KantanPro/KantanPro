@@ -1,12 +1,17 @@
+# macOS system files
 .DS_Store
+**/.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
 
 # アップロード画像ファイルを追跡対象外にする
 images/upload/
 images/upload/*
 create_release_zipのコピー.sh
-.DS_Store
-images/.DS_Store
-.DS_Store
 
 # 開発環境用ファイル（本番環境にアップロードしない）
 development-config.php
@@ -15,4 +20,3 @@ DEVELOPMENT-README.md
 
 # 注意: .local-development ファイルは意図的にgitで管理されます
 # 開発環境判定に使用され、配布時に自動除外されます
-.DS_Store
