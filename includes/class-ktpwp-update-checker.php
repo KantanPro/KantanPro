@@ -20,7 +20,7 @@ class KTPWP_Update_Checker {
     /**
      * GitHubリポジトリURL
      */
-    private $github_repo = 'KantanPro/KantanPro-a-';
+    private $github_repo = 'KantanPro/KantanPro';
     
     /**
      * GitHub Personal Access Token（非公開リポジトリ用）
