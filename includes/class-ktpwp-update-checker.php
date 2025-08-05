@@ -262,20 +262,10 @@ class KTPWP_Update_Checker {
         }
         
         // 更新チェック実行
+        $this->clear_plugin_cache();
         $update_available = $this->check_github_updates();
         
-                    // デバッグ情報を追加
-            $debug_info = array(
-                'current_version' => $this->current_version,
-                'github_repo' => $this->github_repo,
-                'github_token_set' => ! empty( $this->github_token ),
-                'last_check' => get_transient( 'ktpwp_last_update_check' ),
-                'update_available' => get_option( 'ktpwp_update_available' ),
-                'latest_version' => get_option( 'ktpwp_latest_version' ),
-                'check_result' => $update_available
-            );
-        
-        if ( $update_available ) {
+        if ( $update_available && is_array($update_available) ) {
             wp_send_json_success( array(
                 'message' => __( '新しいバージョンが利用可能です！', 'KantanPro' ),
                 'reload' => true,
@@ -1285,6 +1275,7 @@ class KTPWP_Update_Checker {
             
             // 更新チェック実行
             error_log( 'KantanPro: 更新チェック実行開始' );
+            $this->clear_plugin_cache();
             $update_available = $this->check_github_updates();
             error_log( 'KantanPro: 更新チェック結果: ' . ( $update_available ? 'true' : 'false' ) );
             
@@ -1292,7 +1283,7 @@ class KTPWP_Update_Checker {
             $update_data = get_option( 'ktpwp_update_available', false );
             error_log( 'KantanPro: 保存された更新データ: ' . print_r( $update_data, true ) );
             
-            if ( $update_available ) {
+            if ( $update_available && is_array($update_available) ) {
                 $update_data = get_option( 'ktpwp_update_available', false );
                 error_log( 'KantanPro: 更新あり - 更新データ: ' . print_r( $update_data, true ) );
                 wp_send_json_success( array(
