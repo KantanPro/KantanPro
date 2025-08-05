@@ -400,6 +400,9 @@ function ktpwp_enqueue_cache_admin_scripts( $hook ) {
 
 // 管理画面で画像最適化スクリプトを読み込み
 add_action( 'admin_enqueue_scripts', 'ktpwp_enqueue_image_optimizer_scripts' );
+
+// 管理画面で通知非表示スクリプトを読み込み
+add_action( 'admin_enqueue_scripts', 'ktpwp_enqueue_notification_dismiss_scripts' );
 function ktpwp_enqueue_image_optimizer_scripts( $hook ) {
     // メディアライブラリまたは設定ページで読み込み
     if ( 'upload.php' === $hook || 'post.php' === $hook || 'post-new.php' === $hook || 
@@ -416,6 +419,26 @@ function ktpwp_enqueue_image_optimizer_scripts( $hook ) {
         // ナンスを JavaScript に渡す
         wp_localize_script( 'ktpwp-image-optimizer', 'ktpwp_image_optimizer', array(
             'nonce' => wp_create_nonce( 'ktpwp_image_optimization' ),
+            'ajaxurl' => admin_url( 'admin-ajax.php' )
+        ) );
+    }
+}
+
+// 通知非表示スクリプトを読み込み
+function ktpwp_enqueue_notification_dismiss_scripts( $hook ) {
+    // KantanPro設定ページでのみ読み込み
+    if ( 'toplevel_page_ktp-settings' === $hook || 'settings_page_ktp-settings' === $hook ) {
+        wp_enqueue_script(
+            'ktpwp-notification-dismiss',
+            KANTANPRO_PLUGIN_URL . 'js/ktpwp-notification-dismiss.js',
+            array( 'jquery' ),
+            KANTANPRO_PLUGIN_VERSION,
+            true
+        );
+        
+        // ナンスを JavaScript に渡す
+        wp_localize_script( 'ktpwp-notification-dismiss', 'ktpwp_notification_dismiss', array(
+            'nonce' => wp_create_nonce( 'ktpwp_dismiss_notification' ),
             'ajaxurl' => admin_url( 'admin-ajax.php' )
         ) );
     }
@@ -3501,6 +3524,9 @@ function ktpwp_init_ajax_handlers() {
     
     // テスト用AJAXハンドラー
     add_action( 'wp_ajax_ktpwp_test_ajax', 'ktpwp_test_ajax_handler' );
+    
+    // 通知非表示AJAXハンドラー
+    add_action( 'wp_ajax_ktpwp_dismiss_invoice_items_fix_notification', 'ktpwp_dismiss_invoice_items_fix_notification' );
 }
 add_action( 'init', 'ktpwp_init_ajax_handlers' );
 
@@ -4836,11 +4862,18 @@ function ktpwp_distribution_admin_notices() {
         delete_transient( 'ktpwp_invoice_items_fix_error' );
     }
     
-    // 緊急修正ボタンの表示（invoice_itemsカラムエラー対策）
-    echo '<div class="notice notice-info is-dismissible">';
-    echo '<p><strong>KantanPro:</strong> データベースエラーが発生している場合は、以下のボタンで修正してください。</p>';
-    echo '<p><a href="' . esc_url( wp_nonce_url( add_query_arg( 'ktpwp_invoice_items_fix', '1' ), 'ktpwp_invoice_items_fix' ) ) . '" class="button button-primary">invoice_itemsカラム修正を実行</a></p>';
-    echo '</div>';
+    // マイグレーション完了チェック
+    $migration_completed = get_option( 'ktp_order_migration_20250108_invoice_items_completed', false );
+    $notification_dismissed = get_option( 'ktpwp_invoice_items_fix_notification_dismissed', false );
+    
+    // マイグレーションが完了していない場合のみ通知を表示
+    if ( ! $migration_completed && ! $notification_dismissed ) {
+        echo '<div class="notice notice-info is-dismissible" id="ktpwp-invoice-items-fix-notice">';
+        echo '<p><strong>KantanPro:</strong> データベースエラーが発生している場合は、以下のボタンで修正してください。</p>';
+        echo '<p><a href="' . esc_url( wp_nonce_url( add_query_arg( 'ktpwp_invoice_items_fix', '1' ), 'ktpwp_invoice_items_fix' ) ) . '" class="button button-primary">invoice_itemsカラム修正を実行</a></p>';
+        echo '<p><a href="#" class="button button-secondary" onclick="dismissInvoiceItemsFixNotification(); return false;">この通知を非表示にする</a></p>';
+        echo '</div>';
+    }
 }
 
 /**
@@ -4889,6 +4922,9 @@ function ktpwp_execute_invoice_items_fix() {
             }
             
             set_transient( 'ktpwp_invoice_items_fix_success', 'invoice_itemsカラムの修正が正常に完了しました。', 60 );
+            
+            // マイグレーション完了時は通知非表示フラグをリセット
+            delete_option( 'ktpwp_invoice_items_fix_notification_dismissed' );
         } else {
             throw new Exception( 'マイグレーションファイルが見つかりません: ' . $migration_file );
         }
@@ -4900,6 +4936,21 @@ function ktpwp_execute_invoice_items_fix() {
     // リダイレクトして重複実行を防ぐ
     wp_redirect( admin_url( 'admin.php?page=ktp-settings' ) );
     exit;
+}
+
+/**
+ * 通知を非表示にするAJAXハンドラー
+ */
+function ktpwp_dismiss_invoice_items_fix_notification() {
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_die( '権限がありません' );
+    }
+    
+    check_ajax_referer( 'ktpwp_dismiss_notification', 'nonce' );
+    
+    update_option( 'ktpwp_invoice_items_fix_notification_dismissed', true );
+    
+    wp_send_json_success( '通知が非表示になりました' );
 }
 
 // ============================================================================
