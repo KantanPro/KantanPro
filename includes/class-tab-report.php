@@ -100,9 +100,9 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 					<h3 style="margin:50px 0 15px;color:#d32f2f;font-size:24px;text-shadow:0 1px 2px rgba(255,255,255,0.8);">レポート機能の利用にはライセンスが必要です</h3>
 					<p style="margin-bottom:20px;font-size:16px;line-height:1.6;color:#555;text-shadow:0 1px 2px rgba(255,255,255,0.8);">詳細な分析とレポート機能を利用するには、ライセンスキーを購入して設定してください。</p>
 					<div style="margin-bottom:20px;">
-						<a href="' . esc_url( admin_url( 'admin.php?page=ktp-license' ) ) . '" class="button button-primary" style="padding:12px 24px;font-size:16px;text-decoration:none;background:#0073aa;color:#fff;border-radius:5px;display:inline-block;">ライセンス設定へ</a>
+						<a href="https://www.kantanpro.com/klm" target="_blank" class="button button-primary" style="padding:12px 24px;font-size:16px;text-decoration:none;background:#0073aa;color:#fff;border-radius:5px;display:inline-block;">ライセンスを購入</a>
 					</div>
-					<p style="font-size:18px;font-weight:bold;color:#0073aa;line-height:1.5;">ライセンスキーは<a href=\"https://www.kantanpro.com/klm\" target=\"_blank\" style=\"color:#0073aa;text-decoration:underline;\">KantanPro公式サイト</a>で購入できます。</p>
+					<p style="font-size:18px;font-weight:bold;color:#0073aa;line-height:1.5;">ライセンス購入後は<a href="' . esc_url( admin_url( 'admin.php?page=ktp-license' ) ) . '" style="color:#0073aa;text-decoration:underline;">ライセンス設定</a>でライセンスキーを入力してください</p>
 				</div>
 			</div>';
 		}
