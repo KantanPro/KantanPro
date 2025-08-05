@@ -2807,7 +2807,7 @@ class KTPWP_Ajax {
 
 			// Order クラスのインスタンスを作成してプレビューHTML生成を利用
 			if ( ! class_exists( 'Kntan_Order_Class' ) ) {
-				require_once MY_PLUGIN_PATH . 'includes/class-tab-order.php';
+				require_once KTPWP_PLUGIN_DIR . 'includes/class-tab-order.php';
 			}
 
 			$order_class = new Kntan_Order_Class();
