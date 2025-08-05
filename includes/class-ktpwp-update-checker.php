@@ -545,17 +545,15 @@ class KTPWP_Update_Checker {
         $is_plugins_page = ( $current_screen && $current_screen->id === 'plugins' );
         $is_ktpwp_page = $this->is_ktpwp_page();
 
-        // KantanPro設置ページとプラグインリストでのみ表示
-        if ( ! $is_plugins_page && ! $is_ktpwp_page ) {
+        // KantanPro設置ページでのみ表示（プラグインリストでは表示しない）
+        if ( ! $is_ktpwp_page ) {
             return;
         }
 
         // KantanPro設置ページの場合、通知が無視されているかチェック
-        if ( $is_ktpwp_page && get_option( 'ktpwp_update_notice_dismissed', false ) ) {
+        if ( get_option( 'ktpwp_update_notice_dismissed', false ) ) {
             return;
         }
-
-        // プラグインリストの場合は常に表示（無視フラグはチェックしない）
         
         $plugin_name = get_plugin_data( KANTANPRO_PLUGIN_FILE )['Name'];
         
