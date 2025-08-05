@@ -20,7 +20,7 @@ class KTPWP_Update_Checker {
     /**
      * GitHubリポジトリURL
      */
-    private $github_repo = 'KantanPro/KantanPro-a-';
+    private $github_repo = 'KantanPro/KantanPro-a';
     
     /**
      * GitHub Personal Access Token（非公開リポジトリ用）
@@ -82,6 +82,8 @@ class KTPWP_Update_Checker {
             // フック設定
             add_action( 'init', array( $this, 'init' ) );
             add_action( 'admin_init', array( $this, 'admin_init' ) );
+            add_filter( 'pre_set_site_transient_update_plugins', array( $this, 'check_for_plugin_update' ) );
+
             
             // プラグインメタ行にリンクを追加（即座に登録）
             add_filter( 'plugin_row_meta', array( $this, 'add_check_update_meta_link' ), 10, 2 );
@@ -385,10 +387,40 @@ class KTPWP_Update_Checker {
             
             if ( $comparison_result || $force_update ) {
                 // 更新が利用可能
+
+                // アセットからzipファイルのURLを探す
+                $download_url = '';
+                if ( ! empty($data['assets']) ) {
+                    foreach ( $data['assets'] as $asset ) {
+                        // 'KantanPro.zip' のような名前のファイルを優先する
+                        if ( $asset['name'] === 'KantanPro.zip' && $asset['content_type'] === 'application/zip') {
+                            $download_url = $asset['browser_download_url'];
+                            error_log('KantanPro: Found release asset: ' . $download_url);
+                            break;
+                        }
+                    }
+                }
+                // アセットが見つからない場合は、次に`.zip`で終わるアセットを探す
+                if ( empty($download_url) && ! empty($data['assets']) ) {
+                    foreach ( $data['assets'] as $asset ) {
+                        if ( substr($asset['name'], -4) === '.zip' ) {
+                            $download_url = $asset['browser_download_url'];
+                            error_log('KantanPro: Found a .zip release asset: ' . $download_url);
+                            break;
+                        }
+                    }
+                }
+
+                // zipアセットがなければ、zipball_urlをフォールバックとして使う
+                if ( empty($download_url) ) {
+                    $download_url = $data['zipball_url'];
+                    error_log('KantanPro: No release asset found, falling back to zipball_url.');
+                }
+
                 $update_data = array(
                     'version' => $latest_version,
                     'new_version' => $data['tag_name'], // 元のバージョン文字列も保存
-                    'download_url' => $data['zipball_url'],
+                    'download_url' => $download_url,
                     'changelog' => isset( $data['body'] ) ? $data['body'] : '',
                     'published_at' => isset( $data['published_at'] ) ? $data['published_at'] : '',
                     'current_version' => $this->current_version, // 現在のバージョンも保存
@@ -1417,6 +1449,50 @@ class KTPWP_Update_Checker {
             error_log( 'KantanPro: GitHubトークンが更新されました' );
         }
     }
+
+    /**
+     * WordPressの更新トランジェントにプラグインの更新情報を挿入する
+     *
+     * @param object $transient 更新トランジェント
+     * @return object 更新されたトランジェント
+     */
+    public function check_for_plugin_update( $transient ) {
+        if ( empty( $transient->checked ) || ! isset( $transient->checked[ $this->plugin_basename ] ) ) {
+            return $transient;
+        }
+
+        // キャッシュされた更新情報を取得
+        $update_data = get_option( 'ktpwp_update_available' );
+
+        // このフックは頻繁に実行されるため、毎回APIを叩かないように
+        // check_github_updates() は内部で実行間隔をチェックしているので安全に呼び出せる
+        if ( ! $update_data ) {
+            $update_data = $this->check_github_updates();
+        }
+
+        if ( $update_data && is_array( $update_data ) && isset( $update_data['version'] ) ) {
+            $latest_version = $this->clean_version( $update_data['version'] );
+            $current_version = $this->clean_version( $this->current_version );
+
+            if ( version_compare( $latest_version, $current_version, '>' ) ) {
+                $plugin_info = new stdClass();
+                $plugin_info->slug = $this->plugin_slug;
+                $plugin_info->plugin = $this->plugin_basename;
+                $plugin_info->new_version = $update_data['version'];
+                $plugin_info->url = 'https://github.com/' . $this->github_repo;
+                $plugin_info->package = $update_data['download_url'];
+                $plugin_info->tested = get_bloginfo( 'version' ); // 現在のWPバージョンをセット
+                $plugin_info->icons = array(
+                    'default' => KANTANPRO_PLUGIN_URL . 'images/default/icon.png',
+                );
+
+                $transient->response[ $this->plugin_basename ] = $plugin_info;
+            }
+        }
+
+        return $transient;
+    }
+
 
     /**
      * プラグイン無効化時のクリーンアップ
