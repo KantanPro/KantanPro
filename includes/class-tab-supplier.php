@@ -735,7 +735,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 					  $company_name = esc_html( $row->company_name );
 					  $user_name = esc_html( $row->name );
 					  $email = esc_html( $row->email );
-					  $url = esc_html( $row->url );
+					  $url = isset( $row->url ) ? esc_html( $row->url ) : '';
 					  $representative_name = esc_html( $row->representative_name );
 					  $phone = esc_html( $row->phone );
 					  $postal_code = esc_html( $row->postal_code );
@@ -879,7 +879,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 					$company_name = esc_html( $row->company_name );
 					$user_name = esc_html( $row->name );
 					$email = esc_html( $row->email );
-					$url = esc_html( $row->url );
+					$url = isset( $row->url ) ? esc_html( $row->url ) : '';
 					$representative_name = esc_html( $row->representative_name );
 					$phone = esc_html( $row->phone );
 					$postal_code = esc_html( $row->postal_code );
