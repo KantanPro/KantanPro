@@ -73,14 +73,14 @@ class KTPWP_Loader {
     private function setup_class_map() {
         $this->class_map = array(
             // タブ関連クラス
-            'Kntan_Client_Class'     => 'includes/class-tab-client.php',
-            'Kntan_Service_Class'    => 'includes/class-tab-service.php',
+            'Kantan_Client_Class'     => 'includes/class-kantan-client.php',
+            'Kantan_Service_Class'    => 'includes/class-kantan-service.php',
             'KTPWP_Supplier_Class'   => 'includes/class-tab-supplier.php',
             'KTPWP_Supplier_Security' => 'includes/class-supplier-security.php',
             'KTPWP_Supplier_Data'    => 'includes/class-supplier-data.php',
             'KTPWP_Supplier_Skills'  => 'includes/class-ktpwp-supplier-skills.php',
             'KTPWP_Report_Class'     => 'includes/class-tab-report.php',
-            'Kntan_Order_Class'      => 'includes/class-tab-order.php',
+            'Kantan_Order_Class'      => 'includes/class-kantan-order.php',
             'KTPWP_Plugin_Reference' => 'includes/class-plugin-reference.php',
             'KTPWP'                 => 'includes/class-ktpwp.php',
             'KTPWP_Main'            => 'includes/class-ktpwp-main.php',

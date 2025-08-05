@@ -9,7 +9,7 @@
 ## 変更内容
 
 ### 1. ヘッダー行の修正
-- `includes/class-tab-order.php`の`Generate_Invoice_Items_For_Preview`メソッド
+- `includes/class-kantan-order.php`の`Generate_Invoice_Items_For_Preview`メソッド
 - ヘッダー行に「税率」列を追加
 - 配置：No. → 項目名 → 単価 → 数量 → 金額 → **税率** → 備考
 

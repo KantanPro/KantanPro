@@ -81,7 +81,7 @@
   - コスト項目の内税計算も同様に修正
   - **外税計算でも`ceil()`を使用するように統一**
 
-- `includes/class-tab-order.php`
+- `includes/class-kantan-order.php`
   - メール生成・プレビュー表示での内税計算を`floor()` → `ceil()`に変更
   - **外税計算でも`ceil()`を使用するように統一**
   - 2箇所の内税計算ロジックを修正

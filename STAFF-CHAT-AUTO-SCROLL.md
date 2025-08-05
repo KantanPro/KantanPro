@@ -37,7 +37,7 @@
 - 現在のユーザー情報をAJAX設定に追加
 - `current_user` プロパティをJavaScriptで利用可能に
 
-### PHP (/includes/class-tab-order.php)
+### PHP (/includes/class-kantan-order.php)
 - 従来のPOST送信処理をコメントアウト
 - AJAX専用の実装に移行
 

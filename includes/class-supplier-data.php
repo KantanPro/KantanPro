@@ -25,6 +25,15 @@ if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
 	 */
 	class KTPWP_Supplier_Data {
 
+        private static $instance = null;
+
+        public static function get_instance() {
+            if ( null === self::$instance ) {
+                self::$instance = new self();
+            }
+            return self::$instance;
+        }
+
 		/**
 		 * Constructor
 		 *
@@ -38,122 +47,67 @@ if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
 		}
 
 		/**
-		 * Create supplier table
+		 * Get the supplier table schema.
 		 *
-		 * @since 1.0.0
-		 * @param string $tab_name The table name suffix
-		 * @return bool True on success, false on failure
+		 * @return string The SQL for creating the supplier table.
 		 */
-		public function create_table( $tab_name ) {
+		public function get_schema() {
 			global $wpdb;
+			$table_name = $wpdb->prefix . 'ktp_supplier';
+			$charset_collate = $wpdb->get_charset_collate();
+			$default_company = __( 'Regular Supplier', 'ktpwp' );
+			$default_tax = __( 'Tax Included', 'ktpwp' );
+			$default_category = __( 'General', 'ktpwp' );
 
-			if ( empty( $tab_name ) ) {
-				error_log( 'KTPWP: Empty tab_name provided to create_table method' );
-				return false;
-			}
-
-			$table_name = $wpdb->prefix . 'ktp_' . sanitize_key( $tab_name );
-			$my_table_version = '1.2'; // Increment version for qualified_invoice_number field
-			$option_name = 'ktp_' . $tab_name . '_table_version';
-
-			// Check if table needs to be created or updated
-			$installed_version = get_option( $option_name );
-
-			if ( $installed_version !== $my_table_version ) {
-				$default_company = __( 'Regular Supplier', 'ktpwp' );
-				$default_tax = __( 'Tax Included', 'ktpwp' );
-				$default_category = __( 'General', 'ktpwp' );
-
-				// Get charset collate
-				$charset_collate = $wpdb->get_charset_collate();
-
-				$sql = $wpdb->prepare(
-                    "CREATE TABLE %i (
-                    id MEDIUMINT(9) NOT NULL AUTO_INCREMENT,
-                    time BIGINT(11) DEFAULT '0' NOT NULL,
-                    name TINYTEXT NOT NULL,
-                    url VARCHAR(55) NOT NULL,
-                    company_name VARCHAR(100) NOT NULL DEFAULT %s,
-                    email VARCHAR(100) NOT NULL,
-                    representative_name VARCHAR(100) NOT NULL DEFAULT '',
-                    phone VARCHAR(20) NOT NULL,
-                    postal_code VARCHAR(10) NOT NULL,
-                    prefecture TINYTEXT NOT NULL,
-                    city TINYTEXT NOT NULL,
-                    address TEXT NOT NULL,
-                    building TINYTEXT NOT NULL,
-                    closing_day TINYTEXT NOT NULL,
-                    payment_month TINYTEXT NOT NULL,
-                    payment_day TINYTEXT NOT NULL,
-                    payment_method TINYTEXT NOT NULL,
-                    tax_category VARCHAR(100) NOT NULL DEFAULT %s,
-                    memo TEXT NOT NULL,
-                    qualified_invoice_number VARCHAR(100) NOT NULL DEFAULT '',
-                    search_field TEXT NOT NULL,
-                    frequency INT NOT NULL DEFAULT 0,
-                    category VARCHAR(100) NOT NULL DEFAULT %s,
-                    UNIQUE KEY id (id)
-                ) " . $charset_collate,
-                    $table_name,
-                    $default_company,
-                    $default_tax,
-                    $default_category
-				);
-
-				// Include upgrade functions
-				require_once ABSPATH . 'wp-admin/includes/upgrade.php';
-
-				if ( function_exists( 'dbDelta' ) ) {
-					$result = dbDelta( $sql );
-
-					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-						error_log( 'KTPWP: Table creation result for ' . $table_name . ': ' . print_r( $result, true ) );
-					}
-
-					if ( ! empty( $result ) ) {
-						add_option( 'ktp_' . $tab_name . '_table_version', $my_table_version );
-
-						// Create supplier skills table
-						$skills_manager = KTPWP_Supplier_Skills::get_instance();
-						$skills_manager->create_table();
-
-						return true;
-					}
-
-					error_log( 'KTPWP: Failed to create table ' . $table_name );
-					return false;
-				}
-
-				error_log( 'KTPWP: dbDelta function not available' );
-				return false;
-			} else {
-				// Ensure skills table exists even if supplier table already exists
+			$sql = "CREATE TABLE {$table_name} (
+                id MEDIUMINT(9) NOT NULL AUTO_INCREMENT,
+                time BIGINT(11) DEFAULT '0' NOT NULL,
+                name TINYTEXT NOT NULL,
+                url VARCHAR(55) NOT NULL,
+                company_name VARCHAR(100) NOT NULL DEFAULT '{$default_company}',
+                email VARCHAR(100) NOT NULL,
+                representative_name VARCHAR(100) NOT NULL DEFAULT '',
+                phone VARCHAR(20) NOT NULL,
+                postal_code VARCHAR(10) NOT NULL,
+                prefecture TINYTEXT NOT NULL,
+                city TINYTEXT NOT NULL,
+                address TEXT NOT NULL,
+                building TINYTEXT NOT NULL,
+                closing_day TINYTEXT NOT NULL,
+                payment_month TINYTEXT NOT NULL,
+                payment_day TINYTEXT NOT NULL,
+                payment_method TINYTEXT NOT NULL,
+                tax_category VARCHAR(100) NOT NULL DEFAULT '{$default_tax}',
+                memo TEXT NOT NULL,
+                qualified_invoice_number VARCHAR(100) NOT NULL DEFAULT '',
+                search_field TEXT NOT NULL,
+                frequency INT NOT NULL DEFAULT 0,
+                category VARCHAR(100) NOT NULL DEFAULT '{$default_category}',
+                PRIMARY KEY  (id)
+            ) {$charset_collate};";
+			
+			// スキルテーブルもここで作成を試みる
+			if ( class_exists( 'KTPWP_Supplier_Skills' ) ) {
 				$skills_manager = KTPWP_Supplier_Skills::get_instance();
-				$skills_manager->create_table();
-				
-				// Check if qualified_invoice_number column exists and add if missing
-				$column_exists = $wpdb->get_var( 
-					$wpdb->prepare( 
-						"SHOW COLUMNS FROM `{$table_name}` LIKE %s", 
-						'qualified_invoice_number' 
-					) 
-				);
-				
-				if ( ! $column_exists ) {
-					$sql = "ALTER TABLE `{$table_name}` ADD COLUMN `qualified_invoice_number` VARCHAR(100) NOT NULL DEFAULT '' AFTER `memo`";
-					$result = $wpdb->query( $sql );
-					
-					if ( $result !== false ) {
-						error_log( 'KTPWP: Successfully added qualified_invoice_number column to ' . $table_name );
-						// Update version to reflect the change
-						update_option( $option_name, $my_table_version );
-					} else {
-						error_log( 'KTPWP: Failed to add qualified_invoice_number column to ' . $table_name . '. Error: ' . $wpdb->last_error );
-					}
+				if(method_exists($skills_manager, 'get_schema')){
+					$sql .= "\n" . $skills_manager->get_schema();
 				}
 			}
 
-			return true;
+			return $sql;
+		}
+
+		/**
+		 * Create or update the supplier table.
+		 * This method is kept for backward compatibility and direct calls,
+		 * but the main activation hook now uses get_schema().
+		 */
+		public function create_table() {
+			if ( ! function_exists( 'dbDelta' ) ) {
+				require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+			}
+			$schema = $this->get_schema();
+			dbDelta( $schema );
 		}
 
 		/**

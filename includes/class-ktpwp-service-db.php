@@ -43,61 +43,45 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 		}
 
 		/**
-		 * Create service table
+		 * Get the service table schema.
 		 *
-		 * @param string $tab_name The table name suffix
-		 * @return bool True on success, false on failure
+		 * @return string The SQL for creating the service table.
 		 */
-		public function create_table( $tab_name ) {
-			if ( empty( $tab_name ) ) {
-				return false;
-			}
-
+		public function get_schema() {
 			global $wpdb;
-			$my_table_version = '1.0.3'; // バージョンアップ：価格フィールドを小数点対応に変更
-			$table_name = $wpdb->prefix . 'ktp_' . sanitize_key( $tab_name );
+			$table_name = $wpdb->prefix . 'ktp_service';
 			$charset_collate = $wpdb->get_charset_collate();
 
 			// Column definitions with internationalization
-			$columns = array(
-				'id' => 'MEDIUMINT(9) NOT NULL AUTO_INCREMENT',
-				'time' => 'DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL',
-				'service_name' => 'TINYTEXT',
-				'price' => 'DECIMAL(10,2) DEFAULT 0.00 NOT NULL',
-				'tax_rate' => 'DECIMAL(5,2) NULL DEFAULT NULL',
-				'unit' => 'VARCHAR(50) NOT NULL DEFAULT \'\'',
-				'image_url' => 'VARCHAR(255)',
-				'memo' => 'TEXT',
-				'search_field' => 'TEXT',
-				'frequency' => 'INT NOT NULL DEFAULT 0',
-				'category' => sprintf( 'VARCHAR(100) NOT NULL DEFAULT \'%s\'', esc_sql( __( 'General', 'ktpwp' ) ) ),
-			);
+			$sql = "CREATE TABLE {$table_name} (
+				id MEDIUMINT(9) NOT NULL AUTO_INCREMENT,
+				time DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
+				service_name TINYTEXT,
+				price DECIMAL(10,2) DEFAULT 0.00 NOT NULL,
+				tax_rate DECIMAL(5,2) NULL DEFAULT NULL,
+				unit VARCHAR(50) NOT NULL DEFAULT '',
+				image_url VARCHAR(255),
+				memo TEXT,
+				search_field TEXT,
+				frequency INT NOT NULL DEFAULT 0,
+				category VARCHAR(100) NOT NULL DEFAULT '" . esc_sql( __( 'General', 'ktpwp' ) ) . "',
+				PRIMARY KEY  (id)
+			) {$charset_collate};";
 
-			$columns_sql = implode(
-                ",\n",
-                array_map(
-                    function ( $name, $type ) {
-                        return "$name $type";
-                    },
-                    array_keys( $columns ),
-                    $columns
-                )
-            );
+			return $sql;
+		}
 
-			$sql = "CREATE TABLE $table_name (\n$columns_sql,\nPRIMARY KEY  (id)\n) $charset_collate;";
-
-			require_once ABSPATH . 'wp-admin/includes/upgrade.php';
-			dbDelta( $sql );
-
-			// 既存のテーブルがある場合は、priceカラムをDECIMAL(10,2)に変更
-			$table_exists = $wpdb->get_var( "SHOW TABLES LIKE '$table_name'" );
-			if ( $table_exists ) {
-				$wpdb->query( "ALTER TABLE `$table_name` MODIFY `price` DECIMAL(10,2) NOT NULL DEFAULT 0.00" );
+		/**
+		 * Create or update the service table.
+		 * This method is kept for backward compatibility and direct calls,
+		 * but the main activation hook now uses get_schema().
+		 */
+		public function create_table() {
+			if ( ! function_exists( 'dbDelta' ) ) {
+				require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 			}
-
-			update_option( $table_name . '_version', $my_table_version );
-
-			return true;
+			$schema = $this->get_schema();
+			dbDelta( $schema );
 		}
 
 		/**

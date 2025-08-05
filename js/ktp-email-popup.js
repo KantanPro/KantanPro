@@ -550,6 +550,67 @@
         };
     }
 
+    // メール送信前に最新の金額をデータベースに保存
+    function saveLatestAmountsBeforeEmail(orderId) {
+        try {
+            // 請求項目の最新金額を保存
+            $('.invoice-items-table tbody tr').each(function() {
+                const $row = $(this);
+                const itemId = $row.find('input[name*="[id]"]').val();
+                const amountValue = $row.find('.invoice-item-amount').attr('data-amount') || $row.find('.invoice-item-amount').text().replace(/,/g, '');
+                const amount = parseFloat(amountValue) || 0;
+                
+                if (itemId && itemId !== '0' && amount > 0) {
+                    // 即座に金額を保存（デバウンスなし）
+                    $.ajax({
+                        url: typeof ktp_ajax_object !== 'undefined' ? ktp_ajax_object.ajax_url : '/wp-admin/admin-ajax.php',
+                        type: 'POST',
+                        data: {
+                            action: 'auto_save_item',
+                            item_type: 'invoice',
+                            item_id: itemId,
+                            field: 'amount',
+                            value: amount,
+                            order_id: orderId,
+                            nonce: typeof ktp_ajax_object !== 'undefined' ? ktp_ajax_object.nonce : ''
+                        },
+                        async: false // 同期実行で確実に保存
+                    });
+                }
+            });
+
+            // コスト項目の最新金額を保存
+            $('.cost-items-table tbody tr').each(function() {
+                const $row = $(this);
+                const itemId = $row.find('input[name*="[id]"]').val();
+                const amountValue = $row.find('.cost-item-amount').attr('data-amount') || $row.find('.cost-item-amount').text().replace(/,/g, '');
+                const amount = parseFloat(amountValue) || 0;
+                
+                if (itemId && itemId !== '0' && amount > 0) {
+                    // 即座に金額を保存（デバウンスなし）
+                    $.ajax({
+                        url: typeof ktp_ajax_object !== 'undefined' ? ktp_ajax_object.ajax_url : '/wp-admin/admin-ajax.php',
+                        type: 'POST',
+                        data: {
+                            action: 'auto_save_item',
+                            item_type: 'cost',
+                            item_id: itemId,
+                            field: 'amount',
+                            value: amount,
+                            order_id: orderId,
+                            nonce: typeof ktp_ajax_object !== 'undefined' ? ktp_ajax_object.nonce : ''
+                        },
+                        async: false // 同期実行で確実に保存
+                    });
+                }
+            });
+
+            console.log('[EMAIL POPUP] メール送信前の金額保存完了');
+        } catch (error) {
+            console.error('[EMAIL POPUP] メール送信前の金額保存エラー:', error);
+        }
+    }
+
     // メール送信
     function sendEmail(orderId) {
         const subject = $('#email-subject').val();
@@ -560,6 +621,9 @@
             alert('件名と本文を入力してください。');
             return;
         }
+
+        // メール送信前に最新の金額をデータベースに保存
+        saveLatestAmountsBeforeEmail(orderId);
 
         const selectedFiles = window.getSelectedFiles ? window.getSelectedFiles() : [];
         

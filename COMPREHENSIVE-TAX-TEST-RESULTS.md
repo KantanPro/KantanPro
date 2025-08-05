@@ -87,7 +87,7 @@
 - ✅ `js/ktp-invoice-items.js` - 請求項目JavaScript
 - ✅ `js/ktp-client-invoice.js` - 顧客請求書JavaScript
 - ✅ `includes/class-ktpwp-order-ui.php` - 受注書UIクラス
-- ✅ `includes/class-tab-order.php` - 受注書タブクラス
+- ✅ `includes/class-kantan-order.php` - 受注書タブクラス
 
 ### 5.2 修正ファイル確認
 - ✅ 全ての修正ファイルが存在

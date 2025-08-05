@@ -151,13 +151,13 @@ function ktpwp_upgrade() {
  */
 function ktpwp_autoload_classes() {
     $classes = array(
-        'Kntan_Client_Class'    => 'includes/class-tab-client.php',
-        'Kntan_Service_Class'   => 'includes/class-tab-service.php',
+        'Kantan_Client_Class'    => 'includes/class-kantan-client.php',
+        'Kantan_Service_Class'   => 'includes/class-kantan-service.php',
         'KTPWP_Supplier_Class'  => 'includes/class-tab-supplier.php',
         'KTPWP_Supplier_Security' => 'includes/class-supplier-security.php',
         'KTPWP_Supplier_Data'   => 'includes/class-supplier-data.php',
         'KTPWP_Report_Class'    => 'includes/class-tab-report.php',
-        'Kntan_Order_Class'     => 'includes/class-tab-order.php',
+        'Kantan_Order_Class'     => 'includes/class-kantan-order.php',
         'KTPWP_Plugin_Reference' => 'includes/class-plugin-reference.php',
         // 新しいクラス構造
         'KTPWP'                 => 'includes/class-ktpwp.php',
@@ -3507,46 +3507,51 @@ add_action( 'init', 'ktpwp_init_ajax_handlers' );
 function ktp_table_setup() {
     // 出力バッファリングを開始（予期しない出力を防ぐ）
     ob_start();
-    
-    if ( class_exists( 'Kntan_Client_Class' ) ) {
-        $client = new Kntan_Client_Class();
-        $client->Create_Table( 'client' );
-        // $client->Update_Table('client');
-    }        if ( class_exists( 'Kntan_Service_Class' ) ) {
-            $service = new Kntan_Service_Class();
-            $service->Create_Table( 'service' );
-	}        if ( class_exists( 'Kantan_Supplier_Class' ) ) {
-		$supplier = new Kantan_Supplier_Class();
-		$supplier->Create_Table( 'supplier' );
-	}
 
-    // 新しい受注書テーブル作成処理
-    if ( class_exists( 'KTPWP_Order' ) ) {
-        $order_manager = KTPWP_Order::get_instance();
-        $order_manager->create_order_table();
+    // dbDelta関数を確実に利用可能にする
+    if ( ! function_exists( 'dbDelta' ) ) {
+        require_once ABSPATH . 'wp-admin/includes/upgrade.php';
     }
 
-    // 受注明細・原価明細テーブル作成処理
-    if ( class_exists( 'KTPWP_Order_Items' ) ) {
-        $order_items = KTPWP_Order_Items::get_instance();
-        $order_items->create_invoice_items_table();
-        $order_items->create_cost_items_table();
-    }
+    $results = [];
+    $table_classes = [
+        'client'         => 'KTPWP_Client_DB',
+        'service'        => 'KTPWP_Service_DB',
+        'supplier'       => 'KTPWP_Supplier_Data',
+        'order'          => 'KTPWP_Order',
+        'order_items'    => 'KTPWP_Order_Items',
+        'staff_chat'     => 'KTPWP_Staff_Chat',
+    ];
 
-    // スタッフチャットテーブル作成処理（重要：確実に実行）
-    if ( class_exists( 'KTPWP_Staff_Chat' ) ) {
-        $staff_chat = KTPWP_Staff_Chat::get_instance();
-        $result = $staff_chat->create_table();
-        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP: Staff chat table creation result: ' . ( $result ? 'success' : 'failed' ) );
+    foreach ( $table_classes as $slug => $class_name ) {
+        if ( class_exists( $class_name ) ) {
+            $instance = null;
+            // シングルトンと通常のインスタンス化に対応
+            if ( method_exists( $class_name, 'get_instance' ) ) {
+                $instance = $class_name::get_instance();
+            } else {
+                $instance = new $class_name();
+            }
+
+            if ( method_exists( $instance, 'get_schema' ) ) {
+                $schema = $instance->get_schema();
+                if ( ! empty( $schema ) ) {
+                    $results[ $class_name ] = dbDelta( $schema );
+                }
+            }
         }
-    } else {
-        error_log( 'KTPWP: KTPWP_Staff_Chat class not found during table setup' );
     }
-    
+
+    // dbDeltaの実行結果をログに出力
+    if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+        if ( ! empty( $results ) ) {
+            error_log( "KTPWP: dbDelta execution results: " . print_r( $results, true ) );
+        }
+    }
+
     // 出力バッファをクリア（予期しない出力を除去）
     $output = ob_get_clean();
-    
+
     // デバッグ時のみ、予期しない出力があればログに記録
     if ( defined( 'WP_DEBUG' ) && WP_DEBUG && ! empty( $output ) ) {
         error_log( 'KTPWP: ktp_table_setup中に予期しない出力を検出: ' . substr( $output, 0, 1000 ) );
@@ -3844,12 +3849,12 @@ function KTPWP_Index() {
                     $list_content = $list->List_Tab_View( $tab_name );
                     break;
                 case 'order':
-                    $order = new Kntan_Order_Class();
+                    $order = new Kantan_Order_Class();
                     $order_content = $order->Order_Tab_View( $tab_name );
                     $order_content = $order_content ?? '';
                     break;
                 case 'client':
-                    $client = new Kntan_Client_Class();
+                    $client = new Kantan_Client_Class();
                     if ( current_user_can( 'edit_posts' ) ) {
                         $client->Create_Table( $tab_name );
                         // POSTリクエストがある場合のみUpdate_Tableを呼び出す
@@ -3860,7 +3865,7 @@ function KTPWP_Index() {
                     $client_content = $client->View_Table( $tab_name );
                     break;
                 case 'service':
-                    $service = new Kntan_Service_Class();
+                    $service = new Kantan_Service_Class();
                     if ( current_user_can( 'edit_posts' ) ) {
                         $service->Create_Table( $tab_name );
                         $service->Update_Table( $tab_name );
@@ -4025,7 +4030,7 @@ if ( ! class_exists( 'view_tabs_Class' ) ) {
 if ( ! class_exists( 'Kantan_Login_Error' ) ) {
     include_once MY_PLUGIN_PATH . 'includes/class-login-error.php';
 }
-if ( ! class_exists( 'Kntan_Report_Class' ) ) {
+if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
     include_once MY_PLUGIN_PATH . 'includes/class-tab-report.php';
 }
 
@@ -4784,6 +4789,19 @@ function ktpwp_distribution_admin_notices() {
         }
     }
     
+    // invoice_itemsカラム修正の緊急マイグレーション実行
+    if ( isset( $_GET['ktpwp_invoice_items_fix'] ) && $_GET['ktpwp_invoice_items_fix'] === '1' ) {
+        if ( wp_verify_nonce( $_GET['_wpnonce'] ?? '', 'ktpwp_invoice_items_fix' ) ) {
+            ktpwp_execute_invoice_items_fix();
+        } else {
+            // nonceが無い場合は確認画面を表示
+            echo '<div class="notice notice-warning">';
+            echo '<p><strong>KantanPro:</strong> invoice_itemsカラム修正を実行しますか？</p>';
+            echo '<p><a href="' . esc_url( wp_nonce_url( add_query_arg( 'ktpwp_invoice_items_fix', '1' ), 'ktpwp_invoice_items_fix' ) ) . '" class="button button-primary">実行する</a></p>';
+            echo '</div>';
+        }
+    }
+    
     // マイグレーション進行中の通知
     if ( get_option( 'ktpwp_migration_in_progress', false ) ) {
         echo '<div class="notice notice-info is-dismissible">';
@@ -4801,6 +4819,28 @@ function ktpwp_distribution_admin_notices() {
         echo '<p><a href="' . esc_url( wp_nonce_url( add_query_arg( 'ktpwp_manual_migration', '1' ), 'ktpwp_manual_migration' ) ) . '" class="button button-primary">今すぐ更新</a></p>';
         echo '</div>';
     }
+    
+    // invoice_itemsカラム修正成功通知
+    if ( $success_message = get_transient( 'ktpwp_invoice_items_fix_success' ) ) {
+        echo '<div class="notice notice-success is-dismissible">';
+        echo '<p><strong>KantanPro:</strong> ' . esc_html( $success_message ) . '</p>';
+        echo '</div>';
+        delete_transient( 'ktpwp_invoice_items_fix_success' );
+    }
+    
+    // invoice_itemsカラム修正エラー通知
+    if ( $error_message = get_transient( 'ktpwp_invoice_items_fix_error' ) ) {
+        echo '<div class="notice notice-error is-dismissible">';
+        echo '<p><strong>KantanPro:</strong> ' . esc_html( $error_message ) . '</p>';
+        echo '</div>';
+        delete_transient( 'ktpwp_invoice_items_fix_error' );
+    }
+    
+    // 緊急修正ボタンの表示（invoice_itemsカラムエラー対策）
+    echo '<div class="notice notice-info is-dismissible">';
+    echo '<p><strong>KantanPro:</strong> データベースエラーが発生している場合は、以下のボタンで修正してください。</p>';
+    echo '<p><a href="' . esc_url( wp_nonce_url( add_query_arg( 'ktpwp_invoice_items_fix', '1' ), 'ktpwp_invoice_items_fix' ) ) . '" class="button button-primary">invoice_itemsカラム修正を実行</a></p>';
+    echo '</div>';
 }
 
 /**
@@ -4822,6 +4862,39 @@ function ktpwp_execute_manual_migration() {
         
     } catch ( Exception $e ) {
         set_transient( 'ktpwp_manual_migration_error', 'マイグレーション中にエラーが発生しました: ' . $e->getMessage(), 300 );
+    }
+    
+    // リダイレクトして重複実行を防ぐ
+    wp_redirect( admin_url( 'admin.php?page=ktp-settings' ) );
+    exit;
+}
+
+/**
+ * invoice_itemsカラム修正の緊急マイグレーション実行
+ */
+function ktpwp_execute_invoice_items_fix() {
+    if ( ! current_user_can( 'manage_options' ) ) {
+        return;
+    }
+    
+    try {
+        // 特定のマイグレーションファイルを実行
+        $migration_file = __DIR__ . '/includes/migrations/20250108_fix_invoice_items_column.php';
+        
+        if ( file_exists( $migration_file ) ) {
+            require_once $migration_file;
+            
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP: invoice_itemsカラム修正マイグレーションを実行しました' );
+            }
+            
+            set_transient( 'ktpwp_invoice_items_fix_success', 'invoice_itemsカラムの修正が正常に完了しました。', 60 );
+        } else {
+            throw new Exception( 'マイグレーションファイルが見つかりません: ' . $migration_file );
+        }
+        
+    } catch ( Exception $e ) {
+        set_transient( 'ktpwp_invoice_items_fix_error', 'invoice_itemsカラム修正中にエラーが発生しました: ' . $e->getMessage(), 300 );
     }
     
     // リダイレクトして重複実行を防ぐ

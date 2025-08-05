@@ -57,106 +57,47 @@ if ( ! class_exists( 'KTPWP_Staff_Chat' ) ) {
 		}
 
 		/**
+		 * Get the staff chat table schema.
+		 *
+		 * @return string The SQL for creating the staff chat table.
+		 */
+		public function get_schema() {
+			global $wpdb;
+			$table_name = $wpdb->prefix . 'ktp_order_staff_chat';
+			$charset_collate = $wpdb->get_charset_collate();
+
+			$sql = "CREATE TABLE {$table_name} (
+				id MEDIUMINT(9) NOT NULL AUTO_INCREMENT,
+				order_id MEDIUMINT(9) NOT NULL,
+				user_id BIGINT(20) UNSIGNED NOT NULL,
+				user_display_name VARCHAR(255) NOT NULL DEFAULT '',
+				message TEXT NOT NULL,
+				is_initial TINYINT(1) NOT NULL DEFAULT 0,
+				created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+				PRIMARY KEY  (id),
+				KEY order_id (order_id),
+				KEY user_id (user_id),
+				KEY created_at (created_at)
+			) {$charset_collate};";
+
+			return $sql;
+		}
+
+		/**
 		 * Create staff chat table
 		 *
 		 * @since 1.0.0
 		 * @return bool True on success, false on failure
 		 */
 		public function create_table() {
-			global $wpdb;
-			$my_table_version = '1.1';
-			$table_name = $wpdb->prefix . 'ktp_order_staff_chat';
-			$charset_collate = $wpdb->get_charset_collate();
-
-			$current_version = get_option( 'ktp_staff_chat_table_version', '0' );
-
-			$columns_def = array(
-				'id MEDIUMINT(9) NOT NULL AUTO_INCREMENT',
-				'order_id MEDIUMINT(9) NOT NULL',
-				'user_id BIGINT(20) UNSIGNED NOT NULL',
-				'user_display_name VARCHAR(255) NOT NULL DEFAULT ""',
-				'message TEXT NOT NULL',
-				'is_initial TINYINT(1) NOT NULL DEFAULT 0',
-				'created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP',
-				'PRIMARY KEY (id)',
-				'KEY order_id (order_id)',
-				'KEY user_id (user_id)',
-				'KEY created_at (created_at)',
-			);
-
-			// テーブルの存在確認
-			$table_exists = $wpdb->get_var( "SHOW TABLES LIKE '$table_name'" );
-
-			if ( ! $table_exists ) {
-				// テーブルが存在しない場合は新規作成
-				$sql = "CREATE TABLE `{$table_name}` (" . implode( ', ', $columns_def ) . ") {$charset_collate};";
-
+			if ( ! function_exists( 'dbDelta' ) ) {
 				require_once ABSPATH . 'wp-admin/includes/upgrade.php';
-
-				if ( function_exists( 'dbDelta' ) ) {
-					$result = dbDelta( $sql );
-
-					if ( ! empty( $result ) ) {
-						add_option( 'ktp_staff_chat_table_version', $my_table_version );
-						if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-							error_log( "KTPWP: Created staff chat table with version {$my_table_version}" );
-						}
-						return true;
-					}
-
-					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-						error_log( 'KTPWP: Failed to create staff chat table' );
-					}
-					return false;
-				}
-
-				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					error_log( 'KTPWP: dbDelta function not available' );
-				}
-				return false;
-			} else {
-				// テーブルが存在する場合は構造を確認・修正
-				$existing_columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$table_name}`", 0 );
-				$def_column_names = array();
-
-				foreach ( $columns_def as $def ) {
-					if ( preg_match( '/^([a-zA-Z0-9_]+)/', $def, $m ) ) {
-						$def_column_names[] = $m[1];
-					}
-				}
-
-				$missing_columns = array_diff( $def_column_names, $existing_columns );
-
-				foreach ( $missing_columns as $column ) {
-					foreach ( $columns_def as $def ) {
-						if ( strpos( $def, $column . ' ' ) === 0 || strpos( $def, $column . '(' ) === 0 ) {
-							// Skip adding PRIMARY KEY and INDEX through ALTER TABLE to avoid syntax errors
-							if ( strpos( $def, 'PRIMARY KEY' ) !== false || strpos( $def, 'KEY ' ) !== false ) {
-								continue;
-							}
-
-							$result = $wpdb->query( "ALTER TABLE `{$table_name}` ADD COLUMN {$def}" );
-							if ( $result === false ) {
-								if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-									error_log( 'KTPWP: Failed to add column: ' . $def . ' - ' . $wpdb->last_error );
-								}
-							} elseif ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-									error_log( 'KTPWP: Successfully added column: ' . $column );
-							}
-							break;
-						}
-					}
-				}
-
-				update_option( 'ktp_staff_chat_table_version', $my_table_version );
-
-				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					error_log( "KTPWP: Updated staff chat table to version {$my_table_version}" );
-				}
 			}
-
+			$schema = $this->get_schema();
+			dbDelta( $schema );
 			return true;
 		}
+
 
 		/**
 		 * Create initial staff chat entry when order is created

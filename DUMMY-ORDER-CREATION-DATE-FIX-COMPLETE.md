@@ -142,7 +142,7 @@ docker exec -it ktpwp_copy_wordpress php /var/www/html/wp-content/plugins/Kantan
 ## 技術的詳細
 
 ### 作成日時の表示ロジック
-`includes/class-tab-order.php`の1742行目付近で、以下のロジックにより作成日時が表示されます：
+`includes/class-kantan-order.php`の1742行目付近で、以下のロジックにより作成日時が表示されます：
 
 ```php
 // 作成日時の表示

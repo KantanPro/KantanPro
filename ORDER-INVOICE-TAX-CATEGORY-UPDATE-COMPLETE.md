@@ -8,7 +8,7 @@
 ### 1. 受注書印刷機能の修正
 
 #### 1.1 顧客税区分取得機能の追加
-**ファイル**: `includes/class-tab-order.php`
+**ファイル**: `includes/class-kantan-order.php`
 - 受注書IDから顧客の税区分を取得する関数 `get_client_tax_category()` を追加
 - デフォルト値は「内税」に設定
 
@@ -47,7 +47,7 @@ private function get_client_tax_category( $order_id ) {
 ```
 
 #### 1.2 印刷プレビュー機能の修正
-**ファイル**: `includes/class-tab-order.php`
+**ファイル**: `includes/class-kantan-order.php`
 - `Generate_Invoice_Items_For_Preview()` 関数で顧客の税区分を取得
 - 税区分に応じた消費税計算ロジックの実装
 - 税区分に応じた表示テキストの変更
