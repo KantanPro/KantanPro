@@ -12,7 +12,7 @@
  * - シンプル更新システムを実装。
  * - 寄付機能（Stripe決済・進捗管理・自動メール送信）を追加。
  * - バージョンアップ履歴・トラブルシューティングも掲載。
- * - 最新バージョン: 1.0.20 - 2025年1月31日更新
+ * - 最新バージョン: 1.0.21 - 2025年1月31日更新
 * - 更新チェック問題修正
 * - リポジトリ名を修正（KantanPro/KantanPro-a- → KantanPro/KantanPro）
 * - 協力会社のエラーを修正
@@ -662,6 +662,19 @@ if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
 			<div class="ktpwp-reference-section">
 				<h3>📋 バージョン履歴</h3>
 				
+				<div class="ktpwp-changelog-item">
+					<h4>1.0.21 - 2025年1月31日</h4>
+					<ul>
+						<li><strong>ダミーデータツールの改善</strong>
+							<ul>
+								<li>テストデータ作成機能の最適化</li>
+								<li>データ生成処理の安定化</li>
+								<li>ユーザビリティの向上</li>
+							</ul>
+						</li>
+					</ul>
+				</div>
+
 				<div class="ktpwp-changelog-item">
 					<h4>1.0.17 - 2025年8月5日</h4>
 					<ul>
