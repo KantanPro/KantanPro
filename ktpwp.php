@@ -5385,6 +5385,10 @@ function ktpwp_dummy_data_page() {
                 <li>サービス: 6件（一般：税率10%・食品：税率8%・不動産：非課税）各×2</li>
                 <li>請求項目・コスト項目: 受注書に自動追加</li>
             </ul>
+            <p><strong>対象外データ:</strong></p>
+            <ul>
+                <li>スタッフチャット: 既存データは削除されますが、新規作成時は初期メッセージを作成しません</li>
+            </ul>
         </div>
         
         <div class="ktp-dummy-data-card">
