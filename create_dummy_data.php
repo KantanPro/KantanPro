@@ -1,7 +1,7 @@
 <?php
 /**
  * 強化版ダミーデータ作成スクリプト
- * バージョン: 2.5.2
+ * バージョン: 2.5.3
  * 
  * 以下のデータを作成します：
  * - 顧客×6件（カテゴリー別）
@@ -10,6 +10,13 @@
  * - 受注書×ランダム件数（顧客ごとに2-8件、進捗は重み付きランダム分布）
  * - 職能×18件（協力会社×6件 × 税率3パターン：税率10%・税率8%・非課税）
  * - 請求項目とコスト項目を各受注書に追加
+ * 
+ * 対象外データ：
+ * - スタッフチャット（ktp_order_staff_chat）は削除対象に含めるが、新規作成時は初期メッセージを作成しない
+ * 
+ * 修正内容（v2.5.3）:
+ * - スタッフチャットテーブル（ktp_order_staff_chat）を削除対象に含める
+ * - ダミーデータ作成時はスタッフチャットの初期メッセージを作成しない
  * 
  * 修正内容（v2.5.2）:
  * - コスト項目の税率がnullの場合のデフォルト値設定（10%）
@@ -70,6 +77,9 @@ if (file_exists($wp_config_path)) {
 if (!defined('ABSPATH')) {
     define('ABSPATH', dirname(__FILE__) . '/../../../');
 }
+
+// ダミーデータ作成フラグを設定（スタッフチャット初期メッセージ作成を防ぐため）
+define('KTPWP_DUMMY_DATA_CREATION', true);
 
 global $wpdb;
 
@@ -924,7 +934,8 @@ function clear_dummy_data() {
         'ktp_supplier_skills',
         'ktp_service',
         'ktp_supplier',
-        'ktp_client'
+        'ktp_client',
+        'ktp_order_staff_chat'  // スタッフチャットも削除対象に含める
     );
     
     foreach ($tables_to_clear as $table) {

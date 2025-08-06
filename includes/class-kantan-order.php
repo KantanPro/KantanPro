@@ -1332,20 +1332,27 @@ if ( ! class_exists( 'Kantan_Order_Class' ) ) {
 							error_log( 'KTPWP: Initial cost item creation result: ' . ( $cost_result ? 'success' : 'failed' ) . ' for order_id: ' . $new_order_id );
 						}
 
-						// 初期スタッフチャットエントリを作成（重要：確実に実行）
-						$chat_result = $this->Create_Initial_Staff_Chat( $new_order_id, get_current_user_id() );
-						if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-							error_log( 'KTPWP: Initial staff chat creation result: ' . ( $chat_result ? 'success' : 'failed' ) . ' for order_id: ' . $new_order_id );
-						}
-
-						// スタッフチャットの作成に失敗した場合は再試行
-						if ( ! $chat_result ) {
-							error_log( 'KTPWP: Retrying staff chat creation for order_id: ' . $new_order_id );
-							// 少し待ってから再試行
-							sleep( 1 );
+						// ダミーデータ作成時はスタッフチャットの初期メッセージを作成しない
+						if ( ! defined( 'KTPWP_DUMMY_DATA_CREATION' ) || ! KTPWP_DUMMY_DATA_CREATION ) {
+							// 初期スタッフチャットエントリを作成（重要：確実に実行）
 							$chat_result = $this->Create_Initial_Staff_Chat( $new_order_id, get_current_user_id() );
 							if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-								error_log( 'KTPWP: Staff chat creation retry result: ' . ( $chat_result ? 'success' : 'failed' ) . ' for order_id: ' . $new_order_id );
+								error_log( 'KTPWP: Initial staff chat creation result: ' . ( $chat_result ? 'success' : 'failed' ) . ' for order_id: ' . $new_order_id );
+							}
+
+							// スタッフチャットの作成に失敗した場合は再試行
+							if ( ! $chat_result ) {
+								error_log( 'KTPWP: Retrying staff chat creation for order_id: ' . $new_order_id );
+								// 少し待ってから再試行
+								sleep( 1 );
+								$chat_result = $this->Create_Initial_Staff_Chat( $new_order_id, get_current_user_id() );
+								if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+									error_log( 'KTPWP: Staff chat creation retry result: ' . ( $chat_result ? 'success' : 'failed' ) . ' for order_id: ' . $new_order_id );
+								}
+							}
+						} else {
+							if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+								error_log( 'KTPWP: Skipping staff chat creation for dummy data order_id: ' . $new_order_id );
 							}
 						}
 
