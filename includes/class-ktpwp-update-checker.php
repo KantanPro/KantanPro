@@ -1458,6 +1458,11 @@ class KTPWP_Update_Checker {
         if ( ! $update_data ) {
             $update_data = $this->check_github_updates();
         }
+        
+        // プラグインの更新情報キャッシュをクリアして、最新情報を取得
+        if ( $update_data && is_array( $update_data ) ) {
+            delete_site_transient( 'update_plugins' );
+        }
 
         if ( $update_data && is_array( $update_data ) && isset( $update_data['version'] ) ) {
             $latest_version = $this->clean_version( $update_data['version'] );
@@ -1467,13 +1472,59 @@ class KTPWP_Update_Checker {
                 $plugin_info = new stdClass();
                 $plugin_info->slug = $this->plugin_slug;
                 $plugin_info->plugin = $this->plugin_basename;
-                $plugin_info->new_version = $update_data['version'];
+                // 表示用のバージョン文字列を優先的に使用
+                $plugin_info->new_version = isset( $update_data['new_version'] ) ? $update_data['new_version'] : $update_data['version'];
                 $plugin_info->url = 'https://github.com/' . $this->github_repo;
                 $plugin_info->package = $update_data['download_url'];
                 $plugin_info->tested = get_bloginfo( 'version' ); // 現在のWPバージョンをセット
+                $plugin_info->requires = '5.0'; // 必要なWordPressバージョン
+                $plugin_info->requires_php = '7.4'; // 必要なPHPバージョン
+                $plugin_info->last_updated = isset( $update_data['published_at'] ) ? $update_data['published_at'] : '';
                 $plugin_info->icons = array(
                     'default' => KANTANPRO_PLUGIN_URL . 'images/default/icon.png',
                 );
+                
+                // バナー画像を設定
+                $plugin_info->banners = array(
+                    'high' => KANTANPRO_PLUGIN_URL . 'images/default/header_bg_image.png',
+                    'low' => KANTANPRO_PLUGIN_URL . 'images/default/header_bg_image.png',
+                );
+                
+                // スクリーンショットを設定
+                $plugin_info->screenshots = array(
+                    array(
+                        'src' => KANTANPRO_PLUGIN_URL . 'images/default/dummy_graph.png',
+                        'caption' => 'KantanPro ダッシュボード'
+                    )
+                );
+
+                // プラグイン詳細情報のセクションを設定
+                $plugin_info->sections = array();
+                
+                // 現在のプラグイン情報を取得
+                $current_plugin_data = get_plugin_data( KANTANPRO_PLUGIN_FILE );
+                
+                // 説明セクション
+                $plugin_info->sections['description'] = isset( $current_plugin_data['Description'] ) ? $current_plugin_data['Description'] : 'フリーランス・スモールビジネス向けの仕事効率化システム。ショートコード[ktpwp_all_tab]を固定ページに設置してください。';
+                
+                // 変更履歴セクション
+                if ( isset( $update_data['changelog'] ) && ! empty( $update_data['changelog'] ) ) {
+                    $plugin_info->sections['changelog'] = $update_data['changelog'];
+                } else {
+                    $plugin_info->sections['changelog'] = '詳細な変更履歴については、GitHubリポジトリをご確認ください。';
+                }
+                
+                // インストールセクション
+                $plugin_info->sections['installation'] = 'プラグインをアップロードして有効化してください。ショートコード[ktpwp_all_tab]を固定ページに設置することで、システムが利用可能になります。';
+                
+                // よくある質問セクション
+                $plugin_info->sections['faq'] = 'よくある質問については、プラグインのドキュメントをご確認ください。';
+                
+                // プラグインの基本情報を設定
+                $plugin_info->name = isset( $current_plugin_data['Name'] ) ? $current_plugin_data['Name'] : 'KantanPro';
+                $plugin_info->author = isset( $current_plugin_data['Author'] ) ? $current_plugin_data['Author'] : 'KantanPro';
+                $plugin_info->author_homepage = isset( $current_plugin_data['AuthorURI'] ) ? $current_plugin_data['AuthorURI'] : 'https://www.kantanpro.com/kantanpro-page';
+                $plugin_info->homepage = isset( $current_plugin_data['PluginURI'] ) ? $current_plugin_data['PluginURI'] : 'https://www.kantanpro.com/';
 
                 $transient->response[ $this->plugin_basename ] = $plugin_info;
             }
