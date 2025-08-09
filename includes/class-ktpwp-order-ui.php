@@ -745,6 +745,66 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 		}
 
 		/**
+		 * Get profit data and HTML for a given order_id using existing server-side logic
+		 *
+		 * Returns both raw values and the rendered HTML snippet used in the UI
+		 * so that frontend can update `.profit-display` without page reload.
+		 *
+		 * @since 1.0.0
+		 * @param int $order_id Order ID
+		 * @return array{
+		 *   profit: float,
+		 *   qualified_invoice_cost: float,
+		 *   non_qualified_invoice_cost: float,
+		 *   color: string,
+		 *   html: string
+		 * }
+		 */
+		public function get_profit_data_for_order( $order_id ) {
+			if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
+				return array(
+					'profit' => 0,
+					'qualified_invoice_cost' => 0,
+					'non_qualified_invoice_cost' => 0,
+					'color' => '#28a745',
+					'html' => '<div class="profit-display" style="text-align:right;margin-top:8px;font-weight:bold;color:#28a745;">' . esc_html__( '利益', 'ktpwp' ) . ' : 0' . esc_html__( '円', 'ktpwp' ) . '</div>'
+				);
+			}
+
+			$order_items = KTPWP_Order_Items::get_instance();
+			$cost_items  = $order_items->get_cost_items( $order_id );
+			$invoice_items = $order_items->get_invoice_items( $order_id );
+
+			$invoice_total = 0;
+			foreach ( $invoice_items as $invoice_item ) {
+				$invoice_amount = isset( $invoice_item['amount'] ) ? floatval( $invoice_item['amount'] ) : 0;
+				$invoice_total += $invoice_amount;
+			}
+
+			// 現行仕様に合わせる（内税扱いの税込合計）
+			$invoice_total_with_tax_ceiled = ceil( $invoice_total );
+
+			$profit_data = $this->calculate_profit_with_qualified_invoice( $order_id, $cost_items, $invoice_total_with_tax_ceiled );
+			$profit = isset( $profit_data['profit'] ) ? floatval( $profit_data['profit'] ) : 0;
+			$qualified_invoice_cost = isset( $profit_data['qualified_invoice_cost'] ) ? floatval( $profit_data['qualified_invoice_cost'] ) : 0;
+			$non_qualified_invoice_cost = isset( $profit_data['non_qualified_invoice_cost'] ) ? floatval( $profit_data['non_qualified_invoice_cost'] ) : 0;
+
+			$profit_color = $profit >= 0 ? '#28a745' : '#dc3545';
+			$html  = '<div class="profit-display" style="text-align:right;margin-top:8px;font-weight:bold;color:' . $profit_color . ';">';
+			$html .= esc_html__( '利益', 'ktpwp' ) . ' : ' . esc_html( number_format( $profit ) ) . esc_html__( '円', 'ktpwp' );
+			$html .= ' (適格請求書コスト: ' . number_format( ceil( $qualified_invoice_cost ) ) . '円, 非適格請求書コスト: ' . number_format( ceil( $non_qualified_invoice_cost ) ) . '円)';
+			$html .= '</div>';
+
+			return array(
+				'profit' => $profit,
+				'qualified_invoice_cost' => $qualified_invoice_cost,
+				'non_qualified_invoice_cost' => $non_qualified_invoice_cost,
+				'color' => $profit_color,
+				'html' => $html,
+			);
+		}
+
+		/**
 		 * Generate email content for different order statuses
 		 *
 		 * @since 1.0.0

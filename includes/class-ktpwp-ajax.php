@@ -81,6 +81,45 @@ class KTPWP_Ajax {
 	}
 
 	/**
+	 * 受注書IDから利益表示HTMLと数値を構築
+	 *
+	 * @param int $order_id
+	 * @return array
+	 */
+	private function build_profit_payload_for_order( $order_id ) {
+		if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
+			require_once __DIR__ . '/class-ktpwp-order-ui.php';
+		}
+		$order_ui = KTPWP_Order_UI::get_instance();
+		$profit_data = $order_ui->get_profit_data_for_order( $order_id );
+		return array(
+			'html' => isset( $profit_data['html'] ) ? $profit_data['html'] : '',
+			'profit' => isset( $profit_data['profit'] ) ? $profit_data['profit'] : 0,
+			'qualified_invoice_cost' => isset( $profit_data['qualified_invoice_cost'] ) ? $profit_data['qualified_invoice_cost'] : 0,
+			'non_qualified_invoice_cost' => isset( $profit_data['non_qualified_invoice_cost'] ) ? $profit_data['non_qualified_invoice_cost'] : 0,
+			'color' => isset( $profit_data['color'] ) ? $profit_data['color'] : '#28a745',
+		);
+	}
+
+	/**
+	 * Ajax: 最新の利益表示を取得
+	 */
+	public function ajax_get_profit_display() {
+		// 権限チェック
+		if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
+			wp_send_json_error( __( 'この操作を行う権限がありません。', 'ktpwp' ) );
+		}
+
+		$order_id = isset( $_POST['order_id'] ) ? intval( $_POST['order_id'] ) : 0;
+		if ( $order_id <= 0 ) {
+			wp_send_json_error( __( '無効なIDです', 'ktpwp' ) );
+		}
+
+		$payload = $this->build_profit_payload_for_order( $order_id );
+		wp_send_json_success( $payload );
+	}
+
+	/**
 	 * Ajaxハンドラー登録
 	 */
 	public function register_ajax_handlers() {
@@ -207,6 +246,11 @@ class KTPWP_Ajax {
 		add_action( 'wp_ajax_ktp_get_supplier_qualified_invoice_number', array( $this, 'ajax_get_supplier_qualified_invoice_number' ) );
 		add_action( 'wp_ajax_nopriv_ktp_get_supplier_qualified_invoice_number', array( $this, 'ajax_require_login' ) );
 		$this->registered_handlers[] = 'ktp_get_supplier_qualified_invoice_number';
+
+		// 利益表示の最新化（請求項目変更に連動）
+		add_action( 'wp_ajax_ktp_get_profit_display', array( $this, 'ajax_get_profit_display' ) );
+		add_action( 'wp_ajax_nopriv_ktp_get_profit_display', array( $this, 'ajax_require_login' ) );
+		$this->registered_handlers[] = 'ktp_get_profit_display';
 
 		// 進捗更新Ajax
 		add_action( 'wp_ajax_ktp_update_progress', array( $this, 'ajax_update_progress' ) );
@@ -799,10 +843,13 @@ class KTPWP_Ajax {
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 					error_log( "[AJAX_AUTO_SAVE] Successfully updated {$item_type} item {$item_id}, field: {$field_name}" );
 				}
+				// 保存後の最新利益HTMLを返す（フロントで置換）
+				$profit_payload = $this->build_profit_payload_for_order( $order_id );
 				wp_send_json_success(
 					array(
 						'message' => __( '正常に保存されました', 'ktpwp' ),
 						'value_changed' => $result['value_changed'],
+						'profit' => $profit_payload,
 					)
 				);
 			} else {
