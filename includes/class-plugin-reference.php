@@ -12,7 +12,7 @@
  * - シンプル更新システムを実装。
  * - 寄付機能（Stripe決済・進捗管理・自動メール送信）を追加。
  * - バージョンアップ履歴・トラブルシューティングも掲載。
- * - 最新バージョン: 1.0.21 - 2025年1月31日更新
+ * - 最新バージョン: 1.0.22 - 2025年8月9日更新
 * - 更新チェック問題修正
 * - リポジトリ名を修正（KantanPro/KantanPro-a- → KantanPro/KantanPro）
 * - 協力会社のエラーを修正
@@ -468,6 +468,7 @@ if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
 				<li><strong>デザイン</strong>：UI・UX設定・カスタムCSS</li>
 				<li><strong>スタッフ管理</strong>：スタッフ情報・権限管理</li>
 				<li><strong>ライセンス設定</strong>：ライセンス情報・ライセンス検証・ライセンス管理</li>
+				<li><strong>ダミーデータ作成</strong>：顧客・サービス・協力会社・受注などのテストデータを管理画面から一括生成</li>
 				<li><strong>管理メニュー最適化</strong>：メニュー構造の簡素化・設定項目の統合</li>
 				<li><strong>利用規約管理</strong>：利用規約の編集・管理・表示対象の最適化</li>
 			</ul>
@@ -659,11 +660,18 @@ if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
 		 */
 		private function get_changelog_content() {
 			return '
-			<div class="ktpwp-reference-section">
-				<h3>📋 バージョン履歴</h3>
-				
-				<div class="ktpwp-changelog-item">
-					<h4>1.0.21 - 2025年1月31日</h4>
+            <div class="ktpwp-reference-section">
+                <h3>📋 バージョン履歴</h3>
+                
+                <div class="ktpwp-changelog-item">
+                    <h4>1.0.22 - 2025年8月9日</h4>
+                    <ul>
+                        <li><strong>ダミーデータツールの改善</strong></li>
+                    </ul>
+                </div>
+
+                <div class="ktpwp-changelog-item">
+                    <h4>1.0.21 - 2025年1月31日</h4>
 					<ul>
 						<li><strong>ダミーデータツールの改善</strong>
 							<ul>
@@ -1245,8 +1253,8 @@ if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
 				</li>
 			</ul>
 			
-			<h3>最終更新日</h3>
-			<p>2025年8月6日</p>
+            <h3>最終更新日</h3>
+            <p>2025年8月9日</p>
 			';
 		}
 
