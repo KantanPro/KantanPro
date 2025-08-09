@@ -89,8 +89,7 @@ if ( ! defined( 'MY_PLUGIN_URL' ) ) {
  */
 register_activation_hook( __FILE__, 'ktpwp_comprehensive_activation' );
 
-// ダミーデータ作成機能の初期化
-add_action( 'admin_menu', 'ktpwp_add_dummy_data_menu' );
+// ダミーデータ作成機能の管理メニュー登録は KTP_Settings 内のサブメニューとして追加
 
 
 // === WordPress標準更新システム ===

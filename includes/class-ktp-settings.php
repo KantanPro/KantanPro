@@ -625,6 +625,16 @@ class KTP_Settings {
             array( $this, 'create_license_page' ) // 表示を処理する関数
         );
 
+        // サブメニュー - ダミーデータ作成（ライセンス設定の直下）
+        add_submenu_page(
+            'ktp-settings', // 親メニューのスラッグ
+            __( 'ダミーデータ作成', 'ktpwp' ), // ページタイトル
+            __( 'ダミーデータ作成', 'ktpwp' ), // メニュータイトル
+            'manage_options', // 権限
+            'ktpwp-dummy-data', // メニューのスラッグ（既存ページのスラッグを踏襲）
+            'ktpwp_dummy_data_page' // 既存の表示関数を流用
+        );
+
         // サブメニュー - 開発者設定
         add_submenu_page(
             'ktp-settings', // 親メニューのスラッグ
