@@ -428,13 +428,31 @@ if ( ! class_exists( 'KTPWP_Staff_Chat' ) ) {
 
 					// Get WordPress avatar
 					$user_id = intval( $message['user_id'] );
-					$avatar = get_avatar( $user_id, 24, '', $user_display_name, array( 'class' => 'staff-chat-wp-avatar' ) );
+                    $avatar = get_avatar( $user_id, 24, '', $user_display_name, array( 'class' => 'staff-chat-wp-avatar' ) );
 
-					$html .= '<div class="staff-chat-message scrollable">';
+                    $current_user_id = get_current_user_id();
+                    $is_delete_log = false;
+                    if ( isset( $message['message'] ) && is_string( $message['message'] ) ) {
+                        // 削除ログ判定: 「〜がメッセージを削除しました」を含む
+                        $is_delete_log = ( strpos( $message['message'], 'メッセージを削除しました' ) !== false );
+                    }
+                    $can_delete = !$is_delete_log && ( ( $current_user_id && intval( $message['user_id'] ) === intval( $current_user_id ) ) || current_user_can( 'manage_options' ) );
+
+                    $wrapper_classes = 'staff-chat-message scrollable' . ( $is_delete_log ? ' deleted' : '' );
+                    $html .= '<div class="' . $wrapper_classes . '" data-message-id="' . intval( $message['id'] ) . '">';
 					$html .= '<div class="staff-chat-message-header">';
 					$html .= '<span class="staff-chat-avatar-wrapper">' . $avatar . '</span>';
 					$html .= '<span class="staff-chat-user-name">' . $user_display_name . '</span>';
 					$html .= '<span class="staff-chat-timestamp" data-timestamp="' . esc_attr( $created_at ) . '">' . esc_html( $formatted_time ) . '</span>';
+                    if ( $can_delete ) {
+						$icon_html = '';
+						if ( class_exists( 'KTPWP_SVG_Icons' ) ) {
+							$icon_html = KTPWP_SVG_Icons::get_icon( 'delete', array( 'class' => 'ktp-svg-icon', 'style' => 'width:16px;height:16px;' ) );
+						} else {
+							$icon_html = '<span class="dashicons dashicons-trash" aria-hidden="true"></span>';
+						}
+						$html .= '<button type="button" class="staff-chat-delete" title="' . esc_attr__( 'このメッセージを削除', 'ktpwp' ) . '" aria-label="' . esc_attr__( 'このメッセージを削除', 'ktpwp' ) . '" data-message-id="' . intval( $message['id'] ) . '" data-order-id="' . intval( $order_id ) . '">' . $icon_html . '</button>';
+					}
 					$html .= '</div>';
 					$html .= '<div class="staff-chat-message-content">' . nl2br( $message_content ) . '</div>';
 					$html .= '</div>';
@@ -552,6 +570,92 @@ if ( ! class_exists( 'KTPWP_Staff_Chat' ) ) {
 
 			return $script;
 		}
+
+		/**
+		 * Delete a staff chat message by its author (or admin)
+		 *
+		 * @since 1.0.0
+		 * @param int $message_id Message ID
+		 * @return bool True on success, false on failure
+		 */
+        public function delete_message_by_author( $message_id ) {
+            $message_id = absint( $message_id );
+            if ( $message_id <= 0 ) {
+                return false;
+            }
+
+            $current_user_id = get_current_user_id();
+            if ( ! $current_user_id ) {
+                return false;
+            }
+
+            global $wpdb;
+            $table_name = $wpdb->prefix . 'ktp_order_staff_chat';
+
+            // 対象メッセージ取得（order_id も取得）
+            $message = $wpdb->get_row(
+                $wpdb->prepare( "SELECT id, user_id, is_initial, order_id FROM `{$table_name}` WHERE id = %d", $message_id ),
+                ARRAY_A
+            );
+
+            if ( ! $message ) {
+                return false;
+            }
+
+            if ( intval( $message['is_initial'] ) === 1 ) {
+                return false;
+            }
+
+            $owner_user_id = intval( $message['user_id'] );
+            $has_permission = ( $owner_user_id === intval( $current_user_id ) ) || current_user_can( 'manage_options' );
+            if ( ! $has_permission ) {
+                return false;
+            }
+
+            // 削除と削除履歴追加をトランザクションで実行
+            $wpdb->query( 'START TRANSACTION' );
+            try {
+                $deleted = $wpdb->delete( $table_name, array( 'id' => $message_id ), array( '%d' ) );
+                if ( ! $deleted ) {
+                    throw new Exception( 'Failed to delete message' );
+                }
+
+                // 現在ユーザーの表示名
+                $user_info = get_userdata( $current_user_id );
+                if ( ! $user_info ) {
+                    throw new Exception( 'User not found' );
+                }
+                $display_name = $user_info->display_name ? $user_info->display_name : $user_info->user_login;
+
+                // 削除履歴のメッセージを追加
+                $log_text = sprintf( '%s がメッセージを削除しました', sanitize_text_field( $display_name ) );
+                $inserted = $wpdb->insert(
+                    $table_name,
+                    array(
+                        'order_id'          => intval( $message['order_id'] ),
+                        'user_id'           => $current_user_id,
+                        'user_display_name' => sanitize_text_field( $display_name ),
+                        'message'           => $log_text,
+                        'is_initial'        => 0,
+                        'created_at'        => current_time( 'mysql' ),
+                    ),
+                    array( '%d', '%d', '%s', '%s', '%d', '%s' )
+                );
+
+                if ( ! $inserted ) {
+                    throw new Exception( 'Failed to insert delete log' );
+                }
+
+                $wpdb->query( 'COMMIT' );
+                return true;
+            } catch ( Exception $e ) {
+                $wpdb->query( 'ROLLBACK' );
+                if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                    error_log( 'KTPWP StaffChat: delete_message_by_author failed: ' . $e->getMessage() );
+                }
+                return false;
+            }
+        }
 	} // End of KTPWP_Staff_Chat class
 
 } // class_exists check
