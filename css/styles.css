@@ -3137,6 +3137,22 @@ body.ktpwp-modal-open {
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
+/* 削除ログ行（グレーバック、その他のカラー装飾は抑制） */
+.staff-chat-message.scrollable.deleted {
+    background-color: #f2f2f2;
+    border-left-color: #e0e0e0;
+    box-shadow: none;
+}
+.staff-chat-message.scrollable.deleted .staff-chat-user-name,
+.staff-chat-message.scrollable.deleted .staff-chat-timestamp,
+.staff-chat-message.scrollable.deleted .staff-chat-message-content {
+    color: #333;
+}
+.staff-chat-message.scrollable.deleted .staff-chat-avatar-wrapper,
+.staff-chat-message.scrollable.deleted .staff-chat-delete {
+    display: none;
+}
+
 .staff-chat-header-line {
     display: flex;
     align-items: center;
@@ -3198,6 +3214,11 @@ body.ktpwp-modal-open {
 .staff-chat-timestamp {
     color: #999;
     font-size: 12px;
+}
+
+/* タイムスタンプと削除アイコンの間に余白 */
+.staff-chat-message-header .staff-chat-delete {
+    margin-left: 0.5em;
 }
 
 .staff-chat-content {

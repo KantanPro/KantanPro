@@ -708,6 +708,89 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
 
+        // スタッフチャットの削除ボタン（投稿者/管理者）
+        var messagesContainer = document.getElementById('staff-chat-messages');
+        if (messagesContainer) {
+            messagesContainer.addEventListener('click', function (e) {
+                var target = e.target;
+                var deleteBtn = target && target.closest('button.staff-chat-delete');
+                if (!deleteBtn || !messagesContainer.contains(deleteBtn)) return;
+
+                var messageId = deleteBtn.getAttribute('data-message-id');
+                if (!messageId) return;
+
+                if (!confirm('このメッセージを削除しますか？')) return;
+
+                var url = (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) ? ktpwp_ajax.ajax_url :
+                    (typeof ajaxurl !== 'undefined') ? ajaxurl :
+                        window.location.origin + '/wp-admin/admin-ajax.php';
+
+                var params = 'action=delete_staff_chat_message&message_id=' + encodeURIComponent(messageId);
+                if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.staff_chat) {
+                    params += '&_ajax_nonce=' + ktpwp_ajax.nonces.staff_chat;
+                }
+
+                var xhr = new XMLHttpRequest();
+                xhr.open('POST', url, true);
+                xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+                xhr.onreadystatechange = function () {
+                    if (xhr.readyState === 4) {
+                        if (xhr.status === 200) {
+                            try {
+                                var resp = JSON.parse(xhr.responseText);
+                                if (resp.success) {
+                                    // DOMから該当メッセージを除去
+                                    var wrapper = deleteBtn.closest('.staff-chat-message.scrollable');
+                                    var parent = wrapper && wrapper.parentNode;
+                                    if (wrapper && parent) {
+                                        // 位置を維持したまま、削除ログに置換
+                                        var placeholder = document.createElement('div');
+                                        parent.insertBefore(placeholder, wrapper);
+                                        parent.removeChild(wrapper);
+
+                                        var logDiv = document.createElement('div');
+                                        logDiv.className = 'staff-chat-message scrollable';
+                                        var deletedText = (resp.data && resp.data.deleted_text) ? resp.data.deleted_text : 'メッセージを削除しました';
+                                        var tsSpan = wrapper.querySelector('.staff-chat-timestamp');
+                                        var ts = tsSpan ? tsSpan.textContent : '';
+                                        logDiv.classList.add('deleted');
+                                        logDiv.innerHTML = '<div class="staff-chat-message-header">'
+                                            + '<span class="staff-chat-user-name">&nbsp;</span>'
+                                            + '<span class="staff-chat-timestamp">' + ts + '</span>'
+                                            + '</div>'
+                                            + '<div class="staff-chat-message-content">' + deletedText + '</div>';
+                                        parent.replaceChild(logDiv, placeholder);
+                                        // 件数表示の更新
+                                        try { if (typeof updateStaffChatButtonText === 'function') { updateStaffChatButtonText(); } } catch (_) {}
+                                        // 最新HTMLを取得して反映（正確な表示へ同期）
+                                        fetch(window.location.href, { credentials: 'same-origin' })
+                                            .then(function(res){ return res.text(); })
+                                            .then(function(html){
+                                                var tempDiv = document.createElement('div');
+                                                tempDiv.innerHTML = html;
+                                                var newMessages = tempDiv.querySelector('#staff-chat-messages');
+                                                var messagesContainer = document.getElementById('staff-chat-messages');
+                                                if (newMessages && messagesContainer) {
+                                                    messagesContainer.innerHTML = newMessages.innerHTML;
+                                                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                                                }
+                                            });
+                                    }
+                                } else {
+                                    alert(resp.data || '削除に失敗しました');
+                                }
+                            } catch (e) {
+                                alert('JSON解析エラー: ' + e.message);
+                            }
+                        } else {
+                            alert('サーバーエラーが発生しました');
+                        }
+                    }
+                };
+                xhr.send(params);
+            });
+        }
+
         if (window.ktpDebugMode) console.log('KTPWP: Staff chat toggle setup complete');
     }
 

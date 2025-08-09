@@ -374,6 +374,10 @@ class KTPWP_Ajax {
 				add_action( 'wp_ajax_send_staff_chat_message', array( $this, 'ajax_send_staff_chat_message' ) );
 				add_action( 'wp_ajax_nopriv_send_staff_chat_message', array( $this, 'ajax_send_staff_chat_message' ) ); // For testing nopriv
 				$this->registered_handlers[] = 'send_staff_chat_message';
+
+				// チャットメッセージ削除（投稿者/管理者）
+				add_action( 'wp_ajax_delete_staff_chat_message', array( $this, 'ajax_delete_staff_chat_message' ) );
+				$this->registered_handlers[] = 'delete_staff_chat_message';
 			}
 		}
 	}
@@ -2854,6 +2858,76 @@ class KTPWP_Ajax {
 					'data'    => __( 'メッセージの送信中にエラーが発生しました', 'ktpwp' ),
 				)
 			);
+		}
+	}
+
+	/**
+	 * Ajax: スタッフチャットメッセージ削除（投稿者/管理者）
+	 */
+	public function ajax_delete_staff_chat_message() {
+		while ( ob_get_level() ) {
+			ob_end_clean();
+		}
+		ob_start();
+		$this->disable_potentially_interfering_hooks();
+
+		try {
+			if ( ! is_user_logged_in() ) {
+				wp_send_json_error( __( 'ログインが必要です', 'ktpwp' ) );
+				return;
+			}
+
+			$nonce       = $_POST['_ajax_nonce'] ?? '';
+			$nonce_valid = wp_verify_nonce( $nonce, $this->nonce_names['staff_chat'] );
+			if ( ! $nonce_valid && ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
+				wp_send_json_error( __( '権限がありません（nonce不正）', 'ktpwp' ) );
+				return;
+			}
+
+			$message_id = $this->sanitize_ajax_input( 'message_id', 'int' );
+			if ( empty( $message_id ) ) {
+				wp_send_json_error( __( 'メッセージIDが必要です', 'ktpwp' ) );
+				return;
+			}
+
+			if ( ! class_exists( 'KTPWP_Staff_Chat' ) ) {
+				require_once KTPWP_PLUGIN_DIR . 'includes/class-ktpwp-staff-chat.php';
+			}
+			$staff_chat = KTPWP_Staff_Chat::get_instance();
+
+			$result = $staff_chat->delete_message_by_author( $message_id );
+			$output = ob_get_clean();
+			if ( ! empty( $output ) && defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( 'KTPWP Ajax delete_staff_chat_message: Unexpected output cleaned: ' . $output );
+			}
+
+            if ( $result ) {
+                $current_user    = wp_get_current_user();
+                $display_name    = $current_user && $current_user->display_name ? $current_user->display_name : ( $current_user ? $current_user->user_login : '' );
+                $deleted_message = sprintf( '%s がメッセージを削除しました', sanitize_text_field( $display_name ) );
+
+                $this->send_clean_json_response(
+                    array(
+                        'success' => true,
+                        'data'    => array(
+                            'message'      => __( '削除しました', 'ktpwp' ),
+                            'deleted_text' => $deleted_message,
+                            'message_id'   => (int) $message_id,
+                        ),
+                    )
+                );
+			} else {
+				$this->send_clean_json_response(
+					array(
+						'success' => false,
+						'data'    => __( '削除に失敗しました', 'ktpwp' ),
+					)
+				);
+			}
+		} catch ( Exception $e ) {
+			ob_end_clean();
+			$this->log_ajax_error( 'Exception during delete staff chat message', array( 'message' => $e->getMessage() ) );
+			$this->send_clean_json_response( array( 'success' => false, 'data' => __( '削除中にエラーが発生しました', 'ktpwp' ) ) );
 		}
 	}
 
