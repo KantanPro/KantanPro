@@ -1403,14 +1403,19 @@ if ( ! class_exists( 'Kantan_Client_Class' ) ) {
             </script>
             END;
 
-				// cookieに保存されたIDを取得
-				$cookie_name = 'ktp_' . $name . '_id';
-				if ( isset( $_GET['data_id'] ) ) {
-					$data_id = filter_input( INPUT_GET, 'data_id', FILTER_SANITIZE_NUMBER_INT );
-				} elseif ( isset( $_COOKIE[ $cookie_name ] ) ) {
-					$data_id = filter_input( INPUT_COOKIE, $cookie_name, FILTER_SANITIZE_NUMBER_INT );
-				} else {
-					$data_id = $last_id_row ? $last_id_row->id : null;
+				// cookieに保存されたIDを取得（未決定の場合のみ上書き）
+				if ( ! isset( $data_id ) || $data_id === '' || $data_id === null ) {
+					$cookie_name = 'ktp_' . $name . '_id';
+					if ( isset( $_GET['data_id'] ) ) {
+						$data_id = filter_input( INPUT_GET, 'data_id', FILTER_SANITIZE_NUMBER_INT );
+					} elseif ( isset( $_COOKIE[ $cookie_name ] ) ) {
+						// クッキーIDがDBに存在する場合のみ適用
+						$cookie_id = filter_input( INPUT_COOKIE, $cookie_name, FILTER_SANITIZE_NUMBER_INT );
+						$exists = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table_name} WHERE id = %d", $cookie_id ) );
+						$data_id = $exists ? $cookie_id : '';
+					} else {
+						$data_id = $last_id_row ? $last_id_row->id : null;
+					}
 				}
 
 				// ボタン群HTMLの準備
@@ -1430,7 +1435,7 @@ if ( ! class_exists( 'Kantan_Client_Class' ) ) {
 
 				// 追加モードボタン
 				$add_action = 'istmode';
-				$next_data_id = $data_id + 1;
+				$next_data_id = is_numeric( $data_id ) ? ( (int) $data_id + 1 ) : '';
 				$form_action_url = add_query_arg(array('tab_name' => $name), $base_page_url);
 				$button_group_html .= '<form method="post" action="' . esc_url( $form_action_url ) . '" style="margin: 0;">';
 				$button_group_html .= wp_nonce_field( 'ktp_client_action', 'ktp_client_nonce', true, false );
@@ -1462,7 +1467,7 @@ if ( ! class_exists( 'Kantan_Client_Class' ) ) {
 					error_log('KTPWP Client Tab: data_id type = ' . gettype($data_id));
 					error_log('KTPWP Client Tab: id_display condition = ' . (!empty($data_id) && $data_id !== '0' && $data_id !== 0 ? 'true' : 'false'));
 				}
-				$id_display = (empty($data_id) || $data_id === '0' || $data_id === 0) ? '' : '（ ID: ' . esc_html( $data_id ) . ' ）';
+				$id_display = ( ! empty( $post_row ) && ! empty( $data_id ) && $data_id !== '0' && $data_id !== 0 ) ? '（ ID: ' . esc_html( $data_id ) . ' ）' : '';
 				$data_title = '<div class="data_detail_box"><div class="data_detail_title" style="display: flex; align-items: center; justify-content: space-between;">
             <div>■ 顧客の詳細' . $id_display . '</div>' . $button_group_html . '</div>';
 
