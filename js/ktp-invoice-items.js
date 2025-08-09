@@ -606,6 +606,60 @@
         //     profitDisplay.addClass(profit >= 0 ? 'positive' : 'negative');
         // }
 
+        // 利益表示（サーバー側の最新HTMLに置換）
+        try {
+            const orderId = $('input[name="order_id"]').val() || $('#order_id').val();
+            if (orderId) {
+                // 請求テーブル側での入力は高頻度なのでデバウンス
+                if (!window.ktpInvoiceProfitRefreshTimer) {
+                    window.ktpInvoiceProfitRefreshTimer = null;
+                }
+                clearTimeout(window.ktpInvoiceProfitRefreshTimer);
+                window.ktpInvoiceProfitRefreshTimer = setTimeout(function() {
+                    let ajaxUrl = typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : '/wp-admin/admin-ajax.php';
+                    let nonce = '';
+                    if (typeof ktp_ajax_nonce !== 'undefined') {
+                        nonce = ktp_ajax_nonce;
+                    } else if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.nonce) {
+                        nonce = ktp_ajax_object.nonce;
+                    } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.auto_save) {
+                        nonce = ktpwp_ajax.nonces.auto_save;
+                    } else if (typeof window.ktpwp_ajax !== 'undefined' && window.ktpwp_ajax.nonces && window.ktpwp_ajax.nonces.auto_save) {
+                        nonce = window.ktpwp_ajax.nonces.auto_save;
+                    }
+                    $.ajax({
+                        url: ajaxUrl,
+                        type: 'POST',
+                        data: {
+                            action: 'ktp_get_profit_display',
+                            order_id: orderId,
+                            nonce: nonce,
+                            ktp_ajax_nonce: nonce
+                        },
+                        success: function(res) {
+                            try {
+                                const result = typeof res === 'string' ? JSON.parse(res) : res;
+                                if (result && result.success && result.data && result.data.html) {
+                                    const $container = $('.profit-display').parent();
+                                    if ($container && $container.length) {
+                                        // 既存のprofit-displayを差し替え
+                                        $('.profit-display').replaceWith(result.data.html);
+                                    }
+                                }
+                            } catch (e) {
+                                if (window.ktpDebugMode) console.warn('[INVOICE] 利益HTMLパース失敗', e, res);
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            if (window.ktpDebugMode) console.warn('[INVOICE] 利益HTML取得エラー', {status, error});
+                        }
+                    });
+                }, 250);
+            }
+        } catch (e) {
+            if (window.ktpDebugMode) console.warn('[INVOICE] 利益HTML更新処理エラー', e);
+        }
+
         // デバッグログ（利益計算の詳細）
         if (window.ktpDebugMode) {
             console.log('[INVOICE] 利益計算詳細:', {
