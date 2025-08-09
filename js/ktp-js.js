@@ -330,6 +330,33 @@ document.addEventListener('DOMContentLoaded', function () {
     // グローバルスコープに追加
     window.escapeHtml = escapeHtml;
 
+    // クッキーユーティリティ
+    function setCookie(name, value, days) {
+        var expires = '';
+        if (days) {
+            var date = new Date();
+            date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+            expires = '; expires=' + date.toUTCString();
+        }
+        document.cookie = name + '=' + encodeURIComponent(value) + expires + '; path=/';
+    }
+
+    function getCookie(name) {
+        var nameEQ = name + '=';
+        var ca = document.cookie ? document.cookie.split(';') : [];
+        for (var i = 0; i < ca.length; i++) {
+            var c = ca[i].trim();
+            if (c.indexOf(nameEQ) === 0) {
+                return decodeURIComponent(c.substring(nameEQ.length));
+            }
+        }
+        return null;
+    }
+
+    function deleteCookie(name) {
+        document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
+    }
+
     // スクロールタイマーを保存する変数（グローバルスコープ）
     window.scrollTimeouts = [];
 
@@ -798,9 +825,21 @@ document.addEventListener('DOMContentLoaded', function () {
     function setupCostToggle(toggleBtn, content) {
         if (window.ktpDebugMode) console.log('KTPWP: Setting up cost toggle functionality');
 
-        // 初期状態を非表示に設定
-        content.style.display = 'none';
-        toggleBtn.setAttribute('aria-expanded', 'false');
+        // クッキー名を決定（受注書ID単位）
+        var currentOrderIdForCookie = (typeof getCurrentOrderId === 'function' && getCurrentOrderId())
+            || (document.querySelector('input[name="order_id"]') ? document.querySelector('input[name="order_id"]').value : '')
+            || 'global';
+        var costToggleCookieName = 'ktp_cost_toggle_' + currentOrderIdForCookie;
+
+        // 初期状態をクッキーから復元（デフォルトは非表示）
+        var savedToggleState = getCookie(costToggleCookieName); // '1' = 展開, '0' = 非表示
+        if (savedToggleState === '1') {
+            content.style.display = 'block';
+            toggleBtn.setAttribute('aria-expanded', 'true');
+        } else {
+            content.style.display = 'none';
+            toggleBtn.setAttribute('aria-expanded', 'false');
+        }
 
         // 項目数を取得してボタンテキストに追加
         var updateCostButtonText = function () {
@@ -827,6 +866,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 toggleBtn.setAttribute('aria-expanded', 'true');
                 if (window.ktpDebugMode) console.log('KTPWP: Cost content shown');
             }
+            // 状態をクッキーへ保存（365日保持）
+            var newIsExpanded = toggleBtn.getAttribute('aria-expanded') === 'true';
+            setCookie(costToggleCookieName, newIsExpanded ? '1' : '0', 365);
             updateCostButtonText();
         });
 
