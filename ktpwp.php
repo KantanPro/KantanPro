@@ -5613,7 +5613,20 @@ function ktpwp_handle_create_dummy_data_ajax() {
             if (defined('WP_DEBUG') && WP_DEBUG) {
                 error_log('KTPWP: ダミーデータ作成成功 - 出力長: ' . strlen($output));
             }
-            
+
+            // ダミーデータ作成直後の初期表示を揃えるため、
+            // 各タブの選択IDクッキーを「1」に統一設定（30日間有効）
+            if (!headers_sent()) {
+                $cookie_lifetime = time() + (86400 * 30);
+                $cookie_path = '/';
+                // 顧客・サービス・協力会社のID選択クッキー
+                setcookie('ktp_client_id', '1', $cookie_lifetime, $cookie_path);
+                setcookie('ktp_service_id', '1', $cookie_lifetime, $cookie_path);
+                setcookie('ktp_supplier_id', '1', $cookie_lifetime, $cookie_path);
+            } else if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('KTPWP: ヘッダー送信後のため、初期表示クッキーを設定できませんでした');
+            }
+
             // 成功メッセージを返す
             wp_send_json_success(array(
                 'message' => 'ダミーデータが正常に作成されました。',
