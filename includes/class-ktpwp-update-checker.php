@@ -83,6 +83,7 @@ class KTPWP_Update_Checker {
             add_action( 'init', array( $this, 'init' ) );
             add_action( 'admin_init', array( $this, 'admin_init' ) );
             add_filter( 'pre_set_site_transient_update_plugins', array( $this, 'check_for_plugin_update' ) );
+            add_filter( 'plugins_api', array( $this, 'plugins_api_handler' ), 20, 3 );
 
             
             // プラグインメタ行にリンクを追加（即座に登録）
@@ -183,29 +184,128 @@ class KTPWP_Update_Checker {
     }
     
     /**
-     * プラグインメタ行に「更新をチェック」リンクを追加
+     * プラグインメタ行のリンクを調整する
+     * - 自前の「更新をチェック」「キャッシュクリア」を除去
+     * - PluginURI のラベルを「詳細を表示」に変更
      */
     public function add_check_update_meta_link( $plugin_meta, $plugin_file ) {
-        // このプラグインの場合のみリンクを追加
-        if ( $plugin_file === $this->plugin_basename ) {
-            // デバッグ情報をログに出力
-            error_log( 'KantanPro: プラグインメタリンクが追加されました - basename: ' . $this->plugin_basename );
-            
-            $check_link = sprintf(
-                '<a href="#" id="ktpwp-manual-check" data-plugin="%s">%s</a>',
-                esc_attr( $this->plugin_basename ),
-                __( '更新をチェック', 'KantanPro' )
-            );
-            
-            $cache_clear_link = sprintf(
-                '<a href="#" id="ktpwp-cache-clear" data-plugin="%s">%s</a>',
-                esc_attr( $this->plugin_basename ),
-                __( 'キャッシュクリア', 'KantanPro' )
-            );
-            
-            array_push( $plugin_meta, $check_link, $cache_clear_link );
+        if ( $plugin_file !== $this->plugin_basename ) {
+            return $plugin_meta;
         }
-        return $plugin_meta;
+
+        $new_meta        = array();
+        $details_added   = false; // WP標準の詳細モーダル用リンクの重複防止
+        $has_plugin_uri  = false; // PluginURI リンクが存在したか
+        $plugin_data = function_exists( 'get_plugin_data' ) && defined( 'KANTANPRO_PLUGIN_FILE' )
+            ? get_plugin_data( KANTANPRO_PLUGIN_FILE )
+            : array();
+        $plugin_uri  = ! empty( $plugin_data['PluginURI'] ) ? $plugin_data['PluginURI'] : '';
+
+        // PluginURI の href 厳密一致文字列（末尾スラッシュ有無の両方を考慮）
+        $plugin_uri_with_slash = $plugin_uri ? trailingslashit( $plugin_uri ) : '';
+        $plugin_uri_no_slash   = $plugin_uri ? rtrim( $plugin_uri, '/' ) : '';
+        $href_exact_1 = $plugin_uri ? 'href="' . esc_attr( $plugin_uri_with_slash ) . '"' : '';
+        $href_exact_2 = $plugin_uri ? 'href="' . esc_attr( $plugin_uri_no_slash ) . '"' : '';
+
+        foreach ( (array) $plugin_meta as $meta_html ) {
+            // 自前で追加していたリンクは除外
+            if ( strpos( $meta_html, 'id="ktpwp-manual-check"' ) !== false ) {
+                continue;
+            }
+            if ( strpos( $meta_html, 'id="ktpwp-cache-clear"' ) !== false ) {
+                continue;
+            }
+
+            // PluginURI へのリンク（href が厳密一致）の場合は除外して後で1つだけ追加
+            if (
+                $plugin_uri && (
+                    strpos( $meta_html, $href_exact_1 ) !== false ||
+                    strpos( $meta_html, $href_exact_2 ) !== false
+                )
+            ) {
+                $has_plugin_uri = true;
+                continue;
+            }
+
+            // 既存の WordPress 標準の「詳細を表示」（thickbox）リンクがある場合は重複しないようフラグのみ立てる
+            if (
+                strpos( $meta_html, 'open-plugin-details-modal' ) !== false ||
+                strpos( $meta_html, 'plugin-install.php?tab=plugin-information' ) !== false
+            ) {
+                $details_added = true;
+            }
+
+            $new_meta[] = $meta_html;
+        }
+
+        // 既存に無ければ、WordPress標準モーダル用の「詳細を表示」を1つ追加
+        if ( ! $details_added ) {
+            $details_link = sprintf(
+                '<a href="%s" class="thickbox open-plugin-details-modal" aria-label="%s">%s</a>',
+                esc_url( network_admin_url( 'plugin-install.php?tab=plugin-information&plugin=' . rawurlencode( $this->plugin_slug ) . '&TB_iframe=true&width=600&height=550' ) ),
+                esc_attr( sprintf( __( '%s の詳細を表示', 'KantanPro' ), isset( $plugin_data['Name'] ) ? $plugin_data['Name'] : 'KantanPro' ) ),
+                esc_html__( '詳細を表示', 'KantanPro' )
+            );
+            $new_meta[] = $details_link;
+        }
+
+        return $new_meta;
+    }
+
+    /**
+     * plugins_api フィルターでプラグイン詳細モーダル用情報を返す
+     */
+    public function plugins_api_handler( $result, $action, $args ) {
+        if ( $action !== 'plugin_information' ) {
+            return $result;
+        }
+
+        $requested_slug = isset( $args->slug ) ? $args->slug : ( isset( $args->plugin ) ? $args->plugin : '' );
+        if ( ! $requested_slug ) {
+            return $result;
+        }
+
+        // 自プラグイン以外はスルー
+        if ( $requested_slug !== $this->plugin_slug ) {
+            return $result;
+        }
+
+        // 既存の更新データやプラグインデータから情報を構築
+        $update_data = get_option( 'ktpwp_update_available', array() );
+        $plugin_data = function_exists( 'get_plugin_data' ) && defined( 'KANTANPRO_PLUGIN_FILE' )
+            ? get_plugin_data( KANTANPRO_PLUGIN_FILE )
+            : array();
+
+        $info = new stdClass();
+        $info->name           = isset( $plugin_data['Name'] ) ? $plugin_data['Name'] : 'KantanPro';
+        $info->slug           = $this->plugin_slug;
+        $info->version        = isset( $update_data['new_version'] ) ? $update_data['new_version'] : $this->current_version;
+        $info->author         = isset( $plugin_data['Author'] ) ? $plugin_data['Author'] : 'KantanPro';
+        $info->author_profile = isset( $plugin_data['AuthorURI'] ) ? $plugin_data['AuthorURI'] : 'https://www.kantanpro.com/kantanpro-page';
+        $info->homepage       = isset( $plugin_data['PluginURI'] ) ? $plugin_data['PluginURI'] : 'https://www.kantanpro.com/';
+        $info->requires       = '5.0';
+        $info->tested         = get_bloginfo( 'version' );
+        $info->requires_php   = '7.4';
+        $info->last_updated   = isset( $update_data['published_at'] ) ? $update_data['published_at'] : '';
+        $info->download_link  = isset( $update_data['download_url'] ) ? $update_data['download_url'] : '';
+
+        $info->sections = array();
+        $info->sections['description'] = isset( $plugin_data['Description'] )
+            ? $plugin_data['Description']
+            : __( 'フリーランス・スモールビジネス向けの仕事効率化システム。ショートコード[ktpwp_all_tab]を固定ページに設置してください。', 'KantanPro' );
+        $info->sections['changelog']   = isset( $update_data['changelog'] ) && ! empty( $update_data['changelog'] )
+            ? $update_data['changelog']
+            : __( '詳細な変更履歴は公式サイトまたはリポジトリをご確認ください。', 'KantanPro' );
+
+        $info->banners = array(
+            'high' => KANTANPRO_PLUGIN_URL . 'images/default/header_bg_image.png',
+            'low'  => KANTANPRO_PLUGIN_URL . 'images/default/header_bg_image.png',
+        );
+        $info->icons = array(
+            'default' => KANTANPRO_PLUGIN_URL . 'images/default/icon.png',
+        );
+
+        return $info;
     }
     
     /**
