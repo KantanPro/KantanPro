@@ -2632,8 +2632,10 @@ if ( ! class_exists( 'Kantan_Order_Class' ) ) {
 				$html .= '<div style="width: 80px; text-align: right;">単価</div>';
 				$html .= '<div style="width: 60px; text-align: right;">数量</div>';
                 $html .= '<div style="width: 80px; text-align: right;">金額</div>';
-                $html .= '<div style="width: 80px; text-align: right;">税額</div>';
-                $html .= '<div style="width: 60px; text-align: center;">税率</div>';
+                if ( ! ( class_exists( 'KTPWP_Tax_Policy' ) && KTPWP_Tax_Policy::hide_tax_columns() ) ) {
+                    $html .= '<div style="width: 80px; text-align: right;">税額</div>';
+                    $html .= '<div style="width: 60px; text-align: center;">税率</div>';
+                }
 				$html .= '<div style="width: 100px; text-align: left; margin-left: 8px;">備考</div>';
 				$html .= '</div>';
 
@@ -2687,19 +2689,25 @@ if ( ! class_exists( 'Kantan_Order_Class' ) ) {
 					$html .= '<div style="width: 60px; text-align: right;">' . $quantity_display . $unit . '</div>';
                     $html .= '<div style="width: 80px; text-align: right;">' . number_format( $amount ) . '円</div>';
 
-                    // 行税額の計算（税率が設定されている場合のみ表示）
-                    $item_tax_amount_display = '';
-                    if ( $tax_rate !== null ) {
-                        if ( $tax_category === '外税' ) {
-                            $item_tax_amount_value = ceil( $amount * ( $tax_rate / 100 ) );
-                        } else {
-                            $item_tax_amount_value = ceil( $amount * ( $tax_rate / 100 ) / ( 1 + $tax_rate / 100 ) );
+                    if ( ! ( class_exists( 'KTPWP_Tax_Policy' ) && KTPWP_Tax_Policy::hide_tax_columns() ) ) {
+                        // 行税額の計算（税率が設定されている場合のみ表示）
+                        $item_tax_amount_display = '';
+                        if ( $tax_rate !== null ) {
+                            // モードに応じた実効税率
+                            if ( class_exists( 'KTPWP_Tax_Policy' ) ) {
+                                $effective = KTPWP_Tax_Policy::get_effective_rate( $tax_rate );
+                                $tax_rate = $effective !== null ? $effective : $tax_rate;
+                            }
+                            if ( $tax_category === '外税' ) {
+                                $item_tax_amount_value = ceil( $amount * ( $tax_rate / 100 ) );
+                            } else {
+                                $item_tax_amount_value = ceil( $amount * ( $tax_rate / 100 ) / ( 1 + $tax_rate / 100 ) );
+                            }
+                            $item_tax_amount_display = number_format( $item_tax_amount_value ) . '円';
                         }
-                        $item_tax_amount_display = number_format( $item_tax_amount_value ) . '円';
+                        $html .= '<div style="width: 80px; text-align: right;">' . $item_tax_amount_display . '</div>';
+                        $html .= '<div style="width: 60px; text-align: center;">' . ( $tax_rate !== null ? $tax_rate . '%' : '' ) . '</div>';
                     }
-                    $html .= '<div style="width: 80px; text-align: right;">' . $item_tax_amount_display . '</div>';
-
-                    $html .= '<div style="width: 60px; text-align: center;">' . ( $tax_rate !== null ? $tax_rate . '%' : '' ) . '</div>';
 					$html .= '<div style="width: 100px; text-align: left; margin-left: 8px;">' . esc_html( $remarks ) . '</div>';
 					$html .= '</div>';
 
@@ -2721,7 +2729,10 @@ if ( ! class_exists( 'Kantan_Order_Class' ) ) {
 						$html .= '<div style="width: 60px; text-align: right;">&nbsp;</div>';
                         $html .= '<div style="width: 80px; text-align: right;">&nbsp;</div>';
                         $html .= '<div style="width: 80px; text-align: right;">&nbsp;</div>';
-						$html .= '<div style="width: 60px; text-align: center;">&nbsp;</div>';
+                        if ( ! ( class_exists( 'KTPWP_Tax_Policy' ) && KTPWP_Tax_Policy::hide_tax_columns() ) ) {
+                            $html .= '<div style="width: 80px; text-align: right;">&nbsp;</div>';
+                            $html .= '<div style="width: 60px; text-align: center;">&nbsp;</div>';
+                        }
 						$html .= '<div style="width: 100px; text-align: left; margin-left: 8px;">&nbsp;</div>';
 						$html .= '</div>';
 

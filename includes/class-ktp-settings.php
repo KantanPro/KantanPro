@@ -2344,6 +2344,42 @@ class KTP_Settings {
             'ktp-general'
         );
 
+        // 税制モード
+        add_settings_field(
+            'tax_mode',
+            __( '税制モード', 'ktpwp' ),
+            array( $this, 'tax_mode_callback' ),
+            'ktp-general',
+            'tax_setting_section'
+        );
+
+        // 一律税率
+        add_settings_field(
+            'unified_tax_rate',
+            __( '一律税率（%）', 'ktpwp' ),
+            array( $this, 'unified_tax_rate_callback' ),
+            'ktp-general',
+            'tax_setting_section'
+        );
+
+        // 税率/税額列の非表示
+        add_settings_field(
+            'hide_tax_columns',
+            __( '税率/税額列を非表示', 'ktpwp' ),
+            array( $this, 'hide_tax_columns_callback' ),
+            'ktp-general',
+            'tax_setting_section'
+        );
+
+        // 明細税率ロック
+        add_settings_field(
+            'lock_line_tax_rate',
+            __( '明細の税率を編集不可にする', 'ktpwp' ),
+            array( $this, 'lock_line_tax_rate_callback' ),
+            'ktp-general',
+            'tax_setting_section'
+        );
+
         // 基本税率
         add_settings_field(
             'default_tax_rate',
@@ -3003,6 +3039,33 @@ class KTP_Settings {
             $new_input['qualified_invoice_number'] = $qualified_invoice_number;
         }
 
+        // 税制モード
+        if ( isset( $input['tax_mode'] ) ) {
+            $mode = sanitize_text_field( $input['tax_mode'] );
+            $allowed = array( 'multiple', 'unified', 'abolished' );
+            $new_input['tax_mode'] = in_array( $mode, $allowed, true ) ? $mode : 'multiple';
+        }
+
+        // 一律税率
+        if ( isset( $input['unified_tax_rate'] ) ) {
+            $rate = floatval( $input['unified_tax_rate'] );
+            $new_input['unified_tax_rate'] = max( 0.0, $rate );
+        }
+
+        // 税率/税額列の非表示
+        if ( isset( $input['hide_tax_columns'] ) ) {
+            $new_input['hide_tax_columns'] = (bool) $input['hide_tax_columns'];
+        } else {
+            $new_input['hide_tax_columns'] = false;
+        }
+
+        // 明細税率ロック
+        if ( isset( $input['lock_line_tax_rate'] ) ) {
+            $new_input['lock_line_tax_rate'] = (bool) $input['lock_line_tax_rate'];
+        } else {
+            $new_input['lock_line_tax_rate'] = false;
+        }
+
         if ( isset( $input['company_info'] ) ) {
             // HTMLコンテンツを許可し、wp_ksesで安全なHTMLタグのみ保持
             $allowed_html = array(
@@ -3029,6 +3092,56 @@ class KTP_Settings {
         }
 
         return $new_input;
+    }
+
+    /**
+     * 税制モードフィールド
+     */
+    public function tax_mode_callback() {
+        $options = get_option( 'ktp_general_settings' );
+        $value = isset( $options['tax_mode'] ) ? $options['tax_mode'] : 'multiple';
+        ?>
+        <select id="tax_mode" name="ktp_general_settings[tax_mode]">
+            <option value="multiple" <?php selected( $value, 'multiple' ); ?>>複数税率（現行）</option>
+            <option value="unified" <?php selected( $value, 'unified' ); ?>>一律税率</option>
+            <option value="abolished" <?php selected( $value, 'abolished' ); ?>>税廃止（税額0）</option>
+        </select>
+        <div style="font-size:12px;color:#555;margin-top:4px;">※ 将来の制度変更に対応する切替設定です。</div>
+        <?php
+    }
+
+    /**
+     * 一律税率フィールド
+     */
+    public function unified_tax_rate_callback() {
+        $options = get_option( 'ktp_general_settings' );
+        $value = isset( $options['unified_tax_rate'] ) ? $options['unified_tax_rate'] : '';
+        ?>
+        <input type="number" id="unified_tax_rate" name="ktp_general_settings[unified_tax_rate]" value="<?php echo esc_attr( $value ); ?>" step="0.01" min="0" style="width:100px;text-align:right;"> %
+        <div style="font-size:12px;color:#555;margin-top:4px;">※ 税制モードが「一律税率」の場合に適用します。</div>
+        <?php
+    }
+
+    /**
+     * 税率/税額列の非表示
+     */
+    public function hide_tax_columns_callback() {
+        $options = get_option( 'ktp_general_settings' );
+        $checked = ! empty( $options['hide_tax_columns'] );
+        ?>
+        <label><input type="checkbox" name="ktp_general_settings[hide_tax_columns]" value="1" <?php checked( $checked ); ?>> 税率/税額の列や内訳表示を隠す</label>
+        <?php
+    }
+
+    /**
+     * 明細税率ロック
+     */
+    public function lock_line_tax_rate_callback() {
+        $options = get_option( 'ktp_general_settings' );
+        $checked = ! empty( $options['lock_line_tax_rate'] );
+        ?>
+        <label><input type="checkbox" name="ktp_general_settings[lock_line_tax_rate]" value="1" <?php checked( $checked ); ?>> 明細の税率入力を編集不可にする</label>
+        <?php
     }
 
     /**

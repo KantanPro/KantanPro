@@ -145,8 +145,12 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 			$html .= '<th style="text-align:left;">' . esc_html__( '単価', 'ktpwp' ) . '</th>';
 			$html .= '<th style="text-align:left;">' . esc_html__( '数量', 'ktpwp' ) . '</th>';
 			$html .= '<th>' . esc_html__( '単位', 'ktpwp' ) . '</th>';
-			$html .= '<th style="text-align:left;">' . esc_html__( '金額', 'ktpwp' ) . '</th>';
-			$html .= '<th style="text-align:left;">' . esc_html__( '税率', 'ktpwp' ) . '</th>';
+            $html .= '<th style="text-align:left;">' . esc_html__( '金額', 'ktpwp' ) . '</th>';
+            if ( class_exists( 'KTPWP_Tax_Policy' ) && KTPWP_Tax_Policy::hide_tax_columns() ) {
+                // 税率/税額列を非表示
+            } else {
+                $html .= '<th style="text-align:left;">' . esc_html__( '税率', 'ktpwp' ) . '</th>';
+            }
 			$html .= '<th>' . esc_html__( '備考', 'ktpwp' ) . '</th>';
 			$html .= '</tr>';
 			$html .= '</thead>';
@@ -203,20 +207,21 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 				$html .= '<input type="hidden" name="invoice_items[' . $index . '][amount]" value="' . esc_attr( $item['amount'] ) . '" />';
 				$html .= '</td>';
 
-				// Tax Rate
-				$tax_rate_raw = isset( $item['tax_rate'] ) ? $item['tax_rate'] : null;
-				$tax_rate_display = '';
-				if ( $tax_rate_raw !== null && $tax_rate_raw !== '' && is_numeric( $tax_rate_raw ) ) {
-					$tax_rate_display = floatval( $tax_rate_raw );
-				}
-				$html .= '<td style="text-align:left;">';
-				$html .= '<div style="display:inline-flex;align-items:center;margin-left:0;padding-left:0;">';
-				$html .= '<input type="number" name="invoice_items[' . $index . '][tax_rate]" ';
-				$html .= 'value="' . esc_attr( $tax_rate_display ) . '" ';
-				$html .= 'class="invoice-item-input tax-rate" step="1" min="0" max="100" style="width:50px; text-align:right; display:inline-block; margin-left:0; padding-left:0;" />';
-				$html .= '<span style="margin-left:2px; white-space:nowrap;">%</span>';
-				$html .= '</div>';
-				$html .= '</td>';
+                // Tax Rate（モードに応じて非表示/ロック/一律適用）
+                if ( ! ( class_exists( 'KTPWP_Tax_Policy' ) && KTPWP_Tax_Policy::hide_tax_columns() ) ) {
+                    $tax_rate_raw = isset( $item['tax_rate'] ) ? $item['tax_rate'] : null;
+                    $effective_rate = class_exists( 'KTPWP_Tax_Policy' ) ? KTPWP_Tax_Policy::get_effective_rate( $tax_rate_raw ) : null;
+                    $tax_rate_display = ( $effective_rate !== null ) ? $effective_rate : '';
+                    $readonly = ( class_exists( 'KTPWP_Tax_Policy' ) && KTPWP_Tax_Policy::lock_line_tax_rate() ) ? 'readonly' : '';
+                    $html .= '<td style="text-align:left;">';
+                    $html .= '<div style="display:inline-flex;align-items:center;margin-left:0;padding-left:0;">';
+                    $html .= '<input type="number" name="invoice_items[' . $index . '][tax_rate]" ';
+                    $html .= 'value="' . esc_attr( $tax_rate_display ) . '" ';
+                    $html .= 'class="invoice-item-input tax-rate" step="0.01" min="0" max="100" style="width:50px; text-align:right; display:inline-block; margin-left:0; padding-left:0;" ' . $readonly . ' />';
+                    $html .= '<span style="margin-left:2px; white-space:nowrap;">%</span>';
+                    $html .= '</div>';
+                    $html .= '</td>';
+                }
 
 				// Remarks
 				$html .= '<td>';
