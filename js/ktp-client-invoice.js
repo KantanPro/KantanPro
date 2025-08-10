@@ -232,6 +232,7 @@ jQuery(document).ready(function($) {
                                             html += "<div style=\"width: 80px; text-align: right;\">単価</div>";
                                             html += "<div style=\"width: 60px; text-align: right;\">数量/単位</div>";
                                             html += "<div style=\"width: 80px; text-align: right;\">金額</div>";
+                                            html += "<div style=\"width: 80px; text-align: right;\">税額</div>";
                                             html += "<div style=\"width: 60px; text-align: center;\">税率</div>";
                                             html += "<div style=\"width: 100px; text-align: left; margin-left: 8px;\">備考</div>";
                                             html += "</div>";
@@ -278,6 +279,16 @@ jQuery(document).ready(function($) {
                                                     taxRateDisplay = itemTaxRate + "%";
                                                 }
                                                 
+                                                // 行税額の計算
+                                                var lineTaxAmountDisplay = "";
+                                                if (item.tax_rate && !isNaN(itemTaxRate) && itemTaxRate > 0 && amount > 0) {
+                                                    if (res.data.tax_category === '外税') {
+                                                        lineTaxAmountDisplay = Math.ceil(amount * (itemTaxRate / 100)).toLocaleString() + "円";
+                                                    } else {
+                                                        lineTaxAmountDisplay = Math.ceil(amount * (itemTaxRate / 100) / (1 + itemTaxRate / 100)).toLocaleString() + "円";
+                                                    }
+                                                }
+                                                
                                                 // デバッグ用ログ（開発時のみ）
                                                 if (typeof console !== 'undefined' && console.log && typeof ktpwpDebugMode !== 'undefined' && ktpwpDebugMode) {
                                                     console.log("税率デバッグ - 商品:", item.product_name, "税率:", item.tax_rate, "数値変換:", itemTaxRate, "表示:", taxRateDisplay);
@@ -293,6 +304,7 @@ jQuery(document).ready(function($) {
                                                 html += "<div style=\"width: 80px; text-align: right;\">" + unitPrice + "</div>";
                                                 html += "<div style=\"width: 60px; text-align: right;\">" + quantity + "/" + (item.unit || "式") + "</div>";
                                                 html += "<div style=\"width: 80px; text-align: right;\">" + totalPrice + "</div>";
+                                                html += "<div style=\"width: 80px; text-align: right;\">" + lineTaxAmountDisplay + "</div>";
                                                 html += "<div style=\"width: 60px; text-align: center;\">" + taxRateDisplay + "</div>";
                                                 html += "<div style=\"width: 100px; text-align: left; margin-left: 8px;\"></div>";
                                                 html += "</div>";
