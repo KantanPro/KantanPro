@@ -416,6 +416,16 @@
             }
         });
 
+        // 税制モード: 税廃止/一律税率の適用
+        function normalizeRate(raw) {
+            if (window.ktp_tax_policy) {
+                if (window.ktp_tax_policy.mode === 'abolished') return 0;
+                if (window.ktp_tax_policy.mode === 'unified') return parseFloat(window.ktp_tax_policy.unified_tax_rate || 0);
+            }
+            const n = parseFloat(raw);
+            return isNaN(n) ? null : n;
+        }
+
         // 税区分に応じて消費税を計算
         if (taxCategory === '外税') {
             // 外税表示の場合：各項目の税抜金額から税額を計算
@@ -426,10 +436,7 @@
                 const taxRateInput = $row.find('.tax-rate').val();
                 
                 // 税率の処理（NULL、空文字、NaNの場合は税率なしとして扱う）
-                let taxRate = null;
-                if (taxRateInput !== null && taxRateInput !== '' && !isNaN(parseFloat(taxRateInput))) {
-                    taxRate = parseFloat(taxRateInput);
-                }
+                let taxRate = normalizeRate(taxRateInput);
                 
                 // 税率が設定されている場合のみ税額を計算
                 if (taxRate !== null) {
@@ -445,7 +452,11 @@
                 
                 // 税率が設定されている場合のみ税額を計算
                 if (taxRateKey !== 'no_tax_rate') {
-                    const rate = parseFloat(taxRateKey);
+                    let rate = parseFloat(taxRateKey);
+                    if (window.ktp_tax_policy) {
+                        if (window.ktp_tax_policy.mode === 'abolished') rate = 0;
+                        if (window.ktp_tax_policy.mode === 'unified') rate = parseFloat(window.ktp_tax_policy.unified_tax_rate || 0);
+                    }
                     // 内税計算：各税率グループごとに税額を計算（切り上げ）
                     const taxAmount = Math.ceil(groupAmount * (rate / 100) / (1 + rate / 100));
                     totalTaxAmount += taxAmount;

@@ -201,6 +201,11 @@ function ktpwp_autoload_classes() {
             }
         }
     }
+    // 税制ポリシー
+    $tax_policy_file = __DIR__ . '/includes/class-ktpwp-tax-policy.php';
+    if ( file_exists( $tax_policy_file ) ) {
+        require_once $tax_policy_file;
+    }
 }
 
 // --- Ajaxハンドラ（協力会社・職能リスト取得）を必ず読み込む ---

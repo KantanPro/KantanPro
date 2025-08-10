@@ -354,6 +354,12 @@ class KTPWP_Assets {
             $this->enqueue_scripts( false );
             $this->localize_frontend_scripts();
 
+            // 税制ポリシーをJSへ注入
+            if ( class_exists( 'KTPWP_Tax_Policy' ) ) {
+                $tax_config = KTPWP_Tax_Policy::get_js_config();
+                wp_add_inline_script( 'ktp-js', 'window.ktp_tax_policy = ' . json_encode( $tax_config ) . ';', 'before' );
+            }
+
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
                 error_log( 'KTPWP_Assets: Frontend assets enqueued for order tab' );
             }
