@@ -1713,7 +1713,7 @@ class KTPWP_Ajax {
 				// 税率別の集計用配列
 				$tax_rate_groups = array();
 
-				foreach ( $invoice_items_from_db as $item ) {
+                foreach ( $invoice_items_from_db as $item ) {
 					$product_name = isset( $item['product_name'] ) ? sanitize_text_field( $item['product_name'] ) : '';
 					$item_amount  = isset( $item['amount'] ) ? floatval( $item['amount'] ) : 0;
 					$price        = isset( $item['price'] ) ? floatval( $item['price'] ) : 0;
@@ -1723,11 +1723,13 @@ class KTPWP_Ajax {
 					$remarks      = isset( $item['remarks'] ) ? sanitize_text_field( $item['remarks'] ) : '';
 					$amount      += $item_amount;
 
-					// 税率の処理（NULL、空文字、NaNの場合は税率なしとして扱う）
-					$tax_rate = null;
-					if ( $tax_rate_raw !== null && $tax_rate_raw !== '' && is_numeric( $tax_rate_raw ) ) {
-						$tax_rate = floatval( $tax_rate_raw );
-					}
+                    // 税率の処理（税制モード適用: 廃止/一律）
+                    $tax_rate = null;
+                    if ( class_exists( 'KTPWP_Tax_Policy' ) ) {
+                        $tax_rate = KTPWP_Tax_Policy::get_effective_rate( $tax_rate_raw );
+                    } elseif ( $tax_rate_raw !== null && $tax_rate_raw !== '' && is_numeric( $tax_rate_raw ) ) {
+                        $tax_rate = floatval( $tax_rate_raw );
+                    }
 
 					// 税率別の集計（税率なしの場合は'no_tax_rate'として扱う）
 					$tax_rate_key = $tax_rate !== null ? number_format( $tax_rate, 1 ) : 'no_tax_rate';
@@ -1750,8 +1752,10 @@ class KTPWP_Ajax {
 					$price_display = rtrim( rtrim( number_format( $price, 6, '.', '' ), '0' ), '.' );
 					$quantity_display = rtrim( rtrim( number_format( $quantity, 6, '.', '' ), '0' ), '.' );
 
-					if ( ! empty( trim( $product_name ) ) ) {
-						$tax_rate_text = ( $tax_rate !== null ) ? '（税率' . $tax_rate . '%）' : '';
+                    if ( ! empty( trim( $product_name ) ) ) {
+                        // 税制モードで税率/税額列が非表示の場合は税率テキストを抑止
+                        $suppress_tax_text = ( class_exists( 'KTPWP_Tax_Policy' ) && ( KTPWP_Tax_Policy::is_abolished() || KTPWP_Tax_Policy::hide_tax_columns() ) );
+                        $tax_rate_text = ( $tax_rate !== null && ! $suppress_tax_text ) ? '（税率' . $tax_rate . '%）' : '';
 						$remarks_text = ( ! empty( trim( $remarks ) ) ) ? '　※ ' . $remarks : '';
 						$line         = $product_name . '：' . $price_display . '円 × ' . $quantity_display . $unit . ' = ' . number_format( $item_amount ) . '円' . $tax_rate_text . $remarks_text;
 						$item_lines[] = $line;
@@ -1767,7 +1771,10 @@ class KTPWP_Ajax {
 				}
 
 									// 内税の場合は税率別に計算
-				if ( $tax_category !== '外税' ) {
+                if ( $tax_category !== '外税' ) {
+                        // 税制モードで税率/税額列が非表示の場合は内税内訳を出さない
+                        $suppress_tax_detail = ( class_exists( 'KTPWP_Tax_Policy' ) && ( KTPWP_Tax_Policy::is_abolished() || KTPWP_Tax_Policy::hide_tax_columns() ) );
+                        if ( ! $suppress_tax_detail ) {
 						$total_tax_amount = 0;
 						$tax_rate_details = array();
 						
@@ -1781,7 +1788,8 @@ class KTPWP_Ajax {
 								$total_tax_amount += $tax_amount;
 								$tax_rate_details[] = $tax_rate . '%: ' . number_format( $tax_amount ) . '円';
 							}
-						}
+                        }
+                        }
 				}
 				
 				$amount_ceiled = ceil( $amount );
@@ -1789,26 +1797,29 @@ class KTPWP_Ajax {
 				$total_with_tax = $amount_ceiled + $total_tax_amount_ceiled;
 
 				// 税区分に応じた合計行の表示
-				if ( $tax_category === '外税' ) {
+                if ( $tax_category === '外税' ) {
 					$total_line = '外税合計：' . number_format( $amount_ceiled ) . '円';
 					$tax_line = '消費税：' . number_format( $total_tax_amount_ceiled ) . '円';
 					$total_with_tax_line = '内税合計：' . number_format( $total_with_tax ) . '円';
 				} else {
-									// 内税の場合は税率別の内訳を表示
-				if ( count( $tax_rate_groups ) > 1 ) {
-					$tax_detail_text = '（内税：' . implode( ', ', $tax_rate_details ) . '）';
-				} else {
-					// 単一税率の場合
-					if ( array_key_first( $tax_rate_groups ) === 'no_tax_rate' ) {
-						// 税率なしの場合は内税表示をしない
-						$tax_detail_text = '';
-					} else {
-						$tax_detail_text = '（内税：' . number_format( $total_tax_amount_ceiled ) . '円）';
-					}
-				}
-					$total_line = '金額合計：' . number_format( $amount_ceiled ) . '円' . $tax_detail_text;
-					$tax_line = ''; // 内税の場合は消費税行を非表示
-					$total_with_tax_line = ''; // 内税の場合は税込合計行を非表示
+                    // 税制モードで税率/税額列が非表示の場合は内税内訳を付けない
+                    $suppress_tax_detail = ( class_exists( 'KTPWP_Tax_Policy' ) && ( KTPWP_Tax_Policy::is_abolished() || KTPWP_Tax_Policy::hide_tax_columns() ) );
+                    if ( ! $suppress_tax_detail ) {
+                        if ( count( $tax_rate_groups ) > 1 ) {
+                            $tax_detail_text = '（内税：' . implode( ', ', $tax_rate_details ) . '）';
+                        } else {
+                            if ( array_key_first( $tax_rate_groups ) === 'no_tax_rate' ) {
+                                $tax_detail_text = '';
+                            } else {
+                                $tax_detail_text = '（内税：' . number_format( $total_tax_amount_ceiled ) . '円）';
+                            }
+                        }
+                    } else {
+                        $tax_detail_text = '';
+                    }
+                    $total_line = '金額合計：' . number_format( $amount_ceiled ) . '円' . $tax_detail_text;
+                    $tax_line = '';
+                    $total_with_tax_line = '';
 				}
 				
 				$total_length = mb_strlen( $total_line, 'UTF-8' );
@@ -1911,9 +1922,19 @@ class KTPWP_Ajax {
 				}
 			}
 
-			// 件名と本文の統一フォーマット
-			$subject = "{$document_title}：{$project_name}";
-			$body    = "{$customer_display}\n{$user_display}\n\nお世話になります。\n\n＜{$document_title}＞\nID: {$order->id} [{$order_date}]\n\n「{$project_name}」{$document_message}\n{$invoice_list}\n\n--\n{$my_company}";
+            // 件名と本文の統一フォーマット
+            $subject = "{$document_title}：{$project_name}";
+            $body    = "{$customer_display}\n{$user_display}\n\nお世話になります。\n\n＜{$document_title}＞\nID: {$order->id} [{$order_date}]\n\n「{$project_name}」{$document_message}\n{$invoice_list}";
+
+            // 税制モードに応じたメール本文の調整
+            if ( class_exists( 'KTPWP_Tax_Policy' ) ) {
+                if ( KTPWP_Tax_Policy::is_abolished() || KTPWP_Tax_Policy::hide_tax_columns() ) {
+                    // 税廃止または税率/税額非表示のとき、余分な税情報/内訳行があれば除去（保守的に末尾の余白のみ調整）
+                    $body = rtrim( $body );
+                }
+            }
+
+            $body   .= "\n\n--\n{$my_company}";
 
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 				error_log( 'KTPWP Ajax get_email_content: Preparing JSON response - to: ' . $to . ', subject: ' . $subject );
@@ -4666,10 +4687,15 @@ class KTPWP_Ajax {
 			$quantity = floatval( $item['quantity'] );
 			$unit = $item['unit'] ?: '';
 			$amount = floatval( $item['amount'] );
-			$tax_rate = $item['tax_rate'];
-			// 税率がNULLまたは空の場合は非課税取引
-			$is_tax_free = empty( $tax_rate ) || $tax_rate === null;
-			$tax_rate = $is_tax_free ? 0.0 : floatval( $tax_rate );
+            $tax_rate_raw = isset( $item['tax_rate'] ) ? $item['tax_rate'] : null;
+            // 税制モードの実効税率
+            if ( class_exists( 'KTPWP_Tax_Policy' ) ) {
+                $tax_rate = KTPWP_Tax_Policy::get_effective_rate( $tax_rate_raw );
+                if ( $tax_rate === null ) { $tax_rate = 0.0; }
+            } else {
+                $is_tax_free = empty( $tax_rate_raw ) || $tax_rate_raw === null;
+                $tax_rate = $is_tax_free ? 0.0 : floatval( $tax_rate_raw );
+            }
 			$tax_category = isset($item['tax_category']) ? $item['tax_category'] : '内税';
 			$remarks = $item['remarks'] ?: '';
 			$has_qualified_invoice = ! empty( $item['qualified_invoice_number'] );
@@ -4678,13 +4704,16 @@ class KTPWP_Ajax {
 			$product_name_padded = str_pad( $product_name, $max_length + 2, ' ' );
 			
 			// 詳細形式：品名  単価 × 数量/単位 = 金額円（税率X%・税区分）※ 備考
-			if ( $is_tax_free ) {
-				$tax_info = "（非課税取引）";
-			} elseif ( $tax_rate == 0 ) {
-				$tax_info = "（税率0%・{$tax_category}）";
-			} else {
-				$tax_info = "（税率{$tax_rate}%・{$tax_category}）";
-			}
+            $suppress_tax_text = ( class_exists( 'KTPWP_Tax_Policy' ) && ( KTPWP_Tax_Policy::is_abolished() || KTPWP_Tax_Policy::hide_tax_columns() ) );
+            if ( $suppress_tax_text ) {
+                $tax_info = '';
+            } else {
+                if ( $tax_rate == 0 ) {
+                    $tax_info = "（税率0%・{$tax_category}）";
+                } else {
+                    $tax_info = "（税率{$tax_rate}%・{$tax_category}）";
+                }
+            }
 			$remarks_text = ( ! empty( trim( $remarks ) ) ) ? '　※ ' . $remarks : '';
 			
 			$body .= $product_name_padded . "  " . number_format( $price ) . '円 × ' . $quantity . $unit . ' = ' . number_format( $amount ) . "円{$tax_info}{$remarks_text}\n";
@@ -4828,7 +4857,11 @@ class KTPWP_Ajax {
 			error_log( 'KTPWP Purchase Order Email: === TAX CATEGORY DEBUG END ===' );
 		}
 		
-		if ( $is_inclusive_tax ) {
+        $suppress_tax_text = ( class_exists( 'KTPWP_Tax_Policy' ) && ( KTPWP_Tax_Policy::is_abolished() || KTPWP_Tax_Policy::hide_tax_columns() ) );
+        if ( $suppress_tax_text ) {
+            // 税廃止/非表示: 税関連の注記を出さない
+            $body .= "金額合計：" . number_format( $total_amount ) . "円\n\n";
+        } elseif ( $is_inclusive_tax ) {
 			// 内税の場合：税込金額を表示し、税抜価格と消費税額を内訳で表示
 			// 要求された形式に合わせて、税抜価格と消費税額を計算
 			$tax_excluded_amount = $total_amount - $total_tax_amount;
