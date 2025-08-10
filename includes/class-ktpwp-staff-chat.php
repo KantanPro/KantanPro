@@ -592,9 +592,9 @@ if ( ! class_exists( 'KTPWP_Staff_Chat' ) ) {
             global $wpdb;
             $table_name = $wpdb->prefix . 'ktp_order_staff_chat';
 
-            // 対象メッセージ取得（order_id も取得）
+            // 対象メッセージ取得（order_id / created_at も取得）
             $message = $wpdb->get_row(
-                $wpdb->prepare( "SELECT id, user_id, is_initial, order_id FROM `{$table_name}` WHERE id = %d", $message_id ),
+                $wpdb->prepare( "SELECT id, user_id, is_initial, order_id, created_at FROM `{$table_name}` WHERE id = %d", $message_id ),
                 ARRAY_A
             );
 
@@ -627,7 +627,7 @@ if ( ! class_exists( 'KTPWP_Staff_Chat' ) ) {
                 }
                 $display_name = $user_info->display_name ? $user_info->display_name : $user_info->user_login;
 
-                // 削除履歴のメッセージを追加
+                // 削除履歴のメッセージを追加（表示順を維持するため、元メッセージの created_at を引き継ぐ）
                 $log_text = sprintf( '%s がメッセージを削除しました', sanitize_text_field( $display_name ) );
                 $inserted = $wpdb->insert(
                     $table_name,
@@ -637,7 +637,7 @@ if ( ! class_exists( 'KTPWP_Staff_Chat' ) ) {
                         'user_display_name' => sanitize_text_field( $display_name ),
                         'message'           => $log_text,
                         'is_initial'        => 0,
-                        'created_at'        => current_time( 'mysql' ),
+                        'created_at'        => isset( $message['created_at'] ) ? $message['created_at'] : current_time( 'mysql' ),
                     ),
                     array( '%d', '%d', '%s', '%s', '%d', '%s' )
                 );
