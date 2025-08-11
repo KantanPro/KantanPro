@@ -823,7 +823,7 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 				$invoice_total += $invoice_amount;
 			}
 
-			// 現行仕様に合わせる（内税扱いの税込合計）
+			// 内税扱いの税込合計に合わせる
 			$invoice_total_with_tax_ceiled = ceil( $invoice_total );
 
 			$profit_data = $this->calculate_profit_with_qualified_invoice( $order_id, $cost_items, $invoice_total_with_tax_ceiled );

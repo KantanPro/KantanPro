@@ -118,7 +118,7 @@ jQuery(document).ready(function($) {
                                     // 担当者名を表示
                                     html += "<div style=\"margin-bottom:5px;\">" + res.data.selected_department.contact_person + " 様</div>";
                                 } else {
-                                    // 部署選択がない場合：現行のまま
+                                    // 部署選択がない場合：そのまま表示
                                     if (address.startsWith("〒")) {
                                         var postalMatch = address.match(/〒(\d{3}-?\d{4})/);
                                         if (postalMatch) {

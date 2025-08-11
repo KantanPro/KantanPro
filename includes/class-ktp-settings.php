@@ -2344,7 +2344,7 @@ class KTP_Settings {
             'ktp-general'
         );
 
-        // 税制モード
+        // 税制モード（UIは2択: 消費税あり/なし）
         add_settings_field(
             'tax_mode',
             __( '税制モード', 'ktpwp' ),
@@ -3039,11 +3039,20 @@ class KTP_Settings {
             $new_input['qualified_invoice_number'] = $qualified_invoice_number;
         }
 
-        // 税制モード
+        // 税制モード（2択UI → 内部モードへ正規化）
         if ( isset( $input['tax_mode'] ) ) {
-            $mode = sanitize_text_field( $input['tax_mode'] );
-            $allowed = array( 'multiple', 'unified', 'abolished' );
-            $new_input['tax_mode'] = in_array( $mode, $allowed, true ) ? $mode : 'multiple';
+            $ui_mode = sanitize_text_field( $input['tax_mode'] ); // 'with_tax' or 'abolished'
+            if ( $ui_mode === 'abolished' ) {
+                $new_input['tax_mode'] = 'abolished';
+            } else {
+                // 消費税あり: 一律税率が入力されている場合は unified、未入力なら multiple
+                $rate_raw = isset( $input['unified_tax_rate'] ) ? trim( (string) $input['unified_tax_rate'] ) : '';
+                if ( $rate_raw !== '' && is_numeric( $rate_raw ) ) {
+                    $new_input['tax_mode'] = 'unified';
+                } else {
+                    $new_input['tax_mode'] = 'multiple';
+                }
+            }
         }
 
         // 一律税率
@@ -3099,14 +3108,18 @@ class KTP_Settings {
      */
     public function tax_mode_callback() {
         $options = get_option( 'ktp_general_settings' );
-        $value = isset( $options['tax_mode'] ) ? $options['tax_mode'] : 'multiple';
+        $saved_mode = isset( $options['tax_mode'] ) ? $options['tax_mode'] : 'multiple';
+        $ui_value = ($saved_mode === 'abolished') ? 'abolished' : 'with_tax';
         ?>
-        <select id="tax_mode" name="ktp_general_settings[tax_mode]">
-            <option value="multiple" <?php selected( $value, 'multiple' ); ?>>消費税あり（複数税率）</option>
-            <option value="unified" <?php selected( $value, 'unified' ); ?>>消費税あり（一律税率）</option>
-            <option value="abolished" <?php selected( $value, 'abolished' ); ?>>消費税なし（税廃止）</option>
-        </select>
-        <div style="font-size:12px;color:#555;margin-top:4px;">※ 消費税なし（税廃止）を選ぶと税率/税額列は自動的に非表示になります。</div>
+        <label style="margin-right:16px;">
+            <input type="radio" name="ktp_general_settings[tax_mode]" value="with_tax" <?php checked( $ui_value, 'with_tax' ); ?> /> 消費税あり
+        </label>
+        <label>
+            <input type="radio" name="ktp_general_settings[tax_mode]" value="abolished" <?php checked( $ui_value, 'abolished' ); ?> /> 消費税なし（税廃止）
+        </label>
+        <div style="font-size:12px;color:#555;margin-top:4px;">
+            ※ 消費税なし（税廃止）を選ぶと税率/税額列は自動的に非表示になります。消費税ありで一律税率を設定すると、その値が全明細に適用されます。未入力の場合は複数税率運用になります。
+        </div>
         <?php
     }
 
