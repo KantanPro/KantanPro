@@ -510,6 +510,16 @@ if ( ! class_exists( 'Kantan_Service_Class' ) ) {
 				),
 			);
 
+			// 税制モード: 税廃止 または 税率/税額の列を非表示 の場合、税率フィールドをUIから隠す
+			if ( class_exists( 'KTPWP_Tax_Policy' ) && ( KTPWP_Tax_Policy::is_abolished() || KTPWP_Tax_Policy::hide_tax_columns() ) ) {
+				$fields = array_filter(
+					$fields,
+					function ( $field ) {
+						return ! ( isset( $field['name'] ) && $field['name'] === 'tax_rate' );
+					}
+				);
+			}
+
 			// アクションを取得（POSTパラメータを優先、次にGETパラメータ、デフォルトは'update'）
 			$action = 'update';
 			if ( isset( $_POST['query_post'] ) ) {

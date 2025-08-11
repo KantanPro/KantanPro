@@ -1036,6 +1036,16 @@ if ( ! class_exists( 'Kantan_Client_Class' ) ) {
 				),
 			);
 
+			// 税制モード: 税廃止 または 税率/税額の列を非表示 の場合、税区分フィールドをUIから隠す
+			if ( class_exists( 'KTPWP_Tax_Policy' ) && ( KTPWP_Tax_Policy::is_abolished() || KTPWP_Tax_Policy::hide_tax_columns() ) ) {
+				$fields = array_filter(
+					$fields,
+					function ( $field ) {
+						return ! ( isset( $field['name'] ) && $field['name'] === 'tax_category' );
+					}
+				);
+			}
+
 			$data_forms = ''; // フォームのHTMLコードを格納する変数を初期化
 			$data_title = ''; // タイトルのHTMLコードを格納する変数を初期化
 			$div_end = ''; // 終了タグを格納する変数を初期化
@@ -1643,7 +1653,11 @@ if ( ! class_exists( 'Kantan_Client_Class' ) ) {
 			                break;
 					}
 
-					$field = $fields[ $field_key ];
+                    // 税制モードで一部フィールド（例: 税区分）が除外されている場合があるため存在チェック
+                    if ( ! isset( $fields[ $field_key ] ) ) {
+                        continue;
+                    }
+                    $field = $fields[ $field_key ];
 
 					// カテゴリーフィールドの特別処理
 					if ( $field['name'] === 'category' ) {
