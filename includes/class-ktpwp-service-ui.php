@@ -183,14 +183,16 @@ if ( ! class_exists( 'KTPWP_Service_UI' ) ) {
 			// サービス一覧テーブルのヘッダー
 			$html .= '<div class="ktp_service_list_container">';
 			$html .= '<table class="ktp_service_table wp-list-table widefat fixed striped">';
-			$html .= '<thead>
+            $html .= '<thead>
             <tr>
                 <th class="manage-column column-id">ID</th>
                 <th class="manage-column column-image">' . esc_html__( '画像', 'ktpwp' ) . '</th>
                 <th class="manage-column column-service-name">' . esc_html__( 'サービス名', 'ktpwp' ) . '</th>
-                <th class="manage-column column-price">' . esc_html__( '価格', 'ktpwp' ) . '</th>
-                <th class="manage-column column-tax-rate">' . esc_html__( '税率', 'ktpwp' ) . '</th>
-                <th class="manage-column column-unit">' . esc_html__( '単位', 'ktpwp' ) . '</th>
+                <th class="manage-column column-price">' . esc_html__( '価格', 'ktpwp' ) . '</th>';
+            if ( ! ( class_exists( 'KTPWP_Tax_Policy' ) && ( KTPWP_Tax_Policy::is_abolished() || KTPWP_Tax_Policy::hide_tax_columns() ) ) ) {
+                $html .= '<th class="manage-column column-tax-rate">' . esc_html__( '税率', 'ktpwp' ) . '</th>';
+            }
+            $html .= '    <th class="manage-column column-unit">' . esc_html__( '単位', 'ktpwp' ) . '</th>
                 <th class="manage-column column-category">' . esc_html__( 'カテゴリー', 'ktpwp' ) . '</th>
                 <th class="manage-column column-actions">' . esc_html__( '操作', 'ktpwp' ) . '</th>
             </tr>
@@ -230,9 +232,11 @@ if ( ! class_exists( 'KTPWP_Service_UI' ) ) {
 					// 価格列
 					$html .= '<td class="column-price">' . $this->format_price_display( $service->price ) . '</td>';
 
-					// 税率列
-					$tax_rate = isset($service->tax_rate) ? floatval($service->tax_rate) : 10.00;
-					$html .= '<td class="column-tax-rate">' . esc_html( intval($tax_rate) ) . '%</td>';
+                    // 税率列（税廃止/非表示時は出力しない）
+                    if ( ! ( class_exists( 'KTPWP_Tax_Policy' ) && ( KTPWP_Tax_Policy::is_abolished() || KTPWP_Tax_Policy::hide_tax_columns() ) ) ) {
+                        $tax_rate = isset($service->tax_rate) ? floatval($service->tax_rate) : 10.00;
+                        $html .= '<td class="column-tax-rate">' . esc_html( intval($tax_rate) ) . '%</td>';
+                    }
 
 					// 単位列
 					$html .= '<td class="column-unit">' . esc_html( $service->unit ) . '</td>';

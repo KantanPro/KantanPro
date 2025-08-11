@@ -603,13 +603,15 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 			$html .= '<input type="text" name="unit" value="式" placeholder="単位" style="width: 100%; padding: 8px 10px; border: 1px solid #ced4da; border-radius: 4px; font-size: 14px; box-sizing: border-box;">';
 			$html .= '</div>';
 
-			// 税率フィールド（NULL許可）
-			$html .= '<div style="flex: 0.8; min-width: 70px;">';
-			$html .= '<div style="display: flex; align-items: center; gap: 2px;">';
-			$html .= '<input type="number" name="tax_rate" min="0" max="100" step="1" value="10" placeholder="税率" style="width: 100%; padding: 8px 10px; border: 1px solid #ced4da; border-radius: 4px; font-size: 14px; box-sizing: border-box;" title="空欄にすると税率なし（非課税）になります">';
-			$html .= '<span style="font-size: 12px; color: #666; white-space: nowrap;">%</span>';
-			$html .= '</div>';
-			$html .= '</div>';
+            // 税率フィールド（NULL許可）: 税廃止/非表示時は入力を出さない
+            if ( ! ( class_exists( 'KTPWP_Tax_Policy' ) && ( KTPWP_Tax_Policy::is_abolished() || KTPWP_Tax_Policy::hide_tax_columns() ) ) ) {
+                $html .= '<div style="flex: 0.8; min-width: 70px;">';
+                $html .= '<div style="display: flex; align-items: center; gap: 2px;">';
+                $html .= '<input type="number" name="tax_rate" min="0" max="100" step="1" value="10" placeholder="税率" style="width: 100%; padding: 8px 10px; border: 1px solid #ced4da; border-radius: 4px; font-size: 14px; box-sizing: border-box;" title="空欄にすると税率なし（非課税）になります">';
+                $html .= '<span style="font-size: 12px; color: #666; white-space: nowrap;">%</span>';
+                $html .= '</div>';
+                $html .= '</div>';
+            }
 
 			// 追加ボタン
 			$html .= '<div style="flex: 0 0 auto;">';
@@ -647,7 +649,9 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 					$html .= '単価: <strong>' . $unit_price . '円</strong> | ';
 					$html .= '数量: <strong>' . $quantity . '</strong> | ';
 					$html .= '単位: <strong>' . $unit . '</strong> | ';
-					$html .= '税率: <strong>' . ( $tax_rate === null ? 'なし（非課税）' : round($tax_rate) . '%' ) . '</strong>';
+                    if ( ! ( class_exists( 'KTPWP_Tax_Policy' ) && ( KTPWP_Tax_Policy::is_abolished() || KTPWP_Tax_Policy::hide_tax_columns() ) ) ) {
+                        $html .= '税率: <strong>' . ( $tax_rate === null ? 'なし（非課税）' : round($tax_rate) . '%' ) . '</strong>';
+                    }
 					$html .= '</span>';
 					$html .= '<span style="color: #666; font-size: 13px; font-weight: normal; flex-shrink: 0; margin-left: auto;" title="アクセス頻度（クリックされた回数）">頻度(' . $frequency . ')</span>';
 					$html .= '</div>';
