@@ -12,7 +12,7 @@
  * - シンプル更新システムを実装。
  * - 寄付機能（Stripe決済・進捗管理・自動メール送信）を追加。
  * - バージョンアップ履歴・トラブルシューティングも掲載。
- * - 最新バージョン: 1.0.22 - 2025年8月9日更新
+ * - 最新バージョン: 1.0.23 - 2025年8月11日更新
 * - 更新チェック問題修正
 * - リポジトリ名を修正（KantanPro/KantanPro-a- → KantanPro/KantanPro）
 * - 協力会社のエラーを修正
@@ -664,6 +664,19 @@ if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
                 <h3>📋 バージョン履歴</h3>
                 
                 <div class="ktpwp-changelog-item">
+                    <h4>1.0.23 - 2025年8月11日</h4>
+                    <ul>
+                        <li><strong>消費税モード対応</strong>
+                            <ul>
+                                <li>税制モードの切替（消費税あり / 消費税なし）</li>
+                                <li>税率/税額列や内訳表示の自動表示制御</li>
+                                <li>請求書・受注書・メール本文での税表示を一貫制御</li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="ktpwp-changelog-item">
                     <h4>1.0.22 - 2025年8月9日</h4>
                     <ul>
                         <li><strong>ダミーデータツールの改善</strong></li>
@@ -1254,7 +1267,7 @@ if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
 			</ul>
 			
             <h3>最終更新日</h3>
-            <p>2025年8月9日</p>
+            <p>2025年8月11日</p>
 			';
 		}
 
