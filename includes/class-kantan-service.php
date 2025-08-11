@@ -357,11 +357,14 @@ if ( ! class_exists( 'Kantan_Service_Class' ) ) {
 							$item_link_args[ $getKey ] = $getValue;
 						}
 					}
-					$tax_display = $tax_rate !== null ? intval( $tax_rate ) . '%' : '非課税';
-					$formatted_price = number_format( $price, 0, '.', ',' );
-					$results[] = '<a href="' . esc_url( add_query_arg( $item_link_args, $base_page_url ) ) . '">' .
-                    '<div class="ktp_data_list_item">' . esc_html__( 'ID', 'ktpwp' ) . ': ' . $id . ' ' . $service_name . ' | ' . $formatted_price . '円' . ( $unit ? '/' . $unit : '' ) . ' | 税率' . $tax_display . ' | ' . $category . ' | ' . esc_html__( '頻度', 'ktpwp' ) . '(' . $frequency . ')</div>' .
-					'</a><!-- DEBUG: price=' . $price . ' formatted=' . $formatted_price . ' -->';
+                    $tax_display = $tax_rate !== null ? intval( $tax_rate ) . '%' : '非課税';
+                    $formatted_price = number_format( $price, 0, '.', ',' );
+                    // 税制モード: 税廃止/非表示時は税率情報を出さない
+                    $hide_tax = ( class_exists( 'KTPWP_Tax_Policy' ) && ( KTPWP_Tax_Policy::is_abolished() || KTPWP_Tax_Policy::hide_tax_columns() ) );
+                    $tax_segment = $hide_tax ? '' : ' | ' . '税率' . $tax_display;
+                    $results[] = '<a href="' . esc_url( add_query_arg( $item_link_args, $base_page_url ) ) . '">' .
+                    '<div class="ktp_data_list_item">' . esc_html__( 'ID', 'ktpwp' ) . ': ' . $id . ' ' . $service_name . ' | ' . $formatted_price . '円' . ( $unit ? '/' . $unit : '' ) . $tax_segment . ' | ' . $category . ' | ' . esc_html__( '頻度', 'ktpwp' ) . '(' . $frequency . ')</div>' .
+                    '</a><!-- DEBUG: price=' . $price . ' formatted=' . $formatted_price . ' -->';
 				}
 				$query_max_num = $wpdb->num_rows;
 			} else {
