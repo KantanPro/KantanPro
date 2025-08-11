@@ -226,7 +226,7 @@
                                     <span style="color: #6b7280; font-size: ${isSmallScreen ? '12px' : '13px'}; flex-shrink: 0;"><strong>単価:</strong> ${unitPrice}円</span>
                                     <span style="color: #6b7280; font-size: ${isSmallScreen ? '12px' : '13px'}; flex-shrink: 0;"><strong>数量:</strong> ${window.escapeHtml(quantity)}</span>
                                     <span style="color: #6b7280; font-size: ${isSmallScreen ? '12px' : '13px'}; flex-shrink: 0;"><strong>単位:</strong> ${window.escapeHtml(unit)}</span>
-                                    <span style="color: #6b7280; font-size: ${isSmallScreen ? '12px' : '13px'}; flex-shrink: 0;"><strong>税率:</strong> ${skill.tax_rate === null ? 'なし（非課税）' : Math.round(skill.tax_rate || 10) + '%'}</span>
+                                    ${ (window.ktp_tax_policy && (window.ktp_tax_policy.mode === 'abolished' || window.ktp_tax_policy.hide_columns)) ? '' : `<span style="color: #6b7280; font-size: ${isSmallScreen ? '12px' : '13px'}; flex-shrink: 0;"><strong>税率:</strong> ${skill.tax_rate === null ? 'なし（非課税）' : Math.round(skill.tax_rate || 10) + '%'}</span>` }
                                     <span style="color: #6b7280; font-size: ${isSmallScreen ? '12px' : '13px'}; flex-shrink: 0;" title="アクセス頻度（クリックされた回数）"><strong>頻度:</strong> ${frequency}</span>
                                 </div>
                             </div>
@@ -497,6 +497,15 @@ window.ktpAddCostRowFromSkill = function(skill, currentRow) {
     // 新規行のHTMLを生成
     const isSupplier = !!window.ktpCurrentSupplierName;
     
+    const hideColumns = !!(window.ktp_tax_policy && (window.ktp_tax_policy.mode === 'abolished' || window.ktp_tax_policy.hide_columns));
+    const taxTd = hideColumns ? '' : `
+            <td style="text-align:left;">
+                <div style="display:inline-flex;align-items:center;margin-left:0;padding-left:0;">
+                    <input type="number" name="cost_items[${newIndex}][tax_rate]" class="cost-item-input tax-rate" value="${skill.tax_rate === null ? '' : Math.round(skill.tax_rate || 10)}" step="1" min="0" max="100" style="width:50px; text-align:right; display:inline-block; margin-left:0; padding-left:0;" placeholder="税率">
+                    <span style="margin-left:2px; white-space:nowrap;">%</nspan>
+                </div>
+            </td>`;
+
     const newRowHtml = `
         <tr class="cost-item-row" data-row-id="0" data-newly-added="true" data-supplier-id="${window.ktpCurrentSupplierId || 0}">
             <td class="actions-column">
@@ -520,12 +529,7 @@ window.ktpAddCostRowFromSkill = function(skill, currentRow) {
                 <span class="cost-item-amount" data-amount="0" style="display:inline-block;min-width:80px;text-align:left;">0</span>
                 <input type="hidden" name="cost_items[${newIndex}][amount]" value="0">
             </td>
-            <td style="text-align:left;">
-                <div style="display:inline-flex;align-items:center;margin-left:0;padding-left:0;">
-                    <input type="number" name="cost_items[${newIndex}][tax_rate]" class="cost-item-input tax-rate" value="${skill.tax_rate === null ? '' : Math.round(skill.tax_rate || 10)}" step="1" min="0" max="100" style="width:50px; text-align:right; display:inline-block; margin-left:0; padding-left:0;" placeholder="税率">
-                    <span style="margin-left:2px; white-space:nowrap;">%</span>
-                </div>
-            </td>
+            ${taxTd}
             <td>
                 <input type="text" name="cost_items[${newIndex}][remarks]" class="cost-item-input remarks" value="">
                 <input type="hidden" name="cost_items[${newIndex}][sort_order]" value="${newIndex + 1}">

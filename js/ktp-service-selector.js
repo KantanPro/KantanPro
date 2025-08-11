@@ -349,6 +349,10 @@
                     // 画面サイズに応じてレイアウトを調整
                     const isSmallScreen = window.innerWidth < 600;
 
+                    // 税制モードにより税率表示を抑制
+                    const suppressTax = !!(window.ktp_tax_policy && (window.ktp_tax_policy.mode === 'abolished' || window.ktp_tax_policy.hide_columns));
+                    const taxInfoSegment = suppressTax ? '' : `<span style="color: #6b7280; font-size: ${isSmallScreen ? '12px' : '13px'}; flex-shrink: 0;"><strong>税率:</strong> ${taxRate !== null ? Math.floor(taxRate) + '%' : '非課税'}</span>`;
+
                     html += `
                         <div class="ktp_data_list_item" style="
                             line-height: 1.5;
@@ -379,7 +383,7 @@
                                     </strong>
                                     <span style="color: #6b7280; font-size: ${isSmallScreen ? '12px' : '13px'}; flex-shrink: 0;"><strong>価格:</strong> ${formatPriceDisplay(price)}円</span>
                                     <span style="color: #6b7280; font-size: ${isSmallScreen ? '12px' : '13px'}; flex-shrink: 0;"><strong>単位:</strong> ${escapeHtml(unit)}</span>
-                                    <span style="color: #6b7280; font-size: ${isSmallScreen ? '12px' : '13px'}; flex-shrink: 0;"><strong>税率:</strong> ${taxRate !== null ? Math.floor(taxRate) + '%' : '非課税'}</span>
+                                    ${taxInfoSegment}
                                     <span style="color: #6b7280; font-size: ${isSmallScreen ? '12px' : '13px'}; flex-shrink: 0;"><strong>カテゴリー:</strong> ${escapeHtml(category)}</span>
                                     <span style="color: #6b7280; font-size: ${isSmallScreen ? '12px' : '13px'}; flex-shrink: 0;" title="アクセス頻度（クリックされた回数）"><strong>頻度:</strong> ${frequency}</span>
                                 </div>
@@ -786,6 +790,12 @@
             serviceNameEscaped: escapeHtml(serviceData.service_name)
         });
         
+        const hideColumns = !!(window.ktp_tax_policy && (window.ktp_tax_policy.mode === 'abolished' || window.ktp_tax_policy.hide_columns));
+        const taxTd = hideColumns ? '' : `
+                <td style="text-align:left;">
+                    <input type="number" name="invoice_items[${newIndex}][tax_rate]" class="invoice-item-input tax-rate" value="${serviceData.tax_rate !== undefined && serviceData.tax_rate !== null ? Math.round(serviceData.tax_rate) : ''}" step="1" min="0" max="100" style="width: 50px; max-width: 60px; text-align: right !important;"> %
+                </td>`;
+
         const newRowHtml = `
             <tr class="invoice-item-row" data-row-id="0" data-newly-added="true">
                 <td class="actions-column">
@@ -808,9 +818,7 @@
                     <span class="invoice-item-amount" data-amount="${serviceData.price * 1}" style="display:inline-block;min-width:80px;text-align:left;">${(serviceData.price * 1).toLocaleString()}</span>
                     <input type="hidden" name="invoice_items[${newIndex}][amount]" value="${serviceData.price * 1}">
                 </td>
-                <td style="text-align:left;">
-                    <input type="number" name="invoice_items[${newIndex}][tax_rate]" class="invoice-item-input tax-rate" value="${serviceData.tax_rate !== undefined && serviceData.tax_rate !== null ? Math.round(serviceData.tax_rate) : ''}" step="1" min="0" max="100" style="width: 50px; max-width: 60px; text-align: right !important;"> %
-                </td>
+                ${taxTd}
                 <td>
                     <input type="text" name="invoice_items[${newIndex}][remarks]" class="invoice-item-input remarks" value="${serviceData.remarks ? serviceData.remarks : ''}">
                     <input type="hidden" name="invoice_items[${newIndex}][sort_order]" value="${newIndex + 1}">
