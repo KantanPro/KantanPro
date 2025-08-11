@@ -1113,12 +1113,15 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 				),
 			);
 
-			// 税制モード: 税廃止 または 税率/税額の列を非表示 の場合、税区分フィールドをUIから隠す
-			if ( class_exists( 'KTPWP_Tax_Policy' ) && ( KTPWP_Tax_Policy::is_abolished() || KTPWP_Tax_Policy::hide_tax_columns() ) ) {
+            // 税制モード: 消費税なし/税列非表示 の場合、税区分と適格請求書番号をUIから隠す
+            if ( class_exists( 'KTPWP_Tax_Policy' ) && ( KTPWP_Tax_Policy::is_abolished() || KTPWP_Tax_Policy::hide_tax_columns() ) ) {
 				$fields = array_filter(
 					$fields,
 					function ( $field ) {
-						return ! ( isset( $field['name'] ) && $field['name'] === 'tax_category' );
+                        if ( ! isset( $field['name'] ) ) {
+                            return true;
+                        }
+                        return ! in_array( $field['name'], array( 'tax_category', 'qualified_invoice_number' ), true );
 					}
 				);
 			}
