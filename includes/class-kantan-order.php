@@ -2412,9 +2412,10 @@ if ( ! class_exists( 'Kantan_Order_Class' ) ) {
 			$html .= '</div>';
 
 			// 帳票内容（コンパクト）
-			$html .= '<div class="document-content" style="margin-bottom: 20px; padding: 12px; background: #f9f9f9; border-left: 4px solid #007cba; font-size: 14px;">';
-			$html .= sprintf( $document_info['content'], '<strong>' . esc_html( $project_name ) . '</strong>' );
-			$html .= '</div>';
+            // 平文表示（装飾ボックスを廃止）
+            $html .= '<div class="document-content" style="margin: 0 0 12px 0; font-size: 14px;">';
+            $html .= sprintf( $document_info['content'], esc_html( $project_name ) );
+            $html .= '</div>';
 
 			// 請求項目（メインコンテンツ）
 			$html .= '<div class="invoice-items" style="margin-bottom: 20px;">';
