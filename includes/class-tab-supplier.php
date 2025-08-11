@@ -1113,6 +1113,16 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 				),
 			);
 
+			// 税制モード: 税廃止 または 税率/税額の列を非表示 の場合、税区分フィールドをUIから隠す
+			if ( class_exists( 'KTPWP_Tax_Policy' ) && ( KTPWP_Tax_Policy::is_abolished() || KTPWP_Tax_Policy::hide_tax_columns() ) ) {
+				$fields = array_filter(
+					$fields,
+					function ( $field ) {
+						return ! ( isset( $field['name'] ) && $field['name'] === 'tax_category' );
+					}
+				);
+			}
+
 			// フォーム表示用のアクション（istmode:追加、srcmode:検索、update:更新）
 			$form_action = $action;
 			if ( $action === 'istmode' || $action === 'srcmode' ) {
