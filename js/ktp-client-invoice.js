@@ -146,7 +146,8 @@ jQuery(document).ready(function($) {
                                 html += "<div style=\"margin:100px 0 20px 0;padding:15px;border:2px solid #333;border-radius:8px;background-color:#f9f9f9;text-align:center;\">";
                                 html += "<div style=\"font-size:18px;font-weight:bold;color:#333;\">請求書</div>";
                                 // 適格請求書番号を表示（設定されている場合のみ）
-                                if (res.data.qualified_invoice_number && res.data.qualified_invoice_number.trim() !== '') {
+                                var showQualified = !(window.ktp_tax_policy && window.ktp_tax_policy.mode === 'abolished');
+                                if (showQualified && res.data.qualified_invoice_number && res.data.qualified_invoice_number.trim() !== '') {
                                     html += "<div style=\"font-size:14px;color:#333;margin-top:5px;\">適格請求書番号：" + res.data.qualified_invoice_number + "</div>";
                                 }
                                 html += "</div>";
@@ -166,11 +167,19 @@ jQuery(document).ready(function($) {
                                     grandTotal += (group.subtotal || 0) + (group.tax_amount || 0);
                                 });
 
-                                // 税区分に応じた表示
+                                // 税区分に応じた表示（税廃止時は税情報を抑止）
                                 var taxCategory = res.data.tax_category || '内税';
+                                var suppressTax = !!(window.ktp_tax_policy && (window.ktp_tax_policy.mode === 'abolished' || window.ktp_tax_policy.hide_columns));
                                 console.log("[請求書発行] 税区分:", taxCategory);
                                 
-                                if (taxCategory === '外税') {
+                                if (suppressTax) {
+                                    html += "<div style=\"font-weight:bold;font-size:14px;color:#333;display:flex;align-items:center;margin:10px 0 0 0;\">";
+                                    html += "<span>合計金額：" + grandTotal.toLocaleString() + "円</span>";
+                                    html += "<span style=\"margin-left:15px;\">繰越金額：</span>";
+                                    html += "<input type=\"number\" id=\"carryover-amount\" name=\"carryover_amount\" value=\"0\" min=\"0\" step=\"1\" style=\"width:100px;padding:3px 6px;border:1px solid #ccc;border-radius:4px;font-size:14px;text-align:right;margin-left:5px;\" onchange=\"updateInvoiceTotal()\">";
+                                    html += "<span style=\"font-size:14px;\">円</span>";
+                                    html += "</div>";
+                                } else if (taxCategory === '外税') {
                                     // 外税の場合：合計金額（税抜）→消費税→税込合計
                                     html += "<div style=\"font-weight:bold;font-size:14px;color:#333;display:flex;align-items:center;margin:10px 0 0 0;\">";
                                     html += "<span>合計金額：" + grandSubtotal.toLocaleString() + "円</span>";

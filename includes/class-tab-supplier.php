@@ -1949,10 +1949,10 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
                     <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">税区分</td>
                     <td style="border: 1px solid #ddd; padding: 12px;">' . esc_html( $tax_category ) . '</td>
                 </tr>
-                <tr>
+                ' . ( class_exists( 'KTPWP_Tax_Policy' ) && KTPWP_Tax_Policy::is_abolished() ? '' : ('<tr>
                     <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">適格請求書番号</td>
                     <td style="border: 1px solid #ddd; padding: 12px;">' . esc_html( $qualified_invoice_number ) . '</td>
-                </tr>
+                </tr>') ) . '
                 <tr>
                     <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">カテゴリー</td>
                     <td style="border: 1px solid #ddd; padding: 12px;">' . esc_html( $category ) . '</td>
