@@ -43,8 +43,11 @@ class KTPWP_Tax_Policy {
      * 税率/税額列の非表示
      */
     public static function hide_tax_columns(): bool {
-        $settings = self::get_general_settings();
-        return ! empty( $settings['hide_tax_columns'] );
+        // 仕様変更: 消費税なし（abolished）のときは必ず非表示、それ以外は必ず表示
+        if ( self::is_abolished() ) {
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -90,12 +93,15 @@ class KTPWP_Tax_Policy {
      * JS向け設定
      */
     public static function get_js_config(): array {
-        return array(
+        $config = array(
             'mode' => self::get_mode(),
             'unified_tax_rate' => self::get_unified_tax_rate(),
             'hide_tax_columns' => self::hide_tax_columns(),
             'lock_line_tax_rate' => self::lock_line_tax_rate(),
         );
+        // 後方互換: JS側で 'hide_columns' を参照している箇所に対応
+        $config['hide_columns'] = $config['hide_tax_columns'];
+        return $config;
     }
 }
 

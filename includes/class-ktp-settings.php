@@ -3102,11 +3102,11 @@ class KTP_Settings {
         $value = isset( $options['tax_mode'] ) ? $options['tax_mode'] : 'multiple';
         ?>
         <select id="tax_mode" name="ktp_general_settings[tax_mode]">
-            <option value="multiple" <?php selected( $value, 'multiple' ); ?>>複数税率（現行）</option>
-            <option value="unified" <?php selected( $value, 'unified' ); ?>>一律税率</option>
-            <option value="abolished" <?php selected( $value, 'abolished' ); ?>>税廃止（税額0）</option>
+            <option value="multiple" <?php selected( $value, 'multiple' ); ?>>消費税あり（複数税率）</option>
+            <option value="unified" <?php selected( $value, 'unified' ); ?>>消費税あり（一律税率）</option>
+            <option value="abolished" <?php selected( $value, 'abolished' ); ?>>消費税なし（税廃止）</option>
         </select>
-        <div style="font-size:12px;color:#555;margin-top:4px;">※ 将来の制度変更に対応する切替設定です。</div>
+        <div style="font-size:12px;color:#555;margin-top:4px;">※ 消費税なし（税廃止）を選ぶと税率/税額列は自動的に非表示になります。</div>
         <?php
     }
 
@@ -3127,9 +3127,17 @@ class KTP_Settings {
      */
     public function hide_tax_columns_callback() {
         $options = get_option( 'ktp_general_settings' );
-        $checked = ! empty( $options['hide_tax_columns'] );
+        $mode = function_exists('KTPWP_Tax_Policy::get_mode') ? KTPWP_Tax_Policy::get_mode() : ( isset($options['tax_mode']) ? $options['tax_mode'] : 'multiple' );
+        $effective_hidden = ( $mode === 'abolished' );
+        $label_note = $effective_hidden
+            ? '（税制モードが「消費税なし（税廃止）」のため常に非表示）'
+            : '（税制モードが「消費税あり」のため常に表示）';
         ?>
-        <label><input type="checkbox" name="ktp_general_settings[hide_tax_columns]" value="1" <?php checked( $checked ); ?>> 税率/税額の列や内訳表示を隠す</label>
+        <label>
+            <input type="checkbox" value="1" <?php checked( $effective_hidden ); ?> disabled>
+            税率/税額の列や内訳表示を隠す <?php echo esc_html( $label_note ); ?>
+        </label>
+        <input type="hidden" name="ktp_general_settings[hide_tax_columns]" value="<?php echo $effective_hidden ? '1' : '0'; ?>">
         <?php
     }
 
@@ -3346,6 +3354,12 @@ class KTP_Settings {
     public function qualified_invoice_number_callback() {
         $options = get_option( 'ktp_general_settings' );
         $value = isset( $options['qualified_invoice_number'] ) ? $options['qualified_invoice_number'] : '';
+        $mode = class_exists('KTPWP_Tax_Policy') ? KTPWP_Tax_Policy::get_mode() : ( isset($options['tax_mode']) ? $options['tax_mode'] : 'multiple' );
+        if ( $mode === 'abolished' ) {
+            echo '<div style="color:#666;font-size:12px;">消費税なし（税廃止）設定のため、適格請求書番号は使用しません。</div>';
+            echo '<input type="hidden" name="ktp_general_settings[qualified_invoice_number]" value="" />';
+            return;
+        }
         ?>
         <input type="text" id="qualified_invoice_number" name="ktp_general_settings[qualified_invoice_number]" value="<?php echo esc_attr( $value ); ?>" class="regular-text" />
         <div style="font-size:12px;color:#555;margin-top:4px;">

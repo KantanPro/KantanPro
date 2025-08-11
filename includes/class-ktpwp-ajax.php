@@ -1899,10 +1899,10 @@ class KTPWP_Ajax {
 
 			// 適格請求書番号を取得し、請求書の場合に追加
 			if ( $progress === 4 && class_exists( 'KTP_Settings' ) ) {
-				$qualified_invoice_number = KTP_Settings::get_qualified_invoice_number();
-				if ( ! empty( $qualified_invoice_number ) ) {
-					$document_title = $document_title . ' 適格請求書番号：' . $qualified_invoice_number;
-				}
+                $qualified_invoice_number = KTP_Settings::get_qualified_invoice_number();
+                if ( ! ( class_exists('KTPWP_Tax_Policy') && KTPWP_Tax_Policy::is_abolished() ) && ! empty( $qualified_invoice_number ) ) {
+                    $document_title = $document_title . ' 適格請求書番号：' . $qualified_invoice_number;
+                }
 			}
 
 			// 日付フォーマット

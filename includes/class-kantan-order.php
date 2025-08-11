@@ -821,10 +821,10 @@ if ( ! class_exists( 'Kantan_Order_Class' ) ) {
 
 								// 適格請求書番号を取得し、請求書の場合に追加
 								if ( $progress === 4 && class_exists( 'KTP_Settings' ) ) {
-									$qualified_invoice_number = KTP_Settings::get_qualified_invoice_number();
-									if ( ! empty( $qualified_invoice_number ) ) {
-										$document_title = $document_title . ' 適格請求書番号：' . $qualified_invoice_number;
-									}
+                                    $qualified_invoice_number = KTP_Settings::get_qualified_invoice_number();
+                                    if ( ! ( class_exists('KTPWP_Tax_Policy') && KTPWP_Tax_Policy::is_abolished() ) && ! empty( $qualified_invoice_number ) ) {
+                                        $document_title = $document_title . ' 適格請求書番号：' . $qualified_invoice_number;
+                                    }
 								}
 
 								// 日付フォーマット（年月日）
@@ -2405,10 +2405,10 @@ if ( ! class_exists( 'Kantan_Order_Class' ) ) {
 			// 帳票タイトル（コンパクト）
 			$html .= '<div class="document-title" style="text-align: center; margin-bottom: 15px; padding: 12px; border: 2px solid #333; font-size: 18px; font-weight: bold;">';
 			$html .= '＜' . esc_html( $document_info['title'] ) . '＞';
-			// 適格請求書番号を表示（設定されている場合のみ）
-			if ( ! empty( $qualified_invoice_number ) ) {
-				$html .= '<div style="font-size: 14px; font-weight: normal; margin-top: 5px; color: #333;">適格請求書番号：' . esc_html( $qualified_invoice_number ) . '</div>';
-			}
+            // 適格請求書番号を表示（税廃止でなく、設定されている場合のみ）
+            if ( ! ( class_exists( 'KTPWP_Tax_Policy' ) && KTPWP_Tax_Policy::is_abolished() ) && ! empty( $qualified_invoice_number ) ) {
+                $html .= '<div style="font-size: 14px; font-weight: normal; margin-top: 5px; color: #333;">適格請求書番号：' . esc_html( $qualified_invoice_number ) . '</div>';
+            }
 			$html .= '</div>';
 
 			// 帳票内容（コンパクト）
@@ -2547,11 +2547,12 @@ if ( ! class_exists( 'Kantan_Order_Class' ) ) {
 				$end_index = min( $start_index + $items_per_page, $total_items );
 
 				// 2ページ目以降はページ区切りを追加
-				if ( $page > 0 ) {
+                if ( $page > 0 ) {
 					$html .= '<div style="page-break-before: always; margin-top: 30px;"></div>';
 					$html .= '<h3 style="font-size: 16px; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #333;">請求項目（' . ( $page + 1 ) . '/' . $total_pages . 'p）</h3>';
 				} else {
 					// 1ページ目：請求金額、消費税、税込合計を表示
+                    $suppress_tax_display = ( class_exists( 'KTPWP_Tax_Policy' ) && KTPWP_Tax_Policy::hide_tax_columns() );
 					// 消費税計算（税率別に集計）
 					$tax_amount = 0;
 					$tax_rate_groups = array();
@@ -2590,36 +2591,40 @@ if ( ! class_exists( 'Kantan_Order_Class' ) ) {
 					$tax_amount_ceiled = ceil( $tax_amount );
 					$total_with_tax_ceiled = ceil( $total_with_tax );
 					
-					// 税区分に応じた表示
-					if ( $tax_category === '外税' ) {
-						$html .= '<h3 style="font-size: 16px; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #333;">請求項目（' . ( $page + 1 ) . '/' . $total_pages . 'p）　合計金額 : ' . number_format( $grand_total ) . '円　消費税 : ' . number_format( $tax_amount_ceiled ) . '円　税込合計 : ' . number_format( $total_with_tax_ceiled ) . '円</h3>';
-					} else {
-						// 内税の場合は税率別の内訳を表示
-						$tax_detail_text = '';
-						if ( count( $tax_rate_groups ) > 1 ) {
-							$tax_rate_details = array();
-							foreach ( $tax_rate_groups as $tax_rate => $group_amount ) {
-								if ( $tax_rate === 'no_tax_rate' ) {
-									// 税率なしの場合は表示しない
-									continue;
-								} else {
-									$tax_rate_value = floatval( $tax_rate );
-									$group_tax_amount = ceil( $group_amount * ( $tax_rate_value / 100 ) / ( 1 + $tax_rate_value / 100 ) );
-									$tax_rate_details[] = $tax_rate . '%: ' . number_format( $group_tax_amount ) . '円';
-								}
-							}
-							$tax_detail_text = '（内税：' . implode( ', ', $tax_rate_details ) . '）';
-						} else {
-							// 単一税率の場合
-							if ( array_key_first( $tax_rate_groups ) === 'no_tax_rate' ) {
-								// 税率なしの場合は内税表示をしない
-								$tax_detail_text = '';
-							} else {
-								$tax_detail_text = '（内税：' . number_format( $tax_amount_ceiled ) . '円）';
-							}
-						}
-						$html .= '<h3 style="font-size: 16px; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #333;">請求項目（' . ( $page + 1 ) . '/' . $total_pages . 'p）　合計金額 : ' . number_format( $grand_total ) . '円' . $tax_detail_text . '</h3>';
-					}
+                    // 税区分に応じた表示
+                    if ( $suppress_tax_display ) {
+                        $html .= '<h3 style="font-size: 16px; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #333;">請求項目（' . ( $page + 1 ) . '/' . $total_pages . 'p）　合計金額 : ' . number_format( $grand_total ) . '円</h3>';
+                    } else {
+                        if ( $tax_category === '外税' ) {
+                            $html .= '<h3 style="font-size: 16px; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #333;">請求項目（' . ( $page + 1 ) . '/' . $total_pages . 'p）　合計金額 : ' . number_format( $grand_total ) . '円　消費税 : ' . number_format( $tax_amount_ceiled ) . '円　税込合計 : ' . number_format( $total_with_tax_ceiled ) . '円</h3>';
+                        } else {
+                            // 内税の場合は税率別の内訳を表示
+                            $tax_detail_text = '';
+                            if ( count( $tax_rate_groups ) > 1 ) {
+                                $tax_rate_details = array();
+                                foreach ( $tax_rate_groups as $tax_rate => $group_amount ) {
+                                    if ( $tax_rate === 'no_tax_rate' ) {
+                                        // 税率なしの場合は表示しない
+                                        continue;
+                                    } else {
+                                        $tax_rate_value = floatval( $tax_rate );
+                                        $group_tax_amount = ceil( $group_amount * ( $tax_rate_value / 100 ) / ( 1 + $tax_rate_value / 100 ) );
+                                        $tax_rate_details[] = $tax_rate . '%: ' . number_format( $group_tax_amount ) . '円';
+                                    }
+                                }
+                                $tax_detail_text = '（内税：' . implode( ', ', $tax_rate_details ) . '）';
+                            } else {
+                                // 単一税率の場合
+                                if ( array_key_first( $tax_rate_groups ) === 'no_tax_rate' ) {
+                                    // 税率なしの場合は内税表示をしない
+                                    $tax_detail_text = '';
+                                } else {
+                                    $tax_detail_text = '（内税：' . number_format( $tax_amount_ceiled ) . '円）';
+                                }
+                            }
+                            $html .= '<h3 style="font-size: 16px; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #333;">請求項目（' . ( $page + 1 ) . '/' . $total_pages . 'p）　合計金額 : ' . number_format( $grand_total ) . '円' . $tax_detail_text . '</h3>';
+                        }
+                    }
 				}
 
 				// リスト表示開始（枠線なし、設定された奇数偶数背景カラー）
@@ -2749,8 +2754,9 @@ if ( ! class_exists( 'Kantan_Order_Class' ) ) {
 					$html .= '</div>';
 				}
 
-				// 最後のページまたは1ページのみの場合、合計金額、消費税、税込合計を表示
+                // 最後のページまたは1ページのみの場合、合計金額、消費税、税込合計を表示
 				if ( $page == $total_pages - 1 ) {
+                    $suppress_tax_display = ( class_exists( 'KTPWP_Tax_Policy' ) && KTPWP_Tax_Policy::hide_tax_columns() );
 					// 消費税計算
 					$tax_amount = 0;
 					
@@ -2781,26 +2787,33 @@ if ( ! class_exists( 'Kantan_Order_Class' ) ) {
 					$tax_amount_ceiled = ceil( $tax_amount );
 					$total_with_tax_ceiled = ceil( $total_with_tax );
 					
-					// 税区分に応じた表示
-					if ( $tax_category === '外税' ) {
-						// 外税表示の場合
-						$html .= '<div style="display: flex; padding: 10px 8px; background: #e9ecef; font-weight: bold; border-top: 2px solid #ccc; margin-top: 5px; align-items: center; justify-content: flex-end;">';
-						$html .= '<div style="text-align: right;">合計金額 : ' . number_format( $grand_total ) . '円</div>';
-						$html .= '</div>';
-						
-						$html .= '<div style="display: flex; padding: 10px 8px; background: #e9ecef; font-weight: bold; border-top: 1px solid #ccc; align-items: center; justify-content: flex-end;">';
-						$html .= '<div style="text-align: right;">消費税 : ' . number_format( $tax_amount_ceiled ) . '円</div>';
-						$html .= '</div>';
-						
-						$html .= '<div style="display: flex; padding: 10px 8px; background: #e9ecef; font-weight: bold; border-top: 1px solid #ccc; align-items: center; justify-content: flex-end;">';
-						$html .= '<div style="text-align: right;">税込合計 : ' . number_format( $total_with_tax_ceiled ) . '円</div>';
-						$html .= '</div>';
-					} else {
-						// 内税表示の場合（デフォルト）
-						$html .= '<div style="display: flex; padding: 10px 8px; background: #e9ecef; font-weight: bold; border-top: 2px solid #ccc; margin-top: 5px; align-items: center; justify-content: flex-end;">';
-						$html .= '<div style="text-align: right;">合計金額 : ' . number_format( $grand_total ) . '円（内税 ' . number_format( $tax_amount_ceiled ) . '円）</div>';
-						$html .= '</div>';
-					}
+                    // 税区分に応じた表示
+                    if ( $suppress_tax_display ) {
+                        // 税廃止/非表示モード: 税情報は出さず合計のみ
+                        $html .= '<div style="display: flex; padding: 10px 8px; background: #e9ecef; font-weight: bold; border-top: 2px solid #ccc; margin-top: 5px; align-items: center; justify-content: flex-end;">';
+                        $html .= '<div style="text-align: right;">合計金額 : ' . number_format( $grand_total ) . '円</div>';
+                        $html .= '</div>';
+                    } else {
+                        if ( $tax_category === '外税' ) {
+                            // 外税表示の場合
+                            $html .= '<div style="display: flex; padding: 10px 8px; background: #e9ecef; font-weight: bold; border-top: 2px solid #ccc; margin-top: 5px; align-items: center; justify-content: flex-end;">';
+                            $html .= '<div style="text-align: right;">合計金額 : ' . number_format( $grand_total ) . '円</div>';
+                            $html .= '</div>';
+                            
+                            $html .= '<div style="display: flex; padding: 10px 8px; background: #e9ecef; font-weight: bold; border-top: 1px solid #ccc; align-items: center; justify-content: flex-end;">';
+                            $html .= '<div style="text-align: right;">消費税 : ' . number_format( $tax_amount_ceiled ) . '円</div>';
+                            $html .= '</div>';
+                            
+                            $html .= '<div style="display: flex; padding: 10px 8px; background: #e9ecef; font-weight: bold; border-top: 1px solid #ccc; align-items: center; justify-content: flex-end;">';
+                            $html .= '<div style="text-align: right;">税込合計 : ' . number_format( $total_with_tax_ceiled ) . '円</div>';
+                            $html .= '</div>';
+                        } else {
+                            // 内税表示の場合（デフォルト）
+                            $html .= '<div style="display: flex; padding: 10px 8px; background: #e9ecef; font-weight: bold; border-top: 2px solid #ccc; margin-top: 5px; align-items: center; justify-content: flex-end;">';
+                            $html .= '<div style="text-align: right;">合計金額 : ' . number_format( $grand_total ) . '円（内税 ' . number_format( $tax_amount_ceiled ) . '円）</div>';
+                            $html .= '</div>';
+                        }
+                    }
 				}
 
 				$html .= '</div>'; // リスト表示終了
