@@ -2362,23 +2362,7 @@ class KTP_Settings {
             'tax_setting_section'
         );
 
-        // 税率/税額列の非表示
-        add_settings_field(
-            'hide_tax_columns',
-            __( '税率/税額列を非表示', 'ktpwp' ),
-            array( $this, 'hide_tax_columns_callback' ),
-            'ktp-general',
-            'tax_setting_section'
-        );
-
-        // 明細税率ロック
-        add_settings_field(
-            'lock_line_tax_rate',
-            __( '明細の税率を編集不可にする', 'ktpwp' ),
-            array( $this, 'lock_line_tax_rate_callback' ),
-            'ktp-general',
-            'tax_setting_section'
-        );
+        // 税率/税額列の非表示 と 明細税率ロックは税制モードにより自動化したため、設定項目の表示を廃止
 
         // 基本税率
         add_settings_field(
@@ -3115,10 +3099,10 @@ class KTP_Settings {
             <input type="radio" name="ktp_general_settings[tax_mode]" value="with_tax" <?php checked( $ui_value, 'with_tax' ); ?> /> 消費税あり
         </label>
         <label>
-            <input type="radio" name="ktp_general_settings[tax_mode]" value="abolished" <?php checked( $ui_value, 'abolished' ); ?> /> 消費税なし（税廃止）
+            <input type="radio" name="ktp_general_settings[tax_mode]" value="abolished" <?php checked( $ui_value, 'abolished' ); ?> /> 消費税なし
         </label>
         <div style="font-size:12px;color:#555;margin-top:4px;">
-            ※ 消費税なし（税廃止）を選ぶと税率/税額列は自動的に非表示になります。消費税ありで一律税率を設定すると、その値が全明細に適用されます。未入力の場合は複数税率運用になります。
+            ※ 消費税なしを選ぶと税率/税額列は自動的に非表示になります。消費税ありで一律税率を設定すると、その値が全明細に適用されます。未入力の場合は複数税率運用になります。
         </div>
         <?php
     }
@@ -3129,41 +3113,23 @@ class KTP_Settings {
     public function unified_tax_rate_callback() {
         $options = get_option( 'ktp_general_settings' );
         $value = isset( $options['unified_tax_rate'] ) ? $options['unified_tax_rate'] : '';
+        $mode = class_exists('KTPWP_Tax_Policy') ? KTPWP_Tax_Policy::get_mode() : ( isset($options['tax_mode']) ? $options['tax_mode'] : 'multiple' );
+        $disabled = ( $mode === 'abolished' ) ? 'disabled' : '';
         ?>
-        <input type="number" id="unified_tax_rate" name="ktp_general_settings[unified_tax_rate]" value="<?php echo esc_attr( $value ); ?>" step="0.01" min="0" style="width:100px;text-align:right;"> %
-        <div style="font-size:12px;color:#555;margin-top:4px;">※ 税制モードが「一律税率」の場合に適用します。</div>
+        <input type="number" id="unified_tax_rate" name="ktp_general_settings[unified_tax_rate]" value="<?php echo esc_attr( $value ); ?>" step="0.01" min="0" style="width:100px;text-align:right;" <?php echo $disabled; ?>> %
+        <div style="font-size:12px;color:#555;margin-top:4px;">※ 「消費税なし」の場合は入力不要です。</div>
         <?php
     }
 
     /**
      * 税率/税額列の非表示
      */
-    public function hide_tax_columns_callback() {
-        $options = get_option( 'ktp_general_settings' );
-        $mode = function_exists('KTPWP_Tax_Policy::get_mode') ? KTPWP_Tax_Policy::get_mode() : ( isset($options['tax_mode']) ? $options['tax_mode'] : 'multiple' );
-        $effective_hidden = ( $mode === 'abolished' );
-        $label_note = $effective_hidden
-            ? '（税制モードが「消費税なし（税廃止）」のため常に非表示）'
-            : '（税制モードが「消費税あり」のため常に表示）';
-        ?>
-        <label>
-            <input type="checkbox" value="1" <?php checked( $effective_hidden ); ?> disabled>
-            税率/税額の列や内訳表示を隠す <?php echo esc_html( $label_note ); ?>
-        </label>
-        <input type="hidden" name="ktp_general_settings[hide_tax_columns]" value="<?php echo $effective_hidden ? '1' : '0'; ?>">
-        <?php
-    }
+    public function hide_tax_columns_callback() { /* 自動化により非表示（互換のため残置） */ }
 
     /**
      * 明細税率ロック
      */
-    public function lock_line_tax_rate_callback() {
-        $options = get_option( 'ktp_general_settings' );
-        $checked = ! empty( $options['lock_line_tax_rate'] );
-        ?>
-        <label><input type="checkbox" name="ktp_general_settings[lock_line_tax_rate]" value="1" <?php checked( $checked ); ?>> 明細の税率入力を編集不可にする</label>
-        <?php
-    }
+    public function lock_line_tax_rate_callback() { /* 自動化により非表示（互換のため残置） */ }
 
     /**
      * 一般設定セクションの説明
@@ -4230,6 +4196,8 @@ define( 'WP_DEBUG_DISPLAY', false );
     public function default_tax_rate_callback() {
         $options = get_option( 'ktp_general_settings' );
         $value = isset( $options['default_tax_rate'] ) ? $options['default_tax_rate'] : 10.00;
+        $mode = class_exists('KTPWP_Tax_Policy') ? KTPWP_Tax_Policy::get_mode() : ( isset($options['tax_mode']) ? $options['tax_mode'] : 'multiple' );
+        $disabled = ( $mode === 'abolished' ) ? 'disabled' : '';
         ?>
         <input type="number" 
                id="default_tax_rate" 
@@ -4238,10 +4206,10 @@ define( 'WP_DEBUG_DISPLAY', false );
                step="0.01" 
                min="0" 
                max="100" 
-               style="width: 100px;" />
+               style="width: 100px;" <?php echo $disabled; ?> />
         <span>%</span>
         <p class="description">
-            <?php esc_html_e( '基本税率を設定してください。例：10.00', 'ktpwp' ); ?>
+            <?php esc_html_e( '基本税率を設定してください（消費税なしの場合は自動的に無効）。例：10.00', 'ktpwp' ); ?>
         </p>
         <?php
     }
@@ -4252,6 +4220,8 @@ define( 'WP_DEBUG_DISPLAY', false );
     public function reduced_tax_rate_callback() {
         $options = get_option( 'ktp_general_settings' );
         $value = isset( $options['reduced_tax_rate'] ) ? $options['reduced_tax_rate'] : 8.00;
+        $mode = class_exists('KTPWP_Tax_Policy') ? KTPWP_Tax_Policy::get_mode() : ( isset($options['tax_mode']) ? $options['tax_mode'] : 'multiple' );
+        $disabled = ( $mode === 'abolished' ) ? 'disabled' : '';
         ?>
         <input type="number" 
                id="reduced_tax_rate" 
@@ -4260,10 +4230,10 @@ define( 'WP_DEBUG_DISPLAY', false );
                step="0.01" 
                min="0" 
                max="100" 
-               style="width: 100px;" />
+               style="width: 100px;" <?php echo $disabled; ?> />
         <span>%</span>
         <p class="description">
-            <?php esc_html_e( '軽減税率を設定してください。例：8.00', 'ktpwp' ); ?>
+            <?php esc_html_e( '軽減税率を設定してください（消費税なしの場合は自動的に無効）。例：8.00', 'ktpwp' ); ?>
         </p>
         <?php
     }
