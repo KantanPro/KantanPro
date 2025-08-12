@@ -212,9 +212,9 @@ kantanpro22@gmail.com
      * 利用規約ページを作成
      */
     public function create_terms_page() {
-        // 開発者パスワード認証
-        if ( ! $this->verify_developer_password() ) {
-            $this->display_password_form();
+        // 開発モード時のみUIを有効化（配布先では非表示/不可）
+        if ( ! ( defined( 'KTPWP_DEVELOPMENT_MODE' ) && KTPWP_DEVELOPMENT_MODE ) ) {
+            echo '<div class="notice notice-warning"><p>' . esc_html__( 'このページは現在無効化されています。', 'ktpwp' ) . '</p></div>';
             return;
         }
 
@@ -225,37 +225,8 @@ kantanpro22@gmail.com
      * 開発者パスワード認証
      */
     private function verify_developer_password() {
-        // 開発者認証が済んでいる場合は認証不要
-        if ( isset( $_SESSION['ktpwp_developer_authenticated'] ) && $_SESSION['ktpwp_developer_authenticated'] === true ) {
-            return true;
-        }
-
-        // パスワード認証処理
-        if ( isset( $_POST['developer_password'] ) ) {
-            $password = sanitize_text_field( $_POST['developer_password'] );
-            
-            // 開発者パスワード（暗号化済み）- 8bee1222の正しいハッシュ
-            $developer_password_hash = '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi'; // 8bee1222
-
-            // 新しいハッシュを生成して使用（デバッグ用）
-            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                $new_hash = wp_hash_password( '8bee1222' );
-                error_log( 'KantanPro Terms: New hash for 8bee1222: ' . $new_hash );
-                // 新しいハッシュを使用
-                $developer_password_hash = $new_hash;
-            }
-
-            if ( wp_check_password( $password, $developer_password_hash ) ) {
-                $_SESSION['ktp_developer_authenticated'] = true;
-                $_SESSION['ktpwp_developer_authenticated'] = true; // 開発者認証も設定
-                wp_redirect( admin_url( 'admin.php?page=ktp-terms&authenticated=1' ) );
-                exit;
-            } else {
-                $_SESSION['ktp_developer_authenticated'] = false;
-            }
-        }
-        // セッションから認証状態を確認
-        return isset( $_SESSION['ktp_developer_authenticated'] ) && $_SESSION['ktp_developer_authenticated'] === true;
+        // 廃止：開発モードかつ管理者のみ許可
+        return ( defined( 'KTPWP_DEVELOPMENT_MODE' ) && KTPWP_DEVELOPMENT_MODE && current_user_can( 'manage_options' ) );
     }
 
     /**

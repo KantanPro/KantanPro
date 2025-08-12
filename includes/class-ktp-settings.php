@@ -635,15 +635,17 @@ class KTP_Settings {
             'ktpwp_dummy_data_page' // 既存の表示関数を流用
         );
 
-        // サブメニュー - 開発者設定
-        add_submenu_page(
-            'ktp-settings', // 親メニューのスラッグ
-            __( '開発者設定', 'ktpwp' ), // ページタイトル
-            __( '開発者設定', 'ktpwp' ), // メニュータイトル
-            'manage_options', // 権限
-            'ktp-developer-settings', // メニューのスラッグ
-            array( $this, 'create_developer_page' ) // 表示を処理する関数
-        );
+        // サブメニュー - 開発者設定（開発モード時のみ登録）
+        if ( defined( 'KTPWP_DEVELOPMENT_MODE' ) && KTPWP_DEVELOPMENT_MODE ) {
+            add_submenu_page(
+                'ktp-settings', // 親メニューのスラッグ
+                __( '開発者設定', 'ktpwp' ), // ページタイトル
+                __( '開発者設定', 'ktpwp' ), // メニュータイトル
+                'manage_options', // 権限
+                'ktp-developer-settings', // メニューのスラッグ
+                array( $this, 'create_developer_page' ) // 表示を処理する関数
+            );
+        }
 
 
     }
@@ -658,12 +660,7 @@ class KTP_Settings {
         // セッション開始（安全な方法で）
         ktpwp_safe_session_start();
 
-        // 認証解除の処理
-        if ( isset( $_POST['ktpwp_logout'] ) && wp_verify_nonce( $_POST['ktpwp_logout_nonce'], 'ktpwp_logout' ) ) {
-            unset( $_SESSION['ktpwp_developer_authenticated'] );
-            unset( $_SESSION['ktpwp_payment_authenticated'] );
-            echo '<div class="notice notice-success"><p>' . esc_html__( '認証が解除されました。', 'ktpwp' ) . '</p></div>';
-        }
+        // 認証解除機能は廃止（パスワード方式撤廃のため）
 
         // 設定エクスポートの処理
         if ( isset( $_POST['ktpwp_export_settings'] ) && wp_verify_nonce( $_POST['ktpwp_export_nonce'], 'ktpwp_export' ) ) {
@@ -675,9 +672,9 @@ class KTP_Settings {
             $this->import_donation_settings();
         }
 
-        // パスワード認証をチェック
-        if ( ! $this->verify_developer_password() ) {
-            $this->display_developer_password_form();
+        // 開発モードが無効な場合は表示しない（二重ガード）
+        if ( ! ( defined( 'KTPWP_DEVELOPMENT_MODE' ) && KTPWP_DEVELOPMENT_MODE ) ) {
+            echo '<div class="notice notice-warning"><p>' . esc_html__( 'このページは現在無効化されています。', 'ktpwp' ) . '</p></div>';
             return;
         }
 
@@ -688,15 +685,7 @@ class KTP_Settings {
         <div class="wrap ktp-admin-wrap">
             <h1><span class="dashicons dashicons-admin-tools"></span> <?php echo esc_html__( '開発者設定', 'ktpwp' ); ?></h1>
 
-            <!-- 認証解除ボタン -->
-            <div class="ktp-auth-controls" style="margin-bottom: 20px;">
-                <form method="post" style="display: inline;">
-                    <?php wp_nonce_field( 'ktpwp_logout', 'ktpwp_logout_nonce' ); ?>
-                    <button type="submit" name="ktpwp_logout" class="button button-secondary" onclick="return confirm('<?php esc_attr_e( '認証を解除しますか？', 'ktpwp' ); ?>')">
-                        <span class="dashicons dashicons-logout"></span> <?php esc_html_e( '認証を解除', 'ktpwp' ); ?>
-                    </button>
-                </form>
-            </div>
+            <!-- 認証ボタン/解除ボタンは不要になりました -->
 
             <?php $this->display_developer_tabs( $current_tab ); ?>
 
@@ -795,10 +784,11 @@ class KTP_Settings {
      * 開発環境タブのレンダリング
      */
     private function render_development_environment_tab() {
-        // 開発環境でのみ表示
-        if ( ! $this->is_development_environment() ) {
+        // 開発モードが有効、もしくは開発環境と判定された場合のみ表示
+        $dev_mode_enabled = ( defined( 'KTPWP_DEVELOPMENT_MODE' ) && KTPWP_DEVELOPMENT_MODE );
+        if ( ! $dev_mode_enabled && ! $this->is_development_environment() ) {
             echo '<div class="notice notice-warning">';
-            echo '<p><strong>' . esc_html__( '注意:', 'ktpwp' ) . '</strong> ' . esc_html__( 'このページは開発環境でのみ表示されます。本番環境では表示されません。', 'ktpwp' ) . '</p>';
+            echo '<p><strong>' . esc_html__( '注意:', 'ktpwp' ) . '</strong> ' . esc_html__( 'このページは開発モードまたは開発環境でのみ表示されます。', 'ktpwp' ) . '</p>';
             echo '</div>';
             return;
         }
@@ -978,57 +968,11 @@ class KTP_Settings {
      * 開発者設定パスワード認証
      */
     private function verify_developer_password() {
-        // 開発者パスワード（暗号化済み）- 8bee1222の正しいハッシュ
-        $developer_password_hash = '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi'; // 8bee1222
-
-        // 新しいハッシュを生成して使用（デバッグ用）
-        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            $new_hash = wp_hash_password( '8bee1222' );
-            error_log( 'KantanPro Developer: New hash for 8bee1222: ' . $new_hash );
-            // 新しいハッシュを使用
-            $developer_password_hash = $new_hash;
-        }
-
-        // セッションで認証済みかチェック
-        if ( isset( $_SESSION['ktpwp_developer_authenticated'] ) && $_SESSION['ktpwp_developer_authenticated'] === true ) {
+        // パスワード認証は廃止。開発モードかつ管理者のみ許可
+        $dev_mode_enabled = ( defined( 'KTPWP_DEVELOPMENT_MODE' ) && KTPWP_DEVELOPMENT_MODE );
+        if ( $dev_mode_enabled && current_user_can( 'manage_options' ) ) {
             return true;
         }
-
-        // デバッグ用：セッション情報を確認
-        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KantanPro Developer: Session data: ' . print_r( $_SESSION, true ) );
-        }
-
-        // パスワード送信をチェック
-        if ( isset( $_POST['ktpwp_developer_password'] ) ) {
-            $password = sanitize_text_field( $_POST['ktpwp_developer_password'] );
-            
-            // デバッグ用：パスワードハッシュを確認
-            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KantanPro Developer: Password submitted: ' . $password );
-                error_log( 'KantanPro Developer: Generated hash: ' . wp_hash_password( $password ) );
-                error_log( 'KantanPro Developer: Expected hash: ' . $developer_password_hash );
-            }
-            
-            // パスワード認証を試行
-            $is_valid = wp_check_password( $password, $developer_password_hash );
-            
-            // デバッグ用：認証結果を詳細にログに出力
-            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KantanPro Developer: Password submitted: ' . $password );
-                error_log( 'KantanPro Developer: Is valid password: ' . ( $is_valid ? 'true' : 'false' ) );
-                error_log( 'KantanPro Developer: Generated hash for submitted password: ' . wp_hash_password( $password ) );
-                error_log( 'KantanPro Developer: Expected hash: ' . $developer_password_hash );
-            }
-            
-            if ( $is_valid ) {
-                $_SESSION['ktpwp_developer_authenticated'] = true;
-                return true;
-            } else {
-                echo '<div class="notice notice-error"><p>' . esc_html__( 'パスワードが正しくありません。', 'ktpwp' ) . '</p></div>';
-            }
-        }
-
         return false;
     }
 
@@ -1036,63 +980,11 @@ class KTP_Settings {
      * 決済設定パスワード認証（旧関数 - 後方互換性のため残す）
      */
     private function verify_payment_password() {
-        // 開発者認証が済んでいる場合は認証不要
-        if ( isset( $_SESSION['ktpwp_developer_authenticated'] ) && $_SESSION['ktpwp_developer_authenticated'] === true ) {
+        // 廃止：開発モードかつ管理者のみ許可
+        $dev_mode_enabled = ( defined( 'KTPWP_DEVELOPMENT_MODE' ) && KTPWP_DEVELOPMENT_MODE );
+        if ( $dev_mode_enabled && current_user_can( 'manage_options' ) ) {
             return true;
         }
-
-        // 開発者パスワード（暗号化済み）- 8bee1222の正しいハッシュ
-        $developer_password_hash = '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi'; // 8bee1222
-
-        // 新しいハッシュを生成して使用（デバッグ用）
-        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            $new_hash = wp_hash_password( '8bee1222' );
-            error_log( 'KantanPro Payment: New hash for 8bee1222: ' . $new_hash );
-            // 新しいハッシュを使用
-            $developer_password_hash = $new_hash;
-        }
-
-        // セッションで認証済みかチェック
-        if ( isset( $_SESSION['ktpwp_payment_authenticated'] ) && $_SESSION['ktpwp_payment_authenticated'] === true ) {
-            return true;
-        }
-
-        // デバッグ用：セッション情報を確認
-        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KantanPro Payment: Session data: ' . print_r( $_SESSION, true ) );
-        }
-
-        // パスワード送信をチェック
-        if ( isset( $_POST['ktpwp_payment_password'] ) ) {
-            $password = sanitize_text_field( $_POST['ktpwp_payment_password'] );
-            
-            // デバッグ用：パスワードハッシュを確認
-            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KantanPro Payment: Password submitted: ' . $password );
-                error_log( 'KantanPro Payment: Generated hash: ' . wp_hash_password( $password ) );
-                error_log( 'KantanPro Payment: Expected hash: ' . $developer_password_hash );
-            }
-            
-            // パスワード認証を試行
-            $is_valid = wp_check_password( $password, $developer_password_hash );
-            
-            // デバッグ用：認証結果を詳細にログに出力
-            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KantanPro Payment: Password submitted: ' . $password );
-                error_log( 'KantanPro Payment: Is valid password: ' . ( $is_valid ? 'true' : 'false' ) );
-                error_log( 'KantanPro Payment: Generated hash for submitted password: ' . wp_hash_password( $password ) );
-                error_log( 'KantanPro Payment: Expected hash: ' . $developer_password_hash );
-            }
-            
-            if ( $is_valid ) {
-                $_SESSION['ktpwp_payment_authenticated'] = true;
-                $_SESSION['ktpwp_developer_authenticated'] = true; // 開発者認証も設定
-                return true;
-            } else {
-                echo '<div class="notice notice-error"><p>' . esc_html__( 'パスワードが正しくありません。', 'ktpwp' ) . '</p></div>';
-            }
-        }
-
         return false;
     }
 
