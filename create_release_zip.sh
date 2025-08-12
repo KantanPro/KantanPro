@@ -121,12 +121,12 @@ find "${BUILD_DIR}" -type f -name "*.orig" -delete
 echo "  - 完了"
 
 # 7. ZIP圧縮
-echo "\n[7/8] ZIPファイルを作成中..."
+echo "\n[7/9] ZIPファイルを作成中..."
 (cd "${BUILD_DIR}/.." && zip -r -q "${FINAL_ZIP_PATH}" "${BUILD_DIR_NAME}")
 
 if [ $? -eq 0 ]; then
     # 8. 最終検証
-    echo "\n[8/8] 最終検証を実行中..."
+    echo "\n[8/9] 最終検証を実行中..."
     
     # ZIPファイルの整合性チェック
     if unzip -t "${FINAL_ZIP_PATH}" > /dev/null 2>&1; then
@@ -185,6 +185,32 @@ if [ $? -eq 0 ]; then
         echo "  ⚠️  ドキュメントファイル: 一部が残っています"
     fi
     
+    # 9. 配布前の安全チェック: 内部用メニュー/コードが有効化されないこと
+    echo "\n[9/9] 配布前の安全チェックを実行中..."
+    # a) ZIP内に wp-config.php が含まれていないこと（原則含めない）
+    if unzip -l "${FINAL_ZIP_PATH}" | grep -q "wp-config.php"; then
+        echo "  ❌ ZIPに wp-config.php が含まれています。配布禁止。"
+        exit 1
+    else
+        echo "  ✅ ZIPに wp-config.php は含まれていません（推奨）"
+    fi
+
+    # b) プラグイン側で KTPWP_DEVELOPMENT_MODE を true に define していないこと
+    if grep -RIEq "define\s*\(\s*['\"]KTPWP_DEVELOPMENT_MODE['\"]\s*,\s*true\s*\)" "${BUILD_DIR}"; then
+        echo "  ❌ プラグイン内で KTPWP_DEVELOPMENT_MODE を true に定義しています。配布禁止。"
+        exit 1
+    else
+        echo "  ✅ プラグイン内で KTPWP_DEVELOPMENT_MODE を true に定義していません（OK）"
+    fi
+
+    # c) 旧開発者パスワードや既知のハッシュが残っていないこと
+    if grep -RIEq "8bee1222|\$2y\$10\$92IXUNpkjO0rOQ5byMi\.Ye4oKoEa3Ro9llC/.og/at2\.uheWG/igi" "${BUILD_DIR}"; then
+        echo "  ❌ 旧開発者パスワード関連の文字列が残存しています。配布禁止。"
+        exit 1
+    else
+        echo "  ✅ 旧開発者パスワード関連の文字列は検出されませんでした（OK）"
+    fi
+
     # クリーンアップ
     rm -rf "${BUILD_DIR}"
     echo "  ✅ 一時ファイル: クリーンアップ完了"

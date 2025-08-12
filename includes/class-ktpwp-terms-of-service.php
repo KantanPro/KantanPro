@@ -16,10 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class KTPWP_Terms_Of_Service {
 
-    /**
-     * 開発者パスワード（暗号化済み）
-     */
-    const DEVELOPER_PASSWORD_HASH = '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi'; // 8bee1222
+    // 旧開発者パスワード関連は廃止しました
 
     /**
      * シングルトンインスタンス
