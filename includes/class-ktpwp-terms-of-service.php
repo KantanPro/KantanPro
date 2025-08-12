@@ -230,39 +230,8 @@ kantanpro22@gmail.com
      * パスワード入力フォームを表示
      */
     private function display_password_form() {
-        ?>
-        <div class="wrap">
-            <h1><?php echo esc_html__( '利用規約管理', 'ktpwp' ); ?></h1>
-            <div class="notice notice-warning">
-                <p><?php echo esc_html__( '開発者パスワードが必要です。', 'ktpwp' ); ?></p>
-            </div>
-            <?php
-            // パスワード入力フォームのエラーメッセージも修正
-            if ( isset( $_POST['developer_password'] ) ) {
-                $password = sanitize_text_field( $_POST['developer_password'] );
-                
-                // 開発者パスワード（暗号化済み）- 8bee1222の正しいハッシュ
-                $developer_password_hash = '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi'; // 8bee1222
-
-                // 新しいハッシュを生成して使用（デバッグ用）
-                if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                    $new_hash = wp_hash_password( '8bee1222' );
-                    $developer_password_hash = $new_hash;
-                }
-
-                if ( ! wp_check_password( $password, $developer_password_hash ) ) {
-                    echo '<div class="notice notice-error is-dismissible"><p>' . esc_html__( 'パスワードが正しくありません。', 'ktpwp' ) . '</p></div>';
-                }
-            } ?>
-            <form method="post" style="max-width: 600px;">
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <label for="developer_password" style="white-space: nowrap;"><?php echo esc_html__( '開発者パスワード', 'ktpwp' ); ?></label>
-                    <input type="password" name="developer_password" id="developer_password" class="regular-text" required style="flex: 1;" />
-                    <?php submit_button( __( '認証', 'ktpwp' ), 'primary', 'submit', false ); ?>
-                </div>
-            </form>
-        </div>
-        <?php
+        // 廃止: パスワードフォームの代わりに無効化メッセージのみ表示
+        echo '<div class="wrap"><div class="notice notice-info is-dismissible"><p>' . esc_html__( 'このページは現在無効化されています。', 'ktpwp' ) . '</p></div></div>';
     }
 
     /**
