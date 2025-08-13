@@ -3,7 +3,7 @@
  * Plugin Name: KantanPro
  * Plugin URI: https://www.kantanpro.com/
  * Description: フリーランス・スモールビジネス向けの仕事効率化システム。ショートコード[ktpwp_all_tab]を固定ページに設置してください。
- * Version: 1.0.24
+ * Version: 1.0.25
  * Author: KantanPro
  * Author URI: https://www.kantanpro.com/kantanpro-page
  * License: GPL v2 or later
@@ -35,7 +35,7 @@ if ( file_exists( plugin_dir_path( __FILE__ ) . 'development-config.php' ) ) {
 
 // プラグイン定数定義
 if ( ! defined( 'KANTANPRO_PLUGIN_VERSION' ) ) {
-    define( 'KANTANPRO_PLUGIN_VERSION', '1.0.24' );
+    define( 'KANTANPRO_PLUGIN_VERSION', '1.0.25' );
 }
 if ( ! defined( 'KANTANPRO_PLUGIN_NAME' ) ) {
     define( 'KANTANPRO_PLUGIN_NAME', 'KantanPro' );
@@ -958,12 +958,18 @@ function ktpwp_safe_add_client_selected_department_column() {
  */
 function ktpwp_safe_run_migration_files( $from_version, $to_version ) {
     try {
-        if ( function_exists( 'ktpwp_run_migration_files' ) ) {
-            ktpwp_run_migration_files( $from_version, $to_version );
-        } else {
-            // マイグレーションファイルを直接実行
-            ktpwp_run_migration_files_directly( $from_version, $to_version );
-        }
+		if ( function_exists( 'ktpwp_run_migration_files' ) ) {
+			$executed_ok = ktpwp_run_migration_files( $from_version, $to_version );
+			if ( $executed_ok === false ) {
+				throw new Exception( 'マイグレーションファイルの実行に失敗しました' );
+			}
+		} else {
+			// マイグレーションファイルを直接実行
+			$executed_ok = ktpwp_run_migration_files_directly( $from_version, $to_version );
+			if ( $executed_ok === false ) {
+				throw new Exception( 'マイグレーションファイルの実行に失敗しました' );
+			}
+		}
     } catch ( Exception $e ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
             error_log( 'KTPWP Safe Migration Files Error: ' . $e->getMessage() );
@@ -990,7 +996,7 @@ function ktpwp_run_migration_files_directly( $from_version, $to_version ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
             error_log( 'KTPWP: マイグレーションディレクトリが存在しません: ' . $migration_dir );
         }
-        return;
+		return true; // 実行対象なしは成功扱い
     }
     
     // マイグレーションファイルを取得
@@ -1000,11 +1006,13 @@ function ktpwp_run_migration_files_directly( $from_version, $to_version ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
             error_log( 'KTPWP: マイグレーションファイルが見つかりません' );
         }
-        return;
+		return true; // 実行対象なしは成功扱い
     }
     
     // ファイル名でソート
     sort( $migration_files );
+
+	$all_ok = true;
     
     foreach ( $migration_files as $migration_file ) {
         $filename = basename( $migration_file );
@@ -1023,24 +1031,68 @@ function ktpwp_run_migration_files_directly( $from_version, $to_version ) {
                 error_log( 'KTPWP: マイグレーションファイルを実行中: ' . $filename );
             }
             
-            // マイグレーションファイルを読み込み
-            require_once $migration_file;
-            
-            // 実行完了フラグを設定
-            update_option( $migration_key, true );
-            update_option( $migration_key . '_timestamp', current_time( 'mysql' ) );
-            
-            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP: マイグレーションファイルが正常に実行されました: ' . $filename );
-            }
+			// マイグレーションファイルを読み込み（読み込み前後のクラス差分を取得）
+			$before_classes = get_declared_classes();
+			require_once $migration_file;
+			$after_classes = get_declared_classes();
+			$new_classes = array_diff( $after_classes, $before_classes );
+			
+			$executed = false;
+			
+			// 1) 新規に宣言されたクラスから up() を呼ぶ
+			foreach ( $new_classes as $class_name ) {
+				if ( method_exists( $class_name, 'up' ) ) {
+					$result = call_user_func( array( $class_name, 'up' ) );
+					if ( $result !== false ) {
+						$executed = true;
+					}
+				}
+			}
+			
+			// 2) ファイル名から関数名を推測して実行（例: 20250722_create_invoice_items_table → ktpwp_create_invoice_items_table）
+			if ( ! $executed ) {
+				$base = preg_replace( '/\.php$/', '', $filename );
+				if ( preg_match( '/^\d{8,}[_-]?(.*)$/', $base, $m ) ) {
+					$slug = $m[1];
+				} else {
+					$slug = $base;
+				}
+				$slug = strtolower( preg_replace( '/[^a-zA-Z0-9_\-]+/', '_', $slug ) );
+				$slug = str_replace( '-', '_', $slug );
+				$candidate_function = 'ktpwp_' . $slug;
+				if ( function_exists( $candidate_function ) ) {
+					$result = call_user_func( $candidate_function );
+					if ( $result !== false ) {
+						$executed = true;
+					}
+				}
+			}
+			
+			if ( $executed ) {
+				// 実行完了フラグを設定（成功時のみ）
+				update_option( $migration_key, true );
+				update_option( $migration_key . '_timestamp', current_time( 'mysql' ) );
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					error_log( 'KTPWP: マイグレーションを正常に実行しました: ' . $filename );
+				}
+			} else {
+				// 実行できなかった場合はフラグを立てない（次回再試行）
+				$all_ok = false;
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					error_log( 'KTPWP: このマイグレーションファイルで実行可能な処理を見つけられませんでした（未完了扱い）: ' . $filename );
+				}
+			}
             
         } catch ( Exception $e ) {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
                 error_log( 'KTPWP Migration File Error: ' . $filename . ' - ' . $e->getMessage() );
             }
-            // マイグレーションファイルのエラーは致命的ではないため、ログのみ記録して続行
+			// このファイルは未完了とみなし、全体成功フラグを下げる
+			$all_ok = false;
         }
     }
+
+	return $all_ok;
 }
 
 /**
@@ -1292,9 +1344,8 @@ function ktpwp_comprehensive_activation() {
         update_option( 'ktpwp_activation_error_timestamp', current_time( 'mysql' ) );
         update_option( 'ktpwp_activation_error_count', get_option( 'ktpwp_activation_error_count', 0 ) + 1 );
         
-        // エラーが発生した場合でも基本的な設定は保存
-        update_option( 'ktpwp_version', KANTANPRO_PLUGIN_VERSION );
-        update_option( 'ktpwp_db_version', KANTANPRO_PLUGIN_VERSION );
+		// エラーが発生した場合でも基本的な設定は保存（DBバージョンは更新しない）
+		update_option( 'ktpwp_version', KANTANPRO_PLUGIN_VERSION );
         
         // エラー通知を設定
         set_transient( 'ktpwp_activation_error', 'プラグインの有効化中にエラーが発生しました。管理者にお問い合わせください。', 300 );
@@ -1888,9 +1939,8 @@ function ktpwp_plugin_activation() {
             error_log( 'KTPWP: プラグイン有効化処理でエラーが発生: ' . $e->getMessage() );
         }
         
-        // エラーが発生した場合でも基本的な設定は保存
-        update_option( 'ktpwp_version', KANTANPRO_PLUGIN_VERSION );
-        update_option( 'ktpwp_db_version', KANTANPRO_PLUGIN_VERSION );
+		// エラーが発生した場合でも基本的な設定は保存（DBバージョンは更新しない）
+		update_option( 'ktpwp_version', KANTANPRO_PLUGIN_VERSION );
         
         // エラー通知を設定
         set_transient( 'ktpwp_activation_error', 'プラグインの有効化中にエラーが発生しました。プラグインを再有効化してください。', 60 );
