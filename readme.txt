@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.0.23
+Stable tag: 1.0.25
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -243,6 +243,10 @@ KantanProは、WordPress上で以下の業務を一元管理できる多機能�
 * 推奨PHP拡張: GD（画像処理用）
 
 == 変更履歴 ==
+
+= 1.0.25 - 2025年08月13日 =
+* サーバー移転対応
+  - サーバー移転時のためのデータ処理機能を追加（エクスポート/インポート補助、URL/パス置換、エンコード正規化、ドライラン、ログ出力）
 
 = 1.0.23 - 2025年08月11日 =
 * 消費税モード対応

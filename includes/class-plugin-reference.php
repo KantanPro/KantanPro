@@ -12,7 +12,7 @@
  * - シンプル更新システムを実装。
  * - 寄付機能（Stripe決済・進捗管理・自動メール送信）を追加。
  * - バージョンアップ履歴・トラブルシューティングも掲載。
- * - 最新バージョン: 1.0.23 - 2025年8月11日更新
+ * - 最新バージョン: 1.0.25 - 2025年8月13日更新
 * - 更新チェック問題修正
 * - リポジトリ名を修正（KantanPro/KantanPro-a- → KantanPro/KantanPro）
 * - 協力会社のエラーを修正
@@ -664,6 +664,17 @@ if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
                 <h3>📋 バージョン履歴</h3>
                 
                 <div class="ktpwp-changelog-item">
+                    <h4>1.0.25 - 2025年8月13日</h4>
+                    <ul>
+                        <li><strong>サーバー移転対応</strong>
+                            <ul>
+                                <li>サーバー移転時のためのデータ処理機能を追加（エクスポート/インポート補助、URL/パス置換、エンコード正規化、ドライラン、ログ出力）</li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="ktpwp-changelog-item">
                     <h4>1.0.23 - 2025年8月11日</h4>
                     <ul>
                         <li><strong>消費税モード対応</strong>
@@ -1266,8 +1277,8 @@ if ( ! class_exists( 'KTPWP_Plugin_Reference' ) ) {
 				</li>
 			</ul>
 			
-            <h3>最終更新日</h3>
-            <p>2025年8月11日</p>
+			<h3>最終更新日</h3>
+			<p>2025年8月13日</p>
 			';
 		}
 
