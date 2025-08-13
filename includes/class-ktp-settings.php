@@ -203,6 +203,10 @@ class KTP_Settings {
         add_action( 'admin_head', array( $this, 'output_custom_styles' ) );
         add_action( 'admin_init', array( $this, 'handle_default_settings_actions' ) );
 
+		// データエクスポート/インポート用ハンドラ
+		add_action( 'admin_post_ktpwp_export_data', array( $this, 'handle_export_data' ) );
+		add_action( 'admin_post_ktpwp_import_data', array( $this, 'handle_import_data' ) );
+
         // ロゴマークのデフォルト値チェック
         add_action( 'init', array( $this, 'ensure_logo_default_value' ) );
 
@@ -635,6 +639,16 @@ class KTP_Settings {
             'ktpwp_dummy_data_page' // 既存の表示関数を流用
         );
 
+		// サブメニュー - データ処理（エクスポート/インポート）
+		add_submenu_page(
+			'ktp-settings', // 親メニューのスラッグ
+			__( 'データ処理', 'ktpwp' ), // ページタイトル
+			__( 'データ処理', 'ktpwp' ), // メニュータイトル
+			'manage_options', // 権限
+			'ktp-data-tools', // メニューのスラッグ
+			array( $this, 'create_data_tools_page' ) // 表示を処理する関数
+		);
+
         // サブメニュー - 開発者設定（開発モード時のみ登録）
         if ( defined( 'KTPWP_DEVELOPMENT_MODE' ) && KTPWP_DEVELOPMENT_MODE ) {
             add_submenu_page(
@@ -649,6 +663,230 @@ class KTP_Settings {
 
 
     }
+
+	/**
+	 * データ処理ページ（エクスポート/インポート）
+	 */
+	public function create_data_tools_page() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( __( 'この設定ページにアクセスする権限がありません。', 'ktpwp' ) );
+		}
+
+		$notice = '';
+		if ( isset( $_GET['ktp_action'] ) ) {
+			$action = sanitize_text_field( $_GET['ktp_action'] );
+			if ( $action === 'import_success' ) {
+				$notice = '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'インポートが完了しました。', 'ktpwp' ) . '</p></div>';
+			} elseif ( $action === 'import_failed' ) {
+				$notice = '<div class="notice notice-error is-dismissible"><p>' . esc_html__( 'インポートに失敗しました。ファイル形式をご確認ください。', 'ktpwp' ) . '</p></div>';
+			}
+		}
+
+		echo '<div class="wrap ktp-admin-wrap">';
+		echo '<h1>' . esc_html__( 'データ処理', 'ktpwp' ) . '</h1>';
+		if ( $notice ) {
+			echo $notice; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		}
+
+		// エクスポート
+		echo '<div class="ktp-settings-section">';
+		echo '<h2>' . esc_html__( 'エクスポート', 'ktpwp' ) . '</h2>';
+		echo '<p>' . esc_html__( 'KantanProの設定とデータを1つのJSONファイルに出力します。', 'ktpwp' ) . '</p>';
+		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
+		echo '<input type="hidden" name="action" value="ktpwp_export_data" />';
+		echo wp_nonce_field( 'ktpwp_export_data', 'ktpwp_export_nonce', true, false );
+		echo '<p><button type="submit" class="button button-primary">' . esc_html__( 'エクスポート実行', 'ktpwp' ) . '</button></p>';
+		echo '</form>';
+		echo '</div>';
+
+		// インポート
+		echo '<div class="ktp-settings-section">';
+		echo '<h2>' . esc_html__( 'インポート', 'ktpwp' ) . '</h2>';
+		echo '<p>' . esc_html__( 'エクスポートしたJSONファイルを選択してインポートします。サーバー移転時の新規環境（空データ）を前提としています。', 'ktpwp' ) . '</p>';
+		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" enctype="multipart/form-data">';
+		echo '<input type="hidden" name="action" value="ktpwp_import_data" />';
+		echo wp_nonce_field( 'ktpwp_import_data', 'ktpwp_import_nonce', true, false );
+		echo '<input type="file" name="ktp_import_file" accept="application/json" required /> ';
+		echo '<p><button type="submit" class="button button-primary">' . esc_html__( 'インポート実行', 'ktpwp' ) . '</button></p>';
+		echo '</form>';
+		echo '</div>';
+
+		echo '</div>';
+	}
+
+	/**
+	 * エクスポート実行
+	 */
+	public function handle_export_data() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( __( '権限がありません。', 'ktpwp' ) );
+		}
+		if ( ! isset( $_POST['ktpwp_export_nonce'] ) || ! wp_verify_nonce( $_POST['ktpwp_export_nonce'], 'ktpwp_export_data' ) ) {
+			wp_die( __( 'セキュリティチェックに失敗しました。', 'ktpwp' ) );
+		}
+
+		global $wpdb;
+		$export = array();
+		$export['metadata'] = array(
+			'exported_at' => current_time( 'mysql' ),
+			'site_url' => site_url(),
+			'plugin_version' => defined( 'KANTANPRO_PLUGIN_VERSION' ) ? KANTANPRO_PLUGIN_VERSION : 'unknown',
+			'db_prefix' => $wpdb->prefix,
+		);
+
+		// オプションの収集
+		$export['options'] = $this->collect_plugin_options();
+
+		// テーブルの収集
+		$tables = $this->get_plugin_tables();
+		$export['tables'] = array();
+		foreach ( $tables as $table_name ) {
+			$rows = $wpdb->get_results( "SELECT * FROM `{$table_name}`", ARRAY_A );
+			$export['tables'][ $table_name ] = $rows ? $rows : array();
+		}
+
+		$json = wp_json_encode( $export );
+		if ( empty( $json ) ) {
+			wp_die( __( 'エクスポートデータの生成に失敗しました。', 'ktpwp' ) );
+		}
+
+		$filename = 'kantanpro-export-' . date_i18n( 'Ymd-His' ) . '.json';
+		header( 'Content-Description: File Transfer' );
+		header( 'Content-Type: application/json; charset=utf-8' );
+		header( 'Content-Disposition: attachment; filename=' . $filename );
+		header( 'Expires: 0' );
+		header( 'Cache-Control: must-revalidate' );
+		header( 'Pragma: public' );
+		echo $json; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		exit;
+	}
+
+	/**
+	 * インポート実行
+	 */
+	public function handle_import_data() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( __( '権限がありません。', 'ktpwp' ) );
+		}
+		if ( ! isset( $_POST['ktpwp_import_nonce'] ) || ! wp_verify_nonce( $_POST['ktpwp_import_nonce'], 'ktpwp_import_data' ) ) {
+			wp_die( __( 'セキュリティチェックに失敗しました。', 'ktpwp' ) );
+		}
+
+		$redirect = admin_url( 'admin.php?page=ktp-data-tools' );
+		if ( ! isset( $_FILES['ktp_import_file'] ) || empty( $_FILES['ktp_import_file']['tmp_name'] ) ) {
+			wp_safe_redirect( add_query_arg( 'ktp_action', 'import_failed', $redirect ) );
+			exit;
+		}
+
+		$contents = file_get_contents( $_FILES['ktp_import_file']['tmp_name'] );
+		$data = json_decode( $contents, true );
+		if ( ! is_array( $data ) || ! isset( $data['tables'] ) || ! isset( $data['options'] ) ) {
+			wp_safe_redirect( add_query_arg( 'ktp_action', 'import_failed', $redirect ) );
+			exit;
+		}
+
+		global $wpdb;
+		$source_prefix = isset( $data['metadata']['db_prefix'] ) ? (string) $data['metadata']['db_prefix'] : '';
+
+		// オプションの復元
+		if ( isset( $data['options'] ) && is_array( $data['options'] ) ) {
+			foreach ( $data['options'] as $option_name => $option_value ) {
+				// JSON化された値をそのまま保存
+				update_option( $option_name, $option_value );
+			}
+		}
+
+		// テーブルデータの復元（空データ前提）
+		if ( isset( $data['tables'] ) && is_array( $data['tables'] ) ) {
+			foreach ( $data['tables'] as $source_table => $rows ) {
+				$target_table = $this->map_table_to_current_prefix( $source_table, $source_prefix, $wpdb->prefix );
+				if ( empty( $target_table ) ) {
+					continue;
+				}
+				// テーブルが存在しない場合はスキップ（環境差異対策）
+				$table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $target_table ) );
+				if ( $table_exists !== $target_table ) {
+					continue;
+				}
+				// 可能ならトランザクション（InnoDBの場合）
+				$wpdb->query( 'START TRANSACTION' );
+				try {
+					if ( is_array( $rows ) ) {
+						foreach ( $rows as $row ) {
+							if ( ! is_array( $row ) ) {
+								continue;
+							}
+							// 列の存在チェック
+							$columns = $wpdb->get_col( "DESC `{$target_table}`", 0 );
+							$insert = array();
+							foreach ( $row as $key => $value ) {
+								if ( in_array( $key, $columns, true ) ) {
+									$insert[ $key ] = $value;
+								}
+							}
+							if ( ! empty( $insert ) ) {
+								$wpdb->insert( $target_table, $insert );
+							}
+						}
+					}
+					$wpdb->query( 'COMMIT' );
+				} catch ( Exception $e ) {
+					$wpdb->query( 'ROLLBACK' );
+				}
+			}
+		}
+
+		wp_safe_redirect( add_query_arg( 'ktp_action', 'import_success', $redirect ) );
+		exit;
+	}
+
+	/**
+	 * プラグイン関連のオプション収集
+	 *
+	 * @return array
+	 */
+	private function collect_plugin_options() {
+		global $wpdb;
+		$like1 = $wpdb->esc_like( 'ktp_' ) . '%';
+		$like2 = $wpdb->esc_like( 'ktpwp_' ) . '%';
+		$option_names = $wpdb->get_col( $wpdb->prepare( "SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s", $like1, $like2 ) );
+		$options = array();
+		if ( $option_names ) {
+			foreach ( $option_names as $name ) {
+				$options[ $name ] = get_option( $name );
+			}
+		}
+		return $options;
+	}
+
+	/**
+	 * プラグイン関連テーブル名の取得（現在のプレフィックス）
+	 *
+	 * @return string[]
+	 */
+	private function get_plugin_tables() {
+		global $wpdb;
+		$like = $wpdb->esc_like( $wpdb->prefix . 'ktp_' ) . '%';
+		$tables = $wpdb->get_col( $wpdb->prepare( 'SHOW TABLES LIKE %s', $like ) );
+		return is_array( $tables ) ? $tables : array();
+	}
+
+	/**
+	 * 別環境でエクスポートされたテーブル名を現在環境のプレフィックスに合わせて変換
+	 *
+	 * @param string $source_table  例: wp_ktp_order
+	 * @param string $source_prefix 例: wp_
+	 * @param string $target_prefix 現在の $wpdb->prefix
+	 * @return string 変換後のテーブル名
+	 */
+	private function map_table_to_current_prefix( $source_table, $source_prefix, $target_prefix ) {
+		$pos = strpos( $source_table, 'ktp_' );
+		if ( $pos === false ) {
+			return '';
+		}
+		$suffix = substr( $source_table, $pos );
+		return $target_prefix . $suffix;
+	}
     /**
      * 開発者設定ページの表示
      */
