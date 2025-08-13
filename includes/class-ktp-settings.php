@@ -691,10 +691,17 @@ class KTP_Settings {
 		// エクスポート
 		echo '<div class="ktp-settings-section">';
 		echo '<h2>' . esc_html__( 'エクスポート', 'ktpwp' ) . '</h2>';
-		echo '<p>' . esc_html__( 'KantanProの設定とデータを1つのJSONファイルに出力します。', 'ktpwp' ) . '</p>';
+		echo '<p>' . esc_html__( 'KantanProの設定とデータを1つのファイルに出力します。', 'ktpwp' ) . '</p>';
 		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
 		echo '<input type="hidden" name="action" value="ktpwp_export_data" />';
 		echo wp_nonce_field( 'ktpwp_export_data', 'ktpwp_export_nonce', true, false );
+		echo '<p>';
+		echo '<label for="ktp_export_format">' . esc_html__( '形式', 'ktpwp' ) . ':</label> ';
+		echo '<select id="ktp_export_format" name="format">';
+		echo '<option value="json" selected>JSON</option>';
+		echo '<option value="csv">CSV</option>';
+		echo '</select>';
+		echo '</p>';
 		echo '<p><button type="submit" class="button button-primary">' . esc_html__( 'エクスポート実行', 'ktpwp' ) . '</button></p>';
 		echo '</form>';
 		echo '</div>';
@@ -702,11 +709,18 @@ class KTP_Settings {
 		// インポート
 		echo '<div class="ktp-settings-section">';
 		echo '<h2>' . esc_html__( 'インポート', 'ktpwp' ) . '</h2>';
-		echo '<p>' . esc_html__( 'エクスポートしたJSONファイルを選択してインポートします。サーバー移転時の新規環境（空データ）を前提としています。', 'ktpwp' ) . '</p>';
+		echo '<p>' . esc_html__( 'エクスポートしたJSON/CSVファイルを選択してインポートします。サーバー移転時の新規環境（空データ）を前提としています。', 'ktpwp' ) . '</p>';
 		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" enctype="multipart/form-data">';
 		echo '<input type="hidden" name="action" value="ktpwp_import_data" />';
 		echo wp_nonce_field( 'ktpwp_import_data', 'ktpwp_import_nonce', true, false );
-		echo '<input type="file" name="ktp_import_file" accept="application/json" required /> ';
+		echo '<p>';
+		echo '<label for="ktp_import_format">' . esc_html__( '形式', 'ktpwp' ) . ':</label> ';
+		echo '<select id="ktp_import_format" name="format">';
+		echo '<option value="json" selected>JSON</option>';
+		echo '<option value="csv">CSV</option>';
+		echo '</select>';
+		echo '</p>';
+		echo '<input type="file" name="ktp_import_file" accept="application/json,text/csv,.csv" required /> ';
 		echo '<p><button type="submit" class="button button-primary">' . esc_html__( 'インポート実行', 'ktpwp' ) . '</button></p>';
 		echo '</form>';
 		echo '</div>';
@@ -750,14 +764,54 @@ class KTP_Settings {
 			wp_die( __( 'エクスポートデータの生成に失敗しました。', 'ktpwp' ) );
 		}
 
-		$filename = 'kantanpro-export-' . date_i18n( 'Ymd-His' ) . '.json';
+		$format = isset( $_POST['format'] ) ? sanitize_text_field( $_POST['format'] ) : 'json';
+		$format = in_array( $format, array( 'json', 'csv' ), true ) ? $format : 'json';
+
+		if ( $format === 'json' ) {
+			$filename = 'kantanpro-export-' . date_i18n( 'Ymd-His' ) . '.json';
+			header( 'Content-Description: File Transfer' );
+			header( 'Content-Type: application/json; charset=utf-8' );
+			header( 'Content-Disposition: attachment; filename=' . $filename );
+			header( 'Expires: 0' );
+			header( 'Cache-Control: must-revalidate' );
+			header( 'Pragma: public' );
+			echo $json; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			exit;
+		}
+
+		// CSV: 複数テーブルを1ファイルに含めるため、簡易的に疑似区切りを入れる
+		$csv_output = '';
+		// オプションをCSV化
+		$csv_output .= "#OPTIONS\n";
+		$csv_output .= "option_name,option_value\n";
+		foreach ( $export['options'] as $name => $value ) {
+			$csv_output .= $this->csv_line( array( $name, wp_json_encode( $value ) ) );
+		}
+		// テーブルごとにCSV化
+		foreach ( $export['tables'] as $table => $rows ) {
+			$csv_output .= "\n#TABLE:" . $table . "\n";
+			if ( empty( $rows ) ) {
+				continue;
+			}
+			$headers = array_keys( $rows[0] );
+			$csv_output .= $this->csv_line( $headers );
+			foreach ( $rows as $row ) {
+				$line = array();
+				foreach ( $headers as $h ) {
+					$line[] = isset( $row[ $h ] ) ? (string) $row[ $h ] : '';
+				}
+				$csv_output .= $this->csv_line( $line );
+			}
+		}
+
+		$filename = 'kantanpro-export-' . date_i18n( 'Ymd-His' ) . '.csv';
 		header( 'Content-Description: File Transfer' );
-		header( 'Content-Type: application/json; charset=utf-8' );
+		header( 'Content-Type: text/csv; charset=utf-8' );
 		header( 'Content-Disposition: attachment; filename=' . $filename );
 		header( 'Expires: 0' );
 		header( 'Cache-Control: must-revalidate' );
 		header( 'Pragma: public' );
-		echo $json; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		echo $csv_output; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		exit;
 	}
 
@@ -778,62 +832,31 @@ class KTP_Settings {
 			exit;
 		}
 
-		$contents = file_get_contents( $_FILES['ktp_import_file']['tmp_name'] );
-		$data = json_decode( $contents, true );
-		if ( ! is_array( $data ) || ! isset( $data['tables'] ) || ! isset( $data['options'] ) ) {
-			wp_safe_redirect( add_query_arg( 'ktp_action', 'import_failed', $redirect ) );
-			exit;
-		}
+		$format = isset( $_POST['format'] ) ? sanitize_text_field( $_POST['format'] ) : 'json';
+		$format = in_array( $format, array( 'json', 'csv' ), true ) ? $format : 'json';
 
-		global $wpdb;
-		$source_prefix = isset( $data['metadata']['db_prefix'] ) ? (string) $data['metadata']['db_prefix'] : '';
-
-		// オプションの復元
-		if ( isset( $data['options'] ) && is_array( $data['options'] ) ) {
-			foreach ( $data['options'] as $option_name => $option_value ) {
-				// JSON化された値をそのまま保存
-				update_option( $option_name, $option_value );
+		if ( $format === 'json' ) {
+			$contents = file_get_contents( $_FILES['ktp_import_file']['tmp_name'] );
+			$data = json_decode( $contents, true );
+			if ( ! is_array( $data ) || ! isset( $data['tables'] ) || ! isset( $data['options'] ) ) {
+				wp_safe_redirect( add_query_arg( 'ktp_action', 'import_failed', $redirect ) );
+				exit;
 			}
-		}
-
-		// テーブルデータの復元（空データ前提）
-		if ( isset( $data['tables'] ) && is_array( $data['tables'] ) ) {
-			foreach ( $data['tables'] as $source_table => $rows ) {
-				$target_table = $this->map_table_to_current_prefix( $source_table, $source_prefix, $wpdb->prefix );
-				if ( empty( $target_table ) ) {
-					continue;
-				}
-				// テーブルが存在しない場合はスキップ（環境差異対策）
-				$table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $target_table ) );
-				if ( $table_exists !== $target_table ) {
-					continue;
-				}
-				// 可能ならトランザクション（InnoDBの場合）
-				$wpdb->query( 'START TRANSACTION' );
-				try {
-					if ( is_array( $rows ) ) {
-						foreach ( $rows as $row ) {
-							if ( ! is_array( $row ) ) {
-								continue;
-							}
-							// 列の存在チェック
-							$columns = $wpdb->get_col( "DESC `{$target_table}`", 0 );
-							$insert = array();
-							foreach ( $row as $key => $value ) {
-								if ( in_array( $key, $columns, true ) ) {
-									$insert[ $key ] = $value;
-								}
-							}
-							if ( ! empty( $insert ) ) {
-								$wpdb->insert( $target_table, $insert );
-							}
-						}
-					}
-					$wpdb->query( 'COMMIT' );
-				} catch ( Exception $e ) {
-					$wpdb->query( 'ROLLBACK' );
-				}
+			$source_prefix = isset( $data['metadata']['db_prefix'] ) ? (string) $data['metadata']['db_prefix'] : '';
+			$this->import_from_array( $data['options'], $data['tables'], $source_prefix );
+		} else {
+			// CSVインポート: 簡易フォーマット (#OPTIONS と #TABLE: テーブル名)
+			$raw = file( $_FILES['ktp_import_file']['tmp_name'], FILE_IGNORE_NEW_LINES );
+			if ( $raw === false ) {
+				wp_safe_redirect( add_query_arg( 'ktp_action', 'import_failed', $redirect ) );
+				exit;
 			}
+			list( $options, $tables, $source_prefix ) = $this->parse_mixed_csv( $raw );
+			if ( $options === null ) {
+				wp_safe_redirect( add_query_arg( 'ktp_action', 'import_failed', $redirect ) );
+				exit;
+			}
+			$this->import_from_array( $options, $tables, $source_prefix );
 		}
 
 		wp_safe_redirect( add_query_arg( 'ktp_action', 'import_success', $redirect ) );
@@ -857,6 +880,134 @@ class KTP_Settings {
 			}
 		}
 		return $options;
+	}
+
+	/**
+	 * CSV 1行生成（RFC4180に近い簡易実装）
+	 */
+	private function csv_line( $fields ) {
+		$escaped = array();
+		foreach ( (array) $fields as $field ) {
+			$field = (string) $field;
+			$field = str_replace( '"', '""', $field );
+			if ( strpos( $field, ',' ) !== false || strpos( $field, '"' ) !== false || strpos( $field, "\n" ) !== false || strpos( $field, "\r" ) !== false ) {
+				$field = '"' . $field . '"';
+			}
+			$escaped[] = $field;
+		}
+		return implode( ',', $escaped ) . "\n";
+	}
+
+	/**
+	 * 混在CSVのパース（#OPTIONS ブロックと #TABLE: ブロックを解析）
+	 * @return array{0:?array,1:?array,2:string}
+	 */
+	private function parse_mixed_csv( array $lines ) {
+		$options = array();
+		$tables = array();
+		$current = '';
+		$headers = array();
+		$table_name = '';
+		$source_prefix = '';
+
+		for ( $i = 0; $i < count( $lines ); $i++ ) {
+			$line = (string) $lines[ $i ];
+			if ( $line === '' ) { continue; }
+			if ( strpos( $line, '#OPTIONS' ) === 0 ) {
+				$current = 'options_header';
+				$headers = array();
+				continue;
+			}
+			if ( strpos( $line, '#TABLE:' ) === 0 ) {
+				$current = 'table_header';
+				$table_name = trim( substr( $line, 7 ) );
+				$headers = array();
+				continue;
+			}
+			// ヘッダー行処理
+			if ( $current === 'options_header' ) {
+				$headers = $this->parse_csv_row( $line );
+				$current = 'options_rows';
+				continue;
+			}
+			if ( $current === 'table_header' ) {
+				$headers = $this->parse_csv_row( $line );
+				$current = 'table_rows';
+				continue;
+			}
+			// データ行
+			if ( $current === 'options_rows' ) {
+				$row = $this->parse_csv_row( $line );
+				if ( count( $row ) >= 2 ) {
+					$options[ $row[0] ] = json_decode( $row[1], true );
+				}
+				continue;
+			}
+			if ( $current === 'table_rows' ) {
+				$row = $this->parse_csv_row( $line );
+				if ( empty( $headers ) ) { continue; }
+				$assoc = array();
+				foreach ( $headers as $idx => $key ) {
+					$assoc[ $key ] = isset( $row[ $idx ] ) ? $row[ $idx ] : '';
+				}
+				if ( ! isset( $tables[ $table_name ] ) ) { $tables[ $table_name ] = array(); }
+				$tables[ $table_name ][] = $assoc;
+				continue;
+			}
+		}
+
+		return array( $options, $tables, $source_prefix );
+	}
+
+	/**
+	 * CSV1行のパース
+	 */
+	private function parse_csv_row( $line ) {
+		$fp = fopen( 'php://temp', 'r+' );
+		fwrite( $fp, $line );
+		rewind( $fp );
+		$row = fgetcsv( $fp );
+		fclose( $fp );
+		return is_array( $row ) ? $row : array();
+	}
+
+	/**
+	 * 共通配列形式からのインポート
+	 */
+	private function import_from_array( array $options, array $tables, $source_prefix ) {
+		global $wpdb;
+		// オプション
+		foreach ( $options as $option_name => $option_value ) {
+			update_option( $option_name, $option_value );
+		}
+		// テーブル
+		foreach ( $tables as $source_table => $rows ) {
+			$target_table = $this->map_table_to_current_prefix( $source_table, (string) $source_prefix, $wpdb->prefix );
+			if ( empty( $target_table ) ) { continue; }
+			$table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $target_table ) );
+			if ( $table_exists !== $target_table ) { continue; }
+			$wpdb->query( 'START TRANSACTION' );
+			try {
+				if ( is_array( $rows ) ) {
+					foreach ( $rows as $row ) {
+						if ( ! is_array( $row ) ) { continue; }
+						$columns = $wpdb->get_col( "DESC `{$target_table}`", 0 );
+						$insert = array();
+						foreach ( $row as $key => $value ) {
+							if ( in_array( $key, $columns, true ) ) {
+								$insert[ $key ] = $value;
+							}
+						}
+						if ( ! empty( $insert ) ) {
+							$wpdb->insert( $target_table, $insert );
+						}
+					}
+				}
+				$wpdb->query( 'COMMIT' );
+			} catch ( Exception $e ) {
+				$wpdb->query( 'ROLLBACK' );
+			}
+		}
 	}
 
 	/**
