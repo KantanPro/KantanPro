@@ -233,6 +233,7 @@
         function closeOrderPreview() {
             $('#ktp-order-preview-popup').remove();
             $(document).off('keyup.order-preview');
+            $(document).off('click.ktp-order-preview-save', '#ktp-order-preview-save-pdf');
         }
 
         // 閉じるボタンのイベント
@@ -254,8 +255,9 @@
             }
         });
 
-        // 印刷 PDF保存ボタンのイベント
-        $(document).on('click', '#ktp-order-preview-save-pdf', function() {
+        // 印刷 PDF保存ボタンのイベント（二重登録防止のため一旦解除してから登録）
+        $(document).off('click.ktp-order-preview-save', '#ktp-order-preview-save-pdf');
+        $(document).on('click.ktp-order-preview-save', '#ktp-order-preview-save-pdf', function() {
             saveOrderPreviewAsPDF(orderId);
         });
     };
@@ -360,33 +362,74 @@
         }
     }
 
-    // 現在のページで直接印刷する方法
+    // 現在のページで直接印刷する方法（隠しiframeで印刷し、タブを増やさない）
     function printOrderPreviewDirect(content, filename, orderId) {
-        // 現在のページの状態を保存
-        const originalBody = document.body.innerHTML;
-        const originalTitle = document.title;
-        
-        // 印刷用のHTMLを作成
         const printHTML = createPrintableHTML(content, orderId);
-        
-        // ページの内容を印刷用に変更
-        document.body.innerHTML = printHTML;
-        document.title = filename + '.pdf';
-        
-        // 印刷ダイアログを表示
-        window.print();
-        
-        // 印刷完了後、元の内容に戻す
-        setTimeout(function() {
-            document.body.innerHTML = originalBody;
-            document.title = originalTitle;
-            
-            // 受注書プレビューポップアップを閉じる
-            const popup = document.getElementById('ktp-order-preview-popup');
-            if (popup) {
-                popup.remove();
+        const safeTitle = String(filename || '受注書') + '.pdf';
+
+        const iframe = document.createElement('iframe');
+        iframe.style.position = 'fixed';
+        iframe.style.right = '0';
+        iframe.style.bottom = '0';
+        iframe.style.width = '0';
+        iframe.style.height = '0';
+        iframe.style.border = '0';
+        iframe.style.visibility = 'hidden';
+        document.body.appendChild(iframe);
+
+        let cleanupDone = false;
+        const cleanup = function() {
+            if (cleanupDone) return;
+            cleanupDone = true;
+            setTimeout(function() {
+                try { document.body.removeChild(iframe); } catch(_) {}
+            }, 300);
+        };
+
+        let printed = false;
+        const triggerPrint = function() {
+            if (printed) return;
+            printed = true;
+            try {
+                const frameWin = iframe.contentWindow || iframe;
+                frameWin.focus();
+                frameWin.onafterprint = cleanup;
+                setTimeout(function() {
+                    try { frameWin.print(); } catch(e) { cleanup(); }
+                }, 50);
+            } catch (e) {
+                cleanup();
             }
-        }, 1000);
+        };
+
+        try {
+            const frameDoc = (iframe.contentDocument || iframe.contentWindow.document);
+            iframe.onload = function() {
+                try {
+                    const d = iframe.contentDocument || iframe.contentWindow.document;
+                    // タイトルを設定
+                    if (d) {
+                        if (d.title !== undefined) {
+                            d.title = safeTitle;
+                        } else if (d.head) {
+                            const t = d.createElement('title');
+                            t.textContent = safeTitle;
+                            d.head.appendChild(t);
+                        }
+                    }
+                } catch (_) {}
+                triggerPrint();
+            };
+            frameDoc.open();
+            frameDoc.write(printHTML);
+            frameDoc.close();
+        } catch (e) {
+            console.error('[ORDER PREVIEW] iframe印刷処理に失敗:', e);
+            cleanup();
+        }
+
+        // 念のためのタイムアウトクリーンアップ
+        setTimeout(cleanup, 10000);
     }
 
     // ファイル名生成関数
