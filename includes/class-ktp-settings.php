@@ -3304,26 +3304,33 @@ class KTP_Settings {
             $new_input['qualified_invoice_number'] = $qualified_invoice_number;
         }
 
-        // 税制モード（2択UI → 内部モードへ正規化）
+        // 税制モード（明示的に選択: multiple | unified | abolished）
         if ( isset( $input['tax_mode'] ) ) {
-            $ui_mode = sanitize_text_field( $input['tax_mode'] ); // 'with_tax' or 'abolished'
-            if ( $ui_mode === 'abolished' ) {
-                $new_input['tax_mode'] = 'abolished';
+            $ui_mode = sanitize_text_field( $input['tax_mode'] );
+            if ( in_array( $ui_mode, array( 'multiple', 'unified', 'abolished' ), true ) ) {
+                $new_input['tax_mode'] = $ui_mode;
             } else {
-                // 消費税あり: 一律税率が入力されている場合は unified、未入力なら multiple
+                // 後方互換: 'with_tax' が来た場合は multiple とみなす
+                $new_input['tax_mode'] = ( $ui_mode === 'with_tax' ) ? 'multiple' : 'multiple';
+            }
+            // バリデーション: unified選択時は税率必須
+            if ( $new_input['tax_mode'] === 'unified' ) {
                 $rate_raw = isset( $input['unified_tax_rate'] ) ? trim( (string) $input['unified_tax_rate'] ) : '';
-                if ( $rate_raw !== '' && is_numeric( $rate_raw ) ) {
-                    $new_input['tax_mode'] = 'unified';
-                } else {
-                    $new_input['tax_mode'] = 'multiple';
+                if ( $rate_raw === '' ) {
+                    add_settings_error( 'ktp_general_settings', 'unified_tax_rate_required', __( '一律税率モードでは、一律税率（%）の入力が必須です。', 'ktpwp' ), 'error' );
                 }
             }
         }
 
-        // 一律税率
-        if ( isset( $input['unified_tax_rate'] ) ) {
-            $rate = floatval( $input['unified_tax_rate'] );
-            $new_input['unified_tax_rate'] = max( 0.0, $rate );
+        // 一律税率（空欄時はデフォルト5%を適用）
+        if ( array_key_exists( 'unified_tax_rate', $input ) ) {
+            $rate_raw = trim( (string) $input['unified_tax_rate'] );
+            if ( $rate_raw === '' ) {
+                $new_input['unified_tax_rate'] = 5.0;
+            } else {
+                $rate = floatval( $rate_raw );
+                $new_input['unified_tax_rate'] = max( 0.0, $rate );
+            }
         }
 
         // 税率/税額列の非表示
@@ -3374,16 +3381,18 @@ class KTP_Settings {
     public function tax_mode_callback() {
         $options = get_option( 'ktp_general_settings' );
         $saved_mode = isset( $options['tax_mode'] ) ? $options['tax_mode'] : 'multiple';
-        $ui_value = ($saved_mode === 'abolished') ? 'abolished' : 'with_tax';
         ?>
         <label style="margin-right:16px;">
-            <input type="radio" name="ktp_general_settings[tax_mode]" value="with_tax" <?php checked( $ui_value, 'with_tax' ); ?> /> 消費税あり
+            <input type="radio" name="ktp_general_settings[tax_mode]" value="multiple" <?php checked( $saved_mode, 'multiple' ); ?> /> 消費税あり（行ごと税率）
+        </label>
+        <label style="margin-right:16px;">
+            <input type="radio" name="ktp_general_settings[tax_mode]" value="unified" <?php checked( $saved_mode, 'unified' ); ?> /> 一律税率（全明細に同一税率）
         </label>
         <label>
-            <input type="radio" name="ktp_general_settings[tax_mode]" value="abolished" <?php checked( $ui_value, 'abolished' ); ?> /> 消費税なし
+            <input type="radio" name="ktp_general_settings[tax_mode]" value="abolished" <?php checked( $saved_mode, 'abolished' ); ?> /> 消費税なし（税列非表示）
         </label>
         <div style="font-size:12px;color:#555;margin-top:4px;">
-            ※ 消費税なしを選ぶと税率/税額列は自動的に非表示になります。消費税ありで一律税率を設定すると、その値が全明細に適用されます。未入力の場合は複数税率運用になります。
+            ※ 「一律税率」を選択すると入力した税率が全明細に適用され、行ごとの税率編集はできません。「消費税なし」を選択すると税率/税額列は非表示になります。
         </div>
         <?php
     }
@@ -3393,12 +3402,14 @@ class KTP_Settings {
      */
     public function unified_tax_rate_callback() {
         $options = get_option( 'ktp_general_settings' );
-        $value = isset( $options['unified_tax_rate'] ) ? $options['unified_tax_rate'] : '';
+        $value = isset( $options['unified_tax_rate'] ) ? $options['unified_tax_rate'] : 5.00;
         $mode = class_exists('KTPWP_Tax_Policy') ? KTPWP_Tax_Policy::get_mode() : ( isset($options['tax_mode']) ? $options['tax_mode'] : 'multiple' );
-        $disabled = ( $mode === 'abolished' ) ? 'disabled' : '';
+        $disabled = ( $mode !== 'unified' ) ? 'disabled' : '';
         ?>
-        <input type="number" id="unified_tax_rate" name="ktp_general_settings[unified_tax_rate]" value="<?php echo esc_attr( $value ); ?>" step="0.01" min="0" style="width:100px;text-align:right;" <?php echo $disabled; ?>> %
-        <div style="font-size:12px;color:#555;margin-top:4px;">※ 「消費税なし」の場合は入力不要です。</div>
+        <input type="number" id="unified_tax_rate" name="ktp_general_settings[unified_tax_rate]" value="<?php echo esc_attr( $value ); ?>" step="1" min="0" style="width:100px;text-align:right;" placeholder="例：10" <?php echo $disabled; ?>> %
+        <div style="font-size:12px;color:#555;margin-top:4px;">
+            ※ この設定は「一律税率」モード選択時のみ有効です。未入力時は既定の5%が適用されます。0を入力した場合は0%で固定されます。
+        </div>
         <?php
     }
 
@@ -4484,13 +4495,13 @@ define( 'WP_DEBUG_DISPLAY', false );
                id="default_tax_rate" 
                name="ktp_general_settings[default_tax_rate]" 
                value="<?php echo esc_attr( $value ); ?>" 
-               step="0.01" 
+               step="1" 
                min="0" 
                max="100" 
                style="width: 100px;" <?php echo $disabled; ?> />
         <span>%</span>
         <p class="description">
-            <?php esc_html_e( '基本税率を設定してください（消費税なしの場合は自動的に無効）。例：10.00', 'ktpwp' ); ?>
+            <?php esc_html_e( '基本税率を設定してください（消費税なしの場合は自動的に無効）。例：10', 'ktpwp' ); ?>
         </p>
         <?php
     }
@@ -4508,13 +4519,13 @@ define( 'WP_DEBUG_DISPLAY', false );
                id="reduced_tax_rate" 
                name="ktp_general_settings[reduced_tax_rate]" 
                value="<?php echo esc_attr( $value ); ?>" 
-               step="0.01" 
+               step="1" 
                min="0" 
                max="100" 
                style="width: 100px;" <?php echo $disabled; ?> />
         <span>%</span>
         <p class="description">
-            <?php esc_html_e( '軽減税率を設定してください（消費税なしの場合は自動的に無効）。例：8.00', 'ktpwp' ); ?>
+            <?php esc_html_e( '軽減税率を設定してください（消費税なしの場合は自動的に無効）。例：8', 'ktpwp' ); ?>
         </p>
         <?php
     }
