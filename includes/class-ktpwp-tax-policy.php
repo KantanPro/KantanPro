@@ -35,7 +35,7 @@ class KTPWP_Tax_Policy {
         if ( self::is_abolished() ) {
             return 0.0;
         }
-        $rate = isset( $settings['unified_tax_rate'] ) ? (float) $settings['unified_tax_rate'] : 10.0;
+        $rate = isset( $settings['unified_tax_rate'] ) ? (float) $settings['unified_tax_rate'] : 5.0;
         return max( 0.0, $rate );
     }
 
