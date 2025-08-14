@@ -266,7 +266,7 @@ class KTPWP_Assets {
             'ktp-order-preview' => array(
                 'src'       => 'js/ktp-order-preview.js',
                 'deps'      => array( 'jquery', 'ktp-svg-icons' ),
-                'ver'       => KTPWP_PLUGIN_VERSION,
+                'ver'       => KTPWP_PLUGIN_VERSION . '.' . filemtime( KTPWP_PLUGIN_DIR . 'js/ktp-order-preview.js' ),
                 'in_footer' => true,
                 'admin'     => false,
             ),
@@ -304,7 +304,7 @@ class KTPWP_Assets {
             'ktp-client-invoice' => array(
                 'src'       => 'js/ktp-client-invoice.js',
                 'deps'      => array( 'jquery', 'ktp-svg-icons' ),
-                'ver'       => KTPWP_PLUGIN_VERSION,
+                'ver'       => KTPWP_PLUGIN_VERSION . '.' . filemtime( KTPWP_PLUGIN_DIR . 'js/ktp-client-invoice.js' ),
                 'in_footer' => true,
                 'admin'     => false,
                 'localize'  => array(
