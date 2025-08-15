@@ -33,8 +33,8 @@ class KTPWP_Database {
      * @var array
      */
     private $table_classes = array(
-        'client' => 'Kantan_Client_Class',
-        'service' => 'Kantan_Service_Class',
+        'client' => 'KTPWP_Client_Class',
+        'service' => 'KTPWP_Service_Class',
         'supplier' => 'KTPWP_Supplier_Class',
     );
 
@@ -44,12 +44,12 @@ class KTPWP_Database {
      * @var array
      */
     private $class_files = array(
-        'Kantan_Client_Class' => 'class-kantan-client.php',
-        'Kantan_Service_Class' => 'class-kantan-service.php',
-        'KTPWP_Supplier_Class' => 'class-tab-supplier.php',
-        'KTPWP_Supplier_Security' => 'class-supplier-security.php',
-        'KTPWP_Supplier_Data' => 'class-supplier-data.php',
-        'Kantan_Login_Error' => 'class-login-error.php',
+        'KTPWP_Client_Class' => 'class-ktpwp-client.php',
+        'KTPWP_Service_Class' => 'class-ktpwp-service-main.php',
+        'KTPWP_Supplier_Class' => 'class-ktpwp-tab-supplier.php',
+        'KTPWP_Supplier_Security' => 'class-ktpwp-supplier-security.php',
+        'KTPWP_Supplier_Data' => 'class-ktpwp-supplier-data.php',
+        'KTPWP_Login_Error' => 'class-ktpwp-login-error.php',
     );
 
     /**

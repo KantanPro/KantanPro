@@ -1,6 +1,6 @@
 <?php
 
-class Print_Class {
+class KTPWP_Print_Class {
     private $data;
 
     public function __construct( $data ) {

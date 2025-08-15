@@ -17,14 +17,14 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-if ( ! class_exists( 'Kantan_List_Class' ) ) {
+if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 
 	/**
 	 * List class for managing order lists
 	 *
 	 * @since 1.0.0
 	 */
-	class Kantan_List_Class {
+	class KTPWP_List_Class {
 
 		/**
 		 * Constructor
@@ -96,8 +96,8 @@ if ( ! class_exists( 'Kantan_List_Class' ) ) {
 				if ( $num == 3 ) {
 					// 一般設定から警告日数を取得
 					$warning_days = 3; // デフォルト値
-					if ( class_exists( 'KTP_Settings' ) ) {
-						$warning_days = KTP_Settings::get_delivery_warning_days();
+					if ( class_exists( 'KTPWP_Settings' ) ) {
+						$warning_days = KTPWP_Settings::get_delivery_warning_days();
 					}
 
 					$warning_count = $wpdb->get_var(
@@ -224,8 +224,8 @@ if ( ! class_exists( 'Kantan_List_Class' ) ) {
 
 			// ページネーション設定
 			// 一般設定から表示件数を取得（設定クラスが利用可能な場合）
-			if ( class_exists( 'KTP_Settings' ) ) {
-				$query_limit = KTP_Settings::get_work_list_range();
+			if ( class_exists( 'KTPWP_Settings' ) ) {
+				$query_limit = KTPWP_Settings::get_work_list_range();
 			} else {
 				$query_limit = 20; // フォールバック値
 			}
@@ -339,8 +339,8 @@ if ( ! class_exists( 'Kantan_List_Class' ) ) {
 					if ( ! empty( $expected_delivery_date ) && $selected_progress == 3 ) {
 						// 一般設定から警告日数を取得
 						$warning_days = 3; // デフォルト値
-						if ( class_exists( 'KTP_Settings' ) ) {
-							$warning_days = KTP_Settings::get_delivery_warning_days();
+						if ( class_exists( 'KTPWP_Settings' ) ) {
+							$warning_days = KTPWP_Settings::get_delivery_warning_days();
 						}
 
 						// 納期が迫っているかチェック

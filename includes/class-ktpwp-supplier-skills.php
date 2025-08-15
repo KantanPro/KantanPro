@@ -557,8 +557,8 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 
 			// ページネーション設定
 			// 一般設定から表示件数を取得（設定クラスが利用可能な場合）
-			if ( class_exists( 'KTP_Settings' ) ) {
-				$query_limit = KTP_Settings::get_work_list_range();
+			if ( class_exists( 'KTPWP_Settings' ) ) {
+				$query_limit = KTPWP_Settings::get_work_list_range();
 			} else {
 				$query_limit = 10; // フォールバック値（職能リストは10件）
 			}
@@ -734,8 +734,8 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 			$pagination_html = '<div class="pagination" style="text-align: center; margin: 20px 0; padding: 20px 0;">';
 
 			// 1行目：ページ情報表示
-			$page_start = ( $current_page - 1 ) * ( class_exists( 'KTP_Settings' ) ? KTP_Settings::get_work_list_range() : 10 ) + 1;
-			$page_end = min( $total_skills, $current_page * ( class_exists( 'KTP_Settings' ) ? KTP_Settings::get_work_list_range() : 10 ) );
+			$page_start = ( $current_page - 1 ) * ( class_exists( 'KTPWP_Settings' ) ? KTPWP_Settings::get_work_list_range() : 10 ) + 1;
+			$page_end = min( $total_skills, $current_page * ( class_exists( 'KTPWP_Settings' ) ? KTPWP_Settings::get_work_list_range() : 10 ) );
 
 			$pagination_html .= '<div style="margin-bottom: 18px; color: #4b5563; font-size: 14px; font-weight: 500;">';
 			$pagination_html .= esc_html( $current_page ) . ' / ' . esc_html( $total_pages ) . ' ページ（全 ' . esc_html( $total_skills ) . ' 件）';

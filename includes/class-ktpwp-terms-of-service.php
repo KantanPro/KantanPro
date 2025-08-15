@@ -180,7 +180,7 @@ kantanpro22@gmail.com
      * 利用規約メニューを追加
      */
     public function add_terms_menu() {
-        // メニューは既にKTP_Settingsクラスで追加されているため、ここでは何もしない
+        // メニューは既にKTPWP_Settingsクラスで追加されているため、ここでは何もしない
     }
 
     /**

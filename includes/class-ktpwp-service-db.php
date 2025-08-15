@@ -540,13 +540,13 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 			global $wpdb;
 			$table_name = $wpdb->prefix . 'ktp_' . sanitize_key( $tab_name );
 
-			// 先にImage_Processorクラスが存在するか確認
-			if ( ! class_exists( 'Image_Processor' ) ) {
-				require_once __DIR__ . '/class-image_processor.php';
+			// 先にKTPWP_Image_Processorクラスが存在するか確認
+			if ( ! class_exists( 'KTPWP_Image_Processor' ) ) {
+				require_once __DIR__ . '/class-ktpwp-image-processor.php';
 			}
 
 			// 画像URLを取得
-			$image_processor = new Image_Processor();
+			$image_processor = new KTPWP_Image_Processor();
 			$default_image_url = plugin_dir_url( __DIR__ ) . 'images/default/no-image-icon.jpg';
 
 			// デフォルト画像のパスが正しいか確認

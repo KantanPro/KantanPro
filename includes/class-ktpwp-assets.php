@@ -282,7 +282,7 @@ class KTPWP_Assets {
                         'ajax_url' => admin_url( 'admin-ajax.php' ),
                         'nonce'    => wp_create_nonce( 'ktp_ajax_nonce' ),
                         'settings' => array(
-                            'delivery_warning_days' => KTP_Settings::get_delivery_warning_days(),
+                            'delivery_warning_days' => KTPWP_Settings::get_delivery_warning_days(),
                         ),
                     ),
                 ),

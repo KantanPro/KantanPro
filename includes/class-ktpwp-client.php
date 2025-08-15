@@ -14,8 +14,8 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-if ( ! class_exists( 'Kantan_Client_Class' ) ) {
-	class Kantan_Client_Class {
+if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
+	class KTPWP_Client_Class {
 
 		public function __construct() {
 		}
@@ -297,8 +297,8 @@ if ( ! class_exists( 'Kantan_Client_Class' ) ) {
 
 			// 表示件数を取得
 			$query_limit = 20; // デフォルト値
-			if ( class_exists( 'KTP_Settings' ) ) {
-				$query_limit = KTP_Settings::get_work_list_range();
+			if ( class_exists( 'KTPWP_Settings' ) ) {
+				$query_limit = KTPWP_Settings::get_work_list_range();
 			}
 
 			$query_range = $page_start . ',' . $query_limit;
@@ -873,8 +873,10 @@ if ( ! class_exists( 'Kantan_Client_Class' ) ) {
 							. '</div>';
 					}
 				}
-				// 表示したIDをクッキーに保存
-				setcookie( $cookie_name, $query_id, time() + ( 86400 * 30 ), '/' ); // 30日間有効
+				// 表示したIDをクッキーに保存（ヘッダー送信前のみ実行）
+				if ( ! headers_sent() ) {
+					setcookie( $cookie_name, $query_id, time() + ( 86400 * 30 ), '/' ); // 30日間有効
+				}
 				foreach ( $post_row as $row ) {
 					$data_id = esc_html( $row->id );
 					$time = esc_html( $row->time );
@@ -1910,8 +1912,8 @@ if ( ! class_exists( 'Kantan_Client_Class' ) ) {
 			// テンプレート印刷
 			// -----------------------------
 
-			// Print_Classのパスを指定
-			require_once __DIR__ . '/class-print.php';
+			        			// KTPWP_Print_Classのパスを指定
+			require_once __DIR__ . '/class-ktpwp-print.php';
 
 			// 変数の初期化（未定義の場合に備えて）
 			if ( ! isset( $company_name ) ) {

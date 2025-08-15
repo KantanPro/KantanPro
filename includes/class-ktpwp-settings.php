@@ -23,12 +23,12 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.0.0
  */
-class KTP_Settings {
+class KTPWP_Settings {
 
     /**
      * Single instance of the class
      *
-     * @var KTP_Settings
+     * @var KTPWP_Settings
      */
     private static $instance = null;
 
@@ -64,7 +64,7 @@ class KTP_Settings {
      * Get singleton instance
      *
      * @since 1.0.0
-     * @return KTP_Settings
+     * @return KTPWP_Settings
      */
     public static function get_instance() {
         if ( self::$instance === null ) {
@@ -487,7 +487,7 @@ class KTP_Settings {
         
         // デバッグ時のみ、予期しない出力があればログに記録
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG && ! empty( $output ) ) {
-            error_log( 'KTPWP: KTP_Settings::activate中に予期しない出力を検出: ' . substr( $output, 0, 1000 ) );
+            error_log( 'KTPWP: KTPWP_Settings::activate中に予期しない出力を検出: ' . substr( $output, 0, 1000 ) );
         }
     }
 
@@ -4226,7 +4226,7 @@ div.ktp_header > * {
                     <td>
                         <?php
                         $rest_api_status = '有効';
-                        if ( class_exists( 'KTP_Settings' ) ) {
+                        if ( class_exists( 'KTPWP_Settings' ) ) {
                             $rest_api_restricted = self::get_setting( 'rest_api_restricted', '1' );
                             $disable_rest_api_restriction = self::get_setting( 'disable_rest_api_restriction', '0' );
 
@@ -4706,4 +4706,4 @@ define( 'WP_DEBUG_DISPLAY', false );
 }
 
 // インスタンスを初期化
-KTP_Settings::get_instance();
+KTPWP_Settings::get_instance();

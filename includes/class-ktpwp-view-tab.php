@@ -1,6 +1,6 @@
 <?php
 
-class view_tabs_Class {
+class KTPWP_View_Tabs_Class {
 
     public function __construct() {
     }

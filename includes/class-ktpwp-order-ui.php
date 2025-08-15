@@ -353,7 +353,7 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 			}
 
 			            // Calculate total amount and tax（ここから修正）
-            require_once __DIR__ . '/class-supplier-data.php';
+            require_once __DIR__ . '/class-ktpwp-supplier-data.php';
             $supplier_data = new KTPWP_Supplier_Data();
             $total_amount = 0;
             $total_tax_amount = 0;
@@ -1008,8 +1008,8 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 			$document_message = isset( $document_messages[ $progress ] ) ? $document_messages[ $progress ] : '';
 
 			// 適格請求書番号を取得し、請求書の場合に追加
-			if ( $progress === 4 && class_exists( 'KTP_Settings' ) ) {
-                $qualified_invoice_number = KTP_Settings::get_qualified_invoice_number();
+			if ( $progress === 4 && class_exists( 'KTPWP_Settings' ) ) {
+                $qualified_invoice_number = KTPWP_Settings::get_qualified_invoice_number();
                 if ( ! ( class_exists('KTPWP_Tax_Policy') && KTPWP_Tax_Policy::is_abolished() ) && ! empty( $qualified_invoice_number ) ) {
                     $document_title = $document_title . ' 適格請求書番号：' . $qualified_invoice_number;
                 }
