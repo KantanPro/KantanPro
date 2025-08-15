@@ -150,9 +150,9 @@ class KTPWP_Fresh_Install_Detector {
             error_log("KTPWP Fresh Install: 新規インストール用基本構造初期化を開始");
         }
 
-        // KTP_Settings の基本テーブル作成処理を呼び出す
-        if (class_exists('KTP_Settings')) {
-            KTP_Settings::create_or_update_tables();
+        // KTPWP_Settings の基本テーブル作成処理を呼び出す
+        if (class_exists('KTPWP_Settings')) {
+            KTPWP_Settings::create_or_update_tables();
             
             // 初期化完了フラグを設定
             update_option($this->init_completed_key, true);

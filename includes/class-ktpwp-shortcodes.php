@@ -502,16 +502,16 @@ class KTPWP_Shortcodes {
         if (!current_user_can('edit_posts') && !current_user_can('ktpwp_access')) {
             return $this->render_permission_error();
         }
-        if (!class_exists('Kantan_List_Class')) {
-            $this->load_required_class('class-tab-list.php');
+        if (!class_exists('KTPWP_List_Class')) {
+            $this->load_required_class('class-ktpwp-tab-list.php');
         }
 
-        if (class_exists('Kantan_List_Class')) {
-            $list = new Kantan_List_Class();
+        if (class_exists('KTPWP_List_Class')) {
+            $list = new KTPWP_List_Class();
             return $list->List_Tab_View($tab_name);
         }
 
-        return $this->get_error_content('Kantan_List_Class');
+        return $this->get_error_content('KTPWP_List_Class');
     }
 
     /**
@@ -524,17 +524,17 @@ class KTPWP_Shortcodes {
         if (!current_user_can('edit_posts') && !current_user_can('ktpwp_access')) {
             return $this->render_permission_error();
         }
-        if (!class_exists('Kantan_Order_Class')) {
-            $this->load_required_class('class-kantan-order.php');
+        if (!class_exists('KTPWP_Order_Class')) {
+            $this->load_required_class('class-ktpwp-order-main.php');
         }
 
-        if (class_exists('Kantan_Order_Class')) {
-            $order = new Kantan_Order_Class();
+        if (class_exists('KTPWP_Order_Class')) {
+            $order = new KTPWP_Order_Class();
             $content = $order->Order_Tab_View($tab_name);
             return $content ?? '';
         }
 
-        return $this->get_error_content('Kantan_Order_Class');
+        return $this->get_error_content('KTPWP_Order_Class');
     }
 
     /**
@@ -547,12 +547,12 @@ class KTPWP_Shortcodes {
         if (!current_user_can('edit_posts') && !current_user_can('ktpwp_access')) {
             return $this->render_permission_error();
         }
-        if (!class_exists('Kantan_Client_Class')) {
-            $this->load_required_class('class-kantan-client.php');
+        if (!class_exists('KTPWP_Client_Class')) {
+            $this->load_required_class('class-ktpwp-client.php');
         }
 
-        if (class_exists('Kantan_Client_Class')) {
-            $client = new Kantan_Client_Class();
+        if (class_exists('KTPWP_Client_Class')) {
+            $client = new KTPWP_Client_Class();
 
             // 管理者権限がある場合のみテーブル操作 -> 編集者権限に変更
             if (current_user_can('edit_posts') || current_user_can('ktpwp_access')) {
@@ -563,7 +563,7 @@ class KTPWP_Shortcodes {
             return $client->View_Table($tab_name);
         }
 
-        return $this->get_error_content('Kantan_Client_Class');
+        return $this->get_error_content('KTPWP_Client_Class');
     }
 
     /**
@@ -576,12 +576,12 @@ class KTPWP_Shortcodes {
         if (!current_user_can('edit_posts') && !current_user_can('ktpwp_access')) {
             return $this->render_permission_error();
         }
-        if (!class_exists('Kantan_Service_Class')) {
-            $this->load_required_class('class-kantan-service.php');
+        if (!class_exists('KTPWP_Service_Class')) {
+            $this->load_required_class('class-ktpwp-service-main.php');
         }
 
-        if (class_exists('Kantan_Service_Class')) {
-            $service = new Kantan_Service_Class();
+        if (class_exists('KTPWP_Service_Class')) {
+            $service = new KTPWP_Service_Class();
 
             // 管理者権限がある場合のみテーブル操作
             if (current_user_can('manage_options')) {
@@ -592,7 +592,7 @@ class KTPWP_Shortcodes {
             return $service->View_Table($tab_name);
         }
 
-        return $this->get_error_content('Kantan_Service_Class');
+        return $this->get_error_content('KTPWP_Service_Class');
     }
 
     /**
@@ -606,7 +606,7 @@ class KTPWP_Shortcodes {
             return $this->render_permission_error();
         }
         if (!class_exists('KTPWP_Supplier_Class')) {
-            $this->load_required_class('class-tab-supplier.php');
+            $this->load_required_class('class-ktpwp-tab-supplier.php');
         }
 
         if (class_exists('KTPWP_Supplier_Class')) {
@@ -638,7 +638,7 @@ class KTPWP_Shortcodes {
             return $this->render_permission_error();
         }
         if (!class_exists('KTPWP_Report_Class')) {
-            $this->load_required_class('class-tab-report.php');
+            $this->load_required_class('class-ktpwp-tab-report.php');
         }
 
         if (class_exists('KTPWP_Report_Class')) {
@@ -707,16 +707,16 @@ class KTPWP_Shortcodes {
      * @return string タブビューHTML
      */
     private function render_tabs_view($list_content, $order_content, $client_content, $service_content, $supplier_content, $report_content) {
-        if (!class_exists('view_tabs_Class')) {
-            $this->load_required_class('class-view-tab.php');
+        if (!class_exists('KTPWP_View_Tabs_Class')) {
+            $this->load_required_class('class-ktpwp-view-tab.php');
         }
 
-        if (class_exists('view_tabs_Class')) {
-            $view = new view_tabs_Class();
+        if (class_exists('KTPWP_View_Tabs_Class')) {
+            $view = new KTPWP_View_Tabs_Class();
             return $view->TabsView($list_content, $order_content, $client_content, $service_content, $supplier_content, $report_content);
         }
 
-        return $this->get_error_content('view_tabs_Class');
+        return $this->get_error_content('KTPWP_View_Tabs_Class');
     }
 
     /**

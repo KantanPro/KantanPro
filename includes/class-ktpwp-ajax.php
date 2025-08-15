@@ -341,7 +341,7 @@ class KTPWP_Ajax {
 	 */
 	private function init_order_ajax_handlers() {
 		// 受注クラスファイルの読み込み
-		$order_class_file = KTPWP_PLUGIN_DIR . 'includes/class-kantan-order.php';
+		        $order_class_file = KTPWP_PLUGIN_DIR . 'includes/class-ktpwp-order-main.php';
 
 		if ( file_exists( $order_class_file ) ) {
 			require_once $order_class_file;
@@ -481,9 +481,9 @@ class KTPWP_Ajax {
 		);
 
 		// 一般設定の値を追加
-		if ( class_exists( 'KTP_Settings' ) ) {
-			$ajax_data['settings']['work_list_range']       = KTP_Settings::get_work_list_range();
-			$ajax_data['settings']['delivery_warning_days'] = KTP_Settings::get_delivery_warning_days();
+		if ( class_exists( 'KTPWP_Settings' ) ) {
+			$ajax_data['settings']['work_list_range']       = KTPWP_Settings::get_work_list_range();
+			$ajax_data['settings']['delivery_warning_days'] = KTPWP_Settings::get_delivery_warning_days();
 		} else {
 			$ajax_data['settings']['work_list_range']       = 20;
 			$ajax_data['settings']['delivery_warning_days'] = 3;
@@ -574,7 +574,7 @@ class KTPWP_Ajax {
 						'nonce'    => $ajax_data['nonces']['auto_save'],
 						'progress_nonce' => $ajax_data['nonces']['progress_update'],
 						'settings' => array(
-							'delivery_warning_days' => KTP_Settings::get_delivery_warning_days(),
+							'delivery_warning_days' => KTPWP_Settings::get_delivery_warning_days(),
 						),
 					)
 				) . ';'
@@ -1333,8 +1333,8 @@ class KTPWP_Ajax {
 		// 一般設定から表示件数を取得
 		if ( isset( $_POST['limit'] ) && $_POST['limit'] === 'auto' ) {
 			// 一般設定から表示件数を取得（設定クラスが利用可能な場合）
-			if ( class_exists( 'KTP_Settings' ) ) {
-				$limit = KTP_Settings::get_work_list_range();
+			if ( class_exists( 'KTPWP_Settings' ) ) {
+				$limit = KTPWP_Settings::get_work_list_range();
 			} else {
 				$limit = 20; // フォールバック値
 			}
@@ -1639,8 +1639,8 @@ class KTPWP_Ajax {
 			$my_email      = ! empty( $smtp_settings['email_address'] ) ? sanitize_email( $smtp_settings['email_address'] ) : '';
 
 			$my_company = '';
-			if ( class_exists( 'KTP_Settings' ) ) {
-				$my_company = KTP_Settings::get_company_info();
+			if ( class_exists( 'KTPWP_Settings' ) ) {
+				$my_company = KTPWP_Settings::get_company_info();
 			}
 
 			// 旧システムからも取得（後方互換性）
@@ -1898,8 +1898,8 @@ class KTPWP_Ajax {
 			$document_message = isset( $document_messages[ $progress ] ) ? $document_messages[ $progress ] : '';
 
 			// 適格請求書番号を取得し、請求書の場合に追加
-			if ( $progress === 4 && class_exists( 'KTP_Settings' ) ) {
-                $qualified_invoice_number = KTP_Settings::get_qualified_invoice_number();
+			if ( $progress === 4 && class_exists( 'KTPWP_Settings' ) ) {
+                $qualified_invoice_number = KTPWP_Settings::get_qualified_invoice_number();
                 if ( ! ( class_exists('KTPWP_Tax_Policy') && KTPWP_Tax_Policy::is_abolished() ) && ! empty( $qualified_invoice_number ) ) {
                     $document_title = $document_title . ' 適格請求書番号：' . $qualified_invoice_number;
                 }
@@ -2379,8 +2379,8 @@ class KTPWP_Ajax {
 
 			// 会社情報を取得
 			$my_company = '';
-			if ( class_exists( 'KTP_Settings' ) ) {
-				$my_company = KTP_Settings::get_company_info();
+			if ( class_exists( 'KTPWP_Settings' ) ) {
+				$my_company = KTPWP_Settings::get_company_info();
 			}
 
 			// 旧システムからも取得（後方互換性）
@@ -2594,8 +2594,8 @@ class KTPWP_Ajax {
 
 			// 会社情報を取得
 			$company_info = '';
-			if ( class_exists( 'KTP_Settings' ) ) {
-				$company_info = KTP_Settings::get_company_info();
+			if ( class_exists( 'KTPWP_Settings' ) ) {
+				$company_info = KTPWP_Settings::get_company_info();
 			}
 
 			// 旧システムからも取得（後方互換性）
@@ -3039,11 +3039,11 @@ class KTPWP_Ajax {
 			}
 
 			// Order クラスのインスタンスを作成してプレビューHTML生成を利用
-			if ( ! class_exists( 'Kantan_Order_Class' ) ) {
-				require_once KTPWP_PLUGIN_DIR . 'includes/class-kantan-order.php';
+			        if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
+				require_once KTPWP_PLUGIN_DIR . 'includes/class-ktpwp-order-main.php';
 			}
 
-			$order_class = new Kantan_Order_Class();
+			            $order_class = new KTPWP_Order_Class();
 
 			// パブリックメソッドを使用して最新のプレビューHTMLを生成
 			$preview_html = $order_class->Generate_Order_Preview_HTML_Public( $order );
@@ -3493,8 +3493,8 @@ class KTPWP_Ajax {
 
 			// 一般設定から警告日数を取得
 			$warning_days = 3; // デフォルト値
-			if ( class_exists( 'KTP_Settings' ) ) {
-				$warning_days = KTP_Settings::get_delivery_warning_days();
+			if ( class_exists( 'KTPWP_Settings' ) ) {
+				$warning_days = KTPWP_Settings::get_delivery_warning_days();
 			}
 
 			error_log( 'KTPWP Ajax: Warning days: ' . $warning_days . ', Table: ' . $table_name );
@@ -4116,8 +4116,8 @@ class KTPWP_Ajax {
 		}
 		
 		// 受注書タブクラスのインスタンスを作成
-		if (class_exists('Kantan_Order_Class')) {
-			$order_tab = new Kantan_Order_Class();
+		        if (class_exists('KTPWP_Order_Class')) {
+            $order_tab = new KTPWP_Order_Class();
 			
 			// 受注書のHTMLを生成
 			ob_start();
@@ -4578,8 +4578,8 @@ class KTPWP_Ajax {
 			$smtp_settings = get_option( 'ktp_smtp_settings', array() );
 			$my_email = ! empty( $smtp_settings['email_address'] ) ? sanitize_email( $smtp_settings['email_address'] ) : '';
 			$my_company = '';
-			if ( class_exists( 'KTP_Settings' ) ) {
-				$my_company = KTP_Settings::get_company_info();
+			if ( class_exists( 'KTPWP_Settings' ) ) {
+				$my_company = KTPWP_Settings::get_company_info();
 			}
 
 			// 旧システムからも取得（後方互換性）

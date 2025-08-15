@@ -18,18 +18,18 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-require_once 'class-image_processor.php';
+        require_once 'class-ktpwp-image-processor.php';
 require_once 'class-ktpwp-service-ui.php';
 require_once 'class-ktpwp-service-db.php';
 
-if ( ! class_exists( 'Kantan_Service_Class' ) ) {
+if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 
 	/**
 	 * Service class for managing service data
 	 *
 	 * @since 1.0.0
 	 */
-	class Kantan_Service_Class {
+	class KTPWP_Service_Class {
 
 		/**
 		 * UI helper instance
@@ -251,8 +251,8 @@ if ( ! class_exists( 'Kantan_Service_Class' ) ) {
 
 			// 表示範囲（1ページあたりの表示件数）
 			// 一般設定から表示件数を取得（設定クラスが利用可能な場合）
-			if ( class_exists( 'KTP_Settings' ) ) {
-				$query_limit = KTP_Settings::get_work_list_range();
+			if ( class_exists( 'KTPWP_Settings' ) ) {
+				$query_limit = KTPWP_Settings::get_work_list_range();
 			} else {
 				$query_limit = 20; // フォールバック値
 			}
@@ -317,8 +317,8 @@ if ( ! class_exists( 'Kantan_Service_Class' ) ) {
 
 			// ゼロ除算防止のための安全対策
 			if ( $query_limit <= 0 ) {
-				if ( class_exists( 'KTP_Settings' ) ) {
-					$query_limit = KTP_Settings::get_work_list_range();
+				if ( class_exists( 'KTPWP_Settings' ) ) {
+					$query_limit = KTPWP_Settings::get_work_list_range();
 				} else {
 					$query_limit = 20; // フォールバック値
 				}

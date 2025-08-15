@@ -18,14 +18,14 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-if ( ! class_exists( 'Kantan_Order_Class' ) ) {
+if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 
 	/**
 	 * Order class for managing order data
 	 *
 	 * @since 1.0.0
 	 */
-	class Kantan_Order_Class {
+	class KTPWP_Order_Class {
 
 		/**
 		 * Constructor
@@ -516,8 +516,8 @@ if ( ! class_exists( 'Kantan_Order_Class' ) ) {
 
 								// 会社情報を新しい一般設定から取得
 								$my_company = '';
-								if ( class_exists( 'KTP_Settings' ) ) {
-										$my_company = KTP_Settings::get_company_info();
+								if ( class_exists( 'KTPWP_Settings' ) ) {
+										$my_company = KTPWP_Settings::get_company_info();
 								}
 
 								// 旧システムからも取得（後方互換性） - Use prepared statement
@@ -820,8 +820,8 @@ if ( ! class_exists( 'Kantan_Order_Class' ) ) {
 								$document_message = isset( $document_messages[ $progress ] ) ? $document_messages[ $progress ] : $project_name;
 
 								// 適格請求書番号を取得し、請求書の場合に追加
-								if ( $progress === 4 && class_exists( 'KTP_Settings' ) ) {
-                                    $qualified_invoice_number = KTP_Settings::get_qualified_invoice_number();
+								if ( $progress === 4 && class_exists( 'KTPWP_Settings' ) ) {
+                                    $qualified_invoice_number = KTPWP_Settings::get_qualified_invoice_number();
                                     if ( ! ( class_exists('KTPWP_Tax_Policy') && KTPWP_Tax_Policy::is_abolished() ) && ! empty( $qualified_invoice_number ) ) {
                                         $document_title = $document_title . ' 適格請求書番号：' . $qualified_invoice_number;
                                     }
@@ -2312,8 +2312,8 @@ if ( ! class_exists( 'Kantan_Order_Class' ) ) {
 
 			// 適格請求書番号を取得
 			$qualified_invoice_number = '';
-			if ( class_exists( 'KTP_Settings' ) ) {
-				$qualified_invoice_number = KTP_Settings::get_qualified_invoice_number();
+			if ( class_exists( 'KTPWP_Settings' ) ) {
+				$qualified_invoice_number = KTPWP_Settings::get_qualified_invoice_number();
 			}
 
 			// プレビューHTML生成 - A4サイズに最適化
@@ -2878,8 +2878,8 @@ if ( ! class_exists( 'Kantan_Order_Class' ) ) {
 		private function Get_Company_Info_HTML() {
 			// 一般設定から自社情報を取得
 			$company_info = '';
-			if ( class_exists( 'KTP_Settings' ) ) {
-				$company_info = KTP_Settings::get_company_info();
+			if ( class_exists( 'KTPWP_Settings' ) ) {
+				$company_info = KTPWP_Settings::get_company_info();
 			}
 
 					// 旧システムからも取得（後方互換性）
@@ -3015,6 +3015,6 @@ if ( ! class_exists( 'Kantan_Order_Class' ) ) {
 
 			return $lines;
 		}
-	} // End of Kantan_Order_Class
+	} // End of KTPWP_Order_Class
 
 } // class_exists check

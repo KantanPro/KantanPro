@@ -324,8 +324,8 @@ class KTPWP_Main {
         }
 
         // 設定クラスのアクティベート処理
-        if ( class_exists( 'KTP_Settings' ) ) {
-            KTP_Settings::activate();
+        if ( class_exists( 'KTPWP_Settings' ) ) {
+            KTPWP_Settings::activate();
         }
 
         // 設定テーブルが存在しない場合は即座に作成
@@ -374,18 +374,18 @@ class KTPWP_Main {
      */
     private function create_tables() {
         // 各クラスでテーブル作成
-        if ( class_exists( 'Kantan_Client_Class' ) ) {
-            $client = new Kantan_Client_Class();
+        if ( class_exists( 'KTPWP_Client_Class' ) ) {
+            $client = new KTPWP_Client_Class();
             $client->Create_Table( 'client' );
         }
 
-        if ( class_exists( 'Kantan_Service_Class' ) ) {
-            $service = new Kantan_Service_Class();
+        if ( class_exists( 'KTPWP_Service_Class' ) ) {
+            $service = new KTPWP_Service_Class();
             $service->Create_Table( 'service' );
         }
 
-        if ( class_exists( 'Kantan_Supplier_Class' ) ) {
-            $supplier = new Kantan_Supplier_Class();
+        if ( class_exists( 'KTPWP_Supplier_Class' ) ) {
+            $supplier = new KTPWP_Supplier_Class();
             $supplier->Create_Table( 'supplier' );
         }
 

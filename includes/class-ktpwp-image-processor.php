@@ -3,7 +3,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class Image_Processor {
+class KTPWP_Image_Processor {
 
     /**
      * 画像のアップロードと削除を行う

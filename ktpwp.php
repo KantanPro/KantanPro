@@ -150,14 +150,14 @@ function ktpwp_upgrade() {
  */
 function ktpwp_autoload_classes() {
     $classes = array(
-        'Kantan_Client_Class'    => 'includes/class-kantan-client.php',
-        'Kantan_Service_Class'   => 'includes/class-kantan-service.php',
-        'KTPWP_Supplier_Class'  => 'includes/class-tab-supplier.php',
-        'KTPWP_Supplier_Security' => 'includes/class-supplier-security.php',
-        'KTPWP_Supplier_Data'   => 'includes/class-supplier-data.php',
-        'KTPWP_Report_Class'    => 'includes/class-tab-report.php',
-        'Kantan_Order_Class'     => 'includes/class-kantan-order.php',
-        'KTPWP_Plugin_Reference' => 'includes/class-plugin-reference.php',
+        'KTPWP_Client_Class'    => 'includes/class-ktpwp-client.php',
+        'KTPWP_Service_Class'   => 'includes/class-ktpwp-service-main.php',
+        'KTPWP_Supplier_Class'  => 'includes/class-ktpwp-tab-supplier.php',
+        'KTPWP_Supplier_Security' => 'includes/class-ktpwp-supplier-security.php',
+        'KTPWP_Supplier_Data'   => 'includes/class-ktpwp-supplier-data.php',
+        'KTPWP_Report_Class'    => 'includes/class-ktpwp-tab-report.php',
+        'KTPWP_Order_Class'     => 'includes/class-ktpwp-order-main.php',
+        'KTPWP_Plugin_Reference' => 'includes/class-ktpwp-plugin-reference.php',
         // 新しいクラス構造
         'KTPWP'                 => 'includes/class-ktpwp.php',
         'KTPWP_Main'            => 'includes/class-ktpwp-main.php',
@@ -177,6 +177,10 @@ function ktpwp_autoload_classes() {
         'KTPWP_Service_DB'      => 'includes/class-ktpwp-service-db.php',
         'KTPWP_Service_UI'      => 'includes/class-ktpwp-service-ui.php',
         'KTPWP_UI_Generator'    => 'includes/class-ktpwp-ui-generator.php',
+        'KTPWP_Image_Processor' => 'includes/class-ktpwp-image-processor.php',
+        'KTPWP_Login_Error'     => 'includes/class-ktpwp-login-error.php',
+        'KTPWP_Print_Class'     => 'includes/class-ktpwp-print.php',
+        'KTPWP_Upgrade'         => 'includes/class-ktpwp-upgrade.php',
         'KTPWP_License_Manager' => 'includes/class-ktpwp-license-manager.php',
         'KTPWP_Graph_Renderer'  => 'includes/class-ktpwp-graph-renderer.php',
         // POSTデータ安全処理クラス（Adminer警告対策）
@@ -184,10 +188,11 @@ function ktpwp_autoload_classes() {
         // クライアント管理の新クラス
         'KTPWP_Client_DB'       => 'includes/class-ktpwp-client-db.php',
         'KTPWP_Client_UI'       => 'includes/class-ktpwp-client-ui.php',
-        'KTPWP_Department_Manager' => 'includes/class-department-manager.php',
+        'KTPWP_Department_Manager' => 'includes/class-ktpwp-department-manager.php',
         'KTPWP_Terms_Of_Service' => 'includes/class-ktpwp-terms-of-service.php',
         'KTPWP_Update_Checker'  => 'includes/class-ktpwp-update-checker.php',
         'KTPWP_SVG_Icons'       => 'includes/class-ktpwp-svg-icons.php',
+        'KTPWP_Settings'        => 'includes/class-ktpwp-settings.php',
     );
 
     foreach ( $classes as $class_name => $file_path ) {
@@ -1289,8 +1294,8 @@ function ktpwp_comprehensive_activation() {
         ktpwp_safe_table_setup();
         
         // 2. 設定クラスのアクティベート処理
-        if ( class_exists( 'KTP_Settings' ) && method_exists( 'KTP_Settings', 'activate' ) ) {
-            KTP_Settings::activate();
+        if ( class_exists( 'KTPWP_Settings' ) && method_exists( 'KTPWP_Settings', 'activate' ) ) {
+            KTPWP_Settings::activate();
         }
         
         // 3. プラグインリファレンス更新処理
@@ -3046,14 +3051,14 @@ function ktpwp_allow_internal_requests( $result ) {
     }
 
     // 設定でREST API制限が無効化されている場合は制限しない
-    if ( class_exists( 'KTP_Settings' ) ) {
-        $rest_api_restricted = KTP_Settings::get_setting( 'rest_api_restricted', '1' );
+    if ( class_exists( 'KTPWP_Settings' ) ) {
+        $rest_api_restricted = KTPWP_Settings::get_setting( 'rest_api_restricted', '1' );
         if ( $rest_api_restricted !== '1' ) {
             return $result;
         }
 
         // REST API制限の完全無効化設定をチェック
-        $disable_rest_api_restriction = KTP_Settings::get_setting( 'disable_rest_api_restriction', '0' );
+        $disable_rest_api_restriction = KTPWP_Settings::get_setting( 'disable_rest_api_restriction', '0' );
         if ( $disable_rest_api_restriction === '1' ) {
             return $result;
         }
@@ -3353,14 +3358,14 @@ add_action( 'wp_loaded', 'ktpwp_handle_form_redirect', 1 );
 
 
 // ファイルをインクルード
-// アクティベーションフックのために class-ktp-settings.php は常にインクルード
-if ( file_exists( MY_PLUGIN_PATH . 'includes/class-ktp-settings.php' ) ) {
-    include_once MY_PLUGIN_PATH . 'includes/class-ktp-settings.php';
+// アクティベーションフックのために class-ktpwp-settings.php は常にインクルード
+if ( file_exists( MY_PLUGIN_PATH . 'includes/class-ktpwp-settings.php' ) ) {
+    include_once MY_PLUGIN_PATH . 'includes/class-ktpwp-settings.php';
 } else {
     add_action(
         'admin_notices',
         function () {
-			echo '<div class="notice notice-error"><p>' . __( 'KTPWP Critical Error: includes/class-ktp-settings.php not found.', 'ktpwp' ) . '</p></div>';
+			echo '<div class="notice notice-error"><p>' . __( 'KTPWP Critical Error: includes/class-ktpwp-settings.php not found.', 'ktpwp' ) . '</p></div>';
 		}
     );
 }
@@ -3925,16 +3930,16 @@ function KTPWP_Index() {
 
             switch ( $tab_name ) {
                 case 'list':
-                    $list = new Kantan_List_Class();
+                    $list = new KTPWP_List_Class();
                     $list_content = $list->List_Tab_View( $tab_name );
                     break;
                 case 'order':
-                    $order = new Kantan_Order_Class();
+                    $order = new KTPWP_Order_Class();
                     $order_content = $order->Order_Tab_View( $tab_name );
                     $order_content = $order_content ?? '';
                     break;
                 case 'client':
-                    $client = new Kantan_Client_Class();
+                    $client = new KTPWP_Client_Class();
                     if ( current_user_can( 'edit_posts' ) ) {
                         $client->Create_Table( $tab_name );
                         // POSTリクエストがある場合のみUpdate_Tableを呼び出す
@@ -3945,7 +3950,7 @@ function KTPWP_Index() {
                     $client_content = $client->View_Table( $tab_name );
                     break;
                 case 'service':
-                    $service = new Kantan_Service_Class();
+                    $service = new KTPWP_Service_Class();
                     if ( current_user_can( 'edit_posts' ) ) {
                         $service->Create_Table( $tab_name );
                         $service->Update_Table( $tab_name );
@@ -3969,13 +3974,13 @@ function KTPWP_Index() {
                     break;
                 default:
                     // デフォルトの処理
-                    $list = new Kantan_List_Class();
+                    $list = new KTPWP_List_Class();
                     $tab_name = 'list';
                     $list_content = $list->List_Tab_View( $tab_name );
                     break;
             }
             // view
-            $view = new view_tabs_Class();
+            $view = new KTPWP_View_Tabs_Class();
             $tab_view = $view->TabsView( $list_content, $order_content, $client_content, $service_content, $supplier_content, $report_content );
             $return_value = $front_message . $tab_view;
             return $return_value;
@@ -3983,7 +3988,7 @@ function KTPWP_Index() {
         } else {
             // ログインしていない場合、または権限がない場合
             if ( ! is_user_logged_in() ) {
-                $login_error = new Kantan_Login_Error();
+                $login_error = new KTPWP_Login_Error();
                 $error = $login_error->Error_View();
                 return $error;
             } else {
@@ -4100,18 +4105,18 @@ add_action(
 
 
 
-// includes/class-tab-list.php, class-view-tab.php を明示的に読み込む（自動読み込みされていない場合のみ）
-if ( ! class_exists( 'Kantan_List_Class' ) ) {
-    include_once MY_PLUGIN_PATH . 'includes/class-tab-list.php';
+// includes/class-ktpwp-tab-list.php, class-ktpwp-view-tab.php を明示的に読み込む（自動読み込みされていない場合のみ）
+if ( ! class_exists( 'KTPWP_List_Class' ) ) {
+    include_once MY_PLUGIN_PATH . 'includes/class-ktpwp-tab-list.php';
 }
-if ( ! class_exists( 'view_tabs_Class' ) ) {
-    include_once MY_PLUGIN_PATH . 'includes/class-view-tab.php';
+if ( ! class_exists( 'KTPWP_View_Tabs_Class' ) ) {
+    include_once MY_PLUGIN_PATH . 'includes/class-ktpwp-view-tab.php';
 }
-if ( ! class_exists( 'Kantan_Login_Error' ) ) {
-    include_once MY_PLUGIN_PATH . 'includes/class-login-error.php';
+if ( ! class_exists( 'KTPWP_Login_Error' ) ) {
+    include_once MY_PLUGIN_PATH . 'includes/class-ktpwp-login-error.php';
 }
 if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
-    include_once MY_PLUGIN_PATH . 'includes/class-tab-report.php';
+    include_once MY_PLUGIN_PATH . 'includes/class-ktpwp-tab-report.php';
 }
 
 /**
@@ -4205,7 +4210,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 add_action( 'admin_init', 'ktpwp_admin_auto_migrations' );
 
 // 管理画面メニューの登録
-add_action( 'admin_menu', array( 'KTP_Settings', 'add_admin_menu' ) );
+add_action( 'admin_menu', array( 'KTPWP_Settings', 'add_admin_menu' ) );
 
 /**
  * 管理画面での自動マイグレーション実行

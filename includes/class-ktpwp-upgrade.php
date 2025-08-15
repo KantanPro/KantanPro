@@ -3,7 +3,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class KTP_Upgrade {
+class KTPWP_Upgrade {
     public static function migrate_settings() {
         global $wpdb;
         $old_table = $wpdb->prefix . 'ktp_setting';
@@ -55,7 +55,7 @@ add_action(
     function () {
 		// アップグレードが未実行の場合のみ実行
 		if ( ! get_option( 'ktp_settings_migrated' ) ) {
-			KTP_Upgrade::migrate_settings();
+			KTPWP_Upgrade::migrate_settings();
 			update_option( 'ktp_settings_migrated', true );
 		}
 	}

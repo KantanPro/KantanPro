@@ -657,8 +657,8 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 
 			// 表示範囲
 			// 一般設定から表示件数を取得（設定クラスが利用可能な場合）
-			if ( class_exists( 'KTP_Settings' ) ) {
-				$query_limit = KTP_Settings::get_work_list_range();
+			if ( class_exists( 'KTPWP_Settings' ) ) {
+				$query_limit = KTPWP_Settings::get_work_list_range();
 			} else {
 				$query_limit = 20; // フォールバック値
 			}

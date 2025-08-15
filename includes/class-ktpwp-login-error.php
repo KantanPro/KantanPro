@@ -1,6 +1,6 @@
 <?php
 
-class Kantan_Login_Error {
+class KTPWP_Login_Error {
 
     public function __construct() {
         // 必要なアクションやフィルターを追加
