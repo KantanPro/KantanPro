@@ -3751,6 +3751,28 @@ body.ktpwp-modal-open {
   border-color: #1565c0 !important;
 }
 
+/* メール送信ボタン内のアイコンサイズを他ボタンと統一 */
+.controller .order-mail-btn .material-symbols-outlined {
+  font-size: 16px !important;
+  line-height: 1 !important;
+}
+
+/* コントローラー内のSVGアイコンも16pxで統一（KTPSvgIcons対応） */
+.controller .ktp-svg-icon {
+  font-size: 16px !important;
+  line-height: 1 !important;
+}
+.controller .ktp-svg-icon svg {
+  width: 16px !important;
+  height: 16px !important;
+}
+
+/* コントローラー内のMaterial Symbolsも16pxで統一 */
+.controller .material-symbols-outlined {
+  font-size: 16px !important;
+  line-height: 1 !important;
+}
+
 /* 緊急案件（納期が迫っている案件）のスタイル */
 .ktp_work_list_item.urgent-delivery {
     background: linear-gradient(135deg, #fff3e0 0%, #ffebee 100%);
