@@ -20,6 +20,94 @@
     height: 24px !important;
 }
 
+/* サブメニューのアイコン表示 */
+#adminmenu .wp-submenu a[href*="ktp-settings"]::before {
+    content: "\f469"; /* WordPress標準アイコン: admin-settings */
+    font-family: dashicons;
+    margin-right: 5px;
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+#adminmenu .wp-submenu a[href*="ktp-mail-settings"]::before {
+    content: "\f465"; /* WordPress標準アイコン: email */
+    font-family: dashicons;
+    margin-right: 5px;
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+#adminmenu .wp-submenu a[href*="ktp-design-settings"]::before {
+    content: "\f540"; /* WordPress標準アイコン: art */
+    font-family: dashicons;
+    margin-right: 5px;
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+#adminmenu .wp-submenu a[href*="ktp-staff"]::before {
+    content: "\f110"; /* WordPress標準アイコン: groups */
+    font-family: dashicons;
+    margin-right: 5px;
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+#adminmenu .wp-submenu a[href*="ktp-license"]::before {
+    content: "\f160"; /* WordPress標準アイコン: lock */
+    font-family: dashicons;
+    margin-right: 5px;
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+#adminmenu .wp-submenu a[href*="ktpwp-dummy-data"]::before {
+    content: "\f161"; /* WordPress標準アイコン: database */
+    font-family: dashicons;
+    margin-right: 5px;
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+#adminmenu .wp-submenu a[href*="ktp-data-tools"]::before {
+    content: "\f316"; /* WordPress標準アイコン: database-export */
+    font-family: dashicons;
+    margin-right: 5px;
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+#adminmenu .wp-submenu a[href*="ktp-developer-settings"]::before {
+    content: "\f107"; /* WordPress標準アイコン: admin-tools */
+    font-family: dashicons;
+    margin-right: 5px;
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    display: inline-block;
+    vertical-align: middle;
+}
 
 
 /* メインコンテナのスタイル統一 - 最高優先度 */

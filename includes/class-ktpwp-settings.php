@@ -575,7 +575,7 @@ class KTPWP_Settings {
             'manage_options', // 権限
             'ktp-settings', // メニューのスラッグ
             array( $this, 'create_general_page' ), // 表示を処理する関数（一般設定を最初に表示）
-            'dashicons-admin-generic', // アイコン
+            'dashicons-chart-area', // アイコン（グラフ・分析を表すアイコン）
             80 // メニューの位置
         );
 
@@ -683,7 +683,7 @@ class KTPWP_Settings {
 		}
 
 		echo '<div class="wrap ktp-admin-wrap">';
-		echo '<h1>' . esc_html__( 'データ処理', 'ktpwp' ) . '</h1>';
+		echo '<h1><span class="dashicons dashicons-database-export" style="margin-right: 10px; font-size: 24px; width: 24px; height: 24px;"></span>' . esc_html__( 'データ処理', 'ktpwp' ) . '</h1>';
 		if ( $notice ) {
 			echo $notice; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		}
@@ -1072,7 +1072,7 @@ class KTPWP_Settings {
 
         ?>
         <div class="wrap ktp-admin-wrap">
-            <h1><span class="dashicons dashicons-admin-tools"></span> <?php echo esc_html__( '開発者設定', 'ktpwp' ); ?></h1>
+            <h1><span class="dashicons dashicons-admin-tools" style="margin-right: 10px; font-size: 24px; width: 24px; height: 24px;"></span><?php echo esc_html__( '開発者設定', 'ktpwp' ); ?></h1>
 
             <!-- 認証ボタン/解除ボタンは不要になりました -->
 
@@ -1383,7 +1383,7 @@ class KTPWP_Settings {
     private function display_developer_password_form() {
         ?>
         <div class="wrap ktp-admin-wrap">
-            <h1><span class="dashicons dashicons-admin-tools"></span> <?php echo esc_html__( '開発者設定', 'ktpwp' ); ?></h1>
+            <h1><span class="dashicons dashicons-admin-tools" style="margin-right: 10px; font-size: 24px; width: 24px; height: 24px;"></span><?php echo esc_html__( '開発者設定', 'ktpwp' ); ?></h1>
 
             <?php $this->display_developer_tabs( 'developer' ); ?>
 
@@ -1423,7 +1423,7 @@ class KTPWP_Settings {
     private function display_payment_password_form() {
         ?>
         <div class="wrap ktp-admin-wrap">
-            <h1><span class="dashicons dashicons-money-alt"></span> <?php echo esc_html__( '決済設定', 'ktpwp' ); ?></h1>
+            <h1><span class="dashicons dashicons-money-alt" style="margin-right: 10px; font-size: 24px; width: 24px; height: 24px;"></span><?php echo esc_html__( '決済設定', 'ktpwp' ); ?></h1>
 
             <?php $this->display_developer_tabs( 'payment' ); ?>
 
@@ -1825,7 +1825,7 @@ class KTPWP_Settings {
         // $all_roles = $wp_roles->roles; // プルダウンがなくなったため不要
         ?>
         <div class="wrap ktp-admin-wrap">
-            <h1><span class="dashicons dashicons-groups"></span> <?php echo esc_html__( 'スタッフ管理', 'ktpwp' ); ?></h1>
+            <h1><span class="dashicons dashicons-groups" style="margin-right: 10px; font-size: 24px; width: 24px; height: 24px;"></span><?php echo esc_html__( 'スタッフ管理', 'ktpwp' ); ?></h1>
 
 
 
@@ -2036,7 +2036,7 @@ class KTPWP_Settings {
         $options = get_option( $this->option_name );
         ?>
         <div class="wrap ktp-admin-wrap">
-            <h1><span class="dashicons dashicons-email-alt"></span> <?php echo esc_html__( 'メール・SMTP設定', 'ktpwp' ); ?></h1>
+            <h1><span class="dashicons dashicons-email" style="margin-right: 10px; font-size: 24px; width: 24px; height: 24px;"></span><?php echo esc_html__( 'メール・SMTP設定', 'ktpwp' ); ?></h1>
             
             <?php
             // 通知表示
@@ -2128,7 +2128,7 @@ class KTPWP_Settings {
             wp_die( __( 'この設定ページにアクセスする権限がありません。', 'ktpwp' ) );
         } ?>
         <div class="wrap ktp-admin-wrap">
-            <h1><span class="dashicons dashicons-admin-settings"></span> <?php echo esc_html__( '一般設定', 'ktpwp' ); ?></h1>
+            <h1><span class="dashicons dashicons-admin-settings" style="margin-right: 10px; font-size: 24px; width: 24px; height: 24px;"></span><?php echo esc_html__( '一般設定', 'ktpwp' ); ?></h1>
             
             <?php
             // 通知表示
@@ -2204,7 +2204,7 @@ class KTPWP_Settings {
         
         ?>
         <div class="wrap ktp-admin-wrap">
-            <h1><span class="dashicons dashicons-admin-network"></span> <?php echo esc_html__( 'ライセンス設定', 'ktpwp' ); ?></h1>
+            <h1><span class="dashicons dashicons-lock" style="margin-right: 10px; font-size: 24px; width: 24px; height: 24px;"></span><?php echo esc_html__( 'ライセンス設定', 'ktpwp' ); ?></h1>
             
             <?php
             // 通知表示
@@ -2372,7 +2372,7 @@ class KTPWP_Settings {
             wp_die( __( 'この設定ページにアクセスする権限がありません。', 'ktpwp' ) );
         } ?>
         <div class="wrap ktp-admin-wrap">
-            <h1><span class="dashicons dashicons-admin-appearance"></span> <?php echo esc_html__( 'デザイン設定', 'ktpwp' ); ?></h1>
+            <h1><span class="dashicons dashicons-art" style="margin-right: 10px; font-size: 24px; width: 24px; height: 24px;"></span><?php echo esc_html__( 'デザイン設定', 'ktpwp' ); ?></h1>
             
             <?php
             // 通知表示

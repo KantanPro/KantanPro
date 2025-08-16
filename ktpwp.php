@@ -5426,7 +5426,7 @@ function ktpwp_dummy_data_page() {
     
     ?>
     <div class="wrap ktp-dummy-data-wrap">
-        <h1>KantanPro ダミーデータ作成</h1>
+        <h1><span class="dashicons dashicons-database" style="margin-right: 10px; font-size: 24px; width: 24px; height: 24px;"></span>KantanPro ダミーデータ作成</h1>
         
         <div class="ktp-dummy-data-version">
             <p><strong>プラグインバージョン:</strong> <?php echo esc_html(KANTANPRO_PLUGIN_VERSION); ?></p>
