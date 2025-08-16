@@ -157,7 +157,7 @@ function ktpwp_autoload_classes() {
         'KTPWP_Supplier_Data'   => 'includes/class-ktpwp-supplier-data.php',
         'KTPWP_Report_Class'    => 'includes/class-ktpwp-tab-report.php',
         'KTPWP_Order_Class'     => 'includes/class-ktpwp-order-main.php',
-        'KTPWP_Plugin_Reference' => 'includes/class-ktpwp-plugin-reference.php',
+
         // 新しいクラス構造
         'KTPWP'                 => 'includes/class-ktpwp.php',
         'KTPWP_Main'            => 'includes/class-ktpwp-main.php',
@@ -3822,9 +3822,8 @@ function KTPWP_Index() {
                         }
                         $navigation_links .= ' ' . $act_key;
                     }
-                    // リファレンスボタンはログインユーザー全員に表示
-                    $reference_instance = KTPWP_Plugin_Reference::get_instance();
-                    $navigation_links .= $reference_instance->get_reference_link();
+                    // ヘルプリンク（外部リンク）
+                    $navigation_links .= ' <a href="https://www.kantanpro.com/docs" target="_blank" title="ヘルプ" style="display: inline-flex; align-items: center; gap: 4px; color: #0073aa; text-decoration: none;">' . KTPWP_SVG_Icons::get_icon('help', array('style' => 'font-size: 20px; vertical-align: middle;')) . '<span>ヘルプ</span></a>';
                 }
             }
 

@@ -395,9 +395,8 @@ class KTPWP_Shortcodes {
         if (!empty($activation_key)) {
             $links[] = $activation_key;
         }
-        // ヘルプ（リファレンス）
-        $reference_instance = KTPWP_Plugin_Reference::get_instance();
-        $links[] = $reference_instance->get_reference_link();
+        // ヘルプ（外部リンク）
+        $links[] = '<a href="https://www.kantanpro.com/docs" target="_blank" title="ヘルプ" style="display: inline-flex; align-items: center; gap: 4px; color: #0073aa; text-decoration: none;">' . KTPWP_SVG_Icons::get_icon('help', array('style' => 'font-size: 20px; vertical-align: middle;')) . '<span>ヘルプ</span></a>';
 
         return ' ' . implode(' ', $links);
     }

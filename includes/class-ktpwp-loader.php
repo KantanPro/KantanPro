@@ -81,7 +81,7 @@ class KTPWP_Loader {
             'KTPWP_Supplier_Skills'  => 'includes/class-ktpwp-supplier-skills.php',
             'KTPWP_Report_Class'     => 'includes/class-ktpwp-tab-report.php',
             'KTPWP_Order_Class'      => 'includes/class-ktpwp-order-main.php',
-            'KTPWP_Plugin_Reference' => 'includes/class-ktpwp-plugin-reference.php',
+
             'KTPWP'                 => 'includes/class-ktpwp.php',
             'KTPWP_Main'            => 'includes/class-ktpwp-main.php',
             'KTPWP_Loader'          => 'includes/class-ktpwp-loader.php',
