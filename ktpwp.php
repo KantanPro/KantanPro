@@ -219,6 +219,9 @@ require_once __DIR__ . '/includes/ajax-supplier-cost.php';
 // --- 部署管理AJAXハンドラを読み込む ---
 require_once __DIR__ . '/includes/ajax-department.php';
 
+// --- 売上台帳PDF生成AJAXハンドラを読み込む ---
+require_once __DIR__ . '/includes/ajax-sales-ledger-pdf.php';
+
 
 
 // クラスの読み込み実行
