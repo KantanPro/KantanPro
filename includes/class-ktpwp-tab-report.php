@@ -771,14 +771,14 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 
 		if ( ! empty( $sales_data ) ) {
 			$content .= '<div style="overflow-x:auto;">';
-			$content .= '<table style="width:100%;border-collapse:collapse;font-size:12px;">';
+			$content .= '<table style="width:100%;border-collapse:collapse;font-size:16px;line-height:1.6;">';
 			$content .= '<thead>';
 			$content .= '<tr style="background:#f8f9fa;">';
-			$content .= '<th style="border:1px solid #ddd;padding:8px;text-align:left;">日付</th>';
-			$content .= '<th style="border:1px solid #ddd;padding:8px;text-align:left;">顧客名</th>';
-			$content .= '<th style="border:1px solid #ddd;padding:8px;text-align:left;">案件名</th>';
-			$content .= '<th style="border:1px solid #ddd;padding:8px;text-align:right;">売上金額</th>';
-			$content .= '<th style="border:1px solid #ddd;padding:8px;text-align:center;">進捗</th>';
+			$content .= '<th style="border:1px solid #ddd;padding:14px 12px;text-align:left;font-weight:bold;font-size:16px;">日付</th>';
+			$content .= '<th style="border:1px solid #ddd;padding:14px 12px;text-align:left;font-weight:bold;font-size:16px;">顧客名</th>';
+			$content .= '<th style="border:1px solid #ddd;padding:14px 12px;text-align:left;font-weight:bold;font-size:16px;">案件名</th>';
+			$content .= '<th style="border:1px solid #ddd;padding:14px 12px;text-align:right;font-weight:bold;font-size:16px;">売上金額</th>';
+			$content .= '<th style="border:1px solid #ddd;padding:14px 12px;text-align:center;font-weight:bold;font-size:16px;">進捗</th>';
 			$content .= '</tr>';
 			$content .= '</thead>';
 			$content .= '<tbody>';
@@ -787,12 +787,12 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 			$preview_data = array_slice( $sales_data, 0, 10 );
 			
 			foreach ( $preview_data as $row ) {
-				$content .= '<tr>';
-				$content .= '<td style="border:1px solid #ddd;padding:8px;">' . esc_html( $row['date'] ) . '</td>';
-				$content .= '<td style="border:1px solid #ddd;padding:8px;">' . esc_html( $row['client_name'] ) . '</td>';
-				$content .= '<td style="border:1px solid #ddd;padding:8px;">' . esc_html( $row['order_title'] ) . '</td>';
-				$content .= '<td style="border:1px solid #ddd;padding:8px;text-align:right;">¥' . number_format( $row['total_amount'] ) . '</td>';
-				$content .= '<td style="border:1px solid #ddd;padding:8px;text-align:center;">' . esc_html( $this->get_progress_label( $row['progress'] ) ) . '</td>';
+				$content .= '<tr style="border-bottom:1px solid #f0f0f0;">';
+				$content .= '<td style="border:1px solid #ddd;padding:12px;font-size:15px;">' . esc_html( $row['date'] ) . '</td>';
+				$content .= '<td style="border:1px solid #ddd;padding:12px;font-size:15px;">' . esc_html( $row['client_name'] ) . '</td>';
+				$content .= '<td style="border:1px solid #ddd;padding:12px;font-size:15px;">' . esc_html( $row['order_title'] ) . '</td>';
+				$content .= '<td style="border:1px solid #ddd;padding:12px;text-align:right;font-weight:bold;color:#1976d2;font-size:16px;">¥' . number_format( $row['total_amount'] ) . '</td>';
+				$content .= '<td style="border:1px solid #ddd;padding:12px;text-align:center;font-size:15px;">' . esc_html( $this->get_progress_label( $row['progress'] ) ) . '</td>';
 				$content .= '</tr>';
 			}
 
