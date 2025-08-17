@@ -116,10 +116,7 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 		private function render_comprehensive_reports() {
 			global $wpdb;
 
-			$content = '<div id="report_content" style="background:#fff;padding:32px 12px 32px 12px;max-width:1200px;margin:32px auto 0 auto;border-radius:10px;box-shadow:0 2px 8px #eee;">';
-			
-			// レポートタイプ選択
-			$content .= $this->render_report_selector();
+			$content = '<div id="report_content" style="background:#fff;padding:16px 12px 32px 12px;max-width:1200px;margin:8px auto 0 auto;border-radius:10px;box-shadow:0 2px 8px #eee;">';
 			
 			// 現在選択されているレポートタイプを取得
 			$report_type = isset( $_GET['report_type'] ) ? sanitize_text_field( $_GET['report_type'] ) : 'sales';
@@ -170,40 +167,7 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 			return $content;
 		}
 
-		/**
-		 * Render report type selector
-		 *
-		 * @since 1.0.0
-		 * @return string HTML content
-		 */
-		private function render_report_selector() {
-			$current_report = isset( $_GET['report_type'] ) ? sanitize_text_field( $_GET['report_type'] ) : 'sales';
-			
-			$reports = array(
-				'sales' => '売上レポート',
-				'client' => '顧客別レポート',
-				'service' => 'サービス別レポート',
-				'supplier' => '協力会社レポート',
-				'tax_return' => '確定申告'
-			);
 
-			$content = '<div class="report-selector" style="margin-bottom:24px;padding:16px;background:#f8f9fa;border-radius:8px;">';
-			$content .= '<h3 style="margin:0 0 16px 0;color:#333;">レポート種類</h3>';
-			$content .= '<div style="display:flex;flex-wrap:wrap;gap:8px;">';
-
-			foreach ( $reports as $key => $label ) {
-				$active_class = ( $current_report === $key ) ? 'style="background:#1976d2;color:#fff;"' : 'style="background:#fff;color:#333;"';
-				$url = add_query_arg( array( 'tab_name' => 'report', 'report_type' => $key ) );
-				
-				$content .= '<a href="' . esc_url( $url ) . '" class="report-btn" ' . $active_class . ' style="padding:8px 16px;border-radius:6px;text-decoration:none;border:1px solid #ddd;transition:all 0.3s;">';
-				$content .= esc_html( $label );
-				$content .= '</a>';
-			}
-
-			$content .= '</div></div>';
-
-			return $content;
-		}
 
 		/**
 		 * Render sales report
@@ -215,7 +179,7 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 			global $wpdb;
 
 			$content = '<div class="sales-report">';
-			$content .= '<h3 style="margin-bottom:24px;color:#333;">売上レポート</h3>';
+			$content .= '<h3 style="margin-top:0;margin-bottom:24px;color:#333;">売上レポート</h3>';
 
 			// 売上計算条件の説明
 			$content .= '<div style="background:#e3f2fd;border-left:4px solid #2196f3;padding:16px;margin-bottom:24px;border-radius:4px;">';
@@ -259,7 +223,7 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 		 */
 		private function render_client_report() {
 			$content = '<div class="client-report">';
-			$content .= '<h3 style="margin-bottom:8px;color:#333;">顧客別レポート</h3>';
+			$content .= '<h3 style="margin-top:0;margin-bottom:8px;color:#333;">顧客別レポート</h3>';
 			
 			// 期間の説明を追加
 			$period = isset( $_GET['period'] ) ? sanitize_text_field( $_GET['period'] ) : 'all_time';
@@ -295,7 +259,7 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 		 */
 		private function render_service_report() {
 			$content = '<div class="service-report">';
-			$content .= '<h3 style="margin-bottom:8px;color:#333;">サービス別レポート</h3>';
+			$content .= '<h3 style="margin-top:0;margin-bottom:8px;color:#333;">サービス別レポート</h3>';
 			
 			// 期間の説明を追加
 			$period = isset( $_GET['period'] ) ? sanitize_text_field( $_GET['period'] ) : 'all_time';
@@ -331,7 +295,7 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 		 */
 		private function render_supplier_report() {
 			$content = '<div class="supplier-report">';
-			$content .= '<h3 style="margin-bottom:8px;color:#333;">協力会社レポート</h3>';
+			$content .= '<h3 style="margin-top:0;margin-bottom:8px;color:#333;">協力会社レポート</h3>';
 			
 			// 期間の説明を追加
 			$period = isset( $_GET['period'] ) ? sanitize_text_field( $_GET['period'] ) : 'all_time';
@@ -663,7 +627,7 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 	 */
 	private function render_tax_return_report() {
 		$content = '<div class="tax-return-report">';
-		$content .= '<h3 style="margin-bottom:24px;color:#333;">確定申告セクション</h3>';
+		$content .= '<h3 style="margin-top:0;margin-bottom:24px;color:#333;">確定申告セクション</h3>';
 
 		// 年度選択
 		$content .= $this->render_tax_year_selector();
