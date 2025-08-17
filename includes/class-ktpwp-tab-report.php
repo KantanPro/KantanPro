@@ -137,6 +137,9 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 				case 'supplier':
 					$content .= $this->render_supplier_report();
 					break;
+				case 'tax_return':
+					$content .= $this->render_tax_return_report();
+					break;
 				default:
 					$content .= $this->render_sales_report();
 					break;
@@ -157,6 +160,12 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 			);
 			$content .= '<script>var ktp_ajax_object = ' . json_encode( $ajax_data ) . ';</script>';
 			$content .= '<script src="' . esc_url( plugins_url( 'js/ktp-report-charts.js', dirname( __FILE__ ) ) ) . '?v=' . KANTANPRO_PLUGIN_VERSION . '"></script>';
+			
+			// 確定申告タブの場合は売上台帳PDF用スクリプトも読み込み
+			$report_type = isset( $_GET['report_type'] ) ? sanitize_text_field( $_GET['report_type'] ) : 'sales';
+			if ( $report_type === 'tax_return' ) {
+				$content .= '<script src="' . esc_url( plugins_url( 'js/ktp-sales-ledger-pdf.js', dirname( __FILE__ ) ) ) . '?v=' . KANTANPRO_PLUGIN_VERSION . '"></script>';
+			}
 
 			return $content;
 		}
@@ -174,7 +183,8 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 				'sales' => '売上レポート',
 				'client' => '顧客別レポート',
 				'service' => 'サービス別レポート',
-				'supplier' => '協力会社レポート'
+				'supplier' => '協力会社レポート',
+				'tax_return' => '確定申告'
 			);
 
 			$content = '<div class="report-selector" style="margin-bottom:24px;padding:16px;background:#f8f9fa;border-radius:8px;">';
@@ -643,6 +653,257 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 		}
 
 		return $where_clause;
+	}
+
+	/**
+	 * Render tax return report
+	 *
+	 * @since 1.0.0
+	 * @return string HTML content
+	 */
+	private function render_tax_return_report() {
+		$content = '<div class="tax-return-report">';
+		$content .= '<h3 style="margin-bottom:24px;color:#333;">確定申告セクション</h3>';
+
+		// 年度選択
+		$content .= $this->render_tax_year_selector();
+
+		// 売上台帳セクション
+		$content .= $this->render_sales_ledger_section();
+
+		// その他の確定申告関連機能（将来拡張用）
+		$content .= $this->render_tax_return_features();
+
+		$content .= '</div>';
+
+		return $content;
+	}
+
+	/**
+	 * Render tax year selector
+	 *
+	 * @since 1.0.0
+	 * @return string HTML content
+	 */
+	private function render_tax_year_selector() {
+		$current_year = isset( $_GET['tax_year'] ) ? intval( $_GET['tax_year'] ) : date('Y');
+		$start_year = 2020; // 開始年
+		$end_year = date('Y') + 1; // 来年まで
+
+		$content = '<div style="margin-bottom:24px;padding:16px;background:#f8f9fa;border-radius:8px;">';
+		$content .= '<h4 style="margin:0 0 12px 0;">対象年度選択</h4>';
+		$content .= '<div style="display:flex;flex-wrap:wrap;gap:8px;">';
+
+		for ( $year = $end_year; $year >= $start_year; $year-- ) {
+			$active_class = ( $current_year === $year ) ? 'style="background:#1976d2;color:#fff;"' : 'style="background:#fff;color:#333;"';
+			$url = add_query_arg( array( 'tab_name' => 'report', 'report_type' => 'tax_return', 'tax_year' => $year ) );
+			
+			$content .= '<a href="' . esc_url( $url ) . '" class="year-btn" ' . $active_class . ' style="padding:6px 12px;border-radius:4px;text-decoration:none;border:1px solid #ddd;font-size:14px;transition:all 0.3s;">';
+			$content .= esc_html( $year . '年' );
+			$content .= '</a>';
+		}
+
+		$content .= '</div></div>';
+
+		return $content;
+	}
+
+	/**
+	 * Render sales ledger section
+	 *
+	 * @since 1.0.0
+	 * @return string HTML content
+	 */
+	private function render_sales_ledger_section() {
+		global $wpdb;
+
+		$tax_year = isset( $_GET['tax_year'] ) ? intval( $_GET['tax_year'] ) : date('Y');
+		
+		// 売上台帳データを取得
+		$sales_data = $this->get_sales_ledger_data( $tax_year );
+
+		$content = '<div style="background:#fff;border:1px solid #ddd;border-radius:8px;padding:20px;margin-bottom:24px;">';
+		$content .= '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">';
+		$content .= '<h4 style="margin:0;color:#333;">売上台帳（' . esc_html( $tax_year ) . '年）</h4>';
+		
+		// PDF出力ボタン
+		$content .= '<button type="button" id="sales-ledger-pdf-btn" data-year="' . esc_attr( $tax_year ) . '" style="
+			background:#e53935;
+			color:#fff;
+			border:none;
+			padding:10px 20px;
+			border-radius:4px;
+			cursor:pointer;
+			font-size:14px;
+			display:flex;
+			align-items:center;
+			gap:8px;
+		">';
+		$content .= '<span style="font-size:16px;">📄</span>';
+		$content .= 'PDF出力';
+		$content .= '</button>';
+		
+		$content .= '</div>';
+
+		// 売上サマリー
+		$total_sales = array_sum( array_column( $sales_data, 'total_amount' ) );
+		$total_orders = count( $sales_data );
+
+		$content .= '<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:16px;margin-bottom:20px;">';
+		
+		$content .= '<div style="background:linear-gradient(135deg, #43a047 0%, #66bb6a 100%);color:#fff;padding:16px;border-radius:6px;text-align:center;">';
+		$content .= '<div style="font-size:14px;margin-bottom:4px;">年間売上合計</div>';
+		$content .= '<div style="font-size:20px;font-weight:bold;">¥' . number_format( $total_sales ) . '</div>';
+		$content .= '</div>';
+
+		$content .= '<div style="background:linear-gradient(135deg, #1976d2 0%, #42a5f5 100%);color:#fff;padding:16px;border-radius:6px;text-align:center;">';
+		$content .= '<div style="font-size:14px;margin-bottom:4px;">売上件数</div>';
+		$content .= '<div style="font-size:20px;font-weight:bold;">' . number_format( $total_orders ) . '件</div>';
+		$content .= '</div>';
+
+		$content .= '</div>';
+
+		// 売上台帳テーブル（プレビュー版）
+		$content .= '<div style="margin-top:20px;">';
+		$content .= '<div style="background:#f5f5f5;padding:12px;border-radius:4px;margin-bottom:12px;">';
+		$content .= '<strong>📋 売上台帳プレビュー</strong>（最新10件）';
+		$content .= '</div>';
+
+		if ( ! empty( $sales_data ) ) {
+			$content .= '<div style="overflow-x:auto;">';
+			$content .= '<table style="width:100%;border-collapse:collapse;font-size:12px;">';
+			$content .= '<thead>';
+			$content .= '<tr style="background:#f8f9fa;">';
+			$content .= '<th style="border:1px solid #ddd;padding:8px;text-align:left;">日付</th>';
+			$content .= '<th style="border:1px solid #ddd;padding:8px;text-align:left;">顧客名</th>';
+			$content .= '<th style="border:1px solid #ddd;padding:8px;text-align:left;">案件名</th>';
+			$content .= '<th style="border:1px solid #ddd;padding:8px;text-align:right;">売上金額</th>';
+			$content .= '<th style="border:1px solid #ddd;padding:8px;text-align:center;">進捗</th>';
+			$content .= '</tr>';
+			$content .= '</thead>';
+			$content .= '<tbody>';
+
+			// 最新10件のみ表示
+			$preview_data = array_slice( $sales_data, 0, 10 );
+			
+			foreach ( $preview_data as $row ) {
+				$content .= '<tr>';
+				$content .= '<td style="border:1px solid #ddd;padding:8px;">' . esc_html( $row['date'] ) . '</td>';
+				$content .= '<td style="border:1px solid #ddd;padding:8px;">' . esc_html( $row['client_name'] ) . '</td>';
+				$content .= '<td style="border:1px solid #ddd;padding:8px;">' . esc_html( $row['order_title'] ) . '</td>';
+				$content .= '<td style="border:1px solid #ddd;padding:8px;text-align:right;">¥' . number_format( $row['total_amount'] ) . '</td>';
+				$content .= '<td style="border:1px solid #ddd;padding:8px;text-align:center;">' . esc_html( $this->get_progress_label( $row['progress'] ) ) . '</td>';
+				$content .= '</tr>';
+			}
+
+			$content .= '</tbody>';
+			$content .= '</table>';
+			$content .= '</div>';
+
+			if ( count( $sales_data ) > 10 ) {
+				$content .= '<div style="text-align:center;margin-top:12px;color:#666;font-size:14px;">';
+				$content .= '※ 全' . count( $sales_data ) . '件中、最新10件を表示。全件はPDF出力でご確認ください。';
+				$content .= '</div>';
+			}
+		} else {
+			$content .= '<div style="text-align:center;padding:40px;color:#666;">';
+			$content .= '対象年度の売上データがありません。';
+			$content .= '</div>';
+		}
+
+		$content .= '</div>';
+		$content .= '</div>';
+
+		return $content;
+	}
+
+	/**
+	 * Render tax return features
+	 *
+	 * @since 1.0.0
+	 * @return string HTML content
+	 */
+	private function render_tax_return_features() {
+		$content = '<div style="background:#e3f2fd;border-left:4px solid #2196f3;padding:16px;border-radius:4px;">';
+		$content .= '<h4 style="margin:0 0 12px 0;color:#1976d2;">📊 確定申告サポート機能</h4>';
+		$content .= '<div style="color:#333;line-height:1.6;">';
+		$content .= '<ul style="margin:0;padding-left:20px;">';
+		$content .= '<li><strong>売上台帳PDF出力</strong>：年度別の売上データを帳簿形式でPDF出力</li>';
+		$content .= '<li><strong>税務署提出対応</strong>：確定申告に必要な売上情報を整理</li>';
+		$content .= '<li><strong>月別集計</strong>：月ごとの売上推移を確認可能</li>';
+		$content .= '<li><strong>顧客別売上</strong>：主要取引先の売上内訳を把握</li>';
+		$content .= '</ul>';
+		$content .= '</div>';
+		$content .= '</div>';
+
+		return $content;
+	}
+
+	/**
+	 * Get sales ledger data for tax return
+	 *
+	 * @since 1.0.0
+	 * @param int $year Target year
+	 * @return array Sales data
+	 */
+	private function get_sales_ledger_data( $year ) {
+		global $wpdb;
+
+		// 売上台帳用のデータを取得（請求済以降の進捗状況の案件のみ）
+		$query = "SELECT 
+			o.id,
+			o.project_name as order_title,
+			o.created_at as date,
+			o.progress,
+			o.customer_name as client_name,
+			COALESCE(SUM(ii.amount), 0) as total_amount
+		FROM {$wpdb->prefix}ktp_order o
+		LEFT JOIN {$wpdb->prefix}ktp_order_invoice_items ii ON o.id = ii.order_id
+		WHERE YEAR(o.created_at) = %d
+		AND o.progress >= 5
+		AND o.progress != 7
+		AND ii.amount IS NOT NULL
+		GROUP BY o.id
+		ORDER BY o.created_at DESC";
+
+		$results = $wpdb->get_results( $wpdb->prepare( $query, $year ), ARRAY_A );
+
+		// データを整形
+		$sales_data = array();
+		foreach ( $results as $row ) {
+			$sales_data[] = array(
+				'id' => $row['id'],
+				'date' => date( 'Y-m-d', strtotime( $row['date'] ) ),
+				'client_name' => $row['client_name'] ?: '未設定',
+				'order_title' => $row['order_title'] ?: '無題',
+				'total_amount' => floatval( $row['total_amount'] ),
+				'progress' => intval( $row['progress'] )
+			);
+		}
+
+		return $sales_data;
+	}
+
+	/**
+	 * Get progress label
+	 *
+	 * @since 1.0.0
+	 * @param int $progress Progress status
+	 * @return string Progress label
+	 */
+	private function get_progress_label( $progress ) {
+		$labels = array(
+			1 => '受注',
+			2 => '進行中',
+			3 => '完了',
+			4 => '完了',
+			5 => '請求済',
+			6 => '支払済',
+			7 => 'ボツ',
+			8 => '見積中'
+		);
+
+		return isset( $labels[ $progress ] ) ? $labels[ $progress ] : '不明';
 	}
 
 
