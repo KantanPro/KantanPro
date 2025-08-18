@@ -20,6 +20,18 @@
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
+/* レポートボタンのアイコンとテキスト */
+.report-btn-icon {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.report-btn-text {
+    display: inline;
+    white-space: nowrap;
+}
+
 .report-selector h3 {
     font-size: 18px;
     font-weight: 600;
@@ -244,6 +256,22 @@ canvas {
         padding: 6px 12px;
         font-size: 13px;
         margin-bottom: 4px;
+    }
+    
+    /* モバイル表示時はアイコンのみ表示 */
+    .controller a .report-btn-text {
+        display: none;
+    }
+    
+    .controller a {
+        padding: 8px !important;
+        min-width: 40px !important;
+        justify-content: center !important;
+    }
+    
+    .controller a .report-btn-icon svg {
+        width: 18px !important;
+        height: 18px !important;
     }
     
     .period-btn {

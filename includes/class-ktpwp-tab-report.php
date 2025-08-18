@@ -627,7 +627,7 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 	 */
 	private function render_tax_return_report() {
 		$content = '<div class="tax-return-report">';
-		$content .= '<h3 style="margin-top:0;margin-bottom:24px;color:#333;">確定申告セクション</h3>';
+		$content .= '<h3 style="margin-top:0;margin-bottom:24px;color:#333;">確定申告用</h3>';
 
 		// 年度選択
 		$content .= $this->render_tax_year_selector();
