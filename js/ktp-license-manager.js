@@ -50,9 +50,14 @@
          * Handle license verification form submission
          */
         handleLicenseVerification(e) {
+            const $form = $(e.target);
+            // フォールバック送信フラグ時は通常送信
+            if ($form.data('ktp-fallback') === true) {
+                return; // ブラウザ標準送信
+            }
+
             e.preventDefault();
             
-            const $form = $(e.target);
             const $submitButton = $form.find('input[type="submit"]');
             const $statusMessage = $('.ktp-license-status-message');
             
@@ -69,14 +74,25 @@
 
             // Make AJAX request
             $.ajax({
-                url: ajaxurl,
+                url: (typeof ktp_license_manager_vars !== 'undefined' && ktp_license_manager_vars.ajaxurl) ? ktp_license_manager_vars.ajaxurl : (typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php'),
                 type: 'POST',
                 data: {
                     action: 'ktpwp_verify_license',
                     license_key: licenseKey,
                     nonce: ktp_license_manager_vars.nonce
                 },
-                success: (response) => {
+                success: (response, textStatus, xhr) => {
+                    // JSON以外の文字列応答やセキュリティ系テキストならフォーム送信へフォールバック
+                    if (typeof response !== 'object') {
+                        if (typeof response === 'string' && /Security check failed|<[^>]+>/.test(response)) {
+                            this.fallbackToFormSubmission($form, $submitButton);
+                            return;
+                        }
+                        // 応答がJSONでない
+                        this.fallbackToFormSubmission($form, $submitButton);
+                        return;
+                    }
+
                     if (response.success) {
                         this.showMessage('ライセンスが正常に認証されました。', 'success');
                         this.updateLicenseStatus();
@@ -90,6 +106,12 @@
                     }
                 },
                 error: (xhr, status, error) => {
+                    // parsererror や "Security check failed" を含む場合はフォールバック
+                    const body = xhr && typeof xhr.responseText === 'string' ? xhr.responseText : '';
+                    if (status === 'parsererror' || /Security check failed/.test(body)) {
+                        this.fallbackToFormSubmission($form, $submitButton);
+                        return;
+                    }
                     this.showMessage('通信エラーが発生しました。', 'error');
                     console.error('License verification error:', error);
                 },
@@ -115,6 +137,21 @@
             
             if (value && !licensePattern.test(value)) {
                 $input.after('<div class="ktp-license-key-validation" style="color: #dc3232; font-size: 12px; margin-top: 5px;">ライセンスキーの形式が正しくありません。</div>');
+            }
+        }
+
+        /**
+         * 非JSON/セキュリティテキスト時の通常フォーム送信フォールバック
+         */
+        fallbackToFormSubmission($form, $submitButton) {
+            try {
+                this.showMessage('AJAX検証に失敗したため通常送信に切り替えます。', 'warning');
+            } catch (e) {}
+            $submitButton.prop('disabled', false).val('ライセンスを認証');
+            // jQueryハンドラをバイパスしてネイティブ送信
+            $form.data('ktp-fallback', true);
+            if ($form && $form.length && $form[0] && typeof $form[0].submit === 'function') {
+                $form[0].submit();
             }
         }
 
