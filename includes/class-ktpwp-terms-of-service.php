@@ -842,32 +842,30 @@ kantanpro22@gmail.com
         ?>
         <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // フッターのKantanProバージョン表示を探す
-            var footerElements = document.querySelectorAll('*');
-            for (var i = 0; i < footerElements.length; i++) {
-                var element = footerElements[i];
-                if (element.textContent && element.textContent.includes('KantanPro v1.3.0(beta)')) {
-                    // 既に利用規約リンクが追加されているかチェック
-                    if (element.querySelector('a[href*="ktp-terms"]')) {
-                        return;
-                    }
-                    
-                    // 利用規約リンクを追加
-                    var termsLink = document.createElement('a');
-                    termsLink.href = '<?php echo esc_url( $terms_url ); ?>';
-                    termsLink.target = '_blank';
-                    termsLink.textContent = 'KantanPro<?php echo KANTANPRO_PLUGIN_VERSION; ?>利用規約';
-                    termsLink.style.marginLeft = '10px';
-                    termsLink.style.color = '#666';
-                    termsLink.style.textDecoration = 'none';
-                    termsLink.style.fontSize = '12px';
-                    
-                    // 既存のテキストの後に追加
-                    element.appendChild(document.createTextNode(' '));
-                    element.appendChild(termsLink);
-                    break;
-                }
+            // フッターのバージョン表示要素をクラスで特定
+            var footerText = document.querySelector('.ktp-footer-text');
+            if (!footerText) {
+                return;
             }
+
+            // 既にリンクがある場合は何もしない
+            if (footerText.querySelector('a[href*="ktp-terms"]')) {
+                return;
+            }
+
+            // 利用規約リンクを作成
+            var termsLink = document.createElement('a');
+            termsLink.href = '<?php echo esc_url( $terms_url ); ?>';
+            termsLink.target = '_blank';
+            termsLink.textContent = '利用規約';
+            termsLink.style.marginLeft = '10px';
+            termsLink.style.color = '#666';
+            termsLink.style.textDecoration = 'none';
+            termsLink.style.fontSize = '12px';
+
+            // スペースを挟んで追加
+            footerText.appendChild(document.createTextNode(' '));
+            footerText.appendChild(termsLink);
         });
         </script>
         <?php
