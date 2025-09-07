@@ -132,11 +132,10 @@
             // Remove existing validation message
             $validationMessage.remove();
             
-            // Check if value matches expected format (KTPA-XXXXXX-XXXXXX-XXXX)
-            const licensePattern = /^KTPA-[A-Z0-9]{6}-[A-Z0-9]{6}-[A-Z0-9]{4}$/;
-            
-            if (value && !licensePattern.test(value)) {
-                $input.after('<div class="ktp-license-key-validation" style="color: #dc3232; font-size: 12px; margin-top: 5px;">ライセンスキーの形式が正しくありません。</div>');
+            // 許容文字のみの軽いチェック（英数 + < > + = - | とスペース）
+            const allowedPattern = /^[A-Za-z0-9<>+\=\-\| ]+$/;
+            if (value && !allowedPattern.test(value)) {
+                $input.after('<div class="ktp-license-key-validation" style="color: #dc3232; font-size: 12px; margin-top: 5px;">使用できない文字が含まれています。英数と < > + = - | とスペースのみ使用できます。</div>');
             }
         }
 
