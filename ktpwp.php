@@ -35,7 +35,10 @@ if ( file_exists( plugin_dir_path( __FILE__ ) . 'development-config.php' ) ) {
 
 // プラグイン定数定義
 if ( ! defined( 'KANTANPRO_PLUGIN_VERSION' ) ) {
-    define( 'KANTANPRO_PLUGIN_VERSION', '1.0.28' );
+    // プラグインヘッダーから Version を取得して動的に定義
+    $plugin_header = get_file_data( __FILE__, array( 'Version' => 'Version' ) );
+    $detected_version = ( isset( $plugin_header['Version'] ) && $plugin_header['Version'] !== '' ) ? $plugin_header['Version'] : '1.0.0';
+    define( 'KANTANPRO_PLUGIN_VERSION', $detected_version );
 }
 if ( ! defined( 'KANTANPRO_PLUGIN_NAME' ) ) {
     define( 'KANTANPRO_PLUGIN_NAME', 'KantanPro' );
