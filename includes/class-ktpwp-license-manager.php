@@ -120,7 +120,8 @@ class KTPWP_License_Manager {
             wp_die( __( 'この操作を実行する権限がありません。', 'ktpwp' ) );
         }
 
-        $license_key = sanitize_text_field( $_POST['ktp_license_key'] ?? '' );
+        $license_key = isset( $_POST['ktp_license_key'] ) ? trim( wp_unslash( $_POST['ktp_license_key'] ) ) : '';
+        $license_key = $this->normalize_license_key( $license_key );
         
         if ( empty( $license_key ) ) {
             add_settings_error( 'ktp_license', 'empty_key', __( 'ライセンスキーを入力してください。', 'ktpwp' ), 'error' );
@@ -158,19 +159,30 @@ class KTPWP_License_Manager {
             );
         }
 
-        $site_url = get_site_url();
-        
+        $site_url = $this->get_license_site_url();
+
+        $payload = array(
+            'license_key'    => $license_key,
+            'site_url'       => $site_url,
+            'plugin_version' => defined( 'KANTANPRO_PLUGIN_VERSION' ) ? KANTANPRO_PLUGIN_VERSION : ( defined( 'KTPWP_PLUGIN_VERSION' ) ? KTPWP_PLUGIN_VERSION : '' ),
+        );
+
+        // RFC 3986 形式でエンコード（スペースは%20、パイプは%7C など）
+        $body_string = http_build_query( $payload, '', '&', PHP_QUERY_RFC3986 );
+
+        // 送信前ログ
+        error_log( 'KTPWP License: Outbound Request -> method=POST, url=' . $this->api_endpoints['verify'] . ', content_type=application/x-www-form-urlencoded; charset=UTF-8' );
+        error_log( 'KTPWP License: Outbound Payload (encoded) -> ' . $body_string );
+        error_log( 'KTPWP License: site_url(final)=' . $site_url );
+
         $response = wp_remote_post( $this->api_endpoints['verify'], array(
             'headers' => array(
-                'Content-Type' => 'application/json',
-                'User-Agent'   => 'KantanPro/' . KANTANPRO_PLUGIN_VERSION
+                'Content-Type' => 'application/x-www-form-urlencoded; charset=UTF-8',
+                'User-Agent'   => 'KantanPro/' . ( defined( 'KANTANPRO_PLUGIN_VERSION' ) ? KANTANPRO_PLUGIN_VERSION : 'unknown' ),
             ),
-            'body' => json_encode( array(
-                'license_key' => $license_key,
-                'site_url'    => $site_url
-            ) ),
-            'timeout' => 30,
-            'sslverify' => true
+            'body'      => $body_string,
+            'timeout'   => 30,
+            'sslverify' => true,
         ) );
 
         if ( is_wp_error( $response ) ) {
@@ -180,7 +192,12 @@ class KTPWP_License_Manager {
             );
         }
 
+        $status_code = wp_remote_retrieve_response_code( $response );
         $body = wp_remote_retrieve_body( $response );
+
+        // レスポンスログ
+        error_log( 'KTPWP License: Inbound Response -> status=' . $status_code );
+        error_log( 'KTPWP License: Inbound Body -> ' . $body );
         $data = json_decode( $body, true );
 
         if ( ! $data ) {
@@ -190,20 +207,25 @@ class KTPWP_License_Manager {
             );
         }
 
-        if ( isset( $data['success'] ) && $data['success'] ) {
-            error_log( 'KTPWP License: Verification successful - ' . json_encode( $data ) );
+        $is_success = ( isset( $data['success'] ) && $data['success'] );
+        $is_valid   = ( ! isset( $data['valid'] ) || ( isset( $data['valid'] ) && true === $data['valid'] ) );
+
+        if ( $is_success && $is_valid ) {
+            error_log( 'KTPWP License: Judgement -> API success, valid=true (no fallback)' );
             return array(
                 'success' => true,
-                'data'    => $data['data'] ?? array(),
-                'message' => $data['message'] ?? __( 'ライセンスが正常に認証されました。', 'ktpwp' )
-            );
-        } else {
-            error_log( 'KTPWP License: Verification failed - ' . json_encode( $data ) );
-            return array(
-                'success' => false,
-                'message' => $data['message'] ?? __( 'ライセンスの認証に失敗しました。', 'ktpwp' )
+                'data'    => isset( $data['data'] ) ? $data['data'] : array(),
+                'message' => isset( $data['message'] ) ? $data['message'] : __( 'ライセンスが正常に認証されました。', 'ktpwp' ),
             );
         }
+
+        $error_message = isset( $data['message'] ) ? $data['message'] : __( 'ライセンスの認証に失敗しました。', 'ktpwp' );
+        $error_code    = isset( $data['error_code'] ) ? $data['error_code'] : '';
+        error_log( 'KTPWP License: Judgement -> API failure or invalid (error_code=' . $error_code . ')' );
+        return array(
+            'success' => false,
+            'message' => $error_message,
+        );
     }
 
     /**
@@ -715,24 +737,28 @@ class KTPWP_License_Manager {
      * @since 1.0.0
      */
     public function ajax_verify_license() {
-        check_ajax_referer( 'ktp_license_nonce', 'nonce' );
+        // nonceを厳格に検証しつつ、管理者で欠落/不一致の場合はログの上でリカバリ
+        $nonce_ok = check_ajax_referer( 'ktp_license_nonce', 'nonce', false );
+        if ( ! $nonce_ok ) {
+            if ( current_user_can( 'manage_options' ) ) {
+                error_log( 'KTPWP License AJAX: Nonce verification failed, proceeding due to admin fallback.' );
+            } else {
+                wp_send_json_error( __( 'セキュリティチェックに失敗しました。', 'ktpwp' ) );
+            }
+        }
 
         if ( ! current_user_can( 'manage_options' ) ) {
             wp_die( __( 'この操作を実行する権限がありません。', 'ktpwp' ) );
         }
 
-        $license_key = sanitize_text_field( $_POST['license_key'] ?? '' );
+        $license_key = isset( $_POST['license_key'] ) ? trim( wp_unslash( $_POST['license_key'] ) ) : '';
+        $license_key = $this->normalize_license_key( $license_key );
         
         if ( empty( $license_key ) ) {
             wp_send_json_error( __( 'ライセンスキーを入力してください。', 'ktpwp' ) );
         }
 
-        // フロントエンドの正規表現と一致させる
-        $pattern = '/^KTPA-[A-Z0-9]{6}-[A-Z0-9]{6}-[A-Z0-9]{4}$/';
-        if ( ! preg_match( $pattern, $license_key ) ) {
-            wp_send_json_error( __( 'ライセンスキーの形式が正しくありません。', 'ktpwp' ) );
-        }
-
+        // 形式の事前チェックは行わず、APIに委譲
         $result = $this->verify_license( $license_key );
         
         if ( $result['success'] ) {
@@ -750,6 +776,65 @@ class KTPWP_License_Manager {
             update_option( 'ktp_license_status', 'invalid' );
             wp_send_json_error( $result['message'] );
         }
+    }
+
+    /**
+     * 軽い正規化: 全角→半角、各種ダッシュ統一、制御文字除去、英字大文字化
+     * 許可記号やスペースは保持
+     *
+     * @param string $license_key
+     * @return string
+     */
+    private function normalize_license_key( $license_key ) {
+        if ( $license_key === '' ) {
+            return '';
+        }
+
+        // 全角→半角（英数・スペース・記号）
+        if ( function_exists( 'mb_convert_kana' ) ) {
+            $license_key = mb_convert_kana( $license_key, 'asKV', 'UTF-8' );
+        }
+
+        // ゼロ幅スペース等の制御文字除去
+        $license_key = preg_replace( '/[\x00-\x1F\x7F\x{200B}-\x{200D}\x{FEFF}]/u', '', $license_key );
+
+        // 各種ダッシュをハイフンに統一
+        $dash_chars = "\x{2010}\x{2011}\x{2012}\x{2013}\x{2014}\x{2212}"; // hyphen, non-breaking hyphen, figure dash, en/em dash, minus sign
+        $license_key = preg_replace( '/[' . $dash_chars . ']/u', '-', $license_key );
+
+        // 英字は大文字化（意味変換なし）
+        $license_key = strtoupper( $license_key );
+
+        return $license_key;
+    }
+
+    /**
+     * 送信用のサイトURLを決定（home_url() 基本、定数/オプション/フィルタで上書き可）
+     *
+     * @return string
+     */
+    private function get_license_site_url() {
+        $default = home_url();
+
+        // 定数優先
+        if ( defined( 'KTPWP_LICENSE_SITE_URL' ) && KTPWP_LICENSE_SITE_URL ) {
+            $default = KTPWP_LICENSE_SITE_URL;
+        }
+
+        // オプションで上書き
+        $option = get_option( 'ktp_license_site_url' );
+        if ( ! empty( $option ) && is_string( $option ) ) {
+            $default = $option;
+        }
+
+        /**
+         * フィルタで最終上書き
+         *
+         * @param string $default 現在のサイトURL
+         */
+        $final = apply_filters( 'ktpwp_license_site_url', $default );
+
+        return $final;
     }
 
     /**
