@@ -758,7 +758,10 @@ class KTPWP_License_Manager {
             wp_send_json_error( __( 'ライセンスキーを入力してください。', 'ktpwp' ) );
         }
 
-        // 形式の事前チェックは行わず、APIに委譲
+        // 形式の事前チェックは行わず、APIに委譲（許容文字のみ軽く検査する場合は以下有効化）
+        // if ( preg_match( '/[^A-Za-z0-9<>+=\-| ]/', $license_key ) ) {
+        //     wp_send_json_error( __( '使用できない文字が含まれています。', 'ktpwp' ) );
+        // }
         $result = $this->verify_license( $license_key );
         
         if ( $result['success'] ) {
