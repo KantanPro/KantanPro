@@ -14,14 +14,46 @@
     // 金額自動保存のデバウンス用タイマー
     window.ktpCostAmountSaveTimers = {};
 
+    // 統一されたAJAX設定の取得
+    function getAjaxConfig() {
+        const config = {
+            url: '',
+            nonce: ''
+        };
+        
+        // URLの取得（優先順位順）
+        if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) {
+            config.url = ktpwp_ajax.ajax_url;
+        } else if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.ajax_url) {
+            config.url = ktp_ajax_object.ajax_url;
+        } else if (typeof ajaxurl !== 'undefined') {
+            config.url = ajaxurl;
+        } else {
+            config.url = '/wp-admin/admin-ajax.php';
+        }
+        
+        // nonceの取得（優先順位順）
+        if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.auto_save) {
+            config.nonce = ktpwp_ajax.nonces.auto_save;
+        } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.general) {
+            config.nonce = ktpwp_ajax.nonces.general;
+        } else if (typeof ktp_ajax_nonce !== 'undefined') {
+            config.nonce = ktp_ajax_nonce;
+        } else if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.nonce) {
+            config.nonce = ktp_ajax_object.nonce;
+        }
+        
+        return config;
+    }
+
     // 利用可能な変数を確認（デバッグモード時のみ）
     if (window.ktpDebugMode) {
-        console.log('[COST] Available variables check:');
-        console.log('  - ajaxurl:', typeof ajaxurl !== 'undefined' ? ajaxurl : 'undefined');
-        console.log('  - ktp_ajax:', typeof ktp_ajax !== 'undefined' ? ktp_ajax : 'undefined');
-        console.log('  - ktpwp_ajax:', typeof ktpwp_ajax !== 'undefined' ? ktpwp_ajax : 'undefined');
-        console.log('  - ktp_ajax_nonce:', typeof ktp_ajax_nonce !== 'undefined' ? ktp_ajax_nonce : 'undefined');
-        console.log('  - ktp_ajax_object:', typeof ktp_ajax_object !== 'undefined' ? ktp_ajax_object : 'undefined');
+        const ajaxConfig = getAjaxConfig();
+        console.log('[COST] AJAX設定確認:');
+        console.log('  - URL:', ajaxConfig.url);
+        console.log('  - Nonce:', ajaxConfig.nonce ? '設定済み' : '未設定');
+        console.log('  - ktpwp_ajax:', typeof ktpwp_ajax !== 'undefined' ? '利用可能' : '未定義');
+        console.log('  - ktp_ajax_object:', typeof ktp_ajax_object !== 'undefined' ? '利用可能' : '未定義');
     }
 
     // デバウンス機能付きの金額保存関数
@@ -134,47 +166,20 @@
             return;
         }
 
-        // 統一されたnonce取得方法
-        let nonce = '';
-        if (typeof ktp_ajax_nonce !== 'undefined') {
-            nonce = ktp_ajax_nonce;
-        } else if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.nonce) {
-            nonce = ktp_ajax_object.nonce;
-        } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.auto_save) {
-            nonce = ktpwp_ajax.nonces.auto_save;
-        } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.general) {
-            nonce = ktpwp_ajax.nonces.general;
-        } else if (typeof window.ktpwp_ajax !== 'undefined' && window.ktpwp_ajax.nonces && window.ktpwp_ajax.nonces.auto_save) {
-            nonce = window.ktpwp_ajax.nonces.auto_save;
-        } else if (typeof window.ktpwp_ajax !== 'undefined' && window.ktpwp_ajax.nonces && window.ktpwp_ajax.nonces.general) {
-            nonce = window.ktpwp_ajax.nonces.general;
-        }
+        // 統一されたAJAX設定を取得
+        const ajaxConfig = getAjaxConfig();
 
         if (window.ktpDebugMode) {
-            console.log('[COST] getSupplierTaxCategory - nonce:', nonce, 'supplierId:', supplierId);
-        }
-
-        // 統一されたajax_url取得
-        let ajaxUrl = '';
-        if (typeof ajaxurl !== 'undefined') {
-            ajaxUrl = ajaxurl;
-        } else if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.ajax_url) {
-            ajaxUrl = ktp_ajax_object.ajax_url;
-        } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) {
-            ajaxUrl = ktpwp_ajax.ajax_url;
-        } else if (typeof window.ktpwp_ajax !== 'undefined' && window.ktpwp_ajax.ajax_url) {
-            ajaxUrl = window.ktpwp_ajax.ajax_url;
-        } else {
-            ajaxUrl = '/wp-admin/admin-ajax.php';
+            console.log('[COST] getSupplierTaxCategory - nonce:', ajaxConfig.nonce, 'supplierId:', supplierId);
         }
 
         $.ajax({
-            url: ajaxUrl,
+            url: ajaxConfig.url,
             type: 'POST',
             data: {
                 action: 'ktp_get_supplier_tax_category',
                 supplier_id: supplierId,
-                nonce: nonce
+                nonce: ajaxConfig.nonce
             },
             success: function(response) {
                 if (window.ktpDebugMode) {
@@ -216,47 +221,20 @@
             return;
         }
 
-        // 統一されたnonce取得方法
-        let nonce = '';
-        if (typeof ktp_ajax_nonce !== 'undefined') {
-            nonce = ktp_ajax_nonce;
-        } else if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.nonce) {
-            nonce = ktp_ajax_object.nonce;
-        } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.auto_save) {
-            nonce = ktpwp_ajax.nonces.auto_save;
-        } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.general) {
-            nonce = ktpwp_ajax.nonces.general;
-        } else if (typeof window.ktpwp_ajax !== 'undefined' && window.ktpwp_ajax.nonces && window.ktpwp_ajax.nonces.auto_save) {
-            nonce = window.ktpwp_ajax.nonces.auto_save;
-        } else if (typeof window.ktpwp_ajax !== 'undefined' && window.ktpwp_ajax.nonces && window.ktpwp_ajax.nonces.general) {
-            nonce = window.ktpwp_ajax.nonces.general;
-        }
+        // 統一されたAJAX設定を取得
+        const ajaxConfig = getAjaxConfig();
 
         if (window.ktpDebugMode) {
-            console.log('[COST] getSupplierQualifiedInvoiceNumber - nonce:', nonce, 'supplierId:', supplierId);
-        }
-
-        // 統一されたajax_url取得
-        let ajaxUrl = '';
-        if (typeof ajaxurl !== 'undefined') {
-            ajaxUrl = ajaxurl;
-        } else if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.ajax_url) {
-            ajaxUrl = ktp_ajax_object.ajax_url;
-        } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) {
-            ajaxUrl = ktpwp_ajax.ajax_url;
-        } else if (typeof window.ktpwp_ajax !== 'undefined' && window.ktpwp_ajax.ajax_url) {
-            ajaxUrl = window.ktpwp_ajax.ajax_url;
-        } else {
-            ajaxUrl = '/wp-admin/admin-ajax.php';
+            console.log('[COST] getSupplierQualifiedInvoiceNumber - nonce:', ajaxConfig.nonce, 'supplierId:', supplierId);
         }
 
         $.ajax({
-            url: ajaxUrl,
+            url: ajaxConfig.url,
             type: 'POST',
             data: {
                 action: 'ktp_get_supplier_qualified_invoice_number',
                 supplier_id: supplierId,
-                nonce: nonce
+                nonce: ajaxConfig.nonce
             },
             success: function(response) {
                 if (window.ktpDebugMode) {
@@ -337,26 +315,17 @@
         $(document).on('change', 'select[name="customer_id"], select[name="client_id"]', function() {
             const customerId = $(this).val();
             if (customerId) {
-                // 統一されたnonce取得方法
-                let nonce = '';
-                if (typeof ktp_ajax_nonce !== 'undefined') {
-                    nonce = ktp_ajax_nonce;
-                } else if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.nonce) {
-                    nonce = ktp_ajax_object.nonce;
-                } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.auto_save) {
-                    nonce = ktpwp_ajax.nonces.auto_save;
-                } else if (typeof window.ktpwp_ajax !== 'undefined' && window.ktpwp_ajax.nonces && window.ktpwp_ajax.nonces.auto_save) {
-                    nonce = window.ktpwp_ajax.nonces.auto_save;
-                }
+                // 統一されたAJAX設定を取得
+                const ajaxConfig = getAjaxConfig();
 
                 // AJAXで顧客の税区分を取得
                 $.ajax({
-                    url: ajaxurl,
+                    url: ajaxConfig.url,
                     type: 'POST',
                     data: {
                         action: 'ktp_get_client_tax_category',
                         client_id: customerId,
-                        nonce: nonce
+                        nonce: ajaxConfig.nonce
                     },
                     success: function(response) {
                         if (response.success && response.data && response.data.tax_category) {
@@ -511,41 +480,22 @@
             }
 
             if (itemId && itemId !== '0' && orderId) {
-                let ajaxUrl = ajaxurl;
-                if (!ajaxUrl && typeof ktp_ajax_object !== 'undefined') {
-                    ajaxUrl = ktp_ajax_object.ajax_url;
-                } else if (!ajaxUrl) {
-                    ajaxUrl = '/wp-admin/admin-ajax.php'; // Fallback
-                }
-                // nonce の取得を修正（統一された方法）
-                let nonce = '';
-                if (typeof ktp_ajax_nonce !== 'undefined') {
-                    nonce = ktp_ajax_nonce;
-                } else if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.nonce) {
-                    nonce = ktp_ajax_object.nonce;
-                } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.auto_save) {
-                    nonce = ktpwp_ajax.nonces.auto_save;
-                } else if (typeof window.ktpwp_ajax !== 'undefined' && window.ktpwp_ajax.nonces && window.ktpwp_ajax.nonces.auto_save) {
-                    nonce = window.ktpwp_ajax.nonces.auto_save;
-                } else {
-                    if (window.ktpDebugMode) {
-                        console.warn('[COST] deleteRow: nonceが取得できませんでした');
-                    }
-                }
+                // 統一されたAJAX設定を取得
+                const ajaxConfig = getAjaxConfig();
 
                 const ajaxData = {
                     action: 'ktp_delete_item',
                     item_type: 'cost',
                     item_id: itemId,
                     order_id: orderId,
-                    nonce: nonce,
-                    ktp_ajax_nonce: nonce  // 追加: PHPでチェックされるフィールド名
+                    nonce: ajaxConfig.nonce,
+                    ktp_ajax_nonce: ajaxConfig.nonce  // 追加: PHPでチェックされるフィールド名
                 };
                 if (window.ktpDebugMode) {
                     console.log('[COST] deleteRow送信', ajaxData);
                 }
                 $.ajax({
-                    url: ajaxUrl,
+                    url: ajaxConfig.url,
                     type: 'POST',
                     data: ajaxData,
                     success: function (response) {
@@ -677,26 +627,8 @@
 
     // 自動保存機能
     function autoSaveItem(itemType, itemId, fieldName, fieldValue, orderId) {
-        // Ajax URLの確認と代替設定
-        let ajaxUrl = ajaxurl;
-        if (!ajaxUrl) {
-            ajaxUrl = '/wp-admin/admin-ajax.php';
-            if (window.ktpDebugMode) {
-                console.warn('ajaxurl not defined, using fallback');
-            }
-        }
-
-        // 統一されたnonce取得方法
-        let nonce = '';
-        if (typeof ktp_ajax_nonce !== 'undefined') {
-            nonce = ktp_ajax_nonce;
-        } else if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.nonce) {
-            nonce = ktp_ajax_object.nonce;
-        } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.auto_save) {
-            nonce = ktpwp_ajax.nonces.auto_save;
-        } else if (typeof window.ktpwp_ajax !== 'undefined' && window.ktpwp_ajax.nonces && window.ktpwp_ajax.nonces.auto_save) {
-            nonce = window.ktpwp_ajax.nonces.auto_save;
-        }
+        // 統一されたAJAX設定を取得
+        const ajaxConfig = getAjaxConfig();
 
         const ajaxData = {
             action: 'ktp_auto_save_item',
@@ -705,18 +637,18 @@
             field_name: fieldName,
             field_value: fieldValue,
             order_id: orderId,
-            nonce: nonce,
-            ktp_ajax_nonce: nonce  // 追加: PHPでチェックされるフィールド名
+            nonce: ajaxConfig.nonce,
+            ktp_ajax_nonce: ajaxConfig.nonce  // 追加: PHPでチェックされるフィールド名
         };
 
         if (window.ktpDebugMode) {
             console.log('Cost items - Sending Ajax request:', ajaxData);
-            console.log('Ajax URL:', ajaxUrl);
+            console.log('Ajax URL:', ajaxConfig.url);
             console.log('Field being saved:', fieldName, 'Value:', fieldValue);
         }
 
         $.ajax({
-            url: ajaxUrl,
+            url: ajaxConfig.url,
             type: 'POST',
             data: ajaxData,
             success: function (response) {
@@ -778,26 +710,8 @@
 
     // 新規レコード作成機能 (コールバック対応)
     function createNewItem(itemType, fieldName, fieldValue, orderId, $row, callback) {
-        // Ajax URLの確認と代替設定
-        let ajaxUrl = ajaxurl;
-        if (!ajaxUrl) {
-            ajaxUrl = '/wp-admin/admin-ajax.php';
-            if (window.ktpDebugMode) {
-                console.warn('ajaxurl not defined, using fallback');
-            }
-        }
-
-        // 統一されたnonce取得方法
-        let nonce = '';
-        if (typeof ktp_ajax_nonce !== 'undefined') {
-            nonce = ktp_ajax_nonce;
-        } else if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.nonce) {
-            nonce = ktp_ajax_object.nonce;
-        } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.auto_save) {
-            nonce = ktpwp_ajax.nonces.auto_save;
-        } else if (typeof window.ktpwp_ajax !== 'undefined' && window.ktpwp_ajax.nonces && window.ktpwp_ajax.nonces.auto_save) {
-            nonce = window.ktpwp_ajax.nonces.auto_save;
-        }
+        // 統一されたAJAX設定を取得
+        const ajaxConfig = getAjaxConfig();
 
         const ajaxData = {
             action: 'ktp_create_new_item',
@@ -805,8 +719,8 @@
             field_name: fieldName,
             field_value: fieldValue,
             order_id: orderId,
-            nonce: nonce,
-            ktp_ajax_nonce: nonce  // 追加: PHPでチェックされるフィールド名
+            nonce: ajaxConfig.nonce,
+            ktp_ajax_nonce: ajaxConfig.nonce  // 追加: PHPでチェックされるフィールド名
         };
 
         // 重複実行チェック用のユニークID
@@ -822,7 +736,7 @@
         }
 
         $.ajax({
-            url: ajaxUrl,
+            url: ajaxConfig.url,
             type: 'POST',
             data: ajaxData,
             success: function (response) {
@@ -1441,41 +1355,25 @@
                 }
 
                 if (items.length > 0 && orderId) {
-                    let ajaxUrl = ajaxurl;
-                    if (!ajaxUrl && typeof ktp_ajax_object !== 'undefined') {
-                        ajaxUrl = ktp_ajax_object.ajax_url;
-                    } else if (!ajaxUrl) {
-                        ajaxUrl = '/wp-admin/admin-ajax.php'; // Fallback
-                    }
-                    
-                    // 統一されたnonce取得方法
-                    let nonce = '';
-                    if (typeof ktp_ajax_nonce !== 'undefined') {
-                        nonce = ktp_ajax_nonce;
-                    } else if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.nonce) {
-                        nonce = ktp_ajax_object.nonce;
-                    } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.auto_save) {
-                        nonce = ktpwp_ajax.nonces.auto_save;
-                    } else if (typeof window.ktpwp_ajax !== 'undefined' && window.ktpwp_ajax.nonces && window.ktpwp_ajax.nonces.auto_save) {
-                        nonce = window.ktpwp_ajax.nonces.auto_save;
-                    }
+                    // 統一されたAJAX設定を取得
+                    const ajaxConfig = getAjaxConfig();
                     
                     console.log('[COST] 並び替え保存開始:', { 
                         order_id: orderId, 
                         items_count: items.length, 
-                        nonce_length: nonce ? nonce.length : 0 
+                        nonce_length: ajaxConfig.nonce ? ajaxConfig.nonce.length : 0 
                     });
 
                     $.ajax({
-                        url: ajaxUrl,
+                        url: ajaxConfig.url,
                         type: 'POST',
                         data: {
                             action: 'ktp_update_item_order',
                             order_id: orderId,
                             items: items,
                             item_type: 'cost',
-                            nonce: nonce,
-                            ktp_ajax_nonce: nonce
+                            nonce: ajaxConfig.nonce,
+                            ktp_ajax_nonce: ajaxConfig.nonce
                         },
                         success: function (response) {
                             console.log('[COST] updateItemOrderレスポンス', response);
@@ -1787,12 +1685,13 @@
             const orderId = $('input[name="order_id"]').val() || $('#order_id').val();
 
             if (window.ktpDebugMode) {
+                const ajaxConfig = getAjaxConfig();
                 console.log('Cost product name auto-save debug:', {
                     productName: productName,
                     itemId: itemId,
                     orderId: orderId,
-                    hasNonce: typeof ktp_ajax_nonce !== 'undefined',
-                    hasAjaxurl: typeof ajaxurl !== 'undefined'
+                    hasNonce: !!ajaxConfig.nonce,
+                    hasAjaxurl: !!ajaxConfig.url
                 });
             }
 
@@ -1855,12 +1754,13 @@
             const orderId = $('input[name="order_id"]').val() || $('#order_id').val();
 
             if (window.ktpDebugMode) {
+                const ajaxConfig = getAjaxConfig();
                 console.log('Cost price auto-save debug:', {
                     price: price,
                     itemId: itemId,
                     orderId: orderId,
-                    hasNonce: typeof ktp_ajax_nonce !== 'undefined',
-                    hasAjaxurl: typeof ajaxurl !== 'undefined'
+                    hasNonce: !!ajaxConfig.nonce,
+                    hasAjaxurl: !!ajaxConfig.url
                 });
             }
 
@@ -1896,12 +1796,13 @@
             const orderId = $('input[name="order_id"]').val() || $('#order_id').val();
 
             if (window.ktpDebugMode) {
+                const ajaxConfig = getAjaxConfig();
                 console.log('Cost quantity auto-save debug:', {
                     quantity: quantity,
                     itemId: itemId,
                     orderId: orderId,
-                    hasNonce: typeof ktp_ajax_nonce !== 'undefined',
-                    hasAjaxurl: typeof ajaxurl !== 'undefined'
+                    hasNonce: !!ajaxConfig.nonce,
+                    hasAjaxurl: !!ajaxConfig.url
                 });
             }
 
@@ -1926,12 +1827,13 @@
             const orderId = $('input[name="order_id"]').val() || $('#order_id').val();
 
             if (window.ktpDebugMode) {
+                const ajaxConfig = getAjaxConfig();
                 console.log('Cost unit auto-save debug:', {
                     unit: unit,
                     itemId: itemId,
                     orderId: orderId,
-                    hasNonce: typeof ktp_ajax_nonce !== 'undefined',
-                    hasAjaxurl: typeof ajaxurl !== 'undefined'
+                    hasNonce: !!ajaxConfig.nonce,
+                    hasAjaxurl: !!ajaxConfig.url
                 });
             }
 
@@ -1961,12 +1863,13 @@
             const orderId = $('input[name="order_id"]').val() || $('#order_id').val();
 
             if (window.ktpDebugMode) {
+                const ajaxConfig = getAjaxConfig();
                 console.log('Cost remarks auto-save debug:', {
                     remarks: remarks,
                     itemId: itemId,
                     orderId: orderId,
-                    hasNonce: typeof ktp_ajax_nonce !== 'undefined',
-                    hasAjaxurl: typeof ajaxurl !== 'undefined'
+                    hasNonce: !!ajaxConfig.nonce,
+                    hasAjaxurl: !!ajaxConfig.url
                 });
             }
 
@@ -1990,12 +1893,13 @@
             const orderId = $('input[name="order_id"]').val() || $('#order_id').val();
 
             if (window.ktpDebugMode) {
+                const ajaxConfig = getAjaxConfig();
                 console.log('Cost purchase auto-save debug:', {
                     purchase: purchase,
                     itemId: itemId,
                     orderId: orderId,
-                    hasNonce: typeof ktp_ajax_nonce !== 'undefined',
-                    hasAjaxurl: typeof ajaxurl !== 'undefined'
+                    hasNonce: !!ajaxConfig.nonce,
+                    hasAjaxurl: !!ajaxConfig.url
                 });
             }
 
@@ -2310,25 +2214,16 @@
             return;
         }
 
-        // 統一されたnonce取得方法
-        let nonce = '';
-        if (typeof ktp_ajax_nonce !== 'undefined') {
-            nonce = ktp_ajax_nonce;
-        } else if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.nonce) {
-            nonce = ktp_ajax_object.nonce;
-        } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.auto_save) {
-            nonce = ktpwp_ajax.nonces.auto_save;
-        } else if (typeof window.ktpwp_ajax !== 'undefined' && window.ktpwp_ajax.nonces && window.ktpwp_ajax.nonces.auto_save) {
-            nonce = window.ktpwp_ajax.nonces.auto_save;
-        }
+        // 統一されたAJAX設定を取得
+        const ajaxConfig = getAjaxConfig();
 
         $.ajax({
-            url: ajaxurl,
+            url: ajaxConfig.url,
             type: 'POST',
             data: {
                 action: 'ktp_get_client_tax_category_by_order',
                 order_id: orderId,
-                nonce: nonce
+                nonce: ajaxConfig.nonce
             },
             success: function(response) {
                 if (response.success && response.data && response.data.tax_category) {

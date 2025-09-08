@@ -10,14 +10,45 @@
 
     console.log('[EMAIL-POPUP] スクリプトが読み込まれました');
 
+    // 統一されたAJAX設定の取得
+    function getAjaxConfig() {
+        const config = {
+            url: '',
+            nonce: ''
+        };
+        
+        // URLの取得（優先順位順）
+        if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) {
+            config.url = ktpwp_ajax.ajax_url;
+        } else if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.ajax_url) {
+            config.url = ktp_ajax_object.ajax_url;
+        } else if (typeof ajaxurl !== 'undefined') {
+            config.url = ajaxurl;
+        } else {
+            config.url = '/wp-admin/admin-ajax.php';
+        }
+        
+        // nonceの取得（優先順位順）
+        if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.email_send) {
+            config.nonce = ktpwp_ajax.nonces.email_send;
+        } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.general) {
+            config.nonce = ktpwp_ajax.nonces.general;
+        } else if (typeof ktp_ajax_nonce !== 'undefined') {
+            config.nonce = ktp_ajax_nonce;
+        } else if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.nonce) {
+            config.nonce = ktp_ajax_object.nonce;
+        }
+        
+        return config;
+    }
+
     // 依存関係チェック
     $(document).ready(function() {
         console.log('[EMAIL-POPUP] DOM準備完了');
         console.log('[EMAIL-POPUP] jQuery available:', typeof $ !== 'undefined');
-        console.log('[EMAIL-POPUP] ktp_ajax_object available:', typeof ktp_ajax_object !== 'undefined');
-        if (typeof ktp_ajax_object !== 'undefined') {
-            console.log('[EMAIL-POPUP] Ajax URL:', ktp_ajax_object.ajax_url);
-            console.log('[EMAIL-POPUP] Nonce:', ktp_ajax_object.nonce);
+        if (window.ktpDebugMode) {
+            const ajaxConfig = getAjaxConfig();
+            console.log('[EMAIL-POPUP] 統一されたAJAX設定:', ajaxConfig);
         }
     });
 
@@ -119,17 +150,16 @@
 
     // メール内容の取得
     function loadEmailContent(orderId) {
-        const ajaxUrl = typeof ktp_ajax_object !== 'undefined' ? ktp_ajax_object.ajax_url : '/wp-admin/admin-ajax.php';
-        const nonce = typeof ktp_ajax_object !== 'undefined' ? ktp_ajax_object.nonce : '';
+        const ajaxConfig = getAjaxConfig();
 
         const ajaxData = {
             action: 'get_email_content',
             order_id: orderId,
-            nonce: nonce
+            nonce: ajaxConfig.nonce
         };
 
         $.ajax({
-            url: ajaxUrl,
+            url: ajaxConfig.url,
             type: 'POST',
             data: ajaxData,
             dataType: 'json',
@@ -562,8 +592,9 @@
                 
                 if (itemId && itemId !== '0' && amount > 0) {
                     // 即座に金額を保存（デバウンスなし）
+                    const ajaxConfig = getAjaxConfig();
                     $.ajax({
-                        url: typeof ktp_ajax_object !== 'undefined' ? ktp_ajax_object.ajax_url : '/wp-admin/admin-ajax.php',
+                        url: ajaxConfig.url,
                         type: 'POST',
                         data: {
                             action: 'auto_save_item',
@@ -588,8 +619,9 @@
                 
                 if (itemId && itemId !== '0' && amount > 0) {
                     // 即座に金額を保存（デバウンスなし）
+                    const ajaxConfig = getAjaxConfig();
                     $.ajax({
-                        url: typeof ktp_ajax_object !== 'undefined' ? ktp_ajax_object.ajax_url : '/wp-admin/admin-ajax.php',
+                        url: ajaxConfig.url,
                         type: 'POST',
                         data: {
                             action: 'auto_save_item',
@@ -657,7 +689,7 @@
             </div>
         `);
 
-        const ajaxUrl = typeof ktp_ajax_object !== 'undefined' ? ktp_ajax_object.ajax_url : '/wp-admin/admin-ajax.php';
+        const ajaxConfig = getAjaxConfig();
 
         console.log('[EMAIL POPUP] メール送信開始', { 
             orderId, 
@@ -667,7 +699,7 @@
         });
 
         $.ajax({
-            url: ajaxUrl,
+            url: ajaxConfig.url,
             type: 'POST',
             data: formData,
             processData: false,  // FormDataを使用する場合は必須
