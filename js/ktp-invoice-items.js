@@ -17,14 +17,46 @@
     // 金額自動保存のデバウンス用タイマー
     window.ktpInvoiceAmountSaveTimers = {};
 
+    // 統一されたAJAX設定の取得
+    function getAjaxConfig() {
+        const config = {
+            url: '',
+            nonce: ''
+        };
+        
+        // URLの取得（優先順位順）
+        if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) {
+            config.url = ktpwp_ajax.ajax_url;
+        } else if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.ajax_url) {
+            config.url = ktp_ajax_object.ajax_url;
+        } else if (typeof ajaxurl !== 'undefined') {
+            config.url = ajaxurl;
+        } else {
+            config.url = '/wp-admin/admin-ajax.php';
+        }
+        
+        // nonceの取得（優先順位順）
+        if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.auto_save) {
+            config.nonce = ktpwp_ajax.nonces.auto_save;
+        } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.general) {
+            config.nonce = ktpwp_ajax.nonces.general;
+        } else if (typeof ktp_ajax_nonce !== 'undefined') {
+            config.nonce = ktp_ajax_nonce;
+        } else if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.nonce) {
+            config.nonce = ktp_ajax_object.nonce;
+        }
+        
+        return config;
+    }
+
     // 利用可能な変数を確認（デバッグモード時のみ）
     if (window.ktpDebugMode) {
-        console.log('[INVOICE] Available variables check:');
-        console.log('  - ajaxurl:', typeof ajaxurl !== 'undefined' ? ajaxurl : 'undefined');
-        console.log('  - ktp_ajax:', typeof ktp_ajax !== 'undefined' ? ktp_ajax : 'undefined');
-        console.log('  - ktpwp_ajax:', typeof ktpwp_ajax !== 'undefined' ? ktpwp_ajax : 'undefined');
-        console.log('  - ktp_ajax_nonce:', typeof ktp_ajax_nonce !== 'undefined' ? ktp_ajax_nonce : 'undefined');
-        console.log('  - ktp_ajax_object:', typeof ktp_ajax_object !== 'undefined' ? ktp_ajax_object : 'undefined');
+        const ajaxConfig = getAjaxConfig();
+        console.log('[INVOICE] AJAX設定確認:');
+        console.log('  - URL:', ajaxConfig.url);
+        console.log('  - Nonce:', ajaxConfig.nonce ? '設定済み' : '未設定');
+        console.log('  - ktpwp_ajax:', typeof ktpwp_ajax !== 'undefined' ? '利用可能' : '未定義');
+        console.log('  - ktp_ajax_object:', typeof ktp_ajax_object !== 'undefined' ? '利用可能' : '未定義');
     }
 
     // デバウンス機能付きの金額保存関数
@@ -56,23 +88,8 @@
             window.ktpInvoicePendingRequests[requestKey].abort();
         }
         
-        // Ajax URLの確認と代替設定
-        let ajaxUrl = ajaxurl;
-        if (!ajaxUrl) {
-            ajaxUrl = '/wp-admin/admin-ajax.php';
-        }
-        
-        // 統一されたnonce取得方法
-        let nonce = '';
-        if (typeof ktp_ajax_nonce !== 'undefined') {
-            nonce = ktp_ajax_nonce;
-        } else if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.nonce) {
-            nonce = ktp_ajax_object.nonce;
-        } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.auto_save) {
-            nonce = ktpwp_ajax.nonces.auto_save;
-        } else if (typeof window.ktpwp_ajax !== 'undefined' && window.ktpwp_ajax.nonces && window.ktpwp_ajax.nonces.auto_save) {
-            nonce = window.ktpwp_ajax.nonces.auto_save;
-        }
+        // 統一されたAJAX設定を取得
+        const ajaxConfig = getAjaxConfig();
 
         const ajaxData = {
             action: 'ktp_auto_save_item',
@@ -81,16 +98,16 @@
             field_name: fieldName,
             field_value: fieldValue,
             order_id: orderId,
-            nonce: nonce,
-            ktp_ajax_nonce: nonce  // 追加: PHPでチェックされるフィールド名
+            nonce: ajaxConfig.nonce,
+            ktp_ajax_nonce: ajaxConfig.nonce  // 追加: PHPでチェックされるフィールド名
         };
         
         if (window.ktpDebugMode) console.log('[INVOICE AUTO-SAVE] Ajax data:', ajaxData);
-        if (window.ktpDebugMode) console.log('[INVOICE AUTO-SAVE] Ajax URL:', ajaxUrl);
+        if (window.ktpDebugMode) console.log('[INVOICE AUTO-SAVE] Ajax URL:', ajaxConfig.url);
         
         // AJAXリクエストを実行し、進行中のリクエストとして記録
         const xhr = $.ajax({
-            url: ajaxUrl,
+            url: ajaxConfig.url,
             type: 'POST',
             data: ajaxData,
             timeout: 30000, // 30秒のタイムアウトに延長
@@ -169,22 +186,8 @@
     // createNewItem関数にcallback引数を追加し、成功/失敗と新しいitem_idを返すように変更
     window.ktpInvoiceCreateNewItem = function (itemType, fieldName, fieldValue, orderId, $row, callback, skipAmountCalculation = false) {
         if (window.ktpDebugMode) console.log('[INVOICE] createNewItem呼び出し', { itemType, fieldName, fieldValue, orderId, $row });
-        // Ajax URLの確認と代替設定
-        let ajaxUrl = ajaxurl;
-        if (!ajaxUrl) {
-            ajaxUrl = '/wp-admin/admin-ajax.php';
-        }
-        // 統一されたnonce取得方法
-        let nonce = '';
-        if (typeof ktp_ajax_nonce !== 'undefined') {
-            nonce = ktp_ajax_nonce;
-        } else if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.nonce) {
-            nonce = ktp_ajax_object.nonce;
-        } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.auto_save) {
-            nonce = ktpwp_ajax.nonces.auto_save;
-        } else if (typeof window.ktpwp_ajax !== 'undefined' && window.ktpwp_ajax.nonces && window.ktpwp_ajax.nonces.auto_save) {
-            nonce = window.ktpwp_ajax.nonces.auto_save;
-        }
+        // 統一されたAJAX設定を取得
+        const ajaxConfig = getAjaxConfig();
 
         const ajaxData = {
             action: 'ktp_create_new_item',
@@ -192,12 +195,12 @@
             field_name: fieldName,
             field_value: fieldValue,
             order_id: orderId,
-            nonce: nonce,
-            ktp_ajax_nonce: nonce  // 追加: PHPでチェックされるフィールド名
+            nonce: ajaxConfig.nonce,
+            ktp_ajax_nonce: ajaxConfig.nonce  // 追加: PHPでチェックされるフィールド名
         };
         if (window.ktpDebugMode) console.log('[INVOICE] createNewItem送信', ajaxData);
         $.ajax({
-            url: ajaxUrl,
+            url: ajaxConfig.url,
             type: 'POST',
             data: ajaxData,
             success: function (response) {
@@ -627,25 +630,16 @@
                 }
                 clearTimeout(window.ktpInvoiceProfitRefreshTimer);
                 window.ktpInvoiceProfitRefreshTimer = setTimeout(function() {
-                    let ajaxUrl = typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : '/wp-admin/admin-ajax.php';
-                    let nonce = '';
-                    if (typeof ktp_ajax_nonce !== 'undefined') {
-                        nonce = ktp_ajax_nonce;
-                    } else if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.nonce) {
-                        nonce = ktp_ajax_object.nonce;
-                    } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.auto_save) {
-                        nonce = ktpwp_ajax.nonces.auto_save;
-                    } else if (typeof window.ktpwp_ajax !== 'undefined' && window.ktpwp_ajax.nonces && window.ktpwp_ajax.nonces.auto_save) {
-                        nonce = window.ktpwp_ajax.nonces.auto_save;
-                    }
+                    // 統一されたAJAX設定を取得
+                    const ajaxConfig = getAjaxConfig();
                     $.ajax({
-                        url: ajaxUrl,
+                        url: ajaxConfig.url,
                         type: 'POST',
                         data: {
                             action: 'ktp_get_profit_display',
                             order_id: orderId,
-                            nonce: nonce,
-                            ktp_ajax_nonce: nonce
+                            nonce: ajaxConfig.nonce,
+                            ktp_ajax_nonce: ajaxConfig.nonce
                         },
                         success: function(res) {
                             try {
@@ -804,38 +798,20 @@
 
             // Ajaxでサーバーに削除を通知
             if (itemId && itemId !== '0' && orderId) {
-                let ajaxUrl = ajaxurl;
-                if (!ajaxUrl && typeof ktp_ajax_object !== 'undefined') {
-                    ajaxUrl = ktp_ajax_object.ajax_url;
-                } else if (!ajaxUrl) {
-                    ajaxUrl = '/wp-admin/admin-ajax.php';
-                }
-
-                // nonce の取得を修正（統一された方法）
-                let nonce = '';
-                if (typeof ktp_ajax_nonce !== 'undefined') {
-                    nonce = ktp_ajax_nonce;
-                } else if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.nonce) {
-                    nonce = ktp_ajax_object.nonce;
-                } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.auto_save) {
-                    nonce = ktpwp_ajax.nonces.auto_save;
-                } else if (typeof window.ktpwp_ajax !== 'undefined' && window.ktpwp_ajax.nonces && window.ktpwp_ajax.nonces.auto_save) {
-                    nonce = window.ktpwp_ajax.nonces.auto_save;
-                } else {
-                    if (window.ktpDebugMode) console.warn('[INVOICE] deleteRow: nonceが取得できませんでした');
-                }
+                // 統一されたAJAX設定を取得
+                const ajaxConfig = getAjaxConfig();
 
                 const ajaxData = {
                     action: 'ktp_delete_item',
                     item_type: 'invoice',
                     item_id: itemId,
                     order_id: orderId,
-                    nonce: nonce,
-                    ktp_ajax_nonce: nonce  // 追加: PHPでチェックされるフィールド名
+                    nonce: ajaxConfig.nonce,
+                    ktp_ajax_nonce: ajaxConfig.nonce  // 追加: PHPでチェックされるフィールド名
                 };
                 if (window.ktpDebugMode) console.log('[INVOICE] deleteRow送信', ajaxData);
                 $.ajax({
-                    url: ajaxUrl,
+                    url: ajaxConfig.url,
                     type: 'POST',
                     data: ajaxData,
                     success: function (response) {
@@ -950,37 +926,22 @@
                 });
 
                 if (items.length > 0 && orderId) {
-                    let ajaxUrl = ajaxurl;
-                    if (!ajaxUrl && typeof ktp_ajax_object !== 'undefined') {
-                        ajaxUrl = ktp_ajax_object.ajax_url;
-                    } else if (!ajaxUrl) {
-                        ajaxUrl = '/wp-admin/admin-ajax.php';
-                    }
-                    // 統一されたnonce取得方法
-                    let nonce = '';
-                    if (typeof ktp_ajax_nonce !== 'undefined') {
-                        nonce = ktp_ajax_nonce;
-                    } else if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.nonce) {
-                        nonce = ktp_ajax_object.nonce;
-                    } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.auto_save) {
-                        nonce = ktpwp_ajax.nonces.auto_save;
-                    } else if (typeof window.ktpwp_ajax !== 'undefined' && window.ktpwp_ajax.nonces && window.ktpwp_ajax.nonces.auto_save) {
-                        nonce = window.ktpwp_ajax.nonces.auto_save;
-                    }
+                    // 統一されたAJAX設定を取得
+                    const ajaxConfig = getAjaxConfig();
                     
-                    if (window.ktpDebugMode) console.log('[INVOICE] 使用するnonce:', nonce);
+                    if (window.ktpDebugMode) console.log('[INVOICE] 使用するnonce:', ajaxConfig.nonce);
 
                     if (window.ktpDebugMode) console.log('[INVOICE] updateItemOrder送信', { order_id: orderId, items: items });
                     $.ajax({
-                        url: ajaxUrl,
+                        url: ajaxConfig.url,
                         type: 'POST',
                         data: {
                             action: 'ktp_update_item_order',
                             order_id: orderId,
                             items: items,
                             item_type: 'invoice', // Assuming this is for invoice items
-                            nonce: nonce,
-                            ktp_ajax_nonce: nonce  // 追加: PHPでチェックされるフィールド名
+                            nonce: ajaxConfig.nonce,
+                            ktp_ajax_nonce: ajaxConfig.nonce  // 追加: PHPでチェックされるフィールド名
                         },
                         success: function (response) {
                             if (window.ktpDebugMode) console.log('[INVOICE] updateItemOrderレスポンス', response);
