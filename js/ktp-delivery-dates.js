@@ -73,7 +73,6 @@ window.handleProgressChange = function(selectElement) {
     
     // Ajaxで進捗更新
     console.log('[DELIVERY-DATES] Ajaxで進捗更新を実行します');
-    const ajaxConfig = getAjaxConfig();
     jQuery.ajax({
         url: ajaxConfig.url,
         type: 'POST',
@@ -220,7 +219,6 @@ jQuery(document).ready(function($) {
         }
         
         // Ajaxでデータを保存
-        const ajaxConfig = getAjaxConfig();
         $.ajax({
             url: ajaxConfig.url,
             type: 'POST',
@@ -313,7 +311,6 @@ jQuery(document).ready(function($) {
         }
         
         // Ajaxでデータを保存
-        const ajaxConfig = getAjaxConfig();
         $.ajax({
             url: ajaxConfig.url,
             type: 'POST',
@@ -438,7 +435,6 @@ jQuery(document).ready(function($) {
         }
         
         // Ajaxで受注の納期警告件数を取得
-        const ajaxConfig = getAjaxConfig();
         $.ajax({
             url: ajaxConfig.url,
             type: 'POST',
@@ -693,7 +689,6 @@ jQuery(document).ready(function($) {
         }
         
         // Ajaxで完了日を保存
-        const ajaxConfig = getAjaxConfig();
         $.ajax({
             url: ajaxConfig.url,
             type: 'POST',
@@ -759,7 +754,6 @@ jQuery(document).ready(function($) {
         }
         
         // Ajaxで完了日を保存
-        const ajaxConfig = getAjaxConfig();
         $.ajax({
             url: ajaxConfig.url,
             type: 'POST',
