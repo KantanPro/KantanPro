@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.0.30
+Stable tag: 1.0.31
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -324,6 +324,12 @@ curl -sS -X POST \
 * 推奨PHP拡張: GD（画像処理用）
 
 == 変更履歴 ==
+
+= 1.0.31 - 2025年09月09日 =
+* AJAX設定の統一化の改善
+  - 不要なajaxConfigの取得を削除
+  - コードの簡素化を図る
+  - パフォーマンスの向上
 
 = 1.0.30 - 2025年09月09日 =
 * AJAX設定の統一化
