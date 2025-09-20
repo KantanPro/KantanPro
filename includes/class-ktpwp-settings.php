@@ -3617,7 +3617,7 @@ class KTPWP_Settings {
      * @return void
      */
     public function system_name_callback() {
-        $value = get_option( 'ktp_system_name', 'ChaChatWorks' );
+        $value = get_option( 'ktp_system_name', 'KantanPro' );
         ?>
         <input type="text" id="ktp_system_name" name="ktp_system_name" value="<?php echo esc_attr( $value ); ?>" class="regular-text" />
         <div style="font-size:12px;color:#555;margin-top:4px;">
@@ -3633,7 +3633,7 @@ class KTPWP_Settings {
      * @return void
      */
     public function system_description_callback() {
-        $value = get_option( 'ktp_system_description', 'チャチャと仕事が片付く神システム！' );
+        $value = get_option( 'ktp_system_description', '個人事業主・フリーランス・小規模ビジネスのための売管理システムです。' );
         ?>
         <textarea id="ktp_system_description" name="ktp_system_description" rows="3" cols="50" class="large-text"><?php echo esc_textarea( $value ); ?></textarea>
         <div style="font-size:12px;color:#555;margin-top:4px;">
