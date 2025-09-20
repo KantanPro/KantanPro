@@ -897,12 +897,13 @@ class KTPWP_Settings {
 		return '<div style="position:relative;max-width:800px;margin:30px auto;">
 			<img src="' . $image_url . '" alt="' . esc_attr__( 'Backup Feature', 'ktpwp' ) . '" style="width:100%;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.1);filter:blur(3px);opacity:0.7;">
 			<div style="position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,0.3);border-radius:8px;display:flex;flex-direction:column;justify-content:flex-start;align-items:center;text-align:center;padding:20px;">
-				<h3 style="margin:50px 0 15px;color:#d32f2f;font-size:24px;text-shadow:0 1px 2px rgba(255,255,255,0.8);">バックアップ機能の利用にはライセンスが必要です</h3>
-				<p style="margin-bottom:20px;font-size:16px;line-height:1.6;color:#555;text-shadow:0 1px 2px rgba(255,255,255,0.8);">データのエクスポート・リストア機能を利用するには、ライセンスキーを購入して設定してください。</p>
+				<h3 style="margin:50px 0 15px;color:#d32f2f;font-size:24px;text-shadow:0 1px 2px rgba(255,255,255,0.8);">💾 大切なデータを守るバックアップ機能</h3>
+				<p style="margin-bottom:15px;font-size:18px;line-height:1.6;color:#333;text-shadow:0 1px 2px rgba(255,255,255,0.8);font-weight:bold;">「もしも」の時に備えて、今すぐデータをバックアップしませんか？</p>
+				<p style="margin-bottom:20px;font-size:16px;line-height:1.6;color:#555;text-shadow:0 1px 2px rgba(255,255,255,0.8);">サーバー障害・誤操作・データ消失...そんなリスクから大切な受注データ・顧客情報を完全に保護。ワンクリックで全データを安全にバックアップ・復元できる安心機能です。</p>
 				<div style="margin-bottom:20px;">
-					<a href="https://www.kantanpro.com/klm" target="_blank" class="button button-primary" style="padding:12px 24px;font-size:16px;text-decoration:none;background:#0073aa;color:#fff;border-radius:5px;display:inline-block;">ライセンスを購入</a>
+					<a href="https://www.kantanpro.com/klm" target="_blank" class="button button-primary" style="padding:15px 30px;font-size:18px;text-decoration:none;background:#d32f2f;color:#fff;border-radius:8px;display:inline-block;font-weight:bold;box-shadow:0 4px 12px rgba(211,47,47,0.3);transition:all 0.3s ease;">🛡️ 今すぐデータを守る</a>
 				</div>
-				<p style="font-size:18px;font-weight:bold;color:#0073aa;line-height:1.5;">ライセンス購入後は<a href="' . esc_url( admin_url( 'admin.php?page=ktp-license' ) ) . '" style="color:#0073aa;text-decoration:underline;">ライセンス設定</a>でライセンスキーを入力してください</p>
+				<p style="font-size:16px;font-weight:bold;color:#0073aa;line-height:1.5;margin-top:10px;">✨ 購入後は<a href="' . esc_url( admin_url( 'admin.php?page=ktp-license' ) ) . '" style="color:#0073aa;text-decoration:underline;">ライセンス設定</a>でキーを入力するだけ！すぐに使えます</p>
 			</div>
 		</div>';
 	}
