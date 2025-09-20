@@ -639,11 +639,11 @@ class KTPWP_Settings {
             'ktpwp_dummy_data_page' // 既存の表示関数を流用
         );
 
-		// サブメニュー - データ処理（エクスポート/インポート）
+		// サブメニュー - バックアップ（エクスポート/インポート）
 		add_submenu_page(
 			'ktp-settings', // 親メニューのスラッグ
-			__( 'データ処理', 'ktpwp' ), // ページタイトル
-			__( 'データ処理', 'ktpwp' ), // メニュータイトル
+			__( 'バックアップ', 'ktpwp' ), // ページタイトル
+			__( 'バックアップ', 'ktpwp' ), // メニュータイトル
 			'manage_options', // 権限
 			'ktp-data-tools', // メニューのスラッグ
 			array( $this, 'create_data_tools_page' ) // 表示を処理する関数
@@ -665,7 +665,7 @@ class KTPWP_Settings {
     }
 
 	/**
-	 * データ処理ページ（エクスポート/インポート）
+	 * バックアップページ（エクスポート/インポート）
 	 */
 	public function create_data_tools_page() {
 		if ( ! current_user_can( 'manage_options' ) ) {
@@ -683,7 +683,7 @@ class KTPWP_Settings {
 		}
 
 		echo '<div class="wrap ktp-admin-wrap">';
-		echo '<h1><span class="dashicons dashicons-database-export" style="margin-right: 10px; font-size: 24px; width: 24px; height: 24px;"></span>' . esc_html__( 'データ処理', 'ktpwp' ) . '</h1>';
+		echo '<h1><span class="dashicons dashicons-database-export" style="margin-right: 10px; font-size: 24px; width: 24px; height: 24px;"></span>' . esc_html__( 'バックアップ', 'ktpwp' ) . '</h1>';
 		if ( $notice ) {
 			echo $notice; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		}
