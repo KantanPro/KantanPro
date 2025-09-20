@@ -88,7 +88,7 @@
 }
 
 #adminmenu .wp-submenu a[href*="ktp-data-tools"]::before {
-    content: "\f316"; /* WordPress標準アイコン: database-export */
+    content: "\f155"; /* WordPress標準アイコン: star-filled */
     font-family: dashicons;
     margin-right: 5px;
     font-size: 16px;
@@ -96,6 +96,9 @@
     height: 16px;
     display: inline-block;
     vertical-align: middle;
+    color: #ffd700; /* 金色の星 */
+    text-shadow: 0 0 3px rgba(255, 215, 0, 0.6);
+    transform: scale(1.1);
 }
 
 #adminmenu .wp-submenu a[href*="ktp-developer-settings"]::before {
