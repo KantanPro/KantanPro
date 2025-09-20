@@ -203,9 +203,9 @@ class KTPWP_Settings {
         add_action( 'admin_head', array( $this, 'output_custom_styles' ) );
         add_action( 'admin_init', array( $this, 'handle_default_settings_actions' ) );
 
-		// データエクスポート/インポート用ハンドラ
+		// データエクスポート/リストア用ハンドラ
 		add_action( 'admin_post_ktpwp_export_data', array( $this, 'handle_export_data' ) );
-		add_action( 'admin_post_ktpwp_import_data', array( $this, 'handle_import_data' ) );
+		add_action( 'admin_post_ktpwp_restore_data', array( $this, 'handle_restore_data' ) );
 
         // ロゴマークのデフォルト値チェック
         add_action( 'init', array( $this, 'ensure_logo_default_value' ) );
@@ -675,10 +675,10 @@ class KTPWP_Settings {
 		$notice = '';
 		if ( isset( $_GET['ktp_action'] ) ) {
 			$action = sanitize_text_field( $_GET['ktp_action'] );
-			if ( $action === 'import_success' ) {
-				$notice = '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'インポートが完了しました。', 'ktpwp' ) . '</p></div>';
-			} elseif ( $action === 'import_failed' ) {
-				$notice = '<div class="notice notice-error is-dismissible"><p>' . esc_html__( 'インポートに失敗しました。ファイル形式をご確認ください。', 'ktpwp' ) . '</p></div>';
+			if ( $action === 'restore_success' ) {
+				$notice = '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'リストアが完了しました。', 'ktpwp' ) . '</p></div>';
+			} elseif ( $action === 'restore_failed' ) {
+				$notice = '<div class="notice notice-error is-dismissible"><p>' . esc_html__( 'リストアに失敗しました。ファイル形式をご確認ください。', 'ktpwp' ) . '</p></div>';
 			}
 		}
 
@@ -687,6 +687,9 @@ class KTPWP_Settings {
 		if ( $notice ) {
 			echo $notice; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		}
+		
+		// バックアップページ用JavaScriptを読み込み
+		wp_enqueue_script( 'ktp-backup-page', plugin_dir_url( __FILE__ ) . '../js/ktp-backup-page.js', array(), KANTANPRO_PLUGIN_VERSION, true );
 
 		// エクスポート
 		echo '<div class="ktp-settings-section">';
@@ -706,13 +709,14 @@ class KTPWP_Settings {
 		echo '</form>';
 		echo '</div>';
 
-		// インポート
+		// リストア
 		echo '<div class="ktp-settings-section">';
-		echo '<h2>' . esc_html__( 'インポート', 'ktpwp' ) . '</h2>';
-		echo '<p>' . esc_html__( 'エクスポートしたJSON/CSVファイルを選択してインポートします。サーバー移転時の新規環境（空データ）を前提としています。', 'ktpwp' ) . '</p>';
-		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" enctype="multipart/form-data">';
-		echo '<input type="hidden" name="action" value="ktpwp_import_data" />';
-		echo wp_nonce_field( 'ktpwp_import_data', 'ktpwp_import_nonce', true, false );
+		echo '<h2>' . esc_html__( 'リストア', 'ktpwp' ) . '</h2>';
+		echo '<p>' . esc_html__( 'エクスポートしたJSON/CSVファイルを選択してリストアします。', 'ktpwp' ) . '</p>';
+		echo '<div class="notice notice-warning"><p><strong>' . esc_html__( '注意:', 'ktpwp' ) . '</strong> ' . esc_html__( 'リストアを実行すると、現在のデータは全て削除されます。', 'ktpwp' ) . '</p></div>';
+		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" enctype="multipart/form-data" id="ktp-restore-form">';
+		echo '<input type="hidden" name="action" value="ktpwp_restore_data" />';
+		echo wp_nonce_field( 'ktpwp_restore_data', 'ktpwp_restore_nonce', true, false );
 		echo '<p>';
 		echo '<label for="ktp_import_format">' . esc_html__( '形式', 'ktpwp' ) . ':</label> ';
 		echo '<select id="ktp_import_format" name="format">';
@@ -721,7 +725,7 @@ class KTPWP_Settings {
 		echo '</select>';
 		echo '</p>';
 		echo '<input type="file" name="ktp_import_file" accept="application/json,text/csv,.csv" required /> ';
-		echo '<p><button type="submit" class="button button-primary">' . esc_html__( 'インポート実行', 'ktpwp' ) . '</button></p>';
+		echo '<p><button type="submit" class="button button-primary" id="ktp-restore-button">' . esc_html__( 'リストア実行', 'ktpwp' ) . '</button></p>';
 		echo '</form>';
 		echo '</div>';
 
@@ -816,21 +820,24 @@ class KTPWP_Settings {
 	}
 
 	/**
-	 * インポート実行
+	 * リストア実行
 	 */
-	public function handle_import_data() {
+	public function handle_restore_data() {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( __( '権限がありません。', 'ktpwp' ) );
 		}
-		if ( ! isset( $_POST['ktpwp_import_nonce'] ) || ! wp_verify_nonce( $_POST['ktpwp_import_nonce'], 'ktpwp_import_data' ) ) {
+		if ( ! isset( $_POST['ktpwp_restore_nonce'] ) || ! wp_verify_nonce( $_POST['ktpwp_restore_nonce'], 'ktpwp_restore_data' ) ) {
 			wp_die( __( 'セキュリティチェックに失敗しました。', 'ktpwp' ) );
 		}
 
 		$redirect = admin_url( 'admin.php?page=ktp-data-tools' );
 		if ( ! isset( $_FILES['ktp_import_file'] ) || empty( $_FILES['ktp_import_file']['tmp_name'] ) ) {
-			wp_safe_redirect( add_query_arg( 'ktp_action', 'import_failed', $redirect ) );
+			wp_safe_redirect( add_query_arg( 'ktp_action', 'restore_failed', $redirect ) );
 			exit;
 		}
+		
+		// 既存データを削除
+		$this->clear_existing_data();
 
 		$format = isset( $_POST['format'] ) ? sanitize_text_field( $_POST['format'] ) : 'json';
 		$format = in_array( $format, array( 'json', 'csv' ), true ) ? $format : 'json';
@@ -839,7 +846,7 @@ class KTPWP_Settings {
 			$contents = file_get_contents( $_FILES['ktp_import_file']['tmp_name'] );
 			$data = json_decode( $contents, true );
 			if ( ! is_array( $data ) || ! isset( $data['tables'] ) || ! isset( $data['options'] ) ) {
-				wp_safe_redirect( add_query_arg( 'ktp_action', 'import_failed', $redirect ) );
+				wp_safe_redirect( add_query_arg( 'ktp_action', 'restore_failed', $redirect ) );
 				exit;
 			}
 			$source_prefix = isset( $data['metadata']['db_prefix'] ) ? (string) $data['metadata']['db_prefix'] : '';
@@ -848,19 +855,50 @@ class KTPWP_Settings {
 			// CSVインポート: 簡易フォーマット (#OPTIONS と #TABLE: テーブル名)
 			$raw = file( $_FILES['ktp_import_file']['tmp_name'], FILE_IGNORE_NEW_LINES );
 			if ( $raw === false ) {
-				wp_safe_redirect( add_query_arg( 'ktp_action', 'import_failed', $redirect ) );
+				wp_safe_redirect( add_query_arg( 'ktp_action', 'restore_failed', $redirect ) );
 				exit;
 			}
 			list( $options, $tables, $source_prefix ) = $this->parse_mixed_csv( $raw );
 			if ( $options === null ) {
-				wp_safe_redirect( add_query_arg( 'ktp_action', 'import_failed', $redirect ) );
+				wp_safe_redirect( add_query_arg( 'ktp_action', 'restore_failed', $redirect ) );
 				exit;
 			}
 			$this->import_from_array( $options, $tables, $source_prefix );
 		}
 
-		wp_safe_redirect( add_query_arg( 'ktp_action', 'import_success', $redirect ) );
+		wp_safe_redirect( add_query_arg( 'ktp_action', 'restore_success', $redirect ) );
 		exit;
+	}
+
+	/**
+	 * 既存データを削除
+	 */
+	private function clear_existing_data() {
+		global $wpdb;
+		
+		// 外部キー制約を無効化
+		$wpdb->query( 'SET FOREIGN_KEY_CHECKS = 0' );
+		
+		// 削除対象テーブル（外部キー制約のため順序が重要）
+		$tables_to_clear = array(
+			'ktp_order_cost_items',
+			'ktp_order_invoice_items', 
+			'ktp_order_staff_chat',
+			'ktp_order',
+			'ktp_supplier_skills',
+			'ktp_service',
+			'ktp_supplier',
+			'ktp_client',
+		);
+		
+		foreach ( $tables_to_clear as $table ) {
+			$table_name = $wpdb->prefix . $table;
+			$wpdb->query( "DELETE FROM {$table_name}" );
+			$wpdb->query( "ALTER TABLE {$table_name} AUTO_INCREMENT = 1" );
+		}
+		
+		// 外部キー制約を再有効化
+		$wpdb->query( 'SET FOREIGN_KEY_CHECKS = 1' );
 	}
 
 	/**
