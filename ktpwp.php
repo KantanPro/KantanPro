@@ -3834,8 +3834,8 @@ function KTPWP_Index() {
             }
 
             // 設定からシステム名とシステムの説明を取得
-            $system_name = get_option( 'ktp_system_name', 'ChaChatWorks' );
-            $system_description = get_option( 'ktp_system_description', 'チャチャと仕事が片付く神システム！' );
+            $system_name = get_option( 'ktp_system_name', 'KantanPro' );
+            $system_description = get_option( 'ktp_system_description', '個人事業主・フリーランス・小規模ビジネスのための売管理システムです。' );
 
             // ロゴマークを取得（デフォルトは既存のicon.png）
             $default_logo = plugins_url( 'images/default/icon.png', __FILE__ );
