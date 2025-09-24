@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.1.0
+Stable tag: 1.1.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -324,6 +324,13 @@ curl -sS -X POST \
 * 推奨PHP拡張: GD（画像処理用）
 
 == 変更履歴 ==
+
+= 1.1.1 - 2025年09月24日 =
+* AJAXハンドラーの重複登録防止機能を追加
+  - 重複登録によるエラーを防止し、システムの安定性を向上
+  - ログ出力を改善し、デバッグモード時のAjaxリクエスト監視を強化
+  - ログレベルを追加して本番環境でのログ出力を制御
+  - パフォーマンスの向上とメモリ使用量の最適化
 
 = 1.1.0 - 2025年09月20日 =
 * 管理メニューのアイコンを更新
