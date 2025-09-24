@@ -31,6 +31,13 @@ class KTPWP_Ajax {
 	private $registered_handlers = array();
 
 	/**
+	 * ハンドラー登録済みフラグ
+	 *
+	 * @var bool
+	 */
+	private $handlers_registered = false;
+
+	/**
 	 * nonce名の設定
 	 *
 	 * @var array
@@ -123,6 +130,11 @@ class KTPWP_Ajax {
 	 * Ajaxハンドラー登録
 	 */
 	public function register_ajax_handlers() {
+		// 重複登録を防ぐ
+		if ( $this->handlers_registered ) {
+			return;
+		}
+
 		// プロジェクト名インライン編集（管理者のみ）
 		add_action( 'wp_ajax_ktp_update_project_name', array( $this, 'ajax_update_project_name' ) );
 		add_action( 'wp_ajax_nopriv_ktp_update_project_name', array( $this, 'ajax_require_login' ) );
@@ -334,6 +346,9 @@ class KTPWP_Ajax {
 
 		// レポート機能用のAJAXアクション
 		add_action( 'wp_ajax_ktpwp_get_report_data', array( $this, 'get_report_data' ) );
+		
+		// 登録完了フラグを設定
+		$this->handlers_registered = true;
 	}
 
 	/**
@@ -348,7 +363,9 @@ class KTPWP_Ajax {
 		}
 
 		// クラス存在チェックを削除して強制的に登録
-		error_log( '[AJAX] 強制的にAjaxハンドラーを登録します' );
+		if ( class_exists( 'KTPWP_Settings' ) ) {
+			KTPWP_Settings::log_debug( '受注関連Ajaxハンドラーを登録します', array(), 'info' );
+		}
 		
 		// 自動保存
 		add_action( 'wp_ajax_ktp_auto_save_item', array( $this, 'ajax_auto_save_item' ) );
@@ -359,7 +376,9 @@ class KTPWP_Ajax {
 		add_action( 'wp_ajax_ktp_create_new_item', array( $this, 'ajax_create_new_item' ) );
 		add_action( 'wp_ajax_nopriv_ktp_create_new_item', array( $this, 'ajax_create_new_item' ) );
 		$this->registered_handlers[] = 'ktp_create_new_item';
-		error_log( '[AJAX] ktp_create_new_item handler registered' );
+		if ( class_exists( 'KTPWP_Settings' ) ) {
+			KTPWP_Settings::log_debug( 'ktp_create_new_item handler registered', array(), 'debug' );
+		}
 
 		// アイテム削除
 		add_action( 'wp_ajax_ktp_delete_item', array( $this, 'ajax_delete_item' ) );
@@ -371,31 +390,29 @@ class KTPWP_Ajax {
 		add_action( 'wp_ajax_nopriv_ktp_update_item_order', array( $this, 'ajax_require_login' ) ); // 非ログインユーザーはエラー
 		$this->registered_handlers[] = 'ktp_update_item_order';
 		
-		error_log( '[AJAX] 全Ajaxハンドラー登録完了: ' . print_r($this->registered_handlers, true) );
+		if ( class_exists( 'KTPWP_Settings' ) ) {
+			KTPWP_Settings::log_debug( '受注関連Ajaxハンドラー登録完了', array( 'count' => count($this->registered_handlers) ), 'info' );
+		}
 		
-		// デバッグ用：すべてのAjaxリクエストを監視
-		add_action( 'wp_ajax_ktp_create_new_item', function() {
-			error_log( '[AJAX_DEBUG] wp_ajax_ktp_create_new_item アクションが呼び出されました' );
-		}, 1 );
-		add_action( 'wp_ajax_nopriv_ktp_create_new_item', function() {
-			error_log( '[AJAX_DEBUG] wp_ajax_nopriv_ktp_create_new_item アクションが呼び出されました' );
-		}, 1 );
+		// デバッグ用：Ajaxリクエスト監視（デバッグモード時のみ）
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			add_action( 'wp_ajax_ktp_create_new_item', function() {
+				error_log( '[AJAX_DEBUG] wp_ajax_ktp_create_new_item アクションが呼び出されました' );
+			}, 1 );
+			add_action( 'wp_ajax_nopriv_ktp_create_new_item', function() {
+				error_log( '[AJAX_DEBUG] wp_ajax_nopriv_ktp_create_new_item アクションが呼び出されました' );
+			}, 1 );
+		}
 		
-		// デバッグ用：すべてのAjaxリクエストを監視
-		add_action( 'wp_ajax_ktp_create_new_item', function() {
-			error_log( '[AJAX_DEBUG_ALL] すべてのAjaxリクエスト: ' . print_r( $_REQUEST, true ) );
-		}, 0 );
-		add_action( 'wp_ajax_nopriv_ktp_create_new_item', function() {
-			error_log( '[AJAX_DEBUG_ALL] すべてのAjaxリクエスト（非ログイン）: ' . print_r( $_REQUEST, true ) );
-		}, 0 );
-		
-		// デバッグ用：WordPressのAjax処理全体を監視
-		add_action( 'init', function() {
-			error_log( '[AJAX_DEBUG_INIT] WordPress init フック実行中' );
-			if ( wp_doing_ajax() ) {
-				error_log( '[AJAX_DEBUG_INIT] Ajax処理中: action=' . ( isset( $_REQUEST['action'] ) ? $_REQUEST['action'] : 'NOT_SET' ) );
-			}
-		}, 1 );
+		// デバッグ用：Ajaxリクエスト監視（デバッグモード時のみ）
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			add_action( 'wp_ajax_ktp_create_new_item', function() {
+				error_log( '[AJAX_DEBUG_ALL] Ajaxリクエスト: action=' . ( isset( $_REQUEST['action'] ) ? $_REQUEST['action'] : 'NOT_SET' ) );
+			}, 0 );
+			add_action( 'wp_ajax_nopriv_ktp_create_new_item', function() {
+				error_log( '[AJAX_DEBUG_ALL] Ajaxリクエスト（非ログイン）: action=' . ( isset( $_REQUEST['action'] ) ? $_REQUEST['action'] : 'NOT_SET' ) );
+			}, 0 );
+		}
 	}
 
 	/**
@@ -430,43 +447,42 @@ class KTPWP_Ajax {
 	 * サービス関連Ajaxハンドラー初期化
 	 */
 	private function init_service_ajax_handlers() {
-		error_log( '[AJAX] サービスAjaxハンドラー初期化開始' );
+		if ( class_exists( 'KTPWP_Settings' ) ) {
+			KTPWP_Settings::log_debug( 'サービスAjaxハンドラー初期化開始', array(), 'info' );
+		}
 		
 		// サービス一覧取得
 		add_action( 'wp_ajax_ktp_get_service_list', array( $this, 'ajax_get_service_list' ) );
 		add_action( 'wp_ajax_nopriv_ktp_get_service_list', array( $this, 'ajax_get_service_list' ) );
 		$this->registered_handlers[] = 'ktp_get_service_list';
 		
-		error_log( '[AJAX] サービスAjaxハンドラー登録完了: ktp_get_service_list' );
-		error_log( '[AJAX] 登録されたハンドラー: ' . print_r( $this->registered_handlers, true ) );
+		if ( class_exists( 'KTPWP_Settings' ) ) {
+			KTPWP_Settings::log_debug( 'サービスAjaxハンドラー登録完了', array( 
+				'handler' => 'ktp_get_service_list',
+				'total_handlers' => count( $this->registered_handlers ),
+				'wp_ajax_registered' => has_action( 'wp_ajax_ktp_get_service_list' ) ? '登録済み' : '未登録',
+				'wp_ajax_nopriv_registered' => has_action( 'wp_ajax_nopriv_ktp_get_service_list' ) ? '登録済み' : '未登録'
+			), 'info' );
+		}
 		
-		// デバッグ用：アクションが正しく登録されているか確認
-		error_log( '[AJAX] wp_ajax_ktp_get_service_list アクション登録確認: ' . ( has_action( 'wp_ajax_ktp_get_service_list' ) ? '登録済み' : '未登録' ) );
-		error_log( '[AJAX] wp_ajax_nopriv_ktp_get_service_list アクション登録確認: ' . ( has_action( 'wp_ajax_nopriv_ktp_get_service_list' ) ? '登録済み' : '未登録' ) );
+		// デバッグ用：Ajaxリクエスト監視（デバッグモード時のみ）
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			add_action( 'wp_ajax_ktp_get_service_list', function() {
+				error_log( '[AJAX_DEBUG] wp_ajax_ktp_get_service_list アクションが呼び出されました' );
+			}, 1 );
+			add_action( 'wp_ajax_nopriv_ktp_get_service_list', function() {
+				error_log( '[AJAX_DEBUG] wp_ajax_nopriv_ktp_get_service_list アクションが呼び出されました' );
+			}, 1 );
+		}
 		
-		// デバッグ用：Ajaxリクエスト全体を監視
-		add_action( 'wp_ajax_ktp_get_service_list', function() {
-			error_log( '[AJAX_DEBUG] wp_ajax_ktp_get_service_list アクションが呼び出されました' );
-		}, 1 );
-		add_action( 'wp_ajax_nopriv_ktp_get_service_list', function() {
-			error_log( '[AJAX_DEBUG] wp_ajax_nopriv_ktp_get_service_list アクションが呼び出されました' );
-		}, 1 );
-		
-		// デバッグ用：すべてのAjaxリクエストを監視
-		add_action( 'wp_ajax_ktp_get_service_list', function() {
-			error_log( '[AJAX_DEBUG_ALL] すべてのAjaxリクエスト: ' . print_r( $_REQUEST, true ) );
-		}, 0 );
-		add_action( 'wp_ajax_nopriv_ktp_get_service_list', function() {
-			error_log( '[AJAX_DEBUG_ALL] すべてのAjaxリクエスト（非ログイン）: ' . print_r( $_REQUEST, true ) );
-		}, 0 );
-		
-		// デバッグ用：WordPressのAjax処理全体を監視
-		add_action( 'init', function() {
-			error_log( '[AJAX_DEBUG_INIT] WordPress init フック実行中' );
-			if ( wp_doing_ajax() ) {
-				error_log( '[AJAX_DEBUG_INIT] Ajax処理中: action=' . ( isset( $_REQUEST['action'] ) ? $_REQUEST['action'] : 'NOT_SET' ) );
-			}
-		}, 1 );
+		// デバッグ用：WordPressのAjax処理全体を監視（デバッグモード時のみ）
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			add_action( 'init', function() {
+				if ( wp_doing_ajax() ) {
+					error_log( '[AJAX_DEBUG_INIT] Ajax処理中: action=' . ( isset( $_REQUEST['action'] ) ? $_REQUEST['action'] : 'NOT_SET' ) );
+				}
+			}, 1 );
+		}
 	}
 
 	/**

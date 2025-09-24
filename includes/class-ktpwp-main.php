@@ -183,12 +183,16 @@ class KTPWP_Main {
             // AJAXハンドラーが確実に登録されるように、initアクションの後に確認
             add_action( 'init', function() {
                 if ( $this->ajax && method_exists( $this->ajax, 'register_ajax_handlers' ) ) {
-                    // AJAXハンドラーが登録されているかチェック
+                    // AJAXハンドラーが登録されているかチェック（重複登録を防ぐ）
                     if ( !has_action( 'wp_ajax_ktp_get_supplier_qualified_invoice_number' ) ) {
-                        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                            error_log( 'KTPWP_Main: AJAX handlers not registered, registering manually.' );
+                        if ( class_exists( 'KTPWP_Settings' ) ) {
+                            KTPWP_Settings::log_debug( 'AJAX handlers not registered, registering manually', array(), 'info' );
                         }
                         $this->ajax->register_ajax_handlers();
+                    } else {
+                        if ( class_exists( 'KTPWP_Settings' ) ) {
+                            KTPWP_Settings::log_debug( 'AJAX handlers already registered, skipping', array(), 'debug' );
+                        }
                     }
                 }
             }, 15 ); // KTPWP_Ajax's init (priority 5) より後に実行

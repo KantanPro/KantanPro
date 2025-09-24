@@ -4413,10 +4413,16 @@ define( 'WP_DEBUG_DISPLAY', false );
      * @since 1.3.0
      * @param string $message ログメッセージ
      * @param array  $context コンテキスト情報
+     * @param string $level ログレベル (debug, info, warning, error)
      */
-    public static function log_debug( $message, $context = array() ) {
+    public static function log_debug( $message, $context = array(), $level = 'debug' ) {
+        // 本番環境では重要なエラーのみログ出力
+        if ( self::is_production_environment() && ! in_array( $level, array( 'error', 'warning' ) ) ) {
+            return;
+        }
+
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            $log_message = '[' . date( 'Y-m-d H:i:s' ) . '] KTPWP: ' . $message;
+            $log_message = '[' . date( 'Y-m-d H:i:s' ) . '] KTPWP [' . strtoupper( $level ) . ']: ' . $message;
 
             if ( ! empty( $context ) ) {
                 $log_message .= ' | Context: ' . wp_json_encode( $context );
@@ -4431,8 +4437,95 @@ define( 'WP_DEBUG_DISPLAY', false );
                 wp_mkdir_p( $log_dir );
             }
 
+            // ログローテーションをチェック
+            self::check_log_rotation( $log_file );
+
             // ログファイルに書き込み
             error_log( $log_message );
+        }
+    }
+
+    /**
+     * 本番環境かどうかを判定
+     *
+     * @since 1.3.0
+     * @return bool
+     */
+    private static function is_production_environment() {
+        // 環境変数で判定
+        if ( defined( 'WP_ENV' ) && WP_ENV === 'production' ) {
+            return true;
+        }
+
+        // ドメインで判定（本番ドメインの例）
+        $site_url = get_site_url();
+        $production_domains = array(
+            'kantanpro.com',
+            'www.kantanpro.com',
+            // 他の本番ドメインを追加
+        );
+
+        foreach ( $production_domains as $domain ) {
+            if ( strpos( $site_url, $domain ) !== false ) {
+                return true;
+            }
+        }
+
+        // デバッグモードが無効の場合は本番環境とみなす
+        if ( ! defined( 'WP_DEBUG' ) || ! WP_DEBUG ) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * ログローテーション機能
+     *
+     * @since 1.3.0
+     * @param string $log_file ログファイルパス
+     */
+    private static function check_log_rotation( $log_file ) {
+        if ( ! file_exists( $log_file ) ) {
+            return;
+        }
+
+        // ログファイルサイズをチェック（5MB）
+        $max_size = 5 * 1024 * 1024; // 5MB
+        $current_size = filesize( $log_file );
+
+        if ( $current_size > $max_size ) {
+            // ローテーション実行
+            $backup_file = $log_file . '.' . date( 'Y-m-d-H-i-s' ) . '.bak';
+            
+            if ( rename( $log_file, $backup_file ) ) {
+                // 古いログファイルを削除（7日以上前のもの）
+                self::cleanup_old_logs( dirname( $log_file ) );
+                
+                if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                    error_log( 'KTPWP: Log rotated - ' . basename( $backup_file ) );
+                }
+            }
+        }
+    }
+
+    /**
+     * 古いログファイルのクリーンアップ
+     *
+     * @since 1.3.0
+     * @param string $log_dir ログディレクトリ
+     */
+    private static function cleanup_old_logs( $log_dir ) {
+        $files = glob( $log_dir . '/debug.log.*.bak' );
+        $cutoff_time = time() - ( 7 * 24 * 60 * 60 ); // 7日前
+
+        foreach ( $files as $file ) {
+            if ( filemtime( $file ) < $cutoff_time ) {
+                unlink( $file );
+                if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                    error_log( 'KTPWP: Cleaned up old log file - ' . basename( $file ) );
+                }
+            }
         }
     }
 
