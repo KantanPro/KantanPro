@@ -57,8 +57,6 @@ class KTPWP_Terms_Of_Service {
 
         // フックの設定
         add_action( 'admin_init', array( $this, 'handle_terms_actions' ) );
-        add_action( 'wp_footer', array( $this, 'add_terms_footer_link' ) );
-        add_action( 'admin_footer', array( $this, 'add_terms_footer_link' ) );
         add_action( 'wp_ajax_ktpwp_terms_agreement', array( $this, 'handle_terms_agreement' ) );
         add_action( 'wp_ajax_nopriv_ktpwp_terms_agreement', array( $this, 'handle_terms_agreement' ) );
         add_action( 'init', array( $this, 'handle_public_terms_view' ) );
