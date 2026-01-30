@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.1.1
+Stable tag: 1.1.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -324,6 +324,13 @@ curl -sS -X POST \
 * 推奨PHP拡張: GD（画像処理用）
 
 == 変更履歴 ==
+
+= 1.1.2 - 2026年01月30日 =
+* 受注書のタブの上のみワーニング表示を修正
+* フッターの無効な利用規約テキストリンクを削除
+* データリストア機能のUI改善
+  - リストア処理の進行状況を表示するプログレスバーを追加
+  - ユーザー体験を向上させるための視覚的なフィードバックを強化
 
 = 1.1.1 - 2025年09月24日 =
 * AJAXハンドラーの重複登録防止機能を追加
