@@ -1803,7 +1803,8 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 						$completion_date = '';
 					}
 
-					error_log( 'KTPWP Order: 画面表示時の完了日: ' . $completion_date . ' (受注書ID: ' . $order_data->id . ', 元の値: ' . $order_data->completion_date . ')' );
+					$original_completion_date = isset( $order_data->completion_date ) ? $order_data->completion_date : '';
+					error_log( 'KTPWP Order: 画面表示時の完了日: ' . $completion_date . ' (受注書ID: ' . $order_data->id . ', 元の値: ' . $original_completion_date . ')' );
 					$content .= '<div>完了日：<input type="date" id="completion_date" name="completion_date" value="' . esc_attr( $completion_date ) . '" data-order-id="' . esc_attr( $order_data->id ) . '" data-field="completion_date" class="completion-date-input" style="font-size: 12px; padding: 4px 8px; border: 1px solid #ddd; border-radius: 4px; width: 140px;" /></div>';
 
 					// 案件名インライン入力をh4タイトル行に移動
