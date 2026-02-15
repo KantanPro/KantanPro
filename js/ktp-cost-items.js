@@ -779,8 +779,12 @@
                         }
                         if (callback) callback(true, newItemId);
                     } else {
+                        // WordPress wp_send_json_error() は data を文字列で返す場合がある
+                        var errMsg = (result.data && typeof result.data === 'object' && result.data.message)
+                            ? result.data.message
+                            : (typeof result.data === 'string' ? result.data : (result.message || '不明なエラー'));
                         if (window.ktpDebugMode) {
-                            console.error('New cost item creation failed:', result.message || (result.data ? result.data.message : 'Unknown error'));
+                            console.error('New cost item creation failed:', errMsg, 'Response:', result);
                         }
                         if (callback) callback(false, null);
                     }

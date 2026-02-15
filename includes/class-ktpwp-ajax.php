@@ -957,7 +957,7 @@ class KTPWP_Ajax {
 
 		if ( $order_id <= 0 ) {
 			$this->log_ajax_error( 'Invalid order ID for creation', array( 'order_id' => $order_id ) );
-			wp_send_json_error( __( '無効な受注IDです', 'ktpwp' ) );
+			wp_send_json_error( array( 'message' => __( '無効な受注IDです。ページを再読み込みしてから再度お試しください。', 'ktpwp' ) ) );
 		}
 
 		// 新しいクラス構造を使用してアイテムを作成
@@ -997,7 +997,7 @@ class KTPWP_Ajax {
 						'order_id' => $order_id,
 					)
 				);
-				wp_send_json_error( __( 'アイテムの作成に失敗しました', 'ktpwp' ) );
+				wp_send_json_error( array( 'message' => __( 'アイテムの作成に失敗しました', 'ktpwp' ) ) );
 			}
 		} catch ( Exception $e ) {
 			$this->log_ajax_error(

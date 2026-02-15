@@ -573,11 +573,20 @@ window.ktpAddCostRowFromSkill = function(skill, currentRow) {
         updateProfitDisplay();
     }
     
-    // データベースに保存
-    const orderId = $('input[name="order_id"]').val() || $('#order_id').val();
+    // データベースに保存（order_id はコスト項目フォーム内を優先して取得）
+    const orderId = (function() {
+        var fromForm = $('.cost-items-form input[name="order_id"]').val();
+        if (fromForm && fromForm !== '0') return fromForm;
+        var table = $newRow.closest('table.cost-items-table');
+        if (table.length && table.attr('id')) {
+            var m = table.attr('id').match(/cost-items-table-(\d+)/);
+            if (m && m[1]) return m[1];
+        }
+        return $('input[name="order_id"]').val() || $('#order_id').val() || '';
+    })();
     const supplierId = window.ktpCurrentSupplierId; // 現在選択されている協力会社ID
     
-    if (orderId && typeof createNewItem === 'function') {
+    if (orderId && orderId !== '0' && typeof createNewItem === 'function') {
         console.log('[SUPPLIER-SELECTOR] DB新規作成開始', {
             orderId: orderId,
             supplierId: supplierId,
@@ -627,9 +636,18 @@ window.ktpAddCostRowFromSkill = function(skill, currentRow) {
                 }, 100);
             } else {
                 console.error('[SUPPLIER-SELECTOR] 新規コスト項目のDB作成に失敗しました');
+                if (typeof alert !== 'undefined') {
+                    alert('コスト項目の追加に失敗しました。\n「無効な受注IDです」の場合はページを再読み込みしてから再度お試しください。');
+                }
             }
         });
     } else {
+        if (!orderId || orderId === '0') {
+            console.warn('[SUPPLIER-SELECTOR] order_id が取得できません。コスト項目フォーム内の受注IDを確認してください。');
+            if (typeof alert !== 'undefined') {
+                alert('受注IDを取得できません。\n受注書を開いた状態で、コスト項目タブ内から協力会社を選択して追加してください。');
+            }
+        }
         console.warn('[SUPPLIER-SELECTOR] DB新規作成スキップ - 条件未満', {
             orderId: orderId,
             supplierId: supplierId,
@@ -695,9 +713,18 @@ window.ktpUpdateCostRowFromSkill = function(skill, currentRow) {
             if (typeof updateProfitDisplay === 'function') {
                 updateProfitDisplay();
             }
-            // --- DB保存 ---
+            // --- DB保存（order_id はコスト項目フォーム内を優先） ---
             const itemId = currentRow.find('input[name*="[id]"]').val();
-            const orderId = $('input[name="order_id"]').val() || $('#order_id').val();
+            const orderId = (function() {
+                var fromForm = $('.cost-items-form input[name="order_id"]').val();
+                if (fromForm && fromForm !== '0') return fromForm;
+                var table = currentRow.closest('table.cost-items-table');
+                if (table.length && table.attr('id')) {
+                    var m = table.attr('id').match(/cost-items-table-(\d+)/);
+                    if (m && m[1]) return m[1];
+                }
+                return $('input[name="order_id"]').val() || $('#order_id').val() || '';
+            })();
             const supplierId = window.ktpCurrentSupplierId;
             
             // デバッグ情報を出力

@@ -1004,52 +1004,36 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 				unset( $data['tax_rate'] );
 			}
 
-			// フォーマット配列を動的に生成
-			$format = array();
-			foreach ( $data as $value ) {
-				if ( $value === null ) {
-					$format[] = null; // NULL値の場合はフォーマットもnull
-				} else {
-					$format[] = '%s'; // デフォルトは文字列
-				}
-			}
-			
-			// 特定のフィールドのフォーマットを調整
+			// 請求項目の保存と同じ方式: NULL の列は INSERT に含めず $wpdb->insert のみ使用（format に null を渡すと SQL が壊れるため）
+			$data_insert   = array();
+			$format_insert = array();
 			foreach ( $data as $key => $value ) {
-				$index = array_search( $key, array_keys( $data ) );
-				if ( $index !== false ) {
-					switch ( $key ) {
-						case 'order_id':
-						case 'sort_order':
-						case 'ordered':
-							$format[$index] = '%d';
-							break;
-						case 'price':
-						case 'quantity':
-						case 'amount':
-						case 'tax_rate':
-							// 税率がNULLの場合はフォーマットもNULLのままにする
-							if ( $value !== null ) {
-								$format[$index] = '%f';
-							}
-							break;
-						case 'supplier_id':
-							$format[$index] = '%d';
-							break;
-						default:
-							$format[$index] = '%s';
-							break;
-					}
+				if ( $value === null ) {
+					continue;
+				}
+				$data_insert[ $key ] = $value;
+				switch ( $key ) {
+					case 'order_id':
+					case 'sort_order':
+					case 'ordered':
+						$format_insert[] = '%d';
+						break;
+					case 'price':
+					case 'quantity':
+					case 'amount':
+					case 'tax_rate':
+						$format_insert[] = '%f';
+						break;
+					case 'supplier_id':
+						$format_insert[] = '%d';
+						break;
+					default:
+						$format_insert[] = '%s';
+						break;
 				}
 			}
-			
-			error_log( "[KTPWP] create_new_item INSERT debug: table={$table_name}, data_count=" . count($data) . ", format_count=" . count($format) . ", data=" . print_r($data, true) . ", format=" . print_r($format, true) );
-			
-			$result = $wpdb->insert(
-                $table_name,
-                $data,
-                $format
-			);
+			error_log( "[KTPWP] create_new_item INSERT debug: table={$table_name}, data_count=" . count( $data_insert ) . ", data=" . print_r( $data_insert, true ) );
+			$result = $wpdb->insert( $table_name, $data_insert, $format_insert );
 
 			if ( $result === false ) {
 				error_log( 'KTPWP: Failed to create new item: ' . $wpdb->last_error );
