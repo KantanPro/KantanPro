@@ -153,6 +153,92 @@ if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
 
 			// Handle different operations (update, delete, insert, etc.)
 			switch ( $query_post ) {
+				case 'srcmode':
+				case 'istmode':
+					// 表示モード切替はDB更新不要
+					return;
+
+				case 'search':
+					$search_query = isset( $post_data['search_query'] ) ? sanitize_text_field( $post_data['search_query'] ) : '';
+					$redirect_base = wp_get_referer();
+					if ( ! $redirect_base || $redirect_base === '' ) {
+						$redirect_base = home_url( wp_unslash( isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : '/' ) );
+					}
+					if ( ! $redirect_base ) {
+						$redirect_base = KTPWP_Main::get_current_page_base_url();
+					}
+
+					if ( $search_query === '' ) {
+						$redirect_url = add_query_arg(
+							array(
+								'tab_name' => $tab_name,
+								'query_post' => 'srcmode',
+							),
+							$redirect_base
+						);
+						wp_safe_redirect( $redirect_url );
+						exit;
+					}
+
+					$like_pattern = '%' . $wpdb->esc_like( $search_query ) . '%';
+					$results = $wpdb->get_results(
+						$wpdb->prepare(
+							"SELECT * FROM {$table_name} WHERE (COALESCE(search_field,'') LIKE %s OR company_name LIKE %s OR name LIKE %s) ORDER BY id DESC",
+							$like_pattern,
+							$like_pattern,
+							$like_pattern
+						)
+					);
+
+					if ( count( $results ) === 1 ) {
+						$found_id = (int) $results[0]->id;
+						$wpdb->query(
+							$wpdb->prepare(
+								"UPDATE {$table_name} SET frequency = frequency + 1 WHERE id = %d",
+								$found_id
+							)
+						);
+
+						$cookie_name = 'ktp_' . $tab_name . '_id';
+						setcookie( $cookie_name, (string) $found_id, time() + ( 86400 * 30 ), '/' );
+
+						$redirect_url = add_query_arg(
+							array(
+								'tab_name' => $tab_name,
+								'data_id' => $found_id,
+								'message' => 'found',
+							),
+							$redirect_base
+						);
+						wp_safe_redirect( $redirect_url );
+						exit;
+					}
+
+					if ( count( $results ) > 1 ) {
+						$redirect_url = add_query_arg(
+							array(
+								'tab_name' => $tab_name,
+								'multiple_results' => '1',
+								'search_query' => $search_query,
+							),
+							$redirect_base
+						);
+						wp_safe_redirect( $redirect_url );
+						exit;
+					}
+
+					$redirect_url = add_query_arg(
+						array(
+							'tab_name' => $tab_name,
+							'query_post' => 'srcmode',
+							'search_query' => $search_query,
+							'no_results' => '1',
+						),
+						$redirect_base
+					);
+					wp_safe_redirect( $redirect_url );
+					exit;
+
 				case 'delete':
 					// Handle delete operation
 					if ( $data_id > 0 ) {
