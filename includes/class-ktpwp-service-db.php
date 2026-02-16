@@ -530,10 +530,9 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 								),
 								$redirect_base
 							);
-							echo '<script>
-							alert("' . esc_js( sprintf( esc_html__( '検索結果: %d件見つかりました。', 'ktpwp' ), 1 ) ) . '");
-							window.location.href = "' . esc_js( $url ) . '";
-							</script>';
+							$wpdb->query( 'UNLOCK TABLES;' );
+							wp_safe_redirect( $url );
+							exit;
 						} else {
 							// 複数件: 顧客タブと同様にリダイレクトしてダイアログ表示
 							$url = add_query_arg(
@@ -551,7 +550,6 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 					} else {
 						// 検索結果が無い場合
 						$_SESSION['ktp_service_search_message'] = esc_html__( '該当するサービスが見つかりませんでした。条件を変更して再検索してください。', 'ktpwp' );
-						echo '<script>alert("' . esc_js( esc_html__( '該当するサービスが見つかりませんでした。', 'ktpwp' ) ) . '");</script>';
 					}
 				}
 

@@ -212,13 +212,6 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 			// JS通知は他タブと統一のため廃止（noticeのみ）
 			$message = '';
 
-			// 検索メッセージの表示
-			if ( $search_mode && $search_message ) {
-				$message .= '<div class="notice notice-info" style="margin: 10px 0; padding: 10px; background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; border-radius: 4px;">'
-                . '<span style="margin-right: 10px; color: #17a2b8; font-size: 18px;" class="material-symbols-outlined">search</span>'
-                . esc_html( $search_message ) . '</div>';
-			}
-
 			// -----------------------------
 			// リスト表示
 			// -----------------------------
@@ -674,6 +667,9 @@ document.addEventListener('DOMContentLoaded', function() {
 				$data_forms .= '</form>';
 
 				$data_forms .= '</div>'; // button-group の閉じタグ
+				if ( $search_message ) {
+					$data_forms .= '<div class="ktp-service-search-message" style="margin-top: 8px; font-size: 14px; color: #666; line-height: 1.5;">' . esc_html( $search_message ) . '</div>';
+				}
 				$data_forms .= '</div>'; // search-mode-form の閉じタグ
 				$data_forms .= '</div>'; // data_detail_box の閉じタグ
 			}
