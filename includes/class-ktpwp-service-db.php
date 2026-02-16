@@ -457,7 +457,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 				if ( ! $redirect_base ) {
 					$redirect_base = KTPWP_Main::get_current_page_base_url();
 				}
-				$redirect_base = remove_query_arg( array( 'multiple_results', 'search_service_name', 'search_category' ), $redirect_base );
+				$redirect_base = remove_query_arg( array( 'multiple_results', 'search_service_name', 'search_category', 'query_post', 'no_results' ), $redirect_base );
 				$url = add_query_arg(
 					array(
 						'tab_name' => $tab_name,
@@ -507,13 +507,14 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 							$redirect_base = home_url( add_query_arg( array(), $wp->request ) );
 						}
 					}
-					$redirect_base = remove_query_arg( array( 'query_post', 'data_id', 'message', 'multiple_results' ), $redirect_base );
+					$redirect_base = remove_query_arg( array( 'query_post', 'data_id', 'message', 'multiple_results', 'no_results' ), $redirect_base );
 					$url = add_query_arg(
 						array(
 							'tab_name' => $tab_name,
 							'query_post' => 'srcmode',
 							'search_service_name' => $search_service_name,
 							'search_category' => $search_category,
+							'no_results' => '1',
 						),
 						$redirect_base
 					);
@@ -580,7 +581,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 
 						// 0件時は必ず検索モードへ戻す（istmode混在を防止）
 						$redirect_base = remove_query_arg(
-							array( 'query_post', 'data_id', 'message', 'multiple_results' ),
+							array( 'query_post', 'data_id', 'message', 'multiple_results', 'no_results' ),
 							$redirect_base
 						);
 						$url = add_query_arg(
@@ -589,6 +590,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 								'query_post' => 'srcmode',
 								'search_service_name' => $search_service_name,
 								'search_category' => $search_category,
+								'no_results' => '1',
 							),
 							$redirect_base
 						);

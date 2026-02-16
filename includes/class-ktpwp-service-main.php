@@ -213,6 +213,11 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 				$search_mode = true;
 				$search_message = isset( $_SESSION['ktp_service_search_message'] ) ? $_SESSION['ktp_service_search_message'] : '';
 			}
+			// 本番等でセッションがリダイレクト後に引き継がれない場合の対策: URL の no_results=1 で検索フォーム＋該当なしを表示
+			if ( ! $search_mode && $_SERVER['REQUEST_METHOD'] === 'GET' && isset( $_GET['query_post'] ) && $_GET['query_post'] === 'srcmode' && isset( $_GET['no_results'] ) && $_GET['no_results'] === '1' ) {
+				$search_mode = true;
+				$search_message = esc_html__( '該当するサービスが見つかりませんでした。条件を変更して再検索してください。', 'ktpwp' );
+			}
 
 			// JS通知は他タブと統一のため廃止（noticeのみ）
 			$message = '';
