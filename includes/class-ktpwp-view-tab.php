@@ -56,6 +56,8 @@ class KTPWP_View_Tabs_Class {
 				'message',
 				'search_query',
 				'multiple_results',
+				'search_service_name',
+				'search_category',
 				'no_results',
 				'flg',
 				'sort_by',

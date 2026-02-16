@@ -184,6 +184,10 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 				case 'duplicate':
 					return $this->handle_duplicate_service( $tab_name, $data_id );
 
+				case 'srcmode':
+					// 詳細画面の「検索」ボタンは query_post=srcmode で送るため、検索モードとして扱う
+					return $this->handle_search_operations( $tab_name, 'search' );
+
 				case 'search':
 				case 'search_execute':
 				case 'search_cancel':
@@ -445,36 +449,46 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 				unset( $_SESSION['ktp_service_search_mode'] );
 				unset( $_SESSION['ktp_service_search_message'] );
 
-				$base_page_url = KTPWP_Main::get_current_page_base_url();
+				// リダイレクト先を参照元または現在のリクエストURLから組み立て（不正なリダイレクトを防ぐ）
+				$redirect_base = wp_get_referer();
+				if ( ! $redirect_base || $redirect_base === '' ) {
+					$redirect_base = home_url( wp_unslash( isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : '/' ) );
+				}
+				if ( ! $redirect_base ) {
+					$redirect_base = KTPWP_Main::get_current_page_base_url();
+				}
+				$redirect_base = remove_query_arg( array( 'multiple_results', 'search_service_name', 'search_category' ), $redirect_base );
 				$url = add_query_arg(
-                    array(
+					array(
 						'tab_name' => $tab_name,
 						'message' => 'search_cancelled',
-                    ),
-                    $base_page_url
-                );
-
-				echo '<script>
-                window.location.href = "' . esc_js( $url ) . '";
-            </script>';
+					),
+					$redirect_base
+				);
 
 				$wpdb->query( 'UNLOCK TABLES;' );
+				wp_safe_redirect( $url );
+				exit;
 			} elseif ( $query_post === 'search_execute' ) {
 				$search_service_name = isset( $_POST['search_service_name'] ) ? sanitize_text_field( $_POST['search_service_name'] ) : '';
 				$search_category = isset( $_POST['search_category'] ) ? sanitize_text_field( $_POST['search_category'] ) : '';
 
-				// 検索条件の構築
+				// 検索条件の構築（顧客タブと同様: search_field が NULL でも service_name / category でヒット）
 				$where_conditions = array();
 				$where_values = array();
 
 				if ( ! empty( $search_service_name ) ) {
-					$where_conditions[] = 'service_name LIKE %s';
-					$where_values[] = '%' . $wpdb->esc_like( $search_service_name ) . '%';
+					$where_conditions[] = '(COALESCE(service_name,\'\') LIKE %s OR COALESCE(search_field,\'\') LIKE %s)';
+					$name_like = '%' . $wpdb->esc_like( $search_service_name ) . '%';
+					$where_values[] = $name_like;
+					$where_values[] = $name_like;
 				}
 
 				if ( ! empty( $search_category ) ) {
-					$where_conditions[] = 'category LIKE %s';
-					$where_values[] = '%' . $wpdb->esc_like( $search_category ) . '%';
+					$where_conditions[] = '(COALESCE(category,\'\') LIKE %s OR COALESCE(search_field,\'\') LIKE %s)';
+					$cat_like = '%' . $wpdb->esc_like( $search_category ) . '%';
+					$where_values[] = $cat_like;
+					$where_values[] = $cat_like;
 				}
 
 				if ( empty( $where_conditions ) ) {
@@ -484,40 +498,56 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 					// 検索実行
 					$where_clause = ' WHERE ' . implode( ' AND ', $where_conditions );
 					$search_query = "SELECT * FROM {$table_name}" . $where_clause . ' ORDER BY id DESC';
+					$search_results = $wpdb->get_results( $wpdb->prepare( $search_query, $where_values ) );
 
-					if ( ! empty( $where_values ) ) {
-						$search_results = $wpdb->get_results( $wpdb->prepare( $search_query, $where_values ) );
-					} else {
-						$search_results = $wpdb->get_results( $search_query );
+					$redirect_base = wp_get_referer();
+					if ( ! $redirect_base || $redirect_base === '' ) {
+						$redirect_base = home_url( wp_unslash( isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : '/' ) );
+					}
+					if ( ! $redirect_base ) {
+						$current_page_id = get_queried_object_id();
+						$redirect_base = get_permalink( $current_page_id );
+						if ( ! $redirect_base ) {
+							global $wp;
+							$redirect_base = home_url( add_query_arg( array(), $wp->request ) );
+						}
 					}
 
 					if ( $search_results ) {
-						// 検索結果がある場合、最初の結果にリダイレクト
-						$first_result = $search_results[0];
-
+						$result_count = count( $search_results );
 						// 検索モードを解除
 						unset( $_SESSION['ktp_service_search_mode'] );
 						unset( $_SESSION['ktp_service_search_message'] );
 
-						global $wp;
-						$current_page_id = get_queried_object_id();
-						$base_page_url = get_permalink( $current_page_id );
-						if ( ! $base_page_url ) {
-							 $base_page_url = home_url( add_query_arg( array(), $wp->request ) );
+						if ( $result_count === 1 ) {
+							// 1件のみ: その詳細にリダイレクト
+							$first_result = $search_results[0];
+							$url = add_query_arg(
+								array(
+									'tab_name' => $tab_name,
+									'data_id' => $first_result->id,
+									'message' => 'search_found',
+								),
+								$redirect_base
+							);
+							echo '<script>
+							alert("' . esc_js( sprintf( esc_html__( '検索結果: %d件見つかりました。', 'ktpwp' ), 1 ) ) . '");
+							window.location.href = "' . esc_js( $url ) . '";
+							</script>';
+						} else {
+							// 複数件: 顧客タブと同様にリダイレクトしてダイアログ表示
+							$url = add_query_arg(
+								array(
+									'tab_name' => $tab_name,
+									'multiple_results' => '1',
+									'search_service_name' => $search_service_name,
+									'search_category' => $search_category,
+								),
+								$redirect_base
+							);
+							wp_safe_redirect( $url );
+							exit;
 						}
-						$url = add_query_arg(
-                            array(
-								'tab_name' => $tab_name,
-								'data_id' => $first_result->id,
-								'message' => 'search_found',
-                            ),
-                            $base_page_url
-                        );
-
-						echo '<script>
-                        alert("' . esc_js( sprintf( esc_html__( '検索結果: %d件見つかりました。最初の結果を表示します。', 'ktpwp' ), count( $search_results ) ) ) . '");
-                        window.location.href = "' . esc_js( $url ) . '";
-                    </script>';
 					} else {
 						// 検索結果が無い場合
 						$_SESSION['ktp_service_search_message'] = esc_html__( '該当するサービスが見つかりませんでした。条件を変更して再検索してください。', 'ktpwp' );

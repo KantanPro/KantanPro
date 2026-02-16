@@ -197,9 +197,27 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 			// 検索
 			if ( $query_post == 'search' ) {
 
-				// SQLクエリを準備（search_fieldを検索対象にする）
-				$search_query = $post_data['search_query'];
-				$results = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $table_name WHERE search_field LIKE %s", '%' . $wpdb->esc_like( $search_query ) . '%' ) );
+				// 顧客タブと同様: search_field が NULL でも company_name / name でヒットするようにする
+				$search_query = isset( $post_data['search_query'] ) ? sanitize_text_field( $post_data['search_query'] ) : '';
+				if ( $search_query === '' ) {
+					ktpwp_safe_session_start();
+					$_SESSION['ktp_search_message'] = esc_html__( '検索キーワードを入力してください。', 'ktpwp' );
+					$redirect_base = wp_get_referer();
+					if ( ! $redirect_base || $redirect_base === '' ) {
+						$redirect_base = home_url( wp_unslash( isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : '/' ) );
+					}
+					wp_safe_redirect( add_query_arg( array( 'tab_name' => $tab_name, 'query_post' => 'srcmode' ), $redirect_base ) );
+					exit;
+				}
+				$like_pattern = '%' . $wpdb->esc_like( $search_query ) . '%';
+				$results = $wpdb->get_results(
+					$wpdb->prepare(
+						"SELECT * FROM $table_name WHERE (COALESCE(search_field,'') LIKE %s OR company_name LIKE %s OR name LIKE %s) ORDER BY id DESC",
+						$like_pattern,
+						$like_pattern,
+						$like_pattern
+					)
+				);
 
 				// 検索結果が1つある場合の処理
 				if ( count( $results ) == 1 ) {
@@ -208,19 +226,25 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 					// 頻度の値を+1する
 					$wpdb->query(
                         $wpdb->prepare(
-                            "UPDATE $table_name SET frequency = frequency + 1 WHERE ID = %d",
+                            "UPDATE $table_name SET frequency = frequency + 1 WHERE id = %d",
                             $id
                         )
 					);
 					// 検索後に更新モードにする
 					$action = 'update';
 					$data_id = $id;
-					// 現在のURLを取得
-					global $wp;
-					$current_page_id = get_queried_object_id();
-					$base_page_url = get_permalink( $current_page_id );
+					// 現在のURLを取得（顧客タブと同様に referer フォールバック）
+					$base_page_url = wp_get_referer();
+					if ( ! $base_page_url || $base_page_url === '' ) {
+						$base_page_url = home_url( wp_unslash( isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : '/' ) );
+					}
 					if ( ! $base_page_url ) {
+						global $wp;
+						$current_page_id = get_queried_object_id();
+						$base_page_url = get_permalink( $current_page_id );
+						if ( ! $base_page_url ) {
 							$base_page_url = home_url( add_query_arg( array(), $wp->request ) );
+						}
 					}
 					// 新しいパラメータを追加
 					$redirect_url = add_query_arg(
@@ -245,77 +269,30 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
             </script>';
 					exit;
 				}
-				// 検索結果が複数ある場合の処理
+				// 検索結果が複数ある場合の処理（顧客タブと同様にリダイレクトし、GETでダイアログ表示）
 				elseif ( count( $results ) > 1 ) {
-					// 顧客タブと同じく、base_page_urlを使い絶対パスでリンク生成
-					global $wp;
-					$current_page_id = get_queried_object_id();
-					$base_page_url = add_query_arg( array( 'page_id' => $current_page_id ), home_url( $wp->request ) );
-					$search_results_html = "<div class='data_contents'><div class='search_list_box'><div class='data_list_title'>■ 検索結果が複数あります！</div><ul>";
-					foreach ( $results as $row ) {
-						$id = esc_html( $row->id );
-						$company_name = esc_html( $row->company_name );
-						$category = esc_html( $row->category );
-						$link_url = esc_url(
-                            add_query_arg(
-                                array(
-									'tab_name' => $tab_name,
-									'data_id' => $id,
-									'query_post' => 'update',
-                                ),
-                                $base_page_url
-                            )
-                        );
-						$search_results_html .= "<li style='text-align:left;'><a href='{$link_url}' style='text-align:left;'>ID：{$id} 会社名：{$company_name} カテゴリー：{$category}</a></li>";
+					$redirect_base = wp_get_referer();
+					if ( ! $redirect_base || $redirect_base === '' ) {
+						$redirect_base = home_url( wp_unslash( isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : '/' ) );
 					}
-					$search_results_html .= '</ul></div></div>';
-					$search_results_html_js = json_encode( $search_results_html );
-					$close_redirect_url = esc_url(
-                        add_query_arg(
-                            array(
-								'tab_name' => $tab_name,
-								'query_post' => 'srcmode',
-                            ),
-                            $base_page_url
-                        )
-                    );
-					echo "<script>
-            document.addEventListener('DOMContentLoaded', function() {
-                var searchResultsHtml = $search_results_html_js;
-                var popup = document.createElement('div');
-                popup.innerHTML = searchResultsHtml;
-                popup.style.position = 'fixed';
-                popup.style.top = '50%';
-                popup.style.left = '50%';
-                popup.style.transform = 'translate(-50%, -50%)';
-                popup.style.backgroundColor = '#fff';
-                popup.style.padding = '20px';
-                popup.style.zIndex = '1000';
-                popup.style.width = '80%';
-                popup.style.maxWidth = '600px';
-                popup.style.border = '1px solid #ccc';
-                popup.style.borderRadius = '5px';
-                popup.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
-                document.body.appendChild(popup);
-                // ポップアップを閉じるためのボタンを追加
-                var closeButton = document.createElement('button');
-                closeButton.textContent = '閉じる';
-                closeButton.style.fontSize = '0.8em';
-                closeButton.style.color = 'black';
-                closeButton.style.display = 'block';
-                closeButton.style.margin = '10px auto 0';
-                closeButton.style.padding = '10px';
-                closeButton.style.backgroundColor = '#cdcccc';
-                closeButton.style.borderRadius = '5px';
-                closeButton.style.borderColor = '#999';
-                closeButton.onclick = function() {
-                    document.body.removeChild(popup);
-                    // 元の検索モードに戻るために特定のURLにリダイレクト（srcmodeに戻す）
-                    location.href = '" . $close_redirect_url . "';
-                };
-                popup.appendChild(closeButton);
-            });
-            </script>";
+					if ( ! $redirect_base ) {
+						global $wp;
+						$current_page_id = get_queried_object_id();
+						$redirect_base = get_permalink( $current_page_id );
+						if ( ! $redirect_base ) {
+							$redirect_base = add_query_arg( array( 'page_id' => $current_page_id ), home_url( $wp->request ) );
+						}
+					}
+					$redirect_url = add_query_arg(
+						array(
+							'tab_name' => $tab_name,
+							'multiple_results' => '1',
+							'search_query' => $search_query,
+						),
+						$redirect_base
+					);
+					wp_safe_redirect( $redirect_url );
+					exit;
 				}
 				// 検索結果が0件の場合の処理
 				else {
@@ -650,6 +627,89 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 
 			// 現在のページのURLを生成（動的パーマリンク取得）
 			$base_page_url = KTPWP_Main::get_current_page_base_url();
+
+			// 検索結果が複数ある場合：リダイレクト後のGETでダイアログにリストを表示（顧客タブと同様）
+			if ( isset( $_GET['multiple_results'] ) && $_GET['multiple_results'] === '1' && ! empty( $_GET['search_query'] ) ) {
+				$search_query_multiple = sanitize_text_field( wp_unslash( $_GET['search_query'] ) );
+				$like_pattern = '%' . $wpdb->esc_like( $search_query_multiple ) . '%';
+				$multi_results = $wpdb->get_results(
+					$wpdb->prepare(
+						"SELECT * FROM {$table_name} WHERE (COALESCE(search_field,'') LIKE %s OR company_name LIKE %s OR name LIKE %s) ORDER BY id DESC",
+						$like_pattern,
+						$like_pattern,
+						$like_pattern
+					)
+				);
+				if ( ! empty( $multi_results ) ) {
+					$search_results_html = "<div class='data_contents'><div class='search_list_box'><div class='data_list_title'>■ " . esc_html__( '検索結果が複数あります！', 'ktpwp' ) . "</div><ul>";
+					foreach ( $multi_results as $row ) {
+						$id = esc_html( (string) $row->id );
+						$company_name = esc_html( isset( $row->company_name ) ? $row->company_name : '' );
+						$disp_name = esc_html( isset( $row->name ) ? $row->name : '' );
+						$category = esc_html( isset( $row->category ) ? $row->category : '' );
+						$link_url = esc_url(
+							add_query_arg(
+								array(
+									'tab_name' => $name,
+									'data_id' => (int) $row->id,
+									'query_post' => 'update',
+								),
+								$base_page_url
+							)
+						);
+						$search_results_html .= "<li style='text-align:left;'><a href='" . $link_url . "' style='text-align:left;'>ID：" . $id . " 会社名：" . $company_name . " 名前：" . $disp_name . ( $category !== '' ? " カテゴリー：" . $category : '' ) . "</a></li>";
+					}
+					$search_results_html .= '</ul></div></div>';
+					$search_results_html_js = wp_json_encode( $search_results_html );
+					// 閉じる＝検索モードへ。現在のリクエストURLからダイアログ用パラメータを除き検索モード用のみ付与
+					$close_redirect_base = home_url( wp_unslash( isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : '/' ) );
+					$close_redirect_base = remove_query_arg( array( 'multiple_results', 'search_query', 'message' ), $close_redirect_base );
+					$close_redirect_url = esc_url(
+						add_query_arg(
+							array(
+								'tab_name' => $name,
+								'query_post' => 'srcmode',
+							),
+							$close_redirect_base
+						)
+					);
+					$search_results_list = "<script>
+document.addEventListener('DOMContentLoaded', function() {
+	var searchResultsHtml = " . $search_results_html_js . ";
+	var popup = document.createElement('div');
+	popup.innerHTML = searchResultsHtml;
+	popup.style.position = 'fixed';
+	popup.style.top = '50%';
+	popup.style.left = '50%';
+	popup.style.transform = 'translate(-50%, -50%)';
+	popup.style.backgroundColor = '#fff';
+	popup.style.padding = '20px';
+	popup.style.zIndex = '10001';
+	popup.style.width = '80%';
+	popup.style.maxWidth = '600px';
+	popup.style.border = '1px solid #ccc';
+	popup.style.borderRadius = '5px';
+	popup.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
+	document.body.appendChild(popup);
+	var closeButton = document.createElement('button');
+	closeButton.textContent = '" . esc_js( __( '閉じる', 'ktpwp' ) ) . "';
+	closeButton.style.fontSize = '0.8em';
+	closeButton.style.color = 'black';
+	closeButton.style.display = 'block';
+	closeButton.style.margin = '10px auto 0';
+	closeButton.style.padding = '10px';
+	closeButton.style.backgroundColor = '#cdcccc';
+	closeButton.style.borderRadius = '5px';
+	closeButton.style.borderColor = '#999';
+	closeButton.onclick = function() {
+		document.body.removeChild(popup);
+		location.href = '" . $close_redirect_url . "';
+	};
+	popup.appendChild(closeButton);
+});
+</script>";
+				}
+			}
 
             // -----------------------------
 			// ページネーションリンク
@@ -1217,6 +1277,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 				$data_forms = '<div class="search-mode-form ktpwp-search-form" style="background-color: #f8f9fa !important; border: 2px solid #0073aa !important; border-radius: 8px !important; padding: 20px !important; margin: 10px 0 !important; box-shadow: 0 2px 8px rgba(0, 115, 170, 0.1) !important;">';
 				$data_forms .= '<form method="post" action="' . esc_url( $form_action_base_url ) . '">';
 				$data_forms .= function_exists( 'wp_nonce_field' ) ? wp_nonce_field( 'ktp_supplier_action', 'ktp_supplier_nonce', true, false ) : '';
+				$data_forms .= '<input type="hidden" name="tab_name" value="' . esc_attr( $name ) . '">';
 				// 検索クエリの値を取得（POSTが優先、次にGET）
 				$search_query_value = '';
 				if ( isset( $_POST['search_query'] ) ) {
@@ -1408,8 +1469,10 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 				$data_forms .= "<input type=\"hidden\" name=\"data_id\" value=\"{$query_id}\">";
 				$data_forms .= '<input type="hidden" name="query_post" value="update">';
 
-				// 検索リストを生成
-				$data_forms .= $search_results_list;
+				// 検索結果複数時のダイアログ（顧客・サービスと同様にフォーム直前に1回だけ出力）
+				if ( ! empty( $search_results_list ) ) {
+					$data_forms .= $search_results_list;
+				}
 				$data_forms .= "<div class='button'>";
 				// 更新ボタンのみ残す
 				$data_forms .= '<button type="submit" name="send_post" title="更新する"><span class="material-symbols-outlined">cached</span></button>';
@@ -1524,8 +1587,8 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
         </div>
         END;
 
-			// コンテンツを返す - 協力会社職能BOXを協力会社リストBOXの内部に配置
-			$content = $print . $data_list . $skills_section . $data_title . $data_forms . $search_results_list . $div_end;
+			// コンテンツを返す（検索複数時ダイアログは $data_forms 内で既に出力済み）
+			$content = $print . $data_list . $skills_section . $data_title . $data_forms . $div_end;
 			return $content;
 		}
 

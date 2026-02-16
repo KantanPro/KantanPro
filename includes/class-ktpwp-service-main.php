@@ -249,6 +249,101 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 			// 現在のページのURLを生成（動的パーマリンク取得）
 			$base_page_url = KTPWP_Main::get_current_page_base_url();
 
+			// 検索結果が複数ある場合：リダイレクト後のGETでダイアログにリストを表示（顧客タブと同様）
+			$service_search_results_script = '';
+			if ( isset( $_GET['multiple_results'] ) && $_GET['multiple_results'] === '1' ) {
+				$search_service_name = isset( $_GET['search_service_name'] ) ? sanitize_text_field( wp_unslash( $_GET['search_service_name'] ) ) : '';
+				$search_category = isset( $_GET['search_category'] ) ? sanitize_text_field( wp_unslash( $_GET['search_category'] ) ) : '';
+				if ( $search_service_name !== '' || $search_category !== '' ) {
+					$where_conditions = array();
+					$where_values = array();
+					if ( $search_service_name !== '' ) {
+						$where_conditions[] = '(COALESCE(service_name,\'\') LIKE %s OR COALESCE(search_field,\'\') LIKE %s)';
+						$name_like = '%' . $wpdb->esc_like( $search_service_name ) . '%';
+						$where_values[] = $name_like;
+						$where_values[] = $name_like;
+					}
+					if ( $search_category !== '' ) {
+						$where_conditions[] = '(COALESCE(category,\'\') LIKE %s OR COALESCE(search_field,\'\') LIKE %s)';
+						$cat_like = '%' . $wpdb->esc_like( $search_category ) . '%';
+						$where_values[] = $cat_like;
+						$where_values[] = $cat_like;
+					}
+					if ( ! empty( $where_conditions ) ) {
+						$where_clause = ' WHERE ' . implode( ' AND ', $where_conditions );
+						$multi_query = "SELECT * FROM {$table_name}" . $where_clause . ' ORDER BY id DESC';
+						$multi_results = $wpdb->get_results( $wpdb->prepare( $multi_query, $where_values ) );
+						if ( ! empty( $multi_results ) ) {
+							$search_results_html = "<div class='data_contents'><div class='search_list_box'><div class='data_list_title'>■ " . esc_html__( '検索結果が複数あります！', 'ktpwp' ) . "</div><ul>";
+							foreach ( $multi_results as $row ) {
+								$id = esc_html( (string) $row->id );
+								$service_name = esc_html( isset( $row->service_name ) ? $row->service_name : '' );
+								$category = esc_html( isset( $row->category ) ? $row->category : '' );
+								$price = isset( $row->price ) ? esc_html( (string) $row->price ) : '';
+								$link_url = esc_url(
+									add_query_arg(
+										array(
+											'tab_name' => $name,
+											'data_id' => (int) $row->id,
+										),
+										$base_page_url
+									)
+								);
+								$search_results_html .= "<li style='text-align:left;'><a href='" . $link_url . "' style='text-align:left;'>ID：" . $id . " サービス名：" . $service_name . ( $category !== '' ? " カテゴリー：" . $category : '' ) . ( $price !== '' ? " 価格：" . $price : '' ) . "</a></li>";
+							}
+							$search_results_html .= '</ul></div></div>';
+							$search_results_html_js = wp_json_encode( $search_results_html );
+							// 閉じる＝サービスタブの通常表示へ。現在のリクエストURLからダイアログ用パラメータを除く
+							$close_redirect_base = home_url( wp_unslash( isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : '/' ) );
+							$close_redirect_base = remove_query_arg( array( 'multiple_results', 'search_service_name', 'search_category', 'message' ), $close_redirect_base );
+							$close_redirect_url = esc_url(
+								add_query_arg(
+									array(
+										'tab_name' => $name,
+									),
+									$close_redirect_base
+								)
+							);
+							$service_search_results_script = "<script>
+document.addEventListener('DOMContentLoaded', function() {
+	var searchResultsHtml = " . $search_results_html_js . ";
+	var popup = document.createElement('div');
+	popup.innerHTML = searchResultsHtml;
+	popup.style.position = 'fixed';
+	popup.style.top = '50%';
+	popup.style.left = '50%';
+	popup.style.transform = 'translate(-50%, -50%)';
+	popup.style.backgroundColor = '#fff';
+	popup.style.padding = '20px';
+	popup.style.zIndex = '10001';
+	popup.style.width = '80%';
+	popup.style.maxWidth = '600px';
+	popup.style.border = '1px solid #ccc';
+	popup.style.borderRadius = '5px';
+	popup.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
+	document.body.appendChild(popup);
+	var closeButton = document.createElement('button');
+	closeButton.textContent = '" . esc_js( __( '閉じる', 'ktpwp' ) ) . "';
+	closeButton.style.fontSize = '0.8em';
+	closeButton.style.color = 'black';
+	closeButton.style.display = 'block';
+	closeButton.style.margin = '10px auto 0';
+	closeButton.style.padding = '10px';
+	closeButton.style.backgroundColor = '#cdcccc';
+	closeButton.style.borderRadius = '5px';
+	closeButton.style.borderColor = '#999';
+	closeButton.onclick = function() {
+		document.body.removeChild(popup);
+		location.href = '" . $close_redirect_url . "';
+	};
+	popup.appendChild(closeButton);
+});
+</script>";
+						}
+					}
+				}
+			}
+
 			// 表示範囲（1ページあたりの表示件数）
 			// 一般設定から表示件数を取得（設定クラスが利用可能な場合）
 			if ( class_exists( 'KTPWP_Settings' ) ) {
@@ -530,55 +625,57 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 
 			$data_forms = ''; // フォームのHTMLコードを格納する変数を初期化
 
-			// 検索モードの場合は検索フォームを表示
+			// 検索モードの場合は検索フォームを表示（顧客・協力会社と同じデザイン）
 			if ( $search_mode ) {
-				// 検索フォームの表示
 				$data_title = '<div class="data_detail_box search-mode">' .
-                          '<div class="data_detail_title">■ ' . esc_html__( 'サービス検索', 'ktpwp' ) . '</div>';
+					'<div class="data_detail_title">■ ' . esc_html__( 'サービスの詳細（検索モード）', 'ktpwp' ) . '</div>';
 
-				// 検索フォーム
-				$data_forms .= '<form method="post" action="" class="search-form">';
+				// 検索モード用のフォーム（顧客・協力会社と同じ構造・装飾）
+				$data_forms = '<div class="search-mode-form ktpwp-search-form" style="background-color: #f8f9fa !important; border: 2px solid #0073aa !important; border-radius: 8px !important; padding: 20px !important; margin: 10px 0 !important; box-shadow: 0 2px 8px rgba(0, 115, 170, 0.1) !important;">';
+				$data_forms .= '<form method="post" action="">';
 				if ( function_exists( 'wp_nonce_field' ) ) {
 					$data_forms .= wp_nonce_field( 'ktp_service_action', '_ktp_service_nonce', true, false );
 				}
+				$data_forms .= '<input type="hidden" name="tab_name" value="' . esc_attr( $name ) . '">';
 
-				// 検索フィールド
-				$data_forms .= '<div class="form-group">';
-				$data_forms .= '<label>' . esc_html__( 'サービス名で検索', 'ktpwp' ) . '：</label>';
-				$data_forms .= '<input type="text" name="search_service_name" placeholder="' . esc_attr__( 'サービス名を入力', 'ktpwp' ) . '" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">';
+				// 検索条件の値を取得（POSTが優先、次にGET）
+				$search_service_name_value = isset( $_POST['search_service_name'] ) ? esc_attr( wp_unslash( $_POST['search_service_name'] ) ) : ( isset( $_GET['search_service_name'] ) ? esc_attr( urldecode( wp_unslash( $_GET['search_service_name'] ) ) ) : '' );
+				$search_category_value = isset( $_POST['search_category'] ) ? esc_attr( wp_unslash( $_POST['search_category'] ) ) : ( isset( $_GET['search_category'] ) ? esc_attr( urldecode( wp_unslash( $_GET['search_category'] ) ) ) : '' );
+
+				$data_forms .= '<div class="form-group" style="margin-bottom: 15px !important;">';
+				$data_forms .= '<input type="text" name="search_service_name" placeholder="' . esc_attr__( 'サービス名を入力', 'ktpwp' ) . '" value="' . $search_service_name_value . '" style="width: 100% !important; padding: 12px !important; font-size: 16px !important; border: 2px solid #ddd !important; border-radius: 5px !important; box-sizing: border-box !important; transition: border-color 0.3s ease !important;">';
 				$data_forms .= '</div>';
 
-				$data_forms .= '<div class="form-group">';
-				$data_forms .= '<label>' . esc_html__( 'カテゴリーで検索', 'ktpwp' ) . '：</label>';
-				$data_forms .= '<input type="text" name="search_category" placeholder="' . esc_attr__( 'カテゴリーを入力', 'ktpwp' ) . '" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">';
+				$data_forms .= '<div class="form-group" style="margin-bottom: 15px !important;">';
+				$data_forms .= '<input type="text" name="search_category" placeholder="' . esc_attr__( 'カテゴリーを入力', 'ktpwp' ) . '" value="' . $search_category_value . '" style="width: 100% !important; padding: 12px !important; font-size: 16px !important; border: 2px solid #ddd !important; border-radius: 5px !important; box-sizing: border-box !important; transition: border-color 0.3s ease !important;">';
 				$data_forms .= '</div>';
 
-				// 検索ボタン群
-				$data_forms .= '<div class="search-button-group" style="margin-top: 20px; display: flex; gap: 10px;">';
+				// ボタンを横並び（顧客・協力会社と同じ）
+				$data_forms .= '<div class="button-group" style="display: flex; gap: 10px; margin-top: 15px !important; justify-content: flex-end !important;">';
 
-				// 検索実行ボタン
 				$data_forms .= '<input type="hidden" name="query_post" value="search_execute">';
-				$data_forms .= '<button type="submit" name="send_post" title="' . esc_attr__( '検索実行', 'ktpwp' ) . '" style="background-color: #0073aa; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 5px;">';
-				$data_forms .= '<span class="material-symbols-outlined" style="font-size: 18px;">search</span>';
+				$data_forms .= '<button type="submit" name="send_post" title="' . esc_attr__( '検索実行', 'ktpwp' ) . '" class="search-submit-btn" style="background-color: #0073aa !important; color: white !important; border: none !important; padding: 10px 20px !important; cursor: pointer !important; border-radius: 5px !important; display: flex !important; align-items: center !important; gap: 5px !important; font-size: 14px !important; font-weight: 500 !important; transition: all 0.3s ease !important;">';
+				$data_forms .= '<span class="material-symbols-outlined" style="font-size: 18px !important;">search</span>';
 				$data_forms .= esc_html__( '検索実行', 'ktpwp' );
 				$data_forms .= '</button>';
 				$data_forms .= '</form>';
 
-				// キャンセルボタン（別フォーム）
-				$data_forms .= '<form method="post" action="" style="margin: 0;">';
+				// キャンセルボタン（独立したフォーム・顧客・協力会社と同じスタイル）
+				$data_forms .= '<form method="post" action="" style="margin: 0 !important;">';
 				if ( function_exists( 'wp_nonce_field' ) ) {
 					$data_forms .= wp_nonce_field( 'ktp_service_action', '_ktp_service_nonce', true, false );
 				}
+				$data_forms .= '<input type="hidden" name="tab_name" value="' . esc_attr( $name ) . '">';
 				$data_forms .= '<input type="hidden" name="query_post" value="search_cancel">';
-				$data_forms .= '<button type="submit" name="send_post" title="' . esc_attr__( '検索キャンセル', 'ktpwp' ) . '" style="background-color: #666; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 5px;">';
-				$data_forms .= '<span class="material-symbols-outlined" style="font-size: 18px;">close</span>';
+				$data_forms .= '<button type="submit" name="send_post" title="' . esc_attr__( 'キャンセル', 'ktpwp' ) . '" style="background-color: #666 !important; color: white !important; border: none !important; padding: 10px 20px !important; cursor: pointer !important; border-radius: 5px !important; display: flex !important; align-items: center !important; gap: 5px !important; font-size: 14px !important; font-weight: 500 !important; transition: all 0.3s ease !important;">';
+				$data_forms .= '<span class="material-symbols-outlined" style="font-size: 18px !important;">disabled_by_default</span>';
 				$data_forms .= esc_html__( 'キャンセル', 'ktpwp' );
 				$data_forms .= '</button>';
 				$data_forms .= '</form>';
 
-				$data_forms .= '</div>'; // search-button-group の終了
-				// Removed: $data_forms .= '</div>'; // data_detail_box の終了 (This was incorrectly closing the detail box here)
-
+				$data_forms .= '</div>'; // button-group の閉じタグ
+				$data_forms .= '</div>'; // search-mode-form の閉じタグ
+				$data_forms .= '</div>'; // data_detail_box の閉じタグ
 			}
 			// 空のフォームを表示(追加モードの場合)
 			elseif ( $action === 'istmode' ) {
@@ -938,8 +1035,8 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
         </div>
         END;
 
-			// コンテンツを返す
-			$content = $message . $print . '<div class="data_contents">' . $data_list . $data_title . $data_forms . $div_end . '</div> <!-- data_contentsの終了 -->';
+			// コンテンツを返す（複数検索結果ダイアログ用スクリプトを含む）
+			$content = $message . $print . '<div class="data_contents">' . $data_list . $data_title . $data_forms . $service_search_results_script . $div_end . '</div> <!-- data_contentsの終了 -->';
 			return $content;
 		}
 

@@ -287,13 +287,16 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 					}
 					$search_results_html .= '</ul></div></div>';
 					$search_results_html_js = wp_json_encode( $search_results_html );
+					// 閉じる＝検索モードへ。現在のリクエストURLからダイアログ用パラメータを除き検索モード用のみ付与
+					$close_redirect_base = home_url( wp_unslash( isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : '/' ) );
+					$close_redirect_base = remove_query_arg( array( 'multiple_results', 'search_query', 'message' ), $close_redirect_base );
 					$close_redirect_url = esc_url(
 						add_query_arg(
 							array(
 								'tab_name' => $name,
 								'query_post' => 'srcmode',
 							),
-							$base_page_url
+							$close_redirect_base
 						)
 					);
 					$search_results_list = "<script>
