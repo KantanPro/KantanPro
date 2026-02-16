@@ -550,6 +550,25 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 					} else {
 						// 検索結果が無い場合
 						$_SESSION['ktp_service_search_message'] = esc_html__( '該当するサービスが見つかりませんでした。条件を変更して再検索してください。', 'ktpwp' );
+						$_SESSION['ktp_service_search_mode'] = true;
+
+						// 0件時は必ず検索モードへ戻す（istmode混在を防止）
+						$redirect_base = remove_query_arg(
+							array( 'query_post', 'data_id', 'message', 'multiple_results' ),
+							$redirect_base
+						);
+						$url = add_query_arg(
+							array(
+								'tab_name' => $tab_name,
+								'query_post' => 'srcmode',
+								'search_service_name' => $search_service_name,
+								'search_category' => $search_category,
+							),
+							$redirect_base
+						);
+						$wpdb->query( 'UNLOCK TABLES;' );
+						wp_safe_redirect( $url );
+						exit;
 					}
 				}
 
