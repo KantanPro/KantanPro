@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.1.7
+Stable tag: 1.1.8
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -324,6 +324,9 @@ curl -sS -X POST \
 * 推奨PHP拡張: GD（画像処理用）
 
 == 変更履歴 ==
+
+= 1.1.8 - 2026年02月17日 =
+* 検索機能の改善（リダイレクト処理にno_resultsパラメータを追加し、該当なしメッセージの表示を強化）
 
 = 1.1.7 - 2026年02月16日 =
 * 検索機能の改善（未入力時のリダイレクト処理と該当なしメッセージの表示を追加）
