@@ -254,7 +254,8 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 			// 現在のページのURLを生成（動的パーマリンク取得）
 			$base_page_url = KTPWP_Main::get_current_page_base_url();
 
-			// 検索結果が複数ある場合：リダイレクト後のGETでダイアログにリストを表示
+			// 検索結果が複数ある場合：リダイレクト後のGETでダイアログにリストを表示（協力会社タブと同じ方式）
+			// HTMLは hidden div に置きスクリプトで読み取る方式で、JSON埋め込みによる構文エラーを防ぐ
 			if ( isset( $_GET['multiple_results'] ) && $_GET['multiple_results'] === '1' && ! empty( $_GET['search_query'] ) ) {
 				$search_query_multiple = sanitize_text_field( wp_unslash( $_GET['search_query'] ) );
 				$like_pattern = '%' . $wpdb->esc_like( $search_query_multiple ) . '%';
@@ -267,6 +268,7 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 					)
 				);
 				if ( ! empty( $multi_results ) ) {
+					$multi_results_id = 'ktp-client-multi-results-' . wp_rand( 10000, 99999 );
 					$search_results_html = "<div class='data_contents'><div class='search_list_box'><div class='data_list_title'>■ " . esc_html__( '検索結果が複数あります！', 'ktpwp' ) . "</div><ul>";
 					foreach ( $multi_results as $row ) {
 						$id = esc_html( (string) $row->id );
@@ -286,7 +288,6 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 						$search_results_html .= "<li style='text-align:left;'><a href='" . $link_url . "' style='text-align:left;'>ID：" . $id . " 会社名：" . $company_name . " 名前：" . $disp_name . ( $category !== '' ? " カテゴリー：" . $category : '' ) . "</a></li>";
 					}
 					$search_results_html .= '</ul></div></div>';
-					$search_results_html_js = wp_json_encode( $search_results_html );
 					// 閉じる＝検索モードへ。現在のリクエストURLからダイアログ用パラメータを除き検索モード用のみ付与
 					$close_redirect_base = home_url( wp_unslash( isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : '/' ) );
 					$close_redirect_base = remove_query_arg( array( 'multiple_results', 'search_query', 'message' ), $close_redirect_base );
@@ -299,41 +300,29 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 							$close_redirect_base
 						)
 					);
-					$search_results_list = "<script>
-document.addEventListener('DOMContentLoaded', function() {
-	var searchResultsHtml = " . $search_results_html_js . ";
-	var popup = document.createElement('div');
-	popup.innerHTML = searchResultsHtml;
-	popup.style.position = 'fixed';
-	popup.style.top = '50%';
-	popup.style.left = '50%';
-	popup.style.transform = 'translate(-50%, -50%)';
-	popup.style.backgroundColor = '#fff';
-	popup.style.padding = '20px';
-	popup.style.zIndex = '10001';
-	popup.style.width = '80%';
-	popup.style.maxWidth = '600px';
-	popup.style.border = '1px solid #ccc';
-	popup.style.borderRadius = '5px';
-	popup.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
-	document.body.appendChild(popup);
-	var closeButton = document.createElement('button');
-	closeButton.textContent = '" . esc_js( __( '閉じる', 'ktpwp' ) ) . "';
-	closeButton.style.fontSize = '0.8em';
-	closeButton.style.color = 'black';
-	closeButton.style.display = 'block';
-	closeButton.style.margin = '10px auto 0';
-	closeButton.style.padding = '10px';
-	closeButton.style.backgroundColor = '#cdcccc';
-	closeButton.style.borderRadius = '5px';
-	closeButton.style.borderColor = '#999';
-	closeButton.onclick = function() {
-		document.body.removeChild(popup);
-		location.href = '" . $close_redirect_url . "';
+					$search_results_list = '<div id="' . esc_attr( $multi_results_id ) . '" style="display:none;">' . $search_results_html . '</div>' . "\n" . '<script>
+(function() {
+	var run = function() {
+		var el = document.getElementById("' . esc_js( $multi_results_id ) . '");
+		if (!el) return;
+		var searchResultsHtml = el.innerHTML;
+		var popup = document.createElement("div");
+		popup.innerHTML = searchResultsHtml;
+		popup.style.cssText = "position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;padding:20px;z-index:10001;width:80%;max-width:600px;border:1px solid #ccc;border-radius:5px;box-shadow:0 4px 6px rgba(0,0,0,0.1)";
+		document.body.appendChild(popup);
+		var closeBtn = document.createElement("button");
+		closeBtn.textContent = "' . esc_js( __( '閉じる', 'ktpwp' ) ) . '";
+		closeBtn.style.cssText = "font-size:0.8em;color:#000;display:block;margin:10px auto 0;padding:10px;background:#cdcccc;border-radius:5px;border-color:#999;cursor:pointer";
+		closeBtn.onclick = function() { document.body.removeChild(popup); location.href = "' . esc_js( $close_redirect_url ) . '"; };
+		popup.appendChild(closeBtn);
 	};
-	popup.appendChild(closeButton);
-});
-</script>";
+	if (document.readyState === "loading") {
+		document.addEventListener("DOMContentLoaded", run);
+	} else {
+		run();
+	}
+})();
+</script>';
 				}
 			}
 

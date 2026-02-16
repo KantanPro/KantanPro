@@ -252,7 +252,8 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 			// 現在のページのURLを生成（動的パーマリンク取得）
 			$base_page_url = KTPWP_Main::get_current_page_base_url();
 
-			// 検索結果が複数ある場合：リダイレクト後のGETでダイアログにリストを表示（顧客タブと同様）
+			// 検索結果が複数ある場合：リダイレクト後のGETでダイアログにリストを表示（協力会社タブと同じ方式）
+			// HTMLは hidden div に置きスクリプトで読み取る方式で、JSON埋め込みによる構文エラーを防ぐ
 			$service_search_results_script = '';
 			if ( isset( $_GET['multiple_results'] ) && $_GET['multiple_results'] === '1' ) {
 				$search_service_name = isset( $_GET['search_service_name'] ) ? sanitize_text_field( wp_unslash( $_GET['search_service_name'] ) ) : '';
@@ -277,6 +278,7 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 						$multi_query = "SELECT * FROM {$table_name}" . $where_clause . ' ORDER BY id DESC';
 						$multi_results = $wpdb->get_results( $wpdb->prepare( $multi_query, $where_values ) );
 						if ( ! empty( $multi_results ) ) {
+							$multi_results_id = 'ktp-service-multi-results-' . wp_rand( 10000, 99999 );
 							$search_results_html = "<div class='data_contents'><div class='search_list_box'><div class='data_list_title'>■ " . esc_html__( '検索結果が複数あります！', 'ktpwp' ) . "</div><ul>";
 							foreach ( $multi_results as $row ) {
 								$id = esc_html( (string) $row->id );
@@ -288,6 +290,7 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 										array(
 											'tab_name' => $name,
 											'data_id' => (int) $row->id,
+											'query_post' => 'update',
 										),
 										$base_page_url
 									)
@@ -295,53 +298,41 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 								$search_results_html .= "<li style='text-align:left;'><a href='" . $link_url . "' style='text-align:left;'>ID：" . $id . " サービス名：" . $service_name . ( $category !== '' ? " カテゴリー：" . $category : '' ) . ( $price !== '' ? " 価格：" . $price : '' ) . "</a></li>";
 							}
 							$search_results_html .= '</ul></div></div>';
-							$search_results_html_js = wp_json_encode( $search_results_html );
-							// 閉じる＝サービスタブの通常表示へ。現在のリクエストURLからダイアログ用パラメータを除く
+							// 閉じる＝検索モードへ。現在のリクエストURLからダイアログ用パラメータを除き検索モード用のみ付与
 							$close_redirect_base = home_url( wp_unslash( isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : '/' ) );
 							$close_redirect_base = remove_query_arg( array( 'multiple_results', 'search_service_name', 'search_category', 'message' ), $close_redirect_base );
 							$close_redirect_url = esc_url(
 								add_query_arg(
 									array(
 										'tab_name' => $name,
+										'query_post' => 'srcmode',
 									),
 									$close_redirect_base
 								)
 							);
-							$service_search_results_script = "<script>
-document.addEventListener('DOMContentLoaded', function() {
-	var searchResultsHtml = " . $search_results_html_js . ";
-	var popup = document.createElement('div');
-	popup.innerHTML = searchResultsHtml;
-	popup.style.position = 'fixed';
-	popup.style.top = '50%';
-	popup.style.left = '50%';
-	popup.style.transform = 'translate(-50%, -50%)';
-	popup.style.backgroundColor = '#fff';
-	popup.style.padding = '20px';
-	popup.style.zIndex = '10001';
-	popup.style.width = '80%';
-	popup.style.maxWidth = '600px';
-	popup.style.border = '1px solid #ccc';
-	popup.style.borderRadius = '5px';
-	popup.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
-	document.body.appendChild(popup);
-	var closeButton = document.createElement('button');
-	closeButton.textContent = '" . esc_js( __( '閉じる', 'ktpwp' ) ) . "';
-	closeButton.style.fontSize = '0.8em';
-	closeButton.style.color = 'black';
-	closeButton.style.display = 'block';
-	closeButton.style.margin = '10px auto 0';
-	closeButton.style.padding = '10px';
-	closeButton.style.backgroundColor = '#cdcccc';
-	closeButton.style.borderRadius = '5px';
-	closeButton.style.borderColor = '#999';
-	closeButton.onclick = function() {
-		document.body.removeChild(popup);
-		location.href = '" . $close_redirect_url . "';
+							$service_search_results_script = '<div id="' . esc_attr( $multi_results_id ) . '" style="display:none;">' . $search_results_html . '</div>' . "\n" . '<script>
+(function() {
+	var run = function() {
+		var el = document.getElementById("' . esc_js( $multi_results_id ) . '");
+		if (!el) return;
+		var searchResultsHtml = el.innerHTML;
+		var popup = document.createElement("div");
+		popup.innerHTML = searchResultsHtml;
+		popup.style.cssText = "position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;padding:20px;z-index:10001;width:80%;max-width:600px;border:1px solid #ccc;border-radius:5px;box-shadow:0 4px 6px rgba(0,0,0,0.1)";
+		document.body.appendChild(popup);
+		var closeBtn = document.createElement("button");
+		closeBtn.textContent = "' . esc_js( __( '閉じる', 'ktpwp' ) ) . '";
+		closeBtn.style.cssText = "font-size:0.8em;color:#000;display:block;margin:10px auto 0;padding:10px;background:#cdcccc;border-radius:5px;border-color:#999;cursor:pointer";
+		closeBtn.onclick = function() { document.body.removeChild(popup); location.href = "' . esc_js( $close_redirect_url ) . '"; };
+		popup.appendChild(closeBtn);
 	};
-	popup.appendChild(closeButton);
-});
-</script>";
+	if (document.readyState === "loading") {
+		document.addEventListener("DOMContentLoaded", run);
+	} else {
+		run();
+	}
+})();
+</script>';
 						}
 					}
 				}
