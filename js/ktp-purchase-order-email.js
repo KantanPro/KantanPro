@@ -8,12 +8,13 @@
 (function($) {
     'use strict';
 
-    // 発注メールポップアップを表示
-    window.ktpShowPurchaseOrderEmailPopup = function(orderId, supplierName) {
+    // 発注メールポップアップを表示（supplierIdは省略可。あると協力会社の検索が安定する）
+    window.ktpShowPurchaseOrderEmailPopup = function(orderId, supplierName, supplierId) {
         if (!orderId || !supplierName) {
             alert('受注書IDまたは協力会社名が指定されていません。');
             return;
         }
+        supplierId = supplierId || 0;
 
         // ポップアップHTML
         const popupHtml = `
@@ -91,11 +92,12 @@
         });
 
         // 発注メール内容を取得
-        loadPurchaseOrderEmailContent(orderId, supplierName);
+        loadPurchaseOrderEmailContent(orderId, supplierName, supplierId);
     };
 
     // 発注メール内容を読み込み
-    function loadPurchaseOrderEmailContent(orderId, supplierName) {
+    function loadPurchaseOrderEmailContent(orderId, supplierName, supplierId) {
+        supplierId = supplierId || 0;
         // Ajax URLの確認と代替設定
         let ajaxUrl = '';
         if (typeof ajaxurl !== 'undefined') {
@@ -139,6 +141,7 @@
                 action: 'get_purchase_order_email_content',
                 order_id: orderId,
                 supplier_name: supplierName,
+                supplier_id: supplierId,
                 nonce: nonce,
                 ktpwp_ajax_nonce: nonce  // 追加: サーバー側で期待されるフィールド名
             },
@@ -146,7 +149,7 @@
                 try {
                     const result = typeof response === 'string' ? JSON.parse(response) : response;
                     if (result.success && result.data) {
-                        displayPurchaseOrderEmailForm(result.data);
+                        displayPurchaseOrderEmailForm(result.data, orderId, supplierName, supplierId);
                     } else {
                         showError('発注メール内容の取得に失敗しました: ' + (result.data ? result.data.message : '不明なエラー'));
                     }
@@ -162,8 +165,11 @@
         });
     }
 
-    // 発注メールフォームを表示
-    function displayPurchaseOrderEmailForm(data) {
+    // 発注メールフォームを表示（orderId, supplierName, supplierId は送信時に必要）
+    function displayPurchaseOrderEmailForm(data, orderId, supplierName, supplierId) {
+        orderId = orderId || 0;
+        supplierName = supplierName || '';
+        supplierId = supplierId || 0;
         const content = `
             <form id="ktp-purchase-order-email-form">
                 <div style="margin-bottom: 15px;">
@@ -229,10 +235,10 @@
 
         $('#ktp-purchase-order-email-popup-content').html(content);
 
-        // イベントハンドラーを設定
+        // イベントハンドラーを設定（orderId, supplierName, supplierId を渡して送信）
         $('#ktp-purchase-order-email-form').on('submit', function(e) {
             e.preventDefault();
-            sendPurchaseOrderEmail(orderId, supplierName);
+            sendPurchaseOrderEmail(orderId, supplierName, supplierId);
         });
 
         // ファイル添付機能のイベントハンドラー
@@ -464,11 +470,13 @@
     }
 
     // 発注メールを送信
-    function sendPurchaseOrderEmail(orderId, supplierName) {
+    function sendPurchaseOrderEmail(orderId, supplierName, supplierId) {
+        supplierId = supplierId || 0;
         const formData = new FormData();
         formData.append('action', 'send_purchase_order_email');
-        formData.append('order_id', orderId);
-        formData.append('supplier_name', supplierName);
+        formData.append('order_id', orderId || '');
+        formData.append('supplier_name', supplierName || '');
+        formData.append('supplier_id', supplierId);
         formData.append('to', $('#email-to').val());
         formData.append('subject', $('#email-subject').val());
         formData.append('body', $('#email-body').val());
@@ -536,20 +544,29 @@
                         showSuccess('発注メールを送信しました。');
                         $('#ktp-purchase-order-email-popup').remove();
                     } else {
-                        showError('メール送信に失敗しました: ' + (result.data ? result.data.message : '不明なエラー'));
+                        const errMsg = result.data && result.data.message ? result.data.message : '不明なエラー';
+                        showErrorInPopup('メール送信に失敗しました: ' + errMsg);
                     }
                 } catch (e) {
                     console.error('[PURCHASE-ORDER-EMAIL] 送信レスポンスパースエラー:', e, response);
-                    showError('メール送信の処理中にエラーが発生しました');
+                    showErrorInPopup('メール送信の処理中にエラーが発生しました（レスポンスが不正です）');
                 }
             },
             error: function(xhr, status, error) {
                 console.error('[PURCHASE-ORDER-EMAIL] 送信エラー:', {xhr, status, error});
-                showError('メール送信中にエラーが発生しました');
+                let errMsg = 'メール送信中にエラーが発生しました。';
+                if (status === 'parsererror') {
+                    errMsg = 'サーバーからの応答が不正です。PHPのエラーや警告が出ている可能性があります。';
+                } else if (xhr && xhr.responseText && xhr.responseText.length < 500) {
+                    errMsg += ' ' + (xhr.responseText.trim().substring(0, 200) || '');
+                }
+                showErrorInPopup(errMsg);
             },
             complete: function() {
-                // 送信ボタンを再有効化
-                $('#ktp-purchase-order-email-send').prop('disabled', false).text('メール送信');
+                var $btn = $('#ktp-purchase-order-email-send');
+                if ($btn.length) {
+                    $btn.prop('disabled', false).text('メール送信');
+                }
             }
         });
     }
@@ -559,9 +576,23 @@
         alert('✓ ' + message);
     }
 
-    // エラーメッセージを表示
+    // エラーメッセージを表示（アラート）
     function showError(message) {
         alert('✗ ' + message);
+    }
+
+    // ポップアップ内にエラー表示と閉じるボタンを表示（送信失敗時）
+    function showErrorInPopup(message) {
+        $('#ktp-purchase-order-email-popup-content').html(
+            '<div style="padding: 24px; text-align: center;">' +
+            '<p style="color: #c62828; font-weight: bold; margin-bottom: 16px;">✗ ' + (message || 'エラーが発生しました').replace(/</g, '&lt;') + '</p>' +
+            '<p style="color: #666; font-size: 13px; margin-bottom: 20px;">ローカル環境ではSMTP未設定で送信できない場合があります。<br>本番でSMTP設定後、再度お試しください。</p>' +
+            '<button type="button" id="ktp-purchase-order-email-error-close" style="padding: 10px 24px; background: #007cba; color: white; border: none; border-radius: 4px; cursor: pointer;">閉じる</button>' +
+            '</div>'
+        );
+        $('#ktp-purchase-order-email-error-close').on('click', function() {
+            $('#ktp-purchase-order-email-popup').remove();
+        });
     }
 
     // 日付をフォーマット

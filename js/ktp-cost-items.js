@@ -1955,6 +1955,9 @@
             supplierName = supplierName.split(' > ')[0];
         }
         
+        // 協力会社ID（リンクまたは同行のhiddenから取得。ID優先でサーバー側の検索を安定させる）
+        const supplierId = $(this).data('supplier-id') || $(this).closest('tr').find('.supplier-id').val() || 0;
+        
         // 必要な変数を明示的に取得
         const orderId = $('input[name="order_id"]').val() || $('#order_id').val();
         const projectName = $('input[name="project_name"]').val() || $('#project_name').val() || '案件名未設定';
@@ -1998,9 +2001,9 @@
             return;
         }
         
-        // 新しい発注メールポップアップ機能を使用
+        // 新しい発注メールポップアップ機能を使用（協力会社IDがあれば渡す）
         if (typeof window.ktpShowPurchaseOrderEmailPopup === 'function') {
-            window.ktpShowPurchaseOrderEmailPopup(orderId, supplierName);
+            window.ktpShowPurchaseOrderEmailPopup(orderId, supplierName, supplierId);
         } else {
             console.error('[PURCHASE-EMAIL] ktpShowPurchaseOrderEmailPopup関数が見つかりません');
             alert('発注メール機能の読み込みに失敗しました。ページを再読み込みしてください。');

@@ -2350,6 +2350,9 @@ class KTPWP_Ajax {
 	 * Ajax: 発注書メール送信
 	 */
 	public function ajax_send_purchase_order_email() {
+		if ( ! headers_sent() ) {
+			ob_start();
+		}
 		try {
 			// セキュリティチェック
 			if ( ! check_ajax_referer( 'ktpwp_ajax_nonce', 'nonce', false ) ) {
@@ -2557,6 +2560,9 @@ class KTPWP_Ajax {
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 					error_log( "KTPWP Purchase Order Email: Successfully sent email to {$to} with " . count( $attachments ) . ' attachments' );
 				}
+				if ( ob_get_level() ) {
+					ob_end_clean();
+				}
 				wp_send_json_success(
 					array(
 						'message'          => '発注書メールを送信しました。',
@@ -2584,6 +2590,9 @@ class KTPWP_Ajax {
 			error_log( 'KTPWP Ajax send_purchase_order_email Error: ' . $e->getMessage() );
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 				error_log( 'KTPWP Ajax send_purchase_order_email Error Stack Trace: ' . $e->getTraceAsString() );
+			}
+			if ( ob_get_level() ) {
+				ob_end_clean();
 			}
 			wp_send_json_error(
 				array(
@@ -4465,6 +4474,10 @@ class KTPWP_Ajax {
 	 * Ajax: 発注書メール内容取得
 	 */
 	public function ajax_get_purchase_order_email_content() {
+		// AJAXレスポンスがJSONのみになるよう、余計な出力（Warning等）を抑止
+		if ( ! headers_sent() ) {
+			ob_start();
+		}
 		try {
 			// セキュリティチェック
 			if ( ! check_ajax_referer( 'ktpwp_ajax_nonce', 'nonce', false ) ) {
@@ -4476,15 +4489,16 @@ class KTPWP_Ajax {
 				throw new Exception( '権限がありません。' );
 			}
 
-			$order_id = isset( $_POST['order_id'] ) ? absint( $_POST['order_id'] ) : 0;
-			$supplier_name = isset( $_POST['supplier_name'] ) ? sanitize_text_field( $_POST['supplier_name'] ) : '';
+			$order_id     = isset( $_POST['order_id'] ) ? absint( $_POST['order_id'] ) : 0;
+			$supplier_id  = isset( $_POST['supplier_id'] ) ? absint( $_POST['supplier_id'] ) : 0;
+			$supplier_name = isset( $_POST['supplier_name'] ) ? trim( sanitize_text_field( wp_unslash( $_POST['supplier_name'] ) ) ) : '';
 
 			if ( $order_id <= 0 ) {
 				throw new Exception( '無効な受注書IDです。' );
 			}
 
-			if ( empty( $supplier_name ) ) {
-				throw new Exception( '協力会社名が指定されていません。' );
+			if ( $supplier_id <= 0 && empty( $supplier_name ) ) {
+				throw new Exception( '協力会社名または協力会社IDが指定されていません。' );
 			}
 
 			global $wpdb;
@@ -4502,18 +4516,30 @@ class KTPWP_Ajax {
 				throw new Exception( '受注書が見つかりません。' );
 			}
 
-			// 協力会社データを取得
+			// 協力会社データを取得（ID優先、なければ会社名で検索。名前は前後空白を無視）
 			$supplier_table = $wpdb->prefix . 'ktp_supplier';
-			$supplier = $wpdb->get_row(
-				$wpdb->prepare(
-					"SELECT * FROM `{$supplier_table}` WHERE company_name = %s",
-					$supplier_name
-				)
-			);
-
+			$supplier = null;
+			if ( $supplier_id > 0 ) {
+				$supplier = $wpdb->get_row(
+					$wpdb->prepare(
+						"SELECT * FROM `{$supplier_table}` WHERE id = %d",
+						$supplier_id
+					)
+				);
+			}
+			if ( ! $supplier && ! empty( $supplier_name ) ) {
+				$supplier = $wpdb->get_row(
+					$wpdb->prepare(
+						"SELECT * FROM `{$supplier_table}` WHERE TRIM(company_name) = %s",
+						$supplier_name
+					)
+				);
+			}
 			if ( ! $supplier ) {
 				throw new Exception( '協力会社が見つかりません。' );
 			}
+			// 以降のコスト項目フィルタでは取得した協力会社の会社名を使用
+			$supplier_name = $supplier->company_name;
 
 			// 顧客データを取得
 			$client_table = $wpdb->prefix . 'ktp_client';
@@ -4607,7 +4633,7 @@ class KTPWP_Ajax {
 						1
 					)
 				);
-				if ( $setting ) {
+				if ( $setting && isset( $setting->my_company_content ) ) {
 					$my_company = sanitize_text_field( strip_tags( $setting->my_company_content ) );
 				}
 			}
@@ -4628,13 +4654,16 @@ class KTPWP_Ajax {
 				$non_qualified_invoice_cost
 			);
 
+			if ( ob_get_level() ) {
+				ob_end_clean();
+			}
 			wp_send_json_success(
 				array(
 					'subject' => $subject,
 					'body' => $body,
-					'supplier_email' => $supplier->email,
-					'supplier_name' => $supplier->name,
-					'supplier_qualified_invoice_number' => $supplier->qualified_invoice_number,
+					'supplier_email' => isset( $supplier->email ) ? $supplier->email : '',
+					'supplier_name' => isset( $supplier->name ) ? $supplier->name : '',
+					'supplier_qualified_invoice_number' => isset( $supplier->qualified_invoice_number ) ? $supplier->qualified_invoice_number : '',
 					'order_info' => array(
 						'project_name' => $order->project_name,
 						'order_date' => $order->order_date,
@@ -4653,6 +4682,9 @@ class KTPWP_Ajax {
 
 		} catch ( Exception $e ) {
 			error_log( 'KTPWP Ajax get_purchase_order_email_content Error: ' . $e->getMessage() );
+			if ( ob_get_level() ) {
+				ob_end_clean();
+			}
 			wp_send_json_error(
 				array(
 					'message' => $e->getMessage(),
@@ -4668,7 +4700,7 @@ class KTPWP_Ajax {
 		$body = '';
 
 		// 協力会社情報
-		$body .= $supplier->company_name . "\n";
+		$body .= ( isset( $supplier->company_name ) ? $supplier->company_name : '' ) . "\n";
 		if ( ! empty( $supplier->name ) ) {
 			$body .= $supplier->name . "　様\n";
 		} else {
@@ -4698,22 +4730,23 @@ class KTPWP_Ajax {
 		$non_qualified_items = array();
 
 		foreach ( $cost_items as $item ) {
-			$product_name = $item['product_name'];
-			$price = floatval( $item['price'] );
-			$quantity = floatval( $item['quantity'] );
-			$unit = $item['unit'] ?: '';
-			$amount = floatval( $item['amount'] );
+			$product_name = isset( $item['product_name'] ) ? $item['product_name'] : '';
+			$price = floatval( isset( $item['price'] ) ? $item['price'] : 0 );
+			$quantity = floatval( isset( $item['quantity'] ) ? $item['quantity'] : 0 );
+			$unit = ( isset( $item['unit'] ) && $item['unit'] !== '' ) ? $item['unit'] : '';
+			$amount = floatval( isset( $item['amount'] ) ? $item['amount'] : 0 );
             $tax_rate_raw = isset( $item['tax_rate'] ) ? $item['tax_rate'] : null;
             // 税制モードの実効税率
             if ( class_exists( 'KTPWP_Tax_Policy' ) ) {
                 $tax_rate = KTPWP_Tax_Policy::get_effective_rate( $tax_rate_raw );
                 if ( $tax_rate === null ) { $tax_rate = 0.0; }
+                $is_tax_free = ( $tax_rate == 0 );
             } else {
                 $is_tax_free = empty( $tax_rate_raw ) || $tax_rate_raw === null;
                 $tax_rate = $is_tax_free ? 0.0 : floatval( $tax_rate_raw );
             }
-			$tax_category = isset($item['tax_category']) ? $item['tax_category'] : '内税';
-			$remarks = $item['remarks'] ?: '';
+			$tax_category = isset( $item['tax_category'] ) ? $item['tax_category'] : '内税';
+			$remarks = ( isset( $item['remarks'] ) && $item['remarks'] !== '' ) ? $item['remarks'] : '';
 			$has_qualified_invoice = ! empty( $item['qualified_invoice_number'] );
 
 			// 品名を左寄せで表示（商品名と単価の間に半角スペース2つを追加）

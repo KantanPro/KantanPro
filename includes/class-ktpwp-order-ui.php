@@ -512,7 +512,11 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 				$ordered = isset( $item['ordered'] ) ? intval( $item['ordered'] ) : 0;
 				if ( ! empty( $purchase_value ) ) {
 					$html .= '<td>';
-					$html .= '<span class="purchase-display purchase-link" data-purchase="' . esc_attr( $purchase_value ) . '" style="cursor: pointer; color: #007cba; text-decoration: underline;">' . esc_html( $purchase_value ) . 'に発注</span>';
+					$link_attrs = 'data-purchase="' . esc_attr( $purchase_value ) . '"';
+					if ( ! empty( $supplier_id_for_row ) && $supplier_id_for_row > 0 ) {
+						$link_attrs .= ' data-supplier-id="' . esc_attr( $supplier_id_for_row ) . '"';
+					}
+					$html .= '<span class="purchase-display purchase-link" ' . $link_attrs . ' style="cursor: pointer; color: #007cba; text-decoration: underline;">' . esc_html( $purchase_value ) . 'に発注</span>';
 					if ( $ordered === 1 ) {
 						$html .= '<span class="purchase-checked" style="display:inline-block;margin-left:6px;vertical-align:middle;color:#dc3545;font-size:1.3em;font-weight:bold;">✓</span>';
 					}
