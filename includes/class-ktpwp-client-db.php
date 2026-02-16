@@ -702,16 +702,17 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 					wp_redirect( $redirect_url );
 					exit;
 				} else {
+					// 0件時: 検索フォームを表示したままにする（サービスと同様）
 					$redirect_url = add_query_arg(
-                        array(
+						array(
 							'tab_name' => $tab_name,
+							'query_post' => 'srcmode',
 							'search_query' => $search_query,
-							'message' => 'not_found',
-                        ),
-                        $redirect_base
-                    );
-
-					wp_redirect( $redirect_url );
+							'no_results' => '1',
+						),
+						$redirect_base
+					);
+					wp_safe_redirect( $redirect_url );
 					exit;
 				}
 			}

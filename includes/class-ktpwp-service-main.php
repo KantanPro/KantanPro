@@ -204,6 +204,11 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 			if ( ! session_id() ) {
 				ktpwp_safe_session_start();
 			}
+			// タブクリックで遷移した場合（GET で query_post が無い）は検索モードを解除
+			if ( $_SERVER['REQUEST_METHOD'] === 'GET' && ! isset( $_GET['query_post'] ) ) {
+				unset( $_SESSION['ktp_service_search_mode'] );
+				unset( $_SESSION['ktp_service_search_message'] );
+			}
 			if ( isset( $_SESSION['ktp_service_search_mode'] ) && $_SESSION['ktp_service_search_mode'] ) {
 				$search_mode = true;
 				$search_message = isset( $_SESSION['ktp_service_search_message'] ) ? $_SESSION['ktp_service_search_message'] : '';
@@ -625,6 +630,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
 				// 検索モード用のフォーム（顧客・協力会社と同じ構造・装飾）
 				$data_forms = '<div class="search-mode-form ktpwp-search-form" style="background-color: #f8f9fa !important; border: 2px solid #0073aa !important; border-radius: 8px !important; padding: 20px !important; margin: 10px 0 !important; box-shadow: 0 2px 8px rgba(0, 115, 170, 0.1) !important;">';
+				$data_forms .= '<div class="notice notice-info ktp-search-mode-notice" style="margin: 10px 0; padding: 10px; background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; border-radius: 4px; display: flex; align-items: center;">';
+				$data_forms .= '<span style="margin-right: 10px; color: #17a2b8; font-size: 18px;" class="material-symbols-outlined" aria-hidden="true">search</span>';
+				$data_forms .= esc_html__( '検索モードです。条件を入力して検索してください。', 'ktpwp' );
+				$data_forms .= '</div>';
 				$data_forms .= '<form method="post" action="">';
 				if ( function_exists( 'wp_nonce_field' ) ) {
 					$data_forms .= wp_nonce_field( 'ktp_service_action', '_ktp_service_nonce', true, false );
@@ -667,8 +676,24 @@ document.addEventListener('DOMContentLoaded', function() {
 				$data_forms .= '</form>';
 
 				$data_forms .= '</div>'; // button-group の閉じタグ
-				if ( $search_message ) {
-					$data_forms .= '<div class="ktp-service-search-message" style="margin-top: 8px; font-size: 14px; color: #666; line-height: 1.5;">' . esc_html( $search_message ) . '</div>';
+				$no_results_message = esc_html__( '該当するサービスが見つかりませんでした。条件を変更して再検索してください。', 'ktpwp' );
+				if ( $search_message && $search_message === $no_results_message ) {
+					$no_results_id = 'no-results-' . uniqid();
+					$data_forms .= '<div id="' . esc_attr( $no_results_id ) . '" class="no-results" style="
+                    padding: 15px 20px !important;
+                    background: linear-gradient(135deg, #ffeef1 0%, #ffeff2 100%) !important;
+                    border-radius: 6px !important;
+                    margin: 15px 0 !important;
+                    color: #333333 !important;
+                    font-weight: 500 !important;
+                    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08) !important;
+                    display: flex !important;
+                    align-items: center !important;
+                    font-size: 14px !important;
+                ">
+                <span style="margin-right: 10px !important; color: #ff6b8b !important; font-size: 18px !important;" class="material-symbols-outlined">search_off</span>
+                ' . esc_html( $search_message ) . '
+                </div>';
 				}
 				$data_forms .= '</div>'; // search-mode-form の閉じタグ
 				$data_forms .= '</div>'; // data_detail_box の閉じタグ

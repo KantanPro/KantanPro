@@ -839,8 +839,8 @@ document.addEventListener('DOMContentLoaded', function() {
 			// アクションを取得（POSTパラメータを優先、次にGETパラメータ、デフォルトは'update'）
 			$action = isset( $_POST['query_post'] ) ? $_POST['query_post'] : ( isset( $_GET['query_post'] ) ? $_GET['query_post'] : 'update' );
 
-			// 安全性確保: GETリクエストの場合は危険なアクションを実行しない
-			if ( $_SERVER['REQUEST_METHOD'] === 'GET' && in_array( $action, array( 'delete', 'insert', 'search', 'duplicate', 'istmode', 'srcmode' ) ) ) {
+			// 安全性確保: GETリクエストの場合は危険なアクションを実行しない（srcmode/istmode は表示用のため許可）
+			if ( $_SERVER['REQUEST_METHOD'] === 'GET' && in_array( $action, array( 'delete', 'insert', 'search', 'duplicate' ) ) ) {
 				$action = 'update';
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 				}
@@ -1396,6 +1396,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
 				// 検索モード用のフォーム
 				$data_forms = '<div class="search-mode-form ktpwp-search-form" style="background-color: #f8f9fa !important; border: 2px solid #0073aa !important; border-radius: 8px !important; padding: 20px !important; margin: 10px 0 !important; box-shadow: 0 2px 8px rgba(0, 115, 170, 0.1) !important;">';
+				$data_forms .= '<div class="notice notice-info ktp-search-mode-notice" style="margin: 10px 0; padding: 10px; background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; border-radius: 4px; display: flex; align-items: center;">';
+				$data_forms .= '<span style="margin-right: 10px; color: #17a2b8; font-size: 18px;" class="material-symbols-outlined" aria-hidden="true">search</span>';
+				$data_forms .= esc_html__( '検索モードです。条件を入力して検索してください。', 'ktpwp' );
+				$data_forms .= '</div>';
 				$data_forms .= '<form method="post" action="">';
 				$data_forms .= wp_nonce_field( 'ktp_client_action', 'ktp_client_nonce', true, false );
 				$data_forms .= '<input type="hidden" name="tab_name" value="' . esc_attr( $name ) . '">';
@@ -1416,7 +1420,7 @@ document.addEventListener('DOMContentLoaded', function() {
 				if ( ( isset( $_POST['query_post'] ) && $_POST['query_post'] === 'search' && empty( $search_results_list ) ) ||
 					( isset( $_GET['no_results'] ) && $_GET['no_results'] === '1' ) ) {
 					$no_results_id = 'no-results-' . uniqid();
-					$data_forms .= '<div id="' . $no_results_id . '" class="no-results" style="
+					$data_forms .= '<div id="' . esc_attr( $no_results_id ) . '" class="no-results" style="
                     padding: 15px 20px !important;
                     background: linear-gradient(135deg, #ffeef1 0%, #ffeff2 100%) !important;
                     border-radius: 6px !important;
@@ -1425,11 +1429,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     font-weight: 500 !important;
                     box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08) !important;
                     display: flex !important;
-                                       align-items: center !important;
+                    align-items: center !important;
                     font-size: 14px !important;
                 ">
                 <span style="margin-right: 10px !important; color: #ff6b8b !important; font-size: 18px !important;" class="material-symbols-outlined">search_off</span>
-                検索結果が見つかりませんでした。別のキーワードをお試しください。
+                ' . esc_html__( '検索結果が見つかりませんでした。別のキーワードをお試しください。', 'ktpwp' ) . '
                 </div>';
 				}
 
