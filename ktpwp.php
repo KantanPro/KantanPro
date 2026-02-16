@@ -3918,7 +3918,10 @@ function KTPWP_Index() {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
                 $front_message .= '<!-- KantanPro Debug: JavaScript file loaded -->';
             }
-            $tab_name = isset( $_GET['tab_name'] ) ? $_GET['tab_name'] : 'default_tab'; // URLパラメータからtab_nameを取得
+            // POST 時は tab_name を POST から優先（検索フォーム送信でタブが維持されるようにする）
+            $tab_name = ( isset( $_POST['tab_name'] ) && is_string( $_POST['tab_name'] ) )
+                ? sanitize_text_field( wp_unslash( $_POST['tab_name'] ) )
+                : ( isset( $_GET['tab_name'] ) ? sanitize_text_field( wp_unslash( $_GET['tab_name'] ) ) : 'default_tab' );
 
             // $order_content など未定義変数の初期化
             $order_content    = isset( $order_content ) ? $order_content : '';

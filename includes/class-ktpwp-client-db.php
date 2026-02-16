@@ -649,12 +649,21 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 			$search_query = isset( $post_data['search_query'] ) ? sanitize_text_field( $post_data['search_query'] ) : '';
 
 			if ( ! empty( $search_query ) ) {
+				$like_pattern = '%' . $wpdb->esc_like( $search_query ) . '%';
+				// search_field が NULL のレコードも company_name / name でヒットするようにする
 				$results = $wpdb->get_results(
-                    $wpdb->prepare(
-                        "SELECT * FROM $table_name WHERE search_field LIKE %s",
-                        '%' . $wpdb->esc_like( $search_query ) . '%'
-                    )
-                );
+					$wpdb->prepare(
+						"SELECT * FROM $table_name WHERE (COALESCE(search_field,'') LIKE %s OR company_name LIKE %s OR name LIKE %s) ORDER BY id DESC",
+						$like_pattern,
+						$like_pattern,
+						$like_pattern
+					)
+				);
+
+				$redirect_base = wp_get_referer();
+				if ( ! $redirect_base || $redirect_base === '' ) {
+					$redirect_base = home_url( wp_unslash( isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : '/' ) );
+				}
 
 				if ( count( $results ) === 1 ) {
 					$found_id = $results[0]->id;
@@ -675,7 +684,7 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 							'data_id' => $found_id,
 							'message' => 'found',
                         ),
-                        wp_get_referer()
+                        $redirect_base
                     );
 
 					wp_redirect( $redirect_url );
@@ -687,7 +696,7 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 							'search_query' => $search_query,
 							'multiple_results' => '1',
                         ),
-                        wp_get_referer()
+                        $redirect_base
                     );
 
 					wp_redirect( $redirect_url );
@@ -699,7 +708,7 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 							'search_query' => $search_query,
 							'message' => 'not_found',
                         ),
-                        wp_get_referer()
+                        $redirect_base
                     );
 
 					wp_redirect( $redirect_url );

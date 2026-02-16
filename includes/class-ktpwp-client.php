@@ -254,6 +254,86 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 			// 現在のページのURLを生成（動的パーマリンク取得）
 			$base_page_url = KTPWP_Main::get_current_page_base_url();
 
+			// 検索結果が複数ある場合：リダイレクト後のGETでダイアログにリストを表示
+			if ( isset( $_GET['multiple_results'] ) && $_GET['multiple_results'] === '1' && ! empty( $_GET['search_query'] ) ) {
+				$search_query_multiple = sanitize_text_field( wp_unslash( $_GET['search_query'] ) );
+				$like_pattern = '%' . $wpdb->esc_like( $search_query_multiple ) . '%';
+				$multi_results = $wpdb->get_results(
+					$wpdb->prepare(
+						"SELECT * FROM {$table_name} WHERE (COALESCE(search_field,'') LIKE %s OR company_name LIKE %s OR name LIKE %s) ORDER BY id DESC",
+						$like_pattern,
+						$like_pattern,
+						$like_pattern
+					)
+				);
+				if ( ! empty( $multi_results ) ) {
+					$search_results_html = "<div class='data_contents'><div class='search_list_box'><div class='data_list_title'>■ " . esc_html__( '検索結果が複数あります！', 'ktpwp' ) . "</div><ul>";
+					foreach ( $multi_results as $row ) {
+						$id = esc_html( (string) $row->id );
+						$company_name = esc_html( isset( $row->company_name ) ? $row->company_name : '' );
+						$disp_name = esc_html( isset( $row->name ) ? $row->name : '' );
+						$category = esc_html( isset( $row->category ) ? $row->category : '' );
+						$link_url = esc_url(
+							add_query_arg(
+								array(
+									'tab_name' => $name,
+									'data_id' => (int) $row->id,
+									'query_post' => 'update',
+								),
+								$base_page_url
+							)
+						);
+						$search_results_html .= "<li style='text-align:left;'><a href='" . $link_url . "' style='text-align:left;'>ID：" . $id . " 会社名：" . $company_name . " 名前：" . $disp_name . ( $category !== '' ? " カテゴリー：" . $category : '' ) . "</a></li>";
+					}
+					$search_results_html .= '</ul></div></div>';
+					$search_results_html_js = wp_json_encode( $search_results_html );
+					$close_redirect_url = esc_url(
+						add_query_arg(
+							array(
+								'tab_name' => $name,
+								'query_post' => 'srcmode',
+							),
+							$base_page_url
+						)
+					);
+					$search_results_list = "<script>
+document.addEventListener('DOMContentLoaded', function() {
+	var searchResultsHtml = " . $search_results_html_js . ";
+	var popup = document.createElement('div');
+	popup.innerHTML = searchResultsHtml;
+	popup.style.position = 'fixed';
+	popup.style.top = '50%';
+	popup.style.left = '50%';
+	popup.style.transform = 'translate(-50%, -50%)';
+	popup.style.backgroundColor = '#fff';
+	popup.style.padding = '20px';
+	popup.style.zIndex = '10001';
+	popup.style.width = '80%';
+	popup.style.maxWidth = '600px';
+	popup.style.border = '1px solid #ccc';
+	popup.style.borderRadius = '5px';
+	popup.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
+	document.body.appendChild(popup);
+	var closeButton = document.createElement('button');
+	closeButton.textContent = '" . esc_js( __( '閉じる', 'ktpwp' ) ) . "';
+	closeButton.style.fontSize = '0.8em';
+	closeButton.style.color = 'black';
+	closeButton.style.display = 'block';
+	closeButton.style.margin = '10px auto 0';
+	closeButton.style.padding = '10px';
+	closeButton.style.backgroundColor = '#cdcccc';
+	closeButton.style.borderRadius = '5px';
+	closeButton.style.borderColor = '#999';
+	closeButton.onclick = function() {
+		document.body.removeChild(popup);
+		location.href = '" . $close_redirect_url . "';
+	};
+	popup.appendChild(closeButton);
+});
+</script>";
+				}
+			}
+
 			// 表示タイトルの設定（国際化対応）
 			$list_title = ( $view_mode === 'order_history' )
             ? esc_html__( '■ 注文履歴', 'ktpwp' )
@@ -1315,6 +1395,7 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 				$data_forms = '<div class="search-mode-form ktpwp-search-form" style="background-color: #f8f9fa !important; border: 2px solid #0073aa !important; border-radius: 8px !important; padding: 20px !important; margin: 10px 0 !important; box-shadow: 0 2px 8px rgba(0, 115, 170, 0.1) !important;">';
 				$data_forms .= '<form method="post" action="">';
 				$data_forms .= wp_nonce_field( 'ktp_client_action', 'ktp_client_nonce', true, false );
+				$data_forms .= '<input type="hidden" name="tab_name" value="' . esc_attr( $name ) . '">';
 
 				// 検索クエリの値を取得（POSTが優先、次にGET）
 				$search_query_value = '';
