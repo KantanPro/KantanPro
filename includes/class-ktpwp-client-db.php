@@ -648,8 +648,26 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 
 			$search_query = isset( $post_data['search_query'] ) ? sanitize_text_field( $post_data['search_query'] ) : '';
 
-			if ( ! empty( $search_query ) ) {
-				$like_pattern = '%' . $wpdb->esc_like( $search_query ) . '%';
+			$redirect_base = wp_get_referer();
+			if ( ! $redirect_base || $redirect_base === '' ) {
+				$redirect_base = home_url( wp_unslash( isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : '/' ) );
+			}
+
+			// 未入力で検索実行した場合は0件時と同じ扱い（フォームを維持し該当なしメッセージを表示）
+			if ( $search_query === '' ) {
+				$redirect_url = add_query_arg(
+					array(
+						'tab_name' => $tab_name,
+						'query_post' => 'srcmode',
+						'no_results' => '1',
+					),
+					$redirect_base
+				);
+				wp_safe_redirect( $redirect_url );
+				exit;
+			}
+
+			$like_pattern = '%' . $wpdb->esc_like( $search_query ) . '%';
 				// search_field が NULL のレコードも company_name / name でヒットするようにする
 				$results = $wpdb->get_results(
 					$wpdb->prepare(
@@ -659,11 +677,6 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 						$like_pattern
 					)
 				);
-
-				$redirect_base = wp_get_referer();
-				if ( ! $redirect_base || $redirect_base === '' ) {
-					$redirect_base = home_url( wp_unslash( isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : '/' ) );
-				}
 
 				if ( count( $results ) === 1 ) {
 					$found_id = $results[0]->id;
@@ -715,7 +728,6 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 					wp_safe_redirect( $redirect_url );
 					exit;
 				}
-			}
 		}
 
 		/**

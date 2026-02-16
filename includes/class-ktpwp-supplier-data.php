@@ -168,11 +168,13 @@ if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
 						$redirect_base = KTPWP_Main::get_current_page_base_url();
 					}
 
+					// 未入力で検索実行した場合は0件時と同じ扱い（フォームを維持し該当なしメッセージを表示）
 					if ( $search_query === '' ) {
 						$redirect_url = add_query_arg(
 							array(
 								'tab_name' => $tab_name,
 								'query_post' => 'srcmode',
+								'no_results' => '1',
 							),
 							$redirect_base
 						);

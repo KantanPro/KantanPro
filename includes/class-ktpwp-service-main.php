@@ -676,14 +676,18 @@ document.addEventListener('DOMContentLoaded', function() {
 				$data_forms .= '</form>';
 
 				$data_forms .= '</div>'; // button-group の閉じタグ
+				// 該当なしメッセージは検索実行・キャンセルボタンの直下に表示
 				$no_results_message = esc_html__( '該当するサービスが見つかりませんでした。条件を変更して再検索してください。', 'ktpwp' );
 				if ( $search_message && $search_message === $no_results_message ) {
 					$no_results_id = 'no-results-' . uniqid();
-					$data_forms .= '<div id="' . esc_attr( $no_results_id ) . '" class="no-results" style="
+					$data_forms .= '<div id="' . esc_attr( $no_results_id ) . '" class="no-results ktp-service-no-results" style="
+                    margin-top: 16px !important;
                     padding: 15px 20px !important;
                     background: linear-gradient(135deg, #ffeef1 0%, #ffeff2 100%) !important;
                     border-radius: 6px !important;
-                    margin: 15px 0 !important;
+                    margin-right: 0 !important;
+                    margin-bottom: 15px !important;
+                    margin-left: 0 !important;
                     color: #333333 !important;
                     font-weight: 500 !important;
                     box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08) !important;

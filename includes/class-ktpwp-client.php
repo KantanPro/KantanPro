@@ -1416,27 +1416,6 @@ document.addEventListener('DOMContentLoaded', function() {
 				$data_forms .= '<input type="text" name="search_query" placeholder="フリーワード検索" value="' . $search_query_value . '" style="width: 100% !important; padding: 12px !important; font-size: 16px !important; border: 2px solid #ddd !important; border-radius: 5px !important; box-sizing: border-box !important; transition: border-color 0.3s ease !important;">';
 				$data_forms .= '</div>';
 
-				// 検索結果がない場合のメッセージ表示
-				if ( ( isset( $_POST['query_post'] ) && $_POST['query_post'] === 'search' && empty( $search_results_list ) ) ||
-					( isset( $_GET['no_results'] ) && $_GET['no_results'] === '1' ) ) {
-					$no_results_id = 'no-results-' . uniqid();
-					$data_forms .= '<div id="' . esc_attr( $no_results_id ) . '" class="no-results" style="
-                    padding: 15px 20px !important;
-                    background: linear-gradient(135deg, #ffeef1 0%, #ffeff2 100%) !important;
-                    border-radius: 6px !important;
-                    margin: 15px 0 !important;
-                    color: #333333 !important;
-                    font-weight: 500 !important;
-                    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08) !important;
-                    display: flex !important;
-                    align-items: center !important;
-                    font-size: 14px !important;
-                ">
-                <span style="margin-right: 10px !important; color: #ff6b8b !important; font-size: 18px !important;" class="material-symbols-outlined">search_off</span>
-                ' . esc_html__( '検索結果が見つかりませんでした。別のキーワードをお試しください。', 'ktpwp' ) . '
-                </div>';
-				}
-
 				// ボタンを横並びにするためのラップクラスを追加
 				$data_forms .= '<div class="button-group" style="display: flex; gap: 10px; margin-top: 15px !important; justify-content: flex-end !important;">';
 
@@ -1461,6 +1440,29 @@ document.addEventListener('DOMContentLoaded', function() {
 				$data_forms .= '</form>';
 
 				$data_forms .= '</div>'; // ボタンラップクラスの閉じタグ
+				// 該当なしメッセージは検索実行・キャンセルボタンの直下に表示（サービスと同様）
+				if ( ( isset( $_POST['query_post'] ) && $_POST['query_post'] === 'search' && empty( $search_results_list ) ) ||
+					( isset( $_GET['no_results'] ) && $_GET['no_results'] === '1' ) ) {
+					$no_results_id = 'no-results-' . uniqid();
+					$data_forms .= '<div id="' . esc_attr( $no_results_id ) . '" class="no-results ktp-client-no-results" style="
+                    margin-top: 16px !important;
+                    padding: 15px 20px !important;
+                    background: linear-gradient(135deg, #ffeef1 0%, #ffeff2 100%) !important;
+                    border-radius: 6px !important;
+                    margin-right: 0 !important;
+                    margin-bottom: 15px !important;
+                    margin-left: 0 !important;
+                    color: #333333 !important;
+                    font-weight: 500 !important;
+                    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08) !important;
+                    display: flex !important;
+                    align-items: center !important;
+                    font-size: 14px !important;
+                ">
+                <span style="margin-right: 10px !important; color: #ff6b8b !important; font-size: 18px !important;" class="material-symbols-outlined">search_off</span>
+                ' . esc_html__( '検索結果が見つかりませんでした。別のキーワードをお試しください。', 'ktpwp' ) . '
+                </div>';
+				}
 				$data_forms .= '</div>'; // search-mode-formの閉じタグ
 				// data_detail_box を閉じる
 				$data_forms .= '</div>';
