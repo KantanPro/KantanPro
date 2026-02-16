@@ -218,11 +218,6 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 				$search_mode = true;
 				$search_message = esc_html__( '該当するサービスが見つかりませんでした。条件を変更して再検索してください。', 'ktpwp' );
 			}
-			// 検索結果1件で詳細へ遷移した場合はフォームを閉じて詳細を表示する
-			if ( isset( $_GET['data_id'] ) && $_GET['data_id'] !== '' ) {
-				$search_mode = false;
-				$search_message = '';
-			}
 
 			// JS通知は他タブと統一のため廃止（noticeのみ）
 			$message = '';

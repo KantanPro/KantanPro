@@ -691,25 +691,28 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 					$cookie_name = 'ktp_' . $tab_name . '_id';
 					setcookie( $cookie_name, $found_id, time() + ( 86400 * 30 ), '/' );
 
+					// 該当なし画面から再検索でヒットした場合、query_post/no_results を外して詳細表示にする
+					$redirect_base_clean = remove_query_arg( array( 'query_post', 'no_results' ), $redirect_base );
 					$redirect_url = add_query_arg(
                         array(
 							'tab_name' => $tab_name,
 							'data_id' => $found_id,
 							'message' => 'found',
                         ),
-                        $redirect_base
+                        $redirect_base_clean
                     );
 
 					wp_redirect( $redirect_url );
 					exit;
 				} elseif ( count( $results ) > 1 ) {
+					$redirect_base_clean = remove_query_arg( array( 'query_post', 'no_results' ), $redirect_base );
 					$redirect_url = add_query_arg(
                         array(
 							'tab_name' => $tab_name,
 							'search_query' => $search_query,
 							'multiple_results' => '1',
                         ),
-                        $redirect_base
+                        $redirect_base_clean
                     );
 
 					wp_redirect( $redirect_url );

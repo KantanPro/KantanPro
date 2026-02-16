@@ -245,6 +245,8 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 							$base_page_url = home_url( add_query_arg( array(), $wp->request ) );
 						}
 					}
+					// 該当なし画面から再検索でヒットした場合、query_post/no_results を外して詳細表示にする
+					$base_page_url = remove_query_arg( array( 'query_post', 'no_results' ), $base_page_url );
 					// 新しいパラメータを追加
 					$redirect_url = add_query_arg(
                         array(
@@ -253,7 +255,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 							'message' => 'found',
                         ),
                         $base_page_url
-					);
+                    );
 
 					$cookie_name = 'ktp_' . $tab_name . '_id';
 					setcookie( $cookie_name, $data_id, time() + ( 86400 * 30 ), '/' );
@@ -282,6 +284,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 							$redirect_base = add_query_arg( array( 'page_id' => $current_page_id ), home_url( $wp->request ) );
 						}
 					}
+					$redirect_base = remove_query_arg( array( 'query_post', 'no_results' ), $redirect_base );
 					$redirect_url = add_query_arg(
 						array(
 							'tab_name' => $tab_name,

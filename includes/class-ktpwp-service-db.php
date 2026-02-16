@@ -546,9 +546,6 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 						unset( $_SESSION['ktp_service_search_mode'] );
 						unset( $_SESSION['ktp_service_search_message'] );
 
-						// ヒット時は前回の no_results 用パラメータを外す（フォームを閉じて結果を表示するため）
-						$redirect_base = remove_query_arg( array( 'query_post', 'no_results' ), $redirect_base );
-
 						if ( $result_count === 1 ) {
 							// 1件のみ: その詳細にリダイレクト
 							$first_result = $search_results[0];
