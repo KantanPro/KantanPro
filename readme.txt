@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.2.0
+Stable tag: 1.2.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -324,6 +324,15 @@ curl -sS -X POST \
 * 推奨PHP拡張: GD（画像処理用）
 
 == 変更履歴 ==
+
+= 1.2.1 - 2025年02月17日 =
+* 発注済みのコスト項目の更新機能を強化
+  - Ajax処理でのデータベース更新を新旧形式に対応
+  - UI表示を「に発注済み」に変更
+  - 発注メール送信後にコスト項目を自動更新する機能を追加
+* 検索機能の改善
+  - リダイレクト処理を更新し、検索結果が見つかった場合にno_resultsパラメータを削除
+  - 関連するクラスでのリダイレクトURLの整形を統一
 
 = 1.2.0 - 2025年02月17日 =
 * 検索機能の改善
