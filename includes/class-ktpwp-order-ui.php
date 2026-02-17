@@ -516,7 +516,8 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 					if ( ! empty( $supplier_id_for_row ) && $supplier_id_for_row > 0 ) {
 						$link_attrs .= ' data-supplier-id="' . esc_attr( $supplier_id_for_row ) . '"';
 					}
-					$html .= '<span class="purchase-display purchase-link" ' . $link_attrs . ' style="cursor: pointer; color: #007cba; text-decoration: underline;">' . esc_html( $purchase_value ) . 'に発注</span>';
+					$suffix = ( $ordered === 1 ) ? 'に発注済み' : 'に発注';
+					$html .= '<span class="purchase-display purchase-link" ' . $link_attrs . ' data-ordered="' . $ordered . '" style="cursor: pointer; color: #007cba; text-decoration: underline;">' . esc_html( $purchase_value ) . $suffix . '</span>';
 					if ( $ordered === 1 ) {
 						$html .= '<span class="purchase-checked" style="display:inline-block;margin-left:6px;vertical-align:middle;color:#dc3545;font-size:1.3em;font-weight:bold;">✓</span>';
 					}

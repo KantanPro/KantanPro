@@ -543,6 +543,8 @@
                     if (result.success) {
                         showSuccess('発注メールを送信しました。');
                         $('#ktp-purchase-order-email-popup').remove();
+                        // 該当協力会社のコスト項目を「発注済み」に更新
+                        setCostItemsOrderedAndUpdateDisplay(orderId, supplierName);
                     } else {
                         const errMsg = result.data && result.data.message ? result.data.message : '不明なエラー';
                         showErrorInPopup('メール送信に失敗しました: ' + errMsg);
@@ -566,6 +568,47 @@
                 var $btn = $('#ktp-purchase-order-email-send');
                 if ($btn.length) {
                     $btn.prop('disabled', false).text('メール送信');
+                }
+            }
+        });
+    }
+
+    // 発注メール送信後、該当協力会社のコスト項目を発注済みにし、表示を「に発注済み」に更新
+    function setCostItemsOrderedAndUpdateDisplay(orderId, supplierName) {
+        if (!orderId || !supplierName) return;
+        const nonce = (typeof ktp_ajax_nonce !== 'undefined') ? ktp_ajax_nonce : (typeof ktpwp_ajax_nonce !== 'undefined' ? ktpwp_ajax_nonce : '');
+        if (!nonce) {
+            console.warn('[PURCHASE-ORDER-EMAIL] nonceが取得できず発注済み更新をスキップします');
+            updatePurchaseDisplayOnly(supplierName);
+            return;
+        }
+        const ajaxUrl = (typeof ajaxurl !== 'undefined') ? ajaxurl : ((typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) ? ktpwp_ajax.ajax_url : '/wp-admin/admin-ajax.php');
+        $.post(ajaxUrl, {
+            action: 'ktp_set_cost_items_ordered',
+            nonce: nonce,
+            order_id: orderId,
+            supplier_name: supplierName
+        }).done(function(res) {
+            if (res && res.success) {
+                updatePurchaseDisplayOnly(supplierName);
+            }
+        }).fail(function() {
+            updatePurchaseDisplayOnly(supplierName);
+        });
+    }
+
+    // 画面上の該当協力会社の仕入表示を「に発注」→「に発注済み」に更新
+    function updatePurchaseDisplayOnly(supplierName) {
+        $('.cost-items-table tbody tr').each(function() {
+            const $span = $(this).find('.purchase-display.purchase-link');
+            if (!$span.length) return;
+            const text = $span.text().trim();
+            const isOld = (text === supplierName + 'に発注');
+            const isNew = text.startsWith(supplierName + ' >') && text.endsWith('に発注');
+            if (isOld || isNew) {
+                $span.text(text.replace(/に発注$/, 'に発注済み')).attr('data-ordered', '1');
+                if ($(this).find('.purchase-checked').length === 0) {
+                    $span.after('<span class="purchase-checked" style="display:inline-block;margin-left:6px;vertical-align:middle;color:#dc3545;font-size:1.3em;font-weight:bold;">✓</span>');
                 }
             }
         });

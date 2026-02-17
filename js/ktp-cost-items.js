@@ -1968,9 +1968,9 @@
             const $row = $(this);
             const purchaseText = $row.find('.purchase-display').text().trim();
             
-            // 新形式（テスト１会社 > サービス名に発注）と旧形式（テスト１会社に発注）の両方に対応
-            const isNewFormat = purchaseText && purchaseText.startsWith(supplierName + ' >') && purchaseText.endsWith('に発注');
-            const isOldFormat = purchaseText && purchaseText === (supplierName + 'に発注');
+            // 新形式（テスト１会社 > サービス名に発注/に発注済み）と旧形式（テスト１会社に発注/に発注済み）の両方に対応
+            const isNewFormat = purchaseText && purchaseText.startsWith(supplierName + ' >') && (purchaseText.endsWith('に発注') || purchaseText.endsWith('に発注済み'));
+            const isOldFormat = purchaseText && (purchaseText === (supplierName + 'に発注') || purchaseText === (supplierName + 'に発注済み'));
             
             if (isNewFormat || isOldFormat) {
                 const productName = $row.find('.product-name').val();

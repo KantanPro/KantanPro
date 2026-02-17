@@ -321,21 +321,20 @@ class KTPWP_Ajax {
 					wp_send_json_error( 'order_idまたはsupplier_nameが指定されていません' );
 				}
 				$table_name = $wpdb->prefix . 'ktp_order_cost_items';
-				// purchaseカラムがsupplier_nameと一致する全行を更新
-				$result = $wpdb->update(
-                    $table_name,
-                    array( 'ordered' => 1 ),
-                    array(
-						'order_id' => $order_id,
-						'purchase' => $supplier_name,
-                    ),
-                    array( '%d' ),
-                    array( '%d', '%s' )
+				// 旧形式（purchase = 会社名）と新形式（purchase = 会社名 > サービス名）の両方を発注済みに更新
+				$like_pattern = $wpdb->esc_like( $supplier_name ) . ' > %';
+				$updated = $wpdb->query(
+					$wpdb->prepare(
+						"UPDATE `{$table_name}` SET ordered = 1 WHERE order_id = %d AND (purchase = %s OR purchase LIKE %s)",
+						$order_id,
+						$supplier_name,
+						$like_pattern
+					)
 				);
-				if ( $result === false ) {
+				if ( $updated === false ) {
 					wp_send_json_error( 'DB更新に失敗しました: ' . $wpdb->last_error );
 				}
-				wp_send_json_success( array( 'updated' => $result ) );
+				wp_send_json_success( array( 'updated' => $updated ) );
 			}
         );
 		// ▲▲▲ コスト項目「注文済」一括更新Ajax ▲▲▲
