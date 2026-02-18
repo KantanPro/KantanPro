@@ -3466,8 +3466,8 @@ function ktpwp_scripts_and_styles() {
         );
     }
 
-    // ajaxurl をフロントエンドに渡す
-    wp_add_inline_script( 'ktp-js', 'var ktp_ajax_object = ' . json_encode( array( 'ajax_url' => admin_url( 'admin-ajax.php' ) ) ) . ';' );
+    // ajaxurl をフロントエンドに渡す（nonce は AJAX クラス / Assets で設定するため、ここでは上書きしない）
+    wp_add_inline_script( 'ktp-js', 'var ajaxurl = ' . json_encode( admin_url( 'admin-ajax.php' ) ) . ';' );
 
     // Ajax nonceを追加 - AJAXクラスで管理されるため、ここでは設定しない
     // wp_add_inline_script( 'ktp-invoice-items', 'var ktp_ajax_nonce = ' . json_encode( wp_create_nonce( 'ktp_ajax_nonce' ) ) . ';' );

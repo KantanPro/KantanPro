@@ -33,6 +33,8 @@
             config.nonce = ktpwp_ajax.nonces.email_send;
         } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.general) {
             config.nonce = ktpwp_ajax.nonces.general;
+        } else if (typeof ktpwp_ajax_nonce !== 'undefined') {
+            config.nonce = ktpwp_ajax_nonce;
         } else if (typeof ktp_ajax_nonce !== 'undefined') {
             config.nonce = ktp_ajax_nonce;
         } else if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.nonce) {
@@ -667,9 +669,9 @@
         formData.append('subject', subject);
         formData.append('body', body);
         
-        const nonce = typeof ktp_ajax_object !== 'undefined' ? ktp_ajax_object.nonce : '';
-        if (nonce) {
-            formData.append('nonce', nonce);
+        const ajaxConfig = getAjaxConfig();
+        if (ajaxConfig.nonce) {
+            formData.append('nonce', ajaxConfig.nonce);
         }
 
         // ファイルを追加
@@ -688,8 +690,6 @@
                 <div style="font-size: 16px; color: #666;">${loadingMessage}</div>
             </div>
         `);
-
-        const ajaxConfig = getAjaxConfig();
 
         console.log('[EMAIL POPUP] メール送信開始', { 
             orderId, 
