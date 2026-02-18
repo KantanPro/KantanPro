@@ -708,6 +708,9 @@
                 console.log('[EMAIL POPUP] メール送信レスポンス', response);
                 
                 if (response.success) {
+                    const newProgress = response.data && response.data.progress != null ? response.data.progress : null;
+                    const progressLabels = { 1: '受付中', 2: '見積中', 3: '受注', 4: '完了', 5: '請求済', 6: '入金済', 7: 'ボツ' };
+
                     let successMessage = `
                         <div style="font-size: 18px; font-weight: bold; margin-bottom: 10px;">
                             ✓ メール送信完了
@@ -716,7 +719,17 @@
                             宛先: ${to}
                         </div>
                     `;
-                    
+                    if (newProgress != null && progressLabels[newProgress]) {
+                        successMessage += `
+                            <div style="font-size: 14px; margin-top: 8px; color: #28a745;">
+                                進捗を「${progressLabels[newProgress]}」に更新しました。
+                            </div>
+                        `;
+                        var $select = $('#order_progress_select');
+                        if ($select.length && $select.find('option[value="' + newProgress + '"]').length) {
+                            $select.val(String(newProgress));
+                        }
+                    }
                     if (selectedFiles.length > 0) {
                         successMessage += `
                             <div style="font-size: 14px; margin-top: 8px; color: #666;">

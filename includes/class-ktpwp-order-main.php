@@ -982,21 +982,10 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 
 					$update_data = array( 'progress' => $update_progress );
 
-					// 完了日フィールドの値を取得
-					$completion_date = isset( $_POST['completion_date'] ) ? sanitize_text_field( $_POST['completion_date'] ) : '';
-					error_log( 'KTPWP Order: フォームから完了日を取得: ' . $completion_date );
-
-					// 進捗が「完了」（progress = 4）に変更された場合、完了日を記録
+					// 進捗が「完了」（progress = 4）に変更された場合、完了日を実行した日で記録
 					if ( $update_progress == 4 && $current_order && $current_order->progress != 4 ) {
-						if ( ! empty( $completion_date ) ) {
-							// フォームから完了日が送信されている場合はその値を使用
-							$update_data['completion_date'] = $completion_date;
-							error_log( 'KTPWP Order: フォームから完了日を設定: ' . $completion_date );
-						} else {
-							// フォームから完了日が送信されていない場合は今日の日付を設定
-							$update_data['completion_date'] = current_time( 'Y-m-d' );
-							error_log( 'KTPWP Order: 完了日を自動設定します: ' . current_time( 'Y-m-d' ) );
-						}
+						$update_data['completion_date'] = current_time( 'Y-m-d' );
+						error_log( 'KTPWP Order: 完了日を実行日で設定: ' . $update_data['completion_date'] );
 					}
 
 					// 進捗が受注以前（受付中、見積中、受注）に変更された場合、完了日をクリア
@@ -1612,6 +1601,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 					$content .= '</div>';
 					$content .= '</div>';
 
+					// 進捗は任意に変更可能（受付中→完了など飛び級可。メール送信時のみ「次の進捗」へ自動移行）
 					$content .= '<form method="post" action="" class="progress-filter order-header-progress-form" style="display:flex;align-items:center;gap:8px;flex-wrap:nowrap;margin-left:auto;">';
 					$content .= '<input type="hidden" name="update_progress_id" value="' . esc_html( $order_data->id ) . '" />';
 					// Add nonce for progress update

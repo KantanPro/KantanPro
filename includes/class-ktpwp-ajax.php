@@ -2255,11 +2255,38 @@ class KTPWP_Ajax {
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 					error_log( "KTPWP Email: Successfully sent email to {$to} with " . count( $attachments ) . ' attachments' );
 				}
+
+				// メール送信時のみ「次の進捗」へ移行。ローテーションは 1→2→3→4→5→6 で入金済(6)で終了。
+				// （ユーザーによる進捗の直接変更は任意で可能。受付中→完了など飛び級も可。）
+				$new_progress = null;
+				global $wpdb;
+				$order_table  = $wpdb->prefix . 'ktp_order';
+				$current_order = $wpdb->get_row( $wpdb->prepare( "SELECT progress FROM {$order_table} WHERE id = %d", $order_id ) );
+				if ( $current_order ) {
+					$current_progress = (int) $current_order->progress;
+					// 1〜5 のときのみ次へ（6=入金済でローテーション終了、7=ボツは変更しない）
+					if ( $current_progress >= 1 && $current_progress < 6 ) {
+						$next_progress = $current_progress + 1;
+						$update_data   = array( 'progress' => $next_progress );
+						$formats       = array( '%d' );
+						// 進捗が「完了」(4)になった場合のみ完了日を記録
+						if ( $next_progress === 4 && $current_progress !== 4 ) {
+							$update_data['completion_date'] = current_time( 'Y-m-d' );
+							$formats[] = '%s';
+						}
+						$updated = $wpdb->update( $order_table, $update_data, array( 'id' => $order_id ), $formats, array( '%d' ) );
+						if ( $updated !== false ) {
+							$new_progress = $next_progress;
+						}
+					}
+				}
+
 				wp_send_json_success(
 					array(
 						'message'          => 'メールを送信しました。',
 						'to'               => $to,
 						'attachment_count' => count( $attachments ),
+						'progress'         => $new_progress,
 					)
 				);
 			} else {
@@ -4051,6 +4078,7 @@ class KTPWP_Ajax {
 
 	/**
 	 * 進捗更新Ajaxハンドラー
+	 * ユーザーは進捗を柔軟に変更可能（1〜7のいずれへでも変更可。順番でなく飛び級も可）。
 	 */
 	public function ajax_update_progress() {
 		// セキュリティチェック
@@ -4058,8 +4086,9 @@ class KTPWP_Ajax {
 			wp_send_json_error( '権限がありません' );
 		}
 
-		// nonceチェック
-		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( $_POST['nonce'], 'ktp_ajax_nonce' ) ) {
+		// nonceチェック（進捗更新は general / progress_update のどちらでも可）
+		$nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
+		if ( empty( $nonce ) || ( ! wp_verify_nonce( $nonce, 'ktp_ajax_nonce' ) && ! wp_verify_nonce( $nonce, 'ktpwp_ajax_nonce' ) ) ) {
 			wp_send_json_error( 'セキュリティ検証に失敗しました' );
 		}
 
@@ -4068,7 +4097,6 @@ class KTPWP_Ajax {
 
 		$order_id = isset( $_POST['order_id'] ) ? absint( $_POST['order_id'] ) : 0;
 		$new_progress = isset( $_POST['progress'] ) ? absint( $_POST['progress'] ) : 0;
-		$completion_date = isset( $_POST['completion_date'] ) ? sanitize_text_field( $_POST['completion_date'] ) : '';
 
 		if ( $order_id <= 0 || $new_progress < 1 || $new_progress > 7 ) {
 			wp_send_json_error( 'パラメータが不正です' );
@@ -4082,15 +4110,9 @@ class KTPWP_Ajax {
 
 		$update_data = array( 'progress' => $new_progress );
 
-		// 進捗が「完了」（progress = 4）に変更された場合、完了日を記録
+		// 進捗が「完了」（progress = 4）に変更された場合、完了日を実行した日で記録
 		if ( $new_progress == 4 && $current_order->progress != 4 ) {
-			if ( ! empty( $completion_date ) ) {
-				// フォームから完了日が送信されている場合はその値を使用
-				$update_data['completion_date'] = $completion_date;
-			} else {
-				// フォームから完了日が送信されていない場合は今日の日付を設定
-				$update_data['completion_date'] = current_time( 'Y-m-d' );
-			}
+			$update_data['completion_date'] = current_time( 'Y-m-d' );
 		}
 
 		// 進捗が受注以前（受付中、見積中、受注）に変更された場合、完了日をクリア
@@ -4098,8 +4120,13 @@ class KTPWP_Ajax {
 			$update_data['completion_date'] = null;
 		}
 
-		// データベース更新
-		$result = $wpdb->update( $table_name, $update_data, array( 'id' => $order_id ) );
+		// データベース更新（フォーマット指定で確実に保存）
+		$data_format   = array( '%d' );
+		$where_format  = array( '%d' );
+		if ( isset( $update_data['completion_date'] ) ) {
+			$data_format[] = $update_data['completion_date'] === null ? '%s' : '%s';
+		}
+		$result = $wpdb->update( $table_name, $update_data, array( 'id' => $order_id ), $data_format, $where_format );
 
 		if ( $result !== false ) {
 			wp_send_json_success( array(

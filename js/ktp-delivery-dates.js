@@ -651,19 +651,11 @@ jQuery(document).ready(function($) {
         $(this).css('border-color', '#ddd');
     });
     
-    // 受注書詳細でのフォーム送信前に完了日フィールドを同期
-    $(document).on('submit', '.order-header-progress-form', function() {
-        console.log('[DELIVERY-DATES] 受注書詳細フォーム送信前の処理');
-        
-        var $form = $(this);
-        var $completionInput = $('#completion_date');
-        var $hiddenCompletionField = $form.find('input[name="completion_date"]');
-        
-        if ($completionInput.length > 0 && $hiddenCompletionField.length > 0) {
-            var completionValue = $completionInput.val();
-            $hiddenCompletionField.val(completionValue);
-            console.log('[DELIVERY-DATES] フォーム送信前に完了日フィールドを同期しました:', completionValue);
-        }
+    // 受注書詳細の進捗フォームはAJAXで更新するため、通常送信を防止（送信されるとサーバーで未処理のまま再表示され進捗が戻る）
+    $(document).on('submit', '.order-header-progress-form', function(e) {
+        e.preventDefault();
+        console.log('[DELIVERY-DATES] 進捗フォームの送信を防止（進捗はプルダウン変更時にAJAXで保存されます）');
+        return false;
     });
 
     // 完了日フィールドの変更を監視して自動保存（仕事リスト用）
