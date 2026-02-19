@@ -2258,7 +2258,8 @@ class KTPWP_Ajax {
 
 				// メール送信時のみ「次の進捗」へ移行。ローテーションは 1→2→3→4→5→6 で入金済(6)で終了。
 				// （ユーザーによる進捗の直接変更は任意で可能。受付中→完了など飛び級も可。）
-				$new_progress = null;
+				$new_progress    = null;
+				$new_completion_date = null;
 				global $wpdb;
 				$order_table  = $wpdb->prefix . 'ktp_order';
 				$current_order = $wpdb->get_row( $wpdb->prepare( "SELECT progress FROM {$order_table} WHERE id = %d", $order_id ) );
@@ -2272,6 +2273,7 @@ class KTPWP_Ajax {
 						// 進捗が「完了」(4)になった場合のみ完了日を記録
 						if ( $next_progress === 4 && $current_progress !== 4 ) {
 							$update_data['completion_date'] = current_time( 'Y-m-d' );
+							$new_completion_date = $update_data['completion_date'];
 							$formats[] = '%s';
 						}
 						$updated = $wpdb->update( $order_table, $update_data, array( 'id' => $order_id ), $formats, array( '%d' ) );
@@ -2281,14 +2283,16 @@ class KTPWP_Ajax {
 					}
 				}
 
-				wp_send_json_success(
-					array(
-						'message'          => 'メールを送信しました。',
-						'to'               => $to,
-						'attachment_count' => count( $attachments ),
-						'progress'         => $new_progress,
-					)
+				$response_data = array(
+					'message'          => 'メールを送信しました。',
+					'to'               => $to,
+					'attachment_count' => count( $attachments ),
+					'progress'         => $new_progress,
 				);
+				if ( $new_completion_date !== null ) {
+					$response_data['completion_date'] = $new_completion_date;
+				}
+				wp_send_json_success( $response_data );
 			} else {
 				throw new Exception( 'メール送信に失敗しました。サーバー設定を確認してください。' );
 			}

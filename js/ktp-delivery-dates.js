@@ -5,6 +5,30 @@
  * @since 1.0.0
  */
 
+// 統一されたAJAX設定の取得（handleProgressChange からも参照するためグローバルに定義）
+function getAjaxConfigForDeliveryDates() {
+    var config = { url: '', nonce: '' };
+    if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) {
+        config.url = ktpwp_ajax.ajax_url;
+    } else if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.ajax_url) {
+        config.url = ktp_ajax_object.ajax_url;
+    } else if (typeof ajaxurl !== 'undefined') {
+        config.url = ajaxurl;
+    } else {
+        config.url = '/wp-admin/admin-ajax.php';
+    }
+    if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.delivery_dates) {
+        config.nonce = ktpwp_ajax.nonces.delivery_dates;
+    } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.general) {
+        config.nonce = ktpwp_ajax.nonces.general;
+    } else if (typeof ktp_ajax_nonce !== 'undefined') {
+        config.nonce = ktp_ajax_nonce;
+    } else if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.nonce) {
+        config.nonce = ktp_ajax_object.nonce;
+    }
+    return config;
+}
+
 // グローバル関数：受注書詳細での進捗変更処理
 window.handleProgressChange = function(selectElement) {
     console.log('[DELIVERY-DATES] handleProgressChange called');
@@ -61,9 +85,9 @@ window.handleProgressChange = function(selectElement) {
         }
     }
     
-    // nonceの取得
-    const ajaxConfig = getAjaxConfig();
-    const nonce = ajaxConfig.nonce;
+    // nonceの取得（グローバルに定義した関数を使用）
+    var ajaxConfig = getAjaxConfigForDeliveryDates();
+    var nonce = ajaxConfig.nonce;
     
     if (!nonce) {
         console.error('[DELIVERY-DATES] エラー: nonceが取得できません');

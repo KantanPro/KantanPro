@@ -709,6 +709,7 @@
                 
                 if (response.success) {
                     const newProgress = response.data && response.data.progress != null ? response.data.progress : null;
+                    const completionDate = response.data && response.data.completion_date ? response.data.completion_date : null;
                     const progressLabels = { 1: '受付中', 2: '見積中', 3: '受注', 4: '完了', 5: '請求済', 6: '入金済', 7: 'ボツ' };
 
                     let successMessage = `
@@ -728,6 +729,17 @@
                         var $select = $('#order_progress_select');
                         if ($select.length && $select.find('option[value="' + newProgress + '"]').length) {
                             $select.val(String(newProgress));
+                        }
+                        // 進捗が「完了」(4)で完了日が返ってきた場合、完了日フィールドをリアルタイムで更新
+                        if (newProgress === 4 && completionDate) {
+                            var $completionInput = $('#completion_date');
+                            if ($completionInput.length) {
+                                $completionInput.val(completionDate);
+                            }
+                            var $hiddenCompletion = $('input[name="completion_date"]');
+                            if ($hiddenCompletion.length) {
+                                $hiddenCompletion.val(completionDate);
+                            }
                         }
                     }
                     if (selectedFiles.length > 0) {
