@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.2.1
+Stable tag: 1.2.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -324,6 +324,15 @@ curl -sS -X POST \
 * 推奨PHP拡張: GD（画像処理用）
 
 == 変更履歴 ==
+
+= 1.2.2 - 2025年02月19日 =
+* 進捗更新機能を改善
+  - メール送信後に完了日を含むレスポンスを返すように変更し、フロントエンドでの進捗表示をリアルタイムで更新
+  - AJAX設定を統一し、コードの可読性を向上
+* 進捗更新機能を強化
+  - メール送信後に進捗を自動更新し、完了日を実行日で記録
+  - AJAXによる進捗フォームの送信処理を改善し、ユーザーが進捗を柔軟に変更可能に
+* 受注書でのメール送信バグを修正
 
 = 1.2.1 - 2025年02月17日 =
 * 発注済みのコスト項目の更新機能を強化
