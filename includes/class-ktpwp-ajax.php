@@ -3448,8 +3448,26 @@ class KTPWP_Ajax {
 				return;
 			}
 
-			// nonce検証
-			if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( $_POST['nonce'], 'ktp_ajax_nonce' ) ) {
+			// nonce検証（複数キー・複数アクションに対応：仕事リスト・WC受注・受注書詳細のいずれでも通るようにする）
+			$nonce_keys    = array( 'nonce', 'security', '_wpnonce', 'ktp_ajax_nonce' );
+			$nonce_actions = array( 'ktp_ajax_nonce', 'ktpwp_ajax_nonce', 'ktpwp_auto_save_nonce' );
+			$nonce_value   = '';
+			foreach ( $nonce_keys as $key ) {
+				if ( ! empty( $_POST[ $key ] ) && is_string( $_POST[ $key ] ) ) {
+					$nonce_value = sanitize_text_field( wp_unslash( $_POST[ $key ] ) );
+					break;
+				}
+			}
+			$nonce_ok = false;
+			if ( $nonce_value !== '' ) {
+				foreach ( $nonce_actions as $action ) {
+					if ( wp_verify_nonce( $nonce_value, $action ) ) {
+						$nonce_ok = true;
+						break;
+					}
+				}
+			}
+			if ( ! $nonce_ok ) {
 				wp_send_json_error( array( 'message' => __( 'セキュリティ検証に失敗しました', 'ktpwp' ) ) );
 				return;
 			}
@@ -3883,17 +3901,35 @@ class KTPWP_Ajax {
 				return;
 			}
 
-			// nonce検証
-			if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( $_POST['nonce'], 'ktp_ajax_nonce' ) ) {
-				error_log( 'KTPWP Ajax: Nonce verification failed' );
+			// nonce検証（複数キー・複数アクションに対応：仕事リスト・WC受注・受注書詳細のいずれでも通るようにする）
+			$nonce_keys   = array( 'nonce', 'security', '_wpnonce', 'ktp_ajax_nonce' );
+			$nonce_actions = array( 'ktp_ajax_nonce', 'ktpwp_ajax_nonce', 'ktpwp_auto_save_nonce' );
+			$nonce_value  = '';
+			foreach ( $nonce_keys as $key ) {
+				if ( ! empty( $_POST[ $key ] ) && is_string( $_POST[ $key ] ) ) {
+					$nonce_value = sanitize_text_field( wp_unslash( $_POST[ $key ] ) );
+					break;
+				}
+			}
+			$nonce_ok = false;
+			if ( $nonce_value !== '' ) {
+				foreach ( $nonce_actions as $action ) {
+					if ( wp_verify_nonce( $nonce_value, $action ) ) {
+						$nonce_ok = true;
+						break;
+					}
+				}
+			}
+			if ( ! $nonce_ok ) {
+				error_log( 'KTPWP Ajax: Nonce verification failed (ajax_auto_save_field)' );
 				wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'ktpwp' ) );
 				return;
 			}
 
 			// パラメータ取得
 			$order_id = isset( $_POST['order_id'] ) ? absint( $_POST['order_id'] ) : 0;
-			$field_name = isset( $_POST['field_name'] ) ? sanitize_text_field( $_POST['field_name'] ) : '';
-			$field_value = isset( $_POST['field_value'] ) ? sanitize_text_field( $_POST['field_value'] ) : '';
+			$field_name = isset( $_POST['field_name'] ) ? sanitize_text_field( wp_unslash( $_POST['field_name'] ) ) : '';
+			$field_value = isset( $_POST['field_value'] ) ? sanitize_text_field( wp_unslash( $_POST['field_value'] ) ) : '';
 
 			if ( $order_id <= 0 ) {
 				wp_send_json_error( '受注書IDが無効です' );

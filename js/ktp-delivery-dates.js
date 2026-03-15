@@ -17,12 +17,19 @@ function getAjaxConfigForDeliveryDates() {
     } else {
         config.url = '/wp-admin/admin-ajax.php';
     }
-    if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.delivery_dates) {
+    // ページで1つに統一（Head の ktpwp_ajax.nonce を最優先）
+    if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonce) {
+        config.nonce = ktpwp_ajax.nonce;
+    } else if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.nonce) {
+        config.nonce = ktp_ajax_object.nonce;
+    } else if (typeof ktp_ajax !== 'undefined' && ktp_ajax.nonce) {
+        config.nonce = ktp_ajax.nonce;
+    } else if (typeof ktp_ajax_nonce !== 'undefined') {
+        config.nonce = ktp_ajax_nonce;
+    } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.delivery_dates) {
         config.nonce = ktpwp_ajax.nonces.delivery_dates;
     } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.general) {
         config.nonce = ktpwp_ajax.nonces.general;
-    } else if (typeof ktp_ajax_nonce !== 'undefined') {
-        config.nonce = ktp_ajax_nonce;
     } else if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.nonce) {
         config.nonce = ktp_ajax_object.nonce;
     }
@@ -177,15 +184,19 @@ jQuery(document).ready(function($) {
             config.url = '/wp-admin/admin-ajax.php';
         }
         
-        // nonceの取得（優先順位順）
-        if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.delivery_dates) {
+        // nonceはページで1つに統一（Head/TabView の ktpwp_ajax.nonce を最優先。複数出ると検証失敗するため）
+        if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonce) {
+            config.nonce = ktpwp_ajax.nonce;
+        } else if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.nonce) {
+            config.nonce = ktp_ajax_object.nonce;
+        } else if (typeof ktp_ajax !== 'undefined' && ktp_ajax.nonce) {
+            config.nonce = ktp_ajax.nonce;
+        } else if (typeof ktp_ajax_nonce !== 'undefined') {
+            config.nonce = ktp_ajax_nonce;
+        } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.delivery_dates) {
             config.nonce = ktpwp_ajax.nonces.delivery_dates;
         } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.general) {
             config.nonce = ktpwp_ajax.nonces.general;
-        } else if (typeof ktp_ajax_nonce !== 'undefined') {
-            config.nonce = ktp_ajax_nonce;
-        } else if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.nonce) {
-            config.nonce = ktp_ajax_object.nonce;
         }
         
         return config;
