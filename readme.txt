@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.2.7
+Stable tag: 1.2.8
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -324,6 +324,9 @@ curl -sS -X POST \
 * 推奨PHP拡張: GD（画像処理用）
 
 == 変更履歴 ==
+
+= 1.2.8 - 2025年03月15日 =
+* 「次にやること」を更新画面の上部（admin_notices）に表示するよう変更
 
 = 1.2.7 - 2025年03月15日 =
 * 納期警告判定の改善（不正な日付をスキップする処理を追加）
