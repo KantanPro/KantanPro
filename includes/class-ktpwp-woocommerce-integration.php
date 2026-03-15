@@ -47,11 +47,28 @@ class KTPWP_WooCommerce_Integration {
 	 * フックを登録
 	 */
 	private function init_hooks(): void {
-		// 新規注文作成時に KantanPro に受注を追加（WC 5.6+ では woocommerce_store_api_checkout_order_processed も利用可）
+		// 新規注文作成時
 		add_action( 'woocommerce_new_order', array( $this, 'sync_order_to_ktp' ), 20, 2 );
-		// 注文ステータスが「処理中」になったときも同期（新規注文フックが飛ばない環境向け）
+		// チェックアウトで注文が作成された直後（クラシック・ブロック両方で発火しやすい）
+		add_action( 'woocommerce_checkout_order_created', array( $this, 'sync_order_to_ktp_checkout_created' ), 20, 1 );
+		// 注文ステータス変更時（どのステータスでも同期を試行し、未連携なら追加）
+		add_action( 'woocommerce_order_status_pending', array( $this, 'sync_order_to_ktp_on_status' ), 20, 2 );
+		add_action( 'woocommerce_order_status_on-hold', array( $this, 'sync_order_to_ktp_on_status' ), 20, 2 );
 		add_action( 'woocommerce_order_status_processing', array( $this, 'sync_order_to_ktp_on_status' ), 20, 2 );
 		add_action( 'woocommerce_order_status_completed', array( $this, 'sync_order_to_ktp_on_status' ), 20, 2 );
+	}
+
+	/**
+	 * チェックアウト注文作成フック用（order_id または WC_Order が渡る）
+	 *
+	 * @param int|WC_Order $order_or_id 注文ID または注文オブジェクト
+	 */
+	public function sync_order_to_ktp_checkout_created( $order_or_id ): void {
+		if ( $order_or_id instanceof WC_Order ) {
+			$this->sync_order_to_ktp( (int) $order_or_id->get_id(), $order_or_id );
+		} elseif ( is_numeric( $order_or_id ) ) {
+			$this->sync_order_to_ktp( (int) $order_or_id, null );
+		}
 	}
 
 	/**
@@ -87,10 +104,11 @@ class KTPWP_WooCommerce_Integration {
 			return;
 		}
 
-		// 既に連携済みかチェック
-		if ( $this->get_ktp_order_id_by_wc_order_id( $order_id ) ) {
+		// 既に連携済みかチェック（external_order_id カラムがある場合のみ）
+		$existing_ktp_id = $this->get_ktp_order_id_by_wc_order_id( $order_id );
+		if ( $existing_ktp_id ) {
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( 'KTPWP WooCommerce: Order ' . $order_id . ' already synced to KantanPro, skip.' );
+				error_log( 'KTPWP WooCommerce: Order ' . $order_id . ' already synced to KantanPro (id=' . $existing_ktp_id . '), skip.' );
 			}
 			return;
 		}
@@ -136,20 +154,25 @@ class KTPWP_WooCommerce_Integration {
 
 		$ktp_order_id = $order_manager->create_order( $data );
 		if ( ! $ktp_order_id ) {
-			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( 'KTPWP WooCommerce: Failed to create KantanPro order for WC order ' . $order_id );
+			global $wpdb;
+			$err = $wpdb->last_error ? $wpdb->last_error : 'unknown';
+			error_log( 'KTPWP WooCommerce: Failed to create KantanPro order for WC order ' . $order_id . '. DB error: ' . $err );
+			if ( strpos( $err, 'order_number' ) !== false || strpos( $err, 'external_source' ) !== false ) {
+				error_log( 'KTPWP WooCommerce: ヒント: 受注テーブルに order_number や external_source がない可能性があります。KantanPro を一度無効化して再有効化するか、管理画面で保存してマイグレーションを実行してください。' );
 			}
 			return;
 		}
 
-		// 外部連携情報を保存
-		$order_manager->update_order(
-			$ktp_order_id,
-			array(
-				'external_source'   => 'woocommerce',
-				'external_order_id' => (string) $order_id,
-			)
-		);
+		// 外部連携情報を保存（カラムが存在する場合のみ）
+		if ( $this->order_table_has_external_columns() ) {
+			$order_manager->update_order(
+				$ktp_order_id,
+				array(
+					'external_source'   => 'woocommerce',
+					'external_order_id' => (string) $order_id,
+				)
+			);
+		}
 
 		// 請求項目: WC のラインアイテムを追加（なければ初期1件）
 		$this->sync_invoice_items( $ktp_order_id, $order );
@@ -193,12 +216,28 @@ class KTPWP_WooCommerce_Integration {
 	}
 
 	/**
+	 * ktp_order テーブルに external_source / external_order_id があるか
+	 *
+	 * @return bool
+	 */
+	private function order_table_has_external_columns(): bool {
+		global $wpdb;
+		$table  = $wpdb->prefix . 'ktp_order';
+		$cols   = $wpdb->get_col( "SHOW COLUMNS FROM `{$table}`", 0 );
+		$cols   = is_array( $cols ) ? $cols : array();
+		return in_array( 'external_source', $cols, true ) && in_array( 'external_order_id', $cols, true );
+	}
+
+	/**
 	 * external_order_id から KantanPro の order id を取得
 	 *
 	 * @param int $wc_order_id WooCommerce 注文ID
 	 * @return int|null KTP order id or null
 	 */
 	private function get_ktp_order_id_by_wc_order_id( int $wc_order_id ): ?int {
+		if ( ! $this->order_table_has_external_columns() ) {
+			return null;
+		}
 		global $wpdb;
 		$table = $wpdb->prefix . 'ktp_order';
 		$col   = $wpdb->get_var(
