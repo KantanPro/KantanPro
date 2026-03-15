@@ -4919,9 +4919,11 @@ function ktpwp_distribution_admin_notices() {
         echo '</div>';
     }
     
-    // マイグレーション状態チェック
+    // マイグレーション状態チェック（KantanPro設定ページ ktp-* では ktpwp_admin_migration_status が表示するため重複を避ける）
+    $current_page = isset( $_GET['page'] ) ? $_GET['page'] : '';
+    $is_ktp_settings = ( strpos( $current_page, 'ktp-' ) === 0 );
     $migration_status = ktpwp_check_migration_status();
-    if ( $migration_status['needs_migration'] ) {
+    if ( $migration_status['needs_migration'] && ! $is_ktp_settings ) {
         echo '<div class="notice notice-warning">';
         echo '<p><strong>KantanPro:</strong> データベースの更新が必要です。</p>';
         echo '<p>現在のDBバージョン: ' . esc_html( $migration_status['current_db_version'] ) . '</p>';
