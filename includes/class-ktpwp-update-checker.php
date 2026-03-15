@@ -171,14 +171,20 @@ class KTPWP_Update_Checker {
                 'notifications_enabled' => $this->is_update_notification_enabled()
             ) );
             
-            // 更新データがある場合は設定
-            $update_data = get_option( 'ktpwp_update_available', false );
-            if ( $update_data ) {
-                wp_localize_script( 'ktpwp-update-balloon', 'ktpwp_update_data', array(
-                    'has_update' => true,
-                    'message' => __( '新しいバージョンが利用可能です！', 'KantanPro' ),
-                    'update_data' => $update_data
-                ) );
+            // プラグイン更新結果画面では「更新が利用可能です」を出さない（更新直後の違和感を防ぐ）
+            $is_plugin_update_result = in_array( $hook, array( 'update-core.php', 'update.php' ), true );
+            if ( $is_plugin_update_result ) {
+                wp_localize_script( 'ktpwp-update-balloon', 'ktpwp_update_data', array( 'has_update' => false ) );
+            } else {
+                // 更新データがある場合は設定
+                $update_data = get_option( 'ktpwp_update_available', false );
+                if ( $update_data ) {
+                    wp_localize_script( 'ktpwp-update-balloon', 'ktpwp_update_data', array(
+                        'has_update' => true,
+                        'message' => __( '新しいバージョンが利用可能です！', 'KantanPro' ),
+                        'update_data' => $update_data
+                    ) );
+                }
             }
         }
     }
