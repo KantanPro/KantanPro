@@ -1,4 +1,4 @@
-# KantanPro (KTPWP) - Version 1.2.11
+# KantanPro (KTPWP) - Version 1.2.12
 
 WordPressで動作する業務管理・受注進捗・請求・顧客・サービス・協力会社・レポート・スタッフチャットまで一元管理できる多機能プラグイン。
 
@@ -351,6 +351,9 @@ KantanProは、WordPress上で以下の業務を一元管理できる多機能�
 ---
 
 ## 変更履歴
+### Version 1.2.12 - 2025年3月15日
+- **WooCommerce対応完了**
+
 ### Version 1.2.11 - 2025年3月15日
 - **WooCommerceの注文がKantanProに同期されない原因を調査・対応**
 
