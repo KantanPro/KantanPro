@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.2.9
+Stable tag: 1.2.10
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -324,6 +324,10 @@ curl -sS -X POST \
 * 推奨PHP拡張: GD（画像処理用）
 
 == 変更履歴 ==
+
+= 1.2.10 - 2025年03月15日 =
+* WooCommerce連携を追加（WooCommerce読み込み時にKantanProへ受注を自動追加、クラス存在チェックと連携クラスの初期化を実装）
+* 翻訳の早期読み込みに関するNoticeを抑制するフィルターを追加（WooCommerce関連プラグインでのリダイレクト失敗を防ぐため、_load_textdomain_just_in_timeのエラートリガーを無効化）
 
 = 1.2.9 - 2025年03月15日 =
 * プラグイン更新結果画面での通知表示を改善（更新直後に「更新が利用可能です」と表示されないように条件を追加）
