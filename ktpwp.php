@@ -333,6 +333,16 @@ add_action( 'plugins_loaded', 'ktpwp_init_update_checker' );
 add_action( 'plugins_loaded', 'ktpwp_init_cache' );
 add_action( 'plugins_loaded', 'ktpwp_init_image_optimizer' );
 
+// WooCommerce 連携: 注文を KantanPro に自動追加
+add_action( 'woocommerce_loaded', 'ktpwp_init_woocommerce_integration' );
+function ktpwp_init_woocommerce_integration() {
+	if ( ! class_exists( 'WooCommerce' ) ) {
+		return;
+	}
+	require_once plugin_dir_path( __FILE__ ) . 'includes/class-ktpwp-woocommerce-integration.php';
+	KTPWP_WooCommerce_Integration::get_instance();
+}
+
 // キャッシュクリア処理のAJAXハンドラー
 add_action( 'wp_ajax_ktpwp_clear_cache', 'ktpwp_handle_clear_cache_ajax' );
 function ktpwp_handle_clear_cache_ajax() {
