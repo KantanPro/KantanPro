@@ -52,6 +52,7 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 				payment_day TINYTEXT,
 				payment_method TINYTEXT,
 				tax_category VARCHAR(100) NOT NULL DEFAULT '" . __( '内税', 'ktpwp' ) . "',
+				payment_timing VARCHAR(20) NOT NULL DEFAULT 'postpay',
 				memo TEXT,
 				search_field TEXT,
 				frequency INT NOT NULL DEFAULT 0,
@@ -206,6 +207,7 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 				'payment_day' => isset( $post_data['payment_day'] ) ? sanitize_text_field( $post_data['payment_day'] ) : '',
 				'payment_method' => isset( $post_data['payment_method'] ) ? sanitize_text_field( $post_data['payment_method'] ) : '',
 				'tax_category' => isset( $post_data['tax_category'] ) ? sanitize_text_field( $post_data['tax_category'] ) : '',
+				'payment_timing' => isset( $post_data['payment_timing'] ) && in_array( $post_data['payment_timing'], array( 'postpay', 'prepay' ), true ) ? $post_data['payment_timing'] : 'postpay',
 				'memo' => isset( $post_data['memo'] ) ? sanitize_textarea_field( $post_data['memo'] ) : '',
 				'client_status' => $client_status,
 				'category' => isset( $post_data['category'] ) ? sanitize_text_field( $post_data['category'] ) : '',
@@ -467,6 +469,7 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 					'payment_day' => $fields_data['payment_day'],
 					'payment_method' => $fields_data['payment_method'],
 					'tax_category' => $fields_data['tax_category'],
+					'payment_timing' => isset( $fields_data['payment_timing'] ) && in_array( $fields_data['payment_timing'], array( 'postpay', 'prepay' ), true ) ? $fields_data['payment_timing'] : 'postpay',
 					'memo' => $fields_data['memo'],
 					'client_status' => $fields_data['client_status'],
 					'category' => $fields_data['category'],
@@ -491,6 +494,7 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 					'%s', // payment_day
 					'%s', // payment_method
 					'%s', // tax_category
+					'%s', // payment_timing
 					'%s', // memo
 					'%s', // client_status
 					'%s', // category
@@ -568,6 +572,7 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 						'payment_day' => $fields_data['payment_day'],
 						'payment_method' => $fields_data['payment_method'],
 						'tax_category' => $fields_data['tax_category'],
+						'payment_timing' => isset( $fields_data['payment_timing'] ) && in_array( $fields_data['payment_timing'], array( 'postpay', 'prepay' ), true ) ? $fields_data['payment_timing'] : 'postpay',
 						'memo' => $fields_data['memo'],
 						'client_status' => $fields_data['client_status'],
 						'category' => $fields_data['category'],
@@ -576,6 +581,7 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
                     ),
                     array( 'id' => $data_id ),
                     array(
+						'%s',
 						'%s',
 						'%s',
 						'%s',

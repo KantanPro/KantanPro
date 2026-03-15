@@ -4229,10 +4229,16 @@ class KTPWP_Ajax {
 			ORDER BY completion_date ASC",
 			$client_id
 		));
-		
 
-		
-		if (empty($orders)) {
+		// 前払い（前入金済・EC受注）は請求対象から除外
+		if ( class_exists( 'KTPWP_Payment_Timing' ) && ! empty( $orders ) ) {
+			$orders = array_filter( $orders, function ( $order ) use ( $client_data ) {
+				return ! KTPWP_Payment_Timing::is_prepay( $order, $client_data );
+			} );
+			$orders = array_values( $orders );
+		}
+
+		if ( empty( $orders ) ) {
 			wp_send_json_error('請求対象の受注書が見つかりません。');
 			return;
 		}
@@ -4350,7 +4356,7 @@ class KTPWP_Ajax {
 		$response_data = array(
 			'client_name' => $client_data->company_name,
 			'client_address' => $client_data->address,
-			'client_contact' => $client_data->contact_person,
+			'client_contact' => $client_data->name ?? '',
 			'monthly_groups' => $monthly_groups,
 			'departments' => $departments,
 			'qualified_invoice_number' => $qualified_invoice_number,

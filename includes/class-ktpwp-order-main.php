@@ -369,6 +369,37 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 			// Initialize staff chat table
 			$this->Create_Staff_Chat_Table();
 
+			// 支払タイミングの保存処理（POST 時は最優先で実行しリダイレクト）
+			if ( $_SERVER['REQUEST_METHOD'] === 'POST' && isset( $_POST['update_payment_timing_order_id'], $_POST['ktp_payment_timing_nonce'] ) ) {
+				if ( wp_verify_nonce( sanitize_text_field( $_POST['ktp_payment_timing_nonce'] ), 'ktp_update_order_payment_timing' ) ) {
+					$update_id = absint( $_POST['update_payment_timing_order_id'] );
+					$raw = isset( $_POST['order_payment_timing'] ) ? sanitize_text_field( $_POST['order_payment_timing'] ) : '';
+					$payment_timing = in_array( $raw, array( 'postpay', 'prepay' ), true ) ? $raw : null;
+					if ( $update_id > 0 ) {
+						// カラムが無い場合はマイグレーションを実行
+						$cols = $wpdb->get_col( "SHOW COLUMNS FROM `{$table_name}`", 0 );
+						if ( ! is_array( $cols ) || ! in_array( 'payment_timing', $cols, true ) ) {
+							$migration_file = plugin_dir_path( __FILE__ ) . 'migrations/20250313_add_payment_timing_to_order.php';
+							if ( file_exists( $migration_file ) ) {
+								require_once $migration_file;
+								if ( class_exists( 'KTPWP_Migration_20250313_Add_Payment_Timing_To_Order' ) ) {
+									KTPWP_Migration_20250313_Add_Payment_Timing_To_Order::up();
+								}
+							}
+						}
+						if ( $payment_timing === null ) {
+							$wpdb->query( $wpdb->prepare( "UPDATE `{$table_name}` SET payment_timing = NULL WHERE id = %d", $update_id ) );
+						} else {
+							$wpdb->update( $table_name, array( 'payment_timing' => $payment_timing ), array( 'id' => $update_id ), array( '%s' ), array( '%d' ) );
+						}
+						$base_url = class_exists( 'KTPWP_Main' ) ? KTPWP_Main::get_current_page_base_url() : home_url( '/' );
+						$redirect_url = add_query_arg( array( 'tab_name' => 'order', 'order_id' => $update_id ), $base_url );
+						wp_safe_redirect( esc_url_raw( $redirect_url ) );
+						exit;
+					}
+				}
+			}
+
 			// セッション開始（受注書状態記憶のため）
 			if ( session_status() !== PHP_SESSION_ACTIVE ) {
 				ktpwp_safe_session_start();
@@ -1754,6 +1785,27 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 					} else {
 						$content .= '<div><span id="order_user_name">' . $user_display_name . '</span></div>';
 					}
+					// 支払タイミング（後払い / 前払いの2択）
+					$order_payment_timing = 'postpay';
+					if ( property_exists( $order_data, 'payment_timing' ) && $order_data->payment_timing !== null && $order_data->payment_timing !== '' ) {
+						$v = trim( (string) $order_data->payment_timing );
+						if ( $v === 'prepay' || $v === 'postpay' ) {
+							$order_payment_timing = $v;
+						}
+					}
+					$current_url = add_query_arg( array( 'tab_name' => 'order', 'order_id' => $order_data->id ), KTPWP_Main::get_current_page_base_url() );
+					$content .= '<div class="order-payment-timing-wrap" style="margin-top:8px;">';
+					$content .= '<form method="post" action="' . esc_url( $current_url ) . '" style="display:inline;" id="ktp-order-payment-timing-form">';
+					$content .= '<input type="hidden" name="tab_name" value="order" />';
+					$content .= '<input type="hidden" name="order_id" value="' . esc_attr( $order_data->id ) . '" />';
+					$content .= '<select id="order_payment_timing_' . esc_attr( $order_data->id ) . '" name="order_payment_timing" onchange="document.getElementById(\'ktp-order-payment-timing-form\').submit();" style="padding:4px 8px;">';
+					$content .= '<option value="postpay"' . ( $order_payment_timing === 'postpay' ? ' selected' : '' ) . '>' . esc_html__( '後払い', 'ktpwp' ) . '</option>';
+					$content .= '<option value="prepay"' . ( $order_payment_timing === 'prepay' ? ' selected' : '' ) . '>' . esc_html__( '前入金済', 'ktpwp' ) . '</option>';
+					$content .= '</select>';
+					$content .= '<input type="hidden" name="update_payment_timing_order_id" value="' . esc_attr( $order_data->id ) . '" />';
+					$content .= '<input type="hidden" name="ktp_payment_timing_nonce" value="' . esc_attr( wp_create_nonce( 'ktp_update_order_payment_timing' ) ) . '" />';
+					$content .= '</form>';
+					$content .= '</div>';
 					// 作成日時の表示
 					$raw_time = $order_data->time;
 					$formatted_time = '';
@@ -2622,15 +2674,18 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 				// リスト表示開始（枠線なし、設定された奇数偶数背景カラー）
 				$html .= '<div style="margin-bottom: 15px; font-size: 12px;">';
 
-				// ヘッダー行
+				// ヘッダー行（税区分に応じて金額・税額の意味を明示）
+				$amount_label = ( $tax_category === '外税' ) ? '金額（税抜）' : '金額（税込）';
+				$price_label  = ( $tax_category === '外税' ) ? '単価（税抜）' : '単価（税込）';
+				$tax_col_label = ( $tax_category === '外税' ) ? '税額（外税）' : '税額（内税）';
 				$html .= '<div style="display: flex; background: #f0f0f0; padding: 8px; font-weight: bold; border-bottom: 1px solid #ccc; align-items: center;">';
 				$html .= '<div style="width: 30px; text-align: center;">No.</div>';
 				$html .= '<div style="flex: 1; text-align: left; margin-left: 8px;">項目名</div>';
-				$html .= '<div style="width: 80px; text-align: right;">単価</div>';
+				$html .= '<div style="width: 80px; text-align: right;">' . esc_html( $price_label ) . '</div>';
 				$html .= '<div style="width: 60px; text-align: right;">数量</div>';
-                $html .= '<div style="width: 80px; text-align: right;">金額</div>';
+				$html .= '<div style="width: 80px; text-align: right;">' . esc_html( $amount_label ) . '</div>';
                 if ( ! ( class_exists( 'KTPWP_Tax_Policy' ) && KTPWP_Tax_Policy::hide_tax_columns() ) ) {
-                    $html .= '<div style="width: 80px; text-align: right;">税額</div>';
+                    $html .= '<div style="width: 80px; text-align: right;">' . esc_html( $tax_col_label ) . '</div>';
                     $html .= '<div style="width: 60px; text-align: center;">税率</div>';
                 }
 				$html .= '<div style="width: 100px; text-align: left; margin-left: 8px;">備考</div>';

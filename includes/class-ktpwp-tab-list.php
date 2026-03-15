@@ -448,6 +448,13 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 						$content .= " - <span class='project_name'>{$project_name}</span>";
 					}
 					$content .= " - {$time}</a>";
+					// 前払いラベル（前入金済 / EC受注）
+					if ( class_exists( 'KTPWP_Payment_Timing' ) ) {
+						$prepay_label = KTPWP_Payment_Timing::get_prepay_label( $order, null );
+						if ( $prepay_label !== '' ) {
+							$content .= ' <span class="ktp-prepay-badge" style="display:inline-block;margin-left:6px;padding:2px 8px;font-size:11px;background:#e3f2fd;color:#1565c0;border-radius:4px;">' . esc_html( $prepay_label ) . '</span>';
+						}
+					}
 
 					// 納期フィールドと進捗プルダウンを1つのコンテナにまとめる
 					$content .= "<div class='delivery-dates-container'>";

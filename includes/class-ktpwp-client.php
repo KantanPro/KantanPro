@@ -968,6 +968,7 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 					$payment_day = esc_html( $row->payment_day );
 					$payment_method = esc_html( $row->payment_method );
 					$tax_category = esc_html( $row->tax_category );
+					$payment_timing = isset( $row->payment_timing ) && in_array( $row->payment_timing, array( 'postpay', 'prepay' ), true ) ? $row->payment_timing : 'postpay';
 					$memo = esc_html( $row->memo );
 					$client_status = esc_html( $row->client_status );
 					$frequency = esc_html( $row->frequency );
@@ -998,6 +999,7 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 				$payment_day = '末日';
 				$payment_method = '';
 				$tax_category = '';
+				$payment_timing = 'postpay';
 				$memo = '';
 				$client_status = '対象'; // デフォルト値を設定
 				$category = ''; // カテゴリーフィールドを追加
@@ -1093,6 +1095,16 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 					'name' => 'tax_category',
 					'options' => array( '内税', '外税' ),
 					'default' => '内税',
+				),
+				'支払タイミング' => array(
+					'type' => 'select',
+					'name' => 'payment_timing',
+					'options' => array(
+						'postpay' => __( '後払い', 'ktpwp' ),
+						'prepay'  => __( '前払い', 'ktpwp' ),
+					),
+					'default' => 'postpay',
+					'options_assoc' => true,
 				),
 				'カテゴリー' => array(
 					'type' => 'text',
@@ -1322,16 +1334,17 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 						$data_forms .= "<div class=\"form-group\"><label for=\"{$fieldId}\">{$label_i18n}：</label> <textarea id=\"{$fieldId}\" name=\"{$fieldName}\"{$pattern}{$required}>" . esc_textarea( $value ) . '</textarea></div>';
 					} elseif ( $field['type'] === 'select' ) {
 						$options = '';
-						foreach ( $field['options'] as $option ) {
-							// 追加モードではデフォルト値を選択、更新モードでは現在の値を選択
-							if ( $action === 'istmode' ) {
-								// 追加モードの場合、デフォルト値があれば選択
-								$selected = ( isset( $field['default'] ) && $field['default'] === $option ) ? ' selected' : '';
-							} else {
-								// 更新モードの場合、現在の値を選択
-								$selected = ( $value === $option ) ? ' selected' : '';
+						$options_assoc = ! empty( $field['options_assoc'] );
+						foreach ( $field['options'] as $opt_value => $opt_label ) {
+							if ( ! $options_assoc ) {
+								$opt_value = $opt_label;
 							}
-							$options .= '<option value="' . esc_attr( $option ) . "\"{$selected}>" . esc_html__( $option, 'ktpwp' ) . '</option>';
+							if ( $action === 'istmode' ) {
+								$selected = ( isset( $field['default'] ) && $field['default'] === $opt_value ) ? ' selected' : '';
+							} else {
+								$selected = ( $value === $opt_value ) ? ' selected' : '';
+							}
+							$options .= '<option value="' . esc_attr( $opt_value ) . '"' . $selected . '>' . ( $options_assoc ? esc_html( $opt_label ) : esc_html__( $opt_label, 'ktpwp' ) ) . '</option>';
 						}
 						$fieldId = 'ktp-client-' . preg_replace( '/[^a-zA-Z0-9_-]/', '', $fieldName );
 						$data_forms .= "<div class=\"form-group\"><label for=\"{$fieldId}\">{$label_i18n}：</label> <select id=\"{$fieldId}\" name=\"{$fieldName}\"{$required}>{$options}</select></div>";
@@ -1680,7 +1693,7 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 				$data_forms .= '</div>';
 
 				// 残りのフィールド
-				$remaining_fields = array( 'url', 'representative_name', 'phone', 'postal_code', 'prefecture', 'city', 'address', 'building', 'closing_day', 'payment_month', 'payment_day', 'payment_method', 'tax_category', 'category', 'client_status', 'memo' );
+				$remaining_fields = array( 'url', 'representative_name', 'phone', 'postal_code', 'prefecture', 'city', 'address', 'building', 'closing_day', 'payment_month', 'payment_day', 'payment_method', 'tax_category', 'payment_timing', 'category', 'client_status', 'memo' );
 				foreach ( $remaining_fields as $field_name ) {
 					$field_key = '';
 					switch ( $field_name ) {
@@ -1723,6 +1736,9 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 						case 'tax_category':
 									$field_key = '税区分';
 			                break;
+						case 'payment_timing':
+									$field_key = '支払タイミング';
+			                break;
 						case 'category':
 									$field_key = 'カテゴリー';
 			                break;
@@ -1756,9 +1772,13 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 						$data_forms .= '<div class="form-group"><label for="' . $fieldId . '">' . esc_html( $field_key ) . '：</label> <textarea id="' . $fieldId . '" name="' . esc_attr( $field['name'] ) . '"' . $pattern . $required . '>' . esc_textarea( $value ) . '</textarea></div>';
 					} elseif ( $field['type'] === 'select' ) {
 						$options = '';
-						foreach ( $field['options'] as $option ) {
-							$selected = $value === $option ? ' selected' : '';
-							$options .= '<option value="' . esc_attr( $option ) . '"' . $selected . '>' . esc_html( $option ) . '</option>';
+						$options_assoc = ! empty( $field['options_assoc'] );
+						foreach ( $field['options'] as $opt_value => $opt_label ) {
+							if ( ! $options_assoc ) {
+								$opt_value = $opt_label;
+							}
+							$selected = $value === $opt_value ? ' selected' : '';
+							$options .= '<option value="' . esc_attr( $opt_value ) . '"' . $selected . '>' . ( $options_assoc ? esc_html( $opt_label ) : esc_html( $opt_label ) ) . '</option>';
 						}
 						$fieldId = 'ktp-client-' . preg_replace( '/[^a-zA-Z0-9_-]/', '', $field['name'] );
 						$data_forms .= '<div class="form-group"><label for="' . $fieldId . '">' . esc_html( $field_key ) . '：</label> <select id="' . $fieldId . '" name="' . esc_attr( $field['name'] ) . '"' . $required . '>' . $options . '</select></div>';
@@ -2042,6 +2062,9 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 			}
 			if ( ! isset( $tax_category ) ) {
 				$tax_category = '';
+			}
+			if ( ! isset( $payment_timing ) ) {
+				$payment_timing = 'postpay';
 			}
 			if ( ! isset( $category ) ) {
 				$category = '';

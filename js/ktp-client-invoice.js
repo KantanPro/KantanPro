@@ -235,15 +235,18 @@ jQuery(document).ready(function($) {
 
                                         if (order.invoice_items && order.invoice_items.length > 0) {
                                             html += "<div style=\"margin-top:10px;width:100%;\">";
+                                            var amountLabel = (taxCategory === '外税') ? '金額（税抜）' : '金額（税込）';
+                                            var priceLabel = (taxCategory === '外税') ? '単価（税抜）' : '単価（税込）';
+                                            var taxColLabel = (taxCategory === '外税') ? '税額（外税）' : '税額（内税）';
                                             html += "<div style=\"display: flex; background: #f0f0f0; padding: 8px; font-weight: bold; border-bottom: 1px solid #ccc; align-items: center; font-size: 12px;\">";
                                             html += "<div style=\"width: 30px; text-align: center;\">No.</div>";
                                             html += "<div style=\"flex: 1; text-align: left; margin-left: 8px;\">サービス</div>";
-                                            html += "<div style=\"width: 80px; text-align: right;\">単価</div>";
+                                            html += "<div style=\"width: 80px; text-align: right;\">" + priceLabel + "</div>";
                                             html += "<div style=\"width: 60px; text-align: right;\">数量/単位</div>";
-                                            html += "<div style=\"width: 80px; text-align: right;\">金額</div>";
+                                            html += "<div style=\"width: 80px; text-align: right;\">" + amountLabel + "</div>";
                                             if (!(window.ktp_tax_policy && window.ktp_tax_policy.hide_tax_columns)) {
-                                                html += "<div style=\\\"width: 80px; text-align: right;\\\">税額</div>";
-                                                html += "<div style=\\\"width: 60px; text-align: center;\\\">税率</div>";
+                                                html += "<div style=\"width: 80px; text-align: right;\">" + taxColLabel + "</div>";
+                                                html += "<div style=\"width: 60px; text-align: center;\">税率</div>";
                                             }
                                             html += "<div style=\"width: 100px; text-align: left; margin-left: 8px;\">備考</div>";
                                             html += "</div>";
@@ -331,8 +334,8 @@ jQuery(document).ready(function($) {
                                                 html += "<div style=\"width: 60px; text-align: right;\">" + quantity + "/" + (item.unit || "式") + "</div>";
                                                 html += "<div style=\"width: 80px; text-align: right;\">" + totalPrice + "</div>";
                                                 if (!(window.ktp_tax_policy && window.ktp_tax_policy.hide_tax_columns)) {
-                                                    html += "<div style=\\\"width: 80px; text-align: right;\\\">" + lineTaxAmountDisplay + "</div>";
-                                                    html += "<div style=\\\"width: 60px; text-align: center;\\\">" + taxRateDisplay + "</div>";
+                                                    html += "<div style=\"width: 80px; text-align: right;\">" + lineTaxAmountDisplay + "</div>";
+                                                    html += "<div style=\"width: 60px; text-align: center;\">" + taxRateDisplay + "</div>";
                                                 }
                                                 html += "<div style=\"width: 100px; text-align: left; margin-left: 8px;\"></div>";
                                                 html += "</div>";

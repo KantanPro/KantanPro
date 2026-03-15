@@ -196,6 +196,7 @@ function ktpwp_autoload_classes() {
         'KTPWP_Update_Checker'  => 'includes/class-ktpwp-update-checker.php',
         'KTPWP_SVG_Icons'       => 'includes/class-ktpwp-svg-icons.php',
         'KTPWP_Settings'        => 'includes/class-ktpwp-settings.php',
+        'KTPWP_Payment_Timing'  => 'includes/class-ktpwp-payment-timing.php',
     );
 
     foreach ( $classes as $class_name => $file_path ) {
