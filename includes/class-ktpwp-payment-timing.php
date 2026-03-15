@@ -58,17 +58,20 @@ class KTPWP_Payment_Timing {
 
 	/**
 	 * 表示用ラベルを返す（前払いでない場合は空文字）
-	 * 前払い + external_source あり → 'EC受注'、前払いのみ → '前入金済'
+	 * 前払い + external_source=woocommerce → 'WC受注'、その他外部連携 → 'EC受注'、前払いのみ → '前入金済'
 	 *
 	 * @param object $order 受注オブジェクト（payment_timing, external_source, client_id を持つ）
 	 * @param object|null $client 顧客オブジェクト（省略可）
-	 * @return string '' | '前入金済' | 'EC受注'
+	 * @return string '' | '前入金済' | 'EC受注' | 'WC受注'
 	 */
 	public static function get_prepay_label( $order, $client = null ) {
 		if ( ! self::is_prepay( $order, $client ) ) {
 			return '';
 		}
 		$external = isset( $order->external_source ) ? trim( (string) $order->external_source ) : '';
+		if ( $external === 'woocommerce' ) {
+			return __( 'WC受注', 'ktpwp' );
+		}
 		if ( $external !== '' ) {
 			return __( 'EC受注', 'ktpwp' );
 		}

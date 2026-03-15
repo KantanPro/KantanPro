@@ -286,14 +286,19 @@ class KTPWP_Ajax {
 				if ( ! $client_id ) {
 					wp_send_json_error( 'client_idが指定されていません' );
 				}
-				$table_name = $wpdb->prefix . 'ktp_order';
-				// progress=4（完了）→5（請求済）に一括更新（completion_dateは変更しない）
+				$order_table = $wpdb->prefix . 'ktp_order';
+				$client_table = $wpdb->prefix . 'ktp_client';
+				// progress=4（完了）→5（請求済）に一括更新。前払い（WC受注・前入金済等）は後払い請求対象外のため除外する。
 				$result = $wpdb->query(
                     $wpdb->prepare(
-                        "UPDATE {$table_name} SET progress = 5 WHERE client_id = %d AND progress = 4",
+                        "UPDATE `{$order_table}` o
+						LEFT JOIN `{$client_table}` c ON o.client_id = c.id
+						SET o.progress = 5
+						WHERE o.client_id = %d AND o.progress = 4
+						AND NOT ( o.payment_timing = 'prepay' OR ( ( o.payment_timing IS NULL OR o.payment_timing = '' ) AND c.payment_timing = 'prepay' ) )",
                         $client_id
                     )
-				);
+                );
 				if ( $result === false ) {
 					wp_send_json_error( 'DB更新に失敗しました: ' . $wpdb->last_error );
 				}
@@ -4230,7 +4235,7 @@ class KTPWP_Ajax {
 			$client_id
 		));
 
-		// 前払い（前入金済・EC受注）は請求対象から除外
+		// 前払い（前入金済・EC受注・WC受注）は後払い請求対象から除外
 		if ( class_exists( 'KTPWP_Payment_Timing' ) && ! empty( $orders ) ) {
 			$orders = array_filter( $orders, function ( $order ) use ( $client_data ) {
 				return ! KTPWP_Payment_Timing::is_prepay( $order, $client_data );

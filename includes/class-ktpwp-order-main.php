@@ -1799,8 +1799,11 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 					$content .= '<input type="hidden" name="tab_name" value="order" />';
 					$content .= '<input type="hidden" name="order_id" value="' . esc_attr( $order_data->id ) . '" />';
 					$content .= '<select id="order_payment_timing_' . esc_attr( $order_data->id ) . '" name="order_payment_timing" onchange="document.getElementById(\'ktp-order-payment-timing-form\').submit();" style="padding:4px 8px;">';
+					$prepay_label = ( property_exists( $order_data, 'external_source' ) && trim( (string) $order_data->external_source ) === 'woocommerce' )
+						? __( 'WC受注', 'ktpwp' )
+						: __( '前入金済', 'ktpwp' );
 					$content .= '<option value="postpay"' . ( $order_payment_timing === 'postpay' ? ' selected' : '' ) . '>' . esc_html__( '後払い', 'ktpwp' ) . '</option>';
-					$content .= '<option value="prepay"' . ( $order_payment_timing === 'prepay' ? ' selected' : '' ) . '>' . esc_html__( '前入金済', 'ktpwp' ) . '</option>';
+					$content .= '<option value="prepay"' . ( $order_payment_timing === 'prepay' ? ' selected' : '' ) . '>' . esc_html( $prepay_label ) . '</option>';
 					$content .= '</select>';
 					$content .= '<input type="hidden" name="update_payment_timing_order_id" value="' . esc_attr( $order_data->id ) . '" />';
 					$content .= '<input type="hidden" name="ktp_payment_timing_nonce" value="' . esc_attr( wp_create_nonce( 'ktp_update_order_payment_timing' ) ) . '" />';

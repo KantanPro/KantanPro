@@ -56,6 +56,11 @@ class KTPWP_WooCommerce_Integration {
 		add_action( 'woocommerce_order_status_on-hold', array( $this, 'sync_order_to_ktp_on_status' ), 20, 2 );
 		add_action( 'woocommerce_order_status_processing', array( $this, 'sync_order_to_ktp_on_status' ), 20, 2 );
 		add_action( 'woocommerce_order_status_completed', array( $this, 'sync_order_to_ktp_on_status' ), 20, 2 );
+		// 管理画面: 未同期注文の手動同期
+		add_action( 'admin_menu', array( $this, 'add_sync_menu' ), 99 );
+		add_action( 'admin_post_ktpwp_sync_woocommerce_orders', array( $this, 'handle_sync_woocommerce_orders' ) );
+		add_action( 'admin_post_ktpwp_link_woocommerce_clients', array( $this, 'handle_link_woocommerce_clients' ) );
+		add_action( 'admin_post_ktpwp_relink_woocommerce_clients', array( $this, 'handle_relink_woocommerce_clients' ) );
 	}
 
 	/**
@@ -104,6 +109,9 @@ class KTPWP_WooCommerce_Integration {
 			return;
 		}
 
+		// 受注テーブルに order_number / external カラムが無い場合は追加（同期失敗を防ぐ）
+		$this->ensure_order_table_ready();
+
 		// 既に連携済みかチェック（external_order_id カラムがある場合のみ）
 		$existing_ktp_id = $this->get_ktp_order_id_by_wc_order_id( $order_id );
 		if ( $existing_ktp_id ) {
@@ -125,27 +133,31 @@ class KTPWP_WooCommerce_Integration {
 		}
 
 		$customer_name = $this->get_customer_display_name( $order );
-		$order_number   = $order->get_order_number();
-		$project_name   = 'WooCommerce #' . $order_number;
-		$created        = $order->get_date_created();
-		$time           = $created ? $created->getTimestamp() : time();
-		$memo           = sprintf(
+		$user_name     = trim( $order->get_billing_first_name() . ' ' . $order->get_billing_last_name() );
+		$order_number  = $order->get_order_number();
+		$project_name  = 'WooCommerce #' . $order_number;
+		$created       = $order->get_date_created();
+		$time          = $created ? $created->getTimestamp() : time();
+		$memo          = sprintf(
 			/* translators: 1: WooCommerce order number, 2: order ID */
 			__( 'WooCommerce 注文 #%1$s (ID: %2$d)', 'ktpwp' ),
 			$order_number,
 			$order_id
 		);
 
+		// 注文から顧客を取得または作成し、client_id を設定
+		$client_id = $this->get_or_create_client_id_from_order( $order );
+
 		$search_parts = array_filter( array( $customer_name, $project_name, $memo ) );
 		$search_field = implode( ', ', $search_parts );
 
 		$data = array(
 			'time'           => $time,
-			'client_id'      => null,
+			'client_id'      => $client_id,
 			'customer_name'  => $customer_name,
-			'user_name'      => '',
+			'user_name'      => $user_name,
 			'project_name'   => $project_name,
-			'progress'       => 1,
+			'progress'       => 3,
 			'invoice_items'  => '',
 			'cost_items'     => '',
 			'memo'           => $memo,
@@ -157,19 +169,21 @@ class KTPWP_WooCommerce_Integration {
 			global $wpdb;
 			$err = $wpdb->last_error ? $wpdb->last_error : 'unknown';
 			error_log( 'KTPWP WooCommerce: Failed to create KantanPro order for WC order ' . $order_id . '. DB error: ' . $err );
+			set_transient( 'ktpwp_wc_sync_last_error', $err, 60 );
 			if ( strpos( $err, 'order_number' ) !== false || strpos( $err, 'external_source' ) !== false ) {
 				error_log( 'KTPWP WooCommerce: ヒント: 受注テーブルに order_number や external_source がない可能性があります。KantanPro を一度無効化して再有効化するか、管理画面で保存してマイグレーションを実行してください。' );
 			}
 			return;
 		}
 
-		// 外部連携情報を保存（カラムが存在する場合のみ）
+		// 外部連携情報と支払いタイミング（WC受注）を保存（カラムが存在する場合のみ）
 		if ( $this->order_table_has_external_columns() ) {
 			$order_manager->update_order(
 				$ktp_order_id,
 				array(
 					'external_source'   => 'woocommerce',
 					'external_order_id' => (string) $order_id,
+					'payment_timing'    => 'prepay',
 				)
 			);
 		}
@@ -199,20 +213,193 @@ class KTPWP_WooCommerce_Integration {
 	}
 
 	/**
+	 * メインのメールアドレスで既存顧客を取得
+	 *
+	 * @param string $email メールアドレス
+	 * @return object|null 顧客行（id, company_name, name 等）。見つからなければ null
+	 */
+	private function get_client_by_email( string $email ): ?object {
+		$email = sanitize_email( $email );
+		if ( $email === '' || ! is_email( $email ) ) {
+			return null;
+		}
+		global $wpdb;
+		$table = $wpdb->prefix . 'ktp_client';
+		$exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
+		if ( $exists !== $table ) {
+			return null;
+		}
+		$client = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT id, company_name, name FROM `{$table}` WHERE email = %s AND (client_status IS NULL OR client_status != '対象外') ORDER BY id ASC LIMIT 1",
+				$email
+			)
+		);
+		return $client ?: null;
+	}
+
+	/**
 	 * 注文から表示用顧客名を取得
+	 * 注文に会社名があれば会社名、なければ注文者名（姓・名）を返す。
 	 *
 	 * @param WC_Order $order
 	 * @return string
 	 */
 	private function get_customer_display_name( WC_Order $order ): string {
-		$company = $order->get_billing_company();
-		if ( $company ) {
+		$company = trim( (string) $order->get_billing_company() );
+		if ( $company !== '' ) {
 			return $company;
 		}
-		$first = $order->get_billing_first_name();
-		$last  = $order->get_billing_last_name();
+		$first = trim( (string) $order->get_billing_first_name() );
+		$last  = trim( (string) $order->get_billing_last_name() );
 		$name  = trim( $first . ' ' . $last );
 		return $name !== '' ? $name : __( 'ゲスト', 'ktpwp' );
+	}
+
+	/**
+	 * WooCommerce 注文の請求先から KantanPro 顧客を取得または作成し、client_id を返す
+	 * 既存顧客はメインのメールアドレス（ktp_client.email）でのみ判定し、一致しなければ新規顧客を作成する。
+	 *
+	 * @param WC_Order $order
+	 * @return int|null 顧客ID。取得・作成に失敗した場合は null
+	 */
+	private function get_or_create_client_id_from_order( WC_Order $order ): ?int {
+		global $wpdb;
+		$table = $wpdb->prefix . 'ktp_client';
+		$exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
+		if ( $exists !== $table ) {
+			return null;
+		}
+
+		$company = trim( (string) $order->get_billing_company() );
+		$first   = trim( (string) $order->get_billing_first_name() );
+		$last    = trim( (string) $order->get_billing_last_name() );
+		$name    = trim( $first . ' ' . $last );
+		$email   = sanitize_email( $order->get_billing_email() );
+		$phone   = trim( (string) $order->get_billing_phone() );
+		$postal  = trim( (string) $order->get_billing_postcode() );
+		$state   = trim( (string) $order->get_billing_state() );
+		$city    = trim( (string) $order->get_billing_city() );
+		$addr1   = trim( (string) $order->get_billing_address_1() );
+		$addr2   = trim( (string) $order->get_billing_address_2() );
+		$address = trim( $addr1 . ( $addr2 !== '' ? ' ' . $addr2 : '' ) );
+
+		// 既存顧客はメインのメールアドレスのみで判定（会社名・名前では検索しない）。同一メールが複数いる場合は id が最小の顧客を採用
+		if ( $email !== '' && is_email( $email ) ) {
+			$client_id = (int) $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT id FROM `{$table}` WHERE email = %s AND (client_status IS NULL OR client_status != '対象外') ORDER BY id ASC LIMIT 1",
+					$email
+				)
+			);
+			if ( $client_id > 0 ) {
+				return $client_id;
+			}
+		}
+
+		// メールで見つからない、またはメール未入力の場合は新規顧客を作成
+		$company_name = $company !== '' ? $company : ( $name !== '' ? $name : __( 'WooCommerce顧客', 'ktpwp' ) );
+
+		// 新規顧客を作成
+		$search_parts = array_filter( array( $company_name, $name, $email, $phone, $state, $city, $address ) );
+		$search_field = implode( ' ', $search_parts );
+		$cols         = $wpdb->get_col( "SHOW COLUMNS FROM `{$table}`", 0 );
+		$cols         = is_array( $cols ) ? $cols : array();
+
+		$row = array(
+			'time'              => current_time( 'mysql' ),
+			'company_name'      => $company_name,
+			'name'              => $name,
+			'email'             => $email,
+			'phone'             => $phone,
+			'postal_code'       => $postal,
+			'prefecture'        => $state,
+			'city'              => $city,
+			'address'           => $address,
+			'tax_category'      => __( '内税', 'ktpwp' ),
+			'payment_timing'    => 'prepay',
+			'client_status'     => __( '対象', 'ktpwp' ),
+			'search_field'      => $search_field,
+		);
+		$fmt = array( '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' );
+
+		if ( in_array( 'representative_name', $cols, true ) ) {
+			$row['representative_name'] = $name;
+			$fmt[] = '%s';
+		}
+		if ( in_array( 'building', $cols, true ) ) {
+			$row['building'] = '';
+			$fmt[] = '%s';
+		}
+		if ( in_array( 'url', $cols, true ) ) {
+			$row['url'] = '';
+			$fmt[] = '%s';
+		}
+		if ( in_array( 'closing_day', $cols, true ) ) {
+			$row['closing_day'] = '';
+			$fmt[] = '%s';
+		}
+		if ( in_array( 'payment_month', $cols, true ) ) {
+			$row['payment_month'] = '';
+			$fmt[] = '%s';
+		}
+		if ( in_array( 'payment_day', $cols, true ) ) {
+			$row['payment_day'] = '';
+			$fmt[] = '%s';
+		}
+		if ( in_array( 'payment_method', $cols, true ) ) {
+			$row['payment_method'] = '';
+			$fmt[] = '%s';
+		}
+		if ( in_array( 'memo', $cols, true ) ) {
+			$row['memo'] = __( 'WooCommerce から取り込み', 'ktpwp' );
+			$fmt[] = '%s';
+		}
+		if ( in_array( 'category', $cols, true ) ) {
+			$row['category'] = '';
+			$fmt[] = '%s';
+		}
+
+		$result = $wpdb->insert( $table, $row, $fmt );
+		if ( $result === false ) {
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( 'KTPWP WooCommerce: Failed to create client. ' . $wpdb->last_error );
+			}
+			return null;
+		}
+		return (int) $wpdb->insert_id;
+	}
+
+	/**
+	 * 受注テーブルに order_number / external カラムが無ければ追加する
+	 */
+	private function ensure_order_table_ready(): void {
+		global $wpdb;
+		$table = $wpdb->prefix . 'ktp_order';
+		$exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
+		if ( $exists !== $table ) {
+			// 受注テーブルが無い場合は KantanPro のテーブル作成を実行
+			if ( function_exists( 'ktpwp_safe_table_setup' ) ) {
+				ktpwp_safe_table_setup();
+			}
+			$exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
+			if ( $exists !== $table ) {
+				return;
+			}
+		}
+		$cols = $wpdb->get_col( "SHOW COLUMNS FROM `{$table}`", 0 );
+		$cols = is_array( $cols ) ? $cols : array();
+		$add = array(
+			'order_number'      => "VARCHAR(100) NULL DEFAULT NULL COMMENT '受注番号'",
+			'external_source'   => "VARCHAR(50) NULL DEFAULT NULL COMMENT '連携元（例: woocommerce）'",
+			'external_order_id' => "VARCHAR(100) NULL DEFAULT NULL COMMENT '外部注文ID'",
+		);
+		foreach ( $add as $col => $def ) {
+			if ( in_array( $col, $cols, true ) ) {
+				continue;
+			}
+			$wpdb->query( "ALTER TABLE `{$table}` ADD COLUMN `{$col}` {$def}" );
+		}
 	}
 
 	/**
@@ -311,5 +498,250 @@ class KTPWP_WooCommerce_Integration {
 			$wpdb->insert( $table, $row, $fmt );
 			$sort_order++;
 		}
+	}
+
+	/**
+	 * 管理画面に「未同期注文を同期」メニューを追加
+	 */
+	public function add_sync_menu(): void {
+		if ( ! class_exists( 'WooCommerce' ) ) {
+			return;
+		}
+		add_submenu_page(
+			'woocommerce',
+			__( 'KantanPro 連携', 'ktpwp' ),
+			__( 'KantanPro 連携', 'ktpwp' ),
+			'manage_woocommerce',
+			'ktpwp-woocommerce-sync',
+			array( $this, 'render_sync_page' )
+		);
+	}
+
+	/**
+	 * 未同期注文を KantanPro に同期する画面を表示
+	 */
+	public function render_sync_page(): void {
+		$this->ensure_order_table_ready();
+		$message = get_transient( 'ktpwp_wc_sync_message' );
+		if ( $message ) {
+			delete_transient( 'ktpwp_wc_sync_message' );
+			echo '<div class="notice notice-success is-dismissible"><p>' . esc_html( $message ) . '</p></div>';
+		}
+		$error = get_transient( 'ktpwp_wc_sync_error' );
+		if ( $error ) {
+			delete_transient( 'ktpwp_wc_sync_error' );
+			echo '<div class="notice notice-error is-dismissible"><p>' . esc_html( $error ) . '</p></div>';
+		}
+		$url_sync   = wp_nonce_url( admin_url( 'admin-post.php?action=ktpwp_sync_woocommerce_orders' ), 'ktpwp_sync_wc_orders' );
+		$url_link   = wp_nonce_url( admin_url( 'admin-post.php?action=ktpwp_link_woocommerce_clients' ), 'ktpwp_link_wc_clients' );
+		$url_relink = wp_nonce_url( admin_url( 'admin-post.php?action=ktpwp_relink_woocommerce_clients' ), 'ktpwp_relink_wc_clients' );
+		$need_link  = $this->count_orders_without_client();
+		?>
+		<div class="wrap">
+			<h1><?php esc_html_e( 'KantanPro 連携', 'ktpwp' ); ?></h1>
+			<p><?php esc_html_e( 'WooCommerce の注文のうち、まだ KantanPro に取り込まれていないものを一括で同期します。', 'ktpwp' ); ?></p>
+			<p><a href="<?php echo esc_url( $url_sync ); ?>" class="button button-primary"><?php esc_html_e( '未同期の注文を KantanPro に同期', 'ktpwp' ); ?></a></p>
+			<?php if ( $this->order_table_has_external_columns() ) : ?>
+				<hr />
+				<h2><?php esc_html_e( '既存受注の顧客紐付け', 'ktpwp' ); ?></h2>
+				<p><?php esc_html_e( '既に KantanPro に同期済みの WooCommerce 連携受注について、同じ注文の請求先から顧客を取得または作成して紐付けます。', 'ktpwp' ); ?></p>
+				<?php if ( $need_link > 0 ) : ?>
+					<p><a href="<?php echo esc_url( $url_link ); ?>" class="button button-secondary"><?php echo esc_html( sprintf( __( '顧客未設定の受注 %d 件を一括で顧客紐付け', 'ktpwp' ), $need_link ) ); ?></a></p>
+				<?php else : ?>
+					<p><em><?php esc_html_e( '顧客未設定の WooCommerce 連携受注はありません。', 'ktpwp' ); ?></em></p>
+				<?php endif; ?>
+				<p><a href="<?php echo esc_url( $url_relink ); ?>" class="button button-secondary"><?php esc_html_e( '顧客を再紐付け（全件対象・既存の紐付けも上書き）', 'ktpwp' ); ?></a></p>
+			<?php endif; ?>
+		</div>
+		<?php
+	}
+
+	/**
+	 * 未同期の WooCommerce 注文を一括同期
+	 */
+	public function handle_sync_woocommerce_orders(): void {
+		if ( ! current_user_can( 'manage_woocommerce' ) ) {
+			wp_die( esc_html__( '権限がありません。', 'ktpwp' ) );
+		}
+		check_admin_referer( 'ktpwp_sync_wc_orders' );
+		$this->ensure_order_table_ready();
+		$synced = 0;
+		$args   = array(
+			'limit'    => 500,
+			'orderby'  => 'date',
+			'order'    => 'DESC',
+			'return'   => 'ids',
+		);
+		$ids = wc_get_orders( $args );
+		$ids = is_array( $ids ) ? $ids : array();
+		foreach ( $ids as $order_id ) {
+			$before = $this->get_ktp_order_id_by_wc_order_id( (int) $order_id );
+			$this->sync_order_to_ktp( (int) $order_id, null );
+			$after = $this->get_ktp_order_id_by_wc_order_id( (int) $order_id );
+			if ( ! $before && $after ) {
+				$synced++;
+			}
+		}
+		set_transient( 'ktpwp_wc_sync_message', sprintf( __( '%d 件の注文を KantanPro に同期しました。', 'ktpwp' ), $synced ), 30 );
+		if ( $synced === 0 && count( $ids ) > 0 ) {
+			$last_err = get_transient( 'ktpwp_wc_sync_last_error' );
+			delete_transient( 'ktpwp_wc_sync_last_error' );
+			$err_msg = __( '同期できた注文が0件でした。', 'ktpwp' );
+			if ( $last_err ) {
+				$err_msg .= ' ' . __( 'データベースエラー:', 'ktpwp' ) . ' ' . $last_err;
+				$err_msg .= ' ' . __( 'KantanPro を一度無効化して再有効化し、受注テーブルを作成・更新してから再度お試しください。', 'ktpwp' );
+			}
+			set_transient( 'ktpwp_wc_sync_error', $err_msg, 60 );
+		}
+		wp_safe_redirect( admin_url( 'admin.php?page=ktpwp-woocommerce-sync' ) );
+		exit;
+	}
+
+	/**
+	 * 顧客未設定の WooCommerce 連携受注件数を取得
+	 *
+	 * @return int
+	 */
+	public function count_orders_without_client(): int {
+		if ( ! $this->order_table_has_external_columns() ) {
+			return 0;
+		}
+		global $wpdb;
+		$table = $wpdb->prefix . 'ktp_order';
+		$count = (int) $wpdb->get_var(
+			"SELECT COUNT(*) FROM `{$table}` WHERE external_source = 'woocommerce' AND (client_id = 0 OR client_id IS NULL)"
+		);
+		return $count;
+	}
+
+	/**
+	 * 既存の WooCommerce 連携受注（顧客未設定）を一括で顧客紐付け
+	 */
+	public function handle_link_woocommerce_clients(): void {
+		if ( ! current_user_can( 'manage_woocommerce' ) ) {
+			wp_die( esc_html__( '権限がありません。', 'ktpwp' ) );
+		}
+		check_admin_referer( 'ktpwp_link_wc_clients' );
+		$this->ensure_order_table_ready();
+		if ( ! $this->order_table_has_external_columns() ) {
+			set_transient( 'ktpwp_wc_sync_error', __( '受注テーブルに external_source / external_order_id がありません。', 'ktpwp' ), 60 );
+			wp_safe_redirect( admin_url( 'admin.php?page=ktpwp-woocommerce-sync' ) );
+			exit;
+		}
+		global $wpdb;
+		$table   = $wpdb->prefix . 'ktp_order';
+		$rows    = $wpdb->get_results(
+			"SELECT id, external_order_id FROM `{$table}` WHERE external_source = 'woocommerce' AND (client_id = 0 OR client_id IS NULL)",
+			ARRAY_A
+		);
+		$rows    = is_array( $rows ) ? $rows : array();
+		$linked  = 0;
+		$order_manager = KTPWP_Order::get_instance();
+		foreach ( $rows as $row ) {
+			$ktp_id   = (int) $row['id'];
+			$wc_id    = (int) $row['external_order_id'];
+			$order    = wc_get_order( $wc_id );
+			if ( ! $order || ! $order instanceof WC_Order ) {
+				continue;
+			}
+			$email = sanitize_email( $order->get_billing_email() );
+			$existing_client = ( $email !== '' && is_email( $email ) ) ? $this->get_client_by_email( $email ) : null;
+			if ( $existing_client ) {
+				$client_id     = (int) $existing_client->id;
+				$customer_name = isset( $existing_client->company_name ) && trim( (string) $existing_client->company_name ) !== ''
+					? trim( (string) $existing_client->company_name )
+					: $this->get_customer_display_name( $order );
+				$user_name = isset( $existing_client->name ) && trim( (string) $existing_client->name ) !== ''
+					? trim( (string) $existing_client->name )
+					: trim( (string) $order->get_billing_first_name() . ' ' . (string) $order->get_billing_last_name() );
+			} else {
+				$client_id     = $this->get_or_create_client_id_from_order( $order );
+				$customer_name = $this->get_customer_display_name( $order );
+				$user_name     = trim( (string) $order->get_billing_first_name() . ' ' . (string) $order->get_billing_last_name() );
+			}
+			if ( $client_id === null || $client_id <= 0 ) {
+				continue;
+			}
+			$user_name = $user_name !== '' ? $user_name : $customer_name;
+			$ok = $order_manager->update_order( $ktp_id, array(
+				'client_id'      => $client_id,
+				'customer_name'  => $customer_name,
+				'user_name'      => $user_name,
+				'progress'       => 3,
+				'payment_timing' => 'prepay',
+			) );
+			if ( $ok ) {
+				$linked++;
+			}
+		}
+		set_transient( 'ktpwp_wc_sync_message', sprintf( __( '顧客未設定の WooCommerce 連携受注 %d 件を顧客に紐付けました。', 'ktpwp' ), $linked ), 30 );
+		wp_safe_redirect( admin_url( 'admin.php?page=ktpwp-woocommerce-sync' ) );
+		exit;
+	}
+
+	/**
+	 * WooCommerce 連携受注を全件対象に顧客を再紐付け（既に紐付いている受注も上書き）
+	 * 未紐付きが0件でも再度実行できる。
+	 */
+	public function handle_relink_woocommerce_clients(): void {
+		if ( ! current_user_can( 'manage_woocommerce' ) ) {
+			wp_die( esc_html__( '権限がありません。', 'ktpwp' ) );
+		}
+		check_admin_referer( 'ktpwp_relink_wc_clients' );
+		$this->ensure_order_table_ready();
+		if ( ! $this->order_table_has_external_columns() ) {
+			set_transient( 'ktpwp_wc_sync_error', __( '受注テーブルに external_source / external_order_id がありません。', 'ktpwp' ), 60 );
+			wp_safe_redirect( admin_url( 'admin.php?page=ktpwp-woocommerce-sync' ) );
+			exit;
+		}
+		global $wpdb;
+		$table   = $wpdb->prefix . 'ktp_order';
+		$rows    = $wpdb->get_results(
+			"SELECT id, external_order_id FROM `{$table}` WHERE external_source = 'woocommerce'",
+			ARRAY_A
+		);
+		$rows    = is_array( $rows ) ? $rows : array();
+		$linked  = 0;
+		$order_manager = KTPWP_Order::get_instance();
+		foreach ( $rows as $row ) {
+			$ktp_id   = (int) $row['id'];
+			$wc_id    = (int) $row['external_order_id'];
+			$order    = wc_get_order( $wc_id );
+			if ( ! $order || ! $order instanceof WC_Order ) {
+				continue;
+			}
+			$email = sanitize_email( $order->get_billing_email() );
+			$existing_client = ( $email !== '' && is_email( $email ) ) ? $this->get_client_by_email( $email ) : null;
+			if ( $existing_client ) {
+				$client_id     = (int) $existing_client->id;
+				$customer_name = isset( $existing_client->company_name ) && trim( (string) $existing_client->company_name ) !== ''
+					? trim( (string) $existing_client->company_name )
+					: $this->get_customer_display_name( $order );
+				$user_name = isset( $existing_client->name ) && trim( (string) $existing_client->name ) !== ''
+					? trim( (string) $existing_client->name )
+					: trim( (string) $order->get_billing_first_name() . ' ' . (string) $order->get_billing_last_name() );
+			} else {
+				$client_id     = $this->get_or_create_client_id_from_order( $order );
+				$customer_name = $this->get_customer_display_name( $order );
+				$user_name     = trim( (string) $order->get_billing_first_name() . ' ' . (string) $order->get_billing_last_name() );
+			}
+			if ( $client_id === null || $client_id <= 0 ) {
+				continue;
+			}
+			$user_name = $user_name !== '' ? $user_name : $customer_name;
+			$ok = $order_manager->update_order( $ktp_id, array(
+				'client_id'      => $client_id,
+				'customer_name'  => $customer_name,
+				'user_name'      => $user_name,
+				'progress'       => 3,
+				'payment_timing' => 'prepay',
+			) );
+			if ( $ok ) {
+				$linked++;
+			}
+		}
+		set_transient( 'ktpwp_wc_sync_message', sprintf( __( 'WooCommerce 連携受注 %d 件を顧客に再紐付けしました。', 'ktpwp' ), $linked ), 30 );
+		wp_safe_redirect( admin_url( 'admin.php?page=ktpwp-woocommerce-sync' ) );
+		exit;
 	}
 }
