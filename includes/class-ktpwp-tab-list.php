@@ -138,6 +138,9 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 					$completion_dt = $dt;
 					$year = (int) $completion_dt->format( 'Y' );
 					$month = (int) $completion_dt->format( 'm' );
+					if ( $year < 1 || $year > 9999 || $month < 1 || $month > 12 ) {
+						continue;
+					}
 					$closing_day = $order->closing_day;
 					if ( $closing_day === '末日' ) {
 						$closing_dt = new DateTime( "$year-$month-01" );
@@ -343,22 +346,24 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 							$warning_days = KTPWP_Settings::get_delivery_warning_days();
 						}
 
-						// 納期が迫っているかチェック
-						$delivery_date = new DateTime( $expected_delivery_date );
-						$delivery_date->setTime( 0, 0, 0 ); // 時間を00:00:00に設定
-						$today = new DateTime();
-						$today->setTime( 0, 0, 0 ); // 時間を00:00:00に設定
+						// 納期が迫っているかチェック（不正な日付の場合はスキップ）
+						$delivery_date = DateTime::createFromFormat( 'Y-m-d', $expected_delivery_date );
+						if ( $delivery_date !== false ) {
+							$delivery_date->setTime( 0, 0, 0 ); // 時間を00:00:00に設定
+							$today = new DateTime();
+							$today->setTime( 0, 0, 0 ); // 時間を00:00:00に設定
 
-						$diff = $today->diff( $delivery_date );
-						$days_left = $diff->invert ? -$diff->days : $diff->days;
+							$diff = $today->diff( $delivery_date );
+							$days_left = $diff->invert ? -$diff->days : $diff->days;
 
-						$show_warning = $days_left <= $warning_days && $days_left >= 0;
-						$is_urgent = $days_left <= $warning_days && $days_left >= 0;
+							$show_warning = $days_left <= $warning_days && $days_left >= 0;
+							$is_urgent = $days_left <= $warning_days && $days_left >= 0;
 
-						// デバッグ情報（開発時のみ）
-						if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-							$debug_msg = '納期警告判定: 今日=' . $today->format( 'Y-m-d' ) . ', 納期=' . $delivery_date->format( 'Y-m-d' ) . ', 残り日数=' . $days_left . ', 警告日数=' . $warning_days . ', 表示=' . ( $show_warning ? 'YES' : 'NO' );
-							error_log( $debug_msg );
+							// デバッグ情報（開発時のみ）
+							if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+								$debug_msg = '納期警告判定: 今日=' . $today->format( 'Y-m-d' ) . ', 納期=' . $delivery_date->format( 'Y-m-d' ) . ', 残り日数=' . $days_left . ', 警告日数=' . $warning_days . ', 表示=' . ( $show_warning ? 'YES' : 'NO' );
+								error_log( $debug_msg );
+							}
 						}
 					}
 
@@ -373,34 +378,44 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 							$client_info = $wpdb->get_row( $wpdb->prepare( "SELECT closing_day FROM {$client_table} WHERE id = %d", $client_id ) );
 							if ( $client_info && $client_info->closing_day && $client_info->closing_day !== 'なし' ) {
 								// 案件の完了日を取得
-								$completion_date = isset( $order->completion_date ) ? $order->completion_date : '';
-								if ( ! empty( $completion_date ) ) {
-									// 締め日を計算
-									$completion_dt = new DateTime( $completion_date );
-									$year = (int) $completion_dt->format( 'Y' );
-									$month = (int) $completion_dt->format( 'm' );
-									$closing_day = $client_info->closing_day;
-									if ( $closing_day === '末日' ) {
-										$closing_dt = new DateTime( "$year-$month-01" );
-										$closing_dt->modify( 'last day of this month' );
-									} else {
-										$closing_day_num = intval( $closing_day );
-										$closing_dt = new DateTime( "$year-$month-" . str_pad( $closing_day_num, 2, '0', STR_PAD_LEFT ) );
-										// 月末を超える場合は末日に補正
-										$last_day = (int) $closing_dt->format( 't' );
-										if ( $closing_day_num > $last_day ) {
-											$closing_dt->modify( 'last day of this month' );
+								$completion_date = isset( $order->completion_date ) ? trim( (string) $order->completion_date ) : '';
+								if ( $completion_date !== '' ) {
+									$completion_dt = DateTime::createFromFormat( 'Y-m-d', $completion_date );
+									if ( $completion_dt === false ) {
+										$completion_dt = null;
+									}
+									if ( $completion_dt ) {
+										$year = (int) $completion_dt->format( 'Y' );
+										$month = (int) $completion_dt->format( 'm' );
+										// 不正な年・月の場合は締め日計算をスキップ（-1-11-05 等の例外を防ぐ）
+										if ( $year < 1 || $year > 9999 || $month < 1 || $month > 12 ) {
+											$completion_dt = null;
 										}
 									}
-									// 今日から締め日までの日数
-									$today = new DateTime();
-									$today->setTime( 0, 0, 0 );
-									$closing_dt->setTime( 0, 0, 0 );
-									$diff = $today->diff( $closing_dt );
-									$days_left = $diff->invert ? -$diff->days : $diff->days;
-									// 請求日当日以降の場合に警告マークを表示
-									if ( $days_left <= 0 ) {
-										$show_invoice_warning = true;
+									if ( $completion_dt ) {
+										$closing_day = $client_info->closing_day;
+										if ( $closing_day === '末日' ) {
+											$closing_dt = new DateTime( "$year-$month-01" );
+											$closing_dt->modify( 'last day of this month' );
+										} else {
+											$closing_day_num = intval( $closing_day );
+											$closing_dt = new DateTime( "$year-$month-" . str_pad( $closing_day_num, 2, '0', STR_PAD_LEFT ) );
+											// 月末を超える場合は末日に補正
+											$last_day = (int) $closing_dt->format( 't' );
+											if ( $closing_day_num > $last_day ) {
+												$closing_dt->modify( 'last day of this month' );
+											}
+										}
+										// 今日から締め日までの日数
+										$today = new DateTime();
+										$today->setTime( 0, 0, 0 );
+										$closing_dt->setTime( 0, 0, 0 );
+										$diff = $today->diff( $closing_dt );
+										$days_left = $diff->invert ? -$diff->days : $diff->days;
+										// 請求日当日以降の場合に警告マークを表示
+										if ( $days_left <= 0 ) {
+											$show_invoice_warning = true;
+										}
 									}
 								}
 							}

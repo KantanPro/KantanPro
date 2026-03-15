@@ -790,10 +790,17 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
                             $base_page_url
                         );
 
-						// 1行化：ID・案件名・完了日・進捗を同じ行に表示（完了日は「完了日：」ラベル付き）
+						// 1行化：ID・案件名・完了日・前入金済/EC受注・進捗を同じ行に表示
 						$order_info = 'ID: ' . $order_id . ' - ' . $project_name;
 						if ( ! empty( $completion_date ) ) {
 							$order_info .= ' <span style="color: #666; margin-left: 12px;">完了日：' . $completion_date . '</span>';
+						}
+						// 前払いラベル（前入金済 / EC受注）
+						if ( class_exists( 'KTPWP_Payment_Timing' ) ) {
+							$prepay_label = KTPWP_Payment_Timing::get_prepay_label( $order, null );
+							if ( $prepay_label !== '' ) {
+								$order_info .= ' <span class="ktp-prepay-badge" style="display:inline-block;margin-left:6px;padding:2px 8px;font-size:11px;background:#e3f2fd;color:#1565c0;border-radius:4px;">' . esc_html( $prepay_label ) . '</span>';
+							}
 						}
 						$order_info .= ' <span style="float:right;" class="status-' . $progress . '">' . $progress_label . '</span>';
 
