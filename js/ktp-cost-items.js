@@ -266,14 +266,15 @@
         });
     }
 
-    // 利益表示を更新（PHP側の計算結果を使用）
+    // 利益表示を更新（コスト項目変更時に金額合計・利益を即時計算）
     function updateProfitDisplay() {
-        // PHP側で既に利益計算が行われているため、JavaScript側での再計算は行わない
-        // この関数は空にして、PHP側の計算結果をそのまま使用する
-        if (window.ktpDebugMode) {
-            console.log('[COST] updateProfitDisplay: PHP側の利益計算結果を使用（JavaScript側での再計算は無効化）');
+        // 請求項目スクリプトの updateTotalAndProfit を呼び、金額合計と利益を即時再計算・表示する
+        if (typeof window.updateTotalAndProfit === 'function') {
+            window.updateTotalAndProfit();
         }
-        return;
+        if (window.ktpDebugMode) {
+            console.log('[COST] updateProfitDisplay: 金額合計・利益を即時更新');
+        }
     }
 
     // 適格請求書ナンバーを考慮した利益表示を更新（PHP側の計算結果を使用）

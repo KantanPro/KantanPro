@@ -608,6 +608,22 @@
             }
         }
 
+        // コスト項目の金額合計表示を即時更新（受注書＞コスト項目の入力時に即時反映）
+        const costTotalDisplay = $('.cost-items-total');
+        if (costTotalDisplay.length > 0) {
+            const hideCostTax = window.ktp_tax_policy && (window.ktp_tax_policy.mode === 'abolished' || window.ktp_tax_policy.hide_tax_columns);
+            if (hideCostTax) {
+                costTotalDisplay.html('金額合計：' + costTotalCeiled.toLocaleString() + '円');
+            } else {
+                costTotalDisplay.html('金額合計：' + costTotalCeiled.toLocaleString() + '円　（内税：' + costTotalTaxAmountCeiled.toLocaleString() + '円）');
+            }
+            costTotalDisplay.show();
+            const costTaxDisplay = $('.cost-items-tax');
+            const costTotalWithTaxDisplay = $('.cost-items-total-with-tax');
+            if (costTaxDisplay.length) costTaxDisplay.hide();
+            if (costTotalWithTaxDisplay.length) costTotalWithTaxDisplay.hide();
+        }
+
         // 利益表示を更新（PHP側の計算結果を使用）
         // const profitDisplay = $('.profit-display');
         // if (profitDisplay.length > 0) {
@@ -694,6 +710,9 @@
             });
         }
     }
+
+    // コスト項目からの即時計算用にグローバルに露出（受注書＞コスト項目の金額合計・利益を即時更新）
+    window.updateTotalAndProfit = updateTotalAndProfit;
 
     // 新しい行を追加（重複防止機能付き）
     function addNewRow(currentRow, callId) { // callId を追加
