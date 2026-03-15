@@ -23,6 +23,24 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+/**
+ * WordPress 6.7+ の翻訳「早期読み込み」Notice を抑制
+ * WooCommerce / WooCommerce for Japan / WooCommerce PayPal Payments 等が init 前に
+ * 翻訳を読むと Notice が出力され "headers already sent" でリダイレクトが失敗するため、
+ * _load_textdomain_just_in_time の doing_it_wrong を出さないようにする。
+ */
+add_filter(
+	'doing_it_wrong_trigger_error',
+	function ( $trigger, $function_name, $message, $version ) {
+		if ( $function_name === '_load_textdomain_just_in_time' && strpos( $message, 'triggered too early' ) !== false ) {
+			return false;
+		}
+		return $trigger;
+	},
+	10,
+	4
+);
+
 // Composer autoload を読み込みます（現在は外部依存関係なし）
 if ( file_exists( plugin_dir_path( __FILE__ ) . 'vendor/autoload.php' ) ) {
     require_once plugin_dir_path( __FILE__ ) . 'vendor/autoload.php';
