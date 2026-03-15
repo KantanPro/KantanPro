@@ -2288,6 +2288,8 @@ function ktpwp_plugin_upgrade_migration( $upgrader, $hook_extra ) {
         
         // アップデート通知を設定
         set_transient( 'ktpwp_upgrade_message', 'KantanProプラグインが正常に更新されました。適格請求書ナンバー機能も含まれています。', 60 );
+        // マイグレーション成功後「次にやること」を表示するためのフラグ
+        set_transient( 'ktpwp_show_update_complete_guide', '1', 600 );
 
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
             error_log( 'KTPWP: Plugin upgrade migration completed successfully' );
@@ -2298,13 +2300,13 @@ function ktpwp_plugin_upgrade_migration( $upgrader, $hook_extra ) {
             error_log( 'KTPWP: Plugin upgrade migration failed: ' . $e->getMessage() );
         }
         
-        // エラー情報を詳細に記録
+        // エラー情報を詳細に記録（管理者・ログ用）
         update_option( 'ktpwp_upgrade_error', $e->getMessage() );
         update_option( 'ktpwp_upgrade_error_timestamp', current_time( 'mysql' ) );
         update_option( 'ktpwp_upgrade_error_count', get_option( 'ktpwp_upgrade_error_count', 0 ) + 1 );
         
-        // エラー通知を設定
-        set_transient( 'ktpwp_upgrade_error', 'プラグインの更新中にエラーが発生しました。詳細はログを確認してください。', 60 );
+        // ユーザー向けには穏やかな案内（プラグインは更新済みで、DBだけ「今すぐ更新」で対応できる旨を伝える）
+        set_transient( 'ktpwp_upgrade_error', 'プラグインは正常に更新されました。データベースの反映だけ未完了でした。下の「今すぐ更新」でデータベースを更新してください。', 60 );
     }
 }
 
@@ -2696,9 +2698,9 @@ function ktpwp_admin_notices() {
         echo '</div>';
     }
     
-    // アップデートエラー通知
+    // アップデート時の案内（データベース反映が未完了だった場合の穏やかなメッセージ）
     if ( get_transient( 'ktpwp_upgrade_error' ) ) {
-        echo '<div class="notice notice-error is-dismissible">';
+        echo '<div class="notice notice-warning is-dismissible">';
         echo '<p><strong>KantanPro:</strong> ' . esc_html( get_transient( 'ktpwp_upgrade_error' ) ) . '</p>';
         echo '</div>';
     }
@@ -2707,6 +2709,29 @@ function ktpwp_admin_notices() {
 // 管理画面での通知表示（管理画面でのみ実行）
 if ( is_admin() ) {
     add_action( 'admin_notices', 'ktpwp_admin_notices' );
+}
+
+/**
+ * プラグイン更新結果画面（update.php）で「次にやること」をフッターに表示
+ */
+add_action( 'admin_footer', 'ktpwp_footer_update_complete_guide' );
+function ktpwp_footer_update_complete_guide() {
+    if ( ! current_user_can( 'manage_options' ) || ! get_transient( 'ktpwp_show_update_complete_guide' ) ) {
+        return;
+    }
+    $screen = get_current_screen();
+    if ( ! $screen || strpos( $screen->id, 'update' ) === false ) {
+        return;
+    }
+    delete_transient( 'ktpwp_show_update_complete_guide' );
+    $plugins_url = admin_url( 'plugins.php' );
+    $settings_url = admin_url( 'admin.php?page=ktp-settings' );
+    echo '<div class="notice notice-success" style="margin:20px 0;padding:20px;border-left:4px solid #00a32a;background:#f0f9f0;border-radius:4px;">';
+    echo '<p style="font-size:15px;margin:0 0 8px 0;"><strong>✅ KantanPro の更新とマイグレーションが完了しました。</strong></p>';
+    echo '<p style="margin:0 0 12px 0;">次に、下のいずれかをクリックして管理画面に戻ってください。</p>';
+    echo '<p style="margin:0;"><a href="' . esc_url( $plugins_url ) . '" class="button button-primary">プラグイン一覧へ</a> ';
+    echo '<a href="' . esc_url( $settings_url ) . '" class="button">KantanPro 設定を開く</a></p>';
+    echo '</div>';
 }
 
 /**
@@ -4830,9 +4855,35 @@ function ktpwp_admin_auto_migrations() {
  */
 add_action( 'admin_notices', 'ktpwp_distribution_admin_notices' );
 
+/**
+ * プラグイン更新・マイグレーション成功後の「次にやること」案内
+ */
+function ktpwp_show_update_complete_guide() {
+    if ( ! current_user_can( 'manage_options' ) || ! get_transient( 'ktpwp_show_update_complete_guide' ) ) {
+        return;
+    }
+    delete_transient( 'ktpwp_show_update_complete_guide' );
+    $plugins_url = admin_url( 'plugins.php' );
+    $settings_url = admin_url( 'admin.php?page=ktp-settings' );
+    echo '<div class="notice notice-success" style="border-left-color:#00a32a;padding:16px 20px;margin:20px 0;">';
+    echo '<p style="font-size:15px;margin:0 0 10px 0;"><strong>✅ KantanPro の更新とマイグレーションが完了しました。</strong></p>';
+    echo '<p style="margin:0 0 12px 0;">このあと、下のいずれかで通常どおりご利用いただけます。</p>';
+    echo '<p style="margin:0;">';
+    echo '<a href="' . esc_url( $plugins_url ) . '" class="button button-primary">プラグイン一覧へ</a> ';
+    echo '<a href="' . esc_url( $settings_url ) . '" class="button">KantanPro 設定を開く</a>';
+    echo '</p></div>';
+}
+
 function ktpwp_distribution_admin_notices() {
     if ( ! current_user_can( 'manage_options' ) ) {
         return;
+    }
+    
+    // 更新・マイグレーション成功後の「次にやること」案内（update.php では admin_footer で表示するためスキップ）
+    $screen = get_current_screen();
+    $is_update_screen = ( $screen && strpos( $screen->id, 'update' ) !== false );
+    if ( ! $is_update_screen ) {
+        ktpwp_show_update_complete_guide();
     }
     
     // 有効化成功通知
