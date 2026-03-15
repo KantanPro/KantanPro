@@ -4854,6 +4854,8 @@ function ktpwp_admin_auto_migrations() {
  * マイグレーション状態と手動実行オプションを提供
  */
 add_action( 'admin_notices', 'ktpwp_distribution_admin_notices' );
+// 更新完了案内を最優先で画面のいちばん上に表示（更新結果画面で隠れないように）
+add_action( 'admin_notices', 'ktpwp_show_update_complete_guide', 1 );
 
 /**
  * プラグイン更新・マイグレーション成功後の「次にやること」案内
@@ -4877,13 +4879,6 @@ function ktpwp_show_update_complete_guide() {
 function ktpwp_distribution_admin_notices() {
     if ( ! current_user_can( 'manage_options' ) ) {
         return;
-    }
-    
-    // 更新・マイグレーション成功後の「次にやること」案内（update.php では admin_footer で表示するためスキップ）
-    $screen = get_current_screen();
-    $is_update_screen = ( $screen && strpos( $screen->id, 'update' ) !== false );
-    if ( ! $is_update_screen ) {
-        ktpwp_show_update_complete_guide();
     }
     
     // 有効化成功通知
