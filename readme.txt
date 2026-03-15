@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.2.6
+Stable tag: 1.2.7
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -324,6 +324,10 @@ curl -sS -X POST \
 * 推奨PHP拡張: GD（画像処理用）
 
 == 変更履歴 ==
+
+= 1.2.7 - 2025年03月15日 =
+* 納期警告判定の改善（不正な日付をスキップする処理を追加）
+* 前入金済ラベルの追加（案件情報に前入金済ラベルを表示）
 
 = 1.2.6 - 2025年03月15日 =
 * プラグイン更新後の案内機能を追加（マイグレーション成功時に「次にやること」を表示、管理画面フッターに案内メッセージ追加、エラーメッセージをユーザー向けに改善）
