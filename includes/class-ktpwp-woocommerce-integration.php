@@ -135,7 +135,7 @@ class KTPWP_WooCommerce_Integration {
 		$customer_name = $this->get_customer_display_name( $order );
 		$user_name     = trim( $order->get_billing_first_name() . ' ' . $order->get_billing_last_name() );
 		$order_number  = $order->get_order_number();
-		$project_name  = 'WooCommerce #' . $order_number;
+		$project_name  = 'WC #' . $order_number;
 		$created       = $order->get_date_created();
 		$time          = $created ? $created->getTimestamp() : time();
 		$memo          = sprintf(
@@ -662,11 +662,14 @@ class KTPWP_WooCommerce_Integration {
 			if ( $client_id === null || $client_id <= 0 ) {
 				continue;
 			}
-			$user_name = $user_name !== '' ? $user_name : $customer_name;
+			$user_name    = $user_name !== '' ? $user_name : $customer_name;
+			$order_number = $order->get_order_number();
+			$project_name = 'WC #' . $order_number;
 			$ok = $order_manager->update_order( $ktp_id, array(
 				'client_id'      => $client_id,
 				'customer_name'  => $customer_name,
 				'user_name'      => $user_name,
+				'project_name'   => $project_name,
 				'progress'       => 3,
 				'payment_timing' => 'prepay',
 			) );
@@ -728,11 +731,14 @@ class KTPWP_WooCommerce_Integration {
 			if ( $client_id === null || $client_id <= 0 ) {
 				continue;
 			}
-			$user_name = $user_name !== '' ? $user_name : $customer_name;
+			$user_name    = $user_name !== '' ? $user_name : $customer_name;
+			$order_number = $order->get_order_number();
+			$project_name = 'WC #' . $order_number;
 			$ok = $order_manager->update_order( $ktp_id, array(
 				'client_id'      => $client_id,
 				'customer_name'  => $customer_name,
 				'user_name'      => $user_name,
+				'project_name'   => $project_name,
 				'progress'       => 3,
 				'payment_timing' => 'prepay',
 			) );
