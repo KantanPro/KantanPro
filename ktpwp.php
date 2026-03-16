@@ -2459,15 +2459,9 @@ function ktpwp_admin_migration_status() {
     }
     
     if ( $status['needs_migration'] ) {
-        $message = sprintf(
-            'データベースの更新が必要です。現在のバージョン: %s、プラグインバージョン: %s',
-            $status['current_db_version'],
-            $status['plugin_version']
-        );
-        
         echo '<div class="notice notice-warning is-dismissible">';
-        echo '<p><strong>KantanPro:</strong> ' . esc_html( $message ) . '</p>';
-        echo '<p><button type="button" class="button button-primary" id="ktpwp-manual-db-update">今すぐ更新</button></p>';
+        echo '<p><strong>KantanPro:</strong> データベースの更新が必要です。 ';
+        echo '<button type="button" class="button button-primary button-small" id="ktpwp-manual-db-update">今すぐ更新</button></p>';
         echo '</div>';
         
         // JavaScript for manual database update
@@ -4993,18 +4987,7 @@ function ktpwp_distribution_admin_notices() {
         echo '</div>';
     }
     
-    // マイグレーション状態チェック（KantanPro設定ページ ktp-* では ktpwp_admin_migration_status が表示するため重複を避ける）
-    $current_page = isset( $_GET['page'] ) ? $_GET['page'] : '';
-    $is_ktp_settings = ( strpos( $current_page, 'ktp-' ) === 0 );
-    $migration_status = ktpwp_check_migration_status();
-    if ( $migration_status['needs_migration'] && ! $is_ktp_settings ) {
-        echo '<div class="notice notice-warning">';
-        echo '<p><strong>KantanPro:</strong> データベースの更新が必要です。</p>';
-        echo '<p>現在のDBバージョン: ' . esc_html( $migration_status['current_db_version'] ) . '</p>';
-        echo '<p>必要なバージョン: ' . esc_html( $migration_status['plugin_version'] ) . '</p>';
-        echo '<p><a href="' . esc_url( wp_nonce_url( add_query_arg( 'ktpwp_manual_migration', '1' ), 'ktpwp_manual_migration' ) ) . '" class="button button-primary">今すぐ更新</a></p>';
-        echo '</div>';
-    }
+    // データベース更新通知は KantanPro 設定ページ（ktp-*）でのみ ktpwp_admin_migration_status で表示（他画面では表示しない）
     
     // invoice_itemsカラム修正成功通知
     if ( $success_message = get_transient( 'ktpwp_invoice_items_fix_success' ) ) {
