@@ -91,6 +91,18 @@
     margin-bottom: 24px;
 }
 
+/* レポートグラフエリア（PC: 横並び / モバイル: 縦並び） */
+.ktp-report-charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-top: 24px;
+}
+
+.ktp-report-chart-item {
+    min-width: 0; /* グリッド子要素の縮小を許可 */
+}
+
 /* グラフコンテナ */
 .graph-container {
     background: #f8f9fa;
@@ -243,6 +255,11 @@ canvas {
 
 /* レスポンシブデザイン */
 @media screen and (max-width: 768px) {
+    /* モバイル: グラフを縦並びに */
+    .ktp-report-charts-grid {
+        grid-template-columns: 1fr;
+    }
+
     #report_content {
         padding: 16px 8px;
         margin: 16px auto;

@@ -197,14 +197,14 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 			// 売上サマリー
 			$content .= $this->render_sales_summary();
 
-			// グラフエリア
-			$content .= '<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:24px;">';
-			$content .= '<div style="background:#f8f9fa;padding:20px;border-radius:8px;">';
+			// グラフエリア（モバイルでは縦並び）
+			$content .= '<div class="ktp-report-charts-grid">';
+			$content .= '<div class="ktp-report-chart-item" style="background:#f8f9fa;padding:20px;border-radius:8px;">';
 			$content .= '<h4 style="margin:0 0 16px 0;">月別売上推移</h4>';
 			$content .= '<canvas id="monthlySalesChart" width="400" height="300"></canvas>';
 			$content .= '</div>';
 			
-			$content .= '<div style="background:#f8f9fa;padding:20px;border-radius:8px;">';
+			$content .= '<div class="ktp-report-chart-item" style="background:#f8f9fa;padding:20px;border-radius:8px;">';
 			$content .= '<h4 style="margin:0 0 16px 0;">月別利益コスト比較</h4>';
 			$content .= '<canvas id="profitTrendChart" width="400" height="300"></canvas>';
 			$content .= '</div>';
@@ -233,14 +233,14 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 			// 顧客サマリー
 			$content .= $this->render_client_summary();
 
-			// グラフエリア
-			$content .= '<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:24px;">';
-			$content .= '<div style="background:#f8f9fa;padding:20px;border-radius:8px;">';
+			// グラフエリア（モバイルでは縦並び）
+			$content .= '<div class="ktp-report-charts-grid">';
+			$content .= '<div class="ktp-report-chart-item" style="background:#f8f9fa;padding:20px;border-radius:8px;">';
 			$content .= '<h4 style="margin:0 0 16px 0;">顧客別売上</h4>';
 			$content .= '<canvas id="clientSalesChart" width="400" height="300"></canvas>';
 			$content .= '</div>';
 			
-			$content .= '<div style="background:#f8f9fa;padding:20px;border-radius:8px;">';
+			$content .= '<div class="ktp-report-chart-item" style="background:#f8f9fa;padding:20px;border-radius:8px;">';
 			$content .= '<h4 style="margin:0 0 16px 0;">顧客別案件数</h4>';
 			$content .= '<canvas id="clientOrderChart" width="400" height="300"></canvas>';
 			$content .= '</div>';
@@ -269,14 +269,14 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 			// サービスサマリー
 			$content .= $this->render_service_summary();
 
-			// グラフエリア
-			$content .= '<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:24px;">';
-			$content .= '<div style="background:#f8f9fa;padding:20px;border-radius:8px;">';
+			// グラフエリア（モバイルでは縦並び）
+			$content .= '<div class="ktp-report-charts-grid">';
+			$content .= '<div class="ktp-report-chart-item" style="background:#f8f9fa;padding:20px;border-radius:8px;">';
 			$content .= '<h4 style="margin:0 0 16px 0;">サービス別売上</h4>';
 			$content .= '<canvas id="serviceSalesChart" width="400" height="300"></canvas>';
 			$content .= '</div>';
 			
-			$content .= '<div style="background:#f8f9fa;padding:20px;border-radius:8px;">';
+			$content .= '<div class="ktp-report-chart-item" style="background:#f8f9fa;padding:20px;border-radius:8px;">';
 			$content .= '<h4 style="margin:0 0 16px 0;">サービス別比率（受注ベース）</h4>';
 			$content .= '<canvas id="serviceQuantityChart" width="400" height="300"></canvas>';
 			$content .= '</div>';
@@ -305,14 +305,14 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 			// 協力会社サマリー
 			$content .= $this->render_supplier_summary();
 
-			// グラフエリア
-			$content .= '<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:24px;">';
-			$content .= '<div style="background:#f8f9fa;padding:20px;border-radius:8px;">';
+			// グラフエリア（モバイルでは縦並び）
+			$content .= '<div class="ktp-report-charts-grid">';
+			$content .= '<div class="ktp-report-chart-item" style="background:#f8f9fa;padding:20px;border-radius:8px;">';
 			$content .= '<h4 style="margin:0 0 16px 0;">協力会社別貢献度</h4>';
 			$content .= '<canvas id="supplierSkillsChart" width="400" height="300"></canvas>';
 			$content .= '</div>';
 			
-			$content .= '<div style="background:#f8f9fa;padding:20px;border-radius:8px;">';
+			$content .= '<div class="ktp-report-chart-item" style="background:#f8f9fa;padding:20px;border-radius:8px;">';
 			$content .= '<h4 style="margin:0 0 16px 0;">スキル別協力会社数</h4>';
 			$content .= '<canvas id="skillSuppliersChart" width="400" height="300"></canvas>';
 			$content .= '</div>';
