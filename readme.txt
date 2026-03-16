@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.2.15
+Stable tag: 1.2.16
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -324,6 +324,10 @@ curl -sS -X POST \
 * 推奨PHP拡張: GD（画像処理用）
 
 == 変更履歴 ==
+
+= 1.2.16 - 2025年03月15日 =
+* WooCommerce連携：税率の取得を追加
+* 支払いタイミングのセレクタを追加
 
 = 1.2.15 - 2025年03月15日 =
 * コスト項目の金額合計と利益を即時計算・表示する機能を追加（利益表示の更新ロジックを修正）
