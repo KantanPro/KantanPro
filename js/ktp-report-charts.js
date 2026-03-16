@@ -31,54 +31,92 @@
         ]
     };
 
-    // 共通のグラフオプション
-    const commonOptions = {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: {
-                labels: {
-                    color: chartColors.dark,
-                    font: {
-                        size: 12
-                    }
-                }
-            }
-        },
-        scales: {
-            x: {
-                grid: {
-                    color: '#eee'
-                },
-                ticks: {
-                    color: chartColors.dark
-                }
-            },
-            y: {
-                grid: {
-                    color: '#eee'
-                },
-                ticks: {
-                    color: chartColors.dark,
-                    callback: function(value) {
-                        return '¥' + value.toLocaleString();
-                    }
-                }
-            }
+    // ダークモード検出（システム設定・WordPress管理画面のダークモード対応）
+    function isDarkMode() {
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            return true;
         }
-    };
+        var body = document.body;
+        if (body && body.className && /dark|nightly|admin-color-modern/i.test(body.className)) {
+            return true;
+        }
+        var wrap = document.getElementById('wpwrap');
+        if (wrap && wrap.className && /dark|nightly/i.test(wrap.className)) {
+            return true;
+        }
+        return false;
+    }
+
+    // テーマに応じたグラフ用の文字色・グリッド色を返す
+    function getChartTheme() {
+        var dark = isDarkMode();
+        return {
+            textColor: dark ? '#e8e8e8' : chartColors.dark,
+            gridColor: dark ? 'rgba(255, 255, 255, 0.2)' : '#eee'
+        };
+    }
+
+    // 共通のグラフオプション（ダークモード対応）
+    function getCommonOptions() {
+        var theme = getChartTheme();
+        var isDark = isDarkMode();
+        return {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    labels: {
+                        color: theme.textColor,
+                        font: {
+                            size: 12
+                        }
+                    }
+                },
+                tooltip: isDark ? {
+                    titleColor: '#e8e8e8',
+                    bodyColor: '#e8e8e8',
+                    backgroundColor: 'rgba(50, 50, 50, 0.95)',
+                    borderColor: 'rgba(255, 255, 255, 0.2)'
+                } : {}
+            },
+            scales: {
+                x: {
+                    grid: {
+                        color: theme.gridColor
+                    },
+                    ticks: {
+                        color: theme.textColor
+                    }
+                },
+                y: {
+                    grid: {
+                        color: theme.gridColor
+                    },
+                    ticks: {
+                        color: theme.textColor,
+                        callback: function(value) {
+                            return '¥' + value.toLocaleString();
+                        }
+                    }
+                }
+            }
+        };
+    }
 
     // 棒グラフ用の高さ制限オプション
-    const barChartOptions = {
-        ...commonOptions,
-        plugins: {
-            ...commonOptions.plugins,
-            legend: {
-                ...commonOptions.plugins.legend,
-                position: 'top'
+    function getBarChartOptions() {
+        var common = getCommonOptions();
+        return {
+            ...common,
+            plugins: {
+                ...common.plugins,
+                legend: {
+                    ...common.plugins.legend,
+                    position: 'top'
+                }
             }
-        }
-    };
+        };
+    }
 
     // ページ読み込み完了時にグラフを初期化
     document.addEventListener('DOMContentLoaded', function() {
@@ -91,7 +129,7 @@
             window.ktp_report_nonce = ktp_ajax_object.nonce || '';
             console.log('レポート用nonce設定:', {
                 nonces: ktp_ajax_object.nonces,
-                general: ktp_ajax_object.nonces?.general,
+                general: (ktp_ajax_object.nonces && ktp_ajax_object.nonces.general),
                 nonce: ktp_ajax_object.nonce,
                 final: window.ktp_report_nonce
             });
@@ -146,6 +184,33 @@
             // 月別売上推移グラフ
             const monthlySalesCtx = document.getElementById('monthlySalesChart');
             if (monthlySalesCtx && data.monthly_sales) {
+                var monthlyTheme = getChartTheme();
+                var monthlyCommon = getCommonOptions();
+                var monthlyOptions = {
+                    ...monthlyCommon,
+                    plugins: {
+                        ...monthlyCommon.plugins,
+                        title: {
+                            display: true,
+                            text: '月別売上推移',
+                            color: monthlyTheme.textColor,
+                            font: { size: 16, weight: 'bold' }
+                        }
+                    },
+                    scales: {
+                        ...monthlyCommon.scales,
+                        y: {
+                            ...monthlyCommon.scales.y,
+                            beginAtZero: true,
+                            ticks: {
+                                ...monthlyCommon.scales.y.ticks,
+                                callback: function(value) {
+                                    return '¥' + value.toLocaleString();
+                                }
+                            }
+                        }
+                    }
+                };
                 new Chart(monthlySalesCtx, {
                     type: 'line',
                     data: {
@@ -163,37 +228,53 @@
                             pointRadius: 6
                         }]
                     },
-                    options: {
-                        ...commonOptions,
-                        plugins: {
-                            ...commonOptions.plugins,
-                            title: {
-                                display: true,
-                                text: '月別売上推移',
-                                color: chartColors.dark,
-                                font: { size: 16, weight: 'bold' }
-                            }
-                        },
-                        scales: {
-                            ...commonOptions.scales,
-                            y: {
-                                ...commonOptions.scales.y,
-                                beginAtZero: true,
-                                ticks: {
-                                    ...commonOptions.scales.y.ticks,
-                                    callback: function(value) {
-                                        return '¥' + value.toLocaleString();
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    options: monthlyOptions
                 });
             }
 
             // 利益推移グラフ
             const profitTrendCtx = document.getElementById('profitTrendChart');
             if (profitTrendCtx && data.profit_trend) {
+                var profitTheme = getChartTheme();
+                var profitOptions = {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: profitTheme.textColor,
+                                font: { size: 12 }
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: '月別利益コスト比較',
+                            color: profitTheme.textColor,
+                            font: { size: 16, weight: 'bold' }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            stacked: true,
+                            grid: { color: profitTheme.gridColor },
+                            ticks: { color: profitTheme.textColor }
+                        },
+                        y: {
+                            stacked: true,
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            grid: { color: profitTheme.gridColor },
+                            ticks: {
+                                color: profitTheme.textColor,
+                                callback: function(value) {
+                                    return '¥' + value.toLocaleString();
+                                }
+                            },
+                            beginAtZero: true
+                        }
+                    }
+                };
                 new Chart(profitTrendCtx, {
                     type: 'bar',
                     data: {
@@ -219,51 +300,7 @@
                             }
                         ]
                     },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                labels: {
-                                    color: chartColors.dark,
-                                    font: { size: 12 }
-                                }
-                            },
-                            title: {
-                                display: true,
-                                text: '月別利益コスト比較',
-                                color: chartColors.dark,
-                                font: { size: 16, weight: 'bold' }
-                            }
-                        },
-                        scales: {
-                            x: {
-                                stacked: true,
-                                grid: {
-                                    color: '#eee'
-                                },
-                                ticks: {
-                                    color: chartColors.dark
-                                }
-                            },
-                            y: {
-                                stacked: true,
-                                type: 'linear',
-                                display: true,
-                                position: 'left',
-                                grid: {
-                                    color: '#eee'
-                                },
-                                ticks: {
-                                    color: chartColors.dark,
-                                    callback: function(value) {
-                                        return '¥' + value.toLocaleString();
-                                    }
-                                },
-                                beginAtZero: true
-                            }
-                        }
-                    }
+                    options: profitOptions
                 });
             }
         }).catch(function(error) {
@@ -283,6 +320,33 @@
             // 顧客別売上グラフ
             const clientSalesCtx = document.getElementById('clientSalesChart');
             if (clientSalesCtx && data.client_sales) {
+                var clientSalesTheme = getChartTheme();
+                var clientSalesBarOpts = getBarChartOptions();
+                var clientSalesOptions = {
+                    ...clientSalesBarOpts,
+                    plugins: {
+                        ...clientSalesBarOpts.plugins,
+                        title: {
+                            display: true,
+                            text: '顧客別売上',
+                            color: clientSalesTheme.textColor,
+                            font: { size: 16, weight: 'bold' }
+                        }
+                    },
+                    scales: {
+                        ...clientSalesBarOpts.scales,
+                        y: {
+                            ...clientSalesBarOpts.scales.y,
+                            beginAtZero: true,
+                            ticks: {
+                                ...clientSalesBarOpts.scales.y.ticks,
+                                callback: function(value) {
+                                    return '¥' + value.toLocaleString();
+                                }
+                            }
+                        }
+                    }
+                };
                 new Chart(clientSalesCtx, {
                     type: 'bar',
                     data: {
@@ -290,78 +354,56 @@
                         datasets: [{
                             label: '売上金額',
                             data: data.client_sales.data,
-                            backgroundColor: data.client_sales.labels.map((_, index) => 
-                                getGradientColor(chartColors.gradients[index % chartColors.gradients.length])
-                            ),
+                            backgroundColor: data.client_sales.labels.map(function(_, index) {
+                                return getGradientColor(chartColors.gradients[index % chartColors.gradients.length]);
+                            }),
                             borderColor: '#fff',
                             borderWidth: 2,
                             borderRadius: 8
                         }]
                     },
-                    options: {
-                        ...barChartOptions,
-                        plugins: {
-                            ...barChartOptions.plugins,
-                            title: {
-                                display: true,
-                                text: '顧客別売上',
-                                color: chartColors.dark,
-                                font: { size: 16, weight: 'bold' }
-                            }
-                        },
-                        scales: {
-                            ...barChartOptions.scales,
-                            y: {
-                                ...barChartOptions.scales.y,
-                                beginAtZero: true,
-                                ticks: {
-                                    ...barChartOptions.scales.y.ticks,
-                                    callback: function(value) {
-                                        return '¥' + value.toLocaleString();
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    options: clientSalesOptions
                 });
             }
 
             // 顧客別案件数グラフ
             const clientOrderCtx = document.getElementById('clientOrderChart');
             if (clientOrderCtx && data.client_orders) {
+                var clientOrderTheme = getChartTheme();
+                var clientOrderOptions = {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: clientOrderTheme.textColor,
+                                font: { size: 12 },
+                                padding: 20
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: '顧客別案件数',
+                            color: clientOrderTheme.textColor,
+                            font: { size: 16, weight: 'bold' }
+                        }
+                    }
+                };
                 new Chart(clientOrderCtx, {
                     type: 'pie',
                     data: {
                         labels: data.client_orders.labels,
                         datasets: [{
                             data: data.client_orders.data,
-                            backgroundColor: data.client_orders.labels.map((_, index) => 
-                                getGradientColor(chartColors.gradients[index % chartColors.gradients.length])
-                            ),
+                            backgroundColor: data.client_orders.labels.map(function(_, index) {
+                                return getGradientColor(chartColors.gradients[index % chartColors.gradients.length]);
+                            }),
                             borderColor: '#fff',
                             borderWidth: 3
                         }]
                     },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                position: 'bottom',
-                                labels: {
-                                    color: chartColors.dark,
-                                    font: { size: 12 },
-                                    padding: 20
-                                }
-                            },
-                            title: {
-                                display: true,
-                                text: '顧客別案件数',
-                                color: chartColors.dark,
-                                font: { size: 16, weight: 'bold' }
-                            }
-                        }
-                    }
+                    options: clientOrderOptions
                 });
             }
         }).catch(function(error) {
@@ -379,6 +421,33 @@
             // サービス別売上グラフ
             const serviceSalesCtx = document.getElementById('serviceSalesChart');
             if (serviceSalesCtx && data.service_sales) {
+                var serviceSalesTheme = getChartTheme();
+                var serviceSalesBarOpts = getBarChartOptions();
+                var serviceSalesOptions = {
+                    ...serviceSalesBarOpts,
+                    plugins: {
+                        ...serviceSalesBarOpts.plugins,
+                        title: {
+                            display: true,
+                            text: 'サービス別売上',
+                            color: serviceSalesTheme.textColor,
+                            font: { size: 16, weight: 'bold' }
+                        }
+                    },
+                    scales: {
+                        ...serviceSalesBarOpts.scales,
+                        y: {
+                            ...serviceSalesBarOpts.scales.y,
+                            beginAtZero: true,
+                            ticks: {
+                                ...serviceSalesBarOpts.scales.y.ticks,
+                                callback: function(value) {
+                                    return '¥' + value.toLocaleString();
+                                }
+                            }
+                        }
+                    }
+                };
                 new Chart(serviceSalesCtx, {
                     type: 'bar',
                     data: {
@@ -386,89 +455,67 @@
                         datasets: [{
                             label: '売上金額',
                             data: data.service_sales.data,
-                            backgroundColor: data.service_sales.labels.map((_, index) => 
-                                getGradientColor(chartColors.gradients[index % chartColors.gradients.length])
-                            ),
+                            backgroundColor: data.service_sales.labels.map(function(_, index) {
+                                return getGradientColor(chartColors.gradients[index % chartColors.gradients.length]);
+                            }),
                             borderColor: '#fff',
                             borderWidth: 2,
                             borderRadius: 8
                         }]
                     },
-                    options: {
-                        ...barChartOptions,
-                        plugins: {
-                            ...barChartOptions.plugins,
-                            title: {
-                                display: true,
-                                text: 'サービス別売上',
-                                color: chartColors.dark,
-                                font: { size: 16, weight: 'bold' }
-                            }
-                        },
-                        scales: {
-                            ...barChartOptions.scales,
-                            y: {
-                                ...barChartOptions.scales.y,
-                                beginAtZero: true,
-                                ticks: {
-                                    ...barChartOptions.scales.y.ticks,
-                                    callback: function(value) {
-                                        return '¥' + value.toLocaleString();
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    options: serviceSalesOptions
                 });
             }
 
             // サービス別比率（受注ベース）グラフ
             const serviceQuantityCtx = document.getElementById('serviceQuantityChart');
             if (serviceQuantityCtx && data.service_quantity) {
+                var serviceQtyTheme = getChartTheme();
+                var serviceQtyOptions = {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: serviceQtyTheme.textColor,
+                                font: { size: 12 },
+                                padding: 20
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'サービス別比率（受注ベース）',
+                            color: serviceQtyTheme.textColor,
+                            font: { size: 16, weight: 'bold' }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    var label = context.label || '';
+                                    var value = context.parsed;
+                                    var total = context.dataset.data.reduce(function(a, b) { return a + b; }, 0);
+                                    var percentage = ((value / total) * 100).toFixed(1);
+                                    return label + ': ' + value + '件 (' + percentage + '%)';
+                                }
+                            }
+                        }
+                    }
+                };
                 new Chart(serviceQuantityCtx, {
                     type: 'pie',
                     data: {
                         labels: data.service_quantity.labels,
                         datasets: [{
                             data: data.service_quantity.data,
-                            backgroundColor: data.service_quantity.labels.map((_, index) => 
-                                getGradientColor(chartColors.gradients[index % chartColors.gradients.length])
-                            ),
+                            backgroundColor: data.service_quantity.labels.map(function(_, index) {
+                                return getGradientColor(chartColors.gradients[index % chartColors.gradients.length]);
+                            }),
                             borderColor: '#fff',
                             borderWidth: 3
                         }]
                     },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                position: 'bottom',
-                                labels: {
-                                    color: chartColors.dark,
-                                    font: { size: 12 },
-                                    padding: 20
-                                }
-                            },
-                            title: {
-                                display: true,
-                                text: 'サービス別比率（受注ベース）',
-                                color: chartColors.dark,
-                                font: { size: 16, weight: 'bold' }
-                            },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(context) {
-                                        const label = context.label || '';
-                                        const value = context.parsed;
-                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                        const percentage = ((value / total) * 100).toFixed(1);
-                                        return label + ': ' + value + '件 (' + percentage + '%)';
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    options: serviceQtyOptions
                 });
             }
         }).catch(function(error) {
@@ -486,6 +533,33 @@
             // 協力会社別スキル数グラフ
             const supplierSkillsCtx = document.getElementById('supplierSkillsChart');
             if (supplierSkillsCtx && data.supplier_skills) {
+                var supplierSkillsTheme = getChartTheme();
+                var supplierSkillsBarOpts = getBarChartOptions();
+                var supplierSkillsOptions = {
+                    ...supplierSkillsBarOpts,
+                    plugins: {
+                        ...supplierSkillsBarOpts.plugins,
+                        title: {
+                            display: true,
+                            text: '協力会社別貢献度',
+                            color: supplierSkillsTheme.textColor,
+                            font: { size: 16, weight: 'bold' }
+                        }
+                    },
+                    scales: {
+                        ...supplierSkillsBarOpts.scales,
+                        y: {
+                            ...supplierSkillsBarOpts.scales.y,
+                            beginAtZero: true,
+                            ticks: {
+                                ...supplierSkillsBarOpts.scales.y.ticks,
+                                callback: function(value) {
+                                    return '¥' + value.toLocaleString();
+                                }
+                            }
+                        }
+                    }
+                };
                 new Chart(supplierSkillsCtx, {
                     type: 'bar',
                     data: {
@@ -493,78 +567,56 @@
                         datasets: [{
                             label: '貢献度',
                             data: data.supplier_skills.data,
-                            backgroundColor: data.supplier_skills.labels.map((_, index) => 
-                                getGradientColor(chartColors.gradients[index % chartColors.gradients.length])
-                            ),
+                            backgroundColor: data.supplier_skills.labels.map(function(_, index) {
+                                return getGradientColor(chartColors.gradients[index % chartColors.gradients.length]);
+                            }),
                             borderColor: '#fff',
                             borderWidth: 2,
                             borderRadius: 8
                         }]
                     },
-                    options: {
-                        ...barChartOptions,
-                        plugins: {
-                            ...barChartOptions.plugins,
-                            title: {
-                                display: true,
-                                text: '協力会社別貢献度',
-                                color: chartColors.dark,
-                                font: { size: 16, weight: 'bold' }
-                            }
-                        },
-                        scales: {
-                            ...barChartOptions.scales,
-                            y: {
-                                ...barChartOptions.scales.y,
-                                beginAtZero: true,
-                                ticks: {
-                                    ...barChartOptions.scales.y.ticks,
-                                    callback: function(value) {
-                                        return '¥' + value.toLocaleString();
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    options: supplierSkillsOptions
                 });
             }
 
             // スキル別協力会社数グラフ
             const skillSuppliersCtx = document.getElementById('skillSuppliersChart');
             if (skillSuppliersCtx && data.skill_suppliers) {
+                var skillSuppliersTheme = getChartTheme();
+                var skillSuppliersOptions = {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: skillSuppliersTheme.textColor,
+                                font: { size: 12 },
+                                padding: 20
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'スキル別協力会社数',
+                            color: skillSuppliersTheme.textColor,
+                            font: { size: 16, weight: 'bold' }
+                        }
+                    }
+                };
                 new Chart(skillSuppliersCtx, {
                     type: 'doughnut',
                     data: {
                         labels: data.skill_suppliers.labels,
                         datasets: [{
                             data: data.skill_suppliers.data,
-                            backgroundColor: data.skill_suppliers.labels.map((_, index) => 
-                                getGradientColor(chartColors.gradients[index % chartColors.gradients.length])
-                            ),
+                            backgroundColor: data.skill_suppliers.labels.map(function(_, index) {
+                                return getGradientColor(chartColors.gradients[index % chartColors.gradients.length]);
+                            }),
                             borderColor: '#fff',
                             borderWidth: 3
                         }]
                     },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                position: 'bottom',
-                                labels: {
-                                    color: chartColors.dark,
-                                    font: { size: 12 },
-                                    padding: 20
-                                }
-                            },
-                            title: {
-                                display: true,
-                                text: 'スキル別協力会社数',
-                                color: chartColors.dark,
-                                font: { size: 16, weight: 'bold' }
-                            }
-                        }
-                    }
+                    options: skillSuppliersOptions
                 });
             }
         }).catch(function(error) {
