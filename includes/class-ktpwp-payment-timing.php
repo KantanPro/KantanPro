@@ -39,7 +39,7 @@ class KTPWP_Payment_Timing {
 		}
 
 		$client_timing = ( $client && isset( $client->payment_timing ) ) ? trim( (string) $client->payment_timing ) : '';
-		if ( $client_timing === 'prepay' ) {
+		if ( $client_timing === 'prepay' || $client_timing === 'prepay_wc' ) {
 			return 'prepay';
 		}
 		return 'postpay';

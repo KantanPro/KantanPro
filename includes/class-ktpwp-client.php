@@ -975,7 +975,7 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 					$payment_day = esc_html( $row->payment_day );
 					$payment_method = esc_html( $row->payment_method );
 					$tax_category = esc_html( $row->tax_category );
-					$payment_timing = isset( $row->payment_timing ) && in_array( $row->payment_timing, array( 'postpay', 'prepay' ), true ) ? $row->payment_timing : 'postpay';
+					$payment_timing = isset( $row->payment_timing ) && in_array( $row->payment_timing, array( 'postpay', 'prepay', 'prepay_wc' ), true ) ? $row->payment_timing : 'postpay';
 					$memo = esc_html( $row->memo );
 					$client_status = esc_html( $row->client_status );
 					$frequency = esc_html( $row->frequency );
@@ -1107,8 +1107,9 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 					'type' => 'select',
 					'name' => 'payment_timing',
 					'options' => array(
-						'postpay' => __( '後払い', 'ktpwp' ),
-						'prepay'  => __( '前払い', 'ktpwp' ),
+						'postpay'   => __( '後払い', 'ktpwp' ),
+						'prepay'    => __( '前入金済', 'ktpwp' ),
+						'prepay_wc' => __( 'WC受注', 'ktpwp' ),
 					),
 					'default' => 'postpay',
 					'options_assoc' => true,
