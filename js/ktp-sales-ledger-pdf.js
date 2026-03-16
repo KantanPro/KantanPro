@@ -87,18 +87,12 @@
                 ">
                     <div style="
                         display: flex;
-                        justify-content: space-between;
+                        justify-content: flex-end;
                         align-items: center;
                         margin-bottom: 15px;
                         border-bottom: 1px solid #eee;
                         padding-bottom: 10px;
                     ">
-                        <div>
-                            <h3 style="margin: 0; color: #333;">売上台帳 ${year}年</h3>
-                            <div style="font-size: 14px; color: #666; margin-top: 4px;">
-                                ${totalRecords}件 / 合計 ¥${totalAmount.toLocaleString()}
-                            </div>
-                        </div>
                         <button type="button" id="sales-ledger-pdf-close" style="
                             background: none;
                             color: #333;

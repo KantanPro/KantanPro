@@ -58,3 +58,6 @@ Key Conventions
 Environment Rules
 - The Docker environment is correctly configured.
 - Do not modify the development environment settings, including Docker, MySQL, or `wp-config.php`.
+
+Git / コミット
+- Gitのコミットメッセージは常に日本語で記述すること。

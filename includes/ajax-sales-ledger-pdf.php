@@ -123,6 +123,13 @@ function ktp_generate_sales_ledger_pdf_html( $sales_data, $year ) {
     $total_amount = array_sum( array_column( $sales_data, 'total_amount' ) );
     $total_records = count( $sales_data );
     $current_date = date( 'Y年m月d日' );
+
+    // 自社名を取得（単体書類でもどの会社のものか分かるようにする。メールアドレスは含めない）
+    $company_info = class_exists( 'KTPWP_Settings' ) ? KTPWP_Settings::get_company_info() : '';
+    $company_name = ! empty( $company_info ) ? wp_strip_all_tags( $company_info ) : get_bloginfo( 'name' );
+    $company_name = preg_replace( '/\S+@\S+\.\S+/', '', $company_name );
+    $company_name = preg_replace( '/\s+/', ' ', trim( $company_name ) );
+    $company_name = trim( $company_name ) !== '' ? $company_name : __( '（自社名未設定）', 'ktpwp' );
     
     // 月別集計を計算
     $monthly_totals = array();
@@ -137,6 +144,7 @@ function ktp_generate_sales_ledger_pdf_html( $sales_data, $year ) {
     $html = '
     <div class="sales-ledger-pdf">
         <div class="header" style="text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 20px;">
+            <div style="font-size: 14px; color: #333; margin-bottom: 8px; font-weight: bold;">' . nl2br( esc_html( $company_name ) ) . '</div>
             <h1 style="font-size: 24px; margin: 0 0 10px 0; font-weight: bold;">売上台帳</h1>
             <div style="font-size: 18px; margin-bottom: 10px;">' . esc_html( $year ) . '年度</div>
             <div style="font-size: 14px; color: #666;">作成日：' . esc_html( $current_date ) . '</div>
@@ -156,52 +164,77 @@ function ktp_generate_sales_ledger_pdf_html( $sales_data, $year ) {
             </div>
         </div>';
 
-    // 月別売上サマリー
+    // 月別売上サマリー（1〜12月を縦並び、6ヶ月ブロック×2で左右表示）
     if ( ! empty( $monthly_totals ) ) {
         $html .= '
         <div class="monthly-summary" style="margin-bottom: 30px;">
             <h2 style="font-size: 18px; margin: 0 0 15px 0; color: #333;">月別売上サマリー</h2>
-            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; font-size: 12px;">
-                <div style="font-weight: bold; padding: 8px; background: #e3f2fd; text-align: center;">月</div>
-                <div style="font-weight: bold; padding: 8px; background: #e3f2fd; text-align: center;">売上金額</div>
-                <div style="font-weight: bold; padding: 8px; background: #e3f2fd; text-align: center;">月</div>
-                <div style="font-weight: bold; padding: 8px; background: #e3f2fd; text-align: center;">売上金額</div>';
-        
-        for ( $i = 1; $i <= 12; $i += 2 ) {
-            $amount1 = isset( $monthly_totals[ $i ] ) ? $monthly_totals[ $i ] : 0;
-            $amount2 = isset( $monthly_totals[ $i + 1 ] ) ? $monthly_totals[ $i + 1 ] : 0;
-            
-            $html .= '
-                <div style="padding: 6px; text-align: center; border: 1px solid #ddd;">' . $i . '月</div>
-                <div style="padding: 6px; text-align: right; border: 1px solid #ddd;">¥' . number_format( $amount1 ) . '</div>';
-            
-            if ( $i + 1 <= 12 ) {
-                $html .= '
-                <div style="padding: 6px; text-align: center; border: 1px solid #ddd;">' . ($i + 1) . '月</div>
-                <div style="padding: 6px; text-align: right; border: 1px solid #ddd;">¥' . number_format( $amount2 ) . '</div>';
-            } else {
-                $html .= '<div></div><div></div>';
-            }
-        }
-        
+            <div style="display: flex; gap: 24px; flex-wrap: wrap;">';
+
+        // 左ブロック：1月〜6月
         $html .= '
+            <div style="flex: 1; min-width: 200px;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 12px; border: 2px solid #333;">
+                    <thead>
+                        <tr style="background: #e3f2fd;">
+                            <th style="border: 2px solid #333; padding: 8px; text-align: center; font-weight: bold;">月</th>
+                            <th style="border: 2px solid #333; padding: 8px; text-align: right; font-weight: bold;">売上金額</th>
+                        </tr>
+                    </thead>
+                    <tbody>';
+        for ( $i = 1; $i <= 6; $i++ ) {
+            $amount = isset( $monthly_totals[ $i ] ) ? $monthly_totals[ $i ] : 0;
+            $html .= '
+                        <tr>
+                            <td style="border: 2px solid #333; padding: 6px; text-align: center;">' . $i . '月</td>
+                            <td style="border: 2px solid #333; padding: 6px; text-align: right;">¥' . number_format( $amount ) . '</td>
+                        </tr>';
+        }
+        $html .= '
+                    </tbody>
+                </table>
+            </div>';
+
+        // 右ブロック：7月〜12月
+        $html .= '
+            <div style="flex: 1; min-width: 200px;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 12px; border: 2px solid #333;">
+                    <thead>
+                        <tr style="background: #e3f2fd;">
+                            <th style="border: 2px solid #333; padding: 8px; text-align: center; font-weight: bold;">月</th>
+                            <th style="border: 2px solid #333; padding: 8px; text-align: right; font-weight: bold;">売上金額</th>
+                        </tr>
+                    </thead>
+                    <tbody>';
+        for ( $i = 7; $i <= 12; $i++ ) {
+            $amount = isset( $monthly_totals[ $i ] ) ? $monthly_totals[ $i ] : 0;
+            $html .= '
+                        <tr>
+                            <td style="border: 2px solid #333; padding: 6px; text-align: center;">' . $i . '月</td>
+                            <td style="border: 2px solid #333; padding: 6px; text-align: right;">¥' . number_format( $amount ) . '</td>
+                        </tr>';
+        }
+        $html .= '
+                    </tbody>
+                </table>
+            </div>
             </div>
         </div>';
     }
 
-    // 売上明細テーブル
+    // 売上明細テーブル（罫線は月別サマリーと合わせて2px）
     $html .= '
         <div class="sales-details">
             <h2 style="font-size: 18px; margin: 0 0 15px 0; color: #333;">売上明細</h2>
-            <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 20px;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 20px; border: 2px solid #333;">
                 <thead>
                     <tr style="background: #f5f5f5;">
-                        <th style="border: 1px solid #333; padding: 8px; text-align: center; font-weight: bold;">No.</th>
-                        <th style="border: 1px solid #333; padding: 8px; text-align: center; font-weight: bold;">日付</th>
-                        <th style="border: 1px solid #333; padding: 8px; text-align: center; font-weight: bold;">顧客名</th>
-                        <th style="border: 1px solid #333; padding: 8px; text-align: center; font-weight: bold;">案件名</th>
-                        <th style="border: 1px solid #333; padding: 8px; text-align: center; font-weight: bold;">商品・サービス</th>
-                        <th style="border: 1px solid #333; padding: 8px; text-align: center; font-weight: bold;">売上金額</th>
+                        <th style="border: 2px solid #333; padding: 8px; text-align: center; font-weight: bold;">No.</th>
+                        <th style="border: 2px solid #333; padding: 8px; text-align: center; font-weight: bold;">日付</th>
+                        <th style="border: 2px solid #333; padding: 8px; text-align: center; font-weight: bold;">顧客名</th>
+                        <th style="border: 2px solid #333; padding: 8px; text-align: center; font-weight: bold;">案件名</th>
+                        <th style="border: 2px solid #333; padding: 8px; text-align: center; font-weight: bold;">商品・サービス</th>
+                        <th style="border: 2px solid #333; padding: 8px; text-align: center; font-weight: bold;">売上金額</th>
                     </tr>
                 </thead>
                 <tbody>';
@@ -211,19 +244,19 @@ function ktp_generate_sales_ledger_pdf_html( $sales_data, $year ) {
         foreach ( $sales_data as $row ) {
             $html .= '
                     <tr>
-                        <td style="border: 1px solid #333; padding: 6px; text-align: center;">' . $row_number . '</td>
-                        <td style="border: 1px solid #333; padding: 6px; text-align: center;">' . esc_html( $row['date'] ) . '</td>
-                        <td style="border: 1px solid #333; padding: 6px;">' . esc_html( $row['client_name'] ) . '</td>
-                        <td style="border: 1px solid #333; padding: 6px;">' . esc_html( $row['order_title'] ) . '</td>
-                        <td style="border: 1px solid #333; padding: 6px; font-size: 10px;">' . esc_html( mb_strimwidth( $row['products'], 0, 50, '...' ) ) . '</td>
-                        <td style="border: 1px solid #333; padding: 6px; text-align: right; font-weight: bold;">¥' . number_format( $row['total_amount'] ) . '</td>
+                        <td style="border: 2px solid #333; padding: 6px; text-align: center;">' . $row_number . '</td>
+                        <td style="border: 2px solid #333; padding: 6px; text-align: center;">' . esc_html( $row['date'] ) . '</td>
+                        <td style="border: 2px solid #333; padding: 6px;">' . esc_html( $row['client_name'] ) . '</td>
+                        <td style="border: 2px solid #333; padding: 6px;">' . esc_html( $row['order_title'] ) . '</td>
+                        <td style="border: 2px solid #333; padding: 6px; font-size: 10px;">' . esc_html( mb_strimwidth( $row['products'], 0, 50, '...' ) ) . '</td>
+                        <td style="border: 2px solid #333; padding: 6px; text-align: right; font-weight: bold;">¥' . number_format( $row['total_amount'] ) . '</td>
                     </tr>';
             $row_number++;
         }
     } else {
         $html .= '
                     <tr>
-                        <td colspan="6" style="border: 1px solid #333; padding: 20px; text-align: center; color: #666;">
+                        <td colspan="6" style="border: 2px solid #333; padding: 20px; text-align: center; color: #666;">
                             対象年度の売上データがありません。
                         </td>
                     </tr>';
@@ -233,16 +266,11 @@ function ktp_generate_sales_ledger_pdf_html( $sales_data, $year ) {
                 </tbody>
                 <tfoot>
                     <tr style="background: #f0f8ff; font-weight: bold;">
-                        <td colspan="5" style="border: 1px solid #333; padding: 8px; text-align: right;">合計</td>
-                        <td style="border: 1px solid #333; padding: 8px; text-align: right; font-size: 14px;">¥' . number_format( $total_amount ) . '</td>
+                        <td colspan="5" style="border: 2px solid #333; padding: 8px; text-align: right;">合計</td>
+                        <td style="border: 2px solid #333; padding: 8px; text-align: right; font-size: 14px;">¥' . number_format( $total_amount ) . '</td>
                     </tr>
                 </tfoot>
             </table>
-        </div>
-
-        <div class="footer" style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; text-align: center; font-size: 12px; color: #666;">
-            <div>この売上台帳は確定申告用として作成されました。</div>
-            <div style="margin-top: 5px;">KantanPro 業務管理システム</div>
         </div>
     </div>';
 
