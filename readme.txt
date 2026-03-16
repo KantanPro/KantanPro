@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.2.18
+Stable tag: 1.2.19
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -324,6 +324,10 @@ curl -sS -X POST \
 * 推奨PHP拡張: GD（画像処理用）
 
 == 変更履歴 ==
+
+= 1.2.19 - 2025年03月15日 =
+* 売上台帳PDF生成機能の改善（自社名の取得と表示を追加、月別売上サマリーのレイアウト修正、テーブル罫線の統一、JavaScriptスタイルの調整）
+* ダークモード表示を改善
 
 = 1.2.18 - 2025年03月15日 =
 * モバイルのレポートグラフ表示を改善
