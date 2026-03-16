@@ -460,6 +460,8 @@ class KTPWP_WooCommerce_Integration {
 		$sort_order = 1;
 		$now        = current_time( 'mysql' );
 
+		$order_tax_rate_fallback = $this->get_order_default_tax_rate( $order );
+
 		foreach ( $items as $item ) {
 			if ( ! $item instanceof WC_Order_Item_Product ) {
 				continue;
@@ -471,8 +473,9 @@ class KTPWP_WooCommerce_Integration {
 			$price    = $qty > 0 ? $subtotal / $qty : 0;
 			$amount   = $total;
 			$tax      = (float) $item->get_total_tax();
-			// 税率は簡易（金額ベースで逆算、0 の場合は null）
-			$tax_rate = ( $total > 0 && $tax > 0 ) ? round( ( $tax / ( $total - $tax ) ) * 100, 1 ) : null;
+			$subtax   = (float) $item->get_subtotal_tax();
+
+			$tax_rate = $this->calc_line_tax_rate( $subtotal, $subtax, $total, $tax, $order_tax_rate_fallback );
 
 			$row = array(
 				'order_id'     => $ktp_order_id,
@@ -481,23 +484,135 @@ class KTPWP_WooCommerce_Integration {
 				'unit'         => __( '個', 'ktpwp' ),
 				'quantity'     => $qty,
 				'amount'       => $amount,
+				'tax_rate'     => $tax_rate,
 				'remarks'      => '',
 				'sort_order'   => $sort_order,
 				'created_at'   => $now,
 				'updated_at'   => $now,
 			);
-			$fmt = array( '%d', '%s', '%f', '%s', '%f', '%f', '%s', '%d', '%s', '%s' );
-			if ( $tax_rate !== null ) {
-				$row = array_merge(
-					array_slice( $row, 0, 6, true ),
-					array( 'tax_rate' => $tax_rate ),
-					array_slice( $row, 6, null, true )
-				);
-				$fmt = array_merge( array_slice( $fmt, 0, 6 ), array( '%f' ), array_slice( $fmt, 6, null ) );
-			}
+			$fmt = array( '%d', '%s', '%f', '%s', '%f', '%f', '%f', '%s', '%d', '%s', '%s' );
 			$wpdb->insert( $table, $row, $fmt );
 			$sort_order++;
 		}
+	}
+
+	/**
+	 * 注文からデフォルト税率を1件取得（請求項目で税率が算出できない場合のフォールバック）
+	 * get_items('tax') の税行と、WC_Tax::get_rate_percent( rate_id ) の両方から取得を試みる。
+	 *
+	 * @param WC_Order $order
+	 * @return float|null 税率（%）。取得できない場合は null
+	 */
+	private function get_order_default_tax_rate( WC_Order $order ): ?float {
+		// 1) 注文に紐づく税行（order item type = tax）から取得
+		$tax_items = $order->get_items( 'tax' );
+		if ( ! empty( $tax_items ) ) {
+			foreach ( $tax_items as $tax_item ) {
+				if ( ! $tax_item instanceof WC_Order_Item_Tax ) {
+					continue;
+				}
+				$rate_percent = $tax_item->get_rate_percent();
+				$rate_float   = $this->parse_tax_rate_percent( $rate_percent );
+				if ( $rate_float !== null ) {
+					return $rate_float;
+				}
+				// rate_id から WC_Tax で取得を試行（get_rate_percent が空の場合）
+				$rate_id = $tax_item->get_rate_id();
+				if ( $rate_id && class_exists( 'WC_Tax' ) && method_exists( 'WC_Tax', 'get_rate_percent' ) ) {
+					$rate_percent = WC_Tax::get_rate_percent( $rate_id );
+					$rate_float   = $this->parse_tax_rate_percent( $rate_percent );
+					if ( $rate_float !== null ) {
+						return $rate_float;
+					}
+				}
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * 税率文字列を float に変換（"10" / "10%" / "10.000" などに対応）
+	 *
+	 * @param string|float|int $rate_percent
+	 * @return float|null
+	 */
+	private function parse_tax_rate_percent( $rate_percent ): ?float {
+		if ( $rate_percent === null || $rate_percent === '' ) {
+			return null;
+		}
+		if ( is_numeric( $rate_percent ) ) {
+			$f = (float) $rate_percent;
+			return ( $f >= 0 && $f < 100 ) ? round( $f, 1 ) : null;
+		}
+		$str = trim( (string) $rate_percent );
+		$str = str_replace( array( '%', '％' ), '', $str );
+		if ( $str === '' || ! is_numeric( $str ) ) {
+			return null;
+		}
+		$f = (float) $str;
+		return ( $f >= 0 && $f < 100 ) ? round( $f, 1 ) : null;
+	}
+
+	/**
+	 * ラインの税率を算出（小計税額・合計税額から。フォールバックあり）
+	 *
+	 * @param float     $subtotal 小計（税抜）
+	 * @param float     $subtax   小計税額
+	 * @param float     $total    行合計
+	 * @param float     $tax      行税額
+	 * @param float|null $fallback 注文のデフォルト税率
+	 * @return float|null 税率（%）。非課税の場合は null
+	 */
+	private function calc_line_tax_rate( float $subtotal, float $subtax, float $total, float $tax, ?float $fallback ): ?float {
+		$snap_to_standard_rate = function ( float $rate ): float {
+			$r = round( $rate, 1 );
+			if ( $r >= 7.5 && $r <= 8.5 ) {
+				return 8.0;
+			}
+			if ( $r >= 9.5 && $r <= 10.5 ) {
+				return 10.0;
+			}
+			return $r;
+		};
+
+		// 税額が 0 の行は非課税として null。0% は返さない。
+		if ( $subtotal > 0 && $subtax > 0 ) {
+			$rate = ( $subtax / $subtotal ) * 100;
+			if ( $rate > 0 && $rate < 100 ) {
+				return $snap_to_standard_rate( $rate );
+			}
+		}
+		if ( $total > 0 && $tax > 0 ) {
+			$rate_incl = ( $tax / ( $total - $tax ) ) * 100;
+			if ( $rate_incl > 0 && $rate_incl < 100 ) {
+				return $snap_to_standard_rate( $rate_incl );
+			}
+			$rate_excl = ( $tax / $total ) * 100;
+			if ( $rate_excl > 0 && $rate_excl < 100 ) {
+				return $snap_to_standard_rate( $rate_excl );
+			}
+		}
+		if ( $tax > 0 ) {
+			return $fallback !== null ? $fallback : 10.0;
+		}
+		// 金額はあるが税額0 → WooCommerce の端数で0円になっている可能性があるため、注文の税率または10%を採用
+		if ( $subtotal > 0 || $total > 0 ) {
+			return $fallback !== null ? $fallback : 10.0;
+		}
+		return null;
+	}
+
+	/**
+	 * 指定 KTP 受注の請求項目を削除し、WooCommerce 注文から再同期する（税率を含む）
+	 *
+	 * @param int      $ktp_order_id KantanPro 受注ID
+	 * @param WC_Order $order        WooCommerce 注文
+	 */
+	private function replace_invoice_items_from_wc_order( int $ktp_order_id, WC_Order $order ): void {
+		global $wpdb;
+		$table = $wpdb->prefix . 'ktp_order_invoice_items';
+		$wpdb->delete( $table, array( 'order_id' => $ktp_order_id ), array( '%d' ) );
+		$this->sync_invoice_items( $ktp_order_id, $order );
 	}
 
 	/**
@@ -675,6 +790,7 @@ class KTPWP_WooCommerce_Integration {
 			) );
 			if ( $ok ) {
 				$linked++;
+				$this->replace_invoice_items_from_wc_order( $ktp_id, $order );
 			}
 		}
 		set_transient( 'ktpwp_wc_sync_message', sprintf( __( '顧客未設定の WooCommerce 連携受注 %d 件を顧客に紐付けました。', 'ktpwp' ), $linked ), 30 );
@@ -744,6 +860,7 @@ class KTPWP_WooCommerce_Integration {
 			) );
 			if ( $ok ) {
 				$linked++;
+				$this->replace_invoice_items_from_wc_order( $ktp_id, $order );
 			}
 		}
 		set_transient( 'ktpwp_wc_sync_message', sprintf( __( 'WooCommerce 連携受注 %d 件を顧客に再紐付けしました。', 'ktpwp' ), $linked ), 30 );
