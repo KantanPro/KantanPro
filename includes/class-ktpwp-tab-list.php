@@ -190,12 +190,21 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 				$btn_label = esc_html( $label ) . ' (' . $progress_counts[ $num ] . ')';
 				$icon = isset( $progress_icons[ $num ] ) ? $progress_icons[ $num ] : 'circle';
 
-				// 警告マークはJavaScriptで動的に管理するため、初期表示はしない
-				$warning_mark = '';
-
-				// ▼▼▼ 完了タブに警告マークを表示 ▼▼▼
-				if ( $num == 4 && $invoice_warning_count > 0 ) {
-					$warning_mark = '<span class="invoice-warning-mark-row">!</span>';
+				// 進捗タブごとの赤い(!)マーク件数（CSSで右上オーバーレイ・表示制御）
+				$warning_count = 0;
+				$warning_title = '';
+				if ( $num == 3 ) {
+					$warning_count = isset( $progress_warnings[3] ) ? $progress_warnings[3] : 0;
+					$warning_title = $warning_count > 0 ? sprintf( __( '納期が迫っている案件が%d件あります', 'ktpwp' ), $warning_count ) : '';
+				} elseif ( $num == 4 ) {
+					$warning_count = $invoice_warning_count;
+					$warning_title = $warning_count > 0 ? sprintf( __( '請求日を過ぎている案件が%d件あります', 'ktpwp' ), $warning_count ) : '';
+				}
+				// 受注(3)・完了(4)は常にバッジ要素を出力。赤い丸の中に通常の数字（1, 100, 1000等）
+				$warning_badge = '';
+				if ( $num == 3 || $num == 4 ) {
+					$badge_text = $warning_count > 0 ? (string) (int) $warning_count : '';
+					$warning_badge = '<span class="ktp-progress-warning-badge" data-progress="' . esc_attr( $num ) . '" data-count="' . (int) $warning_count . '" title="' . esc_attr( $warning_title ) . '">' . esc_html( $badge_text ) . '</span>';
 				}
 
 				// 進捗ボタンはprogressを必ず付与
@@ -216,7 +225,7 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 				}
 				
 				$content .= '<span class="progress-btn-text">' . $btn_label . '</span>';
-				$content .= $warning_mark;
+				$content .= $warning_badge;
 				$content .= '</a>';
 			}
 			$content .= '</div>';

@@ -3596,10 +3596,54 @@ class KTPWP_Ajax {
 
 			error_log( 'KTPWP Ajax: Warning count: ' . $warning_count );
 
+			// 完了タブ（progress=4）の請求書締日警告件数（リアルタイム更新用）
+			$invoice_warning_count = 0;
+			$client_table           = $wpdb->prefix . 'ktp_client';
+			$query_invoice          = "SELECT o.id, o.client_id, o.completion_date, c.closing_day FROM {$table_name} o LEFT JOIN {$client_table} c ON o.client_id = c.id WHERE o.progress = 4 AND o.completion_date IS NOT NULL AND c.closing_day IS NOT NULL AND c.closing_day != 'なし'";
+			$orders_invoice         = $wpdb->get_results( $query_invoice );
+			$today                  = new DateTime();
+			$today->setTime( 0, 0, 0 );
+			foreach ( $orders_invoice as $order ) {
+				$completion_date = $order->completion_date;
+				if ( empty( $completion_date ) ) {
+					continue;
+				}
+				$dt = DateTime::createFromFormat( 'Y-m-d', $completion_date );
+				$errors = DateTime::getLastErrors();
+				if ( $dt === false || ( $errors && ( $errors['warning_count'] > 0 || $errors['error_count'] > 0 ) ) ) {
+					continue;
+				}
+				$completion_dt = $dt;
+				$year          = (int) $completion_dt->format( 'Y' );
+				$month         = (int) $completion_dt->format( 'm' );
+				if ( $year < 1 || $year > 9999 || $month < 1 || $month > 12 ) {
+					continue;
+				}
+				$closing_day = $order->closing_day;
+				if ( $closing_day === '末日' ) {
+					$closing_dt = new DateTime( "$year-$month-01" );
+					$closing_dt->modify( 'last day of this month' );
+				} else {
+					$closing_day_num = (int) $closing_day;
+					$closing_dt      = new DateTime( "$year-$month-" . str_pad( $closing_day_num, 2, '0', STR_PAD_LEFT ) );
+					$last_day        = (int) $closing_dt->format( 't' );
+					if ( $closing_day_num > $last_day ) {
+						$closing_dt->modify( 'last day of this month' );
+					}
+				}
+				$closing_dt->setTime( 0, 0, 0 );
+				$diff     = $today->diff( $closing_dt );
+				$days_left = $diff->invert ? -$diff->days : $diff->days;
+				if ( $days_left <= 0 ) {
+					$invoice_warning_count++;
+				}
+			}
+
 			wp_send_json_success(
 				array(
-					'warning_count' => (int) $warning_count,
-					'warning_days'  => $warning_days,
+					'warning_count'        => (int) $warning_count,
+					'warning_days'         => $warning_days,
+					'invoice_warning_count' => (int) $invoice_warning_count,
 				)
 			);
 

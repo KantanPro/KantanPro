@@ -277,7 +277,7 @@ li.ktp_work_list_item {
   }
 }
 
-/* 進捗ボタン内の警告マークの位置調整 */
+/* 進捗ボタン：右上角にバッジを重ねるため relative */
 .progress-btn {
   position: relative;
 }
@@ -287,6 +287,31 @@ li.ktp_work_list_item {
   top: -5px;
   right: -5px;
   z-index: 10;
+}
+
+/* 進捗タブの赤い丸バッジ：通常の数字を表示（1〜1000等）。右上オーバーレイ・data-countで表示制御 */
+.ktp-progress-warning-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  z-index: 11;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  box-sizing: border-box;
+  background-color: #f44336;
+  color: #fff;
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: bold;
+  line-height: 1;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+.ktp-progress-warning-badge[data-count="0"] {
+  display: none;
 }
 
 /* 納期入力フィールドのラッパー */

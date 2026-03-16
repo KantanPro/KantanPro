@@ -208,11 +208,8 @@ jQuery(document).ready(function($) {
         console.log('[DELIVERY-DATES] 統一されたAJAX設定:', ajaxConfig);
     }
     
-    // 即座に進捗ボタンの警告マークを更新（DOMContentLoaded後）
-    console.log('[DELIVERY-DATES] DOMContentLoaded後の進捗ボタン警告マーク更新');
-    setTimeout(function() {
-        updateProgressButtonWarning();
-    }, 50);
+    // 進捗タブのバッジはPHPで正しく出力されているため、ページ読み込み時はAJAXで上書きしない（一瞬消えるのを防ぐ）
+    // updateProgressButtonWarning() は納期変更・進捗変更時のみ呼ぶ
 
     // 納期フィールドの変更を監視
     $(document).on('change', '.delivery-date-input', function() {
@@ -271,8 +268,10 @@ jQuery(document).ready(function($) {
                     $input.css('border-color', '#4caf50');
                     $input.css('background-color', '#f1f8e9');
                     
-                    // 警告マークを更新
+                    // 行の警告マークを更新
                     updateWarningMark($input, value);
+                    // 納期変更後は進捗タブのバッジも更新（ユーザー操作時のみ）
+                    updateProgressButtonWarning();
                     
                     // 3秒後に元のスタイルに戻す
                     setTimeout(function() {
@@ -449,9 +448,8 @@ jQuery(document).ready(function($) {
             }
         }
         
-        // 納期フィールドの変更時に進捗ボタンの警告マークを即時更新
-        console.log('[DELIVERY-DATES] 納期変更により進捗ボタンの警告マークを更新');
-        updateProgressButtonWarning();
+        // 進捗タブのバッジはここでは更新しない（ページ読み込み時に updateAllWarningMarks → updateWarningMark が複数回呼ばれ、AJAXで上書きされて消えるため）。
+        // ユーザーが納期を変更したときは、.delivery-date-input の change ハンドラ内で updateProgressButtonWarning() を呼ぶ。
     }
 
     /**
@@ -478,58 +476,43 @@ jQuery(document).ready(function($) {
                 nonce: nonce
             },
             success: function(response) {
-                console.log('[DELIVERY-DATES] 受注警告件数取得応答:', response);
+                console.log('[DELIVERY-DATES] 警告件数取得応答:', response);
                 
                 if (response.success) {
-                    var warningCount = response.data.warning_count;
+                    var warningCount = response.data.warning_count || 0;
+                    var invoiceCount = response.data.invoice_warning_count || 0;
                     var warningDays = response.data.warning_days;
                     
-                    console.log('[DELIVERY-DATES] 受注の納期警告件数:', warningCount, '件（警告日数:', warningDays, '日）');
+                    // 受注タブ（progress=3）のバッジを更新
+                    var $btn3 = $('.progress-btn').filter(function() { return $(this).data('progress') === 3; });
+                    var $badge3 = $btn3.find('.ktp-progress-warning-badge[data-progress="3"]');
+                    var title3 = warningCount > 0 ? '納期が迫っている案件が' + warningCount + '件あります' : '';
+                    if ($badge3.length) {
+                        $badge3.attr('data-count', warningCount).attr('title', title3).text(warningCount > 0 ? String(warningCount) : '');
+                    } else if (warningCount > 0) {
+                        $btn3.find('.delivery-warning-mark').remove();
+                        $btn3.append('<span class="ktp-progress-warning-badge" data-progress="3" data-count="' + warningCount + '" title="' + title3 + '">' + warningCount + '</span>');
+                    }
                     
-                    // 進捗ボタンの警告マークをチェック
-                    var $progressButton = $('.progress-btn').filter(function() {
-                        return $(this).data('progress') === 3; // 受注（progress = 3）
-                    });
-                    
-                    console.log('[DELIVERY-DATES] 受注ボタン数:', $progressButton.length);
-                    
-                    var $existingButtonWarning = $progressButton.find('.delivery-warning-mark');
-                    
-                    if (warningCount > 0) {
-                        // 警告マークがある場合、ボタンにも警告マークを表示
-                        if ($existingButtonWarning.length === 0) {
-                            $progressButton.append('<span class="delivery-warning-mark" title="納期が迫っている案件があります（' + warningCount + '件）">!</span>');
-                            console.log('[DELIVERY-DATES] 進捗ボタンに警告マークを追加しました（' + warningCount + '件）');
-                        } else {
-                            // 既存の警告マークの件数を更新
-                            $existingButtonWarning.attr('title', '納期が迫っている案件があります（' + warningCount + '件）');
-                            console.log('[DELIVERY-DATES] 進捗ボタンの警告マークを更新しました（' + warningCount + '件）');
-                        }
-                    } else {
-                        // 警告マークがない場合、ボタンの警告マークを削除
-                        $existingButtonWarning.remove();
-                        console.log('[DELIVERY-DATES] 進捗ボタンの警告マークを削除しました');
+                    // 完了タブ（progress=4）のバッジを更新
+                    var $btn4 = $('.progress-btn').filter(function() { return $(this).data('progress') === 4; });
+                    var $badge4 = $btn4.find('.ktp-progress-warning-badge[data-progress="4"]');
+                    var title4 = invoiceCount > 0 ? '請求日を過ぎている案件が' + invoiceCount + '件あります' : '';
+                    if ($badge4.length) {
+                        $badge4.attr('data-count', invoiceCount).attr('title', title4).text(invoiceCount > 0 ? String(invoiceCount) : '');
                     }
                 } else {
-                    console.log('[DELIVERY-DATES] 警告件数取得に失敗:', response.data);
-                    // エラー時は既存の警告マークを削除
-                    var $progressButton = $('.progress-btn').filter(function() {
-                        return $(this).data('progress') === 3;
-                    });
-                    $progressButton.find('.delivery-warning-mark').remove();
+                    var $b3 = $('.progress-btn').filter(function() { return $(this).data('progress') === 3; });
+                    var $b4 = $('.progress-btn').filter(function() { return $(this).data('progress') === 4; });
+                    if ($b3.find('.ktp-progress-warning-badge[data-progress="3"]').length) $b3.find('.ktp-progress-warning-badge[data-progress="3"]').attr('data-count', '0').attr('title', '').text('');
+                    if ($b4.find('.ktp-progress-warning-badge[data-progress="4"]').length) $b4.find('.ktp-progress-warning-badge[data-progress="4"]').attr('data-count', '0').attr('title', '').text('');
                 }
             },
             error: function(xhr, status, error) {
-                console.log('[DELIVERY-DATES] 警告件数取得で通信エラーが発生しました:', {
-                    status: status,
-                    error: error,
-                    responseText: xhr.responseText
-                });
-                // エラー時は既存の警告マークを削除
-                var $progressButton = $('.progress-btn').filter(function() {
-                    return $(this).data('progress') === 3;
-                });
-                $progressButton.find('.delivery-warning-mark').remove();
+                var $b3 = $('.progress-btn').filter(function() { return $(this).data('progress') === 3; });
+                var $b4 = $('.progress-btn').filter(function() { return $(this).data('progress') === 4; });
+                if ($b3.find('.ktp-progress-warning-badge[data-progress="3"]').length) $b3.find('.ktp-progress-warning-badge[data-progress="3"]').attr('data-count', '0').attr('title', '').text('');
+                if ($b4.find('.ktp-progress-warning-badge[data-progress="4"]').length) $b4.find('.ktp-progress-warning-badge[data-progress="4"]').attr('data-count', '0').attr('title', '').text('');
             }
         });
     }
@@ -551,8 +534,7 @@ jQuery(document).ready(function($) {
             }
         });
         
-        // 進捗ボタンの警告マークも更新（常に作成中の警告件数を取得）
-        updateProgressButtonWarning();
+        // ページ読み込み時はPHPのバッジをそのまま使う（updateProgressButtonWarning は呼ばない）
         
         console.log('[DELIVERY-DATES] 全警告マーク更新完了');
     }
@@ -589,9 +571,7 @@ jQuery(document).ready(function($) {
             field: $completionInput.data('field')
         });
         
-        // 初期化完了後に進捗ボタンの警告マークを即時更新
-        console.log('[DELIVERY-DATES] 初期化完了後の進捗ボタン警告マーク更新');
-        updateProgressButtonWarning();
+        // 進捗タブバッジはPHPで表示済みのため、ここでは更新しない（消えないようにする）
     }, 100);
 
     // 進捗プルダウンの変更を監視（仕事リスト用）
@@ -636,16 +616,14 @@ jQuery(document).ready(function($) {
         // 現在の進捗をold-progressとして保存
         $select.find('option:selected').data('old-progress', newProgress);
         
-        // 納期フィールドが存在する場合、警告マークを更新
+        // 納期フィールドが存在する場合、行の警告マークを更新
         if ($deliveryInput.length > 0) {
             var deliveryDate = $deliveryInput.val();
             console.log('[DELIVERY-DATES] 納期フィールドあり、更新:', deliveryDate);
             updateWarningMark($deliveryInput, deliveryDate);
-        } else {
-            // 納期フィールドがない場合でも、進捗変更時は進捗ボタンの警告マークを更新
-            console.log('[DELIVERY-DATES] 進捗変更後のボタン警告マーク更新');
-            updateProgressButtonWarning();
         }
+        // 進捗変更時は常にタブのバッジをリアルタイム更新（受注・完了の件数が変わるため）
+        updateProgressButtonWarning();
     });
 
     // 受注書詳細での進捗プルダウンの変更を監視
@@ -730,6 +708,7 @@ jQuery(document).ready(function($) {
                 console.log('[DELIVERY-DATES] 完了日保存応答（仕事リスト）:', response);
                 if (response.success) {
                     console.log('[DELIVERY-DATES] 完了日が正常に保存されました（仕事リスト）');
+                    updateProgressButtonWarning();
                 } else {
                     console.error('[DELIVERY-DATES] 完了日の保存に失敗しました（仕事リスト）:', response.data);
                 }
