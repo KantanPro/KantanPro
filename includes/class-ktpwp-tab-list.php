@@ -82,8 +82,8 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 			$content .= '</form>';
 			$content .= '</div>';
 
-			// Print button with proper escaping
-			$content .= '<button title="' . esc_attr__( 'Print', 'ktpwp' ) . '" onclick="alert(\'' . esc_js( __( 'Print function placeholder', 'ktpwp' ) ) . '\')" style="padding: 6px 10px; font-size: 12px;">';
+			// Print button（現在表示されている内容を印刷ダイアログで表示し、PDF保存・印刷可能）
+			$content .= '<button type="button" title="' . esc_attr__( 'Print', 'ktpwp' ) . '" onclick="typeof ktpListPrintOpen === \'function\' && ktpListPrintOpen();" style="padding: 6px 10px; font-size: 12px;">';
 			$content .= '<span class="material-symbols-outlined" aria-label="' . esc_attr__( 'Print', 'ktpwp' ) . '">print</span>';
 			$content .= '</button>';
 
@@ -185,6 +185,9 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 			}
 
 			$content .= '</div>'; // .controller end
+
+			// 印刷対象エリア開始（現在表示されている内容を印刷するためのラッパー）
+			$content .= '<div id="ktp_list_print_area">';
 
 			// 検索結果（進捗ワークフローブロックの上に表示）
 			if ( $list_search !== '' ) {
@@ -584,8 +587,11 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 			$content .= '</div>'; // .ktp_work_list_box 終了
 			// --- ここまでラッパー追加 ---
 
+			$content .= '</div>'; // #ktp_list_print_area 終了
+
 			// 納期フィールドのJavaScriptファイルを読み込み
 			wp_enqueue_script( 'ktp-delivery-dates' );
+			wp_enqueue_script( 'ktp-list-print', plugins_url( 'js/ktp-list-print.js', dirname( __FILE__ ) ) . '?v=' . ( defined( 'KANTANPRO_PLUGIN_VERSION' ) ? KANTANPRO_PLUGIN_VERSION : '1.0' ), array( 'jquery' ), ( defined( 'KANTANPRO_PLUGIN_VERSION' ) ? KANTANPRO_PLUGIN_VERSION : '1.0' ), true );
 
 			return $content;
 		}
