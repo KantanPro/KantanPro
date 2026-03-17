@@ -420,39 +420,43 @@ $content .= '<script src="' . esc_url( plugins_url( 'js/ktp-report-charts.js', d
 		private function render_client_summary() {
 			global $wpdb;
 
-			$period = isset( $_GET['period'] ) ? sanitize_text_field( $_GET['period'] ) : 'current_year';
+			$period = isset( $_GET['period'] ) ? sanitize_text_field( $_GET['period'] ) : 'all_time';
 			$where_clause = $this->get_period_where_clause( $period );
 
-					// 顧客別売上TOP5（請求済以降の進捗状況の案件のみ）
-		$client_query = "SELECT c.company_name, SUM(ii.amount) as total_sales, COUNT(DISTINCT o.id) as order_count 
-						FROM {$wpdb->prefix}ktp_order o 
-						LEFT JOIN {$wpdb->prefix}ktp_client c ON o.client_id = c.id 
-						LEFT JOIN {$wpdb->prefix}ktp_order_invoice_items ii ON o.id = ii.order_id 
-						WHERE 1=1 {$where_clause} 
-						AND ii.amount IS NOT NULL 
-						AND o.progress >= 5 
-						AND o.progress != 7 
-						GROUP BY o.client_id 
-						ORDER BY total_sales DESC 
-						LIMIT 5";
+			// 顧客別売上TOP5（請求済以降の進捗状況の案件のみ）
+			$client_query = "SELECT COALESCE(c.company_name, '（顧客未設定）') AS company_name, SUM(ii.amount) AS total_sales, COUNT(DISTINCT o.id) AS order_count 
+				FROM {$wpdb->prefix}ktp_order o 
+				LEFT JOIN {$wpdb->prefix}ktp_client c ON o.client_id = c.id 
+				LEFT JOIN {$wpdb->prefix}ktp_order_invoice_items ii ON o.id = ii.order_id 
+				WHERE 1=1 {$where_clause} 
+				AND ii.amount IS NOT NULL 
+				AND o.progress >= 5 
+				AND o.progress != 7 
+				GROUP BY o.client_id 
+				ORDER BY total_sales DESC 
+				LIMIT 5";
 			$client_results = $wpdb->get_results( $client_query );
 
 			$content = '<div style="background:#f8f9fa;padding:20px;border-radius:8px;margin-bottom:24px;">';
 			$content .= '<h4 style="margin:0 0 16px 0;">売上TOP5顧客</h4>';
 			$content .= '<div style="display:grid;gap:12px;">';
 
-			foreach ( $client_results as $index => $client ) {
-				$rank = $index + 1;
-				$content .= '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:#fff;border-radius:6px;">';
-				$content .= '<div style="display:flex;align-items:center;gap:12px;">';
-				$content .= '<span style="background:#1976d2;color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold;">' . $rank . '</span>';
-				$content .= '<span style="font-weight:bold;">' . esc_html( $client->company_name ) . '</span>';
-				$content .= '</div>';
-				$content .= '<div style="text-align:right;">';
-				$content .= '<div style="font-weight:bold;color:#1976d2;">¥' . number_format( $client->total_sales ?? 0 ) . '</div>';
-				$content .= '<div style="font-size:12px;color:#666;">' . number_format( $client->order_count ?? 0 ) . '件</div>';
-				$content .= '</div>';
-				$content .= '</div>';
+			if ( empty( $client_results ) ) {
+				$content .= '<p style="margin:0;padding:12px;background:#fff;border-radius:6px;color:#666;">' . esc_html__( '該当期間に売上データがありません。期間を変更するか、請求済以降の案件・請求項目を登録してください。', 'ktpwp' ) . '</p>';
+			} else {
+				foreach ( $client_results as $index => $client ) {
+					$rank = $index + 1;
+					$content .= '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:#fff;border-radius:6px;">';
+					$content .= '<div style="display:flex;align-items:center;gap:12px;">';
+					$content .= '<span style="background:#1976d2;color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold;">' . $rank . '</span>';
+					$content .= '<span style="font-weight:bold;">' . esc_html( $client->company_name ) . '</span>';
+					$content .= '</div>';
+					$content .= '<div style="text-align:right;">';
+					$content .= '<div style="font-weight:bold;color:#1976d2;">¥' . number_format( $client->total_sales ?? 0 ) . '</div>';
+					$content .= '<div style="font-size:12px;color:#666;">' . number_format( $client->order_count ?? 0 ) . '件</div>';
+					$content .= '</div>';
+					$content .= '</div>';
+				}
 			}
 
 			$content .= '</div></div>';
@@ -469,38 +473,42 @@ $content .= '<script src="' . esc_url( plugins_url( 'js/ktp-report-charts.js', d
 		private function render_service_summary() {
 			global $wpdb;
 
-			$period = isset( $_GET['period'] ) ? sanitize_text_field( $_GET['period'] ) : 'current_year';
+			$period = isset( $_GET['period'] ) ? sanitize_text_field( $_GET['period'] ) : 'all_time';
 			$where_clause = $this->get_period_where_clause( $period );
 
-					// サービス別売上TOP5（請求済以降の進捗状況の案件のみ）
-		$service_query = "SELECT ii.product_name as service_name, SUM(ii.amount) as total_sales, COUNT(DISTINCT o.id) as order_count 
-						 FROM {$wpdb->prefix}ktp_order o 
-						 LEFT JOIN {$wpdb->prefix}ktp_order_invoice_items ii ON o.id = ii.order_id 
-						 WHERE 1=1 {$where_clause} 
-						 AND ii.amount IS NOT NULL 
-						 AND o.progress >= 5 
-						 AND o.progress != 7 
-						 GROUP BY ii.product_name 
-						 ORDER BY total_sales DESC 
-						 LIMIT 5";
+			// サービス別売上TOP5（請求済以降の進捗状況の案件のみ）
+			$service_query = "SELECT COALESCE(ii.product_name, '（未設定）') AS service_name, SUM(ii.amount) AS total_sales, COUNT(DISTINCT o.id) AS order_count 
+				FROM {$wpdb->prefix}ktp_order o 
+				LEFT JOIN {$wpdb->prefix}ktp_order_invoice_items ii ON o.id = ii.order_id 
+				WHERE 1=1 {$where_clause} 
+				AND ii.amount IS NOT NULL 
+				AND o.progress >= 5 
+				AND o.progress != 7 
+				GROUP BY ii.product_name 
+				ORDER BY total_sales DESC 
+				LIMIT 5";
 			$service_results = $wpdb->get_results( $service_query );
 
 			$content = '<div style="background:#f8f9fa;padding:20px;border-radius:8px;margin-bottom:24px;">';
 			$content .= '<h4 style="margin:0 0 16px 0;">売上TOP5サービス</h4>';
 			$content .= '<div style="display:grid;gap:12px;">';
 
-			foreach ( $service_results as $index => $service ) {
-				$rank = $index + 1;
-				$content .= '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:#fff;border-radius:6px;">';
-				$content .= '<div style="display:flex;align-items:center;gap:12px;">';
-				$content .= '<span style="background:#4caf50;color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold;">' . $rank . '</span>';
-				$content .= '<span style="font-weight:bold;">' . esc_html( $service->service_name ) . '</span>';
-				$content .= '</div>';
-				$content .= '<div style="text-align:right;">';
-				$content .= '<div style="font-weight:bold;color:#4caf50;">¥' . number_format( $service->total_sales ?? 0 ) . '</div>';
-				$content .= '<div style="font-size:12px;color:#666;">' . number_format( $service->order_count ?? 0 ) . '件</div>';
-				$content .= '</div>';
-				$content .= '</div>';
+			if ( empty( $service_results ) ) {
+				$content .= '<p style="margin:0;padding:12px;background:#fff;border-radius:6px;color:#666;">' . esc_html__( '該当期間に売上データがありません。期間を変更するか、請求済以降の案件・請求項目を登録してください。', 'ktpwp' ) . '</p>';
+			} else {
+				foreach ( $service_results as $index => $service ) {
+					$rank = $index + 1;
+					$content .= '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:#fff;border-radius:6px;">';
+					$content .= '<div style="display:flex;align-items:center;gap:12px;">';
+					$content .= '<span style="background:#4caf50;color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold;">' . $rank . '</span>';
+					$content .= '<span style="font-weight:bold;">' . esc_html( $service->service_name ) . '</span>';
+					$content .= '</div>';
+					$content .= '<div style="text-align:right;">';
+					$content .= '<div style="font-weight:bold;color:#4caf50;">¥' . number_format( $service->total_sales ?? 0 ) . '</div>';
+					$content .= '<div style="font-size:12px;color:#666;">' . number_format( $service->order_count ?? 0 ) . '件</div>';
+					$content .= '</div>';
+					$content .= '</div>';
+				}
 			}
 
 			$content .= '</div></div>';
@@ -517,39 +525,43 @@ $content .= '<script src="' . esc_url( plugins_url( 'js/ktp-report-charts.js', d
 		private function render_supplier_summary() {
 			global $wpdb;
 
-			$period = isset( $_GET['period'] ) ? sanitize_text_field( $_GET['period'] ) : 'current_year';
+			$period = isset( $_GET['period'] ) ? sanitize_text_field( $_GET['period'] ) : 'all_time';
 			$where_clause = $this->get_period_where_clause( $period );
 
-					// 協力会社別貢献度TOP5（請求済以降の進捗状況の案件のみ）
-		$supplier_query = "SELECT s.company_name, COUNT(DISTINCT o.id) as order_count, SUM(oci.amount) as total_contribution 
-						  FROM {$wpdb->prefix}ktp_order o 
-						  LEFT JOIN {$wpdb->prefix}ktp_order_cost_items oci ON o.id = oci.order_id 
-						  LEFT JOIN {$wpdb->prefix}ktp_supplier s ON oci.supplier_id = s.id 
-						  WHERE 1=1 {$where_clause} 
-						  AND oci.supplier_id IS NOT NULL 
-						  AND o.progress >= 5 
-						  AND o.progress != 7
-						  GROUP BY s.id 
-						  ORDER BY total_contribution DESC 
-						  LIMIT 5";
+			// 協力会社別貢献度TOP5（請求済以降の進捗状況の案件のみ）
+			$supplier_query = "SELECT COALESCE(s.company_name, '（協力会社未設定）') AS company_name, COUNT(DISTINCT o.id) AS order_count, SUM(oci.amount) AS total_contribution 
+				FROM {$wpdb->prefix}ktp_order o 
+				LEFT JOIN {$wpdb->prefix}ktp_order_cost_items oci ON o.id = oci.order_id 
+				LEFT JOIN {$wpdb->prefix}ktp_supplier s ON oci.supplier_id = s.id 
+				WHERE 1=1 {$where_clause} 
+				AND oci.supplier_id IS NOT NULL 
+				AND o.progress >= 5 
+				AND o.progress != 7 
+				GROUP BY s.id 
+				ORDER BY total_contribution DESC 
+				LIMIT 5";
 			$supplier_results = $wpdb->get_results( $supplier_query );
 
 			$content = '<div style="background:#f8f9fa;padding:20px;border-radius:8px;margin-bottom:24px;">';
 			$content .= '<h4 style="margin:0 0 16px 0;">貢献度TOP5協力会社</h4>';
 			$content .= '<div style="display:grid;gap:12px;">';
 
-			foreach ( $supplier_results as $index => $supplier ) {
-				$rank = $index + 1;
-				$content .= '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:#fff;border-radius:6px;">';
-				$content .= '<div style="display:flex;align-items:center;gap:12px;">';
-				$content .= '<span style="background:#ff9800;color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold;">' . $rank . '</span>';
-				$content .= '<span style="font-weight:bold;">' . esc_html( $supplier->company_name ) . '</span>';
-				$content .= '</div>';
-				$content .= '<div style="text-align:right;">';
-				$content .= '<div style="font-weight:bold;color:#ff9800;">¥' . number_format( $supplier->total_contribution ?? 0 ) . '</div>';
-				$content .= '<div style="font-size:12px;color:#666;">' . number_format( $supplier->order_count ?? 0 ) . '件</div>';
-				$content .= '</div>';
-				$content .= '</div>';
+			if ( empty( $supplier_results ) ) {
+				$content .= '<p style="margin:0;padding:12px;background:#fff;border-radius:6px;color:#666;">' . esc_html__( '該当期間に貢献度データがありません。期間を変更するか、請求済以降の案件に協力会社・原価項目を登録してください。', 'ktpwp' ) . '</p>';
+			} else {
+				foreach ( $supplier_results as $index => $supplier ) {
+					$rank = $index + 1;
+					$content .= '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:#fff;border-radius:6px;">';
+					$content .= '<div style="display:flex;align-items:center;gap:12px;">';
+					$content .= '<span style="background:#ff9800;color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold;">' . $rank . '</span>';
+					$content .= '<span style="font-weight:bold;">' . esc_html( $supplier->company_name ) . '</span>';
+					$content .= '</div>';
+					$content .= '<div style="text-align:right;">';
+					$content .= '<div style="font-weight:bold;color:#ff9800;">¥' . number_format( $supplier->total_contribution ?? 0 ) . '</div>';
+					$content .= '<div style="font-size:12px;color:#666;">' . number_format( $supplier->order_count ?? 0 ) . '件</div>';
+					$content .= '</div>';
+					$content .= '</div>';
+				}
 			}
 
 			$content .= '</div></div>';
