@@ -2333,8 +2333,8 @@ function ktpwp_plugin_upgrade_migration( $upgrader, $hook_extra ) {
         update_option( 'ktpwp_upgrade_error_timestamp', current_time( 'mysql' ) );
         update_option( 'ktpwp_upgrade_error_count', get_option( 'ktpwp_upgrade_error_count', 0 ) + 1 );
         
-        // ユーザー向けには穏やかな案内（プラグインは更新済みで、DBだけ「今すぐ更新」で対応できる旨を伝える）
-        set_transient( 'ktpwp_upgrade_error', 'プラグインは正常に更新されました。データベースの反映だけ未完了でした。下の「今すぐ更新」でデータベースを更新してください。', 60 );
+        // ユーザー向けには穏やかな案内（プラグインは更新済みで、KantanPro設定でDB更新できる旨を伝える）
+        set_transient( 'ktpwp_upgrade_error', 'プラグインは正常に更新されました。データベースの反映だけ未完了でした。KantanPro設定でデータベースを更新してください。', 60 );
     }
 }
 
@@ -2722,8 +2722,11 @@ function ktpwp_admin_notices() {
     
     // アップデート時の案内（データベース反映が未完了だった場合の穏やかなメッセージ）
     if ( get_transient( 'ktpwp_upgrade_error' ) ) {
+        $upgrade_msg = get_transient( 'ktpwp_upgrade_error' );
+        $settings_link = '<a href="' . esc_url( admin_url( 'admin.php?page=ktp-settings' ) ) . '">KantanPro設定</a>';
+        $upgrade_msg_display = str_replace( 'KantanPro設定', $settings_link, esc_html( $upgrade_msg ) );
         echo '<div class="notice notice-warning is-dismissible">';
-        echo '<p><strong>KantanPro:</strong> ' . esc_html( get_transient( 'ktpwp_upgrade_error' ) ) . '</p>';
+        echo '<p><strong>KantanPro:</strong> ' . $upgrade_msg_display . '</p>';
         echo '</div>';
     }
 }
