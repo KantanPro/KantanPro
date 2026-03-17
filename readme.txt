@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.2.25
+Stable tag: 1.2.26
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -324,6 +324,9 @@ curl -sS -X POST \
 * 推奨PHP拡張: GD（画像処理用）
 
 == 変更履歴 ==
+
+= 1.2.26 - 2026年03月17日 =
+* 印刷ポップアップの閉じるボタンのイベントバインディングを修正（無名関数を使用して可読性を向上）
 
 = 1.2.25 - 2026年03月17日 =
 * レポートタブの顧客・サービス売上TOP5表示を改善（データがない場合のメッセージ追加、期間デフォルトを「all_time」に変更）
