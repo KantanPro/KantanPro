@@ -1080,6 +1080,8 @@ function ktpwp_run_migration_files_directly( $from_version, $to_version ) {
                 error_log( 'KTPWP: マイグレーションファイルを実行中: ' . $filename );
             }
             
+			// マイグレーションファイルの echo を画面に出さない（更新直後の表示をすっきりさせる）
+			ob_start();
 			// マイグレーションファイルを読み込み（読み込み前後のクラス差分を取得）
 			$before_classes = get_declared_classes();
 			require_once $migration_file;
@@ -1131,6 +1133,7 @@ function ktpwp_run_migration_files_directly( $from_version, $to_version ) {
 					error_log( 'KTPWP: このマイグレーションファイルで実行可能な処理を見つけられませんでした（未完了扱い）: ' . $filename );
 				}
 			}
+			ob_end_clean();
             
         } catch ( Exception $e ) {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
@@ -1138,6 +1141,9 @@ function ktpwp_run_migration_files_directly( $from_version, $to_version ) {
             }
 			// このファイルは未完了とみなし、全体成功フラグを下げる
 			$all_ok = false;
+			if ( ob_get_level() ) {
+				ob_end_clean();
+			}
         }
     }
 
@@ -1927,9 +1933,6 @@ add_action( 'admin_init', 'ktpwp_check_reactivation_migration' );
 // プラグイン更新時の自動マイグレーション
 add_action( 'upgrader_process_complete', 'ktpwp_plugin_upgrade_migration', 10, 2 );
 
-// プラグイン更新直後にダッシュボードへリダイレクト
-add_action( 'admin_init', 'ktpwp_redirect_to_dashboard_after_plugin_update', 5 );
-
 // 新規インストール検出と自動マイグレーション
 add_action( 'admin_init', 'ktpwp_detect_new_installation' );
 
@@ -2263,27 +2266,6 @@ function ktpwp_initialize_selected_department() {
 }
 
 /**
- * プラグイン更新直後にダッシュボードへリダイレクトする
- * update.php / update-core.php 表示前に実行する
- */
-function ktpwp_redirect_to_dashboard_after_plugin_update() {
-    if ( ! current_user_can( 'manage_options' ) ) {
-        return;
-    }
-    if ( ! get_transient( 'ktpwp_redirect_to_dashboard_after_update' ) ) {
-        return;
-    }
-    global $pagenow;
-    $is_update_or_plugins_screen = ( isset( $pagenow ) && in_array( $pagenow, array( 'update.php', 'update-core.php', 'plugins.php' ), true ) );
-    if ( ! $is_update_or_plugins_screen ) {
-        return;
-    }
-    delete_transient( 'ktpwp_redirect_to_dashboard_after_update' );
-    wp_safe_redirect( admin_url( 'index.php' ) );
-    exit;
-}
-
-/**
  * プラグイン更新時の自動マイグレーション処理
  * 配布環境対応の強化版
  */
@@ -2342,8 +2324,6 @@ function ktpwp_plugin_upgrade_migration( $upgrader, $hook_extra ) {
         set_transient( 'ktpwp_upgrade_message', 'KantanProプラグインが正常に更新されました。適格請求書ナンバー機能も含まれています。', 60 );
         // マイグレーション成功後「次にやること」を表示するためのフラグ
         set_transient( 'ktpwp_show_update_complete_guide', '1', 600 );
-        // 更新直後にダッシュボードへリダイレクトするためのフラグ（短命）
-        set_transient( 'ktpwp_redirect_to_dashboard_after_update', '1', 15 );
 
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
             error_log( 'KTPWP: Plugin upgrade migration completed successfully' );
@@ -2361,8 +2341,6 @@ function ktpwp_plugin_upgrade_migration( $upgrader, $hook_extra ) {
         
         // ユーザー向けには穏やかな案内（プラグインは更新済みで、KantanPro設定でDB更新できる旨を伝える）
         set_transient( 'ktpwp_upgrade_error', 'プラグインは正常に更新されました。データベースの反映だけ未完了でした。KantanPro設定でデータベースを更新してください。', 60 );
-        // 更新直後にダッシュボードへリダイレクトするためのフラグ（短命）
-        set_transient( 'ktpwp_redirect_to_dashboard_after_update', '1', 15 );
     }
 }
 
