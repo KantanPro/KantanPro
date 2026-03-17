@@ -55,6 +55,7 @@ class KTPWP_View_Tabs_Class {
 				'page_stage',
 				'message',
 				'search_query',
+				'list_search',
 				'multiple_results',
 				'search_service_name',
 				'search_category',

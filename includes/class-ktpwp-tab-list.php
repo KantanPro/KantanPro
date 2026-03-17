@@ -58,8 +58,29 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 
 			$content = '';
 
-			// Controller container display at top
-			$content .= '<div class="controller">';
+			// フリーワード検索用GETパラメータ
+			$list_search = isset( $_GET['list_search'] ) ? sanitize_text_field( wp_unslash( $_GET['list_search'] ) ) : '';
+
+			// Controller container display at top（左: 検索、右: 印刷）
+			$content .= '<div class="controller" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">';
+
+			// フリーワード検索（左寄せ）
+			$content .= '<div class="ktp-list-search-wrap" style="display:flex;align-items:center;gap:6px;">';
+			$content .= '<form method="get" action="" class="ktp-list-search-form" style="display:flex;align-items:center;gap:6px;">';
+			// 仕事リストタブを維持
+			$content .= '<input type="hidden" name="tab_name" value="' . esc_attr( $tab_name ) . '">';
+			// 既存クエリを保持（tab_nameは上で固定したので除外）
+			$keep_params = array( 'progress', 'page_start', 'page_stage', 'flg' );
+			foreach ( $keep_params as $key ) {
+				if ( isset( $_GET[ $key ] ) && (string) $_GET[ $key ] !== '' ) {
+					$content .= '<input type="hidden" name="' . esc_attr( $key ) . '" value="' . esc_attr( wp_unslash( $_GET[ $key ] ) ) . '">';
+				}
+			}
+			$content .= '<label for="ktp-list-search-input" class="ktp-list-search-label" style="font-weight:bold;white-space:nowrap;">' . esc_html__( 'フリーワード', 'ktpwp' ) . '</label>';
+			$content .= '<input type="search" id="ktp-list-search-input" name="list_search" value="' . esc_attr( $list_search ) . '" placeholder="' . esc_attr__( '検索', 'ktpwp' ) . '" class="ktp-list-search-input" style="min-width:160px;padding:6px 8px;border:1px solid #ddd;border-radius:4px;">';
+			$content .= '<button type="submit" class="ktp-list-search-btn" title="' . esc_attr__( '検索', 'ktpwp' ) . '" style="padding:6px 10px;border:1px solid #ddd;border-radius:4px;background:#f5f5f5;cursor:pointer;">🔍</button>';
+			$content .= '</form>';
+			$content .= '</div>';
 
 			// Print button with proper escaping
 			$content .= '<button title="' . esc_attr__( 'Print', 'ktpwp' ) . '" onclick="alert(\'' . esc_js( __( 'Print function placeholder', 'ktpwp' ) ) . '\')" style="padding: 6px 10px; font-size: 12px;">';
@@ -164,6 +185,11 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 			}
 
 			$content .= '</div>'; // .controller end
+
+			// 検索結果（進捗ワークフローブロックの上に表示）
+			if ( $list_search !== '' ) {
+				$content .= $this->render_list_search_results( $list_search, $wpdb, remove_query_arg( 'list_search' ) );
+			}
 
 			// Workflow area to display progress buttons in full width
 			$content .= '<div class="workflow" style="width:100%;margin:0px 0 0px 0;">';
@@ -565,9 +591,185 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 		}
 
 		/**
+		 * 仕事リスト用フリーワード検索結果をレンダリング（受注書・顧客・サービス・協力会社を横断検索）
+		 *
+		 * @param string $keyword  検索キーワード
+		 * @param \wpdb   $wpdb     WordPress DB インスタンス
+		 * @param string $close_url 検索結果を閉じるリンク先URL（list_search を除いたURL）
+		 * @return string 検索結果HTML
+		 */
+		private function render_list_search_results( $keyword, $wpdb, $close_url = '' ) {
+			$like = '%' . $wpdb->esc_like( $keyword ) . '%';
+			$results = array();
+
+			// 受注書（memo/search_field はテーブルに存在する前提でLIKEに含める）
+			$order_table = $wpdb->prefix . 'ktp_order';
+			$order_args = array( $like, $like, $like );
+			$order_where = " ( customer_name LIKE %s OR user_name LIKE %s OR project_name LIKE %s ";
+			$order_cols = $wpdb->get_col( "SHOW COLUMNS FROM `{$order_table}`" );
+			if ( is_array( $order_cols ) && in_array( 'memo', $order_cols, true ) ) {
+				$order_where .= " OR memo LIKE %s ";
+				$order_args[] = $like;
+			}
+			if ( is_array( $order_cols ) && in_array( 'search_field', $order_cols, true ) ) {
+				$order_where .= " OR search_field LIKE %s ";
+				$order_args[] = $like;
+			}
+			$order_where .= ') ';
+			$order_args[] = 50;
+			$order_sql = "SELECT id, customer_name, user_name, project_name FROM `{$order_table}` WHERE " . $order_where . " ORDER BY time DESC LIMIT %d";
+			$orders = $wpdb->get_results( $wpdb->prepare( $order_sql, $order_args ) );
+			if ( $orders ) {
+				foreach ( $orders as $row ) {
+					$label = 'ID:' . (int) $row->id . ' - ' . ( $row->customer_name ?: '' ) . ' (' . ( $row->user_name ?: '' ) . ')' . ( $row->project_name ? ' - ' . $row->project_name : '' );
+					$url = add_query_arg( array( 'tab_name' => 'order', 'order_id' => (int) $row->id ) );
+					$results[] = array(
+						'page_label' => __( '受注書', 'ktpwp' ),
+						'label'     => $label,
+						'url'       => $url,
+					);
+				}
+			}
+
+			// 顧客
+			$client_table = $wpdb->prefix . 'ktp_client';
+			$client_cols = $wpdb->get_col( "SHOW COLUMNS FROM `{$client_table}`" );
+			$client_where = " ( company_name LIKE %s OR name LIKE %s ";
+			$client_args = array( $like, $like );
+			if ( is_array( $client_cols ) && in_array( 'memo', $client_cols, true ) ) {
+				$client_where .= " OR memo LIKE %s ";
+				$client_args[] = $like;
+			}
+			if ( is_array( $client_cols ) && in_array( 'search_field', $client_cols, true ) ) {
+				$client_where .= " OR search_field LIKE %s ";
+				$client_args[] = $like;
+			}
+			$client_where .= ') ';
+			$client_args[] = 50;
+			$client_sql = "SELECT id, company_name, name FROM `{$client_table}` WHERE " . $client_where . " ORDER BY id DESC LIMIT %d";
+			$clients = $wpdb->get_results( $wpdb->prepare( $client_sql, $client_args ) );
+			if ( $clients ) {
+				foreach ( $clients as $row ) {
+					$label = ( $row->company_name ?: '' ) . ' (' . ( $row->name ?: '' ) . ')';
+					$url = add_query_arg( array( 'tab_name' => 'client', 'data_id' => (int) $row->id ) );
+					$results[] = array(
+						'page_label' => __( '顧客', 'ktpwp' ),
+						'label'     => $label,
+						'url'       => $url,
+					);
+				}
+			}
+
+			// サービス
+			$service_table = $wpdb->prefix . 'ktp_service';
+			$service_cols = $wpdb->get_col( "SHOW COLUMNS FROM `{$service_table}`" );
+			$service_where = " ( service_name LIKE %s ";
+			$service_args = array( $like );
+			if ( is_array( $service_cols ) ) {
+				if ( in_array( 'memo', $service_cols, true ) ) {
+					$service_where .= " OR memo LIKE %s ";
+					$service_args[] = $like;
+				}
+				if ( in_array( 'category', $service_cols, true ) ) {
+					$service_where .= " OR category LIKE %s ";
+					$service_args[] = $like;
+				}
+				if ( in_array( 'search_field', $service_cols, true ) ) {
+					$service_where .= " OR search_field LIKE %s ";
+					$service_args[] = $like;
+				}
+			}
+			$service_where .= ') ';
+			$service_args[] = 50;
+			$service_sql = "SELECT id, service_name FROM `{$service_table}` WHERE " . $service_where . " ORDER BY id DESC LIMIT %d";
+			$services = $wpdb->get_results( $wpdb->prepare( $service_sql, $service_args ) );
+			if ( $services ) {
+				foreach ( $services as $row ) {
+					$label = ( $row->service_name ?: '' );
+					$url = add_query_arg( array( 'tab_name' => 'service', 'data_id' => (int) $row->id ) );
+					$results[] = array(
+						'page_label' => __( 'サービス', 'ktpwp' ),
+						'label'     => $label,
+						'url'       => $url,
+					);
+				}
+			}
+
+			// 協力会社（職能・スキル名 product_name も検索対象）
+			$supplier_table = $wpdb->prefix . 'ktp_supplier';
+			$supplier_skills_table = $wpdb->prefix . 'ktp_supplier_skills';
+			$supplier_skills_exists = ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $supplier_skills_table ) ) === $supplier_skills_table );
+			$supplier_cols = $wpdb->get_col( "SHOW COLUMNS FROM `{$supplier_table}`" );
+			$supplier_where = $supplier_skills_exists ? " ( s.company_name LIKE %s OR s.name LIKE %s " : " ( company_name LIKE %s OR name LIKE %s ";
+			$supplier_args = array( $like, $like );
+			if ( is_array( $supplier_cols ) ) {
+				$pre = $supplier_skills_exists ? 's.' : '';
+				if ( in_array( 'memo', $supplier_cols, true ) ) {
+					$supplier_where .= " OR {$pre}memo LIKE %s ";
+					$supplier_args[] = $like;
+				}
+				if ( in_array( 'search_field', $supplier_cols, true ) ) {
+					$supplier_where .= " OR {$pre}search_field LIKE %s ";
+					$supplier_args[] = $like;
+				}
+			}
+			if ( $supplier_skills_exists ) {
+				$supplier_where .= " OR ss.product_name LIKE %s ";
+				$supplier_args[] = $like;
+			}
+			$supplier_where .= ') ';
+			$supplier_args[] = 50;
+			if ( $supplier_skills_exists ) {
+				$supplier_sql = "SELECT DISTINCT s.id, s.company_name, s.name FROM `{$supplier_table}` s LEFT JOIN `{$supplier_skills_table}` ss ON ss.supplier_id = s.id WHERE " . $supplier_where . " ORDER BY s.id DESC LIMIT %d";
+			} else {
+				$supplier_sql = "SELECT id, company_name, name FROM `{$supplier_table}` WHERE " . $supplier_where . " ORDER BY id DESC LIMIT %d";
+			}
+			$suppliers = $wpdb->get_results( $wpdb->prepare( $supplier_sql, $supplier_args ) );
+			if ( $suppliers ) {
+				foreach ( $suppliers as $row ) {
+					$label = ( $row->company_name ?: '' ) . ' (' . ( $row->name ?: '' ) . ')';
+					$url = add_query_arg( array( 'tab_name' => 'supplier', 'data_id' => (int) $row->id ) );
+					$results[] = array(
+						'page_label' => __( '協力会社', 'ktpwp' ),
+						'label'     => $label,
+						'url'       => $url,
+					);
+				}
+			}
+
+			$close_btn = '';
+			if ( $close_url !== '' ) {
+				$close_btn = '<a href="' . esc_url( $close_url ) . '" class="ktp-list-search-results-close" title="' . esc_attr__( '閉じる', 'ktpwp' ) . '" style="position:absolute;top:8px;right:8px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;color:#666;text-decoration:none;font-size:18px;line-height:1;border-radius:4px;transition:color .2s,background .2s;" onmouseover="this.style.color=\'#333\';this.style.background=\'#eee\';" onmouseout="this.style.color=\'#666\';this.style.background=\'transparent\';">×</a>';
+			}
+
+			if ( empty( $results ) ) {
+				$html = '<div class="ktp-list-search-results" style="position:relative;margin-bottom:16px;padding:14px 18px;padding-right:44px;background:#f9f9f9;border:1px solid #eee;border-radius:6px;">';
+				$html .= $close_btn;
+				$html .= '<p style="margin:0;color:#666;font-size:14px;">' . esc_html__( '検索に一致するデータはありません。', 'ktpwp' ) . '</p>';
+				$html .= '</div>';
+				return $html;
+			}
+
+			$html = '<div class="ktp-list-search-results" style="position:relative;margin-bottom:16px;padding:14px 18px;padding-right:44px;background:#f0f7ff;border:1px solid #bbdefb;border-radius:6px;">';
+			$html .= $close_btn;
+			$html .= '<p style="margin:0 0 10px 0;font-weight:bold;font-size:14px;color:#1565c0;">' . esc_html__( '検索結果', 'ktpwp' ) . '</p>';
+			$html .= '<ul style="margin:0;padding-left:20px;list-style:disc;">';
+			foreach ( $results as $r ) {
+				$html .= '<li style="margin-bottom:6px;">';
+				$html .= '<span>' . esc_html( $r['label'] ) . '</span> ';
+				$html .= '<a href="' . esc_url( $r['url'] ) . '" style="color:#1976d2;font-weight:600;">' . esc_html( $r['page_label'] ) . '</a>';
+				$html .= '</li>';
+			}
+			$html .= '</ul>';
+			$html .= '</div>';
+			return $html;
+		}
+
+		/**
 		 * 統一されたページネーションデザインをレンダリング
 		 *
 		 * @param int    $current_page 現在のページ
+		 * @param int    $total_pages 総ページ数
 		 * @param int    $total_pages 総ページ数
 		 * @param int    $query_limit 1ページあたりの表示件数
 		 * @param string $tab_name タブ名
