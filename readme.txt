@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.2.24
+Stable tag: 1.2.25
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -324,6 +324,11 @@ curl -sS -X POST \
 * 推奨PHP拡張: GD（画像処理用）
 
 == 変更履歴 ==
+
+= 1.2.25 - 2026年03月17日 =
+* レポートタブの顧客・サービス売上TOP5表示を改善（データがない場合のメッセージ追加、期間デフォルトを「all_time」に変更）
+* レポートタブの印刷機能を強化（印刷用JavaScript追加、グラフキャンバスのスタイル調整、背景色に応じた可読性確保）
+* 仕事リストの印刷ボタン機能を改善（印刷対象エリアの追加、印刷用JavaScriptの読み込み処理を実装）
 
 = 1.2.24 - 2026年03月17日 =
 * フリーワード検索機能を追加（検索結果表示メソッドの実装、コントローラーのレイアウト調整、検索フォームの追加）
