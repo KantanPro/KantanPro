@@ -404,7 +404,7 @@
     function bindEvents(filename) {
         $(document).off('.ktp-report-print');
 
-        $(document).on('click.ktp-report-print', '#ktp-report-print-close', closePopup);
+        $(document).on('click.ktp-report-print', '#ktp-report-print-close', function () { closePopup(); });
 
         $(document).on('keyup.ktp-report-print', function (e) {
             if (e.keyCode === 27) { closePopup(); }
