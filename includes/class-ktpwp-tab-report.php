@@ -116,7 +116,7 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 		private function render_comprehensive_reports() {
 			global $wpdb;
 
-			$content = '<div id="report_content" style="background:#fff;padding:16px 12px 32px 12px;max-width:1200px;margin:8px auto 0 auto;border-radius:10px;box-shadow:0 2px 8px #eee;">';
+			$content = '<div id="report_content" class="ktp-report-print-area" style="background:#fff;padding:16px 12px 32px 12px;max-width:1200px;margin:8px auto 0 auto;border-radius:10px;box-shadow:0 2px 8px #eee;">';
 			
 			// 現在選択されているレポートタイプを取得
 			$report_type = isset( $_GET['report_type'] ) ? sanitize_text_field( $_GET['report_type'] ) : 'sales';
@@ -156,8 +156,9 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 				)
 			);
 			$content .= '<script>var ktp_ajax_object = ' . json_encode( $ajax_data ) . ';</script>';
-			$content .= '<script src="' . esc_url( plugins_url( 'js/ktp-report-charts.js', dirname( __FILE__ ) ) ) . '?v=' . KANTANPRO_PLUGIN_VERSION . '"></script>';
-			
+$content .= '<script src="' . esc_url( plugins_url( 'js/ktp-report-charts.js', dirname( __FILE__ ) ) ) . '?v=' . KANTANPRO_PLUGIN_VERSION . '"></script>';
+			$content .= '<script src="' . esc_url( plugins_url( 'js/ktp-report-print.js', dirname( __FILE__ ) ) ) . '?v=' . KANTANPRO_PLUGIN_VERSION . '"></script>';
+
 			// 確定申告タブの場合は売上台帳PDF用スクリプトも読み込み
 			$report_type = isset( $_GET['report_type'] ) ? sanitize_text_field( $_GET['report_type'] ) : 'sales';
 			if ( $report_type === 'tax_return' ) {

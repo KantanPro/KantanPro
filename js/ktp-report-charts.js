@@ -31,35 +31,101 @@
         ]
     };
 
-    // ダークモード検出（システム設定・WordPress管理画面のダークモード対応）
+    // 背景色が明るいか（rgb/rgba/#hex から簡易判定）
+    function isLightBackgroundColor(cssColor) {
+        if (!cssColor || cssColor === 'transparent' || cssColor === 'rgba(0, 0, 0, 0)') {
+            return null;
+        }
+        var m = cssColor.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+        if (m) {
+            var r = parseInt(m[1], 10), g = parseInt(m[2], 10), b = parseInt(m[3], 10);
+            return (r + g + b) / 3 > 128;
+        }
+        m = cssColor.match(/#([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})/);
+        if (m) {
+            var r2 = parseInt(m[1], 16), g2 = parseInt(m[2], 16), b2 = parseInt(m[3], 16);
+            return (r2 + g2 + b2) / 3 > 128;
+        }
+        if (/white|#fff|#ffffff/i.test(cssColor)) { return true; }
+        if (/black|#000|#000000/i.test(cssColor)) { return false; }
+        return null;
+    }
+
+    // 要素から親を遡り、最初に得られた非透明な背景色を返す
+    function getEffectiveBackgroundColor(el) {
+        var node = el;
+        while (node && node !== document.body) {
+            var bg = window.getComputedStyle(node).backgroundColor;
+            if (bg && bg !== 'transparent' && bg !== 'rgba(0, 0, 0, 0)') {
+                return bg;
+            }
+            node = node.parentElement || node.parentNode;
+        }
+        if (document.body) {
+            return window.getComputedStyle(document.body).backgroundColor;
+        }
+        if (document.documentElement) {
+            return window.getComputedStyle(document.documentElement).backgroundColor;
+        }
+        return '';
+    }
+
+    // ダークモード検出（実際の背景色を最優先し、ライト/ダーク両方でグラフが読めるように）
     function isDarkMode() {
-        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            return true;
+        if (document.body && document.body.getAttribute('data-ktp-force-light') === '1') {
+            return false;
+        }
+        var reportEl = document.getElementById('report_content');
+        if (reportEl) {
+            var bg = getEffectiveBackgroundColor(reportEl);
+            var lightBg = isLightBackgroundColor(bg);
+            if (lightBg === true) { return false; }
+            if (lightBg === false) { return true; }
+            if (lightBg === null) { return false; }
         }
         var body = document.body;
-        if (body && body.className && /dark|nightly|admin-color-modern/i.test(body.className)) {
+        if (body) {
+            var bg = window.getComputedStyle(body).backgroundColor;
+            var lightBg = isLightBackgroundColor(bg);
+            if (lightBg === null && document.documentElement) {
+                bg = window.getComputedStyle(document.documentElement).backgroundColor;
+                lightBg = isLightBackgroundColor(bg);
+            }
+            if (lightBg === true) { return false; }
+            if (lightBg === false) { return true; }
+        }
+        var bodyClass = body && body.className ? body.className : '';
+        if (/admin-color-(light|fresh|blue|coffee|ectoplasm|ocean|sunrise)/i.test(bodyClass)) {
+            return false;
+        }
+        if (/admin-color-(modern|midnight)/i.test(bodyClass) || /dark|nightly/i.test(bodyClass)) {
             return true;
         }
         var wrap = document.getElementById('wpwrap');
         if (wrap && wrap.className && /dark|nightly/i.test(wrap.className)) {
             return true;
         }
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            return true;
+        }
         return false;
     }
 
-    // テーマに応じたグラフ用の文字色・グリッド色を返す
+    // テーマに応じたグラフ用の文字色・グリッド色を返す（印刷時は黒で可読性を確保）
+    // レポートでも isDarkMode() で判定（#report_content はインラインで白指定されているため
+    // 背景色取得だとダークモード時も黒文字になり、印刷ダイアログ閉じ後に読めなくなる）
     function getChartTheme() {
         var dark = isDarkMode();
         return {
-            textColor: dark ? '#e8e8e8' : chartColors.dark,
-            gridColor: dark ? 'rgba(255, 255, 255, 0.2)' : '#eee'
+            textColor: dark ? '#e8e8e8' : '#333333',
+            gridColor: dark ? 'rgba(255, 255, 255, 0.2)' : '#ddd'
         };
     }
 
     // 共通のグラフオプション（ダークモード対応）
     function getCommonOptions() {
         var theme = getChartTheme();
-        var isDark = isDarkMode();
+        var isDark = theme.textColor === '#e8e8e8';
         return {
             responsive: true,
             maintainAspectRatio: false,
@@ -118,27 +184,64 @@
         };
     }
 
-    // ページ読み込み完了時にグラフを初期化
-    document.addEventListener('DOMContentLoaded', function() {
-        // AJAX用のnonceを設定
-        if (typeof ktp_ajax_object !== 'undefined') {
-            console.log('ktp_ajax_object全体:', ktp_ajax_object);
-            console.log('ktp_ajax_object.nonces:', ktp_ajax_object.nonces);
-            console.log('ktp_ajax_object.nonce:', ktp_ajax_object.nonce);
-            
-            window.ktp_report_nonce = ktp_ajax_object.nonce || '';
-            console.log('レポート用nonce設定:', {
-                nonces: ktp_ajax_object.nonces,
-                general: (ktp_ajax_object.nonces && ktp_ajax_object.nonces.general),
-                nonce: ktp_ajax_object.nonce,
-                final: window.ktp_report_nonce
-            });
-            
-            // nonce設定後にグラフを初期化
-            initializeCharts();
-        } else {
-            console.error('ktp_ajax_objectが見つかりません');
+    var chartsInitialized = false;
+
+    // レポートタブかどうか（URL の tab_name=report）
+    function isReportTabActive() {
+        var urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get('tab_name') === 'report';
+    }
+
+    // canvas に描画用のサイズを確実に持たせる（親が非表示で 0x0 の場合の対策）
+    function ensureCanvasSize(canvas) {
+        if (!canvas) return;
+        var w = canvas.getAttribute('width') || 400;
+        var h = canvas.getAttribute('height') || 300;
+        if (canvas.offsetWidth === 0 || canvas.offsetHeight === 0) {
+            canvas.style.width = w + 'px';
+            canvas.style.height = h + 'px';
         }
+    }
+
+    // ページ完全読み込み後・レポートタブのときだけグラフを初期化（確実に描画するため）
+    function tryInitializeChartsWhenVisible() {
+        if (chartsInitialized || typeof ktp_ajax_object === 'undefined') {
+            return;
+        }
+        if (typeof Chart === 'undefined') {
+            setTimeout(tryInitializeChartsWhenVisible, 100);
+            return;
+        }
+        window.ktp_report_nonce = ktp_ajax_object.nonce || '';
+        if (!isReportTabActive()) {
+            return;
+        }
+        chartsInitialized = true;
+        initializeCharts();
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof ktp_ajax_object !== 'undefined') {
+            window.ktp_report_nonce = ktp_ajax_object.nonce || '';
+            setTimeout(tryInitializeChartsWhenVisible, 100);
+        }
+    });
+    window.addEventListener('load', function() {
+        if (chartsInitialized) return;
+        if (typeof ktp_ajax_object === 'undefined') return;
+        if (isReportTabActive()) {
+            chartsInitialized = true;
+            initializeCharts();
+            return;
+        }
+        // URL に tab_name が無い場合のフォールバック: レポート用 canvas が存在すれば遅延で初期化
+        setTimeout(function() {
+            if (chartsInitialized) return;
+            if (document.getElementById('monthlySalesChart') || document.getElementById('clientSalesChart')) {
+                chartsInitialized = true;
+                initializeCharts();
+            }
+        }, 500);
     });
 
     // 現在の期間を取得
@@ -151,6 +254,15 @@
     function initializeCharts() {
         const currentReport = getCurrentReportType();
         const currentPeriod = getCurrentPeriod();
+
+        // ここで Chart.js 全体のデフォルト文字色も黒に固定しておく（テーマに依存させない）
+        if (typeof Chart !== 'undefined' && Chart.defaults && Chart.defaults.color !== '#000000') {
+            Chart.defaults.color = '#000000';
+            if (Chart.defaults.font) {
+                Chart.defaults.font.family = Chart.defaults.font.family || '"Noto Sans JP","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif';
+                Chart.defaults.font.size   = Chart.defaults.font.size || 12;
+            }
+        }
         
         console.log('グラフ初期化:', { report: currentReport, period: currentPeriod });
         
@@ -184,10 +296,12 @@
             // 月別売上推移グラフ
             const monthlySalesCtx = document.getElementById('monthlySalesChart');
             if (monthlySalesCtx && data.monthly_sales) {
+                ensureCanvasSize(monthlySalesCtx);
                 var monthlyTheme = getChartTheme();
                 var monthlyCommon = getCommonOptions();
                 var monthlyOptions = {
                     ...monthlyCommon,
+                    responsive: false,
                     plugins: {
                         ...monthlyCommon.plugins,
                         title: {
@@ -235,9 +349,10 @@
             // 利益推移グラフ
             const profitTrendCtx = document.getElementById('profitTrendChart');
             if (profitTrendCtx && data.profit_trend) {
+                ensureCanvasSize(profitTrendCtx);
                 var profitTheme = getChartTheme();
                 var profitOptions = {
-                    responsive: true,
+                    responsive: false,
                     maintainAspectRatio: false,
                     plugins: {
                         legend: {
@@ -320,10 +435,12 @@
             // 顧客別売上グラフ
             const clientSalesCtx = document.getElementById('clientSalesChart');
             if (clientSalesCtx && data.client_sales) {
+                ensureCanvasSize(clientSalesCtx);
                 var clientSalesTheme = getChartTheme();
                 var clientSalesBarOpts = getBarChartOptions();
                 var clientSalesOptions = {
                     ...clientSalesBarOpts,
+                    responsive: false,
                     plugins: {
                         ...clientSalesBarOpts.plugins,
                         title: {
@@ -369,9 +486,10 @@
             // 顧客別案件数グラフ
             const clientOrderCtx = document.getElementById('clientOrderChart');
             if (clientOrderCtx && data.client_orders) {
+                ensureCanvasSize(clientOrderCtx);
                 var clientOrderTheme = getChartTheme();
                 var clientOrderOptions = {
-                    responsive: true,
+                    responsive: false,
                     maintainAspectRatio: false,
                     plugins: {
                         legend: {
@@ -421,10 +539,12 @@
             // サービス別売上グラフ
             const serviceSalesCtx = document.getElementById('serviceSalesChart');
             if (serviceSalesCtx && data.service_sales) {
+                ensureCanvasSize(serviceSalesCtx);
                 var serviceSalesTheme = getChartTheme();
                 var serviceSalesBarOpts = getBarChartOptions();
                 var serviceSalesOptions = {
                     ...serviceSalesBarOpts,
+                    responsive: false,
                     plugins: {
                         ...serviceSalesBarOpts.plugins,
                         title: {
@@ -470,9 +590,10 @@
             // サービス別比率（受注ベース）グラフ
             const serviceQuantityCtx = document.getElementById('serviceQuantityChart');
             if (serviceQuantityCtx && data.service_quantity) {
+                ensureCanvasSize(serviceQuantityCtx);
                 var serviceQtyTheme = getChartTheme();
                 var serviceQtyOptions = {
-                    responsive: true,
+                    responsive: false,
                     maintainAspectRatio: false,
                     plugins: {
                         legend: {
@@ -533,10 +654,12 @@
             // 協力会社別スキル数グラフ
             const supplierSkillsCtx = document.getElementById('supplierSkillsChart');
             if (supplierSkillsCtx && data.supplier_skills) {
+                ensureCanvasSize(supplierSkillsCtx);
                 var supplierSkillsTheme = getChartTheme();
                 var supplierSkillsBarOpts = getBarChartOptions();
                 var supplierSkillsOptions = {
                     ...supplierSkillsBarOpts,
+                    responsive: false,
                     plugins: {
                         ...supplierSkillsBarOpts.plugins,
                         title: {
@@ -582,9 +705,10 @@
             // スキル別協力会社数グラフ
             const skillSuppliersCtx = document.getElementById('skillSuppliersChart');
             if (skillSuppliersCtx && data.skill_suppliers) {
+                ensureCanvasSize(skillSuppliersCtx);
                 var skillSuppliersTheme = getChartTheme();
                 var skillSuppliersOptions = {
-                    responsive: true,
+                    responsive: false,
                     maintainAspectRatio: false,
                     plugins: {
                         legend: {
