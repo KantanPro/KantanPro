@@ -2751,6 +2751,10 @@ function ktpwp_admin_notices() {
     // アップデート時の案内（データベース反映が未完了だった場合の穏やかなメッセージ）
     if ( get_transient( 'ktpwp_upgrade_error' ) ) {
         $upgrade_msg = get_transient( 'ktpwp_upgrade_error' );
+        // 旧文言がトランジェントに残っている場合も新文言に統一
+        if ( strpos( $upgrade_msg, '下の「今すぐ更新」' ) !== false ) {
+            $upgrade_msg = 'プラグインは正常に更新されました。データベースの反映だけ未完了でした。KantanPro設定でデータベースを更新してください。';
+        }
         $settings_link = '<a href="' . esc_url( admin_url( 'admin.php?page=ktp-settings' ) ) . '">KantanPro設定</a>';
         $upgrade_msg_display = str_replace( 'KantanPro設定', $settings_link, esc_html( $upgrade_msg ) );
         echo '<div class="notice notice-warning is-dismissible">';
