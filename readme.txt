@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.2.22
+Stable tag: 1.2.23
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -324,6 +324,10 @@ curl -sS -X POST \
 * 推奨PHP拡張: GD（画像処理用）
 
 == 変更履歴 ==
+
+= 1.2.23 - 2026年03月17日 =
+* マイグレーションファイルの出力を抑制し、ダッシュボードへのリダイレクト機能を削除
+* エラーハンドリングを改善し、出力バッファの管理を追加
 
 = 1.2.22 - 2026年03月17日 =
 * データベース更新通知メッセージの文言を統一（旧文言が残っている場合に新文言に置き換える処理を追加）
