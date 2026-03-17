@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.2.20
+Stable tag: 1.2.21
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -324,6 +324,10 @@ curl -sS -X POST \
 * 推奨PHP拡張: GD（画像処理用）
 
 == 変更履歴 ==
+
+= 1.2.21 - 2026年03月17日 =
+* プラグイン更新直後にダッシュボードへリダイレクトする機能を追加
+* データベース更新通知のメッセージを改善（KantanPro設定ページへのリンクを追加、ユーザーへの案内を明確化）
 
 = 1.2.20 - 2026年03月17日 =
 * データベース更新通知の表示を改善（KantanPro設定ページでのみ表示するように修正、メッセージのフォーマットを簡素化、ボタンのスタイルを調整）
