@@ -3639,11 +3639,125 @@ class KTPWP_Ajax {
 				}
 			}
 
+			// 請求済タブ（progress=5）の入金予定日（支払期日）超過件数（前入金済は対象外・リアルタイム更新用）
+			$payment_warning_count = 0;
+			$query_payment         = "SELECT o.id, o.client_id, o.completion_date, o.payment_timing AS order_payment_timing, c.closing_day, c.payment_month, c.payment_day, c.payment_timing AS client_payment_timing FROM {$table_name} o LEFT JOIN {$client_table} c ON o.client_id = c.id WHERE o.progress = 5 AND o.completion_date IS NOT NULL AND c.payment_month IS NOT NULL AND c.payment_day IS NOT NULL";
+			$orders_payment        = $wpdb->get_results( $query_payment );
+			foreach ( $orders_payment as $order ) {
+				// 前入金済みは未入金警告対象外
+				if ( class_exists( 'KTPWP_Payment_Timing' ) ) {
+					$order_obj  = (object) array(
+						'payment_timing' => isset( $order->order_payment_timing ) ? $order->order_payment_timing : null,
+						'client_id'      => isset( $order->client_id ) ? $order->client_id : 0,
+					);
+					$client_obj = (object) array(
+						'payment_timing' => isset( $order->client_payment_timing ) ? $order->client_payment_timing : null,
+					);
+					if ( KTPWP_Payment_Timing::is_prepay( $order_obj, $client_obj ) ) {
+						continue;
+					}
+				}
+
+				$completion_date = isset( $order->completion_date ) ? (string) $order->completion_date : '';
+				if ( $completion_date === '' ) {
+					continue;
+				}
+				$completion_dt = DateTime::createFromFormat( 'Y-m-d', $completion_date );
+				$errors = DateTime::getLastErrors();
+				if ( $completion_dt === false || ( $errors && ( $errors['warning_count'] > 0 || $errors['error_count'] > 0 ) ) ) {
+					continue;
+				}
+				$completion_dt->setTime( 0, 0, 0 );
+
+				$year  = (int) $completion_dt->format( 'Y' );
+				$month = (int) $completion_dt->format( 'm' );
+				if ( $year < 1 || $year > 9999 || $month < 1 || $month > 12 ) {
+					continue;
+				}
+
+				$closing_day   = isset( $order->closing_day ) ? (string) $order->closing_day : '末日';
+				$payment_month = isset( $order->payment_month ) ? (string) $order->payment_month : '翌月';
+				$payment_day   = isset( $order->payment_day ) ? (string) $order->payment_day : '末日';
+
+				// 完了日が属する請求月（締め日基準）を決定
+				$billing_year  = $year;
+				$billing_month = $month;
+				if ( $closing_day !== '' && $closing_day !== 'なし' ) {
+					if ( $closing_day === '末日' ) {
+						$closing_dt = new DateTime( "$year-$month-01" );
+						$closing_dt->modify( 'last day of this month' );
+					} else {
+						$closing_day_num = (int) $closing_day;
+						$closing_dt      = new DateTime( "$year-$month-" . str_pad( (string) $closing_day_num, 2, '0', STR_PAD_LEFT ) );
+						$last_day        = (int) $closing_dt->format( 't' );
+						if ( $closing_day_num > $last_day ) {
+							$closing_dt->modify( 'last day of this month' );
+						}
+					}
+					$closing_dt->setTime( 0, 0, 0 );
+					if ( $completion_dt > $closing_dt ) {
+						$billing_month++;
+						if ( $billing_month > 12 ) {
+							$billing_month = 1;
+							$billing_year++;
+						}
+					}
+				}
+
+				// 支払月を計算（今月/翌月/翌々月）
+				$payment_year  = $billing_year;
+				$payment_m_num = $billing_month;
+				switch ( $payment_month ) {
+					case '今月':
+						$payment_m_num = $billing_month;
+						break;
+					case '翌々月':
+						$payment_m_num = $billing_month + 2;
+						if ( $payment_m_num > 12 ) {
+							$payment_m_num -= 12;
+							$payment_year++;
+						}
+						break;
+					case '翌月':
+					default:
+						$payment_m_num = $billing_month + 1;
+						if ( $payment_m_num > 12 ) {
+							$payment_m_num = 1;
+							$payment_year++;
+						}
+						break;
+				}
+
+				// 支払日を計算（末日/即日/指定日）
+				if ( $payment_day === '即日' ) {
+					$due_dt = clone $completion_dt;
+				} else {
+					$due_dt = new DateTime();
+					$due_dt->setDate( $payment_year, $payment_m_num, 1 );
+					if ( $payment_day === '末日' ) {
+						$due_dt->modify( 'last day of this month' );
+					} else {
+						$payment_day_num = (int) str_replace( '日', '', $payment_day );
+						$due_dt->setDate( $payment_year, $payment_m_num, max( 1, $payment_day_num ) );
+						$last_day = (int) $due_dt->format( 't' );
+						if ( $payment_day_num > $last_day ) {
+							$due_dt->modify( 'last day of this month' );
+						}
+					}
+					$due_dt->setTime( 0, 0, 0 );
+				}
+
+				if ( $today > $due_dt ) {
+					$payment_warning_count++;
+				}
+			}
+
 			wp_send_json_success(
 				array(
 					'warning_count'        => (int) $warning_count,
 					'warning_days'         => $warning_days,
 					'invoice_warning_count' => (int) $invoice_warning_count,
+					'payment_warning_count' => (int) $payment_warning_count,
 				)
 			);
 

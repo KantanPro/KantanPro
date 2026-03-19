@@ -482,6 +482,7 @@ jQuery(document).ready(function($) {
                 if (response.success) {
                     var warningCount = response.data.warning_count || 0;
                     var invoiceCount = response.data.invoice_warning_count || 0;
+                    var paymentCount = response.data.payment_warning_count || 0;
                     var warningDays = response.data.warning_days;
                     
                     // 受注タブ（progress=3）のバッジを更新
@@ -502,18 +503,30 @@ jQuery(document).ready(function($) {
                     if ($badge4.length) {
                         $badge4.attr('data-count', invoiceCount).attr('title', title4).text(invoiceCount > 0 ? String(invoiceCount) : '');
                     }
+
+                    // 請求済タブ（progress=5）のバッジを更新
+                    var $btn5 = $('.progress-btn').filter(function() { return $(this).data('progress') === 5; });
+                    var $badge5 = $btn5.find('.ktp-progress-warning-badge[data-progress="5"]');
+                    var title5 = paymentCount > 0 ? '入金予定日を過ぎている案件が' + paymentCount + '件あります' : '';
+                    if ($badge5.length) {
+                        $badge5.attr('data-count', paymentCount).attr('title', title5).text(paymentCount > 0 ? String(paymentCount) : '');
+                    }
                 } else {
                     var $b3 = $('.progress-btn').filter(function() { return $(this).data('progress') === 3; });
                     var $b4 = $('.progress-btn').filter(function() { return $(this).data('progress') === 4; });
+                    var $b5 = $('.progress-btn').filter(function() { return $(this).data('progress') === 5; });
                     if ($b3.find('.ktp-progress-warning-badge[data-progress="3"]').length) $b3.find('.ktp-progress-warning-badge[data-progress="3"]').attr('data-count', '0').attr('title', '').text('');
                     if ($b4.find('.ktp-progress-warning-badge[data-progress="4"]').length) $b4.find('.ktp-progress-warning-badge[data-progress="4"]').attr('data-count', '0').attr('title', '').text('');
+                    if ($b5.find('.ktp-progress-warning-badge[data-progress="5"]').length) $b5.find('.ktp-progress-warning-badge[data-progress="5"]').attr('data-count', '0').attr('title', '').text('');
                 }
             },
             error: function(xhr, status, error) {
                 var $b3 = $('.progress-btn').filter(function() { return $(this).data('progress') === 3; });
                 var $b4 = $('.progress-btn').filter(function() { return $(this).data('progress') === 4; });
+                var $b5 = $('.progress-btn').filter(function() { return $(this).data('progress') === 5; });
                 if ($b3.find('.ktp-progress-warning-badge[data-progress="3"]').length) $b3.find('.ktp-progress-warning-badge[data-progress="3"]').attr('data-count', '0').attr('title', '').text('');
                 if ($b4.find('.ktp-progress-warning-badge[data-progress="4"]').length) $b4.find('.ktp-progress-warning-badge[data-progress="4"]').attr('data-count', '0').attr('title', '').text('');
+                if ($b5.find('.ktp-progress-warning-badge[data-progress="5"]').length) $b5.find('.ktp-progress-warning-badge[data-progress="5"]').attr('data-count', '0').attr('title', '').text('');
             }
         });
     }

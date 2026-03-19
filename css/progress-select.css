@@ -362,6 +362,25 @@ li.ktp_work_list_item {
   animation: pulse-warning 2s infinite;
 }
 
+/* ▼▼▼ 入金予定日（支払期日）超過警告マーク ▼▼▼ */
+.payment-warning-mark-row {
+  display: inline-block;
+  background-color: #f44336;
+  color: white;
+  border-radius: 50%;
+  width: 14px;
+  height: 14px;
+  line-height: 14px;
+  text-align: center;
+  font-size: 9px;
+  font-weight: bold;
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  z-index: 10;
+  animation: pulse-warning 2s infinite;
+}
+
 /* モバイル表示での調整 */
 @media screen and (max-width: 768px) {
   /* 仕事リストの行をモバイル対応 - 2行レイアウト */
