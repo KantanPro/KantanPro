@@ -224,7 +224,7 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 				$warning_title = '';
 				if ( $num == 3 ) {
 					$warning_count = isset( $progress_warnings[3] ) ? $progress_warnings[3] : 0;
-					$warning_title = $warning_count > 0 ? sprintf( __( '納期が迫っている案件が%d件あります', 'ktpwp' ), $warning_count ) : '';
+					$warning_title = $warning_count > 0 ? sprintf( __( '納期が迫っている、または過ぎている案件が%d件あります', 'ktpwp' ), $warning_count ) : '';
 				} elseif ( $num == 4 ) {
 					$warning_count = $invoice_warning_count;
 					$warning_title = $warning_count > 0 ? sprintf( __( '請求日を過ぎている案件が%d件あります', 'ktpwp' ), $warning_count ) : '';
@@ -374,9 +374,10 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 					// 完了日フィールドの値を取得
 					$completion_date = isset( $order->completion_date ) ? $order->completion_date : '';
 
-					// 納期警告の判定
+					// 納期警告の判定（納期が迫っている + 納期過ぎも対象）
 					$show_warning = false;
 					$is_urgent = false; // 緊急案件フラグ
+					$delivery_warning_title = ''; // 行のツールチップ用
 					if ( ! empty( $expected_delivery_date ) && $selected_progress == 3 ) {
 						// 一般設定から警告日数を取得
 						$warning_days = 3; // デフォルト値
@@ -384,7 +385,7 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 							$warning_days = KTPWP_Settings::get_delivery_warning_days();
 						}
 
-						// 納期が迫っているかチェック（不正な日付の場合はスキップ）
+						// 納期が迫っているか／過ぎているかチェック（不正な日付の場合はスキップ）
 						$delivery_date = DateTime::createFromFormat( 'Y-m-d', $expected_delivery_date );
 						if ( $delivery_date !== false ) {
 							$delivery_date->setTime( 0, 0, 0 ); // 時間を00:00:00に設定
@@ -394,8 +395,12 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 							$diff = $today->diff( $delivery_date );
 							$days_left = $diff->invert ? -$diff->days : $diff->days;
 
-							$show_warning = $days_left <= $warning_days && $days_left >= 0;
-							$is_urgent = $days_left <= $warning_days && $days_left >= 0;
+							// 納期が迫っている（警告日数以内）または納期過ぎのときに警告表示
+							$show_warning = $days_left <= $warning_days;
+							$is_urgent = $days_left <= $warning_days;
+							$delivery_warning_title = $days_left < 0
+								? __( '納期が過ぎています', 'ktpwp' )
+								: __( '納期が迫っています', 'ktpwp' );
 
 							// デバッグ情報（開発時のみ）
 							if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
@@ -516,8 +521,8 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 					$content .= "<input type='date' name='expected_delivery_date_{$order_id}' value='{$expected_delivery_date}' class='delivery-date-input' data-order-id='{$order_id}' data-field='expected_delivery_date' placeholder='納品予定日' title='納品予定日'>";
 
 					// 納期警告マークを追加
-					if ( $show_warning ) {
-						$content .= "<span class='delivery-warning-mark-row' title='納期が迫っています'>!</span>";
+					if ( $show_warning && $delivery_warning_title !== '' ) {
+						$content .= '<span class="delivery-warning-mark-row" title="' . esc_attr( $delivery_warning_title ) . '">!</span>';
 					}
 
 					// ▼▼▼ 請求書締日警告マークを追加 ▼▼▼

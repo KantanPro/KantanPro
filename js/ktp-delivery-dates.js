@@ -435,12 +435,13 @@ jQuery(document).ready(function($) {
                     delivery: delivery.toISOString().split('T')[0],
                     diffDays: diffDays,
                     warningDays: warningDays,
-                    shouldWarn: diffDays <= warningDays && diffDays >= 0
+                    shouldWarn: diffDays <= warningDays
                 });
                 
-                // 警告日数以内で納期が迫っている場合、警告マークを表示
-                if (diffDays <= warningDays && diffDays >= 0) {
-                    $wrapper.append('<span class="delivery-warning-mark-row" title="納期が迫っています">!</span>');
+                // 納期が迫っている、または納期過ぎの場合に警告マークを表示
+                if (diffDays <= warningDays) {
+                    var rowTitle = diffDays < 0 ? '納期が過ぎています' : '納期が迫っています';
+                    $wrapper.append('<span class="delivery-warning-mark-row" title="' + rowTitle + '">!</span>');
                     console.log('[DELIVERY-DATES] 警告マークを表示しました');
                 } else {
                     console.log('[DELIVERY-DATES] 警告マークは表示しません（条件不適合）');
@@ -486,7 +487,7 @@ jQuery(document).ready(function($) {
                     // 受注タブ（progress=3）のバッジを更新
                     var $btn3 = $('.progress-btn').filter(function() { return $(this).data('progress') === 3; });
                     var $badge3 = $btn3.find('.ktp-progress-warning-badge[data-progress="3"]');
-                    var title3 = warningCount > 0 ? '納期が迫っている案件が' + warningCount + '件あります' : '';
+                    var title3 = warningCount > 0 ? '納期が迫っている、または過ぎている案件が' + warningCount + '件あります' : '';
                     if ($badge3.length) {
                         $badge3.attr('data-count', warningCount).attr('title', title3).text(warningCount > 0 ? String(warningCount) : '');
                     } else if (warningCount > 0) {
