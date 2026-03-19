@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.2.27
+Stable tag: 1.2.28
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -324,6 +324,10 @@ curl -sS -X POST \
 * 推奨PHP拡張: GD（画像処理用）
 
 == 変更履歴 ==
+
+= 1.2.28 - 2026年03月19日 =
+* 印刷用スタイルを改善（ヘッダー・フッター位置調整、リスト表示最適化、余白設定）
+* 印刷用スタイルに警告バッジのCSSを追加（警告マークの表示強化、印刷時の可読性向上）
 
 = 1.2.27 - 2026年03月19日 =
 * 納期・入金予定日（支払期日）超過の警告表示を改善（請求日超過・支払期日超過の警告バッジ追加、表示ロジックの修正）
