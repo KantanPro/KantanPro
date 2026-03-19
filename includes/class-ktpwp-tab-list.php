@@ -76,8 +76,8 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 					$content .= '<input type="hidden" name="' . esc_attr( $key ) . '" value="' . esc_attr( wp_unslash( $_GET[ $key ] ) ) . '">';
 				}
 			}
-			$content .= '<label for="ktp-list-search-input" class="ktp-list-search-label" style="font-weight:bold;white-space:nowrap;">' . esc_html__( 'フリーワード', 'ktpwp' ) . '</label>';
-			$content .= '<input type="search" id="ktp-list-search-input" name="list_search" value="' . esc_attr( $list_search ) . '" placeholder="' . esc_attr__( '検索', 'ktpwp' ) . '" class="ktp-list-search-input" style="min-width:160px;padding:6px 8px;border:1px solid #ddd;border-radius:4px;">';
+			$search_placeholder = ( $list_search !== '' ) ? $list_search : __( 'フリーワード', 'ktpwp' );
+			$content .= '<input type="search" id="ktp-list-search-input" name="list_search" value="" placeholder="' . esc_attr( $search_placeholder ) . '" aria-label="' . esc_attr__( 'フリーワード', 'ktpwp' ) . '" class="ktp-list-search-input" style="min-width:160px;padding:6px 8px;border:1px solid #ddd;border-radius:4px;">';
 			$content .= '<button type="submit" class="ktp-list-search-btn" title="' . esc_attr__( '検索', 'ktpwp' ) . '" style="padding:6px 10px;border:1px solid #ddd;border-radius:4px;background:#f5f5f5;cursor:pointer;">🔍</button>';
 			$content .= '</form>';
 			$content .= '</div>';
