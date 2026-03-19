@@ -538,6 +538,9 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 						}
 					}
 
+					// 顧客リンク用の顧客ID（仕事リスト行で会社名を顧客タブへリンクするために使用）
+					$client_id = isset( $order->client_id ) ? (int) $order->client_id : 0;
+
 					// 納期フィールドの値を取得（希望納期は削除、納品予定日のみ）
 					$expected_delivery_date = isset( $order->expected_delivery_date ) ? $order->expected_delivery_date : '';
 
@@ -781,7 +784,22 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 					// プルダウンフォーム（警告バッジ対象の行は同じ赤強調）
 					$urgent_class = ( $is_urgent || $show_invoice_warning || $show_payment_warning ) ? 'urgent-delivery' : '';
 					$content .= "<li class='ktp_work_list_item {$urgent_class}'>";
-					$content .= "<a href='{$detail_url}'>ID: {$order_id} - {$customer_name} ({$user_name})";
+					// 左寄せブロック（ID・顧客名・担当者・プロジェクト・日時を一まとまりで左寄せ）
+					$content .= "<span class='ktp_work_list_item_text'>";
+					// 受注詳細リンク（ID）＋ 顧客会社名（該当顧客がいれば顧客タブへのリンク）
+					$content .= "<a href='" . esc_url( $detail_url ) . "'>ID: {$order_id}</a> - ";
+					if ( $client_id > 0 ) {
+						$client_url = add_query_arg(
+							array(
+								'tab_name' => 'client',
+								'data_id'  => $client_id,
+							)
+						);
+						$content .= "<a href='" . esc_url( $client_url ) . "' class='ktp-work-list-client-link' title='" . esc_attr__( '顧客詳細を表示', 'ktpwp' ) . "'>{$customer_name}</a>";
+					} else {
+						$content .= $customer_name;
+					}
+					$content .= " <a href='" . esc_url( $detail_url ) . "'>({$user_name})";
 					if ( $project_name !== '' ) {
 						$content .= " - <span class='project_name'>{$project_name}</span>";
 					}
@@ -793,6 +811,7 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 							$content .= ' <span class="ktp-prepay-badge" style="display:inline-block;margin-left:6px;padding:2px 8px;font-size:11px;background:#e3f2fd;color:#1565c0;border-radius:4px;">' . esc_html( $prepay_label ) . '</span>';
 						}
 					}
+					$content .= '</span>';
 
 					// 納期フィールドと進捗プルダウンを1つのコンテナにまとめる
 					$content .= "<div class='delivery-dates-container'>";

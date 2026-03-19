@@ -197,21 +197,38 @@ li.ktp_work_list_item {
   flex-wrap: wrap;
 }
 
-/* リンクのスタイル - シンプル版 */
-.ktp_work_list_item a {
+/* 左寄せブロック（ID・顧客名・担当者・日時を一まとまりで左に表示） */
+.ktp_work_list_item .ktp_work_list_item_text {
   flex: 1;
   min-width: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* リンクのスタイル - シンプル版（ラッパー内のaは伸ばさず左寄せ維持） */
+.ktp_work_list_item a {
   color: #2c3e50;
   text-decoration: none;
+}
+.ktp_work_list_item .ktp_work_list_item_text a {
+  flex: none;
 }
 
 /* プロジェクト名のスタイル - シンプル版 */
 .project_name {
   font-weight: 600;
   color: #0277bd;
+}
+
+/* 仕事リスト行の顧客会社名リンク（顧客タブへ遷移） */
+.ktp_work_list_item a.ktp-work-list-client-link {
+  color: #1565c0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.ktp_work_list_item a.ktp-work-list-client-link:hover {
+  color: #0d47a1;
 }
 
 /* 納期フィールドと進捗プルダウンのコンテナ */
