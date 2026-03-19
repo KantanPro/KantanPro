@@ -2132,36 +2132,54 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
                 printHTML += '@media print { body { margin: 0; padding: 0; background: white; } }';
                 printHTML += '@media print { button, .no-print { display: none !important; } }';
                 printHTML += '</style>';
-                printHTML += '<script>';
-                printHTML += 'window.addEventListener("load", function() {';
-                printHTML += '  setTimeout(function() {';
-                printHTML += '    window.print();';
-                printHTML += '  }, 500);';
-                printHTML += '});';
-                printHTML += 'window.addEventListener("afterprint", function() {';
-                printHTML += '  setTimeout(function() {';
-                printHTML += '    window.close();';
-                printHTML += '  }, 1000);';
-                printHTML += '});';
-                printHTML += '<\/script>';
                 printHTML += '</head>';
                 printHTML += '<body>';
                 printHTML += printContent;
                 printHTML += '</body>';
                 printHTML += '</html>';
-                
-                var printWindow = window.open('', '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
-                
-                if (!printWindow) {
-                    alert('ポップアップがブロックされました。ブラウザの設定でポップアップを許可してください。');
-                    return;
+
+                // 他タブと同様に隠しiframeで印刷する（ポップアップの位置ズレを回避）
+                var iframe = document.createElement('iframe');
+                iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden;';
+                document.body.appendChild(iframe);
+
+                var cleanupDone = false;
+                function cleanup() {
+                    if (cleanupDone) return;
+                    cleanupDone = true;
+                    setTimeout(function() {
+                        try { document.body.removeChild(iframe); } catch (_) {}
+                    }, 300);
                 }
-                
-                printWindow.document.open();
-                printWindow.document.write(printHTML);
-                printWindow.document.close();
-                
-                console.log('[顧客印刷] 印刷ウィンドウを作成しました。印刷ダイアログが自動表示されます。');
+
+                var printed = false;
+                function triggerPrint() {
+                    if (printed) return;
+                    printed = true;
+                    try {
+                        var frameWin = iframe.contentWindow || iframe;
+                        frameWin.focus();
+                        frameWin.onafterprint = cleanup;
+                        setTimeout(function() {
+                            try { frameWin.print(); } catch (e) { cleanup(); }
+                        }, 50);
+                    } catch (e) {
+                        cleanup();
+                    }
+                }
+
+                try {
+                    var frameDoc = iframe.contentDocument || iframe.contentWindow.document;
+                    frameDoc.open();
+                    frameDoc.write(printHTML);
+                    frameDoc.close();
+                    setTimeout(triggerPrint, 50);
+                } catch (e) {
+                    console.error('[顧客印刷] iframe印刷処理に失敗:', e);
+                    cleanup();
+                }
+
+                console.log('[顧客印刷] iframeを作成し印刷ダイアログを開きます。');
 
                 // プレビュー機能は廃止
                 // if (isPreviewOpen) {
