@@ -1501,8 +1501,8 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 					// 右側：プレビューボタン、メールボタン
 					$content .= '<div style="display: flex; gap: 5px;">';
 					// プレビューボタン（受注書IDのみ保持、最新データはAjaxで取得）
-					$content .= '<button id="orderPreviewButton" data-order-id="' . esc_attr( $order_data->id ) . '" title="' . esc_attr__( 'プレビュー', 'ktpwp' ) . '" style="padding: 6px 10px; font-size: 12px;">';
-					$content .= '<span class="material-symbols-outlined" aria-label="' . esc_attr__( 'プレビュー', 'ktpwp' ) . '" style="font-size: 16px;">preview</span>';
+					$content .= '<button id="orderPreviewButton" data-order-id="' . esc_attr( $order_data->id ) . '" title="' . esc_attr__( '印刷する', 'ktpwp' ) . '" style="padding: 6px 10px; font-size: 12px;">';
+					$content .= '<span class="material-symbols-outlined" aria-label="' . esc_attr__( '印刷する', 'ktpwp' ) . '" style="font-size: 16px;">print</span>';
 					$content .= '</button>';
 
 					// 顧客情報に基づいてメールボタンの状態を制御
@@ -1906,8 +1906,8 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 
 					// 右側：プレビューボタンと印刷ボタン（無効化）
 					$content .= '<div style="display: flex; gap: 5px;">';
-					$content .= '<button id="orderPreviewButton" disabled title="' . esc_attr__( 'プレビュー', 'ktpwp' ) . '" style="padding: 6px 10px; font-size: 12px;">';
-					$content .= '<span class="material-symbols-outlined" aria-label="' . esc_attr__( 'プレビュー', 'ktpwp' ) . '" style="font-size: 16px;">preview</span>';
+					$content .= '<button id="orderPreviewButton" disabled title="' . esc_attr__( '印刷する', 'ktpwp' ) . '" style="padding: 6px 10px; font-size: 12px;">';
+					$content .= '<span class="material-symbols-outlined" aria-label="' . esc_attr__( '印刷する', 'ktpwp' ) . '" style="font-size: 16px;">print</span>';
 					$content .= '</button>';
 					$content .= '<button disabled title="' . esc_attr__( '印刷する', 'ktpwp' ) . '" style="padding: 6px 10px; font-size: 12px;">';
 					$content .= '<span class="material-symbols-outlined" aria-label="' . esc_attr__( '印刷', 'ktpwp' ) . '" style="font-size: 16px;">print</span>';
@@ -1934,8 +1934,8 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 
 				// 右側：プレビューボタンと印刷ボタン（無効化）
 				$content .= '<div style="display: flex; gap: 5px;">';
-				$content .= '<button id="orderPreviewButton" disabled title="' . esc_attr__( 'プレビュー', 'ktpwp' ) . '" style="padding: 6px 10px; font-size: 12px;">';
-				$content .= '<span class="material-symbols-outlined" aria-label="' . esc_attr__( 'プレビュー', 'ktpwp' ) . '" style="font-size: 16px;">preview</span>';
+				$content .= '<button id="orderPreviewButton" disabled title="' . esc_attr__( '印刷する', 'ktpwp' ) . '" style="padding: 6px 10px; font-size: 12px;">';
+				$content .= '<span class="material-symbols-outlined" aria-label="' . esc_attr__( '印刷する', 'ktpwp' ) . '" style="font-size: 16px;">print</span>';
 				$content .= '</button>';
 				$content .= '<button disabled title="' . esc_attr__( '印刷する', 'ktpwp' ) . '" style="padding: 6px 10px; font-size: 12px;">';
 				$content .= '<span class="material-symbols-outlined" aria-label="' . esc_attr__( '印刷', 'ktpwp' ) . '" style="font-size: 16px;">print</span>';

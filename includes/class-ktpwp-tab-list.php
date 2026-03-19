@@ -83,8 +83,8 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 			$content .= '</div>';
 
 			// Print button（現在表示されている内容を印刷ダイアログで表示し、PDF保存・印刷可能）
-			$content .= '<button type="button" title="' . esc_attr__( 'Print', 'ktpwp' ) . '" onclick="typeof ktpListPrintOpen === \'function\' && ktpListPrintOpen();" style="padding: 6px 10px; font-size: 12px;">';
-			$content .= '<span class="material-symbols-outlined" aria-label="' . esc_attr__( 'Print', 'ktpwp' ) . '">print</span>';
+			$content .= '<button type="button" title="' . esc_attr__( '印刷する', 'ktpwp' ) . '" onclick="typeof ktpListPrintOpen === \'function\' && ktpListPrintOpen();" style="padding: 6px 10px; font-size: 12px;">';
+			$content .= '<span class="material-symbols-outlined" aria-label="' . esc_attr__( '印刷', 'ktpwp' ) . '">print</span>';
 			$content .= '</button>';
 
 			// Progress status buttons

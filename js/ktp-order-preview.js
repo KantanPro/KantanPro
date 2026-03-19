@@ -118,7 +118,7 @@
                 },
                 complete: function() {
                     // ボタンを元に戻す
-                    $('#orderPreviewButton').prop('disabled', false).html(typeof KTPSvgIcons !== 'undefined' ? KTPSvgIcons.getIcon('preview', {'aria-label': 'プレビュー'}) : '<span class="material-symbols-outlined" aria-label="プレビュー">preview</span>');
+                    $('#orderPreviewButton').prop('disabled', false).html(typeof KTPSvgIcons !== 'undefined' ? KTPSvgIcons.getIcon('print', {'aria-label': '印刷する'}) : '<span class="material-symbols-outlined" aria-label="印刷する">print</span>');
                 }
             });
         });
