@@ -1513,6 +1513,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 
 			// PHP
 			$supplier_preview_html = json_encode( $supplier_preview_html );  // JSON形式にエンコード
+			$company_name_json = wp_json_encode( (string) $company_name );
 
 			// JavaScript
 			$print = <<<END
@@ -1521,9 +1522,25 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
             
             function printContent() {
                 var printContent = $supplier_preview_html;
+                // ファイル名/タイトル生成（Print to PDF の提案名に使用される）
+                var companyName = {$company_name_json};
+                var printDate = new Date();
+                var yyyy = printDate.getFullYear();
+                var mm = String(printDate.getMonth() + 1).padStart(2, '0');
+                var dd = String(printDate.getDate()).padStart(2, '0');
+                var ymd = yyyy + mm + dd;
+                function sanitizeFilename(value) {
+                    return String(value)
+                        .replace(/[\u0000-\u001F\/\\:\uFF1A*\?"<>\|]/g, '-')
+                        .replace(/\s+/g, ' ')
+                        .trim();
+                }
+                var filenameBase = sanitizeFilename(companyName || '協力会社') + '_' + ymd;
+                var filename = filenameBase + '.pdf';
+
                 var printWindow = window.open('', '_blank');
                 printWindow.document.open();
-                printWindow.document.write('<html><head><title>協力会社情報印刷</title></head><body>');
+                printWindow.document.write('<html><head><title>' + filename + '</title></head><body>');
                 printWindow.document.write(printContent);
                 printWindow.document.write('<script>window.onafterprint = function(){ window.close(); }<\/script>');
                 printWindow.document.write('</body></html>');

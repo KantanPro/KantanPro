@@ -365,7 +365,8 @@
     // 現在のページで直接印刷する方法（隠しiframeで印刷し、タブを増やさない）
     function printOrderPreviewDirect(content, filename, orderId) {
         const printHTML = createPrintableHTML(content, orderId);
-        const safeTitle = String(filename || '受注書') + '.pdf';
+        const safeBaseTitle = sanitizeFilename(filename || '受注書');
+        const safeTitle = safeBaseTitle + '.pdf';
 
         const iframe = document.createElement('iframe');
         iframe.style.position = 'fixed';
@@ -433,6 +434,15 @@
     }
 
     // ファイル名生成関数
+    function sanitizeFilename(value) {
+        // 印刷をPDF保存した際のファイル名には禁止文字が含まれうるためサニタイズする
+        // 例: macOS/Windowsでコロン（: / ：）等が問題になり、ブラウザがフォールバック名を使うことがある
+        return String(value)
+            .replace(/[\u0000-\u001F\/\\:\uFF1A*\?"<>\|]/g, '-')
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
+
     function generateFilename(orderId) {
         // 現在の日付を取得（YYYYMMDD形式）
         const currentDate = new Date();
@@ -447,10 +457,8 @@
             : '受注書';
         
         // ファイル名生成: {タイトル}_ID{id}_{発行日}.pdf
-        // macOSでコロン（：）が問題になるため除去
-        const filename = `${documentTitle}_ID${orderId}_${dateString}`;
-        
-        return filename;
+        const rawFilename = `${documentTitle}_ID${orderId}_${dateString}`;
+        return sanitizeFilename(rawFilename);
     }
 
     // 印刷可能なHTMLを生成（PDF最適化）
@@ -460,7 +468,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>受注書 - ID: ${orderId}</title>
+    <title>受注書 ID ${orderId}</title>
     <style>
         * {
             margin: 0;

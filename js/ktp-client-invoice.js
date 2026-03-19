@@ -667,9 +667,63 @@ function printInvoiceContent() {
         var month = String(today.getMonth() + 1).padStart(2, '0');
         var day = String(today.getDate()).padStart(2, '0');
         var todayStr = year + '-' + month + '-' + day;
+
+        function parseDateToTimestamp(dateStr) {
+            if (!dateStr) { return null; }
+            // "YYYY-MM-DD" / "YYYY/MM/DD" を想定して Date へ
+            var normalized = String(dateStr).trim().replace(/\//g, '-');
+            var ts = new Date(normalized).getTime();
+            return isNaN(ts) ? null : ts;
+        }
+
+        function formatYmdForFilename(dateStr) {
+            // "YYYY-MM-DD" -> "YYYYMMDD" のように数字だけ残す
+            if (!dateStr) { return ''; }
+            return String(dateStr).replace(/[^\d]/g, '');
+        }
+
+        // 最終締め日を抽出（DOM上の「締日：YYYY-MM-DD」から最大日を取る）
+        var finalClosingDateYmd = '';
+        try {
+            var divs = tempDiv.querySelectorAll('div');
+            var bestTs = null;
+            var bestRaw = '';
+            divs.forEach(function(el) {
+                var text = (el && el.textContent) ? el.textContent : '';
+                if (!text || text.indexOf('締日：') === -1) { return; }
+
+                // 例: "【4】締日：2026-03-31　案件数：10件"
+                var m = text.match(/締日：\s*([0-9]{4}[-\/][0-9]{1,2}[-\/][0-9]{1,2})/);
+                if (!m || !m[1]) { return; }
+
+                var ts = parseDateToTimestamp(m[1]);
+                if (ts === null) { return; }
+
+                if (bestTs === null || ts > bestTs) {
+                    bestTs = ts;
+                    bestRaw = m[1];
+                }
+            });
+
+            finalClosingDateYmd = bestRaw ? formatYmdForFilename(bestRaw) : '';
+        } catch (e) {
+            // 取得に失敗してもフォールバックで today を使う
+            console.warn('[請求書印刷] 最終締め日抽出に失敗:', e);
+        }
         
-        // ファイル名を生成: 請求書_{顧客名}_ID-{顧客ID}_{今日の日付}.pdf
-        var filename = '請求書_' + (clientName || '顧客') + '_ID-' + (clientId || '0') + '_' + todayStr + '.pdf';
+        function sanitizeFilename(value) {
+            // 印刷をPDF保存した際のファイル名に禁止文字が含まれる場合、ブラウザがフォールバック名になることがあるためサニタイズする
+            return String(value)
+                .replace(/[\u0000-\u001F\/\\:\uFF1A*\?"<>\|]/g, '-')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+        
+        // ファイル名を生成: {請求先会社名}_{最終締め日}.pdf
+        // （ブラウザの提案名がサイト名になってしまうのを防ぐため、必ず title/d.title に反映される値を作る）
+        var closingDateForFilename = finalClosingDateYmd || formatYmdForFilename(todayStr);
+        var filenameBase = sanitizeFilename((clientName || '請求先') + '_' + closingDateForFilename);
+        var filename = filenameBase + '.pdf';
         
         // 印刷用のスタイルを適用したHTMLを生成
         var printHTML = '<!DOCTYPE html>';
@@ -713,47 +767,58 @@ function printInvoiceContent() {
         iframe.style.visibility = 'hidden';
         document.body.appendChild(iframe);
 
+        var originalDocumentTitle = document.title;
         var cleanupDone = false;
         function cleanup() {
             if (cleanupDone) return;
             cleanupDone = true;
             setTimeout(function() {
                 try { document.body.removeChild(iframe); } catch (_) {}
+                try { document.title = originalDocumentTitle; } catch (_) {}
             }, 300);
         }
 
         try {
             var frameDoc = iframe.contentDocument || iframe.contentWindow.document;
-            iframe.onload = function() {
-                try {
-                    var d = iframe.contentDocument || iframe.contentWindow.document;
-                    if (d) {
-                        if (d.title !== undefined) {
-                            d.title = filename;
-                        } else if (d.head) {
+            frameDoc.open();
+            frameDoc.write(printHTML);
+            frameDoc.close();
+
+            // title を onload に依存せず、書き込み直後に反映する（環境によって onload が不安定なため）
+            try {
+                var d = iframe.contentDocument || iframe.contentWindow.document;
+                if (d) {
+                    d.title = filename;
+                    // 念のため <title> 要素も更新
+                    if (d.head) {
+                        var titleEl = d.head.querySelector('title');
+                        if (titleEl) {
+                            titleEl.textContent = filename;
+                        } else {
                             var t = d.createElement('title');
                             t.textContent = filename;
                             d.head.appendChild(t);
                         }
                     }
-                } catch (_) {}
-
-                try {
-                    var w = iframe.contentWindow || iframe;
-                    w.focus();
-                    w.onafterprint = function() {
-                        cleanup();
-                    };
-                    setTimeout(function() {
-                        try { w.print(); } catch (e) { cleanup(); }
-                    }, 50);
-                } catch (e) {
-                    cleanup();
                 }
-            };
-            frameDoc.open();
-            frameDoc.write(printHTML);
-            frameDoc.close();
+            } catch (_) {}
+
+            // print を発火
+            try {
+                var w = iframe.contentWindow || iframe;
+                w.focus();
+                w.onafterprint = function() {
+                    cleanup();
+                };
+                setTimeout(function() {
+                    // 一部ブラウザは iframe の title より親ドキュメントの title を参照して
+                    // PDF保存時の提案ファイル名が決まることがあるため、直前に親 title も合わせる
+                    try { document.title = filename; } catch (_) {}
+                    try { w.print(); } catch (e) { cleanup(); }
+                }, 50);
+            } catch (e) {
+                cleanup();
+            }
         } catch (e) {
             console.error('[請求書印刷] iframe印刷に失敗:', e);
             cleanup();

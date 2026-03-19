@@ -1008,6 +1008,7 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 
 			// PHP
 			$service_preview_html = json_encode( $service_preview_html );  // JSON形式にエンコード
+			$service_name_json = wp_json_encode( (string) $service_name );
 
 			// JavaScript
 			$print = <<<END
@@ -1016,9 +1017,25 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
             
             function printContent() {
                 var printContent = $service_preview_html;
+                // ファイル名/タイトル生成（Print to PDF の提案名に使用される）
+                var serviceName = {$service_name_json};
+                var printDate = new Date();
+                var yyyy = printDate.getFullYear();
+                var mm = String(printDate.getMonth() + 1).padStart(2, '0');
+                var dd = String(printDate.getDate()).padStart(2, '0');
+                var ymd = yyyy + mm + dd;
+                function sanitizeFilename(value) {
+                    return String(value)
+                        .replace(/[\u0000-\u001F\/\\:\uFF1A*\?"<>\|]/g, '-')
+                        .replace(/\s+/g, ' ')
+                        .trim();
+                }
+                var filenameBase = sanitizeFilename(serviceName || 'サービス') + '_' + ymd;
+                var filename = filenameBase + '.pdf';
+
                 var printWindow = window.open('', '_blank');
                 printWindow.document.open();
-                printWindow.document.write('<html><head><title>サービス情報印刷</title></head><body>');
+                printWindow.document.write('<html><head><title>' + filename + '</title></head><body>');
                 printWindow.document.write(printContent);
                 printWindow.document.write('<script>window.onafterprint = function(){ window.close(); }<\/script>');
                 printWindow.document.write('</body></html>');

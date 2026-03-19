@@ -99,6 +99,8 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 			);
 
 			$selected_progress = isset( $_GET['progress'] ) ? absint( $_GET['progress'] ) : 1;
+			// 印刷時だけページネーションを無視して全件取得する
+			$print_all = isset( $_GET['print_all'] ) && (string) $_GET['print_all'] !== '' && (string) $_GET['print_all'] !== '0';
 
 			// Get count for each progress status with prepared statements
 			$progress_counts = array();
@@ -284,10 +286,37 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 			$current_page = floor( $page_start / $query_limit ) + 1;
 
 			// データ取得（進捗が「受注」の場合は納期順でソート）
-			if ( $selected_progress == 3 ) {
-				// 受注の場合は納期が迫っている順でソート
-				$query = $wpdb->prepare(
-                    "SELECT *, 
+			if ( $print_all ) {
+				// ページネーション無視：LIMIT を付けず全件取得
+				if ( $selected_progress == 3 ) {
+					// 受注の場合は納期が迫っている順でソート
+					$query = $wpdb->prepare(
+						"SELECT *,
+                    CASE 
+                        WHEN expected_delivery_date IS NULL THEN 999999
+                        WHEN expected_delivery_date <= CURDATE() THEN 0
+                        ELSE DATEDIFF(expected_delivery_date, CURDATE())
+                    END as days_until_delivery
+                FROM {$table_name}
+                WHERE progress = %d
+                ORDER BY days_until_delivery ASC, time DESC",
+						$selected_progress
+					);
+				} else {
+					// その他の進捗は従来通り時間順でソート
+					$query = $wpdb->prepare(
+						"SELECT * FROM {$table_name}
+                WHERE progress = %d
+                ORDER BY time DESC",
+						$selected_progress
+					);
+				}
+			} else {
+				// ページネーションあり（従来通り LIMIT/OFFSET）
+				if ( $selected_progress == 3 ) {
+					// 受注の場合は納期が迫っている順でソート
+					$query = $wpdb->prepare(
+                        "SELECT *, 
                     CASE 
                         WHEN expected_delivery_date IS NULL THEN 999999
                         WHEN expected_delivery_date <= CURDATE() THEN 0
@@ -297,27 +326,41 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
                 WHERE progress = %d 
                 ORDER BY days_until_delivery ASC, time DESC 
                 LIMIT %d, %d",
-                    $selected_progress,
-                    $page_start,
-                    $query_limit
-				);
-			} else {
-				// その他の進捗は従来通り時間順でソート
-				$query = $wpdb->prepare(
-                    "SELECT * FROM {$table_name} 
+						$selected_progress,
+						$page_start,
+						$query_limit
+					);
+				} else {
+					// その他の進捗は従来通り時間順でソート
+					$query = $wpdb->prepare(
+                        "SELECT * FROM {$table_name} 
                 WHERE progress = %d 
                 ORDER BY time DESC 
                 LIMIT %d, %d",
-                    $selected_progress,
-                    $page_start,
-                    $query_limit
-				);
+						$selected_progress,
+						$page_start,
+						$query_limit
+					);
+				}
 			}
 
 			$order_list = $wpdb->get_results( $query );
 
 			// --- ここからラッパー追加 ---
+			$my_company = '';
+			if ( class_exists( 'KTPWP_Settings' ) ) {
+				$my_company = KTPWP_Settings::get_company_info();
+			}
+			if ( empty( $my_company ) ) {
+				$my_company = get_bloginfo( 'name' );
+			}
+			$my_company = wp_strip_all_tags( (string) $my_company );
+			// メールアドレス表記はフッターでは不要なため削除
+			$my_company = preg_replace( '/\S+@\S+\.\S+/', '', $my_company );
+			$my_company = preg_replace( '/\s+/', ' ', trim( $my_company ) );
+
 			$content .= '<div class="ktp_work_list_box">';
+			$content .= '<div id="ktp_list_my_company_name" style="display:none;">' . esc_html( $my_company ) . '</div>';
 
 			// 受注の場合はソート順を説明
 			if ( $selected_progress == 3 ) {
@@ -588,7 +631,9 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 			// --- ページネーション ---
 			// データ0でも常にページネーションを表示するため、条件チェックを削除
 			// 統一されたページネーションデザインを使用
-			$content .= $this->render_pagination( $current_page, $total_pages, $query_limit, $tab_name, $flg, $selected_progress, $total_rows );
+			if ( ! $print_all ) {
+				$content .= $this->render_pagination( $current_page, $total_pages, $query_limit, $tab_name, $flg, $selected_progress, $total_rows );
+			}
 			$content .= '</div>'; // .ktp_work_list_box 終了
 			// --- ここまでラッパー追加 ---
 
