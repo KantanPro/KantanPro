@@ -498,8 +498,8 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
                         )
                     );
 
-					// プルダウンフォーム
-					$urgent_class = $is_urgent ? 'urgent-delivery' : '';
+					// プルダウンフォーム（受注の納期警告・完了の請求日超過など、警告バッジ対象の行は同じ赤強調）
+					$urgent_class = ( $is_urgent || $show_invoice_warning ) ? 'urgent-delivery' : '';
 					$content .= "<li class='ktp_work_list_item {$urgent_class}'>";
 					$content .= "<a href='{$detail_url}'>ID: {$order_id} - {$customer_name} ({$user_name})";
 					if ( $project_name !== '' ) {
