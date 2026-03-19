@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.2.26
+Stable tag: 1.2.27
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -324,6 +324,12 @@ curl -sS -X POST \
 * 推奨PHP拡張: GD（画像処理用）
 
 == 変更履歴 ==
+
+= 1.2.27 - 2026年03月19日 =
+* 納期・入金予定日（支払期日）超過の警告表示を改善（請求日超過・支払期日超過の警告バッジ追加、表示ロジックの修正）
+* 印刷機能を強化（隠しiframeでの印刷ダイアログ、ファイル名生成・サニタイズ、ラベルを「印刷する」に変更、全件取得オプション追加）
+* 検索機能のプレースホルダーを改善（入力なし時に「フリーワード」表示、aria-labelでアクセシビリティ向上）
+* 仕事リスト行に顧客会社名リンクを追加（顧客タブへのリンク実装、スタイル改善）
 
 = 1.2.26 - 2026年03月17日 =
 * 印刷ポップアップの閉じるボタンのイベントバインディングを修正（無名関数を使用して可読性を向上）
