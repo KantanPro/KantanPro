@@ -9,8 +9,6 @@
 
 (function ($) {
     'use strict';
-
-    var latestPrintHtml = '';
     var forceLightAttr = 'data-ktp-force-light';
 
     var PRINT_BLACK = '#000000';
@@ -337,83 +335,10 @@
         window.setTimeout(cleanup, 12000);
     }
 
-    /* ----------------------------------------------------------------
-     * ポップアップUI
-     * ---------------------------------------------------------------- */
     function getReportArea() {
         var $area = $('.ktp-report-print-area').first();
         if (!$area.length) { $area = $('#report_content').first(); }
         return $area;
-    }
-
-    /**
-     * ポップアップを閉じる。
-     * @param {boolean} [skipReload=false] true のときはリロードしない（既存ポップアップのクリーンアップ用）
-     */
-    function closePopup(skipReload) {
-        $('#ktp-report-print-popup').remove();
-        $(document).off('.ktp-report-print');
-        if (!skipReload) {
-            // 印刷用に黒くしていたグラフを元のテーマに戻してからリロード（戻さないとリロードまで黒いまま）
-            var $area = getReportArea();
-            var p = $area.length ? restoreChartsAfterPrint($area) : Promise.resolve();
-            p.then(function() {
-                window.location.reload();
-            }, function() {
-                window.location.reload();
-            });
-        }
-    }
-
-    function buildPopupHtml(innerHtml) {
-        return ''
-            + '<div id="ktp-report-print-popup" style="'
-            + 'position:fixed;top:0;left:0;width:100%;height:100%;'
-            + 'background:rgba(0,0,0,0.5);z-index:10000;'
-            + 'display:flex;justify-content:center;align-items:center;">'
-            + '<div style="background:#fff;border-radius:8px;padding:15px;'
-            + 'width:95%;max-width:1000px;max-height:85%;overflow-y:auto;'
-            + 'box-shadow:0 4px 20px rgba(0,0,0,0.3);">'
-            + '<div style="display:flex;justify-content:flex-end;align-items:center;'
-            + 'margin-bottom:15px;border-bottom:1px solid #eee;padding-bottom:10px;">'
-            + '<button type="button" id="ktp-report-print-close" style="'
-            + 'background:none;color:#333;border:none;cursor:pointer;font-size:28px;padding:0;line-height:1;">×</button>'
-            + '</div>'
-            + '<div id="ktp-report-print-content" style="'
-            + 'margin-bottom:20px;padding:18px;border:1px solid #ddd;border-radius:4px;'
-            + 'background:#fff;min-height:300px;'
-            + 'font-family:\'Noto Sans JP\',\'Hiragino Kaku Gothic ProN\',Meiryo,sans-serif;'
-            + 'line-height:1.6;color:#333;overflow:auto;">'
-            + innerHtml
-            + '</div>'
-            + '<div style="display:flex;justify-content:center;gap:10px;'
-            + 'border-top:1px solid #eee;padding-top:15px;">'
-            + '<button type="button" id="ktp-report-print-do" style="'
-            + 'background:#1976d2;color:#fff;border:none;padding:12px 24px;'
-            + 'border-radius:4px;cursor:pointer;font-size:16px;'
-            + 'display:flex;align-items:center;gap:8px;">🖨️ 印刷</button>'
-            + '</div>'
-            + '</div>'
-            + '</div>';
-    }
-
-    function bindEvents(filename) {
-        $(document).off('.ktp-report-print');
-
-        $(document).on('click.ktp-report-print', '#ktp-report-print-close', function () { closePopup(); });
-
-        $(document).on('keyup.ktp-report-print', function (e) {
-            if (e.keyCode === 27) { closePopup(); }
-        });
-
-        $(document).on('click.ktp-report-print', '#ktp-report-print-popup', function (e) {
-            if (e.target === this) { closePopup(); }
-        });
-
-        $(document).on('click.ktp-report-print', '#ktp-report-print-do', function () {
-            if (!latestPrintHtml) { alert('プレビューが準備中です。しばらく待ってから押してください。'); return; }
-            printDirect(latestPrintHtml, filename);
-        });
     }
 
     /* ----------------------------------------------------------------
@@ -427,33 +352,20 @@
         }
 
         var filename = 'レポート_' + (new Date().toISOString().slice(0, 10));
-        latestPrintHtml = '';
 
-        closePopup(true);
-        $('body').append(buildPopupHtml('<div style="padding:40px 20px;color:#666;text-align:center;">印刷データを準備中です...</div>'));
-        bindEvents(filename);
-
-        // 印刷時: グラフをライトで再描画 → 画像化直前に全Chartの文字色を黒・背景白に上書き → クローン作成
+        // 印刷時: グラフをライトで再描画 → 画像化直前に全Chartの文字色を黒・背景白に上書き → 直接印刷
         prepareChartsForLightPrint($area).then(function() {
             return applyPrintStyleToCharts($area);
         }).then(function() {
             var cloneHtml = buildWhiteCloneHtml($area);
-            latestPrintHtml = createPrintableHTML(cloneHtml, filename);
-
-            // ポップアップのプレビューエリアも白背景で表示
-            $('#ktp-report-print-content').html(
-                '<div style="background:#fff;padding:16px;border:1px solid #eee;border-radius:4px;'
-                + 'color:#333;font-size:12px;line-height:1.5;">' + cloneHtml + '</div>'
-            );
+            var html = createPrintableHTML(cloneHtml, filename);
+            printDirect(html, filename);
         }).catch(function(err) {
             console.error('[KTP-REPORT-PRINT] build failed:', err);
-            latestPrintHtml = '';
-            $('#ktp-report-print-content').html(
-                '<div style="padding:40px 20px;color:#d32f2f;text-align:center;">印刷データの作成に失敗しました。</div>'
-            );
+            alert('印刷データの作成に失敗しました。');
+        }).finally(function() {
+            restoreChartsAfterPrint($area).catch(function() {});
         });
-        // ポップアップ表示中は restoreChartsAfterPrint を呼ばない（グラフ破棄・再初期化で
-        // イベントが発火し、勝手に閉じる原因になるため）。ユーザーが閉じたときにリロードする。
     }
 
     window.ktpReportPrintOpen = showReportPrintPopup;
