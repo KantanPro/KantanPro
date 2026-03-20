@@ -10,7 +10,7 @@
     'use strict';
 
     /**
-     * 仕事リスト印刷用ポップアップを表示（レポート・売上台帳と同様のPDF・印刷ボタン付き）
+     * 仕事リストを直接印刷ダイアログで開く（プレビューUIは表示しない）
      */
     function showListPrintPopup() {
         var $area = $('#ktp_list_print_area');
@@ -18,8 +18,6 @@
             alert('印刷する内容が見つかりません。');
             return;
         }
-        // 初期表示は仮（全件取得後に差し替え）
-        var contentHtml = '<div style="padding:40px 20px;color:#666;text-align:center;">全件の印刷データを準備中です...</div>';
 
         function sanitizeFilename(value) {
             // Print to PDF の提案名に禁止文字が含まれるとフォールバック名になることがあるためサニタイズする
@@ -79,82 +77,6 @@
             footerText = '（自社名未設定）';
         }
 
-        var popupHtml = ''
-            + '<div id="ktp-list-print-popup" style="'
-            + 'position:fixed;top:0;left:0;width:100%;height:100%;'
-            + 'background:rgba(0,0,0,0.5);z-index:10000;'
-            + 'display:flex;justify-content:center;align-items:center;">'
-            + '<div style="'
-            + 'background:white;border-radius:8px;padding:15px;'
-            + 'width:95%;max-width:900px;max-height:85%;overflow-y:auto;'
-            + 'box-shadow:0 4px 20px rgba(0,0,0,0.3);">'
-            + '<div style="'
-            + 'display:flex;justify-content:flex-end;align-items:center;'
-            + 'margin-bottom:15px;border-bottom:1px solid #eee;padding-bottom:10px;">'
-            + '<button type="button" id="ktp-list-print-close" style="'
-            + 'background:none;color:#333;border:none;cursor:pointer;'
-            + 'font-size:28px;padding:0;line-height:1;">×</button>'
-            + '</div>'
-            + '<div id="ktp-list-print-content" style="'
-            + 'margin-bottom:20px;padding:20px;border:1px solid #ddd;border-radius:4px;'
-            + 'background:#fff;min-height:300px;'
-            + 'font-family:\'Noto Sans JP\',\'Hiragino Kaku Gothic ProN\',Meiryo,sans-serif;'
-            + 'line-height:1.6;color:#333;">'
-            + contentHtml
-            + '</div>'
-            + '<div style="'
-            + 'display:flex;justify-content:center;gap:10px;'
-            + 'border-top:1px solid #eee;padding-top:15px;">'
-            + '<button type="button" id="ktp-list-print-do" style="'
-            + 'background:#1976d2;color:white;border:none;'
-            + 'padding:12px 24px;border-radius:4px;cursor:pointer;font-size:16px;'
-            + 'display:flex;align-items:center;gap:8px;">🖨️ 印刷</button>'
-            + '</div>'
-            + '</div>'
-            + '</div>';
-
-        $('body').append(popupHtml);
-
-        var listReady = false;
-
-        function closeListPrintPopup() {
-            $('#ktp-list-print-popup').remove();
-            $(document).off('keyup.ktp-list-print');
-            $(document).off('click.ktp-list-print', '#ktp-list-print-close');
-            $(document).off('click.ktp-list-print', '#ktp-list-print-popup');
-            $(document).off('click.ktp-list-print', '#ktp-list-print-do');
-        }
-
-        // 既存ハンドラが積み上がると、1回のクリックで print が複数回発火するため先に解除する
-        $(document).off('click.ktp-list-print', '#ktp-list-print-close');
-        $(document).off('click.ktp-list-print', '#ktp-list-print-popup');
-        $(document).off('click.ktp-list-print', '#ktp-list-print-do');
-
-        $(document).on('click.ktp-list-print', '#ktp-list-print-close', function () {
-            closeListPrintPopup();
-        });
-
-        $(document).on('keyup.ktp-list-print', function (e) {
-            if (e.keyCode === 27) {
-                closeListPrintPopup();
-            }
-        });
-
-        $(document).on('click.ktp-list-print', '#ktp-list-print-popup', function (e) {
-            if (e.target === this) {
-                closeListPrintPopup();
-            }
-        });
-
-        $(document).on('click.ktp-list-print', '#ktp-list-print-do', function () {
-            if (!listReady) {
-                alert('印刷データ（全件）を準備中です。少しお待ちください。');
-                return;
-            }
-            var html = $('#ktp-list-print-content').html();
-            printListDirect(html, filename, headerText, footerText);
-        });
-
         // ページネーション無視：進捗指定で print_all=1 の一覧HTMLを取りに行く
         (function loadFullListForPrint() {
             var iframe = document.createElement('iframe');
@@ -166,8 +88,7 @@
                 url = new URL(window.location.href);
             } catch (e) {
                 // URL APIが使えない環境はフォールバック（この場合は現状HTMLのまま）
-                $('#ktp-list-print-content').html($area.html());
-                listReady = true;
+                printListDirect($area.html(), filename, headerText, footerText);
                 try { document.body.removeChild(iframe); } catch (_) {}
                 return;
             }
@@ -182,15 +103,14 @@
                     var doc = iframe.contentDocument || iframe.contentWindow.document;
                     var listBox = doc.querySelector('#ktp_list_print_area .ktp_work_list_box');
                     if (listBox) {
-                        $('#ktp-list-print-content').html(listBox.outerHTML);
+                        printListDirect(listBox.outerHTML, filename, headerText, footerText);
                     } else {
                         var areaHtml = doc.querySelector('#ktp_list_print_area');
-                        $('#ktp-list-print-content').html(areaHtml ? areaHtml.innerHTML : $('#ktp-list-print-content').html());
+                        printListDirect(areaHtml ? areaHtml.innerHTML : $area.html(), filename, headerText, footerText);
                     }
-                    listReady = true;
                 } catch (e) {
                     console.error('[KTP-LIST-PRINT] 全件取得失敗:', e);
-                    $('#ktp-list-print-content').html('<div style="padding:40px 20px;color:#d32f2f;text-align:center;">全件の取得に失敗しました。</div>');
+                    alert('印刷データの取得に失敗しました。');
                 } finally {
                     try { document.body.removeChild(iframe); } catch (_) {}
                 }

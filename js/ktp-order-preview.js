@@ -98,11 +98,12 @@
                         const result = typeof response === 'string' ? JSON.parse(response) : response;
                         
                         if (result.success && result.data && result.data.preview_html) {
-                            // プレビューデータに進捗情報とタイトル情報を含める
-                            window.ktpShowOrderPreview(orderId, result.data.preview_html, {
+                            // プレビュー表示は行わず、取得した最新内容をそのまま印刷ダイアログへ渡す
+                            window.currentOrderInfo = {
                                 progress: result.data.progress,
                                 document_title: result.data.document_title
-                            });
+                            };
+                            saveOrderPreviewAsPDF(orderId, result.data.preview_html);
                         } else {
                             console.error('[ORDER-PREVIEW] プレビューデータの取得に失敗:', result);
                             alert('プレビューデータの取得に失敗しました: ' + (result.data || 'エラー詳細不明'));
@@ -124,9 +125,8 @@
         });
     });
 
-    // 受注書プレビューポップアップの表示
+    // 後方互換: 既存呼び出しがあっても直接印刷する
     window.ktpShowOrderPreview = function (orderId, previewContent, orderInfo) {
-        // グローバル変数として保存（PDF保存時に使用）
         window.currentOrderInfo = orderInfo || {};
 
         if (!orderId) {
@@ -141,125 +141,7 @@
             return;
         }
 
-        // HTMLコンテンツはすでにデコード済みなので、そのまま使用
-
-        // ポップアップHTML
-        const popupHtml = `
-            <div id="ktp-order-preview-popup" style="
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0,0,0,0.5);
-                z-index: 10000;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-            ">
-                <div style="
-                    background: white;
-                    border-radius: 8px;
-                    padding: 15px;
-                    width: 95%;
-                    max-width: 800px;
-                    max-height: 85%;
-                    overflow-y: auto;
-                    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-                ">
-                    <div style="
-                        display: flex;
-                        justify-content: space-between;
-                        align-items: center;
-                        margin-bottom: 15px;
-                        border-bottom: 1px solid #eee;
-                        padding-bottom: 10px;
-                    ">
-                        <h3 style="margin: 0; color: #333;">受注書プレビュー</h3>
-                        <button type="button" id="ktp-order-preview-close" style="
-                            background: none;
-                            color: #333;
-                            border: none;
-                            cursor: pointer;
-                            font-size: 28px;
-                            padding: 0;
-                            line-height: 1;
-                        ">×</button>
-                    </div>
-                    <div id="ktp-order-preview-content" style="
-                        margin-bottom: 20px;
-                        padding: 20px;
-                        border: 1px solid #ddd;
-                        border-radius: 4px;
-                        background: #fff;
-                        min-height: 300px;
-                        font-family: 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
-                        line-height: 1.6;
-                        color: #333;
-                    ">
-                        ${previewContent}
-                    </div>
-                    <div style="
-                        display: flex;
-                        justify-content: center;
-                        gap: 10px;
-                        border-top: 1px solid #eee;
-                        padding-top: 15px;
-                    ">
-                        <button type="button" id="ktp-order-preview-save-pdf" style="
-                            background: #ff9800;
-                            color: white;
-                            border: none;
-                            padding: 10px 20px;
-                            border-radius: 4px;
-                            cursor: pointer;
-                            font-size: 16px;
-                            display: flex;
-                            align-items: center;
-                            gap: 8px;
-                        ">
-                            ${typeof KTPSvgIcons !== 'undefined' ? KTPSvgIcons.getIcon('print') : '<span class="material-symbols-outlined">print</span>'}
-                            印刷 PDF保存
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `;
-
-        // ポップアップを追加
-        $('body').append(popupHtml);
-
-        // ポップアップを閉じる関数
-        function closeOrderPreview() {
-            $('#ktp-order-preview-popup').remove();
-            $(document).off('keyup.order-preview');
-            $(document).off('click.ktp-order-preview-save', '#ktp-order-preview-save-pdf');
-        }
-
-        // 閉じるボタンのイベント
-        $(document).on('click', '#ktp-order-preview-close', function() {
-            closeOrderPreview();
-        });
-
-        // Escapeキーで閉じる
-        $(document).on('keyup.order-preview', function(e) {
-            if (e.keyCode === 27) { // Escape key
-                closeOrderPreview();
-            }
-        });
-
-        // 背景クリックで閉じる
-        $(document).on('click', '#ktp-order-preview-popup', function(e) {
-            if (e.target === this) {
-                closeOrderPreview();
-            }
-        });
-
-        // 印刷 PDF保存ボタンのイベント（二重登録防止のため一旦解除してから登録）
-        $(document).off('click.ktp-order-preview-save', '#ktp-order-preview-save-pdf');
-        $(document).on('click.ktp-order-preview-save', '#ktp-order-preview-save-pdf', function() {
-            saveOrderPreviewAsPDF(orderId);
-        });
+        saveOrderPreviewAsPDF(orderId, previewContent);
     };
 
     // デバッグ用: Ajaxハンドラーのテスト関数
@@ -283,8 +165,8 @@
     };
     
     // PDF保存機能 - 印刷ダイアログ経由でPDF保存
-    function saveOrderPreviewAsPDF(orderId) {
-        const saveContent = $('#ktp-order-preview-content').html();
+    function saveOrderPreviewAsPDF(orderId, previewContent) {
+        const saveContent = previewContent || $('#ktp-order-preview-content').html();
         
         // ファイル名を要求された形式で生成
         const filename = generateFilename(orderId);
