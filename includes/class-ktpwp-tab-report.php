@@ -156,13 +156,30 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 				)
 			);
 			$content .= '<script>var ktp_ajax_object = ' . json_encode( $ajax_data ) . ';</script>';
-$content .= '<script src="' . esc_url( plugins_url( 'js/ktp-report-charts.js', dirname( __FILE__ ) ) ) . '?v=' . KANTANPRO_PLUGIN_VERSION . '"></script>';
-			$content .= '<script src="' . esc_url( plugins_url( 'js/ktp-report-print.js', dirname( __FILE__ ) ) ) . '?v=' . KANTANPRO_PLUGIN_VERSION . '"></script>';
+			$report_charts_ver = KANTANPRO_PLUGIN_VERSION;
+			$report_print_ver  = KANTANPRO_PLUGIN_VERSION;
+			$report_charts_path = plugin_dir_path( dirname( __FILE__ ) ) . 'js/ktp-report-charts.js';
+			$report_print_path  = plugin_dir_path( dirname( __FILE__ ) ) . 'js/ktp-report-print.js';
+
+			if ( file_exists( $report_charts_path ) ) {
+				$report_charts_ver .= '.' . filemtime( $report_charts_path );
+			}
+			if ( file_exists( $report_print_path ) ) {
+				$report_print_ver .= '.' . filemtime( $report_print_path );
+			}
+
+			$content .= '<script src="' . esc_url( plugins_url( 'js/ktp-report-charts.js', dirname( __FILE__ ) ) ) . '?v=' . esc_attr( $report_charts_ver ) . '"></script>';
+			$content .= '<script src="' . esc_url( plugins_url( 'js/ktp-report-print.js', dirname( __FILE__ ) ) ) . '?v=' . esc_attr( $report_print_ver ) . '"></script>';
 
 			// 確定申告タブの場合は売上台帳PDF用スクリプトも読み込み
 			$report_type = isset( $_GET['report_type'] ) ? sanitize_text_field( $_GET['report_type'] ) : 'sales';
 			if ( $report_type === 'tax_return' ) {
-				$content .= '<script src="' . esc_url( plugins_url( 'js/ktp-sales-ledger-pdf.js', dirname( __FILE__ ) ) ) . '?v=' . KANTANPRO_PLUGIN_VERSION . '"></script>';
+				$sales_ledger_print_ver  = KANTANPRO_PLUGIN_VERSION;
+				$sales_ledger_print_path = plugin_dir_path( dirname( __FILE__ ) ) . 'js/ktp-sales-ledger-pdf.js';
+				if ( file_exists( $sales_ledger_print_path ) ) {
+					$sales_ledger_print_ver .= '.' . filemtime( $sales_ledger_print_path );
+				}
+				$content .= '<script src="' . esc_url( plugins_url( 'js/ktp-sales-ledger-pdf.js', dirname( __FILE__ ) ) ) . '?v=' . esc_attr( $sales_ledger_print_ver ) . '"></script>';
 			}
 
 			return $content;
@@ -703,9 +720,9 @@ $content .= '<script src="' . esc_url( plugins_url( 'js/ktp-report-charts.js', d
 		$content .= '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">';
 		$content .= '<h4 style="margin:0;color:#333;">売上台帳（' . esc_html( $tax_year ) . '年）</h4>';
 		
-		// PDF出力ボタン
+		// 印刷ボタン
 		$content .= '<button type="button" id="sales-ledger-pdf-btn" data-year="' . esc_attr( $tax_year ) . '" style="
-			background:#e53935;
+			background:#1976d2;
 			color:#fff;
 			border:none;
 			padding:10px 20px;
@@ -716,8 +733,8 @@ $content .= '<script src="' . esc_url( plugins_url( 'js/ktp-report-charts.js', d
 			align-items:center;
 			gap:8px;
 		">';
-		$content .= '<span style="font-size:16px;">📄</span>';
-		$content .= 'PDF出力';
+		$content .= '<span style="font-size:16px;">🖨️</span>';
+		$content .= '印刷';
 		$content .= '</button>';
 		
 		$content .= '</div>';
@@ -779,7 +796,7 @@ $content .= '<script src="' . esc_url( plugins_url( 'js/ktp-report-charts.js', d
 
 			if ( count( $sales_data ) > 10 ) {
 				$content .= '<div style="text-align:center;margin-top:12px;color:#666;font-size:14px;">';
-				$content .= '※ 全' . count( $sales_data ) . '件中、最新10件を表示。全件はPDF出力でご確認ください。';
+				$content .= '※ 全' . count( $sales_data ) . '件中、最新10件を表示。全件は印刷プレビューでご確認ください。';
 				$content .= '</div>';
 			}
 		} else {
@@ -805,7 +822,7 @@ $content .= '<script src="' . esc_url( plugins_url( 'js/ktp-report-charts.js', d
 		$content .= '<h4 style="margin:0 0 12px 0;color:#1976d2;">📊 確定申告サポート機能</h4>';
 		$content .= '<div style="color:#333;line-height:1.6;">';
 		$content .= '<ul style="margin:0;padding-left:20px;">';
-		$content .= '<li><strong>売上台帳PDF出力</strong>：年度別の売上データを帳簿形式でPDF出力</li>';
+		$content .= '<li><strong>売上台帳印刷</strong>：年度別の売上データを帳簿形式で印刷</li>';
 		$content .= '<li><strong>税務署提出対応</strong>：確定申告に必要な売上情報を整理</li>';
 		$content .= '<li><strong>月別集計</strong>：月ごとの売上推移を確認可能</li>';
 		$content .= '<li><strong>顧客別売上</strong>：主要取引先の売上内訳を把握</li>';

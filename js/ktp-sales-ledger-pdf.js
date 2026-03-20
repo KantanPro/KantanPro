@@ -1,5 +1,5 @@
 /**
- * Sales Ledger PDF Generation
+ * Sales Ledger Print
  *
  * @package KTPWP
  * @since 1.0.0
@@ -123,20 +123,6 @@
                         border-top: 1px solid #eee;
                         padding-top: 15px;
                     ">
-                        <button type="button" id="sales-ledger-pdf-save" style="
-                            background: #e53935;
-                            color: white;
-                            border: none;
-                            padding: 12px 24px;
-                            border-radius: 4px;
-                            cursor: pointer;
-                            font-size: 16px;
-                            display: flex;
-                            align-items: center;
-                            gap: 8px;
-                        ">
-                            📄 PDF保存
-                        </button>
                         <button type="button" id="sales-ledger-pdf-print" style="
                             background: #1976d2;
                             color: white;
@@ -184,23 +170,10 @@
             }
         });
 
-        // PDF保存ボタンのイベント
-        $(document).on('click', '#sales-ledger-pdf-save', function() {
-            saveSalesLedgerAsPDF(filename);
-        });
-
         // 印刷ボタンのイベント
         $(document).on('click', '#sales-ledger-pdf-print', function() {
             printSalesLedger(filename);
         });
-    }
-
-    // PDF保存機能
-    function saveSalesLedgerAsPDF(filename) {
-        const content = $('#sales-ledger-pdf-content').html();
-        
-        // 印刷ダイアログ経由でPDF保存
-        printSalesLedgerDirect(content, filename);
     }
 
     // 印刷機能
@@ -426,7 +399,7 @@
 
     // ドキュメント準備完了時の処理
     $(document).ready(function() {
-        // 売上台帳PDF出力ボタンのクリックイベント
+        // 売上台帳印刷ボタンのクリックイベント
         $(document).on('click', '#sales-ledger-pdf-btn', function(e) {
             e.preventDefault();
             
@@ -439,7 +412,7 @@
             }
 
             // ボタンを無効化してローディング表示
-            $button.prop('disabled', true).html('📄 生成中...');
+            $button.prop('disabled', true).html('🖨️ 生成中...');
 
             // Ajaxで売上台帳PDFデータを取得
             $.ajax({
@@ -480,7 +453,7 @@
                 },
                 complete: function() {
                     // ボタンを元に戻す
-                    $button.prop('disabled', false).html('📄 PDF出力');
+                    $button.prop('disabled', false).html('🖨️ 印刷');
                 }
             });
         });

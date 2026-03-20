@@ -1,5 +1,5 @@
 /**
- * レポート 印刷・PDF保存
+ * レポート 印刷
  * レポートのグラフを含む内容を白背景・黒文字で印刷ダイアログに表示する。
  * ダークモード環境でも印刷は常に白背景で出力される。
  *
@@ -388,10 +388,6 @@
             + '</div>'
             + '<div style="display:flex;justify-content:center;gap:10px;'
             + 'border-top:1px solid #eee;padding-top:15px;">'
-            + '<button type="button" id="ktp-report-print-save" style="'
-            + 'background:#e53935;color:#fff;border:none;padding:12px 24px;'
-            + 'border-radius:4px;cursor:pointer;font-size:16px;'
-            + 'display:flex;align-items:center;gap:8px;">📄 PDF保存</button>'
             + '<button type="button" id="ktp-report-print-do" style="'
             + 'background:#1976d2;color:#fff;border:none;padding:12px 24px;'
             + 'border-radius:4px;cursor:pointer;font-size:16px;'
@@ -412,11 +408,6 @@
 
         $(document).on('click.ktp-report-print', '#ktp-report-print-popup', function (e) {
             if (e.target === this) { closePopup(); }
-        });
-
-        $(document).on('click.ktp-report-print', '#ktp-report-print-save', function () {
-            if (!latestPrintHtml) { alert('プレビューが準備中です。しばらく待ってから押してください。'); return; }
-            printDirect(latestPrintHtml, filename);
         });
 
         $(document).on('click.ktp-report-print', '#ktp-report-print-do', function () {

@@ -77,7 +77,7 @@ if ( ! class_exists( 'KTPWP_Ui_Generator' ) ) {
 				$report_buttons .= '</a>';
 			}
 
-			// プリントボタン（現在表示されている内容を印刷ダイアログで表示し、PDF保存・印刷可能・仕事リストと同じUI）
+			// プリントボタン（現在表示されている内容を印刷ダイアログで表示）
 			$print_button = '<button type="button" onclick="typeof ktpReportPrintOpen === \'function\' && ktpReportPrintOpen();" title="印刷する" style="padding: 6px 10px; font-size: 12px;">
 				<span class="material-symbols-outlined" aria-label="印刷">print</span>
 			</button>';
