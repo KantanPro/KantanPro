@@ -20,7 +20,7 @@
      */
     function applyPrintStyleToCharts($area) {
         if (!$area || !$area.length || typeof window.Chart === 'undefined' || typeof window.Chart.getChart !== 'function') {
-            return Promise.resolve();
+            return Promise.resolve(null);
         }
 
         var ChartGlobal = window.Chart;
@@ -31,12 +31,38 @@
 
         var canvases = $area[0].querySelectorAll('canvas');
         var i, chart, opt, scaleId;
+        var chartSnapshots = [];
 
         for (i = 0; i < canvases.length; i++) {
             chart = window.Chart.getChart(canvases[i]);
             if (!chart || !chart.options) { continue; }
 
             opt = chart.options;
+            var snapshot = {
+                chart: chart,
+                titleColor: null,
+                legendLabelColor: null,
+                scaleColors: {},
+                backgroundColor: chart.options.backgroundColor
+            };
+
+            if (opt.plugins && opt.plugins.title) {
+                snapshot.titleColor = opt.plugins.title.color;
+            }
+            if (opt.plugins && opt.plugins.legend && opt.plugins.legend.labels) {
+                snapshot.legendLabelColor = opt.plugins.legend.labels.color;
+            }
+            if (opt.scales && typeof opt.scales === 'object') {
+                for (scaleId in opt.scales) {
+                    if (Object.prototype.hasOwnProperty.call(opt.scales, scaleId) && opt.scales[scaleId]) {
+                        snapshot.scaleColors[scaleId] = {
+                            ticks: opt.scales[scaleId].ticks ? opt.scales[scaleId].ticks.color : undefined,
+                            grid: opt.scales[scaleId].grid ? opt.scales[scaleId].grid.color : undefined
+                        };
+                    }
+                }
+            }
+            chartSnapshots.push(snapshot);
 
             if (opt.plugins) {
                 if (opt.plugins.title) {
@@ -72,8 +98,48 @@
         }
 
         return wait(180).then(function() {
-            if (ChartGlobal.defaults && prevColor !== undefined) {
-                ChartGlobal.defaults.color = prevColor;
+            return {
+                prevColor: prevColor,
+                chartSnapshots: chartSnapshots
+            };
+        });
+    }
+
+    function restoreChartStylesAfterPrint(printState) {
+        if (!printState) { return; }
+
+        var ChartGlobal = window.Chart;
+        if (ChartGlobal && ChartGlobal.defaults && printState.prevColor !== undefined) {
+            ChartGlobal.defaults.color = printState.prevColor;
+        }
+
+        (printState.chartSnapshots || []).forEach(function(snapshot) {
+            if (!snapshot || !snapshot.chart || !snapshot.chart.options) { return; }
+            var options = snapshot.chart.options;
+            var sid;
+
+            if (options.plugins && options.plugins.title) {
+                options.plugins.title.color = snapshot.titleColor;
+            }
+            if (options.plugins && options.plugins.legend && options.plugins.legend.labels) {
+                options.plugins.legend.labels.color = snapshot.legendLabelColor;
+            }
+            if (options.scales && typeof options.scales === 'object') {
+                for (sid in snapshot.scaleColors) {
+                    if (!Object.prototype.hasOwnProperty.call(snapshot.scaleColors, sid) || !options.scales[sid]) { continue; }
+                    if (options.scales[sid].ticks) {
+                        options.scales[sid].ticks.color = snapshot.scaleColors[sid].ticks;
+                    }
+                    if (options.scales[sid].grid) {
+                        options.scales[sid].grid.color = snapshot.scaleColors[sid].grid;
+                    }
+                }
+            }
+            options.backgroundColor = snapshot.backgroundColor;
+            try {
+                snapshot.chart.update('none');
+            } catch (e) {
+                snapshot.chart.update();
             }
         });
     }
@@ -346,6 +412,7 @@
      * ---------------------------------------------------------------- */
     function showReportPrintPopup() {
         var $area = getReportArea();
+        var printState = null;
         if (!$area.length) {
             alert('印刷する内容が見つかりません。');
             return;
@@ -356,6 +423,9 @@
         // 印刷時: グラフをライトで再描画 → 画像化直前に全Chartの文字色を黒・背景白に上書き → 直接印刷
         prepareChartsForLightPrint($area).then(function() {
             return applyPrintStyleToCharts($area);
+        }).then(function(state) {
+            printState = state;
+            return null;
         }).then(function() {
             var cloneHtml = buildWhiteCloneHtml($area);
             var html = createPrintableHTML(cloneHtml, filename);
@@ -364,6 +434,7 @@
             console.error('[KTP-REPORT-PRINT] build failed:', err);
             alert('印刷データの作成に失敗しました。');
         }).finally(function() {
+            restoreChartStylesAfterPrint(printState);
             restoreChartsAfterPrint($area).catch(function() {});
         });
     }
