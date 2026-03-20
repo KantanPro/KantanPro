@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.2.29
+Stable tag: 1.2.30
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -324,6 +324,11 @@ curl -sS -X POST \
 * 推奨PHP拡張: GD（画像処理用）
 
 == 変更履歴 ==
+
+= 1.2.30 - 2026年03月20日 =
+* 印刷機能を改善（プレビュー／ポップアップUIを削除し、印刷処理を直接実行）
+* 印刷データ作成・取得失敗時のエラーハンドリングを強化（アラート表示を追加）
+* 印刷ボタンラベルを「印刷」に統一し、関連JavaScript処理を更新
 
 = 1.2.29 - 2026年03月20日 =
 * 振込先口座情報を請求書・見積書に追加（設定オプション対応）
