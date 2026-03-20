@@ -359,10 +359,15 @@ jQuery(document).ready(function($) {
                                     html += "</div>";
                                 });
 
-                                if (res.data.company_info) {
-                                    html += "<div style=\"margin-top:30px;padding:20px;border:1px solid #ddd;background:#fafafa;text-align:right;border-radius:6px;\">";
+                                // 請求元（自社）情報：サーバー側でボックス化済み（一般設定／旧設定のフォールバック含む）
+                                if (res.data.company_info && String(res.data.company_info).trim() !== "") {
+                                    html += "<div style=\"margin-top:30px;\">";
                                     html += res.data.company_info;
                                     html += "</div>";
+                                }
+
+                                if (res.data.bank_transfer_html && String(res.data.bank_transfer_html).trim() !== "") {
+                                    html += res.data.bank_transfer_html;
                                 }
 
                                 // 印刷・PDF保存ボタンの上にチェックボックスを追加

@@ -1946,6 +1946,14 @@ class KTPWP_Ajax {
             $subject = "{$document_title}：{$project_name}";
             $body    = "{$customer_display}\n{$user_display}\n\nお世話になります。\n\n＜{$document_title}＞\nID: {$order->id} [{$order_date}]\n\n「{$project_name}」{$document_message}\n{$invoice_list}";
 
+            // 見積り（進捗1）メール：振込先が入力されていれば本文に追加
+            if ( 1 === $progress && class_exists( 'KTPWP_Settings' ) ) {
+                $bank_plain = KTPWP_Settings::get_bank_transfer_plain_text();
+                if ( $bank_plain !== '' ) {
+                    $body .= "\n\n" . $bank_plain;
+                }
+            }
+
             // 税制モードに応じたメール本文の調整
             if ( class_exists( 'KTPWP_Tax_Policy' ) ) {
                 if ( KTPWP_Tax_Policy::is_abolished() || KTPWP_Tax_Policy::hide_tax_columns() ) {
@@ -4551,6 +4559,21 @@ class KTPWP_Ajax {
 		// 支払期日を計算
 		$payment_due_date = $this->calculate_payment_due_date($client_data);
 		
+		$bank_transfer_html = '';
+		if ( class_exists( 'KTPWP_Settings' ) ) {
+			$bank_transfer_html = KTPWP_Settings::get_bank_transfer_invoice_html();
+		}
+
+		// 請求元（自社）情報：一般設定・旧 ktp_setting と同じロジックで HTML 化
+		$company_info_html = '';
+		if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
+			require_once KTPWP_PLUGIN_DIR . 'includes/class-ktpwp-order-main.php';
+		}
+		if ( class_exists( 'KTPWP_Order_Class' ) ) {
+			$order_for_company = new KTPWP_Order_Class();
+			$company_info_html = $order_for_company->get_company_info_box_html();
+		}
+
 		// レスポンスデータを構築
 		$response_data = array(
 			'client_name' => $client_data->company_name,
@@ -4561,7 +4584,9 @@ class KTPWP_Ajax {
 			'qualified_invoice_number' => $qualified_invoice_number,
 			'tax_category' => $tax_category,
 			'selected_department' => null, // デフォルトでは部署選択なし
-			'payment_due_date' => $payment_due_date
+			'payment_due_date' => $payment_due_date,
+			'bank_transfer_html' => $bank_transfer_html,
+			'company_info' => $company_info_html,
 		);
 		
 		wp_send_json_success($response_data);

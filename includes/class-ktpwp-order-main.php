@@ -880,7 +880,14 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 								$body = $subject = '';
 								if ( $progress === 1 ) {
 									$subject = "{$document_title}：{$project_name}";
-									$body = "{$customer_name}\n{$user_name} 様\n\nお世話になります。\n\n＜{$document_title}＞\nID: {$order->id} [{$order_date}]\n\n「{$project_name}」{$document_message}\n{$invoice_list}\n\n--\n{$my_company}";
+									$body = "{$customer_name}\n{$user_name} 様\n\nお世話になります。\n\n＜{$document_title}＞\nID: {$order->id} [{$order_date}]\n\n「{$project_name}」{$document_message}\n{$invoice_list}";
+									if ( class_exists( 'KTPWP_Settings' ) ) {
+										$bank_plain = KTPWP_Settings::get_bank_transfer_plain_text();
+										if ( $bank_plain !== '' ) {
+											$body .= "\n\n" . $bank_plain;
+										}
+									}
+									$body .= "\n\n--\n{$my_company}";
 								} elseif ( $progress === 2 ) {
 									$subject = "{$document_title}：{$project_name}";
 									$body = "{$customer_name}\n{$user_name} 様\n\nお世話になります。\n\n＜{$document_title}＞\nID: {$order->id} [{$order_date}]\n\n「{$project_name}」{$document_message}\n{$invoice_list}\n\n--\n{$my_company}";
@@ -2477,6 +2484,14 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 			$html .= $company_info_html;
 			$html .= '</div>';
 
+			// 見積書（進捗1）・請求書（進捗4）のとき、入力があれば振込先口座を表示
+			if ( class_exists( 'KTPWP_Settings' ) && in_array( (int) $order_data->progress, array( 1, 4 ), true ) ) {
+				$bank_html = KTPWP_Settings::get_bank_transfer_invoice_html();
+				if ( $bank_html !== '' ) {
+					$html .= $bank_html;
+				}
+			}
+
 			// フッター（コンパクト）
 			$html .= '<div class="document-footer" style="text-align: center; margin-top: 20px; padding-top: 10px; border-top: 1px solid #ccc; font-size: 11px; color: #666;">';
 			$html .= '受注書ID: ' . esc_html( $order_data->id ) . ' | 作成日: ' . date( 'Y年m月d日', is_numeric( $order_data->time ) ? $order_data->time : strtotime( $order_data->time ) );
@@ -2986,6 +3001,15 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 			$html .= '</div>';
 
 			return $html;
+		}
+
+		/**
+		 * 自社情報ボックスHTML（顧客請求書プレビュー・Ajax 等）
+		 *
+		 * @return string
+		 */
+		public function get_company_info_box_html() {
+			return $this->Get_Company_Info_HTML();
 		}
 
 		/**

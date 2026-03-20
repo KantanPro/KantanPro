@@ -118,6 +118,73 @@ class KTPWP_Settings {
     }
 
     /**
+     * 請求書下部に印字する振込先口座ブロック（HTML）
+     *
+     * @return string 未入力のときは空文字
+     */
+    public static function get_bank_transfer_invoice_html() {
+        $options = get_option( 'ktp_general_settings', array() );
+        $branch = isset( $options['bank_transfer_bank_branch'] ) ? trim( (string) $options['bank_transfer_bank_branch'] ) : '';
+        $type   = isset( $options['bank_transfer_account_type'] ) && $options['bank_transfer_account_type'] === 'current' ? 'current' : 'ordinary';
+        $number = isset( $options['bank_transfer_account_number'] ) ? trim( (string) $options['bank_transfer_account_number'] ) : '';
+        $holder = isset( $options['bank_transfer_account_holder_kana'] ) ? trim( (string) $options['bank_transfer_account_holder_kana'] ) : '';
+
+        if ( $branch === '' && $number === '' && $holder === '' ) {
+            return '';
+        }
+
+        $type_label = ( $type === 'current' ) ? '当座' : '普通';
+
+        $html  = '<div class="ktp-invoice-bank-transfer" style="margin-top:16px;padding:14px 16px;border:1px solid #ccc;background:#fafafa;border-radius:4px;font-size:13px;line-height:1.6;color:#333;text-align:left;">';
+        $html .= '<div style="font-weight:bold;margin-bottom:8px;border-bottom:1px solid #ddd;padding-bottom:6px;">' . esc_html__( '振込先口座', 'ktpwp' ) . '</div>';
+        if ( $branch !== '' ) {
+            $html .= '<div><span style="font-weight:600;">' . esc_html__( '銀行名・支店名', 'ktpwp' ) . '</span>　' . esc_html( $branch ) . '</div>';
+        }
+        $html .= '<div><span style="font-weight:600;">' . esc_html__( '口座種別', 'ktpwp' ) . '</span>　' . esc_html( $type_label ) . '</div>';
+        if ( $number !== '' ) {
+            $html .= '<div><span style="font-weight:600;">' . esc_html__( '口座番号', 'ktpwp' ) . '</span>　' . esc_html( $number ) . '</div>';
+        }
+        if ( $holder !== '' ) {
+            $html .= '<div><span style="font-weight:600;">' . esc_html__( '口座名義（カナ）', 'ktpwp' ) . '</span>　' . esc_html( $holder ) . '</div>';
+        }
+        $html .= '</div>';
+
+        return $html;
+    }
+
+    /**
+     * 見積メール等用の振込先口座（プレーンテキスト）
+     *
+     * @return string 未入力のときは空文字
+     */
+    public static function get_bank_transfer_plain_text() {
+        $options = get_option( 'ktp_general_settings', array() );
+        $branch = isset( $options['bank_transfer_bank_branch'] ) ? trim( (string) $options['bank_transfer_bank_branch'] ) : '';
+        $type   = isset( $options['bank_transfer_account_type'] ) && $options['bank_transfer_account_type'] === 'current' ? 'current' : 'ordinary';
+        $number = isset( $options['bank_transfer_account_number'] ) ? trim( (string) $options['bank_transfer_account_number'] ) : '';
+        $holder = isset( $options['bank_transfer_account_holder_kana'] ) ? trim( (string) $options['bank_transfer_account_holder_kana'] ) : '';
+
+        if ( $branch === '' && $number === '' && $holder === '' ) {
+            return '';
+        }
+
+        $type_label = ( $type === 'current' ) ? '当座' : '普通';
+        $lines      = array( '【振込先口座】' );
+        if ( $branch !== '' ) {
+            $lines[] = '銀行名・支店名：' . $branch;
+        }
+        $lines[] = '口座種別：' . $type_label;
+        if ( $number !== '' ) {
+            $lines[] = '口座番号：' . $number;
+        }
+        if ( $holder !== '' ) {
+            $lines[] = '口座名義（カナ）：' . $holder;
+        }
+
+        return implode( "\n", $lines );
+    }
+
+    /**
      * Get default tax rate setting
      *
      * @since 1.0.0
@@ -2252,6 +2319,24 @@ class KTPWP_Settings {
                                 }
                                 echo '</table>';
                             }
+                        }
+
+                        // 振込先口座セクションの出力
+                        if ( isset( $wp_settings_sections['ktp-general']['bank_transfer_setting_section'] ) ) {
+                            $section = $wp_settings_sections['ktp-general']['bank_transfer_setting_section'];
+                            echo '<h2>' . esc_html( $section['title'] ) . '</h2>';
+                            if ( $section['callback'] ) {
+                                call_user_func( $section['callback'], $section );
+                            }
+                            if ( isset( $wp_settings_fields['ktp-general']['bank_transfer_setting_section'] ) ) {
+                                echo '<table class="form-table">';
+                                foreach ( $wp_settings_fields['ktp-general']['bank_transfer_setting_section'] as $field ) {
+                                    echo '<tr><th scope="row">' . esc_html( $field['title'] ) . '</th><td>';
+                                    call_user_func( $field['callback'], $field['args'] );
+                                    echo '</td></tr>';
+                                }
+                                echo '</table>';
+                            }
                         } ?>
                         
                         <div class="ktp-submit-button">
@@ -2737,6 +2822,46 @@ class KTPWP_Settings {
             array( $this, 'reduced_tax_rate_callback' ),
             'ktp-general',
             'tax_setting_section'
+        );
+
+        // 振込先口座（請求書印字用）
+        add_settings_section(
+            'bank_transfer_setting_section',
+            __( '振込先口座', 'ktpwp' ),
+            array( $this, 'print_bank_transfer_section_info' ),
+            'ktp-general'
+        );
+
+        add_settings_field(
+            'bank_transfer_bank_branch',
+            __( '銀行名・支店名', 'ktpwp' ),
+            array( $this, 'bank_transfer_bank_branch_callback' ),
+            'ktp-general',
+            'bank_transfer_setting_section'
+        );
+
+        add_settings_field(
+            'bank_transfer_account_type',
+            __( '口座種別', 'ktpwp' ),
+            array( $this, 'bank_transfer_account_type_callback' ),
+            'ktp-general',
+            'bank_transfer_setting_section'
+        );
+
+        add_settings_field(
+            'bank_transfer_account_number',
+            __( '口座番号', 'ktpwp' ),
+            array( $this, 'bank_transfer_account_number_callback' ),
+            'ktp-general',
+            'bank_transfer_setting_section'
+        );
+
+        add_settings_field(
+            'bank_transfer_account_holder_kana',
+            __( '口座名義（カナ）', 'ktpwp' ),
+            array( $this, 'bank_transfer_account_holder_kana_callback' ),
+            'ktp-general',
+            'bank_transfer_setting_section'
         );
 
         // 寄付設定セクション
@@ -3446,6 +3571,24 @@ class KTPWP_Settings {
                 ),
             );
             $new_input['company_info'] = wp_kses( $input['company_info'], $allowed_html );
+        }
+
+        if ( array_key_exists( 'bank_transfer_bank_branch', $input ) ) {
+            $new_input['bank_transfer_bank_branch'] = sanitize_text_field( wp_unslash( (string) $input['bank_transfer_bank_branch'] ) );
+        }
+
+        if ( isset( $input['bank_transfer_account_type'] ) ) {
+            $t = sanitize_text_field( wp_unslash( (string) $input['bank_transfer_account_type'] ) );
+            $new_input['bank_transfer_account_type'] = ( $t === 'current' ) ? 'current' : 'ordinary';
+        }
+
+        if ( array_key_exists( 'bank_transfer_account_number', $input ) ) {
+            $raw = wp_unslash( (string) $input['bank_transfer_account_number'] );
+            $new_input['bank_transfer_account_number'] = sanitize_text_field( preg_replace( '/[^\d\-]/', '', $raw ) );
+        }
+
+        if ( array_key_exists( 'bank_transfer_account_holder_kana', $input ) ) {
+            $new_input['bank_transfer_account_holder_kana'] = sanitize_text_field( wp_unslash( (string) $input['bank_transfer_account_holder_kana'] ) );
         }
 
         return $new_input;
@@ -4649,6 +4792,82 @@ define( 'WP_DEBUG_DISPLAY', false );
      */
     public function print_tax_section_info() {
         echo '<p>' . esc_html__( '消費税の基本設定を行います。', 'ktpwp' ) . '</p>';
+    }
+
+    /**
+     * 振込先口座セクションの説明
+     */
+    public function print_bank_transfer_section_info() {
+        echo '<p>' . esc_html__( '請求書の下部（自社情報の直後）に自動で印字されます。いずれかを入力すると表示されます。', 'ktpwp' ) . '</p>';
+    }
+
+    /**
+     * 銀行名・支店名
+     */
+    public function bank_transfer_bank_branch_callback() {
+        $options = get_option( 'ktp_general_settings', array() );
+        $value   = isset( $options['bank_transfer_bank_branch'] ) ? $options['bank_transfer_bank_branch'] : '';
+        ?>
+        <input type="text"
+               id="bank_transfer_bank_branch"
+               name="ktp_general_settings[bank_transfer_bank_branch]"
+               value="<?php echo esc_attr( $value ); ?>"
+               class="regular-text"
+               placeholder="<?php echo esc_attr__( '例：〇〇銀行 △△支店', 'ktpwp' ); ?>" />
+        <?php
+    }
+
+    /**
+     * 口座種別（普通 / 当座）
+     */
+    public function bank_transfer_account_type_callback() {
+        $options = get_option( 'ktp_general_settings', array() );
+        $saved   = isset( $options['bank_transfer_account_type'] ) ? $options['bank_transfer_account_type'] : 'ordinary';
+        ?>
+        <label style="margin-right:16px;">
+            <input type="radio" name="ktp_general_settings[bank_transfer_account_type]" value="ordinary" <?php checked( $saved, 'ordinary' ); ?> />
+            <?php echo esc_html__( '普通', 'ktpwp' ); ?>
+        </label>
+        <label>
+            <input type="radio" name="ktp_general_settings[bank_transfer_account_type]" value="current" <?php checked( $saved, 'current' ); ?> />
+            <?php echo esc_html__( '当座', 'ktpwp' ); ?>
+        </label>
+        <?php
+    }
+
+    /**
+     * 口座番号
+     */
+    public function bank_transfer_account_number_callback() {
+        $options = get_option( 'ktp_general_settings', array() );
+        $value   = isset( $options['bank_transfer_account_number'] ) ? $options['bank_transfer_account_number'] : '';
+        ?>
+        <input type="text"
+               id="bank_transfer_account_number"
+               name="ktp_general_settings[bank_transfer_account_number]"
+               value="<?php echo esc_attr( $value ); ?>"
+               class="regular-text"
+               inputmode="numeric"
+               autocomplete="off"
+               placeholder="<?php echo esc_attr__( '半角数字（ハイフン可）', 'ktpwp' ); ?>" />
+        <?php
+    }
+
+    /**
+     * 口座名義（カタカナ）
+     */
+    public function bank_transfer_account_holder_kana_callback() {
+        $options = get_option( 'ktp_general_settings', array() );
+        $value   = isset( $options['bank_transfer_account_holder_kana'] ) ? $options['bank_transfer_account_holder_kana'] : '';
+        ?>
+        <input type="text"
+               id="bank_transfer_account_holder_kana"
+               name="ktp_general_settings[bank_transfer_account_holder_kana]"
+               value="<?php echo esc_attr( $value ); ?>"
+               class="regular-text"
+               placeholder="<?php echo esc_attr__( '例：カブシキガイシャ ヤマダ', 'ktpwp' ); ?>" />
+        <p class="description"><?php echo esc_html__( '通帳記載の名義と同じ表記（カタカナ）を推奨します。', 'ktpwp' ); ?></p>
+        <?php
     }
 
     /**
