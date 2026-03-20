@@ -474,7 +474,6 @@
                             backgroundColor: data.client_sales.labels.map(function(_, index) {
                                 return getGradientColor(chartColors.gradients[index % chartColors.gradients.length]);
                             }),
-                            borderColor: 'transparent',
                             borderWidth: 0,
                             borderRadius: 8
                         }]
@@ -517,7 +516,6 @@
                             backgroundColor: data.client_orders.labels.map(function(_, index) {
                                 return getGradientColor(chartColors.gradients[index % chartColors.gradients.length]);
                             }),
-                            borderColor: 'transparent',
                             borderWidth: 0
                         }]
                     },
@@ -578,7 +576,6 @@
                             backgroundColor: data.service_sales.labels.map(function(_, index) {
                                 return getGradientColor(chartColors.gradients[index % chartColors.gradients.length]);
                             }),
-                            borderColor: 'transparent',
                             borderWidth: 0,
                             borderRadius: 8
                         }]
@@ -632,7 +629,6 @@
                             backgroundColor: data.service_quantity.labels.map(function(_, index) {
                                 return getGradientColor(chartColors.gradients[index % chartColors.gradients.length]);
                             }),
-                            borderColor: 'transparent',
                             borderWidth: 0
                         }]
                     },
@@ -693,7 +689,6 @@
                             backgroundColor: data.supplier_skills.labels.map(function(_, index) {
                                 return getGradientColor(chartColors.gradients[index % chartColors.gradients.length]);
                             }),
-                            borderColor: 'transparent',
                             borderWidth: 0,
                             borderRadius: 8
                         }]
@@ -736,7 +731,6 @@
                             backgroundColor: data.skill_suppliers.labels.map(function(_, index) {
                                 return getGradientColor(chartColors.gradients[index % chartColors.gradients.length]);
                             }),
-                            borderColor: 'transparent',
                             borderWidth: 0
                         }]
                     },
