@@ -3804,8 +3804,8 @@ body.ktpwp-modal-open {
     box-shadow: 0 0 0 2px rgba(244, 67, 54, 0.2);
 }
 
-/* --- モバイル横スクロール対応: コスト・請求テーブル --- */
-@media (max-width: 768px) {
+/* --- タブレット以下の横スクロール対応: コスト・請求テーブル --- */
+@media (max-width: 1024px) {
   .cost-items-scroll-wrapper,
   .invoice-items-scroll-wrapper {
     overflow-x: auto;
@@ -3816,7 +3816,7 @@ body.ktpwp-modal-open {
   }
   .cost-items-scroll-wrapper .cost-items-table,
   .invoice-items-scroll-wrapper .invoice-items-table {
-    min-width: 600px;
+    min-width: 760px;
     width: max-content;
   }
 }
