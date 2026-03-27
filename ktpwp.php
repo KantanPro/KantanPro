@@ -4124,11 +4124,11 @@ function KTPWP_Index() {
                             $link_url = isset( $central_banner_options['link_url'] ) ? esc_url( $central_banner_options['link_url'] ) : '';
                             $alt_text = isset( $central_banner_options['alt_text'] ) ? esc_attr( $central_banner_options['alt_text'] ) : '';
                             $target   = ' target="_blank" rel="noopener noreferrer"';
-                            $image_tag = '<img src="' . $image_url . '" alt="' . $alt_text . '" style="max-width:50%;height:auto;" />';
+                            $image_tag = '<img src="' . $image_url . '" alt="' . $alt_text . '" style="width:100%;max-width:100%;height:auto;display:block;vertical-align:top;" />';
                             if ( '' !== $link_url ) {
-                                $before_header_banner = '<div class="ktp-banner ktp-banner-fallback"><a href="' . $link_url . '"' . $target . '>' . $image_tag . '</a></div>';
+                                $before_header_banner = '<div class="ktp-banner ktp-banner-fallback" style="width:100%;max-width:100%;box-sizing:border-box;"><a href="' . $link_url . '"' . $target . ' style="display:block;width:100%;line-height:0;">' . $image_tag . '</a></div>';
                             } else {
-                                $before_header_banner = '<div class="ktp-banner ktp-banner-fallback">' . $image_tag . '</div>';
+                                $before_header_banner = '<div class="ktp-banner ktp-banner-fallback" style="width:100%;max-width:100%;box-sizing:border-box;">' . $image_tag . '</div>';
                             }
                         }
                     }
@@ -4141,11 +4141,11 @@ function KTPWP_Index() {
                             $link_url = isset( $ktp_banner_options['link_url'] ) ? esc_url( $ktp_banner_options['link_url'] ) : '';
                             $alt_text = isset( $ktp_banner_options['alt_text'] ) ? esc_attr( $ktp_banner_options['alt_text'] ) : '';
                             $target   = ! empty( $ktp_banner_options['open_new_tab'] ) ? ' target="_blank" rel="noopener noreferrer"' : '';
-                            $image_tag = '<img src="' . $image_url . '" alt="' . $alt_text . '" style="max-width:50%;height:auto;" />';
+                            $image_tag = '<img src="' . $image_url . '" alt="' . $alt_text . '" style="width:100%;max-width:100%;height:auto;display:block;vertical-align:top;" />';
                             if ( '' !== $link_url ) {
-                                $before_header_banner = '<div class="ktp-banner ktp-banner-fallback"><a href="' . $link_url . '"' . $target . '>' . $image_tag . '</a></div>';
+                                $before_header_banner = '<div class="ktp-banner ktp-banner-fallback" style="width:100%;max-width:100%;box-sizing:border-box;"><a href="' . $link_url . '"' . $target . ' style="display:block;width:100%;line-height:0;">' . $image_tag . '</a></div>';
                             } else {
-                                $before_header_banner = '<div class="ktp-banner ktp-banner-fallback">' . $image_tag . '</div>';
+                                $before_header_banner = '<div class="ktp-banner ktp-banner-fallback" style="width:100%;max-width:100%;box-sizing:border-box;">' . $image_tag . '</div>';
                             }
                         }
                     }
@@ -4153,7 +4153,7 @@ function KTPWP_Index() {
             }
 
             if ( ! empty( $before_header_banner ) ) {
-                $before_header_banner = '<div class="ktp-before-header-banner" style="text-align:center;margin:0;">' . wp_kses_post( $before_header_banner ) . '</div>';
+                $before_header_banner = '<div class="ktp-before-header-banner" style="width:100%;max-width:100%;margin:0;text-align:center;box-sizing:border-box;">' . wp_kses_post( $before_header_banner ) . '</div>';
             }
 
             $return_value = $before_header_banner . $front_message . $tab_view;

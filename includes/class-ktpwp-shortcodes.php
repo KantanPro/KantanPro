@@ -136,7 +136,7 @@ class KTPWP_Shortcodes {
             }
 
             if ( ! empty( $before_header_content ) ) {
-                echo '<div class="ktp-before-header-banner" style="text-align:center;margin:0;">';
+                echo '<div class="ktp-before-header-banner" style="width:100%;max-width:100%;margin:0;text-align:center;box-sizing:border-box;">';
                 echo wp_kses_post( $before_header_content );
                 echo '</div>';
             }
@@ -181,12 +181,12 @@ class KTPWP_Shortcodes {
         $alt_text = isset( $options['alt_text'] ) ? esc_attr( $options['alt_text'] ) : '';
         $target   = ! empty( $options['open_new_tab'] ) ? ' target="_blank" rel="noopener noreferrer"' : '';
 
-        $image_tag = '<img src="' . $image_url . '" alt="' . $alt_text . '" style="max-width:50%;height:auto;" />';
+        $image_tag = '<img src="' . $image_url . '" alt="' . $alt_text . '" style="width:100%;max-width:100%;height:auto;display:block;vertical-align:top;" />';
         if ( '' !== $link_url ) {
-            return '<div class="ktp-banner ktp-banner-fallback"><a href="' . $link_url . '"' . $target . '>' . $image_tag . '</a></div>';
+            return '<div class="ktp-banner ktp-banner-fallback" style="width:100%;max-width:100%;box-sizing:border-box;"><a href="' . $link_url . '"' . $target . ' style="display:block;width:100%;line-height:0;">' . $image_tag . '</a></div>';
         }
 
-        return '<div class="ktp-banner ktp-banner-fallback">' . $image_tag . '</div>';
+        return '<div class="ktp-banner ktp-banner-fallback" style="width:100%;max-width:100%;box-sizing:border-box;">' . $image_tag . '</div>';
     }
 
     /**
