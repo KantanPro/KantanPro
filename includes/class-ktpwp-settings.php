@@ -262,6 +262,7 @@ class KTPWP_Settings {
     private function __construct() {
         add_action( 'admin_menu', array( $this, 'add_plugin_page' ) );
         add_action( 'admin_init', array( $this, 'page_init' ) );
+        add_action( 'rest_api_init', array( $this, 'register_central_banner_rest_route' ) );
         add_action( 'phpmailer_init', array( $this, 'setup_smtp_settings' ) );
         add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_styles' ) );
         add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_media_scripts' ) );
@@ -717,7 +718,7 @@ class KTPWP_Settings {
 		);
 
         // サブメニュー - 開発者設定（開発モード時のみ登録）
-        if ( defined( 'KTPWP_DEVELOPMENT_MODE' ) && KTPWP_DEVELOPMENT_MODE ) {
+        if ( $this->is_developer_settings_enabled() ) {
             add_submenu_page(
                 'ktp-settings', // 親メニューのスラッグ
                 __( '開発者設定', 'ktpwp' ), // ページタイトル
@@ -1205,9 +1206,8 @@ class KTPWP_Settings {
         }
 
         // 開発モードが無効な場合は表示しない（二重ガード）
-        if ( ! ( defined( 'KTPWP_DEVELOPMENT_MODE' ) && KTPWP_DEVELOPMENT_MODE ) ) {
-            echo '<div class="notice notice-warning"><p>' . esc_html__( 'このページは現在無効化されています。', 'ktpwp' ) . '</p></div>';
-            return;
+        if ( ! $this->is_developer_settings_enabled() ) {
+            wp_die( esc_html__( 'この設定ページは開発モードでのみアクセスできます。', 'ktpwp' ) );
         }
 
         // 現在のタブを取得
@@ -1262,6 +1262,17 @@ class KTPWP_Settings {
                     <div class="ktp-settings-section">
                         <?php $this->render_development_environment_tab(); ?>
                     </div>
+                <?php elseif ( $current_tab === 'banner' ) : ?>
+                    <!-- 中央バナー設定 -->
+                    <div class="ktp-settings-section">
+                        <form method="post" action="options.php">
+                        <?php
+                        settings_fields( 'ktp_central_banner_group' );
+                        do_settings_sections( 'ktp-central-banner-settings' );
+                        submit_button();
+                        ?>
+                        </form>
+                    </div>
                 <?php endif; ?>
             </div>
         </div>
@@ -1288,6 +1299,10 @@ class KTPWP_Settings {
             'development' => array(
                 'name' => __( '開発環境', 'ktpwp' ),
                 'icon' => 'dashicons-admin-tools',
+            ),
+            'banner' => array(
+                'name' => __( '中央バナー設定', 'ktpwp' ),
+                'icon' => 'dashicons-format-image',
             ),
         );
 
@@ -2699,6 +2714,11 @@ class KTPWP_Settings {
                 )
             )
         );
+        register_setting(
+            'ktp_central_banner_group',
+            'ktp_central_banner_settings',
+            array( $this, 'sanitize_central_banner_settings' )
+        );
 
         // 寄付設定のオプションページを許可リストに追加（後方互換性を保つ）
         add_filter( 'allowed_options', array( $this, 'add_donation_settings_to_whitelist' ) );
@@ -2977,6 +2997,26 @@ class KTPWP_Settings {
             array( $this, 'github_token_callback' ),
             'ktp-developer-settings',
             'update_notification_setting_section'
+        );
+        add_settings_section(
+            'central_banner_setting_section',
+            __( '中央バナー配信設定', 'ktpwp' ),
+            array( $this, 'print_central_banner_section_info' ),
+            'ktp-central-banner-settings'
+        );
+        add_settings_field(
+            'banner_enabled',
+            __( '配信有効化', 'ktpwp' ),
+            array( $this, 'central_banner_enabled_callback' ),
+            'ktp-central-banner-settings',
+            'central_banner_setting_section'
+        );
+        add_settings_field(
+            'banner_source_url',
+            __( '外部参照URL（JSON）', 'ktpwp' ),
+            array( $this, 'central_banner_source_url_callback' ),
+            'ktp-central-banner-settings',
+            'central_banner_setting_section'
         );
 
         // メール設定セクション
@@ -5089,6 +5129,137 @@ define( 'WP_DEBUG_DISPLAY', false );
         $sanitized['github_token'] = isset( $input['github_token'] ) ? sanitize_text_field( $input['github_token'] ) : '';
         
         return $sanitized;
+    }
+
+    /**
+     * 開発者設定画面を表示可能か判定
+     *
+     * @return bool
+     */
+    private function is_developer_settings_enabled() {
+        return ( defined( 'KTPWP_DEVELOPMENT_MODE' ) && KTPWP_DEVELOPMENT_MODE ) ||
+               ( defined( 'KANTANPRO_DEV_MODE' ) && KANTANPRO_DEV_MODE ) ||
+               $this->is_development_environment();
+    }
+
+    /**
+     * 中央バナー設定セクションの説明
+     *
+     * @return void
+     */
+    public function print_central_banner_section_info() {
+        echo '<p>' . esc_html__( 'ここで設定した内容は、KantanPro配布先へ配信する共通バナー情報として利用します。', 'ktpwp' ) . '</p>';
+    }
+
+    /**
+     * 中央バナー設定の取得
+     *
+     * @return array
+     */
+    private function get_central_banner_settings() {
+        $defaults = array(
+            'enabled'    => 0,
+            'source_url' => '',
+        );
+
+        $settings = get_option( 'ktp_central_banner_settings', array() );
+        if ( ! is_array( $settings ) ) {
+            $settings = array();
+        }
+
+        return wp_parse_args( $settings, $defaults );
+    }
+
+    /**
+     * 中央バナー設定のサニタイズ
+     *
+     * @param array $input 入力値
+     * @return array
+     */
+    public function sanitize_central_banner_settings( $input ) {
+        $sanitized = array();
+        $sanitized['enabled']    = isset( $input['enabled'] ) ? 1 : 0;
+        $sanitized['source_url'] = isset( $input['source_url'] ) ? esc_url_raw( $input['source_url'] ) : '';
+
+        return $sanitized;
+    }
+
+    /**
+     * 中央バナー配信有効化フィールド
+     *
+     * @return void
+     */
+    public function central_banner_enabled_callback() {
+        $settings = $this->get_central_banner_settings();
+        ?>
+        <label>
+            <input type="checkbox" name="ktp_central_banner_settings[enabled]" value="1" <?php checked( 1, (int) $settings['enabled'] ); ?> />
+            <?php esc_html_e( '中央バナー配信を有効にする', 'ktpwp' ); ?>
+        </label>
+        <?php
+    }
+
+    /**
+     * 中央バナー外部参照URLフィールド
+     *
+     * @return void
+     */
+    public function central_banner_source_url_callback() {
+        $settings = $this->get_central_banner_settings();
+        ?>
+        <input type="url" class="regular-text" name="ktp_central_banner_settings[source_url]" value="<?php echo esc_attr( $settings['source_url'] ); ?>" placeholder="https://example.com/banner.json" />
+        <p class="description">
+            <?php esc_html_e( '設定すると、このURLのJSONを優先してバナー表示に使用します。JSON例: {"enabled":true,"image_url":"https://...","link_url":"https://...","alt_text":"..."}', 'ktpwp' ); ?>
+        </p>
+        <?php
+    }
+
+    /**
+     * 中央バナー配信用 REST API ルートを登録
+     *
+     * @return void
+     */
+    public function register_central_banner_rest_route() {
+        register_rest_route(
+            'kantanpro/v1',
+            '/central-banner',
+            array(
+                'methods'             => WP_REST_Server::READABLE,
+                'callback'            => array( $this, 'get_central_banner_rest_response' ),
+                'permission_callback' => '__return_true',
+            )
+        );
+    }
+
+    /**
+     * 中央バナー設定を REST で返す
+     *
+     * @return WP_REST_Response
+     */
+    public function get_central_banner_rest_response() {
+        $settings = $this->get_central_banner_settings();
+        $legacy_banner = get_option( 'ktp_banner_options', array() );
+
+        $image_url = '';
+        $link_url  = '';
+        $alt_text  = '';
+
+        // 配布元にktp-bannerがある場合は、そちらの設定値を優先配信
+        if ( is_array( $legacy_banner ) && ! empty( $legacy_banner['image_url'] ) ) {
+            $image_url = esc_url_raw( $legacy_banner['image_url'] );
+            $link_url  = isset( $legacy_banner['link_url'] ) ? esc_url_raw( $legacy_banner['link_url'] ) : '';
+            $alt_text  = isset( $legacy_banner['alt_text'] ) ? sanitize_text_field( $legacy_banner['alt_text'] ) : '';
+        }
+
+        $payload = array(
+            'enabled'   => ! empty( $settings['enabled'] ),
+            'image_url' => $image_url,
+            'link_url'  => $link_url,
+            'alt_text'  => $alt_text,
+            'updated_at'=> current_time( 'mysql' ),
+        );
+
+        return rest_ensure_response( $payload );
     }
 
 }

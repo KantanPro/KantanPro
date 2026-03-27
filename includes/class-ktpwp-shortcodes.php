@@ -155,12 +155,19 @@ class KTPWP_Shortcodes {
     }
 
     /**
-     * KTP Bannerプラグインの保存値からバナーHTMLを生成する最終フォールバック。
+     * 設定値からバナーHTMLを生成する最終フォールバック。
+     * 優先順位:
+     * 1) KantanPro本体の中央バナー設定
+     * 2) 互換のための ktp-banner プラグイン設定
      *
      * @return string
      */
     private function render_ktp_banner_from_option() {
-        $options = get_option( 'ktp_banner_options', array() );
+        $options = $this->get_central_banner_options();
+        if ( empty( $options ) ) {
+            $options = $this->get_legacy_banner_options();
+        }
+
         if ( empty( $options ) || empty( $options['enabled'] ) ) {
             return '';
         }
@@ -180,6 +187,100 @@ class KTPWP_Shortcodes {
         }
 
         return '<div class="ktp-banner ktp-banner-fallback">' . $image_tag . '</div>';
+    }
+
+    /**
+     * KantanPro本体の中央バナー設定を取得
+     *
+     * @return array
+     */
+    private function get_central_banner_options() {
+        $options = get_option( 'ktp_central_banner_settings', array() );
+        if ( ! is_array( $options ) ) {
+            return array();
+        }
+
+        // 外部参照URLが設定されている場合はそちらを優先して取得
+        if ( ! empty( $options['source_url'] ) ) {
+            $remote_options = $this->fetch_remote_central_banner_options( $options['source_url'] );
+            if ( ! empty( $remote_options ) ) {
+                return $remote_options;
+            }
+        }
+
+        return array(
+            'enabled'      => ! empty( $options['enabled'] ) ? 1 : 0,
+            'image_url'    => isset( $options['image_url'] ) ? $options['image_url'] : '',
+            'link_url'     => isset( $options['link_url'] ) ? $options['link_url'] : '',
+            'alt_text'     => isset( $options['alt_text'] ) ? $options['alt_text'] : '',
+            'open_new_tab' => 1,
+        );
+    }
+
+    /**
+     * 外部URLから中央バナー設定を取得
+     *
+     * @param string $source_url JSON取得先URL
+     * @return array
+     */
+    private function fetch_remote_central_banner_options( $source_url ) {
+        $source_url = esc_url_raw( $source_url );
+        if ( '' === $source_url ) {
+            return array();
+        }
+
+        $cache_key = 'ktp_central_banner_remote_' . md5( $source_url );
+        $cached    = get_transient( $cache_key );
+        if ( is_array( $cached ) ) {
+            return $cached;
+        }
+
+        $response = wp_remote_get(
+            $source_url,
+            array(
+                'timeout' => 5,
+            )
+        );
+        if ( is_wp_error( $response ) ) {
+            return array();
+        }
+
+        $status_code = wp_remote_retrieve_response_code( $response );
+        $body        = wp_remote_retrieve_body( $response );
+        if ( 200 !== (int) $status_code || '' === $body ) {
+            return array();
+        }
+
+        $json = json_decode( $body, true );
+        if ( ! is_array( $json ) ) {
+            return array();
+        }
+
+        $normalized = array(
+            'enabled'      => ! empty( $json['enabled'] ) ? 1 : 0,
+            'image_url'    => isset( $json['image_url'] ) ? esc_url_raw( $json['image_url'] ) : '',
+            'link_url'     => isset( $json['link_url'] ) ? esc_url_raw( $json['link_url'] ) : '',
+            'alt_text'     => isset( $json['alt_text'] ) ? sanitize_text_field( $json['alt_text'] ) : '',
+            'open_new_tab' => 1,
+        );
+
+        // 短時間キャッシュして配布先へのHTTP負荷を抑える
+        set_transient( $cache_key, $normalized, 5 * MINUTE_IN_SECONDS );
+
+        return $normalized;
+    }
+
+    /**
+     * 互換目的で ktp-banner プラグイン設定を取得
+     *
+     * @return array
+     */
+    private function get_legacy_banner_options() {
+        $options = get_option( 'ktp_banner_options', array() );
+        if ( ! is_array( $options ) ) {
+            return array();
+        }
+        return $options;
     }
 
     /**

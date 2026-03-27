@@ -3,7 +3,7 @@
  * Plugin Name: KantanPro
  * Plugin URI: https://www.kantanpro.com/
  * Description: フリーランス・スモールビジネス向けの仕事効率化システム。ショートコード[ktpwp_all_tab]を固定ページに設置してください。
- * Version: 1.2.33
+ * Version: 1.2.34
  * Author: KantanPro
  * Author URI: https://www.kantanpro.com/kantanpro-page
  * License: GPL v2 or later
@@ -4078,18 +4078,75 @@ function KTPWP_Index() {
             }
 
             if ( empty( $before_header_banner ) ) {
-                $ktp_banner_options = get_option( 'ktp_banner_options', array() );
-                if ( ! empty( $ktp_banner_options ) && ! empty( $ktp_banner_options['enabled'] ) ) {
-                    $image_url = isset( $ktp_banner_options['image_url'] ) ? esc_url( $ktp_banner_options['image_url'] ) : '';
-                    if ( '' !== $image_url ) {
-                        $link_url = isset( $ktp_banner_options['link_url'] ) ? esc_url( $ktp_banner_options['link_url'] ) : '';
-                        $alt_text = isset( $ktp_banner_options['alt_text'] ) ? esc_attr( $ktp_banner_options['alt_text'] ) : '';
-                        $target   = ! empty( $ktp_banner_options['open_new_tab'] ) ? ' target="_blank" rel="noopener noreferrer"' : '';
-                        $image_tag = '<img src="' . $image_url . '" alt="' . $alt_text . '" style="max-width:50%;height:auto;" />';
-                        if ( '' !== $link_url ) {
-                            $before_header_banner = '<div class="ktp-banner ktp-banner-fallback"><a href="' . $link_url . '"' . $target . '>' . $image_tag . '</a></div>';
-                        } else {
-                            $before_header_banner = '<div class="ktp-banner ktp-banner-fallback">' . $image_tag . '</div>';
+                // 1) KantanPro本体の中央バナー設定を優先
+                $central_banner_options = get_option( 'ktp_central_banner_settings', array() );
+                $has_central_banner_settings = is_array( $central_banner_options ) && ! empty( $central_banner_options );
+
+                if ( $has_central_banner_settings ) {
+                    // 外部参照URLが設定されている場合はそちらを優先
+                    if ( ! empty( $central_banner_options['source_url'] ) ) {
+                        $source_url = esc_url_raw( $central_banner_options['source_url'] );
+                        $cache_key  = 'ktp_central_banner_remote_' . md5( $source_url );
+                        $remote     = get_transient( $cache_key );
+
+                        if ( ! is_array( $remote ) ) {
+                            $response = wp_remote_get(
+                                $source_url,
+                                array(
+                                    'timeout' => 5,
+                                )
+                            );
+                            if ( ! is_wp_error( $response ) && 200 === (int) wp_remote_retrieve_response_code( $response ) ) {
+                                $json = json_decode( wp_remote_retrieve_body( $response ), true );
+                                if ( is_array( $json ) ) {
+                                    $remote = array(
+                                        'enabled'   => ! empty( $json['enabled'] ) ? 1 : 0,
+                                        'image_url' => isset( $json['image_url'] ) ? esc_url_raw( $json['image_url'] ) : '',
+                                        'link_url'  => isset( $json['link_url'] ) ? esc_url_raw( $json['link_url'] ) : '',
+                                        'alt_text'  => isset( $json['alt_text'] ) ? sanitize_text_field( $json['alt_text'] ) : '',
+                                    );
+                                    set_transient( $cache_key, $remote, 5 * MINUTE_IN_SECONDS );
+                                }
+                            }
+                        }
+
+                        if ( is_array( $remote ) && ! empty( $remote ) ) {
+                            $central_banner_options['enabled']   = ! empty( $remote['enabled'] ) ? 1 : 0;
+                            $central_banner_options['image_url'] = isset( $remote['image_url'] ) ? $remote['image_url'] : '';
+                            $central_banner_options['link_url']  = isset( $remote['link_url'] ) ? $remote['link_url'] : '';
+                            $central_banner_options['alt_text']  = isset( $remote['alt_text'] ) ? $remote['alt_text'] : '';
+                        }
+                    }
+
+                    if ( ! empty( $central_banner_options['enabled'] ) ) {
+                        $image_url = isset( $central_banner_options['image_url'] ) ? esc_url( $central_banner_options['image_url'] ) : '';
+                        if ( '' !== $image_url ) {
+                            $link_url = isset( $central_banner_options['link_url'] ) ? esc_url( $central_banner_options['link_url'] ) : '';
+                            $alt_text = isset( $central_banner_options['alt_text'] ) ? esc_attr( $central_banner_options['alt_text'] ) : '';
+                            $target   = ' target="_blank" rel="noopener noreferrer"';
+                            $image_tag = '<img src="' . $image_url . '" alt="' . $alt_text . '" style="max-width:50%;height:auto;" />';
+                            if ( '' !== $link_url ) {
+                                $before_header_banner = '<div class="ktp-banner ktp-banner-fallback"><a href="' . $link_url . '"' . $target . '>' . $image_tag . '</a></div>';
+                            } else {
+                                $before_header_banner = '<div class="ktp-banner ktp-banner-fallback">' . $image_tag . '</div>';
+                            }
+                        }
+                    }
+                } else {
+                    // 2) 互換性のため、中央設定が未作成の場合のみ旧ktp-banner設定を参照
+                    $ktp_banner_options = get_option( 'ktp_banner_options', array() );
+                    if ( ! empty( $ktp_banner_options ) && ! empty( $ktp_banner_options['enabled'] ) ) {
+                        $image_url = isset( $ktp_banner_options['image_url'] ) ? esc_url( $ktp_banner_options['image_url'] ) : '';
+                        if ( '' !== $image_url ) {
+                            $link_url = isset( $ktp_banner_options['link_url'] ) ? esc_url( $ktp_banner_options['link_url'] ) : '';
+                            $alt_text = isset( $ktp_banner_options['alt_text'] ) ? esc_attr( $ktp_banner_options['alt_text'] ) : '';
+                            $target   = ! empty( $ktp_banner_options['open_new_tab'] ) ? ' target="_blank" rel="noopener noreferrer"' : '';
+                            $image_tag = '<img src="' . $image_url . '" alt="' . $alt_text . '" style="max-width:50%;height:auto;" />';
+                            if ( '' !== $link_url ) {
+                                $before_header_banner = '<div class="ktp-banner ktp-banner-fallback"><a href="' . $link_url . '"' . $target . '>' . $image_tag . '</a></div>';
+                            } else {
+                                $before_header_banner = '<div class="ktp-banner ktp-banner-fallback">' . $image_tag . '</div>';
+                            }
                         }
                     }
                 }
