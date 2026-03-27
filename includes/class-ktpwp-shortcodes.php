@@ -121,6 +121,26 @@ class KTPWP_Shortcodes {
             $header_content = $this->get_header_content();
             $tab_content = $this->get_tab_content();
 
+            // KantanProロゴヘッダーの上に外部プラグイン（例: ktp-banner）差し込み領域を用意
+            ob_start();
+            do_action( 'ktpwp_between_pagination_footer' );
+            $before_header_content = ob_get_clean();
+
+            // フック未登録時の互換フォールバック: ショートコード直接描画
+            if ( empty( $before_header_content ) && shortcode_exists( 'ktp_banner' ) ) {
+                $before_header_content = do_shortcode( '[ktp_banner]' );
+            }
+            // さらに空の場合はオプション値から直接描画（最終フォールバック）
+            if ( empty( $before_header_content ) ) {
+                $before_header_content = $this->render_ktp_banner_from_option();
+            }
+
+            if ( ! empty( $before_header_content ) ) {
+                echo '<div class="ktp-before-header-banner" style="text-align:center;margin:0;">';
+                echo wp_kses_post( $before_header_content );
+                echo '</div>';
+            }
+
             echo $header_content . $tab_content; // バッファに出力
 
         } catch (Exception $e) {
@@ -132,6 +152,34 @@ class KTPWP_Shortcodes {
 
         echo '</div>'; // コンテナ終了
         return ob_get_clean(); // バッファの内容を取得して返す
+    }
+
+    /**
+     * KTP Bannerプラグインの保存値からバナーHTMLを生成する最終フォールバック。
+     *
+     * @return string
+     */
+    private function render_ktp_banner_from_option() {
+        $options = get_option( 'ktp_banner_options', array() );
+        if ( empty( $options ) || empty( $options['enabled'] ) ) {
+            return '';
+        }
+
+        $image_url = isset( $options['image_url'] ) ? esc_url( $options['image_url'] ) : '';
+        if ( '' === $image_url ) {
+            return '';
+        }
+
+        $link_url = isset( $options['link_url'] ) ? esc_url( $options['link_url'] ) : '';
+        $alt_text = isset( $options['alt_text'] ) ? esc_attr( $options['alt_text'] ) : '';
+        $target   = ! empty( $options['open_new_tab'] ) ? ' target="_blank" rel="noopener noreferrer"' : '';
+
+        $image_tag = '<img src="' . $image_url . '" alt="' . $alt_text . '" style="max-width:50%;height:auto;" />';
+        if ( '' !== $link_url ) {
+            return '<div class="ktp-banner ktp-banner-fallback"><a href="' . $link_url . '"' . $target . '>' . $image_tag . '</a></div>';
+        }
+
+        return '<div class="ktp-banner ktp-banner-fallback">' . $image_tag . '</div>';
     }
 
     /**

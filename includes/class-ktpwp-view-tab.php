@@ -111,16 +111,6 @@ EOF;
             </div>
             EOF;
 
-        // ページネーションとフッターの間に外部プラグインの差し込み領域を用意
-        ob_start();
-        do_action( 'ktpwp_between_pagination_footer' );
-        $between_content = ob_get_clean();
-        if ( ! empty( $between_content ) ) {
-            $view .= '<div class="ktp-between-pagination-footer" style="text-align:center;margin:16px 0 8px;">';
-            $view .= wp_kses_post( $between_content );
-            $view .= '</div>';
-        }
-
         // フッターエリアを追加
         $plugin_name = esc_html( KANTANPRO_PLUGIN_NAME );
         $plugin_version = esc_html( KANTANPRO_PLUGIN_VERSION );

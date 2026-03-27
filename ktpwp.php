@@ -4067,7 +4067,39 @@ function KTPWP_Index() {
             // view
             $view = new KTPWP_View_Tabs_Class();
             $tab_view = $view->TabsView( $list_content, $order_content, $client_content, $service_content, $supplier_content, $report_content );
-            $return_value = $front_message . $tab_view;
+            // ヘッダー（ロゴ）より上にバナーを表示（フック/ショートコード/オプション直接の順で取得）
+            $before_header_banner = '';
+            ob_start();
+            do_action( 'ktpwp_between_pagination_footer' );
+            $before_header_banner = ob_get_clean();
+
+            if ( empty( $before_header_banner ) && shortcode_exists( 'ktp_banner' ) ) {
+                $before_header_banner = do_shortcode( '[ktp_banner]' );
+            }
+
+            if ( empty( $before_header_banner ) ) {
+                $ktp_banner_options = get_option( 'ktp_banner_options', array() );
+                if ( ! empty( $ktp_banner_options ) && ! empty( $ktp_banner_options['enabled'] ) ) {
+                    $image_url = isset( $ktp_banner_options['image_url'] ) ? esc_url( $ktp_banner_options['image_url'] ) : '';
+                    if ( '' !== $image_url ) {
+                        $link_url = isset( $ktp_banner_options['link_url'] ) ? esc_url( $ktp_banner_options['link_url'] ) : '';
+                        $alt_text = isset( $ktp_banner_options['alt_text'] ) ? esc_attr( $ktp_banner_options['alt_text'] ) : '';
+                        $target   = ! empty( $ktp_banner_options['open_new_tab'] ) ? ' target="_blank" rel="noopener noreferrer"' : '';
+                        $image_tag = '<img src="' . $image_url . '" alt="' . $alt_text . '" style="max-width:50%;height:auto;" />';
+                        if ( '' !== $link_url ) {
+                            $before_header_banner = '<div class="ktp-banner ktp-banner-fallback"><a href="' . $link_url . '"' . $target . '>' . $image_tag . '</a></div>';
+                        } else {
+                            $before_header_banner = '<div class="ktp-banner ktp-banner-fallback">' . $image_tag . '</div>';
+                        }
+                    }
+                }
+            }
+
+            if ( ! empty( $before_header_banner ) ) {
+                $before_header_banner = '<div class="ktp-before-header-banner" style="text-align:center;margin:0;">' . wp_kses_post( $before_header_banner ) . '</div>';
+            }
+
+            $return_value = $before_header_banner . $front_message . $tab_view;
             return $return_value;
 
         } else {
