@@ -3018,6 +3018,27 @@ class KTPWP_Settings {
             'ktp-central-banner-settings',
             'central_banner_setting_section'
         );
+        add_settings_field(
+            'banner_image_url',
+            __( '配布用バナー画像URL', 'ktpwp' ),
+            array( $this, 'central_banner_image_url_callback' ),
+            'ktp-central-banner-settings',
+            'central_banner_setting_section'
+        );
+        add_settings_field(
+            'banner_link_url',
+            __( '配布用バナーリンクURL', 'ktpwp' ),
+            array( $this, 'central_banner_link_url_callback' ),
+            'ktp-central-banner-settings',
+            'central_banner_setting_section'
+        );
+        add_settings_field(
+            'banner_alt_text',
+            __( '配布用代替テキスト', 'ktpwp' ),
+            array( $this, 'central_banner_alt_text_callback' ),
+            'ktp-central-banner-settings',
+            'central_banner_setting_section'
+        );
 
         // メール設定セクション
         add_settings_section(
@@ -5149,6 +5170,7 @@ define( 'WP_DEBUG_DISPLAY', false );
      */
     public function print_central_banner_section_info() {
         echo '<p>' . esc_html__( 'ここで設定した内容は、KantanPro配布先へ配信する共通バナー情報として利用します。', 'ktpwp' ) . '</p>';
+        echo '<p>' . esc_html__( '配布先では「外部参照URL」が空でも、公式サイトの既定バナー JSON を自動取得します（各サイトへの個別設定は不要です）。表示を止める場合は開発者設定の配信有効をオフにするか、テーマの functions.php 等でフィルター kantanpro_auto_fetch_official_central_banner を false にしてください。', 'ktpwp' ) . '</p>';
     }
 
     /**
@@ -5160,6 +5182,9 @@ define( 'WP_DEBUG_DISPLAY', false );
         $defaults = array(
             'enabled'    => 0,
             'source_url' => '',
+            'image_url'  => '',
+            'link_url'   => '',
+            'alt_text'   => '',
         );
 
         $settings = get_option( 'ktp_central_banner_settings', array() );
@@ -5177,9 +5202,16 @@ define( 'WP_DEBUG_DISPLAY', false );
      * @return array
      */
     public function sanitize_central_banner_settings( $input ) {
+        if ( ! is_array( $input ) ) {
+            $input = array();
+        }
+
         $sanitized = array();
         $sanitized['enabled']    = isset( $input['enabled'] ) ? 1 : 0;
         $sanitized['source_url'] = isset( $input['source_url'] ) ? esc_url_raw( $input['source_url'] ) : '';
+        $sanitized['image_url']  = isset( $input['image_url'] ) ? esc_url_raw( $input['image_url'] ) : '';
+        $sanitized['link_url']   = isset( $input['link_url'] ) ? esc_url_raw( $input['link_url'] ) : '';
+        $sanitized['alt_text']   = isset( $input['alt_text'] ) ? sanitize_text_field( $input['alt_text'] ) : '';
 
         return $sanitized;
     }
@@ -5215,6 +5247,43 @@ define( 'WP_DEBUG_DISPLAY', false );
     }
 
     /**
+     * 配布用バナー画像URL（KTP Banner 未使用の配布元向け）
+     *
+     * @return void
+     */
+    public function central_banner_image_url_callback() {
+        $settings = $this->get_central_banner_settings();
+        ?>
+        <input type="url" class="regular-text" name="ktp_central_banner_settings[image_url]" value="<?php echo esc_attr( $settings['image_url'] ); ?>" placeholder="https://example.com/banner.png" />
+        <p class="description"><?php esc_html_e( 'KTP Banner プラグインで画像を設定している場合はそちらが優先されます。未使用のときは REST 配信にこの URL が使われます。', 'ktpwp' ); ?></p>
+        <?php
+    }
+
+    /**
+     * 配布用バナーリンクURL
+     *
+     * @return void
+     */
+    public function central_banner_link_url_callback() {
+        $settings = $this->get_central_banner_settings();
+        ?>
+        <input type="url" class="regular-text" name="ktp_central_banner_settings[link_url]" value="<?php echo esc_attr( $settings['link_url'] ); ?>" placeholder="https://example.com/" />
+        <?php
+    }
+
+    /**
+     * 配布用代替テキスト
+     *
+     * @return void
+     */
+    public function central_banner_alt_text_callback() {
+        $settings = $this->get_central_banner_settings();
+        ?>
+        <input type="text" class="regular-text" name="ktp_central_banner_settings[alt_text]" value="<?php echo esc_attr( $settings['alt_text'] ); ?>" />
+        <?php
+    }
+
+    /**
      * 中央バナー配信用 REST API ルートを登録
      *
      * @return void
@@ -5244,11 +5313,16 @@ define( 'WP_DEBUG_DISPLAY', false );
         $link_url  = '';
         $alt_text  = '';
 
-        // 配布元にktp-bannerがある場合は、そちらの設定値を優先配信
+        // 1) 配布元に KTP Banner がある場合は、そちらの設定値を優先配信
         if ( is_array( $legacy_banner ) && ! empty( $legacy_banner['image_url'] ) ) {
             $image_url = esc_url_raw( $legacy_banner['image_url'] );
             $link_url  = isset( $legacy_banner['link_url'] ) ? esc_url_raw( $legacy_banner['link_url'] ) : '';
             $alt_text  = isset( $legacy_banner['alt_text'] ) ? sanitize_text_field( $legacy_banner['alt_text'] ) : '';
+        } elseif ( ! empty( $settings['image_url'] ) ) {
+            // 2) KTP Banner なし: 中央バナー設定に保存した配布用画像・リンクを返す（配布先で表示される）
+            $image_url = esc_url_raw( $settings['image_url'] );
+            $link_url  = isset( $settings['link_url'] ) ? esc_url_raw( $settings['link_url'] ) : '';
+            $alt_text  = isset( $settings['alt_text'] ) ? sanitize_text_field( $settings['alt_text'] ) : '';
         }
 
         $payload = array(

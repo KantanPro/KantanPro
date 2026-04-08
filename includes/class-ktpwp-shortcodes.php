@@ -155,6 +155,15 @@ class KTPWP_Shortcodes {
     }
 
     /**
+     * フック・[ktp_banner] 経由が空のときのバナー HTML（ktpwp.php の kantanAllTab からも利用）
+     *
+     * @return string
+     */
+    public function get_banner_fallback_html_after_hooks() {
+        return $this->render_ktp_banner_from_option();
+    }
+
+    /**
      * 設定値からバナーHTMLを生成する最終フォールバック。
      * 優先順位:
      * 1) KantanPro本体の中央バナー設定
@@ -190,21 +199,50 @@ class KTPWP_Shortcodes {
     }
 
     /**
-     * KantanPro本体の中央バナー設定を取得
+     * KantanPro本体の中央バナー設定を取得（リモート・公式フォールバック含む）
+     *
+     * 配布先で source_url を空のまま配布する場合、公式サイトの既定 JSON を自動取得する。
+     * 無効化: add_filter( 'kantanpro_auto_fetch_official_central_banner', '__return_false' );
+     * URL 差し替え: add_filter( 'kantanpro_official_central_banner_json_url', function () { return 'https://...'; } );
      *
      * @return array
      */
     private function get_central_banner_options() {
         $options = get_option( 'ktp_central_banner_settings', array() );
         if ( ! is_array( $options ) ) {
-            return array();
+            $options = array();
         }
 
-        // 外部参照URLが設定されている場合はそちらを優先して取得
+        // 1) 明示の外部参照 URL（配布元の REST 等）
         if ( ! empty( $options['source_url'] ) ) {
             $remote_options = $this->fetch_remote_central_banner_options( $options['source_url'] );
-            if ( ! empty( $remote_options ) ) {
+            if ( ! empty( $remote_options['image_url'] ) ) {
                 return $remote_options;
+            }
+        }
+
+        // 2) ローカルに画像があれば（配布先個別・配布元の直接保存）
+        if ( ! empty( $options['image_url'] ) ) {
+            return array(
+                'enabled'      => ! empty( $options['enabled'] ) ? 1 : 0,
+                'image_url'    => $options['image_url'],
+                'link_url'     => isset( $options['link_url'] ) ? $options['link_url'] : '',
+                'alt_text'     => isset( $options['alt_text'] ) ? $options['alt_text'] : '',
+                'open_new_tab' => 1,
+            );
+        }
+
+        // 3) 公式既定 JSON（不特定多数配布で各サイトに source_url を設定できない場合）
+        if ( $this->should_fetch_official_central_banner_feed( $options ) ) {
+            $official_url = apply_filters(
+                'kantanpro_official_central_banner_json_url',
+                'https://www.kantanpro.com/wp-json/kantanpro/v1/central-banner'
+            );
+            if ( is_string( $official_url ) && '' !== $official_url ) {
+                $remote_options = $this->fetch_remote_central_banner_options( $official_url );
+                if ( ! empty( $remote_options['image_url'] ) ) {
+                    return $remote_options;
+                }
             }
         }
 
@@ -215,6 +253,22 @@ class KTPWP_Shortcodes {
             'alt_text'     => isset( $options['alt_text'] ) ? $options['alt_text'] : '',
             'open_new_tab' => 1,
         );
+    }
+
+    /**
+     * 公式サイトの既定バナー JSON を取りに行くか
+     *
+     * @param array $options ktp_central_banner_settings
+     * @return bool
+     */
+    private function should_fetch_official_central_banner_feed( $options ) {
+        if ( ! apply_filters( 'kantanpro_auto_fetch_official_central_banner', true ) ) {
+            return false;
+        }
+        if ( isset( $options['enabled'] ) && (int) $options['enabled'] === 0 ) {
+            return false;
+        }
+        return true;
     }
 
     /**
