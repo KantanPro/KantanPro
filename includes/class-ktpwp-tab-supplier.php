@@ -111,6 +111,11 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 				// Handle skills operations first
 				$this->handle_skills_operations( $_POST );
 
+				// 職能フォームは ktp_skills_nonce のみ。ここで supplier の nonce チェックに進むと wp_die になる
+				if ( ! empty( $_POST['skills_action'] ) ) {
+					return;
+				}
+
 				// Then handle regular supplier data updates
 				$this->supplier_data->update_table( $tab_name, $_POST );
 			} elseif ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {

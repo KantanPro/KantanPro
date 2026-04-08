@@ -13,13 +13,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 global $wpdb;
 
-// 新規インストール判定 - 新規インストール時はスキップ
+// 新規インストール判定 - 新規インストール時は ALTER はスキップ（dbDelta で既に正しいスキーマ）
 if ( class_exists( 'KTPWP_Fresh_Install_Detector' ) ) {
     $fresh_detector = KTPWP_Fresh_Install_Detector::get_instance();
     if ( $fresh_detector->should_skip_migrations() ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Migration: 新規インストール環境のため20250108_fix_invoice_items_columnをスキップ' );
+            error_log( 'KTPWP Migration: 新規インストール環境のため20250108_fix_invoice_items_columnのALTERをスキップ（修復通知は不要のため完了扱い）' );
         }
+        // スキップ時も完了フラグを立てないと、管理画面に「invoice_itemsカラム修正」が永久表示される
+        update_option( 'ktp_order_migration_20250108_invoice_items_completed', true );
+        update_option( 'ktp_order_migration_20250108_invoice_items_timestamp', current_time( 'mysql' ) );
         return;
     }
 }

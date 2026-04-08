@@ -1384,6 +1384,12 @@ function ktpwp_comprehensive_activation() {
         } else {
             set_transient( 'ktpwp_activation_success', 'KantanProプラグインが正常に有効化されました。', 60 );
         }
+
+        // 初回有効化後、最初の管理画面読み込みで KantanPro 設定へ誘導（空白の管理トップを避ける）
+        update_option( 'ktpwp_pending_admin_settings_redirect', true );
+
+        // 固定ページ＋ショートコード利用時の 404 を防ぐため、リライトルールを再生成
+        flush_rewrite_rules( false );
         
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
             error_log( 'KTPWP: 配布環境対応の包括的プラグイン有効化処理が正常に完了' );
@@ -5099,6 +5105,8 @@ function ktpwp_execute_invoice_items_fix() {
             
             // マイグレーション完了時は通知非表示フラグをリセット
             delete_option( 'ktpwp_invoice_items_fix_notification_dismissed' );
+
+            flush_rewrite_rules( false );
         } else {
             throw new Exception( 'マイグレーションファイルが見つかりません: ' . $migration_file );
         }
@@ -5126,6 +5134,59 @@ function ktpwp_dismiss_invoice_items_fix_notification() {
     
     wp_send_json_success( '通知が非表示になりました' );
 }
+
+/**
+ * DB に invoice_items / cost_items 列が既にあるのにマイグレーション完了フラグだけ欠けている場合、修復通知を出さない
+ */
+function ktpwp_sync_invoice_items_migration_notice_flag() {
+    if ( ! is_admin() || wp_doing_ajax() ) {
+        return;
+    }
+    if ( ! current_user_can( 'manage_options' ) ) {
+        return;
+    }
+    if ( get_option( 'ktp_order_migration_20250108_invoice_items_completed', false ) ) {
+        return;
+    }
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'ktp_order';
+    if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) ) !== $table_name ) {
+        return;
+    }
+    $existing_columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$table_name}`", 0 );
+    if ( ! is_array( $existing_columns ) ) {
+        return;
+    }
+    if ( in_array( 'invoice_items', $existing_columns, true ) && in_array( 'cost_items', $existing_columns, true ) ) {
+        update_option( 'ktp_order_migration_20250108_invoice_items_completed', true );
+        update_option( 'ktp_order_migration_20250108_invoice_items_timestamp', current_time( 'mysql' ) );
+    }
+}
+add_action( 'admin_init', 'ktpwp_sync_invoice_items_migration_notice_flag', 5 );
+
+/**
+ * 有効化直後の最初の管理画面読み込みで KantanPro 設定へ誘導
+ */
+function ktpwp_redirect_to_settings_after_first_activation() {
+    if ( ! is_admin() || wp_doing_ajax() ) {
+        return;
+    }
+    if ( ! get_option( 'ktpwp_pending_admin_settings_redirect' ) ) {
+        return;
+    }
+    if ( ! current_user_can( 'manage_options' ) ) {
+        return;
+    }
+    $page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
+    if ( 'ktp-settings' === $page ) {
+        delete_option( 'ktpwp_pending_admin_settings_redirect' );
+        return;
+    }
+    delete_option( 'ktpwp_pending_admin_settings_redirect' );
+    wp_safe_redirect( admin_url( 'admin.php?page=ktp-settings' ) );
+    exit;
+}
+add_action( 'admin_init', 'ktpwp_redirect_to_settings_after_first_activation', 1 );
 
 // ============================================================================
 // キャッシュヘルパー関数
@@ -5787,6 +5848,13 @@ function ktpwp_handle_create_dummy_data_ajax() {
             
             if (defined('WP_DEBUG') && WP_DEBUG) {
                 error_log('KTPWP: ダミーデータ作成成功 - 出力長: ' . strlen($output));
+            }
+
+            // include が早期 return false した場合でも成功扱いになっていた不具合を防ぐ
+            $client_count = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}ktp_client" );
+            if ( $client_count < 1 ) {
+                wp_send_json_error( array( 'message' => 'ダミーデータの作成に失敗しました。必要なテーブルが存在するか、PHPエラーログを確認してください。' ) );
+                return;
             }
 
             // ダミーデータ作成直後の初期表示を揃えるため、

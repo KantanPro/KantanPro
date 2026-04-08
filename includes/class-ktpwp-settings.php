@@ -4175,7 +4175,7 @@ div.ktp_header {
 
         // タブを手前に表示するためのz-index設定
         $custom_css .= '
-.tabs {
+.tabs.ktp_plugin_container {
     z-index: 200;
     position: relative;
 }';
@@ -4237,8 +4237,8 @@ div.ktp_header > * {
             $tab_active_color = sanitize_hex_color( $design_options['tab_active_color'] );
             if ( $tab_active_color ) {
                 $custom_css .= '
-.tabs input:checked + .tab_item,
-.tab_item.active {
+.tabs.ktp_plugin_container input:checked + .tab_item,
+.tabs.ktp_plugin_container .tab_item.active {
     background-color: ' . esc_attr( $tab_active_color ) . ' !important;
 }';
             }
@@ -4249,7 +4249,7 @@ div.ktp_header > * {
             $tab_inactive_color = sanitize_hex_color( $design_options['tab_inactive_color'] );
             if ( $tab_inactive_color ) {
                 $custom_css .= '
-.tab_item {
+.tabs.ktp_plugin_container .tab_item {
     background-color: ' . esc_attr( $tab_inactive_color ) . ' !important;
 }';
             }
@@ -4260,7 +4260,7 @@ div.ktp_header > * {
             $tab_border_color = sanitize_hex_color( $design_options['tab_border_color'] );
             if ( $tab_border_color ) {
                 $custom_css .= '
-.tab_item {
+.tabs.ktp_plugin_container .tab_item {
     border-bottom-color: ' . esc_attr( $tab_border_color ) . ' !important;
 }';
 
