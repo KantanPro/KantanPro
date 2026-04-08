@@ -5313,20 +5313,21 @@ define( 'WP_DEBUG_DISPLAY', false );
         $link_url  = '';
         $alt_text  = '';
 
-        // 1) 配布元に KTP Banner がある場合は、そちらの設定値を優先配信
-        if ( is_array( $legacy_banner ) && ! empty( $legacy_banner['image_url'] ) ) {
+        // 1) KTP Banner: 「有効」かつ画像ありのときだけ配信（中央バナーのチェックと独立）
+        if ( is_array( $legacy_banner ) && ! empty( $legacy_banner['enabled'] ) && ! empty( $legacy_banner['image_url'] ) ) {
             $image_url = esc_url_raw( $legacy_banner['image_url'] );
             $link_url  = isset( $legacy_banner['link_url'] ) ? esc_url_raw( $legacy_banner['link_url'] ) : '';
             $alt_text  = isset( $legacy_banner['alt_text'] ) ? sanitize_text_field( $legacy_banner['alt_text'] ) : '';
-        } elseif ( ! empty( $settings['image_url'] ) ) {
-            // 2) KTP Banner なし: 中央バナー設定に保存した配布用画像・リンクを返す（配布先で表示される）
+        } elseif ( ! empty( $settings['enabled'] ) && ! empty( $settings['image_url'] ) ) {
+            // 2) KTP Banner なし: 中央バナー「配信有効」かつ配布用画像あり
             $image_url = esc_url_raw( $settings['image_url'] );
             $link_url  = isset( $settings['link_url'] ) ? esc_url_raw( $settings['link_url'] ) : '';
             $alt_text  = isset( $settings['alt_text'] ) ? sanitize_text_field( $settings['alt_text'] ) : '';
         }
 
+        // 配布先は enabled と image_url の両方を見るため、実際に配信する内容があるときは true にそろえる
         $payload = array(
-            'enabled'   => ! empty( $settings['enabled'] ),
+            'enabled'   => ( '' !== $image_url ),
             'image_url' => $image_url,
             'link_url'  => $link_url,
             'alt_text'  => $alt_text,
