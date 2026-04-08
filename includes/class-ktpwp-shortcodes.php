@@ -283,7 +283,8 @@ class KTPWP_Shortcodes {
             return array();
         }
 
-        $cache_key = 'ktp_central_banner_remote_' . md5( $source_url );
+        // v2: enabled と image_url の不整合でキャッシュされた古い値を使わない
+        $cache_key = 'ktp_central_banner_remote_v2_' . md5( $source_url );
         $cached    = get_transient( $cache_key );
         if ( is_array( $cached ) ) {
             return $cached;
@@ -310,9 +311,14 @@ class KTPWP_Shortcodes {
             return array();
         }
 
+        $image_raw    = isset( $json['image_url'] ) ? esc_url_raw( $json['image_url'] ) : '';
+        $has_image    = '' !== $image_raw;
+        // 配信JSONで enabled が false でも image_url があれば表示する（REST・キャッシュの不整合対策）
+        $enabled_flag = ( ! empty( $json['enabled'] ) || $has_image ) ? 1 : 0;
+
         $normalized = array(
-            'enabled'      => ! empty( $json['enabled'] ) ? 1 : 0,
-            'image_url'    => isset( $json['image_url'] ) ? esc_url_raw( $json['image_url'] ) : '',
+            'enabled'      => $enabled_flag,
+            'image_url'    => $image_raw,
             'link_url'     => isset( $json['link_url'] ) ? esc_url_raw( $json['link_url'] ) : '',
             'alt_text'     => isset( $json['alt_text'] ) ? sanitize_text_field( $json['alt_text'] ) : '',
             'open_new_tab' => 1,
