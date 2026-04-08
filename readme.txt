@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.2.35
+Stable tag: 1.2.36
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -324,6 +324,10 @@ curl -sS -X POST \
 * 推奨PHP拡張: GD（画像処理用）
 
 == 変更履歴 ==
+
+= 1.2.36 - 2026年04月08日 =
+* 中央バナー設定に配布用画像URL、リンクURL、代替テキストの設定項目を追加し、バナー表示のフォールバック処理を改善
+* 初回有効化後の管理画面リダイレクト機能を追加し、リライトルールの再生成処理を追加
 
 = 1.2.35 - 2026年03月28日 =
 * バナー表示のスタイルを改善
