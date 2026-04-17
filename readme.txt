@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.2.38
+Stable tag: 1.2.39
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -324,6 +324,9 @@ curl -sS -X POST \
 * 推奨PHP拡張: GD（画像処理用）
 
 == 変更履歴 ==
+
+= 1.2.39 - 2026年04月18日 =
+* 新規インストール等で協力会社職能テーブル（ktp_supplier_skills）が作成されず職能を追加できない問題を修正（プラグイン有効化時のテーブル作成、未作成時の自己修復、コスト項目用AJAX対応）
 
 = 1.2.38 - 2026年04月08日 =
 * 中央バナーのキャッシュキーを修正し、enabledフラグの判定ロジックを改善
