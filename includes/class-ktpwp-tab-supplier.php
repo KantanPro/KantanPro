@@ -1589,6 +1589,39 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 		}
 
 		/**
+		 * 職能追加・削除成功後のリダイレクト。
+		 * REQUEST_URI のみではスキーム・ホストがなく環境によって wp_redirect が失敗し白画面になるため、フルURLを組み立てる。
+		 *
+		 * @param string $message_key GET の message 値（例: skill_added）。
+		 * @param int    $supplier_id Referer 欠如時に tab_name / data_id を付与するための協力会社ID。
+		 * @return void
+		 */
+		private function redirect_after_supplier_skill_change( $message_key, $supplier_id = 0 ) {
+			$redirect_base = wp_get_referer();
+			if ( ! $redirect_base ) {
+				if ( class_exists( 'KTPWP_Main' ) ) {
+					$redirect_base = KTPWP_Main::get_current_page_base_url();
+				} else {
+					$redirect_base = home_url( '/' );
+				}
+				if ( $supplier_id > 0 ) {
+					$redirect_base = add_query_arg(
+						array(
+							'tab_name' => 'supplier',
+							'data_id'  => absint( $supplier_id ),
+						),
+						$redirect_base
+					);
+				}
+			}
+
+			$redirect_url = remove_query_arg( array( 'message' ), $redirect_base );
+			$redirect_url = add_query_arg( 'message', sanitize_key( $message_key ), $redirect_url );
+			wp_safe_redirect( $redirect_url );
+			exit;
+		}
+
+		/**
 		 * Handle skills operations (add, delete, etc.)
 		 *
 		 * @since 1.0.0
@@ -1683,11 +1716,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 			$result = $skills_manager->add_skill( $supplier_id, $product_name, $unit_price, $quantity, $unit, $tax_rate );
 
 			if ( $result ) {
-				// POSTデータ重複送信防止のためリダイレクト
-				$redirect_url = remove_query_arg( array( 'message' ), $_SERVER['REQUEST_URI'] );
-				$redirect_url = add_query_arg( 'message', 'skill_added', $redirect_url );
-				wp_redirect( $redirect_url );
-				exit;
+				$this->redirect_after_supplier_skill_change( 'skill_added', $supplier_id );
 			} else {
 				echo '<script>
             document.addEventListener("DOMContentLoaded", function() {
@@ -1733,15 +1762,15 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 				return;
 			}
 
+			// 削除後は get_skill が取れないため、リダイレクト用に supplier_id を事前取得
+			$supplier_row   = $skills_manager->get_skill( $skill_id );
+			$supplier_id_ok = ( $supplier_row && isset( $supplier_row['supplier_id'] ) ) ? absint( $supplier_row['supplier_id'] ) : 0;
+
 			// Delete the skill
 			$result = $skills_manager->delete_skill( $skill_id );
 
 			if ( $result ) {
-				// POSTデータ重複送信防止のためリダイレクト
-				$redirect_url = remove_query_arg( array( 'message' ), $_SERVER['REQUEST_URI'] );
-				$redirect_url = add_query_arg( 'message', 'skill_deleted', $redirect_url );
-				wp_redirect( $redirect_url );
-				exit;
+				$this->redirect_after_supplier_skill_change( 'skill_deleted', $supplier_id_ok );
 			} else {
 				echo '<script>
             document.addEventListener("DOMContentLoaded", function() {
