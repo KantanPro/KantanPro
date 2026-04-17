@@ -61,6 +61,30 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 		}
 
 		/**
+		 * 職能テーブルが存在しない場合のみ作成（リクエスト内1回）
+		 * 新規インストールで ktp_table_setup より前に UI が開かれた場合などの自己修復用。
+		 *
+		 * @since 1.2.39
+		 */
+		public function ensure_table_exists() {
+			global $wpdb;
+
+			static $checked = false;
+			if ( $checked ) {
+				return;
+			}
+			$checked = true;
+
+			$table_name = $wpdb->prefix . 'ktp_supplier_skills';
+			$exists     = ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) ) === $table_name );
+			if ( ! $exists ) {
+				// オプションだけ残って dbDelta がスキップされるのを防ぐ
+				delete_option( 'ktp_supplier_skills_table_version' );
+				$this->create_table();
+			}
+		}
+
+		/**
 		 * Create supplier skills table
 		 *
 		 * @since 1.0.0
@@ -206,6 +230,8 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 				return array();
 			}
 
+			$this->ensure_table_exists();
+
 			$table_name = $wpdb->prefix . 'ktp_supplier_skills';
 			$supplier_id = absint( $supplier_id );
 
@@ -235,6 +261,8 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 			if ( empty( $supplier_id ) || $supplier_id <= 0 ) {
 				return array();
 			}
+
+			$this->ensure_table_exists();
 
 			$table_name = $wpdb->prefix . 'ktp_supplier_skills';
 			$supplier_id = absint( $supplier_id );
@@ -273,6 +301,8 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 				return 0;
 			}
 
+			$this->ensure_table_exists();
+
 			$table_name = $wpdb->prefix . 'ktp_supplier_skills';
 			$supplier_id = absint( $supplier_id );
 
@@ -305,6 +335,8 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 		if ( empty( $supplier_id ) || $supplier_id <= 0 || empty( $product_name ) ) {
 			return false;
 		}
+
+		$this->ensure_table_exists();
 
 		$table_name = $wpdb->prefix . 'ktp_supplier_skills';
 		$supplier_id = absint( $supplier_id );
@@ -364,6 +396,8 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 		if ( empty( $skill_id ) || $skill_id <= 0 || empty( $product_name ) ) {
 			return false;
 		}
+
+		$this->ensure_table_exists();
 
 		$table_name = $wpdb->prefix . 'ktp_supplier_skills';
 		$skill_id = absint( $skill_id );
@@ -426,6 +460,8 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 			return false;
 		}
 
+		$this->ensure_table_exists();
+
 		$table_name = $wpdb->prefix . 'ktp_supplier_skills';
 		$skill_id = absint( $skill_id );
 
@@ -468,6 +504,8 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 			return false;
 		}
 
+		$this->ensure_table_exists();
+
 		$table_name = $wpdb->prefix . 'ktp_supplier_skills';
 		$supplier_id = absint( $supplier_id );
 
@@ -509,6 +547,8 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 			if ( empty( $skill_id ) || $skill_id <= 0 ) {
 				return null;
 			}
+
+			$this->ensure_table_exists();
 
 			$table_name = $wpdb->prefix . 'ktp_supplier_skills';
 			$skill_id = absint( $skill_id );

@@ -78,6 +78,13 @@ add_action(
 		try {
 			global $wpdb;
 			$table = $wpdb->prefix . 'ktp_supplier_skills';
+
+			if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
+				require_once __DIR__ . '/class-ktpwp-supplier-skills.php';
+			}
+			if ( class_exists( 'KTPWP_Supplier_Skills' ) ) {
+				KTPWP_Supplier_Skills::get_instance()->ensure_table_exists();
+			}
 			
 			// テーブルの存在確認
 			$table_exists = $wpdb->get_var( "SHOW TABLES LIKE '$table'" ) === $table;
@@ -140,6 +147,14 @@ add_action(
 		}
 		global $wpdb;
 		$table = $wpdb->prefix . 'ktp_supplier_skills';
+
+		if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
+			require_once __DIR__ . '/class-ktpwp-supplier-skills.php';
+		}
+		if ( class_exists( 'KTPWP_Supplier_Skills' ) ) {
+			KTPWP_Supplier_Skills::get_instance()->ensure_table_exists();
+		}
+
 		// Handle tax_rate - allow NULL values
 		$tax_rate = isset( $_POST['tax_rate'] ) ? $_POST['tax_rate'] : '';
 		$tax_rate = ( $tax_rate === '' || $tax_rate === null ) ? null : floatval( $tax_rate );

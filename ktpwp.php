@@ -3716,6 +3716,14 @@ function ktp_table_setup() {
         }
     }
 
+    // 協力会社職能テーブル（Supplier_Data::get_schema では get_schema 未実装のため未作成になるため明示的に作成）
+    if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
+        require_once KANTANPRO_PLUGIN_DIR . 'includes/class-ktpwp-supplier-skills.php';
+    }
+    if ( class_exists( 'KTPWP_Supplier_Skills' ) ) {
+        KTPWP_Supplier_Skills::get_instance()->create_table();
+    }
+
     // dbDeltaの実行結果をログに出力
     if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
         if ( ! empty( $results ) ) {
