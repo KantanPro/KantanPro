@@ -622,6 +622,9 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 			$html .= wp_nonce_field( 'ktp_skills_action', 'ktp_skills_nonce', true, false );
 			$html .= '<input type="hidden" name="skills_action" value="add_skill">';
 			$html .= '<input type="hidden" name="supplier_id" value="' . $supplier_id . '">';
+			// POST 時にクエリが付かない環境でもショートコードが協力会社タブを処理できるよう明示する
+			$html .= '<input type="hidden" name="tab_name" value="supplier">';
+			$html .= '<input type="hidden" name="data_id" value="' . esc_attr( (string) $supplier_id ) . '">';
 
 			// 商品名フィールド
 			$html .= '<div style="flex: 2; min-width: 120px;">';
@@ -736,6 +739,8 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
                             ' . str_replace( array( "\r", "\n" ), '', $nonce_field ) . '
                             <input type="hidden" name="skills_action" value="delete_skill">
                             <input type="hidden" name="skill_id" value="${skillId}">
+                            <input type="hidden" name="tab_name" value="supplier">
+                            <input type="hidden" name="data_id" value="' . esc_js( (string) $supplier_id ) . '">
                         `;
                         document.body.appendChild(form);
                         form.submit();

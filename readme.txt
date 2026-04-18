@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.2.40
+Stable tag: 1.2.41
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -324,6 +324,10 @@ curl -sS -X POST \
 * 推奨PHP拡張: GD（画像処理用）
 
 == 変更履歴 ==
+
+= 1.2.41 - 2026年04月18日 =
+* 協力会社職能の追加・削除フォームに tab_name / data_id を付与し、POST 時も協力会社タブとして確実に処理されるよう改善
+* 職能追加・削除後のリダイレクトを強化（Referer 欠如時は HTTP_HOST + REQUEST_URI で組み立て、tab_name・data_id を明示、nocache_headers を付与）
 
 = 1.2.40 - 2026年04月18日 =
 * 協力会社タブで職能の追加・削除後に画面が真っ白になる問題を修正（リダイレクト先をフルURLで組み立て、wp_safe_redirect に統一）

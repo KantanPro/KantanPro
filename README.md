@@ -1,4 +1,4 @@
-# KantanPro (KTPWP) - Version 1.2.40
+# KantanPro (KTPWP) - Version 1.2.41
 
 WordPressで動作する業務管理・受注進捗・請求・顧客・サービス・協力会社・レポート・スタッフチャットまで一元管理できる多機能プラグイン。
 
@@ -351,6 +351,10 @@ KantanProは、WordPress上で以下の業務を一元管理できる多機能�
 ---
 
 ## 変更履歴
+### Version 1.2.41 - 2026年4月18日
+- **協力会社職能の追加・削除フォームに `tab_name` / `data_id` を付与**し、POST 時も協力会社タブとして確実に処理されるよう改善
+- **職能追加・削除後のリダイレクトを強化**（Referer 欠如時は `HTTP_HOST` + `REQUEST_URI` で組み立て、`tab_name`・`data_id` を明示、`nocache_headers` を付与）
+
 ### Version 1.2.40 - 2026年4月18日
 - **協力会社タブで職能の追加・削除後に画面が真っ白になる問題を修正**（リダイレクト先をフルURLで組み立て、`wp_safe_redirect` に統一）
 

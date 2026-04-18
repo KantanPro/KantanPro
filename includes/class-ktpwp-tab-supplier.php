@@ -1598,25 +1598,44 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 		 */
 		private function redirect_after_supplier_skill_change( $message_key, $supplier_id = 0 ) {
 			$redirect_base = wp_get_referer();
+
+			// Referer が無い環境（ブラウザ・CDN・プライバシー設定）では $_SERVER から絶対URLを組み立てる
+			if ( ! $redirect_base && isset( $_SERVER['HTTP_HOST'], $_SERVER['REQUEST_URI'] ) ) {
+				$https = is_ssl();
+				if ( isset( $_SERVER['HTTP_X_FORWARDED_PROTO'] ) && 'https' === strtolower( (string) $_SERVER['HTTP_X_FORWARDED_PROTO'] ) ) {
+					$https = true;
+				}
+				$scheme = $https ? 'https' : 'http';
+				$host   = sanitize_text_field( wp_unslash( $_SERVER['HTTP_HOST'] ) );
+				$uri    = wp_unslash( $_SERVER['REQUEST_URI'] );
+				if ( $host !== '' ) {
+					$redirect_base = $scheme . '://' . $host . $uri;
+				}
+			}
+
 			if ( ! $redirect_base ) {
 				if ( class_exists( 'KTPWP_Main' ) ) {
 					$redirect_base = KTPWP_Main::get_current_page_base_url();
 				} else {
 					$redirect_base = home_url( '/' );
 				}
-				if ( $supplier_id > 0 ) {
-					$redirect_base = add_query_arg(
-						array(
-							'tab_name' => 'supplier',
-							'data_id'  => absint( $supplier_id ),
-						),
-						$redirect_base
-					);
-				}
 			}
 
-			$redirect_url = remove_query_arg( array( 'message' ), $redirect_base );
-			$redirect_url = add_query_arg( 'message', sanitize_key( $message_key ), $redirect_url );
+			// 職能フォームPOSTで tab_name が欠落するとショートコードが別タブ扱いになるため、常に協力会社＋data_id を明示する
+			if ( $supplier_id > 0 ) {
+				$redirect_base = add_query_arg(
+					array(
+						'tab_name' => 'supplier',
+						'data_id'  => absint( $supplier_id ),
+					),
+					remove_query_arg( array( 'tab_name', 'data_id', 'message' ), $redirect_base )
+				);
+			} else {
+				$redirect_base = remove_query_arg( array( 'message' ), $redirect_base );
+			}
+
+			$redirect_url = add_query_arg( 'message', sanitize_key( $message_key ), $redirect_base );
+			nocache_headers();
 			wp_safe_redirect( $redirect_url );
 			exit;
 		}
