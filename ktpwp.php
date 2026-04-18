@@ -3,7 +3,7 @@
  * Plugin Name: KantanPro
  * Plugin URI: https://www.kantanpro.com/
  * Description: フリーランス・スモールビジネス向けの仕事効率化システム。ショートコード[ktpwp_all_tab]を固定ページに設置してください。
- * Version: 1.2.48
+ * Version: 1.2.49
  * Author: KantanPro
  * Author URI: https://www.kantanpro.com/kantanpro-page
  * License: GPL v2 or later
@@ -4369,10 +4369,13 @@ add_action(
         if (!a || !a.href) return;
 
         var href = a.getAttribute('href') || '';
-        if (href.indexOf('action=delete-selected') === -1 && href.indexOf('plugin=' + encodeURIComponent(pluginFile)) === -1) {
-            if (href.indexOf('action=delete-selected') === -1) return;
+        // プラグインの「削除」のみ対象。更新（upgrade-plugin 等）では data 保持設定に関係なく誤って確認しない
+        if (href.indexOf('action=delete') === -1 && href.indexOf('action=delete-selected') === -1) {
+            return;
         }
-        if (href.indexOf(encodeURIComponent(pluginFile)) === -1 && href.indexOf(pluginFile) === -1) return;
+        if (href.indexOf(encodeURIComponent(pluginFile)) === -1 && href.indexOf(pluginFile) === -1) {
+            return;
+        }
 
         if (!window.confirm(message)) {
             e.preventDefault();
