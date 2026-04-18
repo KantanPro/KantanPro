@@ -164,6 +164,21 @@ window.handleProgressChange = function(selectElement) {
 jQuery(document).ready(function($) {
     'use strict';
 
+    // 受注書タブの納期入力・進捗セレクト・バッジが DOM に存在しない場合は、
+    // document レベルの change / click 委譲を一切張らずに即 return する。
+    // （サービス／協力会社／顧客タブでの無駄なイベント処理・再描画を避けるため）
+    if (
+        $('.delivery-date-input').length === 0 &&
+        $('.completion-date-input').length === 0 &&
+        $('#completion_date').length === 0 &&
+        $('.progress-select').length === 0 &&
+        $('#order_progress_select').length === 0 &&
+        $('.order-progress-badge').length === 0 &&
+        $('.delivery-warning-badge').length === 0
+    ) {
+        return;
+    }
+
     console.log('[DELIVERY-DATES] 納期警告機能が読み込まれました');
     
     // 統一されたAJAX設定の取得

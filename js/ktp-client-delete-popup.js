@@ -10,6 +10,23 @@
 (function() {
     'use strict';
 
+    // 顧客タブ以外では本スクリプトの処理は不要。
+    // 特にページ全体を subtree 監視する MutationObserver は、日本語 IME 入力時や
+    // 他タブの textarea 操作時に無駄なオーバーヘッドを発生させるため早期に抜ける。
+    try {
+        var _urlParamsForGuard = new URLSearchParams(window.location.search);
+        var _tabNameForGuard = _urlParamsForGuard.get('tab_name');
+        if (_tabNameForGuard && _tabNameForGuard !== 'client') {
+            return;
+        }
+        // tab_name が無い（単独ショートコード表示など）かつ顧客削除ボタンが DOM に無ければ抜ける
+        if (!_tabNameForGuard && !document.querySelector('.delete-submit-btn')) {
+            return;
+        }
+    } catch (e) {
+        // URLSearchParams 未サポート等のフォールバック: そのまま続行
+    }
+
     // ポップアップのHTMLを生成
     function createDeletePopup(clientId, clientName) {
         const popupId = 'ktp-delete-popup-' + Date.now();

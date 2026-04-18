@@ -386,7 +386,7 @@
         }
 
         // 請求項目の合計と消費税を計算（税率別に集計）
-        $('.invoice-items-table tbody tr').each(function () {
+        $('#order_content .invoice-items-table tbody tr').each(function () {
             const $row = $(this);
             const amountValue = $row.find('.invoice-item-amount').attr('data-amount') || $row.find('.invoice-item-amount').text().replace(/,/g, '');
             const amount = parseFloat(amountValue) || 0;
@@ -432,7 +432,7 @@
         // 税区分に応じて消費税を計算
         if (taxCategory === '外税') {
             // 外税表示の場合：各項目の税抜金額から税額を計算
-            $('.invoice-items-table tbody tr').each(function () {
+            $('#order_content .invoice-items-table tbody tr').each(function () {
                 const $row = $(this);
                 const amountValue = $row.find('.invoice-item-amount').attr('data-amount') || $row.find('.invoice-item-amount').text().replace(/,/g, '');
                 const amount = parseFloat(amountValue) || 0;
@@ -738,7 +738,7 @@
         if (window.ktpDebugMode) console.log(`[INVOICE][${callId}] addNewRow 本処理開始`);
         // フラグ管理はクリックハンドラに集約
 
-        const newIndex = $('.invoice-items-table tbody tr').length;
+        const newIndex = $('#order_content .invoice-items-table tbody tr').length;
         const newRowHtml = `
             <tr class="invoice-item-row" data-row-id="0" data-newly-added="true">
                 <td class="actions-column">
@@ -917,6 +917,12 @@
 
     // ページ読み込み完了時の初期化
     $(document).ready(function () {
+        // 受注書テーブルが DOM に無ければ、以降の全 document 委譲・sortable 初期化・ループをスキップ
+        // （サービス／協力会社／顧客等のタブでは不要。無駄な DOM 走査やイベント委譲を避ける）
+        if ($('.invoice-items-table').length === 0) {
+            return;
+        }
+
         if (window.ktpDebugMode) console.log('[INVOICE] 📋 ページ初期化開始');
 
         // デバッグモードを有効化（金額計算・保存の詳細ログを表示）
@@ -924,11 +930,13 @@
         if (window.ktpDebugMode) console.log('[INVOICE] デバッグモード有効化: 金額計算・保存の詳細ログを表示します');
 
         // 初期状態の確認
-        const initialRowCount = $('.invoice-items-table tbody tr').length;
+        const initialRowCount = $('#order_content .invoice-items-table tbody tr').length;
         if (window.ktpDebugMode) console.log('[INVOICE] 📊 初期行数:', initialRowCount);
 
-        // 並び替え（sortable）有効化
-        $('.invoice-items-table tbody').sortable({
+        // 並び替え（sortable）有効化（受注書タブにテーブルがあるときのみ。空の tbody に対しては初期化しない）
+        const $invoiceSortTbody = $('#order_content .invoice-items-table tbody');
+        if ($invoiceSortTbody.length) {
+        $invoiceSortTbody.sortable({
             handle: '.drag-handle',
             items: '> tr',
             axis: 'y',
@@ -996,9 +1004,10 @@
                 ui.item.removeClass('dragging');
             }
         }).disableSelection();
+        }
 
         // 価格・数量変更時の金額自動計算（blurイベントでのみ実行）
-        $(document).on('blur', '.invoice-items-table .price, .invoice-items-table .quantity', function () {
+        $(document).on('blur', '#order_content .invoice-items-table .price, #order_content .invoice-items-table .quantity', function () {
             const $field = $(this);
             
             // disabled フィールドは処理をスキップ
@@ -1033,7 +1042,7 @@
         });
 
         // スピンアップ・ダウンイベントの処理
-        $(document).on('input', '.invoice-items-table .price, .invoice-items-table .quantity', function () {
+        $(document).on('input', '#order_content .invoice-items-table .price, #order_content .invoice-items-table .quantity', function () {
             const $field = $(this);
             
             // disabled フィールドは処理をスキップ
@@ -1058,7 +1067,7 @@
         });
 
         // スピンアップ・ダウンイベントの専用処理（changeイベント）
-        $(document).on('change', '.invoice-items-table .price, .invoice-items-table .quantity', function () {
+        $(document).on('change', '#order_content .invoice-items-table .price, #order_content .invoice-items-table .quantity', function () {
             const $field = $(this);
             
             // disabled フィールドは処理をスキップ
@@ -1089,7 +1098,7 @@
         });
 
         // 税率変更時のリアルタイム再計算
-        $(document).on('change', '.invoice-items-table .tax-rate', function () {
+        $(document).on('change', '#order_content .invoice-items-table .tax-rate', function () {
             const $field = $(this);
             
             // disabled フィールドは処理をスキップ
@@ -1121,7 +1130,7 @@
         });
 
         // 税率入力時のリアルタイム再計算（inputイベント）
-        $(document).on('input', '.invoice-items-table .tax-rate', function () {
+        $(document).on('input', '#order_content .invoice-items-table .tax-rate', function () {
             const $field = $(this);
             
             // disabled フィールドは処理をスキップ
@@ -1144,7 +1153,7 @@
         });
 
         // 自動追加機能を無効化（コメントアウト）
-        // $(document).on('input', '.invoice-items-table .product-name, .invoice-items-table .price, .invoice-items-table .quantity', function() {
+        // $(document).on('input', '#order_content .invoice-items-table .product-name, #order_content .invoice-items-table .price, #order_content .invoice-items-table .quantity', function() {
         //     const row = $(this).closest('tr');
         //     const tbody = row.closest('tbody');
         //     const isFirstRow = tbody.find('tr').first().is(row);
@@ -1156,17 +1165,17 @@
 
         // [+]ボタンで行追加
         // 既存のハンドラを解除してから登録
-        $(document).off('click.ktpInvoiceAdd', '.invoice-items-table .btn-add-row');
-        $('body').off('click.ktpInvoiceAdd', '.invoice-items-table .btn-add-row');
-        $('.invoice-items-table').off('click.ktpInvoiceAdd', '.btn-add-row');
+        $(document).off('click.ktpInvoiceAdd', '#order_content .invoice-items-table .btn-add-row');
+        $('body').off('click.ktpInvoiceAdd', '#order_content .invoice-items-table .btn-add-row');
+        $('#order_content .invoice-items-table').off('click.ktpInvoiceAdd', '.btn-add-row');
 
         // より強力な解除（名前空間なしも試す）
-        $(document).off('click', '.invoice-items-table .btn-add-row');
-        $('body').off('click', '.invoice-items-table .btn-add-row');
-        $('.invoice-items-table').off('click', '.btn-add-row');
+        $(document).off('click', '#order_content .invoice-items-table .btn-add-row');
+        $('body').off('click', '#order_content .invoice-items-table .btn-add-row');
+        $('#order_content .invoice-items-table').off('click', '.btn-add-row');
 
 
-        $(document).on('click.ktpInvoiceAdd', '.invoice-items-table .btn-add-row', function (e) {
+        $(document).on('click.ktpInvoiceAdd', '#order_content .invoice-items-table .btn-add-row', function (e) {
             const clickId = Date.now();
             if (window.ktpDebugMode) console.log(`[INVOICE][${clickId}] +ボタンクリックイベント発生 (ktpInvoiceAdd)`);
 
@@ -1229,8 +1238,8 @@
         });
 
         // 行削除ボタン - イベント重複を防ぐ
-        $(document).off('click.ktpInvoiceDelete', '.invoice-items-table .btn-delete-row') // 名前空間付きイベントに変更
-            .on('click.ktpInvoiceDelete', '.invoice-items-table .btn-delete-row', function (e) {
+        $(document).off('click.ktpInvoiceDelete', '#order_content .invoice-items-table .btn-delete-row') // 名前空間付きイベントに変更
+            .on('click.ktpInvoiceDelete', '#order_content .invoice-items-table .btn-delete-row', function (e) {
                 e.preventDefault();
                 e.stopPropagation();
                 const currentRow = $(this).closest('tr');
@@ -1239,7 +1248,7 @@
             });
 
         // 行移動ボタン（サービス選択機能）- 請求項目テーブル専用
-        $(document).on('click', '.invoice-items-table .btn-move-row', function (e) {
+        $(document).on('click', '#order_content .invoice-items-table .btn-move-row', function (e) {
             e.preventDefault();
             e.stopPropagation();
             if (window.ktpDebugMode) console.log('[INVOICE-ITEMS] [>]ボタンクリック - サービス選択開始');
@@ -1270,7 +1279,7 @@
         });
 
         // フォーカス時の入力欄スタイル調整
-        $(document).on('focus', '.invoice-item-input', function () {
+        $(document).on('focus', '#order_content .invoice-item-input', function () {
             $(this).addClass('focused');
             // 数値入力フィールドの場合、フォーカス時に全選択
             if ($(this).attr('type') === 'number') {
@@ -1278,12 +1287,12 @@
             }
         });
 
-        $(document).on('blur', '.invoice-item-input', function () {
+        $(document).on('blur', '#order_content .invoice-item-input', function () {
             $(this).removeClass('focused');
         });
 
         // 商品名フィールドのblurイベントで自動保存
-        $(document).on('blur', '.invoice-item-input.product-name', function () {
+        $(document).on('blur', '#order_content .invoice-item-input.product-name', function () {
             const $field = $(this);
             const productName = $field.val();
             const $row = $field.closest('tr');
@@ -1335,7 +1344,7 @@
             }
         });
         // 単価フィールドのblurイベントで自動保存
-        $(document).on('blur', '.invoice-item-input.price', function () {
+        $(document).on('blur', '#order_content .invoice-item-input.price', function () {
             const $field = $(this);
             const price = $field.val();
             const $row = $field.closest('tr');
@@ -1352,7 +1361,7 @@
             }
         });
         // 数量フィールドのblurイベントで自動保存
-        $(document).on('blur', '.invoice-item-input.quantity', function () {
+        $(document).on('blur', '#order_content .invoice-item-input.quantity', function () {
             const $field = $(this);
             const quantity = $field.val();
             const $row = $field.closest('tr');
@@ -1368,7 +1377,7 @@
             }
         });
         // 備考フィールドのblurイベントで自動保存
-        $(document).on('blur', '.invoice-item-input.remarks', function () {
+        $(document).on('blur', '#order_content .invoice-item-input.remarks', function () {
             const $field = $(this);
             const remarks = $field.val();
             const $row = $field.closest('tr');
@@ -1382,7 +1391,7 @@
             }
         });
         // ユニットフィールドのblurイベントで自動保存
-        $(document).on('blur', '.invoice-item-input.unit', function () {
+        $(document).on('blur', '#order_content .invoice-item-input.unit', function () {
             const $field = $(this);
             const unit = $field.val();
             const $row = $field.closest('tr');
@@ -1397,7 +1406,7 @@
         });
 
         // 税率フィールドのblurイベントで自動保存
-        $(document).on('blur', '.invoice-item-input.tax-rate', function () {
+        $(document).on('blur', '#order_content .invoice-item-input.tax-rate', function () {
             const $field = $(this);
             const taxRate = $field.val();
             const $row = $field.closest('tr');
@@ -1431,7 +1440,7 @@
         });
 
         // 税率フィールドのinputイベントでリアルタイム計算
-        $(document).on('input', '.invoice-item-input.tax-rate', function () {
+        $(document).on('input', '#order_content .invoice-item-input.tax-rate', function () {
             const $field = $(this);
             const $row = $field.closest('tr');
             
@@ -1445,12 +1454,12 @@
         });
 
         // 初期状態で既存の行に対して金額計算を実行
-        $('.invoice-items-table tbody tr').each(function () {
+        $('#order_content .invoice-items-table tbody tr').each(function () {
             calculateAmount($(this));
         });
 
         // フォーム送信時にtr順でname属性indexを再構成
-        $(document).on('submit', '.invoice-items-form', function(e) {
+        $(document).on('submit', '#order_content .invoice-items-form', function(e) {
             const $form = $(this);
             const $table = $form.find('.invoice-items-table');
             if ($table.length > 0) {
@@ -1464,7 +1473,7 @@
     window.testInvoiceItemsDebug = function () {
         if (window.ktpDebugMode) console.log('=== インボイス項目デバッグ ===');
 
-        const tbody = $('.invoice-items-table tbody');
+        const tbody = $('#order_content .invoice-items-table tbody');
         if (tbody.length === 0) {
             if (window.ktpDebugMode) console.log('インボイステーブルが見つかりません');
             return;
@@ -1495,14 +1504,14 @@
         // フラグ状態をチェック
         if (window.ktpDebugMode) console.log('フラグ状態:', {
             ktpAddingRow: window.ktpAddingRow,
-            tableProcessing: $('.invoice-items-table').hasClass('processing-add'),
+            tableProcessing: $('#order_content .invoice-items-table').hasClass('processing-add'),
             processingButtons: $('.btn-add-row.processing').length
         });
     };
 
     // 行カウンター機能
     window.countInvoiceRows = function () {
-        const count = $('.invoice-items-table tbody tr').length;
+        const count = $('#order_content .invoice-items-table tbody tr').length;
         if (window.ktpDebugMode) console.log('[INVOICE] 現在の行数:', count);
         return count;
     };
@@ -1541,7 +1550,7 @@
             });
         });
 
-        const tableBody = $('.invoice-items-table tbody')[0];
+        const tableBody = $('#order_content .invoice-items-table tbody')[0];
         if (tableBody) {
             observer.observe(tableBody, {
                 childList: true,
@@ -1557,7 +1566,7 @@
     window.emergencyCleanDuplicateRows = function () {
         if (window.ktpDebugMode) console.log('[INVOICE EMERGENCY] 緊急重複行削除開始');
 
-        const rows = $('.invoice-items-table tbody tr');
+        const rows = $('#order_content .invoice-items-table tbody tr');
         const indexMap = {};
         const duplicateRows = [];
 
@@ -1596,7 +1605,7 @@
         // 全てのフラグをリセット
         window.ktpAddingRow = false;
         $('.invoice-item-row').removeClass('adding-row');
-        $('.invoice-items-table').removeClass('processing-add');
+        $('#order_content .invoice-items-table').removeClass('processing-add');
         $('.btn-add-row').removeClass('processing').prop('disabled', false);
 
         if (window.ktpDebugMode) console.log('[INVOICE RESET] 全フラグリセット完了');
@@ -1604,7 +1613,7 @@
 
     // 重複行検出機能
     window.detectDuplicateRows = function () {
-        const tbody = $('.invoice-items-table tbody');
+        const tbody = $('#order_content .invoice-items-table tbody');
         const rows = tbody.find('tr');
         const indexes = [];
         const duplicates = [];

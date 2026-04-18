@@ -55,9 +55,166 @@ class KTPWP_Assets {
         add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_frontend_assets' ) );
         add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );
         add_action( 'wp_head', array( $this, 'add_preload_links' ), 1 );
+        add_action( 'wp_head', array( $this, 'output_console_silencer' ), 2 );
         add_action( 'wp_head', array( $this, 'output_ajax_config' ), 99 );
         add_action( 'wp_footer', array( $this, 'output_ajax_config_fallback' ), 1 );
         add_action( 'wp_head', array( $this, 'output_svg_icon_styles' ), 100 );
+        // 干渉する他プラグインのフロント JS/CSS を KantanPro ページでのみ除外
+        // （Gomoku Game 等が $(document) に張る委譲や MutationObserver が
+        //   サービス／協力会社タブのメモ欄操作をフリーズさせる事象への対策）
+        add_action( 'wp_enqueue_scripts', array( $this, 'dequeue_interfering_assets' ), 999 );
+    }
+
+    /**
+     * 干渉する他プラグインのフロントエンド JS/CSS を KantanPro 表示ページで除外する
+     *
+     * 既知の干渉プラグインが $(document) への委譲や document.body への
+     * MutationObserver を張ることで、KantanPro のフォーム入力でブラウザが
+     * フリーズする事象を防止する。
+     *
+     * 除外対象は `ktpwp_interfering_asset_handles` フィルターで拡張可能。
+     * 無効化したい場合は wp-config.php で下記を定義:
+     *   define( 'KANTANPRO_DISABLE_INTERFERENCE_GUARD', true );
+     */
+    public function dequeue_interfering_assets() {
+        if ( defined( 'KANTANPRO_DISABLE_INTERFERENCE_GUARD' ) && KANTANPRO_DISABLE_INTERFERENCE_GUARD ) {
+            return;
+        }
+        if ( ! $this->is_kantanpro_page() ) {
+            return;
+        }
+
+        // 既知の干渉プラグインのハンドル一覧
+        // - gomoku-game / gomoku-style : Gomoku Game プラグイン（全ページで初期化する document 委譲と body への MutationObserver を張る）
+        $default_handles = array(
+            // Gomoku Game
+            'gomoku-game',
+            'gomoku-style',
+        );
+
+        /**
+         * 干渉プラグインのアセットハンドル一覧をフィルターで拡張可能にする
+         *
+         * @param array $handles 除外対象のハンドル名配列
+         */
+        $handles = apply_filters( 'ktpwp_interfering_asset_handles', $default_handles );
+
+        if ( ! is_array( $handles ) || empty( $handles ) ) {
+            return;
+        }
+
+        foreach ( $handles as $handle ) {
+            $handle = (string) $handle;
+            if ( $handle === '' ) {
+                continue;
+            }
+            if ( wp_script_is( $handle, 'enqueued' ) || wp_script_is( $handle, 'registered' ) ) {
+                wp_dequeue_script( $handle );
+                wp_deregister_script( $handle );
+            }
+            if ( wp_style_is( $handle, 'enqueued' ) || wp_style_is( $handle, 'registered' ) ) {
+                wp_dequeue_style( $handle );
+                wp_deregister_style( $handle );
+            }
+        }
+
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP Assets: Interfering assets dequeued on KantanPro page: ' . implode( ', ', $handles ) );
+        }
+    }
+
+    /**
+     * 現在の表示ページが KantanPro のショートコードを含むかどうかを判定
+     *
+     * @return bool
+     */
+    private function is_kantanpro_page() {
+        // メインクエリの判定（front-end のみ）
+        if ( is_admin() ) {
+            return false;
+        }
+
+        // タブ切替等でクエリ文字列に tab_name が付いている場合は KantanPro ページと判断
+        if ( isset( $_GET['tab_name'] ) && $_GET['tab_name'] !== '' ) {
+            return true;
+        }
+
+        // post content にショートコードが含まれているかで判定
+        global $post;
+        if ( ! $post instanceof WP_Post ) {
+            return false;
+        }
+        $content = (string) $post->post_content;
+        if ( $content === '' ) {
+            return false;
+        }
+
+        $shortcodes = array( 'kantanAllTab', 'ktpwp_all_tab', 'ktpwp_login_error' );
+        foreach ( $shortcodes as $sc ) {
+            if ( has_shortcode( $content, $sc ) ) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * KTPWP プラグインの console.log を抑制
+     *
+     * 数百箇所の console.log が大量出力されると、DevTools を開いた状態で
+     * ブラウザのメインスレッドがブロックされ、メモ欄クリック時等にフリーズする。
+     * WP_DEBUG の値に関わらず、デフォルトで KTPWP プレフィックス付きログを無効化。
+     *
+     * 開発時にログを復活させたい場合は、以下のいずれかで有効化できる:
+     * 1. ブラウザのコンソールで `localStorage.setItem('ktp_console_debug','1')` を実行
+     * 2. URL パラメータに `?ktpdebug=1` を付加
+     * 3. wp-config.php に `define('KANTANPRO_VERBOSE_CONSOLE', true);` を定義
+     *
+     * console.error / console.warn は常に通すので、エラー検出は可能。
+     */
+    public function output_console_silencer() {
+        // 明示的に verbose を有効化している場合のみスキップ
+        if ( defined( 'KANTANPRO_VERBOSE_CONSOLE' ) && KANTANPRO_VERBOSE_CONSOLE ) {
+            return;
+        }
+        ?>
+<script>
+(function(){
+    try {
+        if (!window.console || !console.log) return;
+        // オプトインでログを復活
+        var _allow = false;
+        try {
+            if (window.localStorage && window.localStorage.getItem('ktp_console_debug') === '1') _allow = true;
+        } catch(e) {}
+        try {
+            if (/[?&]ktpdebug=1(\b|&|$)/.test(window.location.search)) _allow = true;
+        } catch(e) {}
+        if (_allow) return;
+
+        var _origLog = console.log;
+        var _origInfo = console.info;
+        // KTPWP プラグイン系のデバッグログを抑制するパターン
+        var _ktpRe = /^(\[(SERVICE|SUPPLIER|INVOICE|COST|CALC|CALCULATION|CLIENT|DELIVERY|EMAIL|ORDER|STAFF|KTPWP|KTP|CHAT|DEBUG|SVG|BALLOON|REPORT|PREVIEW|POPUP)[^\]]*\]|KTPWP\b|KTP\b|Head:\s*AJAX|Footer\s+fallback:|Ajax|AJAX)/i;
+        function _shouldSuppress(args) {
+            if (!args || args.length === 0) return false;
+            var first = args[0];
+            if (typeof first !== 'string') return false;
+            return _ktpRe.test(first);
+        }
+        console.log = function() {
+            if (_shouldSuppress(arguments)) return;
+            return _origLog.apply(console, arguments);
+        };
+        console.info = function() {
+            if (_shouldSuppress(arguments)) return;
+            return _origInfo.apply(console, arguments);
+        };
+    } catch(e) {}
+})();
+</script>
+        <?php
     }
 
     /**
@@ -449,10 +606,51 @@ class KTPWP_Assets {
         wp_enqueue_script( 'jquery' );
         wp_enqueue_script( 'jquery-ui-sortable' );
 
+        // 現在のタブ名を取得（フロントエンドのみ）
+        // サービス／協力会社／顧客タブでは受注書関連の重いJSを読み込まない
+        // （メモ欄クリック時のフリーズ・ページ読み込み遅延の主原因対策）
+        $current_tab_name = '';
+        if ( ! $is_admin && isset( $_GET['tab_name'] ) ) {
+            $current_tab_name = sanitize_text_field( wp_unslash( $_GET['tab_name'] ) );
+        }
+
+        // 受注書専用スクリプト（サービス／協力会社／顧客タブでは不要）
+        $order_only_scripts = array(
+            'ktp-invoice-items',
+            'ktp-cost-items',
+            'ktp-service-selector',
+            'ktp-supplier-selector',
+            'ktp-purchase-order-email',
+            'ktp-calculation-debug',
+            'ktp-calculation-test',
+            'ktp-calculation-monitor',
+            'ktp-delivery-dates',
+            'ktp-order-preview',
+            'ktp-order-inline-projectname',
+            'ktp-email-popup',
+            'ktp-progress-select',
+        );
+        // 受注書以外のタブで不要なスクリプトを除外
+        $non_order_tabs = array( 'service', 'supplier', 'client', 'report', 'list' );
+        $should_skip_order_scripts = ( ! $is_admin && in_array( $current_tab_name, $non_order_tabs, true ) );
+
+        // 顧客タブ専用（顧客以外のタブでは不要な MutationObserver を避ける）
+        $client_only_scripts = array( 'ktp-client-delete-popup', 'ktp-client-invoice' );
+
         foreach ( $this->scripts as $handle => $script ) {
             if ( $script['admin'] === $is_admin || ! $script['admin'] ) {
                 // 権限チェック
                 if ( isset( $script['capability'] ) && ! current_user_can( $script['capability'] ) ) {
+                    continue;
+                }
+
+                // 受注書以外のタブでは受注書関連JSをスキップ
+                if ( $should_skip_order_scripts && in_array( $handle, $order_only_scripts, true ) ) {
+                    continue;
+                }
+                // 顧客タブ以外では顧客専用JSをスキップ
+                if ( ! $is_admin && $current_tab_name !== '' && $current_tab_name !== 'client'
+                    && in_array( $handle, $client_only_scripts, true ) ) {
                     continue;
                 }
 

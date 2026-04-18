@@ -720,6 +720,8 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 					$data_forms .= wp_nonce_field( 'ktp_service_action', '_ktp_service_nonce', true, false ); }
 
 				// フィールド生成
+				// ブラウザ拡張・翻訳対策
+				$textarea_guard_attrs = ' spellcheck="false" autocorrect="off" autocapitalize="off" autocomplete="off" translate="no" data-gramm="false" data-gramm_editor="false" data-enable-grammarly="false"';
 				foreach ( $fields as $label => $field ) {
 					$value = ''; // 追加モードでは常に空
 					$pattern = isset( $field['pattern'] ) ? ' pattern="' . esc_attr( $field['pattern'] ) . '"' : '';
@@ -729,7 +731,7 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 					$label_i18n = esc_html__( $label, 'ktpwp' );
 
 					if ( $field['type'] === 'textarea' ) {
-						$data_forms .= "<div class=\"form-group\"><label>{$label_i18n}：</label> <textarea name=\"{$fieldName}\"{$pattern}{$required}>" . esc_textarea( $value ) . '</textarea></div>';
+						$data_forms .= "<div class=\"form-group\"><label>{$label_i18n}：</label> <textarea name=\"{$fieldName}\"{$pattern}{$required}{$textarea_guard_attrs}>" . esc_textarea( $value ) . '</textarea></div>';
 					} elseif ( $field['type'] === 'select' ) {
 						$options = '';
 						foreach ( (array) $field['options'] as $option ) {
@@ -933,6 +935,8 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 				$data_forms .= "<form name='service_form' method='post' action='" . esc_url( $form_action_url ) . "'>";
 				if ( function_exists( 'wp_nonce_field' ) ) {
 					$data_forms .= wp_nonce_field( 'ktp_service_action', '_ktp_service_nonce', true, false ); }
+				// ブラウザ拡張（Grammarly 等）やブラウザ翻訳が textarea に介入してフリーズする事象の回避属性
+				$textarea_guard_attrs = ' spellcheck="false" autocorrect="off" autocapitalize="off" autocomplete="off" translate="no" data-gramm="false" data-gramm_editor="false" data-enable-grammarly="false"';
 				foreach ( $fields as $label => $field ) {
 					$value = $action === 'update' ? ${$field['name']} : '';
 					$pattern = isset( $field['pattern'] ) ? ' pattern="' . esc_attr( $field['pattern'] ) . '"' : '';
@@ -941,7 +945,7 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 					$placeholder = isset( $field['placeholder'] ) ? ' placeholder="' . esc_attr__( $field['placeholder'], 'ktpwp' ) . '"' : '';
 					$label_i18n = esc_html__( $label, 'ktpwp' );
 					if ( $field['type'] === 'textarea' ) {
-						$data_forms .= "<div class=\"form-group\"><label>{$label_i18n}：</label> <textarea name=\"{$fieldName}\"{$pattern}{$required}>" . esc_textarea( $value ) . '</textarea></div>';
+						$data_forms .= "<div class=\"form-group\"><label>{$label_i18n}：</label> <textarea name=\"{$fieldName}\"{$pattern}{$required}{$textarea_guard_attrs}>" . esc_textarea( $value ) . '</textarea></div>';
 					} elseif ( $field['type'] === 'select' ) {
 						$options = '';
 						foreach ( (array) $field['options'] as $option ) {

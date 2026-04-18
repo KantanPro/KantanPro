@@ -4,6 +4,27 @@
   visibility: visible !important;
   opacity: 1 !important;
 }
+
+/* ===========================================
+   メモ textarea のフリーズ対策
+   - CSS containment でレイアウト再計算をテキストエリア内部に閉じ込める
+   - will-change で独立した合成レイヤー化し、他要素の reflow を遮断
+   - resize: none で手動リサイズによるレイアウトスラッシングを防止
+   - サービス／協力会社／顧客タブの詳細フォームに適用
+=========================================== */
+.ktp_plugin_container .data_detail_box textarea,
+.ktp_plugin_container .form-group textarea,
+.ktp_plugin_container textarea[name="memo"] {
+    contain: layout style;
+    will-change: contents;
+    resize: vertical;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+}
+/* 詳細ボックス全体もレイアウト分離（他タブ DOM に波及させない） */
+.ktp_plugin_container .data_detail_box {
+    contain: layout style;
+}
 /* コスト項目トグルボタン */
 .toggle-cost-items {
     background: #007cba;
@@ -1052,7 +1073,7 @@ form > .create-order-btn {
     position: relative;
     z-index: 3;
   }
-  
+
   /* 職能リストは常に100%幅を維持 */
   .ktp_data_skill_list_box {
     width: 100% !important;

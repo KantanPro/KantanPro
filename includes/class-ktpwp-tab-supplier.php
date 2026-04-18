@@ -1245,6 +1245,8 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 				$data_forms .= '<form method="post" action="' . esc_url( $form_action_base_url ) . '">';
 				if ( function_exists( 'wp_nonce_field' ) ) {
 					$data_forms .= wp_nonce_field( 'ktp_supplier_action', 'ktp_supplier_nonce', true, false ); }
+				// ブラウザ拡張（Grammarly等）や翻訳による textarea フリーズ回避属性
+				$textarea_guard_attrs = ' spellcheck="false" autocorrect="off" autocapitalize="off" autocomplete="off" translate="no" data-gramm="false" data-gramm_editor="false" data-enable-grammarly="false"';
 				foreach ( $fields as $label => $field ) {
 					$value = '';
 					$pattern = isset( $field['pattern'] ) ? " pattern=\"{$field['pattern']}\"" : '';
@@ -1252,7 +1254,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 					$fieldName = $field['name'];
 					$placeholder = isset( $field['placeholder'] ) ? " placeholder=\"{$field['placeholder']}\"" : '';
 					if ( $field['type'] === 'textarea' ) {
-						$data_forms .= "<div class=\"form-group\"><label>{$label}：</label> <textarea name=\"{$fieldName}\"{$pattern}{$required}>{$value}</textarea></div>";
+						$data_forms .= "<div class=\"form-group\"><label>{$label}：</label> <textarea name=\"{$fieldName}\"{$pattern}{$required}{$textarea_guard_attrs}>{$value}</textarea></div>";
 					} elseif ( $field['type'] === 'select' ) {
 						$options = '';
 						foreach ( $field['options'] as $option ) {
@@ -1445,6 +1447,8 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 					$data_forms .= wp_nonce_field( 'ktp_supplier_action', 'ktp_supplier_nonce', true, false );
 				}
 
+				// ブラウザ拡張（Grammarly等）や翻訳による textarea フリーズ回避属性
+				$textarea_guard_attrs = ' spellcheck="false" autocorrect="off" autocapitalize="off" autocomplete="off" translate="no" data-gramm="false" data-gramm_editor="false" data-enable-grammarly="false"';
 				foreach ( $fields as $label => $field ) {
 					$value = ( $action === 'istmode' ) ? '' : ( isset( ${$field['name']} ) ? ${$field['name']} : '' );
 					$pattern = isset( $field['pattern'] ) ? " pattern=\"{$field['pattern']}\"" : '';
@@ -1452,7 +1456,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 					$placeholder = isset( $field['placeholder'] ) ? " placeholder=\"{$field['placeholder']}\"" : '';
 
 					if ( $field['type'] === 'textarea' ) {
-						$data_forms .= "<div class=\"form-group\"><label>{$label}：</label> <textarea name=\"{$field['name']}\"{$pattern}{$required}>{$value}</textarea></div>";
+						$data_forms .= "<div class=\"form-group\"><label>{$label}：</label> <textarea name=\"{$field['name']}\"{$pattern}{$required}{$textarea_guard_attrs}>{$value}</textarea></div>";
 					} elseif ( $field['type'] === 'select' ) {
 						$options = '';
 						foreach ( $field['options'] as $option ) {

@@ -383,7 +383,7 @@
         }
         // フラグ管理はクリックハンドラに集約
 
-        const newIndex = $('.cost-items-table tbody tr').length;
+        const newIndex = $('#order_content .cost-items-table tbody tr').length;
         const newRowHtml = `
             <tr class="cost-item-row" data-row-id="0" data-newly-added="true" data-supplier-id="0">
                 <td class="actions-column">
@@ -1112,7 +1112,7 @@
         });
         
         // 一番下に新規行を追加
-        const $lastRow = $('.cost-items-table tbody tr').last();
+        const $lastRow = $('#order_content .cost-items-table tbody tr').last();
         const callId = Date.now();
         const rowAdded = addNewRow($lastRow, callId);
         
@@ -1298,10 +1298,17 @@
 
     // ページ読み込み完了時の初期化
     $(document).ready(function () {
+        // コストテーブルが DOM に無ければ、以降の全 document 委譲・sortable 初期化・ループをスキップ
+        if ($('.cost-items-table').length === 0) {
+            return;
+        }
+
         console.log('[COST] 📋 ページ初期化開始');
         
-        // 並び替え（sortable）有効化
-        $('.cost-items-table tbody').sortable({
+        // 並び替え（sortable）有効化（受注書タブにテーブルがあるときのみ）
+        const $costSortTbody = $('#order_content .cost-items-table tbody');
+        if ($costSortTbody.length) {
+        $costSortTbody.sortable({
             handle: '.drag-handle',
             items: '> tr',
             axis: 'y',
@@ -1387,9 +1394,9 @@
                                 if (result.success) {
                                     console.log('[COST] 並び順の保存に成功しました。');
                                     // 成功時の視覚的フィードバック
-                                    $('.cost-items-table tbody').addClass('sort-success');
+                                    $('#order_content .cost-items-table tbody').addClass('sort-success');
                                     setTimeout(function() {
-                                        $('.cost-items-table tbody').removeClass('sort-success');
+                                        $('#order_content .cost-items-table tbody').removeClass('sort-success');
                                     }, 1000);
                                 } else {
                                     console.warn('[COST] 並び順の保存に失敗しました。', result);
@@ -1443,9 +1450,10 @@
                 ui.item.css('opacity', '1');
             }
         }).disableSelection();
+        }
 
         // 単価・数量変更時の金額自動計算（blurイベントでのみ実行）
-        $(document).on('blur', '.cost-items-table .price, .cost-items-table .quantity', function () {
+        $(document).on('blur', '#order_content .cost-items-table .price, #order_content .cost-items-table .quantity', function () {
             const $field = $(this);
             
             // disabled フィールドは処理をスキップ
@@ -1478,7 +1486,7 @@
         });
 
         // 税率変更時のリアルタイム再計算
-        $(document).on('change', '.cost-items-table .tax-rate', function () {
+        $(document).on('change', '#order_content .cost-items-table .tax-rate', function () {
             const $field = $(this);
             
             // disabled フィールドは処理をスキップ
@@ -1510,7 +1518,7 @@
         });
 
         // 税率入力時のリアルタイム再計算（inputイベント）
-        $(document).on('input', '.cost-items-table .tax-rate', function () {
+        $(document).on('input', '#order_content .cost-items-table .tax-rate', function () {
             const $field = $(this);
 
             // disabled フィールドは処理をスキップ
@@ -1533,7 +1541,7 @@
         });
 
         // 自動追加機能を無効化（コメントアウト）
-        // $(document).on('input change', '.cost-items-table .service-name, .cost-items-table .price, .cost-items-table .quantity', function() {
+        // $(document).on('input change', '#order_content .cost-items-table .service-name, #order_content .cost-items-table .price, #order_content .cost-items-table .quantity', function() {
         //     const row = $(this).closest('tr');
         //     const tbody = row.closest('tbody');
         //     const isFirstRow = tbody.find('tr').first().is(row);
@@ -1556,12 +1564,12 @@
 
         // [+]ボタンで行追加（手動追加のみ）- イベント重複を防ぐ
         // より強力に既存のクリックハンドラを全て解除し、その後で名前空間付きのハンドラを1つだけバインドする
-        $(document).off('click', '.cost-items-table .btn-add-row'); // 名前空間なしで全て解除
-        $('body').off('click', '.cost-items-table .btn-add-row');   // bodyからの委譲も同様に解除
-        $('.cost-items-table').off('click', '.btn-add-row');        // テーブル要素からの委譲も同様に解除
+        $(document).off('click', '#order_content .cost-items-table .btn-add-row'); // 名前空間なしで全て解除
+        $('body').off('click', '#order_content .cost-items-table .btn-add-row');   // bodyからの委譲も同様に解除
+        $('#order_content .cost-items-table').off('click', '.btn-add-row');        // テーブル要素からの委譲も同様に解除
 
         // その後、私たちの意図する名前空間付きのハンドラを登録
-        $(document).on('click.ktpCostAdd', '.cost-items-table .btn-add-row', function (e) {
+        $(document).on('click.ktpCostAdd', '#order_content .cost-items-table .btn-add-row', function (e) {
             const clickId = Date.now(); // Define clickId at the beginning of the handler
             console.log(`[COST][${clickId}] +ボタンクリックイベント発生 (ktpCostAdd - 強力解除後)`); 
 
@@ -1629,7 +1637,7 @@
         });
 
         // 行削除ボタン - イベント重複を防ぐ
-        $(document).off('click', '.cost-items-table .btn-delete-row').on('click', '.cost-items-table .btn-delete-row', function (e) {
+        $(document).off('click', '#order_content .cost-items-table .btn-delete-row').on('click', '#order_content .cost-items-table .btn-delete-row', function (e) {
             e.preventDefault();
             e.stopPropagation();
             const currentRow = $(this).closest('tr');
@@ -1637,8 +1645,8 @@
         });
 
         // 行移動ボタン（協力会社選択機能）- コスト項目テーブル専用
-        $(document).off('click', '.cost-items-table .btn-move-row');
-        $(document).on('click', '.cost-items-table .btn-move-row', function (e) {
+        $(document).off('click', '#order_content .cost-items-table .btn-move-row');
+        $(document).on('click', '#order_content .cost-items-table .btn-move-row', function (e) {
             e.preventDefault();
             e.stopPropagation();
             console.log('[COST-ITEMS] [>]ボタンクリック - 協力会社選択開始');
@@ -1661,21 +1669,21 @@
         });
 
         // フォーカス時の入力欄スタイル調整
-        $(document).on('focus', '.cost-item-input', function () {
+        $(document).on('focus', '#order_content .cost-item-input', function () {
             $(this).addClass('focused');
         });
 
-        $(document).on('blur', '.cost-item-input', function () {
+        $(document).on('blur', '#order_content .cost-item-input', function () {
             $(this).removeClass('focused');
         });
 
         // 数値フィールドフォーカス時に全選択
-        $(document).on('focus', '.cost-items-table input[type="number"]', function () {
+        $(document).on('focus', '#order_content .cost-items-table input[type="number"]', function () {
             $(this).select();
         });
 
         // 商品名フィールドのblurイベントで自動保存
-        $(document).on('blur', '.cost-item-input.product-name', function () {
+        $(document).on('blur', '#order_content .cost-item-input.product-name', function () {
             if (window.ktpAddingCostRow === true) {
                 if (window.ktpDebugMode) {
                     console.log('[COST] Product name blur event skipped due to ktpAddingCostRow flag being true.');
@@ -1736,7 +1744,7 @@
         });
 
         // 単価フィールドのinputイベントでリアルタイム計算
-        $(document).on('input', '.cost-item-input.price', function () {
+        $(document).on('input', '#order_content .cost-item-input.price', function () {
             const $field = $(this);
             // フィールドが無効なら何もしない (新規行で商品名入力前の状態)
             if ($field.prop('disabled')) return;
@@ -1748,7 +1756,7 @@
         });
 
         // 単価フィールドのblurイベントで自動保存
-        $(document).on('blur', '.cost-item-input.price', function () {
+        $(document).on('blur', '#order_content .cost-item-input.price', function () {
             const $field = $(this);
             // フィールドが無効なら何もしない (新規行で商品名入力前の状態)
             if ($field.prop('disabled')) return;
@@ -1780,7 +1788,7 @@
         });
 
         // 数量フィールドのinputイベントでリアルタイム計算
-        $(document).on('input', '.cost-item-input.quantity', function () {
+        $(document).on('input', '#order_content .cost-item-input.quantity', function () {
             const $field = $(this);
             if ($field.prop('disabled')) return;
 
@@ -1791,7 +1799,7 @@
         });
 
         // 数量フィールドのblurイベントで自動保存
-        $(document).on('blur', '.cost-item-input.quantity', function () {
+        $(document).on('blur', '#order_content .cost-item-input.quantity', function () {
             const $field = $(this);
             if ($field.prop('disabled')) return;
 
@@ -1822,7 +1830,7 @@
         });
 
         // 単位フィールドのblurイベントで自動保存
-        $(document).on('blur', '.cost-item-input.unit', function () {
+        $(document).on('blur', '#order_content .cost-item-input.unit', function () {
             const $field = $(this);
             if ($field.prop('disabled')) return;
 
@@ -1852,7 +1860,7 @@
         });
 
         // 備考フィールドのblurイベントで自動保存
-        $(document).on('blur', '.cost-item-input.remarks', function () {
+        $(document).on('blur', '#order_content .cost-item-input.remarks', function () {
             const $field = $(this);
             if ($field.prop('disabled')) return;
 
@@ -1888,7 +1896,7 @@
         });
 
         // 仕入フィールドのblurイベントで自動保存
-        $(document).on('blur', '.cost-item-input.purchase', function () {
+        $(document).on('blur', '#order_content .cost-item-input.purchase', function () {
             const $field = $(this);
             if ($field.prop('disabled')) return;
 
@@ -1918,7 +1926,7 @@
         });
 
         // 初期状態で既存の行に対して金額計算を実行
-        $('.cost-items-table tbody tr').each(function () {
+        $('#order_content .cost-items-table tbody tr').each(function () {
             calculateAmount($(this));
         });
 
@@ -1932,7 +1940,7 @@
     window.createNewItem = createNewItem;
 
     // フォーム送信時にtr順でname属性indexを再構成
-    $(document).on('submit', '.cost-items-form', function(e) {
+    $(document).on('submit', '#order_content .cost-items-form', function(e) {
         const $form = $(this);
         const $table = $form.find('.cost-items-table');
         if ($table.length > 0) {
@@ -1965,7 +1973,7 @@
         
         // 同一協力会社の他の仕入情報を収集
         const supplierItems = [];
-        $('.cost-items-table tbody tr').each(function() {
+        $('#order_content .cost-items-table tbody tr').each(function() {
             const $row = $(this);
             const purchaseText = $row.find('.purchase-display').text().trim();
             
@@ -2014,7 +2022,7 @@
     });
 
     // 価格・数量変更時の金額自動計算（blurイベントでのみ実行）
-    $(document).on('blur', '.cost-items-table .price, .cost-items-table .quantity', function () {
+    $(document).on('blur', '#order_content .cost-items-table .price, #order_content .cost-items-table .quantity', function () {
         const $field = $(this);
         
         // disabled フィールドは処理をスキップ
@@ -2049,7 +2057,7 @@
     });
 
     // スピンアップ・ダウンイベントの処理
-    $(document).on('input', '.cost-items-table .price, .cost-items-table .quantity', function () {
+    $(document).on('input', '#order_content .cost-items-table .price, #order_content .cost-items-table .quantity', function () {
         const $field = $(this);
         
         // disabled フィールドは処理をスキップ
@@ -2074,7 +2082,7 @@
     });
 
     // スピンアップ・ダウンイベントの専用処理（changeイベント）
-    $(document).on('change', '.cost-items-table .price, .cost-items-table .quantity', function () {
+    $(document).on('change', '#order_content .cost-items-table .price, #order_content .cost-items-table .quantity', function () {
         const $field = $(this);
         
         // disabled フィールドは処理をスキップ
@@ -2105,7 +2113,7 @@
     });
 
     // 税率変更時の合計表示更新
-    $(document).on('blur', '.cost-items-table .tax-rate', function () {
+    $(document).on('blur', '#order_content .cost-items-table .tax-rate', function () {
         const $field = $(this);
         
         // disabled フィールドは処理をスキップ
@@ -2128,7 +2136,7 @@
     });
 
     // 税率変更時の即座更新（inputイベント）
-    $(document).on('input', '.cost-items-table .tax-rate', function () {
+    $(document).on('input', '#order_content .cost-items-table .tax-rate', function () {
         const $field = $(this);
         
         // disabled フィールドは処理をスキップ

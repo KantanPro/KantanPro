@@ -582,7 +582,7 @@
 
             // カード型リストアイテムのホバーエフェクト
             $(document).off('mouseenter.ktp-service-item mouseleave.ktp-service-item')
-                .on('mouseenter.ktp-service-item', '.ktp_data_list_item', function() {
+                .on('mouseenter.ktp-service-item', '#ktp-service-selector-popup .ktp_data_list_item', function() {
                     // ホバー時のエフェクト
                     $(this).css({
                         'background-color': '#e3f2fd',
@@ -591,7 +591,7 @@
                         'border-radius': '4px'
                     });
                 })
-                .on('mouseleave.ktp-service-item', '.ktp_data_list_item', function() {
+                .on('mouseleave.ktp-service-item', '#ktp-service-selector-popup .ktp_data_list_item', function() {
                     // ホバー解除時
                     const index = $(this).index();
                     const originalBg = index % 2 === 0 ? '#f9fafb' : '#ffffff';
@@ -933,7 +933,7 @@
         // デバッグ用：サービス追加時の金額計算確認
         window.ktpDebugServiceAmountCalculation = function() {
             console.log('=== サービス追加後の金額計算確認 ===');
-            $('.invoice-items-table tbody tr').each(function(index) {
+            $('#order_content .invoice-items-table tbody tr').each(function(index) {
                 const $row = $(this);
                 const productName = $row.find('.product-name').val();
                 const price = parseFloat($row.find('.price').val()) || 0;
