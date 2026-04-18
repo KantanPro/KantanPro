@@ -1582,12 +1582,12 @@ function ktpwp_is_new_installation() {
         }
     }
 
-    // 4. マイグレーション履歴の確認
-    $migration_options = $wpdb->get_results( 
-        "SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE 'ktpwp_migration_%_completed' LIMIT 1" 
+    // 4. マイグレーション履歴の確認（ktp_migration_* はマイグレーションファイル実行時のフラグ名と一致させる）
+    $migration_hit = $wpdb->get_var(
+        "SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE 'ktpwp_migration_%' OR option_name LIKE 'ktp_migration_%' LIMIT 1"
     );
-    
-    if ( ! empty( $migration_options ) ) {
+
+    if ( ! empty( $migration_hit ) ) {
         set_transient( 'ktpwp_new_installation_check', false, HOUR_IN_SECONDS );
         return false; // 既存環境（マイグレーション履歴あり）
     }
@@ -1599,9 +1599,10 @@ function ktpwp_is_new_installation() {
         return false; // 既存環境（DBバージョン設定済み）
     }
 
-    // 全ての条件をクリアした場合は新規インストール
-    set_transient( 'ktpwp_new_installation_check', true, HOUR_IN_SECONDS );
-    return true;
+    // 6. ここまで来た時点で $has_data は true（手順2で空テーブルなら既に return 済み）。
+    // オプション欠落・DBバージョン未設定でも、メインテーブルに行があれば既存環境（誤って新規扱いにしない）。
+    set_transient( 'ktpwp_new_installation_check', false, HOUR_IN_SECONDS );
+    return false;
 }
 
 /**
