@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.2.47
+Stable tag: 1.2.48
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -324,6 +324,9 @@ curl -sS -X POST \
 * 推奨PHP拡張: GD（画像処理用）
 
 == 変更履歴 ==
+
+= 1.2.48 - 2026年04月19日 =
+* プラグイン更新後に管理画面へ表示されていた「データベースの反映だけ未完了」「KantanPro設定でデータベースを更新してください」旨の案内通知を表示しないよう変更（`ktpwp_upgrade_error` トランジェントの設定・表示を削除）。詳細エラーは従来どおりオプションに記録
 
 = 1.2.47 - 2026年04月19日 =
 * アセット読み込みの最適化と拡張性の向上（`includes/class-ktpwp-assets.php`）

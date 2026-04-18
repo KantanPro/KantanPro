@@ -3,7 +3,7 @@
  * Plugin Name: KantanPro
  * Plugin URI: https://www.kantanpro.com/
  * Description: フリーランス・スモールビジネス向けの仕事効率化システム。ショートコード[ktpwp_all_tab]を固定ページに設置してください。
- * Version: 1.2.47
+ * Version: 1.2.48
  * Author: KantanPro
  * Author URI: https://www.kantanpro.com/kantanpro-page
  * License: GPL v2 or later
@@ -2383,9 +2383,6 @@ function ktpwp_plugin_upgrade_migration( $upgrader, $hook_extra ) {
         update_option( 'ktpwp_upgrade_error', $e->getMessage() );
         update_option( 'ktpwp_upgrade_error_timestamp', current_time( 'mysql' ) );
         update_option( 'ktpwp_upgrade_error_count', get_option( 'ktpwp_upgrade_error_count', 0 ) + 1 );
-        
-        // ユーザー向けには穏やかな案内（プラグインは更新済みで、KantanPro設定でDB更新できる旨を伝える）
-        set_transient( 'ktpwp_upgrade_error', 'プラグインは正常に更新されました。データベースの反映だけ未完了でした。KantanPro設定でデータベースを更新してください。', 60 );
     }
 }
 
@@ -2768,20 +2765,6 @@ function ktpwp_admin_notices() {
     if ( get_transient( 'ktpwp_upgrade_message' ) ) {
         echo '<div class="notice notice-success is-dismissible">';
         echo '<p><strong>KantanPro:</strong> ' . esc_html( get_transient( 'ktpwp_upgrade_message' ) ) . '</p>';
-        echo '</div>';
-    }
-    
-    // アップデート時の案内（データベース反映が未完了だった場合の穏やかなメッセージ）
-    if ( get_transient( 'ktpwp_upgrade_error' ) ) {
-        $upgrade_msg = get_transient( 'ktpwp_upgrade_error' );
-        // 旧文言がトランジェントに残っている場合も新文言に統一
-        if ( strpos( $upgrade_msg, '下の「今すぐ更新」' ) !== false ) {
-            $upgrade_msg = 'プラグインは正常に更新されました。データベースの反映だけ未完了でした。KantanPro設定でデータベースを更新してください。';
-        }
-        $settings_link = '<a href="' . esc_url( admin_url( 'admin.php?page=ktp-settings' ) ) . '">KantanPro設定</a>';
-        $upgrade_msg_display = str_replace( 'KantanPro設定', $settings_link, esc_html( $upgrade_msg ) );
-        echo '<div class="notice notice-warning is-dismissible">';
-        echo '<p><strong>KantanPro:</strong> ' . $upgrade_msg_display . '</p>';
         echo '</div>';
     }
 }
