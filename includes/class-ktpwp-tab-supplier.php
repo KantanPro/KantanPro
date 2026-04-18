@@ -890,8 +890,10 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 			if ( $action !== 'istmode' ) {
 				if ( isset( $_GET['data_id'] ) && $_GET['data_id'] !== '' ) {
 					$query_id = filter_input( INPUT_GET, 'data_id', FILTER_SANITIZE_NUMBER_INT );
-					// クッキーも即時更新（追加直後やURL遷移時に常に最新IDを保持）
-					setcookie( $cookie_name, $query_id, time() + ( 86400 * 30 ), '/' );
+					// クッキーも即時更新（追加直後やURL遷移時に常に最新IDを保持）。ショートコード表示後はヘッダー済みの場合あり
+					if ( ! headers_sent() ) {
+						setcookie( $cookie_name, (string) $query_id, time() + ( 86400 * 30 ), '/' );
+					}
 				} else if ( isset( $_COOKIE[ $cookie_name ] ) && $_COOKIE[ $cookie_name ] !== '' ) {
 					$cookie_id = filter_input( INPUT_COOKIE, $cookie_name, FILTER_SANITIZE_NUMBER_INT );
 					// クッキーIDがDBに存在するかチェック

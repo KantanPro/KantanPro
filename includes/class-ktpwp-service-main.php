@@ -509,8 +509,10 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 
 				if ( isset( $_GET['data_id'] ) && $_GET['data_id'] !== '' ) {
 					$query_id = filter_input( INPUT_GET, 'data_id', FILTER_SANITIZE_NUMBER_INT );
-					// GETパラメータで取得したIDをクッキーに保存
-					setcookie( $cookie_name, $query_id, time() + ( 86400 * 30 ), '/' );
+					// GETパラメータで取得したIDをクッキーに保存（ショートコード表示後はヘッダー済みのため送れない場合あり）
+					if ( ! headers_sent() ) {
+						setcookie( $cookie_name, (string) $query_id, time() + ( 86400 * 30 ), '/' );
+					}
 				} elseif ( isset( $_COOKIE[ $cookie_name ] ) && $_COOKIE[ $cookie_name ] !== '' ) {
 					$cookie_id = filter_input( INPUT_COOKIE, $cookie_name, FILTER_SANITIZE_NUMBER_INT );
 					// クッキーIDがDBに存在するかチェック
@@ -522,14 +524,18 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 						$last_id_row = $wpdb->get_row( "SELECT id FROM {$table_name} ORDER BY id DESC LIMIT 1" );
 						$query_id = $last_id_row ? $last_id_row->id : 1;
 						// 最新IDをクッキーに保存
-						setcookie( $cookie_name, $query_id, time() + ( 86400 * 30 ), '/' );
+						if ( ! headers_sent() ) {
+							setcookie( $cookie_name, (string) $query_id, time() + ( 86400 * 30 ), '/' );
+						}
 					}
 				} else {
 					// data_id未指定時は必ずID最新のサービスを表示（降順トップ）
 					$last_id_row = $wpdb->get_row( "SELECT id FROM {$table_name} ORDER BY id DESC LIMIT 1" );
 					$query_id = $last_id_row ? $last_id_row->id : 1;
 					// 最新IDをクッキーに保存
-					setcookie( $cookie_name, $query_id, time() + ( 86400 * 30 ), '/' );
+					if ( ! headers_sent() ) {
+						setcookie( $cookie_name, (string) $query_id, time() + ( 86400 * 30 ), '/' );
+					}
 				}
 
 				// データを取得し変数に格納
