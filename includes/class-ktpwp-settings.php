@@ -2352,6 +2352,24 @@ class KTPWP_Settings {
                                 }
                                 echo '</table>';
                             }
+                        }
+
+                        // プラグイン削除時のデータ保持設定セクションの出力
+                        if ( isset( $wp_settings_sections['ktp-general']['uninstall_setting_section'] ) ) {
+                            $section = $wp_settings_sections['ktp-general']['uninstall_setting_section'];
+                            echo '<h2 id="uninstall_setting_section" style="margin-top:40px;border-top:1px solid #ddd;padding-top:20px;">' . esc_html( $section['title'] ) . '</h2>';
+                            if ( $section['callback'] ) {
+                                call_user_func( $section['callback'], $section );
+                            }
+                            if ( isset( $wp_settings_fields['ktp-general']['uninstall_setting_section'] ) ) {
+                                echo '<table class="form-table">';
+                                foreach ( $wp_settings_fields['ktp-general']['uninstall_setting_section'] as $field ) {
+                                    echo '<tr><th scope="row">' . esc_html( $field['title'] ) . '</th><td>';
+                                    call_user_func( $field['callback'], $field['args'] );
+                                    echo '</td></tr>';
+                                }
+                                echo '</table>';
+                            }
                         } ?>
                         
                         <div class="ktp-submit-button">
@@ -2714,6 +2732,20 @@ class KTPWP_Settings {
                 )
             )
         );
+
+        // プラグイン削除時のデータ保持設定（エンドユーザー向け設定）
+        // 一般設定タブ(ktp-general)に表示するため、ktp_general_group に登録
+        register_setting(
+            'ktp_general_group',
+            'ktp_uninstall_settings',
+            array(
+                'sanitize_callback' => array( $this, 'sanitize_uninstall_settings' ),
+                'type' => 'object',
+                'default' => array(
+                    'uninstall_mode' => 'keep_data',
+                ),
+            )
+        );
         register_setting(
             'ktp_central_banner_group',
             'ktp_central_banner_settings',
@@ -2997,6 +3029,22 @@ class KTPWP_Settings {
             array( $this, 'github_token_callback' ),
             'ktp-developer-settings',
             'update_notification_setting_section'
+        );
+
+        // プラグイン削除時の動作（エンドユーザー向け・一般設定ページに配置）
+        add_settings_section(
+            'uninstall_setting_section',
+            __( 'プラグイン削除時のデータ保持設定', 'ktpwp' ),
+            array( $this, 'print_uninstall_section_info' ),
+            'ktp-general'
+        );
+
+        add_settings_field(
+            'uninstall_mode',
+            __( 'プラグイン削除時の動作', 'ktpwp' ),
+            array( $this, 'uninstall_mode_callback' ),
+            'ktp-general',
+            'uninstall_setting_section'
         );
         add_settings_section(
             'central_banner_setting_section',
@@ -5116,6 +5164,68 @@ define( 'WP_DEBUG_DISPLAY', false );
             <strong>現在の設定:</strong> 公開リポジトリ「KantanPro/KantanPro-a-」を使用
         </p>
         <?php
+    }
+
+    /**
+     * プラグイン削除時データ保持セクションの説明
+     */
+    public function print_uninstall_section_info() {
+        ?>
+        <p><?php esc_html_e( 'プラグインをアンインストール（削除）する時に、登録されたデータをどう扱うかを選択できます。', 'ktpwp' ); ?></p>
+        <?php
+    }
+
+    /**
+     * プラグイン削除時の動作モード選択コールバック
+     */
+    public function uninstall_mode_callback() {
+        $options = get_option( 'ktp_uninstall_settings', array() );
+        $current = isset( $options['uninstall_mode'] ) ? $options['uninstall_mode'] : 'keep_data';
+        ?>
+        <fieldset>
+            <label style="display:block;margin-bottom:10px;line-height:1.6;">
+                <input type="radio"
+                       name="ktp_uninstall_settings[uninstall_mode]"
+                       value="keep_data"
+                       <?php checked( $current, 'keep_data' ); ?> />
+                <strong><?php esc_html_e( 'データを残す（推奨）', 'ktpwp' ); ?></strong><br />
+                <span style="color:#555;margin-left:24px;display:inline-block;">
+                    <?php esc_html_e( 'プラグインを削除しても、顧客・サービス・協力会社・受注書などのデータはデータベースに残ります。後からプラグインを再インストールしたとき、以前のデータをそのまま引き続き利用できます。', 'ktpwp' ); ?>
+                </span>
+            </label>
+            <label style="display:block;line-height:1.6;">
+                <input type="radio"
+                       name="ktp_uninstall_settings[uninstall_mode]"
+                       value="full_delete"
+                       <?php checked( $current, 'full_delete' ); ?> />
+                <strong style="color:#d63638;"><?php esc_html_e( '完全削除（すべてのデータを消す）', 'ktpwp' ); ?></strong><br />
+                <span style="color:#555;margin-left:24px;display:inline-block;">
+                    <?php esc_html_e( 'プラグインを削除すると同時に、KantanProに保存されている全データ（顧客・サービス・協力会社・受注書・請求書・設定など）をデータベースから完全に削除します。', 'ktpwp' ); ?>
+                </span>
+            </label>
+        </fieldset>
+        <div style="margin-top:14px;padding:10px 14px;background:#fef2f2;border-left:4px solid #d63638;border-radius:3px;">
+            <strong style="color:#d63638;">⚠ <?php esc_html_e( '重要な注意:', 'ktpwp' ); ?></strong>
+            <?php esc_html_e( '「完全削除」を選んだ状態でプラグインを削除すると、すべてのデータが失われ、元に戻せません。必ず事前にバックアップを取ってから実行してください。', 'ktpwp' ); ?>
+        </div>
+        <?php
+    }
+
+    /**
+     * アンインストール設定のサニタイズ
+     *
+     * @param array $input
+     * @return array
+     */
+    public function sanitize_uninstall_settings( $input ) {
+        $sanitized = array( 'uninstall_mode' => 'keep_data' );
+        if ( is_array( $input ) && isset( $input['uninstall_mode'] ) ) {
+            $mode = sanitize_key( (string) $input['uninstall_mode'] );
+            if ( in_array( $mode, array( 'keep_data', 'full_delete' ), true ) ) {
+                $sanitized['uninstall_mode'] = $mode;
+            }
+        }
+        return $sanitized;
     }
 
     /**

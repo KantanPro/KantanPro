@@ -1,4 +1,4 @@
-# KantanPro (KTPWP) - Version 1.2.44
+# KantanPro (KTPWP) - Version 1.2.45
 
 WordPressで動作する業務管理・受注進捗・請求・顧客・サービス・協力会社・レポート・スタッフチャットまで一元管理できる多機能プラグイン。
 
@@ -351,6 +351,26 @@ KantanProは、WordPress上で以下の業務を一元管理できる多機能�
 ---
 
 ## 変更履歴
+### Version 1.2.45 - 2026年4月18日
+- **サービス／協力会社タブのメモ欄クリック時にブラウザがフリーズする問題を多層で解消**
+  - 他プラグイン（**Gomoku Game** 等）の `$(document)` 委譲・`MutationObserver` による干渉を、KantanProページでのみ自動除外（`ktpwp_interfering_asset_handles` フィルターで拡張可能）
+  - サービス／協力会社／顧客／レポート／リストタブでは受注書専用の重いJS（`ktp-invoice-items` 等）を読み込まないよう制御
+  - メモ `textarea` に **CSS containment**（`contain: layout style`）と独立合成レイヤー化を適用し、レイアウト再計算を閉じ込め
+  - **Grammarly 等のブラウザ拡張・翻訳による介入**を抑止する属性（`spellcheck`, `data-gramm` 他）を `textarea` に付与
+  - **KTPWP プレフィックス付き `console.log` をデフォルトで抑制**し、DevTools 起動時のメインスレッド詰まりを防止（`localStorage` / URLパラメータ / 定数で verbose 復活可）
+  - 各タブ専用JS（`ktp-invoice-items` / `ktp-cost-items` / `ktp-client-delete-popup` / `ktp-delivery-dates`）に対象DOM不在時の早期returnを追加
+- **プラグイン削除時のデータ保持設定機能を追加**
+  - 「一般設定」に「**プラグイン削除時のデータ保持設定**」セクションを追加し、「データを残す（推奨）／完全削除」を選択可能
+  - **プラグイン一覧画面の KantanPro 行に現在の削除モードをバッジ表示**、横の「変更」リンクから設定画面へ直接ジャンプ
+  - 「削除」リンク押下時に、現在のモードに応じた**確認ダイアログ**を表示（完全削除時は復元不可の警告）
+  - `uninstall.php` を新設し、「完全削除」選択時に `ktp_*` テーブル、`ktp_*`/`ktpwp_*` 系オプション・トランジェント、ユーザーメタ、投稿メタ、KantanPro系cronを一括削除（マルチサイト対応）
+- **詳細フォームをリスト列より前面に固定**し、タブの `pointer-events` を撤去
+- **タブ表示をサーバー側クラスで確定**し、兄弟セレクタのみに依存しないよう堅牢化
+- **サービス・協力会社のレイアウトを顧客タブに合わせて統一**
+- **タブ内の重複IDを解消**し、タブレイアウトの重なりを防止
+- **`View_Table` 内の `setcookie` を `headers_sent` でガード**し、ヘッダー送出後の警告を防止
+- **タブパネルをラジオと兄弟DOMに戻し全タブ表示を修正**。ショートコードの `tab_name` を POST 優先にし、ベースURLの `page_id` 取得を改善
+
 ### Version 1.2.44 - 2026年4月18日
 - **新規インストール判定（`ktpwp_is_new_installation`）の論理不整合を修正**。メインの `ktp_*` テーブルにデータがあるのに、オプション未設定などで**新規扱い**になる問題を解消
 - **マイグレーション履歴オプションの検索**を `ktp_migration_%` にも対応（実際のフラグ名と一致）

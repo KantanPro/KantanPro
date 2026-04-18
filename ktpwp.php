@@ -3,7 +3,7 @@
  * Plugin Name: KantanPro
  * Plugin URI: https://www.kantanpro.com/
  * Description: フリーランス・スモールビジネス向けの仕事効率化システム。ショートコード[ktpwp_all_tab]を固定ページに設置してください。
- * Version: 1.2.44
+ * Version: 1.2.45
  * Author: KantanPro
  * Author URI: https://www.kantanpro.com/kantanpro-page
  * License: GPL v2 or later
@@ -4284,6 +4284,124 @@ register_activation_hook( __FILE__, 'ktpwp_schedule_temp_file_cleanup' );
 
 // プラグイン無効化時にクリーンアップスケジュールを削除
 register_deactivation_hook( __FILE__, 'ktpwp_unschedule_temp_file_cleanup' );
+
+/* ==========================================================================
+ * プラグイン削除（アンインストール）時のデータ保持設定
+ *   - エンドユーザーがプラグイン一覧画面からKantanProを「削除」する際に
+ *     「データを残す／完全削除」を明示的に選べるようにする。
+ *   - プラグインの行に現在の削除モードを表示し、変更リンクを提示する。
+ *   - 「削除」リンク押下時にはどちらのモードで実行されるかを確認する
+ *     JavaScriptダイアログを出す。
+ * ========================================================================== */
+
+/**
+ * 現在のアンインストールモードを取得
+ *
+ * @return string 'keep_data' | 'full_delete'
+ */
+function ktpwp_get_uninstall_mode() {
+    $options = get_option( 'ktp_uninstall_settings', array() );
+    $mode    = isset( $options['uninstall_mode'] ) ? (string) $options['uninstall_mode'] : 'keep_data';
+    return ( $mode === 'full_delete' ) ? 'full_delete' : 'keep_data';
+}
+
+/**
+ * プラグイン一覧の行メタに削除モード表示と変更リンクを追加
+ */
+add_filter(
+    'plugin_row_meta',
+    function ( $links, $file ) {
+        if ( $file !== plugin_basename( __FILE__ ) ) {
+            return $links;
+        }
+        if ( ! current_user_can( 'delete_plugins' ) ) {
+            return $links;
+        }
+
+        $mode         = ktpwp_get_uninstall_mode();
+        $is_full      = ( $mode === 'full_delete' );
+        $mode_label   = $is_full
+            ? __( '完全削除', 'ktpwp' )
+            : __( 'データを残す', 'ktpwp' );
+        $mode_color   = $is_full ? '#d63638' : '#00a32a';
+
+        $settings_url = admin_url( 'admin.php?page=ktp-settings#uninstall_setting_section' );
+
+        $badge = sprintf(
+            '<span style="display:inline-block;padding:1px 8px;border:1px solid %1$s;border-radius:10px;color:%1$s;font-size:11px;line-height:1.4;vertical-align:middle;">%2$s: %3$s</span>',
+            esc_attr( $mode_color ),
+            esc_html__( '削除時の動作', 'ktpwp' ),
+            esc_html( $mode_label )
+        );
+
+        $change_link = sprintf(
+            '<a href="%s">%s</a>',
+            esc_url( $settings_url ),
+            esc_html__( '変更', 'ktpwp' )
+        );
+
+        $links[] = $badge . ' ' . $change_link;
+        return $links;
+    },
+    10,
+    2
+);
+
+/**
+ * プラグイン一覧画面で「削除」リンク押下時に確認ダイアログを出す
+ *
+ * WordPress標準の削除確認画面は全プラグイン共通の文言のため、
+ * KantanProの削除モードを踏まえた案内を事前に表示する。
+ */
+add_action(
+    'admin_footer-plugins.php',
+    function () {
+        if ( ! current_user_can( 'delete_plugins' ) ) {
+            return;
+        }
+
+        $plugin_basename = plugin_basename( __FILE__ );
+        $mode            = ktpwp_get_uninstall_mode();
+        $settings_url    = admin_url( 'admin.php?page=ktp-settings#uninstall_setting_section' );
+
+        $msg_keep = __(
+            "KantanPro を削除します。\n\n現在の設定: 【データを残す】\n→ 顧客・サービス・協力会社・受注書などのデータはデータベースに残ります。\n  後で再インストールすれば、以前のデータを引き続き利用できます。\n\n設定を変更するには、いったんキャンセルして「KantanPro 設定 → 一般設定」から\n「プラグイン削除時のデータ保持設定」を変更してください。\n\nこのまま削除してよろしいですか？",
+            'ktpwp'
+        );
+        $msg_full = __(
+            "⚠ 警告: KantanPro を【完全削除】します。\n\n現在の設定: 【完全削除（すべてのデータを消す）】\n→ 顧客・サービス・協力会社・受注書・請求書・設定など、\n  KantanProに関するすべてのデータがデータベースから完全に削除されます。\n  この操作は元に戻せません。\n\n必ず事前にバックアップを取得していることを確認してください。\n\n設定を変更するには、いったんキャンセルして「KantanPro 設定 → 一般設定」から\n「プラグイン削除時のデータ保持設定」を変更してください。\n\n本当にすべてのデータを削除してよろしいですか？",
+            'ktpwp'
+        );
+
+        $message = ( $mode === 'full_delete' ) ? $msg_full : $msg_keep;
+        ?>
+<script>
+(function(){
+    var pluginFile = <?php echo wp_json_encode( $plugin_basename ); ?>;
+    var message    = <?php echo wp_json_encode( $message ); ?>;
+
+    document.addEventListener('click', function(e){
+        var a = e.target;
+        while (a && a.tagName !== 'A') { a = a.parentNode; }
+        if (!a || !a.href) return;
+
+        var href = a.getAttribute('href') || '';
+        if (href.indexOf('action=delete-selected') === -1 && href.indexOf('plugin=' + encodeURIComponent(pluginFile)) === -1) {
+            if (href.indexOf('action=delete-selected') === -1) return;
+        }
+        if (href.indexOf(encodeURIComponent(pluginFile)) === -1 && href.indexOf(pluginFile) === -1) return;
+
+        if (!window.confirm(message)) {
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+        }
+    }, true);
+})();
+</script>
+        <?php
+    }
+);
 
 /**
  * 一時ファイルクリーンアップのスケジュール設定
