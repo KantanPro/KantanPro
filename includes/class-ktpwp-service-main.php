@@ -364,7 +364,7 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 			}
 
 			$sort_dropdown .=
-            '<select id="sort-select" name="sort_by" style="margin-right:5px;">' .
+            '<select id="' . esc_attr( 'ktp-' . $name . '-sort-select' ) . '" name="sort_by" style="margin-right:5px;">' .
             '<option value="id" ' . selected( $sort_by, 'id', false ) . '>' . esc_html__( 'ID', 'ktpwp' ) . '</option>' .
             '<option value="service_name" ' . selected( $sort_by, 'service_name', false ) . '>' . esc_html__( 'サービス名', 'ktpwp' ) . '</option>' .
             '<option value="price" ' . selected( $sort_by, 'price', false ) . '>' . esc_html__( '価格', 'ktpwp' ) . '</option>' .
@@ -373,7 +373,7 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
             '<option value="frequency" ' . selected( $sort_by, 'frequency', false ) . '>' . esc_html__( '頻度', 'ktpwp' ) . '</option>' .
             '<option value="time" ' . selected( $sort_by, 'time', false ) . '>' . esc_html__( '登録日', 'ktpwp' ) . '</option>' .
             '</select>' .
-            '<select id="sort-order" name="sort_order">' .
+            '<select id="' . esc_attr( 'ktp-' . $name . '-sort-order' ) . '" name="sort_order">' .
             '<option value="ASC" ' . selected( $sort_order, 'ASC', false ) . '>' . esc_html__( '昇順', 'ktpwp' ) . '</option>' .
             '<option value="DESC" ' . selected( $sort_order, 'DESC', false ) . '>' . esc_html__( '降順', 'ktpwp' ) . '</option>' .
             '</select>' .

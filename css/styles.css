@@ -1478,6 +1478,7 @@ form > .create-order-btn {
   margin: 0 auto;
   position: relative;
   z-index: 5; /* ヘッダーより低いz-index */
+  display: flow-root; /* float したタブラベルを内包し、本文との重なりを防ぐ */
 }
 
 /*タブのスタイル*/
@@ -1528,6 +1529,7 @@ input[name="tab_item"] {
   display: none;
   overflow: auto;
   background-color: #fcfcfc;
+  clear: both; /* タブ行が折り返したとき float が本文に被らないように */
 }
 
 /*選択されているタブのコンテンツのみを表示*/

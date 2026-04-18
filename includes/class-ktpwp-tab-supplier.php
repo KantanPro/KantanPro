@@ -756,14 +756,14 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 			}
 
 			$sort_dropdown .=
-            '<select id="sort-select" name="sort_by" style="margin-right:5px;">' .
+            '<select id="' . esc_attr( 'ktp-' . $name . '-sort-select' ) . '" name="sort_by" style="margin-right:5px;">' .
             '<option value="id" ' . selected( $sort_by, 'id', false ) . '>' . esc_html__( 'ID', 'ktpwp' ) . '</option>' .
             '<option value="company_name" ' . selected( $sort_by, 'company_name', false ) . '>' . esc_html__( '会社名', 'ktpwp' ) . '</option>' .
             '<option value="frequency" ' . selected( $sort_by, 'frequency', false ) . '>' . esc_html__( '頻度', 'ktpwp' ) . '</option>' .
             '<option value="time" ' . selected( $sort_by, 'time', false ) . '>' . esc_html__( '登録日', 'ktpwp' ) . '</option>' .
             '<option value="category" ' . selected( $sort_by, 'category', false ) . '>' . esc_html__( 'カテゴリー', 'ktpwp' ) . '</option>' .
             '</select>' .
-            '<select id="sort-order" name="sort_order">' .
+            '<select id="' . esc_attr( 'ktp-' . $name . '-sort-order' ) . '" name="sort_order">' .
             '<option value="ASC" ' . selected( $sort_order, 'ASC', false ) . '>' . esc_html__( '昇順', 'ktpwp' ) . '</option>' .
             '<option value="DESC" ' . selected( $sort_order, 'DESC', false ) . '>' . esc_html__( '降順', 'ktpwp' ) . '</option>' .
             '</select>' .
@@ -1039,12 +1039,12 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 				}
 
 				$skills_sort_dropdown .=
-					'<select id="skills-sort-select" name="skills_sort_by" style="margin-right:5px;">' .
+					'<select id="' . esc_attr( 'ktp-' . $name . '-skills-sort-select' ) . '" name="skills_sort_by" style="margin-right:5px;">' .
 					'<option value="id" ' . selected( $skills_sort_by, 'id', false ) . '>' . esc_html__( 'ID', 'ktpwp' ) . '</option>' .
 					'<option value="product_name" ' . selected( $skills_sort_by, 'product_name', false ) . '>' . esc_html__( '商品名', 'ktpwp' ) . '</option>' .
 					'<option value="frequency" ' . selected( $skills_sort_by, 'frequency', false ) . '>' . esc_html__( '頻度', 'ktpwp' ) . '</option>' .
 					'</select>' .
-					'<select id="skills-sort-order" name="skills_sort_order">' .
+					'<select id="' . esc_attr( 'ktp-' . $name . '-skills-sort-order' ) . '" name="skills_sort_order">' .
 					'<option value="ASC" ' . selected( $skills_sort_order, 'ASC', false ) . '>' . esc_html__( '昇順', 'ktpwp' ) . '</option>' .
 					'<option value="DESC" ' . selected( $skills_sort_order, 'DESC', false ) . '>' . esc_html__( '降順', 'ktpwp' ) . '</option>' .
 					'</select>' .

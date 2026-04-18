@@ -53,7 +53,7 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 				}
 
 				$sort_dropdown .=
-                '<select id="sort-select" name="sort_by" style="margin-right:5px;">' .
+                '<select id="' . esc_attr( 'ktp-' . $name . '-sort-select' ) . '" name="sort_by" style="margin-right:5px;">' .
                 '<option value="id" ' . selected( $sort_by, 'id', false ) . '>' . esc_html__( 'ID', 'ktpwp' ) . '</option>' .
                 '<option value="company_name" ' . selected( $sort_by, 'company_name', false ) . '>' . esc_html__( '会社名', 'ktpwp' ) . '</option>' .
                 '<option value="frequency" ' . selected( $sort_by, 'frequency', false ) . '>' . esc_html__( '頻度', 'ktpwp' ) . '</option>' .
@@ -61,7 +61,7 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
                 '<option value="client_status" ' . selected( $sort_by, 'client_status', false ) . '>' . esc_html__( '対象｜対象外', 'ktpwp' ) . '</option>' .
                 '<option value="category" ' . selected( $sort_by, 'category', false ) . '>' . esc_html__( 'カテゴリー', 'ktpwp' ) . '</option>' .
                 '</select>' .
-                '<select id="sort-order" name="sort_order">' .
+                '<select id="' . esc_attr( 'ktp-' . $name . '-sort-order' ) . '" name="sort_order">' .
                 '<option value="ASC" ' . selected( $sort_order, 'ASC', false ) . '>' . esc_html__( '昇順', 'ktpwp' ) . '</option>' .
                 '<option value="DESC" ' . selected( $sort_order, 'DESC', false ) . '>' . esc_html__( '降順', 'ktpwp' ) . '</option>' .
                 '</select>' .
@@ -104,13 +104,13 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 				}
 
 				$sort_dropdown .=
-                '<select id="order-sort-select" name="order_sort_by" style="margin-right:5px;">' .
+                '<select id="' . esc_attr( 'ktp-' . $name . '-order-sort-select' ) . '" name="order_sort_by" style="margin-right:5px;">' .
                 '<option value="id" ' . selected( $order_sort_by, 'id', false ) . '>' . esc_html__( '注文ID', 'ktpwp' ) . '</option>' .
                 '<option value="time" ' . selected( $order_sort_by, 'time', false ) . '>' . esc_html__( '日付', 'ktpwp' ) . '</option>' .
                 '<option value="progress" ' . selected( $order_sort_by, 'progress', false ) . '>' . esc_html__( '進捗', 'ktpwp' ) . '</option>' .
                 '<option value="project_name" ' . selected( $order_sort_by, 'project_name', false ) . '>' . esc_html__( '案件名', 'ktpwp' ) . '</option>' .
                 '</select>' .
-                '<select id="order-sort-order" name="order_sort_order">' .
+                '<select id="' . esc_attr( 'ktp-' . $name . '-order-sort-order' ) . '" name="order_sort_order">' .
                 '<option value="ASC" ' . selected( $order_sort_order, 'ASC', false ) . '>' . esc_html__( '昇順', 'ktpwp' ) . '</option>' .
                 '<option value="DESC" ' . selected( $order_sort_order, 'DESC', false ) . '>' . esc_html__( '降順', 'ktpwp' ) . '</option>' .
                 '</select>' .
