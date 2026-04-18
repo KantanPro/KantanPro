@@ -1,0 +1,24 @@
+# Composer
+/vendor/
+
+# Node（利用時）
+node_modules/
+
+# OS・IDE
+.DS_Store
+Thumbs.db
+.idea/
+*.swp
+*~
+
+# ログ・環境
+*.log
+.env
+.env.*
+
+# 配布ZIP・一時ファイル
+*.zip
+*.tmp
+
+# 開発用ローカル設定（任意）
+development-config.php

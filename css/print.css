@@ -1,0 +1,14 @@
+/* 全体のフォントを指定 */
+body {
+    font-family: "Times New Roman", serif;
+}
+
+/* 見積書のスタイリング */
+.estimate {
+    /* 見積書のスタイリング */
+}
+
+/* プリント時にはボタンを非表示にする */
+button {
+    display: none;
+}

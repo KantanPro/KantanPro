@@ -1,0 +1,104 @@
+/* サイトヘルスページ専用CSSリセット */
+/* このファイルはサイトヘルスページでのみ読み込まれ、KTPWPプラグインのスタイル競合を防ぎます */
+
+/* 基本的なリセット */
+.data_detail_title,
+.data_list_title,
+.data_skill_list_title {
+    font-weight: normal !important;
+    font-size: inherit !important;
+    background-color: transparent !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    margin-bottom: 0 !important;
+    display: block !important;
+    justify-content: initial !important;
+    align-items: initial !important;
+    flex-wrap: initial !important;
+    gap: 0 !important;
+}
+
+/* 見出し要素のリセット */
+h1, h2, h3, h4, h5, h6 {
+    font-weight: normal !important;
+    font-size: inherit !important;
+}
+
+/* 通知要素のリセット */
+.notice,
+.notice-error,
+.notice-warning,
+.notice-success,
+.notice-info {
+    font-weight: normal !important;
+    font-size: inherit !important;
+}
+
+/* KTPWP固有の要素を非表示 */
+.ktp_header,
+.ktp-floating-notification,
+.ktpwp-modal {
+    display: none !important;
+}
+
+/* フォントサイズとフォントウェイトの強制リセット */
+* {
+    font-weight: normal !important;
+    font-size: inherit !important;
+}
+
+/* 特定の要素のみ太字を許可 */
+strong, b, .notice h3, .notice h4 {
+    font-weight: bold !important;
+}
+
+/* 文字サイズの詳細リセット */
+body {
+    font-size: 14px !important;
+}
+
+p, div, span, a, li, td, th {
+    font-size: inherit !important;
+}
+
+/* より強力なリセット */
+.data_detail_title *,
+.data_list_title *,
+.data_skill_list_title * {
+    font-size: inherit !important;
+    font-weight: normal !important;
+}
+
+/* 特定の要素の強制リセット */
+.data_detail_title,
+.data_list_title,
+.data_skill_list_title {
+    font-size: 14px !important;
+    line-height: 1.4 !important;
+    text-align: left !important;
+    border: none !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    letter-spacing: normal !important;
+    word-spacing: normal !important;
+    text-transform: none !important;
+    text-decoration: none !important;
+}
+
+/* サイトヘルスページの特定要素のリセット */
+.site-health-status__title,
+.site-health-status__title h3,
+.site-health-status__title h4,
+.site-health-status__title h5,
+.site-health-status__title h6 {
+    font-size: 14px !important;
+    font-weight: normal !important;
+}
+
+/* 通知メッセージのリセット */
+.notice p,
+.notice div,
+.notice span {
+    font-size: 14px !important;
+    font-weight: normal !important;
+} 
