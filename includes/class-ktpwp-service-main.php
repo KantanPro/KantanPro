@@ -383,7 +383,9 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
             '</form></div>';
 
 			// リスト表示部分の開始
+			// 顧客・協力会社タブと同じラッパー（.data_contents は display:flex のため二段レイアウトと相性が悪い）
 			$results_h = <<<END
+            <div class="ktp_data_contents">
             <div class="ktp_data_list_box">
             <div class="data_list_title">■ サービスリスト {$sort_dropdown}</div>
         END;
@@ -969,7 +971,7 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 			$data_forms .= '</div>'; // フォームを囲む<div>タグの終了
 
 			// 詳細表示部分の終了
-			$div_end = '</div> <!-- data_detail_boxの終了 -->';
+			$div_end = '</div> <!-- data_detail_boxの終了 -->' . "\n        </div> <!-- ktp_data_contentsの終了 -->";
 
 			// -----------------------------
 			// テンプレート印刷
@@ -1012,9 +1014,15 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
                 )
             );
 
-			// PHP
-			$service_preview_html = json_encode( $service_preview_html );  // JSON形式にエンコード
-			$service_name_json = wp_json_encode( (string) $service_name );
+			// インライン <script> 内に埋め込むため、</script> 等でタグが閉じないようエスケープ（顧客・協力会社と同様）
+			$service_preview_html = wp_json_encode(
+				$service_preview_html,
+				JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE
+			);
+			if ( false === $service_preview_html ) {
+				$service_preview_html = '""';
+			}
+			$service_name_json = wp_json_encode( (string) $service_name, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE );
 
 			// JavaScript
 			$print = <<<END
@@ -1080,7 +1088,7 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
         END;
 
 			// コンテンツを返す（複数検索結果ダイアログ用スクリプトを含む）
-			$content = $message . $print . '<div class="data_contents">' . $data_list . $data_title . $data_forms . $service_search_results_script . $div_end . '</div> <!-- data_contentsの終了 -->';
+			$content = $message . $print . $data_list . $data_title . $data_forms . $service_search_results_script . $div_end;
 			return $content;
 		}
 

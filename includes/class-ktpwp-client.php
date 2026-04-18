@@ -2109,8 +2109,14 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
                 )
             );
 
-			// PHP
-			$customer_preview_html = json_encode( $customer_preview_html );   // JSON形式にエンコード
+			// インライン <script> 埋め込み用（</script> によるタグ切断を防ぐ）
+			$customer_preview_html = wp_json_encode(
+				$customer_preview_html,
+				JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE
+			);
+			if ( false === $customer_preview_html ) {
+				$customer_preview_html = '""';
+			}
 
 			// Simplified JavaScript - matching Update_Table approach
 			$print = <<<END
