@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.2.43
+Stable tag: 1.2.44
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -324,6 +324,10 @@ curl -sS -X POST \
 * 推奨PHP拡張: GD（画像処理用）
 
 == 変更履歴 ==
+
+= 1.2.44 - 2026年04月18日 =
+* 新規インストール判定（ktpwp_is_new_installation）の論理不整合を修正。メインの ktp_* テーブルにデータがあるのにオプション未設定等で新規扱いになる問題を解消
+* マイグレーション履歴オプションの検索を `ktp_migration_%` にも対応（実際のフラグ名と一致）
 
 = 1.2.43 - 2026年04月18日 =
 * タブビュー（TabsView）で各タブの本体HTMLを `#list_content`〜`#report_content` の要素内に配置し、CSS（`#tab:checked ~ #*_content`）と整合。協力会社タブなどで本文が真っ白に見える問題を修正
