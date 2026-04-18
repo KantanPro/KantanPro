@@ -20,8 +20,17 @@ class KTPWP_View_Tabs_Class {
             $this->output_staff_chat_ajax_config();
         }
 
-        // タブの位置を取得
-        $position = $_GET['tab_name'] ?? 'list';
+        // タブの位置（ショートコード側のコンテンツ生成と同様に POST の tab_name を優先）
+        $position = 'list';
+        if ( isset( $_POST['tab_name'] ) && is_string( $_POST['tab_name'] ) ) {
+            $position = sanitize_text_field( wp_unslash( $_POST['tab_name'] ) );
+        } elseif ( isset( $_GET['tab_name'] ) ) {
+            $position = sanitize_text_field( wp_unslash( $_GET['tab_name'] ) );
+        }
+        $allowed_positions = array( 'list', 'order', 'client', 'service', 'supplier', 'report' );
+        if ( ! in_array( $position, $allowed_positions, true ) ) {
+            $position = 'list';
+        }
 
         // タブの内容を配列で定義
         $tabs = array(
@@ -80,36 +89,20 @@ class KTPWP_View_Tabs_Class {
 			$view .= '<a href="' . esc_url( $tab_url ) . "\" class=\"tab_item$active_class\">$value</a>";
         }
 
-        $view .= <<<EOF
-              <div class="tab_content" id="list_content">
-              <br />
-              </div>
-EOF;
-        // タブ外に各タブ本体を出す
-        $view .= $list_content;
-        $view .= $order_content;
-        $view .= $client_content;
-        $view .= $service_content;
-        $view .= $supplier_content;
-        $view .= $report_content;
-        $view .= <<<EOF
-              <div class="tab_content" id="order_content">
-              <br />
-              </div>
-              <div class="tab_content" id="client_content">
-              <br />
-              </div>
-              <div class="tab_content" id="service_content">
-              <br />
-              </div>
-              <div class="tab_content" id="supplier_content">
-              <br />
-              </div>
-              <div class="tab_content" id="report_content">
-              <br />
-              </div>
-            </div>
-            EOF;
+        // 各タブ本体を #list_content 等の要素「内」に置く（CSS の #tab:checked ~ #*_content と一致させる）
+        $view .= '<div class="ktp-tab-panels-wrap" style="clear:both;width:100%;">';
+        $panels = array(
+            'list' => $list_content,
+            'order' => $order_content,
+            'client' => $client_content,
+            'service' => $service_content,
+            'supplier' => $supplier_content,
+            'report' => $report_content,
+        );
+        foreach ( $panels as $panel_id => $panel_html ) {
+            $view .= '<div class="tab_content" id="' . esc_attr( $panel_id ) . '_content">' . $panel_html . '</div>';
+        }
+        $view .= '</div></div>';
 
         // フッターエリアを追加
         $plugin_name = esc_html( KANTANPRO_PLUGIN_NAME );

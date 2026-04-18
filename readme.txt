@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.2.42
+Stable tag: 1.2.43
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -324,6 +324,10 @@ curl -sS -X POST \
 * 推奨PHP拡張: GD（画像処理用）
 
 == 変更履歴 ==
+
+= 1.2.43 - 2026年04月18日 =
+* タブビュー（TabsView）で各タブの本体HTMLを `#list_content`〜`#report_content` の要素内に配置し、CSS（`#tab:checked ~ #*_content`）と整合。協力会社タブなどで本文が真っ白に見える問題を修正
+* タブのアクティブ表示で `tab_name` を POST 優先とし、ショートコード側のタブコンテンツ生成と一致させる
 
 = 1.2.42 - 2026年04月18日 =
 * 協力会社職能の追加・削除POSTを template_redirect でテーマ出力より前に処理し、投稿名パーマリンク等でヘッダー送出後にリダイレクトできず真っ白になる問題を修正（早期処理時のエラーは GET パラメータで通知）
