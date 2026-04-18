@@ -1525,21 +1525,29 @@ input[name="tab_item"] {
 }
 
 /*タブ切り替えの中身のスタイル*/
+/* 表示は :checked~ のみに依存しない（.tabs が flex のとき兄弟セレクタが効かない・重なりが出る環境があるため） */
 .tab_content {
-  display: none;
+  display: none !important;
   overflow: auto;
   background-color: #fcfcfc;
   clear: both; /* タブ行が折り返したとき float が本文に被らないように */
+  pointer-events: none !important;
 }
 
-/*選択されているタブのコンテンツのみを表示*/
+.tab_content.tab_content--active {
+  display: block !important;
+  pointer-events: auto !important;
+}
+
+/* 後方互換: ラジオがトグルされた場合（将来 JS 等で切替する場合） */
 #list:checked~#list_content,
 #order:checked~#order_content,
 #client:checked~#client_content,
 #service:checked~#service_content,
 #supplier:checked~#supplier_content,
 #report:checked~#report_content {
-  display: block;
+  display: block !important;
+  pointer-events: auto !important;
 }
 
 /*選択されているタブのスタイルを変える*/

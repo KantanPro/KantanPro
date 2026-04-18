@@ -101,7 +101,10 @@ class KTPWP_View_Tabs_Class {
             'report' => $report_content,
         );
         foreach ( $panels as $panel_id => $panel_html ) {
-            $view .= '<div class="tab_content" id="' . esc_attr( $panel_id ) . '_content">' . $panel_html . '</div>';
+			$is_active    = ( $position === $panel_id );
+			$active_class = $is_active ? ' tab_content--active' : '';
+			$aria_hidden  = $is_active ? 'false' : 'true';
+			$view        .= '<div class="tab_content' . esc_attr( $active_class ) . '" id="' . esc_attr( $panel_id ) . '_content" aria-hidden="' . esc_attr( $aria_hidden ) . '">' . $panel_html . '</div>';
         }
         $view .= '</div>';
 
