@@ -1,4 +1,4 @@
-# KantanPro (KTPWP) - Version 1.2.46
+# KantanPro (KTPWP) - Version 1.2.47
 
 WordPressで動作する業務管理・受注進捗・請求・顧客・サービス・協力会社・レポート・スタッフチャットまで一元管理できる多機能プラグイン。
 
@@ -11,6 +11,16 @@ WordPressで動作する業務管理・受注進捗・請求・顧客・サー�
 ---
 
 ## 変更履歴
+
+### Version 1.2.47 - 2026年4月19日
+
+- **アセット読み込みの最適化**（`includes/class-ktpwp-assets.php`）
+  - フロント: `ktpwp_should_enqueue_frontend_assets` で読み込み可否をフィルター拡張。KantanPro ページ以外では干渉防止・コンソール抑制・AJAX 設定・SVG スタイルを出力しないようガード
+  - 管理画面: KantanPro 関連画面のみ本体 CSS/JS を読み込み（`ktpwp_is_kantanpro_admin_screen` で拡張可能）。不要な管理画面での読み込みを削減
+  - 受注書以外のタブでは jQuery UI Sortable を読み込まないよう条件分岐
+  - `ktp-cost-items` のバージョンを `filemtime` ベースに変更
+  - 全ページ読み込みデバッグを撤去し、本来のページ判定に復帰
+  - AJAX 設定の `console.log` は verbose 時のみ
 
 ### Version 1.2.46 - 2026年4月18日
 

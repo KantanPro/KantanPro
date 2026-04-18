@@ -80,7 +80,7 @@ class KTPWP_Assets {
         if ( defined( 'KANTANPRO_DISABLE_INTERFERENCE_GUARD' ) && KANTANPRO_DISABLE_INTERFERENCE_GUARD ) {
             return;
         }
-        if ( ! $this->is_kantanpro_page() ) {
+        if ( ! $this->should_enqueue_frontend_assets() ) {
             return;
         }
 
@@ -160,6 +160,40 @@ class KTPWP_Assets {
     }
 
     /**
+     * フロントで KantanPro の CSS/JS を読み込むか（テーマや子テーマで拡張可能）
+     *
+     * @return bool
+     */
+    private function should_enqueue_frontend_assets() {
+        $load = $this->is_kantanpro_page();
+        return (bool) apply_filters( 'ktpwp_should_enqueue_frontend_assets', $load, $this );
+    }
+
+    /**
+     * 管理画面で KantanPro の CSS/JS を読み込む画面か
+     *
+     * @param string $hook_suffix admin_enqueue_scripts の第1引数。
+     * @return bool
+     */
+    private function is_kantanpro_admin_screen( $hook_suffix ) {
+        $hook_suffix = (string) $hook_suffix;
+        if ( $hook_suffix === 'toplevel_page_ktp-settings' ) {
+            return true;
+        }
+        if ( strpos( $hook_suffix, 'ktp-settings_page_' ) === 0 ) {
+            return true;
+        }
+        // 旧ハンドル名や他プラグイン連携で使われる可能性のあるパターン
+        if ( strpos( $hook_suffix, 'kantanpro_page_' ) === 0 ) {
+            return true;
+        }
+        if ( $hook_suffix === 'woocommerce_page_ktpwp-woocommerce-sync' ) {
+            return true;
+        }
+        return (bool) apply_filters( 'ktpwp_is_kantanpro_admin_screen', false, $hook_suffix, $this );
+    }
+
+    /**
      * KTPWP プラグインの console.log を抑制
      *
      * 数百箇所の console.log が大量出力されると、DevTools を開いた状態で
@@ -174,6 +208,9 @@ class KTPWP_Assets {
      * console.error / console.warn は常に通すので、エラー検出は可能。
      */
     public function output_console_silencer() {
+        if ( ! $this->should_enqueue_frontend_assets() ) {
+            return;
+        }
         // 明示的に verbose を有効化している場合のみスキップ
         if ( defined( 'KANTANPRO_VERBOSE_CONSOLE' ) && KANTANPRO_VERBOSE_CONSOLE ) {
             return;
@@ -332,7 +369,7 @@ class KTPWP_Assets {
             'ktp-cost-items' => array(
                 'src'       => 'js/ktp-cost-items.js',
                 'deps'      => array( 'jquery', 'jquery-ui-sortable', 'ktp-supplier-selector' ),
-                'ver'       => KTPWP_PLUGIN_VERSION . '&fver=' . date('YmdHis'),
+                'ver'       => KTPWP_PLUGIN_VERSION . '.' . filemtime( KTPWP_PLUGIN_DIR . 'js/ktp-cost-items.js' ),
                 'in_footer' => true,
                 'admin'     => false,
                 'localize'  => array(
@@ -493,33 +530,31 @@ class KTPWP_Assets {
      * フロントエンドアセット読み込み
      */
     public function enqueue_frontend_assets() {
-        // デバッグ: 一時的にすべてのページでアセットを読み込み
-        $should_load_assets = true;
+        if ( ! $this->should_enqueue_frontend_assets() ) {
+            return;
+        }
 
-        // 現在のページURLを取得
-        $current_url = $_SERVER['REQUEST_URI'] ?? '';
+        // 現在のページURLを取得（デバッグログ用）
+        $current_url  = isset( $_SERVER['REQUEST_URI'] ) ? (string) $_SERVER['REQUEST_URI'] : '';
         $current_page = get_query_var( 'pagename' ) ?: get_query_var( 'page_id' );
 
-        // デバッグログ
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP_Assets: Frontend assets check - URL: ' . $current_url . ', Page: ' . $current_page . ', Should load: ' . ( $should_load_assets ? 'true' : 'false' ) );
+            error_log( 'KTPWP_Assets: Frontend assets check - URL: ' . $current_url . ', Page: ' . $current_page . ', Should load: true' );
             error_log( 'KTPWP_Assets: GET parameters: ' . print_r( $_GET, true ) );
         }
 
-        if ( $should_load_assets ) {
-            $this->enqueue_styles( false );
-            $this->enqueue_scripts( false );
-            $this->localize_frontend_scripts();
+        $this->enqueue_styles( false );
+        $this->enqueue_scripts( false );
+        $this->localize_frontend_scripts();
 
-            // 税制ポリシーをJSへ注入
-            if ( class_exists( 'KTPWP_Tax_Policy' ) ) {
-                $tax_config = KTPWP_Tax_Policy::get_js_config();
-                wp_add_inline_script( 'ktp-js', 'window.ktp_tax_policy = ' . json_encode( $tax_config ) . ';', 'before' );
-            }
+        // 税制ポリシーをJSへ注入
+        if ( class_exists( 'KTPWP_Tax_Policy' ) ) {
+            $tax_config = KTPWP_Tax_Policy::get_js_config();
+            wp_add_inline_script( 'ktp-js', 'window.ktp_tax_policy = ' . json_encode( $tax_config ) . ';', 'before' );
+        }
 
-            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP_Assets: Frontend assets enqueued for order tab' );
-            }
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP_Assets: Frontend assets enqueued for KantanPro page' );
         }
     }
 
@@ -533,6 +568,8 @@ class KTPWP_Assets {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
             error_log( 'KTPWP_Assets: Admin assets enqueue called for hook: ' . $hook_suffix );
         }
+
+        $load_main_admin_assets = $this->is_kantanpro_admin_screen( $hook_suffix );
 
         // ライセンス管理ページ用の特別な処理
         if ( $hook_suffix === 'kantanpro_page_ktp-license' || $hook_suffix === 'toplevel_page_ktp-license' || $hook_suffix === 'ktp-settings_page_ktp-license' ) {
@@ -550,10 +587,12 @@ class KTPWP_Assets {
             ) );
         }
 
-        // 管理画面では常にアセットを読み込み（条件を緩和）
+        // KantanPro 管理画面・Woo 連携画面のみ本体 CSS/JS（他の管理画面での無駄な読み込みを防止）
+        if ( $load_main_admin_assets ) {
             $this->enqueue_styles( true );
             $this->enqueue_scripts( true );
             $this->localize_frontend_scripts(); // 管理画面でもフロントエンド用のAJAX設定を追加
+        }
 
         // 決済設定ページで寄付通知のCSSを読み込み
         if ( strpos( $hook_suffix, 'ktp-payment-settings' ) !== false ) {
@@ -609,9 +648,7 @@ class KTPWP_Assets {
      * @param bool $is_admin 管理画面かどうか
      */
     private function enqueue_scripts( $is_admin = false ) {
-        // 必要な基本スクリプトを読み込み
         wp_enqueue_script( 'jquery' );
-        wp_enqueue_script( 'jquery-ui-sortable' );
 
         // 現在のタブ名を取得（フロントエンドのみ）
         // サービス／協力会社／顧客タブでは受注書関連の重いJSを読み込まない
@@ -619,6 +656,14 @@ class KTPWP_Assets {
         $current_tab_name = '';
         if ( ! $is_admin && isset( $_GET['tab_name'] ) ) {
             $current_tab_name = sanitize_text_field( wp_unslash( $_GET['tab_name'] ) );
+        }
+
+        $non_order_tabs = array( 'service', 'supplier', 'client', 'report', 'list' );
+        $should_skip_order_scripts = ( ! $is_admin && in_array( $current_tab_name, $non_order_tabs, true ) );
+
+        // 受注書まわりでしか使わないタブでは jQuery UI Sortable を読み込まない
+        if ( $is_admin || ! $should_skip_order_scripts ) {
+            wp_enqueue_script( 'jquery-ui-sortable' );
         }
 
         // 受注書専用スクリプト（サービス／協力会社／顧客タブでは不要）
@@ -637,9 +682,6 @@ class KTPWP_Assets {
             'ktp-email-popup',
             'ktp-progress-select',
         );
-        // 受注書以外のタブで不要なスクリプトを除外
-        $non_order_tabs = array( 'service', 'supplier', 'client', 'report', 'list' );
-        $should_skip_order_scripts = ( ! $is_admin && in_array( $current_tab_name, $non_order_tabs, true ) );
 
         // 顧客タブ専用（顧客以外のタブでは不要な MutationObserver を避ける）
         $client_only_scripts = array( 'ktp-client-delete-popup', 'ktp-client-invoice' );
@@ -869,7 +911,9 @@ class KTPWP_Assets {
      * wp_headでAJAX設定を出力
      */
     public function output_ajax_config() {
-        // デバッグ: 一時的にすべてのユーザーに対してAJAX設定を出力
+        if ( ! $this->should_enqueue_frontend_assets() ) {
+            return;
+        }
         if ( ! wp_script_is( 'ktp-js', 'enqueued' ) && ! wp_script_is( 'ktp-js', 'done' ) ) {
             return;
         }
@@ -881,7 +925,9 @@ class KTPWP_Assets {
         echo 'window.ktp_ajax_object = ' . json_encode( $ajax_data ) . ';';
         echo 'window.ktp_ajax_nonce = ' . json_encode( $ajax_data['nonce'] ) . ';';
         echo 'window.ajaxurl = ' . json_encode( $ajax_data['ajax_url'] ) . ';';
-        echo 'console.log("Head: AJAX設定を出力 (debug mode)", window.ktpwp_ajax);';
+        if ( defined( 'KANTANPRO_VERBOSE_CONSOLE' ) && KANTANPRO_VERBOSE_CONSOLE ) {
+            echo 'console.log("Head: AJAX設定を出力", window.ktpwp_ajax);';
+        }
         echo '</script>';
 
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
@@ -893,7 +939,9 @@ class KTPWP_Assets {
      * wp_footerでAJAX設定のフォールバック出力
      */
     public function output_ajax_config_fallback() {
-        // デバッグ: 一時的にすべてのユーザーに対してAJAX設定を出力
+        if ( ! $this->should_enqueue_frontend_assets() ) {
+            return;
+        }
         echo '<script type="text/javascript">';
         echo 'if (typeof window.ktpwp_ajax === "undefined") {';
         $ajax_data = $this->get_unified_ajax_config();
@@ -901,7 +949,9 @@ class KTPWP_Assets {
         echo 'window.ktp_ajax_object = ' . json_encode( $ajax_data ) . ';';
         echo 'window.ktp_ajax_nonce = ' . json_encode( $ajax_data['nonce'] ) . ';';
         echo 'window.ajaxurl = ' . json_encode( $ajax_data['ajax_url'] ) . ';';
-        echo 'console.log("Footer fallback: AJAX設定を出力 (debug mode)", window.ktpwp_ajax);';
+        if ( defined( 'KANTANPRO_VERBOSE_CONSOLE' ) && KANTANPRO_VERBOSE_CONSOLE ) {
+            echo 'console.log("Footer fallback: AJAX設定を出力", window.ktpwp_ajax);';
+        }
         echo '}';
         echo '</script>';
 
@@ -925,7 +975,10 @@ class KTPWP_Assets {
      * SVGアイコンのスタイルを出力
      */
     public function output_svg_icon_styles() {
-        if (class_exists('KTPWP_SVG_Icons')) {
+        if ( ! $this->should_enqueue_frontend_assets() ) {
+            return;
+        }
+        if ( class_exists( 'KTPWP_SVG_Icons' ) ) {
             KTPWP_SVG_Icons::output_styles();
         }
     }

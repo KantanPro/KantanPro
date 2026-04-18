@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.2.46
+Stable tag: 1.2.47
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -324,6 +324,15 @@ curl -sS -X POST \
 * 推奨PHP拡張: GD（画像処理用）
 
 == 変更履歴 ==
+
+= 1.2.47 - 2026年04月19日 =
+* アセット読み込みの最適化と拡張性の向上（`includes/class-ktpwp-assets.php`）
+    * フロントでは `ktpwp_should_enqueue_frontend_assets` フィルターで読み込み可否を拡張可能にし、KantanPro ページ以外では干渉防止・コンソール抑制・AJAX 設定・SVG スタイル出力を行わないようガード
+    * 管理画面では KantanPro 設定・Woo 連携など必要な画面のみ本体 CSS/JS を読み込み（他の管理画面での無駄な読み込みを削減）。`ktpwp_is_kantanpro_admin_screen` フィルターで判定を拡張可能に
+    * サービス／協力会社／顧客／レポート／リストタブでは jQuery UI Sortable を読み込まないよう条件分岐
+    * `ktp-cost-items` のクエリストリング付きバージョン指定をやめ、`filemtime` ベースのキャッシュブレークに変更
+    * 一時的だった「全ページでフロントアセット読み込み」デバッグを撤去し、本来の KantanPro ページ判定に戻す
+    * AJAX 設定出力時の `console.log` は `KANTANPRO_VERBOSE_CONSOLE` 有効時のみ
 
 = 1.2.46 - 2026年04月18日 =
 * レポートタブのレイアウトを協力会社タブと揃える修正
