@@ -1040,6 +1040,18 @@ form > .create-order-btn {
     width: 50%;
     float: right;
   }
+
+  /* 二段組時、リスト行の z-index（ホバー時 1）より詳細フォームを手前に固定（入力が反応しない原因になる重なりを防ぐ） */
+  .ktp_data_contents .data_list_box,
+  .ktp_data_contents .ktp_data_list_box {
+    position: relative;
+    z-index: 1;
+  }
+  .ktp_data_contents .data_detail_box,
+  .ktp_data_contents .ktp_data_detail_box {
+    position: relative;
+    z-index: 3;
+  }
   
   /* 職能リストは常に100%幅を維持 */
   .ktp_data_skill_list_box {
@@ -1531,12 +1543,10 @@ input[name="tab_item"] {
   overflow: auto;
   background-color: #fcfcfc;
   clear: both; /* タブ行が折り返したとき float が本文に被らないように */
-  pointer-events: none !important;
 }
 
 .tab_content.tab_content--active {
   display: block !important;
-  pointer-events: auto !important;
 }
 
 /* 後方互換: ラジオがトグルされた場合（将来 JS 等で切替する場合） */
@@ -1547,7 +1557,6 @@ input[name="tab_item"] {
 #supplier:checked~#supplier_content,
 #report:checked~#report_content {
   display: block !important;
-  pointer-events: auto !important;
 }
 
 /*選択されているタブのスタイルを変える*/
