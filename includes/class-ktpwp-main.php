@@ -513,22 +513,24 @@ class KTPWP_Main {
      */
     public static function get_current_page_base_url() {
         global $wp;
-        
-        // 現在のページIDを取得
-        $current_page_id = get_queried_object_id();
-        
-        // パーマリンクを取得
-        $permalink = get_permalink($current_page_id);
-        
-        // パーマリンクが取得できない場合のフォールバック
-        if (!$permalink) {
-            // home_url()と$wp->requestを使用
-            $permalink = home_url($wp->request);
+
+        $current_page_id = (int) get_queried_object_id();
+        // フロントでクエリのみ（例: localhost:8081/?tab_name=client）のとき ID が 0 になりがち → GET の page_id を参照
+        if ( $current_page_id <= 0 && isset( $_GET['page_id'] ) ) {
+            $current_page_id = absint( wp_unslash( $_GET['page_id'] ) );
         }
-        
-        // page_idパラメータを追加
-        $base_url = add_query_arg(array('page_id' => $current_page_id), $permalink);
-        
-        return $base_url;
+
+        if ( $current_page_id > 0 ) {
+            $permalink = get_permalink( $current_page_id );
+            if ( $permalink ) {
+                return add_query_arg( array( 'page_id' => $current_page_id ), $permalink );
+            }
+        }
+
+        // 固定ページ ID が取れない場合は現在のリクエストベース（ポート・サブディレクトリを維持）
+        $path = is_string( $wp->request ) ? $wp->request : '';
+        $permalink = $path !== '' ? home_url( user_trailingslashit( $path ) ) : home_url( '/' );
+
+        return $permalink;
     }
 }

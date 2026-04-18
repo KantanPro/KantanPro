@@ -688,7 +688,13 @@ class KTPWP_Shortcodes {
      * @return string タブ名
      */
     private function get_current_tab() {
-        $tab_name = isset($_GET['tab_name']) ? sanitize_text_field($_GET['tab_name']) : 'list';
+        // TabsView / kantanAllTab と同様に POST の tab_name を優先（フォーム送信後も正しいタブのコンテンツを生成する）
+        $tab_name = 'list';
+        if (isset($_POST['tab_name']) && is_string($_POST['tab_name'])) {
+            $tab_name = sanitize_text_field(wp_unslash($_POST['tab_name']));
+        } elseif (isset($_GET['tab_name'])) {
+            $tab_name = sanitize_text_field(wp_unslash($_GET['tab_name']));
+        }
 
         // 許可されたタブ名のホワイトリスト
         $allowed_tabs = array('list', 'order', 'client', 'service', 'supplier', 'report');

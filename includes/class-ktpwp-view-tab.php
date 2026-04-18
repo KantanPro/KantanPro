@@ -89,8 +89,9 @@ class KTPWP_View_Tabs_Class {
 			$view .= '<a href="' . esc_url( $tab_url ) . "\" class=\"tab_item$active_class\">$value</a>";
         }
 
-        // 各タブ本体を #list_content 等の要素「内」に置く（CSS の #tab:checked ~ #*_content と一致させる）
-        $view .= '<div class="ktp-tab-panels-wrap" style="clear:both;width:100%;">';
+        // 各タブ本体を #list_content 等に置く。親は .tabs の直下にし、ラジオ（#list 等）の「一般兄弟」になること
+        // （#list:checked ~ #list_content の ~ は兄弟セレクタのため、中間にラッパー div を挟まない）
+        $view .= '<div class="ktp-tab-panels-clearfix" style="clear:both;width:100%;height:0;"></div>';
         $panels = array(
             'list' => $list_content,
             'order' => $order_content,
@@ -102,7 +103,7 @@ class KTPWP_View_Tabs_Class {
         foreach ( $panels as $panel_id => $panel_html ) {
             $view .= '<div class="tab_content" id="' . esc_attr( $panel_id ) . '_content">' . $panel_html . '</div>';
         }
-        $view .= '</div></div>';
+        $view .= '</div>';
 
         // フッターエリアを追加
         $plugin_name = esc_html( KANTANPRO_PLUGIN_NAME );
