@@ -3,7 +3,7 @@
  * Plugin Name: KantanPro
  * Plugin URI: https://www.kantanpro.com/
  * Description: フリーランス・スモールビジネス向けの仕事効率化システム。ショートコード[ktpwp_all_tab]を固定ページに設置してください。
- * Version: 1.2.41
+ * Version: 1.2.42
  * Author: KantanPro
  * Author URI: https://www.kantanpro.com/kantanpro-page
  * License: GPL v2 or later
@@ -117,6 +117,44 @@ register_activation_hook( __FILE__, 'ktpwp_comprehensive_activation' );
 // シンプルなバージョン管理
 
 add_action( 'admin_init', 'ktpwp_upgrade', 10, 0 );
+
+/**
+ * 協力会社「職能」POST をテーマ出力より前に処理する（投稿名パーマリンク等で the_content 内リダイレクトが失敗し白画面になるのを防ぐ）。
+ */
+add_action( 'template_redirect', 'ktpwp_supplier_skills_template_redirect', 0 );
+function ktpwp_supplier_skills_template_redirect() {
+	if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
+		return;
+	}
+	if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
+		return;
+	}
+	if ( is_admin() ) {
+		return;
+	}
+	if ( 'POST' !== strtoupper( (string) ( $_SERVER['REQUEST_METHOD'] ?? '' ) ) ) {
+		return;
+	}
+	if ( empty( $_POST['skills_action'] ) || empty( $_POST['ktp_skills_nonce'] ) ) {
+		return;
+	}
+	if ( ! is_user_logged_in() || ! current_user_can( 'edit_posts' ) ) {
+		return;
+	}
+	$nonce = isset( $_POST['ktp_skills_nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['ktp_skills_nonce'] ) ) : '';
+	if ( ! wp_verify_nonce( $nonce, 'ktp_skills_action' ) ) {
+		return;
+	}
+
+	if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
+		require_once KANTANPRO_PLUGIN_DIR . 'includes/class-ktpwp-tab-supplier.php';
+	}
+
+	$GLOBALS['ktpwp_supplier_skills_early_done'] = true;
+
+	$supplier = new KTPWP_Supplier_Class();
+	$supplier->handle_skills_operations_front_before_template( wp_unslash( $_POST ) );
+}
 
 /**
  * 改善されたアップグレード処理

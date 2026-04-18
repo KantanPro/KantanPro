@@ -108,8 +108,10 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 				}
 
-				// Handle skills operations first
-				$this->handle_skills_operations( $_POST );
+				// Handle skills operations first（template_redirect で既に処理済みの場合は二重実行しない）
+				if ( empty( $GLOBALS['ktpwp_supplier_skills_early_done'] ) ) {
+					$this->handle_skills_operations( $_POST, false );
+				}
 
 				// 職能フォームは ktp_skills_nonce のみ。ここで supplier の nonce チェックに進むと wp_die になる
 				if ( ! empty( $_POST['skills_action'] ) ) {
@@ -581,6 +583,24 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
                         break;
                     case "skill_deleted":
                         showSuccessNotification("' . esc_js( __( '商品・サービスを削除しました。', 'ktpwp' ) ) . '");
+                        break;
+                    case "skill_err_nonce":
+                        showErrorNotification("' . esc_js( __( 'セキュリティチェックに失敗しました。ページを更新して再度お試しください。', 'ktpwp' ) ) . '");
+                        break;
+                    case "skill_err_cap":
+                        showErrorNotification("' . esc_js( __( 'この操作を行う権限がありません。', 'ktpwp' ) ) . '");
+                        break;
+                    case "skill_err_system":
+                        showErrorNotification("' . esc_js( __( 'スキル管理システムが利用できません。', 'ktpwp' ) ) . '");
+                        break;
+                    case "skill_err_input":
+                        showErrorNotification("' . esc_js( __( '必要な情報が不足しているか、削除対象が無効です。', 'ktpwp' ) ) . '");
+                        break;
+                    case "skill_err_add":
+                        showErrorNotification("' . esc_js( __( '商品・サービスの追加に失敗しました。', 'ktpwp' ) ) . '");
+                        break;
+                    case "skill_err_delete":
+                        showErrorNotification("' . esc_js( __( '商品・サービスの削除に失敗しました。', 'ktpwp' ) ) . '");
                         break;
                     case "found":
                         showInfoNotification("' . esc_js( __( '検索結果を表示しています。', 'ktpwp' ) ) . '");
@@ -1644,10 +1664,10 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 		 * Handle skills operations (add, delete, etc.)
 		 *
 		 * @since 1.0.0
-		 * @param array $post_data POST data array
-		 * @return void
+		 * @param array $post_data POST data array.
+		 * @param bool  $early_context true のときテーマ出力前（template_redirect）。リダイレクトのみで通知し echo しない。
 		 */
-		private function handle_skills_operations( $post_data ) {
+		private function handle_skills_operations( $post_data, $early_context = false ) {
 			// Check if this is a skills operation
 			if ( ! isset( $post_data['skills_action'] ) ) {
 				return;
@@ -1656,7 +1676,9 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 			// Security check - verify nonce
 			if ( ! isset( $post_data['ktp_skills_nonce'] ) ||
              ! wp_verify_nonce( $post_data['ktp_skills_nonce'], 'ktp_skills_action' ) ) {
-				// Display security error message and stop execution
+				if ( $early_context ) {
+					$this->redirect_skills_error_notification( 'skill_err_nonce' );
+				}
 				echo '<script>
             document.addEventListener("DOMContentLoaded", function() {
                 showErrorNotification("セキュリティチェックに失敗しました。ページを更新して再度お試しください。");
@@ -1667,6 +1689,9 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 
 			// Check user permissions
 			if ( ! current_user_can( 'edit_posts' ) ) {
+				if ( $early_context ) {
+					$this->redirect_skills_error_notification( 'skill_err_cap' );
+				}
 				echo '<script>
             document.addEventListener("DOMContentLoaded", function() {
                 showErrorNotification("この操作を行う権限がありません。");
@@ -1679,12 +1704,52 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 
 			switch ( $action ) {
 				case 'add_skill':
-					$this->handle_add_skill( $post_data );
+					$this->handle_add_skill( $post_data, $early_context );
 					break;
 				case 'delete_skill':
-					$this->handle_delete_skill( $post_data );
+					$this->handle_delete_skill( $post_data, $early_context );
 					break;
 			}
+		}
+
+		/**
+		 * フロントの template_redirect で呼ぶ（テーマ出力前にリダイレクト可能にするため public）。
+		 *
+		 * @param array $post_data $_POST 相当。
+		 */
+		public function handle_skills_operations_front_before_template( $post_data ) {
+			$this->handle_skills_operations( $post_data, true );
+		}
+
+		/**
+		 * 職能操作エラー時（早期リダイレクト用）。exit する。
+		 *
+		 * @param string $message_key GET message パラメータ。
+		 */
+		private function redirect_skills_error_notification( $message_key ) {
+			$ref = wp_get_referer();
+			if ( ! $ref && isset( $_SERVER['HTTP_HOST'], $_SERVER['REQUEST_URI'] ) ) {
+				$https = is_ssl();
+				if ( isset( $_SERVER['HTTP_X_FORWARDED_PROTO'] ) && 'https' === strtolower( (string) $_SERVER['HTTP_X_FORWARDED_PROTO'] ) ) {
+					$https = true;
+				}
+				$scheme = $https ? 'https' : 'http';
+				$host   = sanitize_text_field( wp_unslash( $_SERVER['HTTP_HOST'] ) );
+				$uri    = wp_unslash( $_SERVER['REQUEST_URI'] );
+				if ( $host !== '' ) {
+					$ref = $scheme . '://' . $host . $uri;
+				}
+			}
+			if ( ! $ref && class_exists( 'KTPWP_Main' ) ) {
+				$ref = KTPWP_Main::get_current_page_base_url();
+			}
+			if ( ! $ref ) {
+				$ref = home_url( '/' );
+			}
+			$url = add_query_arg( 'message', sanitize_key( $message_key ), remove_query_arg( 'message', $ref ) );
+			nocache_headers();
+			wp_safe_redirect( $url );
+			exit;
 		}
 
 		/**
@@ -1694,7 +1759,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 		 * @param array $post_data POST data array
 		 * @return void
 		 */
-		private function handle_add_skill( $post_data ) {
+		private function handle_add_skill( $post_data, $early_context = false ) {
 			// Load skills manager
 			if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 				require_once __DIR__ . '/class-ktpwp-supplier-skills.php';
@@ -1702,6 +1767,9 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 
 			$skills_manager = KTPWP_Supplier_Skills::get_instance();
 			if ( ! $skills_manager ) {
+				if ( $early_context ) {
+					$this->redirect_skills_error_notification( 'skill_err_system' );
+				}
 				echo '<script>
             document.addEventListener("DOMContentLoaded", function() {
                 showErrorNotification("スキル管理システムが利用できません。");
@@ -1723,6 +1791,9 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 
 			// Validate required fields
 			if ( empty( $supplier_id ) || empty( $product_name ) ) {
+				if ( $early_context ) {
+					$this->redirect_skills_error_notification( 'skill_err_input' );
+				}
 				echo '<script>
             document.addEventListener("DOMContentLoaded", function() {
                 showErrorNotification("必要な情報が不足しています。");
@@ -1737,6 +1808,9 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 			if ( $result ) {
 				$this->redirect_after_supplier_skill_change( 'skill_added', $supplier_id );
 			} else {
+				if ( $early_context ) {
+					$this->redirect_skills_error_notification( 'skill_err_add' );
+				}
 				echo '<script>
             document.addEventListener("DOMContentLoaded", function() {
                 showErrorNotification("商品・サービスの追加に失敗しました。");
@@ -1752,7 +1826,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 		 * @param array $post_data POST data array
 		 * @return void
 		 */
-		private function handle_delete_skill( $post_data ) {
+		private function handle_delete_skill( $post_data, $early_context = false ) {
 			// Load skills manager
 			if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 				require_once __DIR__ . '/class-ktpwp-supplier-skills.php';
@@ -1760,6 +1834,9 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 
 			$skills_manager = KTPWP_Supplier_Skills::get_instance();
 			if ( ! $skills_manager ) {
+				if ( $early_context ) {
+					$this->redirect_skills_error_notification( 'skill_err_system' );
+				}
 				echo '<script>
             document.addEventListener("DOMContentLoaded", function() {
                 showErrorNotification("スキル管理システムが利用できません。");
@@ -1773,6 +1850,9 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 
 			// Validate required fields
 			if ( empty( $skill_id ) ) {
+				if ( $early_context ) {
+					$this->redirect_skills_error_notification( 'skill_err_input' );
+				}
 				echo '<script>
             document.addEventListener("DOMContentLoaded", function() {
                 showErrorNotification("削除する商品・サービスが指定されていません。");
@@ -1791,6 +1871,9 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 			if ( $result ) {
 				$this->redirect_after_supplier_skill_change( 'skill_deleted', $supplier_id_ok );
 			} else {
+				if ( $early_context ) {
+					$this->redirect_skills_error_notification( 'skill_err_delete' );
+				}
 				echo '<script>
             document.addEventListener("DOMContentLoaded", function() {
                 showErrorNotification("商品・サービスの削除に失敗しました。");
