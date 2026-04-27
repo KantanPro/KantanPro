@@ -25,60 +25,42 @@
 .ktp_plugin_container .data_detail_box {
     contain: layout style;
 }
-/* コスト項目トグルボタン */
-.toggle-cost-items {
-    background: #007cba;
-    color: #fff;
-    border: none;
-    border-radius: 3px;
-    padding: 4px 12px;
-    font-size: 13px;
-    cursor: pointer;
-    margin-left: 8px;
-    transition: background 0.2s;
-}
-.toggle-cost-items[aria-expanded="true"] {
-    background: #6c757d;
-}
-.toggle-cost-items:hover {
-    background: #005a87;
-}
-
-/* スタッフチャットトグルボタン */
-.toggle-staff-chat {
-    background: #007cba;
-    color: #fff;
-    border: none;
-    border-radius: 3px;
-    padding: 4px 12px;
-    font-size: 13px;
-    cursor: pointer;
-    margin-left: 8px;
-    transition: background 0.2s;
-}
-.toggle-staff-chat[aria-expanded="true"] {
-    background: #6c757d;
-}
-.toggle-staff-chat:hover {
-    background: #005a87;
-}
-.order_cost_box {
+/* 受注書：折りたたみ（コスト項目・スタッフチャット・KantanProEX 同様 ▶︎ / ▼） */
+.ktp-order-block {
     margin-top: 16px;
+    margin-bottom: 24px;
 }
-.order_cost_box h4 {
-    margin-bottom: 8px;
+.ktp-order-details-toggle {
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 12px;
+    background: #fafafa;
 }
-.order_cost_box #cost-items-content {
-    margin-top: 8px;
+.ktp-order-details-toggle > summary.ktp-order-details-summary {
+    cursor: pointer;
+    font-weight: 600;
+    list-style: none;
+    user-select: none;
 }
-.order_memo_box {
-    margin-top: 16px;
+.ktp-order-details-toggle > summary.ktp-order-details-summary::-webkit-details-marker {
+    display: none;
 }
-.order_memo_box h4 {
-    margin-bottom: 8px;
+.ktp-order-details-toggle > summary.ktp-order-details-summary::before {
+    content: '▶︎ ';
+    display: inline-block;
+    margin-right: 4px;
+    font-size: 0.9em;
 }
-.order_memo_box #staff-chat-content {
-    margin-top: 8px;
+.ktp-order-details-toggle[open] > summary.ktp-order-details-summary::before {
+    content: '▼ ';
+}
+.ktp-order-details-hint {
+    font-size: 12px;
+    font-weight: normal;
+    color: #666;
+}
+.ktp-order-details-body {
+    margin-top: 12px;
 }
 /* 請求項目テーブル：交互色の透明行を白に */
 .invoice-items-table tr:nth-of-type(even) {
@@ -4325,4 +4307,318 @@ body.ktpwp-modal-open {
     background: #007cba !important;
     color: #fff !important;
   }
+}
+
+/* 受注書概要カード（KantanBiz型グリッド） */
+.ktp-order-summary-card {
+  padding: 10px 12px;
+}
+.ktp-order-summary-row {
+  display: flex;
+  flex-flow: row wrap;
+  align-items: flex-end;
+  gap: 8px 12px;
+  margin-bottom: 8px;
+}
+/* 案件名〜受付まで1行に近いフロー（狭い幅・項目数で折り返し） */
+.ktp-order-summary-row--topline {
+  align-items: center;
+}
+.ktp-order-summary-row--topline > .ktp-order-summary-field {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+/* 顧客・部署・担当：テキストブロックを進捗セレクトと同じバンドに揃える */
+.ktp-order-summary-row--topline > .ktp-order-summary-field:not(.ktp-order-summary-field--project) {
+  display: flex;
+  align-items: center;
+}
+.ktp-order-summary-row--topline
+  > .ktp-order-summary-field:not(.ktp-order-summary-field--project)
+  .ktp-order-summary-field-value {
+  min-height: 32px;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 3px 6px;
+}
+.ktp-order-summary-row--topline .ktp-order-summary-field--project {
+  flex: 1 1 280px;
+  min-width: 200px;
+  max-width: 100%;
+}
+/* 案件名：ラベルと入力を1行（狭い幅では折り返し） */
+.ktp-order-summary-field--project {
+  display: flex;
+  flex-flow: row wrap;
+  align-items: center;
+  gap: 6px 8px;
+}
+.ktp-order-summary-field--project .ktp-order-summary-field-label {
+  display: inline;
+  margin-bottom: 0;
+  flex: 0 1 auto;
+  line-height: 1.3;
+}
+.ktp-order-summary-field--project .ktp-order-summary-project-input,
+.ktp-order-summary-field--project .order-header-projectname {
+  flex: 1 1 180px;
+  min-width: 140px;
+  max-width: min(800px, 100%);
+  width: auto;
+}
+.ktp-order-summary-row--topline .ktp-order-summary-field--project .ktp-order-summary-project-input,
+.ktp-order-summary-row--topline .ktp-order-summary-field--project .order-header-projectname {
+  min-height: 32px;
+  padding: 5px 10px;
+  box-sizing: border-box;
+  font-size: 13px;
+  line-height: 1.3;
+}
+.ktp-order-summary-row--topline .ktp-order-summary-field--contact {
+  flex: 0 1 auto;
+  min-width: 120px;
+}
+.ktp-order-summary-progress-form {
+  display: flex;
+  flex-flow: row wrap;
+  align-items: center;
+  gap: 6px 10px;
+  margin-left: 0;
+  flex: 0 1 auto;
+}
+.ktp-order-summary-row--topline .ktp-order-summary-progress-form {
+  min-height: 32px;
+  box-sizing: border-box;
+}
+.ktp-order-summary-field-label {
+  display: block;
+  font-size: 12px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 2px;
+  line-height: 1.3;
+}
+.ktp-order-summary-field-label--inline {
+  display: inline;
+  margin-bottom: 0;
+  margin-right: 4px;
+}
+.ktp-order-summary-order-id {
+  font-weight: normal;
+  color: #666;
+  font-size: 0.92em;
+}
+.ktp-order-summary-project-input {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.ktp-order-summary-client-link {
+  color: #1a73e8;
+  font-weight: 500;
+  text-decoration: none;
+}
+.ktp-order-summary-client-link:hover {
+  text-decoration: underline;
+}
+.ktp-order-summary-client-meta {
+  font-size: 0.9em;
+}
+.ktp-order-summary-placeholder {
+  color: #999;
+}
+.ktp-order-summary-contact-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.ktp-order-summary-progress-select {
+  min-width: 120px;
+  max-width: 220px;
+  padding: 4px 8px;
+}
+.ktp-order-summary-row--topline .ktp-order-summary-progress-select {
+  min-height: 32px;
+  padding: 4px 8px;
+  box-sizing: border-box;
+  line-height: 1.25;
+  font-size: 13px;
+}
+.ktp-order-reception-date {
+  white-space: nowrap;
+  font-size: 12px;
+  color: #555;
+  font-weight: normal;
+}
+.ktp-order-summary-row--topline .ktp-order-reception-date {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  font-size: 13px;
+  line-height: 1.25;
+}
+/* 進捗・受付の直後に支払を続ける（同一フロー内の末尾） */
+.ktp-order-summary-row--topline .ktp-order-summary-trailing-meta {
+  display: flex;
+  flex-flow: row wrap;
+  align-items: center;
+  gap: 6px 10px;
+  flex: 0 1 auto;
+  min-height: 32px;
+  box-sizing: border-box;
+}
+.ktp-order-summary-row--topline .ktp-order-summary-trailing-meta .order-payment-timing-wrap {
+  margin-top: 0;
+  display: inline-flex;
+  flex-flow: row nowrap;
+  align-items: center;
+  max-width: 100%;
+}
+/* 支払：［セレクト］ を必ず1行に（ラベル＋フィールドを横並び） */
+.ktp-order-summary-row--topline .ktp-order-summary-payment-form {
+  display: inline-flex;
+  flex-flow: row nowrap;
+  align-items: center;
+  gap: 0 4px;
+  margin: 0;
+  padding: 0;
+  vertical-align: middle;
+  max-width: 100%;
+}
+.ktp-order-summary-row--topline .ktp-order-summary-trailing-meta .ktp-order-summary-payment-label {
+  display: inline;
+  margin: 0;
+  padding: 0;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: bold;
+  color: #333;
+  line-height: 1.3;
+  flex-shrink: 0;
+}
+.ktp-order-summary-row--topline .ktp-order-summary-payment-form .ktp-order-summary-payment-select {
+  flex: 0 1 auto;
+}
+.ktp-order-summary-payment-select {
+  min-width: 7.5rem;
+  max-width: 12rem;
+  min-height: 32px;
+  padding: 4px 8px;
+  box-sizing: border-box;
+  line-height: 1.25;
+  font-size: 13px;
+}
+.ktp-order-summary-dates-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 14px;
+  margin-bottom: 8px;
+}
+@media screen and (max-width: 640px) {
+  .ktp-order-summary-dates-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.ktp-order-summary-date-cell .ktp-order-summary-field-label {
+  margin-bottom: 3px;
+}
+.ktp-order-summary-date-cell-inner {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.ktp-order-summary-date-input {
+  flex: 1;
+  min-width: 140px;
+  max-width: 100%;
+  font-size: 13px;
+  padding: 5px 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+  background: #fff;
+}
+/* 受注書概要の日付クリア（WP .button と高さを揃え、幅 100% にならないようにする） */
+.ktp-order-summary-date-cell-inner .ktp-date-clear-btn {
+  flex-shrink: 0;
+  box-sizing: border-box;
+  min-height: 32px;
+  margin: 0;
+  padding: 0 12px;
+  width: auto;
+  max-width: none;
+  font-size: 12px;
+  line-height: 1.2;
+  font-weight: 500;
+  border: 1px solid #c3c4c7;
+  border-radius: 4px;
+  background: #f6f7f7;
+  color: #2c3338;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.ktp-order-summary-date-cell-inner .ktp-date-clear-btn:hover {
+  background: #f0f0f1;
+  border-color: #8c8f94;
+  color: #1d2327;
+}
+.ktp-order-summary-date-cell-inner .ktp-date-clear-btn:focus {
+  outline: none;
+  border-color: #2271b1;
+  box-shadow: 0 0 0 1px #2271b1;
+}
+.ktp-order-summary-memo-line.ktp-order-summary-memo-wrap,
+.ktp-order-summary-memo-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 0;
+  margin-bottom: 6px;
+  width: 100%;
+  box-sizing: border-box;
+}
+.ktp-order-summary-memo-label {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: bold;
+  color: #333;
+}
+/* 案件名入力（トップ行）と同一のボックスモデル（wp-admin の input 上書きに負けないよう詳細度を上げる） */
+.ktp-order-summary-card .ktp-order-summary-memo-wrap input[type="text"].ktp-order-summary-memo-input {
+  flex: 1;
+  min-width: 12rem;
+  max-width: 100%;
+  min-height: 32px;
+  padding: 5px 10px;
+  box-sizing: border-box;
+  font-size: 13px;
+  line-height: 1.3;
+  border: 1px solid var(--cocoon-basic-border-color, #ccc);
+  border-radius: var(--cocoon-basic-border-radius, 4px);
+  background: #fff;
+}
+.ktp-order-summary-submeta {
+  display: flex;
+  flex-flow: row wrap;
+  align-items: center;
+  gap: 10px 16px;
+  padding-top: 6px;
+  border-top: 1px solid #e0e0e0;
+  font-size: 12px;
+  color: #555;
+}
+.ktp-order-summary-submeta-label {
+  font-weight: bold;
+  color: #333;
+  margin-right: 4px;
+}
+.ktp-order-summary-submeta .order-payment-timing-wrap {
+  margin-top: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }

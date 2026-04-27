@@ -298,7 +298,7 @@ class KTPWP_Update_Checker {
         $info->sections = array();
         $info->sections['description'] = isset( $plugin_data['Description'] )
             ? $plugin_data['Description']
-            : __( 'フリーランス・スモールビジネス向けの仕事効率化システム。ショートコード[ktpwp_all_tab]を固定ページに設置してください。', 'KantanPro' );
+            : __( 'スモールビジネスのための販売支援ツール', 'KantanPro' );
         $info->sections['changelog']   = isset( $update_data['changelog'] ) && ! empty( $update_data['changelog'] )
             ? $update_data['changelog']
             : __( '詳細な変更履歴は公式サイトまたはリポジトリをご確認ください。', 'KantanPro' );
@@ -1611,7 +1611,7 @@ class KTPWP_Update_Checker {
                 $current_plugin_data = get_plugin_data( KANTANPRO_PLUGIN_FILE );
                 
                 // 説明セクション
-                $plugin_info->sections['description'] = isset( $current_plugin_data['Description'] ) ? $current_plugin_data['Description'] : 'フリーランス・スモールビジネス向けの仕事効率化システム。ショートコード[ktpwp_all_tab]を固定ページに設置してください。';
+                $plugin_info->sections['description'] = isset( $current_plugin_data['Description'] ) ? $current_plugin_data['Description'] : 'スモールビジネスのための販売支援ツール';
                 
                 // 変更履歴セクション
                 if ( isset( $update_data['changelog'] ) && ! empty( $update_data['changelog'] ) ) {

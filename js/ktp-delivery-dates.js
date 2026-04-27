@@ -324,6 +324,10 @@ jQuery(document).ready(function($) {
     $(document).on('change', '.completion-date-input', function() {
         console.log('[DELIVERY-DATES] 完了日フィールドが変更されました');
         var $input = $(this);
+        // 受注書詳細の #completion_date は専用ハンドラのみ（二重・三重の Ajax を防ぐ）
+        if ($input.attr('id') === 'completion_date') {
+            return;
+        }
         var orderId = $input.data('order-id');
         var field = $input.data('field');
         var value = $input.val();
@@ -407,6 +411,92 @@ jQuery(document).ready(function($) {
                 $input.css('opacity', '1');
             }
         });
+    });
+
+    // 受注書概要のメモ（1行・ktp_order.memo、change で保存）
+    $(document).on('change', '.ktp-order-summary-memo-input', function() {
+        var $input = $(this);
+        var orderId = $input.data('order-id');
+        var field = $input.data('field');
+        var value = $input.val();
+        if (!field || field !== 'memo') {
+            return;
+        }
+        if (!orderId) {
+            alert('受注IDが取得できません。ページを再読み込みしてください。');
+            return;
+        }
+        $input.prop('disabled', true);
+        $input.css('opacity', '0.6');
+        const ajaxConfig = getAjaxConfig();
+        const nonce = ajaxConfig.nonce;
+        if (!nonce) {
+            alert('セキュリティトークンが取得できません。ページを再読み込みしてください。');
+            $input.prop('disabled', false);
+            $input.css('opacity', '1');
+            return;
+        }
+        $.ajax({
+            url: ajaxConfig.url,
+            type: 'POST',
+            data: {
+                action: 'ktp_update_delivery_date',
+                order_id: orderId,
+                field: field,
+                value: value,
+                nonce: nonce
+            },
+            success: function(response) {
+                if (response.success) {
+                    $input.css('border-color', '#4caf50');
+                    $input.css('background-color', '#f1f8e9');
+                    setTimeout(function() {
+                        $input.css('border-color', '');
+                        $input.css('background-color', '');
+                    }, 3000);
+                } else {
+                    $input.css('border-color', '#f44336');
+                    $input.css('background-color', '#ffebee');
+                    var errorMessage = 'エラーが発生しました';
+                    if (response.data && response.data.message) {
+                        errorMessage = response.data.message;
+                    } else if (response.data) {
+                        errorMessage = response.data;
+                    }
+                    alert('保存に失敗しました: ' + errorMessage);
+                }
+            },
+            error: function() {
+                $input.css('border-color', '#f44336');
+                $input.css('background-color', '#ffebee');
+                alert('通信エラーが発生しました');
+            },
+            complete: function() {
+                $input.prop('disabled', false);
+                $input.css('opacity', '1');
+            }
+        });
+    });
+
+    // 受注書概要：日付のクリア（保存は各 input の change に任せる）
+    $(document).on('click', '.ktp-date-clear-btn', function(e) {
+        e.preventDefault();
+        var tid = $(this).attr('data-target');
+        if (!tid) {
+            return;
+        }
+        var el = document.getElementById(tid);
+        if (!el) {
+            return;
+        }
+        el.value = '';
+        if (typeof Event === 'function') {
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+        if (tid === 'completion_date') {
+            $('form.ktp-order-summary-progress-form input[name="completion_date"]').val('');
+        }
+        $(el).trigger('change');
     });
 
     /**
@@ -703,6 +793,9 @@ jQuery(document).ready(function($) {
     // 完了日フィールドの変更を監視して自動保存（仕事リスト用）
     $(document).on('change', '.completion-date-input', function() {
         var $input = $(this);
+        if ($input.attr('id') === 'completion_date') {
+            return;
+        }
         var orderId = $input.data('order-id');
         var fieldName = $input.data('field');
         var value = $input.val();

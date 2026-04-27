@@ -321,12 +321,12 @@ if ( ! class_exists( 'KTPWP_Staff_Chat' ) ) {
 
 			// Check if order_id is valid
 			if ( ! $order_id || $order_id <= 0 ) {
-				return '<div class="order_memo_box box"><p>注文IDが無効です。</p></div>';
+				return '<p class="ktp-order-block">' . esc_html__( '注文IDが無効です。', 'ktpwp' ) . '</p>';
 			}
 
 			// Ensure table exists
 			if ( ! $this->create_table() ) {
-				return '<div class="order_memo_box box"><p>データベーステーブルの作成に失敗しました。</p></div>';
+				return '<p class="ktp-order-block">' . esc_html__( 'データベーステーブルの作成に失敗しました。', 'ktpwp' ) . '</p>';
 			}
 
 			// Get order creation time
@@ -352,26 +352,17 @@ if ( ! class_exists( 'KTPWP_Staff_Chat' ) ) {
 				}
 			}
 
-			// Build HTML structure
-			$html = '<div class="order_memo_box box">';
-			// チャットタイトルとトグルボタンをh4タグなしで表示
-			$html .= '<div class="staff-chat-header-row">';
-			$html .= '<span class="staff-chat-title">■ スタッフチャット</span>';
-			// Check URL parameter for chat open state
-			// デフォルトでは表示状態にする（chat_open=0が明示的に指定された場合のみ非表示）
-			$chat_should_be_open = ! isset( $_GET['chat_open'] ) || $_GET['chat_open'] !== '0';
-			$aria_expanded = $chat_should_be_open ? 'true' : 'false';
-			$button_text = $chat_should_be_open ? esc_html__( '非表示', 'ktpwp' ) : esc_html__( '表示', 'ktpwp' );
-			// Add toggle button
-			$html .= '<button type="button" class="toggle-staff-chat" aria-expanded="' . $aria_expanded . '" ';
-			$html .= 'title="' . esc_attr__( 'スタッフチャットの表示/非表示を切り替え', 'ktpwp' ) . '">';
-			$html .= $button_text;
-			$html .= '</button>';
-			$html .= '</div>';
+			// デフォルトは閉じ。送信直後・明示オープンのみ HTML で開く（以降は JS がクッキーで復元）
+			$details_open_attr = '';
+			if ( ( isset( $_GET['message_sent'] ) && $_GET['message_sent'] === '1' )
+				|| ( isset( $_GET['chat_open'] ) && $_GET['chat_open'] === '1' ) ) {
+				$details_open_attr = ' open';
+			}
 
-			// Chat content div
-			$display_style = $chat_should_be_open ? 'block' : 'none';
-			$html .= '<div id="staff-chat-content" class="staff-chat-content" style="display: ' . $display_style . ';">';
+			$html  = '<details id="staff-chat-details" class="ktp-order-block ktp-order-details-toggle staff-chat-details"' . $details_open_attr . '>';
+			$html .= '<summary class="ktp-order-details-summary"><span class="staff-chat-title">' . esc_html__( 'スタッフチャット', 'ktpwp' ) . '</span></summary>';
+
+			$html .= '<div id="staff-chat-content" class="staff-chat-content">';
 
 			if ( empty( $messages ) ) {
 				$html .= '<div class="staff-chat-empty">' . esc_html__( 'メッセージはありません。', 'ktpwp' ) . '</div>';
@@ -476,7 +467,7 @@ if ( ! class_exists( 'KTPWP_Staff_Chat' ) ) {
 			}
 
 			$html .= '</div>'; // .staff-chat-content
-			$html .= '</div>'; // .order_memo_box
+			$html .= '</details>';
 
 			// スタッフチャット用AJAX設定を確実に出力
 			$html .= $this->get_ajax_config_script();

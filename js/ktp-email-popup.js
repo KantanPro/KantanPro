@@ -10,6 +10,20 @@
 
     console.log('[EMAIL-POPUP] スクリプトが読み込まれました');
 
+    /**
+     * ポップアップを閉じる（jQuery の $ は noConflict でグローバルに無いことがあるため、
+     * インライン onclick で $ を使わない。成功画面の「閉じる」からも呼ぶ）
+     */
+    window.ktpCloseEmailPopup = function () {
+        var wrap = document.getElementById('ktp-email-popup');
+        if (wrap && wrap.parentNode) {
+            wrap.parentNode.removeChild(wrap);
+        }
+        if (typeof jQuery !== 'undefined') {
+            jQuery(document).off('keyup.email-popup');
+        }
+    };
+
     // 統一されたAJAX設定の取得
     function getAjaxConfig() {
         const config = {
@@ -121,28 +135,22 @@
         // ポップアップを追加
         $('body').append(popupHtml);
 
-        // ポップアップを閉じる関数
-        function closeEmailPopup() {
-            $('#ktp-email-popup').remove();
-            $(document).off('keyup.email-popup');
-        }
-
-        // 閉じるボタンのイベント
-        $(document).on('click', '#ktp-email-popup-close', function() {
-            closeEmailPopup();
+        // 閉じるボタン（×）のイベント
+        $(document).on('click', '#ktp-email-popup-close', function () {
+            window.ktpCloseEmailPopup();
         });
 
         // Escapeキーで閉じる
-        $(document).on('keyup.email-popup', function(e) {
+        $(document).on('keyup.email-popup', function (e) {
             if (e.keyCode === 27) { // Escape key
-                closeEmailPopup();
+                window.ktpCloseEmailPopup();
             }
         });
 
         // 背景クリックで閉じる
-        $(document).on('click', '#ktp-email-popup', function(e) {
+        $(document).on('click', '#ktp-email-popup', function (e) {
             if (e.target === this) {
-                closeEmailPopup();
+                window.ktpCloseEmailPopup();
             }
         });
 
@@ -597,32 +605,51 @@
         };
     }
 
+    /** メールポップアップ用: 自動保存 API は ktp_ajax_nonce 優先（ktpwp 一般 nonce もサーバで受可） */
+    function getAutoSaveNonceForEmail() {
+        if (typeof ktp_ajax_nonce !== 'undefined' && ktp_ajax_nonce) {
+            return ktp_ajax_nonce;
+        }
+        if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.auto_save) {
+            return ktpwp_ajax.nonces.auto_save;
+        }
+        if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.nonces && ktp_ajax_object.nonces.auto_save) {
+            return ktp_ajax_object.nonces.auto_save;
+        }
+        if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.nonce) {
+            return ktp_ajax_object.nonce;
+        }
+        const cfg = getAjaxConfig();
+        return cfg.nonce || '';
+    }
+
     // メール送信前に最新の金額をデータベースに保存
     function saveLatestAmountsBeforeEmail(orderId) {
         try {
-            // 請求項目の最新金額を保存
+            const ajaxConfig = getAjaxConfig();
+            const saveNonce = getAutoSaveNonceForEmail();
+
+            // 請求項目の最新金額を保存（action は wp_ajax_ktp_auto_save_item に合わせる）
             $('.invoice-items-table tbody tr').each(function() {
                 const $row = $(this);
                 const itemId = $row.find('input[name*="[id]"]').val();
                 const amountValue = $row.find('.invoice-item-amount').attr('data-amount') || $row.find('.invoice-item-amount').text().replace(/,/g, '');
                 const amount = parseFloat(amountValue) || 0;
-                
+
                 if (itemId && itemId !== '0' && amount > 0) {
-                    // 即座に金額を保存（デバウンスなし）
-                    const ajaxConfig = getAjaxConfig();
                     $.ajax({
                         url: ajaxConfig.url,
                         type: 'POST',
                         data: {
-                            action: 'auto_save_item',
+                            action: 'ktp_auto_save_item',
                             item_type: 'invoice',
                             item_id: itemId,
-                            field: 'amount',
-                            value: amount,
+                            field_name: 'amount',
+                            field_value: String(amount),
                             order_id: orderId,
-                            nonce: typeof ktp_ajax_object !== 'undefined' ? ktp_ajax_object.nonce : ''
+                            nonce: saveNonce
                         },
-                        async: false // 同期実行で確実に保存
+                        async: false
                     });
                 }
             });
@@ -633,23 +660,21 @@
                 const itemId = $row.find('input[name*="[id]"]').val();
                 const amountValue = $row.find('.cost-item-amount').attr('data-amount') || $row.find('.cost-item-amount').text().replace(/,/g, '');
                 const amount = parseFloat(amountValue) || 0;
-                
+
                 if (itemId && itemId !== '0' && amount > 0) {
-                    // 即座に金額を保存（デバウンスなし）
-                    const ajaxConfig = getAjaxConfig();
                     $.ajax({
                         url: ajaxConfig.url,
                         type: 'POST',
                         data: {
-                            action: 'auto_save_item',
+                            action: 'ktp_auto_save_item',
                             item_type: 'cost',
                             item_id: itemId,
-                            field: 'amount',
-                            value: amount,
+                            field_name: 'amount',
+                            field_value: String(amount),
                             order_id: orderId,
-                            nonce: typeof ktp_ajax_object !== 'undefined' ? ktp_ajax_object.nonce : ''
+                            nonce: saveNonce
                         },
-                        async: false // 同期実行で確実に保存
+                        async: false
                     });
                 }
             });
@@ -773,19 +798,37 @@
                         <div style="text-align: center; padding: 40px; color: #28a745;">
                             ${successMessage}
                             <div style="margin-top: 20px;">
-                                <button type="button" onclick="$('#ktp-email-popup').remove()" style="
+                                <button type="button" class="ktp-email-success-close" style="
+                                    position: relative;
+                                    z-index: 2;
                                     background: #28a745;
                                     color: white;
                                     border: none;
                                     padding: 8px 16px;
                                     border-radius: 4px;
                                     cursor: pointer;
-                                ">
+                                    pointer-events: auto;
+                                " onclick="if(typeof window.ktpCloseEmailPopup==='function'){window.ktpCloseEmailPopup();}return false;">
                                     閉じる
                                 </button>
                             </div>
                         </div>
                     `);
+                    (function () {
+                        var okBtn = document.querySelector('#ktp-email-popup .ktp-email-success-close');
+                        if (!okBtn) {
+                            return;
+                        }
+                        okBtn.addEventListener(
+                            'click',
+                            function (ev) {
+                                ev.preventDefault();
+                                ev.stopPropagation();
+                                window.ktpCloseEmailPopup();
+                            },
+                            true
+                        );
+                    })();
                 } else {
                     const errorMessage = response.data && response.data.message ? response.data.message : 'メール送信に失敗しました';
                     $('#ktp-email-popup-content').html(`

@@ -1618,91 +1618,74 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 						7 => 'ボツ',
 					);
 
-					// 受注書詳細の表示（以前のレイアウト）
-					$content .= '<div class="order_contents">';
-					$content .= '<div class="order_info_box box">';
-					// ■ 受注書概要（ID: *）案件名フィールドを同一div内で横並びに
-					$content .= '<div class="order-header-flex order-header-inline-summary">';
-					$content .= '<span class="order-header-title-id">■ 受注書概要（ID: ' . esc_html( $order_data->id ) . '）'
-					. '<input type="text" class="order_project_name_inline order-header-projectname" name="order_project_name_inline" value="' . ( isset( $order_data->project_name ) ? esc_html( $order_data->project_name ) : '' ) . '" data-order-id="' . esc_html( $order_data->id ) . '" placeholder="案件名" autocomplete="off" />'
-					. '</span>';
+					// 受注書詳細の表示（カードレイアウト・KantanBiz型）
+					$ktp_norm_order_date = function ( $v ) {
+						if ( empty( $v ) || '0000-00-00' === (string) $v || '0000-00-00 00:00:00' === (string) $v ) {
+							return '';
+						}
+						return (string) $v;
+					};
+					$desired_delivery_date = $ktp_norm_order_date( isset( $order_data->desired_delivery_date ) ? $order_data->desired_delivery_date : '' );
+					$expected_delivery_date = $ktp_norm_order_date( isset( $order_data->expected_delivery_date ) ? $order_data->expected_delivery_date : '' );
+					$promised_delivery_date = $ktp_norm_order_date( isset( $order_data->promised_delivery_date ) ? $order_data->promised_delivery_date : '' );
+					$completion_date = $ktp_norm_order_date( isset( $order_data->completion_date ) ? $order_data->completion_date : '' );
+					$original_completion_date = isset( $order_data->completion_date ) ? $order_data->completion_date : '';
+					error_log( 'KTPWP Order: 画面表示時の完了日: ' . $completion_date . ' (受注書ID: ' . $order_data->id . ', 元の値: ' . $original_completion_date . ')' );
 
-					// 希望納期と納品予定日のフィールドを追加
-					$desired_delivery_date = isset( $order_data->desired_delivery_date ) ? $order_data->desired_delivery_date : '';
-					$expected_delivery_date = isset( $order_data->expected_delivery_date ) ? $order_data->expected_delivery_date : '';
-
-					$content .= '<div class="delivery-dates-container" style="display: flex; align-items: center; gap: 15px; margin-left: 20px;">';
-					$content .= '<div class="date-field" style="display: flex; align-items: center; gap: 5px;">';
-					$content .= '<label for="desired_delivery_date" style="white-space: nowrap; font-size: 12px; font-weight: bold; color: #333;">希望納期：</label>';
-					$content .= '<input type="date" id="desired_delivery_date" name="desired_delivery_date" value="' . esc_attr( $desired_delivery_date ) . '" data-order-id="' . esc_attr( $order_data->id ) . '" data-field="desired_delivery_date" class="delivery-date-input" style="font-size: 12px; padding: 4px 8px; border: 1px solid #ddd; border-radius: 4px;" />';
-					$content .= '</div>';
-					$content .= '<div class="date-field" style="display: flex; align-items: center; gap: 5px;">';
-					$content .= '<label for="expected_delivery_date" style="white-space: nowrap; font-size: 12px; font-weight: bold; color: #333;">納品予定日：</label>';
-					$content .= '<input type="date" id="expected_delivery_date" name="expected_delivery_date" value="' . esc_attr( $expected_delivery_date ) . '" data-order-id="' . esc_attr( $order_data->id ) . '" data-field="expected_delivery_date" class="delivery-date-input" style="font-size: 12px; padding: 4px 8px; border: 1px solid #ddd; border-radius: 4px;" />';
-					$content .= '</div>';
-					$content .= '</div>';
-
-					// 進捗は任意に変更可能（受付中→完了など飛び級可。メール送信時のみ「次の進捗」へ自動移行）
-					$content .= '<form method="post" action="" class="progress-filter order-header-progress-form" style="display:flex;align-items:center;gap:8px;flex-wrap:nowrap;margin-left:auto;">';
-					$content .= '<input type="hidden" name="update_progress_id" value="' . esc_html( $order_data->id ) . '" />';
-					// Add nonce for progress update
-					$content .= wp_nonce_field( 'update_progress_action', 'progress_nonce', true, false );
-					$content .= '<label for="order_progress_select" style="white-space:nowrap;margin-right:4px;font-weight:bold;">進捗：</label>';
-					$content .= '<select id="order_progress_select" name="update_progress" style="min-width:120px;max-width:200px;width:auto;">';
-					foreach ( $progress_labels as $num => $label ) {
-									$selected = ( $order_data->progress == $num ) ? 'selected' : '';
-									$content .= '<option value="' . $num . '" ' . $selected . '>' . $label . '</option>';
+					// 受付＝受注書登録日時（旧「作成」表示と同一・ここに統一）
+					$reception_display_str = '';
+					if ( ! empty( $order_data->time ) ) {
+						$raw_time = $order_data->time;
+						if ( is_numeric( $raw_time ) && strlen( (string) $raw_time ) >= 10 ) {
+							$dt = new DateTime( '@' . (int) $raw_time );
+							$dt->setTimezone( new DateTimeZone( wp_timezone_string() ) );
+						} else {
+							$dt = date_create( $raw_time, new DateTimeZone( wp_timezone_string() ) );
+						}
+						if ( $dt ) {
+							$locale = get_locale();
+							if ( substr( $locale, 0, 2 ) === 'ja' ) {
+								$week = array( '日', '月', '火', '水', '木', '金', '土' );
+								$w = $dt->format( 'w' );
+								$reception_display_str = $dt->format( 'Y/n/j' ) . '（' . $week[ $w ] . '）' . $dt->format( ' H:i' );
+							} else {
+								$reception_display_str = $dt->format( 'Y-m-d l H:i' );
+							}
+						}
 					}
-					$content .= '</select>';
 
-					// 完了日フィールドをフォーム内に追加
-					$completion_date = isset( $order_data->completion_date ) ? $order_data->completion_date : '';
-					$content .= '<input type="hidden" name="completion_date" value="' . esc_attr( $completion_date ) . '" />';
-					$content .= '</form>';
-					// 顧客IDの表示を改善
 					$client_id_display = '';
+					$client_data = null;
 					if ( ! empty( $order_data->client_id ) ) {
-						// 顧客レコードが実際に存在するか確認
 						$client_data = $wpdb->get_row(
-                            $wpdb->prepare(
-                                "SELECT id, category FROM `{$client_table}` WHERE id = %d",
-                                $order_data->client_id
-                            )
-                        );
-
+							$wpdb->prepare(
+								"SELECT id, category FROM `{$client_table}` WHERE id = %d",
+								$order_data->client_id
+							)
+						);
 						if ( $client_data ) {
-							// 顧客が存在する場合
 							if ( $client_data->category === '対象外' ) {
-								// 削除済み（対象外）顧客の場合は赤色で表示
 								$client_id_display = '（顧客ID: <span style="color:red;">' . esc_html( $order_data->client_id ) . ' - 削除済み</span>）';
 							} else {
-								// 通常の顧客はリンク付きで表示
-								// 現在のページのURLを動的に取得
-
-								global $wp;
-
 								$base_url = KTPWP_Main::get_current_page_base_url();
-								$client_url = add_query_arg(
-                                    array(
+								$client_url_tmp = add_query_arg(
+									array(
 										'tab_name' => 'client',
 										'data_id' => $order_data->client_id,
-                                    ),
-                                    $base_url
+									),
+									$base_url
 								);
-								$client_id_display = '（顧客ID: <a href="' . esc_url( $client_url ) . '" style="color:blue;">' . esc_html( $order_data->client_id ) . '</a>）';
+								$client_id_display = '（顧客ID: <a href="' . esc_url( $client_url_tmp ) . '" style="color:blue;">' . esc_html( $order_data->client_id ) . '</a>）';
 							}
 						} else {
-							// 顧客が存在しない場合（データベースから完全に削除されている）
 							$client_id_display = '（顧客ID: <span style="color:red;">' . esc_html( $order_data->client_id ) . ' - 削除済み</span>）';
 						}
 					} else {
 						$client_id_display = '（顧客ID未設定）';
 					}
-					
-					// 会社名のフォールバック処理: Contact Form 7で「0」になった場合の対策
+
 					$display_customer_name = $order_data->customer_name;
 					if ( $display_customer_name === '0' || empty( $display_customer_name ) ) {
-						// 顧客IDがある場合は顧客テーブルから会社名を取得
 						if ( ! empty( $order_data->client_id ) ) {
 							$client_company_name = $wpdb->get_var(
 								$wpdb->prepare(
@@ -1712,156 +1695,175 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 							);
 							if ( ! empty( $client_company_name ) ) {
 								$display_customer_name = $client_company_name;
-								
-								// デバッグログ
 								if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 									error_log( 'KTPWP Order Display: 会社名をデータベースから取得しました: ' . $display_customer_name . ' (受注書ID: ' . $order_data->id . ')' );
 								}
 							} else {
-								// 顧客テーブルからも取得できない場合は担当者名を使用
 								$display_customer_name = $order_data->user_name;
-								
 								if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 									error_log( 'KTPWP Order Display: 会社名が見つからないため、担当者名を使用: ' . $display_customer_name . ' (受注書ID: ' . $order_data->id . ')' );
 								}
 							}
 						} else {
-							// 顧客IDがない場合は担当者名を使用
 							$display_customer_name = $order_data->user_name;
-							
 							if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 								error_log( 'KTPWP Order Display: 顧客IDがないため、担当者名を使用: ' . $display_customer_name . ' (受注書ID: ' . $order_data->id . ')' );
 							}
 						}
 					}
-					
-					$content .= '<div><span id="order_customer_name">' . esc_html( $display_customer_name ) . '</span> <span class="client-id" style="color:#666;font-size:0.9em;">' . $client_id_display . '</span></div>';
-					// 担当者名の横に顧客メールアドレスのmailtoリンク（あれば）
-					$client_email = '';
-					$client = null;
 
-					// まず顧客IDがある場合はIDで検索
+					$client = null;
 					if ( ! empty( $order_data->client_id ) ) {
 						$client = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM `{$client_table}` WHERE id = %d", $order_data->client_id ) );
 					}
-
-					// IDで見つからない場合は会社名と担当者名で検索（後方互換性）
 					if ( ! $client ) {
 						$client = $wpdb->get_row(
-                            $wpdb->prepare(
-                                "SELECT * FROM `{$client_table}` WHERE company_name = %s AND name = %s",
-                                $order_data->customer_name,
-                                $order_data->user_name
-                            )
-                        );
+							$wpdb->prepare(
+								"SELECT * FROM `{$client_table}` WHERE company_name = %s AND name = %s",
+								$order_data->customer_name,
+								$order_data->user_name
+							)
+						);
 					}
 
-					// 担当者名の表示を修正
-					$user_display_name = '';
-					
-					// まず受注書テーブルの担当者名を確認
+					$client_url = '';
+					if ( ! empty( $order_data->client_id ) && $client_data && isset( $client_data->category ) && $client_data->category !== '対象外' ) {
+						$client_url = add_query_arg(
+							array(
+								'tab_name' => 'client',
+								'data_id' => $order_data->client_id,
+							),
+							KTPWP_Main::get_current_page_base_url()
+						);
+					}
+
+					$dept_label = '';
+					$contact_name_raw = '';
 					if ( ! empty( $order_data->user_name ) ) {
-						$user_display_name = esc_html( $order_data->user_name );
-					} else {
-						// 受注書テーブルに担当者名がない場合は顧客テーブルから取得
-						if ( ! empty( $order_data->client_id ) ) {
-							$client_contact = $wpdb->get_var(
-								$wpdb->prepare(
-									"SELECT name FROM `{$client_table}` WHERE id = %d",
-									$order_data->client_id
-								)
-							);
-							if ( ! empty( $client_contact ) ) {
-								$user_display_name = esc_html( $client_contact );
-							}
+						$contact_name_raw = $order_data->user_name;
+					} elseif ( ! empty( $order_data->client_id ) ) {
+						$client_contact = $wpdb->get_var(
+							$wpdb->prepare(
+								"SELECT name FROM `{$client_table}` WHERE id = %d",
+								$order_data->client_id
+							)
+						);
+						if ( ! empty( $client_contact ) ) {
+							$contact_name_raw = $client_contact;
 						}
 					}
-
-					// 部署選択がある場合の担当者名表示を修正
+					$selected_department = null;
 					if ( class_exists( 'KTPWP_Department_Manager' ) && ! empty( $order_data->client_id ) ) {
 						$selected_department = KTPWP_Department_Manager::get_selected_department_by_client( $order_data->client_id );
 						if ( $selected_department ) {
-							// 部署選択がある場合：部署名 担当者名の形式で表示
-							$user_display_name = esc_html( $selected_department->department_name ) . ' ' . esc_html( $selected_department->contact_person );
+							$dept_label = $selected_department->department_name;
+							$contact_name_raw = $selected_department->contact_person;
 						}
 					}
+					$contact_display_html = esc_html( $contact_name_raw );
 
-					if ( $client && ! empty( $client->email ) ) {
-						$client_email = esc_attr( $client->email );
-						$content .= '<div><span id="order_user_name">' . $user_display_name . '</span>';
-						$content .= ' <a href="mailto:' . $client_email . '" style="margin-left:8px;vertical-align:middle;" title="メール送信">';
-						$content .= '<span class="material-symbols-outlined" style="font-size:18px;vertical-align:middle;color:#2196f3;">mail</span>';
-						$content .= '</a></div>';
+					if ( $client_url !== '' ) {
+						$customer_cell_inner = '<a class="ktp-order-summary-client-link" href="' . esc_url( $client_url ) . '">' . esc_html( $display_customer_name ) . '</a>';
 					} else {
-						$content .= '<div><span id="order_user_name">' . $user_display_name . '</span></div>';
+						$customer_cell_inner = '<span class="ktp-order-summary-client-text">' . esc_html( $display_customer_name ) . '</span>';
 					}
-					// 支払タイミング（後払い / 前入金済 / WC受注の3択・常に3つ表示）
+					$customer_cell_inner .= ' <span class="client-id ktp-order-summary-client-meta">' . $client_id_display . '</span>';
+
+					// KantanBiz（WooCommerce 連携なし）：支払タイミングは postpay / prepay のみ
 					$order_payment_timing = 'postpay';
 					if ( property_exists( $order_data, 'payment_timing' ) && $order_data->payment_timing !== null && $order_data->payment_timing !== '' ) {
 						$v = trim( (string) $order_data->payment_timing );
 						if ( $v === 'prepay' ) {
-							$is_wc = property_exists( $order_data, 'external_source' ) && trim( (string) $order_data->external_source ) === 'woocommerce';
-							$order_payment_timing = $is_wc ? 'prepay_wc' : 'prepay';
+							$order_payment_timing = 'prepay';
 						} elseif ( $v === 'postpay' ) {
 							$order_payment_timing = 'postpay';
 						}
 					}
 					$current_url = add_query_arg( array( 'tab_name' => 'order', 'order_id' => $order_data->id ), KTPWP_Main::get_current_page_base_url() );
-					$content .= '<div class="order-payment-timing-wrap" style="margin-top:8px;">';
-					$content .= '<form method="post" action="' . esc_url( $current_url ) . '" style="display:inline;" id="ktp-order-payment-timing-form">';
+
+					$summary_memo = ( is_object( $order_data ) && isset( $order_data->memo ) && $order_data->memo !== null ) ? (string) $order_data->memo : '';
+
+					$content .= '<div class="order_contents">';
+					$content .= '<div class="order_info_box box ktp-order-summary-card">';
+
+					$content .= '<div class="ktp-order-summary-row ktp-order-summary-row--topline">';
+					$content .= '<div class="ktp-order-summary-field ktp-order-summary-field--project">';
+					$content .= '<span class="ktp-order-summary-field-label">' . esc_html__( '案件名', 'ktpwp' ) . '：</span>';
+					$content .= '<input type="text" class="order_project_name_inline order-header-projectname ktp-order-summary-project-input" name="order_project_name_inline" value="' . esc_attr( isset( $order_data->project_name ) ? $order_data->project_name : '' ) . '" data-order-id="' . esc_attr( $order_data->id ) . '" placeholder="' . esc_attr__( '案件名', 'ktpwp' ) . '" autocomplete="off" />';
+					$content .= '</div>';
+					$content .= '<div class="ktp-order-summary-field">';
+					$content .= '<div class="ktp-order-summary-field-value" id="order_customer_name">' . $customer_cell_inner . '</div>';
+					$content .= '</div>';
+					$content .= '<div class="ktp-order-summary-field">';
+					$content .= '<div class="ktp-order-summary-field-value">' . ( $dept_label !== '' ? esc_html( $dept_label ) : '<span class="ktp-order-summary-placeholder">—</span>' ) . '</div>';
+					$content .= '</div>';
+					$content .= '<div class="ktp-order-summary-field ktp-order-summary-field--contact">';
+					$content .= '<div class="ktp-order-summary-field-value ktp-order-summary-contact-row">';
+					$content .= '<span id="order_user_name">' . $contact_display_html . '</span>';
+					if ( $client && ! empty( $client->email ) ) {
+						$content .= '<a href="mailto:' . esc_attr( $client->email ) . '" class="ktp-order-summary-mail" title="' . esc_attr__( 'メール送信', 'ktpwp' ) . '"><span class="material-symbols-outlined" style="font-size:18px;vertical-align:middle;color:#2196f3;">mail</span></a>';
+					}
+					$content .= '</div></div>';
+
+					$content .= '<div class="ktp-order-summary-trailing-meta">';
+					$content .= '<form method="post" action="" class="progress-filter order-header-progress-form ktp-order-summary-progress-form">';
+					$content .= '<input type="hidden" name="update_progress_id" value="' . esc_attr( $order_data->id ) . '" />';
+					$content .= wp_nonce_field( 'update_progress_action', 'progress_nonce', true, false );
+					$content .= '<span class="ktp-order-summary-field-label ktp-order-summary-field-label--inline">' . esc_html__( '進捗', 'ktpwp' ) . '：</span>';
+					$content .= '<select id="order_progress_select" name="update_progress" class="ktp-order-summary-progress-select">';
+					foreach ( $progress_labels as $num => $label ) {
+						$selected = ( $order_data->progress == $num ) ? 'selected' : '';
+						$content .= '<option value="' . (int) $num . '" ' . $selected . '>' . esc_html( $label ) . '</option>';
+					}
+					$content .= '</select>';
+					if ( $reception_display_str !== '' ) {
+						$content .= '<span class="ktp-order-reception-date">' . esc_html__( '受付', 'ktpwp' ) . '：<span id="order_created_time">' . esc_html( $reception_display_str ) . '</span></span>';
+					}
+					$content .= '<input type="hidden" name="completion_date" value="' . esc_attr( $completion_date ) . '" />';
+					$content .= '</form>';
+
+					$content .= '<div class="order-payment-timing-wrap">';
+					$content .= '<form method="post" action="' . esc_url( $current_url ) . '" class="ktp-order-summary-payment-form" id="ktp-order-payment-timing-form">';
 					$content .= '<input type="hidden" name="tab_name" value="order" />';
 					$content .= '<input type="hidden" name="order_id" value="' . esc_attr( $order_data->id ) . '" />';
-					$content .= '<select id="order_payment_timing_' . esc_attr( $order_data->id ) . '" name="order_payment_timing" onchange="document.getElementById(\'ktp-order-payment-timing-form\').submit();" style="padding:4px 8px;">';
+					$content .= '<label for="order_payment_timing_' . esc_attr( $order_data->id ) . '" class="ktp-order-summary-submeta-label ktp-order-summary-payment-label">' . esc_html__( '支払', 'ktpwp' ) . '：</label>';
+					$content .= '<select id="order_payment_timing_' . esc_attr( $order_data->id ) . '" name="order_payment_timing" class="ktp-order-summary-payment-select" onchange="document.getElementById(\'ktp-order-payment-timing-form\').submit();">';
 					$content .= '<option value="postpay"' . ( $order_payment_timing === 'postpay' ? ' selected' : '' ) . '>' . esc_html__( '後払い', 'ktpwp' ) . '</option>';
 					$content .= '<option value="prepay"' . ( $order_payment_timing === 'prepay' ? ' selected' : '' ) . '>' . esc_html__( '前入金済', 'ktpwp' ) . '</option>';
 					$content .= '<option value="prepay_wc"' . ( $order_payment_timing === 'prepay_wc' ? ' selected' : '' ) . '>' . esc_html__( 'WC受注', 'ktpwp' ) . '</option>';
 					$content .= '</select>';
 					$content .= '<input type="hidden" name="update_payment_timing_order_id" value="' . esc_attr( $order_data->id ) . '" />';
 					$content .= '<input type="hidden" name="ktp_payment_timing_nonce" value="' . esc_attr( wp_create_nonce( 'ktp_update_order_payment_timing' ) ) . '" />';
-					$content .= '</form>';
+					$content .= '</form></div>';
+
 					$content .= '</div>';
-					// 作成日時の表示
-					$raw_time = $order_data->time;
-					$formatted_time = '';
-					if ( ! empty( $raw_time ) ) {
-						if ( is_numeric( $raw_time ) && strlen( $raw_time ) >= 10 ) {
-							// time()で取得したUNIXタイムスタンプはUTCベース
-							// UTCとして解釈して、適切にタイムゾーン変換する
-							$unix_timestamp = (int) $raw_time;
 
-							// UTCタイムスタンプからDateTimeオブジェクトを作成し、WPタイムゾーンに変換
-							$dt = new DateTime( '@' . $unix_timestamp ); // '@'プレフィックスでUTCとして解釈
-							$dt->setTimezone( new DateTimeZone( wp_timezone_string() ) ); // WordPressのタイムゾーンを適用
-						} else {
-							$dt = date_create( $raw_time, new DateTimeZone( wp_timezone_string() ) );
-						}
-						if ( $dt ) {
-							// ロケールに応じた曜日の取得
-							$locale = get_locale();
-							if ( substr( $locale, 0, 2 ) === 'ja' ) {
-								// 日本語の場合
-								$week = array( '日', '月', '火', '水', '木', '金', '土' );
-								$w = $dt->format( 'w' );
-								$formatted_time = $dt->format( 'Y/n/j' ) . '（' . $week[ $w ] . '）' . $dt->format( ' H:i' );
-							} else {
-								// その他の言語の場合は国際的な形式を使用
-								$formatted_time = $dt->format( 'Y-m-d l H:i' );
-							}
-						}
-					}
-					$content .= '<div>作成：<span id="order_created_time">' . esc_html( $formatted_time ) . '</span></div>';
+					$content .= '</div>';
 
-					// 完了日の表示と編集フィールド
-					$completion_date = isset( $order_data->completion_date ) ? $order_data->completion_date : '';
+					$content .= '<div class="ktp-order-summary-dates-grid">';
+					$content .= '<div class="ktp-order-summary-date-cell"><span class="ktp-order-summary-field-label">' . esc_html__( '約束納期', 'ktpwp' ) . '</span>';
+					$content .= '<div class="ktp-order-summary-date-cell-inner">';
+					$content .= '<input type="date" id="promised_delivery_date" name="promised_delivery_date" value="' . esc_attr( $promised_delivery_date ) . '" data-order-id="' . esc_attr( $order_data->id ) . '" data-field="promised_delivery_date" class="delivery-date-input ktp-order-summary-date-input" />';
+					$content .= '<button type="button" class="ktp-date-clear-btn" data-target="promised_delivery_date">' . esc_html__( 'クリア', 'ktpwp' ) . '</button></div></div>';
+					$content .= '<div class="ktp-order-summary-date-cell"><span class="ktp-order-summary-field-label">' . esc_html__( '希望納期', 'ktpwp' ) . '</span>';
+					$content .= '<div class="ktp-order-summary-date-cell-inner">';
+					$content .= '<input type="date" id="desired_delivery_date" name="desired_delivery_date" value="' . esc_attr( $desired_delivery_date ) . '" data-order-id="' . esc_attr( $order_data->id ) . '" data-field="desired_delivery_date" class="delivery-date-input ktp-order-summary-date-input" />';
+					$content .= '<button type="button" class="ktp-date-clear-btn" data-target="desired_delivery_date">' . esc_html__( 'クリア', 'ktpwp' ) . '</button></div></div>';
+					$content .= '<div class="ktp-order-summary-date-cell"><span class="ktp-order-summary-field-label">' . esc_html__( '納品予定日', 'ktpwp' ) . '</span>';
+					$content .= '<div class="ktp-order-summary-date-cell-inner">';
+					$content .= '<input type="date" id="expected_delivery_date" name="expected_delivery_date" value="' . esc_attr( $expected_delivery_date ) . '" data-order-id="' . esc_attr( $order_data->id ) . '" data-field="expected_delivery_date" class="delivery-date-input ktp-order-summary-date-input" />';
+					$content .= '<button type="button" class="ktp-date-clear-btn" data-target="expected_delivery_date">' . esc_html__( 'クリア', 'ktpwp' ) . '</button></div></div>';
+					$content .= '<div class="ktp-order-summary-date-cell"><span class="ktp-order-summary-field-label">' . esc_html__( '完了日', 'ktpwp' ) . '</span>';
+					$content .= '<div class="ktp-order-summary-date-cell-inner">';
+					$content .= '<input type="date" id="completion_date" name="completion_date" value="' . esc_attr( $completion_date ) . '" data-order-id="' . esc_attr( $order_data->id ) . '" data-field="completion_date" class="completion-date-input ktp-order-summary-date-input" />';
+					$content .= '<button type="button" class="ktp-date-clear-btn" data-target="completion_date">' . esc_html__( 'クリア', 'ktpwp' ) . '</button></div></div>';
+					$content .= '</div>';
 
-					// 0000-00-00や無効な日付の場合は空文字にする
-					if ( $completion_date === '0000-00-00' || $completion_date === '0000-00-00 00:00:00' || empty( $completion_date ) ) {
-						$completion_date = '';
-					}
-
-					$original_completion_date = isset( $order_data->completion_date ) ? $order_data->completion_date : '';
-					error_log( 'KTPWP Order: 画面表示時の完了日: ' . $completion_date . ' (受注書ID: ' . $order_data->id . ', 元の値: ' . $original_completion_date . ')' );
-					$content .= '<div>完了日：<input type="date" id="completion_date" name="completion_date" value="' . esc_attr( $completion_date ) . '" data-order-id="' . esc_attr( $order_data->id ) . '" data-field="completion_date" class="completion-date-input" style="font-size: 12px; padding: 4px 8px; border: 1px solid #ddd; border-radius: 4px; width: 140px;" /></div>';
+					$content .= '<div class="ktp-order-summary-memo-line ktp-order-summary-memo-wrap">';
+					$content .= '<span class="ktp-order-summary-memo-label">' . esc_html__( 'メモ', 'ktpwp' ) . '：</span>';
+					$content .= '<input type="text" id="ktp_order_summary_memo_' . (int) $order_data->id . '" class="ktp-order-summary-memo-input" maxlength="10000" autocomplete="off" ';
+					$content .= 'value="' . esc_attr( $summary_memo ) . '" data-order-id="' . esc_attr( $order_data->id ) . '" data-field="memo" />';
+					$content .= '</div>';
 
 					// 案件名インライン入力をh4タイトル行に移動
 					$project_name = isset( $order_data->project_name ) ? esc_html( $order_data->project_name ) : '';
@@ -1873,23 +1875,11 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 					$content .= '<span class="toc2">■ 請求項目</span>';
 					$content .= $this->Generate_Invoice_Items_Table( $order_id );
 					$content .= '</div>'; // .order_invoice_box 終了
-					// コスト項目とメモ項目のセクションを追加
-					$content .= '<div class="order_cost_box box">';
-					$content .= '<div style="display: flex; align-items: center; gap: 8px;">';
-					$content .= '<span class="toc2">■ コスト項目</span>';
-					$content .= '<span class="toc2">';
-					$content .= '<button type="button" class="toggle-cost-items" aria-expanded="false" ';
-					$content .= 'title="' . esc_attr__( 'コスト項目の表示/非表示を切り替え', 'ktpwp' ) . '">';
-					$content .= esc_html__( '表示', 'ktpwp' );
-					$content .= '</button>';
-					$content .= '</span>';
-					$content .= '</div>';
-					// コスト項目テーブルをラップする（初期状態で非表示にする）
-					$content .= '<div id="cost-items-content" style="display:none;">';
-					// コスト項目テーブルを表示
+					// コスト項目（▶︎▼ 折りたたみ・KantanProEX と同様）
+					$content .= '<details class="ktp-order-block ktp-order-details-toggle order-cost-details">';
+					$content .= '<summary class="ktp-order-details-summary"><span class="toc2">' . esc_html__( 'コスト項目', 'ktpwp' ) . '</span></summary>';
 					$content .= $this->Generate_Cost_Items_Table( $order_id );
-					$content .= '</div>'; // #cost-items-content 終了
-					$content .= '</div>'; // .order_cost_box 終了
+					$content .= '</details>';
 					// スタッフチャットセクションを追加（タイトルなし）
 					$content .= '<!-- DEBUG: スタッフチャット開始 -->';
 					$staff_chat_html = $this->Generate_Staff_Chat_HTML( $order_id );

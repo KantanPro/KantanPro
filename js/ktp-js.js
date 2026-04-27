@@ -390,194 +390,99 @@ document.addEventListener('DOMContentLoaded', function () {
         if (window.ktpDebugMode) console.log('KTPWP: Found toggle buttons:', allToggleButtons.length, allToggleButtons);
     }
 
-    // 全ての cost-items-content 要素を検索
-    var allCostContents = document.querySelectorAll('#cost-items-content');
-    if (window.ktpDebugMode) console.log('KTPWP: Found cost contents:', allCostContents.length, allCostContents);
-
     // ページ内の全ての要素を確認（デバッグ用）
     var allButtons = document.querySelectorAll('button');
     if (window.ktpDebugMode) console.log('KTPWP: All buttons on page:', allButtons.length);
 
-    var costToggleBtn = document.querySelector('.toggle-cost-items');
-    var costContent = document.getElementById('cost-items-content');
+    var costDetailsEl = document.querySelector('details.order-cost-details');
 
-    if (window.ktpDebugMode) console.log('KTPWP: Cost toggle elements found:', {
-        button: !!costToggleBtn,
-        content: !!costContent,
-        buttonElement: costToggleBtn,
-        contentElement: costContent
-    }); if (costToggleBtn && costContent) {
-        setupCostToggle(costToggleBtn, costContent);
+    if (window.ktpDebugMode) console.log('KTPWP: Cost details element found:', !!costDetailsEl);
+
+    if (costDetailsEl) {
+        setupCostDetailsToggle(costDetailsEl);
     } else {
-        if (window.ktpDebugMode) console.log('KTPWP: Cost toggle elements not found - button:', !!costToggleBtn, 'content:', !!costContent);
-
-        // 要素が見つからない場合、少し待ってから再試行
         setTimeout(function () {
-            if (window.ktpDebugMode) console.log('KTPWP: Retrying to find cost toggle elements...');
-            var retryToggleBtn = document.querySelector('.toggle-cost-items');
-            var retryCostContent = document.getElementById('cost-items-content');
-
-            if (window.ktpDebugMode) console.log('KTPWP: Retry results:', {
-                button: !!retryToggleBtn,
-                content: !!retryCostContent
-            });
-
-            if (retryToggleBtn && retryCostContent) {
-                if (window.ktpDebugMode) console.log('KTPWP: Elements found on retry, setting up functionality...');
-                setupCostToggle(retryToggleBtn, retryCostContent);
-            } else {
-                // HTML構造をデバッグ
-                if (window.ktpDebugMode) console.log('KTPWP: Page HTML structure debug:');
-                var orderBoxes = document.querySelectorAll('.order_cost_box, .box');
-                if (window.ktpDebugMode) console.log('KTPWP: Found boxes:', orderBoxes.length, orderBoxes);
-
-                var h4Elements = document.querySelectorAll('h4');
-                if (window.ktpDebugMode) console.log('KTPWP: Found h4 elements:', h4Elements.length);
-                h4Elements.forEach(function (h4, index) {
-                    if (window.ktpDebugMode) console.log('KTPWP: H4 #' + index + ':', h4.textContent);
-                });
+            var retry = document.querySelector('details.order-cost-details');
+            if (retry) {
+                setupCostDetailsToggle(retry);
             }
         }, 2000);
     }
 
-    // スタッフチャットトグル機能をセットアップする関数
-    function setupStaffChatToggle(toggleBtn, content) {
-        if (window.ktpDebugMode) console.log('KTPWP: Setting up staff chat toggle functionality');
+    initOrderAuxSectionDetailsToggles();
+    setTimeout(function () {
+        initOrderAuxSectionDetailsToggles();
+    }, 2000);
 
-        // URLパラメータでチャットを開く状態を確認
+    // スタッフチャット（<details> パネル）
+    function setupStaffChatPanel(detailsEl, content) {
+        if (window.ktpDebugMode) console.log('KTPWP: Setting up staff chat panel');
+        if (!detailsEl || !content) return;
+        if (detailsEl.dataset.ktpStaffChatInit === '1') return;
+        detailsEl.dataset.ktpStaffChatInit = '1';
+
+        content.style.display = 'block';
+        window.updateStaffChatButtonText = function () {};
+
+        var currentOrderIdForChatCookie = (typeof getCurrentOrderId === 'function' && getCurrentOrderId())
+            || (document.querySelector('input[name="staff_chat_order_id"]') ? document.querySelector('input[name="staff_chat_order_id"]').value : '')
+            || (document.querySelector('input[name="order_id"]') ? document.querySelector('input[name="order_id"]').value : '')
+            || 'global';
+        var staffChatCookieName = 'ktp_staff_chat_toggle_' + currentOrderIdForChatCookie;
+
         var urlParams = new URLSearchParams(window.location.search);
-        var chatShouldBeOpen = urlParams.get('chat_open') !== '0';
         var messageSent = urlParams.get('message_sent') === '1';
-        var shouldOpenChat = chatShouldBeOpen;
+        if (messageSent) {
+            detailsEl.open = true;
+            setCookie(staffChatCookieName, '1', 365);
+        } else {
+            var savedChat = getCookie(staffChatCookieName);
+            if (savedChat === '1') {
+                detailsEl.open = true;
+            } else if (savedChat === '0') {
+                detailsEl.open = false;
+            }
+        }
 
-        // 自動スクロール関数
         var scrollToBottom = function () {
-            if (!content || content.style.display === 'none') {
-                return;
-            }
-
-            if (toggleBtn && toggleBtn.getAttribute('aria-expanded') !== 'true') {
-                return;
-            }
+            if (!detailsEl.open) return;
 
             window.clearScrollTimeouts();
 
-            // チャットセクションまでページをスクロール
-            var chatSection = document.querySelector('.order_memo_box h4');
-            if (chatSection && chatSection.textContent.includes('スタッフチャット')) {
+            var chatSection = document.getElementById('staff-chat-details');
+            if (chatSection) {
                 chatSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
 
-            // メッセージエリアのスクロール処理
             var scrollMessages = function () {
+                if (!detailsEl.open) return false;
                 var currentChatContent = document.getElementById('staff-chat-content');
-                if (!currentChatContent || currentChatContent.style.display === 'none') {
-                    return false;
-                }
-
+                if (!currentChatContent) return false;
                 var messagesContainer = document.getElementById('staff-chat-messages');
                 if (messagesContainer) {
                     messagesContainer.scrollTop = messagesContainer.scrollHeight;
                     return true;
-                } else {
-                    if (currentChatContent) {
-                        currentChatContent.scrollTop = currentChatContent.scrollHeight;
-                        return true;
-                    }
                 }
-                return false;
+                currentChatContent.scrollTop = currentChatContent.scrollHeight;
+                return true;
             };
 
-            // 複数回試行してスクロール
-            window.scrollTimeouts.push(setTimeout(function () {
-                scrollMessages();
-            }, 300));
-
-            window.scrollTimeouts.push(setTimeout(function () {
-                scrollMessages();
-            }, 800));
-
-            window.scrollTimeouts.push(setTimeout(function () {
-                scrollMessages();
-            }, 1500));
+            window.scrollTimeouts.push(setTimeout(scrollMessages, 300));
+            window.scrollTimeouts.push(setTimeout(scrollMessages, 800));
+            window.scrollTimeouts.push(setTimeout(scrollMessages, 1500));
         };
 
-        // 初期状態を設定
-        if (shouldOpenChat) {
-            content.style.display = 'block';
-            toggleBtn.setAttribute('aria-expanded', 'true');
-
-            if (messageSent) {
-                scrollToBottom();
-
-                // スクロール実行後、URLからパラメータを削除
-                var newUrl = new URL(window.location);
-                newUrl.searchParams.delete('message_sent');
-                newUrl.searchParams.delete('chat_open');
-                window.history.replaceState({}, '', newUrl);
-            }
-        } else {
-            content.style.display = 'none';
-            toggleBtn.setAttribute('aria-expanded', 'false');
-        }
-
-        // 項目数を取得してボタンテキストに追加
-        var updateStaffChatButtonText = function () {
-            var scrollableMessages = content.querySelectorAll('.staff-chat-message.scrollable');
-            var messageCount = scrollableMessages.length || 0;
-
-            var emptyMessage = content.querySelector('.staff-chat-empty');
-            if (emptyMessage) {
-                messageCount = 0;
-            }
-
-            var showLabel = toggleBtn.dataset.showLabel || window.ktpwpStaffChatShowLabel || '表示';
-            var hideLabel = toggleBtn.dataset.hideLabel || window.ktpwpStaffChatHideLabel || '非表示';
-            var isExpanded = toggleBtn.getAttribute('aria-expanded') === 'true';
-            var buttonText = (isExpanded ? hideLabel : showLabel) + '（' + messageCount + 'メッセージ）';
-            toggleBtn.textContent = buttonText;
-            if (window.ktpDebugMode) console.log('KTPWP: Staff chat button text updated to:', buttonText);
-        };
-
-        // グローバルスコープにも追加
-        window.updateStaffChatButtonText = updateStaffChatButtonText;
-
-        toggleBtn.addEventListener('click', function (e) {
-            e.preventDefault();
-            if (window.ktpDebugMode) console.log('KTPWP: Staff chat toggle button clicked');
-
-            var expanded = toggleBtn.getAttribute('aria-expanded') === 'true';
-            if (expanded) {
-                window.clearScrollTimeouts();
-                content.style.display = 'none';
-                toggleBtn.setAttribute('aria-expanded', 'false');
-                if (window.ktpDebugMode) console.log('KTPWP: Staff chat content hidden');
-            } else {
-                content.style.display = 'block';
-                toggleBtn.setAttribute('aria-expanded', 'true');
+        detailsEl.addEventListener('toggle', function () {
+            if (detailsEl.open) {
                 window.hideNewMessageNotification();
-                if (window.ktpDebugMode) console.log('KTPWP: Staff chat content shown');
             }
-            updateStaffChatButtonText();
+            setCookie(staffChatCookieName, detailsEl.open ? '1' : '0', 365);
         });
 
-        // 国際化ラベルを設定
-        if (typeof window.ktpwpStaffChatShowLabel !== 'undefined') {
-            toggleBtn.dataset.showLabel = window.ktpwpStaffChatShowLabel;
-        }
-        if (typeof window.ktpwpStaffChatHideLabel !== 'undefined') {
-            toggleBtn.dataset.hideLabel = window.ktpwpStaffChatHideLabel;
-        }
-
-        // 初期状態のボタンテキストを設定
-        updateStaffChatButtonText();
-
-        // ページ読み込み完了後の処理
-        if (shouldOpenChat && messageSent) {
+        if (messageSent) {
             window.addEventListener('load', function () {
                 setTimeout(function () {
                     scrollToBottom();
-
                     var newUrl = new URL(window.location);
                     newUrl.searchParams.delete('message_sent');
                     newUrl.searchParams.delete('chat_open');
@@ -818,150 +723,120 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         }
 
-        if (window.ktpDebugMode) console.log('KTPWP: Staff chat toggle setup complete');
+        if (window.ktpDebugMode) console.log('KTPWP: Staff chat panel setup complete');
     }
 
-    // コスト項目トグル機能をセットアップする関数
-    function setupCostToggle(toggleBtn, content) {
-        if (window.ktpDebugMode) console.log('KTPWP: Setting up cost toggle functionality');
-
-        // クッキー名を決定（受注書ID単位）
+    // コスト項目 <details> + クッキーで開閉状態を復元
+    function setupCostDetailsToggle(detailsEl) {
+        if (!detailsEl || detailsEl.dataset.ktpCostDetailsInit === '1') return;
+        detailsEl.dataset.ktpCostDetailsInit = '1';
         var currentOrderIdForCookie = (typeof getCurrentOrderId === 'function' && getCurrentOrderId())
             || (document.querySelector('input[name="order_id"]') ? document.querySelector('input[name="order_id"]').value : '')
             || 'global';
         var costToggleCookieName = 'ktp_cost_toggle_' + currentOrderIdForCookie;
-
-        // 初期状態をクッキーから復元（デフォルトは非表示）
-        var savedToggleState = getCookie(costToggleCookieName); // '1' = 展開, '0' = 非表示
+        var savedToggleState = getCookie(costToggleCookieName);
         if (savedToggleState === '1') {
-            content.style.display = 'block';
-            toggleBtn.setAttribute('aria-expanded', 'true');
-        } else {
-            content.style.display = 'none';
-            toggleBtn.setAttribute('aria-expanded', 'false');
+            detailsEl.open = true;
+        } else if (savedToggleState === '0') {
+            detailsEl.open = false;
         }
-
-        // 項目数を取得してボタンテキストに追加
-        var updateCostButtonText = function () {
-            var itemCount = content.querySelectorAll('.cost-items-table tbody tr').length || 0;
-            var showLabel = toggleBtn.dataset.showLabel || window.ktpwpCostShowLabel || '表示';
-            var hideLabel = toggleBtn.dataset.hideLabel || window.ktpwpCostHideLabel || '非表示';
-            var isExpanded = toggleBtn.getAttribute('aria-expanded') === 'true';
-            var buttonText = (isExpanded ? hideLabel : showLabel) + '（' + itemCount + '項目）';
-            toggleBtn.textContent = buttonText;
-            if (window.ktpDebugMode) console.log('KTPWP: Button text updated to:', buttonText);
-        };
-
-        toggleBtn.addEventListener('click', function (e) {
-            e.preventDefault();
-            if (window.ktpDebugMode) console.log('KTPWP: Cost toggle button clicked');
-
-            var expanded = toggleBtn.getAttribute('aria-expanded') === 'true';
-            if (expanded) {
-                content.style.display = 'none';
-                toggleBtn.setAttribute('aria-expanded', 'false');
-                if (window.ktpDebugMode) console.log('KTPWP: Cost content hidden');
-            } else {
-                content.style.display = 'block';
-                toggleBtn.setAttribute('aria-expanded', 'true');
-                if (window.ktpDebugMode) console.log('KTPWP: Cost content shown');
-            }
-            // 状態をクッキーへ保存（365日保持）
-            var newIsExpanded = toggleBtn.getAttribute('aria-expanded') === 'true';
-            setCookie(costToggleCookieName, newIsExpanded ? '1' : '0', 365);
-            updateCostButtonText();
+        detailsEl.addEventListener('toggle', function () {
+            setCookie(costToggleCookieName, detailsEl.open ? '1' : '0', 365);
         });
-
-        // 国際化ラベルを設定
-        if (typeof window.ktpwpCostShowLabel !== 'undefined') {
-            toggleBtn.dataset.showLabel = window.ktpwpCostShowLabel;
-        }
-        if (typeof window.ktpwpCostHideLabel !== 'undefined') {
-            toggleBtn.dataset.hideLabel = window.ktpwpCostHideLabel;
-        }
-
-        // 初期状態のボタンテキストを設定
-        updateCostButtonText();
-
-        if (window.ktpDebugMode) console.log('KTPWP: Cost toggle setup complete');
     }
 
-    // スタッフチャットトグル
-    var staffChatToggleBtn = document.querySelector('.toggle-staff-chat');
+    // メール履歴・案件ファイルなどの <details>（data-ktp-order-toggle 付き）をクッキーで記憶
+    function setupOrderBlockDetailsToggle(detailsEl) {
+        if (!detailsEl || detailsEl.dataset.ktpOrderBlockToggleInit === '1') return;
+        var toggleKey = detailsEl.getAttribute('data-ktp-order-toggle');
+        if (!toggleKey) return;
+        detailsEl.dataset.ktpOrderBlockToggleInit = '1';
+        var oidAttr = detailsEl.getAttribute('data-ktp-order-id');
+        var oid = (oidAttr && oidAttr !== '')
+            ? oidAttr
+            : ((typeof getCurrentOrderId === 'function' && getCurrentOrderId())
+                || (document.querySelector('input[name="order_id"]') ? document.querySelector('input[name="order_id"]').value : '')
+                || 'global');
+        var cookieName = 'ktp_order_section_' + toggleKey + '_' + oid;
+        var saved = getCookie(cookieName);
+        if (saved === '1') {
+            detailsEl.open = true;
+        } else if (saved === '0') {
+            detailsEl.open = false;
+        }
+        detailsEl.addEventListener('toggle', function () {
+            setCookie(cookieName, detailsEl.open ? '1' : '0', 365);
+        });
+    }
+
+    function initOrderAuxSectionDetailsToggles() {
+        var list = document.querySelectorAll('details.ktp-order-details-toggle[data-ktp-order-toggle]');
+        for (var i = 0; i < list.length; i++) {
+            setupOrderBlockDetailsToggle(list[i]);
+        }
+    }
+
+    // スタッフチャット（<details>）
+    var staffChatDetails = document.getElementById('staff-chat-details');
     var staffChatContent = document.getElementById('staff-chat-content');
 
-    if (window.ktpDebugMode) console.log('KTPWP: Searching for staff chat toggle elements...');
-    if (window.ktpDebugMode) console.log('KTPWP: Staff chat toggle button:', !!staffChatToggleBtn, staffChatToggleBtn);
-    if (window.ktpDebugMode) console.log('KTPWP: Staff chat content:', !!staffChatContent, staffChatContent);
-
-    // ページ読み込み時にローカルストレージをチェックして自動スクロール
-    if (localStorage.getItem('ktp_scroll_to_chat') === 'true') {
-        localStorage.removeItem('ktp_scroll_to_chat');
-        
-        // チャットを開く
-        if (staffChatContent && staffChatToggleBtn) {
-            staffChatContent.style.display = 'block';
-            staffChatToggleBtn.setAttribute('aria-expanded', 'true');
-            
-            // 自動スクロール実行
-            setTimeout(function () {
-                // チャットセクションまでページをスクロール
-                var chatSection = document.querySelector('.staff-chat-title');
-                if (!chatSection) {
-                    chatSection = document.querySelector('.order_memo_box');
-                }
-                if (chatSection) {
-                    chatSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
-                
-                // メッセージエリアを最下部にスクロール
-                var messagesContainer = document.getElementById('staff-chat-messages');
-                if (messagesContainer) {
-                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-                } else {
-                    // fallback: staff-chat-contentをスクロール
-                    if (staffChatContent) {
-                        staffChatContent.scrollTop = staffChatContent.scrollHeight;
-                    }
-                }
-            }, 500);
-        }
+    if (window.ktpDebugMode) {
+        console.log('KTPWP: Staff chat details element:', !!staffChatDetails, 'content:', !!staffChatContent);
     }
 
-    if (staffChatToggleBtn && staffChatContent) {
-        setupStaffChatToggle(staffChatToggleBtn, staffChatContent);
+    if (staffChatDetails && staffChatContent) {
+        setupStaffChatPanel(staffChatDetails, staffChatContent);
     } else {
-        if (window.ktpDebugMode) console.log('KTPWP: Staff chat toggle elements not found');
-
-        // 要素が見つからない場合、少し待ってから再試行
         setTimeout(function () {
-            if (window.ktpDebugMode) console.log('KTPWP: Retrying to find staff chat toggle elements...');
-            var retryStaffToggleBtn = document.querySelector('.toggle-staff-chat');
-            var retryStaffContent = document.getElementById('staff-chat-content');
-
-            if (retryStaffToggleBtn && retryStaffContent) {
-                if (window.ktpDebugMode) console.log('KTPWP: Staff chat elements found on retry');
-                setupStaffChatToggle(retryStaffToggleBtn, retryStaffContent);
+            var d = document.getElementById('staff-chat-details');
+            var c = document.getElementById('staff-chat-content');
+            if (d && c) {
+                setupStaffChatPanel(d, c);
             }
         }, 2000);
     }
 
+    // フォールバック再読込後：クッキー復元の後に開く（記憶と矛盾しないよう cookie も更新）
+    if (localStorage.getItem('ktp_scroll_to_chat') === 'true') {
+        localStorage.removeItem('ktp_scroll_to_chat');
+        var staffD2 = document.getElementById('staff-chat-details');
+        if (staffD2) {
+            staffD2.open = true;
+        }
+        var oidChat = (document.querySelector('input[name="staff_chat_order_id"]') && document.querySelector('input[name="staff_chat_order_id"]').value)
+            || (document.querySelector('input[name="order_id"]') && document.querySelector('input[name="order_id"]').value)
+            || 'global';
+        setCookie('ktp_staff_chat_toggle_' + oidChat, '1', 365);
+        var staffC2 = document.getElementById('staff-chat-content');
+        setTimeout(function () {
+            var chatSection = document.querySelector('.staff-chat-title') || document.getElementById('staff-chat-details');
+            if (chatSection) {
+                chatSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+            var messagesContainer = document.getElementById('staff-chat-messages');
+            if (messagesContainer) {
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            } else if (staffC2) {
+                staffC2.scrollTop = staffC2.scrollHeight;
+            }
+        }, 500);
+    }
+
     // 受注書イベントリスナーを設定する関数
     function setupOrderEventListeners() {
-        // コスト項目トグルの再設定
-        var costToggleBtn = document.querySelector('.toggle-cost-items');
-        var costContent = document.getElementById('cost-items-content');
-        if (costToggleBtn && costContent) {
-            setupCostToggle(costToggleBtn, costContent);
+        var costDetails = document.querySelector('details.order-cost-details');
+        if (costDetails) {
+            setupCostDetailsToggle(costDetails);
         }
-        
-        // スタッフチャットトグルの再設定
-        var staffChatToggleBtn = document.querySelector('.toggle-staff-chat');
-        var staffChatContent = document.getElementById('staff-chat-content');
-        if (staffChatToggleBtn && staffChatContent) {
-            setupStaffChatToggle(staffChatToggleBtn, staffChatContent);
+
+        var staffD = document.getElementById('staff-chat-details');
+        var staffC = document.getElementById('staff-chat-content');
+        if (staffD && staffC) {
+            setupStaffChatPanel(staffD, staffC);
         }
-        
+
+        initOrderAuxSectionDetailsToggles();
+
         // その他の受注書関連イベントリスナーを再設定
         if (typeof ktpInvoiceSetupEventListeners === 'function') {
             ktpInvoiceSetupEventListeners();
@@ -975,43 +850,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
 // グローバル関数：スタッフチャットトグルをテスト
 window.testStaffChatToggle = function () {
-    if (window.ktpDebugMode) console.log('=== スタッフチャットトグルテスト開始 ===');
-
-    var staffToggleBtn = document.querySelector('.toggle-staff-chat');
-    var staffContent = document.getElementById('staff-chat-content');
-
-    if (window.ktpDebugMode) console.log('トグルボタン:', staffToggleBtn);
-    if (window.ktpDebugMode) console.log('コンテンツ:', staffContent);
-
-    if (!staffToggleBtn) {
-        if (window.ktpDebugMode) console.error('スタッフチャットトグルボタンが見つかりません');
+    if (window.ktpDebugMode) console.log('=== スタッフチャット <details> テスト開始 ===');
+    var d = document.getElementById('staff-chat-details');
+    if (!d) {
+        if (window.ktpDebugMode) console.error('staff-chat-details が見つかりません');
         return false;
     }
-
-    if (!staffContent) {
-        if (window.ktpDebugMode) console.error('スタッフチャットコンテンツが見つかりません');
-        return false;
-    }
-
-    // 現在の状態を表示
-    if (window.ktpDebugMode) console.log('現在の状態:', {
-        display: staffContent.style.display,
-        ariaExpanded: staffToggleBtn.getAttribute('aria-expanded'),
-        buttonText: staffToggleBtn.textContent
-    });
-
-    // クリックをシミュレート
-    if (window.ktpDebugMode) console.log('クリックをシミュレート...');
-    staffToggleBtn.click();
-
-    // クリック後の状態を表示
-    if (window.ktpDebugMode) console.log('クリック後の状態:', {
-        display: staffContent.style.display,
-        ariaExpanded: staffToggleBtn.getAttribute('aria-expanded'),
-        buttonText: staffToggleBtn.textContent
-    });
-
-    if (window.ktpDebugMode) console.log('=== テスト完了 ===');
+    d.open = !d.open;
+    if (window.ktpDebugMode) console.log('open:', d.open);
     return true;
 };
 
@@ -1038,43 +884,14 @@ window.testAllToggles = function () {
 
 // グローバル関数：コスト項目トグルをテスト
 window.testCostToggle = function () {
-    if (window.ktpDebugMode) console.log('=== コスト項目トグルテスト開始 ===');
-
-    var costToggleBtn = document.querySelector('.toggle-cost-items');
-    var costContent = document.getElementById('cost-items-content');
-
-    if (window.ktpDebugMode) console.log('トグルボタン:', costToggleBtn);
-    if (window.ktpDebugMode) console.log('コンテンツ:', costContent);
-
-    if (!costToggleBtn) {
-        if (window.ktpDebugMode) console.error('トグルボタンが見つかりません');
+    if (window.ktpDebugMode) console.log('=== コスト項目 <details> テスト開始 ===');
+    var d = document.querySelector('details.order-cost-details');
+    if (!d) {
+        if (window.ktpDebugMode) console.error('order-cost-details が見つかりません');
         return false;
     }
-
-    if (!costContent) {
-        if (window.ktpDebugMode) console.error('コストコンテンツが見つかりません');
-        return false;
-    }
-
-    // 現在の状態を表示
-    if (window.ktpDebugMode) console.log('現在の状態:', {
-        display: costContent.style.display,
-        ariaExpanded: costToggleBtn.getAttribute('aria-expanded'),
-        buttonText: costToggleBtn.textContent
-    });
-
-    // クリックをシミュレート
-    if (window.ktpDebugMode) console.log('クリックをシミュレート...');
-    costToggleBtn.click();
-
-    // クリック後の状態を表示
-    if (window.ktpDebugMode) console.log('クリック後の状態:', {
-        display: costContent.style.display,
-        ariaExpanded: costToggleBtn.getAttribute('aria-expanded'),
-        buttonText: costToggleBtn.textContent
-    });
-
-    if (window.ktpDebugMode) console.log('=== テスト完了 ===');
+    d.open = !d.open;
+    if (window.ktpDebugMode) console.log('open:', d.open);
     return true;
 };
 

@@ -262,16 +262,6 @@
     margin-right: 10px !important;
 }
 
-.ktp-admin-wrap .ktp-remove-image {
-    color: #a00 !important;
-    border-color: #a00 !important;
-}
-
-.ktp-admin-wrap .ktp-remove-image:hover {
-    color: #fff !important;
-    background-color: #a00 !important;
-}
-
 /* デザイン設定フィールド */
 .ktp-admin-wrap input[type="color"] {
     width: 100px !important;
