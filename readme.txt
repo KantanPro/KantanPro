@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.2.50
+Stable tag: 1.2.51
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -324,6 +324,10 @@ curl -sS -X POST \
 * 推奨PHP拡張: GD（画像処理用）
 
 == 変更履歴 ==
+
+= 1.2.51 - 2026年04月27日 =
+* 無料版と有料版の移行競合対策を強化（有料版起動時の無料版停止モード判定を追加）
+* 一般設定の「ロゴマーク」「システム名」「システムの説明」を固定化し、ユーザーが変更できないように改善
 
 = 1.2.50 - 2026年04月19日 =
 * プラグイン一覧の削除確認ダイアログを、更新操作では表示しないようさらに限定（`upgrade-plugin`・`update-selected`・`update.php` を含むリンクは除外、`plugins.php` 上の `action=delete` / `action=delete-selected` のみカスタム確認）。プラグイン更新時はデータベースの業務データは従来どおり保持
