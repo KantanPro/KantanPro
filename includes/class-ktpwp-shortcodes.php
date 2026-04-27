@@ -265,9 +265,9 @@ class KTPWP_Shortcodes {
         if ( ! apply_filters( 'kantanpro_auto_fetch_official_central_banner', true ) ) {
             return false;
         }
-        if ( isset( $options['enabled'] ) && (int) $options['enabled'] === 0 ) {
-            return false;
-        }
+
+        // 配布先（無料版）では個別設定がなくても既定配信を使って表示させる。
+        // 停止したい場合はフィルター `kantanpro_auto_fetch_official_central_banner` を false にする。
         return true;
     }
 
