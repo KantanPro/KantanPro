@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.2.51
+Stable tag: 1.2.52
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -324,6 +324,12 @@ curl -sS -X POST \
 * 推奨PHP拡張: GD（画像処理用）
 
 == 変更履歴 ==
+
+= 1.2.52 - 2026年04月27日 =
+* `[ktpwp_all_tab]` ショートコード登録のフォールバックを追加（`init` 優先度20）。`KTPWP_Index` 経由の登録が漏れた場合でも固定ページでショートコードが動作するよう改善
+* 無料版のレポートタブを KantanProEX（有料版）への案内表示に変更（`kantanAllTab` および `class-ktpwp-shortcodes.php` のレポート取得を統一）
+* 管理画面から「ライセンス設定」サブメニューを廃止
+* バックアップ画面を KantanProEX への案内に変更。エクスポート／リストアの直接 POST はブロックして案内へリダイレクト
 
 = 1.2.51 - 2026年04月27日 =
 * 無料版と有料版の移行競合対策を強化（有料版起動時の無料版停止モード判定を追加）
