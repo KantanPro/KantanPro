@@ -3548,6 +3548,21 @@ if ( file_exists( MY_PLUGIN_PATH . 'includes/class-ktpwp-settings.php' ) ) {
 
 add_action( 'plugins_loaded', 'KTPWP_Index' );
 
+/**
+ * ショートコード登録の保険処理。
+ * 何らかの理由で KTPWP_Index の登録が漏れても [ktpwp_all_tab] を利用可能にする。
+ */
+function ktpwp_ensure_shortcodes_registered() {
+    if ( shortcode_exists( 'ktpwp_all_tab' ) ) {
+        return;
+    }
+    if ( class_exists( 'KTPWP_Shortcodes' ) ) {
+        $shortcodes = KTPWP_Shortcodes::get_instance();
+        add_shortcode( 'ktpwp_all_tab', array( $shortcodes, 'render_all_tabs' ) );
+    }
+}
+add_action( 'init', 'ktpwp_ensure_shortcodes_registered', 20 );
+
 function ktpwp_scripts_and_styles() {
     wp_enqueue_script( 'ktp-js', plugins_url( 'js/ktp-js.js', __FILE__ ) . '?v=' . time(), array( 'jquery' ), null, true );
 
@@ -4155,8 +4170,11 @@ function KTPWP_Index() {
                     $supplier_content = $supplier->View_Table( $tab_name );
                     break;
                 case 'report':
-                    $report = new KTPWP_Report_Class();
-                    $report_content = $report->Report_Tab_View( $tab_name );
+                    $report_content = '<div class="ktpwp-notice" style="padding:20px;background:#fff7e6;border:1px solid #ffd591;border-radius:6px;color:#8a6d3b;">'
+                        . '<h3 style="margin:0 0 8px 0;">' . esc_html__( 'レポート機能は無料版では利用できません', 'ktpwp' ) . '</h3>'
+                        . '<p style="margin:0 0 10px 0;">' . esc_html__( 'KantanProEX（有料版）へ移行してご利用ください。', 'ktpwp' ) . '</p>'
+                        . '<p style="margin:0;"><a class="button button-primary" href="https://www.kantanpro.com/product/kantanpro-ex" target="_blank" rel="noopener noreferrer">' . esc_html__( 'KantanProEX 商品ページ', 'ktpwp' ) . '</a></p>'
+                        . '</div>';
                     break;
                 default:
                     // デフォルトの処理

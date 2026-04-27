@@ -687,15 +687,7 @@ class KTPWP_Settings {
             array( $this, 'create_staff_page' ) // 表示を処理する関数
         );
 
-        // サブメニュー - ライセンス設定
-        add_submenu_page(
-            'ktp-settings', // 親メニューのスラッグ
-            __( 'ライセンス設定', 'ktpwp' ), // ページタイトル
-            __( 'ライセンス設定', 'ktpwp' ), // メニュータイトル
-            'manage_options', // 権限
-            'ktp-license', // メニューのスラッグ
-            array( $this, 'create_license_page' ) // 表示を処理する関数
-        );
+        // 無料版ではライセンス設定は廃止（KantanProEX へ移行）
 
         // サブメニュー - ダミーデータ作成（ライセンス設定の直下）
         add_submenu_page(
@@ -739,75 +731,9 @@ class KTPWP_Settings {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( __( 'この設定ページにアクセスする権限がありません。', 'ktpwp' ) );
 		}
-		
-		// ライセンスチェック
-		$license_manager = KTPWP_License_Manager::get_instance();
-		$is_license_valid = $license_manager->is_license_valid();
-
-		$notice = '';
-		if ( isset( $_GET['ktp_action'] ) ) {
-			$action = sanitize_text_field( $_GET['ktp_action'] );
-			if ( $action === 'restore_success' ) {
-				$notice = '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'リストアが完了しました。', 'ktpwp' ) . '</p></div>';
-			} elseif ( $action === 'restore_failed' ) {
-				$notice = '<div class="notice notice-error is-dismissible"><p>' . esc_html__( 'リストアに失敗しました。ファイル形式をご確認ください。', 'ktpwp' ) . '</p></div>';
-			}
-		}
 
 		echo '<div class="wrap ktp-admin-wrap">';
-		echo '<h1><span class="dashicons dashicons-database-export" style="margin-right: 10px; font-size: 24px; width: 24px; height: 24px;"></span>' . esc_html__( 'バックアップ', 'ktpwp' ) . '</h1>';
-		if ( $notice ) {
-			echo $notice; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-		}
-		
-		// ライセンスが無効な場合はライセンス購入を促すメッセージを表示
-		if ( ! $is_license_valid ) {
-			echo $this->render_backup_license_required_message();
-			echo '</div>';
-			return;
-		}
-		
-		// バックアップページ用JavaScriptを読み込み
-		wp_enqueue_script( 'ktp-backup-page', plugin_dir_url( __FILE__ ) . '../js/ktp-backup-page.js', array(), KANTANPRO_PLUGIN_VERSION, true );
-
-		// エクスポート
-		echo '<div class="ktp-settings-section">';
-		echo '<h2>' . esc_html__( 'エクスポート', 'ktpwp' ) . '</h2>';
-		echo '<p>' . esc_html__( 'KantanProの設定とデータを1つのファイルに出力します。', 'ktpwp' ) . '</p>';
-		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
-		echo '<input type="hidden" name="action" value="ktpwp_export_data" />';
-		echo wp_nonce_field( 'ktpwp_export_data', 'ktpwp_export_nonce', true, false );
-		echo '<p>';
-		echo '<label for="ktp_export_format">' . esc_html__( '形式', 'ktpwp' ) . ':</label> ';
-		echo '<select id="ktp_export_format" name="format">';
-		echo '<option value="json" selected>JSON</option>';
-		echo '<option value="csv">CSV</option>';
-		echo '</select>';
-		echo '</p>';
-		echo '<p><button type="submit" class="button button-primary">' . esc_html__( 'エクスポート実行', 'ktpwp' ) . '</button></p>';
-		echo '</form>';
-		echo '</div>';
-
-		// リストア
-		echo '<div class="ktp-settings-section">';
-		echo '<h2>' . esc_html__( 'リストア', 'ktpwp' ) . '</h2>';
-		echo '<p>' . esc_html__( 'エクスポートしたJSON/CSVファイルを選択してリストアします。', 'ktpwp' ) . '</p>';
-		echo '<div class="notice notice-warning"><p><strong>' . esc_html__( '注意:', 'ktpwp' ) . '</strong> ' . esc_html__( 'リストアを実行すると、現在のデータは全て削除されます。', 'ktpwp' ) . '</p></div>';
-		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" enctype="multipart/form-data" id="ktp-restore-form">';
-		echo '<input type="hidden" name="action" value="ktpwp_restore_data" />';
-		echo wp_nonce_field( 'ktpwp_restore_data', 'ktpwp_restore_nonce', true, false );
-		echo '<p>';
-		echo '<label for="ktp_import_format">' . esc_html__( '形式', 'ktpwp' ) . ':</label> ';
-		echo '<select id="ktp_import_format" name="format">';
-		echo '<option value="json" selected>JSON</option>';
-		echo '<option value="csv">CSV</option>';
-		echo '</select>';
-		echo '</p>';
-		echo '<input type="file" name="ktp_import_file" accept="application/json,text/csv,.csv" required /> ';
-		echo '<p><button type="submit" class="button button-primary" id="ktp-restore-button">' . esc_html__( 'リストア実行', 'ktpwp' ) . '</button></p>';
-		echo '</form>';
-		echo '</div>';
-
+		echo $this->render_feature_moved_to_ex_message( __( 'バックアップ機能', 'ktpwp' ) );
 		echo '</div>';
 	}
 
@@ -815,6 +741,7 @@ class KTPWP_Settings {
 	 * エクスポート実行
 	 */
 	public function handle_export_data() {
+		$this->deny_feature_and_redirect_to_ex();
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( __( '権限がありません。', 'ktpwp' ) );
 		}
@@ -902,6 +829,7 @@ class KTPWP_Settings {
 	 * リストア実行
 	 */
 	public function handle_restore_data() {
+		$this->deny_feature_and_redirect_to_ex();
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( __( '権限がありません。', 'ktpwp' ) );
 		}
@@ -2391,138 +2319,42 @@ class KTPWP_Settings {
         if ( ! current_user_can( 'manage_options' ) ) {
             wp_die( __( 'この設定ページにアクセスする権限がありません。', 'ktpwp' ) );
         }
+        echo '<div class="wrap ktp-admin-wrap">';
+        echo $this->render_feature_moved_to_ex_message( __( 'ライセンス設定', 'ktpwp' ) );
+        echo '</div>';
+    }
 
-        // ライセンスマネージャーのインスタンスを取得
-        $license_manager = KTPWP_License_Manager::get_instance();
-        $license_status = $license_manager->get_license_status();
-        
-        ?>
-        <div class="wrap ktp-admin-wrap">
-            <h1><span class="dashicons dashicons-lock" style="margin-right: 10px; font-size: 24px; width: 24px; height: 24px;"></span><?php echo esc_html__( 'ライセンス設定', 'ktpwp' ); ?></h1>
-            
-            <?php
-            // 通知表示
-            settings_errors( 'ktp_license' );
-            ?>
-            
-            <div class="ktp-settings-container">
-                <div class="ktp-settings-section">
-                    <!-- ライセンスステータス表示 -->
-                    <div class="ktp-license-status-display" style="margin-bottom: 30px; padding: 20px; background: #fff; border: 1px solid #ddd; border-radius: 5px;">
-                        <h3 style="margin-top: 0;">
-                            <span class="dashicons <?php echo esc_attr( $license_status['icon'] ); ?>" style="color: <?php echo esc_attr( $license_status['color'] ); ?>;"></span>
-                            <?php echo esc_html__( 'ライセンスステータス', 'ktpwp' ); ?>
-                        </h3>
-                        <p style="font-size: 16px; margin: 10px 0;">
-                            <strong><?php echo esc_html( $license_status['message'] ); ?></strong>
-                        </p>
-                        <?php if ( ! empty( $license_status['is_dev_mode'] ) ) : ?>
-                            <div class="ktp-dev-mode-toggle" style="margin-top: 15px; padding: 10px; background-color: #fff8e1; border: 1px solid #ffecb3; border-radius: 4px;">
-                                <p style="margin: 0; display: flex; align-items: center; justify-content: space-between;">
-                                    <span><span class="dashicons dashicons-info-outline"></span> 開発環境モードで動作中です。</span>
-                                    <button id="toggle-dev-license" class="button button-secondary">
-                                        <?php echo $license_manager->is_dev_license_enabled() ? '開発用ライセンスを無効化' : '開発用ライセンスを有効化'; ?>
-                                    </button>
-                                    <span class="spinner" style="float: none; margin-left: 5px;"></span>
-                                </p>
-                            </div>
-                        <?php endif; ?><?php if ( isset( $license_status['info'] ) && ! empty( $license_status['info'] ) ) : ?>
-                            <div class="ktp-license-info-details" style="margin-top: 15px; padding: 15px; background: #f9f9f9; border-radius: 3px;">
-                                <h4 style="margin-top: 0;"><?php echo esc_html__( 'ライセンス詳細', 'ktpwp' ); ?></h4>
-                                <table class="form-table" style="margin: 0;">
-                                    <?php
-                                    // 表示する項目を制限
-                                    $display_fields = array(
-                                        'user_email' => 'User email',
-                                        'start_date' => '開始',
-                                        'end_date' => '終了',
-                                        'remaining_days' => '残り日数'
-                                    );
-                                    
-                                    foreach ( $display_fields as $key => $label ) :
-                                        if ( isset( $license_status['info'][$key] ) ) :
-                                    ?>
-                                        <tr>
-                                            <th style="padding: 5px 0; font-weight: normal;"><?php echo esc_html( $label ); ?></th>
-                                            <td style="padding: 5px 0;"><?php echo esc_html( $license_status['info'][$key] ); ?></td>
-                                        </tr>
-                                    <?php 
-                                        endif;
-                                    endforeach; 
-                                    ?>
-                                </table>
-                            </div>
-                        <?php endif; ?>
-                    </div>
+    /**
+     * 無料版では利用できない機能に対するEX移行メッセージを生成。
+     *
+     * @param string $feature_name 機能名。
+     * @return string
+     */
+    private function render_feature_moved_to_ex_message( $feature_name ) {
+        $safe_feature = esc_html( $feature_name );
+        $safe_ex      = esc_html__( 'KantanProEX（有料版）', 'ktpwp' );
+        $ex_url       = esc_url( 'https://www.kantanpro.com/product/kantanpro-ex' );
 
-                    <!-- ライセンス認証フォーム -->
-                    <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
-                        <form method="post" action="" id="ktp-license-form" style="display: flex; align-items: center; gap: 10px; margin: 0;">
-                            <?php wp_nonce_field( 'ktp_license_activation', 'ktp_license_nonce' ); ?>
-                            <input type="hidden" name="ktp_license_activation" value="1">
+        $html  = '<div class="notice notice-warning" style="padding:16px 18px;margin-top:16px;">';
+        $html .= '<h2 style="margin:0 0 8px 0;">' . $safe_feature . '</h2>';
+        $html .= '<p style="margin:0 0 8px 0;">' . sprintf( esc_html__( '%s は無料版では利用できません。', 'ktpwp' ), $safe_feature ) . '</p>';
+        $html .= '<p style="margin:0 0 10px 0;">' . sprintf( esc_html__( '%s へ移行してご利用ください。', 'ktpwp' ), $safe_ex ) . '</p>';
+        $html .= '<p style="margin:0;"><a class="button button-primary" href="' . $ex_url . '" target="_blank" rel="noopener noreferrer">' . esc_html__( 'KantanProEX 商品ページ', 'ktpwp' ) . '</a></p>';
+        $html .= '</div>';
+        return $html;
+    }
 
-                            <label for="ktp_license_key" style="margin-bottom: 0;"><?php echo esc_html__( 'ライセンスキー', 'ktpwp' ); ?></label>
-
-                            <input type="password"
-                                   id="ktp_license_key"
-                                   name="ktp_license_key"
-                                   value="<?php echo esc_attr( get_option( 'ktp_license_key' ) ); ?>"
-                                   style="width: 400px;"
-                                   placeholder="KTPA-XXXXXX-XXXXXX-XXXX"
-                                   autocomplete="off">
-
-                            <?php submit_button( __( 'ライセンスを認証', 'ktpwp' ), 'primary', 'submit', false, ['style' => 'margin: 0;'] ); ?>
-                        </form>
-
-                        <!-- ライセンス状態再確認フォーム -->
-                        <?php if ( ! empty( get_option( 'ktp_license_key' ) ) ) : ?>
-                            <form method="post" action="" style="margin: 0;">
-                                <?php wp_nonce_field( 'ktp_license_recheck', 'ktp_license_recheck_nonce' ); ?>
-                                <input type="hidden" name="ktp_license_recheck" value="1">
-                                <?php submit_button( __( 'ライセンス状態を再確認', 'ktpwp' ), 'secondary', 'recheck_license', false, ['style' => 'margin: 0;'] ); ?>
-                            </form>
-                        <?php endif; ?>
-                    </div>
-
-                    <p class="description" style="padding-left: 8px; margin-top: 5px;">
-                        <?php echo esc_html__( 'KantanPro License Managerから取得したライセンスキーを入力してください。', 'ktpwp' ); ?>
-                    </p>
-
-                    <!-- ライセンス情報 -->
-                    <div class="ktp-license-info" style="margin-top: 30px; padding: 20px; background: #f9f9f9; border-radius: 5px; display: none;">
-                        <h3><?php echo esc_html__( 'ライセンスについて', 'ktpwp' ); ?></h3>
-                        <p><?php echo esc_html__( 'KantanProプラグインのレポート機能を利用するには有効なライセンスキーが必要です。', 'ktpwp' ); ?></p>
-
-                        <!-- 利用可能なライセンスプラン -->
-                        <div style="margin: 20px 0; padding: 15px; background: #fff; border-radius: 5px; border-left: 4px solid #0073aa;">
-                            <h4 style="margin-top: 0; color: #0073aa;"><?php echo esc_html__( '利用可能なライセンスプラン', 'ktpwp' ); ?></h4>
-                            <ul style="margin-left: 20px; line-height: 1.8;">
-                                <li><strong><?php echo esc_html__( '月額プラン', 'ktpwp' ); ?></strong>: 980円/月</li>
-                                <li><strong><?php echo esc_html__( '年額プラン', 'ktpwp' ); ?></strong>: 9,980円/年</li>
-                                <li><strong><?php echo esc_html__( '買い切りプラン', 'ktpwp' ); ?></strong>: 49,900円</li>
-                            </ul>
-                        </div>
-
-                        <ul style="margin-left: 20px;">
-                            <li><?php echo esc_html__( 'ライセンスキーはKantanPro公式サイトから購入できます。', 'ktpwp' ); ?></li>
-                            <li><?php echo esc_html__( 'ライセンス認証により、レポート機能が有効になります。', 'ktpwp' ); ?></li>
-                            <li><?php echo esc_html__( 'ライセンスキーに関する問題がございましたら、サポートまでお問い合わせください。', 'ktpwp' ); ?></li>
-                        </ul>
-                        <p>
-                            <a href="https://www.kantanpro.com/" target="_blank" class="button button-primary">
-                                <?php echo esc_html__( 'ライセンスを購入', 'ktpwp' ); ?>
-                            </a>
-                            <a href="mailto:support@kantanpro.com" class="button button-secondary">
-                                <?php echo esc_html__( 'サポートに問い合わせる', 'ktpwp' ); ?>
-                            </a>
-                        </p>
-                    </div>
-                    
-
-                </div>
-            </div>
-        </div>
-        <?php
+    /**
+     * 無料版で禁止された機能実行時に、EX移行ページへ戻す。
+     *
+     * @return void
+     */
+    private function deny_feature_and_redirect_to_ex() {
+        if ( ! is_admin() ) {
+            return;
+        }
+        wp_safe_redirect( admin_url( 'admin.php?page=ktp-data-tools' ) );
+        exit;
     }
 
     /**

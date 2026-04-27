@@ -851,16 +851,11 @@ class KTPWP_Shortcodes {
         if (!current_user_can('edit_posts') && !current_user_can('ktpwp_access')) {
             return $this->render_permission_error();
         }
-        if (!class_exists('KTPWP_Report_Class')) {
-            $this->load_required_class('class-ktpwp-tab-report.php');
-        }
-
-        if (class_exists('KTPWP_Report_Class')) {
-            $report = new KTPWP_Report_Class();
-            return $report->Report_Tab_View($tab_name);
-        }
-
-        return $this->get_error_content('KTPWP_Report_Class');
+        return '<div class="ktpwp-notice" style="padding:20px;background:#fff7e6;border:1px solid #ffd591;border-radius:6px;color:#8a6d3b;">'
+            . '<h3 style="margin:0 0 8px 0;">' . esc_html__( 'レポート機能は無料版では利用できません', 'ktpwp' ) . '</h3>'
+            . '<p style="margin:0 0 10px 0;">' . esc_html__( 'KantanProEX（有料版）へ移行してご利用ください。', 'ktpwp' ) . '</p>'
+            . '<p style="margin:0;"><a class="button button-primary" href="https://www.kantanpro.com/product/kantanpro-ex" target="_blank" rel="noopener noreferrer">' . esc_html__( 'KantanProEX 商品ページ', 'ktpwp' ) . '</a></p>'
+            . '</div>';
     }
 
     /**
