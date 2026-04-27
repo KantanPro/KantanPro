@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.2.55
+Stable tag: 1.2.56
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -324,6 +324,10 @@ curl -sS -X POST \
 * 推奨PHP拡張: GD（画像処理用）
 
 == 変更履歴 ==
+
+= 1.2.56 - 2026年04月27日 =
+* コミット履歴をもとに無料版メインプラグインのリリース情報を更新
+* `readme.txt` と `README.md` のバージョン表記・変更履歴を最新化
 
 = 1.2.55 - 2026年04月27日 =
 * プラグインの説明文を更新し、初期案内の内容を整理
