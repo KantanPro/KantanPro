@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.2.53
+Stable tag: 1.2.54
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -324,6 +324,12 @@ curl -sS -X POST \
 * 推奨PHP拡張: GD（画像処理用）
 
 == 変更履歴 ==
+
+= 1.2.54 - 2026年04月27日 =
+* 受注書のメモ機能を追加し、運用時の補足情報を保存しやすく改善
+* システム説明文を更新し、初期表示の案内内容を調整
+* スタイルシートを整理し、画面表示の保守性を向上
+* AJAX 処理を改善し、通信時の安定性を向上
 
 = 1.2.53 - 2026年04月27日 =
 * メール送信ポップアップにCC入力欄を追加（`includes/class-ktpwp-order-ui.php`・`js/ktp-email-popup.js`）
