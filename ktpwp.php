@@ -2,7 +2,7 @@
 /**
  * Plugin Name: KantanPro
  * Plugin URI: https://www.kantanpro.com/
- * Description: スモールビジネスのための販売支援ツール
+ * Description: スモールビジネスのための販売支援ツール。ショートコード[ktpwp_all_tab]を固定ページに設置してください。
  * Version: 1.2.54
  * Author: KantanPro
  * Author URI: https://www.kantanpro.com/kantanpro-page
@@ -4026,8 +4026,8 @@ function KTPWP_Index() {
                 }
             }
 
-            // 設定からシステム名を取得。システムの説明は固定文言（一般設定と同一ソース）
-            $system_name = get_option( 'ktp_system_name', 'KantanPro' );
+            // 無料版ヘッダーのシステム名は常に固定値を利用（旧環境の保存オプション値に引きずられないようにする）
+            $system_name = defined( 'KANTANPRO_PLUGIN_NAME' ) ? KANTANPRO_PLUGIN_NAME : 'KantanPro';
             $system_description = defined( 'KANTANPRO_PLUGIN_DESCRIPTION' )
                 ? KANTANPRO_PLUGIN_DESCRIPTION
                 : 'スモールビジネスのための販売支援ツール';
