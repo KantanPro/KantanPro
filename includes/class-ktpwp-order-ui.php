@@ -593,18 +593,9 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
                 $html .= '<div class="cost-items-total-with-tax" style="text-align:right;margin-top:4px;font-weight:bold;color:#d32f2f;' . ( ( class_exists( 'KTPWP_Tax_Policy' ) && ( KTPWP_Tax_Policy::is_abolished() || KTPWP_Tax_Policy::hide_tax_columns() ) ) ? 'display:none;' : '' ) . '"></div>';
             }
 
-			// Profit calculation similar to invoice items
+			// Profit calculation similar to invoice items（請求は税込売上ベースで統一）
 			$invoice_items = $order_items->get_invoice_items( $order_id );
-			$invoice_total = 0;
-			foreach ( $invoice_items as $invoice_item ) {
-				$invoice_amount = isset( $invoice_item['amount'] ) ? floatval( $invoice_item['amount'] ) : 0;
-				$invoice_total += $invoice_amount;
-			}
-
-			// 請求項目の税込合計（内税の場合は請求金額自体が税込）
-			$invoice_total_with_tax = $invoice_total;
-			$invoice_total_ceiled = ceil( $invoice_total );
-			$invoice_total_with_tax_ceiled = ceil( $invoice_total_with_tax );
+			$invoice_total_with_tax_ceiled = ceil( $this->get_invoice_tax_inclusive_total_for_profit( $order_id, $invoice_items ) );
 			
 			// 適格請求書ナンバーを考慮した利益計算
 			$profit_data = $this->calculate_profit_with_qualified_invoice( $order_id, $items, $invoice_total_with_tax_ceiled );
@@ -730,6 +721,63 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 		}
 
 		/**
+		 * 明細行の金額。amount が 0・未同期のときは単価×数量（画面・JS と整合）。
+		 *
+		 * @param array $item invoice_items / cost_items の1行。
+		 * @return float
+		 */
+		private function resolve_order_line_amount_from_item( array $item ) {
+			$price = isset( $item['price'] ) ? floatval( $item['price'] ) : 0.0;
+			$qty   = isset( $item['quantity'] ) ? floatval( $item['quantity'] ) : 0.0;
+			$from_pq = $price * $qty;
+			if ( ! isset( $item['amount'] ) || $item['amount'] === '' || ! is_numeric( $item['amount'] ) ) {
+				return $from_pq;
+			}
+			$from_amount = floatval( $item['amount'] );
+			if ( $from_amount < 0 ) {
+				return $from_amount;
+			}
+			if ( $from_amount > 0 ) {
+				return $from_amount;
+			}
+			if ( $from_pq > 0 ) {
+				return $from_pq;
+			}
+			return 0.0;
+		}
+
+		/**
+		 * 利益計算用の請求ベース（顧客が外税のときは税抜合計＋外税相当、それ以外は行金額の合計＝税込扱い）。
+		 *
+		 * @param int   $order_id      Order ID.
+		 * @param array $invoice_items Invoice rows.
+		 * @return float
+		 */
+		private function get_invoice_tax_inclusive_total_for_profit( $order_id, array $invoice_items ) {
+			if ( empty( $invoice_items ) ) {
+				return 0.0;
+			}
+			$tax_category = $this->get_client_tax_category( $order_id );
+			$sum_lines = 0.0;
+			foreach ( $invoice_items as $row ) {
+				$sum_lines += $this->resolve_order_line_amount_from_item( $row );
+			}
+			if ( $tax_category !== '外税' ) {
+				return $sum_lines;
+			}
+			$tax_sum = 0.0;
+			foreach ( $invoice_items as $row ) {
+				$line = $this->resolve_order_line_amount_from_item( $row );
+				$raw_rate = isset( $row['tax_rate'] ) ? $row['tax_rate'] : null;
+				$rate = class_exists( 'KTPWP_Tax_Policy' ) ? KTPWP_Tax_Policy::get_effective_rate( $raw_rate ) : null;
+				if ( $rate !== null && $rate > 0 ) {
+					$tax_sum += ceil( $line * ( $rate / 100 ) );
+				}
+			}
+			return $sum_lines + $tax_sum;
+		}
+
+		/**
 		 * Calculate profit considering qualified invoice numbers
 		 *
 		 * @since 1.0.0
@@ -745,7 +793,7 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 			
 			foreach ( $cost_items as $item ) {
 				$supplier_id = isset( $item['supplier_id'] ) ? intval( $item['supplier_id'] ) : 0;
-				$amount = isset( $item['amount'] ) ? floatval( $item['amount'] ) : 0;
+				$amount = $this->resolve_order_line_amount_from_item( $item );
 				$tax_rate_raw = isset( $item['tax_rate'] ) ? $item['tax_rate'] : null;
 				$tax_rate = ( $tax_rate_raw !== null && $tax_rate_raw !== '' && is_numeric( $tax_rate_raw ) ) ? floatval( $tax_rate_raw ) : 10.00;
 				$purchase = isset( $item['purchase'] ) ? $item['purchase'] : '';
@@ -822,14 +870,7 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 			$cost_items  = $order_items->get_cost_items( $order_id );
 			$invoice_items = $order_items->get_invoice_items( $order_id );
 
-			$invoice_total = 0;
-			foreach ( $invoice_items as $invoice_item ) {
-				$invoice_amount = isset( $invoice_item['amount'] ) ? floatval( $invoice_item['amount'] ) : 0;
-				$invoice_total += $invoice_amount;
-			}
-
-			// 内税扱いの税込合計に合わせる
-			$invoice_total_with_tax_ceiled = ceil( $invoice_total );
+			$invoice_total_with_tax_ceiled = ceil( $this->get_invoice_tax_inclusive_total_for_profit( $order_id, $invoice_items ) );
 
 			$profit_data = $this->calculate_profit_with_qualified_invoice( $order_id, $cost_items, $invoice_total_with_tax_ceiled );
 			$profit = isset( $profit_data['profit'] ) ? floatval( $profit_data['profit'] ) : 0;

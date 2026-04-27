@@ -274,6 +274,17 @@
                         ">
                     </div>
                     <div style="margin-bottom: 15px;">
+                        <label style="display: block; font-weight: bold; margin-bottom: 5px;">CC（任意・カンマ区切り）：</label>
+                        <p style="margin: 0 0 6px 0; font-size: 12px; color: #666; line-height: 1.4;">顧客代表・各部署に登録されたメールのうち、宛先（To）以外を自動で入れます（KantanBizの「CC（任意）」と同様）。編集できます。</p>
+                        <input type="text" id="email-cc" autocomplete="off" style="
+                            width: 100%;
+                            padding: 8px;
+                            border: 1px solid #ddd;
+                            border-radius: 4px;
+                            box-sizing: border-box;
+                        ">
+                    </div>
+                    <div style="margin-bottom: 15px;">
                         <label style="display: block; font-weight: bold; margin-bottom: 5px;">件名：</label>
                         <input type="text" id="email-subject" value="${emailData.subject}" style="
                             width: 100%;
@@ -348,6 +359,10 @@
         }
 
         $('#ktp-email-popup-content').html(html);
+
+        if (!emailData.error && $('#email-cc').length) {
+            $('#email-cc').val(typeof emailData.cc === 'string' ? emailData.cc : '');
+        }
 
         // フォーム送信イベント
         $('#email-send-form').on('submit', function(e) {
@@ -666,6 +681,10 @@
         formData.append('action', 'send_order_email');
         formData.append('order_id', orderId);
         formData.append('to', to);
+        const ccVal = ($('#email-cc').val() || '').trim();
+        if (ccVal) {
+            formData.append('cc', ccVal);
+        }
         formData.append('subject', subject);
         formData.append('body', body);
         
