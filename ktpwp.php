@@ -104,6 +104,71 @@ if ( ! defined( 'MY_PLUGIN_URL' ) ) {
     define( 'MY_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 }
 
+if ( ! defined( 'KTPWP_EDITION' ) ) {
+    define( 'KTPWP_EDITION', 'free' );
+}
+
+if ( ! function_exists( 'ktpwp_is_plugin_active_by_basename' ) ) {
+    /**
+     * 指定プラグインが有効化済みかを判定（マルチサイト対応）。
+     *
+     * @param string $plugin_basename プラグインベース名。
+     * @return bool
+     */
+    function ktpwp_is_plugin_active_by_basename( $plugin_basename ) {
+        $active_plugins = (array) get_option( 'active_plugins', array() );
+        if ( in_array( $plugin_basename, $active_plugins, true ) ) {
+            return true;
+        }
+
+        if ( is_multisite() ) {
+            $network_active_plugins = (array) get_site_option( 'active_sitewide_plugins', array() );
+            if ( isset( $network_active_plugins[ $plugin_basename ] ) ) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+}
+
+if ( ! function_exists( 'ktpwp_should_bootstrap_free_edition' ) ) {
+    /**
+     * 無料版を起動してよいかを判定。
+     *
+     * @return bool
+     */
+    function ktpwp_should_bootstrap_free_edition() {
+        $active_edition = (string) get_option( 'ktp_active_edition', 'free' );
+        $is_pro_active  = ktpwp_is_plugin_active_by_basename( 'KantanProEX/ktpwp.php' );
+
+        // 有料版が有効な間は無料版を停止モードにする。
+        return ! ( 'pro' === $active_edition && $is_pro_active );
+    }
+}
+
+if ( ! function_exists( 'ktpwp_render_free_edition_suspended_notice' ) ) {
+    /**
+     * 無料版停止中の管理画面通知。
+     *
+     * @return void
+     */
+    function ktpwp_render_free_edition_suspended_notice() {
+        if ( ! current_user_can( 'activate_plugins' ) ) {
+            return;
+        }
+
+        echo '<div class="notice notice-info"><p>';
+        echo esc_html__( 'KantanPro 無料版は、有料版（KantanProEX）が有効化されているため停止中です。ショートコードはそのまま有料版へ引き継がれています。', 'KantanPro' );
+        echo '</p></div>';
+    }
+}
+
+if ( ! ktpwp_should_bootstrap_free_edition() ) {
+    add_action( 'admin_notices', 'ktpwp_render_free_edition_suspended_notice' );
+    return;
+}
+
 /**
  * プラグイン有効化フック（包括的マイグレーション）
  * 新規インストール・再有効化時に必要なデータベーステーブルを作成し、マイグレーションを実行します。
