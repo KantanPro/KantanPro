@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.2.52
+Stable tag: 1.2.53
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -324,6 +324,10 @@ curl -sS -X POST \
 * 推奨PHP拡張: GD（画像処理用）
 
 == 変更履歴 ==
+
+= 1.2.53 - 2026年04月27日 =
+* メール送信ポップアップにCC入力欄を追加（`includes/class-ktpwp-order-ui.php`・`js/ktp-email-popup.js`）
+* 送信処理でCC・宛先の検証と自動設定を実装（`includes/class-ktpwp-ajax.php`）。宛先以外のメールアドレスを適切に扱えるよう改善
 
 = 1.2.52 - 2026年04月27日 =
 * `[ktpwp_all_tab]` ショートコード登録のフォールバックを追加（`init` 優先度20）。`KTPWP_Index` 経由の登録が漏れた場合でも固定ページでショートコードが動作するよう改善

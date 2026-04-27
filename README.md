@@ -1,4 +1,4 @@
-# KantanPro (KTPWP) - Version 1.2.52
+# KantanPro (KTPWP) - Version 1.2.53
 
 WordPressで動作する業務管理・受注進捗・請求・顧客・サービス・協力会社・レポート・スタッフチャットまで一元管理できる多機能プラグイン。
 
@@ -11,6 +11,11 @@ WordPressで動作する業務管理・受注進捗・請求・顧客・サー�
 ---
 
 ## 変更履歴
+
+### Version 1.2.53 - 2026年4月27日
+
+- メール送信ポップアップにCC入力欄を追加（`includes/class-ktpwp-order-ui.php`・`js/ktp-email-popup.js`）
+- 送信処理でCC・宛先の検証と自動設定を実装（`includes/class-ktpwp-ajax.php`）。宛先以外のメールアドレスを適切に扱えるよう改善
 
 ### Version 1.2.52 - 2026年4月27日
 
