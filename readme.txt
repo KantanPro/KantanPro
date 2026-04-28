@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.2.57
+Stable tag: 1.2.58
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -324,6 +324,11 @@ curl -sS -X POST \
 * 推奨PHP拡張: GD（画像処理用）
 
 == 変更履歴 ==
+
+= 1.2.58 - 2026年04月28日 =
+* 仕事リストの顧客詳細リンクを廃止し、行クリックで受注書詳細へ遷移する操作に統一
+* 仕事リストの受付日表示を年月日のみに変更し、フリーワード検索の絞り込み条件に受注書メモを追加
+* 受注書概要の案件名幅・進捗配置・日付入力幅・文字サイズを調整し、モバイル表示のレイアウトを改善
 
 = 1.2.57 - 2026年04月28日 =
 * ショートコードの条件文を修正し、分岐判定の安定性を向上
