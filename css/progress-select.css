@@ -195,6 +195,20 @@ li.ktp_work_list_item {
   background-color: #f9f9f9;
   font-size: 14px;
   flex-wrap: wrap;
+  cursor: pointer;
+}
+
+li.ktp_work_list_item:focus {
+  outline: 2px solid #1976d2;
+  outline-offset: 2px;
+}
+
+li.ktp_work_list_item input,
+li.ktp_work_list_item select,
+li.ktp_work_list_item button,
+li.ktp_work_list_item form,
+li.ktp_work_list_item label {
+  cursor: auto;
 }
 
 /* 左寄せブロック（ID・顧客名・担当者・日時を一まとまりで左に表示） */
@@ -219,16 +233,6 @@ li.ktp_work_list_item {
 .project_name {
   font-weight: 600;
   color: #0277bd;
-}
-
-/* 仕事リスト行の顧客会社名リンク（顧客タブへ遷移） */
-.ktp_work_list_item a.ktp-work-list-client-link {
-  color: #1565c0;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-.ktp_work_list_item a.ktp-work-list-client-link:hover {
-  color: #0d47a1;
 }
 
 /* 納期フィールドと進捗プルダウンのコンテナ */
@@ -441,18 +445,20 @@ li.ktp_work_list_item {
 
   /* 納期フィールドのサイズ調整 */
   .delivery-date-input {
-    min-width: 120px;
-    max-width: 140px;
-    font-size: 12px;
+    width: 180px;
+    min-width: 180px;
+    max-width: 180px;
+    font-size: 14px;
     padding: 4px 6px;
     height: 32px;
   }
 
   /* 完了日フィールドのサイズ調整 */
   .completion-date-input {
-    min-width: 120px;
-    max-width: 140px;
-    font-size: 12px;
+    width: 180px;
+    min-width: 180px;
+    max-width: 180px;
+    font-size: 14px;
     padding: 4px 6px;
     height: 32px;
   }
@@ -524,16 +530,18 @@ li.ktp_work_list_item {
   }
 
   .delivery-date-input {
-    min-width: 100px;
-    max-width: 120px;
-    font-size: 11px;
+    width: 180px;
+    min-width: 180px;
+    max-width: 180px;
+    font-size: 14px;
     height: 30px;
   }
 
   .completion-date-input {
-    min-width: 100px;
-    max-width: 120px;
-    font-size: 11px;
+    width: 180px;
+    min-width: 180px;
+    max-width: 180px;
+    font-size: 14px;
     height: 30px;
   }
 

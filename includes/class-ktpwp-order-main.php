@@ -1806,22 +1806,6 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 					$content .= '</div></div>';
 
 					$content .= '<div class="ktp-order-summary-trailing-meta">';
-					$content .= '<form method="post" action="" class="progress-filter order-header-progress-form ktp-order-summary-progress-form">';
-					$content .= '<input type="hidden" name="update_progress_id" value="' . esc_attr( $order_data->id ) . '" />';
-					$content .= wp_nonce_field( 'update_progress_action', 'progress_nonce', true, false );
-					$content .= '<span class="ktp-order-summary-field-label ktp-order-summary-field-label--inline">' . esc_html__( '進捗', 'ktpwp' ) . '：</span>';
-					$content .= '<select id="order_progress_select" name="update_progress" class="ktp-order-summary-progress-select">';
-					foreach ( $progress_labels as $num => $label ) {
-						$selected = ( $order_data->progress == $num ) ? 'selected' : '';
-						$content .= '<option value="' . (int) $num . '" ' . $selected . '>' . esc_html( $label ) . '</option>';
-					}
-					$content .= '</select>';
-					if ( $reception_display_str !== '' ) {
-						$content .= '<span class="ktp-order-reception-date">' . esc_html__( '受付', 'ktpwp' ) . '：<span id="order_created_time">' . esc_html( $reception_display_str ) . '</span></span>';
-					}
-					$content .= '<input type="hidden" name="completion_date" value="' . esc_attr( $completion_date ) . '" />';
-					$content .= '</form>';
-
 					$content .= '<div class="order-payment-timing-wrap">';
 					$content .= '<form method="post" action="' . esc_url( $current_url ) . '" class="ktp-order-summary-payment-form" id="ktp-order-payment-timing-form">';
 					$content .= '<input type="hidden" name="tab_name" value="order" />';
@@ -1835,7 +1819,25 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 					$content .= '<input type="hidden" name="update_payment_timing_order_id" value="' . esc_attr( $order_data->id ) . '" />';
 					$content .= '<input type="hidden" name="ktp_payment_timing_nonce" value="' . esc_attr( wp_create_nonce( 'ktp_update_order_payment_timing' ) ) . '" />';
 					$content .= '</form></div>';
+					if ( $reception_display_str !== '' ) {
+						$content .= '<span class="ktp-order-reception-date">' . esc_html__( '受付', 'ktpwp' ) . '：<span id="order_created_time">' . esc_html( $reception_display_str ) . '</span></span>';
+					}
 
+					$content .= '</div>';
+
+					$content .= '<div class="ktp-order-summary-progress-meta">';
+					$content .= '<form method="post" action="" class="progress-filter order-header-progress-form ktp-order-summary-progress-form">';
+					$content .= '<input type="hidden" name="update_progress_id" value="' . esc_attr( $order_data->id ) . '" />';
+					$content .= wp_nonce_field( 'update_progress_action', 'progress_nonce', true, false );
+					$content .= '<span class="ktp-order-summary-field-label ktp-order-summary-field-label--inline">' . esc_html__( '進捗', 'ktpwp' ) . '：</span>';
+					$content .= '<select id="order_progress_select" name="update_progress" class="ktp-order-summary-progress-select">';
+					foreach ( $progress_labels as $num => $label ) {
+						$selected = ( $order_data->progress == $num ) ? 'selected' : '';
+						$content .= '<option value="' . (int) $num . '" ' . $selected . '>' . esc_html( $label ) . '</option>';
+					}
+					$content .= '</select>';
+					$content .= '<input type="hidden" name="completion_date" value="' . esc_attr( $completion_date ) . '" />';
+					$content .= '</form>';
 					$content .= '</div>';
 
 					$content .= '</div>';
