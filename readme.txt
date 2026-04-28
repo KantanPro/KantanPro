@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.2.58
+Stable tag: 1.2.59
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -324,6 +324,11 @@ curl -sS -X POST \
 * 推奨PHP拡張: GD（画像処理用）
 
 == 変更履歴 ==
+
+= 1.2.59 - 2026年04月28日 =
+* 受注書概要の受付日をカレンダー入力で編集できるようにし、登録日（created_at / time）へ反映されるよう改善
+* 受注書概要の日付ラベル（受付・約束納期・希望納期・納品予定日・完了日）をカレンダーと同一行・縦中央揃えに統一
+* 日付入力欄の文字サイズを14pxに統一し、一覧・詳細の視認性を改善
 
 = 1.2.58 - 2026年04月28日 =
 * 仕事リストの顧客詳細リンクを廃止し、行クリックで受注書詳細へ遷移する操作に統一
