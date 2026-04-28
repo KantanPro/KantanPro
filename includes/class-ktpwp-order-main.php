@@ -1633,9 +1633,14 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 					error_log( 'KTPWP Order: 画面表示時の完了日: ' . $completion_date . ' (受注書ID: ' . $order_data->id . ', 元の値: ' . $original_completion_date . ')' );
 
 					// 受付＝受注書登録日時（旧「作成」表示と同一・ここに統一）
-					$reception_display_str = '';
+					$reception_date_value = '';
+					$raw_time = '';
 					if ( ! empty( $order_data->time ) ) {
 						$raw_time = $order_data->time;
+					} elseif ( ! empty( $order_data->created_at ) ) {
+						$raw_time = $order_data->created_at;
+					}
+					if ( $raw_time !== '' ) {
 						if ( is_numeric( $raw_time ) && strlen( (string) $raw_time ) >= 10 ) {
 							$dt = new DateTime( '@' . (int) $raw_time );
 							$dt->setTimezone( new DateTimeZone( wp_timezone_string() ) );
@@ -1643,14 +1648,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 							$dt = date_create( $raw_time, new DateTimeZone( wp_timezone_string() ) );
 						}
 						if ( $dt ) {
-							$locale = get_locale();
-							if ( substr( $locale, 0, 2 ) === 'ja' ) {
-								$week = array( '日', '月', '火', '水', '木', '金', '土' );
-								$w = $dt->format( 'w' );
-								$reception_display_str = $dt->format( 'Y/n/j' ) . '（' . $week[ $w ] . '）' . $dt->format( ' H:i' );
-							} else {
-								$reception_display_str = $dt->format( 'Y-m-d l H:i' );
-							}
+							$reception_date_value = $dt->format( 'Y-m-d' );
 						}
 					}
 
@@ -1819,8 +1817,11 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 					$content .= '<input type="hidden" name="update_payment_timing_order_id" value="' . esc_attr( $order_data->id ) . '" />';
 					$content .= '<input type="hidden" name="ktp_payment_timing_nonce" value="' . esc_attr( wp_create_nonce( 'ktp_update_order_payment_timing' ) ) . '" />';
 					$content .= '</form></div>';
-					if ( $reception_display_str !== '' ) {
-						$content .= '<span class="ktp-order-reception-date">' . esc_html__( '受付', 'ktpwp' ) . '：<span id="order_created_time">' . esc_html( $reception_display_str ) . '</span></span>';
+					if ( $reception_date_value !== '' ) {
+						$content .= '<div class="ktp-order-summary-date-cell ktp-order-summary-date-cell--reception"><span class="ktp-order-summary-field-label">' . esc_html__( '受付', 'ktpwp' ) . '：</span>';
+						$content .= '<div class="ktp-order-summary-date-cell-inner">';
+						$content .= '<input type="date" id="order_created_at" name="created_at" value="' . esc_attr( $reception_date_value ) . '" data-order-id="' . esc_attr( $order_data->id ) . '" data-field="created_at" class="order-created-date-input ktp-order-summary-date-input" title="' . esc_attr__( '売上レポートの期間判定に使われる登録日です', 'ktpwp' ) . '" />';
+						$content .= '</div></div>';
 					}
 
 					$content .= '</div>';
@@ -1843,22 +1844,22 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 					$content .= '</div>';
 
 					$content .= '<div class="ktp-order-summary-dates-grid">';
-					$content .= '<div class="ktp-order-summary-date-cell"><span class="ktp-order-summary-field-label">' . esc_html__( '約束納期', 'ktpwp' ) . '</span>';
+					$content .= '<div class="ktp-order-summary-date-cell"><span class="ktp-order-summary-field-label">' . esc_html__( '約束納期', 'ktpwp' ) . '：</span>';
 					$content .= '<div class="ktp-order-summary-date-cell-inner">';
 					$content .= '<input type="date" id="promised_delivery_date" name="promised_delivery_date" value="' . esc_attr( $promised_delivery_date ) . '" data-order-id="' . esc_attr( $order_data->id ) . '" data-field="promised_delivery_date" class="delivery-date-input ktp-order-summary-date-input" />';
-					$content .= '<button type="button" class="ktp-date-clear-btn" data-target="promised_delivery_date">' . esc_html__( 'クリア', 'ktpwp' ) . '</button></div></div>';
-					$content .= '<div class="ktp-order-summary-date-cell"><span class="ktp-order-summary-field-label">' . esc_html__( '希望納期', 'ktpwp' ) . '</span>';
+					$content .= '</div></div>';
+					$content .= '<div class="ktp-order-summary-date-cell"><span class="ktp-order-summary-field-label">' . esc_html__( '希望納期', 'ktpwp' ) . '：</span>';
 					$content .= '<div class="ktp-order-summary-date-cell-inner">';
 					$content .= '<input type="date" id="desired_delivery_date" name="desired_delivery_date" value="' . esc_attr( $desired_delivery_date ) . '" data-order-id="' . esc_attr( $order_data->id ) . '" data-field="desired_delivery_date" class="delivery-date-input ktp-order-summary-date-input" />';
-					$content .= '<button type="button" class="ktp-date-clear-btn" data-target="desired_delivery_date">' . esc_html__( 'クリア', 'ktpwp' ) . '</button></div></div>';
-					$content .= '<div class="ktp-order-summary-date-cell"><span class="ktp-order-summary-field-label">' . esc_html__( '納品予定日', 'ktpwp' ) . '</span>';
+					$content .= '</div></div>';
+					$content .= '<div class="ktp-order-summary-date-cell"><span class="ktp-order-summary-field-label">' . esc_html__( '納品予定日', 'ktpwp' ) . '：</span>';
 					$content .= '<div class="ktp-order-summary-date-cell-inner">';
 					$content .= '<input type="date" id="expected_delivery_date" name="expected_delivery_date" value="' . esc_attr( $expected_delivery_date ) . '" data-order-id="' . esc_attr( $order_data->id ) . '" data-field="expected_delivery_date" class="delivery-date-input ktp-order-summary-date-input" />';
-					$content .= '<button type="button" class="ktp-date-clear-btn" data-target="expected_delivery_date">' . esc_html__( 'クリア', 'ktpwp' ) . '</button></div></div>';
-					$content .= '<div class="ktp-order-summary-date-cell"><span class="ktp-order-summary-field-label">' . esc_html__( '完了日', 'ktpwp' ) . '</span>';
+					$content .= '</div></div>';
+					$content .= '<div class="ktp-order-summary-date-cell"><span class="ktp-order-summary-field-label">' . esc_html__( '完了日', 'ktpwp' ) . '：</span>';
 					$content .= '<div class="ktp-order-summary-date-cell-inner">';
 					$content .= '<input type="date" id="completion_date" name="completion_date" value="' . esc_attr( $completion_date ) . '" data-order-id="' . esc_attr( $order_data->id ) . '" data-field="completion_date" class="completion-date-input ktp-order-summary-date-input" />';
-					$content .= '<button type="button" class="ktp-date-clear-btn" data-target="completion_date">' . esc_html__( 'クリア', 'ktpwp' ) . '</button></div></div>';
+					$content .= '</div></div>';
 					$content .= '</div>';
 
 					$content .= '<div class="ktp-order-summary-memo-line ktp-order-summary-memo-wrap">';

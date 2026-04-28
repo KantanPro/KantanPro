@@ -170,6 +170,7 @@ jQuery(document).ready(function($) {
     if (
         $('.delivery-date-input').length === 0 &&
         $('.completion-date-input').length === 0 &&
+        $('.order-created-date-input').length === 0 &&
         $('#completion_date').length === 0 &&
         $('.progress-select').length === 0 &&
         $('#order_progress_select').length === 0 &&
@@ -225,6 +226,81 @@ jQuery(document).ready(function($) {
     
     // 進捗タブのバッジはPHPで正しく出力されているため、ページ読み込み時はAJAXで上書きしない（一瞬消えるのを防ぐ）
     // updateProgressButtonWarning() は納期変更・進捗変更時のみ呼ぶ
+
+    // 受付日（登録日）の変更を監視
+    $(document).on('change', '.order-created-date-input', function() {
+        var $input = $(this);
+        var orderId = $input.data('order-id');
+        var field = $input.data('field');
+        var value = $input.val();
+
+        if (!orderId || field !== 'created_at') {
+            alert('受付日の保存に必要な情報が取得できません。ページを再読み込みしてください。');
+            return;
+        }
+
+        if (!value) {
+            alert('受付日は空にできません。');
+            return;
+        }
+
+        $input.prop('disabled', true);
+        $input.css('opacity', '0.6');
+
+        const ajaxConfig = getAjaxConfig();
+        const nonce = ajaxConfig.nonce;
+
+        if (!nonce) {
+            alert('セキュリティトークンが取得できません。ページを再読み込みしてください。');
+            $input.prop('disabled', false);
+            $input.css('opacity', '1');
+            return;
+        }
+
+        $.ajax({
+            url: ajaxConfig.url,
+            type: 'POST',
+            data: {
+                action: 'ktp_update_delivery_date',
+                order_id: orderId,
+                field: field,
+                value: value,
+                nonce: nonce
+            },
+            success: function(response) {
+                if (response.success) {
+                    $input.css('border-color', '#4caf50');
+                    $input.css('background-color', '#f1f8e9');
+                    if (response.data && response.data.display_time) {
+                        $('#order_created_time').text(' ' + response.data.display_time);
+                    }
+                    setTimeout(function() {
+                        $input.css('border-color', '');
+                        $input.css('background-color', '');
+                    }, 3000);
+                } else {
+                    $input.css('border-color', '#f44336');
+                    $input.css('background-color', '#ffebee');
+                    var errorMessage = 'エラーが発生しました';
+                    if (response.data && response.data.message) {
+                        errorMessage = response.data.message;
+                    } else if (response.data) {
+                        errorMessage = response.data;
+                    }
+                    alert('受付日の保存に失敗しました: ' + errorMessage);
+                }
+            },
+            error: function() {
+                $input.css('border-color', '#f44336');
+                $input.css('background-color', '#ffebee');
+                alert('通信エラーが発生しました');
+            },
+            complete: function() {
+                $input.prop('disabled', false);
+                $input.css('opacity', '1');
+            }
+        });
+    });
 
     // 納期フィールドの変更を監視
     $(document).on('change', '.delivery-date-input', function() {

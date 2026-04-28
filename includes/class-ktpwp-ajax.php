@@ -3423,6 +3423,88 @@ class KTPWP_Ajax {
 	}
 
 	/**
+	 * 受付日（登録日）を更新する。
+	 *
+	 * @param int    $order_id 受注書ID
+	 * @param string $date_value Y-m-d形式の日付
+	 * @return array 更新後の値
+	 * @throws Exception 更新に失敗した場合
+	 */
+	private function update_order_reception_date( $order_id, $date_value ) {
+		if ( empty( $date_value ) ) {
+			throw new Exception( '受付日は必須です。' );
+		}
+
+		$date_obj = DateTime::createFromFormat( 'Y-m-d', $date_value );
+		if ( ! $date_obj || $date_obj->format( 'Y-m-d' ) !== $date_value ) {
+			throw new Exception( '無効な日付形式です。' );
+		}
+
+		global $wpdb;
+		$table_name = $wpdb->prefix . 'ktp_order';
+		$order = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT `time`, `created_at` FROM `{$table_name}` WHERE id = %d",
+				$order_id
+			)
+		);
+
+		if ( ! $order ) {
+			throw new Exception( '受注書が見つかりません。' );
+		}
+
+		$timezone = new DateTimeZone( wp_timezone_string() );
+		$current_dt = null;
+		$raw_time = isset( $order->time ) ? (string) $order->time : '';
+
+		if ( $raw_time !== '' ) {
+			if ( is_numeric( $raw_time ) && strlen( $raw_time ) >= 10 ) {
+				$current_dt = new DateTime( '@' . (int) $raw_time );
+				$current_dt->setTimezone( $timezone );
+			} else {
+				$current_dt = date_create( $raw_time, $timezone );
+			}
+		}
+
+		if ( ! $current_dt && ! empty( $order->created_at ) ) {
+			$current_dt = date_create( $order->created_at, $timezone );
+		}
+
+		if ( ! $current_dt ) {
+			$current_dt = new DateTime( 'now', $timezone );
+		}
+
+		$updated_dt = DateTime::createFromFormat( 'Y-m-d H:i:s', $date_value . ' ' . $current_dt->format( 'H:i:s' ), $timezone );
+		if ( ! $updated_dt ) {
+			throw new Exception( '受付日の更新に失敗しました。' );
+		}
+
+		$created_at = $updated_dt->format( 'Y-m-d H:i:s' );
+		$time_value = ( is_numeric( $raw_time ) && strlen( $raw_time ) >= 10 ) ? $updated_dt->getTimestamp() : $created_at;
+		$result = $wpdb->update(
+			$table_name,
+			array(
+				'created_at' => $created_at,
+				'time'       => $time_value,
+			),
+			array( 'id' => $order_id ),
+			array( '%s', is_int( $time_value ) ? '%d' : '%s' ),
+			array( '%d' )
+		);
+
+		if ( $result === false ) {
+			throw new Exception( 'データベースの更新に失敗しました: ' . $wpdb->last_error );
+		}
+
+		return array(
+			'created_at'   => $created_at,
+			'field_value'  => $date_value,
+			'time'         => $time_value,
+			'display_time' => $updated_dt->format( 'H:i' ),
+		);
+	}
+
+	/**
 	 * 納期フィールドの保存処理
 	 */
 	public function ajax_save_delivery_date() {
@@ -3521,7 +3603,7 @@ class KTPWP_Ajax {
 			}
 
 			// フィールド名の検証
-			$allowed_fields = array( 'promised_delivery_date', 'desired_delivery_date', 'expected_delivery_date', 'completion_date', 'memo' );
+			$allowed_fields = array( 'promised_delivery_date', 'desired_delivery_date', 'expected_delivery_date', 'completion_date', 'created_at', 'memo' );
 			if ( ! in_array( $field_name, $allowed_fields ) ) {
 				throw new Exception( '無効なフィールド名です。' );
 			}
@@ -3532,6 +3614,20 @@ class KTPWP_Ajax {
 				if ( ! $date_obj || $date_obj->format( 'Y-m-d' ) !== $field_value ) {
 					throw new Exception( '無効な日付形式です。' );
 				}
+			}
+
+			if ( $field_name === 'created_at' ) {
+				$updated_reception_date = $this->update_order_reception_date( $order_id, $field_value );
+				wp_send_json_success(
+					array(
+						'message'      => '受付日が正常に保存されました。',
+						'order_id'     => $order_id,
+						'field_name'   => $field_name,
+						'field_value'  => $updated_reception_date['field_value'],
+						'created_at'   => $updated_reception_date['created_at'],
+						'display_time' => $updated_reception_date['display_time'],
+					)
+				);
 			}
 
 			// データベース更新
@@ -3619,7 +3715,7 @@ class KTPWP_Ajax {
 			}
 
 			// フィールド名の検証
-			$allowed_fields = array( 'promised_delivery_date', 'desired_delivery_date', 'expected_delivery_date', 'completion_date', 'memo' );
+			$allowed_fields = array( 'promised_delivery_date', 'desired_delivery_date', 'expected_delivery_date', 'completion_date', 'created_at', 'memo' );
 			if ( ! in_array( $field, $allowed_fields ) ) {
 				wp_send_json_error( array( 'message' => __( '無効なフィールド名です', 'ktpwp' ) ) );
 				return;
@@ -3632,6 +3728,20 @@ class KTPWP_Ajax {
 					wp_send_json_error( array( 'message' => __( '無効な日付形式です', 'ktpwp' ) ) );
 					return;
 				}
+			}
+
+			if ( $field === 'created_at' ) {
+				$updated_reception_date = $this->update_order_reception_date( $order_id, $value );
+				wp_send_json_success(
+					array(
+						'message'      => __( '受付日を更新しました', 'ktpwp' ),
+						'field'        => $field,
+						'value'        => $updated_reception_date['field_value'],
+						'created_at'   => $updated_reception_date['created_at'],
+						'display_time' => $updated_reception_date['display_time'],
+					)
+				);
+				return;
 			}
 
 			global $wpdb;
