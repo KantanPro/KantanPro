@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.2.59
+Stable tag: 1.2.60
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -324,6 +324,10 @@ curl -sS -X POST \
 * 推奨PHP拡張: GD（画像処理用）
 
 == 変更履歴 ==
+
+= 1.2.60 - 2026年04月29日 =
+* プラグインバージョンを 1.2.60 に更新（`ktpwp.php` ヘッダー）
+* コミット履歴を確認し、無料版メインプラグインのリリース情報を更新（`readme.txt` / `README.md`）
 
 = 1.2.59 - 2026年04月28日 =
 * 受注書概要の受付日をカレンダー入力で編集できるようにし、登録日（created_at / time）へ反映されるよう改善
