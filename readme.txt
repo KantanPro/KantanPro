@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.2.60
+Stable tag: 1.2.61
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -324,6 +324,11 @@ curl -sS -X POST \
 * 推奨PHP拡張: GD（画像処理用）
 
 == 変更履歴 ==
+
+= 1.2.61 - 2026年04月29日 =
+* 無料版のレポートタブを KantanProEX への案内表示として整理し、タイトルバー内に利用不可メッセージを表示するよう改善
+* 受注書のメール送信履歴・案件ファイルに KantanProEX 移行案内を追加し、折りたたみ表示とボタンスタイルを調整
+* 有料版機能の表示を鍵SVGアイコンに統一し、レポートタブ名にも鍵アイコンを表示
 
 = 1.2.60 - 2026年04月29日 =
 * プラグインバージョンを 1.2.60 に更新（`ktpwp.php` ヘッダー）
