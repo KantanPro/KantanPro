@@ -133,7 +133,7 @@ class KTPWP_WooCommerce_Integration {
 		}
 
 		$customer_name = $this->get_customer_display_name( $order );
-		$user_name     = trim( $order->get_billing_first_name() . ' ' . $order->get_billing_last_name() );
+		$user_name     = $this->get_billing_full_name( $order );
 		$order_number  = $order->get_order_number();
 		$project_name  = 'WC #' . $order_number;
 		$created       = $order->get_date_created();
@@ -239,6 +239,90 @@ class KTPWP_WooCommerce_Integration {
 	}
 
 	/**
+	 * WooCommerce の請求先氏名を KantanPro の姓名順に整形
+	 *
+	 * @param WC_Order $order
+	 * @return string
+	 */
+	private function get_billing_full_name( WC_Order $order ): string {
+		$first = trim( (string) $order->get_billing_first_name() );
+		$last  = trim( (string) $order->get_billing_last_name() );
+		return trim( $last . ' ' . $first );
+	}
+
+	/**
+	 * 過去の WooCommerce 取り込みで使っていた名姓順の氏名
+	 *
+	 * @param WC_Order $order
+	 * @return string
+	 */
+	private function get_legacy_billing_full_name( WC_Order $order ): string {
+		$first = trim( (string) $order->get_billing_first_name() );
+		$last  = trim( (string) $order->get_billing_last_name() );
+		return trim( $first . ' ' . $last );
+	}
+
+	/**
+	 * WooCommerce から受信した郵便番号を KantanPro の保存形式に整形
+	 *
+	 * @param string $postal_code 郵便番号
+	 * @return string
+	 */
+	private function normalize_postal_code( string $postal_code ): string {
+		return str_replace( '-', '', trim( $postal_code ) );
+	}
+
+	/**
+	 * 既存の WooCommerce 取り込み顧客に残っている郵便番号・姓名の形式を補正
+	 *
+	 * @param int      $client_id 顧客ID
+	 * @param WC_Order $order     WooCommerce 注文
+	 */
+	private function normalize_existing_client_from_order( int $client_id, WC_Order $order ): void {
+		if ( $client_id <= 0 ) {
+			return;
+		}
+
+		global $wpdb;
+		$table = $wpdb->prefix . 'ktp_client';
+		$cols  = $wpdb->get_col( "SHOW COLUMNS FROM `{$table}`", 0 );
+		$cols  = is_array( $cols ) ? $cols : array();
+
+		$client = $wpdb->get_row(
+			$wpdb->prepare( "SELECT * FROM `{$table}` WHERE id = %d LIMIT 1", $client_id )
+		);
+		if ( ! $client ) {
+			return;
+		}
+
+		$updates     = array();
+		$formats     = array();
+		$name        = $this->get_billing_full_name( $order );
+		$legacy_name = $this->get_legacy_billing_full_name( $order );
+
+		if ( in_array( 'postal_code', $cols, true ) ) {
+			$postal = $this->normalize_postal_code( (string) ( $client->postal_code ?? '' ) );
+			if ( $postal !== trim( (string) ( $client->postal_code ?? '' ) ) ) {
+				$updates['postal_code'] = $postal;
+				$formats[]              = '%s';
+			}
+		}
+
+		if ( $legacy_name !== '' && $name !== '' && $legacy_name !== $name ) {
+			foreach ( array( 'company_name', 'name', 'representative_name' ) as $name_column ) {
+				if ( in_array( $name_column, $cols, true ) && trim( (string) ( $client->{$name_column} ?? '' ) ) === $legacy_name ) {
+					$updates[ $name_column ] = $name;
+					$formats[]               = '%s';
+				}
+			}
+		}
+
+		if ( ! empty( $updates ) ) {
+			$wpdb->update( $table, $updates, array( 'id' => $client_id ), $formats, array( '%d' ) );
+		}
+	}
+
+	/**
 	 * 注文から表示用顧客名を取得
 	 * 注文に会社名があれば会社名、なければ注文者名（姓・名）を返す。
 	 *
@@ -250,9 +334,7 @@ class KTPWP_WooCommerce_Integration {
 		if ( $company !== '' ) {
 			return $company;
 		}
-		$first = trim( (string) $order->get_billing_first_name() );
-		$last  = trim( (string) $order->get_billing_last_name() );
-		$name  = trim( $first . ' ' . $last );
+		$name = $this->get_billing_full_name( $order );
 		return $name !== '' ? $name : __( 'ゲスト', 'ktpwp' );
 	}
 
@@ -272,12 +354,10 @@ class KTPWP_WooCommerce_Integration {
 		}
 
 		$company = trim( (string) $order->get_billing_company() );
-		$first   = trim( (string) $order->get_billing_first_name() );
-		$last    = trim( (string) $order->get_billing_last_name() );
-		$name    = trim( $first . ' ' . $last );
+		$name    = $this->get_billing_full_name( $order );
 		$email   = sanitize_email( $order->get_billing_email() );
 		$phone   = trim( (string) $order->get_billing_phone() );
-		$postal  = trim( (string) $order->get_billing_postcode() );
+		$postal  = $this->normalize_postal_code( (string) $order->get_billing_postcode() );
 		$state   = trim( (string) $order->get_billing_state() );
 		$city    = trim( (string) $order->get_billing_city() );
 		$addr1   = trim( (string) $order->get_billing_address_1() );
@@ -293,6 +373,7 @@ class KTPWP_WooCommerce_Integration {
 				)
 			);
 			if ( $client_id > 0 ) {
+				$this->normalize_existing_client_from_order( $client_id, $order );
 				return $client_id;
 			}
 		}
@@ -763,16 +844,23 @@ class KTPWP_WooCommerce_Integration {
 			$existing_client = ( $email !== '' && is_email( $email ) ) ? $this->get_client_by_email( $email ) : null;
 			if ( $existing_client ) {
 				$client_id     = (int) $existing_client->id;
+				$this->normalize_existing_client_from_order( $client_id, $order );
 				$customer_name = isset( $existing_client->company_name ) && trim( (string) $existing_client->company_name ) !== ''
 					? trim( (string) $existing_client->company_name )
 					: $this->get_customer_display_name( $order );
 				$user_name = isset( $existing_client->name ) && trim( (string) $existing_client->name ) !== ''
 					? trim( (string) $existing_client->name )
-					: trim( (string) $order->get_billing_first_name() . ' ' . (string) $order->get_billing_last_name() );
+					: $this->get_billing_full_name( $order );
+				$legacy_name = $this->get_legacy_billing_full_name( $order );
+				$fixed_name  = $this->get_billing_full_name( $order );
+				if ( $legacy_name !== '' && $fixed_name !== '' && $legacy_name !== $fixed_name ) {
+					$customer_name = $customer_name === $legacy_name ? $fixed_name : $customer_name;
+					$user_name     = $user_name === $legacy_name ? $fixed_name : $user_name;
+				}
 			} else {
 				$client_id     = $this->get_or_create_client_id_from_order( $order );
 				$customer_name = $this->get_customer_display_name( $order );
-				$user_name     = trim( (string) $order->get_billing_first_name() . ' ' . (string) $order->get_billing_last_name() );
+				$user_name     = $this->get_billing_full_name( $order );
 			}
 			if ( $client_id === null || $client_id <= 0 ) {
 				continue;
@@ -833,16 +921,23 @@ class KTPWP_WooCommerce_Integration {
 			$existing_client = ( $email !== '' && is_email( $email ) ) ? $this->get_client_by_email( $email ) : null;
 			if ( $existing_client ) {
 				$client_id     = (int) $existing_client->id;
+				$this->normalize_existing_client_from_order( $client_id, $order );
 				$customer_name = isset( $existing_client->company_name ) && trim( (string) $existing_client->company_name ) !== ''
 					? trim( (string) $existing_client->company_name )
 					: $this->get_customer_display_name( $order );
 				$user_name = isset( $existing_client->name ) && trim( (string) $existing_client->name ) !== ''
 					? trim( (string) $existing_client->name )
-					: trim( (string) $order->get_billing_first_name() . ' ' . (string) $order->get_billing_last_name() );
+					: $this->get_billing_full_name( $order );
+				$legacy_name = $this->get_legacy_billing_full_name( $order );
+				$fixed_name  = $this->get_billing_full_name( $order );
+				if ( $legacy_name !== '' && $fixed_name !== '' && $legacy_name !== $fixed_name ) {
+					$customer_name = $customer_name === $legacy_name ? $fixed_name : $customer_name;
+					$user_name     = $user_name === $legacy_name ? $fixed_name : $user_name;
+				}
 			} else {
 				$client_id     = $this->get_or_create_client_id_from_order( $order );
 				$customer_name = $this->get_customer_display_name( $order );
-				$user_name     = trim( (string) $order->get_billing_first_name() . ' ' . (string) $order->get_billing_last_name() );
+				$user_name     = $this->get_billing_full_name( $order );
 			}
 			if ( $client_id === null || $client_id <= 0 ) {
 				continue;
