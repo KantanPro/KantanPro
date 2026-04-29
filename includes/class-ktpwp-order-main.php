@@ -337,6 +337,49 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 		}
 
 		/**
+		 * 無料版：メール送信履歴・案件ファイルは KantanProEX 機能のため、折りたたみ内に案内のみ表示する。
+		 * KantanProEX 読込時は KTPWP_Order_Auxiliary が本体を描画するためここでは何も出力しない。
+		 *
+		 * @param int $order_id Order ID.
+		 * @return string
+		 */
+		private function render_free_edition_order_auxiliary_notice_blocks( $order_id ) {
+			if ( class_exists( 'KTPWP_Order_Auxiliary' ) ) {
+				return '';
+			}
+
+			$order_id = (int) $order_id;
+			if ( $order_id < 1 ) {
+				return '';
+			}
+
+			$ex_url       = esc_url( 'https://www.kantanpro.com/product/kantanpro-ex' );
+			$notice_inner = '<div class="ktpwp-notice ktp-order-aux-free-notice" style="padding:16px 18px;background:#fff7e6;border:1px solid #ffd591;border-radius:6px;color:#8a6d3b;margin:0;">'
+				. '<div class="ktp-ex-migrate-one-line">'
+				. '<span>' . esc_html__( 'KantanProEX（有料版）へ移行してご利用ください。', 'ktpwp' ) . '</span>'
+				. '<a class="button button-primary" href="' . $ex_url . '" target="_blank" rel="noopener noreferrer">' . esc_html__( 'KantanProEX 商品ページ', 'ktpwp' ) . '</a>'
+				. '</div>'
+				. '</div>';
+
+			$html  = '';
+			$html .= '<details class="ktp-order-block ktp-order-details-toggle ktp-order-mail-log-wrap ktp-order-mail-log-details" data-ktp-order-toggle="mail_log" data-ktp-order-id="' . esc_attr( (string) $order_id ) . '">';
+			$html .= '<summary class="ktp-order-details-summary">';
+			$html .= esc_html__( 'メール送信履歴', 'ktpwp' );
+			$html .= ' <span class="ktp-order-details-hint ktp-order-details-lock ktp-lock-icon" aria-label="' . esc_attr__( '有料版機能', 'ktpwp' ) . '"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M17 9h-1V7a4 4 0 0 0-8 0v2H7a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2Zm-7-2a2 2 0 1 1 4 0v2h-4V7Zm3 9.73V18h-2v-1.27a2 2 0 1 1 2 0Z"/></svg></span>';
+			$html .= '</summary>';
+			$html .= $notice_inner;
+			$html .= '</details>';
+
+			$html .= '<details class="ktp-order-block ktp-order-details-toggle ktp-order-files-wrap ktp-order-files-details" data-ktp-order-toggle="order_files" data-ktp-order-id="' . esc_attr( (string) $order_id ) . '">';
+			$html .= '<summary class="ktp-order-details-summary">' . esc_html__( '案件ファイル', 'ktpwp' );
+			$html .= ' <span class="ktp-order-details-hint ktp-order-details-lock ktp-lock-icon" aria-label="' . esc_attr__( '有料版機能', 'ktpwp' ) . '"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M17 9h-1V7a4 4 0 0 0-8 0v2H7a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2Zm-7-2a2 2 0 1 1 4 0v2h-4V7Zm3 9.73V18h-2v-1.27a2 2 0 1 1 2 0Z"/></svg></span></summary>';
+			$html .= $notice_inner;
+			$html .= '</details>';
+
+			return $html;
+		}
+
+		/**
 		 * Display order tab view
 		 *
 		 * @since 1.0.0
@@ -1883,6 +1926,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 					$content .= '<summary class="ktp-order-details-summary"><span class="toc2">' . esc_html__( 'コスト項目', 'ktpwp' ) . '</span></summary>';
 					$content .= $this->Generate_Cost_Items_Table( $order_id );
 					$content .= '</details>';
+					$content .= $this->render_free_edition_order_auxiliary_notice_blocks( $order_id );
 					// スタッフチャットセクションを追加（タイトルなし）
 					$content .= '<!-- DEBUG: スタッフチャット開始 -->';
 					$staff_chat_html = $this->Generate_Staff_Chat_HTML( $order_id );

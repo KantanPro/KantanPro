@@ -2338,8 +2338,10 @@ class KTPWP_Settings {
         $html  = '<div class="notice notice-warning" style="padding:16px 18px;margin-top:16px;">';
         $html .= '<h2 style="margin:0 0 8px 0;">' . $safe_feature . '</h2>';
         $html .= '<p style="margin:0 0 8px 0;">' . sprintf( esc_html__( '%s は無料版では利用できません。', 'ktpwp' ), $safe_feature ) . '</p>';
-        $html .= '<p style="margin:0 0 10px 0;">' . sprintf( esc_html__( '%s へ移行してご利用ください。', 'ktpwp' ), $safe_ex ) . '</p>';
-        $html .= '<p style="margin:0;"><a class="button button-primary" href="' . $ex_url . '" target="_blank" rel="noopener noreferrer">' . esc_html__( 'KantanProEX 商品ページ', 'ktpwp' ) . '</a></p>';
+        $html .= '<div class="ktp-ex-migrate-one-line">';
+        $html .= '<span>' . sprintf( esc_html__( '%s へ移行してご利用ください。', 'ktpwp' ), $safe_ex ) . '</span>';
+        $html .= '<a class="button button-primary" href="' . $ex_url . '" target="_blank" rel="noopener noreferrer">' . esc_html__( 'KantanProEX 商品ページ', 'ktpwp' ) . '</a>';
+        $html .= '</div>';
         $html .= '</div>';
         return $html;
     }

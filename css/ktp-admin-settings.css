@@ -489,3 +489,68 @@
 .cost-item-amount {
     text-align: left !important;
 }
+
+/* KantanProEX 移行案内（管理画面 notice）：文言とボタンを同一行・縦中央 */
+.wrap.ktp-admin-wrap .ktp-ex-migrate-one-line,
+.notice .ktp-ex-migrate-one-line {
+    display: flex !important;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 12px;
+    margin: 0;
+    padding: 0;
+}
+
+.wrap.ktp-admin-wrap .ktp-ex-migrate-one-line > span,
+.notice .ktp-ex-migrate-one-line > span {
+    margin: 0;
+    padding: 0;
+    line-height: 1.45;
+}
+
+.wrap.ktp-admin-wrap .ktp-ex-migrate-one-line .button.button-primary,
+.notice .ktp-ex-migrate-one-line .button.button-primary {
+    flex-shrink: 0;
+    margin: 0 !important;
+    min-width: 170px;
+    min-height: 34px;
+    box-sizing: border-box;
+    padding: 8px 18px !important;
+    vertical-align: middle;
+    float: none !important;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    align-self: center;
+    border-radius: 999px !important;
+    box-shadow: none !important;
+    text-decoration: none !important;
+    font-size: 12px !important;
+    line-height: 1.25 !important;
+    background: #43a047 !important;
+    background-color: #43a047 !important;
+    border-color: #2e7d32 !important;
+    color: #fff !important;
+    text-shadow: none !important;
+}
+
+.wrap.ktp-admin-wrap .ktp-ex-migrate-one-line .button.button-primary:hover,
+.wrap.ktp-admin-wrap .ktp-ex-migrate-one-line .button.button-primary:focus,
+.notice .ktp-ex-migrate-one-line .button.button-primary:hover,
+.notice .ktp-ex-migrate-one-line .button.button-primary:focus {
+    background: #2e7d32 !important;
+    background-color: #2e7d32 !important;
+    border-color: #1b5e20 !important;
+    color: #fff !important;
+    text-decoration: none !important;
+}
+
+@media (max-width: 480px) {
+    .wrap.ktp-admin-wrap .ktp-ex-migrate-one-line,
+    .notice .ktp-ex-migrate-one-line {
+        flex-wrap: wrap;
+        align-items: center;
+    }
+}

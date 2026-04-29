@@ -59,6 +59,32 @@
     font-weight: normal;
     color: #666;
 }
+.ktp-order-details-lock {
+    margin-left: 4px;
+    color: #111;
+}
+.ktp-lock-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #111;
+    line-height: 1;
+    vertical-align: -3px;
+}
+.ktp-lock-icon svg {
+    display: block;
+    width: 24px;
+    height: 24px;
+    fill: currentColor;
+}
+.tab_item .ktp-lock-icon {
+    margin-right: 4px;
+    vertical-align: -4px;
+}
+.tab_item .ktp-lock-icon svg {
+    width: 22px;
+    height: 22px;
+}
 .ktp-order-details-body {
     margin-top: 12px;
 }
@@ -1672,8 +1698,8 @@ input[name="tab_item"] {
   display: none;
 }
 
-/* ボタンエリアのレイアウト */
-.button {
+/* ボタンエリアのレイアウト（ラッパー div のみ。WP の a.button / button.button とクラス名が衝突するためリンク・本体ボタンは除外） */
+.button:not(a):not(button) {
   display: flex;
   flex-direction: row;
   justify-content: flex-end;
@@ -1785,6 +1811,72 @@ input[name="tab_item"] {
   padding: 0 10px;
   margin-bottom: 10px;
   border-radius: 0 0 4px 4px;
+}
+
+/* KantanProEX 移行案内：文言とボタンを同一行・縦中央（WP .button の上下マージンを打ち消し） */
+.ktp-ex-migrate-one-line {
+  display: flex !important;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+}
+
+.ktp-ex-migrate-one-line a {
+  text-decoration: none !important;
+}
+
+.ktp-ex-migrate-one-line > span {
+  margin: 0;
+  padding: 0;
+  line-height: 1.45;
+}
+
+.ktp_plugin_container .ktp-ex-migrate-one-line .button.button-primary,
+.ktpwp-notice .ktp-ex-migrate-one-line .button.button-primary {
+  flex-shrink: 0;
+  margin: 0 !important;
+  min-width: 170px;
+  min-height: 34px;
+  box-sizing: border-box;
+  padding: 8px 18px !important;
+  vertical-align: middle;
+  float: none !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+  border-radius: 999px !important;
+  box-shadow: none !important;
+  text-decoration: none !important;
+  font-size: 12px !important;
+  line-height: 1.25 !important;
+  background: #43a047 !important;
+  background-color: #43a047 !important;
+  border-color: #2e7d32 !important;
+  color: #fff !important;
+  text-shadow: none !important;
+}
+
+.ktp_plugin_container .ktp-ex-migrate-one-line .button.button-primary:hover,
+.ktp_plugin_container .ktp-ex-migrate-one-line .button.button-primary:focus,
+.ktpwp-notice .ktp-ex-migrate-one-line .button.button-primary:hover,
+.ktpwp-notice .ktp-ex-migrate-one-line .button.button-primary:focus {
+  background: #2e7d32 !important;
+  background-color: #2e7d32 !important;
+  border-color: #1b5e20 !important;
+  color: #fff !important;
+  text-decoration: none !important;
+}
+
+@media (max-width: 480px) {
+  .ktp-ex-migrate-one-line {
+    flex-wrap: wrap;
+    align-items: center;
+  }
 }
 
 /* レポートタブ本体（白カード）の上マージンは 0 */
@@ -2191,7 +2283,7 @@ div.ktp-report-print-area {
     padding: 12px;
   }
   
-  .button {
+  .button:not(a):not(button) {
     flex-wrap: wrap;
   }
 }

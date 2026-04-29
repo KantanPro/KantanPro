@@ -93,6 +93,21 @@ if ( ! class_exists( 'KTPWP_Ui_Generator' ) ) {
 		}
 
 		/**
+		 * 無料版レポート：通常タブと同様のタイトルバー（.controller.ktp-report-controller）に見出しのみ載せる。
+		 *
+		 * @since 1.0.0
+		 * @return string HTML
+		 */
+		public function generate_free_edition_report_title_bar() {
+			return '<div class="controller ktp-report-controller ktp-report-controller--free-notice">'
+				. '<div class="ktp-report-controller__main">'
+				. '<span class="ktp-report-free-edition-title">' . esc_html__( 'レポート機能は無料版では利用できません', 'ktpwp' ) . '</span>'
+				. '</div>'
+				. '<div class="ktp-report-controller__actions"></div>'
+				. '</div>';
+		}
+
+		/**
 		 * Generate workflow section
 		 *
 		 * @since 1.0.0

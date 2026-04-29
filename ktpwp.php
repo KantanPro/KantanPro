@@ -3563,7 +3563,33 @@ function ktpwp_ensure_shortcodes_registered() {
 }
 add_action( 'init', 'ktpwp_ensure_shortcodes_registered', 20 );
 
-function ktpwp_scripts_and_styles() {
+function ktpwp_scripts_and_styles( $hook = '' ) {
+    // 管理画面ではフロント用 JS/CSS・Google CDN の jQuery を読み込まない。
+    // コアの jQuery / メニュー用スクリプトを上書きすると、ダッシュボードなど左メニューのサブメニューが表示されなくなる。
+    // KantanPro 管理画面向けアセットは includes/class-ktpwp-assets.php の admin_enqueue_scripts で読み込む。
+    if ( is_admin() ) {
+        $current_screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+        $current_page   = isset( $_GET['page'] ) ? sanitize_text_field( wp_unslash( $_GET['page'] ) ) : '';
+        $current_action = isset( $_GET['action'] ) ? sanitize_text_field( wp_unslash( $_GET['action'] ) ) : '';
+
+        $is_site_health_page = (
+            ( $current_screen && (
+                $current_screen->id === 'tools_page_site-health' ||
+                $current_screen->id === 'site-health_page_site-health' ||
+                strpos( (string) $current_screen->id, 'site-health' ) !== false
+            ) ) ||
+            $current_page === 'site-health' ||
+            $current_action === 'site-health' ||
+            ( isset( $_SERVER['REQUEST_URI'] ) && strpos( (string) $_SERVER['REQUEST_URI'], 'site-health' ) !== false )
+        );
+
+        if ( $is_site_health_page ) {
+            wp_enqueue_style( 'ktpwp-site-health-reset', plugins_url( 'css/site-health-reset.css', __FILE__ ) . '?v=' . time(), array(), KANTANPRO_PLUGIN_VERSION, 'all' );
+        }
+
+        return;
+    }
+
     wp_enqueue_script( 'ktp-js', plugins_url( 'js/ktp-js.js', __FILE__ ) . '?v=' . time(), array( 'jquery' ), null, true );
 
     // デバッグモードの設定（WP_DEBUGまたは開発環境でのみ有効）
@@ -3576,53 +3602,15 @@ function ktpwp_scripts_and_styles() {
     wp_add_inline_script( 'ktp-js', 'var ktpwpStaffChatShowLabel = ' . json_encode( '表示' ) . ';' );
     wp_add_inline_script( 'ktp-js', 'var ktpwpStaffChatHideLabel = ' . json_encode( '非表示' ) . ';' );
 
-    // サイトヘルスページでのスタイル競合を防ぐため、条件分岐を追加
-    $is_site_health_page = false;
-
-    // 管理画面でのみチェック
-    if ( is_admin() ) {
-        // より確実なサイトヘルスページ検出
-        $current_screen = get_current_screen();
-        $current_page = isset( $_GET['page'] ) ? $_GET['page'] : '';
-        $current_action = isset( $_GET['action'] ) ? $_GET['action'] : '';
-
-        $is_site_health_page = (
-            ( $current_screen && (
-                $current_screen->id === 'tools_page_site-health' ||
-                $current_screen->id === 'site-health_page_site-health' ||
-                strpos( $current_screen->id, 'site-health' ) !== false
-            ) ) ||
-            $current_page === 'site-health' ||
-            $current_action === 'site-health' ||
-            ( isset( $_SERVER['REQUEST_URI'] ) && strpos( $_SERVER['REQUEST_URI'], 'site-health' ) !== false )
-        );
-
-        // デバッグ用（必要に応じてコメントアウト）
-        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log(
-                'KTPWP Site Health Check: ' . ( $is_site_health_page ? 'true' : 'false' ) .
-                     ' | Screen: ' . ( $current_screen ? $current_screen->id : 'none' ) .
-                     ' | Page: ' . $current_page .
-                ' | URI: ' . ( $_SERVER['REQUEST_URI'] ?? 'none' )
-            );
-        }
-    }
-
-    // サイトヘルスページでの処理
-    if ( $is_site_health_page ) {
-        // サイトヘルスページでは専用のリセットCSSのみ読み込み
-        wp_enqueue_style( 'ktpwp-site-health-reset', plugins_url( 'css/site-health-reset.css', __FILE__ ) . '?v=' . time(), array(), KANTANPRO_PLUGIN_VERSION, 'all' );
-    } else {
-        // サイトヘルスページ以外では通常のスタイルを読み込み
-        wp_register_style( 'ktp-css', plugins_url( 'css/styles.css', __FILE__ ) . '?v=' . time(), array(), KANTANPRO_PLUGIN_VERSION, 'all' );
-        wp_enqueue_style( 'ktp-css' );
-        // 進捗プルダウン用のスタイルシートを追加
-        wp_enqueue_style( 'ktp-progress-select', plugins_url( 'css/progress-select.css', __FILE__ ) . '?v=' . time(), array( 'ktp-css' ), KANTANPRO_PLUGIN_VERSION, 'all' );
-        // 設定タブ用のスタイルシートを追加
-        wp_enqueue_style( 'ktp-setting-tab', plugins_url( 'css/ktp-setting-tab.css', __FILE__ ) . '?v=' . time(), array( 'ktp-css' ), KANTANPRO_PLUGIN_VERSION, 'all' );
-        // レポートタブ用のスタイルシートを追加
-        wp_enqueue_style( 'ktp-report', plugins_url( 'css/ktp-report.css', __FILE__ ) . '?v=' . time(), array( 'ktp-css' ), KANTANPRO_PLUGIN_VERSION, 'all' );
-    }
+    // スタイルを読み込み（フロントエンドのみ）
+    wp_register_style( 'ktp-css', plugins_url( 'css/styles.css', __FILE__ ) . '?v=' . time(), array(), KANTANPRO_PLUGIN_VERSION, 'all' );
+    wp_enqueue_style( 'ktp-css' );
+    // 進捗プルダウン用のスタイルシートを追加
+    wp_enqueue_style( 'ktp-progress-select', plugins_url( 'css/progress-select.css', __FILE__ ) . '?v=' . time(), array( 'ktp-css' ), KANTANPRO_PLUGIN_VERSION, 'all' );
+    // 設定タブ用のスタイルシートを追加
+    wp_enqueue_style( 'ktp-setting-tab', plugins_url( 'css/ktp-setting-tab.css', __FILE__ ) . '?v=' . time(), array( 'ktp-css' ), KANTANPRO_PLUGIN_VERSION, 'all' );
+    // レポートタブ用のスタイルシートを追加
+    wp_enqueue_style( 'ktp-report', plugins_url( 'css/ktp-report.css', __FILE__ ) . '?v=' . time(), array( 'ktp-css' ), KANTANPRO_PLUGIN_VERSION, 'all' );
 
     // Material Symbolsを無効化し、SVGアイコンに置き換え
     // wp_enqueue_style( 'ktpwp-material-icons', 'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0', array(), null );
@@ -4172,10 +4160,16 @@ function KTPWP_Index() {
                     $supplier_content = $supplier->View_Table( $tab_name );
                     break;
                 case 'report':
-                    $report_content = '<div class="ktpwp-notice" style="padding:20px;background:#fff7e6;border:1px solid #ffd591;border-radius:6px;color:#8a6d3b;">'
-                        . '<h3 style="margin:0 0 8px 0;">' . esc_html__( 'レポート機能は無料版では利用できません', 'ktpwp' ) . '</h3>'
-                        . '<p style="margin:0 0 10px 0;">' . esc_html__( 'KantanProEX（有料版）へ移行してご利用ください。', 'ktpwp' ) . '</p>'
-                        . '<p style="margin:0;"><a class="button button-primary" href="https://www.kantanpro.com/product/kantanpro-ex" target="_blank" rel="noopener noreferrer">' . esc_html__( 'KantanProEX 商品ページ', 'ktpwp' ) . '</a></p>'
+                    if ( ! class_exists( 'KTPWP_Ui_Generator' ) ) {
+                        require_once KANTANPRO_PLUGIN_DIR . 'includes/class-ktpwp-ui-generator.php';
+                    }
+                    $ktpwp_report_ui_title = new KTPWP_Ui_Generator();
+                    $report_content        = $ktpwp_report_ui_title->generate_free_edition_report_title_bar();
+                    $report_content       .= '<div class="ktpwp-notice ktp-report-free-ex-notice" style="background:#fff7e6;border:1px solid #ffd591;border-radius:6px;color:#8a6d3b;">'
+                        . '<div class="ktp-ex-migrate-one-line">'
+                        . '<span>' . esc_html__( 'KantanProEX（有料版）へ移行してご利用ください。', 'ktpwp' ) . '</span>'
+                        . '<a class="button button-primary" href="https://www.kantanpro.com/product/kantanpro-ex" target="_blank" rel="noopener noreferrer">' . esc_html__( 'KantanProEX 商品ページ', 'ktpwp' ) . '</a>'
+                        . '</div>'
                         . '</div>';
                     break;
                 default:

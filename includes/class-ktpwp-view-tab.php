@@ -32,6 +32,8 @@ class KTPWP_View_Tabs_Class {
             $position = 'list';
         }
 
+        $lock_icon = '<span class="ktp-lock-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M17 9h-1V7a4 4 0 0 0-8 0v2H7a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2Zm-7-2a2 2 0 1 1 4 0v2h-4V7Zm3 9.73V18h-2v-1.27a2 2 0 1 1 2 0Z"/></svg></span>';
+
         // タブの内容を配列で定義
         $tabs = array(
 			'list' => '仕事リスト',
@@ -39,7 +41,7 @@ class KTPWP_View_Tabs_Class {
 			'client' => '顧客',
 			'service' => 'サービス',
 			'supplier' => '協力会社',
-			'report' => 'レポート',
+			'report' => $lock_icon . 'レポート',
         );
 
         // タブの内容を作成（プラグインコンテナクラスを追加してテーマとの競合を防止）
