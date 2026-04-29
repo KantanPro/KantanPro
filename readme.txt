@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.2.61
+Stable tag: 1.2.62
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -324,6 +324,10 @@ curl -sS -X POST \
 * 推奨PHP拡張: GD（画像処理用）
 
 == 変更履歴 ==
+
+= 1.2.62 - 2026年04月30日 =
+* WooCommerce 連携で請求先氏名を姓・名から整形して取得するよう改善
+* WooCommerce の郵便番号から数字以外を除去し、7桁の郵便番号を `123-4567` 形式へ補正する処理を追加
 
 = 1.2.61 - 2026年04月29日 =
 * 無料版のレポートタブを KantanProEX への案内表示として整理し、タイトルバー内に利用不可メッセージを表示するよう改善
