@@ -186,6 +186,27 @@ class KTPWP_Update_Checker {
 
         return $this->plugin_basename;
     }
+
+    /**
+     * 実在するプラグインベースネームへ解決する
+     *
+     * @param string $basename 候補ベースネーム
+     * @return string
+     */
+    private function resolve_installed_basename( $basename ) {
+        if ( ! function_exists( 'get_plugins' ) ) {
+            require_once ABSPATH . 'wp-admin/includes/plugin.php';
+        }
+
+        $installed_plugins = get_plugins();
+        foreach ( array_keys( $installed_plugins ) as $installed_basename ) {
+            if ( $this->is_target_plugin_basename( $installed_basename ) ) {
+                return (string) $installed_basename;
+            }
+        }
+
+        return (string) $basename;
+    }
     
     /**
      * 初期化
@@ -1548,7 +1569,7 @@ class KTPWP_Update_Checker {
             return;
         }
 
-        $target_basename = $this->resolve_target_basename( $options );
+        $target_basename = $this->resolve_installed_basename( $this->resolve_target_basename( $options ) );
         if ( ! $this->is_target_plugin_basename( $target_basename ) ) {
             return;
         }
