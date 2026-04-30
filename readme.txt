@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.2.72
+Stable tag: 1.2.73
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -322,6 +322,9 @@ curl -sS -X POST \
 * MySQL 5.6 以上 または MariaDB 10.0 以上
 * 推奨メモリ: 256MB 以上
 * 推奨PHP拡張: GD（画像処理用）
+
+= 1.2.73 - 2026年05月01日 =
+* 無料版の起動判定を見直し、EX誤判定でショートコード登録前に停止する問題を修正
 
 = 1.2.72 - 2026年05月01日 =
 * 更新直後の有効化が失敗した場合に次回管理画面で再試行するフェイルセーフを追加

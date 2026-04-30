@@ -3,7 +3,7 @@
  * Plugin Name: KantanPro
  * Plugin URI: https://www.kantanpro.com/
  * Description: スモールビジネスのための販売支援ツール。ショートコード[ktpwp_all_tab]を固定ページに設置してください。
- * Version: 1.2.72
+ * Version: 1.2.73
  * Author: KantanPro
  * Author URI: https://www.kantanpro.com/kantanpro-page
  * License: GPL v2 or later
@@ -132,6 +132,59 @@ if ( ! function_exists( 'ktpwp_is_plugin_active_by_basename' ) ) {
     }
 }
 
+if ( ! function_exists( 'ktpwp_normalize_plugin_basename' ) ) {
+    /**
+     * プラグインベースネームを比較用に正規化する。
+     *
+     * @param string $plugin_basename プラグインベース名。
+     * @return string
+     */
+    function ktpwp_normalize_plugin_basename( $plugin_basename ) {
+        if ( ! is_string( $plugin_basename ) || $plugin_basename === '' ) {
+            return '';
+        }
+
+        $file = strtolower( basename( $plugin_basename ) );
+        $dir  = strtolower( dirname( $plugin_basename ) );
+        $dir  = str_replace( array( '-', '_', '.', '/' ), '', $dir );
+
+        return $dir . '/' . $file;
+    }
+}
+
+if ( ! function_exists( 'ktpwp_is_pro_edition_active' ) ) {
+    /**
+     * 有料版（KantanProEX）が有効化されているかを判定する。
+     *
+     * @return bool
+     */
+    function ktpwp_is_pro_edition_active() {
+        $normalized_target = ktpwp_normalize_plugin_basename( 'KantanProEX/ktpwp.php' );
+
+        $active_plugins = (array) get_option( 'active_plugins', array() );
+        foreach ( $active_plugins as $active_plugin ) {
+            if ( ktpwp_normalize_plugin_basename( $active_plugin ) === $normalized_target ) {
+                return true;
+            }
+        }
+
+        if ( is_multisite() ) {
+            $network_active_plugins = (array) get_site_option( 'active_sitewide_plugins', array() );
+            foreach ( array_keys( $network_active_plugins ) as $network_plugin ) {
+                if ( ktpwp_normalize_plugin_basename( $network_plugin ) === $normalized_target ) {
+                    return true;
+                }
+            }
+        }
+
+        if ( defined( 'KTPWP_EDITION' ) && KTPWP_EDITION === 'pro' ) {
+            return true;
+        }
+
+        return false;
+    }
+}
+
 if ( ! function_exists( 'ktpwp_should_bootstrap_free_edition' ) ) {
     /**
      * 無料版を起動してよいかを判定。
@@ -139,7 +192,7 @@ if ( ! function_exists( 'ktpwp_should_bootstrap_free_edition' ) ) {
      * @return bool
      */
     function ktpwp_should_bootstrap_free_edition() {
-        $is_pro_active  = ktpwp_is_plugin_active_by_basename( 'KantanProEX/ktpwp.php' );
+        $is_pro_active  = ktpwp_is_pro_edition_active();
 
         // 有料版が有効な間は、保存済みエディション値に関係なく無料版を停止モードにする。
         if ( $is_pro_active ) {
@@ -147,6 +200,8 @@ if ( ! function_exists( 'ktpwp_should_bootstrap_free_edition' ) ) {
             return false;
         }
 
+        // 有料版が有効でない場合は、無料版を明示してブート処理を継続する。
+        update_option( 'ktp_active_edition', 'free', false );
         return true;
     }
 }
