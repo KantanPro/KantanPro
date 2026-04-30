@@ -3,7 +3,7 @@
  * Plugin Name: KantanPro
  * Plugin URI: https://www.kantanpro.com/
  * Description: スモールビジネスのための販売支援ツール。ショートコード[ktpwp_all_tab]を固定ページに設置してください。
- * Version: 1.2.65
+ * Version: 1.2.66
  * Author: KantanPro
  * Author URI: https://www.kantanpro.com/kantanpro-page
  * License: GPL v2 or later
@@ -139,11 +139,15 @@ if ( ! function_exists( 'ktpwp_should_bootstrap_free_edition' ) ) {
      * @return bool
      */
     function ktpwp_should_bootstrap_free_edition() {
-        $active_edition = (string) get_option( 'ktp_active_edition', 'free' );
         $is_pro_active  = ktpwp_is_plugin_active_by_basename( 'KantanProEX/ktpwp.php' );
 
-        // 有料版が有効な間は無料版を停止モードにする。
-        return ! ( 'pro' === $active_edition && $is_pro_active );
+        // 有料版が有効な間は、保存済みエディション値に関係なく無料版を停止モードにする。
+        if ( $is_pro_active ) {
+            update_option( 'ktp_active_edition', 'pro', false );
+            return false;
+        }
+
+        return true;
     }
 }
 
@@ -159,7 +163,7 @@ if ( ! function_exists( 'ktpwp_render_free_edition_suspended_notice' ) ) {
         }
 
         echo '<div class="notice notice-info"><p>';
-        echo esc_html__( 'KantanPro 無料版は、有料版（KantanProEX）が有効化されているため停止中です。ショートコードはそのまま有料版へ引き継がれています。', 'ktpwp' );
+        echo esc_html__( 'KantanPro 無料版は、有料版（KantanProEX）が有効化されているため停止中です。設定メニューと機能はKantanProEX側で表示され、ショートコードはそのまま有料版へ引き継がれています。', 'ktpwp' );
         echo '</p></div>';
     }
 }
