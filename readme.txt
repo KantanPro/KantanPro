@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.2.69
+Stable tag: 1.2.70
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -324,6 +324,9 @@ curl -sS -X POST \
 * 推奨PHP拡張: GD（画像処理用）
 
 == 変更履歴 ==
+
+= 1.2.70 - 2026年05月01日 =
+* 更新後の再有効化判定をベースネーム正規化で行うようにし、無効化のまま残る問題を修正
 
 = 1.2.69 - 2026年05月01日 =
 * 更新結果画面で案内フラグを先に消費しないようにし、「更新しました。」で停止する問題を修正

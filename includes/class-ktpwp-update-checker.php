@@ -136,6 +136,56 @@ class KTPWP_Update_Checker {
     private function key( $suffix ) {
         return 'ktpwp_upd_' . md5( $this->plugin_basename ) . '_' . $suffix;
     }
+
+    /**
+     * プラグインベースネームを比較用に正規化する
+     *
+     * @param string $basename ベースネーム
+     * @return string
+     */
+    private function normalize_basename( $basename ) {
+        $file = strtolower( basename( $basename ) );
+        $dir  = strtolower( dirname( $basename ) );
+        $dir  = str_replace( array( '-', '_', '.', '/' ), '', $dir );
+
+        return $dir . '/' . $file;
+    }
+
+    /**
+     * 指定ベースネームがこの更新対象プラグインか判定する
+     *
+     * @param string $basename ベースネーム
+     * @return bool
+     */
+    private function is_target_plugin_basename( $basename ) {
+        if ( ! is_string( $basename ) || $basename === '' ) {
+            return false;
+        }
+
+        return $this->normalize_basename( $this->plugin_basename ) === $this->normalize_basename( $basename );
+    }
+
+    /**
+     * 更新フック引数から対象プラグインのベースネームを解決する
+     *
+     * @param array $hook_extra フック情報
+     * @return string
+     */
+    private function resolve_target_basename( $hook_extra ) {
+        if ( isset( $hook_extra['plugin'] ) && $this->is_target_plugin_basename( $hook_extra['plugin'] ) ) {
+            return (string) $hook_extra['plugin'];
+        }
+
+        if ( ! empty( $hook_extra['plugins'] ) && is_array( $hook_extra['plugins'] ) ) {
+            foreach ( $hook_extra['plugins'] as $plugin_basename ) {
+                if ( $this->is_target_plugin_basename( $plugin_basename ) ) {
+                    return (string) $plugin_basename;
+                }
+            }
+        }
+
+        return $this->plugin_basename;
+    }
     
     /**
      * 初期化
@@ -1498,8 +1548,17 @@ class KTPWP_Update_Checker {
             return;
         }
 
-        if ( empty( $options['plugins'] ) || ! in_array( $this->plugin_basename, (array) $options['plugins'], true ) ) {
+        $target_basename = $this->resolve_target_basename( $options );
+        if ( ! $this->is_target_plugin_basename( $target_basename ) ) {
             return;
+        }
+
+        if ( ! function_exists( 'is_plugin_active' ) ) {
+            require_once ABSPATH . 'wp-admin/includes/plugin.php';
+        }
+
+        if ( ! is_plugin_active( $target_basename ) ) {
+            activate_plugin( $target_basename );
         }
 
         set_transient( $this->key( 'admin_reload' ), 1, 5 * MINUTE_IN_SECONDS );
