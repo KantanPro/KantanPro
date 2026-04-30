@@ -21,7 +21,7 @@ if ( file_exists( __DIR__ . '/development-config.php' ) ) {
 
 // Check if user has admin privileges
 if ( ! current_user_can( 'manage_options' ) ) {
-    wp_die( 'このスクリプトを実行する権限がありません。' );
+    wp_die( __( 'このスクリプトを実行する権限がありません。', 'ktpwp' ) );
 }
 
 echo '<h1>ライセンス状態リセットテスト</h1>';

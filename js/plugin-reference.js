@@ -193,7 +193,7 @@
             var $btn = $('.ktpwp-clear-cache-btn');
             var originalText = $btn.text();
 
-            $btn.text('クリア中...').prop('disabled', true);
+            $btn.text(ktpwpTranslate('クリア中...')).prop('disabled', true);
 
             $.ajax({
                 url: ktpwp_reference.ajax_url,

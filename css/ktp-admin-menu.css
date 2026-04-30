@@ -1,0 +1,52 @@
+/* KantanPro admin menu icons. Loaded on every admin screen. */
+#adminmenu .wp-submenu a[href*="ktp-settings"]::before,
+#adminmenu .wp-submenu a[href*="ktp-mail-settings"]::before,
+#adminmenu .wp-submenu a[href*="ktp-design-settings"]::before,
+#adminmenu .wp-submenu a[href*="ktp-staff"]::before,
+#adminmenu .wp-submenu a[href*="ktp-license"]::before,
+#adminmenu .wp-submenu a[href*="ktpwp-dummy-data"]::before,
+#adminmenu .wp-submenu a[href*="ktp-data-tools"]::before,
+#adminmenu .wp-submenu a[href*="ktp-developer-settings"]::before {
+    font-family: dashicons;
+    margin-right: 5px;
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+#adminmenu .wp-submenu a[href*="ktp-settings"]::before {
+    content: "\f469";
+}
+
+#adminmenu .wp-submenu a[href*="ktp-mail-settings"]::before {
+    content: "\f465";
+}
+
+#adminmenu .wp-submenu a[href*="ktp-design-settings"]::before {
+    content: "\f540";
+}
+
+#adminmenu .wp-submenu a[href*="ktp-staff"]::before {
+    content: "\f110";
+}
+
+#adminmenu .wp-submenu a[href*="ktp-license"]::before {
+    content: "\f160";
+}
+
+#adminmenu .wp-submenu a[href*="ktpwp-dummy-data"]::before {
+    content: "\f161";
+}
+
+#adminmenu .wp-submenu a[href*="ktp-data-tools"]::before {
+    content: "\f155";
+    color: #ffd700;
+    text-shadow: 0 0 3px rgba(255, 215, 0, 0.6);
+    transform: scale(1.1);
+}
+
+#adminmenu .wp-submenu a[href*="ktp-developer-settings"]::before {
+    content: "\f107";
+}

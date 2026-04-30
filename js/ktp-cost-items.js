@@ -369,7 +369,7 @@
         // 念のため残し、警告ログを出す。
         const productNameValue = (typeof rawProductName === 'string') ? rawProductName.trim() : '';
         if (productNameValue === '') {
-            // alert('品名を入力してください。(addNewRow)'); // クリックハンドラでアラートを出すので、ここでは不要
+            // alert(ktpwpTranslate('品名を入力してください。(addNewRow)')); // クリックハンドラでアラートを出すので、ここでは不要
             if (window.ktpDebugMode) {
                 console.warn(`[COST][${callId}] addNewRow: 品名が空の状態で呼び出されましたが、処理を続行します（本来はクリックハンドラでブロックされるべきです）。`);
             }
@@ -469,11 +469,11 @@
 
         // 最後の1行は削除しない
         if (tbody.find('tr').length <= 1) {
-            alert('最低1行は必要です。');
+            alert(ktpwpTranslate('最低1行は必要です。'));
             return;
         }
 
-        if (confirm('この行を削除しますか？')) {
+        if (confirm(ktpwpTranslate('この行を削除しますか？'))) {
             const itemId = currentRow.find('input[name*="[id]"]').val();
             const orderId = $('input[name="order_id"]').val() || $('#order_id').val();
             if (window.ktpDebugMode) {
@@ -531,7 +531,7 @@
                             if (window.ktpDebugMode) {
                                 console.error('[COST] deleteRowレスポンスパースエラー', e, response);
                             }
-                            alert('行削除の応答処理中にエラーが発生しました。\n詳細: ' + (typeof response === 'string' ? response : JSON.stringify(response)));
+                            alert(ktpwpTranslate('行削除の応答処理中にエラーが発生しました。\n詳細: ') + (typeof response === 'string' ? response : JSON.stringify(response)));
                         }
                     },
                     error: function (xhr, status, error) {
@@ -550,7 +550,7 @@
                             }
                         }
                         errorDetail += '\nステータス: ' + xhr.status + ' ' + error;
-                        alert('行の削除中にサーバーエラーが発生しました。\n' + errorDetail);
+                        alert(ktpwpTranslate('行の削除中にサーバーエラーが発生しました。\n') + errorDetail);
                     }
                 });
             } else if (itemId === '0') {
@@ -877,7 +877,7 @@
         // ボタンのテキストを変更して処理中であることを明示
         const originalUpdateText = $btn.text();
         $btn.data('original-text', originalUpdateText);
-        $btn.text('処理中...');
+        $btn.text(ktpwpTranslate('処理中...'));
         
         console.log('[COST] 更新ボタンクリック');
         
@@ -914,7 +914,7 @@
                 hasCurrentRow: !!window.ktpCurrentRow,
                 targetRowExists: $targetRow && $targetRow.length > 0
             });
-            alert('更新対象の行またはサービスデータが見つかりません。');
+            alert(ktpwpTranslate('更新対象の行またはサービスデータが見つかりません。'));
             // エラー時にフラグを解除
             $btn.data('processing', false);
             $btn.prop('disabled', false);
@@ -1069,7 +1069,7 @@
         // ボタンのテキストを変更して処理中であることを明示
         const originalAddText = $btn.text();
         $btn.data('original-text', originalAddText);
-        $btn.text('処理中...');
+        $btn.text(ktpwpTranslate('処理中...'));
         
         console.log('[COST] 追加ボタンクリック');
         
@@ -1092,7 +1092,7 @@
         
         if (!serviceData) {
             console.error('[COST] 追加するサービスデータが見つかりません');
-            alert('追加するサービスデータが見つかりません。');
+            alert(ktpwpTranslate('追加するサービスデータが見つかりません。'));
             // エラー時にフラグを解除
             $btn.data('processing', false);
             $btn.prop('disabled', false);
@@ -1118,7 +1118,7 @@
         
         if (!rowAdded) {
             console.error('[COST] 新規行の追加に失敗しました');
-            alert('新規行の追加に失敗しました。');
+            alert(ktpwpTranslate('新規行の追加に失敗しました。'));
             // 新規行追加失敗時にフラグを解除
             $btn.data('processing', false);
             $btn.prop('disabled', false);
@@ -1229,7 +1229,7 @@
                     console.log('[COST] DB新規作成完了');
                 } else {
                     console.error('[COST] 新規コスト項目のDB作成に失敗しました');
-                    alert('新規コスト項目のDB作成に失敗しました。');
+                    alert(ktpwpTranslate('新規コスト項目のDB作成に失敗しました。'));
                 }
                 
                 // 処理完了後、フラグを解除してボタンを再有効化
@@ -1358,7 +1358,7 @@
                 
                 if (hasInvalid) {
                     console.error('[COST] 並び替えエラー: 無効なアイテムが検出されました', invalidItems);
-                    alert('一部のコスト項目IDが不正です。\n\n無効なアイテム:\n' + 
+                    alert(ktpwpTranslate('一部のコスト項目IDが不正です。\n\n無効なアイテム:\n') + 
                           invalidItems.map(item => 
                             `行${item.index + 1}: "${item.productName}" (ID: ${item.itemId}) - ${item.reason}`
                           ).join('\n') + 
@@ -1402,11 +1402,11 @@
                                     console.warn('[COST] 並び順の保存に失敗しました。', result);
                                     const errorMessage = result.data && result.data.message ? 
                                         result.data.message : 'サーバーエラー';
-                                    alert('並び順の保存に失敗しました。\n\nエラー: ' + errorMessage);
+                                    alert(ktpwpTranslate('並び順の保存に失敗しました。\n\nエラー: ') + errorMessage);
                                 }
                             } catch (e) {
                                 console.error('[COST] updateItemOrderレスポンスパースエラー', e, response);
-                                alert('並び順保存の応答処理中にエラーが発生しました。\n\n詳細: ' + e.message);
+                                alert(ktpwpTranslate('並び順保存の応答処理中にエラーが発生しました。\n\n詳細: ') + e.message);
                             }
                         },
                         error: function (xhr, status, error) {
@@ -1587,7 +1587,7 @@
             }
             const productNameValueCH = (typeof rawProductNameCH === 'string') ? rawProductNameCH.trim() : '';
             if (productNameValueCH === '') {
-                alert('品名を入力してください。'); // クリックハンドラからのアラート
+                alert(ktpwpTranslate('品名を入力してください。')); // クリックハンドラからのアラート
                 console.log(`[COST][${clickId}] クリックハンドラ: 品名未入力。 addNewRow を呼び出さずに処理を中断します。これがこのハンドラの最後のログになるはずです。`);
                 return false; // addNewRowを呼び出す前に中断
             }
@@ -1664,7 +1664,7 @@
                 }
             } else {
                 console.error('[COST-ITEMS] ktpShowSupplierSelector関数が見つかりません');
-                alert('協力会社選択機能の読み込みに失敗しました。ページを再読み込みしてください。');
+                alert(ktpwpTranslate('協力会社選択機能の読み込みに失敗しました。ページを再読み込みしてください。'));
             }
         });
 
@@ -2015,7 +2015,7 @@
             window.ktpShowPurchaseOrderEmailPopup(orderId, supplierName, supplierId);
         } else {
             console.error('[PURCHASE-EMAIL] ktpShowPurchaseOrderEmailPopup関数が見つかりません');
-            alert('発注メール機能の読み込みに失敗しました。ページを再読み込みしてください。');
+            alert(ktpwpTranslate('発注メール機能の読み込みに失敗しました。ページを再読み込みしてください。'));
         }
         // ここでこのクリックハンドラの処理は終了
                     return;
@@ -2191,23 +2191,23 @@
             
             if (hasOuttax) {
                 // 外税行が1つでもあれば外税3行表示
-                costTotalDisplay.html('金額合計 : ' + costTotalCeiled.toLocaleString() + '円');
+                costTotalDisplay.html(ktpwpTranslate('金額合計') + ' : ' + ktpwpFormatMoney(costTotalCeiled));
                 costTotalDisplay.show();
                 
                 const costTaxDisplay = $('.cost-items-tax');
                 if (costTaxDisplay.length > 0) {
-                    costTaxDisplay.html('消費税 : ' + costTotalTaxAmountCeiled.toLocaleString() + '円');
+                    costTaxDisplay.html(ktpwpTranslate('消費税') + ' : ' + ktpwpFormatMoney(costTotalTaxAmountCeiled));
                     costTaxDisplay.show();
                 }
 
                 const costTotalWithTaxDisplay = $('.cost-items-total-with-tax');
                 if (costTotalWithTaxDisplay.length > 0) {
-                    costTotalWithTaxDisplay.html('税込合計 : ' + costTotalWithTax.toLocaleString() + '円');
+                    costTotalWithTaxDisplay.html(ktpwpTranslate('税込合計') + ' : ' + ktpwpFormatMoney(costTotalWithTax));
                     costTotalWithTaxDisplay.show();
                 }
             } else {
                 // 全て内税なら内税1行表示
-                costTotalDisplay.html('金額合計：' + costTotalCeiled.toLocaleString() + '円　（内税：' + costTotalTaxAmountCeiled.toLocaleString() + '円）');
+                costTotalDisplay.html(ktpwpTranslate('金額合計') + ' : ' + ktpwpFormatMoney(costTotalCeiled) + ' (' + ktpwpTranslate('内税') + ' : ' + ktpwpFormatMoney(costTotalTaxAmountCeiled) + ')');
                 costTotalDisplay.show();
                 
                 $('.cost-items-tax, .cost-items-total-with-tax').hide();

@@ -1,0 +1,4745 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: KantanPro 1.0\n"
+"Report-Msgid-Bugs-To: https://www.kantanpro.com/\n"
+"POT-Creation-Date: 2026-04-30 15:57+0900\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Domain: ktpwp\n"
+
+#: includes/class-ktpwp-service-db.php:383
+#: includes/class-ktpwp-service-db.php:391
+msgid " (複製)"
+msgstr ""
+
+#: includes/class-ktpwp-terms-of-service.php:895
+msgid "%1$s %2$s Terms of Service"
+msgstr ""
+
+#: includes/class-ktpwp-woocommerce-integration.php:781
+msgid "%d 件の注文を KantanPro に同期しました。"
+msgstr ""
+
+#: includes/class-ktpwp-update-checker.php:252
+msgid "%s の詳細を表示"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:2340
+msgid "%s は無料版では利用できません。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:2342
+msgid "%s へ移行してご利用ください。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:894
+msgid "Backup Feature"
+msgstr ""
+
+#: js/ktp-supplier-selector.js:779
+msgid "DB保存に失敗しました。\nエラー: "
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:303
+#: includes/class-ktpwp-ajax.php:340
+msgid "DB更新に失敗しました: "
+msgstr ""
+
+#: includes/class-ktpwp-supplier-data.php:405
+msgid "Database table does not exist. Please contact the administrator."
+msgstr ""
+
+#: includes/class-ktpwp-payment-timing.php:76
+msgid "EC受注"
+msgstr ""
+
+#: includes/class-ktpwp-service-db.php:67
+#: includes/class-ktpwp-service-ui.php:377
+#: includes/class-ktpwp-supplier-data.php:60
+msgid "General"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:2862
+msgid "GitHub Personal Access Token"
+msgstr ""
+
+#: includes/class-ktpwp-client-ui.php:163
+#: includes/class-ktpwp-client.php:57
+#: includes/class-ktpwp-service-main.php:368
+#: includes/class-ktpwp-service-main.php:457
+#: includes/class-ktpwp-service-ui.php:448
+msgid "ID"
+msgstr ""
+
+#: ktpwp.php:4315
+msgid "Invalid order_id"
+msgstr ""
+
+#: includes/class-ktpwp-service-db.php:359
+msgid "Invalid request method."
+msgstr ""
+
+#: includes/class-ktpwp-service-ui.php:389
+msgid "JPEGまたはPNG形式の画像をアップロードできます。"
+msgstr ""
+
+#: js/ktp-js.js:593
+#: js/ktp-js.js:715
+msgid "JSON解析エラー: "
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:5190
+msgid "KTP Banner プラグインで画像を設定している場合はそちらが優先されます。未使用のときは REST 配信にこの URL が使われます。"
+msgstr ""
+
+#: ktpwp.php:3549
+msgid "KTPWP Critical Error: includes/class-ktpwp-settings.php not found."
+msgstr ""
+
+#: includes/class-ktpwp-woocommerce-integration.php:788
+msgid "KantanPro を一度無効化して再有効化し、受注テーブルを作成・更新してから再度お試しください。"
+msgstr ""
+
+#: ktpwp.php:4434
+msgid "KantanPro を削除します。\n\n現在の設定: 【データを残す】\n→ 顧客・サービス・協力会社・受注書などのデータはデータベースに残ります。\n  後で再インストールすれば、以前のデータを引き続き利用できます。\n\n設定を変更するには、いったんキャンセルして「KantanPro 設定 → 一般設定」から\n「プラグイン削除時のデータ保持設定」を変更してください。\n\nこのまま削除してよろしいですか？"
+msgstr ""
+
+#: ktpwp.php:162
+msgid "KantanPro 無料版は、有料版（KantanProEX）が有効化されているため停止中です。ショートコードはそのまま有料版へ引き継がれています。"
+msgstr ""
+
+#: includes/class-ktpwp-woocommerce-integration.php:708
+#: includes/class-ktpwp-woocommerce-integration.php:709
+#: includes/class-ktpwp-woocommerce-integration.php:737
+msgid "KantanPro 連携"
+msgstr ""
+
+#: includes/class-ktpwp-order-main.php:360
+#: includes/class-ktpwp-settings.php:2343
+#: includes/class-ktpwp-shortcodes.php:862
+#: ktpwp.php:4176
+msgid "KantanProEX 商品ページ"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:2335
+msgid "KantanProEX（有料版）"
+msgstr ""
+
+#: includes/class-ktpwp-order-main.php:359
+#: includes/class-ktpwp-shortcodes.php:861
+#: ktpwp.php:4175
+msgid "KantanProEX（有料版）へ移行してご利用ください。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:4912
+msgid "KantanProが表示されているページで更新通知を表示します。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1712
+msgid "KantanProが設置されているページにアクセス"
+msgstr ""
+
+#: includes/class-ktpwp-login-error.php:32
+msgid "KantanProを利用するにはログインしてください。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1592
+msgid "KantanPro管理権限を持つユーザー向けにフロントエンドで表示される寄付通知のメッセージ"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1711
+msgid "KantanPro管理権限を持つログインユーザーのみ"
+msgstr ""
+
+#: includes/class-ktpwp-terms-of-service.php:285
+msgid "Markdown形式で記述できます。"
+msgstr ""
+
+#: includes/class-ktpwp-service-db.php:219
+#: includes/class-ktpwp-service-db.php:307
+#: includes/class-ktpwp-service-db.php:364
+#: includes/class-ktpwp-service-db.php:434
+msgid "Nonce verification failed."
+msgstr ""
+
+#: includes/ajax-sales-ledger-pdf.php:64
+msgid "PDF生成中にエラーが発生しました: "
+msgstr ""
+
+#: includes/class-ktpwp-security.php:59
+msgid "REST APIはログインユーザーのみ利用可能です。"
+msgstr ""
+
+#: includes/class-ktpwp-supplier-data.php:58
+msgid "Regular Supplier"
+msgstr ""
+
+#: includes/class-ktpwp-graph-renderer.php:31
+#: includes/class-ktpwp-tab-report.php:98
+msgid "Report Graph"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:3201
+msgid "SMTPサーバーを使用したメール送信の設定を行います。SMTPを利用しない場合は空欄のままにしてください。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:3005
+msgid "SMTPパスワード"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:2978
+msgid "SMTPホスト"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:2987
+msgid "SMTPポート"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:2996
+msgid "SMTPユーザー"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:2945
+msgid "SMTP設定"
+msgstr ""
+
+#: includes/class-ktpwp-service-db.php:108
+msgid "Security check failed."
+msgstr ""
+
+#: includes/class-ktpwp-order-main.php:1016
+#: includes/class-ktpwp-order-main.php:1048
+#: includes/class-ktpwp-order-main.php:1123
+#: includes/class-ktpwp-order-main.php:1207
+#: includes/class-ktpwp-order-main.php:499
+msgid "Security check failed. Please refresh the page and try again."
+msgstr ""
+
+#: includes/class-ktpwp-supplier-data.php:59
+msgid "Tax Included"
+msgstr ""
+
+#: includes/class-ktpwp-client.php:1112
+#: includes/class-ktpwp-order-main.php:1858
+#: includes/class-ktpwp-payment-timing.php:73
+msgid "WC受注"
+msgstr ""
+
+#: js/ktpwp-image-optimizer.js:41
+msgid "WebPに変換"
+msgstr ""
+
+#: includes/class-ktpwp-image-optimizer.php:487
+msgid "WebP変換が完了しました"
+msgstr ""
+
+#: includes/class-ktpwp-image-optimizer.php:489
+msgid "WebP変換に失敗しました"
+msgstr ""
+
+#: includes/class-ktpwp-woocommerce-integration.php:436
+msgid "WooCommerce から取り込み"
+msgstr ""
+
+#: includes/class-ktpwp-woocommerce-integration.php:738
+msgid "WooCommerce の注文のうち、まだ KantanPro に取り込まれていないものを一括で同期します。"
+msgstr ""
+
+#: includes/class-ktpwp-woocommerce-integration.php:143
+msgid "WooCommerce 注文 #%1$s (ID: %2$d)"
+msgstr ""
+
+#: includes/class-ktpwp-woocommerce-integration.php:961
+msgid "WooCommerce 連携受注 %d 件を顧客に再紐付けしました。"
+msgstr ""
+
+#: includes/class-ktpwp-woocommerce-integration.php:382
+msgid "WooCommerce顧客"
+msgstr ""
+
+#: includes/class-ktpwp-order-main.php:394
+#: includes/class-ktpwp-tab-list.php:48
+#: includes/class-ktpwp-tab-supplier.php:142
+msgid "You do not have sufficient permissions to access this page."
+msgstr ""
+
+#: includes/class-ktpwp-order-main.php:1212
+msgid "You do not have sufficient permissions to delete orders."
+msgstr ""
+
+#: includes/class-ktpwp-order-main.php:504
+#: includes/class-ktpwp-order-main.php:959
+msgid "You do not have sufficient permissions to send emails."
+msgstr ""
+
+#: includes/class-ktpwp-order-main.php:1128
+msgid "You do not have sufficient permissions to update invoice items."
+msgstr ""
+
+#: includes/class-ktpwp-order-main.php:1053
+msgid "You do not have sufficient permissions to update progress."
+msgstr ""
+
+#: includes/class-ktpwp-order-main.php:1021
+msgid "You do not have sufficient permissions to update project names."
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:287
+msgid "client_idが指定されていません"
+msgstr ""
+
+#: includes/ktp-admin-form.php:35
+msgid "illegal data"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:326
+msgid "order_idまたはsupplier_nameが指定されていません"
+msgstr ""
+
+#: includes/ajax-supplier-cost.php:75
+msgid "supplier_idが不正です"
+msgstr ""
+
+#: ktpwp.php:526
+msgid "{$converted_count} / {$total_count} 個の画像をWebPに変換しました"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:3878
+msgid "※ アクティブなタブの背景色を設定してください。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:3658
+msgid "※ システムの説明は固定です（変更できません）。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:3642
+msgid "※ システム名は固定です（変更できません）。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:3916
+msgid "※ タブの下線（border-bottom）の色を設定してください。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:4017
+msgid "※ プラグインに適用するカスタムCSSを記述してください。HTMLタグは使用できません。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:3997
+msgid "※ ヘッダーの背景画像として使用されます。推奨サイズ: 1920×100px"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:3822
+msgid "※ メール送信時に署名として使用される会社情報です。HTMLタグが使用できます。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:3743
+msgid "※ リストで一度に表示する件数を設定してください。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:3954
+msgid "※ リスト表示で偶数行（2行目、4行目など）の背景色を設定してください。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:3935
+msgid "※ リスト表示で奇数行（1行目、3行目など）の背景色を設定してください。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:3626
+msgid "※ ロゴマークは固定です（変更できません）。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:3766
+msgid "※ 納期警告日数を設定してください。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:3789
+msgid "※ 適格請求書発行事業者の登録番号を入力してください。（例：T1234567890123）"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:3897
+msgid "※ 非アクティブなタブの背景色を設定してください。"
+msgstr ""
+
+#: includes/class-ktpwp-client-ui.php:108
+#: includes/class-ktpwp-client.php:331
+msgid "■ 注文履歴"
+msgstr ""
+
+#: includes/class-ktpwp-client-ui.php:109
+#: includes/class-ktpwp-client.php:332
+msgid "■ 顧客リスト"
+msgstr ""
+
+#: includes/class-ktpwp-client.php:1308
+msgid "■ 顧客追加中"
+msgstr ""
+
+#: ktpwp.php:4438
+msgid "⚠ 警告: KantanPro を【完全削除】します。\n\n現在の設定: 【完全削除（すべてのデータを消す）】\n→ 顧客・サービス・協力会社・受注書・請求書・設定など、\n  KantanProに関するすべてのデータがデータベースから完全に削除されます。\n  この操作は元に戻せません。\n\n必ず事前にバックアップを取得していることを確認してください。\n\n設定を変更するには、いったんキャンセルして「KantanPro 設定 → 一般設定」から\n「プラグイン削除時のデータ保持設定」を変更してください。\n\n本当にすべてのデータを削除してよろしいですか？"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:5031
+msgid "「完全削除」を選んだ状態でプラグインを削除すると、すべてのデータが失われ、元に戻せません。必ず事前にバックアップを取ってから実行してください。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1301
+#: includes/class-ktpwp-settings.php:1324
+msgid "いいえ"
+msgstr ""
+
+#: includes/class-ktpwp-contact-form.php:92
+msgid "お問い合わせの件"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:5104
+msgid "ここで設定した内容は、KantanPro配布先へ配信する共通バナー情報として利用します。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1620
+msgid "このオプションを有効にすると、フロントエンドで寄付通知が表示されます。"
+msgstr ""
+
+#: includes/class-ktpwp-shortcodes.php:943
+msgid "このコンテンツを表示するにはログインが必要です。"
+msgstr ""
+
+#: includes/class-ktpwp-shortcodes.php:952
+msgid "このコンテンツを表示する権限がありません。"
+msgstr ""
+
+#: includes/class-ktpwp-service-ui.php:267
+msgid "このサービスを削除してもよろしいですか？"
+msgstr ""
+
+#: test-license-reset.php:24
+msgid "このスクリプトを実行する権限がありません。"
+msgstr ""
+
+#: includes/ajax-sales-ledger-pdf.php:29
+#: includes/class-ktpwp-tab-report.php:57
+msgid "このページにアクセスする権限がありません。"
+msgstr ""
+
+#: includes/class-ktpwp-terms-of-service.php:212
+#: includes/class-ktpwp-terms-of-service.php:232
+msgid "このページは現在無効化されています。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1266
+msgid "このページは開発モードまたは開発環境でのみ表示されます。"
+msgstr ""
+
+#: includes/class-ktpwp-staff-chat.php:445
+msgid "このメッセージを削除"
+msgstr ""
+
+#: js/ktp-js.js:654
+msgid "このメッセージを削除しますか？"
+msgstr ""
+
+#: includes/class-ktpwp-license-manager.php:120
+#: includes/class-ktpwp-license-manager.php:751
+#: includes/class-ktpwp-license-manager.php:852
+#: includes/class-ktpwp-license-manager.php:879
+#: includes/class-ktpwp-settings.php:1410
+msgid "この操作を実行する権限がありません。"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:1337
+msgid "この操作を行う権限がありません"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:1026
+#: includes/class-ktpwp-ajax.php:1158
+#: includes/class-ktpwp-ajax.php:117
+#: includes/class-ktpwp-ajax.php:3674
+#: includes/class-ktpwp-ajax.php:3813
+msgid "この操作を行う権限がありません。"
+msgstr ""
+
+#: includes/class-ktpwp-license-manager.php:883
+msgid "この機能は開発環境でのみ利用可能です。"
+msgstr ""
+
+#: includes/ajax-sales-ledger-pdf.php:36
+msgid "この機能を利用するにはライセンスが必要です。"
+msgstr ""
+
+#: js/ktp-cost-items.js:476
+#: js/ktp-invoice-items.js:812
+msgid "この行を削除しますか？"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:4874
+msgid "この設定を無効にすると、すべての更新通知が表示されなくなります。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1118
+#: includes/class-ktpwp-settings.php:1869
+#: includes/class-ktpwp-settings.php:2214
+#: includes/class-ktpwp-settings.php:2320
+#: includes/class-ktpwp-settings.php:2400
+msgid "この設定ページにアクセスする権限がありません。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1138
+msgid "この設定ページは開発モードでのみアクセスできます。"
+msgstr ""
+
+#: js/ktpwp-notification-dismiss.js:15
+msgid "この通知を非表示にしますか？"
+msgstr ""
+
+#: includes/class-ktpwp-client.php:1543
+msgid "この顧客を削除（無効化）しますか？\nデータは残りますが、表示ラベルが「対象外」に変更されます。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:2442
+msgid "すべてのデザイン設定がデフォルト値にリセットされます。よろしいですか？"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1350
+msgid "すべてのライセンスデータを削除します。"
+msgstr ""
+
+#: js/ktpwp-image-optimizer.js:240
+msgid "すべての既存画像をWebPに変換"
+msgstr ""
+
+#: js/ktpwp-image-optimizer.js:206
+msgid "すべての既存画像をWebPに変換しますか？この処理には時間がかかる場合があります。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1301
+#: includes/class-ktpwp-settings.php:1324
+msgid "はい"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:1292
+msgid "アイテムの並び順を更新しました"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:1319
+msgid "アイテムの並び順更新中に予期せぬエラーが発生しました（詳細エラーログ確認）"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:1004
+msgid "アイテムの作成に失敗しました"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:1119
+msgid "アイテムを削除しました"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:1145
+msgid "アイテム削除中に予期せぬエラーが発生しました（詳細エラーログ確認）"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:2969
+msgid "アクティベーションキー"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:774
+msgid "エクスポートデータの生成に失敗しました。"
+msgstr ""
+
+#: includes/class-ktpwp-update-checker.php:160
+msgid "エラーが発生しました"
+msgstr ""
+
+#: js/ktpwp-notification-dismiss.js:38
+#: ktpwp.php:6282
+msgid "エラーが発生しました: "
+msgstr ""
+
+#: includes/class-ktpwp-shortcodes.php:150
+#: includes/class-ktpwp-terms-of-service.php:1044
+msgid "エラーが発生しました。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:3087
+msgid "カスタムCSS"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:4015
+msgid "カスタムCSSを入力してください..."
+msgstr ""
+
+#: includes/class-ktpwp-client-ui.php:168
+#: includes/class-ktpwp-client.php:62
+#: includes/class-ktpwp-service-main.php:372
+#: includes/class-ktpwp-service-main.php:602
+#: includes/class-ktpwp-service-ui.php:196
+msgid "カテゴリー"
+msgstr ""
+
+#: includes/class-ktpwp-service-main.php:656
+msgid "カテゴリーを入力"
+msgstr ""
+
+#: includes/class-ktpwp-service-ui.php:506
+msgid "カテゴリーを入力..."
+msgstr ""
+
+#: ktpwp.php:476
+msgid "キャッシュが正常にクリアされました"
+msgstr ""
+
+#: includes/class-ktpwp-update-checker.php:1507
+msgid "キャッシュが正常にクリアされました。更新チェックを再実行してください。"
+msgstr ""
+
+#: ktpwp.php:478
+msgid "キャッシュのクリアに失敗しました: "
+msgstr ""
+
+#: includes/class-ktpwp-update-checker.php:1513
+msgid "キャッシュクリアに失敗しました: "
+msgstr ""
+
+#: js/ktpwp-update-checker.js:69
+msgid "キャッシュクリア中..."
+msgstr ""
+
+#: includes/class-ktpwp-client.php:1386
+#: includes/class-ktpwp-client.php:1388
+#: includes/class-ktpwp-service-main.php:676
+#: includes/class-ktpwp-service-main.php:678
+#: includes/class-ktpwp-service-ui.php:524
+msgid "キャンセル"
+msgstr ""
+
+#: includes/class-ktpwp-shortcodes.php:906
+msgid "クラス %s が見つかりません。"
+msgstr ""
+
+#: js/plugin-reference.js:196
+msgid "クリア中..."
+msgstr ""
+
+#: includes/class-ktpwp-woocommerce-integration.php:338
+msgid "ゲスト"
+msgstr ""
+
+#: includes/class-ktpwp-order-main.php:1926
+msgid "コスト項目"
+msgstr ""
+
+#: js/ktp-supplier-selector.js:640
+msgid "コスト項目の追加に失敗しました。\n「無効な受注IDです」の場合はページを再読み込みしてから再度お試しください。"
+msgstr ""
+
+#: includes/class-ktpwp-shortcodes.php:585
+msgid "コミュニティ"
+msgstr ""
+
+#: ktpwp.php:3699
+msgid "コンテンツの読み込みに失敗しました。"
+msgstr ""
+
+#: js/ktp-js.js:718
+msgid "サーバーエラーが発生しました"
+msgstr ""
+
+#: includes/class-ktpwp-order-ui.php:144
+#: includes/class-ktpwp-order-ui.php:418
+#: includes/class-ktpwp-tab-list.php:1014
+#: includes/class-ktpwp-view-tab.php:42
+msgid "サービス"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:1386
+msgid "サービスDBクラスが見つかりません"
+msgstr ""
+
+#: includes/class-ktpwp-service-ui.php:282
+msgid "サービスが見つかりません。"
+msgstr ""
+
+#: includes/class-ktpwp-service-main.php:633
+msgid "サービスの詳細（検索モード）"
+msgstr ""
+
+#: includes/class-ktpwp-service-main.php:369
+#: includes/class-ktpwp-service-main.php:571
+#: includes/class-ktpwp-service-ui.php:190
+#: includes/class-ktpwp-service-ui.php:359
+#: includes/class-ktpwp-service-ui.php:449
+msgid "サービス名"
+msgstr ""
+
+#: includes/class-ktpwp-service-main.php:652
+msgid "サービス名を入力"
+msgstr ""
+
+#: includes/class-ktpwp-service-ui.php:500
+msgid "サービス名を入力..."
+msgstr ""
+
+#: includes/class-ktpwp-service-main.php:885
+#: includes/class-ktpwp-service-ui.php:387
+msgid "サービス画像"
+msgstr ""
+
+#: includes/class-ktpwp-service-main.php:715
+msgid "サービス追加中"
+msgstr ""
+
+#: includes/class-ktpwp-order-ui.php:168
+msgid "サービス選択"
+msgstr ""
+
+#: js/ktp-invoice-items.js:1277
+msgid "サービス選択機能の読み込みに失敗しました。ページを再読み込みしてください。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:2625
+msgid "システムの説明"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:2616
+msgid "システム名"
+msgstr ""
+
+#: ktpwp.php:3703
+msgid "ショートコード"
+msgstr ""
+
+#: includes/class-ktpwp-tab-supplier.php:594
+msgid "スキル管理システムが利用できません。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1934
+msgid "スタッフ"
+msgstr ""
+
+#: includes/class-ktpwp-staff-chat.php:363
+msgid "スタッフチャット"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1914
+#: includes/class-ktpwp-settings.php:683
+#: includes/class-ktpwp-settings.php:684
+msgid "スタッフ管理"
+msgstr ""
+
+#: includes/class-ktpwp-update-checker.php:301
+msgid "スモールビジネスのための販売支援ツール"
+msgstr ""
+
+#: ktpwp.php:3705
+msgid "セキュリティ"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:1346
+#: includes/class-ktpwp-image-optimizer.php:471
+#: ktpwp.php:465
+#: ktpwp.php:492
+msgid "セキュリティチェックに失敗しました"
+msgstr ""
+
+#: includes/ajax-department.php:113
+#: includes/ajax-department.php:20
+#: includes/ajax-department.php:64
+#: includes/ajax-sales-ledger-pdf.php:23
+#: includes/class-ktpwp-ajax.php:4618
+msgid "セキュリティチェックに失敗しました。"
+msgstr ""
+
+#: includes/class-ktpwp-tab-supplier.php:588
+msgid "セキュリティチェックに失敗しました。ページを更新して再度お試しください。"
+msgstr ""
+
+#: js/ktp-delivery-dates.js:101
+#: js/ktp-delivery-dates.js:254
+#: js/ktp-delivery-dates.js:338
+#: js/ktp-delivery-dates.js:436
+#: js/ktp-delivery-dates.js:510
+msgid "セキュリティトークンが取得できません。ページを再読み込みしてください。"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:2907
+msgid "セキュリティトークンが無効です"
+msgstr ""
+
+#: includes/class-ktpwp-update-checker.php:1024
+#: includes/class-ktpwp-update-checker.php:1300
+#: includes/class-ktpwp-update-checker.php:1340
+#: includes/class-ktpwp-update-checker.php:346
+#: includes/class-ktpwp-update-checker.php:771
+msgid "セキュリティトークンが送信されていません。"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:1060
+#: includes/class-ktpwp-ajax.php:1197
+#: includes/class-ktpwp-ajax.php:282
+#: includes/class-ktpwp-ajax.php:320
+#: includes/class-ktpwp-ajax.php:3698
+msgid "セキュリティ検証に失敗しました"
+msgstr ""
+
+#: js/ktpwp-update-balloon.js:42
+msgid "セキュリティ設定エラー"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:3033
+msgid "タブのアクティブ時の色"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:3051
+msgid "タブの下線色"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:3042
+msgid "タブの非アクティブ時の背景色"
+msgstr ""
+
+#: ktpwp.php:3702
+msgid "タブ機能"
+msgstr ""
+
+#: ktpwp.php:6117
+msgid "ダミーデータが正常に作成されました。"
+msgstr ""
+
+#: ktpwp.php:6098
+msgid "ダミーデータの作成に失敗しました。必要なテーブルが存在するか、PHPエラーログを確認してください。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:695
+#: includes/class-ktpwp-settings.php:696
+msgid "ダミーデータ作成"
+msgstr ""
+
+#: ktpwp.php:6036
+msgid "ダミーデータ作成スクリプトが見つかりません。"
+msgstr ""
+
+#: ktpwp.php:6134
+#: ktpwp.php:6141
+msgid "ダミーデータ作成中にエラーが発生しました: "
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1367
+msgid "テストリンク"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:674
+msgid "デザイン"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:2403
+#: includes/class-ktpwp-settings.php:2961
+#: includes/class-ktpwp-settings.php:673
+msgid "デザイン設定"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:4249
+msgid "デザイン設定をデフォルト値にリセットしました。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:2445
+msgid "デフォルトに戻す"
+msgstr ""
+
+#: ktpwp.php:4392
+msgid "データを残す"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:5013
+msgid "データを残す（推奨）"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:1132
+msgid "データベースからのアイテム削除に失敗しました（詳細エラーログ確認）"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:1307
+msgid "データベースでのアイテム並び順更新に失敗しました（詳細エラーログ確認）"
+msgstr ""
+
+#: ktpwp.php:2718
+msgid "データベースの更新が完了しました。"
+msgstr ""
+
+#: includes/class-ktpwp-woocommerce-integration.php:787
+msgid "データベースエラー:"
+msgstr ""
+
+#: includes/ajax-supplier-cost.php:129
+#: includes/ajax-supplier-cost.php:45
+msgid "データベースエラー: "
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:3848
+#: includes/class-ktpwp-ajax.php:4267
+#: includes/class-ktpwp-ajax.php:4512
+msgid "データベースエラーが発生しました"
+msgstr ""
+
+#: includes/ajax-supplier-cost.php:272
+msgid "データベーステーブルが存在しません"
+msgstr ""
+
+#: includes/class-ktpwp-staff-chat.php:329
+msgid "データベーステーブルの作成に失敗しました。"
+msgstr ""
+
+#: ktpwp.php:2729
+msgid "データベースバージョンを "
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:4608
+msgid "データベース更新に失敗しました"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:4382
+msgid "データベース更新に失敗しました: "
+msgstr ""
+
+#: includes/class-ktpwp-tab-supplier.php:950
+msgid "データーがありません。"
+msgstr ""
+
+#: ktpwp.php:3706
+msgid "トラブルシューティング"
+msgstr ""
+
+#: includes/class-ktpwp-order-ui.php:164
+#: includes/class-ktpwp-order-ui.php:436
+msgid "ドラッグして並び替え"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:705
+#: includes/class-ktpwp-settings.php:706
+msgid "バックアップ"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:736
+msgid "バックアップ機能"
+msgstr ""
+
+#: includes/class-ktpwp-terms-of-service.php:290
+msgid "バージョン"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1485
+#: includes/class-ktpwp-settings.php:1525
+msgid "パスワード"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1478
+#: includes/class-ktpwp-settings.php:1518
+msgid "パスワード認証"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:4572
+msgid "パラメータが不正です"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:4389
+msgid "フィールドが正常に保存されました"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:4356
+msgid "フィールド名が指定されていません"
+msgstr ""
+
+#: js/ktp-delivery-dates.js:324
+#: js/ktp-delivery-dates.js:422
+msgid "フィールド名が設定されていません。ページを再読み込みしてください。"
+msgstr ""
+
+#: includes/class-ktpwp-tab-list.php:79
+#: includes/class-ktpwp-tab-list.php:80
+msgid "フリーワード"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:4910
+msgid "フロントエンドでの更新通知を有効にする"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:4613
+msgid "フロントエンドで表示される寄付通知のプレビューを確認できます。"
+msgstr ""
+
+#: includes/class-ktpwp-update-checker.php:1012
+msgid "フロントエンド更新通知を無視しました。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1713
+msgid "フロントエンド通知が有効"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:2835
+msgid "フロントエンド通知の有効化"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1619
+#: includes/class-ktpwp-settings.php:2764
+msgid "フロントエンド通知を有効にする"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:3205
+msgid "プラグインのライセンス情報を設定します。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:3595
+msgid "プラグインの基本設定を行います。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:3215
+msgid "プラグインの外観とデザインに関する設定を行います。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:4856
+msgid "プラグインの更新通知に関する設定を行います。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:4996
+msgid "プラグインをアンインストール（削除）する時に、登録されたデータをどう扱うかを選択できます。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:5015
+msgid "プラグインを削除しても、顧客・サービス・協力会社・受注書などのデータはデータベースに残ります。後からプラグインを再インストールしたとき、以前のデータをそのまま引き続き利用できます。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:5025
+msgid "プラグインを削除すると同時に、KantanProに保存されている全データ（顧客・サービス・協力会社・受注書・請求書・設定など）をデータベースから完全に削除します。"
+msgstr ""
+
+#: ktpwp.php:3697
+msgid "プラグインリファレンス"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:2871
+msgid "プラグイン削除時のデータ保持設定"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:2878
+msgid "プラグイン削除時の動作"
+msgstr ""
+
+#: js/ktp-order-preview.js:109
+msgid "プレビューデータの取得に失敗しました: "
+msgstr ""
+
+#: js/ktp-order-preview.js:118
+msgid "プレビューデータの取得中にエラーが発生しました: "
+msgstr ""
+
+#: js/ktp-order-preview.js:113
+msgid "プレビューデータの解析に失敗しました。"
+msgstr ""
+
+#: js/ktp-order-preview.js:140
+msgid "プレビュー内容が見つかりません。"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:698
+msgid "プロジェクト名を更新しました"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:3078
+msgid "ヘッダー背景画像"
+msgstr ""
+
+#: ktpwp.php:4236
+msgid "ページタイトル"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1304
+msgid "ホスト名"
+msgstr ""
+
+#: includes/class-ktpwp-login-error.php:40
+#: includes/class-ktpwp-terms-of-service.php:909
+msgid "ホームへ"
+msgstr ""
+
+#: includes/class-ktpwp-client.php:481
+#: includes/class-ktpwp-client.php:746
+#: includes/class-ktpwp-tab-list.php:98
+msgid "ボツ"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:3126
+msgid "メッセージIDが必要です"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:2978
+msgid "メッセージの取得中にエラーが発生しました"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:3079
+msgid "メッセージの送信に失敗しました"
+msgstr ""
+
+#: js/ktp-js.js:590
+msgid "メッセージの送信に失敗しました: "
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:3095
+msgid "メッセージの送信中にエラーが発生しました"
+msgstr ""
+
+#: includes/class-ktpwp-staff-chat.php:368
+msgid "メッセージはありません。"
+msgstr ""
+
+#: includes/class-ktpwp-staff-chat.php:463
+msgid "メッセージを入力してください..."
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:3067
+msgid "メッセージを送信しました"
+msgstr ""
+
+#: includes/class-ktpwp-contact-form.php:395
+msgid "メッセージ本文:"
+msgstr ""
+
+#: ktpwp.php:4237
+msgid "メニュータイトル"
+msgstr ""
+
+#: includes/class-ktpwp-order-main.php:1909
+#: includes/class-ktpwp-service-main.php:598
+#: includes/class-ktpwp-service-ui.php:381
+msgid "メモ"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:3787
+msgid "メモを更新しました"
+msgstr ""
+
+#: includes/class-ktpwp-order-main.php:1561
+#: includes/class-ktpwp-order-main.php:1641
+msgid "メール"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:2401
+msgid "メールを送信しました。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1933
+msgid "メールアドレス"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:2125
+#: includes/class-ktpwp-settings.php:663
+#: includes/class-ktpwp-settings.php:664
+msgid "メール・SMTP設定"
+msgstr ""
+
+#: includes/class-ktpwp-order-main.php:1845
+#: js/ktp-purchase-order-email.js:570
+msgid "メール送信"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:3197
+msgid "メール送信に関する基本設定を行います。"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:1722
+msgid "メール送信不可（メールアドレス未設定または無効）"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:1708
+msgid "メール送信不可（対象外顧客）"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:1696
+msgid "メール送信不可（顧客データなし）"
+msgstr ""
+
+#: includes/class-ktpwp-order-main.php:367
+msgid "メール送信履歴"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1714
+msgid "ユーザーがまだ寄付していない"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1715
+msgid "ユーザーが通知を拒否していない（拒否した場合は月に1回表示）"
+msgstr ""
+
+#: includes/class-ktpwp-terms-of-service.php:543
+msgid "ユーザー認証に失敗しました。"
+msgstr ""
+
+#: includes/class-ktpwp-license-manager.php:993
+msgid "ライセンスが有効です。"
+msgstr ""
+
+#: includes/class-ktpwp-license-manager.php:931
+msgid "ライセンスが有効です。（開発環境）"
+msgstr ""
+
+#: includes/class-ktpwp-license-manager.php:140
+#: includes/class-ktpwp-license-manager.php:218
+#: includes/class-ktpwp-license-manager.php:775
+#: includes/class-ktpwp-settings.php:353
+msgid "ライセンスが正常に認証されました。"
+msgstr ""
+
+#: includes/class-ktpwp-license-manager.php:1001
+#: includes/class-ktpwp-license-manager.php:982
+msgid "ライセンスが無効です。"
+msgstr ""
+
+#: includes/class-ktpwp-license-manager.php:943
+msgid "ライセンスが無効です。（開発環境モードで無効化中）"
+msgstr ""
+
+#: includes/class-ktpwp-license-manager.php:222
+#: includes/class-ktpwp-settings.php:354
+msgid "ライセンスの認証に失敗しました。"
+msgstr ""
+
+#: includes/class-ktpwp-graph-renderer.php:35
+msgid "ライセンスを認証"
+msgstr ""
+
+#: includes/class-ktpwp-assets.php:585
+#: includes/class-ktpwp-license-manager.php:858
+#: includes/class-ktpwp-license-manager.php:920
+#: includes/class-ktpwp-settings.php:2369
+#: js/ktp-license-manager.js:218
+msgid "ライセンスキーが設定されていません。"
+msgstr ""
+
+#: includes/class-ktpwp-license-manager.php:127
+#: includes/class-ktpwp-license-manager.php:758
+msgid "ライセンスキーを入力してください。"
+msgstr ""
+
+#: includes/class-ktpwp-license-manager.php:206
+#: includes/class-ktpwp-license-manager.php:264
+msgid "ライセンスサーバーからの応答が無効です。"
+msgstr ""
+
+#: includes/class-ktpwp-license-manager.php:191
+msgid "ライセンスサーバーとの通信に失敗しました。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1316
+msgid "ライセンスステータス"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1376
+msgid "ライセンステストスクリプトを実行"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1432
+msgid "ライセンスデータがクリアされました。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1348
+msgid "ライセンスデータをクリア"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1290
+#: includes/class-ktpwp-settings.php:1414
+msgid "ライセンスマネージャーが利用できません。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1437
+msgid "ライセンス状態がリセットされました。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:2385
+msgid "ライセンス状態の再確認が完了しました。ライセンスは有効です。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:2391
+msgid "ライセンス状態の再確認が完了しました。ライセンスは無効です。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1359
+msgid "ライセンス状態をリセット"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1361
+msgid "ライセンス状態を無効にリセットします。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:2323
+#: includes/class-ktpwp-settings.php:2953
+msgid "ライセンス設定"
+msgstr ""
+
+#: includes/class-ktpwp-graph-renderer.php:34
+msgid "ライセンス認証が必要です"
+msgstr ""
+
+#: includes/class-ktpwp-graph-renderer.php:36
+msgid "ライセンス認証を完了すると、レポート機能が利用できるようになります"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:915
+msgid "リクエストデータが無効です"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:2634
+msgid "リストの表示件数"
+msgstr ""
+
+#: includes/class-ktpwp-view-tab.php:44
+msgid "レポート"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1370
+msgid "レポートタブを開く"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1372
+msgid "レポート機能の動作を確認します。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1339
+msgid "レポート機能の開発に必要な万能ライセンスキーを設定します。"
+msgstr ""
+
+#: includes/class-ktpwp-ui-generator.php:104
+msgid "レポート機能は無料版では利用できません"
+msgstr ""
+
+#: includes/class-ktpwp-license-manager.php:302
+#: includes/class-ktpwp-license-manager.php:98
+msgid "レポート機能を利用するにはライセンスキーが必要です。"
+msgstr ""
+
+#: includes/class-ktpwp-license-manager.php:158
+msgid "レート制限に達しました。1時間後に再試行してください。"
+msgstr ""
+
+#: includes/class-ktpwp-shortcodes.php:592
+msgid "ログアウト"
+msgstr ""
+
+#: includes/class-ktpwp-login-error.php:35
+msgid "ログイン"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:2888
+#: includes/class-ktpwp-ajax.php:3008
+#: includes/class-ktpwp-ajax.php:3113
+#: includes/class-ktpwp-ajax.php:762
+#: ktpwp.php:4324
+msgid "ログインが必要です"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:2607
+#: includes/class-ktpwp-settings.php:3623
+msgid "ロゴマーク"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:3464
+msgid "一律税率モードでは、一律税率（%）の入力が必須です。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:2687
+msgid "一律税率（%）"
+msgstr ""
+
+#: ktpwp.php:529
+msgid "一括変換に失敗しました: "
+msgstr ""
+
+#: includes/class-ktpwp-service-main.php:605
+msgid "一般"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:2217
+#: includes/class-ktpwp-settings.php:653
+#: includes/class-ktpwp-settings.php:654
+msgid "一般設定"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:1267
+msgid "一部のアイテムデータが無効です"
+msgstr ""
+
+#: js/ktp-cost-items.js:1361
+msgid "一部のコスト項目IDが不正です。\n\n無効なアイテム:\n"
+msgstr ""
+
+#: includes/class-ktpwp-client-db.php:123
+msgid "不正なリクエストです。"
+msgstr ""
+
+#: js/ktp-cost-items.js:1405
+msgid "並び順の保存に失敗しました。\n\nエラー: "
+msgstr ""
+
+#: js/ktp-invoice-items.js:984
+msgid "並び順の保存に失敗しました。: "
+msgstr ""
+
+#: js/ktp-invoice-items.js:993
+msgid "並び順の保存中にサーバーエラーが発生しました。"
+msgstr ""
+
+#: js/ktp-invoice-items.js:988
+msgid "並び順保存の応答処理中にエラーが発生しました。"
+msgstr ""
+
+#: js/ktp-cost-items.js:1409
+msgid "並び順保存の応答処理中にエラーが発生しました。\n\n詳細: "
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1232
+msgid "中央バナー設定"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:5161
+msgid "中央バナー配信を有効にする"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:2885
+msgid "中央バナー配信設定"
+msgstr ""
+
+#: includes/class-ktpwp-view-tab.php:39
+msgid "仕事リスト"
+msgstr ""
+
+#: includes/class-ktpwp-order-ui.php:425
+msgid "仕入"
+msgstr ""
+
+#: includes/class-ktpwp-contact-form.php:388
+msgid "件名:"
+msgstr ""
+
+#: js/ktp-email-popup.js:695
+msgid "件名と本文を入力してください。"
+msgstr ""
+
+#: includes/class-ktpwp-client-ui.php:164
+#: includes/class-ktpwp-client.php:58
+#: includes/class-ktpwp-tab-supplier.php:761
+msgid "会社名"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:2661
+msgid "会社情報"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:1015
+msgid "作成中にエラーが発生しました"
+msgstr ""
+
+#: includes/class-ktpwp-license-manager.php:763
+msgid "使用できない文字が含まれています。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:4747
+msgid "例：〇〇銀行 △△支店"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:4799
+msgid "例：カブシキガイシャ ヤマダ"
+msgstr ""
+
+#: includes/class-ktpwp-service-main.php:370
+#: includes/class-ktpwp-service-main.php:577
+#: includes/class-ktpwp-service-ui.php:191
+#: includes/class-ktpwp-service-ui.php:365
+#: includes/class-ktpwp-service-ui.php:450
+msgid "価格"
+msgstr ""
+
+#: includes/class-ktpwp-service-main.php:580
+msgid "価格（円）"
+msgstr ""
+
+#: includes/class-ktpwp-terms-of-service.php:297
+msgid "保存"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:884
+msgid "保存に失敗しました"
+msgstr ""
+
+#: js/ktp-delivery-dates.js:382
+#: js/ktp-delivery-dates.js:475
+#: js/ktp-delivery-dates.js:542
+msgid "保存に失敗しました: "
+msgstr ""
+
+#: js/ktp-order-inline-projectname.js:37
+msgid "保存エラー: "
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:895
+msgid "保存中にエラーが発生しました"
+msgstr ""
+
+#: includes/class-ktpwp-woocommerce-integration.php:565
+msgid "個"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:3069
+msgid "偶数行の背景色"
+msgstr ""
+
+#: includes/class-ktpwp-order-ui.php:154
+#: includes/class-ktpwp-order-ui.php:424
+msgid "備考"
+msgstr ""
+
+#: includes/class-ktpwp-tab-list.php:760
+msgid "入金予定日が過ぎています"
+msgstr ""
+
+#: includes/class-ktpwp-tab-list.php:359
+msgid "入金予定日を過ぎている案件が%d件あります"
+msgstr ""
+
+#: includes/class-ktpwp-client.php:480
+#: includes/class-ktpwp-client.php:745
+#: includes/class-ktpwp-order.php:472
+#: includes/class-ktpwp-tab-list.php:97
+msgid "入金済"
+msgstr ""
+
+#: includes/class-ktpwp-client-db.php:54
+#: includes/class-ktpwp-woocommerce-integration.php:400
+msgid "内税"
+msgstr ""
+
+#: includes/class-ktpwp-order-ui.php:270
+#: includes/class-ktpwp-order-ui.php:275
+#: includes/class-ktpwp-order-ui.php:280
+#: includes/class-ktpwp-order-ui.php:575
+#: includes/class-ktpwp-order-ui.php:578
+msgid "円"
+msgstr ""
+
+#: js/ktp-cost-items.js:1072
+#: js/ktp-cost-items.js:880
+msgid "処理中..."
+msgstr ""
+
+#: includes/class-ktpwp-client-db.php:41
+msgid "初めてのお客様"
+msgstr ""
+
+#: includes/class-ktpwp-terms-of-service.php:520
+#: includes/class-ktpwp-terms-of-service.php:538
+msgid "利用規約に同意しました。"
+msgstr ""
+
+#: includes/class-ktpwp-terms-of-service.php:273
+msgid "利用規約の内容を編集できます。変更後は保存ボタンをクリックしてください。"
+msgstr ""
+
+#: includes/class-ktpwp-terms-of-service.php:483
+msgid "利用規約の更新に失敗しました。"
+msgstr ""
+
+#: includes/class-ktpwp-terms-of-service.php:302
+msgid "利用規約の表示"
+msgstr ""
+
+#: includes/class-ktpwp-terms-of-service.php:481
+msgid "利用規約を更新しました。"
+msgstr ""
+
+#: includes/class-ktpwp-terms-of-service.php:281
+msgid "利用規約内容"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1220
+msgid "利用規約管理"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1174
+msgid "利用規約管理機能が利用できません。"
+msgstr ""
+
+#: includes/class-ktpwp-terms-of-service.php:266
+msgid "利用規約編集"
+msgstr ""
+
+#: includes/class-ktpwp-terms-of-service.php:906
+msgid "利用開始する"
+msgstr ""
+
+#: includes/class-ktpwp-order-ui.php:611
+#: includes/class-ktpwp-order-ui.php:865
+#: includes/class-ktpwp-order-ui.php:882
+msgid "利益"
+msgstr ""
+
+#: js/ktp-invoice-items.js:631
+msgid "利益 : "
+msgstr ""
+
+#: includes/class-ktpwp-service-ui.php:272
+#: includes/class-ktpwp-settings.php:1959
+msgid "削除"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:3150
+msgid "削除しました"
+msgstr ""
+
+#: includes/class-ktpwp-client.php:1161
+#: includes/class-ktpwp-service-main.php:162
+#: includes/class-ktpwp-service-ui.php:550
+#: includes/class-ktpwp-tab-supplier.php:576
+msgid "削除しました。"
+msgstr ""
+
+#: includes/class-ktpwp-service-main.php:808
+#: includes/class-ktpwp-tab-supplier.php:1403
+msgid "削除する"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:3160
+msgid "削除に失敗しました"
+msgstr ""
+
+#: includes/class-ktpwp-service-db.php:320
+#: includes/class-ktpwp-supplier-data.php:264
+msgid "削除に失敗しました。"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:3167
+msgid "削除中にエラーが発生しました"
+msgstr ""
+
+#: js/ktp-client-delete-popup.js:239
+msgid "削除方法を選択してください。"
+msgstr ""
+
+#: ktpwp.php:4400
+msgid "削除時の動作"
+msgstr ""
+
+#: includes/class-ktpwp-client.php:1543
+msgid "削除（無効化）する"
+msgstr ""
+
+#: includes/class-ktpwp-client.php:1111
+#: includes/class-ktpwp-order-main.php:1857
+#: includes/class-ktpwp-payment-timing.php:78
+msgid "前入金済"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:4783
+msgid "半角数字（ハイフン可）"
+msgstr ""
+
+#: includes/class-ktpwp-tab-list.php:1056
+#: includes/class-ktpwp-view-tab.php:43
+msgid "協力会社"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:4250
+msgid "協力会社IDが無効です"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:4486
+msgid "協力会社IDが無効です (ID: "
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:2479
+msgid "協力会社が見つかりません。"
+msgstr ""
+
+#: includes/class-ktpwp-tab-supplier.php:1293
+msgid "協力会社の詳細（検索モード）"
+msgstr ""
+
+#: includes/class-ktpwp-supplier-data.php:287
+msgid "協力会社を削除しました。"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:4497
+msgid "協力会社テーブルが存在しません"
+msgstr ""
+
+#: includes/ajax-supplier-cost.php:53
+msgid "協力会社リストの取得中にエラーが発生しました: "
+msgstr ""
+
+#: includes/class-ktpwp-supplier-data.php:387
+msgid "協力会社情報を更新しました。"
+msgstr ""
+
+#: includes/class-ktpwp-tab-supplier.php:1218
+msgid "協力会社追加中"
+msgstr ""
+
+#: js/ktp-cost-items.js:1667
+msgid "協力会社選択機能の読み込みに失敗しました。ページを再読み込みしてください。"
+msgstr ""
+
+#: includes/class-ktpwp-order-ui.php:147
+#: includes/class-ktpwp-order-ui.php:421
+#: includes/class-ktpwp-service-main.php:371
+#: includes/class-ktpwp-service-main.php:584
+#: includes/class-ktpwp-service-ui.php:195
+msgid "単位"
+msgstr ""
+
+#: includes/class-ktpwp-order-ui.php:145
+#: includes/class-ktpwp-order-ui.php:419
+msgid "単価"
+msgstr ""
+
+#: includes/class-ktpwp-order-main.php:1957
+#: includes/class-ktpwp-order-main.php:1985
+#: includes/class-ktpwp-tab-list.php:87
+msgid "印刷"
+msgstr ""
+
+#: includes/class-ktpwp-order-main.php:1554
+#: includes/class-ktpwp-order-main.php:1555
+#: includes/class-ktpwp-order-main.php:1953
+#: includes/class-ktpwp-order-main.php:1954
+#: includes/class-ktpwp-order-main.php:1956
+msgid "印刷する"
+msgstr ""
+
+#: js/ktp-list-print.js:18
+#: js/ktp-report-print.js:417
+msgid "印刷する内容が見つかりません。"
+msgstr ""
+
+#: js/ktp-client-invoice.js:862
+msgid "印刷エラーが発生しました: "
+msgstr ""
+
+#: js/ktp-client-invoice.js:487
+msgid "印刷エラー：請求書の内容が空です"
+msgstr ""
+
+#: js/ktp-client-invoice.js:480
+msgid "印刷エラー：請求書データが見つかりません"
+msgstr ""
+
+#: js/ktp-report-print.js:435
+msgid "印刷データの作成に失敗しました。"
+msgstr ""
+
+#: js/ktp-list-print.js:113
+msgid "印刷データの取得に失敗しました。"
+msgstr ""
+
+#: includes/class-ktpwp-order-main.php:1864
+msgid "受付"
+msgstr ""
+
+#: includes/class-ktpwp-client.php:475
+#: includes/class-ktpwp-client.php:740
+#: includes/class-ktpwp-order.php:467
+#: includes/class-ktpwp-tab-list.php:92
+msgid "受付中"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:3623
+msgid "受付日が正常に保存されました。"
+msgstr ""
+
+#: js/ktp-delivery-dates.js:290
+msgid "受付日の保存に失敗しました: "
+msgstr ""
+
+#: js/ktp-delivery-dates.js:238
+msgid "受付日の保存に必要な情報が取得できません。ページを再読み込みしてください。"
+msgstr ""
+
+#: js/ktp-delivery-dates.js:243
+msgid "受付日は空にできません。"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:3737
+msgid "受付日を更新しました"
+msgstr ""
+
+#: includes/class-ktpwp-client.php:477
+#: includes/class-ktpwp-client.php:742
+#: includes/class-ktpwp-order.php:469
+#: includes/class-ktpwp-tab-list.php:94
+msgid "受注"
+msgstr ""
+
+#: js/ktp-delivery-dates.js:502
+msgid "受注IDが取得できません。ページを再読み込みしてください。"
+msgstr ""
+
+#: js/ktp-supplier-selector.js:648
+msgid "受注IDを取得できません。\n受注書を開いた状態で、コスト項目タブ内から協力会社を選択して追加してください。"
+msgstr ""
+
+#: includes/class-ktpwp-woocommerce-integration.php:823
+#: includes/class-ktpwp-woocommerce-integration.php:900
+msgid "受注テーブルに external_source / external_order_id がありません。"
+msgstr ""
+
+#: includes/class-ktpwp-tab-list.php:950
+#: includes/class-ktpwp-view-tab.php:40
+msgid "受注書"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:4625
+msgid "受注書IDが指定されていません。"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:4117
+#: includes/class-ktpwp-ajax.php:4352
+msgid "受注書IDが無効です"
+msgstr ""
+
+#: js/ktp-email-popup.js:74
+#: js/ktp-order-preview.js:134
+#: js/ktp-order-preview.js:79
+#: js/ktp-service-selector.js:16
+msgid "受注書IDが見つかりません。"
+msgstr ""
+
+#: js/ktp-purchase-order-email.js:14
+msgid "受注書IDまたは協力会社名が指定されていません。"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:4134
+msgid "受注書が見つからないか、データベースエラーが発生しました"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:4578
+msgid "受注書が見つかりません"
+msgstr ""
+
+#: includes/class-ktpwp-staff-chat.php:154
+#: ktpwp.php:2018
+msgid "受注書を作成しました。"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:4653
+msgid "受注書クラスが見つかりません。"
+msgstr ""
+
+#: includes/class-ktpwp-order-main.php:1965
+#: includes/class-ktpwp-order-main.php:1993
+#: includes/class-ktpwp-tab-list.php:868
+msgid "受注書データがありません。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:148
+#: includes/class-ktpwp-settings.php:2747
+msgid "口座名義（カナ）"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:145
+#: includes/class-ktpwp-settings.php:2739
+msgid "口座番号"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:143
+#: includes/class-ktpwp-settings.php:2731
+msgid "口座種別"
+msgstr ""
+
+#: includes/class-ktpwp-order-ui.php:270
+msgid "合計金額"
+msgstr ""
+
+#: js/ktp-invoice-items.js:526
+msgid "合計金額 : "
+msgstr ""
+
+#: includes/class-ktpwp-woocommerce-integration.php:785
+msgid "同期できた注文が0件でした。"
+msgstr ""
+
+#: js/ktp-cost-items.js:1590
+#: js/ktp-invoice-items.js:1196
+msgid "品名を入力してください。"
+msgstr ""
+
+#: js/ktp-cost-items.js:372
+#: js/ktp-invoice-items.js:732
+msgid "品名を入力してください。(addNewRow)"
+msgstr ""
+
+#: includes/class-ktpwp-tab-supplier.php:603
+msgid "商品・サービスの削除に失敗しました。"
+msgstr ""
+
+#: includes/class-ktpwp-tab-supplier.php:600
+msgid "商品・サービスの追加に失敗しました。"
+msgstr ""
+
+#: includes/class-ktpwp-tab-supplier.php:585
+msgid "商品・サービスを削除しました。"
+msgstr ""
+
+#: includes/class-ktpwp-tab-supplier.php:582
+msgid "商品・サービスを追加しました。"
+msgstr ""
+
+#: includes/class-ktpwp-tab-supplier.php:1044
+msgid "商品名"
+msgstr ""
+
+#: includes/ajax-supplier-cost.php:426
+msgid "商品名が空のため追加されません"
+msgstr ""
+
+#: includes/ajax-supplier-cost.php:260
+msgid "商品名は必須です"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:4823
+msgid "基本税率を設定してください（消費税なしの場合は自動的に無効）。例：10"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:2698
+msgid "基本税率（%）"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:2599
+msgid "基本設定"
+msgstr ""
+
+#: includes/class-ktpwp-order-main.php:1866
+msgid "売上レポートの期間判定に使われる登録日です"
+msgstr ""
+
+#: js/ktpwp-image-optimizer.js:78
+msgid "変換する画像を選択してください。"
+msgstr ""
+
+#: js/ktpwp-image-optimizer.js:106
+#: js/ktpwp-image-optimizer.js:16
+#: js/ktpwp-image-optimizer.js:219
+msgid "変換中..."
+msgstr ""
+
+#: ktpwp.php:4407
+msgid "変更"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:2898
+msgid "外部参照URL（JSON）"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:3060
+msgid "奇数行の背景色"
+msgstr ""
+
+#: includes/class-ktpwp-client.php:478
+#: includes/class-ktpwp-client.php:743
+#: includes/class-ktpwp-order.php:470
+#: includes/class-ktpwp-tab-list.php:95
+msgid "完了"
+msgstr ""
+
+#: js/ktpwp-image-optimizer.js:114
+msgid "完了: "
+msgstr ""
+
+#: includes/class-ktpwp-order-main.php:1902
+msgid "完了日"
+msgstr ""
+
+#: ktpwp.php:4391
+msgid "完全削除"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:5023
+msgid "完全削除（すべてのデータを消す）"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:2791
+msgid "寄付URL"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1693
+#: includes/class-ktpwp-shortcodes.php:563
+#: includes/class-ktpwp-shortcodes.php:564
+msgid "寄付する"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:2756
+msgid "寄付機能設定"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1656
+msgid "寄付通知の「寄付する」ボタンをクリックした際に遷移するURL"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1600
+msgid "寄付通知の表示設定を行います。フロントエンドでの寄付通知表示を制御できます。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:4612
+msgid "寄付通知プレビュー"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:4945
+msgid "寄稿者"
+msgstr ""
+
+#: includes/class-ktpwp-client-db.php:59
+#: includes/class-ktpwp-woocommerce-integration.php:402
+msgid "対象"
+msgstr ""
+
+#: js/ktp-client-delete-popup.js:249
+msgid "対象外に変更しますか？\n受注書は残り、顧客データは復元可能です。"
+msgstr ""
+
+#: js/ktp-client-delete-popup.js:425
+msgid "対象外顧客のため、受注書を作成できません。"
+msgstr ""
+
+#: includes/class-ktpwp-client-ui.php:167
+#: includes/class-ktpwp-client.php:61
+msgid "対象｜対象外"
+msgstr ""
+
+#: includes/class-ktpwp-order-main.php:1894
+msgid "希望納期"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:4764
+msgid "当座"
+msgstr ""
+
+#: includes/class-ktpwp-client.php:1110
+#: includes/class-ktpwp-order-main.php:1856
+msgid "後払い"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:1105
+#: includes/class-ktpwp-ajax.php:1276
+msgid "必要なクラスが見つかりません。"
+msgstr ""
+
+#: ktpwp.php:4278
+msgid "必要なデータが不足しています"
+msgstr ""
+
+#: includes/class-ktpwp-tab-supplier.php:597
+msgid "必要な情報が不足しているか、削除対象が無効です。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:4984
+msgid "必要な権限: repo (プライベートリポジトリへのアクセス)"
+msgstr ""
+
+#: includes/class-ktpwp-service-main.php:575
+msgid "必須 サービス名"
+msgstr ""
+
+#: js/ktp-supplier-selector.js:705
+msgid "手入力"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:4944
+msgid "投稿者"
+msgstr ""
+
+#: includes/ajax-department.php:45
+msgid "担当者名とメールアドレスを入力してください。"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:4635
+msgid "指定された受注書が見つかりません。"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:4684
+msgid "指定された顧客が見つかりません。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:139
+#: includes/class-ktpwp-settings.php:2716
+msgid "振込先口座"
+msgstr ""
+
+#: includes/class-ktpwp-order-ui.php:143
+#: includes/class-ktpwp-order-ui.php:417
+#: includes/class-ktpwp-service-ui.php:197
+msgid "操作"
+msgstr ""
+
+#: includes/class-ktpwp-order-main.php:1854
+msgid "支払"
+msgstr ""
+
+#: includes/class-ktpwp-order-ui.php:146
+#: includes/class-ktpwp-order-ui.php:420
+msgid "数量"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:993
+msgid "新しいアイテムが作成されました"
+msgstr ""
+
+#: includes/class-ktpwp-service-db.php:228
+msgid "新しいサービス"
+msgstr ""
+
+#: includes/class-ktpwp-service-main.php:159
+#: includes/class-ktpwp-service-ui.php:547
+msgid "新しいサービスを追加しました。"
+msgstr ""
+
+#: includes/class-ktpwp-update-checker.php:1394
+#: includes/class-ktpwp-update-checker.php:184
+#: includes/class-ktpwp-update-checker.php:376
+#: ktpwp.php:4097
+msgid "新しいバージョンが利用可能です！"
+msgstr ""
+
+#: includes/class-ktpwp-tab-supplier.php:419
+#: includes/class-ktpwp-tab-supplier.php:573
+msgid "新しい協力会社を追加しました。"
+msgstr ""
+
+#: includes/class-ktpwp-client.php:1158
+msgid "新しい顧客を追加しました。"
+msgstr ""
+
+#: js/ktp-cost-items.js:1232
+msgid "新規コスト項目のDB作成に失敗しました。"
+msgstr ""
+
+#: includes/class-ktpwp-service-ui.php:352
+msgid "新規サービスを追加"
+msgstr ""
+
+#: js/ktp-cost-items.js:1121
+msgid "新規行の追加に失敗しました。"
+msgstr ""
+
+#: includes/ajax-supplier-cost.php:385
+msgid "新規追加しました"
+msgstr ""
+
+#: includes/class-ktpwp-service-db.php:269
+msgid "新規追加に失敗しました。"
+msgstr ""
+
+#: includes/ajax-supplier-cost.php:390
+msgid "新規追加失敗: "
+msgstr ""
+
+#: includes/class-ktpwp-woocommerce-integration.php:743
+msgid "既に KantanPro に同期済みの WooCommerce 連携受注について、同じ注文の請求先から顧客を取得または作成して紐付けます。"
+msgstr ""
+
+#: includes/class-ktpwp-terms-of-service.php:503
+msgid "既に利用規約に同意済みです。"
+msgstr ""
+
+#: ktpwp.php:6027
+msgid "既存のデータが存在します。データを削除してから再実行してください。"
+msgstr ""
+
+#: includes/class-ktpwp-woocommerce-integration.php:742
+msgid "既存受注の顧客紐付け"
+msgstr ""
+
+#: includes/class-ktpwp-client-ui.php:216
+#: includes/class-ktpwp-client.php:109
+msgid "日付"
+msgstr ""
+
+#: includes/class-ktpwp-client-ui.php:171
+#: includes/class-ktpwp-client-ui.php:221
+#: includes/class-ktpwp-client.php:114
+#: includes/class-ktpwp-client.php:65
+#: includes/class-ktpwp-service-main.php:377
+msgid "昇順"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:4760
+msgid "普通"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:3014
+msgid "暗号化方式"
+msgstr ""
+
+#: includes/class-ktpwp-shortcodes.php:600
+#: js/ktp-license-manager.js:203
+msgid "更新"
+msgstr ""
+
+#: includes/class-ktpwp-update-checker.php:1113
+msgid "更新が完了しました。"
+msgstr ""
+
+#: includes/ajax-supplier-cost.php:367
+msgid "更新しました"
+msgstr ""
+
+#: includes/class-ktpwp-client.php:1155
+#: includes/class-ktpwp-service-main.php:156
+#: includes/class-ktpwp-service-ui.php:544
+#: includes/class-ktpwp-tab-supplier.php:570
+msgid "更新しました。"
+msgstr ""
+
+#: includes/class-ktpwp-client.php:1801
+#: includes/class-ktpwp-service-main.php:966
+msgid "更新する"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:1222
+msgid "更新するアイテムデータがありません"
+msgstr ""
+
+#: js/ktp-supplier-selector.js:934
+msgid "更新するサービスデータが見つかりません。"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:710
+msgid "更新に失敗しました"
+msgstr ""
+
+#: includes/class-ktpwp-update-checker.php:1117
+msgid "更新に失敗しました。"
+msgstr ""
+
+#: includes/class-ktpwp-supplier-data.php:365
+msgid "更新に失敗しました。SQLエラー: "
+msgstr ""
+
+#: includes/class-ktpwp-update-checker.php:159
+msgid "更新をチェック"
+msgstr ""
+
+#: includes/class-ktpwp-update-checker.php:158
+msgid "更新をチェック中..."
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:4930
+msgid "更新チェックの間隔を時間単位で設定してください（1-168時間）。"
+msgstr ""
+
+#: includes/class-ktpwp-update-checker.php:1409
+msgid "更新チェック中にエラーが発生しました: "
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:2844
+msgid "更新チェック間隔（時間）"
+msgstr ""
+
+#: js/ktp-license-manager.js:181
+msgid "更新中..."
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:720
+msgid "更新中にエラーが発生しました"
+msgstr ""
+
+#: js/ktp-supplier-selector.js:955
+msgid "更新処理に必要な関数が見つかりません。"
+msgstr ""
+
+#: js/ktp-supplier-selector.js:951
+msgid "更新処理中にエラーが発生しました: "
+msgstr ""
+
+#: includes/ajax-supplier-cost.php:188
+msgid "更新失敗: "
+msgstr ""
+
+#: includes/ajax-supplier-cost.php:394
+msgid "更新失敗: レコードは存在するが更新条件に合致しません"
+msgstr ""
+
+#: js/ktp-cost-items.js:917
+msgid "更新対象の行またはサービスデータが見つかりません。"
+msgstr ""
+
+#: includes/class-ktpwp-update-checker.php:1055
+#: includes/class-ktpwp-update-checker.php:1085
+msgid "更新情報が見つかりません。"
+msgstr ""
+
+#: includes/class-ktpwp-update-checker.php:1071
+msgid "更新情報の形式が正しくありません。"
+msgstr ""
+
+#: js/ktpwp-update-balloon.js:35
+msgid "更新機能が利用できません"
+msgstr ""
+
+#: includes/class-ktpwp-update-checker.php:1373
+msgid "更新通知が無効化されています。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:2817
+msgid "更新通知の有効化"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:4872
+msgid "更新通知を有効にする"
+msgstr ""
+
+#: includes/class-ktpwp-update-checker.php:1324
+#: includes/class-ktpwp-update-checker.php:804
+msgid "更新通知を無視しました。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:4960
+msgid "更新通知を表示するユーザー権限を選択してください。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1224
+#: includes/class-ktpwp-settings.php:2809
+msgid "更新通知設定"
+msgstr ""
+
+#: js/ktp-cost-items.js:472
+#: js/ktp-invoice-items.js:808
+msgid "最低1行は必要です。"
+msgstr ""
+
+#: includes/class-ktpwp-update-checker.php:1401
+#: includes/class-ktpwp-update-checker.php:382
+msgid "最新バージョンです。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1935
+msgid "最終変更日時"
+msgstr ""
+
+#: includes/class-ktpwp-service-main.php:587
+msgid "月、件、時間など"
+msgstr ""
+
+#: includes/class-ktpwp-image-optimizer.php:481
+msgid "有効な画像ファイルではありません"
+msgstr ""
+
+#: ktpwp.php:2762
+msgid "有効化に失敗しました: "
+msgstr ""
+
+#: includes/class-ktpwp-order-main.php:368
+#: includes/class-ktpwp-order-main.php:375
+msgid "有料版機能"
+msgstr ""
+
+#: includes/class-ktpwp-woocommerce-integration.php:739
+msgid "未同期の注文を KantanPro に同期"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1979
+msgid "未記録"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1313
+msgid "未設定"
+msgstr ""
+
+#: includes/class-ktpwp-tab-supplier.php:1403
+msgid "本当に削除しますか？"
+msgstr ""
+
+#: includes/class-ktpwp-service-main.php:802
+msgid "本当に削除しますか？この操作は元に戻せません。"
+msgstr ""
+
+#: js/ktp-client-invoice.js:468
+msgid "本当に対象受注書の進捗を「請求済」に変更しますか？\nこの操作は取り消せません。\nOKで印刷を続行、キャンセルで中止します。"
+msgstr ""
+
+#: includes/class-ktpwp-order-main.php:374
+msgid "案件ファイル"
+msgstr ""
+
+#: includes/class-ktpwp-client-ui.php:218
+#: includes/class-ktpwp-client.php:111
+#: includes/class-ktpwp-order-main.php:1832
+#: includes/class-ktpwp-order-main.php:1833
+msgid "案件名"
+msgstr ""
+
+#: includes/class-ktpwp-service-ui.php:513
+#: includes/class-ktpwp-tab-list.php:81
+msgid "検索"
+msgstr ""
+
+#: includes/class-ktpwp-client.php:1568
+#: includes/class-ktpwp-service-main.php:851
+#: includes/class-ktpwp-tab-supplier.php:1426
+msgid "検索する"
+msgstr ""
+
+#: includes/class-ktpwp-tab-list.php:1071
+msgid "検索に一致するデータはありません。"
+msgstr ""
+
+#: includes/class-ktpwp-service-main.php:168
+#: includes/class-ktpwp-service-ui.php:556
+msgid "検索をキャンセルしました。"
+msgstr ""
+
+#: includes/class-ktpwp-client.php:1411
+#: includes/class-ktpwp-service-db.php:444
+#: includes/class-ktpwp-service-main.php:639
+#: includes/class-ktpwp-tab-supplier.php:1299
+msgid "検索モードです。条件を入力して検索してください。"
+msgstr ""
+
+#: includes/class-ktpwp-service-main.php:663
+#: includes/class-ktpwp-service-main.php:665
+msgid "検索実行"
+msgstr ""
+
+#: includes/class-ktpwp-tab-list.php:1078
+msgid "検索結果"
+msgstr ""
+
+#: includes/class-ktpwp-client.php:272
+#: includes/class-ktpwp-service-main.php:282
+#: includes/class-ktpwp-tab-supplier.php:673
+msgid "検索結果が複数あります！"
+msgstr ""
+
+#: includes/class-ktpwp-client.php:1473
+#: includes/class-ktpwp-tab-supplier.php:1357
+msgid "検索結果が見つかりませんでした。別のキーワードをお試しください。"
+msgstr ""
+
+#: includes/class-ktpwp-client.php:1164
+#: includes/class-ktpwp-service-ui.php:559
+#: includes/class-ktpwp-tab-supplier.php:272
+#: includes/class-ktpwp-tab-supplier.php:606
+msgid "検索結果を表示しています。"
+msgstr ""
+
+#: ktpwp.php:3701
+msgid "概要"
+msgstr ""
+
+#: includes/ajax-supplier-cost.php:146
+#: includes/ajax-supplier-cost.php:213
+#: includes/ajax-supplier-cost.php:23
+#: includes/ajax-supplier-cost.php:69
+#: includes/class-ktpwp-ajax.php:278
+msgid "権限がありません"
+msgstr ""
+
+#: includes/ajax-department.php:118
+#: includes/ajax-department.php:25
+#: includes/ajax-department.php:69
+#: includes/class-ktpwp-ajax.php:5511
+#: includes/class-ktpwp-settings.php:746
+msgid "権限がありません。"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:3017
+#: includes/class-ktpwp-ajax.php:3120
+msgid "権限がありません（nonce不正）"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:870
+msgid "正常に保存されました"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1216
+#: includes/class-ktpwp-settings.php:1512
+msgid "決済設定"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1519
+msgid "決済設定にアクセスするには、開発者パスワードを入力してください。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1266
+msgid "注意:"
+msgstr ""
+
+#: includes/class-ktpwp-client-ui.php:215
+#: includes/class-ktpwp-client.php:108
+msgid "注文ID"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:2921
+msgid "注文IDが必要です"
+msgstr ""
+
+#: includes/ajax-supplier-cost.php:265
+msgid "注文IDが無効です"
+msgstr ""
+
+#: includes/class-ktpwp-staff-chat.php:324
+msgid "注文IDが無効です。"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:3029
+msgid "注文IDとメッセージが必要です"
+msgstr ""
+
+#: includes/class-ktpwp-order-ui.php:275
+#: includes/class-ktpwp-order-ui.php:578
+msgid "消費税"
+msgstr ""
+
+#: js/ktp-cost-items.js:2199
+msgid "消費税 : "
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:4725
+msgid "消費税の基本設定を行います。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:2670
+msgid "消費税設定"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:122
+#: includes/class-ktpwp-ajax.php:849
+msgid "無効なIDです"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:1086
+msgid "無効なアイテムIDです"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:1074
+#: includes/class-ktpwp-ajax.php:1217
+#: includes/class-ktpwp-ajax.php:838
+#: includes/class-ktpwp-ajax.php:959
+msgid "無効なアイテムタイプです"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:3720
+msgid "無効なフィールド名です"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:1098
+#: includes/class-ktpwp-ajax.php:1212
+#: includes/class-ktpwp-ajax.php:3713
+#: includes/class-ktpwp-ajax.php:681
+msgid "無効な受注IDです"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:964
+msgid "無効な受注IDです。ページを再読み込みしてから再度お試しください。"
+msgstr ""
+
+#: includes/ajax-sales-ledger-pdf.php:43
+msgid "無効な年度が指定されました。"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:3728
+msgid "無効な日付形式です"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:4978
+msgid "現在のプラグインは公開リポジトリ用に設定されています。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1312
+msgid "現在のライセンスキー"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1670
+msgid "現在の設定での通知表示例："
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1297
+msgid "環境情報"
+msgstr ""
+
+#: includes/class-ktpwp-service-ui.php:189
+msgid "画像"
+msgstr ""
+
+#: js/ktp-media-upload.js:37
+msgid "画像を変更"
+msgstr ""
+
+#: ktpwp.php:500
+msgid "画像最適化機能が利用できません"
+msgstr ""
+
+#: js/ktp-cost-items.js:2018
+msgid "発注メール機能の読み込みに失敗しました。ページを再読み込みしてください。"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:2712
+msgid "発注書メールを送信しました。"
+msgstr ""
+
+#: includes/class-ktpwp-login-error.php:38
+msgid "登録"
+msgstr ""
+
+#: includes/class-ktpwp-client-ui.php:166
+#: includes/class-ktpwp-client.php:60
+#: includes/class-ktpwp-service-main.php:374
+#: includes/class-ktpwp-service-ui.php:454
+#: includes/class-ktpwp-tab-supplier.php:763
+msgid "登録日"
+msgstr ""
+
+#: includes/class-ktpwp-terms-of-service.php:903
+msgid "確認しました"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:2678
+msgid "税制モード"
+msgstr ""
+
+#: includes/class-ktpwp-order-ui.php:152
+#: includes/class-ktpwp-order-ui.php:423
+#: includes/class-ktpwp-service-main.php:589
+#: includes/class-ktpwp-service-ui.php:193
+msgid "税率"
+msgstr ""
+
+#: includes/migrations/20250131_fix_null_tax_rates.php:38
+msgid "税率の修正に失敗しました"
+msgstr ""
+
+#: includes/migrations/20250131_fix_null_tax_rates.php:32
+msgid "税率を修正しました。更新件数: {$result}件"
+msgstr ""
+
+#: includes/class-ktpwp-service-main.php:592
+msgid "税率（%）空白で非課税"
+msgstr ""
+
+#: includes/class-ktpwp-order-ui.php:280
+#: includes/class-ktpwp-order-ui.php:581
+msgid "税込合計"
+msgstr ""
+
+#: js/ktp-cost-items.js:2205
+#: js/ktp-invoice-items.js:564
+msgid "税込合計 : "
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1657
+msgid "空欄の場合は https://www.kantanpro.com/donation が使用されます"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:4891
+msgid "管理画面での更新通知を有効にする"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:4893
+msgid "管理画面のプラグインリストページとKantanPro設置ページで更新通知を表示します。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:2826
+msgid "管理画面通知の有効化"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:4942
+msgid "管理者"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1922
+msgid "管理者は登録者の権限に関わらずここでスタッフの追加削除が行えます"
+msgstr ""
+
+#: includes/class-ktpwp-terms-of-service.php:495
+msgid "管理者権限が必要です。"
+msgstr ""
+
+#: includes/class-ktpwp-order-main.php:1890
+msgid "約束納期"
+msgstr ""
+
+#: includes/class-ktpwp-order-main.php:1898
+msgid "納品予定日"
+msgstr ""
+
+#: includes/class-ktpwp-tab-list.php:594
+msgid "納期が迫っています"
+msgstr ""
+
+#: includes/class-ktpwp-tab-list.php:353
+msgid "納期が迫っている、または過ぎている案件が%d件あります"
+msgstr ""
+
+#: includes/class-ktpwp-tab-list.php:593
+msgid "納期が過ぎています"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:3787
+msgid "納期を更新しました"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:2643
+msgid "納期警告日数"
+msgstr ""
+
+#: includes/class-ktpwp-service-ui.php:251
+msgid "編集"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:4943
+msgid "編集者"
+msgstr ""
+
+#: includes/ajax-supplier-cost.php:137
+msgid "職能リストの取得中にエラーが発生しました: "
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:2936
+msgid "自社メールアドレス"
+msgstr ""
+
+#: js/ktp-cost-items.js:553
+#: js/ktp-invoice-items.js:877
+msgid "行の削除中にサーバーエラーが発生しました。\n"
+msgstr ""
+
+#: includes/class-ktpwp-order-ui.php:167
+#: includes/class-ktpwp-order-ui.php:439
+msgid "行を削除"
+msgstr ""
+
+#: includes/class-ktpwp-order-ui.php:440
+msgid "行を移動"
+msgstr ""
+
+#: includes/class-ktpwp-order-ui.php:165
+#: includes/class-ktpwp-order-ui.php:437
+msgid "行を追加"
+msgstr ""
+
+#: js/ktp-cost-items.js:534
+#: js/ktp-invoice-items.js:860
+msgid "行削除の応答処理中にエラーが発生しました。\n詳細: "
+msgstr ""
+
+#: includes/class-ktpwp-assets.php:754
+#: includes/class-ktpwp-assets.php:756
+#: js/ktp-license-manager.js:171
+msgid "表示"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1932
+msgid "表示名"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1709
+msgid "表示条件："
+msgstr ""
+
+#: includes/class-ktpwp-service-ui.php:261
+msgid "複製"
+msgstr ""
+
+#: includes/class-ktpwp-service-main.php:165
+#: includes/class-ktpwp-service-ui.php:553
+#: includes/class-ktpwp-tab-supplier.php:513
+#: includes/class-ktpwp-tab-supplier.php:579
+msgid "複製しました。"
+msgstr ""
+
+#: includes/class-ktpwp-service-main.php:837
+msgid "複製する"
+msgstr ""
+
+#: includes/class-ktpwp-client.php:476
+#: includes/class-ktpwp-client.php:741
+#: includes/class-ktpwp-order.php:468
+#: includes/class-ktpwp-tab-list.php:93
+msgid "見積中"
+msgstr ""
+
+#: ktpwp.php:3704
+msgid "設定"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:5176
+msgid "設定すると、このURLのJSONを優先してバナー表示に使用します。JSON例: {\"enabled\":true,\"image_url\":\"https://...\",\"link_url\":\"https://...\",\"alt_text\":\"...\"}"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:2304
+#: includes/class-ktpwp-settings.php:2436
+msgid "設定を保存"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:4362
+msgid "許可されていないフィールドです"
+msgstr ""
+
+#: includes/class-ktpwp-service-db.php:496
+#: includes/class-ktpwp-service-db.php:579
+#: includes/class-ktpwp-service-main.php:219
+#: includes/class-ktpwp-service-main.php:684
+msgid "該当するサービスが見つかりませんでした。条件を変更して再検索してください。"
+msgstr ""
+
+#: includes/class-ktpwp-tab-supplier.php:609
+msgid "該当する協力会社が見つかりませんでした。"
+msgstr ""
+
+#: includes/class-ktpwp-client.php:1167
+msgid "該当する顧客が見つかりませんでした。"
+msgstr ""
+
+#: includes/class-ktpwp-tab-report.php:462
+#: includes/class-ktpwp-tab-report.php:514
+msgid "該当期間に売上データがありません。期間を変更するか、請求済以降の案件・請求項目を登録してください。"
+msgstr ""
+
+#: includes/class-ktpwp-tab-report.php:567
+msgid "該当期間に貢献度データがありません。期間を変更するか、請求済以降の案件に協力会社・原価項目を登録してください。"
+msgstr ""
+
+#: js/ktp-supplier-selector.js:861
+msgid "該当行の更新に失敗しました。\nエラー: "
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1378
+msgid "詳細なライセンス状態を確認します。"
+msgstr ""
+
+#: includes/class-ktpwp-update-checker.php:304
+msgid "詳細な変更履歴は公式サイトまたはリポジトリをご確認ください。"
+msgstr ""
+
+#: includes/class-ktpwp-shortcodes.php:578
+#: includes/class-ktpwp-update-checker.php:253
+msgid "詳細を表示"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1498
+#: includes/class-ktpwp-settings.php:1538
+msgid "認証"
+msgstr ""
+
+#: includes/class-ktpwp-terms-of-service.php:250
+msgid "認証に成功しました。利用規約の編集が可能です。"
+msgstr ""
+
+#: includes/class-ktpwp-terms-of-service.php:256
+msgid "認証を解除しました。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:352
+msgid "認証中..."
+msgstr ""
+
+#: includes/class-ktpwp-terms-of-service.php:268
+msgid "認証解除"
+msgstr ""
+
+#: ktpwp.php:3698
+msgid "読み込み中..."
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:4708
+msgid "請求対象の受注書が見つかりません。"
+msgstr ""
+
+#: includes/class-ktpwp-tab-list.php:835
+msgid "請求日を過ぎています"
+msgstr ""
+
+#: includes/class-ktpwp-tab-list.php:356
+msgid "請求日を過ぎている案件が%d件あります"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:4732
+msgid "請求書の下部（自社情報の直後）に自動で印字されます。いずれかを入力すると表示されます。"
+msgstr ""
+
+#: includes/class-ktpwp-client.php:479
+#: includes/class-ktpwp-client.php:744
+#: includes/class-ktpwp-order.php:471
+#: includes/class-ktpwp-tab-list.php:96
+msgid "請求済"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:4946
+msgid "購読者"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:4847
+msgid "軽減税率を設定してください（消費税なしの場合は自動的に無効）。例：8"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:2707
+msgid "軽減税率（%）"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1955
+msgid "追加"
+msgstr ""
+
+#: includes/ajax-supplier-cost.php:417
+msgid "追加しました"
+msgstr ""
+
+#: includes/class-ktpwp-client.php:1557
+#: includes/class-ktpwp-service-main.php:823
+#: includes/class-ktpwp-service-ui.php:393
+#: includes/class-ktpwp-tab-supplier.php:1415
+msgid "追加する"
+msgstr ""
+
+#: js/ktp-cost-items.js:1095
+#: js/ktp-supplier-selector.js:894
+msgid "追加するサービスデータが見つかりません。"
+msgstr ""
+
+#: includes/class-ktpwp-supplier-data.php:499
+msgid "追加に失敗しました。SQLエラー: "
+msgstr ""
+
+#: js/ktp-supplier-selector.js:914
+msgid "追加処理に必要な関数が見つかりません。"
+msgstr ""
+
+#: js/ktp-supplier-selector.js:910
+msgid "追加処理中にエラーが発生しました: "
+msgstr ""
+
+#: includes/ajax-supplier-cost.php:202
+#: includes/ajax-supplier-cost.php:422
+msgid "追加失敗: "
+msgstr ""
+
+#: includes/class-ktpwp-client.php:1377
+#: includes/class-ktpwp-client.php:1379
+msgid "追加実行"
+msgstr ""
+
+#: includes/class-ktpwp-staff-chat.php:464
+#: js/ktp-js.js:554
+msgid "送信"
+msgstr ""
+
+#: js/ktp-js.js:516
+#: js/ktp-purchase-order-email.js:507
+msgid "送信中..."
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:3023
+msgid "送信者名"
+msgstr ""
+
+#: js/ktp-delivery-dates.js:296
+#: js/ktp-delivery-dates.js:389
+#: js/ktp-delivery-dates.js:482
+#: js/ktp-delivery-dates.js:548
+msgid "通信エラーが発生しました"
+msgstr ""
+
+#: includes/class-ktpwp-assets.php:584
+#: includes/class-ktpwp-settings.php:355
+msgid "通信エラーが発生しました。"
+msgstr ""
+
+#: js/ktpwp-notification-dismiss.js:43
+msgid "通信エラーが発生しました。ページを再読み込みしてください。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:4800
+msgid "通帳記載の名義と同じ表記（カタカナ）を推奨します。"
+msgstr ""
+
+#: ktpwp.php:5377
+msgid "通知が非表示になりました"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1638
+msgid "通知を表示する間隔を日数で設定してください。0を設定すると他の条件に優先して常時表示されます（ローカル開発環境でのテスト用）。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:2800
+msgid "通知プレビュー"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:2782
+msgid "通知メッセージ"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:2853
+msgid "通知対象ユーザー権限"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1701
+msgid "通知表示テスト"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:2773
+msgid "通知表示間隔（日数）"
+msgstr ""
+
+#: includes/class-ktpwp-client-ui.php:217
+#: includes/class-ktpwp-client.php:110
+#: includes/class-ktpwp-order-main.php:1876
+msgid "進捗"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:4603
+msgid "進捗を更新しました"
+msgstr ""
+
+#: js/ktp-delivery-dates.js:159
+msgid "進捗更新の通信でエラーが発生しました"
+msgstr ""
+
+#: ktpwp.php:2758
+msgid "適格請求書ナンバー機能のマイグレーション関数が見つかりません。"
+msgstr ""
+
+#: ktpwp.php:2753
+msgid "適格請求書ナンバー機能の有効化が完了しました。"
+msgstr ""
+
+#: ktpwp.php:2755
+msgid "適格請求書ナンバー機能の有効化に失敗しました。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:2652
+msgid "適格請求書番号"
+msgstr ""
+
+#: includes/class-ktpwp-client-ui.php:174
+#: includes/class-ktpwp-client-ui.php:224
+#: includes/class-ktpwp-client.php:117
+#: includes/class-ktpwp-client.php:68
+#: includes/class-ktpwp-service-main.php:380
+msgid "適用"
+msgstr ""
+
+#: js/ktpwp-image-optimizer.js:115
+msgid "選択した画像をWebPに変換"
+msgstr ""
+
+#: includes/ajax-department.php:161
+#: includes/ajax-department.php:86
+msgid "部署IDが指定されていません。"
+msgstr ""
+
+#: includes/ajax-department.php:95
+msgid "部署の削除に失敗しました。"
+msgstr ""
+
+#: includes/ajax-department.php:54
+msgid "部署の追加に失敗しました。"
+msgstr ""
+
+#: includes/ajax-department.php:93
+msgid "部署を削除しました。"
+msgstr ""
+
+#: includes/ajax-department.php:52
+msgid "部署を追加しました。"
+msgstr ""
+
+#: includes/ajax-department.php:35
+#: includes/ajax-department.php:79
+msgid "部署テーブルが存在しません。"
+msgstr ""
+
+#: includes/ajax-department.php:142
+msgid "部署テーブルの作成に失敗しました。"
+msgstr ""
+
+#: includes/ajax-department.php:148
+msgid "部署テーブル作成関数が見つかりません。"
+msgstr ""
+
+#: includes/ajax-department.php:126
+#: includes/ajax-department.php:30
+#: includes/ajax-department.php:74
+msgid "部署管理クラスが見つかりません。"
+msgstr ""
+
+#: includes/ajax-department.php:176
+msgid "部署選択状態の更新に失敗しました。"
+msgstr ""
+
+#: includes/ajax-department.php:171
+msgid "部署選択状態を更新しました。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:2891
+msgid "配信有効化"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:5105
+msgid "配布先では「外部参照URL」が空でも、公式サイトの既定バナー JSON を自動取得します（各サイトへの個別設定は不要です）。表示を止める場合は開発者設定の配信有効をオフにするか、テーマの functions.php 等でフィルター kantanpro_auto_fetch_official_central_banner を false にしてください。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:2912
+msgid "配布用バナーリンクURL"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:2905
+msgid "配布用バナー画像URL"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:2919
+msgid "配布用代替テキスト"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:5030
+msgid "重要な注意:"
+msgstr ""
+
+#: includes/class-ktpwp-order-ui.php:148
+#: includes/class-ktpwp-order-ui.php:422
+msgid "金額"
+msgstr ""
+
+#: js/ktp-cost-items.js:2194
+msgid "金額合計 : "
+msgstr ""
+
+#: js/ktp-cost-items.js:2210
+#: js/ktp-invoice-items.js:616
+#: js/ktp-invoice-items.js:618
+msgid "金額合計："
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:141
+#: includes/class-ktpwp-settings.php:2723
+msgid "銀行名・支店名"
+msgstr ""
+
+#: includes/class-ktpwp-client.php:314
+#: includes/class-ktpwp-service-main.php:324
+#: includes/class-ktpwp-settings.php:1694
+#: includes/class-ktpwp-tab-list.php:1065
+#: includes/class-ktpwp-tab-supplier.php:714
+msgid "閉じる"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1704
+msgid "閉じるテスト"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1228
+#: includes/class-ktpwp-settings.php:1300
+msgid "開発環境"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1424
+msgid "開発用ライセンスが設定されました。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1426
+msgid "開発用ライセンスの設定に失敗しました。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1337
+msgid "開発用ライセンスを設定"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1308
+msgid "開発用ライセンスキー"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1331
+msgid "開発用ライセンス操作"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1323
+msgid "開発用ライセンス有効"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1493
+#: includes/class-ktpwp-settings.php:1533
+msgid "開発者パスワードを入力してください。"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1146
+#: includes/class-ktpwp-settings.php:1472
+#: includes/class-ktpwp-settings.php:716
+#: includes/class-ktpwp-settings.php:717
+msgid "開発者設定"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:1479
+msgid "開発者設定にアクセスするには、開発者パスワードを入力してください。"
+msgstr ""
+
+#: includes/class-ktpwp-client-ui.php:172
+#: includes/class-ktpwp-client-ui.php:222
+#: includes/class-ktpwp-client.php:115
+#: includes/class-ktpwp-client.php:66
+#: includes/class-ktpwp-service-main.php:378
+msgid "降順"
+msgstr ""
+
+#: includes/class-ktpwp-settings.php:4980
+msgid "非公開リポジトリを使用する場合のみ、GitHub Personal Access Tokenを設定してください。"
+msgstr ""
+
+#: includes/class-ktpwp-assets.php:755
+#: includes/class-ktpwp-assets.php:757
+#: js/ktp-license-manager.js:168
+msgid "非表示"
+msgstr ""
+
+#: includes/class-ktpwp-client-ui.php:165
+#: includes/class-ktpwp-client.php:59
+#: includes/class-ktpwp-service-main.php:373
+#: includes/class-ktpwp-service-main.php:457
+#: includes/class-ktpwp-service-ui.php:453
+msgid "頻度"
+msgstr ""
+
+#: includes/class-ktpwp-tab-list.php:979
+#: includes/class-ktpwp-view-tab.php:41
+msgid "顧客"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:4670
+msgid "顧客IDが指定されていません。"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:4051
+msgid "顧客IDが無効です"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php:4067
+#: includes/class-ktpwp-ajax.php:4160
+msgid "顧客が見つからないか、データベースエラーが発生しました"
+msgstr ""
+
+#: includes/class-ktpwp-woocommerce-integration.php:749
+msgid "顧客を再紐付け（全件対象・既存の紐付けも上書き）"
+msgstr ""
+
+#: includes/class-ktpwp-order-main.php:1966
+#: includes/class-ktpwp-order-main.php:1994
+#: includes/class-ktpwp-tab-list.php:869
+msgid "顧客タブで顧客情報を入力し受注書を作成してください"
+msgstr ""
+
+#: includes/class-ktpwp-client.php:548
+msgid "顧客データが見つかりません。"
+msgstr ""
+
+#: includes/class-ktpwp-woocommerce-integration.php:884
+msgid "顧客未設定の WooCommerce 連携受注 %d 件を顧客に紐付けました。"
+msgstr ""
+
+#: includes/class-ktpwp-woocommerce-integration.php:747
+msgid "顧客未設定の WooCommerce 連携受注はありません。"
+msgstr ""
+
+#: includes/class-ktpwp-woocommerce-integration.php:745
+msgid "顧客未設定の受注 %d 件を一括で顧客紐付け"
+msgstr ""
+
+#: includes/class-ktpwp-graph-renderer.php:33
+msgid "高度なグラフレポート機能"
+msgstr ""
+
+#: includes/ajax-sales-ledger-pdf.php:132
+msgid "（自社名未設定）"
+msgstr ""
+
+#: js/ktp-sales-ledger-pdf.js:276
+msgid "🖨️ 印刷"
+msgstr ""
+
+#: js/ktp-sales-ledger-pdf.js:241
+msgid "🖨️ 生成中..."
+msgstr ""
+
+msgid "📅 ソート順:"
+msgstr ""
+
+msgid "納期が迫っている順 → 受注日時順（新しい順）で表示されています。"
+msgstr ""
+
+msgid "納期"
+msgstr ""
+
+msgid "%1$d / %2$d ページ（全 %3$d 件）"
+msgstr ""
+
+msgid "このウィンドウを閉じる"
+msgstr ""
+
+msgid "利用規約"
+msgstr ""
+
+msgid "ヘルプ"
+msgstr ""
+
+msgid "外税"
+msgstr ""
+
+msgid "金額合計"
+msgstr ""
+
+msgid "適格請求書コスト"
+msgstr ""
+
+msgid "非適格請求書コスト"
+msgstr ""
+
+msgid "送信履歴はまだありません。"
+msgstr ""
+
+msgid "最新%d件"
+msgstr ""
+
+msgid "PDF・画像（最大20MB）"
+msgstr ""
+
+msgid "受注書作成"
+msgstr ""
+
+#: includes/class-ktpwp-order-main.php
+msgid "%s 様"
+msgstr ""
+
+#: includes/class-ktpwp-order-main.php
+msgid "%1$s %2$s 様"
+msgstr ""
+
+#: includes/class-ktpwp-order-main.php
+msgid "＜%s＞"
+msgstr ""
+
+#: includes/class-ktpwp-order-main.php
+msgid "受注書ID: %1$d | 作成日: %2$s"
+msgstr ""
+
+#: includes/class-ktpwp-order-main.php
+msgid "Y年m月d日"
+msgstr ""
+
+#: includes/class-ktpwp-order-main.php
+msgid "見積書"
+msgstr ""
+
+#: includes/class-ktpwp-order-main.php
+msgid "注文受書"
+msgstr ""
+
+#: includes/class-ktpwp-order-main.php
+msgid "納品書"
+msgstr ""
+
+#: includes/class-ktpwp-order-main.php
+msgid "請求書"
+msgstr ""
+
+#: includes/class-ktpwp-order-main.php
+msgid "領収書"
+msgstr ""
+
+#: includes/class-ktpwp-order-main.php
+msgid "案件完了"
+msgstr ""
+
+#: includes/class-ktpwp-order-main.php
+msgid "%sにつきましてお見積りいたします。"
+msgstr ""
+
+#: includes/class-ktpwp-order-main.php
+msgid "%sにつきましてご注文をお受けしました。"
+msgstr ""
+
+#: includes/class-ktpwp-order-main.php
+msgid "%sにつきまして完了しました。"
+msgstr ""
+
+#: includes/class-ktpwp-order-main.php
+msgid "%sにつきまして請求申し上げます。"
+msgstr ""
+
+#: includes/class-ktpwp-order-main.php
+msgid "%sにつきましてお支払いを確認しました。"
+msgstr ""
+
+#: includes/class-ktpwp-order-main.php
+msgid "%sにつきましては全て完了しています。"
+msgstr ""
+
+#: includes/class-ktpwp-order-main.php
+msgid "%sにつきましてご依頼をお受けしました。"
+msgstr ""
+
+#: includes/class-ktpwp-order-main.php
+msgid "請求項目（%1$d/%2$dp）"
+msgstr ""
+
+#: includes/class-ktpwp-order-main.php
+msgid "金額（税抜）"
+msgstr ""
+
+#: includes/class-ktpwp-order-main.php
+msgid "金額（税込）"
+msgstr ""
+
+#: includes/class-ktpwp-order-main.php
+msgid "単価（税抜）"
+msgstr ""
+
+#: includes/class-ktpwp-order-main.php
+msgid "単価（税込）"
+msgstr ""
+
+#: includes/class-ktpwp-order-main.php
+msgid "税額（外税）"
+msgstr ""
+
+#: includes/class-ktpwp-order-main.php
+msgid "税額（内税）"
+msgstr ""
+
+#: includes/class-ktpwp-order-main.php
+msgid "項目名"
+msgstr ""
+
+#: includes/class-ktpwp-order-main.php
+msgid "ページ小計"
+msgstr ""
+
+#: includes/class-ktpwp-order-main.php
+msgid "（内税：%s）"
+msgstr ""
+
+#: includes/class-ktpwp-order-main.php
+msgid "（内税：%s円）"
+msgstr ""
+
+#: includes/class-ktpwp-order-main.php
+msgid "（内税 %s円）"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php js/ktp-email-popup.js
+msgid "見積り書"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php js/ktp-email-popup.js
+msgid "につきましてお見積りいたします。"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php js/ktp-email-popup.js
+msgid "につきましてご注文をお受けしました。"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php js/ktp-email-popup.js
+msgid "につきまして完了しました。"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php js/ktp-email-popup.js
+msgid "につきまして請求申し上げます。"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php js/ktp-email-popup.js
+msgid "につきましてお支払いを確認しました。"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php js/ktp-email-popup.js
+msgid "につきましては全て完了しています。"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php js/ktp-email-popup.js
+msgid "%1$s：%2$s"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php js/ktp-email-popup.js
+msgid "%1$s\n%2$s\n\nお世話になります。\n\n＜%3$s＞\nID: %4$d [%5$s]\n\n「%6$s」%7$s\n%8$s"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php js/ktp-email-popup.js
+msgid "（税率%s%%）"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php js/ktp-email-popup.js
+msgid "※ %s"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php js/ktp-email-popup.js
+msgid "%1$s：%2$s円 × %3$s%4$s = %5$s円%6$s%7$s"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php js/ktp-email-popup.js
+msgid "外税合計：%s円"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php js/ktp-email-popup.js
+msgid "消費税：%s円"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php js/ktp-email-popup.js
+msgid "内税合計：%s円"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php js/ktp-email-popup.js
+msgid "金額合計：%s円"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php js/ktp-email-popup.js
+msgid "（請求項目未入力）"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php js/ktp-email-popup.js
+msgid "メール内容を読み込み中..."
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php js/ktp-email-popup.js
+msgid "メール内容の取得に失敗しました"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php js/ktp-email-popup.js
+msgid "メール内容の読み込みに失敗しました"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php js/ktp-email-popup.js
+msgid "再度お試しください"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php js/ktp-email-popup.js
+msgid "権限がありません。ログインを確認してください。"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php js/ktp-email-popup.js
+msgid "受注書が見つかりませんでした。"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php js/ktp-email-popup.js
+msgid "サーバーエラーが発生しました。"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php js/ktp-email-popup.js
+msgid "レスポンスの解析に失敗しました。"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php js/ktp-email-popup.js
+msgid "HTMLエラーメッセージが混在している可能性があります。"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php js/ktp-email-popup.js
+msgid "ステータス"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php js/ktp-email-popup.js
+msgid "宛先"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php js/ktp-email-popup.js
+msgid "CC（任意・カンマ区切り）"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php js/ktp-email-popup.js
+msgid "顧客代表・各部署に登録されたメールのうち、宛先（To）以外を自動で入れます（KantanBizの「CC（任意）」と同様）。編集できます。"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php js/ktp-email-popup.js
+msgid "件名"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php js/ktp-email-popup.js
+msgid "本文"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php js/ktp-email-popup.js
+msgid "ファイル添付"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php js/ktp-email-popup.js
+msgid "ファイルをドラッグ&ドロップまたはクリックして選択"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php js/ktp-email-popup.js
+msgid "対応形式：PDF, 画像(JPG,PNG,GIF), Word, Excel, 圧縮ファイル等"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php js/ktp-email-popup.js
+msgid "最大ファイルサイズ：10MB/ファイル, 合計50MB"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php js/ktp-email-popup.js
+msgid "ファイル \"%s\" は10MBを超えています。\n最大ファイルサイズ：10MB"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php js/ktp-email-popup.js
+msgid "合計ファイルサイズが50MBを超えます。\nファイルを減らしてください。"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php js/ktp-email-popup.js
+msgid "ファイル \"%s\" は対応していない形式です。\n対応形式：PDF, 画像, Word, Excel, 圧縮ファイル等"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php js/ktp-email-popup.js
+msgid "選択されたファイル"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php js/ktp-email-popup.js
+msgid "メール送信中..."
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php js/ktp-email-popup.js
+msgid "%d件のファイルを添付中..."
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php js/ktp-email-popup.js
+msgid "メール送信完了"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php js/ktp-email-popup.js
+msgid "進捗を「%s」に更新しました。"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php js/ktp-email-popup.js
+msgid "添付ファイル"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php js/ktp-email-popup.js
+msgid "メール送信に失敗しました"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php js/ktp-email-popup.js
+msgid "メール送信失敗"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php js/ktp-email-popup.js
+msgid "メール送信エラー"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php js/ktp-email-popup.js
+msgid "再試行"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php js/ktp-email-popup.js
+msgid "顧客データが見つかりません"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php js/ktp-email-popup.js
+msgid "この顧客は削除済み（対象外）のため、メール送信はできません。"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php js/ktp-email-popup.js
+msgid "メールアドレス未設定"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php js/ktp-email-popup.js
+msgid "この顧客のメールアドレスが未設定または無効です。顧客管理画面で代表メールまたは部署メールを登録してください。"
+msgstr ""
+
+#: includes/class-ktpwp-ajax.php
+msgid "この受注書に関連する顧客データが見つかりません。顧客管理画面で顧客を登録してください。"
+msgstr ""
+
+msgid "通貨"
+msgstr ""
+
+msgid "日本円（JPY）"
+msgstr ""
+
+msgid "米ドル（USD）"
+msgstr ""
+
+msgid "ユーロ（EUR）"
+msgstr ""
+
+msgid "英ポンド（GBP）"
+msgstr ""
+
+msgid "豪ドル（AUD）"
+msgstr ""
+
+msgid "カナダドル（CAD）"
+msgstr ""
+
+msgid "※ 金額の表示通貨です。為替換算は行わず、入力済みの数値を選択した通貨として表示します。"
+msgstr ""
+
+msgid "外税合計：%s"
+msgstr ""
+
+msgid "消費税：%s"
+msgstr ""
+
+msgid "内税合計：%s"
+msgstr ""
+
+msgid "金額合計：%s"
+msgstr ""
+
+msgid "（内税 %s）"
+msgstr ""
+
+msgid "%1$s：%2$s × %3$s%4$s = %5$s%6$s%7$s"
+msgstr ""
+
+
+msgid "【振込先口座】"
+msgstr ""
+
+msgid "銀行名・支店名："
+msgstr ""
+
+msgid "口座種別："
+msgstr ""
+
+msgid "口座番号："
+msgstr ""
+
+msgid "口座名義（カナ）："
+msgstr ""
+
+msgid "KantanProの開発を支援してください。"
+msgstr ""
+
+msgid "このサイトの運営にご協力いただける方は、寄付をお願いいたします。"
+msgstr ""
+
+msgid "KantanPro利用権限（ktpwp_access）を付加しました。"
+msgstr ""
+
+msgid "スタッフ追加の通知メールを %s に送信しました。"
+msgstr ""
+
+msgid "スタッフ追加の通知メール送信に失敗しました。メール設定をご確認ください。"
+msgstr ""
+
+msgid "KantanPro利用権限（ktpwp_access）を削除しました。"
+msgstr ""
+
+msgid "スタッフ削除の通知メールを %s に送信しました。"
+msgstr ""
+
+msgid "スタッフ削除の通知メール送信に失敗しました。メール設定をご確認ください。"
+msgstr ""
+
+msgid "登録スタッフ一覧"
+msgstr ""
+
+msgid "メール通知について："
+msgstr ""
+
+msgid "スタッフの追加・削除時に、該当ユーザーへ自動でメール通知が送信されます。"
+msgstr ""
+
+msgid "通知内容にはログイン情報や権限の変更についての案内が含まれます。"
+msgstr ""
+
+msgid "利用中"
+msgstr ""
+
+msgid "未使用"
+msgstr ""
+
+msgid "なし"
+msgstr ""
+
+msgid "会社名や担当者名"
+msgstr ""
+
+msgid "【KTPWP】SMTPテストメール"
+msgstr ""
+
+msgid "このメールはKTPWPプラグインのSMTPテスト送信です。\n\n送信元: %s"
+msgstr ""
+
+msgid "テストメールを送信しました。メールボックスをご確認ください。"
+msgstr ""
+
+msgid "PHPMailerインスタンスが取得できませんでした"
+msgstr ""
+
+msgid "テストメールの送信に失敗しました。SMTP設定をご確認ください。"
+msgstr ""
+
+msgid "消費税あり（行ごと税率）"
+msgstr ""
+
+msgid "一律税率（全明細に同一税率）"
+msgstr ""
+
+msgid "消費税なし（税列非表示）"
+msgstr ""
+
+msgid "※ 「一律税率」を選択すると入力した税率が全明細に適用され、行ごとの税率編集はできません。「消費税なし」を選択すると税率/税額列は非表示になります。"
+msgstr ""
+
+msgid "例：10"
+msgstr ""
+
+msgid "※ この設定は「一律税率」モード選択時のみ有効です。未入力時は既定の5%が適用されます。0を入力した場合は0%で固定されます。"
+msgstr ""
+
+msgid "消費税なし（税廃止）設定のため、適格請求書番号は使用しません。"
+msgstr ""
+
+msgid "KTPWP設定"
+msgstr ""
+
+msgid "デバッグログ設定"
+msgstr ""
+
+msgid "デバッグログを有効にする"
+msgstr ""
+
+msgid "デバッグログは安全な場所（wp-content/logs/）に保存されます。"
+msgstr ""
+
+msgid "REST API制限"
+msgstr ""
+
+msgid "フロントエンドでのREST APIをログインユーザーのみに制限する"
+msgstr ""
+
+msgid "管理画面やブロックエディターは常に許可されます。"
+msgstr ""
+
+msgid "REST API制限を完全に無効化する（サイトヘルスエラーが解決されない場合）"
+msgstr ""
+
+msgid "この設定を有効にすると、セキュリティが低下する可能性があります。"
+msgstr ""
+
+msgid "サイトヘルスエラーが解決されない場合のみ使用してください。"
+msgstr ""
+
+msgid "現在の設定状況"
+msgstr ""
+
+msgid "プラグインバージョン"
+msgstr ""
+
+msgid "インストール日"
+msgstr ""
+
+msgid "デバッグモード"
+msgstr ""
+
+msgid "サイトURL"
+msgstr ""
+
+msgid "REST API制限の状態"
+msgstr ""
+
+msgid "有効"
+msgstr ""
+
+msgid "完全無効化"
+msgstr ""
+
+msgid "無効"
+msgstr ""
+
+msgid "開発環境で緩和"
+msgstr ""
+
+msgid "推奨設定（wp-config.php）"
+msgstr ""
+
+msgid "デバッグログの安全な設定:"
+msgstr ""
+
+msgid "デバッグモードを有効化"
+msgstr ""
+
+msgid "デバッグログを安全な場所に保存"
+msgstr ""
+
+msgid "デバッグ表示を無効化（本番環境では必須）"
+msgstr ""
+
+msgid "スクリプトエラーの表示を無効化"
+msgstr ""
+
+msgid "設定を保存しました。"
+msgstr ""
+
+msgid "不明"
+msgstr ""
+
+msgid "公開リポジトリ用に最適化済み"
+msgstr ""
+
+msgid "GitHub Personal Access Tokenの作成"
+msgstr ""
+
+msgid "現在の設定:"
+msgstr ""
+
+msgid "公開リポジトリ「KantanPro/KantanPro-a-」を使用"
+msgstr ""
+
+msgid "[%s] スタッフ権限が付与されました"
+msgstr ""
+
+msgid "この度、%s の業務管理システム（KantanPro）のスタッフ権限が付与されました。"
+msgstr ""
+
+msgid "以下のURLからログインして、システムをご利用ください："
+msgstr ""
+
+msgid "ログイン情報："
+msgstr ""
+
+msgid "ユーザー名: "
+msgstr ""
+
+msgid "メールアドレス: "
+msgstr ""
+
+msgid "パスワードをお忘れの場合は、ログイン画面の「パスワードをお忘れですか？」からリセットしてください。"
+msgstr ""
+
+msgid "ご不明な点がございましたら、システム管理者までお問い合わせください。"
+msgstr ""
+
+msgid "[%s] スタッフ権限が削除されました"
+msgstr ""
+
+msgid "%s の業務管理システム（KantanPro）のスタッフ権限が削除されました。"
+msgstr ""
+
+msgid "今後、システムへのアクセスができなくなります。"
+msgstr ""
+
+msgid "ご質問がございましたら、システム管理者までお問い合わせください。"
+msgstr ""
+
+msgid "※ このメールは自動送信されています。"
+msgstr ""
+
+msgid "メール設定"
+msgstr ""
+
+msgid "※ サイトから届くメールが迷惑メールと認識されないよう、サイトのドメインと同じメールアドレスをご入力ください。"
+msgstr ""
+
+
+msgid "リストアが完了しました。"
+msgstr ""
+
+msgid "リストアに失敗しました。ファイル形式をご確認ください。"
+msgstr ""
+
+msgid "エクスポート"
+msgstr ""
+
+msgid "KantanProの設定とデータを1つのファイルに出力します。"
+msgstr ""
+
+msgid "形式"
+msgstr ""
+
+msgid "エクスポート実行"
+msgstr ""
+
+msgid "リストア"
+msgstr ""
+
+msgid "エクスポートしたJSON/CSVファイルを選択してリストアします。"
+msgstr ""
+
+msgid "リストアを実行すると、現在のデータは全て削除されます。"
+msgstr ""
+
+msgid "リストア実行"
+msgstr ""
+
+msgid "開発環境として判定"
+msgstr ""
+
+msgid "テストメール送信"
+msgstr ""
+
+msgid "SMTPの設定が正しく機能しているか確認するためのテストメールを送信します。"
+msgstr ""
+
+msgid "%d件"
+msgstr ""
+
+msgid "%d日"
+msgstr ""
+
+msgid "KantanPro ダミーデータ作成"
+msgstr ""
+
+msgid "KantanPro ダミーデータ"
+msgstr ""
+
+msgid "スクリプトが見つかりません"
+msgstr ""
+
+msgid "品名ベース税率設定版"
+msgstr ""
+
+msgid "バージョン情報が見つかりません"
+msgstr ""
+
+msgid "プラグインバージョン:"
+msgstr ""
+
+msgid "ダミーデータ作成スクリプトバージョン:"
+msgstr ""
+
+msgid "作成されるデータ:"
+msgstr ""
+
+msgid "顧客: 6件（メールアドレス: info@kantanpro.com）"
+msgstr ""
+
+msgid "受注書: 18件（顧客×6件 × ステータス3パターン：受付中・受注・完成）"
+msgstr ""
+
+msgid "協力会社: 6件（メールアドレス: info@kantanpro.com）"
+msgstr ""
+
+msgid "職能: 18件（協力会社×6件 × 税率3パターン：10%・8%・非課税）"
+msgstr ""
+
+msgid "サービス: 6件（一般：税率10%・食品：税率8%・不動産：非課税）各×2"
+msgstr ""
+
+msgid "請求項目・コスト項目: 受注書に自動追加"
+msgstr ""
+
+msgid "対象外データ:"
+msgstr ""
+
+msgid "スタッフチャット: 既存データは削除されますが、新規作成時は初期メッセージを作成しません"
+msgstr ""
+
+msgid "テスト用のダミーデータを作成します。既存データがある場合は確認メッセージが表示されます。"
+msgstr ""
+
+msgid "ダミーデータを作成"
+msgstr ""
+
+msgid "データをクリア"
+msgstr ""
+
+msgid "作成中..."
+msgstr ""
+
+msgid "ダミーデータを作成中..."
+msgstr ""
+
+msgid "エラー: "
+msgstr ""
+
+msgid "不明なエラー"
+msgstr ""
+
+msgid "サーバーエラー: "
+msgstr ""
+
+msgid "本当にデータをクリアしますか？\nこの操作は元に戻せません。"
+msgstr ""
+
+msgid "データをクリア中..."
+msgstr ""
+
+msgid "コスト項目: %d件"
+msgstr ""
+
+msgid "請求項目: %d件"
+msgstr ""
+
+msgid "受注書: %d件"
+msgstr ""
+
+msgid "顧客: %d件"
+msgstr ""
+
+msgid "協力会社職能: %d件"
+msgstr ""
+
+msgid "協力会社: %d件"
+msgstr ""
+
+msgid "サービス: %d件"
+msgstr ""
+
+msgid "データクリアが完了しました！<br><br>クリアされたデータ:<br>• %s<br><br>合計: %d件のデータを削除しました。"
+msgstr ""
+
+msgid "クリアするデータがありませんでした。"
+msgstr ""
+
+msgid "請求書発行"
+msgstr ""
+
+msgid "請求書プレビュー"
+msgstr ""
+
+msgid "作成"
+msgstr ""
+
+msgid "会社名："
+msgstr ""
+
+msgid "名前："
+msgstr ""
+
+msgid "カテゴリー："
+msgstr ""
+
+msgid "の注文履歴"
+msgstr ""
+
+msgid "日"
+msgstr ""
+
+msgid "月"
+msgstr ""
+
+msgid "火"
+msgstr ""
+
+msgid "水"
+msgstr ""
+
+msgid "木"
+msgstr ""
+
+msgid "金"
+msgstr ""
+
+msgid "土"
+msgstr ""
+
+msgid "完了日："
+msgstr ""
+
+msgid "まだ注文がありません。"
+msgstr ""
+
+msgid "[削除済み]"
+msgstr ""
+
+msgid "[＋]ボタンを押してデーターを作成してください"
+msgstr ""
+
+msgid "データがまだ登録されていません"
+msgstr ""
+
+msgid "顧客データがありません。"
+msgstr ""
+
+msgid "顧客削除の選択"
+msgstr ""
+
+msgid "の削除方法を選択してください"
+msgstr ""
+
+msgid "1. 対象外（推奨）"
+msgstr ""
+
+msgid "受注書は残り、顧客データは復元可能です"
+msgstr ""
+
+msgid "2. 通常削除"
+msgstr ""
+
+msgid "顧客データと部署データを削除（受注書は残す）"
+msgstr ""
+
+msgid "3. 完全削除"
+msgstr ""
+
+msgid "顧客データと関連する受注書を完全に削除します"
+msgstr ""
+
+msgid "削除実行"
+msgstr ""
+
+msgid "顧客データと部署データを削除しますか？\n\n注意：\n• 顧客データと部署データが完全に削除されます\n• 受注書は残りますが、顧客情報は失われます\n• この操作は元に戻せません"
+msgstr ""
+
+msgid "顧客データと関連する受注書を完全に削除しますか？\n\n警告：\n• 顧客データが完全に削除されます\n• 関連するすべての受注書が削除されます\n• この操作は元に戻せません\n• データの復元は不可能です"
+msgstr ""
+
+msgid "受注書作成（対象外顧客のため無効）"
+msgstr ""
+
+msgid "顧客ID: "
+msgstr ""
+
+msgid "フリーワード検索"
+msgstr ""
+
+msgid "■ 顧客の詳細（検索モード）"
+msgstr ""
+
+msgid "部署設定（複数の部署や担当者がある場合は設定してください）"
+msgstr ""
+
+msgid "部署名"
+msgstr ""
+
+msgid "選択された部署"
+msgstr ""
+
+msgid "部署名:"
+msgstr ""
+
+msgid "担当者名:"
+msgstr ""
+
+msgid "メールアドレス:"
+msgstr ""
+
+msgid "部署を選択してください"
+msgstr ""
+
+msgid "部署が登録されていません。"
+msgstr ""
+
+msgid "顧客を保存後に部署を追加できます。"
+msgstr ""
+
+msgid "部署の追加に失敗しました: "
+msgstr ""
+
+msgid "この部署を削除しますか？"
+msgstr ""
+
+msgid "部署の削除に失敗しました: "
+msgstr ""
+
+msgid "部署選択状態の更新に失敗しました: "
+msgstr ""
+
+msgid "名前"
+msgstr ""
+
+msgid "代表者名"
+msgstr ""
+
+msgid "郵便番号"
+msgstr ""
+
+msgid "都道府県"
+msgstr ""
+
+msgid "市区町村"
+msgstr ""
+
+msgid "番地"
+msgstr ""
+
+msgid "建物名"
+msgstr ""
+
+msgid "締め日"
+msgstr ""
+
+msgid "支払月"
+msgstr ""
+
+msgid "支払日"
+msgstr ""
+
+msgid "支払方法"
+msgstr ""
+
+msgid "税区分"
+msgstr ""
+
+msgid "支払タイミング"
+msgstr ""
+
+msgid "必須 法人名または屋号"
+msgstr ""
+
+msgid "半角数字 ハイフン不要"
+msgstr ""
+
+msgid "5日"
+msgstr ""
+
+msgid "10日"
+msgstr ""
+
+msgid "15日"
+msgstr ""
+
+msgid "20日"
+msgstr ""
+
+msgid "25日"
+msgstr ""
+
+msgid "末日"
+msgstr ""
+
+msgid "今月"
+msgstr ""
+
+msgid "翌月"
+msgstr ""
+
+msgid "翌々月"
+msgstr ""
+
+msgid "その他"
+msgstr ""
+
+msgid "即日"
+msgstr ""
+
+msgid "銀行振込"
+msgstr ""
+
+msgid "クレジット"
+msgstr ""
+
+msgid "現金集金"
+msgstr ""
+
+msgid "対象外"
+msgstr ""
+
+msgid " 様"
+msgstr ""
+
+msgid "様"
+msgstr ""
+
+msgid "通信エラーが発生しました。ページを再読み込みして再度お試しください。"
+msgstr ""
+
+msgid "適格請求書番号："
+msgstr ""
+
+msgid "平素より大変お世話になっております。下記の通りご請求申し上げます。"
+msgstr ""
+
+msgid "合計金額："
+msgstr ""
+
+msgid "繰越金額："
+msgstr ""
+
+msgid "消費税："
+msgstr ""
+
+msgid "税込合計："
+msgstr ""
+
+msgid "（内消費税："
+msgstr ""
+
+msgid "請求金額："
+msgstr ""
+
+msgid "お支払い期日："
+msgstr ""
+
+msgid "締日："
+msgstr ""
+
+msgid "　案件数："
+msgstr ""
+
+msgid "件"
+msgstr ""
+
+msgid "（完了日："
+msgstr ""
+
+msgid "数量/単位"
+msgstr ""
+
+msgid "式"
+msgstr ""
+
+msgid "案件合計："
+msgstr ""
+
+msgid "請求項目なし"
+msgstr ""
+
+msgid " 月別合計："
+msgstr ""
+
+msgid "対象受注書の進捗を「請求済」に変更する"
+msgstr ""
+
+msgid "印刷 PDF保存"
+msgstr ""
+
+msgid "該当する案件はありません。"
+msgstr ""
+
+msgid "データ取得エラー: "
+msgstr ""
+
+msgid "レスポンス: "
+msgstr ""
+
+msgid "通信エラー (HTTP "
+msgstr ""
+
+msgid "顧客IDが見つかりません。"
+msgstr ""
+
+msgid "セキュリティエラー: nonceが見つかりません。"
+msgstr ""
+
+msgid "■ 顧客の詳細"
+msgstr ""
+
+msgid "顧客情報"
+msgstr ""
+
+msgid "顧客情報印刷"
+msgstr ""
+
+msgid "印刷日時:"
+msgstr ""
+
+msgid "Y年m月d日 H:i"
+msgstr ""
+
+msgid "Y年n月分"
+msgstr ""
+
+msgid "■ サービスの詳細"
+msgstr ""
+
+msgid "■ サービスリスト"
+msgstr ""
+
+msgid "サービス情報"
+msgstr ""
+
+msgid "非課税"
+msgstr ""
+
+msgid "画像をアップロード"
+msgstr ""
+
+msgid "受注書がありません"
+msgstr ""
+
+msgid "非表示にする"
+msgstr ""
+
+msgid "受注書を削除"
+msgstr ""
+
+msgid "本当にこの受注書を削除しますか？\\nこの操作は元に戻せません。"
+msgstr ""
+
+msgid "■ 協力会社の詳細"
+msgstr ""
+
+msgid "（ ID: %s ）"
+msgstr ""
+
+msgid "■ %1$s（ID: %2$s）の商品"
+msgstr ""
+
+msgid "■ %sの商品"
+msgstr ""
+
+msgid "協力会社情報"
+msgstr ""
+
+msgid "担当者名"
+msgstr ""
+
+msgid "電話番号"
+msgstr ""
+
+msgid "住所"
+msgstr ""
+
+msgid "売上レポート"
+msgstr ""
+
+msgid "顧客別レポート"
+msgstr ""
+
+msgid "サービス別レポート"
+msgstr ""
+
+msgid "協力会社レポート"
+msgstr ""
+
+msgid "確定申告用"
+msgstr ""
+
+msgid "📊 売上計算について"
+msgstr ""
+
+msgid "売上は「請求済」以降の進捗状況の案件のみを対象としています。"
+msgstr ""
+
+msgid "※ 請求項目があっても進捗が「完了」以前の場合は売上に含まれません。"
+msgstr ""
+
+msgid "※ 「ボツ」案件は売上計算から除外されています。"
+msgstr ""
+
+msgid "月別売上推移"
+msgstr ""
+
+msgid "月別利益コスト比較"
+msgstr ""
+
+msgid "顧客別売上"
+msgstr ""
+
+msgid "顧客別案件数"
+msgstr ""
+
+msgid "サービス別売上"
+msgstr ""
+
+msgid "サービス別比率（受注ベース）"
+msgstr ""
+
+msgid "協力会社別貢献度"
+msgstr ""
+
+msgid "スキル別協力会社数"
+msgstr ""
+
+msgid "売上は「請求済」以降の進捗状況の案件のみを対象としています。「ボツ」案件は売上計算から除外されています。対象期間：%s"
+msgstr ""
+
+msgid "売上は「請求済」以降の進捗状況の案件のみを対象としています。サービス別比率は「受注」以降の進捗状況の案件を対象としています。「ボツ」案件は計算から除外されています。対象期間：%s"
+msgstr ""
+
+msgid "貢献度は「請求済」以降の進捗状況の案件のみを対象としています。「ボツ」案件は計算から除外されています。対象期間：%s"
+msgstr ""
+
+msgid "全期間"
+msgstr ""
+
+msgid "今年"
+msgstr ""
+
+msgid "去年"
+msgstr ""
+
+msgid "先月"
+msgstr ""
+
+msgid "過去3ヶ月"
+msgstr ""
+
+msgid "過去6ヶ月"
+msgstr ""
+
+msgid "期間選択"
+msgstr ""
+
+msgid "総売上"
+msgstr ""
+
+msgid "案件数"
+msgstr ""
+
+msgid "平均単価"
+msgstr ""
+
+msgid "%s件"
+msgstr ""
+
+msgid "売上TOP5顧客"
+msgstr ""
+
+msgid "売上TOP5サービス"
+msgstr ""
+
+msgid "貢献度TOP5協力会社"
+msgstr ""
+
+msgid "（顧客未設定）"
+msgstr ""
+
+msgid "（協力会社未設定）"
+msgstr ""
+
+msgid "（未設定）"
+msgstr ""
+
+msgid "無題"
+msgstr ""
+
+msgid "対象年度選択"
+msgstr ""
+
+msgid "%s年"
+msgstr ""
+
+msgid "売上台帳（%s年）"
+msgstr ""
+
+msgid "年間売上合計"
+msgstr ""
+
+msgid "売上件数"
+msgstr ""
+
+msgid "📋 売上台帳プレビュー"
+msgstr ""
+
+msgid "（最新10件）"
+msgstr ""
+
+msgid "顧客名"
+msgstr ""
+
+msgid "売上金額"
+msgstr ""
+
+msgid "※ 全%1$d件中、最新10件を表示。全件は印刷プレビューでご確認ください。"
+msgstr ""
+
+msgid "対象年度の売上データがありません。"
+msgstr ""
+
+msgid "📊 確定申告サポート機能"
+msgstr ""
+
+msgid "売上台帳印刷"
+msgstr ""
+
+msgid "年度別の売上データを帳簿形式で印刷"
+msgstr ""
+
+msgid "税務署提出対応"
+msgstr ""
+
+msgid "確定申告に必要な売上情報を整理"
+msgstr ""
+
+msgid "月別集計"
+msgstr ""
+
+msgid "月ごとの売上推移を確認可能"
+msgstr ""
+
+msgid "主要取引先の売上内訳を把握"
+msgstr ""
+
+msgid "進行中"
+msgstr ""
+
+msgid "支払済"
+msgstr ""
+
+msgid "コスト"
+msgstr ""
+
+msgid "貢献度"
+msgstr ""
+
+msgid "年度が指定されていません。"
+msgstr ""
+
+msgid "PDFデータの取得に失敗しました: "
+msgstr ""
+
+msgid "エラー詳細不明"
+msgstr ""
+
+msgid "PDFデータの解析に失敗しました。"
+msgstr ""
+
+msgid "PDFデータの取得中にエラーが発生しました: "
+msgstr ""
+
+msgid "レポート機能の利用にはライセンスが必要です"
+msgstr ""
+
+msgid "詳細な分析とレポート機能を利用するには、ライセンスキーを購入して設定してください。"
+msgstr ""
+
+msgid "ライセンスを購入"
+msgstr ""
+
+msgid "ライセンス購入後は%sでライセンスキーを入力してください"
+msgstr ""
+
+msgid "売上台帳"
+msgstr ""
+
+msgid "売上台帳_%s年_%s"
+msgstr ""
+
+msgid "%s年度"
+msgstr ""
+
+msgid "作成日：%s"
+msgstr ""
+
+msgid "年間売上サマリー"
+msgstr ""
+
+msgid "月別売上サマリー"
+msgstr ""
+
+msgid "%d月"
+msgstr ""
+
+msgid "売上明細"
+msgstr ""
+
+msgid "商品・サービス"
+msgstr ""
+
+msgid "合計"
+msgstr ""
+
+msgid "※ 期間集計は受付日ではなく、完了日を基準にしています。"
+msgstr ""
+
+msgid "スモールビジネスのための販売支援ツール。ショートコード[ktpwp_all_tab]を固定ページに設置してください。"
+msgstr ""
+
+msgid "詳細な変更履歴については、GitHubリポジトリをご確認ください。"
+msgstr ""
+
+msgid "プラグインをアップロードして有効化してください。ショートコード[ktpwp_all_tab]を固定ページに設置することで、システムが利用可能になります。"
+msgstr ""
+
+msgid "よくある質問については、プラグインのドキュメントをご確認ください。"
+msgstr ""
+
+msgid "自動更新を無効化"
+msgstr ""
+
+msgid "%s の自動更新を無効化"
+msgstr ""
+
+msgid "自動更新を有効化"
+msgstr ""
+
+msgid "%s の自動更新を有効化"
+msgstr ""
+
+msgid "KantanProプラグインが正常にインストールされました。"
+msgstr ""
+
+msgid "KantanProプラグインが正常に有効化されました。"
+msgstr ""
+
+msgid "KantanProプラグインが正常に有効化されました。すべての機能が利用可能です。"
+msgstr ""
+
+msgid "KantanProプラグインが正常に更新されました。適格請求書ナンバー機能も含まれています。"
+msgstr ""
+
+msgid "案件数："
+msgstr ""

@@ -384,10 +384,11 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 
 			// リスト表示部分の開始
 			// 顧客・協力会社タブと同じラッパー（.data_contents は display:flex のため二段レイアウトと相性が悪い）
+			$list_title = esc_html__( '■ サービスリスト', 'ktpwp' );
 			$results_h = <<<END
             <div class="ktp_data_contents">
             <div class="ktp_data_list_box">
-            <div class="data_list_title">■ サービスリスト {$sort_dropdown}</div>
+            <div class="data_list_title">{$list_title} {$sort_dropdown}</div>
         END;
 			// スタート位置を決める
 			$page_stage = $_GET['page_stage'] ?? '';
@@ -454,7 +455,7 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
                     $hide_tax = ( class_exists( 'KTPWP_Tax_Policy' ) && ( KTPWP_Tax_Policy::is_abolished() || KTPWP_Tax_Policy::hide_tax_columns() ) );
                     $tax_segment = $hide_tax ? '' : ' | ' . '税率' . $tax_display;
                     $results[] = '<a href="' . esc_url( add_query_arg( $item_link_args, $base_page_url ) ) . '">' .
-                    '<div class="ktp_data_list_item">' . esc_html__( 'ID', 'ktpwp' ) . ': ' . $id . ' ' . $service_name . ' | ' . $formatted_price . '円' . ( $unit ? '/' . $unit : '' ) . $tax_segment . ' | ' . $category . ' | ' . esc_html__( '頻度', 'ktpwp' ) . '(' . $frequency . ')</div>' .
+                    '<div class="ktp_data_list_item">' . esc_html__( 'ID', 'ktpwp' ) . ': ' . $id . ' ' . $service_name . ' | ' . KTPWP_Settings::format_money( $price ) . ( $unit ? '/' . $unit : '' ) . $tax_segment . ' | ' . $category . ' | ' . esc_html__( '頻度', 'ktpwp' ) . '(' . $frequency . ')</div>' .
                     '</a><!-- DEBUG: price=' . $price . ' formatted=' . $formatted_price . ' -->';
 				}
 				$query_max_num = $wpdb->num_rows;
@@ -577,7 +578,7 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 				esc_html__( '価格', 'ktpwp' ) => array(
 					'type' => 'number',
 					'name' => 'price',
-					'placeholder' => esc_attr__( '価格（円）', 'ktpwp' ),
+					'placeholder' => esc_attr__( '価格', 'ktpwp' ),
 					'step' => '0.01',
 					'min' => '0',
 				),
@@ -749,7 +750,7 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 				$data_forms .= "<input type='hidden' name='query_post' value='new'>";
 				$data_forms .= "<input type='hidden' name='data_id' value=''>";
 				$data_forms .= "<input type='hidden' name='action_type' value='create_new'>";
-				$data_forms .= "<button type='submit' name='send_post' value='create' title='追加実行'><span class='material-symbols-outlined'>select_check_box</span></button>";
+				$data_forms .= '<button type="submit" name="send_post" value="create" title="' . esc_attr__( '追加実行', 'ktpwp' ) . '"><span class="material-symbols-outlined">select_check_box</span></button>';
 				$data_forms .= '</form>';
 
 				// キャンセルボタン（独立したフォーム）
@@ -759,7 +760,7 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 				}
 				$data_forms .= "<input type='hidden' name='query_post' value='update'>";
 				$data_forms .= "<input type='hidden' name='action_type' value='cancel'>";
-				$data_forms .= "<button type='submit' name='send_post' value='cancel' title='キャンセル'><span class='material-symbols-outlined'>disabled_by_default</span></button>";
+				$data_forms .= '<button type="submit" name="send_post" value="cancel" title="' . esc_attr__( 'キャンセル', 'ktpwp' ) . '"><span class="material-symbols-outlined">disabled_by_default</span></button>';
 				$data_forms .= '</form>';
 				$data_forms .= '<div class="add"></div>';
 				$data_forms .= '</div>';
@@ -894,7 +895,7 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 				$image_section_html .= '<input type="file" name="image" class="file-input">';
 				$image_section_html .= '<input type="hidden" name="data_id" value="' . esc_attr( $data_id ) . '">';
 				$image_section_html .= '<input type="hidden" name="query_post" value="upload_image">';
-				$image_section_html .= '<button type="submit" name="send_post" class="upload-btn" title="画像をアップロード">';
+				$image_section_html .= '<button type="submit" name="send_post" class="upload-btn" title="' . esc_attr__( '画像をアップロード', 'ktpwp' ) . '">';
 				$image_section_html .= '<span class="material-symbols-outlined">upload</span>';
 				$image_section_html .= '</button>';
 				$image_section_html .= '</div>';
@@ -908,7 +909,7 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 				$image_section_html .= $nonce_field_delete;
 				$image_section_html .= '<input type="hidden" name="data_id" value="' . esc_attr( $data_id ) . '">';
 				$image_section_html .= '<input type="hidden" name="query_post" value="delete_image">';
-				$image_section_html .= '<button type="submit" name="send_post" title="削除する" onclick="return confirm(\'本当に削除しますか？\')">';
+				$image_section_html .= '<button type="submit" name="send_post" title="' . esc_attr__( '削除する', 'ktpwp' ) . '" onclick="return confirm(\'' . esc_js( __( '本当に削除しますか？', 'ktpwp' ) ) . '\')">';
 				$image_section_html .= '<span class="material-symbols-outlined">delete</span>';
 				$image_section_html .= '</button>';
 				$image_section_html .= '</form>';
@@ -928,7 +929,7 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 					error_log('KTPWP Service Tab: Final id_display = ' . $id_display);
 				}
 				$data_title = '<div class="data_detail_box"><div class="data_detail_title" style="display: flex; align-items: center; justify-content: space-between;">
-        <div>■ サービスの詳細' . $id_display . '</div>' . $button_group_html . '</div>' . $image_section_html;
+        <div>' . esc_html__( '■ サービスの詳細', 'ktpwp' ) . $id_display . '</div>' . $button_group_html . '</div>' . $image_section_html;
 
 				// 更新フォームの開始
 				$form_action_url = add_query_arg(array('tab_name' => $name), $base_page_url);
@@ -1027,6 +1028,8 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 				$service_preview_html = '""';
 			}
 			$service_name_json = wp_json_encode( (string) $service_name, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE );
+			$print_button_title = esc_attr__( '印刷する', 'ktpwp' );
+			$print_button_label = esc_attr__( '印刷', 'ktpwp' );
 
 			// JavaScript
 			$print = <<<END
@@ -1085,8 +1088,8 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
         </script>
         <!-- コントローラー/プレビューアイコン（プレビューは廃止） -->
         <div class="controller">
-                <button onclick="printContent()" title="印刷する" style="padding: 6px 10px; font-size: 12px;">
-                    <span class="material-symbols-outlined" aria-label="印刷">print</span>
+                <button onclick="printContent()" title="{$print_button_title}" style="padding: 6px 10px; font-size: 12px;">
+                    <span class="material-symbols-outlined" aria-label="{$print_button_label}">print</span>
                 </button>
         </div>
         END;
@@ -1129,7 +1132,7 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 			// 価格の表示形式
 			$price_display = '';
 			if ( $price > 0 ) {
-				$price_display = $this->format_price_display( $price ) . '円';
+				$price_display = KTPWP_Settings::format_money( $price );
 				if ( ! empty( $unit ) ) {
 					$price_display .= '/' . $unit;
 				}
@@ -1140,7 +1143,7 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 			if ( $tax_rate !== null && $tax_rate > 0 ) {
 				$tax_display = round( $tax_rate ) . '%';
 			} elseif ( $tax_rate === null ) {
-				$tax_display = '非課税';
+				$tax_display = __( '非課税', 'ktpwp' );
 			}
 
 			// 画像の表示部分
@@ -1155,36 +1158,36 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 			return '
         <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: 0 auto;">
             <div style="text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 20px;">
-                <h1 style="color: #333; margin: 0; font-size: 24px;">サービス情報</h1>
+                <h1 style="color: #333; margin: 0; font-size: 24px;">' . esc_html__( 'サービス情報', 'ktpwp' ) . '</h1>
             </div>
             
             ' . $image_html . '
             
             <table style="border-collapse: collapse; width: 100%; margin-bottom: 20px;">
                 <tr>
-                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa; width: 25%;">サービス名</td>
+                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa; width: 25%;">' . esc_html__( 'サービス名', 'ktpwp' ) . '</td>
                     <td style="border: 1px solid #ddd; padding: 12px;">' . esc_html( $service_name ) . '</td>
                 </tr>
                 <tr>
-                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">価格</td>
+                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">' . esc_html__( '価格', 'ktpwp' ) . '</td>
                     <td style="border: 1px solid #ddd; padding: 12px;">' . esc_html( $price_display ) . '</td>
                 </tr>
                 <tr>
-                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">税率</td>
+                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">' . esc_html__( '税率', 'ktpwp' ) . '</td>
                     <td style="border: 1px solid #ddd; padding: 12px;">' . esc_html( $tax_display ) . '</td>
                 </tr>
                 <tr>
-                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">カテゴリー</td>
+                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">' . esc_html__( 'カテゴリー', 'ktpwp' ) . '</td>
                     <td style="border: 1px solid #ddd; padding: 12px;">' . esc_html( $category ) . '</td>
                 </tr>
                 <tr>
-                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">メモ</td>
+                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">' . esc_html__( 'メモ', 'ktpwp' ) . '</td>
                     <td style="border: 1px solid #ddd; padding: 12px; white-space: pre-wrap;">' . esc_html( $memo ) . '</td>
                 </tr>
             </table>
             
             <div style="text-align: center; margin-top: 30px; color: #666; font-size: 12px;">
-                <p>印刷日時: ' . date( 'Y年m月d日 H:i' ) . '</p>
+                <p>' . esc_html__( '印刷日時:', 'ktpwp' ) . ' ' . esc_html( wp_date( __( 'Y年m月d日 H:i', 'ktpwp' ) ) ) . '</p>
             </div>
         </div>';
 		}
@@ -1213,7 +1216,7 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 
 			// 1行目：ページ情報表示
 			$pagination_html .= '<div style="margin-bottom: 18px; color: #4b5563; font-size: 14px; font-weight: 500;">';
-			$pagination_html .= esc_html( $current_page ) . ' / ' . esc_html( $total_pages ) . ' ページ（全 ' . esc_html( $total_rows ) . ' 件）';
+			$pagination_html .= esc_html( sprintf( __( '%1$d / %2$d ページ（全 %3$d 件）', 'ktpwp' ), $current_page, $total_pages, $total_rows ) );
 			$pagination_html .= '</div>';
 
 			// 2行目：ページネーションボタン

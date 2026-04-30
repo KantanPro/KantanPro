@@ -569,6 +569,8 @@ class KTPWP_Assets {
             error_log( 'KTPWP_Assets: Admin assets enqueue called for hook: ' . $hook_suffix );
         }
 
+        $this->enqueue_admin_menu_icons();
+
         $load_main_admin_assets = $this->is_kantanpro_admin_screen( $hook_suffix );
 
         // ライセンス管理ページ用の特別な処理
@@ -607,6 +609,24 @@ class KTPWP_Assets {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
             error_log( 'KTPWP_Assets: Admin assets enqueued for hook: ' . $hook_suffix );
         }
+    }
+
+    /**
+     * KantanPro の管理メニューアイコン用CSSを全管理画面で読み込む。
+     *
+     * 管理メニューはすべての管理画面で表示されるため、設定画面専用CSSに依存させると
+     * 他画面へ移動した際にサブメニューアイコンが消える。
+     */
+    private function enqueue_admin_menu_icons() {
+        $src       = $this->get_asset_url( 'css/ktp-admin-menu.css' );
+        $file_path = plugin_dir_path( dirname( __FILE__ ) ) . 'css/ktp-admin-menu.css';
+        $version   = KTPWP_PLUGIN_VERSION;
+
+        if ( file_exists( $file_path ) ) {
+            $version .= '.' . filemtime( $file_path );
+        }
+
+        wp_enqueue_style( 'ktp-admin-menu-icons', $src, array(), $version, 'all' );
     }
 
     /**
@@ -967,7 +987,7 @@ class KTPWP_Assets {
         load_plugin_textdomain(
             'ktpwp',
             false,
-            dirname( plugin_basename( __FILE__ ) ) . '/languages'
+            dirname( plugin_basename( KTPWP_PLUGIN_FILE ) ) . '/languages/'
         );
     }
 

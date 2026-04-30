@@ -98,7 +98,7 @@ window.handleProgressChange = function(selectElement) {
     
     if (!nonce) {
         console.error('[DELIVERY-DATES] エラー: nonceが取得できません');
-        alert('セキュリティトークンが取得できません。ページを再読み込みしてください。');
+        alert(ktpwpTranslate('セキュリティトークンが取得できません。ページを再読み込みしてください。'));
         return;
     }
     
@@ -156,7 +156,7 @@ window.handleProgressChange = function(selectElement) {
             setTimeout(function() {
                 $select.css('border-color', '');
             }, 3000);
-            alert('進捗更新の通信でエラーが発生しました');
+            alert(ktpwpTranslate('進捗更新の通信でエラーが発生しました'));
         }
     });
 };
@@ -235,12 +235,12 @@ jQuery(document).ready(function($) {
         var value = $input.val();
 
         if (!orderId || field !== 'created_at') {
-            alert('受付日の保存に必要な情報が取得できません。ページを再読み込みしてください。');
+            alert(ktpwpTranslate('受付日の保存に必要な情報が取得できません。ページを再読み込みしてください。'));
             return;
         }
 
         if (!value) {
-            alert('受付日は空にできません。');
+            alert(ktpwpTranslate('受付日は空にできません。'));
             return;
         }
 
@@ -251,7 +251,7 @@ jQuery(document).ready(function($) {
         const nonce = ajaxConfig.nonce;
 
         if (!nonce) {
-            alert('セキュリティトークンが取得できません。ページを再読み込みしてください。');
+            alert(ktpwpTranslate('セキュリティトークンが取得できません。ページを再読み込みしてください。'));
             $input.prop('disabled', false);
             $input.css('opacity', '1');
             return;
@@ -287,13 +287,13 @@ jQuery(document).ready(function($) {
                     } else if (response.data) {
                         errorMessage = response.data;
                     }
-                    alert('受付日の保存に失敗しました: ' + errorMessage);
+                    alert(ktpwpTranslate('受付日の保存に失敗しました: ') + errorMessage);
                 }
             },
             error: function() {
                 $input.css('border-color', '#f44336');
                 $input.css('background-color', '#ffebee');
-                alert('通信エラーが発生しました');
+                alert(ktpwpTranslate('通信エラーが発生しました'));
             },
             complete: function() {
                 $input.prop('disabled', false);
@@ -321,7 +321,7 @@ jQuery(document).ready(function($) {
         // フィールド名の検証
         if (!field) {
             console.error('[DELIVERY-DATES] エラー: data-field属性が設定されていません');
-            alert('フィールド名が設定されていません。ページを再読み込みしてください。');
+            alert(ktpwpTranslate('フィールド名が設定されていません。ページを再読み込みしてください。'));
             return;
         }
         
@@ -335,7 +335,7 @@ jQuery(document).ready(function($) {
         
         if (!nonce) {
             console.error('[DELIVERY-DATES] エラー: nonceが取得できません');
-            alert('セキュリティトークンが取得できません。ページを再読み込みしてください。');
+            alert(ktpwpTranslate('セキュリティトークンが取得できません。ページを再読み込みしてください。'));
             $input.prop('disabled', false);
             $input.css('opacity', '1');
             return;
@@ -379,14 +379,14 @@ jQuery(document).ready(function($) {
                     } else if (response.data) {
                         errorMessage = response.data;
                     }
-                    alert('保存に失敗しました: ' + errorMessage);
+                    alert(ktpwpTranslate('保存に失敗しました: ') + errorMessage);
                 }
             },
             error: function() {
                 // 通信エラー時の処理
                 $input.css('border-color', '#f44336');
                 $input.css('background-color', '#ffebee');
-                alert('通信エラーが発生しました');
+                alert(ktpwpTranslate('通信エラーが発生しました'));
             },
             complete: function() {
                 // 処理完了時の処理
@@ -419,7 +419,7 @@ jQuery(document).ready(function($) {
         // フィールド名の検証
         if (!field) {
             console.error('[DELIVERY-DATES] エラー: data-field属性が設定されていません');
-            alert('フィールド名が設定されていません。ページを再読み込みしてください。');
+            alert(ktpwpTranslate('フィールド名が設定されていません。ページを再読み込みしてください。'));
             return;
         }
         
@@ -433,7 +433,7 @@ jQuery(document).ready(function($) {
         
         if (!nonce) {
             console.error('[DELIVERY-DATES] エラー: nonceが取得できません');
-            alert('セキュリティトークンが取得できません。ページを再読み込みしてください。');
+            alert(ktpwpTranslate('セキュリティトークンが取得できません。ページを再読み込みしてください。'));
             $input.prop('disabled', false);
             $input.css('opacity', '1');
             return;
@@ -472,14 +472,14 @@ jQuery(document).ready(function($) {
                     } else if (response.data) {
                         errorMessage = response.data;
                     }
-                    alert('保存に失敗しました: ' + errorMessage);
+                    alert(ktpwpTranslate('保存に失敗しました: ') + errorMessage);
                 }
             },
             error: function() {
                 // 通信エラー時の処理
                 $input.css('border-color', '#f44336');
                 $input.css('background-color', '#ffebee');
-                alert('通信エラーが発生しました');
+                alert(ktpwpTranslate('通信エラーが発生しました'));
             },
             complete: function() {
                 // 処理完了時の処理
@@ -499,7 +499,7 @@ jQuery(document).ready(function($) {
             return;
         }
         if (!orderId) {
-            alert('受注IDが取得できません。ページを再読み込みしてください。');
+            alert(ktpwpTranslate('受注IDが取得できません。ページを再読み込みしてください。'));
             return;
         }
         $input.prop('disabled', true);
@@ -507,7 +507,7 @@ jQuery(document).ready(function($) {
         const ajaxConfig = getAjaxConfig();
         const nonce = ajaxConfig.nonce;
         if (!nonce) {
-            alert('セキュリティトークンが取得できません。ページを再読み込みしてください。');
+            alert(ktpwpTranslate('セキュリティトークンが取得できません。ページを再読み込みしてください。'));
             $input.prop('disabled', false);
             $input.css('opacity', '1');
             return;
@@ -539,13 +539,13 @@ jQuery(document).ready(function($) {
                     } else if (response.data) {
                         errorMessage = response.data;
                     }
-                    alert('保存に失敗しました: ' + errorMessage);
+                    alert(ktpwpTranslate('保存に失敗しました: ') + errorMessage);
                 }
             },
             error: function() {
                 $input.css('border-color', '#f44336');
                 $input.css('background-color', '#ffebee');
-                alert('通信エラーが発生しました');
+                alert(ktpwpTranslate('通信エラーが発生しました'));
             },
             complete: function() {
                 $input.prop('disabled', false);
@@ -621,7 +621,7 @@ jQuery(document).ready(function($) {
                 
                 // 納期が迫っている、または納期過ぎの場合に警告マークを表示
                 if (diffDays <= warningDays) {
-                    var rowTitle = diffDays < 0 ? '納期が過ぎています' : '納期が迫っています';
+                    var rowTitle = diffDays < 0 ? ktpwpTranslate('納期が過ぎています') : ktpwpTranslate('納期が迫っています');
                     $wrapper.append('<span class="delivery-warning-mark-row" title="' + rowTitle + '">!</span>');
                     console.log('[DELIVERY-DATES] 警告マークを表示しました');
                 } else {
@@ -669,7 +669,7 @@ jQuery(document).ready(function($) {
                     // 受注タブ（progress=3）のバッジを更新
                     var $btn3 = $('.progress-btn').filter(function() { return $(this).data('progress') === 3; });
                     var $badge3 = $btn3.find('.ktp-progress-warning-badge[data-progress="3"]');
-                    var title3 = warningCount > 0 ? '納期が迫っている、または過ぎている案件が' + warningCount + '件あります' : '';
+                    var title3 = warningCount > 0 ? ktpwpTranslate('納期が迫っている、または過ぎている案件が%d件あります').replace('%d', warningCount) : '';
                     if ($badge3.length) {
                         $badge3.attr('data-count', warningCount).attr('title', title3).text(warningCount > 0 ? String(warningCount) : '');
                     } else if (warningCount > 0) {
@@ -680,7 +680,7 @@ jQuery(document).ready(function($) {
                     // 完了タブ（progress=4）のバッジを更新
                     var $btn4 = $('.progress-btn').filter(function() { return $(this).data('progress') === 4; });
                     var $badge4 = $btn4.find('.ktp-progress-warning-badge[data-progress="4"]');
-                    var title4 = invoiceCount > 0 ? '請求日を過ぎている案件が' + invoiceCount + '件あります' : '';
+                    var title4 = invoiceCount > 0 ? ktpwpTranslate('請求日を過ぎている案件が%d件あります').replace('%d', invoiceCount) : '';
                     if ($badge4.length) {
                         $badge4.attr('data-count', invoiceCount).attr('title', title4).text(invoiceCount > 0 ? String(invoiceCount) : '');
                     }
@@ -688,7 +688,7 @@ jQuery(document).ready(function($) {
                     // 請求済タブ（progress=5）のバッジを更新
                     var $btn5 = $('.progress-btn').filter(function() { return $(this).data('progress') === 5; });
                     var $badge5 = $btn5.find('.ktp-progress-warning-badge[data-progress="5"]');
-                    var title5 = paymentCount > 0 ? '入金予定日を過ぎている案件が' + paymentCount + '件あります' : '';
+                    var title5 = paymentCount > 0 ? ktpwpTranslate('入金予定日を過ぎている案件が%d件あります').replace('%d', paymentCount) : '';
                     if ($badge5.length) {
                         $badge5.attr('data-count', paymentCount).attr('title', title5).text(paymentCount > 0 ? String(paymentCount) : '');
                     }

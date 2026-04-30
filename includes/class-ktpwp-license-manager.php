@@ -95,7 +95,7 @@ class KTPWP_License_Manager {
             if ( $license_status !== 'not_set' ) {
                 update_option( 'ktp_license_status', 'not_set' );
                 update_option( 'ktp_license_info', array(
-                    'message' => 'レポート機能を利用するにはライセンスキーが必要です。',
+                    'message' => __( 'レポート機能を利用するにはライセンスキーが必要です。', 'ktpwp' ),
                     'features' => array(
                         'reports' => false,
                         'analytics' => false
@@ -299,7 +299,7 @@ class KTPWP_License_Manager {
             if ( $license_status !== 'not_set' ) {
                 update_option( 'ktp_license_status', 'not_set' );
                 update_option( 'ktp_license_info', array(
-                    'message' => 'レポート機能を利用するにはライセンスキーが必要です。',
+                    'message' => __( 'レポート機能を利用するにはライセンスキーが必要です。', 'ktpwp' ),
                     'features' => array(
                         'reports' => false,
                         'analytics' => false

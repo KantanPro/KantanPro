@@ -133,7 +133,7 @@ class KTPWP_Settings {
             return '';
         }
 
-        $type_label = ( $type === 'current' ) ? '当座' : '普通';
+        $type_label = ( $type === 'current' ) ? __( '当座', 'ktpwp' ) : __( '普通', 'ktpwp' );
 
         $html  = '<div class="ktp-invoice-bank-transfer" style="margin-top:16px;padding:14px 16px;border:1px solid #ccc;background:#fafafa;border-radius:4px;font-size:13px;line-height:1.6;color:#333;text-align:left;">';
         $html .= '<div style="font-weight:bold;margin-bottom:8px;border-bottom:1px solid #ddd;padding-bottom:6px;">' . esc_html__( '振込先口座', 'ktpwp' ) . '</div>';
@@ -168,20 +168,113 @@ class KTPWP_Settings {
             return '';
         }
 
-        $type_label = ( $type === 'current' ) ? '当座' : '普通';
-        $lines      = array( '【振込先口座】' );
+        $type_label = ( $type === 'current' ) ? __( '当座', 'ktpwp' ) : __( '普通', 'ktpwp' );
+        $lines      = array( __( '【振込先口座】', 'ktpwp' ) );
         if ( $branch !== '' ) {
-            $lines[] = '銀行名・支店名：' . $branch;
+            $lines[] = __( '銀行名・支店名：', 'ktpwp' ) . $branch;
         }
-        $lines[] = '口座種別：' . $type_label;
+        $lines[] = __( '口座種別：', 'ktpwp' ) . $type_label;
         if ( $number !== '' ) {
-            $lines[] = '口座番号：' . $number;
+            $lines[] = __( '口座番号：', 'ktpwp' ) . $number;
         }
         if ( $holder !== '' ) {
-            $lines[] = '口座名義（カナ）：' . $holder;
+            $lines[] = __( '口座名義（カナ）：', 'ktpwp' ) . $holder;
         }
 
         return implode( "\n", $lines );
+    }
+
+
+    /**
+     * Get supported currency definitions.
+     *
+     * @return array<string,array{label:string,symbol:string,position:string,decimals:int}>
+     */
+    public static function get_supported_currencies() {
+        return array(
+            'JPY' => array(
+                'label'    => __( '日本円（JPY）', 'ktpwp' ),
+                'symbol'   => '円',
+                'position' => 'after',
+                'decimals' => 0,
+            ),
+            'USD' => array(
+                'label'    => __( '米ドル（USD）', 'ktpwp' ),
+                'symbol'   => '$',
+                'position' => 'before',
+                'decimals' => 2,
+            ),
+            'EUR' => array(
+                'label'    => __( 'ユーロ（EUR）', 'ktpwp' ),
+                'symbol'   => '€',
+                'position' => 'before',
+                'decimals' => 2,
+            ),
+            'GBP' => array(
+                'label'    => __( '英ポンド（GBP）', 'ktpwp' ),
+                'symbol'   => '£',
+                'position' => 'before',
+                'decimals' => 2,
+            ),
+            'AUD' => array(
+                'label'    => __( '豪ドル（AUD）', 'ktpwp' ),
+                'symbol'   => 'A$',
+                'position' => 'before',
+                'decimals' => 2,
+            ),
+            'CAD' => array(
+                'label'    => __( 'カナダドル（CAD）', 'ktpwp' ),
+                'symbol'   => 'C$',
+                'position' => 'before',
+                'decimals' => 2,
+            ),
+        );
+    }
+
+    /**
+     * Get selected currency code.
+     *
+     * @return string
+     */
+    public static function get_currency_code() {
+        $options = get_option( 'ktp_general_settings', array() );
+        $code = isset( $options['currency_code'] ) ? strtoupper( sanitize_text_field( $options['currency_code'] ) ) : 'JPY';
+        $supported = self::get_supported_currencies();
+        return isset( $supported[ $code ] ) ? $code : 'JPY';
+    }
+
+    /**
+     * Get selected currency settings for JavaScript.
+     *
+     * @return array<string,mixed>
+     */
+    public static function get_currency_config() {
+        $code = self::get_currency_code();
+        $supported = self::get_supported_currencies();
+        $config = $supported[ $code ];
+        $config['code'] = $code;
+        return $config;
+    }
+
+    /**
+     * Format a numeric amount using the selected currency.
+     *
+     * @param float|int|string $amount Amount value.
+     * @return string
+     */
+    public static function format_money( $amount ) {
+        $config = self::get_currency_config();
+        $number = is_numeric( $amount ) ? (float) $amount : 0.0;
+        $decimals = isset( $config['decimals'] ) ? (int) $config['decimals'] : 0;
+        $formatted = number_format( $number, $decimals );
+        $symbol = isset( $config['symbol'] ) ? (string) $config['symbol'] : '';
+        $position = isset( $config['position'] ) ? (string) $config['position'] : 'after';
+
+        if ( $position === 'before' ) {
+            return $symbol . $formatted;
+        }
+
+        return $formatted . $symbol;
     }
 
     /**
@@ -394,6 +487,7 @@ class KTPWP_Settings {
 					'delivery_warning_days' => 3,
 					'qualified_invoice_number' => '',
 					'company_info' => '',
+					'currency_code' => 'JPY',
                 )
             );
         } else {
@@ -404,6 +498,11 @@ class KTPWP_Settings {
             // 適格請求書番号フィールドが存在しない場合は追加
             if ( ! array_key_exists( 'qualified_invoice_number', $existing_general ) ) {
                 $existing_general['qualified_invoice_number'] = '';
+                $general_updated = true;
+            }
+
+            if ( ! array_key_exists( 'currency_code', $existing_general ) ) {
+                $existing_general['currency_code'] = 'JPY';
                 $general_updated = true;
             }
 
@@ -474,7 +573,7 @@ class KTPWP_Settings {
                     'suggested_amounts' => '1000,3000,5000,10000',
                     'frontend_notice_enabled' => false,
                     'notice_display_interval' => 7,
-                    'notice_message' => 'KantanProの開発を支援してください。',
+                    'notice_message' => __( 'KantanProの開発を支援してください。', 'ktpwp' ),
                     'donation_url' => ''
                 )
             );
@@ -489,7 +588,7 @@ class KTPWP_Settings {
                 'suggested_amounts' => '1000,3000,5000,10000',
                 'frontend_notice_enabled' => false,
                 'notice_display_interval' => 7,
-                'notice_message' => 'KantanProの開発を支援してください。',
+                'notice_message' => __( 'KantanProの開発を支援してください。', 'ktpwp' ),
                 'donation_url' => ''
             );
 
@@ -638,8 +737,8 @@ class KTPWP_Settings {
     public function add_plugin_page() {
         // メインメニュー
         add_menu_page(
-            __( 'KantanPro', 'ktpwp' ), // ページタイトル
-            __( 'KantanPro', 'ktpwp' ), // メニュータイトル
+            KANTANPRO_PLUGIN_NAME, // ページタイトル
+            KANTANPRO_PLUGIN_NAME, // メニュータイトル
             'manage_options', // 権限
             'ktp-settings', // メニューのスラッグ
             array( $this, 'create_general_page' ), // 表示を処理する関数（一般設定を最初に表示）
@@ -1582,7 +1681,7 @@ class KTPWP_Settings {
      */
     public function notice_message_callback() {
         $options = get_option( 'ktp_donation_settings' );
-        $default_message = 'このサイトの運営にご協力いただける方は、寄付をお願いいたします。';
+        $default_message = __( 'このサイトの運営にご協力いただける方は、寄付をお願いいたします。', 'ktpwp' );
         ?>
         <textarea id="notice_message" 
                   name="ktp_donation_settings[notice_message]" 
@@ -1663,7 +1762,7 @@ class KTPWP_Settings {
      */
     public function donation_notice_preview_callback() {
         $donation_settings = get_option( 'ktp_donation_settings', array() );
-        $message = isset( $donation_settings['notice_message'] ) ? $donation_settings['notice_message'] : 'このサイトの運営にご協力いただける方は、寄付をお願いいたします。';
+        $message = isset( $donation_settings['notice_message'] ) ? $donation_settings['notice_message'] : __( 'このサイトの運営にご協力いただける方は、寄付をお願いいたします。', 'ktpwp' );
         
         ?>
         <div class="ktpwp-notice-preview-container">
@@ -1810,7 +1909,7 @@ class KTPWP_Settings {
         if ( isset( $input['notice_message'] ) ) {
             $new_input['notice_message'] = sanitize_textarea_field( $input['notice_message'] );
         } else {
-            $new_input['notice_message'] = isset( $existing_settings['notice_message'] ) ? $existing_settings['notice_message'] : 'このサイトの運営にご協力いただける方は、寄付をお願いいたします。';
+            $new_input['notice_message'] = isset( $existing_settings['notice_message'] ) ? $existing_settings['notice_message'] : __( 'このサイトの運営にご協力いただける方は、寄付をお願いいたします。', 'ktpwp' );
         }
         
         // 寄付URL
@@ -1879,27 +1978,27 @@ class KTPWP_Settings {
                     $user_obj->add_cap( 'ktpwp_access' );
                     // 最終変更日時を記録
                     update_user_meta( $user_id, 'last_activity', current_time( 'mysql' ) );
-                    echo '<div class="notice notice-success is-dismissible"><p>KantanPro利用権限（ktpwp_access）を付加しました。</p></div>';
+                    echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'KantanPro利用権限（ktpwp_access）を付加しました。', 'ktpwp' ) . '</p></div>';
 
                     // スタッフ追加時のメール通知を送信
                     $mail_sent = $this->send_staff_notification_email( $user_obj, 'add' );
                     if ( $mail_sent ) {
-                        echo '<div class="notice notice-success is-dismissible"><p>📧 スタッフ追加の通知メールを ' . esc_html( $user_obj->user_email ) . ' に送信しました。</p></div>';
+                        echo '<div class="notice notice-success is-dismissible"><p>' . esc_html( sprintf( __( 'スタッフ追加の通知メールを %s に送信しました。', 'ktpwp' ), $user_obj->user_email ) ) . '</p></div>';
                     } else {
-                        echo '<div class="notice notice-warning is-dismissible"><p>⚠️ スタッフ追加の通知メール送信に失敗しました。メール設定をご確認ください。</p></div>';
+                        echo '<div class="notice notice-warning is-dismissible"><p>' . esc_html__( 'スタッフ追加の通知メール送信に失敗しました。メール設定をご確認ください。', 'ktpwp' ) . '</p></div>';
                     }
                 } elseif ( $action === 'remove' ) {
                     $user_obj->remove_cap( 'ktpwp_access' );
                     // 最終変更日時を記録
                     update_user_meta( $user_id, 'last_activity', current_time( 'mysql' ) );
-                    echo '<div class="notice notice-success is-dismissible"><p>KantanPro利用権限（ktpwp_access）を削除しました。</p></div>';
+                    echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'KantanPro利用権限（ktpwp_access）を削除しました。', 'ktpwp' ) . '</p></div>';
 
                     // スタッフ削除時のメール通知を送信
                     $mail_sent = $this->send_staff_notification_email( $user_obj, 'remove' );
                     if ( $mail_sent ) {
-                        echo '<div class="notice notice-success is-dismissible"><p>📧 スタッフ削除の通知メールを ' . esc_html( $user_obj->user_email ) . ' に送信しました。</p></div>';
+                        echo '<div class="notice notice-success is-dismissible"><p>' . esc_html( sprintf( __( 'スタッフ削除の通知メールを %s に送信しました。', 'ktpwp' ), $user_obj->user_email ) ) . '</p></div>';
                     } else {
-                        echo '<div class="notice notice-warning is-dismissible"><p>⚠️ スタッフ削除の通知メール送信に失敗しました。メール設定をご確認ください。</p></div>';
+                        echo '<div class="notice notice-warning is-dismissible"><p>' . esc_html__( 'スタッフ削除の通知メール送信に失敗しました。メール設定をご確認ください。', 'ktpwp' ) . '</p></div>';
                     }
                 }
             }
@@ -1917,14 +2016,14 @@ class KTPWP_Settings {
 
             <div class="ktp-settings-container">
                 <div class="ktp-settings-section">
-                    <h2>登録スタッフ一覧</h2>
+                    <h2><?php echo esc_html__( '登録スタッフ一覧', 'ktpwp' ); ?></h2>
                     <div style="margin-bottom: 10px; color: #555; font-size: 13px;">
                         <?php echo esc_html__( '管理者は登録者の権限に関わらずここでスタッフの追加削除が行えます', 'ktpwp' ); ?>
                     </div>
                     <div style="margin-bottom: 15px; padding: 12px; background: #e7f3ff; border: 1px solid #b3d9ff; border-radius: 4px; font-size: 13px;">
                         <span class="dashicons dashicons-info" style="color: #0073aa; margin-right: 5px;"></span>
-                        <strong>メール通知について：</strong>スタッフの追加・削除時に、該当ユーザーへ自動でメール通知が送信されます。
-                        通知内容にはログイン情報や権限の変更についての案内が含まれます。
+                        <strong><?php echo esc_html__( 'メール通知について：', 'ktpwp' ); ?></strong><?php echo esc_html__( 'スタッフの追加・削除時に、該当ユーザーへ自動でメール通知が送信されます。', 'ktpwp' ); ?>
+                        <?php echo esc_html__( '通知内容にはログイン情報や権限の変更についての案内が含まれます。', 'ktpwp' ); ?>
                     </div>
                     <table class="widefat fixed striped ktp-staff-table">
                         <thead>
@@ -1943,9 +2042,9 @@ class KTPWP_Settings {
                                 <td>
                                     <div style="display: flex; align-items: center; gap: 10px;">
                                         <?php if ( $user->has_cap( 'ktpwp_access' ) ) : ?>
-                                            <span style="color:green;font-weight:bold;">利用中</span>
+                                            <span style="color:green;font-weight:bold;"><?php echo esc_html__( '利用中', 'ktpwp' ); ?></span>
                                         <?php else : ?>
-                                            <span style="color:red;">未使用</span>
+                                            <span style="color:red;"><?php echo esc_html__( '未使用', 'ktpwp' ); ?></span>
                                         <?php endif; ?>
                                         <form method="post" style="display: flex; align-items: center; gap: 10px; margin-bottom: 0;">
                                             <?php wp_nonce_field( 'ktp_staff_role_action', 'ktp_staff_role_nonce' ); ?>
@@ -2025,22 +2124,22 @@ class KTPWP_Settings {
         $display_name = ! empty( $user_obj->display_name ) ? $user_obj->display_name : $user_obj->user_login;
 
         if ( $action === 'add' ) {
-            $subject = '[' . get_bloginfo( 'name' ) . '] スタッフ権限が付与されました';
-            $body = $display_name . ' 様' . "\n\n";
-            $body .= 'この度、' . get_bloginfo( 'name' ) . ' の業務管理システム（KantanPro）のスタッフ権限が付与されました。' . "\n\n";
-            $body .= '以下のURLからログインして、システムをご利用ください：' . "\n";
+            $subject = sprintf( __( '[%s] スタッフ権限が付与されました', 'ktpwp' ), get_bloginfo( 'name' ) );
+            $body = sprintf( __( '%s 様', 'ktpwp' ), $display_name ) . "\n\n";
+            $body .= sprintf( __( 'この度、%s の業務管理システム（KantanPro）のスタッフ権限が付与されました。', 'ktpwp' ), get_bloginfo( 'name' ) ) . "\n\n";
+            $body .= __( '以下のURLからログインして、システムをご利用ください：', 'ktpwp' ) . "\n";
             $body .= wp_login_url() . "\n\n";
-            $body .= 'ログイン情報：' . "\n";
-            $body .= 'ユーザー名: ' . $user_obj->user_login . "\n";
-            $body .= 'メールアドレス: ' . $user_obj->user_email . "\n\n";
-            $body .= 'パスワードをお忘れの場合は、ログイン画面の「パスワードをお忘れですか？」からリセットしてください。' . "\n\n";
-            $body .= 'ご不明な点がございましたら、システム管理者までお問い合わせください。' . "\n\n";
+            $body .= __( 'ログイン情報：', 'ktpwp' ) . "\n";
+            $body .= __( 'ユーザー名: ', 'ktpwp' ) . $user_obj->user_login . "\n";
+            $body .= __( 'メールアドレス: ', 'ktpwp' ) . $user_obj->user_email . "\n\n";
+            $body .= __( 'パスワードをお忘れの場合は、ログイン画面の「パスワードをお忘れですか？」からリセットしてください。', 'ktpwp' ) . "\n\n";
+            $body .= __( 'ご不明な点がございましたら、システム管理者までお問い合わせください。', 'ktpwp' ) . "\n\n";
         } else {
-            $subject = '[' . get_bloginfo( 'name' ) . '] スタッフ権限が削除されました';
-            $body = $display_name . ' 様' . "\n\n";
-            $body .= get_bloginfo( 'name' ) . ' の業務管理システム（KantanPro）のスタッフ権限が削除されました。' . "\n\n";
-            $body .= '今後、システムへのアクセスができなくなります。' . "\n";
-            $body .= 'ご質問がございましたら、システム管理者までお問い合わせください。' . "\n\n";
+            $subject = sprintf( __( '[%s] スタッフ権限が削除されました', 'ktpwp' ), get_bloginfo( 'name' ) );
+            $body = sprintf( __( '%s 様', 'ktpwp' ), $display_name ) . "\n\n";
+            $body .= sprintf( __( '%s の業務管理システム（KantanPro）のスタッフ権限が削除されました。', 'ktpwp' ), get_bloginfo( 'name' ) ) . "\n\n";
+            $body .= __( '今後、システムへのアクセスができなくなります。', 'ktpwp' ) . "\n";
+            $body .= __( 'ご質問がございましたら、システム管理者までお問い合わせください。', 'ktpwp' ) . "\n\n";
         }
 
         // 署名を追加
@@ -2050,7 +2149,7 @@ class KTPWP_Settings {
         }
 
         // 自動送信であることを明記
-        $body .= "\n※ このメールは自動送信されています。" . "\n";
+        $body .= "\n" . __( '※ このメールは自動送信されています。', 'ktpwp' ) . "\n";
 
         // ヘッダーを設定
         $headers = array();
@@ -2179,17 +2278,17 @@ class KTPWP_Settings {
             }
 
             echo '<div class="ktp-submit-button">';
-            submit_button( '設定を保存', 'primary', 'submit', false );
+            submit_button( __( '設定を保存', 'ktpwp' ), 'primary', 'submit', false );
             echo '</div>';
             echo '</form>';
 
             // テストメール送信フォーム
             echo '<div class="ktp-test-mail-form">';
-            echo '<h3>テストメール送信</h3>';
-            echo '<p>SMTPの設定が正しく機能しているか確認するためのテストメールを送信します。</p>';
+            echo '<h3>' . esc_html__( 'テストメール送信', 'ktpwp' ) . '</h3>';
+            echo '<p>' . esc_html__( 'SMTPの設定が正しく機能しているか確認するためのテストメールを送信します。', 'ktpwp' ) . '</p>';
             echo '<form method="post">';
             echo '<input type="hidden" name="test_email" value="1">';
-            submit_button( 'テストメール送信', 'secondary', 'submit', false );
+            submit_button( __( 'テストメール送信', 'ktpwp' ), 'secondary', 'submit', false );
             echo '</form>';
             echo '</div>';
 
@@ -2543,7 +2642,7 @@ class KTPWP_Settings {
                 'default' => array(
                     'frontend_notice_enabled' => false,
                     'notice_display_interval' => 7,
-                    'notice_message' => 'このサイトの運営にご協力いただける方は、寄付をお願いいたします。',
+                    'notice_message' => __( 'このサイトの運営にご協力いただける方は、寄付をお願いいたします。', 'ktpwp' ),
                     'donation_url' => ''
                 )
             )
@@ -2660,6 +2759,14 @@ class KTPWP_Settings {
             'company_info',
             __( '会社情報', 'ktpwp' ),
             array( $this, 'company_info_callback' ),
+            'ktp-general',
+            'general_setting_section'
+        );
+
+        add_settings_field(
+            'currency_code',
+            __( '通貨', 'ktpwp' ),
+            array( $this, 'currency_code_callback' ),
             'ktp-general',
             'general_setting_section'
         );
@@ -2925,7 +3032,7 @@ class KTPWP_Settings {
         // メール設定セクション
         add_settings_section(
             'email_setting_section',
-            'メール設定',
+            __( 'メール設定', 'ktpwp' ),
             array( $this, 'print_section_info' ),
             'ktp-settings'
         );
@@ -3243,7 +3350,7 @@ class KTPWP_Settings {
                style="width:320px;max-width:100%;" required 
                pattern="^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$" 
                placeholder="info@example.com">
-        <div style="font-size:12px;color:#555;margin-top:4px;">※ サイトから届くメールが迷惑メールと認識されないよう、サイトのドメインと同じメールアドレスをご入力ください。</div>
+        <div style="font-size:12px;color:#555;margin-top:4px;"><?php echo esc_html__( '※ サイトから届くメールが迷惑メールと認識されないよう、サイトのドメインと同じメールアドレスをご入力ください。', 'ktpwp' ); ?></div>
         <?php
     }
 
@@ -3292,7 +3399,7 @@ class KTPWP_Settings {
         $selected = isset( $options['smtp_secure'] ) ? $options['smtp_secure'] : '';
         ?>
         <select id="smtp_secure" name="<?php echo $this->option_name; ?>[smtp_secure]">
-            <option value="" <?php selected( $selected, '' ); ?>>なし</option>
+            <option value="" <?php selected( $selected, '' ); ?>><?php echo esc_html__( 'なし', 'ktpwp' ); ?></option>
             <option value="ssl" <?php selected( $selected, 'ssl' ); ?>>SSL</option>
             <option value="tls" <?php selected( $selected, 'tls' ); ?>>TLS</option>
         </select>
@@ -3305,7 +3412,7 @@ class KTPWP_Settings {
         <input type="text" id="smtp_from_name" name="<?php echo esc_attr( $this->option_name ); ?>[smtp_from_name]" 
                value="<?php echo isset( $options['smtp_from_name'] ) ? esc_attr( $options['smtp_from_name'] ) : ''; ?>" 
                style="width:220px;max-width:100%;" 
-               placeholder="会社名や担当者名">
+               placeholder="<?php echo esc_attr__( '会社名や担当者名', 'ktpwp' ); ?>">
         <?php
     }
 
@@ -3344,8 +3451,8 @@ class KTPWP_Settings {
     private function send_test_email() {
         $options = get_option( $this->option_name );
         $to = $options['email_address'];
-        $subject = '【KTPWP】SMTPテストメール';
-        $body = "このメールはKTPWPプラグインのSMTPテスト送信です。\n\n送信元: {$options['email_address']}";
+        $subject = __( '【KTPWP】SMTPテストメール', 'ktpwp' );
+        $body = sprintf( __( "このメールはKTPWPプラグインのSMTPテスト送信です。\n\n送信元: %s", 'ktpwp' ), $options['email_address'] );
         $headers = array();
 
         if ( ! empty( $options['smtp_from_name'] ) ) {
@@ -3357,16 +3464,16 @@ class KTPWP_Settings {
         $sent = wp_mail( $to, $subject, $body, $headers );
 
         if ( $sent ) {
-            $this->test_mail_message = 'テストメールを送信しました。メールボックスをご確認ください。';
+            $this->test_mail_message = __( 'テストメールを送信しました。メールボックスをご確認ください。', 'ktpwp' );
             $this->test_mail_status = 'success';
 
             // 成功通知を表示
-            $this->show_notification( '✉️ テストメールを送信しました。メールボックスをご確認ください。', true );
+            $this->show_notification( __( 'テストメールを送信しました。メールボックスをご確認ください。', 'ktpwp' ), true );
 
             add_settings_error(
                 'ktp_settings',
                 'test_mail_success',
-                'テストメールを送信しました。メールボックスをご確認ください。',
+                __( 'テストメールを送信しました。メールボックスをご確認ください。', 'ktpwp' ),
                 'updated'
             );
         } else {
@@ -3377,20 +3484,20 @@ class KTPWP_Settings {
                 if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 					error_log( 'KTPWP SMTPテストメール送信失敗: ' . $error_message ); }
             } else {
-                $error_message = 'PHPMailerインスタンスが取得できませんでした';
+                $error_message = __( 'PHPMailerインスタンスが取得できませんでした', 'ktpwp' );
                 error_log( 'KTPWP SMTPテストメール送信失敗: ' . $error_message );
             }
 
-            $this->test_mail_message = 'テストメールの送信に失敗しました。SMTP設定をご確認ください。';
+            $this->test_mail_message = __( 'テストメールの送信に失敗しました。SMTP設定をご確認ください。', 'ktpwp' );
             $this->test_mail_status = 'error';
 
             // エラー通知を表示
-            $this->show_notification( '⚠️ テストメールの送信に失敗しました。SMTP設定をご確認ください。', false );
+            $this->show_notification( __( 'テストメールの送信に失敗しました。SMTP設定をご確認ください。', 'ktpwp' ), false );
 
             add_settings_error(
                 'ktp_settings',
                 'test_mail_error',
-                'テストメールの送信に失敗しました。SMTP設定をご確認ください。',
+                __( 'テストメールの送信に失敗しました。SMTP設定をご確認ください。', 'ktpwp' ),
                 'error'
             );
         }
@@ -3446,6 +3553,12 @@ class KTPWP_Settings {
             // 英数字、ハイフン、スペースのみ許可（全角文字は半角に変換）
             $qualified_invoice_number = preg_replace( '/[^a-zA-Z0-9\-\s]/', '', $qualified_invoice_number );
             $new_input['qualified_invoice_number'] = $qualified_invoice_number;
+        }
+
+        if ( isset( $input['currency_code'] ) ) {
+            $currency_code = strtoupper( sanitize_text_field( $input['currency_code'] ) );
+            $supported_currencies = self::get_supported_currencies();
+            $new_input['currency_code'] = isset( $supported_currencies[ $currency_code ] ) ? $currency_code : 'JPY';
         }
 
         // 税制モード（明示的に選択: multiple | unified | abolished）
@@ -3545,16 +3658,16 @@ class KTPWP_Settings {
         $saved_mode = isset( $options['tax_mode'] ) ? $options['tax_mode'] : 'multiple';
         ?>
         <label style="margin-right:16px;">
-            <input type="radio" name="ktp_general_settings[tax_mode]" value="multiple" <?php checked( $saved_mode, 'multiple' ); ?> /> 消費税あり（行ごと税率）
+            <input type="radio" name="ktp_general_settings[tax_mode]" value="multiple" <?php checked( $saved_mode, 'multiple' ); ?> /> <?php echo esc_html__( '消費税あり（行ごと税率）', 'ktpwp' ); ?>
         </label>
         <label style="margin-right:16px;">
-            <input type="radio" name="ktp_general_settings[tax_mode]" value="unified" <?php checked( $saved_mode, 'unified' ); ?> /> 一律税率（全明細に同一税率）
+            <input type="radio" name="ktp_general_settings[tax_mode]" value="unified" <?php checked( $saved_mode, 'unified' ); ?> /> <?php echo esc_html__( '一律税率（全明細に同一税率）', 'ktpwp' ); ?>
         </label>
         <label>
-            <input type="radio" name="ktp_general_settings[tax_mode]" value="abolished" <?php checked( $saved_mode, 'abolished' ); ?> /> 消費税なし（税列非表示）
+            <input type="radio" name="ktp_general_settings[tax_mode]" value="abolished" <?php checked( $saved_mode, 'abolished' ); ?> /> <?php echo esc_html__( '消費税なし（税列非表示）', 'ktpwp' ); ?>
         </label>
         <div style="font-size:12px;color:#555;margin-top:4px;">
-            ※ 「一律税率」を選択すると入力した税率が全明細に適用され、行ごとの税率編集はできません。「消費税なし」を選択すると税率/税額列は非表示になります。
+            <?php echo esc_html__( '※ 「一律税率」を選択すると入力した税率が全明細に適用され、行ごとの税率編集はできません。「消費税なし」を選択すると税率/税額列は非表示になります。', 'ktpwp' ); ?>
         </div>
         <?php
     }
@@ -3568,9 +3681,9 @@ class KTPWP_Settings {
         $mode = class_exists('KTPWP_Tax_Policy') ? KTPWP_Tax_Policy::get_mode() : ( isset($options['tax_mode']) ? $options['tax_mode'] : 'multiple' );
         $disabled = ( $mode !== 'unified' ) ? 'disabled' : '';
         ?>
-        <input type="number" id="unified_tax_rate" name="ktp_general_settings[unified_tax_rate]" value="<?php echo esc_attr( $value ); ?>" step="1" min="0" style="width:100px;text-align:right;" placeholder="例：10" <?php echo $disabled; ?>> %
+        <input type="number" id="unified_tax_rate" name="ktp_general_settings[unified_tax_rate]" value="<?php echo esc_attr( $value ); ?>" step="1" min="0" style="width:100px;text-align:right;" placeholder="<?php echo esc_attr__( '例：10', 'ktpwp' ); ?>" <?php echo $disabled; ?>> %
         <div style="font-size:12px;color:#555;margin-top:4px;">
-            ※ この設定は「一律税率」モード選択時のみ有効です。未入力時は既定の5%が適用されます。0を入力した場合は0%で固定されます。
+            <?php echo esc_html__( '※ この設定は「一律税率」モード選択時のみ有効です。未入力時は既定の5%が適用されます。0を入力した場合は0%で固定されます。', 'ktpwp' ); ?>
         </div>
         <?php
     }
@@ -3686,7 +3799,7 @@ class KTPWP_Settings {
     private function get_fixed_system_description() {
         return defined( 'KANTANPRO_PLUGIN_DESCRIPTION' )
             ? KANTANPRO_PLUGIN_DESCRIPTION
-            : 'スモールビジネスのための販売支援ツール';
+            : __( 'スモールビジネスのための販売支援ツール', 'ktpwp' );
     }
 
     /**
@@ -3730,14 +3843,14 @@ class KTPWP_Settings {
         $value = isset( $options['work_list_range'] ) ? $options['work_list_range'] : 20;
         ?>
         <select id="work_list_range" name="ktp_general_settings[work_list_range]">
-            <option value="5" <?php selected( $value, 5 ); ?>>5件</option>
-            <option value="10" <?php selected( $value, 10 ); ?>>10件</option>
-            <option value="20" <?php selected( $value, 20 ); ?>>20件</option>
-            <option value="30" <?php selected( $value, 30 ); ?>>30件</option>
-            <option value="50" <?php selected( $value, 50 ); ?>>50件</option>
-            <option value="100" <?php selected( $value, 100 ); ?>>100件</option>
-            <option value="200" <?php selected( $value, 200 ); ?>>200件</option>
-            <option value="500" <?php selected( $value, 500 ); ?>>500件</option>
+            <option value="5" <?php selected( $value, 5 ); ?>><?php echo esc_html( sprintf( __( '%d件', 'ktpwp' ), 5 ) ); ?></option>
+            <option value="10" <?php selected( $value, 10 ); ?>><?php echo esc_html( sprintf( __( '%d件', 'ktpwp' ), 10 ) ); ?></option>
+            <option value="20" <?php selected( $value, 20 ); ?>><?php echo esc_html( sprintf( __( '%d件', 'ktpwp' ), 20 ) ); ?></option>
+            <option value="30" <?php selected( $value, 30 ); ?>><?php echo esc_html( sprintf( __( '%d件', 'ktpwp' ), 30 ) ); ?></option>
+            <option value="50" <?php selected( $value, 50 ); ?>><?php echo esc_html( sprintf( __( '%d件', 'ktpwp' ), 50 ) ); ?></option>
+            <option value="100" <?php selected( $value, 100 ); ?>><?php echo esc_html( sprintf( __( '%d件', 'ktpwp' ), 100 ) ); ?></option>
+            <option value="200" <?php selected( $value, 200 ); ?>><?php echo esc_html( sprintf( __( '%d件', 'ktpwp' ), 200 ) ); ?></option>
+            <option value="500" <?php selected( $value, 500 ); ?>><?php echo esc_html( sprintf( __( '%d件', 'ktpwp' ), 500 ) ); ?></option>
         </select>
         <div style="font-size:12px;color:#555;margin-top:4px;">
             <?php echo esc_html__( '※ リストで一度に表示する件数を設定してください。', 'ktpwp' ); ?>
@@ -3756,11 +3869,11 @@ class KTPWP_Settings {
         $value = isset( $options['delivery_warning_days'] ) ? $options['delivery_warning_days'] : 3;
         ?>
         <select id="delivery_warning_days" name="ktp_general_settings[delivery_warning_days]">
-            <option value="1" <?php selected( $value, 1 ); ?>>1日</option>
-            <option value="3" <?php selected( $value, 3 ); ?>>3日</option>
-            <option value="7" <?php selected( $value, 7 ); ?>>7日</option>
-            <option value="14" <?php selected( $value, 14 ); ?>>14日</option>
-            <option value="30" <?php selected( $value, 30 ); ?>>30日</option>
+            <option value="1" <?php selected( $value, 1 ); ?>><?php echo esc_html( sprintf( __( '%d日', 'ktpwp' ), 1 ) ); ?></option>
+            <option value="3" <?php selected( $value, 3 ); ?>><?php echo esc_html( sprintf( __( '%d日', 'ktpwp' ), 3 ) ); ?></option>
+            <option value="7" <?php selected( $value, 7 ); ?>><?php echo esc_html( sprintf( __( '%d日', 'ktpwp' ), 7 ) ); ?></option>
+            <option value="14" <?php selected( $value, 14 ); ?>><?php echo esc_html( sprintf( __( '%d日', 'ktpwp' ), 14 ) ); ?></option>
+            <option value="30" <?php selected( $value, 30 ); ?>><?php echo esc_html( sprintf( __( '%d日', 'ktpwp' ), 30 ) ); ?></option>
         </select>
         <div style="font-size:12px;color:#555;margin-top:4px;">
             <?php echo esc_html__( '※ 納期警告日数を設定してください。', 'ktpwp' ); ?>
@@ -3779,7 +3892,7 @@ class KTPWP_Settings {
         $value = isset( $options['qualified_invoice_number'] ) ? $options['qualified_invoice_number'] : '';
         $mode = class_exists('KTPWP_Tax_Policy') ? KTPWP_Tax_Policy::get_mode() : ( isset($options['tax_mode']) ? $options['tax_mode'] : 'multiple' );
         if ( $mode === 'abolished' ) {
-            echo '<div style="color:#666;font-size:12px;">消費税なし（税廃止）設定のため、適格請求書番号は使用しません。</div>';
+            echo '<div style="color:#666;font-size:12px;">' . esc_html__( '消費税なし（税廃止）設定のため、適格請求書番号は使用しません。', 'ktpwp' ) . '</div>';
             echo '<input type="hidden" name="ktp_general_settings[qualified_invoice_number]" value="" />';
             return;
         }
@@ -3787,6 +3900,30 @@ class KTPWP_Settings {
         <input type="text" id="qualified_invoice_number" name="ktp_general_settings[qualified_invoice_number]" value="<?php echo esc_attr( $value ); ?>" class="regular-text" />
         <div style="font-size:12px;color:#555;margin-top:4px;">
             <?php echo esc_html__( '※ 適格請求書発行事業者の登録番号を入力してください。（例：T1234567890123）', 'ktpwp' ); ?>
+        </div>
+        <?php
+    }
+
+
+    /**
+     * 通貨フィールドのコールバック
+     *
+     * @return void
+     */
+    public function currency_code_callback() {
+        $options = get_option( 'ktp_general_settings', array() );
+        $value = isset( $options['currency_code'] ) ? strtoupper( (string) $options['currency_code'] ) : 'JPY';
+        $currencies = self::get_supported_currencies();
+        ?>
+        <select id="currency_code" name="ktp_general_settings[currency_code]">
+            <?php foreach ( $currencies as $code => $currency ) : ?>
+                <option value="<?php echo esc_attr( $code ); ?>" <?php selected( $value, $code ); ?>>
+                    <?php echo esc_html( $currency['label'] ); ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+        <div style="font-size:12px;color:#555;margin-top:4px;">
+            <?php echo esc_html__( '※ 金額の表示通貨です。為替換算は行わず、入力済みの数値を選択した通貨として表示します。', 'ktpwp' ); ?>
         </div>
         <?php
     }
@@ -3990,7 +4127,7 @@ class KTPWP_Settings {
             </div>
             
             <button type="button" class="button ktp-upload-image">
-                画像を変更
+                <?php echo esc_html__( '画像を変更', 'ktpwp' ); ?>
             </button>
             
             <div style="font-size:12px;color:#555;margin-top:4px;">
@@ -4268,8 +4405,8 @@ div.ktp_header > * {
      */
     public static function add_admin_menu() {
         add_options_page(
-            'KTPWP設定',
-            'KTPWP設定',
+            __( 'KTPWP設定', 'ktpwp' ),
+            __( 'KTPWP設定', 'ktpwp' ),
             'manage_options',
             'ktpwp-settings',
             array( __CLASS__, 'admin_page' )
@@ -4290,56 +4427,56 @@ div.ktp_header > * {
         $current_settings = self::get_all_settings();
         ?>
         <div class="wrap">
-            <h1>KTPWP設定</h1>
+            <h1><?php echo esc_html__( 'KTPWP設定', 'ktpwp' ); ?></h1>
             
             <form method="post" action="">
                 <?php wp_nonce_field( 'ktpwp_settings', 'ktpwp_settings_nonce' ); ?>
                 
                 <table class="form-table">
                     <tr>
-                        <th scope="row">デバッグログ設定</th>
+                        <th scope="row"><?php echo esc_html__( 'デバッグログ設定', 'ktpwp' ); ?></th>
                         <td>
                             <fieldset>
                                 <label>
                                     <input type="checkbox" name="ktpwp_debug_log_enabled" value="1" 
                                            <?php checked( $current_settings['debug_log_enabled'], '1' ); ?> />
-                                    デバッグログを有効にする
+                                    <?php echo esc_html__( 'デバッグログを有効にする', 'ktpwp' ); ?>
                                 </label>
                                 <p class="description">
-                                    デバッグログは安全な場所（wp-content/logs/）に保存されます。
+                                    <?php echo esc_html__( 'デバッグログは安全な場所（wp-content/logs/）に保存されます。', 'ktpwp' ); ?>
                                 </p>
                             </fieldset>
                         </td>
                     </tr>
                     
                     <tr>
-                        <th scope="row">REST API制限</th>
+                        <th scope="row"><?php echo esc_html__( 'REST API制限', 'ktpwp' ); ?></th>
                         <td>
                             <fieldset>
                                 <label>
                                     <input type="checkbox" name="ktpwp_rest_api_restricted" value="1" 
                                            <?php checked( $current_settings['rest_api_restricted'], '1' ); ?> />
-                                    フロントエンドでのREST APIをログインユーザーのみに制限する
+                                    <?php echo esc_html__( 'フロントエンドでのREST APIをログインユーザーのみに制限する', 'ktpwp' ); ?>
                                 </label>
                                 <p class="description">
-                                    管理画面やブロックエディターは常に許可されます。
+                                    <?php echo esc_html__( '管理画面やブロックエディターは常に許可されます。', 'ktpwp' ); ?>
                                 </p>
                             </fieldset>
                         </td>
                     </tr>
                     
                     <tr>
-                        <th scope="row">トラブルシューティング</th>
+                        <th scope="row"><?php echo esc_html__( 'トラブルシューティング', 'ktpwp' ); ?></th>
                         <td>
                             <fieldset>
                                 <label>
                                     <input type="checkbox" name="ktpwp_disable_rest_api_restriction" value="1" 
                                            <?php checked( $current_settings['disable_rest_api_restriction'], '1' ); ?> />
-                                    REST API制限を完全に無効化する（サイトヘルスエラーが解決されない場合）
+                                    <?php echo esc_html__( 'REST API制限を完全に無効化する（サイトヘルスエラーが解決されない場合）', 'ktpwp' ); ?>
                                 </label>
                                 <p class="description">
-                                    <strong>注意:</strong> この設定を有効にすると、セキュリティが低下する可能性があります。
-                                    サイトヘルスエラーが解決されない場合のみ使用してください。
+                                    <strong><?php echo esc_html__( '注意:', 'ktpwp' ); ?></strong> <?php echo esc_html__( 'この設定を有効にすると、セキュリティが低下する可能性があります。', 'ktpwp' ); ?>
+                                    <?php echo esc_html__( 'サイトヘルスエラーが解決されない場合のみ使用してください。', 'ktpwp' ); ?>
                                 </p>
                             </fieldset>
                         </td>
@@ -4349,64 +4486,64 @@ div.ktp_header > * {
                 <?php submit_button(); ?>
             </form>
             
-            <h2>現在の設定状況</h2>
+            <h2><?php echo esc_html__( '現在の設定状況', 'ktpwp' ); ?></h2>
             <table class="form-table">
                 <tr>
-                    <th scope="row">プラグインバージョン</th>
+                    <th scope="row"><?php echo esc_html__( 'プラグインバージョン', 'ktpwp' ); ?></th>
                     <td><?php echo esc_html( $current_settings['version'] ); ?></td>
                 </tr>
                 <tr>
-                    <th scope="row">インストール日</th>
+                    <th scope="row"><?php echo esc_html__( 'インストール日', 'ktpwp' ); ?></th>
                     <td><?php echo esc_html( $current_settings['installed_date'] ); ?></td>
                 </tr>
                 <tr>
-                    <th scope="row">デバッグモード</th>
+                    <th scope="row"><?php echo esc_html__( 'デバッグモード', 'ktpwp' ); ?></th>
                     <td><?php echo esc_html( $current_settings['debug_mode'] ); ?></td>
                 </tr>
                 <tr>
-                    <th scope="row">サイトURL</th>
+                    <th scope="row"><?php echo esc_html__( 'サイトURL', 'ktpwp' ); ?></th>
                     <td><?php echo esc_html( home_url() ); ?></td>
                 </tr>
                 <tr>
-                    <th scope="row">開発環境</th>
-                    <td><?php echo ( strpos( home_url(), 'localhost' ) !== false || strpos( home_url(), '127.0.0.1' ) !== false ) ? 'はい' : 'いいえ'; ?></td>
+                    <th scope="row"><?php echo esc_html__( '開発環境', 'ktpwp' ); ?></th>
+                    <td><?php echo ( strpos( home_url(), 'localhost' ) !== false || strpos( home_url(), '127.0.0.1' ) !== false ) ? esc_html__( 'はい', 'ktpwp' ) : esc_html__( 'いいえ', 'ktpwp' ); ?></td>
                 </tr>
                 <tr>
-                    <th scope="row">REST API制限の状態</th>
+                    <th scope="row"><?php echo esc_html__( 'REST API制限の状態', 'ktpwp' ); ?></th>
                     <td>
                         <?php
-                        $rest_api_status = '有効';
+                        $rest_api_status = esc_html__( '有効', 'ktpwp' );
                         if ( class_exists( 'KTPWP_Settings' ) ) {
                             $rest_api_restricted = self::get_setting( 'rest_api_restricted', '1' );
                             $disable_rest_api_restriction = self::get_setting( 'disable_rest_api_restriction', '0' );
 
                             if ( $disable_rest_api_restriction === '1' ) {
-                                $rest_api_status = '<span style="color: red;">完全無効化</span>';
+                                $rest_api_status = '<span style="color: red;">' . esc_html__( '完全無効化', 'ktpwp' ) . '</span>';
                             } elseif ( $rest_api_restricted !== '1' ) {
-                                $rest_api_status = '<span style="color: orange;">無効</span>';
+                                $rest_api_status = '<span style="color: orange;">' . esc_html__( '無効', 'ktpwp' ) . '</span>';
                             } elseif ( defined( 'WP_DEBUG' ) && WP_DEBUG && ( strpos( home_url(), 'localhost' ) !== false || strpos( home_url(), '127.0.0.1' ) !== false ) ) {
-                                $rest_api_status = '<span style="color: blue;">開発環境で緩和</span>';
+                                $rest_api_status = '<span style="color: blue;">' . esc_html__( '開発環境で緩和', 'ktpwp' ) . '</span>';
                             }
                         }
-                        echo $rest_api_status;
+                        echo wp_kses_post( $rest_api_status );
                         ?>
                     </td>
                 </tr>
             </table>
             
-            <h2>推奨設定（wp-config.php）</h2>
+            <h2><?php echo esc_html__( '推奨設定（wp-config.php）', 'ktpwp' ); ?></h2>
             <div class="notice notice-info">
-                <p><strong>デバッグログの安全な設定:</strong></p>
-                <pre><code>// デバッグモードを有効化
+                <p><strong><?php echo esc_html__( 'デバッグログの安全な設定:', 'ktpwp' ); ?></strong></p>
+                <pre><code><?php echo esc_html__( 'デバッグモードを有効化', 'ktpwp' ); ?>
 define( 'WP_DEBUG', true );
 
-// デバッグログを安全な場所に保存
+<?php echo esc_html__( 'デバッグログを安全な場所に保存', 'ktpwp' ); ?>
 define( 'WP_DEBUG_LOG', WP_CONTENT_DIR . '/logs/debug.log' );
 
-// デバッグ表示を無効化（本番環境では必須）
+<?php echo esc_html__( 'デバッグ表示を無効化（本番環境では必須）', 'ktpwp' ); ?>
 define( 'WP_DEBUG_DISPLAY', false );
 
-// スクリプトエラーの表示を無効化
+<?php echo esc_html__( 'スクリプトエラーの表示を無効化', 'ktpwp' ); ?>
 @ini_set( 'display_errors', 0 );</code></pre>
             </div>
         </div>
@@ -4435,7 +4572,7 @@ define( 'WP_DEBUG_DISPLAY', false );
         add_action(
             'admin_notices',
             function () {
-				echo '<div class="notice notice-success is-dismissible"><p>設定を保存しました。</p></div>';
+				echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( '設定を保存しました。', 'ktpwp' ) . '</p></div>';
 			}
         );
     }
@@ -4449,7 +4586,7 @@ define( 'WP_DEBUG_DISPLAY', false );
     public static function get_all_settings() {
         return array(
             'version' => get_option( 'ktpwp_version', KANTANPRO_PLUGIN_VERSION ),
-            'installed_date' => get_option( 'ktpwp_installed_date', '不明' ),
+            'installed_date' => get_option( 'ktpwp_installed_date', __( '不明', 'ktpwp' ) ),
             'debug_mode' => get_option( 'ktpwp_debug_mode', 'disabled' ),
             'debug_log_enabled' => get_option( 'ktpwp_debug_log_enabled', '0' ),
             'rest_api_restricted' => get_option( 'ktpwp_rest_api_restricted', '1' ),
@@ -4974,16 +5111,16 @@ define( 'WP_DEBUG_DISPLAY', false );
                value="<?php echo esc_attr( $value ); ?>" 
                style="width: 400px;" />
         <p class="description">
-            <strong style="color: #28a745;">✅ 公開リポジトリ用に最適化済み</strong><br>
+            <strong style="color: #28a745;"><?php echo esc_html__( '公開リポジトリ用に最適化済み', 'ktpwp' ); ?></strong><br>
             <?php esc_html_e( '現在のプラグインは公開リポジトリ用に設定されています。', 'ktpwp' ); ?>
             <br>
             <?php esc_html_e( '非公開リポジトリを使用する場合のみ、GitHub Personal Access Tokenを設定してください。', 'ktpwp' ); ?>
             <br>
-            <a href="https://github.com/settings/tokens" target="_blank">GitHub Personal Access Tokenの作成</a>
+            <a href="https://github.com/settings/tokens" target="_blank"><?php echo esc_html__( 'GitHub Personal Access Tokenの作成', 'ktpwp' ); ?></a>
             <br>
             <?php esc_html_e( '必要な権限: repo (プライベートリポジトリへのアクセス)', 'ktpwp' ); ?>
             <br><br>
-            <strong>現在の設定:</strong> 公開リポジトリ「KantanPro/KantanPro-a-」を使用
+            <strong><?php echo esc_html__( '現在の設定:', 'ktpwp' ); ?></strong> <?php echo esc_html__( '公開リポジトリ「KantanPro/KantanPro-a-」を使用', 'ktpwp' ); ?>
         </p>
         <?php
     }

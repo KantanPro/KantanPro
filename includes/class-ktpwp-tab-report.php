@@ -97,12 +97,12 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 			return '<div style="position:relative;max-width:800px;margin:30px auto;">
 				<img src="' . $dummy_graph_url . '" alt="' . esc_attr__( 'Report Graph', 'ktpwp' ) . '" style="width:100%;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.1);filter:blur(3px);opacity:0.7;">
 				<div style="position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,0.3);border-radius:8px;display:flex;flex-direction:column;justify-content:flex-start;align-items:center;text-align:center;padding:20px;">
-					<h3 style="margin:50px 0 15px;color:#d32f2f;font-size:24px;text-shadow:0 1px 2px rgba(255,255,255,0.8);">レポート機能の利用にはライセンスが必要です</h3>
-					<p style="margin-bottom:20px;font-size:16px;line-height:1.6;color:#555;text-shadow:0 1px 2px rgba(255,255,255,0.8);">詳細な分析とレポート機能を利用するには、ライセンスキーを購入して設定してください。</p>
+					<h3 style="margin:50px 0 15px;color:#d32f2f;font-size:24px;text-shadow:0 1px 2px rgba(255,255,255,0.8);">' . esc_html__( 'レポート機能の利用にはライセンスが必要です', 'ktpwp' ) . '</h3>
+					<p style="margin-bottom:20px;font-size:16px;line-height:1.6;color:#555;text-shadow:0 1px 2px rgba(255,255,255,0.8);">' . esc_html__( '詳細な分析とレポート機能を利用するには、ライセンスキーを購入して設定してください。', 'ktpwp' ) . '</p>
 					<div style="margin-bottom:20px;">
-						<a href="https://www.kantanpro.com/klm" target="_blank" class="button button-primary" style="padding:12px 24px;font-size:16px;text-decoration:none;background:#0073aa;color:#fff;border-radius:5px;display:inline-block;">ライセンスを購入</a>
+						<a href="https://www.kantanpro.com/klm" target="_blank" class="button button-primary" style="padding:12px 24px;font-size:16px;text-decoration:none;background:#0073aa;color:#fff;border-radius:5px;display:inline-block;">' . esc_html__( 'ライセンスを購入', 'ktpwp' ) . '</a>
 					</div>
-					<p style="font-size:18px;font-weight:bold;color:#0073aa;line-height:1.5;">ライセンス購入後は<a href="' . esc_url( admin_url( 'admin.php?page=ktp-license' ) ) . '" style="color:#0073aa;text-decoration:underline;">ライセンス設定</a>でライセンスキーを入力してください</p>
+					<p style="font-size:18px;font-weight:bold;color:#0073aa;line-height:1.5;">' . sprintf( esc_html__( 'ライセンス購入後は%sでライセンスキーを入力してください', 'ktpwp' ), '<a href="' . esc_url( admin_url( 'admin.php?page=ktp-license' ) ) . '" style="color:#0073aa;text-decoration:underline;">' . esc_html__( 'ライセンス設定', 'ktpwp' ) . '</a>' ) . '</p>
 				</div>
 			</div>';
 		}
@@ -197,15 +197,15 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 			global $wpdb;
 
 			$content = '<div class="sales-report">';
-			$content .= '<h3 style="margin-top:0;margin-bottom:24px;color:#333;">売上レポート</h3>';
+			$content .= '<h3 style="margin-top:0;margin-bottom:24px;color:#333;">' . esc_html__( '売上レポート', 'ktpwp' ) . '</h3>';
 
 			// 売上計算条件の説明
 			$content .= '<div style="background:#e3f2fd;border-left:4px solid #2196f3;padding:16px;margin-bottom:24px;border-radius:4px;">';
-			$content .= '<div style="font-weight:bold;color:#1976d2;margin-bottom:8px;">📊 売上計算について</div>';
+			$content .= '<div style="font-weight:bold;color:#1976d2;margin-bottom:8px;">' . esc_html__( '📊 売上計算について', 'ktpwp' ) . '</div>';
 			$content .= '<div style="color:#333;font-size:14px;line-height:1.5;">';
-			$content .= '売上は「請求済」以降の進捗状況の案件のみを対象としています。<br>';
-			$content .= '※ 請求項目があっても進捗が「完了」以前の場合は売上に含まれません。<br>';
-			$content .= '※ 「ボツ」案件は売上計算から除外されています。';
+			$content .= esc_html__( '売上は「請求済」以降の進捗状況の案件のみを対象としています。', 'ktpwp' ) . '<br>';
+			$content .= esc_html__( '※ 請求項目があっても進捗が「完了」以前の場合は売上に含まれません。', 'ktpwp' ) . '<br>';
+			$content .= esc_html__( '※ 「ボツ」案件は売上計算から除外されています。', 'ktpwp' );
 			$content .= '</div>';
 			$content .= '</div>';
 
@@ -218,12 +218,12 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 			// グラフエリア（モバイルでは縦並び）
 			$content .= '<div class="ktp-report-charts-grid">';
 			$content .= '<div class="ktp-report-chart-item" style="background:#f8f9fa;padding:20px;border-radius:8px;">';
-			$content .= '<h4 style="margin:0 0 16px 0;">月別売上推移</h4>';
+			$content .= '<h4 style="margin:0 0 16px 0;">' . esc_html__( '月別売上推移', 'ktpwp' ) . '</h4>';
 			$content .= '<canvas id="monthlySalesChart" width="400" height="300"></canvas>';
 			$content .= '</div>';
 			
 			$content .= '<div class="ktp-report-chart-item" style="background:#f8f9fa;padding:20px;border-radius:8px;">';
-			$content .= '<h4 style="margin:0 0 16px 0;">月別利益コスト比較</h4>';
+			$content .= '<h4 style="margin:0 0 16px 0;">' . esc_html__( '月別利益コスト比較', 'ktpwp' ) . '</h4>';
 			$content .= '<canvas id="profitTrendChart" width="400" height="300"></canvas>';
 			$content .= '</div>';
 			$content .= '</div>';
@@ -241,12 +241,12 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 		 */
 		private function render_client_report() {
 			$content = '<div class="client-report">';
-			$content .= '<h3 style="margin-top:0;margin-bottom:8px;color:#333;">顧客別レポート</h3>';
+			$content .= '<h3 style="margin-top:0;margin-bottom:8px;color:#333;">' . esc_html__( '顧客別レポート', 'ktpwp' ) . '</h3>';
 			
 			// 期間の説明を追加
 			$period = isset( $_GET['period'] ) ? sanitize_text_field( $_GET['period'] ) : 'all_time';
 			$period_description = $this->get_period_description( $period );
-			$content .= '<p style="margin:0 0 24px 0;color:#666;font-size:14px;">売上は「請求済」以降の進捗状況の案件のみを対象としています。「ボツ」案件は売上計算から除外されています。対象期間：' . esc_html( $period_description ) . '</p>';
+			$content .= '<p style="margin:0 0 24px 0;color:#666;font-size:14px;">' . esc_html( sprintf( __( '売上は「請求済」以降の進捗状況の案件のみを対象としています。「ボツ」案件は売上計算から除外されています。対象期間：%s', 'ktpwp' ), $period_description ) ) . '</p>';
 
 			// 顧客サマリー
 			$content .= $this->render_client_summary();
@@ -254,12 +254,12 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 			// グラフエリア（モバイルでは縦並び）
 			$content .= '<div class="ktp-report-charts-grid">';
 			$content .= '<div class="ktp-report-chart-item" style="background:#f8f9fa;padding:20px;border-radius:8px;">';
-			$content .= '<h4 style="margin:0 0 16px 0;">顧客別売上</h4>';
+			$content .= '<h4 style="margin:0 0 16px 0;">' . esc_html__( '顧客別売上', 'ktpwp' ) . '</h4>';
 			$content .= '<canvas id="clientSalesChart" width="400" height="300"></canvas>';
 			$content .= '</div>';
 			
 			$content .= '<div class="ktp-report-chart-item" style="background:#f8f9fa;padding:20px;border-radius:8px;">';
-			$content .= '<h4 style="margin:0 0 16px 0;">顧客別案件数</h4>';
+			$content .= '<h4 style="margin:0 0 16px 0;">' . esc_html__( '顧客別案件数', 'ktpwp' ) . '</h4>';
 			$content .= '<canvas id="clientOrderChart" width="400" height="300"></canvas>';
 			$content .= '</div>';
 			$content .= '</div>';
@@ -277,12 +277,12 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 		 */
 		private function render_service_report() {
 			$content = '<div class="service-report">';
-			$content .= '<h3 style="margin-top:0;margin-bottom:8px;color:#333;">サービス別レポート</h3>';
+			$content .= '<h3 style="margin-top:0;margin-bottom:8px;color:#333;">' . esc_html__( 'サービス別レポート', 'ktpwp' ) . '</h3>';
 			
 			// 期間の説明を追加
 			$period = isset( $_GET['period'] ) ? sanitize_text_field( $_GET['period'] ) : 'all_time';
 			$period_description = $this->get_period_description( $period );
-			$content .= '<p style="margin:0 0 24px 0;color:#666;font-size:14px;">売上は「請求済」以降の進捗状況の案件のみを対象としています。サービス別比率は「受注」以降の進捗状況の案件を対象としています。「ボツ」案件は計算から除外されています。対象期間：' . esc_html( $period_description ) . '</p>';
+			$content .= '<p style="margin:0 0 24px 0;color:#666;font-size:14px;">' . esc_html( sprintf( __( '売上は「請求済」以降の進捗状況の案件のみを対象としています。サービス別比率は「受注」以降の進捗状況の案件を対象としています。「ボツ」案件は計算から除外されています。対象期間：%s', 'ktpwp' ), $period_description ) ) . '</p>';
 
 			// サービスサマリー
 			$content .= $this->render_service_summary();
@@ -290,12 +290,12 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 			// グラフエリア（モバイルでは縦並び）
 			$content .= '<div class="ktp-report-charts-grid">';
 			$content .= '<div class="ktp-report-chart-item" style="background:#f8f9fa;padding:20px;border-radius:8px;">';
-			$content .= '<h4 style="margin:0 0 16px 0;">サービス別売上</h4>';
+			$content .= '<h4 style="margin:0 0 16px 0;">' . esc_html__( 'サービス別売上', 'ktpwp' ) . '</h4>';
 			$content .= '<canvas id="serviceSalesChart" width="400" height="300"></canvas>';
 			$content .= '</div>';
 			
 			$content .= '<div class="ktp-report-chart-item" style="background:#f8f9fa;padding:20px;border-radius:8px;">';
-			$content .= '<h4 style="margin:0 0 16px 0;">サービス別比率（受注ベース）</h4>';
+			$content .= '<h4 style="margin:0 0 16px 0;">' . esc_html__( 'サービス別比率（受注ベース）', 'ktpwp' ) . '</h4>';
 			$content .= '<canvas id="serviceQuantityChart" width="400" height="300"></canvas>';
 			$content .= '</div>';
 			$content .= '</div>';
@@ -313,12 +313,12 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 		 */
 		private function render_supplier_report() {
 			$content = '<div class="supplier-report">';
-			$content .= '<h3 style="margin-top:0;margin-bottom:8px;color:#333;">協力会社レポート</h3>';
+			$content .= '<h3 style="margin-top:0;margin-bottom:8px;color:#333;">' . esc_html__( '協力会社レポート', 'ktpwp' ) . '</h3>';
 			
 			// 期間の説明を追加
 			$period = isset( $_GET['period'] ) ? sanitize_text_field( $_GET['period'] ) : 'all_time';
 			$period_description = $this->get_period_description( $period );
-			$content .= '<p style="margin:0 0 24px 0;color:#666;font-size:14px;">貢献度は「請求済」以降の進捗状況の案件のみを対象としています。「ボツ」案件は計算から除外されています。対象期間：' . esc_html( $period_description ) . '</p>';
+			$content .= '<p style="margin:0 0 24px 0;color:#666;font-size:14px;">' . esc_html( sprintf( __( '貢献度は「請求済」以降の進捗状況の案件のみを対象としています。「ボツ」案件は計算から除外されています。対象期間：%s', 'ktpwp' ), $period_description ) ) . '</p>';
 
 			// 協力会社サマリー
 			$content .= $this->render_supplier_summary();
@@ -326,12 +326,12 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 			// グラフエリア（モバイルでは縦並び）
 			$content .= '<div class="ktp-report-charts-grid">';
 			$content .= '<div class="ktp-report-chart-item" style="background:#f8f9fa;padding:20px;border-radius:8px;">';
-			$content .= '<h4 style="margin:0 0 16px 0;">協力会社別貢献度</h4>';
+			$content .= '<h4 style="margin:0 0 16px 0;">' . esc_html__( '協力会社別貢献度', 'ktpwp' ) . '</h4>';
 			$content .= '<canvas id="supplierSkillsChart" width="400" height="300"></canvas>';
 			$content .= '</div>';
 			
 			$content .= '<div class="ktp-report-chart-item" style="background:#f8f9fa;padding:20px;border-radius:8px;">';
-			$content .= '<h4 style="margin:0 0 16px 0;">スキル別協力会社数</h4>';
+			$content .= '<h4 style="margin:0 0 16px 0;">' . esc_html__( 'スキル別協力会社数', 'ktpwp' ) . '</h4>';
 			$content .= '<canvas id="skillSuppliersChart" width="400" height="300"></canvas>';
 			$content .= '</div>';
 			$content .= '</div>';
@@ -351,17 +351,17 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 			$current_period = isset( $_GET['period'] ) ? sanitize_text_field( $_GET['period'] ) : 'all_time';
 			
 			$periods = array(
-				'all_time' => '全期間',
-				'this_year' => '今年',
-				'last_year' => '去年',
-				'this_month' => '今月',
-				'last_month' => '先月',
-				'last_3_months' => '過去3ヶ月',
-				'last_6_months' => '過去6ヶ月'
+				'all_time' => __( '全期間', 'ktpwp' ),
+				'this_year' => __( '今年', 'ktpwp' ),
+				'last_year' => __( '去年', 'ktpwp' ),
+				'this_month' => __( '今月', 'ktpwp' ),
+				'last_month' => __( '先月', 'ktpwp' ),
+				'last_3_months' => __( '過去3ヶ月', 'ktpwp' ),
+				'last_6_months' => __( '過去6ヶ月', 'ktpwp' )
 			);
 
 			$content = '<div style="margin-bottom:24px;padding:16px;background:#f8f9fa;border-radius:8px;">';
-			$content .= '<h4 style="margin:0 0 12px 0;">期間選択</h4>';
+			$content .= '<h4 style="margin:0 0 12px 0;">' . esc_html__( '期間選択', 'ktpwp' ) . '</h4>';
 			$content .= '<div style="display:flex;flex-wrap:wrap;gap:8px;">';
 
 			foreach ( $periods as $key => $label ) {
@@ -409,18 +409,18 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 			$content = '<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:16px;margin-bottom:24px;">';
 			
 			$content .= '<div style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);color:#fff;padding:20px;border-radius:8px;text-align:center;">';
-			$content .= '<div style="margin:0 0 8px 0;font-size:16px;font-weight:bold;color:#fff;">総売上</div>';
-			$content .= '<div style="font-size:24px;font-weight:bold;">¥' . number_format( $total_sales ) . '</div>';
+			$content .= '<div style="margin:0 0 8px 0;font-size:16px;font-weight:bold;color:#fff;">' . esc_html__( '総売上', 'ktpwp' ) . '</div>';
+			$content .= '<div style="font-size:24px;font-weight:bold;">' . esc_html( class_exists( 'KTPWP_Settings' ) ? KTPWP_Settings::format_money( $total_sales ) : number_format( $total_sales ) ) . '</div>';
 			$content .= '</div>';
 
 			$content .= '<div style="background:linear-gradient(135deg, #f093fb 0%, #f5576c 100%);color:#fff;padding:20px;border-radius:8px;text-align:center;">';
-			$content .= '<div style="margin:0 0 8px 0;font-size:16px;font-weight:bold;color:#fff;">案件数</div>';
-			$content .= '<div style="font-size:24px;font-weight:bold;">' . number_format( $order_count ) . '件</div>';
+			$content .= '<div style="margin:0 0 8px 0;font-size:16px;font-weight:bold;color:#fff;">' . esc_html__( '案件数', 'ktpwp' ) . '</div>';
+			$content .= '<div style="font-size:24px;font-weight:bold;">' . esc_html( sprintf( __( '%s件', 'ktpwp' ), number_format( $order_count ) ) ) . '</div>';
 			$content .= '</div>';
 
 			$content .= '<div style="background:linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);color:#fff;padding:20px;border-radius:8px;text-align:center;">';
-			$content .= '<div style="margin:0 0 8px 0;font-size:16px;font-weight:bold;color:#fff;">平均単価</div>';
-			$content .= '<div style="font-size:24px;font-weight:bold;">¥' . number_format( $avg_amount ) . '</div>';
+			$content .= '<div style="margin:0 0 8px 0;font-size:16px;font-weight:bold;color:#fff;">' . esc_html__( '平均単価', 'ktpwp' ) . '</div>';
+			$content .= '<div style="font-size:24px;font-weight:bold;">' . esc_html( class_exists( 'KTPWP_Settings' ) ? KTPWP_Settings::format_money( $avg_amount ) : number_format( $avg_amount ) ) . '</div>';
 			$content .= '</div>';
 
 			$content .= '</div>';
@@ -441,7 +441,7 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 			$where_clause = $this->get_period_where_clause( $period );
 
 			// 顧客別売上TOP5（請求済以降の進捗状況の案件のみ）
-			$client_query = "SELECT COALESCE(c.company_name, '（顧客未設定）') AS company_name, SUM(ii.amount) AS total_sales, COUNT(DISTINCT o.id) AS order_count 
+			$client_query = "SELECT COALESCE(c.company_name, '(Customer not set)') AS company_name, SUM(ii.amount) AS total_sales, COUNT(DISTINCT o.id) AS order_count 
 				FROM {$wpdb->prefix}ktp_order o 
 				LEFT JOIN {$wpdb->prefix}ktp_client c ON o.client_id = c.id 
 				LEFT JOIN {$wpdb->prefix}ktp_order_invoice_items ii ON o.id = ii.order_id 
@@ -455,7 +455,7 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 			$client_results = $wpdb->get_results( $client_query );
 
 			$content = '<div style="background:#f8f9fa;padding:20px;border-radius:8px;margin-bottom:24px;">';
-			$content .= '<h4 style="margin:0 0 16px 0;">売上TOP5顧客</h4>';
+			$content .= '<h4 style="margin:0 0 16px 0;">' . esc_html__( '売上TOP5顧客', 'ktpwp' ) . '</h4>';
 			$content .= '<div style="display:grid;gap:12px;">';
 
 			if ( empty( $client_results ) ) {
@@ -469,8 +469,8 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 					$content .= '<span style="font-weight:bold;">' . esc_html( $client->company_name ) . '</span>';
 					$content .= '</div>';
 					$content .= '<div style="text-align:right;">';
-					$content .= '<div style="font-weight:bold;color:#1976d2;">¥' . number_format( $client->total_sales ?? 0 ) . '</div>';
-					$content .= '<div style="font-size:12px;color:#666;">' . number_format( $client->order_count ?? 0 ) . '件</div>';
+					$content .= '<div style="font-weight:bold;color:#1976d2;">' . esc_html( class_exists( 'KTPWP_Settings' ) ? KTPWP_Settings::format_money( $client->total_sales ?? 0 ) : number_format( $client->total_sales ?? 0 ) ) . '</div>';
+					$content .= '<div style="font-size:12px;color:#666;">' . esc_html( sprintf( __( '%s件', 'ktpwp' ), number_format( $client->order_count ?? 0 ) ) ) . '</div>';
 					$content .= '</div>';
 					$content .= '</div>';
 				}
@@ -494,7 +494,7 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 			$where_clause = $this->get_period_where_clause( $period );
 
 			// サービス別売上TOP5（請求済以降の進捗状況の案件のみ）
-			$service_query = "SELECT COALESCE(ii.product_name, '（未設定）') AS service_name, SUM(ii.amount) AS total_sales, COUNT(DISTINCT o.id) AS order_count 
+			$service_query = "SELECT COALESCE(ii.product_name, '(Not set)') AS service_name, SUM(ii.amount) AS total_sales, COUNT(DISTINCT o.id) AS order_count 
 				FROM {$wpdb->prefix}ktp_order o 
 				LEFT JOIN {$wpdb->prefix}ktp_order_invoice_items ii ON o.id = ii.order_id 
 				WHERE 1=1 {$where_clause} 
@@ -507,7 +507,7 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 			$service_results = $wpdb->get_results( $service_query );
 
 			$content = '<div style="background:#f8f9fa;padding:20px;border-radius:8px;margin-bottom:24px;">';
-			$content .= '<h4 style="margin:0 0 16px 0;">売上TOP5サービス</h4>';
+			$content .= '<h4 style="margin:0 0 16px 0;">' . esc_html__( '売上TOP5サービス', 'ktpwp' ) . '</h4>';
 			$content .= '<div style="display:grid;gap:12px;">';
 
 			if ( empty( $service_results ) ) {
@@ -521,8 +521,8 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 					$content .= '<span style="font-weight:bold;">' . esc_html( $service->service_name ) . '</span>';
 					$content .= '</div>';
 					$content .= '<div style="text-align:right;">';
-					$content .= '<div style="font-weight:bold;color:#4caf50;">¥' . number_format( $service->total_sales ?? 0 ) . '</div>';
-					$content .= '<div style="font-size:12px;color:#666;">' . number_format( $service->order_count ?? 0 ) . '件</div>';
+					$content .= '<div style="font-weight:bold;color:#4caf50;">' . esc_html( class_exists( 'KTPWP_Settings' ) ? KTPWP_Settings::format_money( $service->total_sales ?? 0 ) : number_format( $service->total_sales ?? 0 ) ) . '</div>';
+					$content .= '<div style="font-size:12px;color:#666;">' . esc_html( sprintf( __( '%s件', 'ktpwp' ), number_format( $service->order_count ?? 0 ) ) ) . '</div>';
 					$content .= '</div>';
 					$content .= '</div>';
 				}
@@ -546,7 +546,7 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 			$where_clause = $this->get_period_where_clause( $period );
 
 			// 協力会社別貢献度TOP5（請求済以降の進捗状況の案件のみ）
-			$supplier_query = "SELECT COALESCE(s.company_name, '（協力会社未設定）') AS company_name, COUNT(DISTINCT o.id) AS order_count, SUM(oci.amount) AS total_contribution 
+			$supplier_query = "SELECT COALESCE(s.company_name, '(Supplier not set)') AS company_name, COUNT(DISTINCT o.id) AS order_count, SUM(oci.amount) AS total_contribution 
 				FROM {$wpdb->prefix}ktp_order o 
 				LEFT JOIN {$wpdb->prefix}ktp_order_cost_items oci ON o.id = oci.order_id 
 				LEFT JOIN {$wpdb->prefix}ktp_supplier s ON oci.supplier_id = s.id 
@@ -560,7 +560,7 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 			$supplier_results = $wpdb->get_results( $supplier_query );
 
 			$content = '<div style="background:#f8f9fa;padding:20px;border-radius:8px;margin-bottom:24px;">';
-			$content .= '<h4 style="margin:0 0 16px 0;">貢献度TOP5協力会社</h4>';
+			$content .= '<h4 style="margin:0 0 16px 0;">' . esc_html__( '貢献度TOP5協力会社', 'ktpwp' ) . '</h4>';
 			$content .= '<div style="display:grid;gap:12px;">';
 
 			if ( empty( $supplier_results ) ) {
@@ -574,8 +574,8 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 					$content .= '<span style="font-weight:bold;">' . esc_html( $supplier->company_name ) . '</span>';
 					$content .= '</div>';
 					$content .= '<div style="text-align:right;">';
-					$content .= '<div style="font-weight:bold;color:#ff9800;">¥' . number_format( $supplier->total_contribution ?? 0 ) . '</div>';
-					$content .= '<div style="font-size:12px;color:#666;">' . number_format( $supplier->order_count ?? 0 ) . '件</div>';
+					$content .= '<div style="font-weight:bold;color:#ff9800;">' . esc_html( class_exists( 'KTPWP_Settings' ) ? KTPWP_Settings::format_money( $supplier->total_contribution ?? 0 ) : number_format( $supplier->total_contribution ?? 0 ) ) . '</div>';
+					$content .= '<div style="font-size:12px;color:#666;">' . esc_html( sprintf( __( '%s件', 'ktpwp' ), number_format( $supplier->order_count ?? 0 ) ) ) . '</div>';
 					$content .= '</div>';
 					$content .= '</div>';
 				}
@@ -595,18 +595,18 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 	 */
 	private function get_period_description( $period ) {
 		$periods = array(
-			'all_time' => '全期間',
-			'this_year' => '今年',
-			'last_year' => '去年',
-			'this_month' => '今月',
-			'last_month' => '先月',
-			'last_3_months' => '過去3ヶ月',
-			'last_6_months' => '過去6ヶ月',
-			'current_year' => '今年',
-			'current_month' => '今月'
+			'all_time' => __( '全期間', 'ktpwp' ),
+			'this_year' => __( '今年', 'ktpwp' ),
+			'last_year' => __( '去年', 'ktpwp' ),
+			'this_month' => __( '今月', 'ktpwp' ),
+			'last_month' => __( '先月', 'ktpwp' ),
+			'last_3_months' => __( '過去3ヶ月', 'ktpwp' ),
+			'last_6_months' => __( '過去6ヶ月', 'ktpwp' ),
+			'current_year' => __( '今年', 'ktpwp' ),
+			'current_month' => __( '今月', 'ktpwp' )
 		);
 
-		return isset( $periods[ $period ] ) ? $periods[ $period ] : '全期間';
+		return isset( $periods[ $period ] ) ? $periods[ $period ] : __( '全期間', 'ktpwp' );
 	}
 
 	/**
@@ -657,7 +657,7 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 	 */
 	private function render_tax_return_report() {
 		$content = '<div class="tax-return-report">';
-		$content .= '<h3 style="margin-top:0;margin-bottom:24px;color:#333;">確定申告用</h3>';
+		$content .= '<h3 style="margin-top:0;margin-bottom:24px;color:#333;">' . esc_html__( '確定申告用', 'ktpwp' ) . '</h3>';
 
 		// 年度選択
 		$content .= $this->render_tax_year_selector();
@@ -685,7 +685,7 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 		$end_year = date('Y') + 1; // 来年まで
 
 		$content = '<div style="margin-bottom:24px;padding:16px;background:#f8f9fa;border-radius:8px;">';
-		$content .= '<h4 style="margin:0 0 12px 0;">対象年度選択</h4>';
+		$content .= '<h4 style="margin:0 0 12px 0;">' . esc_html__( '対象年度選択', 'ktpwp' ) . '</h4>';
 		$content .= '<div style="display:flex;flex-wrap:wrap;gap:8px;">';
 
 		for ( $year = $end_year; $year >= $start_year; $year-- ) {
@@ -693,7 +693,7 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 			$url = add_query_arg( array( 'tab_name' => 'report', 'report_type' => 'tax_return', 'tax_year' => $year ) );
 			
 			$content .= '<a href="' . esc_url( $url ) . '" class="year-btn" ' . $active_class . ' style="padding:6px 12px;border-radius:4px;text-decoration:none;border:1px solid #ddd;font-size:14px;transition:all 0.3s;">';
-			$content .= esc_html( $year . '年' );
+			$content .= esc_html( sprintf( __( '%s年', 'ktpwp' ), $year ) );
 			$content .= '</a>';
 		}
 
@@ -718,7 +718,7 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 
 		$content = '<div style="background:#fff;border:1px solid #ddd;border-radius:8px;padding:20px;margin-bottom:24px;">';
 		$content .= '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">';
-		$content .= '<h4 style="margin:0;color:#333;">売上台帳（' . esc_html( $tax_year ) . '年）</h4>';
+		$content .= '<h4 style="margin:0;color:#333;">' . esc_html( sprintf( __( '売上台帳（%s年）', 'ktpwp' ), $tax_year ) ) . '</h4>';
 		
 		// 印刷ボタン
 		$content .= '<button type="button" id="sales-ledger-pdf-btn" data-year="' . esc_attr( $tax_year ) . '" style="
@@ -734,7 +734,7 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 			gap:8px;
 		">';
 		$content .= '<span style="font-size:16px;">🖨️</span>';
-		$content .= '印刷';
+		$content .= esc_html__( '印刷', 'ktpwp' );
 		$content .= '</button>';
 		
 		$content .= '</div>';
@@ -746,13 +746,13 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 		$content .= '<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:16px;margin-bottom:20px;">';
 		
 		$content .= '<div style="background:linear-gradient(135deg, #43a047 0%, #66bb6a 100%);color:#fff;padding:16px;border-radius:6px;text-align:center;">';
-		$content .= '<div style="font-size:14px;margin-bottom:4px;">年間売上合計</div>';
-		$content .= '<div style="font-size:20px;font-weight:bold;">¥' . number_format( $total_sales ) . '</div>';
+		$content .= '<div style="font-size:14px;margin-bottom:4px;">' . esc_html__( '年間売上合計', 'ktpwp' ) . '</div>';
+		$content .= '<div style="font-size:20px;font-weight:bold;">' . esc_html( class_exists( 'KTPWP_Settings' ) ? KTPWP_Settings::format_money( $total_sales ) : number_format( $total_sales ) ) . '</div>';
 		$content .= '</div>';
 
 		$content .= '<div style="background:linear-gradient(135deg, #1976d2 0%, #42a5f5 100%);color:#fff;padding:16px;border-radius:6px;text-align:center;">';
-		$content .= '<div style="font-size:14px;margin-bottom:4px;">売上件数</div>';
-		$content .= '<div style="font-size:20px;font-weight:bold;">' . number_format( $total_orders ) . '件</div>';
+		$content .= '<div style="font-size:14px;margin-bottom:4px;">' . esc_html__( '売上件数', 'ktpwp' ) . '</div>';
+		$content .= '<div style="font-size:20px;font-weight:bold;">' . esc_html( sprintf( __( '%s件', 'ktpwp' ), number_format( $total_orders ) ) ) . '</div>';
 		$content .= '</div>';
 
 		$content .= '</div>';
@@ -760,7 +760,7 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 		// 売上台帳テーブル（プレビュー版）
 		$content .= '<div style="margin-top:20px;">';
 		$content .= '<div style="background:#f5f5f5;padding:12px;border-radius:4px;margin-bottom:12px;">';
-		$content .= '<strong>📋 売上台帳プレビュー</strong>（最新10件）';
+		$content .= '<strong>' . esc_html__( '📋 売上台帳プレビュー', 'ktpwp' ) . '</strong>' . esc_html__( '（最新10件）', 'ktpwp' );
 		$content .= '</div>';
 
 		if ( ! empty( $sales_data ) ) {
@@ -768,11 +768,11 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 			$content .= '<table style="width:100%;border-collapse:collapse;font-size:16px;line-height:1.6;">';
 			$content .= '<thead>';
 			$content .= '<tr style="background:#f8f9fa;">';
-			$content .= '<th style="border:1px solid #ddd;padding:14px 12px;text-align:left;font-weight:bold;font-size:16px;">日付</th>';
-			$content .= '<th style="border:1px solid #ddd;padding:14px 12px;text-align:left;font-weight:bold;font-size:16px;">顧客名</th>';
-			$content .= '<th style="border:1px solid #ddd;padding:14px 12px;text-align:left;font-weight:bold;font-size:16px;">案件名</th>';
-			$content .= '<th style="border:1px solid #ddd;padding:14px 12px;text-align:right;font-weight:bold;font-size:16px;">売上金額</th>';
-			$content .= '<th style="border:1px solid #ddd;padding:14px 12px;text-align:center;font-weight:bold;font-size:16px;">進捗</th>';
+			$content .= '<th style="border:1px solid #ddd;padding:14px 12px;text-align:left;font-weight:bold;font-size:16px;">' . esc_html__( '日付', 'ktpwp' ) . '</th>';
+			$content .= '<th style="border:1px solid #ddd;padding:14px 12px;text-align:left;font-weight:bold;font-size:16px;">' . esc_html__( '顧客名', 'ktpwp' ) . '</th>';
+			$content .= '<th style="border:1px solid #ddd;padding:14px 12px;text-align:left;font-weight:bold;font-size:16px;">' . esc_html__( '案件名', 'ktpwp' ) . '</th>';
+			$content .= '<th style="border:1px solid #ddd;padding:14px 12px;text-align:right;font-weight:bold;font-size:16px;">' . esc_html__( '売上金額', 'ktpwp' ) . '</th>';
+			$content .= '<th style="border:1px solid #ddd;padding:14px 12px;text-align:center;font-weight:bold;font-size:16px;">' . esc_html__( '進捗', 'ktpwp' ) . '</th>';
 			$content .= '</tr>';
 			$content .= '</thead>';
 			$content .= '<tbody>';
@@ -785,7 +785,7 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 				$content .= '<td style="border:1px solid #ddd;padding:12px;font-size:15px;">' . esc_html( $row['date'] ) . '</td>';
 				$content .= '<td style="border:1px solid #ddd;padding:12px;font-size:15px;">' . esc_html( $row['client_name'] ) . '</td>';
 				$content .= '<td style="border:1px solid #ddd;padding:12px;font-size:15px;">' . esc_html( $row['order_title'] ) . '</td>';
-				$content .= '<td style="border:1px solid #ddd;padding:12px;text-align:right;font-weight:bold;color:#1976d2;font-size:16px;">¥' . number_format( $row['total_amount'] ) . '</td>';
+				$content .= '<td style="border:1px solid #ddd;padding:12px;text-align:right;font-weight:bold;color:#1976d2;font-size:16px;">' . esc_html( class_exists( 'KTPWP_Settings' ) ? KTPWP_Settings::format_money( $row['total_amount'] ) : number_format( $row['total_amount'] ) ) . '</td>';
 				$content .= '<td style="border:1px solid #ddd;padding:12px;text-align:center;font-size:15px;">' . esc_html( $this->get_progress_label( $row['progress'] ) ) . '</td>';
 				$content .= '</tr>';
 			}
@@ -796,12 +796,12 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 
 			if ( count( $sales_data ) > 10 ) {
 				$content .= '<div style="text-align:center;margin-top:12px;color:#666;font-size:14px;">';
-				$content .= '※ 全' . count( $sales_data ) . '件中、最新10件を表示。全件は印刷プレビューでご確認ください。';
+				$content .= esc_html( sprintf( __( '※ 全%1$d件中、最新10件を表示。全件は印刷プレビューでご確認ください。', 'ktpwp' ), count( $sales_data ) ) );
 				$content .= '</div>';
 			}
 		} else {
 			$content .= '<div style="text-align:center;padding:40px;color:#666;">';
-			$content .= '対象年度の売上データがありません。';
+			$content .= esc_html__( '対象年度の売上データがありません。', 'ktpwp' );
 			$content .= '</div>';
 		}
 
@@ -819,13 +819,13 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 	 */
 	private function render_tax_return_features() {
 		$content = '<div style="background:#e3f2fd;border-left:4px solid #2196f3;padding:16px;border-radius:4px;">';
-		$content .= '<h4 style="margin:0 0 12px 0;color:#1976d2;">📊 確定申告サポート機能</h4>';
+		$content .= '<h4 style="margin:0 0 12px 0;color:#1976d2;">' . esc_html__( '📊 確定申告サポート機能', 'ktpwp' ) . '</h4>';
 		$content .= '<div style="color:#333;line-height:1.6;">';
 		$content .= '<ul style="margin:0;padding-left:20px;">';
-		$content .= '<li><strong>売上台帳印刷</strong>：年度別の売上データを帳簿形式で印刷</li>';
-		$content .= '<li><strong>税務署提出対応</strong>：確定申告に必要な売上情報を整理</li>';
-		$content .= '<li><strong>月別集計</strong>：月ごとの売上推移を確認可能</li>';
-		$content .= '<li><strong>顧客別売上</strong>：主要取引先の売上内訳を把握</li>';
+		$content .= '<li><strong>' . esc_html__( '売上台帳印刷', 'ktpwp' ) . '</strong>: ' . esc_html__( '年度別の売上データを帳簿形式で印刷', 'ktpwp' ) . '</li>';
+		$content .= '<li><strong>' . esc_html__( '税務署提出対応', 'ktpwp' ) . '</strong>: ' . esc_html__( '確定申告に必要な売上情報を整理', 'ktpwp' ) . '</li>';
+		$content .= '<li><strong>' . esc_html__( '月別集計', 'ktpwp' ) . '</strong>: ' . esc_html__( '月ごとの売上推移を確認可能', 'ktpwp' ) . '</li>';
+		$content .= '<li><strong>' . esc_html__( '顧客別売上', 'ktpwp' ) . '</strong>: ' . esc_html__( '主要取引先の売上内訳を把握', 'ktpwp' ) . '</li>';
 		$content .= '</ul>';
 		$content .= '</div>';
 		$content .= '</div>';
@@ -868,8 +868,8 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 			$sales_data[] = array(
 				'id' => $row['id'],
 				'date' => date( 'Y-m-d', strtotime( $row['date'] ) ),
-				'client_name' => $row['client_name'] ?: '未設定',
-				'order_title' => $row['order_title'] ?: '無題',
+				'client_name' => $row['client_name'] ?: __( '未設定', 'ktpwp' ),
+				'order_title' => $row['order_title'] ?: __( '無題', 'ktpwp' ),
 				'total_amount' => floatval( $row['total_amount'] ),
 				'progress' => intval( $row['progress'] )
 			);
@@ -887,17 +887,17 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 	 */
 	private function get_progress_label( $progress ) {
 		$labels = array(
-			1 => '受注',
-			2 => '進行中',
-			3 => '完了',
-			4 => '完了',
-			5 => '請求済',
-			6 => '支払済',
-			7 => 'ボツ',
-			8 => '見積中'
+			1 => __( '受注', 'ktpwp' ),
+			2 => __( '進行中', 'ktpwp' ),
+			3 => __( '完了', 'ktpwp' ),
+			4 => __( '完了', 'ktpwp' ),
+			5 => __( '請求済', 'ktpwp' ),
+			6 => __( '支払済', 'ktpwp' ),
+			7 => __( 'ボツ', 'ktpwp' ),
+			8 => __( '見積中', 'ktpwp' )
 		);
 
-		return isset( $labels[ $progress ] ) ? $labels[ $progress ] : '不明';
+		return isset( $labels[ $progress ] ) ? $labels[ $progress ] : __( '不明', 'ktpwp' );
 	}
 
 

@@ -689,7 +689,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 					$html .= '<span style="color: #999; font-size: 12px; font-weight: normal; flex-shrink: 0;">ID: ' . $skill_id . '</span>';
 					$html .= '<span style="font-weight: 600; color: #2c3e50; flex-shrink: 0;">' . $product_name . '</span>';
 					$html .= '<span style="color: #666; font-size: 13px; font-weight: normal; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">';
-					$html .= '単価: <strong>' . $unit_price . '円</strong> | ';
+					$html .= '単価: <strong>' . KTPWP_Settings::format_money( $unit_price ) . '</strong> | ';
 					$html .= '数量: <strong>' . $quantity . '</strong> | ';
 					$html .= '単位: <strong>' . $unit . '</strong> | ';
                     if ( ! ( class_exists( 'KTPWP_Tax_Policy' ) && ( KTPWP_Tax_Policy::is_abolished() || KTPWP_Tax_Policy::hide_tax_columns() ) ) ) {
@@ -783,7 +783,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 			$page_end = min( $total_skills, $current_page * ( class_exists( 'KTPWP_Settings' ) ? KTPWP_Settings::get_work_list_range() : 10 ) );
 
 			$pagination_html .= '<div style="margin-bottom: 18px; color: #4b5563; font-size: 14px; font-weight: 500;">';
-			$pagination_html .= esc_html( $current_page ) . ' / ' . esc_html( $total_pages ) . ' ページ（全 ' . esc_html( $total_skills ) . ' 件）';
+			$pagination_html .= esc_html( sprintf( __( '%1$d / %2$d ページ（全 %3$d 件）', 'ktpwp' ), $current_page, $total_pages, $total_skills ) );
 			$pagination_html .= '</div>';
 
 			// 2行目：ページネーションボタン

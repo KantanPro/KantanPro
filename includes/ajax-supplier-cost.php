@@ -20,7 +20,7 @@ add_action(
 		
 		if ( ! current_user_can( 'edit_posts' ) ) {
 			error_log('[SUPPLIER-COST-AJAX] 権限エラー: ユーザーに権限がありません');
-			wp_send_json_error( '権限がありません' );
+			wp_send_json_error( __( '権限がありません', 'ktpwp' ) );
 		}
 		
 		try {
@@ -42,7 +42,7 @@ add_action(
 			
 			if ( $wpdb->last_error ) {
 				error_log('[SUPPLIER-COST-AJAX] データベースエラー: ' . $wpdb->last_error );
-				wp_send_json_error( 'データベースエラー: ' . $wpdb->last_error );
+				wp_send_json_error( __( 'データベースエラー: ', 'ktpwp' ) . $wpdb->last_error );
 			}
 			
 			error_log('[SUPPLIER-COST-AJAX] 協力会社リスト取得成功: ' . count( $suppliers ) . '件' );
@@ -50,7 +50,7 @@ add_action(
 			
 		} catch ( Exception $e ) {
 			error_log('[SUPPLIER-COST-AJAX] 例外発生: ' . $e->getMessage() );
-			wp_send_json_error( '協力会社リストの取得中にエラーが発生しました: ' . $e->getMessage() );
+			wp_send_json_error( __( '協力会社リストの取得中にエラーが発生しました: ', 'ktpwp' ) . $e->getMessage() );
 		}
 	}
 );
@@ -66,13 +66,13 @@ add_action(
 		
 		if ( ! current_user_can( 'edit_posts' ) ) {
 			error_log('[SUPPLIER-COST-AJAX] 権限エラー: ユーザーに権限がありません');
-			wp_send_json_error( '権限がありません' );
+			wp_send_json_error( __( '権限がありません', 'ktpwp' ) );
 		}
 		
 		$supplier_id = isset( $_POST['supplier_id'] ) ? intval( $_POST['supplier_id'] ) : 0;
 		if ( ! $supplier_id ) {
 			error_log('[SUPPLIER-COST-AJAX] supplier_idが不正: ' . $supplier_id );
-			wp_send_json_error( 'supplier_idが不正です' );
+			wp_send_json_error( __( 'supplier_idが不正です', 'ktpwp' ) );
 		}
 		
 		try {
@@ -126,7 +126,7 @@ add_action(
 			
 			if ( $wpdb->last_error ) {
 				error_log('[SUPPLIER-COST-AJAX] データベースエラー: ' . $wpdb->last_error );
-				wp_send_json_error( 'データベースエラー: ' . $wpdb->last_error );
+				wp_send_json_error( __( 'データベースエラー: ', 'ktpwp' ) . $wpdb->last_error );
 			}
 			
 			error_log('[SUPPLIER-COST-AJAX] 職能リスト取得成功: ' . count( $skills ) . '件' );
@@ -134,7 +134,7 @@ add_action(
 			
 		} catch ( Exception $e ) {
 			error_log('[SUPPLIER-COST-AJAX] 例外発生: ' . $e->getMessage() );
-			wp_send_json_error( '職能リストの取得中にエラーが発生しました: ' . $e->getMessage() );
+			wp_send_json_error( __( '職能リストの取得中にエラーが発生しました: ', 'ktpwp' ) . $e->getMessage() );
 		}
 	}
 );
@@ -143,7 +143,7 @@ add_action(
     'wp_ajax_ktpwp_save_supplier_skill_for_cost',
     function () {
 		if ( ! current_user_can( 'edit_posts' ) ) {
-			wp_send_json_error( '権限がありません' );
+			wp_send_json_error( __( '権限がありません', 'ktpwp' ) );
 		}
 		global $wpdb;
 		$table = $wpdb->prefix . 'ktp_supplier_skills';
@@ -185,7 +185,7 @@ add_action(
 				
 				wp_send_json_success( array( 'id' => intval( $_POST['id'] ) ) );
 			} else {
-				wp_send_json_error( '更新失敗: ' . $wpdb->last_error );
+				wp_send_json_error( __( '更新失敗: ', 'ktpwp' ) . $wpdb->last_error );
 			}
 		} else {
 			// 追加
@@ -199,7 +199,7 @@ add_action(
 				
 				wp_send_json_success( array( 'id' => $wpdb->insert_id ) );
 			} else {
-				wp_send_json_error( '追加失敗: ' . $wpdb->last_error );
+				wp_send_json_error( __( '追加失敗: ', 'ktpwp' ) . $wpdb->last_error );
 			}
 		}
 	}
@@ -210,7 +210,7 @@ add_action(
     function () {
 		// 権限チェック
 		if ( ! current_user_can( 'edit_posts' ) ) {
-			wp_send_json_error( '権限がありません' );
+			wp_send_json_error( __( '権限がありません', 'ktpwp' ) );
 			return;
 		}
 
@@ -257,19 +257,19 @@ add_action(
 
 		// 必須項目の検証
 		if ( empty( $product_name ) ) {
-			wp_send_json_error( '商品名は必須です' );
+			wp_send_json_error( __( '商品名は必須です', 'ktpwp' ) );
 			return;
 		}
 
 		if ( $order_id <= 0 ) {
-			wp_send_json_error( '注文IDが無効です' );
+			wp_send_json_error( __( '注文IDが無効です', 'ktpwp' ) );
 			return;
 		}
 
 		// テーブルの存在確認
 		$table_exists = $wpdb->get_var( "SHOW TABLES LIKE '$table'" ) === $table;
 		if ( ! $table_exists ) {
-			wp_send_json_error( 'データベーステーブルが存在しません' );
+			wp_send_json_error( __( 'データベーステーブルが存在しません', 'ktpwp' ) );
 			return;
 		}
 
@@ -364,7 +364,7 @@ add_action(
 				wp_send_json_success(
                     array(
 						'id' => $item_id,
-						'message' => '更新しました',
+						'message' => __( '更新しました', 'ktpwp' ),
                     )
                 );
 			} else {
@@ -382,16 +382,16 @@ add_action(
 						wp_send_json_success(
                             array(
 								'id' => $wpdb->insert_id,
-								'message' => '新規追加しました',
+								'message' => __( '新規追加しました', 'ktpwp' ),
                             )
                         );
 					} else {
 						error_log( 'INSERT失敗: ' . $wpdb->last_error );
-						wp_send_json_error( '新規追加失敗: ' . $wpdb->last_error );
+						wp_send_json_error( __( '新規追加失敗: ', 'ktpwp' ) . $wpdb->last_error );
 					}
 				} else {
 					error_log( 'レコードは存在するが更新条件に合致しない' );
-					wp_send_json_error( '更新失敗: レコードは存在するが更新条件に合致しません' );
+					wp_send_json_error( __( '更新失敗: レコードは存在するが更新条件に合致しません', 'ktpwp' ) );
 				}
 			}
 		} else {
@@ -414,16 +414,16 @@ add_action(
 					wp_send_json_success(
                         array(
 							'id' => $wpdb->insert_id,
-							'message' => '追加しました',
+							'message' => __( '追加しました', 'ktpwp' ),
                         )
                     );
 				} else {
 					error_log( 'INSERT失敗: ' . $wpdb->last_error );
-					wp_send_json_error( '追加失敗: ' . $wpdb->last_error );
+					wp_send_json_error( __( '追加失敗: ', 'ktpwp' ) . $wpdb->last_error );
 				}
 			} else {
 				error_log( 'INSERT失敗: 商品名が空' );
-				wp_send_json_error( '商品名が空のため追加されません' );
+				wp_send_json_error( __( '商品名が空のため追加されません', 'ktpwp' ) );
 			}
 		}
 

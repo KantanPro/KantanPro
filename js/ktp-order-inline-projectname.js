@@ -34,7 +34,7 @@ jQuery(document).ready(function($) {
           $input.addClass('autosave-error');
           setTimeout(function(){ $input.removeClass('autosave-error'); }, 1200);
           if (res && res.data) {
-            alert('保存エラー: ' + res.data);
+            alert(ktpwpTranslate('保存エラー: ') + res.data);
           }
         }
       },

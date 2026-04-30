@@ -513,7 +513,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 // 送信ボタンを一時的に無効化
                 if (submitButton) {
                     submitButton.disabled = true;
-                    submitButton.textContent = '送信中...';
+                    submitButton.textContent = ktpwpTranslate('送信中...');
                     submitButton.style.opacity = '0.6';
                 }
 
@@ -551,7 +551,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         // 送信ボタンとメッセージ入力欄を復元
                         if (submitButton) {
                             submitButton.disabled = false;
-                            submitButton.textContent = '送信';
+                            submitButton.textContent = ktpwpTranslate('送信');
                             submitButton.style.opacity = '1';
                         }
                         if (messageInput) {
@@ -587,10 +587,10 @@ document.addEventListener('DOMContentLoaded', function () {
                                         });
                                     return;
                                 } else {
-                                    alert('メッセージの送信に失敗しました: ' + (response.data || '不明なエラー'));
+                                    alert(ktpwpTranslate('メッセージの送信に失敗しました: ') + (response.data || '不明なエラー'));
                                 }
                             } catch (e) {
-                                alert('JSON解析エラー: ' + e.message);
+                                alert(ktpwpTranslate('JSON解析エラー: ') + e.message);
                             }
                         } else {
                             let msg = 'サーバーエラーが発生しました';
@@ -651,7 +651,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 var messageId = deleteBtn.getAttribute('data-message-id');
                 if (!messageId) return;
 
-                if (!confirm('このメッセージを削除しますか？')) return;
+                if (!confirm(ktpwpTranslate('このメッセージを削除しますか？'))) return;
 
                 var url = (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) ? ktpwp_ajax.ajax_url :
                     (typeof ajaxurl !== 'undefined') ? ajaxurl :
@@ -712,10 +712,10 @@ document.addEventListener('DOMContentLoaded', function () {
                                     alert(resp.data || '削除に失敗しました');
                                 }
                             } catch (e) {
-                                alert('JSON解析エラー: ' + e.message);
+                                alert(ktpwpTranslate('JSON解析エラー: ') + e.message);
                             }
                         } else {
-                            alert('サーバーエラーが発生しました');
+                            alert(ktpwpTranslate('サーバーエラーが発生しました'));
                         }
                     }
                 };

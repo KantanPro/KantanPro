@@ -36,12 +36,12 @@ class KTPWP_View_Tabs_Class {
 
         // タブの内容を配列で定義
         $tabs = array(
-			'list' => '仕事リスト',
-			'order' => '受注書',
-			'client' => '顧客',
-			'service' => 'サービス',
-			'supplier' => '協力会社',
-			'report' => $lock_icon . 'レポート',
+			'list' => esc_html__( '仕事リスト', 'ktpwp' ),
+			'order' => esc_html__( '受注書', 'ktpwp' ),
+			'client' => esc_html__( '顧客', 'ktpwp' ),
+			'service' => esc_html__( 'サービス', 'ktpwp' ),
+			'supplier' => esc_html__( '協力会社', 'ktpwp' ),
+			'report' => $lock_icon . esc_html__( 'レポート', 'ktpwp' ),
         );
 
         // タブの内容を作成（プラグインコンテナクラスを追加してテーマとの競合を防止）

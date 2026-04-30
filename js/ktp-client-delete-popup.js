@@ -4,7 +4,7 @@
  * 削除ボタンクリック時に以下の選択肢を表示：
  * 1. 対象外（受注書は残り顧客データは復元可能）
  * 2. 削除（顧客データは削除されますが受注書は削除されません）
- * 3. 完全削除（顧客データと関連する受注書を完全に削除します）
+ * ${t('3. 完全削除')}（${t('顧客データと関連する受注書を完全に削除します')}）
  */
 
 (function() {
@@ -29,6 +29,7 @@
 
     // ポップアップのHTMLを生成
     function createDeletePopup(clientId, clientName) {
+        const t = (text) => (typeof ktpwpTranslate === 'function' ? ktpwpTranslate(text) : text);
         const popupId = 'ktp-delete-popup-' + Date.now();
         
         const popupHTML = `
@@ -69,14 +70,14 @@
                                 margin-right: 8px;
                                 font-size: 20px;
                             ">warning</span>
-                            顧客削除の選択
+                            ${t('顧客削除の選択')}
                         </h3>
                         <p style="
                             margin: 0;
                             color: #666;
                             font-size: 14px;
                         ">
-                            顧客「${clientName}」の削除方法を選択してください
+                            ${t('顧客')}「${clientName}」${t('の削除方法を選択してください')}
                         </p>
                     </div>
 
@@ -95,12 +96,12 @@
                                         font-weight: 600;
                                         color: #333;
                                         margin-bottom: 5px;
-                                    ">1. 対象外（推奨）</div>
+                                    ">${t('1. 対象外（推奨）')}</div>
                                     <div style="
                                         font-size: 13px;
                                         color: #666;
                                         line-height: 1.4;
-                                    ">受注書は残り、顧客データは復元可能です</div>
+                                    ">${t('受注書は残り、顧客データは復元可能です')}</div>
                                 </div>
                                 <span class="material-symbols-outlined" style="
                                     color: #4caf50;
@@ -123,12 +124,12 @@
                                         font-weight: 600;
                                         color: #333;
                                         margin-bottom: 5px;
-                                    ">2. 通常削除</div>
+                                    ">${t('2. 通常削除')}</div>
                                     <div style="
                                         font-size: 13px;
                                         color: #666;
                                         line-height: 1.4;
-                                    ">顧客データと部署データを削除（受注書は残す）</div>
+                                    ">${t('顧客データと部署データを削除（受注書は残す）')}</div>
                                 </div>
                                 <span class="material-symbols-outlined" style="
                                     color: #ff9800;
@@ -150,12 +151,12 @@
                                         font-weight: 600;
                                         color: #333;
                                         margin-bottom: 5px;
-                                    ">3. 完全削除</div>
+                                    ">${t('3. 完全削除')}</div>
                                     <div style="
                                         font-size: 13px;
                                         color: #666;
                                         line-height: 1.4;
-                                    ">顧客データと関連する受注書を完全に削除します</div>
+                                    ">${t('顧客データと関連する受注書を完全に削除します')}</div>
                                 </div>
                                 <span class="material-symbols-outlined" style="
                                     color: #f44336;
@@ -179,7 +180,7 @@
                             cursor: pointer;
                             font-size: 14px;
                             transition: all 0.2s ease;
-                        ">キャンセル</button>
+                        ">${t('キャンセル')}</button>
                         <button type="button" class="ktp-delete-confirm-btn" style="
                             padding: 10px 20px;
                             border: none;
@@ -191,7 +192,7 @@
                             transition: all 0.2s ease;
                             opacity: 0.5;
                             pointer-events: none;
-                        ">削除実行</button>
+                        ">${t('削除実行')}</button>
                     </div>
                 </div>
             </div>
@@ -236,7 +237,7 @@
             const selectedOption = this.dataset.selectedOption;
             
             if (!selectedOption) {
-                alert('削除方法を選択してください。');
+                alert(ktpwpTranslate('削除方法を選択してください。'));
                 return;
             }
 
@@ -246,14 +247,14 @@
 
             switch (selectedOption) {
                 case 'soft':
-                    isConfirmed = confirm('対象外に変更しますか？\n受注書は残り、顧客データは復元可能です。');
+                    isConfirmed = confirm(ktpwpTranslate('対象外に変更しますか？\n受注書は残り、顧客データは復元可能です。'));
                     break;
                 case 'delete':
-                    confirmMessage = '顧客データと部署データを削除しますか？\n\n⚠️ 注意：\n• 顧客データと部署データが完全に削除されます\n• 受注書は残りますが、顧客情報は失われます\n• この操作は元に戻せません';
+                    confirmMessage = ktpwpTranslate('顧客データと部署データを削除しますか？\n\n注意：\n• 顧客データと部署データが完全に削除されます\n• 受注書は残りますが、顧客情報は失われます\n• この操作は元に戻せません');
                     isConfirmed = confirm(confirmMessage);
                     break;
                 case 'complete':
-                    confirmMessage = '顧客データと関連する受注書を完全に削除しますか？\n\n🚨 警告：\n• 顧客データが完全に削除されます\n• 関連するすべての受注書が削除されます\n• この操作は元に戻せません\n• データの復元は不可能です';
+                    confirmMessage = ktpwpTranslate('顧客データと関連する受注書を完全に削除しますか？\n\n警告：\n• 顧客データが完全に削除されます\n• 関連するすべての受注書が削除されます\n• この操作は元に戻せません\n• データの復元は不可能です');
                     isConfirmed = confirm(confirmMessage);
                     break;
             }
@@ -267,7 +268,7 @@
                         orderButton.style.background = '#ccc';
                         orderButton.style.color = '#888';
                         orderButton.style.cursor = 'not-allowed';
-                        orderButton.title = '受注書作成（対象外顧客のため無効）';
+                        orderButton.title = ktpwpTranslate('受注書作成（対象外顧客のため無効）');
                     }
                 }
 
@@ -376,16 +377,16 @@
                 if (!clientIdInput) return;
                 const clientId = clientIdInput.value;
                 // 顧客名を取得（ページ内から検索）
-                let clientName = '顧客';
+                let clientName = ktpwpTranslate('顧客');
                 const customerNameElement = document.querySelector('#order_customer_name, .data_detail_title');
                 if (customerNameElement) {
                     const nameText = customerNameElement.textContent;
                                     const nameMatch = nameText.match(/顧客の詳細.*?（.*?ID:\s*(\d+).*?）/);
                 if (nameMatch) {
-                    clientName = '顧客ID: ' + clientId;
+                    clientName = ktpwpTranslate('顧客ID: ') + clientId;
                 } else {
                     // IDが表示されていない場合でも顧客名を設定
-                    clientName = '顧客ID: ' + clientId;
+                    clientName = ktpwpTranslate('顧客ID: ') + clientId;
                 }
                 }
                 // ポップアップを表示
@@ -422,7 +423,7 @@
         if (statusElement && statusElement.getAttribute('data-client-status') === '対象外') {
             e.preventDefault();
             e.stopPropagation();
-            alert('対象外顧客のため、受注書を作成できません。');
+            alert(ktpwpTranslate('対象外顧客のため、受注書を作成できません。'));
             return false;
         }
     }
@@ -478,7 +479,7 @@
                     orderButton.style.background = '#ccc';
                     orderButton.style.color = '#888';
                     orderButton.style.cursor = 'not-allowed';
-                    orderButton.title = '受注書作成（対象外顧客のため無効）';
+                    orderButton.title = ktpwpTranslate('受注書作成（対象外顧客のため無効）');
                     console.log('受注書作成ボタンを無効化しました（対象外顧客）');
                 }
             } else {
@@ -492,7 +493,7 @@
                         orderButton.style.background = '#ccc';
                         orderButton.style.color = '#888';
                         orderButton.style.cursor = 'not-allowed';
-                        orderButton.title = '受注書作成（対象外顧客のため無効）';
+                        orderButton.title = ktpwpTranslate('受注書作成（対象外顧客のため無効）');
                         console.log('受注書作成ボタンを無効化しました（削除処理完了後）');
                     }
                 }
@@ -507,7 +508,7 @@
                     orderButton.style.background = '#ccc';
                     orderButton.style.color = '#888';
                     orderButton.style.cursor = 'not-allowed';
-                    orderButton.title = '受注書作成（対象外顧客のため無効）';
+                    orderButton.title = ktpwpTranslate('受注書作成（対象外顧客のため無効）');
                     console.log('受注書作成ボタンを無効化しました（セッションストレージ）');
                 }
                 // フラグをクリア
@@ -532,7 +533,7 @@
                         orderButton.style.background = '#ccc';
                         orderButton.style.color = '#888';
                         orderButton.style.cursor = 'not-allowed';
-                        orderButton.title = '受注書作成（対象外顧客のため無効）';
+                        orderButton.title = ktpwpTranslate('受注書作成（対象外顧客のため無効）');
                         console.log('定期的チェックで受注書作成ボタンを無効化しました');
                     }
                 }

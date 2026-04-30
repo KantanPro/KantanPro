@@ -12,7 +12,7 @@ jQuery(document).ready(function($) {
      * 通知を非表示にする
      */
     window.dismissInvoiceItemsFixNotification = function() {
-        if (!confirm('この通知を非表示にしますか？')) {
+        if (!confirm(ktpwpTranslate('この通知を非表示にしますか？'))) {
             return false;
         }
         
@@ -35,12 +35,12 @@ jQuery(document).ready(function($) {
                         alert(response.data);
                     }
                 } else {
-                    alert('エラーが発生しました: ' + (response.data || '不明なエラー'));
+                    alert(ktpwpTranslate('エラーが発生しました: ') + (response.data || '不明なエラー'));
                 }
             },
             error: function(xhr, status, error) {
                 console.error('AJAX Error:', error);
-                alert('通信エラーが発生しました。ページを再読み込みしてください。');
+                alert(ktpwpTranslate('通信エラーが発生しました。ページを再読み込みしてください。'));
             }
         });
         

@@ -11,7 +11,7 @@
     // 発注メールポップアップを表示（supplierIdは省略可。あると協力会社の検索が安定する）
     window.ktpShowPurchaseOrderEmailPopup = function(orderId, supplierName, supplierId) {
         if (!orderId || !supplierName) {
-            alert('受注書IDまたは協力会社名が指定されていません。');
+            alert(ktpwpTranslate('受注書IDまたは協力会社名が指定されていません。'));
             return;
         }
         supplierId = supplierId || 0;
@@ -504,7 +504,7 @@
         });
 
         // 送信ボタンを無効化
-        $('#ktp-purchase-order-email-send').prop('disabled', true).text('送信中...');
+        $('#ktp-purchase-order-email-send').prop('disabled', true).text(ktpwpTranslate('送信中...'));
 
         // 送信中表示を更新（ファイル数を表示）
         let loadingMessage = '発注メール送信中...';
@@ -567,7 +567,7 @@
             complete: function() {
                 var $btn = $('#ktp-purchase-order-email-send');
                 if ($btn.length) {
-                    $btn.prop('disabled', false).text('メール送信');
+                    $btn.prop('disabled', false).text(ktpwpTranslate('メール送信'));
                 }
             }
         });

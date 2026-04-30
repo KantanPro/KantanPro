@@ -17,22 +17,22 @@ if ( ! defined( 'ABSPATH' ) ) {
 function ktp_add_department_ajax() {
     // セキュリティチェック
     if ( ! wp_verify_nonce( $_POST['nonce'], 'ktp_department_nonce' ) ) {
-        wp_die( 'セキュリティチェックに失敗しました。' );
+        wp_die( __( 'セキュリティチェックに失敗しました。', 'ktpwp' ) );
     }
 
     // 権限チェック
     if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
-        wp_die( '権限がありません。' );
+        wp_die( __( '権限がありません。', 'ktpwp' ) );
     }
 
     // 部署管理クラスが存在するかチェック
     if ( ! class_exists( 'KTPWP_Department_Manager' ) ) {
-        wp_send_json_error( '部署管理クラスが見つかりません。' );
+        wp_send_json_error( __( '部署管理クラスが見つかりません。', 'ktpwp' ) );
     }
 
     // 部署テーブルが存在するかチェック
     if ( ! KTPWP_Department_Manager::table_exists() ) {
-        wp_send_json_error( '部署テーブルが存在しません。' );
+        wp_send_json_error( __( '部署テーブルが存在しません。', 'ktpwp' ) );
     }
 
     // パラメータの取得とバリデーション
@@ -42,16 +42,16 @@ function ktp_add_department_ajax() {
     $email = sanitize_email( $_POST['email'] );
 
     if ( empty( $client_id ) || empty( $contact_person ) || empty( $email ) ) {
-        wp_send_json_error( '担当者名とメールアドレスを入力してください。' );
+        wp_send_json_error( __( '担当者名とメールアドレスを入力してください。', 'ktpwp' ) );
     }
 
     // 部署を追加
     $result = KTPWP_Department_Manager::add_department( $client_id, $department_name, $contact_person, $email );
 
     if ( $result ) {
-        wp_send_json_success( '部署を追加しました。' );
+        wp_send_json_success( __( '部署を追加しました。', 'ktpwp' ) );
     } else {
-        wp_send_json_error( '部署の追加に失敗しました。' );
+        wp_send_json_error( __( '部署の追加に失敗しました。', 'ktpwp' ) );
     }
 }
 
@@ -61,38 +61,38 @@ function ktp_add_department_ajax() {
 function ktp_delete_department_ajax() {
     // セキュリティチェック
     if ( ! wp_verify_nonce( $_POST['nonce'], 'ktp_department_nonce' ) ) {
-        wp_die( 'セキュリティチェックに失敗しました。' );
+        wp_die( __( 'セキュリティチェックに失敗しました。', 'ktpwp' ) );
     }
 
     // 権限チェック
     if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
-        wp_die( '権限がありません。' );
+        wp_die( __( '権限がありません。', 'ktpwp' ) );
     }
 
     // 部署管理クラスが存在するかチェック
     if ( ! class_exists( 'KTPWP_Department_Manager' ) ) {
-        wp_send_json_error( '部署管理クラスが見つかりません。' );
+        wp_send_json_error( __( '部署管理クラスが見つかりません。', 'ktpwp' ) );
     }
 
     // 部署テーブルが存在するかチェック
     if ( ! KTPWP_Department_Manager::table_exists() ) {
-        wp_send_json_error( '部署テーブルが存在しません。' );
+        wp_send_json_error( __( '部署テーブルが存在しません。', 'ktpwp' ) );
     }
 
     // パラメータの取得とバリデーション
     $department_id = intval( $_POST['department_id'] );
 
     if ( empty( $department_id ) ) {
-        wp_send_json_error( '部署IDが指定されていません。' );
+        wp_send_json_error( __( '部署IDが指定されていません。', 'ktpwp' ) );
     }
 
     // 部署を削除
     $result = KTPWP_Department_Manager::delete_department( $department_id );
 
     if ( $result ) {
-        wp_send_json_success( '部署を削除しました。' );
+        wp_send_json_success( __( '部署を削除しました。', 'ktpwp' ) );
     } else {
-        wp_send_json_error( '部署の削除に失敗しました。' );
+        wp_send_json_error( __( '部署の削除に失敗しました。', 'ktpwp' ) );
     }
 }
 
@@ -110,12 +110,12 @@ function ktp_update_department_selection_ajax() {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
             error_log( 'KTPWP AJAX: Nonce verification failed' );
         }
-        wp_die( 'セキュリティチェックに失敗しました。' );
+        wp_die( __( 'セキュリティチェックに失敗しました。', 'ktpwp' ) );
     }
 
     // 権限チェック
     if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
-        wp_die( '権限がありません。' );
+        wp_die( __( '権限がありません。', 'ktpwp' ) );
     }
 
     // 部署管理クラスが存在するかチェック
@@ -123,7 +123,7 @@ function ktp_update_department_selection_ajax() {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
             error_log( 'KTPWP AJAX: KTPWP_Department_Manager class not found' );
         }
-        wp_send_json_error( '部署管理クラスが見つかりません。' );
+        wp_send_json_error( __( '部署管理クラスが見つかりません。', 'ktpwp' ) );
     }
 
     // 部署テーブルが存在するかチェック
@@ -139,13 +139,13 @@ function ktp_update_department_selection_ajax() {
                 if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
                     error_log( 'KTPWP AJAX: Failed to create department table' );
                 }
-                wp_send_json_error( '部署テーブルの作成に失敗しました。' );
+                wp_send_json_error( __( '部署テーブルの作成に失敗しました。', 'ktpwp' ) );
             }
         } else {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
                 error_log( 'KTPWP AJAX: ktpwp_create_department_table function not found' );
             }
-            wp_send_json_error( '部署テーブル作成関数が見つかりません。' );
+            wp_send_json_error( __( '部署テーブル作成関数が見つかりません。', 'ktpwp' ) );
         }
     }
 
@@ -158,7 +158,7 @@ function ktp_update_department_selection_ajax() {
     }
 
     if ( empty( $department_id ) ) {
-        wp_send_json_error( '部署IDが指定されていません。' );
+        wp_send_json_error( __( '部署IDが指定されていません。', 'ktpwp' ) );
     }
 
     // 部署選択状態を更新
@@ -168,12 +168,12 @@ function ktp_update_department_selection_ajax() {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
             error_log( 'KTPWP AJAX: update_department_selection successful' );
         }
-        wp_send_json_success( '部署選択状態を更新しました。' );
+        wp_send_json_success( __( '部署選択状態を更新しました。', 'ktpwp' ) );
     } else {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
             error_log( 'KTPWP AJAX: update_department_selection failed' );
         }
-        wp_send_json_error( '部署選択状態の更新に失敗しました。' );
+        wp_send_json_error( __( '部署選択状態の更新に失敗しました。', 'ktpwp' ) );
     }
 }
 

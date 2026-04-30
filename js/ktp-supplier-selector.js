@@ -223,7 +223,7 @@
                                     <strong style="font-size: ${isSmallScreen ? '14px' : '15px'}; color: #1f2937; word-break: break-word; flex-shrink: 0;">
                                         ID: ${skillId} - ${window.escapeHtml(productName)}
                                     </strong>
-                                    <span style="color: #6b7280; font-size: ${isSmallScreen ? '12px' : '13px'}; flex-shrink: 0;"><strong>単価:</strong> ${unitPrice}円</span>
+                                    <span style="color: #6b7280; font-size: ${isSmallScreen ? '12px' : '13px'}; flex-shrink: 0;"><strong>単価:</strong> ${ktpwpFormatMoney(unitPrice)}</span>
                                     <span style="color: #6b7280; font-size: ${isSmallScreen ? '12px' : '13px'}; flex-shrink: 0;"><strong>数量:</strong> ${window.escapeHtml(quantity)}</span>
                                     <span style="color: #6b7280; font-size: ${isSmallScreen ? '12px' : '13px'}; flex-shrink: 0;"><strong>単位:</strong> ${window.escapeHtml(unit)}</span>
                                     ${ (window.ktp_tax_policy && (window.ktp_tax_policy.mode === 'abolished' || window.ktp_tax_policy.hide_columns)) ? '' : `<span style="color: #6b7280; font-size: ${isSmallScreen ? '12px' : '13px'}; flex-shrink: 0;"><strong>税率:</strong> ${skill.tax_rate === null ? 'なし（非課税）' : Math.round(skill.tax_rate || 10) + '%'}</span>` }
@@ -637,7 +637,7 @@ window.ktpAddCostRowFromSkill = function(skill, currentRow) {
             } else {
                 console.error('[SUPPLIER-SELECTOR] 新規コスト項目のDB作成に失敗しました');
                 if (typeof alert !== 'undefined') {
-                    alert('コスト項目の追加に失敗しました。\n「無効な受注IDです」の場合はページを再読み込みしてから再度お試しください。');
+                    alert(ktpwpTranslate('コスト項目の追加に失敗しました。\n「無効な受注IDです」の場合はページを再読み込みしてから再度お試しください。'));
                 }
             }
         });
@@ -645,7 +645,7 @@ window.ktpAddCostRowFromSkill = function(skill, currentRow) {
         if (!orderId || orderId === '0') {
             console.warn('[SUPPLIER-SELECTOR] order_id が取得できません。コスト項目フォーム内の受注IDを確認してください。');
             if (typeof alert !== 'undefined') {
-                alert('受注IDを取得できません。\n受注書を開いた状態で、コスト項目タブ内から協力会社を選択して追加してください。');
+                alert(ktpwpTranslate('受注IDを取得できません。\n受注書を開いた状態で、コスト項目タブ内から協力会社を選択して追加してください。'));
             }
         }
         console.warn('[SUPPLIER-SELECTOR] DB新規作成スキップ - 条件未満', {
@@ -702,7 +702,7 @@ window.ktpUpdateCostRowFromSkill = function(skill, currentRow) {
                         .removeClass('purchase-link')
                         .removeAttr('data-purchase')
                         .css({color:'', cursor:'', 'text-decoration':''})
-                        .text('手入力');
+                        .text(ktpwpTranslate('手入力'));
                 }
                 currentRow.find('input[name*="[purchase]"]').val(purchaseDisplayText);
             }
@@ -776,7 +776,7 @@ window.ktpUpdateCostRowFromSkill = function(skill, currentRow) {
                     if (typeof window.showErrorNotification === 'function') {
                         window.showErrorNotification('DB保存に失敗しました。\nエラー: ' + saveError.message);
                     } else {
-                        alert('DB保存に失敗しました。\nエラー: ' + saveError.message);
+                        alert(ktpwpTranslate('DB保存に失敗しました。\nエラー: ') + saveError.message);
                     }
                     return;
                 }
@@ -858,7 +858,7 @@ window.ktpUpdateCostRowFromSkill = function(skill, currentRow) {
         }
     } catch (error) {
         console.error('[SUPPLIER-SELECTOR] ktpUpdateCostRowFromSkill関数でエラーが発生:', error);
-        alert('該当行の更新に失敗しました。\nエラー: ' + error.message);
+        alert(ktpwpTranslate('該当行の更新に失敗しました。\nエラー: ') + error.message);
     }
     console.log('[SUPPLIER-SELECTOR] ===== ktpUpdateCostRowFromSkill関数終了 =====');
 };
@@ -891,7 +891,7 @@ $(function() {
         
         if (!serviceData) {
             console.error('[SUPPLIER-SELECTOR] サービスデータが見つかりません');
-            alert('追加するサービスデータが見つかりません。');
+            alert(ktpwpTranslate('追加するサービスデータが見つかりません。'));
             return;
         }
         
@@ -907,11 +907,11 @@ $(function() {
                 console.log('[SUPPLIER-SELECTOR] 追加処理完了 - ポップアップは開いたままにします');
             } catch (error) {
                 console.error('[SUPPLIER-SELECTOR] ktpAddCostRowFromSkill関数実行エラー:', error);
-                alert('追加処理中にエラーが発生しました: ' + error.message);
+                alert(ktpwpTranslate('追加処理中にエラーが発生しました: ') + error.message);
             }
         } else {
             console.error('[SUPPLIER-SELECTOR] ktpAddCostRowFromSkill関数が見つかりません');
-            alert('追加処理に必要な関数が見つかりません。');
+            alert(ktpwpTranslate('追加処理に必要な関数が見つかりません。'));
         }
     });
     
@@ -931,7 +931,7 @@ $(function() {
         
         if (!serviceData) {
             console.error('[SUPPLIER-SELECTOR] サービスデータが見つかりません');
-            alert('更新するサービスデータが見つかりません。');
+            alert(ktpwpTranslate('更新するサービスデータが見つかりません。'));
             return;
         }
         
@@ -948,11 +948,11 @@ $(function() {
                 console.log('[SUPPLIER-SELECTOR] ktpUpdateCostRowFromSkill関数呼び出し成功');
             } catch (error) {
                 console.error('[SUPPLIER-SELECTOR] ktpUpdateCostRowFromSkill関数実行エラー:', error);
-                alert('更新処理中にエラーが発生しました: ' + error.message);
+                alert(ktpwpTranslate('更新処理中にエラーが発生しました: ') + error.message);
             }
         } else {
             console.error('[SUPPLIER-SELECTOR] ktpUpdateCostRowFromSkill関数が見つかりません');
-            alert('更新処理に必要な関数が見つかりません。');
+            alert(ktpwpTranslate('更新処理に必要な関数が見つかりません。'));
         }
     });
     

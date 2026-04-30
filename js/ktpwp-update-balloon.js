@@ -32,14 +32,14 @@
         } else {
             console.error('KantanPro: ktpwp_update_ajax変数が定義されていません！');
             // 変数が存在しない場合は更新リンクを無効化
-            $('#ktpwp-header-update-check').off('click').css('pointer-events', 'none').attr('title', '更新機能が利用できません');
+            $('#ktpwp-header-update-check').off('click').css('pointer-events', 'none').attr('title', ktpwpTranslate('更新機能が利用できません'));
             return;
         }
         
         // nonceが存在しない場合の処理
         if (!ktpwp_update_ajax.nonce) {
             console.error('KantanPro: nonceが設定されていません！');
-            $('#ktpwp-header-update-check').off('click').css('pointer-events', 'none').attr('title', 'セキュリティ設定エラー');
+            $('#ktpwp-header-update-check').off('click').css('pointer-events', 'none').attr('title', ktpwpTranslate('セキュリティ設定エラー'));
             return;
         }
         

@@ -8,7 +8,7 @@
  * Author URI: https://www.kantanpro.com/kantanpro-page
  * License: GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
- * Text Domain: KantanPro
+ * Text Domain: ktpwp
  * Domain Path: /languages
  * Requires at least: 5.0
  * Tested up to: 6.9.1
@@ -159,7 +159,7 @@ if ( ! function_exists( 'ktpwp_render_free_edition_suspended_notice' ) ) {
         }
 
         echo '<div class="notice notice-info"><p>';
-        echo esc_html__( 'KantanPro 無料版は、有料版（KantanProEX）が有効化されているため停止中です。ショートコードはそのまま有料版へ引き継がれています。', 'KantanPro' );
+        echo esc_html__( 'KantanPro 無料版は、有料版（KantanProEX）が有効化されているため停止中です。ショートコードはそのまま有料版へ引き継がれています。', 'ktpwp' );
         echo '</p></div>';
     }
 }
@@ -285,6 +285,7 @@ function ktpwp_autoload_classes() {
         // 新しいクラス構造
         'KTPWP'                 => 'includes/class-ktpwp.php',
         'KTPWP_Main'            => 'includes/class-ktpwp-main.php',
+        'KTPWP_I18n'            => 'includes/class-ktpwp-i18n.php',
         'KTPWP_Loader'          => 'includes/class-ktpwp-loader.php',
         'KTPWP_Security'        => 'includes/class-ktpwp-security.php',
         'KTPWP_Ajax'            => 'includes/class-ktpwp-ajax.php',
@@ -351,6 +352,11 @@ require_once __DIR__ . '/includes/ajax-sales-ledger-pdf.php';
 
 // クラスの読み込み実行
 ktpwp_autoload_classes();
+
+// 多言語化サポートを初期化
+if ( class_exists( 'KTPWP_I18n' ) ) {
+    KTPWP_I18n::get_instance()->init();
+}
 
 // 部署テーブルの存在確認と作成
 if ( function_exists( 'ktpwp_create_department_table' ) ) {
@@ -451,12 +457,12 @@ add_action( 'wp_ajax_ktpwp_clear_cache', 'ktpwp_handle_clear_cache_ajax' );
 function ktpwp_handle_clear_cache_ajax() {
     // 権限チェック
     if ( ! current_user_can( 'manage_options' ) ) {
-        wp_send_json_error( '権限がありません' );
+        wp_send_json_error( __( '権限がありません', 'ktpwp' ) );
     }
     
     // ナンスチェック
     if ( ! wp_verify_nonce( $_POST['nonce'], 'ktpwp_clear_cache' ) ) {
-        wp_send_json_error( 'セキュリティチェックに失敗しました' );
+        wp_send_json_error( __( 'セキュリティチェックに失敗しました', 'ktpwp' ) );
     }
     
     try {
@@ -467,9 +473,9 @@ function ktpwp_handle_clear_cache_ajax() {
             error_log( 'KTPWP Cache: 管理画面からキャッシュをクリアしました' );
         }
         
-        wp_send_json_success( 'キャッシュが正常にクリアされました' );
+        wp_send_json_success( __( 'キャッシュが正常にクリアされました', 'ktpwp' ) );
     } catch ( Exception $e ) {
-        wp_send_json_error( 'キャッシュのクリアに失敗しました: ' . $e->getMessage() );
+        wp_send_json_error( __( 'キャッシュのクリアに失敗しました: ', 'ktpwp' ) . $e->getMessage() );
     }
 }
 
@@ -478,12 +484,12 @@ add_action( 'wp_ajax_ktpwp_convert_all_images', 'ktpwp_handle_convert_all_images
 function ktpwp_handle_convert_all_images_ajax() {
     // 権限チェック
     if ( ! current_user_can( 'upload_files' ) ) {
-        wp_send_json_error( '権限がありません' );
+        wp_send_json_error( __( '権限がありません', 'ktpwp' ) );
     }
     
     // ナンスチェック
     if ( ! wp_verify_nonce( $_POST['nonce'], 'ktpwp_image_optimization' ) ) {
-        wp_send_json_error( 'セキュリティチェックに失敗しました' );
+        wp_send_json_error( __( 'セキュリティチェックに失敗しました', 'ktpwp' ) );
     }
     
     try {
@@ -491,7 +497,7 @@ function ktpwp_handle_convert_all_images_ajax() {
         global $ktpwp_image_optimizer;
         
         if ( ! $ktpwp_image_optimizer ) {
-            wp_send_json_error( '画像最適化機能が利用できません' );
+            wp_send_json_error( __( '画像最適化機能が利用できません', 'ktpwp' ) );
         }
         
         // すべての画像添付ファイルを取得
@@ -517,10 +523,10 @@ function ktpwp_handle_convert_all_images_ajax() {
             }
         }
         
-        wp_send_json_success( "{$converted_count} / {$total_count} 個の画像をWebPに変換しました" );
+        wp_send_json_success( __( "{$converted_count} / {$total_count} 個の画像をWebPに変換しました", 'ktpwp' ) );
         
     } catch ( Exception $e ) {
-        wp_send_json_error( '一括変換に失敗しました: ' . $e->getMessage() );
+        wp_send_json_error( __( '一括変換に失敗しました: ', 'ktpwp' ) . $e->getMessage() );
     }
 }
 
@@ -617,12 +623,12 @@ function ktpwp_auto_update_setting_html( $html, $plugin_file, $plugin_data ) {
         
         if ( in_array( $plugin_file, $auto_update_plugins, true ) ) {
             $action = 'disable';
-            $text = __( '自動更新を無効化' );
-            $aria_label = esc_attr( sprintf( __( '%s の自動更新を無効化' ), $plugin_data['Name'] ) );
+            $text = __( '自動更新を無効化', 'ktpwp' );
+            $aria_label = esc_attr( sprintf( __( '%s の自動更新を無効化', 'ktpwp' ), $plugin_data['Name'] ) );
         } else {
             $action = 'enable';
-            $text = __( '自動更新を有効化' );
-            $aria_label = esc_attr( sprintf( __( '%s の自動更新を有効化' ), $plugin_data['Name'] ) );
+            $text = __( '自動更新を有効化', 'ktpwp' );
+            $aria_label = esc_attr( sprintf( __( '%s の自動更新を有効化', 'ktpwp' ), $plugin_data['Name'] ) );
         }
         
         $url = wp_nonce_url(
@@ -1483,9 +1489,9 @@ function ktpwp_comprehensive_activation() {
         
         // 9. 有効化成功通知の設定
         if ( $is_new_installation ) {
-            set_transient( 'ktpwp_activation_success', 'KantanProプラグインが正常にインストールされました。', 60 );
+            set_transient( 'ktpwp_activation_success', __( 'KantanProプラグインが正常にインストールされました。', 'ktpwp' ), 60 );
         } else {
-            set_transient( 'ktpwp_activation_success', 'KantanProプラグインが正常に有効化されました。', 60 );
+            set_transient( 'ktpwp_activation_success', __( 'KantanProプラグインが正常に有効化されました。', 'ktpwp' ), 60 );
         }
 
         // 初回有効化後、最初の管理画面読み込みで KantanPro 設定へ誘導（空白の管理トップを避ける）
@@ -2009,7 +2015,7 @@ function ktpwp_repair_existing_data() {
                         'order_id' => $order->id,
                         'user_id' => 1, // 管理者ユーザーID
                         'user_display_name' => 'システム',
-                        'message' => '受注書を作成しました。',
+                        'message' => __( '受注書を作成しました。', 'ktpwp' ),
                         'is_initial' => 1,
                         'created_at' => current_time( 'mysql' ),
                     ),
@@ -2093,7 +2099,7 @@ function ktpwp_plugin_activation() {
         add_option( 'ktpwp_activation_redirect', true );
         
         // 有効化完了通知を設定
-        set_transient( 'ktpwp_activation_message', 'KantanProプラグインが正常に有効化されました。すべての機能が利用可能です。', 60 );
+        set_transient( 'ktpwp_activation_message', __( 'KantanProプラグインが正常に有効化されました。すべての機能が利用可能です。', 'ktpwp' ), 60 );
         
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
             error_log( 'KTPWP: プラグイン有効化処理が正常に完了' );
@@ -2431,7 +2437,7 @@ function ktpwp_plugin_upgrade_migration( $upgrader, $hook_extra ) {
         update_option( 'ktpwp_upgrade_success_count', get_option( 'ktpwp_upgrade_success_count', 0 ) + 1 );
         
         // アップデート通知を設定
-        set_transient( 'ktpwp_upgrade_message', 'KantanProプラグインが正常に更新されました。適格請求書ナンバー機能も含まれています。', 60 );
+        set_transient( 'ktpwp_upgrade_message', __( 'KantanProプラグインが正常に更新されました。適格請求書ナンバー機能も含まれています。', 'ktpwp' ), 60 );
         // マイグレーション成功後「次にやること」を表示するためのフラグ
         set_transient( 'ktpwp_show_update_complete_guide', '1', 600 );
 
@@ -2670,11 +2676,11 @@ add_action( 'wp_ajax_ktpwp_run_qualified_invoice_migration', 'ktpwp_handle_quali
 function ktpwp_handle_manual_db_update() {
     // セキュリティチェック
     if ( ! wp_verify_nonce( $_POST['nonce'], 'ktpwp_manual_db_update' ) ) {
-        wp_send_json_error( 'セキュリティチェックに失敗しました。' );
+        wp_send_json_error( __( 'セキュリティチェックに失敗しました。', 'ktpwp' ) );
     }
     
     if ( ! current_user_can( 'manage_options' ) ) {
-        wp_send_json_error( 'この操作を実行する権限がありません。' );
+        wp_send_json_error( __( 'この操作を実行する権限がありません。', 'ktpwp' ) );
     }
     
     $plugin_version = KANTANPRO_PLUGIN_VERSION;
@@ -2709,7 +2715,7 @@ function ktpwp_handle_manual_db_update() {
         ktpwp_flush_db_version_cache();
         wp_cache_flush();
         
-        wp_send_json_success( 'データベースの更新が完了しました。' );
+        wp_send_json_success( __( 'データベースの更新が完了しました。', 'ktpwp' ) );
         
     } catch ( Exception $e ) {
         // 配布先で安全性チェック等で失敗しても、バージョンのみ更新して通知を消す
@@ -2720,8 +2726,7 @@ function ktpwp_handle_manual_db_update() {
         ktpwp_flush_db_version_cache();
         wp_cache_flush();
         
-        wp_send_json_success(
-            'データベースバージョンを ' . $plugin_version . ' に更新しました。一部のチェックで問題がありましたが、表示は解消されます。'
+        wp_send_json_success( __( 'データベースバージョンを ', 'ktpwp' ) . $plugin_version . ' に更新しました。一部のチェックで問題がありましたが、表示は解消されます。'
         );
     }
 }
@@ -2732,11 +2737,11 @@ function ktpwp_handle_manual_db_update() {
 function ktpwp_handle_qualified_invoice_migration() {
     // セキュリティチェック
     if ( ! wp_verify_nonce( $_POST['nonce'], 'ktpwp_run_qualified_invoice_migration' ) ) {
-        wp_send_json_error( 'セキュリティチェックに失敗しました。' );
+        wp_send_json_error( __( 'セキュリティチェックに失敗しました。', 'ktpwp' ) );
     }
     
     if ( ! current_user_can( 'manage_options' ) ) {
-        wp_send_json_error( 'この操作を実行する権限がありません。' );
+        wp_send_json_error( __( 'この操作を実行する権限がありません。', 'ktpwp' ) );
     }
     
     try {
@@ -2745,16 +2750,16 @@ function ktpwp_handle_qualified_invoice_migration() {
             $result = ktpwp_run_qualified_invoice_migration();
             
             if ( $result ) {
-                wp_send_json_success( '適格請求書ナンバー機能の有効化が完了しました。' );
+                wp_send_json_success( __( '適格請求書ナンバー機能の有効化が完了しました。', 'ktpwp' ) );
             } else {
-                wp_send_json_error( '適格請求書ナンバー機能の有効化に失敗しました。' );
+                wp_send_json_error( __( '適格請求書ナンバー機能の有効化に失敗しました。', 'ktpwp' ) );
             }
         } else {
-            wp_send_json_error( '適格請求書ナンバー機能のマイグレーション関数が見つかりません。' );
+            wp_send_json_error( __( '適格請求書ナンバー機能のマイグレーション関数が見つかりません。', 'ktpwp' ) );
         }
         
     } catch ( Exception $e ) {
-        wp_send_json_error( '有効化に失敗しました: ' . $e->getMessage() );
+        wp_send_json_error( __( '有効化に失敗しました: ', 'ktpwp' ) . $e->getMessage() );
     }
 }
 
@@ -2783,11 +2788,29 @@ function ktpwp_auto_clear_migration_error_for_end_users() {
 /**
  * 管理画面での通知表示
  */
+
+/**
+ * 管理画面通知の保存済み日本語メッセージを現在のロケール向けに変換する。
+ *
+ * @param string $message Notice message.
+ * @return string
+ */
+function ktpwp_translate_admin_notice_message( $message ) {
+    $messages = array(
+        'KantanProプラグインが正常にインストールされました。' => __( 'KantanProプラグインが正常にインストールされました。', 'ktpwp' ),
+        'KantanProプラグインが正常に有効化されました。' => __( 'KantanProプラグインが正常に有効化されました。', 'ktpwp' ),
+        'KantanProプラグインが正常に有効化されました。すべての機能が利用可能です。' => __( 'KantanProプラグインが正常に有効化されました。すべての機能が利用可能です。', 'ktpwp' ),
+        'KantanProプラグインが正常に更新されました。適格請求書ナンバー機能も含まれています。' => __( 'KantanProプラグインが正常に更新されました。適格請求書ナンバー機能も含まれています。', 'ktpwp' ),
+    );
+
+    return isset( $messages[ $message ] ) ? $messages[ $message ] : $message;
+}
+
 function ktpwp_admin_notices() {
     // 有効化完了通知
     if ( get_transient( 'ktpwp_activation_message' ) ) {
         echo '<div class="notice notice-success is-dismissible">';
-        echo '<p><strong>KantanPro:</strong> ' . esc_html( get_transient( 'ktpwp_activation_message' ) ) . '</p>';
+        echo '<p><strong>KantanPro:</strong> ' . esc_html( ktpwp_translate_admin_notice_message( get_transient( 'ktpwp_activation_message' ) ) ) . '</p>';
         echo '</div>';
     }
     
@@ -2829,7 +2852,7 @@ function ktpwp_admin_notices() {
     // アップデート完了通知
     if ( get_transient( 'ktpwp_upgrade_message' ) ) {
         echo '<div class="notice notice-success is-dismissible">';
-        echo '<p><strong>KantanPro:</strong> ' . esc_html( get_transient( 'ktpwp_upgrade_message' ) ) . '</p>';
+        echo '<p><strong>KantanPro:</strong> ' . esc_html( ktpwp_translate_admin_notice_message( get_transient( 'ktpwp_upgrade_message' ) ) ) . '</p>';
         echo '</div>';
     }
 }
@@ -3992,7 +4015,7 @@ function KTPWP_Index() {
                         'admin_email' => urlencode( $admin_email ),
                         'admin_name' => urlencode( $admin_name )
                     ), $donation_url );
-                    $navigation_links .= ' <a href="' . $donation_url_with_params . '" target="_blank" rel="noopener noreferrer" title="寄付する" style="display: inline-flex; align-items: center; gap: 4px; color: #0073aa; text-decoration: none;"><span class="material-symbols-outlined" style="font-size: 20px; vertical-align: middle;">favorite</span><span>寄付する</span></a>';
+                    $navigation_links .= ' <a href="' . $donation_url_with_params . '" target="_blank" rel="noopener noreferrer" title="' . esc_attr__( '寄付する', 'ktpwp' ) . '" style="display: inline-flex; align-items: center; gap: 4px; color: #0073aa; text-decoration: none;"><span class="material-symbols-outlined" style="font-size: 20px; vertical-align: middle;">favorite</span><span>' . esc_html__( '寄付する', 'ktpwp' ) . '</span></a>';
                     // ログアウトボタン
                     $navigation_links .= ' <a href="' . $logout_link . '" title="ログアウト" style="display: inline-flex; align-items: center; gap: 4px; color: #0073aa; text-decoration: none;"><span class="material-symbols-outlined" style="font-size: 20px; vertical-align: middle;">logout</span></a>';
                     // 更新リンクは編集者権限がある場合のみ
@@ -4010,7 +4033,7 @@ function KTPWP_Index() {
                         $navigation_links .= ' ' . $act_key;
                     }
                     // ヘルプリンク（外部リンク）
-                    $navigation_links .= ' <a href="https://www.kantanpro.com/docs" target="_blank" title="ヘルプ" style="display: inline-flex; align-items: center; gap: 4px; color: #0073aa; text-decoration: none;">' . KTPWP_SVG_Icons::get_icon('help', array('style' => 'font-size: 20px; vertical-align: middle;')) . '<span>ヘルプ</span></a>';
+                    $navigation_links .= ' <a href="https://www.kantanpro.com/docs" target="_blank" title="' . esc_attr__( 'ヘルプ', 'ktpwp' ) . '" style="display: inline-flex; align-items: center; gap: 4px; color: #0073aa; text-decoration: none;">' . KTPWP_SVG_Icons::get_icon('help', array('style' => 'font-size: 20px; vertical-align: middle;')) . '<span>' . esc_html__( 'ヘルプ', 'ktpwp' ) . '</span></a>';
                 }
             }
 
@@ -4089,7 +4112,7 @@ function KTPWP_Index() {
             if ( $update_data ) {
                 $front_message .= '<script>var ktpwp_update_data = ' . wp_json_encode( array(
                     'has_update' => true,
-                    'message' => '新しいバージョンが利用可能です！',
+                    'message' => __( '新しいバージョンが利用可能です！', 'ktpwp' ),
                     'update_data' => $update_data
                 ) ) . ';</script>';
             }
@@ -4380,26 +4403,30 @@ add_filter(
             return $links;
         }
 
-        $mode         = ktpwp_get_uninstall_mode();
-        $is_full      = ( $mode === 'full_delete' );
-        $mode_label   = $is_full
-            ? __( '完全削除', 'ktpwp' )
-            : __( 'データを残す', 'ktpwp' );
-        $mode_color   = $is_full ? '#d63638' : '#00a32a';
+        $mode                  = ktpwp_get_uninstall_mode();
+        $is_full               = ( $mode === 'full_delete' );
+        $locale                = function_exists( 'determine_locale' ) ? determine_locale() : get_locale();
+        $ktpwp_is_english_locale = ( strpos( (string) $locale, 'en' ) === 0 );
+        $mode_label            = $is_full
+            ? ( $ktpwp_is_english_locale ? 'Full delete' : __( '完全削除', 'ktpwp' ) )
+            : ( $ktpwp_is_english_locale ? 'Keep data' : __( 'データを残す', 'ktpwp' ) );
+        $mode_color            = $is_full ? '#d63638' : '#00a32a';
+        $deletion_behavior_label = $ktpwp_is_english_locale ? 'Deletion behavior' : __( '削除時の動作', 'ktpwp' );
+        $change_label          = $ktpwp_is_english_locale ? 'Change' : __( '変更', 'ktpwp' );
 
         $settings_url = admin_url( 'admin.php?page=ktp-settings#uninstall_setting_section' );
 
         $badge = sprintf(
             '<span style="display:inline-block;padding:1px 8px;border:1px solid %1$s;border-radius:10px;color:%1$s;font-size:11px;line-height:1.4;vertical-align:middle;">%2$s: %3$s</span>',
             esc_attr( $mode_color ),
-            esc_html__( '削除時の動作', 'ktpwp' ),
+            esc_html( $deletion_behavior_label ),
             esc_html( $mode_label )
         );
 
         $change_link = sprintf(
             '<a href="%s">%s</a>',
             esc_url( $settings_url ),
-            esc_html__( '変更', 'ktpwp' )
+            esc_html( $change_label )
         );
 
         $links[] = $badge . ' ' . $change_link;
@@ -5180,7 +5207,7 @@ function ktpwp_distribution_admin_notices() {
     // 有効化成功通知
     if ( $success_message = get_transient( 'ktpwp_activation_success' ) ) {
         echo '<div class="notice notice-success is-dismissible">';
-        echo '<p><strong>KantanPro:</strong> ' . esc_html( $success_message ) . '</p>';
+        echo '<p><strong>KantanPro:</strong> ' . esc_html( ktpwp_translate_admin_notice_message( $success_message ) ) . '</p>';
         echo '</div>';
         delete_transient( 'ktpwp_activation_success' );
     }
@@ -5188,7 +5215,7 @@ function ktpwp_distribution_admin_notices() {
     // 再有効化成功通知
     if ( $success_message = get_transient( 'ktpwp_reactivation_success' ) ) {
         echo '<div class="notice notice-success is-dismissible">';
-        echo '<p><strong>KantanPro:</strong> ' . esc_html( $success_message ) . '</p>';
+        echo '<p><strong>KantanPro:</strong> ' . esc_html( ktpwp_translate_admin_notice_message( $success_message ) ) . '</p>';
         echo '</div>';
         delete_transient( 'ktpwp_reactivation_success' );
     }
@@ -5196,7 +5223,7 @@ function ktpwp_distribution_admin_notices() {
     // 新規インストール成功通知
     if ( $success_message = get_transient( 'ktpwp_new_installation_success' ) ) {
         echo '<div class="notice notice-success is-dismissible">';
-        echo '<p><strong>KantanPro:</strong> ' . esc_html( $success_message ) . '</p>';
+        echo '<p><strong>KantanPro:</strong> ' . esc_html( ktpwp_translate_admin_notice_message( $success_message ) ) . '</p>';
         echo '</div>';
         delete_transient( 'ktpwp_new_installation_success' );
     }
@@ -5266,7 +5293,7 @@ function ktpwp_distribution_admin_notices() {
     // invoice_itemsカラム修正成功通知
     if ( $success_message = get_transient( 'ktpwp_invoice_items_fix_success' ) ) {
         echo '<div class="notice notice-success is-dismissible">';
-        echo '<p><strong>KantanPro:</strong> ' . esc_html( $success_message ) . '</p>';
+        echo '<p><strong>KantanPro:</strong> ' . esc_html( ktpwp_translate_admin_notice_message( $success_message ) ) . '</p>';
         echo '</div>';
         delete_transient( 'ktpwp_invoice_items_fix_success' );
     }
@@ -5362,14 +5389,14 @@ function ktpwp_execute_invoice_items_fix() {
  */
 function ktpwp_dismiss_invoice_items_fix_notification() {
     if ( ! current_user_can( 'manage_options' ) ) {
-        wp_die( '権限がありません' );
+        wp_die( __( '権限がありません', 'ktpwp' ) );
     }
     
     check_ajax_referer( 'ktpwp_dismiss_notification', 'nonce' );
     
     update_option( 'ktpwp_invoice_items_fix_notification_dismissed', true );
     
-    wp_send_json_success( '通知が非表示になりました' );
+    wp_send_json_success( __( '通知が非表示になりました', 'ktpwp' ) );
 }
 
 /**
@@ -5793,8 +5820,8 @@ function ktpwp_get_distribution_migration_status() {
 function ktpwp_add_dummy_data_menu() {
     add_submenu_page(
         'tools.php',
-        'KantanPro ダミーデータ作成',
-        'KantanPro ダミーデータ',
+        __( 'KantanPro ダミーデータ作成', 'ktpwp' ),
+        __( 'KantanPro ダミーデータ', 'ktpwp' ),
         'manage_options',
         'ktpwp-dummy-data',
         'ktpwp_dummy_data_page'
@@ -5808,7 +5835,7 @@ function ktpwp_get_dummy_data_script_version() {
     $script_path = KANTANPRO_PLUGIN_DIR . 'create_dummy_data.php';
     
     if (!file_exists($script_path)) {
-        return 'スクリプトが見つかりません';
+        return __( 'スクリプトが見つかりません', 'ktpwp' );
     }
     
     $content = file_get_contents($script_path);
@@ -5819,13 +5846,14 @@ function ktpwp_get_dummy_data_script_version() {
         
         // 説明文も抽出
         if (preg_match('/バージョン:\s*[0-9]+\.[0-9]+\.[0-9]+\s*\(([^)]+)\)/', $content, $desc_matches)) {
-            return $version . ' (' . $desc_matches[1] . ')';
+            $description = $desc_matches[1] === '品名ベース税率設定版' ? __( '品名ベース税率設定版', 'ktpwp' ) : $desc_matches[1];
+            return $version . ' (' . $description . ')';
         }
         
         return $version;
     }
     
-    return 'バージョン情報が見つかりません';
+    return __( 'バージョン情報が見つかりません', 'ktpwp' );
 }
 
 /**
@@ -5840,40 +5868,40 @@ function ktpwp_dummy_data_page() {
     
     ?>
     <div class="wrap ktp-dummy-data-wrap">
-        <h1><span class="dashicons dashicons-database" style="margin-right: 10px; font-size: 24px; width: 24px; height: 24px;"></span>KantanPro ダミーデータ作成</h1>
+        <h1><span class="dashicons dashicons-database" style="margin-right: 10px; font-size: 24px; width: 24px; height: 24px;"></span><?php echo esc_html__( 'KantanPro ダミーデータ作成', 'ktpwp' ); ?></h1>
         
         <div class="ktp-dummy-data-version">
-            <p><strong>プラグインバージョン:</strong> <?php echo esc_html(KANTANPRO_PLUGIN_VERSION); ?></p>
-            <p><strong>ダミーデータ作成スクリプトバージョン:</strong> <?php echo esc_html(ktpwp_get_dummy_data_script_version()); ?></p>
+            <p><strong><?php echo esc_html__( 'プラグインバージョン:', 'ktpwp' ); ?></strong> <?php echo esc_html(KANTANPRO_PLUGIN_VERSION); ?></p>
+            <p><strong><?php echo esc_html__( 'ダミーデータ作成スクリプトバージョン:', 'ktpwp' ); ?></strong> <?php echo esc_html(ktpwp_get_dummy_data_script_version()); ?></p>
         </div>
         
         <div class="ktp-dummy-data-info">
-            <p><strong>作成されるデータ:</strong></p>
+            <p><strong><?php echo esc_html__( '作成されるデータ:', 'ktpwp' ); ?></strong></p>
             <ul>
-                <li>顧客: 6件（メールアドレス: info@kantanpro.com）</li>
-                <li>受注書: 18件（顧客×6件 × ステータス3パターン：受付中・受注・完成）</li>
-                <li>協力会社: 6件（メールアドレス: info@kantanpro.com）</li>
-                <li>職能: 18件（協力会社×6件 × 税率3パターン：10%・8%・非課税）</li>
-                <li>サービス: 6件（一般：税率10%・食品：税率8%・不動産：非課税）各×2</li>
-                <li>請求項目・コスト項目: 受注書に自動追加</li>
+                <li><?php echo esc_html__( '顧客: 6件（メールアドレス: info@kantanpro.com）', 'ktpwp' ); ?></li>
+                <li><?php echo esc_html__( '受注書: 18件（顧客×6件 × ステータス3パターン：受付中・受注・完成）', 'ktpwp' ); ?></li>
+                <li><?php echo esc_html__( '協力会社: 6件（メールアドレス: info@kantanpro.com）', 'ktpwp' ); ?></li>
+                <li><?php echo esc_html__( '職能: 18件（協力会社×6件 × 税率3パターン：10%・8%・非課税）', 'ktpwp' ); ?></li>
+                <li><?php echo esc_html__( 'サービス: 6件（一般：税率10%・食品：税率8%・不動産：非課税）各×2', 'ktpwp' ); ?></li>
+                <li><?php echo esc_html__( '請求項目・コスト項目: 受注書に自動追加', 'ktpwp' ); ?></li>
             </ul>
-            <p><strong>対象外データ:</strong></p>
+            <p><strong><?php echo esc_html__( '対象外データ:', 'ktpwp' ); ?></strong></p>
             <ul>
-                <li>スタッフチャット: 既存データは削除されますが、新規作成時は初期メッセージを作成しません</li>
+                <li><?php echo esc_html__( 'スタッフチャット: 既存データは削除されますが、新規作成時は初期メッセージを作成しません', 'ktpwp' ); ?></li>
             </ul>
         </div>
         
         <div class="ktp-dummy-data-card">
-            <h2>ダミーデータ作成</h2>
-            <p>テスト用のダミーデータを作成します。既存データがある場合は確認メッセージが表示されます。</p>
+            <h2><?php echo esc_html__( 'ダミーデータ作成', 'ktpwp' ); ?></h2>
+            <p><?php echo esc_html__( 'テスト用のダミーデータを作成します。既存データがある場合は確認メッセージが表示されます。', 'ktpwp' ); ?></p>
             
             <div class="ktp-dummy-data-buttons">
                 <button type="button" id="create-dummy-data" class="ktp-dummy-data-button">
-                    ダミーデータを作成
+                    <?php echo esc_html__( 'ダミーデータを作成', 'ktpwp' ); ?>
                 </button>
                 
                 <button type="button" id="clear-data" class="ktp-dummy-data-button clear-button">
-                    データをクリア
+                    <?php echo esc_html__( 'データをクリア', 'ktpwp' ); ?>
                 </button>
             </div>
             
@@ -5883,13 +5911,26 @@ function ktpwp_dummy_data_page() {
     
     <script>
     jQuery(document).ready(function($) {
+        var ktpDummyDataStrings = <?php echo wp_json_encode( array(
+            'creating' => __( '作成中...', 'ktpwp' ),
+            'creating_message' => __( 'ダミーデータを作成中...', 'ktpwp' ),
+            'create_button' => __( 'ダミーデータを作成', 'ktpwp' ),
+            'error_prefix' => __( 'エラー: ', 'ktpwp' ),
+            'unknown_error' => __( '不明なエラー', 'ktpwp' ),
+            'network_error' => __( '通信エラーが発生しました。', 'ktpwp' ),
+            'server_error_prefix' => __( 'サーバーエラー: ', 'ktpwp' ),
+            'clear_confirm' => __( "本当にデータをクリアしますか？\nこの操作は元に戻せません。", 'ktpwp' ),
+            'clearing' => __( 'クリア中...', 'ktpwp' ),
+            'clearing_message' => __( 'データをクリア中...', 'ktpwp' ),
+            'clear_button' => __( 'データをクリア', 'ktpwp' ),
+        ) ); ?>;
         // ダミーデータ作成ボタン
         $('#create-dummy-data').on('click', function() {
             var button = $(this);
             var resultDiv = $('#dummy-data-result');
             
-            button.prop('disabled', true).text('作成中...');
-            resultDiv.html('<div class="ktp-dummy-data-result info"><p>ダミーデータを作成中...</p></div>');
+            button.prop('disabled', true).text(ktpDummyDataStrings.creating);
+            resultDiv.html('<div class="ktp-dummy-data-result info"><p>' + ktpDummyDataStrings.creating_message + '</p></div>');
             
             $.ajax({
                 url: ajaxurl,
@@ -5903,12 +5944,12 @@ function ktpwp_dummy_data_page() {
                     if (response.success) {
                         resultDiv.html('<div class="ktp-dummy-data-result success"><p>' + response.data.message + '</p></div>');
                     } else {
-                        resultDiv.html('<div class="ktp-dummy-data-result error"><p>エラー: ' + (response.data ? response.data.message : '不明なエラー') + '</p></div>');
+                        resultDiv.html('<div class="ktp-dummy-data-result error"><p>' + ktpDummyDataStrings.error_prefix + (response.data ? response.data.message : ktpDummyDataStrings.unknown_error) + '</p></div>');
                     }
                 },
                 error: function(xhr, status, error) {
                     console.error('AJAX Error:', {xhr: xhr, status: status, error: error});
-                    var errorMessage = '通信エラーが発生しました。';
+                    var errorMessage = ktpDummyDataStrings.network_error;
                     if (xhr.responseText) {
                         try {
                             var response = JSON.parse(xhr.responseText);
@@ -5916,28 +5957,28 @@ function ktpwp_dummy_data_page() {
                                 errorMessage = response.data.message;
                             }
                         } catch (e) {
-                            errorMessage = 'サーバーエラー: ' + xhr.status + ' ' + xhr.statusText;
+                            errorMessage = ktpDummyDataStrings.server_error_prefix + xhr.status + ' ' + xhr.statusText;
                         }
                     }
                     resultDiv.html('<div class="ktp-dummy-data-result error"><p>' + errorMessage + '</p></div>');
                 },
                 complete: function() {
-                    button.prop('disabled', false).text('ダミーデータを作成');
+                    button.prop('disabled', false).text(ktpDummyDataStrings.create_button);
                 }
             });
         });
         
         // データクリアボタン
         $('#clear-data').on('click', function() {
-            if (!confirm('本当にデータをクリアしますか？\nこの操作は元に戻せません。')) {
+            if (!confirm(ktpDummyDataStrings.clear_confirm)) {
                 return;
             }
             
             var button = $(this);
             var resultDiv = $('#dummy-data-result');
             
-            button.prop('disabled', true).text('クリア中...');
-            resultDiv.html('<div class="ktp-dummy-data-result info"><p>データをクリア中...</p></div>');
+            button.prop('disabled', true).text(ktpDummyDataStrings.clearing);
+            resultDiv.html('<div class="ktp-dummy-data-result info"><p>' + ktpDummyDataStrings.clearing_message + '</p></div>');
             
             $.ajax({
                 url: ajaxurl,
@@ -5951,12 +5992,12 @@ function ktpwp_dummy_data_page() {
                     if (response.success) {
                         resultDiv.html('<div class="ktp-dummy-data-result success"><p>' + response.data.message + '</p></div>');
                     } else {
-                        resultDiv.html('<div class="ktp-dummy-data-result error"><p>エラー: ' + (response.data ? response.data.message : '不明なエラー') + '</p></div>');
+                        resultDiv.html('<div class="ktp-dummy-data-result error"><p>' + ktpDummyDataStrings.error_prefix + (response.data ? response.data.message : ktpDummyDataStrings.unknown_error) + '</p></div>');
                     }
                 },
                 error: function(xhr, status, error) {
                     console.error('Clear Data AJAX Error:', {xhr: xhr, status: status, error: error});
-                    var errorMessage = '通信エラーが発生しました。';
+                    var errorMessage = ktpDummyDataStrings.network_error;
                     if (xhr.responseText) {
                         try {
                             var response = JSON.parse(xhr.responseText);
@@ -5964,13 +6005,13 @@ function ktpwp_dummy_data_page() {
                                 errorMessage = response.data.message;
                             }
                         } catch (e) {
-                            errorMessage = 'サーバーエラー: ' + xhr.status + ' ' + xhr.statusText;
+                            errorMessage = ktpDummyDataStrings.server_error_prefix + xhr.status + ' ' + xhr.statusText;
                         }
                     }
                     resultDiv.html('<div class="ktp-dummy-data-result error"><p>' + errorMessage + '</p></div>');
                 },
                 complete: function() {
-                    button.prop('disabled', false).text('データをクリア');
+                    button.prop('disabled', false).text(ktpDummyDataStrings.clear_button);
                 }
             });
         });
@@ -5997,7 +6038,7 @@ function ktpwp_handle_create_dummy_data_ajax() {
             if (defined('WP_DEBUG') && WP_DEBUG) {
                 error_log('KTPWP: セキュリティチェックに失敗しました');
             }
-            wp_send_json_error(array('message' => 'セキュリティチェックに失敗しました。'));
+            wp_send_json_error(array('message' => __( 'セキュリティチェックに失敗しました。', 'ktpwp' )));
             return;
         }
         
@@ -6005,7 +6046,7 @@ function ktpwp_handle_create_dummy_data_ajax() {
             if (defined('WP_DEBUG') && WP_DEBUG) {
                 error_log('KTPWP: 権限がありません');
             }
-            wp_send_json_error(array('message' => '権限がありません。'));
+            wp_send_json_error(array('message' => __( '権限がありません。', 'ktpwp' )));
             return;
         }
         
@@ -6019,7 +6060,7 @@ function ktpwp_handle_create_dummy_data_ajax() {
         
         if ($existing_clients > 0 || $existing_orders > 0 || $existing_suppliers > 0 || $existing_services > 0) {
             wp_send_json_error(array(
-                'message' => '既存のデータが存在します。データを削除してから再実行してください。'
+                'message' => __( '既存のデータが存在します。データを削除してから再実行してください。', 'ktpwp' )
             ));
             return;
         }
@@ -6028,7 +6069,7 @@ function ktpwp_handle_create_dummy_data_ajax() {
         $dummy_data_script = plugin_dir_path(__FILE__) . 'create_dummy_data.php';
         
         if (!file_exists($dummy_data_script)) {
-            wp_send_json_error(array('message' => 'ダミーデータ作成スクリプトが見つかりません。'));
+            wp_send_json_error(array('message' => __( 'ダミーデータ作成スクリプトが見つかりません。', 'ktpwp' )));
             return;
         }
         
@@ -6090,7 +6131,7 @@ function ktpwp_handle_create_dummy_data_ajax() {
             // include が早期 return false した場合でも成功扱いになっていた不具合を防ぐ
             $client_count = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}ktp_client" );
             if ( $client_count < 1 ) {
-                wp_send_json_error( array( 'message' => 'ダミーデータの作成に失敗しました。必要なテーブルが存在するか、PHPエラーログを確認してください。' ) );
+                wp_send_json_error( array( 'message' => __( 'ダミーデータの作成に失敗しました。必要なテーブルが存在するか、PHPエラーログを確認してください。', 'ktpwp' ) ) );
                 return;
             }
 
@@ -6109,7 +6150,7 @@ function ktpwp_handle_create_dummy_data_ajax() {
 
             // 成功メッセージを返す
             wp_send_json_success(array(
-                'message' => 'ダミーデータが正常に作成されました。',
+                'message' => __( 'ダミーデータが正常に作成されました。', 'ktpwp' ),
                 'output' => $output
             ));
             
@@ -6126,14 +6167,14 @@ function ktpwp_handle_create_dummy_data_ajax() {
                 error_log('KTPWP: ダミーデータ作成中に例外が発生しました: ' . $e->getMessage());
                 error_log('KTPWP: 例外の詳細: ' . $e->getTraceAsString());
             }
-            wp_send_json_error(array('message' => 'ダミーデータ作成中にエラーが発生しました: ' . $e->getMessage()));
+            wp_send_json_error(array('message' => __( 'ダミーデータ作成中にエラーが発生しました: ', 'ktpwp' ) . $e->getMessage()));
         }
         
     } catch (Exception $e) {
         if (defined('WP_DEBUG') && WP_DEBUG) {
             error_log('KTPWP: ダミーデータ作成中にエラーが発生しました: ' . $e->getMessage());
         }
-        wp_send_json_error(array('message' => 'ダミーデータ作成中にエラーが発生しました: ' . $e->getMessage()));
+        wp_send_json_error(array('message' => __( 'ダミーデータ作成中にエラーが発生しました: ', 'ktpwp' ) . $e->getMessage()));
     } finally {
         // 出力バッファをクリア（予期しない出力を除去）
         $output = ob_get_clean();
@@ -6163,7 +6204,7 @@ function ktpwp_handle_clear_data_ajax() {
             if (defined('WP_DEBUG') && WP_DEBUG) {
                 error_log('KTPWP: セキュリティチェックに失敗しました');
             }
-            wp_send_json_error(array('message' => 'セキュリティチェックに失敗しました。'));
+            wp_send_json_error(array('message' => __( 'セキュリティチェックに失敗しました。', 'ktpwp' )));
             return;
         }
         
@@ -6171,7 +6212,7 @@ function ktpwp_handle_clear_data_ajax() {
             if (defined('WP_DEBUG') && WP_DEBUG) {
                 error_log('KTPWP: 権限がありません');
             }
-            wp_send_json_error(array('message' => '権限がありません。'));
+            wp_send_json_error(array('message' => __( '権限がありません。', 'ktpwp' )));
             return;
         }
         
@@ -6185,7 +6226,7 @@ function ktpwp_handle_clear_data_ajax() {
         if ($cost_items_count > 0) {
             $result = $wpdb->query("DELETE FROM {$wpdb->prefix}ktp_order_cost_items");
             if ($result !== false) {
-                $cleared_tables[] = "コスト項目: {$cost_items_count}件";
+                $cleared_tables[] = sprintf( __( 'コスト項目: %d件', 'ktpwp' ), $cost_items_count );
                 $total_cleared += $cost_items_count;
             }
         }
@@ -6194,7 +6235,7 @@ function ktpwp_handle_clear_data_ajax() {
         if ($invoice_items_count > 0) {
             $result = $wpdb->query("DELETE FROM {$wpdb->prefix}ktp_order_invoice_items");
             if ($result !== false) {
-                $cleared_tables[] = "請求項目: {$invoice_items_count}件";
+                $cleared_tables[] = sprintf( __( '請求項目: %d件', 'ktpwp' ), $invoice_items_count );
                 $total_cleared += $invoice_items_count;
             }
         }
@@ -6204,7 +6245,7 @@ function ktpwp_handle_clear_data_ajax() {
         if ($order_count > 0) {
             $result = $wpdb->query("DELETE FROM {$wpdb->prefix}ktp_order");
             if ($result !== false) {
-                $cleared_tables[] = "受注書: {$order_count}件";
+                $cleared_tables[] = sprintf( __( '受注書: %d件', 'ktpwp' ), $order_count );
                 $total_cleared += $order_count;
             }
         }
@@ -6214,7 +6255,7 @@ function ktpwp_handle_clear_data_ajax() {
         if ($client_count > 0) {
             $result = $wpdb->query("DELETE FROM {$wpdb->prefix}ktp_client");
             if ($result !== false) {
-                $cleared_tables[] = "顧客: {$client_count}件";
+                $cleared_tables[] = sprintf( __( '顧客: %d件', 'ktpwp' ), $client_count );
                 $total_cleared += $client_count;
             }
         }
@@ -6224,7 +6265,7 @@ function ktpwp_handle_clear_data_ajax() {
         if ($supplier_skills_count > 0) {
             $result = $wpdb->query("DELETE FROM {$wpdb->prefix}ktp_supplier_skills");
             if ($result !== false) {
-                $cleared_tables[] = "協力会社職能: {$supplier_skills_count}件";
+                $cleared_tables[] = sprintf( __( '協力会社職能: %d件', 'ktpwp' ), $supplier_skills_count );
                 $total_cleared += $supplier_skills_count;
             }
         }
@@ -6234,7 +6275,7 @@ function ktpwp_handle_clear_data_ajax() {
         if ($supplier_count > 0) {
             $result = $wpdb->query("DELETE FROM {$wpdb->prefix}ktp_supplier");
             if ($result !== false) {
-                $cleared_tables[] = "協力会社: {$supplier_count}件";
+                $cleared_tables[] = sprintf( __( '協力会社: %d件', 'ktpwp' ), $supplier_count );
                 $total_cleared += $supplier_count;
             }
         }
@@ -6244,19 +6285,19 @@ function ktpwp_handle_clear_data_ajax() {
         if ($service_count > 0) {
             $result = $wpdb->query("DELETE FROM {$wpdb->prefix}ktp_service");
             if ($result !== false) {
-                $cleared_tables[] = "サービス: {$service_count}件";
+                $cleared_tables[] = sprintf( __( 'サービス: %d件', 'ktpwp' ), $service_count );
                 $total_cleared += $service_count;
             }
         }
         
         if ($total_cleared > 0) {
             $success_message = sprintf(
-                'データクリアが完了しました！<br><br>クリアされたデータ:<br>• %s<br><br>合計: %d件のデータを削除しました。',
+                __( 'データクリアが完了しました！<br><br>クリアされたデータ:<br>• %s<br><br>合計: %d件のデータを削除しました。', 'ktpwp' ),
                 implode('<br>• ', $cleared_tables),
                 $total_cleared
             );
         } else {
-            $success_message = 'クリアするデータがありませんでした。';
+            $success_message = __( 'クリアするデータがありませんでした。', 'ktpwp' );
         }
         
         if (defined('WP_DEBUG') && WP_DEBUG) {
@@ -6274,7 +6315,7 @@ function ktpwp_handle_clear_data_ajax() {
         }
         
         wp_send_json_error(array(
-            'message' => 'エラーが発生しました: ' . $e->getMessage()
+            'message' => __( 'エラーが発生しました: ', 'ktpwp' ) . $e->getMessage()
         ));
     } finally {
         // 出力バッファをクリア（予期しない出力を除去）

@@ -71,7 +71,7 @@
     // メール送信ポップアップの表示
     window.ktpShowEmailPopup = function (orderId) {
         if (!orderId) {
-            alert('受注書IDが見つかりません。');
+            alert(ktpwpTranslate('受注書IDが見つかりません。'));
             return;
         }
 
@@ -107,7 +107,7 @@
                         border-bottom: 1px solid #eee;
                         padding-bottom: 15px;
                     ">
-                        <h3 style="margin: 0; color: #333;">メール送信</h3>
+                        <h3 style="margin: 0; color: #333;">${ktpwpTranslate('メール送信')}</h3>
                         <button type="button" id="ktp-email-popup-close" style="
                             background: none;
                             color: #333;
@@ -125,7 +125,7 @@
                         box-sizing: border-box;
                     ">
                         <div style="text-align: center; padding: 40px;">
-                            <div style="font-size: 16px; color: #666;">メール内容を読み込み中...</div>
+                            <div style="font-size: 16px; color: #666;">${ktpwpTranslate('メール内容を読み込み中...')}</div>
                         </div>
                     </div>
                 </div>
@@ -178,11 +178,11 @@
                 if (response.success && response.data) {
                     renderEmailForm(response.data, orderId);
                 } else {
-                    const errorMessage = response.data && response.data.message ? response.data.message : 'メール内容の取得に失敗しました';
+                    const errorMessage = response.data && response.data.message ? ktpwpTranslate(response.data.message) : ktpwpTranslate('メール内容の取得に失敗しました');
                     $('#ktp-email-popup-content').html(`
                         <div style="text-align: center; padding: 40px; color: #dc3545;">
                             <div style="font-size: 16px;">${errorMessage}</div>
-                            <div style="font-size: 14px; margin-top: 4px;">再度お試しください</div>
+                            <div style="font-size: 14px; margin-top: 4px;">${ktpwpTranslate('再度お試しください')}</div>
                         </div>
                     `);
                 }
@@ -197,7 +197,7 @@
                 console.error('[EMAIL POPUP] レスポンスヘッダー:', xhr.getAllResponseHeaders());
                 console.error('[EMAIL POPUP] レスポンステキスト詳細:', xhr.responseText);
                 
-                let errorMessage = 'メール内容の読み込みに失敗しました';
+                let errorMessage = ktpwpTranslate('メール内容の読み込みに失敗しました');
                 let errorDetails = '';
                 
                 // レスポンステキストからJSON部分を抽出して解析を試行
@@ -220,22 +220,22 @@
                 
                 // エラーメッセージの詳細化
                 if (xhr.status === 403) {
-                    errorMessage = '権限がありません。ログインを確認してください。';
+                    errorMessage = ktpwpTranslate('権限がありません。ログインを確認してください。');
                 } else if (xhr.status === 404) {
-                    errorMessage = '受注書が見つかりませんでした。';
+                    errorMessage = ktpwpTranslate('受注書が見つかりませんでした。');
                 } else if (xhr.status === 500) {
-                    errorMessage = 'サーバーエラーが発生しました。';
+                    errorMessage = ktpwpTranslate('サーバーエラーが発生しました。');
                 } else if (status === 'parsererror') {
-                    errorMessage = 'レスポンスの解析に失敗しました。';
-                    errorDetails = 'HTMLエラーメッセージが混在している可能性があります。';
+                    errorMessage = ktpwpTranslate('レスポンスの解析に失敗しました。');
+                    errorDetails = ktpwpTranslate('HTMLエラーメッセージが混在している可能性があります。');
                 }
                 
                 $('#ktp-email-popup-content').html(`
                     <div style="text-align: center; padding: 40px; color: #dc3545;">
                         <div style="font-size: 16px;">${errorMessage}</div>
-                        <div style="font-size: 14px; margin-top: 8px;">ステータス: ${xhr.status} ${status}</div>
+                        <div style="font-size: 14px; margin-top: 8px;">${ktpwpTranslate('ステータス')}: ${xhr.status} ${status}</div>
                         ${errorDetails ? `<div style="font-size: 14px; margin-top: 4px; color: #666;">${errorDetails}</div>` : ''}
-                        <div style="font-size: 14px; margin-top: 4px;">再度お試しください</div>
+                        <div style="font-size: 14px; margin-top: 4px;">${ktpwpTranslate('再度お試しください')}</div>
                     </div>
                 `);
             }
@@ -259,10 +259,10 @@
                     text-align: center;
                 ">
                     <h4 style="margin-top: 0; color: ${emailData.error_type === 'no_email' ? '#856404' : '#d32f2f'};">
-                        ${emailData.error_title}
+                        ${ktpwpTranslate(emailData.error_title)}
                     </h4>
                     <p style="color: ${emailData.error_type === 'no_email' ? '#856404' : '#d32f2f'}; margin-bottom: 0;">
-                        ${emailData.error}
+                        ${ktpwpTranslate(emailData.error)}
                     </p>
                 </div>
             `;
@@ -271,7 +271,7 @@
             html = `
                 <form id="email-send-form" style="width: 100%;">
                     <div style="margin-bottom: 15px;">
-                        <label style="display: block; font-weight: bold; margin-bottom: 5px;">宛先：</label>
+                        <label style="display: block; font-weight: bold; margin-bottom: 5px;">${ktpwpTranslate('宛先')}：</label>
                         <input type="email" value="${emailData.to}" readonly style="
                             width: 100%;
                             padding: 8px;
@@ -282,8 +282,8 @@
                         ">
                     </div>
                     <div style="margin-bottom: 15px;">
-                        <label style="display: block; font-weight: bold; margin-bottom: 5px;">CC（任意・カンマ区切り）：</label>
-                        <p style="margin: 0 0 6px 0; font-size: 12px; color: #666; line-height: 1.4;">顧客代表・各部署に登録されたメールのうち、宛先（To）以外を自動で入れます（KantanBizの「CC（任意）」と同様）。編集できます。</p>
+                        <label style="display: block; font-weight: bold; margin-bottom: 5px;">${ktpwpTranslate('CC（任意・カンマ区切り）')}：</label>
+                        <p style="margin: 0 0 6px 0; font-size: 12px; color: #666; line-height: 1.4;">${ktpwpTranslate('顧客代表・各部署に登録されたメールのうち、宛先（To）以外を自動で入れます（KantanBizの「CC（任意）」と同様）。編集できます。')}</p>
                         <input type="text" id="email-cc" autocomplete="off" style="
                             width: 100%;
                             padding: 8px;
@@ -293,7 +293,7 @@
                         ">
                     </div>
                     <div style="margin-bottom: 15px;">
-                        <label style="display: block; font-weight: bold; margin-bottom: 5px;">件名：</label>
+                        <label style="display: block; font-weight: bold; margin-bottom: 5px;">${ktpwpTranslate('件名')}：</label>
                         <input type="text" id="email-subject" value="${emailData.subject}" style="
                             width: 100%;
                             padding: 8px;
@@ -303,7 +303,7 @@
                         ">
                     </div>
                     <div style="margin-bottom: 20px;">
-                        <label style="display: block; font-weight: bold; margin-bottom: 5px;">本文：</label>
+                        <label style="display: block; font-weight: bold; margin-bottom: 5px;">${ktpwpTranslate('本文')}：</label>
                         <textarea id="email-body" rows="12" style="
                             width: 100%;
                             padding: 8px;
@@ -315,7 +315,7 @@
                         ">${emailData.body}</textarea>
                     </div>
                     <div style="margin-bottom: 20px;">
-                        <label style="display: block; font-weight: bold; margin-bottom: 5px;">ファイル添付：</label>
+                        <label style="display: block; font-weight: bold; margin-bottom: 5px;">${ktpwpTranslate('ファイル添付')}：</label>
                         <div id="file-attachment-area" style="
                             border: 2px dashed #ddd;
                             border-radius: 8px;
@@ -328,11 +328,11 @@
                             <input type="file" id="email-attachments" multiple accept=".pdf,.jpg,.jpeg,.png,.gif,.doc,.docx,.xls,.xlsx,.zip,.rar,.7z" style="display: none;">
                             <div id="drop-zone" style="cursor: pointer;">
                                 <div style="font-size: 18px; color: #666; margin-bottom: 8px;">
-                                    📎 ファイルをドラッグ&ドロップまたはクリックして選択
+                                    📎 ${ktpwpTranslate('ファイルをドラッグ&ドロップまたはクリックして選択')}
                                 </div>
                                 <div style="font-size: 13px; color: #888; line-height: 1.4;">
-                                    対応形式：PDF, 画像(JPG,PNG,GIF), Word, Excel, 圧縮ファイル等<br>
-                                    <strong>最大ファイルサイズ：10MB/ファイル, 合計50MB</strong>
+                                    ${ktpwpTranslate('対応形式：PDF, 画像(JPG,PNG,GIF), Word, Excel, 圧縮ファイル等')}<br>
+                                    <strong>${ktpwpTranslate('最大ファイルサイズ：10MB/ファイル, 合計50MB')}</strong>
                                 </div>
                             </div>
                         </div>
@@ -357,7 +357,7 @@
                             font-size: 16px;
                             font-weight: bold;
                         ">
-                            メール送信
+                            ${ktpwpTranslate('メール送信')}
                         </button>
                     </div>
                     <input type="hidden" name="order_id" value="${orderId}">
@@ -448,21 +448,21 @@
             files.forEach(file => {
                 // ファイルサイズチェック
                 if (file.size > maxFileSize) {
-                    alert(`ファイル "${file.name}" は10MBを超えています。\n最大ファイルサイズ：10MB`);
+                    alert(ktpwpTranslate('ファイル "%s" は10MBを超えています。\n最大ファイルサイズ：10MB').replace('%s', file.name));
                     hasError = true;
                     return;
                 }
 
                 // 合計サイズチェック
                 if (totalSize + file.size > maxTotalSize) {
-                    alert(`合計ファイルサイズが50MBを超えます。\nファイルを減らしてください。`);
+                    alert(ktpwpTranslate('合計ファイルサイズが50MBを超えます。\nファイルを減らしてください。'));
                     hasError = true;
                     return;
                 }
 
                 // ファイル形式チェック
                 if (!allowedTypes.includes(file.type) && !isAllowedExtension(file.name)) {
-                    alert(`ファイル "${file.name}" は対応していない形式です。\n対応形式：PDF, 画像, Word, Excel, 圧縮ファイル等`);
+                    alert(ktpwpTranslate('ファイル "%s" は対応していない形式です。\n対応形式：PDF, 画像, Word, Excel, 圧縮ファイル等').replace('%s', file.name));
                     hasError = true;
                     return;
                 }
@@ -499,7 +499,7 @@
                 return;
             }
 
-            let html = '<div style="font-weight: bold; margin-bottom: 10px; color: #333; border-bottom: 1px solid #eee; padding-bottom: 5px;">選択されたファイル：</div>';
+            let html = '<div style="font-weight: bold; margin-bottom: 10px; color: #333; border-bottom: 1px solid #eee; padding-bottom: 5px;">' + ktpwpTranslate('選択されたファイル') + '：</div>';
             selectedFiles.forEach((file, index) => {
                 const sizeText = formatFileSize(file.size);
                 const fileIcon = getFileIcon(file.name);
@@ -531,7 +531,7 @@
                             font-weight: 500;
                             margin-left: 10px;
                             transition: background 0.2s;
-                        " onmouseover="this.style.background='#c82333'" onmouseout="this.style.background='#dc3545'">削除</button>
+                        " onmouseover="this.style.background='#c82333'" onmouseout="this.style.background='#dc3545'">${ktpwpTranslate('削除')}</button>
                     </div>
                 `;
             });
@@ -550,7 +550,7 @@
                     border-top: 1px solid #eee;
                 ">
                     <div style="margin-bottom: 4px;">
-                        合計：<strong style="color: ${progressColor};">${formatFileSize(totalSize)}</strong> / 50MB (${totalSizePercent}%)
+                        ${ktpwpTranslate('合計')}：<strong style="color: ${progressColor};">${formatFileSize(totalSize)}</strong> / 50MB (${totalSizePercent}%)
                     </div>
                     <div style="
                         background: #e9ecef;
@@ -692,7 +692,7 @@
         const to = $('input[name="to"]').val();
 
         if (!subject.trim() || !body.trim()) {
-            alert('件名と本文を入力してください。');
+            alert(ktpwpTranslate('件名と本文を入力してください。'));
             return;
         }
 
@@ -724,9 +724,9 @@
         });
 
         // 送信中表示を更新（ファイル数を表示）
-        let loadingMessage = 'メール送信中...';
+        let loadingMessage = ktpwpTranslate('メール送信中...');
         if (selectedFiles.length > 0) {
-            loadingMessage += `<br><small style="color: #666;">${selectedFiles.length}件のファイルを添付中...</small>`;
+            loadingMessage += `<br><small style="color: #666;">${ktpwpTranslate('%d件のファイルを添付中...').replace('%d', selectedFiles.length)}</small>`;
         }
 
         $('#ktp-email-popup-content').html(`
@@ -754,20 +754,20 @@
                 if (response.success) {
                     const newProgress = response.data && response.data.progress != null ? response.data.progress : null;
                     const completionDate = response.data && response.data.completion_date ? response.data.completion_date : null;
-                    const progressLabels = { 1: '受付中', 2: '見積中', 3: '受注', 4: '完了', 5: '請求済', 6: '入金済', 7: 'ボツ' };
+                    const progressLabels = { 1: ktpwpTranslate('受付中'), 2: ktpwpTranslate('見積中'), 3: ktpwpTranslate('受注'), 4: ktpwpTranslate('完了'), 5: ktpwpTranslate('請求済'), 6: ktpwpTranslate('入金済'), 7: ktpwpTranslate('ボツ') };
 
                     let successMessage = `
                         <div style="font-size: 18px; font-weight: bold; margin-bottom: 10px;">
-                            ✓ メール送信完了
+                            ✓ ${ktpwpTranslate('メール送信完了')}
                         </div>
                         <div style="font-size: 14px;">
-                            宛先: ${to}
+                            ${ktpwpTranslate('宛先')}: ${to}
                         </div>
                     `;
                     if (newProgress != null && progressLabels[newProgress]) {
                         successMessage += `
                             <div style="font-size: 14px; margin-top: 8px; color: #28a745;">
-                                進捗を「${progressLabels[newProgress]}」に更新しました。
+                                ${ktpwpTranslate('進捗を「%s」に更新しました。').replace('%s', progressLabels[newProgress])}
                             </div>
                         `;
                         var $select = $('#order_progress_select');
@@ -789,7 +789,7 @@
                     if (selectedFiles.length > 0) {
                         successMessage += `
                             <div style="font-size: 14px; margin-top: 8px; color: #666;">
-                                添付ファイル: ${selectedFiles.length}件
+                                ${ktpwpTranslate('添付ファイル')}: ${selectedFiles.length}${ktpwpTranslate('件')}
                             </div>
                         `;
                     }
@@ -809,7 +809,7 @@
                                     cursor: pointer;
                                     pointer-events: auto;
                                 " onclick="if(typeof window.ktpCloseEmailPopup==='function'){window.ktpCloseEmailPopup();}return false;">
-                                    閉じる
+                                    ${ktpwpTranslate('閉じる')}
                                 </button>
                             </div>
                         </div>
@@ -830,11 +830,11 @@
                         );
                     })();
                 } else {
-                    const errorMessage = response.data && response.data.message ? response.data.message : 'メール送信に失敗しました';
+                    const errorMessage = response.data && response.data.message ? ktpwpTranslate(response.data.message) : ktpwpTranslate('メール送信に失敗しました');
                     $('#ktp-email-popup-content').html(`
                         <div style="text-align: center; padding: 40px; color: #dc3545;">
                             <div style="font-size: 16px; font-weight: bold; margin-bottom: 10px;">
-                                ✗ メール送信失敗
+                                ✗ ${ktpwpTranslate('メール送信失敗')}
                             </div>
                             <div style="font-size: 14px;">${errorMessage}</div>
                             <div style="margin-top: 20px;">
@@ -846,7 +846,7 @@
                                     border-radius: 4px;
                                     cursor: pointer;
                                 ">
-                                    再試行
+                                    ${ktpwpTranslate('再試行')}
                                 </button>
                             </div>
                         </div>
@@ -864,9 +864,9 @@
                 $('#ktp-email-popup-content').html(`
                     <div style="text-align: center; padding: 40px; color: #dc3545;">
                         <div style="font-size: 16px; font-weight: bold; margin-bottom: 10px;">
-                            ✗ メール送信エラー
+                            ✗ ${ktpwpTranslate('メール送信エラー')}
                         </div>
-                        <div style="font-size: 14px;">ステータス: ${xhr.status} ${status}</div>
+                        <div style="font-size: 14px;">${ktpwpTranslate('ステータス')}: ${xhr.status} ${status}</div>
                         <div style="margin-top: 20px;">
                             <button type="button" onclick="ktpShowEmailPopup(${orderId})" style="
                                 background: #dc3545;

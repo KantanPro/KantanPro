@@ -58,7 +58,7 @@ function ktpwp_create_invoice_items_table() {
 // マイグレーション実行
 if (isset($_GET['run_migration']) && $_GET['run_migration'] === 'create_invoice_items_table') {
     if (!current_user_can('manage_options')) {
-        wp_die('権限がありません');
+        wp_die( __( '権限がありません', 'ktpwp' ) );
     }
     
     $result = ktpwp_create_invoice_items_table();

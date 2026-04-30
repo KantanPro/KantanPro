@@ -682,7 +682,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 										// サービスが空でない項目のみリストに追加
 										if ( ! empty( trim( $product_name ) ) ) {
 											// 詳細形式：サービス：単価 × 数量/単位 = 金額円（税率X%）
-											$line = $product_name . '：' . number_format( $price ) . '円 × ' . $quantity . $unit . ' = ' . number_format( $item_amount ) . '円（税率' . $tax_rate . '%）';
+											$line = $product_name . '：' . KTPWP_Settings::format_money( $price ) . ' × ' . $quantity . $unit . ' = ' . KTPWP_Settings::format_money( $item_amount ) . '（税率' . $tax_rate . '%）';
 											$item_lines[] = $line;
 											// 最大文字数を計算（日本語文字も考慮）
 											$line_length = mb_strlen( $line, 'UTF-8' );
@@ -705,12 +705,12 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 									foreach ( $tax_rate_groups as $tax_rate => $group_amount ) {
 										if ( $tax_rate === 'non_taxable' ) {
 											// 非課税の場合は税額を0とする
-											$tax_rate_details[] = '非課税: 0円';
+											$tax_rate_details[] = '非課税: ' . KTPWP_Settings::format_money( 0 );
 										} else {
 											$tax_rate_value = floatval( $tax_rate );
 											$tax_amount = ceil( $group_amount * ( $tax_rate_value / 100 ) / ( 1 + $tax_rate_value / 100 ) );
 											$total_tax_amount += $tax_amount;
-											$tax_rate_details[] = $tax_rate . '%: ' . number_format( $tax_amount ) . '円';
+											$tax_rate_details[] = $tax_rate . '%: ' . KTPWP_Settings::format_money( $tax_amount );
 										}
 									}
 									}
@@ -722,17 +722,17 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 
 									// 税区分に応じた合計行の表示
 									if ( $tax_category === '外税' ) {
-										$total_line = '外税合計：' . number_format( $amount_ceiled ) . '円';
-										$tax_line = '消費税：' . number_format( $total_tax_amount_ceiled ) . '円';
-										$total_with_tax_line = '内税合計：' . number_format( $total_with_tax ) . '円';
+										$total_line = '外税合計：' . KTPWP_Settings::format_money( $amount_ceiled );
+										$tax_line = '消費税：' . KTPWP_Settings::format_money( $total_tax_amount_ceiled );
+										$total_with_tax_line = '内税合計：' . KTPWP_Settings::format_money( $total_with_tax );
 									} else {
 									// 内税の場合は税率別の内訳を表示
 									if ( count( $tax_rate_groups ) > 1 ) {
 										$tax_detail_text = '（内税：' . implode( ', ', $tax_rate_details ) . '）';
 									} else {
-										$tax_detail_text = '（内税：' . number_format( $total_tax_amount_ceiled ) . '円）';
+										$tax_detail_text = '（内税：' . KTPWP_Settings::format_money( $total_tax_amount_ceiled ) . '）';
 									}
-									$total_line = '金額合計：' . number_format( $amount_ceiled ) . '円' . $tax_detail_text;
+									$total_line = '金額合計：' . KTPWP_Settings::format_money( $amount_ceiled ) . $tax_detail_text;
 										$tax_line = ''; // 内税の場合は消費税行を非表示
 										$total_with_tax_line = ''; // 内税の場合は税込合計行を非表示
 									}
@@ -797,7 +797,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 												if ( ! empty( trim( $product_name ) ) ) {
 													// 詳細形式：サービス：単価 × 数量/単位 = 金額円（税率X%）※ 備考
 													$remarks_text = ( ! empty( trim( $remarks ) ) ) ? '　※ ' . $remarks : '';
-													$invoice_list .= $product_name . '：' . number_format( $price ) . '円 × ' . $quantity . $unit . ' = ' . number_format( $item_amount ) . "円（税率{$tax_rate}%）" . $remarks_text . "\n";
+													$invoice_list .= $product_name . '：' . KTPWP_Settings::format_money( $price ) . ' × ' . $quantity . $unit . ' = ' . KTPWP_Settings::format_money( $item_amount ) . "（税率{$tax_rate}%）" . $remarks_text . "\n";
 												}
 											}
 											
@@ -810,7 +810,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 														$tax_rate_value = floatval( $tax_rate );
 														$tax_amount = ceil( $group_amount * ( $tax_rate_value / 100 ) / ( 1 + $tax_rate_value / 100 ) );
 														$total_tax_amount += $tax_amount;
-														$tax_rate_details[] = $tax_rate . '%: ' . number_format( $tax_amount ) . '円';
+														$tax_rate_details[] = $tax_rate . '%: ' . KTPWP_Settings::format_money( $tax_amount );
 													}
 												}
 												
@@ -820,17 +820,17 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 											
 											// 税区分に応じた合計表示
 											if ( $tax_category === '外税' ) {
-												$invoice_list .= "\n外税合計：" . number_format( $amount_ceiled ) . '円';
-												$invoice_list .= "\n消費税：" . number_format( $total_tax_amount_ceiled ) . '円';
-												$invoice_list .= "\n内税合計：" . number_format( $total_with_tax ) . '円';
+												$invoice_list .= "\n外税合計：" . KTPWP_Settings::format_money( $amount_ceiled );
+												$invoice_list .= "\n消費税：" . KTPWP_Settings::format_money( $total_tax_amount_ceiled );
+												$invoice_list .= "\n内税合計：" . KTPWP_Settings::format_money( $total_with_tax );
 											} else {
 													// 内税の場合は税率別の内訳を表示
 													if ( count( $tax_rate_groups ) > 1 ) {
 														$tax_detail_text = '（内税：' . implode( ', ', $tax_rate_details ) . '）';
 													} else {
-														$tax_detail_text = '（内税：' . number_format( $total_tax_amount_ceiled ) . '円）';
+														$tax_detail_text = '（内税：' . KTPWP_Settings::format_money( $total_tax_amount_ceiled ) . '）';
 													}
-													$invoice_list .= "\n金額合計：" . number_format( $amount_ceiled ) . '円' . $tax_detail_text;
+													$invoice_list .= "\n金額合計：" . KTPWP_Settings::format_money( $amount_ceiled ) . $tax_detail_text;
 											}
 										} else {
 											$invoice_list = sanitize_textarea_field( $invoice_items_json );
@@ -1526,7 +1526,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 
 					// 左側：削除ボタン（ゴミ箱アイコン付き）
 					$current_url = add_query_arg( null, null );
-					$content .= '<form method="post" action="' . esc_url( $current_url ) . '" style="display:inline-block;" onsubmit="return confirm(\'本当にこの受注書を削除しますか？\\nこの操作は元に戻せません。\');">';
+					$content .= '<form method="post" action="' . esc_url( $current_url ) . '" style="display:inline-block;" onsubmit="return confirm(\'' . esc_js( __( '本当にこの受注書を削除しますか？\nこの操作は元に戻せません。', 'ktpwp' ) ) . '\');">';
 					$content .= '<input type="hidden" name="order_id" value="' . esc_attr( $order_data->id ) . '">';
 					$content .= '<input type="hidden" name="delete_order" value="1">';
 					// 顧客データの存在有無を記録（デバッグ用）
@@ -1543,8 +1543,8 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 					// Add nonce to delete form
 					$content .= wp_nonce_field( 'delete_order_action', 'delete_nonce', true, false );
 					$content .= '<button type="submit" class="delete-order-btn">';
-					$content .= '<span class="material-symbols-outlined" aria-label="削除">delete</span>';
-					$content .= '受注書を削除';
+					$content .= '<span class="material-symbols-outlined" aria-label="' . esc_attr__( '削除', 'ktpwp' ) . '">delete</span>';
+					$content .= esc_html__( '受注書を削除', 'ktpwp' );
 					$content .= '</button>';
 					$content .= '</form>';
 
@@ -1943,9 +1943,9 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 					$content .= '<div class="controller" style="display: flex; justify-content: space-between; align-items: center;">';
 
 					// 左側：削除ボタン（無効化）- Material Symbolsは既に読み込み済み
-					$content .= '<button type="button" class="delete-order-btn" disabled title="受注書がありません">';
-					$content .= '<span class="material-symbols-outlined" aria-label="削除">delete</span>';
-					$content .= '受注書を削除';
+					$content .= '<button type="button" class="delete-order-btn" disabled title="' . esc_attr__( '受注書がありません', 'ktpwp' ) . '">';
+					$content .= '<span class="material-symbols-outlined" aria-label="' . esc_attr__( '削除', 'ktpwp' ) . '">delete</span>';
+					$content .= esc_html__( '受注書を削除', 'ktpwp' );
 					$content .= '</button>';
 
 					// 右側：プレビューボタンと印刷ボタン（無効化）
@@ -1971,9 +1971,9 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 				$content .= '<div class="controller" style="display: flex; justify-content: space-between; align-items: center;">';
 
 				// 左側：削除ボタン（無効化）- Material Symbolsは既に読み込み済み
-				$content .= '<button type="button" class="delete-order-btn" disabled title="受注書がありません">';
-				$content .= '<span class="material-symbols-outlined" aria-label="削除">delete</span>';
-				$content .= '受注書を削除';
+				$content .= '<button type="button" class="delete-order-btn" disabled title="' . esc_attr__( '受注書がありません', 'ktpwp' ) . '">';
+				$content .= '<span class="material-symbols-outlined" aria-label="' . esc_attr__( '削除', 'ktpwp' ) . '">delete</span>';
+				$content .= esc_html__( '受注書を削除', 'ktpwp' );
 				$content .= '</button>';
 
 				// 右側：プレビューボタンと印刷ボタン（無効化）
@@ -2475,11 +2475,11 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 				// 選択された部署情報を表示
 				if ( $selected_department ) {
 					$html .= '<div class="department-info" style="font-size: 12px; margin-bottom: 4px; color: #666;">';
-					$html .= '<div>' . esc_html( $selected_department->department_name ) . ' ' . esc_html( $selected_department->contact_person ) . ' 様</div>';
+					$html .= '<div>' . esc_html( sprintf( __( '%1$s %2$s 様', 'ktpwp' ), $selected_department->department_name, $selected_department->contact_person ) ) . '</div>';
 					$html .= '</div>';
 				}
 
-				$html .= '<div class="customer-name" style="font-size: 14px; margin-bottom: 100px;">' . esc_html( $order_data->user_name ) . ' 様</div>';
+				$html .= '<div class="customer-name" style="font-size: 14px; margin-bottom: 100px;">' . esc_html( sprintf( __( '%s 様', 'ktpwp' ), $order_data->user_name ) ) . '</div>';
 			} else {			
 				// 住所がない場合：会社名 → 選択された部署情報 → 名前 様
 				$html .= '<div class="company-name" style="font-size: 16px; font-weight: bold; margin-bottom: 4px;">' . esc_html( $display_customer_name ) . '</div>';
@@ -2487,21 +2487,21 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 				// 選択された部署情報を表示
 				if ( $selected_department ) {
 					$html .= '<div class="department-info" style="font-size: 12px; margin-bottom: 4px; color: #666;">';
-					$html .= '<div>' . esc_html( $selected_department->department_name ) . ' ' . esc_html( $selected_department->contact_person ) . ' 様</div>';
+					$html .= '<div>' . esc_html( sprintf( __( '%1$s %2$s 様', 'ktpwp' ), $selected_department->department_name, $selected_department->contact_person ) ) . '</div>';
 					$html .= '</div>';
 				}
 
-				$html .= '<div class="customer-name" style="font-size: 14px; margin-bottom: 100px;">' . esc_html( $order_data->user_name ) . ' 様</div>';
+				$html .= '<div class="customer-name" style="font-size: 14px; margin-bottom: 100px;">' . esc_html( sprintf( __( '%s 様', 'ktpwp' ), $order_data->user_name ) ) . '</div>';
 			}
 
 			$html .= '</div>';
 
 			// 帳票タイトル（コンパクト）
 			$html .= '<div class="document-title" style="text-align: center; margin-bottom: 15px; padding: 12px; border: 2px solid #333; font-size: 18px; font-weight: bold;">';
-			$html .= '＜' . esc_html( $document_info['title'] ) . '＞';
+			$html .= esc_html( sprintf( __( '＜%s＞', 'ktpwp' ), $document_info['title'] ) );
             // 適格請求書番号を表示（税廃止でなく、設定されている場合のみ）
             if ( ! ( class_exists( 'KTPWP_Tax_Policy' ) && KTPWP_Tax_Policy::is_abolished() ) && ! empty( $qualified_invoice_number ) ) {
-                $html .= '<div style="font-size: 14px; font-weight: normal; margin-top: 5px; color: #333;">適格請求書番号：' . esc_html( $qualified_invoice_number ) . '</div>';
+                $html .= '<div style="font-size: 14px; font-weight: normal; margin-top: 5px; color: #333;">' . esc_html__( '適格請求書番号', 'ktpwp' ) . '：' . esc_html( $qualified_invoice_number ) . '</div>';
             }
 			$html .= '</div>';
 
@@ -2531,7 +2531,14 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 
 			// フッター（コンパクト）
 			$html .= '<div class="document-footer" style="text-align: center; margin-top: 20px; padding-top: 10px; border-top: 1px solid #ccc; font-size: 11px; color: #666;">';
-			$html .= '受注書ID: ' . esc_html( $order_data->id ) . ' | 作成日: ' . date( 'Y年m月d日', is_numeric( $order_data->time ) ? $order_data->time : strtotime( $order_data->time ) );
+			$created_timestamp = is_numeric( $order_data->time ) ? (int) $order_data->time : strtotime( $order_data->time );
+			$html .= esc_html(
+				sprintf(
+					__( '受注書ID: %1$d | 作成日: %2$s', 'ktpwp' ),
+					$order_data->id,
+					wp_date( __( 'Y年m月d日', 'ktpwp' ), $created_timestamp )
+				)
+			);
 			$html .= '</div>';
 
 			$html .= '</div>'; // .order-preview-document 終了
@@ -2562,38 +2569,38 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 			switch ( $progress ) {
 				case 1: // 受付中
 					return array(
-						'title' => '見積書',
-						'content' => '%sにつきましてお見積りいたします。',
+						'title' => __( '見積書', 'ktpwp' ),
+						'content' => __( '%sにつきましてお見積りいたします。', 'ktpwp' ),
 					);
 				case 2: // 見積中
 					return array(
-						'title' => '注文受書',
-						'content' => '%sにつきましてご注文をお受けしました。',
+						'title' => __( '注文受書', 'ktpwp' ),
+						'content' => __( '%sにつきましてご注文をお受けしました。', 'ktpwp' ),
 					);
 				case 3: // 受注
 					return array(
-						'title' => '納品書',
-						'content' => '%sにつきまして完了しました。',
+						'title' => __( '納品書', 'ktpwp' ),
+						'content' => __( '%sにつきまして完了しました。', 'ktpwp' ),
 					);
 				case 4: // 完了
 					return array(
-						'title' => '請求書',
-						'content' => '%sにつきまして請求申し上げます。',
+						'title' => __( '請求書', 'ktpwp' ),
+						'content' => __( '%sにつきまして請求申し上げます。', 'ktpwp' ),
 					);
 				case 5: // 請求済
 					return array(
-						'title' => '領収書',
-						'content' => '%sにつきましてお支払いを確認しました。',
+						'title' => __( '領収書', 'ktpwp' ),
+						'content' => __( '%sにつきましてお支払いを確認しました。', 'ktpwp' ),
 					);
 				case 6: // 入金済
 					return array(
-						'title' => '案件完了',
-						'content' => '%sにつきましては全て完了しています。',
+						'title' => __( '案件完了', 'ktpwp' ),
+						'content' => __( '%sにつきましては全て完了しています。', 'ktpwp' ),
 					);
 				default:
 					return array(
-						'title' => '受注書',
-						'content' => '%sにつきましてご依頼をお受けしました。',
+						'title' => __( '受注書', 'ktpwp' ),
+						'content' => __( '%sにつきましてご依頼をお受けしました。', 'ktpwp' ),
 					);
 			}
 		}
@@ -2652,7 +2659,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 				// 2ページ目以降はページ区切りを追加
                 if ( $page > 0 ) {
 					$html .= '<div style="page-break-before: always; margin-top: 30px;"></div>';
-					$html .= '<h3 style="font-size: 16px; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #333;">請求項目（' . ( $page + 1 ) . '/' . $total_pages . 'p）</h3>';
+					$html .= '<h3 style="font-size: 16px; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #333;">' . esc_html( sprintf( __( '請求項目（%1$d/%2$dp）', 'ktpwp' ), ( $page + 1 ), $total_pages ) ) . '</h3>';
 				} else {
 					// 1ページ目：請求金額、消費税、税込合計を表示
                     $suppress_tax_display = ( class_exists( 'KTPWP_Tax_Policy' ) && KTPWP_Tax_Policy::hide_tax_columns() );
@@ -2696,10 +2703,10 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 					
                     // 税区分に応じた表示
                     if ( $suppress_tax_display ) {
-                        $html .= '<h3 style="font-size: 16px; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #333;">請求項目（' . ( $page + 1 ) . '/' . $total_pages . 'p）　合計金額 : ' . number_format( $grand_total ) . '円</h3>';
+                        $html .= '<h3 style="font-size: 16px; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #333;">' . esc_html( sprintf( __( '請求項目（%1$d/%2$dp）', 'ktpwp' ), ( $page + 1 ), $total_pages ) ) . '　' . esc_html__( '合計金額', 'ktpwp' ) . ' : ' . esc_html( KTPWP_Settings::format_money( $grand_total ) ) . '</h3>';
                     } else {
                         if ( $tax_category === '外税' ) {
-                            $html .= '<h3 style="font-size: 16px; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #333;">請求項目（' . ( $page + 1 ) . '/' . $total_pages . 'p）　合計金額 : ' . number_format( $grand_total ) . '円　消費税 : ' . number_format( $tax_amount_ceiled ) . '円　税込合計 : ' . number_format( $total_with_tax_ceiled ) . '円</h3>';
+                            $html .= '<h3 style="font-size: 16px; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #333;">' . esc_html( sprintf( __( '請求項目（%1$d/%2$dp）', 'ktpwp' ), ( $page + 1 ), $total_pages ) ) . '　' . esc_html__( '合計金額', 'ktpwp' ) . ' : ' . esc_html( KTPWP_Settings::format_money( $grand_total ) ) . '　' . esc_html__( '消費税', 'ktpwp' ) . ' : ' . esc_html( KTPWP_Settings::format_money( $tax_amount_ceiled ) ) . '　' . esc_html__( '税込合計', 'ktpwp' ) . ' : ' . esc_html( KTPWP_Settings::format_money( $total_with_tax_ceiled ) ) . '</h3>';
                         } else {
                             // 内税の場合は税率別の内訳を表示
                             $tax_detail_text = '';
@@ -2712,20 +2719,20 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
                                     } else {
                                         $tax_rate_value = floatval( $tax_rate );
                                         $group_tax_amount = ceil( $group_amount * ( $tax_rate_value / 100 ) / ( 1 + $tax_rate_value / 100 ) );
-                                        $tax_rate_details[] = $tax_rate . '%: ' . number_format( $group_tax_amount ) . '円';
+                                        $tax_rate_details[] = $tax_rate . '%: ' . KTPWP_Settings::format_money( $group_tax_amount );
                                     }
                                 }
-                                $tax_detail_text = '（内税：' . implode( ', ', $tax_rate_details ) . '）';
+                                $tax_detail_text = sprintf( __( '（内税：%s）', 'ktpwp' ), implode( ', ', $tax_rate_details ) );
                             } else {
                                 // 単一税率の場合
                                 if ( array_key_first( $tax_rate_groups ) === 'no_tax_rate' ) {
                                     // 税率なしの場合は内税表示をしない
                                     $tax_detail_text = '';
                                 } else {
-                                    $tax_detail_text = '（内税：' . number_format( $tax_amount_ceiled ) . '円）';
+                                    $tax_detail_text = sprintf( __( '（内税：%s）', 'ktpwp' ), KTPWP_Settings::format_money( $tax_amount_ceiled ) );
                                 }
                             }
-                            $html .= '<h3 style="font-size: 16px; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #333;">請求項目（' . ( $page + 1 ) . '/' . $total_pages . 'p）　合計金額 : ' . number_format( $grand_total ) . '円' . $tax_detail_text . '</h3>';
+                            $html .= '<h3 style="font-size: 16px; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #333;">' . esc_html( sprintf( __( '請求項目（%1$d/%2$dp）', 'ktpwp' ), ( $page + 1 ), $total_pages ) ) . '　' . esc_html__( '合計金額', 'ktpwp' ) . ' : ' . esc_html( KTPWP_Settings::format_money( $grand_total ) ) . esc_html( $tax_detail_text ) . '</h3>';
                         }
                     }
 				}
@@ -2734,20 +2741,20 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 				$html .= '<div style="margin-bottom: 15px; font-size: 12px;">';
 
 				// ヘッダー行（税区分に応じて金額・税額の意味を明示）
-				$amount_label = ( $tax_category === '外税' ) ? '金額（税抜）' : '金額（税込）';
-				$price_label  = ( $tax_category === '外税' ) ? '単価（税抜）' : '単価（税込）';
-				$tax_col_label = ( $tax_category === '外税' ) ? '税額（外税）' : '税額（内税）';
+				$amount_label = ( $tax_category === '外税' ) ? __( '金額（税抜）', 'ktpwp' ) : __( '金額（税込）', 'ktpwp' );
+				$price_label  = ( $tax_category === '外税' ) ? __( '単価（税抜）', 'ktpwp' ) : __( '単価（税込）', 'ktpwp' );
+				$tax_col_label = ( $tax_category === '外税' ) ? __( '税額（外税）', 'ktpwp' ) : __( '税額（内税）', 'ktpwp' );
 				$html .= '<div style="display: flex; background: #f0f0f0; padding: 8px; font-weight: bold; border-bottom: 1px solid #ccc; align-items: center;">';
 				$html .= '<div style="width: 30px; text-align: center;">No.</div>';
-				$html .= '<div style="flex: 1; text-align: left; margin-left: 8px;">項目名</div>';
+				$html .= '<div style="flex: 1; text-align: left; margin-left: 8px;">' . esc_html__( '項目名', 'ktpwp' ) . '</div>';
 				$html .= '<div style="width: 80px; text-align: right;">' . esc_html( $price_label ) . '</div>';
-				$html .= '<div style="width: 60px; text-align: right;">数量</div>';
+				$html .= '<div style="width: 60px; text-align: right;">' . esc_html__( '数量', 'ktpwp' ) . '</div>';
 				$html .= '<div style="width: 80px; text-align: right;">' . esc_html( $amount_label ) . '</div>';
                 if ( ! ( class_exists( 'KTPWP_Tax_Policy' ) && KTPWP_Tax_Policy::hide_tax_columns() ) ) {
                     $html .= '<div style="width: 80px; text-align: right;">' . esc_html( $tax_col_label ) . '</div>';
-                    $html .= '<div style="width: 60px; text-align: center;">税率</div>';
+                    $html .= '<div style="width: 60px; text-align: center;">' . esc_html__( '税率', 'ktpwp' ) . '</div>';
                 }
-				$html .= '<div style="width: 100px; text-align: left; margin-left: 8px;">備考</div>';
+				$html .= '<div style="width: 100px; text-align: left; margin-left: 8px;">' . esc_html__( '備考', 'ktpwp' ) . '</div>';
 				$html .= '</div>';
 
 				$page_total = 0;
@@ -2796,9 +2803,9 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 					$html .= '<div style="display: flex; padding: 6px 8px; height: 24px; background: ' . esc_attr( $bg_color ) . '; align-items: center;">';
 					$html .= '<div style="width: 30px; text-align: center;">' . $item_no . '</div>';
 					$html .= '<div style="flex: 1; text-align: left; margin-left: 8px;">' . esc_html( $product_name ) . '</div>';
-					$html .= '<div style="width: 80px; text-align: right;">' . number_format( $price ) . '円</div>';
+					$html .= '<div style="width: 80px; text-align: right;">' . esc_html( KTPWP_Settings::format_money( $price ) ) . '</div>';
 					$html .= '<div style="width: 60px; text-align: right;">' . $quantity_display . $unit . '</div>';
-                    $html .= '<div style="width: 80px; text-align: right;">' . number_format( $amount ) . '円</div>';
+                    $html .= '<div style="width: 80px; text-align: right;">' . esc_html( KTPWP_Settings::format_money( $amount ) ) . '</div>';
 
                     if ( ! ( class_exists( 'KTPWP_Tax_Policy' ) && KTPWP_Tax_Policy::hide_tax_columns() ) ) {
                         // 行税額の計算（税率が設定されている場合のみ表示）
@@ -2814,7 +2821,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
                             } else {
                                 $item_tax_amount_value = ceil( $amount * ( $tax_rate / 100 ) / ( 1 + $tax_rate / 100 ) );
                             }
-                            $item_tax_amount_display = number_format( $item_tax_amount_value ) . '円';
+                            $item_tax_amount_display = KTPWP_Settings::format_money( $item_tax_amount_value );
                         }
                         $html .= '<div style="width: 80px; text-align: right;">' . $item_tax_amount_display . '</div>';
                         $html .= '<div style="width: 60px; text-align: center;">' . ( $tax_rate !== null ? $tax_rate . '%' : '' ) . '</div>';
@@ -2856,7 +2863,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 				if ( $total_pages > 1 ) {
 					// ページ小計行（右寄せで表示）
 					$html .= '<div style="display: flex; padding: 10px 8px; background: #f5f5f5; font-weight: bold; border-top: 1px solid #ccc; margin-top: 5px; align-items: center; justify-content: flex-end;">';
-					$html .= '<div style="text-align: right;">ページ小計　¥' . number_format( $page_total ) . '</div>';
+					$html .= '<div style="text-align: right;">' . esc_html__( 'ページ小計', 'ktpwp' ) . '　' . esc_html( KTPWP_Settings::format_money( $page_total ) ) . '</div>';
 					$html .= '</div>';
 				}
 
@@ -2897,26 +2904,26 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
                     if ( $suppress_tax_display ) {
                         // 税廃止/非表示モード: 税情報は出さず合計のみ
                         $html .= '<div style="display: flex; padding: 10px 8px; background: #e9ecef; font-weight: bold; border-top: 2px solid #ccc; margin-top: 5px; align-items: center; justify-content: flex-end;">';
-                        $html .= '<div style="text-align: right;">合計金額 : ' . number_format( $grand_total ) . '円</div>';
+                        $html .= '<div style="text-align: right;">' . esc_html__( '合計金額', 'ktpwp' ) . ' : ' . esc_html( KTPWP_Settings::format_money( $grand_total ) ) . '</div>';
                         $html .= '</div>';
                     } else {
                         if ( $tax_category === '外税' ) {
                             // 外税表示の場合
                             $html .= '<div style="display: flex; padding: 10px 8px; background: #e9ecef; font-weight: bold; border-top: 2px solid #ccc; margin-top: 5px; align-items: center; justify-content: flex-end;">';
-                            $html .= '<div style="text-align: right;">合計金額 : ' . number_format( $grand_total ) . '円</div>';
+                            $html .= '<div style="text-align: right;">' . esc_html__( '合計金額', 'ktpwp' ) . ' : ' . esc_html( KTPWP_Settings::format_money( $grand_total ) ) . '</div>';
                             $html .= '</div>';
                             
                             $html .= '<div style="display: flex; padding: 10px 8px; background: #e9ecef; font-weight: bold; border-top: 1px solid #ccc; align-items: center; justify-content: flex-end;">';
-                            $html .= '<div style="text-align: right;">消費税 : ' . number_format( $tax_amount_ceiled ) . '円</div>';
+                            $html .= '<div style="text-align: right;">' . esc_html__( '消費税', 'ktpwp' ) . ' : ' . esc_html( KTPWP_Settings::format_money( $tax_amount_ceiled ) ) . '</div>';
                             $html .= '</div>';
                             
                             $html .= '<div style="display: flex; padding: 10px 8px; background: #e9ecef; font-weight: bold; border-top: 1px solid #ccc; align-items: center; justify-content: flex-end;">';
-                            $html .= '<div style="text-align: right;">税込合計 : ' . number_format( $total_with_tax_ceiled ) . '円</div>';
+                            $html .= '<div style="text-align: right;">' . esc_html__( '税込合計', 'ktpwp' ) . ' : ' . esc_html( KTPWP_Settings::format_money( $total_with_tax_ceiled ) ) . '</div>';
                             $html .= '</div>';
                         } else {
                             // 内税表示の場合（デフォルト）
                             $html .= '<div style="display: flex; padding: 10px 8px; background: #e9ecef; font-weight: bold; border-top: 2px solid #ccc; margin-top: 5px; align-items: center; justify-content: flex-end;">';
-                            $html .= '<div style="text-align: right;">合計金額 : ' . number_format( $grand_total ) . '円（内税 ' . number_format( $tax_amount_ceiled ) . '円）</div>';
+                            $html .= '<div style="text-align: right;">' . esc_html__( '合計金額', 'ktpwp' ) . ' : ' . esc_html( KTPWP_Settings::format_money( $grand_total ) ) . esc_html( sprintf( __( '（内税 %s）', 'ktpwp' ), KTPWP_Settings::format_money( $tax_amount_ceiled ) ) ) . '</div>';
                             $html .= '</div>';
                         }
                     }

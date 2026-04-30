@@ -111,81 +111,81 @@ foreach ($required_tables as $table) {
 
 // カテゴリー定義
 $categories = array(
-    'テック' => array(
+    'Tech' => array(
         'tax_rate' => 10.00,
-        'description' => 'IT・テクノロジー関連'
+        'description' => 'IT and technology services'
     ),
-    '不動産' => array(
-        'tax_rate' => null, // 非課税
-        'description' => '不動産・建設関連'
+    'Real Estate' => array(
+        'tax_rate' => null, // Tax exempt
+        'description' => 'Real estate and construction services'
     ),
-    '一般' => array(
+    'General' => array(
         'tax_rate' => 10.00,
-        'description' => '一般的なサービス'
+        'description' => 'General business services'
     ),
-    'ロジスティック' => array(
+    'Logistics' => array(
         'tax_rate' => 10.00,
-        'description' => '物流・輸送関連'
+        'description' => 'Logistics and transportation services'
     ),
-    '食品' => array(
+    'Food' => array(
         'tax_rate' => 8.00,
-        'description' => '食品・飲食関連'
+        'description' => 'Food and restaurant services'
     ),
-    '医療' => array(
+    'Healthcare' => array(
         'tax_rate' => 10.00,
-        'description' => '医療・ヘルスケア関連'
+        'description' => 'Medical and healthcare services'
     ),
-    '教育' => array(
+    'Education' => array(
         'tax_rate' => 10.00,
-        'description' => '教育・研修関連'
+        'description' => 'Education and training services'
     ),
-    '金融' => array(
+    'Finance' => array(
         'tax_rate' => 10.00,
-        'description' => '金融・保険関連'
+        'description' => 'Finance and insurance services'
     )
 );
 
 // カテゴリー別データ定義
 $category_data = array(
-    'テック' => array(
-        'companies' => array('株式会社テックソリューション', '有限会社デジタルクリエイター', '合同会社システム開発', '株式会社ウェブデザイン'),
-        'services' => array('ウェブサイト制作', 'システム開発', 'モバイルアプリ開発', 'クラウド構築', 'データベース設計', 'API開発'),
-        'skills' => array('プログラミング', 'システム設計', 'データベース管理', 'クラウドインフラ', 'セキュリティ対策', 'AI・機械学習')
+    'Tech' => array(
+        'companies' => array('Tech Solutions Inc.', 'Digital Creators LLC', 'System Development Partners', 'Web Design Studio Inc.'),
+        'services' => array('Website Development', 'System Development', 'Mobile App Development', 'Cloud Infrastructure Setup', 'Database Design', 'API Development'),
+        'skills' => array('Programming', 'System Design', 'Database Administration', 'Cloud Infrastructure', 'Security Consulting', 'AI and Machine Learning')
     ),
-    '不動産' => array(
-        'companies' => array('株式会社不動産コンサルティング', '有限会社建設工業', '合同会社建築設計', '株式会社プロパティマネジメント'),
-        'services' => array('不動産仲介', '物件管理', '建築設計', '建設工事', '不動産投資相談', '物件査定'),
-        'skills' => array('建築設計', '不動産鑑定', '施工管理', 'CAD設計', '不動産法務', 'プロジェクトマネジメント')
+    'Real Estate' => array(
+        'companies' => array('Real Estate Consulting Inc.', 'Construction Works LLC', 'Architectural Design Partners', 'Property Management Inc.'),
+        'services' => array('Real Estate Brokerage', 'Property Management', 'Architectural Design', 'Construction Work', 'Real Estate Investment Consulting', 'Property Appraisal'),
+        'skills' => array('Architectural Design', 'Real Estate Appraisal', 'Construction Management', 'CAD Design', 'Real Estate Legal Support', 'Project Management')
     ),
-    '一般' => array(
-        'companies' => array('株式会社サンプル商事', '有限会社コンサルティング', '合同会社デザイン工房', '株式会社マーケティングプロ'),
-        'services' => array('経営コンサルティング', 'マーケティング戦略', 'デザイン制作', '翻訳サービス', 'イベント企画', '調査・分析'),
-        'skills' => array('経営コンサル', 'マーケティング', 'デザイン', '翻訳', 'イベント企画', 'データ分析')
+    'General' => array(
+        'companies' => array('Sample Trading Inc.', 'Business Consulting LLC', 'Design Workshop Partners', 'Marketing Pro Inc.'),
+        'services' => array('Business Consulting', 'Marketing Strategy', 'Design Production', 'Translation Services', 'Event Planning', 'Research and Analysis'),
+        'skills' => array('Business Consulting', 'Marketing', 'Design', 'Translation', 'Event Planning', 'Data Analysis')
     ),
-    'ロジスティック' => array(
-        'companies' => array('株式会社ロジスティクス', '有限会社輸送サービス', '合同会社倉庫管理', '株式会社配送センター'),
-        'services' => array('物流管理', '配送サービス', '倉庫管理', '輸出入手続き', 'サプライチェーン管理', '配送ルート最適化'),
-        'skills' => array('物流管理', '配送計画', '倉庫運営', '通関手続き', 'ルート最適化', '在庫管理')
+    'Logistics' => array(
+        'companies' => array('Logistics Inc.', 'Transport Services LLC', 'Warehouse Management Partners', 'Delivery Center Inc.'),
+        'services' => array('Logistics Management', 'Delivery Services', 'Warehouse Management', 'Import and Export Procedures', 'Supply Chain Management', 'Delivery Route Optimization'),
+        'skills' => array('Logistics Management', 'Delivery Planning', 'Warehouse Operations', 'Customs Procedures', 'Route Optimization', 'Inventory Management')
     ),
-    '食品' => array(
-        'companies' => array('株式会社フードサービス', '有限会社ケータリング', '合同会社食材配送', '株式会社レストラン運営'),
-        'services' => array('食品', 'ケータリングサービス', '食材配送', 'レストラン運営', '食品加工', '栄養管理', '食品安全管理'),
-        'skills' => array('食品', '食品品質管理', '栄養管理', '食品安全', '食材調達', 'メニュー開発', '衛生管理')
+    'Food' => array(
+        'companies' => array('Food Services Inc.', 'Catering LLC', 'Food Delivery Partners', 'Restaurant Operations Inc.'),
+        'services' => array('Food', 'Catering Services', 'Food Delivery', 'Restaurant Operations', 'Food Processing', 'Nutrition Management', 'Food Safety Management'),
+        'skills' => array('Food', 'Food Quality Control', 'Nutrition Management', 'Food Safety', 'Ingredient Procurement', 'Menu Development', 'Sanitation Management')
     ),
-    '医療' => array(
-        'companies' => array('株式会社メディカルサービス', '有限会社ヘルスケア', '合同会社医療コンサル', '株式会社薬局運営'),
-        'services' => array('医療コンサルティング', '健康診断', '薬局運営', '医療機器管理', '看護サービス', '医療事務'),
-        'skills' => array('医療コンサル', '看護', '薬剤師', '医療事務', '健康管理', '医療機器操作')
+    'Healthcare' => array(
+        'companies' => array('Medical Services Inc.', 'Healthcare LLC', 'Medical Consulting Partners', 'Pharmacy Operations Inc.'),
+        'services' => array('Medical Consulting', 'Health Checkups', 'Pharmacy Operations', 'Medical Equipment Management', 'Nursing Services', 'Medical Administration'),
+        'skills' => array('Medical Consulting', 'Nursing', 'Pharmacist Services', 'Medical Administration', 'Health Management', 'Medical Equipment Operation')
     ),
-    '教育' => array(
-        'companies' => array('株式会社教育サービス', '有限会社研修センター', '合同会社オンライン教育', '株式会社スクール運営'),
-        'services' => array('研修サービス', 'オンライン教育', 'スクール運営', '教材開発', '資格取得支援', '教育コンサル'),
-        'skills' => array('講師', '教材開発', '教育コンサル', 'オンライン教育', '資格指導', 'カリキュラム設計')
+    'Education' => array(
+        'companies' => array('Education Services Inc.', 'Training Center LLC', 'Online Education Partners', 'School Operations Inc.'),
+        'services' => array('Training Services', 'Online Education', 'School Operations', 'Teaching Material Development', 'Certification Support', 'Education Consulting'),
+        'skills' => array('Instructor Services', 'Teaching Material Development', 'Education Consulting', 'Online Education', 'Certification Training', 'Curriculum Design')
     ),
-    '金融' => array(
-        'companies' => array('株式会社フィナンシャルサービス', '有限会社保険代理店', '合同会社投資コンサル', '株式会社会計事務所'),
-        'services' => array('投資コンサルティング', '保険相談', '会計サービス', '税務相談', '資産運用', 'リスク管理'),
-        'skills' => array('投資コンサル', '保険設計', '会計', '税務', '資産運用', 'リスク管理')
+    'Finance' => array(
+        'companies' => array('Financial Services Inc.', 'Insurance Agency LLC', 'Investment Consulting Partners', 'Accounting Office Inc.'),
+        'services' => array('Investment Consulting', 'Insurance Consulting', 'Accounting Services', 'Tax Consulting', 'Asset Management', 'Risk Management'),
+        'skills' => array('Investment Consulting', 'Insurance Planning', 'Accounting', 'Tax Services', 'Asset Management', 'Risk Management')
     )
 );
 
@@ -256,12 +256,12 @@ safe_echo("==========================================");
 
 // 1. 顧客データの作成（カテゴリー別）
 $clients = array();
-$client_categories = array('テック', '不動産', '一般', 'ロジスティック', '食品', '医療');
+$client_categories = array('Tech', 'Real Estate', 'General', 'Logistics', 'Food', 'Healthcare');
 
 foreach ($client_categories as $category) {
     $companies = $category_data[$category]['companies'];
     $company_name = $companies[array_rand($companies)];
-    $names = array('田中太郎', '佐藤花子', '鈴木一郎', '高橋美咲', '渡辺健太', '伊藤恵子');
+    $names = array('John Smith', 'Emily Johnson', 'Michael Brown', 'Sarah Davis', 'David Wilson', 'Jessica Taylor');
     $name = $names[array_rand($names)];
     
     $clients[] = array(
@@ -298,12 +298,12 @@ foreach ($clients as $client) {
 
 // 2. 協力会社データの作成（カテゴリー別）
 $suppliers = array();
-$supplier_categories = array('テック', '不動産', '一般', 'ロジスティック', '食品', '教育');
+$supplier_categories = array('Tech', 'Real Estate', 'General', 'Logistics', 'Food', 'Education');
 
 foreach ($supplier_categories as $category) {
     $companies = $category_data[$category]['companies'];
     $company_name = $companies[array_rand($companies)];
-    $names = array('山田次郎', '中村由美', '小林正男', '加藤真理', '松本和也', '井上智子');
+    $names = array('Robert Anderson', 'Laura Martinez', 'William Thompson', 'Karen White', 'James Harris', 'Linda Clark');
     $name = $names[array_rand($names)];
     
     $suppliers[] = array(
@@ -344,7 +344,7 @@ foreach ($suppliers as $supplier) {
 
 // 3. サービスデータの作成（カテゴリー別・税率自動設定）
 $services = array();
-$service_categories = array('テック', '不動産', '一般', 'ロジスティック', '食品', '金融');
+$service_categories = array('Tech', 'Real Estate', 'General', 'Logistics', 'Food', 'Finance');
 
 foreach ($service_categories as $category) {
     $service_names = $category_data[$category]['services'];
@@ -358,14 +358,14 @@ foreach ($service_categories as $category) {
         $service_name = $service_names[$index];
         
         // 品名に基づいて税率を決定
-        if ($service_name === '食品') {
+        if ($service_name === 'Food') {
             $tax_rate = 8.00; // サービス名「食品」のみ税率8%
         } else {
             $tax_rate = 10.00; // その他は一般税率10%
         }
         
         $price = rand(50000, 800000);
-        $units = array('式', '月', '時間', '件', '回');
+        $units = array('project', 'month', 'hour', 'item', 'session');
         $unit = $units[array_rand($units)];
         
         $services[] = array(
@@ -401,7 +401,7 @@ foreach ($services as $service) {
 }
 
 // 4. 職能データの作成（カテゴリー別・税率自動設定）
-$skill_categories = array('テック', '不動産', '一般', 'ロジスティック', '食品', '医療');
+$skill_categories = array('Tech', 'Real Estate', 'General', 'Logistics', 'Food', 'Healthcare');
 
 safe_echo("職能作成を開始します...");
 safe_echo("協力会社数: " . count($supplier_ids));
@@ -427,7 +427,7 @@ foreach ($supplier_ids as $supplier_id) {
     
     if (!isset($category_data[$supplier_category])) {
         safe_echo("ERROR: カテゴリー '{$supplier_category}' のデータが定義されていません");
-        $supplier_category = '一般';
+        $supplier_category = 'General';
     }
     
     $skill_names = $category_data[$supplier_category]['skills'];
@@ -441,7 +441,7 @@ foreach ($supplier_ids as $supplier_id) {
     
     // 職能名「食品」があるかチェック
     foreach ($skill_names as $skill_name) {
-        if ($skill_name === '食品') {
+        if ($skill_name === 'Food') {
             $has_food_skill = true;
             break;
         }
@@ -456,8 +456,8 @@ foreach ($supplier_ids as $supplier_id) {
         );
         
         // 職能名「食品」を必ず1つ含めるように修正
-        $skill_names_for_tax_8 = array('食品'); // 税率8%用の職能名リスト
-        $skill_names_for_tax_10 = array_diff($skill_names, array('食品')); // 税率10%用の職能名リスト（食品以外）
+        $skill_names_for_tax_8 = array('Food'); // 税率8%用の職能名リスト
+        $skill_names_for_tax_10 = array_diff($skill_names, array('Food')); // 税率10%用の職能名リスト（食品以外）
         
         safe_echo("税率8%用職能名: " . implode(', ', $skill_names_for_tax_8));
         safe_echo("税率10%用職能名: " . implode(', ', $skill_names_for_tax_10));
@@ -489,7 +489,7 @@ foreach ($supplier_ids as $supplier_id) {
         
         $unit_price = rand(5000, 50000);
         $quantity = rand(1, 10);
-        $unit = '時間';
+        $unit = 'hour';
         
         // 税率がnullの場合は10%をデフォルトとして設定
         $default_tax_rate = $tax_rate !== null ? $tax_rate : 10.00;
@@ -523,7 +523,7 @@ foreach ($supplier_ids as $supplier_id) {
 
 // 5. 受注書データの作成（ランダムな進捗分布）
 $order_statuses = array(1, 2, 3, 4, 5, 6); // 受付中、見積中、受注、進行中、完成、請求済
-$order_names = array('Webサイトリニューアル', 'ECサイト構築', '業務システム開発', 'マーケティング戦略策定', 'ロゴデザイン制作', 'データ分析サービス', 'モバイルアプリ開発', 'SEO対策サービス', 'SNS運用代行', '動画制作');
+$order_names = array('Website Renewal', 'E-commerce Site Development', 'Business System Development', 'Marketing Strategy Planning', 'Logo Design Production', 'Data Analysis Service', 'Mobile App Development', 'SEO Consulting Service', 'Social Media Management', 'Video Production');
 
 $order_ids = array();
 foreach ($client_ids as $client_id) {
@@ -594,12 +594,12 @@ foreach ($client_ids as $client_id) {
         
         // ステータスラベルの定義
         $status_labels = array(
-            1 => '受付中',
-            2 => '見積中',
-            3 => '受注',
-            4 => '進行中',
-            5 => '完成',
-            6 => '請求済'
+            1 => 'Received',
+            2 => 'Estimating',
+            3 => 'Ordered',
+            4 => 'In Progress',
+            5 => 'Completed',
+            6 => 'Invoiced'
         );
         
         // 作成日時を設定
@@ -678,7 +678,7 @@ foreach ($client_ids as $client_id) {
             $user_name,
             $search_field,
             $status,
-            'ダミーデータ',
+            'Dummy Data',
             $completion_date
         );
         
@@ -798,7 +798,7 @@ function add_invoice_items_to_order($order_id, $service_ids) {
                         'quantity' => $quantity,
                         'amount' => $total_price,
                         'tax_rate' => $service->tax_rate,
-                        'remarks' => 'ダミーデータ',
+                        'remarks' => 'Dummy Data',
                         'sort_order' => 1,
                         'created_at' => current_time('mysql'),
                         'updated_at' => current_time('mysql')
@@ -876,8 +876,8 @@ function add_cost_items_to_order($order_id, $supplier_ids) {
                 'unit' => $skill->unit,
                 'amount' => $total_cost,
                 'tax_rate' => $default_tax_rate,
-                'remarks' => 'ダミーデータ',
-                'purchase' => 'ダミーデータ',
+                'remarks' => 'Dummy Data',
+                'purchase' => 'Dummy Data',
                 'ordered' => 0,
                 'sort_order' => 1,
                 'created_at' => current_time('mysql'),

@@ -13,7 +13,7 @@
 
         const orderId = $('input[name="order_id"]').val() || $('#order_id').val();
         if (!orderId) {
-            alert('受注書IDが見つかりません。');
+            alert(ktpwpTranslate('受注書IDが見つかりません。'));
             return;
         }
 
@@ -381,7 +381,7 @@
                                     <strong style="font-size: ${isSmallScreen ? '14px' : '15px'}; color: #1f2937; word-break: break-word; flex-shrink: 0;">
                                         ID: ${serviceId} - ${escapeHtml(serviceName)}
                                     </strong>
-                                    <span style="color: #6b7280; font-size: ${isSmallScreen ? '12px' : '13px'}; flex-shrink: 0;"><strong>価格:</strong> ${formatPriceDisplay(price)}円</span>
+                                    <span style="color: #6b7280; font-size: ${isSmallScreen ? '12px' : '13px'}; flex-shrink: 0;"><strong>価格:</strong> ${ktpwpFormatMoney(price)}</span>
                                     <span style="color: #6b7280; font-size: ${isSmallScreen ? '12px' : '13px'}; flex-shrink: 0;"><strong>単位:</strong> ${escapeHtml(unit)}</span>
                                     ${taxInfoSegment}
                                     <span style="color: #6b7280; font-size: ${isSmallScreen ? '12px' : '13px'}; flex-shrink: 0;"><strong>カテゴリー:</strong> ${escapeHtml(category)}</span>

@@ -523,12 +523,12 @@
         if (invoiceTotalDisplay.length > 0) {
             if (taxCategory === '外税') {
                 // 外税表示の場合：3行表示
-                invoiceTotalDisplay.html('合計金額 : ' + invoiceTotalCeiled.toLocaleString() + '円');
+                invoiceTotalDisplay.html(ktpwpTranslate('合計金額') + ' : ' + ktpwpFormatMoney(invoiceTotalCeiled));
                 
                 // 消費税表示を更新（税率別の内訳を表示）
                 const taxDisplay = $('.invoice-items-tax');
                 if (taxDisplay.length > 0) {
-                    let taxDetailHtml = '消費税 : ' + totalTaxAmountCeiled.toLocaleString() + '円';
+                    let taxDetailHtml = ktpwpTranslate('消費税') + ' : ' + ktpwpFormatMoney(totalTaxAmountCeiled);
                     
                                     // 税率別の内訳を追加
                 const taxRateDetails = [];
@@ -546,7 +546,7 @@
                         const groupAmount = taxRateGroups[taxRateKey];
                         const taxAmount = Math.ceil(groupAmount * (rate / 100));
                         if (groupAmount > 0) {
-                            taxRateDetails.push(`${rate}%: ${taxAmount.toLocaleString()}円`);
+                            taxRateDetails.push(`${rate}%: ${ktpwpFormatMoney(taxAmount)}`);
                         }
                     }
                 });
@@ -561,11 +561,11 @@
                 // 税込合計表示を更新
                 const totalWithTaxDisplay = $('.invoice-items-total-with-tax');
                 if (totalWithTaxDisplay.length > 0) {
-                    totalWithTaxDisplay.html('税込合計 : ' + totalWithTax.toLocaleString() + '円');
+                    totalWithTaxDisplay.html(ktpwpTranslate('税込合計') + ' : ' + ktpwpFormatMoney(totalWithTax));
                 }
             } else {
                 // 内税表示の場合：税率別の内訳を表示
-                let totalDisplayHtml = '金額合計：' + invoiceTotalCeiled.toLocaleString() + '円';
+                let totalDisplayHtml = ktpwpTranslate('金額合計') + ' : ' + ktpwpFormatMoney(invoiceTotalCeiled);
                 
                 // 税率別の内訳を追加
                 const taxRateDetails = [];
@@ -583,13 +583,13 @@
                         const groupAmount = taxRateGroups[taxRateKey];
                         const taxAmount = Math.ceil(groupAmount * (rate / 100) / (1 + rate / 100));
                         if (groupAmount > 0) {
-                            taxRateDetails.push(`${rate}%: ${taxAmount.toLocaleString()}円`);
+                            taxRateDetails.push(`${rate}%: ${ktpwpFormatMoney(taxAmount)}`);
                         }
                     }
                 });
                 
                 if (taxRateDetails.length > 0) {
-                    totalDisplayHtml += '　（内税：' + taxRateDetails.join(', ') + '）';
+                    totalDisplayHtml += ' (' + ktpwpTranslate('内税') + ' : ' + taxRateDetails.join(', ') + ')';
                 }
                 
                 invoiceTotalDisplay.html(totalDisplayHtml);
@@ -613,9 +613,9 @@
         if (costTotalDisplay.length > 0) {
             const hideCostTax = window.ktp_tax_policy && (window.ktp_tax_policy.mode === 'abolished' || window.ktp_tax_policy.hide_tax_columns);
             if (hideCostTax) {
-                costTotalDisplay.html('金額合計：' + costTotalCeiled.toLocaleString() + '円');
+                costTotalDisplay.html(ktpwpTranslate('金額合計') + ' : ' + ktpwpFormatMoney(costTotalCeiled));
             } else {
-                costTotalDisplay.html('金額合計：' + costTotalCeiled.toLocaleString() + '円　（内税：' + costTotalTaxAmountCeiled.toLocaleString() + '円）');
+                costTotalDisplay.html(ktpwpTranslate('金額合計') + ' : ' + ktpwpFormatMoney(costTotalCeiled) + ' (' + ktpwpTranslate('内税') + ' : ' + ktpwpFormatMoney(costTotalTaxAmountCeiled) + ')');
             }
             costTotalDisplay.show();
             const costTaxDisplay = $('.cost-items-tax');
@@ -628,7 +628,7 @@
         // const profitDisplay = $('.profit-display');
         // if (profitDisplay.length > 0) {
         //     const profitColor = profit >= 0 ? '#28a745' : '#dc3545';
-        //     profitDisplay.html('利益 : ' + profit.toLocaleString() + '円');
+        //     profitDisplay.html(ktpwpTranslate('利益') + ' : ' + ktpwpFormatMoney(profit));
         //     profitDisplay.css('color', profitColor);
         // 
         //     // CSSクラスを更新
@@ -729,7 +729,7 @@
         // 今回は呼び出し元を信頼し、ここではチェックを簡略化または削除の方向で検討したが、まずはログで状況把握
         const productNameValue = (typeof rawProductName === 'string') ? rawProductName.trim() : '';
         if (productNameValue === '') {
-            // alert('品名を入力してください。(addNewRow)'); // クリックハンドラでアラートを出すので、ここでは不要
+            // alert(ktpwpTranslate('品名を入力してください。(addNewRow)')); // クリックハンドラでアラートを出すので、ここでは不要
             if (window.ktpDebugMode) console.warn(`[INVOICE][${callId}] addNewRow: 品名が空の状態で呼び出されましたが、処理を続行します（本来はクリックハンドラでブロックされるべきです）。`);
             // return false; // ここで return false すると、クリックハンドラの品名チェックが機能していない場合に二重チェックになる
                           // ただし、現状問題が解決していないため、ここでも止めることを検討したが、まずはログで状況把握
@@ -805,11 +805,11 @@
 
         // 最後の1行は削除しない
         if (tbody.find('tr').length <= 1) {
-            alert('最低1行は必要です。');
+            alert(ktpwpTranslate('最低1行は必要です。'));
             return;
         }
 
-        if (confirm('この行を削除しますか？')) {
+        if (confirm(ktpwpTranslate('この行を削除しますか？'))) {
             const itemId = currentRow.find('input[name*="[id]"]').val();
             const orderId = $('input[name="order_id"]').val() || $('#order_id').val();
 
@@ -857,7 +857,7 @@
                             }
                         } catch (e) {
                             if (window.ktpDebugMode) console.error('[INVOICE] deleteRowレスポンスパースエラー', e, response);
-                            alert('行削除の応答処理中にエラーが発生しました。\n詳細: ' + (typeof response === 'string' ? response : JSON.stringify(response)));
+                            alert(ktpwpTranslate('行削除の応答処理中にエラーが発生しました。\n詳細: ') + (typeof response === 'string' ? response : JSON.stringify(response)));
                         }
                     },
                     error: function (xhr, status, error) {
@@ -874,7 +874,7 @@
                             }
                         }
                         errorDetail += '\nステータス: ' + xhr.status + ' ' + error;
-                        alert('行の削除中にサーバーエラーが発生しました。\n' + errorDetail);
+                        alert(ktpwpTranslate('行の削除中にサーバーエラーが発生しました。\n') + errorDetail);
                     }
                 });
             } else if (itemId === '0') {
@@ -981,16 +981,16 @@
                                     // updateRowIndexes($(event.target).closest('table'));
                                 } else {
                                     if (window.ktpDebugMode) console.warn('[INVOICE] 並び順の保存に失敗しました。', result);
-                                    alert('並び順の保存に失敗しました。: ' + (result.data && result.data.message ? result.data.message : 'サーバーエラー'));
+                                    alert(ktpwpTranslate('並び順の保存に失敗しました。: ') + (result.data && result.data.message ? result.data.message : 'サーバーエラー'));
                                 }
                             } catch (e) {
                                 if (window.ktpDebugMode) console.error('[INVOICE] updateItemOrderレスポンスパースエラー', e, response);
-                                alert('並び順保存の応答処理中にエラーが発生しました。');
+                                alert(ktpwpTranslate('並び順保存の応答処理中にエラーが発生しました。'));
                             }
                         },
                         error: function (xhr, status, error) {
                             if (window.ktpDebugMode) console.error('[INVOICE] updateItemOrderエラー', { status, error, responseText: xhr.responseText });
-                            alert('並び順の保存中にサーバーエラーが発生しました。');
+                            alert(ktpwpTranslate('並び順の保存中にサーバーエラーが発生しました。'));
                         }
                     });
                 } else {
@@ -1193,7 +1193,7 @@
             const productNameValueCH = (typeof rawProductNameCH === 'string') ? rawProductNameCH.trim() : '';
 
             if (productNameValueCH === '') {
-                alert('品名を入力してください。');
+                alert(ktpwpTranslate('品名を入力してください。'));
                 if (window.ktpDebugMode) console.log(`[INVOICE][${clickId}] クリックハンドラ: 品名未入力。 addNewRow を呼び出さずに処理を中断します。これがこのハンドラの最後のログになるはずです。`);
                 return false;
             }
@@ -1274,7 +1274,7 @@
             } else {
                 if (window.ktpDebugMode) console.error('[INVOICE-ITEMS] ktpShowServiceSelector関数が見つかりません');
                 if (window.ktpDebugMode) console.error('[INVOICE-ITEMS] 利用可能なwindow関数:', Object.keys(window).filter(key => key.includes('ktp')));
-                alert('サービス選択機能の読み込みに失敗しました。ページを再読み込みしてください。');
+                alert(ktpwpTranslate('サービス選択機能の読み込みに失敗しました。ページを再読み込みしてください。'));
             }
         });
 

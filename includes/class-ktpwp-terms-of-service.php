@@ -175,6 +175,86 @@ kantanpro22@gmail.com
     }
 
     /**
+     * デフォルトの利用規約内容（英語）を取得
+     */
+    public static function get_default_terms_content_en() {
+        return '### Article 1 (Application)
+These Terms apply to the use of the KantanPro plugin (the "Plugin").
+
+### Article 2 (Conditions of Use)
+1. The Plugin is intended for use in a WordPress environment.
+2. Users must have the appropriate authority to use the Plugin.
+
+### Article 3 (Prohibited Acts)
+Users must not engage in any of the following acts when using the Plugin:
+1. Acts that violate laws, regulations, or public order and morals
+2. Acts related to criminal activity
+3. Acts that interfere with the operation of the Plugin
+4. Acts that cause inconvenience to other users
+5. Any other acts deemed inappropriate by us
+
+### Article 4 (Suspension of the Plugin)
+If we determine that any of the following circumstances apply, we may suspend or interrupt all or part of the Plugin without prior notice to users.
+1. Maintenance, inspection, or updates of computer systems related to the Plugin
+2. Difficulty providing the Plugin due to force majeure such as earthquakes, lightning, fire, power outages, or natural disasters
+3. Any other circumstance in which we determine that providing the Plugin is difficult
+
+### Article 5 (Disclaimer)
+1. We are not responsible for any transactions, communications, disputes, or other matters arising between users and other users or third parties in connection with the Plugin.
+2. We are not responsible for any damages arising from the use of the Plugin.
+3. We are not responsible for any loss of data arising from the use of the Plugin.
+
+### Article 6 (Changes to Services)
+We may change the contents of the Plugin or discontinue providing the Plugin without notice to users, and we are not responsible for any damages incurred by users as a result.
+
+### Article 7 (Changes to These Terms)
+We may change these Terms at any time without notice to users if we determine that such changes are necessary.
+
+### Article 8 (Governing Law and Jurisdiction)
+1. These Terms are governed by the laws of Japan.
+2. If a dispute arises in connection with the Plugin, the court having jurisdiction over our head office location shall have exclusive agreed jurisdiction.
+
+### Article 9 (Contact)
+For inquiries regarding these Terms, please contact us at the following email address.
+kantanpro22@gmail.com
+
+End';
+    }
+
+    /**
+     * 利用規約を英語で表示するか判定
+     */
+    private function should_translate_terms_to_english() {
+        $locale = function_exists( 'determine_locale' ) ? determine_locale() : get_locale();
+        return strpos( strtolower( (string) $locale ), 'en' ) === 0;
+    }
+
+    /**
+     * DB保存済みの初期日本語規約か判定
+     */
+    private function is_default_japanese_terms_content( $content ) {
+        $content = (string) $content;
+        return strpos( $content, '### 第1条（適用）' ) !== false && strpos( $content, 'kantanpro22@gmail.com' ) !== false;
+    }
+
+    /**
+     * 表示ロケールに応じた初期規約を取得
+     */
+    private function get_default_terms_content_for_locale() {
+        return $this->should_translate_terms_to_english() ? self::get_default_terms_content_en() : self::get_default_terms_content();
+    }
+
+    /**
+     * 利用規約タイトルを取得
+     */
+    private function get_terms_title() {
+        if ( $this->should_translate_terms_to_english() ) {
+            return sprintf( __( '%1$s %2$s Terms of Service', 'ktpwp' ), KANTANPRO_PLUGIN_NAME, KANTANPRO_PLUGIN_VERSION );
+        }
+
+        return KANTANPRO_PLUGIN_NAME . KANTANPRO_PLUGIN_VERSION . '利用規約';
+    }
+    /**
      * 利用規約メニューを追加
      */
     public function add_terms_menu() {
@@ -301,7 +381,7 @@ kantanpro22@gmail.com
 
                 <h3><?php echo esc_html__( '利用規約の表示', 'ktpwp' ); ?></h3>
                 <div style="background: #f9f9f9; padding: 20px; border: 1px solid #ddd; border-radius: 4px;">
-                    <h2 style="color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; margin-bottom: 20px;">KantanPro<?php echo KANTANPRO_PLUGIN_VERSION; ?>利用規約</h2>
+                    <h2 style="color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; margin-bottom: 20px;"><?php echo esc_html( $this->get_terms_title() ); ?></h2>
                     <?php echo $this->format_terms_content( $terms ? $terms->terms_content : '' ); ?>
                 </div>
             </div>
@@ -709,7 +789,7 @@ kantanpro22@gmail.com
             $table_exists = $wpdb->get_var( "SHOW TABLES LIKE '$table_name'" );
             if ( ! $table_exists ) {
                 // それでも失敗した場合はデフォルトの利用規約を返す
-                return self::get_default_terms_content();
+                return $this->get_default_terms_content_for_locale();
             }
         }
         
@@ -717,12 +797,16 @@ kantanpro22@gmail.com
         
         if ( ! $terms ) {
             // データが存在しない場合はデフォルトの利用規約を返す
-            return self::get_default_terms_content();
+            return $this->get_default_terms_content_for_locale();
         }
         
         if ( empty( trim( $terms->terms_content ) ) ) {
             // 内容が空の場合はデフォルトの利用規約を返す
-            return self::get_default_terms_content();
+            return $this->get_default_terms_content_for_locale();
+        }
+
+        if ( $this->should_translate_terms_to_english() && $this->is_default_japanese_terms_content( $terms->terms_content ) ) {
+            return self::get_default_terms_content_en();
         }
         
         return $terms->terms_content;
@@ -743,13 +827,15 @@ kantanpro22@gmail.com
      */
     private function display_public_terms_page() {
         $terms_content = $this->get_terms_content();
+        $terms_lang    = $this->should_translate_terms_to_english() ? 'en' : 'ja';
+        $terms_title   = $this->get_terms_title();
         ?>
         <!DOCTYPE html>
-        <html lang="ja">
+        <html lang="<?php echo esc_attr( $terms_lang ); ?>">
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>KantanPro<?php echo KANTANPRO_PLUGIN_VERSION; ?>利用規約</title>
+            <title><?php echo esc_html( $terms_title ); ?></title>
             <style>
                 body {
                     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -809,11 +895,11 @@ kantanpro22@gmail.com
         </head>
         <body>
             <div class="container">
-                <h1>KantanPro<?php echo KANTANPRO_PLUGIN_VERSION; ?>利用規約</h1>
+                <h1><?php echo esc_html( $terms_title ); ?></h1>
                 <?php echo $this->format_terms_content( $terms_content ); ?>
                 
                 <div class="back-link">
-                    <a href="javascript:window.close();">このウィンドウを閉じる</a>
+                    <a href="javascript:window.close();"><?php echo esc_html__( 'このウィンドウを閉じる', 'ktpwp' ); ?></a>
                 </div>
             </div>
         </body>
@@ -855,7 +941,7 @@ kantanpro22@gmail.com
             var termsLink = document.createElement('a');
             termsLink.href = '<?php echo esc_url( $terms_url ); ?>';
             termsLink.target = '_blank';
-            termsLink.textContent = '利用規約';
+            termsLink.textContent = '<?php echo esc_js( __( '利用規約', 'ktpwp' ) ); ?>';
             termsLink.style.marginLeft = '10px';
             termsLink.style.color = '#666';
             termsLink.style.textDecoration = 'none';
@@ -892,7 +978,7 @@ kantanpro22@gmail.com
             <div class="ktpwp-terms-overlay"></div>
             <div class="ktpwp-terms-modal">
                 <div class="ktpwp-terms-header">
-                    <h2><?php echo esc_html__( 'KantanPro' . KANTANPRO_PLUGIN_VERSION . '利用規約', 'ktpwp' ); ?></h2>
+                    <h2><?php echo esc_html( sprintf( __( '%1$s %2$s Terms of Service', 'ktpwp' ), KANTANPRO_PLUGIN_NAME, KANTANPRO_PLUGIN_VERSION ) ); ?></h2>
                 </div>
                 <div class="ktpwp-terms-content">
                     <?php echo $this->format_terms_content( $terms_content ); ?>
@@ -900,13 +986,13 @@ kantanpro22@gmail.com
                 <div class="ktpwp-terms-footer">
                     <div class="ktpwp-terms-checkbox-container">
                         <input type="checkbox" id="ktpwp-terms-checkbox" />
-                        <label for="ktpwp-terms-checkbox">確認しました</label>
+                        <label for="ktpwp-terms-checkbox"><?php echo esc_html__( '確認しました', 'ktpwp' ); ?></label>
                     </div>
                     <button type="button" id="ktpwp-start-usage" class="ktpwp-start-btn" disabled>
-                        利用開始する
+                        <?php echo esc_html__( '利用開始する', 'ktpwp' ); ?>
                     </button>
                     <div class="ktpwp-home-link">
-                        <a href="<?php echo esc_url( home_url( '/' ) ); ?>">ホームへ</a>
+                        <a href="<?php echo esc_url( home_url( '/' ) ); ?>"><?php echo esc_html__( 'ホームへ', 'ktpwp' ); ?></a>
                     </div>
                 </div>
             </div>

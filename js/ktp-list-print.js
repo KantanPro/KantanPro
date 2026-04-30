@@ -15,7 +15,7 @@
     function showListPrintPopup() {
         var $area = $('#ktp_list_print_area');
         if (!$area.length) {
-            alert('印刷する内容が見つかりません。');
+            alert(ktpwpTranslate('印刷する内容が見つかりません。'));
             return;
         }
 
@@ -110,7 +110,7 @@
                     }
                 } catch (e) {
                     console.error('[KTP-LIST-PRINT] 全件取得失敗:', e);
-                    alert('印刷データの取得に失敗しました。');
+                    alert(ktpwpTranslate('印刷データの取得に失敗しました。'));
                 } finally {
                     try { document.body.removeChild(iframe); } catch (_) {}
                 }

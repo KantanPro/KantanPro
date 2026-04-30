@@ -76,7 +76,7 @@
             
             if (!orderId) {
                 console.error('[ORDER-PREVIEW] 受注書IDが見つかりません');
-                alert('受注書IDが見つかりません。');
+                alert(ktpwpTranslate('受注書IDが見つかりません。'));
                 return;
             }
 
@@ -106,16 +106,16 @@
                             saveOrderPreviewAsPDF(orderId, result.data.preview_html);
                         } else {
                             console.error('[ORDER-PREVIEW] プレビューデータの取得に失敗:', result);
-                            alert('プレビューデータの取得に失敗しました: ' + (result.data || 'エラー詳細不明'));
+                            alert(ktpwpTranslate('プレビューデータの取得に失敗しました: ') + (result.data || 'エラー詳細不明'));
                         }
                     } catch (parseError) {
                         console.error('[ORDER-PREVIEW] レスポンス解析エラー:', parseError);
-                        alert('プレビューデータの解析に失敗しました。');
+                        alert(ktpwpTranslate('プレビューデータの解析に失敗しました。'));
                     }
                 },
                 error: function(xhr, status, error) {
                     console.error('[ORDER-PREVIEW] Ajax エラー:', { status, error, responseText: xhr.responseText });
-                    alert('プレビューデータの取得中にエラーが発生しました: ' + error);
+                    alert(ktpwpTranslate('プレビューデータの取得中にエラーが発生しました: ') + error);
                 },
                 complete: function() {
                     // ボタンを元に戻す
@@ -131,13 +131,13 @@
 
         if (!orderId) {
             console.error('[ORDER PREVIEW] エラー: orderIdが見つかりません');
-            alert('受注書IDが見つかりません。');
+            alert(ktpwpTranslate('受注書IDが見つかりません。'));
             return;
         }
 
         if (!previewContent) {
             console.error('[ORDER PREVIEW] エラー: previewContentが見つかりません');
-            alert('プレビュー内容が見つかりません。');
+            alert(ktpwpTranslate('プレビュー内容が見つかりません。'));
             return;
         }
 

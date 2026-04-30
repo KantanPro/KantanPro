@@ -34,7 +34,7 @@ jQuery(document).ready(function($) {
             preview.show();
             
             // ボタンのテキストを変更
-            button.text('画像を変更');
+            button.text(ktpwpTranslate('画像を変更'));
         });
         
         // Media Library を開く

@@ -275,16 +275,16 @@ class KTPWP_Ajax {
             function () {
 				// 権限チェック
 				if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
-					wp_send_json_error( '権限がありません' );
+					wp_send_json_error( __( '権限がありません', 'ktpwp' ) );
 				}
 				// nonceチェック（必要ならPOSTでnonceも送る）
 				// if ( ! isset($_POST['nonce']) || ! wp_verify_nonce($_POST['nonce'], 'ktp_ajax_nonce') ) {
-				// wp_send_json_error('セキュリティ検証に失敗しました');
+				// wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'ktpwp' ) );
 				// }
 				global $wpdb;
 				$client_id = isset( $_POST['client_id'] ) ? intval( $_POST['client_id'] ) : 0;
 				if ( ! $client_id ) {
-					wp_send_json_error( 'client_idが指定されていません' );
+					wp_send_json_error( __( 'client_idが指定されていません', 'ktpwp' ) );
 				}
 				$order_table = $wpdb->prefix . 'ktp_order';
 				$client_table = $wpdb->prefix . 'ktp_client';
@@ -300,7 +300,7 @@ class KTPWP_Ajax {
                     )
                 );
 				if ( $result === false ) {
-					wp_send_json_error( 'DB更新に失敗しました: ' . $wpdb->last_error );
+					wp_send_json_error( __( 'DB更新に失敗しました: ', 'ktpwp' ) . $wpdb->last_error );
 				}
 				wp_send_json_success( array( 'updated' => $result ) );
 			}
@@ -313,17 +313,17 @@ class KTPWP_Ajax {
             function () {
 				// 権限チェック
 				if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
-					wp_send_json_error( '権限がありません' );
+					wp_send_json_error( __( '権限がありません', 'ktpwp' ) );
 				}
 				// nonceチェック
 				if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( $_POST['nonce'], 'ktp_ajax_nonce' ) ) {
-					wp_send_json_error( 'セキュリティ検証に失敗しました' );
+					wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'ktpwp' ) );
 				}
 				global $wpdb;
 				$order_id = isset( $_POST['order_id'] ) ? intval( $_POST['order_id'] ) : 0;
 				$supplier_name = isset( $_POST['supplier_name'] ) ? sanitize_text_field( $_POST['supplier_name'] ) : '';
 				if ( ! $order_id || ! $supplier_name ) {
-					wp_send_json_error( 'order_idまたはsupplier_nameが指定されていません' );
+					wp_send_json_error( __( 'order_idまたはsupplier_nameが指定されていません', 'ktpwp' ) );
 				}
 				$table_name = $wpdb->prefix . 'ktp_order_cost_items';
 				// 旧形式（purchase = 会社名）と新形式（purchase = 会社名 > サービス名）の両方を発注済みに更新
@@ -337,7 +337,7 @@ class KTPWP_Ajax {
 					)
 				);
 				if ( $updated === false ) {
-					wp_send_json_error( 'DB更新に失敗しました: ' . $wpdb->last_error );
+					wp_send_json_error( __( 'DB更新に失敗しました: ', 'ktpwp' ) . $wpdb->last_error );
 				}
 				wp_send_json_success( array( 'updated' => $updated ) );
 			}
@@ -1693,10 +1693,10 @@ class KTPWP_Ajax {
 			if ( ! $client ) {
 				wp_send_json_error(
 					array(
-						'message'     => 'メール送信不可（顧客データなし）',
+						'message'     => __( 'メール送信不可（顧客データなし）', 'ktpwp' ),
 						'error_type'  => 'no_client',
-						'error_title' => '顧客データが見つかりません',
-						'error'       => 'この受注書に関連する顧客データが見つかりません。顧客管理画面で顧客を登録してください。',
+						'error_title' => __( '顧客データが見つかりません', 'ktpwp' ),
+						'error'       => __( 'この受注書に関連する顧客データが見つかりません。顧客管理画面で顧客を登録してください。', 'ktpwp' ),
 					)
 				);
 				return;
@@ -1705,10 +1705,10 @@ class KTPWP_Ajax {
 			if ( $client->category === '対象外' ) {
 				wp_send_json_error(
 					array(
-						'message'     => 'メール送信不可（対象外顧客）',
+						'message'     => __( 'メール送信不可（対象外顧客）', 'ktpwp' ),
 						'error_type'  => 'excluded_client',
-						'error_title' => 'メール送信不可',
-						'error'       => 'この顧客は削除済み（対象外）のため、メール送信はできません。',
+						'error_title' => __( 'メール送信不可', 'ktpwp' ),
+						'error'       => __( 'この顧客は削除済み（対象外）のため、メール送信はできません。', 'ktpwp' ),
 					)
 				);
 				return;
@@ -1719,10 +1719,10 @@ class KTPWP_Ajax {
 			if ( $to === '' || ! is_email( $to ) ) {
 				wp_send_json_error(
 					array(
-						'message'     => 'メール送信不可（メールアドレス未設定または無効）',
+						'message'     => __( 'メール送信不可（メールアドレス未設定または無効）', 'ktpwp' ),
 						'error_type'  => 'no_email',
-						'error_title' => 'メールアドレス未設定',
-						'error'       => 'この顧客のメールアドレスが未設定または無効です。顧客管理画面で代表メールまたは部署メールを登録してください。',
+						'error_title' => __( 'メールアドレス未設定', 'ktpwp' ),
+						'error'       => __( 'この顧客のメールアドレスが未設定または無効です。顧客管理画面で代表メールまたは部署メールを登録してください。', 'ktpwp' ),
 					)
 				);
 				return;
@@ -1850,9 +1850,18 @@ class KTPWP_Ajax {
                     if ( ! empty( trim( $product_name ) ) ) {
                         // 税制モードで税率/税額列が非表示の場合は税率テキストを抑止
                         $suppress_tax_text = ( class_exists( 'KTPWP_Tax_Policy' ) && ( KTPWP_Tax_Policy::is_abolished() || KTPWP_Tax_Policy::hide_tax_columns() ) );
-                        $tax_rate_text = ( $tax_rate !== null && ! $suppress_tax_text ) ? '（税率' . $tax_rate . '%）' : '';
-						$remarks_text = ( ! empty( trim( $remarks ) ) ) ? '　※ ' . $remarks : '';
-						$line         = $product_name . '：' . $price_display . '円 × ' . $quantity_display . $unit . ' = ' . number_format( $item_amount ) . '円' . $tax_rate_text . $remarks_text;
+                        $tax_rate_text = ( $tax_rate !== null && ! $suppress_tax_text ) ? sprintf( __( '（税率%s%%）', 'ktpwp' ), $tax_rate ) : '';
+						$remarks_text = ( ! empty( trim( $remarks ) ) ) ? '　' . sprintf( __( '※ %s', 'ktpwp' ), $remarks ) : '';
+						$line         = sprintf(
+							__( '%1$s：%2$s × %3$s%4$s = %5$s%6$s%7$s', 'ktpwp' ),
+							$product_name,
+							$price_display,
+							$quantity_display,
+							$unit,
+							KTPWP_Settings::format_money( $item_amount ),
+							$tax_rate_text,
+							$remarks_text
+						);
 						$item_lines[] = $line;
 						$line_length  = mb_strlen( $line, 'UTF-8' );
 						if ( $line_length > $max_length ) {
@@ -1881,7 +1890,7 @@ class KTPWP_Ajax {
 								$tax_rate_value = floatval( $tax_rate );
 								$tax_amount = ceil( $group_amount * ( $tax_rate_value / 100 ) / ( 1 + $tax_rate_value / 100 ) );
 								$total_tax_amount += $tax_amount;
-								$tax_rate_details[] = $tax_rate . '%: ' . number_format( $tax_amount ) . '円';
+								$tax_rate_details[] = $tax_rate . '%: ' . KTPWP_Settings::format_money( $tax_amount );
 							}
                         }
                         }
@@ -1893,26 +1902,26 @@ class KTPWP_Ajax {
 
 				// 税区分に応じた合計行の表示
                 if ( $tax_category === '外税' ) {
-					$total_line = '外税合計：' . number_format( $amount_ceiled ) . '円';
-					$tax_line = '消費税：' . number_format( $total_tax_amount_ceiled ) . '円';
-					$total_with_tax_line = '内税合計：' . number_format( $total_with_tax ) . '円';
+					$total_line = sprintf( __( '外税合計：%s', 'ktpwp' ), KTPWP_Settings::format_money( $amount_ceiled ) );
+					$tax_line = sprintf( __( '消費税：%s', 'ktpwp' ), KTPWP_Settings::format_money( $total_tax_amount_ceiled ) );
+					$total_with_tax_line = sprintf( __( '内税合計：%s', 'ktpwp' ), KTPWP_Settings::format_money( $total_with_tax ) );
 				} else {
                     // 税制モードで税率/税額列が非表示の場合は内税内訳を付けない
                     $suppress_tax_detail = ( class_exists( 'KTPWP_Tax_Policy' ) && ( KTPWP_Tax_Policy::is_abolished() || KTPWP_Tax_Policy::hide_tax_columns() ) );
                     if ( ! $suppress_tax_detail ) {
                         if ( count( $tax_rate_groups ) > 1 ) {
-                            $tax_detail_text = '（内税：' . implode( ', ', $tax_rate_details ) . '）';
+                            $tax_detail_text = sprintf( __( '（内税：%s）', 'ktpwp' ), implode( ', ', $tax_rate_details ) );
                         } else {
                             if ( array_key_first( $tax_rate_groups ) === 'no_tax_rate' ) {
                                 $tax_detail_text = '';
                             } else {
-                                $tax_detail_text = '（内税：' . number_format( $total_tax_amount_ceiled ) . '円）';
+                                $tax_detail_text = sprintf( __( '（内税：%s）', 'ktpwp' ), KTPWP_Settings::format_money( $total_tax_amount_ceiled ) );
                             }
                         }
                     } else {
                         $tax_detail_text = '';
                     }
-                    $total_line = '金額合計：' . number_format( $amount_ceiled ) . '円' . $tax_detail_text;
+                    $total_line = sprintf( __( '金額合計：%s', 'ktpwp' ), KTPWP_Settings::format_money( $amount_ceiled ) ) . $tax_detail_text;
                     $tax_line = '';
                     $total_with_tax_line = '';
 				}
@@ -1936,7 +1945,7 @@ class KTPWP_Ajax {
 					$invoice_list .= $total_with_tax_line;
 				}
 			} else {
-				$invoice_list = '（請求項目未入力）';
+				$invoice_list = __( '（請求項目未入力）', 'ktpwp' );
 			}
 
 			// 進捗ごとに件名・本文を生成
@@ -1972,54 +1981,64 @@ class KTPWP_Ajax {
 
 			// 進捗に応じた帳票タイトルと件名を設定
 			$document_titles = array(
-				1 => '見積り書',
-				2 => '注文受書',
-				3 => '納品書',
-				4 => '請求書',
-				5 => '領収書',
-				6 => '案件完了',
+				1 => __( '見積り書', 'ktpwp' ),
+				2 => __( '注文受書', 'ktpwp' ),
+				3 => __( '納品書', 'ktpwp' ),
+				4 => __( '請求書', 'ktpwp' ),
+				5 => __( '領収書', 'ktpwp' ),
+				6 => __( '案件完了', 'ktpwp' ),
 			);
 
 			$document_messages = array(
-				1 => 'につきましてお見積りいたします。',
-				2 => 'につきましてご注文をお受けしました。',
-				3 => 'につきまして完了しました。',
-				4 => 'につきまして請求申し上げます。',
-				5 => 'につきましてお支払いを確認しました。',
-				6 => 'につきましては全て完了しています。',
+				1 => __( 'につきましてお見積りいたします。', 'ktpwp' ),
+				2 => __( 'につきましてご注文をお受けしました。', 'ktpwp' ),
+				3 => __( 'につきまして完了しました。', 'ktpwp' ),
+				4 => __( 'につきまして請求申し上げます。', 'ktpwp' ),
+				5 => __( 'につきましてお支払いを確認しました。', 'ktpwp' ),
+				6 => __( 'につきましては全て完了しています。', 'ktpwp' ),
 			);
 
-			$document_title   = isset( $document_titles[ $progress ] ) ? $document_titles[ $progress ] : '受注書';
+			$document_title   = isset( $document_titles[ $progress ] ) ? $document_titles[ $progress ] : __( '受注書', 'ktpwp' );
 			$document_message = isset( $document_messages[ $progress ] ) ? $document_messages[ $progress ] : '';
 
 			// 適格請求書番号を取得し、請求書の場合に追加
 			if ( $progress === 4 && class_exists( 'KTPWP_Settings' ) ) {
                 $qualified_invoice_number = KTPWP_Settings::get_qualified_invoice_number();
                 if ( ! ( class_exists('KTPWP_Tax_Policy') && KTPWP_Tax_Policy::is_abolished() ) && ! empty( $qualified_invoice_number ) ) {
-                    $document_title = $document_title . ' 適格請求書番号：' . $qualified_invoice_number;
+                    $document_title = $document_title . ' ' . __( '適格請求書番号', 'ktpwp' ) . '：' . $qualified_invoice_number;
                 }
 			}
 
 			// 日付フォーマット
-			$order_date = date( 'Y年m月d日', $order->time );
+			$order_date = wp_date( __( 'Y年m月d日', 'ktpwp' ), $order->time );
 
 			// 部署情報を取得
 			$department_info = '';
 			$customer_display = $customer_name;
-			$user_display = $user_name . ' 様';
+			$user_display = sprintf( __( '%s 様', 'ktpwp' ), $user_name );
 
 			if ( class_exists( 'KTPWP_Department_Manager' ) ) {
 				$selected_department = KTPWP_Department_Manager::get_selected_department_by_client( $client->id );
 				if ( $selected_department ) {
 					// 部署選択がある場合：会社名、部署名、担当者名を別々に表示
 					$customer_display = $customer_name;
-					$user_display = $selected_department->department_name . "\n" . $selected_department->contact_person . ' 様';
+					$user_display = $selected_department->department_name . "\n" . sprintf( __( '%s 様', 'ktpwp' ), $selected_department->contact_person );
 				}
 			}
 
             // 件名と本文の統一フォーマット
-            $subject = "{$document_title}：{$project_name}";
-            $body    = "{$customer_display}\n{$user_display}\n\nお世話になります。\n\n＜{$document_title}＞\nID: {$order->id} [{$order_date}]\n\n「{$project_name}」{$document_message}\n{$invoice_list}";
+            $subject = sprintf( __( '%1$s：%2$s', 'ktpwp' ), $document_title, $project_name );
+            $body    = sprintf(
+				__( "%1\$s\n%2\$s\n\nお世話になります。\n\n＜%3\$s＞\nID: %4\$d [%5\$s]\n\n「%6\$s」%7\$s\n%8\$s", 'ktpwp' ),
+				$customer_display,
+				$user_display,
+				$document_title,
+				$order->id,
+				$order_date,
+				$project_name,
+				$document_message,
+				$invoice_list
+			);
 
             // 見積り（進捗1）メール：振込先が入力されていれば本文に追加
             if ( 1 === $progress && class_exists( 'KTPWP_Settings' ) ) {
@@ -2398,7 +2417,7 @@ class KTPWP_Ajax {
 				}
 
 				$response_data = array(
-					'message'          => 'メールを送信しました。',
+					'message'          => __( 'メールを送信しました。', 'ktpwp' ),
 					'to'               => $to,
 					'attachment_count' => count( $attachments ),
 					'progress'         => $new_progress,
@@ -2476,7 +2495,7 @@ class KTPWP_Ajax {
 			} else {
 				wp_send_json_error(
 					array(
-						'message' => '協力会社が見つかりません。',
+						'message' => __( '協力会社が見つかりません。', 'ktpwp' ),
 					)
 				);
 			}
@@ -2709,7 +2728,7 @@ class KTPWP_Ajax {
 				}
 				wp_send_json_success(
 					array(
-						'message'          => '発注書メールを送信しました。',
+						'message'          => __( '発注書メールを送信しました。', 'ktpwp' ),
 						'to'               => $to,
 						'supplier_name'    => $supplier_name,
 						'attachment_count' => count( $attachments ),
@@ -3620,7 +3639,7 @@ class KTPWP_Ajax {
 				$updated_reception_date = $this->update_order_reception_date( $order_id, $field_value );
 				wp_send_json_success(
 					array(
-						'message'      => '受付日が正常に保存されました。',
+						'message'      => __( '受付日が正常に保存されました。', 'ktpwp' ),
 						'order_id'     => $order_id,
 						'field_name'   => $field_name,
 						'field_value'  => $updated_reception_date['field_value'],
@@ -4048,7 +4067,7 @@ class KTPWP_Ajax {
 			$client_id = isset( $_POST['client_id'] ) ? absint( $_POST['client_id'] ) : 0;
 
 			if ( $client_id <= 0 ) {
-				wp_send_json_error( '顧客IDが無効です' );
+				wp_send_json_error( __( '顧客IDが無効です', 'ktpwp' ) );
 			}
 
 			global $wpdb;
@@ -4114,7 +4133,7 @@ class KTPWP_Ajax {
 			$order_id = isset( $_POST['order_id'] ) ? absint( $_POST['order_id'] ) : 0;
 
 			if ( $order_id <= 0 ) {
-				wp_send_json_error( '受注書IDが無効です' );
+				wp_send_json_error( __( '受注書IDが無効です', 'ktpwp' ) );
 			}
 
 			global $wpdb;
@@ -4247,7 +4266,7 @@ class KTPWP_Ajax {
 			$supplier_id = isset( $_POST['supplier_id'] ) ? absint( $_POST['supplier_id'] ) : 0;
 
 			if ( $supplier_id <= 0 ) {
-				wp_send_json_error( '協力会社IDが無効です' );
+				wp_send_json_error( __( '協力会社IDが無効です', 'ktpwp' ) );
 			}
 
 			global $wpdb;
@@ -4349,17 +4368,17 @@ class KTPWP_Ajax {
 			}
 
 			if ( $order_id <= 0 ) {
-				wp_send_json_error( '受注書IDが無効です' );
+				wp_send_json_error( __( '受注書IDが無効です', 'ktpwp' ) );
 			}
 
 			if ( empty( $field_name ) ) {
-				wp_send_json_error( 'フィールド名が指定されていません' );
+				wp_send_json_error( __( 'フィールド名が指定されていません', 'ktpwp' ) );
 			}
 
 			// 許可されたフィールド名のみ更新可能
 			$allowed_fields = array( 'promised_delivery_date', 'desired_delivery_date', 'completion_date', 'expected_delivery_date', 'memo' );
 			if ( ! in_array( $field_name, $allowed_fields ) ) {
-				wp_send_json_error( '許可されていないフィールドです' );
+				wp_send_json_error( __( '許可されていないフィールドです', 'ktpwp' ) );
 			}
 
 			global $wpdb;
@@ -4379,14 +4398,14 @@ class KTPWP_Ajax {
 
 			if ( $result === false ) {
 				error_log( 'KTPWP Ajax: Database update failed: ' . $wpdb->last_error );
-				wp_send_json_error( 'データベース更新に失敗しました: ' . $wpdb->last_error );
+				wp_send_json_error( __( 'データベース更新に失敗しました: ', 'ktpwp' ) . $wpdb->last_error );
 			}
 
 			error_log( 'KTPWP Ajax: Field saved successfully - Order ID: ' . $order_id . ', Field: ' . $field_name . ', Value: ' . $field_value );
 
 			wp_send_json_success(
                 array(
-					'message' => 'フィールドが正常に保存されました',
+					'message' => __( 'フィールドが正常に保存されました', 'ktpwp' ),
 					'field_name' => $field_name,
 					'field_value' => $field_value,
                 )
@@ -4483,7 +4502,7 @@ class KTPWP_Ajax {
 			
 			if ( $supplier_id <= 0 ) {
 				error_log( 'KTPWP Ajax: Invalid supplier ID: ' . $supplier_id );
-				wp_send_json_error( '協力会社IDが無効です (ID: ' . $supplier_id . ')' );
+				wp_send_json_error( __( '協力会社IDが無効です (ID: ', 'ktpwp' ) . $supplier_id . ')' );
 				return;
 			}
 
@@ -4553,13 +4572,13 @@ class KTPWP_Ajax {
 	public function ajax_update_progress() {
 		// セキュリティチェック
 		if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
-			wp_send_json_error( '権限がありません' );
+			wp_send_json_error( __( '権限がありません', 'ktpwp' ) );
 		}
 
 		// nonceチェック（進捗更新は general / progress_update のどちらでも可）
 		$nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
 		if ( empty( $nonce ) || ( ! wp_verify_nonce( $nonce, 'ktp_ajax_nonce' ) && ! wp_verify_nonce( $nonce, 'ktpwp_ajax_nonce' ) ) ) {
-			wp_send_json_error( 'セキュリティ検証に失敗しました' );
+			wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'ktpwp' ) );
 		}
 
 		global $wpdb;
@@ -4569,13 +4588,13 @@ class KTPWP_Ajax {
 		$new_progress = isset( $_POST['progress'] ) ? absint( $_POST['progress'] ) : 0;
 
 		if ( $order_id <= 0 || $new_progress < 1 || $new_progress > 7 ) {
-			wp_send_json_error( 'パラメータが不正です' );
+			wp_send_json_error( __( 'パラメータが不正です', 'ktpwp' ) );
 		}
 
 		// 現在の進捗を取得
 		$current_order = $wpdb->get_row( $wpdb->prepare( "SELECT progress FROM {$table_name} WHERE id = %d", $order_id ) );
 		if ( ! $current_order ) {
-			wp_send_json_error( '受注書が見つかりません' );
+			wp_send_json_error( __( '受注書が見つかりません', 'ktpwp' ) );
 		}
 
 		$update_data = array( 'progress' => $new_progress );
@@ -4600,12 +4619,12 @@ class KTPWP_Ajax {
 
 		if ( $result !== false ) {
 			wp_send_json_success( array(
-				'message' => '進捗を更新しました',
+				'message' => __( '進捗を更新しました', 'ktpwp' ),
 				'progress' => $new_progress,
 				'completion_date' => isset( $update_data['completion_date'] ) ? $update_data['completion_date'] : null
 			) );
 		} else {
-			wp_send_json_error( 'データベース更新に失敗しました' );
+			wp_send_json_error( __( 'データベース更新に失敗しました', 'ktpwp' ) );
 		}
 	}
 
@@ -4615,14 +4634,14 @@ class KTPWP_Ajax {
 	public function get_order_data() {
 		// セキュリティチェック
 		if (!isset($_POST['ktp_ajax_nonce']) || !wp_verify_nonce($_POST['ktp_ajax_nonce'], 'ktp_ajax_nonce')) {
-			wp_send_json_error('セキュリティチェックに失敗しました。');
+			wp_send_json_error( __( 'セキュリティチェックに失敗しました。', 'ktpwp' ) );
 			return;
 		}
 		
 		// 受注書IDを取得
 		$order_id = isset($_POST['order_id']) ? absint($_POST['order_id']) : 0;
 		if (!$order_id) {
-			wp_send_json_error('受注書IDが指定されていません。');
+			wp_send_json_error( __( '受注書IDが指定されていません。', 'ktpwp' ) );
 			return;
 		}
 		
@@ -4632,7 +4651,7 @@ class KTPWP_Ajax {
 		$order_data = $wpdb->get_row($wpdb->prepare("SELECT * FROM `{$table_name}` WHERE id = %d", $order_id));
 		
 		if (!$order_data) {
-			wp_send_json_error('指定された受注書が見つかりません。');
+			wp_send_json_error( __( '指定された受注書が見つかりません。', 'ktpwp' ) );
 			return;
 		}
 		
@@ -4650,7 +4669,7 @@ class KTPWP_Ajax {
 				'order_id' => $order_id
 			));
 		} else {
-			wp_send_json_error('受注書クラスが見つかりません。');
+			wp_send_json_error( __( '受注書クラスが見つかりません。', 'ktpwp' ) );
 		}
 	}
 
@@ -4660,14 +4679,14 @@ class KTPWP_Ajax {
 	public function ajax_get_invoice_candidates() {
 		// セキュリティチェック
 		if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'ktp_ajax_nonce')) {
-			wp_send_json_error('セキュリティチェックに失敗しました。');
+			wp_send_json_error( __( 'セキュリティチェックに失敗しました。', 'ktpwp' ) );
 			return;
 		}
 		
 		// 顧客IDを取得
 		$client_id = isset($_POST['client_id']) ? absint($_POST['client_id']) : 0;
 		if (!$client_id) {
-			wp_send_json_error('顧客IDが指定されていません。');
+			wp_send_json_error( __( '顧客IDが指定されていません。', 'ktpwp' ) );
 			return;
 		}
 		
@@ -4681,7 +4700,7 @@ class KTPWP_Ajax {
 		));
 		
 		if (!$client_data) {
-			wp_send_json_error('指定された顧客が見つかりません。');
+			wp_send_json_error( __( '指定された顧客が見つかりません。', 'ktpwp' ) );
 			return;
 		}
 		
@@ -4705,22 +4724,53 @@ class KTPWP_Ajax {
 		}
 
 		if ( empty( $orders ) ) {
-			wp_send_json_error('請求対象の受注書が見つかりません。');
+			wp_send_json_error( __( '請求対象の受注書が見つかりません。', 'ktpwp' ) );
 			return;
 		}
 		
 		// 月別グループに分類
 		$monthly_groups = array();
 		foreach ($orders as $order) {
-			$completion_date = new DateTime($order->completion_date);
-			$year = $completion_date->format('Y');
-			$month = $completion_date->format('m');
-			$key = $year . '-' . $month;
+			$date_candidates = array(
+				isset( $order->completion_date ) ? $order->completion_date : '',
+				isset( $order->order_date ) ? $order->order_date : '',
+				isset( $order->created_at ) ? $order->created_at : '',
+				isset( $order->time ) ? $order->time : '',
+			);
+			$completion_date = null;
+
+			foreach ( $date_candidates as $date_candidate ) {
+				if ( empty( $date_candidate ) || in_array( (string) $date_candidate, array( '0000-00-00', '0000-00-00 00:00:00' ), true ) ) {
+					continue;
+				}
+
+				try {
+					$candidate_date = is_numeric( $date_candidate ) ? new DateTime( '@' . (int) $date_candidate ) : new DateTime( (string) $date_candidate );
+				} catch ( Exception $e ) {
+					continue;
+				}
+
+				$candidate_year = (int) $candidate_date->format( 'Y' );
+				$candidate_month = (int) $candidate_date->format( 'm' );
+				if ( $candidate_year >= 1 && $candidate_month >= 1 && $candidate_month <= 12 ) {
+					$completion_date = $candidate_date;
+					break;
+				}
+			}
+
+			if ( null === $completion_date ) {
+				$completion_date = new DateTime( current_time( 'mysql' ) );
+			}
+
+			$year = (int) $completion_date->format('Y');
+			$month = (int) $completion_date->format('m');
+			$key = sprintf( '%04d-%02d', $year, $month );
+			$completion_timestamp = $completion_date->getTimestamp();
 			
 			if (!isset($monthly_groups[$key])) {
 				$monthly_groups[$key] = array(
-					'billing_period' => $year . '年' . intval($month) . '月分',
-					'closing_date' => $completion_date->format('Y年m月d日'),
+					'billing_period' => wp_date( __( 'Y年n月分', 'ktpwp' ), $completion_timestamp ),
+					'closing_date' => wp_date( __( 'Y年m月d日', 'ktpwp' ), $completion_timestamp ),
 					'orders' => array(),
 					'subtotal' => 0,
 					'tax_amount' => 0
@@ -4742,6 +4792,11 @@ class KTPWP_Ajax {
 			$monthly_groups[$key]['orders'][] = $order;
 		}
 		
+		if ( empty( $monthly_groups ) ) {
+			wp_send_json_error( __( '請求対象の受注書が見つかりません。', 'ktpwp' ) );
+			return;
+		}
+
 		// 配列のキーをリセット
 		$monthly_groups = array_values($monthly_groups);
 		
@@ -5284,7 +5339,7 @@ class KTPWP_Ajax {
             }
 			$remarks_text = ( ! empty( trim( $remarks ) ) ) ? '　※ ' . $remarks : '';
 			
-			$body .= $product_name_padded . "  " . number_format( $price ) . '円 × ' . $quantity . $unit . ' = ' . number_format( $amount ) . "円{$tax_info}{$remarks_text}\n";
+			$body .= $product_name_padded . "  " . KTPWP_Settings::format_money( $price ) . ' × ' . $quantity . $unit . ' = ' . KTPWP_Settings::format_money( $amount ) . "{$tax_info}{$remarks_text}\n";
 
 			// 税率別集計
 			$tax_rate_key = number_format( $tax_rate, 1 );
@@ -5428,12 +5483,12 @@ class KTPWP_Ajax {
         $suppress_tax_text = ( class_exists( 'KTPWP_Tax_Policy' ) && ( KTPWP_Tax_Policy::is_abolished() || KTPWP_Tax_Policy::hide_tax_columns() ) );
         if ( $suppress_tax_text ) {
             // 税廃止/非表示: 税関連の注記を出さない
-            $body .= "金額合計：" . number_format( $total_amount ) . "円\n\n";
+            $body .= "金額合計：" . KTPWP_Settings::format_money( $total_amount ) . "\n\n";
         } elseif ( $is_inclusive_tax ) {
 			// 内税の場合：税込金額を表示し、税抜価格と消費税額を内訳で表示
 			// 要求された形式に合わせて、税抜価格と消費税額を計算
 			$tax_excluded_amount = $total_amount - $total_tax_amount;
-			$body .= "金額合計：" . number_format( $total_amount ) . "円（税抜価格：" . number_format( $tax_excluded_amount ) . "円＋消費税額：" . number_format( $total_tax_amount ) . "円）\n\n";
+			$body .= "金額合計：" . KTPWP_Settings::format_money( $total_amount ) . "（税抜価格：" . KTPWP_Settings::format_money( $tax_excluded_amount ) . "＋消費税額：" . KTPWP_Settings::format_money( $total_tax_amount ) . "）\n\n";
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 				error_log( 'KTPWP Purchase Order Email: Using 内税 format' );
 			}
@@ -5457,9 +5512,9 @@ class KTPWP_Ajax {
 			
 			$tax_included_amount = $total_amount + $correct_tax_amount;
 			
-			$body .= "金額合計：" . number_format( $total_amount ) . "円\n";
-			$body .= "消費税額：" . number_format( $correct_tax_amount ) . "円\n";
-			$body .= "税込金額：" . number_format( $tax_included_amount ) . "円\n\n";
+			$body .= "金額合計：" . KTPWP_Settings::format_money( $total_amount ) . "\n";
+			$body .= "消費税額：" . KTPWP_Settings::format_money( $correct_tax_amount ) . "\n";
+			$body .= "税込金額：" . KTPWP_Settings::format_money( $tax_included_amount ) . "\n\n";
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 				error_log( 'KTPWP Purchase Order Email: Using 外税 format' );
 				error_log( 'KTPWP Purchase Order Email: Correct tax amount for 外税: ' . $correct_tax_amount );

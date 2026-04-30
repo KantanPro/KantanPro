@@ -10,6 +10,16 @@
 (function() {
     'use strict';
 
+    function ktpReportTranslate(text) {
+        return typeof window.ktpwpTranslate === 'function' ? window.ktpwpTranslate(text) : text;
+    }
+    function ktpReportFormatMoney(value) {
+        return typeof window.ktpwpFormatMoney === 'function' ? window.ktpwpFormatMoney(value) : Number(value || 0).toLocaleString();
+    }
+    function ktpReportFormatCount(value) {
+        return ktpReportTranslate('%s件').replace('%s', Number(value || 0).toLocaleString());
+    }
+
     // 色設定
     const chartColors = {
         primary: '#1976d2',
@@ -161,7 +171,7 @@
                     ticks: {
                         color: theme.textColor,
                         callback: function(value) {
-                            return '¥' + value.toLocaleString();
+                            return ktpReportFormatMoney(value);
                         }
                     }
                 }
@@ -306,7 +316,7 @@
                         ...monthlyCommon.plugins,
                         title: {
                             display: true,
-                            text: '月別売上推移',
+                            text: ktpReportTranslate('月別売上推移'),
                             color: monthlyTheme.textColor,
                             font: { size: 16, weight: 'bold' }
                         }
@@ -319,7 +329,7 @@
                             ticks: {
                                 ...monthlyCommon.scales.y.ticks,
                                 callback: function(value) {
-                                    return '¥' + value.toLocaleString();
+                                    return ktpReportFormatMoney(value);
                                 }
                             }
                         }
@@ -330,7 +340,7 @@
                     data: {
                         labels: data.monthly_sales.labels,
                         datasets: [{
-                            label: '売上金額',
+                            label: ktpReportTranslate('売上金額'),
                             data: data.monthly_sales.data,
                             borderColor: chartColors.primary,
                             backgroundColor: 'rgba(25, 118, 210, 0.1)',
@@ -363,7 +373,7 @@
                         },
                         title: {
                             display: true,
-                            text: '月別利益コスト比較',
+                            text: ktpReportTranslate('月別利益コスト比較'),
                             color: profitTheme.textColor,
                             font: { size: 16, weight: 'bold' }
                         }
@@ -383,7 +393,7 @@
                             ticks: {
                                 color: profitTheme.textColor,
                                 callback: function(value) {
-                                    return '¥' + value.toLocaleString();
+                                    return ktpReportFormatMoney(value);
                                 }
                             },
                             beginAtZero: true
@@ -396,7 +406,7 @@
                         labels: data.profit_trend.labels,
                         datasets: [
                             {
-                                label: 'コスト',
+                                label: ktpReportTranslate('コスト'),
                                 data: data.profit_trend.cost,
                                 backgroundColor: chartColors.warning,
                                 borderColor: chartColors.warning,
@@ -405,7 +415,7 @@
                                 yAxisID: 'y'
                             },
                             {
-                                label: '利益',
+                                label: ktpReportTranslate('利益'),
                                 data: data.profit_trend.profit,
                                 backgroundColor: chartColors.success,
                                 borderColor: chartColors.success,
@@ -445,7 +455,7 @@
                         ...clientSalesBarOpts.plugins,
                         title: {
                             display: true,
-                            text: '顧客別売上',
+                            text: ktpReportTranslate('顧客別売上'),
                             color: clientSalesTheme.textColor,
                             font: { size: 16, weight: 'bold' }
                         }
@@ -458,7 +468,7 @@
                             ticks: {
                                 ...clientSalesBarOpts.scales.y.ticks,
                                 callback: function(value) {
-                                    return '¥' + value.toLocaleString();
+                                    return ktpReportFormatMoney(value);
                                 }
                             }
                         }
@@ -469,7 +479,7 @@
                     data: {
                         labels: data.client_sales.labels,
                         datasets: [{
-                            label: '売上金額',
+                            label: ktpReportTranslate('売上金額'),
                             data: data.client_sales.data,
                             backgroundColor: data.client_sales.labels.map(function(_, index) {
                                 return getGradientColor(chartColors.gradients[index % chartColors.gradients.length]);
@@ -501,7 +511,7 @@
                         },
                         title: {
                             display: true,
-                            text: '顧客別案件数',
+                            text: ktpReportTranslate('顧客別案件数'),
                             color: clientOrderTheme.textColor,
                             font: { size: 16, weight: 'bold' }
                         }
@@ -547,7 +557,7 @@
                         ...serviceSalesBarOpts.plugins,
                         title: {
                             display: true,
-                            text: 'サービス別売上',
+                            text: ktpReportTranslate('サービス別売上'),
                             color: serviceSalesTheme.textColor,
                             font: { size: 16, weight: 'bold' }
                         }
@@ -560,7 +570,7 @@
                             ticks: {
                                 ...serviceSalesBarOpts.scales.y.ticks,
                                 callback: function(value) {
-                                    return '¥' + value.toLocaleString();
+                                    return ktpReportFormatMoney(value);
                                 }
                             }
                         }
@@ -571,7 +581,7 @@
                     data: {
                         labels: data.service_sales.labels,
                         datasets: [{
-                            label: '売上金額',
+                            label: ktpReportTranslate('売上金額'),
                             data: data.service_sales.data,
                             backgroundColor: data.service_sales.labels.map(function(_, index) {
                                 return getGradientColor(chartColors.gradients[index % chartColors.gradients.length]);
@@ -603,7 +613,7 @@
                         },
                         title: {
                             display: true,
-                            text: 'サービス別比率（受注ベース）',
+                            text: ktpReportTranslate('サービス別比率（受注ベース）'),
                             color: serviceQtyTheme.textColor,
                             font: { size: 16, weight: 'bold' }
                         },
@@ -614,7 +624,7 @@
                                     var value = context.parsed;
                                     var total = context.dataset.data.reduce(function(a, b) { return a + b; }, 0);
                                     var percentage = ((value / total) * 100).toFixed(1);
-                                    return label + ': ' + value + '件 (' + percentage + '%)';
+                                    return label + ': ' + ktpReportFormatCount(value) + ' (' + percentage + '%)';
                                 }
                             }
                         }
@@ -660,7 +670,7 @@
                         ...supplierSkillsBarOpts.plugins,
                         title: {
                             display: true,
-                            text: '協力会社別貢献度',
+                            text: ktpReportTranslate('協力会社別貢献度'),
                             color: supplierSkillsTheme.textColor,
                             font: { size: 16, weight: 'bold' }
                         }
@@ -673,7 +683,7 @@
                             ticks: {
                                 ...supplierSkillsBarOpts.scales.y.ticks,
                                 callback: function(value) {
-                                    return '¥' + value.toLocaleString();
+                                    return ktpReportFormatMoney(value);
                                 }
                             }
                         }
@@ -684,7 +694,7 @@
                     data: {
                         labels: data.supplier_skills.labels,
                         datasets: [{
-                            label: '貢献度',
+                            label: ktpReportTranslate('貢献度'),
                             data: data.supplier_skills.data,
                             backgroundColor: data.supplier_skills.labels.map(function(_, index) {
                                 return getGradientColor(chartColors.gradients[index % chartColors.gradients.length]);
@@ -716,7 +726,7 @@
                         },
                         title: {
                             display: true,
-                            text: 'スキル別協力会社数',
+                            text: ktpReportTranslate('スキル別協力会社数'),
                             color: skillSuppliersTheme.textColor,
                             font: { size: 16, weight: 'bold' }
                         }

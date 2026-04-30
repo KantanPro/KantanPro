@@ -13,7 +13,7 @@
         var $status = $('#ktpwp-webp-status-' + attachmentId);
         
         // ボタンを無効化
-        $button.prop('disabled', true).text('変換中...');
+        $button.prop('disabled', true).text(ktpwpTranslate('変換中...'));
         $status.html('');
         
         // AJAX リクエスト
@@ -38,7 +38,7 @@
             },
             complete: function() {
                 // ボタンを再有効化
-                $button.prop('disabled', false).text('WebPに変換');
+                $button.prop('disabled', false).text(ktpwpTranslate('WebPに変換'));
             }
         });
     };
@@ -75,7 +75,7 @@
             });
             
             if (selectedIds.length === 0) {
-                alert('変換する画像を選択してください。');
+                alert(ktpwpTranslate('変換する画像を選択してください。'));
                 return;
             }
             
@@ -103,7 +103,7 @@
                           '</div>';
         
         $button.after(progressHtml);
-        $button.prop('disabled', true).text('変換中...');
+        $button.prop('disabled', true).text(ktpwpTranslate('変換中...'));
         
         // 各画像を順次処理
         processNextImage();
@@ -111,8 +111,8 @@
         function processNextImage() {
             if (processedCount >= totalCount) {
                 // 完了
-                $('#ktpwp-progress-text').text('完了: ' + successCount + ' / ' + totalCount + ' 成功');
-                $button.prop('disabled', false).text('選択した画像をWebPに変換');
+                $('#ktpwp-progress-text').text(ktpwpTranslate('完了: ') + successCount + ' / ' + totalCount + ' 成功');
+                $button.prop('disabled', false).text(ktpwpTranslate('選択した画像をWebPに変換'));
                 
                 setTimeout(function() {
                     $('#ktpwp-conversion-progress').fadeOut();
@@ -203,7 +203,7 @@
         
         // 全画像変換ボタンのイベント
         $('#ktpwp-convert-all-images').on('click', function() {
-            if (confirm('すべての既存画像をWebPに変換しますか？この処理には時間がかかる場合があります。')) {
+            if (confirm(ktpwpTranslate('すべての既存画像をWebPに変換しますか？この処理には時間がかかる場合があります。'))) {
                 convertAllImages();
             }
         });
@@ -216,7 +216,7 @@
         var $button = $('#ktpwp-convert-all-images');
         var $status = $('#ktpwp-image-optimization-status');
         
-        $button.prop('disabled', true).text('変換中...');
+        $button.prop('disabled', true).text(ktpwpTranslate('変換中...'));
         $status.html('<div style="color: #0073aa;">変換を開始しています...</div>');
         
         $.ajax({
@@ -237,7 +237,7 @@
                 $status.html('<div style="color: red;">✗ エラーが発生しました: ' + error + '</div>');
             },
             complete: function() {
-                $button.prop('disabled', false).text('すべての既存画像をWebPに変換');
+                $button.prop('disabled', false).text(ktpwpTranslate('すべての既存画像をWebPに変換'));
             }
         });
     }

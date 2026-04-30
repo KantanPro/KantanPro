@@ -151,7 +151,7 @@ if ( ! class_exists( 'KTPWP_Staff_Chat' ) ) {
 					'order_id' => $order_id,
 					'user_id' => $user_id,
 					'user_display_name' => $display_name,
-					'message' => '受注書を作成しました。',
+					'message' => __( '受注書を作成しました。', 'ktpwp' ),
 					'is_initial' => 1,
 					'created_at' => current_time( 'mysql' ),
                 ),
@@ -387,7 +387,7 @@ if ( ! class_exists( 'KTPWP_Staff_Chat' ) ) {
 						$header_html .= '<div class="staff-chat-header-line">';
 						$header_html .= '<span class="staff-chat-avatar-wrapper">' . $avatar . '</span>';
 						$header_html .= '<span class="staff-chat-user-name">' . $user_display_name . '</span>';
-						$header_html .= '<span class="staff-chat-order-time">受注書作成：' . esc_html( $order_created_time ) . '</span>';
+						$header_html .= '<span class="staff-chat-order-time">' . esc_html__( '受注書作成', 'ktpwp' ) . ': ' . esc_html( $order_created_time ) . '</span>';
 						$header_html .= '</div>';
 						$header_html .= '</div>';
 						$header_html .= '</div>';
@@ -408,7 +408,11 @@ if ( ! class_exists( 'KTPWP_Staff_Chat' ) ) {
 				foreach ( $scrollable_messages as $message ) {
 					$created_at = $message['created_at'];
 					$user_display_name = esc_html( $message['user_display_name'] );
-					$message_content = esc_html( $message['message'] );
+					$message_text = isset( $message['message'] ) ? (string) $message['message'] : '';
+					if ( ! empty( $message['is_initial'] ) && $message_text === '受注書を作成しました。' ) {
+						$message_text = __( '受注書を作成しました。', 'ktpwp' );
+					}
+					$message_content = esc_html( $message_text );
 
 					// Format time
 					$formatted_time = '';

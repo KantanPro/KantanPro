@@ -165,10 +165,10 @@
             
             if ($input.attr('type') === 'password') {
                 $input.attr('type', 'text');
-                $toggleButton.text('非表示');
+                $toggleButton.text(ktpwpTranslate('非表示'));
             } else {
                 $input.attr('type', 'password');
-                $toggleButton.text('表示');
+                $toggleButton.text(ktpwpTranslate('表示'));
             }
         }
 
@@ -178,7 +178,7 @@
         refreshLicenseStatus() {
             const $refreshButton = $('.ktp-refresh-license');
             
-            $refreshButton.prop('disabled', true).text('更新中...');
+            $refreshButton.prop('disabled', true).text(ktpwpTranslate('更新中...'));
             
             $.ajax({
                 url: ajaxurl,
@@ -200,7 +200,7 @@
                     console.error('License info refresh error:', error);
                 },
                 complete: () => {
-                    $refreshButton.prop('disabled', false).text('更新');
+                    $refreshButton.prop('disabled', false).text(ktpwpTranslate('更新'));
                 }
             });
         }
@@ -215,7 +215,7 @@
             if (!licenseKey) {
                 $statusDisplay.find('h3 .dashicons').removeClass('dashicons-yes-alt dashicons-no-alt').addClass('dashicons-warning');
                 $statusDisplay.find('h3 .dashicons').css('color', '#f56e28');
-                $statusDisplay.find('p strong').text('ライセンスキーが設定されていません。');
+                $statusDisplay.find('p strong').text(ktpwpTranslate('ライセンスキーが設定されていません。'));
             }
         }
 

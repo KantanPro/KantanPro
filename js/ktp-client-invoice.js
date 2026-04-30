@@ -14,6 +14,9 @@ jQuery(document).ready(function($) {
         window.ktp_design_settings = ktpClientInvoice.design_settings;
         
         var ajaxurl = ktpClientInvoice.ajax_url;
+        var t = function(text) { return typeof ktpwpTranslate === 'function' ? ktpwpTranslate(text) : text; };
+        var currentLocale = (window.ktpwpI18n && window.ktpwpI18n.locale) || document.documentElement.lang || '';
+        var customerHonorific = /^ja/i.test(currentLocale) ? ' 様' : '';
         
         // フォールバック: ktpClientInvoiceが利用できない場合の代替手段
         if (!ajaxurl) {
@@ -67,7 +70,7 @@ jQuery(document).ready(function($) {
                 xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
                 xhr.onerror = function() {
                     console.error("[請求書発行] Ajax通信エラー");
-                    list.innerHTML = "<div style=\"color:#c00;\">通信エラーが発生しました。ページを再読み込みして再度お試しください。</div>";
+                    list.innerHTML = "<div style=\"color:#c00;\">" + t("通信エラーが発生しました。ページを再読み込みして再度お試しください。") + "</div>";
                 };
                 xhr.onload = function() {
                     console.log("[請求書発行] Ajaxレスポンス受信:", xhr.status, xhr.responseText);
@@ -116,7 +119,7 @@ jQuery(document).ready(function($) {
                                     // 部署名を表示
                                     html += "<div style=\"margin-bottom:5px;\">" + res.data.selected_department.department_name + "</div>";
                                     // 担当者名を表示
-                                    html += "<div style=\"margin-bottom:5px;\">" + res.data.selected_department.contact_person + " 様</div>";
+                                    html += "<div style=\"margin-bottom:5px;\">" + res.data.selected_department.contact_person + customerHonorific + "</div>";
                                 } else {
                                     // 部署選択がない場合：そのまま表示
                                     if (address.startsWith("〒")) {
@@ -137,23 +140,23 @@ jQuery(document).ready(function($) {
                                     html += "<div style=\"margin-bottom:5px;\">" + companyName + "</div>";
 
                                     if (contactDisplay && contactDisplay.trim() !== "" && contactDisplay !== "未設定") {
-                                        contactDisplay += " 様";
+                                        contactDisplay += customerHonorific;
                                         html += "<div style=\"margin-bottom:5px;\">" + contactDisplay + "</div>";
                                     }
                                 }
                                 html += "</div>";
 
                                 html += "<div style=\"margin:100px 0 20px 0;padding:15px;border:2px solid #333;border-radius:8px;background-color:#f9f9f9;text-align:center;\">";
-                                html += "<div style=\"font-size:18px;font-weight:bold;color:#333;\">請求書</div>";
+                                html += "<div style=\"font-size:18px;font-weight:bold;color:#333;\">" + t("請求書") + "</div>";
                                 // 適格請求書番号を表示（設定されている場合のみ）
                                 var showQualified = !(window.ktp_tax_policy && window.ktp_tax_policy.mode === 'abolished');
                                 if (showQualified && res.data.qualified_invoice_number && res.data.qualified_invoice_number.trim() !== '') {
-                                    html += "<div style=\"font-size:14px;color:#333;margin-top:5px;\">適格請求書番号：" + res.data.qualified_invoice_number + "</div>";
+                                    html += "<div style=\"font-size:14px;color:#333;margin-top:5px;\">" + t("適格請求書番号：") + "" + res.data.qualified_invoice_number + "</div>";
                                 }
                                 html += "</div>";
 
                                 html += "<div style=\"margin:20px 0;padding:10px;font-size:14px;line-height:1.6;color:#333;\">";
-                                html += "平素より大変お世話になっております。下記の通りご請求申し上げます。";
+                                html += t("平素より大変お世話になっております。下記の通りご請求申し上げます。");
                                 html += "</div>";
 
                                 // 消費税対応の全体合計計算
@@ -174,34 +177,34 @@ jQuery(document).ready(function($) {
                                 
                                 if (suppressTax) {
                                     html += "<div style=\"font-weight:bold;font-size:14px;color:#333;display:flex;align-items:center;margin:10px 0 0 0;\">";
-                                    html += "<span>合計金額：" + grandTotal.toLocaleString() + "円</span>";
-                                    html += "<span style=\"margin-left:15px;\">繰越金額：</span>";
+                                    html += "<span>" + t("合計金額：") + "" + ktpwpFormatMoney(grandTotal) + "</span>";
+                                    html += "<span style=\"margin-left:15px;\">" + t("繰越金額：") + "</span>";
                                     html += "<input type=\"number\" id=\"carryover-amount\" name=\"carryover_amount\" value=\"0\" min=\"0\" step=\"1\" style=\"width:100px;padding:3px 6px;border:1px solid #ccc;border-radius:4px;font-size:14px;text-align:right;margin-left:5px;\" onchange=\"updateInvoiceTotal()\">";
-                                    html += "<span style=\"font-size:14px;\">円</span>";
+                                    html += "<span style=\"font-size:14px;\">" + ((window.ktpwpI18n && window.ktpwpI18n.currency && window.ktpwpI18n.currency.code) || "JPY") + "</span>";
                                     html += "</div>";
                                 } else if (taxCategory === '外税') {
                                     // 外税の場合：合計金額（税抜）→消費税→税込合計
                                     html += "<div style=\"font-weight:bold;font-size:14px;color:#333;display:flex;align-items:center;margin:10px 0 0 0;\">";
-                                    html += "<span>合計金額：" + grandSubtotal.toLocaleString() + "円</span>";
+                                    html += "<span>" + t("合計金額：") + "" + ktpwpFormatMoney(grandSubtotal) + "</span>";
                                     if (grandTaxAmount > 0) {
-                                        html += "<span style=\"margin-left:15px;\">消費税：" + grandTaxAmount.toLocaleString() + "円</span>";
-                                        html += "<span style=\"margin-left:15px;\">税込合計：" + grandTotal.toLocaleString() + "円</span>";
+                                        html += "<span style=\"margin-left:15px;\">" + t("消費税：") + "" + ktpwpFormatMoney(grandTaxAmount) + "</span>";
+                                        html += "<span style=\"margin-left:15px;\">" + t("税込合計：") + "" + ktpwpFormatMoney(grandTotal) + "</span>";
                                     }
-                                    html += "<span style=\"margin-left:15px;\">繰越金額：</span>";
+                                    html += "<span style=\"margin-left:15px;\">" + t("繰越金額：") + "</span>";
                                     html += "<input type=\"number\" id=\"carryover-amount\" name=\"carryover_amount\" value=\"0\" min=\"0\" step=\"1\" style=\"width:100px;padding:3px 6px;border:1px solid #ccc;border-radius:4px;font-size:14px;text-align:right;margin-left:5px;\" onchange=\"updateInvoiceTotal()\">";
-                                    html += "<span style=\"font-size:14px;\">円</span>";
+                                    html += "<span style=\"font-size:14px;\">" + ((window.ktpwpI18n && window.ktpwpI18n.currency && window.ktpwpI18n.currency.code) || "JPY") + "</span>";
                                     html += "</div>";
                                 } else {
                                     // 内税の場合：合計金額（税込）に内消費税を表示
                                     html += "<div style=\"font-weight:bold;font-size:14px;color:#333;display:flex;align-items:center;margin:10px 0 0 0;\">";
-                                    html += "<span>合計金額：" + grandTotal.toLocaleString() + "円";
+                                    html += "<span>" + t("合計金額：") + "" + ktpwpFormatMoney(grandTotal);
                                     if (grandTaxAmount > 0) {
-                                        html += "（内消費税：" + Math.round(grandTaxAmount).toLocaleString() + "円）";
+                                        html += "" + t("（内消費税：") + "" + ktpwpFormatMoney(Math.round(grandTaxAmount)) + "）";
                                     }
                                     html += "</span>";
-                                    html += "<span style=\"margin-left:15px;\">繰越金額：</span>";
+                                    html += "<span style=\"margin-left:15px;\">" + t("繰越金額：") + "</span>";
                                     html += "<input type=\"number\" id=\"carryover-amount\" name=\"carryover_amount\" value=\"0\" min=\"0\" step=\"1\" style=\"width:100px;padding:3px 6px;border:1px solid #ccc;border-radius:4px;font-size:14px;text-align:right;margin-left:5px;\" onchange=\"updateInvoiceTotal()\">";
-                                    html += "<span style=\"font-size:14px;\">円</span>";
+                                    html += "<span style=\"font-size:14px;\">" + ((window.ktpwpI18n && window.ktpwpI18n.currency && window.ktpwpI18n.currency.code) || "JPY") + "</span>";
                                     html += "</div>";
                                 }
                                 
@@ -209,8 +212,8 @@ jQuery(document).ready(function($) {
                                 var paymentDueDate = res.data.payment_due_date || '';
                                 
                                 html += "<div style=\"font-weight:bold;font-size:20px;color:#0073aa;display:flex;align-items:center;margin:10px 0 0 0;\">";
-                                html += "<span>請求金額：<span id=\"total-amount\">" + grandTotal.toLocaleString() + "</span>円</span>";
-                                html += "<span style=\"margin-left:2em;font-size:16px;\">お支払い期日：<input type=\"date\" id=\"payment-due-date-input\" value=\"" + paymentDueDate + "\" style=\"font-size:16px;padding:4px 8px;border:1px solid #ccc;border-radius:4px;width:180px;max-width:100%;\"></span>";
+                                html += "<span>" + t("請求金額：") + "<span id=\"total-amount\">" + ktpwpFormatMoney(grandTotal) + "</span></span>";
+                                html += "<span style=\"margin-left:2em;font-size:16px;\">" + t("お支払い期日：") + "<input type=\"date\" id=\"payment-due-date-input\" value=\"" + paymentDueDate + "\" style=\"font-size:16px;padding:4px 8px;border:1px solid #ccc;border-radius:4px;width:180px;max-width:100%;\"></span>";
                                 html += "</div>";
 
                                 window.invoiceGrandTotal = grandTotal;
@@ -220,7 +223,7 @@ jQuery(document).ready(function($) {
                                 res.data.monthly_groups.forEach(function(group) {
                                     html += "<div style=\"margin:20px 0 10px 0;padding:8px 12px;background-color:#f0f8ff;border-left:4px solid #0073aa;border-radius:4px;\">";
                                     html += "<div style=\"font-weight:bold;color:#0073aa;font-size:14px;\">";
-                                    html += "【" + group.billing_period + "】締日：" + group.closing_date + "　案件数：" + group.orders.length + "件";
+                                    html += "【" + group.billing_period + "】" + t("締日：") + group.closing_date + " " + t("案件数：") + group.orders.length;
                                     html += "</div>";
                                     html += "</div>";
 
@@ -230,25 +233,25 @@ jQuery(document).ready(function($) {
                                         var orderSubtotal = 0;
                                         html += "<div style=\"padding:10px;border-bottom:1px solid #eee;\">";
                                         html += "<div style=\"font-weight:bold;margin-bottom:8px;color:#333;font-size:12px;\">";
-                                        html += "ID: " + order.id + " - " + order.project_name + "（完了日：" + order.completion_date + "）";
+                                        html += "ID: " + order.id + " - " + order.project_name + "" + t("（完了日：") + "" + order.completion_date + "）";
                                         html += "</div>";
 
                                         if (order.invoice_items && order.invoice_items.length > 0) {
                                             html += "<div style=\"margin-top:10px;width:100%;\">";
-                                            var amountLabel = (taxCategory === '外税') ? '金額（税抜）' : '金額（税込）';
-                                            var priceLabel = (taxCategory === '外税') ? '単価（税抜）' : '単価（税込）';
-                                            var taxColLabel = (taxCategory === '外税') ? '税額（外税）' : '税額（内税）';
-                                            html += "<div style=\"display: flex; background: #f0f0f0; padding: 8px; font-weight: bold; border-bottom: 1px solid #ccc; align-items: center; font-size: 12px;\">";
-                                            html += "<div style=\"width: 30px; text-align: center;\">No.</div>";
-                                            html += "<div style=\"flex: 1; text-align: left; margin-left: 8px;\">サービス</div>";
-                                            html += "<div style=\"width: 80px; text-align: right;\">" + priceLabel + "</div>";
-                                            html += "<div style=\"width: 60px; text-align: right;\">数量/単位</div>";
-                                            html += "<div style=\"width: 80px; text-align: right;\">" + amountLabel + "</div>";
+                                            var amountLabel = (taxCategory === '外税') ? t('金額（税抜）') : t('金額（税込）');
+                                            var priceLabel = (taxCategory === '外税') ? t('単価（税抜）') : t('単価（税込）');
+                                            var taxColLabel = (taxCategory === '外税') ? t('税額（外税）') : t('税額（内税）');
+                                            html += "<div style=\"display: flex; background: #f0f0f0; padding: 8px; font-weight: bold; border-bottom: 1px solid #ccc; align-items: center; font-size: 12px; width: 100%; box-sizing: border-box;\">";
+                                            html += "<div style=\"flex: 0 0 30px; width: 30px; text-align: center; white-space: nowrap;\">No.</div>";
+                                            html += "<div style=\"flex: 1 1 auto; min-width: 0; text-align: left; margin-left: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;\">" + t("サービス") + "</div>";
+                                            html += "<div style=\"flex: 0 0 auto; min-width: 70px; text-align: right; white-space: nowrap; margin-left: 6px;\">" + priceLabel + "</div>";
+                                            html += "<div style=\"flex: 0 0 auto; min-width: 58px; text-align: right; white-space: nowrap; margin-left: 6px;\">" + t("数量/単位") + "</div>";
+                                            html += "<div style=\"flex: 0 0 auto; min-width: 70px; text-align: right; white-space: nowrap; margin-left: 6px;\">" + amountLabel + "</div>";
                                             if (!(window.ktp_tax_policy && window.ktp_tax_policy.hide_tax_columns)) {
-                                                html += "<div style=\"width: 80px; text-align: right;\">" + taxColLabel + "</div>";
-                                                html += "<div style=\"width: 60px; text-align: center;\">税率</div>";
+                                                html += "<div style=\"flex: 0 0 auto; min-width: 65px; text-align: right; white-space: nowrap; margin-left: 6px;\">" + taxColLabel + "</div>";
+                                                html += "<div style=\"flex: 0 0 auto; min-width: 45px; text-align: center; white-space: nowrap; margin-left: 6px;\">" + t("税率") + "</div>";
                                             }
-                                            html += "<div style=\"width: 100px; text-align: left; margin-left: 8px;\">備考</div>";
+                                            html += "<div style=\"flex: 0 0 58px; width: 58px; min-width: 0; text-align: left; margin-left: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;\">" + t("備考") + "</div>";
                                             html += "</div>";
 
                                             var oddRowColor = window.ktp_design_settings.odd_row_color || "#E7EEFD";
@@ -280,10 +283,10 @@ jQuery(document).ready(function($) {
                                                     return num.toLocaleString();
                                                 }
                                                 
-                                                var unitPrice = item.price ? formatCurrency(item.price) + "円" : "-";
+                                                var unitPrice = item.price ? ktpwpFormatMoney(item.price) : "-";
                                                 var quantity = item.quantity ? formatDecimalDisplay(item.quantity) : "-";
                                                 var amount = item.amount ? parseFloat(item.amount) : 0;
-                                                var totalPrice = amount > 0 ? amount.toLocaleString() + "円" : "-";
+                                                var totalPrice = amount > 0 ? ktpwpFormatMoney(amount) : "-";
                                                 
                                                 // 税率表示（全ての税率を表示）
                                                 var taxRateDisplay = "-";
@@ -311,9 +314,9 @@ jQuery(document).ready(function($) {
                                                         if (itemTaxRate === 0) {
                                                             lineTaxAmountDisplay = "";
                                                         } else if (res.data.tax_category === '外税') {
-                                                            lineTaxAmountDisplay = Math.ceil(amount * (itemTaxRate / 100)).toLocaleString() + "円";
+                                                            lineTaxAmountDisplay = ktpwpFormatMoney(Math.ceil(amount * (itemTaxRate / 100)));
                                                         } else {
-                                                            lineTaxAmountDisplay = Math.ceil(amount * (itemTaxRate / 100) / (1 + itemTaxRate / 100)).toLocaleString() + "円";
+                                                            lineTaxAmountDisplay = ktpwpFormatMoney(Math.ceil(amount * (itemTaxRate / 100) / (1 + itemTaxRate / 100)));
                                                         }
                                                     }
                                                 }
@@ -327,26 +330,27 @@ jQuery(document).ready(function($) {
                                                     orderSubtotal += amount;
                                                 }
                                                 var bgColor = (index % 2 === 0) ? evenRowColor : oddRowColor;
-                                                html += "<div style=\"display: flex; padding: 6px 8px; height: 24px; background: " + bgColor + "; align-items: center; font-size: 12px;\">";
-                                                html += "<div style=\"width: 30px; text-align: center;\">" + (index + 1) + "</div>";
-                                                html += "<div style=\"flex: 1; text-align: left; margin-left: 8px;\">" + item.product_name + "</div>";
-                                                html += "<div style=\"width: 80px; text-align: right;\">" + unitPrice + "</div>";
-                                                html += "<div style=\"width: 60px; text-align: right;\">" + quantity + "/" + (item.unit || "式") + "</div>";
-                                                html += "<div style=\"width: 80px; text-align: right;\">" + totalPrice + "</div>";
+                                                html += "<div style=\"display: flex; padding: 6px 8px; height: 24px; background: " + bgColor + "; align-items: center; font-size: 12px; width: 100%; box-sizing: border-box;\">";
+                                                html += "<div style=\"flex: 0 0 30px; width: 30px; text-align: center; white-space: nowrap;\">" + (index + 1) + "</div>";
+                                                html += "<div title=\"" + (item.product_name || "") + "\" style=\"flex: 1 1 auto; min-width: 0; text-align: left; margin-left: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;\">" + (item.product_name || "") + "</div>";
+                                                html += "<div style=\"flex: 0 0 auto; min-width: 70px; text-align: right; white-space: nowrap; margin-left: 6px;\">" + unitPrice + "</div>";
+                                                html += "<div style=\"flex: 0 0 auto; min-width: 58px; text-align: right; white-space: nowrap; margin-left: 6px;\">" + quantity + "/" + (item.unit || t("式")) + "</div>";
+                                                html += "<div style=\"flex: 0 0 auto; min-width: 70px; text-align: right; white-space: nowrap; margin-left: 6px;\">" + totalPrice + "</div>";
                                                 if (!(window.ktp_tax_policy && window.ktp_tax_policy.hide_tax_columns)) {
-                                                    html += "<div style=\"width: 80px; text-align: right;\">" + lineTaxAmountDisplay + "</div>";
-                                                    html += "<div style=\"width: 60px; text-align: center;\">" + taxRateDisplay + "</div>";
+                                                    html += "<div style=\"flex: 0 0 auto; min-width: 65px; text-align: right; white-space: nowrap; margin-left: 6px;\">" + lineTaxAmountDisplay + "</div>";
+                                                    html += "<div style=\"flex: 0 0 auto; min-width: 45px; text-align: center; white-space: nowrap; margin-left: 6px;\">" + taxRateDisplay + "</div>";
                                                 }
-                                                html += "<div style=\"width: 100px; text-align: left; margin-left: 8px;\"></div>";
+                                                var remarksDisplay = item.remarks || "";
+                                                html += "<div title=\"" + remarksDisplay + "\" style=\"flex: 0 0 58px; width: 58px; min-width: 0; text-align: left; margin-left: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;\">" + remarksDisplay + "</div>";
                                                 html += "</div>";
                                             });
 
                                             html += "</div>";
                                             html += "<div style=\"margin-top:10px;text-align:right;font-weight:bold;font-size:13px;color:#333;\">";
-                                            html += "案件合計：" + orderSubtotal.toLocaleString() + "円";
+                                            html += t("案件合計：") + ktpwpFormatMoney(orderSubtotal);
                                             html += "</div>";
                                         } else {
-                                            html += "<div style=\"color:#999;font-size:12px;\">請求項目なし</div>";
+                                            html += "<div style=\"color:#999;font-size:12px;\">" + t("請求項目なし") + "</div>";
                                         }
                                         monthlyTotal += orderSubtotal;
                                         html += "</div>";
@@ -354,7 +358,7 @@ jQuery(document).ready(function($) {
 
                                     html += "<div style=\"margin:15px 0;padding:12px;background-color:#f8f9fa;border:2px solid #0073aa;border-radius:6px;text-align:right;\">";
                                     html += "<div style=\"font-weight:bold;font-size:15px;color:#0073aa;\">";
-                                    html += group.billing_period + " 月別合計：" + monthlyTotal.toLocaleString() + "円";
+                                    html += group.billing_period + t(" 月別合計：") + ktpwpFormatMoney(monthlyTotal);
                                     html += "</div>";
                                     html += "</div>";
                                 });
@@ -374,27 +378,27 @@ jQuery(document).ready(function($) {
                                 html += '<div style="margin-top:20px;text-align:center;">';
                                 html += '<label style="display:inline-flex;align-items:center;font-size:15px;font-weight:500;margin-bottom:12px;">';
                                 html += '<input type="checkbox" id="set-invoice-completed" style="width:18px;height:18px;margin-right:8px;">';
-                                html += '対象受注書の進捗を「請求済」に変更する';
+                                html += t('対象受注書の進捗を「請求済」に変更する');
                                 html += '</label><br />';
                                 html += '<button onclick="printInvoiceContent()" style="background-color:#0073aa;color:white;border:none;padding:10px 20px;border-radius:5px;cursor:pointer;font-size:14px;font-weight:500;">';
                                 html += (typeof KTPSvgIcons !== 'undefined' ? KTPSvgIcons.getIcon('print', {'style': 'font-size:16px;vertical-align:middle;margin-right:5px;'}) : '<span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle;margin-right:5px;">print</span>');
-                                html += '印刷 PDF保存';
+                                html += t('印刷 PDF保存');
                                 html += '</button>';
                                 html += '</div>';
 
                                 list.innerHTML = html;
                             } else {
-                                list.innerHTML = "<div style=\"color:#888;\">該当する案件はありません。</div>";
+                                list.innerHTML = "<div style=\"color:#888;\">" + t("該当する案件はありません。") + "</div>";
                             }
                         } catch (e) {
                             console.error("[請求書発行] JSON解析エラー:", e);
                             console.error("[請求書発行] レスポンス内容:", xhr.responseText);
-                            list.innerHTML = "<div style=\"color:#c00;\">データ取得エラー: " + e.message + "<br>レスポンス: " + xhr.responseText.substring(0, 200) + "</div>";
+                            list.innerHTML = "<div style=\"color:#c00;\">" + t("データ取得エラー: ") + e.message + "<br>" + t("レスポンス: ") + xhr.responseText.substring(0, 200) + "</div>";
                         }
                     } else {
                         console.error("[請求書発行] HTTPエラー:", xhr.status, xhr.statusText);
                         console.error("[請求書発行] レスポンス内容:", xhr.responseText);
-                        list.innerHTML = "<div style=\"color:#c00;\">通信エラー (HTTP " + xhr.status + "): " + xhr.statusText + "<br>レスポンス: " + xhr.responseText.substring(0, 200) + "</div>";
+                        list.innerHTML = "<div style=\"color:#c00;\">" + t("通信エラー (HTTP ") + xhr.status + "): " + xhr.statusText + "<br>" + t("レスポンス: ") + xhr.responseText.substring(0, 200) + "</div>";
                     }
                 };
                 var clientId = "";
@@ -420,7 +424,7 @@ jQuery(document).ready(function($) {
 
                 if (!clientId) {
                     console.error("[請求書発行] 顧客IDが見つかりません");
-                    list.innerHTML = "<div style=\"color:#c00;\">顧客IDが見つかりません。</div>";
+                    list.innerHTML = "<div style=\"color:#c00;\">" + t("顧客IDが見つかりません。") + "</div>";
                     return;
                 }
 
@@ -441,7 +445,7 @@ jQuery(document).ready(function($) {
                         console.log("[請求書発行] window.ktpwp_ajax_nonce から nonce を取得");
                     } else {
                         console.error("[請求書発行] nonce が見つかりません。AJAXリクエストを中止します。");
-                        list.innerHTML = "<div style=\"color:#c00;\">セキュリティエラー: nonceが見つかりません。</div>";
+                        list.innerHTML = "<div style=\"color:#c00;\">" + t("セキュリティエラー: nonceが見つかりません。") + "</div>";
                         return;
                     }
                 }
@@ -465,7 +469,7 @@ function printInvoiceContent() {
     var setInvoiceCompleted = document.getElementById('set-invoice-completed');
     var shouldSetCompleted = false;
     if (setInvoiceCompleted && setInvoiceCompleted.checked) {
-        var confirmed = window.confirm('本当に対象受注書の進捗を「請求済」に変更しますか？\nこの操作は取り消せません。\nOKで印刷を続行、キャンセルで中止します。');
+        var confirmed = window.confirm(ktpwpTranslate('本当に対象受注書の進捗を「請求済」に変更しますか？\nこの操作は取り消せません。\nOKで印刷を続行、キャンセルで中止します。'));
         if (!confirmed) {
             return; // キャンセル時は何もしない
         }
@@ -477,14 +481,14 @@ function printInvoiceContent() {
         var invoiceList = document.getElementById('invoiceList');
         if (!invoiceList) {
             console.error("[請求書印刷] invoiceList要素が見つかりません");
-            alert("印刷エラー：請求書データが見つかりません");
+            alert(ktpwpTranslate("印刷エラー：請求書データが見つかりません"));
             return;
         }
 
         var invoiceContent = invoiceList.innerHTML;
         if (!invoiceContent || invoiceContent.trim() === "") {
             console.error("[請求書印刷] 請求書の内容が空です");
-            alert("印刷エラー：請求書の内容が空です");
+            alert(ktpwpTranslate("印刷エラー：請求書の内容が空です"));
             return;
         }
 
@@ -697,7 +701,7 @@ function printInvoiceContent() {
                 var text = (el && el.textContent) ? el.textContent : '';
                 if (!text || text.indexOf('締日：') === -1) { return; }
 
-                // 例: "【4】締日：2026-03-31　案件数：10件"
+                // 例: "【4】" + t("締日：") + "2026-03-31" + " " + t("案件数：") + "10"
                 var m = text.match(/締日：\s*([0-9]{4}[-\/][0-9]{1,2}[-\/][0-9]{1,2})/);
                 if (!m || !m[1]) { return; }
 
@@ -859,7 +863,7 @@ function printInvoiceContent() {
 
     } catch (error) {
         console.error("[請求書印刷] エラーが発生しました:", error);
-        alert("印刷エラーが発生しました: " + error.message);
+        alert(ktpwpTranslate("印刷エラーが発生しました: ") + error.message);
     }
 }
 

@@ -32,7 +32,7 @@ function active_ktp_validation( $input ) {
         add_settings_error(
             'active_ktp',
             'active-ktp-validation_error',
-            __( 'illegal data', 'Hello_World' ),
+            __( 'illegal data', 'ktpwp' ),
             'error'
         );
     }

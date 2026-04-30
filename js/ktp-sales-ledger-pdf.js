@@ -238,7 +238,7 @@
             }
 
             // ボタンを無効化してローディング表示
-            $button.prop('disabled', true).html('🖨️ 生成中...');
+            $button.prop('disabled', true).html(ktpwpTranslate('🖨️ 生成中...'));
 
             // Ajaxで売上台帳PDFデータを取得
             $.ajax({
@@ -273,7 +273,7 @@
                 },
                 complete: function() {
                     // ボタンを元に戻す
-                    $button.prop('disabled', false).html('🖨️ 印刷');
+                    $button.prop('disabled', false).html(ktpwpTranslate('🖨️ 印刷'));
                 }
             });
         });

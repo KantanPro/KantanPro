@@ -66,7 +66,7 @@
             var originalText = $link.text();
             
             // リンクを無効化し、テキストを変更
-            $link.text('キャッシュクリア中...')
+            $link.text(ktpwpTranslate('キャッシュクリア中...'))
                  .addClass('disabled')
                  .css('pointer-events', 'none');
             

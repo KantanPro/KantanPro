@@ -568,7 +568,7 @@ class KTPWP_Shortcodes {
         $links[] = sprintf(
             '<a href="%s" target="_blank" rel="noopener noreferrer">%s</a>',
             esc_url($external_links['official_site']),
-            esc_html__('KantanPro', 'ktpwp')
+            esc_html( KANTANPRO_PLUGIN_NAME )
         );
         
         // 詳細を表示（公式サイトの機能紹介ページ等。なければトップページ）
@@ -605,7 +605,7 @@ class KTPWP_Shortcodes {
             $links[] = $activation_key;
         }
         // ヘルプ（外部リンク）
-        $links[] = '<a href="https://www.kantanpro.com/docs" target="_blank" title="ヘルプ" style="display: inline-flex; align-items: center; gap: 4px; color: #0073aa; text-decoration: none;">' . KTPWP_SVG_Icons::get_icon('help', array('style' => 'font-size: 20px; vertical-align: middle;')) . '<span>ヘルプ</span></a>';
+        $links[] = '<a href="https://www.kantanpro.com/docs" target="_blank" title="' . esc_attr__( 'ヘルプ', 'ktpwp' ) . '" style="display: inline-flex; align-items: center; gap: 4px; color: #0073aa; text-decoration: none;">' . KTPWP_SVG_Icons::get_icon('help', array('style' => 'font-size: 20px; vertical-align: middle;')) . '<span>' . esc_html__( 'ヘルプ', 'ktpwp' ) . '</span></a>';
 
         return ' ' . implode(' ', $links);
     }

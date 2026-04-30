@@ -844,9 +844,11 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 					  }
 
 					  $item_link_url = esc_url( add_query_arg( $query_args, $base_page_url ) );
+					  $frequency_title = esc_attr__( 'アクセス頻度（クリックされた回数）', 'ktpwp' );
+					  $frequency_label = esc_html__( '頻度', 'ktpwp' );
 					  $results[] = <<<END
                 <a href="{$item_link_url}" onclick="document.cookie = '{$cookie_name}=' + {$id};">
-                    <div class="ktp_data_list_item">D: $id $company_name | 担当者: $user_name | $category | <span title="アクセス頻度（クリックされた回数）">頻度($frequency)</span></div>
+                    <div class="ktp_data_list_item">D: $id $company_name | 担当者: $user_name | $category | <span title="{$frequency_title}">{$frequency_label}($frequency)</span></div>
                 </a>
                 END;
 
@@ -1058,7 +1060,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 					// 職能データが1件以上ある場合：IDを表示
 					$current_id_message = '<div class="data_skill_list_title" style="display: flex; align-items: center;">'
 						. '<div style="display: flex; align-items: center; gap: 8px;">'
-						. '■ ' . esc_html( $display_company_name ) . '（ID: ' . esc_html( $query_id ) . '）の商品'
+						. esc_html( sprintf( __( '■ %1$s（ID: %2$s）の商品', 'ktpwp' ), $display_company_name, $query_id ) )
 						. '</div>'
 						. $skills_sort_dropdown
 						. '</div>';
@@ -1066,7 +1068,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 					// 職能データが0件の場合：IDを非表示
 					$current_id_message = '<div class="data_skill_list_title" style="display: flex; align-items: center;">'
 						. '<div style="display: flex; align-items: center; gap: 8px;">'
-						. '■ ' . esc_html( $display_company_name ) . 'の商品'
+						. esc_html( sprintf( __( '■ %sの商品', 'ktpwp' ), $display_company_name ) )
 						. '</div>'
 						. $skills_sort_dropdown
 						. '</div>';
@@ -1271,7 +1273,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 				// 追加実行ボタン
 				$data_forms .= "<input type='hidden' name='query_post' value='insert'>";
 				$data_forms .= "<input type='hidden' name='data_id' value=''>";
-				$data_forms .= "<button type='submit' name='send_post' title='追加実行'><span class='material-symbols-outlined'>select_check_box</span></button>";
+				$data_forms .= '<button type="submit" name="send_post" title="' . esc_attr__( '追加実行', 'ktpwp' ) . '"><span class="material-symbols-outlined">select_check_box</span></button>';
 				// キャンセルボタン（JavaScriptでリダイレクト）
 				global $wp;
 				$current_page_id = get_queried_object_id();
@@ -1280,7 +1282,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 					$base_page_url = home_url( add_query_arg( array(), $wp->request ) );
 				}
 				$cancel_url = add_query_arg( array( 'tab_name' => $name ), $base_page_url );
-				$data_forms .= "<button type='button' onclick='window.location.href=\"" . esc_js( $cancel_url ) . "\"' title='キャンセル'><span class='material-symbols-outlined'>disabled_by_default</span></button>";
+				$data_forms .= '<button type="button" onclick="window.location.href=\"' . esc_js( $cancel_url ) . '\"" title="' . esc_attr__( 'キャンセル', 'ktpwp' ) . '"><span class="material-symbols-outlined">disabled_by_default</span></button>';
 				$data_forms .= '<div class="add"></div>';
 				$data_forms .= '</div>';
 				$data_forms .= '</form>';
@@ -1309,7 +1311,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 					$search_query_value = esc_attr( urldecode( $_GET['search_query'] ) );
 				}
 				$data_forms .= '<div class="form-group" style="margin-bottom: 15px !important;">';
-				$data_forms .= '<input type="text" name="search_query" placeholder="フリーワード検索" value="' . $search_query_value . '" style="width: 100% !important; padding: 12px !important; font-size: 16px !important; border: 2px solid #ddd !important; border-radius: 5px !important; box-sizing: border-box !important; transition: border-color 0.3s ease !important;">';
+				$data_forms .= '<input type="text" name="search_query" placeholder="' . esc_attr__( 'フリーワード検索', 'ktpwp' ) . '" value="' . $search_query_value . '" style="width: 100% !important; padding: 12px !important; font-size: 16px !important; border: 2px solid #ddd !important; border-radius: 5px !important; box-sizing: border-box !important; transition: border-color 0.3s ease !important;">';
 				$data_forms .= '</div>';
 
 				// ボタンを横並びにするためのラップクラスを追加
@@ -1317,9 +1319,9 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 
 				// 検索実行ボタン
 				$data_forms .= '<input type="hidden" name="query_post" value="search">';
-				$data_forms .= '<button type="submit" name="send_post" title="検索実行" style="background-color: #0073aa !important; color: white !important; border: none !important; padding: 10px 20px !important; cursor: pointer !important; border-radius: 5px !important; display: flex !important; align-items: center !important; gap: 5px !important; font-size: 14px !important; font-weight: 500 !important; transition: all 0.3s ease !important;">';
+				$data_forms .= '<button type="submit" name="send_post" title="' . esc_attr__( '検索実行', 'ktpwp' ) . '" style="background-color: #0073aa !important; color: white !important; border: none !important; padding: 10px 20px !important; cursor: pointer !important; border-radius: 5px !important; display: flex !important; align-items: center !important; gap: 5px !important; font-size: 14px !important; font-weight: 500 !important; transition: all 0.3s ease !important;">';
 				$data_forms .= '<span class="material-symbols-outlined" style="font-size: 18px !important;">search</span>';
-				$data_forms .= '検索実行';
+				$data_forms .= esc_html__( '検索実行', 'ktpwp' );
 				$data_forms .= '</button>';
 				$data_forms .= '</form>';
 
@@ -1327,9 +1329,9 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 				$data_forms .= '<form method="post" action="' . esc_url( $form_action_base_url ) . '" style="margin: 0 !important;">';
 				$data_forms .= function_exists( 'wp_nonce_field' ) ? wp_nonce_field( 'ktp_supplier_action', 'ktp_supplier_nonce', true, false ) : '';
 				$data_forms .= '<input type="hidden" name="query_post" value="update">';
-				$data_forms .= '<button type="submit" name="send_post" title="キャンセル" style="background-color: #666 !important; color: white !important; border: none !important; padding: 10px 20px !important; cursor: pointer !important; border-radius: 5px !important; display: flex !important; align-items: center !important; gap: 5px !important; font-size: 14px !important; font-weight: 500 !important; transition: all 0.3s ease !important;">';
+				$data_forms .= '<button type="submit" name="send_post" title="' . esc_attr__( 'キャンセル', 'ktpwp' ) . '" style="background-color: #666 !important; color: white !important; border: none !important; padding: 10px 20px !important; cursor: pointer !important; border-radius: 5px !important; display: flex !important; align-items: center !important; gap: 5px !important; font-size: 14px !important; font-weight: 500 !important; transition: all 0.3s ease !important;">';
 				$data_forms .= '<span class="material-symbols-outlined" style="font-size: 18px !important;">disabled_by_default</span>';
-				$data_forms .= 'キャンセル';
+				$data_forms .= esc_html__( 'キャンセル', 'ktpwp' );
 				$data_forms .= '</button>';
 				$data_forms .= '</form>';
 
@@ -1437,9 +1439,9 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 					error_log('KTPWP Supplier Tab: query_id type = ' . gettype($query_id));
 					error_log('KTPWP Supplier Tab: id_display condition = ' . (!empty($query_id) && $query_id !== '0' && $query_id !== 0 ? 'true' : 'false'));
 				}
-				$id_display = (empty($query_id) || $query_id === '0' || $query_id === 0) ? '' : '（ ID: ' . esc_html( $query_id ) . ' ）';
+				$id_display = ( empty( $query_id ) || $query_id === '0' || $query_id === 0 ) ? '' : sprintf( __( '（ ID: %s ）', 'ktpwp' ), esc_html( $query_id ) );
 				$data_title = '<div class="data_detail_box"><div class="data_detail_title" style="display: flex; align-items: center; justify-content: space-between;">
-            <div>■ 協力会社の詳細' . $id_display . '</div>' . $button_group_html . '</div>';
+            <div>' . esc_html__( '■ 協力会社の詳細', 'ktpwp' ) . $id_display . '</div>' . $button_group_html . '</div>';
 
 				// メイン更新フォーム
 				$data_forms .= '<form method="post" action="' . esc_url( $form_action_base_url ) . '">';
@@ -1480,7 +1482,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 				}
 				$data_forms .= "<div class='button'>";
 				// 更新ボタンのみ残す
-				$data_forms .= '<button type="submit" name="send_post" title="更新する"><span class="material-symbols-outlined">cached</span></button>';
+				$data_forms .= '<button type="submit" name="send_post" title="' . esc_attr__( '更新する', 'ktpwp' ) . '"><span class="material-symbols-outlined">cached</span></button>';
 				$data_forms .= '<div class="add"></div>';
 				$data_forms .= '</div>';
 				$data_forms .= '</form>';
@@ -1551,6 +1553,8 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 				$supplier_preview_html = '""';
 			}
 			$company_name_json = wp_json_encode( (string) $company_name, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE );
+			$print_button_title = esc_attr__( '印刷する', 'ktpwp' );
+			$print_button_label = esc_attr__( '印刷', 'ktpwp' );
 
 			// JavaScript
 			$print = <<<END
@@ -1609,8 +1613,8 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
         </script>
         <!-- コントローラー/プレビューアイコン（プレビューは廃止） -->
         <div class="controller">
-                <button onclick="printContent()" title="印刷する" style="padding: 6px 10px; font-size: 12px;">
-                    <span class="material-symbols-outlined" aria-label="印刷">print</span>
+                <button onclick="printContent()" title="{$print_button_title}" style="padding: 6px 10px; font-size: 12px;">
+                    <span class="material-symbols-outlined" aria-label="{$print_button_label}">print</span>
                 </button>
         </div>
         END;
@@ -1918,7 +1922,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 
 			// 1行目：ページ情報表示
 			$pagination_html .= '<div style="margin-bottom: 18px; color: #4b5563; font-size: 14px; font-weight: 500;">';
-			$pagination_html .= esc_html( $current_page ) . ' / ' . esc_html( $total_pages ) . ' ページ（全 ' . esc_html( $total_rows ) . ' 件）';
+			$pagination_html .= esc_html( sprintf( __( '%1$d / %2$d ページ（全 %3$d 件）', 'ktpwp' ), $current_page, $total_pages, $total_rows ) );
 			$pagination_html .= '</div>';
 
 			// 2行目：ページネーションボタン
@@ -2098,20 +2102,20 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 			return '
         <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 900px; margin: 0 auto;">
             <div style="text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 20px;">
-                <h1 style="color: #333; margin: 0; font-size: 24px;">協力会社情報</h1>
+                <h1 style="color: #333; margin: 0; font-size: 24px;">' . esc_html__( '協力会社情報', 'ktpwp' ) . '</h1>
             </div>
             
             <table style="border-collapse: collapse; width: 100%; margin-bottom: 20px;">
                 <tr>
-                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa; width: 25%;">会社名</td>
+                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa; width: 25%;">' . esc_html__( '会社名', 'ktpwp' ) . '</td>
                     <td style="border: 1px solid #ddd; padding: 12px;">' . esc_html( $company_name ) . '</td>
                 </tr>
                 <tr>
-                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">担当者名</td>
+                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">' . esc_html__( '担当者名', 'ktpwp' ) . '</td>
                     <td style="border: 1px solid #ddd; padding: 12px;">' . esc_html( $name ) . '</td>
                 </tr>
                 <tr>
-                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">メールアドレス</td>
+                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">' . esc_html__( 'メールアドレス', 'ktpwp' ) . '</td>
                     <td style="border: 1px solid #ddd; padding: 12px;">' . esc_html( $email ) . '</td>
                 </tr>
                 <tr>
@@ -2119,61 +2123,61 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
                     <td style="border: 1px solid #ddd; padding: 12px;">' . esc_html( $url ) . '</td>
                 </tr>
                 <tr>
-                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">代表者名</td>
+                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">' . esc_html__( '代表者名', 'ktpwp' ) . '</td>
                     <td style="border: 1px solid #ddd; padding: 12px;">' . esc_html( $representative_name ) . '</td>
                 </tr>
                 <tr>
-                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">電話番号</td>
+                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">' . esc_html__( '電話番号', 'ktpwp' ) . '</td>
                     <td style="border: 1px solid #ddd; padding: 12px;">' . esc_html( $phone ) . '</td>
                 </tr>
                 <tr>
-                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">郵便番号</td>
+                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">' . esc_html__( '郵便番号', 'ktpwp' ) . '</td>
                     <td style="border: 1px solid #ddd; padding: 12px;">' . esc_html( $postal_code ) . '</td>
                 </tr>
                 <tr>
-                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">住所</td>
+                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">' . esc_html__( '住所', 'ktpwp' ) . '</td>
                     <td style="border: 1px solid #ddd; padding: 12px;">' . esc_html( $full_address ) . '</td>
                 </tr>
                 <tr>
-                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">締め日</td>
+                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">' . esc_html__( '締め日', 'ktpwp' ) . '</td>
                     <td style="border: 1px solid #ddd; padding: 12px;">' . esc_html( $closing_day ) . '</td>
                 </tr>
                 <tr>
-                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">支払月</td>
+                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">' . esc_html__( '支払月', 'ktpwp' ) . '</td>
                     <td style="border: 1px solid #ddd; padding: 12px;">' . esc_html( $payment_month ) . '</td>
                 </tr>
                 <tr>
-                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">支払日</td>
+                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">' . esc_html__( '支払日', 'ktpwp' ) . '</td>
                     <td style="border: 1px solid #ddd; padding: 12px;">' . esc_html( $payment_day ) . '</td>
                 </tr>
                 <tr>
-                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">支払方法</td>
+                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">' . esc_html__( '支払方法', 'ktpwp' ) . '</td>
                     <td style="border: 1px solid #ddd; padding: 12px;">' . esc_html( $payment_method ) . '</td>
                 </tr>
                 <tr>
-                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">税区分</td>
+                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">' . esc_html__( '税区分', 'ktpwp' ) . '</td>
                     <td style="border: 1px solid #ddd; padding: 12px;">' . esc_html( $tax_category ) . '</td>
                 </tr>
                 ' . ( class_exists( 'KTPWP_Tax_Policy' ) && KTPWP_Tax_Policy::is_abolished() ? '' : ('<tr>
-                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">適格請求書番号</td>
+                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">' . esc_html__( '適格請求書番号', 'ktpwp' ) . '</td>
                     <td style="border: 1px solid #ddd; padding: 12px;">' . esc_html( $qualified_invoice_number ) . '</td>
                 </tr>') ) . '
                 <tr>
-                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">カテゴリー</td>
+                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">' . esc_html__( 'カテゴリー', 'ktpwp' ) . '</td>
                     <td style="border: 1px solid #ddd; padding: 12px;">' . esc_html( $category ) . '</td>
                 </tr>
                 <tr>
-                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">頻度</td>
+                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">' . esc_html__( '頻度', 'ktpwp' ) . '</td>
                     <td style="border: 1px solid #ddd; padding: 12px;">' . esc_html( $frequency ) . '</td>
                 </tr>
                 <tr>
-                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">メモ</td>
+                    <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; background-color: #f8f9fa;">' . esc_html__( 'メモ', 'ktpwp' ) . '</td>
                     <td style="border: 1px solid #ddd; padding: 12px; white-space: pre-wrap;">' . esc_html( $memo ) . '</td>
                 </tr>
             </table>
             
             <div style="text-align: center; margin-top: 30px; color: #666; font-size: 12px;">
-                <p>印刷日時: ' . date( 'Y年m月d日 H:i' ) . '</p>
+                <p>' . esc_html__( '印刷日時:', 'ktpwp' ) . ' ' . esc_html( wp_date( __( 'Y年m月d日 H:i', 'ktpwp' ) ) ) . '</p>
             </div>
         </div>';
 		}

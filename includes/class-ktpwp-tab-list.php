@@ -510,20 +510,22 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 			// 受注の場合はソート順を説明
 			if ( $selected_progress == 3 ) {
 				$content .= '<div style="background: #e3f2fd; border-left: 4px solid #1976d2; padding: 10px 15px; margin-bottom: 15px; border-radius: 4px; font-size: 13px; color: #1565c0;">';
-				$content .= '<strong>📅 ソート順:</strong> 納期が迫っている順 → 受注日時順（新しい順）で表示されています。';
+				$content .= '<strong>' . esc_html__( '📅 ソート順:', 'ktpwp' ) . '</strong> ' . esc_html__( '納期が迫っている順 → 受注日時順（新しい順）で表示されています。', 'ktpwp' );
 				$content .= '</div>';
 			}
+
+			$date_input_lang_attr = ( function_exists( 'determine_locale' ) && strpos( strtolower( determine_locale() ), 'en' ) === 0 ) ? ' lang="en-US"' : '';
 
 			if ( $order_list ) {
 				// 進捗ラベル
 				$progress_labels = array(
-					1 => '受付中',
-					2 => '見積中',
-					3 => '受注',
-					4 => '完了',
-					5 => '請求済',
-					6 => '入金済',
-					7 => 'ボツ',
+					1 => __( '受付中', 'ktpwp' ),
+					2 => __( '見積中', 'ktpwp' ),
+					3 => __( '受注', 'ktpwp' ),
+					4 => __( '完了', 'ktpwp' ),
+					5 => __( '請求済', 'ktpwp' ),
+					6 => __( '入金済', 'ktpwp' ),
+					7 => __( 'ボツ', 'ktpwp' ),
 				);
 				$content .= '<ul>';
 				foreach ( $order_list as $order ) {
@@ -822,8 +824,8 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 					// 納期フィールドと進捗プルダウンを1つのコンテナにまとめる
 					$content .= "<div class='delivery-dates-container'>";
 					$content .= "<div class='delivery-input-wrapper'>";
-					$content .= "<span class='delivery-label'>納期</span>";
-					$content .= "<input type='date' name='expected_delivery_date_{$order_id}' value='{$expected_delivery_date}' class='delivery-date-input' data-order-id='{$order_id}' data-field='expected_delivery_date' placeholder='納品予定日' title='納品予定日'>";
+					$content .= "<span class='delivery-label'>" . esc_html__( '納期', 'ktpwp' ) . "</span>";
+					$content .= "<input type='date' name='expected_delivery_date_{$order_id}' value='{$expected_delivery_date}' class='delivery-date-input' data-order-id='{$order_id}' data-field='expected_delivery_date' placeholder='" . esc_attr__( '納品予定日', 'ktpwp' ) . "' title='" . esc_attr__( '納品予定日', 'ktpwp' ) . "'{$date_input_lang_attr}>";
 
 					// 納期警告マークを追加
 					if ( $show_warning && $delivery_warning_title !== '' ) {
@@ -844,8 +846,8 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 
 					// 完了日カレンダーを納期カレンダーの右側に追加
 					$content .= "<div class='completion-input-wrapper'>";
-					$content .= "<span class='completion-label'><span class='completion-label-desktop'>完了日</span><span class='completion-label-mobile'>完了</span></span>";
-					$content .= "<input type='date' name='completion_date_{$order_id}' value='{$completion_date}' class='completion-date-input' data-order-id='{$order_id}' data-field='completion_date' placeholder='完了日' title='完了日'>";
+					$content .= "<span class='completion-label'><span class='completion-label-desktop'>" . esc_html__( '完了日', 'ktpwp' ) . "</span><span class='completion-label-mobile'>" . esc_html__( '完了', 'ktpwp' ) . "</span></span>";
+					$content .= "<input type='date' name='completion_date_{$order_id}' value='{$completion_date}' class='completion-date-input' data-order-id='{$order_id}' data-field='completion_date' placeholder='" . esc_attr__( '完了日', 'ktpwp' ) . "' title='" . esc_attr__( '完了日', 'ktpwp' ) . "'{$date_input_lang_attr}>";
 					$content .= '</div>';
 
 					// 進捗プルダウンを納期コンテナ内に配置
@@ -1113,7 +1115,7 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 
 			// 1行目：ページ情報表示
 			$pagination_html .= '<div style="margin-bottom: 18px; color: #4b5563; font-size: 14px; font-weight: 500;">';
-			$pagination_html .= esc_html( $current_page ) . ' / ' . esc_html( $total_pages ) . ' ページ（全 ' . esc_html( $total_rows ) . ' 件）';
+			$pagination_html .= esc_html( sprintf( __( '%1$d / %2$d ページ（全 %3$d 件）', 'ktpwp' ), $current_page, $total_pages, $total_rows ) );
 			$pagination_html .= '</div>';
 
 			// 2行目：ページネーションボタン
