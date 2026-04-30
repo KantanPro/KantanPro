@@ -1520,7 +1520,8 @@ class KTPWP_Update_Checker {
         }
 
         if ( ! isset( $_GET['ktpwp_reloaded'] ) ) {
-            wp_safe_redirect( admin_url( 'admin.php?page=ktp-settings&ktpwp_reloaded=1&ktpwp_updated=1' ) );
+            delete_transient( $this->key( 'admin_reload' ) );
+            wp_safe_redirect( admin_url( 'plugins.php?ktpwp_reloaded=1&ktpwp_updated=1' ) );
             exit;
         }
 
