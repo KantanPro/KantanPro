@@ -84,6 +84,7 @@ class KTPWP_Update_Checker {
             add_action( 'admin_init', array( $this, 'admin_init' ) );
             add_filter( 'pre_set_site_transient_update_plugins', array( $this, 'check_for_plugin_update' ) );
             add_filter( 'plugins_api', array( $this, 'plugins_api_handler' ), 20, 3 );
+            add_action( 'upgrader_process_complete', array( $this, 'handle_update_complete' ), 10, 2 );
 
             
             // プラグインメタ行にリンクを追加（即座に登録）
@@ -125,6 +126,16 @@ class KTPWP_Update_Checker {
         error_log( 'KantanPro Update Checker: 初期化完了 - basename: ' . $this->plugin_basename );
         error_log( 'KantanPro Update Checker: 管理画面: ' . ( is_admin() ? 'はい' : 'いいえ' ) );
     }
+
+    /**
+     * 更新チェッカー用の一意なキーを生成する
+     *
+     * @param string $suffix キーのサフィックス
+     * @return string
+     */
+    private function key( $suffix ) {
+        return 'ktpwp_upd_' . md5( $this->plugin_basename ) . '_' . $suffix;
+    }
     
     /**
      * 初期化
@@ -143,6 +154,7 @@ class KTPWP_Update_Checker {
     public function admin_init() {
         // 管理画面でのスクリプトとスタイルの読み込み
         add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_scripts' ) );
+        $this->maybe_redirect_to_settings_after_update();
     }
     
     /**
@@ -1459,12 +1471,60 @@ class KTPWP_Update_Checker {
         // バージョンが変更された場合
         if ( $old_version !== $new_version ) {
             $this->clear_plugin_cache();
+            if ( is_admin() && $old_version !== '0' ) {
+                set_transient( $this->key( 'admin_reload' ), 1, 5 * MINUTE_IN_SECONDS );
+            }
             
             // 新しいバージョンを保存
             update_option( 'ktpwp_version', $new_version );
             
             error_log( 'KantanPro: バージョン更新を検出 - ' . $old_version . ' → ' . $new_version . ' (キャッシュクリア完了)' );
         }
+    }
+
+    /**
+     * プラグイン更新完了後、次の管理画面ロードで設定ページへ戻す
+     *
+     * @param object $upgrader_object アップグレーダー
+     * @param array  $options 更新オプション
+     * @return void
+     */
+    public function handle_update_complete( $upgrader_object, $options ) {
+        if ( empty( $options['action'] ) || empty( $options['type'] ) ) {
+            return;
+        }
+
+        if ( $options['action'] !== 'update' || $options['type'] !== 'plugin' ) {
+            return;
+        }
+
+        if ( empty( $options['plugins'] ) || ! in_array( $this->plugin_basename, (array) $options['plugins'], true ) ) {
+            return;
+        }
+
+        set_transient( $this->key( 'admin_reload' ), 1, 5 * MINUTE_IN_SECONDS );
+    }
+
+    /**
+     * 更新直後に管理画面を一度だけリロードし、設定ページへ戻す
+     *
+     * @return void
+     */
+    public function maybe_redirect_to_settings_after_update() {
+        if ( ! is_admin() || ( function_exists( 'wp_doing_ajax' ) && wp_doing_ajax() ) || ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
+
+        if ( ! get_transient( $this->key( 'admin_reload' ) ) ) {
+            return;
+        }
+
+        if ( ! isset( $_GET['ktpwp_reloaded'] ) ) {
+            wp_safe_redirect( admin_url( 'admin.php?page=ktp-settings&ktpwp_reloaded=1&ktpwp_updated=1' ) );
+            exit;
+        }
+
+        delete_transient( $this->key( 'admin_reload' ) );
     }
 
     /**
