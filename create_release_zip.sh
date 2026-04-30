@@ -220,6 +220,12 @@ if [ $? -eq 0 ]; then
     echo "ZIPファイル: ${FINAL_ZIP_PATH}"
     echo "ファイルサイズ: ${ZIP_SIZE}"
     echo "解凍後フォルダ: ${BUILD_DIR_NAME}"
+    echo ""
+    echo "⚠️  GitHub自動更新向けの注意:"
+    echo "  - 既存ユーザー救済のため、GitHub ReleaseにはこのZIPをasset添付しないでください。"
+    echo "  - GitHub Releaseはassetなしで作成し、WordPress updaterをzipball_url(codeload.github.com)へフォールバックさせます。"
+    echo "  - このZIPは管理画面からの手動アップロード/配布サイト掲載用として使用してください。"
+    echo "  - 例: gh release create ${VERSION} --repo KantanPro/KantanPro --title \"KantanPro（WP）v ${VERSION} をリリースしました\" --notes \"...\" --latest"
     echo "--------------------------------------------------"
 else
     echo "\n❌ ZIPファイルの作成に失敗しました。"
