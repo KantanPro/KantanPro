@@ -155,7 +155,7 @@ msgstr "KantanPro 連携"
 #: includes/class-ktpwp-settings.php:2343
 #: includes/class-ktpwp-shortcodes.php:862 ktpwp.php:4176
 msgid "KantanProEX 商品ページ"
-msgstr "KantanProEX 商品ページ"
+msgstr "KantanProEX Product Page"
 
 #: includes/class-ktpwp-settings.php:2335
 msgid "KantanProEX（有料版）"
@@ -164,7 +164,7 @@ msgstr "KantanProEX（有料版）"
 #: includes/class-ktpwp-order-main.php:359
 #: includes/class-ktpwp-shortcodes.php:861 ktpwp.php:4175
 msgid "KantanProEX（有料版）へ移行してご利用ください。"
-msgstr "KantanProEX（有料版）へ移行してご利用ください。"
+msgstr "Please upgrade to KantanProEX (paid version) to use this feature."
 
 #: includes/class-ktpwp-settings.php:4912
 msgid "KantanProが表示されているページで更新通知を表示します。"
@@ -1321,7 +1321,7 @@ msgstr "レポート機能の開発に必要な万能ライセンスキーを設
 
 #: includes/class-ktpwp-ui-generator.php:104
 msgid "レポート機能は無料版では利用できません"
-msgstr "レポート機能は無料版では利用できません"
+msgstr "Reports are not available in the free version"
 
 #: includes/class-ktpwp-license-manager.php:302
 #: includes/class-ktpwp-license-manager.php:98
@@ -1821,6 +1821,9 @@ msgid "受注書が見つかりません"
 msgstr "受注書が見つかりません"
 
 #: includes/class-ktpwp-staff-chat.php:154 ktpwp.php:2018
+msgid "システム"
+msgstr "System"
+
 msgid "受注書を作成しました。"
 msgstr "Order created."
 

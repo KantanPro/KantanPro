@@ -306,6 +306,22 @@ if ( ! class_exists( 'KTPWP_Staff_Chat' ) ) {
 		}
 
 		/**
+		 * Localize reserved display names stored in staff chat rows.
+		 *
+		 * @param string $display_name Stored display name.
+		 * @return string Localized display name.
+		 */
+		private function localize_user_display_name( $display_name ) {
+			$display_name = (string) $display_name;
+
+			if ( $display_name === 'システム' || $display_name === 'System' ) {
+				return __( 'システム', 'ktpwp' );
+			}
+
+			return $display_name;
+		}
+
+		/**
 		 * Generate staff chat HTML
 		 *
 		 * @since 1.0.0
@@ -371,7 +387,7 @@ if ( ! class_exists( 'KTPWP_Staff_Chat' ) ) {
 				foreach ( $messages as $index => $message ) {
 					if ( $index === 0 && intval( $message['is_initial'] ) === 1 ) {
 						// First message: fixed header display
-						$user_display_name = esc_html( $message['user_display_name'] );
+						$user_display_name = esc_html( $this->localize_user_display_name( $message['user_display_name'] ) );
 						$order_created_time = '';
 						if ( $order && ! empty( $order->time ) ) {
 							$order_created_time = date( 'Y/n/j H:i', $order->time );
@@ -407,7 +423,7 @@ if ( ! class_exists( 'KTPWP_Staff_Chat' ) ) {
 			if ( ! empty( $scrollable_messages ) ) {
 				foreach ( $scrollable_messages as $message ) {
 					$created_at = $message['created_at'];
-					$user_display_name = esc_html( $message['user_display_name'] );
+					$user_display_name = esc_html( $this->localize_user_display_name( $message['user_display_name'] ) );
 					$message_text = isset( $message['message'] ) ? (string) $message['message'] : '';
 					if ( ! empty( $message['is_initial'] ) && $message_text === '受注書を作成しました。' ) {
 						$message_text = __( '受注書を作成しました。', 'ktpwp' );
@@ -522,7 +538,7 @@ if ( ! class_exists( 'KTPWP_Staff_Chat' ) ) {
 			foreach ( $messages as $message ) {
 				$formatted_messages[] = array(
 					'id'                => intval( $message['id'] ),
-					'user_display_name' => esc_html( $message['user_display_name'] ),
+					'user_display_name' => esc_html( $this->localize_user_display_name( $message['user_display_name'] ) ),
 					'message'           => esc_html( $message['message'] ),
 					'created_at'        => $message['created_at'],
 					'timestamp'         => strtotime( $message['created_at'] ),
