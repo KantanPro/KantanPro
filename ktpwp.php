@@ -3,7 +3,7 @@
  * Plugin Name: KantanPro
  * Plugin URI: https://www.kantanpro.com/
  * Description: スモールビジネスのための販売支援ツール。ショートコード[ktpwp_all_tab]を固定ページに設置してください。
- * Version: 1.2.66
+ * Version: 1.2.67
  * Author: KantanPro
  * Author URI: https://www.kantanpro.com/kantanpro-page
  * License: GPL v2 or later
@@ -2444,6 +2444,8 @@ function ktpwp_plugin_upgrade_migration( $upgrader, $hook_extra ) {
         set_transient( 'ktpwp_upgrade_message', __( 'KantanProプラグインが正常に更新されました。適格請求書ナンバー機能も含まれています。', 'ktpwp' ), 60 );
         // マイグレーション成功後「次にやること」を表示するためのフラグ
         set_transient( 'ktpwp_show_update_complete_guide', '1', 600 );
+        // 更新結果画面から設定ページへ自動遷移するための専用フラグ
+        set_transient( 'ktpwp_redirect_to_settings_after_update', '1', 600 );
 
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
             error_log( 'KTPWP: Plugin upgrade migration completed successfully' );
@@ -2871,22 +2873,37 @@ if ( is_admin() ) {
  */
 add_action( 'admin_footer', 'ktpwp_footer_update_complete_guide' );
 function ktpwp_footer_update_complete_guide() {
-    if ( ! current_user_can( 'manage_options' ) || ! get_transient( 'ktpwp_show_update_complete_guide' ) ) {
+    if ( ! current_user_can( 'manage_options' ) ) {
         return;
     }
     $screen = get_current_screen();
     if ( ! $screen || strpos( $screen->id, 'update' ) === false ) {
         return;
     }
+
+    $should_show_guide = get_transient( 'ktpwp_show_update_complete_guide' );
+    $should_redirect = get_transient( 'ktpwp_redirect_to_settings_after_update' );
+
+    if ( ! $should_show_guide && ! $should_redirect ) {
+        return;
+    }
+
     delete_transient( 'ktpwp_show_update_complete_guide' );
+    delete_transient( 'ktpwp_redirect_to_settings_after_update' );
     $plugins_url = admin_url( 'plugins.php' );
-    $settings_url = admin_url( 'admin.php?page=ktp-settings' );
+    $settings_url = admin_url( 'admin.php?page=ktp-settings&ktpwp_updated=1' );
     echo '<div class="notice notice-success" style="margin:20px 0;padding:20px;border-left:4px solid #00a32a;background:#f0f9f0;border-radius:4px;">';
     echo '<p style="font-size:15px;margin:0 0 8px 0;"><strong>✅ KantanPro の更新とマイグレーションが完了しました。</strong></p>';
-    echo '<p style="margin:0 0 12px 0;">次に、下のいずれかをクリックして管理画面に戻ってください。</p>';
+    echo '<p style="margin:0 0 12px 0;">設定ページへ移動します。自動で移動しない場合は下のボタンをクリックしてください。</p>';
     echo '<p style="margin:0;"><a href="' . esc_url( $plugins_url ) . '" class="button button-primary">プラグイン一覧へ</a> ';
     echo '<a href="' . esc_url( $settings_url ) . '" class="button">KantanPro 設定を開く</a></p>';
     echo '</div>';
+
+    if ( $should_redirect ) {
+        echo '<script>';
+        echo 'window.setTimeout(function(){ window.top.location.href = ' . wp_json_encode( $settings_url ) . '; }, 800);';
+        echo '</script>';
+    }
 }
 
 /**

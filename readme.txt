@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.2.66
+Stable tag: 1.2.67
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -324,6 +324,9 @@ curl -sS -X POST \
 * 推奨PHP拡張: GD（画像処理用）
 
 == 変更履歴 ==
+
+= 1.2.67 - 2026年05月01日 =
+* プラグイン更新完了画面からKantanPro設定ページへ自動遷移する処理を修正
 
 = 1.2.66 - 2026年04月30日 =
 * KantanProEXが有効な場合は無料版を必ず停止モードにし、設定メニューの重複表示を防止
