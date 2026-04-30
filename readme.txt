@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.2.62
+Stable tag: 1.2.63
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -324,6 +324,11 @@ curl -sS -X POST \
 * 推奨PHP拡張: GD（画像処理用）
 
 == 変更履歴 ==
+
+= 1.2.63 - 2026年04月30日 =
+* 多言語化対応を強化し、テキストドメインの修正、エラーメッセージの翻訳関数対応、英語翻訳ファイルの追加を実施
+* ダミーデータのカテゴリー名を英語化し、翻訳環境での表示を改善
+* ユーザー表示名のローカライズ機能を追加し、スタッフチャットの表示名を修正
 
 = 1.2.62 - 2026年04月30日 =
 * WooCommerce 連携で請求先氏名を姓・名から整形して取得するよう改善
