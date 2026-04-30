@@ -207,6 +207,47 @@ class KTPWP_Update_Checker {
 
         return (string) $basename;
     }
+
+    /**
+     * 対象プラグインを有効化し、成功可否を返す
+     *
+     * @param string $basename ベースネーム
+     * @return bool
+     */
+    private function activate_target_plugin( $basename ) {
+        if ( ! function_exists( 'is_plugin_active' ) || ! function_exists( 'activate_plugin' ) ) {
+            require_once ABSPATH . 'wp-admin/includes/plugin.php';
+        }
+
+        $resolved_basename = $this->resolve_installed_basename( $basename );
+        if ( ! $this->is_target_plugin_basename( $resolved_basename ) ) {
+            return false;
+        }
+
+        if ( is_plugin_active( $resolved_basename ) ) {
+            return true;
+        }
+
+        $activation_result = activate_plugin( $resolved_basename );
+        return ! is_wp_error( $activation_result );
+    }
+
+    /**
+     * 保留中の再有効化を再試行する
+     *
+     * @return void
+     */
+    private function retry_pending_activation() {
+        $pending = get_site_transient( $this->key( 'pending_activation' ) );
+        if ( ! is_array( $pending ) || empty( $pending['basename'] ) ) {
+            return;
+        }
+
+        if ( $this->activate_target_plugin( (string) $pending['basename'] ) ) {
+            delete_site_transient( $this->key( 'pending_activation' ) );
+            set_transient( $this->key( 'admin_reload' ), 1, 5 * MINUTE_IN_SECONDS );
+        }
+    }
     
     /**
      * 初期化
@@ -225,6 +266,7 @@ class KTPWP_Update_Checker {
     public function admin_init() {
         // 管理画面でのスクリプトとスタイルの読み込み
         add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_scripts' ) );
+        $this->retry_pending_activation();
         $this->maybe_redirect_to_settings_after_update();
     }
     
@@ -1574,15 +1616,19 @@ class KTPWP_Update_Checker {
             return;
         }
 
-        if ( ! function_exists( 'is_plugin_active' ) ) {
-            require_once ABSPATH . 'wp-admin/includes/plugin.php';
+        if ( $this->activate_target_plugin( $target_basename ) ) {
+            delete_site_transient( $this->key( 'pending_activation' ) );
+            set_transient( $this->key( 'admin_reload' ), 1, 5 * MINUTE_IN_SECONDS );
+            return;
         }
 
-        if ( ! is_plugin_active( $target_basename ) ) {
-            activate_plugin( $target_basename );
-        }
-
-        set_transient( $this->key( 'admin_reload' ), 1, 5 * MINUTE_IN_SECONDS );
+        set_site_transient(
+            $this->key( 'pending_activation' ),
+            array(
+                'basename' => $target_basename,
+            ),
+            30 * MINUTE_IN_SECONDS
+        );
     }
 
     /**
