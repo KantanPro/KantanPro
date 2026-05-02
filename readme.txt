@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.2.77
+Stable tag: 1.2.78
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -322,6 +322,13 @@ curl -sS -X POST \
 * MySQL 5.6 以上 または MariaDB 10.0 以上
 * 推奨メモリ: 256MB 以上
 * 推奨PHP拡張: GD（画像処理用）
+
+= 1.2.78 - 2026年05月02日 =
+* （自動要約）`git log v1.2.77..HEAD`（GitHub `main`）は空。タグ `v1.2.77` 対比の差分は `includes/class-ktpwp-i18n.php`・`js/ktp-client-invoice.js`
+* 一括請求プレビュー：KantanBiz 相当の税率別内訳サフィックス（内税/外税・レート別税額）を請求金額・案件合計・月別合計に表示（税ポリシー廃止・統一・列非表示と連動）
+* 一括請求プレビュー：レイアウトを再構成（タイトル・挨拶文・サマリーボックス、明細を HTML 表、ゼブラ行色は一般設定の奇偶色を利用）
+* 一括請求プレビュー：部署・担当者行、進捗「請求済」バッジ、動的文言の HTML エスケープ、自社情報・振込案内の外枠二重化を避けるアンラップ処理を追加
+* 英語UI：「件」「税額」「部署」「ご担当者名」「代表窓口」「請求済（入金予定日超過）」など請求プレビュー関連の翻訳キーを追加（`class-ktpwp-i18n.php`）
 
 = 1.2.77 - 2026年05月02日 =
 * （自動要約）GitHub `main` はタグ `v1.2.76` と同一コミットのため追加コミットなし。手元差分（`v1.2.76` クローンとのファイル差分）を反映

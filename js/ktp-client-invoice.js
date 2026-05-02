@@ -1,5 +1,98 @@
 // KTP Client Invoice Script
 
+function ktpInvoiceSuppressTaxForInlineSuffix() {
+    return !!(window.ktp_tax_policy && (window.ktp_tax_policy.mode === 'abolished' || window.ktp_tax_policy.hide_columns));
+}
+
+function ktpInvoiceEffectiveItemTaxRate(item) {
+    var itemTaxRateRaw = item && item.tax_rate;
+    if (window.ktp_tax_policy) {
+        if (window.ktp_tax_policy.mode === 'abolished') {
+            return 0;
+        }
+        if (window.ktp_tax_policy.mode === 'unified') {
+            return parseFloat(window.ktp_tax_policy.unified_tax_rate || 0) || 0;
+        }
+    }
+    if (itemTaxRateRaw !== null && itemTaxRateRaw !== undefined && itemTaxRateRaw !== '' && !isNaN(parseFloat(itemTaxRateRaw))) {
+        return parseFloat(itemTaxRateRaw);
+    }
+    return 0;
+}
+
+function ktpInvoiceFormatRateLabel(rate) {
+    var s = Number(rate).toFixed(2);
+    if (s.indexOf('.') >= 0) {
+        s = s.replace(/0+$/, '').replace(/\.$/, '');
+    }
+    return s;
+}
+
+/**
+ * 請求項目配列から「 (内税|消費税 : 10%: xxx, 8%: yyy)」形式（KantanBiz InvoiceTaxInlineBreakdown と同式）
+ */
+function ktpInvoiceTaxInlineSuffixFromItems(items, taxCategory, translateFn) {
+    var tfn = typeof translateFn === 'function' ? translateFn : function (x) { return x; };
+    if (ktpInvoiceSuppressTaxForInlineSuffix() || !items || !items.length) {
+        return '';
+    }
+    var sums = {};
+    items.forEach(function (item) {
+        var rate = ktpInvoiceEffectiveItemTaxRate(item);
+        if (rate <= 0) {
+            return;
+        }
+        var amount = parseFloat(item.amount) || 0;
+        if (amount <= 0) {
+            amount = (parseFloat(item.price) || 0) * (parseFloat(item.quantity) || 0);
+        }
+        if (amount <= 0) {
+            return;
+        }
+        var key = Number(rate).toFixed(2);
+        sums[key] = (sums[key] || 0) + amount;
+    });
+    var keys = Object.keys(sums).sort(function (a, b) { return parseFloat(b) - parseFloat(a); });
+    var parts = [];
+    keys.forEach(function (key) {
+        var rate = parseFloat(key);
+        var groupAmount = sums[key];
+        var tax = taxCategory === '外税'
+            ? Math.ceil(groupAmount * (rate / 100))
+            : Math.ceil((groupAmount * (rate / 100)) / (1 + rate / 100));
+        if (tax > 0) {
+            parts.push(ktpInvoiceFormatRateLabel(rate) + '%: ' + (typeof ktpwpFormatMoney === 'function' ? ktpwpFormatMoney(tax) : String(tax)));
+        }
+    });
+    if (!parts.length) {
+        return '';
+    }
+    var label = taxCategory === '外税' ? tfn('消費税') : tfn('内税');
+    return ' (' + label + ' : ' + parts.join(', ') + ')';
+}
+
+function ktpInvoiceEscapeHtml(s) {
+    return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
+/** KantanBiz 相当の自社ブロック用に旧 company-info-box の外枠を外す */
+function ktpInvoiceUnwrapCompanyInfoBox(html) {
+    var str = String(html || '').trim();
+    var m = str.match(/^<div\s+class="company-info-box"[^>]*>([\s\S]*)<\/div>\s*$/i);
+    return m ? m[1].trim() : str;
+}
+
+/** 二重枠を避けるため振込ブロックの外側 div を外す */
+function ktpInvoiceUnwrapBankTransferBox(html) {
+    var str = String(html || '').trim();
+    var m = str.match(/^<div\s+class="ktp-invoice-bank-transfer"[^>]*>([\s\S]*)<\/div>\s*$/i);
+    return m ? m[1].trim() : str;
+}
+
 jQuery(document).ready(function($) {
     //
     // 請求書発行機能
@@ -15,11 +108,6 @@ jQuery(document).ready(function($) {
         
         var ajaxurl = ktpClientInvoice.ajax_url;
         var t = function(text) { return typeof ktpwpTranslate === 'function' ? ktpwpTranslate(text) : text; };
-        var currentLocale = (window.ktpwpI18n && window.ktpwpI18n.locale) || document.documentElement.lang || '';
-        var customerHonorific = /^ja/i.test(currentLocale) ? ' 様' : '';
-        var ccyForCarryover = (window.ktpwpI18n && window.ktpwpI18n.currency) || {};
-        var carryoverSym = (ccyForCarryover.symbol != null && String(ccyForCarryover.symbol).trim() !== '') ? String(ccyForCarryover.symbol).trim() : '';
-        var carryoverCurrencyLabel = carryoverSym !== '' ? carryoverSym : (ccyForCarryover.code === 'JPY' ? '円' : (ccyForCarryover.code || 'JPY'));
         /** 請求プレビュー用: MySQL ゼロ日付などは「未設定」表示 */
         var formatInvoiceCompletionDate = function(d) {
             var s = d != null ? String(d).trim() : '';
@@ -28,6 +116,11 @@ jQuery(document).ready(function($) {
             }
             return s.replace(/\s00:00:00$/, '');
         };
+        var currentLocale = (window.ktpwpI18n && window.ktpwpI18n.locale) || document.documentElement.lang || '';
+        var customerHonorific = /^ja/i.test(currentLocale) ? ' 様' : '';
+        var ccyForCarryover = (window.ktpwpI18n && window.ktpwpI18n.currency) || {};
+        var carryoverSym = (ccyForCarryover.symbol != null && String(ccyForCarryover.symbol).trim() !== '') ? String(ccyForCarryover.symbol).trim() : '';
+        var carryoverCurrencyLabel = carryoverSym !== '' ? carryoverSym : (ccyForCarryover.code === 'JPY' ? '円' : (ccyForCarryover.code || 'JPY'));
         
         // フォールバック: ktpClientInvoiceが利用できない場合の代替手段
         if (!ajaxurl) {
@@ -157,18 +250,17 @@ jQuery(document).ready(function($) {
                                 }
                                 html += "</div>";
 
-                                html += "<div class=\"ktp-invoice-title-box\" style=\"margin:100px 0 20px 0;padding:15px;border:2px solid #333;border-radius:8px;background-color:#f9f9f9;text-align:center;\">";
-                                html += "<div style=\"font-size:18px;font-weight:bold;color:#333;\">" + t("請求書") + "</div>";
-                                // 適格請求書番号を表示（設定されている場合のみ）
+                                html += "<div class=\"ktp-invoice-title-box\" style=\"margin:100px 0 20px 0;padding:12px 16px;border:2px solid #d1d5db;border-radius:6px;background-color:#fff;text-align:center;\">";
+                                html += "<div style=\"font-size:24px;line-height:1.25;font-weight:bold;color:#111827;\">" + t("請求書") + "</div>";
                                 var showQualified = !(window.ktp_tax_policy && window.ktp_tax_policy.mode === 'abolished');
                                 if (showQualified && res.data.qualified_invoice_number && res.data.qualified_invoice_number.trim() !== '') {
-                                    html += "<div style=\"font-size:14px;color:#333;margin-top:5px;\">" + t("適格請求書番号：") + "" + res.data.qualified_invoice_number + "</div>";
+                                    html += "<div style=\"font-size:14px;color:#374151;margin-top:4px;\">" + t("適格請求書番号：") + res.data.qualified_invoice_number + "</div>";
                                 }
                                 html += "</div>";
 
-                                html += "<div style=\"margin:20px 0;padding:10px;font-size:14px;line-height:1.6;color:#333;\">";
+                                html += "<p style=\"margin:0 0 16px;font-size:14px;line-height:1.5;color:#374151;\">";
                                 html += t("平素より大変お世話になっております。下記の通りご請求申し上げます。");
-                                html += "</div>";
+                                html += "</p>";
 
                                 // 消費税対応の全体合計計算
                                 var grandTotal = 0;
@@ -185,122 +277,103 @@ jQuery(document).ready(function($) {
                                 var taxCategory = res.data.tax_category || '内税';
                                 var suppressTax = !!(window.ktp_tax_policy && (window.ktp_tax_policy.mode === 'abolished' || window.ktp_tax_policy.hide_columns));
                                 console.log("[請求書発行] 税区分:", taxCategory);
-                                
-                                if (suppressTax) {
-                                    html += "<div style=\"font-weight:bold;font-size:14px;color:#333;display:flex;align-items:center;margin:10px 0 0 0;\">";
-                                    html += "<span>" + t("合計金額：") + "" + ktpwpFormatMoney(grandTotal) + "</span>";
-                                    html += "<span style=\"margin-left:15px;\">" + t("繰越金額：") + "</span>";
-                                    html += "<input type=\"number\" id=\"carryover-amount\" name=\"carryover_amount\" value=\"0\" min=\"0\" step=\"1\" style=\"width:100px;padding:3px 6px;border:1px solid #ccc;border-radius:4px;font-size:14px;text-align:right;margin-left:5px;\" onchange=\"updateInvoiceTotal()\">";
-                                    html += "<span style=\"font-size:14px;\">" + carryoverCurrencyLabel + "</span>";
-                                    html += "</div>";
-                                } else if (taxCategory === '外税') {
-                                    // 外税の場合：合計金額（税抜）→消費税→税込合計
-                                    html += "<div style=\"font-weight:bold;font-size:14px;color:#333;display:flex;align-items:center;margin:10px 0 0 0;\">";
-                                    html += "<span>" + t("合計金額：") + "" + ktpwpFormatMoney(grandSubtotal) + "</span>";
-                                    if (grandTaxAmount > 0) {
-                                        html += "<span style=\"margin-left:15px;\">" + t("消費税：") + "" + ktpwpFormatMoney(grandTaxAmount) + "</span>";
-                                        html += "<span style=\"margin-left:15px;\">" + t("税込合計：") + "" + ktpwpFormatMoney(grandTotal) + "</span>";
-                                    }
-                                    html += "<span style=\"margin-left:15px;\">" + t("繰越金額：") + "</span>";
-                                    html += "<input type=\"number\" id=\"carryover-amount\" name=\"carryover_amount\" value=\"0\" min=\"0\" step=\"1\" style=\"width:100px;padding:3px 6px;border:1px solid #ccc;border-radius:4px;font-size:14px;text-align:right;margin-left:5px;\" onchange=\"updateInvoiceTotal()\">";
-                                    html += "<span style=\"font-size:14px;\">" + carryoverCurrencyLabel + "</span>";
-                                    html += "</div>";
-                                } else {
-                                    // 内税の場合：合計金額（税込）に内消費税を表示
-                                    html += "<div style=\"font-weight:bold;font-size:14px;color:#333;display:flex;align-items:center;margin:10px 0 0 0;\">";
-                                    html += "<span>" + t("合計金額：") + "" + ktpwpFormatMoney(grandTotal);
-                                    if (grandTaxAmount > 0) {
-                                        html += "" + t("（内消費税：") + "" + ktpwpFormatMoney(Math.round(grandTaxAmount)) + "）";
-                                    }
-                                    html += "</span>";
-                                    html += "<span style=\"margin-left:15px;\">" + t("繰越金額：") + "</span>";
-                                    html += "<input type=\"number\" id=\"carryover-amount\" name=\"carryover_amount\" value=\"0\" min=\"0\" step=\"1\" style=\"width:100px;padding:3px 6px;border:1px solid #ccc;border-radius:4px;font-size:14px;text-align:right;margin-left:5px;\" onchange=\"updateInvoiceTotal()\">";
-                                    html += "<span style=\"font-size:14px;\">" + carryoverCurrencyLabel + "</span>";
-                                    html += "</div>";
-                                }
-                                
-                                // 請求金額・お支払い期日を1行で横並び
+
+                                var allPreviewItems = [];
+                                res.data.monthly_groups.forEach(function (g) {
+                                    (g.orders || []).forEach(function (ord) {
+                                        (ord.invoice_items || []).forEach(function (it) {
+                                            allPreviewItems.push(it);
+                                        });
+                                    });
+                                });
+                                var grandTaxSuffix = suppressTax ? '' : ktpInvoiceTaxInlineSuffixFromItems(allPreviewItems, taxCategory, t);
+
                                 var paymentDueDate = res.data.payment_due_date || '';
-                                
-                                html += "<div style=\"font-weight:bold;font-size:20px;color:#0073aa;display:flex;align-items:center;margin:10px 0 0 0;\">";
-                                html += "<span>" + t("請求金額：") + "<span id=\"total-amount\">" + ktpwpFormatMoney(grandTotal) + "</span></span>";
-                                html += "<span style=\"margin-left:2em;font-size:16px;\">" + t("お支払い期日：") + "<input type=\"date\" id=\"payment-due-date-input\" value=\"" + paymentDueDate + "\" style=\"font-size:16px;padding:4px 8px;border:1px solid #ccc;border-radius:4px;width:180px;max-width:100%;\"></span>";
+                                html += "<div class=\"ktp-biz-summary-box\" style=\"margin-bottom:24px;padding:16px;border:1px solid #e5e7eb;border-radius:6px;background-color:#f9fafb;font-size:14px;color:#374151;\">";
+                                html += "<div style=\"display:flex;flex-wrap:wrap;align-items:center;column-gap:24px;row-gap:8px;\">";
+                                html += "<div style=\"display:inline-flex;align-items:center;gap:8px;\">";
+                                html += "<span>" + t("繰越金額：") + "</span>";
+                                html += "<input type=\"number\" id=\"carryover-amount\" name=\"carryover_amount\" value=\"0\" min=\"0\" step=\"1\" style=\"width:100px;padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;text-align:right;background:#fff;\" onchange=\"updateInvoiceTotal()\">";
+                                html += "<span>" + carryoverCurrencyLabel + "</span>";
                                 html += "</div>";
+                                html += "<div class=\"ktp-biz-invoice-amount-box\" style=\"margin-left:16px;border:1px solid #bae6fd;background-color:#e0f2fe;border-radius:6px;padding:6px 12px;font-weight:800;display:inline-flex;align-items:baseline;flex-wrap:wrap;gap:4px;\">";
+                                html += t("請求金額：") + "<span id=\"total-amount\" style=\"font-size:20px;font-weight:800;color:#0369a1;\">" + ktpwpFormatMoney(grandTotal) + "</span>";
+                                html += "<span class=\"ktp-invoice-tax-inline-suffix\" style=\"font-size:14px;font-weight:700;color:#1e293b;\">" + grandTaxSuffix + "</span>";
+                                html += "</div>";
+                                html += "<div class=\"ktp-biz-payment-due\" style=\"flex-basis:100%;\">";
+                                html += t("お支払い期日：") + "<input type=\"date\" id=\"payment-due-date-input\" value=\"" + paymentDueDate + "\" style=\"margin-left:8px;font-size:14px;padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;max-width:100%;\">";
+                                html += "</div>";
+                                html += "</div></div>";
 
                                 window.invoiceGrandTotal = grandTotal;
                                 window.invoiceTaxAmount = grandTaxAmount; // 消費税をグローバルに設定
                                 window.invoiceTaxCategory = res.data.tax_category; // 税区分をグローバルに設定
 
+                                var oddRowColor = window.ktp_design_settings.odd_row_color || "#E7EEFD";
+                                var evenRowColor = window.ktp_design_settings.even_row_color || "#FFFFFF";
+                                var hideTaxCols = !!(window.ktp_tax_policy && window.ktp_tax_policy.hide_tax_columns);
+
+                                function formatDecimalDisplay(value) {
+                                    if (value === '' || value === null || value === undefined) {
+                                        return '';
+                                    }
+                                    var num = parseFloat(value);
+                                    if (isNaN(num)) {
+                                        return value;
+                                    }
+                                    return num.toFixed(6).replace(/\.?0+$/, '');
+                                }
+
                                 res.data.monthly_groups.forEach(function(group) {
-                                    html += "<div style=\"margin:20px 0 10px 0;padding:8px 12px;background-color:#f0f8ff;border-left:4px solid #0073aa;border-radius:4px;\">";
-                                    html += "<div style=\"font-weight:bold;color:#0073aa;font-size:14px;\">";
-                                    html += "【" + group.billing_period + "】" + t("締日：") + group.closing_date + " " + t("案件数：") + group.orders.length;
+                                    html += "<section style=\"border:1px solid #e5e7eb;border-radius:6px;overflow:hidden;margin-bottom:16px;\">";
+                                    html += "<div style=\"padding:8px 16px;background-color:#f9fafb;border-bottom:1px solid #e5e7eb;font-size:14px;font-weight:600;color:#075985;\">";
+                                    html += "【" + group.billing_period + "】" + t("締日：") + group.closing_date + " " + t("案件数：") + group.orders.length + t("件");
                                     html += "</div>";
-                                    html += "</div>";
+                                    html += "<div style=\"padding:16px;display:flex;flex-direction:column;gap:16px;\">";
 
                                     var monthlyTotal = 0;
+                                    var monthGroupItems = [];
 
                                     group.orders.forEach(function(order) {
                                         var orderSubtotal = 0;
-                                        html += "<div style=\"padding:10px;border-bottom:1px solid #eee;\">";
-                                        html += "<div style=\"font-weight:bold;margin-bottom:8px;color:#333;font-size:12px;\">";
-                                        html += "ID: " + order.id + " - " + order.project_name + "" + t("（完了日：") + "" + formatInvoiceCompletionDate(order.completion_date) + "）";
+                                        var deptLine = "";
+                                        if (res.data.selected_department) {
+                                            deptLine = t("部署：") + ktpInvoiceEscapeHtml(res.data.selected_department.department_name || "") + " ／ " + t("ご担当者名：") + ktpInvoiceEscapeHtml(res.data.selected_department.contact_person || "") + customerHonorific;
+                                        } else {
+                                            var cn = (res.data.client_contact || "").trim();
+                                            deptLine = t("部署：") + t("代表窓口") + " ／ " + t("ご担当者名：") + (cn ? cn + customerHonorific : "—");
+                                        }
+                                        var invoicedBadge = parseInt(order.progress, 10) === 5
+                                            ? "<span style=\"margin-left:8px;display:inline-flex;align-items:center;border-radius:9999px;background-color:#fef3c7;padding:2px 8px;font-size:11px;font-weight:700;color:#92400e;\">" + t("請求済（入金予定日超過）") + "</span>"
+                                            : "";
+
+                                        html += "<div style=\"border:1px solid #e5e7eb;border-radius:6px;overflow:hidden;\">";
+                                        html += "<div style=\"padding:8px 12px;border-bottom:1px solid #e5e7eb;background-color:#fff;font-size:14px;font-weight:600;color:#1f2937;\">";
+                                        html += "ID: " + order.id + " - " + ktpInvoiceEscapeHtml(order.project_name || "") + t("（完了日：") + formatInvoiceCompletionDate(order.completion_date) + "）" + invoicedBadge;
+                                        html += "<div style=\"margin-top:4px;font-size:12px;font-weight:normal;color:#4b5563;\">" + deptLine + "</div>";
                                         html += "</div>";
 
                                         if (order.invoice_items && order.invoice_items.length > 0) {
-                                            html += "<div style=\"margin-top:10px;width:100%;\">";
-                                            var amountLabel = (taxCategory === '外税') ? t('金額（税抜）') : t('金額（税込）');
-                                            var priceLabel = (taxCategory === '外税') ? t('単価（税抜）') : t('単価（税込）');
-                                            var taxColLabel = (taxCategory === '外税') ? t('税額（外税）') : t('税額（内税）');
-                                            html += "<div style=\"display: flex; background: #f0f0f0; padding: 8px; font-weight: bold; border-bottom: 1px solid #ccc; align-items: center; font-size: 12px; width: 100%; box-sizing: border-box;\">";
-                                            html += "<div style=\"flex: 0 0 30px; width: 30px; text-align: center; white-space: nowrap;\">No.</div>";
-                                            html += "<div style=\"flex: 1 1 auto; min-width: 0; text-align: left; margin-left: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;\">" + t("サービス") + "</div>";
-                                            html += "<div style=\"flex: 0 0 auto; min-width: 70px; text-align: right; white-space: nowrap; margin-left: 6px;\">" + priceLabel + "</div>";
-                                            html += "<div style=\"flex: 0 0 auto; min-width: 58px; text-align: right; white-space: nowrap; margin-left: 6px;\">" + t("数量/単位") + "</div>";
-                                            html += "<div style=\"flex: 0 0 auto; min-width: 70px; text-align: right; white-space: nowrap; margin-left: 6px;\">" + amountLabel + "</div>";
-                                            if (!(window.ktp_tax_policy && window.ktp_tax_policy.hide_tax_columns)) {
-                                                html += "<div style=\"flex: 0 0 auto; min-width: 65px; text-align: right; white-space: nowrap; margin-left: 6px;\">" + taxColLabel + "</div>";
-                                                html += "<div style=\"flex: 0 0 auto; min-width: 45px; text-align: center; white-space: nowrap; margin-left: 6px;\">" + t("税率") + "</div>";
+                                            html += "<div style=\"overflow-x:auto;\">";
+                                            html += "<table class=\"ktp-biz-items-table\" style=\"width:100%;border-collapse:collapse;font-size:14px;\">";
+                                            html += "<thead><tr style=\"color:#4b5563;border-bottom:1px solid #f3f4f6;background-color:#f9fafb;\">";
+                                            html += "<th style=\"text-align:left;padding:8px 12px;width:3.5rem;\">No.</th>";
+                                            html += "<th style=\"text-align:left;padding:8px 12px;\">" + t("サービス") + "</th>";
+                                            html += "<th style=\"text-align:right;padding:8px 12px;white-space:nowrap;\">" + t("単価") + "</th>";
+                                            html += "<th style=\"text-align:right;padding:8px 12px;white-space:nowrap;\">" + t("数量/単位") + "</th>";
+                                            html += "<th style=\"text-align:right;padding:8px 12px;\">" + t("金額") + "</th>";
+                                            if (!hideTaxCols) {
+                                                html += "<th style=\"text-align:right;padding:8px 12px;\">" + t("税額") + "</th>";
+                                                html += "<th style=\"text-align:right;padding:8px 12px;\">" + t("税率") + "</th>";
                                             }
-                                            html += "<div style=\"flex: 0 0 58px; width: 58px; min-width: 0; text-align: left; margin-left: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;\">" + t("備考") + "</div>";
-                                            html += "</div>";
-
-                                            var oddRowColor = window.ktp_design_settings.odd_row_color || "#E7EEFD";
-                                            var evenRowColor = window.ktp_design_settings.even_row_color || "#FFFFFF";
+                                            html += "<th style=\"text-align:left;padding:8px 12px;white-space:nowrap;\">" + t("備考") + "</th>";
+                                            html += "</tr></thead><tbody>";
 
                                             order.invoice_items.forEach(function(item, index) {
-                                                // 小数点以下の不要な0を削除する関数
-                                                function formatDecimalDisplay(value) {
-                                                    if (value === '' || value === null || value === undefined) {
-                                                        return '';
-                                                    }
-                                                    const num = parseFloat(value);
-                                                    if (isNaN(num)) {
-                                                        return value;
-                                                    }
-                                                    // 小数点以下6桁まで表示し、末尾の0とピリオドを削除
-                                                    return num.toFixed(6).replace(/\.?0+$/, '');
-                                                }
-                                                
-                                                // 金額を3桁区切りでフォーマットする関数
-                                                function formatCurrency(value) {
-                                                    if (value === '' || value === null || value === undefined) {
-                                                        return '';
-                                                    }
-                                                    const num = parseFloat(value);
-                                                    if (isNaN(num)) {
-                                                        return value;
-                                                    }
-                                                    return num.toLocaleString();
-                                                }
-                                                
-                                                var unitPrice = item.price ? ktpwpFormatMoney(item.price) : "-";
-                                                var quantity = item.quantity ? formatDecimalDisplay(item.quantity) : "-";
+                                                var unitPrice = item.price ? ktpwpFormatMoney(item.price) : "—";
+                                                var quantity = item.quantity ? formatDecimalDisplay(item.quantity) : "—";
                                                 var amount = item.amount ? parseFloat(item.amount) : 0;
-                                                var totalPrice = amount > 0 ? ktpwpFormatMoney(amount) : "-";
-                                                
-                                                // 税率表示（全ての税率を表示）
-                                                var taxRateDisplay = "-";
+                                                var totalPrice = amount > 0 ? ktpwpFormatMoney(amount) : "—";
                                                 var itemTaxRateRaw = item.tax_rate;
                                                 var itemTaxRate = null;
                                                 if (window.ktp_tax_policy) {
@@ -314,76 +387,71 @@ jQuery(document).ready(function($) {
                                                 } else if (itemTaxRateRaw !== null && itemTaxRateRaw !== '' && !isNaN(parseFloat(itemTaxRateRaw))) {
                                                     itemTaxRate = parseFloat(itemTaxRateRaw);
                                                 }
+                                                var taxRateDisplay = "-";
                                                 if (itemTaxRate !== null && !isNaN(itemTaxRate) && itemTaxRate >= 0) {
                                                     taxRateDisplay = itemTaxRate + "%";
                                                 }
-                                                
-                                                // 行税額の計算
                                                 var lineTaxAmountDisplay = "";
-                                                if (!(window.ktp_tax_policy && window.ktp_tax_policy.hide_tax_columns)) {
+                                                if (!hideTaxCols) {
                                                     if (itemTaxRate !== null && !isNaN(itemTaxRate) && itemTaxRate >= 0 && amount > 0) {
                                                         if (itemTaxRate === 0) {
-                                                            lineTaxAmountDisplay = "";
-                                                        } else if (res.data.tax_category === '外税') {
+                                                            lineTaxAmountDisplay = "—";
+                                                        } else if (res.data.tax_category === "外税") {
                                                             lineTaxAmountDisplay = ktpwpFormatMoney(Math.ceil(amount * (itemTaxRate / 100)));
                                                         } else {
                                                             lineTaxAmountDisplay = ktpwpFormatMoney(Math.ceil(amount * (itemTaxRate / 100) / (1 + itemTaxRate / 100)));
                                                         }
                                                     }
                                                 }
-                                                
-                                                // デバッグ用ログ（開発時のみ）
-                                                if (typeof console !== 'undefined' && console.log && typeof ktpwpDebugMode !== 'undefined' && ktpwpDebugMode) {
-                                                    console.log("税率デバッグ - 商品:", item.product_name, "税率:", item.tax_rate, "数値変換:", itemTaxRate, "表示:", taxRateDisplay);
-                                                }
-
                                                 if (amount > 0) {
                                                     orderSubtotal += amount;
                                                 }
-                                                var bgColor = (index % 2 === 0) ? evenRowColor : oddRowColor;
-                                                html += "<div style=\"display: flex; padding: 6px 8px; height: 24px; background: " + bgColor + "; align-items: center; font-size: 12px; width: 100%; box-sizing: border-box;\">";
-                                                html += "<div style=\"flex: 0 0 30px; width: 30px; text-align: center; white-space: nowrap;\">" + (index + 1) + "</div>";
-                                                html += "<div title=\"" + (item.product_name || "") + "\" style=\"flex: 1 1 auto; min-width: 0; text-align: left; margin-left: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;\">" + (item.product_name || "") + "</div>";
-                                                html += "<div style=\"flex: 0 0 auto; min-width: 70px; text-align: right; white-space: nowrap; margin-left: 6px;\">" + unitPrice + "</div>";
-                                                html += "<div style=\"flex: 0 0 auto; min-width: 58px; text-align: right; white-space: nowrap; margin-left: 6px;\">" + quantity + "/" + (item.unit || t("式")) + "</div>";
-                                                html += "<div style=\"flex: 0 0 auto; min-width: 70px; text-align: right; white-space: nowrap; margin-left: 6px;\">" + totalPrice + "</div>";
-                                                if (!(window.ktp_tax_policy && window.ktp_tax_policy.hide_tax_columns)) {
-                                                    html += "<div style=\"flex: 0 0 auto; min-width: 65px; text-align: right; white-space: nowrap; margin-left: 6px;\">" + lineTaxAmountDisplay + "</div>";
-                                                    html += "<div style=\"flex: 0 0 auto; min-width: 45px; text-align: center; white-space: nowrap; margin-left: 6px;\">" + taxRateDisplay + "</div>";
+                                                var rowBg = (index % 2 === 0) ? evenRowColor : oddRowColor;
+                                                html += "<tr class=\"ktp-biz-inv-row\" style=\"border-bottom:1px solid #f3f4f6;background-color:" + rowBg + ";\">";
+                                                html += "<td style=\"padding:8px 12px;color:#374151;\">" + (index + 1) + "</td>";
+                                                html += "<td style=\"padding:8px 12px;color:#111827;\">" + ktpInvoiceEscapeHtml(item.product_name || "") + "</td>";
+                                                html += "<td style=\"padding:8px 12px;text-align:right;color:#374151;white-space:nowrap;\">" + unitPrice + "</td>";
+                                                html += "<td style=\"padding:8px 12px;text-align:right;color:#374151;white-space:nowrap;\">" + quantity + "/" + ktpInvoiceEscapeHtml(item.unit || t("式")) + "</td>";
+                                                html += "<td style=\"padding:8px 12px;text-align:right;color:#111827;white-space:nowrap;\">" + totalPrice + "</td>";
+                                                if (!hideTaxCols) {
+                                                    html += "<td style=\"padding:8px 12px;text-align:right;color:#374151;white-space:nowrap;\">" + lineTaxAmountDisplay + "</td>";
+                                                    html += "<td style=\"padding:8px 12px;text-align:right;color:#374151;white-space:nowrap;\">" + taxRateDisplay + "</td>";
                                                 }
-                                                var remarksDisplay = item.remarks || "";
-                                                html += "<div title=\"" + remarksDisplay + "\" style=\"flex: 0 0 58px; width: 58px; min-width: 0; text-align: left; margin-left: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;\">" + remarksDisplay + "</div>";
-                                                html += "</div>";
+                                                var remarksDisplay = item.remarks ? ktpInvoiceEscapeHtml(item.remarks) : "—";
+                                                html += "<td style=\"padding:8px 12px;color:#374151;\">" + remarksDisplay + "</td>";
+                                                html += "</tr>";
                                             });
 
-                                            html += "</div>";
-                                            html += "<div style=\"margin-top:10px;text-align:right;font-weight:bold;font-size:13px;color:#333;\">";
-                                            html += t("案件合計：") + ktpwpFormatMoney(orderSubtotal);
+                                            html += "</tbody></table></div>";
+                                            html += "<div style=\"padding:8px 12px;text-align:right;font-size:14px;font-weight:600;color:#111827;border-top:1px solid #f3f4f6;background-color:#fff;\">";
+                                            html += t("案件合計：") + ktpwpFormatMoney(orderSubtotal) + ktpInvoiceTaxInlineSuffixFromItems(order.invoice_items || [], taxCategory, t);
                                             html += "</div>";
                                         } else {
-                                            html += "<div style=\"color:#999;font-size:12px;\">" + t("請求項目なし") + "</div>";
+                                            html += "<div style=\"padding:12px;color:#6b7280;font-size:14px;\">" + t("請求項目なし") + "</div>";
                                         }
                                         monthlyTotal += orderSubtotal;
+                                        monthGroupItems = monthGroupItems.concat(order.invoice_items || []);
                                         html += "</div>";
                                     });
 
-                                    html += "<div style=\"margin:15px 0;padding:12px;background-color:#f8f9fa;border:2px solid #0073aa;border-radius:6px;text-align:right;\">";
-                                    html += "<div style=\"font-weight:bold;font-size:15px;color:#0073aa;\">";
-                                    html += group.billing_period + t(" 月別合計：") + ktpwpFormatMoney(monthlyTotal);
                                     html += "</div>";
+                                    html += "<div style=\"padding:8px 16px;border-top:1px solid #e5e7eb;background-color:#f9fafb;text-align:right;font-size:16px;font-weight:700;color:#0369a1;\">";
+                                    html += group.billing_period + t(" 月別合計：") + ktpwpFormatMoney(monthlyTotal) + ktpInvoiceTaxInlineSuffixFromItems(monthGroupItems, taxCategory, t);
                                     html += "</div>";
+                                    html += "</section>";
                                 });
 
-                                // 請求元（自社）情報：サーバー側でボックス化済み（一般設定／旧設定のフォールバック含む）
+                                html += "<div class=\"ktp-biz-company-bank-grid\" style=\"display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;margin-top:24px;margin-bottom:24px;break-inside:avoid-page;page-break-inside:avoid;\">";
+                                html += "<section style=\"border:1px solid #e5e7eb;border-radius:6px;padding:16px;break-inside:avoid-page;page-break-inside:avoid;\">";
                                 if (res.data.company_info && String(res.data.company_info).trim() !== "") {
-                                    html += "<div style=\"margin-top:30px;\">";
-                                    html += res.data.company_info;
-                                    html += "</div>";
+                                    html += "<div style=\"font-size:14px;color:#374151;line-height:1.5;\">" + ktpInvoiceUnwrapCompanyInfoBox(res.data.company_info) + "</div>";
                                 }
-
+                                html += "</section>";
+                                html += "<section style=\"border:1px solid #e5e7eb;border-radius:6px;padding:16px;break-inside:avoid-page;page-break-inside:avoid;\">";
                                 if (res.data.bank_transfer_html && String(res.data.bank_transfer_html).trim() !== "") {
-                                    html += res.data.bank_transfer_html;
+                                    html += "<div style=\"font-size:14px;color:#374151;line-height:1.5;\">" + ktpInvoiceUnwrapBankTransferBox(res.data.bank_transfer_html) + "</div>";
                                 }
+                                html += "</section></div>";
 
                                 // 印刷・PDF保存ボタンの上にチェックボックスを追加
                                 html += '<div id="ktp-invoice-footer-actions" style="margin-top:20px;text-align:center;">';
@@ -601,7 +669,7 @@ function printInvoiceContent(outputMode) {
             }
         }
 
-        // 印刷用にデザイン設定を適用
+        // 印刷用にデザイン設定を適用（旧 flex 明細）
         var rows = tempDiv.querySelectorAll('[style*="background"]');
         rows.forEach(function(row, index) {
             if (row.style.background && (row.style.background.includes('#E7EEFD') || row.style.background.includes('#FFFFFF'))) {
@@ -610,15 +678,13 @@ function printInvoiceContent(outputMode) {
                 console.log("[請求書印刷] 行の色を更新:", index, bgColor);
             }
         });
+        var invTableRows = tempDiv.querySelectorAll('tr.ktp-biz-inv-row');
+        invTableRows.forEach(function(tr, idx) {
+            var bgColor = (idx % 2 === 0) ? evenRowColor : oddRowColor;
+            tr.style.backgroundColor = bgColor;
+        });
 
         invoiceContent = tempDiv.innerHTML;
-
-        // 今日の日付を取得（YYYY-MM-DD形式）
-        var today = new Date();
-        var year = today.getFullYear();
-        var month = String(today.getMonth() + 1).padStart(2, '0');
-        var day = String(today.getDate()).padStart(2, '0');
-        var todayStr = year + '-' + month + '-' + day;
 
         // ファイル名生成
         var clientId = '';
@@ -693,6 +759,13 @@ function printInvoiceContent(outputMode) {
         console.log("- 方法2要素数:", document.querySelectorAll('#invoiceList div[style*="font-size:14px;margin-bottom:4px;"]').length);
         console.log("- 方法3要素数:", document.querySelectorAll('#invoiceList div').length);
         console.log("- 最終的な顧客名:", clientName);
+        
+        // 今日の日付を取得（YYYY-MM-DD形式）
+        var today = new Date();
+        var year = today.getFullYear();
+        var month = String(today.getMonth() + 1).padStart(2, '0');
+        var day = String(today.getDate()).padStart(2, '0');
+        var todayStr = year + '-' + month + '-' + day;
 
         function parseDateToTimestamp(dateStr) {
             if (!dateStr) { return null; }
@@ -784,6 +857,9 @@ function printInvoiceContent(outputMode) {
             printHTML += '  .page-container.ktp-inv-print-envelope { margin: 0 !important; width: 100% !important; max-width: none !important; padding: ' + invPrintBodyFlowPadTopMm + 'mm ' + invPrintPadRightInnerMm + 'mm ' + invPrintPadBottomInnerMm + 'mm ' + invPrintPadLeftInnerMm + 'mm !important; box-sizing: border-box !important; }';
             printHTML += '  .page-container.ktp-inv-print-envelope .ktp-invoice-address-block { position: absolute !important; top: ' + invAddrTopMm + 'mm !important; left: ' + invAddrLeftMm + 'mm !important; right: auto !important; z-index: 999 !important; max-width: 88mm !important; margin: 0 !important; }';
             printHTML += '  .page-container.ktp-inv-print-envelope .ktp-invoice-title-box { margin-top: 0 !important; }';
+            printHTML += '  .ktp-biz-company-bank-grid { display: grid !important; grid-template-columns: minmax(0,1fr) minmax(0,1fr) !important; gap: 1rem !important; break-inside: avoid-page; page-break-inside: avoid; }';
+            printHTML += '  .ktp-biz-company-bank-grid > section { break-inside: avoid-page; page-break-inside: avoid; }';
+            printHTML += '  .ktp-biz-items-table { font-size: 0.8rem !important; }';
             printHTML += '}';
         }
         printHTML += '</style>';
