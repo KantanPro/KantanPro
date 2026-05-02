@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.2.75
+Stable tag: 1.2.76
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -322,6 +322,9 @@ curl -sS -X POST \
 * MySQL 5.6 以上 または MariaDB 10.0 以上
 * 推奨メモリ: 256MB 以上
 * 推奨PHP拡張: GD（画像処理用）
+
+= 1.2.76 - 2026年05月02日 =
+* メンテナンスリリース（v1.2.75 以降、GitHub main 上に追加コミットなし。バージョン表記の更新と配布フロー継続）
 
 = 1.2.75 - 2026年05月02日 =
 * 請求候補取得で無効な完了日（0000-00-00 系）を SQL・PHP の両方で除外
