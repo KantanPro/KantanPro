@@ -1555,6 +1555,9 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 			$company_name_json = wp_json_encode( (string) $company_name, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE );
 			$print_button_title = esc_attr__( '印刷する', 'ktpwp' );
 			$print_button_label = esc_attr__( '印刷', 'ktpwp' );
+			$supplier_address_label_title = esc_attr__( '宛名印刷', 'ktpwp' );
+			$supplier_address_label_aria  = esc_attr__( '宛名', 'ktpwp' );
+			$supplier_address_label_text  = esc_html__( '宛名印刷', 'ktpwp' );
 
 			// JavaScript
 			$print = <<<END
@@ -1593,6 +1596,110 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
                 //     togglePreview();
                 // }
             }
+            function printSupplierAddressLabel() {
+                function t(msg) { return (typeof ktpwpTranslate === 'function') ? ktpwpTranslate(msg) : msg; }
+                function esc(s) {
+                    if (s == null || s === '') { return ''; }
+                    return String(s)
+                        .replace(/&/g, '&amp;')
+                        .replace(/</g, '&lt;')
+                        .replace(/>/g, '&gt;')
+                        .replace(/"/g, '&quot;');
+                }
+                function field(name) {
+                    var box = document.querySelector('.data_detail_box');
+                    var el = box ? box.querySelector('[name="' + name + '"]') : null;
+                    if (!el) { el = document.querySelector('[name="' + name + '"]'); }
+                    if (!el || el.value === undefined || el.value === null) { return ''; }
+                    return String(el.value).trim();
+                }
+                function formatPostal(pc) {
+                    var d = String(pc).replace(/\D/g, '');
+                    if (d.length === 7) { return '\u3012' + d.slice(0, 3) + '-' + d.slice(3); }
+                    if (d.length > 0) { return '\u3012' + d; }
+                    return '';
+                }
+                var postal = formatPostal(field('postal_code'));
+                var pref = field('prefecture');
+                var city = field('city');
+                var street = field('address');
+                var building = field('building');
+                var company = field('company_name');
+                var person = field('user_name');
+                if (!person) { person = field('representative_name'); }
+                var line2 = (pref + city).trim();
+                var line3 = (street + building).trim();
+                var honor = (/^ja/i.test(document.documentElement.lang || '') || (window.ktpwpI18n && /^ja/i.test(String(window.ktpwpI18n.locale || '')))) ? ' \u69d8' : '';
+                if (!postal && !line2 && !line3 && !company && !person) {
+                    alert(t('宛先情報がありません。協力会社詳細を表示して住所などを入力してください。'));
+                    return;
+                }
+                var inner = '';
+                if (postal) { inner += '<div>' + esc(postal) + '</div>'; }
+                if (line2) { inner += '<div>' + esc(line2) + '</div>'; }
+                if (line3) { inner += '<div>' + esc(line3) + '</div>'; }
+                if (company) { inner += '<div style="font-weight:bold;margin-top:0.35em;">' + esc(company) + '</div>'; }
+                if (person) { inner += '<div style="margin-top:0.25em;">' + esc(person) + esc(honor) + '</div>'; }
+                var title = t('宛名');
+                var gridStartMm = 105;
+                var gridStepMm = 10;
+                var gridLineCount = 18;
+                var gridLinesHtml = '<div class="ktp-atena-grid-lines" aria-hidden="true">';
+                var gi;
+                for (gi = 0; gi < gridLineCount; gi++) {
+                    gridLinesHtml += '<div class="ktp-atena-line" style="top:' + (gridStartMm + gi * gridStepMm) + 'mm"></div>';
+                }
+                gridLinesHtml += '</div>';
+                var printHTML = '<!DOCTYPE html><html lang="' + (document.documentElement.lang || 'ja') + '"><head><meta charset="UTF-8">';
+                printHTML += '<title>' + esc(title) + '</title>';
+                printHTML += '<style>';
+                printHTML += '*{margin:0;padding:0;box-sizing:border-box;}';
+                printHTML += 'body{position:relative;margin:0;padding:0;min-height:235mm;font-family:"Noto Sans JP","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;font-size:12px;line-height:1.4;color:#333;background:#fff;}';
+                printHTML += '.ktp-atena-grid-lines{position:absolute;left:10mm;right:10mm;top:0;bottom:0;pointer-events:none;z-index:0;}';
+                printHTML += '.ktp-atena-line{position:absolute;left:0;right:0;height:0;border-top:1px dotted rgba(0,0,0,0.22);}';
+                printHTML += '@page{size:120mm 235mm;margin:10mm;}';
+                printHTML += '@media print{body{margin:0;padding:0;}.ktp-atena-line{border-top-width:0.25mm;border-top-style:dotted;border-top-color:rgba(0,0,0,0.2);}button,.no-print{display:none!important;}}';
+                printHTML += '.label{position:absolute;z-index:1;top:6mm;left:23mm;text-align:left;font-size:12px;line-height:1.4;color:#333;max-width:88mm;word-wrap:break-word;}';
+                printHTML += '</style></head><body>';
+                printHTML += gridLinesHtml;
+                printHTML += '<div class="label">' + inner + '</div>';
+                printHTML += '</body></html>';
+                var iframe = document.createElement('iframe');
+                iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden;';
+                document.body.appendChild(iframe);
+                var cleanupDone = false;
+                function cleanup() {
+                    if (cleanupDone) { return; }
+                    cleanupDone = true;
+                    setTimeout(function() {
+                        try { document.body.removeChild(iframe); } catch (_) {}
+                    }, 300);
+                }
+                var printed = false;
+                function triggerPrint() {
+                    if (printed) { return; }
+                    printed = true;
+                    try {
+                        var frameWin = iframe.contentWindow || iframe;
+                        frameWin.focus();
+                        frameWin.onafterprint = cleanup;
+                        setTimeout(function() {
+                            try { frameWin.print(); } catch (e) { cleanup(); }
+                        }, 50);
+                    } catch (e) { cleanup(); }
+                }
+                try {
+                    var frameDoc = iframe.contentDocument || iframe.contentWindow.document;
+                    frameDoc.open();
+                    frameDoc.write(printHTML);
+                    frameDoc.close();
+                    setTimeout(triggerPrint, 50);
+                } catch (e) {
+                    console.error('[協力会社宛名印刷] iframe印刷に失敗:', e);
+                    cleanup();
+                }
+            }
+
 
             // プレビュー機能（廃止）
             // function togglePreview() {
@@ -1611,11 +1718,16 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
             //     }
             // }
         </script>
-        <!-- コントローラー/プレビューアイコン（プレビューは廃止） -->
-        <div class="controller">
-                <button onclick="printContent()" title="{$print_button_title}" style="padding: 6px 10px; font-size: 12px;">
-                    <span class="material-symbols-outlined" aria-label="{$print_button_label}">print</span>
+        <!-- コントローラー（顧客タブと同様：左に宛名印刷、右に詳細印刷） -->
+        <div class="controller" style="display: flex; justify-content: space-between; align-items: center;">
+                <div class="ktp-supplier-controller-actions" style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                <button type="button" id="supplierAddressLabelPrintButton" class="ktp-client-address-label-btn" onclick="printSupplierAddressLabel(); return false;" title="{$supplier_address_label_title}"><span class="material-symbols-outlined" aria-label="{$supplier_address_label_aria}">contact_mail</span><span class="btn-label">{$supplier_address_label_text}</span></button>
+                </div>
+                <div style="display: flex; gap: 5px;">
+                <button type="button" onclick="printContent()" title="{$print_button_title}" style="padding: 8px 12px; font-size: 12px; background: #fff; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; transition: all 0.2s ease;">
+                    <span class="material-symbols-outlined" aria-label="{$print_button_label}" style="font-size: 18px; color: #333;">print</span>
                 </button>
+                </div>
         </div>
         END;
 

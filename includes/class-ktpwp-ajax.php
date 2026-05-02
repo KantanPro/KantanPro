@@ -4711,9 +4711,27 @@ class KTPWP_Ajax {
 			WHERE client_id = %d 
 			AND progress = 4 
 			AND completion_date IS NOT NULL
+			AND completion_date <> '0000-00-00'
+			AND completion_date <> '0000-00-00 00:00:00'
 			ORDER BY completion_date ASC",
 			$client_id
 		));
+
+		// MySQL のゼロ日付など IS NOT NULL を満たすが無効な完了日は除外
+		if ( ! empty( $orders ) ) {
+			$orders = array_values(
+				array_filter(
+					$orders,
+					static function ( $row ) {
+						$raw = isset( $row->completion_date ) ? trim( (string) $row->completion_date ) : '';
+						if ( $raw === '' || 0 === strpos( $raw, '0000-00-00' ) ) {
+							return false;
+						}
+						return true;
+					}
+				)
+			);
+		}
 
 		// 前払い（前入金済・EC受注・WC受注）は後払い請求対象から除外
 		if ( class_exists( 'KTPWP_Payment_Timing' ) && ! empty( $orders ) ) {

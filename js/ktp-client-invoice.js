@@ -17,6 +17,14 @@ jQuery(document).ready(function($) {
         var t = function(text) { return typeof ktpwpTranslate === 'function' ? ktpwpTranslate(text) : text; };
         var currentLocale = (window.ktpwpI18n && window.ktpwpI18n.locale) || document.documentElement.lang || '';
         var customerHonorific = /^ja/i.test(currentLocale) ? ' 様' : '';
+        /** 請求プレビュー用: MySQL ゼロ日付などは「未設定」表示 */
+        var formatInvoiceCompletionDate = function(d) {
+            var s = d != null ? String(d).trim() : '';
+            if (!s || s.indexOf('0000-00-00') === 0) {
+                return t('未設定');
+            }
+            return s.replace(/\s00:00:00$/, '');
+        };
         
         // フォールバック: ktpClientInvoiceが利用できない場合の代替手段
         if (!ajaxurl) {
@@ -233,7 +241,7 @@ jQuery(document).ready(function($) {
                                         var orderSubtotal = 0;
                                         html += "<div style=\"padding:10px;border-bottom:1px solid #eee;\">";
                                         html += "<div style=\"font-weight:bold;margin-bottom:8px;color:#333;font-size:12px;\">";
-                                        html += "ID: " + order.id + " - " + order.project_name + "" + t("（完了日：") + "" + order.completion_date + "）";
+                                        html += "ID: " + order.id + " - " + order.project_name + "" + t("（完了日：") + "" + formatInvoiceCompletionDate(order.completion_date) + "）";
                                         html += "</div>";
 
                                         if (order.invoice_items && order.invoice_items.length > 0) {
