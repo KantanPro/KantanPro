@@ -4909,7 +4909,7 @@ class KTPWP_Ajax {
 		// レスポンスデータを構築
 		$response_data = array(
 			'client_name' => $client_data->company_name,
-			'client_address' => $client_data->address,
+			'client_address' => $this->format_client_address_for_invoice_preview( $client_data ),
 			'client_contact' => $client_data->name ?? '',
 			'monthly_groups' => $monthly_groups,
 			'departments' => $departments,
@@ -4923,7 +4923,41 @@ class KTPWP_Ajax {
 		
 		wp_send_json_success($response_data);
 	}
-	
+
+	/**
+	 * 請求書プレビュー用に住所を1～2行の文字列へまとめる（郵便・都道府県・市区町村・番地・建物。従来は address のみ返して空になりがちだった）
+	 *
+	 * @param object $client_data ktp_client 行
+	 * @return string
+	 */
+	private function format_client_address_for_invoice_preview( $client_data ) {
+		$postal_raw = isset( $client_data->postal_code ) ? sanitize_text_field( (string) $client_data->postal_code ) : '';
+		$pref       = isset( $client_data->prefecture ) ? trim( (string) $client_data->prefecture ) : '';
+		$city       = isset( $client_data->city ) ? trim( (string) $client_data->city ) : '';
+		$street     = isset( $client_data->address ) ? trim( (string) $client_data->address ) : '';
+		$building   = isset( $client_data->building ) ? trim( (string) $client_data->building ) : '';
+		$body       = $pref . $city . $street . $building;
+		if ( $body !== '' && strpos( $body, '〒' ) === 0 ) {
+			return $body;
+		}
+		$postal_line = '';
+		if ( $postal_raw !== '' ) {
+			$digits = preg_replace( '/\D/', '', $postal_raw );
+			if ( strlen( $digits ) === 7 ) {
+				$postal_line = '〒' . substr( $digits, 0, 3 ) . '-' . substr( $digits, 3 );
+			} else {
+				$postal_line = ( strpos( $postal_raw, '〒' ) === 0 ) ? $postal_raw : ( '〒' . $postal_raw );
+			}
+		}
+		if ( $postal_line !== '' && $body !== '' ) {
+			return $postal_line . "\n" . $body;
+		}
+		if ( $postal_line !== '' ) {
+			return $postal_line;
+		}
+		return $body;
+	}
+
 	/**
 	 * 顧客の支払条件に基づいて支払期日を計算
 	 *

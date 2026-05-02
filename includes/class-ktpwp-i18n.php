@@ -668,6 +668,7 @@ class KTPWP_I18n {
             ' 月別合計：' => ' monthly total:',
             '対象受注書の進捗を「請求済」に変更する' => 'Change target orders to Invoiced',
             '印刷 PDF保存' => 'Print / Save PDF',
+            'PDF保存' => 'Save as PDF',
             '該当する案件はありません。' => 'No matching orders found.',
             'データ取得エラー: ' => 'Data retrieval error: ',
             'レスポンス: ' => 'Response: ',

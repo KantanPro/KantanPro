@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.2.76
+Stable tag: 1.2.77
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -322,6 +322,12 @@ curl -sS -X POST \
 * MySQL 5.6 以上 または MariaDB 10.0 以上
 * 推奨メモリ: 256MB 以上
 * 推奨PHP拡張: GD（画像処理用）
+
+= 1.2.77 - 2026年05月02日 =
+* （自動要約）GitHub `main` はタグ `v1.2.76` と同一コミットのため追加コミットなし。手元差分（`v1.2.76` クローンとのファイル差分）を反映
+* 一括請求書：顧客タブの請求候補 AJAX で `client_address` を郵便番号・都道府県・市区町村・番地・建物から組み立て（`class-ktpwp-ajax.php` の `format_client_address_for_invoice_preview`）
+* 一括請求書：印刷と PDF 保存をボタン分離。印刷は長形3号窓向け余白・宛名絶対配置、PDF はプレビュー相当の A4 レイアウト（`ktp-client-invoice.js`）
+* 英語UI：ボタン「PDF保存」用の固定文言翻訳を追加（`class-ktpwp-i18n.php`）
 
 = 1.2.76 - 2026年05月02日 =
 * メンテナンスリリース（v1.2.75 以降、GitHub main 上に追加コミットなし。バージョン表記の更新と配布フロー継続）

@@ -17,6 +17,9 @@ jQuery(document).ready(function($) {
         var t = function(text) { return typeof ktpwpTranslate === 'function' ? ktpwpTranslate(text) : text; };
         var currentLocale = (window.ktpwpI18n && window.ktpwpI18n.locale) || document.documentElement.lang || '';
         var customerHonorific = /^ja/i.test(currentLocale) ? ' 様' : '';
+        var ccyForCarryover = (window.ktpwpI18n && window.ktpwpI18n.currency) || {};
+        var carryoverSym = (ccyForCarryover.symbol != null && String(ccyForCarryover.symbol).trim() !== '') ? String(ccyForCarryover.symbol).trim() : '';
+        var carryoverCurrencyLabel = carryoverSym !== '' ? carryoverSym : (ccyForCarryover.code === 'JPY' ? '円' : (ccyForCarryover.code || 'JPY'));
         /** 請求プレビュー用: MySQL ゼロ日付などは「未設定」表示 */
         var formatInvoiceCompletionDate = function(d) {
             var s = d != null ? String(d).trim() : '';
@@ -87,7 +90,7 @@ jQuery(document).ready(function($) {
                             var res = JSON.parse(xhr.responseText);
                             console.log("[請求書発行] レスポンス解析結果:", res);
                             if (res.success && res.data && res.data.monthly_groups && res.data.monthly_groups.length > 0) {
-                                var html = "<div style=\"margin-bottom:20px;font-size:12px;\">";
+                                var html = "<div class=\"ktp-invoice-address-block\" style=\"margin-bottom:20px;font-size:12px;\">";
 
                                 // 部署選択がある場合の宛先表示を修正
                                 var address = res.data.client_address || "";
@@ -130,7 +133,7 @@ jQuery(document).ready(function($) {
                                     html += "<div style=\"margin-bottom:5px;\">" + res.data.selected_department.contact_person + customerHonorific + "</div>";
                                 } else {
                                     // 部署選択がない場合：そのまま表示
-                                    if (address.startsWith("〒")) {
+                                    if (address && address.startsWith("〒")) {
                                         var postalMatch = address.match(/〒(\d{3}-?\d{4})/);
                                         if (postalMatch) {
                                             postalCode = "〒" + postalMatch[1];
@@ -154,7 +157,7 @@ jQuery(document).ready(function($) {
                                 }
                                 html += "</div>";
 
-                                html += "<div style=\"margin:100px 0 20px 0;padding:15px;border:2px solid #333;border-radius:8px;background-color:#f9f9f9;text-align:center;\">";
+                                html += "<div class=\"ktp-invoice-title-box\" style=\"margin:100px 0 20px 0;padding:15px;border:2px solid #333;border-radius:8px;background-color:#f9f9f9;text-align:center;\">";
                                 html += "<div style=\"font-size:18px;font-weight:bold;color:#333;\">" + t("請求書") + "</div>";
                                 // 適格請求書番号を表示（設定されている場合のみ）
                                 var showQualified = !(window.ktp_tax_policy && window.ktp_tax_policy.mode === 'abolished');
@@ -188,7 +191,7 @@ jQuery(document).ready(function($) {
                                     html += "<span>" + t("合計金額：") + "" + ktpwpFormatMoney(grandTotal) + "</span>";
                                     html += "<span style=\"margin-left:15px;\">" + t("繰越金額：") + "</span>";
                                     html += "<input type=\"number\" id=\"carryover-amount\" name=\"carryover_amount\" value=\"0\" min=\"0\" step=\"1\" style=\"width:100px;padding:3px 6px;border:1px solid #ccc;border-radius:4px;font-size:14px;text-align:right;margin-left:5px;\" onchange=\"updateInvoiceTotal()\">";
-                                    html += "<span style=\"font-size:14px;\">" + ((window.ktpwpI18n && window.ktpwpI18n.currency && window.ktpwpI18n.currency.code) || "JPY") + "</span>";
+                                    html += "<span style=\"font-size:14px;\">" + carryoverCurrencyLabel + "</span>";
                                     html += "</div>";
                                 } else if (taxCategory === '外税') {
                                     // 外税の場合：合計金額（税抜）→消費税→税込合計
@@ -200,7 +203,7 @@ jQuery(document).ready(function($) {
                                     }
                                     html += "<span style=\"margin-left:15px;\">" + t("繰越金額：") + "</span>";
                                     html += "<input type=\"number\" id=\"carryover-amount\" name=\"carryover_amount\" value=\"0\" min=\"0\" step=\"1\" style=\"width:100px;padding:3px 6px;border:1px solid #ccc;border-radius:4px;font-size:14px;text-align:right;margin-left:5px;\" onchange=\"updateInvoiceTotal()\">";
-                                    html += "<span style=\"font-size:14px;\">" + ((window.ktpwpI18n && window.ktpwpI18n.currency && window.ktpwpI18n.currency.code) || "JPY") + "</span>";
+                                    html += "<span style=\"font-size:14px;\">" + carryoverCurrencyLabel + "</span>";
                                     html += "</div>";
                                 } else {
                                     // 内税の場合：合計金額（税込）に内消費税を表示
@@ -212,7 +215,7 @@ jQuery(document).ready(function($) {
                                     html += "</span>";
                                     html += "<span style=\"margin-left:15px;\">" + t("繰越金額：") + "</span>";
                                     html += "<input type=\"number\" id=\"carryover-amount\" name=\"carryover_amount\" value=\"0\" min=\"0\" step=\"1\" style=\"width:100px;padding:3px 6px;border:1px solid #ccc;border-radius:4px;font-size:14px;text-align:right;margin-left:5px;\" onchange=\"updateInvoiceTotal()\">";
-                                    html += "<span style=\"font-size:14px;\">" + ((window.ktpwpI18n && window.ktpwpI18n.currency && window.ktpwpI18n.currency.code) || "JPY") + "</span>";
+                                    html += "<span style=\"font-size:14px;\">" + carryoverCurrencyLabel + "</span>";
                                     html += "</div>";
                                 }
                                 
@@ -383,14 +386,18 @@ jQuery(document).ready(function($) {
                                 }
 
                                 // 印刷・PDF保存ボタンの上にチェックボックスを追加
-                                html += '<div style="margin-top:20px;text-align:center;">';
+                                html += '<div id="ktp-invoice-footer-actions" style="margin-top:20px;text-align:center;">';
                                 html += '<label style="display:inline-flex;align-items:center;font-size:15px;font-weight:500;margin-bottom:12px;">';
                                 html += '<input type="checkbox" id="set-invoice-completed" style="width:18px;height:18px;margin-right:8px;">';
                                 html += t('対象受注書の進捗を「請求済」に変更する');
                                 html += '</label><br />';
-                                html += '<button onclick="printInvoiceContent()" style="background-color:#0073aa;color:white;border:none;padding:10px 20px;border-radius:5px;cursor:pointer;font-size:14px;font-weight:500;">';
+                                html += '<button type="button" onclick="printInvoiceContent(\'print\')" style="background-color:#0073aa;color:white;border:none;padding:10px 20px;border-radius:5px;cursor:pointer;font-size:14px;font-weight:500;margin-right:8px;">';
                                 html += (typeof KTPSvgIcons !== 'undefined' ? KTPSvgIcons.getIcon('print', {'style': 'font-size:16px;vertical-align:middle;margin-right:5px;'}) : '<span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle;margin-right:5px;">print</span>');
-                                html += t('印刷 PDF保存');
+                                html += t('印刷');
+                                html += '</button>';
+                                html += '<button type="button" onclick="printInvoiceContent(\'pdf\')" style="background-color:#2271b1;color:white;border:none;padding:10px 20px;border-radius:5px;cursor:pointer;font-size:14px;font-weight:500;">';
+                                html += (typeof KTPSvgIcons !== 'undefined' ? KTPSvgIcons.getIcon('picture_as_pdf', {'style': 'font-size:16px;vertical-align:middle;margin-right:5px;'}) : '<span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle;margin-right:5px;">picture_as_pdf</span>');
+                                html += t('PDF保存');
                                 html += '</button>';
                                 html += '</div>';
 
@@ -472,7 +479,20 @@ jQuery(document).ready(function($) {
     })();
 });
 
-function printInvoiceContent() {
+/**
+ * @param {string} outputMode 'print' = 一括請求書の印刷のみ（@page10mm。宛名10+6/10+23。請求書タイトル枠上端67mm=10+57。宛名以外余白左20・右15・下15）、'pdf' = プレビューと同じA4（PDF保存用）
+ */
+function printInvoiceContent(outputMode) {
+    var mode = (outputMode === 'pdf') ? 'pdf' : 'print';
+    // 印刷のみ：宛名 absolute top=6 left=23（用紙 10+6 / 左33）。請求書タイトル枠は用紙上67mm（10+57）起点＝padding-top 57mm。宛名以外 padding 左10・右5・下5
+    var invPrintPageMarginMm = (mode === 'print') ? 10 : 0;
+    var invAddrTopMm = (mode === 'print') ? (16 - invPrintPageMarginMm) : 0;
+    var invAddrLeftMm = (mode === 'print') ? (33 - invPrintPageMarginMm) : 0;
+    var invInvoiceTitleTopFromPaperMm = 67;
+    var invPrintBodyFlowPadTopMm = (mode === 'print') ? (invInvoiceTitleTopFromPaperMm - invPrintPageMarginMm) : 0;
+    var invPrintPadLeftInnerMm = (mode === 'print') ? 10 : 0;
+    var invPrintPadRightInnerMm = (mode === 'print') ? 5 : 0;
+    var invPrintPadBottomInnerMm = (mode === 'print') ? 5 : 0;
     // チェックボックスの状態を確認
     var setInvoiceCompleted = document.getElementById('set-invoice-completed');
     var shouldSetCompleted = false;
@@ -530,21 +550,10 @@ function printInvoiceContent() {
             carryoverInputInContent.parentNode.replaceChild(carryoverSpan, carryoverInputInContent);
         }
 
-        // チェックボックスとラベルを印刷用HTMLから除去
-        var invoiceCompletedInput = tempDiv.querySelector('#set-invoice-completed');
-        if (invoiceCompletedInput) {
-            // 親labelごと削除
-            var label = invoiceCompletedInput.closest('label');
-            if (label && label.parentNode) {
-                // labelの直後の<br>も削除
-                var next = label.nextSibling;
-                if (next && next.nodeName === 'BR') {
-                    next.parentNode.removeChild(next);
-                }
-                label.parentNode.removeChild(label);
-            } else {
-                invoiceCompletedInput.parentNode.removeChild(invoiceCompletedInput);
-            }
+        // フッター（請求済チェック・印刷／PDFボタン）を印刷用HTMLから除去
+        var footerActions = tempDiv.querySelector('#ktp-invoice-footer-actions');
+        if (footerActions && footerActions.parentNode) {
+            footerActions.parentNode.removeChild(footerActions);
         }
 
         // お支払い期日inputをテキストに置き換え
@@ -603,6 +612,13 @@ function printInvoiceContent() {
         });
 
         invoiceContent = tempDiv.innerHTML;
+
+        // 今日の日付を取得（YYYY-MM-DD形式）
+        var today = new Date();
+        var year = today.getFullYear();
+        var month = String(today.getMonth() + 1).padStart(2, '0');
+        var day = String(today.getDate()).padStart(2, '0');
+        var todayStr = year + '-' + month + '-' + day;
 
         // ファイル名生成
         var clientId = '';
@@ -677,13 +693,6 @@ function printInvoiceContent() {
         console.log("- 方法2要素数:", document.querySelectorAll('#invoiceList div[style*="font-size:14px;margin-bottom:4px;"]').length);
         console.log("- 方法3要素数:", document.querySelectorAll('#invoiceList div').length);
         console.log("- 最終的な顧客名:", clientName);
-        
-        // 今日の日付を取得（YYYY-MM-DD形式）
-        var today = new Date();
-        var year = today.getFullYear();
-        var month = String(today.getMonth() + 1).padStart(2, '0');
-        var day = String(today.getDate()).padStart(2, '0');
-        var todayStr = year + '-' + month + '-' + day;
 
         function parseDateToTimestamp(dateStr) {
             if (!dateStr) { return null; }
@@ -742,7 +751,7 @@ function printInvoiceContent() {
         var filenameBase = sanitizeFilename((clientName || '請求先') + '_' + closingDateForFilename);
         var filename = filenameBase + '.pdf';
         
-        // 印刷用のスタイルを適用したHTMLを生成
+        // 印刷用のスタイルを適用したHTMLを生成（print=封筒窓向け / pdf=プレビュー同等A4）
         var printHTML = '<!DOCTYPE html>';
         printHTML += '<html lang="ja">';
         printHTML += '<head>';
@@ -753,18 +762,36 @@ function printInvoiceContent() {
         printHTML += '<meta name="filename" content="' + filename + '">';
         printHTML += '<style>';
         printHTML += '* { margin: 0; padding: 0; box-sizing: border-box; }';
-        printHTML += 'body { font-family: "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif; font-size: 12px; line-height: 1.4; color: #333; background: white; padding: 20px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }';
-        printHTML += '.page-container { width: 210mm; max-width: 210mm; margin: 0 auto; background: white; padding: 50px; }';
-        printHTML += '@page { size: A4; margin: 50px; }';
-        printHTML += '@page :first { size: A4; margin: 50px; }';
-        printHTML += '@media print { body { margin: 0; padding: 0; background: white; } .page-container { box-shadow: none; margin: 0; padding: 0; width: auto; max-width: none; } }';
-        printHTML += '@media print { button, .no-print { display: none !important; } }';
+        printHTML += 'body { font-family: "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif; font-size: 12px; line-height: 1.4; color: #333; background: white; -webkit-print-color-adjust: exact; print-color-adjust: exact; }';
         printHTML += 'h1, h2, h3, h4, h5, h6 { font-weight: bold; }';
         printHTML += '* { -webkit-print-color-adjust: exact !important; color-adjust: exact !important; print-color-adjust: exact !important; }';
+        printHTML += '@media print { button, .no-print { display: none !important; } }';
+        if (mode === 'pdf') {
+            printHTML += 'body { padding: 20px; background: white; }';
+            printHTML += '.page-container { width: 210mm; max-width: 210mm; margin: 0 auto; background: white; padding: 50px; }';
+            printHTML += '@page { size: A4; margin: 50px; }';
+            printHTML += '@page :first { size: A4; margin: 50px; }';
+            printHTML += '@media print { body { margin: 0; padding: 0; background: white; } .page-container { box-shadow: none; margin: 0; padding: 0; width: auto; max-width: none; } }';
+        } else {
+            // 印刷のみ：@page 10mm。padding 上=57mm（請求書タイトル枠 用紙上67mm=10+57）＋右5＋下5＋左10
+            printHTML += 'html, body { padding: 0; margin: 0; background: white; }';
+            printHTML += '@page { size: A4; margin: ' + invPrintPageMarginMm + 'mm; }';
+            printHTML += '.page-container.ktp-inv-print-envelope { position: relative; width: 210mm; max-width: 210mm; margin: 0 auto; background: white; min-height: 297mm; padding: ' + invPrintBodyFlowPadTopMm + 'mm ' + invPrintPadRightInnerMm + 'mm ' + invPrintPadBottomInnerMm + 'mm ' + invPrintPadLeftInnerMm + 'mm; box-sizing: border-box; }';
+            printHTML += '.page-container.ktp-inv-print-envelope .ktp-invoice-address-block { position: absolute; top: ' + invAddrTopMm + 'mm; left: ' + invAddrLeftMm + 'mm; z-index: 2; max-width: 88mm; margin: 0 !important; }';
+            printHTML += '.page-container.ktp-inv-print-envelope .ktp-invoice-title-box { margin-top: 0 !important; }';
+            printHTML += '@media print {';
+            printHTML += '  html, body { margin: 0 !important; padding: 0 !important; }';
+            printHTML += '  .page-container.ktp-inv-print-envelope { margin: 0 !important; width: 100% !important; max-width: none !important; padding: ' + invPrintBodyFlowPadTopMm + 'mm ' + invPrintPadRightInnerMm + 'mm ' + invPrintPadBottomInnerMm + 'mm ' + invPrintPadLeftInnerMm + 'mm !important; box-sizing: border-box !important; }';
+            printHTML += '  .page-container.ktp-inv-print-envelope .ktp-invoice-address-block { position: absolute !important; top: ' + invAddrTopMm + 'mm !important; left: ' + invAddrLeftMm + 'mm !important; right: auto !important; z-index: 999 !important; max-width: 88mm !important; margin: 0 !important; }';
+            printHTML += '  .page-container.ktp-inv-print-envelope .ktp-invoice-title-box { margin-top: 0 !important; }';
+            printHTML += '}';
+        }
         printHTML += '</style>';
         printHTML += '</head>';
         printHTML += '<body>';
-        printHTML += '<div class="page-container">';
+        printHTML += (mode === 'pdf')
+            ? '<div class="page-container">'
+            : '<div class="page-container ktp-inv-print-envelope">';
         printHTML += invoiceContent;
         printHTML += '</div>';
         printHTML += '</body>';
@@ -819,6 +846,29 @@ function printInvoiceContent() {
                     }
                 }
             } catch (_) {}
+
+            // 封筒印刷：宛名 absolute（座標はスタイルシートと同一）。タイトル margin は CSS で 0
+            if (mode === 'print') {
+                try {
+                    var dPrint = iframe.contentDocument || iframe.contentWindow.document;
+                    if (dPrint) {
+                        var addrEl = dPrint.querySelector('.ktp-invoice-address-block');
+                        if (addrEl) {
+                            addrEl.style.setProperty('position', 'absolute', 'important');
+                            addrEl.style.setProperty('top', invAddrTopMm + 'mm', 'important');
+                            addrEl.style.setProperty('left', invAddrLeftMm + 'mm', 'important');
+                            addrEl.style.setProperty('right', 'auto', 'important');
+                            addrEl.style.setProperty('z-index', '999', 'important');
+                            addrEl.style.setProperty('max-width', '88mm', 'important');
+                            addrEl.style.setProperty('margin', '0', 'important');
+                        } else {
+                            console.warn('[請求書印刷] .ktp-invoice-address-block が見つかりません（封筒用座標をスキップ）');
+                        }
+                    }
+                } catch (injErr) {
+                    console.warn('[請求書印刷] 印刷用インラインスタイル適用に失敗:', injErr);
+                }
+            }
 
             // print を発火
             try {
