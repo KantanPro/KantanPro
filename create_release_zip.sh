@@ -1,49 +1,29 @@
 #!/usr/bin/env bash
-# KantanPro 手動配布用 ZIP 生成（WordPress の plugins 直下に展開できる構成）
-# 使い方: ./create_release_zip.sh [出力ディレクトリ]
-# 未指定時は /Users/kantanpro/Desktop/KantanPro_TEST_UP
-
 set -euo pipefail
 
+# 使い方: ./create_release_zip.sh [version]
+# version 未指定時は plugin_config.json の default_version を使用
+
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-OUTPUT_DIR="${1:-/Users/kantanpro/Desktop/KantanPro_TEST_UP}"
-PLUGIN_FOLDER_NAME="KantanPro"
+CONFIG_FILE="$ROOT_DIR/plugin_config.json"
 
-VERSION="$(grep '^\s*\* Version:' "${ROOT_DIR}/ktpwp.php" | head -1 | sed 's/.*Version:[[:space:]]*//;s/[[:space:]]*$//')"
-TODAY="$(date +%Y%m%d)"
-ZIP_NAME="${PLUGIN_FOLDER_NAME}_${VERSION}_${TODAY}.zip"
-ZIP_PATH="${OUTPUT_DIR}/${ZIP_NAME}"
+if [[ ! -f "$CONFIG_FILE" ]]; then
+  echo "plugin_config.json が見つかりません" >&2
+  exit 1
+fi
 
-echo "=========================================="
-echo "KantanPro リリース ZIP"
-echo "=========================================="
-echo "ソース: ${ROOT_DIR}"
-echo "バージョン: ${VERSION}"
-echo "出力: ${ZIP_PATH}"
-echo "=========================================="
+if [[ -n "${1:-}" ]]; then
+  VERSION="$1"
+else
+  VERSION=$(php -r 'echo json_decode(file_get_contents("'$CONFIG_FILE'"), true)["default_version"];')
+fi
 
-mkdir -p "${OUTPUT_DIR}"
+OUTPUT_DIR=$(php -r 'echo json_decode(file_get_contents("'$CONFIG_FILE'"), true)["output_directory"];')
 
-TEMP_DIR="$(mktemp -d)"
-cleanup() { rm -rf "${TEMP_DIR}"; }
-trap cleanup EXIT
+mkdir -p "$OUTPUT_DIR"
 
-DEST="${TEMP_DIR}/${PLUGIN_FOLDER_NAME}"
-mkdir -p "${DEST}"
+echo "[INFO] create_plugin_zip.sh を呼び出します... (v$VERSION)"
 
-rsync -a \
-  --exclude='.git/' \
-  --exclude='.cursor/' \
-  --exclude='.DS_Store' \
-  --exclude='*.log' \
-  --exclude='*.tmp' \
-  "${ROOT_DIR}/" "${DEST}/"
+"$ROOT_DIR/create_plugin_zip.sh" -v "$VERSION" -o "$OUTPUT_DIR" -s "$ROOT_DIR"
 
-(
-  cd "${TEMP_DIR}"
-  zip -rq "${ZIP_PATH}" "${PLUGIN_FOLDER_NAME}" -x "*.DS_Store" -x "*.log" -x "*.tmp"
-)
-
-SIZE="$(ls -lh "${ZIP_PATH}" | awk '{print $5}')"
-BYTES="$(stat -f%z "${ZIP_PATH}" 2>/dev/null || stat -c%s "${ZIP_PATH}" 2>/dev/null)"
-echo "完了: ${ZIP_NAME} (${SIZE} / ${BYTES} bytes)"
+echo "[INFO] 完了"

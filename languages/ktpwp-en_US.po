@@ -4134,8 +4134,8 @@ msgstr "Completion date:"
 msgid "まだ注文がありません。"
 msgstr "No orders yet."
 
-msgid "[削除済み]"
-msgstr "[Deleted]"
+msgid "【対象外】"
+msgstr "[Excluded]"
 
 msgid "[＋]ボタンを押してデーターを作成してください"
 msgstr "Press the [+] button to create data."

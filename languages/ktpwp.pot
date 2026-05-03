@@ -4120,7 +4120,7 @@ msgstr ""
 msgid "まだ注文がありません。"
 msgstr ""
 
-msgid "[削除済み]"
+msgid "【対象外】"
 msgstr ""
 
 msgid "[＋]ボタンを押してデーターを作成してください"

@@ -605,19 +605,19 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
                             )
                         );
 
-						// 削除済み（対象外）の場合の視覚的スタイリング
+						// 対象外の場合の視覚的スタイリング（ラベルは行末に表示）
 						$list_style = '';
-						$deleted_mark = '';
+						$excluded_mark = '';
 						if ( $client_status === '対象外' || $client_status === 'Inactive' ) {
 							$list_style = ' style="background-color: #ffe6e6; border-left: 3px solid #ff4444;"';
-							$deleted_mark = '<span style="color: #ff4444; font-weight: bold; margin-right: 5px;">' . esc_html__( '[削除済み]', 'ktpwp' ) . '</span>';
+							$excluded_mark = '<span style="color: #ff4444; font-weight: bold; margin-left: 5px;">' . esc_html__( '【対象外】', 'ktpwp' ) . '</span>';
 						}
 
 						// カテゴリーが空の場合は何も表示しない
 						$display_category = ! empty( $category ) ? $category : '';
 
 						$results[] = '<a href="' . $link_url . '" onclick="document.cookie = \'{$cookie_name}=\' + ' . $id . ';">'
-						. '<div class="ktp_data_list_item"' . $list_style . '>' . $deleted_mark . 'D:' . $id . ' ' . $company_name . ' | ' . $user_name . ' | ' . $display_category . ' | ' . esc_html__( '頻度', 'ktpwp' ) . '(' . $frequency . ')</div>'
+						. '<div class="ktp_data_list_item"' . $list_style . '>D:' . $id . ' ' . $company_name . ' | ' . $user_name . ' | ' . $display_category . ' | ' . esc_html__( '頻度', 'ktpwp' ) . '(' . $frequency . ')' . $excluded_mark . '</div>'
 						. '</a>';
 					}
 				} else {

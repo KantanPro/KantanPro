@@ -564,7 +564,7 @@ class KTPWP_I18n {
             '不明' => 'Unknown',
             '完了日：' => 'Completion date:',
             'まだ注文がありません。' => 'No orders yet.',
-            '[削除済み]' => '[Deleted]',
+            '【対象外】' => '[Excluded]',
             '[＋]ボタンを押してデーターを作成してください' => 'Press the [+] button to create data.',
             'データがまだ登録されていません' => 'No data has been registered yet.',
             '顧客データがありません。' => 'No customer data found.',
