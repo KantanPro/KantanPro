@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.2.79
+Stable tag: 1.2.80
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -322,6 +322,11 @@ curl -sS -X POST \
 * MySQL 5.6 以上 または MariaDB 10.0 以上
 * 推奨メモリ: 256MB 以上
 * 推奨PHP拡張: GD（画像処理用）
+
+= 1.2.80 - 2026年05月08日 =
+* （自動要約）`git log v1.2.79..origin/main` は空。タグ `v1.2.79` 対比の手元差分は `css/progress-select.css`・`css/styles.css`・`ktpwp.php`
+* 仕事リスト：モバイル表示で本文を省略せず行内折り返しし、納期・完了日・進捗の入力群も項目単位で折り返すよう調整
+* ヘッダー：プラグインロゴ画像を KantanProEX と同じ固定 `images/default/icon.png` 表示に統一し、旧保存オプションや遅延読み込みによる差し替えを抑止
 
 = 1.2.79 - 2026年05月03日 =
 * （自動要約）v1.2.78 以降の変更：`includes/class-ktpwp-client.php`・`includes/class-ktpwp-i18n.php`・`languages/ktpwp-en_US.po`・`languages/ktpwp.pot`・`languages/ktpwp-en_US.mo`・`ktpwp.php`・`readme.txt`・`create_release_zip.sh`・`create_plugin_zip.sh`・`plugin_config.json`

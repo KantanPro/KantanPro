@@ -404,32 +404,38 @@ li.ktp_work_list_item label {
 
 /* モバイル表示での調整 */
 @media screen and (max-width: 768px) {
-  /* 仕事リストの行をモバイル対応 - 2行レイアウト */
+  /* 仕事リストの行をモバイル対応 - 行内で折り返し */
   li.ktp_work_list_item {
-    flex-direction: column;
-    align-items: stretch;
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
     gap: 8px;
     padding: 10px 12px;
   }
 
-  /* 1行目：ID〜日時のリンク */
-  .ktp_work_list_item a {
+  /* 1行目：ID〜日時を行内で折り返す */
+  .ktp_work_list_item .ktp_work_list_item_text {
     order: 1;
+    flex: 1 1 100%;
     white-space: normal;
-    word-wrap: break-word;
+    overflow: visible;
+    text-overflow: clip;
+    overflow-wrap: anywhere;
     line-height: 1.4;
     margin-bottom: 0;
   }
 
-  /* 2行目：納期と進捗を1つのコンテナに配置 */
+  /* 2行目：納期と進捗を折り返し可能な1つのコンテナに配置 */
   .ktp_work_list_item .delivery-dates-container {
     order: 2;
+    flex: 1 1 100%;
     margin-left: 0;
     justify-content: flex-start;
-    gap: 12px;
-    flex-wrap: nowrap;
+    gap: 8px 12px;
+    flex-wrap: wrap;
     align-items: center;
     display: flex;
+    white-space: normal;
   }
 
   /* 納期ラベルの調整 */
@@ -479,11 +485,11 @@ li.ktp_work_list_item label {
     align-items: center;
     gap: 8px;
     flex-shrink: 0;
-    flex-wrap: nowrap;
-    white-space: nowrap;
+    flex-wrap: wrap;
+    white-space: normal;
   }
 
-  /* 納期ラベルとカレンダーを強制的に1行に配置 */
+  /* ラベルと入力欄の組は崩さず、組ごと折り返す */
   .delivery-dates-container > * {
     flex-shrink: 0;
     white-space: nowrap;
