@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.2.80
+Stable tag: 1.2.81
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -322,6 +322,11 @@ curl -sS -X POST \
 * MySQL 5.6 以上 または MariaDB 10.0 以上
 * 推奨メモリ: 256MB 以上
 * 推奨PHP拡張: GD（画像処理用）
+
+= 1.2.81 - 2026年05月08日 =
+* （自動要約）作業開始時点の `git log v1.2.80..origin/main` は空。タグ `v1.2.80` 対比の差分は `includes/class-ktpwp-update-checker.php` とバージョン/リリースノート更新
+* WordPress標準更新：GitHub `zipball_url` の展開フォルダ `KantanPro-KantanPro-<hash>` を更新前に正規フォルダ `KantanPro` へ補正し、`active_plugins` の `KantanPro/ktpwp.php` と不一致になって更新後に無効化されるリスクを修正
+* WordPress標準更新：post_install 段階でもインストール先が正規フォルダでない場合に `KantanPro` へリネームする保険処理を追加
 
 = 1.2.80 - 2026年05月08日 =
 * （自動要約）`git log v1.2.79..origin/main` は空。タグ `v1.2.79` 対比の手元差分は `css/progress-select.css`・`css/styles.css`・`ktpwp.php`
