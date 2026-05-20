@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.2.83
+Stable tag: 1.2.84
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -322,6 +322,10 @@ curl -sS -X POST \
 * MySQL 5.6 以上 または MariaDB 10.0 以上
 * 推奨メモリ: 256MB 以上
 * 推奨PHP拡張: GD（画像処理用）
+
+= 1.2.84 - 2026年05月20日 =
+* （自動要約）`git log v1.2.83..HEAD`（本バージョンのメタデータ更新コミット直前まで）：`4ef1925 一括請求のテーブルヘッダーのスタイルを修正`。`git diff v1.2.83..4ef1925 --stat` は `js/ktp-client-invoice.js` のみ（+1/-1）
+* 一括請求プレビュー：明細テーブルヘッダーに `ktp-bulk-items-table-head` クラスを付与し、背景色・下線色を KantanBiz 相当のピンク系（`#ffeef1` / `#fecdd3`）に調整
 
 = 1.2.83 - 2026年05月20日 =
 * （自動要約）`git log v1.2.82..HEAD`（本バージョンのメタデータ更新コミット直前まで）：`6b6467a 一括請求の締日表示機能を追加`。`git diff v1.2.82..6b6467a --stat` は `includes/class-ktpwp-ajax.php` のみ（+51/-1）
