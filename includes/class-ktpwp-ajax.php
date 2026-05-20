@@ -4788,7 +4788,7 @@ class KTPWP_Ajax {
 			if (!isset($monthly_groups[$key])) {
 				$monthly_groups[$key] = array(
 					'billing_period' => wp_date( __( 'Y年n月分', 'ktpwp' ), $completion_timestamp ),
-					'closing_date' => wp_date( __( 'Y年m月d日', 'ktpwp' ), $completion_timestamp ),
+					'closing_date' => $this->bulk_invoice_closing_date_label_for_period( $key, $client_data ),
 					'orders' => array(),
 					'subtotal' => 0,
 					'tax_amount' => 0
@@ -4922,6 +4922,56 @@ class KTPWP_Ajax {
 		);
 		
 		wp_send_json_success($response_data);
+	}
+
+	/**
+	 * 一括請求の月別グループ表示用締日（顧客の締め日 × 対象年月。完了日は使わない）
+	 *
+	 * @param string $period_key 例: 2026-04
+	 * @param object $client_data ktp_client 行
+	 * @return string
+	 */
+	private function bulk_invoice_closing_date_label_for_period( $period_key, $client_data ) {
+		$closing_day = isset( $client_data->closing_day ) ? trim( (string) $client_data->closing_day ) : '';
+		if ( $closing_day === '' || $closing_day === 'なし' || ! preg_match( '/^\d{4}-\d{2}$/', (string) $period_key ) ) {
+			return '—';
+		}
+
+		$year  = (int) substr( $period_key, 0, 4 );
+		$month = (int) substr( $period_key, 5, 2 );
+		if ( $year < 1 || $month < 1 || $month > 12 ) {
+			return '—';
+		}
+
+		try {
+			$base = new DateTime( sprintf( '%04d-%02d-01', $year, $month ) );
+		} catch ( Exception $e ) {
+			return '—';
+		}
+
+		if ( in_array( $closing_day, array( '末', '末日' ), true ) ) {
+			$base->modify( 'last day of this month' );
+
+			return wp_date( __( 'Y年m月d日', 'ktpwp' ), $base->getTimestamp() );
+		}
+
+		$day_num = (int) preg_replace( '/[^0-9]/', '', $closing_day );
+		if ( $day_num < 1 ) {
+			return '—';
+		}
+
+		$last_day = (int) $base->format( 't' );
+		if ( $day_num > $last_day ) {
+			$day_num = $last_day;
+		}
+
+		try {
+			$closing = new DateTime( sprintf( '%04d-%02d-%02d', $year, $month, $day_num ) );
+		} catch ( Exception $e ) {
+			return '—';
+		}
+
+		return wp_date( __( 'Y年m月d日', 'ktpwp' ), $closing->getTimestamp() );
 	}
 
 	/**
