@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.2.84
+Stable tag: 1.2.85
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -322,6 +322,11 @@ curl -sS -X POST \
 * MySQL 5.6 以上 または MariaDB 10.0 以上
 * 推奨メモリ: 256MB 以上
 * 推奨PHP拡張: GD（画像処理用）
+
+= 1.2.85 - 2026年05月20日 =
+* （自動要約）`git log v1.2.84..HEAD`（本バージョンのメタデータ更新コミット直前まで）：`d0ec7e5 ヘッダー更新バッジ表示機能を追加`。`git diff v1.2.84..d0ec7e5 --stat`：`css/ktpwp-update-balloon.css`・`includes/class-ktpwp-update-checker.php`・`js/ktpwp-update-balloon.js`・`ktpwp.php`（+118/-8）
+* ヘッダー更新チェック：更新あり時に refresh ボタンへ赤丸バッジを表示（「後で」で吹き出しを閉じてもバッジは残る）
+* 更新チェッカー：`has_header_update_badge()` を追加し、通知設定・権限・保存済み更新情報からバッジ表示可否を判定
 
 = 1.2.84 - 2026年05月20日 =
 * （自動要約）`git log v1.2.83..HEAD`（本バージョンのメタデータ更新コミット直前まで）：`4ef1925 一括請求のテーブルヘッダーのスタイルを修正`。`git diff v1.2.83..4ef1925 --stat` は `js/ktp-client-invoice.js` のみ（+1/-1）
