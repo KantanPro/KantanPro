@@ -101,6 +101,35 @@
         }
 
         setUpdateBadgeVisible(showBadge);
+        pollHeaderUpdateBadge();
+    }
+
+    /**
+     * バックグラウンドで更新をポーリングしバッジを更新
+     */
+    function pollHeaderUpdateBadge() {
+        if (typeof ktpwp_update_ajax === 'undefined' || !ktpwp_update_ajax.nonce) {
+            return;
+        }
+
+        if (typeof ktpwp_update_ajax.notifications_enabled !== 'undefined' && !ktpwp_update_ajax.notifications_enabled) {
+            return;
+        }
+
+        $.ajax({
+            url: ktpwp_update_ajax.ajax_url,
+            type: 'POST',
+            data: {
+                action: 'ktpwp_poll_header_update',
+                nonce: ktpwp_update_ajax.nonce
+            },
+            timeout: 30000,
+            success: function(response) {
+                if (response.success && response.data && typeof response.data.has_update !== 'undefined') {
+                    setUpdateBadgeVisible(!!response.data.has_update);
+                }
+            }
+        });
     }
     
     /**

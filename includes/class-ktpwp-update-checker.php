@@ -76,11 +76,13 @@ class KTPWP_Update_Checker {
         // チェック間隔を設定から取得
         $check_interval_hours = isset( $update_settings['check_interval'] ) ? intval( $update_settings['check_interval'] ) : 24;
         $this->check_interval = $check_interval_hours * 3600; // 時間を秒に変換
+
+        // 日次更新チェックの WP-Cron 登録（管理画面アクセス不要）
+        add_action( 'init', array( $this, 'init' ), 5 );
         
         // WordPress.orgとの接続エラーを防ぐため、管理画面でのみフックを設定
         if ( is_admin() ) {
             // フック設定
-            add_action( 'init', array( $this, 'init' ) );
             add_action( 'admin_init', array( $this, 'admin_init' ) );
             add_filter( 'pre_set_site_transient_update_plugins', array( $this, 'check_for_plugin_update' ) );
             add_filter( 'plugins_api', array( $this, 'plugins_api_handler' ), 20, 3 );
@@ -101,13 +103,19 @@ class KTPWP_Update_Checker {
             add_action( 'wp_ajax_ktpwp_check_github_update', array( $this, 'ajax_check_github_update' ) );
             add_action( 'wp_ajax_ktpwp_perform_update', array( $this, 'perform_plugin_update' ) );
             add_action( 'wp_ajax_ktpwp_clear_plugin_cache', array( $this, 'ajax_clear_plugin_cache' ) );
-            
-            // ヘッダー更新通知用のAJAX処理
-            add_action( 'wp_ajax_ktpwp_dismiss_header_update_notice', array( $this, 'dismiss_header_update_notice' ) );
-            add_action( 'wp_ajax_ktpwp_check_header_update', array( $this, 'ajax_check_header_update' ) );
+        }
+
+        // ヘッダー更新チェック AJAX（フロントエンドからも利用）
+        add_action( 'wp_ajax_ktpwp_dismiss_header_update_notice', array( $this, 'dismiss_header_update_notice' ) );
+        add_action( 'wp_ajax_ktpwp_check_header_update', array( $this, 'ajax_check_header_update' ) );
+        add_action( 'wp_ajax_ktpwp_poll_header_update', array( $this, 'ajax_poll_header_update' ) );
+
+        // フロントエンドでの定期更新チェック（管理画面アクセス不要・バナー表示とは独立）
+        if ( ! is_admin() && $this->is_update_notification_enabled() ) {
+            add_action( 'wp', array( $this, 'maybe_check_on_ktpwp_page' ), 20 );
         }
         
-        // フロントエンド通知は条件付きで設定
+        // フロントエンド通知バナーは条件付きで設定
         if ( $this->is_frontend_notification_enabled() ) {
             add_action( 'wp_body_open', array( $this, 'check_frontend_update' ) );
             add_action( 'wp_footer', array( $this, 'check_frontend_update' ) );
@@ -953,9 +961,7 @@ class KTPWP_Update_Checker {
             return;
         }
 
-        // KantanProが表示されているページでのみ実行
-        global $post;
-        if ( ! is_a( $post, 'WP_Post' ) || ! has_shortcode( $post->post_content, 'ktpwp_all_tab' ) ) {
+        if ( ! $this->is_ktpwp_shortcode_page() ) {
             return;
         }
 
@@ -970,28 +976,12 @@ class KTPWP_Update_Checker {
             ) );
         }
 
-        // 1日1回のみチェック
-        $last_frontend_check = get_option( 'ktpwp_last_frontend_check', 0 );
-        $current_time = time();
-        
-        if ( ( $current_time - $last_frontend_check ) < $this->check_interval ) {
-            // チェック間隔内でも、更新が利用可能な場合は通知を表示
-            $update_data = get_option( 'ktpwp_update_available', false );
-            if ( $update_data ) {
-                $this->show_frontend_update_notice();
-            }
-            return;
-        }
+        $this->maybe_run_scheduled_update_check();
 
-        // 更新チェック実行
-        $update_available = $this->check_github_updates();
-        
-        if ( $update_available ) {
+        $update_data = get_option( 'ktpwp_update_available', false );
+        if ( $update_data ) {
             $this->show_frontend_update_notice();
         }
-        
-        // 最後のフロントエンドチェック時刻を更新
-        update_option( 'ktpwp_last_frontend_check', $current_time );
     }
     
     /**
@@ -1500,6 +1490,89 @@ class KTPWP_Update_Checker {
         return $version;
     }
     
+    /**
+     * KantanPro 設置ページ（ショートコード設置ページ）かどうか
+     *
+     * @return bool
+     */
+    private function is_ktpwp_shortcode_page() {
+        global $post;
+
+        return is_a( $post, 'WP_Post' ) && has_shortcode( $post->post_content, 'ktpwp_all_tab' );
+    }
+
+    /**
+     * スケジュールに従って GitHub 更新チェックを実行（同一リクエスト内は1回のみ）
+     *
+     * @param bool $force 間隔制限を無視してチェックする
+     * @return bool 更新が利用可能か
+     */
+    public function maybe_run_scheduled_update_check( $force = false ) {
+        if ( ! $this->is_update_notification_enabled() ) {
+            return false;
+        }
+
+        if ( ! is_user_logged_in() || ! $this->user_has_notification_permission() ) {
+            return false;
+        }
+
+        static $ran = false;
+        if ( $ran && ! $force ) {
+            return (bool) $this->has_header_update_badge();
+        }
+
+        if ( ! $force ) {
+            $last_check = get_transient( 'ktpwp_last_update_check' );
+            if ( $last_check && ( time() - (int) $last_check ) < $this->check_interval ) {
+                $ran = true;
+                return (bool) $this->has_header_update_badge();
+            }
+        }
+
+        $this->check_github_updates();
+        $ran = true;
+
+        return (bool) $this->has_header_update_badge();
+    }
+
+    /**
+     * フロントエンド KantanPro ページ表示時の更新チェック
+     */
+    public function maybe_check_on_ktpwp_page() {
+        if ( ! $this->is_ktpwp_shortcode_page() ) {
+            return;
+        }
+
+        $this->maybe_run_scheduled_update_check();
+    }
+
+    /**
+     * バッジ用の軽量 AJAX ポーリング
+     */
+    public function ajax_poll_header_update() {
+        if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'ktpwp_header_update_check' ) ) {
+            wp_send_json_error( array(
+                'message' => __( 'セキュリティチェックに失敗しました。', 'ktpwp' ),
+            ) );
+        }
+
+        if ( ! $this->user_has_notification_permission() ) {
+            wp_send_json_error( array(
+                'message' => __( 'この操作を実行する権限がありません。', 'ktpwp' ),
+            ) );
+        }
+
+        if ( ! $this->is_update_notification_enabled() ) {
+            wp_send_json_success( array( 'has_update' => false ) );
+        }
+
+        $this->maybe_run_scheduled_update_check();
+
+        wp_send_json_success( array(
+            'has_update' => $this->has_header_update_badge(),
+        ) );
+    }
+
     /**
      * ヘッダー更新リンク用の更新チェック
      */

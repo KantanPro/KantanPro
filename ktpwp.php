@@ -4112,6 +4112,7 @@ function KTPWP_Index() {
             if ( $enable_notifications && class_exists( 'KTPWP_Update_Checker' ) ) {
                 global $ktpwp_update_checker;
                 if ( $ktpwp_update_checker ) {
+                    $ktpwp_update_checker->maybe_run_scheduled_update_check();
                     $show_update_badge = $ktpwp_update_checker->has_header_update_badge();
                 }
             }
