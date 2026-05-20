@@ -4105,6 +4105,17 @@ function KTPWP_Index() {
             $plugin_version = esc_html( KANTANPRO_PLUGIN_VERSION );
             $update_link_url = esc_url( KTPWP_Main::get_current_page_base_url() );
 
+            // ヘッダー更新バッジ表示判定（ナビリンク生成前）
+            $show_update_badge = false;
+            $update_settings = get_option( 'ktp_update_notification_settings', array() );
+            $enable_notifications = isset( $update_settings['enable_notifications'] ) ? $update_settings['enable_notifications'] : true;
+            if ( $enable_notifications && class_exists( 'KTPWP_Update_Checker' ) ) {
+                global $ktpwp_update_checker;
+                if ( $ktpwp_update_checker ) {
+                    $show_update_badge = $ktpwp_update_checker->has_header_update_badge();
+                }
+            }
+
             // ログインしているユーザーのみにナビゲーションリンクを表示
             $navigation_links = '';
             if ( is_user_logged_in() && $current_user && $current_user->ID > 0 ) {
@@ -4127,12 +4138,12 @@ function KTPWP_Index() {
                     $navigation_links .= ' <a href="' . $logout_link . '" title="ログアウト" style="display: inline-flex; align-items: center; gap: 4px; color: #0073aa; text-decoration: none;"><span class="material-symbols-outlined" style="font-size: 20px; vertical-align: middle;">logout</span></a>';
                     // 更新リンクは編集者権限がある場合のみ
                     if ( current_user_can( 'edit_posts' ) ) {
-                        // 更新通知設定を確認
-                        $update_settings = get_option( 'ktp_update_notification_settings', array() );
-                        $enable_notifications = isset( $update_settings['enable_notifications'] ) ? $update_settings['enable_notifications'] : true;
                         if ( $enable_notifications ) {
+                            $update_check_title = $show_update_badge ? esc_attr__( '更新が利用可能です', 'ktpwp' ) : esc_attr__( '更新チェック', 'ktpwp' );
+                            $update_link_class = $show_update_badge ? ' has-update' : '';
+                            $update_badge_markup = '<span class="ktpwp-header-update-badge' . ( $show_update_badge ? ' is-visible' : '' ) . '" aria-hidden="true"></span>';
                             // 更新通知機能付きのリンク
-                            $navigation_links .= ' <a href="#" id="ktpwp-header-update-check" title="更新チェック" style="display: inline-flex; align-items: center; gap: 4px; color: #0073aa; text-decoration: none; cursor: pointer;"><span class="material-symbols-outlined" style="font-size: 20px; vertical-align: middle;">refresh</span></a>';
+                            $navigation_links .= ' <a href="#" id="ktpwp-header-update-check" class="ktpwp-header-update-link' . esc_attr( $update_link_class ) . '" title="' . $update_check_title . '" style="display: inline-flex; align-items: center; gap: 4px; color: #0073aa; text-decoration: none; cursor: pointer; position: relative;"><span class="material-symbols-outlined" style="font-size: 20px; vertical-align: middle;">refresh</span>' . $update_badge_markup . '</a>';
                         } else {
                             // 通常のページリロードリンク
                             $navigation_links .= ' <a href="' . $update_link_url . '" title="更新" style="display: inline-flex; align-items: center; gap: 4px; color: #0073aa; text-decoration: none;"><span class="material-symbols-outlined" style="font-size: 20px; vertical-align: middle;">refresh</span></a>';
@@ -4154,15 +4165,13 @@ function KTPWP_Index() {
             $logo_url = ktpwp_plugin_asset_url( 'images/default/icon.png' );
 
             // 更新通知設定を確認
-            $update_settings = get_option( 'ktp_update_notification_settings', array() );
-            $enable_notifications = isset( $update_settings['enable_notifications'] ) ? $update_settings['enable_notifications'] : true;
-            
-            // 更新情報を取得
+            // 更新情報を取得（吹き出し表示用。バッジは $show_update_badge を使用）
             $update_data = null;
             if ( $enable_notifications && class_exists( 'KTPWP_Update_Checker' ) ) {
                 global $ktpwp_update_checker;
                 if ( $ktpwp_update_checker ) {
                     $update_data = $ktpwp_update_checker->check_header_update();
+                    $show_update_badge = $ktpwp_update_checker->has_header_update_badge();
                 }
             }
             
@@ -4224,6 +4233,7 @@ function KTPWP_Index() {
             }
             
             $front_message .= '<script>var ktpwp_update_ajax = ' . wp_json_encode( $ajax_data ) . ';</script>';
+            $front_message .= '<script>var ktpwp_update_badge_available = ' . ( $show_update_badge ? 'true' : 'false' ) . ';</script>';
             
             // デバッグ用のHTMLコメントを追加
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {

@@ -302,6 +302,7 @@ class KTPWP_Update_Checker {
             $is_plugin_update_result = in_array( $hook, array( 'update-core.php', 'update.php' ), true );
             if ( $is_plugin_update_result ) {
                 wp_localize_script( 'ktpwp-update-balloon', 'ktpwp_update_data', array( 'has_update' => false ) );
+                wp_localize_script( 'ktpwp-update-balloon', 'ktpwp_update_badge_available', false );
             } else {
                 // 更新データがある場合は設定
                 $update_data = get_option( 'ktpwp_update_available', false );
@@ -312,6 +313,7 @@ class KTPWP_Update_Checker {
                         'update_data' => $update_data
                     ) );
                 }
+                wp_localize_script( 'ktpwp-update-balloon', 'ktpwp_update_badge_available', $this->has_header_update_badge() );
             }
         }
     }
@@ -1530,6 +1532,37 @@ class KTPWP_Update_Checker {
         }
         
         return $update_data;
+    }
+
+    /**
+     * ヘッダー更新ボタンにバッジを表示するか（「後で」で吹き出しを閉じてもバッジは残す）
+     */
+    public function has_header_update_badge() {
+        if ( ! $this->is_update_notification_enabled() ) {
+            return false;
+        }
+
+        if ( ! is_user_logged_in() || ! $this->user_has_notification_permission() ) {
+            return false;
+        }
+
+        $update_data = get_option( 'ktpwp_update_available', false );
+        if ( ! $update_data || ! is_array( $update_data ) ) {
+            return false;
+        }
+
+        $latest_version = '';
+        if ( isset( $update_data['new_version'] ) ) {
+            $latest_version = $this->clean_version( $update_data['new_version'] );
+        } elseif ( isset( $update_data['version'] ) ) {
+            $latest_version = $this->clean_version( $update_data['version'] );
+        }
+
+        if ( $latest_version === '' ) {
+            return false;
+        }
+
+        return version_compare( $latest_version, $this->clean_version( $this->current_version ), '>' );
     }
 
     /**

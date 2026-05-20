@@ -61,7 +61,47 @@
         
         // 既存の更新がある場合は吹き出しを表示
         checkExistingUpdate();
+        initUpdateBadge();
     });
+    
+    /**
+     * 更新バッジの表示/非表示
+     */
+    function setUpdateBadgeVisible(visible) {
+        var $link = $('#ktpwp-header-update-check');
+        if (!$link.length) {
+            return;
+        }
+
+        var $badge = $link.find('.ktpwp-header-update-badge');
+        if (!$badge.length) {
+            $badge = $('<span class="ktpwp-header-update-badge" aria-hidden="true"></span>');
+            $link.append($badge);
+        }
+
+        if (visible) {
+            $link.addClass('has-update').attr('title', ktpwpTranslate('更新が利用可能です'));
+            $badge.addClass('is-visible');
+        } else {
+            $link.removeClass('has-update').attr('title', ktpwpTranslate('更新チェック'));
+            $badge.removeClass('is-visible');
+        }
+    }
+
+    /**
+     * ページ読み込み時の更新バッジ初期化
+     */
+    function initUpdateBadge() {
+        var showBadge = false;
+
+        if (typeof ktpwp_update_badge_available !== 'undefined') {
+            showBadge = !!ktpwp_update_badge_available;
+        } else if (typeof ktpwp_update_data !== 'undefined' && ktpwp_update_data.has_update) {
+            showBadge = true;
+        }
+
+        setUpdateBadgeVisible(showBadge);
+    }
     
     /**
      * 更新チェックを実行
@@ -114,9 +154,11 @@
                 if (response.success) {
                     if (response.data.has_update) {
                         // 更新がある場合は吹き出しを表示
+                        setUpdateBadgeVisible(true);
                         showUpdateBalloon(response.data.message, true, response.data.update_data);
                     } else {
                         // 更新がない場合
+                        setUpdateBadgeVisible(false);
                         var message = response.data.message;
                         if (response.data.notifications_disabled) {
                             message = '更新通知が無効化されています。管理画面の設定で有効にしてください。';
