@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.2.81
+Stable tag: 1.2.82
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -322,6 +322,10 @@ curl -sS -X POST \
 * MySQL 5.6 以上 または MariaDB 10.0 以上
 * 推奨メモリ: 256MB 以上
 * 推奨PHP拡張: GD（画像処理用）
+
+= 1.2.82 - 2026年05月20日 =
+* （自動要約）`git log v1.2.81..HEAD` およびタグ `v1.2.81` 対比の `git diff` は空。機能コードの変更はなく、バージョン番号とリリースノートのみ更新
+* 配布・更新確認用のメンテナンスリリース（WordPress 標準更新の `zipball_url` 配布経路の動作確認を含む）
 
 = 1.2.81 - 2026年05月08日 =
 * （自動要約）作業開始時点の `git log v1.2.80..origin/main` は空。タグ `v1.2.80` 対比の差分は `includes/class-ktpwp-update-checker.php` とバージョン/リリースノート更新
