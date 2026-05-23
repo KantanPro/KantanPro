@@ -310,7 +310,11 @@ class KTPWP_Update_Checker {
             $is_plugin_update_result = in_array( $hook, array( 'update-core.php', 'update.php' ), true );
             if ( $is_plugin_update_result ) {
                 wp_localize_script( 'ktpwp-update-balloon', 'ktpwp_update_data', array( 'has_update' => false ) );
-                wp_localize_script( 'ktpwp-update-balloon', 'ktpwp_update_badge_available', false );
+                wp_add_inline_script(
+                    'ktpwp-update-balloon',
+                    'var ktpwp_update_badge_available = ' . wp_json_encode( false ) . ';',
+                    'before'
+                );
             } else {
                 // 更新データがある場合は設定
                 $update_data = get_option( 'ktpwp_update_available', false );
@@ -321,7 +325,11 @@ class KTPWP_Update_Checker {
                         'update_data' => $update_data
                     ) );
                 }
-                wp_localize_script( 'ktpwp-update-balloon', 'ktpwp_update_badge_available', $this->has_header_update_badge() );
+                wp_add_inline_script(
+                    'ktpwp-update-balloon',
+                    'var ktpwp_update_badge_available = ' . wp_json_encode( (bool) $this->has_header_update_badge() ) . ';',
+                    'before'
+                );
             }
         }
     }
