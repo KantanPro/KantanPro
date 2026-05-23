@@ -1,4 +1,4 @@
-# KantanPro (KTPWP) - Version 1.2.86
+# KantanPro (KTPWP) - Version 1.2.87
 
 WordPressで動作する業務管理・受注進捗・請求・顧客・サービス・協力会社・レポート・スタッフチャットまで一元管理できる多機能プラグイン。
 
@@ -11,6 +11,10 @@ WordPressで動作する業務管理・受注進捗・請求・顧客・サー�
 ---
 
 ## 変更履歴
+
+### Version 1.2.87 - 2026年5月24日
+
+- ヘッダー更新バッジ：`ktpwp_update_badge_available` を `wp_add_inline_script` で渡すよう変更し、フロント側で真偽値が正しく評価されるよう修正
 
 ### Version 1.2.86 - 2026年5月20日
 

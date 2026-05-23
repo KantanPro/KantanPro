@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.2.86
+Stable tag: 1.2.87
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -322,6 +322,10 @@ curl -sS -X POST \
 * MySQL 5.6 以上 または MariaDB 10.0 以上
 * 推奨メモリ: 256MB 以上
 * 推奨PHP拡張: GD（画像処理用）
+
+= 1.2.87 - 2026年05月24日 =
+* （自動要約）`git log v1.2.86..HEAD`（本バージョンのメタデータ更新コミット直前まで）：`58adf41 更新バッジ表示機能のスクリプトを修正`。`git diff v1.2.86..58adf41 --stat`：`includes/class-ktpwp-update-checker.php`（+10/-2）
+* ヘッダー更新バッジ：`ktpwp_update_badge_available` の渡し方を `wp_localize_script` から `wp_add_inline_script` + `wp_json_encode` に変更し、フロント側で真偽値が正しく評価されるよう修正
 
 = 1.2.86 - 2026年05月20日 =
 * （自動要約）`git log v1.2.85..HEAD`（本バージョンのメタデータ更新コミット直前まで）：`93cbcfd 定期更新チェック機能を追加`。`git diff v1.2.85..93cbcfd --stat`：`includes/class-ktpwp-update-checker.php`・`js/ktpwp-update-balloon.js`・`ktpwp.php`（+131/-28）
