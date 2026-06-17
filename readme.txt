@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.2.88
+Stable tag: 1.2.89
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -322,6 +322,9 @@ curl -sS -X POST \
 * MySQL 5.6 以上 または MariaDB 10.0 以上
 * 推奨メモリ: 256MB 以上
 * 推奨PHP拡張: GD（画像処理用）
+
+= 1.2.89 - 2026年06月17日 =
+* 配布 ZIP から誤って除外されていた `create_dummy_data.php` を同梱するよう修正（ダミーデータ作成エラー解消）
 
 = 1.2.88 - 2026年06月17日 =
 * KantanProEX solo 相当のコア機能（契約・Stripe・公開商品・PDF・タブ検索・受注補助・FMインポート等）を無料版に統合

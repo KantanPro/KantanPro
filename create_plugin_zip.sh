@@ -88,7 +88,7 @@ find "$PLUGIN_DIR" -name 'development-config.php' -delete 2>/dev/null || true
 
 find "$PLUGIN_DIR" -type f \( -name 'README.md' -o -name '*.md' -o -name '*.html' \) -delete 2>/dev/null || true
 find "$PLUGIN_DIR/languages" -type f \( -name '*.po' -o -name '*.pot' \) -delete 2>/dev/null || true
-rm -f "$PLUGIN_DIR/create_dummy_data.php" "$PLUGIN_DIR/create_dummy_data.php.bak"
+rm -f "$PLUGIN_DIR/create_dummy_data.php.bak"
 
 find "$PLUGIN_DIR" -type f \( -name 'test-*.php' -o -name 'test_*.php' -o -name 'debug-*.php' -o -name 'wp-cli-create-dummy-data.php' -o -name 'test-report-ajax.php' -o -name 'test-license-reset.php' \) -delete 2>/dev/null || true
 find "$PLUGIN_DIR" -type f \( -name 'test-*.sh' -o -name 'run-dummy-data.sh' -o -name 'wp-cli.sh' -o -name 'wp-cli-aliases.sh' -o -name 'setup-wp-cli.sh' \) -delete 2>/dev/null || true
@@ -110,6 +110,11 @@ fi
 
 if ! grep -q "Plugin Name:[[:space:]]*KantanPro" "$PLUGIN_DIR/ktpwp.php"; then
   print_error "ktpwp.php に Plugin Name: KantanPro ヘッダーがありません"
+  exit 1
+fi
+
+if [[ ! -f "$PLUGIN_DIR/create_dummy_data.php" ]]; then
+  print_error "ビルド内に create_dummy_data.php がありません（ダミーデータ作成に必要）"
   exit 1
 fi
 
@@ -164,6 +169,12 @@ FORBIDDEN_IN_ZIP=$(echo "$ZIP_LIST" | grep -E "^${PLUGIN_NAME}/(\.cursor/|\.vsco
 if [[ -n "$FORBIDDEN_IN_ZIP" ]]; then
   print_error "ZIP に配布不要ファイルが含まれています:"
   echo "$FORBIDDEN_IN_ZIP"
+  rm -rf "$WORK_DIR"
+  exit 1
+fi
+
+if ! echo "$ZIP_LIST" | grep -Fxq "${PLUGIN_NAME}/create_dummy_data.php"; then
+  print_error "ZIP 内に create_dummy_data.php がありません"
   rm -rf "$WORK_DIR"
   exit 1
 fi

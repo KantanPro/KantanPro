@@ -1538,12 +1538,38 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 		}
 
 		/**
+		 * 定期契約（請求サイクル）機能が利用可能か。
+		 *
+		 * @return bool
+		 */
+		private function is_contracts_feature_enabled() {
+			return ! function_exists( 'ktpwp_is_feature_enabled' ) || ktpwp_is_feature_enabled( 'contracts' );
+		}
+
+		/**
+		 * サイト公開（公開商品）機能が利用可能か。
+		 *
+		 * @return bool
+		 */
+		private function is_public_products_feature_enabled() {
+			return ! function_exists( 'ktpwp_is_feature_enabled' ) || ktpwp_is_feature_enabled( 'public_products' );
+		}
+
+		/**
 		 * サイト公開チェックボックスの HTML を返す。
 		 *
 		 * @param int $is_public 公開フラグ（0 or 1）。
 		 * @return string
 		 */
 		private function render_is_public_checkbox_field( $is_public ) {
+			if ( ! $this->is_public_products_feature_enabled() ) {
+				if ( class_exists( 'KTPWP_Edition' ) ) {
+					return KTPWP_Edition::get_upgrade_message_html( __( 'サイトに公開', 'ktpwp' ) );
+				}
+
+				return '';
+			}
+
 			$checked = (int) $is_public === 1 ? ' checked' : '';
 
 			return '<div class="form-group ktpwp-service-public-field">'
@@ -1561,6 +1587,10 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 		 * @return string
 		 */
 		private function render_public_quantity_mode_field( $public_quantity_fixed ) {
+			if ( ! $this->is_public_products_feature_enabled() ) {
+				return '';
+			}
+
 			$fixed = (int) $public_quantity_fixed === 1;
 			$html  = $this->render_service_contract_fields_styles();
 			$html .= '<div class="ktpwp-service-field-block ktpwp-service-field-block--public-quantity">';
@@ -1589,6 +1619,10 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 		 * @return string
 		 */
 		private function render_public_html_field( $public_html ) {
+			if ( ! $this->is_public_products_feature_enabled() ) {
+				return '';
+			}
+
 			$html  = $this->render_service_contract_fields_styles();
 			$html .= '<div class="ktpwp-service-field-block ktpwp-service-field-block--public-html">';
 			$html .= '<div class="ktpwp-service-field-block__label">';
@@ -1613,7 +1647,6 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 				return '';
 			}
 
-			$this->ensure_service_contract_fields_script_enqueued();
 			$selected = KTPWP_Contract_Billing_Cycle::sanitize( $selected );
 			$html     = $this->render_service_contract_fields_styles();
 			$html    .= '<div class="ktpwp-service-field-block ktpwp-service-field-block--cycle">';
@@ -1622,7 +1655,23 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 			$html    .= '<span class="ktpwp-service-field-block__hint">' . esc_html__( '定期契約で請求する場合にサイクルを選びます。都度請求のサービスは「都度請求」のままにしてください。', 'ktpwp' ) . '</span>';
 			$html    .= '</div>';
 			$html    .= '<div class="ktpwp-service-field-block__control">';
-			$html    .= '<select id="contract_billing_cycle" name="contract_billing_cycle">';
+
+			if ( ! $this->is_contracts_feature_enabled() ) {
+				$none_label = KTPWP_Contract_Billing_Cycle::get_label( KTPWP_Contract_Billing_Cycle::NONE );
+				$html      .= '<input type="hidden" name="contract_billing_cycle" value="' . esc_attr( KTPWP_Contract_Billing_Cycle::NONE ) . '">';
+				$html      .= '<select id="contract_billing_cycle" disabled aria-disabled="true">';
+				$html      .= '<option value="' . esc_attr( KTPWP_Contract_Billing_Cycle::NONE ) . '" selected>' . esc_html( $none_label ) . '</option>';
+				$html      .= '</select>';
+				$html      .= '</div></div>';
+				if ( class_exists( 'KTPWP_Edition' ) ) {
+					$html .= KTPWP_Edition::get_upgrade_message_html( __( '定期契約（請求サイクル）', 'ktpwp' ) );
+				}
+
+				return $html;
+			}
+
+			$this->ensure_service_contract_fields_script_enqueued();
+			$html .= '<select id="contract_billing_cycle" name="contract_billing_cycle">';
 			foreach ( KTPWP_Contract_Billing_Cycle::get_options() as $value => $label ) {
 				$is_selected = $selected === $value ? ' selected' : '';
 				$html       .= '<option value="' . esc_attr( $value ) . '"' . $is_selected . '>' . esc_html( $label ) . '</option>';
@@ -1665,6 +1714,10 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 		 * @return bool
 		 */
 		private function should_show_service_recurring_fields( $contract_billing_cycle ) {
+			if ( ! $this->is_contracts_feature_enabled() ) {
+				return false;
+			}
+
 			return ! class_exists( 'KTPWP_Contract_Billing_Cycle' )
 				|| KTPWP_Contract_Billing_Cycle::is_recurring( $contract_billing_cycle );
 		}

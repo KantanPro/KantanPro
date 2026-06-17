@@ -140,6 +140,8 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 			$public_html = self::sanitize_public_html(
 				isset( $_POST['public_html'] ) ? wp_unslash( $_POST['public_html'] ) : ''
 			);
+			$this->clamp_public_product_fields_for_edition( $data_id, $table_name, $is_public, $public_quantity_fixed, $public_html );
+			$this->clamp_contract_fields_for_edition( $data_id, $table_name, $contract_billing_cycle, $stock );
 
 			// Create search field value
 			$search_field_value = implode(
@@ -218,8 +220,10 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 						if ( $update_result !== false ) {
 							$this->increment_frequency( $tab_name, $data_id );
 						}
-						$this->sync_service_recurring_items_from_post( $data_id );
-						$this->sync_service_initial_fees_from_post( $data_id );
+						if ( $this->is_contracts_feature_enabled() ) {
+							$this->sync_service_recurring_items_from_post( $data_id );
+							$this->sync_service_initial_fees_from_post( $data_id );
+						}
 						$this->sync_service_public_availability( $data_id );
 					}
 					break;
@@ -295,6 +299,8 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 			$public_html = self::sanitize_public_html(
 				isset( $_POST['public_html'] ) ? wp_unslash( $_POST['public_html'] ) : ''
 			);
+			$this->clamp_public_product_fields_for_edition( 0, $table_name, $is_public, $public_quantity_fixed, $public_html );
+			$this->clamp_contract_fields_for_edition( 0, $table_name, $contract_billing_cycle, $stock );
 
 			// 検索フィールド値を作成
 			$search_field_value = implode(
@@ -356,8 +362,10 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 			if ( $insert_result === false ) {
 				echo "<script>alert('" . esc_js( esc_html__( '新規追加に失敗しました。', 'ktpwp' ) ) . "');</script>";
 			} else {
-				$this->sync_service_recurring_items_from_post( $new_id );
-				$this->sync_service_initial_fees_from_post( $new_id );
+				if ( $this->is_contracts_feature_enabled() ) {
+					$this->sync_service_recurring_items_from_post( $new_id );
+					$this->sync_service_initial_fees_from_post( $new_id );
+				}
 				$this->sync_service_public_availability( $new_id );
 
 				// 元のページ（ショートコードが配置された固定ページ）にリダイレクト
@@ -478,9 +486,13 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 
 			if ( $this->service_table_has_contract_billing_cycle_column( $table_name ) ) {
 				$cycle_value = isset( $original_data->contract_billing_cycle ) ? $original_data->contract_billing_cycle : 'none';
-				$duplicate_data['contract_billing_cycle'] = class_exists( 'KTPWP_Contract_Billing_Cycle' )
+				$cycle_value = class_exists( 'KTPWP_Contract_Billing_Cycle' )
 					? KTPWP_Contract_Billing_Cycle::sanitize( $cycle_value )
 					: 'none';
+				if ( ! $this->is_contracts_feature_enabled() && class_exists( 'KTPWP_Contract_Billing_Cycle' ) ) {
+					$cycle_value = KTPWP_Contract_Billing_Cycle::NONE;
+				}
+				$duplicate_data['contract_billing_cycle'] = $cycle_value;
 				$duplicate_format[] = '%s';
 			}
 
@@ -1484,6 +1496,80 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 		 * @param mixed $raw POST 値など。
 		 * @return int 0=変更可能, 1=1固定
 		 */
+		/**
+		 * 定期契約機能が無効なエディション向けに請求サイクル等を制限する。
+		 *
+		 * @param int    $data_id                更新時のサービス ID（新規は 0）。
+		 * @param string $table_name             サービステーブル名。
+		 * @param string $contract_billing_cycle 請求サイクル（参照渡し）。
+		 * @param int    $stock                  在庫数（参照渡し）。
+		 * @return void
+		 */
+		private function clamp_contract_fields_for_edition( $data_id, $table_name, &$contract_billing_cycle, &$stock ) {
+			if ( $this->is_contracts_feature_enabled() ) {
+				return;
+			}
+
+			$contract_billing_cycle = class_exists( 'KTPWP_Contract_Billing_Cycle' )
+				? KTPWP_Contract_Billing_Cycle::NONE
+				: 'none';
+
+			if ( $data_id > 0 && $this->service_table_has_stock_column( $table_name ) ) {
+				global $wpdb;
+				$row_stock = $wpdb->get_var( $wpdb->prepare( "SELECT stock FROM {$table_name} WHERE id = %d", $data_id ) );
+				$stock     = $row_stock !== null ? max( 0, absint( $row_stock ) ) : 1;
+			} else {
+				$stock = 1;
+			}
+		}
+
+		/**
+		 * 定期契約機能が利用可能か。
+		 *
+		 * @return bool
+		 */
+		private function is_contracts_feature_enabled() {
+			return ! function_exists( 'ktpwp_is_feature_enabled' ) || ktpwp_is_feature_enabled( 'contracts' );
+		}
+
+		/**
+		 * 公開商品機能が無効なエディション向けに is_public 等を制限する。
+		 *
+		 * @param int    $data_id                 更新時のサービス ID（新規は 0）。
+		 * @param string $table_name              サービステーブル名。
+		 * @param int    $is_public               公開フラグ（参照渡し）。
+		 * @param int    $public_quantity_fixed   公開フォーム数量固定（参照渡し）。
+		 * @param string $public_html             公開用 HTML（参照渡し）。
+		 * @return void
+		 */
+		private function clamp_public_product_fields_for_edition( $data_id, $table_name, &$is_public, &$public_quantity_fixed, &$public_html ) {
+			if ( ! function_exists( 'ktpwp_is_feature_enabled' ) || ktpwp_is_feature_enabled( 'public_products' ) ) {
+				return;
+			}
+
+			$is_public = 0;
+
+			if ( $data_id > 0 ) {
+				global $wpdb;
+				$row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table_name} WHERE id = %d", $data_id ) );
+				if ( $row ) {
+					if ( $this->service_table_has_public_quantity_fixed_column( $table_name ) ) {
+						$public_quantity_fixed = isset( $row->public_quantity_fixed )
+							? self::sanitize_public_quantity_fixed( $row->public_quantity_fixed )
+							: 0;
+					}
+					if ( $this->service_table_has_public_html_column( $table_name ) ) {
+						$public_html = isset( $row->public_html )
+							? self::sanitize_public_html( $row->public_html )
+							: '';
+					}
+				}
+			} else {
+				$public_quantity_fixed = 0;
+				$public_html           = '';
+			}
+		}
+
 		public static function sanitize_public_quantity_fixed( $raw ) {
 			return isset( $raw ) && '1' === (string) $raw ? 1 : 0;
 		}

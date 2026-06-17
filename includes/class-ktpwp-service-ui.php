@@ -377,9 +377,15 @@ if ( ! class_exists( 'KTPWP_Service_UI' ) ) {
 				$html .= '<textarea id="memo" name="memo" rows="3"></textarea>';
 				$html .= '</div>';
 
-				$html .= '<div class="form-group ktpwp-service-public-field">';
-				$html .= '<label><input type="checkbox" name="is_public" value="1"><span class="ktpwp-service-public-field__text">' . esc_html__( 'サイトに公開', 'ktpwp' ) . '</span></label>';
-				$html .= '</div>';
+				if ( function_exists( 'ktpwp_is_feature_enabled' ) && ! ktpwp_is_feature_enabled( 'public_products' ) ) {
+					if ( class_exists( 'KTPWP_Edition' ) ) {
+						$html .= KTPWP_Edition::get_upgrade_message_html( __( 'サイトに公開', 'ktpwp' ) );
+					}
+				} else {
+					$html .= '<div class="form-group ktpwp-service-public-field">';
+					$html .= '<label><input type="checkbox" name="is_public" value="1"><span class="ktpwp-service-public-field__text">' . esc_html__( 'サイトに公開', 'ktpwp' ) . '</span></label>';
+					$html .= '</div>';
+				}
 
 				// 画像アップロード機能（新規サービス追加時）
 				$html .= '<div class="form-group">';
