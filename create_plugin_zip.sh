@@ -58,15 +58,24 @@ mkdir -p "$PLUGIN_DIR"
 print_info "ファイルをコピー中（rsync）..."
 rsync -a \
   --exclude='.git/' \
+  --exclude='.cursor/' \
+  --exclude='.vscode/' \
+  --exclude='.idea/' \
   --exclude='node_modules/' \
   --exclude='vendor/' \
   --exclude='*.zip' \
   --exclude='*.tmp' \
   --exclude='.DS_Store' \
+  --exclude='wp-cli.phar' \
+  --exclude='wp-cli.yml' \
+  --exclude='wp-cli.sh' \
+  --exclude='wp-cli-aliases.sh' \
+  --exclude='setup-wp-cli.sh' \
   --exclude="${PLUGIN_NAME}_temp_*/" \
   "$SOURCE_DIR/" "$PLUGIN_DIR/"
 
 rm -f "$PLUGIN_DIR/create_release_zip.sh" "$PLUGIN_DIR/create_plugin_zip.sh" "$PLUGIN_DIR/plugin_config.json"
+rm -f "$PLUGIN_DIR/composer.lock"
 
 find "$PLUGIN_DIR" -name '.DS_Store' -delete 2>/dev/null || true
 find "$PLUGIN_DIR" -name '.phpcs.xml' -delete 2>/dev/null || true
@@ -91,6 +100,18 @@ fi
 
 find "$PLUGIN_DIR" -type f -name '*.zip' -delete 2>/dev/null || true
 find "$PLUGIN_DIR" -type f -name 'wp-cli.phar' -delete 2>/dev/null || true
+rm -rf "$PLUGIN_DIR/.cursor" "$PLUGIN_DIR/.vscode" "$PLUGIN_DIR/.idea" 2>/dev/null || true
+rm -f "$PLUGIN_DIR/wp-cli.yml" "$PLUGIN_DIR/wp-cli.sh" "$PLUGIN_DIR/wp-cli-aliases.sh" "$PLUGIN_DIR/setup-wp-cli.sh" "$PLUGIN_DIR/composer.lock" 2>/dev/null || true
+
+if [[ ! -f "$PLUGIN_DIR/ktpwp.php" ]]; then
+  print_error "ビルド内に ktpwp.php がありません"
+  exit 1
+fi
+
+if ! grep -q "Plugin Name:[[:space:]]*KantanPro" "$PLUGIN_DIR/ktpwp.php"; then
+  print_error "ktpwp.php に Plugin Name: KantanPro ヘッダーがありません"
+  exit 1
+fi
 
 print_info "PHP 構文チェック（メインファイル）..."
 if ! php -l "$PLUGIN_DIR/ktpwp.php" >/dev/null; then
@@ -103,6 +124,7 @@ ZIP_NAME="KantanPro_${VERSION}_${DATE}.zip"
 ZIP_PATH="$OUTPUT_DIR/$ZIP_NAME"
 
 print_info "ZIP 作成: $ZIP_NAME"
+rm -f "$ZIP_PATH"
 (
   cd "$WORK_DIR"
   zip -rq "$ZIP_PATH" "$PLUGIN_NAME"
@@ -110,6 +132,48 @@ print_info "ZIP 作成: $ZIP_NAME"
 
 if ! unzip -t "$ZIP_PATH" >/dev/null 2>&1; then
   print_error "ZIP 整合性チェックに失敗しました: $ZIP_PATH"
+  rm -rf "$WORK_DIR"
+  exit 1
+fi
+
+ZIP_LIST=$(unzip -Z1 "$ZIP_PATH")
+
+if ! echo "$ZIP_LIST" | grep -Fxq "${PLUGIN_NAME}/ktpwp.php"; then
+  print_error "ZIP 内に ${PLUGIN_NAME}/ktpwp.php が見つかりません"
+  rm -rf "$WORK_DIR"
+  exit 1
+fi
+
+TMP_HEADER=$(mktemp)
+unzip -p "$ZIP_PATH" "${PLUGIN_NAME}/ktpwp.php" > "$TMP_HEADER"
+if ! grep -q "Plugin Name:[[:space:]]*KantanPro" "$TMP_HEADER"; then
+  print_error "ZIP 内の ktpwp.php に有効な Plugin Name ヘッダーがありません"
+  rm -f "$TMP_HEADER"
+  rm -rf "$WORK_DIR"
+  exit 1
+fi
+rm -f "$TMP_HEADER"
+
+if ! echo "$ZIP_LIST" | grep -Fxq "${PLUGIN_NAME}/readme.txt"; then
+  print_error "ZIP 内に readme.txt がありません"
+  rm -rf "$WORK_DIR"
+  exit 1
+fi
+
+FORBIDDEN_IN_ZIP=$(echo "$ZIP_LIST" | grep -E "^${PLUGIN_NAME}/(\.cursor/|\.vscode/|wp-cli\.yml|composer\.lock)" || true)
+if [[ -n "$FORBIDDEN_IN_ZIP" ]]; then
+  print_error "ZIP に配布不要ファイルが含まれています:"
+  echo "$FORBIDDEN_IN_ZIP"
+  rm -rf "$WORK_DIR"
+  exit 1
+fi
+
+# ルートが単一フォルダ（KantanPro/）であることを確認
+ROOT_ENTRIES=$(echo "$ZIP_LIST" | awk -F/ 'NF>=1 && $1!="" {print $1}' | sort -u)
+ROOT_COUNT=$(echo "$ROOT_ENTRIES" | grep -c . || true)
+if [[ "$ROOT_COUNT" -ne 1 ]] || [[ "$ROOT_ENTRIES" != "$PLUGIN_NAME" ]]; then
+  print_error "ZIP のルート構造が不正です（期待: ${PLUGIN_NAME}/ のみ）"
+  echo "$ROOT_ENTRIES"
   rm -rf "$WORK_DIR"
   exit 1
 fi
