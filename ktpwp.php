@@ -143,6 +143,7 @@ if ( ! defined( 'KTPWP_EDITION' ) ) {
     define( 'KTPWP_EDITION', 'free' );
 }
 if ( ! defined( 'KTPWP_STAFF_LIMIT' ) ) {
+    // 無料版: 0 = スタッフ追加不可（管理者のみ）。有料 pro の 0（無制限）とは別扱い。
     define( 'KTPWP_STAFF_LIMIT', 0 );
 }
 
@@ -6799,8 +6800,18 @@ function ktpwp_handle_create_dummy_data_ajax() {
 
             // include が早期 return false した場合でも成功扱いになっていた不具合を防ぐ
             $client_count = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}ktp_client" );
+            $order_count  = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}ktp_order" );
             if ( $client_count < 1 ) {
                 wp_send_json_error( array( 'message' => __( 'ダミーデータの作成に失敗しました。必要なテーブルが存在するか、PHPエラーログを確認してください。', 'ktpwp' ) ) );
+                return;
+            }
+            if ( $order_count < 1 ) {
+                wp_send_json_error(
+                    array(
+                        'message' => __( '顧客データは作成されましたが、受注書（案件）の作成に失敗しました。プラグインを最新版に更新してから、データを削除して再度お試しください。', 'ktpwp' ),
+                        'output'  => $output,
+                    )
+                );
                 return;
             }
 

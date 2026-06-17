@@ -2272,7 +2272,7 @@ class KTPWP_Settings {
                                     $staff_limit_display
                                 )
                             );
-                            if ( $staff_limit > 0 ) {
+                            if ( class_exists( 'KTPWP_Edition' ) ) {
                                 echo ' — ';
                                 echo esc_html(
                                     sprintf(
@@ -2285,7 +2285,7 @@ class KTPWP_Settings {
                         }
                         ?>
                     </p>
-                    <?php if ( $staff_limit > 0 && ! $can_add_staff ) : ?>
+                    <?php if ( ! $can_add_staff ) : ?>
                         <div class="notice notice-warning inline" style="margin-top: 12px;">
                             <p><?php echo esc_html( KTPWP_Edition::get_staff_limit_reached_message() ); ?></p>
                         </div>

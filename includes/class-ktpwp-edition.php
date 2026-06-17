@@ -41,7 +41,7 @@ class KTPWP_Edition {
 			'free' => array(
 				'slug'        => 'free',
 				'plugin_name' => 'KantanPro',
-				'staff_limit' => 0,
+				'staff_limit' => 0, // 0 = スタッフ追加不可（管理者のみ）。有料 pro の 0（無制限）とは別扱い。
 				'label'       => __( '無料版', 'ktpwp' ),
 			),
 		);
@@ -150,7 +150,7 @@ class KTPWP_Edition {
 	}
 
 	/**
-	 * スタッフ上限（0 = 無制限）
+	 * スタッフ上限（無料版の 0 = 追加不可。有料 pro の 0 = 無制限）
 	 *
 	 * @return int
 	 */
@@ -298,7 +298,13 @@ class KTPWP_Edition {
 	 * @return bool
 	 */
 	public static function can_add_staff() {
-		$limit = self::get_staff_limit();
+		$limit   = self::get_staff_limit();
+		$edition = self::get_active_edition();
+
+		if ( $edition === 'free' && $limit === 0 ) {
+			return false;
+		}
+
 		if ( $limit <= 0 ) {
 			return true;
 		}
@@ -312,7 +318,12 @@ class KTPWP_Edition {
 	 * @return string
 	 */
 	public static function format_staff_limit_display() {
-		$limit = self::get_staff_limit();
+		$limit   = self::get_staff_limit();
+		$edition = self::get_active_edition();
+
+		if ( $edition === 'free' && $limit === 0 ) {
+			return __( '追加不可（管理者のみ）', 'ktpwp' );
+		}
 
 		return $limit > 0 ? (string) $limit : __( '無制限', 'ktpwp' );
 	}
@@ -325,6 +336,10 @@ class KTPWP_Edition {
 	public static function get_staff_limit_reached_message() {
 		$limit         = self::get_staff_limit();
 		$edition_label = self::get_edition_label();
+
+		if ( self::get_active_edition() === 'free' && $limit === 0 ) {
+			return __( '無料版ではスタッフを追加できません。管理者のみご利用いただけます。チームで使う場合は KantanProEX（有料版）をご検討ください。', 'ktpwp' );
+		}
 
 		return sprintf(
 			/* translators: 1: edition label, 2: staff limit number */
