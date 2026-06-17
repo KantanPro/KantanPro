@@ -11,8 +11,7 @@
     console.log('[EMAIL-POPUP] スクリプトが読み込まれました');
 
     /**
-     * ポップアップを閉じる（jQuery の $ は noConflict でグローバルに無いことがあるため、
-     * インライン onclick で $ を使わない。成功画面の「閉じる」からも呼ぶ）
+     * ポップアップを閉じる（jQuery に依存しない。noConflict・他プラグインとの競合を避ける）
      */
     window.ktpCloseEmailPopup = function () {
         var wrap = document.getElementById('ktp-email-popup');
@@ -58,6 +57,16 @@
         return config;
     }
 
+    const KTP_WHITE_MAIL_FIELD_STYLE = 'width:100%;padding:8px;border:1px solid #ddd;border-radius:4px;box-sizing:border-box;background:#ffffff;color:#111827;';
+
+    function escapeHtml(value) {
+        return String(value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
     // 依存関係チェック
     $(document).ready(function() {
         console.log('[EMAIL-POPUP] DOM準備完了');
@@ -84,12 +93,15 @@
                 width: 100%;
                 height: 100%;
                 background: rgba(0,0,0,0.5);
-                z-index: 10000;
+                z-index: 2147483646;
                 display: flex;
                 justify-content: center;
                 align-items: center;
+                isolation: isolate;
             ">
                 <div style="
+                    position: relative;
+                    z-index: 1;
                     background: white;
                     border-radius: 8px;
                     padding: 20px;
@@ -267,40 +279,57 @@
                 </div>
             `;
         } else {
+            let ccOptions = Array.isArray(emailData.cc_options) ? emailData.cc_options : [];
+            if (ccOptions.length === 0 && typeof emailData.cc === 'string' && emailData.cc.trim() !== '') {
+                emailData.cc.split(/[\s,;、]+/).forEach(function (rawEmail) {
+                    const email = String(rawEmail || '').trim();
+                    if (!email) {
+                        return;
+                    }
+                    ccOptions.push({ email: email, label: email });
+                });
+            }
+            let ccCheckboxHtml = '';
+            if (ccOptions.length > 0) {
+                ccCheckboxHtml += `<p style="margin:0 0 6px 0;font-size:12px;color:#666;line-height:1.4;">${ktpwpTranslate('顧客・部署の連絡先から選べます。')}</p>`;
+                ccCheckboxHtml += '<div style="margin-top:8px;padding:12px;border:1px solid #e5e7eb;border-radius:6px;background:#f9fafb;">';
+                ccOptions.forEach(function (opt) {
+                    ccCheckboxHtml += `
+                        <label style="display:flex;align-items:flex-start;gap:8px;font-size:13px;color:#374151;margin-bottom:8px;">
+                            <input type="checkbox" name="cc_emails[]" value="${escapeHtml(opt.email)}" checked style="margin-top:2px;" />
+                            <span>${escapeHtml(opt.label || opt.email)}</span>
+                        </label>
+                    `;
+                });
+                ccCheckboxHtml += '</div>';
+            } else {
+                ccCheckboxHtml += `<p style="margin:0 0 6px 0;font-size:12px;color:#666;line-height:1.4;">${ktpwpTranslate('代表メールとは別の部署メールが顧客管理に登録されている場合、ここに選択肢が表示されます。')}</p>`;
+            }
+
             // メール送信フォーム
             html = `
                 <form id="email-send-form" style="width: 100%;">
                     <div style="margin-bottom: 15px;">
                         <label style="display: block; font-weight: bold; margin-bottom: 5px;">${ktpwpTranslate('宛先')}：</label>
-                        <input type="email" value="${emailData.to}" readonly style="
-                            width: 100%;
-                            padding: 8px;
-                            border: 1px solid #ddd;
-                            border-radius: 4px;
-                            background: #f5f5f5;
-                            box-sizing: border-box;
-                        ">
+                        <p style="margin: 4px 0 0; color: #333;">${escapeHtml(emailData.to_label || emailData.to)}</p>
                     </div>
                     <div style="margin-bottom: 15px;">
-                        <label style="display: block; font-weight: bold; margin-bottom: 5px;">${ktpwpTranslate('CC（任意・カンマ区切り）')}：</label>
-                        <p style="margin: 0 0 6px 0; font-size: 12px; color: #666; line-height: 1.4;">${ktpwpTranslate('顧客代表・各部署に登録されたメールのうち、宛先（To）以外を自動で入れます（KantanBizの「CC（任意）」と同様）。編集できます。')}</p>
-                        <input type="text" id="email-cc" autocomplete="off" style="
-                            width: 100%;
-                            padding: 8px;
-                            border: 1px solid #ddd;
-                            border-radius: 4px;
-                            box-sizing: border-box;
-                        ">
+                        <label style="display: block; font-weight: bold; margin-bottom: 5px;">${ktpwpTranslate('CC（任意）')}：</label>
+                        ${ccCheckboxHtml}
+                        <div style="margin-top:${ccOptions.length > 0 ? '12px' : '0'};">
+                            <label for="email-cc-extra" style="display:block;font-size:13px;color:#666;margin-bottom:5px;">${ktpwpTranslate('その他のCC')}</label>
+                            <input type="text" id="email-cc-extra" autocomplete="off" placeholder="example@example.com" style="${KTP_WHITE_MAIL_FIELD_STYLE}">
+                            <p style="margin:6px 0 0;font-size:12px;color:#666;line-height:1.4;">${ktpwpTranslate('顧客・部署以外の宛先はカンマまたは改行で入力できます。')}</p>
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label for="email-bcc-extra" style="display: block; font-weight: bold; margin-bottom: 5px;">${ktpwpTranslate('BCC（任意）')}：</label>
+                        <input type="text" id="email-bcc-extra" autocomplete="off" placeholder="example@example.com" style="${KTP_WHITE_MAIL_FIELD_STYLE}">
+                        <p style="margin:6px 0 0;font-size:12px;color:#666;line-height:1.4;">${ktpwpTranslate('宛先に表示されない控え送信用です。カンマまたは改行で入力できます。')}</p>
                     </div>
                     <div style="margin-bottom: 15px;">
                         <label style="display: block; font-weight: bold; margin-bottom: 5px;">${ktpwpTranslate('件名')}：</label>
-                        <input type="text" id="email-subject" value="${emailData.subject}" style="
-                            width: 100%;
-                            padding: 8px;
-                            border: 1px solid #ddd;
-                            border-radius: 4px;
-                            box-sizing: border-box;
-                        ">
+                        <input type="text" id="email-subject" value="${escapeHtml(emailData.subject)}" style="${KTP_WHITE_MAIL_FIELD_STYLE}">
                     </div>
                     <div style="margin-bottom: 20px;">
                         <label style="display: block; font-weight: bold; margin-bottom: 5px;">${ktpwpTranslate('本文')}：</label>
@@ -312,7 +341,7 @@
                             resize: vertical;
                             box-sizing: border-box;
                             font-family: monospace;
-                        ">${emailData.body}</textarea>
+                        ">${escapeHtml(emailData.body)}</textarea>
                     </div>
                     <div style="margin-bottom: 20px;">
                         <label style="display: block; font-weight: bold; margin-bottom: 5px;">${ktpwpTranslate('ファイル添付')}：</label>
@@ -361,16 +390,12 @@
                         </button>
                     </div>
                     <input type="hidden" name="order_id" value="${orderId}">
-                    <input type="hidden" name="to" value="${emailData.to}">
+                    <input type="hidden" name="to" value="${escapeHtml(emailData.to)}">
                 </form>
             `;
         }
 
         $('#ktp-email-popup-content').html(html);
-
-        if (!emailData.error && $('#email-cc').length) {
-            $('#email-cc').val(typeof emailData.cc === 'string' ? emailData.cc : '');
-        }
 
         // フォーム送信イベント
         $('#email-send-form').on('submit', function(e) {
@@ -706,9 +731,16 @@
         formData.append('action', 'send_order_email');
         formData.append('order_id', orderId);
         formData.append('to', to);
-        const ccVal = ($('#email-cc').val() || '').trim();
-        if (ccVal) {
-            formData.append('cc', ccVal);
+        $('#email-send-form input[name="cc_emails[]"]:checked').each(function () {
+            formData.append('cc_emails[]', $(this).val());
+        });
+        const ccExtraVal = ($('#email-cc-extra').val() || '').trim();
+        if (ccExtraVal) {
+            formData.append('cc_emails_extra', ccExtraVal);
+        }
+        const bccExtraVal = ($('#email-bcc-extra').val() || '').trim();
+        if (bccExtraVal) {
+            formData.append('bcc_emails_extra', bccExtraVal);
         }
         formData.append('subject', subject);
         formData.append('body', body);

@@ -231,10 +231,12 @@
                 showUpdateBalloon(errorMessage, false);
             },
             complete: function() {
-                // リンクを元に戻す
+                // リンクを元に戻す（バッジ状態は setUpdateBadgeVisible で同期）
                 setTimeout(function() {
+                    var badgeVisible = $link.hasClass('has-update');
                     $link.html(originalHtml);
                     $link.css('pointer-events', 'auto');
+                    setUpdateBadgeVisible(badgeVisible);
                 }, 1000);
             }
         });

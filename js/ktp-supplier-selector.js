@@ -33,6 +33,21 @@
         return div.innerHTML;
     }
 
+    window.ktpwpIncrementSkillFrequency = function(skillId) {
+        const id = parseInt(skillId, 10);
+        if (!id || typeof ajaxurl === 'undefined') {
+            return;
+        }
+        const nonce = (typeof ktpwp_ajax_nonce !== 'undefined' && ktpwp_ajax_nonce)
+            || (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object && ktp_ajax_object.nonce)
+            || '';
+        $.post(ajaxurl, {
+            action: 'ktpwp_increment_skill_frequency',
+            skill_id: id,
+            nonce: nonce
+        });
+    };
+
     // 即座に関数を定義してグローバルに露出
     window.ktpShowSupplierSelector = function(currentRow) {
         console.log('[SUPPLIER-SELECTOR] ===== 協力会社選択開始 =====');
@@ -902,6 +917,9 @@ $(function() {
             try {
                 window.ktpAddCostRowFromSkill(serviceData, null);
                 console.log('[SUPPLIER-SELECTOR] ktpAddCostRowFromSkill関数呼び出し成功');
+                if (serviceData.id && typeof window.ktpwpIncrementSkillFrequency === 'function') {
+                    window.ktpwpIncrementSkillFrequency(serviceData.id);
+                }
                 
                 // 追加処理では自動でポップアップを閉じない（ユーザーが手動で閉じるまで開いたまま）
                 console.log('[SUPPLIER-SELECTOR] 追加処理完了 - ポップアップは開いたままにします');
@@ -946,6 +964,9 @@ $(function() {
             try {
                 window.ktpUpdateCostRowFromSkill(serviceData, currentRow);
                 console.log('[SUPPLIER-SELECTOR] ktpUpdateCostRowFromSkill関数呼び出し成功');
+                if (serviceData.id && typeof window.ktpwpIncrementSkillFrequency === 'function') {
+                    window.ktpwpIncrementSkillFrequency(serviceData.id);
+                }
             } catch (error) {
                 console.error('[SUPPLIER-SELECTOR] ktpUpdateCostRowFromSkill関数実行エラー:', error);
                 alert(ktpwpTranslate('更新処理中にエラーが発生しました: ') + error.message);

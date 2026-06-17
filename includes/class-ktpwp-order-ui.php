@@ -76,7 +76,7 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 				
 				$order_data = $wpdb->get_row(
 					$wpdb->prepare(
-						"SELECT client_id FROM `{$order_table}` WHERE id = %d",
+						"SELECT * FROM `{$order_table}` WHERE id = %d",
 						$order_id
 					)
 				);
@@ -92,6 +92,7 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 						$tax_category = $client_tax_category;
 					}
 				}
+
 			}
 
 			// sort_orderの昇順でソート
@@ -126,7 +127,11 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 			// Calculate total amount
 			$total_amount = 0;
 			foreach ( $items as $item ) {
-				$total_amount += isset( $item['amount'] ) ? floatval( $item['amount'] ) : 0;
+				if ( class_exists( 'KTPWP_Invoice_Line_Amount' ) ) {
+					$total_amount += KTPWP_Invoice_Line_Amount::resolve_line_amount( $item );
+				} else {
+					$total_amount += isset( $item['amount'] ) ? floatval( $item['amount'] ) : 0;
+				}
 			}
 
 			$html = '<div class="invoice-items-container">';
@@ -158,22 +163,29 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 
 			foreach ( $items as $index => $item ) {
 				$row_id = isset( $item['id'] ) ? intval( $item['id'] ) : 0;
-				$html .= '<tr class="invoice-item-row" data-row-id="' . $row_id . '">';
+				$is_provisional = ! empty( $item['is_provisional'] );
+				$row_lock_attr  = $is_provisional ? ' readonly tabindex="-1"' : '';
+				$btn_disabled   = $is_provisional ? ' disabled' : '';
+				$line_amount = class_exists( 'KTPWP_Invoice_Line_Amount' )
+					? KTPWP_Invoice_Line_Amount::resolve_line_amount( $item )
+					: ( isset( $item['amount'] ) ? floatval( $item['amount'] ) : 0 );
+				$html .= '<tr class="invoice-item-row' . ( $is_provisional ? ' invoice-item-row--provisional' : '' ) . '" data-row-id="' . $row_id . '" data-is-provisional="' . ( $is_provisional ? '1' : '0' ) . '">';
 				// Actions column with drag handle and buttons
 				$html .= '<td class="actions-column">';
-				$html .= '<span class="drag-handle" title="' . esc_attr__( 'ドラッグして並び替え', 'ktpwp' ) . '">&#9776;</span>';
-				$html .= '<button type="button" class="btn-add-row" title="' . esc_attr__( '行を追加', 'ktpwp' ) . '">+</button>';
+				$html .= '<span class="drag-handle' . ( $is_provisional ? ' is-disabled' : '' ) . '" title="' . esc_attr__( 'ドラッグして並び替え', 'ktpwp' ) . '">&#9776;</span>';
+				$html .= '<button type="button" class="btn-add-row"' . $btn_disabled . ' title="' . esc_attr__( '行を追加', 'ktpwp' ) . '">+</button>';
 				// --- ここを修正: 1行目でも常に削除ボタンを出力 ---
-				$html .= '<button type="button" class="btn-delete-row" title="' . esc_attr__( '行を削除', 'ktpwp' ) . '">×</button>';
-				$html .= '<button type="button" class="btn-move-row" title="' . esc_attr__( 'サービス選択', 'ktpwp' ) . '">></button>';
+				$html .= '<button type="button" class="btn-delete-row"' . $btn_disabled . ' title="' . esc_attr__( '行を削除', 'ktpwp' ) . '">×</button>';
+				$html .= '<button type="button" class="btn-move-row"' . $btn_disabled . ' title="' . esc_attr__( 'サービス選択', 'ktpwp' ) . '">></button>';
 				$html .= '</td>';
 
 				// Product name
 				$html .= '<td>';
 				$html .= '<input type="text" name="invoice_items[' . $index . '][product_name]" ';
 				$html .= 'value="' . esc_attr( $item['product_name'] ) . '" ';
-				$html .= 'class="invoice-item-input product-name" />';
+				$html .= 'class="invoice-item-input product-name"' . $row_lock_attr . ' />';
 				$html .= '<input type="hidden" name="invoice_items[' . $index . '][id]" value="' . $row_id . '" />';
+				$html .= '<input type="hidden" name="invoice_items[' . $index . '][is_provisional]" class="invoice-item-is-provisional" value="' . esc_attr( $is_provisional ? '1' : '0' ) . '" />';
 				$html .= '</td>';
 
 				// Price
@@ -182,7 +194,7 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 				$price_display = rtrim( rtrim( number_format( $price_raw, 6, '.', '' ), '0' ), '.' );
 				$html .= '<input type="number" name="invoice_items[' . $index . '][price]" ';
 				$html .= 'value="' . esc_attr( $price_display ) . '" ';
-				$html .= 'class="invoice-item-input price" step="1" min="0" style="text-align:left;" />';
+				$html .= 'class="invoice-item-input price" step="1" min="0" style="text-align:left;"' . $row_lock_attr . ' />';
 				$html .= '</td>';
 
 				// Quantity
@@ -191,20 +203,20 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 				$quantity_display = rtrim( rtrim( number_format( $quantity_raw, 6, '.', '' ), '0' ), '.' );
 				$html .= '<input type="number" name="invoice_items[' . $index . '][quantity]" ';
 				$html .= 'value="' . esc_attr( $quantity_display ) . '" ';
-				$html .= 'class="invoice-item-input quantity" step="1" min="0" style="text-align:left;" />';
+				$html .= 'class="invoice-item-input quantity" step="1" min="0" style="text-align:left;"' . $row_lock_attr . ' />';
 				$html .= '</td>';
 
 				// Unit
 				$html .= '<td>';
 				$html .= '<input type="text" name="invoice_items[' . $index . '][unit]" ';
 				$html .= 'value="' . esc_attr( $item['unit'] ) . '" ';
-				$html .= 'class="invoice-item-input unit" />';
+				$html .= 'class="invoice-item-input unit"' . $row_lock_attr . ' />';
 				$html .= '</td>';
 
 				// Amount
 				$html .= '<td style="text-align:left;">';
-				$html .= '<span class="invoice-item-amount" data-amount="' . esc_attr( $item['amount'] ) . '" style="display:inline-block;min-width:80px;text-align:left;">' . esc_html( number_format( $item['amount'] ) ) . '</span>';
-				$html .= '<input type="hidden" name="invoice_items[' . $index . '][amount]" value="' . esc_attr( $item['amount'] ) . '" />';
+				$html .= '<span class="invoice-item-amount" data-amount="' . esc_attr( (string) (int) round( $line_amount ) ) . '" style="display:inline-block;min-width:80px;text-align:left;">' . esc_html( number_format( (int) round( $line_amount ) ) ) . '</span>';
+				$html .= '<input type="hidden" name="invoice_items[' . $index . '][amount]" value="' . esc_attr( (string) (int) round( $line_amount ) ) . '" />';
 				$html .= '</td>';
 
                 // Tax Rate（モードに応じて非表示/ロック/一律適用）
@@ -212,12 +224,15 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
                     $tax_rate_raw = isset( $item['tax_rate'] ) ? $item['tax_rate'] : null;
                     $effective_rate = class_exists( 'KTPWP_Tax_Policy' ) ? KTPWP_Tax_Policy::get_effective_rate( $tax_rate_raw ) : null;
                     $tax_rate_display = ( $effective_rate !== null ) ? $effective_rate : '';
-                    $readonly = ( class_exists( 'KTPWP_Tax_Policy' ) && KTPWP_Tax_Policy::lock_line_tax_rate() ) ? 'readonly' : '';
+                    $tax_readonly = ( class_exists( 'KTPWP_Tax_Policy' ) && KTPWP_Tax_Policy::lock_line_tax_rate() ) ? 'readonly' : '';
+                    if ( $is_provisional ) {
+                        $tax_readonly = 'readonly tabindex="-1"';
+                    }
                     $html .= '<td style="text-align:left;">';
                     $html .= '<div style="display:inline-flex;align-items:center;margin-left:0;padding-left:0;">';
                     $html .= '<input type="number" name="invoice_items[' . $index . '][tax_rate]" ';
                     $html .= 'value="' . esc_attr( $tax_rate_display ) . '" ';
-                    $html .= 'class="invoice-item-input tax-rate" step="1" min="0" max="100" style="width:50px; text-align:right; display:inline-block; margin-left:0; padding-left:0;" ' . $readonly . ' />';
+                    $html .= 'class="invoice-item-input tax-rate" step="1" min="0" max="100" style="width:50px; text-align:right; display:inline-block; margin-left:0; padding-left:0;" ' . $tax_readonly . ' />';
                     $html .= '<span style="margin-left:2px; white-space:nowrap;">%</span>';
                     $html .= '</div>';
                     $html .= '</td>';
@@ -227,7 +242,7 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 				$html .= '<td>';
 				$html .= '<input type="text" name="invoice_items[' . $index . '][remarks]" ';
 				$html .= 'value="' . esc_attr( $item['remarks'] ) . '" ';
-				$html .= 'class="invoice-item-input remarks" />';
+				$html .= 'class="invoice-item-input remarks"' . $row_lock_attr . ' />';
 				$html .= '</td>';
 
 				$html .= '</tr>';
@@ -262,6 +277,17 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 			$total_amount_ceiled = ceil( $total_amount );
 			$tax_amount_ceiled = ceil( $tax_amount );
 			$total_with_tax_ceiled = ceil( $total_with_tax );
+
+			$has_provisional_rows = false;
+			foreach ( $items as $item ) {
+				if ( ! empty( $item['is_provisional'] ) ) {
+					$has_provisional_rows = true;
+					break;
+				}
+			}
+			$total_label = $has_provisional_rows
+				? __( '今回請求合計', 'ktpwp' )
+				: __( '金額合計', 'ktpwp' );
 			
 			// 税区分に応じた合計表示
 			if ( $tax_category === '外税' ) {
@@ -280,13 +306,15 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 				$html .= esc_html__( '税込合計', 'ktpwp' ) . ' : ' . esc_html( KTPWP_Settings::format_money( $total_with_tax_ceiled ) );
 				$html .= '</div>';
 			} else {
-				// 内税表示の場合：1行表示
+				// 内税表示の場合：合計と内税を1行表示
+				$total_display = esc_html( $total_label ) . ' : ' . esc_html( KTPWP_Settings::format_money( $total_amount_ceiled ) );
+				if ( $tax_amount_ceiled > 0 && ! ( class_exists( 'KTPWP_Tax_Policy' ) && ( KTPWP_Tax_Policy::is_abolished() || KTPWP_Tax_Policy::hide_tax_columns() ) ) ) {
+					$total_display .= ' (' . esc_html__( '内税', 'ktpwp' ) . ' : ' . esc_html( KTPWP_Settings::format_money( $tax_amount_ceiled ) ) . ')';
+				}
 				$html .= '<div class="invoice-items-total" style="text-align:right;margin-top:8px;font-weight:bold;">';
-				$html .= esc_html__( '金額合計', 'ktpwp' ) . ' : ' . esc_html( KTPWP_Settings::format_money( $total_amount_ceiled ) ) . ' (' . esc_html__( '内税', 'ktpwp' ) . ' : ' . esc_html( KTPWP_Settings::format_money( $tax_amount_ceiled ) ) . ')';
+				$html .= $total_display;
 				$html .= '</div>';
-				
-				// Tax amount display (非表示)
-				$html .= '<div class="invoice-items-tax" style="text-align:right;margin-top:4px;color:#666;display:none;"></div>';
+				$html .= '<div class="invoice-items-tax" style="text-align:right;margin-top:4px;color:#666;"></div>';
 				
 				// Total with tax display (非表示)
 				$html .= '<div class="invoice-items-total-with-tax" style="text-align:right;margin-top:4px;font-weight:bold;color:#d32f2f;display:none;"></div>';
@@ -727,6 +755,10 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 		 * @return float
 		 */
 		private function resolve_order_line_amount_from_item( array $item ) {
+			if ( class_exists( 'KTPWP_Invoice_Line_Amount' ) ) {
+				return KTPWP_Invoice_Line_Amount::resolve_line_amount( $item );
+			}
+
 			$price = isset( $item['price'] ) ? floatval( $item['price'] ) : 0.0;
 			$qty   = isset( $item['quantity'] ) ? floatval( $item['quantity'] ) : 0.0;
 			$from_pq = $price * $qty;

@@ -272,7 +272,9 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 			// Sanitize sort parameters
 			$allowed_sort_columns = array( 'id', 'product_name', 'frequency' );
 			$sort_by = in_array( $sort_by, $allowed_sort_columns ) ? $sort_by : 'frequency';
-			$sort_order = ( strtoupper( $sort_order ) === 'ASC' ) ? 'ASC' : 'DESC';
+			$sort_order = class_exists( 'KTPWP_List_Table' )
+				? KTPWP_List_Table::sanitize_sort_order( $sort_order )
+				: ( ( strtoupper( (string) $sort_order ) === 'ASC' ) ? 'ASC' : 'DESC' );
 
 			$results = $wpdb->get_results(
                 $wpdb->prepare(
@@ -578,7 +580,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 
 			// ソート順の取得（デフォルトは頻度の降順）
 			$sort_by = 'frequency';
-			$sort_order = 'DESC';
+			$sort_order = class_exists( 'KTPWP_List_Table' ) ? KTPWP_List_Table::default_sort_order() : 'DESC';
 
 			if ( isset( $_GET['skills_sort_by'] ) ) {
 				$sort_by = sanitize_text_field( $_GET['skills_sort_by'] );
@@ -590,9 +592,9 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 			}
 
 			if ( isset( $_GET['skills_sort_order'] ) ) {
-				$sort_order_param = strtoupper( sanitize_text_field( $_GET['skills_sort_order'] ) );
-				// ASCかDESCのみ許可
-				$sort_order = ( $sort_order_param === 'ASC' ) ? 'ASC' : 'DESC';
+				$sort_order = class_exists( 'KTPWP_List_Table' )
+					? KTPWP_List_Table::sanitize_sort_order( sanitize_text_field( $_GET['skills_sort_order'] ) )
+					: 'DESC';
 			}
 
 			// ページネーション設定
@@ -773,7 +775,11 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 
 			// 現在のソートパラメータを取得
 			$sort_by = isset( $_GET['skills_sort_by'] ) ? sanitize_text_field( $_GET['skills_sort_by'] ) : 'frequency';
-			$sort_order = isset( $_GET['skills_sort_order'] ) ? sanitize_text_field( $_GET['skills_sort_order'] ) : 'DESC';
+			$sort_order = isset( $_GET['skills_sort_order'] )
+				? ( class_exists( 'KTPWP_List_Table' )
+					? KTPWP_List_Table::sanitize_sort_order( sanitize_text_field( $_GET['skills_sort_order'] ) )
+					: 'DESC' )
+				: ( class_exists( 'KTPWP_List_Table' ) ? KTPWP_List_Table::default_sort_order() : 'DESC' );
 
 			// 他のタブと統一した正円ボタンデザインのページネーション
 			$pagination_html = '<div class="pagination" style="text-align: center; margin: 20px 0; padding: 20px 0;">';

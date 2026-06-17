@@ -30,13 +30,6 @@ function ktp_handle_sales_ledger_pdf_ajax() {
         return;
     }
 
-    // ライセンスチェック
-    $license_manager = KTPWP_License_Manager::get_instance();
-    if ( ! $license_manager->is_license_valid() ) {
-        wp_send_json_error( __( 'この機能を利用するにはライセンスが必要です。', 'ktpwp' ) );
-        return;
-    }
-
     $year = intval( $_POST['year'] ?? date('Y') );
     
     if ( $year < 2000 || $year > date('Y') + 10 ) {
@@ -78,19 +71,20 @@ function ktp_get_sales_ledger_data_for_pdf( $year ) {
     $query = "SELECT 
         o.id,
         o.project_name as order_title,
-        o.created_at as date,
+        o.completion_date as date,
         o.progress,
         o.customer_name as client_name,
         COALESCE(SUM(ii.amount), 0) as total_amount,
         GROUP_CONCAT(ii.product_name SEPARATOR ', ') as products
     FROM {$wpdb->prefix}ktp_order o
     LEFT JOIN {$wpdb->prefix}ktp_order_invoice_items ii ON o.id = ii.order_id
-    WHERE YEAR(o.created_at) = %d
+    WHERE YEAR(o.completion_date) = %d
     AND o.progress >= 5
     AND o.progress != 7
     AND ii.amount IS NOT NULL
+    AND o.completion_date IS NOT NULL
     GROUP BY o.id
-    ORDER BY o.created_at ASC";
+    ORDER BY o.completion_date ASC";
 
     $results = $wpdb->get_results( $wpdb->prepare( $query, $year ), ARRAY_A );
 

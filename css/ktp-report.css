@@ -16,7 +16,7 @@
     padding-top: 0 !important;
 }
 
-/* 無料版レポート：黄案内の左右を青バーと同一 18px にし、文言とボタンの縦位置を揃える */
+/* フリー版レポート：黄案内の左右を青バーと同一 18px にし、文言とボタンの縦位置を揃える */
 .ktp_plugin_container .tab_content#report_content .ktpwp-notice.ktp-report-free-ex-notice {
     padding: 16px 18px;
     margin: 0;
@@ -74,7 +74,7 @@
     }
 }
 
-/* 無料版レポート：青タイトルバー（高さアップ・左右パディングは黄ボックスと同一） */
+/* フリー版レポート：青タイトルバー（高さアップ・左右パディングは黄ボックスと同一） */
 .ktp_plugin_container .tab_content#report_content .controller.ktp-report-controller--free-notice {
     display: flex;
     justify-content: space-between;
@@ -511,7 +511,7 @@ canvas {
 /* 成功メッセージ */
 .success-message {
     background: #e8f5e8;
-    color: #43a047;
+    color: #2e7d32;
     padding: 16px;
     border-radius: 8px;
     border: 1px solid #c8e6c9;

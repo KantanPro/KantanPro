@@ -533,4 +533,68 @@ class KTPWP_Main {
 
         return $permalink;
     }
+
+    /**
+     * リダイレクト用ベース URL を解決（admin-ajax 等で queried object が取れない場合向け）
+     *
+     * @param string $posted_base フロントから渡された redirect_base（任意）
+     * @return string
+     */
+    public static function resolve_page_base_url_for_redirect( $posted_base = '' ) {
+        $strip_keys = array(
+            'tab_name',
+            'data_id',
+            'message',
+            'query_post',
+            'page_start',
+            'page_stage',
+            'sort_by',
+            'sort_order',
+            'no_results',
+            'multiple_results',
+            'search_service_name',
+            'search_category',
+            'order_id',
+        );
+
+        $candidates = array();
+
+        if ( is_string( $posted_base ) && $posted_base !== '' ) {
+            $candidates[] = esc_url_raw( wp_unslash( $posted_base ) );
+        }
+
+        $referer = wp_get_referer();
+        if ( $referer ) {
+            $candidates[] = $referer;
+        }
+
+        if ( class_exists( 'KTPWP_Settings' ) ) {
+            $business_url = KTPWP_Settings::get_ktpwp_business_page_url();
+            if ( $business_url !== '' ) {
+                $candidates[] = $business_url;
+            }
+        }
+
+        $candidates[] = self::get_current_page_base_url();
+
+        $home_host = wp_parse_url( home_url( '/' ), PHP_URL_HOST );
+
+        foreach ( $candidates as $candidate ) {
+            if ( ! is_string( $candidate ) || $candidate === '' ) {
+                continue;
+            }
+
+            $host = wp_parse_url( $candidate, PHP_URL_HOST );
+            if ( $home_host && $host && strtolower( (string) $host ) !== strtolower( (string) $home_host ) ) {
+                continue;
+            }
+
+            $base = remove_query_arg( $strip_keys, $candidate );
+            if ( $base ) {
+                return $base;
+            }
+        }
+
+        return home_url( '/' );
+    }
 }

@@ -129,20 +129,25 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 					error_log( 'KTPWP Service: Request URI: ' . $_SERVER['REQUEST_URI'] );
 				}
 
-				// istmode（追加モード）の場合は update_table を呼ばない
 				$query_post = isset( $_POST['query_post'] ) ? sanitize_text_field( $_POST['query_post'] ) : '';
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 					error_log( 'KTPWP Service: Extracted query_post: "' . $query_post . '"' );
 				}
 
-				if ( $query_post !== 'istmode' ) {
-					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-						error_log( 'KTPWP Service: Calling update_table with query_post: "' . $query_post . '"' );
-					}
-					$this->update_table( $name );
-				} elseif ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-						error_log( 'KTPWP Service: Skipping update_table for istmode' );
+				// 追加・検索モードは GET へリダイレクト（タブ状態復元で上書きされないよう PRG）
+				if ( in_array( $query_post, array( 'istmode', 'srcmode' ), true ) ) {
+					$redirect_url = add_query_arg(
+						array(
+							'tab_name'   => $name,
+							'query_post' => $query_post,
+						),
+						KTPWP_Main::get_current_page_base_url()
+					);
+					wp_safe_redirect( $redirect_url );
+					exit;
 				}
+
+				$this->update_table( $name );
 			}
 
 			// GETパラメータからのメッセージをフローティングアラート（JS通知）で表示（他タブと統一・安全な出力）
@@ -213,10 +218,14 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 				$search_mode = true;
 				$search_message = isset( $_SESSION['ktp_service_search_message'] ) ? $_SESSION['ktp_service_search_message'] : '';
 			}
-			// 本番等でセッションがリダイレクト後に引き継がれない場合の対策: URL の no_results=1 で検索フォーム＋該当なしを表示
-			if ( ! $search_mode && $_SERVER['REQUEST_METHOD'] === 'GET' && isset( $_GET['query_post'] ) && $_GET['query_post'] === 'srcmode' && isset( $_GET['no_results'] ) && $_GET['no_results'] === '1' ) {
+			// 本番等でセッションがリダイレクト後に引き継がれない場合の対策: GET の query_post=srcmode で検索フォームを表示
+			if ( ! $search_mode && $_SERVER['REQUEST_METHOD'] === 'GET' && isset( $_GET['query_post'] ) && $_GET['query_post'] === 'srcmode' ) {
 				$search_mode = true;
-				$search_message = esc_html__( '該当するサービスが見つかりませんでした。条件を変更して再検索してください。', 'ktpwp' );
+				if ( isset( $_GET['no_results'] ) && $_GET['no_results'] === '1' ) {
+					$search_message = esc_html__( '該当するサービスが見つかりませんでした。条件を変更して再検索してください。', 'ktpwp' );
+				} elseif ( $search_message === '' ) {
+					$search_message = esc_html__( '検索モードです。条件を入力して検索してください。', 'ktpwp' );
+				}
 			}
 
 			// JS通知は他タブと統一のため廃止（noticeのみ）
@@ -232,21 +241,29 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 			// -----------------------------
 			// ソート順の取得（デフォルトはIDの降順 - 新しい順）
 			$sort_by = 'id';
-			$sort_order = 'DESC';
+			$sort_order = class_exists( 'KTPWP_List_Table' ) ? KTPWP_List_Table::default_sort_order() : 'DESC';
 
 			if ( isset( $_GET['sort_by'] ) ) {
 				$sort_by = sanitize_text_field( $_GET['sort_by'] );
 				// 安全なカラム名のみ許可（SQLインジェクション対策）
-				$allowed_columns = array( 'id', 'service_name', 'price', 'unit', 'frequency', 'time', 'category' );
+				$allowed_columns = array( 'id', 'service_name', 'price', 'unit', 'frequency', 'time', 'category', 'tax_rate', 'is_public', 'contract_billing_cycle' );
 				if ( ! in_array( $sort_by, $allowed_columns ) ) {
 					$sort_by = 'id'; // 不正な値の場合はデフォルトに戻す
 				}
 			}
 
 			if ( isset( $_GET['sort_order'] ) ) {
-				$sort_order_param = strtoupper( sanitize_text_field( $_GET['sort_order'] ) );
-				// ASCかDESCのみ許可
-				$sort_order = ( $sort_order_param === 'ASC' ) ? 'ASC' : 'DESC';
+				$sort_order = class_exists( 'KTPWP_List_Table' )
+					? KTPWP_List_Table::sanitize_sort_order( sanitize_text_field( $_GET['sort_order'] ) )
+					: 'DESC';
+			}
+
+			// リスト表示前に頻度を加算（一覧に反映させる）
+			if ( isset( $_GET['data_id'] ) && $_GET['data_id'] !== '' && ( ! defined( 'DOING_AJAX' ) || ! DOING_AJAX ) && ( ! function_exists( 'ktpwp_should_skip_frequency_on_view' ) || ! ktpwp_should_skip_frequency_on_view() ) ) {
+				$view_record_id = filter_input( INPUT_GET, 'data_id', FILTER_SANITIZE_NUMBER_INT );
+				if ( $view_record_id > 0 && function_exists( 'ktpwp_increment_record_frequency_on_view' ) ) {
+					ktpwp_increment_record_frequency_on_view( 'service', (int) $view_record_id );
+				}
 			}
 
 			// 現在のページのURLを生成（動的パーマリンク取得）
@@ -349,46 +366,13 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 				$query_limit = 20; // 不正な値の場合はデフォルト値に
 			}
 
-			// ソートプルダウンを追加
-			// ソートフォームのアクションURLからは 'message' を除去
-			$sort_action_url = remove_query_arg( 'message', $base_page_url );
-
-			$sort_dropdown = '<div class="sort-dropdown" style="float:right;margin-left:10px;">' .
-            '<form method="get" action="' . esc_url( $sort_action_url ) . '" style="display:flex;align-items:center;">';
-
-			// 現在のGETパラメータを維持するための隠しフィールド (messageとソート自体に関連するキーは除く)
-			foreach ( $_GET as $key => $value ) {
-				if ( ! in_array( $key, array( 'message', 'sort_by', 'sort_order', '_ktp_service_nonce', 'query_post', 'send_post' ) ) ) {
-					$sort_dropdown .= '<input type="hidden" name="' . esc_attr( $key ) . '" value="' . esc_attr( stripslashes( $value ) ) . '">';
-				}
-			}
-
-			$sort_dropdown .=
-            '<select id="' . esc_attr( 'ktp-' . $name . '-sort-select' ) . '" name="sort_by" style="margin-right:5px;">' .
-            '<option value="id" ' . selected( $sort_by, 'id', false ) . '>' . esc_html__( 'ID', 'ktpwp' ) . '</option>' .
-            '<option value="service_name" ' . selected( $sort_by, 'service_name', false ) . '>' . esc_html__( 'サービス名', 'ktpwp' ) . '</option>' .
-            '<option value="price" ' . selected( $sort_by, 'price', false ) . '>' . esc_html__( '価格', 'ktpwp' ) . '</option>' .
-            '<option value="unit" ' . selected( $sort_by, 'unit', false ) . '>' . esc_html__( '単位', 'ktpwp' ) . '</option>' .
-            '<option value="category" ' . selected( $sort_by, 'category', false ) . '>' . esc_html__( 'カテゴリー', 'ktpwp' ) . '</option>' .
-            '<option value="frequency" ' . selected( $sort_by, 'frequency', false ) . '>' . esc_html__( '頻度', 'ktpwp' ) . '</option>' .
-            '<option value="time" ' . selected( $sort_by, 'time', false ) . '>' . esc_html__( '登録日', 'ktpwp' ) . '</option>' .
-            '</select>' .
-            '<select id="' . esc_attr( 'ktp-' . $name . '-sort-order' ) . '" name="sort_order">' .
-            '<option value="ASC" ' . selected( $sort_order, 'ASC', false ) . '>' . esc_html__( '昇順', 'ktpwp' ) . '</option>' .
-            '<option value="DESC" ' . selected( $sort_order, 'DESC', false ) . '>' . esc_html__( '降順', 'ktpwp' ) . '</option>' .
-            '</select>' .
-            '<button type="submit" style="margin-left:5px;padding:4px 8px;background:#f0f0f0;border:1px solid #ccc;border-radius:3px;cursor:pointer;" title="' . esc_attr__( '適用', 'ktpwp' ) . '">' .
-            '<span class="material-symbols-outlined" style="font-size:18px;line-height:18px;vertical-align:middle;">check</span>' .
-            '</button>' .
-            '</form></div>';
-
 			// リスト表示部分の開始
 			// 顧客・協力会社タブと同じラッパー（.data_contents は display:flex のため二段レイアウトと相性が悪い）
 			$list_title = esc_html__( '■ サービスリスト', 'ktpwp' );
 			$results_h = <<<END
             <div class="ktp_data_contents">
             <div class="ktp_data_list_box">
-            <div class="data_list_title">{$list_title} {$sort_dropdown}</div>
+            <div class="data_list_title">{$list_title}</div>
         END;
 			// スタート位置を決める
 			$page_stage = $_GET['page_stage'] ?? '';
@@ -403,9 +387,22 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 			
 			$query_range = $page_start . ',' . $query_limit;
 
+			$list_search_where = '';
+			$list_search_args  = array();
+			if ( class_exists( 'KTPWP_Tab_Search_UI' ) ) {
+				$list_search_keyword = KTPWP_Tab_Search_UI::get_instance()->get_keyword();
+				if ( $list_search_keyword !== '' ) {
+					list( $list_search_where, $list_search_args ) = KTPWP_Tab_Search_UI::get_instance()->master_list_search_clause( $table_name, $list_search_keyword, 'service' );
+				}
+			}
+
 			// 全データ数を取得
-			$total_query = "SELECT COUNT(*) FROM {$table_name}";
-			$total_rows = $wpdb->get_var( $total_query );
+			$total_query = "SELECT COUNT(*) FROM {$table_name} WHERE 1=1{$list_search_where}";
+			if ( $list_search_args !== array() ) {
+				$total_rows = $wpdb->get_var( $wpdb->prepare( $total_query, $list_search_args ) );
+			} else {
+				$total_rows = $wpdb->get_var( $total_query );
+			}
 
 			// ゼロ除算防止のための安全対策
 			if ( $query_limit <= 0 ) {
@@ -422,15 +419,22 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 			$current_page = floor( $page_start / $query_limit ) + 1;
 
 			// データを取得（ソート順を適用）
-			$query = $wpdb->prepare( "SELECT * FROM {$table_name} ORDER BY {$sort_by} {$sort_order} LIMIT %d, %d", $page_start, $query_limit );
+			$query = $wpdb->prepare(
+				"SELECT * FROM {$table_name} WHERE 1=1{$list_search_where} ORDER BY {$sort_by} {$sort_order} LIMIT %d, %d",
+				array_merge( $list_search_args, array( $page_start, $query_limit ) )
+			);
 			$post_row = $wpdb->get_results( $query );
 			$results = array(); // ← 追加：未定義エラー防止
+			$list_header = '';
+			$list_footer = '';
+			$hide_tax = true;
 			if ( $post_row ) {
+				$list_header = $this->render_service_list_table_open( $hide_tax, $base_page_url, $sort_by, $sort_order );
 				foreach ( $post_row as $row ) {
 					$id = esc_html( $row->id );
-					$service_name = esc_html( $row->service_name );
+					$service_name_raw = isset( $row->service_name ) ? (string) $row->service_name : '';
+					$service_name = esc_html( $service_name_raw );
 					$price = isset( $row->price ) ? floatval( $row->price ) : 0;
-					$tax_rate = isset( $row->tax_rate ) && $row->tax_rate !== null ? floatval( $row->tax_rate ) : null;
 					$unit = isset( $row->unit ) ? esc_html( $row->unit ) : '';
 					$category = esc_html( $row->category );
 					$frequency = esc_html( $row->frequency );
@@ -449,15 +453,34 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 							$item_link_args[ $getKey ] = $getValue;
 						}
 					}
-                    $tax_display = $tax_rate !== null ? intval( $tax_rate ) . '%' : '非課税';
                     $formatted_price = number_format( $price, 0, '.', ',' );
-                    // 税制モード: 税廃止/非表示時は税率情報を出さない
-                    $hide_tax = ( class_exists( 'KTPWP_Tax_Policy' ) && ( KTPWP_Tax_Policy::is_abolished() || KTPWP_Tax_Policy::hide_tax_columns() ) );
-                    $tax_segment = $hide_tax ? '' : ' | ' . '税率' . $tax_display;
-                    $results[] = '<a href="' . esc_url( add_query_arg( $item_link_args, $base_page_url ) ) . '">' .
-                    '<div class="ktp_data_list_item">' . esc_html__( 'ID', 'ktpwp' ) . ': ' . $id . ' ' . $service_name . ' | ' . KTPWP_Settings::format_money( $price ) . ( $unit ? '/' . $unit : '' ) . $tax_segment . ' | ' . $category . ' | ' . esc_html__( '頻度', 'ktpwp' ) . '(' . $frequency . ')</div>' .
-                    '</a><!-- DEBUG: price=' . $price . ' formatted=' . $formatted_price . ' -->';
+					$is_public = isset( $row->is_public ) ? (int) $row->is_public : 0;
+					$row_stock = isset( $row->stock ) ? max( 0, absint( $row->stock ) ) : 1;
+					$contract_cycle_value = class_exists( 'KTPWP_Contract_Billing_Cycle' ) && isset( $row->contract_billing_cycle )
+						? KTPWP_Contract_Billing_Cycle::sanitize( $row->contract_billing_cycle )
+						: ( class_exists( 'KTPWP_Contract_Billing_Cycle' ) ? KTPWP_Contract_Billing_Cycle::NONE : 'none' );
+					$contract_cycle_cell = class_exists( 'KTPWP_Contract_Billing_Cycle' )
+						? '<td class="col-contract">' . KTPWP_Contract_Billing_Cycle::render_badge( $contract_cycle_value ) . '</td>'
+						: '';
+					$thumb_url   = $this->db_helper->resolve_image_url(
+						(int) $row->id,
+						isset( $row->image_url ) ? (string) $row->image_url : ''
+					);
+					$default_thumb_url = $this->db_helper->get_default_image_url();
+					$row_url = esc_url( add_query_arg( $item_link_args, $base_page_url ) );
+					$price_unit_cell = '<td class="col-price-unit">' . $this->render_service_price_unit_display( $price, $unit ) . '</td>';
+					$results[] = '<tr class="ktp-service-list-data-row" data-href="' . $row_url . '" onclick="window.location.href=this.dataset.href">' .
+					'<td class="col-id">' . $id . '</td>' .
+					'<td class="col-image"><span class="ktp-service-list-thumb-wrap"><img src="' . esc_url( $thumb_url ) . '" alt="' . esc_attr( $service_name_raw ) . '" class="ktp-service-list-thumb" loading="lazy" decoding="async" onerror="this.src=\'' . esc_url( $default_thumb_url ) . '\'" /></span></td>' .
+					'<td class="col-name">' . $service_name . '</td>' .
+					'<td class="col-public">' . $this->render_service_public_badge( $is_public, $row_stock, (int) $row->id, $contract_cycle_value ) . '</td>' .
+					$contract_cycle_cell .
+					$price_unit_cell .
+					'<td class="col-category">' . $category . '</td>' .
+					'<td class="col-frequency">' . $frequency . '</td>' .
+					'</tr><!-- DEBUG: price=' . $price . ' formatted=' . $formatted_price . ' -->';
 				}
+				$list_footer = class_exists( 'KTPWP_List_Table' ) ? KTPWP_List_Table::close() : '</tbody></table></div>';
 				$query_max_num = $wpdb->num_rows;
 			} else {
 				// 新しい0データ案内メッセージ（統一デザイン・ガイダンス）
@@ -471,7 +494,23 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 			// 統一されたページネーションデザインを使用
 			$results_f = $this->render_pagination( $current_page, $total_pages, $query_limit, $name, $flg, $base_page_url, $total_rows );
 
-			$data_list = $results_h . implode( $results ) . $results_f . '</div>'; // ktp_data_list_box を閉じる
+			$selected_service_id   = $this->resolve_selected_service_id( $name, $table_name );
+			$related_list_html     = '';
+			if ( $selected_service_id > 0 && class_exists( 'KTPWP_Service_Related_Orders' ) ) {
+				$selected_service_name = (string) $wpdb->get_var(
+					$wpdb->prepare(
+						"SELECT service_name FROM {$table_name} WHERE id = %d",
+						$selected_service_id
+					)
+				);
+				$related_list_html = KTPWP_Service_Related_Orders::render_list_section(
+					$selected_service_id,
+					$selected_service_name,
+					$base_page_url
+				);
+			}
+
+			$data_list = $results_h . $list_header . implode( $results ) . $list_footer . $results_f . $related_list_html . '</div>'; // ktp_data_list_box を閉じる
 
 			// -----------------------------
 			// 詳細表示(GET)
@@ -487,10 +526,6 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 				}
 			}
 
-			// デバッグ: タブクリック時の動作をログに記録
-			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			}
-
 			// 初期化
 			$data_id = '';
 			$time = '';
@@ -501,6 +536,11 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 			$memo = '';
 			$category = '';
 			$image_url = '';
+			$is_public = 0;
+			$contract_billing_cycle = class_exists( 'KTPWP_Contract_Billing_Cycle' ) ? KTPWP_Contract_Billing_Cycle::NONE : 'none';
+			$stock = 1;
+			$public_quantity_fixed = 0;
+			$public_html = '';
 			$query_id = 0;
 
 			// 追加モード以外の場合のみデータを取得
@@ -564,6 +604,17 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 					$memo = esc_html( $row->memo );
 					$category = esc_html( $row->category );
 					$image_url = esc_html( $row->image_url );
+					$is_public = isset( $row->is_public ) ? (int) $row->is_public : 0;
+					$contract_billing_cycle = class_exists( 'KTPWP_Contract_Billing_Cycle' ) && isset( $row->contract_billing_cycle )
+						? KTPWP_Contract_Billing_Cycle::sanitize( $row->contract_billing_cycle )
+						: ( class_exists( 'KTPWP_Contract_Billing_Cycle' ) ? KTPWP_Contract_Billing_Cycle::NONE : 'none' );
+					$stock = isset( $row->stock ) ? max( 0, absint( $row->stock ) ) : 1;
+					$public_quantity_fixed = class_exists( 'KTPWP_Service_DB' )
+						? KTPWP_Service_DB::sanitize_public_quantity_fixed( $row->public_quantity_fixed ?? null )
+						: 0;
+					$public_html = class_exists( 'KTPWP_Service_DB' )
+						? (string) ( $row->public_html ?? '' )
+						: '';
 				}
 			}
 			  			// 表示するフォーム要素を定義
@@ -745,24 +796,39 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 					}
 				}
 
+				$data_forms .= $this->render_is_public_checkbox_field( 0 );
+				$data_forms .= $this->render_public_quantity_mode_field( 0 );
+				$data_forms .= $this->render_public_html_field( '' );
+				$default_cycle = class_exists( 'KTPWP_Contract_Billing_Cycle' ) ? KTPWP_Contract_Billing_Cycle::NONE : 'none';
+				$data_forms .= $this->render_contract_billing_cycle_field( $default_cycle );
+				$data_forms .= $this->render_service_recurring_fields_block_open( $default_cycle );
+				$data_forms .= $this->render_stock_field( 1 );
+				$data_forms .= $this->render_service_recurring_items_field( 0, $default_cycle );
+				$data_forms .= $this->render_service_initial_fees_field( 0 );
+				$data_forms .= $this->render_service_recurring_fields_block_close();
+				$data_forms .= $this->render_service_contract_fields_scripts();
+
 				$data_forms .= "<div class='button'>";
-				// 追加実行ボタン
+				// 追加実行ボタン（顧客タブと同じスタイル）
 				$data_forms .= "<input type='hidden' name='query_post' value='new'>";
 				$data_forms .= "<input type='hidden' name='data_id' value=''>";
 				$data_forms .= "<input type='hidden' name='action_type' value='create_new'>";
-				$data_forms .= '<button type="submit" name="send_post" value="create" title="' . esc_attr__( '追加実行', 'ktpwp' ) . '"><span class="material-symbols-outlined">select_check_box</span></button>';
+				$data_forms .= '<button type="submit" name="send_post" value="create" title="' . esc_attr__( '追加実行', 'ktpwp' ) . '" class="insert-submit-btn">'
+					. '<span class="material-symbols-outlined">select_check_box</span>'
+					. esc_html__( '追加実行', 'ktpwp' ) . '</button>';
 				$data_forms .= '</form>';
 
-				// キャンセルボタン（独立したフォーム）
+				// キャンセルボタン（独立したフォーム・顧客タブと同じスタイル）
 				$data_forms .= "<form method='post' action='' style='display:inline-block;margin-left:10px;'>";
 				if ( function_exists( 'wp_nonce_field' ) ) {
 					$data_forms .= wp_nonce_field( 'ktp_service_action', '_ktp_service_nonce', true, false );
 				}
 				$data_forms .= "<input type='hidden' name='query_post' value='update'>";
 				$data_forms .= "<input type='hidden' name='action_type' value='cancel'>";
-				$data_forms .= '<button type="submit" name="send_post" value="cancel" title="' . esc_attr__( 'キャンセル', 'ktpwp' ) . '"><span class="material-symbols-outlined">disabled_by_default</span></button>';
+				$data_forms .= '<button type="submit" title="' . esc_attr__( 'キャンセル', 'ktpwp' ) . '" style="background-color: #666 !important; margin-left: 10px;">'
+					. '<span class="material-symbols-outlined">disabled_by_default</span>'
+					. esc_html__( 'キャンセル', 'ktpwp' ) . '</button>';
 				$data_forms .= '</form>';
-				$data_forms .= '<div class="add"></div>';
 				$data_forms .= '</div>';
 			} else {
 				// 通常モード：既存の詳細フォーム表示
@@ -826,16 +892,10 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 				$button_group_html .= '</button>';
 				$button_group_html .= '</form>';
 
-				// 複製ボタン
+				// 複製ボタン（Ajax で軽量送信。Cookie 肥大化時の 431 回避）
 				if ( $data_id ) {
-					$form_action_url = add_query_arg(array('tab_name' => $name), $base_page_url);
-					$button_group_html .= '<form method="post" action="' . esc_url( $form_action_url ) . '" style="margin: 0;">';
-					if ( function_exists( 'wp_nonce_field' ) ) {
-						$button_group_html .= wp_nonce_field( 'ktp_service_action', '_ktp_service_nonce', true, false );
-					}
-					$button_group_html .= '<input type="hidden" name="query_post" value="duplicate">';
-					$button_group_html .= '<input type="hidden" name="data_id" value="' . esc_attr( $data_id ) . '">';
-					$button_group_html .= '<button type="submit" name="send_post" title="' . esc_attr__( '複製する', 'ktpwp' ) . '" class="button-style duplicate-submit-btn">';
+					$button_group_html .= '<form style="margin: 0;" onsubmit="return false;">';
+					$button_group_html .= '<button type="button" class="button-style duplicate-submit-btn ktp-service-duplicate-btn" data-service-id="' . esc_attr( (string) $data_id ) . '" data-success-message="' . esc_attr__( '複製しました。', 'ktpwp' ) . '" data-error-message="' . esc_attr__( '複製に失敗しました。', 'ktpwp' ) . '" title="' . esc_attr__( '複製する', 'ktpwp' ) . '">';
 					$button_group_html .= '<span class="material-symbols-outlined">content_copy</span>';
 					$button_group_html .= '</button>';
 					$button_group_html .= '</form>';
@@ -863,27 +923,34 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 				// データを取得
 				$query = "SELECT * FROM {$table_name} WHERE id = %d";
 				$post_row = $wpdb->get_results( $wpdb->prepare( $query, $data_id ) );
-				$image_url = '';
+				$db_image_url = '';
 				foreach ( $post_row as $row ) {
-					$image_url = esc_html( $row->image_url );
+					$db_image_url = isset( $row->image_url ) ? (string) $row->image_url : '';
 				}
 
-				// 画像URLが空または無効な場合、デフォルト画像を使用
-				if ( empty( $image_url ) ) {
-					$image_url = plugin_dir_url( __DIR__ ) . 'images/default/no-image-icon.jpg';
-				}
-
-				// アップロード画像が存在するか確認
-				$upload_dir = __DIR__ . '/../images/upload/';
-				$upload_file = $upload_dir . $data_id . '.jpeg';
-				if ( file_exists( $upload_file ) ) {
-					$plugin_url = plugin_dir_url( __DIR__ );
-					$image_url = $plugin_url . 'images/upload/' . $data_id . '.jpeg';
-				}
+				$image_url   = $this->db_helper->resolve_image_url( (int) $data_id, $db_image_url );
+				$default_url = $this->db_helper->get_default_image_url();
+				$has_custom_image = ( $image_url !== $default_url );
 
 				// 画像とアップロードフォームのHTML
 				$image_section_html = '<div style="margin-top: 10px;">'; // 画像セクション開始
-				$image_section_html .= '<div class="image"><img src="' . $image_url . '" alt="' . esc_attr__( 'サービス画像', 'ktpwp' ) . '" class="product-image" onerror="this.src=\'' . plugin_dir_url( __DIR__ ) . 'images/default/no-image-icon.jpg\'" style="width: 100%; height: auto; max-width: 100%;"></div>';
+				$image_section_html .= '<div class="image">';
+				$image_section_html .= '<div class="image-frame">';
+				$image_section_html .= '<img src="' . esc_url( $image_url ) . '" alt="' . esc_attr__( 'サービス画像', 'ktpwp' ) . '" class="product-image" onerror="this.src=\'' . esc_url( $default_url ) . '\'">';
+
+				if ( $has_custom_image ) {
+					$nonce_field_delete = function_exists( 'wp_nonce_field' ) ? wp_nonce_field( 'ktp_service_action', '_ktp_service_nonce', true, false ) : '';
+					$form_action_url    = add_query_arg( array( 'tab_name' => $name ), $base_page_url );
+					$image_section_html .= '<form method="post" action="' . esc_url( $form_action_url ) . '" class="image-delete-form">';
+					$image_section_html .= $nonce_field_delete;
+					$image_section_html .= '<input type="hidden" name="data_id" value="' . esc_attr( $data_id ) . '">';
+					$image_section_html .= '<input type="hidden" name="query_post" value="delete_image">';
+					$image_section_html .= '<button type="submit" name="send_post" class="image-delete-btn" title="' . esc_attr__( '画像を削除', 'ktpwp' ) . '" aria-label="' . esc_attr__( '画像を削除', 'ktpwp' ) . '" onclick="return confirm(\'' . esc_js( __( '本当に削除しますか？', 'ktpwp' ) ) . '\')">&times;</button>';
+					$image_section_html .= '</form>';
+				}
+
+				$image_section_html .= '</div>'; // image-frame
+				$image_section_html .= '</div>'; // image
 				$image_section_html .= '<div class="image_upload_form">';
 
 				// サービス画像アップロードフォーム
@@ -901,18 +968,6 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 				$image_section_html .= '</div>';
 				$image_section_html .= '</form>';
 				$image_section_html .= '<script>function checkImageUpload(form) { if (!form.image.value) { alert("画像が選択されていません。アップロードする画像を選択してください。"); return false; } return true; }</script>';
-
-				// サービス画像削除ボタン
-				$nonce_field_delete = function_exists( 'wp_nonce_field' ) ? wp_nonce_field( 'ktp_service_action', '_ktp_service_nonce', true, false ) : '';
-				$form_action_url = add_query_arg(array('tab_name' => $name), $base_page_url);
-				$image_section_html .= '<form method="post" action="' . esc_url( $form_action_url ) . '">';
-				$image_section_html .= $nonce_field_delete;
-				$image_section_html .= '<input type="hidden" name="data_id" value="' . esc_attr( $data_id ) . '">';
-				$image_section_html .= '<input type="hidden" name="query_post" value="delete_image">';
-				$image_section_html .= '<button type="submit" name="send_post" title="' . esc_attr__( '削除する', 'ktpwp' ) . '" onclick="return confirm(\'' . esc_js( __( '本当に削除しますか？', 'ktpwp' ) ) . '\')">';
-				$image_section_html .= '<span class="material-symbols-outlined">delete</span>';
-				$image_section_html .= '</button>';
-				$image_section_html .= '</form>';
 				$image_section_html .= '</div>'; // image_upload_form終了
 				$image_section_html .= '</div>'; // 画像セクション終了
 
@@ -961,6 +1016,19 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 						$data_forms .= "<div class=\"form-group\"><label>{$label_i18n}：</label> <input type=\"{$field['type']}\" name=\"{$fieldName}\" value=\"" . esc_attr( $value ) . "\"{$pattern}{$required}{$placeholder}{$step}{$min}></div>";
 					}
 				}
+				$data_forms .= $this->render_is_public_checkbox_field( (int) $is_public );
+				$data_forms .= $this->render_public_quantity_mode_field( (int) $public_quantity_fixed );
+				$data_forms .= $this->render_public_html_field( (string) $public_html );
+				$cycle_value = class_exists( 'KTPWP_Contract_Billing_Cycle' )
+					? KTPWP_Contract_Billing_Cycle::sanitize( $contract_billing_cycle )
+					: 'none';
+				$data_forms .= $this->render_contract_billing_cycle_field( $cycle_value );
+				$data_forms .= $this->render_service_recurring_fields_block_open( $cycle_value );
+				$data_forms .= $this->render_stock_field( (int) $stock );
+				$data_forms .= $this->render_service_recurring_items_field( (int) $data_id, $cycle_value );
+				$data_forms .= $this->render_service_initial_fees_field( (int) $data_id );
+				$data_forms .= $this->render_service_recurring_fields_block_close();
+				$data_forms .= $this->render_service_contract_fields_scripts();
 				$data_forms .= '<input type="hidden" name="query_post" value="update">';
 				$data_forms .= "<input type=\"hidden\" name=\"data_id\" value=\"{$data_id}\">";
 				$data_forms .= "<div class='button'>";
@@ -1031,6 +1099,18 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 			$print_button_title = esc_attr__( '印刷する', 'ktpwp' );
 			$print_button_label = esc_attr__( '印刷', 'ktpwp' );
 
+			$search_keep_params  = array();
+			$search_toolbar_html = '';
+			$search_panel_html   = '';
+			if ( isset( $_GET['data_id'] ) && $_GET['data_id'] !== '' ) {
+				$search_keep_params['data_id'] = sanitize_text_field( wp_unslash( $_GET['data_id'] ) );
+			}
+			if ( class_exists( 'KTPWP_Tab_Search_UI' ) ) {
+				$search_ui           = KTPWP_Tab_Search_UI::get_instance();
+				$search_toolbar_html = $search_ui->render_toolbar_form( 'service', $search_keep_params );
+				$search_panel_html   = $search_ui->maybe_render_cross_search_panel( 'service' );
+			}
+
 			// JavaScript
 			$print = <<<END
         <script>
@@ -1087,16 +1167,50 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
             // }
         </script>
         <!-- コントローラー/プレビューアイコン（プレビューは廃止） -->
-        <div class="controller">
+        <div class="controller" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+                {$search_toolbar_html}
+                <div style="display:flex;gap:5px;margin-left:auto;">
                 <button onclick="printContent()" title="{$print_button_title}" style="padding: 6px 10px; font-size: 12px;">
                     <span class="material-symbols-outlined" aria-label="{$print_button_label}">print</span>
                 </button>
+                </div>
         </div>
         END;
 
 			// コンテンツを返す（複数検索結果ダイアログ用スクリプトを含む）
-			$content = $message . $print . $data_list . $data_title . $data_forms . $service_search_results_script . $div_end;
+			$content = $message . $print . $search_panel_html . $data_list . $data_title . $data_forms . $service_search_results_script . $div_end;
 			return $content;
+		}
+
+		/**
+		 * 詳細表示と同じルールで選択中のサービス ID を解決する。
+		 *
+		 * @param string $name       タブ名。
+		 * @param string $table_name サービステーブル名。
+		 * @return int
+		 */
+		private function resolve_selected_service_id( $name, $table_name ) {
+			global $wpdb;
+
+			$cookie_name = 'ktp_' . $name . '_id';
+
+			if ( isset( $_GET['data_id'] ) && $_GET['data_id'] !== '' ) {
+				return max( 0, (int) filter_input( INPUT_GET, 'data_id', FILTER_SANITIZE_NUMBER_INT ) );
+			}
+
+			if ( isset( $_COOKIE[ $cookie_name ] ) && $_COOKIE[ $cookie_name ] !== '' ) {
+				$cookie_id = (int) filter_input( INPUT_COOKIE, $cookie_name, FILTER_SANITIZE_NUMBER_INT );
+				if ( $cookie_id > 0 ) {
+					$exists = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table_name} WHERE id = %d", $cookie_id ) );
+					if ( $exists ) {
+						return $cookie_id;
+					}
+				}
+			}
+
+			$last_id_row = $wpdb->get_row( "SELECT id FROM {$table_name} ORDER BY id DESC LIMIT 1" );
+
+			return $last_id_row && isset( $last_id_row->id ) ? (int) $last_id_row->id : 0;
 		}
 
 		/**
@@ -1106,11 +1220,10 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 		 * @return string フォーマットされた価格
 		 */
 		private function format_price_display( $price ) {
-			// 小数点以下がある場合は2桁まで表示（末尾の0は消す）
-			if ( is_numeric($price) ) {
-				$formatted = rtrim(rtrim(number_format($price, 2, '.', ''), '0'), '.');
-				return $formatted;
+			if ( class_exists( 'KTPWP_Settings' ) && is_numeric( $price ) ) {
+				return KTPWP_Settings::format_decimal_trimmed( $price );
 			}
+
 			return $price;
 		}
 
@@ -1150,8 +1263,8 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 			$image_html = '';
 			if ( ! empty( $image_url ) ) {
 				$image_html = '
-            <div style="text-align: center; margin-bottom: 20px;">
-                <img src="' . esc_url( $image_url ) . '" alt="' . esc_attr( $service_name ) . '" style="max-width: 100%; max-height: 300px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <div class="image" style="margin-bottom: 20px;">
+                <img src="' . esc_url( $image_url ) . '" alt="' . esc_attr( $service_name ) . '" class="product-image" style="border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
             </div>';
 			}
 
@@ -1348,6 +1461,516 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 			$pagination_html .= '</div>';
 
 			return $pagination_html;
+		}
+
+		/**
+		 * サービスリスト表（ヘッダー付き）の開始タグを返す。
+		 *
+		 * @param bool $hide_tax 税率列を非表示にするか。
+		 * @return string
+		 */
+		private function render_service_list_table_open( $hide_tax, $base_page_url, $sort_by, $sort_order ) {
+			if ( ! class_exists( 'KTPWP_List_Table' ) ) {
+				require_once __DIR__ . '/class-ktpwp-list-table.php';
+			}
+
+			$sort_context = array(
+				'base_url'      => $base_page_url,
+				'sort_by'       => $sort_by,
+				'sort_order'    => $sort_order,
+				'preserve_args' => KTPWP_List_Table::preserved_query_args(
+					array( '_ktp_service_nonce', 'query_post', 'send_post' )
+				),
+			);
+
+			$columns = array(
+				array(
+					'class'    => 'col-id',
+					'label'    => __( 'ID', 'ktpwp' ),
+					'sort_key' => 'id',
+				),
+				array(
+					'class' => 'col-image',
+					'label' => __( '画像', 'ktpwp' ),
+				),
+				array(
+					'class'    => 'col-name',
+					'label'    => __( 'サービス名', 'ktpwp' ),
+					'sort_key' => 'service_name',
+				),
+				array(
+					'class'    => 'col-public',
+					'label'    => __( '公開', 'ktpwp' ),
+					'sort_key' => 'is_public',
+				),
+				array(
+					'class'    => 'col-contract',
+					'label'    => __( '契約', 'ktpwp' ),
+					'sort_key' => 'contract_billing_cycle',
+				),
+				array(
+					'class'    => 'col-price-unit',
+					'label'    => __( '価格/単位', 'ktpwp' ),
+					'sort_key' => 'price',
+				),
+			);
+
+			if ( ! $hide_tax ) {
+				$columns[] = array(
+					'class'    => 'col-tax',
+					'label'    => __( '税率', 'ktpwp' ),
+					'sort_key' => 'tax_rate',
+				);
+			}
+
+			$columns[] = array(
+				'class'    => 'col-category',
+				'label'    => __( 'カテゴリー', 'ktpwp' ),
+				'sort_key' => 'category',
+			);
+			$columns[] = array(
+				'class'    => 'col-frequency',
+				'label'    => __( '頻度', 'ktpwp' ),
+				'sort_key' => 'frequency',
+			);
+
+			return KTPWP_List_Table::open( $columns, $sort_context, 'ktp-list-table--service' );
+		}
+
+		/**
+		 * サイト公開チェックボックスの HTML を返す。
+		 *
+		 * @param int $is_public 公開フラグ（0 or 1）。
+		 * @return string
+		 */
+		private function render_is_public_checkbox_field( $is_public ) {
+			$checked = (int) $is_public === 1 ? ' checked' : '';
+
+			return '<div class="form-group ktpwp-service-public-field">'
+				. '<label>'
+				. '<input type="checkbox" name="is_public" value="1"' . $checked . '>'
+				. '<span class="ktpwp-service-public-field__text">' . esc_html__( 'サイトに公開', 'ktpwp' ) . '</span>'
+				. '</label>'
+				. '</div>';
+		}
+
+		/**
+		 * 公開フォームの数量設定フィールドの HTML を返す。
+		 *
+		 * @param int $public_quantity_fixed 0=変更可能, 1=1固定。
+		 * @return string
+		 */
+		private function render_public_quantity_mode_field( $public_quantity_fixed ) {
+			$fixed = (int) $public_quantity_fixed === 1;
+			$html  = $this->render_service_contract_fields_styles();
+			$html .= '<div class="ktpwp-service-field-block ktpwp-service-field-block--public-quantity">';
+			$html .= '<div class="ktpwp-service-field-block__label">';
+			$html .= '<span class="ktpwp-service-field-block__label-text ktpwp-service-field-block__section-title">' . esc_html__( '公開フォームの数量', 'ktpwp' ) . '</span>';
+			$html .= '<span class="ktpwp-service-field-block__hint">' . esc_html__( 'サイト公開時のお問い合わせフォームで、数量を入力させるか1に固定するかを選びます。', 'ktpwp' ) . '</span>';
+			$html .= '</div>';
+			$html .= '<div class="ktpwp-service-field-block__control ktpwp-service-field-block__control--radio">';
+			$html .= '<label class="ktpwp-service-radio-option">';
+			$html .= '<input type="radio" name="public_quantity_fixed" value="0"' . checked( ! $fixed, true, false ) . '>';
+			$html .= '<span>' . esc_html__( '変更可能（数量欄を表示）', 'ktpwp' ) . '</span>';
+			$html .= '</label>';
+			$html .= '<label class="ktpwp-service-radio-option">';
+			$html .= '<input type="radio" name="public_quantity_fixed" value="1"' . checked( $fixed, true, false ) . '>';
+			$html .= '<span>' . esc_html__( '1に固定（数量欄を非表示）', 'ktpwp' ) . '</span>';
+			$html .= '</label>';
+			$html .= '</div></div>';
+
+			return $html;
+		}
+
+		/**
+		 * 公開用HTMLフィールドの HTML を返す。
+		 *
+		 * @param string $public_html 公開用HTML。
+		 * @return string
+		 */
+		private function render_public_html_field( $public_html ) {
+			$html  = $this->render_service_contract_fields_styles();
+			$html .= '<div class="ktpwp-service-field-block ktpwp-service-field-block--public-html">';
+			$html .= '<div class="ktpwp-service-field-block__label">';
+			$html .= '<span class="ktpwp-service-field-block__label-text ktpwp-service-field-block__section-title">' . esc_html__( '公開用HTML', 'ktpwp' ) . '</span>';
+			$html .= '<span class="ktpwp-service-field-block__hint">' . esc_html__( '公開商品カード・詳細に表示するHTMLです。公式LINE友だち追加ボタンなど、リンクや画像タグを記述できます。メモ欄とは別管理です。', 'ktpwp' ) . '</span>';
+			$html .= '</div>';
+			$html .= '<div class="ktpwp-service-field-block__control">';
+			$html .= '<textarea id="public_html" name="public_html" rows="6" class="large-text code" placeholder="' . esc_attr__( '例: LINE友だち追加ボタンのHTML', 'ktpwp' ) . '">' . esc_textarea( $public_html ) . '</textarea>';
+			$html .= '</div></div>';
+
+			return $html;
+		}
+
+		/**
+		 * 契約（請求サイクル）セレクトの HTML を返す。
+		 *
+		 * @param string $selected 選択中のサイクル値。
+		 * @return string
+		 */
+		private function render_contract_billing_cycle_field( $selected ) {
+			if ( ! class_exists( 'KTPWP_Contract_Billing_Cycle' ) ) {
+				return '';
+			}
+
+			$this->ensure_service_contract_fields_script_enqueued();
+			$selected = KTPWP_Contract_Billing_Cycle::sanitize( $selected );
+			$html     = $this->render_service_contract_fields_styles();
+			$html    .= '<div class="ktpwp-service-field-block ktpwp-service-field-block--cycle">';
+			$html    .= '<div class="ktpwp-service-field-block__label">';
+			$html    .= '<span class="ktpwp-service-field-block__label-text ktpwp-service-field-block__section-title">' . esc_html__( '契約（請求サイクル）', 'ktpwp' ) . '</span>';
+			$html    .= '<span class="ktpwp-service-field-block__hint">' . esc_html__( '定期契約で請求する場合にサイクルを選びます。都度請求のサービスは「都度請求」のままにしてください。', 'ktpwp' ) . '</span>';
+			$html    .= '</div>';
+			$html    .= '<div class="ktpwp-service-field-block__control">';
+			$html    .= '<select id="contract_billing_cycle" name="contract_billing_cycle">';
+			foreach ( KTPWP_Contract_Billing_Cycle::get_options() as $value => $label ) {
+				$is_selected = $selected === $value ? ' selected' : '';
+				$html       .= '<option value="' . esc_attr( $value ) . '"' . $is_selected . '>' . esc_html( $label ) . '</option>';
+			}
+			$html .= '</select>';
+			$html .= '</div></div>';
+
+			return $html;
+		}
+
+		/**
+		 * 定期請求項目以降（初回費用含む）のブロック開始タグ。
+		 *
+		 * @param string $contract_billing_cycle 請求サイクル。
+		 * @return string
+		 */
+		private function render_service_recurring_fields_block_open( $contract_billing_cycle ) {
+			$show  = $this->should_show_service_recurring_fields( $contract_billing_cycle );
+			$class = 'ktpwp-service-recurring-fields';
+			if ( ! $show ) {
+				$class .= ' ktpwp-service-recurring-fields--hidden';
+			}
+
+			return '<div id="ktpwp-service-recurring-fields" class="' . esc_attr( $class ) . '" aria-hidden="' . ( $show ? 'false' : 'true' ) . '">';
+		}
+
+		/**
+		 * 定期請求項目以降のブロック終了タグ。
+		 *
+		 * @return string
+		 */
+		private function render_service_recurring_fields_block_close() {
+			return '</div>';
+		}
+
+		/**
+		 * 定期契約用フィールドの表示判定（都度請求時は非表示）。
+		 *
+		 * @param string $contract_billing_cycle 請求サイクル。
+		 * @return bool
+		 */
+		private function should_show_service_recurring_fields( $contract_billing_cycle ) {
+			return ! class_exists( 'KTPWP_Contract_Billing_Cycle' )
+				|| KTPWP_Contract_Billing_Cycle::is_recurring( $contract_billing_cycle );
+		}
+
+		/**
+		 * 在庫数フィールドの HTML を返す。
+		 *
+		 * @param int $stock 在庫数。
+		 * @return string
+		 */
+		private function render_stock_field( $stock ) {
+			$stock = max( 0, absint( $stock ) );
+			$html  = $this->render_service_contract_fields_styles();
+			$html .= '<div id="ktpwp-service-stock" class="ktpwp-service-field-block ktpwp-service-field-block--stock">';
+			$html .= '<div class="ktpwp-service-field-block__label">';
+			$html .= '<span class="ktpwp-service-field-block__label-text ktpwp-service-field-block__section-title">' . esc_html__( '在庫数', 'ktpwp' ) . '</span>';
+			$html .= '<span class="ktpwp-service-field-block__hint">' . esc_html__( '販売所の受付上限です。0 で完売。契約件数と問い合わせ案件の合計が在庫数に達すると、すべての顧客からの問い合わせを停止（保留中）します。', 'ktpwp' ) . '</span>';
+			$html .= '</div>';
+			if ( $stock === 0 ) {
+				$html .= '<p class="ktpwp-service-stock-sold-out-notice">' . esc_html__( '公開ページでは「完売御礼！」と表示され、問い合わせは受け付けません。', 'ktpwp' ) . '</p>';
+			}
+			$html .= '<div class="ktpwp-service-field-block__control">';
+			$html .= '<input type="number" id="stock" name="stock" min="0" step="1" value="' . esc_attr( (string) $stock ) . '">';
+			$html .= '</div></div>';
+
+			return $html;
+		}
+
+		/**
+		 * サービス詳細の定期請求項目入力欄
+		 *
+		 * @param int    $service_id             サービス ID。
+		 * @param string $contract_billing_cycle 請求サイクル。
+		 * @return string
+		 */
+		private function render_service_recurring_items_field( $service_id, $contract_billing_cycle = 'none' ) {
+			if ( ! class_exists( 'KTPWP_Contract_Recurring_Items' ) ) {
+				return '';
+			}
+
+			$items = $service_id > 0
+				? KTPWP_Contract_Recurring_Items::get_by_service_id( $service_id )
+				: array();
+			$row_count = max( 3, count( $items ) );
+
+			$html  = $this->render_service_contract_fields_styles();
+			$html .= '<div class="ktpwp-service-field-block ktpwp-service-field-block--recurring" id="ktpwp-service-recurring-items">';
+			$html .= '<div class="ktpwp-service-field-block__label">';
+			$html .= '<span class="ktpwp-service-field-block__label-text ktpwp-service-field-block__section-title">' . esc_html__( '定期請求項目', 'ktpwp' ) . '</span>';
+			$html .= '<span class="ktpwp-service-field-block__hint">' . esc_html__(
+				'定期契約作成時のデフォルト明細です（例: 家賃・共益費）。WEB初回オン＝WEB受注の今回請求に含める。オフ＝今回は0円の参考行（月額案内のみ）。初回だけ別請求は下の「初回費用」を使ってください。',
+				'ktpwp'
+			) . '</span>';
+			$html .= '</div>';
+			$html .= '<div class="ktpwp-service-field-block__control ktpwp-service-field-block__control--full">';
+			$html .= '<table class="ktpwp-service-detail-items__table" id="ktpwp-service-recurring-items-table"><thead><tr>';
+			$html .= $this->render_service_detail_items_table_headers( true );
+			$html .= '</tr></thead><tbody>';
+
+			for ( $i = 0; $i < $row_count; $i++ ) {
+				$item = isset( $items[ $i ] ) ? $items[ $i ] : null;
+				$bill_on_first = $item ? ! empty( $item->bill_on_first_invoice ) : true;
+				$html .= '<tr>';
+				$html .= '<td><input type="text" name="recurring_items[' . $i . '][item_name]" value="' . esc_attr( $item ? (string) $item->item_name : '' ) . '" maxlength="255"></td>';
+				$html .= '<td><input type="number" name="recurring_items[' . $i . '][amount]" value="' . esc_attr( $item ? KTPWP_Settings::format_number_field_value( $item->amount ) : '' ) . '" min="0" step="0.01"></td>';
+				$html .= '<td><input type="number" name="recurring_items[' . $i . '][tax_rate]" value="' . esc_attr( $item && $item->tax_rate !== null ? KTPWP_Settings::format_number_field_value( $item->tax_rate ) : '' ) . '" min="0" max="100" step="1" placeholder="' . esc_attr__( '非課税', 'ktpwp' ) . '"></td>';
+				$html .= '<td class="ktpwp-service-recurring-first-invoice">';
+				$html .= '<input type="hidden" name="recurring_items[' . $i . '][bill_on_first_invoice]" value="0">';
+				$html .= '<label><input type="checkbox" name="recurring_items[' . $i . '][bill_on_first_invoice]" value="1" ' . checked( $bill_on_first, true, false ) . '> ' . esc_html__( '初回請求', 'ktpwp' ) . '</label>';
+				$html .= '</td>';
+				$html .= '</tr>';
+			}
+
+			$html .= '</tbody></table></div></div>';
+
+			return $html;
+		}
+
+		/**
+		 * サービス詳細の初回費用（既定）入力欄
+		 *
+		 * @param int $service_id サービス ID。
+		 * @return string
+		 */
+		private function render_service_initial_fees_field( $service_id ) {
+			if ( ! class_exists( 'KTPWP_Service_Initial_Fees' ) ) {
+				return '';
+			}
+
+			$fees = $service_id > 0
+				? KTPWP_Service_Initial_Fees::get_by_service_id( $service_id )
+				: array();
+			$row_count = max( 3, count( $fees ) );
+
+			$presets = class_exists( 'KTPWP_Contract_DB' )
+				? KTPWP_Contract_DB::get_initial_fee_presets()
+				: array();
+			$preset_text = ! empty( $presets )
+				? implode( ' / ', array_map( 'esc_html', $presets ) )
+				: '';
+
+			$html  = $this->render_service_contract_fields_styles();
+			$html .= '<div class="ktpwp-service-field-block ktpwp-service-field-block--initial-fees" id="ktpwp-service-initial-fees">';
+			$html .= '<div class="ktpwp-service-field-block__label">';
+			$html .= '<span class="ktpwp-service-field-block__label-text">' . esc_html__( '初回費用（既定）', 'ktpwp' ) . '</span>';
+			$html .= '<span class="ktpwp-service-field-block__hint">' . esc_html__( '敷金・礼金など、初回請求時のみ自動で入る費用です（毎月請求の共益費は上の「定期請求項目」へ）。', 'ktpwp' ) . '</span>';
+			$html .= '</div>';
+			$html .= '<div class="ktpwp-service-field-block__control ktpwp-service-field-block__control--full">';
+			$html .= '<table class="ktpwp-service-detail-items__table" id="ktpwp-service-initial-fees-table"><thead><tr>';
+			$html .= $this->render_service_detail_items_table_headers();
+			$html .= '</tr></thead><tbody>';
+
+			for ( $i = 0; $i < $row_count; $i++ ) {
+				$fee = isset( $fees[ $i ] ) ? $fees[ $i ] : null;
+				$html .= '<tr>';
+				$html .= '<td><input type="text" name="initial_fees[' . $i . '][fee_name]" value="' . esc_attr( $fee ? (string) $fee->fee_name : '' ) . '" maxlength="255"></td>';
+				$html .= '<td><input type="number" name="initial_fees[' . $i . '][amount]" value="' . esc_attr( $fee ? KTPWP_Settings::format_number_field_value( $fee->amount ) : '' ) . '" min="0" step="0.01"></td>';
+				$html .= '<td><input type="number" name="initial_fees[' . $i . '][tax_rate]" value="' . esc_attr( $fee && $fee->tax_rate !== null ? KTPWP_Settings::format_number_field_value( $fee->tax_rate ) : '' ) . '" min="0" max="100" step="1" placeholder="' . esc_attr__( '非課税', 'ktpwp' ) . '"></td>';
+				$html .= '</tr>';
+			}
+
+			$html .= '</tbody></table>';
+			if ( $preset_text !== '' ) {
+				$html .= '<p class="ktpwp-service-initial-fees__presets">' . esc_html__( 'プリセット例:', 'ktpwp' ) . ' ' . $preset_text . '</p>';
+			}
+			$html .= '</div></div>';
+
+			return $html;
+		}
+
+		/**
+		 * 定期請求・初回費用テーブルの共通ヘッダ
+		 *
+		 * @return string
+		 */
+		private function render_service_detail_items_table_headers( $include_first_invoice = false ) {
+			$html  = '<th>' . esc_html__( '項目名', 'ktpwp' ) . '</th>';
+			$html .= '<th>' . esc_html__( '金額', 'ktpwp' ) . '</th>';
+			$html .= '<th>' . esc_html__( '税率(%)', 'ktpwp' ) . '</th>';
+			if ( $include_first_invoice ) {
+				$html .= '<th>' . esc_html__( 'WEB初回', 'ktpwp' ) . '</th>';
+			}
+
+			return $html;
+		}
+
+		/**
+		 * 請求サイクル切替 JS を読み込む（インライン script は WP ショートコード出力で実行されないため外部ファイル）。
+		 *
+		 * @return void
+		 */
+		private function ensure_service_contract_fields_script_enqueued() {
+			if ( ! function_exists( 'wp_enqueue_script' ) ) {
+				return;
+			}
+			if ( wp_script_is( 'ktp-service-contract-fields', 'enqueued' ) ) {
+				return;
+			}
+
+			if ( ! wp_script_is( 'ktp-service-contract-fields', 'registered' ) ) {
+				$plugin_file = dirname( __DIR__ ) . '/ktpwp.php';
+				$script_path = dirname( __DIR__ ) . '/js/ktp-service-contract-fields.js';
+				$version     = defined( 'KTPWP_PLUGIN_VERSION' ) ? KTPWP_PLUGIN_VERSION : '1.0';
+				if ( file_exists( $script_path ) ) {
+					$version .= '.' . filemtime( $script_path );
+				}
+				wp_register_script(
+					'ktp-service-contract-fields',
+					plugins_url( 'js/ktp-service-contract-fields.js', $plugin_file ),
+					array(),
+					$version,
+					true
+				);
+				wp_localize_script(
+					'ktp-service-contract-fields',
+					'ktpServiceContractFields',
+					array(
+						'none_value' => class_exists( 'KTPWP_Contract_Billing_Cycle' )
+							? KTPWP_Contract_Billing_Cycle::NONE
+							: 'none',
+					)
+				);
+			}
+
+			wp_enqueue_script( 'ktp-service-contract-fields' );
+		}
+
+		/**
+		 * 請求サイクルに応じて定期請求・初回費用ブロックの表示を切り替える JS
+		 *
+		 * @return string
+		 */
+		private function render_service_contract_fields_scripts() {
+			$this->ensure_service_contract_fields_script_enqueued();
+
+			return '';
+		}
+
+		/**
+		 * 契約・定期請求項目ブロック用 CSS（キャッシュに依存しないよう1回だけ出力）
+		 *
+		 * @return string
+		 */
+		private function render_service_contract_fields_styles() {
+			static $rendered = false;
+			if ( $rendered ) {
+				return '';
+			}
+			$rendered = true;
+
+			return '<style id="ktpwp-service-contract-fields-css">'
+				. '.ktpwp-service-field-block{display:grid;grid-template-columns:25% minmax(0,1fr);column-gap:12px;row-gap:0;margin-bottom:16px;align-items:start;}'
+				. '.ktpwp-service-field-block__label{text-align:right;padding-top:8px;}'
+				. '.ktpwp-service-field-block__label-text{display:block;font-size:14px;color:#444;line-height:1.4;font-weight:normal;}'
+				. '.ktpwp-service-field-block__section-title{margin-top:12px;font-weight:700;color:#333;}'
+				. '.ktpwp-service-field-block__hint{display:block;margin-top:3px;font-size:12px;line-height:1.45;color:#777;font-weight:normal;}'
+				. '.ktpwp-service-field-block__control{min-width:0;}'
+				. '.ktpwp-service-field-block__control select,.ktpwp-service-field-block__control input{width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid #ddd;border-radius:4px;font-size:14px;background:#fff;}'
+				. '.ktpwp-service-field-block--recurring,.ktpwp-service-field-block--initial-fees{display:block;}'
+				. '.ktpwp-service-recurring-fields--hidden{display:none !important;}'
+				. '.ktpwp-service-field-block--cycle .ktpwp-service-field-block__section-title{font-weight:600;}'
+				. '.ktpwp-service-field-block--recurring .ktpwp-service-field-block__label,.ktpwp-service-field-block--initial-fees .ktpwp-service-field-block__label{display:grid;grid-template-columns:25% minmax(0,1fr);column-gap:12px;margin-bottom:8px;padding-top:0;}'
+				. '.ktpwp-service-field-block--recurring .ktpwp-service-field-block__label-text,.ktpwp-service-field-block--recurring .ktpwp-service-field-block__hint,.ktpwp-service-field-block--initial-fees .ktpwp-service-field-block__label-text,.ktpwp-service-field-block--initial-fees .ktpwp-service-field-block__hint{grid-column:1;text-align:right;}'
+				. '.ktpwp-service-field-block__control--full{width:100%;}'
+				. '.ktpwp-service-detail-items__table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:13px;}'
+				. '.ktpwp-service-detail-items__table th,.ktpwp-service-detail-items__table td{border:1px solid #ddd;padding:8px;vertical-align:middle;font-size:13px;line-height:1.4;}'
+				. '.ktpwp-service-detail-items__table th{background:#ffeef1;color:#4b5563;font-weight:600;text-align:left;border-bottom:1px solid #fecdd3;}'
+				. '.ktpwp-service-detail-items__table td input{width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid #ddd;border-radius:4px;font-size:14px;background:#fff;}'
+				. '.ktpwp-service-initial-fees__presets{margin:8px 0 0;font-size:12px;line-height:1.45;color:#777;}'
+				. '@media screen and (max-width:767px){.ktpwp-service-field-block,.ktpwp-service-field-block--recurring .ktpwp-service-field-block__label,.ktpwp-service-field-block--initial-fees .ktpwp-service-field-block__label{grid-template-columns:1fr;}.ktpwp-service-field-block__label,.ktpwp-service-field-block--recurring .ktpwp-service-field-block__label-text,.ktpwp-service-field-block--recurring .ktpwp-service-field-block__hint,.ktpwp-service-field-block--initial-fees .ktpwp-service-field-block__label-text,.ktpwp-service-field-block--initial-fees .ktpwp-service-field-block__hint{text-align:left;}}'
+				. '</style>';
+		}
+
+		/**
+		 * サービスリスト用の価格/単位表示 HTML を返す。
+		 *
+		 * @param float  $price 価格。
+		 * @param string $unit  単位（エスケープ済み想定）。
+		 * @return string
+		 */
+		private function render_service_price_unit_display( $price, $unit ) {
+			$html = esc_html( KTPWP_Settings::format_money( $price ) );
+
+			if ( $unit !== '' ) {
+				$html .= '<span class="ktp-service-price-unit-sep">/</span>' . $unit;
+			}
+
+			return $html;
+		}
+
+		/**
+		 * サービスリスト用の公開状態バッジ HTML を返す。
+		 *
+		 * @param int      $is_public              公開フラグ（0 or 1）。
+		 * @param int|null $stock                  在庫数。
+		 * @param int      $service_id             サービス ID。
+		 * @param string   $contract_billing_cycle 請求サイクル。
+		 * @return string
+		 */
+		private function render_service_public_badge( $is_public, $stock = null, $service_id = 0, $contract_billing_cycle = 'none' ) {
+			$service_id = absint( $service_id );
+			$is_recurring = class_exists( 'KTPWP_Contract_Billing_Cycle' )
+				&& KTPWP_Contract_Billing_Cycle::is_recurring( $contract_billing_cycle );
+
+			if ( (int) $is_public === 1 && $service_id > 0 && $is_recurring && class_exists( 'KTPWP_Contract_Service_Public_Availability' ) ) {
+				$service = (object) array(
+					'stock'                  => $stock ?? 1,
+					'contract_billing_cycle' => $contract_billing_cycle,
+				);
+				$availability = KTPWP_Contract_Service_Public_Availability::get_public_availability(
+					$service_id,
+					$service,
+					true
+				);
+				$state = (string) ( $availability['availability_state'] ?? 'open' );
+
+				if ( $state === 'sold_out' ) {
+					return '<span class="ktp-service-public-badge ktp-service-public-badge--sold-out" title="' . esc_attr__( '公開ページで完売表示', 'ktpwp' ) . '">'
+						. esc_html__( '完売御礼！', 'ktpwp' )
+						. '</span>';
+				}
+
+				if ( $state === 'pending' ) {
+					return '<span class="ktp-service-public-badge ktp-service-public-badge--pending" title="' . esc_attr__( '公開ページで保留中表示', 'ktpwp' ) . '">'
+						. esc_html__( '保留中', 'ktpwp' )
+						. '</span>';
+				}
+			}
+
+			if ( $stock !== null && class_exists( 'KTPWP_Contract_Service_Public_Availability' )
+				&& KTPWP_Contract_Service_Public_Availability::is_sold_out( (int) $stock )
+				&& (int) $is_public === 1 ) {
+				return '<span class="ktp-service-public-badge ktp-service-public-badge--sold-out" title="' . esc_attr__( '公開ページで完売表示', 'ktpwp' ) . '">'
+					. esc_html__( '完売御礼！', 'ktpwp' )
+					. '</span>';
+			}
+
+			if ( (int) $is_public === 1 ) {
+				return '<span class="ktp-service-public-badge ktp-service-public-badge--public" title="' . esc_attr__( 'サイトに公開中', 'ktpwp' ) . '">'
+					. esc_html__( '公開', 'ktpwp' )
+					. '</span>';
+			}
+
+			return '<span class="ktp-service-public-badge ktp-service-public-badge--private" title="' . esc_attr__( 'サイト非公開', 'ktpwp' ) . '">'
+				. esc_html__( '非公開', 'ktpwp' )
+				. '</span>';
 		}
 	} // End class Kntan_Service_Class
 

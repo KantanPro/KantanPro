@@ -145,11 +145,21 @@ class KTPWP_Image_Processor {
         // ここでは、新しいファイル名形式で最も最近のものを探すロジックが必要になる可能性があります。
         // 簡単のため、ここでは完全な日付一致ではなく、data_idで始まるファイルを探します。
         // より堅牢な実装のためには、日付部分も考慮した検索が必要です。
-        $files = glob( $upload_dir . $data_id . '-*.{jpeg,jpg,png,gif}', GLOB_BRACE );
+        $files = array();
+        foreach ( array( 'jpeg', 'jpg', 'png', 'gif' ) as $ext ) {
+            $matched = glob( $upload_dir . $data_id . '-*.' . $ext );
+            if ( is_array( $matched ) ) {
+                $files = array_merge( $files, $matched );
+            }
+        }
         if ( ! empty( $files ) ) {
-            // 日付でソートして最新のものを取得するなどのロジックを追加可能
-            $latest_file = $files[ count( $files ) - 1 ]; // 最も新しいファイル（名前順）
-            $latest_file_name = basename( $latest_file );
+            usort(
+                $files,
+                static function ( $a, $b ) {
+                    return filemtime( $b ) <=> filemtime( $a );
+                }
+            );
+            $latest_file_name = basename( $files[0] );
             $plugin_url = plugin_dir_url( __DIR__ );
             return $plugin_url . 'images/upload/' . $latest_file_name;
         }

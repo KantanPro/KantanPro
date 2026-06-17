@@ -132,6 +132,289 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 		}
 
 		/**
+		 * 請求項目テーブルが無ければ作成する。
+		 *
+		 * @return bool テーブルが利用可能なら true。
+		 */
+		public function ensure_invoice_items_table() {
+			global $wpdb;
+
+			$table_name = $wpdb->prefix . 'ktp_order_invoice_items';
+			$exists     = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) );
+
+			if ( $exists !== $table_name ) {
+				$this->create_invoice_items_table();
+				$exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) );
+			}
+
+			if ( $exists === $table_name && ! $this->invoice_table_has_column( 'is_provisional' ) ) {
+				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+				$wpdb->query(
+					"ALTER TABLE `{$table_name}` ADD COLUMN `is_provisional` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '1=定期参考（今回請求しない）' AFTER `remarks`"
+				);
+			}
+
+			return $exists === $table_name;
+		}
+
+		/**
+		 * 公開商品の Web お申込み用に請求項目を追加する（KantanBiz 公開商品 inbound と同仕様）。
+		 *
+		 * 定期請求項目（ktp_service_recurring_item）を全行コピーし、
+		 * 定期契約サービスなら初回費用（既定）も remarks「初回のみ」で追加する。
+		 * 定期項目が未登録の場合のみ、サービス名 + price の 1 行にフォールバックする。
+		 *
+		 * @param int    $order_id 案件 ID。
+		 * @param object $service  ktp_service 行。
+		 * @param float  $quantity 数量。
+		 * @return bool
+		 */
+		public function insert_invoice_item_from_public_product( $order_id, $service, $quantity = 1.0 ) {
+			$order_id = (int) $order_id;
+			if ( $order_id <= 0 || ! is_object( $service ) ) {
+				return false;
+			}
+
+			if ( ! $this->ensure_invoice_items_table() ) {
+				error_log( 'KTPWP Public Product: Invoice items table is not available' );
+				return false;
+			}
+
+			$quantity = max( 1.0, (float) $quantity );
+			$unit     = isset( $service->unit ) ? sanitize_text_field( (string) $service->unit ) : '';
+			if ( $unit === '' ) {
+				$unit = __( '式', 'ktpwp' );
+			}
+
+			$default_tax_rate = null;
+			if ( isset( $service->tax_rate ) && $service->tax_rate !== null && $service->tax_rate !== '' && is_numeric( $service->tax_rate ) ) {
+				$default_tax_rate = (float) $service->tax_rate;
+			}
+
+			$service_id = isset( $service->id ) ? (int) $service->id : 0;
+			$resolver   = $this->get_public_product_draft_resolver();
+			$recurring  = $resolver
+				? $resolver->default_recurring_items_for_service( $service_id )
+				: array();
+
+			$sort_order = 0;
+			$saved      = false;
+
+			if ( ! empty( $recurring ) ) {
+				foreach ( $recurring as $item ) {
+					$item_name = isset( $item['item_name'] ) ? sanitize_text_field( (string) $item['item_name'] ) : '';
+					if ( $item_name === '' ) {
+						continue;
+					}
+
+					$price = isset( $item['amount'] ) ? (float) $item['amount'] : 0.0;
+					$tax_rate = isset( $item['tax_rate'] ) && $item['tax_rate'] !== null && $item['tax_rate'] !== ''
+						? (float) $item['tax_rate']
+						: $default_tax_rate;
+					$is_provisional = empty( $item['bill_on_first_invoice'] );
+
+					if ( $this->insert_public_product_invoice_row(
+						$order_id,
+						$item_name,
+						$price,
+						$unit,
+						$quantity,
+						'',
+						$tax_rate,
+						$sort_order,
+						$is_provisional
+					) ) {
+						$saved = true;
+						++$sort_order;
+					}
+				}
+			} else {
+				$product_name = isset( $service->service_name ) ? sanitize_text_field( (string) $service->service_name ) : '';
+				if ( $product_name === '' ) {
+					return false;
+				}
+
+				$price = isset( $service->price ) ? (float) $service->price : 0.0;
+				if ( $this->insert_public_product_invoice_row(
+					$order_id,
+					$product_name,
+					$price,
+					$unit,
+					$quantity,
+					'',
+					$default_tax_rate,
+					$sort_order,
+					false
+				) ) {
+					$saved = true;
+					++$sort_order;
+				}
+			}
+
+			if ( ! $saved ) {
+				return false;
+			}
+
+			if ( $this->service_is_recurring_contract( $service ) && $resolver ) {
+				$initial_fee_remarks = class_exists( 'KTPWP_Contract_Billing' )
+					? KTPWP_Contract_Billing::INITIAL_FEE_REMARKS
+					: '初回のみ';
+				$initial_fees = $resolver->default_initial_fees_for_service( $service_id );
+
+				foreach ( $initial_fees as $fee ) {
+					$fee_name = isset( $fee['fee_name'] ) ? sanitize_text_field( (string) $fee['fee_name'] ) : '';
+					if ( $fee_name === '' ) {
+						continue;
+					}
+
+					$price = isset( $fee['amount'] ) ? (float) $fee['amount'] : 0.0;
+					$tax_rate = isset( $fee['tax_rate'] ) && $fee['tax_rate'] !== null && $fee['tax_rate'] !== ''
+						? (float) $fee['tax_rate']
+						: $default_tax_rate;
+
+					if ( $this->insert_public_product_invoice_row(
+						$order_id,
+						$fee_name,
+						$price,
+						__( '式', 'ktpwp' ),
+						1.0,
+						$initial_fee_remarks,
+						$tax_rate,
+						$sort_order,
+						false
+					) ) {
+						++$sort_order;
+					}
+				}
+			}
+
+			return true;
+		}
+
+		/**
+		 * 公開商品お申込み用の請求明細 1 行を INSERT する。
+		 *
+		 * @param int         $order_id   案件 ID。
+		 * @param string      $name       品名。
+		 * @param float       $price      単価。
+		 * @param string      $unit       単位。
+		 * @param float       $quantity   数量。
+		 * @param string      $remarks    備考。
+		 * @param float|null  $tax_rate   税率。
+		 * @param int         $sort_order 並び順。
+		 * @param bool        $is_provisional 定期参考（今回請求しない）か。
+		 * @return bool
+		 */
+		private function insert_public_product_invoice_row( $order_id, $name, $price, $unit, $quantity, $remarks, $tax_rate, $sort_order, $is_provisional = false ) {
+			global $wpdb;
+
+			$table_name = $wpdb->prefix . 'ktp_order_invoice_items';
+			$is_provisional = (bool) $is_provisional;
+			$row_amount       = $is_provisional
+				? 0
+				: (int) round( (float) $price * (float) $quantity );
+			$data       = array(
+				'order_id'     => (int) $order_id,
+				'product_name' => sanitize_text_field( (string) $name ),
+				'price'        => (float) $price,
+				'quantity'     => (float) $quantity,
+				'unit'         => sanitize_text_field( (string) $unit ),
+				'amount'       => $row_amount,
+				'remarks'      => sanitize_text_field( (string) $remarks ),
+				'sort_order'   => (int) $sort_order,
+				'created_at'   => current_time( 'mysql' ),
+				'updated_at'   => current_time( 'mysql' ),
+			);
+
+			$format = array( '%d', '%s', '%f', '%f', '%s', '%d', '%s', '%d', '%s', '%s' );
+
+			if ( $this->invoice_table_has_column( 'is_provisional' ) ) {
+				$data['is_provisional'] = $is_provisional ? 1 : 0;
+				$format[]               = '%d';
+			}
+
+			if ( $tax_rate !== null ) {
+				$data['tax_rate'] = (float) $tax_rate;
+				$format[]         = '%f';
+			}
+
+			$result = $wpdb->insert( $table_name, $data, $format );
+			if ( $result === false ) {
+				error_log( 'KTPWP Public Product: Failed to insert invoice item - ' . $wpdb->last_error );
+				return false;
+			}
+
+			return true;
+		}
+
+		/**
+		 * @return KTPWP_Order_Contract_Draft_Resolver|null
+		 */
+		private function get_public_product_draft_resolver() {
+			if ( ! class_exists( 'KTPWP_Order_Contract_Draft_Resolver' ) ) {
+				$path = dirname( __FILE__ ) . '/class-ktpwp-order-contract-draft-resolver.php';
+				if ( is_readable( $path ) ) {
+					require_once $path;
+				}
+			}
+
+			if ( ! class_exists( 'KTPWP_Order_Contract_Draft_Resolver' ) ) {
+				return null;
+			}
+
+			return KTPWP_Order_Contract_Draft_Resolver::get_instance();
+		}
+
+		/**
+		 * @param object $service ktp_service 行。
+		 * @return bool
+		 */
+		private function service_is_recurring_contract( $service ) {
+			if ( ! is_object( $service ) ) {
+				return false;
+			}
+
+			if ( ! class_exists( 'KTPWP_Contract_Billing_Cycle' ) ) {
+				$path = dirname( __FILE__ ) . '/class-ktpwp-contract-billing-cycle.php';
+				if ( is_readable( $path ) ) {
+					require_once $path;
+				}
+			}
+
+			if ( ! class_exists( 'KTPWP_Contract_Billing_Cycle' ) ) {
+				return false;
+			}
+
+			return KTPWP_Contract_Billing_Cycle::is_recurring( $service->contract_billing_cycle ?? 'none' );
+		}
+
+		/**
+		 * 請求項目テーブルに指定カラムがあるか。
+		 *
+		 * @param string $column カラム名。
+		 * @return bool
+		 */
+		private function invoice_table_has_column( $column ) {
+			global $wpdb;
+
+			$column     = sanitize_key( (string) $column );
+			$table_name = $wpdb->prefix . 'ktp_order_invoice_items';
+
+			if ( $column === '' ) {
+				return false;
+			}
+
+			$found = $wpdb->get_var(
+				$wpdb->prepare(
+					"SHOW COLUMNS FROM `{$table_name}` LIKE %s",
+					$column
+				)
+			);
+
+			return is_string( $found ) && $found === $column;
+		}
+
+		/**
 		 * Create or update the cost items table.
 		 */
 		public function create_cost_items_table() {
@@ -220,6 +503,12 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 			global $wpdb;
 			$table_name = $wpdb->prefix . 'ktp_order_invoice_items';
 
+			if ( ! $this->ensure_invoice_items_table() ) {
+				return false;
+			}
+
+			$has_is_provisional = $this->invoice_table_has_column( 'is_provisional' );
+
 			// Start transaction
 			$wpdb->query( 'START TRANSACTION' );
 
@@ -260,32 +549,32 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 					// 商品名が空でも既存行(id>0)の場合は、product_nameを空で更新するために処理を続ける
 
 					$data = array(
-						'order_id' => $order_id,
+						'order_id'     => $order_id,
 						'product_name' => $product_name,
-						'price' => $price,
-						'quantity' => $quantity,
-						'unit' => $unit,
-						'amount' => $amount,
-						'tax_rate' => $tax_rate,
-						'remarks' => $remarks,
-						'is_provisional' => $is_provisional,
-						'sort_order' => $sort_order,
-						'updated_at' => current_time( 'mysql' ),
+						'price'        => $price,
+						'quantity'     => $quantity,
+						'unit'         => $unit,
+						'amount'       => $amount,
 					);
+					$format = array( '%d', '%s', '%f', '%f', '%s', '%f' );
 
-					$format = array(
-						'%d', // order_id
-						'%s', // product_name
-						'%f', // price
-						'%f', // quantity
-						'%s', // unit
-						'%f', // amount
-						( $tax_rate !== null ? '%f' : null ), // tax_rate
-						'%s', // remarks
-						'%d', // is_provisional
-						'%d', // sort_order
-						'%s',  // updated_at
-					);
+					if ( $tax_rate !== null ) {
+						$data['tax_rate'] = $tax_rate;
+						$format[]         = '%f';
+					}
+
+					$data['remarks'] = $remarks;
+					$format[]        = '%s';
+
+					if ( $has_is_provisional ) {
+						$data['is_provisional'] = $is_provisional;
+						$format[]               = '%d';
+					}
+
+					$data['sort_order'] = $sort_order;
+					$data['updated_at'] = current_time( 'mysql' );
+					$format[]           = '%d';
+					$format[]           = '%s';
 
 					$used_id = 0;
 					if ( $item_id > 0 ) {
@@ -736,6 +1025,9 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 				case 'supplier_id':
 					$value_changed = (int) $current_value !== (int) $field_value;
 					break;
+				case 'is_provisional':
+					$value_changed = (int) $current_value !== (int) rest_sanitize_boolean( $field_value );
+					break;
 				default:
 					$value_changed = $current_value !== $field_value;
 			}
@@ -827,6 +1119,16 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 						);
 					}
 					break;
+				case 'is_provisional':
+					if ( $item_type !== 'invoice' || ! $this->invoice_table_has_column( 'is_provisional' ) ) {
+						return array(
+							'success' => true,
+							'value_changed' => false,
+						);
+					}
+					$update_data['is_provisional'] = rest_sanitize_boolean( $field_value ) ? 1 : 0;
+					$format[]                      = '%d';
+					break;
 				default:
 					return array(
 						'success' => false,
@@ -852,6 +1154,29 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 					'success' => false,
 					'value_changed' => false,
 				);
+			}
+
+			if ( $item_type === 'invoice' && $field_name === 'is_provisional' && class_exists( 'KTPWP_Invoice_Line_Amount' ) ) {
+				$row = $wpdb->get_row(
+					$wpdb->prepare(
+						"SELECT * FROM `{$table_name}` WHERE id = %d",
+						$item_id
+					),
+					ARRAY_A
+				);
+				if ( is_array( $row ) ) {
+					$new_amount = KTPWP_Invoice_Line_Amount::resolve_billable_amount( $row );
+					$wpdb->update(
+						$table_name,
+						array(
+							'amount'     => $new_amount,
+							'updated_at' => current_time( 'mysql' ),
+						),
+						array( 'id' => $item_id ),
+						array( '%d', '%s' ),
+						array( '%d' )
+					);
+				}
 			}
 
 			return array(

@@ -20,97 +20,7 @@
     height: 24px !important;
 }
 
-/* サブメニューのアイコン表示 */
-#adminmenu .wp-submenu a[href*="ktp-settings"]::before {
-    content: "\f469"; /* WordPress標準アイコン: admin-settings */
-    font-family: dashicons;
-    margin-right: 5px;
-    font-size: 16px;
-    width: 16px;
-    height: 16px;
-    display: inline-block;
-    vertical-align: middle;
-}
-
-#adminmenu .wp-submenu a[href*="ktp-mail-settings"]::before {
-    content: "\f465"; /* WordPress標準アイコン: email */
-    font-family: dashicons;
-    margin-right: 5px;
-    font-size: 16px;
-    width: 16px;
-    height: 16px;
-    display: inline-block;
-    vertical-align: middle;
-}
-
-#adminmenu .wp-submenu a[href*="ktp-design-settings"]::before {
-    content: "\f540"; /* WordPress標準アイコン: art */
-    font-family: dashicons;
-    margin-right: 5px;
-    font-size: 16px;
-    width: 16px;
-    height: 16px;
-    display: inline-block;
-    vertical-align: middle;
-}
-
-#adminmenu .wp-submenu a[href*="ktp-staff"]::before {
-    content: "\f110"; /* WordPress標準アイコン: groups */
-    font-family: dashicons;
-    margin-right: 5px;
-    font-size: 16px;
-    width: 16px;
-    height: 16px;
-    display: inline-block;
-    vertical-align: middle;
-}
-
-#adminmenu .wp-submenu a[href*="ktp-license"]::before {
-    content: "\f160"; /* WordPress標準アイコン: lock */
-    font-family: dashicons;
-    margin-right: 5px;
-    font-size: 16px;
-    width: 16px;
-    height: 16px;
-    display: inline-block;
-    vertical-align: middle;
-}
-
-#adminmenu .wp-submenu a[href*="ktpwp-dummy-data"]::before {
-    content: "\f161"; /* WordPress標準アイコン: database */
-    font-family: dashicons;
-    margin-right: 5px;
-    font-size: 16px;
-    width: 16px;
-    height: 16px;
-    display: inline-block;
-    vertical-align: middle;
-}
-
-#adminmenu .wp-submenu a[href*="ktp-data-tools"]::before {
-    content: "\f155"; /* WordPress標準アイコン: star-filled */
-    font-family: dashicons;
-    margin-right: 5px;
-    font-size: 16px;
-    width: 16px;
-    height: 16px;
-    display: inline-block;
-    vertical-align: middle;
-    color: #ffd700; /* 金色の星 */
-    text-shadow: 0 0 3px rgba(255, 215, 0, 0.6);
-    transform: scale(1.1);
-}
-
-#adminmenu .wp-submenu a[href*="ktp-developer-settings"]::before {
-    content: "\f107"; /* WordPress標準アイコン: admin-tools */
-    font-family: dashicons;
-    margin-right: 5px;
-    font-size: 16px;
-    width: 16px;
-    height: 16px;
-    display: inline-block;
-    vertical-align: middle;
-}
+/* サブメニューは文字タイトルのみ（疑似アイコンは表示しない） */
 
 
 /* メインコンテナのスタイル統一 - 最高優先度 */
@@ -141,6 +51,44 @@
     border-radius: 3px !important;
     border: 1px solid #e5e5e5 !important;
     margin-top: 20px !important;
+}
+
+/* ショートコード一覧（一般設定ページ下部） */
+.ktp-admin-wrap .ktp-shortcodes-reference {
+    margin-top: 30px !important;
+    padding-top: 20px !important;
+    border-top: 1px solid #ddd !important;
+}
+
+.ktp-admin-wrap .ktp-shortcodes-reference h2 {
+    margin-top: 0 !important;
+}
+
+.ktp-admin-wrap .ktp-shortcodes-subheading {
+    font-size: 14px !important;
+    margin: 24px 0 10px !important;
+}
+
+.ktp-admin-wrap .ktp-shortcodes-table {
+    margin-top: 12px !important;
+}
+
+.ktp-admin-wrap .ktp-shortcodes-table code {
+    font-size: 12px !important;
+    white-space: nowrap !important;
+}
+
+.ktp-admin-wrap .ktp-shortcodes-examples {
+    list-style: disc !important;
+    margin: 8px 0 0 20px !important;
+}
+
+.ktp-admin-wrap .ktp-shortcodes-examples li {
+    margin-bottom: 6px !important;
+}
+
+.ktp-admin-wrap .ktp-shortcodes-examples code {
+    font-size: 12px !important;
 }
 
 /* ライセンス情報ボックス */
@@ -490,67 +438,54 @@
     text-align: left !important;
 }
 
-/* KantanProEX 移行案内（管理画面 notice）：文言とボタンを同一行・縦中央 */
-.wrap.ktp-admin-wrap .ktp-ex-migrate-one-line,
-.notice .ktp-ex-migrate-one-line {
-    display: flex !important;
-    flex-direction: row;
-    flex-wrap: nowrap;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 12px;
-    margin: 0;
-    padding: 0;
+/* スタッフ管理: ON/OFF スライドボタン */
+.ktpwp-staff-toggle-form .ktpwp-switch {
+    position: relative;
+    display: inline-block;
+    width: 46px;
+    height: 22px;
+    flex: none;
 }
 
-.wrap.ktp-admin-wrap .ktp-ex-migrate-one-line > span,
-.notice .ktp-ex-migrate-one-line > span {
-    margin: 0;
-    padding: 0;
-    line-height: 1.45;
+.ktpwp-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
 }
 
-.wrap.ktp-admin-wrap .ktp-ex-migrate-one-line .button.button-primary,
-.notice .ktp-ex-migrate-one-line .button.button-primary {
-    flex-shrink: 0;
-    margin: 0 !important;
-    min-width: 170px;
-    min-height: 34px;
-    box-sizing: border-box;
-    padding: 8px 18px !important;
-    vertical-align: middle;
-    float: none !important;
-    display: inline-flex !important;
-    align-items: center;
-    justify-content: center;
-    align-self: center;
-    border-radius: 999px !important;
-    box-shadow: none !important;
-    text-decoration: none !important;
-    font-size: 12px !important;
-    line-height: 1.25 !important;
-    background: #43a047 !important;
-    background-color: #43a047 !important;
-    border-color: #2e7d32 !important;
-    color: #fff !important;
-    text-shadow: none !important;
+.ktpwp-switch-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #cfd8dc;
+    transition: .18s;
+    border-radius: 999px;
 }
 
-.wrap.ktp-admin-wrap .ktp-ex-migrate-one-line .button.button-primary:hover,
-.wrap.ktp-admin-wrap .ktp-ex-migrate-one-line .button.button-primary:focus,
-.notice .ktp-ex-migrate-one-line .button.button-primary:hover,
-.notice .ktp-ex-migrate-one-line .button.button-primary:focus {
-    background: #2e7d32 !important;
-    background-color: #2e7d32 !important;
-    border-color: #1b5e20 !important;
-    color: #fff !important;
-    text-decoration: none !important;
+.ktpwp-switch-slider::before {
+    content: "";
+    position: absolute;
+    height: 18px;
+    width: 18px;
+    left: 2px;
+    top: 2px;
+    background-color: #ffffff;
+    transition: .18s;
+    border-radius: 50%;
 }
 
-@media (max-width: 480px) {
-    .wrap.ktp-admin-wrap .ktp-ex-migrate-one-line,
-    .notice .ktp-ex-migrate-one-line {
-        flex-wrap: wrap;
-        align-items: center;
-    }
+.ktpwp-staff-toggle-form .ktpwp-switch input:checked + .ktpwp-switch-slider {
+    background-color: #0073aa;
+}
+
+.ktpwp-staff-toggle-form .ktpwp-switch input:checked + .ktpwp-switch-slider::before {
+    transform: translateX(24px);
+}
+
+.ktpwp-switch input:focus-visible + .ktpwp-switch-slider {
+    outline: 2px solid rgba(0, 115, 170, 0.35);
+    outline-offset: 2px;
 }

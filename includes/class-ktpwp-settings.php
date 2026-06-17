@@ -118,6 +118,389 @@ class KTPWP_Settings {
     }
 
     /**
+     * 業務画面ショートコードの検索パターン。
+     *
+     * @return string[]
+     */
+    public static function get_ktpwp_shortcode_search_patterns() {
+        return array( '[ktpwp_all_tab]', '[kantanpro_ex]', '[kantanAllTab]' );
+    }
+
+    /**
+     * 固定ページに業務画面ショートコードが設置されているか。
+     *
+     * @param int $page_id 固定ページ ID。
+     * @return bool
+     */
+    public static function page_has_ktpwp_shortcode( $page_id ) {
+        $page_id = (int) $page_id;
+        if ( $page_id <= 0 ) {
+            return false;
+        }
+
+        $post = get_post( $page_id );
+        if ( ! $post || $post->post_type !== 'page' || $post->post_status !== 'publish' ) {
+            return false;
+        }
+
+        $content = (string) $post->post_content;
+        foreach ( self::get_ktpwp_shortcode_search_patterns() as $pattern ) {
+            if ( strpos( $content, $pattern ) !== false ) {
+                return true;
+            }
+        }
+
+        return has_shortcode( $content, 'ktpwp_all_tab' ) || has_shortcode( $content, 'kantanpro_ex' );
+    }
+
+    /**
+     * 業務画面ショートコード設置ページを自動検出する。
+     *
+     * @return int
+     */
+    public static function detect_ktpwp_business_page_id() {
+        static $cached_page_id = null;
+        if ( $cached_page_id !== null ) {
+            return (int) $cached_page_id;
+        }
+
+        global $wpdb;
+        $likes = array();
+        foreach ( self::get_ktpwp_shortcode_search_patterns() as $pattern ) {
+            $likes[] = $wpdb->prepare( 'post_content LIKE %s', '%' . $wpdb->esc_like( $pattern ) . '%' );
+        }
+
+        $like_sql = implode( ' OR ', $likes );
+        $cached_page_id = (int) $wpdb->get_var(
+            "SELECT ID FROM {$wpdb->posts}
+            WHERE post_type = 'page'
+            AND post_status = 'publish'
+            AND ( {$like_sql} )
+            ORDER BY ID ASC
+            LIMIT 1"
+        );
+
+        return (int) $cached_page_id;
+    }
+
+    /**
+     * 業務画面ページ ID を取得する（一般設定 → 自動検出の順）。
+     *
+     * @return int
+     */
+    public static function get_ktpwp_business_page_id() {
+        $options    = get_option( 'ktp_general_settings', array() );
+        $configured = isset( $options['ktp_page_id'] ) ? (int) $options['ktp_page_id'] : 0;
+
+        if ( $configured > 0 && self::page_has_ktpwp_shortcode( $configured ) ) {
+            return $configured;
+        }
+
+        return self::detect_ktpwp_business_page_id();
+    }
+
+    /**
+     * 業務画面ページ URL を取得する。
+     *
+     * @return string
+     */
+    public static function get_ktpwp_business_page_url() {
+        static $cached_url = null;
+        if ( $cached_url !== null ) {
+            return $cached_url;
+        }
+
+        $page_id = self::get_ktpwp_business_page_id();
+        if ( $page_id <= 0 ) {
+            $cached_url = '';
+            return $cached_url;
+        }
+
+        $permalink = get_permalink( $page_id );
+        if ( ! $permalink ) {
+            $cached_url = '';
+            return $cached_url;
+        }
+
+        $cached_url = (string) add_query_arg( array( 'page_id' => $page_id ), $permalink );
+        return $cached_url;
+    }
+
+    /**
+     * 業務画面ショートコード設置ページ一覧を取得する。
+     *
+     * @return array<int, WP_Post>
+     */
+    public static function get_ktpwp_shortcode_pages() {
+        global $wpdb;
+
+        $likes = array();
+        foreach ( self::get_ktpwp_shortcode_search_patterns() as $pattern ) {
+            $likes[] = $wpdb->prepare( 'post_content LIKE %s', '%' . $wpdb->esc_like( $pattern ) . '%' );
+        }
+
+        $like_sql = implode( ' OR ', $likes );
+        $ids      = $wpdb->get_col(
+            "SELECT ID FROM {$wpdb->posts}
+            WHERE post_type = 'page'
+            AND post_status = 'publish'
+            AND ( {$like_sql} )
+            ORDER BY post_title ASC"
+        );
+
+        $pages = array();
+        foreach ( $ids as $id ) {
+            $post = get_post( (int) $id );
+            if ( $post instanceof WP_Post ) {
+                $pages[] = $post;
+            }
+        }
+
+        return $pages;
+    }
+
+    /**
+     * 固定ページ幅の標準値（未設定時のデフォルト）。
+     *
+     * @return string
+     */
+    public static function get_default_page_content_width() {
+        return '1400px';
+    }
+
+    /**
+     * 固定ページのコンテンツ幅プリセット一覧。
+     *
+     * @return array<string, string>
+     */
+    public static function get_page_content_width_presets() {
+        return array(
+            ''       => __( 'デフォルト（テーマの幅）', 'ktpwp' ),
+            '960px'  => __( '狭い（960px）', 'ktpwp' ),
+            '1200px' => __( 'やや狭い（1200px）', 'ktpwp' ),
+            '1400px' => __( '標準（1400px）', 'ktpwp' ),
+            '1600px' => __( 'より広い（1600px）', 'ktpwp' ),
+            '1920px' => __( '最大（1920px）', 'ktpwp' ),
+            'custom' => __( 'カスタム', 'ktpwp' ),
+        );
+    }
+
+    /**
+     * ショートコード設置済み固定ページ向けの標準幅マップを返す。
+     *
+     * @return array<int, string>
+     */
+    public static function build_default_page_content_widths() {
+        $default_width = self::get_default_page_content_width();
+        $widths        = array();
+
+        foreach ( self::get_ktpwp_shortcode_pages() as $page ) {
+            $page_id = (int) $page->ID;
+            if ( $page_id > 0 ) {
+                $widths[ $page_id ] = $default_width;
+            }
+        }
+
+        return $widths;
+    }
+
+    /**
+     * 固定ページ幅の標準値をデザイン設定に書き込む（インストール時・未設定ページの補完）。
+     *
+     * @return void
+     */
+    public static function seed_default_page_content_widths() {
+        $default_widths = self::build_default_page_content_widths();
+        if ( empty( $default_widths ) ) {
+            return;
+        }
+
+        $design_option_name = 'ktp_design_settings';
+        $design             = get_option( $design_option_name, array() );
+        if ( ! is_array( $design ) ) {
+            $design = array();
+        }
+
+        $widths = isset( $design['page_content_widths'] ) && is_array( $design['page_content_widths'] )
+            ? $design['page_content_widths']
+            : array();
+
+        $changed = false;
+        if ( empty( $widths ) ) {
+            $widths  = $default_widths;
+            $changed = true;
+        } else {
+            foreach ( $default_widths as $page_id => $width ) {
+                if ( ! array_key_exists( $page_id, $widths ) ) {
+                    $widths[ $page_id ] = $width;
+                    $changed            = true;
+                }
+            }
+        }
+
+        if ( ! $changed ) {
+            return;
+        }
+
+        $design['page_content_widths'] = $widths;
+        update_option( $design_option_name, $design );
+    }
+
+    /**
+     * ページ幅の CSS 値をサニタイズする。
+     *
+     * @param string $value 入力値。
+     * @return string 空文字または CSS 長さ（例: 1400px）。
+     */
+    public static function sanitize_page_content_width_value( $value ) {
+        $value = trim( (string) $value );
+        if ( $value === '' || $value === 'custom' ) {
+            return '';
+        }
+
+        if ( preg_match( '/^\d+(\.\d+)?(px|rem|%)$/i', $value ) ) {
+            return strtolower( $value );
+        }
+
+        if ( preg_match( '/^\d+(\.\d+)?$/', $value ) ) {
+            return $value . 'px';
+        }
+
+        return '';
+    }
+
+    /**
+     * 固定ページに設定されたコンテンツ幅を取得する。
+     *
+     * @param int $page_id 固定ページ ID。
+     * @return string 空文字または CSS 長さ。
+     */
+    public static function get_page_content_width_for_page( $page_id ) {
+        $page_id = (int) $page_id;
+        if ( $page_id <= 0 || ! self::page_has_ktpwp_shortcode( $page_id ) ) {
+            return '';
+        }
+
+        $design_options = self::get_design_settings();
+        $widths         = isset( $design_options['page_content_widths'] ) && is_array( $design_options['page_content_widths'] )
+            ? $design_options['page_content_widths']
+            : array();
+
+        if ( ! isset( $widths[ $page_id ] ) ) {
+            return self::get_default_page_content_width();
+        }
+
+        $saved = trim( (string) $widths[ $page_id ] );
+        if ( $saved === '' ) {
+            return '';
+        }
+
+        return self::sanitize_page_content_width_value( $saved );
+    }
+
+    /**
+     * 表示中の KantanPro 固定ページ ID を取得する。
+     *
+     * @return int
+     */
+    public static function get_current_ktpwp_page_id() {
+        $page_id = (int) get_queried_object_id();
+        if ( $page_id <= 0 && isset( $_GET['page_id'] ) ) {
+            $page_id = absint( wp_unslash( $_GET['page_id'] ) );
+        }
+
+        return $page_id;
+    }
+
+    /**
+     * ページ幅ラッパー用の HTML 属性文字列を返す。
+     *
+     * @param int      $page_id       固定ページ ID（0 のときは表示中ページ）。
+     * @param string[] $extra_classes 追加 CSS クラス。
+     * @return string
+     */
+    public static function get_page_layout_wrapper_attributes( $page_id = 0, $extra_classes = array() ) {
+        $page_id = (int) $page_id;
+        if ( $page_id <= 0 ) {
+            $page_id = self::get_current_ktpwp_page_id();
+        }
+
+        $classes = array( 'ktpwp-page-layout' );
+        if ( is_array( $extra_classes ) ) {
+            foreach ( $extra_classes as $class_name ) {
+                $class_name = sanitize_html_class( (string) $class_name );
+                if ( $class_name !== '' ) {
+                    $classes[] = $class_name;
+                }
+            }
+        }
+        $attrs   = array(
+            'class' => implode( ' ', $classes ),
+        );
+
+        $width = self::get_page_content_width_for_page( $page_id );
+        if ( $width !== '' ) {
+            $attrs['class'] .= ' ktpwp-page-layout--sized';
+            $attrs['data-ktp-page-id'] = (string) $page_id;
+            $attrs['style']            = 'max-width:' . $width . ';margin-left:auto;margin-right:auto;width:100%;box-sizing:border-box;';
+        }
+
+        $html = '';
+        foreach ( $attrs as $name => $value ) {
+            $html .= ' ' . $name . '="' . esc_attr( $value ) . '"';
+        }
+
+        return ltrim( $html );
+    }
+
+    /**
+     * 固定ページごとのコンテンツ幅 CSS を生成する。
+     *
+     * @param int    $page_id 固定ページ ID。
+     * @param string $width   CSS 長さ。
+     * @return string
+     */
+    private static function build_page_content_width_css( $page_id, $width ) {
+        $page_id = (int) $page_id;
+        $width   = self::sanitize_page_content_width_value( $width );
+        if ( $page_id <= 0 || $width === '' ) {
+            return '';
+        }
+
+        $selector = 'body.page-id-' . $page_id;
+        $targets  = array(
+            $selector . ' #container .content .main',
+            $selector . ' #content .main',
+            $selector . ' .entry-content',
+            $selector . ' .article',
+            $selector . ' #content-in.wrap',
+            $selector . ' .ktpwp-page-layout',
+            $selector . ' .ktpwp-shortcode-container',
+            $selector . ' .ktp-before-header-banner',
+            $selector . ' .ktp_header',
+            $selector . ' .tabs.ktp_plugin_container',
+        );
+
+        return implode( ',', $targets ) . '{'
+            . 'max-width:' . $width . ' !important;'
+            . 'margin-left:auto !important;'
+            . 'margin-right:auto !important;'
+            . 'width:100% !important;'
+            . 'box-sizing:border-box !important;'
+            . '}';
+    }
+
+    /**
+     * 一般設定で指定された業務画面ページ ID（0 は未指定）。
+     *
+     * @return int
+     */
+    public static function get_configured_ktpwp_business_page_id() {
+        $options = get_option( 'ktp_general_settings', array() );
+        return isset( $options['ktp_page_id'] ) ? (int) $options['ktp_page_id'] : 0;
+    }
+
+    /**
      * 請求書下部に印字する振込先口座ブロック（HTML）
      *
      * @return string 未入力のときは空文字
@@ -258,23 +641,73 @@ class KTPWP_Settings {
 
     /**
      * Format a numeric amount using the selected currency.
+     * 整数値は小数点以下を表示しない（50000.00 → 50,000円）。
      *
      * @param float|int|string $amount Amount value.
      * @return string
      */
     public static function format_money( $amount ) {
-        $config = self::get_currency_config();
-        $number = is_numeric( $amount ) ? (float) $amount : 0.0;
-        $decimals = isset( $config['decimals'] ) ? (int) $config['decimals'] : 0;
-        $formatted = number_format( $number, $decimals );
-        $symbol = isset( $config['symbol'] ) ? (string) $config['symbol'] : '';
+        $config   = self::get_currency_config();
+        $symbol   = isset( $config['symbol'] ) ? (string) $config['symbol'] : '';
         $position = isset( $config['position'] ) ? (string) $config['position'] : 'after';
+        $plain    = self::format_decimal_trimmed( $amount );
+
+        if ( $plain === '' ) {
+            $plain = '0';
+        }
+
+        $parts    = explode( '.', $plain );
+        $parts[0] = number_format( (float) $parts[0], 0, '.', ',' );
+        $formatted = isset( $parts[1] ) ? $parts[0] . '.' . $parts[1] : $parts[0];
 
         if ( $position === 'before' ) {
             return $symbol . $formatted;
         }
 
         return $formatted . $symbol;
+    }
+
+    /**
+     * 末尾の不要な 0 を省略して数値を表示する（税率・数量など）。
+     *
+     * @param float|int|string|null $value        数値。
+     * @param int                   $max_decimals 最大小数桁。
+     * @return string
+     */
+    public static function format_decimal_trimmed( $value, $max_decimals = 4 ) {
+        if ( $value === null || $value === '' ) {
+            return '';
+        }
+
+        if ( ! is_numeric( $value ) ) {
+            return (string) $value;
+        }
+
+        $number    = (float) $value;
+        $formatted = rtrim( rtrim( number_format( $number, $max_decimals, '.', '' ), '0' ), '.' );
+
+        return $formatted === '' ? '0' : $formatted;
+    }
+
+    /**
+     * フォーム input の value 属性用（DB の DECIMAL 由来の .00 を省略）。
+     *
+     * @param float|int|string|null $value        数値。
+     * @param int                   $max_decimals 最大小数桁。
+     * @return string
+     */
+    public static function format_number_field_value( $value, $max_decimals = 4 ) {
+        return self::format_decimal_trimmed( $value, $max_decimals );
+    }
+
+    /**
+     * 通貨記号付きで金額を表示する（{@see format_money} のエイリアス）。
+     *
+     * @param float|int|string $amount 金額。
+     * @return string
+     */
+    public static function format_money_trimmed( $amount ) {
+        return self::format_money( $amount );
     }
 
     /**
@@ -315,7 +748,9 @@ class KTPWP_Settings {
             'tab_border_color' => '#B7CBFB',
             'odd_row_color' => '#E7EEFD',
             'even_row_color' => '#FFFFFF',
+            'public_product_card_bg_color' => '#e2e8f0',
             'header_bg_image' => 'images/default/header_bg_image.png',
+            'page_content_widths' => array(),
             'custom_css' => '',
         );
 
@@ -354,14 +789,16 @@ class KTPWP_Settings {
      */
     private function __construct() {
         add_action( 'admin_menu', array( $this, 'add_plugin_page' ) );
+        add_action( 'admin_menu', array( $this, 'register_developer_submenu' ), 100 );
         add_action( 'admin_init', array( $this, 'page_init' ) );
         add_action( 'rest_api_init', array( $this, 'register_central_banner_rest_route' ) );
         add_action( 'phpmailer_init', array( $this, 'setup_smtp_settings' ) );
         add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_styles' ) );
         add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_media_scripts' ) );
-        add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_license_manager_assets' ) );
         add_action( 'wp_head', array( $this, 'output_custom_styles' ) );
         add_action( 'admin_head', array( $this, 'output_custom_styles' ) );
+        add_action( 'wp_head', array( $this, 'output_page_content_width_styles' ), 20 );
+        add_filter( 'body_class', array( $this, 'filter_body_class_for_page_content_width' ) );
         add_action( 'admin_init', array( $this, 'handle_default_settings_actions' ) );
 
 		// データエクスポート/リストア用ハンドラ
@@ -370,6 +807,7 @@ class KTPWP_Settings {
 
         // ロゴマークのデフォルト値チェック
         add_action( 'init', array( $this, 'ensure_logo_default_value' ) );
+        add_action( 'init', array( __CLASS__, 'seed_default_page_content_widths' ), 25 );
 
         // ユーザーアクティビティの追跡
         add_action( 'wp_login', array( $this, 'record_user_last_login' ), 10, 2 );
@@ -423,31 +861,6 @@ class KTPWP_Settings {
                 array(),
                 '1.0.1'
             );
-        }
-    }
-
-    /**
-     * Enqueue license manager scripts and styles
-     *
-     * @since 1.0.0
-     * @param string $hook Current admin page hook
-     */
-    public function enqueue_license_manager_assets( $hook ) {
-        // License pageでのみ読み込み
-        if ( $hook === 'toplevel_page_ktp-license' ) {
-            wp_enqueue_script( 'ktp-license-manager', plugin_dir_url( __DIR__ ) . 'js/ktp-license-manager.js', array( 'jquery' ), KANTANPRO_PLUGIN_VERSION, true );
-            
-            // AJAX用のデータをローカライズ
-            wp_localize_script( 'ktp-license-manager', 'ktp_license_ajax', array(
-                'ajaxurl' => admin_url( 'admin-ajax.php' ),
-                'nonce'   => wp_create_nonce( 'ktp_license_nonce' ),
-                'strings' => array(
-                    'verifying' => __( '認証中...', 'ktpwp' ),
-                    'success'   => __( 'ライセンスが正常に認証されました。', 'ktpwp' ),
-                    'error'     => __( 'ライセンスの認証に失敗しました。', 'ktpwp' ),
-                    'network_error' => __( '通信エラーが発生しました。', 'ktpwp' )
-                )
-            ) );
         }
     }
 
@@ -506,6 +919,11 @@ class KTPWP_Settings {
                 $general_updated = true;
             }
 
+            if ( ! array_key_exists( 'ktp_page_id', $existing_general ) ) {
+                $existing_general['ktp_page_id'] = 0;
+                $general_updated = true;
+            }
+
             if ( $general_updated ) {
                 update_option( $general_option_name, $existing_general );
             }
@@ -519,7 +937,9 @@ class KTPWP_Settings {
             'tab_border_color' => '#B7CBFB',
             'odd_row_color' => '#E7EEFD',
             'even_row_color' => '#FFFFFF',
+            'public_product_card_bg_color' => '#e2e8f0',
             'header_bg_image' => 'images/default/header_bg_image.png',
+            'page_content_widths' => self::build_default_page_content_widths(),
             'custom_css' => '',
         );
 
@@ -556,8 +976,12 @@ class KTPWP_Settings {
             }
         }
 
+        self::seed_default_page_content_widths();
+
         // ロゴマークのデフォルト値を設定
-        $default_logo = plugins_url( 'images/default/icon.png', KANTANPRO_PLUGIN_FILE );
+        $default_logo = function_exists( 'ktpwp_plugin_asset_url' )
+            ? ktpwp_plugin_asset_url( 'images/default/icon.png' )
+            : plugins_url( 'images/default/icon.png', KANTANPRO_PLUGIN_FILE );
         if ( false === get_option( 'ktp_logo_image' ) ) {
             add_option( 'ktp_logo_image', $default_logo );
         }
@@ -786,9 +1210,7 @@ class KTPWP_Settings {
             array( $this, 'create_staff_page' ) // 表示を処理する関数
         );
 
-        // 無料版ではライセンス設定は廃止（KantanProEX へ移行）
-
-        // サブメニュー - ダミーデータ作成（ライセンス設定の直下）
+        // サブメニュー - ダミーデータ作成
         add_submenu_page(
             'ktp-settings', // 親メニューのスラッグ
             __( 'ダミーデータ作成', 'ktpwp' ), // ページタイトル
@@ -808,20 +1230,79 @@ class KTPWP_Settings {
 			array( $this, 'create_data_tools_page' ) // 表示を処理する関数
 		);
 
-        // サブメニュー - 開発者設定（開発モード時のみ登録）
-        if ( $this->is_developer_settings_enabled() ) {
-            add_submenu_page(
-                'ktp-settings', // 親メニューのスラッグ
-                __( '開発者設定', 'ktpwp' ), // ページタイトル
-                __( '開発者設定', 'ktpwp' ), // メニュータイトル
-                'manage_options', // 権限
-                'ktp-developer-settings', // メニューのスラッグ
-                array( $this, 'create_developer_page' ) // 表示を処理する関数
-            );
+		// サブメニュー - FileMaker 版データ取り込み（顧客 CSV/TSV）
+		add_submenu_page(
+			'ktp-settings',
+			__( 'FileMaker版データ取り込み', 'ktpwp' ),
+			__( 'FileMaker版データ取り込み', 'ktpwp' ),
+			'manage_options',
+			'ktp-fm-import',
+			array( $this, 'create_fm_import_page' )
+		);
+    }
+
+    /**
+     * 開発者設定はサブメニュー最下部に表示（帳票表示設定などより後に登録）
+     *
+     * @since 1.0.0
+     */
+    public function register_developer_submenu() {
+        if ( ! $this->is_developer_settings_enabled() ) {
+            return;
         }
 
-
+        add_submenu_page(
+            'ktp-settings',
+            __( '開発者設定', 'ktpwp' ),
+            __( '開発者設定', 'ktpwp' ),
+            'manage_options',
+            'ktp-developer-settings',
+            array( $this, 'create_developer_page' )
+        );
     }
+
+	/**
+	 * FileMaker 版データ取り込み（クラス未読込時の致命エラーを避けるラッパー）
+	 *
+	 * @return void
+	 */
+	public function create_fm_import_page() {
+		try {
+			if ( ! class_exists( 'KTPWP_FM_Import', false ) ) {
+				$fm_path = ( defined( 'MY_PLUGIN_PATH' ) && is_string( MY_PLUGIN_PATH ) && MY_PLUGIN_PATH !== '' )
+					? trailingslashit( MY_PLUGIN_PATH ) . 'includes/class-ktpwp-fm-import.php'
+					: dirname( __DIR__ ) . '/includes/class-ktpwp-fm-import.php';
+				if ( is_readable( $fm_path ) ) {
+					require_once $fm_path;
+				}
+			}
+			if ( ! class_exists( 'KTPWP_FM_Import', false ) ) {
+				if ( ! current_user_can( 'manage_options' ) ) {
+					wp_die( esc_html__( 'このページにアクセスする権限がありません。', 'ktpwp' ) );
+				}
+				echo '<div class="wrap ktp-admin-wrap"><h1>' . esc_html__( 'FileMaker版データ取り込み', 'ktpwp' ) . '</h1>';
+				echo '<div class="notice notice-error"><p>' . esc_html__( '取り込みモジュール（includes/class-ktpwp-fm-import.php）を読み込めません。プラグインを再アップロードするか、コンテナ／ボリュームに最新ファイルが載っているか確認してください。', 'ktpwp' ) . '</p></div></div>';
+				return;
+			}
+			KTPWP_FM_Import::bootstrap();
+			KTPWP_FM_Import::render_admin_page();
+		} catch ( \Throwable $e ) {
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG && defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG ) {
+				error_log( 'KTPWP create_fm_import_page: ' . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine() );
+			}
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_die( esc_html__( 'このページにアクセスする権限がありません。', 'ktpwp' ) );
+			}
+			echo '<div class="wrap ktp-admin-wrap"><h1>' . esc_html__( 'FileMaker版データ取り込み', 'ktpwp' ) . '</h1>';
+			echo '<div class="notice notice-error"><p>' . esc_html__( 'この画面の表示中にエラーが発生しました。', 'ktpwp' ) . '</p>';
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG && current_user_can( 'manage_options' ) ) {
+				echo '<pre style="white-space:pre-wrap;max-height:320px;overflow:auto;background:#fff;padding:12px;border:1px solid #ccc;">';
+				echo esc_html( $e->getMessage() . "\n" . $e->getFile() . ':' . $e->getLine() . "\n\n" . $e->getTraceAsString() );
+				echo '</pre>';
+			}
+			echo '</div></div>';
+		}
+	}
 
 	/**
 	 * バックアップページ（エクスポート/インポート）
@@ -832,7 +1313,71 @@ class KTPWP_Settings {
 		}
 
 		echo '<div class="wrap ktp-admin-wrap">';
-		echo $this->render_feature_moved_to_ex_message( __( 'バックアップ機能', 'ktpwp' ) );
+		if ( function_exists( 'ktpwp_is_feature_enabled' ) && ! ktpwp_is_feature_enabled( 'backup' ) ) {
+			echo class_exists( 'KTPWP_Edition' )
+				? KTPWP_Edition::get_admin_moved_to_ex_message_html( __( 'バックアップ機能', 'ktpwp' ) )
+				: '';
+			echo '</div>';
+			return;
+		}
+
+		$notice = '';
+		if ( isset( $_GET['ktp_action'] ) ) {
+			$action = sanitize_text_field( $_GET['ktp_action'] );
+			if ( $action === 'restore_success' ) {
+				$notice = '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'リストアが完了しました。', 'ktpwp' ) . '</p></div>';
+			} elseif ( $action === 'restore_failed' ) {
+				$notice = '<div class="notice notice-error is-dismissible"><p>' . esc_html__( 'リストアに失敗しました。ファイル形式をご確認ください。', 'ktpwp' ) . '</p></div>';
+			}
+		}
+
+		echo '<div class="wrap ktp-admin-wrap">';
+		echo '<h1><span class="dashicons dashicons-database-export" style="margin-right: 10px; font-size: 24px; width: 24px; height: 24px;"></span>' . esc_html__( 'バックアップ', 'ktpwp' ) . '</h1>';
+		if ( $notice ) {
+			echo $notice; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		}
+
+		// バックアップページ用JavaScriptを読み込み
+		wp_enqueue_script( 'ktp-backup-page', plugin_dir_url( __FILE__ ) . '../js/ktp-backup-page.js', array(), KANTANPRO_PLUGIN_VERSION, true );
+
+		// エクスポート
+		echo '<div class="ktp-settings-section">';
+		echo '<h2>' . esc_html__( 'エクスポート', 'ktpwp' ) . '</h2>';
+		echo '<p>' . esc_html__( 'KantanProの設定とデータを1つのファイルに出力します。', 'ktpwp' ) . '</p>';
+		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
+		echo '<input type="hidden" name="action" value="ktpwp_export_data" />';
+		echo wp_nonce_field( 'ktpwp_export_data', 'ktpwp_export_nonce', true, false );
+		echo '<p>';
+		echo '<label for="ktp_export_format">' . esc_html__( '形式', 'ktpwp' ) . ':</label> ';
+		echo '<select id="ktp_export_format" name="format">';
+		echo '<option value="json" selected>JSON</option>';
+		echo '<option value="csv">CSV</option>';
+		echo '</select>';
+		echo '</p>';
+		echo '<p><button type="submit" class="button button-primary">' . esc_html__( 'エクスポート実行', 'ktpwp' ) . '</button></p>';
+		echo '</form>';
+		echo '</div>';
+
+		// リストア
+		echo '<div class="ktp-settings-section">';
+		echo '<h2>' . esc_html__( 'リストア', 'ktpwp' ) . '</h2>';
+		echo '<p>' . esc_html__( 'エクスポートしたJSON/CSVファイルを選択してリストアします。', 'ktpwp' ) . '</p>';
+		echo '<div class="notice notice-warning"><p><strong>' . esc_html__( '注意:', 'ktpwp' ) . '</strong> ' . esc_html__( 'リストアを実行すると、現在のデータは全て削除されます。', 'ktpwp' ) . '</p></div>';
+		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" enctype="multipart/form-data" id="ktp-restore-form">';
+		echo '<input type="hidden" name="action" value="ktpwp_restore_data" />';
+		echo wp_nonce_field( 'ktpwp_restore_data', 'ktpwp_restore_nonce', true, false );
+		echo '<p>';
+		echo '<label for="ktp_import_format">' . esc_html__( '形式', 'ktpwp' ) . ':</label> ';
+		echo '<select id="ktp_import_format" name="format">';
+		echo '<option value="json" selected>JSON</option>';
+		echo '<option value="csv">CSV</option>';
+		echo '</select>';
+		echo '</p>';
+		echo '<input type="file" name="ktp_import_file" accept="application/json,text/csv,.csv" required /> ';
+		echo '<p><button type="submit" class="button button-primary" id="ktp-restore-button">' . esc_html__( 'リストア実行', 'ktpwp' ) . '</button></p>';
+		echo '</form>';
+		echo '</div>';
+
 		echo '</div>';
 	}
 
@@ -840,7 +1385,10 @@ class KTPWP_Settings {
 	 * エクスポート実行
 	 */
 	public function handle_export_data() {
-		$this->deny_feature_and_redirect_to_ex();
+		if ( function_exists( 'ktpwp_is_feature_enabled' ) && ! ktpwp_is_feature_enabled( 'backup' ) ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=ktp-data-tools' ) );
+			exit;
+		}
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( __( '権限がありません。', 'ktpwp' ) );
 		}
@@ -928,7 +1476,10 @@ class KTPWP_Settings {
 	 * リストア実行
 	 */
 	public function handle_restore_data() {
-		$this->deny_feature_and_redirect_to_ex();
+		if ( function_exists( 'ktpwp_is_feature_enabled' ) && ! ktpwp_is_feature_enabled( 'backup' ) ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=ktp-data-tools' ) );
+			exit;
+		}
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( __( '権限がありません。', 'ktpwp' ) );
 		}
@@ -974,33 +1525,6 @@ class KTPWP_Settings {
 
 		wp_safe_redirect( add_query_arg( 'ktp_action', 'restore_success', $redirect ) );
 		exit;
-	}
-
-	/**
-	 * バックアップ機能のライセンス購入を促すメッセージを表示
-	 *
-	 * @return string HTML content
-	 */
-	private function render_backup_license_required_message() {
-		$dummy_backup_url = esc_url( plugins_url( '../images/default/dummy_backup.png', __FILE__ ) );
-		
-		// ダミー画像が存在しない場合は、プレースホルダーを使用
-		$image_url = file_exists( plugin_dir_path( __FILE__ ) . '../images/default/dummy_backup.png' ) 
-			? $dummy_backup_url 
-			: 'data:image/svg+xml;base64,' . base64_encode( '<svg width="800" height="400" xmlns="http://www.w3.org/2000/svg"><rect width="800" height="400" fill="#f0f0f0"/><text x="400" y="200" text-anchor="middle" font-family="Arial" font-size="24" fill="#999">バックアップ機能</text></svg>' );
-		
-		return '<div style="position:relative;max-width:800px;margin:30px auto;">
-			<img src="' . $image_url . '" alt="' . esc_attr__( 'Backup Feature', 'ktpwp' ) . '" style="width:100%;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.1);filter:blur(3px);opacity:0.7;">
-			<div style="position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,0.3);border-radius:8px;display:flex;flex-direction:column;justify-content:flex-start;align-items:center;text-align:center;padding:20px;">
-				<h3 style="margin:50px 0 15px;color:#d32f2f;font-size:24px;text-shadow:0 1px 2px rgba(255,255,255,0.8);">💾 大切なデータを守るバックアップ機能</h3>
-				<p style="margin-bottom:15px;font-size:18px;line-height:1.6;color:#333;text-shadow:0 1px 2px rgba(255,255,255,0.8);font-weight:bold;">「もしも」の時に備えて、今すぐデータをバックアップしませんか？</p>
-				<p style="margin-bottom:20px;font-size:16px;line-height:1.6;color:#555;text-shadow:0 1px 2px rgba(255,255,255,0.8);">サーバー障害・誤操作・データ消失...そんなリスクから大切な受注データ・顧客情報を完全に保護。ワンクリックで全データを安全にバックアップ・復元できる安心機能です。</p>
-				<div style="margin-bottom:20px;">
-					<a href="https://www.kantanpro.com/klm" target="_blank" class="button button-primary" style="padding:15px 30px;font-size:18px;text-decoration:none;background:#d32f2f;color:#fff;border-radius:8px;display:inline-block;font-weight:bold;box-shadow:0 4px 12px rgba(211,47,47,0.3);transition:all 0.3s ease;">🛡️ 今すぐデータを守る</a>
-				</div>
-				<p style="font-size:16px;font-weight:bold;color:#0073aa;line-height:1.5;margin-top:10px;">✨ 購入後は<a href="' . esc_url( admin_url( 'admin.php?page=ktp-license' ) ) . '" style="color:#0073aa;text-decoration:underline;">ライセンス設定</a>でキーを入力するだけ！すぐに使えます</p>
-			</div>
-		</div>';
 	}
 
 	/**
@@ -1217,459 +1741,171 @@ class KTPWP_Settings {
             wp_die( __( 'この設定ページにアクセスする権限がありません。', 'ktpwp' ) );
         }
 
-        // セッション開始（安全な方法で）
-        ktpwp_safe_session_start();
-
-        // 認証解除機能は廃止（パスワード方式撤廃のため）
-
-        // 設定エクスポートの処理
-        if ( isset( $_POST['ktpwp_export_settings'] ) && wp_verify_nonce( $_POST['ktpwp_export_nonce'], 'ktpwp_export' ) ) {
-            $this->export_donation_settings();
-        }
-
-        // 設定インポートの処理
-        if ( isset( $_POST['ktpwp_import_settings'] ) && wp_verify_nonce( $_POST['ktpwp_import_nonce'], 'ktpwp_import' ) ) {
-            $this->import_donation_settings();
-        }
-
-        // 開発モードが無効な場合は表示しない（二重ガード）
         if ( ! $this->is_developer_settings_enabled() ) {
-            wp_die( esc_html__( 'この設定ページは開発モードでのみアクセスできます。', 'ktpwp' ) );
+            wp_die( esc_html__( 'この設定ページは開発環境でのみアクセスできます。', 'ktpwp' ) );
         }
 
-        // 現在のタブを取得
-        $current_tab = isset( $_GET['tab'] ) ? sanitize_text_field( $_GET['tab'] ) : 'payment';
+        if ( isset( $_POST['ktp_developer_edition_override'] ) && check_admin_referer( 'ktp_developer_edition_settings', 'ktp_developer_edition_nonce' ) ) {
+            $override = sanitize_text_field( wp_unslash( $_POST['ktp_developer_edition_override'] ) );
+            if ( $override === '' || ( class_exists( 'KTPWP_Edition' ) && in_array( $override, KTPWP_Edition::get_valid_slugs(), true ) ) ) {
+                update_option( 'ktp_developer_edition_override', $override, false );
+                echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'エディション設定を保存しました。', 'ktpwp' ) . '</p></div>';
+            } else {
+                echo '<div class="notice notice-error is-dismissible"><p>' . esc_html__( '無効なエディションが指定されました。', 'ktpwp' ) . '</p></div>';
+            }
+        }
 
         ?>
         <div class="wrap ktp-admin-wrap">
             <h1><span class="dashicons dashicons-admin-tools" style="margin-right: 10px; font-size: 24px; width: 24px; height: 24px;"></span><?php echo esc_html__( '開発者設定', 'ktpwp' ); ?></h1>
-
-            <!-- 認証ボタン/解除ボタンは不要になりました -->
-
-            <?php $this->display_developer_tabs( $current_tab ); ?>
-
             <div class="ktp-settings-container">
-                <?php if ( $current_tab === 'payment' ) : ?>
-                    <!-- 決済設定 -->
-                    <div class="ktp-settings-section">
-                        <form method="post" action="options.php">
-                        <?php
-                        settings_fields( 'ktp_donation_group' );
-                        do_settings_sections( 'ktp-payment-settings' );
-                        submit_button();
-                        ?>
-                        </form>
-                    </div>
-                <?php elseif ( $current_tab === 'terms' ) : ?>
-                    <!-- 利用規約管理 -->
-                    <div class="ktp-settings-section">
-                        <?php
-                        // 利用規約管理クラスが存在する場合は委譲
-                        if ( class_exists( 'KTPWP_Terms_Of_Service' ) ) {
-                            $terms_service = KTPWP_Terms_Of_Service::get_instance();
-                            $terms_service->create_terms_page();
-                        } else {
-                            // フォールバック
-                            echo '<div class="ktp-settings-container"><div class="ktp-settings-section"><p>' . esc_html__( '利用規約管理機能が利用できません。', 'ktpwp' ) . '</p></div></div>';
-                        } ?>
-                    </div>
-                <?php elseif ( $current_tab === 'updates' ) : ?>
-                    <!-- 更新通知設定 -->
-                    <div class="ktp-settings-section">
-                        <form method="post" action="options.php">
-                        <?php
-                        settings_fields( 'ktp_update_notification_group' );
-                        do_settings_sections( 'ktp-developer-settings' );
-                        submit_button();
-                        ?>
-                        </form>
-                    </div>
-                <?php elseif ( $current_tab === 'development' ) : ?>
-                    <!-- 開発環境設定 -->
-                    <div class="ktp-settings-section">
-                        <?php $this->render_development_environment_tab(); ?>
-                    </div>
-                <?php elseif ( $current_tab === 'banner' ) : ?>
-                    <!-- 中央バナー設定 -->
-                    <div class="ktp-settings-section">
-                        <form method="post" action="options.php">
-                        <?php
-                        settings_fields( 'ktp_central_banner_group' );
-                        do_settings_sections( 'ktp-central-banner-settings' );
-                        submit_button();
-                        ?>
-                        </form>
-                    </div>
-                <?php endif; ?>
+                <?php $this->render_developer_edition_settings(); ?>
+                <?php $this->render_developer_system_info(); ?>
             </div>
         </div>
         <?php
     }
 
     /**
-     * 開発者設定タブを表示
+     * 開発者設定: エディション・スタッフ上限（ローカル検証用）
+     *
+     * @return void
      */
-    private function display_developer_tabs( $current_tab ) {
-        $tabs = array(
-            'payment' => array(
-                'name' => __( '決済設定', 'ktpwp' ),
-                'icon' => 'dashicons-money-alt',
-            ),
-            'terms' => array(
-                'name' => __( '利用規約管理', 'ktpwp' ),
-                'icon' => 'dashicons-text-page',
-            ),
-            'updates' => array(
-                'name' => __( '更新通知設定', 'ktpwp' ),
-                'icon' => 'dashicons-update',
-            ),
-            'development' => array(
-                'name' => __( '開発環境', 'ktpwp' ),
-                'icon' => 'dashicons-admin-tools',
-            ),
-            'banner' => array(
-                'name' => __( '中央バナー設定', 'ktpwp' ),
-                'icon' => 'dashicons-format-image',
-            ),
+    private function render_developer_edition_settings() {
+        if ( ! class_exists( 'KTPWP_Edition' ) ) {
+            return;
+        }
+
+        $baked_edition   = defined( 'KTPWP_EDITION' ) ? (string) KTPWP_EDITION : 'pro';
+        $active_edition  = KTPWP_Edition::get_active_edition();
+        $override        = get_option( 'ktp_developer_edition_override', '' );
+        $definitions     = KTPWP_Edition::get_definitions();
+        $staff_count     = KTPWP_Edition::count_staff_users();
+        $staff_limit     = KTPWP_Edition::get_staff_limit();
+        $plugin_name     = KTPWP_Edition::get_plugin_name();
+        ?>
+        <div class="ktp-settings-section">
+            <h2><?php esc_html_e( 'エディション（配布ビルド検証）', 'ktpwp' ); ?></h2>
+            <p><?php esc_html_e( '本番配布 ZIP ではビルド時にエディションが固定されます。ここではローカル環境でのみ、エディションを一時的に切り替えてスタッフ上限を検証できます。', 'ktpwp' ); ?></p>
+            <table class="form-table" role="presentation">
+                <tbody>
+                    <tr>
+                        <th scope="row"><?php esc_html_e( 'ビルド済みエディション', 'ktpwp' ); ?></th>
+                        <td><?php echo esc_html( KTPWP_Edition::get_edition_label( $baked_edition ) . ' (' . $baked_edition . ')' ); ?></td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><?php esc_html_e( '現在有効なエディション', 'ktpwp' ); ?></th>
+                        <td><?php echo esc_html( KTPWP_Edition::get_edition_label( $active_edition ) . ' (' . $active_edition . ')' ); ?></td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><?php esc_html_e( 'プラグイン名', 'ktpwp' ); ?></th>
+                        <td><?php echo esc_html( $plugin_name ); ?></td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><?php esc_html_e( 'スタッフ上限', 'ktpwp' ); ?></th>
+                        <td><?php echo esc_html( sprintf( __( '%1$s（現在 %2$d 人）', 'ktpwp' ), KTPWP_Edition::format_staff_limit_display(), $staff_count ) ); ?></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <form method="post" action="">
+                <?php wp_nonce_field( 'ktp_developer_edition_settings', 'ktp_developer_edition_nonce' ); ?>
+                <table class="form-table" role="presentation">
+                    <tbody>
+                        <tr>
+                            <th scope="row"><label for="ktp_developer_edition_override"><?php esc_html_e( 'ローカル上書き', 'ktpwp' ); ?></label></th>
+                            <td>
+                                <select name="ktp_developer_edition_override" id="ktp_developer_edition_override">
+                                    <option value=""><?php esc_html_e( 'ビルド済みのまま（上書きなし）', 'ktpwp' ); ?></option>
+                                    <?php foreach ( $definitions as $slug => $definition ) : ?>
+                                        <option value="<?php echo esc_attr( $slug ); ?>" <?php selected( $override, $slug ); ?>>
+                                            <?php
+                                            echo esc_html(
+                                                sprintf(
+                                                    '%s — %s（スタッフ上限: %s）',
+                                                    $definition['label'],
+                                                    $definition['plugin_name'],
+                                                    $definition['staff_limit'] > 0 ? (string) $definition['staff_limit'] : __( '無制限', 'ktpwp' )
+                                                )
+                                            );
+                                            ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <p class="description"><?php esc_html_e( '配布 ZIP 生成前に、各エディションのスタッフ制限が意図どおりか確認するための設定です。', 'ktpwp' ); ?></p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <?php submit_button( __( 'エディション設定を保存', 'ktpwp' ) ); ?>
+            </form>
+
+            <h3><?php esc_html_e( '配布 ZIP ビルドコマンド', 'ktpwp' ); ?></h3>
+            <p class="description"><?php esc_html_e( 'プラグインディレクトリで実行します。エディションごとに別フォルダ名・別 ZIP が生成されます。', 'ktpwp' ); ?></p>
+            <ul style="font-family: monospace; font-size: 13px;">
+                <li>./create_release_zip.sh pro</li>
+                <li>./create_release_zip.sh solo</li>
+                <li>./create_release_zip.sh team</li>
+                <li>./create_release_zip.sh business</li>
+            </ul>
+        </div>
+        <?php
+    }
+
+    /**
+     * 開発者設定: システム情報
+     *
+     * @return void
+     */
+    private function render_developer_system_info() {
+        global $wpdb;
+
+        $host              = isset( $_SERVER['HTTP_HOST'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_HOST'] ) ) : '';
+        $plugin_version    = defined( 'KANTANPRO_PLUGIN_VERSION' ) ? KANTANPRO_PLUGIN_VERSION : '';
+        $db_version        = get_option( 'ktpwp_db_version', '' );
+        $installed_date    = get_option( 'ktpwp_installed_date', '' );
+        $dev_mode          = defined( 'KTPWP_DEVELOPMENT_MODE' ) && KTPWP_DEVELOPMENT_MODE;
+        $kantanpro_dev     = defined( 'KANTANPRO_DEV_MODE' ) && KANTANPRO_DEV_MODE;
+        $wp_debug          = defined( 'WP_DEBUG' ) && WP_DEBUG;
+        $mysql_version     = method_exists( $wpdb, 'db_version' ) ? $wpdb->db_version() : '';
+        $is_dev_env        = $this->is_development_environment();
+
+        $rows = array(
+            __( 'プラグイン', 'ktpwp' )         => ( defined( 'KANTANPRO_PLUGIN_NAME' ) ? KANTANPRO_PLUGIN_NAME : 'KantanProEX' ) . ' ' . $plugin_version,
+            __( 'DBバージョン', 'ktpwp' )       => $db_version !== '' ? $db_version : __( '不明', 'ktpwp' ),
+            __( 'インストール日', 'ktpwp' )     => $installed_date !== '' ? $installed_date : __( '不明', 'ktpwp' ),
+            __( 'WordPress', 'ktpwp' )          => get_bloginfo( 'version' ),
+            __( 'PHP', 'ktpwp' )                => PHP_VERSION,
+            __( 'データベース', 'ktpwp' )       => $mysql_version !== '' ? $mysql_version : __( '不明', 'ktpwp' ),
+            __( 'サイトURL', 'ktpwp' )          => home_url( '/' ),
+            __( 'ホスト名', 'ktpwp' )           => $host !== '' ? $host : __( '不明', 'ktpwp' ),
+            __( '開発環境として判定', 'ktpwp' ) => $is_dev_env ? __( 'はい', 'ktpwp' ) : __( 'いいえ', 'ktpwp' ),
+            __( '開発モード', 'ktpwp' )         => $dev_mode ? __( '有効', 'ktpwp' ) : __( '無効', 'ktpwp' ),
+            __( 'KANTANPRO_DEV_MODE', 'ktpwp' ) => $kantanpro_dev ? __( '有効', 'ktpwp' ) : __( '無効', 'ktpwp' ),
+            __( 'WP_DEBUG', 'ktpwp' )           => $wp_debug ? __( '有効', 'ktpwp' ) : __( '無効', 'ktpwp' ),
         );
 
-        echo '<h2 class="nav-tab-wrapper">';
-        foreach ( $tabs as $tab_id => $tab ) {
-            $active = ( $current_tab === $tab_id ) ? 'nav-tab-active' : '';
-            $url = add_query_arg( 'tab', $tab_id, admin_url( 'admin.php?page=ktp-developer-settings' ) );
-            echo '<a href="' . esc_url( $url ) . '" class="nav-tab ' . esc_attr( $active ) . '">';
-            echo '<span class="dashicons ' . esc_attr( $tab['icon'] ) . '"></span> ';
-            echo esc_html( $tab['name'] );
-            echo '</a>';
+        if ( class_exists( 'KTPWP_Edition' ) ) {
+            $rows[ __( 'エディション', 'ktpwp' ) ]       = KTPWP_Edition::get_edition_label() . ' (' . KTPWP_Edition::get_active_edition() . ')';
+            $rows[ __( 'スタッフ上限', 'ktpwp' ) ]       = KTPWP_Edition::format_staff_limit_display();
+            $rows[ __( '登録スタッフ数', 'ktpwp' ) ]     = (string) KTPWP_Edition::count_staff_users();
         }
-        echo '</h2>';
-    }
-
-    /**
-     * 決済設定ページの表示（旧関数 - 後方互換性のため残す）
-     */
-    public function create_payment_page() {
-        // 開発者設定ページにリダイレクト
-        wp_redirect( admin_url( 'admin.php?page=ktp-developer-settings&tab=payment' ) );
-        exit;
-    }
-
-    /**
-     * 開発環境タブのレンダリング
-     */
-    private function render_development_environment_tab() {
-        // 開発モードが有効、もしくは開発環境と判定された場合のみ表示
-        $dev_mode_enabled = ( defined( 'KTPWP_DEVELOPMENT_MODE' ) && KTPWP_DEVELOPMENT_MODE );
-        if ( ! $dev_mode_enabled && ! $this->is_development_environment() ) {
-            echo '<div class="notice notice-warning">';
-            echo '<p><strong>' . esc_html__( '注意:', 'ktpwp' ) . '</strong> ' . esc_html__( 'このページは開発モードまたは開発環境でのみ表示されます。', 'ktpwp' ) . '</p>';
-            echo '</div>';
-            return;
-        }
-
-        // 開発環境用のアクション処理
-        $this->handle_development_actions();
-
-        // ライセンスマネージャーのインスタンスを取得
-        if ( class_exists( 'KTPWP_License_Manager' ) ) {
-            $license_manager = KTPWP_License_Manager::get_instance();
-            $dev_info = $license_manager->get_development_info();
-            $license_status = $license_manager->get_license_status();
-        } else {
-            $dev_info = array(
-                'is_development' => false,
-                'host' => $_SERVER['HTTP_HOST'] ?? 'unknown',
-                'dev_license_key' => 'N/A',
-                'current_license_key' => get_option( 'ktp_license_key' ),
-                'license_status' => get_option( 'ktp_license_status' ),
-                'is_dev_license_active' => false
-            );
-            $license_status = array(
-                'status' => 'unknown',
-                'message' => __( 'ライセンスマネージャーが利用できません。', 'ktpwp' ),
-                'icon' => 'dashicons-warning',
-                'color' => '#f56e28'
-            );
-        } ?>
-
-        <div class="card">
-            <h2><?php esc_html_e( '環境情報', 'ktpwp' ); ?></h2>
-            <table class="form-table">
-                <tr>
-                    <th><?php esc_html_e( '開発環境', 'ktpwp' ); ?></th>
-                    <td><?php echo $dev_info['is_development'] ? esc_html__( 'はい', 'ktpwp' ) : esc_html__( 'いいえ', 'ktpwp' ); ?></td>
-                </tr>
-                <tr>
-                    <th><?php esc_html_e( 'ホスト名', 'ktpwp' ); ?></th>
-                    <td><?php echo esc_html( $dev_info['host'] ); ?></td>
-                </tr>
-                <tr>
-                    <th><?php esc_html_e( '開発用ライセンスキー', 'ktpwp' ); ?></th>
-                    <td><code><?php echo esc_html( $dev_info['dev_license_key'] ); ?></code></td>
-                </tr>
-                <tr>
-                    <th><?php esc_html_e( '現在のライセンスキー', 'ktpwp' ); ?></th>
-                    <td><?php echo empty( $dev_info['current_license_key'] ) ? esc_html__( '未設定', 'ktpwp' ) : esc_html( $dev_info['current_license_key'] ); ?></td>
-                </tr>
-                <tr>
-                    <th><?php esc_html_e( 'ライセンスステータス', 'ktpwp' ); ?></th>
-                    <td>
-                        <span class="dashicons <?php echo esc_attr( $license_status['icon'] ); ?>" style="color: <?php echo esc_attr( $license_status['color'] ); ?>;"></span>
-                        <?php echo esc_html( $license_status['message'] ); ?>
-                    </td>
-                </tr>
-                <tr>
-                    <th><?php esc_html_e( '開発用ライセンス有効', 'ktpwp' ); ?></th>
-                    <td><?php echo $dev_info['is_dev_license_active'] ? esc_html__( 'はい', 'ktpwp' ) : esc_html__( 'いいえ', 'ktpwp' ); ?></td>
-                </tr>
+        ?>
+        <div class="ktp-settings-section">
+            <h2><?php esc_html_e( 'システム情報', 'ktpwp' ); ?></h2>
+            <table class="form-table" role="presentation">
+                <tbody>
+                <?php foreach ( $rows as $label => $value ) : ?>
+                    <tr>
+                        <th scope="row"><?php echo esc_html( $label ); ?></th>
+                        <td><?php echo esc_html( (string) $value ); ?></td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
             </table>
         </div>
-
-        <?php if ( $dev_info['is_development'] && class_exists( 'KTPWP_License_Manager' ) ) : ?>
-            <div class="card">
-                <h2><?php esc_html_e( '開発用ライセンス操作', 'ktpwp' ); ?></h2>
-                <form method="post" action="">
-                    <?php wp_nonce_field( 'ktp_development_action', 'ktp_development_nonce' ); ?>
-                    
-                    <p>
-                        <button type="submit" name="ktp_development_action" value="set_dev_license" class="button button-primary">
-                            <?php esc_html_e( '開発用ライセンスを設定', 'ktpwp' ); ?>
-                        </button>
-                        <span class="description"><?php esc_html_e( 'レポート機能の開発に必要な万能ライセンスキーを設定します。', 'ktpwp' ); ?></span>
-                    </p>
-                </form>
-
-                <form method="post" action="">
-                    <?php wp_nonce_field( 'ktp_development_action', 'ktp_development_nonce' ); ?>
-                    
-                    <p>
-                        <button type="submit" name="ktp_development_action" value="clear_license" class="button button-secondary">
-                            <?php esc_html_e( 'ライセンスデータをクリア', 'ktpwp' ); ?>
-                        </button>
-                        <span class="description"><?php esc_html_e( 'すべてのライセンスデータを削除します。', 'ktpwp' ); ?></span>
-                    </p>
-                </form>
-
-                <form method="post" action="">
-                    <?php wp_nonce_field( 'ktp_development_action', 'ktp_development_nonce' ); ?>
-                    
-                    <p>
-                        <button type="submit" name="ktp_development_action" value="reset_license" class="button button-secondary">
-                            <?php esc_html_e( 'ライセンス状態をリセット', 'ktpwp' ); ?>
-                        </button>
-                        <span class="description"><?php esc_html_e( 'ライセンス状態を無効にリセットします。', 'ktpwp' ); ?></span>
-                    </p>
-                </form>
-            </div>
-
-            <div class="card">
-                <h2><?php esc_html_e( 'テストリンク', 'ktpwp' ); ?></h2>
-                <p>
-                    <a href="<?php echo admin_url( 'admin.php?page=ktp-settings&tab=report' ); ?>" class="button">
-                        <?php esc_html_e( 'レポートタブを開く', 'ktpwp' ); ?>
-                    </a>
-                    <span class="description"><?php esc_html_e( 'レポート機能の動作を確認します。', 'ktpwp' ); ?></span>
-                </p>
-                <p>
-                    <a href="<?php echo plugins_url( 'test-license-reset.php', dirname( __FILE__ ) ); ?>" class="button" target="_blank">
-                        <?php esc_html_e( 'ライセンステストスクリプトを実行', 'ktpwp' ); ?>
-                    </a>
-                    <span class="description"><?php esc_html_e( '詳細なライセンス状態を確認します。', 'ktpwp' ); ?></span>
-                </p>
-            </div>
-        <?php endif; ?><?php
-    }
-
-    /**
-     * 開発環境の判定
-     */
-    private function is_development_environment() {
-        $host = $_SERVER['HTTP_HOST'] ?? '';
-        
-        return in_array( $host, ['localhost', '127.0.0.1'] ) || 
-               strpos( $host, '.local' ) !== false || 
-               strpos( $host, '.test' ) !== false ||
-               strpos( $host, '.dev' ) !== false ||
-               strpos( $host, 'localhost:' ) !== false ||
-               strpos( $host, '127.0.0.1:' ) !== false ||
-               ( defined( 'WP_ENV' ) && WP_ENV === 'development' ) ||
-               ( defined( 'KTPWP_DEVELOPMENT_MODE' ) && KTPWP_DEVELOPMENT_MODE === true );
-    }
-
-    /**
-     * 開発環境用のアクション処理
-     */
-    private function handle_development_actions() {
-        if ( ! isset( $_POST['ktp_development_action'] ) || 
-             ! wp_verify_nonce( $_POST['ktp_development_nonce'], 'ktp_development_action' ) ) {
-            return;
-        }
-
-        if ( ! current_user_can( 'manage_options' ) ) {
-            wp_die( __( 'この操作を実行する権限がありません。', 'ktpwp' ) );
-        }
-
-        if ( ! class_exists( 'KTPWP_License_Manager' ) ) {
-            add_settings_error( 'ktp_development', 'license_manager_not_found', __( 'ライセンスマネージャーが利用できません。', 'ktpwp' ), 'error' );
-            return;
-        }
-
-        $action = sanitize_text_field( $_POST['ktp_development_action'] );
-        $license_manager = KTPWP_License_Manager::get_instance();
-
-        switch ( $action ) {
-            case 'set_dev_license':
-                if ( $license_manager->set_development_license() ) {
-                    add_settings_error( 'ktp_development', 'dev_license_set', __( '開発用ライセンスが設定されました。', 'ktpwp' ), 'success' );
-                } else {
-                    add_settings_error( 'ktp_development', 'dev_license_failed', __( '開発用ライセンスの設定に失敗しました。', 'ktpwp' ), 'error' );
-                }
-                break;
-
-            case 'clear_license':
-                $license_manager->clear_all_license_data();
-                add_settings_error( 'ktp_development', 'license_cleared', __( 'ライセンスデータがクリアされました。', 'ktpwp' ), 'success' );
-                break;
-
-            case 'reset_license':
-                $license_manager->reset_license_for_testing();
-                add_settings_error( 'ktp_development', 'license_reset', __( 'ライセンス状態がリセットされました。', 'ktpwp' ), 'success' );
-                break;
-        }
-    }
-
-    /**
-     * 開発者設定パスワード認証
-     */
-    private function verify_developer_password() {
-        // パスワード認証は廃止。開発モードかつ管理者のみ許可
-        $dev_mode_enabled = ( defined( 'KTPWP_DEVELOPMENT_MODE' ) && KTPWP_DEVELOPMENT_MODE );
-        if ( $dev_mode_enabled && current_user_can( 'manage_options' ) ) {
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * 決済設定パスワード認証（旧関数 - 後方互換性のため残す）
-     */
-    private function verify_payment_password() {
-        // 廃止：開発モードかつ管理者のみ許可
-        $dev_mode_enabled = ( defined( 'KTPWP_DEVELOPMENT_MODE' ) && KTPWP_DEVELOPMENT_MODE );
-        if ( $dev_mode_enabled && current_user_can( 'manage_options' ) ) {
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * 開発者設定パスワードフォームを表示
-     */
-    private function display_developer_password_form() {
-        ?>
-        <div class="wrap ktp-admin-wrap">
-            <h1><span class="dashicons dashicons-admin-tools" style="margin-right: 10px; font-size: 24px; width: 24px; height: 24px;"></span><?php echo esc_html__( '開発者設定', 'ktpwp' ); ?></h1>
-
-            <?php $this->display_developer_tabs( 'developer' ); ?>
-
-            <div class="ktp-settings-container">
-                <div class="ktp-settings-section">
-                    <h2><?php esc_html_e( 'パスワード認証', 'ktpwp' ); ?></h2>
-                    <p><?php esc_html_e( '開発者設定にアクセスするには、開発者パスワードを入力してください。', 'ktpwp' ); ?></p>
-                    
-                    <form method="post" action="">
-                        <table class="form-table">
-                            <tr>
-                                <th scope="row">
-                                    <label for="ktpwp_developer_password"><?php esc_html_e( 'パスワード', 'ktpwp' ); ?></label>
-                                </th>
-                                <td>
-                                    <input type="password" 
-                                           id="ktpwp_developer_password" 
-                                           name="ktpwp_developer_password" 
-                                           class="regular-text" 
-                                           required>
-                                    <p class="description"><?php esc_html_e( '開発者パスワードを入力してください。', 'ktpwp' ); ?></p>
-                                </td>
-                            </tr>
-                        </table>
-                        
-                        <?php submit_button( __( '認証', 'ktpwp' ) ); ?>
-                    </form>
-                </div>
-            </div>
-        </div>
         <?php
     }
-
-    /**
-     * 決済設定パスワードフォームを表示（旧関数 - 後方互換性のため残す）
-     */
-    private function display_payment_password_form() {
-        ?>
-        <div class="wrap ktp-admin-wrap">
-            <h1><span class="dashicons dashicons-money-alt" style="margin-right: 10px; font-size: 24px; width: 24px; height: 24px;"></span><?php echo esc_html__( '決済設定', 'ktpwp' ); ?></h1>
-
-            <?php $this->display_developer_tabs( 'payment' ); ?>
-
-            <div class="ktp-settings-container">
-                <div class="ktp-settings-section">
-                    <h2><?php esc_html_e( 'パスワード認証', 'ktpwp' ); ?></h2>
-                    <p><?php esc_html_e( '決済設定にアクセスするには、開発者パスワードを入力してください。', 'ktpwp' ); ?></p>
-                    
-                    <form method="post" action="">
-                        <table class="form-table">
-                            <tr>
-                                <th scope="row">
-                                    <label for="ktpwp_payment_password"><?php esc_html_e( 'パスワード', 'ktpwp' ); ?></label>
-                                </th>
-                                <td>
-                                    <input type="password" 
-                                           id="ktpwp_payment_password" 
-                                           name="ktpwp_payment_password" 
-                                           class="regular-text" 
-                                           required>
-                                    <p class="description"><?php esc_html_e( '開発者パスワードを入力してください。', 'ktpwp' ); ?></p>
-                                </td>
-                            </tr>
-                        </table>
-                        
-                        <?php submit_button( __( '認証', 'ktpwp' ) ); ?>
-                    </form>
-                </div>
-            </div>
-        </div>
-        <?php
-    }
-
-    /**
-     * 寄付設定を許可リストに追加
-     */
-    public function add_donation_settings_to_whitelist( $allowed_options ) {
-        $allowed_options['ktp_donation_group'] = array( 'ktp_donation_settings' );
-        return $allowed_options;
-    }
-
-    /**
-     * 寄付設定ページのコールバック
-     */
-    public function donation_settings_page() {
-        // 開発者設定ページにリダイレクト
-        wp_redirect( admin_url( 'admin.php?page=ktp-developer-settings&tab=payment' ) );
-        exit;
-    }
-
-    /**
-     * 利用規約管理ページの表示（旧関数 - 後方互換性のため残す）
-     */
-    public function create_terms_page() {
-        // 開発者設定ページにリダイレクト
-        wp_redirect( admin_url( 'admin.php?page=ktp-developer-settings&tab=terms' ) );
-        exit;
-    }
-
-
-
 
 
 
@@ -1975,6 +2211,9 @@ class KTPWP_Settings {
             $user_obj = get_userdata( $user_id );
             if ( $user_obj ) {
                 if ( $action === 'add' ) {
+                    if ( class_exists( 'KTPWP_Edition' ) && ! KTPWP_Edition::can_add_staff() ) {
+                        echo '<div class="notice notice-error is-dismissible"><p>' . esc_html( KTPWP_Edition::get_staff_limit_reached_message() ) . '</p></div>';
+                    } else {
                     $user_obj->add_cap( 'ktpwp_access' );
                     // 最終変更日時を記録
                     update_user_meta( $user_id, 'last_activity', current_time( 'mysql' ) );
@@ -1986,6 +2225,7 @@ class KTPWP_Settings {
                         echo '<div class="notice notice-success is-dismissible"><p>' . esc_html( sprintf( __( 'スタッフ追加の通知メールを %s に送信しました。', 'ktpwp' ), $user_obj->user_email ) ) . '</p></div>';
                     } else {
                         echo '<div class="notice notice-warning is-dismissible"><p>' . esc_html__( 'スタッフ追加の通知メール送信に失敗しました。メール設定をご確認ください。', 'ktpwp' ) . '</p></div>';
+                    }
                     }
                 } elseif ( $action === 'remove' ) {
                     $user_obj->remove_cap( 'ktpwp_access' );
@@ -2006,6 +2246,10 @@ class KTPWP_Settings {
 
         // 管理者以外のユーザーのみ取得
         $users = get_users( array( 'role__not_in' => array( 'administrator' ) ) );
+        $staff_count = class_exists( 'KTPWP_Edition' ) ? KTPWP_Edition::count_staff_users() : 0;
+        $staff_limit = class_exists( 'KTPWP_Edition' ) ? KTPWP_Edition::get_staff_limit() : 0;
+        $staff_limit_display = class_exists( 'KTPWP_Edition' ) ? KTPWP_Edition::format_staff_limit_display() : __( '無制限', 'ktpwp' );
+        $can_add_staff = class_exists( 'KTPWP_Edition' ) ? KTPWP_Edition::can_add_staff() : true;
         global $wp_roles;
         // $all_roles = $wp_roles->roles; // プルダウンがなくなったため不要
         ?>
@@ -2015,6 +2259,38 @@ class KTPWP_Settings {
 
 
             <div class="ktp-settings-container">
+                <div class="ktp-settings-section">
+                    <h2><?php echo esc_html__( 'スタッフ枠', 'ktpwp' ); ?></h2>
+                    <p style="margin-bottom: 0;">
+                        <?php
+                        if ( class_exists( 'KTPWP_Edition' ) ) {
+                            echo esc_html(
+                                sprintf(
+                                    /* translators: 1: current staff count, 2: staff limit label */
+                                    __( '現在 %1$d 人 / 上限 %2$s', 'ktpwp' ),
+                                    $staff_count,
+                                    $staff_limit_display
+                                )
+                            );
+                            if ( $staff_limit > 0 ) {
+                                echo ' — ';
+                                echo esc_html(
+                                    sprintf(
+                                        /* translators: %s: edition label */
+                                        __( 'エディション: %s', 'ktpwp' ),
+                                        KTPWP_Edition::get_edition_label()
+                                    )
+                                );
+                            }
+                        }
+                        ?>
+                    </p>
+                    <?php if ( $staff_limit > 0 && ! $can_add_staff ) : ?>
+                        <div class="notice notice-warning inline" style="margin-top: 12px;">
+                            <p><?php echo esc_html( KTPWP_Edition::get_staff_limit_reached_message() ); ?></p>
+                        </div>
+                    <?php endif; ?>
+                </div>
                 <div class="ktp-settings-section">
                     <h2><?php echo esc_html__( '登録スタッフ一覧', 'ktpwp' ); ?></h2>
                     <div style="margin-bottom: 10px; color: #555; font-size: 13px;">
@@ -2037,27 +2313,49 @@ class KTPWP_Settings {
                         <tbody>
                         <?php foreach ( $users as $user ) : ?>
                             <tr>
-                                <td><?php echo esc_html( $user->display_name ); ?></td>
+                                <td>
+                                    <?php
+                                    $profile_link = get_edit_user_link( $user->ID );
+                                    if ( empty( $profile_link ) ) {
+                                        $profile_link = admin_url( 'user-edit.php?user_id=' . (int) $user->ID );
+                                    }
+                                    ?>
+                                    <a href="<?php echo esc_url( $profile_link ); ?>" title="<?php echo esc_attr__( 'プロフィールを開く', 'ktpwp' ); ?>">
+                                        <?php echo esc_html( $user->display_name ); ?>
+                                    </a>
+                                </td>
                                 <td><?php echo esc_html( $user->user_email ); ?></td>
                                 <td>
-                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                    <div style="display: flex; align-items: center; gap: 12px;">
                                         <?php if ( $user->has_cap( 'ktpwp_access' ) ) : ?>
                                             <span style="color:green;font-weight:bold;"><?php echo esc_html__( '利用中', 'ktpwp' ); ?></span>
                                         <?php else : ?>
                                             <span style="color:red;"><?php echo esc_html__( '未使用', 'ktpwp' ); ?></span>
                                         <?php endif; ?>
-                                        <form method="post" style="display: flex; align-items: center; gap: 10px; margin-bottom: 0;">
+
+                                        <form method="post" class="ktpwp-staff-toggle-form" style="display: flex; align-items: center; gap: 10px; margin-bottom: 0;">
                                             <?php wp_nonce_field( 'ktp_staff_role_action', 'ktp_staff_role_nonce' ); ?>
                                             <input type="hidden" name="ktpwp_access_user" value="<?php echo esc_attr( $user->ID ); ?>">
-                                            <label style="margin-bottom: 0;">
-                                                <input type="radio" name="ktpwp_access_action" value="add" <?php checked( ! $user->has_cap( 'ktpwp_access' ) ); ?>>
-                                                <?php esc_html_e( '追加', 'ktpwp' ); ?>
+                                            <input type="hidden" name="ktpwp_access_action" class="ktpwp-staff-toggle-action" value="">
+                                            <?php
+                                            $checkbox_id = 'ktpwp_staff_toggle_' . (int) $user->ID;
+                                            $checked = $user->has_cap( 'ktpwp_access' );
+                                            $toggle_disabled = ! $checked && ! $can_add_staff;
+                                            ?>
+                                            <label class="ktpwp-switch<?php echo $toggle_disabled ? ' ktpwp-switch--disabled' : ''; ?>" for="<?php echo esc_attr( $checkbox_id ); ?>" title="<?php echo esc_attr( $checked ? 'ON（利用中）' : ( $toggle_disabled ? __( 'スタッフ上限に達しています', 'ktpwp' ) : 'OFF（未使用）' ) ); ?>">
+                                                <input
+                                                    type="checkbox"
+                                                    id="<?php echo esc_attr( $checkbox_id ); ?>"
+                                                    class="ktpwp-staff-toggle-checkbox"
+                                                    <?php checked( $checked ); ?>
+                                                    <?php disabled( $toggle_disabled ); ?>
+                                                    aria-label="<?php echo esc_attr( sprintf( 'staff-toggle-%d', (int) $user->ID ) ); ?>"
+                                                />
+                                                <span class="ktpwp-switch-slider" aria-hidden="true"></span>
                                             </label>
-                                            <label style="margin-bottom: 0;">
-                                                <input type="radio" name="ktpwp_access_action" value="remove" <?php checked( $user->has_cap( 'ktpwp_access' ) ); ?>>
-                                                <?php esc_html_e( '削除', 'ktpwp' ); ?>
-                                            </label>
-                                            <button type="submit" class="button"><?php esc_html_e( '適用', 'ktpwp' ); ?></button>
+                                            <noscript>
+                                                <button type="submit" class="button"><?php esc_html_e( '適用', 'ktpwp' ); ?></button>
+                                            </noscript>
                                         </form>
                                     </div>
                                 </td>
@@ -2085,6 +2383,22 @@ class KTPWP_Settings {
                 </div>
             </div>
         </div>
+        <script>
+        (function() {
+            const forms = document.querySelectorAll('.ktpwp-staff-toggle-form');
+            forms.forEach((form) => {
+                const checkbox = form.querySelector('.ktpwp-staff-toggle-checkbox');
+                const actionInput = form.querySelector('.ktpwp-staff-toggle-action');
+                if (!checkbox || !actionInput) return;
+
+                checkbox.addEventListener('change', function() {
+                    // ON -> add, OFF -> remove
+                    actionInput.value = this.checked ? 'add' : 'remove';
+                    form.submit();
+                });
+            });
+        })();
+        </script>
         <?php
     }
 
@@ -2381,6 +2695,60 @@ class KTPWP_Settings {
                             }
                         }
 
+                        // 定期請求メール
+                        if ( isset( $wp_settings_sections['ktp-general']['contract_reminder_setting_section'] ) ) {
+                            $section = $wp_settings_sections['ktp-general']['contract_reminder_setting_section'];
+                            echo '<h2>' . esc_html( $section['title'] ) . '</h2>';
+                            if ( $section['callback'] ) {
+                                call_user_func( $section['callback'], $section );
+                            }
+                            if ( isset( $wp_settings_fields['ktp-general']['contract_reminder_setting_section'] ) ) {
+                                echo '<table class="form-table">';
+                                foreach ( $wp_settings_fields['ktp-general']['contract_reminder_setting_section'] as $field ) {
+                                    echo '<tr><th scope="row">' . esc_html( $field['title'] ) . '</th><td>';
+                                    call_user_func( $field['callback'], $field['args'] );
+                                    echo '</td></tr>';
+                                }
+                                echo '</table>';
+                            }
+                        }
+
+                        // Stripe 請求連携
+                        if ( isset( $wp_settings_sections['ktp-general']['stripe_billing_setting_section'] ) ) {
+                            $section = $wp_settings_sections['ktp-general']['stripe_billing_setting_section'];
+                            echo '<h2>' . esc_html( $section['title'] ) . '</h2>';
+                            if ( $section['callback'] ) {
+                                call_user_func( $section['callback'], $section );
+                            }
+                            if ( isset( $wp_settings_fields['ktp-general']['stripe_billing_setting_section'] ) ) {
+                                echo '<table class="form-table">';
+                                foreach ( $wp_settings_fields['ktp-general']['stripe_billing_setting_section'] as $field ) {
+                                    echo '<tr><th scope="row">' . esc_html( $field['title'] ) . '</th><td>';
+                                    call_user_func( $field['callback'], $field['args'] );
+                                    echo '</td></tr>';
+                                }
+                                echo '</table>';
+                            }
+                        }
+
+                        // 日本郵便 郵便番号・デジタルアドレスAPI（顧客フォームの住所自動入力）
+                        if ( isset( $wp_settings_sections['ktp-general']['japanpost_api_setting_section'] ) ) {
+                            $section = $wp_settings_sections['ktp-general']['japanpost_api_setting_section'];
+                            echo '<h2>' . esc_html( $section['title'] ) . '</h2>';
+                            if ( $section['callback'] ) {
+                                call_user_func( $section['callback'], $section );
+                            }
+                            if ( isset( $wp_settings_fields['ktp-general']['japanpost_api_setting_section'] ) ) {
+                                echo '<table class="form-table">';
+                                foreach ( $wp_settings_fields['ktp-general']['japanpost_api_setting_section'] as $field ) {
+                                    echo '<tr><th scope="row">' . esc_html( $field['title'] ) . '</th><td>';
+                                    call_user_func( $field['callback'], $field['args'] );
+                                    echo '</td></tr>';
+                                }
+                                echo '</table>';
+                            }
+                        }
+
                         // プラグイン削除時のデータ保持設定セクションの出力
                         if ( isset( $wp_settings_sections['ktp-general']['uninstall_setting_section'] ) ) {
                             $section = $wp_settings_sections['ktp-general']['uninstall_setting_section'];
@@ -2405,6 +2773,7 @@ class KTPWP_Settings {
                     </form>
                 </div>
 
+                <?php $this->render_shortcodes_reference_section(); ?>
 
             </div>
         </div>
@@ -2412,83 +2781,99 @@ class KTPWP_Settings {
     }
 
     /**
-     * ライセンス設定ページの表示
-     */
-    public function create_license_page() {
-        if ( ! current_user_can( 'manage_options' ) ) {
-            wp_die( __( 'この設定ページにアクセスする権限がありません。', 'ktpwp' ) );
-        }
-        echo '<div class="wrap ktp-admin-wrap">';
-        echo $this->render_feature_moved_to_ex_message( __( 'ライセンス設定', 'ktpwp' ) );
-        echo '</div>';
-    }
-
-    /**
-     * 無料版では利用できない機能に対するEX移行メッセージを生成。
-     *
-     * @param string $feature_name 機能名。
-     * @return string
-     */
-    private function render_feature_moved_to_ex_message( $feature_name ) {
-        $safe_feature = esc_html( $feature_name );
-        $safe_ex      = esc_html__( 'KantanProEX（有料版）', 'ktpwp' );
-        $ex_url       = esc_url( 'https://www.kantanpro.com/product/kantanpro-ex' );
-
-        $html  = '<div class="notice notice-warning" style="padding:16px 18px;margin-top:16px;">';
-        $html .= '<h2 style="margin:0 0 8px 0;">' . $safe_feature . '</h2>';
-        $html .= '<p style="margin:0 0 8px 0;">' . sprintf( esc_html__( '%s は無料版では利用できません。', 'ktpwp' ), $safe_feature ) . '</p>';
-        $html .= '<div class="ktp-ex-migrate-one-line">';
-        $html .= '<span>' . sprintf( esc_html__( '%s へ移行してご利用ください。', 'ktpwp' ), $safe_ex ) . '</span>';
-        $html .= '<a class="button button-primary" href="' . $ex_url . '" target="_blank" rel="noopener noreferrer">' . esc_html__( 'KantanProEX 商品ページ', 'ktpwp' ) . '</a>';
-        $html .= '</div>';
-        $html .= '</div>';
-        return $html;
-    }
-
-    /**
-     * 無料版で禁止された機能実行時に、EX移行ページへ戻す。
+     * 一般設定ページ下部：利用可能なショートコード一覧
      *
      * @return void
      */
-    private function deny_feature_and_redirect_to_ex() {
-        if ( ! is_admin() ) {
-            return;
-        }
-        wp_safe_redirect( admin_url( 'admin.php?page=ktp-data-tools' ) );
-        exit;
-    }
+    private function render_shortcodes_reference_section() {
+        ?>
+        <div class="ktp-settings-section ktp-shortcodes-reference">
+            <h2><?php echo esc_html__( 'ショートコード', 'ktpwp' ); ?></h2>
+            <p class="description">
+                <?php echo esc_html__( '固定ページや投稿の本文に以下のショートコードを設置して利用できます。', 'ktpwp' ); ?>
+            </p>
 
-    /**
-     * ライセンス状態再確認の処理
-     */
-    private function handle_license_recheck() {
-        $license_key = get_option( 'ktp_license_key' );
-        
-        if ( empty( $license_key ) ) {
-            add_settings_error( 'ktp_license', 'no_license_key', __( 'ライセンスキーが設定されていません。', 'ktpwp' ), 'error' );
-            return;
-        }
+            <table class="widefat striped ktp-shortcodes-table">
+                <thead>
+                    <tr>
+                        <th scope="col"><?php echo esc_html__( 'ショートコード', 'ktpwp' ); ?></th>
+                        <th scope="col"><?php echo esc_html__( '用途', 'ktpwp' ); ?></th>
+                        <th scope="col"><?php echo esc_html__( '備考', 'ktpwp' ); ?></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>[ktpwp_all_tab]</code></td>
+                        <td><?php echo esc_html__( 'KantanPro の業務画面（顧客・案件・商品など全タブ）', 'ktpwp' ); ?></td>
+                        <td><?php echo esc_html__( 'ログイン必須。社内・会員向けページに設置します。', 'ktpwp' ); ?></td>
+                    </tr>
+                    <tr>
+                        <td><code>[kantanpro_ex]</code></td>
+                        <td><?php echo esc_html__( '上記と同じ（別名）', 'ktpwp' ); ?></td>
+                        <td><?php echo esc_html__( 'ログイン必須。', 'ktpwp' ); ?></td>
+                    </tr>
+                    <tr>
+                        <td><code>[ktpwp_public_products]</code></td>
+                        <td><?php echo esc_html__( '公開商品の一覧表示', 'ktpwp' ); ?></td>
+                        <td><?php echo esc_html__( 'ログイン不要。商品編集で「サイトに公開」にチェックした商品のみ表示されます。', 'ktpwp' ); ?></td>
+                    </tr>
+                </tbody>
+            </table>
 
-        // ライセンスマネージャーのインスタンスを取得
-        $license_manager = KTPWP_License_Manager::get_instance();
-        
-        // 強制的にライセンスを再検証
-        $result = $license_manager->verify_license( $license_key );
-        
-        if ( $result['success'] ) {
-            // ライセンスが有効な場合、情報を更新
-            update_option( 'ktp_license_status', 'active' );
-            update_option( 'ktp_license_info', $result['data'] );
-            update_option( 'ktp_license_verified_at', current_time( 'timestamp' ) );
-            
-            add_settings_error( 'ktp_license', 'recheck_success', __( 'ライセンス状態の再確認が完了しました。ライセンスは有効です。', 'ktpwp' ), 'success' );
-        } else {
-            // ライセンスが無効な場合、ステータスを更新
-            update_option( 'ktp_license_status', 'invalid' );
-            error_log( 'KTPWP License: License recheck failed: ' . $result['message'] );
-            
-            add_settings_error( 'ktp_license', 'recheck_failed', __( 'ライセンス状態の再確認が完了しました。ライセンスは無効です。', 'ktpwp' ) . ' (' . $result['message'] . ')', 'error' );
-        }
+            <h3 class="ktp-shortcodes-subheading"><?php echo esc_html__( '[ktpwp_public_products] の属性', 'ktpwp' ); ?></h3>
+            <table class="widefat striped ktp-shortcodes-table">
+                <thead>
+                    <tr>
+                        <th scope="col"><?php echo esc_html__( '属性', 'ktpwp' ); ?></th>
+                        <th scope="col"><?php echo esc_html__( '既定値', 'ktpwp' ); ?></th>
+                        <th scope="col"><?php echo esc_html__( '説明', 'ktpwp' ); ?></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>layout</code></td>
+                        <td><code>grid</code></td>
+                        <td><?php echo esc_html__( '表示形式: grid / table / cards', 'ktpwp' ); ?></td>
+                    </tr>
+                    <tr>
+                        <td><code>columns</code></td>
+                        <td><code>3</code></td>
+                        <td><?php echo esc_html__( '列数（1〜4）。grid / cards で有効', 'ktpwp' ); ?></td>
+                    </tr>
+                    <tr>
+                        <td><code>category</code></td>
+                        <td><?php echo esc_html__( '（空）', 'ktpwp' ); ?></td>
+                        <td><?php echo esc_html__( 'カテゴリで絞り込み（サーバー側）。複数指定時はカンマ区切り（例: サポート,WEB制作）。絞り込み UI 表示時は単一指定のみ初期値に使用', 'ktpwp' ); ?></td>
+                    </tr>
+                    <tr>
+                        <td><code>show_filter</code></td>
+                        <td><code>yes</code></td>
+                        <td><?php echo esc_html__( 'カテゴリ絞り込み UI（サジェスト付き）の表示 ON/OFF', 'ktpwp' ); ?></td>
+                    </tr>
+                    <tr>
+                        <td><code>ids</code></td>
+                        <td><?php echo esc_html__( '（空）', 'ktpwp' ); ?></td>
+                        <td><?php echo esc_html__( '表示する商品 ID（例: 2,5,8）', 'ktpwp' ); ?></td>
+                    </tr>
+                    <tr>
+                        <td><code>show_image</code> / <code>show_price</code> / <code>show_unit</code> / <code>show_category</code> / <code>show_tax</code> / <code>show_memo</code></td>
+                        <td><code>yes</code>（<code>show_tax</code> は <code>no</code>）</td>
+                        <td><?php echo esc_html__( '各項目の表示 ON/OFF（yes / no）', 'ktpwp' ); ?></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3 class="ktp-shortcodes-subheading"><?php echo esc_html__( '記述例', 'ktpwp' ); ?></h3>
+            <ul class="ktp-shortcodes-examples">
+                <li><code>[ktpwp_public_products]</code></li>
+                <li><code>[ktpwp_public_products layout="grid" columns="3"]</code></li>
+                <li><code>[ktpwp_public_products layout="table"]</code></li>
+                <li><code>[ktpwp_public_products layout="cards" columns="2" show_tax="yes"]</code></li>
+                <li><code>[ktpwp_public_products category="Web制作" ids="2,5,8"]</code></li>
+                <li><code>[ktpwp_public_products category="サポート,WEB制作"]</code></li>
+            </ul>
+        </div>
+        <?php
     }
 
     /**
@@ -2562,25 +2947,6 @@ class KTPWP_Settings {
             wp_enqueue_style( 'thickbox' );
         }
 
-        // ライセンス状態再確認の処理
-        if ( isset( $_POST['ktp_license_recheck'] ) && wp_verify_nonce( $_POST['ktp_license_recheck_nonce'], 'ktp_license_recheck' ) ) {
-            if ( current_user_can( 'manage_options' ) ) {
-                $this->handle_license_recheck();
-            }
-        }
-
-        // アクティベーションキー保存時の通知
-        if ( isset( $_POST['ktp_activation_key'] ) ) {
-            $old = get_option( 'ktp_activation_key' );
-            $new = sanitize_text_field( $_POST['ktp_activation_key'] );
-            if ( $old !== $new ) {
-                update_option( 'ktp_activation_key', $new );
-                if ( method_exists( $this, 'show_notification' ) ) {
-                    $this->show_notification( 'アクティベーションキーを保存しました。', true );
-                }
-                add_settings_error( 'ktp_activation_key', 'activation_key_saved', 'アクティベーションキーを保存しました。', 'updated' );
-            }
-        }
         if ( ! current_user_can( 'manage_options' ) ) {
             return;
         }
@@ -2619,10 +2985,11 @@ class KTPWP_Settings {
             array( $this, 'sanitize' )
         );
 
-        // 以前の設定ページから移行したアクティベーションキー設定
+        // 一般設定ページ（page=ktp-settings）のフォームで保存するため ktp_general_group に登録
         register_setting(
-            'ktp-group',
-            'ktp_activation_key'
+            'ktp_general_group',
+            'ktp_japanpost_api_settings',
+            array( $this, 'sanitize_japanpost_api_settings' )
         );
 
         // デザイン設定グループの登録
@@ -2685,13 +3052,6 @@ class KTPWP_Settings {
             array( $this, 'sanitize_central_banner_settings' )
         );
 
-        // 寄付設定のオプションページを許可リストに追加（後方互換性を保つ）
-        add_filter( 'allowed_options', array( $this, 'add_donation_settings_to_whitelist' ) );
-        // WordPress 5.5.0未満のバージョン用（非推奨だが後方互換性のため）
-        if ( version_compare( get_bloginfo( 'version' ), '5.5.0', '<' ) ) {
-            add_filter( 'whitelist_options', array( $this, 'add_donation_settings_to_whitelist' ) );
-        }
-
         // 一般設定セクション
         add_settings_section(
             'general_setting_section',
@@ -2723,6 +3083,14 @@ class KTPWP_Settings {
             'ktp_system_description',
             __( 'システムの説明', 'ktpwp' ),
             array( $this, 'system_description_callback' ),
+            'ktp-general',
+            'general_setting_section'
+        );
+
+        add_settings_field(
+            'ktp_page_id',
+            __( '業務画面ページ', 'ktpwp' ),
+            array( $this, 'ktp_page_id_callback' ),
             'ktp-general',
             'general_setting_section'
         );
@@ -2857,120 +3225,130 @@ class KTPWP_Settings {
             'bank_transfer_setting_section'
         );
 
-        // 寄付設定セクション
-        add_settings_section(
-            'donation_setting_section',
-            __( '寄付機能設定', 'ktpwp' ),
-            array( $this, 'print_donation_section_info' ),
-            'ktp-payment-settings'
-        );
+        if ( class_exists( 'KTPWP_Contract_Reminder_Mail' ) ) {
+            add_settings_section(
+                'contract_reminder_setting_section',
+                __( '定期請求メール', 'ktpwp' ),
+                array( 'KTPWP_Contract_Reminder_Mail', 'render_settings_section_info' ),
+                'ktp-general'
+            );
 
-        // フロントエンド通知の有効化
-        add_settings_field(
-            'frontend_notice_enabled',
-            __( 'フロントエンド通知を有効にする', 'ktpwp' ),
-            array( $this, 'frontend_notice_enabled_callback' ),
-            'ktp-payment-settings',
-            'donation_setting_section'
-        );
+            add_settings_field(
+                'contract_reminder_enabled',
+                __( '自動送信', 'ktpwp' ),
+                array( 'KTPWP_Contract_Reminder_Mail', 'render_enabled_field' ),
+                'ktp-general',
+                'contract_reminder_setting_section'
+            );
 
-        // 通知表示間隔
-        add_settings_field(
-            'notice_display_interval',
-            __( '通知表示間隔（日数）', 'ktpwp' ),
-            array( $this, 'notice_display_interval_callback' ),
-            'ktp-payment-settings',
-            'donation_setting_section'
-        );
+            add_settings_field(
+                'contract_reminder_days_before',
+                __( '送信タイミング', 'ktpwp' ),
+                array( 'KTPWP_Contract_Reminder_Mail', 'render_days_before_field' ),
+                'ktp-general',
+                'contract_reminder_setting_section'
+            );
 
-        // 通知メッセージ
-        add_settings_field(
-            'notice_message',
-            __( '通知メッセージ', 'ktpwp' ),
-            array( $this, 'notice_message_callback' ),
-            'ktp-payment-settings',
-            'donation_setting_section'
-        );
+            add_settings_field(
+                'contract_reminder_subject',
+                __( '件名テンプレート', 'ktpwp' ),
+                array( 'KTPWP_Contract_Reminder_Mail', 'render_subject_field' ),
+                'ktp-general',
+                'contract_reminder_setting_section'
+            );
 
-        // 寄付URL
-        add_settings_field(
-            'donation_url',
-            __( '寄付URL', 'ktpwp' ),
-            array( $this, 'donation_url_callback' ),
-            'ktp-payment-settings',
-            'donation_setting_section'
-        );
+            add_settings_field(
+                'contract_reminder_body',
+                __( '本文テンプレート', 'ktpwp' ),
+                array( 'KTPWP_Contract_Reminder_Mail', 'render_body_field' ),
+                'ktp-general',
+                'contract_reminder_setting_section'
+            );
+        }
 
-        // 寄付通知プレビュー
-        add_settings_field(
-            'donation_notice_preview',
-            __( '通知プレビュー', 'ktpwp' ),
-            array( $this, 'donation_notice_preview_callback' ),
-            'ktp-payment-settings',
-            'donation_setting_section'
-        );
+        if ( class_exists( 'KTPWP_Stripe_Billing' ) ) {
+            $stripe_feature_enabled = ! function_exists( 'ktpwp_is_feature_enabled' ) || ktpwp_is_feature_enabled( 'stripe_billing' );
+            add_settings_section(
+                'stripe_billing_setting_section',
+                __( 'Stripe 請求連携', 'ktpwp' ),
+                array( 'KTPWP_Stripe_Billing', 'render_settings_section_info' ),
+                'ktp-general'
+            );
 
-        // 更新通知設定セクション
-        add_settings_section(
-            'update_notification_setting_section',
-            __( '更新通知設定', 'ktpwp' ),
-            array( $this, 'print_update_notification_section_info' ),
-            'ktp-developer-settings'
-        );
+            if ( $stripe_feature_enabled ) {
+                add_settings_field(
+                    'stripe_enabled',
+                    __( '有効化', 'ktpwp' ),
+                    array( 'KTPWP_Stripe_Billing', 'render_enabled_field' ),
+                    'ktp-general',
+                    'stripe_billing_setting_section'
+                );
 
-        // 更新通知の有効化
-        add_settings_field(
-            'enable_notifications',
-            __( '更新通知の有効化', 'ktpwp' ),
-            array( $this, 'enable_notifications_callback' ),
-            'ktp-developer-settings',
-            'update_notification_setting_section'
-        );
+                add_settings_field(
+                    'stripe_test_mode',
+                    __( 'テストモード', 'ktpwp' ),
+                    array( 'KTPWP_Stripe_Billing', 'render_test_mode_field' ),
+                    'ktp-general',
+                    'stripe_billing_setting_section'
+                );
 
-        // 管理画面通知の有効化
-        add_settings_field(
-            'enable_admin_notifications',
-            __( '管理画面通知の有効化', 'ktpwp' ),
-            array( $this, 'enable_admin_notifications_callback' ),
-            'ktp-developer-settings',
-            'update_notification_setting_section'
-        );
+                add_settings_field(
+                    'stripe_secret_key_test',
+                    __( 'Secret Key（テスト）', 'ktpwp' ),
+                    array( 'KTPWP_Stripe_Billing', 'render_secret_key_test_field' ),
+                    'ktp-general',
+                    'stripe_billing_setting_section'
+                );
 
-        // フロントエンド通知の有効化
-        add_settings_field(
-            'enable_frontend_notifications',
-            __( 'フロントエンド通知の有効化', 'ktpwp' ),
-            array( $this, 'enable_frontend_notifications_callback' ),
-            'ktp-developer-settings',
-            'update_notification_setting_section'
-        );
+                add_settings_field(
+                    'stripe_secret_key_live',
+                    __( 'Secret Key（本番）', 'ktpwp' ),
+                    array( 'KTPWP_Stripe_Billing', 'render_secret_key_live_field' ),
+                    'ktp-general',
+                    'stripe_billing_setting_section'
+                );
 
-        // チェック間隔の設定
-        add_settings_field(
-            'check_interval',
-            __( '更新チェック間隔（時間）', 'ktpwp' ),
-            array( $this, 'check_interval_callback' ),
-            'ktp-developer-settings',
-            'update_notification_setting_section'
-        );
+                add_settings_field(
+                    'stripe_webhook_secret_test',
+                    __( 'Webhook Secret（テスト）', 'ktpwp' ),
+                    array( 'KTPWP_Stripe_Billing', 'render_webhook_secret_test_field' ),
+                    'ktp-general',
+                    'stripe_billing_setting_section'
+                );
 
-        // 通知対象ユーザー権限の設定
-        add_settings_field(
-            'notification_roles',
-            __( '通知対象ユーザー権限', 'ktpwp' ),
-            array( $this, 'notification_roles_callback' ),
-            'ktp-developer-settings',
-            'update_notification_setting_section'
-        );
+                add_settings_field(
+                    'stripe_webhook_secret_live',
+                    __( 'Webhook Secret（本番）', 'ktpwp' ),
+                    array( 'KTPWP_Stripe_Billing', 'render_webhook_secret_live_field' ),
+                    'ktp-general',
+                    'stripe_billing_setting_section'
+                );
 
-        // GitHubトークンの設定
-        add_settings_field(
-            'github_token',
-            __( 'GitHub Personal Access Token', 'ktpwp' ),
-            array( $this, 'github_token_callback' ),
-            'ktp-developer-settings',
-            'update_notification_setting_section'
-        );
+                add_settings_field(
+                    'stripe_days_until_due',
+                    __( '支払期日', 'ktpwp' ),
+                    array( 'KTPWP_Stripe_Billing', 'render_days_until_due_field' ),
+                    'ktp-general',
+                    'stripe_billing_setting_section'
+                );
+
+                add_settings_field(
+                    'stripe_invoice_issuer_name',
+                    __( '請求元名（Stripe）', 'ktpwp' ),
+                    array( 'KTPWP_Stripe_Billing', 'render_invoice_issuer_name_field' ),
+                    'ktp-general',
+                    'stripe_billing_setting_section'
+                );
+            }
+
+            add_settings_field(
+                'contract_invoice_auto_enabled',
+                __( '定期請求メール自動送信', 'ktpwp' ),
+                array( 'KTPWP_Stripe_Billing', 'render_contract_invoice_auto_field' ),
+                'ktp-general',
+                'stripe_billing_setting_section'
+            );
+        }
 
         // プラグイン削除時の動作（エンドユーザー向け・一般設定ページに配置）
         add_settings_section(
@@ -2986,47 +3364,6 @@ class KTPWP_Settings {
             array( $this, 'uninstall_mode_callback' ),
             'ktp-general',
             'uninstall_setting_section'
-        );
-        add_settings_section(
-            'central_banner_setting_section',
-            __( '中央バナー配信設定', 'ktpwp' ),
-            array( $this, 'print_central_banner_section_info' ),
-            'ktp-central-banner-settings'
-        );
-        add_settings_field(
-            'banner_enabled',
-            __( '配信有効化', 'ktpwp' ),
-            array( $this, 'central_banner_enabled_callback' ),
-            'ktp-central-banner-settings',
-            'central_banner_setting_section'
-        );
-        add_settings_field(
-            'banner_source_url',
-            __( '外部参照URL（JSON）', 'ktpwp' ),
-            array( $this, 'central_banner_source_url_callback' ),
-            'ktp-central-banner-settings',
-            'central_banner_setting_section'
-        );
-        add_settings_field(
-            'banner_image_url',
-            __( '配布用バナー画像URL', 'ktpwp' ),
-            array( $this, 'central_banner_image_url_callback' ),
-            'ktp-central-banner-settings',
-            'central_banner_setting_section'
-        );
-        add_settings_field(
-            'banner_link_url',
-            __( '配布用バナーリンクURL', 'ktpwp' ),
-            array( $this, 'central_banner_link_url_callback' ),
-            'ktp-central-banner-settings',
-            'central_banner_setting_section'
-        );
-        add_settings_field(
-            'banner_alt_text',
-            __( '配布用代替テキスト', 'ktpwp' ),
-            array( $this, 'central_banner_alt_text_callback' ),
-            'ktp-central-banner-settings',
-            'central_banner_setting_section'
         );
 
         // メール設定セクション
@@ -3054,29 +3391,12 @@ class KTPWP_Settings {
             'ktp-settings'
         );
 
-        // ライセンス設定セクション
-        add_settings_section(
-            'license_setting_section',
-            __( 'ライセンス設定', 'ktpwp' ),
-            array( $this, 'print_license_section_info' ),
-            'ktp-settings'
-        );
-
         // デザイン設定セクション
         add_settings_section(
             'design_setting_section',
             __( 'デザイン設定', 'ktpwp' ),
             array( $this, 'print_design_section_info' ),
             'ktp-design'
-        );
-
-        // アクティベーションキー
-        add_settings_field(
-            'activation_key',
-            __( 'アクティベーションキー', 'ktpwp' ),
-            array( $this, 'activation_key_callback' ),
-            'ktp-settings',
-            'license_setting_section'
         );
 
         // SMTPホスト
@@ -3133,6 +3453,45 @@ class KTPWP_Settings {
             'smtp_setting_section'
         );
 
+        add_settings_section(
+            'japanpost_api_setting_section',
+            __( '日本郵便 郵便番号・デジタルアドレスAPI', 'ktpwp' ),
+            array( $this, 'print_japanpost_api_section_info' ),
+            'ktp-general'
+        );
+
+        add_settings_field(
+            'japanpost_api_enabled',
+            __( '日本郵便APIを使う', 'ktpwp' ),
+            array( $this, 'japanpost_api_enabled_callback' ),
+            'ktp-general',
+            'japanpost_api_setting_section'
+        );
+
+        add_settings_field(
+            'japanpost_api_environment',
+            __( '接続先', 'ktpwp' ),
+            array( $this, 'japanpost_api_environment_callback' ),
+            'ktp-general',
+            'japanpost_api_setting_section'
+        );
+
+        add_settings_field(
+            'japanpost_api_client_id',
+            __( 'クライアントID', 'ktpwp' ),
+            array( $this, 'japanpost_api_client_id_callback' ),
+            'ktp-general',
+            'japanpost_api_setting_section'
+        );
+
+        add_settings_field(
+            'japanpost_api_secret_key',
+            __( 'クライアントシークレット', 'ktpwp' ),
+            array( $this, 'japanpost_api_secret_key_callback' ),
+            'ktp-general',
+            'japanpost_api_setting_section'
+        );
+
         // デザイン設定フィールド
         // タブのアクティブ時の色
         add_settings_field(
@@ -3179,11 +3538,29 @@ class KTPWP_Settings {
             'design_setting_section'
         );
 
+        // 公開商品カードの背景色
+        add_settings_field(
+            'public_product_card_bg_color',
+            __( '公開商品カードの背景色', 'ktpwp' ),
+            array( $this, 'public_product_card_bg_color_callback' ),
+            'ktp-design',
+            'design_setting_section'
+        );
+
         // ヘッダー背景画像
         add_settings_field(
             'header_bg_image',
             __( 'ヘッダー背景画像', 'ktpwp' ),
             array( $this, 'header_bg_image_callback' ),
+            'ktp-design',
+            'design_setting_section'
+        );
+
+        // 固定ページごとのコンテンツ幅
+        add_settings_field(
+            'page_content_widths',
+            __( '固定ページの幅', 'ktpwp' ),
+            array( $this, 'page_content_widths_callback' ),
             'ktp-design',
             'design_setting_section'
         );
@@ -3284,6 +3661,10 @@ class KTPWP_Settings {
             $new_input['even_row_color'] = sanitize_hex_color( $input['even_row_color'] );
         }
 
+        if ( isset( $input['public_product_card_bg_color'] ) ) {
+            $new_input['public_product_card_bg_color'] = sanitize_hex_color( $input['public_product_card_bg_color'] );
+        }
+
         if ( isset( $input['header_bg_image'] ) ) {
             // 数値（添付ファイルID）または文字列（画像パス）に対応
             if ( is_numeric( $input['header_bg_image'] ) ) {
@@ -3297,6 +3678,49 @@ class KTPWP_Settings {
             $new_input['custom_css'] = wp_strip_all_tags( $input['custom_css'] );
         }
 
+        $existing = get_option( 'ktp_design_settings', array() );
+        $raw_widths = array();
+        if ( isset( $input['page_content_widths'] ) && is_array( $input['page_content_widths'] ) ) {
+            $raw_widths = $input['page_content_widths'];
+        } elseif ( isset( $existing['page_content_widths'] ) && is_array( $existing['page_content_widths'] ) ) {
+            $raw_widths = $existing['page_content_widths'];
+        }
+
+        $custom_widths = array();
+        if ( isset( $input['page_content_width_custom'] ) && is_array( $input['page_content_width_custom'] ) ) {
+            $custom_widths = $input['page_content_width_custom'];
+        }
+
+        $sanitized_widths = array();
+        foreach ( $raw_widths as $page_id => $preset ) {
+            $page_id = absint( $page_id );
+            if ( $page_id <= 0 || ! self::page_has_ktpwp_shortcode( $page_id ) ) {
+                continue;
+            }
+
+            $preset = sanitize_text_field( (string) $preset );
+            if ( $preset === '' || $preset === 'default' ) {
+                continue;
+            }
+
+            if ( $preset === 'custom' ) {
+                $custom_raw = isset( $custom_widths[ $page_id ] ) ? trim( (string) $custom_widths[ $page_id ] ) : '';
+                $width      = self::sanitize_page_content_width_value( $custom_raw );
+                if ( $width === '' ) {
+                    continue;
+                }
+                $sanitized_widths[ $page_id ] = $width;
+                continue;
+            }
+
+            $width = self::sanitize_page_content_width_value( $preset );
+            if ( $width !== '' ) {
+                $sanitized_widths[ $page_id ] = $width;
+            }
+        }
+
+        $new_input['page_content_widths'] = $sanitized_widths;
+
         return $new_input;
     }
 
@@ -3308,10 +3732,6 @@ class KTPWP_Settings {
         echo esc_html__( 'SMTPサーバーを使用したメール送信の設定を行います。SMTPを利用しない場合は空欄のままにしてください。', 'ktpwp' );
     }
 
-    public function print_license_section_info() {
-        echo esc_html__( 'プラグインのライセンス情報を設定します。', 'ktpwp' );
-    }
-
     /**
      * デザイン設定セクションの説明
      *
@@ -3320,26 +3740,6 @@ class KTPWP_Settings {
      */
     public function print_design_section_info() {
         echo esc_html__( 'プラグインの外観とデザインに関する設定を行います。', 'ktpwp' );
-    }
-
-    public function activation_key_callback() {
-        $activation_key = get_option( 'ktp_activation_key' );
-        $has_license = ! empty( $activation_key );
-        ?>
-        <input type="password" id="ktp_activation_key" name="ktp_activation_key" 
-               value="<?php echo esc_attr( $activation_key ); ?>" 
-               style="width:320px;max-width:100%;"
-               placeholder="XXXX-XXXX-XXXX-XXXX"
-               autocomplete="off">
-        <div class="ktp-license-status <?php echo $has_license ? 'active' : 'inactive'; ?>">
-            <?php if ( $has_license ) : ?>
-                <span class="dashicons dashicons-yes-alt"></span> ライセンスキーが登録されています
-            <?php else : ?>
-                <span class="dashicons dashicons-warning"></span> ライセンスキーが未登録です
-            <?php endif; ?>
-        </div>
-        <div style="font-size:12px;color:#555;margin-top:8px;">※ プラグインのライセンスキーを入力して、機能を有効化してください。</div>
-        <?php
     }
 
     public function email_address_callback() {
@@ -3414,6 +3814,107 @@ class KTPWP_Settings {
                style="width:220px;max-width:100%;" 
                placeholder="<?php echo esc_attr__( '会社名や担当者名', 'ktpwp' ); ?>">
         <?php
+    }
+
+    /**
+     * 日本郵便APIセクションの説明
+     */
+    public function print_japanpost_api_section_info() {
+        echo '<p>' . esc_html__( '顧客タブの郵便番号から住所を自動入力する際、日本郵便の公式APIを利用できます。郵便番号・デジタルアドレス for Biz で発行したクライアントID・シークレットを入力してください。未設定または無効のときは従来どおり zipcloud の公開APIを利用します。', 'ktpwp' ) . '</p>';
+        echo '<p>' . esc_html__( '検証（スタブ）は API v2（/api/v2/）です。テスト用ドキュメントのとおり、郵便番号の例: 1020072・1020082・1010032・1010047 などが検索できます。', 'ktpwp' ) . '</p>';
+        echo '<p><a href="https://lp-api.da.pf.japanpost.jp/" target="_blank" rel="noopener noreferrer">' . esc_html__( '郵便番号・デジタルアドレスAPI（日本郵便）', 'ktpwp' ) . '</a></p>';
+    }
+
+    /**
+     * @return void
+     */
+    public function japanpost_api_enabled_callback() {
+        $options = get_option( 'ktp_japanpost_api_settings', array() );
+        $on      = ! empty( $options['enabled'] );
+        ?>
+        <label>
+            <input type="checkbox" name="ktp_japanpost_api_settings[enabled]" value="1" <?php checked( $on ); ?> />
+            <?php echo esc_html__( '有効にする（オフのときは zipcloud で郵便番号から住所を取得）', 'ktpwp' ); ?>
+        </label>
+        <?php
+    }
+
+    /**
+     * @return void
+     */
+    public function japanpost_api_environment_callback() {
+        $options = get_option( 'ktp_japanpost_api_settings', array() );
+        $env     = isset( $options['environment'] ) && $options['environment'] === 'stub' ? 'stub' : 'production';
+        ?>
+        <select name="ktp_japanpost_api_settings[environment]" id="ktp_japanpost_api_environment">
+            <option value="production" <?php selected( $env, 'production' ); ?>><?php echo esc_html__( '本番', 'ktpwp' ); ?></option>
+            <option value="stub" <?php selected( $env, 'stub' ); ?>><?php echo esc_html__( '検証（スタブ）', 'ktpwp' ); ?></option>
+        </select>
+        <p class="description" style="margin-top:8px;">
+            <strong><?php echo esc_html__( '本番', 'ktpwp' ); ?>:</strong> <code>api.da.pf.japanpost.jp</code>（<?php echo esc_html__( 'API v1', 'ktpwp' ); ?>）<br />
+            <strong><?php echo esc_html__( '検証（スタブ）', 'ktpwp' ); ?>:</strong> <code>stub-qz73x.da.pf.japanpost.jp</code>（<?php echo esc_html__( 'API v2（テスト用リファレンス準拠）', 'ktpwp' ); ?>）
+        </p>
+        <?php
+    }
+
+    /**
+     * @return void
+     */
+    public function japanpost_api_client_id_callback() {
+        $options = get_option( 'ktp_japanpost_api_settings', array() );
+        $val     = isset( $options['client_id'] ) ? (string) $options['client_id'] : '';
+        ?>
+        <input type="text" name="ktp_japanpost_api_settings[client_id]" id="ktp_japanpost_api_client_id" value="<?php echo esc_attr( $val ); ?>" class="regular-text" autocomplete="off" />
+        <?php
+    }
+
+    /**
+     * @return void
+     */
+    public function japanpost_api_secret_key_callback() {
+        ?>
+        <input type="password" name="ktp_japanpost_api_settings[secret_key]" id="ktp_japanpost_api_secret_key" value="" class="regular-text" autocomplete="off" placeholder="<?php echo esc_attr__( '変更する場合のみ入力', 'ktpwp' ); ?>" />
+        <p class="description"><?php echo esc_html__( '登録済みのシークレットを維持する場合は空のまま保存してください。', 'ktpwp' ); ?></p>
+        <?php
+    }
+
+    /**
+     * 日本郵便API設定のサニタイズ
+     *
+     * @param array|null $input 入力
+     * @return array
+     */
+    public function sanitize_japanpost_api_settings( $input ) {
+        $prev = get_option( 'ktp_japanpost_api_settings', array() );
+        if ( ! is_array( $prev ) ) {
+            $prev = array();
+        }
+        $out = array_merge(
+            array(
+                'enabled'     => false,
+                'environment' => 'production',
+                'client_id'   => '',
+                'secret_key'  => '',
+            ),
+            $prev
+        );
+        if ( ! is_array( $input ) ) {
+            return $out;
+        }
+        $out['enabled'] = ! empty( $input['enabled'] );
+        if ( isset( $input['environment'] ) && in_array( $input['environment'], array( 'production', 'stub' ), true ) ) {
+            $out['environment'] = $input['environment'];
+        }
+        if ( isset( $input['client_id'] ) ) {
+            $out['client_id'] = sanitize_text_field( wp_unslash( (string) $input['client_id'] ) );
+        }
+        if ( isset( $input['secret_key'] ) ) {
+            $sk = trim( wp_unslash( (string) $input['secret_key'] ) );
+            if ( $sk !== '' ) {
+                $out['secret_key'] = $sk;
+            }
+        }
+        return $out;
     }
 
     public function setup_smtp_settings( $phpmailer ) {
@@ -3561,6 +4062,24 @@ class KTPWP_Settings {
             $new_input['currency_code'] = isset( $supported_currencies[ $currency_code ] ) ? $currency_code : 'JPY';
         }
 
+        if ( isset( $input['ktp_page_id'] ) ) {
+            $page_id = absint( $input['ktp_page_id'] );
+            if ( $page_id === 0 ) {
+                $new_input['ktp_page_id'] = 0;
+            } elseif ( self::page_has_ktpwp_shortcode( $page_id ) ) {
+                $new_input['ktp_page_id'] = $page_id;
+            } else {
+                $existing = get_option( 'ktp_general_settings', array() );
+                $new_input['ktp_page_id'] = isset( $existing['ktp_page_id'] ) ? (int) $existing['ktp_page_id'] : 0;
+                add_settings_error(
+                    'ktp_general_settings',
+                    'invalid_ktp_page_id',
+                    __( '業務画面ページには、[ktpwp_all_tab] または [kantanpro_ex] が設置された公開中の固定ページを選択してください。', 'ktpwp' ),
+                    'error'
+                );
+            }
+        }
+
         // 税制モード（明示的に選択: multiple | unified | abolished）
         if ( isset( $input['tax_mode'] ) ) {
             $ui_mode = sanitize_text_field( $input['tax_mode'] );
@@ -3604,6 +4123,24 @@ class KTPWP_Settings {
             $new_input['lock_line_tax_rate'] = false;
         }
 
+        if ( isset( $input['contract_reminder_enabled'] ) ) {
+            $new_input['contract_reminder_enabled'] = (bool) $input['contract_reminder_enabled'];
+        } else {
+            $new_input['contract_reminder_enabled'] = false;
+        }
+
+        if ( isset( $input['contract_reminder_days_before'] ) ) {
+            $new_input['contract_reminder_days_before'] = max( 1, min( 30, absint( $input['contract_reminder_days_before'] ) ) );
+        }
+
+        if ( isset( $input['contract_reminder_subject'] ) ) {
+            $new_input['contract_reminder_subject'] = sanitize_text_field( $input['contract_reminder_subject'] );
+        }
+
+        if ( isset( $input['contract_reminder_body'] ) ) {
+            $new_input['contract_reminder_body'] = sanitize_textarea_field( $input['contract_reminder_body'] );
+        }
+
         if ( isset( $input['company_info'] ) ) {
             // HTMLコンテンツを許可し、wp_ksesで安全なHTMLタグのみ保持
             $allowed_html = array(
@@ -3645,6 +4182,54 @@ class KTPWP_Settings {
 
         if ( array_key_exists( 'bank_transfer_account_holder_kana', $input ) ) {
             $new_input['bank_transfer_account_holder_kana'] = sanitize_text_field( wp_unslash( (string) $input['bank_transfer_account_holder_kana'] ) );
+        }
+
+        $existing = get_option( 'ktp_general_settings', array() );
+        if ( ! is_array( $existing ) ) {
+            $existing = array();
+        }
+
+        $new_input['stripe_enabled'] = ! empty( $input['stripe_enabled'] );
+        $new_input['stripe_test_mode'] = ! empty( $input['stripe_test_mode'] );
+        $new_input['contract_invoice_auto_enabled'] = ! empty( $input['contract_invoice_auto_enabled'] );
+
+        if ( isset( $input['stripe_days_until_due'] ) ) {
+            $new_input['stripe_days_until_due'] = max( 1, min( 90, absint( $input['stripe_days_until_due'] ) ) );
+        } elseif ( isset( $existing['stripe_days_until_due'] ) ) {
+            $new_input['stripe_days_until_due'] = max( 1, min( 90, absint( $existing['stripe_days_until_due'] ) ) );
+        }
+
+        if ( array_key_exists( 'stripe_invoice_issuer_name', $input ) ) {
+            $new_input['stripe_invoice_issuer_name'] = sanitize_text_field( wp_unslash( (string) $input['stripe_invoice_issuer_name'] ) );
+        } elseif ( isset( $existing['stripe_invoice_issuer_name'] ) ) {
+            $new_input['stripe_invoice_issuer_name'] = $existing['stripe_invoice_issuer_name'];
+        }
+
+        $stripe_secret_fields = array(
+            'stripe_secret_key_test',
+            'stripe_secret_key_live',
+            'stripe_webhook_secret_test',
+            'stripe_webhook_secret_live',
+        );
+        foreach ( $stripe_secret_fields as $field ) {
+            if ( array_key_exists( $field, $input ) ) {
+                $value = trim( sanitize_text_field( wp_unslash( (string) $input[ $field ] ) ) );
+                if ( $value !== '' ) {
+                    $new_input[ $field ] = $value;
+                } elseif ( isset( $existing[ $field ] ) ) {
+                    $new_input[ $field ] = $existing[ $field ];
+                }
+            } elseif ( isset( $existing[ $field ] ) ) {
+                $new_input[ $field ] = $existing[ $field ];
+            }
+        }
+
+        if ( ! $new_input['stripe_enabled'] ) {
+            $test_key = trim( (string) ( $new_input['stripe_secret_key_test'] ?? '' ) );
+            $live_key = trim( (string) ( $new_input['stripe_secret_key_live'] ?? '' ) );
+            if ( $test_key !== '' || $live_key !== '' ) {
+                $new_input['stripe_enabled'] = true;
+            }
         }
 
         return $new_input;
@@ -3715,10 +4300,13 @@ class KTPWP_Settings {
      * @return void
      */
     public function ensure_logo_default_value() {
+        $default_logo = function_exists( 'ktpwp_plugin_asset_url' )
+            ? ktpwp_plugin_asset_url( 'images/default/icon.png' )
+            : plugins_url( 'images/default/icon.png', KANTANPRO_PLUGIN_FILE );
         $current_logo = get_option( 'ktp_logo_image' );
-        if ( empty( $current_logo ) ) {
-            $default_logo = plugins_url( 'images/default/icon.png', KANTANPRO_PLUGIN_FILE );
-            update_option( 'ktp_logo_image', $default_logo );
+
+        if ( ! is_string( $current_logo ) || '' === trim( $current_logo ) || $current_logo !== $default_logo ) {
+            update_option( 'ktp_logo_image', $default_logo, false );
         }
     }
 
@@ -3779,7 +4367,9 @@ class KTPWP_Settings {
      * @return string
      */
     private function get_fixed_logo_image() {
-        return plugins_url( 'images/default/icon.png', KANTANPRO_PLUGIN_FILE );
+        return function_exists( 'ktpwp_plugin_asset_url' )
+            ? ktpwp_plugin_asset_url( 'images/default/icon.png' )
+            : plugins_url( 'images/default/icon.png', KANTANPRO_PLUGIN_FILE );
     }
 
     /**
@@ -3788,7 +4378,7 @@ class KTPWP_Settings {
      * @return string
      */
     private function get_fixed_system_name() {
-        return defined( 'KANTANPRO_PLUGIN_NAME' ) ? KANTANPRO_PLUGIN_NAME : 'KantanPro';
+        return defined( 'KANTANPRO_PLUGIN_NAME' ) ? KANTANPRO_PLUGIN_NAME : 'KantanProEX';
     }
 
     /**
@@ -3830,6 +4420,52 @@ class KTPWP_Settings {
      */
     public function sanitize_fixed_system_description( $value ) {
         return sanitize_textarea_field( $this->get_fixed_system_description() );
+    }
+
+    /**
+     * 業務画面ページフィールドのコールバック。
+     *
+     * @return void
+     */
+    public function ktp_page_id_callback() {
+        $selected   = self::get_configured_ktpwp_business_page_id();
+        $candidates = self::get_ktpwp_shortcode_pages();
+        ?>
+        <select id="ktp_page_id" name="ktp_general_settings[ktp_page_id]">
+            <option value="0" <?php selected( $selected, 0 ); ?>>
+                <?php echo esc_html__( '自動検出（ショートコード設置ページのうち ID が最小の公開ページ）', 'ktpwp' ); ?>
+            </option>
+            <?php foreach ( $candidates as $page ) : ?>
+                <option value="<?php echo esc_attr( (string) (int) $page->ID ); ?>" <?php selected( $selected, (int) $page->ID ); ?>>
+                    <?php echo esc_html( $page->post_title . ' (ID: ' . (int) $page->ID . ')' ); ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+        <p class="description">
+            <?php echo esc_html__( '受注通知メール等の「受注書へのリンク」に使う KantanPro 業務画面ページです。デモページが選ばれる場合は本番ページを指定してください。', 'ktpwp' ); ?>
+        </p>
+        <?php
+        $effective_page_id = self::get_ktpwp_business_page_id();
+        if ( $effective_page_id > 0 ) {
+            $effective_url = self::get_ktpwp_business_page_url();
+            if ( $effective_url !== '' ) {
+                ?>
+                <p class="description">
+                    <?php
+                    printf(
+                        /* translators: 1: page ID */
+                        esc_html__( '現在のリンク先: ページ ID %1$d', 'ktpwp' ),
+                        (int) $effective_page_id
+                    );
+                    ?>
+                    —
+                    <a href="<?php echo esc_url( $effective_url ); ?>" target="_blank" rel="noopener noreferrer">
+                        <?php echo esc_html__( 'ページを開く', 'ktpwp' ); ?>
+                    </a>
+                </p>
+                <?php
+            }
+        }
     }
 
     /**
@@ -4094,6 +4730,25 @@ class KTPWP_Settings {
     }
 
     /**
+     * 公開商品カードの背景色フィールドのコールバック
+     *
+     * @since 1.3.60
+     * @return void
+     */
+    public function public_product_card_bg_color_callback() {
+        $options = get_option( 'ktp_design_settings' );
+        $value   = isset( $options['public_product_card_bg_color'] ) ? $options['public_product_card_bg_color'] : '#e2e8f0';
+        ?>
+        <input type="color" id="public_product_card_bg_color" name="ktp_design_settings[public_product_card_bg_color]"
+               value="<?php echo esc_attr( $value ); ?>"
+               style="width:100px;height:40px;">
+        <div style="font-size:12px;color:#555;margin-top:4px;">
+            <?php echo esc_html__( '※ [ktpwp_public_products] のグリッド型・カード型一覧で、各商品カードの背景色を設定します。', 'ktpwp' ); ?>
+        </div>
+        <?php
+    }
+
+    /**
      * ヘッダー背景画像フィールドのコールバック
      *
      * @since 1.0.0
@@ -4134,6 +4789,113 @@ class KTPWP_Settings {
                 <?php echo esc_html__( '※ ヘッダーの背景画像として使用されます。推奨サイズ: 1920×100px', 'ktpwp' ); ?>
             </div>
         </div>
+        <?php
+    }
+
+    /**
+     * 固定ページごとのコンテンツ幅フィールドのコールバック。
+     *
+     * @return void
+     */
+    public function page_content_widths_callback() {
+        $options  = self::get_design_settings();
+        $widths   = isset( $options['page_content_widths'] ) && is_array( $options['page_content_widths'] )
+            ? $options['page_content_widths']
+            : array();
+        $pages    = self::get_ktpwp_shortcode_pages();
+        $presets  = self::get_page_content_width_presets();
+        $preset_keys = array_keys( $presets );
+        ?>
+        <p class="description" style="margin-top:0;">
+            <?php echo esc_html__( 'ショートコードを設置した固定ページごとに、KantanPro 業務画面の表示幅を変更できます。未設定のページは標準（1400px）で表示されます。', 'ktpwp' ); ?>
+        </p>
+        <?php if ( empty( $pages ) ) : ?>
+            <p><?php echo esc_html__( 'ショートコードが設置された公開中の固定ページがありません。', 'ktpwp' ); ?></p>
+        <?php else : ?>
+            <table class="widefat striped" style="max-width:760px;">
+                <thead>
+                    <tr>
+                        <th scope="col"><?php echo esc_html__( '固定ページ', 'ktpwp' ); ?></th>
+                        <th scope="col"><?php echo esc_html__( '表示幅', 'ktpwp' ); ?></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ( $pages as $page ) :
+                        $page_id       = (int) $page->ID;
+                        $saved_width   = isset( $widths[ $page_id ] ) ? self::sanitize_page_content_width_value( (string) $widths[ $page_id ] ) : '';
+                        $selected      = '';
+                        $custom_value  = '';
+
+                        if ( $saved_width !== '' ) {
+                            if ( in_array( $saved_width, $preset_keys, true ) ) {
+                                $selected = $saved_width;
+                            } else {
+                                $selected     = 'custom';
+                                $custom_value = preg_replace( '/[^0-9.]/', '', $saved_width );
+                            }
+                        } else {
+                            $selected = isset( $widths[ $page_id ] ) ? '' : self::get_default_page_content_width();
+                        }
+                        ?>
+                        <tr>
+                            <td>
+                                <strong><?php echo esc_html( $page->post_title ); ?></strong><br>
+                                <span class="description"><?php echo esc_html( sprintf( __( 'ID: %d', 'ktpwp' ), $page_id ) ); ?></span>
+                            </td>
+                            <td>
+                                <select
+                                    id="ktp_page_content_width_<?php echo esc_attr( (string) $page_id ); ?>"
+                                    name="ktp_design_settings[page_content_widths][<?php echo esc_attr( (string) $page_id ); ?>]"
+                                    class="ktp-page-content-width-select"
+                                    data-page-id="<?php echo esc_attr( (string) $page_id ); ?>"
+                                >
+                                    <?php foreach ( $presets as $value => $label ) : ?>
+                                        <option value="<?php echo esc_attr( $value ); ?>" <?php selected( $selected, $value ); ?>>
+                                            <?php echo esc_html( $label ); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <input
+                                    type="number"
+                                    class="ktp-page-content-width-custom"
+                                    data-page-id="<?php echo esc_attr( (string) $page_id ); ?>"
+                                    name="ktp_design_settings[page_content_width_custom][<?php echo esc_attr( (string) $page_id ); ?>]"
+                                    value="<?php echo esc_attr( $custom_value ); ?>"
+                                    min="320"
+                                    max="3840"
+                                    step="1"
+                                    placeholder="<?php echo esc_attr__( '例: 1350', 'ktpwp' ); ?>"
+                                    style="width:120px;max-width:100%;margin-left:8px;<?php echo $selected === 'custom' ? '' : 'display:none;'; ?>"
+                                >
+                                <span class="description ktp-page-content-width-custom-suffix" data-page-id="<?php echo esc_attr( (string) $page_id ); ?>" style="<?php echo $selected === 'custom' ? '' : 'display:none;'; ?>">px</span>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+            <script>
+            (function () {
+                function toggleCustomWidthInput(select) {
+                    var pageId = select.getAttribute('data-page-id');
+                    var customInput = document.querySelector('.ktp-page-content-width-custom[data-page-id="' + pageId + '"]');
+                    var suffix = document.querySelector('.ktp-page-content-width-custom-suffix[data-page-id="' + pageId + '"]');
+                    var showCustom = select.value === 'custom';
+                    if (customInput) {
+                        customInput.style.display = showCustom ? '' : 'none';
+                    }
+                    if (suffix) {
+                        suffix.style.display = showCustom ? '' : 'none';
+                    }
+                }
+
+                document.querySelectorAll('.ktp-page-content-width-select').forEach(function (select) {
+                    select.addEventListener('change', function () {
+                        toggleCustomWidthInput(select);
+                    });
+                });
+            })();
+            </script>
+        <?php endif; ?>
         <?php
     }
 
@@ -4299,6 +5061,7 @@ div.ktp_header > * {
 .ktp_list_item:nth-child(odd),
 .ktp_plugin_container ul li:nth-child(odd),
 .ktp_data_contents .ktp_data_list_box > a:nth-of-type(odd) .ktp_data_list_item,
+.ktp_data_list_box .ktp-service-related-list__rows > a:nth-of-type(odd) .ktp_data_list_item,
 .ktp_search_list_box ul li:nth-child(odd),
 .ktp_search_list_box > a:nth-of-type(odd) .ktp_data_list_item,
 .ktp_plugin_container tr:nth-child(odd),
@@ -4324,11 +5087,31 @@ div.ktp_header > * {
 .ktp_list_item:nth-child(even),
 .ktp_plugin_container ul li:nth-child(even),
 .ktp_data_contents .ktp_data_list_box > a:nth-of-type(even) .ktp_data_list_item,
+.ktp_data_list_box .ktp-service-related-list__rows > a:nth-of-type(even) .ktp_data_list_item,
 .ktp_search_list_box ul li:nth-child(even),
 .ktp_search_list_box > a:nth-of-type(even) .ktp_data_list_item,
 .ktp_plugin_container tr:nth-child(even),
 .ktp_plugin_container tbody tr:nth-child(even) {
     background-color: ' . esc_attr( $even_row_color ) . ' !important;
+}';
+            }
+        }
+
+        // 公開商品カードの背景色設定
+        if ( ! empty( $design_options['public_product_card_bg_color'] ) ) {
+            $public_product_card_bg_color = sanitize_hex_color( $design_options['public_product_card_bg_color'] );
+            if ( $public_product_card_bg_color ) {
+                $custom_css .= '
+.ktpwp-public-products {
+    --ktpwp-public-product-card-bg: ' . esc_attr( $public_product_card_bg_color ) . ';
+}
+.ktpwp-public-products-grid__item,
+.ktpwp-public-products-card {
+    background: ' . esc_attr( $public_product_card_bg_color ) . ' !important;
+}
+.ktpwp-public-products-grid__image-wrap,
+.ktpwp-public-products-card__image-wrap {
+    background: ' . esc_attr( $public_product_card_bg_color ) . ' !important;
 }';
             }
         }
@@ -4344,6 +5127,55 @@ div.ktp_header > * {
             echo $custom_css;
             echo '</style>';
         }
+    }
+
+    /**
+     * 固定ページの幅設定に応じた body_class を付与する。
+     *
+     * @param string[] $classes body クラス一覧。
+     * @return string[]
+     */
+    public function filter_body_class_for_page_content_width( $classes ) {
+        $page_id = self::get_current_ktpwp_page_id();
+        $width   = self::get_page_content_width_for_page( $page_id );
+        if ( $width === '' ) {
+            return $classes;
+        }
+
+        $classes[] = 'ktpwp-has-page-width';
+        $classes[] = 'ktpwp-page-width-' . preg_replace( '/[^0-9]/', '', $width );
+
+        return $classes;
+    }
+
+    /**
+     * 固定ページごとのコンテンツ幅スタイルを出力する。
+     *
+     * @return void
+     */
+    public function output_page_content_width_styles() {
+        if ( is_admin() ) {
+            return;
+        }
+
+        $page_id = self::get_current_ktpwp_page_id();
+        if ( $page_id <= 0 ) {
+            return;
+        }
+
+        $width = self::get_page_content_width_for_page( $page_id );
+        if ( $width === '' ) {
+            return;
+        }
+
+        $custom_css = self::build_page_content_width_css( $page_id, $width );
+        if ( $custom_css === '' ) {
+            return;
+        }
+
+        echo '<style type="text/css" id="ktp-page-content-width-styles">';
+        echo $custom_css;
+        echo '</style>';
     }
 
     /**
@@ -4376,7 +5208,9 @@ div.ktp_header > * {
                 'tab_border_color' => '#B7CBFB',
                 'odd_row_color' => '#E7EEFD',
                 'even_row_color' => '#FFFFFF',
+                'public_product_card_bg_color' => '#e2e8f0',
                 'header_bg_image' => 'images/default/header_bg_image.png',
+                'page_content_widths' => self::build_default_page_content_widths(),
                 'custom_css' => '',
             );
             update_option( 'ktp_design_settings', $system_defaults );
@@ -4481,6 +5315,61 @@ div.ktp_header > * {
                             </fieldset>
                         </td>
                     </tr>
+
+                    <tr>
+                        <th scope="row"><?php echo esc_html__( '管理画面 IP 制限', 'ktpwp' ); ?></th>
+                        <td>
+                            <?php
+                            $current_ip = class_exists( 'KTPWP_Security' )
+                                ? KTPWP_Security::get_instance()->get_client_ip()
+                                : ( isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '' );
+                            ?>
+                            <fieldset>
+                                <label>
+                                    <input type="checkbox" name="ktpwp_admin_ip_restriction_enabled" value="1"
+                                           <?php checked( $current_settings['admin_ip_restriction_enabled'], '1' ); ?> />
+                                    <?php echo esc_html__( '許可 IP 以外から wp-admin / wp-login.php へのアクセスを拒否する', 'ktpwp' ); ?>
+                                </label>
+                                <p class="description">
+                                    <?php echo esc_html__( '現在のアクセス元 IP:', 'ktpwp' ); ?>
+                                    <code><?php echo esc_html( $current_ip !== '' ? $current_ip : __( '取得できません', 'ktpwp' ) ); ?></code>
+                                </p>
+                                <label for="ktpwp_admin_allowed_ips"><?php echo esc_html__( '許可 IP アドレス', 'ktpwp' ); ?></label><br>
+                                <textarea name="ktpwp_admin_allowed_ips" id="ktpwp_admin_allowed_ips" rows="5" class="large-text code"><?php echo esc_textarea( $current_settings['admin_allowed_ips'] ); ?></textarea>
+                                <p class="description">
+                                    <?php echo esc_html__( '1 行に 1 件。IPv4 / IPv6、CIDR（例: 203.0.113.0/24）に対応。有効化する前に自分の IP を必ず追加してください。', 'ktpwp' ); ?>
+                                </p>
+                            </fieldset>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th scope="row"><?php echo esc_html__( '管理画面 Basic 認証', 'ktpwp' ); ?></th>
+                        <td>
+                            <fieldset>
+                                <label>
+                                    <input type="checkbox" name="ktpwp_admin_basic_auth_enabled" value="1"
+                                           <?php checked( $current_settings['admin_basic_auth_enabled'], '1' ); ?> />
+                                    <?php echo esc_html__( 'IP 制限に該当しないアクセス、または IP 制限が使えない環境向けに Basic 認証を要求する', 'ktpwp' ); ?>
+                                </label>
+                                <p class="description">
+                                    <?php echo esc_html__( '許可 IP からのアクセスは Basic 認証なしで通過します。IP 制限を無効にした場合は、管理画面全体で Basic 認証が必要になります。', 'ktpwp' ); ?>
+                                </p>
+                                <p>
+                                    <label for="ktpwp_admin_basic_auth_user"><?php echo esc_html__( 'ユーザー名', 'ktpwp' ); ?></label><br>
+                                    <input type="text" name="ktpwp_admin_basic_auth_user" id="ktpwp_admin_basic_auth_user" class="regular-text"
+                                           value="<?php echo esc_attr( $current_settings['admin_basic_auth_user'] ); ?>" autocomplete="off">
+                                </p>
+                                <p>
+                                    <label for="ktpwp_admin_basic_auth_pass"><?php echo esc_html__( 'パスワード', 'ktpwp' ); ?></label><br>
+                                    <input type="password" name="ktpwp_admin_basic_auth_pass" id="ktpwp_admin_basic_auth_pass" class="regular-text" value="" autocomplete="new-password">
+                                </p>
+                                <p class="description">
+                                    <?php echo esc_html__( 'パスワードを空欄のまま保存すると、現在のパスワードを維持します。', 'ktpwp' ); ?>
+                                </p>
+                            </fieldset>
+                        </td>
+                    </tr>
                 </table>
                 
                 <?php submit_button(); ?>
@@ -4529,6 +5418,23 @@ div.ktp_header > * {
                         ?>
                     </td>
                 </tr>
+                <tr>
+                    <th scope="row"><?php echo esc_html__( '管理画面アクセス保護', 'ktpwp' ); ?></th>
+                    <td>
+                        <?php
+                        $admin_protection = array();
+                        if ( $current_settings['admin_ip_restriction_enabled'] === '1' ) {
+                            $admin_protection[] = esc_html__( 'IP 制限: 有効', 'ktpwp' );
+                        }
+                        if ( $current_settings['admin_basic_auth_enabled'] === '1' ) {
+                            $admin_protection[] = esc_html__( 'Basic 認証: 有効', 'ktpwp' );
+                        }
+                        echo ! empty( $admin_protection )
+                            ? esc_html( implode( ' / ', $admin_protection ) )
+                            : esc_html__( '無効', 'ktpwp' );
+                        ?>
+                    </td>
+                </tr>
             </table>
             
             <h2><?php echo esc_html__( '推奨設定（wp-config.php）', 'ktpwp' ); ?></h2>
@@ -4568,6 +5474,29 @@ define( 'WP_DEBUG_DISPLAY', false );
         $disable_rest_api_restriction = isset( $_POST['ktpwp_disable_rest_api_restriction'] ) ? '1' : '0';
         update_option( 'ktpwp_disable_rest_api_restriction', $disable_rest_api_restriction );
 
+        // 管理画面 IP 制限
+        $admin_ip_restriction_enabled = isset( $_POST['ktpwp_admin_ip_restriction_enabled'] ) ? '1' : '0';
+        $admin_allowed_ips            = isset( $_POST['ktpwp_admin_allowed_ips'] )
+            ? sanitize_textarea_field( wp_unslash( $_POST['ktpwp_admin_allowed_ips'] ) )
+            : '';
+        update_option( 'ktpwp_admin_ip_restriction_enabled', $admin_ip_restriction_enabled );
+        update_option( 'ktpwp_admin_allowed_ips', $admin_allowed_ips );
+
+        // 管理画面 Basic 認証
+        $admin_basic_auth_enabled = isset( $_POST['ktpwp_admin_basic_auth_enabled'] ) ? '1' : '0';
+        $admin_basic_auth_user    = isset( $_POST['ktpwp_admin_basic_auth_user'] )
+            ? sanitize_user( wp_unslash( $_POST['ktpwp_admin_basic_auth_user'] ), true )
+            : '';
+        update_option( 'ktpwp_admin_basic_auth_enabled', $admin_basic_auth_enabled );
+        update_option( 'ktpwp_admin_basic_auth_user', $admin_basic_auth_user );
+
+        $admin_basic_auth_pass_raw = isset( $_POST['ktpwp_admin_basic_auth_pass'] )
+            ? (string) wp_unslash( $_POST['ktpwp_admin_basic_auth_pass'] )
+            : '';
+        if ( $admin_basic_auth_pass_raw !== '' ) {
+            update_option( 'ktpwp_admin_basic_auth_pass', wp_hash_password( $admin_basic_auth_pass_raw ) );
+        }
+
         // 設定保存メッセージ
         add_action(
             'admin_notices',
@@ -4591,6 +5520,10 @@ define( 'WP_DEBUG_DISPLAY', false );
             'debug_log_enabled' => get_option( 'ktpwp_debug_log_enabled', '0' ),
             'rest_api_restricted' => get_option( 'ktpwp_rest_api_restricted', '1' ),
             'disable_rest_api_restriction' => get_option( 'ktpwp_disable_rest_api_restriction', '0' ),
+            'admin_ip_restriction_enabled' => get_option( 'ktpwp_admin_ip_restriction_enabled', '0' ),
+            'admin_allowed_ips' => get_option( 'ktpwp_admin_allowed_ips', '' ),
+            'admin_basic_auth_enabled' => get_option( 'ktpwp_admin_basic_auth_enabled', '0' ),
+            'admin_basic_auth_user' => get_option( 'ktpwp_admin_basic_auth_user', '' ),
         );
     }
 
@@ -5222,14 +6155,32 @@ define( 'WP_DEBUG_DISPLAY', false );
     }
 
     /**
+     * 開発環境の判定
+     *
+     * @return bool
+     */
+    private function is_development_environment() {
+        $host = isset( $_SERVER['HTTP_HOST'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_HOST'] ) ) : '';
+
+        return in_array( $host, array( 'localhost', '127.0.0.1' ), true )
+            || strpos( $host, '.local' ) !== false
+            || strpos( $host, '.test' ) !== false
+            || strpos( $host, '.dev' ) !== false
+            || strpos( $host, 'localhost:' ) !== false
+            || strpos( $host, '127.0.0.1:' ) !== false
+            || ( defined( 'WP_ENV' ) && WP_ENV === 'development' )
+            || ( defined( 'KTPWP_DEVELOPMENT_MODE' ) && KTPWP_DEVELOPMENT_MODE === true );
+    }
+
+    /**
      * 開発者設定画面を表示可能か判定
      *
      * @return bool
      */
     private function is_developer_settings_enabled() {
-        return ( defined( 'KTPWP_DEVELOPMENT_MODE' ) && KTPWP_DEVELOPMENT_MODE ) ||
-               ( defined( 'KANTANPRO_DEV_MODE' ) && KANTANPRO_DEV_MODE ) ||
-               $this->is_development_environment();
+        return ( defined( 'KTPWP_DEVELOPMENT_MODE' ) && KTPWP_DEVELOPMENT_MODE )
+            || ( defined( 'KANTANPRO_DEV_MODE' ) && KANTANPRO_DEV_MODE )
+            || $this->is_development_environment();
     }
 
     /**
@@ -5238,8 +6189,7 @@ define( 'WP_DEBUG_DISPLAY', false );
      * @return void
      */
     public function print_central_banner_section_info() {
-        echo '<p>' . esc_html__( 'ここで設定した内容は、KantanPro配布先へ配信する共通バナー情報として利用します。', 'ktpwp' ) . '</p>';
-        echo '<p>' . esc_html__( '配布先では「外部参照URL」が空でも、公式サイトの既定バナー JSON を自動取得します（各サイトへの個別設定は不要です）。表示を止める場合は開発者設定の配信有効をオフにするか、テーマの functions.php 等でフィルター kantanpro_auto_fetch_official_central_banner を false にしてください。', 'ktpwp' ) . '</p>';
+        return;
     }
 
     /**
@@ -5382,25 +6332,24 @@ define( 'WP_DEBUG_DISPLAY', false );
         $link_url  = '';
         $alt_text  = '';
 
-        // 1) KTP Banner: 「有効」かつ画像ありのときだけ配信（中央バナーのチェックと独立）
+        // EX 本体では広告バナーを表示しないが、配布先 KantanPro 向けの API 配信は許可する。
+        // 公式サイト側に KTP Banner がある場合は、その設定を優先して配信する。
         if ( is_array( $legacy_banner ) && ! empty( $legacy_banner['enabled'] ) && ! empty( $legacy_banner['image_url'] ) ) {
             $image_url = esc_url_raw( $legacy_banner['image_url'] );
             $link_url  = isset( $legacy_banner['link_url'] ) ? esc_url_raw( $legacy_banner['link_url'] ) : '';
             $alt_text  = isset( $legacy_banner['alt_text'] ) ? sanitize_text_field( $legacy_banner['alt_text'] ) : '';
         } elseif ( ! empty( $settings['enabled'] ) && ! empty( $settings['image_url'] ) ) {
-            // 2) KTP Banner なし: 中央バナー「配信有効」かつ配布用画像あり
             $image_url = esc_url_raw( $settings['image_url'] );
             $link_url  = isset( $settings['link_url'] ) ? esc_url_raw( $settings['link_url'] ) : '';
             $alt_text  = isset( $settings['alt_text'] ) ? sanitize_text_field( $settings['alt_text'] ) : '';
         }
 
-        // 配布先は enabled と image_url の両方を見るため、実際に配信する内容があるときは true にそろえる
         $payload = array(
-            'enabled'   => ( '' !== $image_url ),
-            'image_url' => $image_url,
-            'link_url'  => $link_url,
-            'alt_text'  => $alt_text,
-            'updated_at'=> current_time( 'mysql' ),
+            'enabled'    => ( '' !== $image_url ),
+            'image_url'  => $image_url,
+            'link_url'   => $link_url,
+            'alt_text'   => $alt_text,
+            'updated_at' => current_time( 'mysql' ),
         );
 
         return rest_ensure_response( $payload );

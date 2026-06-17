@@ -199,12 +199,25 @@ class KTPWP_WooCommerce_Integration {
 			}
 		}
 
-		// 初期スタッフチャット
+		// 初期スタッフチャット（管理者名義）
 		if ( class_exists( 'KTPWP_Staff_Chat' ) ) {
 			$staff_chat = KTPWP_Staff_Chat::get_instance();
-			if ( method_exists( $staff_chat, 'create_initial_chat' ) ) {
-				$staff_chat->create_initial_chat( $ktp_order_id, null );
+			if ( method_exists( $staff_chat, 'create_inbound_initial_chat' ) ) {
+				$staff_chat->create_inbound_initial_chat(
+					$ktp_order_id,
+					KTPWP_Order_Admin_Notification::SOURCE_WOOCOMMERCE
+				);
 			}
+		}
+
+		if ( class_exists( 'KTPWP_Order_Admin_Notification' ) ) {
+			KTPWP_Order_Admin_Notification::get_instance()->notify_new_order(
+				$ktp_order_id,
+				KTPWP_Order_Admin_Notification::SOURCE_WOOCOMMERCE,
+				array(
+					'wc_order_number' => $order_number,
+				)
+			);
 		}
 
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {

@@ -110,9 +110,8 @@ class KTPWP_Hook_Manager {
         $this->removed_hooks_count += 2;
         
         // admin_init関連の重い処理を削除
-        remove_action( 'admin_init', 'ktpwp_handle_auto_update_toggle' );
         remove_action( 'admin_init', 'ktpwp_check_terms_agreement' );
-        $this->removed_hooks_count += 2;
+        $this->removed_hooks_count += 1;
         
         // admin_enqueue_scripts関連を削除
         remove_action( 'admin_enqueue_scripts', 'ktpwp_enqueue_cache_admin_scripts' );

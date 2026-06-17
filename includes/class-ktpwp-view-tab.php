@@ -33,6 +33,7 @@ class KTPWP_View_Tabs_Class {
         }
 
         $lock_icon = '<span class="ktp-lock-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M17 9h-1V7a4 4 0 0 0-8 0v2H7a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2Zm-7-2a2 2 0 1 1 4 0v2h-4V7Zm3 9.73V18h-2v-1.27a2 2 0 1 1 2 0Z"/></svg></span>';
+        $report_locked = function_exists( 'ktpwp_is_feature_enabled' ) && ! ktpwp_is_feature_enabled( 'report' );
 
         // タブの内容を配列で定義
         $tabs = array(
@@ -41,7 +42,7 @@ class KTPWP_View_Tabs_Class {
 			'client' => esc_html__( '顧客', 'ktpwp' ),
 			'service' => esc_html__( 'サービス', 'ktpwp' ),
 			'supplier' => esc_html__( '協力会社', 'ktpwp' ),
-			'report' => $lock_icon . esc_html__( 'レポート', 'ktpwp' ),
+			'report' => ( $report_locked ? $lock_icon : '' ) . esc_html__( 'レポート', 'ktpwp' ),
         );
 
         // タブの内容を作成（プラグインコンテナクラスを追加してテーマとの競合を防止）
@@ -76,6 +77,14 @@ class KTPWP_View_Tabs_Class {
 				'sort_order',
 				'order_sort_by',
 				'order_sort_order',
+				'skills_sort_by',
+				'skills_sort_order',
+				'skills_page',
+				'report_type',
+				'period',
+				'tax_year',
+				'list_type',
+				'progress',
 				'chat_open',
 				'message_sent',  // チャット関連パラメータも除去
             ),
@@ -85,8 +94,11 @@ class KTPWP_View_Tabs_Class {
         foreach ( $tabs as $key => $value ) {
 			$checked = $position === $key ? ' checked' : '';
 			$active_class = $position === $key ? ' active' : '';
-			// クリーンなベースURLにタブ名のみを追加
-			$tab_url = add_query_arg( 'tab_name', $key, $clean_base_url );
+			$tab_args = array_merge(
+				array( 'tab_name' => $key ),
+				$this->get_saved_tab_state( $key )
+			);
+			$tab_url = add_query_arg( $tab_args, $clean_base_url );
 			$view .= "<input id=\"$key\" type=\"radio\" name=\"tab_item\"$checked>";
 			$view .= '<a href="' . esc_url( $tab_url ) . "\" class=\"tab_item$active_class\">$value</a>";
         }
@@ -123,6 +135,17 @@ class KTPWP_View_Tabs_Class {
         $view .= '</div>';
 
 		return $view;
+    }
+
+    /**
+     * Cookie に保存されたタブ表示状態を取得する。
+     *
+     * @param string $tab_name タブ名。
+     * @return array<string, string>
+     */
+    private function get_saved_tab_state( $tab_name ) {
+        // タブ状態は localStorage で管理（Cookie 肥大化による 431 回避）。
+        return array();
     }
 
     /**

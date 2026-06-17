@@ -274,8 +274,65 @@
         return num.toFixed(6).replace(/\.?0+$/, '');
     }
 
-    // 価格×数量の自動計算
+    function isProvisionalInvoiceRow($row) {
+        if (!$row || !$row.length) {
+            return false;
+        }
+        if (String($row.attr('data-is-provisional') || '0') === '1') {
+            return true;
+        }
+        const hidden = $row.find('.invoice-item-is-provisional').val();
+        return String(hidden || '0') === '1';
+    }
+
+    function applyProvisionalRowLock($row, isProvisional) {
+        const $actionButtons = $row.find('.actions-column button');
+        const $dragHandle = $row.find('.drag-handle');
+        const $inputs = $row.find('.invoice-item-input');
+
+        if (isProvisional) {
+            $actionButtons.prop('disabled', true);
+            $dragHandle.addClass('is-disabled').attr('aria-disabled', 'true');
+            $inputs.prop('readonly', true).attr('tabindex', '-1');
+            return;
+        }
+
+        $actionButtons.prop('disabled', false);
+        $dragHandle.removeClass('is-disabled').removeAttr('aria-disabled');
+        $inputs.prop('readonly', false).removeAttr('tabindex');
+
+        const productName = ($row.find('.product-name').val() || '').trim();
+        if (productName === '') {
+            $row.find('.invoice-item-input').not('.product-name').not('.amount').prop('disabled', true);
+        } else {
+            $row.find('.invoice-item-input').not('.product-name').not('.amount').prop('disabled', false);
+        }
+
+        if (window.ktp_tax_policy && window.ktp_tax_policy.lock_line_tax_rate) {
+            $row.find('.tax-rate').prop('readonly', true);
+        }
+    }
+
     function calculateAmount(row) {
+        if (isProvisionalInvoiceRow(row)) {
+            const $amountSpan = row.find('.invoice-item-amount');
+            const $amountInput = row.find('input[name*="[amount]"]');
+            if ($amountSpan.length > 0) {
+                $amountSpan.text('0');
+                $amountSpan.attr('data-amount', '0');
+            }
+            if ($amountInput.length > 0) {
+                $amountInput.val('0');
+            }
+            const itemId = row.find('input[name*="[id]"]').val();
+            const orderId = $('input[name="order_id"]').val() || $('#order_id').val();
+            if (itemId && itemId !== '0' && orderId) {
+                debouncedAmountSave('invoice', itemId, 0, orderId);
+            }
+            updateTotalAndProfit();
+            return;
+        }
+
         const priceValue = row.find('.price').val();
         const quantityValue = row.find('.quantity').val();
         
@@ -385,9 +442,17 @@
             }
         }
 
+        const hasProvisionalRows = $('#order_content .invoice-items-table tbody tr').filter(function () {
+            return isProvisionalInvoiceRow($(this));
+        }).length > 0;
+
         // 請求項目の合計と消費税を計算（税率別に集計）
         $('#order_content .invoice-items-table tbody tr').each(function () {
             const $row = $(this);
+            if (isProvisionalInvoiceRow($row)) {
+                return;
+            }
+
             const amountValue = $row.find('.invoice-item-amount').attr('data-amount') || $row.find('.invoice-item-amount').text().replace(/,/g, '');
             const amount = parseFloat(amountValue) || 0;
             const taxRateInput = $row.find('.tax-rate').val();
@@ -434,6 +499,10 @@
             // 外税表示の場合：各項目の税抜金額から税額を計算
             $('#order_content .invoice-items-table tbody tr').each(function () {
                 const $row = $(this);
+                if (isProvisionalInvoiceRow($row)) {
+                    return;
+                }
+
                 const amountValue = $row.find('.invoice-item-amount').attr('data-amount') || $row.find('.invoice-item-amount').text().replace(/,/g, '');
                 const amount = parseFloat(amountValue) || 0;
                 const taxRateInput = $row.find('.tax-rate').val();
@@ -564,43 +633,42 @@
                     totalWithTaxDisplay.html(ktpwpTranslate('税込合計') + ' : ' + ktpwpFormatMoney(totalWithTax));
                 }
             } else {
-                // 内税表示の場合：税率別の内訳を表示
-                let totalDisplayHtml = ktpwpTranslate('金額合計') + ' : ' + ktpwpFormatMoney(invoiceTotalCeiled);
-                
-                // 税率別の内訳を追加
+                // 内税表示の場合：合計と内税を1行表示（参考行あり時は「今回請求合計」）
+                const totalLabel = hasProvisionalRows
+                    ? ktpwpTranslate('今回請求合計', '今回請求合計')
+                    : ktpwpTranslate('金額合計', '金額合計');
+                let totalDisplayHtml = totalLabel + ' : ' + ktpwpFormatMoney(invoiceTotalCeiled);
+
                 const taxRateDetails = [];
                 Object.keys(taxRateGroups).sort((a, b) => {
-                    // 税率なしを最後に表示
                     if (a === 'no_tax_rate') return 1;
                     if (b === 'no_tax_rate') return -1;
                     return parseFloat(b) - parseFloat(a);
                 }).forEach(taxRateKey => {
                     if (taxRateKey === 'no_tax_rate') {
-                        // 税率なしの場合は表示しない
                         return;
-                    } else {
-                        const rate = parseFloat(taxRateKey);
-                        const groupAmount = taxRateGroups[taxRateKey];
-                        const taxAmount = Math.ceil(groupAmount * (rate / 100) / (1 + rate / 100));
-                        if (groupAmount > 0) {
-                            taxRateDetails.push(`${rate}%: ${ktpwpFormatMoney(taxAmount)}`);
-                        }
+                    }
+                    const rate = parseFloat(taxRateKey);
+                    const groupAmount = taxRateGroups[taxRateKey];
+                    const taxAmount = Math.ceil(groupAmount * (rate / 100) / (1 + rate / 100));
+                    if (groupAmount > 0) {
+                        taxRateDetails.push(`${rate}%: ${ktpwpFormatMoney(taxAmount)}`);
                     }
                 });
-                
+
                 if (taxRateDetails.length > 0) {
-                    totalDisplayHtml += ' (' + ktpwpTranslate('内税') + ' : ' + taxRateDetails.join(', ') + ')';
+                    totalDisplayHtml += ' (' + ktpwpTranslate('内税', '内税') + ' : ' + taxRateDetails.join(', ') + ')';
+                } else if (totalTaxAmountCeiled > 0) {
+                    totalDisplayHtml += ' (' + ktpwpTranslate('内税', '内税') + ' : ' + ktpwpFormatMoney(totalTaxAmountCeiled) + ')';
                 }
-                
+
                 invoiceTotalDisplay.html(totalDisplayHtml);
-                
-                // 消費税表示を非表示
+
                 const taxDisplay = $('.invoice-items-tax');
                 if (taxDisplay.length > 0) {
                     taxDisplay.html('');
                 }
 
-                // 税込合計表示を非表示
                 const totalWithTaxDisplay = $('.invoice-items-total-with-tax');
                 if (totalWithTaxDisplay.length > 0) {
                     totalWithTaxDisplay.html('');
@@ -767,6 +835,7 @@
                 <td>
                     <input type="text" name="invoice_items[${newIndex}][remarks]" class="invoice-item-input remarks" value="" disabled>
                     <input type="hidden" name="invoice_items[${newIndex}][sort_order]" value="${newIndex + 1}">
+                    <input type="hidden" name="invoice_items[${newIndex}][is_provisional]" class="invoice-item-is-provisional" value="0">
                 </td>
             </tr>
         `;
@@ -938,7 +1007,8 @@
         if ($invoiceSortTbody.length) {
         $invoiceSortTbody.sortable({
             handle: '.drag-handle',
-            items: '> tr',
+            items: '> tr:not(.invoice-item-row--provisional)',
+            cancel: '.is-disabled, .is-disabled *',
             axis: 'y',
             helper: 'clone',
             update: function (event, ui) {
@@ -1186,6 +1256,10 @@
             const $button = $(this);
             const currentRow = $button.closest('tr');
 
+            if (isProvisionalInvoiceRow(currentRow)) {
+                return false;
+            }
+
             let rawProductNameCH = currentRow.find('input.product-name').val();
             if (typeof rawProductNameCH !== 'string') {
                 rawProductNameCH = currentRow.find('input[name$="[product_name]"]').val();
@@ -1243,6 +1317,9 @@
                 e.preventDefault();
                 e.stopPropagation();
                 const currentRow = $(this).closest('tr');
+                if (isProvisionalInvoiceRow(currentRow)) {
+                    return false;
+                }
                 if (window.ktpDebugMode) console.log('[INVOICE] 削除ボタンクリック', currentRow);
                 deleteRow(currentRow);
             });
@@ -1257,6 +1334,9 @@
             
             // サービス選択ポップアップを表示
             const currentRow = $(this).closest('tr');
+            if (isProvisionalInvoiceRow(currentRow)) {
+                return false;
+            }
             if (window.ktpDebugMode) console.log('[INVOICE-ITEMS] currentRow:', currentRow);
             
             // ktpShowServiceSelector関数の存在確認
@@ -1455,7 +1535,11 @@
 
         // 初期状態で既存の行に対して金額計算を実行
         $('#order_content .invoice-items-table tbody tr').each(function () {
-            calculateAmount($(this));
+            const $row = $(this);
+            if (isProvisionalInvoiceRow($row)) {
+                applyProvisionalRowLock($row, true);
+            }
+            calculateAmount($row);
         });
 
         // フォーム送信時にtr順でname属性indexを再構成

@@ -518,6 +518,37 @@ class KTPWP_Contact_Form {
 
         $new_id = $wpdb->insert_id;
 
+        if ( $new_id && class_exists( 'KTPWP_Order_Admin_Notification' ) ) {
+            $client_email = '';
+            if ( ! empty( $order_data['client_id'] ) ) {
+                $client_table = $wpdb->prefix . 'ktp_client';
+                $client_email = (string) $wpdb->get_var(
+                    $wpdb->prepare(
+                        "SELECT email FROM `{$client_table}` WHERE id = %d",
+                        (int) $order_data['client_id']
+                    )
+                );
+            }
+
+            KTPWP_Order_Admin_Notification::get_instance()->notify_new_order(
+                (int) $new_id,
+                KTPWP_Order_Admin_Notification::SOURCE_CONTACT_FORM7,
+                array(
+                    'client_email' => $client_email,
+                )
+            );
+        }
+
+        if ( $new_id && class_exists( 'KTPWP_Staff_Chat' ) ) {
+            $staff_chat = KTPWP_Staff_Chat::get_instance();
+            if ( method_exists( $staff_chat, 'create_inbound_initial_chat' ) ) {
+                $staff_chat->create_inbound_initial_chat(
+                    (int) $new_id,
+                    KTPWP_Order_Admin_Notification::SOURCE_CONTACT_FORM7
+                );
+            }
+        }
+
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
             error_log( 'KTPWP Contact Form: Order data saved with ID ' . $new_id );
         }

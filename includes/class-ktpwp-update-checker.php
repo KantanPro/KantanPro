@@ -20,7 +20,7 @@ class KTPWP_Update_Checker {
     /**
      * GitHubリポジトリURL
      */
-    private $github_repo = 'KantanPro/KantanPro';
+    private $github_repo = 'KantanPro/KantanProEx';
     
     /**
      * GitHub Personal Access Token（非公開リポジトリ用）
@@ -57,13 +57,10 @@ class KTPWP_Update_Checker {
      * コンストラクタ
      */
     public function __construct() {
-        // プラグインベースネームを確実に取得
-        $plugin_file = defined( 'KANTANPRO_PLUGIN_FILE' ) ? KANTANPRO_PLUGIN_FILE : __FILE__;
-        $this->plugin_basename = plugin_basename( $plugin_file );
-        
-        // 備用のベースネーム取得方法
-        if ( empty( $this->plugin_basename ) || $this->plugin_basename === basename( __FILE__ ) ) {
-            $this->plugin_basename = 'KantanPro/ktpwp.php';
+        $this->plugin_basename = $this->detect_canonical_plugin_basename();
+
+        if ( class_exists( 'KTPWP_Edition' ) ) {
+            $this->github_repo = KTPWP_Edition::get_github_repo();
         }
         
         $this->plugin_slug = dirname( $this->plugin_basename );
@@ -85,10 +82,14 @@ class KTPWP_Update_Checker {
             // フック設定
             add_action( 'admin_init', array( $this, 'admin_init' ) );
             add_filter( 'pre_set_site_transient_update_plugins', array( $this, 'check_for_plugin_update' ) );
+            add_filter( 'site_transient_update_plugins', array( $this, 'check_for_plugin_update' ) );
             add_filter( 'plugins_api', array( $this, 'plugins_api_handler' ), 20, 3 );
+            add_filter( 'upgrader_pre_download', array( $this, 'upgrader_pre_download' ), 10, 3 );
             add_filter( 'upgrader_source_selection', array( $this, 'normalize_github_zipball_source' ), 1, 4 );
+            add_filter( 'upgrader_pre_install', array( $this, 'before_update' ), 10, 3 );
             add_filter( 'upgrader_post_install', array( $this, 'rename_github_source' ), 9, 3 );
-            add_action( 'upgrader_process_complete', array( $this, 'handle_update_complete' ), 10, 2 );
+            add_filter( 'upgrader_post_install', array( $this, 'after_update' ), 10, 3 );
+            add_action( 'upgrader_process_complete', array( $this, 'handle_auto_activation' ), 10, 2 );
 
             
             // プラグインメタ行にリンクを追加（即座に登録）
@@ -138,6 +139,82 @@ class KTPWP_Update_Checker {
     }
 
     /**
+     * 一時展開パスを避け、現在の正規プラグインベースネームを検出する
+     *
+     * @return string
+     */
+    private function detect_canonical_plugin_basename() {
+        $fallback = 'KantanProEX/ktpwp.php';
+
+        if ( ! function_exists( 'get_plugins' ) ) {
+            require_once ABSPATH . 'wp-admin/includes/plugin.php';
+        }
+
+        $plugins = get_plugins();
+        if ( is_array( $plugins ) ) {
+            // 安定ディレクトリ（KantanProEX/）を最優先
+            if ( isset( $plugins['KantanProEX/ktpwp.php'] ) ) {
+                $name = isset( $plugins['KantanProEX/ktpwp.php']['Name'] ) ? (string) $plugins['KantanProEX/ktpwp.php']['Name'] : '';
+                if ( stripos( $name, 'KantanProEX' ) !== false ) {
+                    return 'KantanProEX/ktpwp.php';
+                }
+            }
+
+            foreach ( $plugins as $basename => $plugin_data ) {
+                if ( basename( $basename ) !== 'ktpwp.php' ) {
+                    continue;
+                }
+
+                $name = isset( $plugin_data['Name'] ) ? (string) $plugin_data['Name'] : '';
+                if ( stripos( $name, 'KantanProEX' ) === false ) {
+                    continue;
+                }
+
+                // 一時展開ディレクトリ由来のベースネームは採用しない
+                if ( strpos( $basename, '~' ) !== false ) {
+                    continue;
+                }
+
+                // GitHub zip 更新時の一時フォルダ（例: KantanPro-KantanProEx-a6ca47e）は正規キーにしない
+                $dir = dirname( $basename );
+                if ( preg_match( '/^KantanPro-KantanProEx-[a-f0-9]{6,}$/i', $dir ) ) {
+                    continue;
+                }
+
+                return (string) $basename;
+            }
+        }
+
+        if ( defined( 'KANTANPRO_PLUGIN_FILE' ) && file_exists( KANTANPRO_PLUGIN_FILE ) ) {
+            $detected = plugin_basename( KANTANPRO_PLUGIN_FILE );
+            if ( is_string( $detected ) && $detected !== '' && strpos( $detected, '~' ) === false ) {
+                return $detected;
+            }
+        }
+
+        $main_plugin_file = dirname( __DIR__ ) . '/ktpwp.php';
+        if ( file_exists( $main_plugin_file ) ) {
+            $detected = plugin_basename( $main_plugin_file );
+            if ( is_string( $detected ) && $detected !== '' && strpos( $detected, '~' ) === false ) {
+                return $detected;
+            }
+        }
+
+        return $fallback;
+    }
+    
+    /**
+     * 初期化
+     */
+    public function init() {
+        // 毎日の自動更新チェック
+        if ( ! wp_next_scheduled( 'ktpwp_daily_update_check' ) ) {
+            wp_schedule_event( time(), 'daily', 'ktpwp_daily_update_check' );
+        }
+        add_action( 'ktpwp_daily_update_check', array( $this, 'check_github_updates' ) );
+    }
+
+    /**
      * 更新チェッカー用の一意なキーを生成する
      *
      * @param string $suffix キーのサフィックス
@@ -172,7 +249,31 @@ class KTPWP_Update_Checker {
             return false;
         }
 
-        return $this->normalize_basename( $this->plugin_basename ) === $this->normalize_basename( $basename );
+        $normalized_target = $this->normalize_basename( $this->plugin_basename );
+        $normalized_given  = $this->normalize_basename( $basename );
+
+        if ( $normalized_target === $normalized_given ) {
+            return true;
+        }
+
+        $file = strtolower( basename( $basename ) );
+        if ( $file !== 'ktpwp.php' ) {
+            return false;
+        }
+
+        $dir = strtolower( dirname( $basename ) );
+
+        // 標準インストール先。strpos で kantanproex を含む判定は kantanpro-kantanproex-* に誤マッチするため使わない。
+        if ( $dir === strtolower( $this->plugin_slug ) ) {
+            return true;
+        }
+
+        // GitHub zipball のルートフォルダ（Owner-Repo-commit）
+        if ( preg_match( '/^kantanpro-kantanproex-[a-f0-9]{6,}$/i', $dir ) ) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -209,22 +310,43 @@ class KTPWP_Update_Checker {
         }
 
         $installed_plugins = get_plugins();
+        $basename          = (string) $basename;
+
+        // 呼び出し側が提示したパスがそのまま存在するなら最優先（更新後の再有効化など）
+        if ( $basename !== '' && isset( $installed_plugins[ $basename ] ) ) {
+            return $basename;
+        }
+
+        $canonical = $this->plugin_basename;
+        if ( isset( $installed_plugins[ $canonical ] ) ) {
+            return $canonical;
+        }
+
+        // 正規フォルダ名を zipball の一時名より優先（get_plugins() のキー順に依存しない）
+        $stable_key = $this->plugin_slug . '/ktpwp.php';
+        foreach ( array_keys( $installed_plugins ) as $installed_basename ) {
+            if ( strcasecmp( $installed_basename, $stable_key ) === 0 && $this->is_target_plugin_basename( $installed_basename ) ) {
+                return (string) $installed_basename;
+            }
+        }
+
         foreach ( array_keys( $installed_plugins ) as $installed_basename ) {
             if ( $this->is_target_plugin_basename( $installed_basename ) ) {
                 return (string) $installed_basename;
             }
         }
 
-        return (string) $basename;
+        return $basename;
     }
 
     /**
      * 対象プラグインを有効化し、成功可否を返す
      *
      * @param string $basename ベースネーム
+     * @param bool $network_active ネットワーク有効化フラグ
      * @return bool
      */
-    private function activate_target_plugin( $basename ) {
+    private function activate_target_plugin( $basename, $network_active = false ) {
         if ( ! function_exists( 'is_plugin_active' ) || ! function_exists( 'activate_plugin' ) ) {
             require_once ABSPATH . 'wp-admin/includes/plugin.php';
         }
@@ -238,8 +360,69 @@ class KTPWP_Update_Checker {
             return true;
         }
 
-        $activation_result = activate_plugin( $resolved_basename );
+        if ( $network_active ) {
+            $activation_result = activate_plugin( $resolved_basename, '', true );
+        } else {
+            $activation_result = activate_plugin( $resolved_basename );
+        }
+
         return ! is_wp_error( $activation_result );
+    }
+
+    /**
+     * WordPress標準更新後に有効化レコードだけが外れた場合でも、次回リクエストで読み込まれるよう復旧する。
+     *
+     * @param string $basename       プラグインベースネーム
+     * @param bool   $network_active ネットワーク有効化フラグ
+     * @return void
+     */
+    private function restore_active_plugin_record( $basename, $network_active = false ) {
+        $resolved_basename = $this->resolve_installed_basename( $basename );
+        if ( ! $this->is_target_plugin_basename( $resolved_basename ) ) {
+            return;
+        }
+
+        if ( $network_active && function_exists( 'is_multisite' ) && is_multisite() ) {
+            $sitewide = get_site_option( 'active_sitewide_plugins', array() );
+            if ( ! is_array( $sitewide ) ) {
+                $sitewide = array();
+            }
+
+            foreach ( array_keys( $sitewide ) as $key ) {
+                if ( $key !== $resolved_basename && $this->is_target_plugin_basename( $key ) ) {
+                    unset( $sitewide[ $key ] );
+                }
+            }
+
+            $sitewide[ $resolved_basename ] = isset( $sitewide[ $resolved_basename ] ) ? (int) $sitewide[ $resolved_basename ] : time();
+            update_site_option( 'active_sitewide_plugins', $sitewide );
+            if ( function_exists( 'wp_clean_plugins_cache' ) ) {
+                wp_clean_plugins_cache();
+            }
+            return;
+        }
+
+        $active_plugins = get_option( 'active_plugins', array() );
+        if ( ! is_array( $active_plugins ) ) {
+            $active_plugins = array();
+        }
+
+        $next = array();
+        foreach ( $active_plugins as $plugin ) {
+            if ( $plugin !== $resolved_basename && $this->is_target_plugin_basename( $plugin ) ) {
+                continue;
+            }
+            $next[] = $plugin;
+        }
+
+        if ( ! in_array( $resolved_basename, $next, true ) ) {
+            $next[] = $resolved_basename;
+        }
+
+        update_option( 'active_plugins', array_values( array_unique( $next ) ), false );
+        if ( function_exists( 'wp_clean_plugins_cache' ) ) {
+            wp_clean_plugins_cache();
+        }
     }
 
     /**
@@ -253,21 +436,126 @@ class KTPWP_Update_Checker {
             return;
         }
 
-        if ( $this->activate_target_plugin( (string) $pending['basename'] ) ) {
+        $network_active = ! empty( $pending['network_active'] );
+        if ( $this->activate_target_plugin( (string) $pending['basename'], $network_active ) ) {
             delete_site_transient( $this->key( 'pending_activation' ) );
             set_transient( $this->key( 'admin_reload' ), 1, 5 * MINUTE_IN_SECONDS );
         }
     }
-    
+
     /**
-     * 初期化
+     * GitHub API/ダウンロード用ヘッダーを生成する
+     *
+     * @return array
      */
-    public function init() {
-        // 毎日の自動更新チェック
-        if ( ! wp_next_scheduled( 'ktpwp_daily_update_check' ) ) {
-            wp_schedule_event( time(), 'daily', 'ktpwp_daily_update_check' );
+    private function get_github_headers( $accept = 'application/vnd.github.v3+json' ) {
+        $headers = array(
+            'Accept' => $accept,
+            'X-GitHub-Api-Version' => '2022-11-28',
+            'User-Agent' => 'KantanPro-Plugin/' . $this->current_version,
+            'Cache-Control' => 'no-cache',
+        );
+
+        $github_token = trim( (string) $this->github_token );
+        if ( $github_token === '' && defined( 'KP_GITHUB_TOKEN' ) && KP_GITHUB_TOKEN ) {
+            $github_token = trim( (string) KP_GITHUB_TOKEN );
         }
-        add_action( 'ktpwp_daily_update_check', array( $this, 'check_github_updates' ) );
+
+        if ( $github_token !== '' ) {
+            $headers['Authorization'] = 'Bearer ' . $github_token;
+        }
+
+        return $headers;
+    }
+
+    /**
+     * GitHubダウンロード用ヘッダーを生成する
+     *
+     * @param string $url ダウンロードURL
+     * @return array
+     */
+    private function get_github_download_headers( $url = '' ) {
+        $accept = 'application/vnd.github.v3+json';
+        if ( strpos( $url, 'api.github.com' ) !== false && strpos( $url, '/releases/assets/' ) !== false ) {
+            $accept = 'application/octet-stream';
+        }
+
+        return $this->get_github_headers( $accept );
+    }
+
+    /**
+     * GitHub関連URLかどうかを判定する
+     *
+     * @param string $url URL
+     * @return bool
+     */
+    private function is_github_url( $url ) {
+        return is_string( $url ) && (
+            strpos( $url, 'github.com' ) !== false ||
+            strpos( $url, 'githubusercontent.com' ) !== false
+        );
+    }
+
+    /**
+     * 最新の公開済みGitHub Releaseを取得する
+     *
+     * /releases/latest が取れない場合は /releases の先頭から draft/prerelease を除外して取得する。
+     *
+     * @return array|false
+     */
+    private function get_latest_github_release() {
+        $args = array(
+            'timeout' => 30,
+            'headers' => $this->get_github_headers(),
+        );
+
+        $latest_url = 'https://api.github.com/repos/' . $this->github_repo . '/releases/latest';
+        error_log( 'KantanPro: GitHub APIに接続中: ' . $latest_url );
+        $response = wp_remote_get( $latest_url, $args );
+
+        if ( ! is_wp_error( $response ) && wp_remote_retrieve_response_code( $response ) === 200 ) {
+            $data = json_decode( wp_remote_retrieve_body( $response ), true );
+            if ( is_array( $data ) && isset( $data['tag_name'] ) && empty( $data['draft'] ) && empty( $data['prerelease'] ) ) {
+                return $data;
+            }
+        } else {
+            if ( is_wp_error( $response ) ) {
+                error_log( 'KantanPro: GitHub latest API接続エラー: ' . $response->get_error_message() );
+            } else {
+                error_log( 'KantanPro: GitHub latest APIレスポンス: ' . wp_remote_retrieve_response_code( $response ) . ' - ' . wp_remote_retrieve_body( $response ) );
+            }
+        }
+
+        $list_url = 'https://api.github.com/repos/' . $this->github_repo . '/releases';
+        error_log( 'KantanPro: GitHub Releases一覧にフォールバックします: ' . $list_url );
+        $list_response = wp_remote_get( $list_url, $args );
+
+        if ( is_wp_error( $list_response ) ) {
+            error_log( 'KantanPro: GitHub releases API接続エラー: ' . $list_response->get_error_message() );
+            return false;
+        }
+
+        $response_code = wp_remote_retrieve_response_code( $list_response );
+        if ( $response_code !== 200 ) {
+            error_log( 'KantanPro: GitHub releases API エラーレスポンス: ' . $response_code . ' - ' . wp_remote_retrieve_body( $list_response ) );
+            return false;
+        }
+
+        $releases = json_decode( wp_remote_retrieve_body( $list_response ), true );
+        if ( ! is_array( $releases ) ) {
+            return false;
+        }
+
+        foreach ( $releases as $release ) {
+            if ( ! empty( $release['draft'] ) || ! empty( $release['prerelease'] ) ) {
+                continue;
+            }
+            if ( isset( $release['tag_name'] ) ) {
+                return $release;
+            }
+        }
+
+        return false;
     }
     
     /**
@@ -276,8 +564,93 @@ class KTPWP_Update_Checker {
     public function admin_init() {
         // 管理画面でのスクリプトとスタイルの読み込み
         add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_scripts' ) );
+        $this->reconcile_active_plugin_keys();
+        $this->sanitize_update_plugins_transient();
         $this->retry_pending_activation();
-        $this->maybe_redirect_to_settings_after_update();
+        $this->maybe_reload_admin_after_activation();
+    }
+
+    /**
+     * active_plugins 内に残った一時ベースネームを正規キーへ補正する
+     *
+     * @return void
+     */
+    private function reconcile_active_plugin_keys() {
+        $active_plugins = get_option( 'active_plugins', array() );
+        if ( ! is_array( $active_plugins ) || empty( $active_plugins ) ) {
+            return;
+        }
+
+        $changed = false;
+        $has_canonical = in_array( $this->plugin_basename, $active_plugins, true );
+
+        foreach ( $active_plugins as $index => $basename ) {
+            if ( ! $this->is_target_plugin_basename( $basename ) ) {
+                continue;
+            }
+            if ( $basename === $this->plugin_basename ) {
+                continue;
+            }
+
+            unset( $active_plugins[ $index ] );
+            $changed = true;
+        }
+
+        if ( ! $has_canonical ) {
+            $active_plugins[] = $this->plugin_basename;
+            $changed = true;
+        }
+
+        if ( $changed ) {
+            $active_plugins = array_values( array_unique( $active_plugins ) );
+            update_option( 'active_plugins', $active_plugins, false );
+            wp_clean_plugins_cache();
+        }
+    }
+
+    /**
+     * update_plugins トランジェント内の一時ベースネームを正規化する
+     *
+     * @return void
+     */
+    private function sanitize_update_plugins_transient() {
+        $transient = get_site_transient( 'update_plugins' );
+        if ( ! is_object( $transient ) ) {
+            return;
+        }
+
+        $changed = false;
+        foreach ( array( 'checked', 'response', 'no_update' ) as $bucket ) {
+            if ( ! isset( $transient->{$bucket} ) || ! is_array( $transient->{$bucket} ) ) {
+                continue;
+            }
+
+            foreach ( array_keys( $transient->{$bucket} ) as $basename ) {
+                if ( ! $this->is_target_plugin_basename( $basename ) ) {
+                    continue;
+                }
+                if ( $basename === $this->plugin_basename ) {
+                    continue;
+                }
+
+                $value = $transient->{$bucket}[ $basename ];
+                unset( $transient->{$bucket}[ $basename ] );
+
+                if ( $bucket === 'response' && is_object( $value ) ) {
+                    $value->plugin = $this->plugin_basename;
+                    if ( property_exists( $value, 'id' ) ) {
+                        $value->id = $this->plugin_slug;
+                    }
+                }
+
+                $transient->{$bucket}[ $this->plugin_basename ] = $value;
+                $changed = true;
+            }
+        }
+
+        if ( $changed ) {
+            set_site_transient( 'update_plugins', $transient );
+        }
     }
     
     /**
@@ -448,12 +821,19 @@ class KTPWP_Update_Checker {
             ? $update_data['changelog']
             : __( '詳細な変更履歴は公式サイトまたはリポジトリをご確認ください。', 'ktpwp' );
 
+        $banner_url = function_exists( 'ktpwp_plugin_asset_url' )
+            ? ktpwp_plugin_asset_url( 'images/default/header_bg_image.png' )
+            : KANTANPRO_PLUGIN_URL . 'images/default/header_bg_image.png';
+        $icon_url = function_exists( 'ktpwp_plugin_asset_url' )
+            ? ktpwp_plugin_asset_url( 'images/default/icon.png' )
+            : KANTANPRO_PLUGIN_URL . 'images/default/icon.png';
+
         $info->banners = array(
-            'high' => KANTANPRO_PLUGIN_URL . 'images/default/header_bg_image.png',
-            'low'  => KANTANPRO_PLUGIN_URL . 'images/default/header_bg_image.png',
+            'high' => $banner_url,
+            'low'  => $banner_url,
         );
         $info->icons = array(
-            'default' => KANTANPRO_PLUGIN_URL . 'images/default/icon.png',
+            'default' => $icon_url,
         );
 
         return $info;
@@ -514,18 +894,28 @@ class KTPWP_Update_Checker {
         
         // 更新チェック実行
         $this->clear_plugin_cache();
-        $update_available = $this->check_github_updates();
+        $this->check_github_updates();
+        $status = $this->resolve_header_update_status();
+        $debug_info = array(
+            'current_version' => $this->current_version,
+            'github_repo' => $this->github_repo,
+            'latest_version' => get_option( 'ktpwp_latest_version' ),
+            'update_available' => get_option( 'ktpwp_update_available' ),
+        );
         
-        if ( $update_available && is_array($update_available) ) {
+        if ( $status['has_update'] ) {
             wp_send_json_success( array(
                 'message' => __( '新しいバージョンが利用可能です！', 'ktpwp' ),
                 'reload' => true,
+                'has_update' => true,
+                'update_data' => $status['update_data'],
                 'debug_info' => $debug_info
             ) );
         } else {
             wp_send_json_success( array(
                 'message' => __( '最新バージョンです。', 'ktpwp' ),
                 'reload' => false,
+                'has_update' => false,
                 'debug_info' => $debug_info
             ) );
         }
@@ -551,58 +941,14 @@ class KTPWP_Update_Checker {
 
         // エラーハンドリングを強化
         try {
-            // WordPress.orgとの接続エラーを防ぐため、タイムアウトを設定
-            $timeout = 30;
-            $headers = array(
-                'Accept' => 'application/vnd.github.v3+json',
-            );
-            
-            // 公開リポジトリ用のため、トークン認証は無効化
-            // 配布用プラグインではセキュリティ上の理由でトークンを使用しない
-            error_log( 'KantanPro: 公開リポジトリとしてAPIに接続します' );
-            
-            $args = array(
-                'timeout' => $timeout,
-                'user-agent' => 'KantanPro-Plugin/' . $this->current_version,
-                'headers' => $headers,
-            );
-
-            // GitHub API URL
-            $api_url = 'https://api.github.com/repos/' . $this->github_repo . '/releases/latest';
-            
-            error_log( 'KantanPro: GitHub APIに接続中: ' . $api_url );
-            
-            // wp_remote_getを使用してGitHub APIに接続
-            $response = wp_remote_get( $api_url, $args );
-            
-            // レスポンスエラーチェック
-            if ( is_wp_error( $response ) ) {
-                error_log( 'KantanPro: GitHub API接続エラー: ' . $response->get_error_message() );
-                return false;
-            }
-            
-            $response_code = wp_remote_retrieve_response_code( $response );
-            if ( $response_code !== 200 ) {
-                $response_body = wp_remote_retrieve_body( $response );
-                error_log( 'KantanPro: GitHub API エラーレスポンス: ' . $response_code . ' - ' . $response_body );
-                
-                // 公開リポジトリ用のエラーハンドリング
-                if ( $response_code === 404 ) {
-                    error_log( 'KantanPro: リポジトリが見つかりません。リポジトリ名またはURLを確認してください。' );
-                } elseif ( $response_code === 403 ) {
-                    error_log( 'KantanPro: GitHub APIレート制限に達しました。しばらく時間をおいて再試行してください。' );
-                } elseif ( $response_code === 401 ) {
-                    error_log( 'KantanPro: GitHub API認証エラー。公開リポジトリの場合は認証は不要です。' );
+            $data = $this->get_latest_github_release();
+            if ( ! $data ) {
+                error_log( 'KantanPro: GitHub Release情報を取得できませんでした' );
+                $existing = get_option( 'ktpwp_update_available', false );
+                if ( is_array( $existing ) && $this->has_header_update_badge() ) {
+                    error_log( 'KantanPro: GitHub 取得失敗のため保存済み更新情報を維持します' );
+                    return $existing;
                 }
-                
-                return false;
-            }
-            
-            $body = wp_remote_retrieve_body( $response );
-            $data = json_decode( $body, true );
-            
-            if ( ! $data || ! isset( $data['tag_name'] ) ) {
-                error_log( 'KantanPro: GitHub APIレスポンスの解析に失敗しました' );
                 return false;
             }
             
@@ -633,9 +979,12 @@ class KTPWP_Update_Checker {
                 $download_url = '';
                 if ( ! empty($data['assets']) ) {
                     foreach ( $data['assets'] as $asset ) {
-                        // 'KantanPro.zip' のような名前のファイルを優先する
-                        if ( $asset['name'] === 'KantanPro.zip' && $asset['content_type'] === 'application/zip') {
-                            $download_url = $asset['browser_download_url'];
+                        // EX用の固定名または配布スクリプトのバージョン付きZIPを優先する
+                        if (
+                            ( $asset['name'] === 'KantanProEX.zip' || preg_match( '/^KantanProEX_.*\.zip$/', $asset['name'] ) )
+                            && $asset['content_type'] === 'application/zip'
+                        ) {
+                            $download_url = ! empty( $asset['url'] ) ? $asset['url'] : $asset['browser_download_url'];
                             error_log('KantanPro: Found release asset: ' . $download_url);
                             break;
                         }
@@ -645,7 +994,7 @@ class KTPWP_Update_Checker {
                 if ( empty($download_url) && ! empty($data['assets']) ) {
                     foreach ( $data['assets'] as $asset ) {
                         if ( substr($asset['name'], -4) === '.zip' ) {
-                            $download_url = $asset['browser_download_url'];
+                            $download_url = ! empty( $asset['url'] ) ? $asset['url'] : $asset['browser_download_url'];
                             error_log('KantanPro: Found a .zip release asset: ' . $download_url);
                             break;
                         }
@@ -1261,7 +1610,17 @@ class KTPWP_Update_Checker {
         }
         
         // 一時ファイルにダウンロード
+        $added_download_filter = false;
+        if ( $this->is_github_url( $download_url ) ) {
+            add_filter( 'http_request_args', array( $this, 'github_download_args' ), 10, 2 );
+            $added_download_filter = true;
+        }
+
         $temp_file = download_url( $download_url );
+        if ( $added_download_filter ) {
+            remove_filter( 'http_request_args', array( $this, 'github_download_args' ), 10 );
+        }
+
         if ( is_wp_error( $temp_file ) ) {
             $this->recursive_rmdir( $temp_dir );
             return new WP_Error( 'download_failed', 'ファイルのダウンロードに失敗しました: ' . $temp_file->get_error_message() );
@@ -1314,6 +1673,16 @@ class KTPWP_Update_Checker {
             $this->recursive_rmdir( $temp_dir );
             return new WP_Error( 'install_failed', 'プラグインの配置に失敗しました。' );
         }
+
+        // バックアップからサービス画像（images/upload/）を復元
+        $backup_upload_dir = $backup_dir . '/images/upload';
+        $plugin_upload_dir = $plugin_dir . '/images/upload';
+        if ( is_dir( $backup_upload_dir ) ) {
+            if ( ! is_dir( $plugin_upload_dir ) ) {
+                wp_mkdir_p( $plugin_upload_dir );
+            }
+            $this->merge_upload_directory( $backup_upload_dir, $plugin_upload_dir, true );
+        }
         
         // 成功時はバックアップを削除
         if ( is_dir( $backup_dir ) ) {
@@ -1327,6 +1696,42 @@ class KTPWP_Update_Checker {
         return true;
     }
     
+    /**
+     * サービス画像アップロードディレクトリをマージする。
+     *
+     * @param string $source_dir コピー元ディレクトリ。
+     * @param string $target_dir コピー先ディレクトリ。
+     * @param bool   $overwrite  true のとき既存ファイルを上書きする（更新復元時）。
+     * @return void
+     */
+    private function merge_upload_directory( $source_dir, $target_dir, $overwrite = false ) {
+        if ( ! is_dir( $source_dir ) || ! is_dir( $target_dir ) ) {
+            return;
+        }
+
+        $files = scandir( $source_dir );
+        if ( ! is_array( $files ) ) {
+            return;
+        }
+
+        foreach ( $files as $file ) {
+            if ( $file === '.' || $file === '..' ) {
+                continue;
+            }
+
+            $source_file = $source_dir . '/' . $file;
+            $target_file = $target_dir . '/' . $file;
+
+            if ( ! is_file( $source_file ) ) {
+                continue;
+            }
+
+            if ( $overwrite || ! file_exists( $target_file ) ) {
+                @copy( $source_file, $target_file );
+            }
+        }
+    }
+
     /**
      * ディレクトリを再帰的に削除
      */
@@ -1344,122 +1749,6 @@ class KTPWP_Update_Checker {
             }
             rmdir( $dir );
         }
-    }
-
-    /**
-     * GitHub zipball 展開直後にトップフォルダ名をプラグインディレクトリへ揃える
-     *
-     * WordPress 標準更新では basename( $source ) がインストール先フォルダ名になるため、
-     * GitHub source archive の KantanPro-KantanPro-<hash> のままだと
-     * active_plugins の KantanPro/ktpwp.php と不一致になり、更新後に無効化され得る。
-     *
-     * @param string|WP_Error $source        選択されたソースパス。
-     * @param string          $remote_source 解凍ルート。
-     * @param WP_Upgrader     $upgrader      アップグレーダー。
-     * @param array           $hook_extra    フック情報。
-     * @return string|WP_Error
-     */
-    public function normalize_github_zipball_source( $source, $remote_source, $upgrader, $hook_extra ) {
-        if ( is_wp_error( $source ) || ! is_string( $source ) || '' === trim( $source ) ) {
-            return $source;
-        }
-
-        if ( empty( $hook_extra['type'] ) || 'plugin' !== $hook_extra['type'] ) {
-            return $source;
-        }
-
-        $explicit = isset( $hook_extra['plugin'] ) ? (string) $hook_extra['plugin'] : '';
-        if ( $explicit !== '' && ! $this->is_target_plugin_basename( $explicit ) ) {
-            return $source;
-        }
-
-        $candidate = trailingslashit( $source );
-        if ( ! is_dir( $candidate ) || ! file_exists( $candidate . 'ktpwp.php' ) ) {
-            return $source;
-        }
-
-        if ( ! function_exists( 'get_plugin_data' ) ) {
-            require_once ABSPATH . 'wp-admin/includes/plugin.php';
-        }
-
-        $plugin_data = get_plugin_data( $candidate . 'ktpwp.php', false, false );
-        $name        = isset( $plugin_data['Name'] ) ? (string) $plugin_data['Name'] : '';
-        if ( strcasecmp( $name, 'KantanPro' ) !== 0 ) {
-            return $source;
-        }
-
-        $slug = 'KantanPro';
-        $src  = untrailingslashit( $source );
-        if ( strtolower( basename( $src ) ) === strtolower( $slug ) ) {
-            return $source;
-        }
-
-        $parent = dirname( $src );
-        $dest   = $parent . '/' . $slug;
-
-        if ( is_dir( $dest ) ) {
-            $this->recursive_rmdir( trailingslashit( $dest ) );
-        }
-
-        if ( @rename( $src, $dest ) ) {
-            return trailingslashit( $dest );
-        }
-
-        return $source;
-    }
-
-    /**
-     * post_install 段階で、インストール先が正規フォルダでない場合の保険として補正する
-     *
-     * @param mixed $response 応答。
-     * @param array $hook_extra フック情報。
-     * @param array $result インストール結果。
-     * @return mixed
-     */
-    public function rename_github_source( $response, $hook_extra, $result ) {
-        $target_basename = $this->resolve_installed_basename( $this->resolve_target_basename( $hook_extra ) );
-        if ( ! $this->is_target_plugin_basename( $target_basename ) ) {
-            return $response;
-        }
-
-        if ( empty( $result ) || ! is_array( $result ) || empty( $result['destination'] ) ) {
-            return $response;
-        }
-
-        $expected_dir = trailingslashit( WP_PLUGIN_DIR ) . 'KantanPro/';
-        if ( untrailingslashit( $result['destination'] ) === untrailingslashit( $expected_dir ) ) {
-            return $response;
-        }
-
-        $installed_dir = '';
-        foreach ( array( 'destination', 'remote_destination', 'local_destination', 'source' ) as $key ) {
-            if ( empty( $result[ $key ] ) || ! is_string( $result[ $key ] ) ) {
-                continue;
-            }
-            $dir = trailingslashit( $result[ $key ] );
-            if ( is_dir( $dir ) && file_exists( $dir . 'ktpwp.php' ) ) {
-                $installed_dir = $dir;
-                break;
-            }
-        }
-
-        if ( $installed_dir === '' || untrailingslashit( $installed_dir ) === untrailingslashit( $expected_dir ) ) {
-            return $response;
-        }
-
-        if ( is_dir( $expected_dir ) ) {
-            $this->recursive_rmdir( $expected_dir );
-        }
-
-        if ( @rename( untrailingslashit( $installed_dir ), untrailingslashit( $expected_dir ) ) ) {
-            $result['destination'] = $expected_dir;
-            if ( isset( $result['remote_destination'] ) ) {
-                $result['remote_destination'] = $expected_dir;
-            }
-            return $result;
-        }
-
-        return $response;
     }
     
     /**
@@ -1736,21 +2025,18 @@ class KTPWP_Update_Checker {
             
             // 更新チェック実行
             error_log( 'KantanPro: 更新チェック実行開始' );
-            $this->clear_plugin_cache();
-            $update_available = $this->check_github_updates();
-            error_log( 'KantanPro: 更新チェック結果: ' . ( $update_available ? 'true' : 'false' ) );
+            $this->clear_plugin_cache_for_update_check();
+            $this->check_github_updates();
+            $status = $this->resolve_header_update_status();
+            error_log( 'KantanPro: 更新チェック結果 has_update=' . ( $status['has_update'] ? 'true' : 'false' ) );
+            error_log( 'KantanPro: 保存された更新データ: ' . print_r( get_option( 'ktpwp_update_available', false ), true ) );
             
-            // 更新データを取得して詳細ログを出力
-            $update_data = get_option( 'ktpwp_update_available', false );
-            error_log( 'KantanPro: 保存された更新データ: ' . print_r( $update_data, true ) );
-            
-            if ( $update_available && is_array($update_available) ) {
-                $update_data = get_option( 'ktpwp_update_available', false );
-                error_log( 'KantanPro: 更新あり - 更新データ: ' . print_r( $update_data, true ) );
+            if ( $status['has_update'] ) {
+                error_log( 'KantanPro: 更新あり - 更新データ: ' . print_r( $status['update_data'], true ) );
                 wp_send_json_success( array(
                     'message' => __( '新しいバージョンが利用可能です！', 'ktpwp' ),
                     'has_update' => true,
-                    'update_data' => $update_data
+                    'update_data' => $status['update_data']
                 ) );
             } else {
                 error_log( 'KantanPro: 更新なし' );
@@ -1807,6 +2093,42 @@ class KTPWP_Update_Checker {
     }
 
     /**
+     * 手動更新チェック用の軽量キャッシュクリア（保存済みの更新情報は維持）
+     *
+     * GitHub 再取得に失敗した場合でも、バッジ用の ktpwp_update_available を先に消さない。
+     */
+    public function clear_plugin_cache_for_update_check() {
+        wp_clean_plugins_cache();
+        delete_site_transient( 'update_plugins' );
+        delete_transient( 'update_plugins' );
+        delete_transient( 'ktpwp_last_update_check' );
+        delete_transient( 'ktpwp_last_force_check' );
+        error_log( 'KantanPro: 更新チェック用キャッシュをクリアしました（更新情報オプションは維持）' );
+    }
+
+    /**
+     * ヘッダー更新チェック後のレスポンス用データ
+     *
+     * @return array{ has_update: bool, update_data: array|false }
+     */
+    private function resolve_header_update_status() {
+        $update_data = get_option( 'ktpwp_update_available', false );
+        $has_update  = $this->has_header_update_badge();
+
+        if ( $has_update && is_array( $update_data ) ) {
+            return array(
+                'has_update'  => true,
+                'update_data' => $update_data,
+            );
+        }
+
+        return array(
+            'has_update'  => false,
+            'update_data' => false,
+        );
+    }
+
+    /**
      * バージョン更新時の自動キャッシュクリア
      */
     public function auto_clear_cache_on_version_update() {
@@ -1825,65 +2147,6 @@ class KTPWP_Update_Checker {
             
             error_log( 'KantanPro: バージョン更新を検出 - ' . $old_version . ' → ' . $new_version . ' (キャッシュクリア完了)' );
         }
-    }
-
-    /**
-     * プラグイン更新完了後、次の管理画面ロードで設定ページへ戻す
-     *
-     * @param object $upgrader_object アップグレーダー
-     * @param array  $options 更新オプション
-     * @return void
-     */
-    public function handle_update_complete( $upgrader_object, $options ) {
-        if ( empty( $options['action'] ) || empty( $options['type'] ) ) {
-            return;
-        }
-
-        if ( $options['action'] !== 'update' || $options['type'] !== 'plugin' ) {
-            return;
-        }
-
-        $target_basename = $this->resolve_installed_basename( $this->resolve_target_basename( $options ) );
-        if ( ! $this->is_target_plugin_basename( $target_basename ) ) {
-            return;
-        }
-
-        if ( $this->activate_target_plugin( $target_basename ) ) {
-            delete_site_transient( $this->key( 'pending_activation' ) );
-            set_transient( $this->key( 'admin_reload' ), 1, 5 * MINUTE_IN_SECONDS );
-            return;
-        }
-
-        set_site_transient(
-            $this->key( 'pending_activation' ),
-            array(
-                'basename' => $target_basename,
-            ),
-            30 * MINUTE_IN_SECONDS
-        );
-    }
-
-    /**
-     * 更新直後に管理画面を一度だけリロードし、設定ページへ戻す
-     *
-     * @return void
-     */
-    public function maybe_redirect_to_settings_after_update() {
-        if ( ! is_admin() || ( function_exists( 'wp_doing_ajax' ) && wp_doing_ajax() ) || ! current_user_can( 'manage_options' ) ) {
-            return;
-        }
-
-        if ( ! get_transient( $this->key( 'admin_reload' ) ) ) {
-            return;
-        }
-
-        if ( ! isset( $_GET['ktpwp_reloaded'] ) ) {
-            delete_transient( $this->key( 'admin_reload' ) );
-            wp_safe_redirect( admin_url( 'plugins.php?ktpwp_reloaded=1&ktpwp_updated=1' ) );
-            exit;
-        }
-
-        delete_transient( $this->key( 'admin_reload' ) );
     }
 
     /**
@@ -1971,8 +2234,36 @@ class KTPWP_Update_Checker {
      * @return object 更新されたトランジェント
      */
     public function check_for_plugin_update( $transient ) {
-        if ( empty( $transient->checked ) || ! isset( $transient->checked[ $this->plugin_basename ] ) ) {
+        if ( ! is_admin() && ! ( defined( 'DOING_CRON' ) && DOING_CRON ) ) {
             return $transient;
+        }
+
+        if ( ! is_object( $transient ) ) {
+            $transient = new stdClass();
+        }
+
+        if ( ! isset( $transient->checked ) || ! is_array( $transient->checked ) ) {
+            $transient->checked = array();
+        }
+
+        $transient->checked[ $this->plugin_basename ] = $this->current_version;
+
+        // 一時展開ディレクトリ由来の古いキーを除去し、functions.phpの file_get_contents 警告を回避する
+        foreach ( array( 'checked', 'response', 'no_update' ) as $bucket ) {
+            if ( ! isset( $transient->{$bucket} ) || ! is_array( $transient->{$bucket} ) ) {
+                continue;
+            }
+
+            foreach ( array_keys( $transient->{$bucket} ) as $basename ) {
+                if ( ! $this->is_target_plugin_basename( $basename ) ) {
+                    continue;
+                }
+                if ( $basename === $this->plugin_basename ) {
+                    continue;
+                }
+
+                unset( $transient->{$bucket}[ $basename ] );
+            }
         }
 
         // キャッシュされた更新情報を取得
@@ -1984,11 +2275,6 @@ class KTPWP_Update_Checker {
             $update_data = $this->check_github_updates();
         }
         
-        // プラグインの更新情報キャッシュをクリアして、最新情報を取得
-        if ( $update_data && is_array( $update_data ) ) {
-            delete_site_transient( 'update_plugins' );
-        }
-
         if ( $update_data && is_array( $update_data ) && isset( $update_data['version'] ) ) {
             $latest_version = $this->clean_version( $update_data['version'] );
             $current_version = $this->clean_version( $this->current_version );
@@ -2005,20 +2291,30 @@ class KTPWP_Update_Checker {
                 $plugin_info->requires = '5.0'; // 必要なWordPressバージョン
                 $plugin_info->requires_php = '7.4'; // 必要なPHPバージョン
                 $plugin_info->last_updated = isset( $update_data['published_at'] ) ? $update_data['published_at'] : '';
+                $banner_url = function_exists( 'ktpwp_plugin_asset_url' )
+                    ? ktpwp_plugin_asset_url( 'images/default/header_bg_image.png' )
+                    : KANTANPRO_PLUGIN_URL . 'images/default/header_bg_image.png';
+                $icon_url = function_exists( 'ktpwp_plugin_asset_url' )
+                    ? ktpwp_plugin_asset_url( 'images/default/icon.png' )
+                    : KANTANPRO_PLUGIN_URL . 'images/default/icon.png';
+                $dummy_url = function_exists( 'ktpwp_plugin_asset_url' )
+                    ? ktpwp_plugin_asset_url( 'images/default/dummy_graph.png' )
+                    : KANTANPRO_PLUGIN_URL . 'images/default/dummy_graph.png';
+
                 $plugin_info->icons = array(
-                    'default' => KANTANPRO_PLUGIN_URL . 'images/default/icon.png',
+                    'default' => $icon_url,
                 );
                 
                 // バナー画像を設定
                 $plugin_info->banners = array(
-                    'high' => KANTANPRO_PLUGIN_URL . 'images/default/header_bg_image.png',
-                    'low' => KANTANPRO_PLUGIN_URL . 'images/default/header_bg_image.png',
+                    'high' => $banner_url,
+                    'low' => $banner_url,
                 );
                 
                 // スクリーンショットを設定
                 $plugin_info->screenshots = array(
                     array(
-                        'src' => KANTANPRO_PLUGIN_URL . 'images/default/dummy_graph.png',
+                        'src' => $dummy_url,
                         'caption' => 'KantanPro ダッシュボード'
                     )
                 );
@@ -2051,11 +2347,388 @@ class KTPWP_Update_Checker {
                 $plugin_info->author_homepage = isset( $current_plugin_data['AuthorURI'] ) ? $current_plugin_data['AuthorURI'] : 'https://www.kantanpro.com/kantanpro-page';
                 $plugin_info->homepage = isset( $current_plugin_data['PluginURI'] ) ? $current_plugin_data['PluginURI'] : 'https://www.kantanpro.com/';
 
+                if ( ! isset( $transient->response ) || ! is_array( $transient->response ) ) {
+                    $transient->response = array();
+                }
                 $transient->response[ $this->plugin_basename ] = $plugin_info;
+                if ( isset( $transient->no_update[ $this->plugin_basename ] ) ) {
+                    unset( $transient->no_update[ $this->plugin_basename ] );
+                }
+            } else {
+                if ( ! isset( $transient->no_update ) || ! is_array( $transient->no_update ) ) {
+                    $transient->no_update = array();
+                }
+                $transient->no_update[ $this->plugin_basename ] = (object) array(
+                    'id' => $this->plugin_slug,
+                    'slug' => $this->plugin_slug,
+                    'plugin' => $this->plugin_basename,
+                    'new_version' => $this->current_version,
+                    'url' => 'https://github.com/' . $this->github_repo,
+                    'package' => '',
+                );
+                if ( isset( $transient->response[ $this->plugin_basename ] ) ) {
+                    unset( $transient->response[ $this->plugin_basename ] );
+                }
             }
         }
 
         return $transient;
+    }
+
+    /**
+     * GitHubからのダウンロード時に認証ヘッダーを付与する
+     *
+     * @param mixed $reply ダウンロード前の応答
+     * @param string $package パッケージURL
+     * @param object $upgrader アップグレーダー
+     * @return mixed
+     */
+    public function upgrader_pre_download( $reply, $package, $upgrader ) {
+        if ( $this->is_github_url( $package ) ) {
+            add_filter( 'http_request_args', array( $this, 'github_download_args' ), 10, 2 );
+        }
+
+        return $reply;
+    }
+
+    /**
+     * GitHubダウンロード用のHTTPリクエスト引数を調整する
+     *
+     * @param array $args HTTPリクエスト引数
+     * @param string $url URL
+     * @return array
+     */
+    public function github_download_args( $args, $url ) {
+        if ( $this->is_github_url( $url ) ) {
+            $args['timeout'] = 60;
+            $args['headers'] = isset( $args['headers'] ) && is_array( $args['headers'] ) ? $args['headers'] : array();
+            $args['headers'] = array_merge( $args['headers'], $this->get_github_download_headers( $url ) );
+        }
+
+        return $args;
+    }
+
+    /**
+     * 更新前に有効化状態を保存し、更新中の競合を避ける
+     *
+     * @param mixed $response 応答
+     * @param array $hook_extra フック情報
+     * @param mixed $result 結果
+     * @return mixed
+     */
+    public function before_update( $response, $hook_extra, $result = null ) {
+        $target_basename = $this->resolve_installed_basename( $this->resolve_target_basename( $hook_extra ) );
+        if ( ! $this->is_target_plugin_basename( $target_basename ) ) {
+            return $response;
+        }
+
+        if ( ! function_exists( 'is_plugin_active' ) ) {
+            require_once ABSPATH . 'wp-admin/includes/plugin.php';
+        }
+
+        $was_network_active = is_multisite() && is_plugin_active_for_network( $target_basename );
+        $was_active = is_plugin_active( $target_basename ) || $was_network_active;
+
+        set_site_transient(
+            $this->key( 'pre_update_state' ),
+            array(
+                'was_active' => $was_active,
+                'network_active' => $was_network_active,
+                'basename' => $target_basename,
+            ),
+            30 * MINUTE_IN_SECONDS
+        );
+
+        $this->backup_service_images_before_update();
+
+        return $response;
+    }
+
+    /**
+     * GitHub zipball 展開直後にトップフォルダ名をプラグインディレクトリへ揃える
+     *
+     * WP は保護ディレクトリ直下へのインストール時に basename( $source ) をそのまま
+     * プラグインフォルダ名に使うため、KantanPro-KantanProEx-<hash> のままだと
+     * active_plugins の KantanProEX/ktpwp.php と不一致になる。post_install より前に補正する。
+     *
+     * @param string|WP_Error $source        選択されたソースパス。
+     * @param string          $remote_source 解凍ルート。
+     * @param WP_Upgrader     $upgrader      アップグレーダー。
+     * @param array           $hook_extra    フック情報。
+     * @return string|WP_Error
+     */
+    public function normalize_github_zipball_source( $source, $remote_source, $upgrader, $hook_extra ) {
+        if ( is_wp_error( $source ) || ! is_string( $source ) || '' === trim( $source ) ) {
+            return $source;
+        }
+
+        if ( empty( $hook_extra['type'] ) || 'plugin' !== $hook_extra['type'] ) {
+            return $source;
+        }
+
+        $explicit = isset( $hook_extra['plugin'] ) ? (string) $hook_extra['plugin'] : '';
+        if ( $explicit !== '' && ! $this->is_target_plugin_basename( $explicit ) ) {
+            return $source;
+        }
+
+        $candidate = trailingslashit( $source );
+        if ( ! is_dir( $candidate ) || ! file_exists( $candidate . 'ktpwp.php' ) ) {
+            return $source;
+        }
+
+        if ( ! function_exists( 'get_plugin_data' ) ) {
+            require_once ABSPATH . 'wp-admin/includes/plugin.php';
+        }
+
+        $plugin_data = get_plugin_data( $candidate . 'ktpwp.php', false, false );
+        $name        = isset( $plugin_data['Name'] ) ? (string) $plugin_data['Name'] : '';
+        if ( stripos( $name, 'KantanProEX' ) === false ) {
+            return $source;
+        }
+
+        $slug = $this->plugin_slug;
+        $src  = untrailingslashit( $source );
+        if ( strtolower( basename( $src ) ) === strtolower( $slug ) ) {
+            return $source;
+        }
+
+        $parent = dirname( $src );
+        $dest   = $parent . '/' . $slug;
+
+        if ( is_dir( $dest ) ) {
+            $this->recursive_rmdir( trailingslashit( $dest ) );
+        }
+
+        if ( @rename( $src, $dest ) ) {
+            return trailingslashit( $dest );
+        }
+
+        return $source;
+    }
+
+    /**
+     * GitHub zipball展開時のディレクトリ名をプラグインslugに補正する
+     *
+     * @param mixed $response 応答
+     * @param array $hook_extra フック情報
+     * @param array $result インストール結果
+     * @return mixed
+     */
+    public function rename_github_source( $response, $hook_extra, $result ) {
+        $target_basename = $this->resolve_installed_basename( $this->resolve_target_basename( $hook_extra ) );
+        if ( ! $this->is_target_plugin_basename( $target_basename ) ) {
+            return $response;
+        }
+
+        if ( empty( $result ) || ! is_array( $result ) || empty( $result['destination'] ) ) {
+            return $response;
+        }
+
+        $expected_dir = trailingslashit( WP_PLUGIN_DIR ) . $this->plugin_slug . '/';
+        if ( untrailingslashit( $result['destination'] ) === untrailingslashit( $expected_dir ) ) {
+            return $response;
+        }
+
+        $installed_dir = '';
+        foreach ( array( 'destination', 'remote_destination', 'local_destination', 'source' ) as $key ) {
+            if ( empty( $result[ $key ] ) || ! is_string( $result[ $key ] ) ) {
+                continue;
+            }
+            $dir = trailingslashit( $result[ $key ] );
+            if ( is_dir( $dir ) && file_exists( $dir . 'ktpwp.php' ) ) {
+                $installed_dir = $dir;
+                break;
+            }
+        }
+
+        if ( $installed_dir === '' ) {
+            return $response;
+        }
+
+        if ( untrailingslashit( $installed_dir ) === untrailingslashit( $expected_dir ) ) {
+            return $response;
+        }
+
+        if ( is_dir( $expected_dir ) ) {
+            $this->recursive_rmdir( $expected_dir );
+        }
+
+        if ( @rename( untrailingslashit( $installed_dir ), untrailingslashit( $expected_dir ) ) ) {
+            $result['destination'] = $expected_dir;
+            if ( isset( $result['remote_destination'] ) ) {
+                $result['remote_destination'] = $expected_dir;
+            }
+            return $result;
+        }
+
+        return $response;
+    }
+
+    /**
+     * 更新後にキャッシュをクリアする
+     *
+     * @param mixed $response 応答
+     * @param array $hook_extra フック情報
+     * @param array $result インストール結果
+     * @return mixed
+     */
+    public function after_update( $response, $hook_extra, $result ) {
+        $target_basename = $this->resolve_target_basename( $hook_extra );
+        if ( $this->is_target_plugin_basename( $target_basename ) ) {
+            $this->restore_service_images_after_update();
+
+            remove_filter( 'http_request_args', array( $this, 'github_download_args' ), 10 );
+            delete_option( 'ktpwp_update_available' );
+            delete_option( 'ktpwp_latest_version' );
+            delete_transient( 'ktpwp_last_update_check' );
+            delete_site_transient( 'update_plugins' );
+            delete_site_transient( 'update_plugins_checked' );
+            wp_clean_plugins_cache();
+
+            if ( function_exists( 'wp_cache_flush' ) ) {
+                wp_cache_flush();
+            }
+        }
+
+        return $response;
+    }
+
+    /**
+     * プラグイン更新前にサービス画像を wp-content/uploads へ退避する。
+     *
+     * WordPress 標準のプラグイン更新は配布 ZIP にユーザー画像が含まれないため、
+     * 更新前に退避しないと images/upload/ が消える。
+     *
+     * @return void
+     */
+    private function backup_service_images_before_update() {
+        $plugin_upload_dir = trailingslashit( WP_PLUGIN_DIR ) . $this->plugin_slug . '/images/upload';
+        if ( ! is_dir( $plugin_upload_dir ) ) {
+            return;
+        }
+
+        $upload_info = wp_upload_dir();
+        if ( ! empty( $upload_info['error'] ) ) {
+            return;
+        }
+
+        $backup_dir = trailingslashit( $upload_info['basedir'] ) . 'ktpwp-service-images-backup';
+        if ( is_dir( $backup_dir ) ) {
+            $this->recursive_rmdir( $backup_dir );
+        }
+
+        if ( ! wp_mkdir_p( $backup_dir ) ) {
+            return;
+        }
+
+        $this->merge_upload_directory( $plugin_upload_dir, $backup_dir );
+        set_site_transient( $this->key( 'upload_backup_path' ), $backup_dir, 30 * MINUTE_IN_SECONDS );
+    }
+
+    /**
+     * プラグイン更新後に退避したサービス画像を復元する。
+     *
+     * @return void
+     */
+    private function restore_service_images_after_update() {
+        $backup_dir = get_site_transient( $this->key( 'upload_backup_path' ) );
+        delete_site_transient( $this->key( 'upload_backup_path' ) );
+
+        if ( ! is_string( $backup_dir ) || $backup_dir === '' || ! is_dir( $backup_dir ) ) {
+            return;
+        }
+
+        $plugin_upload_dir = trailingslashit( WP_PLUGIN_DIR ) . $this->plugin_slug . '/images/upload';
+        if ( ! is_dir( $plugin_upload_dir ) ) {
+            wp_mkdir_p( $plugin_upload_dir );
+        }
+
+        if ( is_dir( $plugin_upload_dir ) ) {
+            $this->merge_upload_directory( $backup_dir, $plugin_upload_dir, true );
+        }
+
+        $this->recursive_rmdir( $backup_dir );
+    }
+
+    /**
+     * 更新後に元の有効化状態へ戻す
+     *
+     * @param object $upgrader_object アップグレーダー
+     * @param array $options 更新オプション
+     * @return void
+     */
+    public function handle_auto_activation( $upgrader_object, $options ) {
+        if ( empty( $options['action'] ) || empty( $options['type'] ) ) {
+            return;
+        }
+
+        if ( $options['action'] !== 'update' || $options['type'] !== 'plugin' ) {
+            return;
+        }
+
+        $target_basename = $this->resolve_installed_basename( $this->resolve_target_basename( $options ) );
+        if ( ! $this->is_target_plugin_basename( $target_basename ) ) {
+            return;
+        }
+
+        if ( ! function_exists( 'is_plugin_active' ) ) {
+            require_once ABSPATH . 'wp-admin/includes/plugin.php';
+        }
+
+        $pre_update_state = get_site_transient( $this->key( 'pre_update_state' ) );
+        $activation_basename = ! empty( $pre_update_state['basename'] ) ? $pre_update_state['basename'] : $target_basename;
+        $activation_basename = $this->resolve_installed_basename( $activation_basename );
+        if ( ! $this->is_target_plugin_basename( $activation_basename ) ) {
+            $activation_basename = $target_basename;
+        }
+
+        $should_reactivate = $pre_update_state && ! empty( $pre_update_state['was_active'] );
+        $network_active    = $should_reactivate && ! empty( $pre_update_state['network_active'] );
+
+        if ( $should_reactivate ) {
+            $this->restore_active_plugin_record( $activation_basename, $network_active );
+        }
+
+        if ( $should_reactivate && ! is_plugin_active( $activation_basename ) ) {
+            if ( ! $this->activate_target_plugin( $activation_basename, $network_active ) ) {
+                set_site_transient(
+                    $this->key( 'pending_activation' ),
+                    array(
+                        'basename' => $activation_basename,
+                        'network_active' => $network_active,
+                    ),
+                    30 * MINUTE_IN_SECONDS
+                );
+            } else {
+                delete_site_transient( $this->key( 'pending_activation' ) );
+            }
+        }
+
+        set_transient( $this->key( 'admin_reload' ), 1, 5 * MINUTE_IN_SECONDS );
+        delete_site_transient( $this->key( 'pre_update_state' ) );
+    }
+
+    /**
+     * 更新直後に管理画面を一度だけリロードする
+     *
+     * @return void
+     */
+    public function maybe_reload_admin_after_activation() {
+        if ( ! is_admin() || ( function_exists( 'wp_doing_ajax' ) && wp_doing_ajax() ) || ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
+
+        if ( ! get_transient( $this->key( 'admin_reload' ) ) ) {
+            return;
+        }
+
+        if ( ! isset( $_GET['ktpwp_reloaded'] ) ) {
+            delete_transient( $this->key( 'admin_reload' ) );
+            wp_safe_redirect( admin_url( 'plugins.php?ktpwp_reloaded=1&ktpwp_updated=1' ) );
+            exit;
+        }
+
+        delete_transient( $this->key( 'admin_reload' ) );
     }
 
 

@@ -404,38 +404,32 @@ li.ktp_work_list_item label {
 
 /* モバイル表示での調整 */
 @media screen and (max-width: 768px) {
-  /* 仕事リストの行をモバイル対応 - 行内で折り返し */
+  /* 仕事リストの行をモバイル対応 - 2行レイアウト */
   li.ktp_work_list_item {
-    flex-direction: row;
-    align-items: center;
-    flex-wrap: wrap;
+    flex-direction: column;
+    align-items: stretch;
     gap: 8px;
     padding: 10px 12px;
   }
 
-  /* 1行目：ID〜日時を行内で折り返す */
-  .ktp_work_list_item .ktp_work_list_item_text {
+  /* 1行目：ID〜日時のリンク */
+  .ktp_work_list_item a {
     order: 1;
-    flex: 1 1 100%;
     white-space: normal;
-    overflow: visible;
-    text-overflow: clip;
-    overflow-wrap: anywhere;
+    word-wrap: break-word;
     line-height: 1.4;
     margin-bottom: 0;
   }
 
-  /* 2行目：納期と進捗を折り返し可能な1つのコンテナに配置 */
+  /* 2行目：納期と進捗を1つのコンテナに配置 */
   .ktp_work_list_item .delivery-dates-container {
     order: 2;
-    flex: 1 1 100%;
     margin-left: 0;
     justify-content: flex-start;
-    gap: 8px 12px;
-    flex-wrap: wrap;
+    gap: 12px;
+    flex-wrap: nowrap;
     align-items: center;
     display: flex;
-    white-space: normal;
   }
 
   /* 納期ラベルの調整 */
@@ -485,11 +479,11 @@ li.ktp_work_list_item label {
     align-items: center;
     gap: 8px;
     flex-shrink: 0;
-    flex-wrap: wrap;
-    white-space: normal;
+    flex-wrap: nowrap;
+    white-space: nowrap;
   }
 
-  /* ラベルと入力欄の組は崩さず、組ごと折り返す */
+  /* 納期ラベルとカレンダーを強制的に1行に配置 */
   .delivery-dates-container > * {
     flex-shrink: 0;
     white-space: nowrap;
@@ -577,5 +571,59 @@ li.ktp_work_list_item label {
 
   .ktp_work_list_item form::before {
     font-size: 11px;
+  }
+}
+
+/* モバイル幅を押し広げないよう、仕事リスト本体の各要素を折り返す */
+@media screen and (max-width: 768px) {
+  li.ktp_work_list_item {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  .ktp_work_list_item .ktp_work_list_item_text,
+  .ktp_work_list_item a {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    overflow-wrap: anywhere !important;
+    word-break: break-word !important;
+    box-sizing: border-box !important;
+  }
+
+  .ktp_work_list_item .delivery-dates-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    flex: 1 1 100% !important;
+    flex-wrap: wrap !important;
+    white-space: normal !important;
+    box-sizing: border-box !important;
+  }
+
+  .ktp_work_list_item .delivery-input-wrapper,
+  .ktp_work_list_item .completion-input-wrapper,
+  .ktp_work_list_item form {
+    max-width: 100% !important;
+    min-width: 0 !important;
+    flex: 1 1 100% !important;
+    flex-wrap: wrap !important;
+    white-space: normal !important;
+    box-sizing: border-box !important;
+  }
+
+  .ktp_work_list_item .delivery-date-input,
+  .ktp_work_list_item .completion-date-input,
+  .ktp_work_list_item .progress-select {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
   }
 }

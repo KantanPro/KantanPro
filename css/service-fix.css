@@ -39,6 +39,68 @@
     font-size: 14px;
 }
 
+/* サービスリスト：列レイアウト */
+.ktp-service-list-header,
+.ktp_data_list_item--service-row {
+    align-items: center;
+    column-gap: 12px;
+    display: grid;
+    grid-template-columns: 3em 48px minmax(120px, 2fr) 6em 4em 4em minmax(80px, 1fr) 4em;
+}
+
+.ktp-service-list-header.ktp-service-list--hide-tax,
+.ktp_data_list_item--service-row.ktp-service-list--hide-tax {
+    grid-template-columns: 3em 48px minmax(120px, 2fr) 6em 4em minmax(80px, 1fr) 4em;
+}
+
+.ktp-service-list-header {
+    background: #f5f5f5;
+    border-bottom: 1px solid #dcdcde;
+    color: #1d2327;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.ktp-service-list-header .ktp-service-list-col--image {
+    text-align: center;
+}
+
+.ktp-service-list-id {
+    color: #646970;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: right;
+}
+
+.ktp-service-list-thumb-wrap {
+    line-height: 0;
+}
+
+.ktp-service-list-thumb {
+    background: #f6f7f7;
+    border: 1px solid #e5e7eb;
+    border-radius: 4px;
+    display: block;
+    height: 100%;
+    object-fit: cover;
+    width: 100%;
+}
+
+.ktp-service-list-col {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ktp-service-list-col--name {
+    font-weight: 600;
+}
+
+.ktp_service_table .column-image {
+    width: 64px;
+}
+
 /* データリストの交互の行に色を付ける */
 .ktp_data_list_box > a:nth-of-type(odd) .ktp_data_list_item,
 .data_list_box > a:nth-of-type(odd) .data_list_item {

@@ -50,6 +50,14 @@ if ( ! class_exists( 'KTPWP_Ui_Generator' ) ) {
 				)
 			);
 
+			$search_toolbar = '';
+			if ( class_exists( 'KTPWP_Tab_Search_UI' ) ) {
+				$search_toolbar = KTPWP_Tab_Search_UI::get_instance()->render_toolbar_form(
+					'report',
+					array( 'report_type' => $current_report )
+				);
+			}
+
 			$report_buttons = '';
 			foreach ( $reports as $key => $report_data ) {
 				$active_style = ( $current_report === $key ) ? 
@@ -83,7 +91,8 @@ if ( ! class_exists( 'KTPWP_Ui_Generator' ) ) {
 			</button>';
 
 			return '<div class="controller ktp-report-controller">
-				<div class="ktp-report-controller__main">
+				<div class="ktp-report-controller__main" style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;">
+					' . $search_toolbar . '
 					' . $report_buttons . '
 				</div>
 				<div class="ktp-report-controller__actions">
@@ -93,10 +102,9 @@ if ( ! class_exists( 'KTPWP_Ui_Generator' ) ) {
 		}
 
 		/**
-		 * 無料版レポート：通常タブと同様のタイトルバー（.controller.ktp-report-controller）に見出しのみ載せる。
+		 * 無料版レポートタブ用タイトルバー
 		 *
-		 * @since 1.0.0
-		 * @return string HTML
+		 * @return string
 		 */
 		public function generate_free_edition_report_title_bar() {
 			return '<div class="controller ktp-report-controller ktp-report-controller--free-notice">'

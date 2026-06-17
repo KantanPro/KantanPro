@@ -128,44 +128,16 @@ class KTPWP_Assets {
      *
      * @return bool
      */
-    private function is_kantanpro_page() {
-        // メインクエリの判定（front-end のみ）
-        if ( is_admin() ) {
-            return false;
-        }
-
-        // タブ切替等でクエリ文字列に tab_name が付いている場合は KantanPro ページと判断
-        if ( isset( $_GET['tab_name'] ) && $_GET['tab_name'] !== '' ) {
-            return true;
-        }
-
-        // post content にショートコードが含まれているかで判定
-        global $post;
-        if ( ! $post instanceof WP_Post ) {
-            return false;
-        }
-        $content = (string) $post->post_content;
-        if ( $content === '' ) {
-            return false;
-        }
-
-        $shortcodes = array( 'kantanAllTab', 'ktpwp_all_tab', 'ktpwp_login_error' );
-        foreach ( $shortcodes as $sc ) {
-            if ( has_shortcode( $content, $sc ) ) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     /**
      * フロントで KantanPro の CSS/JS を読み込むか（テーマや子テーマで拡張可能）
      *
      * @return bool
      */
     private function should_enqueue_frontend_assets() {
-        $load = $this->is_kantanpro_page();
+        $load = function_exists( 'ktpwp_is_frontend_kantanpro_app_page' )
+            ? ktpwp_is_frontend_kantanpro_app_page()
+            : false;
+
         return (bool) apply_filters( 'ktpwp_should_enqueue_frontend_assets', $load, $this );
     }
 
@@ -270,7 +242,7 @@ class KTPWP_Assets {
             'ktp-css' => array(
                 'src'    => 'css/styles.css',
                 'deps'   => array(),
-                'ver'    => KANTANPRO_PLUGIN_VERSION,
+                'ver'    => KTPWP_PLUGIN_VERSION . '.' . filemtime( KTPWP_PLUGIN_DIR . 'css/styles.css' ),
                 'media'  => 'all',
                 'admin'  => false,
             ),
@@ -446,7 +418,7 @@ class KTPWP_Assets {
             'ktp-email-popup' => array(
                 'src'       => 'js/ktp-email-popup.js',
                 'deps'      => array( 'jquery' ),
-                'ver'       => KTPWP_PLUGIN_VERSION,
+                'ver'       => KTPWP_PLUGIN_VERSION . '.' . filemtime( KTPWP_PLUGIN_DIR . 'js/ktp-email-popup.js' ),
                 'in_footer' => true,
                 'admin'     => false,
                 'localize'  => array(
@@ -495,6 +467,20 @@ class KTPWP_Assets {
                 'in_footer' => true,
                 'admin'     => false,
             ),
+            'ktp-number-format' => array(
+                'src'       => 'js/ktp-number-format.js',
+                'deps'      => array(),
+                'ver'       => KTPWP_PLUGIN_VERSION . '.' . filemtime( KTPWP_PLUGIN_DIR . 'js/ktp-number-format.js' ),
+                'in_footer' => true,
+                'admin'     => false,
+            ),
+            'ktp-atena-print' => array(
+                'src'       => 'js/ktp-atena-print.js',
+                'deps'      => array(),
+                'ver'       => KTPWP_PLUGIN_VERSION . '.' . filemtime( KTPWP_PLUGIN_DIR . 'js/ktp-atena-print.js' ),
+                'in_footer' => true,
+                'admin'     => false,
+            ),
             'ktp-client-invoice' => array(
                 'src'       => 'js/ktp-client-invoice.js',
                 'deps'      => array( 'jquery', 'ktp-svg-icons' ),
@@ -505,15 +491,123 @@ class KTPWP_Assets {
                     'object' => 'ktpClientInvoice',
                     'data'   => function () {
                         $design_options = get_option( 'ktp_design_settings', array() );
-                        return array(
-                            'ajax_url' => admin_url( 'admin-ajax.php' ),
-                            'nonce'    => wp_create_nonce( 'ktp_ajax_nonce' ),
-                            'design_settings' => array(
-                                'odd_row_color' => isset( $design_options['odd_row_color'] ) ? $design_options['odd_row_color'] : '#E7EEFD',
-                                'even_row_color' => isset( $design_options['even_row_color'] ) ? $design_options['even_row_color'] : '#FFFFFF',
+                        $pdf_export     = class_exists( 'KTPWP_Pdf_Branding' ) ? KTPWP_Pdf_Branding::export_for_js() : array();
+                        return array_merge(
+                            array(
+                                'ajax_url' => admin_url( 'admin-ajax.php' ),
+                                'nonce'    => wp_create_nonce( 'ktp_ajax_nonce' ),
+                                'design_settings' => array(
+                                    'odd_row_color' => isset( $design_options['odd_row_color'] ) ? $design_options['odd_row_color'] : '#E7EEFD',
+                                    'even_row_color' => isset( $design_options['even_row_color'] ) ? $design_options['even_row_color'] : '#FFFFFF',
+                                ),
                             ),
+                            $pdf_export
                         );
                     },
+                ),
+            ),
+            'ktp-service-contract-fields' => array(
+                'src'       => 'js/ktp-service-contract-fields.js',
+                'deps'      => array(),
+                'ver'       => KTPWP_PLUGIN_VERSION . '.' . filemtime( KTPWP_PLUGIN_DIR . 'js/ktp-service-contract-fields.js' ),
+                'in_footer' => true,
+                'admin'     => false,
+                'localize'  => array(
+                    'object' => 'ktpServiceContractFields',
+                    'data'   => function () {
+                        return array(
+                            'none_value' => class_exists( 'KTPWP_Contract_Billing_Cycle' )
+                                ? KTPWP_Contract_Billing_Cycle::NONE
+                                : 'none',
+                        );
+                    },
+                ),
+            ),
+            'ktp-client-contract' => array(
+                'src'       => 'js/ktp-client-contract.js',
+                'deps'      => array( 'ktp-svg-icons' ),
+                'ver'       => KTPWP_PLUGIN_VERSION . '.' . filemtime( KTPWP_PLUGIN_DIR . 'js/ktp-client-contract.js' ),
+                'in_footer' => true,
+                'admin'     => false,
+                'localize'  => array(
+                    'object' => 'ktpClientContract',
+                    'data'   => function () {
+                        $client_id = 0;
+                        if ( isset( $_GET['data_id'] ) ) {
+                            $client_id = absint( $_GET['data_id'] );
+                        } elseif ( isset( $_COOKIE['ktp_client_id'] ) ) {
+                            $client_id = absint( $_COOKIE['ktp_client_id'] );
+                        }
+
+                        return array(
+                            'ajax_url'       => admin_url( 'admin-ajax.php' ),
+                            'nonce'          => wp_create_nonce( 'ktp_contract_nonce' ),
+                            'client_id'      => $client_id,
+                            'stripe_enabled' => class_exists( 'KTPWP_Stripe_Billing' ) && KTPWP_Stripe_Billing::is_enabled(),
+                        );
+                    },
+                ),
+            ),
+            'ktp-contract-billing' => array(
+                'src'       => 'js/ktp-contract-billing.js',
+                'deps'      => array(),
+                'ver'       => KTPWP_PLUGIN_VERSION . '.' . filemtime( KTPWP_PLUGIN_DIR . 'js/ktp-contract-billing.js' ),
+                'in_footer' => true,
+                'admin'     => false,
+                'localize'  => array(
+                    'object' => 'ktpContractBilling',
+                    'data'   => array(
+                        'ajax_url' => admin_url( 'admin-ajax.php' ),
+                        'nonce'    => wp_create_nonce( 'ktp_contract_billing_nonce' ),
+                    ),
+                ),
+            ),
+            'ktp-order-delete-confirm' => array(
+                'src'       => 'js/ktp-order-delete-confirm.js',
+                'deps'      => array(),
+                'ver'       => KTPWP_PLUGIN_VERSION . '.' . filemtime( KTPWP_PLUGIN_DIR . 'js/ktp-order-delete-confirm.js' ),
+                'in_footer' => true,
+                'admin'     => false,
+                'localize'  => array(
+                    'object' => 'ktpOrderDeleteConfirm',
+                    'data'   => array(
+                        'message' => __(
+                            "本当にこの受注書を削除しますか？\n\n請求明細・原価明細・スタッフチャット・添付ファイル・メール送信履歴も削除されます。\nこの操作は元に戻せません。",
+                            'ktpwp'
+                        ),
+                    ),
+                ),
+            ),
+            'ktp-order-contract' => array(
+                'src'       => 'js/ktp-order-contract.js',
+                'deps'      => array( 'ktp-number-format' ),
+                'ver'       => KTPWP_PLUGIN_VERSION . '.' . filemtime( KTPWP_PLUGIN_DIR . 'js/ktp-order-contract.js' ),
+                'in_footer' => true,
+                'admin'     => false,
+                'localize'  => array(
+                    'object' => 'ktpOrderContract',
+                    'data'   => array(
+                        'ajax_url' => admin_url( 'admin-ajax.php' ),
+                        'nonce'    => wp_create_nonce( 'ktp_order_contract_nonce' ),
+                        'icons'    => class_exists( 'KTPWP_SVG_Icons' )
+                            ? array(
+                                'delete' => KTPWP_SVG_Icons::get_icon(
+                                    'delete',
+                                    array(
+                                        'class' => 'ktp-svg-icon',
+                                        'style' => 'font-size:18px;line-height:1;',
+                                    )
+                                ),
+                                'add'    => KTPWP_SVG_Icons::get_icon(
+                                    'add',
+                                    array(
+                                        'class' => 'ktp-svg-icon',
+                                        'style' => 'font-size:18px;line-height:1;',
+                                    )
+                                ),
+                            )
+                            : array(),
+                    ),
                 ),
             ),
             // 'ktp-skills-list-effects' => array(
@@ -573,22 +667,6 @@ class KTPWP_Assets {
 
         $load_main_admin_assets = $this->is_kantanpro_admin_screen( $hook_suffix );
 
-        // ライセンス管理ページ用の特別な処理
-        if ( $hook_suffix === 'kantanpro_page_ktp-license' || $hook_suffix === 'toplevel_page_ktp-license' || $hook_suffix === 'ktp-settings_page_ktp-license' ) {
-            $script_path = KTPWP_PLUGIN_DIR . 'js/ktp-license-manager.js';
-            $version = KANTANPRO_PLUGIN_VERSION . '.' . filemtime( $script_path );
-            wp_enqueue_script( 'ktp-license-manager', plugin_dir_url( __DIR__ ) . 'js/ktp-license-manager.js', array( 'jquery' ), $version, true );
-            
-            wp_localize_script( 'ktp-license-manager', 'ktp_license_manager_vars', array(
-                'ajaxurl' => admin_url( 'admin-ajax.php' ),
-                'nonce'   => wp_create_nonce( 'ktp_license_nonce' ),
-                'messages' => array(
-                    'ajax_error' => __( '通信エラーが発生しました。', 'ktpwp' ),
-                    'not_set'   => __( 'ライセンスキーが設定されていません。', 'ktpwp' )
-                )
-            ) );
-        }
-
         // KantanPro 管理画面・Woo 連携画面のみ本体 CSS/JS（他の管理画面での無駄な読み込みを防止）
         if ( $load_main_admin_assets ) {
             $this->enqueue_styles( true );
@@ -618,15 +696,9 @@ class KTPWP_Assets {
      * 他画面へ移動した際にサブメニューアイコンが消える。
      */
     private function enqueue_admin_menu_icons() {
-        $src       = $this->get_asset_url( 'css/ktp-admin-menu.css' );
-        $file_path = plugin_dir_path( dirname( __FILE__ ) ) . 'css/ktp-admin-menu.css';
-        $version   = KTPWP_PLUGIN_VERSION;
-
-        if ( file_exists( $file_path ) ) {
-            $version .= '.' . filemtime( $file_path );
-        }
-
-        wp_enqueue_style( 'ktp-admin-menu-icons', $src, array(), $version, 'all' );
+        // KantanProEX 設定サブメニューは「文字のみ」表示に統一するため、
+        // 管理メニュー専用アイコンCSSは読み込まない。
+        return;
     }
 
     /**
@@ -699,12 +771,21 @@ class KTPWP_Assets {
             'ktp-delivery-dates',
             'ktp-order-preview',
             'ktp-order-inline-projectname',
+            'ktp-order-delete-confirm',
+            'ktp-order-contract',
             'ktp-email-popup',
             'ktp-progress-select',
         );
 
         // 顧客タブ専用（顧客以外のタブでは不要な MutationObserver を避ける）
-        $client_only_scripts = array( 'ktp-client-delete-popup', 'ktp-client-invoice' );
+        $client_only_scripts = array( 'ktp-client-delete-popup', 'ktp-client-invoice', 'ktp-client-contract' );
+
+        // 仕事リストタブ専用
+        $list_only_scripts = array( 'ktp-contract-billing' );
+
+        // 宛名印刷（顧客・協力会社タブ）
+        $atena_print_tabs         = array( 'client', 'supplier' );
+        $atena_print_only_scripts = array( 'ktp-atena-print' );
 
         foreach ( $this->scripts as $handle => $script ) {
             if ( $script['admin'] === $is_admin || ! $script['admin'] ) {
@@ -720,6 +801,17 @@ class KTPWP_Assets {
                 // 顧客タブ以外では顧客専用JSをスキップ
                 if ( ! $is_admin && $current_tab_name !== '' && $current_tab_name !== 'client'
                     && in_array( $handle, $client_only_scripts, true ) ) {
+                    continue;
+                }
+                // 仕事リスト以外では定期請求JSをスキップ
+                if ( ! $is_admin && $current_tab_name !== '' && $current_tab_name !== 'list'
+                    && in_array( $handle, $list_only_scripts, true ) ) {
+                    continue;
+                }
+                // 宛名印刷は顧客・協力会社タブのみ
+                if ( ! $is_admin && $current_tab_name !== ''
+                    && ! in_array( $current_tab_name, $atena_print_tabs, true )
+                    && in_array( $handle, $atena_print_only_scripts, true ) ) {
                     continue;
                 }
 

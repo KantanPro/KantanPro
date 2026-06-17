@@ -430,3 +430,27 @@ add_action(
 		error_log( '=== ktpwp_save_order_cost_item 終了 ===' );
 	}
 );
+
+add_action(
+	'wp_ajax_ktpwp_increment_skill_frequency',
+	function () {
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			wp_send_json_error( __( '権限がありません', 'ktpwp' ) );
+		}
+
+		if ( ! check_ajax_referer( 'ktpwp_ajax_nonce', 'nonce', false ) ) {
+			wp_send_json_error( __( 'セキュリティチェックに失敗しました。', 'ktpwp' ) );
+		}
+
+		$skill_id = isset( $_POST['skill_id'] ) ? absint( $_POST['skill_id'] ) : 0;
+		if ( $skill_id <= 0 ) {
+			wp_send_json_error( __( '職能 ID が不正です。', 'ktpwp' ) );
+		}
+
+		if ( function_exists( 'ktpwp_increment_record_frequency' ) ) {
+			ktpwp_increment_record_frequency( 'supplier_skill', $skill_id );
+		}
+
+		wp_send_json_success();
+	}
+);

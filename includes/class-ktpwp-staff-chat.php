@@ -108,14 +108,6 @@ if ( ! class_exists( 'KTPWP_Staff_Chat' ) ) {
 		 * @return bool True on success, false on failure
 		 */
 		public function create_initial_chat( $order_id, $user_id = null ) {
-			if ( ! $order_id || $order_id <= 0 ) {
-				return false;
-			}
-
-			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_order_staff_chat';
-
-			// Use current user if user_id not provided
 			if ( ! $user_id ) {
 				$user_id = get_current_user_id();
 			}
@@ -124,19 +116,68 @@ if ( ! class_exists( 'KTPWP_Staff_Chat' ) ) {
 				return false;
 			}
 
-			// Check if initial chat already exists
-			$existing_chat = $wpdb->get_var(
-                $wpdb->prepare(
-                    "SELECT COUNT(*) FROM `{$table_name}` WHERE order_id = %d AND is_initial = 1",
-                    $order_id
-                )
-            );
+			return $this->insert_initial_chat_if_absent(
+				$order_id,
+				(int) $user_id,
+				__( '受注書を作成しました。', 'ktpwp' )
+			);
+		}
 
-			if ( $existing_chat > 0 ) {
-				return true; // Already exists
+		/**
+		 * Web受注（外部経路）時に、管理者名義でスタッフチャットの初期メッセージを入れる。
+		 * 管理者へ通知が届くため、受注対応の責任をチャット上でも明示する。
+		 *
+		 * @since 1.0.0
+		 * @param int    $order_id 受注 ID。
+		 * @param string $source   受注元（KTPWP_Order_Admin_Notification::SOURCE_*）。
+		 * @return bool True on success, false on failure.
+		 */
+		public function create_inbound_initial_chat( $order_id, $source ) {
+			$source = sanitize_key( (string) $source );
+			if ( ! $this->is_notifiable_inbound_source( $source ) ) {
+				return false;
 			}
 
-			// Get user display name
+			$owner_id = $this->resolve_primary_admin_user_id();
+			if ( ! $owner_id ) {
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					error_log( 'KTPWP: Skipped inbound staff chat — no administrator user found (order_id=' . (int) $order_id . ')' );
+				}
+				return false;
+			}
+
+			return $this->insert_initial_chat_if_absent(
+				$order_id,
+				$owner_id,
+				$this->build_inbound_initial_message( $source )
+			);
+		}
+
+		/**
+		 * @param int    $order_id 受注 ID。
+		 * @param int    $user_id  投稿者ユーザー ID。
+		 * @param string $message  メッセージ本文。
+		 * @return bool
+		 */
+		private function insert_initial_chat_if_absent( $order_id, $user_id, $message ) {
+			if ( ! $order_id || $order_id <= 0 || ! $user_id ) {
+				return false;
+			}
+
+			global $wpdb;
+			$table_name = $wpdb->prefix . 'ktp_order_staff_chat';
+
+			$existing_chat = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT COUNT(*) FROM `{$table_name}` WHERE order_id = %d AND is_initial = 1",
+					$order_id
+				)
+			);
+
+			if ( $existing_chat > 0 ) {
+				return true;
+			}
+
 			$user_info = get_userdata( $user_id );
 			if ( ! $user_info ) {
 				return false;
@@ -144,33 +185,99 @@ if ( ! class_exists( 'KTPWP_Staff_Chat' ) ) {
 
 			$display_name = $user_info->display_name ? $user_info->display_name : $user_info->user_login;
 
-			// Insert initial chat entry
 			$inserted = $wpdb->insert(
-                $table_name,
-                array(
-					'order_id' => $order_id,
-					'user_id' => $user_id,
+				$table_name,
+				array(
+					'order_id'          => $order_id,
+					'user_id'           => $user_id,
 					'user_display_name' => $display_name,
-					'message' => __( '受注書を作成しました。', 'ktpwp' ),
-					'is_initial' => 1,
-					'created_at' => current_time( 'mysql' ),
-                ),
-                array(
-					'%d', // order_id
-					'%d', // user_id
-					'%s', // user_display_name
-					'%s', // message
-					'%d', // is_initial
-					'%s',  // created_at
-                )
+					'message'           => $message,
+					'is_initial'        => 1,
+					'created_at'        => current_time( 'mysql' ),
+				),
+				array(
+					'%d',
+					'%d',
+					'%s',
+					'%s',
+					'%d',
+					'%s',
+				)
 			);
 
 			if ( $inserted ) {
 				return true;
-			} else {
-				error_log( 'KTPWP: Failed to create initial staff chat: ' . $wpdb->last_error );
-				return false;
 			}
+
+			error_log( 'KTPWP: Failed to create initial staff chat: ' . $wpdb->last_error );
+			return false;
+		}
+
+		/**
+		 * @return int 管理者ユーザー ID。見つからない場合は 0。
+		 */
+		private function resolve_primary_admin_user_id() {
+			$admins = get_users(
+				array(
+					'role'    => 'administrator',
+					'number'  => 1,
+					'orderby' => 'ID',
+					'order'   => 'ASC',
+					'fields'  => 'ID',
+				)
+			);
+
+			if ( empty( $admins ) ) {
+				return 0;
+			}
+
+			return (int) $admins[0];
+		}
+
+		/**
+		 * スタッフチャットは日本語オフィス向けのため、常に日本語で入れる。
+		 *
+		 * @param string $source 受注元。
+		 * @return string
+		 */
+		private function build_inbound_initial_message( $source ) {
+			return sprintf(
+				'Webからの受注がありました。（%s）',
+				$this->get_inbound_source_label( $source )
+			);
+		}
+
+		/**
+		 * @param string $source 受注元。
+		 * @return string
+		 */
+		private function get_inbound_source_label( $source ) {
+			switch ( $source ) {
+				case 'woocommerce':
+					return 'WooCommerce';
+				case 'contact_form_7':
+					return 'お問い合わせフォーム（Contact Form 7）';
+				case 'public_product':
+					return '公開商品のお問い合わせ';
+				default:
+					return '外部連携';
+			}
+		}
+
+		/**
+		 * @param string $source 受注元。
+		 * @return bool
+		 */
+		private function is_notifiable_inbound_source( $source ) {
+			return in_array(
+				$source,
+				array(
+					'woocommerce',
+					'contact_form_7',
+					'public_product',
+				),
+				true
+			);
 		}
 
 		/**

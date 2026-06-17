@@ -275,6 +275,11 @@ class KTPWP_License_Manager {
      * @return bool True if license is valid
      */
     public function is_license_valid() {
+        // KantanProEX 系（ダウンロード販売版）はライセンスキー検証なしで全機能利用可。
+        if ( function_exists( 'ktpwp_is_ex_edition' ) && ktpwp_is_ex_edition() ) {
+            return true;
+        }
+
         // 開発環境の判定
         if ( $this->is_development_environment() ) {
             // 開発ライセンスが無効化されている場合は false

@@ -2,7 +2,6 @@
 .btn-add-row {
   display: inline-block !important;
   visibility: visible !important;
-  opacity: 1 !important;
 }
 
 /* ===========================================
@@ -25,7 +24,7 @@
 .ktp_plugin_container .data_detail_box {
     contain: layout style;
 }
-/* 受注書：折りたたみ（コスト項目・スタッフチャット・KantanProEX 同様 ▶︎ / ▼） */
+/* 受注書：折りたたみ（メール履歴・案件ファイル・コスト・スタッフチャット共通） */
 .ktp-order-block {
     margin-top: 16px;
     margin-bottom: 24px;
@@ -88,8 +87,376 @@
 .ktp-order-details-body {
     margin-top: 12px;
 }
-/* 請求項目テーブル：交互色の透明行を白に */
-.invoice-items-table tr:nth-of-type(even) {
+
+/* メール履歴・案件ファイル：外枠直下の余白（.ktp-order-details-body 廃止） */
+.ktp-order-mail-log-details > summary + * {
+    margin-top: 12px;
+}
+
+.ktp-mail-log-entry + .ktp-mail-log-entry {
+    margin-top: 10px;
+}
+
+.ktp-order-files-details > summary + * {
+    margin-top: 12px;
+}
+
+.ktp-order-mail-log-empty,
+.ktp-order-files-empty {
+    margin-bottom: 0;
+}
+
+.ktp-mail-log-entry {
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    background: #fff;
+}
+
+.ktp-mail-log-entry-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    padding: 10px 12px;
+    font-size: 13px;
+    line-height: 1.45;
+    gap: 4px 6px;
+}
+
+.ktp-mail-log-entry-date {
+    white-space: nowrap;
+    margin-right: 4px;
+}
+
+.ktp-mail-log-entry-sender {
+    color: #444;
+}
+
+.ktp-mail-log-entry-to {
+    color: #555;
+}
+
+.ktp-mail-log-entry-subj {
+    color: #333;
+}
+
+.ktp-mail-log-entry-body {
+    padding: 0 12px 12px;
+    font-size: 13px;
+    border-top: 1px solid #f0f0f0;
+}
+
+.ktp-mail-log-context {
+    margin: 10px 0 8px;
+    font-size: 12px;
+    color: #555;
+}
+
+.ktp-mail-log-meta-table {
+    margin: 8px 0;
+    border-collapse: collapse;
+    font-size: 12px;
+    width: 100%;
+}
+
+.ktp-mail-log-meta-table th {
+    text-align: left;
+    padding: 4px 8px;
+    width: 80px;
+    vertical-align: top;
+}
+
+.ktp-mail-log-meta-table td {
+    padding: 4px 8px;
+}
+
+.ktp-mail-log-subject-cell {
+    word-break: break-all;
+}
+
+.ktp-mail-log-error-cell {
+    color: #c62828;
+    word-break: break-all;
+}
+
+.ktp-mail-log-cc-note {
+    padding: 4px 8px;
+    font-size: 11px;
+    color: #3949ab;
+}
+
+.ktp-mail-log-body-pre {
+    white-space: pre-wrap;
+    word-break: break-all;
+    background: #f9f9f9;
+    border: 1px solid #eee;
+    border-radius: 4px;
+    padding: 10px;
+    margin: 8px 0 0;
+    font-size: 12px;
+    max-height: 320px;
+    overflow: auto;
+}
+
+.ktp-order-file-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.ktp-order-file-list .ktp-order-file-row {
+    padding: 10px 12px;
+    border-bottom: 1px solid #eee;
+}
+
+.ktp-order-file-list .ktp-order-file-row:last-child {
+    border-bottom: none;
+}
+
+.ktp-order-file-upload-form {
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid #e0e0e0;
+    box-sizing: border-box;
+}
+
+.ktp-order-file-upload-label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 6px;
+    font-size: 13px;
+}
+
+.ktp-order-file-upload-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.ktp-order-file-input {
+    font-size: 13px;
+}
+
+.ktp-order-file-upload-hint {
+    margin: 8px 0 0;
+}
+
+.order-cost-details > summary ~ * {
+    margin-top: 8px;
+}
+
+#staff-chat-content.staff-chat-content {
+    margin-top: 8px;
+}
+
+/* 案件ファイル：アップロード（グローバル .button はラッパー用のため専用クラス） */
+.ktp-order-files-wrap .ktp-order-file-upload-btn {
+    padding: 8px 18px;
+    background: #1976d2;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    line-height: 1.3;
+}
+.ktp-order-files-wrap .ktp-order-file-upload-btn:hover {
+    background: #1565c0;
+    color: #fff;
+}
+
+/* 案件ファイル1行：アイコン | ファイル名 | プレビュー | ダウンロード | 削除 */
+.ktp-order-files-wrap .ktp-order-file-row {
+    padding: 10px 12px;
+    border-bottom: 1px solid #eee;
+}
+
+.ktp-order-files-wrap .ktp-order-file-row-inner {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 10px;
+}
+
+.ktp-order-files-wrap .ktp-order-file-icon {
+    flex: 0 0 44px;
+    width: 44px;
+    height: 44px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: #f5f5f5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.ktp-order-files-wrap .ktp-order-file-icon img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    vertical-align: middle;
+}
+
+.ktp-order-files-wrap .ktp-order-file-icon-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #666;
+}
+
+.ktp-order-files-wrap .ktp-order-file-text {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.ktp-order-files-wrap .ktp-order-file-name {
+    font-weight: 600;
+    font-size: 13px;
+    line-height: 1.35;
+    word-break: break-all;
+}
+
+.ktp-order-files-wrap .ktp-order-file-meta {
+    font-size: 11px;
+    color: #666;
+    margin-top: 2px;
+    line-height: 1.3;
+}
+
+.ktp-order-files-wrap .ktp-order-file-actions {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 6px;
+    margin-top: 0;
+}
+
+.ktp-order-files-wrap .ktp-order-file-actions > a,
+.ktp-order-files-wrap .ktp-order-file-actions > form {
+    flex-shrink: 0;
+}
+
+.ktp-order-files-wrap .ktp-order-file-delete-form {
+    display: inline-flex;
+    margin: 0;
+    align-items: center;
+}
+
+.ktp-order-files-wrap .ktp-order-file-delete-form .ktp-order-file-delete-btn {
+    font-family: inherit;
+}
+
+@media (max-width: 720px) {
+    .ktp-order-files-wrap .ktp-order-file-row-inner {
+        flex-wrap: wrap;
+        align-items: flex-start;
+    }
+
+    .ktp-order-files-wrap .ktp-order-file-actions {
+        flex: 1 1 100%;
+        justify-content: flex-start;
+        padding-left: 54px;
+        box-sizing: border-box;
+    }
+}
+
+@media (max-width: 480px) {
+    .ktp-order-files-wrap .ktp-order-file-actions {
+        flex-wrap: wrap;
+        padding-left: 0;
+    }
+}
+
+.ktp-order-files-wrap .ktp-order-file-action-btn {
+    display: inline-block;
+    padding: 6px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.3;
+    border-radius: 4px;
+    text-decoration: none;
+    border: 1px solid #bdbdbd;
+    background: #fff;
+    color: #333;
+    cursor: pointer;
+    box-sizing: border-box;
+}
+
+.ktp-order-files-wrap .ktp-order-file-preview-btn:hover {
+    background: #f5f5f5;
+    color: #111;
+    border-color: #9e9e9e;
+}
+
+.ktp-order-files-wrap .ktp-order-file-download-btn {
+    background: #1976d2;
+    border-color: #1976d2;
+    color: #fff;
+}
+
+.ktp-order-files-wrap .ktp-order-file-download-btn:hover {
+    background: #1565c0;
+    border-color: #1565c0;
+    color: #fff;
+}
+
+.ktp-order-files-wrap .ktp-order-file-delete-btn {
+    background: #fff;
+    border: 1px solid #e57373;
+    color: #c62828;
+    cursor: pointer;
+}
+
+.ktp-order-files-wrap .ktp-order-file-delete-btn:hover {
+    background: #ffebee;
+    border-color: #c62828;
+    color: #b71c1c;
+}
+
+/* コスト項目トグルボタン（レガシー・未使用時は無害） */
+.toggle-cost-items {
+    background: #007cba;
+    color: #fff;
+    border: none;
+    border-radius: 3px;
+    padding: 4px 12px;
+    font-size: 13px;
+    cursor: pointer;
+    margin-left: 8px;
+    transition: background 0.2s;
+}
+.toggle-cost-items[aria-expanded="true"] {
+    background: #6c757d;
+}
+.toggle-cost-items:hover {
+    background: #005a87;
+}
+
+/* スタッフチャットトグルボタン */
+.toggle-staff-chat {
+    background: #007cba;
+    color: #fff;
+    border: none;
+    border-radius: 3px;
+    padding: 4px 12px;
+    font-size: 13px;
+    cursor: pointer;
+    margin-left: 8px;
+    transition: background 0.2s;
+}
+.toggle-staff-chat[aria-expanded="true"] {
+    background: #6c757d;
+}
+.toggle-staff-chat:hover {
+    background: #005a87;
+}
+/* 請求項目テーブル：交互色の透明行を白に（参考行は除外） */
+.invoice-items-table tr:nth-of-type(even):not(.invoice-item-row--provisional) {
   background-color: #fff !important;
 }
 /* コスト項目テーブル：交互色の透明行を白に */
@@ -122,6 +489,47 @@
 .invoice-item-row.dragging {
     background: #e3f2fd !important;
     opacity: 0.7;
+}
+
+/* 今回請求に含まれない行（定期参考・is_provisional） */
+.invoice-items-table tr.invoice-item-row--provisional {
+    background-color: #e8edf3 !important;
+    color: #64748b;
+}
+.invoice-items-table tr.invoice-item-row--provisional td {
+    background-color: inherit;
+}
+.invoice-items-table tr.invoice-item-row--provisional td:first-child {
+    border-left: 4px solid #94a3b8;
+}
+.invoice-items-table tr.invoice-item-row--provisional .invoice-item-amount {
+    color: #94a3b8;
+    font-style: italic;
+}
+.invoice-items-table tr.invoice-item-row--provisional .invoice-item-input {
+    pointer-events: none;
+    cursor: default;
+    user-select: none;
+    background-color: #eef2f6 !important;
+    color: #64748b;
+}
+.invoice-items-table tr.invoice-item-row--provisional .actions-column button,
+.invoice-items-table tr.invoice-item-row--provisional .drag-handle.is-disabled {
+    pointer-events: none;
+    opacity: 0.45 !important;
+    cursor: not-allowed;
+    filter: grayscale(1);
+}
+.invoice-items-table tr.invoice-item-row--provisional .actions-column .btn-add-row,
+.invoice-items-table tr.invoice-item-row--provisional .actions-column .btn-delete-row,
+.invoice-items-table tr.invoice-item-row--provisional .actions-column .btn-move-row {
+    background: #b0bec5 !important;
+    color: #eceff1 !important;
+}
+.invoice-items-table tr.invoice-item-row--provisional .actions-column .btn-add-row:hover,
+.invoice-items-table tr.invoice-item-row--provisional .actions-column .btn-delete-row:hover,
+.invoice-items-table tr.invoice-item-row--provisional .actions-column .btn-move-row:hover {
+    background: #b0bec5 !important;
 }
 
 .cost-item-row.dragging {
@@ -399,6 +807,138 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
+.ktp-avatar-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    background: transparent;
+    padding: 0;
+    margin: 0;
+    cursor: default;
+    line-height: 0;
+    text-decoration: none;
+}
+
+a.ktp-avatar-trigger {
+    cursor: pointer;
+}
+
+.ktp-avatar-trigger--other {
+    cursor: pointer;
+}
+
+/* フロントの flex 内配置やテーマの overflow から外すため JS で body 直下へ移動する */
+.ktp-readonly-profile-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 100000;
+    pointer-events: none;
+    isolation: isolate;
+}
+
+.ktp-readonly-profile-modal:not([hidden]) {
+    display: block !important;
+    pointer-events: auto;
+}
+
+/* バックドロップより必ず手前にパネル（z-index の !important とインラインの食い違いで背景が手前に来ないようにする） */
+.ktp-readonly-profile-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.35);
+    z-index: 0;
+    pointer-events: auto;
+}
+
+.ktp-readonly-profile-panel {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: min(420px, calc(100vw - 24px));
+    max-width: calc(100vw - 24px);
+    box-sizing: border-box;
+    background: #fff !important;
+    border: 1px solid #d9e2ec;
+    border-radius: 12px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.2);
+    padding: 14px 14px 12px;
+    z-index: 1;
+    pointer-events: auto;
+    visibility: visible !important;
+    opacity: 1 !important;
+    display: block !important;
+}
+
+/* 一括請求プレビュー（.ktp_header z-index:100000 より手前） */
+#ktp-invoice-preview-popup {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483646;
+  isolation: isolate;
+  box-sizing: border-box;
+}
+
+#ktp-invoice-preview-popup .ktp-invoice-preview-dialog {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.ktp-readonly-profile-close {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    border: 0;
+    background: transparent;
+    color: #64748b;
+    font-size: 20px;
+    cursor: pointer;
+}
+
+.ktp-readonly-profile-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #334155;
+    margin-bottom: 10px;
+}
+
+.ktp-readonly-profile-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 4px;
+}
+
+.ktp-readonly-profile-email {
+    font-size: 12px;
+    color: #4b5563;
+    margin-bottom: 6px;
+    word-break: break-all;
+}
+
+.ktp-readonly-profile-role {
+    display: inline-block;
+    font-size: 11px;
+    color: #0369a1;
+    background: #e0f2fe;
+    border-radius: 999px;
+    padding: 2px 8px;
+    margin-bottom: 8px;
+}
+
+.ktp-readonly-profile-note {
+    font-size: 11px;
+    color: #64748b;
+}
+
 /* レスポンシブ対応 */
 @media (max-width: 768px) {
     .user_icon {
@@ -505,7 +1045,7 @@
 .progress-select {
   height: 28px;
   padding: 0 24px 0 8px;
-  font-size: 13px;
+  font-size: 14px;
   border: 1px solid #ddd;
   border-radius: 4px;
   background-color: #f9f9f9;
@@ -765,7 +1305,7 @@
 
 /* 仕事リストの進捗プルダウン用スタイル（重複あり） */
 .progress-select {
-  font-size: 13px;
+  font-size: 14px;
   padding: 4px 24px 4px 8px;
   border-radius: 4px;
   border: 1px solid #ddd;
@@ -1164,6 +1704,1138 @@ form > .create-order-btn {
   margin-bottom: 20px;
 }
 
+/* サービスリスト（表形式） */
+.ktp-service-list-table-wrap {
+  overflow-x: auto;
+}
+
+.ktp-service-list-table {
+  border-collapse: collapse;
+  margin: 0;
+  table-layout: fixed;
+  width: 100%;
+}
+
+.ktp-service-list-table th,
+.ktp-service-list-table td {
+  border: 1px solid #e5e7eb;
+  padding: 6px 12px;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.ktp-service-list-table tbody td {
+  padding: 4px 12px;
+}
+
+.ktp-service-list-table thead th {
+  background: #fdeef2;
+  color: #1d2327;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.ktp-service-list-table th.ktp-sortable-col {
+  padding: 0;
+}
+
+.ktp-service-list-table .ktp-sortable-header {
+  align-items: center;
+  color: inherit;
+  display: inline-flex;
+  gap: 4px;
+  padding: 10px 12px;
+  text-decoration: none;
+  width: 100%;
+}
+
+.ktp-service-list-table .ktp-sortable-header:hover {
+  background: #f8d7e3;
+  color: #2271b1;
+  text-decoration: underline;
+}
+
+.ktp-service-list-table th.is-sorted {
+  background: #f8c8dc;
+}
+
+.ktp-service-list-table .ktp-sort-indicator {
+  font-size: 10px;
+  line-height: 1;
+}
+
+.ktp-service-list-table tbody tr:nth-child(odd) {
+  background: #f9fafb;
+}
+
+.ktp-service-list-table tbody tr:nth-child(even) {
+  background: #fff;
+}
+
+.ktp-service-list-data-row {
+  cursor: pointer;
+}
+
+.ktp-service-list-data-row:hover {
+  background: #f0f7ff !important;
+}
+
+.ktp-service-list-table .col-public {
+  text-align: center;
+  white-space: nowrap;
+}
+
+.ktp-service-public-badge {
+  border-radius: 4px;
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.4;
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+
+.ktp-service-public-badge--public {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.ktp-service-public-badge--private {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.ktp-service-public-badge--sold-out {
+  background: #ffebee;
+  color: #c62828;
+}
+
+.ktp-service-public-badge--pending {
+  background: #fff3e0;
+  color: #e65100;
+}
+
+.ktpwp-service-stock-sold-out-notice {
+  color: #c62828;
+  font-size: 13px;
+  font-weight: 600;
+  margin: 8px 0 0;
+}
+
+.ktp-service-related-list__title {
+  margin-top: 18px;
+}
+
+.ktp_data_list_box .ktp-service-related-list__rows > a:nth-of-type(odd) .ktp_data_list_item {
+  background-color: #e7eefd !important;
+}
+
+.ktp_data_list_box .ktp-service-related-list__rows > a:nth-of-type(even) .ktp_data_list_item {
+  background-color: #ffffff !important;
+}
+
+.ktp_data_list_box .ktp-service-related-list__rows > a:hover .ktp_data_list_item {
+  background-color: #f0f7ff !important;
+}
+
+.ktp-service-related-list__section + .ktp-service-related-list__section {
+  margin-top: 10px;
+}
+
+.ktp-service-related-list__group-title {
+  background-color: #ffeef1;
+  border-bottom: 1px solid #fecdd3;
+  color: #4b5563;
+  font-size: 12px;
+  font-weight: 600;
+  margin: 0;
+  padding: 8px 16px;
+}
+
+.ktp-service-related-list__item {
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.ktp-service-related-list__meta {
+  color: #666;
+  font-size: 12px;
+  margin-left: 6px;
+}
+
+.ktp-service-related-list__badge {
+  border-radius: 4px;
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  margin-left: 6px;
+  padding: 1px 6px;
+  vertical-align: middle;
+}
+
+.ktp-service-related-list__badge--contract {
+  background: #e8eaf6;
+  color: #3949ab;
+}
+
+.ktp-service-related-list__badge--web {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+
+.ktp-service-related-list__status {
+  float: right;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.ktp-service-related-list__empty {
+  align-items: center;
+  background: linear-gradient(135deg, #fff3cd 0%, #fff8e1 100%);
+  border-radius: 6px;
+  color: #856404;
+  display: flex;
+  font-size: 14px;
+  font-weight: 600;
+  gap: 8px;
+  justify-content: center;
+  margin: 12px 0;
+  padding: 12px 16px;
+  text-align: center;
+}
+
+.ktp-contract-cycle-badge {
+  border-radius: 4px;
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.4;
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+
+.ktp-contract-cycle-badge--recurring {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+
+.ktp-contract-cycle-badge--none {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+/* 定期契約（顧客タブ） */
+.ktp-contract-section {
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin: 24px 0 0;
+  padding: 16px 18px;
+}
+
+.ktp-contract-section__title {
+  color: #333;
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 12px;
+}
+
+.ktp-contract-section__hint,
+.ktp-contract-section__empty {
+  color: #666;
+  font-size: 12px;
+  margin: 0 0 12px;
+}
+
+.ktp-contract-section__toolbar {
+  margin-bottom: 12px;
+}
+
+.ktp-contract-list-table {
+  border-collapse: collapse;
+  font-size: 12px;
+  width: 100%;
+}
+
+.ktp-contract-list-table th,
+.ktp-contract-list-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.ktp-contract-list-table th {
+  background: #f5f5f5;
+}
+
+.ktp-contract-list-table__amount {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.ktp-contract-list-table__actions {
+  white-space: nowrap;
+}
+
+.ktp-contract-list-table__actions .ktp-contract-action-btn {
+  margin-right: 4px;
+}
+
+.ktp-contract-list-table__actions .ktp-contract-action-btn:last-child {
+  margin-right: 0;
+}
+
+.ktp-contract-status {
+  border-radius: 4px;
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+}
+
+.ktp-contract-status--active {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.ktp-contract-status--paused {
+  background: #fff3e0;
+  color: #ef6c00;
+}
+
+.ktp-contract-status--cancelled {
+  background: #ffebee;
+  color: #c62828;
+}
+
+.ktp-contract-form-wrap {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  margin-top: 16px;
+  padding: 16px;
+}
+
+.ktp-contract-form__heading {
+  font-size: 14px;
+  margin: 0 0 14px;
+}
+
+.ktp-contract-form__grid {
+  display: grid;
+  gap: 12px 16px;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  margin-bottom: 12px;
+}
+
+.ktp-contract-form__field label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.ktp-contract-form__field input[type="text"],
+.ktp-contract-form__field input[type="number"],
+.ktp-contract-form__field input[type="date"],
+.ktp-contract-form__field select,
+.ktp-contract-form__field textarea {
+  box-sizing: border-box;
+  max-width: 100%;
+  width: 100%;
+}
+
+.ktp-contract-form__field--checkbox label {
+  font-weight: normal;
+}
+
+.ktp-contract-form__actions {
+  border-top: 1px solid #eee;
+  margin-top: 16px;
+  padding-top: 16px;
+}
+
+.ktp-contract-list-table__stripe {
+  font-size: 11px;
+  line-height: 1.4;
+  min-width: 88px;
+}
+
+.ktp-contract-stripe-cell__next {
+  color: #666;
+  font-size: 10px;
+}
+
+.ktp-contract-stripe-status {
+  border-radius: 4px;
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 6px;
+}
+
+.ktp-contract-stripe-status--active,
+.ktp-contract-stripe-status--trialing {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.ktp-contract-stripe-status--past_due,
+.ktp-contract-stripe-status--unpaid,
+.ktp-contract-stripe-status--needs_card {
+  background: #fff3e0;
+  color: #ef6c00;
+}
+
+.ktp-contract-stripe-status--canceled,
+.ktp-contract-stripe-status--incomplete_expired {
+  background: #ffebee;
+  color: #c62828;
+}
+
+.ktp-contract-stripe-status--not_started,
+.ktp-contract-stripe-status--incomplete {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+
+.ktp-contract-stripe-block {
+  background: #f8fbff;
+  border: 1px solid #c5d9f0;
+  border-radius: 8px;
+  margin-top: 16px;
+  padding: 14px 16px;
+}
+
+.ktp-contract-stripe-block__title {
+  font-size: 13px;
+  margin: 0 0 10px;
+}
+
+.ktp-contract-stripe-block__body {
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.ktp-contract-stripe-block__body dl {
+  display: grid;
+  gap: 4px 12px;
+  grid-template-columns: 120px 1fr;
+  margin: 0;
+}
+
+.ktp-contract-stripe-block__body dt {
+  color: #666;
+  font-weight: 600;
+  margin: 0;
+}
+
+.ktp-contract-stripe-block__body dd {
+  margin: 0;
+  word-break: break-all;
+}
+
+.ktp-contract-stripe-block__setup {
+  border-top: 1px solid #dbe8f7;
+  margin-top: 12px;
+  padding-top: 12px;
+}
+
+.ktp-contract-stripe-block__url-wrap {
+  margin-top: 10px;
+}
+
+.ktp-contract-stripe-block__url-wrap label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.ktp-contract-stripe-block__url-row {
+  align-items: stretch;
+  display: flex;
+  gap: 8px;
+}
+
+.ktp-contract-stripe-block__url-row input[type="text"] {
+  flex: 1;
+  font-size: 12px;
+  min-width: 0;
+}
+
+/* 定期契約ボタン（顧客タブの請求書発行・更新ボタンと同系統） */
+.ktp-contract-section .ktp-contract-action-btn {
+  align-items: center;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fff;
+  color: #333;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 500;
+  gap: 8px;
+  line-height: 1.2;
+  padding: 8px 18px;
+  transition: all 0.2s ease;
+}
+
+.ktp-contract-section .ktp-contract-action-btn:hover {
+  background: #f0f0f0;
+  border-color: #0073aa;
+}
+
+.ktp-contract-section .ktp-contract-action-btn .material-symbols-outlined,
+.ktp-contract-section .ktp-contract-action-btn .ktp-svg-icon {
+  display: inline-flex !important;
+  align-items: center;
+  font-size: 18px;
+  justify-content: center;
+  line-height: 1;
+}
+
+.ktp-contract-section .ktp-contract-action-btn--primary {
+  background: #28a745;
+  border-color: #1e7e34;
+  color: #fff;
+}
+
+.ktp-contract-section .ktp-contract-action-btn--primary:hover {
+  background: #1e7e34;
+  border-color: #155724;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.ktp-contract-section .ktp-contract-action-btn--secondary {
+  background: #666;
+  border-color: #555;
+  color: #fff;
+}
+
+.ktp-contract-section .ktp-contract-action-btn--secondary:hover {
+  background: #555;
+  border-color: #444;
+  color: #fff;
+}
+
+.ktp-contract-section .ktp-contract-action-btn--danger {
+  background: #fff;
+  border-color: #dc3545;
+  color: #dc3545;
+}
+
+.ktp-contract-section .ktp-contract-action-btn--danger:hover {
+  background: #dc3545;
+  border-color: #dc3545;
+  color: #fff;
+}
+
+.ktp-contract-section .ktp-contract-action-btn--icon {
+  justify-content: center;
+  min-height: 36px;
+  min-width: 36px;
+  padding: 8px 12px;
+}
+
+.ktp-contract-section .ktp-contract-action-btn--sm {
+  font-size: 12px;
+  padding: 6px 14px;
+}
+
+.ktp-contract-section .button .ktp-contract-action-btn {
+  margin-left: 0;
+}
+
+.ktp-contract-section .button .ktp-contract-action-btn + .ktp-contract-action-btn {
+  margin-left: 10px;
+}
+
+.ktp-contract-initial-fees {
+  border-top: 1px solid #eee;
+  margin-top: 16px;
+  padding-top: 16px;
+}
+
+.ktp-contract-initial-fees__title {
+  font-size: 13px;
+  margin: 0 0 8px;
+}
+
+.ktp-contract-initial-fees__presets {
+  margin-bottom: 10px;
+}
+
+.ktp-contract-initial-fees__table {
+  border-collapse: collapse;
+  font-size: 12px;
+  margin-bottom: 10px;
+  width: 100%;
+}
+
+.ktp-contract-initial-fees__table th,
+.ktp-contract-initial-fees__table td {
+  border: 1px solid #ddd;
+  padding: 6px;
+}
+
+.ktp-contract-initial-fees--locked .ktp-contract-initial-fees__table input,
+.ktp-contract-initial-fees--locked .ktp-contract-initial-fees__presets {
+  opacity: 0.7;
+}
+
+.ktp-contract-initial-fees__table .ktp-contract-initial-fees__actions {
+  text-align: center;
+  vertical-align: middle;
+  width: 44px;
+}
+
+.ktp-contract-initial-fees__table .ktp-contract-action-btn--icon {
+  min-height: 28px;
+  min-width: 28px;
+  padding: 4px 6px;
+}
+
+.ktp-contract-initial-fees--locked .ktp-contract-remove-fee-row {
+  display: none;
+}
+
+/* 定期請求（仕事リスト） */
+.ktp-list-view-switcher {
+  align-items: center;
+  display: inline-flex;
+  gap: 6px;
+}
+
+.ktp-list-view-switcher__btn {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  color: #333;
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  text-decoration: none;
+}
+
+.ktp-list-view-switcher__btn:hover {
+  background: #f5f5f5;
+  color: #333;
+}
+
+.ktp-list-view-switcher__btn.is-active {
+  background: #1976d2;
+  border-color: #1976d2;
+  color: #fff;
+  pointer-events: none;
+}
+
+.ktp-list-view-switcher__btn.is-active:hover {
+  background: #1976d2;
+  color: #fff;
+}
+
+.ktp-list-type-filter {
+  align-items: center;
+  display: inline-flex;
+  gap: 6px;
+}
+
+.ktp-list-type-filter__label {
+  color: #666;
+  font-size: 12px;
+}
+
+.ktp-list-type-filter__btn {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  color: #333;
+  font-size: 12px;
+  padding: 4px 10px;
+  text-decoration: none;
+}
+
+.ktp-list-type-filter__btn.is-active {
+  background: #1976d2;
+  border-color: #1976d2;
+  color: #fff;
+}
+
+@media (max-width: 767px) {
+  .controller .ktp-list-search-wrap {
+    align-items: flex-start !important;
+    flex-wrap: wrap !important;
+    row-gap: 8px !important;
+    width: 100% !important;
+  }
+
+  .controller .ktp-list-search-form {
+    flex: 1 1 100% !important;
+    width: 100% !important;
+  }
+
+  .ktp-list-view-switcher,
+  .ktp-list-type-filter {
+    flex: 1 1 auto;
+    flex-wrap: wrap;
+    max-width: 100%;
+  }
+
+  .ktp-list-view-switcher__btn,
+  .ktp-list-type-filter__btn {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  .ktp-list-type-filter__label {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+}
+
+.ktp-recurring-badge {
+  background: #fff3e0;
+  border-radius: 4px;
+  color: #e65100;
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  margin-left: 6px;
+  padding: 2px 8px;
+}
+
+.ktp-contract-billing-panel {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  margin: 16px 0;
+  padding: 10px 14px;
+}
+
+.ktp-contract-billing-panel .ktp-contract-action-btn,
+.ktp-contract-billing-table .ktp-contract-action-btn {
+  align-items: center;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fff;
+  color: #333;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 500;
+  gap: 8px;
+  line-height: 1.2;
+  padding: 8px 18px;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.ktp-contract-billing-panel .ktp-contract-action-btn--primary {
+  background: #28a745;
+  border-color: #1e7e34;
+  color: #fff;
+}
+
+.ktp-contract-billing-panel .ktp-contract-action-btn--primary:hover {
+  background: #1e7e34;
+  color: #fff;
+}
+
+.ktp-contract-billing-panel .ktp-contract-action-btn--secondary {
+  background: #666;
+  border-color: #555;
+  color: #fff;
+}
+
+.ktp-contract-billing-panel .ktp-contract-action-btn--secondary:hover {
+  background: #555;
+  color: #fff;
+}
+
+.ktp-contract-reminder-status {
+  border-radius: 4px;
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+}
+
+.ktp-contract-reminder-status--sent {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+
+.ktp-contract-reminder-status--pending {
+  background: #fff3e0;
+  color: #e65100;
+}
+
+.ktp-contract-reminder-status--off {
+  background: #f5f5f5;
+  color: #757575;
+}
+
+.ktp-contract-billing-table .ktp-contract-billing-send-reminder-one {
+  font-size: 11px;
+  margin-left: 6px;
+  padding: 4px 10px;
+}
+
+.ktp-bulk-invoice-section__title {
+  color: #1e40af;
+  font-size: 14px;
+  font-weight: 700;
+  margin: 4px 0 8px;
+}
+
+.ktp-contract-billing-panel__header {
+  align-items: flex-start;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.ktp-contract-billing-panel__title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-width: 0;
+}
+
+.ktp-contract-billing-panel__title {
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.25;
+  margin: 0 0 4px;
+}
+
+.ktp-contract-billing-panel__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.ktp-contract-billing-panel__meta-line {
+  color: #666;
+  font-size: 12px;
+  line-height: 1.3;
+  margin: 0;
+  padding: 0;
+}
+
+.ktp-contract-billing-panel__meta-line + .ktp-contract-billing-panel__meta-line {
+  margin-top: 3px;
+}
+
+.ktp-contract-billing-panel__summary {
+  color: #666;
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.ktp-contract-billing-panel__hint {
+  color: #888;
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+.ktp-contract-billing-panel__actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ktp-contract-billing-panel__empty {
+  color: #666;
+  font-size: 12px;
+  line-height: 1.3;
+  margin: 0;
+  padding: 0;
+}
+
+.ktp-contract-billing-table-wrap {
+  overflow-x: auto;
+}
+
+.ktp-contract-billing-table {
+  border-collapse: collapse;
+  font-size: 13px;
+  width: 100%;
+}
+
+.ktp-contract-billing-table th,
+.ktp-contract-billing-table td {
+  border-bottom: 1px solid #eee;
+  padding: 10px 8px;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.ktp-contract-billing-table th {
+  background: #f5f5f5;
+  font-weight: 600;
+}
+
+.ktp-contract-billing-table__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.ktp-contract-billing-table__cycle {
+  white-space: nowrap;
+}
+
+.ktp-contract-billing-status {
+  border-radius: 999px;
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+}
+
+.ktp-contract-billing-status--pending {
+  background: #fff3e0;
+  color: #e65100;
+}
+
+.ktp-contract-billing-status--generated {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+
+.ktp-contract-billing-status--invoiced {
+  background: #f3e5f5;
+  color: #6a1b9a;
+}
+
+.ktp-contract-billing-status--paid {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.ktp-contract-billing-status--rejected {
+  background: #ffebee;
+  color: #c62828;
+}
+
+.ktp-contract-billing-panel__message {
+  border-radius: 4px;
+  font-size: 13px;
+  margin-top: 12px;
+  padding: 10px 12px;
+}
+
+.ktp-contract-billing-panel__message.is-success {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.ktp-contract-billing-panel__message.is-error {
+  background: #ffebee;
+  color: #c62828;
+}
+
+.ktp-contract-action-btn--muted {
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  color: #333;
+}
+
+.ktp-contract-action-btn--outline {
+  background: #fff;
+  border: 1px solid #1976d2;
+  color: #1976d2;
+  text-decoration: none;
+}
+
+.ktp-contract-action-btn--outline:hover {
+  background: #e3f2fd;
+}
+
+.ktp-service-list-table .col-id {
+  text-align: right;
+  white-space: nowrap;
+  width: 3.5em;
+}
+
+/* 顧客・協力会社リスト（標準幅 1400px 向け） */
+.ktp-service-list-table.ktp-list-table--party .col-id {
+  width: 5%;
+}
+
+.ktp-service-list-table.ktp-list-table--party .col-company {
+  width: 38%;
+}
+
+.ktp-service-list-table.ktp-list-table--party .col-contact {
+  width: 16%;
+}
+
+.ktp-service-list-table.ktp-list-table--party .col-category {
+  width: 26%;
+}
+
+.ktp-service-list-table.ktp-list-table--party .col-frequency {
+  text-align: center;
+  width: 10%;
+}
+
+/* サービスリスト（リスト欄は画面幅の約50%・標準1400px時は約660px） */
+.ktp-service-list-table.ktp-list-table--service .col-id {
+  width: 5%;
+}
+
+.ktp-service-list-table.ktp-list-table--service .col-image {
+  width: 7%;
+}
+
+.ktp-service-list-table.ktp-list-table--service .ktp-service-list-thumb-wrap {
+  aspect-ratio: 1 / 1;
+  height: auto;
+  margin: 0;
+  width: 100%;
+}
+
+.ktp-service-list-table.ktp-list-table--service .ktp-service-list-thumb {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.ktp-service-list-table.ktp-list-table--service .col-name {
+  width: 24%;
+}
+
+.ktp-service-list-table.ktp-list-table--service .col-public {
+  width: 8%;
+}
+
+.ktp-service-list-table.ktp-list-table--service .col-contract {
+  width: 9%;
+}
+
+.ktp-service-list-table.ktp-list-table--service .col-price-unit {
+  overflow: visible;
+  text-align: right;
+  white-space: nowrap;
+  width: 22%;
+}
+
+.ktp-service-list-table.ktp-list-table--service .col-category {
+  max-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 15%;
+}
+
+.ktp-service-list-table.ktp-list-table--service .col-frequency {
+  text-align: center;
+  width: 10%;
+}
+
+.ktp-service-list-table .col-image {
+  line-height: 0;
+  text-align: center;
+  width: 52px;
+}
+
+.ktp-service-list-table tbody td.col-image {
+  padding: 4px 6px;
+  vertical-align: middle;
+}
+
+.ktp-service-list-table thead th.col-image {
+  padding: 6px 8px;
+}
+
+.ktp-service-list-table .ktp-service-list-thumb-wrap {
+  align-items: center;
+  background: #f6f7f7;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  box-sizing: border-box;
+  display: flex;
+  flex-shrink: 0;
+  height: 40px;
+  justify-content: center;
+  line-height: 0;
+  margin: 0 auto;
+  overflow: hidden;
+  width: 40px;
+}
+
+.ktp-service-list-table .ktp-service-list-thumb {
+  display: block;
+  height: 100%;
+  margin: 0;
+  object-fit: cover;
+  width: 100%;
+}
+
+.ktp-service-list-table .col-name,
+.ktp-service-list-table .col-company {
+  font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ktp-service-list-table .col-contact,
+.ktp-service-list-table .col-category {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ktp-service-list-table .col-price-unit,
+.ktp-service-list-table .col-price,
+.ktp-service-list-table .col-tax,
+.ktp-service-list-table .col-unit,
+.ktp-service-list-table .col-frequency,
+.ktp-service-list-table .col-contact,
+.ktp-service-list-table .col-status {
+  white-space: nowrap;
+}
+
+.ktp-service-list-table .col-frequency {
+  text-align: center;
+}
+
+.ktp-service-list-table .col-price-unit .ktp-service-price-unit-sep {
+  color: #646970;
+  margin: 0 0.1em;
+}
+
+.ktp-data-list-row--excluded {
+  background: #ffe6e6 !important;
+}
+
+.ktp-data-list-row--excluded td.col-id {
+  border-left: 3px solid #ff4444;
+}
+
+.ktp-data-list-status-excluded {
+  color: #d63638;
+  font-weight: 700;
+}
+
 /* データリストボックスの見出し */
 .data_list_box h3,
 .ktp_data_list_box h3 {
@@ -1187,11 +2859,44 @@ form > .create-order-btn {
   align-items: flex-start;
   flex-wrap: wrap;
   position: relative;
-  z-index: 10;
+  z-index: 100000;
   width: 100%;
   box-sizing: border-box;
   gap: 15px;
   min-height: fit-content;
+}
+
+/* ショートコードヘッダーのプラグインアイコン（汎用 .title / テーマの img ルールとの衝突を抑止） */
+.ktp_header .ktp-header-plugin-reload {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  line-height: 0;
+}
+
+.ktp_header .ktp-header-plugin-reload:focus {
+  outline: 2px solid rgba(0, 115, 170, 0.3);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.ktp_header .ktp-header-plugin-icon {
+  display: inline-block;
+  width: auto;
+  max-width: none;
+  height: 40px;
+  flex-shrink: 0;
+  object-fit: contain;
+  vertical-align: middle;
+  margin-right: 8px;
+  position: relative;
+  top: -5px;
 }
 
 /* PC・タブレット表示用：ヘッダー右側セクション */
@@ -1238,6 +2943,80 @@ form > .create-order-btn {
   outline-offset: 2px;
 }
 
+.ktp_header .ktp-header-settings-menu {
+  display: inline-flex;
+  position: relative;
+  align-items: center;
+  z-index: 100002;
+}
+
+.ktp_header .ktp-header-settings-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: #0073aa;
+  text-decoration: none;
+  padding: 2px 4px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1.4;
+  transition: all 0.2s ease;
+}
+
+.ktp_header .ktp-header-settings-toggle:hover,
+.ktp_header .ktp-header-settings-menu.is-open .ktp-header-settings-toggle {
+  background-color: rgba(0, 115, 170, 0.1);
+  color: #005a87;
+}
+
+.ktp_header .ktp-header-settings-toggle:focus {
+  outline: 2px solid rgba(0, 115, 170, 0.3);
+  outline-offset: 2px;
+}
+
+.ktp_header .ktp-header-settings-dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 150px;
+  padding: 6px 0;
+  background: #fff;
+  border: 1px solid #dcdcde;
+  border-radius: 6px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.16);
+  z-index: 2147483647;
+}
+
+.ktp_header .ktp-header-settings-menu.is-open .ktp-header-settings-dropdown {
+  display: block;
+}
+
+.ktp_header .ktp-header-settings-dropdown a {
+  display: block;
+  width: auto;
+  min-width: 0;
+  padding: 8px 12px;
+  color: #1d2327;
+  background: #fff;
+  border: 0;
+  border-radius: 0;
+  text-decoration: none;
+  white-space: nowrap;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.ktp_header .ktp-header-settings-dropdown a:hover,
+.ktp_header .ktp-header-settings-dropdown a:focus {
+  background: #f0f6fc;
+  color: #005a87;
+  outline: none;
+}
+
 /* 寄付ボタンの特別なスタイル */
 .ktp_header .navigation-links a[href*="donation"],
 .ktp_header .navigation-links a[title*="寄付する"] {
@@ -1281,39 +3060,6 @@ form > .create-order-btn {
 
 .ktp_header .header-logo {
   flex-shrink: 0;
-}
-
-/* ショートコードヘッダーのプラグインアイコン（汎用 .title / テーマの img ルールとの衝突を抑止） */
-.ktp_header .ktp-header-plugin-reload {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  padding: 0;
-  margin: 0;
-  border: 0;
-  background: transparent;
-  cursor: pointer;
-  line-height: 0;
-}
-
-.ktp_header .ktp-header-plugin-reload:focus {
-  outline: 2px solid rgba(0, 115, 170, 0.3);
-  outline-offset: 2px;
-  border-radius: 4px;
-}
-
-.ktp_header .ktp-header-plugin-icon {
-  display: inline-block;
-  width: auto;
-  max-width: none;
-  height: 40px;
-  flex-shrink: 0;
-  object-fit: contain;
-  vertical-align: middle;
-  margin-right: 8px;
-  position: relative;
-  top: -5px;
 }
 
 .ktp_header .system-info {
@@ -1679,6 +3425,56 @@ input[name="tab_item"] {
   position: relative;
 }
 
+/* URL フィールド + 地球アイコン（KantanBiz 詳細表示と同様） */
+.form-group.form-group--url .ktp-url-field-wrap {
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+}
+
+.form-group.form-group--url .ktp-url-field-wrap input {
+  flex: 1 1 auto;
+  width: auto !important;
+  min-width: 0;
+}
+
+.ktp-url-open-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background-color: #fff;
+  color: #555;
+  text-decoration: none;
+  box-sizing: border-box;
+  transition: border-color 0.2s, background-color 0.2s;
+  margin-left: 8px;
+}
+
+.ktp-url-open-link:hover:not(.ktp-url-open-link--disabled) {
+  border-color: #4a90e2;
+  background-color: #f7faff;
+  color: #333;
+}
+
+.ktp-url-open-link--disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.ktp-url-open-link__icon {
+  width: 18px;
+  height: 18px;
+}
+
 /* ラベル */
 .form-group label {
   width: 25%;
@@ -1724,6 +3520,135 @@ input[name="tab_item"] {
   border-left: 3px solid #e74c3c;
 }
 
+/* サービス詳細：契約・定期請求項目 */
+.ktpwp-service-field-block__label-text {
+  display: block;
+  font-size: 14px;
+  color: #444;
+  line-height: 1.4;
+  font-weight: normal;
+}
+
+.ktpwp-service-field-block__section-title {
+  margin-top: 12px;
+  font-weight: 700;
+  color: #333;
+}
+
+.ktpwp-service-field-block__hint {
+  display: block;
+  margin-top: 3px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #777;
+  font-weight: normal;
+}
+
+.form-group.ktpwp-service-public-field > label {
+  width: auto;
+  margin-right: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.form-group.ktpwp-service-public-field input[type="checkbox"] {
+  width: auto;
+  flex: 0 0 auto;
+  margin: 0;
+}
+
+.form-group.ktpwp-service-contract-field {
+  align-items: flex-start;
+}
+
+.ktpwp-service-field-label-col {
+  width: 25%;
+  flex-shrink: 0;
+  margin-right: 12px;
+  text-align: right;
+}
+
+.ktpwp-service-field-label-col label {
+  display: block;
+  width: 100%;
+  margin: 0;
+  text-align: right;
+  font-size: 14px;
+  color: #444;
+  white-space: normal;
+}
+
+.ktpwp-service-field-hint {
+  font-size: 11px;
+  color: #64748b;
+  line-height: 1.45;
+  margin: 4px 0 0;
+}
+
+.form-group.ktpwp-service-contract-field .ktpwp-service-field-hint {
+  text-align: right;
+}
+
+.form-group.ktpwp-service-contract-field select {
+  width: 75%;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ktpwp-service-recurring-items {
+  margin-bottom: 16px;
+}
+
+.ktpwp-service-recurring-items__head {
+  display: flex;
+  margin-bottom: 8px;
+}
+
+.ktpwp-service-recurring-items__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  table-layout: fixed;
+}
+
+.ktpwp-service-recurring-items__table th,
+.ktpwp-service-recurring-items__table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  vertical-align: middle;
+}
+
+.ktpwp-service-recurring-items__table th {
+  background: #ffeef1;
+  color: #4b5563;
+  font-weight: 600;
+  text-align: left;
+  border-bottom: 1px solid #fecdd3;
+}
+
+.ktpwp-service-recurring-items__table td input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  background-color: #fff;
+}
+
+.ktpwp-service-recurring-items__table td input:focus {
+  border-color: #4a90e2;
+  box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.15);
+  outline: none;
+}
+
+.ktpwp-service-recurring-fields--hidden {
+  display: none !important;
+}
+
 /* エラー表示のスタイル */
 .form-error {
   color: #e74c3c;
@@ -1747,8 +3672,8 @@ input[name="tab_item"] {
   display: none;
 }
 
-/* ボタンエリアのレイアウト（ラッパー div のみ。WP の a.button / button.button とクラス名が衝突するためリンク・本体ボタンは除外） */
-.button:not(a):not(button) {
+/* ボタンエリアのレイアウト */
+.button {
   display: flex;
   flex-direction: row;
   justify-content: flex-end;
@@ -1857,75 +3782,12 @@ input[name="tab_item"] {
 .controller {
   display: flex;
   justify-content: flex-end;
-  padding: 0 10px;
-  margin-bottom: 10px;
+  align-items: center;
+  gap: 8px;
+  /* 上は詰める・下は余白を確保 */
+  padding: 2px 10px 16px;
+  margin-bottom: 0;
   border-radius: 0 0 4px 4px;
-}
-
-/* KantanProEX 移行案内：文言とボタンを同一行・縦中央（WP .button の上下マージンを打ち消し） */
-.ktp-ex-migrate-one-line {
-  display: flex !important;
-  flex-direction: row;
-  flex-wrap: nowrap;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 12px;
-  margin: 0;
-  padding: 0;
-}
-
-.ktp-ex-migrate-one-line a {
-  text-decoration: none !important;
-}
-
-.ktp-ex-migrate-one-line > span {
-  margin: 0;
-  padding: 0;
-  line-height: 1.45;
-}
-
-.ktp_plugin_container .ktp-ex-migrate-one-line .button.button-primary,
-.ktpwp-notice .ktp-ex-migrate-one-line .button.button-primary {
-  flex-shrink: 0;
-  margin: 0 !important;
-  min-width: 170px;
-  min-height: 34px;
-  box-sizing: border-box;
-  padding: 8px 18px !important;
-  vertical-align: middle;
-  float: none !important;
-  display: inline-flex !important;
-  align-items: center;
-  justify-content: center;
-  align-self: center;
-  border-radius: 999px !important;
-  box-shadow: none !important;
-  text-decoration: none !important;
-  font-size: 12px !important;
-  line-height: 1.25 !important;
-  background: #43a047 !important;
-  background-color: #43a047 !important;
-  border-color: #2e7d32 !important;
-  color: #fff !important;
-  text-shadow: none !important;
-}
-
-.ktp_plugin_container .ktp-ex-migrate-one-line .button.button-primary:hover,
-.ktp_plugin_container .ktp-ex-migrate-one-line .button.button-primary:focus,
-.ktpwp-notice .ktp-ex-migrate-one-line .button.button-primary:hover,
-.ktpwp-notice .ktp-ex-migrate-one-line .button.button-primary:focus {
-  background: #2e7d32 !important;
-  background-color: #2e7d32 !important;
-  border-color: #1b5e20 !important;
-  color: #fff !important;
-  text-decoration: none !important;
-}
-
-@media (max-width: 480px) {
-  .ktp-ex-migrate-one-line {
-    flex-wrap: wrap;
-    align-items: center;
-  }
 }
 
 /* レポートタブ本体（白カード）の上マージンは 0 */
@@ -1960,11 +3822,12 @@ div.ktp-report-print-area {
   flex-wrap: wrap;
   align-items: center;
   gap: 4px;
+  margin-bottom: 10px;
 }
 
 /* ボタンの間隔 */
 .controller button {
-  margin: 10px;
+  margin: 0 6px 12px 0;
 }
 
 /* プリンターエリア */
@@ -2235,19 +4098,54 @@ div.ktp-report-print-area {
   width: 100%; /* 利用可能な幅を最大に */
   max-width: 100%; /* コンテナの幅を超えないようにする */
   margin-bottom: 10px; /* 下に余白を追加 */
-  overflow: hidden; /* 画像がはみ出さないようにする */
+  overflow: visible;
   border-radius: 4px; /* 角を少し丸く */
   border: 1px solid #e5e7eb; /* 薄いボーダーを追加 */
 }
 
+.image-frame {
+  display: block;
+  position: relative;
+  width: 100%;
+}
+
+.image-delete-form {
+  margin: 0;
+  position: absolute;
+  right: 0.5rem;
+  top: 0.5rem;
+  z-index: 3;
+}
+
+.image-delete-btn {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid #fca5a5;
+  border-radius: 9999px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  color: #dc2626;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 1.25rem;
+  height: 2rem;
+  justify-content: center;
+  line-height: 1;
+  padding: 0;
+  width: 2rem;
+}
+
+.image-delete-btn:hover {
+  background: #fef2f2;
+  border-color: #f87171;
+  color: #b91c1c;
+}
+
 /* サービス画像のスタイル */
 .product-image {
-  width: 100%; /* div.imageの幅いっぱいに表示 */
-  height: auto; /* 画像の高さを画像に合わせる */
-  max-width: 100%; /* コンテナの幅を超えないようにする */
-  max-height: 320px; /* モバイル時以外は高さ320pxに制限 */
-  object-fit: contain; /* コンテナ内で縦横比を保ちつつ、全体が見えるように調整 */
-  object-position: left; /* 画像を左寄せにする */
+  display: block;
+  height: auto;
+  max-width: 100%;
+  width: 100%;
 }
 
 /* 検索リストボックスのスタイル */
@@ -2327,12 +4225,33 @@ div.ktp-report-print-area {
   .form-group textarea {
     width: 100%;
   }
+
+  .form-group.ktpwp-service-contract-field {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ktpwp-service-field-label-col,
+  .form-group.ktpwp-service-contract-field .ktpwp-service-field-label-col {
+    width: 100%;
+    margin-right: 0;
+    text-align: left;
+  }
+
+  .ktpwp-service-field-label-col label,
+  .form-group.ktpwp-service-contract-field .ktpwp-service-field-hint {
+    text-align: left;
+  }
+
+  .form-group.ktpwp-service-contract-field select {
+    width: 100%;
+  }
   
   .box {
     padding: 12px;
   }
   
-  .button:not(a):not(button) {
+  .button {
     flex-wrap: wrap;
   }
 }
@@ -3813,13 +5732,13 @@ body.ktpwp-modal-open {
   background: #28a745 !important;
   color: #fff !important;
   border: 1px solid #1e7e34 !important;
-  border-radius: 3px !important;
-  padding: 6px 10px !important;
+  border-radius: 8px !important;
+  padding: 8px 18px !important;
   font-size: 12px !important;
   cursor: pointer !important;
   display: inline-flex !important;
   align-items: center !important;
-  gap: 4px !important;
+  gap: 8px !important;
   transition: all 0.2s ease !important;
 }
 
@@ -3834,11 +5753,11 @@ body.ktpwp-modal-open {
 
 .controller .create-order-btn .material-symbols-outlined,
 .controller #invoiceButton .material-symbols-outlined {
-  font-size: 16px !important;
+  font-size: 18px !important;
   line-height: 1 !important;
 }
 
-/* 顧客・協力会社タブ・宛名印刷（長形3号想定、青ボタン） */
+/* 顧客・協力会社タブ: 宛名印刷（長形3号想定レイアウト、同一配色） */
 .controller #addressLabelPrintButton,
 .controller #supplierAddressLabelPrintButton,
 .controller .ktp-client-address-label-btn {
@@ -3918,7 +5837,7 @@ body.ktpwp-modal-open {
 }
 
 /* 各タブのcontroller内ボタンの統一スタイル（orderMailButtonと同じサイズ）- 顧客タブのボタンを除外 */
-.controller button[style*="padding: 6px 10px"]:not(.order-history-btn):not(.customer-list-btn):not(.create-order-btn):not(.ktp-client-address-label-btn) {
+.controller button[style*="padding: 6px 10px"]:not(.order-history-btn):not(.customer-list-btn):not(.create-order-btn) {
     padding: 6px 10px !important;
     font-size: 12px !important;
     border: 1px solid #ddd !important;
@@ -3930,12 +5849,12 @@ body.ktpwp-modal-open {
     justify-content: center !important;
 }
 
-.controller button[style*="padding: 6px 10px"]:not(.order-history-btn):not(.customer-list-btn):not(.create-order-btn):not(.ktp-client-address-label-btn):hover {
+.controller button[style*="padding: 6px 10px"]:not(.order-history-btn):not(.customer-list-btn):not(.create-order-btn):hover {
     background: #f0f0f0 !important;
     border-color: #0073aa !important;
 }
 
-.controller button[style*="padding: 6px 10px"]:not(.order-history-btn):not(.customer-list-btn):not(.create-order-btn):not(.ktp-client-address-label-btn) .material-symbols-outlined {
+.controller button[style*="padding: 6px 10px"]:not(.order-history-btn):not(.customer-list-btn):not(.create-order-btn) .material-symbols-outlined {
     font-size: 16px !important;
     line-height: 1 !important;
 }
@@ -3947,8 +5866,44 @@ body.ktpwp-modal-open {
   border: 1px solid #007bff !important;
 }
 
+/* 受注詳細タイトルバー右側アクション（印刷/メール） */
+.controller .ktp-order-title-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.controller .ktp-title-icon-btn {
+  width: 34px !important;
+  height: 30px !important;
+  padding: 0 !important;
+  border-radius: 4px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 0 !important;
+  gap: 0 !important;
+  font-size: 0 !important;
+  vertical-align: middle !important;
+  flex: 0 0 auto;
+  contain: layout style paint;
+}
+
+.controller .ktp-title-icon-btn .material-symbols-outlined,
+.controller .ktp-title-icon-btn .ktp-svg-icon {
+  font-size: 18px !important;
+  width: 18px !important;
+  height: 18px !important;
+  line-height: 1 !important;
+  display: block !important;
+  margin: 0 !important;
+  position: relative;
+  top: -1px;
+}
+
 /* 伝票処理タブ controller内ボタンカラー */
-.controller .delete-order-btn {
+.controller .delete-order-btn,
+.ktp-order-delete-footer .delete-order-btn {
   background: #d9534f !important;
   color: #fff !important;
   border: 1px solid #d43f3a !important;
@@ -3960,9 +5915,58 @@ body.ktpwp-modal-open {
   align-items: center !important;
   gap: 4px !important;
 }
-.controller .delete-order-btn:hover:not(:disabled) {
+.controller .delete-order-btn:hover:not(:disabled),
+.ktp-order-delete-footer .delete-order-btn:hover:not(:disabled) {
   background: #c9302c !important;
   border-color: #ac2925 !important;
+}
+
+.controller .ktp-order-controller-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ktp-order-delete-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+  margin-bottom: 4px;
+  padding-top: 12px;
+}
+
+.ktp-order-delete-footer .ktp-order-delete-form {
+  display: inline-block;
+}
+
+.controller .ktp-order-contract-btn {
+  background: #5c6bc0 !important;
+  color: #fff !important;
+  border: 1px solid #3f51b5 !important;
+  border-radius: 4px !important;
+  padding: 6px 10px !important;
+  font-size: 12px !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+.controller .ktp-order-contract-btn:hover:not(:disabled) {
+  background: #3f51b5 !important;
+  border-color: #303f9f !important;
+}
+
+.controller .ktp-order-contract-btn--view {
+  background: #fff !important;
+  color: #374151 !important;
+  border: 1px solid #d1d5db !important;
+}
+
+.controller .ktp-order-contract-btn--view:hover {
+  background: #f9fafb !important;
+  border-color: #9ca3af !important;
+  color: #111827 !important;
 }
 
 .controller .order-mail-btn {
@@ -4008,6 +6012,65 @@ body.ktpwp-modal-open {
 .controller .material-symbols-outlined {
   font-size: 16px !important;
   line-height: 1 !important;
+}
+
+/* 各タブのプリントアイコンサイズを統一（大きい方に合わせる） */
+.controller .print-btn .material-symbols-outlined,
+.controller #orderPreviewButton .material-symbols-outlined,
+.controller .printer button .material-symbols-outlined,
+.controller button[onclick*="printContent"] .material-symbols-outlined,
+.controller .printer .ktp-svg-icon {
+  font-size: 24px !important;
+  line-height: 1 !important;
+}
+
+.controller .printer .ktp-svg-icon svg {
+  width: 24px !important;
+  height: 24px !important;
+}
+
+/* 仕事リスト：フリーワード入力と検索ボタンの縦位置を揃える */
+.ktp-list-search-form {
+  align-items: center !important;
+}
+
+.ktp-list-search-form .ktp-list-search-input {
+  height: 32px !important;
+  line-height: 32px !important;
+  margin: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  box-sizing: border-box;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.ktp-list-search-form .ktp-list-search-btn {
+  height: 32px !important;
+  min-width: 32px !important;
+  margin: 0 !important;
+  padding: 0 10px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1 !important;
+  vertical-align: middle !important;
+}
+
+/* 仕事リスト: 検索セットの下余白を確保 */
+.controller .ktp-list-search-wrap {
+  margin-bottom: 10px !important;
+}
+
+/* 仕事リストのタイトルバーは検索欄〜プリントまで縦中央揃え */
+.controller .ktp-list-search-wrap,
+.controller .printer {
+  align-self: center !important;
+}
+
+.controller .printer button {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
 }
 
 /* 緊急案件（納期が迫っている案件）のスタイル */
@@ -4367,19 +6430,176 @@ body.ktpwp-modal-open {
   }
 }
 
+/* モバイルヘッダー: 説明文を隠し、ログイン中スタッフのアバターを右上に表示 */
+@media (max-width: 768px) {
+  .ktp_header {
+    min-height: 86px !important;
+    overflow: visible !important;
+  }
+
+  .ktp_header .system-description {
+    display: none !important;
+  }
+
+  .ktp_header .parent {
+    padding-right: 132px !important;
+    box-sizing: border-box !important;
+    position: relative !important;
+    z-index: 1 !important;
+  }
+
+  .ktp_header .header-right-section {
+    width: 0 !important;
+    height: 0 !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    margin: 0 !important;
+    position: static !important;
+    overflow: visible !important;
+  }
+
+  .ktp_header .logo-and-system-info {
+    align-items: center !important;
+    flex-wrap: nowrap !important;
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+
+  .ktp_header .system-info {
+    min-width: 0 !important;
+  }
+
+  .ktp_header .system-name {
+    margin-bottom: 0 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  .ktp_header .navigation-links {
+    display: flex !important;
+    position: absolute !important;
+    top: 10px !important;
+    right: 10px !important;
+    width: auto !important;
+    max-width: 128px !important;
+    flex-wrap: nowrap !important;
+    justify-content: flex-end !important;
+    align-items: center !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 100002 !important;
+  }
+
+  .ktp_header .navigation-links a {
+    width: 26px !important;
+    height: 26px !important;
+    min-width: 26px !important;
+    padding: 2px !important;
+    justify-content: center !important;
+    box-sizing: border-box !important;
+    background-color: rgba(255, 255, 255, 0.75) !important;
+  }
+
+  .ktp_header .navigation-links a > span:not(.ktp-svg-icon) {
+    display: none !important;
+  }
+
+  .ktp_header .ktp-header-settings-menu {
+    flex: 0 0 auto !important;
+  }
+
+  .ktp_header .ktp-header-settings-toggle {
+    width: 26px !important;
+    height: 26px !important;
+    min-width: 26px !important;
+    padding: 2px !important;
+    justify-content: center !important;
+    box-sizing: border-box !important;
+    background-color: rgba(255, 255, 255, 0.75) !important;
+  }
+
+  .ktp_header .ktp-header-settings-toggle > span:not(.ktp-svg-icon) {
+    display: none !important;
+  }
+
+  .ktp_header .ktp-header-settings-dropdown {
+    top: calc(100% + 8px) !important;
+    right: 0 !important;
+    min-width: 148px !important;
+    z-index: 2147483647 !important;
+  }
+
+  .ktp_header .ktp-header-settings-dropdown a {
+    display: block !important;
+    width: auto !important;
+    height: auto !important;
+    min-width: 0 !important;
+    padding: 9px 12px !important;
+    background: #fff !important;
+    color: #1d2327 !important;
+    white-space: nowrap !important;
+    text-align: left !important;
+  }
+
+  .ktp_header .user-avatars-section {
+    display: flex !important;
+    position: absolute !important;
+    top: 44px !important;
+    right: 10px !important;
+    width: auto !important;
+    max-width: 112px !important;
+    justify-content: flex-end !important;
+    align-items: center !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 10000 !important;
+    pointer-events: auto !important;
+  }
+
+  .ktp_header .user-avatars-section .logged-in-staff-avatars {
+    display: inline-flex !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+
+  .ktp_header .user-avatars-section .ktp-avatar-trigger,
+  .ktp_header .user-avatars-section .avatar,
+  .ktp_header .user-avatars-section .user_icon {
+    display: inline-flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    flex: 0 0 auto !important;
+    position: relative !important;
+    z-index: 10001 !important;
+  }
+
+  .ktp_header .user-avatars-section .avatar,
+  .ktp_header .user-avatars-section .user_icon {
+    width: 32px !important;
+    height: 32px !important;
+    max-width: none !important;
+    border-radius: 50% !important;
+    object-fit: cover !important;
+  }
+}
+
 @media screen and (max-width: 767px) {
   .controller .create-order-btn,
   .controller #invoiceButton,
   .controller #addressLabelPrintButton,
   .controller #supplierAddressLabelPrintButton,
   .controller .ktp-client-address-label-btn {
-    width: 40px !important;
-    height: 40px !important;
-    min-width: 40px !important;
-    min-height: 40px !important;
-    max-width: 40px !important;
-    max-height: 40px !important;
-    border-radius: 6px !important;
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+    min-height: 44px !important;
+    max-width: 44px !important;
+    max-height: 44px !important;
+    border-radius: 10px !important;
     padding: 0 !important;
     justify-content: center !important;
     align-items: center !important;
@@ -4393,11 +6613,24 @@ body.ktpwp-modal-open {
   .controller #invoiceButton .material-symbols-outlined,
   .controller #addressLabelPrintButton .material-symbols-outlined,
   .controller #supplierAddressLabelPrintButton .material-symbols-outlined,
-  .controller .ktp-client-address-label-btn .material-symbols-outlined {
+  .controller .ktp-client-address-label-btn .material-symbols-outlined,
+  .controller .create-order-btn .ktp-svg-icon,
+  .controller #invoiceButton .ktp-svg-icon,
+  .controller #addressLabelPrintButton .ktp-svg-icon,
+  .controller #supplierAddressLabelPrintButton .ktp-svg-icon,
+  .controller .ktp-client-address-label-btn .ktp-svg-icon {
     font-size: 22px !important;
     margin: 0 !important;
     line-height: 1 !important;
     display: block !important;
+  }
+  .controller .create-order-btn .ktp-svg-icon svg,
+  .controller #invoiceButton .ktp-svg-icon svg,
+  .controller #addressLabelPrintButton .ktp-svg-icon svg,
+  .controller #supplierAddressLabelPrintButton .ktp-svg-icon svg,
+  .controller .ktp-client-address-label-btn .ktp-svg-icon svg {
+    width: 22px !important;
+    height: 22px !important;
   }
   .controller .create-order-btn .btn-label,
   .controller #invoiceButton .btn-label,
@@ -4493,6 +6726,18 @@ body.ktpwp-modal-open {
   
   .data_detail_title .search-mode-btn:hover {
     background: #007cba !important;
+    color: #fff !important;
+  }
+
+  /* 複製ボタンの特別なスタイル */
+  .data_detail_title .duplicate-submit-btn {
+    background: #fff !important;
+    border-color: #6c757d !important;
+    color: #6c757d !important;
+  }
+
+  .data_detail_title .duplicate-submit-btn:hover {
+    background: #6c757d !important;
     color: #fff !important;
   }
 }
@@ -4617,6 +6862,24 @@ body.ktpwp-modal-open {
   color: #666;
   font-size: 14px;
 }
+.ktp-order-summary-field--order-id {
+  display: inline-flex;
+  align-items: center;
+  gap: 0 4px;
+  flex: 0 0 auto;
+  order: 0;
+}
+.ktp-order-summary-field--order-id .ktp-order-summary-field-label {
+  display: inline;
+  margin-bottom: 0;
+  line-height: 1.3;
+}
+.ktp-order-summary-date-cell--order-id {
+  display: inline-flex;
+  align-items: center;
+  gap: 0 4px;
+  flex: 0 0 auto;
+}
 .ktp-order-summary-project-input {
   width: 100%;
   max-width: 100%;
@@ -4629,6 +6892,15 @@ body.ktpwp-modal-open {
   text-decoration: none;
 }
 .ktp-order-summary-client-link:hover {
+  text-decoration: underline;
+}
+.ktp-order-summary-client-link--full {
+  display: inline;
+  color: #1a73e8;
+  font-weight: 500;
+  text-decoration: none;
+}
+.ktp-order-summary-client-link--full:hover {
   text-decoration: underline;
 }
 .ktp-order-summary-client-meta {
@@ -4661,19 +6933,6 @@ body.ktpwp-modal-open {
   height: 32px;
   margin: 0 4px 0 0;
 }
-.ktp-order-reception-date {
-  white-space: nowrap;
-  font-size: 14px;
-  color: #555;
-  font-weight: normal;
-}
-.ktp-order-summary-row--topline .ktp-order-reception-date {
-  display: inline-flex;
-  align-items: center;
-  min-height: 32px;
-  font-size: 14px;
-  line-height: 1.25;
-}
 /* 支払・受付は通常フローのまま配置する */
 .ktp-order-summary-row--topline .ktp-order-summary-trailing-meta {
   order: 3;
@@ -4692,6 +6951,7 @@ body.ktpwp-modal-open {
   display: inline-flex;
   flex-flow: row nowrap;
   align-items: center;
+  flex: 0 0 auto;
   max-width: 100%;
 }
 /* 支払：［セレクト］ を必ず1行に（ラベル＋フィールドを横並び） */
@@ -4770,8 +7030,6 @@ body.ktpwp-modal-open {
   }
 }
 .ktp-order-summary-date-cell .ktp-order-summary-field-label {
-  display: inline-flex;
-  align-items: center;
   flex: 0 0 auto;
   margin: 0;
   color: #333;
@@ -4779,7 +7037,6 @@ body.ktpwp-modal-open {
   font-weight: bold;
   line-height: 1.3;
   white-space: nowrap;
-  min-height: 32px;
 }
 .ktp-order-summary-date-cell-inner {
   display: inline-flex;
@@ -4787,7 +7044,6 @@ body.ktpwp-modal-open {
   flex: 0 0 auto;
   gap: 0;
   flex-wrap: nowrap;
-  min-height: 32px;
 }
 .ktp-order-summary-date-cell {
   display: inline-flex;
@@ -4807,7 +7063,7 @@ body.ktpwp-modal-open {
   min-height: 28px;
   font-size: 14px;
   line-height: 1;
-  padding: 5px 8px;
+  padding: 4px 6px;
   border: 1px solid #ccc;
   border-radius: 4px;
   box-sizing: border-box;
@@ -4831,7 +7087,7 @@ body.ktpwp-modal-open {
   padding: 0 12px;
   width: auto;
   max-width: none;
-  font-size: 14px;
+  font-size: 12px;
   line-height: 1.2;
   font-weight: 500;
   border: 1px solid #c3c4c7;
@@ -4902,4 +7158,239 @@ body.ktpwp-modal-open {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+}
+
+/* 一括請求：税額列は既定非表示（チェックまたは帳票設定で表示） */
+#invoiceList .ktp-bulk-tax-amount-col,
+.ktp-bulk-tax-amount-col {
+  display: none;
+}
+#invoiceList.ktp-bulk-show-tax-amount .ktp-bulk-tax-amount-col,
+.ktp-bulk-show-tax-amount .ktp-bulk-tax-amount-col {
+  display: table-cell;
+}
+
+/* 一括請求：明細タイトル行は薄いピンク、データ行はデザイン設定の青/白交互 */
+.ktp-biz-items-table thead.ktp-bulk-items-table-head tr,
+.ktp-biz-items-table thead.ktp-bulk-items-table-head th {
+  background-color: #ffeef1;
+  border-bottom: 1px solid #fecdd3;
+}
+
+/* 案件→定期契約変換パネル */
+.ktp-order-contract-panel {
+  margin: 16px 0 24px;
+}
+.ktp-order-contract-panel__inner {
+  padding: 16px 18px;
+}
+.ktp-order-contract-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.ktp-order-contract-summary {
+  background: #eef6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: #1e3a5f;
+}
+.ktp-order-contract-summary__line {
+  margin: 0;
+}
+.ktp-order-contract-summary__line + .ktp-order-contract-summary__line {
+  margin-top: 2px;
+}
+.ktp-order-contract-summary__note {
+  color: #334155;
+}
+.ktp-order-contract-summary p {
+  margin: 0;
+}
+.ktp-order-contract-message {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+}
+.ktp-order-contract-message--error {
+  background: #ffebee;
+  border: 1px solid #f44336;
+  color: #b71c1c;
+}
+.ktp-order-contract-message--success {
+  background: #e8f5e9;
+  border: 1px solid #4caf50;
+  color: #1b5e20;
+}
+.ktp-order-contract-link-block {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e7eb;
+}
+.ktp-order-contract-link-block__title {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #334155;
+}
+.ktp-order-contract-link-block__checkbox label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+  cursor: pointer;
+}
+.ktp-order-contract-link-block__checkbox input[type="checkbox"] {
+  margin: 0;
+  flex: 0 0 auto;
+}
+.ktp-order-contract-link-block__help {
+  margin: 6px 0 12px;
+  padding-left: 24px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: #64748b;
+}
+
+/* 案件→定期契約パネル：文字サイズ・見出しを統一 */
+.ktp-order-contract-panel {
+  font-size: 14px;
+  line-height: 1.45;
+  color: #334155;
+}
+
+.ktp-order-contract-panel .ktp-contract-section__title {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.45;
+  margin: 0;
+  color: #1e293b;
+}
+
+.ktp-order-contract-panel .ktp-order-contract-summary,
+.ktp-order-contract-panel .ktp-order-contract-summary__line,
+.ktp-order-contract-panel .ktp-order-contract-message,
+.ktp-order-contract-panel .ktp-contract-form__field label,
+.ktp-order-contract-panel .ktp-contract-form__field--checkbox label,
+.ktp-order-contract-panel .ktp-contract-recurring-items__title,
+.ktp-order-contract-panel .ktp-contract-initial-fees__title,
+.ktp-order-contract-panel .ktp-order-contract-link-block__title,
+.ktp-order-contract-panel .ktp-order-contract-link-block__checkbox label,
+.ktp-order-contract-panel .ktp-order-contract-link-block__help,
+.ktp-order-contract-panel .ktp-contract-initial-fees__presets label,
+.ktp-order-contract-panel .ktp-contract-recurring-items__locked,
+.ktp-order-contract-panel .ktp-contract-initial-fees__locked,
+.ktp-order-contract-panel .description {
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.ktp-order-contract-panel h4,
+.ktp-order-contract-panel h5 {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.45;
+  margin: 0 0 8px;
+  color: #334155;
+}
+
+.ktp-order-contract-panel .ktp-contract-form__field label {
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: #475569;
+}
+
+.ktp-order-contract-panel .ktp-contract-form__field--checkbox label,
+.ktp-order-contract-panel .ktp-order-contract-link-block__checkbox label {
+  font-weight: 600;
+  color: #334155;
+}
+
+.ktp-order-contract-panel .ktp-contract-form__field input[type="text"],
+.ktp-order-contract-panel .ktp-contract-form__field input[type="number"],
+.ktp-order-contract-panel .ktp-contract-form__field input[type="date"],
+.ktp-order-contract-panel .ktp-contract-form__field input[type="month"],
+.ktp-order-contract-panel .ktp-contract-form__field select,
+.ktp-order-contract-panel .ktp-contract-form__field textarea,
+.ktp-order-contract-panel .ktp-contract-recurring-items__table input,
+.ktp-order-contract-panel .ktp-contract-initial-fees__table input,
+.ktp-order-contract-panel .ktp-contract-initial-fees__presets select {
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.ktp-order-contract-panel .ktp-contract-recurring-items,
+.ktp-order-contract-panel .ktp-contract-initial-fees {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.ktp-order-contract-panel .ktp-contract-recurring-items__table,
+.ktp-order-contract-panel .ktp-contract-initial-fees__table {
+  border-collapse: collapse;
+  font-size: 14px;
+  margin-bottom: 10px;
+  width: 100%;
+}
+
+.ktp-order-contract-panel .ktp-contract-recurring-items__table th,
+.ktp-order-contract-panel .ktp-contract-recurring-items__table td,
+.ktp-order-contract-panel .ktp-contract-initial-fees__table th,
+.ktp-order-contract-panel .ktp-contract-initial-fees__table td {
+  border: 1px solid #ddd;
+  padding: 6px 8px;
+  vertical-align: middle;
+}
+
+.ktp-order-contract-panel .ktp-contract-recurring-items__table th,
+.ktp-order-contract-panel .ktp-contract-initial-fees__table th {
+  background: #f5f5f5;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
+}
+
+.ktp-order-contract-panel .ktp-contract-recurring-items__table input,
+.ktp-order-contract-panel .ktp-contract-initial-fees__table input {
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.ktp-order-contract-panel .ktp-contract-recurring-items__actions,
+.ktp-order-contract-panel .ktp-contract-initial-fees__actions {
+  text-align: center;
+  width: 44px;
+}
+
+.ktp-order-contract-panel .ktp-contract-section .ktp-contract-action-btn {
+  font-size: 14px;
+}
+
+.ktp-order-contract-panel .ktp-order-contract-link-block__title {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 8px;
+  color: #334155;
+}
+
+.ktp-order-contract-panel .description,
+.ktp-order-contract-panel .ktp-order-contract-link-block__help {
+  color: #64748b;
+  font-weight: 400;
+  margin: 0 0 8px;
+}
+
+.ktp-order-contract-panel .ktp-order-contract-link-block__help {
+  margin: 6px 0 12px;
+  padding-left: 24px;
 }

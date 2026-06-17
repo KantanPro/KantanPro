@@ -9,7 +9,7 @@ jQuery(document).ready(function($) {
         var hiddenInput = field.find('input[type="hidden"]');
         var preview = field.find('.ktp-image-preview');
         var previewImg = field.find('#header_bg_image_preview');
-        
+
         // WordPress Media Library を開く
         var mediaUploader = wp.media({
             title: 'ヘッダー背景画像を選択',
@@ -32,7 +32,7 @@ jQuery(document).ready(function($) {
             // プレビュー画像を更新
             previewImg.attr('src', attachment.url);
             preview.show();
-            
+
             // ボタンのテキストを変更
             button.text(ktpwpTranslate('画像を変更'));
         });

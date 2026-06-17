@@ -194,12 +194,16 @@ if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
 
 					if ( count( $results ) === 1 ) {
 						$found_id = (int) $results[0]->id;
-						$wpdb->query(
-							$wpdb->prepare(
-								"UPDATE {$table_name} SET frequency = frequency + 1 WHERE id = %d",
-								$found_id
-							)
-						);
+						if ( function_exists( 'ktpwp_increment_record_frequency' ) ) {
+							ktpwp_increment_record_frequency( 'supplier', $found_id );
+						} else {
+							$wpdb->query(
+								$wpdb->prepare(
+									"UPDATE {$table_name} SET frequency = COALESCE(frequency, 0) + 1 WHERE id = %d",
+									$found_id
+								)
+							);
+						}
 
 						$cookie_name = 'ktp_' . $tab_name . '_id';
 						setcookie( $cookie_name, (string) $found_id, time() + ( 86400 * 30 ), '/' );
@@ -249,6 +253,20 @@ if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
 					if ( $data_id > 0 ) {
 						// Fire action hook before deletion for cleanup
 						do_action( 'ktpwp_supplier_before_delete', $data_id );
+
+						// 協力会社削除時は紐づく職能も先に削除する（フック未登録時の取りこぼし防止）
+						$skills_deleted = $this->delete_supplier_skills_by_supplier_id( $data_id );
+						if ( ! $skills_deleted ) {
+							if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+								error_log( 'KTPWP: Supplier skills deletion failed before supplier delete. supplier_id=' . $data_id );
+							}
+							echo '<script>
+                        document.addEventListener("DOMContentLoaded", function() {
+                            showErrorNotification("' . esc_js( __( '職能データの削除に失敗しました。', 'ktpwp' ) ) . '");
+                        });
+                        </script>';
+							return;
+						}
 
 						$delete_result = $wpdb->delete( $table_name, array( 'id' => $data_id ), array( '%d' ) );
 
@@ -366,6 +384,10 @@ if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
                         });
                         </script>';
 						} else {
+							if ( function_exists( 'ktpwp_increment_record_frequency' ) ) {
+								ktpwp_increment_record_frequency( 'supplier', $data_id );
+							}
+
 							$cookie_name = 'ktp_' . $tab_name . '_id';
 							setcookie( $cookie_name, $data_id, time() + ( 86400 * 30 ), '/' );
 
@@ -550,6 +572,47 @@ if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
 				'qualified_invoice_number' => isset( $post_data['qualified_invoice_number'] ) ? sanitize_text_field( $post_data['qualified_invoice_number'] ) : '',
 				'category' => isset( $post_data['category'] ) ? sanitize_text_field( $post_data['category'] ) : '',
 			);
+		}
+
+		/**
+		 * 指定した協力会社の職能データを削除
+		 *
+		 * @param int $supplier_id 協力会社ID
+		 * @return bool 成功時true
+		 */
+		private function delete_supplier_skills_by_supplier_id( $supplier_id ) {
+			global $wpdb;
+
+			$supplier_id = absint( $supplier_id );
+			if ( $supplier_id <= 0 ) {
+				return false;
+			}
+
+			$skills_table = $wpdb->prefix . 'ktp_supplier_skills';
+			$table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $skills_table ) );
+			if ( $table_exists !== $skills_table ) {
+				return true;
+			}
+
+			$result = $wpdb->query(
+				$wpdb->prepare(
+					"DELETE FROM `{$skills_table}` WHERE supplier_id = %d",
+					$supplier_id
+				)
+			);
+
+			if ( $result === false ) {
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					error_log( 'KTPWP: Failed to delete supplier skills by supplier_id. SQL Error: ' . $wpdb->last_error );
+				}
+				return false;
+			}
+
+			if ( function_exists( 'ktpwp_cache_delete' ) ) {
+				ktpwp_cache_delete( "supplier_skills_for_cost_{$supplier_id}" );
+			}
+
+			return true;
 		}
 
 		/**

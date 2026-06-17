@@ -58,6 +58,12 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 
 			$content = '';
 
+			$recurring_billing_view = isset( $_GET['recurring_billing'] ) && '1' === (string) wp_unslash( $_GET['recurring_billing'] );
+			$list_type_recurring    = isset( $_GET['list_type'] ) && 'recurring' === sanitize_key( wp_unslash( $_GET['list_type'] ) );
+			$order_columns          = $wpdb->get_col( "SHOW COLUMNS FROM `{$table_name}`" );
+			$order_has_contract_id  = is_array( $order_columns ) && in_array( 'contract_id', $order_columns, true );
+			$list_type_where        = ( $list_type_recurring && $order_has_contract_id ) ? ' AND contract_id > 0' : '';
+
 			// フリーワード検索用GETパラメータ
 			$list_search = isset( $_GET['list_search'] ) ? sanitize_text_field( wp_unslash( $_GET['list_search'] ) ) : '';
 
@@ -70,7 +76,7 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 			// 仕事リストタブを維持
 			$content .= '<input type="hidden" name="tab_name" value="' . esc_attr( $tab_name ) . '">';
 			// 既存クエリを保持（tab_nameは上で固定したので除外）
-			$keep_params = array( 'progress', 'page_start', 'page_stage', 'flg' );
+			$keep_params = array( 'progress', 'page_start', 'page_stage', 'flg', 'list_type' );
 			foreach ( $keep_params as $key ) {
 				if ( isset( $_GET[ $key ] ) && (string) $_GET[ $key ] !== '' ) {
 					$content .= '<input type="hidden" name="' . esc_attr( $key ) . '" value="' . esc_attr( wp_unslash( $_GET[ $key ] ) ) . '">';
@@ -80,6 +86,15 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 			$content .= '<input type="search" id="ktp-list-search-input" name="list_search" value="" placeholder="' . esc_attr( $search_placeholder ) . '" aria-label="' . esc_attr__( 'フリーワード', 'ktpwp' ) . '" class="ktp-list-search-input" style="min-width:160px;padding:6px 8px;border:1px solid #ddd;border-radius:4px;">';
 			$content .= '<button type="submit" class="ktp-list-search-btn" title="' . esc_attr__( '検索', 'ktpwp' ) . '" style="padding:6px 10px;border:1px solid #ddd;border-radius:4px;background:#f5f5f5;cursor:pointer;">🔍</button>';
 			$content .= '</form>';
+
+			if ( class_exists( 'KTPWP_Contract_Billing_UI' ) ) {
+				$billing_ui = KTPWP_Contract_Billing_UI::get_instance();
+				$content   .= $billing_ui->render_list_view_switcher( $tab_name, $recurring_billing_view );
+				if ( ! $recurring_billing_view ) {
+					$content .= $billing_ui->render_list_type_filter( $tab_name, $list_type_recurring );
+				}
+			}
+
 			$content .= '</div>';
 
 			// Print button（現在表示されている内容を印刷ダイアログで表示し、PDF保存・印刷可能）
@@ -315,6 +330,11 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 			// 印刷対象エリア開始（現在表示されている内容を印刷するためのラッパー）
 			$content .= '<div id="ktp_list_print_area">';
 
+			if ( $recurring_billing_view && class_exists( 'KTPWP_Contract_Billing_UI' ) ) {
+				$billing_period = isset( $_GET['billing_period'] ) ? sanitize_text_field( wp_unslash( $_GET['billing_period'] ) ) : null;
+				$content       .= KTPWP_Contract_Billing_UI::get_instance()->render_monthly_panel( $tab_name, $billing_period );
+			} else {
+
 			// 検索結果（進捗ワークフローブロックの上に表示）
 			if ( $list_search !== '' ) {
 				$content .= $this->render_list_search_results( $list_search, $wpdb, remove_query_arg( 'list_search' ) );
@@ -427,7 +447,7 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 			}
 			// 総件数取得
 			$total_query = $wpdb->prepare(
-				"SELECT COUNT(*) FROM {$table_name} WHERE progress = %d{$list_search_where}",
+				"SELECT COUNT(*) FROM {$table_name} WHERE progress = %d{$list_search_where}{$list_type_where}",
 				array_merge( array( $selected_progress ), $list_search_args )
 			);
 			$total_rows = $wpdb->get_var( $total_query );
@@ -447,7 +467,7 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
                         ELSE DATEDIFF(expected_delivery_date, CURDATE())
                     END as days_until_delivery
                 FROM {$table_name}
-                WHERE progress = %d{$list_search_where}
+                WHERE progress = %d{$list_search_where}{$list_type_where}
                 ORDER BY days_until_delivery ASC, time DESC",
 						array_merge( array( $selected_progress ), $list_search_args )
 					);
@@ -455,7 +475,7 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 					// その他の進捗は従来通り時間順でソート
 					$query = $wpdb->prepare(
 						"SELECT * FROM {$table_name}
-                WHERE progress = %d{$list_search_where}
+                WHERE progress = %d{$list_search_where}{$list_type_where}
                 ORDER BY time DESC",
 						array_merge( array( $selected_progress ), $list_search_args )
 					);
@@ -472,7 +492,7 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
                         ELSE DATEDIFF(expected_delivery_date, CURDATE())
                     END as days_until_delivery
                 FROM {$table_name} 
-                WHERE progress = %d{$list_search_where}
+                WHERE progress = %d{$list_search_where}{$list_type_where}
                 ORDER BY days_until_delivery ASC, time DESC 
                 LIMIT %d, %d",
 						array_merge( array( $selected_progress ), $list_search_args, array( $page_start, $query_limit ) )
@@ -481,7 +501,7 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 					// その他の進捗は従来通り時間順でソート
 					$query = $wpdb->prepare(
                         "SELECT * FROM {$table_name} 
-                WHERE progress = %d{$list_search_where}
+                WHERE progress = %d{$list_search_where}{$list_type_where}
                 ORDER BY time DESC 
                 LIMIT %d, %d",
 						array_merge( array( $selected_progress ), $list_search_args, array( $page_start, $query_limit ) )
@@ -530,35 +550,16 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 				$content .= '<ul>';
 				foreach ( $order_list as $order ) {
 					$order_id = esc_html( $order->id );
-					$customer_name = esc_html( $order->customer_name );
-					$user_name = esc_html( $order->user_name );
 					$project_name = isset( $order->project_name ) ? esc_html( $order->project_name ) : '';
-
-					// 会社名と担当者名のフォールバック処理
-					if ( empty( $customer_name ) || empty( $user_name ) ) {
-						global $wpdb;
-						$client_table = $wpdb->prefix . 'ktp_client';
-						
-						// 顧客IDがある場合は顧客テーブルから情報を取得
-						if ( ! empty( $order->client_id ) ) {
-							$client_info = $wpdb->get_row(
-								$wpdb->prepare(
-									"SELECT company_name, name FROM `{$client_table}` WHERE id = %d",
-									$order->client_id
-								)
-							);
-							if ( $client_info ) {
-								if ( empty( $customer_name ) ) {
-									$customer_name = esc_html( $client_info->company_name );
-								}
-								if ( empty( $user_name ) ) {
-									$user_name = esc_html( $client_info->name );
-								}
-							}
-						}
+					$list_client_label = '';
+					if ( class_exists( 'KTPWP_Department_Manager' ) ) {
+						$list_client_label = esc_html(
+							KTPWP_Department_Manager::format_work_list_client_label_for_order( $order )
+						);
+					} else {
+						$list_client_label = esc_html( trim( (string) $order->customer_name . ' ' . (string) $order->user_name ) );
 					}
 
-					// 顧客リンク用の顧客ID（仕事リスト行で会社名を顧客タブへリンクするために使用）
 					$client_id = isset( $order->client_id ) ? (int) $order->client_id : 0;
 
 					// 納期フィールドの値を取得（希望納期は削除、納品予定日のみ）
@@ -807,17 +808,23 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 					// 左寄せブロック（ID・顧客名・担当者・プロジェクト・日時を一まとまりで左寄せ）
 					$content .= '<span class="ktp_work_list_item_text">';
 					// 行全体を受注書詳細へのリンクに統一し、顧客詳細リンクは廃止
-					$content .= "ID: {$order_id} - {$customer_name} ({$user_name})";
+					$content .= 'ID: ' . $order_id;
+					if ( $list_client_label !== '' ) {
+						$content .= ' ' . $list_client_label;
+					}
 					if ( $project_name !== '' ) {
 						$content .= " - <span class='project_name'>{$project_name}</span>";
 					}
 					$content .= " - {$time}";
-					// 前払いラベル（前入金済 / EC受注）
+					// 受注経路ラベル（WEB受注 / 前入金済 / EC受注 等）
 					if ( class_exists( 'KTPWP_Payment_Timing' ) ) {
-						$prepay_label = KTPWP_Payment_Timing::get_prepay_label( $order, null );
-						if ( $prepay_label !== '' ) {
-							$content .= ' <span class="ktp-prepay-badge" style="display:inline-block;margin-left:6px;padding:2px 8px;font-size:11px;background:#e3f2fd;color:#1565c0;border-radius:4px;">' . esc_html( $prepay_label ) . '</span>';
+						$source_label = KTPWP_Payment_Timing::get_inbound_source_label( $order, null );
+						if ( $source_label !== '' ) {
+							$content .= ' <span class="ktp-prepay-badge" style="display:inline-block;margin-left:6px;padding:2px 8px;font-size:11px;background:#e3f2fd;color:#1565c0;border-radius:4px;">' . esc_html( $source_label ) . '</span>';
 						}
+					}
+					if ( $order_has_contract_id && isset( $order->contract_id ) && (int) $order->contract_id > 0 ) {
+						$content .= ' <span class="ktp-recurring-badge">' . esc_html__( '定期', 'ktpwp' ) . '</span>';
 					}
 					$content .= '</span>';
 
@@ -892,6 +899,9 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 					}
 
 					$wpdb->update( $table_name, $update_data, array( 'id' => $update_id ) );
+					if ( class_exists( 'KTPWP_Order_Progress_Effects' ) ) {
+						KTPWP_Order_Progress_Effects::after_progress_updated( $update_id, $update_progress );
+					}
 					// リダイレクトで再読み込み（POSTリダブミット防止）
 					wp_redirect( esc_url_raw( $_SERVER['REQUEST_URI'] ) );
 					exit;
@@ -905,6 +915,8 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 			}
 			$content .= '</div>'; // .ktp_work_list_box 終了
 			// --- ここまでラッパー追加 ---
+
+			} // end recurring_billing_view else (通常の仕事リスト)
 
 			$content .= '</div>'; // #ktp_list_print_area 終了
 
@@ -942,11 +954,20 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 			}
 			$order_where .= ') ';
 			$order_args[] = 50;
-			$order_sql = "SELECT id, customer_name, user_name, project_name FROM `{$order_table}` WHERE " . $order_where . " ORDER BY time DESC LIMIT %d";
+			$order_sql = "SELECT id, client_id, customer_name, user_name, project_name FROM `{$order_table}` WHERE " . $order_where . " ORDER BY time DESC LIMIT %d";
 			$orders = $wpdb->get_results( $wpdb->prepare( $order_sql, $order_args ) );
 			if ( $orders ) {
 				foreach ( $orders as $row ) {
-					$label = 'ID:' . (int) $row->id . ' - ' . ( $row->customer_name ?: '' ) . ' (' . ( $row->user_name ?: '' ) . ')' . ( $row->project_name ? ' - ' . $row->project_name : '' );
+					$client_label = class_exists( 'KTPWP_Department_Manager' )
+						? KTPWP_Department_Manager::format_work_list_client_label_for_order( $row )
+						: trim( (string) ( $row->customer_name ?: '' ) . ' ' . (string) ( $row->user_name ?: '' ) );
+					$label = 'ID: ' . (int) $row->id;
+					if ( $client_label !== '' ) {
+						$label .= ' ' . $client_label;
+					}
+					if ( $row->project_name ) {
+						$label .= ' - ' . $row->project_name;
+					}
 					$url = add_query_arg( array( 'tab_name' => 'order', 'order_id' => (int) $row->id ) );
 					$results[] = array(
 						'page_label' => __( '受注書', 'ktpwp' ),

@@ -178,6 +178,11 @@
                 </div>
 
                 <div style="margin-bottom: 15px;">
+                    <label for="email-cc-po" style="display: block; margin-bottom: 5px; font-weight: bold;">CC（任意・カンマ区切り）:</label>
+                    <input type="text" id="email-cc-po" name="cc" placeholder="cc@example.com" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
+                </div>
+
+                <div style="margin-bottom: 15px;">
                     <label for="email-subject" style="display: block; margin-bottom: 5px; font-weight: bold;">件名:</label>
                     <input type="text" id="email-subject" name="subject" value="${data.subject}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;" required>
                 </div>
@@ -478,6 +483,10 @@
         formData.append('supplier_name', supplierName || '');
         formData.append('supplier_id', supplierId);
         formData.append('to', $('#email-to').val());
+        const ccPo = ($('#email-cc-po').val() || '').trim();
+        if (ccPo) {
+            formData.append('cc', ccPo);
+        }
         formData.append('subject', $('#email-subject').val());
         formData.append('body', $('#email-body').val());
 

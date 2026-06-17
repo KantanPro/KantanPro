@@ -8,6 +8,15 @@
 (function ($) {
     'use strict';
 
+    function closeServiceSelector() {
+        $('#ktp-service-selector-popup').remove();
+        $(document).off('keyup.service-selector');
+        $(document).off('click.ktp-pagination mouseenter.ktp-pagination mouseleave.ktp-pagination');
+        $(document).off('mouseenter.ktp-service-item mouseleave.ktp-service-item');
+    }
+
+    window.ktpCloseServiceSelector = closeServiceSelector;
+
     // サービス選択ポップアップの表示
     window.ktpShowServiceSelector = function (targetRow, mode = 'add') {
 
@@ -76,14 +85,6 @@
 
         // ポップアップを追加
         $('body').append(popupHtml);
-
-        // ポップアップを閉じる関数（共通化）
-        function closeServiceSelector() {
-            $('#ktp-service-selector-popup').remove();
-            $(document).off('keyup.service-selector');
-            $(document).off('click.ktp-pagination mouseenter.ktp-pagination mouseleave.ktp-pagination');
-            $(document).off('mouseenter.ktp-service-item mouseleave.ktp-service-item');
-        }
 
         // 閉じるボタンのイベント
         $('#ktp-service-selector-close').on('click.service-selector', function (e) {
@@ -1110,19 +1111,6 @@
             "'": '&#039;'
         };
         return text.replace(/[&<>"']/g, function (m) { return map[m]; });
-    }
-
-    // グローバルスコープに関数を公開
-    window.ktpShowServiceSelector = ktpShowServiceSelector;
-    window.ktpCloseServiceSelector = closeServiceSelector;
-    
-    // デバッグログを追加
-    console.log('[SERVICE SELECTOR] 初期化完了');
-    console.log('[SERVICE SELECTOR] ktpShowServiceSelector関数をグローバルスコープに追加:', typeof window.ktpShowServiceSelector);
-    console.log('[SERVICE SELECTOR] ktpCloseServiceSelector関数をグローバルスコープに追加:', typeof window.ktpCloseServiceSelector);
-    console.log('[SERVICE SELECTOR] ktp_service_ajax_object available:', typeof ktp_service_ajax_object !== 'undefined');
-    if (typeof ktp_service_ajax_object !== 'undefined') {
-        console.log('[SERVICE SELECTOR] ktp_service_ajax_object:', ktp_service_ajax_object);
     }
 
 })(jQuery);

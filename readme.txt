@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.2.87
+Stable tag: 1.2.88
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -322,6 +322,11 @@ curl -sS -X POST \
 * MySQL 5.6 以上 または MariaDB 10.0 以上
 * 推奨メモリ: 256MB 以上
 * 推奨PHP拡張: GD（画像処理用）
+
+= 1.2.88 - 2026年06月17日 =
+* KantanProEX solo 相当のコア機能（契約・Stripe・公開商品・PDF・タブ検索・受注補助・FMインポート等）を無料版に統合
+* 無料版の機能制限（レポート・バックアップ・メール送信履歴・案件ファイル・有料向け機能）は `KTPWP_Edition` の feature flag で維持
+* ブロックエディター保存時の JSON 破損対策（ショートコード REST 抑止）を継続
 
 = 1.2.87 - 2026年05月24日 =
 * （自動要約）`git log v1.2.86..HEAD`（本バージョンのメタデータ更新コミット直前まで）：`58adf41 更新バッジ表示機能のスクリプトを修正`。`git diff v1.2.86..58adf41 --stat`：`includes/class-ktpwp-update-checker.php`（+10/-2）
