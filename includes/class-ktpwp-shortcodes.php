@@ -89,12 +89,8 @@ class KTPWP_Shortcodes {
      * @return string 描画されたHTML
      */
     public function render_all_tabs($atts = array()) {
-        // Ajaxリクエスト中（特に投稿保存時など）は、ショートコードの出力を抑制する
-        // これにより、JSONレスポンスが壊れるのを防ぐ
-        // ただし、このショートコード自体がAjaxでコンテンツを返すことを意図している場合は、この条件分岐は見直す必要がある
-        if (defined('DOING_AJAX') && DOING_AJAX) {
-            // WordPressの投稿保存処理など、特定のAjaxアクションを判定して分岐することも検討できる
-            // 例: if (defined('DOING_AJAX') && DOING_AJAX && isset($_POST['action']) && $_POST['action'] === 'editpost')
+        // Ajax / REST（ブロックエディター保存等）では出力を抑止し JSON レスポンスを壊さない
+        if ( function_exists( 'ktpwp_should_suppress_shortcode_output' ) && ktpwp_should_suppress_shortcode_output() ) {
             return '';
         }
 

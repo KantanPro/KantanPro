@@ -3995,10 +3995,33 @@ function add_htmx_to_head() {
 }
 add_action( 'wp_head', 'add_htmx_to_head' );
 
+/**
+ * ブロックエディター保存（REST API）や Ajax 中にショートコードの重い描画を抑止する。
+ * 描画すると PHP 警告や HTML が JSON レスポンスに混ざり「正しい JSON レスポンスではありません」になる。
+ *
+ * @return bool
+ */
+function ktpwp_should_suppress_shortcode_output() {
+	if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
+		return true;
+	}
+	if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
+		return true;
+	}
+	if ( function_exists( 'wp_is_json_request' ) && wp_is_json_request() ) {
+		return true;
+	}
+	return false;
+}
+
 function KTPWP_Index() {
 
     // すべてのタブのショートコード[kantanAllTab]
     function kantanAllTab() {
+
+        if ( ktpwp_should_suppress_shortcode_output() ) {
+            return '';
+        }
 
         // 利用規約同意チェック
         ktpwp_check_terms_on_shortcode();

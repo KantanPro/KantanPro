@@ -53,6 +53,12 @@ class KTPWP_Security {
             return $result;
         }
 
+        // ブロックエディター保存など WordPress 標準 REST API は常に許可
+        $request_uri = isset( $_SERVER['REQUEST_URI'] ) ? (string) $_SERVER['REQUEST_URI'] : '';
+        if ( strpos( $request_uri, '/wp-json/' ) !== false ) {
+            return $result;
+        }
+
         if ( ! is_user_logged_in() ) {
             return new WP_Error(
                 'rest_forbidden',
