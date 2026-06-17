@@ -69,6 +69,28 @@ rsync -a \
 rm -f "$PLUGIN_DIR/create_release_zip.sh" "$PLUGIN_DIR/create_plugin_zip.sh" "$PLUGIN_DIR/plugin_config.json"
 
 find "$PLUGIN_DIR" -name '.DS_Store' -delete 2>/dev/null || true
+find "$PLUGIN_DIR" -name '.phpcs.xml' -delete 2>/dev/null || true
+find "$PLUGIN_DIR" -name '.editorconfig' -delete 2>/dev/null || true
+find "$PLUGIN_DIR" -name '.cursorrules' -delete 2>/dev/null || true
+find "$PLUGIN_DIR" -name '.gitignore' -delete 2>/dev/null || true
+find "$PLUGIN_DIR" -name '.gitattributes' -delete 2>/dev/null || true
+find "$PLUGIN_DIR" -name '.local-development' -delete 2>/dev/null || true
+find "$PLUGIN_DIR" -name 'development-config.php' -delete 2>/dev/null || true
+
+find "$PLUGIN_DIR" -type f \( -name 'README.md' -o -name '*.md' -o -name '*.html' \) -delete 2>/dev/null || true
+find "$PLUGIN_DIR/languages" -type f \( -name '*.po' -o -name '*.pot' \) -delete 2>/dev/null || true
+rm -f "$PLUGIN_DIR/create_dummy_data.php" "$PLUGIN_DIR/create_dummy_data.php.bak"
+
+find "$PLUGIN_DIR" -type f \( -name 'test-*.php' -o -name 'test_*.php' -o -name 'debug-*.php' -o -name 'wp-cli-create-dummy-data.php' -o -name 'test-report-ajax.php' -o -name 'test-license-reset.php' \) -delete 2>/dev/null || true
+find "$PLUGIN_DIR" -type f \( -name 'test-*.sh' -o -name 'run-dummy-data.sh' -o -name 'wp-cli.sh' -o -name 'wp-cli-aliases.sh' -o -name 'setup-wp-cli.sh' \) -delete 2>/dev/null || true
+find "$PLUGIN_DIR" -type f \( -name '*-debug.js' -o -name '*-test.js' -o -name 'test-*.js' -o -name '*backup*.js' -o -name '*.bak' -o -name 'implementation-test.js' -o -name 'plugin-reference.js' -o -name 'service-fix.js' -o -name 'progress-select.js' \) -delete 2>/dev/null || true
+
+if [[ -d "$PLUGIN_DIR/images/upload" ]]; then
+  find "$PLUGIN_DIR/images/upload" -mindepth 1 -delete 2>/dev/null || true
+fi
+
+find "$PLUGIN_DIR" -type f -name '*.zip' -delete 2>/dev/null || true
+find "$PLUGIN_DIR" -type f -name 'wp-cli.phar' -delete 2>/dev/null || true
 
 print_info "PHP 構文チェック（メインファイル）..."
 if ! php -l "$PLUGIN_DIR/ktpwp.php" >/dev/null; then
@@ -86,7 +108,20 @@ print_info "ZIP 作成: $ZIP_NAME"
   zip -rq "$ZIP_PATH" "$PLUGIN_NAME"
 )
 
-print_success "完了: $ZIP_PATH ($(du -h "$ZIP_PATH" | awk '{print $1}'))"
+if ! unzip -t "$ZIP_PATH" >/dev/null 2>&1; then
+  print_error "ZIP 整合性チェックに失敗しました: $ZIP_PATH"
+  rm -rf "$WORK_DIR"
+  exit 1
+fi
+
+ZIP_SIZE_BYTES=$(stat -f%z "$ZIP_PATH" 2>/dev/null || stat -c%s "$ZIP_PATH")
+if [[ "$ZIP_SIZE_BYTES" -ge 3145728 ]]; then
+  print_error "ZIP が 3MB 以上です（${ZIP_SIZE_BYTES} bytes）。一般 WordPress ではインストール不可の可能性があります。"
+  rm -rf "$WORK_DIR"
+  exit 1
+fi
+
+print_success "完了: $ZIP_PATH ($(du -h "$ZIP_PATH" | awk '{print $1}')) — 3MB 未満"
 
 rm -rf "$WORK_DIR"
 ls -la "$ZIP_PATH"

@@ -18,7 +18,15 @@ Thumbs.db
 
 # 配布ZIP・一時ファイル
 *.zip
+ktpwp-*.zip
 *.tmp
+
+# WP-CLI（開発用。リポジトリ同梱で zipball が肥大化するため除外）
+wp-cli.phar
+
+# ユーザーアップロードのサービス画像（リポジトリ同梱・zipball 混入を防ぐ）
+images/upload/*
+!images/upload/.gitkeep
 
 # 開発用ローカル設定（任意）
 development-config.php
