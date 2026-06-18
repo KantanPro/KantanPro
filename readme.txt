@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.2.89
+Stable tag: 1.2.90
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -322,6 +322,11 @@ curl -sS -X POST \
 * MySQL 5.6 以上 または MariaDB 10.0 以上
 * 推奨メモリ: 256MB 以上
 * 推奨PHP拡張: GD（画像処理用）
+
+= 1.2.90 - 2026年06月19日 =
+* 利用規約同意時に kantanpro.com（KLM）へ通知する API 連携を追加（SMTP 未設定でも開発者が把握可能）
+* KLM 通信失敗時は従来の wp_mail と保留キューで再試行（ユーザー側の利用は継続可能）
+* SMTP テストメール成功時に保留中の同意通知を再送
 
 = 1.2.89 - 2026年06月17日 =
 * 配布 ZIP から誤って除外されていた `create_dummy_data.php` を同梱するよう修正（ダミーデータ作成エラー解消）

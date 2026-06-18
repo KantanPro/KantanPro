@@ -3968,6 +3968,10 @@ class KTPWP_Settings {
             $this->test_mail_message = __( 'テストメールを送信しました。メールボックスをご確認ください。', 'ktpwp' );
             $this->test_mail_status = 'success';
 
+            if ( class_exists( 'KTPWP_Terms_Of_Service' ) ) {
+                KTPWP_Terms_Of_Service::get_instance()->flush_pending_notifications();
+            }
+
             // 成功通知を表示
             $this->show_notification( __( 'テストメールを送信しました。メールボックスをご確認ください。', 'ktpwp' ), true );
 

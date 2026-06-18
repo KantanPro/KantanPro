@@ -61,6 +61,32 @@ class KTPWP_Terms_Of_Service {
         add_action( 'wp_ajax_nopriv_ktpwp_terms_agreement', array( $this, 'handle_terms_agreement' ) );
         add_action( 'init', array( $this, 'handle_public_terms_view' ) );
         add_action( 'admin_notices', array( $this, 'display_admin_notices' ) );
+        add_action( 'init', array( $this, 'maybe_schedule_terms_retry_cron' ) );
+        add_action( 'ktpwp_flush_pending_terms_notifications', array( $this, 'flush_pending_notifications' ) );
+    }
+
+    /**
+     * KLM 利用規約同意 API URL
+     */
+    private function get_klm_terms_api_url() {
+        return 'https://www.kantanpro.com/wp-json/ktp-license/v1/terms-agreement';
+    }
+
+    /**
+     * KLM 向けプラグイン slug
+     */
+    private function get_plugin_slug_for_klm() {
+        if ( defined( 'KANTANPRO_PLUGIN_NAME' ) && KANTANPRO_PLUGIN_NAME === 'KantanProEX' ) {
+            return 'kantanpro-ex';
+        }
+        return 'kantanpro';
+    }
+
+    /**
+     * 保留通知オプション名
+     */
+    private function get_pending_option_name() {
+        return 'ktpwp_pending_terms_notifications';
     }
 
     /**
@@ -591,8 +617,7 @@ End';
             // メール送信の重複防止用トランジェントをチェック
             $mail_transient_key = 'ktpwp_terms_mail_sent_' . $user_id;
             if ( ! get_transient( $mail_transient_key ) ) {
-                // 開発者にメール通知
-                $mail_sent = $this->send_developer_notification( $user_id );
+                $notify_result = $this->notify_developer( $user_id );
                 
                 // メール送信完了をマーク（5分間有効）
                 set_transient( $mail_transient_key, true, 300 );
@@ -601,22 +626,29 @@ End';
                 
                 // デバッグモードでは通知状況を表示
                 if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                    if ( $mail_sent ) {
+                    if ( ! empty( $notify_result['klm_sent'] ) ) {
+                        $response_message .= ' 開発者サーバーへの通知を送信しました。';
+                    } elseif ( ! empty( $notify_result['mail_sent'] ) ) {
                         $response_message .= ' 開発者への通知メールを送信しました。';
+                    } elseif ( ! empty( $notify_result['queued'] ) ) {
+                        $response_message .= ' （開発者への通知は後で再試行されます）';
                     } else {
-                        $response_message .= ' （開発者への通知メール送信に失敗しました）';
+                        $response_message .= ' （開発者への通知送信に失敗しました）';
                     }
                 }
                 
                 wp_send_json_success( array( 
                     'message' => $response_message,
-                    'mail_sent' => $mail_sent
+                    'klm_sent' => ! empty( $notify_result['klm_sent'] ),
+                    'mail_sent' => ! empty( $notify_result['mail_sent'] ),
+                    'queued' => ! empty( $notify_result['queued'] ),
                 ) );
             } else {
                 // メール送信済みの場合
                 wp_send_json_success( array( 
                     'message' => __( '利用規約に同意しました。', 'ktpwp' ),
-                    'mail_sent' => true
+                    'mail_sent' => true,
+                    'klm_sent' => true,
                 ) );
             }
         } else {
@@ -625,7 +657,193 @@ End';
     }
 
     /**
-     * 開発者にメール通知を送信
+     * 開発者へ通知（KLM API → wp_mail → 保留キュー）
+     *
+     * @param int $user_id User ID.
+     * @return array{klm_sent:bool,mail_sent:bool,queued:bool}
+     */
+    private function notify_developer( $user_id ) {
+        $result = array(
+            'klm_sent'  => false,
+            'mail_sent' => false,
+            'queued'    => false,
+        );
+
+        if ( $this->notify_via_klm_api( $user_id ) ) {
+            $result['klm_sent'] = true;
+            return $result;
+        }
+
+        $mail_sent = $this->send_developer_notification( $user_id );
+        if ( $mail_sent ) {
+            $result['mail_sent'] = true;
+            return $result;
+        }
+
+        $this->queue_pending_notification( $user_id );
+        $result['queued'] = true;
+        return $result;
+    }
+
+    /**
+     * KLM API へ利用規約同意を送信
+     *
+     * @param int $user_id User ID.
+     * @return bool
+     */
+    private function notify_via_klm_api( $user_id ) {
+        $payload = $this->build_terms_notification_payload( $user_id );
+        if ( ! $payload ) {
+            return false;
+        }
+
+        $body_string = http_build_query( $payload, '', '&', PHP_QUERY_RFC3986 );
+        $plugin_version = defined( 'KANTANPRO_PLUGIN_VERSION' ) ? KANTANPRO_PLUGIN_VERSION : 'unknown';
+
+        $response = wp_remote_post(
+            $this->get_klm_terms_api_url(),
+            array(
+                'headers' => array(
+                    'Content-Type' => 'application/x-www-form-urlencoded; charset=UTF-8',
+                    'User-Agent'   => 'KantanPro/' . $plugin_version,
+                ),
+                'body'      => $body_string,
+                'timeout'   => 20,
+                'sslverify' => true,
+            )
+        );
+
+        if ( is_wp_error( $response ) ) {
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP Terms Agreement: KLM API error - ' . $response->get_error_message() );
+            }
+            return false;
+        }
+
+        $status_code = (int) wp_remote_retrieve_response_code( $response );
+        $body        = wp_remote_retrieve_body( $response );
+        $data        = json_decode( $body, true );
+
+        if ( $status_code >= 200 && $status_code < 300 && is_array( $data ) && ! empty( $data['success'] ) ) {
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'KTPWP Terms Agreement: KLM API success (User ID: ' . $user_id . ')' );
+            }
+            return true;
+        }
+
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( 'KTPWP Terms Agreement: KLM API failed (status=' . $status_code . ', body=' . $body . ')' );
+        }
+
+        return false;
+    }
+
+    /**
+     * 通知ペイロードを生成
+     *
+     * @param int $user_id User ID.
+     * @return array<string, string>|false
+     */
+    private function build_terms_notification_payload( $user_id ) {
+        $user = get_userdata( $user_id );
+        if ( ! $user ) {
+            return false;
+        }
+
+        return array(
+            'site_url'       => home_url(),
+            'admin_email'    => (string) get_option( 'admin_email' ),
+            'user_email'     => (string) $user->user_email,
+            'display_name'   => (string) $user->display_name,
+            'plugin_slug'    => $this->get_plugin_slug_for_klm(),
+            'plugin_version' => defined( 'KANTANPRO_PLUGIN_VERSION' ) ? (string) KANTANPRO_PLUGIN_VERSION : '',
+            'terms_version'  => (string) $this->get_current_terms_version(),
+            'agreed_at'      => (string) get_user_meta( $user_id, 'ktpwp_terms_agreed', true ),
+        );
+    }
+
+    /**
+     * 保留通知をキューに追加
+     *
+     * @param int $user_id User ID.
+     */
+    private function queue_pending_notification( $user_id ) {
+        $payload = $this->build_terms_notification_payload( $user_id );
+        if ( ! $payload ) {
+            return;
+        }
+
+        $queue = get_option( $this->get_pending_option_name(), array() );
+        if ( ! is_array( $queue ) ) {
+            $queue = array();
+        }
+
+        $key = md5( $payload['site_url'] . '|' . $payload['user_email'] . '|' . $payload['terms_version'] );
+        $queue[ $key ] = array(
+            'user_id'    => (int) $user_id,
+            'payload'    => $payload,
+            'created_at' => current_time( 'mysql' ),
+            'attempts'   => isset( $queue[ $key ]['attempts'] ) ? (int) $queue[ $key ]['attempts'] + 1 : 1,
+        );
+
+        update_option( $this->get_pending_option_name(), $queue, false );
+        $this->maybe_schedule_terms_retry_cron();
+    }
+
+    /**
+     * 保留通知の再送
+     */
+    public function flush_pending_notifications() {
+        $queue = get_option( $this->get_pending_option_name(), array() );
+        if ( ! is_array( $queue ) || empty( $queue ) ) {
+            return;
+        }
+
+        $remaining = array();
+        foreach ( $queue as $key => $item ) {
+            $user_id = isset( $item['user_id'] ) ? (int) $item['user_id'] : 0;
+            if ( $user_id <= 0 ) {
+                continue;
+            }
+
+            if ( $this->notify_via_klm_api( $user_id ) ) {
+                continue;
+            }
+
+            if ( $this->send_developer_notification( $user_id ) ) {
+                continue;
+            }
+
+            $item['attempts'] = isset( $item['attempts'] ) ? (int) $item['attempts'] + 1 : 1;
+            if ( $item['attempts'] <= 30 ) {
+                $remaining[ $key ] = $item;
+            }
+        }
+
+        if ( empty( $remaining ) ) {
+            delete_option( $this->get_pending_option_name() );
+            wp_clear_scheduled_hook( 'ktpwp_flush_pending_terms_notifications' );
+        } else {
+            update_option( $this->get_pending_option_name(), $remaining, false );
+        }
+    }
+
+    /**
+     * 保留通知の Cron をスケジュール
+     */
+    public function maybe_schedule_terms_retry_cron() {
+        $queue = get_option( $this->get_pending_option_name(), array() );
+        if ( ! is_array( $queue ) || empty( $queue ) ) {
+            return;
+        }
+
+        if ( ! wp_next_scheduled( 'ktpwp_flush_pending_terms_notifications' ) ) {
+            wp_schedule_event( time() + HOUR_IN_SECONDS, 'daily', 'ktpwp_flush_pending_terms_notifications' );
+        }
+    }
+
+    /**
+     * 開発者にメール通知を送信（フォールバック）
      */
     private function send_developer_notification( $user_id ) {
         // 重複送信防止のためのログ出力
