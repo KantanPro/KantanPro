@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.2.91
+Stable tag: 1.2.92
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -322,6 +322,11 @@ curl -sS -X POST \
 * MySQL 5.6 以上 または MariaDB 10.0 以上
 * 推奨メモリ: 256MB 以上
 * 推奨PHP拡張: GD（画像処理用）
+
+= 1.2.92 - 2026年06月19日 =
+* 「削除しない」設定時、サービス画像を wp-content/uploads/ktpwp-service-images/ に保存しプラグイン更新後も残るよう変更
+* 既存のプラグイン内 images/upload/ から uploads への自動移行を追加
+* 完全削除（full_delete）時は永続画像フォルダも削除
 
 = 1.2.91 - 2026年06月19日 =
 * 利用規約を v2.0 に改訂（同意手続・KLM 通知・情報取扱いを明記）

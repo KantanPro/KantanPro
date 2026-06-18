@@ -145,6 +145,50 @@ function ktpwp_perform_uninstall_for_current_site() {
             wp_clear_scheduled_hook( $hook );
         }
     }
+
+    /* -----------------------------------------------------------
+     * 6) 永続サービス画像フォルダを削除
+     * ----------------------------------------------------------- */
+    $upload = wp_upload_dir();
+    if ( empty( $upload['error'] ) ) {
+        $image_dir = trailingslashit( $upload['basedir'] ) . 'ktpwp-service-images';
+        if ( is_dir( $image_dir ) ) {
+            ktpwp_uninstall_recursive_rmdir( $image_dir );
+        }
+    }
+}
+
+if ( ! function_exists( 'ktpwp_uninstall_recursive_rmdir' ) ) {
+    /**
+     * アンインストール用ディレクトリ再帰削除
+     *
+     * @param string $dir ディレクトリパス。
+     */
+    function ktpwp_uninstall_recursive_rmdir( $dir ) {
+        if ( ! is_dir( $dir ) ) {
+            return;
+        }
+
+        $objects = scandir( $dir );
+        if ( ! is_array( $objects ) ) {
+            return;
+        }
+
+        foreach ( $objects as $object ) {
+            if ( $object === '.' || $object === '..' ) {
+                continue;
+            }
+
+            $path = $dir . '/' . $object;
+            if ( is_dir( $path ) ) {
+                ktpwp_uninstall_recursive_rmdir( $path );
+            } else {
+                @unlink( $path );
+            }
+        }
+
+        @rmdir( $dir );
+    }
 }
 
 // ------------------------------------------------------------------

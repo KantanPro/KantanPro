@@ -3,7 +3,7 @@
  * Plugin Name: KantanPro
  * Plugin URI: https://www.kantanpro.com/
  * Description: スモールビジネスのための販売支援ツール。ショートコード[ktpwp_all_tab]を固定ページに設置してください。
- * Version: 1.2.91
+ * Version: 1.2.92
  * Author: KantanPro
  * Author URI: https://www.kantanpro.com/kantanpro-page
  * License: GPL v2 or later
@@ -480,6 +480,7 @@ if ( ! function_exists( 'ktpwp_autoload_classes' ) ) {
         'KTPWP_UI_Generator'    => 'includes/class-ktpwp-ui-generator.php',
         'KTPWP_Tab_Search_UI'   => 'includes/class-ktpwp-tab-search-ui.php',
         'KTPWP_Image_Processor' => 'includes/class-ktpwp-image-processor.php',
+        'KTPWP_Service_Image_Storage' => 'includes/class-ktpwp-service-image-storage.php',
         'KTPWP_JapanPost_Address_API' => 'includes/class-ktpwp-japanpost-address-api.php',
         'KTPWP_Login_Error'     => 'includes/class-ktpwp-login-error.php',
         'KTPWP_Print_Class'     => 'includes/class-ktpwp-print.php',
@@ -585,6 +586,15 @@ if ( function_exists( 'ktpwp_create_department_table' ) ) {
     $department_table_created = ktpwp_create_department_table();
     if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
         error_log( "KTPWP: Department table creation result: " . ( $department_table_created ? 'success' : 'failed' ) );
+    }
+}
+
+/**
+ * サービス画像を uploads 配下へ移行（データを残す設定時）
+ */
+function ktpwp_maybe_migrate_service_images() {
+    if ( class_exists( 'KTPWP_Service_Image_Storage' ) ) {
+        KTPWP_Service_Image_Storage::migrate_legacy_images();
     }
 }
 
@@ -708,6 +718,7 @@ function ktpwp_init_image_optimizer() {
 // プラグインが完全に読み込まれた後に実行（最初に実行してフック最適化を行う）
 add_action( 'plugins_loaded', 'ktpwp_init_hook_manager', 0 );
 add_action( 'plugins_loaded', 'ktpwp_init_admin_access_protection', 0 );
+add_action( 'plugins_loaded', 'ktpwp_maybe_migrate_service_images', 8 );
 add_action( 'plugins_loaded', 'ktpwp_init_update_checker' );
 add_action( 'plugins_loaded', 'ktpwp_init_contract_reminder_mail' );
 add_action( 'plugins_loaded', 'ktpwp_init_stripe_billing' );

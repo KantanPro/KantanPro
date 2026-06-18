@@ -1683,6 +1683,10 @@ class KTPWP_Update_Checker {
             }
             $this->merge_upload_directory( $backup_upload_dir, $plugin_upload_dir, true );
         }
+
+        if ( class_exists( 'KTPWP_Service_Image_Storage' ) ) {
+            KTPWP_Service_Image_Storage::migrate_legacy_images();
+        }
         
         // 成功時はバックアップを削除
         if ( is_dir( $backup_dir ) ) {
@@ -2441,6 +2445,10 @@ class KTPWP_Update_Checker {
 
         $this->backup_service_images_before_update();
 
+        if ( class_exists( 'KTPWP_Service_Image_Storage' ) ) {
+            KTPWP_Service_Image_Storage::migrate_legacy_images();
+        }
+
         return $response;
     }
 
@@ -2576,6 +2584,10 @@ class KTPWP_Update_Checker {
         $target_basename = $this->resolve_target_basename( $hook_extra );
         if ( $this->is_target_plugin_basename( $target_basename ) ) {
             $this->restore_service_images_after_update();
+
+            if ( class_exists( 'KTPWP_Service_Image_Storage' ) ) {
+                KTPWP_Service_Image_Storage::migrate_legacy_images();
+            }
 
             remove_filter( 'http_request_args', array( $this, 'github_download_args' ), 10 );
             delete_option( 'ktpwp_update_available' );

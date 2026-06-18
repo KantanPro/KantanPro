@@ -22,11 +22,16 @@ class KTPWP_Image_Processor {
             }
         }
 
-        // 保存先ディレクトリを images/upload/ に変更
-        $upload_dir = __DIR__ . '/../images/upload/';
-        // ディレクトリがなければ作成
+        // 保存先ディレクトリ
+        if ( class_exists( 'KTPWP_Service_Image_Storage' ) ) {
+            $upload_dir = KTPWP_Service_Image_Storage::get_upload_dir();
+            $upload_url = KTPWP_Service_Image_Storage::get_upload_url();
+        } else {
+            $upload_dir = __DIR__ . '/../images/upload/';
+            $upload_url = plugin_dir_url( __DIR__ ) . 'images/upload/';
+        }
         if ( ! file_exists( $upload_dir ) ) {
-            mkdir( $upload_dir, 0777, true );
+            wp_mkdir_p( $upload_dir );
         }
         // 保存ファイル名
         // $file_path = $upload_dir . $data_id . '.jpeg'; // 修正前
@@ -131,8 +136,7 @@ class KTPWP_Image_Processor {
                 return $default_image_url;
             }
 
-            $plugin_url = plugin_dir_url( __DIR__ );
-            $image_url = $plugin_url . 'images/upload/' . $new_file_name; // 修正後
+            $image_url = $upload_url . $new_file_name;
 
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
             }
@@ -160,8 +164,7 @@ class KTPWP_Image_Processor {
                 }
             );
             $latest_file_name = basename( $files[0] );
-            $plugin_url = plugin_dir_url( __DIR__ );
-            return $plugin_url . 'images/upload/' . $latest_file_name;
+            return $upload_url . $latest_file_name;
         }
 
         // それ以外はデフォルト画像を返す

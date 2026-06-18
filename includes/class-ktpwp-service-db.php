@@ -1152,6 +1152,10 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 		 * @return string
 		 */
 		public function get_upload_dir() {
+			if ( class_exists( 'KTPWP_Service_Image_Storage' ) ) {
+				return KTPWP_Service_Image_Storage::get_upload_dir();
+			}
+
 			return dirname( __DIR__ ) . '/images/upload/';
 		}
 
@@ -1161,6 +1165,10 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 		 * @return string
 		 */
 		public function get_upload_url() {
+			if ( class_exists( 'KTPWP_Service_Image_Storage' ) ) {
+				return KTPWP_Service_Image_Storage::get_upload_url();
+			}
+
 			return plugin_dir_url( dirname( __DIR__ ) . '/ktpwp.php' ) . 'images/upload/';
 		}
 
@@ -1207,23 +1215,28 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 				return null;
 			}
 
-			$upload_dir = $this->get_upload_dir();
-			if ( ! is_dir( $upload_dir ) ) {
-				return null;
-			}
+			$search_dirs = class_exists( 'KTPWP_Service_Image_Storage' )
+				? KTPWP_Service_Image_Storage::get_search_dirs()
+				: array( $this->get_upload_dir() );
 
 			$files = array();
 
-			foreach ( array( '.jpeg', '.jpg' ) as $ext ) {
-				$legacy_file = $upload_dir . $service_id . $ext;
-				if ( is_file( $legacy_file ) ) {
-					$files[] = $legacy_file;
+			foreach ( $search_dirs as $upload_dir ) {
+				if ( ! is_dir( $upload_dir ) ) {
+					continue;
 				}
-			}
 
-			$dated_files = $this->glob_service_image_files( $upload_dir, $service_id );
-			if ( ! empty( $dated_files ) ) {
-				$files = array_merge( $files, $dated_files );
+				foreach ( array( '.jpeg', '.jpg' ) as $ext ) {
+					$legacy_file = $upload_dir . $service_id . $ext;
+					if ( is_file( $legacy_file ) ) {
+						$files[] = $legacy_file;
+					}
+				}
+
+				$dated_files = $this->glob_service_image_files( $upload_dir, $service_id );
+				if ( ! empty( $dated_files ) ) {
+					$files = array_merge( $files, $dated_files );
+				}
 			}
 
 			if ( empty( $files ) ) {
@@ -1254,23 +1267,28 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 				return;
 			}
 
-			$upload_dir = $this->get_upload_dir();
-			if ( ! is_dir( $upload_dir ) ) {
-				return;
-			}
+			$search_dirs = class_exists( 'KTPWP_Service_Image_Storage' )
+				? KTPWP_Service_Image_Storage::get_search_dirs()
+				: array( $this->get_upload_dir() );
 
-			foreach ( array( '.jpeg', '.jpg', '.png', '.gif' ) as $ext ) {
-				$legacy_file = $upload_dir . $service_id . $ext;
-				if ( is_file( $legacy_file ) ) {
-					@unlink( $legacy_file );
+			foreach ( $search_dirs as $upload_dir ) {
+				if ( ! is_dir( $upload_dir ) ) {
+					continue;
 				}
-			}
 
-			$files = $this->glob_service_image_files( $upload_dir, $service_id );
-			if ( ! empty( $files ) ) {
-				foreach ( $files as $file ) {
-					if ( is_file( $file ) ) {
-						@unlink( $file );
+				foreach ( array( '.jpeg', '.jpg', '.png', '.gif' ) as $ext ) {
+					$legacy_file = $upload_dir . $service_id . $ext;
+					if ( is_file( $legacy_file ) ) {
+						@unlink( $legacy_file );
+					}
+				}
+
+				$files = $this->glob_service_image_files( $upload_dir, $service_id );
+				if ( ! empty( $files ) ) {
+					foreach ( $files as $file ) {
+						if ( is_file( $file ) ) {
+							@unlink( $file );
+						}
 					}
 				}
 			}
@@ -1305,6 +1323,10 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 
 			$uploaded_file = $this->find_uploaded_image_file( $service_id );
 			if ( $uploaded_file ) {
+				if ( class_exists( 'KTPWP_Service_Image_Storage' ) ) {
+					return KTPWP_Service_Image_Storage::file_path_to_public_url( $uploaded_file );
+				}
+
 				return $upload_url . basename( $uploaded_file );
 			}
 
@@ -1312,9 +1334,19 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 			if ( $image_url !== '' && ! $this->is_default_image_url( $image_url ) ) {
 				$filename = basename( wp_parse_url( $image_url, PHP_URL_PATH ) );
 				if ( $filename !== '' ) {
-					$local_file = $this->get_upload_dir() . $filename;
-					if ( is_file( $local_file ) ) {
-						return $upload_url . $filename;
+					$search_dirs = class_exists( 'KTPWP_Service_Image_Storage' )
+						? KTPWP_Service_Image_Storage::get_search_dirs()
+						: array( $this->get_upload_dir() );
+
+					foreach ( $search_dirs as $dir ) {
+						$local_file = $dir . $filename;
+						if ( is_file( $local_file ) ) {
+							if ( class_exists( 'KTPWP_Service_Image_Storage' ) ) {
+								return KTPWP_Service_Image_Storage::file_path_to_public_url( $local_file );
+							}
+
+							return $upload_url . $filename;
+						}
 					}
 				}
 
