@@ -3,7 +3,7 @@
  * Plugin Name: KantanPro
  * Plugin URI: https://www.kantanpro.com/
  * Description: スモールビジネスのための販売支援ツール。ショートコード[ktpwp_all_tab]を固定ページに設置してください。
- * Version: 1.2.90
+ * Version: 1.2.91
  * Author: KantanPro
  * Author URI: https://www.kantanpro.com/kantanpro-page
  * License: GPL v2 or later
@@ -5183,6 +5183,10 @@ function ktpwp_ensure_terms_table() {
             }
         }
     }
+
+    if ( class_exists( 'KTPWP_Terms_Of_Service' ) ) {
+        KTPWP_Terms_Of_Service::maybe_upgrade_default_terms();
+    }
 }
 
 /**
@@ -5228,56 +5232,20 @@ function ktpwp_create_terms_table_directly() {
  */
 function ktpwp_insert_default_terms_directly() {
     global $wpdb;
+
+    if ( ! class_exists( 'KTPWP_Terms_Of_Service' ) ) {
+        return;
+    }
     
     $terms_table = $wpdb->prefix . 'ktp_terms_of_service';
-    
-    $default_terms = '### 第1条（適用）
-本規約は、KantanProプラグイン（以下「本プラグイン」）の利用に関して適用されます。
-
-### 第2条（利用条件）
-1. 本プラグインは、WordPress環境での利用を前提としています。
-2. 利用者は、本プラグインの利用にあたり、適切な権限を有する必要があります。
-
-### 第3条（禁止事項）
-利用者は、本プラグインの利用にあたり、以下の行為を行ってはなりません：
-1. 法令または公序良俗に違反する行為
-2. 犯罪行為に関連する行為
-3. 本プラグインの運営を妨害する行為
-4. 他の利用者に迷惑をかける行為
-5. その他、当社が不適切と判断する行為
-
-### 第4条（本プラグインの提供の停止等）
-当社は、以下のいずれかの事由があると判断した場合、利用者に事前に通知することなく本プラグインの全部または一部の提供を停止または中断することができるものとします。
-1. 本プラグインにかかるコンピュータシステムの保守点検または更新を行う場合
-2. 地震、落雷、火災、停電または天災などの不可抗力により、本プラグインの提供が困難となった場合
-3. その他、当社が本プラグインの提供が困難と判断した場合
-
-### 第5条（免責事項）
-1. 当社は、本プラグインに関して、利用者と他の利用者または第三者との間において生じた取引、連絡または紛争等について一切責任を負いません。
-2. 当社は、本プラグインの利用により生じる損害について一切の責任を負いません。
-3. 当社は、本プラグインの利用により生じるデータの損失について一切の責任を負いません。
-
-### 第6条（サービス内容の変更等）
-当社は、利用者に通知することなく、本プラグインの内容を変更しまたは本プラグインの提供を中止することができるものとし、これによって利用者に生じた損害について一切の責任を負いません。
-
-### 第7条（利用規約の変更）
-当社は、必要と判断した場合には、利用者に通知することなくいつでも本規約を変更することができるものとします。
-
-### 第8条（準拠法・裁判管轄）
-1. 本規約の解釈にあたっては、日本法を準拠法とします。
-2. 本プラグインに関して紛争が生じた場合には、当社の本店所在地を管轄する裁判所を専属的合意管轄とします。
-
-### 第9条（お問い合わせ）
-本規約に関するお問い合わせは、以下のメールアドレスまでお願いいたします。
-kantanpro22@gmail.com
-
-以上';
+    $default_terms = KTPWP_Terms_Of_Service::get_default_terms_content();
+    $version = KTPWP_Terms_Of_Service::get_default_terms_version();
     
     $result = $wpdb->insert(
         $terms_table,
         array(
             'terms_content' => $default_terms,
-            'version' => '1.0',
+            'version' => $version,
             'is_active' => 1
         ),
         array( '%s', '%s', '%d' )
@@ -5299,56 +5267,22 @@ kantanpro22@gmail.com
  */
 function ktpwp_fix_empty_terms_content( $terms_id ) {
     global $wpdb;
+
+    if ( ! class_exists( 'KTPWP_Terms_Of_Service' ) ) {
+        return;
+    }
     
     $terms_table = $wpdb->prefix . 'ktp_terms_of_service';
-    
-    $default_terms = '### 第1条（適用）
-本規約は、KantanProプラグイン（以下「本プラグイン」）の利用に関して適用されます。
-
-### 第2条（利用条件）
-1. 本プラグインは、WordPress環境での利用を前提としています。
-2. 利用者は、本プラグインの利用にあたり、適切な権限を有する必要があります。
-
-### 第3条（禁止事項）
-利用者は、本プラグインの利用にあたり、以下の行為を行ってはなりません：
-1. 法令または公序良俗に違反する行為
-2. 犯罪行為に関連する行為
-3. 本プラグインの運営を妨害する行為
-4. 他の利用者に迷惑をかける行為
-5. その他、当社が不適切と判断する行為
-
-### 第4条（本プラグインの提供の停止等）
-当社は、以下のいずれかの事由があると判断した場合、利用者に事前に通知することなく本プラグインの全部または一部の提供を停止または中断することができるものとします。
-1. 本プラグインにかかるコンピュータシステムの保守点検または更新を行う場合
-2. 地震、落雷、火災、停電または天災などの不可抗力により、本プラグインの提供が困難となった場合
-3. その他、当社が本プラグインの提供が困難と判断した場合
-
-### 第5条（免責事項）
-1. 当社は、本プラグインに関して、利用者と他の利用者または第三者との間において生じた取引、連絡または紛争等について一切責任を負いません。
-2. 当社は、本プラグインの利用により生じる損害について一切の責任を負いません。
-3. 当社は、本プラグインの利用により生じるデータの損失について一切の責任を負いません。
-
-### 第6条（サービス内容の変更等）
-当社は、利用者に通知することなく、本プラグインの内容を変更しまたは本プラグインの提供を中止することができるものとし、これによって利用者に生じた損害について一切の責任を負いません。
-
-### 第7条（利用規約の変更）
-当社は、必要と判断した場合には、利用者に通知することなくいつでも本規約を変更することができるものとします。
-
-### 第8条（準拠法・裁判管轄）
-1. 本規約の解釈にあたっては、日本法を準拠法とします。
-2. 本プラグインに関して紛争が生じた場合には、当社の本店所在地を管轄する裁判所を専属的合意管轄とします。
-
-### 第9条（お問い合わせ）
-本規約に関するお問い合わせは、以下のメールアドレスまでお願いいたします。
-kantanpro22@gmail.com
-
-以上';
+    $default_terms = KTPWP_Terms_Of_Service::get_default_terms_content();
     
     $result = $wpdb->update(
         $terms_table,
-        array( 'terms_content' => $default_terms ),
+        array(
+            'terms_content' => $default_terms,
+            'version' => KTPWP_Terms_Of_Service::get_default_terms_version(),
+        ),
         array( 'id' => $terms_id ),
-        array( '%s' ),
+        array( '%s', '%s' ),
         array( '%d' )
     );
     

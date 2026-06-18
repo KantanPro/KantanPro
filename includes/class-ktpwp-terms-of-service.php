@@ -129,6 +129,20 @@ class KTPWP_Terms_Of_Service {
     }
 
     /**
+     * バンドル既定の利用規約バージョン
+     */
+    public static function get_default_terms_version() {
+        return '2.0';
+    }
+
+    /**
+     * 規約文中のプラグイン表示名
+     */
+    public static function get_plugin_name_for_terms() {
+        return defined( 'KANTANPRO_PLUGIN_NAME' ) ? KANTANPRO_PLUGIN_NAME : 'KantanPro';
+    }
+
+    /**
      * デフォルトの利用規約を挿入
      */
     public static function insert_default_terms() {
@@ -145,7 +159,7 @@ class KTPWP_Terms_Of_Service {
                 $table_name,
                 array(
                     'terms_content' => $default_terms,
-                    'version' => '1.0',
+                    'version' => self::get_default_terms_version(),
                     'is_active' => 1
                 ),
                 array( '%s', '%s', '%d' )
@@ -154,17 +168,76 @@ class KTPWP_Terms_Of_Service {
     }
 
     /**
+     * 旧既定規約（v1.0）から現行既定規約へ自動移行
+     */
+    public static function maybe_upgrade_default_terms() {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'ktp_terms_of_service';
+
+        $terms = $wpdb->get_row( "SELECT * FROM {$table_name} WHERE is_active = 1 ORDER BY id DESC LIMIT 1" );
+        if ( ! $terms ) {
+            return;
+        }
+
+        if ( version_compare( (string) $terms->version, self::get_default_terms_version(), '>=' ) ) {
+            return;
+        }
+
+        if ( ! self::is_legacy_v1_default_terms_content( $terms->terms_content, (string) $terms->version ) ) {
+            return;
+        }
+
+        $wpdb->update(
+            $table_name,
+            array( 'is_active' => 0 ),
+            array( 'is_active' => 1 ),
+            array( '%d' ),
+            array( '%d' )
+        );
+
+        $wpdb->insert(
+            $table_name,
+            array(
+                'terms_content' => self::get_default_terms_content(),
+                'version' => self::get_default_terms_version(),
+                'is_active' => 1,
+            ),
+            array( '%s', '%s', '%d' )
+        );
+    }
+
+    /**
      * デフォルトの利用規約内容を取得
      */
     public static function get_default_terms_content() {
-        return '### 第1条（適用）
-本規約は、KantanProプラグイン（以下「本プラグイン」）の利用に関して適用されます。
+        $plugin = self::get_plugin_name_for_terms();
+
+        return sprintf(
+            '### 第1条（適用）
+本規約は、%1$sプラグイン（以下「本プラグイン」）の利用に関して適用されます。
+本規約における「当社」とは、本プラグインの開発・運営者をいいます。
 
 ### 第2条（利用条件）
 1. 本プラグインは、WordPress環境での利用を前提としています。
 2. 利用者は、本プラグインの利用にあたり、適切な権限を有する必要があります。
+3. 本プラグインの設定・管理を行うWordPress管理者（以下「管理者」）は、初回利用時および本規約の改定時に、画面上で提示される利用規約への同意が必要です。管理者以外のユーザーには、同意確認を求めません。
 
-### 第3条（禁止事項）
+### 第3条（利用規約への同意）
+1. 管理者は、利用規約確認画面で内容を確認し、「確認しました」にチェックを入れたうえで「利用開始する」を選択することにより、本規約に同意したものとみなされます。
+2. 同意の記録（同意日時および同意した利用規約のバージョン）は、当該管理者のWordPressユーザー情報としてサイト内に保存されます。
+3. 本規約の内容またはバージョンが改定された場合、管理者は改定後の規約への再度の同意が必要となることがあります。
+
+### 第4条（同意時の通知および情報の取扱い）
+1. 管理者が本規約に同意した際、当社は同意の事実を把握・記録するため、以下の情報を当社が運営するライセンス管理サーバー（kantanpro.com）へ送信することがあります。
+   - サイトURL
+   - WordPressの管理者メールアドレス
+   - 同意した管理者の表示名およびメールアドレス
+   - 本プラグインの名称およびバージョン
+   - 同意した利用規約のバージョンおよび同意日時
+2. 前項の送信に失敗した場合、当社は当該サイトのメール送信機能（SMTP設定等）を用いて、当社指定の連絡先へ通知を試行することがあります。また、送信に失敗した通知はサイト内に一時的に保留され、後日自動的に再送信が試行されます。
+3. 前各項の通知処理の失敗または遅延により、管理者による本プラグインの利用が制限されることはありません。
+
+### 第5条（禁止事項）
 利用者は、本プラグインの利用にあたり、以下の行為を行ってはなりません：
 1. 法令または公序良俗に違反する行為
 2. 犯罪行為に関連する行為
@@ -172,46 +245,68 @@ class KTPWP_Terms_Of_Service {
 4. 他の利用者に迷惑をかける行為
 5. その他、当社が不適切と判断する行為
 
-### 第4条（本プラグインの提供の停止等）
+### 第6条（本プラグインの提供の停止等）
 当社は、以下のいずれかの事由があると判断した場合、利用者に事前に通知することなく本プラグインの全部または一部の提供を停止または中断することができるものとします。
 1. 本プラグインにかかるコンピュータシステムの保守点検または更新を行う場合
 2. 地震、落雷、火災、停電または天災などの不可抗力により、本プラグインの提供が困難となった場合
 3. その他、当社が本プラグインの提供が困難と判断した場合
 
-### 第5条（免責事項）
+### 第7条（免責事項）
 1. 当社は、本プラグインに関して、利用者と他の利用者または第三者との間において生じた取引、連絡または紛争等について一切責任を負いません。
 2. 当社は、本プラグインの利用により生じる損害について一切の責任を負いません。
 3. 当社は、本プラグインの利用により生じるデータの損失について一切の責任を負いません。
 
-### 第6条（サービス内容の変更等）
+### 第8条（サービス内容の変更等）
 当社は、利用者に通知することなく、本プラグインの内容を変更しまたは本プラグインの提供を中止することができるものとし、これによって利用者に生じた損害について一切の責任を負いません。
 
-### 第7条（利用規約の変更）
-当社は、必要と判断した場合には、利用者に通知することなくいつでも本規約を変更することができるものとします。
+### 第9条（利用規約の変更）
+当社は、必要と判断した場合には、利用者に通知することなくいつでも本規約を変更することができるものとします。規約の改定後は、管理者に対して再度の同意を求める場合があります。
 
-### 第8条（準拠法・裁判管轄）
+### 第10条（準拠法・裁判管轄）
 1. 本規約の解釈にあたっては、日本法を準拠法とします。
 2. 本プラグインに関して紛争が生じた場合には、当社の本店所在地を管轄する裁判所を専属的合意管轄とします。
 
-### 第9条（お問い合わせ）
+### 第11条（お問い合わせ）
 本規約に関するお問い合わせは、以下のメールアドレスまでお願いいたします。
 kantanpro22@gmail.com
 
-以上';
+以上',
+            $plugin
+        );
     }
 
     /**
      * デフォルトの利用規約内容（英語）を取得
      */
     public static function get_default_terms_content_en() {
-        return '### Article 1 (Application)
-These Terms apply to the use of the KantanPro plugin (the "Plugin").
+        $plugin = self::get_plugin_name_for_terms();
+
+        return sprintf(
+            '### Article 1 (Application)
+These Terms apply to the use of the %1$s plugin (the "Plugin").
+"We," "us," or "our" refers to the developer and operator of the Plugin.
 
 ### Article 2 (Conditions of Use)
 1. The Plugin is intended for use in a WordPress environment.
 2. Users must have the appropriate authority to use the Plugin.
+3. WordPress administrators who configure or manage the Plugin (each, an "Administrator") must agree to these Terms on first use and whenever these Terms are revised. Users who are not Administrators are not required to complete the agreement dialog.
 
-### Article 3 (Prohibited Acts)
+### Article 3 (Agreement to These Terms)
+1. An Administrator is deemed to have agreed to these Terms by reviewing the agreement screen, checking "I have reviewed," and selecting "Start using."
+2. A record of agreement (date/time and the version of these Terms agreed to) is stored in that Administrator\'s WordPress user information on the site.
+3. If the content or version of these Terms is revised, Administrators may be required to agree again to the revised Terms.
+
+### Article 4 (Notifications and Information Handling upon Agreement)
+1. When an Administrator agrees to these Terms, we may send the following information to our license management server operated at kantanpro.com in order to acknowledge and record the agreement:
+   - Site URL
+   - WordPress administrator email address
+   - Display name and email address of the agreeing Administrator
+   - Plugin name and version
+   - Version of these Terms agreed to and the date/time of agreement
+2. If transmission under the preceding paragraph fails, we may attempt to notify a contact address designated by us using the site\'s mail delivery function (such as SMTP settings). Failed notifications may be temporarily retained on the site and automatically retried later.
+3. Failure or delay of the notifications described above does not restrict the Administrator\'s use of the Plugin.
+
+### Article 5 (Prohibited Acts)
 Users must not engage in any of the following acts when using the Plugin:
 1. Acts that violate laws, regulations, or public order and morals
 2. Acts related to criminal activity
@@ -219,32 +314,34 @@ Users must not engage in any of the following acts when using the Plugin:
 4. Acts that cause inconvenience to other users
 5. Any other acts deemed inappropriate by us
 
-### Article 4 (Suspension of the Plugin)
+### Article 6 (Suspension of the Plugin)
 If we determine that any of the following circumstances apply, we may suspend or interrupt all or part of the Plugin without prior notice to users.
 1. Maintenance, inspection, or updates of computer systems related to the Plugin
 2. Difficulty providing the Plugin due to force majeure such as earthquakes, lightning, fire, power outages, or natural disasters
 3. Any other circumstance in which we determine that providing the Plugin is difficult
 
-### Article 5 (Disclaimer)
+### Article 7 (Disclaimer)
 1. We are not responsible for any transactions, communications, disputes, or other matters arising between users and other users or third parties in connection with the Plugin.
 2. We are not responsible for any damages arising from the use of the Plugin.
 3. We are not responsible for any loss of data arising from the use of the Plugin.
 
-### Article 6 (Changes to Services)
+### Article 8 (Changes to Services)
 We may change the contents of the Plugin or discontinue providing the Plugin without notice to users, and we are not responsible for any damages incurred by users as a result.
 
-### Article 7 (Changes to These Terms)
-We may change these Terms at any time without notice to users if we determine that such changes are necessary.
+### Article 9 (Changes to These Terms)
+We may change these Terms at any time without notice to users if we determine that such changes are necessary. After a revision, we may require Administrators to agree again.
 
-### Article 8 (Governing Law and Jurisdiction)
+### Article 10 (Governing Law and Jurisdiction)
 1. These Terms are governed by the laws of Japan.
 2. If a dispute arises in connection with the Plugin, the court having jurisdiction over our head office location shall have exclusive agreed jurisdiction.
 
-### Article 9 (Contact)
+### Article 11 (Contact)
 For inquiries regarding these Terms, please contact us at the following email address.
 kantanpro22@gmail.com
 
-End';
+End',
+            $plugin
+        );
     }
 
     /**
@@ -260,7 +357,28 @@ End';
      */
     private function is_default_japanese_terms_content( $content ) {
         $content = (string) $content;
-        return strpos( $content, '### 第1条（適用）' ) !== false && strpos( $content, 'kantanpro22@gmail.com' ) !== false;
+        return strpos( $content, '### 第1条（適用）' ) !== false
+            && strpos( $content, 'kantanpro22@gmail.com' ) !== false
+            && (
+                strpos( $content, '### 第3条（利用規約への同意）' ) !== false
+                || strpos( $content, '### 第3条（禁止事項）' ) !== false
+            );
+    }
+
+    /**
+     * 旧バンドル既定規約（v1.0）か判定
+     */
+    public static function is_legacy_v1_default_terms_content( $content, $version ) {
+        if ( (string) $version !== '1.0' ) {
+            return false;
+        }
+
+        $content = (string) $content;
+
+        return strpos( $content, '### 第1条（適用）' ) !== false
+            && strpos( $content, '### 第3条（禁止事項）' ) !== false
+            && strpos( $content, '### 第3条（利用規約への同意）' ) === false
+            && strpos( $content, 'kantanpro22@gmail.com' ) !== false;
     }
 
     /**
@@ -431,6 +549,7 @@ End';
         if ( $user_id ) {
             delete_user_meta( $user_id, 'ktpwp_terms_agreed' );
             delete_user_meta( $user_id, 'ktpwp_terms_version' );
+            delete_user_meta( $user_id, 'ktpwp_terms_agreed_plugin_version' );
         }
     }
 
@@ -613,6 +732,7 @@ End';
             // 同意状態を保存
             update_user_meta( $user_id, 'ktpwp_terms_agreed', current_time( 'mysql' ) );
             update_user_meta( $user_id, 'ktpwp_terms_version', $this->get_current_terms_version() );
+            update_user_meta( $user_id, 'ktpwp_terms_agreed_plugin_version', $this->get_plugin_version_for_terms_consent() );
             
             // メール送信の重複防止用トランジェントをチェック
             $mail_transient_key = 'ktpwp_terms_mail_sent_' . $user_id;
@@ -964,6 +1084,34 @@ End';
     }
 
     /**
+     * 利用規約の再同意が必要なプラグインバージョン（この版のみ一度限り）
+     */
+    public static function get_required_terms_reconsent_plugin_version() {
+        return '1.2.91';
+    }
+
+    /**
+     * 同意時に記録するプラグインバージョン
+     */
+    private function get_plugin_version_for_terms_consent() {
+        return defined( 'KANTANPRO_PLUGIN_VERSION' ) ? (string) KANTANPRO_PLUGIN_VERSION : self::get_required_terms_reconsent_plugin_version();
+    }
+
+    /**
+     * v1.2.91 以降の再同意要件を満たしているか
+     */
+    private function has_completed_required_plugin_reconsent( $user_id ) {
+        $required = self::get_required_terms_reconsent_plugin_version();
+        $agreed_plugin_version = (string) get_user_meta( $user_id, 'ktpwp_terms_agreed_plugin_version', true );
+
+        if ( $agreed_plugin_version === '' ) {
+            return false;
+        }
+
+        return version_compare( $agreed_plugin_version, $required, '>=' );
+    }
+
+    /**
      * 利用規約に同意済みかチェック
      */
     public function has_user_agreed_to_terms( $user_id = null ) {
@@ -984,7 +1132,11 @@ End';
         $agreed_version = get_user_meta( $user_id, 'ktpwp_terms_version', true );
         $current_version = $this->get_current_terms_version();
 
-        return ! empty( $agreed_time ) && $agreed_version === $current_version;
+        if ( empty( $agreed_time ) || $agreed_version !== $current_version ) {
+            return false;
+        }
+
+        return $this->has_completed_required_plugin_reconsent( $user_id );
     }
 
     /**

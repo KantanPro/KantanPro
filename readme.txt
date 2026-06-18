@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.2.90
+Stable tag: 1.2.91
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -322,6 +322,11 @@ curl -sS -X POST \
 * MySQL 5.6 以上 または MariaDB 10.0 以上
 * 推奨メモリ: 256MB 以上
 * 推奨PHP拡張: GD（画像処理用）
+
+= 1.2.91 - 2026年06月19日 =
+* 利用規約を v2.0 に改訂（同意手続・KLM 通知・情報取扱いを明記）
+* v1.2.91 有効化時に管理者へ一度だけ利用規約への再同意を求めるよう変更（以降のバージョンアップでは再同意不要）
+* 旧既定規約（v1.0）から v2.0 への自動移行を追加
 
 = 1.2.90 - 2026年06月19日 =
 * 利用規約同意時に kantanpro.com（KLM）へ通知する API 連携を追加（SMTP 未設定でも開発者が把握可能）
