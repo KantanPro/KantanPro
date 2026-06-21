@@ -1612,9 +1612,9 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 
 					// プレビューボタン用のHTML生成は削除（Ajax経由で最新データを取得）
 
-					$content .= '<div class="controller" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">';
+					$content .= '<div class="controller ktp-order-controller">';
 
-					$content .= '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">';
+					$content .= '<div class="ktp-order-controller__search">';
 					if ( class_exists( 'KTPWP_Tab_Search_UI' ) ) {
 						$order_search_keep = array();
 						if ( ! empty( $order_data->id ) ) {
@@ -1622,8 +1622,10 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 						}
 						$content .= KTPWP_Tab_Search_UI::get_instance()->render_toolbar_form( 'order', $order_search_keep );
 					}
+					$content .= '</div>';
 
-					// 左側：定期契約作成
+					$content .= '<div class="ktp-order-controller__bar">';
+					$content .= '<div class="ktp-order-controller-actions">';
 					$content .= '<div class="ktp-order-controller-left">';
 
 					if ( class_exists( 'KTPWP_Order_Contract_UI' ) ) {
@@ -1631,10 +1633,10 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 					}
 
 					$content .= '</div>';
-
-					$content .= '</div>'; // 左側（検索＋定期契約）終了
+					$content .= '</div>';
 
 					// 右側：プレビューボタン、メールボタン（軽量な共通クラスで描画）
+					$content .= '<div class="ktp-order-controller__tools">';
 					$content .= '<div class="ktp-order-title-actions">';
 					// プレビューボタン（受注書IDのみ保持、最新データはAjaxで取得）
 					$content .= '<button id="orderPreviewButton" class="ktp-title-icon-btn print-btn" data-order-id="' . esc_attr( $order_data->id ) . '" title="' . esc_attr__( '印刷する', 'ktpwp' ) . '" aria-label="' . esc_attr__( '印刷する', 'ktpwp' ) . '">';
@@ -1726,8 +1728,10 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 					}
 					$content .= '<span class="material-symbols-outlined" aria-hidden="true">mail</span>';
 					$content .= '</button>';
-					$content .= '</div>'; // 右側のボタン群終了
-					$content .= '</div>'; // controller終了
+					$content .= '</div>'; // ktp-order-title-actions 終了
+					$content .= '</div>'; // ktp-order-controller__tools 終了
+					$content .= '</div>'; // ktp-order-controller__bar 終了
+					$content .= '</div>'; // controller 終了
 
 					if ( class_exists( 'KTPWP_Tab_Search_UI' ) ) {
 						$content .= KTPWP_Tab_Search_UI::get_instance()->maybe_render_cross_search_panel( 'order', array( 'order_id' ) );
@@ -2069,15 +2073,19 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 
 				} else {
 					// 指定された受注書が見つからない場合もコントローラーと案内を表示
-					$content .= '<div class="controller" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">';
+					$content .= '<div class="controller ktp-order-controller">';
 
-					$content .= '<div style="display:flex;align-items:center;gap:12px;">';
+					$content .= '<div class="ktp-order-controller__search">';
 					if ( class_exists( 'KTPWP_Tab_Search_UI' ) ) {
 						$content .= KTPWP_Tab_Search_UI::get_instance()->render_toolbar_form( 'order', array() );
 					}
 					$content .= '</div>';
 
+					$content .= '<div class="ktp-order-controller__bar">';
+					$content .= '<div class="ktp-order-controller-actions"></div>';
+
 					// 右側：プレビューボタンとメールボタン（無効化）
+					$content .= '<div class="ktp-order-controller__tools">';
 					$content .= '<div class="ktp-order-title-actions">';
 					$content .= '<button id="orderPreviewButton" class="ktp-title-icon-btn print-btn" disabled title="' . esc_attr__( '印刷する', 'ktpwp' ) . '" aria-label="' . esc_attr__( '印刷する', 'ktpwp' ) . '">';
 					$content .= '<span class="material-symbols-outlined" aria-hidden="true">print</span>';
@@ -2085,8 +2093,10 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 					$content .= '<button class="ktp-title-icon-btn order-mail-btn" disabled title="' . esc_attr__( 'メール送信不可', 'ktpwp' ) . '" aria-label="' . esc_attr__( 'メール送信不可', 'ktpwp' ) . '">';
 					$content .= '<span class="material-symbols-outlined" aria-hidden="true">mail</span>';
 					$content .= '</button>';
-					$content .= '</div>'; // 右側のボタン群終了
-					$content .= '</div>'; // controller終了
+					$content .= '</div>';
+					$content .= '</div>';
+					$content .= '</div>';
+					$content .= '</div>';
 
 					if ( class_exists( 'KTPWP_Tab_Search_UI' ) ) {
 						$content .= KTPWP_Tab_Search_UI::get_instance()->maybe_render_cross_search_panel( 'order', array( 'order_id' ) );
@@ -2101,15 +2111,19 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 				}
 			} else {
 				// 受注書データが存在しない場合でもレイアウトを維持
-				$content .= '<div class="controller" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">';
+				$content .= '<div class="controller ktp-order-controller">';
 
-				$content .= '<div style="display:flex;align-items:center;gap:12px;">';
+				$content .= '<div class="ktp-order-controller__search">';
 				if ( class_exists( 'KTPWP_Tab_Search_UI' ) ) {
 					$content .= KTPWP_Tab_Search_UI::get_instance()->render_toolbar_form( 'order', array() );
 				}
 				$content .= '</div>';
 
+				$content .= '<div class="ktp-order-controller__bar">';
+				$content .= '<div class="ktp-order-controller-actions"></div>';
+
 				// 右側：プレビューボタンとメールボタン（無効化）
+				$content .= '<div class="ktp-order-controller__tools">';
 				$content .= '<div class="ktp-order-title-actions">';
 				$content .= '<button id="orderPreviewButton" class="ktp-title-icon-btn print-btn" disabled title="' . esc_attr__( '印刷する', 'ktpwp' ) . '" aria-label="' . esc_attr__( '印刷する', 'ktpwp' ) . '">';
 				$content .= '<span class="material-symbols-outlined" aria-hidden="true">print</span>';
@@ -2117,8 +2131,10 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 				$content .= '<button class="ktp-title-icon-btn order-mail-btn" disabled title="' . esc_attr__( 'メール送信不可', 'ktpwp' ) . '" aria-label="' . esc_attr__( 'メール送信不可', 'ktpwp' ) . '">';
 				$content .= '<span class="material-symbols-outlined" aria-hidden="true">mail</span>';
 				$content .= '</button>';
-				$content .= '</div>'; // 右側のボタン群終了
-				$content .= '</div>'; // controller終了
+				$content .= '</div>';
+				$content .= '</div>';
+				$content .= '</div>';
+				$content .= '</div>';
 
 				if ( class_exists( 'KTPWP_Tab_Search_UI' ) ) {
 					$content .= KTPWP_Tab_Search_UI::get_instance()->maybe_render_cross_search_panel( 'order', array( 'order_id' ) );

@@ -1769,18 +1769,20 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
             //     }
             // }
         </script>
-        <!-- コントローラー（顧客タブと同様：左に宛名印刷、右に詳細印刷） -->
-        <div class="controller" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-                <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <!-- コントローラー（顧客タブと同様：検索全幅1行、ボタン1行＋印刷右寄せ） -->
+        <div class="controller ktp-supplier-controller">
+                <div class="ktp-supplier-controller__search">
                 {$search_toolbar_html}
-                <div class="ktp-supplier-controller-actions" style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                </div>
+                <div class="ktp-supplier-controller__bar">
+                <div class="ktp-supplier-controller-actions">
                 <button type="button" id="supplierAddressLabelPrintButton" class="ktp-client-address-label-btn" onclick="printSupplierAddressLabel(); return false;" title="{$supplier_address_label_title}">{$supplier_address_label_icon}<span class="btn-label">{$supplier_address_label_text}</span></button>
                 </div>
-                </div>
-                <div style="display: flex; gap: 5px;">
+                <div class="ktp-supplier-controller__tools">
                 <button type="button" onclick="printContent()" title="{$print_button_title}" style="padding: 8px 12px; font-size: 12px; background: #fff; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; transition: all 0.2s ease;">
                     <span class="material-symbols-outlined" aria-label="{$print_button_label}" style="font-size: 18px; color: #333;">print</span>
                 </button>
+                </div>
                 </div>
         </div>
         END;

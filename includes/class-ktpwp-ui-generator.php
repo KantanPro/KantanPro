@@ -91,12 +91,16 @@ if ( ! class_exists( 'KTPWP_Ui_Generator' ) ) {
 			</button>';
 
 			return '<div class="controller ktp-report-controller">
-				<div class="ktp-report-controller__main" style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;">
+				<div class="ktp-report-controller__search">
 					' . $search_toolbar . '
+				</div>
+				<div class="ktp-report-controller__bar">
+				<div class="ktp-report-controller__main">
 					' . $report_buttons . '
 				</div>
 				<div class="ktp-report-controller__actions">
 					' . $print_button . '
+				</div>
 				</div>
 			</div>';
 		}

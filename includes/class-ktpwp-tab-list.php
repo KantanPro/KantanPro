@@ -67,10 +67,9 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 			// フリーワード検索用GETパラメータ
 			$list_search = isset( $_GET['list_search'] ) ? sanitize_text_field( wp_unslash( $_GET['list_search'] ) ) : '';
 
-			// Controller container display at top（左: 検索、右: 印刷）
-			$content .= '<div class="controller" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">';
-
-			// フリーワード検索（左寄せ）
+    // Controller container display at top（検索全幅1行、フィルタ＋印刷は2行目）
+			$content .= '<div class="controller ktp-list-controller">';
+			$content .= '<div class="ktp-list-controller__search">';
 			$content .= '<div class="ktp-list-search-wrap" style="display:flex;align-items:center;gap:6px;">';
 			$content .= '<form method="get" action="" class="ktp-list-search-form" style="display:flex;align-items:center;gap:6px;">';
 			// 仕事リストタブを維持
@@ -86,7 +85,11 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 			$content .= '<input type="search" id="ktp-list-search-input" name="list_search" value="" placeholder="' . esc_attr( $search_placeholder ) . '" aria-label="' . esc_attr__( 'フリーワード', 'ktpwp' ) . '" class="ktp-list-search-input" style="min-width:160px;padding:6px 8px;border:1px solid #ddd;border-radius:4px;">';
 			$content .= '<button type="submit" class="ktp-list-search-btn" title="' . esc_attr__( '検索', 'ktpwp' ) . '" style="padding:6px 10px;border:1px solid #ddd;border-radius:4px;background:#f5f5f5;cursor:pointer;">🔍</button>';
 			$content .= '</form>';
+			$content .= '</div>';
+			$content .= '</div>';
 
+			$content .= '<div class="ktp-list-controller__bar">';
+			$content .= '<div class="ktp-list-controller-actions">';
 			if ( class_exists( 'KTPWP_Contract_Billing_UI' ) ) {
 				$billing_ui = KTPWP_Contract_Billing_UI::get_instance();
 				$content   .= $billing_ui->render_list_view_switcher( $tab_name, $recurring_billing_view );
@@ -94,13 +97,16 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 					$content .= $billing_ui->render_list_type_filter( $tab_name, $list_type_recurring );
 				}
 			}
-
 			$content .= '</div>';
 
 			// Print button（現在表示されている内容を印刷ダイアログで表示し、PDF保存・印刷可能）
+			$content .= '<div class="ktp-list-controller__tools">';
 			$content .= '<button type="button" title="' . esc_attr__( '印刷する', 'ktpwp' ) . '" onclick="typeof ktpListPrintOpen === \'function\' && ktpListPrintOpen();" style="padding: 6px 10px; font-size: 12px;">';
 			$content .= '<span class="material-symbols-outlined" aria-label="' . esc_attr__( '印刷', 'ktpwp' ) . '">print</span>';
 			$content .= '</button>';
+			$content .= '</div>';
+			$content .= '</div>';
+			$content .= '</div>'; // .controller end
 
 			// Progress status buttons
 			$progress_labels = array(
@@ -324,8 +330,6 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 					}
 				}
 			}
-
-			$content .= '</div>'; // .controller end
 
 			// 印刷対象エリア開始（現在表示されている内容を印刷するためのラッパー）
 			$content .= '<div id="ktp_list_print_area">';
