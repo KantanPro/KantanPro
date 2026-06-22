@@ -391,28 +391,22 @@ if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
 							$cookie_name = 'ktp_' . $tab_name . '_id';
 							setcookie( $cookie_name, $data_id, time() + ( 86400 * 30 ), '/' );
 
-							// Prepare redirect URL
-							global $wp;
-							$current_page_id = get_queried_object_id();
-							$base_page_url = KTPWP_Main::get_current_page_base_url();
+							$redirect_base = class_exists( 'KTPWP_Main' )
+								? KTPWP_Main::resolve_page_base_url_for_redirect()
+								: wp_get_referer();
+							if ( ! $redirect_base ) {
+								$redirect_base = home_url( '/' );
+							}
 							$redirect_url = add_query_arg(
-                                array(
+								array(
 									'tab_name' => $tab_name,
-									'data_id' => $data_id,
-									'message' => 'updated',
-                                ),
-                                $base_page_url
-                            );
-
-							echo '<script>
-                            document.addEventListener("DOMContentLoaded", function() {
-                                showSuccessNotification("' . esc_js( esc_html__( '協力会社情報を更新しました。', 'ktpwp' ) ) . '");
-                                setTimeout(function() {
-                                    window.location.href = "' . esc_js( $redirect_url ) . '";
-                                }, 1000);
-                            });
-                        </script>';
-							return;
+									'data_id'  => $data_id,
+									'message'  => 'updated',
+								),
+								$redirect_base
+							);
+							wp_safe_redirect( $redirect_url );
+							exit;
 						}
 					}
 					break;

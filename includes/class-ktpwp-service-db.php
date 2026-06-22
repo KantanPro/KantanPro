@@ -225,6 +225,21 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 							$this->sync_service_initial_fees_from_post( $data_id );
 						}
 						$this->sync_service_public_availability( $data_id );
+
+						$redirect_base = wp_get_referer();
+						if ( ! $redirect_base ) {
+							$redirect_base = KTPWP_Main::get_current_page_base_url();
+						}
+						$redirect_url = add_query_arg(
+							array(
+								'tab_name' => $tab_name,
+								'data_id'  => $data_id,
+								'message'  => 'updated',
+							),
+							$redirect_base
+						);
+						wp_safe_redirect( $redirect_url );
+						exit;
 					}
 					break;
 
