@@ -102,6 +102,14 @@
 
         setUpdateBadgeVisible(showBadge);
         pollHeaderUpdateBadge();
+
+        var pollIntervalMs = 3600000;
+        if (typeof ktpwp_update_ajax !== 'undefined' && ktpwp_update_ajax.badge_poll_interval) {
+            pollIntervalMs = parseInt(ktpwp_update_ajax.badge_poll_interval, 10) || pollIntervalMs;
+        }
+        if (pollIntervalMs > 0) {
+            setInterval(pollHeaderUpdateBadge, pollIntervalMs);
+        }
     }
 
     /**

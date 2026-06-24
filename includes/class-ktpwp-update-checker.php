@@ -47,6 +47,11 @@ class KTPWP_Update_Checker {
      * 更新チェックの間隔（秒）
      */
     private $check_interval;
+
+    /**
+     * ヘッダーバッジ用の更新チェック間隔（秒）
+     */
+    private $badge_check_interval = 3600;
     
     /**
      * フロントエンド通知の実行フラグ
@@ -1867,11 +1872,99 @@ class KTPWP_Update_Checker {
             wp_send_json_success( array( 'has_update' => false ) );
         }
 
-        $this->maybe_run_scheduled_update_check();
+        $this->maybe_run_badge_update_check( true );
 
         wp_send_json_success( array(
             'has_update' => $this->has_header_update_badge(),
         ) );
+    }
+
+    /**
+     * ヘッダーバッジ用の更新チェック（既定1時間間隔・ポーリング時は強制実行可）
+     *
+     * @param bool $force 間隔制限を無視してチェックする
+     * @return bool 更新が利用可能か
+     */
+    public function maybe_run_badge_update_check( $force = false ) {
+        if ( ! $this->is_update_notification_enabled() ) {
+            return false;
+        }
+
+        if ( ! is_user_logged_in() || ! $this->user_has_notification_permission() ) {
+            return false;
+        }
+
+        if ( ! $force ) {
+            $last_badge_check = get_transient( 'ktpwp_last_badge_update_check' );
+            if ( $last_badge_check && ( time() - (int) $last_badge_check ) < $this->badge_check_interval ) {
+                return (bool) $this->has_header_update_badge();
+            }
+        }
+
+        $this->check_github_updates();
+        set_transient( 'ktpwp_last_badge_update_check', time(), DAY_IN_SECONDS );
+
+        return (bool) $this->has_header_update_badge();
+    }
+
+    /**
+     * フロントヘッダー更新バッジ用のアセットをフッターへ登録（jQuery 依存を保証）
+     *
+     * @param bool       $show_update_badge     バッジ表示可否
+     * @param array|null $update_data           吹き出し用の更新データ
+     * @param bool       $notifications_enabled 更新通知の有効状態
+     */
+    public function enqueue_header_update_balloon_assets( $show_update_badge, $update_data, $notifications_enabled ) {
+        if ( wp_script_is( 'ktpwp-update-balloon', 'enqueued' ) || wp_script_is( 'ktpwp-update-balloon', 'done' ) ) {
+            return;
+        }
+
+        wp_enqueue_style(
+            'ktpwp-update-balloon',
+            KANTANPRO_PLUGIN_URL . 'css/ktpwp-update-balloon.css',
+            array(),
+            $this->current_version
+        );
+
+        wp_enqueue_script( 'jquery' );
+        wp_enqueue_script(
+            'ktpwp-update-balloon',
+            KANTANPRO_PLUGIN_URL . 'js/ktpwp-update-balloon.js',
+            array( 'jquery' ),
+            $this->current_version,
+            true
+        );
+
+        wp_localize_script(
+            'ktpwp-update-balloon',
+            'ktpwp_update_ajax',
+            array(
+                'ajax_url'              => admin_url( 'admin-ajax.php' ),
+                'nonce'                 => wp_create_nonce( 'ktpwp_header_update_check' ),
+                'dismiss_nonce'         => wp_create_nonce( 'ktpwp_header_update_notice' ),
+                'admin_url'             => admin_url(),
+                'notifications_enabled' => (bool) $notifications_enabled,
+                'badge_poll_interval'   => $this->badge_check_interval * 1000,
+            )
+        );
+
+        if ( is_array( $update_data ) && ! empty( $update_data ) ) {
+            wp_localize_script(
+                'ktpwp-update-balloon',
+                'ktpwp_update_data',
+                array(
+                    'has_update'  => true,
+                    'message'     => __( '新しいバージョンが利用可能です！', 'ktpwp' ),
+                    'update_data' => $update_data,
+                )
+            );
+        }
+
+        wp_add_inline_script(
+            'ktpwp-update-balloon',
+            'var ktpwp_update_badge_available = ' . wp_json_encode( (bool) $show_update_badge ) . ';',
+            'before'
+        );
     }
 
     /**

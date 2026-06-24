@@ -3,7 +3,7 @@
  * Plugin Name: KantanPro
  * Plugin URI: https://www.kantanpro.com/
  * Description: スモールビジネスのための販売支援ツール。ショートコード[ktpwp_all_tab]を固定ページに設置してください。
- * Version: 1.2.97
+ * Version: 1.2.98
  * Author: KantanPro
  * Author URI: https://www.kantanpro.com/kantanpro-page
  * License: GPL v2 or later
@@ -4512,21 +4512,26 @@ function KTPWP_Index() {
             if ( $enable_notifications && class_exists( 'KTPWP_Update_Checker' ) ) {
                 global $ktpwp_update_checker;
                 if ( $ktpwp_update_checker ) {
-                    $ktpwp_update_checker->maybe_run_scheduled_update_check();
+                    $ktpwp_update_checker->maybe_run_badge_update_check();
                     $show_update_badge = $ktpwp_update_checker->has_header_update_badge();
                 }
             }
 
             // ログインしているユーザーのみにナビゲーションリンクを表示
             $navigation_links = '';
+            global $ktpwp_update_checker;
             if ( is_user_logged_in() && $current_user && $current_user->ID > 0 ) {
                 // セッションの有効性も確認
                 $user_sessions = WP_Session_Tokens::get_instance( $current_user->ID );
                 if ( $user_sessions && ! empty( $user_sessions->get_all() ) ) {
                     // ログアウトボタン
                     $navigation_links .= ' <a href="' . $logout_link . '" title="ログアウト" style="display: inline-flex; align-items: center; gap: 4px; color: #0073aa; text-decoration: none;"><span class="material-symbols-outlined" style="font-size: 20px; vertical-align: middle;">logout</span></a>';
-                    // 更新リンクは編集者権限がある場合のみ
-                    if ( current_user_can( 'edit_posts' ) ) {
+                    // 更新リンクは編集者権限があり、かつ更新通知対象ロールの場合のみ
+                    $can_show_update_check = current_user_can( 'edit_posts' );
+                    if ( $enable_notifications && $ktpwp_update_checker ) {
+                        $can_show_update_check = $ktpwp_update_checker->user_has_notification_permission();
+                    }
+                    if ( $can_show_update_check ) {
                         if ( $enable_notifications ) {
                             $update_check_title = $show_update_badge ? esc_attr__( '更新が利用可能です', 'ktpwp' ) : esc_attr__( '更新チェック', 'ktpwp' );
                             $update_link_class = $show_update_badge ? ' has-update' : '';
@@ -4629,49 +4634,21 @@ function KTPWP_Index() {
                 . 'document.addEventListener("keydown",function(e){if(e.key==="Escape"){closeMenus(null);}});'
                 . '})();</script>';
             
-            // 更新通知用のスクリプトとスタイルを追加（常に読み込み）
-            $front_message .= '<link rel="stylesheet" href="' . esc_url( plugins_url( 'css/ktpwp-update-balloon.css', __FILE__ ) ) . '?v=' . KANTANPRO_PLUGIN_VERSION . '">';
-            
-            // AJAX用の変数を設定（常に設定）- JavaScriptファイルの読み込み前に設定
-            $ajax_data = array(
-                'ajax_url' => admin_url( 'admin-ajax.php' ),
-                'nonce' => wp_create_nonce( 'ktpwp_header_update_check' ),
-                'dismiss_nonce' => wp_create_nonce( 'ktpwp_header_update_notice' ),
-                'admin_url' => admin_url(),
-                'notifications_enabled' => $enable_notifications
-            );
-            
-            // デバッグ用のログを追加
-            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KantanPro: JavaScript変数設定 - nonce: ' . $ajax_data['nonce'] );
-                error_log( 'KantanPro: JavaScript変数設定 - notifications_enabled: ' . ( $enable_notifications ? 'true' : 'false' ) );
-                error_log( 'KantanPro: JavaScript変数設定 - ajax_url: ' . $ajax_data['ajax_url'] );
-                error_log( 'KantanPro: JavaScript変数設定 - admin_url: ' . $ajax_data['admin_url'] );
+            // 更新通知用のアセットをフッターへ登録（jQuery 読み込み後に実行されるよう保証）
+            if ( class_exists( 'KTPWP_Update_Checker' ) ) {
+                global $ktpwp_update_checker;
+                if ( $ktpwp_update_checker ) {
+                    $ktpwp_update_checker->enqueue_header_update_balloon_assets(
+                        (bool) $show_update_badge,
+                        is_array( $update_data ) ? $update_data : null,
+                        (bool) $enable_notifications
+                    );
+                }
             }
-            
-            $front_message .= '<script>var ktpwp_update_ajax = ' . wp_json_encode( $ajax_data ) . ';</script>';
-            $front_message .= '<script>var ktpwp_update_badge_available = ' . ( $show_update_badge ? 'true' : 'false' ) . ';</script>';
             
             // デバッグ用のHTMLコメントを追加
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                $front_message .= '<!-- KantanPro Debug: JavaScript variables set -->';
-            }
-            
-            // 更新情報をJavaScript変数として設定
-            if ( $update_data ) {
-                $front_message .= '<script>var ktpwp_update_data = ' . wp_json_encode( array(
-                    'has_update' => true,
-                    'message' => __( '新しいバージョンが利用可能です！', 'ktpwp' ),
-                    'update_data' => $update_data
-                ) ) . ';</script>';
-            }
-            
-            // JavaScriptファイルを読み込み
-            $front_message .= '<script src="' . esc_url( plugins_url( 'js/ktpwp-update-balloon.js', __FILE__ ) ) . '?v=' . KANTANPRO_PLUGIN_VERSION . '"></script>';
-            
-            // デバッグ用のHTMLコメントを追加
-            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                $front_message .= '<!-- KantanPro Debug: JavaScript file loaded -->';
+                $front_message .= '<!-- KantanPro Debug: update balloon assets enqueued -->';
             }
             // POST 時は tab_name を POST から優先（検索フォーム送信でタブが維持されるようにする）
             $tab_name = ( isset( $_POST['tab_name'] ) && is_string( $_POST['tab_name'] ) )

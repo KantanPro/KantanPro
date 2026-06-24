@@ -8,6 +8,11 @@
 /* ヘッダー更新チェックボタンの赤丸バッジ */
 #ktpwp-header-update-check {
     position: relative;
+    overflow: visible;
+}
+
+.ktp_header .navigation-links a.ktpwp-header-update-link {
+    overflow: visible;
 }
 
 .ktpwp-header-update-badge {
