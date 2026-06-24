@@ -86,9 +86,14 @@ if ( ! class_exists( 'KTPWP_Ui_Generator' ) ) {
 			}
 
 			// プリントボタン（現在表示されている内容を印刷ダイアログで表示）
-			$print_button = '<button type="button" onclick="typeof ktpReportPrintOpen === \'function\' && ktpReportPrintOpen();" title="' . esc_attr__( '印刷する', 'ktpwp' ) . '" style="padding: 6px 10px; font-size: 12px;">
-				<span class="material-symbols-outlined" aria-label="' . esc_attr__( '印刷', 'ktpwp' ) . '">print</span>
-			</button>';
+			$print_button = self::render_tab_print_button(
+				array(
+					'id'      => 'js-report-print-btn',
+					'label'   => __( 'レポート印刷', 'ktpwp' ),
+					'title'   => __( '印刷（ブラウザの印刷／PDFに保存）', 'ktpwp' ),
+					'onclick' => "typeof ktpReportPrintOpen === 'function' && ktpReportPrintOpen();",
+				)
+			);
 
 			return '<div class="controller ktp-report-controller">
 				<div class="ktp-report-controller__search">
@@ -127,6 +132,56 @@ if ( ! class_exists( 'KTPWP_Ui_Generator' ) ) {
 		 */
 		public function generate_workflow() {
 			return '<div class="workflow"></div>';
+		}
+
+		/**
+		 * KantanBiz 相当のタブ印刷ボタン HTML を生成する。
+		 *
+		 * @since 1.0.0
+		 * @param array<string, mixed> $args ボタン設定。
+		 * @return string
+		 */
+		public static function render_tab_print_button( $args = array() ) {
+			$args = wp_parse_args(
+				$args,
+				array(
+					'id'       => '',
+					'label'    => __( '印刷', 'ktpwp' ),
+					'title'    => __( '印刷（ブラウザの印刷／PDFに保存）', 'ktpwp' ),
+					'onclick'  => '',
+					'class'    => '',
+					'attrs'    => array(),
+					'disabled' => false,
+				)
+			);
+
+			$classes = trim( 'ktp-tab-print-btn js-tab-print-btn ' . (string) $args['class'] );
+			$attrs   = '';
+
+			foreach ( (array) $args['attrs'] as $key => $value ) {
+				if ( ! is_string( $key ) || $key === '' ) {
+					continue;
+				}
+				if ( $key === 'data-status-label-map' && is_array( $value ) ) {
+					$value = wp_json_encode( $value, JSON_UNESCAPED_UNICODE );
+				}
+				$attrs .= ' ' . esc_attr( $key ) . '="' . esc_attr( (string) $value ) . '"';
+			}
+
+			$id_attr      = $args['id'] !== '' ? ' id="' . esc_attr( (string) $args['id'] ) . '"' : '';
+			$onclick_attr = $args['onclick'] !== '' ? ' onclick="' . esc_attr( (string) $args['onclick'] ) . '"' : '';
+			$disabled     = ! empty( $args['disabled'] ) ? ' disabled' : '';
+
+			return '<button type="button"'
+				. $id_attr
+				. ' class="' . esc_attr( $classes ) . '"'
+				. ' title="' . esc_attr( (string) $args['title'] ) . '"'
+				. $onclick_attr
+				. $disabled
+				. $attrs
+				. '>'
+				. esc_html( (string) $args['label'] )
+				. '</button>';
 		}
 	}
 

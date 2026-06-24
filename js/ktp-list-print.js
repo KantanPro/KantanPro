@@ -1,6 +1,6 @@
 /**
  * 仕事リスト 印刷・PDF保存
- * 現在表示されている内容をポップアップで表示し、PDF保存・印刷ボタンを提供する。
+ * KantanBiz work-list-print.js と同様、ボタンの data 属性から印刷メタを組み立てる。
  *
  * @package KTPWP
  * @since 1.0.0
@@ -9,31 +9,74 @@
 (function ($) {
     'use strict';
 
-    /**
-     * 仕事リストを直接印刷ダイアログで開く（プレビューUIは表示しない）
-     */
-    function showListPrintPopup() {
-        var $area = $('#ktp_list_print_area');
-        if (!$area.length) {
-            alert(ktpwpTranslate('印刷する内容が見つかりません。'));
-            return;
-        }
+    function sanitizeFilename(value) {
+        return String(value)
+            .replace(/[\u0000-\u001F\/\\:\uFF1A*\?"<>\|]/g, '-')
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
 
-        function sanitizeFilename(value) {
-            // Print to PDF の提案名に禁止文字が含まれるとフォールバック名になることがあるためサニタイズする
-            return String(value)
-                .replace(/[\u0000-\u001F\/\\:\uFF1A*\?"<>\|]/g, '-')
-                .replace(/\s+/g, ' ')
-                .trim();
-        }
+    function escapeHtml(value) {
+        return String(value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
 
-        // 選択中の進捗(progress)から進捗名を決定（URLパラメータを優先）
+    function getPrintOfficeName(btn) {
+        var footer = '';
+        if (btn && btn.dataset && btn.dataset.printFooterName) {
+            footer = String(btn.dataset.printFooterName).trim();
+        }
+        if (!footer) {
+            try {
+                footer = ($('#ktp_list_print_area').find('#ktp_list_my_company_name').text() || '').trim();
+            } catch (e) {}
+        }
+        if (!footer) {
+            footer = '（自社名未設定）';
+        }
+        return footer;
+    }
+
+    function buildListPrintMeta(btn, area) {
+        var printDate = new Date();
+        var yyyy = printDate.getFullYear();
+        var mm = String(printDate.getMonth() + 1).padStart(2, '0');
+        var dd = String(printDate.getDate()).padStart(2, '0');
+        var ymd = yyyy + mm + dd;
+        var printDateYmdDisplay = yyyy + '-' + mm + '-' + dd;
+
         var progressParam = 1;
+        var statusLabelMap = {};
+        var defaultStatusLabel = typeof ktpwpTranslate === 'function'
+            ? ktpwpTranslate('進捗タブ')
+            : '進捗タブ';
+
         try {
             var sp = new URLSearchParams(window.location.search);
             var p = sp.get('progress');
             progressParam = p ? parseInt(p, 10) : 1;
         } catch (e) {}
+
+        try {
+            statusLabelMap = JSON.parse((btn && btn.dataset ? btn.dataset.statusLabelMap : '') || '{}');
+        } catch (e) {
+            statusLabelMap = {};
+        }
+
+        if (btn && btn.dataset && btn.dataset.defaultStatusLabel) {
+            defaultStatusLabel = btn.dataset.defaultStatusLabel.trim() || defaultStatusLabel;
+        }
+
+        if (btn && btn.dataset && btn.dataset.selectedProgress) {
+            var selected = parseInt(btn.dataset.selectedProgress, 10);
+            if (!isNaN(selected)) {
+                progressParam = selected;
+            }
+        }
 
         var progressLabels = {
             1: '受付中',
@@ -44,40 +87,53 @@
             6: '入金済'
         };
 
-        var progressName = progressLabels[progressParam] || '進捗';
-
-        // 印刷日（YYYYMMDD）
-        var printDate = new Date();
-        var yyyy = printDate.getFullYear();
-        var mm = String(printDate.getMonth() + 1).padStart(2, '0');
-        var dd = String(printDate.getDate()).padStart(2, '0');
-        var ymd = yyyy + mm + dd;
-        var printDateYmdDisplay = yyyy + '-' + mm + '-' + dd;
-
-        // filename は「拡張子なし」。d.title / document.title 側で .pdf を付与する
-        var filename = sanitizeFilename(progressName) + '_' + ymd;
-        function escapeHtml(value) {
-            return String(value)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#039;');
+        var statusLabel = (btn && btn.dataset && btn.dataset.printTitle)
+            ? btn.dataset.printTitle.trim()
+            : '';
+        if (!statusLabel && btn && btn.dataset && btn.dataset.selectedStatusLabel) {
+            statusLabel = btn.dataset.selectedStatusLabel.trim();
+        }
+        if (!statusLabel) {
+            statusLabel = statusLabelMap[String(progressParam)] || progressLabels[progressParam] || defaultStatusLabel;
         }
 
-        // ヘッダー表示用：ファイル名用のサニタイズはせず、表示文字「：」を維持する
-        var headerText = escapeHtml(progressName + '：' + printDateYmdDisplay);
+        var filename = sanitizeFilename(statusLabel) + '_' + ymd;
+        var headerFormat = (btn && btn.dataset && btn.dataset.printHeaderFormat)
+            ? btn.dataset.printHeaderFormat.trim()
+            : ':statusの作業リスト';
+        var listTitle = (btn && btn.dataset && btn.dataset.printListTitle)
+            ? btn.dataset.printListTitle.trim()
+            : '作業リスト';
+        var headerTitle = statusLabel
+            ? headerFormat.replace(':status', statusLabel)
+            : listTitle;
+        var headerText = escapeHtml(headerTitle + ' ' + printDateYmdDisplay);
+        var footerText = escapeHtml(getPrintOfficeName(btn));
 
-        // 自社名（サーバで埋め込んだ隠し要素から取得）
-        var footerText = '';
-        try {
-            footerText = ($area.find('#ktp_list_my_company_name').text() || '').trim();
-        } catch (e) {}
-        if (!footerText) {
-            footerText = '（自社名未設定）';
+        return {
+            progressParam: progressParam,
+            filename: filename,
+            headerText: headerText,
+            footerText: footerText,
+            areaHtmlFallback: area ? area.innerHTML : ''
+        };
+    }
+
+    /**
+     * 仕事リストを直接印刷ダイアログで開く（プレビューUIは表示しない）
+     */
+    function showListPrintPopup(triggerBtn) {
+        var $area = $('#ktp_list_print_area');
+        if (!$area.length) {
+            alert(ktpwpTranslate('印刷する内容が見つかりません。'));
+            return;
         }
 
-        // ページネーション無視：進捗指定で print_all=1 の一覧HTMLを取りに行く
+        var btn = triggerBtn instanceof HTMLElement
+            ? triggerBtn
+            : document.getElementById('js-work-list-print-btn');
+        var meta = buildListPrintMeta(btn, $area.get(0));
+
         (function loadFullListForPrint() {
             var iframe = document.createElement('iframe');
             iframe.style.cssText = 'position:fixed;right:-9999px;bottom:-9999px;width:0;height:0;border:0;visibility:hidden;';
@@ -87,26 +143,26 @@
             try {
                 url = new URL(window.location.href);
             } catch (e) {
-                // URL APIが使えない環境はフォールバック（この場合は現状HTMLのまま）
-                printListDirect($area.html(), filename, headerText, footerText);
+                printListDirect($area.html(), meta.filename, meta.headerText, meta.footerText);
                 try { document.body.removeChild(iframe); } catch (_) {}
                 return;
             }
 
             url.searchParams.set('print_all', '1');
-            url.searchParams.set('progress', String(progressParam));
+            url.searchParams.set('progress', String(meta.progressParam));
             url.searchParams.set('page_start', '0');
             url.searchParams.delete('page_stage');
+            url.searchParams.delete('list_search');
 
             iframe.onload = function() {
                 try {
                     var doc = iframe.contentDocument || iframe.contentWindow.document;
                     var listBox = doc.querySelector('#ktp_list_print_area .ktp_work_list_box');
                     if (listBox) {
-                        printListDirect(listBox.outerHTML, filename, headerText, footerText);
+                        printListDirect(listBox.outerHTML, meta.filename, meta.headerText, meta.footerText);
                     } else {
                         var areaHtml = doc.querySelector('#ktp_list_print_area');
-                        printListDirect(areaHtml ? areaHtml.innerHTML : $area.html(), filename, headerText, footerText);
+                        printListDirect(areaHtml ? areaHtml.innerHTML : meta.areaHtmlFallback, meta.filename, meta.headerText, meta.footerText);
                     }
                 } catch (e) {
                     console.error('[KTP-LIST-PRINT] 全件取得失敗:', e);
@@ -151,7 +207,6 @@
                 var frameWin = iframe.contentWindow || iframe;
                 frameWin.focus();
                 frameWin.onafterprint = cleanup;
-                // 環境によっては親 document.title が提案名に使われるため、直前に合わせる
                 try { document.title = filename + '.pdf'; } catch (e) {}
                 setTimeout(function () {
                     try {
@@ -172,7 +227,6 @@
                     var d = iframe.contentDocument || iframe.contentWindow.document;
                     if (d && d.title !== undefined) {
                         d.title = filename + '.pdf';
-                        // <title> 要素も更新（提案名が title 要素を読む場合に備える）
                         if (d.head) {
                             var titleEl = d.head.querySelector('title');
                             if (titleEl) {
@@ -200,7 +254,6 @@
     /**
      * 印刷用HTMLを生成（スタイル付き）
      */
-    // header/footer は fixed で常に各ページに表示する
     function createListPrintableHTML(content, filename, headerText, footerText) {
         return '<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8">'
             + '<meta name="viewport" content="width=device-width,initial-scale=1.0">'
@@ -258,6 +311,27 @@
             + '</div></body></html>';
     }
 
-    window.ktpListPrintOpen = showListPrintPopup;
+    $(document).on('click', '#js-work-list-print-btn', function (event) {
+        var btn = event.currentTarget;
+        if (!btn || btn.disabled || btn.dataset.ktpPrintBusy === '1') {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+        btn.dataset.ktpPrintBusy = '1';
+
+        try {
+            showListPrintPopup(btn);
+        } finally {
+            window.setTimeout(function () {
+                delete btn.dataset.ktpPrintBusy;
+            }, 1500);
+        }
+    });
+
+    window.ktpListPrintOpen = function (triggerBtn) {
+        showListPrintPopup(triggerBtn || document.getElementById('js-work-list-print-btn'));
+    };
 
 })(jQuery);

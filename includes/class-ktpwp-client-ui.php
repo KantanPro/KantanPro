@@ -61,7 +61,7 @@ if ( ! class_exists( 'KTPWP_Client_UI' ) ) {
 			if ( isset( $_GET['sort_by'] ) ) {
 				$sort_by = sanitize_text_field( $_GET['sort_by'] );
 				// 安全なカラム名のみ許可（SQLインジェクション対策）
-				$allowed_columns = array( 'id', 'company_name', 'frequency', 'time', 'client_status', 'category' );
+				$allowed_columns = array( 'id', 'company_name', 'name', 'phone', 'frequency', 'time', 'client_status' );
 				if ( ! in_array( $sort_by, $allowed_columns ) ) {
 					$sort_by = 'id'; // 不正な値の場合はデフォルトに戻す
 				}
@@ -196,6 +196,8 @@ if ( ! class_exists( 'KTPWP_Client_UI' ) ) {
 			$html = <<<END
         <div class="ktp_data_contents">
             <div class="ktp_data_list_box">
+            <div id="ktp-clients-print-list-area">
+            <div id="ktp-clients-print-list-only">
             <div class="data_list_title">$list_title $sort_dropdown</div>
         END;
 

@@ -73,6 +73,9 @@
             e.preventDefault();
             
             const orderId = $(this).data('order-id');
+            const $btn = $(this);
+            const defaultLabel = String($btn.data('default-label') || '受注書印刷');
+            const loadingLabel = String($btn.data('loading-label') || '読み込み中…');
             
             if (!orderId) {
                 console.error('[ORDER-PREVIEW] 受注書IDが見つかりません');
@@ -80,8 +83,7 @@
                 return;
             }
 
-            // ローディング表示
-            $(this).prop('disabled', true).html(typeof KTPSvgIcons !== 'undefined' ? KTPSvgIcons.getIcon('hourglass_empty') : '<span class="material-symbols-outlined">hourglass_empty</span>');
+            $btn.prop('disabled', true).text(loadingLabel);
             
             // Ajaxで最新のプレビューデータを取得
             $.ajax({
@@ -118,8 +120,9 @@
                     alert(ktpwpTranslate('プレビューデータの取得中にエラーが発生しました: ') + error);
                 },
                 complete: function() {
-                    // ボタンを元に戻す
-                    $('#orderPreviewButton').prop('disabled', false).html(typeof KTPSvgIcons !== 'undefined' ? KTPSvgIcons.getIcon('print', {'aria-label': '印刷する'}) : '<span class="material-symbols-outlined" aria-label="印刷する">print</span>');
+                    const $printBtn = $('#orderPreviewButton');
+                    const restoreLabel = String($printBtn.data('default-label') || '受注書印刷');
+                    $printBtn.prop('disabled', false).text(restoreLabel);
                 }
             });
         });
@@ -251,13 +254,7 @@
         const safeTitle = safeBaseTitle + '.pdf';
 
         const iframe = document.createElement('iframe');
-        iframe.style.position = 'fixed';
-        iframe.style.right = '0';
-        iframe.style.bottom = '0';
-        iframe.style.width = '0';
-        iframe.style.height = '0';
-        iframe.style.border = '0';
-        iframe.style.visibility = 'hidden';
+        iframe.style.cssText = 'position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;border:0;opacity:0;pointer-events:none;';
         document.body.appendChild(iframe);
 
         let cleanupDone = false;

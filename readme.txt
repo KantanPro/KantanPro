@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.2.94
+Stable tag: 1.2.95
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -322,6 +322,10 @@ curl -sS -X POST \
 * MySQL 5.6 以上 または MariaDB 10.0 以上
 * 推奨メモリ: 256MB 以上
 * 推奨PHP拡張: GD（画像処理用）
+
+= 1.2.95 - 2026年06月24日 =
+* 各タブの印刷をKantanBiz準拠のテキストラベルボタンに統一（作業リスト・受注書・レポート・顧客・サービス・協力会社リスト）
+* マスタ一覧の全件印刷（print_all）と受注書帳票の進捗別タイトル・見積／原価明細の出し分けを追加
 
 = 1.2.94 - 2026年06月22日 =
 * サービス更新後に更新したサービスが表示されるようリダイレクトを修正

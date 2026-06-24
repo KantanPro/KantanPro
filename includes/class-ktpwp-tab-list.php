@@ -99,11 +99,55 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 			}
 			$content .= '</div>';
 
-			// Print button（現在表示されている内容を印刷ダイアログで表示し、PDF保存・印刷可能）
+			$selected_progress = isset( $_GET['progress'] ) ? absint( $_GET['progress'] ) : 1;
+
+			$progress_labels_for_print = array(
+				1 => __( '受付中', 'ktpwp' ),
+				2 => __( '見積中', 'ktpwp' ),
+				3 => __( '受注', 'ktpwp' ),
+				4 => __( '完了', 'ktpwp' ),
+				5 => __( '請求済', 'ktpwp' ),
+				6 => __( '入金済', 'ktpwp' ),
+			);
+			$selected_progress_label   = isset( $progress_labels_for_print[ $selected_progress ] )
+				? $progress_labels_for_print[ $selected_progress ]
+				: __( '進捗タブ', 'ktpwp' );
+			$status_label_map          = array();
+			foreach ( $progress_labels_for_print as $num => $label ) {
+				$status_label_map[ (string) $num ] = $label;
+			}
+			$my_company_for_print = '';
+			if ( class_exists( 'KTPWP_Settings' ) ) {
+				$my_company_for_print = KTPWP_Settings::get_company_info();
+			}
+			if ( empty( $my_company_for_print ) ) {
+				$my_company_for_print = get_bloginfo( 'name' );
+			}
+			$my_company_for_print = wp_strip_all_tags( (string) $my_company_for_print );
+			$my_company_for_print = preg_replace( '/\S+@\S+\.\S+/', '', $my_company_for_print );
+			$my_company_for_print = preg_replace( '/\s+/', ' ', trim( $my_company_for_print ) );
+
+			// Print button（KantanBiz 相当：テキストラベル＋data 属性）
 			$content .= '<div class="ktp-list-controller__tools">';
-			$content .= '<button type="button" title="' . esc_attr__( '印刷する', 'ktpwp' ) . '" onclick="typeof ktpListPrintOpen === \'function\' && ktpListPrintOpen();" style="padding: 6px 10px; font-size: 12px;">';
-			$content .= '<span class="material-symbols-outlined" aria-label="' . esc_attr__( '印刷', 'ktpwp' ) . '">print</span>';
-			$content .= '</button>';
+			if ( class_exists( 'KTPWP_Ui_Generator' ) ) {
+				$content .= KTPWP_Ui_Generator::render_tab_print_button(
+					array(
+						'id'     => 'js-work-list-print-btn',
+						'label'  => __( '作業リスト印刷', 'ktpwp' ),
+						'title'  => __( '印刷（ブラウザの印刷／PDFに保存）', 'ktpwp' ),
+						'attrs'  => array(
+							'data-print-list-title'       => __( '作業リスト', 'ktpwp' ),
+							'data-print-header-format'    => ':statusの作業リスト',
+							'data-selected-progress'      => (string) $selected_progress,
+							'data-selected-status-label'  => $selected_progress_label,
+							'data-print-title'            => $selected_progress_label,
+							'data-default-status-label'   => __( '進捗タブ', 'ktpwp' ),
+							'data-status-label-map'       => $status_label_map,
+							'data-print-footer-name'      => $my_company_for_print,
+						),
+					)
+				);
+			}
 			$content .= '</div>';
 			$content .= '</div>';
 			$content .= '</div>'; // .controller end
@@ -119,7 +163,6 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 				7 => __( 'ボツ', 'ktpwp' ),
 			);
 
-			$selected_progress = isset( $_GET['progress'] ) ? absint( $_GET['progress'] ) : 1;
 			// 印刷時だけページネーションを無視して全件取得する
 			$print_all = isset( $_GET['print_all'] ) && (string) $_GET['print_all'] !== '' && (string) $_GET['print_all'] !== '0';
 
@@ -926,7 +969,6 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 
 			// 納期フィールドのJavaScriptファイルを読み込み
 			wp_enqueue_script( 'ktp-delivery-dates' );
-			wp_enqueue_script( 'ktp-list-print', plugins_url( 'js/ktp-list-print.js', dirname( __FILE__ ) ) . '?v=' . ( defined( 'KANTANPRO_PLUGIN_VERSION' ) ? KANTANPRO_PLUGIN_VERSION : '1.0' ), array( 'jquery' ), ( defined( 'KANTANPRO_PLUGIN_VERSION' ) ? KANTANPRO_PLUGIN_VERSION : '1.0' ), true );
 
 			return $content;
 		}

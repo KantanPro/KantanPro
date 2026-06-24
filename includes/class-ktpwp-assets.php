@@ -562,6 +562,20 @@ class KTPWP_Assets {
                     ),
                 ),
             ),
+            'ktp-list-print' => array(
+                'src'       => 'js/ktp-list-print.js',
+                'deps'      => array( 'jquery' ),
+                'ver'       => KTPWP_PLUGIN_VERSION . '.' . filemtime( KTPWP_PLUGIN_DIR . 'js/ktp-list-print.js' ),
+                'in_footer' => true,
+                'admin'     => false,
+            ),
+            'ktp-tab-list-print' => array(
+                'src'       => 'js/ktp-tab-list-print.js',
+                'deps'      => array( 'jquery' ),
+                'ver'       => KTPWP_PLUGIN_VERSION . '.' . filemtime( KTPWP_PLUGIN_DIR . 'js/ktp-tab-list-print.js' ),
+                'in_footer' => true,
+                'admin'     => false,
+            ),
             'ktp-order-delete-confirm' => array(
                 'src'       => 'js/ktp-order-delete-confirm.js',
                 'deps'      => array(),
@@ -746,8 +760,12 @@ class KTPWP_Assets {
         // サービス／協力会社／顧客タブでは受注書関連の重いJSを読み込まない
         // （メモ欄クリック時のフリーズ・ページ読み込み遅延の主原因対策）
         $current_tab_name = '';
-        if ( ! $is_admin && isset( $_GET['tab_name'] ) ) {
-            $current_tab_name = sanitize_text_field( wp_unslash( $_GET['tab_name'] ) );
+        if ( ! $is_admin ) {
+            if ( isset( $_POST['tab_name'] ) && is_string( $_POST['tab_name'] ) ) {
+                $current_tab_name = sanitize_text_field( wp_unslash( $_POST['tab_name'] ) );
+            } elseif ( isset( $_GET['tab_name'] ) ) {
+                $current_tab_name = sanitize_text_field( wp_unslash( $_GET['tab_name'] ) );
+            }
         }
 
         $non_order_tabs = array( 'service', 'supplier', 'client', 'report', 'list' );
@@ -777,11 +795,15 @@ class KTPWP_Assets {
             'ktp-progress-select',
         );
 
+        // マスタ一覧タブ（顧客・サービス等）のリスト印刷
+        $tab_list_print_tabs         = array( 'client', 'service', 'supplier' );
+        $tab_list_print_only_scripts = array( 'ktp-tab-list-print' );
+
         // 顧客タブ専用（顧客以外のタブでは不要な MutationObserver を避ける）
         $client_only_scripts = array( 'ktp-client-delete-popup', 'ktp-client-invoice', 'ktp-client-contract' );
 
         // 仕事リストタブ専用
-        $list_only_scripts = array( 'ktp-contract-billing' );
+        $list_only_scripts = array( 'ktp-contract-billing', 'ktp-list-print' );
 
         // 宛名印刷（顧客・協力会社タブ）
         $atena_print_tabs         = array( 'client', 'supplier' );
@@ -801,6 +823,12 @@ class KTPWP_Assets {
                 // 顧客タブ以外では顧客専用JSをスキップ
                 if ( ! $is_admin && $current_tab_name !== '' && $current_tab_name !== 'client'
                     && in_array( $handle, $client_only_scripts, true ) ) {
+                    continue;
+                }
+                // リスト印刷JSは対象マスタタブのみ
+                if ( ! $is_admin && $current_tab_name !== ''
+                    && ! in_array( $current_tab_name, $tab_list_print_tabs, true )
+                    && in_array( $handle, $tab_list_print_only_scripts, true ) ) {
                     continue;
                 }
                 // 仕事リスト以外では定期請求JSをスキップ

@@ -1639,9 +1639,20 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 					$content .= '<div class="ktp-order-controller__tools">';
 					$content .= '<div class="ktp-order-title-actions">';
 					// プレビューボタン（受注書IDのみ保持、最新データはAjaxで取得）
-					$content .= '<button id="orderPreviewButton" class="ktp-title-icon-btn print-btn" data-order-id="' . esc_attr( $order_data->id ) . '" title="' . esc_attr__( '印刷する', 'ktpwp' ) . '" aria-label="' . esc_attr__( '印刷する', 'ktpwp' ) . '">';
-					$content .= '<span class="material-symbols-outlined" aria-hidden="true">print</span>';
-					$content .= '</button>';
+					if ( class_exists( 'KTPWP_Ui_Generator' ) ) {
+						$content .= KTPWP_Ui_Generator::render_tab_print_button(
+							array(
+								'id'     => 'orderPreviewButton',
+								'label'  => __( '受注書印刷', 'ktpwp' ),
+								'title'  => $this->Get_Order_Print_Button_Title( (int) $order_data->progress ),
+								'attrs'  => array(
+									'data-order-id'       => (string) $order_data->id,
+									'data-default-label'  => __( '受注書印刷', 'ktpwp' ),
+									'data-loading-label'  => __( '読み込み中…', 'ktpwp' ),
+								),
+							)
+						);
+					}
 
 					// 顧客情報に基づいてメールボタンの状態を制御
 					$client = null;
@@ -2087,9 +2098,16 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 					// 右側：プレビューボタンとメールボタン（無効化）
 					$content .= '<div class="ktp-order-controller__tools">';
 					$content .= '<div class="ktp-order-title-actions">';
-					$content .= '<button id="orderPreviewButton" class="ktp-title-icon-btn print-btn" disabled title="' . esc_attr__( '印刷する', 'ktpwp' ) . '" aria-label="' . esc_attr__( '印刷する', 'ktpwp' ) . '">';
-					$content .= '<span class="material-symbols-outlined" aria-hidden="true">print</span>';
-					$content .= '</button>';
+					if ( class_exists( 'KTPWP_Ui_Generator' ) ) {
+						$content .= KTPWP_Ui_Generator::render_tab_print_button(
+							array(
+								'id'       => 'orderPreviewButton',
+								'label'    => __( '受注書印刷', 'ktpwp' ),
+								'title'    => __( '印刷（ブラウザの印刷／PDFに保存）', 'ktpwp' ),
+								'disabled' => true,
+							)
+						);
+					}
 					$content .= '<button class="ktp-title-icon-btn order-mail-btn" disabled title="' . esc_attr__( 'メール送信不可', 'ktpwp' ) . '" aria-label="' . esc_attr__( 'メール送信不可', 'ktpwp' ) . '">';
 					$content .= '<span class="material-symbols-outlined" aria-hidden="true">mail</span>';
 					$content .= '</button>';
@@ -2125,9 +2143,16 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 				// 右側：プレビューボタンとメールボタン（無効化）
 				$content .= '<div class="ktp-order-controller__tools">';
 				$content .= '<div class="ktp-order-title-actions">';
-				$content .= '<button id="orderPreviewButton" class="ktp-title-icon-btn print-btn" disabled title="' . esc_attr__( '印刷する', 'ktpwp' ) . '" aria-label="' . esc_attr__( '印刷する', 'ktpwp' ) . '">';
-				$content .= '<span class="material-symbols-outlined" aria-hidden="true">print</span>';
-				$content .= '</button>';
+				if ( class_exists( 'KTPWP_Ui_Generator' ) ) {
+					$content .= KTPWP_Ui_Generator::render_tab_print_button(
+						array(
+							'id'       => 'orderPreviewButton',
+							'label'    => __( '受注書印刷', 'ktpwp' ),
+							'title'    => __( '印刷（ブラウザの印刷／PDFに保存）', 'ktpwp' ),
+							'disabled' => true,
+						)
+					);
+				}
 				$content .= '<button class="ktp-title-icon-btn order-mail-btn" disabled title="' . esc_attr__( 'メール送信不可', 'ktpwp' ) . '" aria-label="' . esc_attr__( 'メール送信不可', 'ktpwp' ) . '">';
 				$content .= '<span class="material-symbols-outlined" aria-hidden="true">mail</span>';
 				$content .= '</button>';
@@ -2555,8 +2580,15 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 				? KTPWP_Pdf_Document_Settings::resolve_title( $pdf_kind, $document_info['title'] )
 				: $document_info['title'];
 			$doc_lead = class_exists( 'KTPWP_Pdf_Document_Settings' )
-				? KTPWP_Pdf_Document_Settings::resolve_lead( $pdf_kind, sprintf( $document_info['content'], '%s' ) )
-				: sprintf( $document_info['content'], '%s' );
+				? KTPWP_Pdf_Document_Settings::resolve_lead( $pdf_kind, $document_info['content'] )
+				: $document_info['content'];
+			$use_project_name_in_lead = ! empty( $document_info['use_project_name'] );
+			$uses_estimate_layout     = class_exists( 'KTPWP_Pdf_Document_Kind' )
+				? KTPWP_Pdf_Document_Kind::print_uses_estimate_layout( $order_data->progress )
+				: in_array( (int) $order_data->progress, array( 1, 2 ), true );
+			$shows_cost_section       = class_exists( 'KTPWP_Pdf_Document_Kind' )
+				? KTPWP_Pdf_Document_Kind::print_shows_cost_section( $order_data->progress )
+				: in_array( (int) $order_data->progress, array( 3, 7 ), true );
 
 			// 案件名の取得（空の場合はデフォルト値）
 			$project_name = ! empty( $order_data->project_name ) ? $order_data->project_name : '案件';
@@ -2688,13 +2720,43 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 
 			// 帳票内容（コンパクト）
 			$html .= '<div class="document-content" style="margin: 0 0 12px 0; font-size: 14px;">';
-			$html .= esc_html( sprintf( $doc_lead, $project_name ) );
+			if ( $use_project_name_in_lead ) {
+				$html .= esc_html( sprintf( $doc_lead, $project_name ) );
+			} else {
+				$html .= esc_html( $doc_lead );
+			}
 			$html .= '</div>';
+
+			if ( $uses_estimate_layout ) {
+				$issued_at   = wp_date( __( 'Y年n月j日', 'ktpwp' ), time() );
+				$valid_until = wp_date( __( 'Y年n月j日', 'ktpwp' ), strtotime( '+30 days' ) );
+				$html       .= '<p class="estimate-print-meta" style="font-size: 12px; color: #666; margin: 0 0 8px;">';
+				$html       .= esc_html(
+					sprintf(
+						__( '発行日: %1$s / 見積有効期限: %2$s（発行日から30日間）', 'ktpwp' ),
+						$issued_at,
+						$valid_until
+					)
+				);
+				$html .= '</p>';
+				$html .= '<p class="estimate-print-notice" style="font-size: 12px; color: #666; margin: 0 0 12px;">';
+				$html .= esc_html__( '本書は発行日時点の見積であり、正式な請求内容は受注確定後の契約・請求書に準じます。', 'ktpwp' );
+				$html .= '</p>';
+			}
 
 			// 請求項目（メインコンテンツ）
 			$html .= '<div class="invoice-items" style="margin-bottom: 20px;">';
 			$html .= $invoice_items_html;
 			$html .= '</div>';
+
+			if ( $shows_cost_section ) {
+				$cost_items_html = $this->Generate_Cost_Items_For_Preview( $order_data->id );
+				if ( $cost_items_html !== '' ) {
+					$html .= '<div class="cost-items" style="margin-bottom: 20px;">';
+					$html .= $cost_items_html;
+					$html .= '</div>';
+				}
+			}
 
 			// 自社情報（コンパクト）
 			$html .= '<div class="company-info" style="margin-bottom: 15px;">';
@@ -2706,7 +2768,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 			}
 			$html .= '</div>';
 
-			if ( ! empty( $this->preview_doc_settings['show_bank_transfer'] ) && class_exists( 'KTPWP_Settings' ) ) {
+			if ( $uses_estimate_layout && ! empty( $this->preview_doc_settings['show_bank_transfer'] ) && class_exists( 'KTPWP_Settings' ) ) {
 				$bank_html = KTPWP_Settings::get_bank_transfer_invoice_html();
 				if ( $bank_html !== '' ) {
 					$html .= $bank_html;
@@ -2750,43 +2812,138 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 		 * @since 1.0.0
 		 */
 		private function Get_Document_Info_By_Progress( $progress ) {
-			switch ( $progress ) {
-				case 1: // 受付中
+			// KantanBiz Order::printDocumentTitle / printDocumentLead に準拠
+			switch ( (int) $progress ) {
+				case 1:
 					return array(
-						'title' => __( '見積書', 'ktpwp' ),
-						'content' => __( '%sにつきましてお見積りいたします。', 'ktpwp' ),
+						'title'            => __( '見積書', 'ktpwp' ),
+						'content'          => __( '「%s」につきまして、下記のとおりお見積り申し上げます。', 'ktpwp' ),
+						'use_project_name' => true,
 					);
-				case 2: // 見積中
+				case 2:
 					return array(
-						'title' => __( '注文受書', 'ktpwp' ),
-						'content' => __( '%sにつきましてご注文をお受けしました。', 'ktpwp' ),
+						'title'            => __( '注文受書', 'ktpwp' ),
+						'content'          => __( '「%s」につきまして、下記のとおりお見積り申し上げます。', 'ktpwp' ),
+						'use_project_name' => true,
 					);
-				case 3: // 受注
+				case 3:
 					return array(
-						'title' => __( '納品書', 'ktpwp' ),
-						'content' => __( '%sにつきまして完了しました。', 'ktpwp' ),
+						'title'            => __( '注文受書', 'ktpwp' ),
+						'content'          => __( '「%s」について、ご注文をお承りしました。', 'ktpwp' ),
+						'use_project_name' => true,
 					);
-				case 4: // 完了
+				case 4:
 					return array(
-						'title' => __( '請求書', 'ktpwp' ),
-						'content' => __( '%sにつきまして請求申し上げます。', 'ktpwp' ),
+						'title'            => __( '納品書', 'ktpwp' ),
+						'content'          => __( '「%s」につきまして、下記のとおり納品いたしました。', 'ktpwp' ),
+						'use_project_name' => true,
 					);
-				case 5: // 請求済
+				case 5:
 					return array(
-						'title' => __( '領収書', 'ktpwp' ),
-						'content' => __( '%sにつきましてお支払いを確認しました。', 'ktpwp' ),
+						'title'            => __( '請求書', 'ktpwp' ),
+						'content'          => __( '「%s」につきまして、下記のとおりご請求申し上げます。', 'ktpwp' ),
+						'use_project_name' => true,
 					);
-				case 6: // 入金済
+				case 6:
 					return array(
-						'title' => __( '案件完了', 'ktpwp' ),
-						'content' => __( '%sにつきましては全て完了しています。', 'ktpwp' ),
+						'title'            => __( '領収書', 'ktpwp' ),
+						'content'          => __( '「%s」の代金につきまして、下記のとおり領収いたしました。', 'ktpwp' ),
+						'use_project_name' => true,
+					);
+				case 7:
+					return array(
+						'title'            => __( '案件（ボツ）', 'ktpwp' ),
+						'content'          => __( '本出力はボツ案件の記録用です。', 'ktpwp' ),
+						'use_project_name' => false,
 					);
 				default:
 					return array(
-						'title' => __( '受注書', 'ktpwp' ),
-						'content' => __( '%sにつきましてご依頼をお受けしました。', 'ktpwp' ),
+						'title'            => __( '受注書', 'ktpwp' ),
+						'content'          => __( '「%s」につきまして、下記のとおりお見積り申し上げます。', 'ktpwp' ),
+						'use_project_name' => true,
 					);
 			}
+		}
+
+		/**
+		 * 受注書印刷ボタンの title 属性（SaaS orders.print_title 相当）
+		 *
+		 * @param int $progress 進捗 1–7
+		 */
+		private function Get_Order_Print_Button_Title( $progress ) {
+			$document_info = $this->Get_Document_Info_By_Progress( $progress );
+			$status_label  = class_exists( 'KTPWP_Pdf_Document_Kind' )
+				? KTPWP_Pdf_Document_Kind::progress_label( $progress )
+				: '';
+
+			if ( $status_label === '' ) {
+				return __( '印刷（ブラウザの印刷／PDFに保存）', 'ktpwp' );
+			}
+
+			return sprintf(
+				__( '進捗「%1$s」に応じて「%2$s」として出力します', 'ktpwp' ),
+				$status_label,
+				$document_info['title']
+			);
+		}
+
+		/**
+		 * プレビュー用原価明細HTMLを生成
+		 *
+		 * @param int $order_id 受注書ID
+		 * @return string HTML（明細なしの場合は空文字）
+		 */
+		private function Generate_Cost_Items_For_Preview( $order_id ) {
+			$cost_items = $this->Get_Cost_Items( $order_id );
+			if ( empty( $cost_items ) || ! is_array( $cost_items ) ) {
+				return '';
+			}
+
+			global $wpdb;
+			$supplier_table = $wpdb->prefix . 'ktp_supplier';
+
+			$html  = '<h3 style="font-size: 16px; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #333;">';
+			$html .= esc_html__( '原価明細', 'ktpwp' );
+			$html .= '</h3>';
+			$html .= '<table style="width: 100%; border-collapse: collapse; margin-bottom: 12px;">';
+			$html .= '<thead><tr>';
+			$html .= '<th style="border: 1px solid #d1d5db; padding: 6px 8px; text-align: left;">' . esc_html__( '商品名', 'ktpwp' ) . '</th>';
+			$html .= '<th style="border: 1px solid #d1d5db; padding: 6px 8px; text-align: left;">' . esc_html__( '協力会社', 'ktpwp' ) . '</th>';
+			$html .= '<th style="border: 1px solid #d1d5db; padding: 6px 8px; text-align: right;">' . esc_html__( '金額', 'ktpwp' ) . '</th>';
+			$html .= '</tr></thead><tbody>';
+
+			foreach ( $cost_items as $item ) {
+				$product_name  = isset( $item['product_name'] ) ? (string) $item['product_name'] : '';
+				$supplier_name = '—';
+				$supplier_id   = isset( $item['supplier_id'] ) ? (int) $item['supplier_id'] : 0;
+				if ( $supplier_id > 0 ) {
+					$fetched = $wpdb->get_var(
+						$wpdb->prepare(
+							"SELECT company_name FROM `{$supplier_table}` WHERE id = %d",
+							$supplier_id
+						)
+					);
+					if ( is_string( $fetched ) && $fetched !== '' ) {
+						$supplier_name = $fetched;
+					}
+				}
+				$amount = isset( $item['amount'] ) ? floatval( $item['amount'] ) : 0;
+				if ( $amount <= 0 && isset( $item['price'], $item['quantity'] ) ) {
+					$amount = floatval( $item['price'] ) * floatval( $item['quantity'] );
+				}
+
+				$html .= '<tr>';
+				$html .= '<td style="border: 1px solid #d1d5db; padding: 6px 8px;">' . esc_html( $product_name ) . '</td>';
+				$html .= '<td style="border: 1px solid #d1d5db; padding: 6px 8px;">' . esc_html( $supplier_name ) . '</td>';
+				$html .= '<td style="border: 1px solid #d1d5db; padding: 6px 8px; text-align: right;">';
+				$html .= esc_html( class_exists( 'KTPWP_Settings' ) ? KTPWP_Settings::format_money( $amount ) : (string) $amount );
+				$html .= '</td>';
+				$html .= '</tr>';
+			}
+
+			$html .= '</tbody></table>';
+
+			return $html;
 		}
 
 		/**

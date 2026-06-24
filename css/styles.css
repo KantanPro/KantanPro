@@ -2697,8 +2697,12 @@ form > .create-order-btn {
   width: 16%;
 }
 
-.ktp-service-list-table.ktp-list-table--party .col-category {
-  width: 26%;
+.ktp-service-list-table.ktp-list-table--party .col-phone {
+  width: 18%;
+}
+
+.ktp-service-list-table.ktp-list-table--party .col-category.no-print {
+  width: 16%;
 }
 
 .ktp-service-list-table.ktp-list-table--party .col-frequency {
@@ -3950,6 +3954,35 @@ div.ktp-report-print-area {
 .ktp_plugin_container .ktp-report-controller__bar .ktp-report-controller__main {
   flex: 1 1 auto;
   gap: 4px;
+}
+
+/* KantanBiz 相当のタブ印刷ボタン（テキストラベル） */
+.ktp-tab-print-btn {
+  align-items: center;
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  color: #374151;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 600;
+  justify-content: center;
+  line-height: 1.25;
+  padding: 8px 16px;
+  transition: background-color 0.15s ease;
+  white-space: nowrap;
+}
+
+.ktp-tab-print-btn:hover {
+  background: #f9fafb;
+}
+
+.ktp-tab-print-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  pointer-events: none;
 }
 
 .ktp_plugin_container .ktp-supplier-controller__tools,
