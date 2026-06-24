@@ -1034,7 +1034,9 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 
 			// Generate subject and body by progress status
 			$progress = absint( $order->progress );
-			$project_name = $order->project_name ? sanitize_text_field( $order->project_name ) : '';
+			$project_name = class_exists( 'KTPWP_Order' )
+				? KTPWP_Order::project_name_for_content( $order->project_name )
+				: ( $order->project_name ? sanitize_text_field( $order->project_name ) : '案件' );
 			$customer_name = sanitize_text_field( $order->customer_name );
 			$user_name = sanitize_text_field( $order->user_name );
 

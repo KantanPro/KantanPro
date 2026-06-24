@@ -27,6 +27,11 @@ if ( ! class_exists( 'KTPWP_Order' ) ) {
 	class KTPWP_Order {
 
 		/**
+		 * 案件名未入力時の DB 初期値・表示用プレースホルダー。
+		 */
+		public const PROJECT_NAME_PLACEHOLDER = '※ 入力してください';
+
+		/**
 		 * Singleton instance
 		 *
 		 * @since 1.0.0
@@ -285,7 +290,7 @@ if ( ! class_exists( 'KTPWP_Order' ) ) {
 				'client_id'      => null,
 				'customer_name'  => '',
 				'user_name'      => '',
-				'project_name'   => '',
+				'project_name'   => self::PROJECT_NAME_PLACEHOLDER,
 				'progress'       => 1,
 				'invoice_items'  => '',
 				'cost_items'     => '',
@@ -585,6 +590,58 @@ if ( ! class_exists( 'KTPWP_Order' ) ) {
 			);
 
 			return $latest_order ? (int) $latest_order : 0;
+		}
+
+		/**
+		 * 案件名が未入力プレースホルダーかどうか。
+		 *
+		 * @param mixed $name 案件名。
+		 */
+		public static function is_project_name_placeholder( $name ): bool {
+			return trim( (string) $name ) === self::PROJECT_NAME_PLACEHOLDER;
+		}
+
+		/**
+		 * 入力欄に表示する案件名（空 DB はプレースホルダー）。
+		 *
+		 * @param mixed $name 案件名。
+		 */
+		public static function project_name_input_value( $name ): string {
+			$name = trim( (string) $name );
+			if ( $name === '' ) {
+				return self::PROJECT_NAME_PLACEHOLDER;
+			}
+
+			return $name;
+		}
+
+		/**
+		 * メール・PDF 等の本文に使う案件名。
+		 *
+		 * @param mixed  $name     案件名。
+		 * @param string $fallback 未入力時の代替。
+		 */
+		public static function project_name_for_content( $name, string $fallback = '案件' ): string {
+			$name = trim( (string) $name );
+			if ( $name === '' || self::is_project_name_placeholder( $name ) ) {
+				return $fallback;
+			}
+
+			return $name;
+		}
+
+		/**
+		 * DB 保存用の案件名（空入力はプレースホルダー）。
+		 *
+		 * @param mixed $name 案件名。
+		 */
+		public static function project_name_for_storage( $name ): string {
+			$name = trim( sanitize_text_field( (string) $name ) );
+			if ( $name === '' ) {
+				return self::PROJECT_NAME_PLACEHOLDER;
+			}
+
+			return $name;
 		}
 	} // End of KTPWP_Order class
 

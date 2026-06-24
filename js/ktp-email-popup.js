@@ -361,12 +361,13 @@
                                 </div>
                                 <div style="font-size: 13px; color: #888; line-height: 1.4;">
                                     ${ktpwpTranslate('対応形式：PDF, 画像(JPG,PNG,GIF), Word, Excel, 圧縮ファイル等')}<br>
-                                    <strong>${ktpwpTranslate('最大ファイルサイズ：10MB/ファイル, 合計50MB')}</strong>
+                                    <strong>${ktpwpTranslate('最大ファイルサイズ：10MB/ファイル, 合計50MB')}</strong><br>
+                                    <span style="color: #b45309;">${ktpwpTranslate('※ ZIP/RAR/7z は Gmail 等で届かないことがあります')}</span>
                                 </div>
                             </div>
                         </div>
                         <div id="selected-files" style="
-                            max-height: 120px;
+                            max-height: 180px;
                             overflow-y: auto;
                             border: 1px solid #ddd;
                             border-radius: 4px;
@@ -524,7 +525,11 @@
                 return;
             }
 
-            let html = '<div style="font-weight: bold; margin-bottom: 10px; color: #333; border-bottom: 1px solid #eee; padding-bottom: 5px;">' + ktpwpTranslate('選択されたファイル') + '：</div>';
+            let html = '';
+            if (window.KtpEmailAttachmentWarnings) {
+                html += window.KtpEmailAttachmentWarnings.renderNoticeHtml(selectedFiles, ktpwpTranslate);
+            }
+            html += '<div style="font-weight: bold; margin-bottom: 10px; color: #333; border-bottom: 1px solid #eee; padding-bottom: 5px;">' + ktpwpTranslate('選択されたファイル') + '：</div>';
             selectedFiles.forEach((file, index) => {
                 const sizeText = formatFileSize(file.size);
                 const fileIcon = getFileIcon(file.name);
@@ -744,6 +749,7 @@
         }
         formData.append('subject', subject);
         formData.append('body', body);
+        formData.append('attachment_count', String(selectedFiles.length));
         
         const ajaxConfig = getAjaxConfig();
         if (ajaxConfig.nonce) {
@@ -751,8 +757,8 @@
         }
 
         // ファイルを追加
-        selectedFiles.forEach((file, index) => {
-            formData.append(`attachments[${index}]`, file);
+        selectedFiles.forEach((file) => {
+            formData.append('attachments[]', file);
         });
 
         // 送信中表示を更新（ファイル数を表示）
@@ -819,11 +825,22 @@
                         }
                     }
                     if (selectedFiles.length > 0) {
-                        successMessage += `
+                        const serverAttachmentCount = response.data && response.data.attachment_count != null
+                            ? parseInt(response.data.attachment_count, 10)
+                            : 0;
+                        if (serverAttachmentCount > 0) {
+                            successMessage += `
                             <div style="font-size: 14px; margin-top: 8px; color: #666;">
-                                ${ktpwpTranslate('添付ファイル')}: ${selectedFiles.length}${ktpwpTranslate('件')}
+                                ${ktpwpTranslate('添付ファイル')}: ${serverAttachmentCount}${ktpwpTranslate('件')}
                             </div>
                         `;
+                        } else {
+                            successMessage += `
+                            <div style="font-size: 14px; margin-top: 8px; color: #dc3545;">
+                                ${ktpwpTranslate('添付ファイルをサーバーで処理できませんでした。受信メールをご確認ください。')}
+                            </div>
+                        `;
+                        }
                     }
 
                     $('#ktp-email-popup-content').html(`

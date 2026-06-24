@@ -838,7 +838,9 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 
 								// 進捗ごとに件名・本文 - Sanitize input data
 								$progress = absint( $order->progress );
-								$project_name = $order->project_name ? sanitize_text_field( $order->project_name ) : '';
+								$project_name = class_exists( 'KTPWP_Order' )
+									? KTPWP_Order::project_name_for_content( $order->project_name )
+									: ( $order->project_name ? sanitize_text_field( $order->project_name ) : '案件' );
 								$customer_name = sanitize_text_field( $order->customer_name );
 								$user_name = sanitize_text_field( $order->user_name );
 
@@ -1970,7 +1972,10 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 					$content .= '</div>';
 					$content .= '<div class="ktp-order-summary-field ktp-order-summary-field--project">';
 					$content .= '<span class="ktp-order-summary-field-label">' . esc_html__( '案件名', 'ktpwp' ) . '：</span>';
-					$content .= '<input type="text" class="order_project_name_inline order-header-projectname ktp-order-summary-project-input" name="order_project_name_inline" value="' . esc_attr( isset( $order_data->project_name ) ? $order_data->project_name : '' ) . '" data-order-id="' . esc_attr( $order_data->id ) . '" placeholder="' . esc_attr__( '案件名', 'ktpwp' ) . '" autocomplete="off" />';
+					$summary_project_name = class_exists( 'KTPWP_Order' )
+						? KTPWP_Order::project_name_input_value( $order_data->project_name ?? '' )
+						: ( isset( $order_data->project_name ) ? (string) $order_data->project_name : '※ 入力してください' );
+					$content .= '<input type="text" class="order_project_name_inline order-header-projectname ktp-order-summary-project-input" name="order_project_name_inline" value="' . esc_attr( $summary_project_name ) . '" data-order-id="' . esc_attr( $order_data->id ) . '" placeholder="' . esc_attr__( '案件名', 'ktpwp' ) . '" autocomplete="off" />';
 					$content .= '</div>';
 					$content .= '<div class="ktp-order-summary-field ktp-order-summary-field--client-source">';
 					$content .= '<div class="ktp-order-summary-field-value ktp-order-summary-contact-row" id="order_customer_name">';
@@ -2590,8 +2595,10 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 				? KTPWP_Pdf_Document_Kind::print_shows_cost_section( $order_data->progress )
 				: in_array( (int) $order_data->progress, array( 3, 7 ), true );
 
-			// 案件名の取得（空の場合はデフォルト値）
-			$project_name = ! empty( $order_data->project_name ) ? $order_data->project_name : '案件';
+			// 案件名の取得（未入力・プレースホルダーはデフォルト値）
+			$project_name = class_exists( 'KTPWP_Order' )
+				? KTPWP_Order::project_name_for_content( $order_data->project_name ?? '' )
+				: ( ! empty( $order_data->project_name ) ? $order_data->project_name : '案件' );
 
 			// 請求項目の取得
 			$invoice_result = $this->Generate_Invoice_Items_For_Preview( $order_data->id );

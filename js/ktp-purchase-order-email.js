@@ -210,12 +210,13 @@
                             </div>
                             <div style="font-size: 13px; color: #888; line-height: 1.4;">
                                 対応形式：PDF, 画像(JPG,PNG,GIF), Word, Excel, 圧縮ファイル等<br>
-                                <strong>最大ファイルサイズ：10MB/ファイル, 合計50MB</strong>
+                                <strong>最大ファイルサイズ：10MB/ファイル, 合計50MB</strong><br>
+                                <span style="color: #b45309;">※ ZIP/RAR/7z は Gmail 等で届かないことがあります</span>
                             </div>
                         </div>
                     </div>
                     <div id="selected-files" style="
-                        max-height: 120px;
+                        max-height: 180px;
                         overflow-y: auto;
                         border: 1px solid #ddd;
                         border-radius: 4px;
@@ -376,6 +377,10 @@
             const progressColor = totalSizePercent > 80 ? '#ff6b6b' : totalSizePercent > 60 ? '#ffa726' : '#4caf50';
 
             let html = '';
+            if (window.KtpEmailAttachmentWarnings) {
+                html += window.KtpEmailAttachmentWarnings.renderNoticeHtml(selectedFiles);
+            }
+
             selectedFiles.forEach((file, index) => {
                 const fileIcon = getFileIcon(file.name);
                 const fileSize = formatFileSize(file.size);
@@ -490,6 +495,8 @@
         formData.append('subject', $('#email-subject').val());
         formData.append('body', $('#email-body').val());
 
+        const selectedFiles = window.getSelectedFiles ? window.getSelectedFiles() : [];
+
         // nonceを追加
         let nonce = '';
         if (typeof ktpwp_ajax_nonce !== 'undefined') {
@@ -505,11 +512,11 @@
         }
         formData.append('nonce', nonce);
         formData.append('ktpwp_ajax_nonce', nonce);  // 追加: サーバー側で期待されるフィールド名
+        formData.append('attachment_count', String(selectedFiles.length));
 
         // 選択されたファイルを追加
-        const selectedFiles = window.getSelectedFiles ? window.getSelectedFiles() : [];
-        selectedFiles.forEach((file, index) => {
-            formData.append(`attachments[${index}]`, file);
+        selectedFiles.forEach((file) => {
+            formData.append('attachments[]', file);
         });
 
         // 送信ボタンを無効化

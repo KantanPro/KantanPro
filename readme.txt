@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.2.96
+Stable tag: 1.2.97
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -322,6 +322,12 @@ curl -sS -X POST \
 * MySQL 5.6 以上 または MariaDB 10.0 以上
 * 推奨メモリ: 256MB 以上
 * 推奨PHP拡張: GD（画像処理用）
+
+= 1.2.97 - 2026年06月25日 =
+* メール添付送信を安定化（addStringAttachment・サーバー側件数検証・ZIP/RAR/7z 添付時の注意表示）
+* SMTP 送信時の PHPMailer HELO/Hostname を送信ドメインに統一
+* 案件名インライン編集を修正（初期値「※ 入力してください」・Ajax 保存・edit_posts 権限対応）
+* ktpwp.php の案件名 Ajax 重複ハンドラを削除
 
 = 1.2.96 - 2026年06月24日 =
 * 誤って同梱されていた封筒プレビュー用画像を削除（配布ZIPサイズの正常化）

@@ -313,15 +313,21 @@ class KTPWP_Assets {
             'ktp-order-inline-projectname' => array(
                 'src'       => 'js/ktp-order-inline-projectname.js',
                 'deps'      => array( 'jquery' ),
-                'ver'       => KTPWP_PLUGIN_VERSION,
+                'ver'       => KTPWP_PLUGIN_VERSION . '.' . filemtime( KTPWP_PLUGIN_DIR . 'js/ktp-order-inline-projectname.js' ),
                 'in_footer' => true,
                 'admin'     => false,
                 'localize'  => array(
                     'object' => 'ktpwp_inline_edit_nonce',
-                    'data'   => array(
-                        'nonce' => wp_create_nonce( 'ktp_update_project_name' ),
-                    ),
-                    'capability' => 'manage_options',
+                    'data'   => static function () {
+                        $can_edit = current_user_can( 'manage_options' )
+                            || current_user_can( 'ktpwp_access' )
+                            || current_user_can( 'edit_posts' );
+
+                        return array(
+                            'ajax_url' => admin_url( 'admin-ajax.php' ),
+                            'nonce'    => $can_edit ? wp_create_nonce( 'ktp_update_project_name' ) : '',
+                        );
+                    },
                 ),
             ),
             'ktp-supplier-selector' => array(
@@ -352,9 +358,16 @@ class KTPWP_Assets {
                     ),
                 ),
             ),
+            'ktp-email-attachment-warnings' => array(
+                'src'       => 'js/ktp-email-attachment-warnings.js',
+                'deps'      => array(),
+                'ver'       => KTPWP_PLUGIN_VERSION . '.' . filemtime( KTPWP_PLUGIN_DIR . 'js/ktp-email-attachment-warnings.js' ),
+                'in_footer' => true,
+                'admin'     => false,
+            ),
             'ktp-purchase-order-email' => array(
                 'src'       => 'js/ktp-purchase-order-email.js',
-                'deps'      => array( 'jquery', 'ktp-cost-items' ),
+                'deps'      => array( 'jquery', 'ktp-cost-items', 'ktp-email-attachment-warnings' ),
                 'ver'       => KTPWP_PLUGIN_VERSION,
                 'in_footer' => true,
                 'admin'     => false,
@@ -417,7 +430,7 @@ class KTPWP_Assets {
             ),
             'ktp-email-popup' => array(
                 'src'       => 'js/ktp-email-popup.js',
-                'deps'      => array( 'jquery' ),
+                'deps'      => array( 'jquery', 'ktp-email-attachment-warnings' ),
                 'ver'       => KTPWP_PLUGIN_VERSION . '.' . filemtime( KTPWP_PLUGIN_DIR . 'js/ktp-email-popup.js' ),
                 'in_footer' => true,
                 'admin'     => false,

@@ -3917,8 +3917,66 @@ class KTPWP_Settings {
         return $out;
     }
 
+    /**
+     * PHPMailer の HELO / Message-ID 用ホスト名を送信ドメインに揃える。
+     * home_url が localhost の環境でも SMTP 送信元ドメインを優先する。
+     *
+     * @param object $phpmailer PHPMailer インスタンス。
+     */
+    public static function apply_phpmailer_identity( $phpmailer ) {
+        if ( ! is_object( $phpmailer ) ) {
+            return;
+        }
+
+        $host = self::resolve_mail_ehlo_hostname();
+        if ( $host !== '' ) {
+            $phpmailer->Hostname = $host;
+            if ( property_exists( $phpmailer, 'Helo' ) ) {
+                $phpmailer->Helo = $host;
+            }
+        }
+
+        $phpmailer->CharSet = 'UTF-8';
+    }
+
+    /**
+     * SMTP EHLO / Message-ID に使うホスト名を決定する。
+     */
+    private static function resolve_mail_ehlo_hostname() {
+        $blocked_hosts = array( 'localhost', '127.0.0.1', '::1' );
+        $from_domain   = '';
+
+        $is_usable = static function ( $host ) use ( $blocked_hosts ) {
+            if ( ! is_string( $host ) || $host === '' ) {
+                return false;
+            }
+            return ! in_array( strtolower( $host ), $blocked_hosts, true );
+        };
+
+        $smtp_settings = get_option( 'ktp_smtp_settings', array() );
+        $from_email    = ! empty( $smtp_settings['email_address'] ) ? sanitize_email( $smtp_settings['email_address'] ) : '';
+        if ( $from_email !== '' && is_email( $from_email ) ) {
+            $domain_parts = explode( '@', $from_email );
+            $from_domain  = strtolower( (string) end( $domain_parts ) );
+            if ( $is_usable( $from_domain ) ) {
+                return $from_domain;
+            }
+        }
+
+        foreach ( array( home_url(), site_url() ) as $url ) {
+            $site_host = wp_parse_url( $url, PHP_URL_HOST );
+            if ( $is_usable( $site_host ) ) {
+                return strtolower( (string) $site_host );
+            }
+        }
+
+        return $from_domain;
+    }
+
     public function setup_smtp_settings( $phpmailer ) {
         try {
+            self::apply_phpmailer_identity( $phpmailer );
+
             $options = get_option( $this->option_name );
 
             if ( ! empty( $options['smtp_host'] ) && ! empty( $options['smtp_port'] ) && ! empty( $options['smtp_user'] ) && ! empty( $options['smtp_pass'] ) ) {

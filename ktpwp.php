@@ -3,7 +3,7 @@
  * Plugin Name: KantanPro
  * Plugin URI: https://www.kantanpro.com/
  * Description: スモールビジネスのための販売支援ツール。ショートコード[ktpwp_all_tab]を固定ページに設置してください。
- * Version: 1.2.96
+ * Version: 1.2.97
  * Author: KantanPro
  * Author URI: https://www.kantanpro.com/kantanpro-page
  * License: GPL v2 or later
@@ -4141,18 +4141,6 @@ function ktpwp_scripts_and_styles( $hook = '' ) {
     //     1
     // );
     wp_enqueue_script( 'jquery', 'https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js', array(), '3.5.1', true );
-    wp_enqueue_script( 'ktp-order-inline-projectname', plugins_url( 'js/ktp-order-inline-projectname.js', __FILE__ ), array( 'jquery' ), KANTANPRO_PLUGIN_VERSION, true );
-    // Nonceをjsに渡す（案件名インライン編集用）
-    if ( current_user_can( 'manage_options' ) || current_user_can( 'ktpwp_access' ) ) {
-        wp_add_inline_script(
-            'ktp-order-inline-projectname',
-            'var ktpwp_inline_edit_nonce = ' . json_encode(
-                array(
-					'nonce' => wp_create_nonce( 'ktp_update_project_name' ),
-                )
-            ) . ';'
-        );
-    }
 
     // ajaxurl をフロントエンドに渡す（nonce は AJAX クラス / Assets で設定するため、ここでは上書きしない）
     wp_add_inline_script( 'ktp-js', 'var ajaxurl = ' . json_encode( admin_url( 'admin-ajax.php' ) ) . ';' );
@@ -4843,69 +4831,7 @@ add_action(
     5
 );
 
-// 案件名インライン編集用Ajaxハンドラ
-
-// 案件名インライン編集用Ajaxハンドラ（管理者のみ許可＆nonce検証）
-add_action(
-    'wp_ajax_ktp_update_project_name',
-    function () {
-		// 権限チェック
-		if ( ! current_user_can( 'manage_options' ) && ! current_user_can( 'ktpwp_access' ) ) {
-			wp_send_json_error( __( '権限がありません', 'ktpwp' ) );
-		}
-
-		// POSTデータの安全な取得
-		if ( ! KTPWP_Post_Data_Handler::has_post_keys( array( '_wpnonce', 'order_id', 'project_name' ) ) ) {
-			wp_send_json_error( __( '必要なデータが不足しています', 'ktpwp' ) );
-		}
-
-		$post_data = KTPWP_Post_Data_Handler::get_multiple_post_data(
-            array(
-				'_wpnonce' => 'text',
-				'order_id' => array(
-					'type' => 'int',
-					'default' => 0,
-				),
-				'project_name' => 'text',
-            )
-        );
-
-		// nonceチェック
-		if ( ! wp_verify_nonce( $post_data['_wpnonce'], 'ktp_update_project_name' ) ) {
-			wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'ktpwp' ) );
-		}
-
-		global $wpdb;
-		$order_id = $post_data['order_id'];
-		// wp_strip_all_tags()でタグのみ削除（HTMLエンティティは保持）
-		$project_name = wp_strip_all_tags( $post_data['project_name'] );
-		if ( $order_id > 0 ) {
-			$table = $wpdb->prefix . 'ktp_order';
-			$result = $wpdb->update(
-                $table,
-                array( 'project_name' => $project_name ),
-                array( 'id' => $order_id ),
-                array( '%s' ),
-                array( '%d' )
-			);
-			if ( $result === false && defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( "KTPWP: Failed SQL: UPDATE `$table` SET `project_name` = '$project_name' WHERE `id` = $order_id | Error: " . $wpdb->last_error );
-			}
-			wp_send_json_success();
-		} else {
-			wp_send_json_error( __( 'Invalid order_id', 'ktpwp' ) );
-		}
-	}
-);
-
-// 非ログイン時はAjaxで案件名編集不可（セキュリティのため）
-add_action(
-    'wp_ajax_nopriv_ktp_update_project_name',
-    function () {
-		wp_send_json_error( __( 'ログインが必要です', 'ktpwp' ) );
-	}
-);
-
+// 案件名インライン編集は class-ktpwp-ajax.php の ajax_update_project_name で処理
 
 
 
