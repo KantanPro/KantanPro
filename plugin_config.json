@@ -1,6 +1,6 @@
 {
   "plugin_name": "KantanPro",
   "output_directory": "/Users/kantanpro/Desktop/KantanPro_TEST_UP",
-  "default_version": "1.2.95",
+  "default_version": "1.2.96",
   "zip_filename_format": "KantanPro_{version}_{date}.zip"
 }
