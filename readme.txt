@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.2.99
+Stable tag: 1.2.100
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -322,6 +322,10 @@ curl -sS -X POST \
 * MySQL 5.6 以上 または MariaDB 10.0 以上
 * 推奨メモリ: 256MB 以上
 * 推奨PHP拡張: GD（画像処理用）
+
+= 1.2.100 - 2026年06月26日 =
+* 顧客タブの注文履歴が詳細パネルと別顧客を参照する不具合を修正
+* 顧客ID解決ロジックを統一し、削除済み・非表示顧客の案件が履歴に残らないよう改善
 
 = 1.2.99 - 2026年06月26日 =
 * フロント画面のヘッダー更新チェックボタンが動作しない不具合を修正

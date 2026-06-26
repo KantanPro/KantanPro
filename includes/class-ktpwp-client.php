@@ -316,6 +316,42 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 			return KTPWP_Client_DB::get_instance()->get_next_display_id( $table_name, $deleted_id );
 		}
 
+		/**
+		 * 顧客タブで表示中の顧客 ID を解決（GET → DB に存在する Cookie → 最新 ID）。
+		 *
+		 * @param string $name       タブ名（client）。
+		 * @param string $table_name 顧客テーブル名。
+		 * @return int
+		 */
+		private function resolve_active_client_id( $name, $table_name ) {
+			global $wpdb;
+
+			$cookie_name = 'ktp_' . $name . '_id';
+			$candidate   = 0;
+
+			if ( isset( $_GET['data_id'] ) && $_GET['data_id'] !== '' ) {
+				$candidate = (int) filter_input( INPUT_GET, 'data_id', FILTER_SANITIZE_NUMBER_INT );
+			} elseif ( isset( $_COOKIE[ $cookie_name ] ) && $_COOKIE[ $cookie_name ] !== '' ) {
+				$candidate = (int) filter_input( INPUT_COOKIE, $cookie_name, FILTER_SANITIZE_NUMBER_INT );
+			}
+
+			if ( $candidate > 0 ) {
+				$exists = $wpdb->get_var(
+					$wpdb->prepare(
+						"SELECT COUNT(*) FROM {$table_name} WHERE id = %d",
+						$candidate
+					)
+				);
+				if ( $exists ) {
+					return $candidate;
+				}
+			}
+
+			$max_id_row = $wpdb->get_row( "SELECT id FROM {$table_name} ORDER BY id DESC LIMIT 1" );
+
+			return $max_id_row ? (int) $max_id_row->id : 0;
+		}
+
 
 		// -----------------------------
 		// テーブルの表示
@@ -518,19 +554,10 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 
 			// 注文履歴モードの場合
 			if ( $view_mode === 'order_history' ) {
-				// 現在表示中の顧客ID
 				$cookie_name = 'ktp_' . $name . '_id';
-				if ( isset( $_GET['data_id'] ) ) {
-					$client_id = filter_input( INPUT_GET, 'data_id', FILTER_SANITIZE_NUMBER_INT );
-				} elseif ( isset( $_COOKIE[ $cookie_name ] ) ) {
-					$client_id = filter_input( INPUT_COOKIE, $cookie_name, FILTER_SANITIZE_NUMBER_INT );
-				} else {
-					// 最後のIDを取得して表示
-					// $query = "SELECT id FROM {$table_name} ORDER BY id DESC LIMIT 1";
-					// $last_id_row = $wpdb->get_row($query);
-					$query_last_id = "SELECT id FROM {$table_name} ORDER BY id DESC LIMIT 1";
-					$last_id_row = $wpdb->get_row( $query_last_id );
-					$client_id = $last_id_row ? $last_id_row->id : 1;
+				$client_id   = $this->resolve_active_client_id( $name, $table_name );
+				if ( $client_id <= 0 ) {
+					$client_id = 1;
 				}
 
 				// 受注書テーブル
@@ -850,20 +877,9 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 					. '</div>';
 			} elseif ( ! $print_all ) {
 				// 受注履歴セクションを追加（リストBOX内、ページネーションの後）
-				// 詳細BOXに表示されている顧客のIDを取得して注文履歴タイトルを生成
+				$cookie_name           = 'ktp_' . $name . '_id';
 				$current_customer_name = '';
-				$current_customer_id = '';
-
-				// 詳細BOXに表示されている顧客のIDを取得
-				if ( isset( $_GET['data_id'] ) && $_GET['data_id'] !== '' ) {
-					$current_customer_id = filter_input( INPUT_GET, 'data_id', FILTER_SANITIZE_NUMBER_INT );
-				} elseif ( isset( $_COOKIE[ $cookie_name ] ) && $_COOKIE[ $cookie_name ] !== '' ) {
-					$current_customer_id = filter_input( INPUT_COOKIE, $cookie_name, FILTER_SANITIZE_NUMBER_INT );
-				} else {
-					// data_id未指定時は最大IDを取得
-					$max_id_row = $wpdb->get_row( "SELECT id FROM {$table_name} ORDER BY id DESC LIMIT 1" );
-					$current_customer_id = $max_id_row ? $max_id_row->id : '';
-				}
+				$current_customer_id   = $this->resolve_active_client_id( $name, $table_name );
 
 				// 顧客名を取得
 				if ( $current_customer_id ) {
@@ -1087,39 +1103,14 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 
 			// 追加モード以外の場合のみデータを取得
 			if ( $action !== 'istmode' ) {
-				if ( isset( $_GET['data_id'] ) && $_GET['data_id'] !== '' ) {
-					$query_id = filter_input( INPUT_GET, 'data_id', FILTER_SANITIZE_NUMBER_INT );
-				} elseif ( isset( $_COOKIE[ $cookie_name ] ) && $_COOKIE[ $cookie_name ] !== '' ) {
-					$cookie_id = filter_input( INPUT_COOKIE, $cookie_name, FILTER_SANITIZE_NUMBER_INT );
-					// クッキーIDがDBに存在するかチェック
-					$exists = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table_name} WHERE id = %d", $cookie_id ) );
-					if ( $exists ) {
-						$query_id = $cookie_id;
-					} else {
-						// 存在しなければ最大ID
-						// $max_id_row = $wpdb->get_row("SELECT id FROM {$table_name} ORDER BY id DESC LIMIT 1");
-						$query_max_id_cookie_fallback = "SELECT id FROM {$table_name} ORDER BY id DESC LIMIT 1";
-						$max_id_row = $wpdb->get_row( $query_max_id_cookie_fallback );
-						$query_id = $max_id_row ? $max_id_row->id : '';
-					}
-				} else {
-					// data_id未指定時は必ずID最大の顧客を表示
-					// $max_id_row = $wpdb->get_row("SELECT id FROM {$table_name} ORDER BY id DESC LIMIT 1");
-					$query_max_id_no_get_cookie = "SELECT id FROM {$table_name} ORDER BY id DESC LIMIT 1";
-					$max_id_row = $wpdb->get_row( $query_max_id_no_get_cookie );
-					$query_id = $max_id_row ? $max_id_row->id : '';
-				}
+				$query_id = $this->resolve_active_client_id( $name, $table_name );
 
 				// データを取得し変数に格納
 				$query = $wpdb->prepare( "SELECT * FROM {$table_name} WHERE id = %d", $query_id );
 				$post_row = $wpdb->get_results( $query );
 				if ( ! $post_row || count( $post_row ) === 0 ) {
-					// 存在しないIDの場合は最大IDを取得して再表示
-					// $max_id_row = $wpdb->get_row("SELECT id FROM {$table_name} ORDER BY id DESC LIMIT 1");
-					$query_max_id_fetch_fail_fallback = "SELECT id FROM {$table_name} ORDER BY id DESC LIMIT 1";
-					$max_id_row = $wpdb->get_row( $query_max_id_fetch_fail_fallback );
-					if ( $max_id_row && isset( $max_id_row->id ) ) {
-						$query_id = $max_id_row->id;
+					$query_id = $this->resolve_active_client_id( $name, $table_name );
+					if ( $query_id > 0 ) {
 						$query = $wpdb->prepare( "SELECT * FROM {$table_name} WHERE id = %d", $query_id );
 						$post_row = $wpdb->get_results( $query );
 					}
@@ -1409,22 +1400,8 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 			$controller_html .= '<div class="ktp-client-controller-actions" style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">';
 
 			// 現在の顧客IDを取得（後で使用するため）
-			$current_client_id = 0;
-			$cookie_name = 'ktp_' . $name . '_id';
-			if ( isset( $_GET['data_id'] ) ) {
-				$current_client_id = filter_input( INPUT_GET, 'data_id', FILTER_SANITIZE_NUMBER_INT );
-			} elseif ( isset( $_COOKIE[ $cookie_name ] ) ) {
-				$current_client_id = filter_input( INPUT_COOKIE, $cookie_name, FILTER_SANITIZE_NUMBER_INT );
-			} else {
-				// 最後のIDを取得
-				// $wpdb と $table_name がこのスコープで利用可能である必要がある
-				if ( isset( $wpdb, $table_name ) ) {
-							$query = "SELECT id FROM {$table_name} ORDER BY id DESC LIMIT 1";
-							$last_id_row = $wpdb->get_row( $query );
-							$current_client_id = $last_id_row ? $last_id_row->id : 0;
-				}
-			}
-			$current_client_id = (int) $current_client_id;
+			$cookie_name       = 'ktp_' . $name . '_id';
+			$current_client_id = $this->resolve_active_client_id( $name, $table_name );
 
 			if ( class_exists( 'KTPWP_Tab_Search_UI' ) ) {
 				$client_search_keep = array();
