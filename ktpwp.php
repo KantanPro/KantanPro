@@ -3,7 +3,7 @@
  * Plugin Name: KantanPro
  * Plugin URI: https://www.kantanpro.com/
  * Description: スモールビジネスのための販売支援ツール。ショートコード[ktpwp_all_tab]を固定ページに設置してください。
- * Version: 1.2.98
+ * Version: 1.2.99
  * Author: KantanPro
  * Author URI: https://www.kantanpro.com/kantanpro-page
  * License: GPL v2 or later
@@ -602,17 +602,18 @@ function ktpwp_maybe_migrate_service_images() {
  * 更新チェッカーの初期化
  */
 function ktpwp_init_update_checker() {
-    // WordPress.orgとの接続エラーを防ぐため、条件付きで初期化
-    if ( class_exists( 'KTPWP_Update_Checker' ) ) {
-        // 管理画面でのみ更新チェッカーを初期化
-        if ( is_admin() ) {
-            global $ktpwp_update_checker;
-            $ktpwp_update_checker = new KTPWP_Update_Checker();
-            
-            // エラーログに初期化完了を記録
-            error_log( 'KantanPro: 更新チェッカーが管理画面で初期化されました' );
-        }
+    if ( ! class_exists( 'KTPWP_Update_Checker' ) ) {
+        return;
     }
+
+    global $ktpwp_update_checker;
+    if ( $ktpwp_update_checker instanceof KTPWP_Update_Checker ) {
+        return;
+    }
+
+    // WordPress.org 向けプラグイン更新フックはクラス内で is_admin() ガード済み。
+    // フロントでもインスタンス化し、ヘッダー更新チェック用 JS/AJAX を有効にする。
+    $ktpwp_update_checker = new KTPWP_Update_Checker();
 }
 
 
@@ -4537,7 +4538,10 @@ function KTPWP_Index() {
                             $update_link_class = $show_update_badge ? ' has-update' : '';
                             $update_badge_markup = '<span class="ktpwp-header-update-badge' . ( $show_update_badge ? ' is-visible' : '' ) . '" aria-hidden="true"></span>';
                             // 更新通知機能付きのリンク
-                            $navigation_links .= ' <a href="#" id="ktpwp-header-update-check" class="ktpwp-header-update-link' . esc_attr( $update_link_class ) . '" title="' . $update_check_title . '" style="display: inline-flex; align-items: center; gap: 4px; color: #0073aa; text-decoration: none; cursor: pointer; position: relative;"><span class="material-symbols-outlined" style="font-size: 20px; vertical-align: middle;">refresh</span>' . $update_badge_markup . '</a>';
+                            $refresh_icon = class_exists( 'KTPWP_SVG_Icons' )
+                                ? KTPWP_SVG_Icons::get_icon( 'refresh', array( 'style' => 'font-size: 20px; vertical-align: middle;' ) )
+                                : '<span class="material-symbols-outlined" style="font-size: 20px; vertical-align: middle;">refresh</span>';
+                            $navigation_links .= ' <a href="#" id="ktpwp-header-update-check" class="ktpwp-header-update-link' . esc_attr( $update_link_class ) . '" title="' . $update_check_title . '" style="display: inline-flex; align-items: center; gap: 4px; color: #0073aa; text-decoration: none; cursor: pointer; position: relative;">' . $refresh_icon . $update_badge_markup . '</a>';
                         } else {
                             // 通常のページリロードリンク
                             $navigation_links .= ' <a href="' . $update_link_url . '" title="更新" style="display: inline-flex; align-items: center; gap: 4px; color: #0073aa; text-decoration: none;"><span class="material-symbols-outlined" style="font-size: 20px; vertical-align: middle;">refresh</span></a>';

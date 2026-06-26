@@ -1804,7 +1804,18 @@ class KTPWP_Update_Checker {
     private function is_ktpwp_shortcode_page() {
         global $post;
 
-        return is_a( $post, 'WP_Post' ) && has_shortcode( $post->post_content, 'ktpwp_all_tab' );
+        if ( ! is_a( $post, 'WP_Post' ) ) {
+            return false;
+        }
+
+        $shortcodes = array( 'kantanAllTab', 'ktpwp_all_tab', 'kantanpro_ex' );
+        foreach ( $shortcodes as $shortcode ) {
+            if ( has_shortcode( $post->post_content, $shortcode ) ) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -1915,25 +1926,29 @@ class KTPWP_Update_Checker {
      * @param bool       $notifications_enabled 更新通知の有効状態
      */
     public function enqueue_header_update_balloon_assets( $show_update_badge, $update_data, $notifications_enabled ) {
-        if ( wp_script_is( 'ktpwp-update-balloon', 'enqueued' ) || wp_script_is( 'ktpwp-update-balloon', 'done' ) ) {
-            return;
+        $script_handle = 'ktpwp-update-balloon';
+        $script_loaded = wp_script_is( $script_handle, 'enqueued' ) || wp_script_is( $script_handle, 'done' );
+
+        if ( ! wp_style_is( 'ktpwp-update-balloon', 'enqueued' ) && ! wp_style_is( 'ktpwp-update-balloon', 'done' ) ) {
+            wp_enqueue_style(
+                'ktpwp-update-balloon',
+                KANTANPRO_PLUGIN_URL . 'css/ktpwp-update-balloon.css',
+                array(),
+                $this->current_version
+            );
         }
 
-        wp_enqueue_style(
-            'ktpwp-update-balloon',
-            KANTANPRO_PLUGIN_URL . 'css/ktpwp-update-balloon.css',
-            array(),
-            $this->current_version
-        );
-
         wp_enqueue_script( 'jquery' );
-        wp_enqueue_script(
-            'ktpwp-update-balloon',
-            KANTANPRO_PLUGIN_URL . 'js/ktpwp-update-balloon.js',
-            array( 'jquery' ),
-            $this->current_version,
-            true
-        );
+
+        if ( ! $script_loaded ) {
+            wp_enqueue_script(
+                $script_handle,
+                KANTANPRO_PLUGIN_URL . 'js/ktpwp-update-balloon.js',
+                array( 'jquery' ),
+                $this->current_version,
+                true
+            );
+        }
 
         wp_localize_script(
             'ktpwp-update-balloon',
