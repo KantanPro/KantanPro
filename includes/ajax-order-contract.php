@@ -30,6 +30,8 @@ function ktp_get_order_contract_draft_ajax() {
 		wp_send_json_error( __( '権限がありません。', 'ktpwp' ) );
 	}
 
+	ktpwp_require_contracts_feature_or_ajax_error();
+
 	$order_id = absint( $_POST['order_id'] ?? 0 );
 	if ( $order_id <= 0 || ! class_exists( 'KTPWP_Order_Contract_Conversion' ) ) {
 		wp_send_json_error( __( '案件が見つかりません。', 'ktpwp' ) );
@@ -82,6 +84,8 @@ function ktp_convert_order_to_contract_ajax() {
 	if ( ! ktpwp_order_contract_ajax_can_manage() ) {
 		wp_send_json_error( __( '権限がありません。', 'ktpwp' ) );
 	}
+
+	ktpwp_require_contracts_feature_or_ajax_error();
 
 	if ( ! class_exists( 'KTPWP_Order_Contract_Conversion' ) ) {
 		wp_send_json_error( __( '定期契約機能が利用できません。', 'ktpwp' ) );

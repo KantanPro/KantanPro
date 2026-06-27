@@ -1710,6 +1710,10 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 		 * @return int
 		 */
 		private static function resolve_public_instant_purchase_from_post( $tab_name, $data_id ) {
+			if ( function_exists( 'ktpwp_is_feature_enabled' ) && ! ktpwp_is_feature_enabled( 'public_products' ) ) {
+				return 0;
+			}
+
 			if ( isset( $_POST['public_instant_purchase'] ) ) {
 				return self::sanitize_public_instant_purchase( wp_unslash( $_POST['public_instant_purchase'] ) );
 			}

@@ -387,3 +387,31 @@ if ( ! function_exists( 'ktpwp_is_feature_enabled' ) ) {
 		return KTPWP_Edition::is_feature_enabled( $feature );
 	}
 }
+
+if ( ! function_exists( 'ktpwp_contracts_feature_enabled' ) ) {
+	/**
+	 * 定期契約機能が利用可能か
+	 *
+	 * @return bool
+	 */
+	function ktpwp_contracts_feature_enabled() {
+		return ktpwp_is_feature_enabled( 'contracts' );
+	}
+}
+
+if ( ! function_exists( 'ktpwp_require_contracts_feature_or_ajax_error' ) ) {
+	/**
+	 * 定期契約 AJAX: 無料版では JSON エラーで終了
+	 *
+	 * @return void
+	 */
+	function ktpwp_require_contracts_feature_or_ajax_error() {
+		if ( ! ktpwp_contracts_feature_enabled() ) {
+			wp_send_json_error(
+				class_exists( 'KTPWP_Edition' )
+					? wp_strip_all_tags( KTPWP_Edition::get_upgrade_message_html( __( '定期契約', 'ktpwp' ) ) )
+					: __( 'この機能は有料版で利用できます。', 'ktpwp' )
+			);
+		}
+	}
+}

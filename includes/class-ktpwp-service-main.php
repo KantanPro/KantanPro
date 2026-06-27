@@ -478,7 +478,7 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 					$contract_cycle_value = class_exists( 'KTPWP_Contract_Billing_Cycle' ) && isset( $row->contract_billing_cycle )
 						? KTPWP_Contract_Billing_Cycle::sanitize( $row->contract_billing_cycle )
 						: ( class_exists( 'KTPWP_Contract_Billing_Cycle' ) ? KTPWP_Contract_Billing_Cycle::NONE : 'none' );
-					$contract_cycle_cell = class_exists( 'KTPWP_Contract_Billing_Cycle' )
+					$contract_cycle_cell = ( $this->is_contracts_feature_enabled() && class_exists( 'KTPWP_Contract_Billing_Cycle' ) )
 						? '<td class="col-contract">' . KTPWP_Contract_Billing_Cycle::render_badge( $contract_cycle_value ) . '</td>'
 						: '';
 					$thumb_url   = $this->db_helper->resolve_image_url(
@@ -488,11 +488,14 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 					$default_thumb_url = $this->db_helper->get_default_image_url();
 					$row_url = esc_url( add_query_arg( $item_link_args, $base_page_url ) );
 					$price_unit_cell = '<td class="col-price-unit">' . $this->render_service_price_unit_display( $price, $unit ) . '</td>';
+					$public_cell       = $this->is_public_products_enabled()
+						? '<td class="col-public">' . $this->render_service_public_badge( $is_public, $row_stock, (int) $row->id, $contract_cycle_value ) . '</td>'
+						: '';
 					$results[] = '<tr class="ktp-service-list-data-row" data-href="' . $row_url . '" onclick="window.location.href=this.dataset.href">' .
 					'<td class="col-id">' . $id . '</td>' .
 					'<td class="col-image"><span class="ktp-service-list-thumb-wrap"><img src="' . esc_url( $thumb_url ) . '" alt="' . esc_attr( $service_name_raw ) . '" class="ktp-service-list-thumb" loading="lazy" decoding="async" onerror="this.src=\'' . esc_url( $default_thumb_url ) . '\'" /></span></td>' .
 					'<td class="col-name" title="' . esc_attr( $service_name_raw ) . '">' . $service_name . '</td>' .
-					'<td class="col-public">' . $this->render_service_public_badge( $is_public, $row_stock, (int) $row->id, $contract_cycle_value ) . '</td>' .
+					$public_cell .
 					$contract_cycle_cell .
 					$price_unit_cell .
 					'<td class="col-category">' . $category . '</td>' .
@@ -520,7 +523,7 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 			$related_list_html   = '';
 			if ( ! $print_all ) {
 				$selected_service_id = $this->resolve_selected_service_id( $name, $table_name );
-				if ( $selected_service_id > 0 && class_exists( 'KTPWP_Service_Related_Orders' ) ) {
+				if ( $selected_service_id > 0 && $this->is_contracts_feature_enabled() && class_exists( 'KTPWP_Service_Related_Orders' ) ) {
 					$selected_service_name = (string) $wpdb->get_var(
 						$wpdb->prepare(
 							"SELECT service_name FROM {$table_name} WHERE id = %d",
@@ -635,15 +638,17 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 						? KTPWP_Contract_Billing_Cycle::sanitize( $row->contract_billing_cycle )
 						: ( class_exists( 'KTPWP_Contract_Billing_Cycle' ) ? KTPWP_Contract_Billing_Cycle::NONE : 'none' );
 					$stock = isset( $row->stock ) ? max( 0, absint( $row->stock ) ) : 1;
-					$public_quantity_fixed = class_exists( 'KTPWP_Service_DB' )
-						? KTPWP_Service_DB::sanitize_public_quantity_fixed( $row->public_quantity_fixed ?? null )
-						: 0;
-					$public_instant_purchase = class_exists( 'KTPWP_Service_DB' )
-						? KTPWP_Service_DB::sanitize_public_instant_purchase( $row->public_instant_purchase ?? null )
-						: 0;
-					$public_html = class_exists( 'KTPWP_Service_DB' )
-						? (string) ( $row->public_html ?? '' )
-						: '';
+					if ( $this->is_public_products_enabled() ) {
+						$public_quantity_fixed = class_exists( 'KTPWP_Service_DB' )
+							? KTPWP_Service_DB::sanitize_public_quantity_fixed( $row->public_quantity_fixed ?? null )
+							: 0;
+						$public_instant_purchase = class_exists( 'KTPWP_Service_DB' )
+							? KTPWP_Service_DB::sanitize_public_instant_purchase( $row->public_instant_purchase ?? null )
+							: 0;
+						$public_html = class_exists( 'KTPWP_Service_DB' )
+							? (string) ( $row->public_html ?? '' )
+							: '';
+					}
 				}
 			}
 			  			// 表示するフォーム要素を定義
@@ -825,18 +830,9 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 					}
 				}
 
-				$data_forms .= $this->render_stock_field( 1 );
-				$data_forms .= $this->render_is_public_checkbox_field( 0 );
-				$data_forms .= $this->render_public_quantity_mode_field( 0 );
-				$data_forms .= $this->render_public_instant_purchase_field( 0 );
-				$data_forms .= $this->render_public_html_field( '' );
+				$data_forms .= $this->render_public_product_fields_section( 0, 0, 0, '' );
 				$default_cycle = class_exists( 'KTPWP_Contract_Billing_Cycle' ) ? KTPWP_Contract_Billing_Cycle::NONE : 'none';
-				$data_forms .= $this->render_contract_billing_cycle_field( $default_cycle );
-				$data_forms .= $this->render_service_recurring_fields_block_open( $default_cycle );
-				$data_forms .= $this->render_service_recurring_items_field( 0, $default_cycle );
-				$data_forms .= $this->render_service_initial_fees_field( 0 );
-				$data_forms .= $this->render_service_recurring_fields_block_close();
-				$data_forms .= $this->render_service_contract_fields_scripts();
+				$data_forms .= $this->render_contract_fields_section( 0, $default_cycle, 1 );
 
 				$data_forms .= "<div class='button'>";
 				// 追加実行ボタン（顧客タブと同じスタイル）
@@ -1046,20 +1042,11 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 						$data_forms .= "<div class=\"form-group\"><label>{$label_i18n}：</label> <input type=\"{$field['type']}\" name=\"{$fieldName}\" value=\"" . esc_attr( $value ) . "\"{$pattern}{$required}{$placeholder}{$step}{$min}></div>";
 					}
 				}
-				$data_forms .= $this->render_stock_field( (int) $stock );
-				$data_forms .= $this->render_is_public_checkbox_field( (int) $is_public );
-				$data_forms .= $this->render_public_quantity_mode_field( (int) $public_quantity_fixed );
-				$data_forms .= $this->render_public_instant_purchase_field( (int) $public_instant_purchase );
-				$data_forms .= $this->render_public_html_field( (string) $public_html );
 				$cycle_value = class_exists( 'KTPWP_Contract_Billing_Cycle' )
 					? KTPWP_Contract_Billing_Cycle::sanitize( $contract_billing_cycle )
 					: 'none';
-				$data_forms .= $this->render_contract_billing_cycle_field( $cycle_value );
-				$data_forms .= $this->render_service_recurring_fields_block_open( $cycle_value );
-				$data_forms .= $this->render_service_recurring_items_field( (int) $data_id, $cycle_value );
-				$data_forms .= $this->render_service_initial_fees_field( (int) $data_id );
-				$data_forms .= $this->render_service_recurring_fields_block_close();
-				$data_forms .= $this->render_service_contract_fields_scripts();
+				$data_forms .= $this->render_public_product_fields_section( (int) $is_public, (int) $public_quantity_fixed, (int) $public_instant_purchase, (string) $public_html );
+				$data_forms .= $this->render_contract_fields_section( (int) $data_id, $cycle_value, (int) $stock );
 				$data_forms .= '<input type="hidden" name="query_post" value="update">';
 				$data_forms .= "<input type=\"hidden\" name=\"data_id\" value=\"{$data_id}\">";
 				$data_forms .= "<div class='button'>";
@@ -1582,21 +1569,28 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 					'label'    => __( 'サービス名', 'ktpwp' ),
 					'sort_key' => 'service_name',
 				),
-				array(
+			);
+
+			if ( $this->is_public_products_enabled() ) {
+				$columns[] = array(
 					'class'    => 'col-public',
 					'label'    => __( '公開', 'ktpwp' ),
 					'sort_key' => 'is_public',
-				),
-				array(
+				);
+			}
+
+			if ( $this->is_contracts_feature_enabled() ) {
+				$columns[] = array(
 					'class'    => 'col-contract',
 					'label'    => __( '契約', 'ktpwp' ),
 					'sort_key' => 'contract_billing_cycle',
-				),
-				array(
-					'class'    => 'col-price-unit',
-					'label'    => __( '価格/単位', 'ktpwp' ),
-					'sort_key' => 'price',
-				),
+				);
+			}
+
+			$columns[] = array(
+				'class'    => 'col-price-unit',
+				'label'    => __( '価格/単位', 'ktpwp' ),
+				'sort_key' => 'price',
 			);
 
 			if ( ! $hide_tax ) {
@@ -1619,6 +1613,97 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 			);
 
 			return KTPWP_List_Table::open( $columns, $sort_context, 'ktp-list-table--service' );
+		}
+
+		/**
+		 * 公開商品機能が有効か（無料版では false）。
+		 *
+		 * @return bool
+		 */
+		private function is_public_products_enabled() {
+			return ! function_exists( 'ktpwp_is_feature_enabled' ) || ktpwp_is_feature_enabled( 'public_products' );
+		}
+
+		/**
+		 * 定期契約機能が有効か（無料版では false）。
+		 *
+		 * @return bool
+		 */
+		private function is_contracts_feature_enabled() {
+			return function_exists( 'ktpwp_contracts_feature_enabled' )
+				? ktpwp_contracts_feature_enabled()
+				: ( ! function_exists( 'ktpwp_is_feature_enabled' ) || ktpwp_is_feature_enabled( 'contracts' ) );
+		}
+
+		/**
+		 * 在庫数フィールドを表示するか（公開商品または定期契約が有効なとき）。
+		 *
+		 * @return bool
+		 */
+		private function should_show_service_stock_field() {
+			return $this->is_public_products_enabled() || $this->is_contracts_feature_enabled();
+		}
+
+		/**
+		 * 定期契約関連フィールド（無料版では EX 案内のみ）。
+		 *
+		 * @param int    $service_id             サービス ID。
+		 * @param string $contract_billing_cycle 請求サイクル。
+		 * @param int    $stock                  在庫数。
+		 * @return string
+		 */
+		private function render_contract_fields_section( $service_id, $contract_billing_cycle, $stock ) {
+			$html = '';
+
+			if ( $this->should_show_service_stock_field() ) {
+				$html .= $this->render_stock_field( (int) $stock );
+			}
+
+			if ( ! $this->is_contracts_feature_enabled() ) {
+				if ( class_exists( 'KTPWP_Edition' ) ) {
+					$html .= KTPWP_Edition::get_upgrade_message_html( __( '定期契約', 'ktpwp' ) );
+				}
+
+				return $html;
+			}
+
+			$cycle_value = class_exists( 'KTPWP_Contract_Billing_Cycle' )
+				? KTPWP_Contract_Billing_Cycle::sanitize( $contract_billing_cycle )
+				: 'none';
+			$html .= $this->render_contract_billing_cycle_field( $cycle_value );
+			$html .= $this->render_service_recurring_fields_block_open( $cycle_value );
+			$html .= $this->render_service_recurring_items_field( (int) $service_id, $cycle_value );
+			$html .= $this->render_service_initial_fees_field( (int) $service_id );
+			$html .= $this->render_service_recurring_fields_block_close();
+			$html .= $this->render_service_contract_fields_scripts();
+
+			return $html;
+		}
+
+		/**
+		 * 公開商品関連フィールド（無料版では EX 案内のみ）。
+		 *
+		 * @param int    $is_public               公開フラグ。
+		 * @param int    $public_quantity_fixed   数量固定。
+		 * @param int    $public_instant_purchase 即時購入。
+		 * @param string $public_html             公開用 HTML。
+		 * @return string
+		 */
+		private function render_public_product_fields_section( $is_public, $public_quantity_fixed, $public_instant_purchase, $public_html ) {
+			if ( ! $this->is_public_products_enabled() ) {
+				if ( class_exists( 'KTPWP_Edition' ) ) {
+					return KTPWP_Edition::get_upgrade_message_html( __( 'サイトに公開', 'ktpwp' ) );
+				}
+
+				return '';
+			}
+
+			$html  = $this->render_is_public_checkbox_field( (int) $is_public );
+			$html .= $this->render_public_quantity_mode_field( (int) $public_quantity_fixed );
+			$html .= $this->render_public_instant_purchase_field( (int) $public_instant_purchase );
+			$html .= $this->render_public_html_field( (string) $public_html );
+
+			return $html;
 		}
 
 		/**

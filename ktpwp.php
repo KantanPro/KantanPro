@@ -3,7 +3,7 @@
  * Plugin Name: KantanPro
  * Plugin URI: https://www.kantanpro.com/
  * Description: スモールビジネスのための販売支援ツール。ショートコード[ktpwp_all_tab]を固定ページに設置してください。
- * Version: 1.3.1
+ * Version: 1.3.2
  * Author: KantanPro
  * Author URI: https://www.kantanpro.com/kantanpro-page
  * License: GPL v2 or later
@@ -622,6 +622,12 @@ function ktpwp_init_update_checker() {
  * 定期契約の請求予定メール Cron を初期化
  */
 function ktpwp_init_contract_reminder_mail() {
+    if ( function_exists( 'ktpwp_contracts_feature_enabled' ) && ! ktpwp_contracts_feature_enabled() ) {
+        if ( class_exists( 'KTPWP_Contract_Reminder_Mail' ) ) {
+            KTPWP_Contract_Reminder_Mail::unschedule();
+        }
+        return;
+    }
     if ( class_exists( 'KTPWP_Contract_Reminder_Mail' ) ) {
         KTPWP_Contract_Reminder_Mail::boot();
     }

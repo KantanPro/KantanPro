@@ -62,6 +62,8 @@ function ktp_generate_contract_order_ajax() {
 		wp_send_json_error( __( '権限がありません。', 'ktpwp' ) );
 	}
 
+	ktpwp_require_contracts_feature_or_ajax_error();
+
 	if ( ! class_exists( 'KTPWP_Contract_Billing' ) ) {
 		wp_send_json_error( __( '定期請求機能が利用できません。', 'ktpwp' ) );
 	}
@@ -106,6 +108,8 @@ function ktp_generate_all_contract_orders_ajax() {
 		wp_send_json_error( __( '権限がありません。', 'ktpwp' ) );
 	}
 
+	ktpwp_require_contracts_feature_or_ajax_error();
+
 	if ( ! class_exists( 'KTPWP_Contract_Billing' ) ) {
 		wp_send_json_error( __( '定期請求機能が利用できません。', 'ktpwp' ) );
 	}
@@ -148,6 +152,8 @@ function ktp_send_contract_reminder_ajax() {
 		wp_send_json_error( __( '権限がありません。', 'ktpwp' ) );
 	}
 
+	ktpwp_require_contracts_feature_or_ajax_error();
+
 	if ( ! class_exists( 'KTPWP_Contract_Reminder_Mail' ) ) {
 		wp_send_json_error( __( '請求予定メール機能が利用できません。', 'ktpwp' ) );
 	}
@@ -183,6 +189,8 @@ function ktp_send_pending_contract_reminders_ajax() {
 	if ( ! ktpwp_contract_billing_ajax_can_manage() ) {
 		wp_send_json_error( __( '権限がありません。', 'ktpwp' ) );
 	}
+
+	ktpwp_require_contracts_feature_or_ajax_error();
 
 	if ( ! class_exists( 'KTPWP_Contract_Reminder_Mail' ) ) {
 		wp_send_json_error( __( '請求予定メール機能が利用できません。', 'ktpwp' ) );

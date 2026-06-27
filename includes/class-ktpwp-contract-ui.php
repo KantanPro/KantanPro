@@ -44,6 +44,10 @@ if ( ! class_exists( 'KTPWP_Contract_UI' ) ) {
 		 * @return string
 		 */
 		public function render_client_section( $client_id ) {
+			if ( function_exists( 'ktpwp_contracts_feature_enabled' ) && ! ktpwp_contracts_feature_enabled() ) {
+				return '';
+			}
+
 			$client_id = absint( $client_id );
 			if ( $client_id <= 0 || ! $this->db->tables_exist() ) {
 				return '';

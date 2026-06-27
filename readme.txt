@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.3.1
+Stable tag: 1.3.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -322,6 +322,11 @@ curl -sS -X POST \
 * MySQL 5.6 以上 または MariaDB 10.0 以上
 * 推奨メモリ: 256MB 以上
 * 推奨PHP拡張: GD（画像処理用）
+
+= 1.3.2 - 2026年06月27日 =
+* 無料版で有料機能（公開商品・即時購入・定期契約）の UI が表示される不具合を修正
+* サービスタブ・顧客タブ・仕事リスト・案件タブ・一般設定から該当 UI を非表示にし、有料版案内を表示
+* 定期契約関連 AJAX と Cron を無料版で拒否するようガードを追加
 
 = 1.3.1 - 2026年06月27日 =
 * サービスタブで重大なエラーになる不具合を修正（即時購入フラグ用メソッドの欠落）

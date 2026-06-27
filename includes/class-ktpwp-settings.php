@@ -3225,7 +3225,8 @@ class KTPWP_Settings {
             'bank_transfer_setting_section'
         );
 
-        if ( class_exists( 'KTPWP_Contract_Reminder_Mail' ) ) {
+        if ( class_exists( 'KTPWP_Contract_Reminder_Mail' )
+            && ( ! function_exists( 'ktpwp_contracts_feature_enabled' ) || ktpwp_contracts_feature_enabled() ) ) {
             add_settings_section(
                 'contract_reminder_setting_section',
                 __( '定期請求メール', 'ktpwp' ),

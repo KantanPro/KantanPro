@@ -2264,7 +2264,8 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
         }
         </script>';
 
-				if ( class_exists( 'KTPWP_Contract_UI' ) && ! empty( $data_id ) && is_numeric( $data_id ) ) {
+				if ( function_exists( 'ktpwp_contracts_feature_enabled' ) && ktpwp_contracts_feature_enabled()
+					&& class_exists( 'KTPWP_Contract_UI' ) && ! empty( $data_id ) && is_numeric( $data_id ) ) {
 					$data_forms .= KTPWP_Contract_UI::get_instance()->render_client_section( (int) $data_id );
 				}
 

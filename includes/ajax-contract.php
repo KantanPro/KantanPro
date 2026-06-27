@@ -30,6 +30,8 @@ function ktp_save_contract_ajax() {
 		wp_send_json_error( __( '権限がありません。', 'ktpwp' ) );
 	}
 
+	ktpwp_require_contracts_feature_or_ajax_error();
+
 	if ( ! class_exists( 'KTPWP_Contract_DB' ) ) {
 		wp_send_json_error( __( '定期契約機能が利用できません。', 'ktpwp' ) );
 	}
@@ -90,6 +92,8 @@ function ktp_get_contract_ajax() {
 		wp_send_json_error( __( '権限がありません。', 'ktpwp' ) );
 	}
 
+	ktpwp_require_contracts_feature_or_ajax_error();
+
 	$contract_id = absint( $_POST['contract_id'] ?? 0 );
 	$client_id   = absint( $_POST['client_id'] ?? 0 );
 
@@ -126,6 +130,8 @@ function ktp_delete_contract_ajax() {
 		wp_send_json_error( __( '権限がありません。', 'ktpwp' ) );
 	}
 
+	ktpwp_require_contracts_feature_or_ajax_error();
+
 	$contract_id = absint( $_POST['contract_id'] ?? 0 );
 	$client_id   = absint( $_POST['client_id'] ?? 0 );
 
@@ -154,6 +160,8 @@ function ktp_create_contract_setup_checkout_ajax() {
 	if ( ! ktpwp_contract_ajax_can_manage() ) {
 		wp_send_json_error( __( '権限がありません。', 'ktpwp' ) );
 	}
+
+	ktpwp_require_contracts_feature_or_ajax_error();
 
 	$contract_id = absint( $_POST['contract_id'] ?? 0 );
 	$client_id   = absint( $_POST['client_id'] ?? 0 );

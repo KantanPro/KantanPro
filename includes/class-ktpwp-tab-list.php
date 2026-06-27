@@ -90,7 +90,8 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 
 			$content .= '<div class="ktp-list-controller__bar">';
 			$content .= '<div class="ktp-list-controller-actions">';
-			if ( class_exists( 'KTPWP_Contract_Billing_UI' ) ) {
+			if ( function_exists( 'ktpwp_contracts_feature_enabled' ) && ktpwp_contracts_feature_enabled()
+				&& class_exists( 'KTPWP_Contract_Billing_UI' ) ) {
 				$billing_ui = KTPWP_Contract_Billing_UI::get_instance();
 				$content   .= $billing_ui->render_list_view_switcher( $tab_name, $recurring_billing_view );
 				if ( ! $recurring_billing_view ) {
@@ -377,7 +378,8 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 			// 印刷対象エリア開始（現在表示されている内容を印刷するためのラッパー）
 			$content .= '<div id="ktp_list_print_area">';
 
-			if ( $recurring_billing_view && class_exists( 'KTPWP_Contract_Billing_UI' ) ) {
+			if ( function_exists( 'ktpwp_contracts_feature_enabled' ) && ktpwp_contracts_feature_enabled()
+				&& $recurring_billing_view && class_exists( 'KTPWP_Contract_Billing_UI' ) ) {
 				$billing_period = isset( $_GET['billing_period'] ) ? sanitize_text_field( wp_unslash( $_GET['billing_period'] ) ) : null;
 				$content       .= KTPWP_Contract_Billing_UI::get_instance()->render_monthly_panel( $tab_name, $billing_period );
 			} else {

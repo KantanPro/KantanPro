@@ -1630,7 +1630,8 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 					$content .= '<div class="ktp-order-controller-actions">';
 					$content .= '<div class="ktp-order-controller-left">';
 
-					if ( class_exists( 'KTPWP_Order_Contract_UI' ) ) {
+					if ( function_exists( 'ktpwp_contracts_feature_enabled' ) && ktpwp_contracts_feature_enabled()
+						&& class_exists( 'KTPWP_Order_Contract_UI' ) ) {
 						$content .= KTPWP_Order_Contract_UI::get_instance()->render_action_button( $order_data );
 					}
 
@@ -1750,7 +1751,8 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 						$content .= KTPWP_Tab_Search_UI::get_instance()->maybe_render_cross_search_panel( 'order', array( 'order_id' ) );
 					}
 
-					if ( class_exists( 'KTPWP_Order_Contract_UI' ) ) {
+					if ( function_exists( 'ktpwp_contracts_feature_enabled' ) && ktpwp_contracts_feature_enabled()
+						&& class_exists( 'KTPWP_Order_Contract_UI' ) ) {
 						$content .= KTPWP_Order_Contract_UI::get_instance()->render_panel( $order_data );
 					}
 
