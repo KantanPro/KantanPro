@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.3.0
+Stable tag: 1.3.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -322,6 +322,10 @@ curl -sS -X POST \
 * MySQL 5.6 以上 または MariaDB 10.0 以上
 * 推奨メモリ: 256MB 以上
 * 推奨PHP拡張: GD（画像処理用）
+
+= 1.3.1 - 2026年06月27日 =
+* サービスタブで重大なエラーになる不具合を修正（即時購入フラグ用メソッドの欠落）
+* サービステーブルに public_instant_purchase カラムのマイグレーションを追加
 
 = 1.3.0 - 2026年06月27日 =
 * 顧客タブ・協力会社タブで重大なエラーになる不具合を修正（外部リンク用フォーム描画メソッドの欠落）
