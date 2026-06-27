@@ -1,6 +1,6 @@
 <?php
 /**
- * External URL helpers (normalize + globe open link).
+ * External URL / email / phone helpers (normalize + action open links).
  *
  * @package KTPWP
  * @since 1.0.0
@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( ! class_exists( 'KTPWP_External_Url' ) ) {
 
 	/**
-	 * URL normalization and form field open-link UI (KantanBiz detail-cards 相当).
+	 * URL / メール / 電話の正規化とフォーム横アクションリンク UI（KantanBiz 相当）。
 	 */
 	class KTPWP_External_Url {
 
@@ -40,40 +40,109 @@ if ( ! class_exists( 'KTPWP_External_Url' ) ) {
 		}
 
 		/**
-		 * Heroicons globe (same path as KantanBiz clients/partials/detail-cards).
+		 * @param string $email Raw email address.
+		 */
+		public static function is_valid_email( string $email ): bool {
+			return filter_var( trim( $email ), FILTER_VALIDATE_EMAIL ) !== false;
+		}
+
+		/**
+		 * @param string $email Raw email address.
+		 */
+		public static function mailto_href( string $email ): string {
+			$email = trim( $email );
+			if ( ! self::is_valid_email( $email ) ) {
+				return '';
+			}
+
+			return 'mailto:' . rawurlencode( $email );
+		}
+
+		/**
+		 * @param string $phone Raw phone number.
+		 */
+		public static function tel_href( string $phone ): string {
+			$raw = trim( $phone );
+			if ( $raw === '' ) {
+				return '';
+			}
+
+			$has_plus = isset( $raw[0] ) && $raw[0] === '+';
+			$digits   = preg_replace( '/\D/u', '', $raw ) ?? '';
+			if ( $digits === '' ) {
+				return '';
+			}
+
+			return 'tel:' . ( $has_plus ? '+' : '' ) . $digits;
+		}
+
+		/**
+		 * Heroicons globe outline (KantanBiz biz-url-field 相当).
 		 */
 		public static function globe_svg(): string {
-			return '<svg xmlns="http://www.w3.org/2000/svg" class="ktp-url-open-link__icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">'
-				. '<path fill-rule="evenodd" d="M10 1a9 9 0 100 18 9 9 0 000-18zm4.5 9a7.5 7.5 0 01-.14 1.425h-2.151a14.391 14.391 0 000-2.85h2.15A7.5 7.5 0 0114.5 10zM10 2.5c.914 0 1.885 1.17 2.32 3.575H7.68C8.115 3.67 9.086 2.5 10 2.5zM7.454 8.575a12.893 12.893 0 000 2.85H5.303a7.5 7.5 0 010-2.85h2.15zm.226 4.35h4.64C11.885 16.33 10.914 17.5 10 17.5s-1.885-1.17-2.32-3.575zM12.546 11.425H7.454a12.893 12.893 0 010-2.85h5.092a12.893 12.893 0 010 2.85zM4.5 10c0-.49.047-.97.14-1.425h2.151a14.391 14.391 0 000 2.85H4.64A7.5 7.5 0 014.5 10zm8.82 6.348a10.214 10.214 0 001.355-3.423h1.535a7.538 7.538 0 01-2.89 3.423zM16.21 7.075h-1.535a10.214 10.214 0 00-1.355-3.423 7.538 7.538 0 012.89 3.423zM6.68 3.652A10.214 10.214 0 005.325 7.075H3.79A7.538 7.538 0 016.68 3.652zM3.79 12.925h1.535a10.214 10.214 0 001.355 3.423 7.538 7.538 0 01-2.89-3.423z" clip-rule="evenodd" />'
+			return '<svg xmlns="http://www.w3.org/2000/svg" class="ktp-url-open-link__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">'
+				. '<path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" />'
 				. '</svg>';
+		}
+
+		/**
+		 * Heroicons envelope outline.
+		 */
+		public static function email_svg(): string {
+			return '<svg xmlns="http://www.w3.org/2000/svg" class="ktp-url-open-link__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">'
+				. '<path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />'
+				. '</svg>';
+		}
+
+		/**
+		 * Heroicons phone outline.
+		 */
+		public static function phone_svg(): string {
+			return '<svg xmlns="http://www.w3.org/2000/svg" class="ktp-url-open-link__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">'
+				. '<path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />'
+				. '</svg>';
+		}
+
+		/**
+		 * Action link placed beside an input.
+		 *
+		 * @param string $href        Resolved href (empty = disabled).
+		 * @param string $input_id    Input element id (data-ktp-action-source).
+		 * @param string $aria_label  Accessible label.
+		 * @param string $svg         Icon markup.
+		 * @param bool   $external    Open in new tab (URL only).
+		 */
+		private static function render_action_anchor( string $href, string $input_id, string $aria_label, string $svg, bool $external = false ): string {
+			$disabled  = $href === '';
+			$classes   = 'ktp-url-open-link' . ( $disabled ? ' ktp-url-open-link--disabled' : '' );
+			$link_href = $disabled ? '#' : $href;
+			$extra     = $disabled ? ' aria-disabled="true" tabindex="-1"' : '';
+			$target    = ( ! $disabled && $external ) ? ' target="_blank" rel="noopener noreferrer"' : '';
+
+			return sprintf(
+				'<a href="%s" class="%s" data-ktp-action-source="%s" aria-label="%s" title="%s"%s%s>%s</a>',
+				esc_url( $link_href ),
+				esc_attr( $classes ),
+				esc_attr( $input_id ),
+				esc_attr( $aria_label ),
+				esc_attr( $aria_label ),
+				$target,
+				$extra,
+				$svg
+			);
 		}
 
 		/**
 		 * Globe link placed beside a URL input.
 		 *
 		 * @param string $raw         Current field value.
-		 * @param string $input_id    Input element id (data-ktp-url-source).
+		 * @param string $input_id    Input element id.
 		 * @param string $aria_label  Accessible label.
 		 */
 		public static function render_open_anchor( string $raw, string $input_id, string $aria_label = '' ): string {
 			$aria_label = $aria_label !== '' ? $aria_label : __( 'URL', 'ktpwp' );
-			$url        = self::normalize( $raw );
-			$disabled   = $url === '';
-			$classes    = 'ktp-url-open-link' . ( $disabled ? ' ktp-url-open-link--disabled' : '' );
-			$href       = $disabled ? '#' : $url;
 
-			$extra = $disabled ? ' aria-disabled="true" tabindex="-1"' : '';
-
-			return sprintf(
-				'<a href="%s" target="_blank" rel="noopener noreferrer" class="%s" data-ktp-url-source="%s" aria-label="%s" title="%s"%s>%s</a>',
-				esc_url( $href ),
-				esc_attr( $classes ),
-				esc_attr( $input_id ),
-				esc_attr( $aria_label ),
-				esc_attr( $aria_label ),
-				$extra,
-				self::globe_svg()
-			);
+			return self::render_action_anchor( self::normalize( $raw ), $input_id, $aria_label, self::globe_svg(), true );
 		}
 
 		/**
@@ -90,21 +159,147 @@ if ( ! class_exists( 'KTPWP_External_Url' ) ) {
 			string $required_attr,
 			string $placeholder_attr
 		): string {
-			$input = sprintf(
-				'<input id="%s" type="%s" name="%s" value="%s"%s%s%s>',
-				esc_attr( $field_id ),
-				esc_attr( (string) ( $field['type'] ?? 'text' ) ),
-				esc_attr( (string) ( $field['name'] ?? 'url' ) ),
-				esc_attr( $value ),
+			return self::render_contact_form_group(
+				'url',
+				$label_text,
+				$field_id,
+				$field,
+				$value,
 				$pattern_attr,
 				$required_attr,
 				$placeholder_attr
 			);
+		}
 
-			$link = self::render_open_anchor( $value, $field_id, $label_text );
+		/**
+		 * Form group: label + email input + mailto link.
+		 *
+		 * @param string $label_text Already translated label (without trailing colon).
+		 */
+		public static function render_email_form_group(
+			string $label_text,
+			string $field_id,
+			array $field,
+			string $value,
+			string $pattern_attr,
+			string $required_attr,
+			string $placeholder_attr
+		): string {
+			return self::render_contact_form_group(
+				'email',
+				$label_text,
+				$field_id,
+				$field,
+				$value,
+				$pattern_attr,
+				$required_attr,
+				$placeholder_attr
+			);
+		}
+
+		/**
+		 * Form group: label + phone input + tel link.
+		 *
+		 * @param string $label_text Already translated label (without trailing colon).
+		 */
+		public static function render_phone_form_group(
+			string $label_text,
+			string $field_id,
+			array $field,
+			string $value,
+			string $pattern_attr,
+			string $required_attr,
+			string $placeholder_attr
+		): string {
+			return self::render_contact_form_group(
+				'phone',
+				$label_text,
+				$field_id,
+				$field,
+				$value,
+				$pattern_attr,
+				$required_attr,
+				$placeholder_attr
+			);
+		}
+
+		/**
+		 * Render url / email / phone form group when supported; otherwise null.
+		 */
+		public static function maybe_render_form_group(
+			string $field_name,
+			string $label_text,
+			string $field_id,
+			array $field,
+			string $value,
+			string $pattern_attr,
+			string $required_attr,
+			string $placeholder_attr
+		): ?string {
+			switch ( $field_name ) {
+				case 'url':
+					return self::render_url_form_group( $label_text, $field_id, $field, $value, $pattern_attr, $required_attr, $placeholder_attr );
+				case 'email':
+					return self::render_email_form_group( $label_text, $field_id, $field, $value, $pattern_attr, $required_attr, $placeholder_attr );
+				case 'phone':
+					return self::render_phone_form_group( $label_text, $field_id, $field, $value, $pattern_attr, $required_attr, $placeholder_attr );
+				default:
+					return null;
+			}
+		}
+
+		/**
+		 * @param 'url'|'email'|'phone' $kind Field kind.
+		 */
+		private static function render_contact_form_group(
+			string $kind,
+			string $label_text,
+			string $field_id,
+			array $field,
+			string $value,
+			string $pattern_attr,
+			string $required_attr,
+			string $placeholder_attr
+		): string {
+			$input_type  = (string) ( $field['type'] ?? 'text' );
+			$input_name  = (string) ( $field['name'] ?? $kind );
+			$extra_attrs = '';
+
+			if ( $kind === 'url' ) {
+				$input_marker = ' data-ktp-url-input';
+				$href         = self::normalize( $value );
+				$svg          = self::globe_svg();
+				$external     = true;
+			} elseif ( $kind === 'email' ) {
+				$input_marker = ' data-ktp-email-input';
+				$href         = self::mailto_href( $value );
+				$svg          = self::email_svg();
+				$external     = false;
+			} else {
+				$input_marker = ' data-ktp-phone-input';
+				$href         = self::tel_href( $value );
+				$svg          = self::phone_svg();
+				$external     = false;
+				$extra_attrs  = ' inputmode="tel" autocomplete="tel"';
+			}
+
+			$input = sprintf(
+				'<input id="%s" type="%s" name="%s" value="%s"%s%s%s%s>',
+				esc_attr( $field_id ),
+				esc_attr( $input_type ),
+				esc_attr( $input_name ),
+				esc_attr( $value ),
+				$pattern_attr,
+				$required_attr,
+				$placeholder_attr,
+				$input_marker . $extra_attrs
+			);
+
+			$link = self::render_action_anchor( $href, $field_id, $label_text, $svg, $external );
 
 			$html = sprintf(
-				'<div class="form-group form-group--url"><label for="%s">%s：</label><span class="ktp-url-field-wrap">%s%s</span></div>',
+				'<div class="form-group form-group--%s"><label for="%s">%s：</label><span class="ktp-url-field-wrap">%s%s</span></div>',
+				esc_attr( $kind ),
 				esc_attr( $field_id ),
 				esc_html( $label_text ),
 				$input,
@@ -115,7 +310,7 @@ if ( ! class_exists( 'KTPWP_External_Url' ) ) {
 		}
 
 		/**
-		 * Inline script: sync globe link with input value (once per page).
+		 * Inline script: sync action links with input values (once per page).
 		 */
 		public static function maybe_script(): string {
 			if ( self::$script_printed ) {
@@ -136,13 +331,36 @@ if ( ! class_exists( 'KTPWP_External_Url' ) ) {
 		} catch (e) {}
 		return "";
 	}
+	function normalizeEmail(raw) {
+		raw = (raw || "").trim();
+		if (!raw) { return ""; }
+		if (/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(raw)) {
+			return "mailto:" + encodeURIComponent(raw);
+		}
+		return "";
+	}
+	function normalizePhone(raw) {
+		raw = (raw || "").trim();
+		if (!raw) { return ""; }
+		var hasPlus = raw.charAt(0) === "+";
+		var digits = raw.replace(/\\D/g, "");
+		if (!digits) { return ""; }
+		return "tel:" + (hasPlus ? "+" : "") + digits;
+	}
+	function resolveHref(input) {
+		if (!input) { return ""; }
+		if (input.hasAttribute("data-ktp-url-input")) { return normalizeUrl(input.value); }
+		if (input.hasAttribute("data-ktp-email-input")) { return normalizeEmail(input.value); }
+		if (input.hasAttribute("data-ktp-phone-input")) { return normalizePhone(input.value); }
+		return "";
+	}
 	function syncLink(link) {
 		if (!link) { return; }
-		var id = link.getAttribute("data-ktp-url-source");
+		var id = link.getAttribute("data-ktp-action-source") || link.getAttribute("data-ktp-url-source");
 		var input = id ? document.getElementById(id) : null;
-		var url = input ? normalizeUrl(input.value) : "";
-		if (url) {
-			link.href = url;
+		var href = resolveHref(input);
+		if (href) {
+			link.href = href;
 			link.classList.remove("ktp-url-open-link--disabled");
 			link.removeAttribute("aria-disabled");
 			link.removeAttribute("tabindex");
@@ -154,11 +372,11 @@ if ( ! class_exists( 'KTPWP_External_Url' ) ) {
 		}
 	}
 	function bindInput(input) {
-		if (!input || input.getAttribute("data-ktp-url-bound")) { return; }
-		input.setAttribute("data-ktp-url-bound", "1");
+		if (!input || input.getAttribute("data-ktp-action-bound")) { return; }
+		input.setAttribute("data-ktp-action-bound", "1");
 		var id = input.id;
 		if (!id) { return; }
-		document.querySelectorAll("[data-ktp-url-source=\\"" + id + "\\"]").forEach(function(link) {
+		document.querySelectorAll("[data-ktp-action-source=\\"" + id + "\\"],[data-ktp-url-source=\\"" + id + "\\"]").forEach(function(link) {
 			var handler = function() { syncLink(link); };
 			input.addEventListener("input", handler);
 			input.addEventListener("change", handler);
@@ -166,7 +384,7 @@ if ( ! class_exists( 'KTPWP_External_Url' ) ) {
 		});
 	}
 	function init() {
-		document.querySelectorAll("input[name=\\"url\\"]").forEach(bindInput);
+		document.querySelectorAll("[data-ktp-url-input],[data-ktp-email-input],[data-ktp-phone-input]").forEach(bindInput);
 	}
 	if (document.readyState === "loading") {
 		document.addEventListener("DOMContentLoaded", init);
@@ -174,7 +392,7 @@ if ( ! class_exists( 'KTPWP_External_Url' ) ) {
 		init();
 	}
 	document.addEventListener("click", function(e) {
-		var link = e.target.closest("[data-ktp-url-source].ktp-url-open-link--disabled");
+		var link = e.target.closest("[data-ktp-action-source].ktp-url-open-link--disabled,[data-ktp-url-source].ktp-url-open-link--disabled");
 		if (link) { e.preventDefault(); }
 	});
 })();
