@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.3.2
+Stable tag: 1.3.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -322,6 +322,10 @@ curl -sS -X POST \
 * MySQL 5.6 以上 または MariaDB 10.0 以上
 * 推奨メモリ: 256MB 以上
 * 推奨PHP拡張: GD（画像処理用）
+
+= 1.3.3 - 2026年06月28日 =
+* 案件名インライン編集で project_name nonce 未定義の Warning が出る不具合を修正
+* ktpwp_access / edit_posts 権限ユーザーにも nonce を発行し、インライン編集を有効化
 
 = 1.3.2 - 2026年06月27日 =
 * 無料版で有料機能（公開商品・即時購入・定期契約）の UI が表示される不具合を修正
