@@ -469,6 +469,8 @@ jQuery(document).ready(function($) {
                 }
             }
 
+            ensureInvoicePopupOnBody();
+
             // ポップアップを閉じる関数
             function closeInvoicePopup() {
                 popup.style.display = "none";
