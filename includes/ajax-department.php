@@ -151,7 +151,8 @@ function ktp_update_department_selection_ajax() {
 
     // パラメータの取得とバリデーション
     $department_id = intval( $_POST['department_id'] );
-    $is_selected = isset( $_POST['is_selected'] ) ? (bool) $_POST['is_selected'] : false;
+    $is_selected_raw = isset( $_POST['is_selected'] ) ? wp_unslash( $_POST['is_selected'] ) : '0';
+    $is_selected     = in_array( strtolower( (string) $is_selected_raw ), array( '1', 'true', 'yes', 'on' ), true );
 
     if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
         error_log( "KTPWP AJAX: update_department_selection called - department_id: {$department_id}, is_selected: " . ( $is_selected ? 'true' : 'false' ) );

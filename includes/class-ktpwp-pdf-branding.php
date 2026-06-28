@@ -215,6 +215,7 @@ final class KTPWP_Pdf_Branding {
 				'seal_data_uri' => $branding['seal_data_uri'],
 			),
 			'bank_transfer_html' => class_exists( 'KTPWP_Settings' ) ? KTPWP_Settings::get_bank_transfer_invoice_html() : '',
+			'bank_transfer_bulk_issuer_html' => class_exists( 'KTPWP_Settings' ) ? KTPWP_Settings::get_bank_transfer_bulk_issuer_html() : '',
 		);
 	}
 }

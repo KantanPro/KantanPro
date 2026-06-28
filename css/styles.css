@@ -2502,7 +2502,9 @@ form > .create-order-btn {
   color: #1e40af;
   font-size: 14px;
   font-weight: 700;
-  margin: 4px 0 8px;
+  margin: 8px 0 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px dashed #bfdbfe;
 }
 
 .ktp-contract-billing-panel__header {
@@ -7641,6 +7643,307 @@ body.ktpwp-modal-open {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+}
+
+/* 一括請求（KantanBiz 一括請求書レイアウト相当） */
+#invoiceList .ktp-bulk-invoice-content-area {
+  padding: 8mm 10mm 10mm 10mm;
+  box-sizing: border-box;
+}
+#invoiceList .ktp-bulk-invoice-content-area.ktp-bulk-invoice-envelope-page {
+  position: relative;
+  --bulk-body-flow-top-extra: 20mm;
+  --bulk-issuer-stack-max-width: calc(100% - var(--bulk-env-left, 23mm) - 88mm - 4mm);
+}
+#invoiceList .ktp-bulk-invoice-issuer-stack {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 8;
+  max-width: var(--bulk-issuer-stack-max-width);
+  pointer-events: none;
+}
+#invoiceList .ktp-bulk-invoice-issuer-inner {
+  position: relative;
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  margin-left: auto;
+  text-align: left;
+  padding-right: var(--bulk-issuer-pad-right, 5mm);
+  pointer-events: auto;
+  box-sizing: border-box;
+}
+#invoiceList .ktp-bulk-invoice-issuer-text-block {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  position: relative;
+}
+#invoiceList .ktp-bulk-invoice-issuer-text-block > div {
+  margin-bottom: 0.2em;
+}
+#invoiceList .ktp-bulk-invoice-issuer-text-block > div:last-child {
+  margin-bottom: 0;
+}
+#invoiceList .ktp-bulk-invoice-issuer-doc-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5em;
+  width: 0;
+  min-width: 100%;
+  margin-bottom: 0.55em;
+  font-size: 2em;
+  color: var(--bulk-accent, #374151);
+  line-height: 1;
+}
+#invoiceList .ktp-bulk-invoice-issuer-doc-title-ornament {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  gap: 0.2em;
+  min-width: 0;
+}
+#invoiceList .ktp-bulk-invoice-issuer-doc-title-ornament > span {
+  display: block;
+  width: 100%;
+  height: 0.0625em;
+  min-height: 1px;
+  background: currentColor;
+}
+#invoiceList .ktp-bulk-invoice-issuer-doc-title-text {
+  flex: 0 0 auto;
+  font-size: inherit;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+#invoiceList .ktp-bulk-invoice-issuer-logo-wrap {
+  width: 0;
+  min-width: 100%;
+  margin-top: 2.5em;
+  margin-bottom: 0.45em;
+  overflow: hidden;
+}
+#invoiceList .ktp-bulk-invoice-issuer-logo-img {
+  display: block;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: auto !important;
+  object-fit: contain;
+  object-position: left center;
+}
+#invoiceList .ktp-bulk-invoice-issuer-bank {
+  margin-top: 1.2em;
+}
+#invoiceList .ktp-bulk-invoice-issuer-text-block,
+#invoiceList .ktp-bulk-invoice-issuer-bank-text {
+  font-size: inherit;
+  color: inherit;
+}
+#invoiceList .ktp-bulk-invoice-issuer-bank-text,
+#invoiceList .ktp-bulk-invoice-issuer-bank .ktp-invoice-bank-transfer {
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+  background-color: #fff !important;
+  box-shadow: none !important;
+}
+#invoiceList .ktp-bulk-invoice-issuer-bank .ktp-invoice-bank-transfer > div:first-child {
+  border-bottom: none !important;
+  padding-bottom: 0 !important;
+  margin-bottom: 0.2em !important;
+}
+#invoiceList .ktp-bulk-invoice-issuer-seal-scope {
+  position: relative;
+}
+#invoiceList .ktp-bulk-invoice-issuer-seal-overlay {
+  position: absolute;
+  right: -0.4em;
+  top: -0.5em;
+  z-index: 2;
+  pointer-events: none;
+  background: transparent;
+  mix-blend-mode: multiply;
+  opacity: 0.75;
+}
+#invoiceList .ktp-bulk-invoice-content-area.ktp-bulk-invoice-envelope-page {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-areas:
+    "addressee issuer"
+    "body body"
+    "footer footer";
+  column-gap: 1rem;
+  align-items: start;
+  --bulk-issuer-pad-right: 6mm;
+}
+#invoiceList .ktp-bulk-invoice-address-block {
+  position: static !important;
+  top: auto !important;
+  left: auto !important;
+  grid-area: addressee;
+  max-width: none !important;
+  margin: 0 !important;
+  z-index: auto !important;
+}
+#invoiceList .ktp-bulk-invoice-issuer-stack {
+  position: static;
+  grid-area: issuer;
+  justify-self: stretch;
+  align-self: start;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  pointer-events: auto;
+}
+#invoiceList .ktp-bulk-invoice-issuer-inner {
+  width: 90%;
+  max-width: 90%;
+}
+#invoiceList .ktp-bulk-invoice-print-except-addressee {
+  grid-area: body;
+  margin-top: 1.25rem !important;
+  min-width: 0;
+}
+#invoiceList .ktp-bulk-invoice-envelope-footer {
+  grid-area: footer;
+  grid-column: 1 / -1;
+  width: 100%;
+  min-width: 0;
+}
+#invoiceList .ktp-bulk-invoice-content-area.ktp-bulk-invoice-envelope-page--labeled {
+  padding-top: calc(8mm + var(--bulk-envelope-label-offset, 15mm)) !important;
+}
+#invoiceList .ktp-bulk-invoice-content-area.ktp-bulk-invoice-envelope-page--labeled .ktp-bulk-invoice-address-block {
+  margin-top: calc(-1 * var(--bulk-envelope-label-offset, 15mm));
+}
+#invoiceList .ktp-bulk-invoice-envelope-label-slot {
+  font-size: var(--bulk-issuer-text-font-size, 14px);
+  line-height: 1;
+  margin-bottom: 0.35em;
+}
+#invoiceList .ktp-bulk-invoice-envelope-label {
+  display: block;
+  color: #2563eb;
+  font-size: 2em;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  text-align: left;
+}
+#invoiceList .ktp-bulk-invoice-addressee {
+  font-size: 12px;
+  line-height: 1.4;
+  margin-bottom: 20px;
+  color: #111827;
+}
+#invoiceList .ktp-bulk-invoice-addressee > div {
+  margin-bottom: 5px;
+}
+/* 宛名ご担当: ラジオ選択でプレビュー反映（KantanBiz addressee-contact-mode-styles 相当） */
+#invoiceList .ktp-bulk-invoice-content-area:has(input[name="addressee-contact-mode"][value="representative"]:checked) .ktp-bulk-invoice-representative-row {
+  display: block !important;
+}
+#invoiceList .ktp-bulk-invoice-content-area:has(input[name="addressee-contact-mode"][value="department"]:checked) .ktp-bulk-invoice-department-contact-row {
+  display: block !important;
+}
+#invoiceList .ktp-bulk-invoice-content-area:has(input[name="addressee-contact-mode"][value="representative"]:checked) .ktp-bulk-invoice-company-honorific,
+#invoiceList .ktp-bulk-invoice-content-area:has(input[name="addressee-contact-mode"][value="department"]:checked) .ktp-bulk-invoice-company-honorific {
+  display: none !important;
+}
+#invoiceList .ktp-bulk-invoice-note-box {
+  margin: 2rem auto 0;
+  max-width: 42rem;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background-color: #f9fafb;
+  text-align: center;
+}
+#invoiceList .ktp-bulk-invoice-note-box > p.ktp-bulk-invoice-envelope-margin-note {
+  margin: 0 0 12px;
+  text-align: left;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #6b7280;
+}
+#invoiceList .ktp-bulk-invoice-document-lead {
+  width: 50%;
+  max-width: 50%;
+  text-align: left;
+  margin: 0 0 16px 0;
+  color: #374151;
+}
+#invoiceList .ktp-bulk-invoice-summary-box {
+  margin-bottom: 24px;
+  padding: 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background-color: #f9fafb;
+  font-size: 14px;
+  color: #374151;
+}
+#invoiceList .ktp-bulk-invoice-order-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+#invoiceList .ktp-bulk-invoice-order-group {
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 0;
+}
+#invoiceList .ktp-bulk-invoice-order-group-header {
+  padding: 8px 16px;
+  background-color: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 14px;
+  font-weight: 600;
+  color: #075985;
+}
+#invoiceList .ktp-bulk-invoice-order-group-body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+#invoiceList .ktp-bulk-invoice-order-group-footer {
+  padding: 8px 16px;
+  border-top: 2px solid #cbd5e1;
+  background-color: #f9fafb;
+  text-align: right;
+  font-size: 16px;
+  font-weight: 700;
+  color: #0369a1;
+}
+#invoiceList .ktp-bulk-invoice-order-card {
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  overflow: hidden;
+  background-color: #fff;
+}
+#invoiceList .ktp-bulk-invoice-order-card-header {
+  padding: 8px 12px;
+  border-bottom: 1px solid #e5e7eb;
+  background-color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2937;
+}
+#invoiceList .ktp-bulk-invoice-order-card-footer {
+  padding: 8px 12px;
+  text-align: right;
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+  border-top: 1px solid #e5e7eb;
+  background-color: #fff;
 }
 
 /* 一括請求：税額列は既定非表示（チェックまたは帳票設定で表示） */

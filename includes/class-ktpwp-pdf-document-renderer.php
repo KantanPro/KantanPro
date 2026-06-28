@@ -98,39 +98,106 @@ final class KTPWP_Pdf_Document_Renderer {
 	 * @param string               $legacy_company_info_html 従来の company-info-box HTML（フォールバック）
 	 */
 	public static function bulk_invoice_company_section_html( array $branding, array $doc_settings, $legacy_company_info_html = '' ) {
-		$sizes       = KTPWP_Pdf_Document_Settings::scaled_branding_sizes( $doc_settings );
-		$logo_style  = KTPWP_Pdf_Document_Settings::logo_css_declaration( $sizes, true );
-		$seal_style  = KTPWP_Pdf_Document_Settings::seal_css_declaration( $sizes );
-		$line_height = (float) ( $doc_settings['issuer_line_height'] ?? KTPWP_Pdf_Document_Settings::DEFAULT_ISSUER_LINE_HEIGHT );
+		return self::bulk_invoice_issuer_stack_html( $branding, $doc_settings, '', '', $legacy_company_info_html );
+	}
+
+	/**
+	 * 一括請求：右上 issuer stack（KantanBiz bulk-invoice-issuer-stack 相当）
+	 *
+	 * @param array<string, mixed> $branding
+	 * @param array<string, mixed> $doc_settings
+	 * @param string               $qualified_invoice_number
+	 * @param string               $bank_transfer_html
+	 * @param string               $legacy_company_info_html
+	 */
+	public static function bulk_invoice_issuer_stack_html(
+		array $branding,
+		array $doc_settings,
+		$qualified_invoice_number = '',
+		$bank_transfer_html = '',
+		$legacy_company_info_html = ''
+	) {
+		$sizes              = KTPWP_Pdf_Document_Settings::scaled_branding_sizes( $doc_settings );
+		$seal_overlay_css   = KTPWP_Pdf_Document_Settings::bulk_issuer_seal_overlay_css_declaration( $sizes );
+		$issuer_font_size   = KTPWP_Pdf_Document_Settings::scaled_font_size_px(
+			(int) ( $doc_settings['body_font_size'] ?? 14 ),
+			$doc_settings
+		);
+		$line_height        = (float) ( $doc_settings['issuer_line_height'] ?? KTPWP_Pdf_Document_Settings::DEFAULT_ISSUER_LINE_HEIGHT );
+		$accent             = esc_attr( $doc_settings['accent_color'] ?? '#374151' );
+		$title              = KTPWP_Pdf_Document_Settings::resolve_title(
+			KTPWP_Pdf_Document_Kind::BULK_INVOICE,
+			__( '請求書', 'ktpwp' )
+		);
 
 		$show_logo = ! empty( $doc_settings['show_logo'] ) && ! empty( $branding['logo_data_uri'] );
 		$show_seal = ! empty( $doc_settings['show_seal'] ) && ! empty( $branding['seal_data_uri'] );
+		$show_qualified = ! empty( $doc_settings['show_qualified_invoice_number'] )
+			&& trim( (string) $qualified_invoice_number ) !== ''
+			&& ! ( class_exists( 'KTPWP_Tax_Policy' ) && KTPWP_Tax_Policy::hide_tax_columns() );
+		$show_bank = ! empty( $doc_settings['show_bank_transfer'] )
+			&& trim( wp_strip_all_tags( (string) $bank_transfer_html ) ) !== '';
 
-		$html = '<div class="ktp-bulk-company-info" style="font-size:14px;color:#374151;line-height:' . esc_attr( (string) $line_height ) . ';">';
+		$issuer_name      = trim( (string) ( $branding['name'] ?? '' ) );
+		$has_company_text = $issuer_name !== '' || ! empty( $branding['address_html'] );
+		$has_issuer_content = $show_logo || $show_seal || $has_company_text || $show_qualified || $show_bank || $legacy_company_info_html !== '';
 
-		if ( $show_logo || $show_seal ) {
-			$html .= '<div class="ktp-bulk-branding-row" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:8px;">';
-			if ( $show_logo ) {
-				$html .= '<img src="' . esc_attr( $branding['logo_data_uri'] ) . '" alt="" style="' . esc_attr( $logo_style ) . '">';
+		if ( ! $has_issuer_content ) {
+			return '';
+		}
+
+		$html  = '<div class="ktp-bulk-invoice-issuer-stack" aria-hidden="false">';
+		$html .= '<div class="ktp-bulk-invoice-issuer-inner ktp-bulk-invoice-company-info" style="line-height:' . esc_attr( (string) $line_height ) . ';font-size:' . (int) $issuer_font_size . 'px;color:#374151;">';
+		$html .= '<div class="ktp-bulk-invoice-issuer-doc-title" style="color:' . $accent . ';">';
+		$html .= self::bulk_invoice_doc_title_ornament_html();
+		$html .= '<span class="ktp-bulk-invoice-issuer-doc-title-text">' . esc_html( $title ) . '</span>';
+		$html .= self::bulk_invoice_doc_title_ornament_html();
+		$html .= '</div>';
+
+		if ( $show_logo ) {
+			$html .= '<div class="ktp-bulk-invoice-issuer-logo-wrap">';
+			$html .= '<img src="' . esc_attr( $branding['logo_data_uri'] ) . '" alt="" class="ktp-bulk-invoice-issuer-logo-img">';
+			$html .= '</div>';
+		}
+
+		$html .= '<div class="ktp-bulk-invoice-issuer-text-block">';
+		if ( $show_qualified ) {
+			$html .= '<div class="ktp-bulk-invoice-issuer-registration">' . esc_html__( '登録番号：', 'ktpwp' ) . esc_html( $qualified_invoice_number ) . '</div>';
+		}
+
+		if ( $has_company_text || $show_bank || $show_seal || $legacy_company_info_html !== '' ) {
+			$html .= '<div class="ktp-bulk-invoice-issuer-seal-scope">';
+			if ( $issuer_name !== '' ) {
+				$html .= '<div>' . esc_html( $issuer_name ) . '</div>';
+				if ( ! empty( $branding['address_html'] ) ) {
+					$html .= '<div>' . $branding['address_html'] . '</div>';
+				}
+			} elseif ( $legacy_company_info_html !== '' ) {
+				$html .= $legacy_company_info_html;
+			}
+			if ( $show_bank ) {
+				$bank_inner = class_exists( 'KTPWP_Settings' )
+					? KTPWP_Settings::get_bank_transfer_bulk_issuer_html()
+					: $bank_transfer_html;
+				if ( $bank_inner !== '' ) {
+					$html .= '<div class="ktp-bulk-invoice-issuer-bank">' . $bank_inner . '</div>';
+				}
 			}
 			if ( $show_seal ) {
-				$html .= '<img src="' . esc_attr( $branding['seal_data_uri'] ) . '" alt="" style="' . esc_attr( $seal_style ) . '">';
+				$html .= '<img src="' . esc_attr( $branding['seal_data_uri'] ) . '" alt="" class="ktp-bulk-invoice-issuer-seal-overlay" style="' . esc_attr( $seal_overlay_css ) . '">';
 			}
 			$html .= '</div>';
 		}
 
-		$issuer_name = trim( (string) ( $branding['name'] ?? '' ) );
-		if ( $issuer_name !== '' ) {
-			$html .= '<div style="font-weight:bold;">' . esc_html( $issuer_name ) . '</div>';
-			if ( ! empty( $branding['address_html'] ) ) {
-				$html .= '<div>' . $branding['address_html'] . '</div>';
-			}
-		} elseif ( $legacy_company_info_html !== '' ) {
-			$html .= $legacy_company_info_html;
-		}
-
-		$html .= '</div>';
+		$html .= '</div></div></div>';
 
 		return $html;
+	}
+
+	/**
+	 * @return string
+	 */
+	private static function bulk_invoice_doc_title_ornament_html() {
+		return '<span class="ktp-bulk-invoice-issuer-doc-title-ornament" aria-hidden="true"><span></span><span></span><span></span></span>';
 	}
 }

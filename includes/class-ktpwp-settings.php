@@ -536,6 +536,22 @@ class KTPWP_Settings {
     }
 
     /**
+     * 一括請求 issuer stack 用の振込先（枠・背景色なし）
+     *
+     * @return string 未入力のときは空文字
+     */
+    public static function get_bank_transfer_bulk_issuer_html() {
+        $plain = self::get_bank_transfer_plain_text();
+        if ( $plain === '' ) {
+            return '';
+        }
+
+        return '<div class="ktp-bulk-invoice-issuer-bank-text" style="white-space:pre-line;background:#fff;">'
+            . esc_html( $plain )
+            . '</div>';
+    }
+
+    /**
      * 見積メール等用の振込先口座（プレーンテキスト）
      *
      * @return string 未入力のときは空文字

@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.3.3
+Stable tag: 1.3.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -322,6 +322,10 @@ curl -sS -X POST \
 * MySQL 5.6 以上 または MariaDB 10.0 以上
 * 推奨メモリ: 256MB 以上
 * 推奨PHP拡張: GD（画像処理用）
+
+= 1.3.4 - 2026年06月28日 =
+* 一括請求の封筒窓レイアウト・印刷の案件区切り・宛名担当切替・印影位置を改善
+* 一括請求プレビューからPDF保存ボタンを削除（印刷ダイアログからPDF保存可能）
 
 = 1.3.3 - 2026年06月28日 =
 * 案件名インライン編集で project_name nonce 未定義の Warning が出る不具合を修正

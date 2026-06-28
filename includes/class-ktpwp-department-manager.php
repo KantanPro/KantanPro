@@ -697,4 +697,31 @@ class KTPWP_Department_Manager {
         }
         return implode( ' ', $segments );
     }
+
+    /**
+     * 一括請求・宛名印刷の「部署 ご担当」行（例: 営業部 山田太郎）。
+     *
+     * @param object|null $department ktp_department 行。
+     * @return string
+     */
+    public static function bulk_invoice_department_contact_line( $department ) {
+        if ( ! $department ) {
+            return '';
+        }
+
+        $dept_name = self::department_name_for_mail_addressee( (string) ( $department->department_name ?? '' ) );
+        $contact   = trim( str_replace( array( "\0", "\r", "\n", "\t" ), '', (string) ( $department->contact_person ?? '' ) ) );
+
+        if ( $dept_name === '' && $contact === '' ) {
+            return '';
+        }
+        if ( $dept_name === '' ) {
+            return $contact;
+        }
+        if ( $contact === '' ) {
+            return $dept_name;
+        }
+
+        return $dept_name . ' ' . $contact;
+    }
 }

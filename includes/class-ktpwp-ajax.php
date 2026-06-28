@@ -5593,6 +5593,7 @@ class KTPWP_Ajax {
 		}
 
 		$issuer_company_html = $company_info_html;
+		$issuer_stack_html   = $company_info_html;
 		if ( class_exists( 'KTPWP_Pdf_Branding' ) && class_exists( 'KTPWP_Pdf_Document_Settings' ) && class_exists( 'KTPWP_Pdf_Document_Renderer' ) ) {
 			$bulk_doc_settings = KTPWP_Pdf_Document_Settings::resolve( KTPWP_Pdf_Document_Kind::BULK_INVOICE );
 			$pdf_branding      = KTPWP_Pdf_Branding::for_documents();
@@ -5601,22 +5602,70 @@ class KTPWP_Ajax {
 				$bulk_doc_settings,
 				$company_info_html
 			);
+			$issuer_stack_html = KTPWP_Pdf_Document_Renderer::bulk_invoice_issuer_stack_html(
+				$pdf_branding,
+				$bulk_doc_settings,
+				$qualified_invoice_number,
+				$bank_transfer_html,
+				$company_info_html
+			);
 		}
+
+		$selected_department = null;
+		$bulk_department_contact_line = '';
+		$representative_name = trim( (string) ( $client_data->representative_name ?? '' ) );
+		if ( $representative_name === '' ) {
+			$representative_name = trim( (string) ( $client_data->name ?? '' ) );
+		}
+		if ( class_exists( 'KTPWP_Department_Manager' ) ) {
+			$selected_dept_row = null;
+			$requested_dept_id = isset( $_POST['selected_department_id'] ) ? absint( $_POST['selected_department_id'] ) : 0;
+			if ( $requested_dept_id > 0 ) {
+				$candidate_dept = KTPWP_Department_Manager::get_department( $requested_dept_id );
+				if ( $candidate_dept && (int) $candidate_dept->client_id === (int) $client_id ) {
+					KTPWP_Department_Manager::update_department_selection( $requested_dept_id, true );
+					$selected_dept_row = $candidate_dept;
+				}
+			}
+			if ( ! $selected_dept_row ) {
+				$selected_dept_row = KTPWP_Department_Manager::get_selected_department_by_client( $client_id );
+			}
+			if ( $selected_dept_row ) {
+				$selected_department = array(
+					'department_name' => KTPWP_Department_Manager::department_name_for_mail_addressee( $selected_dept_row->department_name ),
+					'contact_person' => trim( (string) ( $selected_dept_row->contact_person ?? '' ) ),
+				);
+				$bulk_department_contact_line = KTPWP_Department_Manager::bulk_invoice_department_contact_line( $selected_dept_row );
+			}
+		}
+
+		$document_lead = class_exists( 'KTPWP_Pdf_Document_Settings' )
+			? KTPWP_Pdf_Document_Settings::resolve_lead(
+				KTPWP_Pdf_Document_Kind::BULK_INVOICE,
+				'この度はご用命いただき誠にありがとうございました。 以下の通りご請求させていただきますので、よろしくお願い申し上げます。'
+			)
+			: 'この度はご用命いただき誠にありがとうございました。 以下の通りご請求させていただきますので、よろしくお願い申し上げます。';
 
 		// レスポンスデータを構築
 		$response_data = array(
 			'client_name' => $client_data->company_name,
 			'client_address' => $this->format_client_address_for_invoice_preview( $client_data ),
 			'client_contact' => $client_data->name ?? '',
+			'representative_name' => $representative_name,
+			'has_representative_contact' => ( $representative_name !== '' ),
+			'bulk_department_contact_line' => $bulk_department_contact_line,
+			'has_department_contact' => ( $bulk_department_contact_line !== '' ),
+			'document_lead' => $document_lead,
 			'monthly_groups' => $monthly_groups,
 			'departments' => $departments,
 			'qualified_invoice_number' => $qualified_invoice_number,
 			'tax_category' => $tax_category,
-			'selected_department' => null, // デフォルトでは部署選択なし
+			'selected_department' => $selected_department,
 			'payment_due_date' => $payment_due_date,
 			'bank_transfer_html' => $bank_transfer_html,
 			'company_info' => $company_info_html,
 			'issuer_company_html' => $issuer_company_html,
+			'issuer_stack_html' => $issuer_stack_html,
 		);
 		
 		wp_send_json_success($response_data);
