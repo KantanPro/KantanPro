@@ -989,6 +989,100 @@ a.ktp-avatar-trigger {
   }
 }
 
+/* 一括請求プレビュー：モバイルは左右余白を詰める */
+@media screen and (max-width: 767px) {
+  #ktp-invoice-preview-popup .ktp-invoice-preview-dialog {
+    top: 0;
+    left: 0;
+    transform: none;
+    width: 100vw !important;
+    min-width: 0 !important;
+    max-width: 100vw !important;
+    max-height: 100vh;
+    height: 100vh;
+    padding: 6px 2px !important;
+    border-radius: 0;
+  }
+
+  #ktp-invoice-preview-popup .ktp-invoice-preview-header,
+  #ktp-invoice-preview-popup .ktp-invoice-envelope-hint {
+    padding-left: 4px !important;
+    padding-right: 4px !important;
+  }
+
+  #ktp-invoice-preview-popup #invoiceList > .ktp-bulk-invoice-content-area {
+    padding-right: 2mm !important;
+    padding-left: 2mm !important;
+  }
+
+  #ktp-invoice-preview-popup #invoiceList .ktp-bulk-invoice-content-area.ktp-bulk-invoice-envelope-page {
+    column-gap: 0.5rem;
+    --bulk-issuer-pad-right: 2mm;
+  }
+
+  #ktp-invoice-preview-popup #invoiceList .ktp-bulk-invoice-order-group-body {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+}
+
+/* モバイル: 一覧行タップ後は詳細欄を前面表示（顧客・協力会社・サービス共通） */
+@media screen and (max-width: 767px) {
+  .ktp_data_contents.is-mobile-detail-view .ktp_data_list_box,
+  .data_contents.is-mobile-detail-view .data_list_box {
+    display: none !important;
+  }
+
+  .ktp_data_contents.is-mobile-detail-view .data_detail_box,
+  .ktp_data_contents.is-mobile-detail-view .ktp_data_detail_box,
+  .data_contents.is-mobile-detail-view .data_detail_box,
+  .data_contents.is-mobile-detail-view .ktp_data_detail_box {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .data_detail_box .data_detail_title,
+  #ktp-detail {
+    scroll-margin-top: 12px;
+  }
+
+  .data_detail_title .ktp-mobile-list-back {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    padding: 0;
+    margin-left: 8px;
+    margin-right: 0;
+    margin-bottom: 0;
+    vertical-align: middle;
+    border: 1px solid #cbd5e1;
+    border-radius: 50%;
+    background: #fff;
+    color: #1f2937;
+    line-height: 0;
+    cursor: pointer;
+  }
+
+  .data_detail_title .ktp-mobile-list-back .material-symbols-outlined {
+    font-size: 20px;
+    line-height: 1;
+    color: #1f2937;
+  }
+
+  .data_detail_title .ktp-mobile-list-back:hover {
+    background: #f8fafc;
+    border-color: #94a3b8;
+  }
+
+  .data_detail_title .ktp-mobile-list-back:hover .material-symbols-outlined {
+    color: #111827;
+  }
+}
+
 .ktp-readonly-profile-close {
     position: absolute;
     top: 6px;

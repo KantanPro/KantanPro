@@ -152,7 +152,7 @@ if ( ! class_exists( 'KTPWP_List_Table' ) ) {
 			if ( $cookie_name !== '' ) {
 				$attrs .= "if(this.dataset.cookieName){document.cookie=this.dataset.cookieName+'='+this.dataset.cookieId;}";
 			}
-			$attrs .= 'window.location.href=this.dataset.href;"';
+			$attrs .= "var _ktpNavUrl=this.dataset.href;if(window.matchMedia&&window.matchMedia('(max-width:767px)').matches){try{sessionStorage.setItem('ktp_scroll_to_detail','1');}catch(e){}_ktpNavUrl=_ktpNavUrl+(_ktpNavUrl.indexOf('#')>-1?'':'#ktp-detail');}window.location.href=_ktpNavUrl;\"";
 
 			return $attrs;
 		}

@@ -589,6 +589,13 @@ class KTPWP_Assets {
                 'in_footer' => true,
                 'admin'     => false,
             ),
+            'ktp-list-table-mobile' => array(
+                'src'       => 'js/ktp-list-table-mobile.js',
+                'deps'      => array(),
+                'ver'       => KTPWP_PLUGIN_VERSION . '.' . filemtime( KTPWP_PLUGIN_DIR . 'js/ktp-list-table-mobile.js' ),
+                'in_footer' => true,
+                'admin'     => false,
+            ),
             'ktp-order-delete-confirm' => array(
                 'src'       => 'js/ktp-order-delete-confirm.js',
                 'deps'      => array(),
@@ -811,6 +818,8 @@ class KTPWP_Assets {
         // マスタ一覧タブ（顧客・サービス等）のリスト印刷
         $tab_list_print_tabs         = array( 'client', 'service', 'supplier' );
         $tab_list_print_only_scripts = array( 'ktp-tab-list-print' );
+        $master_detail_tabs          = array( 'client', 'service', 'supplier' );
+        $master_detail_only_scripts  = array( 'ktp-list-table-mobile' );
 
         // 顧客タブ専用（顧客以外のタブでは不要な MutationObserver を避ける）
         $client_only_scripts = array( 'ktp-client-delete-popup', 'ktp-client-invoice', 'ktp-client-contract' );
@@ -842,6 +851,11 @@ class KTPWP_Assets {
                 if ( ! $is_admin && $current_tab_name !== ''
                     && ! in_array( $current_tab_name, $tab_list_print_tabs, true )
                     && in_array( $handle, $tab_list_print_only_scripts, true ) ) {
+                    continue;
+                }
+                if ( ! $is_admin && $current_tab_name !== ''
+                    && ! in_array( $current_tab_name, $master_detail_tabs, true )
+                    && in_array( $handle, $master_detail_only_scripts, true ) ) {
                     continue;
                 }
                 // 仕事リスト以外では定期請求JSをスキップ
