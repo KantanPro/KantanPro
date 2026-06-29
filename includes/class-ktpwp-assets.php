@@ -591,7 +591,7 @@ class KTPWP_Assets {
             ),
             'ktp-list-table-mobile' => array(
                 'src'       => 'js/ktp-list-table-mobile.js',
-                'deps'      => array(),
+                'deps'      => array( 'ktp-svg-icons' ),
                 'ver'       => KTPWP_PLUGIN_VERSION . '.' . filemtime( KTPWP_PLUGIN_DIR . 'js/ktp-list-table-mobile.js' ),
                 'in_footer' => true,
                 'admin'     => false,

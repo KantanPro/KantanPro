@@ -1026,23 +1026,18 @@ a.ktp-avatar-trigger {
   }
 }
 
-/* モバイル: 一覧行タップ後は詳細欄を前面表示（顧客・協力会社・サービス共通） */
+/* モバイル: 一覧行タップ後は一覧を残したまま詳細欄へスクロール（顧客・協力会社・サービス共通） */
+.data_detail_title .ktp-mobile-list-back {
+  display: none;
+}
+
 @media screen and (max-width: 767px) {
-  .ktp_data_contents.is-mobile-detail-view .ktp_data_list_box,
-  .data_contents.is-mobile-detail-view .data_list_box {
-    display: none !important;
-  }
-
-  .ktp_data_contents.is-mobile-detail-view .data_detail_box,
-  .ktp_data_contents.is-mobile-detail-view .ktp_data_detail_box,
-  .data_contents.is-mobile-detail-view .data_detail_box,
-  .data_contents.is-mobile-detail-view .ktp_data_detail_box {
-    width: 100% !important;
-    max-width: 100% !important;
-  }
-
   .data_detail_box .data_detail_title,
-  #ktp-detail {
+  .data_detail_box [id^="ktp-detail"],
+  .ktp_data_list_box > .data_list_title,
+  .ktp_data_list_box .data_list_title:first-child,
+  .data_list_box > .data_list_title,
+  .data_list_box .data_list_title:first-child {
     scroll-margin-top: 12px;
   }
 
@@ -1067,10 +1062,15 @@ a.ktp-avatar-trigger {
     cursor: pointer;
   }
 
-  .data_detail_title .ktp-mobile-list-back .material-symbols-outlined {
+  .data_detail_title .ktp-mobile-list-back .ktp-svg-icon {
     font-size: 20px;
     line-height: 1;
     color: #1f2937;
+  }
+
+  .data_detail_title .ktp-mobile-list-back .ktp-svg-icon svg {
+    width: 20px;
+    height: 20px;
   }
 
   .data_detail_title .ktp-mobile-list-back:hover {
@@ -1078,7 +1078,7 @@ a.ktp-avatar-trigger {
     border-color: #94a3b8;
   }
 
-  .data_detail_title .ktp-mobile-list-back:hover .material-symbols-outlined {
+  .data_detail_title .ktp-mobile-list-back:hover .ktp-svg-icon {
     color: #111827;
   }
 }
@@ -3634,8 +3634,10 @@ input[name="tab_item"] {
   position: relative;
 }
 
-/* URL フィールド + 地球アイコン（KantanBiz 詳細表示と同様） */
-.form-group.form-group--url .ktp-url-field-wrap {
+/* URL / メール / 電話 フィールド + アクションアイコン（KantanBiz 詳細表示と同様） */
+.form-group.form-group--url .ktp-url-field-wrap,
+.form-group.form-group--email .ktp-url-field-wrap,
+.form-group.form-group--phone .ktp-url-field-wrap {
   display: flex;
   align-items: center;
   flex: 1 1 auto;
@@ -3643,7 +3645,9 @@ input[name="tab_item"] {
   min-width: 0;
 }
 
-.form-group.form-group--url .ktp-url-field-wrap input {
+.form-group.form-group--url .ktp-url-field-wrap input,
+.form-group.form-group--email .ktp-url-field-wrap input,
+.form-group.form-group--phone .ktp-url-field-wrap input {
   flex: 1 1 auto;
   width: auto !important;
   min-width: 0;
@@ -3653,10 +3657,12 @@ input[name="tab_item"] {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  flex: 0 0 36px;
   flex-shrink: 0;
   width: 36px;
   height: 36px;
   padding: 0;
+  overflow: hidden;
   border: 1px solid #ddd;
   border-radius: 4px;
   background-color: #fff;
@@ -4876,6 +4882,24 @@ div.ktp-report-print-area {
   .form-group select,
   .form-group textarea {
     width: 100%;
+  }
+
+  .data_detail_box .ktp-url-field-wrap,
+  .form-group.form-group--url .ktp-url-field-wrap,
+  .form-group.form-group--email .ktp-url-field-wrap,
+  .form-group.form-group--phone .ktp-url-field-wrap {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .data_detail_box .ktp-url-field-wrap input,
+  .form-group.form-group--url .ktp-url-field-wrap input,
+  .form-group.form-group--email .ktp-url-field-wrap input,
+  .form-group.form-group--phone .ktp-url-field-wrap input {
+    flex: 1 1 0;
+    min-width: 0;
+    width: auto !important;
   }
 
   .form-group.ktpwp-service-contract-field {

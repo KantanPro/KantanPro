@@ -1,15 +1,13 @@
 /**
- * モバイル: マスタ一覧（表形式）の行タップで詳細欄を表示する。
+ * モバイル: マスタ一覧（表形式）の行タップ後、一覧は残したまま詳細欄へスクロールする。
  * 顧客・協力会社・サービス共通。
- *
- * .tab_content { overflow: auto } のため window ではなくタブパネル内をスクロールする。
  */
 (function () {
     'use strict';
 
     var MQ = window.matchMedia('(max-width: 767px)');
     var STORAGE_KEY = 'ktp_scroll_to_detail';
-    var DETAIL_ANCHOR_ID = 'ktp-detail';
+    var DETAIL_ANCHOR_PREFIX = 'ktp-detail';
 
     function t(msg) {
         return typeof window.ktpwpTranslate === 'function' ? window.ktpwpTranslate(msg) : msg;
@@ -17,6 +15,22 @@
 
     function isMobile() {
         return MQ.matches;
+    }
+
+    function getPanelKeyFromElement(element) {
+        if (!element) {
+            return '';
+        }
+        var panel = element.closest('#client_content, #supplier_content, #service_content');
+        if (!panel || !panel.id) {
+            return '';
+        }
+        return panel.id.replace(/_content$/, '');
+    }
+
+    function getDetailAnchorId(contents) {
+        var panelKey = getPanelKeyFromElement(contents);
+        return panelKey ? DETAIL_ANCHOR_PREFIX + '-' + panelKey : DETAIL_ANCHOR_PREFIX;
     }
 
     function findActiveContents() {
@@ -35,27 +49,41 @@
 
     function findDetailTitle(contents) {
         if (!contents) {
-            return document.getElementById(DETAIL_ANCHOR_ID)
-                || document.querySelector('.data_detail_box .data_detail_title');
+            return document.querySelector('.data_detail_box .data_detail_title');
         }
+
+        var anchorId = getDetailAnchorId(contents);
         var title = contents.querySelector('.data_detail_box .data_detail_title');
-        if (title && !title.id) {
-            title.id = DETAIL_ANCHOR_ID;
+        if (title) {
+            title.id = anchorId;
         }
         return title;
     }
 
-    function getScrollContainer(element) {
-        if (!element) {
+    function findListTarget(contents) {
+        if (!contents) {
             return null;
         }
-        var panel = element.closest('.tab_content');
-        if (panel) {
-            var style = window.getComputedStyle(panel);
-            if (/(auto|scroll|overlay)/.test(style.overflowY)) {
-                return panel;
-            }
+
+        var listBox = contents.querySelector('.ktp_data_list_box, .data_list_box');
+        if (!listBox) {
+            return null;
         }
+
+        return listBox.querySelector('.data_list_title') || listBox;
+    }
+
+    function getScrollableContainer(element) {
+        var el = element;
+
+        while (el && el !== document.documentElement) {
+            var style = window.getComputedStyle(el);
+            if (/(auto|scroll|overlay)/.test(style.overflowY) && el.scrollHeight > el.clientHeight + 1) {
+                return el;
+            }
+            el = el.parentElement;
+        }
+
         return null;
     }
 
@@ -64,7 +92,7 @@
             return;
         }
 
-        var container = getScrollContainer(element);
+        var container = getScrollableContainer(element);
         if (container) {
             var containerRect = container.getBoundingClientRect();
             var elementRect = element.getBoundingClientRect();
@@ -76,11 +104,22 @@
             return;
         }
 
-        var top = element.getBoundingClientRect().top + (window.pageYOffset || document.documentElement.scrollTop || 0) - 12;
-        window.scrollTo({
-            top: Math.max(0, top),
-            behavior: 'smooth'
+        element.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start',
+            inline: 'nearest'
         });
+    }
+
+    function getBackButtonIconHtml() {
+        var html = '';
+        if (typeof window.KTPSvgIcons !== 'undefined' && typeof window.KTPSvgIcons.getIcon === 'function') {
+            html = window.KTPSvgIcons.getIcon('arrow_upward', { 'aria-hidden': 'true' });
+        }
+        if (!html) {
+            html = '<span class="ktp-svg-icon" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M4 12l1.41 1.41L11 7.83V20h2V7.83l5.58 5.59L20 12l-8-8-8 8z"/></svg></span>';
+        }
+        return html;
     }
 
     function findTitleTextHost(titleBar) {
@@ -98,6 +137,10 @@
     }
 
     function ensureBackButton(contents) {
+        if (!isMobile()) {
+            return;
+        }
+
         var title = findDetailTitle(contents);
         if (!title || title.querySelector('.ktp-mobile-list-back')) {
             return;
@@ -107,21 +150,16 @@
         var btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'ktp-mobile-list-back';
-        btn.setAttribute('aria-label', t('一覧に戻る'));
-        btn.setAttribute('title', t('一覧に戻る'));
-        btn.innerHTML = '<span class="material-symbols-outlined" aria-hidden="true">arrow_upward</span>';
-        btn.addEventListener('click', function (event) {
-            event.preventDefault();
-            showListView(contents);
-        });
+        btn.setAttribute('aria-label', t('一覧へ移動'));
+        btn.setAttribute('title', t('一覧へ移動'));
+        btn.innerHTML = getBackButtonIconHtml();
         host.appendChild(btn);
     }
 
-    function showDetailView(contents) {
+    function scrollToDetail(contents) {
         if (!contents) {
             return;
         }
-        contents.classList.add('is-mobile-detail-view');
         ensureBackButton(contents);
 
         var title = findDetailTitle(contents);
@@ -139,19 +177,26 @@
         window.setTimeout(runScroll, 240);
     }
 
-    function showListView(contents) {
+    function scrollToList(contents) {
         if (!contents) {
-            return;
+            contents = findActiveContents();
         }
-        contents.classList.remove('is-mobile-detail-view');
-        var list = contents.querySelector('.ktp_data_list_box, .data_list_box');
+        var list = findListTarget(contents);
         if (list) {
             scrollElementIntoView(list);
         }
     }
 
+    function hashRequestsDetailScroll() {
+        var hash = (location.hash || '').replace(/^#/, '');
+        if (!hash) {
+            return false;
+        }
+        return hash === DETAIL_ANCHOR_PREFIX || hash.indexOf(DETAIL_ANCHOR_PREFIX + '-') === 0;
+    }
+
     function shouldOpenDetailView() {
-        if (location.hash === '#' + DETAIL_ANCHOR_ID) {
+        if (hashRequestsDetailScroll()) {
             return true;
         }
         try {
@@ -182,26 +227,50 @@
 
         var contents = findActiveContents();
         if (contents && contents.querySelector('.data_detail_box, .ktp_data_detail_box')) {
-            showDetailView(contents);
+            scrollToDetail(contents);
         }
     }
 
-    function resetOnDesktop(event) {
+    function removeBackButtons() {
+        document.querySelectorAll('.ktp-mobile-list-back').forEach(function (btn) {
+            btn.remove();
+        });
+    }
+
+    function resetOnViewportChange(event) {
         if (event.matches) {
             return;
         }
-        document.querySelectorAll('.ktp_data_contents.is-mobile-detail-view, .data_contents.is-mobile-detail-view').forEach(function (contents) {
-            contents.classList.remove('is-mobile-detail-view');
+        removeBackButtons();
+    }
+
+    var backButtonHandlerBound = false;
+
+    function bindBackButtonHandler() {
+        if (backButtonHandlerBound) {
+            return;
+        }
+        backButtonHandlerBound = true;
+
+        document.addEventListener('click', function (event) {
+            var btn = event.target.closest('.ktp-mobile-list-back');
+            if (!btn || !isMobile()) {
+                return;
+            }
+            event.preventDefault();
+            event.stopPropagation();
+            scrollToList(btn.closest('.ktp_data_contents, .data_contents'));
         });
     }
 
     if (typeof MQ.addEventListener === 'function') {
-        MQ.addEventListener('change', resetOnDesktop);
+        MQ.addEventListener('change', resetOnViewportChange);
     } else if (typeof MQ.addListener === 'function') {
-        MQ.addListener(resetOnDesktop);
+        MQ.addListener(resetOnViewportChange);
     }
 
     function boot() {
+        bindBackButtonHandler();
         initAfterNavigation();
     }
 

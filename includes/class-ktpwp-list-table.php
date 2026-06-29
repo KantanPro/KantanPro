@@ -152,7 +152,7 @@ if ( ! class_exists( 'KTPWP_List_Table' ) ) {
 			if ( $cookie_name !== '' ) {
 				$attrs .= "if(this.dataset.cookieName){document.cookie=this.dataset.cookieName+'='+this.dataset.cookieId;}";
 			}
-			$attrs .= "var _ktpNavUrl=this.dataset.href;if(window.matchMedia&&window.matchMedia('(max-width:767px)').matches){try{sessionStorage.setItem('ktp_scroll_to_detail','1');}catch(e){}_ktpNavUrl=_ktpNavUrl+(_ktpNavUrl.indexOf('#')>-1?'':'#ktp-detail');}window.location.href=_ktpNavUrl;\"";
+			$attrs .= "var _ktpNavUrl=this.dataset.href;if(window.matchMedia&&window.matchMedia('(max-width:767px)').matches){try{sessionStorage.setItem('ktp_scroll_to_detail','1');}catch(e){}var _kHash='ktp-detail';try{var _kTab=new URL(_ktpNavUrl,window.location.href).searchParams.get('tab_name');if(_kTab){_kHash='ktp-detail-'+_kTab;}}catch(e2){}_ktpNavUrl=_ktpNavUrl+(_ktpNavUrl.indexOf('#')>-1?'':'#'+_kHash);}window.location.href=_ktpNavUrl;\"";
 
 			return $attrs;
 		}
