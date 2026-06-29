@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.3.6
+Stable tag: 1.3.7
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -322,6 +322,9 @@ curl -sS -X POST \
 * MySQL 5.6 以上 または MariaDB 10.0 以上
 * 推奨メモリ: 256MB 以上
 * 推奨PHP拡張: GD（画像処理用）
+
+= 1.3.7 - 2026年06月30日 =
+* モバイルのマスタ一覧（顧客・協力会社・サービス）でリスト→詳細のスクロール速度を詳細→一覧と同じ体感に調整
 
 = 1.3.6 - 2026年06月29日 =
 * モバイル時にマスタ一覧（顧客・協力会社・サービス）で一覧を残したまま詳細へスクロールするよう改善
