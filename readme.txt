@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.3.7
+Stable tag: 1.3.8
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -322,6 +322,12 @@ curl -sS -X POST \
 * MySQL 5.6 以上 または MariaDB 10.0 以上
 * 推奨メモリ: 256MB 以上
 * 推奨PHP拡張: GD（画像処理用）
+
+= 1.3.8 - 2026年07月01日 =
+* 一括請求プレビューに印刷・PDF保存ボタンを追加（KantanBiz方式・Safari対応）
+* 印刷レイアウトをプレビュー表示と一致させるよう改善（印影・発行者情報の配置）
+* PDF保存が動作しない不具合を修正
+* スマホでは印刷・PDF保存ボタンを白背景・グレー枠に統一
 
 = 1.3.7 - 2026年06月30日 =
 * モバイルのマスタ一覧（顧客・協力会社・サービス）でリスト→詳細のスクロール速度を詳細→一覧と同じ体感に調整
