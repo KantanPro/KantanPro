@@ -46,6 +46,42 @@ function ktpBulkInvoiceOrderLayoutPrintCss(containerSelector) {
     return css;
 }
 
+/** PDF/印刷キャプチャ用ミラー CSS（KantanBiz bulk-invoice-pdf-mirror-styles + iframe-styles 相当） */
+function ktpBulkInvoicePdfMirrorStylesCss() {
+    var css = '';
+    css += '.ktp-bulk-invoice-pdf-save-mode .ktp-bulk-invoice-content-area{padding:8mm 10mm 10mm 10mm!important;--bulk-issuer-pad-right:6mm;}';
+    css += '.ktp-bulk-invoice-pdf-save-mode .ktp-bulk-invoice-content-area.ktp-bulk-invoice-envelope-page{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;grid-template-rows:minmax(0,max-content) max-content!important;grid-template-areas:"addressee issuer" "body body"!important;column-gap:1rem!important;align-items:start!important;position:relative!important;width:100%!important;max-width:none!important;box-sizing:border-box!important;overflow:visible!important;}';
+    css += '.ktp-bulk-invoice-pdf-save-mode .ktp-bulk-invoice-content-area.ktp-bulk-invoice-envelope-page--labeled{padding-top:calc(8mm + var(--bulk-envelope-label-offset,15mm))!important;}';
+    css += '.ktp-bulk-invoice-pdf-save-mode .ktp-bulk-invoice-content-area.ktp-bulk-invoice-envelope-page--labeled .ktp-bulk-invoice-address-block{margin-top:calc(-1 * var(--bulk-envelope-label-offset,15mm));}';
+    css += '.ktp-bulk-invoice-pdf-save-mode .ktp-bulk-invoice-address-block{position:static!important;top:auto!important;left:auto!important;right:auto!important;grid-area:addressee!important;max-width:none!important;margin:0!important;z-index:auto!important;}';
+    css += '.ktp-bulk-invoice-pdf-save-mode .ktp-bulk-invoice-issuer-stack{position:static!important;top:auto!important;right:auto!important;grid-area:issuer!important;justify-self:stretch!important;align-self:start!important;width:100%!important;max-width:100%!important;min-height:max-content!important;padding-bottom:3mm!important;pointer-events:auto!important;overflow:visible!important;}';
+    css += '.ktp-bulk-invoice-pdf-save-mode .ktp-bulk-invoice-issuer-inner{position:relative!important;display:block!important;width:90%!important;max-width:90%!important;margin-left:auto!important;box-sizing:border-box!important;overflow:visible!important;color:#374151;line-height:1.35;}';
+    css += '.ktp-bulk-invoice-pdf-save-mode .ktp-bulk-invoice-print-except-addressee{grid-area:body!important;margin-top:1.25rem!important;min-width:0;width:100%!important;}';
+    css += '.ktp-bulk-invoice-pdf-save-mode .ktp-bulk-invoice-pdf-root{position:relative;margin:0 auto;background:#fff;box-sizing:border-box;width:100%;max-width:100%;}';
+    css += '.ktp-bulk-invoice-print-document .ktp-bulk-invoice-issuer-doc-title{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:0.5em!important;width:0!important;min-width:100%!important;margin-bottom:0.55em!important;font-size:2em!important;color:var(--bulk-accent,#374151)!important;line-height:1!important;}';
+    css += '.ktp-bulk-invoice-print-document .ktp-bulk-invoice-issuer-doc-title-ornament{display:flex!important;flex:1 1 0!important;flex-direction:column!important;align-items:stretch!important;justify-content:center!important;gap:0.2em!important;min-width:0!important;}';
+    css += '.ktp-bulk-invoice-print-document .ktp-bulk-invoice-issuer-doc-title-ornament>span{display:block!important;width:100%!important;height:0.0625em!important;min-height:1px!important;background:currentColor!important;}';
+    css += '.ktp-bulk-invoice-print-document .ktp-bulk-invoice-issuer-doc-title-text{flex:0 0 auto!important;font-size:inherit!important;letter-spacing:0.08em!important;white-space:nowrap!important;}';
+    css += '.ktp-bulk-invoice-print-document .ktp-bulk-invoice-issuer-logo-wrap{width:0!important;min-width:100%!important;margin-top:2.5em!important;margin-bottom:0.45em!important;overflow:hidden!important;}';
+    css += '.ktp-bulk-invoice-print-document .ktp-bulk-invoice-issuer-logo-img{display:block!important;width:100%!important;max-width:100%!important;height:auto!important;object-fit:contain!important;object-position:left center!important;}';
+    css += '.ktp-bulk-invoice-print-document .ktp-bulk-invoice-issuer-text-block{display:block!important;width:100%!important;max-width:100%!important;position:relative!important;}';
+    css += '.ktp-bulk-invoice-print-document .ktp-bulk-invoice-issuer-text-block>div{margin-bottom:0.2em;}';
+    css += '.ktp-bulk-invoice-print-document .ktp-bulk-invoice-issuer-bank{margin-top:1.2em!important;padding:0!important;border:none!important;background:#fff!important;box-shadow:none!important;}';
+    css += '.ktp-bulk-invoice-print-document .ktp-bulk-invoice-issuer-bank *{margin:0;padding:0;border:none!important;background:#fff!important;box-shadow:none!important;}';
+    css += '.ktp-bulk-invoice-pdf-save-mode .ktp-bulk-invoice-issuer-seal-scope,.ktp-bulk-invoice-print-document .ktp-bulk-invoice-issuer-seal-scope{position:relative!important;overflow:visible!important;isolation:isolate!important;background:#fff!important;padding-bottom:0.35em!important;}';
+    css += '.ktp-bulk-invoice-pdf-save-mode .ktp-bulk-invoice-issuer-seal-overlay,.ktp-bulk-invoice-print-document .ktp-bulk-invoice-issuer-seal-overlay{position:absolute!important;right:-0.4em!important;top:-0.5em!important;transform:none!important;z-index:3!important;pointer-events:none!important;background:transparent!important;mix-blend-mode:multiply!important;opacity:0.75!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;object-fit:contain!important;}';
+    css += '.ktp-bulk-invoice-print-document .ktp-bulk-invoice-envelope-label-slot{font-size:var(--bulk-issuer-text-font-size,14px);line-height:1;margin-bottom:0.35em;}';
+    css += '.ktp-bulk-invoice-print-document .ktp-bulk-invoice-envelope-label{display:block;color:#2563eb;font-size:2em;line-height:1;letter-spacing:0.08em;text-align:left;}';
+    css += '.ktp-bulk-invoice-print-document .ktp-bulk-invoice-addressee{font-size:12px;line-height:1.4;margin-bottom:20px;color:#111827;}';
+    css += '.ktp-bulk-invoice-print-document .ktp-bulk-invoice-document-lead{width:50%;max-width:50%;text-align:left;margin:0 0 16px 0;color:#374151;}';
+    css += '.ktp-bulk-invoice-print-document .ktp-bulk-invoice-summary-box{margin-bottom:24px;padding:16px;border:1px solid #e5e7eb;border-radius:6px;background-color:#f9fafb;font-size:14px;color:#374151;}';
+    css += '.ktp-bulk-invoice-print-document .ktp-bulk-tax-amount-col{display:none!important;}';
+    css += '.ktp-bulk-invoice-print-document .ktp-bulk-show-tax-amount .ktp-bulk-tax-amount-col{display:table-cell!important;}';
+    css += '.ktp-bulk-invoice-print-document .ktp-biz-items-table thead.ktp-bulk-items-table-head tr,.ktp-bulk-invoice-print-document .ktp-biz-items-table thead.ktp-bulk-items-table-head th{background-color:#ffeef1!important;border-bottom:1px solid #fecdd3!important;}';
+    css += '.ktp-bulk-invoice-pdf-capture-mount .ktp-bulk-invoice-issuer-seal-overlay{mix-blend-mode:multiply!important;background:transparent!important;}';
+    return css;
+}
+
 /**
  * 請求項目配列から「 (内税|消費税 : 10%: xxx, 8%: yyy)」形式（KantanBiz InvoiceTaxInlineBreakdown と同式）
  */
@@ -388,7 +424,7 @@ function ktpBuildBulkIssuerStackHtml(bulkDoc, branding, qualifiedNumber, bankTra
             html += '<div class="ktp-bulk-invoice-issuer-bank">' + bulkBankHtml + '</div>';
         }
         if (showSeal) {
-            html += '<img src="' + branding.seal_data_uri + '" alt="" class="ktp-bulk-invoice-issuer-seal-overlay" style="display:block;max-height:' + (bulkDoc.seal_max_height_px || 48) + 'px;max-width:' + (bulkDoc.seal_max_width_px || 48) + 'px;object-fit:contain;">';
+            html += '<img src="' + branding.seal_data_uri + '" alt="" class="ktp-bulk-invoice-issuer-seal-overlay" style="position:absolute;right:-0.4em;top:-0.5em;max-height:' + (bulkDoc.seal_max_height_px || 48) + 'px;max-width:' + (bulkDoc.seal_max_width_px || 48) + 'px;object-fit:contain;mix-blend-mode:multiply;opacity:0.75;pointer-events:none;z-index:2;">';
         }
         html += '</div>';
     }
@@ -821,10 +857,16 @@ jQuery(document).ready(function($) {
                                 html += '<input type="checkbox" id="set-invoice-completed" style="width:18px;height:18px;margin-right:8px;">';
                                 html += t('対象受注書の進捗を「請求済」に変更する');
                                 html += '</label><br />';
-                                html += '<button type="button" onclick="printInvoiceContent(\'print\')" style="background-color:#0073aa;color:white;border:none;padding:10px 20px;border-radius:5px;cursor:pointer;font-size:14px;font-weight:500;">';
+                                html += '<div style="display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:4px;">';
+                                html += '<button type="button" id="ktp-invoice-print-btn" data-client-name="' + ktpInvoiceEscapeHtml(res.data.client_name || window.invoiceClientName || '') + '" style="background-color:#0073aa;color:white;border:none;padding:10px 20px;border-radius:5px;cursor:pointer;font-size:14px;font-weight:500;">';
                                 html += (typeof KTPSvgIcons !== 'undefined' ? KTPSvgIcons.getIcon('print', {'style': 'font-size:16px;vertical-align:middle;margin-right:5px;'}) : '<span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle;margin-right:5px;">print</span>');
                                 html += t('印刷');
                                 html += '</button>';
+                                html += '<button type="button" id="ktp-invoice-pdf-btn" data-client-name="' + ktpInvoiceEscapeHtml(res.data.client_name || window.invoiceClientName || '') + '" style="background-color:#fff;color:#0073aa;border:1px solid #0073aa;padding:10px 20px;border-radius:5px;cursor:pointer;font-size:14px;font-weight:500;">';
+                                html += (typeof KTPSvgIcons !== 'undefined' ? KTPSvgIcons.getIcon('picture_as_pdf', {'style': 'font-size:16px;vertical-align:middle;margin-right:5px;'}) : '<span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle;margin-right:5px;">picture_as_pdf</span>');
+                                html += t('PDF保存');
+                                html += '</button>';
+                                html += '</div>';
                                 html += '</div>';
                                 html += '</div>';
                                 html += '</div>';
@@ -840,6 +882,9 @@ jQuery(document).ready(function($) {
                                 if (showTaxAmountCheckbox) {
                                     showTaxAmountCheckbox.addEventListener('change', updateKtpBulkTaxAmountVisibility);
                                     updateKtpBulkTaxAmountVisibility();
+                                }
+                                if (typeof bindKtpBulkInvoiceOutputButtons === 'function') {
+                                    bindKtpBulkInvoiceOutputButtons();
                                 }
                             } else {
                                 list.innerHTML = "<div style=\"color:#888;\">" + t("該当する案件はありません。") + "</div>";
@@ -923,86 +968,71 @@ jQuery(document).ready(function($) {
 });
 
 /**
- * @param {string} outputMode 'print' = 一括請求書の印刷のみ（@page10mm。宛名10+6/10+23。請求書タイトル枠上端67mm=10+57。宛名以外余白左20・右15・下15）、'pdf' = プレビューと同じA4（PDF保存用）
+ * 印刷前の「請求済」確認（印刷ボタンのみ）
+ * @returns {boolean}
  */
-function printInvoiceContent(outputMode) {
-    var mode = (outputMode === 'pdf') ? 'pdf' : 'print';
-    var bulkDoc = (typeof ktpClientInvoice !== 'undefined' && ktpClientInvoice.document_settings && ktpClientInvoice.document_settings.bulk_invoice)
-        ? ktpClientInvoice.document_settings.bulk_invoice
-        : {};
-    var marginTop = parseInt(bulkDoc.margin_top_mm, 10);
-    var marginLeft = parseInt(bulkDoc.margin_left_mm, 10);
-    var marginRight = parseInt(bulkDoc.margin_right_mm, 10);
-    var marginBottom = parseInt(bulkDoc.margin_bottom_mm, 10);
-    var envTop = parseInt(bulkDoc.envelope_top_mm, 10);
-    var envLeft = parseInt(bulkDoc.envelope_left_mm, 10);
-    if (isNaN(marginTop)) { marginTop = 57; }
-    if (isNaN(marginLeft)) { marginLeft = 10; }
-    if (isNaN(marginRight)) { marginRight = 5; }
-    if (isNaN(marginBottom)) { marginBottom = 5; }
-    if (isNaN(envTop)) { envTop = 6; }
-    if (isNaN(envLeft)) { envLeft = 23; }
-    // 印刷のみ：@page 10mm。本文 padding と封筒窓は帳票表示設定（一括請求）から
-    var invPrintPageMarginMm = (mode === 'print') ? 10 : 0;
-    var invAddrTopMm = (mode === 'print') ? envTop : 0;
-    var invAddrLeftMm = (mode === 'print') ? envLeft : 0;
-    var invInvoiceTitleTopFromPaperMm = (mode === 'print') ? (invPrintPageMarginMm + marginTop) : 0;
-    var invPrintBodyFlowPadTopMm = (mode === 'print') ? marginTop : 0;
-    var invPrintBodyFlowTopExtraMm = (mode === 'print') ? 20 : 0;
-    var invPrintPadLeftInnerMm = (mode === 'print') ? marginLeft : 0;
-    var invPrintPadRightInnerMm = (mode === 'print') ? marginRight : 0;
-    var invPrintPadBottomInnerMm = (mode === 'print') ? marginBottom : 0;
-    // チェックボックスの状態を確認
+function ktpConfirmInvoicePrintWithProgress() {
     var setInvoiceCompleted = document.getElementById('set-invoice-completed');
-    var shouldSetCompleted = false;
-    if (setInvoiceCompleted && setInvoiceCompleted.checked) {
-        var confirmed = window.confirm(ktpwpTranslate('本当に対象受注書の進捗を「請求済」に変更しますか？\nこの操作は取り消せません。\nOKで印刷を続行、キャンセルで中止します。'));
-        if (!confirmed) {
-            return; // キャンセル時は何もしない
-        }
-        shouldSetCompleted = true;
+    if (!setInvoiceCompleted || !setInvoiceCompleted.checked) {
+        return true;
     }
+    return window.confirm(ktpwpTranslate('本当に対象受注書の進捗を「請求済」に変更しますか？\nこの操作は取り消せません。\nOKで印刷を続行、キャンセルで中止します。'));
+}
+
+/** 印刷完了後に進捗を「請求済」へ更新 */
+function ktpRunInvoiceCompletedAfterPrint() {
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/wp-admin/admin-ajax.php');
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    var clientId = '';
+    var urlParams = new URLSearchParams(window.location.search);
+    clientId = urlParams.get('data_id');
+    if (!clientId) {
+        var clientIdInput = document.getElementById('client-id-input');
+        if (clientIdInput) {
+            clientId = clientIdInput.value;
+        }
+    }
+    var params = 'action=ktp_set_invoice_completed&client_id=' + encodeURIComponent(clientId);
+    xhr.onload = function() {
+        if (xhr.status === 200) {
+            try {
+                var response = JSON.parse(xhr.responseText);
+                if (response.success) {
+                    updateOrderHistoryProgress(clientId, 4, 5);
+                }
+            } catch (e) {}
+        }
+    };
+    xhr.send(params);
+}
+
+/**
+ * プレビュー相当の印刷用 HTML を生成（KantanBiz buildBulkInvoicePrintHtml 相当）
+ * @param {string} mode 'pdf' | 'print'（いずれもプレビュー同等レイアウト）
+ * @returns {{ html: string, filename: string } | null}
+ */
+function ktpBuildBulkInvoiceOutputHtml(mode) {
     try {
-        console.log("[請求書印刷] 印刷開始");
-
-        var invoiceList = document.getElementById('invoiceList');
-        if (!invoiceList) {
-            console.error("[請求書印刷] invoiceList要素が見つかりません");
-            alert(ktpwpTranslate("印刷エラー：請求書データが見つかりません"));
-            return;
+        var sourceEl = document.querySelector('#invoiceList .ktp-bulk-invoice-content-area.ktp-bulk-invoice-envelope-page');
+        if (!sourceEl) {
+            return null;
         }
 
-        var invoiceContent = invoiceList.innerHTML;
-        if (!invoiceContent || invoiceContent.trim() === "") {
-            console.error("[請求書印刷] 請求書の内容が空です");
-            alert(ktpwpTranslate("印刷エラー：請求書の内容が空です"));
-            return;
-        }
-
-        console.log("[請求書印刷] 請求書内容取得完了");
-
-        // デザイン設定を取得
         var designSettings = window.ktp_design_settings || {};
-        var oddRowColor = designSettings.odd_row_color || "#E7EEFD";
-        var evenRowColor = designSettings.even_row_color || "#FFFFFF";
-        
-        console.log("[請求書印刷] デザイン設定:", {
-            oddRowColor: oddRowColor,
-            evenRowColor: evenRowColor
-        });
+        var oddRowColor = designSettings.odd_row_color || '#E7EEFD';
+        var evenRowColor = designSettings.even_row_color || '#FFFFFF';
 
         var carryoverAmount = window.carryoverAmount || 0;
         var carryoverInput = document.getElementById('carryover-amount');
         if (carryoverInput) {
-            carryoverAmount = parseInt(carryoverInput.value) || 0;
-            console.log("[請求書印刷] 繰越金額:", carryoverAmount);
+            carryoverAmount = parseInt(carryoverInput.value, 10) || 0;
         }
 
-        // 繰越金額入力フィールドを非表示にし、印刷用のspanに置き換える
-        var tempDiv = document.createElement('div');
-        tempDiv.innerHTML = invoiceContent;
-        var carryoverInputInContent = tempDiv.querySelector('#carryover-amount');
-        if(carryoverInputInContent) {
+        var clone = sourceEl.cloneNode(true);
+
+        var carryoverInputInContent = clone.querySelector('#carryover-amount');
+        if (carryoverInputInContent) {
             var carryoverSpan = document.createElement('span');
             carryoverSpan.style.fontWeight = 'bold';
             carryoverSpan.textContent = carryoverAmount.toLocaleString();
@@ -1021,8 +1051,11 @@ function printInvoiceContent(outputMode) {
             addresseeContactMode = addresseeModeRadio.value;
         }
 
-        // フッター（請求済チェック・印刷／PDFボタン）を印刷用HTMLから除去
-        var footerActions = tempDiv.querySelector('#ktp-invoice-footer-actions');
+        clone.querySelectorAll('.ktp-bulk-invoice-no-print, script, style').forEach(function(el) {
+            el.remove();
+        });
+
+        var footerActions = clone.querySelector('#ktp-invoice-footer-actions');
         if (footerActions) {
             var footerWrap = footerActions.closest('.ktp-bulk-invoice-envelope-footer');
             if (footerWrap && footerWrap.parentNode) {
@@ -1032,424 +1065,136 @@ function printInvoiceContent(outputMode) {
             }
         }
 
-        var addresseeEl = tempDiv.querySelector('.ktp-bulk-invoice-addressee');
+        var addresseeEl = clone.querySelector('.ktp-bulk-invoice-addressee');
         if (addresseeEl) {
             ktpApplyAddresseeContactModeToRoot(addresseeEl, 'addressee-contact-mode', addresseeContactMode);
         }
 
-        // お支払い期日inputをテキストに置き換え
-        var paymentDueDateInputInContent = tempDiv.querySelector('#payment-due-date-input');
+        var paymentDueDateInputInContent = clone.querySelector('#payment-due-date-input');
         if (paymentDueDateInputInContent) {
-            // 最新の値を取得（元のDOMから）
             var liveInput = document.getElementById('payment-due-date-input');
             var paymentDueDateValue = liveInput ? liveInput.value : paymentDueDateInputInContent.value;
-            // 日付を「YYYY/MM/DD」形式に整形
-            var formattedDate = paymentDueDateValue ? paymentDueDateValue.replace(/-/g, "/") : "";
+            var formattedDate = paymentDueDateValue ? paymentDueDateValue.replace(/-/g, '/') : '';
             var paymentDueDateSpan = document.createElement('span');
             paymentDueDateSpan.style.fontWeight = 'bold';
             paymentDueDateSpan.textContent = formattedDate;
             paymentDueDateInputInContent.parentNode.replaceChild(paymentDueDateSpan, paymentDueDateInputInContent);
         }
 
-        // 合計金額を更新（税区分に応じた計算）
         if (window.invoiceGrandTotal) {
-            var totalAmountElement = tempDiv.querySelector('#total-amount');
-            if(totalAmountElement) {
+            var totalAmountElement = clone.querySelector('#total-amount');
+            if (totalAmountElement) {
                 var taxCategory = window.invoiceTaxCategory || '内税';
                 var taxAmount = window.invoiceTaxAmount || 0;
-                
                 if (taxCategory === '外税') {
-                    // 外税の場合：税抜き合計 + 消費税 + 繰越金額
-                    var subtotal = window.invoiceGrandTotal - taxAmount; // 税抜き合計を計算
-                    var totalWithTax = subtotal + taxAmount + carryoverAmount;
-                    totalAmountElement.textContent = totalWithTax.toLocaleString();
-                    console.log("[請求書印刷] 外税計算:", {
-                        subtotal: subtotal,
-                        taxAmount: taxAmount,
-                        carryoverAmount: carryoverAmount,
-                        totalWithTax: totalWithTax
-                    });
+                    var subtotal = window.invoiceGrandTotal - taxAmount;
+                    totalAmountElement.textContent = (subtotal + taxAmount + carryoverAmount).toLocaleString();
                 } else {
-                    // 内税の場合：税込合計 + 繰越金額
-                    var totalWithCarryover = window.invoiceGrandTotal + carryoverAmount;
-                    totalAmountElement.textContent = totalWithCarryover.toLocaleString();
-                    console.log("[請求書印刷] 内税計算:", {
-                        grandTotal: window.invoiceGrandTotal,
-                        carryoverAmount: carryoverAmount,
-                        totalWithCarryover: totalWithCarryover
-                    });
+                    totalAmountElement.textContent = (window.invoiceGrandTotal + carryoverAmount).toLocaleString();
                 }
             }
         }
 
-        // 印刷用にデザイン設定を適用（旧 flex 明細）
-        var rows = tempDiv.querySelectorAll('[style*="background"]');
-        rows.forEach(function(row, index) {
+        clone.querySelectorAll('[style*="background"]').forEach(function(row, index) {
             if (row.style.background && (row.style.background.includes('#E7EEFD') || row.style.background.includes('#FFFFFF'))) {
-                var bgColor = (index % 2 === 0) ? evenRowColor : oddRowColor;
-                row.style.background = bgColor;
-                console.log("[請求書印刷] 行の色を更新:", index, bgColor);
+                row.style.background = (index % 2 === 0) ? evenRowColor : oddRowColor;
             }
         });
-        var invTableRows = tempDiv.querySelectorAll('tr.ktp-biz-inv-row');
-        invTableRows.forEach(function(tr, idx) {
-            var bgColor = (idx % 2 === 0) ? evenRowColor : oddRowColor;
-            tr.style.backgroundColor = bgColor;
+        clone.querySelectorAll('tr.ktp-biz-inv-row').forEach(function(tr, idx) {
+            tr.style.backgroundColor = (idx % 2 === 0) ? evenRowColor : oddRowColor;
         });
 
-        invoiceContent = tempDiv.innerHTML;
+        var invoiceContent = clone.outerHTML;
 
-        // ファイル名生成
-        var clientId = '';
-        var clientName = '';
-        
-        // 顧客IDを取得
-        var urlParams = new URLSearchParams(window.location.search);
-        clientId = urlParams.get('data_id');
-        if (!clientId) {
-            var clientIdInput = document.getElementById('client-id-input');
-            if (clientIdInput) {
-                clientId = clientIdInput.value;
-            }
-        }
-        
-        // 顧客名を取得（優先順位順）
-        // 方法0: グローバル変数から取得（最も確実）
-        if (window.invoiceClientName && window.invoiceClientName !== '未設定') {
-            clientName = window.invoiceClientName;
-        }
-        
-        // 方法1: DOMから会社名を直接取得
+        var clientName = window.invoiceClientName || '請求先';
         if (!clientName || clientName === '顧客' || clientName === '未設定') {
-            var companyNameElem = document.querySelector('#invoiceList div[style*="font-size:16px;font-weight:bold;margin-bottom:4px;"]');
+            var companyNameElem = sourceEl.querySelector('.ktp-bulk-invoice-addressee div[style*="font-weight:bold"]');
             if (companyNameElem) {
-                clientName = companyNameElem.textContent.trim();
+                clientName = companyNameElem.textContent.replace(/\s*様?$/, '').trim();
             }
         }
-        
-        // 方法2: 宛先情報から取得
-        if (!clientName || clientName === '顧客' || clientName === '未設定') {
-            var addressElems = document.querySelectorAll('#invoiceList div[style*="font-size:14px;margin-bottom:4px;"]');
-            for (var i = 0; i < addressElems.length; i++) {
-                var text = addressElems[i].textContent.trim();
-                if (text && text.length > 0 && !text.includes('様') && !text.includes('〒') && !text.includes('電話') && text !== '未設定') {
-                    clientName = text;
-                    break;
-                }
-            }
-        }
-        
-        // 方法3: 請求書タイトル周辺から取得
-        if (!clientName || clientName === '顧客' || clientName === '未設定') {
-            var titleElems = document.querySelectorAll('#invoiceList div');
-            for (var i = 0; i < titleElems.length; i++) {
-                var text = titleElems[i].textContent.trim();
-                if (text && text.includes('様') && text.length < 50) {
-                    clientName = text.replace(/\s*様?$/, '');
-                    break;
-                }
-            }
-        }
-        
-        // 方法4: 古い方法（後方互換性）
-        if (!clientName || clientName === '顧客' || clientName === '未設定') {
-            var clientNameElem = document.querySelector('#invoiceList div[style*="margin-bottom:5px;"]:nth-child(3)');
-            if (clientNameElem) {
-                clientName = clientNameElem.textContent.replace(/\s*様?$/, '');
-            }
-        }
-        
-        console.log("[請求書印刷] 顧客情報:", {
-            clientId: clientId,
-            clientName: clientName,
-            todayStr: todayStr
-        });
-        
-        // 顧客名取得のデバッグ情報
-        console.log("[請求書印刷] 顧客名取得デバッグ:");
-        console.log("- グローバル変数:", window.invoiceClientName);
-        console.log("- 方法1要素:", document.querySelector('#invoiceList div[style*="font-size:16px;font-weight:bold;margin-bottom:4px;"]'));
-        console.log("- 方法2要素数:", document.querySelectorAll('#invoiceList div[style*="font-size:14px;margin-bottom:4px;"]').length);
-        console.log("- 方法3要素数:", document.querySelectorAll('#invoiceList div').length);
-        console.log("- 最終的な顧客名:", clientName);
-        
-        // 今日の日付を取得（YYYY-MM-DD形式）
+
         var today = new Date();
-        var year = today.getFullYear();
-        var month = String(today.getMonth() + 1).padStart(2, '0');
-        var day = String(today.getDate()).padStart(2, '0');
-        var todayStr = year + '-' + month + '-' + day;
+        var todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
 
         function parseDateToTimestamp(dateStr) {
             if (!dateStr) { return null; }
-            // "YYYY-MM-DD" / "YYYY/MM/DD" を想定して Date へ
-            var normalized = String(dateStr).trim().replace(/\//g, '-');
-            var ts = new Date(normalized).getTime();
+            var ts = new Date(String(dateStr).trim().replace(/\//g, '-')).getTime();
             return isNaN(ts) ? null : ts;
         }
 
-        function formatYmdForFilename(dateStr) {
-            // "YYYY-MM-DD" -> "YYYYMMDD" のように数字だけ残す
-            if (!dateStr) { return ''; }
-            return String(dateStr).replace(/[^\d]/g, '');
-        }
-
-        // 最終締め日を抽出（DOM上の「締日：YYYY-MM-DD」から最大日を取る）
         var finalClosingDateYmd = '';
-        try {
-            var divs = tempDiv.querySelectorAll('div');
-            var bestTs = null;
-            var bestRaw = '';
-            divs.forEach(function(el) {
-                var text = (el && el.textContent) ? el.textContent : '';
-                if (!text || text.indexOf('締日：') === -1) { return; }
+        var bestTs = null;
+        clone.querySelectorAll('div').forEach(function(el) {
+            var text = el && el.textContent ? el.textContent : '';
+            if (!text || text.indexOf('締日：') === -1) { return; }
+            var m = text.match(/締日：\s*([0-9]{4}[-\/][0-9]{1,2}[-\/][0-9]{1,2})/);
+            if (!m || !m[1]) { return; }
+            var ts = parseDateToTimestamp(m[1]);
+            if (ts === null) { return; }
+            if (bestTs === null || ts > bestTs) {
+                bestTs = ts;
+                finalClosingDateYmd = m[1].replace(/[^\d]/g, '');
+            }
+        });
 
-                // 例: "【4】" + t("締日：") + "2026-03-31" + " " + t("案件数：") + "10"
-                var m = text.match(/締日：\s*([0-9]{4}[-\/][0-9]{1,2}[-\/][0-9]{1,2})/);
-                if (!m || !m[1]) { return; }
-
-                var ts = parseDateToTimestamp(m[1]);
-                if (ts === null) { return; }
-
-                if (bestTs === null || ts > bestTs) {
-                    bestTs = ts;
-                    bestRaw = m[1];
-                }
-            });
-
-            finalClosingDateYmd = bestRaw ? formatYmdForFilename(bestRaw) : '';
-        } catch (e) {
-            // 取得に失敗してもフォールバックで today を使う
-            console.warn('[請求書印刷] 最終締め日抽出に失敗:', e);
-        }
-        
         function sanitizeFilename(value) {
-            // 印刷をPDF保存した際のファイル名に禁止文字が含まれる場合、ブラウザがフォールバック名になることがあるためサニタイズする
             return String(value)
                 .replace(/[\u0000-\u001F\/\\:\uFF1A*\?"<>\|]/g, '-')
                 .replace(/\s+/g, ' ')
                 .trim();
         }
-        
-        // ファイル名を生成: {請求先会社名}_{最終締め日}.pdf
-        // （ブラウザの提案名がサイト名になってしまうのを防ぐため、必ず title/d.title に反映される値を作る）
-        var closingDateForFilename = finalClosingDateYmd || formatYmdForFilename(todayStr);
-        var filenameBase = sanitizeFilename((clientName || '請求先') + '_' + closingDateForFilename);
-        var filename = filenameBase + '.pdf';
-        
-        // 印刷用のスタイルを適用したHTMLを生成（print=封筒窓向け / pdf=プレビュー同等A4）
-        var printHTML = '<!DOCTYPE html>';
-        printHTML += '<html lang="ja">';
-        printHTML += '<head>';
-        printHTML += '<meta charset="UTF-8">';
-        printHTML += '<meta name="viewport" content="width=device-width, initial-scale=1.0">';
+
+        var closingDateForFilename = finalClosingDateYmd || todayStr.replace(/[^\d]/g, '');
+        var filename = sanitizeFilename((clientName || '請求先') + '_' + closingDateForFilename) + '.pdf';
+
+        var previewWidth = 794;
+        var measured = Math.round(sourceEl.getBoundingClientRect().width);
+        if (measured > 0) {
+            previewWidth = window.innerWidth < 768 ? Math.max(measured, 794) : measured;
+        }
+
+        var rootClass = 'ktp-bulk-invoice-pdf-root' + (showTaxAmountForPrint ? ' ktp-bulk-show-tax-amount' : '');
+        var rootWidthAttr = ' style="width:' + previewWidth + 'px;max-width:100%;box-sizing:border-box;"';
+
+        var printHTML = '<!DOCTYPE html><html lang="ja" style="color-scheme:light"><head><meta charset="UTF-8">';
+        printHTML += '<meta name="viewport" content="width=' + previewWidth + '">';
         printHTML += '<title>' + filename + '</title>';
-        printHTML += '<meta name="title" content="' + filename + '">';
-        printHTML += '<meta name="filename" content="' + filename + '">';
-        printHTML += '<style>';
-        printHTML += '* { margin: 0; padding: 0; box-sizing: border-box; }';
-        printHTML += 'body { font-family: "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif; font-size: 12px; line-height: 1.4; color: #333; background: white; -webkit-print-color-adjust: exact; print-color-adjust: exact; }';
-        printHTML += 'h1, h2, h3, h4, h5, h6 { font-weight: bold; }';
-        printHTML += '* { -webkit-print-color-adjust: exact !important; color-adjust: exact !important; print-color-adjust: exact !important; }';
-        printHTML += '@media print { button, .no-print { display: none !important; } }';
-        printHTML += '.ktp-bulk-tax-amount-col { display: none !important; }';
-        printHTML += '.ktp-biz-items-table thead.ktp-bulk-items-table-head tr, .ktp-biz-items-table thead.ktp-bulk-items-table-head th { background-color: #ffeef1 !important; border-bottom: 1px solid #fecdd3 !important; }';
-        printHTML += '.ktp-bulk-invoice-issuer-stack { position: absolute; top: 0; right: 0; z-index: 8; max-width: calc(100% - 23mm - 88mm - 4mm); pointer-events: none; }';
-        printHTML += '.ktp-bulk-invoice-issuer-inner { position: relative; display: block; width: 100%; max-width: 100%; margin-left: auto; text-align: left; padding-right: 5mm; pointer-events: auto; box-sizing: border-box; color: #374151; line-height: 1.35; }';
-        printHTML += '.ktp-bulk-invoice-issuer-doc-title { display: flex; align-items: center; justify-content: space-between; gap: 0.5em; width: 0; min-width: 100%; margin-bottom: 0.55em; font-size: 2em; color: #374151; line-height: 1; }';
-        printHTML += '.ktp-bulk-invoice-issuer-doc-title-ornament { display: flex; flex: 1 1 0; flex-direction: column; align-items: stretch; justify-content: center; gap: 0.2em; min-width: 0; }';
-        printHTML += '.ktp-bulk-invoice-issuer-doc-title-ornament > span { display: block; width: 100%; height: 0.0625em; min-height: 1px; background: currentColor; }';
-        printHTML += '.ktp-bulk-invoice-issuer-doc-title-text { flex: 0 0 auto; font-size: inherit; letter-spacing: 0.08em; white-space: nowrap; }';
-        printHTML += '.ktp-bulk-invoice-issuer-logo-wrap { width: 0; min-width: 100%; margin-top: 2.5em; margin-bottom: 0.45em; overflow: hidden; }';
-        printHTML += '.ktp-bulk-invoice-issuer-logo-img { display: block; width: 100% !important; max-width: 100% !important; height: auto !important; object-fit: contain; object-position: left center; }';
-        printHTML += '.ktp-bulk-invoice-issuer-bank { margin-top: 1.2em; }';
-        printHTML += '.ktp-bulk-invoice-issuer-bank-text, .ktp-bulk-invoice-issuer-bank .ktp-invoice-bank-transfer { margin: 0 !important; padding: 0 !important; border: none !important; border-radius: 0 !important; background: #fff !important; background-color: #fff !important; box-shadow: none !important; }';
-        printHTML += '.ktp-bulk-invoice-issuer-bank .ktp-invoice-bank-transfer > div:first-child { border-bottom: none !important; padding-bottom: 0 !important; margin-bottom: 0.2em !important; }';
-        printHTML += '.ktp-bulk-invoice-issuer-seal-scope { position: relative; }';
-        printHTML += '.ktp-bulk-invoice-issuer-seal-overlay { position: absolute; right: -0.4em; top: -0.5em; z-index: 2; pointer-events: none; background: transparent; mix-blend-mode: multiply; opacity: 0.75; }';
-        printHTML += '.ktp-bulk-invoice-envelope-label-slot { font-size: var(--bulk-issuer-text-font-size, 14px); line-height: 1; margin-bottom: 0.35em; }';
-        printHTML += '.ktp-bulk-invoice-envelope-label { display: block; color: #2563eb; font-size: 2em; line-height: 1; letter-spacing: 0.08em; text-align: left; }';
-        printHTML += '.ktp-bulk-invoice-addressee { font-size: 12px; line-height: 1.4; margin-bottom: 20px; color: #111827; }';
-        printHTML += '.ktp-bulk-invoice-addressee > div { margin-bottom: 5px; }';
-        printHTML += '.ktp-bulk-invoice-document-lead { width: 50%; max-width: 50%; text-align: left; margin: 0 0 16px 0; color: #374151; }';
-        printHTML += ktpBulkInvoiceOrderLayoutPrintCss('.page-container');
-        if (showTaxAmountForPrint) {
-            printHTML += '.ktp-bulk-show-tax-amount .ktp-bulk-tax-amount-col { display: table-cell !important; }';
-        }
-        if (mode === 'pdf') {
-            printHTML += 'body { padding: 20px; background: white; }';
-            printHTML += '.page-container { width: 210mm; max-width: 210mm; margin: 0 auto; background: white; padding: 50px; }';
-            printHTML += '@page { size: A4; margin: 50px; }';
-            printHTML += '@page :first { size: A4; margin: 50px; }';
-            printHTML += '@media print { body { margin: 0; padding: 0; background: white; } .page-container { box-shadow: none; margin: 0; padding: 0; width: auto; max-width: none; } .ktp-bulk-invoice-envelope-footer { display: none !important; } }';
-        } else {
-            printHTML += 'html, body { padding: 0; margin: 0; background: white; }';
-            printHTML += '@page { size: A4; margin: ' + invPrintPageMarginMm + 'mm; }';
-            printHTML += '.page-container.ktp-bulk-invoice-print-root { position: relative; width: 210mm; max-width: 210mm; margin: 0 auto; background: white; min-height: 297mm; box-sizing: border-box; }';
-            printHTML += '.page-container.ktp-bulk-invoice-print-root .ktp-bulk-invoice-content-area.ktp-bulk-invoice-envelope-page { position: relative; width: 100%; max-width: none; box-sizing: border-box; min-height: 297mm; padding: calc(' + invPrintBodyFlowPadTopMm + 'mm + ' + invPrintBodyFlowTopExtraMm + 'mm) ' + invPrintPadRightInnerMm + 'mm ' + invPrintPadBottomInnerMm + 'mm ' + invPrintPadLeftInnerMm + 'mm !important; }';
-            printHTML += '.page-container.ktp-bulk-invoice-print-root .ktp-bulk-invoice-content-area.ktp-bulk-invoice-envelope-page--labeled { padding-top: calc(' + invPrintBodyFlowPadTopMm + 'mm + ' + invPrintBodyFlowTopExtraMm + 'mm + var(--bulk-envelope-label-offset, 15mm)) !important; }';
-            printHTML += '.page-container.ktp-bulk-invoice-print-root .ktp-bulk-invoice-address-block { position: absolute !important; top: ' + invAddrTopMm + 'mm !important; left: ' + invAddrLeftMm + 'mm !important; right: auto !important; z-index: 999 !important; max-width: 88mm !important; margin: 0 !important; }';
-            printHTML += '.page-container.ktp-bulk-invoice-print-root .ktp-bulk-invoice-issuer-stack { position: absolute !important; top: ' + invAddrTopMm + 'mm !important; right: 0 !important; max-width: calc(100% - ' + invAddrLeftMm + 'mm - 88mm - 4mm) !important; }';
-            printHTML += '.page-container.ktp-bulk-invoice-print-root .ktp-bulk-invoice-issuer-inner { width: 100% !important; max-width: 100% !important; }';
-            printHTML += '.page-container.ktp-bulk-invoice-print-root .ktp-bulk-invoice-print-except-addressee { margin-top: 0 !important; }';
-            printHTML += '.page-container.ktp-bulk-invoice-print-root .ktp-bulk-invoice-summary-box { margin-top: 12mm !important; margin-bottom: 6mm !important; break-after: avoid-page; page-break-after: avoid; }';
-            printHTML += '.page-container.ktp-bulk-invoice-print-root .ktp-bulk-invoice-envelope-footer { display: none !important; }';
-            printHTML += '.page-container.ktp-bulk-invoice-print-root .ktp-bulk-invoice-issuer-stack, .page-container.ktp-bulk-invoice-print-root .ktp-bulk-invoice-issuer-inner { break-inside: avoid-page; page-break-inside: avoid; }';
-            printHTML += '@media print {';
-            printHTML += '  html, body { margin: 0 !important; padding: 0 !important; }';
-            printHTML += '  .page-container.ktp-bulk-invoice-print-root { margin: 0 !important; width: 100% !important; max-width: none !important; }';
-            printHTML += '  .page-container.ktp-bulk-invoice-print-root .ktp-bulk-invoice-content-area.ktp-bulk-invoice-envelope-page { padding: calc(' + invPrintBodyFlowPadTopMm + 'mm + ' + invPrintBodyFlowTopExtraMm + 'mm) ' + invPrintPadRightInnerMm + 'mm ' + invPrintPadBottomInnerMm + 'mm ' + invPrintPadLeftInnerMm + 'mm !important; }';
-            printHTML += '  .page-container.ktp-bulk-invoice-print-root .ktp-bulk-invoice-address-block { position: absolute !important; top: ' + invAddrTopMm + 'mm !important; left: ' + invAddrLeftMm + 'mm !important; right: auto !important; z-index: 999 !important; max-width: 88mm !important; margin: 0 !important; }';
-            printHTML += '  .page-container.ktp-bulk-invoice-print-root .ktp-bulk-invoice-issuer-stack { top: ' + invAddrTopMm + 'mm !important; right: 0 !important; max-width: calc(100% - ' + invAddrLeftMm + 'mm - 88mm - 4mm) !important; }';
-            printHTML += '  .ktp-biz-items-table { font-size: 0.8rem !important; }';
-            printHTML += '}';
-        }
-        printHTML += '</style>';
-        printHTML += '</head>';
-        printHTML += '<body>';
-        var printContainerClass = 'page-container' + (showTaxAmountForPrint ? ' ktp-bulk-show-tax-amount' : '');
-        printHTML += (mode === 'pdf')
-            ? '<div class="' + printContainerClass + '">'
-            : '<div class="' + printContainerClass + ' ktp-bulk-invoice-print-root">';
-        printHTML += invoiceContent;
-        printHTML += '</div>';
-        printHTML += '</body>';
-        printHTML += '</html>';
+        printHTML += '<style id="ktp-bulk-invoice-pdf-mirror-styles">';
+        printHTML += 'html,body.ktp-bulk-invoice-print-document{margin:0;padding:0;background:#fff!important;color:#111827;color-scheme:light;font-family:"Noto Sans JP","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;font-size:14px;line-height:1.5;-webkit-print-color-adjust:exact;print-color-adjust:exact;}';
+        printHTML += ktpBulkInvoicePdfMirrorStylesCss();
+        printHTML += ktpBulkInvoiceOrderLayoutPrintCss('.ktp-bulk-invoice-pdf-root');
+        printHTML += '</style></head>';
+        printHTML += '<body class="ktp-bulk-invoice-print-document ktp-bulk-invoice-pdf-save-mode">';
+        printHTML += '<div class="' + rootClass + '"' + rootWidthAttr + '>' + invoiceContent + '</div>';
+        printHTML += '</body></html>';
 
-        console.log("[請求書印刷] 印刷HTML生成完了");
-        console.log("[請求書印刷] ファイル名:", filename);
-
-        // 新規タブやabout:blankを開かず、隠しiframeで印刷（Chrome 139対応）
-        var iframe = document.createElement('iframe');
-        iframe.style.position = 'fixed';
-        iframe.style.right = '0';
-        iframe.style.bottom = '0';
-        iframe.style.width = '0';
-        iframe.style.height = '0';
-        iframe.style.border = '0';
-        iframe.style.visibility = 'hidden';
-        document.body.appendChild(iframe);
-
-        var originalDocumentTitle = document.title;
-        var cleanupDone = false;
-        function cleanup() {
-            if (cleanupDone) return;
-            cleanupDone = true;
-            setTimeout(function() {
-                try { document.body.removeChild(iframe); } catch (_) {}
-                try { document.title = originalDocumentTitle; } catch (_) {}
-            }, 300);
-        }
-
-        try {
-            var frameDoc = iframe.contentDocument || iframe.contentWindow.document;
-            frameDoc.open();
-            frameDoc.write(printHTML);
-            frameDoc.close();
-
-            // title を onload に依存せず、書き込み直後に反映する（環境によって onload が不安定なため）
-            try {
-                var d = iframe.contentDocument || iframe.contentWindow.document;
-                if (d) {
-                    d.title = filename;
-                    // 念のため <title> 要素も更新
-                    if (d.head) {
-                        var titleEl = d.head.querySelector('title');
-                        if (titleEl) {
-                            titleEl.textContent = filename;
-                        } else {
-                            var t = d.createElement('title');
-                            t.textContent = filename;
-                            d.head.appendChild(t);
-                        }
-                    }
-                }
-            } catch (_) {}
-
-            // 封筒印刷：宛名 absolute（座標はスタイルシートと同一）。タイトル margin は CSS で 0
-            if (mode === 'print') {
-                try {
-                    var dPrint = iframe.contentDocument || iframe.contentWindow.document;
-                    if (dPrint) {
-                        var addrEl = dPrint.querySelector('.ktp-bulk-invoice-address-block');
-                        if (addrEl) {
-                            addrEl.style.setProperty('position', 'absolute', 'important');
-                            addrEl.style.setProperty('top', invAddrTopMm + 'mm', 'important');
-                            addrEl.style.setProperty('left', invAddrLeftMm + 'mm', 'important');
-                            addrEl.style.setProperty('right', 'auto', 'important');
-                            addrEl.style.setProperty('z-index', '999', 'important');
-                            addrEl.style.setProperty('max-width', '88mm', 'important');
-                            addrEl.style.setProperty('margin', '0', 'important');
-                        } else {
-                            console.warn('[請求書印刷] .ktp-bulk-invoice-address-block が見つかりません（封筒用座標をスキップ）');
-                        }
-                        var issuerEl = dPrint.querySelector('.ktp-bulk-invoice-issuer-stack');
-                        if (issuerEl) {
-                            issuerEl.style.setProperty('position', 'absolute', 'important');
-                            issuerEl.style.setProperty('top', invAddrTopMm + 'mm', 'important');
-                            issuerEl.style.setProperty('right', '0', 'important');
-                            issuerEl.style.setProperty('max-width', 'calc(100% - ' + invAddrLeftMm + 'mm - 88mm - 4mm)', 'important');
-                        }
-                    }
-                } catch (injErr) {
-                    console.warn('[請求書印刷] 印刷用インラインスタイル適用に失敗:', injErr);
-                }
-            }
-
-            // print を発火
-            try {
-                var w = iframe.contentWindow || iframe;
-                w.focus();
-                w.onafterprint = function() {
-                    cleanup();
-                };
-                setTimeout(function() {
-                    // 一部ブラウザは iframe の title より親ドキュメントの title を参照して
-                    // PDF保存時の提案ファイル名が決まることがあるため、直前に親 title も合わせる
-                    try { document.title = filename; } catch (_) {}
-                    try { w.print(); } catch (e) { cleanup(); }
-                }, 50);
-            } catch (e) {
-                cleanup();
-            }
-        } catch (e) {
-            console.error('[請求書印刷] iframe印刷に失敗:', e);
-            cleanup();
-        }
-
-        // 印刷完了後の進捗変更Ajaxは、iframe印刷とは独立して実行
-        if (shouldSetCompleted) {
-            var xhr = new XMLHttpRequest();
-            xhr.open('POST', '/wp-admin/admin-ajax.php');
-            xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-            var clientId = '';
-            var urlParams = new URLSearchParams(window.location.search);
-            clientId = urlParams.get('data_id');
-            if (!clientId) {
-                var clientIdInput = document.getElementById('client-id-input');
-                if (clientIdInput) {
-                    clientId = clientIdInput.value;
-                }
-            }
-            var params = 'action=ktp_set_invoice_completed&client_id=' + encodeURIComponent(clientId);
-            xhr.onload = function() {
-                if (xhr.status === 200) {
-                    try {
-                        var response = JSON.parse(xhr.responseText);
-                        if (response.success) {
-                            updateOrderHistoryProgress(clientId, 4, 5);
-                        }
-                    } catch (e) {}
-                }
-            };
-            xhr.send(params);
-        }
-
+        return { html: printHTML, filename: filename, previewWidth: previewWidth };
     } catch (error) {
-        console.error("[請求書印刷] エラーが発生しました:", error);
-        alert(ktpwpTranslate("印刷エラーが発生しました: ") + error.message);
+        console.error('[請求書] 印刷HTML生成エラー:', error);
+        return null;
     }
 }
+
+/**
+ * @param {string} outputMode 'print' | 'pdf'
+ */
+function printInvoiceContent(outputMode) {
+    var mode = (outputMode === 'pdf') ? 'pdf' : 'print';
+    if (mode === 'print' && !ktpConfirmInvoicePrintWithProgress()) {
+        return;
+    }
+    if (typeof window.KTPBulkInvoicePrint !== 'undefined') {
+        if (mode === 'pdf') {
+            window.KTPBulkInvoicePrint.startPdfSave(document.getElementById('ktp-invoice-pdf-btn'));
+        } else {
+            window.KTPBulkInvoicePrint.startPrint(document.getElementById('ktp-invoice-print-btn'));
+        }
+        return;
+    }
+    alert(ktpwpTranslate('印刷機能の読み込みに失敗しました。ページを再読み込みしてください。'));
+}
+
 
 
 function updateInvoiceTotal() {

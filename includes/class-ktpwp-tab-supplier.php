@@ -838,11 +838,6 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 							'sort_key' => 'name',
 						),
 						array(
-							'class'    => 'col-category no-print',
-							'label'    => __( 'カテゴリー', 'ktpwp' ),
-							'sort_key' => 'category',
-						),
-						array(
 							'class'    => 'col-phone',
 							'label'    => __( '電話番号', 'ktpwp' ),
 							'sort_key' => 'phone',
@@ -905,14 +900,12 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 
 					  $item_link_url = esc_url( add_query_arg( $query_args, $base_page_url ) );
 					  $frequency_title = esc_attr__( 'アクセス頻度（クリックされた回数）', 'ktpwp' );
-					  $display_category = $category !== '' ? $category : '—';
 					  $display_phone    = $phone !== '' ? $phone : '—';
 					  $row_attrs       = KTPWP_List_Table::row_nav_attrs( $item_link_url, $cookie_name, (int) $row->id );
 					  $results[]       = '<tr' . $row_attrs . '>'
 						. '<td class="col-id">' . $id . '</td>'
 						. '<td class="col-company">' . $company_name . '</td>'
 						. '<td class="col-contact">' . $user_name . '</td>'
-						. '<td class="col-category no-print">' . esc_html( $display_category ) . '</td>'
 						. '<td class="col-phone">' . esc_html( $display_phone ) . '</td>'
 						. '<td class="col-frequency no-print" title="' . $frequency_title . '">' . $frequency . '</td>'
 						. '</tr>';

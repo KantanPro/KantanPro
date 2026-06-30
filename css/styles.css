@@ -1900,6 +1900,55 @@ form > .create-order-btn {
   overflow-x: auto;
 }
 
+@media (max-width: 767px) {
+  .ktp_data_list_box .ktp-service-list-table-wrap {
+    -webkit-overflow-scrolling: touch;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+  }
+
+  .ktp_data_list_box .ktp-service-list-table-wrap > .ktp-service-list-table {
+    min-width: 100%;
+    table-layout: auto;
+    width: max-content;
+  }
+
+  .ktp_data_list_box .ktp-service-list-table.ktp-list-table--party {
+    min-width: 34rem;
+  }
+
+  .ktp_data_list_box .ktp-service-list-table.ktp-list-table--service {
+    min-width: 42rem;
+  }
+
+  .ktp_data_list_box .ktp-service-list-table .col-company,
+  .ktp_data_list_box .ktp-service-list-table .col-name {
+    max-width: none;
+    min-width: 8rem;
+    width: auto;
+  }
+
+  .ktp_data_list_box .ktp-service-list-table .col-contact,
+  .ktp_data_list_box .ktp-service-list-table .col-phone,
+  .ktp_data_list_box .ktp-service-list-table .col-category {
+    max-width: none;
+    min-width: 5.5rem;
+    width: auto;
+  }
+
+  .ktp_data_list_box .ktp-service-list-table .col-price-unit,
+  .ktp_data_list_box .ktp-service-list-table .col-public,
+  .ktp_data_list_box .ktp-service-list-table .col-contract {
+    max-width: none;
+    min-width: 4.5rem;
+    white-space: nowrap;
+    width: auto;
+  }
+}
+
 .ktp-service-list-table {
   border-collapse: collapse;
   margin: 0;
@@ -2891,11 +2940,7 @@ form > .create-order-btn {
 }
 
 .ktp-service-list-table.ktp-list-table--party .col-phone {
-  width: 18%;
-}
-
-.ktp-service-list-table.ktp-list-table--party .col-category.no-print {
-  width: 16%;
+  width: 26%;
 }
 
 .ktp-service-list-table.ktp-list-table--party .col-frequency {

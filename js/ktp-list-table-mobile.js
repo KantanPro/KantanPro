@@ -8,6 +8,16 @@
     var MQ = window.matchMedia('(max-width: 767px)');
     var STORAGE_KEY = 'ktp_scroll_to_detail';
     var DETAIL_ANCHOR_PREFIX = 'ktp-detail';
+    var SCROLL_DURATION_MS = 1200;
+    var smoothScrollFrameId = 0;
+
+    try {
+        if (MQ.matches && sessionStorage.getItem(STORAGE_KEY) === '1' && 'scrollRestoration' in history) {
+            history.scrollRestoration = 'manual';
+        }
+    } catch (err) {
+        // ignore
+    }
 
     function t(msg) {
         return typeof window.ktpwpTranslate === 'function' ? window.ktpwpTranslate(msg) : msg;
@@ -92,30 +102,124 @@
         return null;
     }
 
-    function scrollElementIntoView(element, behavior) {
+    function resolveScrollContext(firstElement, secondElement) {
+        var container = getScrollableContainer(firstElement) || getScrollableContainer(secondElement);
+
+        return {
+            container: container,
+            scrollable: container || window
+        };
+    }
+
+    function getScrollTop(context) {
+        if (context.scrollable === window) {
+            return window.pageYOffset || document.documentElement.scrollTop || 0;
+        }
+
+        return context.scrollable.scrollTop;
+    }
+
+    function setScrollTop(context, top) {
+        if (context.scrollable === window) {
+            window.scrollTo(0, top);
+            return;
+        }
+
+        context.scrollable.scrollTop = top;
+    }
+
+    function easeInOutCubic(progress) {
+        return progress < 0.5
+            ? 4 * progress * progress * progress
+            : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+    }
+
+    function getScrollTargetTop(element, container) {
+        if (container) {
+            var containerRect = container.getBoundingClientRect();
+            var elementRect = element.getBoundingClientRect();
+            return Math.max(0, elementRect.top - containerRect.top + container.scrollTop - 12);
+        }
+
+        var elementRect = element.getBoundingClientRect();
+        return Math.max(0, elementRect.top + (window.pageYOffset || document.documentElement.scrollTop || 0) - 12);
+    }
+
+    function animateScrollTop(context, targetTop, duration, forcedStartTop) {
+        if (smoothScrollFrameId) {
+            window.cancelAnimationFrame(smoothScrollFrameId);
+            smoothScrollFrameId = 0;
+        }
+
+        var startTop = typeof forcedStartTop === 'number' ? forcedStartTop : getScrollTop(context);
+        var distance = targetTop - startTop;
+
+        if (Math.abs(distance) < 1) {
+            setScrollTop(context, targetTop);
+            return;
+        }
+
+        var startTime = null;
+        var step = function (timestamp) {
+            if (!startTime) {
+                startTime = timestamp;
+            }
+
+            var progress = Math.min((timestamp - startTime) / duration, 1);
+            setScrollTop(context, startTop + distance * easeInOutCubic(progress));
+
+            if (progress < 1) {
+                smoothScrollFrameId = window.requestAnimationFrame(step);
+            } else {
+                smoothScrollFrameId = 0;
+            }
+        };
+
+        smoothScrollFrameId = window.requestAnimationFrame(step);
+    }
+
+    function scrollListToDetail(list, title, duration) {
+        var context = resolveScrollContext(list, title);
+        var listTop = getScrollTargetTop(list, context.container);
+
+        setScrollTop(context, listTop);
+
+        var runAnimation = function () {
+            var startTop = getScrollTop(context);
+            var toTop = getScrollTargetTop(title, context.container);
+            animateScrollTop(context, toTop, duration, startTop);
+        };
+
+        window.requestAnimationFrame(function () {
+            window.requestAnimationFrame(function () {
+                var startTop = getScrollTop(context);
+                var toTop = getScrollTargetTop(title, context.container);
+
+                if (Math.abs(toTop - startTop) < 8) {
+                    window.setTimeout(runAnimation, 120);
+                    return;
+                }
+
+                runAnimation();
+            });
+        });
+    }
+
+    function scrollElementIntoView(element, behavior, duration) {
         if (!element) {
             return;
         }
 
         var scrollBehavior = behavior || 'smooth';
+        var context = resolveScrollContext(element, element);
+        var targetTop = getScrollTargetTop(element, context.container);
 
-        var container = getScrollableContainer(element);
-        if (container) {
-            var containerRect = container.getBoundingClientRect();
-            var elementRect = element.getBoundingClientRect();
-            var offset = elementRect.top - containerRect.top + container.scrollTop - 12;
-            container.scrollTo({
-                top: Math.max(0, offset),
-                behavior: scrollBehavior
-            });
+        if (scrollBehavior === 'smooth') {
+            animateScrollTop(context, targetTop, duration || SCROLL_DURATION_MS);
             return;
         }
 
-        element.scrollIntoView({
-            behavior: scrollBehavior,
-            block: 'start',
-            inline: 'nearest'
-        });
+        setScrollTop(context, targetTop);
     }
 
     function getBackButtonIconHtml() {
@@ -189,24 +293,25 @@
         var list = findListTarget(contents);
 
         if (list) {
-            scrollElementIntoView(list, 'auto');
+            var context = resolveScrollContext(list, title);
+            setScrollTop(context, getScrollTargetTop(list, context.container));
         }
 
-        var runSmoothScroll = function () {
+        var runListToDetailScroll = function () {
             assignDetailAnchorId(title, contents);
-            scrollElementIntoView(title, 'smooth');
-        };
 
-        var scheduleSmoothScroll = function () {
-            window.requestAnimationFrame(function () {
-                window.requestAnimationFrame(runSmoothScroll);
-            });
+            if (list) {
+                scrollListToDetail(list, title, SCROLL_DURATION_MS);
+                return;
+            }
+
+            scrollElementIntoView(title, 'smooth', SCROLL_DURATION_MS);
         };
 
         if (document.readyState === 'complete') {
-            scheduleSmoothScroll();
+            runListToDetailScroll();
         } else {
-            window.addEventListener('load', scheduleSmoothScroll, { once: true });
+            window.addEventListener('load', runListToDetailScroll, { once: true });
         }
     }
 
