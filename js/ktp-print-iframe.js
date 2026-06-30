@@ -1328,6 +1328,7 @@ global.KTPPrintIframe = {
   openPrintPreviewTab,
   printHtmlInHiddenIframe,
   printPdfBlob,
+  downloadPdfBlob,
   PRINT_FOOTER_STYLE_BLOCK
 };
 

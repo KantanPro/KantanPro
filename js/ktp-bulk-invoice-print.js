@@ -1083,6 +1083,10 @@ async function renderBulkInvoiceElementToPdf(target, previewWidth, options = {})
         return pdfBlob;
     }
 
+    if (typeof downloadPdfBlob !== 'function') {
+        throw new Error('PDFダウンロード機能が読み込まれていません');
+    }
+
     await downloadPdfBlob(pdfBlob, pdfFilename);
 }
 
