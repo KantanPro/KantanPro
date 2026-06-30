@@ -8137,6 +8137,105 @@ body.ktpwp-modal-open {
   line-height: 1.5;
   color: #6b7280;
 }
+
+/* 一括請求プレビュー: 印刷・PDF保存 */
+#ktp-invoice-preview-popup .ktp-invoice-output-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.2;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+#ktp-invoice-preview-popup .ktp-invoice-output-btn--print {
+  background-color: #0073aa;
+  color: #fff;
+  border: none;
+}
+
+#ktp-invoice-preview-popup .ktp-invoice-output-btn--pdf {
+  background-color: #fff;
+  color: #0073aa;
+  border: 1px solid #0073aa;
+}
+
+@media screen and (max-width: 767px) {
+  #ktp-invoice-preview-popup #ktp-invoice-footer-actions > div,
+  #ktp-invoice-preview-popup .ktp-invoice-output-actions {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: center;
+    align-items: stretch;
+    gap: 0.75rem;
+    width: fit-content;
+    max-width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* スマホ: KantanBiz 同様、青塗りなしの白ボタン */
+  #ktp-invoice-preview-popup #ktp-invoice-print-btn,
+  #ktp-invoice-preview-popup #ktp-invoice-pdf-btn,
+  #ktp-invoice-preview-popup .ktp-invoice-output-btn,
+  #ktp-invoice-preview-popup #ktp-invoice-print-btn:hover,
+  #ktp-invoice-preview-popup #ktp-invoice-pdf-btn:hover,
+  #ktp-invoice-preview-popup .ktp-invoice-output-btn:hover,
+  #ktp-invoice-preview-popup #ktp-invoice-print-btn:active,
+  #ktp-invoice-preview-popup #ktp-invoice-pdf-btn:active,
+  #ktp-invoice-preview-popup .ktp-invoice-output-btn:active,
+  #ktp-invoice-preview-popup #ktp-invoice-print-btn:focus,
+  #ktp-invoice-preview-popup #ktp-invoice-pdf-btn:focus,
+  #ktp-invoice-preview-popup .ktp-invoice-output-btn:focus,
+  #ktp-invoice-preview-popup #ktp-invoice-print-btn:focus-visible,
+  #ktp-invoice-preview-popup #ktp-invoice-pdf-btn:focus-visible,
+  #ktp-invoice-preview-popup .ktp-invoice-output-btn:focus-visible,
+  #ktp-invoice-preview-popup #ktp-invoice-print-btn:disabled,
+  #ktp-invoice-preview-popup #ktp-invoice-pdf-btn:disabled,
+  #ktp-invoice-preview-popup .ktp-invoice-output-btn:disabled {
+    background-color: #fff !important;
+    color: #374151 !important;
+    border: 1px solid #d1d5db !important;
+    opacity: 1 !important;
+    box-shadow: none !important;
+  }
+
+  #ktp-invoice-preview-popup #ktp-invoice-print-btn,
+  #ktp-invoice-preview-popup #ktp-invoice-pdf-btn,
+  #ktp-invoice-preview-popup .ktp-invoice-output-btn {
+    flex: 0 0 auto;
+    min-width: 7.5rem;
+    min-height: 48px;
+  }
+
+  #ktp-invoice-preview-popup #ktp-invoice-print-btn:disabled,
+  #ktp-invoice-preview-popup #ktp-invoice-pdf-btn:disabled,
+  #ktp-invoice-preview-popup .ktp-invoice-output-btn:disabled {
+    cursor: wait;
+  }
+
+  #ktp-invoice-preview-popup #ktp-invoice-print-btn .material-symbols-outlined,
+  #ktp-invoice-preview-popup #ktp-invoice-pdf-btn .material-symbols-outlined,
+  #ktp-invoice-preview-popup .ktp-invoice-output-btn .material-symbols-outlined,
+  #ktp-invoice-preview-popup #ktp-invoice-print-btn .ktp-svg-icon,
+  #ktp-invoice-preview-popup #ktp-invoice-pdf-btn .ktp-svg-icon,
+  #ktp-invoice-preview-popup .ktp-invoice-output-btn .ktp-svg-icon,
+  #ktp-invoice-preview-popup #ktp-invoice-print-btn .ktp-svg-icon svg,
+  #ktp-invoice-preview-popup #ktp-invoice-pdf-btn .ktp-svg-icon svg,
+  #ktp-invoice-preview-popup .ktp-invoice-output-btn .ktp-svg-icon svg {
+    color: #374151 !important;
+    fill: currentColor !important;
+  }
+}
+
 #invoiceList .ktp-bulk-invoice-document-lead {
   width: 50%;
   max-width: 50%;
