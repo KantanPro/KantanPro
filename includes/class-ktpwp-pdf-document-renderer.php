@@ -118,6 +118,7 @@ final class KTPWP_Pdf_Document_Renderer {
 		$legacy_company_info_html = ''
 	) {
 		$sizes              = KTPWP_Pdf_Document_Settings::scaled_branding_sizes( $doc_settings );
+		$scaled_seal        = KTPWP_Pdf_Document_Settings::scaled_bulk_issuer_seal_branding( $sizes );
 		$seal_overlay_css   = KTPWP_Pdf_Document_Settings::bulk_issuer_seal_overlay_css_declaration( $sizes );
 		$issuer_font_size   = KTPWP_Pdf_Document_Settings::scaled_font_size_px(
 			(int) ( $doc_settings['body_font_size'] ?? 14 ),
@@ -129,6 +130,12 @@ final class KTPWP_Pdf_Document_Renderer {
 			KTPWP_Pdf_Document_Kind::BULK_INVOICE,
 			__( '請求書', 'ktpwp' )
 		);
+		$logo_width_percent = (int) ( $doc_settings['issuer_logo_width_percent'] ?? KTPWP_Pdf_Document_Settings::ISSUER_LOGO_WIDTH_PERCENT_DEFAULT );
+		$logo_align         = KTPWP_Pdf_Document_Settings::resolve_issuer_logo_align(
+			$doc_settings['issuer_logo_align'] ?? KTPWP_Pdf_Document_Settings::ISSUER_LOGO_ALIGN_DEFAULT
+		);
+		$logo_css           = KTPWP_Pdf_Document_Settings::bulk_issuer_logo_css_declaration( $logo_width_percent, $logo_align );
+		$can_resize         = current_user_can( 'manage_options' );
 
 		$show_logo = ! empty( $doc_settings['show_logo'] ) && ! empty( $branding['logo_data_uri'] );
 		$show_seal = ! empty( $doc_settings['show_seal'] ) && ! empty( $branding['seal_data_uri'] );
@@ -155,8 +162,16 @@ final class KTPWP_Pdf_Document_Renderer {
 		$html .= '</div>';
 
 		if ( $show_logo ) {
+			$logo_class = 'ktp-bulk-invoice-issuer-logo-img';
+			$logo_attrs = '';
+			if ( $can_resize ) {
+				$logo_class .= ' is-resizable';
+				$logo_attrs  = ' data-ktp-bulk-logo-resize="1"'
+					. ' data-width-percent="' . esc_attr( (string) $logo_width_percent ) . '"'
+					. ' data-logo-align="' . esc_attr( $logo_align ) . '"';
+			}
 			$html .= '<div class="ktp-bulk-invoice-issuer-logo-wrap">';
-			$html .= '<img src="' . esc_attr( $branding['logo_data_uri'] ) . '" alt="" class="ktp-bulk-invoice-issuer-logo-img">';
+			$html .= '<img src="' . esc_attr( $branding['logo_data_uri'] ) . '" alt="" class="' . esc_attr( $logo_class ) . '" style="' . esc_attr( $logo_css ) . '" draggable="false"' . $logo_attrs . '>';
 			$html .= '</div>';
 		}
 
@@ -184,7 +199,17 @@ final class KTPWP_Pdf_Document_Renderer {
 				}
 			}
 			if ( $show_seal ) {
-				$html .= '<img src="' . esc_attr( $branding['seal_data_uri'] ) . '" alt="" class="ktp-bulk-invoice-issuer-seal-overlay" style="' . esc_attr( $seal_overlay_css ) . '">';
+				$seal_class = 'ktp-bulk-invoice-issuer-seal-overlay';
+				$seal_attrs = '';
+				if ( $can_resize ) {
+					$seal_class .= ' is-resizable';
+					$seal_attrs  = ' data-ktp-bulk-seal-resize="1"'
+						. ' data-setting-width="' . esc_attr( (string) (int) $doc_settings['seal_max_width_px'] ) . '"'
+						. ' data-setting-height="' . esc_attr( (string) (int) $doc_settings['seal_max_height_px'] ) . '"'
+						. ' data-display-width="' . esc_attr( (string) (int) $scaled_seal['seal_max_width_px'] ) . '"'
+						. ' data-display-height="' . esc_attr( (string) (int) $scaled_seal['seal_max_height_px'] ) . '"';
+				}
+				$html .= '<img src="' . esc_attr( $branding['seal_data_uri'] ) . '" alt="" class="' . esc_attr( $seal_class ) . '" style="' . esc_attr( $seal_overlay_css ) . '" draggable="false"' . $seal_attrs . '>';
 			}
 			$html .= '</div>';
 		}

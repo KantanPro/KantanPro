@@ -49,7 +49,7 @@ final class KTPWP_Pdf_Document_Settings {
 
 	public const BULK_ISSUER_SEAL_OVERLAY_SCALE = 6.0;
 
-	public const BULK_ISSUER_SEAL_OVERLAY_MAX = 336;
+	public const BULK_ISSUER_SEAL_OVERLAY_MAX = 454;
 
 	public const BULK_ISSUER_BLOCK_SCALE = 0.7;
 
@@ -58,6 +58,24 @@ final class KTPWP_Pdf_Document_Settings {
 	public const BULK_INVOICE_BODY_FLOW_TOP_EXTRA_MM = 20;
 
 	public const BULK_ISSUER_FONT_SIZE_MAX = 28;
+
+	public const ISSUER_LOGO_WIDTH_PERCENT_MIN = 15;
+
+	public const ISSUER_LOGO_WIDTH_PERCENT_MAX = 100;
+
+	public const ISSUER_LOGO_WIDTH_PERCENT_DEFAULT = 100;
+
+	public const ISSUER_LOGO_ALIGN_LEFT = 'left';
+
+	public const ISSUER_LOGO_ALIGN_RIGHT = 'right';
+
+	public const ISSUER_LOGO_ALIGN_DEFAULT = self::ISSUER_LOGO_ALIGN_LEFT;
+
+	/** @var list<string> */
+	public const ISSUER_LOGO_ALIGNS = array(
+		self::ISSUER_LOGO_ALIGN_LEFT,
+		self::ISSUER_LOGO_ALIGN_RIGHT,
+	);
 
 	public const ISSUER_LINE_HEIGHT_MIN = 1.0;
 
@@ -156,6 +174,8 @@ final class KTPWP_Pdf_Document_Settings {
 			'seal_max_width_px' => 48,
 			'logo_keep_aspect_ratio' => true,
 			'seal_keep_aspect_ratio' => true,
+			'issuer_logo_width_percent' => self::ISSUER_LOGO_WIDTH_PERCENT_DEFAULT,
+			'issuer_logo_align' => self::ISSUER_LOGO_ALIGN_DEFAULT,
 			'accent_color' => self::DEFAULT_ACCENT,
 			'body_font_size' => 14,
 			'title_font_size' => 24,
@@ -227,6 +247,14 @@ final class KTPWP_Pdf_Document_Settings {
 				$stored,
 				'show_tax_amount_column',
 				(bool) ( $defaults['show_tax_amount_column'] ?? false )
+			);
+			$resolved['issuer_logo_width_percent'] = self::clamp_int(
+				$stored['issuer_logo_width_percent'] ?? $defaults['issuer_logo_width_percent'] ?? self::ISSUER_LOGO_WIDTH_PERCENT_DEFAULT,
+				self::ISSUER_LOGO_WIDTH_PERCENT_MIN,
+				self::ISSUER_LOGO_WIDTH_PERCENT_MAX
+			);
+			$resolved['issuer_logo_align'] = self::resolve_issuer_logo_align(
+				$stored['issuer_logo_align'] ?? $defaults['issuer_logo_align'] ?? self::ISSUER_LOGO_ALIGN_DEFAULT
 			);
 		}
 
@@ -307,11 +335,30 @@ final class KTPWP_Pdf_Document_Settings {
 	}
 
 	/**
+	 * 一括請求書印影オーバーレイの表示スケール係数。
+	 */
+	public static function bulk_issuer_seal_overlay_scale_factor() {
+		return self::BULK_ISSUER_SEAL_OVERLAY_SCALE * self::BULK_ISSUER_BLOCK_SCALE * self::BULK_ISSUER_INNER_SCALE;
+	}
+
+	/**
+	 * プレビュー上の表示 px から帳票設定の印影サイズへ戻す。
+	 */
+	public static function setting_size_from_bulk_issuer_seal_display_px( $display_px ) {
+		$scale = self::bulk_issuer_seal_overlay_scale_factor();
+		if ( $scale <= 0 ) {
+			return self::SEAL_MAX_SIZE_MIN;
+		}
+
+		return self::clamp_int( (int) round( (int) $display_px / $scale ), self::SEAL_MAX_SIZE_MIN, self::SEAL_MAX_SIZE_MAX );
+	}
+
+	/**
 	 * @param array<string, mixed> $branding
 	 * @return array<string, mixed>
 	 */
 	public static function scaled_bulk_issuer_seal_branding( array $branding ) {
-		$scale = self::BULK_ISSUER_SEAL_OVERLAY_SCALE * self::BULK_ISSUER_BLOCK_SCALE * self::BULK_ISSUER_INNER_SCALE;
+		$scale = self::bulk_issuer_seal_overlay_scale_factor();
 
 		return array_merge(
 			$branding,
@@ -330,6 +377,83 @@ final class KTPWP_Pdf_Document_Settings {
 				),
 			)
 		);
+	}
+
+	/**
+	 * 一括請求書右上ロゴの幅（ブロック幅に対する %）。
+	 */
+	public static function bulk_issuer_logo_css_declaration( $width_percent, $align = self::ISSUER_LOGO_ALIGN_DEFAULT ) {
+		$percent = self::clamp_int(
+			$width_percent,
+			self::ISSUER_LOGO_WIDTH_PERCENT_MIN,
+			self::ISSUER_LOGO_WIDTH_PERCENT_MAX
+		);
+		$align   = self::resolve_issuer_logo_align( $align );
+		$is_right = $align === self::ISSUER_LOGO_ALIGN_RIGHT;
+
+		return implode(
+			';',
+			array(
+				'display:block',
+				"width:{$percent}%",
+				'max-width:100%',
+				'height:auto',
+				'object-fit:contain',
+				$is_right ? 'object-position:right center' : 'object-position:left center',
+				$is_right ? 'margin-left:auto' : 'margin-left:0',
+				'margin-right:0',
+			)
+		) . ';';
+	}
+
+	/**
+	 * 一括請求書の印影サイズだけを帳票設定へ反映する。
+	 */
+	public static function merge_bulk_invoice_seal_size( $width_px, $height_px ) {
+		$all = get_option( self::OPTION_DOCUMENT_SETTINGS, array() );
+		if ( ! is_array( $all ) ) {
+			$all = array();
+		}
+		$kind  = KTPWP_Pdf_Document_Kind::BULK_INVOICE;
+		$slice = is_array( $all[ $kind ] ?? null ) ? $all[ $kind ] : array();
+
+		$slice['seal_max_width_px']      = self::clamp_int( $width_px, self::SEAL_MAX_SIZE_MIN, self::SEAL_MAX_SIZE_MAX );
+		$slice['seal_max_height_px']     = self::clamp_int( $height_px, self::SEAL_MAX_SIZE_MIN, self::SEAL_MAX_SIZE_MAX );
+		$slice['seal_keep_aspect_ratio'] = true;
+		$all[ $kind ]                    = $slice;
+
+		update_option( self::OPTION_DOCUMENT_SETTINGS, self::normalize_from_request( $all ) );
+	}
+
+	/**
+	 * 一括請求書のロゴ幅（%）と寄せを帳票設定へ反映する。
+	 */
+	public static function merge_bulk_invoice_logo_width_percent( $percent, $align = self::ISSUER_LOGO_ALIGN_DEFAULT ) {
+		$all = get_option( self::OPTION_DOCUMENT_SETTINGS, array() );
+		if ( ! is_array( $all ) ) {
+			$all = array();
+		}
+		$kind  = KTPWP_Pdf_Document_Kind::BULK_INVOICE;
+		$slice = is_array( $all[ $kind ] ?? null ) ? $all[ $kind ] : array();
+
+		$slice['issuer_logo_width_percent'] = self::clamp_int(
+			$percent,
+			self::ISSUER_LOGO_WIDTH_PERCENT_MIN,
+			self::ISSUER_LOGO_WIDTH_PERCENT_MAX
+		);
+		$slice['issuer_logo_align']         = self::resolve_issuer_logo_align( $align );
+		$slice['logo_keep_aspect_ratio']    = true;
+		$all[ $kind ]                       = $slice;
+
+		update_option( self::OPTION_DOCUMENT_SETTINGS, self::normalize_from_request( $all ) );
+	}
+
+	public static function resolve_issuer_logo_align( $value ) {
+		$align = is_string( $value ) ? strtolower( trim( $value ) ) : self::ISSUER_LOGO_ALIGN_DEFAULT;
+
+		return in_array( $align, self::ISSUER_LOGO_ALIGNS, true )
+			? $align
+			: self::ISSUER_LOGO_ALIGN_DEFAULT;
 	}
 
 	/**
@@ -577,6 +701,17 @@ final class KTPWP_Pdf_Document_Settings {
 				$slice,
 				'show_tax_amount_column',
 				(bool) $defaults['show_tax_amount_column']
+			);
+		}
+
+		if ( $kind === KTPWP_Pdf_Document_Kind::BULK_INVOICE ) {
+			$normalized['issuer_logo_width_percent'] = self::clamp_int(
+				$slice['issuer_logo_width_percent'] ?? $defaults['issuer_logo_width_percent'] ?? self::ISSUER_LOGO_WIDTH_PERCENT_DEFAULT,
+				self::ISSUER_LOGO_WIDTH_PERCENT_MIN,
+				self::ISSUER_LOGO_WIDTH_PERCENT_MAX
+			);
+			$normalized['issuer_logo_align'] = self::resolve_issuer_logo_align(
+				$slice['issuer_logo_align'] ?? $defaults['issuer_logo_align'] ?? self::ISSUER_LOGO_ALIGN_DEFAULT
 			);
 		}
 

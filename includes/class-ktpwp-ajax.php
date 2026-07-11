@@ -228,6 +228,14 @@ class KTPWP_Ajax {
 		add_action( 'wp_ajax_nopriv_ktp_get_invoice_candidates', array( $this, 'ajax_require_login' ) ); // 非ログインユーザーはエラー
 		$this->registered_handlers[] = 'ktp_get_invoice_candidates';
 
+		add_action( 'wp_ajax_ktp_update_bulk_invoice_seal_size', array( $this, 'ajax_update_bulk_invoice_seal_size' ) );
+		add_action( 'wp_ajax_nopriv_ktp_update_bulk_invoice_seal_size', array( $this, 'ajax_require_login' ) );
+		$this->registered_handlers[] = 'ktp_update_bulk_invoice_seal_size';
+
+		add_action( 'wp_ajax_ktp_update_bulk_invoice_logo_width', array( $this, 'ajax_update_bulk_invoice_logo_width' ) );
+		add_action( 'wp_ajax_nopriv_ktp_update_bulk_invoice_logo_width', array( $this, 'ajax_require_login' ) );
+		$this->registered_handlers[] = 'ktp_update_bulk_invoice_logo_width';
+
 		// 部署選択状態更新（ajax-department.phpで登録済み）
 		// add_action( 'wp_ajax_ktp_update_department_selection', 'ktp_update_department_selection_ajax' );
 		add_action( 'wp_ajax_nopriv_ktp_update_department_selection', array( $this, 'ajax_require_login' ) );
@@ -5356,6 +5364,70 @@ class KTPWP_Ajax {
 		} else {
 			wp_send_json_error( __( '受注書クラスが見つかりません。', 'ktpwp' ) );
 		}
+	}
+
+	/**
+	 * 一括請求書プレビュー：印影サイズ更新
+	 */
+	public function ajax_update_bulk_invoice_seal_size() {
+		$nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
+		if ( $nonce === '' || ! wp_verify_nonce( $nonce, 'ktp_ajax_nonce' ) ) {
+			wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'ktpwp' ) );
+		}
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( '権限がありません', 'ktpwp' ) );
+		}
+		if ( ! class_exists( 'KTPWP_Pdf_Document_Settings' ) ) {
+			wp_send_json_error( __( '設定クラスが見つかりません', 'ktpwp' ) );
+		}
+
+		$width  = isset( $_POST['seal_max_width_px'] ) ? (int) $_POST['seal_max_width_px'] : 0;
+		$height = isset( $_POST['seal_max_height_px'] ) ? (int) $_POST['seal_max_height_px'] : 0;
+		KTPWP_Pdf_Document_Settings::merge_bulk_invoice_seal_size( $width, $height );
+
+		$resolved = KTPWP_Pdf_Document_Settings::resolve( KTPWP_Pdf_Document_Kind::BULK_INVOICE );
+		$sizes    = KTPWP_Pdf_Document_Settings::scaled_branding_sizes( $resolved );
+		$scaled   = KTPWP_Pdf_Document_Settings::scaled_bulk_issuer_seal_branding( $sizes );
+
+		wp_send_json_success(
+			array(
+				'ok'                 => true,
+				'seal_max_width_px'  => (int) $resolved['seal_max_width_px'],
+				'seal_max_height_px' => (int) $resolved['seal_max_height_px'],
+				'display_width_px'   => (int) $scaled['seal_max_width_px'],
+				'display_height_px'  => (int) $scaled['seal_max_height_px'],
+			)
+		);
+	}
+
+	/**
+	 * 一括請求書プレビュー：ロゴ幅（%）更新
+	 */
+	public function ajax_update_bulk_invoice_logo_width() {
+		$nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
+		if ( $nonce === '' || ! wp_verify_nonce( $nonce, 'ktp_ajax_nonce' ) ) {
+			wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'ktpwp' ) );
+		}
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( '権限がありません', 'ktpwp' ) );
+		}
+		if ( ! class_exists( 'KTPWP_Pdf_Document_Settings' ) ) {
+			wp_send_json_error( __( '設定クラスが見つかりません', 'ktpwp' ) );
+		}
+
+		$percent = isset( $_POST['issuer_logo_width_percent'] ) ? (int) $_POST['issuer_logo_width_percent'] : 0;
+		$align   = isset( $_POST['issuer_logo_align'] ) ? sanitize_text_field( wp_unslash( $_POST['issuer_logo_align'] ) ) : KTPWP_Pdf_Document_Settings::ISSUER_LOGO_ALIGN_DEFAULT;
+		KTPWP_Pdf_Document_Settings::merge_bulk_invoice_logo_width_percent( $percent, $align );
+
+		$resolved = KTPWP_Pdf_Document_Settings::resolve( KTPWP_Pdf_Document_Kind::BULK_INVOICE );
+
+		wp_send_json_success(
+			array(
+				'ok'                         => true,
+				'issuer_logo_width_percent'  => (int) $resolved['issuer_logo_width_percent'],
+				'issuer_logo_align'          => (string) $resolved['issuer_logo_align'],
+			)
+		);
 	}
 
 	/**

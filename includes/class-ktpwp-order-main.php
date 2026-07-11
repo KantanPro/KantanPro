@@ -3133,16 +3133,31 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 						$tax_rate = floatval( $tax_rate_raw );
 					}
 
-					// 小数点以下の不要な0を削除
-					$price_display = rtrim( rtrim( number_format( $price, 6, '.', '' ), '0' ), '.' );
-					$quantity_display = rtrim( rtrim( number_format( $quantity, 6, '.', '' ), '0' ), '.' );
+					// 小数点以下の不要な0を削除（説明行は空表示）
+					$price_display = class_exists( 'KTPWP_Order_Invoice_Document_Display' )
+						? KTPWP_Order_Invoice_Document_Display::unit_price_cell( $product_name, $price )
+						: ( class_exists( 'KTPWP_Settings' ) ? KTPWP_Settings::format_money( $price ) : number_format( $price, 0 ) );
+					$quantity_unit_display = class_exists( 'KTPWP_Order_Invoice_Document_Display' )
+						? KTPWP_Order_Invoice_Document_Display::quantity_with_unit_cell( $product_name, $quantity, $unit, $price )
+						: ( rtrim( rtrim( number_format( $quantity, 6, '.', '' ), '0' ), '.' ) . $unit );
+					$amount_display = class_exists( 'KTPWP_Order_Invoice_Document_Display' )
+						? KTPWP_Order_Invoice_Document_Display::amount_cell( $product_name, $amount )
+						: ( class_exists( 'KTPWP_Settings' ) ? KTPWP_Settings::format_money( $amount ) : number_format( $amount, 0 ) );
+					$is_section_title = class_exists( 'KTPWP_Order_Invoice_Document_Display' )
+						&& KTPWP_Order_Invoice_Document_Display::hides_unit_price_and_quantity( $product_name, $price, $quantity );
 
 					// 金額計算
 					if ( $price == 0 && $amount > 0 && $quantity > 0 ) {
 						$price = $amount / $quantity;
+						$price_display = class_exists( 'KTPWP_Order_Invoice_Document_Display' )
+							? KTPWP_Order_Invoice_Document_Display::unit_price_cell( $product_name, $price )
+							: ( class_exists( 'KTPWP_Settings' ) ? KTPWP_Settings::format_money( $price ) : number_format( $price, 0 ) );
 					}
 					if ( $amount == 0 && $price > 0 && $quantity > 0 ) {
 						$amount = $price * $quantity;
+						$amount_display = class_exists( 'KTPWP_Order_Invoice_Document_Display' )
+							? KTPWP_Order_Invoice_Document_Display::amount_cell( $product_name, $amount )
+							: ( class_exists( 'KTPWP_Settings' ) ? KTPWP_Settings::format_money( $amount ) : number_format( $amount, 0 ) );
 					}
 
 					$page_total += $amount;
@@ -3153,14 +3168,15 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 					$html .= '<div style="display: flex; padding: 6px 8px; min-height: 24px; background: ' . esc_attr( $bg_color ) . '; align-items: center;">';
 					$html .= '<div style="width: 30px; text-align: center;">' . $item_no . '</div>';
 					$html .= '<div style="flex: 1; text-align: left; margin-left: 8px;">' . esc_html( $product_name ) . '</div>';
-					$html .= '<div style="width: 80px; text-align: right;">' . esc_html( KTPWP_Settings::format_money( $price ) ) . '</div>';
-					$html .= '<div style="width: 60px; text-align: right;">' . $quantity_display . $unit . '</div>';
-                    $html .= '<div style="width: 80px; text-align: right;">' . esc_html( KTPWP_Settings::format_money( $amount ) ) . '</div>';
+					$html .= '<div style="width: 80px; text-align: right;">' . esc_html( $price_display ) . '</div>';
+					$html .= '<div style="width: 60px; text-align: right;">' . esc_html( $quantity_unit_display ) . '</div>';
+                    $html .= '<div style="width: 80px; text-align: right;">' . esc_html( $amount_display ) . '</div>';
 
                     if ( ! ( class_exists( 'KTPWP_Tax_Policy' ) && KTPWP_Tax_Policy::hide_tax_columns() ) ) {
                         // 行税額の計算（税率が設定されている場合のみ表示）
                         $item_tax_amount_display = '';
-                        if ( $tax_rate !== null ) {
+                        $tax_rate_display = '';
+                        if ( ! $is_section_title && $tax_rate !== null ) {
                             // モードに応じた実効税率
                             if ( class_exists( 'KTPWP_Tax_Policy' ) ) {
                                 $effective = KTPWP_Tax_Policy::get_effective_rate( $tax_rate );
@@ -3172,12 +3188,18 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
                                 $item_tax_amount_value = ceil( $amount * ( $tax_rate / 100 ) / ( 1 + $tax_rate / 100 ) );
                             }
                             $item_tax_amount_display = KTPWP_Settings::format_money( $item_tax_amount_value );
+                            $tax_rate_display = $tax_rate . '%';
                         }
                         $html .= '<div style="width: 80px; text-align: right;">' . $item_tax_amount_display . '</div>';
-                        $html .= '<div style="width: 60px; text-align: center;">' . ( $tax_rate !== null ? $tax_rate . '%' : '' ) . '</div>';
+                        $html .= '<div style="width: 60px; text-align: center;">' . esc_html( $tax_rate_display ) . '</div>';
                     }
-					$html .= '<div style="width: 100px; text-align: left; margin-left: 8px;">' . esc_html( $remarks ) . '</div>';
+					$remarks_display = class_exists( 'KTPWP_Order_Invoice_Document_Display' )
+						? KTPWP_Order_Invoice_Document_Display::remarks_cell( $product_name, $remarks, $price, $quantity, '' )
+						: $remarks;
+					$html .= '<div style="width: 100px; text-align: left; margin-left: 8px;">' . esc_html( $remarks_display ) . '</div>';
 					$html .= '</div>';
+
+
 
 					$row_count++;
 					$global_row_count++;

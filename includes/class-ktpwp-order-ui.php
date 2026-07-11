@@ -191,7 +191,10 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 				// Price
 				$html .= '<td style="text-align:left;">';
 				$price_raw = floatval( $item['price'] );
-				$price_display = rtrim( rtrim( number_format( $price_raw, 6, '.', '' ), '0' ), '.' );
+				$quantity_raw_for_display = floatval( $item['quantity'] );
+				$price_display = class_exists( 'KTPWP_Order_Invoice_Document_Display' )
+					? KTPWP_Order_Invoice_Document_Display::input_value( $item['product_name'], $price_raw, $quantity_raw_for_display, 'price' )
+					: rtrim( rtrim( number_format( $price_raw, 6, '.', '' ), '0' ), '.' );
 				$html .= '<input type="number" name="invoice_items[' . $index . '][price]" ';
 				$html .= 'value="' . esc_attr( $price_display ) . '" ';
 				$html .= 'class="invoice-item-input price" step="1" min="0" style="text-align:left;"' . $row_lock_attr . ' />';
@@ -200,11 +203,15 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 				// Quantity
 				$html .= '<td style="text-align:left;">';
 				$quantity_raw = floatval( $item['quantity'] );
-				$quantity_display = rtrim( rtrim( number_format( $quantity_raw, 6, '.', '' ), '0' ), '.' );
+				$quantity_display = class_exists( 'KTPWP_Order_Invoice_Document_Display' )
+					? KTPWP_Order_Invoice_Document_Display::input_value( $item['product_name'], $price_raw, $quantity_raw, 'quantity' )
+					: rtrim( rtrim( number_format( $quantity_raw, 6, '.', '' ), '0' ), '.' );
 				$html .= '<input type="number" name="invoice_items[' . $index . '][quantity]" ';
 				$html .= 'value="' . esc_attr( $quantity_display ) . '" ';
 				$html .= 'class="invoice-item-input quantity" step="1" min="0" style="text-align:left;"' . $row_lock_attr . ' />';
 				$html .= '</td>';
+
+
 
 				// Unit
 				$html .= '<td>';
@@ -215,9 +222,17 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 
 				// Amount
 				$html .= '<td style="text-align:left;">';
-				$html .= '<span class="invoice-item-amount" data-amount="' . esc_attr( (string) (int) round( $line_amount ) ) . '" style="display:inline-block;min-width:80px;text-align:left;">' . esc_html( number_format( (int) round( $line_amount ) ) ) . '</span>';
+				$amount_input_display = class_exists( 'KTPWP_Order_Invoice_Document_Display' )
+					? KTPWP_Order_Invoice_Document_Display::input_value( $item['product_name'], $price_raw, $quantity_raw, 'amount', $line_amount )
+					: (string) (int) round( $line_amount );
+				$amount_span_text = $amount_input_display === ''
+					? ''
+					: number_format( (int) round( $line_amount ) );
+				$html .= '<span class="invoice-item-amount" data-amount="' . esc_attr( (string) (int) round( $line_amount ) ) . '" style="display:inline-block;min-width:80px;text-align:left;">' . esc_html( $amount_span_text ) . '</span>';
 				$html .= '<input type="hidden" name="invoice_items[' . $index . '][amount]" value="' . esc_attr( (string) (int) round( $line_amount ) ) . '" />';
 				$html .= '</td>';
+
+
 
                 // Tax Rate（モードに応じて非表示/ロック/一律適用）
                 if ( ! ( class_exists( 'KTPWP_Tax_Policy' ) && KTPWP_Tax_Policy::hide_tax_columns() ) ) {

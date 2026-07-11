@@ -7986,19 +7986,81 @@ body.ktpwp-modal-open {
   white-space: nowrap;
 }
 #invoiceList .ktp-bulk-invoice-issuer-logo-wrap {
+  position: relative;
   width: 0;
   min-width: 100%;
   margin-top: 2.5em;
   margin-bottom: 0.45em;
-  overflow: hidden;
+  overflow: visible;
 }
 #invoiceList .ktp-bulk-invoice-issuer-logo-img {
   display: block;
-  width: 100% !important;
-  max-width: 100% !important;
-  height: auto !important;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
   object-fit: contain;
   object-position: left center;
+}
+@media screen {
+  #invoiceList .ktp-bulk-invoice-issuer-logo-img.is-resizable {
+    pointer-events: auto;
+    cursor: pointer;
+  }
+  #invoiceList .ktp-bulk-invoice-issuer-logo-img.is-resizable.is-selected {
+    outline: 1px dashed rgba(37, 99, 235, 0.7);
+    outline-offset: 2px;
+  }
+  #invoiceList .ktp-bulk-invoice-logo-resize-handle {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    margin: -5px 0 0 -5px;
+    padding: 0;
+    border: 1px solid #2563eb;
+    border-radius: 2px;
+    background: #fff;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.9);
+    box-sizing: border-box;
+    z-index: 6;
+    pointer-events: auto;
+    touch-action: none;
+  }
+  #invoiceList .ktp-bulk-invoice-logo-resize-handle[data-corner="sw"] { cursor: nesw-resize; }
+  #invoiceList .ktp-bulk-invoice-logo-resize-handle[data-corner="se"] { cursor: nwse-resize; }
+  #invoiceList .ktp-bulk-invoice-issuer-seal-overlay.is-resizable {
+    pointer-events: auto;
+    cursor: pointer;
+  }
+  #invoiceList .ktp-bulk-invoice-issuer-seal-overlay.is-resizable.is-selected {
+    outline: 1px dashed rgba(37, 99, 235, 0.7);
+    outline-offset: 2px;
+  }
+  #invoiceList .ktp-bulk-invoice-seal-resize-handle {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    margin: -5px 0 0 -5px;
+    padding: 0;
+    border: 1px solid #2563eb;
+    border-radius: 2px;
+    background: #fff;
+    box-sizing: border-box;
+    z-index: 20;
+    pointer-events: auto;
+    touch-action: none;
+  }
+  #invoiceList .ktp-bulk-invoice-seal-resize-handle[data-corner="nw"] { cursor: nwse-resize; }
+  #invoiceList .ktp-bulk-invoice-seal-resize-handle[data-corner="ne"] { cursor: nesw-resize; }
+  #invoiceList .ktp-bulk-invoice-seal-resize-handle[data-corner="sw"] { cursor: nesw-resize; }
+  #invoiceList .ktp-bulk-invoice-seal-resize-handle[data-corner="se"] { cursor: nwse-resize; }
+}
+.ktp-bulk-invoice-print-document .ktp-bulk-invoice-seal-resize-handle,
+.ktp-bulk-invoice-print-document .ktp-bulk-invoice-logo-resize-handle,
+.ktp-bulk-invoice-pdf-capture-mount .ktp-bulk-invoice-seal-resize-handle,
+.ktp-bulk-invoice-pdf-capture-mount .ktp-bulk-invoice-logo-resize-handle,
+.ktp-bulk-invoice-print-document .ktp-bulk-invoice-no-print,
+.ktp-bulk-invoice-pdf-capture-mount .ktp-bulk-invoice-no-print {
+  display: none !important;
 }
 #invoiceList .ktp-bulk-invoice-issuer-bank {
   margin-top: 1.2em;

@@ -62,8 +62,9 @@ function ktpBulkInvoicePdfMirrorStylesCss() {
     css += '.ktp-bulk-invoice-print-document .ktp-bulk-invoice-issuer-doc-title-ornament{display:flex!important;flex:1 1 0!important;flex-direction:column!important;align-items:stretch!important;justify-content:center!important;gap:0.2em!important;min-width:0!important;}';
     css += '.ktp-bulk-invoice-print-document .ktp-bulk-invoice-issuer-doc-title-ornament>span{display:block!important;width:100%!important;height:0.0625em!important;min-height:1px!important;background:currentColor!important;}';
     css += '.ktp-bulk-invoice-print-document .ktp-bulk-invoice-issuer-doc-title-text{flex:0 0 auto!important;font-size:inherit!important;letter-spacing:0.08em!important;white-space:nowrap!important;}';
-    css += '.ktp-bulk-invoice-print-document .ktp-bulk-invoice-issuer-logo-wrap{width:0!important;min-width:100%!important;margin-top:2.5em!important;margin-bottom:0.45em!important;overflow:hidden!important;}';
-    css += '.ktp-bulk-invoice-print-document .ktp-bulk-invoice-issuer-logo-img{display:block!important;width:100%!important;max-width:100%!important;height:auto!important;object-fit:contain!important;object-position:left center!important;}';
+    css += '.ktp-bulk-invoice-print-document .ktp-bulk-invoice-issuer-logo-wrap{width:0!important;min-width:100%!important;margin-top:2.5em!important;margin-bottom:0.45em!important;overflow:visible!important;}';
+    css += '.ktp-bulk-invoice-print-document .ktp-bulk-invoice-issuer-logo-img{display:block!important;max-width:100%!important;height:auto!important;object-fit:contain!important;}';
+    css += '.ktp-bulk-invoice-print-document .ktp-bulk-invoice-seal-resize-handle,.ktp-bulk-invoice-print-document .ktp-bulk-invoice-logo-resize-handle,.ktp-bulk-invoice-pdf-capture-mount .ktp-bulk-invoice-seal-resize-handle,.ktp-bulk-invoice-pdf-capture-mount .ktp-bulk-invoice-logo-resize-handle,.ktp-bulk-invoice-print-document .ktp-bulk-invoice-no-print,.ktp-bulk-invoice-pdf-capture-mount .ktp-bulk-invoice-no-print{display:none!important;}';
     css += '.ktp-bulk-invoice-print-document .ktp-bulk-invoice-issuer-text-block{display:block!important;width:100%!important;max-width:100%!important;position:relative!important;}';
     css += '.ktp-bulk-invoice-print-document .ktp-bulk-invoice-issuer-text-block>div{margin-bottom:0.2em;}';
     css += '.ktp-bulk-invoice-print-document .ktp-bulk-invoice-issuer-bank{margin-top:1.2em!important;padding:0!important;border:none!important;background:#fff!important;box-shadow:none!important;}';
@@ -392,9 +393,36 @@ function ktpBuildBulkIssuerStackHtml(bulkDoc, branding, qualifiedNumber, bankTra
     var title = bulkDoc.title || t('請求書');
     var name = (branding.name || '').trim();
     var hasCompany = name !== '' || branding.address_html;
+    var canResize = typeof ktpClientInvoice !== 'undefined'
+        && ((ktpClientInvoice.bulkSealResize && ktpClientInvoice.bulkSealResize.enabled)
+            || (ktpClientInvoice.bulkLogoResize && ktpClientInvoice.bulkLogoResize.enabled));
     if (!showLogo && !showSeal && !hasCompany && !showQualified && !showBank && !legacyHtml) {
         return '';
     }
+
+    var logoPercent = parseInt(bulkDoc.issuer_logo_width_percent, 10);
+    if (isNaN(logoPercent) || logoPercent < 15) {
+        logoPercent = 100;
+    }
+    if (logoPercent > 100) {
+        logoPercent = 100;
+    }
+    var logoAlign = bulkDoc.issuer_logo_align === 'right' ? 'right' : 'left';
+    var logoCss = 'display:block;width:' + logoPercent + '%;max-width:100%;height:auto;object-fit:contain;'
+        + (logoAlign === 'right' ? 'object-position:right center;margin-left:auto;' : 'object-position:left center;margin-left:0;')
+        + 'margin-right:0;';
+
+    var sealSettingW = parseInt(bulkDoc.seal_max_width_px, 10) || 48;
+    var sealSettingH = parseInt(bulkDoc.seal_max_height_px, 10) || 48;
+    var sealOverlayScale = (typeof ktpClientInvoice !== 'undefined' && ktpClientInvoice.bulkSealResize && ktpClientInvoice.bulkSealResize.overlayScale)
+        ? Number(ktpClientInvoice.bulkSealResize.overlayScale)
+        : (6 * 0.7 * 0.9);
+    var sealOverlayMax = (typeof ktpClientInvoice !== 'undefined' && ktpClientInvoice.bulkSealResize && ktpClientInvoice.bulkSealResize.overlayMax)
+        ? Number(ktpClientInvoice.bulkSealResize.overlayMax)
+        : 454;
+    var sealDisplayW = Math.max(16, Math.min(sealOverlayMax, Math.round(sealSettingW * sealOverlayScale)));
+    var sealDisplayH = Math.max(16, Math.min(sealOverlayMax, Math.round(sealSettingH * sealOverlayScale)));
+    var sealCss = 'display:block;width:' + sealDisplayW + 'px;height:' + sealDisplayH + 'px;object-fit:contain;object-position:center center;';
 
     var html = '<div class="ktp-bulk-invoice-issuer-stack" aria-hidden="false">';
     html += '<div class="ktp-bulk-invoice-issuer-inner ktp-bulk-invoice-company-info" style="font-size:' + fontSize + 'px;color:#374151;line-height:' + lh + ';">';
@@ -404,7 +432,11 @@ function ktpBuildBulkIssuerStackHtml(bulkDoc, branding, qualifiedNumber, bankTra
     html += '<span class="ktp-bulk-invoice-issuer-doc-title-ornament" aria-hidden="true"><span></span><span></span><span></span></span>';
     html += '</div>';
     if (showLogo) {
-        html += '<div class="ktp-bulk-invoice-issuer-logo-wrap"><img src="' + branding.logo_data_uri + '" alt="" class="ktp-bulk-invoice-issuer-logo-img"></div>';
+        var logoClass = 'ktp-bulk-invoice-issuer-logo-img' + (canResize ? ' is-resizable' : '');
+        var logoAttrs = canResize
+            ? ' data-ktp-bulk-logo-resize="1" data-width-percent="' + logoPercent + '" data-logo-align="' + logoAlign + '"'
+            : '';
+        html += '<div class="ktp-bulk-invoice-issuer-logo-wrap"><img src="' + branding.logo_data_uri + '" alt="" class="' + logoClass + '" style="' + logoCss + '" draggable="false"' + logoAttrs + '></div>';
     }
     html += '<div class="ktp-bulk-invoice-issuer-text-block">';
     if (showQualified) {
@@ -424,7 +456,11 @@ function ktpBuildBulkIssuerStackHtml(bulkDoc, branding, qualifiedNumber, bankTra
             html += '<div class="ktp-bulk-invoice-issuer-bank">' + bulkBankHtml + '</div>';
         }
         if (showSeal) {
-            html += '<img src="' + branding.seal_data_uri + '" alt="" class="ktp-bulk-invoice-issuer-seal-overlay" style="position:absolute;right:-0.4em;top:-0.5em;max-height:' + (bulkDoc.seal_max_height_px || 48) + 'px;max-width:' + (bulkDoc.seal_max_width_px || 48) + 'px;object-fit:contain;mix-blend-mode:multiply;opacity:0.75;pointer-events:none;z-index:2;">';
+            var sealClass = 'ktp-bulk-invoice-issuer-seal-overlay' + (canResize ? ' is-resizable' : '');
+            var sealAttrs = canResize
+                ? ' data-ktp-bulk-seal-resize="1" data-setting-width="' + sealSettingW + '" data-setting-height="' + sealSettingH + '" data-display-width="' + sealDisplayW + '" data-display-height="' + sealDisplayH + '"'
+                : '';
+            html += '<img src="' + branding.seal_data_uri + '" alt="" class="' + sealClass + '" style="' + sealCss + '" draggable="false"' + sealAttrs + '>';
         }
         html += '</div>';
     }
@@ -673,10 +709,32 @@ jQuery(document).ready(function($) {
                                     html += "</tr></thead><tbody>";
 
                                     items.forEach(function(item, index) {
-                                        var unitPrice = item.price ? ktpwpFormatMoney(item.price) : "—";
-                                        var quantity = item.quantity ? formatDecimalDisplay(item.quantity) : "—";
+                                        var productName = item.product_name || "";
+                                        var priceNum = parseFloat(item.price) || 0;
+                                        var qtyNum = parseFloat(item.quantity) || 0;
                                         var amount = item.amount ? parseFloat(item.amount) : 0;
-                                        var totalPrice = amount > 0 ? ktpwpFormatMoney(amount) : "—";
+                                        var isSectionTitle = productName.trim() !== "" && priceNum === 0 && qtyNum === 0;
+                                        var unitPrice = "";
+                                        if (!(productName.trim() !== "" && priceNum === 0)) {
+                                            unitPrice = priceNum ? ktpwpFormatMoney(priceNum) : "";
+                                        }
+                                        var quantityUnit = "";
+                                        if (isSectionTitle) {
+                                            quantityUnit = "";
+                                        } else {
+                                            var quantity = qtyNum ? formatDecimalDisplay(qtyNum) : "";
+                                            var unitPart = item.unit || t("式");
+                                            if (quantity === "" && (!item.unit || String(item.unit).trim() === "")) {
+                                                quantityUnit = "";
+                                            } else if (quantity === "") {
+                                                quantityUnit = ktpInvoiceEscapeHtml(unitPart);
+                                            } else if (!item.unit || String(item.unit).trim() === "") {
+                                                quantityUnit = quantity;
+                                            } else {
+                                                quantityUnit = quantity + "/" + ktpInvoiceEscapeHtml(item.unit);
+                                            }
+                                        }
+                                        var totalPrice = (!isSectionTitle && amount > 0) ? ktpwpFormatMoney(amount) : "";
                                         var itemTaxRateRaw = item.tax_rate;
                                         var itemTaxRate = null;
                                         if (window.ktp_tax_policy) {
@@ -690,12 +748,12 @@ jQuery(document).ready(function($) {
                                         } else if (itemTaxRateRaw !== null && itemTaxRateRaw !== '' && !isNaN(parseFloat(itemTaxRateRaw))) {
                                             itemTaxRate = parseFloat(itemTaxRateRaw);
                                         }
-                                        var taxRateDisplay = "-";
-                                        if (itemTaxRate !== null && !isNaN(itemTaxRate) && itemTaxRate >= 0) {
+                                        var taxRateDisplay = "";
+                                        if (!isSectionTitle && itemTaxRate !== null && !isNaN(itemTaxRate) && itemTaxRate >= 0) {
                                             taxRateDisplay = itemTaxRate + "%";
                                         }
                                         var lineTaxAmountDisplay = "";
-                                        if (!tableOptions.hideTaxCols && itemTaxRate !== null && !isNaN(itemTaxRate) && itemTaxRate >= 0 && amount > 0) {
+                                        if (!isSectionTitle && !tableOptions.hideTaxCols && itemTaxRate !== null && !isNaN(itemTaxRate) && itemTaxRate >= 0 && amount > 0) {
                                             if (itemTaxRate === 0) {
                                                 lineTaxAmountDisplay = "—";
                                             } else if (res.data.tax_category === "外税") {
@@ -710,9 +768,9 @@ jQuery(document).ready(function($) {
                                         var rowBg = (index % 2 === 0) ? tableOptions.evenRowColor : tableOptions.oddRowColor;
                                         html += "<tr class=\"ktp-biz-inv-row\" style=\"border-bottom:1px solid #f3f4f6;background-color:" + rowBg + ";\">";
                                         html += "<td style=\"padding:8px 12px;color:#374151;\">" + (index + 1) + "</td>";
-                                        html += "<td style=\"padding:8px 12px;color:#111827;\">" + ktpInvoiceEscapeHtml(item.product_name || "") + "</td>";
+                                        html += "<td style=\"padding:8px 12px;color:#111827;\">" + ktpInvoiceEscapeHtml(productName) + "</td>";
                                         html += "<td style=\"padding:8px 12px;text-align:right;color:#374151;white-space:nowrap;\">" + unitPrice + "</td>";
-                                        html += "<td style=\"padding:8px 12px;text-align:right;color:#374151;white-space:nowrap;\">" + quantity + "/" + ktpInvoiceEscapeHtml(item.unit || t("式")) + "</td>";
+                                        html += "<td style=\"padding:8px 12px;text-align:right;color:#374151;white-space:nowrap;\">" + quantityUnit + "</td>";
                                         html += "<td style=\"padding:8px 12px;text-align:right;color:#111827;white-space:nowrap;\">" + totalPrice + "</td>";
                                         if (!tableOptions.hideTaxCols) {
                                             html += "<td class=\"ktp-bulk-tax-amount-col\" style=\"padding:8px 12px;text-align:right;color:#374151;white-space:nowrap;\">" + lineTaxAmountDisplay + "</td>";
@@ -720,7 +778,10 @@ jQuery(document).ready(function($) {
                                         if (tableOptions.showTaxRateCol) {
                                             html += "<td style=\"padding:8px 12px;text-align:right;color:#374151;white-space:nowrap;\">" + taxRateDisplay + "</td>";
                                         }
-                                        var remarksDisplay = item.remarks ? ktpInvoiceEscapeHtml(item.remarks) : "—";
+                                        var remarksDisplay = "";
+                                        if (!isSectionTitle) {
+                                            remarksDisplay = item.remarks ? ktpInvoiceEscapeHtml(item.remarks) : "—";
+                                        }
                                         html += "<td style=\"padding:8px 12px;color:#374151;\">" + remarksDisplay + "</td>";
                                         html += "</tr>";
                                     });
@@ -885,6 +946,11 @@ jQuery(document).ready(function($) {
                                 }
                                 if (typeof bindKtpBulkInvoiceOutputButtons === 'function') {
                                     bindKtpBulkInvoiceOutputButtons();
+                                }
+                                try {
+                                    document.dispatchEvent(new CustomEvent('ktp-bulk-invoice-preview-ready', { detail: { root: list } }));
+                                } catch (previewReadyErr) {
+                                    console.warn('[請求書発行] preview-ready イベントの発火に失敗しました', previewReadyErr);
                                 }
                             } else {
                                 list.innerHTML = "<div style=\"color:#888;\">" + t("該当する案件はありません。") + "</div>";

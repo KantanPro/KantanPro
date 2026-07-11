@@ -512,19 +512,61 @@ class KTPWP_Assets {
                     'data'   => function () {
                         $design_options = get_option( 'ktp_design_settings', array() );
                         $pdf_export     = class_exists( 'KTPWP_Pdf_Branding' ) ? KTPWP_Pdf_Branding::export_for_js() : array();
+                        $can_resize     = current_user_can( 'manage_options' );
+                        $ajax_url       = admin_url( 'admin-ajax.php' );
+                        $nonce          = wp_create_nonce( 'ktp_ajax_nonce' );
+                        $bulk_resize    = array();
+                        if ( class_exists( 'KTPWP_Pdf_Document_Settings' ) ) {
+                            $bulk_resize = array(
+                                'bulkSealResize' => array(
+                                    'enabled'      => $can_resize,
+                                    'ajaxUrl'      => $ajax_url,
+                                    'nonce'        => $nonce,
+                                    'action'       => 'ktp_update_bulk_invoice_seal_size',
+                                    'settingMin'   => KTPWP_Pdf_Document_Settings::SEAL_MAX_SIZE_MIN,
+                                    'settingMax'   => KTPWP_Pdf_Document_Settings::SEAL_MAX_SIZE_MAX,
+                                    'overlayScale' => KTPWP_Pdf_Document_Settings::bulk_issuer_seal_overlay_scale_factor(),
+                                    'overlayMax'   => KTPWP_Pdf_Document_Settings::BULK_ISSUER_SEAL_OVERLAY_MAX,
+                                ),
+                                'bulkLogoResize' => array(
+                                    'enabled'      => $can_resize,
+                                    'ajaxUrl'      => $ajax_url,
+                                    'nonce'        => $nonce,
+                                    'action'       => 'ktp_update_bulk_invoice_logo_width',
+                                    'percentMin'   => KTPWP_Pdf_Document_Settings::ISSUER_LOGO_WIDTH_PERCENT_MIN,
+                                    'percentMax'   => KTPWP_Pdf_Document_Settings::ISSUER_LOGO_WIDTH_PERCENT_MAX,
+                                    'minDisplayPx' => KTPWP_Pdf_Document_Settings::LOGO_MAX_WIDTH_MIN,
+                                ),
+                            );
+                        }
                         return array_merge(
                             array(
-                                'ajax_url' => admin_url( 'admin-ajax.php' ),
-                                'nonce'    => wp_create_nonce( 'ktp_ajax_nonce' ),
+                                'ajax_url' => $ajax_url,
+                                'nonce'    => $nonce,
                                 'design_settings' => array(
                                     'odd_row_color' => isset( $design_options['odd_row_color'] ) ? $design_options['odd_row_color'] : '#E7EEFD',
                                     'even_row_color' => isset( $design_options['even_row_color'] ) ? $design_options['even_row_color'] : '#FFFFFF',
                                 ),
                             ),
-                            $pdf_export
+                            $pdf_export,
+                            $bulk_resize
                         );
                     },
                 ),
+            ),
+            'ktp-bulk-invoice-seal-resize' => array(
+                'src'       => 'js/ktp-bulk-invoice-seal-resize.js',
+                'deps'      => array( 'ktp-client-invoice' ),
+                'ver'       => KTPWP_PLUGIN_VERSION . '.' . filemtime( KTPWP_PLUGIN_DIR . 'js/ktp-bulk-invoice-seal-resize.js' ),
+                'in_footer' => true,
+                'admin'     => false,
+            ),
+            'ktp-bulk-invoice-logo-resize' => array(
+                'src'       => 'js/ktp-bulk-invoice-logo-resize.js',
+                'deps'      => array( 'ktp-client-invoice' ),
+                'ver'       => KTPWP_PLUGIN_VERSION . '.' . filemtime( KTPWP_PLUGIN_DIR . 'js/ktp-bulk-invoice-logo-resize.js' ),
+                'in_footer' => true,
+                'admin'     => false,
             ),
             'ktp-bulk-invoice-print' => array(
                 'src'       => 'js/ktp-bulk-invoice-print.js',
@@ -836,7 +878,7 @@ class KTPWP_Assets {
         $master_detail_only_scripts  = array( 'ktp-list-table-mobile' );
 
         // 顧客タブ専用（顧客以外のタブでは不要な MutationObserver を避ける）
-        $client_only_scripts = array( 'ktp-client-delete-popup', 'ktp-client-invoice', 'ktp-bulk-invoice-print', 'ktp-client-contract' );
+        $client_only_scripts = array( 'ktp-client-delete-popup', 'ktp-client-invoice', 'ktp-bulk-invoice-seal-resize', 'ktp-bulk-invoice-logo-resize', 'ktp-bulk-invoice-print', 'ktp-client-contract' );
 
         // 仕事リストタブ専用
         $list_only_scripts = array( 'ktp-contract-billing', 'ktp-list-print' );
