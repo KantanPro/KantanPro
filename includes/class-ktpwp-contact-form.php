@@ -286,7 +286,7 @@ class KTPWP_Contact_Form {
         $memo = $this->create_memo( $data['subject'] ?? '', $data['message'] ?? '' );
 
         return array(
-            'company_name' => $data['company_name'] ?? '',
+            'company_name' => $this->normalize_company_name( $data['company_name'] ?? '' ),
             'name' => $data['name'] ?? '',
             'email' => $data['email'] ?? '',
             'memo' => $memo,
@@ -319,32 +319,15 @@ class KTPWP_Contact_Form {
         }
 
         // 会社名が空の場合は、データベースから取得または個人名を使用
-        if ( empty( $company_name ) ) {
-            // 顧客IDから会社名を取得
-            global $wpdb;
-            $client_table = $wpdb->prefix . 'ktp_client';
-            $client_data = $wpdb->get_row(
-                $wpdb->prepare(
-                    "SELECT company_name FROM `{$client_table}` WHERE id = %d",
-                    $client_id
-                )
-            );
-            
-            if ( $client_data && ! empty( $client_data->company_name ) ) {
-                $company_name = $client_data->company_name;
-                
-                if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                    error_log( 'KTPWP CF7: 会社名をデータベースから取得しました: ' . $company_name );
-                }
-            } else {
-                // それでも会社名が取得できない場合は、個人名を使用
-                $company_name = $customer_name;
-                
-                if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                    error_log( 'KTPWP CF7: 会社名が見つからないため、個人名を使用: ' . $company_name );
-                }
-            }
+        if ( ! class_exists( 'KTPWP_Inquiry_Field' ) ) {
+            require_once dirname( __FILE__ ) . '/class-ktpwp-inquiry-field.php';
         }
+
+        $company_name = KTPWP_Inquiry_Field::resolve_order_customer_name(
+            (int) $client_id,
+            $company_name,
+            $customer_name
+        );
 
         return array(
             'client_id' => $client_id,
@@ -372,6 +355,20 @@ class KTPWP_Contact_Form {
             }
         }
         return '';
+    }
+
+    /**
+     * 会社名フィールドを正規化する。
+     *
+     * @param mixed $value フォーム値。
+     * @return string
+     */
+    private function normalize_company_name( $value ) {
+        if ( ! class_exists( 'KTPWP_Inquiry_Field' ) ) {
+            require_once dirname( __FILE__ ) . '/class-ktpwp-inquiry-field.php';
+        }
+
+        return KTPWP_Inquiry_Field::normalize_company_name( $value );
     }
 
     /**

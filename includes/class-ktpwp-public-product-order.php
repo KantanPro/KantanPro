@@ -396,6 +396,10 @@ if ( ! class_exists( 'KTPWP_Public_Product_Order' ) ) {
 			$table_name = $wpdb->prefix . 'ktp_client';
 			$email      = isset( $data['email'] ) ? sanitize_email( $data['email'] ) : '';
 			$company_name = isset( $data['company_name'] ) ? sanitize_text_field( $data['company_name'] ) : '';
+			if ( ! class_exists( 'KTPWP_Inquiry_Field' ) ) {
+				require_once dirname( __FILE__ ) . '/class-ktpwp-inquiry-field.php';
+			}
+			$company_name = KTPWP_Inquiry_Field::normalize_company_name( $company_name );
 			$contact_name = isset( $data['name'] ) ? sanitize_text_field( $data['name'] ) : '';
 			$department_id = null;
 
@@ -433,7 +437,7 @@ if ( ! class_exists( 'KTPWP_Public_Product_Order' ) ) {
 			}
 
 			$client_data = array(
-				'company_name'  => $company_name !== '' ? $company_name : $this->allocate_unset_company_name(),
+				'company_name'  => KTPWP_Inquiry_Field::is_meaningful_company_name( $company_name ) ? $company_name : $this->allocate_unset_company_name(),
 				'name'          => isset( $data['name'] ) ? sanitize_text_field( $data['name'] ) : '',
 				'email'         => $email,
 				'memo'          => implode( "\n", $memo_parts ),
@@ -467,28 +471,11 @@ if ( ! class_exists( 'KTPWP_Public_Product_Order' ) ) {
 		 * @return string
 		 */
 		private function resolve_order_customer_name( $client_id, $form_company, $form_contact ) {
-			global $wpdb;
-
-			$client_id = (int) $client_id;
-			if ( $client_id > 0 ) {
-				$table_name = $wpdb->prefix . 'ktp_client';
-				$registered_company = $wpdb->get_var(
-					$wpdb->prepare(
-						"SELECT company_name FROM {$table_name} WHERE id = %d",
-						$client_id
-					)
-				);
-				if ( is_string( $registered_company ) && trim( $registered_company ) !== '' ) {
-					return sanitize_text_field( trim( $registered_company ) );
-				}
+			if ( ! class_exists( 'KTPWP_Inquiry_Field' ) ) {
+				require_once dirname( __FILE__ ) . '/class-ktpwp-inquiry-field.php';
 			}
 
-			$form_company = trim( sanitize_text_field( (string) $form_company ) );
-			if ( $form_company !== '' ) {
-				return $form_company;
-			}
-
-			return sanitize_text_field( (string) $form_contact );
+			return KTPWP_Inquiry_Field::resolve_order_customer_name( $client_id, $form_company, $form_contact );
 		}
 
 		/**
@@ -499,12 +486,16 @@ if ( ! class_exists( 'KTPWP_Public_Product_Order' ) ) {
 		 * @return bool
 		 */
 		private function should_use_inquiry_department( $client, $form_company ) {
-			$form_company = trim( sanitize_text_field( (string) $form_company ) );
+			if ( ! class_exists( 'KTPWP_Inquiry_Field' ) ) {
+				require_once dirname( __FILE__ ) . '/class-ktpwp-inquiry-field.php';
+			}
+
+			$form_company = KTPWP_Inquiry_Field::normalize_company_name( $form_company );
 			if ( $form_company === '' ) {
 				return false;
 			}
 
-			$registered_company = trim( (string) ( $client->company_name ?? '' ) );
+			$registered_company = KTPWP_Inquiry_Field::normalize_company_name( $client->company_name ?? '' );
 			if ( $registered_company === '' ) {
 				return false;
 			}
