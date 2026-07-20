@@ -292,6 +292,16 @@ if ( ! class_exists( 'KTPWP_Inquiry_Client_Resolver' ) ) {
 		}
 
 		/**
+		 * @param mixed $value 会社名候補。
+		 * @return bool
+		 */
+		private static function is_placeholder_company_name( $value ) {
+			self::ensure_inquiry_field_class();
+
+			return KTPWP_Inquiry_Field::is_placeholder_company_name( $value );
+		}
+
+		/**
 		 * @return void
 		 */
 		private static function ensure_inquiry_field_class() {
