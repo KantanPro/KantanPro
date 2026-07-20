@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.3.10
+Stable tag: 1.3.11
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -322,6 +322,11 @@ curl -sS -X POST \
 * MySQL 5.6 以上 または MariaDB 10.0 以上
 * 推奨メモリ: 256MB 以上
 * 推奨PHP拡張: GD（画像処理用）
+
+= 1.3.11 - 2026年07月20日 =
+* CF7・公開商品の問い合わせで同一メールアドレスの顧客が重複作成される不具合を修正（KantanBiz同様のメール照合）
+* CF7問い合わせの会社名フィールド検出と顧客名表示を改善
+* CF7取り込みの二重処理を防止
 
 = 1.3.10 - 2026年07月20日 =
 * CF7・公開商品の問い合わせで会社名未入力時に顧客名が「0」と表示される不具合を修正

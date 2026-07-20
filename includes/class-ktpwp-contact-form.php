@@ -77,7 +77,12 @@ class KTPWP_Contact_Form {
                 'company_name', 
                 'your-company', 
                 'company',
-                'your-company-name'
+                'your-company-name',
+                'customer-name',
+                'customer_name',
+                'your-customer',
+                'your-customer-name',
+                'your_customer_name',
             ),
             'name' => array( 'your-name', 'name', 'your_name' ),
             'email' => array( 'your-email', 'email', 'your_email' ),
@@ -96,14 +101,26 @@ class KTPWP_Contact_Form {
     }
 
     /**
+     * CF7 フック登録済みフラグ。
+     *
+     * @var bool
+     */
+    private static $hooks_registered = false;
+
+    /**
      * フック初期化
      */
     private function init_hooks() {
+        if ( self::$hooks_registered ) {
+            return;
+        }
+
         error_log( 'KTPWP DEBUG: init_hooks called' );
         // Contact Form 7が有効な場合のみフックを追加
         if ( class_exists( 'WPCF7_ContactForm' ) ) {
             add_action( 'wpcf7_mail_sent', array( $this, 'capture_contact_form_data' ) );
             error_log( 'KTPWP DEBUG: wpcf7_mail_sent hook registered' );
+            self::$hooks_registered = true;
         } else {
             error_log( 'KTPWP DEBUG: WPCF7_ContactForm class not found' );
         }
@@ -158,16 +175,32 @@ class KTPWP_Contact_Form {
 
         // 顧客データの準備と保存
         $client_data = $this->prepare_client_data( $posted_data );
-        
 
+        if ( ! class_exists( 'KTPWP_Inquiry_Client_Resolver' ) ) {
+            require_once dirname( __FILE__ ) . '/class-ktpwp-inquiry-client-resolver.php';
+        }
 
-        $client_id = $this->save_client_data( $client_data );
+        $form_id = method_exists( $contact_form, 'id' ) ? (int) $contact_form->id() : 0;
+        if ( KTPWP_Inquiry_Client_Resolver::should_skip_duplicate_inquiry( $client_data['email'] ?? '', $form_id ) ) {
+            return;
+        }
+
+        $resolved = KTPWP_Inquiry_Client_Resolver::resolve(
+            array(
+                'email'        => $client_data['email'] ?? '',
+                'company_name' => $client_data['company_name'] ?? '',
+                'name'         => $client_data['name'] ?? '',
+                'memo'         => $client_data['memo'] ?? '',
+            )
+        );
+
+        $client_id     = is_array( $resolved ) ? (int) ( $resolved['client_id'] ?? 0 ) : 0;
+        $department_id = is_array( $resolved ) ? ( $resolved['department_id'] ?? null ) : null;
+        $department_id = $department_id ? (int) $department_id : null;
 
         if ( $client_id ) {
             // 受注データも作成
-            $order_data = $this->prepare_order_data( $posted_data, $client_id );
-
-
+            $order_data = $this->prepare_order_data( $posted_data, $client_id, $department_id );
 
             $this->save_order_data( $order_data );
 
@@ -187,7 +220,7 @@ class KTPWP_Contact_Form {
         // 会社名フィールドの自動検出
         $company_name_candidates = array();
         foreach ( $field_keys as $key ) {
-            if ( preg_match( '/^(.*company.*|.*会社.*|.*法人.*)$/i', $key ) ) {
+            if ( preg_match( '/^(.*company.*|.*会社.*|.*法人.*|.*customer.*|.*顧客.*)$/iu', $key ) ) {
                 $company_name_candidates[] = $key;
             }
         }
@@ -195,7 +228,11 @@ class KTPWP_Contact_Form {
         // 担当者名フィールドの自動検出
         $name_candidates = array();
         foreach ( $field_keys as $key ) {
-            if ( preg_match( '/^(.*name.*|.*名前.*|.*氏名.*)$/i', $key ) && ! in_array( $key, $company_name_candidates ) ) {
+            if (
+                preg_match( '/^(.*name.*|.*名前.*|.*氏名.*)$/iu', $key )
+                && ! in_array( $key, $company_name_candidates, true )
+                && preg_match( '/customer|顧客/iu', $key ) !== 1
+            ) {
                 $name_candidates[] = $key;
             }
         }
@@ -302,7 +339,7 @@ class KTPWP_Contact_Form {
      * @param int   $client_id 顧客ID
      * @return array 準備された受注データ
      */
-    private function prepare_order_data( $posted_data, $client_id ) {
+    private function prepare_order_data( $posted_data, $client_id, $department_id = null ) {
         $customer_name = $this->get_field_value( $posted_data, $this->field_mapping['name'] );
         $company_name = $this->get_field_value( $posted_data, $this->field_mapping['company_name'] );
         $subject      = $this->get_field_value( $posted_data, $this->field_mapping['subject'] );
@@ -331,6 +368,7 @@ class KTPWP_Contact_Form {
 
         return array(
             'client_id' => $client_id,
+            'client_department_id' => $department_id,
             'customer_name' => sanitize_text_field( $company_name ),  // 会社名を設定
             'user_name' => sanitize_text_field( $customer_name ),     // 担当者名を設定
             'project_name' => ! empty( $subject ) ? sanitize_text_field( $subject ) : $this->default_values['project_name'],
@@ -485,21 +523,35 @@ class KTPWP_Contact_Form {
 
         // IDはAUTO_INCREMENTで自動生成されるため明示的に設定しない
 
-        // wpdb->insert() はキーによるマッピングを使用するため、
-        // formatの順序はorder_dataのキーの順序と一致させる
-        $format = array(
-            '%s', // order_number
-            '%d', // client_id
-            '%s', // customer_name
-            '%s', // user_name
-            '%s', // project_name
-            '%d', // progress
-            '%d', // time
-            '%s', // created_at
-            '%s', // updated_at
+        $insert_data = array(
+            'order_number'  => $order_data['order_number'],
+            'client_id'     => (int) $order_data['client_id'],
+            'customer_name' => $order_data['customer_name'],
+            'user_name'     => $order_data['user_name'],
+            'project_name'  => $order_data['project_name'],
+            'progress'      => (int) $order_data['progress'],
+            'time'          => (int) $order_data['time'],
+            'created_at'    => $order_data['created_at'],
+            'updated_at'    => $order_data['updated_at'],
         );
 
-        $result = $wpdb->insert( $table_name, $order_data, $format );
+        if ( ! empty( $order_data['client_department_id'] ) ) {
+            $cols = $wpdb->get_col( "SHOW COLUMNS FROM `{$table_name}`", 0 );
+            if ( is_array( $cols ) && in_array( 'client_department_id', $cols, true ) ) {
+                $insert_data['client_department_id'] = (int) $order_data['client_department_id'];
+            }
+        }
+
+        $format = array();
+        foreach ( array_keys( $insert_data ) as $key ) {
+            if ( in_array( $key, array( 'client_id', 'client_department_id', 'progress', 'time' ), true ) ) {
+                $format[] = '%d';
+            } else {
+                $format[] = '%s';
+            }
+        }
+
+        $result = $wpdb->insert( $table_name, $insert_data, $format );
 
         if ( $result === false ) {
             $this->log_error(
@@ -721,22 +773,38 @@ class KTPWP_Contact_Form {
 
         // フィルターなので、データを変更せずに処理
         if ( ! empty( $posted_data ) ) {
-            // データを処理してデータベースに保存
+            if ( ! class_exists( 'KTPWP_Inquiry_Client_Resolver' ) ) {
+                require_once dirname( __FILE__ ) . '/class-ktpwp-inquiry-client-resolver.php';
+            }
+
+            $this->adjust_field_mapping( $posted_data );
             $client_data = $this->prepare_client_data( $posted_data );
-            $client_id = $this->save_client_data( $client_data );
+
+            if ( KTPWP_Inquiry_Client_Resolver::should_skip_duplicate_inquiry( $client_data['email'] ?? '', 0 ) ) {
+                return $posted_data;
+            }
+
+            $resolved = KTPWP_Inquiry_Client_Resolver::resolve(
+                array(
+                    'email'        => $client_data['email'] ?? '',
+                    'company_name' => $client_data['company_name'] ?? '',
+                    'name'         => $client_data['name'] ?? '',
+                    'memo'         => $client_data['memo'] ?? '',
+                )
+            );
+
+            $client_id     = is_array( $resolved ) ? (int) ( $resolved['client_id'] ?? 0 ) : 0;
+            $department_id = is_array( $resolved ) ? ( $resolved['department_id'] ?? null ) : null;
+            $department_id = $department_id ? (int) $department_id : null;
 
             if ( $client_id ) {
-                // 受注データも作成
-                $order_data = $this->prepare_order_data( $posted_data, $client_id );
+                $order_data = $this->prepare_order_data( $posted_data, $client_id, $department_id );
 
-                // デバッグログ: 受注データを記録
                 if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
                     error_log( 'KTPWP CF7 Prepared Order Data (from filter): ' . print_r( $order_data, true ) );
                 }
 
                 $this->save_order_data( $order_data );
-
-                // クッキー設定
                 $this->set_client_cookie( $client_id );
             }
         }

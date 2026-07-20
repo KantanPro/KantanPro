@@ -180,7 +180,7 @@ if ( ! class_exists( 'KTPWP_Order_Admin_Notification' ) ) {
 			$site_name    = get_bloginfo( 'name' );
 			$order_number = isset( $order->order_number ) ? (string) $order->order_number : '';
 			$project_name = isset( $order->project_name ) ? (string) $order->project_name : '';
-			$customer_name = isset( $order->customer_name ) ? $this->normalize_display_company_name( $order->customer_name ) : '';
+			$customer_name = $this->resolve_display_customer_name( $order );
 			$user_name     = isset( $order->user_name ) ? (string) $order->user_name : '';
 			$memo          = isset( $order->memo ) ? (string) $order->memo : '';
 			$progress      = isset( $order->progress ) ? (int) $order->progress : 0;
@@ -250,17 +250,28 @@ if ( ! class_exists( 'KTPWP_Order_Admin_Notification' ) ) {
 		}
 
 		/**
-		 * 通知メール表示用の会社名を正規化する。
+		 * 通知メールに表示する顧客名を決定する。
 		 *
-		 * @param mixed $value 受注の顧客名。
+		 * @param object $order 受注行。
 		 * @return string
 		 */
-		private function normalize_display_company_name( $value ) {
+		private function resolve_display_customer_name( $order ) {
 			if ( ! class_exists( 'KTPWP_Inquiry_Field' ) ) {
 				require_once dirname( __FILE__ ) . '/class-ktpwp-inquiry-field.php';
 			}
 
-			return KTPWP_Inquiry_Field::normalize_company_name( $value );
+			$stored = isset( $order->customer_name ) ? (string) $order->customer_name : '';
+			if ( KTPWP_Inquiry_Field::is_meaningful_company_name( $stored ) ) {
+				return KTPWP_Inquiry_Field::normalize_company_name( $stored );
+			}
+
+			$user_name = isset( $order->user_name ) ? (string) $order->user_name : '';
+
+			return KTPWP_Inquiry_Field::resolve_order_customer_name(
+				isset( $order->client_id ) ? (int) $order->client_id : 0,
+				'',
+				$user_name
+			);
 		}
 
 		/**

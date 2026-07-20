@@ -391,75 +391,11 @@ if ( ! class_exists( 'KTPWP_Public_Product_Order' ) ) {
 		 * @return array{client_id: int, department_id: int|null}|false
 		 */
 		private function find_or_create_client( array $data ) {
-			global $wpdb;
-
-			$table_name = $wpdb->prefix . 'ktp_client';
-			$email      = isset( $data['email'] ) ? sanitize_email( $data['email'] ) : '';
-			$company_name = isset( $data['company_name'] ) ? sanitize_text_field( $data['company_name'] ) : '';
-			if ( ! class_exists( 'KTPWP_Inquiry_Field' ) ) {
-				require_once dirname( __FILE__ ) . '/class-ktpwp-inquiry-field.php';
-			}
-			$company_name = KTPWP_Inquiry_Field::normalize_company_name( $company_name );
-			$contact_name = isset( $data['name'] ) ? sanitize_text_field( $data['name'] ) : '';
-			$department_id = null;
-
-			if ( $email !== '' ) {
-				$existing = $wpdb->get_row(
-					$wpdb->prepare(
-						"SELECT * FROM {$table_name} WHERE email = %s ORDER BY id DESC LIMIT 1",
-						$email
-					)
-				);
-				if ( $existing ) {
-					$client_id = (int) $existing->id;
-
-					if ( $this->should_use_inquiry_department( $existing, $company_name ) ) {
-						$department_id = $this->find_or_create_department_for_client( $client_id, $company_name, $contact_name, $email );
-						$department_id = $department_id ? (int) $department_id : null;
-					}
-
-					return array(
-						'client_id'     => $client_id,
-						'department_id' => $department_id,
-					);
-				}
+			if ( ! class_exists( 'KTPWP_Inquiry_Client_Resolver' ) ) {
+				require_once dirname( __FILE__ ) . '/class-ktpwp-inquiry-client-resolver.php';
 			}
 
-			$memo_parts = array();
-			if ( ! empty( $data['message'] ) ) {
-				$memo_parts[] = __( 'ご要望:', 'ktpwp' ) . ' ' . sanitize_textarea_field( $data['message'] );
-			}
-			if ( ! empty( $data['phone'] ) ) {
-				$memo_parts[] = __( '電話:', 'ktpwp' ) . ' ' . sanitize_text_field( $data['phone'] );
-			}
-			if ( ! empty( $data['service_name'] ) ) {
-				$memo_parts[] = __( '初回お申込商品:', 'ktpwp' ) . ' ' . sanitize_text_field( $data['service_name'] );
-			}
-
-			$client_data = array(
-				'company_name'  => KTPWP_Inquiry_Field::is_meaningful_company_name( $company_name ) ? $company_name : $this->allocate_unset_company_name(),
-				'name'          => isset( $data['name'] ) ? sanitize_text_field( $data['name'] ) : '',
-				'email'         => $email,
-				'memo'          => implode( "\n", $memo_parts ),
-				'time'          => current_time( 'mysql' ),
-				'client_status' => __( '対象', 'ktpwp' ),
-			);
-
-			$result = $wpdb->insert(
-				$table_name,
-				$client_data,
-				array( '%s', '%s', '%s', '%s', '%s', '%s' )
-			);
-
-			if ( $result === false ) {
-				error_log( 'KTPWP Public Product: Failed to insert client - ' . $wpdb->last_error );
-				return false;
-			}
-
-			return array(
-				'client_id'     => (int) $wpdb->insert_id,
-				'department_id' => null,
-			);
+			return KTPWP_Inquiry_Client_Resolver::resolve( $data );
 		}
 
 		/**
