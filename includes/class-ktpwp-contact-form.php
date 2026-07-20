@@ -282,6 +282,21 @@ class KTPWP_Contact_Form {
             );
         }
 
+        // 本文フィールドの自動検出
+        $message_candidates = array();
+        foreach ( $field_keys as $key ) {
+            if ( preg_match( '/^(.*message.*|.*内容.*|.*本文.*|.*body.*|.*inquiry.*|.*問い合わせ.*)$/iu', $key ) ) {
+                $message_candidates[] = $key;
+            }
+        }
+
+        if ( ! empty( $message_candidates ) ) {
+            $this->field_mapping['message'] = array_merge(
+                $this->field_mapping['message'],
+                $message_candidates
+            );
+        }
+
         // デバッグログ: 調整されたフィールドマッピングを記録
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
             error_log( 'KTPWP CF7 Adjusted Field Mapping: ' . print_r( $this->field_mapping, true ) );
@@ -343,6 +358,8 @@ class KTPWP_Contact_Form {
         $customer_name = $this->get_field_value( $posted_data, $this->field_mapping['name'] );
         $company_name = $this->get_field_value( $posted_data, $this->field_mapping['company_name'] );
         $subject      = $this->get_field_value( $posted_data, $this->field_mapping['subject'] );
+        $message      = $this->get_field_value( $posted_data, $this->field_mapping['message'] );
+        $category     = $this->get_field_value( $posted_data, $this->field_mapping['category'] );
 
         // デバッグログ: フィールドマッピングの結果を記録
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
@@ -366,6 +383,13 @@ class KTPWP_Contact_Form {
             $customer_name
         );
 
+        $order_memo = $this->create_order_memo(
+            $subject,
+            $message,
+            $category,
+            $department_id
+        );
+
         return array(
             'client_id' => $client_id,
             'client_department_id' => $department_id,
@@ -376,6 +400,7 @@ class KTPWP_Contact_Form {
             'time' => time(),
             'created_at' => current_time( 'mysql' ),
             'updated_at' => current_time( 'mysql' ),
+            'memo' => $order_memo,
         );
     }
 
@@ -388,10 +413,23 @@ class KTPWP_Contact_Form {
      */
     private function get_field_value( $posted_data, $field_names ) {
         foreach ( $field_names as $field_name ) {
-            if ( isset( $posted_data[ $field_name ] ) ) {
-                return $posted_data[ $field_name ];
+            if ( ! isset( $posted_data[ $field_name ] ) ) {
+                continue;
             }
+
+            $raw = $posted_data[ $field_name ];
+            if ( is_array( $raw ) ) {
+                $raw = implode( ', ', array_filter( array_map( 'strval', $raw ) ) );
+            }
+
+            $value = trim( (string) $raw );
+            if ( $value === '' ) {
+                continue;
+            }
+
+            return $value;
         }
+
         return '';
     }
 
@@ -431,6 +469,73 @@ class KTPWP_Contact_Form {
         }
 
         return $memo;
+    }
+
+    /**
+     * 受注書メモを作成（KantanBiz 同様: 問い合わせ受信ヘッダー + 件名・本文）。
+     *
+     * @param string   $subject       件名。
+     * @param string   $message       本文。
+     * @param string   $category      カテゴリ（任意）。
+     * @param int|null $department_id 部署 ID（任意）。
+     * @return string
+     */
+    private function create_order_memo( $subject, $message, $category = '', $department_id = null ) {
+        $body = $this->create_memo( $subject, $message );
+
+        $category = sanitize_text_field( (string) $category );
+        if ( $category !== '' ) {
+            $body = trim( $body . "\n" . __( 'カテゴリ:', 'ktpwp' ) . ' ' . $category );
+        }
+
+        $header = sprintf(
+            '── %s %s ──',
+            __( '問い合わせ受信', 'ktpwp' ),
+            current_time( 'Y-m-d H:i:s' )
+        );
+
+        $department_label = $this->resolve_department_label( $department_id );
+        if ( $department_label !== '' ) {
+            $header .= ' （' . sprintf(
+                /* translators: %s: department name */
+                __( '部署: %s', 'ktpwp' ),
+                $department_label
+            ) . '）';
+        }
+
+        $memo = trim( $body ) === '' ? $header : $header . "\n" . $body;
+
+        if ( function_exists( 'mb_strlen' ) && mb_strlen( $memo ) > 10000 ) {
+            $memo = mb_substr( $memo, 0, 10000 );
+        }
+
+        return $memo;
+    }
+
+    /**
+     * @param int|null $department_id 部署 ID。
+     * @return string
+     */
+    private function resolve_department_label( $department_id ) {
+        $department_id = (int) $department_id;
+        if ( $department_id <= 0 ) {
+            return '';
+        }
+
+        if ( ! class_exists( 'KTPWP_Department_Manager' ) ) {
+            require_once dirname( __FILE__ ) . '/class-ktpwp-department-manager.php';
+        }
+
+        global $wpdb;
+        $table = $wpdb->prefix . 'ktp_client_department';
+        $name  = $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT department_name FROM `{$table}` WHERE id = %d",
+                $department_id
+            )
+        );
+
+        return is_string( $name ) ? sanitize_text_field( $name ) : '';
     }
 
     /**
@@ -540,6 +645,10 @@ class KTPWP_Contact_Form {
             if ( is_array( $cols ) && in_array( 'client_department_id', $cols, true ) ) {
                 $insert_data['client_department_id'] = (int) $order_data['client_department_id'];
             }
+        }
+
+        if ( ! empty( $order_data['memo'] ) ) {
+            $insert_data['memo'] = sanitize_textarea_field( $order_data['memo'] );
         }
 
         $format = array();
