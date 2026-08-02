@@ -152,7 +152,10 @@ if ( ! class_exists( 'KTPWP_List_Table' ) ) {
 			if ( $cookie_name !== '' ) {
 				$attrs .= "if(this.dataset.cookieName){document.cookie=this.dataset.cookieName+'='+this.dataset.cookieId;}";
 			}
-			$attrs .= "var _ktpNavUrl=this.dataset.href;if(window.matchMedia&&window.matchMedia('(max-width:767px)').matches){try{sessionStorage.setItem('ktp_scroll_to_detail','1');}catch(e){}var _kHash='ktp-detail';try{var _kTab=new URL(_ktpNavUrl,window.location.href).searchParams.get('tab_name');if(_kTab){_kHash='ktp-detail-'+_kTab;}}catch(e2){}_ktpNavUrl=_ktpNavUrl+(_ktpNavUrl.indexOf('#')>-1?'':'#'+_kHash);}window.location.href=_ktpNavUrl;\"";
+			// 注意: この文字列内に素の ">" を書かない。wptexturize() がタグの終端と誤認識し、
+			// 直後のクォートを全角クォートに変換してしまい onclick 属性が閉じられなくなる
+			// （結果、後続の <td class="col-id"> ごと属性値に飲み込まれてID列が消える不具合の原因になる）。
+			$attrs .= "var _ktpNavUrl=this.dataset.href;if(window.matchMedia&&window.matchMedia('(max-width:767px)').matches){try{sessionStorage.setItem('ktp_scroll_to_detail','1');}catch(e){}var _kHash='ktp-detail';try{var _kTab=new URL(_ktpNavUrl,window.location.href).searchParams.get('tab_name');if(_kTab){_kHash='ktp-detail-'+_kTab;}}catch(e2){}_ktpNavUrl=_ktpNavUrl+(_ktpNavUrl.indexOf('#')!==-1?'':'#'+_kHash);}window.location.href=_ktpNavUrl;\"";
 
 			return $attrs;
 		}

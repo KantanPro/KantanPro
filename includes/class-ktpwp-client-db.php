@@ -539,6 +539,20 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 				error_log( 'KTPWP Client Debug: handle_update - data_id = ' . $data_id );
 			}
 
+			// 更新対象のIDが実在しない場合（削除済み・DBリセット後の古いURL等）は
+			// $wpdb->update() が0件更新でも false を返さず「成功」と誤判定してしまうため、
+			// 事前に実在確認を行い、無ければ新規追加として扱う。
+			if ( $data_id > 0 ) {
+				$existing_id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table_name} WHERE id = %d", $data_id ) );
+				if ( ! $existing_id ) {
+					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+						error_log( 'KTPWP Client Debug: handle_update - data_id ' . $data_id . ' not found, falling back to insert' );
+					}
+					$this->handle_insert( $table_name, $tab_name, $fields_data, $search_field_value );
+					return;
+				}
+			}
+
 			if ( $data_id > 0 ) {
 				$result = $wpdb->update(
                     $table_name,

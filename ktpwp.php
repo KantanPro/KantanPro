@@ -4405,6 +4405,7 @@ function ktpwp_should_suppress_shortcode_output() {
 }
 
 function KTPWP_Index() {
+    error_log("KTPWP-DEBUG: KTPWP_Index called");
 
     // すべてのタブのショートコード[kantanAllTab]
     function kantanAllTab() {
@@ -4789,6 +4790,30 @@ function KTPWP_Index() {
     add_shortcode( 'ktpwp_all_tab', 'kantanAllTab' );
     // KantanProEX 用のショートコード
     add_shortcode( 'kantanpro_ex', 'kantanAllTab' );
+
+    // ブロックエディタ環境（do_blocks が優先度9でショートコードを先に展開）では、
+    // このショートコードが出力する一覧テーブルの onclick 内のシングルクオートが
+    // 優先度10のwptexturizeによってスマートクオート実体参照に置換されてしまい、
+    // 属性の終端が壊れて表の列がずれる不具合が発生するため、
+    // このショートコードを含むコンテンツに限定してwptexturizeを一時的に無効化する。
+    add_filter( 'the_content', 'ktpwp_disable_wptexturize_for_all_tab', 0 );
+}
+
+if ( ! function_exists( 'ktpwp_disable_wptexturize_for_all_tab' ) ) {
+    function ktpwp_disable_wptexturize_for_all_tab( $content ) { error_log('KTPWP-DEBUG: filter fired, has_shortcode=' . var_export(has_shortcode($content, 'ktpwp_all_tab'), true));
+        if ( has_shortcode( $content, 'ktpwp_all_tab' ) || has_shortcode( $content, 'kantanAllTab' ) || has_shortcode( $content, 'kantanpro_ex' ) ) {
+            remove_filter( 'the_content', 'wptexturize', 10 );
+            add_filter( 'the_content', 'ktpwp_restore_wptexturize_after_all_tab', 20 );
+        }
+        return $content;
+    }
+}
+
+if ( ! function_exists( 'ktpwp_restore_wptexturize_after_all_tab' ) ) {
+    function ktpwp_restore_wptexturize_after_all_tab( $content ) {
+        add_filter( 'the_content', 'wptexturize', 10 );
+        return $content;
+    }
 }
 
 // add_submenu_page の第7引数修正

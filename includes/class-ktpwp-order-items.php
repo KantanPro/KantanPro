@@ -104,7 +104,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 				unit VARCHAR(50) NOT NULL DEFAULT '',
 				quantity DECIMAL(10,2) NOT NULL DEFAULT 0.00,
 				amount INT(11) NOT NULL DEFAULT 0,
-				tax_rate DECIMAL(5,2) NOT NULL DEFAULT 10.00,
+				tax_rate DECIMAL(5,2) NULL DEFAULT NULL,
 				remarks TEXT,
 				purchase VARCHAR(255),
 				qualified_invoice_number VARCHAR(255),
