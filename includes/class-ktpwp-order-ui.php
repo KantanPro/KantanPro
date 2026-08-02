@@ -161,6 +161,7 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 			$html .= '</thead>';
 			$html .= '<tbody>';
 
+			$invoice_stripe_index = 0;
 			foreach ( $items as $index => $item ) {
 				$row_id = isset( $item['id'] ) ? intval( $item['id'] ) : 0;
 				$is_provisional = ! empty( $item['is_provisional'] );
@@ -169,7 +170,14 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 				$line_amount = class_exists( 'KTPWP_Invoice_Line_Amount' )
 					? KTPWP_Invoice_Line_Amount::resolve_line_amount( $item )
 					: ( isset( $item['amount'] ) ? floatval( $item['amount'] ) : 0 );
-				$html .= '<tr class="invoice-item-row' . ( $is_provisional ? ' invoice-item-row--provisional' : '' ) . '" data-row-id="' . $row_id . '" data-is-provisional="' . ( $is_provisional ? '1' : '0' ) . '">';
+				// nth-of-typeだと非表示/参考行の数え方でズレるため、表示順に明示的な偶奇クラスを振る（参考行は対象外）
+				$invoice_stripe_class = '';
+				if ( ! $is_provisional ) {
+					// $invoice_stripe_index は0始まりのため、0番目が人間の数える「1行目＝奇数行」になる
+					$invoice_stripe_class = ( $invoice_stripe_index % 2 === 0 ) ? 'invoice-item-row--odd' : 'invoice-item-row--even';
+					++$invoice_stripe_index;
+				}
+				$html .= '<tr class="invoice-item-row' . ( $is_provisional ? ' invoice-item-row--provisional' : ' ' . $invoice_stripe_class ) . '" data-row-id="' . $row_id . '" data-is-provisional="' . ( $is_provisional ? '1' : '0' ) . '">';
 				// Actions column with drag handle and buttons
 				$html .= '<td class="actions-column">';
 				$html .= '<span class="drag-handle' . ( $is_provisional ? ' is-disabled' : '' ) . '" title="' . esc_attr__( 'ドラッグして並び替え', 'ktpwp' ) . '">&#9776;</span>';
@@ -349,10 +357,13 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 		 * @return string HTML table content
 		 */
 		public function generate_cost_items_table( $order_id ) {
-			// supplier_idカラムがなければ自動追加
+			// supplier_id / purchase_status / purchase_status_date / purchase_status_datesカラムがなければ自動追加
 			if ( class_exists( 'KTPWP_Order_Items' ) ) {
 				$order_items = KTPWP_Order_Items::get_instance();
 				$order_items->add_supplier_id_column_if_missing();
+				$order_items->add_purchase_status_column_if_missing();
+				$order_items->add_purchase_status_date_column_if_missing();
+				$order_items->add_purchase_status_dates_column_if_missing();
 			}
 
 			$order_items = KTPWP_Order_Items::get_instance();
@@ -473,7 +484,10 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 			foreach ( $items as $index => $item ) {
 				$row_id = isset( $item['id'] ) ? intval( $item['id'] ) : 0;
 				$supplier_id_for_row = isset( $item['supplier_id'] ) ? intval( $item['supplier_id'] ) : 0;
-				$html .= '<tr class="cost-item-row" data-row-id="' . $row_id . '" data-supplier-id="' . $supplier_id_for_row . '">';
+				// 仕入記録行を挟んでも交互配色が崩れないよう、コスト項目1件単位で偶奇クラスを付与する
+				// $index は0始まりのため、0番目が人間の数える「1行目＝奇数行」になる
+				$stripe_class = ( $index % 2 === 0 ) ? 'cost-item-row--odd' : 'cost-item-row--even';
+				$html .= '<tr class="cost-item-row ' . $stripe_class . '" data-row-id="' . $row_id . '" data-supplier-id="' . $supplier_id_for_row . '">';
 				// Actions column with drag handle and buttons
 				$html .= '<td class="actions-column">';
 				$html .= '<span class="drag-handle" title="' . esc_attr__( 'ドラッグして並び替え', 'ktpwp' ) . '">&#9776;</span>';
@@ -550,31 +564,33 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 				$html .= 'class="cost-item-input remarks" />';
 				$html .= '</td>';
 
-				// Purchase (仕入)
+				// Purchase (仕入) : プルダウンのみ。協力会社名や仕入記録（見積依頼／発注／仕入完了の各日付）は下の結合行に表示する
 				$purchase_value = isset( $item['purchase'] ) ? $item['purchase'] : '';
-				$ordered = isset( $item['ordered'] ) ? intval( $item['ordered'] ) : 0;
-				if ( ! empty( $purchase_value ) ) {
-					$html .= '<td>';
-					$link_attrs = 'data-purchase="' . esc_attr( $purchase_value ) . '"';
-					if ( ! empty( $supplier_id_for_row ) && $supplier_id_for_row > 0 ) {
-						$link_attrs .= ' data-supplier-id="' . esc_attr( $supplier_id_for_row ) . '"';
-					}
-					$suffix = ( $ordered === 1 ) ? 'に発注済み' : 'に発注';
-					$html .= '<span class="purchase-display purchase-link" ' . $link_attrs . ' data-ordered="' . $ordered . '" style="cursor: pointer; color: #007cba; text-decoration: underline;">' . esc_html( $purchase_value ) . $suffix . '</span>';
-					if ( $ordered === 1 ) {
-						$html .= '<span class="purchase-checked" style="display:inline-block;margin-left:6px;vertical-align:middle;color:#dc3545;font-size:1.3em;font-weight:bold;">✓</span>';
-					}
-					$html .= '<input type="hidden" name="cost_items[' . $index . '][purchase]" ';
-					$html .= 'value="' . esc_attr( $purchase_value ) . '" />';
-					$html .= '</td>';
-				} else {
-					$html .= '<td>';
-					$html .= '<span class="purchase-display">手入力</span>';
-					$html .= '<input type="hidden" name="cost_items[' . $index . '][purchase]" ';
-					$html .= 'value="" />';
-					$html .= '</td>';
-				}
+				$purchase_status = isset( $item['purchase_status'] ) && $item['purchase_status'] !== '' ? $item['purchase_status'] : 'pending';
+				$purchase_status_dates_json = isset( $item['purchase_status_dates'] ) ? $item['purchase_status_dates'] : '';
+				$status_history_label = KTPWP_Order_Items::format_purchase_status_history_label( $purchase_status_dates_json );
+				$html .= '<td class="purchase-cell">';
+				$html .= $this->render_purchase_status_select( $purchase_status, $supplier_id_for_row, $purchase_value, $row_id );
+				$html .= '<input type="hidden" name="cost_items[' . $index . '][purchase]" ';
+				$html .= 'value="' . esc_attr( $purchase_value ) . '" />';
+				$html .= '</td>';
 
+				$html .= '</tr>';
+
+				// 仕入記録行（協力会社名＋見積依頼／発注／仕入完了の各日付）。今後長くなっていくため全カラムを結合した専用行に表示する。
+				// 協力会社が未設定の場合は「協力会社を選ぶ」リンクを表示する。
+				$html .= '<tr class="cost-item-purchase-record-row ' . $stripe_class . '" data-row-id="' . $row_id . '">';
+				$html .= '<td colspan="9" class="purchase-record-cell">';
+				if ( ! empty( $purchase_value ) ) {
+					$html .= '<span class="purchase-display" data-purchase="' . esc_attr( $purchase_value ) . '">' . esc_html( $purchase_value );
+					if ( $status_history_label !== '' ) {
+						$html .= '<span class="purchase-status-date"> ' . esc_html( $status_history_label ) . '</span>';
+					}
+					$html .= '</span>';
+				} else {
+					$html .= '<button type="button" class="purchase-choose-supplier-link">' . esc_html__( '協力会社を選ぶ', 'ktpwp' ) . '</button>';
+				}
+				$html .= '</td>';
 				$html .= '</tr>';
 			}
 
@@ -661,6 +677,44 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 
 			$html .= '</form>';
 			$html .= '</div>';
+
+			return $html;
+		}
+
+		/**
+		 * コスト項目「仕入」列の発注ステータス選択プルダウンHTMLを生成
+		 *
+		 * 協力会社が未設定（手入力）の行にも表示する。その場合はメール送信対象がないため
+		 * 「見積依頼」「発注」を選ぶと協力会社選択を促すダイアログを表示し、
+		 * 「未着手」「仕入完了」は行単位でそのまま保存する（JS側で分岐）。
+		 *
+		 * @since 1.2.0
+		 * @param string $status         現在の purchase_status（pending/quote_requested/ordered/completed）
+		 * @param int    $supplier_id    協力会社ID（未設定なら0）
+		 * @param string $purchase_value 「会社名 > 品目名」または会社名のみの文字列（未設定なら空文字）
+		 * @param int    $item_id        コスト項目ID（未保存の新規行なら0）
+		 * @return string
+		 */
+		private function render_purchase_status_select( $status, $supplier_id, $purchase_value, $item_id = 0 ) {
+			if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
+				return '';
+			}
+			$supplier_name = $purchase_value;
+			if ( strpos( $purchase_value, ' > ' ) !== false ) {
+				$parts = explode( ' > ', $purchase_value, 2 );
+				$supplier_name = $parts[0];
+			}
+
+			$options = KTPWP_Order_Items::get_purchase_status_options();
+			if ( ! array_key_exists( $status, $options ) ) {
+				$status = 'pending';
+			}
+
+			$html = '<select class="cost-item-purchase-status" data-item-id="' . esc_attr( intval( $item_id ) ) . '" data-supplier-id="' . esc_attr( intval( $supplier_id ) ) . '" data-supplier-name="' . esc_attr( $supplier_name ) . '">';
+			foreach ( $options as $value => $label ) {
+				$html .= '<option value="' . esc_attr( $value ) . '"' . selected( $status, $value, false ) . '>' . esc_html( $label ) . '</option>';
+			}
+			$html .= '</select>';
 
 			return $html;
 		}

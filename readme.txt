@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.3.13
+Stable tag: 1.3.14
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -322,6 +322,11 @@ curl -sS -X POST \
 * MySQL 5.6 以上 または MariaDB 10.0 以上
 * 推奨メモリ: 256MB 以上
 * 推奨PHP拡張: GD（画像処理用）
+
+= 1.3.14 - 2026年08月02日 =
+* コスト項目に仕入ステータス管理機能を追加（見積依頼・発注・仕入完了の履歴記録、協力会社へのメール送信・PDF出力連携）
+* 協力会社選択後に仕入記録行が更新されない不具合を修正
+* コスト項目・請求項目テーブルの表示を調整（ヘッダー配色の統一、行の余白・罫線の整理）
 
 = 1.3.13 - 2026年07月20日 =
 * CF7問い合わせ本文が受注書メモに保存されない不具合を修正（KantanBiz同形式）

@@ -383,7 +383,7 @@
         }
         // フラグ管理はクリックハンドラに集約
 
-        const newIndex = $('#order_content .cost-items-table tbody tr').length;
+        const newIndex = $('#order_content .cost-items-table tbody tr.cost-item-row').length;
         const newRowHtml = `
             <tr class="cost-item-row" data-row-id="0" data-newly-added="true" data-supplier-id="0">
                 <td class="actions-column">
@@ -417,10 +417,13 @@
                     <input type="text" name="cost_items[${newIndex}][remarks]" class="cost-item-input remarks" value="">
                     <input type="hidden" name="cost_items[${newIndex}][sort_order]" value="${newIndex + 1}">
                 </td>
-                <td>
-                    <span class="purchase-display">手入力</span>
+                <td class="purchase-cell">
+                    ${ktpBuildPurchaseStatusSelectHtml('pending', 0, '', 0)}
                     <input type="hidden" name="cost_items[${newIndex}][purchase]" value="">
                 </td>
+            </tr>
+            <tr class="cost-item-purchase-record-row" data-row-id="0">
+                <td colspan="9" class="purchase-record-cell"><button type="button" class="purchase-choose-supplier-link">${ktpwpTranslate('協力会社を選ぶ')}</button></td>
             </tr>
         `;
 
@@ -429,8 +432,12 @@
             if (window.ktpDebugMode) {
                 console.log(`[COST][${callId}] currentRow.after(newRowHtml) を実行する直前。currentRow:`, currentRow[0].outerHTML);
             }
-            currentRow.after(newRowHtml);
-            const $newRow = currentRow.next();
+            // currentRowに仕入記録行が付いている場合は、その後ろ（データ行＋記録行のまとまりの末尾）に挿入する
+            const $insertAfterTarget = currentRow.next('.cost-item-purchase-record-row').length
+                ? currentRow.next('.cost-item-purchase-record-row')
+                : currentRow;
+            $insertAfterTarget.after(newRowHtml);
+            const $newRow = $insertAfterTarget.next();
             if ($newRow && $newRow.length > 0 && $newRow.hasClass('cost-item-row')) {
                 if (window.ktpDebugMode) {
                     console.log(`[COST][${callId}] 新しい行がDOMに追加されました。`);
@@ -438,7 +445,10 @@
                 
                 // 新しい行で金額の自動計算を実行
                 calculateAmount($newRow);
-                
+
+                // 行が増えたので交互配色を再計算
+                refreshCostItemRowStripes();
+
                 $newRow.find('.product-name').focus();
                 success = true;
             } else {
@@ -462,13 +472,42 @@
         return success;
     }
 
+    // コスト項目行を、対応する仕入記録行（あれば）ごと削除する
+    function removeRowWithPurchaseRecord($row) {
+        const rowId = $row.attr('data-row-id');
+        if (rowId && rowId !== '0') {
+            $row.closest('tbody').find('tr.cost-item-purchase-record-row[data-row-id="' + rowId + '"]').remove();
+        } else {
+            $row.next('.cost-item-purchase-record-row').remove();
+        }
+        $row.remove();
+        refreshCostItemRowStripes();
+    }
+
+    // コスト項目1件（データ行＋仕入記録行）を1グループとして交互配色クラスを振り直す。
+    // 仕入記録行を挟むと tr:nth-of-type による自動配色が崩れるため、明示的にクラスで管理する。
+    function refreshCostItemRowStripes() {
+        let groupIndex = 0;
+        $('#order_content .cost-items-table tbody tr.cost-item-row').each(function () {
+            const $row = $(this);
+            // groupIndex は0始まりのため、0番目が人間の数える「1行目＝奇数行」になる
+            const stripeClass = (groupIndex % 2 === 0) ? 'cost-item-row--odd' : 'cost-item-row--even';
+            $row.removeClass('cost-item-row--even cost-item-row--odd').addClass(stripeClass);
+            const $recordRow = $row.next('.cost-item-purchase-record-row');
+            if ($recordRow.length) {
+                $recordRow.removeClass('cost-item-row--even cost-item-row--odd').addClass(stripeClass);
+            }
+            groupIndex++;
+        });
+    }
+
     // 行を削除
     function deleteRow(currentRow) {
         const table = currentRow.closest('table');
         const tbody = table.find('tbody');
 
-        // 最後の1行は削除しない
-        if (tbody.find('tr').length <= 1) {
+        // 最後の1行は削除しない（仕入記録行はカウント対象外）
+        if (tbody.find('tr.cost-item-row').length <= 1) {
             alert(ktpwpTranslate('最低1行は必要です。'));
             return;
         }
@@ -509,7 +548,7 @@
                                 if (window.ktpDebugMode) {
                                     console.log('[COST] deleteRowサーバー側削除成功');
                                 }
-                                currentRow.remove();
+                                removeRowWithPurchaseRecord(currentRow);
                                 updateProfitDisplay(); // 合計金額と利益を更新
                             } else {
                                 if (window.ktpDebugMode) {
@@ -558,13 +597,13 @@
                 if (window.ktpDebugMode) {
                     console.log('[COST] deleteRow: サーバー未保存行のため即時削除');
                 }
-                currentRow.remove();
+                removeRowWithPurchaseRecord(currentRow);
                 updateProfitDisplay(); // 合計金額と利益を更新
             } else {
                 if (window.ktpDebugMode) {
                     console.warn('[COST] deleteRow: itemIdまたはorderIdが不足しているため、クライアント側でのみ削除');
                 }
-                currentRow.remove();
+                removeRowWithPurchaseRecord(currentRow);
                 updateProfitDisplay(); // 合計金額と利益を更新
             }
         }
@@ -576,12 +615,13 @@
             console.log('[COST] updateRowIndexes開始');
         }
         const tbody = table.find('tbody');
-        const rowCount = tbody.find('tr').length;
+        // 仕入記録行（.cost-item-purchase-record-row）はフォーム項目を持たないインデックス対象外の行なので除外する
+        const rowCount = tbody.find('tr.cost-item-row').length;
         if (window.ktpDebugMode) {
             console.log('[COST] 更新対象行数:', rowCount);
         }
-        
-        tbody.find('tr').each(function (index) {
+
+        tbody.find('tr.cost-item-row').each(function (index) {
             const row = $(this);
             let updatedCount = 0;
             
@@ -627,7 +667,7 @@
     }
 
     // 自動保存機能
-    function autoSaveItem(itemType, itemId, fieldName, fieldValue, orderId) {
+    function autoSaveItem(itemType, itemId, fieldName, fieldValue, orderId, onSuccess) {
         // 統一されたAJAX設定を取得
         const ajaxConfig = getAjaxConfig();
 
@@ -672,6 +712,10 @@
                         
                         // 成功時の視覚的フィードバック（オプション）
                         // showSaveIndicator('saved');
+
+                        if (typeof onSuccess === 'function') {
+                            onSuccess(result.data || {});
+                        }
                     } else {
                         if (window.ktpDebugMode) {
                             console.error('Cost auto-save failed:', result.message);
@@ -752,6 +796,8 @@
                         // 新しいIDをhidden inputに設定
                         $row.find('input[name*="[id]"]').val(newItemId);
                         $row.attr('data-row-id', newItemId); // data-row-idも更新
+                        $row.find('.cost-item-purchase-status').attr('data-item-id', newItemId); // 仕入ステータス保存用IDも更新
+                        $row.next('.cost-item-purchase-record-row').attr('data-row-id', newItemId); // 対応する仕入記録行のIDも同期
 
                         // data-newly-added属性を削除し、他のフィールドを有効化
                         if ($row.data('newly-added')) {
@@ -951,24 +997,16 @@
         
         // 協力会社名を「仕入」フィールドに表示
         if (window.ktpCurrentSupplierName) {
-            const purchaseDisplayText = window.ktpCurrentSupplierName && productName ? 
-                `${window.ktpCurrentSupplierName} > ${productName}` : 
+            const purchaseDisplayText = window.ktpCurrentSupplierName && productName ?
+                `${window.ktpCurrentSupplierName} > ${productName}` :
                 window.ktpCurrentSupplierName;
-            
-            // リンク付きの仕入フィールドを更新
-            const $purchaseDisplay = $targetRow.find('.purchase-display');
-            if (purchaseDisplayText.indexOf(' > ') !== -1) {
-                $purchaseDisplay.removeClass('purchase-link').addClass('purchase-link')
-                    .attr('data-purchase', purchaseDisplayText)
-                    .text(purchaseDisplayText);
-            } else {
-                $purchaseDisplay.removeClass('purchase-link')
-                    .removeAttr('data-purchase')
-                    .text(purchaseDisplayText);
-            }
+
+            // 仕入ステータスプルダウンを用意し、仕入記録行に協力会社名を表示
             $targetRow.find('input[name*="[purchase]"]').val(purchaseDisplayText);
+            ktpEnsurePurchaseStatusSelect($targetRow, purchaseDisplayText, window.ktpCurrentSupplierId || 0);
+            ktpRenderPurchaseRecordRow($targetRow, purchaseDisplayText, '');
         }
-        
+
         // DB即時反映
         const itemId = $targetRow.find('input[name*="[id]"]').val();
         const orderId = $('input[name="order_id"]').val() || $('#order_id').val();
@@ -1111,8 +1149,8 @@
             buttonElement: $btn[0]
         });
         
-        // 一番下に新規行を追加
-        const $lastRow = $('#order_content .cost-items-table tbody tr').last();
+        // 一番下に新規行を追加（仕入記録行は対象外）
+        const $lastRow = $('#order_content .cost-items-table tbody tr.cost-item-row').last();
         const callId = Date.now();
         const rowAdded = addNewRow($lastRow, callId);
         
@@ -1156,24 +1194,16 @@
         
         // 協力会社名を「仕入」フィールドに表示
         if (window.ktpCurrentSupplierName) {
-            const purchaseDisplayText = window.ktpCurrentSupplierName && productName ? 
-                `${window.ktpCurrentSupplierName} > ${productName}` : 
+            const purchaseDisplayText = window.ktpCurrentSupplierName && productName ?
+                `${window.ktpCurrentSupplierName} > ${productName}` :
                 window.ktpCurrentSupplierName;
-            
-            // リンク付きの仕入フィールドを更新
-            const $purchaseDisplay = $newRow.find('.purchase-display');
-            if (purchaseDisplayText.indexOf(' > ') !== -1) {
-                $purchaseDisplay.removeClass('purchase-link').addClass('purchase-link')
-                    .attr('data-purchase', purchaseDisplayText)
-                    .text(purchaseDisplayText);
-            } else {
-                $purchaseDisplay.removeClass('purchase-link')
-                    .removeAttr('data-purchase')
-                    .text(purchaseDisplayText);
-            }
+
+            // 仕入フィールドを更新し、仕入ステータスプルダウンを追加
             $newRow.find('input[name*="[purchase]"]').val(purchaseDisplayText);
+            ktpEnsurePurchaseStatusSelect($newRow, purchaseDisplayText, window.ktpCurrentSupplierId || 0);
+            ktpRenderPurchaseRecordRow($newRow, purchaseDisplayText, '');
         }
-        
+
         // DB新規作成
         const orderId = $('input[name="order_id"]').val() || $('#order_id').val();
         
@@ -1310,23 +1340,40 @@
         if ($costSortTbody.length) {
         $costSortTbody.sortable({
             handle: '.drag-handle',
-            items: '> tr',
+            items: '> tr.cost-item-row',
             axis: 'y',
             helper: 'clone',
             update: function (event, ui) {
                 console.log('[COST] ドラッグ&ドロップ並び替え完了');
                 const table = $(this).closest('table');
-                
+                const $tbody = $(this);
+
+                // 仕入記録行（.cost-item-purchase-record-row）はsortableの対象外のため、
+                // 対応するコスト項目行（同じdata-row-id）の直後に付け直して対応関係を保つ
+                $tbody.find('tr.cost-item-row').each(function () {
+                    const rowId = $(this).attr('data-row-id');
+                    if (!rowId || rowId === '0') {
+                        return;
+                    }
+                    const $recordRow = $tbody.find('tr.cost-item-purchase-record-row[data-row-id="' + rowId + '"]');
+                    if ($recordRow.length) {
+                        $recordRow.insertAfter($(this));
+                    }
+                });
+
+                // 並び順が変わったので交互配色を再計算
+                refreshCostItemRowStripes();
+
                 // name属性のインデックスを更新
                 updateRowIndexes(table);
-                
+
                 // サーバーに並び順を保存
                 const items = [];
                 const orderId = $('input[name="order_id"]').val() || $('#order_id').val();
                 let hasInvalid = false;
                 let invalidItems = [];
-                
-                $(this).find('tr').each(function (index) {
+
+                $(this).find('tr.cost-item-row').each(function (index) {
                     const itemId = $(this).find('input[name*="[id]"]').val();
                     const productName = $(this).find('input[name*="[product_name]"]').val();
                     
@@ -1668,6 +1715,23 @@
             }
         });
 
+        // 仕入記録行の「協力会社を選ぶ」リンク - 対応するコスト項目行に対して協力会社選択を開く
+        $(document).off('click', '#order_content .cost-items-table .purchase-choose-supplier-link');
+        $(document).on('click', '#order_content .cost-items-table .purchase-choose-supplier-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const currentRow = $(this).closest('tr.cost-item-purchase-record-row').prev('tr.cost-item-row');
+            if (currentRow.length === 0) {
+                return;
+            }
+            if (typeof window.ktpShowSupplierSelector === 'function') {
+                window.ktpShowSupplierSelector(currentRow);
+            } else {
+                console.error('[COST-ITEMS] ktpShowSupplierSelector関数が見つかりません');
+                alert(ktpwpTranslate('協力会社選択機能の読み込みに失敗しました。ページを再読み込みしてください。'));
+            }
+        });
+
         // フォーカス時の入力欄スタイル調整
         $(document).on('focus', '#order_content .cost-item-input', function () {
             $(this).addClass('focused');
@@ -1925,8 +1989,8 @@
             }
         });
 
-        // 初期状態で既存の行に対して金額計算を実行
-        $('#order_content .cost-items-table tbody tr').each(function () {
+        // 初期状態で既存の行に対して金額計算を実行（仕入記録行は対象外）
+        $('#order_content .cost-items-table tbody tr.cost-item-row').each(function () {
             calculateAmount($(this));
         });
 
@@ -2019,6 +2083,308 @@
         }
         // ここでこのクリックハンドラの処理は終了
                     return;
+    });
+
+    // ===== 仕入ステータス（未着手 / 見積依頼 / 発注 / 仕入完了）プルダウン =====
+    const KTP_PURCHASE_STATUS_OPTIONS = [
+        { value: 'pending', label: '未着手' },
+        { value: 'quote_requested', label: '見積依頼' },
+        { value: 'ordered', label: '発注' },
+        { value: 'completed', label: '仕入完了' }
+    ];
+
+    // 仕入ステータスプルダウンのHTMLを生成
+    function ktpBuildPurchaseStatusSelectHtml(status, supplierId, supplierName, itemId) {
+        status = status || 'pending';
+        supplierId = supplierId || 0;
+        supplierName = supplierName || '';
+        itemId = itemId || 0;
+        let html = '<select class="cost-item-purchase-status" data-item-id="' + itemId + '" data-supplier-id="' + supplierId + '" data-supplier-name="' + $('<div>').text(supplierName).html() + '">';
+        KTP_PURCHASE_STATUS_OPTIONS.forEach(function (opt) {
+            html += '<option value="' + opt.value + '"' + (opt.value === status ? ' selected' : '') + '>' + opt.label + '</option>';
+        });
+        html += '</select>';
+        return html;
+    }
+
+    // 「YYYY/MM/DD」形式で本日日付を返す
+    function ktpFormatTodayForStatusLabel() {
+        const d = new Date();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        return d.getFullYear() + '/' + mm + '/' + dd;
+    }
+
+    // 「ステータス名：日付」ラベル文字列を生成（未着手なら空文字）
+    function ktpBuildStatusDateLabelText(status) {
+        if (!status || status === 'pending') {
+            return '';
+        }
+        const opt = KTP_PURCHASE_STATUS_OPTIONS.find(function (o) { return o.value === status; });
+        if (!opt) {
+            return '';
+        }
+        return opt.label + '：' + ktpFormatTodayForStatusLabel();
+    }
+
+    // 仕入記録行（協力会社名＋ステータス：日付）を作成/更新/削除する。
+    // 今後この記録は長くなっていく想定のため、コスト項目行の直下に全カラムを結合した専用行として表示する。
+    function ktpRenderPurchaseRecordRow($row, purchaseValue, statusLabelText) {
+        let $recordRow = $row.next('.cost-item-purchase-record-row');
+
+        if ($recordRow.length === 0) {
+            const colCount = $row.children('td').length;
+            const rowId = $row.attr('data-row-id') || 0;
+            $recordRow = $(
+                '<tr class="cost-item-purchase-record-row" data-row-id="' + rowId + '">' +
+                    '<td colspan="' + colCount + '" class="purchase-record-cell"></td>' +
+                '</tr>'
+            );
+            $row.after($recordRow);
+        }
+
+        // 対応するコスト項目行から交互配色クラスを継承する
+        const stripeClass = $row.hasClass('cost-item-row--odd') ? 'cost-item-row--odd' : 'cost-item-row--even';
+        $recordRow.removeClass('cost-item-row--even cost-item-row--odd').addClass(stripeClass);
+
+        const $cell = $recordRow.find('td.purchase-record-cell');
+        if (purchaseValue) {
+            let html = '<span class="purchase-display" data-purchase="' + $('<div>').text(purchaseValue).html() + '">' + $('<div>').text(purchaseValue).html();
+            if (statusLabelText) {
+                html += '<span class="purchase-status-date"> ' + statusLabelText + '</span>';
+            }
+            html += '</span>';
+            $cell.html(html);
+        } else {
+            $cell.html('<button type="button" class="purchase-choose-supplier-link">' + ktpwpTranslate('協力会社を選ぶ') + '</button>');
+        }
+    }
+
+    // 協力会社が新たに設定された行の仕入ステータスプルダウンに協力会社情報を反映する（無ければ追加）
+    function ktpEnsurePurchaseStatusSelect($row, purchaseDisplayText, supplierId) {
+        if (!purchaseDisplayText) {
+            return;
+        }
+        const $cell = $row.find('.purchase-cell');
+        let supplierName = purchaseDisplayText;
+        if (supplierName.indexOf(' > ') !== -1) {
+            supplierName = supplierName.split(' > ')[0];
+        }
+        const itemId = $row.find('input[name*="[id]"]').val() || 0;
+        const $select = $cell.find('.cost-item-purchase-status');
+        if ($select.length === 0) {
+            $cell.prepend(ktpBuildPurchaseStatusSelectHtml('pending', supplierId, supplierName, itemId));
+        } else {
+            $select.attr('data-supplier-id', supplierId || 0).attr('data-supplier-name', supplierName);
+        }
+    }
+
+    // 協力会社選択ポップアップ（ktp-supplier-selector.js）など他ファイルから呼べるように公開
+    window.ktpEnsurePurchaseStatusSelect = ktpEnsurePurchaseStatusSelect;
+    window.ktpRenderPurchaseRecordRow = ktpRenderPurchaseRecordRow;
+
+    // 画面上の該当協力会社の仕入ステータスプルダウン・仕入記録行をまとめて更新（メール送信成功後などに使用）。
+    // records（[{id, label}]）が渡された場合は行ごとのサーバー側で確定した履歴ラベルを使用し、
+    // 無い場合は今回変更した1件分のラベルのみで簡易表示する。
+    window.ktpUpdatePurchaseStatusSelects = function (supplierName, status, records) {
+        if (!supplierName || !status) {
+            return;
+        }
+        const recordMap = {};
+        (records || []).forEach(function (r) {
+            if (r && typeof r.id !== 'undefined') {
+                recordMap[String(r.id)] = r.label;
+            }
+        });
+        $('#order_content .cost-items-table .cost-item-purchase-status').each(function () {
+            const $select = $(this);
+            if (($select.data('supplier-name') || '') === supplierName) {
+                $select.val(status).data('prev-value', status);
+                const $row = $select.closest('tr');
+                const purchaseValue = $row.find('input[name*="[purchase]"]').val() || '';
+                const rowId = String($row.attr('data-row-id') || '');
+                const label = recordMap.hasOwnProperty(rowId) ? recordMap[rowId] : ktpBuildStatusDateLabelText(status);
+                ktpRenderPurchaseRecordRow($row, purchaseValue, label);
+            }
+        });
+    };
+
+    // 仕入ステータスを協力会社単位で一括更新（メール送信を伴わない遷移用）
+    function applyCostItemsPurchaseStatus(orderId, supplierName, supplierId, status, callback) {
+        const nonce = (typeof ktp_ajax_nonce !== 'undefined') ? ktp_ajax_nonce : (typeof ktpwp_ajax_nonce !== 'undefined' ? ktpwp_ajax_nonce : '');
+        const ajaxUrl = (typeof ajaxurl !== 'undefined') ? ajaxurl : ((typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) ? ktpwp_ajax.ajax_url : '/wp-admin/admin-ajax.php');
+        $.post(ajaxUrl, {
+            action: 'ktp_set_cost_items_purchase_status',
+            nonce: nonce,
+            order_id: orderId,
+            supplier_name: supplierName,
+            status: status
+        }).done(function (res) {
+            const success = !!(res && res.success);
+            if (success) {
+                window.ktpUpdatePurchaseStatusSelects(supplierName, status, res.data && res.data.records);
+            }
+            if (typeof callback === 'function') {
+                callback(success);
+            }
+        }).fail(function () {
+            if (typeof callback === 'function') {
+                callback(false);
+            }
+        });
+    }
+
+    // 見積依頼／発注への変更時に表示する3択ダイアログ（メール送信／PDF印刷／状況のみ変更／キャンセル）
+    function ktpShowPurchaseStatusChoiceDialog(orderId, supplierName, supplierId, newStatus, prevStatus, $select) {
+        const statusLabel = (newStatus === 'quote_requested') ? ktpwpTranslate('見積依頼') : ktpwpTranslate('発注');
+        const mode = (newStatus === 'quote_requested') ? 'quote' : 'order';
+
+        $('#ktp-purchase-status-choice-dialog').remove();
+
+        const dialogHtml = `
+            <div id="ktp-purchase-status-choice-dialog" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10001; display: flex; justify-content: center; align-items: center;">
+                <div style="background: #fff; border-radius: 8px; padding: 24px; width: 90%; max-width: 420px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+                    <h3 style="margin: 0 0 12px; font-size: 16px; color: #333;">${statusLabel}${ktpwpTranslate('に変更します')}</h3>
+                    <p style="margin: 0 0 16px; font-size: 13px; color: #666; line-height: 1.5;">${ktpwpTranslate('メール送信・PDF印刷、または状況のみ更新できます。')}</p>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <button type="button" class="ktp-purchase-choice-btn" data-choice="email" style="padding: 10px; background: #007cba; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">${ktpwpTranslate('メールを送信')}</button>
+                        <button type="button" class="ktp-purchase-choice-btn" data-choice="pdf" style="padding: 10px; background: #455a64; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">${ktpwpTranslate('PDFを印刷／保存')}</button>
+                        <button type="button" class="ktp-purchase-choice-btn" data-choice="status_only" style="padding: 10px; background: #78909c; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">${ktpwpTranslate('仕入れ状況だけ変更')}</button>
+                        <button type="button" class="ktp-purchase-choice-btn" data-choice="cancel" style="padding: 10px; background: #eee; color: #333; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">${ktpwpTranslate('キャンセル')}</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        $('body').append(dialogHtml);
+
+        function closeDialog() {
+            $('#ktp-purchase-status-choice-dialog').remove();
+        }
+
+        $('#ktp-purchase-status-choice-dialog').on('click', function (e) {
+            if (e.target === this) {
+                closeDialog();
+                $select.val(prevStatus);
+            }
+        });
+
+        $('#ktp-purchase-status-choice-dialog .ktp-purchase-choice-btn').on('click', function () {
+            const choice = $(this).data('choice');
+            closeDialog();
+
+            if (choice === 'cancel') {
+                $select.val(prevStatus);
+                return;
+            }
+
+            if (choice === 'email') {
+                window.ktpPurchaseStatusRevert = function () {
+                    $select.val(prevStatus);
+                };
+                if (typeof window.ktpShowPurchaseOrderEmailPopup === 'function') {
+                    window.ktpShowPurchaseOrderEmailPopup(orderId, supplierName, supplierId, mode);
+                } else {
+                    console.error('[COST] ktpShowPurchaseOrderEmailPopup関数が見つかりません');
+                    window.ktpPurchaseStatusRevert = null;
+                    $select.val(prevStatus);
+                }
+                return;
+            }
+
+            if (choice === 'pdf') {
+                if (typeof window.ktpPrintPurchaseOrderDocument !== 'function') {
+                    console.error('[COST] ktpPrintPurchaseOrderDocument関数が見つかりません');
+                    $select.val(prevStatus);
+                    alert(ktpwpTranslate('印刷機能の読み込みに失敗しました。ページを再読み込みしてください。'));
+                    return;
+                }
+                window.ktpPrintPurchaseOrderDocument(orderId, supplierName, supplierId, mode, function (success) {
+                    if (success) {
+                        applyCostItemsPurchaseStatus(orderId, supplierName, supplierId, newStatus, function (ok) {
+                            if (!ok) {
+                                $select.val(prevStatus);
+                            }
+                        });
+                    } else {
+                        $select.val(prevStatus);
+                    }
+                });
+                return;
+            }
+
+            if (choice === 'status_only') {
+                applyCostItemsPurchaseStatus(orderId, supplierName, supplierId, newStatus, function (ok) {
+                    if (!ok) {
+                        $select.val(prevStatus);
+                    }
+                });
+            }
+        });
+    }
+
+    // フォーカス時に変更前の値を保持（メール送信キャンセル時に選択を戻すため）
+    $(document).on('focus', '#order_content .cost-item-purchase-status', function () {
+        $(this).data('prev-value', this.value);
+    });
+
+    // 仕入ステータス変更時の処理
+    $(document).on('change', '#order_content .cost-item-purchase-status', function () {
+        const $select = $(this);
+        const newStatus = $select.val();
+        const prevStatus = $select.data('prev-value') || 'pending';
+
+        if (newStatus === prevStatus) {
+            return;
+        }
+
+        const supplierId = $select.data('supplier-id') || 0;
+        const supplierName = $select.data('supplier-name') || '';
+        const itemId = $select.data('item-id') || $select.closest('tr').find('input[name*="[id]"]').val() || 0;
+        const orderId = $('input[name="order_id"]').val() || $('#order_id').val();
+
+        if (!orderId) {
+            $select.val(prevStatus);
+            return;
+        }
+
+        // 協力会社が未設定（手入力）の行はメール送信対象がない
+        if (!supplierName) {
+            if (newStatus === 'quote_requested' || newStatus === 'ordered') {
+                alert(ktpwpTranslate('見積依頼・発注メールを送信するには、先に協力会社タブから協力会社を選択してください。'));
+                $select.val(prevStatus);
+                return;
+            }
+            // 未着手・仕入完了は行単体で保存
+            if (!itemId || itemId == 0) {
+                alert(ktpwpTranslate('先にサービス名など他の項目を入力して保存してください。'));
+                $select.val(prevStatus);
+                return;
+            }
+            $select.data('prev-value', newStatus);
+            const $row = $select.closest('tr');
+            const purchaseValue = $row.find('input[name*="[purchase]"]').val() || '';
+            // 楽観的に即時表示し、サーバー応答（見積依頼／発注／仕入完了の全履歴ラベル）が届き次第正しい内容に差し替える
+            ktpRenderPurchaseRecordRow($row, purchaseValue, ktpBuildStatusDateLabelText(newStatus));
+            autoSaveItem('cost', itemId, 'purchase_status', newStatus, orderId, function (data) {
+                const label = (data && typeof data.history_label === 'string') ? data.history_label : ktpBuildStatusDateLabelText(newStatus);
+                ktpRenderPurchaseRecordRow($row, purchaseValue, label);
+            });
+            return;
+        }
+
+        if (newStatus === 'quote_requested' || newStatus === 'ordered') {
+            // 見積依頼・発注は「メール送信／PDF印刷／状況のみ変更」の3択ダイアログを挟む
+            ktpShowPurchaseStatusChoiceDialog(orderId, supplierName, supplierId, newStatus, prevStatus, $select);
+        } else {
+            // 未着手・仕入完了はメール送信不要。即時にDBへ反映（協力会社単位で一括）
+            applyCostItemsPurchaseStatus(orderId, supplierName, supplierId, newStatus, function (success) {
+                if (success) {
+                    $select.data('prev-value', newStatus);
+                } else {
+                    $select.val(prevStatus);
+                }
+            });
+        }
     });
 
     // 価格・数量変更時の金額自動計算（blurイベントでのみ実行）

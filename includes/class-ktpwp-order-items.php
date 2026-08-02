@@ -109,6 +109,9 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 				purchase VARCHAR(255),
 				qualified_invoice_number VARCHAR(255),
 				ordered TINYINT(1) NOT NULL DEFAULT 0,
+				purchase_status VARCHAR(20) NOT NULL DEFAULT 'pending',
+				purchase_status_date DATE NULL DEFAULT NULL,
+				purchase_status_dates TEXT NULL DEFAULT NULL,
 				sort_order INT NOT NULL DEFAULT 0,
 				created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 				updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -825,6 +828,168 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 		}
 
 		/**
+		 * コスト項目テーブルに purchase_status カラムがなければ自動追加
+		 *
+		 * @since 1.2.0
+		 * @return bool true: 追加済み/既存, false: 追加失敗
+		 */
+		public function add_purchase_status_column_if_missing() {
+			global $wpdb;
+			$table_name = $wpdb->prefix . 'ktp_order_cost_items';
+			$column = $wpdb->get_results(
+                "SHOW COLUMNS FROM `{$table_name}` LIKE 'purchase_status'"
+			);
+			if ( empty( $column ) ) {
+				$result = $wpdb->query( "ALTER TABLE `{$table_name}` ADD COLUMN purchase_status VARCHAR(20) NOT NULL DEFAULT 'pending' AFTER ordered" );
+				if ( $result === false ) {
+					error_log( 'KTPWP: purchase_statusカラムの自動追加に失敗: ' . $wpdb->last_error );
+					return false;
+				} else {
+					error_log( 'KTPWP: purchase_statusカラムを自動追加しました' );
+				}
+			}
+			return true;
+		}
+
+		/**
+		 * コスト項目テーブルに purchase_status_date カラムがなければ自動追加
+		 *
+		 * @since 1.2.0
+		 * @return bool true: 追加済み/既存, false: 追加失敗
+		 */
+		public function add_purchase_status_date_column_if_missing() {
+			global $wpdb;
+			$table_name = $wpdb->prefix . 'ktp_order_cost_items';
+			$column = $wpdb->get_results(
+                "SHOW COLUMNS FROM `{$table_name}` LIKE 'purchase_status_date'"
+			);
+			if ( empty( $column ) ) {
+				$result = $wpdb->query( "ALTER TABLE `{$table_name}` ADD COLUMN purchase_status_date DATE NULL DEFAULT NULL AFTER purchase_status" );
+				if ( $result === false ) {
+					error_log( 'KTPWP: purchase_status_dateカラムの自動追加に失敗: ' . $wpdb->last_error );
+					return false;
+				} else {
+					error_log( 'KTPWP: purchase_status_dateカラムを自動追加しました' );
+				}
+			}
+			return true;
+		}
+
+		/**
+		 * コスト項目テーブルに purchase_status_dates カラムがなければ自動追加
+		 *
+		 * @since 1.2.0
+		 * @return bool true: 追加済み/既存, false: 追加失敗
+		 */
+		public function add_purchase_status_dates_column_if_missing() {
+			global $wpdb;
+			$table_name = $wpdb->prefix . 'ktp_order_cost_items';
+			$column = $wpdb->get_results(
+                "SHOW COLUMNS FROM `{$table_name}` LIKE 'purchase_status_dates'"
+			);
+			if ( empty( $column ) ) {
+				$result = $wpdb->query( "ALTER TABLE `{$table_name}` ADD COLUMN purchase_status_dates TEXT NULL DEFAULT NULL AFTER purchase_status_date" );
+				if ( $result === false ) {
+					error_log( 'KTPWP: purchase_status_datesカラムの自動追加に失敗: ' . $wpdb->last_error );
+					return false;
+				} else {
+					error_log( 'KTPWP: purchase_status_datesカラムを自動追加しました' );
+				}
+			}
+			return true;
+		}
+
+		/**
+		 * 仕入ステータス（発注状況）の選択肢一覧を取得
+		 *
+		 * @since 1.2.0
+		 * @return array status_value => label
+		 */
+		public static function get_purchase_status_options() {
+			return array(
+				'pending'         => __( '未着手', 'ktpwp' ),
+				'quote_requested' => __( '見積依頼', 'ktpwp' ),
+				'ordered'         => __( '発注', 'ktpwp' ),
+				'completed'       => __( '仕入完了', 'ktpwp' ),
+			);
+		}
+
+		/**
+		 * 履歴として日付を記録するステータス（未着手は対象外）
+		 *
+		 * @since 1.2.0
+		 * @return array
+		 */
+		public static function get_purchase_status_history_keys() {
+			return array( 'quote_requested', 'ordered', 'completed' );
+		}
+
+		/**
+		 * purchase_status_dates（JSON文字列）を連想配列にデコードする
+		 *
+		 * @since 1.2.0
+		 * @param string|null $raw_json
+		 * @return array status_value => 'Y-m-d'
+		 */
+		public static function decode_purchase_status_history( $raw_json ) {
+			if ( empty( $raw_json ) ) {
+				return array();
+			}
+			$decoded = json_decode( (string) $raw_json, true );
+			return is_array( $decoded ) ? $decoded : array();
+		}
+
+		/**
+		 * 既存の履歴に新しいステータスの日付をマージする。
+		 * pending の場合は履歴を全クリアする（KantanBiz版の仕様に合わせる）。
+		 *
+		 * @since 1.2.0
+		 * @param string|null $raw_json     既存の purchase_status_dates
+		 * @param string      $status_value 新しい仕入ステータス
+		 * @param string      $date         記録する日付（Y-m-d）
+		 * @return array 更新後の履歴配列
+		 */
+		public static function merge_purchase_status_history( $raw_json, $status_value, $date ) {
+			if ( $status_value === 'pending' ) {
+				return array();
+			}
+			$history = self::decode_purchase_status_history( $raw_json );
+			if ( in_array( $status_value, self::get_purchase_status_history_keys(), true ) ) {
+				$history[ $status_value ] = $date;
+			}
+			return $history;
+		}
+
+		/**
+		 * 見積依頼／発注／仕入完了、各イベントの日付を1行分のラベルにまとめる
+		 * （例: 「見積依頼：2026/08/01　発注：2026/08/02　仕入完了：2026/08/05」）。
+		 * 到達していないステータスは表示しない。
+		 *
+		 * @since 1.2.0
+		 * @param string|null $raw_json purchase_status_dates（JSON文字列）
+		 * @return string
+		 */
+		public static function format_purchase_status_history_label( $raw_json ) {
+			$history = self::decode_purchase_status_history( $raw_json );
+			if ( empty( $history ) ) {
+				return '';
+			}
+			$options = self::get_purchase_status_options();
+			$parts = array();
+			foreach ( self::get_purchase_status_history_keys() as $status_value ) {
+				if ( empty( $history[ $status_value ] ) ) {
+					continue;
+				}
+				$timestamp = strtotime( $history[ $status_value ] );
+				if ( ! $timestamp ) {
+					continue;
+				}
+				$parts[] = $options[ $status_value ] . '：' . date_i18n( 'Y/m/d', $timestamp );
+			}
+			return implode( '　', $parts );
+		}
+
+		/**
 		 * Create initial invoice item for new order
 		 *
 		 * @since 1.0.0
@@ -1008,6 +1173,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 				case 'unit':
 				case 'remarks':
 				case 'purchase':
+				case 'purchase_status':
 					$value_changed = (string) $current_value !== (string) $field_value;
 					break;
 				case 'price':
@@ -1098,6 +1264,36 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 						);
 					}
 					break;
+				case 'purchase_status':
+					// purchase_statusフィールドはcost itemsのみで使用
+					if ( $item_type === 'cost' && array_key_exists( sanitize_key( $field_value ), self::get_purchase_status_options() ) ) {
+						$status_value = sanitize_key( $field_value );
+						$update_data['purchase_status'] = $status_value;
+						$format[] = '%s';
+						$update_data['ordered'] = in_array( $status_value, array( 'ordered', 'completed' ), true ) ? 1 : 0;
+						$format[] = '%d';
+
+						$today = current_time( 'Y-m-d' );
+						// 未着手に戻したら日付をクリア、それ以外はステータス変更日を記録
+						$update_data['purchase_status_date'] = ( $status_value === 'pending' ) ? null : $today;
+						$format[] = '%s';
+
+						// 見積依頼／発注／仕入完了、各イベントの日付履歴をマージして保存
+						$current_history_json = $wpdb->get_var(
+                            $wpdb->prepare( "SELECT purchase_status_dates FROM `{$table_name}` WHERE id = %d", $item_id )
+						);
+						$history = self::merge_purchase_status_history( $current_history_json, $status_value, $today );
+						$update_data['purchase_status_dates'] = empty( $history ) ? null : wp_json_encode( $history );
+						$format[] = '%s';
+						$purchase_status_history_label = self::format_purchase_status_history_label( $update_data['purchase_status_dates'] );
+					} else {
+						error_log( 'KTPWP: Attempted to update purchase_status field with invalid type/value - ignoring' );
+						return array(
+							'success' => true,
+							'value_changed' => false,
+						);
+					}
+					break;
 				case 'sort_order':
 					$update_data['sort_order'] = intval( $field_value );
 					$format[] = '%d';
@@ -1179,10 +1375,14 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 				}
 			}
 
-			return array(
+			$return_value = array(
 				'success' => true,
 				'value_changed' => true,
 			);
+			if ( $field_name === 'purchase_status' && isset( $purchase_status_history_label ) ) {
+				$return_value['history_label'] = $purchase_status_history_label;
+			}
+			return $return_value;
 		}
 
 		/**
@@ -1315,7 +1515,13 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 			if ( $item_type === 'cost' ) {
 				$data['purchase'] = '';
 				$data['ordered'] = 0;
-				
+
+				// purchase_statusカラムが存在する場合のみ追加
+				$purchase_status_columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$table_name}` LIKE 'purchase_status'", 0 );
+				if ( ! empty( $purchase_status_columns ) ) {
+					$data['purchase_status'] = 'pending';
+				}
+
 				// supplier_idカラムが存在する場合のみ追加
 				$columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$table_name}` LIKE 'supplier_id'", 0 );
 				if ( ! empty( $columns ) ) {

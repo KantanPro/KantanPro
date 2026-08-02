@@ -332,6 +332,8 @@ class KTPWP_Order_Auxiliary {
 				$mk = isset( $log->mail_kind ) ? (string) $log->mail_kind : 'customer';
 				if ( $mk === 'purchase_order' ) {
 					$kind_label = '<span style="font-size:11px;background:#fff3e0;color:#e65100;padding:2px 8px;border-radius:10px;">' . esc_html__( '発注', 'ktpwp' ) . '</span>';
+				} elseif ( $mk === 'quote_request' ) {
+					$kind_label = '<span style="font-size:11px;background:#f3e5f5;color:#6a1b9a;padding:2px 8px;border-radius:10px;">' . esc_html__( '見積依頼', 'ktpwp' ) . '</span>';
 				} else {
 					$kind_label = '<span style="font-size:11px;background:#e3f2fd;color:#1565c0;padding:2px 8px;border-radius:10px;">' . esc_html__( '顧客', 'ktpwp' ) . '</span>';
 				}

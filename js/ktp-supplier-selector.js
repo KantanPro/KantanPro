@@ -701,25 +701,18 @@ window.ktpUpdateCostRowFromSkill = function(skill, currentRow) {
             const taxRateValue = (skill.tax_rate === null || skill.tax_rate === '') ? '' : Math.round(skill.tax_rate);
             currentRow.find('.tax-rate').val(taxRateValue);
             
-            // 協力会社名を「仕入」フィールドに表示
+            // 協力会社名を「仕入」欄（プルダウン＋仕入記録行）に反映
             if (window.ktpCurrentSupplierName) {
                 const purchaseDisplayText = window.ktpCurrentSupplierName;
-                const $purchaseDisplay = currentRow.find('.purchase-display');
-                if (window.ktpCurrentSupplierName) {
-                    $purchaseDisplay
-                        .removeClass('purchase-link')
-                        .addClass('purchase-link')
-                        .attr('data-purchase', purchaseDisplayText)
-                        .css({color:'#0073aa', cursor:'pointer', 'text-decoration':'underline'})
-                        .text(`${window.ktpCurrentSupplierName}に発注`);
-                } else {
-                    $purchaseDisplay
-                        .removeClass('purchase-link')
-                        .removeAttr('data-purchase')
-                        .css({color:'', cursor:'', 'text-decoration':''})
-                        .text(ktpwpTranslate('手入力'));
-                }
                 currentRow.find('input[name*="[purchase]"]').val(purchaseDisplayText);
+                currentRow.attr('data-supplier-id', window.ktpCurrentSupplierId || 0);
+                currentRow.find('input.supplier-id').val(window.ktpCurrentSupplierId || 0);
+                if (typeof window.ktpEnsurePurchaseStatusSelect === 'function') {
+                    window.ktpEnsurePurchaseStatusSelect(currentRow, purchaseDisplayText, window.ktpCurrentSupplierId || 0);
+                }
+                if (typeof window.ktpRenderPurchaseRecordRow === 'function') {
+                    window.ktpRenderPurchaseRecordRow(currentRow, purchaseDisplayText, '');
+                }
             }
             // 金額を再計算
             if (typeof calculateAmount === 'function') {

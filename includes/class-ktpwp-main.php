@@ -321,10 +321,13 @@ class KTPWP_Main {
             }
         }
 
-        // supplier_idカラム自動追加（コスト項目テーブル）
+        // supplier_id / purchase_status / purchase_status_date / purchase_status_datesカラム自動追加（コスト項目テーブル）
         if ( class_exists( 'KTPWP_Order_Items' ) ) {
             $order_items = KTPWP_Order_Items::get_instance();
             $order_items->add_supplier_id_column_if_missing();
+            $order_items->add_purchase_status_column_if_missing();
+            $order_items->add_purchase_status_date_column_if_missing();
+            $order_items->add_purchase_status_dates_column_if_missing();
         }
 
         // 設定クラスのアクティベート処理

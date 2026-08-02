@@ -455,12 +455,24 @@
 .toggle-staff-chat:hover {
     background: #005a87;
 }
-/* 請求項目テーブル：交互色の透明行を白に（参考行は除外） */
-.invoice-items-table tr:nth-of-type(even):not(.invoice-item-row--provisional) {
+/* 請求項目テーブル：交互色（奇数行=水色、偶数行=白。参考行は除外）。
+   nth-of-typeだと参考行等の非表示行を含めて数えてしまいズレるため、PHP側で表示順に付与した
+   .invoice-item-row--odd/--even クラスを基準にする（コスト項目テーブルと同じ方式）。
+   input等セル内要素が独自の背景色を持つため、tr ではなく直下の td に背景色を当てる。 */
+.invoice-items-table tr.invoice-item-row--odd > td {
+  background-color: #e3f2fd !important;
+}
+.invoice-items-table tr.invoice-item-row--even > td {
   background-color: #fff !important;
 }
-/* コスト項目テーブル：交互色の透明行を白に */
-.cost-items-table tr:nth-of-type(even) {
+/* コスト項目テーブル：交互色の透明行を白/水色に。
+   仕入記録行（.cost-item-purchase-record-row）が挟まると nth-of-type の数え方が崩れるため、
+   コスト項目1件＝1グループとして付与される .cost-item-row--even/--odd クラスを基準にする（PHP/JS両方で付与）。
+   input等セル内要素が独自の背景色を持つため、tr ではなく直下の td に背景色を当てる（KantanBiz版と同じ方式）。 */
+.cost-items-table tr.cost-item-row--odd > td {
+  background-color: #e3f2fd !important;
+}
+.cost-items-table tr.cost-item-row--even > td {
   background-color: #fff !important;
 }
 /* 請求項目テーブルの単価・数量・金額フィールドを左揃え */
@@ -5156,20 +5168,20 @@ div.ktp-report-print-area {
 .invoice-items-table {
     width: 100%;
     border-collapse: collapse;
-    border: 1px solid #ddd;
+    border: none;
     font-size: 14px;
 }
 
 .invoice-items-table th,
 .invoice-items-table td {
-    border: 1px solid #d0d7de;
+    border: none;
     padding: 8px;
     text-align: left;
     vertical-align: middle;
 }
 
 .invoice-items-table th {
-    background-color: #e8f4f8;
+    background-color: #fdeef2;
     font-weight: bold;
     white-space: nowrap;
     color: #2c3e50;
@@ -5178,7 +5190,7 @@ div.ktp-report-print-area {
 .invoice-items-table .actions-column {
     width: 80px;
     white-space: nowrap;
-    padding-left: 4px;
+    padding-left: 10px;
     padding-right: 2px;
 }
 
@@ -5332,23 +5344,29 @@ div.ktp-report-print-area {
     color: #333;
 }
 
+.cost-items-scroll-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+}
+
 .cost-items-table {
     width: 100%;
     border-collapse: collapse;
-    border: 1px solid #ddd;
+    border: none;
     font-size: 14px;
 }
 
 .cost-items-table th,
 .cost-items-table td {
-    border: 1px solid #d0d7de;
+    border: none;
     padding: 8px;
     text-align: left;
     vertical-align: middle;
 }
 
 .cost-items-table th {
-    background-color: #e8f4f8;
+    background-color: #fdeef2;
     font-weight: bold;
     white-space: nowrap;
     color: #2c3e50;
@@ -5357,7 +5375,7 @@ div.ktp-report-print-area {
 .cost-items-table .actions-column {
     width: 80px;
     white-space: nowrap;
-    padding-left: 4px;
+    padding-left: 10px;
     padding-right: 2px;
 }
 
@@ -5418,6 +5436,76 @@ div.ktp-report-print-area {
 .cost-items-table .purchase-link:hover {
     color: #005a8b !important;
     text-decoration: underline;
+}
+
+.cost-items-table .purchase-cell {
+    min-width: 110px;
+}
+
+/* 仕入記録行（協力会社名＋ステータス：日付）。今後長くなる想定のため全カラムを結合した専用行に表示する。
+   背景色は対応するコスト項目行と揃える（.cost-item-row--even/--odd を参照）。
+   コスト項目行との間の罫線は消して、ひとつながりのグループに見えるようにする。 */
+.cost-items-table tr.cost-item-row:has(+ tr.cost-item-purchase-record-row) > td {
+    border-bottom: none;
+    padding-bottom: 2px;
+}
+
+.cost-items-table .cost-item-purchase-record-row td.purchase-record-cell {
+    border-top: none;
+    padding: 1px 12px 3px 8px;
+    text-align: right;
+}
+
+.cost-items-table .cost-item-purchase-record-row .purchase-display {
+    display: inline-block;
+    font-style: normal;
+    font-size: 11px;
+    line-height: 1.3;
+    color: #888;
+    padding: 0 2px;
+}
+
+.cost-items-table .cost-item-purchase-record-row .purchase-status-date {
+    color: #b45309;
+    font-weight: 600;
+}
+
+.cost-items-table .cost-item-purchase-record-row .purchase-choose-supplier-link {
+    background: none;
+    border: none;
+    padding: 0 2px;
+    font-size: 11px;
+    cursor: pointer;
+    color: #007cba;
+    text-decoration: underline;
+}
+
+.cost-items-table .cost-item-purchase-record-row .purchase-choose-supplier-link:hover {
+    color: #005a8b;
+}
+
+.cost-items-table .cost-item-purchase-status {
+    padding: 3px 4px;
+    font-size: 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: #fff;
+}
+
+.cost-items-table .cost-item-purchase-status option[value="pending"] {
+    color: #666;
+}
+
+.cost-items-table .cost-item-purchase-status option[value="quote_requested"] {
+    color: #8e24aa;
+}
+
+.cost-items-table .cost-item-purchase-status option[value="ordered"] {
+    color: #e65100;
+}
+
+.cost-items-table .cost-item-purchase-status option[value="completed"] {
+    color: #2e7d32;
 }
 
 .cost-items-table .amount {

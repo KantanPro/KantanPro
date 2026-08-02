@@ -8,13 +8,16 @@
 (function($) {
     'use strict';
 
-    // 発注メールポップアップを表示（supplierIdは省略可。あると協力会社の検索が安定する）
-    window.ktpShowPurchaseOrderEmailPopup = function(orderId, supplierName, supplierId) {
+    // 発注/見積依頼メールポップアップを表示（supplierIdは省略可。あると協力会社の検索が安定する）
+    // mode: 'order'(発注) または 'quote'(見積依頼)
+    window.ktpShowPurchaseOrderEmailPopup = function(orderId, supplierName, supplierId, mode) {
         if (!orderId || !supplierName) {
             alert(ktpwpTranslate('受注書IDまたは協力会社名が指定されていません。'));
             return;
         }
         supplierId = supplierId || 0;
+        mode = (mode === 'quote') ? 'quote' : 'order';
+        const popupTitle = (mode === 'quote') ? '見積依頼メール送信' : '発注メール送信';
 
         // ポップアップHTML
         const popupHtml = `
@@ -48,7 +51,7 @@
                         border-bottom: 1px solid #eee;
                         padding-bottom: 15px;
                     ">
-                        <h3 style="margin: 0; color: #333;">発注メール送信</h3>
+                        <h3 style="margin: 0; color: #333;">${popupTitle}</h3>
                         <button type="button" id="ktp-purchase-order-email-popup-close" style="
                             background: none;
                             color: #333;
@@ -79,25 +82,35 @@
         // 新しいポップアップを追加
         $('body').append(popupHtml);
 
-        // 閉じるボタンのイベント
+        // 閉じるボタンのイベント（キャンセル扱い＝ステータス選択を元に戻す）
         $('#ktp-purchase-order-email-popup-close').on('click', function() {
-            $('#ktp-purchase-order-email-popup').remove();
+            closePurchaseOrderPopup(true);
         });
 
-        // 背景クリックで閉じる
+        // 背景クリックで閉じる（キャンセル扱い）
         $('#ktp-purchase-order-email-popup').on('click', function(e) {
             if (e.target === this) {
-                $(this).remove();
+                closePurchaseOrderPopup(true);
             }
         });
 
-        // 発注メール内容を取得
-        loadPurchaseOrderEmailContent(orderId, supplierName, supplierId);
+        // 発注/見積依頼メール内容を取得
+        loadPurchaseOrderEmailContent(orderId, supplierName, supplierId, mode);
     };
 
-    // 発注メール内容を読み込み
-    function loadPurchaseOrderEmailContent(orderId, supplierName, supplierId) {
+    // ポップアップを閉じる。shouldRevert=true の場合、仕入ステータスの選択を変更前の値に戻す
+    function closePurchaseOrderPopup(shouldRevert) {
+        if (shouldRevert && typeof window.ktpPurchaseStatusRevert === 'function') {
+            window.ktpPurchaseStatusRevert();
+        }
+        window.ktpPurchaseStatusRevert = null;
+        $('#ktp-purchase-order-email-popup').remove();
+    }
+
+    // 発注/見積依頼メール内容を読み込み
+    function loadPurchaseOrderEmailContent(orderId, supplierName, supplierId, mode) {
         supplierId = supplierId || 0;
+        mode = (mode === 'quote') ? 'quote' : 'order';
         // Ajax URLの確認と代替設定
         let ajaxUrl = '';
         if (typeof ajaxurl !== 'undefined') {
@@ -142,6 +155,7 @@
                 order_id: orderId,
                 supplier_name: supplierName,
                 supplier_id: supplierId,
+                mode: mode,
                 nonce: nonce,
                 ktpwp_ajax_nonce: nonce  // 追加: サーバー側で期待されるフィールド名
             },
@@ -149,7 +163,7 @@
                 try {
                     const result = typeof response === 'string' ? JSON.parse(response) : response;
                     if (result.success && result.data) {
-                        displayPurchaseOrderEmailForm(result.data, orderId, supplierName, supplierId);
+                        displayPurchaseOrderEmailForm(result.data, orderId, supplierName, supplierId, mode);
                     } else {
                         showError('発注メール内容の取得に失敗しました: ' + (result.data ? result.data.message : '不明なエラー'));
                     }
@@ -165,11 +179,12 @@
         });
     }
 
-    // 発注メールフォームを表示（orderId, supplierName, supplierId は送信時に必要）
-    function displayPurchaseOrderEmailForm(data, orderId, supplierName, supplierId) {
+    // 発注/見積依頼メールフォームを表示（orderId, supplierName, supplierId は送信時に必要）
+    function displayPurchaseOrderEmailForm(data, orderId, supplierName, supplierId, mode) {
         orderId = orderId || 0;
         supplierName = supplierName || '';
         supplierId = supplierId || 0;
+        mode = (mode === 'quote') ? 'quote' : 'order';
         const content = `
             <form id="ktp-purchase-order-email-form">
                 <div style="margin-bottom: 15px;">
@@ -244,7 +259,7 @@
         // イベントハンドラーを設定（orderId, supplierName, supplierId を渡して送信）
         $('#ktp-purchase-order-email-form').on('submit', function(e) {
             e.preventDefault();
-            sendPurchaseOrderEmail(orderId, supplierName, supplierId);
+            sendPurchaseOrderEmail(orderId, supplierName, supplierId, mode);
         });
 
         // ファイル添付機能のイベントハンドラー
@@ -479,14 +494,16 @@
         };
     }
 
-    // 発注メールを送信
-    function sendPurchaseOrderEmail(orderId, supplierName, supplierId) {
+    // 発注/見積依頼メールを送信
+    function sendPurchaseOrderEmail(orderId, supplierName, supplierId, mode) {
         supplierId = supplierId || 0;
+        mode = (mode === 'quote') ? 'quote' : 'order';
         const formData = new FormData();
         formData.append('action', 'send_purchase_order_email');
         formData.append('order_id', orderId || '');
         formData.append('supplier_name', supplierName || '');
         formData.append('supplier_id', supplierId);
+        formData.append('mode', mode);
         formData.append('to', $('#email-to').val());
         const ccPo = ($('#email-cc-po').val() || '').trim();
         if (ccPo) {
@@ -523,7 +540,7 @@
         $('#ktp-purchase-order-email-send').prop('disabled', true).text(ktpwpTranslate('送信中...'));
 
         // 送信中表示を更新（ファイル数を表示）
-        let loadingMessage = '発注メール送信中...';
+        let loadingMessage = (mode === 'quote') ? '見積依頼メール送信中...' : '発注メール送信中...';
         if (selectedFiles.length > 0) {
             loadingMessage += `<br><small style="color: #666;">${selectedFiles.length}件のファイルを添付中...</small>`;
         }
@@ -557,10 +574,12 @@
                 try {
                     const result = typeof response === 'string' ? JSON.parse(response) : response;
                     if (result.success) {
-                        showSuccess('発注メールを送信しました。');
+                        showSuccess((mode === 'quote') ? '見積依頼メールを送信しました。' : '発注メールを送信しました。');
+                        // 送信成功時はステータス選択を元に戻さない
+                        window.ktpPurchaseStatusRevert = null;
                         $('#ktp-purchase-order-email-popup').remove();
-                        // 該当協力会社のコスト項目を「発注済み」に更新
-                        setCostItemsOrderedAndUpdateDisplay(orderId, supplierName);
+                        // 該当協力会社のコスト項目の仕入ステータスを更新
+                        setCostItemsPurchaseStatusAndUpdateDisplay(orderId, supplierName, mode === 'quote' ? 'quote_requested' : 'ordered');
                     } else {
                         const errMsg = result.data && result.data.message ? result.data.message : '不明なエラー';
                         showErrorInPopup('メール送信に失敗しました: ' + errMsg);
@@ -589,44 +608,28 @@
         });
     }
 
-    // 発注メール送信後、該当協力会社のコスト項目を発注済みにし、表示を「に発注済み」に更新
-    function setCostItemsOrderedAndUpdateDisplay(orderId, supplierName) {
-        if (!orderId || !supplierName) return;
+    // 発注/見積依頼メール送信後、該当協力会社のコスト項目の仕入ステータスをDB更新し、画面のプルダウンに反映
+    function setCostItemsPurchaseStatusAndUpdateDisplay(orderId, supplierName, status) {
+        if (!orderId || !supplierName || !status) return;
         const nonce = (typeof ktp_ajax_nonce !== 'undefined') ? ktp_ajax_nonce : (typeof ktpwp_ajax_nonce !== 'undefined' ? ktpwp_ajax_nonce : '');
         if (!nonce) {
-            console.warn('[PURCHASE-ORDER-EMAIL] nonceが取得できず発注済み更新をスキップします');
-            updatePurchaseDisplayOnly(supplierName);
+            console.warn('[PURCHASE-ORDER-EMAIL] nonceが取得できず仕入ステータス更新をスキップします');
+            window.ktpUpdatePurchaseStatusSelects && window.ktpUpdatePurchaseStatusSelects(supplierName, status);
             return;
         }
         const ajaxUrl = (typeof ajaxurl !== 'undefined') ? ajaxurl : ((typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) ? ktpwp_ajax.ajax_url : '/wp-admin/admin-ajax.php');
         $.post(ajaxUrl, {
-            action: 'ktp_set_cost_items_ordered',
+            action: 'ktp_set_cost_items_purchase_status',
             nonce: nonce,
             order_id: orderId,
-            supplier_name: supplierName
+            supplier_name: supplierName,
+            status: status
         }).done(function(res) {
             if (res && res.success) {
-                updatePurchaseDisplayOnly(supplierName);
+                window.ktpUpdatePurchaseStatusSelects && window.ktpUpdatePurchaseStatusSelects(supplierName, status, res.data && res.data.records);
             }
         }).fail(function() {
-            updatePurchaseDisplayOnly(supplierName);
-        });
-    }
-
-    // 画面上の該当協力会社の仕入表示を「に発注」→「に発注済み」に更新
-    function updatePurchaseDisplayOnly(supplierName) {
-        $('.cost-items-table tbody tr').each(function() {
-            const $span = $(this).find('.purchase-display.purchase-link');
-            if (!$span.length) return;
-            const text = $span.text().trim();
-            const isOld = (text === supplierName + 'に発注');
-            const isNew = text.startsWith(supplierName + ' >') && text.endsWith('に発注');
-            if (isOld || isNew) {
-                $span.text(text.replace(/に発注$/, 'に発注済み')).attr('data-ordered', '1');
-                if ($(this).find('.purchase-checked').length === 0) {
-                    $span.after('<span class="purchase-checked" style="display:inline-block;margin-left:6px;vertical-align:middle;color:#dc3545;font-size:1.3em;font-weight:bold;">✓</span>');
-                }
-            }
+            window.ktpUpdatePurchaseStatusSelects && window.ktpUpdatePurchaseStatusSelects(supplierName, status);
         });
     }
 
@@ -650,9 +653,96 @@
             '</div>'
         );
         $('#ktp-purchase-order-email-error-close').on('click', function() {
-            $('#ktp-purchase-order-email-popup').remove();
+            closePurchaseOrderPopup(true);
         });
     }
+
+    // 発注書/見積依頼書をPDF印刷／保存する（ブラウザの印刷ダイアログで「PDFに保存」を選ぶ運用）。
+    // mode: 'order'(発注) または 'quote'(見積依頼)。onDone(success) は印刷ダイアログが閉じた後に呼ばれる。
+    window.ktpPrintPurchaseOrderDocument = function (orderId, supplierName, supplierId, mode, onDone) {
+        if (!orderId || !supplierName) {
+            alert(ktpwpTranslate('受注書IDまたは協力会社名が指定されていません。'));
+            if (typeof onDone === 'function') onDone(false);
+            return;
+        }
+        supplierId = supplierId || 0;
+        mode = (mode === 'quote') ? 'quote' : 'order';
+
+        let ajaxUrl = '';
+        if (typeof ajaxurl !== 'undefined') {
+            ajaxUrl = ajaxurl;
+        } else if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.ajax_url) {
+            ajaxUrl = ktp_ajax_object.ajax_url;
+        } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) {
+            ajaxUrl = ktpwp_ajax.ajax_url;
+        } else {
+            ajaxUrl = '/wp-admin/admin-ajax.php';
+        }
+
+        let nonce = '';
+        if (typeof ktpwp_ajax_nonce !== 'undefined') {
+            nonce = ktpwp_ajax_nonce;
+        } else if (typeof ktp_ajax_nonce !== 'undefined') {
+            nonce = ktp_ajax_nonce;
+        } else if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.nonce) {
+            nonce = ktp_ajax_object.nonce;
+        } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.general) {
+            nonce = ktpwp_ajax.nonces.general;
+        } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.auto_save) {
+            nonce = ktpwp_ajax.nonces.auto_save;
+        }
+
+        $.ajax({
+            url: ajaxUrl,
+            type: 'POST',
+            data: {
+                action: 'get_purchase_order_print_html',
+                order_id: orderId,
+                supplier_name: supplierName,
+                supplier_id: supplierId,
+                mode: mode,
+                nonce: nonce,
+                ktpwp_ajax_nonce: nonce
+            },
+            success: function (response) {
+                try {
+                    const result = typeof response === 'string' ? JSON.parse(response) : response;
+                    if (!result.success || !result.data || !result.data.html) {
+                        alert(ktpwpTranslate('印刷用データの取得に失敗しました: ') + (result.data && result.data.message ? result.data.message : ktpwpTranslate('不明なエラー')));
+                        if (typeof onDone === 'function') onDone(false);
+                        return;
+                    }
+                    if (typeof window.KTPPrintIframe === 'undefined' || typeof window.KTPPrintIframe.printHtmlInHiddenIframe !== 'function') {
+                        alert(ktpwpTranslate('印刷機能の読み込みに失敗しました。ページを再読み込みしてください。'));
+                        if (typeof onDone === 'function') onDone(false);
+                        return;
+                    }
+                    const started = window.KTPPrintIframe.printHtmlInHiddenIframe({
+                        html: result.data.html,
+                        filename: result.data.filename || (mode === 'quote' ? '見積依頼書' : '発注書'),
+                        printDelayMs: 300,
+                        fallbackCleanupMs: 30000,
+                        onCleanup: function () {
+                            if (typeof onDone === 'function') onDone(true);
+                        }
+                    });
+                    if (!started) {
+                        alert(ktpwpTranslate('印刷処理が既に実行中です。しばらく待ってから再度お試しください。'));
+                        if (typeof onDone === 'function') onDone(false);
+                    }
+                } catch (e) {
+                    console.error('[PURCHASE-ORDER-PDF] レスポンスパースエラー:', e, response);
+                    alert(ktpwpTranslate('印刷用データの処理中にエラーが発生しました。'));
+                    if (typeof onDone === 'function') onDone(false);
+                }
+            },
+            error: function (xhr, status, error) {
+                console.error('[PURCHASE-ORDER-PDF] Ajax エラー:', { xhr, status, error });
+                alert(ktpwpTranslate('印刷用データの取得中にエラーが発生しました。'));
+                if (typeof onDone === 'function') onDone(false);
+            }
+        });
+    };
 
     // 日付をフォーマット
     function formatDate(dateString) {

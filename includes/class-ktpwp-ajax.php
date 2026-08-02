@@ -179,6 +179,11 @@ class KTPWP_Ajax {
 		add_action( 'wp_ajax_nopriv_send_purchase_order_email', array( $this, 'ajax_require_login' ) );
 		$this->registered_handlers[] = 'send_purchase_order_email';
 
+		// 発注書/見積依頼書 印刷用HTML取得（PDF保存）
+		add_action( 'wp_ajax_get_purchase_order_print_html', array( $this, 'ajax_get_purchase_order_print_html' ) );
+		add_action( 'wp_ajax_nopriv_get_purchase_order_print_html', array( $this, 'ajax_require_login' ) );
+		$this->registered_handlers[] = 'get_purchase_order_print_html';
+
 		// 会社情報取得
 		add_action( 'wp_ajax_get_company_info', array( $this, 'ajax_get_company_info' ) );
 		add_action( 'wp_ajax_nopriv_get_company_info', array( $this, 'ajax_require_login' ) );
@@ -319,9 +324,9 @@ class KTPWP_Ajax {
         );
 		// ▲▲▲ 一括請求書「請求済」進捗変更Ajax ▲▲▲
 
-		// ▼▼▼ コスト項目「注文済」一括更新Ajax ▼▼▼
+		// ▼▼▼ コスト項目「仕入ステータス」一括更新Ajax（協力会社単位） ▼▼▼
 		add_action(
-            'wp_ajax_ktp_set_cost_items_ordered',
+            'wp_ajax_ktp_set_cost_items_purchase_status',
             function () {
 				// 権限チェック
 				if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
@@ -334,27 +339,83 @@ class KTPWP_Ajax {
 				global $wpdb;
 				$order_id = isset( $_POST['order_id'] ) ? intval( $_POST['order_id'] ) : 0;
 				$supplier_name = isset( $_POST['supplier_name'] ) ? sanitize_text_field( $_POST['supplier_name'] ) : '';
+				$status = isset( $_POST['status'] ) ? sanitize_key( $_POST['status'] ) : 'ordered';
 				if ( ! $order_id || ! $supplier_name ) {
 					wp_send_json_error( __( 'order_idまたはsupplier_nameが指定されていません', 'ktpwp' ) );
 				}
+				if ( class_exists( 'KTPWP_Order_Items' ) && ! array_key_exists( $status, KTPWP_Order_Items::get_purchase_status_options() ) ) {
+					wp_send_json_error( __( '無効な仕入ステータスです', 'ktpwp' ) );
+				}
+				if ( class_exists( 'KTPWP_Order_Items' ) ) {
+					KTPWP_Order_Items::get_instance()->add_purchase_status_column_if_missing();
+					KTPWP_Order_Items::get_instance()->add_purchase_status_date_column_if_missing();
+					KTPWP_Order_Items::get_instance()->add_purchase_status_dates_column_if_missing();
+				}
+				$ordered_flag = in_array( $status, array( 'ordered', 'completed' ), true ) ? 1 : 0;
+				// 未着手に戻したら日付をクリア、それ以外は本日の日付をステータス変更日として記録
+				$today = current_time( 'Y-m-d' );
+				$status_date = ( $status === 'pending' ) ? null : $today;
+				// ※ $wpdb->prepare() の %s に null を渡すと空文字列になりDATE型としては不正なため、SQL文自体を分岐する
+				$status_date_sql = ( $status_date === null ) ? 'NULL' : '%s';
 				$table_name = $wpdb->prefix . 'ktp_order_cost_items';
-				// 旧形式（purchase = 会社名）と新形式（purchase = 会社名 > サービス名）の両方を発注済みに更新
+				// 旧形式（purchase = 会社名）と新形式（purchase = 会社名 > サービス名）の両方を対象に更新
 				$like_pattern = $wpdb->esc_like( $supplier_name ) . ' > %';
-				$updated = $wpdb->query(
+
+				// 見積依頼／発注／仕入完了の日付履歴は行ごとに既存値が異なりうるため、行単位でマージして個別に更新する
+				$rows = $wpdb->get_results(
 					$wpdb->prepare(
-						"UPDATE `{$table_name}` SET ordered = 1 WHERE order_id = %d AND (purchase = %s OR purchase LIKE %s)",
+						"SELECT id, purchase_status_dates FROM `{$table_name}` WHERE order_id = %d AND (purchase = %s OR purchase LIKE %s)",
 						$order_id,
 						$supplier_name,
 						$like_pattern
 					)
 				);
-				if ( $updated === false ) {
-					wp_send_json_error( __( 'DB更新に失敗しました: ', 'ktpwp' ) . $wpdb->last_error );
+
+				$updated = 0;
+				$records = array();
+				foreach ( $rows as $row ) {
+					$history = class_exists( 'KTPWP_Order_Items' )
+						? KTPWP_Order_Items::merge_purchase_status_history( $row->purchase_status_dates, $status, $today )
+						: array();
+					$history_json = empty( $history ) ? null : wp_json_encode( $history );
+					$history_json_sql = ( $history_json === null ) ? 'NULL' : '%s';
+
+					$query_args = array( $status, $ordered_flag );
+					if ( $status_date !== null ) {
+						$query_args[] = $status_date;
+					}
+					if ( $history_json !== null ) {
+						$query_args[] = $history_json;
+					}
+					$query_args[] = current_time( 'mysql' );
+					$query_args[] = (int) $row->id;
+
+					$result = $wpdb->query(
+						$wpdb->prepare(
+							"UPDATE `{$table_name}` SET purchase_status = %s, ordered = %d, purchase_status_date = {$status_date_sql}, purchase_status_dates = {$history_json_sql}, updated_at = %s WHERE id = %d",
+							$query_args
+						)
+					);
+					if ( $result !== false ) {
+						++$updated;
+						$records[] = array(
+							'id'    => (int) $row->id,
+							'label' => class_exists( 'KTPWP_Order_Items' ) ? KTPWP_Order_Items::format_purchase_status_history_label( $history_json ) : '',
+						);
+					}
 				}
-				wp_send_json_success( array( 'updated' => $updated ) );
+
+				wp_send_json_success(
+					array(
+						'updated'     => $updated,
+						'status'      => $status,
+						'status_date' => $status_date,
+						'records'     => $records,
+					)
+				);
 			}
         );
-		// ▲▲▲ コスト項目「注文済」一括更新Ajax ▲▲▲
+		// ▲▲▲ コスト項目「仕入ステータス」一括更新Ajax ▲▲▲
 
 		// 受注書データ取得
 		add_action('wp_ajax_ktp_get_order_data', array($this, 'get_order_data'));
@@ -886,6 +947,7 @@ class KTPWP_Ajax {
 						'message' => __( '正常に保存されました', 'ktpwp' ),
 						'value_changed' => $result['value_changed'],
 						'profit' => $profit_payload,
+						'history_label' => isset( $result['history_label'] ) ? $result['history_label'] : null,
 					)
 				);
 			} else {
@@ -3236,6 +3298,8 @@ class KTPWP_Ajax {
 			$subject       = isset( $_POST['subject'] ) ? sanitize_text_field( $_POST['subject'] ) : '';
 			$body          = isset( $_POST['body'] ) ? sanitize_textarea_field( $_POST['body'] ) : '';
 			$supplier_name = isset( $_POST['supplier_name'] ) ? sanitize_text_field( $_POST['supplier_name'] ) : '';
+			$mode          = ( isset( $_POST['mode'] ) && $_POST['mode'] === 'quote' ) ? 'quote' : 'order';
+			$mail_log_type = ( $mode === 'quote' ) ? 'quote_request' : 'purchase_order';
 
 			if ( $order_id <= 0 ) {
 				throw new Exception( '無効な受注書IDです。' );
@@ -3354,7 +3418,7 @@ class KTPWP_Ajax {
 						'to',
 						$to,
 						$cc_list !== array() ? $cc_list : null,
-						'purchase_order',
+						$mail_log_type,
 						$supplier_name !== '' ? $supplier_name : null
 					);
 				}
@@ -3367,9 +3431,10 @@ class KTPWP_Ajax {
 				}
 				wp_send_json_success(
 					array(
-						'message'          => __( '発注書メールを送信しました。', 'ktpwp' ),
+						'message'          => ( $mode === 'quote' ) ? __( '見積依頼メールを送信しました。', 'ktpwp' ) : __( '発注書メールを送信しました。', 'ktpwp' ),
 						'to'               => $to,
 						'supplier_name'    => $supplier_name,
+						'mode'             => $mode,
 						'attachment_count' => count( $attachment_entries ),
 					)
 				);
@@ -3385,7 +3450,7 @@ class KTPWP_Ajax {
 						'to',
 						$to,
 						$cc_list !== array() ? $cc_list : null,
-						'purchase_order',
+						$mail_log_type,
 						$supplier_name !== '' ? $supplier_name : null
 					);
 				}
@@ -3417,6 +3482,226 @@ class KTPWP_Ajax {
 				)
 			);
 		}
+	}
+
+	/**
+	 * Ajax: 発注書/見積依頼書の印刷用HTMLを取得（ブラウザの印刷ダイアログでPDF保存する）
+	 *
+	 * @since 1.2.0
+	 */
+	public function ajax_get_purchase_order_print_html() {
+		if ( ! headers_sent() ) {
+			ob_start();
+		}
+		try {
+			if ( ! check_ajax_referer( 'ktpwp_ajax_nonce', 'nonce', false ) ) {
+				throw new Exception( 'セキュリティ検証に失敗しました。' );
+			}
+			if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
+				throw new Exception( '権限がありません。' );
+			}
+
+			$order_id      = isset( $_POST['order_id'] ) ? absint( $_POST['order_id'] ) : 0;
+			$supplier_id   = isset( $_POST['supplier_id'] ) ? absint( $_POST['supplier_id'] ) : 0;
+			$supplier_name = isset( $_POST['supplier_name'] ) ? trim( sanitize_text_field( wp_unslash( $_POST['supplier_name'] ) ) ) : '';
+			$mode          = ( isset( $_POST['mode'] ) && $_POST['mode'] === 'quote' ) ? 'quote' : 'order';
+
+			if ( $order_id <= 0 ) {
+				throw new Exception( '無効な受注書IDです。' );
+			}
+			if ( $supplier_id <= 0 && empty( $supplier_name ) ) {
+				throw new Exception( '協力会社名または協力会社IDが指定されていません。' );
+			}
+
+			global $wpdb;
+
+			$order_table = $wpdb->prefix . 'ktp_order';
+			$order = $wpdb->get_row(
+				$wpdb->prepare( "SELECT * FROM `{$order_table}` WHERE id = %d", $order_id )
+			);
+			if ( ! $order ) {
+				throw new Exception( '受注書が見つかりません。' );
+			}
+
+			$supplier_table = $wpdb->prefix . 'ktp_supplier';
+			$supplier = null;
+			if ( $supplier_id > 0 ) {
+				$supplier = $wpdb->get_row(
+					$wpdb->prepare( "SELECT * FROM `{$supplier_table}` WHERE id = %d", $supplier_id )
+				);
+			}
+			if ( ! $supplier && ! empty( $supplier_name ) ) {
+				$supplier = $wpdb->get_row(
+					$wpdb->prepare( "SELECT * FROM `{$supplier_table}` WHERE TRIM(company_name) = %s", $supplier_name )
+				);
+			}
+			if ( ! $supplier ) {
+				throw new Exception( '協力会社が見つかりません。' );
+			}
+			$supplier_name = $supplier->company_name;
+
+			$order_items = KTPWP_Order_Items::get_instance();
+			$cost_items  = $order_items->get_cost_items( $order_id );
+
+			$filtered_cost_items = array();
+			foreach ( $cost_items as $item ) {
+				$item_purchase = isset( $item['purchase'] ) ? $item['purchase'] : '';
+				if ( $item_purchase === $supplier_name ) {
+					$filtered_cost_items[] = $item;
+				}
+			}
+
+			$my_company = '';
+			if ( class_exists( 'KTPWP_Settings' ) ) {
+				$my_company = KTPWP_Settings::get_company_info();
+			}
+
+			$doc_title = ( $mode === 'quote' ) ? __( '見積依頼書', 'ktpwp' ) : __( '発注書', 'ktpwp' );
+			$html      = $this->build_purchase_order_print_html( $doc_title, $order, $supplier, $filtered_cost_items, $my_company );
+			$filename  = $doc_title . '_' . $order_id . '_' . sanitize_file_name( $supplier_name );
+
+			if ( ob_get_level() ) {
+				ob_end_clean();
+			}
+			wp_send_json_success(
+				array(
+					'html'     => $html,
+					'filename' => $filename,
+				)
+			);
+		} catch ( Exception $e ) {
+			error_log( 'KTPWP Ajax get_purchase_order_print_html Error: ' . $e->getMessage() );
+			if ( ob_get_level() ) {
+				ob_end_clean();
+			}
+			wp_send_json_error(
+				array(
+					'message' => $e->getMessage(),
+				)
+			);
+		}
+	}
+
+	/**
+	 * 発注書/見積依頼書の印刷用HTMLドキュメントを組み立てる
+	 *
+	 * @since 1.2.0
+	 * @param string $doc_title   帳票タイトル（発注書／見積依頼書）
+	 * @param object $order       ktp_order 行
+	 * @param object $supplier    ktp_supplier 行
+	 * @param array  $cost_items  対象協力会社に絞り込んだコスト項目
+	 * @param string $my_company  自社情報（テキスト）
+	 * @return string
+	 */
+	private function build_purchase_order_print_html( $doc_title, $order, $supplier, $cost_items, $my_company ) {
+		$total_amount     = 0;
+		$total_tax_amount = 0;
+		$rows_html        = '';
+
+		foreach ( $cost_items as $item ) {
+			$product_name = isset( $item['product_name'] ) ? $item['product_name'] : '';
+			$price        = floatval( isset( $item['price'] ) ? $item['price'] : 0 );
+			$quantity     = floatval( isset( $item['quantity'] ) ? $item['quantity'] : 0 );
+			$unit         = isset( $item['unit'] ) ? $item['unit'] : '';
+			$amount       = floatval( isset( $item['amount'] ) ? $item['amount'] : 0 );
+			$tax_rate_raw = isset( $item['tax_rate'] ) ? $item['tax_rate'] : null;
+			if ( class_exists( 'KTPWP_Tax_Policy' ) ) {
+				$tax_rate = KTPWP_Tax_Policy::get_effective_rate( $tax_rate_raw );
+				if ( $tax_rate === null ) {
+					$tax_rate = 0.0;
+				}
+			} else {
+				$tax_rate = ( $tax_rate_raw !== null && $tax_rate_raw !== '' ) ? floatval( $tax_rate_raw ) : 0.0;
+			}
+			$tax_category = isset( $item['tax_category'] ) ? $item['tax_category'] : '内税';
+			$remarks      = isset( $item['remarks'] ) ? $item['remarks'] : '';
+
+			$tax_amount = 0;
+			if ( $tax_rate > 0 ) {
+				if ( $tax_category === '外税' ) {
+					$tax_amount = ceil( $amount * ( $tax_rate / 100 ) );
+				} else {
+					$tax_amount = ceil( $amount * ( $tax_rate / 100 ) / ( 1 + $tax_rate / 100 ) );
+				}
+			}
+			$total_amount     += $amount;
+			$total_tax_amount += $tax_amount;
+
+			$rows_html .= '<tr>';
+			$rows_html .= '<td>' . esc_html( $product_name ) . '</td>';
+			$rows_html .= '<td class="num">' . esc_html( KTPWP_Settings::format_money( $price ) ) . '</td>';
+			$rows_html .= '<td class="num">' . esc_html( $quantity ) . esc_html( $unit ) . '</td>';
+			$rows_html .= '<td class="num">' . esc_html( KTPWP_Settings::format_money( $amount ) ) . '</td>';
+			$rows_html .= '<td class="num">' . ( $tax_rate > 0 ? esc_html( $tax_rate ) . '%' : '-' ) . '</td>';
+			$rows_html .= '<td>' . esc_html( $remarks ) . '</td>';
+			$rows_html .= '</tr>';
+		}
+
+		$total_with_tax = $total_amount + $total_tax_amount;
+		$today          = date_i18n( 'Y年n月j日' );
+
+		$supplier_address = trim(
+			( isset( $supplier->prefecture ) ? $supplier->prefecture : '' ) .
+			( isset( $supplier->city ) ? $supplier->city : '' ) .
+			( isset( $supplier->address ) ? $supplier->address : '' ) .
+			( isset( $supplier->building ) ? $supplier->building : '' )
+		);
+
+		$html  = '<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><title>' . esc_html( $doc_title ) . '</title>';
+		$html .= '<style>
+			@page { size: A4 portrait; margin: 15mm; }
+			body { font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif; color: #222; margin: 0; padding: 0; }
+			.doc-title { text-align: center; font-size: 24px; font-weight: bold; letter-spacing: 0.3em; margin: 0 0 24px; }
+			.doc-header { display: flex; justify-content: space-between; margin-bottom: 24px; }
+			.doc-header .to { font-size: 15px; }
+			.doc-header .to .company { font-size: 16px; font-weight: bold; border-bottom: 1px solid #333; padding-bottom: 4px; display: inline-block; min-width: 220px; }
+			.doc-header .meta { text-align: right; font-size: 12px; color: #444; }
+			.doc-header .from { margin-top: 16px; font-size: 12px; white-space: pre-line; }
+			table.items { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 12px; }
+			table.items th, table.items td { border: 1px solid #999; padding: 6px 8px; }
+			table.items th { background: #f0f0f0; }
+			table.items td.num { text-align: right; }
+			.totals { margin-top: 12px; text-align: right; font-size: 13px; }
+			.totals .grand { font-size: 16px; font-weight: bold; }
+		</style></head><body>';
+
+		$html .= '<div class="doc-title">' . esc_html( $doc_title ) . '</div>';
+		$html .= '<div class="doc-header">';
+		$html .= '<div class="to">';
+		$html .= '<div class="company">' . esc_html( $supplier->company_name ) . ' 御中</div><br>';
+		if ( ! empty( $supplier->name ) ) {
+			$html .= '<div>' . esc_html( $supplier->name ) . ' 様</div>';
+		}
+		$html .= '<div class="from">' . esc_html( $my_company ) . '</div>';
+		$html .= '</div>';
+		$html .= '<div class="meta">';
+		$html .= esc_html( $today ) . '<br>';
+		$html .= esc_html__( '案件', 'ktpwp' ) . '：' . esc_html( isset( $order->project_name ) ? $order->project_name : '' ) . '<br>';
+		$html .= esc_html__( '受注書ID', 'ktpwp' ) . '：' . esc_html( $order->id );
+		if ( $supplier_address !== '' ) {
+			$html .= '<br>' . esc_html( $supplier_address );
+		}
+		$html .= '</div>';
+		$html .= '</div>';
+
+		$html .= '<table class="items"><thead><tr>';
+		$html .= '<th>' . esc_html__( '品目', 'ktpwp' ) . '</th>';
+		$html .= '<th>' . esc_html__( '単価', 'ktpwp' ) . '</th>';
+		$html .= '<th>' . esc_html__( '数量', 'ktpwp' ) . '</th>';
+		$html .= '<th>' . esc_html__( '金額', 'ktpwp' ) . '</th>';
+		$html .= '<th>' . esc_html__( '税率', 'ktpwp' ) . '</th>';
+		$html .= '<th>' . esc_html__( '備考', 'ktpwp' ) . '</th>';
+		$html .= '</tr></thead><tbody>' . $rows_html . '</tbody></table>';
+
+		$html .= '<div class="totals">';
+		$html .= '<div>' . esc_html__( '金額合計', 'ktpwp' ) . '：' . esc_html( KTPWP_Settings::format_money( $total_amount ) ) . '</div>';
+		$html .= '<div>' . esc_html__( '消費税額', 'ktpwp' ) . '：' . esc_html( KTPWP_Settings::format_money( $total_tax_amount ) ) . '</div>';
+		$html .= '<div class="grand">' . esc_html__( '合計', 'ktpwp' ) . '：' . esc_html( KTPWP_Settings::format_money( $total_with_tax ) ) . '</div>';
+		$html .= '</div>';
+
+		$html .= '</body></html>';
+
+		return $html;
 	}
 
 	/**
@@ -5987,6 +6272,7 @@ class KTPWP_Ajax {
 			$order_id     = isset( $_POST['order_id'] ) ? absint( $_POST['order_id'] ) : 0;
 			$supplier_id  = isset( $_POST['supplier_id'] ) ? absint( $_POST['supplier_id'] ) : 0;
 			$supplier_name = isset( $_POST['supplier_name'] ) ? trim( sanitize_text_field( wp_unslash( $_POST['supplier_name'] ) ) ) : '';
+			$mode         = ( isset( $_POST['mode'] ) && $_POST['mode'] === 'quote' ) ? 'quote' : 'order';
 
 			if ( $order_id <= 0 ) {
 				throw new Exception( '無効な受注書IDです。' );
@@ -6133,8 +6419,10 @@ class KTPWP_Ajax {
 				}
 			}
 
-			// 発注書メール内容を生成
-			$subject = '【発注書】受注書ID:' . $order_id . 'の件';
+			// 発注書/見積依頼書メール内容を生成
+			$subject = ( $mode === 'quote' )
+				? '【見積依頼】受注書ID:' . $order_id . 'の件'
+				: '【発注書】受注書ID:' . $order_id . 'の件';
 
 			// メール本文を生成
 			$body = $this->generate_purchase_order_email_body(
@@ -6146,7 +6434,8 @@ class KTPWP_Ajax {
 				$total_amount,
 				$total_tax_amount,
 				$qualified_invoice_cost,
-				$non_qualified_invoice_cost
+				$non_qualified_invoice_cost,
+				$mode
 			);
 
 			if ( ob_get_level() ) {
@@ -6191,7 +6480,8 @@ class KTPWP_Ajax {
 	/**
 	 * 発注書メール本文を生成
 	 */
-	private function generate_purchase_order_email_body( $order, $supplier, $client, $cost_items, $my_company, $total_amount, $total_tax_amount, $qualified_invoice_cost, $non_qualified_invoice_cost ) {
+	private function generate_purchase_order_email_body( $order, $supplier, $client, $cost_items, $my_company, $total_amount, $total_tax_amount, $qualified_invoice_cost, $non_qualified_invoice_cost, $mode = 'order' ) {
+		$is_quote = ( $mode === 'quote' );
 		$body = '';
 
 		// 協力会社情報
@@ -6205,10 +6495,14 @@ class KTPWP_Ajax {
 
 		// 挨拶文
 		$body .= "いつもお世話になっています。\n";
-		$body .= "以下のように発注します。納期が決まりましたらご連絡ください。\n\n";
+		if ( $is_quote ) {
+			$body .= "下記の内容でお見積りをお願いいたします。ご確認のほど、よろしくお願いいたします。\n\n";
+		} else {
+			$body .= "以下のように発注します。納期が決まりましたらご連絡ください。\n\n";
+		}
 
-		// 発注内容
-		$body .= "【発注内容】\n";
+		// 発注/見積依頼内容
+		$body .= $is_quote ? "【見積依頼内容】\n" : "【発注内容】\n";
 		$body .= str_repeat( '-', 60 ) . "\n";
 
 		$max_length = 0;

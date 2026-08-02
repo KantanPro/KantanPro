@@ -367,7 +367,7 @@ class KTPWP_Assets {
             ),
             'ktp-purchase-order-email' => array(
                 'src'       => 'js/ktp-purchase-order-email.js',
-                'deps'      => array( 'jquery', 'ktp-cost-items', 'ktp-email-attachment-warnings' ),
+                'deps'      => array( 'jquery', 'ktp-cost-items', 'ktp-email-attachment-warnings', 'ktp-print-iframe' ),
                 'ver'       => KTPWP_PLUGIN_VERSION,
                 'in_footer' => true,
                 'admin'     => false,
