@@ -3,7 +3,7 @@
  * Plugin Name: KantanPro
  * Plugin URI: https://www.kantanpro.com/
  * Description: スモールビジネスのための販売支援ツール。ショートコード[ktpwp_all_tab]を固定ページに設置してください。
- * Version: 1.3.20
+ * Version: 1.3.21
  * Author: KantanPro
  * Author URI: https://www.kantanpro.com/kantanpro-page
  * License: GPL v2 or later
@@ -4607,7 +4607,30 @@ function KTPWP_Index() {
                 $navigation_links = KTPWP_SVG_Icons::replace_material_symbols($navigation_links);
             }
             
-            $front_message = '<div class="ktp_header">'
+            // KantanProロゴヘッダーの上にバナーを表示する（有料版では非表示）。
+            // KTPWP_Shortcodes::render_all_tabs() と同じ優先順位で解決する。
+            $ktp_before_header_banner = '';
+            $ktp_hide_banner = function_exists( 'ktpwp_should_hide_ktp_banner' ) && ktpwp_should_hide_ktp_banner();
+            if ( ! $ktp_hide_banner ) {
+                ob_start();
+                do_action( 'ktpwp_between_pagination_footer' );
+                $ktp_before_header_banner = ob_get_clean();
+
+                if ( empty( $ktp_before_header_banner ) && shortcode_exists( 'ktp_banner' ) ) {
+                    $ktp_before_header_banner = do_shortcode( '[ktp_banner]' );
+                }
+                if ( empty( $ktp_before_header_banner ) && class_exists( 'KTPWP_Shortcodes' ) ) {
+                    $ktp_before_header_banner = KTPWP_Shortcodes::get_instance()->get_banner_fallback_html_after_hooks();
+                }
+            }
+            $front_message = '';
+            if ( ! empty( $ktp_before_header_banner ) ) {
+                $front_message .= '<div class="ktp-before-header-banner" style="width:100%;max-width:100%;margin:0;text-align:center;box-sizing:border-box;">'
+                    . wp_kses_post( $ktp_before_header_banner )
+                    . '</div>';
+            }
+
+            $front_message .= '<div class="ktp_header">'
                 . '<div class="parent">'
                 . '<div class="logo-and-system-info">'
                 . '<button type="button" class="ktp-header-plugin-reload" title="' . esc_attr__( 'リロード', 'ktpwp' ) . '" aria-label="' . esc_attr__( 'リロード', 'ktpwp' ) . '" onclick="window.location.reload();">'

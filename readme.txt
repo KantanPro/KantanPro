@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.3.20
+Stable tag: 1.3.21
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -322,6 +322,9 @@ curl -sS -X POST \
 * MySQL 5.6 以上 または MariaDB 10.0 以上
 * 推奨メモリ: 256MB 以上
 * 推奨PHP拡張: GD（画像処理用）
+
+= 1.3.21 - 2026年08月03日 =
+* 真の原因を特定して修正：実際のショートコード（[ktpwp_all_tab]等）は、バナー機能を持たない旧来の手続き型関数（ktpwp.phpのkantanAllTab、plugins_loadedフックで先に登録される）で処理されており、これまでのclass-ktpwp-shortcodes.php側の修正が反映されない状態だった。この実際に使われている関数にバナー挿入処理を追加
 
 = 1.3.20 - 2026年08月03日 =
 * 調査用の暫定デバッグ出力を削除（原因は2026年6月17日のEX solo統合マージで復活していた回帰バグと特定し、v1.3.17で修正済み）
