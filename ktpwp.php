@@ -3,7 +3,7 @@
  * Plugin Name: KantanPro
  * Plugin URI: https://www.kantanpro.com/
  * Description: スモールビジネスのための販売支援ツール。ショートコード[ktpwp_all_tab]を固定ページに設置してください。
- * Version: 1.3.22
+ * Version: 1.3.23
  * Author: KantanPro
  * Author URI: https://www.kantanpro.com/kantanpro-page
  * License: GPL v2 or later
@@ -4628,6 +4628,10 @@ function KTPWP_Index() {
                 $front_message .= '<div class="ktp-before-header-banner" style="width:100%;max-width:100%;margin:0;text-align:center;box-sizing:border-box;">'
                     . wp_kses_post( $ktp_before_header_banner )
                     . '</div>';
+                // ローテーション表示用CSS/JSは wp_kses_post が <style>/<script> を除去するため、別出力する。
+                if ( class_exists( 'KTPWP_Shortcodes' ) ) {
+                    $front_message .= KTPWP_Shortcodes::get_instance()->get_and_clear_pending_banner_assets();
+                }
             }
 
             $front_message .= '<div class="ktp_header">'

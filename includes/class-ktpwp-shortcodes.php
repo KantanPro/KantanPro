@@ -153,6 +153,8 @@ class KTPWP_Shortcodes {
                     echo '<div class="ktp-before-header-banner" style="width:100%;max-width:100%;margin:0;text-align:center;box-sizing:border-box;">';
                     echo wp_kses_post( $before_header_content );
                     echo '</div>';
+                    // ローテーション表示用CSS/JSは wp_kses_post が <style>/<script> を除去するため、別出力する。
+                    echo $this->get_and_clear_pending_banner_assets(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- 固定の自前CSS/JSのみ
                 }
             }
 
@@ -226,14 +228,35 @@ class KTPWP_Shortcodes {
     }
 
     /**
-     * 複数バナーのローテーション表示HTMLを生成する（インラインCSS/JS同梱、単発出力）。
+     * ローテーション表示用のCSS/JS（wp_kses_postで除去されないよう、
+     * バナー本体マークアップとは別に保持し、呼び出し側が生出力する）。
+     *
+     * @var string
+     */
+    private static $pending_rotator_assets = '';
+
+    /**
+     * ローテーション表示用CSS/JSを取得し、内部の保留分をクリアする。
+     * wp_kses_post() は <style>/<script> を除去してしまうため、
+     * バナー本体（kses対象）とは別に、この戻り値は必ずkses非経由で出力すること。
+     *
+     * @return string
+     */
+    public function get_and_clear_pending_banner_assets() {
+        $assets = self::$pending_rotator_assets;
+        self::$pending_rotator_assets = '';
+        return $assets;
+    }
+
+    /**
+     * 複数バナーのローテーション表示HTMLを生成する（CSS/JSは別途 get_and_clear_pending_banner_assets() で取得）。
      *
      * @param array $banners           バナー配列（image_url/link_url/alt_text）
      * @param int   $rotation_interval ローテーション間隔（秒）
      * @return string
      */
     private function build_banner_rotator_html( $banners, $rotation_interval ) {
-        static $assets_printed = false;
+        static $assets_prepared = false;
 
         $items = '';
         foreach ( $banners as $index => $banner ) {
@@ -258,14 +281,14 @@ class KTPWP_Shortcodes {
 
         $html = '<div class="ktp-banner-rotator" data-interval="' . (int) $rotation_interval . '" style="position:relative;width:100%;max-width:100%;box-sizing:border-box;overflow:hidden;">' . $items . '</div>';
 
-        if ( ! $assets_printed ) {
-            $assets_printed = true;
-            $html .= '<style>'
+        if ( ! $assets_prepared ) {
+            $assets_prepared = true;
+            $assets = '<style>'
                 . '.ktp-banner-rotator-item{width:100%;max-width:100%;box-sizing:border-box;transition:opacity .5s ease;}'
                 . '.ktp-banner-rotator-item:not(.is-active){position:absolute;top:0;left:0;opacity:0;visibility:hidden;pointer-events:none;}'
                 . '.ktp-banner-rotator-item.is-active{position:relative;opacity:1;visibility:visible;pointer-events:auto;}'
                 . '</style>';
-            $html .= '<script>(function(){'
+            $assets .= '<script>(function(){'
                 . 'function initRotator(el){'
                 . 'var items=el.querySelectorAll(".ktp-banner-rotator-item");'
                 . 'if(items.length<2){return;}'
@@ -280,6 +303,7 @@ class KTPWP_Shortcodes {
                 . '}'
                 . 'document.querySelectorAll(".ktp-banner-rotator").forEach(initRotator);'
                 . '})();</script>';
+            self::$pending_rotator_assets = $assets;
         }
 
         return $html;
