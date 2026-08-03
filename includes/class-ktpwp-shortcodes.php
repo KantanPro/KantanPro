@@ -154,6 +154,12 @@ class KTPWP_Shortcodes {
                     echo wp_kses_post( $before_header_content );
                     echo '</div>';
                 }
+
+                // 原因調査用の暫定デバッグ出力（管理者にのみHTMLコメントで表示、原因判明後に削除すること）
+                if ( current_user_can( 'manage_options' ) ) {
+                    $debug_info = get_transient( 'ktp_central_banner_debug_last' );
+                    echo "\n<!-- KTP_CENTRAL_BANNER_DEBUG: " . esc_html( $debug_info ? $debug_info : 'no fetch attempt recorded (cache hit or not reached)' ) . " -->\n";
+                }
             }
 
             echo $header_content . $tab_content; // バッファに出力
@@ -328,19 +334,24 @@ class KTPWP_Shortcodes {
             )
         );
         if ( is_wp_error( $response ) ) {
+            $this->set_central_banner_debug_info( 'wp_error: ' . $response->get_error_message() );
             return array();
         }
 
         $status_code = wp_remote_retrieve_response_code( $response );
         $body        = wp_remote_retrieve_body( $response );
         if ( 200 !== (int) $status_code || '' === $body ) {
+            $this->set_central_banner_debug_info( 'bad_response: status=' . $status_code . ' body_len=' . strlen( (string) $body ) );
             return array();
         }
 
         $json = json_decode( $body, true );
         if ( ! is_array( $json ) ) {
+            $this->set_central_banner_debug_info( 'json_decode_failed: body=' . substr( (string) $body, 0, 200 ) );
             return array();
         }
+
+        $this->set_central_banner_debug_info( 'success: status=' . $status_code );
 
         $image_raw    = isset( $json['image_url'] ) ? esc_url_raw( $json['image_url'] ) : '';
         $has_image    = '' !== $image_raw;
@@ -359,6 +370,17 @@ class KTPWP_Shortcodes {
         set_transient( $cache_key, $normalized, 5 * MINUTE_IN_SECONDS );
 
         return $normalized;
+    }
+
+    /**
+     * 中央バナー取得の診断情報を一時的に記録する（管理者向けデバッグ用、60秒で失効）。
+     * 原因調査用の暫定コードのため、原因判明後に削除すること。
+     *
+     * @param string $message 診断メッセージ
+     * @return void
+     */
+    private function set_central_banner_debug_info( $message ) {
+        set_transient( 'ktp_central_banner_debug_last', $message . ' @ ' . current_time( 'mysql' ), 60 );
     }
 
     /**
