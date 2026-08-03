@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.3.23
+Stable tag: 1.3.24
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -322,6 +322,9 @@ curl -sS -X POST \
 * MySQL 5.6 以上 または MariaDB 10.0 以上
 * 推奨メモリ: 256MB 以上
 * 推奨PHP拡張: GD（画像処理用）
+
+= 1.3.24 - 2026年08月03日 =
+* ローテーション表示のCSS/JSが一部サイト（WP-Optimize等の「インラインCSS/JS結合」機能を持つプラグイン導入環境）で除去され、バナーが縦に2段表示されてしまう不具合を修正。本文中への直接出力をやめ、WordPress標準のenqueue API（wp_add_inline_style/wp_add_inline_script）経由で読み込むよう変更
 
 = 1.3.23 - 2026年08月03日 =
 * ローテーション表示時、wp_kses_post()が<style>/<script>タグを除去しCSS/JSがそのままテキスト表示されてしまう不具合を修正。CSS/JSはkses処理を経由せず別出力するよう分離
