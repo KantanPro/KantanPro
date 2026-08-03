@@ -243,9 +243,10 @@ class KTPWP_Shortcodes {
         }
 
         // 2) ローカルに画像があれば（配布先個別・配布元の直接保存）
+        // 画像が設定済みなら、無料版の広告仕様として enabled チェックの状態に関わらず表示する。
         if ( ! empty( $options['image_url'] ) ) {
             return array(
-                'enabled'      => ! empty( $options['enabled'] ) ? 1 : 0,
+                'enabled'      => 1,
                 'image_url'    => $options['image_url'],
                 'link_url'     => isset( $options['link_url'] ) ? $options['link_url'] : '',
                 'alt_text'     => isset( $options['alt_text'] ) ? $options['alt_text'] : '',
@@ -289,9 +290,8 @@ class KTPWP_Shortcodes {
         if ( ! apply_filters( 'kantanpro_auto_fetch_official_central_banner', true ) ) {
             return false;
         }
-        if ( isset( $options['enabled'] ) && (int) $options['enabled'] === 0 ) {
-            return false;
-        }
+        // 無料版の広告バナーは配布先の管理画面設定に関わらず表示する仕様のため、
+        // ローカルの ktp_central_banner_settings[enabled] による無効化は無視する。
         return true;
     }
 
