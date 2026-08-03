@@ -202,6 +202,12 @@ class KTPWP_Shortcodes {
             return '';
         }
 
+        $banners = ! empty( $options['banners'] ) && is_array( $options['banners'] ) ? $options['banners'] : array();
+        if ( count( $banners ) > 1 ) {
+            $rotation_interval = isset( $options['rotation_interval'] ) ? max( 2, min( 60, (int) $options['rotation_interval'] ) ) : 5;
+            return $this->build_banner_rotator_html( $banners, $rotation_interval );
+        }
+
         $image_url = isset( $options['image_url'] ) ? esc_url( $options['image_url'] ) : '';
         if ( '' === $image_url ) {
             return '';
@@ -217,6 +223,66 @@ class KTPWP_Shortcodes {
         }
 
         return '<div class="ktp-banner ktp-banner-fallback" style="width:100%;max-width:100%;box-sizing:border-box;">' . $image_tag . '</div>';
+    }
+
+    /**
+     * 複数バナーのローテーション表示HTMLを生成する（インラインCSS/JS同梱、単発出力）。
+     *
+     * @param array $banners           バナー配列（image_url/link_url/alt_text）
+     * @param int   $rotation_interval ローテーション間隔（秒）
+     * @return string
+     */
+    private function build_banner_rotator_html( $banners, $rotation_interval ) {
+        static $assets_printed = false;
+
+        $items = '';
+        foreach ( $banners as $index => $banner ) {
+            $image_url = isset( $banner['image_url'] ) ? esc_url( $banner['image_url'] ) : '';
+            if ( '' === $image_url ) {
+                continue;
+            }
+            $link_url  = isset( $banner['link_url'] ) ? esc_url( $banner['link_url'] ) : '';
+            $alt_text  = isset( $banner['alt_text'] ) ? esc_attr( $banner['alt_text'] ) : '';
+            $item_class = 'ktp-banner-rotator-item' . ( 0 === $index ? ' is-active' : '' );
+
+            $image_tag = '<img src="' . $image_url . '" alt="' . $alt_text . '" style="width:100%;max-width:100%;height:auto;display:block;vertical-align:top;" />';
+            if ( '' !== $link_url ) {
+                $image_tag = '<a href="' . $link_url . '" target="_blank" rel="noopener noreferrer" style="display:block;width:100%;line-height:0;">' . $image_tag . '</a>';
+            }
+            $items .= '<div class="' . $item_class . '">' . $image_tag . '</div>';
+        }
+
+        if ( '' === $items ) {
+            return '';
+        }
+
+        $html = '<div class="ktp-banner-rotator" data-interval="' . (int) $rotation_interval . '" style="position:relative;width:100%;max-width:100%;box-sizing:border-box;overflow:hidden;">' . $items . '</div>';
+
+        if ( ! $assets_printed ) {
+            $assets_printed = true;
+            $html .= '<style>'
+                . '.ktp-banner-rotator-item{width:100%;max-width:100%;box-sizing:border-box;transition:opacity .5s ease;}'
+                . '.ktp-banner-rotator-item:not(.is-active){position:absolute;top:0;left:0;opacity:0;visibility:hidden;pointer-events:none;}'
+                . '.ktp-banner-rotator-item.is-active{position:relative;opacity:1;visibility:visible;pointer-events:auto;}'
+                . '</style>';
+            $html .= '<script>(function(){'
+                . 'function initRotator(el){'
+                . 'var items=el.querySelectorAll(".ktp-banner-rotator-item");'
+                . 'if(items.length<2){return;}'
+                . 'var interval=parseInt(el.getAttribute("data-interval"),10);'
+                . 'if(!isFinite(interval)||interval<2){interval=5;}'
+                . 'var i=0;'
+                . 'setInterval(function(){'
+                . 'items[i].classList.remove("is-active");'
+                . 'i=(i+1)%items.length;'
+                . 'items[i].classList.add("is-active");'
+                . '},interval*1000);'
+                . '}'
+                . 'document.querySelectorAll(".ktp-banner-rotator").forEach(initRotator);'
+                . '})();</script>';
+        }
+
+        return $html;
     }
 
     /**
@@ -347,12 +413,31 @@ class KTPWP_Shortcodes {
         // 配信JSONで enabled が false でも image_url があれば表示する（REST・キャッシュの不整合対策）
         $enabled_flag = ( ! empty( $json['enabled'] ) || $has_image ) ? 1 : 0;
 
+        // 複数バナー（ローテーション表示用）
+        $banners = array();
+        if ( ! empty( $json['banners'] ) && is_array( $json['banners'] ) ) {
+            foreach ( $json['banners'] as $banner_item ) {
+                if ( ! is_array( $banner_item ) || empty( $banner_item['image_url'] ) ) {
+                    continue;
+                }
+                $banners[] = array(
+                    'image_url' => esc_url_raw( $banner_item['image_url'] ),
+                    'link_url'  => isset( $banner_item['link_url'] ) ? esc_url_raw( $banner_item['link_url'] ) : '',
+                    'alt_text'  => isset( $banner_item['alt_text'] ) ? sanitize_text_field( $banner_item['alt_text'] ) : '',
+                );
+            }
+        }
+        $rotation_interval = isset( $json['rotation_interval'] ) ? absint( $json['rotation_interval'] ) : 5;
+        $rotation_interval = max( 2, min( 60, $rotation_interval ) );
+
         $normalized = array(
-            'enabled'      => $enabled_flag,
-            'image_url'    => $image_raw,
-            'link_url'     => isset( $json['link_url'] ) ? esc_url_raw( $json['link_url'] ) : '',
-            'alt_text'     => isset( $json['alt_text'] ) ? sanitize_text_field( $json['alt_text'] ) : '',
-            'open_new_tab' => 1,
+            'enabled'           => $enabled_flag,
+            'image_url'         => $image_raw,
+            'link_url'          => isset( $json['link_url'] ) ? esc_url_raw( $json['link_url'] ) : '',
+            'alt_text'          => isset( $json['alt_text'] ) ? sanitize_text_field( $json['alt_text'] ) : '',
+            'open_new_tab'      => 1,
+            'banners'           => $banners,
+            'rotation_interval' => $rotation_interval,
         );
 
         // 短時間キャッシュして配布先へのHTTP負荷を抑える
