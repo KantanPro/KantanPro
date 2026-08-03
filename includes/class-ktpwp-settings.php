@@ -6413,10 +6413,27 @@ define( 'WP_DEBUG_DISPLAY', false );
 
         // EX 本体では広告バナーを表示しないが、配布先 KantanPro 向けの API 配信は許可する。
         // 公式サイト側に KTP Banner がある場合は、その設定を優先して配信する。
-        if ( is_array( $legacy_banner ) && ! empty( $legacy_banner['enabled'] ) && ! empty( $legacy_banner['image_url'] ) ) {
-            $image_url = esc_url_raw( $legacy_banner['image_url'] );
-            $link_url  = isset( $legacy_banner['link_url'] ) ? esc_url_raw( $legacy_banner['link_url'] ) : '';
-            $alt_text  = isset( $legacy_banner['alt_text'] ) ? sanitize_text_field( $legacy_banner['alt_text'] ) : '';
+        // KTP Banner プラグインは複数バナー形式（banners配列）に移行済みのため、
+        // 旧フラット形式（image_url直下）と新形式（banners[].image_url）の両方に対応する。
+        $legacy_active_banner = array();
+        if ( is_array( $legacy_banner ) && ! empty( $legacy_banner['enabled'] ) ) {
+            if ( ! empty( $legacy_banner['banners'] ) && is_array( $legacy_banner['banners'] ) ) {
+                foreach ( $legacy_banner['banners'] as $banner_item ) {
+                    if ( ! is_array( $banner_item ) || empty( $banner_item['enabled'] ) || empty( $banner_item['image_url'] ) ) {
+                        continue;
+                    }
+                    $legacy_active_banner = $banner_item;
+                    break;
+                }
+            } elseif ( ! empty( $legacy_banner['image_url'] ) ) {
+                $legacy_active_banner = $legacy_banner;
+            }
+        }
+
+        if ( ! empty( $legacy_active_banner['image_url'] ) ) {
+            $image_url = esc_url_raw( $legacy_active_banner['image_url'] );
+            $link_url  = isset( $legacy_active_banner['link_url'] ) ? esc_url_raw( $legacy_active_banner['link_url'] ) : '';
+            $alt_text  = isset( $legacy_active_banner['alt_text'] ) ? sanitize_text_field( $legacy_active_banner['alt_text'] ) : '';
         } elseif ( ! empty( $settings['enabled'] ) && ! empty( $settings['image_url'] ) ) {
             $image_url = esc_url_raw( $settings['image_url'] );
             $link_url  = isset( $settings['link_url'] ) ? esc_url_raw( $settings['link_url'] ) : '';

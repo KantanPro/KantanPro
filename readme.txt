@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.3.15
+Stable tag: 1.3.16
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -322,6 +322,9 @@ curl -sS -X POST \
 * MySQL 5.6 以上 または MariaDB 10.0 以上
 * 推奨メモリ: 256MB 以上
 * 推奨PHP拡張: GD（画像処理用）
+
+= 1.3.16 - 2026年08月03日 =
+* 中央バナー配信APIが、KTP Bannerプラグインの複数バナー形式（banners配列）に対応しておらず、公式サイトで登録したバナーが配信されない不具合を修正
 
 = 1.3.15 - 2026年08月02日 =
 * 受注テーブルの初期作成定義に、完了日・締め日・支払情報・納期ステータス・外部連携用カラムなど既存機能で使用しているカラムを追加（新規インストール時のスキーマ不整合を解消）
