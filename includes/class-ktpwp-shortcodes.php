@@ -62,7 +62,62 @@ class KTPWP_Shortcodes {
     private function init_hooks() {
         add_action( 'init', array( $this, 'register_shortcodes' ), 15 );
         add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_public_products_assets' ) );
+        add_action( 'wp_enqueue_scripts', array( $this, 'maybe_enqueue_banner_rotator_assets' ) );
         // ※Ajaxハンドラの登録は class-ktpwp-ajax.php 側でのみ行う
+    }
+
+    /**
+     * 中央バナーが複数件ある場合のみ、ローテーション用CSS/JSをWordPressの
+     * 正規のenqueue APIで登録する。
+     *
+     * 本文中に直接 <style>/<script> タグを出力すると、一部のキャッシュ/軽量化
+     * プラグイン（例: WP-Optimizeの「インラインCSS/JSの結合」機能）がタグごと
+     * 除去してしまうことがあるため、必ずこの経路で読み込ませること。
+     *
+     * @return void
+     */
+    public function maybe_enqueue_banner_rotator_assets() {
+        if ( ! is_user_logged_in() ) {
+            return;
+        }
+        if ( function_exists( 'ktpwp_should_hide_ktp_banner' ) && ktpwp_should_hide_ktp_banner() ) {
+            return;
+        }
+
+        $options = $this->get_central_banner_options();
+        if ( empty( $options ) ) {
+            $options = $this->get_legacy_banner_options();
+        }
+        $banners = ! empty( $options['banners'] ) && is_array( $options['banners'] ) ? $options['banners'] : array();
+        if ( count( $banners ) < 2 ) {
+            return;
+        }
+
+        $css = '.ktp-banner-rotator-item{width:100%;max-width:100%;box-sizing:border-box;transition:opacity .5s ease;}'
+            . '.ktp-banner-rotator-item:not(.is-active){position:absolute;top:0;left:0;opacity:0;visibility:hidden;pointer-events:none;}'
+            . '.ktp-banner-rotator-item.is-active{position:relative;opacity:1;visibility:visible;pointer-events:auto;}';
+
+        $js = 'function initKtpBannerRotator(el){'
+            . 'var items=el.querySelectorAll(".ktp-banner-rotator-item");'
+            . 'if(items.length<2){return;}'
+            . 'var interval=parseInt(el.getAttribute("data-interval"),10);'
+            . 'if(!isFinite(interval)||interval<2){interval=5;}'
+            . 'var i=0;'
+            . 'setInterval(function(){'
+            . 'items[i].classList.remove("is-active");'
+            . 'i=(i+1)%items.length;'
+            . 'items[i].classList.add("is-active");'
+            . '},interval*1000);'
+            . '}'
+            . 'document.querySelectorAll(".ktp-banner-rotator").forEach(initKtpBannerRotator);';
+
+        wp_register_style( 'ktp-banner-rotator', false, array(), KANTANPRO_PLUGIN_VERSION );
+        wp_enqueue_style( 'ktp-banner-rotator' );
+        wp_add_inline_style( 'ktp-banner-rotator', $css );
+
+        wp_register_script( 'ktp-banner-rotator', false, array(), KANTANPRO_PLUGIN_VERSION, true );
+        wp_enqueue_script( 'ktp-banner-rotator' );
+        wp_add_inline_script( 'ktp-banner-rotator', $js );
     }
 
     /**
@@ -153,8 +208,6 @@ class KTPWP_Shortcodes {
                     echo '<div class="ktp-before-header-banner" style="width:100%;max-width:100%;margin:0;text-align:center;box-sizing:border-box;">';
                     echo wp_kses_post( $before_header_content );
                     echo '</div>';
-                    // ローテーション表示用CSS/JSは wp_kses_post が <style>/<script> を除去するため、別出力する。
-                    echo $this->get_and_clear_pending_banner_assets(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- 固定の自前CSS/JSのみ
                 }
             }
 
@@ -228,36 +281,16 @@ class KTPWP_Shortcodes {
     }
 
     /**
-     * ローテーション表示用のCSS/JS（wp_kses_postで除去されないよう、
-     * バナー本体マークアップとは別に保持し、呼び出し側が生出力する）。
-     *
-     * @var string
-     */
-    private static $pending_rotator_assets = '';
-
-    /**
-     * ローテーション表示用CSS/JSを取得し、内部の保留分をクリアする。
-     * wp_kses_post() は <style>/<script> を除去してしまうため、
-     * バナー本体（kses対象）とは別に、この戻り値は必ずkses非経由で出力すること。
-     *
-     * @return string
-     */
-    public function get_and_clear_pending_banner_assets() {
-        $assets = self::$pending_rotator_assets;
-        self::$pending_rotator_assets = '';
-        return $assets;
-    }
-
-    /**
-     * 複数バナーのローテーション表示HTMLを生成する（CSS/JSは別途 get_and_clear_pending_banner_assets() で取得）。
+     * 複数バナーのローテーション表示HTMLを生成する。
+     * CSS/JSは maybe_enqueue_banner_rotator_assets() で別途enqueueする
+     * （本文中に直接 <style>/<script> を出力すると、一部のキャッシュ/軽量化
+     * プラグインにタグごと除去されることがあるため）。
      *
      * @param array $banners           バナー配列（image_url/link_url/alt_text）
      * @param int   $rotation_interval ローテーション間隔（秒）
      * @return string
      */
     private function build_banner_rotator_html( $banners, $rotation_interval ) {
-        static $assets_prepared = false;
-
         $items = '';
         foreach ( $banners as $index => $banner ) {
             $image_url = isset( $banner['image_url'] ) ? esc_url( $banner['image_url'] ) : '';
@@ -279,34 +312,7 @@ class KTPWP_Shortcodes {
             return '';
         }
 
-        $html = '<div class="ktp-banner-rotator" data-interval="' . (int) $rotation_interval . '" style="position:relative;width:100%;max-width:100%;box-sizing:border-box;overflow:hidden;">' . $items . '</div>';
-
-        if ( ! $assets_prepared ) {
-            $assets_prepared = true;
-            $assets = '<style>'
-                . '.ktp-banner-rotator-item{width:100%;max-width:100%;box-sizing:border-box;transition:opacity .5s ease;}'
-                . '.ktp-banner-rotator-item:not(.is-active){position:absolute;top:0;left:0;opacity:0;visibility:hidden;pointer-events:none;}'
-                . '.ktp-banner-rotator-item.is-active{position:relative;opacity:1;visibility:visible;pointer-events:auto;}'
-                . '</style>';
-            $assets .= '<script>(function(){'
-                . 'function initRotator(el){'
-                . 'var items=el.querySelectorAll(".ktp-banner-rotator-item");'
-                . 'if(items.length<2){return;}'
-                . 'var interval=parseInt(el.getAttribute("data-interval"),10);'
-                . 'if(!isFinite(interval)||interval<2){interval=5;}'
-                . 'var i=0;'
-                . 'setInterval(function(){'
-                . 'items[i].classList.remove("is-active");'
-                . 'i=(i+1)%items.length;'
-                . 'items[i].classList.add("is-active");'
-                . '},interval*1000);'
-                . '}'
-                . 'document.querySelectorAll(".ktp-banner-rotator").forEach(initRotator);'
-                . '})();</script>';
-            self::$pending_rotator_assets = $assets;
-        }
-
-        return $html;
+        return '<div class="ktp-banner-rotator" data-interval="' . (int) $rotation_interval . '" style="position:relative;width:100%;max-width:100%;box-sizing:border-box;overflow:hidden;">' . $items . '</div>';
     }
 
     /**
