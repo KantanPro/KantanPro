@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.3.17
+Stable tag: 1.3.18
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -322,6 +322,9 @@ curl -sS -X POST \
 * MySQL 5.6 以上 または MariaDB 10.0 以上
 * 推奨メモリ: 256MB 以上
 * 推奨PHP拡張: GD（画像処理用）
+
+= 1.3.18 - 2026年08月03日 =
+* 中央バナー取得時、他プラグインがPHPセッションを開いたままにしていると外部HTTPリクエストがブロック・タイムアウトする場合があったため、リクエスト直前でセッションを解放するよう修正
 
 = 1.3.17 - 2026年08月03日 =
 * 中央バナー（広告）配信を、配布先の「中央バナー設定」のenabledチェック状態に関わらず必ず表示するよう修正（無料版は広告表示を必須とする仕様のため、配布先側の設定で無効化できてしまう不具合を解消）

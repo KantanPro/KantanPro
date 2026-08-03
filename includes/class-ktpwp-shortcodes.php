@@ -314,6 +314,13 @@ class KTPWP_Shortcodes {
             return $cached;
         }
 
+        // 他プラグインが session_start() したまま外部HTTPリクエストを行うと、
+        // セッションファイルのロックにより wp_remote_get() がブロック・タイムアウトすることがあるため、
+        // リクエスト直前でセッションを解放する（$_SESSION の内容自体は保持される）。
+        if ( function_exists( 'session_status' ) && session_status() === PHP_SESSION_ACTIVE ) {
+            session_write_close();
+        }
+
         $response = wp_remote_get(
             $source_url,
             array(
