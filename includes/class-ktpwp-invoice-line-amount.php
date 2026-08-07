@@ -417,6 +417,17 @@ if ( ! class_exists( 'KTPWP_Invoice_Line_Amount' ) ) {
 			}
 
 			$tax_rate_key = $tax_rate !== null ? number_format( $tax_rate, 1 ) : 'no_tax_rate';
+
+			// 単価・数量が未入力（0）でサービス名だけ入力された行は、計算式を出さずサービス名のみ表示する（KantanBiz準拠）。
+			if ( $product_name !== '' && $price == 0.0 && $quantity == 0.0 ) {
+				return array(
+					'line'         => $product_name,
+					'amount'       => $item_amount,
+					'tax_rate_key' => $tax_rate_key,
+					'tax_amount'   => $tax_amount,
+				);
+			}
+
 			$price_display = rtrim( rtrim( number_format( $price, 6, '.', '' ), '0' ), '.' );
 			$quantity_display = rtrim( rtrim( number_format( $quantity, 6, '.', '' ), '0' ), '.' );
 			$suppress_tax_text = ( class_exists( 'KTPWP_Tax_Policy' ) && ( KTPWP_Tax_Policy::is_abolished() || KTPWP_Tax_Policy::hide_tax_columns() ) );
