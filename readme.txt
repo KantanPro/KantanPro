@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.3.25
+Stable tag: 1.3.26
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -322,6 +322,11 @@ curl -sS -X POST \
 * MySQL 5.6 以上 または MariaDB 10.0 以上
 * 推奨メモリ: 256MB 以上
 * 推奨PHP拡張: GD（画像処理用）
+
+= 1.3.26 - 2026年08月14日 =
+* 更新チェックがGitHubに接続できなかったとき「最新バージョンです」と表示され、新しいバージョンの公開に気付けない不具合を修正。取得に失敗した場合は「更新情報を取得できませんでした」と表示します
+* GitHubのアクセス制限（レート制限）を正しく判定するよう修正。共有サーバーなどで制限にかかると更新チェックが最大1日再試行されなかった問題を解消し、次のアクセスで再試行します
+* 通信エラー時に、表示済みの更新通知が消えてしまう問題を修正
 
 = 1.3.25 - 2026年08月07日 =
 * 受注書メールの請求項目で、サービス名だけ入力されて単価・数量が未入力（0）の行が「サービス名：0 × 0 = 0円」と表示されていた不具合を修正。計算式を出さずサービス名のみを表示するよう改善
