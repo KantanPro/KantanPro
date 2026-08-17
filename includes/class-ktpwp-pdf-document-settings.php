@@ -91,18 +91,26 @@ final class KTPWP_Pdf_Document_Settings {
 
 	/**
 	 * 宛名印刷（顧客・協力会社）の宛名ブロック位置（mm）。
-	 * 印刷可能領域（用紙余白 10mm の内側）の左上を原点とする絶対位置で、
+	 * 一括請求書と同じく余白なし印刷（@page margin:0）が前提で、A4 用紙の左上端が原点。
 	 * 既定値のとき長形３号窓明封筒の窓と揃う。
 	 */
-	public const ATENA_LABEL_BASE_TOP_MM = 6;
+	public const ATENA_LABEL_BASE_TOP_MM = 16;
 
-	public const ATENA_LABEL_BASE_LEFT_MM = 23;
+	public const ATENA_LABEL_BASE_LEFT_MM = 33;
 
 	public const ATENA_LABEL_POSITION_MM_MIN = 0;
 
-	public const ATENA_LABEL_POSITION_MM_MAX = 60;
+	public const ATENA_LABEL_POSITION_MM_MAX = 80;
 
 	public const OPTION_ATENA_LABEL_POSITION = 'ktp_atena_label_position';
+
+	/**
+	 * 保存値の座標基準。'paper' = 用紙端起点。
+	 * 旧版（印刷可能領域起点）で保存された値は読み出し時に +10mm して変換する。
+	 */
+	public const ATENA_LABEL_BASIS_PAPER = 'paper';
+
+	private const ATENA_LABEL_LEGACY_OFFSET_MM = 10;
 
 	public const OPTION_DOCUMENT_SETTINGS = 'ktp_pdf_document_settings';
 
@@ -474,17 +482,25 @@ final class KTPWP_Pdf_Document_Settings {
 			$stored = array();
 		}
 
+		$top  = $stored['top_mm'] ?? null;
+		$left = $stored['left_mm'] ?? null;
+
+		if ( $top === null || $left === null ) {
+			return array(
+				'top_mm'  => self::ATENA_LABEL_BASE_TOP_MM,
+				'left_mm' => self::ATENA_LABEL_BASE_LEFT_MM,
+			);
+		}
+
+		// 旧版（印刷可能領域起点）で保存された値を用紙端起点へ寄せる
+		if ( ( $stored['basis'] ?? '' ) !== self::ATENA_LABEL_BASIS_PAPER ) {
+			$top  = (int) $top + self::ATENA_LABEL_LEGACY_OFFSET_MM;
+			$left = (int) $left + self::ATENA_LABEL_LEGACY_OFFSET_MM;
+		}
+
 		return array(
-			'top_mm'  => self::clamp_int(
-				$stored['top_mm'] ?? self::ATENA_LABEL_BASE_TOP_MM,
-				self::ATENA_LABEL_POSITION_MM_MIN,
-				self::ATENA_LABEL_POSITION_MM_MAX
-			),
-			'left_mm' => self::clamp_int(
-				$stored['left_mm'] ?? self::ATENA_LABEL_BASE_LEFT_MM,
-				self::ATENA_LABEL_POSITION_MM_MIN,
-				self::ATENA_LABEL_POSITION_MM_MAX
-			),
+			'top_mm'  => self::clamp_int( $top, self::ATENA_LABEL_POSITION_MM_MIN, self::ATENA_LABEL_POSITION_MM_MAX ),
+			'left_mm' => self::clamp_int( $left, self::ATENA_LABEL_POSITION_MM_MIN, self::ATENA_LABEL_POSITION_MM_MAX ),
 		);
 	}
 
@@ -497,6 +513,7 @@ final class KTPWP_Pdf_Document_Settings {
 		$position = array(
 			'top_mm'  => self::clamp_int( $top_mm, self::ATENA_LABEL_POSITION_MM_MIN, self::ATENA_LABEL_POSITION_MM_MAX ),
 			'left_mm' => self::clamp_int( $left_mm, self::ATENA_LABEL_POSITION_MM_MIN, self::ATENA_LABEL_POSITION_MM_MAX ),
+			'basis'   => self::ATENA_LABEL_BASIS_PAPER,
 		);
 
 		update_option( self::OPTION_ATENA_LABEL_POSITION, $position );

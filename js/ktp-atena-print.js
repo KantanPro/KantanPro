@@ -4,11 +4,12 @@
  * 宛名ブロックは請求書プレビューと同じくドラッグで位置を調整でき、
  * 移動後の 上／左 mm は帳票設定（ktp_atena_label_position）へ保存される（管理者のみ）。
  *
- * 基本レイアウト（用紙余白は上下左右 10mm 前提・位置は @page 余白内の印刷可能領域起点）
- * - 宛名: 用紙上 上16mm(10+6) 左33mm(10+23) → 領域内 top 6mm left 23mm（既定値・ドラッグで変更可）
- * - 罫線グループ: 用紙上 左右20mm(10+10) → 領域内 left/right 10mm
- * - 罫線開始: 用紙上 上115mm(10+105) → 領域内 top 105mm
- * - 罫線行間: A4 1 ページに収まるよう (印刷可能高さ − 105mm) ÷ 18 行で自動算出（約 9.56mm）
+ * 基本レイアウト（一括請求書と同じく @page margin:0 の余白なし印刷が前提。
+ * 位置指定はすべて A4 用紙の左上端が原点なので、画面の表示値＝実際の印刷位置になる）
+ * - 宛名: 上16mm 左33mm（既定値・ドラッグで変更可）
+ * - 罫線グループ: 左右20mm
+ * - 罫線開始: 上115mm
+ * - 罫線行間: A4 1 ページに収まるよう (297mm − 下余白10mm − 115mm) ÷ 18 行で自動算出（約 9.56mm）
  */
 (function (global) {
     'use strict';
@@ -18,20 +19,19 @@
     var STYLE_ID = 'ktp-atena-preview-styles';
     var MEMO_MAX_LENGTH = 2000;
 
-    var PAGE_MARGIN_MM = 10;
+    /** 罫線メモの下端に残す余白（@page margin は 0 なので用紙下端からの距離） */
+    var PAGE_BOTTOM_MARGIN_MM = 10;
     var A4_WIDTH_MM = 210;
     var A4_HEIGHT_MM = 297;
-    var PRINTABLE_WIDTH_MM = A4_WIDTH_MM - PAGE_MARGIN_MM * 2;
-    var PRINTABLE_HEIGHT_MM = A4_HEIGHT_MM - PAGE_MARGIN_MM * 2;
 
-    /** 印刷可能領域内の配置（mm）。用紙端からの値は LAYOUT コメント参照 */
+    /** A4 用紙の左上端を原点とする配置（mm） */
     var LAYOUT = {
-        labelTopMm: 6,
-        labelLeftMm: 23,
+        labelTopMm: 16,
+        labelLeftMm: 33,
         labelMaxWidthMm: 88,
-        gridInsetLeftMm: 10,
-        gridInsetRightMm: 10,
-        gridStartMm: 105,
+        gridInsetLeftMm: 20,
+        gridInsetRightMm: 20,
+        gridStartMm: 115,
         gridLineCount: 18,
     };
 
@@ -42,7 +42,7 @@
 
     var PREVIEW_PANEL_MAX_PX = 720;
 
-    /** 宛名ブロック位置（mm・印刷可能領域の左上が原点）。localize 設定があればそれを初期値にする */
+    /** 宛名ブロック位置（mm・A4 用紙の左上端が原点）。localize 設定があればそれを初期値にする */
     var labelPosition = null;
 
     /** ドラッグ中の状態 */
@@ -50,6 +50,9 @@
     var dragGlobalsBound = false;
     var positionSaveTimer = null;
     var cachedPxPerMm = 0;
+
+    /** 開いているプレビュー（説明文の再描画に使う）。@type {null | {modal: HTMLElement, config: object}} */
+    var currentPreview = null;
 
     function t(msg) {
         return typeof global.ktpwpTranslate === 'function' ? global.ktpwpTranslate(msg) : msg;
@@ -115,9 +118,9 @@
         }
     }
 
-    /** 罫線開始から用紙下端（印刷可能領域）までの高さ */
+    /** 罫線開始から用紙下端（下余白の手前）までの高さ */
     function memoAreaHeightMm(opts) {
-        return PRINTABLE_HEIGHT_MM - opts.gridStartMm;
+        return A4_HEIGHT_MM - PAGE_BOTTOM_MARGIN_MM - opts.gridStartMm;
     }
 
     /** A4 1 ページ内に収まる行間（mm） */
@@ -130,7 +133,7 @@
     }
 
     function pageHeightMm() {
-        return PRINTABLE_HEIGHT_MM;
+        return A4_HEIGHT_MM;
     }
 
     function normalizeConfig(config) {
@@ -194,7 +197,7 @@
         var max = Number(config.max);
         return {
             min: Number.isFinite(min) ? min : 0,
-            max: Number.isFinite(max) ? max : 60
+            max: Number.isFinite(max) ? max : 80
         };
     }
 
@@ -212,6 +215,24 @@
             leftMm: clamp(Number.isFinite(left) ? left : LAYOUT.labelLeftMm, limits.min, limits.max)
         };
         return labelPosition;
+    }
+
+    /** 宛名位置の初期値（mm）。localize 設定の baseTop/baseLeft → LAYOUT の順で解決する */
+    function baseLabelPosition() {
+        var config = readDragConfig() || {};
+        var top = Number(config.baseTop);
+        var left = Number(config.baseLeft);
+        return {
+            topMm: Number.isFinite(top) ? top : LAYOUT.labelTopMm,
+            leftMm: Number.isFinite(left) ? left : LAYOUT.labelLeftMm
+        };
+    }
+
+    function isAtBasePosition() {
+        var base = baseLabelPosition();
+        var pos = getLabelPosition();
+        return Math.round(pos.topMm) === Math.round(base.topMm)
+            && Math.round(pos.leftMm) === Math.round(base.leftMm);
     }
 
     function setLabelPosition(topMm, leftMm) {
@@ -240,8 +261,8 @@
 
     function buildLayoutCss(options) {
         var opts = options || {};
-        var pageWidth = opts.fullWidth ? '100%' : PRINTABLE_WIDTH_MM + 'mm';
-        var pageH = opts.pageHeightMm != null ? opts.pageHeightMm : PRINTABLE_HEIGHT_MM;
+        var pageWidth = opts.fullWidth ? '100%' : A4_WIDTH_MM + 'mm';
+        var pageH = opts.pageHeightMm != null ? opts.pageHeightMm : A4_HEIGHT_MM;
         var css = '';
         css +=
             '.ktp-atena-page{position:relative;box-sizing:border-box;width:' +
@@ -301,7 +322,7 @@
         page.style.transform = '';
         page.style.transformOrigin = 'top center';
         var available = wrap.clientWidth;
-        var pageWidthPx = mmToPx(PRINTABLE_WIDTH_MM);
+        var pageWidthPx = mmToPx(A4_WIDTH_MM);
         if (available <= 0 || pageWidthPx <= 0) {
             wrap.style.height = '';
             return;
@@ -339,8 +360,10 @@
             '.ktp-atena-panel-close{background:none;border:none;font-size:24px;line-height:1;cursor:pointer;color:#374151;padding:0 4px;}' +
             '.ktp-atena-panel-body{overflow:auto;padding:8px 10px;flex:1;min-height:0;}' +
             '.ktp-atena-panel-note{margin:0 0 8px;font-size:11px;color:#6b7280;line-height:1.45;}' +
+            /* 用紙の外側をグレーの台紙にして、紙の端がひと目で分かるようにする */
+            '.ktp-atena-sheet-frame{background:#eceef1;background-image:linear-gradient(#eceef1,#e4e7ea);border-radius:6px;padding:14px;display:flex;justify-content:center;box-shadow:inset 0 1px 2px rgba(0,0,0,.08);}' +
             '.ktp-atena-sheet-wrap{position:relative;width:100%;display:flex;justify-content:center;overflow:hidden;}' +
-            '.ktp-atena-page{box-shadow:0 0 0 1px #e5e7eb;}' +
+            '.ktp-atena-page{box-shadow:0 0 0 1px rgba(0,0,0,.12),0 2px 8px rgba(0,0,0,.16);}' +
             buildLayoutCss({ pageHeightMm: pageHeightMm() }) +
             /* 宛名ブロックのドラッグ移動（管理者のみ） */
             '.ktp-atena-label.is-ktp-atena-draggable{cursor:move;touch-action:none;border-radius:4px;}' +
@@ -350,10 +373,14 @@
             '.ktp-atena-mm-readout{position:absolute;top:2px;left:2px;z-index:30;display:none;align-items:center;gap:.55rem;padding:.28rem .55rem;border-radius:4px;background:rgba(15,23,42,.88);color:#f8fafc;font-size:12px;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:.02em;line-height:1.2;pointer-events:none;box-shadow:0 1px 4px rgba(0,0,0,.18);}' +
             '.ktp-atena-mm-readout.is-visible{display:inline-flex;}' +
             '.ktp-atena-mm-readout .mm-pair{white-space:nowrap;}' +
+            '.ktp-atena-mm-readout .mm-origin{opacity:.72;font-weight:500;white-space:nowrap;}' +
             '.ktp-atena-mm-readout .mm-label{opacity:.72;font-weight:500;margin-right:.15rem;}' +
             '.ktp-atena-panel-footer{display:flex;justify-content:flex-end;gap:8px;padding:10px 12px;border-top:1px solid #e5e7eb;flex-shrink:0;}' +
             '.ktp-atena-btn{padding:8px 14px;font-size:13px;border-radius:4px;cursor:pointer;border:1px solid #d1d5db;background:#fff;color:#374151;}' +
-            '.ktp-atena-btn-primary{background:#2563eb;border-color:#2563eb;color:#fff;}';
+            '.ktp-atena-btn-primary{background:#2563eb;border-color:#2563eb;color:#fff;}' +
+            /* 宛名位置のリセットは左端に寄せる（閉じる・印刷は右端のまま） */
+            '.ktp-atena-reset-position{margin-right:auto;}' +
+            '.ktp-atena-reset-position[disabled]{opacity:.5;cursor:default;}';
     }
 
     function closeModal() {
@@ -383,9 +410,12 @@
             '</div>' +
             '<div class="ktp-atena-panel-body">' +
             '<p class="ktp-atena-panel-note"></p>' +
-            '<div class="ktp-atena-sheet-wrap"></div>' +
+            '<div class="ktp-atena-sheet-frame"><div class="ktp-atena-sheet-wrap"></div></div>' +
             '</div>' +
             '<div class="ktp-atena-panel-footer">' +
+            '<button type="button" class="ktp-atena-btn ktp-atena-reset-position" style="display:none;">' +
+            esc(t('宛名位置を初期値に戻す')) +
+            '</button>' +
             '<button type="button" class="ktp-atena-btn ktp-atena-cancel">' +
             esc(t('閉じる')) +
             '</button>' +
@@ -484,6 +514,7 @@
 
     /**
      * プレビュー用紙の左上に 上／左 mm を表示する要素を用意する。
+     * 表示は用紙端からの距離で、実際の印刷位置と一致する。
      *
      * @param {HTMLElement} wrap .ktp-atena-sheet-wrap
      */
@@ -494,6 +525,9 @@
             el.className = 'ktp-atena-mm-readout';
             el.setAttribute('aria-live', 'polite');
             el.innerHTML =
+                '<span class="mm-origin">' +
+                esc(t('用紙端から')) +
+                '</span>' +
                 '<span class="mm-pair"><span class="mm-label">' +
                 esc(t('上')) +
                 '</span><span data-mm="top">0</span>mm</span>' +
@@ -581,6 +615,7 @@
 
             setLabelPosition(roundedTop, roundedLeft);
             applyLabelPositionToPage(pageEl);
+            refreshPositionUi();
 
             saveLabelPosition(roundedTop, roundedLeft)
                 .then(function (data) {
@@ -592,6 +627,7 @@
                     if (Number.isFinite(top) && Number.isFinite(left)) {
                         setLabelPosition(top, left);
                         applyLabelPositionToPage(pageEl);
+                        refreshPositionUi();
                     }
                 })
                 .catch(function (error) {
@@ -637,10 +673,61 @@
                 hideMmReadout(drag.wrap);
             }, 600);
             scheduleLabelPositionSave(drag.pageEl, pos.topMm, pos.leftMm);
+            refreshPositionUi();
         }
 
         global.addEventListener('pointerup', endDrag);
         global.addEventListener('pointercancel', endDrag);
+    }
+
+    /**
+     * 宛名位置を初期値に戻すボタン（管理者のみ表示）。
+     * 押すとプレビュー・説明文・保存値のすべてが初期値に戻る。
+     */
+    function wireResetPosition(modal, pageEl) {
+        var btn = modal.querySelector('.ktp-atena-reset-position');
+        if (!btn) {
+            return;
+        }
+        if (!pageEl || !dragEnabled()) {
+            btn.style.display = 'none';
+            return;
+        }
+
+        // 開くたびに前回のハンドラを捨てる（印刷ボタンと同じ作法）
+        var fresh = btn.cloneNode(true);
+        btn.parentNode.replaceChild(fresh, btn);
+        fresh.style.display = '';
+        fresh.disabled = isAtBasePosition();
+
+        fresh.addEventListener('click', function () {
+            var base = baseLabelPosition();
+            var pos = setLabelPosition(base.topMm, base.leftMm);
+            applyLabelPositionToPage(pageEl);
+
+            var wrap = modal.querySelector('.ktp-atena-sheet-wrap');
+            if (wrap) {
+                updateMmReadout(wrap, pos.topMm, pos.leftMm, true);
+                setTimeout(function () {
+                    hideMmReadout(wrap);
+                }, 900);
+            }
+
+            fresh.disabled = true;
+            refreshPreviewNote();
+            scheduleLabelPositionSave(pageEl, pos.topMm, pos.leftMm);
+        });
+    }
+
+    /** 宛名位置が変わったあとに説明文とリセットボタンの状態を追従させる */
+    function refreshPositionUi() {
+        refreshPreviewNote();
+        if (currentPreview && currentPreview.modal) {
+            var btn = currentPreview.modal.querySelector('.ktp-atena-reset-position');
+            if (btn && btn.style.display !== 'none') {
+                btn.disabled = isAtBasePosition();
+            }
+        }
     }
 
     /** 宛名ブロックのドラッグ移動を有効化する（管理者のみ） */
@@ -704,7 +791,7 @@
         printHTML +=
             'html,body{margin:0;padding:0;font-family:"Noto Sans JP","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;font-size:12px;line-height:1.4;color:#333;background:#fff;}';
         printHTML += buildLayoutCss({ fullWidth: true, pageHeightMm: pageHeightMm(), printClassLabel: true });
-        printHTML += '@page{size:A4 portrait;margin:' + PAGE_MARGIN_MM + 'mm;}';
+        printHTML += '@page{size:A4 portrait;margin:0;}';
         printHTML +=
             '@media print{html,body{margin:0;padding:0;}.ktp-atena-page{page-break-inside:avoid;page-break-after:avoid;}.ktp-atena-line{border-top-width:0.25mm;border-top-style:dotted;border-top-color:rgba(0,0,0,0.2);}}';
         printHTML += '</style></head><body><div class="ktp-atena-page" style="' + labelPositionStyle() + '">';
@@ -784,27 +871,53 @@
         }
     }
 
+    /** プレビュー上部の説明文。用紙端からの宛名位置（上／左 mm）だけを簡潔に示す */
+    function buildPreviewNote(config) {
+        var pos = getLabelPosition();
+        var lines = [];
+
+        lines.push(
+            t('宛名位置：用紙の上端から{top}mm・左端から{left}mm（印刷は余白なしで出力されます）')
+                .replace('{top}', formatMm(pos.topMm))
+                .replace('{left}', formatMm(pos.leftMm))
+        );
+
+        if (dragEnabled()) {
+            lines.push(t('宛名ブロックはドラッグで移動できます。'));
+        }
+
+        if (config.memoNote) {
+            lines.push(config.memoNote);
+        }
+
+        return lines.join(' ');
+    }
+
+    /** 開いているプレビューの説明文を現在の宛名位置で描き直す */
+    function refreshPreviewNote() {
+        if (!currentPreview || !currentPreview.modal) {
+            return;
+        }
+        var el = currentPreview.modal.querySelector('.ktp-atena-panel-note');
+        if (el) {
+            el.textContent = buildPreviewNote(currentPreview.config);
+        }
+    }
+
     function openPreview(config) {
         if (!config || typeof config !== 'object') {
             return;
         }
         var modal = ensureModal();
+        currentPreview = { modal: modal, config: config };
         modal.querySelector('.ktp-atena-panel-title').textContent = config.title || t('宛名印刷');
-        var pos = getLabelPosition();
-        var note =
-            config.memoNote ||
-            t('用紙余白10mm・宛名（上{top}mm左{left}mm）・罫線（左右20mm・上115mmから）でレイアウトします。罫線メモは次に開くまで保存されます。')
-                .replace('{top}', formatMm(PAGE_MARGIN_MM + pos.topMm))
-                .replace('{left}', formatMm(PAGE_MARGIN_MM + pos.leftMm));
-        if (dragEnabled()) {
-            note += ' ' + t('宛名ブロックはドラッグで位置を調整でき、調整後の位置は保存されます。');
-        }
-        modal.querySelector('.ktp-atena-panel-note').textContent = note;
+        refreshPreviewNote();
         var wrap = modal.querySelector('.ktp-atena-sheet-wrap');
         wrap.innerHTML = buildPageHtml(config);
         var page = wrap.querySelector('.ktp-atena-page');
         wireMemo(page);
         wireLabelDrag(modal, page);
+        wireResetPosition(modal, page);
 
         var printBtn = modal.querySelector('.ktp-atena-print');
         var newPrintBtn = printBtn.cloneNode(true);
@@ -843,6 +956,6 @@
         openPreview: openPreview,
         storageKey: storageKey,
         layout: LAYOUT,
-        pageMarginMm: PAGE_MARGIN_MM,
+        pageBottomMarginMm: PAGE_BOTTOM_MARGIN_MM,
     };
 })(window);

@@ -2523,7 +2523,6 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
                     recordId: recordId,
                     labelInnerHtml: inner,
                     title: t('宛名印刷'),
-                    gridStartMm: 105,
                     maxMemoLines: 18
                 });
             }
