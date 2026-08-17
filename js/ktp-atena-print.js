@@ -1,8 +1,11 @@
 /**
  * 宛名印刷：プレビュー（編集）画面・罫線メモ（全体1テキストエリア）・localStorage 保存
  *
+ * 宛名ブロックは請求書プレビューと同じくドラッグで位置を調整でき、
+ * 移動後の 上／左 mm は帳票設定（ktp_atena_label_position）へ保存される（管理者のみ）。
+ *
  * 基本レイアウト（用紙余白は上下左右 10mm 前提・位置は @page 余白内の印刷可能領域起点）
- * - 宛名: 用紙上 上16mm(10+6) 左33mm(10+23) → 領域内 top 6mm left 23mm
+ * - 宛名: 用紙上 上16mm(10+6) 左33mm(10+23) → 領域内 top 6mm left 23mm（既定値・ドラッグで変更可）
  * - 罫線グループ: 用紙上 左右20mm(10+10) → 領域内 left/right 10mm
  * - 罫線開始: 用紙上 上115mm(10+105) → 領域内 top 105mm
  * - 罫線行間: A4 1 ページに収まるよう (印刷可能高さ − 105mm) ÷ 18 行で自動算出（約 9.56mm）
@@ -38,6 +41,15 @@
     };
 
     var PREVIEW_PANEL_MAX_PX = 720;
+
+    /** 宛名ブロック位置（mm・印刷可能領域の左上が原点）。localize 設定があればそれを初期値にする */
+    var labelPosition = null;
+
+    /** ドラッグ中の状態 */
+    var activeDrag = null;
+    var dragGlobalsBound = false;
+    var positionSaveTimer = null;
+    var cachedPxPerMm = 0;
 
     function t(msg) {
         return typeof global.ktpwpTranslate === 'function' ? global.ktpwpTranslate(msg) : msg;
@@ -145,6 +157,87 @@
         return px || mm * 3.7795275591;
     }
 
+    /** CSS の 1mm が何 px で描画されるか（初回のみ実測してキャッシュ） */
+    function pxPerMm() {
+        if (!cachedPxPerMm) {
+            cachedPxPerMm = mmToPx(100) / 100 || 96 / 25.4;
+        }
+        return cachedPxPerMm;
+    }
+
+    function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    function formatMm(value) {
+        var rounded = Math.round(value * 10) / 10;
+        return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+    }
+
+    /** 宛名ドラッグの設定（localize 済みなら管理者のみ enabled） */
+    function readDragConfig() {
+        var settings = global.ktpAtenaPrintSettings;
+        if (!settings || !settings.labelDrag) {
+            return null;
+        }
+        return settings.labelDrag;
+    }
+
+    function dragEnabled() {
+        var config = readDragConfig();
+        return !!(config && config.enabled && config.ajaxUrl && config.nonce && config.action);
+    }
+
+    function positionLimits() {
+        var config = readDragConfig() || {};
+        var min = Number(config.min);
+        var max = Number(config.max);
+        return {
+            min: Number.isFinite(min) ? min : 0,
+            max: Number.isFinite(max) ? max : 60
+        };
+    }
+
+    /** 現在の宛名位置（mm）。保存済み設定 → 既定値の順で解決する */
+    function getLabelPosition() {
+        if (labelPosition) {
+            return labelPosition;
+        }
+        var config = readDragConfig() || {};
+        var limits = positionLimits();
+        var top = Number(config.topMm);
+        var left = Number(config.leftMm);
+        labelPosition = {
+            topMm: clamp(Number.isFinite(top) ? top : LAYOUT.labelTopMm, limits.min, limits.max),
+            leftMm: clamp(Number.isFinite(left) ? left : LAYOUT.labelLeftMm, limits.min, limits.max)
+        };
+        return labelPosition;
+    }
+
+    function setLabelPosition(topMm, leftMm) {
+        var limits = positionLimits();
+        labelPosition = {
+            topMm: clamp(topMm, limits.min, limits.max),
+            leftMm: clamp(leftMm, limits.min, limits.max)
+        };
+        return labelPosition;
+    }
+
+    /** .ktp-atena-page に載せる位置指定（CSS 変数） */
+    function labelPositionStyle() {
+        var pos = getLabelPosition();
+        return '--ktp-atena-label-top:' + pos.topMm + 'mm;--ktp-atena-label-left:' + pos.leftMm + 'mm;';
+    }
+
+    function applyLabelPositionToPage(pageEl) {
+        if (!pageEl) {
+            return;
+        }
+        var pos = getLabelPosition();
+        pageEl.style.setProperty('--ktp-atena-label-top', pos.topMm + 'mm');
+        pageEl.style.setProperty('--ktp-atena-label-left', pos.leftMm + 'mm');
+    }
+
     function buildLayoutCss(options) {
         var opts = options || {};
         var pageWidth = opts.fullWidth ? '100%' : PRINTABLE_WIDTH_MM + 'mm';
@@ -159,11 +252,11 @@
             pageH +
             'mm;margin:0 auto;background:#fff;overflow:hidden;page-break-inside:avoid;page-break-after:avoid;}';
         css +=
-            '.ktp-atena-label{position:absolute;z-index:2;top:' +
+            '.ktp-atena-label{position:absolute;z-index:2;top:var(--ktp-atena-label-top,' +
             LAYOUT.labelTopMm +
-            'mm;left:' +
+            'mm);left:var(--ktp-atena-label-left,' +
             LAYOUT.labelLeftMm +
-            'mm;text-align:left;font-size:12px;line-height:1.4;color:#333;max-width:' +
+            'mm);text-align:left;font-size:12px;line-height:1.4;color:#333;max-width:' +
             LAYOUT.labelMaxWidthMm +
             'mm;word-wrap:break-word;}';
         css +=
@@ -186,11 +279,11 @@
             '.ktp-atena-memo:focus{outline:1px dashed rgba(37,99,235,.45);background:rgba(37,99,235,.04);}';
         if (opts.printClassLabel) {
             css +=
-                '.label{position:absolute;z-index:2;top:' +
+                '.label{position:absolute;z-index:2;top:var(--ktp-atena-label-top,' +
                 LAYOUT.labelTopMm +
-                'mm;left:' +
+                'mm);left:var(--ktp-atena-label-left,' +
                 LAYOUT.labelLeftMm +
-                'mm;text-align:left;font-size:12px;line-height:1.4;color:#333;max-width:' +
+                'mm);text-align:left;font-size:12px;line-height:1.4;color:#333;max-width:' +
                 LAYOUT.labelMaxWidthMm +
                 'mm;word-wrap:break-word;}';
             css +=
@@ -246,9 +339,18 @@
             '.ktp-atena-panel-close{background:none;border:none;font-size:24px;line-height:1;cursor:pointer;color:#374151;padding:0 4px;}' +
             '.ktp-atena-panel-body{overflow:auto;padding:8px 10px;flex:1;min-height:0;}' +
             '.ktp-atena-panel-note{margin:0 0 8px;font-size:11px;color:#6b7280;line-height:1.45;}' +
-            '.ktp-atena-sheet-wrap{width:100%;display:flex;justify-content:center;overflow:hidden;}' +
+            '.ktp-atena-sheet-wrap{position:relative;width:100%;display:flex;justify-content:center;overflow:hidden;}' +
             '.ktp-atena-page{box-shadow:0 0 0 1px #e5e7eb;}' +
             buildLayoutCss({ pageHeightMm: pageHeightMm() }) +
+            /* 宛名ブロックのドラッグ移動（管理者のみ） */
+            '.ktp-atena-label.is-ktp-atena-draggable{cursor:move;touch-action:none;border-radius:4px;}' +
+            '.ktp-atena-label.is-ktp-atena-draggable:hover{outline:1px dashed rgba(37,99,235,.6);outline-offset:4px;}' +
+            '.ktp-atena-label.is-ktp-atena-draggable.is-dragging{outline:1px dashed rgba(37,99,235,.9);outline-offset:4px;cursor:grabbing;user-select:none;}' +
+            /* ドラッグ中：宛名の 上・左 mm 表示 */
+            '.ktp-atena-mm-readout{position:absolute;top:2px;left:2px;z-index:30;display:none;align-items:center;gap:.55rem;padding:.28rem .55rem;border-radius:4px;background:rgba(15,23,42,.88);color:#f8fafc;font-size:12px;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:.02em;line-height:1.2;pointer-events:none;box-shadow:0 1px 4px rgba(0,0,0,.18);}' +
+            '.ktp-atena-mm-readout.is-visible{display:inline-flex;}' +
+            '.ktp-atena-mm-readout .mm-pair{white-space:nowrap;}' +
+            '.ktp-atena-mm-readout .mm-label{opacity:.72;font-weight:500;margin-right:.15rem;}' +
             '.ktp-atena-panel-footer{display:flex;justify-content:flex-end;gap:8px;padding:10px 12px;border-top:1px solid #e5e7eb;flex-shrink:0;}' +
             '.ktp-atena-btn{padding:8px 14px;font-size:13px;border-radius:4px;cursor:pointer;border:1px solid #d1d5db;background:#fff;color:#374151;}' +
             '.ktp-atena-btn-primary{background:#2563eb;border-color:#2563eb;color:#fff;}';
@@ -315,11 +417,19 @@
         var html = '';
         var i;
 
+        var canDrag = dragEnabled();
+
         html +=
             '<div class="ktp-atena-page" data-memo-key="' +
             esc(memoKey) +
+            '" style="' +
+            labelPositionStyle() +
             '">';
-        html += '<div class="ktp-atena-label">' + (opts.labelInnerHtml || '') + '</div>';
+        html += '<div class="ktp-atena-label' + (canDrag ? ' is-ktp-atena-draggable' : '') + '"';
+        if (canDrag) {
+            html += ' data-ktp-atena-drag="1" title="' + esc(t('ドラッグして宛名の位置を調整できます')) + '"';
+        }
+        html += '>' + (opts.labelInnerHtml || '') + '</div>';
         html +=
             '<div class="ktp-atena-memo-area" style="top:' +
             gridStart +
@@ -372,6 +482,207 @@
         ta.addEventListener('blur', persist);
     }
 
+    /**
+     * プレビュー用紙の左上に 上／左 mm を表示する要素を用意する。
+     *
+     * @param {HTMLElement} wrap .ktp-atena-sheet-wrap
+     */
+    function ensureMmReadout(wrap) {
+        var el = wrap.querySelector('.ktp-atena-mm-readout');
+        if (!el) {
+            el = document.createElement('div');
+            el.className = 'ktp-atena-mm-readout';
+            el.setAttribute('aria-live', 'polite');
+            el.innerHTML =
+                '<span class="mm-pair"><span class="mm-label">' +
+                esc(t('上')) +
+                '</span><span data-mm="top">0</span>mm</span>' +
+                '<span class="mm-pair"><span class="mm-label">' +
+                esc(t('左')) +
+                '</span><span data-mm="left">0</span>mm</span>';
+            wrap.appendChild(el);
+        }
+        return el;
+    }
+
+    function updateMmReadout(wrap, topMm, leftMm, visible) {
+        var el = ensureMmReadout(wrap);
+        var topEl = el.querySelector('[data-mm="top"]');
+        var leftEl = el.querySelector('[data-mm="left"]');
+        if (topEl) {
+            topEl.textContent = formatMm(topMm);
+        }
+        if (leftEl) {
+            leftEl.textContent = formatMm(leftMm);
+        }
+        el.classList.toggle('is-visible', !!visible);
+    }
+
+    function hideMmReadout(wrap) {
+        var el = wrap && wrap.querySelector('.ktp-atena-mm-readout');
+        if (el) {
+            el.classList.remove('is-visible');
+        }
+    }
+
+    /** プレビューの縮小倍率（applyPreviewScale の transform 分）を実測する */
+    function previewScale(pageEl) {
+        var natural = pageEl.offsetWidth;
+        if (!natural) {
+            return 1;
+        }
+        var rendered = pageEl.getBoundingClientRect().width;
+        var scale = rendered / natural;
+        return scale > 0.05 ? scale : 1;
+    }
+
+    function saveLabelPosition(topMm, leftMm) {
+        var config = readDragConfig();
+        if (!config) {
+            return Promise.resolve(null);
+        }
+        var body = new URLSearchParams();
+        body.set('action', config.action);
+        body.set('nonce', config.nonce);
+        body.set('top_mm', String(topMm));
+        body.set('left_mm', String(leftMm));
+
+        return fetch(config.ajaxUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                Accept: 'application/json'
+            },
+            credentials: 'same-origin',
+            body: body.toString()
+        })
+            .then(function (response) {
+                if (!response.ok) {
+                    throw new Error('atena label position save failed: ' + response.status);
+                }
+                return response.json();
+            })
+            .then(function (json) {
+                if (!json || !json.success || !json.data) {
+                    throw new Error('atena label position save failed: invalid response');
+                }
+                return json.data;
+            });
+    }
+
+    function scheduleLabelPositionSave(pageEl, topMm, leftMm) {
+        if (positionSaveTimer) {
+            clearTimeout(positionSaveTimer);
+        }
+        positionSaveTimer = setTimeout(function () {
+            var limits = positionLimits();
+            var roundedTop = clamp(Math.round(topMm), limits.min, limits.max);
+            var roundedLeft = clamp(Math.round(leftMm), limits.min, limits.max);
+
+            setLabelPosition(roundedTop, roundedLeft);
+            applyLabelPositionToPage(pageEl);
+
+            saveLabelPosition(roundedTop, roundedLeft)
+                .then(function (data) {
+                    if (!data) {
+                        return;
+                    }
+                    var top = Number(data.top_mm);
+                    var left = Number(data.left_mm);
+                    if (Number.isFinite(top) && Number.isFinite(left)) {
+                        setLabelPosition(top, left);
+                        applyLabelPositionToPage(pageEl);
+                    }
+                })
+                .catch(function (error) {
+                    console.warn('[宛名印刷] 宛名位置の保存に失敗しました', error);
+                });
+        }, 250);
+    }
+
+    function bindDragGlobals() {
+        if (dragGlobalsBound) {
+            return;
+        }
+        dragGlobalsBound = true;
+
+        global.addEventListener('pointermove', function (event) {
+            if (!activeDrag) {
+                return;
+            }
+            var limits = positionLimits();
+            var perMm = pxPerMm() * activeDrag.scale;
+            var deltaTop = (event.clientY - activeDrag.startClientY) / perMm;
+            var deltaLeft = (event.clientX - activeDrag.startClientX) / perMm;
+            var nextTop = clamp(activeDrag.startTopMm + deltaTop, limits.min, limits.max);
+            var nextLeft = clamp(activeDrag.startLeftMm + deltaLeft, limits.min, limits.max);
+
+            setLabelPosition(nextTop, nextLeft);
+            applyLabelPositionToPage(activeDrag.pageEl);
+            updateMmReadout(activeDrag.wrap, nextTop, nextLeft, true);
+        });
+
+        function endDrag() {
+            if (!activeDrag) {
+                return;
+            }
+            var drag = activeDrag;
+            activeDrag = null;
+            drag.labelEl.classList.remove('is-dragging');
+
+            var pos = getLabelPosition();
+            // ドロップ直後は丸め後の値を一瞬見せてから消す
+            updateMmReadout(drag.wrap, Math.round(pos.topMm), Math.round(pos.leftMm), true);
+            setTimeout(function () {
+                hideMmReadout(drag.wrap);
+            }, 600);
+            scheduleLabelPositionSave(drag.pageEl, pos.topMm, pos.leftMm);
+        }
+
+        global.addEventListener('pointerup', endDrag);
+        global.addEventListener('pointercancel', endDrag);
+    }
+
+    /** 宛名ブロックのドラッグ移動を有効化する（管理者のみ） */
+    function wireLabelDrag(modal, pageEl) {
+        if (!pageEl || !dragEnabled()) {
+            return;
+        }
+        var labelEl = pageEl.querySelector('.ktp-atena-label[data-ktp-atena-drag="1"]');
+        var wrap = modal.querySelector('.ktp-atena-sheet-wrap');
+        if (!labelEl || !wrap) {
+            return;
+        }
+
+        bindDragGlobals();
+
+        labelEl.addEventListener('pointerdown', function (event) {
+            if (event.button !== undefined && event.button !== 0) {
+                return;
+            }
+            event.preventDefault();
+            event.stopPropagation();
+
+            labelEl.classList.add('is-dragging');
+            var pos = getLabelPosition();
+            activeDrag = {
+                labelEl: labelEl,
+                pageEl: pageEl,
+                wrap: wrap,
+                scale: previewScale(pageEl),
+                startClientX: event.clientX,
+                startClientY: event.clientY,
+                startTopMm: pos.topMm,
+                startLeftMm: pos.leftMm
+            };
+
+            updateMmReadout(wrap, pos.topMm, pos.leftMm, true);
+            if (labelEl.setPointerCapture) {
+                labelEl.setPointerCapture(event.pointerId);
+            }
+        });
+    }
+
     function collectMemoBody(pageEl) {
         if (!pageEl) {
             return '';
@@ -396,7 +707,7 @@
         printHTML += '@page{size:A4 portrait;margin:' + PAGE_MARGIN_MM + 'mm;}';
         printHTML +=
             '@media print{html,body{margin:0;padding:0;}.ktp-atena-page{page-break-inside:avoid;page-break-after:avoid;}.ktp-atena-line{border-top-width:0.25mm;border-top-style:dotted;border-top-color:rgba(0,0,0,0.2);}}';
-        printHTML += '</style></head><body><div class="ktp-atena-page">';
+        printHTML += '</style></head><body><div class="ktp-atena-page" style="' + labelPositionStyle() + '">';
 
         var gi;
         printHTML += '<div class="ktp-atena-grid-lines" aria-hidden="true">';
@@ -479,15 +790,21 @@
         }
         var modal = ensureModal();
         modal.querySelector('.ktp-atena-panel-title').textContent = config.title || t('宛名印刷');
-        modal.querySelector('.ktp-atena-panel-note').textContent =
+        var pos = getLabelPosition();
+        var note =
             config.memoNote ||
-            t(
-                '用紙余白10mm・宛名（上16mm左33mm）・罫線（左右20mm・上115mmから）でレイアウトします。罫線メモは次に開くまで保存されます。'
-            );
+            t('用紙余白10mm・宛名（上{top}mm左{left}mm）・罫線（左右20mm・上115mmから）でレイアウトします。罫線メモは次に開くまで保存されます。')
+                .replace('{top}', formatMm(PAGE_MARGIN_MM + pos.topMm))
+                .replace('{left}', formatMm(PAGE_MARGIN_MM + pos.leftMm));
+        if (dragEnabled()) {
+            note += ' ' + t('宛名ブロックはドラッグで位置を調整でき、調整後の位置は保存されます。');
+        }
+        modal.querySelector('.ktp-atena-panel-note').textContent = note;
         var wrap = modal.querySelector('.ktp-atena-sheet-wrap');
         wrap.innerHTML = buildPageHtml(config);
         var page = wrap.querySelector('.ktp-atena-page');
         wireMemo(page);
+        wireLabelDrag(modal, page);
 
         var printBtn = modal.querySelector('.ktp-atena-print');
         var newPrintBtn = printBtn.cloneNode(true);

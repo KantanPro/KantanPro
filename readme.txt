@@ -4,7 +4,7 @@ Tags: business, order management, customer management, invoice, report, staff ch
 Requires at least: 5.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.3.26
+Stable tag: 1.3.27
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -322,6 +322,9 @@ curl -sS -X POST \
 * MySQL 5.6 以上 または MariaDB 10.0 以上
 * 推奨メモリ: 256MB 以上
 * 推奨PHP拡張: GD（画像処理用）
+
+= 1.3.27 - 2026年08月17日 =
+* 顧客・協力会社タブの宛名印刷プレビューで、宛名ブロックをドラッグして位置を調整できる機能を追加。窓付き封筒の窓に合わせやすくなりました。ドラッグ中は用紙の上端・左端からの距離が mm で表示され、離すとその位置が保存されます（調整・保存は管理者のみ）。調整した位置は印刷結果にも反映され、次回以降の宛名印刷にも引き継がれます
 
 = 1.3.26 - 2026年08月14日 =
 * 更新チェックがGitHubに接続できなかったとき「最新バージョンです」と表示され、新しいバージョンの公開に気付けない不具合を修正。取得に失敗した場合は「更新情報を取得できませんでした」と表示します

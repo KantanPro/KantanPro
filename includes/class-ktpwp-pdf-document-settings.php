@@ -89,6 +89,21 @@ final class KTPWP_Pdf_Document_Settings {
 
 	public const DEFAULT_INVOICE_ROW_PADDING_Y = 6;
 
+	/**
+	 * 宛名印刷（顧客・協力会社）の宛名ブロック位置（mm）。
+	 * 印刷可能領域（用紙余白 10mm の内側）の左上を原点とする絶対位置で、
+	 * 既定値のとき長形３号窓明封筒の窓と揃う。
+	 */
+	public const ATENA_LABEL_BASE_TOP_MM = 6;
+
+	public const ATENA_LABEL_BASE_LEFT_MM = 23;
+
+	public const ATENA_LABEL_POSITION_MM_MIN = 0;
+
+	public const ATENA_LABEL_POSITION_MM_MAX = 60;
+
+	public const OPTION_ATENA_LABEL_POSITION = 'ktp_atena_label_position';
+
 	public const OPTION_DOCUMENT_SETTINGS = 'ktp_pdf_document_settings';
 
 	public const OPTION_PDF_LAYOUT = 'ktp_pdf_layout';
@@ -446,6 +461,47 @@ final class KTPWP_Pdf_Document_Settings {
 		$all[ $kind ]                       = $slice;
 
 		update_option( self::OPTION_DOCUMENT_SETTINGS, self::normalize_from_request( $all ) );
+	}
+
+	/**
+	 * 宛名印刷の宛名ブロック位置（mm）。帳票設定とは別オプションで保持する。
+	 *
+	 * @return array{top_mm:int, left_mm:int}
+	 */
+	public static function resolve_atena_label_position() {
+		$stored = get_option( self::OPTION_ATENA_LABEL_POSITION, array() );
+		if ( ! is_array( $stored ) ) {
+			$stored = array();
+		}
+
+		return array(
+			'top_mm'  => self::clamp_int(
+				$stored['top_mm'] ?? self::ATENA_LABEL_BASE_TOP_MM,
+				self::ATENA_LABEL_POSITION_MM_MIN,
+				self::ATENA_LABEL_POSITION_MM_MAX
+			),
+			'left_mm' => self::clamp_int(
+				$stored['left_mm'] ?? self::ATENA_LABEL_BASE_LEFT_MM,
+				self::ATENA_LABEL_POSITION_MM_MIN,
+				self::ATENA_LABEL_POSITION_MM_MAX
+			),
+		);
+	}
+
+	/**
+	 * 宛名印刷の宛名ブロック位置（mm）を保存する。
+	 *
+	 * @return array{top_mm:int, left_mm:int}
+	 */
+	public static function merge_atena_label_position( $top_mm, $left_mm ) {
+		$position = array(
+			'top_mm'  => self::clamp_int( $top_mm, self::ATENA_LABEL_POSITION_MM_MIN, self::ATENA_LABEL_POSITION_MM_MAX ),
+			'left_mm' => self::clamp_int( $left_mm, self::ATENA_LABEL_POSITION_MM_MIN, self::ATENA_LABEL_POSITION_MM_MAX ),
+		);
+
+		update_option( self::OPTION_ATENA_LABEL_POSITION, $position );
+
+		return $position;
 	}
 
 	public static function resolve_issuer_logo_align( $value ) {

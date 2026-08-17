@@ -241,6 +241,10 @@ class KTPWP_Ajax {
 		add_action( 'wp_ajax_nopriv_ktp_update_bulk_invoice_logo_width', array( $this, 'ajax_require_login' ) );
 		$this->registered_handlers[] = 'ktp_update_bulk_invoice_logo_width';
 
+		add_action( 'wp_ajax_ktp_update_atena_label_position', array( $this, 'ajax_update_atena_label_position' ) );
+		add_action( 'wp_ajax_nopriv_ktp_update_atena_label_position', array( $this, 'ajax_require_login' ) );
+		$this->registered_handlers[] = 'ktp_update_atena_label_position';
+
 		// 部署選択状態更新（ajax-department.phpで登録済み）
 		// add_action( 'wp_ajax_ktp_update_department_selection', 'ktp_update_department_selection_ajax' );
 		add_action( 'wp_ajax_nopriv_ktp_update_department_selection', array( $this, 'ajax_require_login' ) );
@@ -5711,6 +5715,35 @@ class KTPWP_Ajax {
 				'ok'                         => true,
 				'issuer_logo_width_percent'  => (int) $resolved['issuer_logo_width_percent'],
 				'issuer_logo_align'          => (string) $resolved['issuer_logo_align'],
+			)
+		);
+	}
+
+	/**
+	 * 宛名印刷プレビュー：宛名ブロック位置（封筒窓合わせ）更新
+	 */
+	public function ajax_update_atena_label_position() {
+		$nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
+		if ( $nonce === '' || ! wp_verify_nonce( $nonce, 'ktp_ajax_nonce' ) ) {
+			wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'ktpwp' ) );
+		}
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( '権限がありません', 'ktpwp' ) );
+		}
+		if ( ! class_exists( 'KTPWP_Pdf_Document_Settings' ) ) {
+			wp_send_json_error( __( '設定クラスが見つかりません', 'ktpwp' ) );
+		}
+
+		$top  = isset( $_POST['top_mm'] ) ? (int) $_POST['top_mm'] : KTPWP_Pdf_Document_Settings::ATENA_LABEL_BASE_TOP_MM;
+		$left = isset( $_POST['left_mm'] ) ? (int) $_POST['left_mm'] : KTPWP_Pdf_Document_Settings::ATENA_LABEL_BASE_LEFT_MM;
+
+		$position = KTPWP_Pdf_Document_Settings::merge_atena_label_position( $top, $left );
+
+		wp_send_json_success(
+			array(
+				'ok'      => true,
+				'top_mm'  => (int) $position['top_mm'],
+				'left_mm' => (int) $position['left_mm'],
 			)
 		);
 	}

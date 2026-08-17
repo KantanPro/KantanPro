@@ -493,6 +493,30 @@ class KTPWP_Assets {
                 'ver'       => KTPWP_PLUGIN_VERSION . '.' . filemtime( KTPWP_PLUGIN_DIR . 'js/ktp-atena-print.js' ),
                 'in_footer' => true,
                 'admin'     => false,
+                'localize'  => array(
+                    'object' => 'ktpAtenaPrintSettings',
+                    'data'   => function () {
+                        if ( ! class_exists( 'KTPWP_Pdf_Document_Settings' ) ) {
+                            return array();
+                        }
+                        $position = KTPWP_Pdf_Document_Settings::resolve_atena_label_position();
+
+                        return array(
+                            'labelDrag' => array(
+                                'enabled'  => current_user_can( 'manage_options' ),
+                                'ajaxUrl'  => admin_url( 'admin-ajax.php' ),
+                                'nonce'    => wp_create_nonce( 'ktp_ajax_nonce' ),
+                                'action'   => 'ktp_update_atena_label_position',
+                                'min'      => KTPWP_Pdf_Document_Settings::ATENA_LABEL_POSITION_MM_MIN,
+                                'max'      => KTPWP_Pdf_Document_Settings::ATENA_LABEL_POSITION_MM_MAX,
+                                'baseTop'  => KTPWP_Pdf_Document_Settings::ATENA_LABEL_BASE_TOP_MM,
+                                'baseLeft' => KTPWP_Pdf_Document_Settings::ATENA_LABEL_BASE_LEFT_MM,
+                                'topMm'    => (int) $position['top_mm'],
+                                'leftMm'   => (int) $position['left_mm'],
+                            ),
+                        );
+                    },
+                ),
             ),
             'ktp-print-iframe' => array(
                 'src'       => 'js/ktp-print-iframe.js',
