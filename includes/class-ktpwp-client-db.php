@@ -120,7 +120,7 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 
 				// nonce検証
 				if ( ! isset( $_POST['ktp_client_nonce'] ) || ! wp_verify_nonce( $_POST['ktp_client_nonce'], 'ktp_client_action' ) ) {
-					wp_die( __( '不正なリクエストです。', 'kantanpro' ) );
+					wp_die( esc_html__( '不正なリクエストです。', 'kantanpro' ) );
 				}
 
 				// POST データの取得とサニタイズ

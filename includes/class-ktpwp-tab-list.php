@@ -45,7 +45,7 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 		public function List_Tab_View( $tab_name ) {
 			// Check user capabilities
 			// if ( ! current_user_can( 'manage_options' ) ) {
-			// wp_die( __( 'You do not have sufficient permissions to access this page.', 'kantanpro' ) );
+			// wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'kantanpro' ) );
 			// }
 
 			if ( empty( $tab_name ) ) {

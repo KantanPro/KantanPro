@@ -5992,7 +5992,7 @@ function ktpwp_execute_invoice_items_fix() {
  */
 function ktpwp_dismiss_invoice_items_fix_notification() {
     if ( ! current_user_can( 'manage_options' ) ) {
-        wp_die( __( '権限がありません', 'kantanpro' ) );
+        wp_die( esc_html__( '権限がありません', 'kantanpro' ) );
     }
     
     check_ajax_referer( 'ktpwp_dismiss_notification', 'nonce' );

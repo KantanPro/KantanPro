@@ -117,7 +117,7 @@ class KTPWP_License_Manager {
         }
 
         if ( ! current_user_can( 'manage_options' ) ) {
-            wp_die( __( 'この操作を実行する権限がありません。', 'kantanpro' ) );
+            wp_die( esc_html__( 'この操作を実行する権限がありません。', 'kantanpro' ) );
         }
 
         $license_key = isset( $_POST['ktp_license_key'] ) ? trim( wp_unslash( $_POST['ktp_license_key'] ) ) : '';
@@ -753,7 +753,7 @@ class KTPWP_License_Manager {
         }
 
         if ( ! current_user_can( 'manage_options' ) ) {
-            wp_die( __( 'この操作を実行する権限がありません。', 'kantanpro' ) );
+            wp_die( esc_html__( 'この操作を実行する権限がありません。', 'kantanpro' ) );
         }
 
         $license_key = isset( $_POST['license_key'] ) ? trim( wp_unslash( $_POST['license_key'] ) ) : '';
@@ -854,7 +854,7 @@ class KTPWP_License_Manager {
         check_ajax_referer( 'ktp_license_nonce', 'nonce' );
 
         if ( ! current_user_can( 'manage_options' ) ) {
-            wp_die( __( 'この操作を実行する権限がありません。', 'kantanpro' ) );
+            wp_die( esc_html__( 'この操作を実行する権限がありません。', 'kantanpro' ) );
         }
 
         $license_key = get_option( 'ktp_license_key' );

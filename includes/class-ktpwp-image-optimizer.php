@@ -650,9 +650,9 @@ class KTPWP_Image_Optimizer {
         
         echo '<div style="position: fixed; bottom: 130px; right: 10px; background: #fff; border: 1px solid #ccc; padding: 10px; font-size: 12px; z-index: 9999;">';
         echo '<strong>KTPWP Image Optimization:</strong><br>';
-        echo "WebP Conversions: {$stats['webp_conversions']}<br>";
-        echo "Size Reduction: {$size_reduction_mb} MB<br>";
-        echo "Cache Hits: {$stats['cache_hits']}<br>";
+        echo 'WebP Conversions: ' . esc_html( $stats['webp_conversions'] ) . '<br>';
+        echo 'Size Reduction: ' . esc_html( $size_reduction_mb ) . ' MB<br>';
+        echo 'Cache Hits: ' . esc_html( $stats['cache_hits'] ) . '<br>';
         echo "WebP Support: " . ( $this->webp_supported() ? 'Yes' : 'No' );
         echo '</div>';
     }

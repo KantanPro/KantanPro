@@ -138,7 +138,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
 					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 						error_log( 'KTPWP: Nonce verification failed' );
 					}
-					wp_die( __( 'Security check failed. Please refresh the page and try again.', 'kantanpro' ) );
+					wp_die( esc_html__( 'Security check failed. Please refresh the page and try again.', 'kantanpro' ) );
 				}
 			}
 
@@ -418,7 +418,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
 					$table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) ) === $table_name;
 					if ( ! $table_exists ) {
 						error_log( 'KTPWP ERROR: Table does not exist: ' . $table_name );
-						wp_die( __( 'Database table does not exist. Please contact the administrator.', 'kantanpro' ) );
+						wp_die( esc_html__( 'Database table does not exist. Please contact the administrator.', 'kantanpro' ) );
 					}
 
 					// Sanitize all POST data for insert operation

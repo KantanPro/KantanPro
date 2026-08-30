@@ -366,9 +366,9 @@ class KTPWP_Hook_Manager {
         
         echo '<div style="position: fixed; bottom: 70px; right: 10px; background: #fff; border: 1px solid #ccc; padding: 10px; font-size: 12px; z-index: 9999;">';
         echo '<strong>KTPWP Hook Optimization:</strong><br>';
-        echo "Removed Hooks: {$stats['removed_hooks']}<br>";
-        echo "Optimized Hooks: {$stats['optimized_hooks']}<br>";
-        echo "Total Optimizations: {$stats['total_optimizations']}";
+        echo 'Removed Hooks: ' . esc_html( $stats['removed_hooks'] ) . '<br>';
+        echo 'Optimized Hooks: ' . esc_html( $stats['optimized_hooks'] ) . '<br>';
+        echo 'Total Optimizations: ' . esc_html( $stats['total_optimizations'] );
         echo '</div>';
     }
 

@@ -745,7 +745,7 @@ class KTPWP_Ajax {
 		echo 'var ktpwp_ajax = ' . json_encode( $ajax_data ) . ';';
 		echo '}';
 		echo 'if (typeof ajaxurl === "undefined") {';
-		echo 'var ajaxurl = "' . admin_url( 'admin-ajax.php' ) . '";';
+		echo 'var ajaxurl = "' . esc_url_raw( admin_url( 'admin-ajax.php' ) ) . '";';
 		echo '}';
 		echo '</script>';
 	}
@@ -4293,7 +4293,9 @@ class KTPWP_Ajax {
 			$json          = wp_json_encode( $fallback_data );
 		}
 
-		// JSONを出力
+		// JSONを出力。wp_json_encode() の戻り値であり、JSON として送出するため
+		// HTML エスケープを行うと壊れる。
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		echo $json;
 
 		// WordPress 標準の終了処理を使用（shutdown フックを実行）
@@ -6823,7 +6825,7 @@ class KTPWP_Ajax {
 	public function get_report_data() {
 		// 権限チェック
 		if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
-			wp_die( __( '権限がありません。', 'kantanpro' ) );
+			wp_die( esc_html__( '権限がありません。', 'kantanpro' ) );
 		}
 
 		// ノンスチェック
@@ -6836,7 +6838,7 @@ class KTPWP_Ajax {
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 				error_log( 'レポートAJAX nonce検証失敗: ' . ( isset( $_POST['nonce'] ) ? $_POST['nonce'] : 'NOT_SET' ) );
 			}
-			wp_die( __( 'セキュリティチェックに失敗しました。', 'kantanpro' ) );
+			wp_die( esc_html__( 'セキュリティチェックに失敗しました。', 'kantanpro' ) );
 		}
 		
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {

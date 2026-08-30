@@ -17,12 +17,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 function ktp_add_department_ajax() {
     // セキュリティチェック
     if ( ! wp_verify_nonce( $_POST['nonce'], 'ktp_department_nonce' ) ) {
-        wp_die( __( 'セキュリティチェックに失敗しました。', 'kantanpro' ) );
+        wp_die( esc_html__( 'セキュリティチェックに失敗しました。', 'kantanpro' ) );
     }
 
     // 権限チェック
     if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
-        wp_die( __( '権限がありません。', 'kantanpro' ) );
+        wp_die( esc_html__( '権限がありません。', 'kantanpro' ) );
     }
 
     // 部署管理クラスが存在するかチェック
@@ -61,12 +61,12 @@ function ktp_add_department_ajax() {
 function ktp_delete_department_ajax() {
     // セキュリティチェック
     if ( ! wp_verify_nonce( $_POST['nonce'], 'ktp_department_nonce' ) ) {
-        wp_die( __( 'セキュリティチェックに失敗しました。', 'kantanpro' ) );
+        wp_die( esc_html__( 'セキュリティチェックに失敗しました。', 'kantanpro' ) );
     }
 
     // 権限チェック
     if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
-        wp_die( __( '権限がありません。', 'kantanpro' ) );
+        wp_die( esc_html__( '権限がありません。', 'kantanpro' ) );
     }
 
     // 部署管理クラスが存在するかチェック
@@ -110,12 +110,12 @@ function ktp_update_department_selection_ajax() {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
             error_log( 'KTPWP AJAX: Nonce verification failed' );
         }
-        wp_die( __( 'セキュリティチェックに失敗しました。', 'kantanpro' ) );
+        wp_die( esc_html__( 'セキュリティチェックに失敗しました。', 'kantanpro' ) );
     }
 
     // 権限チェック
     if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
-        wp_die( __( '権限がありません。', 'kantanpro' ) );
+        wp_die( esc_html__( '権限がありません。', 'kantanpro' ) );
     }
 
     // 部署管理クラスが存在するかチェック

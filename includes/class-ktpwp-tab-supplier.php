@@ -139,7 +139,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 
 			// セキュリティチェック
 			if ( ! current_user_can( 'edit_posts' ) ) {
-				wp_die( __( 'You do not have sufficient permissions to access this page.', 'kantanpro' ) );
+				wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'kantanpro' ) );
 			}
 
 			// 入力値の検証

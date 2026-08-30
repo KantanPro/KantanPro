@@ -709,7 +709,7 @@ PROMPT;
 			echo '<option value="__skip__">' . esc_html__( '（マッピングしない）', 'kantanpro' ) . '</option>';
 			foreach ( $headers as $i => $h ) {
 				$opt = esc_html( $h !== '' ? $h : (string) $i );
-				echo '<option value="' . (int) $i . '"' . selected( $selected, $i, false ) . '>' . $opt . '</option>';
+				echo '<option value="' . (int) $i . '"' . selected( $selected, $i, false ) . '>' . esc_html( $opt ) . '</option>';
 			}
 			echo '</select></td></tr>';
 		}
