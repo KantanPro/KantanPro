@@ -4,7 +4,7 @@ Tags: invoice, crm, order management, quotation, business
 Requires at least: 5.9
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.3.29
+Stable tag: 1.3.30
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -124,6 +124,9 @@ CSV / データ取り込み機能で、列の自動マッピングに使用し�
 == Changelog ==
 
 過去のすべての変更履歴は、プラグインに同梱の changelog.txt を参照してください。
+
+= 1.3.30 - 2026年08月30日 =
+* 請求候補データと受注書データを返す内部処理で、権限の確認が抜けていた問題を修正しました。ログインしていれば権限に関わらずデータを取得できる状態でしたが、編集権限を必須にしました
 
 = 1.3.29 - 2026年08月30日 =
 * PDF出力とグラフ描画に使うライブラリ（html2canvas / jsPDF / Chart.js）をプラグインに同梱するよう変更。外部CDNへの依存をなくし、CDNが利用できない環境でもPDFを出力できるようになりました
