@@ -5628,6 +5628,12 @@ class KTPWP_Ajax {
 	 * 受注書データを取得
 	 */
 	public function get_order_data() {
+		// 権限チェック（業務データのため、ログイン＋編集権限を必須とする）
+		if ( ! is_user_logged_in() || ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) ) {
+			wp_send_json_error( __( 'この操作を行う権限がありません。', 'kantanpro' ) );
+			return;
+		}
+
 		// セキュリティチェック
 		if (!isset($_POST['ktp_ajax_nonce']) || !wp_verify_nonce($_POST['ktp_ajax_nonce'], 'ktp_ajax_nonce')) {
 			wp_send_json_error( __( 'セキュリティチェックに失敗しました。', 'kantanpro' ) );
@@ -5766,6 +5772,12 @@ class KTPWP_Ajax {
 	 * 請求書候補データを取得
 	 */
 	public function ajax_get_invoice_candidates() {
+		// 権限チェック（業務データのため、ログイン＋編集権限を必須とする）
+		if ( ! is_user_logged_in() || ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) ) {
+			wp_send_json_error( __( 'この操作を行う権限がありません。', 'kantanpro' ) );
+			return;
+		}
+
 		// セキュリティチェック
 		if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'ktp_ajax_nonce')) {
 			wp_send_json_error( __( 'セキュリティチェックに失敗しました。', 'kantanpro' ) );
