@@ -112,16 +112,6 @@ CSV / データ取り込み機能で、列の自動マッピングに使用し�
 * 利用規約: https://openai.com/policies/terms-of-use
 * プライバシーポリシー: https://openai.com/policies/privacy-policy
 
-**4. お知らせ配信（kantanpro.com）**
-
-プラグイン画面に表示するお知らせの内容を取得します。
-管理画面の設定で無効にできます。取得のみで、サイトの情報は送信しません。
-
-* 送信先: `https://www.kantanpro.com/wp-json/kantanpro/v1/central-banner`
-* 送信するデータ: なし（取得のみ）
-* 提供元: https://www.kantanpro.com/
-* プライバシーポリシー: https://www.kantanpro.com/privacy-policy/
-
 == Screenshots ==
 
 1. 仕事リストタブ — 受注案件の一覧と進捗フィルター

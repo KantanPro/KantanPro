@@ -3304,10 +3304,10 @@ function ktpwp_footer_update_complete_guide() {
     $plugins_url = admin_url( 'plugins.php' );
     $settings_url = admin_url( 'admin.php?page=ktp-settings&ktpwp_updated=1' );
     echo '<div class="notice notice-success" style="margin:20px 0;padding:20px;border-left:4px solid #00a32a;background:#f0f9f0;border-radius:4px;">';
-    echo '<p style="font-size:15px;margin:0 0 8px 0;"><strong>✅ KantanProEX の更新とマイグレーションが完了しました。</strong></p>';
+    echo '<p style="font-size:15px;margin:0 0 8px 0;"><strong>✅ ' . esc_html( ktpwp_admin_notice_label() ) . ' の更新とマイグレーションが完了しました。</strong></p>';
     echo '<p style="margin:0 0 12px 0;">プラグイン一覧へ戻ります。通常の管理画面読み込み後に設定を開いてください。</p>';
     echo '<p style="margin:0;"><a href="' . esc_url( $plugins_url ) . '" class="button button-primary">プラグイン一覧へ</a> ';
-    echo '<a href="' . esc_url( $settings_url ) . '" class="button">KantanProEX 設定を開く</a></p>';
+    echo '<a href="' . esc_url( $settings_url ) . '" class="button">' . esc_html( ktpwp_admin_notice_label() ) . ' 設定を開く</a></p>';
     echo '</div>';
 
     if ( $should_redirect ) {
@@ -4600,7 +4600,7 @@ function KTPWP_Index() {
             }
 
             // システム名はプラグイン定数を優先して固定表示（無料版の残存オプション値に影響されない）
-            $system_name = defined( 'KANTANPRO_PLUGIN_NAME' ) ? KANTANPRO_PLUGIN_NAME : 'KantanProEX';
+            $system_name = defined( 'KANTANPRO_PLUGIN_NAME' ) ? KANTANPRO_PLUGIN_NAME : 'KantanPro';
             $system_description = defined( 'KANTANPRO_PLUGIN_DESCRIPTION' )
                 ? KANTANPRO_PLUGIN_DESCRIPTION
                 : 'スモールビジネスのための販売支援ツール';

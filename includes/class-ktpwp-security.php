@@ -592,7 +592,7 @@ class KTPWP_Security {
     private function send_basic_auth_challenge() {
         if ( ! headers_sent() ) {
             status_header( 401 );
-            header( 'WWW-Authenticate: Basic realm="' . esc_attr__( 'KantanProEX 管理画面', 'ktpwp' ) . '"' );
+            header( 'WWW-Authenticate: Basic realm="' . esc_attr( defined( 'KANTANPRO_PLUGIN_NAME' ) ? KANTANPRO_PLUGIN_NAME : 'KantanPro' ) . '"' );
             header( 'Content-Type: text/plain; charset=UTF-8' );
         }
 

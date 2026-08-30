@@ -1887,7 +1887,7 @@ class KTPWP_Settings {
         $is_dev_env        = $this->is_development_environment();
 
         $rows = array(
-            __( 'プラグイン', 'ktpwp' )         => ( defined( 'KANTANPRO_PLUGIN_NAME' ) ? KANTANPRO_PLUGIN_NAME : 'KantanProEX' ) . ' ' . $plugin_version,
+            __( 'プラグイン', 'ktpwp' )         => ( defined( 'KANTANPRO_PLUGIN_NAME' ) ? KANTANPRO_PLUGIN_NAME : 'KantanPro' ) . ' ' . $plugin_version,
             __( 'DBバージョン', 'ktpwp' )       => $db_version !== '' ? $db_version : __( '不明', 'ktpwp' ),
             __( 'インストール日', 'ktpwp' )     => $installed_date !== '' ? $installed_date : __( '不明', 'ktpwp' ),
             __( 'WordPress', 'ktpwp' )          => get_bloginfo( 'version' ),
