@@ -88,7 +88,7 @@ class KTPWP_Payment_Timing {
 	 */
 	public static function get_inbound_source_label( $order, $client = null ) {
 		if ( self::is_public_web_order( $order ) ) {
-			return __( 'WEB受注', 'ktpwp' );
+			return __( 'WEB受注', 'kantanpro' );
 		}
 
 		return self::get_prepay_label( $order, $client );
@@ -107,12 +107,12 @@ class KTPWP_Payment_Timing {
 		}
 		$external = isset( $order->external_source ) ? trim( (string) $order->external_source ) : '';
 		if ( $external === 'woocommerce' ) {
-			return __( 'WC受注', 'ktpwp' );
+			return __( 'WC受注', 'kantanpro' );
 		}
 		if ( $external !== '' ) {
-			return __( 'EC受注', 'ktpwp' );
+			return __( 'EC受注', 'kantanpro' );
 		}
-		return __( '前入金済', 'ktpwp' );
+		return __( '前入金済', 'kantanpro' );
 	}
 
 	/**

@@ -468,25 +468,25 @@ class KTPWP_Image_Optimizer {
         $nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( $_POST['nonce'] ) : '';
         
         if ( ! wp_verify_nonce( $nonce, 'ktpwp_webp_conversion_' . $attachment_id ) ) {
-            wp_send_json_error( __( 'セキュリティチェックに失敗しました', 'ktpwp' ) );
+            wp_send_json_error( __( 'セキュリティチェックに失敗しました', 'kantanpro' ) );
         }
         
         if ( ! current_user_can( 'upload_files' ) ) {
-            wp_send_json_error( __( '権限がありません', 'ktpwp' ) );
+            wp_send_json_error( __( '権限がありません', 'kantanpro' ) );
         }
         
         $image_path = get_attached_file( $attachment_id );
         
         if ( ! $image_path || ! $this->is_image_file( $image_path ) ) {
-            wp_send_json_error( __( '有効な画像ファイルではありません', 'ktpwp' ) );
+            wp_send_json_error( __( '有効な画像ファイルではありません', 'kantanpro' ) );
         }
         
         $webp_file = $this->convert_to_webp( $image_path );
         
         if ( $webp_file ) {
-            wp_send_json_success( __( 'WebP変換が完了しました', 'ktpwp' ) );
+            wp_send_json_success( __( 'WebP変換が完了しました', 'kantanpro' ) );
         } else {
-            wp_send_json_error( __( 'WebP変換に失敗しました', 'ktpwp' ) );
+            wp_send_json_error( __( 'WebP変換に失敗しました', 'kantanpro' ) );
         }
     }
 

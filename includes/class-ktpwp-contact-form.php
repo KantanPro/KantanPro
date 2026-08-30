@@ -94,7 +94,7 @@ class KTPWP_Contact_Form {
         // デフォルト値設定
         $this->default_values = array(
             'client_status' => '対象',
-            'project_name' => __( 'お問い合わせの件', 'ktpwp' ),
+            'project_name' => __( 'お問い合わせの件', 'kantanpro' ),
             'progress' => 1, // "受付中"
             'user_name' => '',
         );
@@ -458,14 +458,14 @@ class KTPWP_Contact_Form {
         $memo = '';
 
         if ( ! empty( $subject ) ) {
-            $memo .= __( '件名:', 'ktpwp' ) . ' ' . $subject;
+            $memo .= __( '件名:', 'kantanpro' ) . ' ' . $subject;
         }
 
         if ( ! empty( $message ) ) {
             if ( ! empty( $memo ) ) {
                 $memo .= "\n";
             }
-            $memo .= __( 'メッセージ本文:', 'ktpwp' ) . ' ' . $message;
+            $memo .= __( 'メッセージ本文:', 'kantanpro' ) . ' ' . $message;
         }
 
         return $memo;
@@ -485,12 +485,12 @@ class KTPWP_Contact_Form {
 
         $category = sanitize_text_field( (string) $category );
         if ( $category !== '' ) {
-            $body = trim( $body . "\n" . __( 'カテゴリ:', 'ktpwp' ) . ' ' . $category );
+            $body = trim( $body . "\n" . __( 'カテゴリ:', 'kantanpro' ) . ' ' . $category );
         }
 
         $header = sprintf(
             '── %s %s ──',
-            __( '問い合わせ受信', 'ktpwp' ),
+            __( '問い合わせ受信', 'kantanpro' ),
             current_time( 'Y-m-d H:i:s' )
         );
 
@@ -498,7 +498,7 @@ class KTPWP_Contact_Form {
         if ( $department_label !== '' ) {
             $header .= ' （' . sprintf(
                 /* translators: %s: department name */
-                __( '部署: %s', 'ktpwp' ),
+                __( '部署: %s', 'kantanpro' ),
                 $department_label
             ) . '）';
         }

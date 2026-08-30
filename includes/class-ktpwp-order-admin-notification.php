@@ -195,53 +195,55 @@ if ( ! class_exists( 'KTPWP_Order_Admin_Notification' ) ) {
 
 			$subject = sprintf(
 				/* translators: 1: site name, 2: order source label */
-				__( '[%1$s] 新規受注のお知らせ（%2$s）', 'ktpwp' ),
+				__( '[%1$s] 新規受注のお知らせ（%2$s）', 'kantanpro' ),
 				$site_name,
 				$source_label
 			);
 
-			$body  = __( '新しい受注が登録されました。', 'ktpwp' ) . "\n\n";
-			$body .= __( '受注元:', 'ktpwp' ) . ' ' . $source_label . "\n";
+			$body  = __( '新しい受注が登録されました。', 'kantanpro' ) . "\n\n";
+			$body .= __( '受注元:', 'kantanpro' ) . ' ' . $source_label . "\n";
 
 			if ( $order_number !== '' ) {
-				$body .= __( '受注番号:', 'ktpwp' ) . ' ' . $order_number . "\n";
+				$body .= __( '受注番号:', 'kantanpro' ) . ' ' . $order_number . "\n";
 			}
 
-			$body .= __( '案件名:', 'ktpwp' ) . ' ' . $project_name . "\n";
-			$body .= __( '進捗:', 'ktpwp' ) . ' ' . $progress_label . "\n";
+			$body .= __( '案件名:', 'kantanpro' ) . ' ' . $project_name . "\n";
+			$body .= __( '進捗:', 'kantanpro' ) . ' ' . $progress_label . "\n";
 
 			if ( $customer_name !== '' ) {
-				$body .= __( '顧客名:', 'ktpwp' ) . ' ' . $customer_name . "\n";
+				$body .= __( '顧客名:', 'kantanpro' ) . ' ' . $customer_name . "\n";
 			}
 			if ( $user_name !== '' ) {
-				$body .= __( '担当者名:', 'ktpwp' ) . ' ' . $user_name . "\n";
+				$body .= __( '担当者名:', 'kantanpro' ) . ' ' . $user_name . "\n";
 			}
 			if ( $client_email !== '' ) {
-				$body .= __( 'メールアドレス:', 'ktpwp' ) . ' ' . $client_email . "\n";
+				$body .= __( 'メールアドレス:', 'kantanpro' ) . ' ' . $client_email . "\n";
 			}
 
 			if ( ! empty( $context['wc_order_number'] ) ) {
-				$body .= __( 'WooCommerce 注文番号:', 'ktpwp' ) . ' ' . sanitize_text_field( (string) $context['wc_order_number'] ) . "\n";
+				$body .= __( 'WooCommerce 注文番号:', 'kantanpro' ) . ' ' . sanitize_text_field( (string) $context['wc_order_number'] ) . "\n";
 			}
 			if ( ! empty( $context['service_name'] ) ) {
-				$body .= __( '商品名:', 'ktpwp' ) . ' ' . sanitize_text_field( (string) $context['service_name'] ) . "\n";
+				$body .= __( '商品名:', 'kantanpro' ) . ' ' . sanitize_text_field( (string) $context['service_name'] ) . "\n";
 			}
 			if ( $memo !== '' ) {
-				$body .= "\n" . __( 'メモ:', 'ktpwp' ) . "\n" . $memo . "\n";
+				$body .= "\n" . __( 'メモ:', 'kantanpro' ) . "\n" . $memo . "\n";
 			}
 
 			$order_url = $this->get_order_document_url( (int) $order->id );
 			if ( $order_url !== '' ) {
-				$body .= "\n" . __( '受注書へのリンク:', 'ktpwp' ) . "\n" . $order_url . "\n";
+				$body .= "\n" . __( '受注書へのリンク:', 'kantanpro' ) . "\n" . $order_url . "\n";
 				$order_ref_parts = array();
 				if ( $order_number !== '' ) {
-					$order_ref_parts[] = sprintf( __( '受注番号 %s', 'ktpwp' ), $order_number );
+					/* translators: %s: 受注番号 */
+					$order_ref_parts[] = sprintf( __( '受注番号 %s', 'kantanpro' ), $order_number );
 				}
-				$order_ref_parts[] = sprintf( __( 'ID %d', 'ktpwp' ), (int) $order->id );
+				/* translators: %d: ID番号 */
+				$order_ref_parts[] = sprintf( __( 'ID %d', 'kantanpro' ), (int) $order->id );
 				$body .= '（' . implode( ' / ', $order_ref_parts ) . '）' . "\n";
 			}
 
-			$body .= "\n" . __( '※ このメールは自動送信されています。', 'ktpwp' ) . "\n";
+			$body .= "\n" . __( '※ このメールは自動送信されています。', 'kantanpro' ) . "\n";
 
 			return array(
 				'subject' => $subject,
@@ -301,13 +303,13 @@ if ( ! class_exists( 'KTPWP_Order_Admin_Notification' ) ) {
 		private function get_source_label( $source ) {
 			switch ( $source ) {
 				case self::SOURCE_WOOCOMMERCE:
-					return __( 'WooCommerce', 'ktpwp' );
+					return __( 'WooCommerce', 'kantanpro' );
 				case self::SOURCE_CONTACT_FORM7:
-					return __( 'お問い合わせフォーム（Contact Form 7）', 'ktpwp' );
+					return __( 'お問い合わせフォーム（Contact Form 7）', 'kantanpro' );
 				case self::SOURCE_PUBLIC_PRODUCT:
-					return __( '公開商品のお問い合わせ', 'ktpwp' );
+					return __( '公開商品のお問い合わせ', 'kantanpro' );
 				default:
-					return __( '外部連携', 'ktpwp' );
+					return __( '外部連携', 'kantanpro' );
 			}
 		}
 

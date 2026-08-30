@@ -62,7 +62,7 @@ if ( ! class_exists( 'KTPWP_Public_Product_Order' ) ) {
 					'success' => false,
 					'message' => sprintf(
 						/* translators: %s: store URL */
-						__( 'フリー版では公開商品機能は利用できません。KantanProEX（WP）販売所: %s', 'ktpwp' ),
+						__( 'フリー版では公開商品機能は利用できません。KantanProEX（WP）販売所: %s', 'kantanpro' ),
 						$store_url
 					),
 				);
@@ -72,7 +72,7 @@ if ( ! class_exists( 'KTPWP_Public_Product_Order' ) ) {
 			if ( ! $service ) {
 				return array(
 					'success' => false,
-					'message' => __( '指定された商品は公開されていないか、存在しません。', 'ktpwp' ),
+					'message' => __( '指定された商品は公開されていないか、存在しません。', 'kantanpro' ),
 				);
 			}
 
@@ -93,14 +93,14 @@ if ( ! class_exists( 'KTPWP_Public_Product_Order' ) ) {
 			if ( $contact_name === '' ) {
 				return array(
 					'success' => false,
-					'message' => __( 'お名前を入力してください。', 'ktpwp' ),
+					'message' => __( 'お名前を入力してください。', 'kantanpro' ),
 				);
 			}
 
 			if ( $email === '' || ! is_email( $email ) ) {
 				return array(
 					'success' => false,
-					'message' => __( '有効なメールアドレスを入力してください。', 'ktpwp' ),
+					'message' => __( '有効なメールアドレスを入力してください。', 'kantanpro' ),
 				);
 			}
 
@@ -112,8 +112,8 @@ if ( ! class_exists( 'KTPWP_Public_Product_Order' ) ) {
 
 				if ( empty( $availability['acceptance_open'] ) ) {
 					$message = $availability['availability_state'] === 'sold_out'
-						? __( 'こちらの商品は完売しました。', 'ktpwp' )
-						: __( '現在この商品はお問い合わせを受け付けておりません（保留中）。', 'ktpwp' );
+						? __( 'こちらの商品は完売しました。', 'kantanpro' )
+						: __( '現在この商品はお問い合わせを受け付けておりません（保留中）。', 'kantanpro' );
 
 					return array(
 						'success' => false,
@@ -140,7 +140,7 @@ if ( ! class_exists( 'KTPWP_Public_Product_Order' ) ) {
 			if ( $client_id <= 0 ) {
 				return array(
 					'success' => false,
-					'message' => __( 'お客様情報の保存に失敗しました。', 'ktpwp' ),
+					'message' => __( 'お客様情報の保存に失敗しました。', 'kantanpro' ),
 				);
 			}
 
@@ -171,7 +171,7 @@ if ( ! class_exists( 'KTPWP_Public_Product_Order' ) ) {
 			if ( ! $order_id ) {
 				return array(
 					'success' => false,
-					'message' => __( '案件の作成に失敗しました。', 'ktpwp' ),
+					'message' => __( '案件の作成に失敗しました。', 'kantanpro' ),
 				);
 			}
 
@@ -223,7 +223,7 @@ if ( ! class_exists( 'KTPWP_Public_Product_Order' ) ) {
 
 			return array(
 				'success'  => true,
-				'message'  => __( 'お問い合わせを受け付けました。担当者よりご連絡いたします。', 'ktpwp' ),
+				'message'  => __( 'お問い合わせを受け付けました。担当者よりご連絡いたします。', 'kantanpro' ),
 				'order_id' => (int) $order_id,
 			);
 		}
@@ -240,7 +240,7 @@ if ( ! class_exists( 'KTPWP_Public_Product_Order' ) ) {
 
 			if ( ! empty( $_POST['company_url'] ) ) {
 				$this->send_ajax_json_error(
-					array( 'message' => __( '送信に失敗しました。', 'ktpwp' ) ),
+					array( 'message' => __( '送信に失敗しました。', 'kantanpro' ) ),
 					400
 				);
 			}
@@ -327,12 +327,12 @@ if ( ! class_exists( 'KTPWP_Public_Product_Order' ) ) {
 
 			$product_suffix = sprintf(
 				/* translators: 1: product ID, 2: product name */
-				__( '商品ID: %1$d %2$s', 'ktpwp' ),
+				__( '商品ID: %1$d %2$s', 'kantanpro' ),
 				$service_id,
 				$service_name
 			);
 			$product_suffix = trim( $product_suffix );
-			$web_suffix     = __( '（Webお申込み）', 'ktpwp' );
+			$web_suffix     = __( '（Webお申込み）', 'kantanpro' );
 
 			$memo = $message === '' ? $product_suffix : $message . ' ' . $product_suffix;
 

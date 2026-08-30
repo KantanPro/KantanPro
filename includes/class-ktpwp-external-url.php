@@ -140,7 +140,7 @@ if ( ! class_exists( 'KTPWP_External_Url' ) ) {
 		 * @param string $aria_label  Accessible label.
 		 */
 		public static function render_open_anchor( string $raw, string $input_id, string $aria_label = '' ): string {
-			$aria_label = $aria_label !== '' ? $aria_label : __( 'URL', 'ktpwp' );
+			$aria_label = $aria_label !== '' ? $aria_label : __( 'URL', 'kantanpro' );
 
 			return self::render_action_anchor( self::normalize( $raw ), $input_id, $aria_label, self::globe_svg(), true );
 		}

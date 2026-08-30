@@ -140,7 +140,7 @@ class KTPWP_WooCommerce_Integration {
 		$time          = $created ? $created->getTimestamp() : time();
 		$memo          = sprintf(
 			/* translators: 1: WooCommerce order number, 2: order ID */
-			__( 'WooCommerce 注文 #%1$s (ID: %2$d)', 'ktpwp' ),
+			__( 'WooCommerce 注文 #%1$s (ID: %2$d)', 'kantanpro' ),
 			$order_number,
 			$order_id
 		);
@@ -348,7 +348,7 @@ class KTPWP_WooCommerce_Integration {
 			return $company;
 		}
 		$name = $this->get_billing_full_name( $order );
-		return $name !== '' ? $name : __( 'ゲスト', 'ktpwp' );
+		return $name !== '' ? $name : __( 'ゲスト', 'kantanpro' );
 	}
 
 	/**
@@ -392,7 +392,7 @@ class KTPWP_WooCommerce_Integration {
 		}
 
 		// メールで見つからない、またはメール未入力の場合は新規顧客を作成
-		$company_name = $company !== '' ? $company : ( $name !== '' ? $name : __( 'WooCommerce顧客', 'ktpwp' ) );
+		$company_name = $company !== '' ? $company : ( $name !== '' ? $name : __( 'WooCommerce顧客', 'kantanpro' ) );
 
 		// 新規顧客を作成
 		$search_parts = array_filter( array( $company_name, $name, $email, $phone, $state, $city, $address ) );
@@ -410,9 +410,9 @@ class KTPWP_WooCommerce_Integration {
 			'prefecture'        => $state,
 			'city'              => $city,
 			'address'           => $address,
-			'tax_category'      => __( '内税', 'ktpwp' ),
+			'tax_category'      => __( '内税', 'kantanpro' ),
 			'payment_timing'    => 'prepay',
-			'client_status'     => __( '対象', 'ktpwp' ),
+			'client_status'     => __( '対象', 'kantanpro' ),
 			'search_field'      => $search_field,
 		);
 		$fmt = array( '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' );
@@ -446,7 +446,7 @@ class KTPWP_WooCommerce_Integration {
 			$fmt[] = '%s';
 		}
 		if ( in_array( 'memo', $cols, true ) ) {
-			$row['memo'] = __( 'WooCommerce から取り込み', 'ktpwp' );
+			$row['memo'] = __( 'WooCommerce から取り込み', 'kantanpro' );
 			$fmt[] = '%s';
 		}
 		if ( in_array( 'category', $cols, true ) ) {
@@ -575,7 +575,7 @@ class KTPWP_WooCommerce_Integration {
 				'order_id'     => $ktp_order_id,
 				'product_name' => $name,
 				'price'        => $price,
-				'unit'         => __( '個', 'ktpwp' ),
+				'unit'         => __( '個', 'kantanpro' ),
 				'quantity'     => $qty,
 				'amount'       => $amount,
 				'tax_rate'     => $tax_rate,
@@ -718,8 +718,8 @@ class KTPWP_WooCommerce_Integration {
 		}
 		add_submenu_page(
 			'woocommerce',
-			__( 'KantanPro 連携', 'ktpwp' ),
-			__( 'KantanPro 連携', 'ktpwp' ),
+			__( 'KantanPro 連携', 'kantanpro' ),
+			__( 'KantanPro 連携', 'kantanpro' ),
 			'manage_woocommerce',
 			'ktpwp-woocommerce-sync',
 			array( $this, 'render_sync_page' )
@@ -747,19 +747,19 @@ class KTPWP_WooCommerce_Integration {
 		$need_link  = $this->count_orders_without_client();
 		?>
 		<div class="wrap">
-			<h1><?php esc_html_e( 'KantanPro 連携', 'ktpwp' ); ?></h1>
-			<p><?php esc_html_e( 'WooCommerce の注文のうち、まだ KantanPro に取り込まれていないものを一括で同期します。', 'ktpwp' ); ?></p>
-			<p><a href="<?php echo esc_url( $url_sync ); ?>" class="button button-primary"><?php esc_html_e( '未同期の注文を KantanPro に同期', 'ktpwp' ); ?></a></p>
+			<h1><?php esc_html_e( 'KantanPro 連携', 'kantanpro' ); ?></h1>
+			<p><?php esc_html_e( 'WooCommerce の注文のうち、まだ KantanPro に取り込まれていないものを一括で同期します。', 'kantanpro' ); ?></p>
+			<p><a href="<?php echo esc_url( $url_sync ); ?>" class="button button-primary"><?php esc_html_e( '未同期の注文を KantanPro に同期', 'kantanpro' ); ?></a></p>
 			<?php if ( $this->order_table_has_external_columns() ) : ?>
 				<hr />
-				<h2><?php esc_html_e( '既存受注の顧客紐付け', 'ktpwp' ); ?></h2>
-				<p><?php esc_html_e( '既に KantanPro に同期済みの WooCommerce 連携受注について、同じ注文の請求先から顧客を取得または作成して紐付けます。', 'ktpwp' ); ?></p>
+				<h2><?php esc_html_e( '既存受注の顧客紐付け', 'kantanpro' ); ?></h2>
+				<p><?php esc_html_e( '既に KantanPro に同期済みの WooCommerce 連携受注について、同じ注文の請求先から顧客を取得または作成して紐付けます。', 'kantanpro' ); ?></p>
 				<?php if ( $need_link > 0 ) : ?>
-					<p><a href="<?php echo esc_url( $url_link ); ?>" class="button button-secondary"><?php echo esc_html( sprintf( __( '顧客未設定の受注 %d 件を一括で顧客紐付け', 'ktpwp' ), $need_link ) ); ?></a></p>
+					<p><a href="<?php echo esc_url( $url_link ); ?>" class="button button-secondary"><?php echo esc_html( /* translators: %d: 対象の受注件数 */ sprintf( __( '顧客未設定の受注 %d 件を一括で顧客紐付け', 'kantanpro' ), $need_link ) ); ?></a></p>
 				<?php else : ?>
-					<p><em><?php esc_html_e( '顧客未設定の WooCommerce 連携受注はありません。', 'ktpwp' ); ?></em></p>
+					<p><em><?php esc_html_e( '顧客未設定の WooCommerce 連携受注はありません。', 'kantanpro' ); ?></em></p>
 				<?php endif; ?>
-				<p><a href="<?php echo esc_url( $url_relink ); ?>" class="button button-secondary"><?php esc_html_e( '顧客を再紐付け（全件対象・既存の紐付けも上書き）', 'ktpwp' ); ?></a></p>
+				<p><a href="<?php echo esc_url( $url_relink ); ?>" class="button button-secondary"><?php esc_html_e( '顧客を再紐付け（全件対象・既存の紐付けも上書き）', 'kantanpro' ); ?></a></p>
 			<?php endif; ?>
 		</div>
 		<?php
@@ -770,7 +770,7 @@ class KTPWP_WooCommerce_Integration {
 	 */
 	public function handle_sync_woocommerce_orders(): void {
 		if ( ! current_user_can( 'manage_woocommerce' ) ) {
-			wp_die( esc_html__( '権限がありません。', 'ktpwp' ) );
+			wp_die( esc_html__( '権限がありません。', 'kantanpro' ) );
 		}
 		check_admin_referer( 'ktpwp_sync_wc_orders' );
 		$this->ensure_order_table_ready();
@@ -791,14 +791,15 @@ class KTPWP_WooCommerce_Integration {
 				$synced++;
 			}
 		}
-		set_transient( 'ktpwp_wc_sync_message', sprintf( __( '%d 件の注文を KantanPro に同期しました。', 'ktpwp' ), $synced ), 30 );
+		/* translators: %d: 同期した注文の件数 */
+		set_transient( 'ktpwp_wc_sync_message', sprintf( __( '%d 件の注文を KantanPro に同期しました。', 'kantanpro' ), $synced ), 30 );
 		if ( $synced === 0 && count( $ids ) > 0 ) {
 			$last_err = get_transient( 'ktpwp_wc_sync_last_error' );
 			delete_transient( 'ktpwp_wc_sync_last_error' );
-			$err_msg = __( '同期できた注文が0件でした。', 'ktpwp' );
+			$err_msg = __( '同期できた注文が0件でした。', 'kantanpro' );
 			if ( $last_err ) {
-				$err_msg .= ' ' . __( 'データベースエラー:', 'ktpwp' ) . ' ' . $last_err;
-				$err_msg .= ' ' . __( 'KantanPro を一度無効化して再有効化し、受注テーブルを作成・更新してから再度お試しください。', 'ktpwp' );
+				$err_msg .= ' ' . __( 'データベースエラー:', 'kantanpro' ) . ' ' . $last_err;
+				$err_msg .= ' ' . __( 'KantanPro を一度無効化して再有効化し、受注テーブルを作成・更新してから再度お試しください。', 'kantanpro' );
 			}
 			set_transient( 'ktpwp_wc_sync_error', $err_msg, 60 );
 		}
@@ -828,12 +829,12 @@ class KTPWP_WooCommerce_Integration {
 	 */
 	public function handle_link_woocommerce_clients(): void {
 		if ( ! current_user_can( 'manage_woocommerce' ) ) {
-			wp_die( esc_html__( '権限がありません。', 'ktpwp' ) );
+			wp_die( esc_html__( '権限がありません。', 'kantanpro' ) );
 		}
 		check_admin_referer( 'ktpwp_link_wc_clients' );
 		$this->ensure_order_table_ready();
 		if ( ! $this->order_table_has_external_columns() ) {
-			set_transient( 'ktpwp_wc_sync_error', __( '受注テーブルに external_source / external_order_id がありません。', 'ktpwp' ), 60 );
+			set_transient( 'ktpwp_wc_sync_error', __( '受注テーブルに external_source / external_order_id がありません。', 'kantanpro' ), 60 );
 			wp_safe_redirect( admin_url( 'admin.php?page=ktpwp-woocommerce-sync' ) );
 			exit;
 		}
@@ -894,7 +895,8 @@ class KTPWP_WooCommerce_Integration {
 				$this->replace_invoice_items_from_wc_order( $ktp_id, $order );
 			}
 		}
-		set_transient( 'ktpwp_wc_sync_message', sprintf( __( '顧客未設定の WooCommerce 連携受注 %d 件を顧客に紐付けました。', 'ktpwp' ), $linked ), 30 );
+		/* translators: %d: 紐付けた受注の件数 */
+		set_transient( 'ktpwp_wc_sync_message', sprintf( __( '顧客未設定の WooCommerce 連携受注 %d 件を顧客に紐付けました。', 'kantanpro' ), $linked ), 30 );
 		wp_safe_redirect( admin_url( 'admin.php?page=ktpwp-woocommerce-sync' ) );
 		exit;
 	}
@@ -905,12 +907,12 @@ class KTPWP_WooCommerce_Integration {
 	 */
 	public function handle_relink_woocommerce_clients(): void {
 		if ( ! current_user_can( 'manage_woocommerce' ) ) {
-			wp_die( esc_html__( '権限がありません。', 'ktpwp' ) );
+			wp_die( esc_html__( '権限がありません。', 'kantanpro' ) );
 		}
 		check_admin_referer( 'ktpwp_relink_wc_clients' );
 		$this->ensure_order_table_ready();
 		if ( ! $this->order_table_has_external_columns() ) {
-			set_transient( 'ktpwp_wc_sync_error', __( '受注テーブルに external_source / external_order_id がありません。', 'ktpwp' ), 60 );
+			set_transient( 'ktpwp_wc_sync_error', __( '受注テーブルに external_source / external_order_id がありません。', 'kantanpro' ), 60 );
 			wp_safe_redirect( admin_url( 'admin.php?page=ktpwp-woocommerce-sync' ) );
 			exit;
 		}
@@ -971,7 +973,8 @@ class KTPWP_WooCommerce_Integration {
 				$this->replace_invoice_items_from_wc_order( $ktp_id, $order );
 			}
 		}
-		set_transient( 'ktpwp_wc_sync_message', sprintf( __( 'WooCommerce 連携受注 %d 件を顧客に再紐付けしました。', 'ktpwp' ), $linked ), 30 );
+		/* translators: %d: 再紐付けした受注の件数 */
+		set_transient( 'ktpwp_wc_sync_message', sprintf( __( 'WooCommerce 連携受注 %d 件を顧客に再紐付けしました。', 'kantanpro' ), $linked ), 30 );
 		wp_safe_redirect( admin_url( 'admin.php?page=ktpwp-woocommerce-sync' ) );
 		exit;
 	}

@@ -139,11 +139,11 @@ if ( ! class_exists( 'KTPWP_Contract_DB' ) ) {
 		 */
 		public static function get_initial_fee_presets() {
 			return array(
-				__( '保証金', 'ktpwp' ),
-				__( '敷金', 'ktpwp' ),
-				__( '礼金', 'ktpwp' ),
-				__( '初期設定費用', 'ktpwp' ),
-				__( '入会金', 'ktpwp' ),
+				__( '保証金', 'kantanpro' ),
+				__( '敷金', 'kantanpro' ),
+				__( '礼金', 'kantanpro' ),
+				__( '初期設定費用', 'kantanpro' ),
+				__( '入会金', 'kantanpro' ),
 			);
 		}
 
@@ -216,7 +216,7 @@ if ( ! class_exists( 'KTPWP_Contract_DB' ) ) {
 			global $wpdb;
 
 			if ( ! $this->tables_exist() ) {
-				return new WP_Error( 'no_tables', __( '定期契約テーブルが存在しません。', 'ktpwp' ) );
+				return new WP_Error( 'no_tables', __( '定期契約テーブルが存在しません。', 'kantanpro' ) );
 			}
 
 			$client_id = absint( $data['client_id'] ?? 0 );
@@ -224,11 +224,11 @@ if ( ! class_exists( 'KTPWP_Contract_DB' ) ) {
 			$contract_name = sanitize_text_field( $data['contract_name'] ?? '' );
 
 			if ( $client_id <= 0 || $service_id <= 0 || $contract_name === '' ) {
-				return new WP_Error( 'invalid_input', __( '契約名とサービスを入力してください。', 'ktpwp' ) );
+				return new WP_Error( 'invalid_input', __( '契約名とサービスを入力してください。', 'kantanpro' ) );
 			}
 
 			if ( ! $this->client_exists( $client_id ) ) {
-				return new WP_Error( 'invalid_client', __( '顧客が見つかりません。', 'ktpwp' ) );
+				return new WP_Error( 'invalid_client', __( '顧客が見つかりません。', 'kantanpro' ) );
 			}
 
 			$contract_id = absint( $data['id'] ?? 0 );
@@ -238,7 +238,7 @@ if ( ! class_exists( 'KTPWP_Contract_DB' ) ) {
 			if ( $contract_id > 0 ) {
 				$existing = $this->get_contract_by_id( $contract_id );
 				if ( ! $existing || (int) $existing->client_id !== $client_id ) {
-					return new WP_Error( 'not_found', __( '契約が見つかりません。', 'ktpwp' ) );
+					return new WP_Error( 'not_found', __( '契約が見つかりません。', 'kantanpro' ) );
 				}
 
 				$previous_service_id = (int) $existing->service_id;
@@ -249,7 +249,7 @@ if ( ! class_exists( 'KTPWP_Contract_DB' ) ) {
 			}
 
 			if ( ! $this->is_valid_recurring_service( $service_id ) ) {
-				return new WP_Error( 'invalid_service', __( '定期請求に利用できるサービスを選択してください。', 'ktpwp' ) );
+				return new WP_Error( 'invalid_service', __( '定期請求に利用できるサービスを選択してください。', 'kantanpro' ) );
 			}
 
 			$billing_cycle = class_exists( 'KTPWP_Contract_Billing_Cycle' )
@@ -261,7 +261,7 @@ if ( ! class_exists( 'KTPWP_Contract_DB' ) ) {
 			}
 
 			if ( ! class_exists( 'KTPWP_Contract_Billing_Cycle' ) || ! KTPWP_Contract_Billing_Cycle::is_recurring( $billing_cycle ) ) {
-				return new WP_Error( 'invalid_cycle', __( '請求サイクルが不正です。', 'ktpwp' ) );
+				return new WP_Error( 'invalid_cycle', __( '請求サイクルが不正です。', 'kantanpro' ) );
 			}
 
 			$billing_day = absint( $data['billing_day'] ?? 1 );
@@ -341,7 +341,7 @@ if ( ! class_exists( 'KTPWP_Contract_DB' ) ) {
 				);
 
 				if ( false === $result ) {
-					return new WP_Error( 'update_failed', __( '契約の更新に失敗しました。', 'ktpwp' ) );
+					return new WP_Error( 'update_failed', __( '契約の更新に失敗しました。', 'kantanpro' ) );
 				}
 			} else {
 				$row_data['first_billed'] = 0;
@@ -349,7 +349,7 @@ if ( ! class_exists( 'KTPWP_Contract_DB' ) ) {
 
 				$result = $wpdb->insert( $table, $row_data, $row_format );
 				if ( false === $result ) {
-					return new WP_Error( 'insert_failed', __( '契約の追加に失敗しました。', 'ktpwp' ) );
+					return new WP_Error( 'insert_failed', __( '契約の追加に失敗しました。', 'kantanpro' ) );
 				}
 				$contract_id = (int) $wpdb->insert_id;
 			}
@@ -458,7 +458,7 @@ if ( ! class_exists( 'KTPWP_Contract_DB' ) ) {
 
 			$contract = $this->get_contract_by_id( $contract_id );
 			if ( ! $contract || (int) $contract->client_id !== $client_id ) {
-				return new WP_Error( 'not_found', __( '契約が見つかりません。', 'ktpwp' ) );
+				return new WP_Error( 'not_found', __( '契約が見つかりません。', 'kantanpro' ) );
 			}
 
 			$service_id = (int) $contract->service_id;
@@ -481,7 +481,7 @@ if ( ! class_exists( 'KTPWP_Contract_DB' ) ) {
 			$result = $wpdb->delete( $table, array( 'id' => $contract_id ), array( '%d' ) );
 
 			if ( false === $result ) {
-				return new WP_Error( 'delete_failed', __( '契約の削除に失敗しました。', 'ktpwp' ) );
+				return new WP_Error( 'delete_failed', __( '契約の削除に失敗しました。', 'kantanpro' ) );
 			}
 
 			if ( $service_id > 0 && class_exists( 'KTPWP_Contract_Service_Public_Availability' ) ) {
@@ -590,8 +590,8 @@ if ( ! class_exists( 'KTPWP_Contract_DB' ) ) {
 		 */
 		public static function get_payment_due_mode_options() {
 			return array(
-				'contract' => __( '契約の請求日', 'ktpwp' ),
-				'client'   => __( '顧客の締め支払日', 'ktpwp' ),
+				'contract' => __( '契約の請求日', 'kantanpro' ),
+				'client'   => __( '顧客の締め支払日', 'kantanpro' ),
 			);
 		}
 

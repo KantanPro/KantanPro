@@ -38,7 +38,7 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 				time BIGINT(11) DEFAULT '0' NOT NULL,
 				name TINYTEXT,
 				url VARCHAR(55),
-				company_name VARCHAR(100) NOT NULL DEFAULT '" . __( '初めてのお客様', 'ktpwp' ) . "',
+				company_name VARCHAR(100) NOT NULL DEFAULT '" . __( '初めてのお客様', 'kantanpro' ) . "',
 				representative_name TINYTEXT,
 				email VARCHAR(100),
 				phone VARCHAR(20),
@@ -51,12 +51,12 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 				payment_month TINYTEXT,
 				payment_day TINYTEXT,
 				payment_method TINYTEXT,
-				tax_category VARCHAR(100) NOT NULL DEFAULT '" . __( '内税', 'ktpwp' ) . "',
+				tax_category VARCHAR(100) NOT NULL DEFAULT '" . __( '内税', 'kantanpro' ) . "',
 				payment_timing VARCHAR(20) NOT NULL DEFAULT 'postpay',
 				memo TEXT,
 				search_field TEXT,
 				frequency INT NOT NULL DEFAULT 0,
-				client_status VARCHAR(100) NOT NULL DEFAULT '" . __( '対象', 'ktpwp' ) . "',
+				client_status VARCHAR(100) NOT NULL DEFAULT '" . __( '対象', 'kantanpro' ) . "',
 				category VARCHAR(255) NULL,
 				PRIMARY KEY  (id)
 			) {$charset_collate};";
@@ -120,7 +120,7 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 
 				// nonce検証
 				if ( ! isset( $_POST['ktp_client_nonce'] ) || ! wp_verify_nonce( $_POST['ktp_client_nonce'], 'ktp_client_action' ) ) {
-					wp_die( __( '不正なリクエストです。', 'ktpwp' ) );
+					wp_die( __( '不正なリクエストです。', 'kantanpro' ) );
 				}
 
 				// POST データの取得とサニタイズ

@@ -186,7 +186,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 			$quantity = max( 1.0, (float) $quantity );
 			$unit     = isset( $service->unit ) ? sanitize_text_field( (string) $service->unit ) : '';
 			if ( $unit === '' ) {
-				$unit = __( '式', 'ktpwp' );
+				$unit = __( '式', 'kantanpro' );
 			}
 
 			$default_tax_rate = null;
@@ -279,7 +279,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 						$order_id,
 						$fee_name,
 						$price,
-						__( '式', 'ktpwp' ),
+						__( '式', 'kantanpro' ),
 						1.0,
 						$initial_fee_remarks,
 						$tax_rate,
@@ -907,10 +907,10 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 		 */
 		public static function get_purchase_status_options() {
 			return array(
-				'pending'         => __( '未着手', 'ktpwp' ),
-				'quote_requested' => __( '見積依頼', 'ktpwp' ),
-				'ordered'         => __( '発注', 'ktpwp' ),
-				'completed'       => __( '仕入完了', 'ktpwp' ),
+				'pending'         => __( '未着手', 'kantanpro' ),
+				'quote_requested' => __( '見積依頼', 'kantanpro' ),
+				'ordered'         => __( '発注', 'kantanpro' ),
+				'completed'       => __( '仕入完了', 'kantanpro' ),
 			);
 		}
 

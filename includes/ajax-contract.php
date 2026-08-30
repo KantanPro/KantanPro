@@ -23,17 +23,17 @@ function ktpwp_contract_ajax_can_manage() {
  */
 function ktp_save_contract_ajax() {
 	if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), 'ktp_contract_nonce' ) ) {
-		wp_send_json_error( __( 'セキュリティチェックに失敗しました。', 'ktpwp' ) );
+		wp_send_json_error( __( 'セキュリティチェックに失敗しました。', 'kantanpro' ) );
 	}
 
 	if ( ! ktpwp_contract_ajax_can_manage() ) {
-		wp_send_json_error( __( '権限がありません。', 'ktpwp' ) );
+		wp_send_json_error( __( '権限がありません。', 'kantanpro' ) );
 	}
 
 	ktpwp_require_contracts_feature_or_ajax_error();
 
 	if ( ! class_exists( 'KTPWP_Contract_DB' ) ) {
-		wp_send_json_error( __( '定期契約機能が利用できません。', 'ktpwp' ) );
+		wp_send_json_error( __( '定期契約機能が利用できません。', 'kantanpro' ) );
 	}
 
 	$db = KTPWP_Contract_DB::get_instance();
@@ -75,7 +75,7 @@ function ktp_save_contract_ajax() {
 	wp_send_json_success(
 		array(
 			'contract_id' => (int) $result,
-			'message'       => __( '定期契約を保存しました。', 'ktpwp' ),
+			'message'       => __( '定期契約を保存しました。', 'kantanpro' ),
 		)
 	);
 }
@@ -85,11 +85,11 @@ function ktp_save_contract_ajax() {
  */
 function ktp_get_contract_ajax() {
 	if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), 'ktp_contract_nonce' ) ) {
-		wp_send_json_error( __( 'セキュリティチェックに失敗しました。', 'ktpwp' ) );
+		wp_send_json_error( __( 'セキュリティチェックに失敗しました。', 'kantanpro' ) );
 	}
 
 	if ( ! ktpwp_contract_ajax_can_manage() ) {
-		wp_send_json_error( __( '権限がありません。', 'ktpwp' ) );
+		wp_send_json_error( __( '権限がありません。', 'kantanpro' ) );
 	}
 
 	ktpwp_require_contracts_feature_or_ajax_error();
@@ -98,14 +98,14 @@ function ktp_get_contract_ajax() {
 	$client_id   = absint( $_POST['client_id'] ?? 0 );
 
 	if ( $contract_id <= 0 || $client_id <= 0 || ! class_exists( 'KTPWP_Contract_DB' ) ) {
-		wp_send_json_error( __( '契約が見つかりません。', 'ktpwp' ) );
+		wp_send_json_error( __( '契約が見つかりません。', 'kantanpro' ) );
 	}
 
 	$db       = KTPWP_Contract_DB::get_instance();
 	$payload  = $db->get_contract_payload( $contract_id );
 
 	if ( ! $payload || (int) $payload['client_id'] !== $client_id ) {
-		wp_send_json_error( __( '契約が見つかりません。', 'ktpwp' ) );
+		wp_send_json_error( __( '契約が見つかりません。', 'kantanpro' ) );
 	}
 
 	if ( class_exists( 'KTPWP_Stripe_Subscription' ) ) {
@@ -123,11 +123,11 @@ function ktp_get_contract_ajax() {
  */
 function ktp_delete_contract_ajax() {
 	if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), 'ktp_contract_nonce' ) ) {
-		wp_send_json_error( __( 'セキュリティチェックに失敗しました。', 'ktpwp' ) );
+		wp_send_json_error( __( 'セキュリティチェックに失敗しました。', 'kantanpro' ) );
 	}
 
 	if ( ! ktpwp_contract_ajax_can_manage() ) {
-		wp_send_json_error( __( '権限がありません。', 'ktpwp' ) );
+		wp_send_json_error( __( '権限がありません。', 'kantanpro' ) );
 	}
 
 	ktpwp_require_contracts_feature_or_ajax_error();
@@ -136,7 +136,7 @@ function ktp_delete_contract_ajax() {
 	$client_id   = absint( $_POST['client_id'] ?? 0 );
 
 	if ( $contract_id <= 0 || $client_id <= 0 || ! class_exists( 'KTPWP_Contract_DB' ) ) {
-		wp_send_json_error( __( '契約が見つかりません。', 'ktpwp' ) );
+		wp_send_json_error( __( '契約が見つかりません。', 'kantanpro' ) );
 	}
 
 	$db     = KTPWP_Contract_DB::get_instance();
@@ -146,7 +146,7 @@ function ktp_delete_contract_ajax() {
 		wp_send_json_error( $result->get_error_message() );
 	}
 
-	wp_send_json_success( array( 'message' => __( '定期契約を削除しました。', 'ktpwp' ) ) );
+	wp_send_json_success( array( 'message' => __( '定期契約を削除しました。', 'kantanpro' ) ) );
 }
 
 /**
@@ -154,11 +154,11 @@ function ktp_delete_contract_ajax() {
  */
 function ktp_create_contract_setup_checkout_ajax() {
 	if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), 'ktp_contract_nonce' ) ) {
-		wp_send_json_error( __( 'セキュリティチェックに失敗しました。', 'ktpwp' ) );
+		wp_send_json_error( __( 'セキュリティチェックに失敗しました。', 'kantanpro' ) );
 	}
 
 	if ( ! ktpwp_contract_ajax_can_manage() ) {
-		wp_send_json_error( __( '権限がありません。', 'ktpwp' ) );
+		wp_send_json_error( __( '権限がありません。', 'kantanpro' ) );
 	}
 
 	ktpwp_require_contracts_feature_or_ajax_error();
@@ -167,14 +167,14 @@ function ktp_create_contract_setup_checkout_ajax() {
 	$client_id   = absint( $_POST['client_id'] ?? 0 );
 
 	if ( $contract_id <= 0 || $client_id <= 0 || ! class_exists( 'KTPWP_Contract_DB' ) || ! class_exists( 'KTPWP_Stripe_Subscription' ) ) {
-		wp_send_json_error( __( '契約が見つかりません。', 'ktpwp' ) );
+		wp_send_json_error( __( '契約が見つかりません。', 'kantanpro' ) );
 	}
 
 	$db       = KTPWP_Contract_DB::get_instance();
 	$contract = $db->get_contract_by_id( $contract_id );
 
 	if ( ! $contract || (int) $contract->client_id !== $client_id ) {
-		wp_send_json_error( __( '契約が見つかりません。', 'ktpwp' ) );
+		wp_send_json_error( __( '契約が見つかりません。', 'kantanpro' ) );
 	}
 
 	$result = KTPWP_Stripe_Subscription::get_instance()->issue_setup_checkout_for_contract( $contract_id );
@@ -186,7 +186,7 @@ function ktp_create_contract_setup_checkout_ajax() {
 	wp_send_json_success(
 		array(
 			'url'     => (string) ( $result['url'] ?? '' ),
-			'message' => __( 'カード登録リンクを発行しました。', 'ktpwp' ),
+			'message' => __( 'カード登録リンクを発行しました。', 'kantanpro' ),
 		)
 	);
 }

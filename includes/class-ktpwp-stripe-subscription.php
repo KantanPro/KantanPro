@@ -102,7 +102,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Subscription' ) ) {
 
 			$order_id = absint( $order_id );
 			if ( $order_id <= 0 || ! class_exists( '\Stripe\StripeClient' ) || ! class_exists( 'KTPWP_Stripe_Billing' ) ) {
-				return new WP_Error( 'invalid', __( 'Stripe 請求の対象外です。', 'ktpwp' ) );
+				return new WP_Error( 'invalid', __( 'Stripe 請求の対象外です。', 'kantanpro' ) );
 			}
 
 			$order_table = $wpdb->prefix . 'ktp_order';
@@ -114,11 +114,11 @@ if ( ! class_exists( 'KTPWP_Stripe_Subscription' ) ) {
 			);
 
 			if ( ! $order || ! $this->order_qualifies_for_immediate_subscription( $order ) ) {
-				return new WP_Error( 'invalid_order', __( 'Stripe サブスクリプションの対象外です。', 'ktpwp' ) );
+				return new WP_Error( 'invalid_order', __( 'Stripe サブスクリプションの対象外です。', 'kantanpro' ) );
 			}
 
 			if ( ! empty( $order->stripe_paid_at ) ) {
-				return new WP_Error( 'already_paid', __( 'この請求は入金済みです。', 'ktpwp' ) );
+				return new WP_Error( 'already_paid', __( 'この請求は入金済みです。', 'kantanpro' ) );
 			}
 
 			$stripe_billing = KTPWP_Stripe_Billing::get_instance();
@@ -139,7 +139,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Subscription' ) ) {
 					);
 					$invoice        = $subscription->latest_invoice ?? null;
 					if ( $invoice && isset( $invoice->status ) && $invoice->status === 'paid' ) {
-						return new WP_Error( 'already_paid', __( 'この請求は入金済みです。', 'ktpwp' ) );
+						return new WP_Error( 'already_paid', __( 'この請求は入金済みです。', 'kantanpro' ) );
 					}
 					if ( $invoice && in_array( (string) $invoice->status, array( 'draft', 'open' ), true ) ) {
 						if ( $expected_total > 0 && $stripe_billing->invoice_matches_order( $invoice, $order_id, $expected_total ) ) {
@@ -172,12 +172,12 @@ if ( ! class_exists( 'KTPWP_Stripe_Subscription' ) ) {
 
 			$draft = KTPWP_Order_Contract_Draft_Resolver::get_instance()->resolve( $order_id );
 			if ( ! $draft ) {
-				return new WP_Error( 'no_draft', __( '定期契約ドラフトが見つかりません。', 'ktpwp' ) );
+				return new WP_Error( 'no_draft', __( '定期契約ドラフトが見つかりません。', 'kantanpro' ) );
 			}
 
 			$items = $this->build_subscription_items_from_draft( $draft, $stripe, $order_id );
 			if ( empty( $items ) ) {
-				return new WP_Error( 'no_items', __( '定期請求の明細がありません。', 'ktpwp' ) );
+				return new WP_Error( 'no_items', __( '定期請求の明細がありません。', 'kantanpro' ) );
 			}
 
 			$billing_day = $this->resolve_immediate_billing_day();
@@ -205,7 +205,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Subscription' ) ) {
 
 				$invoice = $subscription->latest_invoice ?? null;
 				if ( ! $invoice || empty( $invoice->id ) ) {
-					return new WP_Error( 'stripe_no_invoice', __( 'Stripe 初回請求書の取得に失敗しました。', 'ktpwp' ) );
+					return new WP_Error( 'stripe_no_invoice', __( 'Stripe 初回請求書の取得に失敗しました。', 'kantanpro' ) );
 				}
 
 				if ( $finalize && isset( $invoice->status ) && $invoice->status === 'draft' ) {
@@ -277,7 +277,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Subscription' ) ) {
 		public function provision_contract_on_first_payment( $order_id, $subscription_id ) {
 			$order_id = absint( $order_id );
 			if ( $order_id <= 0 || $subscription_id === '' || ! class_exists( 'KTPWP_Order_Contract_Conversion' ) ) {
-				return new WP_Error( 'invalid', __( '自動契約の対象外です。', 'ktpwp' ) );
+				return new WP_Error( 'invalid', __( '自動契約の対象外です。', 'kantanpro' ) );
 			}
 
 			global $wpdb;
@@ -290,7 +290,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Subscription' ) ) {
 			);
 
 			if ( ! $order ) {
-				return new WP_Error( 'invalid_order', __( '自動契約の対象外です。', 'ktpwp' ) );
+				return new WP_Error( 'invalid_order', __( '自動契約の対象外です。', 'kantanpro' ) );
 			}
 
 			if ( (int) ( $order->contract_id ?? 0 ) > 0 ) {
@@ -299,12 +299,12 @@ if ( ! class_exists( 'KTPWP_Stripe_Subscription' ) ) {
 			}
 
 			if ( ! class_exists( 'KTPWP_Stripe_Billing' ) || ! KTPWP_Stripe_Billing::get_instance()->is_public_web_order( $order ) ) {
-				return new WP_Error( 'invalid_order', __( '自動契約の対象外です。', 'ktpwp' ) );
+				return new WP_Error( 'invalid_order', __( '自動契約の対象外です。', 'kantanpro' ) );
 			}
 
 			$draft = KTPWP_Order_Contract_Draft_Resolver::get_instance()->resolve( $order_id );
 			if ( ! $draft || ! empty( $draft['initial_fees'] ) ) {
-				return new WP_Error( 'invalid_order', __( '自動契約の対象外です。', 'ktpwp' ) );
+				return new WP_Error( 'invalid_order', __( '自動契約の対象外です。', 'kantanpro' ) );
 			}
 
 			$billing_day = $this->resolve_immediate_billing_day();
@@ -322,7 +322,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Subscription' ) ) {
 				'send_reminder_mail' => 1,
 				'memo'               => sprintf(
 					/* translators: %d: order id */
-					__( '受注 #%d から自動作成', 'ktpwp' ),
+					__( '受注 #%d から自動作成', 'kantanpro' ),
 					$order_id
 				),
 			);
@@ -401,22 +401,22 @@ if ( ! class_exists( 'KTPWP_Stripe_Subscription' ) ) {
 		 */
 		public function maybe_start_for_contract( $contract_id, $source_order_id = 0 ) {
 			if ( ! class_exists( 'KTPWP_Stripe_Billing' ) || ! KTPWP_Stripe_Billing::is_enabled() ) {
-				return new WP_Error( 'stripe_disabled', __( 'Stripe 連携が無効です。', 'ktpwp' ) );
+				return new WP_Error( 'stripe_disabled', __( 'Stripe 連携が無効です。', 'kantanpro' ) );
 			}
 
 			if ( ! class_exists( '\Stripe\StripeClient' ) ) {
-				return new WP_Error( 'stripe_sdk_missing', __( 'Stripe SDK が読み込まれていません。', 'ktpwp' ) );
+				return new WP_Error( 'stripe_sdk_missing', __( 'Stripe SDK が読み込まれていません。', 'kantanpro' ) );
 			}
 
 			$contract_id = absint( $contract_id );
 			$contract    = $this->get_contract( $contract_id );
 
 			if ( ! $contract ) {
-				return new WP_Error( 'not_found', __( '定期契約が見つかりません。', 'ktpwp' ) );
+				return new WP_Error( 'not_found', __( '定期契約が見つかりません。', 'kantanpro' ) );
 			}
 
 			if ( isset( $contract->status ) && 'active' !== $contract->status ) {
-				return new WP_Error( 'inactive', __( '有効な定期契約のみサブスクリプションを開始できます。', 'ktpwp' ) );
+				return new WP_Error( 'inactive', __( '有効な定期契約のみサブスクリプションを開始できます。', 'kantanpro' ) );
 			}
 
 			if ( ! empty( $contract->stripe_subscription_id ) ) {
@@ -439,12 +439,12 @@ if ( ! class_exists( 'KTPWP_Stripe_Subscription' ) ) {
 
 			if ( ! class_exists( 'KTPWP_Contract_Billing_Cycle' )
 				|| ! KTPWP_Contract_Billing_Cycle::is_recurring( $contract->billing_cycle ?? '' ) ) {
-				return new WP_Error( 'not_recurring', __( '都度請求の契約はサブスクリプション対象外です。', 'ktpwp' ) );
+				return new WP_Error( 'not_recurring', __( '都度請求の契約はサブスクリプション対象外です。', 'kantanpro' ) );
 			}
 
 			$client_id = (int) ( $contract->client_id ?? 0 );
 			if ( $client_id <= 0 ) {
-				return new WP_Error( 'no_client', __( '顧客が見つかりません。', 'ktpwp' ) );
+				return new WP_Error( 'no_client', __( '顧客が見つかりません。', 'kantanpro' ) );
 			}
 
 			$stripe_billing = KTPWP_Stripe_Billing::get_instance();
@@ -474,7 +474,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Subscription' ) ) {
 						'no_payment_method',
 						sprintf(
 							/* translators: %s: Stripe Setup URL */
-							__( 'カード登録が必要です。以下のリンクからカードを登録してください: %s', 'ktpwp' ),
+							__( 'カード登録が必要です。以下のリンクからカードを登録してください: %s', 'kantanpro' ),
 							$setup_url
 						)
 					);
@@ -482,20 +482,20 @@ if ( ! class_exists( 'KTPWP_Stripe_Subscription' ) ) {
 
 				return new WP_Error(
 					'no_payment_method',
-					__( '初回決済のカード情報が Stripe に保存されていません。初回 Invoice をカードで支払った後、再度お試しください。', 'ktpwp' )
+					__( '初回決済のカード情報が Stripe に保存されていません。初回 Invoice をカードで支払った後、再度お試しください。', 'kantanpro' )
 				);
 			}
 
 			$trial_end = $this->compute_subscription_trial_end( $contract );
 			if ( ! $trial_end || $trial_end <= time() ) {
-				return new WP_Error( 'invalid_trial', __( '次回請求日の算出に失敗しました。', 'ktpwp' ) );
+				return new WP_Error( 'invalid_trial', __( '次回請求日の算出に失敗しました。', 'kantanpro' ) );
 			}
 
 			try {
 				$stripe = new \Stripe\StripeClient( KTPWP_Stripe_Billing::get_secret_key() );
 				$items  = $this->build_subscription_items( $contract, $stripe );
 				if ( empty( $items ) ) {
-					return new WP_Error( 'no_items', __( '定期請求の明細がありません。', 'ktpwp' ) );
+					return new WP_Error( 'no_items', __( '定期請求の明細がありません。', 'kantanpro' ) );
 				}
 
 				$params = array(
@@ -969,7 +969,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Subscription' ) ) {
 				}
 			} else {
 				$amount = (int) round( (float) ( $contract->amount ?? 0 ) );
-				$name   = trim( (string) ( $contract->contract_name ?? __( '定期契約', 'ktpwp' ) ) );
+				$name   = trim( (string) ( $contract->contract_name ?? __( '定期契約', 'kantanpro' ) ) );
 				if ( $amount > 0 && $name !== '' ) {
 					$product_id = $this->get_or_create_stripe_product( $stripe, $name, $contract_id );
 					if ( $product_id !== '' ) {
@@ -1182,7 +1182,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Subscription' ) ) {
 			if ( empty( $rows ) && (float) ( $draft['amount'] ?? 0 ) > 0 ) {
 				$rows = array(
 					array(
-						'item_name' => (string) ( $draft['contract_name'] ?? __( '定期契約', 'ktpwp' ) ),
+						'item_name' => (string) ( $draft['contract_name'] ?? __( '定期契約', 'kantanpro' ) ),
 						'amount'    => (float) $draft['amount'],
 					),
 				);
@@ -1401,15 +1401,15 @@ if ( ! class_exists( 'KTPWP_Stripe_Subscription' ) ) {
 					}
 				} catch ( Exception $e ) {
 					$result['status']       = 'unknown';
-					$result['status_label'] = __( '取得失敗', 'ktpwp' );
+					$result['status_label'] = __( '取得失敗', 'kantanpro' );
 				}
 			} else {
 				if ( $result['has_payment_method'] ) {
 					$result['status']       = 'not_started';
-					$result['status_label'] = __( '未開始', 'ktpwp' );
+					$result['status_label'] = __( '未開始', 'kantanpro' );
 				} else {
 					$result['status']       = 'needs_card';
-					$result['status_label'] = __( '要カード登録', 'ktpwp' );
+					$result['status_label'] = __( '要カード登録', 'kantanpro' );
 				}
 			}
 
@@ -1493,15 +1493,15 @@ if ( ! class_exists( 'KTPWP_Stripe_Subscription' ) ) {
 			$contract    = $this->get_contract( $contract_id );
 
 			if ( ! $contract ) {
-				return new WP_Error( 'not_found', __( '定期契約が見つかりません。', 'ktpwp' ) );
+				return new WP_Error( 'not_found', __( '定期契約が見つかりません。', 'kantanpro' ) );
 			}
 
 			if ( ! $this->contract_needs_setup_link( $contract ) ) {
-				return new WP_Error( 'not_needed', __( 'カード登録リンクは不要です。', 'ktpwp' ) );
+				return new WP_Error( 'not_needed', __( 'カード登録リンクは不要です。', 'kantanpro' ) );
 			}
 
 			if ( ! class_exists( 'KTPWP_Stripe_Billing' ) ) {
-				return new WP_Error( 'stripe_disabled', __( 'Stripe 連携が無効です。', 'ktpwp' ) );
+				return new WP_Error( 'stripe_disabled', __( 'Stripe 連携が無効です。', 'kantanpro' ) );
 			}
 
 			$customer_id = KTPWP_Stripe_Billing::get_instance()->get_or_create_customer( (int) $contract->client_id );
@@ -1511,7 +1511,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Subscription' ) ) {
 
 			$url = $this->create_setup_checkout_for_contract( $contract_id, (string) $customer_id );
 			if ( $url === '' ) {
-				return new WP_Error( 'stripe_error', __( 'カード登録リンクの発行に失敗しました。', 'ktpwp' ) );
+				return new WP_Error( 'stripe_error', __( 'カード登録リンクの発行に失敗しました。', 'kantanpro' ) );
 			}
 
 			return array(
@@ -1527,17 +1527,17 @@ if ( ! class_exists( 'KTPWP_Stripe_Subscription' ) ) {
 		 */
 		private function format_subscription_status_label( $status ) {
 			$labels = array(
-				'active'             => __( '稼働中', 'ktpwp' ),
-				'trialing'           => __( 'トライアル', 'ktpwp' ),
-				'past_due'           => __( '支払い遅延', 'ktpwp' ),
-				'unpaid'             => __( '未払い', 'ktpwp' ),
-				'canceled'           => __( '解約済み', 'ktpwp' ),
-				'incomplete'         => __( '未完了', 'ktpwp' ),
-				'incomplete_expired' => __( '期限切れ', 'ktpwp' ),
-				'paused'             => __( '一時停止', 'ktpwp' ),
-				'not_started'        => __( '未開始', 'ktpwp' ),
-				'needs_card'         => __( '要カード登録', 'ktpwp' ),
-				'unknown'            => __( '取得失敗', 'ktpwp' ),
+				'active'             => __( '稼働中', 'kantanpro' ),
+				'trialing'           => __( 'トライアル', 'kantanpro' ),
+				'past_due'           => __( '支払い遅延', 'kantanpro' ),
+				'unpaid'             => __( '未払い', 'kantanpro' ),
+				'canceled'           => __( '解約済み', 'kantanpro' ),
+				'incomplete'         => __( '未完了', 'kantanpro' ),
+				'incomplete_expired' => __( '期限切れ', 'kantanpro' ),
+				'paused'             => __( '一時停止', 'kantanpro' ),
+				'not_started'        => __( '未開始', 'kantanpro' ),
+				'needs_card'         => __( '要カード登録', 'kantanpro' ),
+				'unknown'            => __( '取得失敗', 'kantanpro' ),
 			);
 
 			return isset( $labels[ $status ] ) ? $labels[ $status ] : $status;

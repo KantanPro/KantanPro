@@ -147,13 +147,13 @@ if ( ! class_exists( 'KTPWP_Inquiry_Client_Resolver' ) ) {
 			} else {
 				$memo_parts = array();
 				if ( ! empty( $data['message'] ) ) {
-					$memo_parts[] = __( 'ご要望:', 'ktpwp' ) . ' ' . sanitize_textarea_field( $data['message'] );
+					$memo_parts[] = __( 'ご要望:', 'kantanpro' ) . ' ' . sanitize_textarea_field( $data['message'] );
 				}
 				if ( ! empty( $data['phone'] ) ) {
-					$memo_parts[] = __( '電話:', 'ktpwp' ) . ' ' . sanitize_text_field( $data['phone'] );
+					$memo_parts[] = __( '電話:', 'kantanpro' ) . ' ' . sanitize_text_field( $data['phone'] );
 				}
 				if ( ! empty( $data['service_name'] ) ) {
-					$memo_parts[] = __( '初回お申込商品:', 'ktpwp' ) . ' ' . sanitize_text_field( $data['service_name'] );
+					$memo_parts[] = __( '初回お申込商品:', 'kantanpro' ) . ' ' . sanitize_text_field( $data['service_name'] );
 				}
 				$memo = implode( "\n", $memo_parts );
 			}
@@ -164,7 +164,7 @@ if ( ! class_exists( 'KTPWP_Inquiry_Client_Resolver' ) ) {
 				'email'         => $email,
 				'memo'          => $memo,
 				'time'          => current_time( 'mysql' ),
-				'client_status' => __( '対象', 'ktpwp' ),
+				'client_status' => __( '対象', 'kantanpro' ),
 			);
 
 			$result = $wpdb->insert(

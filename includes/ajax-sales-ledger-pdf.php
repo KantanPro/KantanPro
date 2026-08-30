@@ -20,20 +20,20 @@ add_action( 'wp_ajax_ktp_generate_sales_ledger_pdf', 'ktp_handle_sales_ledger_pd
 function ktp_handle_sales_ledger_pdf_ajax() {
     // セキュリティチェック
     if ( ! wp_verify_nonce( $_POST['nonce'] ?? '', 'ktpwp_ajax_nonce' ) ) {
-        wp_send_json_error( __( 'セキュリティチェックに失敗しました。', 'ktpwp' ) );
+        wp_send_json_error( __( 'セキュリティチェックに失敗しました。', 'kantanpro' ) );
         return;
     }
 
     // 権限チェック
     if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
-        wp_send_json_error( __( 'このページにアクセスする権限がありません。', 'ktpwp' ) );
+        wp_send_json_error( __( 'このページにアクセスする権限がありません。', 'kantanpro' ) );
         return;
     }
 
     $year = intval( $_POST['year'] ?? date('Y') );
     
     if ( $year < 2000 || $year > date('Y') + 10 ) {
-        wp_send_json_error( __( '無効な年度が指定されました。', 'ktpwp' ) );
+        wp_send_json_error( __( '無効な年度が指定されました。', 'kantanpro' ) );
         return;
     }
 
@@ -46,7 +46,8 @@ function ktp_handle_sales_ledger_pdf_ajax() {
         
         wp_send_json_success( array(
             'pdf_html' => $pdf_html,
-            'filename' => sprintf( __( '売上台帳_%s年_%s', 'ktpwp' ), $year, date('Ymd') ),
+            /* translators: 1: 年, 2: 顧客名 */
+            'filename' => sprintf( __( '売上台帳_%s年_%s', 'kantanpro' ), $year, date('Ymd') ),
             'year' => $year,
             'total_records' => count( $sales_data ),
             'total_amount' => array_sum( array_column( $sales_data, 'total_amount' ) )
@@ -54,7 +55,7 @@ function ktp_handle_sales_ledger_pdf_ajax() {
 
     } catch ( Exception $e ) {
         error_log( 'KTPWP Sales Ledger PDF Error: ' . $e->getMessage() );
-        wp_send_json_error( __( 'PDF生成中にエラーが発生しました: ', 'ktpwp' ) . $e->getMessage() );
+        wp_send_json_error( __( 'PDF生成中にエラーが発生しました: ', 'kantanpro' ) . $e->getMessage() );
     }
 }
 
@@ -93,10 +94,10 @@ function ktp_get_sales_ledger_data_for_pdf( $year ) {
     foreach ( $results as $row ) {
         $sales_data[] = array(
             'id' => $row['id'],
-            'date' => wp_date( __( 'Y年m月d日', 'ktpwp' ), strtotime( $row['date'] ) ),
-            'client_name' => $row['client_name'] ?: __( '未設定', 'ktpwp' ),
+            'date' => wp_date( __( 'Y年m月d日', 'kantanpro' ), strtotime( $row['date'] ) ),
+            'client_name' => $row['client_name'] ?: __( '未設定', 'kantanpro' ),
             'client_address' => '',
-            'order_title' => $row['order_title'] ?: __( '無題', 'ktpwp' ),
+            'order_title' => $row['order_title'] ?: __( '無題', 'kantanpro' ),
             'products' => $row['products'] ?: '',
             'total_amount' => floatval( $row['total_amount'] ),
             'progress' => intval( $row['progress'] )
@@ -116,14 +117,14 @@ function ktp_get_sales_ledger_data_for_pdf( $year ) {
 function ktp_generate_sales_ledger_pdf_html( $sales_data, $year ) {
     $total_amount = array_sum( array_column( $sales_data, 'total_amount' ) );
     $total_records = count( $sales_data );
-    $current_date = wp_date( __( 'Y年m月d日', 'ktpwp' ) );
+    $current_date = wp_date( __( 'Y年m月d日', 'kantanpro' ) );
 
     // 自社名を取得（単体書類でもどの会社のものか分かるようにする。メールアドレスは含めない）
     $company_info = class_exists( 'KTPWP_Settings' ) ? KTPWP_Settings::get_company_info() : '';
     $company_name = ! empty( $company_info ) ? wp_strip_all_tags( $company_info ) : get_bloginfo( 'name' );
     $company_name = preg_replace( '/\S+@\S+\.\S+/', '', $company_name );
     $company_name = preg_replace( '/\s+/', ' ', trim( $company_name ) );
-    $company_name = trim( $company_name ) !== '' ? $company_name : __( '（自社名未設定）', 'ktpwp' );
+    $company_name = trim( $company_name ) !== '' ? $company_name : __( '（自社名未設定）', 'kantanpro' );
     
     // 月別集計を計算
     $monthly_totals = array();
@@ -139,21 +140,21 @@ function ktp_generate_sales_ledger_pdf_html( $sales_data, $year ) {
     <div class="sales-ledger-pdf">
         <div class="header" style="text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 20px;">
             <div style="font-size: 14px; color: #333; margin-bottom: 8px; font-weight: bold;">' . nl2br( esc_html( $company_name ) ) . '</div>
-            <h1 style="font-size: 24px; margin: 0 0 10px 0; font-weight: bold;">' . esc_html__( '売上台帳', 'ktpwp' ) . '</h1>
-            <div style="font-size: 18px; margin-bottom: 10px;">' . esc_html( sprintf( __( '%s年度', 'ktpwp' ), $year ) ) . '</div>
-            <div style="font-size: 14px; color: #666;">' . esc_html( sprintf( __( '作成日：%s', 'ktpwp' ), $current_date ) ) . '</div>
+            <h1 style="font-size: 24px; margin: 0 0 10px 0; font-weight: bold;">' . esc_html__( '売上台帳', 'kantanpro' ) . '</h1>
+            <div style="font-size: 18px; margin-bottom: 10px;">' . esc_html( /* translators: %s: 年度 */ sprintf( __( '%s年度', 'kantanpro' ), $year ) ) . '</div>
+            <div style="font-size: 14px; color: #666;">' . esc_html( /* translators: %s: 作成日 */ sprintf( __( '作成日：%s', 'kantanpro' ), $current_date ) ) . '</div>
         </div>
 
         <div class="summary" style="margin-bottom: 30px; background: #f8f9fa; padding: 20px; border-radius: 8px;">
-            <h2 style="font-size: 18px; margin: 0 0 15px 0; color: #333;">' . esc_html__( '年間売上サマリー', 'ktpwp' ) . '</h2>
+            <h2 style="font-size: 18px; margin: 0 0 15px 0; color: #333;">' . esc_html__( '年間売上サマリー', 'kantanpro' ) . '</h2>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                 <div>
-                    <div style="font-size: 14px; color: #666; margin-bottom: 5px;">' . esc_html__( '年間売上合計', 'ktpwp' ) . '</div>
+                    <div style="font-size: 14px; color: #666; margin-bottom: 5px;">' . esc_html__( '年間売上合計', 'kantanpro' ) . '</div>
                     <div style="font-size: 20px; font-weight: bold; color: #1976d2;">' . esc_html( class_exists( 'KTPWP_Settings' ) ? KTPWP_Settings::format_money( $total_amount ) : number_format( $total_amount ) ) . '</div>
                 </div>
                 <div>
-                    <div style="font-size: 14px; color: #666; margin-bottom: 5px;">' . esc_html__( '売上件数', 'ktpwp' ) . '</div>
-                    <div style="font-size: 20px; font-weight: bold; color: #4caf50;">' . esc_html( sprintf( __( '%s件', 'ktpwp' ), number_format( $total_records ) ) ) . '</div>
+                    <div style="font-size: 14px; color: #666; margin-bottom: 5px;">' . esc_html__( '売上件数', 'kantanpro' ) . '</div>
+                    <div style="font-size: 20px; font-weight: bold; color: #4caf50;">' . esc_html( /* translators: %s: 件数 */ sprintf( __( '%s件', 'kantanpro' ), number_format( $total_records ) ) ) . '</div>
                 </div>
             </div>
         </div>';
@@ -162,7 +163,7 @@ function ktp_generate_sales_ledger_pdf_html( $sales_data, $year ) {
     if ( ! empty( $monthly_totals ) ) {
         $html .= '
         <div class="monthly-summary" style="margin-bottom: 30px;">
-            <h2 style="font-size: 18px; margin: 0 0 15px 0; color: #333;">' . esc_html__( '月別売上サマリー', 'ktpwp' ) . '</h2>
+            <h2 style="font-size: 18px; margin: 0 0 15px 0; color: #333;">' . esc_html__( '月別売上サマリー', 'kantanpro' ) . '</h2>
             <div style="display: flex; gap: 24px; flex-wrap: wrap;">';
 
         // 左ブロック：1月〜6月
@@ -171,8 +172,8 @@ function ktp_generate_sales_ledger_pdf_html( $sales_data, $year ) {
                 <table style="width: 100%; border-collapse: collapse; font-size: 12px; border: 2px solid #333;">
                     <thead>
                         <tr style="background: #e3f2fd;">
-                            <th style="border: 2px solid #333; padding: 8px; text-align: center; font-weight: bold;">' . esc_html__( '月', 'ktpwp' ) . '</th>
-                            <th style="border: 2px solid #333; padding: 8px; text-align: right; font-weight: bold;">' . esc_html__( '売上金額', 'ktpwp' ) . '</th>
+                            <th style="border: 2px solid #333; padding: 8px; text-align: center; font-weight: bold;">' . esc_html__( '月', 'kantanpro' ) . '</th>
+                            <th style="border: 2px solid #333; padding: 8px; text-align: right; font-weight: bold;">' . esc_html__( '売上金額', 'kantanpro' ) . '</th>
                         </tr>
                     </thead>
                     <tbody>';
@@ -180,7 +181,7 @@ function ktp_generate_sales_ledger_pdf_html( $sales_data, $year ) {
             $amount = isset( $monthly_totals[ $i ] ) ? $monthly_totals[ $i ] : 0;
             $html .= '
                         <tr>
-                            <td style="border: 2px solid #333; padding: 6px; text-align: center;">' . esc_html( sprintf( __( '%d月', 'ktpwp' ), $i ) ) . '</td>
+                            <td style="border: 2px solid #333; padding: 6px; text-align: center;">' . esc_html( /* translators: %d: 月 */ sprintf( __( '%d月', 'kantanpro' ), $i ) ) . '</td>
                             <td style="border: 2px solid #333; padding: 6px; text-align: right;">' . esc_html( class_exists( 'KTPWP_Settings' ) ? KTPWP_Settings::format_money( $amount ) : number_format( $amount ) ) . '</td>
                         </tr>';
         }
@@ -195,8 +196,8 @@ function ktp_generate_sales_ledger_pdf_html( $sales_data, $year ) {
                 <table style="width: 100%; border-collapse: collapse; font-size: 12px; border: 2px solid #333;">
                     <thead>
                         <tr style="background: #e3f2fd;">
-                            <th style="border: 2px solid #333; padding: 8px; text-align: center; font-weight: bold;">' . esc_html__( '月', 'ktpwp' ) . '</th>
-                            <th style="border: 2px solid #333; padding: 8px; text-align: right; font-weight: bold;">' . esc_html__( '売上金額', 'ktpwp' ) . '</th>
+                            <th style="border: 2px solid #333; padding: 8px; text-align: center; font-weight: bold;">' . esc_html__( '月', 'kantanpro' ) . '</th>
+                            <th style="border: 2px solid #333; padding: 8px; text-align: right; font-weight: bold;">' . esc_html__( '売上金額', 'kantanpro' ) . '</th>
                         </tr>
                     </thead>
                     <tbody>';
@@ -204,7 +205,7 @@ function ktp_generate_sales_ledger_pdf_html( $sales_data, $year ) {
             $amount = isset( $monthly_totals[ $i ] ) ? $monthly_totals[ $i ] : 0;
             $html .= '
                         <tr>
-                            <td style="border: 2px solid #333; padding: 6px; text-align: center;">' . esc_html( sprintf( __( '%d月', 'ktpwp' ), $i ) ) . '</td>
+                            <td style="border: 2px solid #333; padding: 6px; text-align: center;">' . esc_html( /* translators: %d: 月 */ sprintf( __( '%d月', 'kantanpro' ), $i ) ) . '</td>
                             <td style="border: 2px solid #333; padding: 6px; text-align: right;">' . esc_html( class_exists( 'KTPWP_Settings' ) ? KTPWP_Settings::format_money( $amount ) : number_format( $amount ) ) . '</td>
                         </tr>';
         }
@@ -219,16 +220,16 @@ function ktp_generate_sales_ledger_pdf_html( $sales_data, $year ) {
     // 売上明細テーブル（罫線は月別サマリーと合わせて2px）
     $html .= '
         <div class="sales-details">
-            <h2 style="font-size: 18px; margin: 0 0 15px 0; color: #333;">' . esc_html__( '売上明細', 'ktpwp' ) . '</h2>
+            <h2 style="font-size: 18px; margin: 0 0 15px 0; color: #333;">' . esc_html__( '売上明細', 'kantanpro' ) . '</h2>
             <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 20px; border: 2px solid #333;">
                 <thead>
                     <tr style="background: #f5f5f5;">
                         <th style="border: 2px solid #333; padding: 8px; text-align: center; font-weight: bold;">No.</th>
-                        <th style="border: 2px solid #333; padding: 8px; text-align: center; font-weight: bold;">' . esc_html__( '日付', 'ktpwp' ) . '</th>
-                        <th style="border: 2px solid #333; padding: 8px; text-align: center; font-weight: bold;">' . esc_html__( '顧客名', 'ktpwp' ) . '</th>
-                        <th style="border: 2px solid #333; padding: 8px; text-align: center; font-weight: bold;">' . esc_html__( '案件名', 'ktpwp' ) . '</th>
-                        <th style="border: 2px solid #333; padding: 8px; text-align: center; font-weight: bold;">' . esc_html__( '商品・サービス', 'ktpwp' ) . '</th>
-                        <th style="border: 2px solid #333; padding: 8px; text-align: center; font-weight: bold;">' . esc_html__( '売上金額', 'ktpwp' ) . '</th>
+                        <th style="border: 2px solid #333; padding: 8px; text-align: center; font-weight: bold;">' . esc_html__( '日付', 'kantanpro' ) . '</th>
+                        <th style="border: 2px solid #333; padding: 8px; text-align: center; font-weight: bold;">' . esc_html__( '顧客名', 'kantanpro' ) . '</th>
+                        <th style="border: 2px solid #333; padding: 8px; text-align: center; font-weight: bold;">' . esc_html__( '案件名', 'kantanpro' ) . '</th>
+                        <th style="border: 2px solid #333; padding: 8px; text-align: center; font-weight: bold;">' . esc_html__( '商品・サービス', 'kantanpro' ) . '</th>
+                        <th style="border: 2px solid #333; padding: 8px; text-align: center; font-weight: bold;">' . esc_html__( '売上金額', 'kantanpro' ) . '</th>
                     </tr>
                 </thead>
                 <tbody>';
@@ -251,7 +252,7 @@ function ktp_generate_sales_ledger_pdf_html( $sales_data, $year ) {
         $html .= '
                     <tr>
                         <td colspan="6" style="border: 2px solid #333; padding: 20px; text-align: center; color: #666;">
-                            ' . esc_html__( '対象年度の売上データがありません。', 'ktpwp' ) . '
+                            ' . esc_html__( '対象年度の売上データがありません。', 'kantanpro' ) . '
                         </td>
                     </tr>';
     }
@@ -260,7 +261,7 @@ function ktp_generate_sales_ledger_pdf_html( $sales_data, $year ) {
                 </tbody>
                 <tfoot>
                     <tr style="background: #f0f8ff; font-weight: bold;">
-                        <td colspan="5" style="border: 2px solid #333; padding: 8px; text-align: right;">' . esc_html__( '合計', 'ktpwp' ) . '</td>
+                        <td colspan="5" style="border: 2px solid #333; padding: 8px; text-align: right;">' . esc_html__( '合計', 'kantanpro' ) . '</td>
                         <td style="border: 2px solid #333; padding: 8px; text-align: right; font-size: 14px;">' . esc_html( class_exists( 'KTPWP_Settings' ) ? KTPWP_Settings::format_money( $total_amount ) : number_format( $total_amount ) ) . '</td>
                     </tr>
                 </tfoot>

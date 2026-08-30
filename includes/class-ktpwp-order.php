@@ -487,12 +487,12 @@ if ( ! class_exists( 'KTPWP_Order' ) ) {
 		 */
 		public function get_progress_labels() {
 			return array(
-				1 => esc_html__( '受付中', 'ktpwp' ),
-				2 => esc_html__( '見積中', 'ktpwp' ),
-				3 => esc_html__( '受注', 'ktpwp' ),
-				4 => esc_html__( '完了', 'ktpwp' ),
-				5 => esc_html__( '請求済', 'ktpwp' ),
-				6 => esc_html__( '入金済', 'ktpwp' ),
+				1 => esc_html__( '受付中', 'kantanpro' ),
+				2 => esc_html__( '見積中', 'kantanpro' ),
+				3 => esc_html__( '受注', 'kantanpro' ),
+				4 => esc_html__( '完了', 'kantanpro' ),
+				5 => esc_html__( '請求済', 'kantanpro' ),
+				6 => esc_html__( '入金済', 'kantanpro' ),
 			);
 		}
 

@@ -150,7 +150,7 @@ if ( ! class_exists( 'KTPWP_Contract_Reminder_Mail' ) ) {
 			$options = get_option( 'ktp_general_settings', array() );
 			$checked = ! isset( $options['contract_reminder_enabled'] ) || ! empty( $options['contract_reminder_enabled'] );
 			echo '<label><input type="checkbox" name="ktp_general_settings[contract_reminder_enabled]" value="1" ' . checked( $checked, true, false ) . '> ';
-			echo esc_html__( '請求予定メールを自動送信する', 'ktpwp' );
+			echo esc_html__( '請求予定メールを自動送信する', 'kantanpro' );
 			echo '</label>';
 		}
 
@@ -163,7 +163,7 @@ if ( ! class_exists( 'KTPWP_Contract_Reminder_Mail' ) ) {
 			$options = get_option( 'ktp_general_settings', array() );
 			$value   = isset( $options['contract_reminder_days_before'] ) ? absint( $options['contract_reminder_days_before'] ) : 3;
 			echo '<input type="number" min="1" max="30" step="1" name="ktp_general_settings[contract_reminder_days_before]" value="' . esc_attr( (string) max( 1, $value ) ) . '" class="small-text"> ';
-			echo esc_html__( '日前', 'ktpwp' );
+			echo esc_html__( '日前', 'kantanpro' );
 		}
 
 		/**
@@ -174,7 +174,7 @@ if ( ! class_exists( 'KTPWP_Contract_Reminder_Mail' ) ) {
 		public static function render_subject_field() {
 			$value = self::get_subject_template();
 			echo '<input type="text" name="ktp_general_settings[contract_reminder_subject]" value="' . esc_attr( $value ) . '" class="large-text">';
-			echo '<p class="description">' . esc_html__( '利用可能: {client_name}, {contract_name}, {period_label}, {billing_date}, {amount}, {payment_due}', 'ktpwp' ) . '</p>';
+			echo '<p class="description">' . esc_html__( '利用可能: {client_name}, {contract_name}, {period_label}, {billing_date}, {amount}, {payment_due}', 'kantanpro' ) . '</p>';
 		}
 
 		/**
@@ -185,7 +185,7 @@ if ( ! class_exists( 'KTPWP_Contract_Reminder_Mail' ) ) {
 		public static function render_body_field() {
 			$value = self::get_body_template();
 			echo '<textarea name="ktp_general_settings[contract_reminder_body]" rows="12" class="large-text code">' . esc_textarea( $value ) . '</textarea>';
-			echo '<p class="description">' . esc_html__( '利用可能: {client_name}, {contract_name}, {period_label}, {billing_date}, {amount}, {payment_due}, {initial_fee_note}, {bank_info}, {company_info}', 'ktpwp' ) . '</p>';
+			echo '<p class="description">' . esc_html__( '利用可能: {client_name}, {contract_name}, {period_label}, {billing_date}, {amount}, {payment_due}, {initial_fee_note}, {bank_info}, {company_info}', 'kantanpro' ) . '</p>';
 		}
 
 		/**
@@ -194,7 +194,7 @@ if ( ! class_exists( 'KTPWP_Contract_Reminder_Mail' ) ) {
 		 * @return void
 		 */
 		public static function render_settings_section_info() {
-			echo '<p>' . esc_html__( '定期契約の請求日の数日前に、顧客へ請求予定の案内メールを送信します。', 'ktpwp' ) . '</p>';
+			echo '<p>' . esc_html__( '定期契約の請求日の数日前に、顧客へ請求予定の案内メールを送信します。', 'kantanpro' ) . '</p>';
 		}
 
 		/**
@@ -341,25 +341,25 @@ if ( ! class_exists( 'KTPWP_Contract_Reminder_Mail' ) ) {
 			$period      = sanitize_text_field( $period );
 
 			if ( $contract_id <= 0 || ! preg_match( '/^\d{4}-\d{2}$/', $period ) || ! $this->billing || ! $this->contract_db ) {
-				return new WP_Error( 'invalid_args', __( '送信対象が不正です。', 'ktpwp' ) );
+				return new WP_Error( 'invalid_args', __( '送信対象が不正です。', 'kantanpro' ) );
 			}
 
 			$contract = $this->contract_db->get_contract_by_id( $contract_id );
 			if ( ! $contract || 'active' !== $contract->status ) {
-				return new WP_Error( 'inactive', __( '有効な定期契約のみメールを送信できます。', 'ktpwp' ) );
+				return new WP_Error( 'inactive', __( '有効な定期契約のみメールを送信できます。', 'kantanpro' ) );
 			}
 
 			if ( (int) $contract->send_reminder_mail !== 1 ) {
-				return new WP_Error( 'disabled', __( 'この契約は請求予定メールが無効です。', 'ktpwp' ) );
+				return new WP_Error( 'disabled', __( 'この契約は請求予定メールが無効です。', 'kantanpro' ) );
 			}
 
 			if ( ! $this->billing->is_contract_due_in_period( $contract, $period ) ) {
-				return new WP_Error( 'not_due', __( 'この月は請求対象ではありません。', 'ktpwp' ) );
+				return new WP_Error( 'not_due', __( 'この月は請求対象ではありません。', 'kantanpro' ) );
 			}
 
 			$log = $this->billing->get_billing_log( $contract_id, $period );
 			if ( ! $force && $log && ! empty( $log->reminder_sent_at ) ) {
-				return new WP_Error( 'already_sent', __( '請求予定メールはすでに送信済みです。', 'ktpwp' ) );
+				return new WP_Error( 'already_sent', __( '請求予定メールはすでに送信済みです。', 'kantanpro' ) );
 			}
 
 			$client = $wpdb->get_row(
@@ -369,12 +369,12 @@ if ( ! class_exists( 'KTPWP_Contract_Reminder_Mail' ) ) {
 				)
 			);
 			if ( ! $client ) {
-				return new WP_Error( 'client_missing', __( '顧客が見つかりません。', 'ktpwp' ) );
+				return new WP_Error( 'client_missing', __( '顧客が見つかりません。', 'kantanpro' ) );
 			}
 
 			$to = $this->resolve_client_email( $client );
 			if ( $to === '' ) {
-				return new WP_Error( 'no_email', __( '顧客のメールアドレスが設定されていません。', 'ktpwp' ) );
+				return new WP_Error( 'no_email', __( '顧客のメールアドレスが設定されていません。', 'kantanpro' ) );
 			}
 
 			$mail = $this->build_mail_content( $contract, $client, $period );
@@ -387,7 +387,7 @@ if ( ! class_exists( 'KTPWP_Contract_Reminder_Mail' ) ) {
 			);
 
 			if ( empty( $mail_outcome['success'] ) ) {
-				$message = ! empty( $mail_outcome['error_message'] ) ? (string) $mail_outcome['error_message'] : __( 'メール送信に失敗しました。', 'ktpwp' );
+				$message = ! empty( $mail_outcome['error_message'] ) ? (string) $mail_outcome['error_message'] : __( 'メール送信に失敗しました。', 'kantanpro' );
 				return new WP_Error( 'mail_failed', $message );
 			}
 
@@ -540,7 +540,7 @@ if ( ! class_exists( 'KTPWP_Contract_Reminder_Mail' ) ) {
 				return '';
 			}
 
-			return __( '※初回請求のため、保証金等の追加費用が含まれます。', 'ktpwp' );
+			return __( '※初回請求のため、保証金等の追加費用が含まれます。', 'kantanpro' );
 		}
 
 		/**

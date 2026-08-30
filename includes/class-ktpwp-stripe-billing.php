@@ -402,7 +402,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Billing' ) ) {
 				}
 				$body .= "\n\n" . sprintf(
 					/* translators: %s: error message */
-					__( '【オンライン決済】決済リンクの準備に失敗しました: %s', 'ktpwp' ),
+					__( '【オンライン決済】決済リンクの準備に失敗しました: %s', 'kantanpro' ),
 					$result->get_error_message()
 				);
 				return $body;
@@ -413,7 +413,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Billing' ) ) {
 				return $this->inject_payment_block( $body, $url, $order );
 			}
 
-			$body .= "\n\n" . __( '【オンライン決済】送信確定時に決済リンクが本文へ挿入されます。', 'ktpwp' );
+			$body .= "\n\n" . __( '【オンライン決済】送信確定時に決済リンクが本文へ挿入されます。', 'kantanpro' );
 
 			if ( ! $this->should_hide_bank_transfer( $order ) && class_exists( 'KTPWP_Settings' ) ) {
 				$bank_plain = KTPWP_Settings::get_bank_transfer_plain_text();
@@ -446,7 +446,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Billing' ) ) {
 
 			$url = isset( $result['url'] ) ? (string) $result['url'] : '';
 			if ( $url === '' ) {
-				return new WP_Error( 'stripe_no_url', __( 'Stripe 決済リンクの取得に失敗しました。', 'ktpwp' ) );
+				return new WP_Error( 'stripe_no_url', __( 'Stripe 決済リンクの取得に失敗しました。', 'kantanpro' ) );
 			}
 
 			return $this->inject_payment_block( $body, $url, $order );
@@ -512,7 +512,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Billing' ) ) {
 		 */
 		private function strip_body_for_mail_log( $body ) {
 			$body         = $this->normalize_email_body( $body );
-			$history_note = __( '【オンライン決済】決済リンクは送信履歴には含めません。', 'ktpwp' );
+			$history_note = __( '【オンライン決済】決済リンクは送信履歴には含めません。', 'kantanpro' );
 			$note         = "\n\n" . $history_note;
 
 			// 保存時・表示時の二重呼び出しでも注記が重複しないよう、判定前に履歴用注記を除外する。
@@ -551,7 +551,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Billing' ) ) {
 		private function build_payment_block( $url ) {
 			$url = trim( (string) $url );
 
-			return "\n\n" . __( '【オンライン決済】以下のリンクよりお支払いください。', 'ktpwp' ) . "\n" . $url;
+			return "\n\n" . __( '【オンライン決済】以下のリンクよりお支払いください。', 'kantanpro' ) . "\n" . $url;
 		}
 
 		/**
@@ -598,11 +598,11 @@ if ( ! class_exists( 'KTPWP_Stripe_Billing' ) ) {
 
 			$order_id = absint( $order_id );
 			if ( $order_id <= 0 || ! self::is_enabled() ) {
-				return new WP_Error( 'invalid', __( 'Stripe 請求の対象外です。', 'ktpwp' ) );
+				return new WP_Error( 'invalid', __( 'Stripe 請求の対象外です。', 'kantanpro' ) );
 			}
 
 			if ( ! class_exists( '\Stripe\StripeClient' ) ) {
-				return new WP_Error( 'stripe_sdk_missing', __( 'Stripe SDK が読み込まれていません。', 'ktpwp' ) );
+				return new WP_Error( 'stripe_sdk_missing', __( 'Stripe SDK が読み込まれていません。', 'kantanpro' ) );
 			}
 
 			$order_table = $wpdb->prefix . 'ktp_order';
@@ -614,7 +614,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Billing' ) ) {
 			);
 
 			if ( ! $order || ! $this->should_apply_to_order( $order ) ) {
-				return new WP_Error( 'invalid_order', __( 'Stripe 請求の対象外です。', 'ktpwp' ) );
+				return new WP_Error( 'invalid_order', __( 'Stripe 請求の対象外です。', 'kantanpro' ) );
 			}
 
 			if ( class_exists( 'KTPWP_Stripe_Subscription' )
@@ -623,12 +623,12 @@ if ( ! class_exists( 'KTPWP_Stripe_Billing' ) ) {
 			}
 
 			if ( ! empty( $order->stripe_paid_at ) ) {
-				return new WP_Error( 'already_paid', __( 'この請求は入金済みです。', 'ktpwp' ) );
+				return new WP_Error( 'already_paid', __( 'この請求は入金済みです。', 'kantanpro' ) );
 			}
 
 			$client_id = (int) ( $order->client_id ?? 0 );
 			if ( $client_id <= 0 ) {
-				return new WP_Error( 'no_client', __( '顧客が見つかりません。', 'ktpwp' ) );
+				return new WP_Error( 'no_client', __( '顧客が見つかりません。', 'kantanpro' ) );
 			}
 
 			$customer_id = $this->get_or_create_customer( $client_id );
@@ -641,7 +641,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Billing' ) ) {
 
 			$line_items = $this->get_order_line_items( $order_id );
 			if ( empty( $line_items ) ) {
-				return new WP_Error( 'no_items', __( '請求明細がありません。', 'ktpwp' ) );
+				return new WP_Error( 'no_items', __( '請求明細がありません。', 'kantanpro' ) );
 			}
 
 			$expected_total = $this->compute_expected_total_from_lines( $line_items );
@@ -822,7 +822,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Billing' ) ) {
 			}
 
 			if ( isset( $existing->status ) && $existing->status === 'paid' ) {
-				return new WP_Error( 'already_paid', __( 'この請求は入金済みです。', 'ktpwp' ) );
+				return new WP_Error( 'already_paid', __( 'この請求は入金済みです。', 'kantanpro' ) );
 			}
 
 			if ( ! in_array( (string) $existing->status, array( 'draft', 'open' ), true ) ) {
@@ -882,7 +882,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Billing' ) ) {
 
 			$client_id = absint( $client_id );
 			if ( $client_id <= 0 ) {
-				return new WP_Error( 'invalid_client', __( '顧客が見つかりません。', 'ktpwp' ) );
+				return new WP_Error( 'invalid_client', __( '顧客が見つかりません。', 'kantanpro' ) );
 			}
 
 			$table  = $wpdb->prefix . 'ktp_client';
@@ -894,7 +894,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Billing' ) ) {
 			);
 
 			if ( ! $client ) {
-				return new WP_Error( 'invalid_client', __( '顧客が見つかりません。', 'ktpwp' ) );
+				return new WP_Error( 'invalid_client', __( '顧客が見つかりません。', 'kantanpro' ) );
 			}
 
 			if ( ! empty( $client->stripe_customer_id ) ) {
@@ -902,7 +902,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Billing' ) ) {
 			}
 
 			if ( ! class_exists( '\Stripe\StripeClient' ) ) {
-				return new WP_Error( 'stripe_sdk_missing', __( 'Stripe SDK が読み込まれていません。', 'ktpwp' ) );
+				return new WP_Error( 'stripe_sdk_missing', __( 'Stripe SDK が読み込まれていません。', 'kantanpro' ) );
 			}
 
 			$email = $this->resolve_client_email( $client );
@@ -1343,12 +1343,12 @@ if ( ! class_exists( 'KTPWP_Stripe_Billing' ) ) {
 		public static function render_settings_section_info() {
 			if ( function_exists( 'ktpwp_is_feature_enabled' ) && ! ktpwp_is_feature_enabled( 'stripe_billing' ) ) {
 				if ( class_exists( 'KTPWP_Edition' ) ) {
-					echo wp_kses_post( KTPWP_Edition::get_upgrade_message_html( __( 'Stripe 請求連携', 'ktpwp' ) ) );
+					echo wp_kses_post( KTPWP_Edition::get_upgrade_message_html( __( 'Stripe 請求連携', 'kantanpro' ) ) );
 				}
 				return;
 			}
-			echo '<p>' . esc_html__( '初回は Stripe Invoice（今回請求分）、初回費用なしの定額案件は Subscription を即時開始します。', 'ktpwp' ) . '</p>';
-			echo '<p class="description">' . esc_html__( 'Webhook URL:', 'ktpwp' ) . ' <code>' . esc_html( self::get_webhook_url() ) . '</code></p>';
+			echo '<p>' . esc_html__( '初回は Stripe Invoice（今回請求分）、初回費用なしの定額案件は Subscription を即時開始します。', 'kantanpro' ) . '</p>';
+			echo '<p class="description">' . esc_html__( 'Webhook URL:', 'kantanpro' ) . ' <code>' . esc_html( self::get_webhook_url() ) . '</code></p>';
 		}
 
 		/**
@@ -1358,13 +1358,13 @@ if ( ! class_exists( 'KTPWP_Stripe_Billing' ) ) {
 		 */
 		public static function render_enabled_field() {
 			if ( function_exists( 'ktpwp_is_feature_enabled' ) && ! ktpwp_is_feature_enabled( 'stripe_billing' ) ) {
-				echo '<span class="description">' . esc_html__( 'フリー版では利用できません。', 'ktpwp' ) . '</span>';
+				echo '<span class="description">' . esc_html__( 'フリー版では利用できません。', 'kantanpro' ) . '</span>';
 				return;
 			}
 			$options = get_option( 'ktp_general_settings', array() );
 			$checked = ! empty( $options['stripe_enabled'] );
 			echo '<label><input type="checkbox" name="ktp_general_settings[stripe_enabled]" value="1" ' . checked( $checked, true, false ) . '> ';
-			echo esc_html__( 'Stripe 請求連携を有効にする', 'ktpwp' );
+			echo esc_html__( 'Stripe 請求連携を有効にする', 'kantanpro' );
 			echo '</label>';
 		}
 
@@ -1377,7 +1377,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Billing' ) ) {
 			$options = get_option( 'ktp_general_settings', array() );
 			$checked = ! empty( $options['stripe_test_mode'] );
 			echo '<label><input type="checkbox" name="ktp_general_settings[stripe_test_mode]" value="1" ' . checked( $checked, true, false ) . '> ';
-			echo esc_html__( 'テストモード（テスト用 API キーを使用）', 'ktpwp' );
+			echo esc_html__( 'テストモード（テスト用 API キーを使用）', 'kantanpro' );
 			echo '</label>';
 		}
 
@@ -1434,7 +1434,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Billing' ) ) {
 			$options = get_option( 'ktp_general_settings', array() );
 			$value   = isset( $options['stripe_days_until_due'] ) ? absint( $options['stripe_days_until_due'] ) : 30;
 			echo '<input type="number" min="1" max="90" step="1" name="ktp_general_settings[stripe_days_until_due]" value="' . esc_attr( (string) max( 1, $value ) ) . '" class="small-text"> ';
-			echo esc_html__( '日', 'ktpwp' );
+			echo esc_html__( '日', 'kantanpro' );
 		}
 
 		/**
@@ -1445,7 +1445,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Billing' ) ) {
 		public static function render_invoice_issuer_name_field() {
 			$value = self::get_invoice_issuer_name();
 			echo '<input type="text" name="ktp_general_settings[stripe_invoice_issuer_name]" value="' . esc_attr( $value ) . '" class="regular-text">';
-			echo '<p class="description">' . esc_html__( 'Stripe 請求ページの「請求元」に表示されます。保存時と請求書作成時に Stripe アカウントへ同期されます。', 'ktpwp' ) . '</p>';
+			echo '<p class="description">' . esc_html__( 'Stripe 請求ページの「請求元」に表示されます。保存時と請求書作成時に Stripe アカウントへ同期されます。', 'kantanpro' ) . '</p>';
 		}
 
 		/**
@@ -1456,14 +1456,14 @@ if ( ! class_exists( 'KTPWP_Stripe_Billing' ) ) {
 		public static function render_contract_invoice_auto_field() {
 			if ( function_exists( 'ktpwp_is_feature_enabled' ) && ! ktpwp_is_feature_enabled( 'contract_invoice_auto_mail' ) ) {
 				if ( class_exists( 'KTPWP_Edition' ) ) {
-					echo wp_kses_post( KTPWP_Edition::get_upgrade_message_html( __( '定期請求メール自動送信', 'ktpwp' ) ) );
+					echo wp_kses_post( KTPWP_Edition::get_upgrade_message_html( __( '定期請求メール自動送信', 'kantanpro' ) ) );
 				}
 				return;
 			}
 			$options = get_option( 'ktp_general_settings', array() );
 			$checked = ! isset( $options['contract_invoice_auto_enabled'] ) || ! empty( $options['contract_invoice_auto_enabled'] );
 			echo '<label><input type="checkbox" name="ktp_general_settings[contract_invoice_auto_enabled]" value="1" ' . checked( $checked, true, false ) . '> ';
-			echo esc_html__( '定期契約の請求メールを自動送信する（初回請求を除く・Subscription 契約は対象外）', 'ktpwp' );
+			echo esc_html__( '定期契約の請求メールを自動送信する（初回請求を除く・Subscription 契約は対象外）', 'kantanpro' );
 			echo '</label>';
 		}
 	}

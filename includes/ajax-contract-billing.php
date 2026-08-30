@@ -55,17 +55,17 @@ function ktpwp_contract_billing_get_frontend_base_url() {
  */
 function ktp_generate_contract_order_ajax() {
 	if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), 'ktp_contract_billing_nonce' ) ) {
-		wp_send_json_error( __( 'セキュリティチェックに失敗しました。', 'ktpwp' ) );
+		wp_send_json_error( __( 'セキュリティチェックに失敗しました。', 'kantanpro' ) );
 	}
 
 	if ( ! ktpwp_contract_billing_ajax_can_manage() ) {
-		wp_send_json_error( __( '権限がありません。', 'ktpwp' ) );
+		wp_send_json_error( __( '権限がありません。', 'kantanpro' ) );
 	}
 
 	ktpwp_require_contracts_feature_or_ajax_error();
 
 	if ( ! class_exists( 'KTPWP_Contract_Billing' ) ) {
-		wp_send_json_error( __( '定期請求機能が利用できません。', 'ktpwp' ) );
+		wp_send_json_error( __( '定期請求機能が利用できません。', 'kantanpro' ) );
 	}
 
 	$contract_id = absint( $_POST['contract_id'] ?? 0 );
@@ -91,7 +91,7 @@ function ktp_generate_contract_order_ajax() {
 		array(
 			'order_id'  => (int) $result,
 			'order_url' => $order_url,
-			'message'   => __( '案件を紐付けしました。', 'ktpwp' ),
+			'message'   => __( '案件を紐付けしました。', 'kantanpro' ),
 		)
 	);
 }
@@ -101,17 +101,17 @@ function ktp_generate_contract_order_ajax() {
  */
 function ktp_generate_all_contract_orders_ajax() {
 	if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), 'ktp_contract_billing_nonce' ) ) {
-		wp_send_json_error( __( 'セキュリティチェックに失敗しました。', 'ktpwp' ) );
+		wp_send_json_error( __( 'セキュリティチェックに失敗しました。', 'kantanpro' ) );
 	}
 
 	if ( ! ktpwp_contract_billing_ajax_can_manage() ) {
-		wp_send_json_error( __( '権限がありません。', 'ktpwp' ) );
+		wp_send_json_error( __( '権限がありません。', 'kantanpro' ) );
 	}
 
 	ktpwp_require_contracts_feature_or_ajax_error();
 
 	if ( ! class_exists( 'KTPWP_Contract_Billing' ) ) {
-		wp_send_json_error( __( '定期請求機能が利用できません。', 'ktpwp' ) );
+		wp_send_json_error( __( '定期請求機能が利用できません。', 'kantanpro' ) );
 	}
 
 	$period  = sanitize_text_field( wp_unslash( $_POST['period'] ?? '' ) );
@@ -120,7 +120,7 @@ function ktp_generate_all_contract_orders_ajax() {
 
 	$message = sprintf(
 		/* translators: %d: created count */
-		__( '%d件の案件を紐付けしました。', 'ktpwp' ),
+		__( '%d件の案件を紐付けしました。', 'kantanpro' ),
 		(int) $result['created']
 	);
 
@@ -145,17 +145,17 @@ add_action( 'wp_ajax_ktp_generate_all_contract_orders', 'ktp_generate_all_contra
  */
 function ktp_send_contract_reminder_ajax() {
 	if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), 'ktp_contract_billing_nonce' ) ) {
-		wp_send_json_error( __( 'セキュリティチェックに失敗しました。', 'ktpwp' ) );
+		wp_send_json_error( __( 'セキュリティチェックに失敗しました。', 'kantanpro' ) );
 	}
 
 	if ( ! ktpwp_contract_billing_ajax_can_manage() ) {
-		wp_send_json_error( __( '権限がありません。', 'ktpwp' ) );
+		wp_send_json_error( __( '権限がありません。', 'kantanpro' ) );
 	}
 
 	ktpwp_require_contracts_feature_or_ajax_error();
 
 	if ( ! class_exists( 'KTPWP_Contract_Reminder_Mail' ) ) {
-		wp_send_json_error( __( '請求予定メール機能が利用できません。', 'ktpwp' ) );
+		wp_send_json_error( __( '請求予定メール機能が利用できません。', 'kantanpro' ) );
 	}
 
 	$contract_id = absint( $_POST['contract_id'] ?? 0 );
@@ -173,7 +173,7 @@ function ktp_send_contract_reminder_ajax() {
 
 	wp_send_json_success(
 		array(
-			'message' => __( '請求予定メールを送信しました。', 'ktpwp' ),
+			'message' => __( '請求予定メールを送信しました。', 'kantanpro' ),
 		)
 	);
 }
@@ -183,17 +183,17 @@ function ktp_send_contract_reminder_ajax() {
  */
 function ktp_send_pending_contract_reminders_ajax() {
 	if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), 'ktp_contract_billing_nonce' ) ) {
-		wp_send_json_error( __( 'セキュリティチェックに失敗しました。', 'ktpwp' ) );
+		wp_send_json_error( __( 'セキュリティチェックに失敗しました。', 'kantanpro' ) );
 	}
 
 	if ( ! ktpwp_contract_billing_ajax_can_manage() ) {
-		wp_send_json_error( __( '権限がありません。', 'ktpwp' ) );
+		wp_send_json_error( __( '権限がありません。', 'kantanpro' ) );
 	}
 
 	ktpwp_require_contracts_feature_or_ajax_error();
 
 	if ( ! class_exists( 'KTPWP_Contract_Reminder_Mail' ) ) {
-		wp_send_json_error( __( '請求予定メール機能が利用できません。', 'ktpwp' ) );
+		wp_send_json_error( __( '請求予定メール機能が利用できません。', 'kantanpro' ) );
 	}
 
 	$period   = sanitize_text_field( wp_unslash( $_POST['period'] ?? '' ) );
@@ -205,7 +205,7 @@ function ktp_send_pending_contract_reminders_ajax() {
 
 	$message = sprintf(
 		/* translators: %d: sent count */
-		__( '%d件の請求予定メールを送信しました。', 'ktpwp' ),
+		__( '%d件の請求予定メールを送信しました。', 'kantanpro' ),
 		(int) $result['sent']
 	);
 

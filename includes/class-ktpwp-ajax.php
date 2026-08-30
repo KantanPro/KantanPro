@@ -114,12 +114,12 @@ class KTPWP_Ajax {
 	public function ajax_get_profit_display() {
 		// 権限チェック
 		if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
-			wp_send_json_error( __( 'この操作を行う権限がありません。', 'ktpwp' ) );
+			wp_send_json_error( __( 'この操作を行う権限がありません。', 'kantanpro' ) );
 		}
 
 		$order_id = isset( $_POST['order_id'] ) ? intval( $_POST['order_id'] ) : 0;
 		if ( $order_id <= 0 ) {
-			wp_send_json_error( __( '無効なIDです', 'ktpwp' ) );
+			wp_send_json_error( __( '無効なIDです', 'kantanpro' ) );
 		}
 
 		$payload = $this->build_profit_payload_for_order( $order_id );
@@ -296,16 +296,16 @@ class KTPWP_Ajax {
             function () {
 				// 権限チェック
 				if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
-					wp_send_json_error( __( '権限がありません', 'ktpwp' ) );
+					wp_send_json_error( __( '権限がありません', 'kantanpro' ) );
 				}
 				// nonceチェック（必要ならPOSTでnonceも送る）
 				// if ( ! isset($_POST['nonce']) || ! wp_verify_nonce($_POST['nonce'], 'ktp_ajax_nonce') ) {
-				// wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'ktpwp' ) );
+				// wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'kantanpro' ) );
 				// }
 				global $wpdb;
 				$client_id = isset( $_POST['client_id'] ) ? intval( $_POST['client_id'] ) : 0;
 				if ( ! $client_id ) {
-					wp_send_json_error( __( 'client_idが指定されていません', 'ktpwp' ) );
+					wp_send_json_error( __( 'client_idが指定されていません', 'kantanpro' ) );
 				}
 				$order_table = $wpdb->prefix . 'ktp_order';
 				$client_table = $wpdb->prefix . 'ktp_client';
@@ -321,7 +321,7 @@ class KTPWP_Ajax {
                     )
                 );
 				if ( $result === false ) {
-					wp_send_json_error( __( 'DB更新に失敗しました: ', 'ktpwp' ) . $wpdb->last_error );
+					wp_send_json_error( __( 'DB更新に失敗しました: ', 'kantanpro' ) . $wpdb->last_error );
 				}
 				wp_send_json_success( array( 'updated' => $result ) );
 			}
@@ -334,21 +334,21 @@ class KTPWP_Ajax {
             function () {
 				// 権限チェック
 				if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
-					wp_send_json_error( __( '権限がありません', 'ktpwp' ) );
+					wp_send_json_error( __( '権限がありません', 'kantanpro' ) );
 				}
 				// nonceチェック
 				if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( $_POST['nonce'], 'ktp_ajax_nonce' ) ) {
-					wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'ktpwp' ) );
+					wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'kantanpro' ) );
 				}
 				global $wpdb;
 				$order_id = isset( $_POST['order_id'] ) ? intval( $_POST['order_id'] ) : 0;
 				$supplier_name = isset( $_POST['supplier_name'] ) ? sanitize_text_field( $_POST['supplier_name'] ) : '';
 				$status = isset( $_POST['status'] ) ? sanitize_key( $_POST['status'] ) : 'ordered';
 				if ( ! $order_id || ! $supplier_name ) {
-					wp_send_json_error( __( 'order_idまたはsupplier_nameが指定されていません', 'ktpwp' ) );
+					wp_send_json_error( __( 'order_idまたはsupplier_nameが指定されていません', 'kantanpro' ) );
 				}
 				if ( class_exists( 'KTPWP_Order_Items' ) && ! array_key_exists( $status, KTPWP_Order_Items::get_purchase_status_options() ) ) {
-					wp_send_json_error( __( '無効な仕入ステータスです', 'ktpwp' ) );
+					wp_send_json_error( __( '無効な仕入ステータスです', 'kantanpro' ) );
 				}
 				if ( class_exists( 'KTPWP_Order_Items' ) ) {
 					KTPWP_Order_Items::get_instance()->add_purchase_status_column_if_missing();
@@ -755,12 +755,12 @@ class KTPWP_Ajax {
 	 */
 	public function ajax_update_project_name() {
 		if ( ! current_user_can( 'manage_options' ) && ! current_user_can( 'ktpwp_access' ) && ! current_user_can( 'edit_posts' ) ) {
-			wp_send_json_error( __( '権限がありません', 'ktpwp' ) );
+			wp_send_json_error( __( '権限がありません', 'kantanpro' ) );
 		}
 
 		$nonce = isset( $_POST['_wpnonce'] ) ? sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ) : '';
 		if ( $nonce === '' || ! wp_verify_nonce( $nonce, 'ktp_update_project_name' ) ) {
-			wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'ktpwp' ) );
+			wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'kantanpro' ) );
 		}
 
 		$order_id     = isset( $_POST['order_id'] ) ? absint( $_POST['order_id'] ) : 0;
@@ -770,7 +770,7 @@ class KTPWP_Ajax {
 			: sanitize_text_field( $project_name );
 
 		if ( $order_id <= 0 ) {
-			wp_send_json_error( __( '無効な受注IDです', 'ktpwp' ) );
+			wp_send_json_error( __( '無効な受注IDです', 'kantanpro' ) );
 		}
 
 		global $wpdb;
@@ -791,12 +791,12 @@ class KTPWP_Ajax {
 					'project_name' => $project_name,
 				)
 			);
-			wp_send_json_error( __( '更新に失敗しました', 'ktpwp' ) );
+			wp_send_json_error( __( '更新に失敗しました', 'kantanpro' ) );
 		}
 
 		wp_send_json_success(
 			array(
-				'message'      => __( 'プロジェクト名を更新しました', 'ktpwp' ),
+				'message'      => __( 'プロジェクト名を更新しました', 'kantanpro' ),
 				'project_name' => $project_name,
 			)
 		);
@@ -808,7 +808,7 @@ class KTPWP_Ajax {
 	public function ajax_get_logged_in_users() {
 		// 編集者以上の権限チェック
 		if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
-			wp_send_json_error( __( 'この操作を行う権限がありません。', 'ktpwp' ) );
+			wp_send_json_error( __( 'この操作を行う権限がありません。', 'kantanpro' ) );
 			return;
 		}
 
@@ -840,7 +840,7 @@ class KTPWP_Ajax {
 	 * Ajax: ログイン要求（非ログインユーザー用）
 	 */
 	public function ajax_require_login() {
-		wp_send_json_error( __( 'ログインが必要です', 'ktpwp' ) );
+		wp_send_json_error( __( 'ログインが必要です', 'kantanpro' ) );
 	}
 
 	/**
@@ -850,7 +850,7 @@ class KTPWP_Ajax {
 		// 編集者以上の権限チェック
 		if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
 			$this->log_ajax_error( 'Auto-save permission check failed' );
-			wp_send_json_error( __( 'この操作を行う権限がありません。', 'ktpwp' ) );
+			wp_send_json_error( __( 'この操作を行う権限がありません。', 'kantanpro' ) );
 			return;
 		}
 
@@ -903,7 +903,7 @@ class KTPWP_Ajax {
 				error_log( '[AJAX_AUTO_SAVE] All POST values: ' . print_r( $_POST, true ) );
 			}
 			$this->log_ajax_error( 'Auto-save security check failed', $_POST );
-			wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'ktpwp' ) );
+			wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'kantanpro' ) );
 		}
 
 		// POSTデータの取得とサニタイズ
@@ -916,7 +916,7 @@ class KTPWP_Ajax {
 		// バリデーション
 		if ( ! in_array( $item_type, array( 'invoice', 'cost' ), true ) ) {
 			$this->log_ajax_error( 'Invalid item type', array( 'type' => $item_type ) );
-			wp_send_json_error( __( '無効なアイテムタイプです', 'ktpwp' ) );
+			wp_send_json_error( __( '無効なアイテムタイプです', 'kantanpro' ) );
 		}
 
 		if ( $item_id <= 0 || $order_id <= 0 ) {
@@ -927,7 +927,7 @@ class KTPWP_Ajax {
 					'order_id' => $order_id,
 				)
 			);
-			wp_send_json_error( __( '無効なIDです', 'ktpwp' ) );
+			wp_send_json_error( __( '無効なIDです', 'kantanpro' ) );
 		}
 
 		// 新しいクラス構造を使用してアイテムを更新
@@ -948,7 +948,7 @@ class KTPWP_Ajax {
 				$profit_payload = $this->build_profit_payload_for_order( $order_id );
 				wp_send_json_success(
 					array(
-						'message' => __( '正常に保存されました', 'ktpwp' ),
+						'message' => __( '正常に保存されました', 'kantanpro' ),
 						'value_changed' => $result['value_changed'],
 						'profit' => $profit_payload,
 						'history_label' => isset( $result['history_label'] ) ? $result['history_label'] : null,
@@ -963,7 +963,7 @@ class KTPWP_Ajax {
 						'field'   => $field_name,
 					)
 				);
-				wp_send_json_error( __( '保存に失敗しました', 'ktpwp' ) );
+				wp_send_json_error( __( '保存に失敗しました', 'kantanpro' ) );
 			}
 		} catch ( Exception $e ) {
 			$this->log_ajax_error(
@@ -974,7 +974,7 @@ class KTPWP_Ajax {
 					'item_id' => $item_id,
 				)
 			);
-			wp_send_json_error( __( '保存中にエラーが発生しました', 'ktpwp' ) );
+			wp_send_json_error( __( '保存中にエラーが発生しました', 'kantanpro' ) );
 		}
 	}
 
@@ -987,14 +987,14 @@ class KTPWP_Ajax {
 		// 編集者以上の権限チェック
 		if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
 			$this->log_ajax_error( 'Create new item permission check failed' );
-			wp_send_json_error( __( 'この操作を行う権限がありません。', 'ktpwp' ) );
+			wp_send_json_error( __( 'この操作を行う権限がありません。', 'kantanpro' ) );
 			return;
 		}
 
 		// 安全性の初期チェック（Adminer警告対策）
 		if ( ! is_array( $_POST ) || empty( $_POST ) ) {
 			error_log( 'KTPWP Ajax: $_POST is not array or empty' );
-			wp_send_json_error( __( 'リクエストデータが無効です', 'ktpwp' ) );
+			wp_send_json_error( __( 'リクエストデータが無効です', 'kantanpro' ) );
 			return;
 		}
 
@@ -1025,7 +1025,7 @@ class KTPWP_Ajax {
 			error_log( '[AJAX_CREATE_NEW_ITEM] Security check failed - tried fields: ' . implode( ', ', $nonce_fields ) );
 			error_log( '[AJAX_CREATE_NEW_ITEM] Available POST fields: ' . implode( ', ', array_keys( $_POST ) ) );
 			$this->log_ajax_error( 'Create new item security check failed', $_POST );
-			wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'ktpwp' ) );
+			wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'kantanpro' ) );
 		}
 
 		// POSTデータの取得とサニタイズ（強化版）
@@ -1038,12 +1038,12 @@ class KTPWP_Ajax {
 		// バリデーション
 		if ( ! in_array( $item_type, array( 'invoice', 'cost' ), true ) ) {
 			$this->log_ajax_error( 'Invalid item type for creation', array( 'type' => $item_type ) );
-			wp_send_json_error( __( '無効なアイテムタイプです', 'ktpwp' ) );
+			wp_send_json_error( __( '無効なアイテムタイプです', 'kantanpro' ) );
 		}
 
 		if ( $order_id <= 0 ) {
 			$this->log_ajax_error( 'Invalid order ID for creation', array( 'order_id' => $order_id ) );
-			wp_send_json_error( array( 'message' => __( '無効な受注IDです。ページを再読み込みしてから再度お試しください。', 'ktpwp' ) ) );
+			wp_send_json_error( array( 'message' => __( '無効な受注IDです。ページを再読み込みしてから再度お試しください。', 'kantanpro' ) ) );
 		}
 
 		// 新しいクラス構造を使用してアイテムを作成
@@ -1072,7 +1072,7 @@ class KTPWP_Ajax {
 				wp_send_json_success(
 					array(
 						'item_id' => $new_item_id,
-						'message' => __( '新しいアイテムが作成されました', 'ktpwp' ),
+						'message' => __( '新しいアイテムが作成されました', 'kantanpro' ),
 					)
 				);
 			} else {
@@ -1083,7 +1083,7 @@ class KTPWP_Ajax {
 						'order_id' => $order_id,
 					)
 				);
-				wp_send_json_error( array( 'message' => __( 'アイテムの作成に失敗しました', 'ktpwp' ) ) );
+				wp_send_json_error( array( 'message' => __( 'アイテムの作成に失敗しました', 'kantanpro' ) ) );
 			}
 		} catch ( Exception $e ) {
 			$this->log_ajax_error(
@@ -1094,7 +1094,7 @@ class KTPWP_Ajax {
 					'order_id' => $order_id,
 				)
 			);
-			wp_send_json_error( __( '作成中にエラーが発生しました', 'ktpwp' ) );
+			wp_send_json_error( __( '作成中にエラーが発生しました', 'kantanpro' ) );
 		}
 	}
 
@@ -1105,7 +1105,7 @@ class KTPWP_Ajax {
 		// 編集者以上の権限チェック
 		if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
 			$this->log_ajax_error( 'Delete item permission check failed', $_POST );
-			wp_send_json_error( __( 'この操作を行う権限がありません。', 'ktpwp' ) );
+			wp_send_json_error( __( 'この操作を行う権限がありません。', 'kantanpro' ) );
 			return;
 		}
 
@@ -1139,7 +1139,7 @@ class KTPWP_Ajax {
 			error_log( '[AJAX_DELETE_ITEM] Security check failed - tried fields: ' . implode( ', ', $nonce_fields ) );
 			error_log( '[AJAX_DELETE_ITEM] Available POST fields: ' . implode( ', ', array_keys( $_POST ) ) );
 			$this->log_ajax_error( 'Delete item security check failed', $_POST );
-			wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'ktpwp' ) );
+			wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'kantanpro' ) );
 		}
 
 		// POSTデータの取得とサニタイズ
@@ -1153,7 +1153,7 @@ class KTPWP_Ajax {
 		// バリデーション
 		if ( ! in_array( $item_type, array( 'invoice', 'cost' ), true ) ) {
 			$this->log_ajax_error( 'Invalid item type for deletion', array( 'type' => $item_type ) );
-			wp_send_json_error( __( '無効なアイテムタイプです', 'ktpwp' ) );
+			wp_send_json_error( __( '無効なアイテムタイプです', 'kantanpro' ) );
 		}
 
 		if ( $item_id <= 0 ) {
@@ -1165,7 +1165,7 @@ class KTPWP_Ajax {
 					'order_id'  => $order_id,
 				)
 			);
-			wp_send_json_error( __( '無効なアイテムIDです', 'ktpwp' ) );
+			wp_send_json_error( __( '無効なアイテムIDです', 'kantanpro' ) );
 		}
 
 		if ( $order_id <= 0 ) {
@@ -1177,14 +1177,14 @@ class KTPWP_Ajax {
 					'item_id'   => $item_id,
 				)
 			);
-			wp_send_json_error( __( '無効な受注IDです', 'ktpwp' ) );
+			wp_send_json_error( __( '無効な受注IDです', 'kantanpro' ) );
 		}
 
 		// KTPWP_Order_Items クラスのインスタンスを取得
 		// クラスが存在するか確認
 		if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 			$this->log_ajax_error( 'KTPWP_Order_Items class not found' );
-			wp_send_json_error( __( '必要なクラスが見つかりません。', 'ktpwp' ) );
+			wp_send_json_error( __( '必要なクラスが見つかりません。', 'kantanpro' ) );
 			return; // ここで処理を中断
 		}
 		$order_items = KTPWP_Order_Items::get_instance();
@@ -1198,7 +1198,7 @@ class KTPWP_Ajax {
 				error_log( '[AJAX_DELETE_ITEM] Success: item deleted successfully' );
 				wp_send_json_success(
 					array(
-						'message' => __( 'アイテムを削除しました', 'ktpwp' ),
+						'message' => __( 'アイテムを削除しました', 'kantanpro' ),
 					)
 				);
 			} else {
@@ -1211,7 +1211,7 @@ class KTPWP_Ajax {
 						'order_id'  => $order_id,
 					)
 				);
-				wp_send_json_error( __( 'データベースからのアイテム削除に失敗しました（詳細エラーログ確認）', 'ktpwp' ) );
+				wp_send_json_error( __( 'データベースからのアイテム削除に失敗しました（詳細エラーログ確認）', 'kantanpro' ) );
 			}
 		} catch ( Exception $e ) {
 			$this->log_ajax_error(
@@ -1224,7 +1224,7 @@ class KTPWP_Ajax {
 					'trace'     => $e->getTraceAsString(),
 				)
 			);
-			wp_send_json_error( __( 'アイテム削除中に予期せぬエラーが発生しました（詳細エラーログ確認）', 'ktpwp' ) );
+			wp_send_json_error( __( 'アイテム削除中に予期せぬエラーが発生しました（詳細エラーログ確認）', 'kantanpro' ) );
 		}
 	}
 
@@ -1237,7 +1237,7 @@ class KTPWP_Ajax {
 		// 編集者以上の権限チェック
 		if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
 			$this->log_ajax_error( 'Update item order permission check failed', $_POST );
-			wp_send_json_error( __( 'この操作を行う権限がありません。', 'ktpwp' ) );
+			wp_send_json_error( __( 'この操作を行う権限がありません。', 'kantanpro' ) );
 			return;
 		}
 
@@ -1276,7 +1276,7 @@ class KTPWP_Ajax {
 				}
 			}
 			$this->log_ajax_error( 'Update item order security check failed', $_POST );
-			wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'ktpwp' ) );
+			wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'kantanpro' ) );
 		}
 
 		// POSTデータの取得とサニタイズ
@@ -1291,17 +1291,17 @@ class KTPWP_Ajax {
 		// バリデーション
 		if ( $order_id <= 0 ) {
 			$this->log_ajax_error( 'Invalid order ID for updating item order', array( 'order_id' => $order_id ) );
-			wp_send_json_error( __( '無効な受注IDです', 'ktpwp' ) );
+			wp_send_json_error( __( '無効な受注IDです', 'kantanpro' ) );
 		}
 
 		if ( ! in_array( $item_type, array( 'invoice', 'cost' ), true ) ) {
 			$this->log_ajax_error( 'Invalid item type for updating item order', array( 'item_type' => $item_type ) );
-			wp_send_json_error( __( '無効なアイテムタイプです', 'ktpwp' ) );
+			wp_send_json_error( __( '無効なアイテムタイプです', 'kantanpro' ) );
 		}
 
 		if ( empty( $items_data ) ) {
 			$this->log_ajax_error( 'No items data provided for updating order', $_POST );
-			wp_send_json_error( __( '更新するアイテムデータがありません', 'ktpwp' ) );
+			wp_send_json_error( __( '更新するアイテムデータがありません', 'kantanpro' ) );
 		}
 
 		// アイテムデータの詳細バリデーション
@@ -1346,7 +1346,7 @@ class KTPWP_Ajax {
 			error_log( '[AJAX_UPDATE_ITEM_ORDER] Invalid items found: ' . print_r( $invalid_items, true ) );
 			wp_send_json_error(
 				array(
-					'message'       => __( '一部のアイテムデータが無効です', 'ktpwp' ),
+					'message'       => __( '一部のアイテムデータが無効です', 'kantanpro' ),
 					'invalid_items' => $invalid_items,
 				)
 			);
@@ -1355,7 +1355,7 @@ class KTPWP_Ajax {
 		// KTPWP_Order_Items クラスのインスタンスを取得
 		if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 			$this->log_ajax_error( 'KTPWP_Order_Items class not found for updating item order' );
-			wp_send_json_error( __( '必要なクラスが見つかりません。', 'ktpwp' ) );
+			wp_send_json_error( __( '必要なクラスが見つかりません。', 'kantanpro' ) );
 			return;
 		}
 		$order_items_manager = KTPWP_Order_Items::get_instance();
@@ -1371,7 +1371,7 @@ class KTPWP_Ajax {
 				error_log( "[AJAX_UPDATE_ITEM_ORDER] Successfully updated item order for order_id={$order_id}, item_type={$item_type}" );
 				wp_send_json_success(
 					array(
-						'message'       => __( 'アイテムの並び順を更新しました', 'ktpwp' ),
+						'message'       => __( 'アイテムの並び順を更新しました', 'kantanpro' ),
 						'updated_count' => count( $valid_items ),
 						'order_id'      => $order_id,
 						'item_type'     => $item_type,
@@ -1386,7 +1386,7 @@ class KTPWP_Ajax {
 						'items_data_count' => count( $valid_items ),
 					)
 				);
-				wp_send_json_error( __( 'データベースでのアイテム並び順更新に失敗しました（詳細エラーログ確認）', 'ktpwp' ) );
+				wp_send_json_error( __( 'データベースでのアイテム並び順更新に失敗しました（詳細エラーログ確認）', 'kantanpro' ) );
 			}
 		} catch ( Exception $e ) {
 			$this->log_ajax_error(
@@ -1398,7 +1398,7 @@ class KTPWP_Ajax {
 					'trace'     => $e->getTraceAsString(),
 				)
 			);
-			wp_send_json_error( __( 'アイテムの並び順更新中に予期せぬエラーが発生しました（詳細エラーログ確認）', 'ktpwp' ) );
+			wp_send_json_error( __( 'アイテムの並び順更新中に予期せぬエラーが発生しました（詳細エラーログ確認）', 'kantanpro' ) );
 		}
 	}
 
@@ -1416,7 +1416,7 @@ class KTPWP_Ajax {
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 				error_log( '[AJAX] サービス一覧取得: 権限不足' );
 			}
-			wp_send_json_error( __( 'この操作を行う権限がありません', 'ktpwp' ) );
+			wp_send_json_error( __( 'この操作を行う権限がありません', 'kantanpro' ) );
 			return;
 		}
 
@@ -1425,7 +1425,7 @@ class KTPWP_Ajax {
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 				error_log( '[AJAX] サービス一覧取得: nonce検証失敗' );
 			}
-			wp_send_json_error( __( 'セキュリティチェックに失敗しました', 'ktpwp' ) );
+			wp_send_json_error( __( 'セキュリティチェックに失敗しました', 'kantanpro' ) );
 			return;
 		}
 
@@ -1465,7 +1465,7 @@ class KTPWP_Ajax {
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 					error_log( '[AJAX] KTPWP_Service_DBクラスが見つかりません' );
 				}
-				wp_send_json_error( __( 'サービスDBクラスが見つかりません', 'ktpwp' ) );
+				wp_send_json_error( __( 'サービスDBクラスが見つかりません', 'kantanpro' ) );
 				return;
 			}
 
@@ -1621,17 +1621,17 @@ class KTPWP_Ajax {
 	 */
 	public function ajax_duplicate_service() {
 		if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
-			wp_send_json_error( __( 'この操作を行う権限がありません。', 'ktpwp' ) );
+			wp_send_json_error( __( 'この操作を行う権限がありません。', 'kantanpro' ) );
 		}
 
 		$nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
 		if ( empty( $nonce ) || ( ! wp_verify_nonce( $nonce, 'ktp_ajax_nonce' ) && ! wp_verify_nonce( $nonce, 'ktpwp_ajax_nonce' ) ) ) {
-			wp_send_json_error( __( 'セキュリティチェックに失敗しました', 'ktpwp' ) );
+			wp_send_json_error( __( 'セキュリティチェックに失敗しました', 'kantanpro' ) );
 		}
 
 		$data_id = isset( $_POST['data_id'] ) ? absint( $_POST['data_id'] ) : 0;
 		if ( $data_id <= 0 ) {
-			wp_send_json_error( __( '複製元のサービス ID が不正です。', 'ktpwp' ) );
+			wp_send_json_error( __( '複製元のサービス ID が不正です。', 'kantanpro' ) );
 		}
 
 		if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
@@ -2438,10 +2438,10 @@ class KTPWP_Ajax {
 			if ( ! $client ) {
 				wp_send_json_error(
 					array(
-						'message'     => __( 'メール送信不可（顧客データなし）', 'ktpwp' ),
+						'message'     => __( 'メール送信不可（顧客データなし）', 'kantanpro' ),
 						'error_type'  => 'no_client',
-						'error_title' => __( '顧客データが見つかりません', 'ktpwp' ),
-						'error'       => __( 'この受注書に関連する顧客データが見つかりません。顧客管理画面で顧客を登録してください。', 'ktpwp' ),
+						'error_title' => __( '顧客データが見つかりません', 'kantanpro' ),
+						'error'       => __( 'この受注書に関連する顧客データが見つかりません。顧客管理画面で顧客を登録してください。', 'kantanpro' ),
 					)
 				);
 				return;
@@ -2450,10 +2450,10 @@ class KTPWP_Ajax {
 			if ( $client->category === '対象外' ) {
 				wp_send_json_error(
 					array(
-						'message'     => __( 'メール送信不可（対象外顧客）', 'ktpwp' ),
+						'message'     => __( 'メール送信不可（対象外顧客）', 'kantanpro' ),
 						'error_type'  => 'excluded_client',
-						'error_title' => __( 'メール送信不可', 'ktpwp' ),
-						'error'       => __( 'この顧客は削除済み（対象外）のため、メール送信はできません。', 'ktpwp' ),
+						'error_title' => __( 'メール送信不可', 'kantanpro' ),
+						'error'       => __( 'この顧客は削除済み（対象外）のため、メール送信はできません。', 'kantanpro' ),
 					)
 				);
 				return;
@@ -2464,10 +2464,10 @@ class KTPWP_Ajax {
 			if ( $to === '' || ! is_email( $to ) ) {
 				wp_send_json_error(
 					array(
-						'message'     => __( 'メール送信不可（メールアドレス未設定または無効）', 'ktpwp' ),
+						'message'     => __( 'メール送信不可（メールアドレス未設定または無効）', 'kantanpro' ),
 						'error_type'  => 'no_email',
-						'error_title' => __( 'メールアドレス未設定', 'ktpwp' ),
-						'error'       => __( 'この顧客のメールアドレスが未設定または無効です。顧客管理画面で代表メールまたは部署メールを登録してください。', 'ktpwp' ),
+						'error_title' => __( 'メールアドレス未設定', 'kantanpro' ),
+						'error'       => __( 'この顧客のメールアドレスが未設定または無効です。顧客管理画面で代表メールまたは部署メールを登録してください。', 'kantanpro' ),
 					)
 				);
 				return;
@@ -2617,10 +2617,13 @@ class KTPWP_Ajax {
                     if ( ! empty( trim( $product_name ) ) ) {
                         // 税制モードで税率/税額列が非表示の場合は税率テキストを抑止
                         $suppress_tax_text = ( class_exists( 'KTPWP_Tax_Policy' ) && ( KTPWP_Tax_Policy::is_abolished() || KTPWP_Tax_Policy::hide_tax_columns() ) );
-                        $tax_rate_text = ( $tax_rate !== null && ! $suppress_tax_text ) ? sprintf( __( '（税率%s%%）', 'ktpwp' ), $tax_rate ) : '';
-						$remarks_text = ( ! empty( trim( $remarks ) ) ) ? '　' . sprintf( __( '※ %s', 'ktpwp' ), $remarks ) : '';
+                        /* translators: %s: 税率（パーセント値） */
+                        $tax_rate_text = ( $tax_rate !== null && ! $suppress_tax_text ) ? sprintf( __( '（税率%s%%）', 'kantanpro' ), $tax_rate ) : '';
+						/* translators: %s: 補足メッセージ */
+						$remarks_text = ( ! empty( trim( $remarks ) ) ) ? '　' . sprintf( __( '※ %s', 'kantanpro' ), $remarks ) : '';
 						$line         = sprintf(
-							__( '%1$s：%2$s × %3$s%4$s = %5$s%6$s%7$s', 'ktpwp' ),
+							/* translators: 1: 品目名, 2: 単価, 3: 数量, 4: 単位, 5: 金額, 6: 通貨記号, 7: 税区分の注記 */
+							__( '%1$s：%2$s × %3$s%4$s = %5$s%6$s%7$s', 'kantanpro' ),
 							$product_name,
 							$price_display,
 							$quantity_display,
@@ -2669,26 +2672,32 @@ class KTPWP_Ajax {
 
 				// 税区分に応じた合計行の表示
                 if ( $tax_category === '外税' ) {
-					$total_line = sprintf( __( '外税合計：%s', 'ktpwp' ), KTPWP_Settings::format_money( $amount_ceiled ) );
-					$tax_line = sprintf( __( '消費税：%s', 'ktpwp' ), KTPWP_Settings::format_money( $total_tax_amount_ceiled ) );
-					$total_with_tax_line = sprintf( __( '内税合計：%s', 'ktpwp' ), KTPWP_Settings::format_money( $total_with_tax ) );
+					/* translators: %s: 外税の合計額 */
+					$total_line = sprintf( __( '外税合計：%s', 'kantanpro' ), KTPWP_Settings::format_money( $amount_ceiled ) );
+					/* translators: %s: 消費税額 */
+					$tax_line = sprintf( __( '消費税：%s', 'kantanpro' ), KTPWP_Settings::format_money( $total_tax_amount_ceiled ) );
+					/* translators: %s: 内税の合計額 */
+					$total_with_tax_line = sprintf( __( '内税合計：%s', 'kantanpro' ), KTPWP_Settings::format_money( $total_with_tax ) );
 				} else {
                     // 税制モードで税率/税額列が非表示の場合は内税内訳を付けない
                     $suppress_tax_detail = ( class_exists( 'KTPWP_Tax_Policy' ) && ( KTPWP_Tax_Policy::is_abolished() || KTPWP_Tax_Policy::hide_tax_columns() ) );
                     if ( ! $suppress_tax_detail ) {
                         if ( count( $tax_rate_groups ) > 1 ) {
-                            $tax_detail_text = sprintf( __( '（内税：%s）', 'ktpwp' ), implode( ', ', $tax_rate_details ) );
+                            /* translators: %s: 内税額（通貨記号付き） */
+                            $tax_detail_text = sprintf( __( '（内税：%s）', 'kantanpro' ), implode( ', ', $tax_rate_details ) );
                         } else {
                             if ( array_key_first( $tax_rate_groups ) === 'no_tax_rate' ) {
                                 $tax_detail_text = '';
                             } else {
-                                $tax_detail_text = sprintf( __( '（内税：%s）', 'ktpwp' ), KTPWP_Settings::format_money( $total_tax_amount_ceiled ) );
+                                /* translators: %s: 内税額（通貨記号付き） */
+                                $tax_detail_text = sprintf( __( '（内税：%s）', 'kantanpro' ), KTPWP_Settings::format_money( $total_tax_amount_ceiled ) );
                             }
                         }
                     } else {
                         $tax_detail_text = '';
                     }
-                    $total_line = sprintf( __( '金額合計：%s', 'ktpwp' ), KTPWP_Settings::format_money( $amount_ceiled ) ) . $tax_detail_text;
+                    /* translators: %s: 金額の合計 */
+                    $total_line = sprintf( __( '金額合計：%s', 'kantanpro' ), KTPWP_Settings::format_money( $amount_ceiled ) ) . $tax_detail_text;
                     $tax_line = '';
                     $total_with_tax_line = '';
 				}
@@ -2712,7 +2721,7 @@ class KTPWP_Ajax {
 					$invoice_list .= $total_with_tax_line;
 				}
 			} else {
-				$invoice_list = __( '（請求項目未入力）', 'ktpwp' );
+				$invoice_list = __( '（請求項目未入力）', 'kantanpro' );
 			}
 
 			// 進捗ごとに件名・本文を生成
@@ -2748,40 +2757,41 @@ class KTPWP_Ajax {
 
 			// 進捗に応じた帳票タイトルと件名を設定
 			$document_titles = array(
-				1 => __( '見積り書', 'ktpwp' ),
-				2 => __( '注文受書', 'ktpwp' ),
-				3 => __( '納品書', 'ktpwp' ),
-				4 => __( '請求書', 'ktpwp' ),
-				5 => __( '領収書', 'ktpwp' ),
-				6 => __( '案件完了', 'ktpwp' ),
+				1 => __( '見積り書', 'kantanpro' ),
+				2 => __( '注文受書', 'kantanpro' ),
+				3 => __( '納品書', 'kantanpro' ),
+				4 => __( '請求書', 'kantanpro' ),
+				5 => __( '領収書', 'kantanpro' ),
+				6 => __( '案件完了', 'kantanpro' ),
 			);
 
 			$document_messages = array(
-				1 => __( 'につきましてお見積りいたします。', 'ktpwp' ),
-				2 => __( 'につきましてご注文をお受けしました。', 'ktpwp' ),
-				3 => __( 'につきまして完了しました。', 'ktpwp' ),
-				4 => __( 'につきまして請求申し上げます。', 'ktpwp' ),
-				5 => __( 'につきましてお支払いを確認しました。', 'ktpwp' ),
-				6 => __( 'につきましては全て完了しています。', 'ktpwp' ),
+				1 => __( 'につきましてお見積りいたします。', 'kantanpro' ),
+				2 => __( 'につきましてご注文をお受けしました。', 'kantanpro' ),
+				3 => __( 'につきまして完了しました。', 'kantanpro' ),
+				4 => __( 'につきまして請求申し上げます。', 'kantanpro' ),
+				5 => __( 'につきましてお支払いを確認しました。', 'kantanpro' ),
+				6 => __( 'につきましては全て完了しています。', 'kantanpro' ),
 			);
 
-			$document_title   = isset( $document_titles[ $progress ] ) ? $document_titles[ $progress ] : __( '受注書', 'ktpwp' );
+			$document_title   = isset( $document_titles[ $progress ] ) ? $document_titles[ $progress ] : __( '受注書', 'kantanpro' );
 			$document_message = isset( $document_messages[ $progress ] ) ? $document_messages[ $progress ] : '';
 
 			// 適格請求書番号を取得し、請求書の場合に追加
 			if ( $progress === 4 && class_exists( 'KTPWP_Settings' ) ) {
                 $qualified_invoice_number = KTPWP_Settings::get_qualified_invoice_number();
                 if ( ! ( class_exists('KTPWP_Tax_Policy') && KTPWP_Tax_Policy::is_abolished() ) && ! empty( $qualified_invoice_number ) ) {
-                    $document_title = $document_title . ' ' . __( '適格請求書番号', 'ktpwp' ) . '：' . $qualified_invoice_number;
+                    $document_title = $document_title . ' ' . __( '適格請求書番号', 'kantanpro' ) . '：' . $qualified_invoice_number;
                 }
 			}
 
 			// 日付フォーマット
-			$order_date = wp_date( __( 'Y年m月d日', 'ktpwp' ), $order->time );
+			$order_date = wp_date( __( 'Y年m月d日', 'kantanpro' ), $order->time );
 
 			// 宛先表示（部署選択時: {親会社名} / {部署名} / {部署担当者名} 様）
 			$customer_display = $customer_name;
-			$user_display     = sprintf( __( '%s 様', 'ktpwp' ), $user_name );
+			/* translators: %s: 宛名（顧客名または担当者名） */
+			$user_display     = sprintf( __( '%s 様', 'kantanpro' ), $user_name );
 
 			if ( class_exists( 'KTPWP_Department_Manager' ) ) {
 				$selected_department = KTPWP_Department_Manager::resolve_department_for_order( $order );
@@ -2794,7 +2804,8 @@ class KTPWP_Ajax {
 				);
 
 				if ( $contact_name !== '' ) {
-					$user_display = sprintf( __( '%s 様', 'ktpwp' ), $contact_name );
+					/* translators: %s: 宛名（顧客名または担当者名） */
+					$user_display = sprintf( __( '%s 様', 'kantanpro' ), $contact_name );
 				}
 
 				if ( $selected_department ) {
@@ -2808,10 +2819,11 @@ class KTPWP_Ajax {
 			}
 
             // 件名と本文の統一フォーマット
-            $subject = sprintf( __( '%1$s：%2$s', 'ktpwp' ), $document_title, $project_name );
+            /* translators: 1: 項目名, 2: 値 */
+            $subject = sprintf( __( '%1$s：%2$s', 'kantanpro' ), $document_title, $project_name );
             $email_rule_line = str_repeat( '-', 60 );
             $body    = sprintf(
-				__( "%1\$s\n%2\$s\n\nお世話になります。\n「%6\$s」%7\$s\n\n＜%3\$s＞ID: %4\$d [%5\$s]\n%9\$s\n%8\$s", 'ktpwp' ),
+				__( "%1\$s\n%2\$s\n\nお世話になります。\n「%6\$s」%7\$s\n\n＜%3\$s＞ID: %4\$d [%5\$s]\n%9\$s\n%8\$s", 'kantanpro' ),
 				$customer_display,
 				$user_display,
 				$document_title,
@@ -3170,7 +3182,7 @@ class KTPWP_Ajax {
 				}
 
 				$response_data = array(
-					'message'          => __( 'メールを送信しました。', 'ktpwp' ),
+					'message'          => __( 'メールを送信しました。', 'kantanpro' ),
 					'to'               => $to,
 					'attachment_count' => count( $attachment_entries ),
 					'progress'         => $new_progress,
@@ -3264,7 +3276,7 @@ class KTPWP_Ajax {
 			} else {
 				wp_send_json_error(
 					array(
-						'message' => __( '協力会社が見つかりません。', 'ktpwp' ),
+						'message' => __( '協力会社が見つかりません。', 'kantanpro' ),
 					)
 				);
 			}
@@ -3435,7 +3447,7 @@ class KTPWP_Ajax {
 				}
 				wp_send_json_success(
 					array(
-						'message'          => ( $mode === 'quote' ) ? __( '見積依頼メールを送信しました。', 'ktpwp' ) : __( '発注書メールを送信しました。', 'ktpwp' ),
+						'message'          => ( $mode === 'quote' ) ? __( '見積依頼メールを送信しました。', 'kantanpro' ) : __( '発注書メールを送信しました。', 'kantanpro' ),
 						'to'               => $to,
 						'supplier_name'    => $supplier_name,
 						'mode'             => $mode,
@@ -3560,7 +3572,7 @@ class KTPWP_Ajax {
 				$my_company = KTPWP_Settings::get_company_info();
 			}
 
-			$doc_title = ( $mode === 'quote' ) ? __( '見積依頼書', 'ktpwp' ) : __( '発注書', 'ktpwp' );
+			$doc_title = ( $mode === 'quote' ) ? __( '見積依頼書', 'kantanpro' ) : __( '発注書', 'kantanpro' );
 			$html      = $this->build_purchase_order_print_html( $doc_title, $order, $supplier, $filtered_cost_items, $my_company );
 			$filename  = $doc_title . '_' . $order_id . '_' . sanitize_file_name( $supplier_name );
 
@@ -3680,8 +3692,8 @@ class KTPWP_Ajax {
 		$html .= '</div>';
 		$html .= '<div class="meta">';
 		$html .= esc_html( $today ) . '<br>';
-		$html .= esc_html__( '案件', 'ktpwp' ) . '：' . esc_html( isset( $order->project_name ) ? $order->project_name : '' ) . '<br>';
-		$html .= esc_html__( '受注書ID', 'ktpwp' ) . '：' . esc_html( $order->id );
+		$html .= esc_html__( '案件', 'kantanpro' ) . '：' . esc_html( isset( $order->project_name ) ? $order->project_name : '' ) . '<br>';
+		$html .= esc_html__( '受注書ID', 'kantanpro' ) . '：' . esc_html( $order->id );
 		if ( $supplier_address !== '' ) {
 			$html .= '<br>' . esc_html( $supplier_address );
 		}
@@ -3689,18 +3701,18 @@ class KTPWP_Ajax {
 		$html .= '</div>';
 
 		$html .= '<table class="items"><thead><tr>';
-		$html .= '<th>' . esc_html__( '品目', 'ktpwp' ) . '</th>';
-		$html .= '<th>' . esc_html__( '単価', 'ktpwp' ) . '</th>';
-		$html .= '<th>' . esc_html__( '数量', 'ktpwp' ) . '</th>';
-		$html .= '<th>' . esc_html__( '金額', 'ktpwp' ) . '</th>';
-		$html .= '<th>' . esc_html__( '税率', 'ktpwp' ) . '</th>';
-		$html .= '<th>' . esc_html__( '備考', 'ktpwp' ) . '</th>';
+		$html .= '<th>' . esc_html__( '品目', 'kantanpro' ) . '</th>';
+		$html .= '<th>' . esc_html__( '単価', 'kantanpro' ) . '</th>';
+		$html .= '<th>' . esc_html__( '数量', 'kantanpro' ) . '</th>';
+		$html .= '<th>' . esc_html__( '金額', 'kantanpro' ) . '</th>';
+		$html .= '<th>' . esc_html__( '税率', 'kantanpro' ) . '</th>';
+		$html .= '<th>' . esc_html__( '備考', 'kantanpro' ) . '</th>';
 		$html .= '</tr></thead><tbody>' . $rows_html . '</tbody></table>';
 
 		$html .= '<div class="totals">';
-		$html .= '<div>' . esc_html__( '金額合計', 'ktpwp' ) . '：' . esc_html( KTPWP_Settings::format_money( $total_amount ) ) . '</div>';
-		$html .= '<div>' . esc_html__( '消費税額', 'ktpwp' ) . '：' . esc_html( KTPWP_Settings::format_money( $total_tax_amount ) ) . '</div>';
-		$html .= '<div class="grand">' . esc_html__( '合計', 'ktpwp' ) . '：' . esc_html( KTPWP_Settings::format_money( $total_with_tax ) ) . '</div>';
+		$html .= '<div>' . esc_html__( '金額合計', 'kantanpro' ) . '：' . esc_html( KTPWP_Settings::format_money( $total_amount ) ) . '</div>';
+		$html .= '<div>' . esc_html__( '消費税額', 'kantanpro' ) . '：' . esc_html( KTPWP_Settings::format_money( $total_tax_amount ) ) . '</div>';
+		$html .= '<div class="grand">' . esc_html__( '合計', 'kantanpro' ) . '：' . esc_html( KTPWP_Settings::format_money( $total_with_tax ) ) . '</div>';
 		$html .= '</div>';
 
 		$html .= '</body></html>';
@@ -3769,13 +3781,13 @@ class KTPWP_Ajax {
 	 */
 	public function ajax_lookup_postal_address() {
 		if ( ! check_ajax_referer( 'ktpwp_ajax_nonce', 'nonce', false ) ) {
-			wp_send_json_error( array( 'message' => __( 'セキュリティ検証に失敗しました。', 'ktpwp' ) ) );
+			wp_send_json_error( array( 'message' => __( 'セキュリティ検証に失敗しました。', 'kantanpro' ) ) );
 		}
 		if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
-			wp_send_json_error( array( 'message' => __( '権限がありません。', 'ktpwp' ) ) );
+			wp_send_json_error( array( 'message' => __( '権限がありません。', 'kantanpro' ) ) );
 		}
 		if ( ! class_exists( 'KTPWP_JapanPost_Address_API' ) ) {
-			wp_send_json_error( array( 'message' => __( '住所検索機能が利用できません。', 'ktpwp' ) ) );
+			wp_send_json_error( array( 'message' => __( '住所検索機能が利用できません。', 'kantanpro' ) ) );
 		}
 		$zip = isset( $_POST['zipcode'] ) ? sanitize_text_field( wp_unslash( $_POST['zipcode'] ) ) : '';
 		$xff = KTPWP_JapanPost_Address_API::get_request_client_ip();
@@ -3869,7 +3881,7 @@ class KTPWP_Ajax {
 				$this->send_clean_json_response(
 					array(
 						'success' => false,
-						'data'    => __( 'ログインが必要です', 'ktpwp' ),
+						'data'    => __( 'ログインが必要です', 'kantanpro' ),
 					)
 				);
 				return;
@@ -3888,7 +3900,7 @@ class KTPWP_Ajax {
 				$this->send_clean_json_response(
 					array(
 						'success' => false,
-						'data'    => __( 'セキュリティトークンが無効です', 'ktpwp' ),
+						'data'    => __( 'セキュリティトークンが無効です', 'kantanpro' ),
 					)
 				);
 				return;
@@ -3902,7 +3914,7 @@ class KTPWP_Ajax {
 				$this->send_clean_json_response(
 					array(
 						'success' => false,
-						'data'    => __( '注文IDが必要です', 'ktpwp' ),
+						'data'    => __( '注文IDが必要です', 'kantanpro' ),
 					)
 				);
 				return;
@@ -3913,7 +3925,7 @@ class KTPWP_Ajax {
 				$this->send_clean_json_response(
 					array(
 						'success' => false,
-						'data'    => __( '権限がありません', 'ktpwp' ),
+						'data'    => __( '権限がありません', 'kantanpro' ),
 					)
 				);
 				return;
@@ -3959,7 +3971,7 @@ class KTPWP_Ajax {
 			$this->send_clean_json_response(
 				array(
 					'success' => false,
-					'data'    => __( 'メッセージの取得中にエラーが発生しました', 'ktpwp' ),
+					'data'    => __( 'メッセージの取得中にエラーが発生しました', 'kantanpro' ),
 				)
 			);
 		}
@@ -3989,7 +4001,7 @@ class KTPWP_Ajax {
 		try {
 			// ログインチェック
 			if ( ! is_user_logged_in() ) {
-				wp_send_json_error( __( 'ログインが必要です', 'ktpwp' ) );
+				wp_send_json_error( __( 'ログインが必要です', 'kantanpro' ) );
 				return;
 			}
 
@@ -3998,7 +4010,7 @@ class KTPWP_Ajax {
 			$nonce_valid = wp_verify_nonce( $nonce, $this->nonce_names['staff_chat'] );
 			// nonceが不正かつ権限もない場合のみエラー
 			if ( ! $nonce_valid && ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
-				wp_send_json_error( __( '権限がありません（nonce不正）', 'ktpwp' ) );
+				wp_send_json_error( __( '権限がありません（nonce不正）', 'kantanpro' ) );
 				return;
 			}
 
@@ -4010,7 +4022,7 @@ class KTPWP_Ajax {
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 					error_log( 'KTPWP StaffChat: order_idまたはmessageが空: order_id=' . print_r( $order_id, true ) . ' message=' . print_r( $message, true ) );
 				}
-				wp_send_json_error( __( '注文IDとメッセージが必要です', 'ktpwp' ) );
+				wp_send_json_error( __( '注文IDとメッセージが必要です', 'kantanpro' ) );
 				return;
 			}
 
@@ -4019,7 +4031,7 @@ class KTPWP_Ajax {
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 					error_log( 'KTPWP StaffChat: 権限チェック失敗 user_id=' . get_current_user_id() );
 				}
-				wp_send_json_error( __( '権限がありません', 'ktpwp' ) );
+				wp_send_json_error( __( '権限がありません', 'kantanpro' ) );
 				return;
 			}
 
@@ -4048,7 +4060,7 @@ class KTPWP_Ajax {
 					array(
 						'success' => true,
 						'data'    => array(
-							'message' => __( 'メッセージを送信しました', 'ktpwp' ),
+							'message' => __( 'メッセージを送信しました', 'kantanpro' ),
 						),
 					)
 				);
@@ -4060,7 +4072,7 @@ class KTPWP_Ajax {
 				$this->send_clean_json_response(
 					array(
 						'success' => false,
-						'data'    => __( 'メッセージの送信に失敗しました', 'ktpwp' ),
+						'data'    => __( 'メッセージの送信に失敗しました', 'kantanpro' ),
 					)
 				);
 			}
@@ -4076,7 +4088,7 @@ class KTPWP_Ajax {
 			$this->send_clean_json_response(
 				array(
 					'success' => false,
-					'data'    => __( 'メッセージの送信中にエラーが発生しました', 'ktpwp' ),
+					'data'    => __( 'メッセージの送信中にエラーが発生しました', 'kantanpro' ),
 				)
 			);
 		}
@@ -4094,20 +4106,20 @@ class KTPWP_Ajax {
 
 		try {
 			if ( ! is_user_logged_in() ) {
-				wp_send_json_error( __( 'ログインが必要です', 'ktpwp' ) );
+				wp_send_json_error( __( 'ログインが必要です', 'kantanpro' ) );
 				return;
 			}
 
 			$nonce       = $_POST['_ajax_nonce'] ?? '';
 			$nonce_valid = wp_verify_nonce( $nonce, $this->nonce_names['staff_chat'] );
 			if ( ! $nonce_valid && ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
-				wp_send_json_error( __( '権限がありません（nonce不正）', 'ktpwp' ) );
+				wp_send_json_error( __( '権限がありません（nonce不正）', 'kantanpro' ) );
 				return;
 			}
 
 			$message_id = $this->sanitize_ajax_input( 'message_id', 'int' );
 			if ( empty( $message_id ) ) {
-				wp_send_json_error( __( 'メッセージIDが必要です', 'ktpwp' ) );
+				wp_send_json_error( __( 'メッセージIDが必要です', 'kantanpro' ) );
 				return;
 			}
 
@@ -4131,7 +4143,7 @@ class KTPWP_Ajax {
                     array(
                         'success' => true,
                         'data'    => array(
-                            'message'      => __( '削除しました', 'ktpwp' ),
+                            'message'      => __( '削除しました', 'kantanpro' ),
                             'deleted_text' => $deleted_message,
                             'message_id'   => (int) $message_id,
                         ),
@@ -4141,14 +4153,14 @@ class KTPWP_Ajax {
 				$this->send_clean_json_response(
 					array(
 						'success' => false,
-						'data'    => __( '削除に失敗しました', 'ktpwp' ),
+						'data'    => __( '削除に失敗しました', 'kantanpro' ),
 					)
 				);
 			}
 		} catch ( Exception $e ) {
 			ob_end_clean();
 			$this->log_ajax_error( 'Exception during delete staff chat message', array( 'message' => $e->getMessage() ) );
-			$this->send_clean_json_response( array( 'success' => false, 'data' => __( '削除中にエラーが発生しました', 'ktpwp' ) ) );
+			$this->send_clean_json_response( array( 'success' => false, 'data' => __( '削除中にエラーが発生しました', 'kantanpro' ) ) );
 		}
 	}
 
@@ -4604,7 +4616,7 @@ class KTPWP_Ajax {
 				$updated_reception_date = $this->update_order_reception_date( $order_id, $field_value );
 				wp_send_json_success(
 					array(
-						'message'      => __( '受付日が正常に保存されました。', 'ktpwp' ),
+						'message'      => __( '受付日が正常に保存されました。', 'kantanpro' ),
 						'order_id'     => $order_id,
 						'field_name'   => $field_name,
 						'field_value'  => $updated_reception_date['field_value'],
@@ -4655,7 +4667,7 @@ class KTPWP_Ajax {
 		try {
 			// 権限チェック
 			if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
-				wp_send_json_error( array( 'message' => __( 'この操作を行う権限がありません。', 'ktpwp' ) ) );
+				wp_send_json_error( array( 'message' => __( 'この操作を行う権限がありません。', 'kantanpro' ) ) );
 				return;
 			}
 
@@ -4679,7 +4691,7 @@ class KTPWP_Ajax {
 				}
 			}
 			if ( ! $nonce_ok ) {
-				wp_send_json_error( array( 'message' => __( 'セキュリティ検証に失敗しました', 'ktpwp' ) ) );
+				wp_send_json_error( array( 'message' => __( 'セキュリティ検証に失敗しました', 'kantanpro' ) ) );
 				return;
 			}
 
@@ -4694,14 +4706,14 @@ class KTPWP_Ajax {
 
 			// バリデーション
 			if ( $order_id <= 0 ) {
-				wp_send_json_error( array( 'message' => __( '無効な受注IDです', 'ktpwp' ) ) );
+				wp_send_json_error( array( 'message' => __( '無効な受注IDです', 'kantanpro' ) ) );
 				return;
 			}
 
 			// フィールド名の検証
 			$allowed_fields = array( 'promised_delivery_date', 'desired_delivery_date', 'expected_delivery_date', 'completion_date', 'created_at', 'memo' );
 			if ( ! in_array( $field, $allowed_fields ) ) {
-				wp_send_json_error( array( 'message' => __( '無効なフィールド名です', 'ktpwp' ) ) );
+				wp_send_json_error( array( 'message' => __( '無効なフィールド名です', 'kantanpro' ) ) );
 				return;
 			}
 
@@ -4709,7 +4721,7 @@ class KTPWP_Ajax {
 			if ( $field !== 'memo' && ! empty( $value ) ) {
 				$date_obj = DateTime::createFromFormat( 'Y-m-d', $value );
 				if ( ! $date_obj || $date_obj->format( 'Y-m-d' ) !== $value ) {
-					wp_send_json_error( array( 'message' => __( '無効な日付形式です', 'ktpwp' ) ) );
+					wp_send_json_error( array( 'message' => __( '無効な日付形式です', 'kantanpro' ) ) );
 					return;
 				}
 			}
@@ -4718,7 +4730,7 @@ class KTPWP_Ajax {
 				$updated_reception_date = $this->update_order_reception_date( $order_id, $value );
 				wp_send_json_success(
 					array(
-						'message'      => __( '受付日を更新しました', 'ktpwp' ),
+						'message'      => __( '受付日を更新しました', 'kantanpro' ),
 						'field'        => $field,
 						'value'        => $updated_reception_date['field_value'],
 						'created_at'   => $updated_reception_date['created_at'],
@@ -4768,7 +4780,7 @@ class KTPWP_Ajax {
 				error_log( 'KTPWP Ajax: Last error: ' . $wpdb->last_error );
 			}
 
-			$ok_message = ( $field === 'memo' ) ? __( 'メモを更新しました', 'ktpwp' ) : __( '納期を更新しました', 'ktpwp' );
+			$ok_message = ( $field === 'memo' ) ? __( 'メモを更新しました', 'kantanpro' ) : __( '納期を更新しました', 'kantanpro' );
 			wp_send_json_success(
 				array(
 					'message' => $ok_message,
@@ -4794,14 +4806,14 @@ class KTPWP_Ajax {
 			// 権限チェック
 			if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
 				error_log( 'KTPWP Ajax: Permission check failed' );
-				wp_send_json_error( __( 'この操作を行う権限がありません。', 'ktpwp' ) );
+				wp_send_json_error( __( 'この操作を行う権限がありません。', 'kantanpro' ) );
 				return;
 			}
 
 			// nonce検証
 			if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( $_POST['nonce'], 'ktp_ajax_nonce' ) ) {
 				error_log( 'KTPWP Ajax: Nonce verification failed' );
-				wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'ktpwp' ) );
+				wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'kantanpro' ) );
 				return;
 			}
 
@@ -4829,7 +4841,7 @@ class KTPWP_Ajax {
 
 			if ( $warning_count === null ) {
 				error_log( 'KTPWP Ajax: Database error: ' . $wpdb->last_error );
-				wp_send_json_error( __( 'データベースエラーが発生しました', 'ktpwp' ) );
+				wp_send_json_error( __( 'データベースエラーが発生しました', 'kantanpro' ) );
 				return;
 			}
 
@@ -5002,7 +5014,7 @@ class KTPWP_Ajax {
 
 		} catch ( Exception $e ) {
 			error_log( 'KTPWP Ajax ajax_get_creating_warning_count Error: ' . $e->getMessage() );
-			wp_send_json_error( __( 'エラーが発生しました: ' . $e->getMessage(), 'ktpwp' ) );
+			wp_send_json_error( __( 'エラーが発生しました: ' . $e->getMessage(), 'kantanpro' ) );
 		}
 	}
 
@@ -5017,14 +5029,14 @@ class KTPWP_Ajax {
 			// 権限チェック
 			if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
 				error_log( 'KTPWP Ajax: Permission check failed' );
-				wp_send_json_error( __( 'この操作を行う権限がありません。', 'ktpwp' ) );
+				wp_send_json_error( __( 'この操作を行う権限がありません。', 'kantanpro' ) );
 				return;
 			}
 
 			// nonce検証
 			if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( $_POST['nonce'], 'ktp_ajax_nonce' ) ) {
 				error_log( 'KTPWP Ajax: Nonce verification failed' );
-				wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'ktpwp' ) );
+				wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'kantanpro' ) );
 				return;
 			}
 
@@ -5032,7 +5044,7 @@ class KTPWP_Ajax {
 			$client_id = isset( $_POST['client_id'] ) ? absint( $_POST['client_id'] ) : 0;
 
 			if ( $client_id <= 0 ) {
-				wp_send_json_error( __( '顧客IDが無効です', 'ktpwp' ) );
+				wp_send_json_error( __( '顧客IDが無効です', 'kantanpro' ) );
 			}
 
 			global $wpdb;
@@ -5048,7 +5060,7 @@ class KTPWP_Ajax {
 
 			if ( $tax_category === null ) {
 				error_log( 'KTPWP Ajax: Client not found or database error: ' . $wpdb->last_error );
-				wp_send_json_error( __( '顧客が見つからないか、データベースエラーが発生しました', 'ktpwp' ) );
+				wp_send_json_error( __( '顧客が見つからないか、データベースエラーが発生しました', 'kantanpro' ) );
 				return;
 			}
 
@@ -5068,7 +5080,7 @@ class KTPWP_Ajax {
 
 		} catch ( Exception $e ) {
 			error_log( 'KTPWP Ajax ajax_get_client_tax_category Error: ' . $e->getMessage() );
-			wp_send_json_error( __( 'エラーが発生しました: ' . $e->getMessage(), 'ktpwp' ) );
+			wp_send_json_error( __( 'エラーが発生しました: ' . $e->getMessage(), 'kantanpro' ) );
 		}
 	}
 
@@ -5083,14 +5095,14 @@ class KTPWP_Ajax {
 			// 権限チェック
 			if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
 				error_log( 'KTPWP Ajax: Permission check failed' );
-				wp_send_json_error( __( 'この操作を行う権限がありません。', 'ktpwp' ) );
+				wp_send_json_error( __( 'この操作を行う権限がありません。', 'kantanpro' ) );
 				return;
 			}
 
 			// nonce検証
 			if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( $_POST['nonce'], 'ktp_ajax_nonce' ) ) {
 				error_log( 'KTPWP Ajax: Nonce verification failed' );
-				wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'ktpwp' ) );
+				wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'kantanpro' ) );
 				return;
 			}
 
@@ -5098,7 +5110,7 @@ class KTPWP_Ajax {
 			$order_id = isset( $_POST['order_id'] ) ? absint( $_POST['order_id'] ) : 0;
 
 			if ( $order_id <= 0 ) {
-				wp_send_json_error( __( '受注書IDが無効です', 'ktpwp' ) );
+				wp_send_json_error( __( '受注書IDが無効です', 'kantanpro' ) );
 			}
 
 			global $wpdb;
@@ -5115,7 +5127,7 @@ class KTPWP_Ajax {
 
 			if ( $client_id === null ) {
 				error_log( 'KTPWP Ajax: Order not found or database error: ' . $wpdb->last_error );
-				wp_send_json_error( __( '受注書が見つからないか、データベースエラーが発生しました', 'ktpwp' ) );
+				wp_send_json_error( __( '受注書が見つからないか、データベースエラーが発生しました', 'kantanpro' ) );
 				return;
 			}
 
@@ -5141,7 +5153,7 @@ class KTPWP_Ajax {
 
 			if ( $tax_category === null ) {
 				error_log( 'KTPWP Ajax: Client not found or database error: ' . $wpdb->last_error );
-				wp_send_json_error( __( '顧客が見つからないか、データベースエラーが発生しました', 'ktpwp' ) );
+				wp_send_json_error( __( '顧客が見つからないか、データベースエラーが発生しました', 'kantanpro' ) );
 				return;
 			}
 
@@ -5162,7 +5174,7 @@ class KTPWP_Ajax {
 
 		} catch ( Exception $e ) {
 			error_log( 'KTPWP Ajax ajax_get_client_tax_category_by_order Error: ' . $e->getMessage() );
-			wp_send_json_error( __( 'エラーが発生しました: ' . $e->getMessage(), 'ktpwp' ) );
+			wp_send_json_error( __( 'エラーが発生しました: ' . $e->getMessage(), 'kantanpro' ) );
 		}
 	}
 
@@ -5177,7 +5189,7 @@ class KTPWP_Ajax {
 			// 権限チェック
 			if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
 				error_log( 'KTPWP Ajax: Permission check failed' );
-				wp_send_json_error( __( 'この操作を行う権限がありません。', 'ktpwp' ) );
+				wp_send_json_error( __( 'この操作を行う権限がありません。', 'kantanpro' ) );
 				return;
 			}
 
@@ -5223,7 +5235,7 @@ class KTPWP_Ajax {
 			
 			if (!$nonce_verified) {
 				error_log('KTPWP Ajax: Tax category nonce verification failed');
-				wp_send_json_error(__('セキュリティ検証に失敗しました', 'ktpwp'));
+				wp_send_json_error(__('セキュリティ検証に失敗しました', 'kantanpro'));
 				return;
 			}
 
@@ -5231,7 +5243,7 @@ class KTPWP_Ajax {
 			$supplier_id = isset( $_POST['supplier_id'] ) ? absint( $_POST['supplier_id'] ) : 0;
 
 			if ( $supplier_id <= 0 ) {
-				wp_send_json_error( __( '協力会社IDが無効です', 'ktpwp' ) );
+				wp_send_json_error( __( '協力会社IDが無効です', 'kantanpro' ) );
 			}
 
 			global $wpdb;
@@ -5248,7 +5260,7 @@ class KTPWP_Ajax {
 			// データベースエラーのチェック
 			if ( $wpdb->last_error ) {
 				error_log( 'KTPWP Ajax: Database error when getting tax category: ' . $wpdb->last_error );
-				wp_send_json_error( __( 'データベースエラーが発生しました', 'ktpwp' ) );
+				wp_send_json_error( __( 'データベースエラーが発生しました', 'kantanpro' ) );
 				return;
 			}
 
@@ -5279,7 +5291,7 @@ class KTPWP_Ajax {
 
 		} catch ( Exception $e ) {
 			error_log( 'KTPWP Ajax ajax_get_supplier_tax_category Error: ' . $e->getMessage() );
-			wp_send_json_error( __( 'エラーが発生しました: ' . $e->getMessage(), 'ktpwp' ) );
+			wp_send_json_error( __( 'エラーが発生しました: ' . $e->getMessage(), 'kantanpro' ) );
 		}
 	}
 
@@ -5294,7 +5306,7 @@ class KTPWP_Ajax {
 			// 権限チェック
 			if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
 				error_log( 'KTPWP Ajax: Permission check failed' );
-				wp_send_json_error( __( 'この操作を行う権限がありません。', 'ktpwp' ) );
+				wp_send_json_error( __( 'この操作を行う権限がありません。', 'kantanpro' ) );
 				return;
 			}
 
@@ -5319,7 +5331,7 @@ class KTPWP_Ajax {
 			}
 			if ( ! $nonce_ok ) {
 				error_log( 'KTPWP Ajax: Nonce verification failed (ajax_auto_save_field)' );
-				wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'ktpwp' ) );
+				wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'kantanpro' ) );
 				return;
 			}
 
@@ -5333,24 +5345,24 @@ class KTPWP_Ajax {
 			}
 
 			if ( $order_id <= 0 ) {
-				wp_send_json_error( __( '受注書IDが無効です', 'ktpwp' ) );
+				wp_send_json_error( __( '受注書IDが無効です', 'kantanpro' ) );
 			}
 
 			if ( empty( $field_name ) ) {
-				wp_send_json_error( __( 'フィールド名が指定されていません', 'ktpwp' ) );
+				wp_send_json_error( __( 'フィールド名が指定されていません', 'kantanpro' ) );
 			}
 
 			// 許可されたフィールド名のみ更新可能
 			$allowed_fields = array( 'promised_delivery_date', 'desired_delivery_date', 'completion_date', 'expected_delivery_date', 'created_at', 'memo' );
 			if ( ! in_array( $field_name, $allowed_fields ) ) {
-				wp_send_json_error( __( '許可されていないフィールドです', 'ktpwp' ) );
+				wp_send_json_error( __( '許可されていないフィールドです', 'kantanpro' ) );
 			}
 
 			if ( $field_name === 'created_at' ) {
 				$updated_reception_date = $this->update_order_reception_date( $order_id, $field_value );
 				wp_send_json_success(
 					array(
-						'message'      => __( '受付日が正常に保存されました', 'ktpwp' ),
+						'message'      => __( '受付日が正常に保存されました', 'kantanpro' ),
 						'field_name'   => $field_name,
 						'field_value'  => $updated_reception_date['field_value'],
 						'created_at'   => $updated_reception_date['created_at'],
@@ -5376,14 +5388,14 @@ class KTPWP_Ajax {
 
 			if ( $result === false ) {
 				error_log( 'KTPWP Ajax: Database update failed: ' . $wpdb->last_error );
-				wp_send_json_error( __( 'データベース更新に失敗しました: ', 'ktpwp' ) . $wpdb->last_error );
+				wp_send_json_error( __( 'データベース更新に失敗しました: ', 'kantanpro' ) . $wpdb->last_error );
 			}
 
 			error_log( 'KTPWP Ajax: Field saved successfully - Order ID: ' . $order_id . ', Field: ' . $field_name . ', Value: ' . $field_value );
 
 			wp_send_json_success(
                 array(
-					'message' => __( 'フィールドが正常に保存されました', 'ktpwp' ),
+					'message' => __( 'フィールドが正常に保存されました', 'kantanpro' ),
 					'field_name' => $field_name,
 					'field_value' => $field_value,
                 )
@@ -5391,7 +5403,7 @@ class KTPWP_Ajax {
 
 		} catch ( Exception $e ) {
 			error_log( 'KTPWP Ajax ajax_auto_save_field Error: ' . $e->getMessage() );
-			wp_send_json_error( __( 'エラーが発生しました: ' . $e->getMessage(), 'ktpwp' ) );
+			wp_send_json_error( __( 'エラーが発生しました: ' . $e->getMessage(), 'kantanpro' ) );
 		}
 	}
 
@@ -5420,7 +5432,7 @@ class KTPWP_Ajax {
 			// 権限チェック
 			if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
 				error_log( 'KTPWP Ajax: Permission check failed' );
-				wp_send_json_error( __( 'この操作を行う権限がありません。', 'ktpwp' ) );
+				wp_send_json_error( __( 'この操作を行う権限がありません。', 'kantanpro' ) );
 				return;
 			}
 
@@ -5468,7 +5480,7 @@ class KTPWP_Ajax {
 			if (!$nonce_verified) {
 				error_log('[AJAX_GET_SUPPLIER_QUALIFIED_INVOICE] Security check failed - all nonce sources: ' . print_r($nonce_sources, true));
 				error_log('[AJAX_GET_SUPPLIER_QUALIFIED_INVOICE] POST data: ' . print_r($_POST, true));
-				wp_send_json_error(__('セキュリティ検証に失敗しました', 'ktpwp'));
+				wp_send_json_error(__('セキュリティ検証に失敗しました', 'kantanpro'));
 				return;
 			}
 
@@ -5480,7 +5492,7 @@ class KTPWP_Ajax {
 			
 			if ( $supplier_id <= 0 ) {
 				error_log( 'KTPWP Ajax: Invalid supplier ID: ' . $supplier_id );
-				wp_send_json_error( __( '協力会社IDが無効です (ID: ', 'ktpwp' ) . $supplier_id . ')' );
+				wp_send_json_error( __( '協力会社IDが無効です (ID: ', 'kantanpro' ) . $supplier_id . ')' );
 				return;
 			}
 
@@ -5491,7 +5503,7 @@ class KTPWP_Ajax {
 			$table_exists = $wpdb->get_var("SHOW TABLES LIKE '$supplier_table'") === $supplier_table;
 			if (!$table_exists) {
 				error_log('KTPWP Ajax: Supplier table does not exist: ' . $supplier_table);
-				wp_send_json_error(__('協力会社テーブルが存在しません', 'ktpwp'));
+				wp_send_json_error(__('協力会社テーブルが存在しません', 'kantanpro'));
 				return;
 			}
 
@@ -5506,7 +5518,7 @@ class KTPWP_Ajax {
 			// データベースエラーのチェック
 			if ( $wpdb->last_error ) {
 				error_log( 'KTPWP Ajax: Database error when getting qualified invoice number: ' . $wpdb->last_error );
-				wp_send_json_error( __( 'データベースエラーが発生しました', 'ktpwp' ) );
+				wp_send_json_error( __( 'データベースエラーが発生しました', 'kantanpro' ) );
 				return;
 			}
 
@@ -5539,7 +5551,7 @@ class KTPWP_Ajax {
 
 		} catch ( Exception $e ) {
 			error_log( 'KTPWP Ajax ajax_get_supplier_qualified_invoice_number Error: ' . $e->getMessage() );
-			wp_send_json_error( __( 'エラーが発生しました: ' . $e->getMessage(), 'ktpwp' ) );
+			wp_send_json_error( __( 'エラーが発生しました: ' . $e->getMessage(), 'kantanpro' ) );
 		}
 	}
 
@@ -5550,13 +5562,13 @@ class KTPWP_Ajax {
 	public function ajax_update_progress() {
 		// セキュリティチェック
 		if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
-			wp_send_json_error( __( '権限がありません', 'ktpwp' ) );
+			wp_send_json_error( __( '権限がありません', 'kantanpro' ) );
 		}
 
 		// nonceチェック（進捗更新は general / progress_update のどちらでも可）
 		$nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
 		if ( empty( $nonce ) || ( ! wp_verify_nonce( $nonce, 'ktp_ajax_nonce' ) && ! wp_verify_nonce( $nonce, 'ktpwp_ajax_nonce' ) ) ) {
-			wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'ktpwp' ) );
+			wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'kantanpro' ) );
 		}
 
 		global $wpdb;
@@ -5566,13 +5578,13 @@ class KTPWP_Ajax {
 		$new_progress = isset( $_POST['progress'] ) ? absint( $_POST['progress'] ) : 0;
 
 		if ( $order_id <= 0 || $new_progress < 1 || $new_progress > 7 ) {
-			wp_send_json_error( __( 'パラメータが不正です', 'ktpwp' ) );
+			wp_send_json_error( __( 'パラメータが不正です', 'kantanpro' ) );
 		}
 
 		// 現在の進捗を取得
 		$current_order = $wpdb->get_row( $wpdb->prepare( "SELECT progress FROM {$table_name} WHERE id = %d", $order_id ) );
 		if ( ! $current_order ) {
-			wp_send_json_error( __( '受注書が見つかりません', 'ktpwp' ) );
+			wp_send_json_error( __( '受注書が見つかりません', 'kantanpro' ) );
 		}
 
 		$update_data = array( 'progress' => $new_progress );
@@ -5601,12 +5613,12 @@ class KTPWP_Ajax {
 			}
 
 			wp_send_json_success( array(
-				'message' => __( '進捗を更新しました', 'ktpwp' ),
+				'message' => __( '進捗を更新しました', 'kantanpro' ),
 				'progress' => $new_progress,
 				'completion_date' => isset( $update_data['completion_date'] ) ? $update_data['completion_date'] : null
 			) );
 		} else {
-			wp_send_json_error( __( 'データベース更新に失敗しました', 'ktpwp' ) );
+			wp_send_json_error( __( 'データベース更新に失敗しました', 'kantanpro' ) );
 		}
 	}
 
@@ -5616,14 +5628,14 @@ class KTPWP_Ajax {
 	public function get_order_data() {
 		// セキュリティチェック
 		if (!isset($_POST['ktp_ajax_nonce']) || !wp_verify_nonce($_POST['ktp_ajax_nonce'], 'ktp_ajax_nonce')) {
-			wp_send_json_error( __( 'セキュリティチェックに失敗しました。', 'ktpwp' ) );
+			wp_send_json_error( __( 'セキュリティチェックに失敗しました。', 'kantanpro' ) );
 			return;
 		}
 		
 		// 受注書IDを取得
 		$order_id = isset($_POST['order_id']) ? absint($_POST['order_id']) : 0;
 		if (!$order_id) {
-			wp_send_json_error( __( '受注書IDが指定されていません。', 'ktpwp' ) );
+			wp_send_json_error( __( '受注書IDが指定されていません。', 'kantanpro' ) );
 			return;
 		}
 		
@@ -5633,7 +5645,7 @@ class KTPWP_Ajax {
 		$order_data = $wpdb->get_row($wpdb->prepare("SELECT * FROM `{$table_name}` WHERE id = %d", $order_id));
 		
 		if (!$order_data) {
-			wp_send_json_error( __( '指定された受注書が見つかりません。', 'ktpwp' ) );
+			wp_send_json_error( __( '指定された受注書が見つかりません。', 'kantanpro' ) );
 			return;
 		}
 		
@@ -5651,7 +5663,7 @@ class KTPWP_Ajax {
 				'order_id' => $order_id
 			));
 		} else {
-			wp_send_json_error( __( '受注書クラスが見つかりません。', 'ktpwp' ) );
+			wp_send_json_error( __( '受注書クラスが見つかりません。', 'kantanpro' ) );
 		}
 	}
 
@@ -5661,13 +5673,13 @@ class KTPWP_Ajax {
 	public function ajax_update_bulk_invoice_seal_size() {
 		$nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
 		if ( $nonce === '' || ! wp_verify_nonce( $nonce, 'ktp_ajax_nonce' ) ) {
-			wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'ktpwp' ) );
+			wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'kantanpro' ) );
 		}
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( __( '権限がありません', 'ktpwp' ) );
+			wp_send_json_error( __( '権限がありません', 'kantanpro' ) );
 		}
 		if ( ! class_exists( 'KTPWP_Pdf_Document_Settings' ) ) {
-			wp_send_json_error( __( '設定クラスが見つかりません', 'ktpwp' ) );
+			wp_send_json_error( __( '設定クラスが見つかりません', 'kantanpro' ) );
 		}
 
 		$width  = isset( $_POST['seal_max_width_px'] ) ? (int) $_POST['seal_max_width_px'] : 0;
@@ -5695,13 +5707,13 @@ class KTPWP_Ajax {
 	public function ajax_update_bulk_invoice_logo_width() {
 		$nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
 		if ( $nonce === '' || ! wp_verify_nonce( $nonce, 'ktp_ajax_nonce' ) ) {
-			wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'ktpwp' ) );
+			wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'kantanpro' ) );
 		}
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( __( '権限がありません', 'ktpwp' ) );
+			wp_send_json_error( __( '権限がありません', 'kantanpro' ) );
 		}
 		if ( ! class_exists( 'KTPWP_Pdf_Document_Settings' ) ) {
-			wp_send_json_error( __( '設定クラスが見つかりません', 'ktpwp' ) );
+			wp_send_json_error( __( '設定クラスが見つかりません', 'kantanpro' ) );
 		}
 
 		$percent = isset( $_POST['issuer_logo_width_percent'] ) ? (int) $_POST['issuer_logo_width_percent'] : 0;
@@ -5725,13 +5737,13 @@ class KTPWP_Ajax {
 	public function ajax_update_atena_label_position() {
 		$nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
 		if ( $nonce === '' || ! wp_verify_nonce( $nonce, 'ktp_ajax_nonce' ) ) {
-			wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'ktpwp' ) );
+			wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'kantanpro' ) );
 		}
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( __( '権限がありません', 'ktpwp' ) );
+			wp_send_json_error( __( '権限がありません', 'kantanpro' ) );
 		}
 		if ( ! class_exists( 'KTPWP_Pdf_Document_Settings' ) ) {
-			wp_send_json_error( __( '設定クラスが見つかりません', 'ktpwp' ) );
+			wp_send_json_error( __( '設定クラスが見つかりません', 'kantanpro' ) );
 		}
 
 		$top  = isset( $_POST['top_mm'] ) ? (int) $_POST['top_mm'] : KTPWP_Pdf_Document_Settings::ATENA_LABEL_BASE_TOP_MM;
@@ -5754,14 +5766,14 @@ class KTPWP_Ajax {
 	public function ajax_get_invoice_candidates() {
 		// セキュリティチェック
 		if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'ktp_ajax_nonce')) {
-			wp_send_json_error( __( 'セキュリティチェックに失敗しました。', 'ktpwp' ) );
+			wp_send_json_error( __( 'セキュリティチェックに失敗しました。', 'kantanpro' ) );
 			return;
 		}
 		
 		// 顧客IDを取得
 		$client_id = isset($_POST['client_id']) ? absint($_POST['client_id']) : 0;
 		if (!$client_id) {
-			wp_send_json_error( __( '顧客IDが指定されていません。', 'ktpwp' ) );
+			wp_send_json_error( __( '顧客IDが指定されていません。', 'kantanpro' ) );
 			return;
 		}
 		
@@ -5775,7 +5787,7 @@ class KTPWP_Ajax {
 		));
 		
 		if (!$client_data) {
-			wp_send_json_error( __( '指定された顧客が見つかりません。', 'ktpwp' ) );
+			wp_send_json_error( __( '指定された顧客が見つかりません。', 'kantanpro' ) );
 			return;
 		}
 		
@@ -5817,7 +5829,7 @@ class KTPWP_Ajax {
 		}
 
 		if ( empty( $orders ) ) {
-			wp_send_json_error( __( '請求対象の受注書が見つかりません。', 'ktpwp' ) );
+			wp_send_json_error( __( '請求対象の受注書が見つかりません。', 'kantanpro' ) );
 			return;
 		}
 		
@@ -5862,7 +5874,7 @@ class KTPWP_Ajax {
 			
 			if (!isset($monthly_groups[$key])) {
 				$monthly_groups[$key] = array(
-					'billing_period' => wp_date( __( 'Y年n月分', 'ktpwp' ), $completion_timestamp ),
+					'billing_period' => wp_date( __( 'Y年n月分', 'kantanpro' ), $completion_timestamp ),
 					'closing_date' => $this->bulk_invoice_closing_date_label_for_period( $key, $client_data ),
 					'orders' => array(),
 					'subtotal' => 0,
@@ -5886,7 +5898,7 @@ class KTPWP_Ajax {
 		}
 		
 		if ( empty( $monthly_groups ) ) {
-			wp_send_json_error( __( '請求対象の受注書が見つかりません。', 'ktpwp' ) );
+			wp_send_json_error( __( '請求対象の受注書が見つかりません。', 'kantanpro' ) );
 			return;
 		}
 
@@ -6089,7 +6101,7 @@ class KTPWP_Ajax {
 		if ( in_array( $closing_day, array( '末', '末日' ), true ) ) {
 			$base->modify( 'last day of this month' );
 
-			return wp_date( __( 'Y年m月d日', 'ktpwp' ), $base->getTimestamp() );
+			return wp_date( __( 'Y年m月d日', 'kantanpro' ), $base->getTimestamp() );
 		}
 
 		$day_num = (int) preg_replace( '/[^0-9]/', '', $closing_day );
@@ -6108,7 +6120,7 @@ class KTPWP_Ajax {
 			return '—';
 		}
 
-		return wp_date( __( 'Y年m月d日', 'ktpwp' ), $closing->getTimestamp() );
+		return wp_date( __( 'Y年m月d日', 'kantanpro' ), $closing->getTimestamp() );
 	}
 
 	/**
@@ -6811,7 +6823,7 @@ class KTPWP_Ajax {
 	public function get_report_data() {
 		// 権限チェック
 		if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
-			wp_die( __( '権限がありません。', 'ktpwp' ) );
+			wp_die( __( '権限がありません。', 'kantanpro' ) );
 		}
 
 		// ノンスチェック
@@ -6824,7 +6836,7 @@ class KTPWP_Ajax {
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 				error_log( 'レポートAJAX nonce検証失敗: ' . ( isset( $_POST['nonce'] ) ? $_POST['nonce'] : 'NOT_SET' ) );
 			}
-			wp_die( __( 'セキュリティチェックに失敗しました。', 'ktpwp' ) );
+			wp_die( __( 'セキュリティチェックに失敗しました。', 'kantanpro' ) );
 		}
 		
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
@@ -7292,21 +7304,21 @@ class KTPWP_Ajax {
 		if ( ! empty( $recurring_orders ) ) {
 			$sections[] = array(
 				'key'    => 'recurring',
-				'label'  => '【' . __( '定期', 'ktpwp' ) . '】',
+				'label'  => '【' . __( '定期', 'kantanpro' ) . '】',
 				'orders' => $recurring_orders,
 			);
 		}
 		if ( ! empty( $spot_orders ) ) {
 			$sections[] = array(
 				'key'    => 'spot',
-				'label'  => '【' . __( '都度', 'ktpwp' ) . '】',
+				'label'  => '【' . __( '都度', 'kantanpro' ) . '】',
 				'orders' => $spot_orders,
 			);
 		}
 		if ( ! empty( $initial_lines ) ) {
 			$sections[] = array(
 				'key'   => 'initial',
-				'label' => '【' . __( '初回のみ', 'ktpwp' ) . '】',
+				'label' => '【' . __( '初回のみ', 'kantanpro' ) . '】',
 				'lines' => $initial_lines,
 			);
 		}

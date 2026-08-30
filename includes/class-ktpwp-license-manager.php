@@ -95,7 +95,7 @@ class KTPWP_License_Manager {
             if ( $license_status !== 'not_set' ) {
                 update_option( 'ktp_license_status', 'not_set' );
                 update_option( 'ktp_license_info', array(
-                    'message' => __( 'レポート機能を利用するにはライセンスキーが必要です。', 'ktpwp' ),
+                    'message' => __( 'レポート機能を利用するにはライセンスキーが必要です。', 'kantanpro' ),
                     'features' => array(
                         'reports' => false,
                         'analytics' => false
@@ -117,14 +117,14 @@ class KTPWP_License_Manager {
         }
 
         if ( ! current_user_can( 'manage_options' ) ) {
-            wp_die( __( 'この操作を実行する権限がありません。', 'ktpwp' ) );
+            wp_die( __( 'この操作を実行する権限がありません。', 'kantanpro' ) );
         }
 
         $license_key = isset( $_POST['ktp_license_key'] ) ? trim( wp_unslash( $_POST['ktp_license_key'] ) ) : '';
         $license_key = $this->normalize_license_key( $license_key );
         
         if ( empty( $license_key ) ) {
-            add_settings_error( 'ktp_license', 'empty_key', __( 'ライセンスキーを入力してください。', 'ktpwp' ), 'error' );
+            add_settings_error( 'ktp_license', 'empty_key', __( 'ライセンスキーを入力してください。', 'kantanpro' ), 'error' );
             return;
         }
 
@@ -137,7 +137,7 @@ class KTPWP_License_Manager {
             update_option( 'ktp_license_info', $result['data'] );
             update_option( 'ktp_license_verified_at', current_time( 'timestamp' ) );
             
-            add_settings_error( 'ktp_license', 'activation_success', __( 'ライセンスが正常に認証されました。', 'ktpwp' ), 'success' );
+            add_settings_error( 'ktp_license', 'activation_success', __( 'ライセンスが正常に認証されました。', 'kantanpro' ), 'success' );
         } else {
             add_settings_error( 'ktp_license', 'activation_failed', $result['message'], 'error' );
         }
@@ -155,7 +155,7 @@ class KTPWP_License_Manager {
         if ( ! $this->check_rate_limit() ) {
             return array(
                 'success' => false,
-                'message' => __( 'レート制限に達しました。1時間後に再試行してください。', 'ktpwp' )
+                'message' => __( 'レート制限に達しました。1時間後に再試行してください。', 'kantanpro' )
             );
         }
 
@@ -188,7 +188,7 @@ class KTPWP_License_Manager {
         if ( is_wp_error( $response ) ) {
             return array(
                 'success' => false,
-                'message' => __( 'ライセンスサーバーとの通信に失敗しました。', 'ktpwp' ) . ' ' . $response->get_error_message()
+                'message' => __( 'ライセンスサーバーとの通信に失敗しました。', 'kantanpro' ) . ' ' . $response->get_error_message()
             );
         }
 
@@ -203,7 +203,7 @@ class KTPWP_License_Manager {
         if ( ! $data ) {
             return array(
                 'success' => false,
-                'message' => __( 'ライセンスサーバーからの応答が無効です。', 'ktpwp' )
+                'message' => __( 'ライセンスサーバーからの応答が無効です。', 'kantanpro' )
             );
         }
 
@@ -215,11 +215,11 @@ class KTPWP_License_Manager {
             return array(
                 'success' => true,
                 'data'    => isset( $data['data'] ) ? $data['data'] : array(),
-                'message' => isset( $data['message'] ) ? $data['message'] : __( 'ライセンスが正常に認証されました。', 'ktpwp' ),
+                'message' => isset( $data['message'] ) ? $data['message'] : __( 'ライセンスが正常に認証されました。', 'kantanpro' ),
             );
         }
 
-        $error_message = isset( $data['message'] ) ? $data['message'] : __( 'ライセンスの認証に失敗しました。', 'ktpwp' );
+        $error_message = isset( $data['message'] ) ? $data['message'] : __( 'ライセンスの認証に失敗しました。', 'kantanpro' );
         $error_code    = isset( $data['error_code'] ) ? $data['error_code'] : '';
         error_log( 'KTPWP License: Judgement -> API failure or invalid (error_code=' . $error_code . ')' );
         return array(
@@ -261,7 +261,7 @@ class KTPWP_License_Manager {
         if ( ! $data ) {
             return array(
                 'success' => false,
-                'message' => __( 'ライセンスサーバーからの応答が無効です。', 'ktpwp' )
+                'message' => __( 'ライセンスサーバーからの応答が無効です。', 'kantanpro' )
             );
         }
 
@@ -304,7 +304,7 @@ class KTPWP_License_Manager {
             if ( $license_status !== 'not_set' ) {
                 update_option( 'ktp_license_status', 'not_set' );
                 update_option( 'ktp_license_info', array(
-                    'message' => __( 'レポート機能を利用するにはライセンスキーが必要です。', 'ktpwp' ),
+                    'message' => __( 'レポート機能を利用するにはライセンスキーが必要です。', 'kantanpro' ),
                     'features' => array(
                         'reports' => false,
                         'analytics' => false
@@ -748,24 +748,24 @@ class KTPWP_License_Manager {
             if ( current_user_can( 'manage_options' ) ) {
                 error_log( 'KTPWP License AJAX: Nonce verification failed, proceeding due to admin fallback.' );
             } else {
-                wp_send_json_error( __( 'セキュリティチェックに失敗しました。', 'ktpwp' ) );
+                wp_send_json_error( __( 'セキュリティチェックに失敗しました。', 'kantanpro' ) );
             }
         }
 
         if ( ! current_user_can( 'manage_options' ) ) {
-            wp_die( __( 'この操作を実行する権限がありません。', 'ktpwp' ) );
+            wp_die( __( 'この操作を実行する権限がありません。', 'kantanpro' ) );
         }
 
         $license_key = isset( $_POST['license_key'] ) ? trim( wp_unslash( $_POST['license_key'] ) ) : '';
         $license_key = $this->normalize_license_key( $license_key );
         
         if ( empty( $license_key ) ) {
-            wp_send_json_error( __( 'ライセンスキーを入力してください。', 'ktpwp' ) );
+            wp_send_json_error( __( 'ライセンスキーを入力してください。', 'kantanpro' ) );
         }
 
         // 形式の事前チェックは行わず、APIに委譲（許容文字のみ軽く検査する場合は以下有効化）
         // if ( preg_match( '/[^A-Za-z0-9<>+=\-| ]/', $license_key ) ) {
-        //     wp_send_json_error( __( '使用できない文字が含まれています。', 'ktpwp' ) );
+        //     wp_send_json_error( __( '使用できない文字が含まれています。', 'kantanpro' ) );
         // }
         $result = $this->verify_license( $license_key );
         
@@ -777,7 +777,7 @@ class KTPWP_License_Manager {
             update_option( 'ktp_license_verified_at', current_time( 'timestamp' ) );
 
             wp_send_json_success( array(
-                'message' => $result['message'] ?? __( 'ライセンスが正常に認証されました。', 'ktpwp' )
+                'message' => $result['message'] ?? __( 'ライセンスが正常に認証されました。', 'kantanpro' )
             ) );
         } else {
             // 失敗した場合もステータスを更新
@@ -854,13 +854,13 @@ class KTPWP_License_Manager {
         check_ajax_referer( 'ktp_license_nonce', 'nonce' );
 
         if ( ! current_user_can( 'manage_options' ) ) {
-            wp_die( __( 'この操作を実行する権限がありません。', 'ktpwp' ) );
+            wp_die( __( 'この操作を実行する権限がありません。', 'kantanpro' ) );
         }
 
         $license_key = get_option( 'ktp_license_key' );
         
         if ( empty( $license_key ) ) {
-            wp_send_json_error( __( 'ライセンスキーが設定されていません。', 'ktpwp' ) );
+            wp_send_json_error( __( 'ライセンスキーが設定されていません。', 'kantanpro' ) );
         }
 
         $result = $this->get_license_info( $license_key );
@@ -881,11 +881,11 @@ class KTPWP_License_Manager {
         check_ajax_referer( 'ktp_license_nonce', 'nonce' );
 
         if ( ! current_user_can( 'manage_options' ) ) {
-            wp_send_json_error( __( 'この操作を実行する権限がありません。', 'ktpwp' ) );
+            wp_send_json_error( __( 'この操作を実行する権限がありません。', 'kantanpro' ) );
         }
 
         if ( ! $this->is_development_environment() ) {
-            wp_send_json_error( __( 'この機能は開発環境でのみ利用可能です。', 'ktpwp' ) );
+            wp_send_json_error( __( 'この機能は開発環境でのみ利用可能です。', 'kantanpro' ) );
         }
 
         $enabled = $this->is_dev_license_enabled();
@@ -922,7 +922,7 @@ class KTPWP_License_Manager {
         if ( empty( $license_key ) ) {
             return array(
                 'status' => 'not_set',
-                'message' => __( 'ライセンスキーが設定されていません。', 'ktpwp' ),
+                'message' => __( 'ライセンスキーが設定されていません。', 'kantanpro' ),
                 'icon' => 'dashicons-warning',
                 'color' => '#f56e28'
             );
@@ -933,7 +933,7 @@ class KTPWP_License_Manager {
             if ( $this->is_dev_license_enabled() ) {
                 return array(
                     'status' => 'active_dev',
-                    'message' => __( 'ライセンスが有効です。（開発環境）', 'ktpwp' ),
+                    'message' => __( 'ライセンスが有効です。（開発環境）', 'kantanpro' ),
                     'icon' => 'dashicons-yes-alt',
                     'color' => '#46b450',
                     'info' => array_merge( $license_info, array(
@@ -945,7 +945,7 @@ class KTPWP_License_Manager {
             } else {
                 return array(
                     'status' => 'inactive_dev',
-                    'message' => __( 'ライセンスが無効です。（開発環境モードで無効化中）', 'ktpwp' ),
+                    'message' => __( 'ライセンスが無効です。（開発環境モードで無効化中）', 'kantanpro' ),
                     'icon' => 'dashicons-warning',
                     'color' => '#f56e28',
                     'is_dev_mode' => true
@@ -984,7 +984,7 @@ class KTPWP_License_Manager {
                     
                     return array(
                         'status' => 'invalid',
-                        'message' => __( 'ライセンスが無効です。', 'ktpwp' ) . ' (' . $result['message'] . ')',
+                        'message' => __( 'ライセンスが無効です。', 'kantanpro' ) . ' (' . $result['message'] . ')',
                         'icon' => 'dashicons-no-alt',
                         'color' => '#dc3232'
                     );
@@ -995,7 +995,7 @@ class KTPWP_License_Manager {
         if ( $license_status === 'active' ) {
             return array(
                 'status' => 'active',
-                'message' => __( 'ライセンスが有効です。', 'ktpwp' ),
+                'message' => __( 'ライセンスが有効です。', 'kantanpro' ),
                 'icon' => 'dashicons-yes-alt',
                 'color' => '#46b450',
                 'info' => $license_info
@@ -1003,7 +1003,7 @@ class KTPWP_License_Manager {
         } else {
             return array(
                 'status' => 'invalid',
-                'message' => __( 'ライセンスが無効です。', 'ktpwp' ),
+                'message' => __( 'ライセンスが無効です。', 'kantanpro' ),
                 'icon' => 'dashicons-no-alt',
                 'color' => '#dc3232'
             );

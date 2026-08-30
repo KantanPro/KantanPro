@@ -310,18 +310,18 @@ class KTPWP_Order_Auxiliary {
 
 		$html  = '<details class="ktp-order-block ktp-order-details-toggle ktp-order-mail-log-wrap ktp-order-mail-log-details" data-ktp-order-toggle="mail_log" data-ktp-order-id="' . esc_attr( (string) $order_id ) . '">';
 		$html .= '<summary class="ktp-order-details-summary">';
-		$html .= esc_html__( 'メール送信履歴', 'ktpwp' );
-		$html .= ' <span class="ktp-order-details-hint">' . esc_html( sprintf( /* translators: max rows */ __( '最新%d件', 'ktpwp' ), self::MAIL_LOG_LIMIT ) ) . '</span>';
+		$html .= esc_html__( 'メール送信履歴', 'kantanpro' );
+		$html .= ' <span class="ktp-order-details-hint">' . esc_html( sprintf( /* translators: max rows */ __( '最新%d件', 'kantanpro' ), self::MAIL_LOG_LIMIT ) ) . '</span>';
 		$html .= '</summary>';
 
 		if ( $logs === array() ) {
-			$html .= '<p class="description ktp-order-mail-log-empty">' . esc_html__( '送信履歴はまだありません。', 'ktpwp' ) . '</p>';
+			$html .= '<p class="description ktp-order-mail-log-empty">' . esc_html__( '送信履歴はまだありません。', 'kantanpro' ) . '</p>';
 		} else {
 			foreach ( $logs as $log ) {
 				$sent_ts = ! empty( $log->sent_at ) ? strtotime( $log->sent_at ) : false;
 				$dt      = $sent_ts ? date_i18n( 'Y/n/j H:i', $sent_ts ) : '—';
 
-				$sender = __( 'システム', 'ktpwp' );
+				$sender = __( 'システム', 'kantanpro' );
 				if ( ! empty( $log->user_id ) ) {
 					$u = get_userdata( (int) $log->user_id );
 					if ( $u && $u->display_name ) {
@@ -331,17 +331,17 @@ class KTPWP_Order_Auxiliary {
 
 				$mk = isset( $log->mail_kind ) ? (string) $log->mail_kind : 'customer';
 				if ( $mk === 'purchase_order' ) {
-					$kind_label = '<span style="font-size:11px;background:#fff3e0;color:#e65100;padding:2px 8px;border-radius:10px;">' . esc_html__( '発注', 'ktpwp' ) . '</span>';
+					$kind_label = '<span style="font-size:11px;background:#fff3e0;color:#e65100;padding:2px 8px;border-radius:10px;">' . esc_html__( '発注', 'kantanpro' ) . '</span>';
 				} elseif ( $mk === 'quote_request' ) {
-					$kind_label = '<span style="font-size:11px;background:#f3e5f5;color:#6a1b9a;padding:2px 8px;border-radius:10px;">' . esc_html__( '見積依頼', 'ktpwp' ) . '</span>';
+					$kind_label = '<span style="font-size:11px;background:#f3e5f5;color:#6a1b9a;padding:2px 8px;border-radius:10px;">' . esc_html__( '見積依頼', 'kantanpro' ) . '</span>';
 				} else {
-					$kind_label = '<span style="font-size:11px;background:#e3f2fd;color:#1565c0;padding:2px 8px;border-radius:10px;">' . esc_html__( '顧客', 'ktpwp' ) . '</span>';
+					$kind_label = '<span style="font-size:11px;background:#e3f2fd;color:#1565c0;padding:2px 8px;border-radius:10px;">' . esc_html__( '顧客', 'kantanpro' ) . '</span>';
 				}
 
 				$dtype = isset( $log->delivery_type ) ? (string) $log->delivery_type : 'to';
 				$type_label = ( $dtype === 'cc' )
-					? '<span style="font-size:11px;background:#e8eaf6;color:#3949ab;padding:2px 8px;border-radius:10px;">' . esc_html__( 'CC別送', 'ktpwp' ) . '</span>'
-					: '<span style="font-size:11px;background:#eee;color:#333;padding:2px 8px;border-radius:10px;">' . esc_html__( '通常', 'ktpwp' ) . '</span>';
+					? '<span style="font-size:11px;background:#e8eaf6;color:#3949ab;padding:2px 8px;border-radius:10px;">' . esc_html__( 'CC別送', 'kantanpro' ) . '</span>'
+					: '<span style="font-size:11px;background:#eee;color:#333;padding:2px 8px;border-radius:10px;">' . esc_html__( '通常', 'kantanpro' ) . '</span>';
 
 				$cc_show = '—';
 				if ( ! empty( $log->cc_emails ) ) {
@@ -361,8 +361,8 @@ class KTPWP_Order_Auxiliary {
 
 				$ok     = isset( $log->send_status ) && $log->send_status === 'sent';
 				$status = $ok
-					? '<span style="font-size:11px;background:#e8f5e9;color:#2e7d32;padding:2px 8px;border-radius:10px;">' . esc_html__( '成功', 'ktpwp' ) . '</span>'
-					: '<span style="font-size:11px;background:#ffebee;color:#c62828;padding:2px 8px;border-radius:10px;">' . esc_html__( '失敗', 'ktpwp' ) . '</span>';
+					? '<span style="font-size:11px;background:#e8f5e9;color:#2e7d32;padding:2px 8px;border-radius:10px;">' . esc_html__( '成功', 'kantanpro' ) . '</span>'
+					: '<span style="font-size:11px;background:#ffebee;color:#c62828;padding:2px 8px;border-radius:10px;">' . esc_html__( '失敗', 'kantanpro' ) . '</span>';
 
 				$html .= '<div class="ktp-mail-log-entry">';
 				$html .= '<div class="ktp-mail-log-entry-head">';
@@ -376,24 +376,24 @@ class KTPWP_Order_Auxiliary {
 				$html .= '</div>';
 				$html .= '<div class="ktp-mail-log-entry-body">';
 				if ( ! empty( $log->context_note ) ) {
-					$html .= '<p class="ktp-mail-log-context">' . esc_html( sprintf( /* translators: %s supplier or context */ __( '補足: %s', 'ktpwp' ), (string) $log->context_note ) ) . '</p>';
+					$html .= '<p class="ktp-mail-log-context">' . esc_html( sprintf( /* translators: %s supplier or context */ __( '補足: %s', 'kantanpro' ), (string) $log->context_note ) ) . '</p>';
 				}
 				$html .= '<table class="widefat ktp-mail-log-meta-table"><tbody>';
-				$html .= '<tr><th>' . esc_html__( 'CC', 'ktpwp' ) . '</th><td>' . $cc_show . '</td></tr>';
-				$html .= '<tr><th>' . esc_html__( 'BCC', 'ktpwp' ) . '</th><td>' . $bcc_show . '</td></tr>';
-				$html .= '<tr><th>' . esc_html__( '件名', 'ktpwp' ) . '</th><td class="ktp-mail-log-subject-cell">' . esc_html( (string) $log->subject ) . '</td></tr>';
+				$html .= '<tr><th>' . esc_html__( 'CC', 'kantanpro' ) . '</th><td>' . $cc_show . '</td></tr>';
+				$html .= '<tr><th>' . esc_html__( 'BCC', 'kantanpro' ) . '</th><td>' . $bcc_show . '</td></tr>';
+				$html .= '<tr><th>' . esc_html__( '件名', 'kantanpro' ) . '</th><td class="ktp-mail-log-subject-cell">' . esc_html( (string) $log->subject ) . '</td></tr>';
 				if ( ! $ok && ! empty( $log->error_message ) ) {
-					$html .= '<tr><th>' . esc_html__( 'エラー', 'ktpwp' ) . '</th><td class="ktp-mail-log-error-cell">' . esc_html( (string) $log->error_message ) . '</td></tr>';
+					$html .= '<tr><th>' . esc_html__( 'エラー', 'kantanpro' ) . '</th><td class="ktp-mail-log-error-cell">' . esc_html( (string) $log->error_message ) . '</td></tr>';
 				}
 				if ( $dtype === 'cc' && ! empty( $log->primary_to_email ) ) {
-					$html .= '<tr><td colspan="2" class="ktp-mail-log-cc-note">' . esc_html( sprintf( /* translators: %s email */ __( 'CC別送（本来の宛先: %s）', 'ktpwp' ), (string) $log->primary_to_email ) ) . '</td></tr>';
+					$html .= '<tr><td colspan="2" class="ktp-mail-log-cc-note">' . esc_html( sprintf( /* translators: %s email */ __( 'CC別送（本来の宛先: %s）', 'kantanpro' ), (string) $log->primary_to_email ) ) . '</td></tr>';
 				}
 				$html .= '</tbody></table>';
 				$body_text = isset( $log->body ) && $log->body !== '' ? (string) $log->body : '';
 				if ( $body_text !== '' && class_exists( 'KTPWP_Stripe_Billing' ) ) {
 					$body_text = KTPWP_Stripe_Billing::sanitize_body_for_mail_log( $body_text );
 				}
-				$html     .= '<pre class="ktp-mail-log-body-pre">' . ( $body_text !== '' ? esc_html( $body_text ) : esc_html__( '（本文なし）', 'ktpwp' ) ) . '</pre>';
+				$html     .= '<pre class="ktp-mail-log-body-pre">' . ( $body_text !== '' ? esc_html( $body_text ) : esc_html__( '（本文なし）', 'kantanpro' ) ) . '</pre>';
 				$html     .= '</div></div>';
 			}
 		}
@@ -421,11 +421,11 @@ class KTPWP_Order_Auxiliary {
 		}
 
 		$html  = '<details class="ktp-order-block ktp-order-details-toggle ktp-order-files-wrap ktp-order-files-details" data-ktp-order-toggle="order_files" data-ktp-order-id="' . esc_attr( (string) $order_id ) . '">';
-		$html .= '<summary class="ktp-order-details-summary">' . esc_html__( '案件ファイル', 'ktpwp' );
-		$html .= ' <span class="ktp-order-details-hint">' . esc_html__( 'PDF・画像（最大20MB）', 'ktpwp' ) . '</span></summary>';
+		$html .= '<summary class="ktp-order-details-summary">' . esc_html__( '案件ファイル', 'kantanpro' );
+		$html .= ' <span class="ktp-order-details-hint">' . esc_html__( 'PDF・画像（最大20MB）', 'kantanpro' ) . '</span></summary>';
 
 		if ( $files === array() ) {
-			$html .= '<p class="description ktp-order-files-empty">' . esc_html__( 'まだファイルがありません。', 'ktpwp' ) . '</p>';
+			$html .= '<p class="description ktp-order-files-empty">' . esc_html__( 'まだファイルがありません。', 'kantanpro' ) . '</p>';
 		} else {
 			$html .= '<ul class="ktp-order-file-list">';
 			foreach ( $files as $f ) {
@@ -441,7 +441,7 @@ class KTPWP_Order_Auxiliary {
 				$sz     = $bytes >= 1048576
 					? number_format_i18n( $bytes / 1048576, 1 ) . ' MB'
 					: ( $bytes >= 1024 ? number_format_i18n( $bytes / 1024, 1 ) . ' KB' : (string) $bytes . ' B' );
-				$who    = __( '（不明）', 'ktpwp' );
+				$who    = __( '（不明）', 'kantanpro' );
 				if ( ! empty( $f->user_id ) ) {
 					$uu = get_userdata( (int) $f->user_id );
 					if ( $uu && $uu->display_name ) {
@@ -473,16 +473,16 @@ class KTPWP_Order_Auxiliary {
 				$html .= '</div>';
 				$html .= '<div class="ktp-order-file-actions">';
 				if ( $can_preview ) {
-					$html .= '<a href="' . esc_url( $preview_url ) . '" class="ktp-order-file-action-btn ktp-order-file-preview-btn" target="_blank" rel="noopener noreferrer">' . esc_html__( 'プレビュー', 'ktpwp' ) . '</a>';
+					$html .= '<a href="' . esc_url( $preview_url ) . '" class="ktp-order-file-action-btn ktp-order-file-preview-btn" target="_blank" rel="noopener noreferrer">' . esc_html__( 'プレビュー', 'kantanpro' ) . '</a>';
 				}
-				$html .= '<a href="' . esc_url( $dl_url ) . '" class="ktp-order-file-action-btn ktp-order-file-download-btn">' . esc_html__( 'ダウンロード', 'ktpwp' ) . '</a>';
-				$html .= '<form class="ktp-order-file-delete-form" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" onsubmit="return confirm(\'' . esc_js( __( 'このファイルを削除しますか？', 'ktpwp' ) ) . '\');">';
+				$html .= '<a href="' . esc_url( $dl_url ) . '" class="ktp-order-file-action-btn ktp-order-file-download-btn">' . esc_html__( 'ダウンロード', 'kantanpro' ) . '</a>';
+				$html .= '<form class="ktp-order-file-delete-form" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" onsubmit="return confirm(\'' . esc_js( __( 'このファイルを削除しますか？', 'kantanpro' ) ) . '\');">';
 				$html .= '<input type="hidden" name="action" value="ktpwp_delete_order_file" />';
 				$html .= wp_nonce_field( 'ktpwp_order_file_delete_' . $order_id, 'ktpwp_order_file_delete_nonce', true, false );
 				$html .= '<input type="hidden" name="order_id_for_file" value="' . esc_attr( (string) $order_id ) . '" />';
 				$html .= '<input type="hidden" name="ktpwp_redirect" value="' . esc_url( $redirect_url ) . '" />';
 				$html .= '<input type="hidden" name="ktpwp_order_file_id" value="' . esc_attr( (string) $f->id ) . '" />';
-				$html .= '<button type="submit" class="ktp-order-file-action-btn ktp-order-file-delete-btn">' . esc_html__( '削除', 'ktpwp' ) . '</button>';
+				$html .= '<button type="submit" class="ktp-order-file-action-btn ktp-order-file-delete-btn">' . esc_html__( '削除', 'kantanpro' ) . '</button>';
 				$html .= '</form>';
 				$html .= '</div>';
 				$html .= '</div>';
@@ -496,13 +496,13 @@ class KTPWP_Order_Auxiliary {
 		$html .= wp_nonce_field( 'ktpwp_order_file_upload_' . $order_id, 'ktpwp_order_file_upload_nonce', true, false );
 		$html .= '<input type="hidden" name="order_id_for_file" value="' . esc_attr( (string) $order_id ) . '" />';
 		$html .= '<input type="hidden" name="ktpwp_redirect" value="' . esc_url( $redirect_url ) . '" />';
-		$html .= '<label class="ktp-order-file-upload-label">' . esc_html__( 'ファイルを追加', 'ktpwp' ) . '</label>';
+		$html .= '<label class="ktp-order-file-upload-label">' . esc_html__( 'ファイルを追加', 'kantanpro' ) . '</label>';
 		$html .= '<div class="ktp-order-file-upload-row">';
 		$html .= '<input type="file" name="ktpwp_order_file" class="ktp-order-file-input" accept=".pdf,image/jpeg,image/png,image/gif,image/webp,application/pdf" required />';
 		// .button はプラグイン CSS で「ラッパー用」定義されているため button 要素に付けない
-		$html .= '<button type="submit" class="ktp-order-file-upload-btn">' . esc_html__( 'アップロード', 'ktpwp' ) . '</button>';
+		$html .= '<button type="submit" class="ktp-order-file-upload-btn">' . esc_html__( 'アップロード', 'kantanpro' ) . '</button>';
 		$html .= '</div>';
-		$html .= '<p class="description ktp-order-file-upload-hint">' . esc_html__( 'PDF または画像（JPEG・PNG・GIF・WebP）。最大 20MB。', 'ktpwp' ) . '</p>';
+		$html .= '<p class="description ktp-order-file-upload-hint">' . esc_html__( 'PDF または画像（JPEG・PNG・GIF・WebP）。最大 20MB。', 'kantanpro' ) . '</p>';
 		$html .= '</form>';
 
 		$html .= '</details>';
@@ -680,17 +680,17 @@ class KTPWP_Order_Auxiliary {
 	 */
 	public static function handle_upload_post() {
 		if ( ! is_user_logged_in() || ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) ) {
-			wp_die( esc_html__( '権限がありません。', 'ktpwp' ), '', array( 'response' => 403 ) );
+			wp_die( esc_html__( '権限がありません。', 'kantanpro' ), '', array( 'response' => 403 ) );
 		}
 
 		$order_id = isset( $_POST['order_id_for_file'] ) ? absint( $_POST['order_id_for_file'] ) : 0;
 		if ( $order_id <= 0 ) {
-			wp_die( esc_html__( '無効なリクエストです。', 'ktpwp' ), '', array( 'response' => 400 ) );
+			wp_die( esc_html__( '無効なリクエストです。', 'kantanpro' ), '', array( 'response' => 400 ) );
 		}
 
 		$nonce = isset( $_POST['ktpwp_order_file_upload_nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['ktpwp_order_file_upload_nonce'] ) ) : '';
 		if ( ! wp_verify_nonce( $nonce, 'ktpwp_order_file_upload_' . $order_id ) ) {
-			wp_die( esc_html__( '無効なリクエストです。', 'ktpwp' ), '', array( 'response' => 403 ) );
+			wp_die( esc_html__( '無効なリクエストです。', 'kantanpro' ), '', array( 'response' => 403 ) );
 		}
 
 		$redirect = self::resolve_order_file_redirect( $order_id );
@@ -710,17 +710,17 @@ class KTPWP_Order_Auxiliary {
 	 */
 	public static function handle_delete_post() {
 		if ( ! is_user_logged_in() || ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) ) {
-			wp_die( esc_html__( '権限がありません。', 'ktpwp' ), '', array( 'response' => 403 ) );
+			wp_die( esc_html__( '権限がありません。', 'kantanpro' ), '', array( 'response' => 403 ) );
 		}
 
 		$order_id = isset( $_POST['order_id_for_file'] ) ? absint( $_POST['order_id_for_file'] ) : 0;
 		if ( $order_id <= 0 ) {
-			wp_die( esc_html__( '無効なリクエストです。', 'ktpwp' ), '', array( 'response' => 400 ) );
+			wp_die( esc_html__( '無効なリクエストです。', 'kantanpro' ), '', array( 'response' => 400 ) );
 		}
 
 		$nonce = isset( $_POST['ktpwp_order_file_delete_nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['ktpwp_order_file_delete_nonce'] ) ) : '';
 		if ( ! wp_verify_nonce( $nonce, 'ktpwp_order_file_delete_' . $order_id ) ) {
-			wp_die( esc_html__( '無効なリクエストです。', 'ktpwp' ), '', array( 'response' => 403 ) );
+			wp_die( esc_html__( '無効なリクエストです。', 'kantanpro' ), '', array( 'response' => 403 ) );
 		}
 
 		$redirect = self::resolve_order_file_redirect( $order_id );
@@ -757,12 +757,12 @@ class KTPWP_Order_Auxiliary {
 
 	public static function handle_download() {
 		if ( ! is_user_logged_in() || ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) ) {
-			wp_die( esc_html__( '権限がありません。', 'ktpwp' ), 403 );
+			wp_die( esc_html__( '権限がありません。', 'kantanpro' ), 403 );
 		}
 
 		$file_id = isset( $_GET['file_id'] ) ? absint( $_GET['file_id'] ) : 0;
 		if ( $file_id <= 0 ) {
-			wp_die( esc_html__( '無効なリクエストです。', 'ktpwp' ), 400 );
+			wp_die( esc_html__( '無効なリクエストです。', 'kantanpro' ), 400 );
 		}
 
 		check_admin_referer( 'ktpwp_download_order_file_' . $file_id );
@@ -772,13 +772,13 @@ class KTPWP_Order_Auxiliary {
 		$table = $wpdb->prefix . 'ktp_order_file';
 		$row   = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM `{$table}` WHERE id = %d", $file_id ) );
 		if ( ! $row ) {
-			wp_die( esc_html__( 'ファイルが見つかりません。', 'ktpwp' ), 404 );
+			wp_die( esc_html__( 'ファイルが見つかりません。', 'kantanpro' ), 404 );
 		}
 
 		$upload = wp_upload_dir();
 		$path   = trailingslashit( $upload['basedir'] ) . str_replace( array( '..', '\\' ), '', (string) $row->storage_path );
 		if ( ! is_readable( $path ) ) {
-			wp_die( esc_html__( 'ファイルが見つかりません。', 'ktpwp' ), 404 );
+			wp_die( esc_html__( 'ファイルが見つかりません。', 'kantanpro' ), 404 );
 		}
 
 		$inline = isset( $_GET['inline'] ) && (string) $_GET['inline'] === '1';

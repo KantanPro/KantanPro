@@ -42,7 +42,7 @@ class KTPWP_Edition {
 				'slug'        => 'free',
 				'plugin_name' => 'KantanPro',
 				'staff_limit' => 0, // 0 = スタッフ追加不可（管理者のみ）。有料 pro の 0（無制限）とは別扱い。
-				'label'       => __( '無料版', 'ktpwp' ),
+				'label'       => __( '無料版', 'kantanpro' ),
 			),
 		);
 	}
@@ -235,12 +235,12 @@ class KTPWP_Edition {
 			. '<span>' . esc_html(
 				sprintf(
 					/* translators: %s: feature name */
-					__( '%s は無料版では利用できません。', 'ktpwp' ),
+					__( '%s は無料版では利用できません。', 'kantanpro' ),
 					$feature_name
 				)
-			) . ' ' . esc_html__( 'KantanProEX（有料版）へ移行してご利用ください。', 'ktpwp' ) . '</span> '
+			) . ' ' . esc_html__( 'KantanProEX（有料版）へ移行してご利用ください。', 'kantanpro' ) . '</span> '
 			. '<a class="button button-primary" href="' . $store_url . '" target="_blank" rel="noopener noreferrer">'
-			. esc_html__( 'KantanProEX 商品ページ', 'ktpwp' )
+			. esc_html__( 'KantanProEX 商品ページ', 'kantanpro' )
 			. '</a></div></div>';
 	}
 
@@ -259,13 +259,13 @@ class KTPWP_Edition {
 			. esc_html(
 				sprintf(
 					/* translators: %s: feature name */
-					__( '%s は無料版では利用できません。', 'ktpwp' ),
+					__( '%s は無料版では利用できません。', 'kantanpro' ),
 					$feature_name
 				)
 			)
-			. '<br />' . esc_html__( 'KantanProEX（有料版）へ移行してご利用ください。', 'ktpwp' )
+			. '<br />' . esc_html__( 'KantanProEX（有料版）へ移行してご利用ください。', 'kantanpro' )
 			. '</p><p><a class="button button-primary" href="' . $store_url . '" target="_blank" rel="noopener noreferrer">'
-			. esc_html__( 'KantanProEX 商品ページ', 'ktpwp' )
+			. esc_html__( 'KantanProEX 商品ページ', 'kantanpro' )
 			. '</a></p></div></div>';
 	}
 
@@ -322,10 +322,10 @@ class KTPWP_Edition {
 		$edition = self::get_active_edition();
 
 		if ( $edition === 'free' && $limit === 0 ) {
-			return __( '追加不可（管理者のみ）', 'ktpwp' );
+			return __( '追加不可（管理者のみ）', 'kantanpro' );
 		}
 
-		return $limit > 0 ? (string) $limit : __( '無制限', 'ktpwp' );
+		return $limit > 0 ? (string) $limit : __( '無制限', 'kantanpro' );
 	}
 
 	/**
@@ -338,12 +338,12 @@ class KTPWP_Edition {
 		$edition_label = self::get_edition_label();
 
 		if ( self::get_active_edition() === 'free' && $limit === 0 ) {
-			return __( '無料版ではスタッフを追加できません。管理者のみご利用いただけます。チームで使う場合は KantanProEX（有料版）をご検討ください。', 'ktpwp' );
+			return __( '無料版ではスタッフを追加できません。管理者のみご利用いただけます。チームで使う場合は KantanProEX（有料版）をご検討ください。', 'kantanpro' );
 		}
 
 		return sprintf(
 			/* translators: 1: edition label, 2: staff limit number */
-			__( '%1$sではスタッフは最大%2$d人まで登録できます。上限に達しているため、これ以上スタッフを追加できません。', 'ktpwp' ),
+			__( '%1$sではスタッフは最大%2$d人まで登録できます。上限に達しているため、これ以上スタッフを追加できません。', 'kantanpro' ),
 			$edition_label,
 			$limit
 		);
@@ -409,8 +409,8 @@ if ( ! function_exists( 'ktpwp_require_contracts_feature_or_ajax_error' ) ) {
 		if ( ! ktpwp_contracts_feature_enabled() ) {
 			wp_send_json_error(
 				class_exists( 'KTPWP_Edition' )
-					? wp_strip_all_tags( KTPWP_Edition::get_upgrade_message_html( __( '定期契約', 'ktpwp' ) ) )
-					: __( 'この機能は有料版で利用できます。', 'ktpwp' )
+					? wp_strip_all_tags( KTPWP_Edition::get_upgrade_message_html( __( '定期契約', 'kantanpro' ) ) )
+					: __( 'この機能は有料版で利用できます。', 'kantanpro' )
 			);
 		}
 	}

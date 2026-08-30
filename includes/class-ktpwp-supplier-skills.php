@@ -789,7 +789,8 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 			$page_end = min( $total_skills, $current_page * ( class_exists( 'KTPWP_Settings' ) ? KTPWP_Settings::get_work_list_range() : 10 ) );
 
 			$pagination_html .= '<div style="margin-bottom: 18px; color: #4b5563; font-size: 14px; font-weight: 500;">';
-			$pagination_html .= esc_html( sprintf( __( '%1$d / %2$d ページ（全 %3$d 件）', 'ktpwp' ), $current_page, $total_pages, $total_skills ) );
+			/* translators: 1: 現在のページ番号, 2: 総ページ数, 3: 総件数 */
+			$pagination_html .= esc_html( sprintf( __( '%1$d / %2$d ページ（全 %3$d 件）', 'kantanpro' ), $current_page, $total_pages, $total_skills ) );
 			$pagination_html .= '</div>';
 
 			// 2行目：ページネーションボタン

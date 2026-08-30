@@ -393,7 +393,8 @@ End',
      */
     private function get_terms_title() {
         if ( $this->should_translate_terms_to_english() ) {
-            return sprintf( __( '%1$s %2$s Terms of Service', 'ktpwp' ), KANTANPRO_PLUGIN_NAME, KANTANPRO_PLUGIN_VERSION );
+            /* translators: 1: サイト名, 2: プラグイン名 */
+            return sprintf( __( '%1$s %2$s Terms of Service', 'kantanpro' ), KANTANPRO_PLUGIN_NAME, KANTANPRO_PLUGIN_VERSION );
         }
 
         return KANTANPRO_PLUGIN_NAME . KANTANPRO_PLUGIN_VERSION . '利用規約';
@@ -433,7 +434,7 @@ End',
     public function create_terms_page() {
         // 開発モード時のみUIを有効化（配布先では非表示/不可）
         if ( ! ( defined( 'KTPWP_DEVELOPMENT_MODE' ) && KTPWP_DEVELOPMENT_MODE ) ) {
-            echo '<div class="notice notice-warning"><p>' . esc_html__( 'このページは現在無効化されています。', 'ktpwp' ) . '</p></div>';
+            echo '<div class="notice notice-warning"><p>' . esc_html__( 'このページは現在無効化されています。', 'kantanpro' ) . '</p></div>';
             return;
         }
 
@@ -453,7 +454,7 @@ End',
      */
     private function display_password_form() {
         // 廃止: パスワードフォームの代わりに無効化メッセージのみ表示
-        echo '<div class="wrap"><div class="notice notice-info is-dismissible"><p>' . esc_html__( 'このページは現在無効化されています。', 'ktpwp' ) . '</p></div></div>';
+        echo '<div class="wrap"><div class="notice notice-info is-dismissible"><p>' . esc_html__( 'このページは現在無効化されています。', 'kantanpro' ) . '</p></div></div>';
     }
 
     /**
@@ -471,13 +472,13 @@ End',
 
         // 認証成功メッセージ
         if ( isset( $_GET['authenticated'] ) && $_GET['authenticated'] === '1' ) {
-            echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( '認証に成功しました。利用規約の編集が可能です。', 'ktpwp' ) . '</p></div>';
+            echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( '認証に成功しました。利用規約の編集が可能です。', 'kantanpro' ) . '</p></div>';
         }
 
         // ログアウト処理
         if ( isset( $_GET['logout'] ) && $_GET['logout'] === '1' ) {
             $_SESSION['ktp_developer_authenticated'] = false;
-            echo '<div class="notice notice-info is-dismissible"><p>' . esc_html__( '認証を解除しました。', 'ktpwp' ) . '</p></div>';
+            echo '<div class="notice notice-info is-dismissible"><p>' . esc_html__( '認証を解除しました。', 'kantanpro' ) . '</p></div>';
         }
 
         // 利用規約の取得
@@ -487,14 +488,14 @@ End',
         <div class="ktp-settings-container">
             <div class="ktp-settings-section">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <h2><?php echo esc_html__( '利用規約編集', 'ktpwp' ); ?></h2>
+                    <h2><?php echo esc_html__( '利用規約編集', 'kantanpro' ); ?></h2>
                     <a href="<?php echo esc_url( admin_url( 'admin.php?page=ktp-terms&logout=1' ) ); ?>" class="button button-secondary">
-                        <?php echo esc_html__( '認証解除', 'ktpwp' ); ?>
+                        <?php echo esc_html__( '認証解除', 'kantanpro' ); ?>
                     </a>
                 </div>
                 
                 <div class="notice notice-info">
-                    <p><?php echo esc_html__( '利用規約の内容を編集できます。変更後は保存ボタンをクリックしてください。', 'ktpwp' ); ?></p>
+                    <p><?php echo esc_html__( '利用規約の内容を編集できます。変更後は保存ボタンをクリックしてください。', 'kantanpro' ); ?></p>
                 </div>
 
                 <form method="post" action="">
@@ -502,28 +503,28 @@ End',
                     <table class="form-table">
                         <tr>
                             <th scope="row">
-                                <label for="terms_content"><?php echo esc_html__( '利用規約内容', 'ktpwp' ); ?></label>
+                                <label for="terms_content"><?php echo esc_html__( '利用規約内容', 'kantanpro' ); ?></label>
                             </th>
                             <td>
                                 <textarea name="terms_content" id="terms_content" rows="30" cols="80" style="width: 100%; font-family: monospace;"><?php echo esc_textarea( $terms ? $terms->terms_content : '' ); ?></textarea>
-                                <p class="description"><?php echo esc_html__( 'Markdown形式で記述できます。', 'ktpwp' ); ?></p>
+                                <p class="description"><?php echo esc_html__( 'Markdown形式で記述できます。', 'kantanpro' ); ?></p>
                             </td>
                         </tr>
                         <tr>
                             <th scope="row">
-                                <label for="terms_version"><?php echo esc_html__( 'バージョン', 'ktpwp' ); ?></label>
+                                <label for="terms_version"><?php echo esc_html__( 'バージョン', 'kantanpro' ); ?></label>
                             </th>
                             <td>
                                 <input type="text" name="terms_version" id="terms_version" value="<?php echo esc_attr( $terms ? $terms->version : '1.0' ); ?>" class="regular-text" />
                             </td>
                         </tr>
                     </table>
-                    <?php submit_button( __( '保存', 'ktpwp' ) ); ?>
+                    <?php submit_button( __( '保存', 'kantanpro' ) ); ?>
                 </form>
 
                 <hr style="margin: 30px 0;">
 
-                <h3><?php echo esc_html__( '利用規約の表示', 'ktpwp' ); ?></h3>
+                <h3><?php echo esc_html__( '利用規約の表示', 'kantanpro' ); ?></h3>
                 <div style="background: #f9f9f9; padding: 20px; border: 1px solid #ddd; border-radius: 4px;">
                     <h2 style="color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; margin-bottom: 20px;"><?php echo esc_html( $this->get_terms_title() ); ?></h2>
                     <?php echo $this->format_terms_content( $terms ? $terms->terms_content : '' ); ?>
@@ -703,9 +704,9 @@ End',
         );
 
         if ( $result ) {
-            echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( '利用規約を更新しました。', 'ktpwp' ) . '</p></div>';
+            echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( '利用規約を更新しました。', 'kantanpro' ) . '</p></div>';
         } else {
-            echo '<div class="notice notice-error is-dismissible"><p>' . esc_html__( '利用規約の更新に失敗しました。', 'ktpwp' ) . '</p></div>';
+            echo '<div class="notice notice-error is-dismissible"><p>' . esc_html__( '利用規約の更新に失敗しました。', 'kantanpro' ) . '</p></div>';
         }
     }
 
@@ -717,7 +718,7 @@ End',
 
         // 管理者権限チェック（管理者のみ処理）
         if ( ! current_user_can( 'manage_options' ) ) {
-            wp_send_json_error( array( 'message' => __( '管理者権限が必要です。', 'ktpwp' ) ) );
+            wp_send_json_error( array( 'message' => __( '管理者権限が必要です。', 'kantanpro' ) ) );
             return;
         }
 
@@ -725,7 +726,7 @@ End',
         if ( $user_id ) {
             // 既に同意済みかチェック（重複防止）
             if ( $this->has_user_agreed_to_terms( $user_id ) ) {
-                wp_send_json_success( array( 'message' => __( '既に利用規約に同意済みです。', 'ktpwp' ) ) );
+                wp_send_json_success( array( 'message' => __( '既に利用規約に同意済みです。', 'kantanpro' ) ) );
                 return;
             }
 
@@ -742,7 +743,7 @@ End',
                 // メール送信完了をマーク（5分間有効）
                 set_transient( $mail_transient_key, true, 300 );
                 
-                $response_message = __( '利用規約に同意しました。', 'ktpwp' );
+                $response_message = __( '利用規約に同意しました。', 'kantanpro' );
                 
                 // デバッグモードでは通知状況を表示
                 if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
@@ -766,13 +767,13 @@ End',
             } else {
                 // メール送信済みの場合
                 wp_send_json_success( array( 
-                    'message' => __( '利用規約に同意しました。', 'ktpwp' ),
+                    'message' => __( '利用規約に同意しました。', 'kantanpro' ),
                     'mail_sent' => true,
                     'klm_sent' => true,
                 ) );
             }
         } else {
-            wp_send_json_error( array( 'message' => __( 'ユーザー認証に失敗しました。', 'ktpwp' ) ) );
+            wp_send_json_error( array( 'message' => __( 'ユーザー認証に失敗しました。', 'kantanpro' ) ) );
         }
     }
 
@@ -1280,7 +1281,7 @@ End',
                 <?php echo $this->format_terms_content( $terms_content ); ?>
                 
                 <div class="back-link">
-                    <a href="javascript:window.close();"><?php echo esc_html__( 'このウィンドウを閉じる', 'ktpwp' ); ?></a>
+                    <a href="javascript:window.close();"><?php echo esc_html__( 'このウィンドウを閉じる', 'kantanpro' ); ?></a>
                 </div>
             </div>
         </body>
@@ -1322,7 +1323,7 @@ End',
             var termsLink = document.createElement('a');
             termsLink.href = '<?php echo esc_url( $terms_url ); ?>';
             termsLink.target = '_blank';
-            termsLink.textContent = '<?php echo esc_js( __( '利用規約', 'ktpwp' ) ); ?>';
+            termsLink.textContent = '<?php echo esc_js( __( '利用規約', 'kantanpro' ) ); ?>';
             termsLink.style.marginLeft = '10px';
             termsLink.style.color = '#666';
             termsLink.style.textDecoration = 'none';
@@ -1359,7 +1360,7 @@ End',
             <div class="ktpwp-terms-overlay"></div>
             <div class="ktpwp-terms-modal">
                 <div class="ktpwp-terms-header">
-                    <h2><?php echo esc_html( sprintf( __( '%1$s %2$s Terms of Service', 'ktpwp' ), KANTANPRO_PLUGIN_NAME, KANTANPRO_PLUGIN_VERSION ) ); ?></h2>
+                    <h2><?php echo esc_html( /* translators: 1: サイト名, 2: プラグイン名 */ sprintf( __( '%1$s %2$s Terms of Service', 'kantanpro' ), KANTANPRO_PLUGIN_NAME, KANTANPRO_PLUGIN_VERSION ) ); ?></h2>
                 </div>
                 <div class="ktpwp-terms-content">
                     <?php echo $this->format_terms_content( $terms_content ); ?>
@@ -1367,13 +1368,13 @@ End',
                 <div class="ktpwp-terms-footer">
                     <div class="ktpwp-terms-checkbox-container">
                         <input type="checkbox" id="ktpwp-terms-checkbox" />
-                        <label for="ktpwp-terms-checkbox"><?php echo esc_html__( '確認しました', 'ktpwp' ); ?></label>
+                        <label for="ktpwp-terms-checkbox"><?php echo esc_html__( '確認しました', 'kantanpro' ); ?></label>
                     </div>
                     <button type="button" id="ktpwp-start-usage" class="ktpwp-start-btn" disabled>
-                        <?php echo esc_html__( '利用開始する', 'ktpwp' ); ?>
+                        <?php echo esc_html__( '利用開始する', 'kantanpro' ); ?>
                     </button>
                     <div class="ktpwp-home-link">
-                        <a href="<?php echo esc_url( home_url( '/' ) ); ?>"><?php echo esc_html__( 'ホームへ', 'ktpwp' ); ?></a>
+                        <a href="<?php echo esc_url( home_url( '/' ) ); ?>"><?php echo esc_html__( 'ホームへ', 'kantanpro' ); ?></a>
                     </div>
                 </div>
             </div>
@@ -1508,7 +1509,7 @@ End',
                         }
                     },
                     error: function() {
-                        alert('<?php echo esc_js( __( 'エラーが発生しました。', 'ktpwp' ) ); ?>');
+                        alert('<?php echo esc_js( __( 'エラーが発生しました。', 'kantanpro' ) ); ?>');
                     }
                 });
             });

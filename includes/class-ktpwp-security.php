@@ -82,7 +82,7 @@ class KTPWP_Security {
         if ( ! is_user_logged_in() ) {
             return new WP_Error(
                 'rest_forbidden',
-                __( 'REST APIはログインユーザーのみ利用可能です。', 'ktpwp' ),
+                __( 'REST APIはログインユーザーのみ利用可能です。', 'kantanpro' ),
                 array( 'status' => 403 )
             );
         }
@@ -596,7 +596,7 @@ class KTPWP_Security {
             header( 'Content-Type: text/plain; charset=UTF-8' );
         }
 
-        echo esc_html__( '認証が必要です。', 'ktpwp' );
+        echo esc_html__( '認証が必要です。', 'kantanpro' );
         exit;
     }
 
@@ -609,7 +609,7 @@ class KTPWP_Security {
             header( 'Content-Type: text/plain; charset=UTF-8' );
         }
 
-        echo esc_html__( 'この管理画面へのアクセスは許可されていません。', 'ktpwp' );
+        echo esc_html__( 'この管理画面へのアクセスは許可されていません。', 'kantanpro' );
         exit;
     }
 }

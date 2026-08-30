@@ -61,13 +61,13 @@ if ( ! class_exists( 'KTPWP_Contract_UI' ) ) {
 			$stripe_enabled    = class_exists( 'KTPWP_Stripe_Billing' ) && KTPWP_Stripe_Billing::is_enabled();
 
 			$html  = '<div class="ktp-contract-section" id="ktp-contract-section" data-client-id="' . esc_attr( (string) $client_id ) . '">';
-			$html .= '<h4 class="ktp-contract-section__title">' . esc_html__( '■ 定期契約', 'ktpwp' ) . '</h4>';
+			$html .= '<h4 class="ktp-contract-section__title">' . esc_html__( '■ 定期契約', 'kantanpro' ) . '</h4>';
 			if ( function_exists( 'ktpwp_is_feature_enabled' ) && ! ktpwp_is_feature_enabled( 'stripe_billing' ) && class_exists( 'KTPWP_Edition' ) ) {
-				$html .= KTPWP_Edition::get_upgrade_message_html( __( 'Stripe 請求連携', 'ktpwp' ) );
+				$html .= KTPWP_Edition::get_upgrade_message_html( __( 'Stripe 請求連携', 'kantanpro' ) );
 			}
 
 			if ( empty( $recurring_services ) ) {
-				$html .= '<p class="ktp-contract-section__hint">' . esc_html__( '定期請求に使えるサービスがありません。サービスタブで「契約（請求サイクル）」を都度以外に設定してください。', 'ktpwp' ) . '</p>';
+				$html .= '<p class="ktp-contract-section__hint">' . esc_html__( '定期請求に使えるサービスがありません。サービスタブで「契約（請求サイクル）」を都度以外に設定してください。', 'kantanpro' ) . '</p>';
 			} else {
 				$html .= '<div class="ktp-contract-section__toolbar">';
 				$html .= $this->render_action_button(
@@ -75,7 +75,7 @@ if ( ! class_exists( 'KTPWP_Contract_UI' ) ) {
 						'id'    => 'ktp-contract-add-btn',
 						'class' => 'ktp-contract-action-btn--primary',
 						'icon'  => 'add',
-						'label' => __( '新規定期契約', 'ktpwp' ),
+						'label' => __( '新規定期契約', 'kantanpro' ),
 					)
 				);
 				$html .= '</div>';
@@ -110,21 +110,21 @@ if ( ! class_exists( 'KTPWP_Contract_UI' ) ) {
 			}
 
 			if ( empty( $contracts ) ) {
-				return '<p class="ktp-contract-section__empty">' . esc_html__( '定期契約はまだ登録されていません。', 'ktpwp' ) . '</p>';
+				return '<p class="ktp-contract-section__empty">' . esc_html__( '定期契約はまだ登録されていません。', 'kantanpro' ) . '</p>';
 			}
 
 			$html  = '<table class="ktp-contract-list-table">';
 			$html .= '<thead><tr>';
-			$html .= '<th>' . esc_html__( '契約名', 'ktpwp' ) . '</th>';
-			$html .= '<th>' . esc_html__( 'サービス', 'ktpwp' ) . '</th>';
-			$html .= '<th>' . esc_html__( '金額', 'ktpwp' ) . '</th>';
-			$html .= '<th>' . esc_html__( 'サイクル', 'ktpwp' ) . '</th>';
-			$html .= '<th>' . esc_html__( '請求日', 'ktpwp' ) . '</th>';
-			$html .= '<th>' . esc_html__( '状態', 'ktpwp' ) . '</th>';
+			$html .= '<th>' . esc_html__( '契約名', 'kantanpro' ) . '</th>';
+			$html .= '<th>' . esc_html__( 'サービス', 'kantanpro' ) . '</th>';
+			$html .= '<th>' . esc_html__( '金額', 'kantanpro' ) . '</th>';
+			$html .= '<th>' . esc_html__( 'サイクル', 'kantanpro' ) . '</th>';
+			$html .= '<th>' . esc_html__( '請求日', 'kantanpro' ) . '</th>';
+			$html .= '<th>' . esc_html__( '状態', 'kantanpro' ) . '</th>';
 			if ( $stripe_enabled ) {
-				$html .= '<th>' . esc_html__( 'Stripe', 'ktpwp' ) . '</th>';
+				$html .= '<th>' . esc_html__( 'Stripe', 'kantanpro' ) . '</th>';
 			}
-			$html .= '<th>' . esc_html__( '操作', 'ktpwp' ) . '</th>';
+			$html .= '<th>' . esc_html__( '操作', 'kantanpro' ) . '</th>';
 			$html .= '</tr></thead><tbody>';
 
 			foreach ( $contracts as $contract ) {
@@ -155,7 +155,7 @@ if ( ! class_exists( 'KTPWP_Contract_UI' ) ) {
 					array(
 						'class'       => 'ktp-contract-action-btn--icon ktp-contract-edit-btn',
 						'icon'        => 'edit',
-						'label'       => __( '編集', 'ktpwp' ),
+						'label'       => __( '編集', 'kantanpro' ),
 						'show_label'  => false,
 						'extra_attrs' => ' data-contract-id="' . esc_attr( (string) $contract->id ) . '"',
 					)
@@ -165,7 +165,7 @@ if ( ! class_exists( 'KTPWP_Contract_UI' ) ) {
 					array(
 						'class'       => 'ktp-contract-action-btn--danger ktp-contract-action-btn--icon ktp-contract-delete-btn',
 						'icon'        => 'delete',
-						'label'       => __( '削除', 'ktpwp' ),
+						'label'       => __( '削除', 'kantanpro' ),
 						'show_label'  => false,
 						'extra_attrs' => ' data-contract-id="' . esc_attr( (string) $contract->id ) . '"',
 					)
@@ -191,20 +191,20 @@ if ( ! class_exists( 'KTPWP_Contract_UI' ) ) {
 		 * @return string
 		 */
 		private function render_contract_form( $client_id, $recurring_services, $fee_presets, $status_labels, $billing_day_opts, $stripe_enabled = false ) {
-			$html  = '<h5 class="ktp-contract-form__heading" id="ktp-contract-form-heading">' . esc_html__( '定期契約を追加', 'ktpwp' ) . '</h5>';
+			$html  = '<h5 class="ktp-contract-form__heading" id="ktp-contract-form-heading">' . esc_html__( '定期契約を追加', 'kantanpro' ) . '</h5>';
 			$html .= '<input type="hidden" id="ktp-contract-id" value="0">';
 			$html .= '<input type="hidden" id="ktp-contract-client-id" value="' . esc_attr( (string) $client_id ) . '">';
 
 			$html .= '<div class="ktp-contract-form__grid">';
 			$html .= '<div class="ktp-contract-form__field">';
-			$html .= '<label for="ktp-contract-name">' . esc_html__( '契約名', 'ktpwp' ) . ' <span class="required">*</span></label>';
-			$html .= '<input type="text" id="ktp-contract-name" maxlength="255" placeholder="' . esc_attr__( '例: ○○ビル 101号室 家賃', 'ktpwp' ) . '">';
+			$html .= '<label for="ktp-contract-name">' . esc_html__( '契約名', 'kantanpro' ) . ' <span class="required">*</span></label>';
+			$html .= '<input type="text" id="ktp-contract-name" maxlength="255" placeholder="' . esc_attr__( '例: ○○ビル 101号室 家賃', 'kantanpro' ) . '">';
 			$html .= '</div>';
 
 			$html .= '<div class="ktp-contract-form__field">';
-			$html .= '<label for="ktp-contract-service-id">' . esc_html__( 'サービス', 'ktpwp' ) . ' <span class="required">*</span></label>';
+			$html .= '<label for="ktp-contract-service-id">' . esc_html__( 'サービス', 'kantanpro' ) . ' <span class="required">*</span></label>';
 			$html .= '<select id="ktp-contract-service-id">';
-			$html .= '<option value="">' . esc_html__( '選択してください', 'ktpwp' ) . '</option>';
+			$html .= '<option value="">' . esc_html__( '選択してください', 'kantanpro' ) . '</option>';
 			foreach ( $recurring_services as $service ) {
 				$cycle = class_exists( 'KTPWP_Contract_Billing_Cycle' )
 					? KTPWP_Contract_Billing_Cycle::sanitize( $service->contract_billing_cycle ?? 'none' )
@@ -226,13 +226,13 @@ if ( ! class_exists( 'KTPWP_Contract_UI' ) ) {
 			$html .= '</div>';
 
 			$html .= '<div class="ktp-contract-form__field">';
-			$html .= '<label for="ktp-contract-amount">' . esc_html__( '請求金額', 'ktpwp' ) . '</label>';
+			$html .= '<label for="ktp-contract-amount">' . esc_html__( '請求金額', 'kantanpro' ) . '</label>';
 			$html .= '<input type="number" id="ktp-contract-amount" min="0" step="0.01" value="0">';
-			$html .= '<p class="description">' . esc_html__( '定期請求項目がある場合は、項目の合計が契約金額になります。', 'ktpwp' ) . '</p>';
+			$html .= '<p class="description">' . esc_html__( '定期請求項目がある場合は、項目の合計が契約金額になります。', 'kantanpro' ) . '</p>';
 			$html .= '</div>';
 
 			$html .= '<div class="ktp-contract-form__field">';
-			$html .= '<label for="ktp-contract-billing-cycle">' . esc_html__( '請求サイクル', 'ktpwp' ) . '</label>';
+			$html .= '<label for="ktp-contract-billing-cycle">' . esc_html__( '請求サイクル', 'kantanpro' ) . '</label>';
 			$html .= '<select id="ktp-contract-billing-cycle">';
 			if ( class_exists( 'KTPWP_Contract_Billing_Cycle' ) ) {
 				foreach ( KTPWP_Contract_Billing_Cycle::get_recurring_options() as $value => $label ) {
@@ -243,7 +243,7 @@ if ( ! class_exists( 'KTPWP_Contract_UI' ) ) {
 			$html .= '</div>';
 
 			$html .= '<div class="ktp-contract-form__field">';
-			$html .= '<label for="ktp-contract-billing-day">' . esc_html__( '請求日', 'ktpwp' ) . '</label>';
+			$html .= '<label for="ktp-contract-billing-day">' . esc_html__( '請求日', 'kantanpro' ) . '</label>';
 			$html .= '<select id="ktp-contract-billing-day">';
 			foreach ( $billing_day_opts as $day_value => $day_label ) {
 				$html .= '<option value="' . esc_attr( (string) $day_value ) . '">' . esc_html( $day_label ) . '</option>';
@@ -252,29 +252,29 @@ if ( ! class_exists( 'KTPWP_Contract_UI' ) ) {
 			$html .= '</div>';
 
 			$html .= '<div class="ktp-contract-form__field">';
-			$html .= '<label for="ktp-contract-payment-due-mode">' . esc_html__( '入金期日', 'ktpwp' ) . '</label>';
+			$html .= '<label for="ktp-contract-payment-due-mode">' . esc_html__( '入金期日', 'kantanpro' ) . '</label>';
 			$html .= '<select id="ktp-contract-payment-due-mode">';
 			foreach ( KTPWP_Contract_DB::get_payment_due_mode_options() as $value => $label ) {
 				$selected = ( 'contract' === $value ) ? ' selected' : '';
 				$html    .= '<option value="' . esc_attr( $value ) . '"' . $selected . '>' . esc_html( $label ) . '</option>';
 			}
 			$html .= '</select>';
-			$html .= '<p class="description">' . esc_html__( '家賃などは「契約の請求日」。都度請求と同じ締め支払ルールで回収する場合は「顧客の締め支払日」を選びます。', 'ktpwp' ) . '</p>';
+			$html .= '<p class="description">' . esc_html__( '家賃などは「契約の請求日」。都度請求と同じ締め支払ルールで回収する場合は「顧客の締め支払日」を選びます。', 'kantanpro' ) . '</p>';
 			$html .= '</div>';
 
 			$html .= '<div class="ktp-contract-form__field">';
-			$html .= '<label for="ktp-contract-start-date">' . esc_html__( '契約開始日', 'ktpwp' ) . '</label>';
+			$html .= '<label for="ktp-contract-start-date">' . esc_html__( '契約開始日', 'kantanpro' ) . '</label>';
 			$html .= '<input type="date" id="ktp-contract-start-date" value="' . esc_attr( wp_date( 'Y-m-d' ) ) . '">';
 			$html .= '</div>';
 
 			$html .= '<div class="ktp-contract-form__field">';
-			$html .= '<label for="ktp-contract-end-date">' . esc_html__( '契約終了日', 'ktpwp' ) . '</label>';
+			$html .= '<label for="ktp-contract-end-date">' . esc_html__( '契約終了日', 'kantanpro' ) . '</label>';
 			$html .= '<input type="date" id="ktp-contract-end-date">';
-			$html .= '<p class="description">' . esc_html__( '空欄の場合は自動更新', 'ktpwp' ) . '</p>';
+			$html .= '<p class="description">' . esc_html__( '空欄の場合は自動更新', 'kantanpro' ) . '</p>';
 			$html .= '</div>';
 
 			$html .= '<div class="ktp-contract-form__field">';
-			$html .= '<label for="ktp-contract-status">' . esc_html__( '状態', 'ktpwp' ) . '</label>';
+			$html .= '<label for="ktp-contract-status">' . esc_html__( '状態', 'kantanpro' ) . '</label>';
 			$html .= '<select id="ktp-contract-status">';
 			foreach ( $status_labels as $value => $label ) {
 				$html .= '<option value="' . esc_attr( $value ) . '">' . esc_html( $label ) . '</option>';
@@ -283,12 +283,12 @@ if ( ! class_exists( 'KTPWP_Contract_UI' ) ) {
 			$html .= '</div>';
 
 			$html .= '<div class="ktp-contract-form__field ktp-contract-form__field--checkbox">';
-			$html .= '<label><input type="checkbox" id="ktp-contract-send-reminder" value="1" checked> ' . esc_html__( '請求予定メールを送る（請求日の3日前）', 'ktpwp' ) . '</label>';
+			$html .= '<label><input type="checkbox" id="ktp-contract-send-reminder" value="1" checked> ' . esc_html__( '請求予定メールを送る（請求日の3日前）', 'kantanpro' ) . '</label>';
 			$html .= '</div>';
 			$html .= '</div>';
 
 			$html .= '<div class="ktp-contract-form__field">';
-			$html .= '<label for="ktp-contract-memo">' . esc_html__( 'メモ', 'ktpwp' ) . '</label>';
+			$html .= '<label for="ktp-contract-memo">' . esc_html__( 'メモ', 'kantanpro' ) . '</label>';
 			$html .= '<textarea id="ktp-contract-memo" rows="2"></textarea>';
 			$html .= '</div>';
 
@@ -306,7 +306,7 @@ if ( ! class_exists( 'KTPWP_Contract_UI' ) ) {
 					'id'    => 'ktp-contract-save-btn',
 					'class' => 'ktp-contract-action-btn--primary update-submit-btn',
 					'icon'  => 'cached',
-					'label' => __( '保存', 'ktpwp' ),
+					'label' => __( '保存', 'kantanpro' ),
 				)
 			);
 			$html .= ' ';
@@ -315,7 +315,7 @@ if ( ! class_exists( 'KTPWP_Contract_UI' ) ) {
 					'id'    => 'ktp-contract-cancel-btn',
 					'class' => 'ktp-contract-action-btn--secondary',
 					'icon'  => 'disabled_by_default',
-					'label' => __( 'キャンセル', 'ktpwp' ),
+					'label' => __( 'キャンセル', 'kantanpro' ),
 				)
 			);
 			$html .= '</div>';
@@ -330,13 +330,13 @@ if ( ! class_exists( 'KTPWP_Contract_UI' ) ) {
 		 */
 		private function render_recurring_items_block() {
 			$html  = '<div class="ktp-contract-recurring-items" id="ktp-contract-recurring-items">';
-			$html .= '<h5 class="ktp-contract-recurring-items__title">' . esc_html__( '定期請求項目', 'ktpwp' ) . '</h5>';
-			$html .= '<p class="description">' . esc_html__( '家賃＋共益費など、毎回請求する明細を登録します。空欄の行は無視されます。', 'ktpwp' ) . '</p>';
+			$html .= '<h5 class="ktp-contract-recurring-items__title">' . esc_html__( '定期請求項目', 'kantanpro' ) . '</h5>';
+			$html .= '<p class="description">' . esc_html__( '家賃＋共益費など、毎回請求する明細を登録します。空欄の行は無視されます。', 'kantanpro' ) . '</p>';
 			$html .= '<table class="ktp-contract-recurring-items__table" id="ktp-contract-recurring-items-table">';
 			$html .= '<thead><tr>';
-			$html .= '<th>' . esc_html__( '項目名', 'ktpwp' ) . '</th>';
-			$html .= '<th>' . esc_html__( '金額', 'ktpwp' ) . '</th>';
-			$html .= '<th>' . esc_html__( '税率(%)', 'ktpwp' ) . '</th>';
+			$html .= '<th>' . esc_html__( '項目名', 'kantanpro' ) . '</th>';
+			$html .= '<th>' . esc_html__( '金額', 'kantanpro' ) . '</th>';
+			$html .= '<th>' . esc_html__( '税率(%)', 'kantanpro' ) . '</th>';
 			$html .= '<th></th>';
 			$html .= '</tr></thead>';
 			$html .= '<tbody id="ktp-contract-recurring-items-body"></tbody>';
@@ -346,10 +346,10 @@ if ( ! class_exists( 'KTPWP_Contract_UI' ) ) {
 					'id'    => 'ktp-contract-add-recurring-row',
 					'class' => 'ktp-contract-action-btn--primary ktp-contract-action-btn--sm',
 					'icon'  => 'add',
-					'label' => __( '行を追加', 'ktpwp' ),
+					'label' => __( '行を追加', 'kantanpro' ),
 				)
 			);
-			$html .= '<p class="ktp-contract-recurring-items__locked" id="ktp-contract-recurring-items-locked" style="display:none;">' . esc_html__( '初回請求済みのため、定期請求項目は変更できません。', 'ktpwp' ) . '</p>';
+			$html .= '<p class="ktp-contract-recurring-items__locked" id="ktp-contract-recurring-items-locked" style="display:none;">' . esc_html__( '初回請求済みのため、定期請求項目は変更できません。', 'kantanpro' ) . '</p>';
 			$html .= '</div>';
 
 			return $html;
@@ -363,25 +363,25 @@ if ( ! class_exists( 'KTPWP_Contract_UI' ) ) {
 		 */
 		private function render_initial_fees_block( $fee_presets ) {
 			$html  = '<div class="ktp-contract-initial-fees" id="ktp-contract-initial-fees">';
-			$html .= '<h5 class="ktp-contract-initial-fees__title">' . esc_html__( '初回請求の追加費用', 'ktpwp' ) . '</h5>';
-			$html .= '<p class="description">' . esc_html__( '初回請求書にのみ含めます（保証金・初期設定費用など）。2回目以降は自動で除外されます。', 'ktpwp' ) . '</p>';
+			$html .= '<h5 class="ktp-contract-initial-fees__title">' . esc_html__( '初回請求の追加費用', 'kantanpro' ) . '</h5>';
+			$html .= '<p class="description">' . esc_html__( '初回請求書にのみ含めます（保証金・初期設定費用など）。2回目以降は自動で除外されます。', 'kantanpro' ) . '</p>';
 
 			$html .= '<div class="ktp-contract-initial-fees__presets">';
-			$html .= '<label for="ktp-contract-fee-preset">' . esc_html__( '名目プリセット', 'ktpwp' ) . '</label> ';
+			$html .= '<label for="ktp-contract-fee-preset">' . esc_html__( '名目プリセット', 'kantanpro' ) . '</label> ';
 			$html .= '<select id="ktp-contract-fee-preset">';
-			$html .= '<option value="">' . esc_html__( '選択して行を追加', 'ktpwp' ) . '</option>';
+			$html .= '<option value="">' . esc_html__( '選択して行を追加', 'kantanpro' ) . '</option>';
 			foreach ( $fee_presets as $preset ) {
 				$html .= '<option value="' . esc_attr( $preset ) . '">' . esc_html( $preset ) . '</option>';
 			}
-			$html .= '<option value="__custom__">' . esc_html__( 'その他（自由入力）', 'ktpwp' ) . '</option>';
+			$html .= '<option value="__custom__">' . esc_html__( 'その他（自由入力）', 'kantanpro' ) . '</option>';
 			$html .= '</select>';
 			$html .= '</div>';
 
 			$html .= '<table class="ktp-contract-initial-fees__table" id="ktp-contract-initial-fees-table">';
 			$html .= '<thead><tr>';
-			$html .= '<th>' . esc_html__( '名目', 'ktpwp' ) . '</th>';
-			$html .= '<th>' . esc_html__( '金額', 'ktpwp' ) . '</th>';
-			$html .= '<th>' . esc_html__( '税率(%)', 'ktpwp' ) . '</th>';
+			$html .= '<th>' . esc_html__( '名目', 'kantanpro' ) . '</th>';
+			$html .= '<th>' . esc_html__( '金額', 'kantanpro' ) . '</th>';
+			$html .= '<th>' . esc_html__( '税率(%)', 'kantanpro' ) . '</th>';
 			$html .= '<th></th>';
 			$html .= '</tr></thead>';
 			$html .= '<tbody id="ktp-contract-initial-fees-body"></tbody>';
@@ -392,10 +392,10 @@ if ( ! class_exists( 'KTPWP_Contract_UI' ) ) {
 					'id'    => 'ktp-contract-add-fee-row',
 					'class' => 'ktp-contract-action-btn--primary ktp-contract-action-btn--sm',
 					'icon'  => 'add',
-					'label' => __( '行を追加', 'ktpwp' ),
+					'label' => __( '行を追加', 'kantanpro' ),
 				)
 			);
-			$html .= '<p class="ktp-contract-initial-fees__locked" id="ktp-contract-initial-fees-locked" style="display:none;">' . esc_html__( '初回請求済みのため、追加費用は変更できません。', 'ktpwp' ) . '</p>';
+			$html .= '<p class="ktp-contract-initial-fees__locked" id="ktp-contract-initial-fees-locked" style="display:none;">' . esc_html__( '初回請求済みのため、追加費用は変更できません。', 'kantanpro' ) . '</p>';
 			$html .= '</div>';
 
 			return $html;
@@ -409,11 +409,11 @@ if ( ! class_exists( 'KTPWP_Contract_UI' ) ) {
 		 */
 		private function format_billing_day_label( $billing_day ) {
 			if ( 99 === $billing_day ) {
-				return __( '末日', 'ktpwp' );
+				return __( '末日', 'kantanpro' );
 			}
 
 			/* translators: %d: day of month */
-			return sprintf( __( '毎月%d日', 'ktpwp' ), $billing_day );
+			return sprintf( __( '毎月%d日', 'kantanpro' ), $billing_day );
 		}
 
 		/**
@@ -423,9 +423,9 @@ if ( ! class_exists( 'KTPWP_Contract_UI' ) ) {
 		 */
 		private function get_status_labels() {
 			return array(
-				'active'    => __( '有効', 'ktpwp' ),
-				'paused'    => __( '一時停止', 'ktpwp' ),
-				'cancelled' => __( '解約', 'ktpwp' ),
+				'active'    => __( '有効', 'kantanpro' ),
+				'paused'    => __( '一時停止', 'kantanpro' ),
+				'cancelled' => __( '解約', 'kantanpro' ),
 			);
 		}
 
@@ -438,9 +438,9 @@ if ( ! class_exists( 'KTPWP_Contract_UI' ) ) {
 			$options = array();
 			for ( $day = 1; $day <= 28; $day++ ) {
 				/* translators: %d: day of month */
-				$options[ $day ] = sprintf( __( '毎月%d日', 'ktpwp' ), $day );
+				$options[ $day ] = sprintf( __( '毎月%d日', 'kantanpro' ), $day );
 			}
-			$options[99] = __( '末日', 'ktpwp' );
+			$options[99] = __( '末日', 'kantanpro' );
 
 			return $options;
 		}
@@ -476,7 +476,7 @@ if ( ! class_exists( 'KTPWP_Contract_UI' ) ) {
 			if ( ! empty( $status['next_billing_date'] ) ) {
 				$html .= '<br><span class="ktp-contract-stripe-cell__next">';
 				/* translators: %s: date */
-				$html .= esc_html( sprintf( __( '次回: %s', 'ktpwp' ), $status['next_billing_date'] ) );
+				$html .= esc_html( sprintf( __( '次回: %s', 'kantanpro' ), $status['next_billing_date'] ) );
 				$html .= '</span>';
 			}
 
@@ -490,9 +490,9 @@ if ( ! class_exists( 'KTPWP_Contract_UI' ) ) {
 		 */
 		private function render_stripe_subscription_block() {
 			$html  = '<div class="ktp-contract-stripe-block" id="ktp-contract-stripe-block" style="display:none;">';
-			$html .= '<h5 class="ktp-contract-stripe-block__title">' . esc_html__( 'Stripe サブスクリプション', 'ktpwp' ) . '</h5>';
+			$html .= '<h5 class="ktp-contract-stripe-block__title">' . esc_html__( 'Stripe サブスクリプション', 'kantanpro' ) . '</h5>';
 			$html .= '<div class="ktp-contract-stripe-block__body" id="ktp-contract-stripe-status">';
-			$html .= '<p class="ktp-contract-stripe-block__loading">' . esc_html__( '読み込み中…', 'ktpwp' ) . '</p>';
+			$html .= '<p class="ktp-contract-stripe-block__loading">' . esc_html__( '読み込み中…', 'kantanpro' ) . '</p>';
 			$html .= '</div>';
 			$html .= '<div class="ktp-contract-stripe-block__setup" id="ktp-contract-stripe-setup" style="display:none;">';
 			$html .= $this->render_action_button(
@@ -500,11 +500,11 @@ if ( ! class_exists( 'KTPWP_Contract_UI' ) ) {
 					'id'    => 'ktp-contract-setup-link-btn',
 					'class' => 'ktp-contract-action-btn--primary ktp-contract-action-btn--sm',
 					'icon'  => 'link',
-					'label' => __( 'カード登録リンクを発行', 'ktpwp' ),
+					'label' => __( 'カード登録リンクを発行', 'kantanpro' ),
 				)
 			);
 			$html .= '<div class="ktp-contract-stripe-block__url-wrap" id="ktp-contract-setup-url-wrap" style="display:none;">';
-			$html .= '<label for="ktp-contract-setup-url">' . esc_html__( 'カード登録 URL', 'ktpwp' ) . '</label>';
+			$html .= '<label for="ktp-contract-setup-url">' . esc_html__( 'カード登録 URL', 'kantanpro' ) . '</label>';
 			$html .= '<div class="ktp-contract-stripe-block__url-row">';
 			$html .= '<input type="text" id="ktp-contract-setup-url" readonly>';
 			$html .= $this->render_action_button(
@@ -512,11 +512,11 @@ if ( ! class_exists( 'KTPWP_Contract_UI' ) ) {
 					'id'    => 'ktp-contract-setup-url-copy-btn',
 					'class' => 'ktp-contract-action-btn--secondary ktp-contract-action-btn--sm',
 					'icon'  => 'content_copy',
-					'label' => __( 'コピー', 'ktpwp' ),
+					'label' => __( 'コピー', 'kantanpro' ),
 				)
 			);
 			$html .= '</div>';
-			$html .= '<p class="description">' . esc_html__( '顧客に送付してカード登録後、自動でサブスクリプションが開始されます。', 'ktpwp' ) . '</p>';
+			$html .= '<p class="description">' . esc_html__( '顧客に送付してカード登録後、自動でサブスクリプションが開始されます。', 'kantanpro' ) . '</p>';
 			$html .= '</div>';
 			$html .= '</div>';
 			$html .= '</div>';

@@ -1,7 +1,7 @@
 === KantanPro ===
 Contributors: kantanpro
 Tags: invoice, crm, order management, quotation, business
-Requires at least: 5.0
+Requires at least: 5.9
 Tested up to: 6.9
 Requires PHP: 7.4
 Stable tag: 1.3.28

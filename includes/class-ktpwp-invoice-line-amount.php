@@ -263,7 +263,7 @@ if ( ! class_exists( 'KTPWP_Invoice_Line_Amount' ) ) {
 
 			if ( empty( $split['bill_now'] ) && empty( $split['reference'] ) ) {
 				return array(
-					'list'           => __( '（請求項目未入力）', 'ktpwp' ),
+					'list'           => __( '（請求項目未入力）', 'kantanpro' ),
 					'bill_total'     => 0.0,
 					'has_reference'  => false,
 				);
@@ -274,7 +274,7 @@ if ( ! class_exists( 'KTPWP_Invoice_Line_Amount' ) ) {
 			if ( ! empty( $split['bill_now'] ) ) {
 				$bill_block = self::build_item_block( $split['bill_now'], $tax_category, false );
 				if ( count( $split['reference'] ) > 0 ) {
-					$output .= '＜' . __( '今回のお支払い', 'ktpwp' ) . '＞' . "\n";
+					$output .= '＜' . __( '今回のお支払い', 'kantanpro' ) . '＞' . "\n";
 				}
 				$output .= $bill_block['list'];
 			}
@@ -283,7 +283,7 @@ if ( ! class_exists( 'KTPWP_Invoice_Line_Amount' ) ) {
 				if ( $output !== '' ) {
 					$output .= "\n";
 				}
-				$output .= '＜' . __( '契約開始後の月額（参考）', 'ktpwp' ) . '＞' . "\n";
+				$output .= '＜' . __( '契約開始後の月額（参考）', 'kantanpro' ) . '＞' . "\n";
 				$output .= self::build_reference_block( $split['reference'] );
 			}
 
@@ -378,7 +378,8 @@ if ( ! class_exists( 'KTPWP_Invoice_Line_Amount' ) ) {
 			$block  = implode( "\n", $lines ) . "\n";
 			$block .= str_repeat( '-', 60 ) . "\n";
 			$block .= sprintf(
-				__( '月額合計：%s', 'ktpwp' ),
+				/* translators: %s: 月額の合計 */
+				__( '月額合計：%s', 'kantanpro' ),
 				class_exists( 'KTPWP_Settings' ) ? KTPWP_Settings::format_money( $total ) : number_format( $total )
 			);
 
@@ -431,11 +432,14 @@ if ( ! class_exists( 'KTPWP_Invoice_Line_Amount' ) ) {
 			$price_display = rtrim( rtrim( number_format( $price, 6, '.', '' ), '0' ), '.' );
 			$quantity_display = rtrim( rtrim( number_format( $quantity, 6, '.', '' ), '0' ), '.' );
 			$suppress_tax_text = ( class_exists( 'KTPWP_Tax_Policy' ) && ( KTPWP_Tax_Policy::is_abolished() || KTPWP_Tax_Policy::hide_tax_columns() ) );
-			$tax_rate_text = ( $tax_rate !== null && ! $suppress_tax_text ) ? sprintf( __( '（税率%s%%）', 'ktpwp' ), $tax_rate ) : '';
-			$remarks_text  = ( $remarks !== '' ) ? '　' . sprintf( __( '※ %s', 'ktpwp' ), $remarks ) : '';
+			/* translators: %s: 税率（パーセント値） */
+			$tax_rate_text = ( $tax_rate !== null && ! $suppress_tax_text ) ? sprintf( __( '（税率%s%%）', 'kantanpro' ), $tax_rate ) : '';
+			/* translators: %s: 補足メッセージ */
+			$remarks_text  = ( $remarks !== '' ) ? '　' . sprintf( __( '※ %s', 'kantanpro' ), $remarks ) : '';
 
 			$line = sprintf(
-				__( '%1$s：%2$s × %3$s%4$s = %5$s%6$s%7$s', 'ktpwp' ),
+				/* translators: 1: 品目名, 2: 単価, 3: 数量, 4: 単位, 5: 金額, 6: 通貨記号, 7: 税区分の注記 */
+				__( '%1$s：%2$s × %3$s%4$s = %5$s%6$s%7$s', 'kantanpro' ),
 				$product_name,
 				$price_display,
 				$quantity_display,
@@ -467,9 +471,12 @@ if ( ! class_exists( 'KTPWP_Invoice_Line_Amount' ) ) {
 			if ( $tax_category === '外税' ) {
 				$total_with_tax = $amount_ceiled + $tax_ceiled;
 				$lines          = str_repeat( '-', 60 ) . "\n";
-				$lines         .= sprintf( __( '外税合計：%s', 'ktpwp' ), KTPWP_Settings::format_money( $amount_ceiled ) ) . "\n";
-				$lines         .= sprintf( __( '消費税：%s', 'ktpwp' ), KTPWP_Settings::format_money( $tax_ceiled ) ) . "\n";
-				$lines         .= sprintf( __( '内税合計：%s', 'ktpwp' ), KTPWP_Settings::format_money( $total_with_tax ) );
+				/* translators: %s: 外税の合計額 */
+				$lines         .= sprintf( __( '外税合計：%s', 'kantanpro' ), KTPWP_Settings::format_money( $amount_ceiled ) ) . "\n";
+				/* translators: %s: 消費税額 */
+				$lines         .= sprintf( __( '消費税：%s', 'kantanpro' ), KTPWP_Settings::format_money( $tax_ceiled ) ) . "\n";
+				/* translators: %s: 内税の合計額 */
+				$lines         .= sprintf( __( '内税合計：%s', 'kantanpro' ), KTPWP_Settings::format_money( $total_with_tax ) );
 
 				return $lines;
 			}
@@ -489,14 +496,17 @@ if ( ! class_exists( 'KTPWP_Invoice_Line_Amount' ) ) {
 					$tax_rate_details[] = $tax_rate . '%: ' . KTPWP_Settings::format_money( $tax_amount );
 				}
 				if ( count( $tax_rate_groups ) > 1 ) {
-					$tax_detail_text = sprintf( __( '（内税：%s）', 'ktpwp' ), implode( ', ', $tax_rate_details ) );
+					/* translators: %s: 内税額（通貨記号付き） */
+					$tax_detail_text = sprintf( __( '（内税：%s）', 'kantanpro' ), implode( ', ', $tax_rate_details ) );
 				} elseif ( $total_tax_amount > 0 ) {
-					$tax_detail_text = sprintf( __( '（内税：%s）', 'ktpwp' ), KTPWP_Settings::format_money( ceil( $total_tax_amount ) ) );
+					/* translators: %s: 内税額（通貨記号付き） */
+					$tax_detail_text = sprintf( __( '（内税：%s）', 'kantanpro' ), KTPWP_Settings::format_money( ceil( $total_tax_amount ) ) );
 				}
 			}
 
 			return str_repeat( '-', 60 ) . "\n"
-				. sprintf( __( '金額合計：%s', 'ktpwp' ), KTPWP_Settings::format_money( $amount_ceiled ) )
+				/* translators: %s: 金額の合計 */
+				. sprintf( __( '金額合計：%s', 'kantanpro' ), KTPWP_Settings::format_money( $amount_ceiled ) )
 				. $tax_detail_text;
 		}
 	}

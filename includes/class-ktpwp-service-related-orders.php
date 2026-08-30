@@ -122,7 +122,7 @@ if ( ! class_exists( 'KTPWP_Service_Related_Orders' ) ) {
 
 			$memo_prefix = sprintf(
 				/* translators: 1: service ID (must keep trailing space for exact match) */
-				__( '商品ID: %1$d ', 'ktpwp' ),
+				__( '商品ID: %1$d ', 'kantanpro' ),
 				$service_id
 			);
 			$memo_like   = '%' . $wpdb->esc_like( $memo_prefix ) . '%';
@@ -173,7 +173,7 @@ if ( ! class_exists( 'KTPWP_Service_Related_Orders' ) ) {
 			if ( $service_name === '' ) {
 				$service_name = sprintf(
 					/* translators: %d: service ID */
-					__( 'サービス ID %d', 'ktpwp' ),
+					__( 'サービス ID %d', 'kantanpro' ),
 					$service_id
 				);
 			}
@@ -182,7 +182,7 @@ if ( ! class_exists( 'KTPWP_Service_Related_Orders' ) ) {
 			$orders    = self::get_orders_for_service( $service_id );
 
 			$html  = '<div class="data_list_title ktp-service-related-list__title">';
-			$html .= '■ ' . esc_html( $service_name ) . esc_html__( 'の契約・案件', 'ktpwp' );
+			$html .= '■ ' . esc_html( $service_name ) . esc_html__( 'の契約・案件', 'kantanpro' );
 			$html .= '</div>';
 
 			$has_rows = false;
@@ -191,7 +191,7 @@ if ( ! class_exists( 'KTPWP_Service_Related_Orders' ) ) {
 			if ( $contracts !== array() ) {
 				$has_rows      = true;
 				$sections_html .= '<div class="ktp-service-related-list__section">';
-				$sections_html .= '<div class="ktp-service-related-list__group-title">' . esc_html__( '定期契約', 'ktpwp' ) . '</div>';
+				$sections_html .= '<div class="ktp-service-related-list__group-title">' . esc_html__( '定期契約', 'kantanpro' ) . '</div>';
 				$sections_html .= '<div class="ktp-service-related-list__rows">';
 				foreach ( $contracts as $contract ) {
 					$sections_html .= self::render_contract_row( $contract, $base_page_url );
@@ -202,7 +202,7 @@ if ( ! class_exists( 'KTPWP_Service_Related_Orders' ) ) {
 			if ( $orders !== array() ) {
 				$has_rows      = true;
 				$sections_html .= '<div class="ktp-service-related-list__section">';
-				$sections_html .= '<div class="ktp-service-related-list__group-title">' . esc_html__( '案件', 'ktpwp' ) . '</div>';
+				$sections_html .= '<div class="ktp-service-related-list__group-title">' . esc_html__( '案件', 'kantanpro' ) . '</div>';
 				$sections_html .= '<div class="ktp-service-related-list__rows">';
 				foreach ( $orders as $order ) {
 					$sections_html .= self::render_order_row( $order, $base_page_url );
@@ -217,7 +217,7 @@ if ( ! class_exists( 'KTPWP_Service_Related_Orders' ) ) {
 			if ( ! $has_rows ) {
 				$html .= '<div class="ktp_data_list_item ktp-service-related-list__empty">'
 					. '<span class="material-symbols-outlined" aria-hidden="true">info</span>'
-					. esc_html__( 'このサービスに紐づく契約・案件はありません。', 'ktpwp' )
+					. esc_html__( 'このサービスに紐づく契約・案件はありません。', 'kantanpro' )
 					. '</div>';
 			}
 
@@ -251,7 +251,7 @@ if ( ! class_exists( 'KTPWP_Service_Related_Orders' ) ) {
 			if ( $client_name !== '' ) {
 				$line .= ' <span class="ktp-service-related-list__meta">' . esc_html( $client_name ) . '</span>';
 			}
-			$line .= ' <span class="ktp-service-related-list__badge ktp-service-related-list__badge--contract">' . esc_html__( '契約', 'ktpwp' ) . '</span>';
+			$line .= ' <span class="ktp-service-related-list__badge ktp-service-related-list__badge--contract">' . esc_html__( '契約', 'kantanpro' ) . '</span>';
 			$line .= ' <span class="ktp-service-related-list__status ktp-contract-status ktp-contract-status--' . esc_attr( $status ) . '">' . esc_html( $status_label ) . '</span>';
 
 			return '<a href="' . esc_url( $detail_url ) . '">'
@@ -291,13 +291,13 @@ if ( ! class_exists( 'KTPWP_Service_Related_Orders' ) ) {
 				$line .= ' <span class="ktp-service-related-list__meta">' . esc_html(
 					sprintf(
 						/* translators: %d: client ID */
-						__( '顧客 #%d', 'ktpwp' ),
+						__( '顧客 #%d', 'kantanpro' ),
 						$client_id
 					)
 				) . '</span>';
 			}
 			if ( $is_web ) {
-				$line .= ' <span class="ktp-service-related-list__badge ktp-service-related-list__badge--web">' . esc_html__( 'Webお申込み', 'ktpwp' ) . '</span>';
+				$line .= ' <span class="ktp-service-related-list__badge ktp-service-related-list__badge--web">' . esc_html__( 'Webお申込み', 'kantanpro' ) . '</span>';
 			}
 			$line .= ' <span class="ktp-service-related-list__status status-' . esc_attr( (string) $progress ) . '">' . esc_html( $progress_label ) . '</span>';
 
@@ -314,9 +314,9 @@ if ( ! class_exists( 'KTPWP_Service_Related_Orders' ) ) {
 		 */
 		private static function get_contract_status_label( $status ) {
 			$labels = array(
-				'active'    => __( '有効', 'ktpwp' ),
-				'paused'    => __( '一時停止', 'ktpwp' ),
-				'cancelled' => __( '解約', 'ktpwp' ),
+				'active'    => __( '有効', 'kantanpro' ),
+				'paused'    => __( '一時停止', 'kantanpro' ),
+				'cancelled' => __( '解約', 'kantanpro' ),
 			);
 
 			return $labels[ $status ] ?? $status;
@@ -330,16 +330,16 @@ if ( ! class_exists( 'KTPWP_Service_Related_Orders' ) ) {
 		 */
 		private static function get_progress_label( $progress ) {
 			$labels = array(
-				1 => __( '受付中', 'ktpwp' ),
-				2 => __( '見積中', 'ktpwp' ),
-				3 => __( '受注', 'ktpwp' ),
-				4 => __( '完了', 'ktpwp' ),
-				5 => __( '請求済', 'ktpwp' ),
-				6 => __( '入金済', 'ktpwp' ),
-				7 => __( 'ボツ', 'ktpwp' ),
+				1 => __( '受付中', 'kantanpro' ),
+				2 => __( '見積中', 'kantanpro' ),
+				3 => __( '受注', 'kantanpro' ),
+				4 => __( '完了', 'kantanpro' ),
+				5 => __( '請求済', 'kantanpro' ),
+				6 => __( '入金済', 'kantanpro' ),
+				7 => __( 'ボツ', 'kantanpro' ),
 			);
 
-			return $labels[ $progress ] ?? __( '不明', 'ktpwp' );
+			return $labels[ $progress ] ?? __( '不明', 'kantanpro' );
 		}
 	}
 }

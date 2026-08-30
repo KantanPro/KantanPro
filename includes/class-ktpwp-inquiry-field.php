@@ -63,7 +63,7 @@ if ( ! class_exists( 'KTPWP_Inquiry_Field' ) ) {
 
 			$placeholders = array(
 				'（会社名未入力）',
-				__( '初めてのお客様', 'ktpwp' ),
+				__( '初めてのお客様', 'kantanpro' ),
 			);
 
 			return in_array( $normalized, $placeholders, true );

@@ -694,7 +694,7 @@ class KTPWP_Assets {
                     'data'   => array(
                         'message' => __(
                             "本当にこの受注書を削除しますか？\n\n請求明細・原価明細・スタッフチャット・添付ファイル・メール送信履歴も削除されます。\nこの操作は元に戻せません。",
-                            'ktpwp'
+                            'kantanpro'
                         ),
                     ),
                 ),
@@ -1005,10 +1005,10 @@ class KTPWP_Assets {
         wp_add_inline_script( 'ktp-js', 'var ajaxurl = ' . json_encode( $ajax_data['ajax_url'] ) . ';' );
 
         // 翻訳ラベル
-        wp_add_inline_script( 'ktp-js', 'var ktpwpCostShowLabel = ' . json_encode( esc_html__( '表示', 'ktpwp' ) ) . ';' );
-        wp_add_inline_script( 'ktp-js', 'var ktpwpCostHideLabel = ' . json_encode( esc_html__( '非表示', 'ktpwp' ) ) . ';' );
-        wp_add_inline_script( 'ktp-js', 'var ktpwpStaffChatShowLabel = ' . json_encode( esc_html__( '表示', 'ktpwp' ) ) . ';' );
-        wp_add_inline_script( 'ktp-js', 'var ktpwpStaffChatHideLabel = ' . json_encode( esc_html__( '非表示', 'ktpwp' ) ) . ';' );
+        wp_add_inline_script( 'ktp-js', 'var ktpwpCostShowLabel = ' . json_encode( esc_html__( '表示', 'kantanpro' ) ) . ';' );
+        wp_add_inline_script( 'ktp-js', 'var ktpwpCostHideLabel = ' . json_encode( esc_html__( '非表示', 'kantanpro' ) ) . ';' );
+        wp_add_inline_script( 'ktp-js', 'var ktpwpStaffChatShowLabel = ' . json_encode( esc_html__( '表示', 'kantanpro' ) ) . ';' );
+        wp_add_inline_script( 'ktp-js', 'var ktpwpStaffChatHideLabel = ' . json_encode( esc_html__( '非表示', 'kantanpro' ) ) . ';' );
 
         // デバッグ情報
 
@@ -1202,7 +1202,7 @@ class KTPWP_Assets {
      */
     public function load_textdomain_late() {
         load_plugin_textdomain(
-            'ktpwp',
+            'kantanpro',
             false,
             dirname( plugin_basename( KTPWP_PLUGIN_FILE ) ) . '/languages/'
         );

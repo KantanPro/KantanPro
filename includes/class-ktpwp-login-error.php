@@ -29,15 +29,15 @@ class KTPWP_Login_Error {
         $home_link = esc_url( home_url( '/' ) );
 
         // 表示する内容
-        $content  = '<h3>' . esc_html__( 'KantanProを利用するにはログインしてください。', 'ktpwp' ) . '</h3>';
+        $content  = '<h3>' . esc_html__( 'KantanProを利用するにはログインしてください。', 'kantanpro' ) . '</h3>';
         $content .= '<!--ログイン-->';
         $content .= '<p>';
-        $content .= '<font size="4"><a href="' . $login_link . '">' . esc_html__( 'ログイン', 'ktpwp' ) . '</a></font>';
+        $content .= '<font size="4"><a href="' . $login_link . '">' . esc_html__( 'ログイン', 'kantanpro' ) . '</a></font>';
 
         // 登録リンクは常に表示
-        $content .= '　<font size="4"><a href="' . $registration_link . '">' . esc_html__( '登録', 'ktpwp' ) . '</a></font>';
+        $content .= '　<font size="4"><a href="' . $registration_link . '">' . esc_html__( '登録', 'kantanpro' ) . '</a></font>';
 
-        $content .= '　<font size="4"><a href="' . $home_link . '">' . esc_html__( 'ホームへ', 'ktpwp' ) . '</a></font>';
+        $content .= '　<font size="4"><a href="' . $home_link . '">' . esc_html__( 'ホームへ', 'kantanpro' ) . '</a></font>';
         $content .= '</p>';
 
         return $content;

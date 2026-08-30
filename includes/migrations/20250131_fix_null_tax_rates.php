@@ -29,13 +29,13 @@ class FixNullTaxRatesMigration {
         if ($result !== false) {
             return array(
                 'success' => true,
-                'message' => __( "税率を修正しました。更新件数: {$result}件", 'ktpwp' ),
+                'message' => __( "税率を修正しました。更新件数: {$result}件", 'kantanpro' ),
                 'updated_count' => $result
             );
         } else {
             return array(
                 'success' => false,
-                'message' => __( '税率の修正に失敗しました', 'ktpwp' ),
+                'message' => __( '税率の修正に失敗しました', 'kantanpro' ),
                 'error' => $wpdb->last_error
             );
         }

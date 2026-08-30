@@ -352,21 +352,21 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 			}
 
 			$notice_inner = class_exists( 'KTPWP_Edition' )
-				? KTPWP_Edition::get_upgrade_message_html( __( 'メール送信履歴・案件ファイル', 'ktpwp' ) )
+				? KTPWP_Edition::get_upgrade_message_html( __( 'メール送信履歴・案件ファイル', 'kantanpro' ) )
 				: '';
 
 			$html  = '';
 			$html .= '<details class="ktp-order-block ktp-order-details-toggle ktp-order-mail-log-wrap ktp-order-mail-log-details" data-ktp-order-toggle="mail_log" data-ktp-order-id="' . esc_attr( (string) $order_id ) . '">';
 			$html .= '<summary class="ktp-order-details-summary">';
-			$html .= esc_html__( 'メール送信履歴', 'ktpwp' );
-			$html .= ' <span class="ktp-order-details-hint ktp-order-details-lock ktp-lock-icon" aria-label="' . esc_attr__( '有料版機能', 'ktpwp' ) . '"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M17 9h-1V7a4 4 0 0 0-8 0v2H7a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2Zm-7-2a2 2 0 1 1 4 0v2h-4V7Zm3 9.73V18h-2v-1.27a2 2 0 1 1 2 0Z"/></svg></span>';
+			$html .= esc_html__( 'メール送信履歴', 'kantanpro' );
+			$html .= ' <span class="ktp-order-details-hint ktp-order-details-lock ktp-lock-icon" aria-label="' . esc_attr__( '有料版機能', 'kantanpro' ) . '"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M17 9h-1V7a4 4 0 0 0-8 0v2H7a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2Zm-7-2a2 2 0 1 1 4 0v2h-4V7Zm3 9.73V18h-2v-1.27a2 2 0 1 1 2 0Z"/></svg></span>';
 			$html .= '</summary>';
 			$html .= $notice_inner;
 			$html .= '</details>';
 
 			$html .= '<details class="ktp-order-block ktp-order-details-toggle ktp-order-files-wrap ktp-order-files-details" data-ktp-order-toggle="order_files" data-ktp-order-id="' . esc_attr( (string) $order_id ) . '">';
-			$html .= '<summary class="ktp-order-details-summary">' . esc_html__( '案件ファイル', 'ktpwp' );
-			$html .= ' <span class="ktp-order-details-hint ktp-order-details-lock ktp-lock-icon" aria-label="' . esc_attr__( '有料版機能', 'ktpwp' ) . '"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M17 9h-1V7a4 4 0 0 0-8 0v2H7a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2Zm-7-2a2 2 0 1 1 4 0v2h-4V7Zm3 9.73V18h-2v-1.27a2 2 0 1 1 2 0Z"/></svg></span></summary>';
+			$html .= '<summary class="ktp-order-details-summary">' . esc_html__( '案件ファイル', 'kantanpro' );
+			$html .= ' <span class="ktp-order-details-hint ktp-order-details-lock ktp-lock-icon" aria-label="' . esc_attr__( '有料版機能', 'kantanpro' ) . '"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M17 9h-1V7a4 4 0 0 0-8 0v2H7a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2Zm-7-2a2 2 0 1 1 4 0v2h-4V7Zm3 9.73V18h-2v-1.27a2 2 0 1 1 2 0Z"/></svg></span></summary>';
 			$html .= $notice_inner;
 			$html .= '</details>';
 
@@ -385,7 +385,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 
 			// Check user capabilities - allow editors and above to access
 			if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
-				wp_die( __( 'You do not have sufficient permissions to access this page.', 'ktpwp' ) );
+				wp_die( __( 'You do not have sufficient permissions to access this page.', 'kantanpro' ) );
 			}
 
 			if ( empty( $tab_name ) ) {
@@ -490,12 +490,12 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 				// Verify nonce
 				// if ( ! isset( $_POST['order_mail_nonce'] ) ||
 				// ! wp_verify_nonce( $_POST['order_mail_nonce'], 'send_order_mail_action' ) ) {
-				// wp_die( __( 'Security check failed. Please refresh the page and try again.', 'ktpwp' ) );
+				// wp_die( __( 'Security check failed. Please refresh the page and try again.', 'kantanpro' ) );
 				// }
 
 				// Additional capability check
 				// if ( ! current_user_can( 'manage_options' ) ) {
-				// wp_die( __( 'You do not have sufficient permissions to send emails.', 'ktpwp' ) );
+				// wp_die( __( 'You do not have sufficient permissions to send emails.', 'kantanpro' ) );
 				// }
 
 				$order_id = absint( $_POST['send_order_mail_id'] );
@@ -951,7 +951,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 								if ( isset( $_POST['do_send_mail'] ) && $_POST['do_send_mail'] == '1' ) {
 									// Additional verification for email sending
 									// if ( ! current_user_can( 'manage_options' ) ) {
-									// wp_die( __( 'You do not have sufficient permissions to send emails.', 'ktpwp' ) );
+									// wp_die( __( 'You do not have sufficient permissions to send emails.', 'kantanpro' ) );
 									// }
 
 									$headers = array();
@@ -1026,12 +1026,12 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 				// Verify nonce
 				// if ( ! isset( $_POST['project_name_nonce'] ) ||
 				// ! wp_verify_nonce( $_POST['project_name_nonce'], 'update_project_name_action' ) ) {
-				// wp_die( __( 'Security check failed. Please refresh the page and try again.', 'ktpwp' ) );
+				// wp_die( __( 'Security check failed. Please refresh the page and try again.', 'kantanpro' ) );
 				// }
 
 				// Check user capabilities
 				// if ( ! current_user_can( 'manage_options' ) ) {
-				// wp_die( __( 'You do not have sufficient permissions to update project names.', 'ktpwp' ) );
+				// wp_die( __( 'You do not have sufficient permissions to update project names.', 'kantanpro' ) );
 				// }
 
 				$update_id = absint( $_POST['update_project_name_id'] );
@@ -1058,12 +1058,12 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 				// Verify nonce
 				// if ( ! isset( $_POST['progress_nonce'] ) ||
 				// ! wp_verify_nonce( $_POST['progress_nonce'], 'update_progress_action' ) ) {
-				// wp_die( __( 'Security check failed. Please refresh the page and try again.', 'ktpwp' ) );
+				// wp_die( __( 'Security check failed. Please refresh the page and try again.', 'kantanpro' ) );
 				// }
 
 				// Check user capabilities
 				// if ( ! current_user_can( 'manage_options' ) ) {
-				// wp_die( __( 'You do not have sufficient permissions to update progress.', 'ktpwp' ) );
+				// wp_die( __( 'You do not have sufficient permissions to update progress.', 'kantanpro' ) );
 				// }
 
 				$update_id = absint( $_POST['update_progress_id'] );
@@ -1133,12 +1133,12 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 				// Verify nonce
 				if ( ! isset( $_POST['invoice_items_nonce'] ) ||
                  ! wp_verify_nonce( $_POST['invoice_items_nonce'], 'save_invoice_items_action' ) ) {
-					wp_die( __( 'Security check failed. Please refresh the page and try again.', 'ktpwp' ) );
+					wp_die( __( 'Security check failed. Please refresh the page and try again.', 'kantanpro' ) );
 				}
 
 				// Check user capabilities
 				if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
-					wp_die( __( 'You do not have sufficient permissions to update invoice items.', 'ktpwp' ) );
+					wp_die( __( 'You do not have sufficient permissions to update invoice items.', 'kantanpro' ) );
 				}
 
 				$order_id = isset( $_POST['order_id'] ) ? absint( $_POST['order_id'] ) : 0;
@@ -1213,7 +1213,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 
 				if ( $delete_confirmed !== '1' ) {
 					$content .= '<div class="error" style="padding:12px 14px;margin:12px 0;border:1px solid #f44336;background:#ffebee;border-radius:6px;">'
-						. esc_html__( '受注書の削除は確認後にのみ実行できます。ページを再読み込みして、もう一度お試しください。', 'ktpwp' )
+						. esc_html__( '受注書の削除は確認後にのみ実行できます。ページを再読み込みして、もう一度お試しください。', 'kantanpro' )
 						. '</div>';
 				} else {
 				$order_id_to_delete = absint( $_POST['order_id'] );
@@ -1224,12 +1224,12 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 				// Verify nonce for delete action
 				// if ( ! isset( $_POST['delete_nonce'] ) ||
 				// ! wp_verify_nonce( $_POST['delete_nonce'], 'delete_order_action' ) ) {
-				// wp_die( __( 'Security check failed. Please refresh the page and try again.', 'ktpwp' ) );
+				// wp_die( __( 'Security check failed. Please refresh the page and try again.', 'kantanpro' ) );
 				// }
 
 				// Check user capabilities
 				// if ( ! current_user_can( 'manage_options' ) ) {
-				// wp_die( __( 'You do not have sufficient permissions to delete orders.', 'ktpwp' ) );
+				// wp_die( __( 'You do not have sufficient permissions to delete orders.', 'kantanpro' ) );
 				// }
 
 				// 削除処理 - 顧客データの存在に関係なく受注書を削除
@@ -1597,15 +1597,15 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 					if ( isset( $_GET['ktp_of_notice'] ) ) {
 						$n = sanitize_key( wp_unslash( $_GET['ktp_of_notice'] ) );
 						$map = array(
-							'upload_ok'        => array( 'border-color:#4caf50;background:#e8f5e9;', __( 'ファイルを追加しました。', 'ktpwp' ) ),
-							'upload_err'       => array( 'border-color:#f44336;background:#ffebee;', __( 'ファイルを追加できませんでした。', 'ktpwp' ) ),
-							'upload_err_size'  => array( 'border-color:#f44336;background:#ffebee;', __( 'ファイルサイズが大きすぎます（最大 20MB）。', 'ktpwp' ) ),
-							'upload_err_type'  => array( 'border-color:#f44336;background:#ffebee;', __( 'PDF または画像（JPEG・PNG・GIF・WebP）のみアップロードできます。', 'ktpwp' ) ),
-							'upload_err_perm'  => array( 'border-color:#f44336;background:#ffebee;', __( '権限がありません。', 'ktpwp' ) ),
-							'upload_err_order' => array( 'border-color:#f44336;background:#ffebee;', __( '受注書が見つかりません。', 'ktpwp' ) ),
-							'del_ok'           => array( 'border-color:#4caf50;background:#e8f5e9;', __( 'ファイルを削除しました。', 'ktpwp' ) ),
-							'del_err'          => array( 'border-color:#f44336;background:#ffebee;', __( 'ファイルを削除できませんでした。', 'ktpwp' ) ),
-							'del_err_perm'     => array( 'border-color:#f44336;background:#ffebee;', __( '権限がありません。', 'ktpwp' ) ),
+							'upload_ok'        => array( 'border-color:#4caf50;background:#e8f5e9;', __( 'ファイルを追加しました。', 'kantanpro' ) ),
+							'upload_err'       => array( 'border-color:#f44336;background:#ffebee;', __( 'ファイルを追加できませんでした。', 'kantanpro' ) ),
+							'upload_err_size'  => array( 'border-color:#f44336;background:#ffebee;', __( 'ファイルサイズが大きすぎます（最大 20MB）。', 'kantanpro' ) ),
+							'upload_err_type'  => array( 'border-color:#f44336;background:#ffebee;', __( 'PDF または画像（JPEG・PNG・GIF・WebP）のみアップロードできます。', 'kantanpro' ) ),
+							'upload_err_perm'  => array( 'border-color:#f44336;background:#ffebee;', __( '権限がありません。', 'kantanpro' ) ),
+							'upload_err_order' => array( 'border-color:#f44336;background:#ffebee;', __( '受注書が見つかりません。', 'kantanpro' ) ),
+							'del_ok'           => array( 'border-color:#4caf50;background:#e8f5e9;', __( 'ファイルを削除しました。', 'kantanpro' ) ),
+							'del_err'          => array( 'border-color:#f44336;background:#ffebee;', __( 'ファイルを削除できませんでした。', 'kantanpro' ) ),
+							'del_err_perm'     => array( 'border-color:#f44336;background:#ffebee;', __( '権限がありません。', 'kantanpro' ) ),
 						);
 						if ( isset( $map[ $n ] ) ) {
 							$content .= '<div class="ktp-of-notice" style="padding:12px 14px;margin:12px 0;border:1px solid;border-radius:6px;' . esc_attr( $map[ $n ][0] ) . '"><p style="margin:0;">' . esc_html( $map[ $n ][1] ) . '</p></div>';
@@ -1646,12 +1646,12 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 						$content .= KTPWP_Ui_Generator::render_tab_print_button(
 							array(
 								'id'     => 'orderPreviewButton',
-								'label'  => __( '受注書印刷', 'ktpwp' ),
+								'label'  => __( '受注書印刷', 'kantanpro' ),
 								'title'  => $this->Get_Order_Print_Button_Title( (int) $order_data->progress ),
 								'attrs'  => array(
 									'data-order-id'       => (string) $order_data->id,
-									'data-default-label'  => __( '受注書印刷', 'ktpwp' ),
-									'data-loading-label'  => __( '読み込み中…', 'ktpwp' ),
+									'data-default-label'  => __( '受注書印刷', 'kantanpro' ),
+									'data-loading-label'  => __( '読み込み中…', 'kantanpro' ),
 								),
 							)
 						);
@@ -1660,7 +1660,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 					// 顧客情報に基づいてメールボタンの状態を制御
 					$client = null;
 					$can_send_email = false;
-					$mail_button_title = esc_attr__( 'メール', 'ktpwp' );
+					$mail_button_title = esc_attr__( 'メール', 'kantanpro' );
 					$mail_button_style = 'padding: 6px 10px; font-size: 12px; border: none;';
 
 					// 顧客データを取得
@@ -1736,9 +1736,9 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 
 					// Email button (opens popup)
 					if ( $can_send_email ) {
-						$content .= '<button type="button" id="orderMailButton" class="ktp-title-icon-btn order-mail-btn" onclick="ktpShowEmailPopup(' . esc_attr( $order_data->id ) . ')" title="' . $mail_button_title . '" aria-label="' . esc_attr__( 'メール送信', 'ktpwp' ) . '">';
+						$content .= '<button type="button" id="orderMailButton" class="ktp-title-icon-btn order-mail-btn" onclick="ktpShowEmailPopup(' . esc_attr( $order_data->id ) . ')" title="' . $mail_button_title . '" aria-label="' . esc_attr__( 'メール送信', 'kantanpro' ) . '">';
 					} else {
-						$content .= '<button type="button" id="orderMailButton" class="ktp-title-icon-btn order-mail-btn" disabled title="' . $mail_button_title . '" aria-label="' . esc_attr__( 'メール送信不可', 'ktpwp' ) . '">';
+						$content .= '<button type="button" id="orderMailButton" class="ktp-title-icon-btn order-mail-btn" disabled title="' . $mail_button_title . '" aria-label="' . esc_attr__( 'メール送信不可', 'kantanpro' ) . '">';
 					}
 					$content .= '<span class="material-symbols-outlined" aria-hidden="true">mail</span>';
 					$content .= '</button>';
@@ -1926,7 +1926,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 
 					$client_id_display_for_header = $client_id_display;
 					if ( $client_url !== '' && ! empty( $order_data->client_id ) ) {
-						$client_id_display_for_header = '（' . esc_html__( '顧客ID', 'ktpwp' ) . ': ' . esc_html( $order_data->client_id ) . '）';
+						$client_id_display_for_header = '（' . esc_html__( '顧客ID', 'kantanpro' ) . ': ' . esc_html( $order_data->client_id ) . '）';
 					}
 
 					$order_header_source_inner = esc_html( $parent_company_name );
@@ -1939,9 +1939,9 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 						if ( $dept_contact_name === '' ) {
 							$dept_contact_name = $contact_name_raw;
 						}
-						$order_header_source_inner .= esc_html( $dept_display_name ) . ': ' . esc_html( $dept_contact_name ) . esc_html__( ' 様より', 'ktpwp' );
+						$order_header_source_inner .= esc_html( $dept_display_name ) . ': ' . esc_html( $dept_contact_name ) . esc_html__( ' 様より', 'kantanpro' );
 					} else {
-						$order_header_source_inner .= esc_html( $contact_name_raw ) . esc_html__( ' 様より', 'ktpwp' );
+						$order_header_source_inner .= esc_html( $contact_name_raw ) . esc_html__( ' 様より', 'kantanpro' );
 					}
 
 					if ( $client_url !== '' ) {
@@ -1969,21 +1969,21 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 
 					$content .= '<div class="ktp-order-summary-row ktp-order-summary-row--topline">';
 					$content .= '<div class="ktp-order-summary-field ktp-order-summary-field--order-id">';
-					$content .= '<span class="ktp-order-summary-field-label">' . esc_html__( '受注ID', 'ktpwp' ) . '：</span>';
+					$content .= '<span class="ktp-order-summary-field-label">' . esc_html__( '受注ID', 'kantanpro' ) . '：</span>';
 					$content .= '<span class="ktp-order-summary-order-id">' . esc_html( (string) $order_data->id ) . '</span>';
 					$content .= '</div>';
 					$content .= '<div class="ktp-order-summary-field ktp-order-summary-field--project">';
-					$content .= '<span class="ktp-order-summary-field-label">' . esc_html__( '案件名', 'ktpwp' ) . '：</span>';
+					$content .= '<span class="ktp-order-summary-field-label">' . esc_html__( '案件名', 'kantanpro' ) . '：</span>';
 					$summary_project_name = class_exists( 'KTPWP_Order' )
 						? KTPWP_Order::project_name_input_value( $order_data->project_name ?? '' )
 						: ( isset( $order_data->project_name ) ? (string) $order_data->project_name : '※ 入力してください' );
-					$content .= '<input type="text" class="order_project_name_inline order-header-projectname ktp-order-summary-project-input" name="order_project_name_inline" value="' . esc_attr( $summary_project_name ) . '" data-order-id="' . esc_attr( $order_data->id ) . '" placeholder="' . esc_attr__( '案件名', 'ktpwp' ) . '" autocomplete="off" />';
+					$content .= '<input type="text" class="order_project_name_inline order-header-projectname ktp-order-summary-project-input" name="order_project_name_inline" value="' . esc_attr( $summary_project_name ) . '" data-order-id="' . esc_attr( $order_data->id ) . '" placeholder="' . esc_attr__( '案件名', 'kantanpro' ) . '" autocomplete="off" />';
 					$content .= '</div>';
 					$content .= '<div class="ktp-order-summary-field ktp-order-summary-field--client-source">';
 					$content .= '<div class="ktp-order-summary-field-value ktp-order-summary-contact-row" id="order_customer_name">';
 					$content .= $order_header_source_html;
 					if ( $client && ! empty( $client->email ) ) {
-						$content .= '<a href="mailto:' . esc_attr( $client->email ) . '" class="ktp-order-summary-mail" title="' . esc_attr__( 'メール送信', 'ktpwp' ) . '"><span class="material-symbols-outlined" style="font-size:18px;vertical-align:middle;color:#2196f3;">mail</span></a>';
+						$content .= '<a href="mailto:' . esc_attr( $client->email ) . '" class="ktp-order-summary-mail" title="' . esc_attr__( 'メール送信', 'kantanpro' ) . '"><span class="material-symbols-outlined" style="font-size:18px;vertical-align:middle;color:#2196f3;">mail</span></a>';
 					}
 					$content .= '</div></div>';
 
@@ -1992,19 +1992,19 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 					$content .= '<form method="post" action="' . esc_url( $current_url ) . '" class="ktp-order-summary-payment-form" id="ktp-order-payment-timing-form">';
 					$content .= '<input type="hidden" name="tab_name" value="order" />';
 					$content .= '<input type="hidden" name="order_id" value="' . esc_attr( $order_data->id ) . '" />';
-					$content .= '<label for="order_payment_timing_' . esc_attr( $order_data->id ) . '" class="ktp-order-summary-submeta-label ktp-order-summary-payment-label">' . esc_html__( '支払', 'ktpwp' ) . '：</label>';
+					$content .= '<label for="order_payment_timing_' . esc_attr( $order_data->id ) . '" class="ktp-order-summary-submeta-label ktp-order-summary-payment-label">' . esc_html__( '支払', 'kantanpro' ) . '：</label>';
 					$content .= '<select id="order_payment_timing_' . esc_attr( $order_data->id ) . '" name="order_payment_timing" class="ktp-order-summary-payment-select" onchange="document.getElementById(\'ktp-order-payment-timing-form\').submit();">';
-					$content .= '<option value="postpay"' . ( $order_payment_timing === 'postpay' ? ' selected' : '' ) . '>' . esc_html__( '後払い', 'ktpwp' ) . '</option>';
-					$content .= '<option value="prepay"' . ( $order_payment_timing === 'prepay' ? ' selected' : '' ) . '>' . esc_html__( '前入金済', 'ktpwp' ) . '</option>';
-					$content .= '<option value="prepay_wc"' . ( $order_payment_timing === 'prepay_wc' ? ' selected' : '' ) . '>' . esc_html__( 'WC受注', 'ktpwp' ) . '</option>';
+					$content .= '<option value="postpay"' . ( $order_payment_timing === 'postpay' ? ' selected' : '' ) . '>' . esc_html__( '後払い', 'kantanpro' ) . '</option>';
+					$content .= '<option value="prepay"' . ( $order_payment_timing === 'prepay' ? ' selected' : '' ) . '>' . esc_html__( '前入金済', 'kantanpro' ) . '</option>';
+					$content .= '<option value="prepay_wc"' . ( $order_payment_timing === 'prepay_wc' ? ' selected' : '' ) . '>' . esc_html__( 'WC受注', 'kantanpro' ) . '</option>';
 					$content .= '</select>';
 					$content .= '<input type="hidden" name="update_payment_timing_order_id" value="' . esc_attr( $order_data->id ) . '" />';
 					$content .= '<input type="hidden" name="ktp_payment_timing_nonce" value="' . esc_attr( wp_create_nonce( 'ktp_update_order_payment_timing' ) ) . '" />';
 					$content .= '</form></div>';
 					if ( $reception_date_value !== '' ) {
-						$content .= '<div class="ktp-order-summary-date-cell ktp-order-summary-date-cell--reception"><span class="ktp-order-summary-field-label">' . esc_html__( '受付', 'ktpwp' ) . '：</span>';
+						$content .= '<div class="ktp-order-summary-date-cell ktp-order-summary-date-cell--reception"><span class="ktp-order-summary-field-label">' . esc_html__( '受付', 'kantanpro' ) . '：</span>';
 						$content .= '<div class="ktp-order-summary-date-cell-inner">';
-						$content .= '<input type="date" id="order_created_at" name="created_at" value="' . esc_attr( $reception_date_value ) . '" data-order-id="' . esc_attr( $order_data->id ) . '" data-field="created_at" class="order-created-date-input ktp-order-summary-date-input" title="' . esc_attr__( '売上レポートの期間判定に使われる登録日です', 'ktpwp' ) . '" />';
+						$content .= '<input type="date" id="order_created_at" name="created_at" value="' . esc_attr( $reception_date_value ) . '" data-order-id="' . esc_attr( $order_data->id ) . '" data-field="created_at" class="order-created-date-input ktp-order-summary-date-input" title="' . esc_attr__( '売上レポートの期間判定に使われる登録日です', 'kantanpro' ) . '" />';
 						$content .= '</div></div>';
 					}
 
@@ -2014,7 +2014,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 					$content .= '<form method="post" action="" class="progress-filter order-header-progress-form ktp-order-summary-progress-form">';
 					$content .= '<input type="hidden" name="update_progress_id" value="' . esc_attr( $order_data->id ) . '" />';
 					$content .= wp_nonce_field( 'update_progress_action', 'progress_nonce', true, false );
-					$content .= '<span class="ktp-order-summary-field-label ktp-order-summary-field-label--inline">' . esc_html__( '進捗', 'ktpwp' ) . '：</span>';
+					$content .= '<span class="ktp-order-summary-field-label ktp-order-summary-field-label--inline">' . esc_html__( '進捗', 'kantanpro' ) . '：</span>';
 					$content .= '<select id="order_progress_select" name="update_progress" class="ktp-order-summary-progress-select">';
 					foreach ( $progress_labels as $num => $label ) {
 						$selected = ( $order_data->progress == $num ) ? 'selected' : '';
@@ -2028,26 +2028,26 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 					$content .= '</div>';
 
 					$content .= '<div class="ktp-order-summary-dates-grid">';
-					$content .= '<div class="ktp-order-summary-date-cell"><span class="ktp-order-summary-field-label">' . esc_html__( '約束納期', 'ktpwp' ) . '：</span>';
+					$content .= '<div class="ktp-order-summary-date-cell"><span class="ktp-order-summary-field-label">' . esc_html__( '約束納期', 'kantanpro' ) . '：</span>';
 					$content .= '<div class="ktp-order-summary-date-cell-inner">';
 					$content .= '<input type="date" id="promised_delivery_date" name="promised_delivery_date" value="' . esc_attr( $promised_delivery_date ) . '" data-order-id="' . esc_attr( $order_data->id ) . '" data-field="promised_delivery_date" class="delivery-date-input ktp-order-summary-date-input" />';
 					$content .= '</div></div>';
-					$content .= '<div class="ktp-order-summary-date-cell"><span class="ktp-order-summary-field-label">' . esc_html__( '希望納期', 'ktpwp' ) . '：</span>';
+					$content .= '<div class="ktp-order-summary-date-cell"><span class="ktp-order-summary-field-label">' . esc_html__( '希望納期', 'kantanpro' ) . '：</span>';
 					$content .= '<div class="ktp-order-summary-date-cell-inner">';
 					$content .= '<input type="date" id="desired_delivery_date" name="desired_delivery_date" value="' . esc_attr( $desired_delivery_date ) . '" data-order-id="' . esc_attr( $order_data->id ) . '" data-field="desired_delivery_date" class="delivery-date-input ktp-order-summary-date-input" />';
 					$content .= '</div></div>';
-					$content .= '<div class="ktp-order-summary-date-cell"><span class="ktp-order-summary-field-label">' . esc_html__( '納品予定日', 'ktpwp' ) . '：</span>';
+					$content .= '<div class="ktp-order-summary-date-cell"><span class="ktp-order-summary-field-label">' . esc_html__( '納品予定日', 'kantanpro' ) . '：</span>';
 					$content .= '<div class="ktp-order-summary-date-cell-inner">';
 					$content .= '<input type="date" id="expected_delivery_date" name="expected_delivery_date" value="' . esc_attr( $expected_delivery_date ) . '" data-order-id="' . esc_attr( $order_data->id ) . '" data-field="expected_delivery_date" class="delivery-date-input ktp-order-summary-date-input" />';
 					$content .= '</div></div>';
-					$content .= '<div class="ktp-order-summary-date-cell"><span class="ktp-order-summary-field-label">' . esc_html__( '完了日', 'ktpwp' ) . '：</span>';
+					$content .= '<div class="ktp-order-summary-date-cell"><span class="ktp-order-summary-field-label">' . esc_html__( '完了日', 'kantanpro' ) . '：</span>';
 					$content .= '<div class="ktp-order-summary-date-cell-inner">';
 					$content .= '<input type="date" id="completion_date" name="completion_date" value="' . esc_attr( $completion_date ) . '" data-order-id="' . esc_attr( $order_data->id ) . '" data-field="completion_date" class="completion-date-input ktp-order-summary-date-input" />';
 					$content .= '</div></div>';
 					$content .= '</div>';
 
 					$content .= '<div class="ktp-order-summary-memo-line ktp-order-summary-memo-wrap">';
-					$content .= '<span class="ktp-order-summary-memo-label">' . esc_html__( 'メモ', 'ktpwp' ) . '：</span>';
+					$content .= '<span class="ktp-order-summary-memo-label">' . esc_html__( 'メモ', 'kantanpro' ) . '：</span>';
 					$content .= '<input type="text" id="ktp_order_summary_memo_' . (int) $order_data->id . '" class="ktp-order-summary-memo-input" maxlength="10000" autocomplete="off" ';
 					$content .= 'value="' . esc_attr( $summary_memo ) . '" data-order-id="' . esc_attr( $order_data->id ) . '" data-field="memo" />';
 					$content .= '</div>';
@@ -2064,7 +2064,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 					$content .= '</div>'; // .order_invoice_box 終了
 					// コスト項目（▶︎▼ 折りたたみ）
 					$content .= '<details class="ktp-order-block ktp-order-details-toggle order-cost-details">';
-					$content .= '<summary class="ktp-order-details-summary"><span class="toc2">' . esc_html__( 'コスト項目', 'ktpwp' ) . '</span></summary>';
+					$content .= '<summary class="ktp-order-details-summary"><span class="toc2">' . esc_html__( 'コスト項目', 'kantanpro' ) . '</span></summary>';
 					$content .= $this->Generate_Cost_Items_Table( $order_id );
 					$content .= '</details>';
 					if ( function_exists( 'ktpwp_is_feature_enabled' ) && ktpwp_is_feature_enabled( 'order_auxiliary' ) ) {
@@ -2109,13 +2109,13 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 						$content .= KTPWP_Ui_Generator::render_tab_print_button(
 							array(
 								'id'       => 'orderPreviewButton',
-								'label'    => __( '受注書印刷', 'ktpwp' ),
-								'title'    => __( '印刷（ブラウザの印刷／PDFに保存）', 'ktpwp' ),
+								'label'    => __( '受注書印刷', 'kantanpro' ),
+								'title'    => __( '印刷（ブラウザの印刷／PDFに保存）', 'kantanpro' ),
 								'disabled' => true,
 							)
 						);
 					}
-					$content .= '<button class="ktp-title-icon-btn order-mail-btn" disabled title="' . esc_attr__( 'メール送信不可', 'ktpwp' ) . '" aria-label="' . esc_attr__( 'メール送信不可', 'ktpwp' ) . '">';
+					$content .= '<button class="ktp-title-icon-btn order-mail-btn" disabled title="' . esc_attr__( 'メール送信不可', 'kantanpro' ) . '" aria-label="' . esc_attr__( 'メール送信不可', 'kantanpro' ) . '">';
 					$content .= '<span class="material-symbols-outlined" aria-hidden="true">mail</span>';
 					$content .= '</button>';
 					$content .= '</div>';
@@ -2130,8 +2130,8 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 					// 統一された案内表示
 					$content .= '<div class="ktp_data_list_item" style="padding: 15px 20px; background: linear-gradient(135deg, #e3f2fd 0%, #fce4ec 100%); border-radius: 8px; margin: 18px 0; color: #333; font-weight: 600; box-shadow: 0 3px 12px rgba(0,0,0,0.07); display: flex; align-items: center; font-size: 15px; gap: 10px;">'
 					. '<span class="material-symbols-outlined" aria-label="データなし">search_off</span>'
-					. '<span style="font-size: 1em; font-weight: 600;">' . esc_html__( '受注書データがありません。', 'ktpwp' ) . '</span>'
-					. '<span style="margin-left: 18px; font-size: 13px; color: #888;">' . esc_html__( '顧客タブで顧客情報を入力し受注書を作成してください', 'ktpwp' ) . '</span>'
+					. '<span style="font-size: 1em; font-weight: 600;">' . esc_html__( '受注書データがありません。', 'kantanpro' ) . '</span>'
+					. '<span style="margin-left: 18px; font-size: 13px; color: #888;">' . esc_html__( '顧客タブで顧客情報を入力し受注書を作成してください', 'kantanpro' ) . '</span>'
 					. '</div>';
 				}
 			} else {
@@ -2154,13 +2154,13 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 					$content .= KTPWP_Ui_Generator::render_tab_print_button(
 						array(
 							'id'       => 'orderPreviewButton',
-							'label'    => __( '受注書印刷', 'ktpwp' ),
-							'title'    => __( '印刷（ブラウザの印刷／PDFに保存）', 'ktpwp' ),
+							'label'    => __( '受注書印刷', 'kantanpro' ),
+							'title'    => __( '印刷（ブラウザの印刷／PDFに保存）', 'kantanpro' ),
 							'disabled' => true,
 						)
 					);
 				}
-				$content .= '<button class="ktp-title-icon-btn order-mail-btn" disabled title="' . esc_attr__( 'メール送信不可', 'ktpwp' ) . '" aria-label="' . esc_attr__( 'メール送信不可', 'ktpwp' ) . '">';
+				$content .= '<button class="ktp-title-icon-btn order-mail-btn" disabled title="' . esc_attr__( 'メール送信不可', 'kantanpro' ) . '" aria-label="' . esc_attr__( 'メール送信不可', 'kantanpro' ) . '">';
 				$content .= '<span class="material-symbols-outlined" aria-hidden="true">mail</span>';
 				$content .= '</button>';
 				$content .= '</div>';
@@ -2175,8 +2175,8 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 				// 仕事リストタブと統一されたデータ0の時の案内表示
 				$content .= '<div class="ktp_order_content ktp-no-order-data" style="padding: 15px 20px; background: linear-gradient(135deg, #e3f2fd 0%, #fce4ec 100%); border-radius: 8px; margin: 18px 0; color: #333; font-weight: 600; box-shadow: 0 3px 12px rgba(0,0,0,0.07); display: flex; align-items: center; font-size: 15px; gap: 10px;">'
                 . '<span class="material-symbols-outlined" aria-label="データなし">search_off</span>'
-                . '<span style="font-size: 1em; font-weight: 600;">' . esc_html__( '受注書データがありません。', 'ktpwp' ) . '</span>'
-                . '<span style="margin-left: 18px; font-size: 13px; color: #888;">' . esc_html__( '顧客タブで顧客情報を入力し受注書を作成してください', 'ktpwp' ) . '</span>'
+                . '<span style="font-size: 1em; font-weight: 600;">' . esc_html__( '受注書データがありません。', 'kantanpro' ) . '</span>'
+                . '<span style="margin-left: 18px; font-size: 13px; color: #888;">' . esc_html__( '顧客タブで顧客情報を入力し受注書を作成してください', 'kantanpro' ) . '</span>'
                 . '</div>';
 			}
 
@@ -2684,7 +2684,8 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 
 			$addressee_parent_line      = $display_customer_name;
 			$addressee_department_line  = '';
-			$addressee_name_line        = sprintf( __( '%s 様', 'ktpwp' ), $order_data->user_name );
+			/* translators: %s: 宛名（顧客名または担当者名） */
+			$addressee_name_line        = sprintf( __( '%s 様', 'kantanpro' ), $order_data->user_name );
 			if ( $selected_department ) {
 				$addressee_parent_line = $parent_company_name;
 				$addressee_department_line = class_exists( 'KTPWP_Department_Manager' )
@@ -2692,7 +2693,8 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 					: sanitize_text_field( $selected_department->department_name );
 				$contact_person = trim( (string) $selected_department->contact_person );
 				$addressee_name_line = sprintf(
-					__( '%s 様', 'ktpwp' ),
+					/* translators: %s: 宛名（顧客名または担当者名） */
+					__( '%s 様', 'kantanpro' ),
 					$contact_person !== '' ? $contact_person : $order_data->user_name
 				);
 			}
@@ -2720,10 +2722,11 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 
 			// 帳票タイトル（コンパクト）
 			$html .= '<div class="document-title ktp-doc-title-box" style="text-align: center; margin-bottom: 15px; padding: 12px; border: 2px solid #333; font-size: 18px; font-weight: bold;">';
-			$html .= esc_html( sprintf( __( '＜%s＞', 'ktpwp' ), $doc_title ) );
+			/* translators: %s: 帳票の種類名 */
+			$html .= esc_html( sprintf( __( '＜%s＞', 'kantanpro' ), $doc_title ) );
 			$show_qualified = ! empty( $this->preview_doc_settings['show_qualified_invoice_number'] );
 			if ( $show_qualified && ! ( class_exists( 'KTPWP_Tax_Policy' ) && KTPWP_Tax_Policy::is_abolished() ) && ! empty( $qualified_invoice_number ) ) {
-				$html .= '<div style="font-size: 14px; font-weight: normal; margin-top: 5px; color: #333;">' . esc_html__( '適格請求書番号', 'ktpwp' ) . '：' . esc_html( $qualified_invoice_number ) . '</div>';
+				$html .= '<div style="font-size: 14px; font-weight: normal; margin-top: 5px; color: #333;">' . esc_html__( '適格請求書番号', 'kantanpro' ) . '：' . esc_html( $qualified_invoice_number ) . '</div>';
 			}
 			$html .= '</div>';
 
@@ -2737,19 +2740,20 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 			$html .= '</div>';
 
 			if ( $uses_estimate_layout ) {
-				$issued_at   = wp_date( __( 'Y年n月j日', 'ktpwp' ), time() );
-				$valid_until = wp_date( __( 'Y年n月j日', 'ktpwp' ), strtotime( '+30 days' ) );
+				$issued_at   = wp_date( __( 'Y年n月j日', 'kantanpro' ), time() );
+				$valid_until = wp_date( __( 'Y年n月j日', 'kantanpro' ), strtotime( '+30 days' ) );
 				$html       .= '<p class="estimate-print-meta" style="font-size: 12px; color: #666; margin: 0 0 8px;">';
 				$html       .= esc_html(
 					sprintf(
-						__( '発行日: %1$s / 見積有効期限: %2$s（発行日から30日間）', 'ktpwp' ),
+						/* translators: 1: 発行日, 2: 見積の有効期限 */
+						__( '発行日: %1$s / 見積有効期限: %2$s（発行日から30日間）', 'kantanpro' ),
 						$issued_at,
 						$valid_until
 					)
 				);
 				$html .= '</p>';
 				$html .= '<p class="estimate-print-notice" style="font-size: 12px; color: #666; margin: 0 0 12px;">';
-				$html .= esc_html__( '本書は発行日時点の見積であり、正式な請求内容は受注確定後の契約・請求書に準じます。', 'ktpwp' );
+				$html .= esc_html__( '本書は発行日時点の見積であり、正式な請求内容は受注確定後の契約・請求書に準じます。', 'kantanpro' );
 				$html .= '</p>';
 			}
 
@@ -2789,9 +2793,10 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 			$created_timestamp = is_numeric( $order_data->time ) ? (int) $order_data->time : strtotime( $order_data->time );
 			$html .= esc_html(
 				sprintf(
-					__( '受注書ID: %1$d | 作成日: %2$s', 'ktpwp' ),
+					/* translators: 1: 受注書ID, 2: 作成日 */
+					__( '受注書ID: %1$d | 作成日: %2$s', 'kantanpro' ),
 					$order_data->id,
-					wp_date( __( 'Y年m月d日', 'ktpwp' ), $created_timestamp )
+					wp_date( __( 'Y年m月d日', 'kantanpro' ), $created_timestamp )
 				)
 			);
 			$html .= '</div>';
@@ -2825,50 +2830,57 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 			switch ( (int) $progress ) {
 				case 1:
 					return array(
-						'title'            => __( '見積書', 'ktpwp' ),
-						'content'          => __( '「%s」につきまして、下記のとおりお見積り申し上げます。', 'ktpwp' ),
+						'title'            => __( '見積書', 'kantanpro' ),
+						/* translators: %s: 案件名 */
+						'content'          => __( '「%s」につきまして、下記のとおりお見積り申し上げます。', 'kantanpro' ),
 						'use_project_name' => true,
 					);
 				case 2:
 					return array(
-						'title'            => __( '注文受書', 'ktpwp' ),
-						'content'          => __( '「%s」につきまして、下記のとおりお見積り申し上げます。', 'ktpwp' ),
+						'title'            => __( '注文受書', 'kantanpro' ),
+						/* translators: %s: 案件名 */
+						'content'          => __( '「%s」につきまして、下記のとおりお見積り申し上げます。', 'kantanpro' ),
 						'use_project_name' => true,
 					);
 				case 3:
 					return array(
-						'title'            => __( '注文受書', 'ktpwp' ),
-						'content'          => __( '「%s」について、ご注文をお承りしました。', 'ktpwp' ),
+						'title'            => __( '注文受書', 'kantanpro' ),
+						/* translators: %s: 案件名 */
+						'content'          => __( '「%s」について、ご注文をお承りしました。', 'kantanpro' ),
 						'use_project_name' => true,
 					);
 				case 4:
 					return array(
-						'title'            => __( '納品書', 'ktpwp' ),
-						'content'          => __( '「%s」につきまして、下記のとおり納品いたしました。', 'ktpwp' ),
+						'title'            => __( '納品書', 'kantanpro' ),
+						/* translators: %s: 案件名 */
+						'content'          => __( '「%s」につきまして、下記のとおり納品いたしました。', 'kantanpro' ),
 						'use_project_name' => true,
 					);
 				case 5:
 					return array(
-						'title'            => __( '請求書', 'ktpwp' ),
-						'content'          => __( '「%s」につきまして、下記のとおりご請求申し上げます。', 'ktpwp' ),
+						'title'            => __( '請求書', 'kantanpro' ),
+						/* translators: %s: 案件名 */
+						'content'          => __( '「%s」につきまして、下記のとおりご請求申し上げます。', 'kantanpro' ),
 						'use_project_name' => true,
 					);
 				case 6:
 					return array(
-						'title'            => __( '領収書', 'ktpwp' ),
-						'content'          => __( '「%s」の代金につきまして、下記のとおり領収いたしました。', 'ktpwp' ),
+						'title'            => __( '領収書', 'kantanpro' ),
+						/* translators: %s: 案件名 */
+						'content'          => __( '「%s」の代金につきまして、下記のとおり領収いたしました。', 'kantanpro' ),
 						'use_project_name' => true,
 					);
 				case 7:
 					return array(
-						'title'            => __( '案件（ボツ）', 'ktpwp' ),
-						'content'          => __( '本出力はボツ案件の記録用です。', 'ktpwp' ),
+						'title'            => __( '案件（ボツ）', 'kantanpro' ),
+						'content'          => __( '本出力はボツ案件の記録用です。', 'kantanpro' ),
 						'use_project_name' => false,
 					);
 				default:
 					return array(
-						'title'            => __( '受注書', 'ktpwp' ),
-						'content'          => __( '「%s」につきまして、下記のとおりお見積り申し上げます。', 'ktpwp' ),
+						'title'            => __( '受注書', 'kantanpro' ),
+						/* translators: %s: 案件名 */
+						'content'          => __( '「%s」につきまして、下記のとおりお見積り申し上げます。', 'kantanpro' ),
 						'use_project_name' => true,
 					);
 			}
@@ -2886,11 +2898,12 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 				: '';
 
 			if ( $status_label === '' ) {
-				return __( '印刷（ブラウザの印刷／PDFに保存）', 'ktpwp' );
+				return __( '印刷（ブラウザの印刷／PDFに保存）', 'kantanpro' );
 			}
 
 			return sprintf(
-				__( '進捗「%1$s」に応じて「%2$s」として出力します', 'ktpwp' ),
+				/* translators: 1: 進捗の名称, 2: 出力される帳票名 */
+				__( '進捗「%1$s」に応じて「%2$s」として出力します', 'kantanpro' ),
 				$status_label,
 				$document_info['title']
 			);
@@ -2912,13 +2925,13 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 			$supplier_table = $wpdb->prefix . 'ktp_supplier';
 
 			$html  = '<h3 style="font-size: 16px; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #333;">';
-			$html .= esc_html__( '原価明細', 'ktpwp' );
+			$html .= esc_html__( '原価明細', 'kantanpro' );
 			$html .= '</h3>';
 			$html .= '<table style="width: 100%; border-collapse: collapse; margin-bottom: 12px;">';
 			$html .= '<thead><tr>';
-			$html .= '<th style="border: 1px solid #d1d5db; padding: 6px 8px; text-align: left;">' . esc_html__( '商品名', 'ktpwp' ) . '</th>';
-			$html .= '<th style="border: 1px solid #d1d5db; padding: 6px 8px; text-align: left;">' . esc_html__( '協力会社', 'ktpwp' ) . '</th>';
-			$html .= '<th style="border: 1px solid #d1d5db; padding: 6px 8px; text-align: right;">' . esc_html__( '金額', 'ktpwp' ) . '</th>';
+			$html .= '<th style="border: 1px solid #d1d5db; padding: 6px 8px; text-align: left;">' . esc_html__( '商品名', 'kantanpro' ) . '</th>';
+			$html .= '<th style="border: 1px solid #d1d5db; padding: 6px 8px; text-align: left;">' . esc_html__( '協力会社', 'kantanpro' ) . '</th>';
+			$html .= '<th style="border: 1px solid #d1d5db; padding: 6px 8px; text-align: right;">' . esc_html__( '金額', 'kantanpro' ) . '</th>';
 			$html .= '</tr></thead><tbody>';
 
 			foreach ( $cost_items as $item ) {
@@ -3009,7 +3022,8 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 				// 2ページ目以降はページ区切りを追加
                 if ( $page > 0 ) {
 					$html .= '<div style="page-break-before: always; margin-top: 30px;"></div>';
-					$html .= '<h3 style="font-size: 16px; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #333;">' . esc_html( sprintf( __( '請求項目（%1$d/%2$dp）', 'ktpwp' ), ( $page + 1 ), $total_pages ) ) . '</h3>';
+					/* translators: 1: 現在のページ番号, 2: 総ページ数 */
+					$html .= '<h3 style="font-size: 16px; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #333;">' . esc_html( sprintf( __( '請求項目（%1$d/%2$dp）', 'kantanpro' ), ( $page + 1 ), $total_pages ) ) . '</h3>';
 				} else {
 					// 1ページ目：請求金額、消費税、税込合計を表示
                     $suppress_tax_display = ( class_exists( 'KTPWP_Tax_Policy' ) && KTPWP_Tax_Policy::hide_tax_columns() );
@@ -3053,10 +3067,12 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 					
                     // 税区分に応じた表示
                     if ( $suppress_tax_display ) {
-                        $html .= '<h3 style="font-size: 16px; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #333;">' . esc_html( sprintf( __( '請求項目（%1$d/%2$dp）', 'ktpwp' ), ( $page + 1 ), $total_pages ) ) . '　' . esc_html__( '合計金額', 'ktpwp' ) . ' : ' . esc_html( KTPWP_Settings::format_money( $grand_total ) ) . '</h3>';
+                        /* translators: 1: 現在のページ番号, 2: 総ページ数 */
+                        $html .= '<h3 style="font-size: 16px; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #333;">' . esc_html( sprintf( __( '請求項目（%1$d/%2$dp）', 'kantanpro' ), ( $page + 1 ), $total_pages ) ) . '　' . esc_html__( '合計金額', 'kantanpro' ) . ' : ' . esc_html( KTPWP_Settings::format_money( $grand_total ) ) . '</h3>';
                     } else {
                         if ( $tax_category === '外税' ) {
-                            $html .= '<h3 style="font-size: 16px; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #333;">' . esc_html( sprintf( __( '請求項目（%1$d/%2$dp）', 'ktpwp' ), ( $page + 1 ), $total_pages ) ) . '　' . esc_html__( '合計金額', 'ktpwp' ) . ' : ' . esc_html( KTPWP_Settings::format_money( $grand_total ) ) . '　' . esc_html__( '消費税', 'ktpwp' ) . ' : ' . esc_html( KTPWP_Settings::format_money( $tax_amount_ceiled ) ) . '　' . esc_html__( '税込合計', 'ktpwp' ) . ' : ' . esc_html( KTPWP_Settings::format_money( $total_with_tax_ceiled ) ) . '</h3>';
+                            /* translators: 1: 現在のページ番号, 2: 総ページ数 */
+                            $html .= '<h3 style="font-size: 16px; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #333;">' . esc_html( sprintf( __( '請求項目（%1$d/%2$dp）', 'kantanpro' ), ( $page + 1 ), $total_pages ) ) . '　' . esc_html__( '合計金額', 'kantanpro' ) . ' : ' . esc_html( KTPWP_Settings::format_money( $grand_total ) ) . '　' . esc_html__( '消費税', 'kantanpro' ) . ' : ' . esc_html( KTPWP_Settings::format_money( $tax_amount_ceiled ) ) . '　' . esc_html__( '税込合計', 'kantanpro' ) . ' : ' . esc_html( KTPWP_Settings::format_money( $total_with_tax_ceiled ) ) . '</h3>';
                         } else {
                             // 内税の場合は税率別の内訳を表示
                             $tax_detail_text = '';
@@ -3072,17 +3088,20 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
                                         $tax_rate_details[] = $tax_rate . '%: ' . KTPWP_Settings::format_money( $group_tax_amount );
                                     }
                                 }
-                                $tax_detail_text = sprintf( __( '（内税：%s）', 'ktpwp' ), implode( ', ', $tax_rate_details ) );
+                                /* translators: %s: 内税額（通貨記号付き） */
+                                $tax_detail_text = sprintf( __( '（内税：%s）', 'kantanpro' ), implode( ', ', $tax_rate_details ) );
                             } else {
                                 // 単一税率の場合
                                 if ( array_key_first( $tax_rate_groups ) === 'no_tax_rate' ) {
                                     // 税率なしの場合は内税表示をしない
                                     $tax_detail_text = '';
                                 } else {
-                                    $tax_detail_text = sprintf( __( '（内税：%s）', 'ktpwp' ), KTPWP_Settings::format_money( $tax_amount_ceiled ) );
+                                    /* translators: %s: 内税額（通貨記号付き） */
+                                    $tax_detail_text = sprintf( __( '（内税：%s）', 'kantanpro' ), KTPWP_Settings::format_money( $tax_amount_ceiled ) );
                                 }
                             }
-                            $html .= '<h3 style="font-size: 16px; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #333;">' . esc_html( sprintf( __( '請求項目（%1$d/%2$dp）', 'ktpwp' ), ( $page + 1 ), $total_pages ) ) . '　' . esc_html__( '合計金額', 'ktpwp' ) . ' : ' . esc_html( KTPWP_Settings::format_money( $grand_total ) ) . esc_html( $tax_detail_text ) . '</h3>';
+                            /* translators: 1: 現在のページ番号, 2: 総ページ数 */
+                            $html .= '<h3 style="font-size: 16px; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #333;">' . esc_html( sprintf( __( '請求項目（%1$d/%2$dp）', 'kantanpro' ), ( $page + 1 ), $total_pages ) ) . '　' . esc_html__( '合計金額', 'kantanpro' ) . ' : ' . esc_html( KTPWP_Settings::format_money( $grand_total ) ) . esc_html( $tax_detail_text ) . '</h3>';
                         }
                     }
 				}
@@ -3091,20 +3110,20 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 				$html .= '<div style="margin-bottom: 15px; font-size: 12px;">';
 
 				// ヘッダー行（税区分に応じて金額・税額の意味を明示）
-				$amount_label = ( $tax_category === '外税' ) ? __( '金額（税抜）', 'ktpwp' ) : __( '金額（税込）', 'ktpwp' );
-				$price_label  = ( $tax_category === '外税' ) ? __( '単価（税抜）', 'ktpwp' ) : __( '単価（税込）', 'ktpwp' );
-				$tax_col_label = ( $tax_category === '外税' ) ? __( '税額（外税）', 'ktpwp' ) : __( '税額（内税）', 'ktpwp' );
+				$amount_label = ( $tax_category === '外税' ) ? __( '金額（税抜）', 'kantanpro' ) : __( '金額（税込）', 'kantanpro' );
+				$price_label  = ( $tax_category === '外税' ) ? __( '単価（税抜）', 'kantanpro' ) : __( '単価（税込）', 'kantanpro' );
+				$tax_col_label = ( $tax_category === '外税' ) ? __( '税額（外税）', 'kantanpro' ) : __( '税額（内税）', 'kantanpro' );
 				$html .= '<div class="ktp-invoice-items-header" style="display: flex; background: #f0f0f0; padding: 8px; font-weight: bold; border-bottom: 1px solid #ccc; align-items: center;">';
 				$html .= '<div style="width: 30px; text-align: center;">No.</div>';
-				$html .= '<div style="flex: 1; text-align: left; margin-left: 8px;">' . esc_html__( '項目名', 'ktpwp' ) . '</div>';
+				$html .= '<div style="flex: 1; text-align: left; margin-left: 8px;">' . esc_html__( '項目名', 'kantanpro' ) . '</div>';
 				$html .= '<div style="width: 80px; text-align: right;">' . esc_html( $price_label ) . '</div>';
-				$html .= '<div style="width: 60px; text-align: right;">' . esc_html__( '数量', 'ktpwp' ) . '</div>';
+				$html .= '<div style="width: 60px; text-align: right;">' . esc_html__( '数量', 'kantanpro' ) . '</div>';
 				$html .= '<div style="width: 80px; text-align: right;">' . esc_html( $amount_label ) . '</div>';
                 if ( ! ( class_exists( 'KTPWP_Tax_Policy' ) && KTPWP_Tax_Policy::hide_tax_columns() ) ) {
                     $html .= '<div style="width: 80px; text-align: right;">' . esc_html( $tax_col_label ) . '</div>';
-                    $html .= '<div style="width: 60px; text-align: center;">' . esc_html__( '税率', 'ktpwp' ) . '</div>';
+                    $html .= '<div style="width: 60px; text-align: center;">' . esc_html__( '税率', 'kantanpro' ) . '</div>';
                 }
-				$html .= '<div style="width: 100px; text-align: left; margin-left: 8px;">' . esc_html__( '備考', 'ktpwp' ) . '</div>';
+				$html .= '<div style="width: 100px; text-align: left; margin-left: 8px;">' . esc_html__( '備考', 'kantanpro' ) . '</div>';
 				$html .= '</div>';
 
 				$page_total = 0;
@@ -3235,7 +3254,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 				if ( $total_pages > 1 ) {
 					// ページ小計行（右寄せで表示）
 					$html .= '<div style="display: flex; padding: 10px 8px; background: #f5f5f5; font-weight: bold; border-top: 1px solid #ccc; margin-top: 5px; align-items: center; justify-content: flex-end;">';
-					$html .= '<div style="text-align: right;">' . esc_html__( 'ページ小計', 'ktpwp' ) . '　' . esc_html( KTPWP_Settings::format_money( $page_total ) ) . '</div>';
+					$html .= '<div style="text-align: right;">' . esc_html__( 'ページ小計', 'kantanpro' ) . '　' . esc_html( KTPWP_Settings::format_money( $page_total ) ) . '</div>';
 					$html .= '</div>';
 				}
 
@@ -3276,26 +3295,27 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
                     if ( $suppress_tax_display ) {
                         // 税廃止/非表示モード: 税情報は出さず合計のみ
                         $html .= '<div style="display: flex; padding: 10px 8px; background: #e9ecef; font-weight: bold; border-top: 2px solid #ccc; margin-top: 5px; align-items: center; justify-content: flex-end;">';
-                        $html .= '<div style="text-align: right;">' . esc_html__( '合計金額', 'ktpwp' ) . ' : ' . esc_html( KTPWP_Settings::format_money( $grand_total ) ) . '</div>';
+                        $html .= '<div style="text-align: right;">' . esc_html__( '合計金額', 'kantanpro' ) . ' : ' . esc_html( KTPWP_Settings::format_money( $grand_total ) ) . '</div>';
                         $html .= '</div>';
                     } else {
                         if ( $tax_category === '外税' ) {
                             // 外税表示の場合
                             $html .= '<div style="display: flex; padding: 10px 8px; background: #e9ecef; font-weight: bold; border-top: 2px solid #ccc; margin-top: 5px; align-items: center; justify-content: flex-end;">';
-                            $html .= '<div style="text-align: right;">' . esc_html__( '合計金額', 'ktpwp' ) . ' : ' . esc_html( KTPWP_Settings::format_money( $grand_total ) ) . '</div>';
+                            $html .= '<div style="text-align: right;">' . esc_html__( '合計金額', 'kantanpro' ) . ' : ' . esc_html( KTPWP_Settings::format_money( $grand_total ) ) . '</div>';
                             $html .= '</div>';
                             
                             $html .= '<div style="display: flex; padding: 10px 8px; background: #e9ecef; font-weight: bold; border-top: 1px solid #ccc; align-items: center; justify-content: flex-end;">';
-                            $html .= '<div style="text-align: right;">' . esc_html__( '消費税', 'ktpwp' ) . ' : ' . esc_html( KTPWP_Settings::format_money( $tax_amount_ceiled ) ) . '</div>';
+                            $html .= '<div style="text-align: right;">' . esc_html__( '消費税', 'kantanpro' ) . ' : ' . esc_html( KTPWP_Settings::format_money( $tax_amount_ceiled ) ) . '</div>';
                             $html .= '</div>';
                             
                             $html .= '<div style="display: flex; padding: 10px 8px; background: #e9ecef; font-weight: bold; border-top: 1px solid #ccc; align-items: center; justify-content: flex-end;">';
-                            $html .= '<div style="text-align: right;">' . esc_html__( '税込合計', 'ktpwp' ) . ' : ' . esc_html( KTPWP_Settings::format_money( $total_with_tax_ceiled ) ) . '</div>';
+                            $html .= '<div style="text-align: right;">' . esc_html__( '税込合計', 'kantanpro' ) . ' : ' . esc_html( KTPWP_Settings::format_money( $total_with_tax_ceiled ) ) . '</div>';
                             $html .= '</div>';
                         } else {
                             // 内税表示の場合（デフォルト）
                             $html .= '<div style="display: flex; padding: 10px 8px; background: #e9ecef; font-weight: bold; border-top: 2px solid #ccc; margin-top: 5px; align-items: center; justify-content: flex-end;">';
-                            $html .= '<div style="text-align: right;">' . esc_html__( '合計金額', 'ktpwp' ) . ' : ' . esc_html( KTPWP_Settings::format_money( $grand_total ) ) . esc_html( sprintf( __( '（内税 %s）', 'ktpwp' ), KTPWP_Settings::format_money( $tax_amount_ceiled ) ) ) . '</div>';
+                            /* translators: 合計金額のラベル */
+                            $html .= '<div style="text-align: right;">' . esc_html__( '合計金額', 'kantanpro' ) . ' : ' . esc_html( KTPWP_Settings::format_money( $grand_total ) ) . esc_html( sprintf( __( '（内税 %s）', 'kantanpro' ), KTPWP_Settings::format_money( $tax_amount_ceiled ) ) ) . '</div>';
                             $html .= '</div>';
                         }
                     }
@@ -3517,7 +3537,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 		private function get_order_delete_confirm_message() {
 			return __(
 				"本当にこの受注書を削除しますか？\n\n請求明細・原価明細・スタッフチャット・添付ファイル・メール送信履歴も削除されます。\nこの操作は元に戻せません。",
-				'ktpwp'
+				'kantanpro'
 			);
 		}
 
@@ -3549,8 +3569,8 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 			$html .= '<input type="hidden" name="client_exists" value="' . ( $client_exists ? '1' : '0' ) . '">';
 			$html .= wp_nonce_field( 'delete_order_action', 'delete_nonce', true, false );
 			$html .= '<button type="button" class="delete-order-btn ktp-order-delete-trigger" data-ktp-order-delete="1">';
-			$html .= '<span class="material-symbols-outlined" aria-label="' . esc_attr__( '削除', 'ktpwp' ) . '">delete</span>';
-			$html .= esc_html__( '受注書を削除', 'ktpwp' );
+			$html .= '<span class="material-symbols-outlined" aria-label="' . esc_attr__( '削除', 'kantanpro' ) . '">delete</span>';
+			$html .= esc_html__( '受注書を削除', 'kantanpro' );
 			$html .= '</button>';
 			$html .= '</form>';
 

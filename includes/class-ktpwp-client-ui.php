@@ -105,8 +105,8 @@ if ( ! class_exists( 'KTPWP_Client_UI' ) ) {
 
 			// 表示タイトルの設定（国際化対応）
 			$list_title = ( $view_mode === 'order_history' )
-            ? esc_html__( '■ 注文履歴', 'ktpwp' )
-            : esc_html__( '■ 顧客リスト', 'ktpwp' );
+            ? esc_html__( '■ 注文履歴', 'kantanpro' )
+            : esc_html__( '■ 顧客リスト', 'kantanpro' );
 
 			// ここでは顧客一覧のリスト表示部分を実装します
 			// 顧客詳細フォーム部分は後で移行します
@@ -177,16 +177,16 @@ if ( ! class_exists( 'KTPWP_Client_UI' ) ) {
 
 				$sort_dropdown .=
 					'<select id="' . esc_attr( 'ktp-' . $name . '-order-sort-select' ) . '" name="order_sort_by" style="margin-right:5px;">' .
-					'<option value="id" ' . selected( $order_sort_by, 'id', false ) . '>' . esc_html__( '注文ID', 'ktpwp' ) . '</option>' .
-					'<option value="time" ' . selected( $order_sort_by, 'time', false ) . '>' . esc_html__( '日付', 'ktpwp' ) . '</option>' .
-					'<option value="progress" ' . selected( $order_sort_by, 'progress', false ) . '>' . esc_html__( '進捗', 'ktpwp' ) . '</option>' .
-					'<option value="project_name" ' . selected( $order_sort_by, 'project_name', false ) . '>' . esc_html__( '案件名', 'ktpwp' ) . '</option>' .
+					'<option value="id" ' . selected( $order_sort_by, 'id', false ) . '>' . esc_html__( '注文ID', 'kantanpro' ) . '</option>' .
+					'<option value="time" ' . selected( $order_sort_by, 'time', false ) . '>' . esc_html__( '日付', 'kantanpro' ) . '</option>' .
+					'<option value="progress" ' . selected( $order_sort_by, 'progress', false ) . '>' . esc_html__( '進捗', 'kantanpro' ) . '</option>' .
+					'<option value="project_name" ' . selected( $order_sort_by, 'project_name', false ) . '>' . esc_html__( '案件名', 'kantanpro' ) . '</option>' .
 					'</select>' .
 					'<select id="' . esc_attr( 'ktp-' . $name . '-order-sort-order' ) . '" name="order_sort_order">' .
-					'<option value="DESC" ' . selected( $order_sort_order, 'DESC', false ) . '>' . esc_html__( '降順', 'ktpwp' ) . '</option>' .
-					'<option value="ASC" ' . selected( $order_sort_order, 'ASC', false ) . '>' . esc_html__( '昇順', 'ktpwp' ) . '</option>' .
+					'<option value="DESC" ' . selected( $order_sort_order, 'DESC', false ) . '>' . esc_html__( '降順', 'kantanpro' ) . '</option>' .
+					'<option value="ASC" ' . selected( $order_sort_order, 'ASC', false ) . '>' . esc_html__( '昇順', 'kantanpro' ) . '</option>' .
 					'</select>' .
-					'<button type="submit" style="margin-left:5px;padding:4px 8px;background:#f0f0f0;border:1px solid #ccc;border-radius:3px;cursor:pointer;" title="' . esc_attr__( '適用', 'ktpwp' ) . '">' .
+					'<button type="submit" style="margin-left:5px;padding:4px 8px;background:#f0f0f0;border:1px solid #ccc;border-radius:3px;cursor:pointer;" title="' . esc_attr__( '適用', 'kantanpro' ) . '">' .
 					'<span class="material-symbols-outlined" style="font-size:18px;line-height:18px;vertical-align:middle;">check</span>' .
 					'</button>' .
 					'</form></div>';

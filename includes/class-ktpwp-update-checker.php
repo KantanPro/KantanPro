@@ -732,9 +732,9 @@ class KTPWP_Update_Checker {
             wp_localize_script( 'ktpwp-update-checker', 'ktpwp_update_checker', array(
                 'ajax_url' => admin_url( 'admin-ajax.php' ),
                 'nonce' => wp_create_nonce( 'ktpwp_update_checker' ),
-                'checking_text' => __( '更新をチェック中...', 'ktpwp' ),
-                'check_text' => __( '更新をチェック', 'ktpwp' ),
-                'error_text' => __( 'エラーが発生しました', 'ktpwp' ),
+                'checking_text' => __( '更新をチェック中...', 'kantanpro' ),
+                'check_text' => __( '更新をチェック', 'kantanpro' ),
+                'error_text' => __( 'エラーが発生しました', 'kantanpro' ),
             ) );
         }
         
@@ -763,7 +763,7 @@ class KTPWP_Update_Checker {
                 if ( $this->is_update_newer_than_installed( $update_data ) ) {
                     wp_localize_script( 'ktpwp-update-balloon', 'ktpwp_update_data', array(
                         'has_update' => true,
-                        'message' => __( '新しいバージョンが利用可能です！', 'ktpwp' ),
+                        'message' => __( '新しいバージョンが利用可能です！', 'kantanpro' ),
                         'update_data' => $update_data
                     ) );
                 }
@@ -836,8 +836,9 @@ class KTPWP_Update_Checker {
             $details_link = sprintf(
                 '<a href="%s" class="thickbox open-plugin-details-modal" aria-label="%s">%s</a>',
                 esc_url( network_admin_url( 'plugin-install.php?tab=plugin-information&plugin=' . rawurlencode( $this->plugin_slug ) . '&TB_iframe=true&width=600&height=550' ) ),
-                esc_attr( sprintf( __( '%s の詳細を表示', 'ktpwp' ), isset( $plugin_data['Name'] ) ? $plugin_data['Name'] : 'ktpwp' ) ),
-                esc_html__( '詳細を表示', 'ktpwp' )
+                /* translators: %s: プラグイン名 */
+                esc_attr( sprintf( __( '%s の詳細を表示', 'kantanpro' ), isset( $plugin_data['Name'] ) ? $plugin_data['Name'] : 'ktpwp' ) ),
+                esc_html__( '詳細を表示', 'kantanpro' )
             );
             $new_meta[] = $details_link;
         }
@@ -885,10 +886,10 @@ class KTPWP_Update_Checker {
         $info->sections = array();
         $info->sections['description'] = isset( $plugin_data['Description'] )
             ? $plugin_data['Description']
-            : __( 'スモールビジネスのための販売支援ツール', 'ktpwp' );
+            : __( 'スモールビジネスのための販売支援ツール', 'kantanpro' );
         $info->sections['changelog']   = isset( $update_data['changelog'] ) && ! empty( $update_data['changelog'] )
             ? $update_data['changelog']
-            : __( '詳細な変更履歴は公式サイトまたはリポジトリをご確認ください。', 'ktpwp' );
+            : __( '詳細な変更履歴は公式サイトまたはリポジトリをご確認ください。', 'kantanpro' );
 
         $banner_url = function_exists( 'ktpwp_plugin_asset_url' )
             ? ktpwp_plugin_asset_url( 'images/default/header_bg_image.png' )
@@ -914,11 +915,11 @@ class KTPWP_Update_Checker {
     public function handle_manual_update_check() {
         // セキュリティチェック
         if ( ! wp_verify_nonce( $_POST['_wpnonce'], 'ktpwp_manual_update_check' ) ) {
-            wp_die( __( 'セキュリティチェックに失敗しました。', 'ktpwp' ) );
+            wp_die( __( 'セキュリティチェックに失敗しました。', 'kantanpro' ) );
         }
         
         if ( ! current_user_can( 'update_plugins' ) ) {
-            wp_die( __( 'この操作を実行する権限がありません。', 'ktpwp' ) );
+            wp_die( __( 'この操作を実行する権限がありません。', 'kantanpro' ) );
         }
         
         // 更新チェック実行
@@ -937,7 +938,7 @@ class KTPWP_Update_Checker {
         if ( ! isset( $_POST['nonce'] ) ) {
             error_log( 'KantanPro: ajax_check_github_update - nonceが送信されていません' );
             wp_send_json_error( array(
-                'message' => __( 'セキュリティトークンが送信されていません。', 'ktpwp' ),
+                'message' => __( 'セキュリティトークンが送信されていません。', 'kantanpro' ),
                 'error_type' => 'missing_nonce'
             ) );
             return;
@@ -947,7 +948,7 @@ class KTPWP_Update_Checker {
         if ( ! wp_verify_nonce( $_POST['nonce'], 'ktpwp_update_checker' ) ) {
             error_log( 'KantanPro: ajax_check_github_update - nonce検証に失敗しました' );
             wp_send_json_error( array(
-                'message' => __( 'セキュリティチェックに失敗しました。', 'ktpwp' ),
+                'message' => __( 'セキュリティチェックに失敗しました。', 'kantanpro' ),
                 'error_type' => 'security'
             ) );
             return;
@@ -955,7 +956,7 @@ class KTPWP_Update_Checker {
         
         if ( ! current_user_can( 'update_plugins' ) ) {
             wp_send_json_error( array(
-                'message' => __( 'この操作を実行する権限がありません。', 'ktpwp' ),
+                'message' => __( 'この操作を実行する権限がありません。', 'kantanpro' ),
                 'error_type' => 'permission'
             ) );
             return;
@@ -974,7 +975,7 @@ class KTPWP_Update_Checker {
         
         if ( $status['has_update'] ) {
             wp_send_json_success( array(
-                'message' => __( '新しいバージョンが利用可能です！', 'ktpwp' ),
+                'message' => __( '新しいバージョンが利用可能です！', 'kantanpro' ),
                 'reload' => true,
                 'has_update' => true,
                 'update_data' => $status['update_data'],
@@ -982,13 +983,13 @@ class KTPWP_Update_Checker {
             ) );
         } elseif ( $this->last_check_failed() ) {
             wp_send_json_error( array(
-                'message' => __( '更新情報を取得できませんでした。時間をおいて再度お試しください。', 'ktpwp' ),
+                'message' => __( '更新情報を取得できませんでした。時間をおいて再度お試しください。', 'kantanpro' ),
                 'error_type' => 'fetch_failed',
                 'debug_info' => $debug_info
             ) );
         } else {
             wp_send_json_success( array(
-                'message' => __( '最新バージョンです。', 'ktpwp' ),
+                'message' => __( '最新バージョンです。', 'kantanpro' ),
                 'reload' => false,
                 'has_update' => false,
                 'debug_info' => $debug_info
@@ -1359,7 +1360,7 @@ class KTPWP_Update_Checker {
         if ( ! isset( $_POST['nonce'] ) ) {
             error_log( 'KantanPro: dismiss_update_notice - nonceが送信されていません' );
             wp_send_json_error( array(
-                'message' => __( 'セキュリティトークンが送信されていません。', 'ktpwp' ),
+                'message' => __( 'セキュリティトークンが送信されていません。', 'kantanpro' ),
                 'error_type' => 'missing_nonce'
             ) );
             return;
@@ -1369,7 +1370,7 @@ class KTPWP_Update_Checker {
         if ( ! wp_verify_nonce( $_POST['nonce'], 'ktpwp_dismiss_update_notice' ) ) {
             error_log( 'KantanPro: dismiss_update_notice - nonce検証に失敗しました' );
             wp_send_json_error( array(
-                'message' => __( 'セキュリティチェックに失敗しました。', 'ktpwp' ),
+                'message' => __( 'セキュリティチェックに失敗しました。', 'kantanpro' ),
                 'error_type' => 'security'
             ) );
             return;
@@ -1377,7 +1378,7 @@ class KTPWP_Update_Checker {
         
         if ( ! current_user_can( 'update_plugins' ) ) {
             wp_send_json_error( array(
-                'message' => __( 'この操作を実行する権限がありません。', 'ktpwp' ),
+                'message' => __( 'この操作を実行する権限がありません。', 'kantanpro' ),
                 'error_type' => 'permission'
             ) );
             return;
@@ -1392,7 +1393,7 @@ class KTPWP_Update_Checker {
         // プラグインリストの場合は無視フラグを設定しない（再表示される）
         
         wp_send_json_success( array(
-            'message' => __( '更新通知を無視しました。', 'ktpwp' )
+            'message' => __( '更新通知を無視しました。', 'kantanpro' )
         ) );
     }
     
@@ -1503,7 +1504,7 @@ class KTPWP_Update_Checker {
                 cursor: pointer;
                 color: #666;
                 line-height: 1;
-            " onclick="ktpwpDismissFrontendNotice()" title="<?php echo esc_attr__( '非表示にする', 'ktpwp' ); ?>">&times;</button>
+            " onclick="ktpwpDismissFrontendNotice()" title="<?php echo esc_attr__( '非表示にする', 'kantanpro' ); ?>">&times;</button>
             <p style="margin: 0; color: #0073aa; font-size: 14px; line-height: 1.4;">
                 <strong><?php echo esc_html( $plugin_name ); ?></strong> の新しいバージョン 
                 <strong><?php echo esc_html( $new_version ); ?></strong> が利用可能です。
@@ -1554,7 +1555,7 @@ class KTPWP_Update_Checker {
         if ( ! isset( $_POST['nonce'] ) ) {
             error_log( 'KantanPro: dismiss_frontend_update_notice - nonceが送信されていません' );
             wp_send_json_error( array(
-                'message' => __( 'セキュリティトークンが送信されていません。', 'ktpwp' ),
+                'message' => __( 'セキュリティトークンが送信されていません。', 'kantanpro' ),
                 'error_type' => 'missing_nonce'
             ) );
             return;
@@ -1564,7 +1565,7 @@ class KTPWP_Update_Checker {
         if ( ! wp_verify_nonce( $_POST['nonce'], 'ktpwp_dismiss_frontend_update_notice' ) ) {
             error_log( 'KantanPro: dismiss_frontend_update_notice - nonce検証に失敗しました' );
             wp_send_json_error( array(
-                'message' => __( 'セキュリティチェックに失敗しました。', 'ktpwp' ),
+                'message' => __( 'セキュリティチェックに失敗しました。', 'kantanpro' ),
                 'error_type' => 'security'
             ) );
             return;
@@ -1583,7 +1584,7 @@ class KTPWP_Update_Checker {
         // KantanPro設置ページでのみ無視フラグを設定
         update_option( 'ktpwp_frontend_update_notice_dismissed', true );
         wp_send_json_success( array(
-            'message' => __( 'フロントエンド更新通知を無視しました。', 'ktpwp' )
+            'message' => __( 'フロントエンド更新通知を無視しました。', 'kantanpro' )
         ) );
     }
     
@@ -1595,7 +1596,7 @@ class KTPWP_Update_Checker {
         if ( ! isset( $_POST['nonce'] ) ) {
             error_log( 'KantanPro: perform_plugin_update - nonceが送信されていません' );
             wp_send_json_error( array(
-                'message' => __( 'セキュリティトークンが送信されていません。', 'ktpwp' ),
+                'message' => __( 'セキュリティトークンが送信されていません。', 'kantanpro' ),
                 'error_type' => 'missing_nonce'
             ) );
             return;
@@ -1605,7 +1606,7 @@ class KTPWP_Update_Checker {
         if ( ! wp_verify_nonce( $_POST['nonce'], 'ktpwp_perform_update' ) ) {
             error_log( 'KantanPro: perform_plugin_update - nonce検証に失敗しました' );
             wp_send_json_error( array(
-                'message' => __( 'セキュリティチェックに失敗しました。', 'ktpwp' ),
+                'message' => __( 'セキュリティチェックに失敗しました。', 'kantanpro' ),
                 'error_type' => 'security'
             ) );
             return;
@@ -1613,7 +1614,7 @@ class KTPWP_Update_Checker {
         
         if ( ! current_user_can( 'update_plugins' ) ) {
             wp_send_json_error( array(
-                'message' => __( 'この操作を実行する権限がありません。', 'ktpwp' ),
+                'message' => __( 'この操作を実行する権限がありません。', 'kantanpro' ),
                 'error_type' => 'permission'
             ) );
             return;
@@ -1626,7 +1627,7 @@ class KTPWP_Update_Checker {
         error_log( 'KantanPro: 更新実行時の更新データ: ' . print_r( $update_data, true ) );
         if ( ! $update_data ) {
             wp_send_json_error( array(
-                'message' => __( '更新情報が見つかりません。', 'ktpwp' ),
+                'message' => __( '更新情報が見つかりません。', 'kantanpro' ),
                 'error_type' => 'no_update_data'
             ) );
         }
@@ -1642,7 +1643,7 @@ class KTPWP_Update_Checker {
         } else {
             error_log( 'KantanPro: 更新データの形式が不正です: ' . print_r( $update_data, true ) );
             wp_send_json_error( array(
-                'message' => __( '更新情報の形式が正しくありません。', 'ktpwp' ),
+                'message' => __( '更新情報の形式が正しくありません。', 'kantanpro' ),
                 'error_type' => 'invalid_update_data'
             ) );
         }
@@ -1656,7 +1657,7 @@ class KTPWP_Update_Checker {
         if ( $cleaned_update_version !== $cleaned_requested_version ) {
             error_log( 'KantanPro: バージョン比較失敗' );
             wp_send_json_error( array(
-                'message' => __( '更新情報が見つかりません。', 'ktpwp' ),
+                'message' => __( '更新情報が見つかりません。', 'kantanpro' ),
                 'error_type' => 'version_mismatch'
             ) );
         }
@@ -1684,11 +1685,11 @@ class KTPWP_Update_Checker {
             delete_option( 'ktpwp_frontend_update_notice_dismissed' );
             
             wp_send_json_success( array(
-                'message' => __( '更新が完了しました。', 'ktpwp' )
+                'message' => __( '更新が完了しました。', 'kantanpro' )
             ) );
         } else {
             wp_send_json_error( array(
-                'message' => __( '更新に失敗しました。', 'ktpwp' ),
+                'message' => __( '更新に失敗しました。', 'kantanpro' ),
                 'error_type' => 'update_failed'
             ) );
         }
@@ -2016,13 +2017,13 @@ class KTPWP_Update_Checker {
     public function ajax_poll_header_update() {
         if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'ktpwp_header_update_check' ) ) {
             wp_send_json_error( array(
-                'message' => __( 'セキュリティチェックに失敗しました。', 'ktpwp' ),
+                'message' => __( 'セキュリティチェックに失敗しました。', 'kantanpro' ),
             ) );
         }
 
         if ( ! $this->user_has_notification_permission() ) {
             wp_send_json_error( array(
-                'message' => __( 'この操作を実行する権限がありません。', 'ktpwp' ),
+                'message' => __( 'この操作を実行する権限がありません。', 'kantanpro' ),
             ) );
         }
 
@@ -2120,7 +2121,7 @@ class KTPWP_Update_Checker {
                 'ktpwp_update_data',
                 array(
                     'has_update'  => true,
-                    'message'     => __( '新しいバージョンが利用可能です！', 'ktpwp' ),
+                    'message'     => __( '新しいバージョンが利用可能です！', 'kantanpro' ),
                     'update_data' => $update_data,
                 )
             );
@@ -2202,7 +2203,7 @@ class KTPWP_Update_Checker {
         if ( ! isset( $_POST['nonce'] ) ) {
             error_log( 'KantanPro: dismiss_header_update_notice - nonceが送信されていません' );
             wp_send_json_error( array(
-                'message' => __( 'セキュリティトークンが送信されていません。', 'ktpwp' ),
+                'message' => __( 'セキュリティトークンが送信されていません。', 'kantanpro' ),
                 'error_type' => 'missing_nonce'
             ) );
             return;
@@ -2212,7 +2213,7 @@ class KTPWP_Update_Checker {
         if ( ! wp_verify_nonce( $_POST['nonce'], 'ktpwp_header_update_notice' ) ) {
             error_log( 'KantanPro: dismiss_header_update_notice - nonce検証に失敗しました' );
             wp_send_json_error( array(
-                'message' => __( 'セキュリティチェックに失敗しました。', 'ktpwp' ),
+                'message' => __( 'セキュリティチェックに失敗しました。', 'kantanpro' ),
                 'error_type' => 'invalid_nonce'
             ) );
             return;
@@ -2226,7 +2227,7 @@ class KTPWP_Update_Checker {
         
         update_option( 'ktpwp_header_update_notice_dismissed', true );
         wp_send_json_success( array(
-            'message' => __( '更新通知を無視しました。', 'ktpwp' )
+            'message' => __( '更新通知を無視しました。', 'kantanpro' )
         ) );
     }
 
@@ -2242,7 +2243,7 @@ class KTPWP_Update_Checker {
             if ( ! isset( $_POST['nonce'] ) ) {
                 error_log( 'KantanPro: ajax_check_header_update - nonceが送信されていません' );
                 wp_send_json_error( array(
-                    'message' => __( 'セキュリティトークンが送信されていません。', 'ktpwp' ),
+                    'message' => __( 'セキュリティトークンが送信されていません。', 'kantanpro' ),
                     'error_type' => 'missing_nonce'
                 ) );
                 return;
@@ -2254,7 +2255,7 @@ class KTPWP_Update_Checker {
                 error_log( 'KantanPro: ajax_check_header_update - nonce検証に失敗しました' );
                 error_log( 'KantanPro: 期待されるnonce: ' . wp_create_nonce( 'ktpwp_header_update_check' ) );
                 wp_send_json_error( array(
-                    'message' => __( 'セキュリティチェックに失敗しました。', 'ktpwp' ),
+                    'message' => __( 'セキュリティチェックに失敗しました。', 'kantanpro' ),
                     'error_type' => 'security'
                 ) );
                 return;
@@ -2265,7 +2266,7 @@ class KTPWP_Update_Checker {
             if ( ! $this->user_has_notification_permission() ) {
                 error_log( 'KantanPro: 権限チェック失敗' );
                 wp_send_json_error( array(
-                    'message' => __( 'この操作を実行する権限がありません。', 'ktpwp' ),
+                    'message' => __( 'この操作を実行する権限がありません。', 'kantanpro' ),
                     'error_type' => 'permission'
                 ) );
                 return;
@@ -2275,7 +2276,7 @@ class KTPWP_Update_Checker {
             // 更新通知が無効の場合は即座に返す
             if ( ! $this->is_update_notification_enabled() ) {
                 wp_send_json_success( array(
-                    'message' => __( '更新通知が無効化されています。', 'ktpwp' ),
+                    'message' => __( '更新通知が無効化されています。', 'kantanpro' ),
                     'has_update' => false,
                     'notifications_disabled' => true
                 ) );
@@ -2293,7 +2294,7 @@ class KTPWP_Update_Checker {
             if ( $status['has_update'] ) {
                 error_log( 'KantanPro: 更新あり - 更新データ: ' . print_r( $status['update_data'], true ) );
                 wp_send_json_success( array(
-                    'message' => __( '新しいバージョンが利用可能です！', 'ktpwp' ),
+                    'message' => __( '新しいバージョンが利用可能です！', 'kantanpro' ),
                     'has_update' => true,
                     'update_data' => $status['update_data']
                 ) );
@@ -2301,13 +2302,13 @@ class KTPWP_Update_Checker {
                 // GitHub へ到達できなかった場合は「最新版」と表示しない
                 error_log( 'KantanPro: 更新情報の取得に失敗' );
                 wp_send_json_error( array(
-                    'message' => __( '更新情報を取得できませんでした。時間をおいて再度お試しください。', 'ktpwp' ),
+                    'message' => __( '更新情報を取得できませんでした。時間をおいて再度お試しください。', 'kantanpro' ),
                     'error_type' => 'fetch_failed'
                 ) );
             } else {
                 error_log( 'KantanPro: 更新なし' );
                 wp_send_json_success( array(
-                    'message' => __( '最新バージョンです。', 'ktpwp' ),
+                    'message' => __( '最新バージョンです。', 'kantanpro' ),
                     'has_update' => false
                 ) );
             }
@@ -2315,7 +2316,7 @@ class KTPWP_Update_Checker {
         } catch ( Exception $e ) {
             error_log( 'KantanPro: AJAX更新チェックで例外が発生: ' . $e->getMessage() );
             wp_send_json_error( array(
-                'message' => __( '更新チェック中にエラーが発生しました: ', 'ktpwp' ) . $e->getMessage(),
+                'message' => __( '更新チェック中にエラーが発生しました: ', 'kantanpro' ) . $e->getMessage(),
                 'error_type' => 'exception'
             ) );
         }
@@ -2423,7 +2424,7 @@ class KTPWP_Update_Checker {
         // 権限チェック
         if ( ! current_user_can( 'manage_options' ) ) {
             wp_send_json_error( array(
-                'message' => __( '権限がありません。', 'ktpwp' ),
+                'message' => __( '権限がありません。', 'kantanpro' ),
                 'error_type' => 'permission_denied'
             ) );
             return;
@@ -2432,7 +2433,7 @@ class KTPWP_Update_Checker {
         // ナンスチェック
         if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( $_POST['nonce'], 'ktpwp_update_checker' ) ) {
             wp_send_json_error( array(
-                'message' => __( 'セキュリティチェックに失敗しました。', 'ktpwp' ),
+                'message' => __( 'セキュリティチェックに失敗しました。', 'kantanpro' ),
                 'error_type' => 'invalid_nonce'
             ) );
             return;
@@ -2453,13 +2454,13 @@ class KTPWP_Update_Checker {
             );
             
             wp_send_json_success( array(
-                'message' => __( 'キャッシュが正常にクリアされました。更新チェックを再実行してください。', 'ktpwp' ),
+                'message' => __( 'キャッシュが正常にクリアされました。更新チェックを再実行してください。', 'kantanpro' ),
                 'debug_info' => $debug_info
             ) );
             
         } catch ( Exception $e ) {
             wp_send_json_error( array(
-                'message' => __( 'キャッシュクリアに失敗しました: ', 'ktpwp' ) . $e->getMessage(),
+                'message' => __( 'キャッシュクリアに失敗しました: ', 'kantanpro' ) . $e->getMessage(),
                 'error_type' => 'cache_clear_failed'
             ) );
         }
@@ -2593,20 +2594,20 @@ class KTPWP_Update_Checker {
                 $current_plugin_data = get_plugin_data( KANTANPRO_PLUGIN_FILE );
                 
                 // 説明セクション
-                $plugin_info->sections['description'] = isset( $current_plugin_data['Description'] ) ? $current_plugin_data['Description'] : __( 'スモールビジネスのための販売支援ツール', 'ktpwp' );
+                $plugin_info->sections['description'] = isset( $current_plugin_data['Description'] ) ? $current_plugin_data['Description'] : __( 'スモールビジネスのための販売支援ツール', 'kantanpro' );
                 
                 // 変更履歴セクション
                 if ( isset( $update_data['changelog'] ) && ! empty( $update_data['changelog'] ) ) {
                     $plugin_info->sections['changelog'] = $update_data['changelog'];
                 } else {
-                    $plugin_info->sections['changelog'] = __( '詳細な変更履歴については、GitHubリポジトリをご確認ください。', 'ktpwp' );
+                    $plugin_info->sections['changelog'] = __( '詳細な変更履歴については、GitHubリポジトリをご確認ください。', 'kantanpro' );
                 }
                 
                 // インストールセクション
-                $plugin_info->sections['installation'] = __( 'プラグインをアップロードして有効化してください。ショートコード[ktpwp_all_tab]を固定ページに設置することで、システムが利用可能になります。', 'ktpwp' );
+                $plugin_info->sections['installation'] = __( 'プラグインをアップロードして有効化してください。ショートコード[ktpwp_all_tab]を固定ページに設置することで、システムが利用可能になります。', 'kantanpro' );
                 
                 // よくある質問セクション
-                $plugin_info->sections['faq'] = __( 'よくある質問については、プラグインのドキュメントをご確認ください。', 'ktpwp' );
+                $plugin_info->sections['faq'] = __( 'よくある質問については、プラグインのドキュメントをご確認ください。', 'kantanpro' );
                 
                 // プラグインの基本情報を設定
                 $plugin_info->name = isset( $current_plugin_data['Name'] ) ? $current_plugin_data['Name'] : 'ktpwp';

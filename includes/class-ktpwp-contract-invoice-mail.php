@@ -205,7 +205,7 @@ if ( ! class_exists( 'KTPWP_Contract_Invoice_Mail' ) ) {
 			$period      = sanitize_text_field( $period );
 
 			if ( $order_id <= 0 ) {
-				return new WP_Error( 'invalid_order', __( '案件が見つかりません。', 'ktpwp' ) );
+				return new WP_Error( 'invalid_order', __( '案件が見つかりません。', 'kantanpro' ) );
 			}
 
 			$order_table = $wpdb->prefix . 'ktp_order';
@@ -217,7 +217,7 @@ if ( ! class_exists( 'KTPWP_Contract_Invoice_Mail' ) ) {
 			);
 
 			if ( ! $order || (int) $order->progress !== 4 ) {
-				return new WP_Error( 'invalid_progress', __( '請求書ステータスの案件のみ送信できます。', 'ktpwp' ) );
+				return new WP_Error( 'invalid_progress', __( '請求書ステータスの案件のみ送信できます。', 'kantanpro' ) );
 			}
 
 			$client = null;
@@ -232,7 +232,7 @@ if ( ! class_exists( 'KTPWP_Contract_Invoice_Mail' ) ) {
 
 			$to = $this->resolve_client_email( $client );
 			if ( $to === '' ) {
-				return new WP_Error( 'no_email', __( '顧客のメールアドレスが見つかりません。', 'ktpwp' ) );
+				return new WP_Error( 'no_email', __( '顧客のメールアドレスが見つかりません。', 'kantanpro' ) );
 			}
 
 			$my_company = class_exists( 'KTPWP_Settings' ) ? KTPWP_Settings::get_company_info() : get_bloginfo( 'name' );
@@ -247,7 +247,7 @@ if ( ! class_exists( 'KTPWP_Contract_Invoice_Mail' ) ) {
 			}
 
 			if ( empty( $content['subject'] ) || empty( $content['body'] ) ) {
-				return new WP_Error( 'empty_content', __( 'メール本文の生成に失敗しました。', 'ktpwp' ) );
+				return new WP_Error( 'empty_content', __( 'メール本文の生成に失敗しました。', 'kantanpro' ) );
 			}
 
 			$body = (string) $content['body'];
@@ -264,7 +264,7 @@ if ( ! class_exists( 'KTPWP_Contract_Invoice_Mail' ) ) {
 			$sent    = wp_mail( $to, (string) $content['subject'], $body, $headers );
 
 			if ( ! $sent ) {
-				return new WP_Error( 'mail_failed', __( 'メール送信に失敗しました。', 'ktpwp' ) );
+				return new WP_Error( 'mail_failed', __( 'メール送信に失敗しました。', 'kantanpro' ) );
 			}
 
 			$this->mark_invoice_sent( $contract_id, $period, $order_id );

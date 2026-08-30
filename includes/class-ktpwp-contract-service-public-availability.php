@@ -172,7 +172,7 @@ if ( ! class_exists( 'KTPWP_Contract_Service_Public_Availability' ) ) {
 				return array(
 					'acceptance_open'    => false,
 					'availability_state' => 'sold_out',
-					'status_label'       => __( '完売御礼！', 'ktpwp' ),
+					'status_label'       => __( '完売御礼！', 'kantanpro' ),
 				);
 			}
 
@@ -188,7 +188,7 @@ if ( ! class_exists( 'KTPWP_Contract_Service_Public_Availability' ) ) {
 				return array(
 					'acceptance_open'    => false,
 					'availability_state' => 'pending',
-					'status_label'       => __( '保留中', 'ktpwp' ),
+					'status_label'       => __( '保留中', 'kantanpro' ),
 				);
 			}
 
@@ -406,7 +406,7 @@ if ( ! class_exists( 'KTPWP_Contract_Service_Public_Availability' ) ) {
 
 			$memo_prefix = sprintf(
 				/* translators: 1: service ID (must keep trailing space for exact match) */
-				__( '商品ID: %1$d ', 'ktpwp' ),
+				__( '商品ID: %1$d ', 'kantanpro' ),
 				$service_id
 			);
 			$memo_like   = '%' . $wpdb->esc_like( $memo_prefix ) . '%';
@@ -523,7 +523,7 @@ if ( ! class_exists( 'KTPWP_Contract_Service_Public_Availability' ) ) {
 
 			$memo_prefix = sprintf(
 				/* translators: 1: service ID (must keep trailing space for exact match) */
-				__( '商品ID: %1$d ', 'ktpwp' ),
+				__( '商品ID: %1$d ', 'kantanpro' ),
 				$service_id
 			);
 			$memo_like   = '%' . $wpdb->esc_like( $memo_prefix ) . '%';

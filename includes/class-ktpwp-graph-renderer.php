@@ -28,11 +28,11 @@ if ( ! class_exists( 'KTPWP_Graph_Renderer' ) ) {
 			$settings_url    = esc_url( admin_url( 'admin.php?page=ktp-settings' ) );
 
 			$content = '<div style="position:relative;max-width:800px;margin:30px auto;">';
-			$content .= '<img src="' . $dummy_graph_url . '" alt="' . esc_attr__( 'Report Graph', 'ktpwp' ) . '" style="width:100%;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.1);filter:blur(3px);opacity:0.7;">';
+			$content .= '<img src="' . $dummy_graph_url . '" alt="' . esc_attr__( 'Report Graph', 'kantanpro' ) . '" style="width:100%;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.1);filter:blur(3px);opacity:0.7;">';
 			$content .= '<div style="position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,0.3);border-radius:8px;display:flex;flex-direction:column;justify-content:flex-start;align-items:center;text-align:center;padding:20px;">';
-			$content .= '<h3 style="margin:50px 0 15px;color:#333;font-size:24px;text-shadow:0 1px 2px rgba(255,255,255,0.8);">' . esc_html__( 'グラフプレビュー（サンプル）', 'ktpwp' ) . '</h3>';
-			$content .= '<p style="margin:10px 0;color:#555;font-size:16px;text-shadow:0 1px 2px rgba(255,255,255,0.8);">' . esc_html__( 'レポートの詳細は「レポート」タブでご利用いただけます。', 'ktpwp' ) . '</p>';
-			$content .= '<a href="' . $settings_url . '" style="display:inline-block;background:linear-gradient(135deg, #2271b1, #135e96);color:#fff;font-size:16px;font-weight:bold;padding:15px 32px;margin-top:10px;border-radius:50px;text-decoration:none;box-shadow:0 4px 15px rgba(34,113,177,0.3);">' . esc_html__( 'KantanPro 設定を開く', 'ktpwp' ) . '</a>';
+			$content .= '<h3 style="margin:50px 0 15px;color:#333;font-size:24px;text-shadow:0 1px 2px rgba(255,255,255,0.8);">' . esc_html__( 'グラフプレビュー（サンプル）', 'kantanpro' ) . '</h3>';
+			$content .= '<p style="margin:10px 0;color:#555;font-size:16px;text-shadow:0 1px 2px rgba(255,255,255,0.8);">' . esc_html__( 'レポートの詳細は「レポート」タブでご利用いただけます。', 'kantanpro' ) . '</p>';
+			$content .= '<a href="' . $settings_url . '" style="display:inline-block;background:linear-gradient(135deg, #2271b1, #135e96);color:#fff;font-size:16px;font-weight:bold;padding:15px 32px;margin-top:10px;border-radius:50px;text-decoration:none;box-shadow:0 4px 15px rgba(34,113,177,0.3);">' . esc_html__( 'KantanPro 設定を開く', 'kantanpro' ) . '</a>';
 			$content .= '</div></div>';
 
 			return $content;

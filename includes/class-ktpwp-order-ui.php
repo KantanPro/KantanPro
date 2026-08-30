@@ -145,18 +145,18 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 			$html .= '<table class="invoice-items-table" id="invoice-items-table-' . intval( $order_id ) . '">';
 			$html .= '<thead>';
 			$html .= '<tr>';
-			$html .= '<th class="actions-column">' . esc_html__( '操作', 'ktpwp' ) . '</th>';
-			$html .= '<th>' . esc_html__( 'サービス', 'ktpwp' ) . '</th>';
-			$html .= '<th style="text-align:left;">' . esc_html__( '単価', 'ktpwp' ) . '</th>';
-			$html .= '<th style="text-align:left;">' . esc_html__( '数量', 'ktpwp' ) . '</th>';
-			$html .= '<th>' . esc_html__( '単位', 'ktpwp' ) . '</th>';
-            $html .= '<th style="text-align:left;">' . esc_html__( '金額', 'ktpwp' ) . '</th>';
+			$html .= '<th class="actions-column">' . esc_html__( '操作', 'kantanpro' ) . '</th>';
+			$html .= '<th>' . esc_html__( 'サービス', 'kantanpro' ) . '</th>';
+			$html .= '<th style="text-align:left;">' . esc_html__( '単価', 'kantanpro' ) . '</th>';
+			$html .= '<th style="text-align:left;">' . esc_html__( '数量', 'kantanpro' ) . '</th>';
+			$html .= '<th>' . esc_html__( '単位', 'kantanpro' ) . '</th>';
+            $html .= '<th style="text-align:left;">' . esc_html__( '金額', 'kantanpro' ) . '</th>';
             if ( class_exists( 'KTPWP_Tax_Policy' ) && KTPWP_Tax_Policy::hide_tax_columns() ) {
                 // 税率/税額列を非表示
             } else {
-                $html .= '<th style="text-align:left;">' . esc_html__( '税率', 'ktpwp' ) . '</th>';
+                $html .= '<th style="text-align:left;">' . esc_html__( '税率', 'kantanpro' ) . '</th>';
             }
-			$html .= '<th>' . esc_html__( '備考', 'ktpwp' ) . '</th>';
+			$html .= '<th>' . esc_html__( '備考', 'kantanpro' ) . '</th>';
 			$html .= '</tr>';
 			$html .= '</thead>';
 			$html .= '<tbody>';
@@ -180,11 +180,11 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 				$html .= '<tr class="invoice-item-row' . ( $is_provisional ? ' invoice-item-row--provisional' : ' ' . $invoice_stripe_class ) . '" data-row-id="' . $row_id . '" data-is-provisional="' . ( $is_provisional ? '1' : '0' ) . '">';
 				// Actions column with drag handle and buttons
 				$html .= '<td class="actions-column">';
-				$html .= '<span class="drag-handle' . ( $is_provisional ? ' is-disabled' : '' ) . '" title="' . esc_attr__( 'ドラッグして並び替え', 'ktpwp' ) . '">&#9776;</span>';
-				$html .= '<button type="button" class="btn-add-row"' . $btn_disabled . ' title="' . esc_attr__( '行を追加', 'ktpwp' ) . '">+</button>';
+				$html .= '<span class="drag-handle' . ( $is_provisional ? ' is-disabled' : '' ) . '" title="' . esc_attr__( 'ドラッグして並び替え', 'kantanpro' ) . '">&#9776;</span>';
+				$html .= '<button type="button" class="btn-add-row"' . $btn_disabled . ' title="' . esc_attr__( '行を追加', 'kantanpro' ) . '">+</button>';
 				// --- ここを修正: 1行目でも常に削除ボタンを出力 ---
-				$html .= '<button type="button" class="btn-delete-row"' . $btn_disabled . ' title="' . esc_attr__( '行を削除', 'ktpwp' ) . '">×</button>';
-				$html .= '<button type="button" class="btn-move-row"' . $btn_disabled . ' title="' . esc_attr__( 'サービス選択', 'ktpwp' ) . '">></button>';
+				$html .= '<button type="button" class="btn-delete-row"' . $btn_disabled . ' title="' . esc_attr__( '行を削除', 'kantanpro' ) . '">×</button>';
+				$html .= '<button type="button" class="btn-move-row"' . $btn_disabled . ' title="' . esc_attr__( 'サービス選択', 'kantanpro' ) . '">></button>';
 				$html .= '</td>';
 
 				// Product name
@@ -309,30 +309,30 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 				}
 			}
 			$total_label = $has_provisional_rows
-				? __( '今回請求合計', 'ktpwp' )
-				: __( '金額合計', 'ktpwp' );
+				? __( '今回請求合計', 'kantanpro' )
+				: __( '金額合計', 'kantanpro' );
 			
 			// 税区分に応じた合計表示
 			if ( $tax_category === '外税' ) {
 				// 外税表示の場合：3行表示
 				$html .= '<div class="invoice-items-total" style="text-align:right;margin-top:8px;font-weight:bold;">';
-				$html .= esc_html__( '合計金額', 'ktpwp' ) . ' : ' . esc_html( KTPWP_Settings::format_money( $total_amount_ceiled ) );
+				$html .= esc_html__( '合計金額', 'kantanpro' ) . ' : ' . esc_html( KTPWP_Settings::format_money( $total_amount_ceiled ) );
 				$html .= '</div>';
 				
 				// Tax amount display
 				$html .= '<div class="invoice-items-tax" style="text-align:right;margin-top:4px;color:#666;">';
-				$html .= esc_html__( '消費税', 'ktpwp' ) . ' : ' . esc_html( KTPWP_Settings::format_money( $tax_amount_ceiled ) );
+				$html .= esc_html__( '消費税', 'kantanpro' ) . ' : ' . esc_html( KTPWP_Settings::format_money( $tax_amount_ceiled ) );
 				$html .= '</div>';
 				
 				// Total with tax display
 				$html .= '<div class="invoice-items-total-with-tax" style="text-align:right;margin-top:4px;font-weight:bold;color:#d32f2f;">';
-				$html .= esc_html__( '税込合計', 'ktpwp' ) . ' : ' . esc_html( KTPWP_Settings::format_money( $total_with_tax_ceiled ) );
+				$html .= esc_html__( '税込合計', 'kantanpro' ) . ' : ' . esc_html( KTPWP_Settings::format_money( $total_with_tax_ceiled ) );
 				$html .= '</div>';
 			} else {
 				// 内税表示の場合：合計と内税を1行表示
 				$total_display = esc_html( $total_label ) . ' : ' . esc_html( KTPWP_Settings::format_money( $total_amount_ceiled ) );
 				if ( $tax_amount_ceiled > 0 && ! ( class_exists( 'KTPWP_Tax_Policy' ) && ( KTPWP_Tax_Policy::is_abolished() || KTPWP_Tax_Policy::hide_tax_columns() ) ) ) {
-					$total_display .= ' (' . esc_html__( '内税', 'ktpwp' ) . ' : ' . esc_html( KTPWP_Settings::format_money( $tax_amount_ceiled ) ) . ')';
+					$total_display .= ' (' . esc_html__( '内税', 'kantanpro' ) . ' : ' . esc_html( KTPWP_Settings::format_money( $tax_amount_ceiled ) ) . ')';
 				}
 				$html .= '<div class="invoice-items-total" style="text-align:right;margin-top:8px;font-weight:bold;">';
 				$html .= $total_display;
@@ -468,15 +468,15 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 			$html .= '<table class="cost-items-table" id="cost-items-table-' . intval( $order_id ) . '">';
 			$html .= '<thead>';
 			$html .= '<tr>';
-			$html .= '<th class="actions-column">' . esc_html__( '操作', 'ktpwp' ) . '</th>';
-			$html .= '<th>' . esc_html__( 'サービス', 'ktpwp' ) . '</th>';
-			$html .= '<th style="text-align:left;">' . esc_html__( '単価', 'ktpwp' ) . '</th>';
-			$html .= '<th style="text-align:left;">' . esc_html__( '数量', 'ktpwp' ) . '</th>';
-			$html .= '<th>' . esc_html__( '単位', 'ktpwp' ) . '</th>';
-			$html .= '<th style="text-align:left;">' . esc_html__( '金額', 'ktpwp' ) . '</th>';
-			$html .= '<th style="text-align:left;">' . esc_html__( '税率', 'ktpwp' ) . '</th>';
-			$html .= '<th>' . esc_html__( '備考', 'ktpwp' ) . '</th>';
-			$html .= '<th>' . esc_html__( '仕入', 'ktpwp' ) . '</th>';
+			$html .= '<th class="actions-column">' . esc_html__( '操作', 'kantanpro' ) . '</th>';
+			$html .= '<th>' . esc_html__( 'サービス', 'kantanpro' ) . '</th>';
+			$html .= '<th style="text-align:left;">' . esc_html__( '単価', 'kantanpro' ) . '</th>';
+			$html .= '<th style="text-align:left;">' . esc_html__( '数量', 'kantanpro' ) . '</th>';
+			$html .= '<th>' . esc_html__( '単位', 'kantanpro' ) . '</th>';
+			$html .= '<th style="text-align:left;">' . esc_html__( '金額', 'kantanpro' ) . '</th>';
+			$html .= '<th style="text-align:left;">' . esc_html__( '税率', 'kantanpro' ) . '</th>';
+			$html .= '<th>' . esc_html__( '備考', 'kantanpro' ) . '</th>';
+			$html .= '<th>' . esc_html__( '仕入', 'kantanpro' ) . '</th>';
 			$html .= '</tr>';
 			$html .= '</thead>';
 			$html .= '<tbody>';
@@ -490,11 +490,11 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 				$html .= '<tr class="cost-item-row ' . $stripe_class . '" data-row-id="' . $row_id . '" data-supplier-id="' . $supplier_id_for_row . '">';
 				// Actions column with drag handle and buttons
 				$html .= '<td class="actions-column">';
-				$html .= '<span class="drag-handle" title="' . esc_attr__( 'ドラッグして並び替え', 'ktpwp' ) . '">&#9776;</span>';
-				$html .= '<button type="button" class="btn-add-row" title="' . esc_attr__( '行を追加', 'ktpwp' ) . '">+</button>';
+				$html .= '<span class="drag-handle" title="' . esc_attr__( 'ドラッグして並び替え', 'kantanpro' ) . '">&#9776;</span>';
+				$html .= '<button type="button" class="btn-add-row" title="' . esc_attr__( '行を追加', 'kantanpro' ) . '">+</button>';
 				// --- ここを修正: 1行目でも常に削除ボタンを出力 ---
-				$html .= '<button type="button" class="btn-delete-row" title="' . esc_attr__( '行を削除', 'ktpwp' ) . '">×</button>';
-				$html .= '<button type="button" class="btn-move-row" title="' . esc_attr__( '行を移動', 'ktpwp' ) . '">></button>';
+				$html .= '<button type="button" class="btn-delete-row" title="' . esc_attr__( '行を削除', 'kantanpro' ) . '">×</button>';
+				$html .= '<button type="button" class="btn-move-row" title="' . esc_attr__( '行を移動', 'kantanpro' ) . '">></button>';
 				$html .= '</td>';
 
 				// Product name
@@ -588,7 +588,7 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 					}
 					$html .= '</span>';
 				} else {
-					$html .= '<button type="button" class="purchase-choose-supplier-link">' . esc_html__( '協力会社を選ぶ', 'ktpwp' ) . '</button>';
+					$html .= '<button type="button" class="purchase-choose-supplier-link">' . esc_html__( '協力会社を選ぶ', 'kantanpro' ) . '</button>';
 				}
 				$html .= '</td>';
 				$html .= '</tr>';
@@ -631,21 +631,21 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
             if ( $has_outtax ) {
                 // 外税行が1つでもあれば外税3行表示
                 $html .= '<div class="cost-items-total" style="text-align:right;margin-top:8px;font-weight:bold;">';
-                $html .= esc_html__( '金額合計', 'ktpwp' ) . ' : ' . esc_html( KTPWP_Settings::format_money( $total_amount_ceiled ) );
+                $html .= esc_html__( '金額合計', 'kantanpro' ) . ' : ' . esc_html( KTPWP_Settings::format_money( $total_amount_ceiled ) );
                 $html .= '</div>';
                 $html .= '<div class="cost-items-tax" style="text-align:right;margin-top:4px;color:#666;">';
-                $html .= esc_html__( '消費税', 'ktpwp' ) . ' : ' . esc_html( KTPWP_Settings::format_money( $total_tax_amount_ceiled ) );
+                $html .= esc_html__( '消費税', 'kantanpro' ) . ' : ' . esc_html( KTPWP_Settings::format_money( $total_tax_amount_ceiled ) );
                 $html .= '</div>';
                 $html .= '<div class="cost-items-total-with-tax" style="text-align:right;margin-top:4px;font-weight:bold;color:#d32f2f;">';
-                $html .= esc_html__( '税込合計', 'ktpwp' ) . ' : ' . esc_html( KTPWP_Settings::format_money( $total_with_tax_ceiled ) );
+                $html .= esc_html__( '税込合計', 'kantanpro' ) . ' : ' . esc_html( KTPWP_Settings::format_money( $total_with_tax_ceiled ) );
                 $html .= '</div>';
             } else {
                 // 全て内税なら内税1行表示
                 $html .= '<div class="cost-items-total" style="text-align:right;margin-top:8px;font-weight:bold;">';
                 if ( class_exists( 'KTPWP_Tax_Policy' ) && ( KTPWP_Tax_Policy::is_abolished() || KTPWP_Tax_Policy::hide_tax_columns() ) ) {
-                    $html .= esc_html__( '金額合計', 'ktpwp' ) . ' : ' . esc_html( KTPWP_Settings::format_money( $total_amount_ceiled ) );
+                    $html .= esc_html__( '金額合計', 'kantanpro' ) . ' : ' . esc_html( KTPWP_Settings::format_money( $total_amount_ceiled ) );
                 } else {
-                    $html .= esc_html__( '金額合計', 'ktpwp' ) . ' : ' . esc_html( KTPWP_Settings::format_money( $total_amount_ceiled ) ) . ' (' . esc_html__( '内税', 'ktpwp' ) . ' : ' . esc_html( KTPWP_Settings::format_money( $total_tax_amount_ceiled ) ) . ')';
+                    $html .= esc_html__( '金額合計', 'kantanpro' ) . ' : ' . esc_html( KTPWP_Settings::format_money( $total_amount_ceiled ) ) . ' (' . esc_html__( '内税', 'kantanpro' ) . ' : ' . esc_html( KTPWP_Settings::format_money( $total_tax_amount_ceiled ) ) . ')';
                 }
                 $html .= '</div>';
                 $html .= '<div class="cost-items-tax" style="text-align:right;margin-top:4px;color:#666;' . ( ( class_exists( 'KTPWP_Tax_Policy' ) && ( KTPWP_Tax_Policy::is_abolished() || KTPWP_Tax_Policy::hide_tax_columns() ) ) ? 'display:none;' : '' ) . '"></div>';
@@ -667,11 +667,11 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
             // Profit display (using tax-inclusive values)
             $profit_color = $profit >= 0 ? '#28a745' : '#dc3545';  // Green for profit, red for loss
             $html .= '<div class="profit-display" style="text-align:right;margin-top:8px;font-weight:bold;color:' . $profit_color . ';">';
-            $html .= esc_html__( '利益', 'ktpwp' ) . ' : ' . esc_html( KTPWP_Settings::format_money( $profit ) );
+            $html .= esc_html__( '利益', 'kantanpro' ) . ' : ' . esc_html( KTPWP_Settings::format_money( $profit ) );
             // 税廃止モード/税列非表示の場合は内訳を表示しない
             $hide_breakdown = ( class_exists( 'KTPWP_Tax_Policy' ) && ( KTPWP_Tax_Policy::is_abolished() || KTPWP_Tax_Policy::hide_tax_columns() ) );
             if ( ! $hide_breakdown ) {
-                $html .= ' (' . esc_html__( '適格請求書コスト', 'ktpwp' ) . ': ' . esc_html( KTPWP_Settings::format_money( ceil( $qualified_invoice_cost ) ) ) . ', ' . esc_html__( '非適格請求書コスト', 'ktpwp' ) . ': ' . esc_html( KTPWP_Settings::format_money( ceil( $non_qualified_invoice_cost ) ) ) . ')';
+                $html .= ' (' . esc_html__( '適格請求書コスト', 'kantanpro' ) . ': ' . esc_html( KTPWP_Settings::format_money( ceil( $qualified_invoice_cost ) ) ) . ', ' . esc_html__( '非適格請求書コスト', 'kantanpro' ) . ': ' . esc_html( KTPWP_Settings::format_money( ceil( $non_qualified_invoice_cost ) ) ) . ')';
             }
             $html .= '</div>';
 
@@ -963,7 +963,7 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 					'qualified_invoice_cost' => 0,
 					'non_qualified_invoice_cost' => 0,
 					'color' => '#28a745',
-					'html' => '<div class="profit-display" style="text-align:right;margin-top:8px;font-weight:bold;color:#28a745;">' . esc_html__( '利益', 'ktpwp' ) . ' : ' . esc_html( KTPWP_Settings::format_money( 0 ) ) . '</div>'
+					'html' => '<div class="profit-display" style="text-align:right;margin-top:8px;font-weight:bold;color:#28a745;">' . esc_html__( '利益', 'kantanpro' ) . ' : ' . esc_html( KTPWP_Settings::format_money( 0 ) ) . '</div>'
 				);
 			}
 
@@ -980,10 +980,10 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 
             $profit_color = $profit >= 0 ? '#28a745' : '#dc3545';
             $html  = '<div class="profit-display" style="text-align:right;margin-top:8px;font-weight:bold;color:' . $profit_color . ';">';
-            $html .= esc_html__( '利益', 'ktpwp' ) . ' : ' . esc_html( KTPWP_Settings::format_money( $profit ) );
+            $html .= esc_html__( '利益', 'kantanpro' ) . ' : ' . esc_html( KTPWP_Settings::format_money( $profit ) );
             $hide_breakdown = ( class_exists( 'KTPWP_Tax_Policy' ) && ( KTPWP_Tax_Policy::is_abolished() || KTPWP_Tax_Policy::hide_tax_columns() ) );
             if ( ! $hide_breakdown ) {
-                $html .= ' (' . esc_html__( '適格請求書コスト', 'ktpwp' ) . ': ' . esc_html( KTPWP_Settings::format_money( ceil( $qualified_invoice_cost ) ) ) . ', ' . esc_html__( '非適格請求書コスト', 'ktpwp' ) . ': ' . esc_html( KTPWP_Settings::format_money( ceil( $non_qualified_invoice_cost ) ) ) . ')';
+                $html .= ' (' . esc_html__( '適格請求書コスト', 'kantanpro' ) . ': ' . esc_html( KTPWP_Settings::format_money( ceil( $qualified_invoice_cost ) ) ) . ', ' . esc_html__( '非適格請求書コスト', 'kantanpro' ) . ': ' . esc_html( KTPWP_Settings::format_money( ceil( $non_qualified_invoice_cost ) ) ) . ')';
             }
             $html .= '</div>';
 

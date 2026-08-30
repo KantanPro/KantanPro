@@ -64,7 +64,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 				memo TEXT,
 				search_field TEXT,
 				frequency INT NOT NULL DEFAULT 0,
-				category VARCHAR(100) NOT NULL DEFAULT '" . esc_sql( __( 'General', 'ktpwp' ) ) . "',
+				category VARCHAR(100) NOT NULL DEFAULT '" . esc_sql( __( 'General', 'kantanpro' ) ) . "',
 				is_public TINYINT(1) NOT NULL DEFAULT 0,
 				contract_billing_cycle VARCHAR(20) NOT NULL DEFAULT 'none',
 				stock INT UNSIGNED NOT NULL DEFAULT 1,
@@ -111,7 +111,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 
 			// Verify nonce for security
 			if ( ! isset( $_POST['_ktp_service_nonce'] ) || ! wp_verify_nonce( $_POST['_ktp_service_nonce'], 'ktp_service_action' ) ) {
-				wp_die( esc_html__( 'Security check failed.', 'ktpwp' ) );
+				wp_die( esc_html__( 'Security check failed.', 'kantanpro' ) );
 			}
 
 			// Sanitize and validate POST data
@@ -297,7 +297,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 
 			// nonceを検証
 			if ( ! isset( $_POST['_ktp_service_nonce'] ) || ! wp_verify_nonce( $_POST['_ktp_service_nonce'], 'ktp_service_action' ) ) {
-				wp_die( esc_html__( 'Nonce verification failed.', 'ktpwp' ) );
+				wp_die( esc_html__( 'Nonce verification failed.', 'kantanpro' ) );
 			}
 
 			// 新しいIDを取得
@@ -306,7 +306,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 			$new_id = $new_id_result && isset( $new_id_result->new_id ) ? intval( $new_id_result->new_id ) : 1;
 
 			// フォームからのデータを取得
-			$service_name = isset( $_POST['service_name'] ) ? sanitize_text_field( $_POST['service_name'] ) : esc_html__( '新しいサービス', 'ktpwp' );
+			$service_name = isset( $_POST['service_name'] ) ? sanitize_text_field( $_POST['service_name'] ) : esc_html__( '新しいサービス', 'kantanpro' );
 			$price = isset( $_POST['price'] ) ? floatval( $_POST['price'] ) : 0;
 			$tax_rate = isset( $_POST['tax_rate'] ) && $_POST['tax_rate'] !== '' ? floatval( $_POST['tax_rate'] ) : null;
 			$unit = isset( $_POST['unit'] ) ? sanitize_text_field( $_POST['unit'] ) : '';
@@ -390,7 +390,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 			);
 
 			if ( $insert_result === false ) {
-				echo "<script>alert('" . esc_js( esc_html__( '新規追加に失敗しました。', 'ktpwp' ) ) . "');</script>";
+				echo "<script>alert('" . esc_js( esc_html__( '新規追加に失敗しました。', 'kantanpro' ) ) . "');</script>";
 			} else {
 				if ( $this->is_contracts_feature_enabled() ) {
 					$this->sync_service_recurring_items_from_post( $new_id );
@@ -433,7 +433,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 
 			// nonceを検証
 			if ( ! isset( $_POST['_ktp_service_nonce'] ) || ! wp_verify_nonce( $_POST['_ktp_service_nonce'], 'ktp_service_action' ) ) {
-				wp_die( esc_html__( 'Nonce verification failed.', 'ktpwp' ) );
+				wp_die( esc_html__( 'Nonce verification failed.', 'kantanpro' ) );
 			}
 
 			if ( $data_id > 0 ) {
@@ -446,7 +446,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 				if ( $delete_result === false ) {
 					echo "<script>
                 document.addEventListener('DOMContentLoaded', function() {
-                    showErrorNotification('" . esc_js( esc_html__( '削除に失敗しました。', 'ktpwp' ) ) . "');
+                    showErrorNotification('" . esc_js( esc_html__( '削除に失敗しました。', 'kantanpro' ) ) . "');
                 });
                 </script>";
 				} else {
@@ -486,12 +486,12 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 			$table_name = $wpdb->prefix . 'ktp_' . sanitize_key( $tab_name );
 
 			if ( $data_id <= 0 ) {
-				return new WP_Error( 'invalid_id', __( '複製元のサービス ID が不正です。', 'ktpwp' ) );
+				return new WP_Error( 'invalid_id', __( '複製元のサービス ID が不正です。', 'kantanpro' ) );
 			}
 
 			$original_data = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table_name} WHERE id = %d", $data_id ) );
 			if ( ! $original_data ) {
-				return new WP_Error( 'not_found', __( '複製元のサービスが見つかりません。', 'ktpwp' ) );
+				return new WP_Error( 'not_found', __( '複製元のサービスが見つかりません。', 'kantanpro' ) );
 			}
 
 			$new_id_query  = "SELECT COALESCE(MAX(id), 0) + 1 as new_id FROM {$table_name}";
@@ -501,7 +501,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 			$duplicate_data = array(
 				'id'           => $new_id,
 				'time'         => current_time( 'mysql' ),
-				'service_name' => $original_data->service_name . esc_html__( ' (複製)', 'ktpwp' ),
+				'service_name' => $original_data->service_name . esc_html__( ' (複製)', 'kantanpro' ),
 				'price'        => $original_data->price,
 				'tax_rate'     => $original_data->tax_rate,
 				'unit'         => $original_data->unit,
@@ -510,7 +510,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 				'is_public'    => 0,
 				'image_url'    => $original_data->image_url,
 				'frequency'    => $original_data->frequency,
-				'search_field' => $original_data->service_name . esc_html__( ' (複製)', 'ktpwp' ) . ', ' . $original_data->price . ', ' . ( $original_data->tax_rate ?? '' ) . ', ' . $original_data->unit . ', ' . $original_data->category,
+				'search_field' => $original_data->service_name . esc_html__( ' (複製)', 'kantanpro' ) . ', ' . $original_data->price . ', ' . ( $original_data->tax_rate ?? '' ) . ', ' . $original_data->unit . ', ' . $original_data->category,
 			);
 			$duplicate_format = array( '%d', '%s', '%s', '%f', '%f', '%s', '%s', '%s', '%d', '%s', '%d', '%s' );
 
@@ -559,7 +559,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 			);
 
 			if ( $insert_result === false ) {
-				return new WP_Error( 'insert_failed', __( '複製に失敗しました。', 'ktpwp' ) );
+				return new WP_Error( 'insert_failed', __( '複製に失敗しました。', 'kantanpro' ) );
 			}
 
 			if ( class_exists( 'KTPWP_Contract_Recurring_Items' ) ) {
@@ -590,11 +590,11 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 		 */
 		private function handle_duplicate_service( $tab_name, $data_id ) {
 			if ( $_SERVER['REQUEST_METHOD'] !== 'POST' ) {
-				wp_die( esc_html__( 'Invalid request method.', 'ktpwp' ) );
+				wp_die( esc_html__( 'Invalid request method.', 'kantanpro' ) );
 			}
 
 			if ( ! isset( $_POST['_ktp_service_nonce'] ) || ! wp_verify_nonce( $_POST['_ktp_service_nonce'], 'ktp_service_action' ) ) {
-				wp_die( esc_html__( 'Nonce verification failed.', 'ktpwp' ) );
+				wp_die( esc_html__( 'Nonce verification failed.', 'kantanpro' ) );
 			}
 
 			$result = $this->duplicate_service_record( $data_id );
@@ -636,7 +636,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 
 			// nonceを検証
 			if ( ! isset( $_POST['_ktp_service_nonce'] ) || ! wp_verify_nonce( $_POST['_ktp_service_nonce'], 'ktp_service_action' ) ) {
-				wp_die( esc_html__( 'Nonce verification failed.', 'ktpwp' ) );
+				wp_die( esc_html__( 'Nonce verification failed.', 'kantanpro' ) );
 			}
 
 			if ( ! session_id() ) {
@@ -646,7 +646,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 			if ( $query_post === 'search' ) {
 				// 検索モードフラグをセット
 				$_SESSION['ktp_service_search_mode'] = true;
-				$_SESSION['ktp_service_search_message'] = esc_html__( '検索モードです。条件を入力して検索してください。', 'ktpwp' );
+				$_SESSION['ktp_service_search_message'] = esc_html__( '検索モードです。条件を入力して検索してください。', 'kantanpro' );
 				$wpdb->query( 'UNLOCK TABLES;' );
 				return;
 			} elseif ( $query_post === 'search_cancel' ) {
@@ -698,7 +698,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 
 				if ( empty( $where_conditions ) ) {
 					// 未入力で検索実行した場合は0件時と同じ扱い（フォームを維持し該当なしメッセージを表示）
-					$_SESSION['ktp_service_search_message'] = esc_html__( '該当するサービスが見つかりませんでした。条件を変更して再検索してください。', 'ktpwp' );
+					$_SESSION['ktp_service_search_message'] = esc_html__( '該当するサービスが見つかりませんでした。条件を変更して再検索してください。', 'kantanpro' );
 					$_SESSION['ktp_service_search_mode'] = true;
 					$redirect_base = wp_get_referer();
 					if ( ! $redirect_base || $redirect_base === '' ) {
@@ -781,7 +781,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 						}
 					} else {
 						// 検索結果が無い場合
-						$_SESSION['ktp_service_search_message'] = esc_html__( '該当するサービスが見つかりませんでした。条件を変更して再検索してください。', 'ktpwp' );
+						$_SESSION['ktp_service_search_message'] = esc_html__( '該当するサービスが見つかりませんでした。条件を変更して再検索してください。', 'kantanpro' );
 						$_SESSION['ktp_service_search_mode'] = true;
 
 						// 0件時は必ず検索モードへ戻す（istmode混在を防止）

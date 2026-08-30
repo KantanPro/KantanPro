@@ -41,12 +41,12 @@ if ( ! class_exists( 'KTPWP_Contract_Billing_Cycle' ) ) {
 		 */
 		public static function get_options() {
 			return array(
-				self::NONE       => __( '都度請求', 'ktpwp' ),
-				self::MONTHLY    => __( '毎月', 'ktpwp' ),
-				self::BIMONTHLY  => __( '2ヶ月に1回', 'ktpwp' ),
-				self::QUARTERLY  => __( '3ヶ月に1回', 'ktpwp' ),
-				self::SEMIANNUAL => __( '6ヶ月に1回', 'ktpwp' ),
-				self::ANNUAL     => __( '毎年', 'ktpwp' ),
+				self::NONE       => __( '都度請求', 'kantanpro' ),
+				self::MONTHLY    => __( '毎月', 'kantanpro' ),
+				self::BIMONTHLY  => __( '2ヶ月に1回', 'kantanpro' ),
+				self::QUARTERLY  => __( '3ヶ月に1回', 'kantanpro' ),
+				self::SEMIANNUAL => __( '6ヶ月に1回', 'kantanpro' ),
+				self::ANNUAL     => __( '毎年', 'kantanpro' ),
 			);
 		}
 

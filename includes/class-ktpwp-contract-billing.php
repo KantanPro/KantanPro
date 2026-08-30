@@ -254,31 +254,31 @@ if ( ! class_exists( 'KTPWP_Contract_Billing' ) ) {
 			$period      = $period ? sanitize_text_field( $period ) : $this->get_billing_period();
 
 			if ( $contract_id <= 0 || ! preg_match( '/^\d{4}-\d{2}$/', $period ) ) {
-				return new WP_Error( 'invalid_args', __( '請求対象が不正です。', 'ktpwp' ) );
+				return new WP_Error( 'invalid_args', __( '請求対象が不正です。', 'kantanpro' ) );
 			}
 
 			$contract = $this->contract_db->get_contract_by_id( $contract_id );
 			if ( ! $contract ) {
-				return new WP_Error( 'not_found', __( '定期契約が見つかりません。', 'ktpwp' ) );
+				return new WP_Error( 'not_found', __( '定期契約が見つかりません。', 'kantanpro' ) );
 			}
 
 			if ( 'active' !== $contract->status ) {
-				return new WP_Error( 'inactive', __( '有効な定期契約のみ案件を紐付けできます。', 'ktpwp' ) );
+				return new WP_Error( 'inactive', __( '有効な定期契約のみ案件を紐付けできます。', 'kantanpro' ) );
 			}
 
 			if ( ! $this->is_contract_due_in_period( $contract, $period ) ) {
-				return new WP_Error( 'not_due', __( 'この月は請求対象ではありません。', 'ktpwp' ) );
+				return new WP_Error( 'not_due', __( 'この月は請求対象ではありません。', 'kantanpro' ) );
 			}
 
 			$existing_log = $this->get_billing_log( $contract_id, $period );
 			if ( $existing_log && (int) $existing_log->order_id > 0 ) {
-				return new WP_Error( 'already_generated', __( '今月分の案件はすでに紐付けされています。', 'ktpwp' ) );
+				return new WP_Error( 'already_generated', __( '今月分の案件はすでに紐付けされています。', 'kantanpro' ) );
 			}
 
 			$existing_order = $this->find_order_for_contract_period( $contract_id, $period );
 			if ( $existing_order ) {
 				$this->ensure_billing_log( $contract_id, $period, (int) $existing_order->id );
-				return new WP_Error( 'already_generated', __( '今月分の案件はすでに紐付けされています。', 'ktpwp' ) );
+				return new WP_Error( 'already_generated', __( '今月分の案件はすでに紐付けされています。', 'kantanpro' ) );
 			}
 
 			$client = $wpdb->get_row(
@@ -288,11 +288,11 @@ if ( ! class_exists( 'KTPWP_Contract_Billing' ) ) {
 				)
 			);
 			if ( ! $client ) {
-				return new WP_Error( 'client_missing', __( '顧客が見つかりません。', 'ktpwp' ) );
+				return new WP_Error( 'client_missing', __( '顧客が見つかりません。', 'kantanpro' ) );
 			}
 
 			if ( isset( $client->client_status ) && '対象外' === $client->client_status ) {
-				return new WP_Error( 'client_excluded', __( '対象外の顧客には案件を紐付けできません。', 'ktpwp' ) );
+				return new WP_Error( 'client_excluded', __( '対象外の顧客には案件を紐付けできません。', 'kantanpro' ) );
 			}
 
 			$service = $wpdb->get_row(
@@ -331,7 +331,7 @@ if ( ! class_exists( 'KTPWP_Contract_Billing' ) ) {
 				'memo'          => sanitize_textarea_field(
 					sprintf(
 						/* translators: %d: contract id */
-						__( '定期契約ID: %d', 'ktpwp' ),
+						__( '定期契約ID: %d', 'kantanpro' ),
 						$contract_id
 					)
 				),
@@ -367,7 +367,7 @@ if ( ! class_exists( 'KTPWP_Contract_Billing' ) ) {
 			$inserted = $wpdb->insert( $order_table, $insert_data, $insert_formats );
 			if ( false === $inserted ) {
 				$wpdb->query( 'ROLLBACK' );
-				return new WP_Error( 'insert_failed', __( '案件の紐付けに失敗しました。', 'ktpwp' ) );
+				return new WP_Error( 'insert_failed', __( '案件の紐付けに失敗しました。', 'kantanpro' ) );
 			}
 
 			$order_id = (int) $wpdb->insert_id;
@@ -387,7 +387,7 @@ if ( ! class_exists( 'KTPWP_Contract_Billing' ) ) {
 				);
 				if ( false === $updated ) {
 					$wpdb->query( 'ROLLBACK' );
-					return new WP_Error( 'update_failed', __( '初回請求フラグの更新に失敗しました。', 'ktpwp' ) );
+					return new WP_Error( 'update_failed', __( '初回請求フラグの更新に失敗しました。', 'kantanpro' ) );
 				}
 			}
 
@@ -413,7 +413,7 @@ if ( ! class_exists( 'KTPWP_Contract_Billing' ) ) {
 			}
 			if ( false === $log_saved ) {
 				$wpdb->query( 'ROLLBACK' );
-				return new WP_Error( 'log_failed', __( '請求ログの保存に失敗しました。', 'ktpwp' ) );
+				return new WP_Error( 'log_failed', __( '請求ログの保存に失敗しました。', 'kantanpro' ) );
 			}
 
 			$wpdb->query( 'COMMIT' );
@@ -553,7 +553,7 @@ if ( ! class_exists( 'KTPWP_Contract_Billing' ) ) {
 			$invoice_table = $wpdb->prefix . 'ktp_order_invoice_items';
 			$wpdb->delete( $invoice_table, array( 'order_id' => $order_id ), array( '%d' ) );
 
-			$unit     = ( $service && ! empty( $service->unit ) ) ? (string) $service->unit : __( '式', 'ktpwp' );
+			$unit     = ( $service && ! empty( $service->unit ) ) ? (string) $service->unit : __( '式', 'kantanpro' );
 			$default_tax_rate = null;
 			if ( $service && isset( $service->tax_rate ) && $service->tax_rate !== null && $service->tax_rate !== '' ) {
 				$default_tax_rate = (float) $service->tax_rate;
@@ -600,7 +600,7 @@ if ( ! class_exists( 'KTPWP_Contract_Billing' ) ) {
 						(string) $fee->fee_name,
 						(float) $fee->amount,
 						1,
-						__( '式', 'ktpwp' ),
+						__( '式', 'kantanpro' ),
 						$fee_tax,
 						$sort,
 						self::INITIAL_FEE_REMARKS,
@@ -680,14 +680,14 @@ if ( ! class_exists( 'KTPWP_Contract_Billing' ) ) {
 		public static function format_billing_day_label( $billing_day ) {
 			$billing_day = (int) $billing_day;
 			if ( 99 === $billing_day ) {
-				return __( '毎月末', 'ktpwp' );
+				return __( '毎月末', 'kantanpro' );
 			}
 			if ( $billing_day <= 0 ) {
-				return __( '未設定', 'ktpwp' );
+				return __( '未設定', 'kantanpro' );
 			}
 
 			/* translators: %d: day of month */
-			return sprintf( __( '毎月%d日', 'ktpwp' ), $billing_day );
+			return sprintf( __( '毎月%d日', 'kantanpro' ), $billing_day );
 		}
 
 		/**
@@ -764,18 +764,18 @@ if ( ! class_exists( 'KTPWP_Contract_Billing' ) ) {
 				if ( $billing_date_lbl !== '' ) {
 					return sprintf(
 						/* translators: %s: short date like 6/30 */
-						__( '月末（%s）', 'ktpwp' ),
+						__( '月末（%s）', 'kantanpro' ),
 						$billing_date_lbl
 					);
 				}
 
-				return __( '月末', 'ktpwp' );
+				return __( '月末', 'kantanpro' );
 			}
 
 			if ( $billing_date_lbl !== '' ) {
 				return sprintf(
 					/* translators: 1: day of month, 2: short date */
-					__( '%1$d日（%2$s）', 'ktpwp' ),
+					__( '%1$d日（%2$s）', 'kantanpro' ),
 					$billing_day,
 					$billing_date_lbl
 				);
@@ -800,14 +800,14 @@ if ( ! class_exists( 'KTPWP_Contract_Billing' ) ) {
 			$closing_day   = isset( $client_or_contract->closing_day ) ? trim( (string) $client_or_contract->closing_day ) : '';
 
 			if ( $payment_month === '' && $payment_day === '' && ( $closing_day === '' || $closing_day === 'なし' ) ) {
-				return __( '未設定', 'ktpwp' );
+				return __( '未設定', 'kantanpro' );
 			}
 
 			$parts = array();
 			if ( $closing_day !== '' && $closing_day !== 'なし' ) {
 				$parts[] = sprintf(
 					/* translators: %s: closing day label */
-					__( '締め:%s', 'ktpwp' ),
+					__( '締め:%s', 'kantanpro' ),
 					$closing_day
 				);
 			}

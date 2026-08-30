@@ -66,7 +66,7 @@ class KTPWP_I18n {
      * @return void
      */
     public function load_textdomain() {
-        load_plugin_textdomain( 'ktpwp', false, dirname( plugin_basename( KTPWP_PLUGIN_FILE ) ) . '/languages/' );
+        load_plugin_textdomain( 'kantanpro', false, dirname( plugin_basename( KTPWP_PLUGIN_FILE ) ) . '/languages/' );
     }
 
     /**

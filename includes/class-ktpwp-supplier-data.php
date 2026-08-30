@@ -55,9 +55,9 @@ if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
 			global $wpdb;
 			$table_name = $wpdb->prefix . 'ktp_supplier';
 			$charset_collate = $wpdb->get_charset_collate();
-			$default_company = __( 'Regular Supplier', 'ktpwp' );
-			$default_tax = __( 'Tax Included', 'ktpwp' );
-			$default_category = __( 'General', 'ktpwp' );
+			$default_company = __( 'Regular Supplier', 'kantanpro' );
+			$default_tax = __( 'Tax Included', 'kantanpro' );
+			$default_category = __( 'General', 'kantanpro' );
 
 			$sql = "CREATE TABLE {$table_name} (
                 id MEDIUMINT(9) NOT NULL AUTO_INCREMENT,
@@ -138,7 +138,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
 					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 						error_log( 'KTPWP: Nonce verification failed' );
 					}
-					wp_die( __( 'Security check failed. Please refresh the page and try again.', 'ktpwp' ) );
+					wp_die( __( 'Security check failed. Please refresh the page and try again.', 'kantanpro' ) );
 				}
 			}
 
@@ -262,7 +262,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
 							}
 							echo '<script>
                         document.addEventListener("DOMContentLoaded", function() {
-                            showErrorNotification("' . esc_js( __( '職能データの削除に失敗しました。', 'ktpwp' ) ) . '");
+                            showErrorNotification("' . esc_js( __( '職能データの削除に失敗しました。', 'kantanpro' ) ) . '");
                         });
                         </script>';
 							return;
@@ -279,7 +279,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
 							// ユーザーには適切なエラーメッセージのみ表示
 							echo '<script>
                         document.addEventListener("DOMContentLoaded", function() {
-                            showErrorNotification("' . esc_js( __( '削除に失敗しました。', 'ktpwp' ) ) . '");
+                            showErrorNotification("' . esc_js( __( '削除に失敗しました。', 'kantanpro' ) ) . '");
                         });
                         </script>';
 						} else {
@@ -302,7 +302,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
 							// 成功メッセージのみ表示（デバッグログは含めない）
 							echo '<script>
                             document.addEventListener("DOMContentLoaded", function() {
-                                showSuccessNotification("' . esc_js( esc_html__( '協力会社を削除しました。', 'ktpwp' ) ) . '");
+                                showSuccessNotification("' . esc_js( esc_html__( '協力会社を削除しました。', 'kantanpro' ) ) . '");
                                 setTimeout(function() {
                                     window.location.href = "' . esc_js( $redirect_url ) . '";
                                 }, 1000);
@@ -380,7 +380,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
 						if ( $update_result === false ) {
 							echo '<script>
                         document.addEventListener("DOMContentLoaded", function() {
-                            showErrorNotification("' . esc_js( __( '更新に失敗しました。SQLエラー: ', 'ktpwp' ) ) . esc_js( $wpdb->last_error ) . '");
+                            showErrorNotification("' . esc_js( __( '更新に失敗しました。SQLエラー: ', 'kantanpro' ) ) . esc_js( $wpdb->last_error ) . '");
                         });
                         </script>';
 						} else {
@@ -418,7 +418,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
 					$table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) ) === $table_name;
 					if ( ! $table_exists ) {
 						error_log( 'KTPWP ERROR: Table does not exist: ' . $table_name );
-						wp_die( __( 'Database table does not exist. Please contact the administrator.', 'ktpwp' ) );
+						wp_die( __( 'Database table does not exist. Please contact the administrator.', 'kantanpro' ) );
 					}
 
 					// Sanitize all POST data for insert operation
@@ -512,7 +512,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
 					if ( $insert_result === false ) {
 						echo '<script>
                     document.addEventListener("DOMContentLoaded", function() {
-                        showErrorNotification("' . esc_js( __( '追加に失敗しました。SQLエラー: ', 'ktpwp' ) ) . esc_js( $wpdb->last_error ) . '");
+                        showErrorNotification("' . esc_js( __( '追加に失敗しました。SQLエラー: ', 'kantanpro' ) ) . esc_js( $wpdb->last_error ) . '");
                     });
                     </script>';
 					} else {

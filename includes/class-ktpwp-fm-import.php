@@ -74,9 +74,9 @@ final class KTPWP_FM_Import {
 				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 				'nonce'   => wp_create_nonce( self::NONCE_AJAX_AI ),
 				'i18n'    => array(
-					'working' => __( 'AI に問い合わせ中…', 'ktpwp' ),
-					'done'    => __( 'マッピングを反映しました。内容を確認してから取り込みを実行してください。', 'ktpwp' ),
-					'error'   => __( 'AI マッピングに失敗しました。', 'ktpwp' ),
+					'working' => __( 'AI に問い合わせ中…', 'kantanpro' ),
+					'done'    => __( 'マッピングを反映しました。内容を確認してから取り込みを実行してください。', 'kantanpro' ),
+					'error'   => __( 'AI マッピングに失敗しました。', 'kantanpro' ),
 				),
 			)
 		);
@@ -89,7 +89,7 @@ final class KTPWP_FM_Import {
 	 */
 	public static function render_admin_page(): void {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'このページにアクセスする権限がありません。', 'ktpwp' ) );
+			wp_die( esc_html__( 'このページにアクセスする権限がありません。', 'kantanpro' ) );
 		}
 
 		if ( ! empty( $_GET['ktp_fm_reset'] ) && isset( $_GET['ktp_fm_reset_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['ktp_fm_reset_nonce'] ) ), 'ktp_fm_reset' ) ) {
@@ -116,12 +116,12 @@ final class KTPWP_FM_Import {
 		$session       = get_transient( $transient_key );
 
 		echo '<div class="wrap ktp-admin-wrap">';
-		echo '<h1>' . esc_html__( 'FileMaker版データ取り込み', 'ktpwp' ) . '</h1>';
+		echo '<h1>' . esc_html__( 'FileMaker版データ取り込み', 'kantanpro' ) . '</h1>';
 
 		echo '<div class="notice notice-info"><p>';
-		echo esc_html__( 'FileMaker Pro 版から書き出した Zip ファイルを1つアップロードしてください。Zip 内の構成は問いません。OpenAI API キー（BYOK）を設定したうえで「AI で解析して取り込む」を実行すると、Zip 内の表形式ファイルを判別し、顧客・協力会社・商品マスタへ可能な範囲で取り込みます。', 'ktpwp' );
+		echo esc_html__( 'FileMaker Pro 版から書き出した Zip ファイルを1つアップロードしてください。Zip 内の構成は問いません。OpenAI API キー（BYOK）を設定したうえで「AI で解析して取り込む」を実行すると、Zip 内の表形式ファイルを判別し、顧客・協力会社・商品マスタへ可能な範囲で取り込みます。', 'kantanpro' );
 		echo ' ';
-		echo esc_html__( 'OpenAI の従量課金はご利用のアカウントに発生します。', 'ktpwp' );
+		echo esc_html__( 'OpenAI の従量課金はご利用のアカウントに発生します。', 'kantanpro' );
 		echo '</p></div>';
 
 		if ( is_string( $ai_zip_notice ) && $ai_zip_notice !== '' ) {
@@ -145,7 +145,7 @@ final class KTPWP_FM_Import {
 			$session_clean = self::sanitize_session_for_render( $session_raw );
 			if ( $session_raw !== false && $session_raw !== null && $session_clean === null ) {
 				delete_transient( $transient_key );
-				echo '<div class="notice notice-warning"><p>' . esc_html__( '取り込み途中のデータが壊れているため破棄しました。ファイルを再度アップロードしてください。', 'ktpwp' ) . '</p></div>';
+				echo '<div class="notice notice-warning"><p>' . esc_html__( '取り込み途中のデータが壊れているため破棄しました。ファイルを再度アップロードしてください。', 'kantanpro' ) . '</p></div>';
 				self::render_upload_form();
 			} elseif ( $session_clean !== null ) {
 				try {
@@ -154,7 +154,7 @@ final class KTPWP_FM_Import {
 					if ( defined( 'WP_DEBUG' ) && WP_DEBUG && defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG ) {
 						error_log( 'KTPWP_FM_Import: ' . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine() );
 					}
-					echo '<div class="notice notice-error"><p>' . esc_html__( '取り込み画面の表示中にエラーが発生しました。「最初からやり直す」でセッションを消すか、ファイルを確認してください。', 'ktpwp' ) . '</p></div>';
+					echo '<div class="notice notice-error"><p>' . esc_html__( '取り込み画面の表示中にエラーが発生しました。「最初からやり直す」でセッションを消すか、ファイルを確認してください。', 'kantanpro' ) . '</p></div>';
 					self::render_upload_form();
 				}
 			} else {
@@ -173,7 +173,7 @@ final class KTPWP_FM_Import {
 			return;
 		}
 		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ), self::NONCE_OPENAI ) ) {
-			wp_die( esc_html__( 'セキュリティ検証に失敗しました。', 'ktpwp' ) );
+			wp_die( esc_html__( 'セキュリティ検証に失敗しました。', 'kantanpro' ) );
 		}
 		$key = isset( $_POST['ktp_fm_openai_key'] ) ? sanitize_text_field( wp_unslash( $_POST['ktp_fm_openai_key'] ) ) : '';
 		if ( $key === '' ) {
@@ -194,21 +194,21 @@ final class KTPWP_FM_Import {
 			return '';
 		}
 		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ), self::NONCE_UPLOAD ) ) {
-			return '<div class="notice notice-error"><p>' . esc_html__( 'セキュリティ検証に失敗しました。', 'ktpwp' ) . '</p></div>';
+			return '<div class="notice notice-error"><p>' . esc_html__( 'セキュリティ検証に失敗しました。', 'kantanpro' ) . '</p></div>';
 		}
 		if ( empty( $_FILES['ktp_fm_file']['tmp_name'] ) ) {
-			return '<div class="notice notice-error"><p>' . esc_html__( 'ファイルを選択してください。', 'ktpwp' ) . '</p></div>';
+			return '<div class="notice notice-error"><p>' . esc_html__( 'ファイルを選択してください。', 'kantanpro' ) . '</p></div>';
 		}
 
 		$file = $_FILES['ktp_fm_file'];
 		if ( ! empty( $file['error'] ) ) {
-			return '<div class="notice notice-error"><p>' . esc_html__( 'ファイルのアップロードに失敗しました。', 'ktpwp' ) . '</p></div>';
+			return '<div class="notice notice-error"><p>' . esc_html__( 'ファイルのアップロードに失敗しました。', 'kantanpro' ) . '</p></div>';
 		}
 		if ( (int) $file['size'] > self::MAX_ZIP_BYTES ) {
 			return '<div class="notice notice-error"><p>' . esc_html(
 				sprintf(
 					/* translators: %s: max size like 50 MB */
-					__( 'Zip が大きすぎます（%s 以下にしてください）。', 'ktpwp' ),
+					__( 'Zip が大きすぎます（%s 以下にしてください）。', 'kantanpro' ),
 					size_format( self::MAX_ZIP_BYTES )
 				)
 			) . '</p></div>';
@@ -217,16 +217,16 @@ final class KTPWP_FM_Import {
 		$name = isset( $file['name'] ) ? sanitize_file_name( $file['name'] ) : '';
 		$ext  = strtolower( pathinfo( $name, PATHINFO_EXTENSION ) );
 		if ( $ext !== 'zip' ) {
-			return '<div class="notice notice-error"><p>' . esc_html__( 'アップロードできるのは FileMaker 版から書き出した Zip ファイルのみです。', 'ktpwp' ) . '</p></div>';
+			return '<div class="notice notice-error"><p>' . esc_html__( 'アップロードできるのは FileMaker 版から書き出した Zip ファイルのみです。', 'kantanpro' ) . '</p></div>';
 		}
 
 		if ( ! class_exists( 'ZipArchive', false ) ) {
-			return '<div class="notice notice-error"><p>' . esc_html__( 'このサーバーでは Zip を扱えません（ZipArchive がありません）。', 'ktpwp' ) . '</p></div>';
+			return '<div class="notice notice-error"><p>' . esc_html__( 'このサーバーでは Zip を扱えません（ZipArchive がありません）。', 'kantanpro' ) . '</p></div>';
 		}
 
 		$probe = new ZipArchive();
 		if ( $probe->open( $file['tmp_name'] ) !== true ) {
-			return '<div class="notice notice-error"><p>' . esc_html__( 'Zip ファイルを開けませんでした。', 'ktpwp' ) . '</p></div>';
+			return '<div class="notice notice-error"><p>' . esc_html__( 'Zip ファイルを開けませんでした。', 'kantanpro' ) . '</p></div>';
 		}
 		$probe->close();
 
@@ -239,7 +239,7 @@ final class KTPWP_FM_Import {
 		}
 
 		if ( ! @move_uploaded_file( $file['tmp_name'], $dest ) ) {
-			return '<div class="notice notice-error"><p>' . esc_html__( 'サーバーへ Zip を保存できませんでした。', 'ktpwp' ) . '</p></div>';
+			return '<div class="notice notice-error"><p>' . esc_html__( 'サーバーへ Zip を保存できませんでした。', 'kantanpro' ) . '</p></div>';
 		}
 
 		set_transient(
@@ -252,7 +252,7 @@ final class KTPWP_FM_Import {
 			self::TRANSIENT_TTL
 		);
 
-		return '<div class="notice notice-success"><p>' . esc_html__( 'Zip を受け付けました。下の「AI で解析して取り込む」から続行してください（OpenAI API キーが必要です）。', 'ktpwp' ) . '</p></div>';
+		return '<div class="notice notice-success"><p>' . esc_html__( 'Zip を受け付けました。下の「AI で解析して取り込む」から続行してください（OpenAI API キーが必要です）。', 'kantanpro' ) . '</p></div>';
 	}
 
 	/**
@@ -263,7 +263,7 @@ final class KTPWP_FM_Import {
 			return '';
 		}
 		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ), self::NONCE_IMPORT ) ) {
-			return '<div class="notice notice-error"><p>' . esc_html__( 'セキュリティ検証に失敗しました。', 'ktpwp' ) . '</p></div>';
+			return '<div class="notice notice-error"><p>' . esc_html__( 'セキュリティ検証に失敗しました。', 'kantanpro' ) . '</p></div>';
 		}
 
 		$key           = self::transient_key_for_user();
@@ -271,7 +271,7 @@ final class KTPWP_FM_Import {
 		$session_clean = self::sanitize_session_for_render( $session_raw );
 		if ( $session_clean === null ) {
 			delete_transient( $key );
-			return '<div class="notice notice-error"><p>' . esc_html__( 'セッションが切れたか、保存データが不正です。ファイルを再度アップロードしてください。', 'ktpwp' ) . '</p></div>';
+			return '<div class="notice notice-error"><p>' . esc_html__( 'セッションが切れたか、保存データが不正です。ファイルを再度アップロードしてください。', 'kantanpro' ) . '</p></div>';
 		}
 
 		$headers = $session_clean['headers'];
@@ -309,7 +309,7 @@ final class KTPWP_FM_Import {
 		$cls = $result['errors'] > 0 ? 'notice-warning' : 'notice-success';
 		$msg = sprintf(
 			/* translators: 1: inserted count, 2: skipped, 3: errors */
-			__( '取り込み完了：追加 %1$d 件、スキップ %2$d 件、エラー %3$d 件。', 'ktpwp' ),
+			__( '取り込み完了：追加 %1$d 件、スキップ %2$d 件、エラー %3$d 件。', 'kantanpro' ),
 			(int) $result['inserted'],
 			(int) $result['skipped'],
 			(int) $result['errors']
@@ -328,23 +328,23 @@ final class KTPWP_FM_Import {
 			return '';
 		}
 		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ), self::NONCE_AI_ZIP ) ) {
-			return '<div class="notice notice-error"><p>' . esc_html__( 'セキュリティ検証に失敗しました。', 'ktpwp' ) . '</p></div>';
+			return '<div class="notice notice-error"><p>' . esc_html__( 'セキュリティ検証に失敗しました。', 'kantanpro' ) . '</p></div>';
 		}
 
 		$api_key = self::decrypt_api_key( (string) get_option( self::OPTION_OPENAI_KEY_ENC, '' ) );
 		if ( $api_key === '' ) {
-			return '<div class="notice notice-error"><p>' . esc_html__( '先に OpenAI API キーを保存してください。', 'ktpwp' ) . '</p></div>';
+			return '<div class="notice notice-error"><p>' . esc_html__( '先に OpenAI API キーを保存してください。', 'kantanpro' ) . '</p></div>';
 		}
 
 		$zip_sess = self::sanitize_zip_session( get_transient( self::transient_zip_session_key() ) );
 		if ( $zip_sess === null ) {
-			return '<div class="notice notice-error"><p>' . esc_html__( '取り込み待ちの Zip がありません。もう一度 Zip をアップロードしてください。', 'ktpwp' ) . '</p></div>';
+			return '<div class="notice notice-error"><p>' . esc_html__( '取り込み待ちの Zip がありません。もう一度 Zip をアップロードしてください。', 'kantanpro' ) . '</p></div>';
 		}
 
 		$zip_path = $zip_sess['path'];
 		if ( ! self::is_valid_stored_zip_path( $zip_path ) ) {
 			delete_transient( self::transient_zip_session_key() );
-			return '<div class="notice notice-error"><p>' . esc_html__( '保存された Zip のパスが無効です。最初からやり直してください。', 'ktpwp' ) . '</p></div>';
+			return '<div class="notice notice-error"><p>' . esc_html__( '保存された Zip のパスが無効です。最初からやり直してください。', 'kantanpro' ) . '</p></div>';
 		}
 
 		if ( function_exists( 'set_time_limit' ) ) {
@@ -356,7 +356,7 @@ final class KTPWP_FM_Import {
 			return '<div class="notice notice-error"><p>' . esc_html( $manifest->get_error_message() ) . '</p></div>';
 		}
 		if ( $manifest === array() ) {
-			return '<div class="notice notice-error"><p>' . esc_html__( 'Zip 内に取り込み候補となる表形式ファイル（csv / tsv / tab / txt）が見つかりませんでした。', 'ktpwp' ) . '</p></div>';
+			return '<div class="notice notice-error"><p>' . esc_html__( 'Zip 内に取り込み候補となる表形式ファイル（csv / tsv / tab / txt）が見つかりませんでした。', 'kantanpro' ) . '</p></div>';
 		}
 
 		$user_json = self::truncate_manifest_json_for_openai( $manifest );
@@ -378,7 +378,7 @@ final class KTPWP_FM_Import {
 		delete_transient( self::transient_zip_session_key() );
 		set_transient( self::transient_report_key(), $report, self::TRANSIENT_TTL );
 
-		return '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'AI 解析と取り込み処理が完了しました。下のレポートを確認してください。', 'ktpwp' ) . '</p></div>';
+		return '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'AI 解析と取り込み処理が完了しました。下のレポートを確認してください。', 'kantanpro' ) . '</p></div>';
 	}
 
 	/**
@@ -386,19 +386,19 @@ final class KTPWP_FM_Import {
 	 */
 	public static function ajax_ai_mapping(): void {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => __( '権限がありません。', 'ktpwp' ) ), 403 );
+			wp_send_json_error( array( 'message' => __( '権限がありません。', 'kantanpro' ) ), 403 );
 		}
 		check_ajax_referer( self::NONCE_AJAX_AI, 'nonce' );
 
 		$key = self::decrypt_api_key( (string) get_option( self::OPTION_OPENAI_KEY_ENC, '' ) );
 		if ( $key === '' ) {
-			wp_send_json_error( array( 'message' => __( 'OpenAI API キーが未設定です。', 'ktpwp' ) ) );
+			wp_send_json_error( array( 'message' => __( 'OpenAI API キーが未設定です。', 'kantanpro' ) ) );
 		}
 
 		$headers = isset( $_POST['headers'] ) ? json_decode( wp_unslash( (string) $_POST['headers'] ), true ) : null;
 		$samples = isset( $_POST['samples'] ) ? json_decode( wp_unslash( (string) $_POST['samples'] ), true ) : null;
 		if ( ! is_array( $headers ) || $headers === array() ) {
-			wp_send_json_error( array( 'message' => __( 'ヘッダーが不正です。', 'ktpwp' ) ) );
+			wp_send_json_error( array( 'message' => __( 'ヘッダーが不正です。', 'kantanpro' ) ) );
 		}
 		$headers = array_map( 'sanitize_text_field', array_map( 'strval', $headers ) );
 		if ( ! is_array( $samples ) ) {
@@ -446,13 +446,13 @@ final class KTPWP_FM_Import {
 		$code = (int) wp_remote_retrieve_response_code( $response );
 		$body = json_decode( (string) wp_remote_retrieve_body( $response ), true );
 		if ( $code < 200 || $code >= 300 ) {
-			$msg = is_array( $body ) && isset( $body['error']['message'] ) ? (string) $body['error']['message'] : __( 'OpenAI API エラー', 'ktpwp' );
+			$msg = is_array( $body ) && isset( $body['error']['message'] ) ? (string) $body['error']['message'] : __( 'OpenAI API エラー', 'kantanpro' );
 			wp_send_json_error( array( 'message' => $msg ) );
 		}
 		$content = is_array( $body ) && isset( $body['choices'][0]['message']['content'] ) ? (string) $body['choices'][0]['message']['content'] : '';
 		$decoded = json_decode( $content, true );
 		if ( ! is_array( $decoded ) || empty( $decoded['column_map'] ) || ! is_array( $decoded['column_map'] ) ) {
-			wp_send_json_error( array( 'message' => __( 'AI の応答を解釈できませんでした。', 'ktpwp' ) ) );
+			wp_send_json_error( array( 'message' => __( 'AI の応答を解釈できませんでした。', 'kantanpro' ) ) );
 		}
 
 		$out_map = array();
@@ -515,72 +515,72 @@ PROMPT;
 		$entity = self::normalize_entity( $entity );
 		if ( $entity === self::ENTITY_SUPPLIER ) {
 			return array(
-				'company_name'             => __( '会社名', 'ktpwp' ),
-				'name'                     => __( '担当者名', 'ktpwp' ),
-				'email'                    => __( 'メール', 'ktpwp' ),
-				'url'                      => __( 'URL', 'ktpwp' ),
-				'representative_name'      => __( '代表者名', 'ktpwp' ),
-				'phone'                    => __( '電話', 'ktpwp' ),
-				'postal_code'              => __( '郵便番号', 'ktpwp' ),
-				'prefecture'               => __( '都道府県', 'ktpwp' ),
-				'city'                     => __( '市区町村', 'ktpwp' ),
-				'address'                  => __( '住所', 'ktpwp' ),
-				'building'                 => __( '建物名', 'ktpwp' ),
-				'closing_day'              => __( '締め日', 'ktpwp' ),
-				'payment_month'            => __( '支払月', 'ktpwp' ),
-				'payment_day'              => __( '支払日', 'ktpwp' ),
-				'payment_method'           => __( '支払方法', 'ktpwp' ),
-				'tax_category'             => __( '税区分', 'ktpwp' ),
-				'memo'                     => __( 'メモ', 'ktpwp' ),
-				'qualified_invoice_number' => __( '適格請求書番号', 'ktpwp' ),
-				'category'                 => __( 'カテゴリ', 'ktpwp' ),
+				'company_name'             => __( '会社名', 'kantanpro' ),
+				'name'                     => __( '担当者名', 'kantanpro' ),
+				'email'                    => __( 'メール', 'kantanpro' ),
+				'url'                      => __( 'URL', 'kantanpro' ),
+				'representative_name'      => __( '代表者名', 'kantanpro' ),
+				'phone'                    => __( '電話', 'kantanpro' ),
+				'postal_code'              => __( '郵便番号', 'kantanpro' ),
+				'prefecture'               => __( '都道府県', 'kantanpro' ),
+				'city'                     => __( '市区町村', 'kantanpro' ),
+				'address'                  => __( '住所', 'kantanpro' ),
+				'building'                 => __( '建物名', 'kantanpro' ),
+				'closing_day'              => __( '締め日', 'kantanpro' ),
+				'payment_month'            => __( '支払月', 'kantanpro' ),
+				'payment_day'              => __( '支払日', 'kantanpro' ),
+				'payment_method'           => __( '支払方法', 'kantanpro' ),
+				'tax_category'             => __( '税区分', 'kantanpro' ),
+				'memo'                     => __( 'メモ', 'kantanpro' ),
+				'qualified_invoice_number' => __( '適格請求書番号', 'kantanpro' ),
+				'category'                 => __( 'カテゴリ', 'kantanpro' ),
 			);
 		}
 		if ( $entity === self::ENTITY_SERVICE ) {
 			return array(
-				'service_name' => __( '商品・サービス名', 'ktpwp' ),
-				'price'        => __( '単価（数値）', 'ktpwp' ),
-				'tax_rate'     => __( '税率（%・空可）', 'ktpwp' ),
-				'unit'         => __( '単位', 'ktpwp' ),
-				'memo'         => __( 'メモ', 'ktpwp' ),
-				'category'     => __( 'カテゴリ', 'ktpwp' ),
+				'service_name' => __( '商品・サービス名', 'kantanpro' ),
+				'price'        => __( '単価（数値）', 'kantanpro' ),
+				'tax_rate'     => __( '税率（%・空可）', 'kantanpro' ),
+				'unit'         => __( '単位', 'kantanpro' ),
+				'memo'         => __( 'メモ', 'kantanpro' ),
+				'category'     => __( 'カテゴリ', 'kantanpro' ),
 			);
 		}
 		if ( $entity === self::ENTITY_ORDER ) {
 			return array(
-				'link_company_name' => __( '顧客マスタと紐づける会社名（必須・ktp_client.company_name と一致）', 'ktpwp' ),
-				'link_email'        => __( '顧客マスタと紐づけるメール（任意・会社名で一意に決められないとき）', 'ktpwp' ),
-				'project_name'      => __( '案件名（project_name）', 'ktpwp' ),
-				'customer_name'     => __( '受注書上の顧客表示名（空なら会社名にフォールバック可）', 'ktpwp' ),
-				'user_name'         => __( '担当者名', 'ktpwp' ),
-				'order_date'        => __( '受注日・起算日（日付文字列）', 'ktpwp' ),
-				'progress_label'    => __( '進捗ラベル（例: 受付中・見積中・受注・完了・請求済・入金済・ボツ）', 'ktpwp' ),
-				'memo'              => __( 'メモ', 'ktpwp' ),
-				'external_order_key' => __( '行の一意キー（FileMaker 内部ID 等・重複スキップ用・任意）', 'ktpwp' ),
+				'link_company_name' => __( '顧客マスタと紐づける会社名（必須・ktp_client.company_name と一致）', 'kantanpro' ),
+				'link_email'        => __( '顧客マスタと紐づけるメール（任意・会社名で一意に決められないとき）', 'kantanpro' ),
+				'project_name'      => __( '案件名（project_name）', 'kantanpro' ),
+				'customer_name'     => __( '受注書上の顧客表示名（空なら会社名にフォールバック可）', 'kantanpro' ),
+				'user_name'         => __( '担当者名', 'kantanpro' ),
+				'order_date'        => __( '受注日・起算日（日付文字列）', 'kantanpro' ),
+				'progress_label'    => __( '進捗ラベル（例: 受付中・見積中・受注・完了・請求済・入金済・ボツ）', 'kantanpro' ),
+				'memo'              => __( 'メモ', 'kantanpro' ),
+				'external_order_key' => __( '行の一意キー（FileMaker 内部ID 等・重複スキップ用・任意）', 'kantanpro' ),
 			);
 		}
 
 		return array(
-			'company_name'        => __( '会社名', 'ktpwp' ),
-			'name'                => __( '担当者名（顧客側）', 'ktpwp' ),
-			'email'               => __( 'メール', 'ktpwp' ),
-			'url'                 => __( 'URL', 'ktpwp' ),
-			'representative_name' => __( '代表者名', 'ktpwp' ),
-			'phone'               => __( '電話', 'ktpwp' ),
-			'postal_code'         => __( '郵便番号', 'ktpwp' ),
-			'prefecture'          => __( '都道府県', 'ktpwp' ),
-			'city'                => __( '市区町村', 'ktpwp' ),
-			'address'             => __( '住所', 'ktpwp' ),
-			'building'            => __( '建物名', 'ktpwp' ),
-			'closing_day'         => __( '締め日', 'ktpwp' ),
-			'payment_month'       => __( '支払月', 'ktpwp' ),
-			'payment_day'         => __( '支払日', 'ktpwp' ),
-			'payment_method'      => __( '支払方法', 'ktpwp' ),
-			'tax_category'        => __( '税区分', 'ktpwp' ),
-			'payment_timing'      => __( '支払タイミング（postpay/prepay/prepay_wc）', 'ktpwp' ),
-			'memo'                => __( 'メモ', 'ktpwp' ),
-			'client_status'       => __( '顧客ステータス', 'ktpwp' ),
-			'category'            => __( 'カテゴリ', 'ktpwp' ),
+			'company_name'        => __( '会社名', 'kantanpro' ),
+			'name'                => __( '担当者名（顧客側）', 'kantanpro' ),
+			'email'               => __( 'メール', 'kantanpro' ),
+			'url'                 => __( 'URL', 'kantanpro' ),
+			'representative_name' => __( '代表者名', 'kantanpro' ),
+			'phone'               => __( '電話', 'kantanpro' ),
+			'postal_code'         => __( '郵便番号', 'kantanpro' ),
+			'prefecture'          => __( '都道府県', 'kantanpro' ),
+			'city'                => __( '市区町村', 'kantanpro' ),
+			'address'             => __( '住所', 'kantanpro' ),
+			'building'            => __( '建物名', 'kantanpro' ),
+			'closing_day'         => __( '締め日', 'kantanpro' ),
+			'payment_month'       => __( '支払月', 'kantanpro' ),
+			'payment_day'         => __( '支払日', 'kantanpro' ),
+			'payment_method'      => __( '支払方法', 'kantanpro' ),
+			'tax_category'        => __( '税区分', 'kantanpro' ),
+			'payment_timing'      => __( '支払タイミング（postpay/prepay/prepay_wc）', 'kantanpro' ),
+			'memo'                => __( 'メモ', 'kantanpro' ),
+			'client_status'       => __( '顧客ステータス', 'kantanpro' ),
+			'category'            => __( 'カテゴリ', 'kantanpro' ),
 		);
 	}
 
@@ -590,14 +590,14 @@ PROMPT;
 	private static function render_openai_key_form(): void {
 		$has_key = get_option( self::OPTION_OPENAI_KEY_ENC, '' ) !== '';
 		echo '<div class="card" style="max-width:720px;margin:16px 0;padding:16px;">';
-		echo '<h2>' . esc_html__( 'OpenAI API キー（BYOK・必須）', 'ktpwp' ) . '</h2>';
-		echo '<p class="description">' . esc_html__( 'Zip の自動解析・取り込みに使用します。キーはサイト内で暗号化して保存し、OpenAI の従量課金はご利用のアカウントに発生します。', 'ktpwp' ) . '</p>';
+		echo '<h2>' . esc_html__( 'OpenAI API キー（BYOK・必須）', 'kantanpro' ) . '</h2>';
+		echo '<p class="description">' . esc_html__( 'Zip の自動解析・取り込みに使用します。キーはサイト内で暗号化して保存し、OpenAI の従量課金はご利用のアカウントに発生します。', 'kantanpro' ) . '</p>';
 		echo '<form method="post" action="">';
 		wp_nonce_field( self::NONCE_OPENAI );
-		echo '<p><input type="password" name="ktp_fm_openai_key" class="regular-text" autocomplete="off" placeholder="' . esc_attr( $has_key ? __( '（保存済み・上書きする場合のみ入力）', 'ktpwp' ) : '' ) . '" /></p>';
-		echo '<p><button type="submit" name="ktp_fm_openai_save" class="button">' . esc_html__( 'API キーを保存', 'ktpwp' ) . '</button> ';
+		echo '<p><input type="password" name="ktp_fm_openai_key" class="regular-text" autocomplete="off" placeholder="' . esc_attr( $has_key ? __( '（保存済み・上書きする場合のみ入力）', 'kantanpro' ) : '' ) . '" /></p>';
+		echo '<p><button type="submit" name="ktp_fm_openai_save" class="button">' . esc_html__( 'API キーを保存', 'kantanpro' ) . '</button> ';
 		if ( $has_key ) {
-			echo '<span class="description">' . esc_html__( '保存済みのキーを削除するには空のまま保存してください。', 'ktpwp' ) . '</span>';
+			echo '<span class="description">' . esc_html__( '保存済みのキーを削除するには空のまま保存してください。', 'kantanpro' ) . '</span>';
 		}
 		echo '</p></form></div>';
 	}
@@ -607,18 +607,18 @@ PROMPT;
 	 */
 	private static function render_upload_form(): void {
 		echo '<div class="card" style="max-width:720px;margin:16px 0;padding:16px;">';
-		echo '<h2>' . esc_html__( 'Zip をアップロード', 'ktpwp' ) . '</h2>';
+		echo '<h2>' . esc_html__( 'Zip をアップロード', 'kantanpro' ) . '</h2>';
 		echo '<form method="post" enctype="multipart/form-data" action="">';
 		wp_nonce_field( self::NONCE_UPLOAD );
 		echo '<p><input type="file" name="ktp_fm_file" accept=".zip,application/zip" required /></p>';
 		echo '<p class="description">' . esc_html(
 			sprintf(
 				/* translators: %s: max upload size */
-				__( 'FileMaker Pro 版から書き出した Zip のみ（最大 %s）。', 'ktpwp' ),
+				__( 'FileMaker Pro 版から書き出した Zip のみ（最大 %s）。', 'kantanpro' ),
 				size_format( self::MAX_ZIP_BYTES )
 			)
 		) . '</p>';
-		echo '<p><button type="submit" name="ktp_fm_upload" class="button button-primary">' . esc_html__( 'Zip をアップロード', 'ktpwp' ) . '</button></p>';
+		echo '<p><button type="submit" name="ktp_fm_upload" class="button button-primary">' . esc_html__( 'Zip をアップロード', 'kantanpro' ) . '</button></p>';
 		echo '</form></div>';
 	}
 
@@ -690,23 +690,23 @@ PROMPT;
 		$entity_label = self::entity_label( $entity );
 
 		echo '<div class="card" style="margin:16px 0;padding:16px;">';
-		echo '<p><strong>' . esc_html__( '対象ファイル:', 'ktpwp' ) . '</strong> ' . esc_html( isset( $session['filename'] ) ? (string) $session['filename'] : '' ) . '</p>';
-		echo '<h2>' . esc_html__( '2. 列の対応', 'ktpwp' ) . '（' . esc_html( $entity_label ) . '）</h2>';
-		echo '<p><button type="button" class="button" id="ktp-fm-ai-suggest">' . esc_html__( 'AI で列を提案（OpenAI）', 'ktpwp' ) . '</button> ';
+		echo '<p><strong>' . esc_html__( '対象ファイル:', 'kantanpro' ) . '</strong> ' . esc_html( isset( $session['filename'] ) ? (string) $session['filename'] : '' ) . '</p>';
+		echo '<h2>' . esc_html__( '2. 列の対応', 'kantanpro' ) . '（' . esc_html( $entity_label ) . '）</h2>';
+		echo '<p><button type="button" class="button" id="ktp-fm-ai-suggest">' . esc_html__( 'AI で列を提案（OpenAI）', 'kantanpro' ) . '</button> ';
 		echo '<span class="description" id="ktp-fm-ai-status"></span></p>';
 
 		echo '<form method="post" action="" id="ktp-fm-import-form">';
 		wp_nonce_field( self::NONCE_IMPORT );
 
 		echo '<table class="widefat striped"><thead><tr>';
-		echo '<th>' . esc_html__( '取り込み先', 'ktpwp' ) . '</th><th>' . esc_html__( 'ファイルの列', 'ktpwp' ) . '</th>';
+		echo '<th>' . esc_html__( '取り込み先', 'kantanpro' ) . '</th><th>' . esc_html__( 'ファイルの列', 'kantanpro' ) . '</th>';
 		echo '</tr></thead><tbody>';
 
 		foreach ( self::target_fields_for_entity( $entity ) as $field => $label ) {
 			$selected = isset( $guess[ $field ] ) ? (int) $guess[ $field ] : '';
 			echo '<tr><th scope="row">' . esc_html( $label ) . '<br><code style="font-size:11px;">' . esc_html( $field ) . '</code></th><td>';
 			echo '<select name="ktp_fm_map[' . esc_attr( $field ) . ']">';
-			echo '<option value="__skip__">' . esc_html__( '（マッピングしない）', 'ktpwp' ) . '</option>';
+			echo '<option value="__skip__">' . esc_html__( '（マッピングしない）', 'kantanpro' ) . '</option>';
 			foreach ( $headers as $i => $h ) {
 				$opt = esc_html( $h !== '' ? $h : (string) $i );
 				echo '<option value="' . (int) $i . '"' . selected( $selected, $i, false ) . '>' . $opt . '</option>';
@@ -718,20 +718,20 @@ PROMPT;
 
 		if ( $entity === self::ENTITY_CLIENT || $entity === self::ENTITY_SUPPLIER ) {
 			echo '<p style="margin-top:12px;"><label><input type="checkbox" name="ktp_fm_skip_dup_email" value="1" checked /> ';
-			echo esc_html__( 'メールアドレスが既に登録済みの行はスキップする', 'ktpwp' ) . '</label></p>';
+			echo esc_html__( 'メールアドレスが既に登録済みの行はスキップする', 'kantanpro' ) . '</label></p>';
 		}
 		if ( $entity === self::ENTITY_SERVICE ) {
 			echo '<p style="margin-top:12px;"><label><input type="checkbox" name="ktp_fm_skip_dup_service_name" value="1" checked /> ';
-			echo esc_html__( '同名の商品（サービス名）が既に登録済みの行はスキップする', 'ktpwp' ) . '</label></p>';
+			echo esc_html__( '同名の商品（サービス名）が既に登録済みの行はスキップする', 'kantanpro' ) . '</label></p>';
 		}
 
-		$confirm = __( 'データベースに追加します。よろしいですか？', 'ktpwp' );
+		$confirm = __( 'データベースに追加します。よろしいですか？', 'kantanpro' );
 		echo '<p><button type="submit" name="ktp_fm_import_run" class="button button-primary" onclick="return confirm(\'' . esc_js( $confirm ) . '\');">';
-		echo esc_html__( '取り込みを実行', 'ktpwp' ) . '</button> ';
-		echo '<a class="button" href="' . esc_url( wp_nonce_url( admin_url( 'admin.php?page=ktp-fm-import&ktp_fm_reset=1' ), 'ktp_fm_reset', 'ktp_fm_reset_nonce' ) ) . '">' . esc_html__( '最初からやり直す', 'ktpwp' ) . '</a></p>';
+		echo esc_html__( '取り込みを実行', 'kantanpro' ) . '</button> ';
+		echo '<a class="button" href="' . esc_url( wp_nonce_url( admin_url( 'admin.php?page=ktp-fm-import&ktp_fm_reset=1' ), 'ktp_fm_reset', 'ktp_fm_reset_nonce' ) ) . '">' . esc_html__( '最初からやり直す', 'kantanpro' ) . '</a></p>';
 		echo '</form>';
 
-		echo '<h3>' . esc_html__( 'プレビュー（先頭5行）', 'ktpwp' ) . '</h3>';
+		echo '<h3>' . esc_html__( 'プレビュー（先頭5行）', 'kantanpro' ) . '</h3>';
 		echo '<div style="overflow:auto;max-height:280px;border:1px solid #ccd0d4;">';
 		echo '<table class="widefat" style="font-size:12px;"><thead><tr>';
 		foreach ( $headers as $h ) {
@@ -945,10 +945,10 @@ PROMPT;
 				'payment_month'          => isset( $data['payment_month'] ) ? $data['payment_month'] : '',
 				'payment_day'            => isset( $data['payment_day'] ) ? $data['payment_day'] : '',
 				'payment_method'         => isset( $data['payment_method'] ) ? $data['payment_method'] : '',
-				'tax_category'           => isset( $data['tax_category'] ) && $data['tax_category'] !== '' ? $data['tax_category'] : __( '内税', 'ktpwp' ),
+				'tax_category'           => isset( $data['tax_category'] ) && $data['tax_category'] !== '' ? $data['tax_category'] : __( '内税', 'kantanpro' ),
 				'payment_timing'         => isset( $data['payment_timing'] ) && in_array( $data['payment_timing'], array( 'postpay', 'prepay', 'prepay_wc' ), true ) ? $data['payment_timing'] : $default_timing,
 				'memo'                   => isset( $data['memo'] ) ? $data['memo'] : '',
-				'client_status'          => isset( $data['client_status'] ) && $data['client_status'] !== '' ? $data['client_status'] : __( '対象', 'ktpwp' ),
+				'client_status'          => isset( $data['client_status'] ) && $data['client_status'] !== '' ? $data['client_status'] : __( '対象', 'kantanpro' ),
 				'category'               => isset( $data['category'] ) ? $data['category'] : '',
 				'selected_department_id' => null,
 				'search_field'           => $search,
@@ -1137,10 +1137,10 @@ PROMPT;
 				'payment_month'            => '',
 				'payment_day'              => '',
 				'payment_method'           => '',
-				'tax_category'             => __( '内税', 'ktpwp' ),
+				'tax_category'             => __( '内税', 'kantanpro' ),
 				'memo'                     => '',
 				'qualified_invoice_number' => '',
-				'category'                 => __( 'General', 'ktpwp' ),
+				'category'                 => __( 'General', 'kantanpro' ),
 			);
 			foreach ( $defaults as $k => $v ) {
 				if ( ! isset( $data[ $k ] ) || $data[ $k ] === '' ) {
@@ -1148,7 +1148,7 @@ PROMPT;
 				}
 			}
 			if ( $data['tax_category'] === '' ) {
-				$data['tax_category'] = __( '内税', 'ktpwp' );
+				$data['tax_category'] = __( '内税', 'kantanpro' );
 			}
 
 			$search = self::build_supplier_search_field( $data );
@@ -1287,7 +1287,7 @@ PROMPT;
 
 			$unit     = isset( $data['unit'] ) ? (string) $data['unit'] : '';
 			$memo     = isset( $data['memo'] ) ? (string) $data['memo'] : '';
-			$category = isset( $data['category'] ) && $data['category'] !== '' ? (string) $data['category'] : __( 'General', 'ktpwp' );
+			$category = isset( $data['category'] ) && $data['category'] !== '' ? (string) $data['category'] : __( 'General', 'kantanpro' );
 			$price    = isset( $data['price'] ) ? (float) $data['price'] : 0.0;
 			$tax_rate = array_key_exists( 'tax_rate', $data ) ? $data['tax_rate'] : null;
 
@@ -1391,7 +1391,7 @@ PROMPT;
 
 			$project = trim( (string) ( $d['project_name'] ?? '' ) );
 			if ( $project === '' ) {
-				$project = __( 'FileMaker取込', 'ktpwp' );
+				$project = __( 'FileMaker取込', 'kantanpro' );
 			}
 			$cust_display = trim( (string) ( $d['customer_name'] ?? '' ) );
 			if ( $cust_display === '' ) {
@@ -1687,18 +1687,18 @@ PROMPT;
 		}
 		$lines = preg_split( '/\R/u', $raw, -1, PREG_SPLIT_NO_EMPTY );
 		if ( ! is_array( $lines ) || $lines === array() ) {
-			return new WP_Error( 'ktp_fm_empty', __( '有効な行がありません。', 'ktpwp' ) );
+			return new WP_Error( 'ktp_fm_empty', __( '有効な行がありません。', 'kantanpro' ) );
 		}
 
 		$first = $lines[0];
 		$delim = self::detect_delimiter( $first );
 		if ( $delim === null ) {
-			return new WP_Error( 'ktp_fm_delim', __( '区切り文字を判定できませんでした（カンマまたはタブを含む1行目が必要です）。', 'ktpwp' ) );
+			return new WP_Error( 'ktp_fm_delim', __( '区切り文字を判定できませんでした（カンマまたはタブを含む1行目が必要です）。', 'kantanpro' ) );
 		}
 
 		$headers = str_getcsv( $first, $delim );
 		if ( ! is_array( $headers ) || $headers === array() ) {
-			return new WP_Error( 'ktp_fm_header', __( 'ヘッダー行を読み取れませんでした。', 'ktpwp' ) );
+			return new WP_Error( 'ktp_fm_header', __( 'ヘッダー行を読み取れませんでした。', 'kantanpro' ) );
 		}
 		$headers = array_map(
 			static function ( $h ) {
@@ -1818,13 +1818,13 @@ PROMPT;
 		$raw   = str_replace( array( "\r\n", "\r" ), "\n", $raw );
 		$lines = preg_split( '/\R/u', $raw, -1, PREG_SPLIT_NO_EMPTY );
 		if ( ! is_array( $lines ) || $lines === array() ) {
-			return new WP_Error( 'ktp_fm_empty', __( '有効な行がありません。', 'ktpwp' ) );
+			return new WP_Error( 'ktp_fm_empty', __( '有効な行がありません。', 'kantanpro' ) );
 		}
 
 		$first = $lines[0];
 		$delim = self::detect_delimiter( $first );
 		if ( $delim === null ) {
-			return new WP_Error( 'ktp_fm_delim', __( '区切り文字を判定できませんでした。', 'ktpwp' ) );
+			return new WP_Error( 'ktp_fm_delim', __( '区切り文字を判定できませんでした。', 'kantanpro' ) );
 		}
 
 		$matrix = array();
@@ -1841,7 +1841,7 @@ PROMPT;
 			$matrix[] = $cells;
 		}
 		if ( $max < 1 || $matrix === array() ) {
-			return new WP_Error( 'ktp_fm_empty', __( '有効な行がありません。', 'ktpwp' ) );
+			return new WP_Error( 'ktp_fm_empty', __( '有効な行がありません。', 'kantanpro' ) );
 		}
 
 		$headers = array();
@@ -1882,15 +1882,15 @@ PROMPT;
 	private static function entity_label( $entity ): string {
 		$entity = self::normalize_entity( $entity );
 		if ( $entity === self::ENTITY_SUPPLIER ) {
-			return __( '協力会社', 'ktpwp' );
+			return __( '協力会社', 'kantanpro' );
 		}
 		if ( $entity === self::ENTITY_SERVICE ) {
-			return __( '商品（サービス）', 'ktpwp' );
+			return __( '商品（サービス）', 'kantanpro' );
 		}
 		if ( $entity === self::ENTITY_ORDER ) {
-			return __( '受注', 'ktpwp' );
+			return __( '受注', 'kantanpro' );
 		}
-		return __( '顧客', 'ktpwp' );
+		return __( '顧客', 'kantanpro' );
 	}
 
 	/**
@@ -1947,16 +1947,16 @@ PROMPT;
 	private static function read_upload_delimited_raw( $tmp_path, $ext, &$outer_name ) {
 		if ( $ext !== 'zip' ) {
 			$raw = file_get_contents( $tmp_path );
-			return is_string( $raw ) ? $raw : new WP_Error( 'ktp_fm_read', __( 'ファイルを読み取れませんでした。', 'ktpwp' ) );
+			return is_string( $raw ) ? $raw : new WP_Error( 'ktp_fm_read', __( 'ファイルを読み取れませんでした。', 'kantanpro' ) );
 		}
 
 		if ( ! class_exists( 'ZipArchive' ) ) {
-			return new WP_Error( 'ktp_fm_zip', __( 'このサーバーでは Zip を展開できません（ZipArchive がありません）。', 'ktpwp' ) );
+			return new WP_Error( 'ktp_fm_zip', __( 'このサーバーでは Zip を展開できません（ZipArchive がありません）。', 'kantanpro' ) );
 		}
 
 		$zip = new ZipArchive();
 		if ( $zip->open( $tmp_path ) !== true ) {
-			return new WP_Error( 'ktp_fm_zip_open', __( 'Zip ファイルを開けませんでした。', 'ktpwp' ) );
+			return new WP_Error( 'ktp_fm_zip_open', __( 'Zip ファイルを開けませんでした。', 'kantanpro' ) );
 		}
 
 		$candidates = array();
@@ -1981,7 +1981,7 @@ PROMPT;
 		sort( $candidates, SORT_STRING );
 		if ( $candidates === array() ) {
 			$zip->close();
-			return new WP_Error( 'ktp_fm_zip_empty', __( 'Zip 内に csv/tsv/tab/txt が見つかりませんでした。', 'ktpwp' ) );
+			return new WP_Error( 'ktp_fm_zip_empty', __( 'Zip 内に csv/tsv/tab/txt が見つかりませんでした。', 'kantanpro' ) );
 		}
 
 		$first = $candidates[0];
@@ -1989,7 +1989,7 @@ PROMPT;
 		$zip->close();
 
 		if ( ! is_string( $raw ) || $raw === '' ) {
-			return new WP_Error( 'ktp_fm_zip_read', __( 'Zip 内のテーブルデータを読み取れませんでした。', 'ktpwp' ) );
+			return new WP_Error( 'ktp_fm_zip_read', __( 'Zip 内のテーブルデータを読み取れませんでした。', 'kantanpro' ) );
 		}
 
 		$outer_name = $outer_name . ' / ' . $first;
@@ -2050,11 +2050,11 @@ PROMPT;
 	private static function zip_storage_dir() {
 		$upload = wp_upload_dir();
 		if ( ! empty( $upload['error'] ) ) {
-			return new WP_Error( 'ktp_fm_upload_dir', __( 'アップロードディレクトリが利用できません。', 'ktpwp' ) );
+			return new WP_Error( 'ktp_fm_upload_dir', __( 'アップロードディレクトリが利用できません。', 'kantanpro' ) );
 		}
 		$dir = trailingslashit( $upload['basedir'] ) . 'ktp-fm-import-tmp';
 		if ( ! wp_mkdir_p( $dir ) ) {
-			return new WP_Error( 'ktp_fm_mkdir', __( '一時ディレクトリを作成できませんでした。', 'ktpwp' ) );
+			return new WP_Error( 'ktp_fm_mkdir', __( '一時ディレクトリを作成できませんでした。', 'kantanpro' ) );
 		}
 		$ht = trailingslashit( $dir ) . '.htaccess';
 		if ( ! file_exists( $ht ) ) {
@@ -2108,20 +2108,20 @@ PROMPT;
 	 */
 	private static function render_zip_pending_ui( array $zip_sess ): void {
 		echo '<div class="card" style="max-width:920px;margin:16px 0;padding:16px;">';
-		echo '<h2>' . esc_html__( 'Zip を受け付け済み', 'ktpwp' ) . '</h2>';
-		echo '<p><strong>' . esc_html__( 'ファイル:', 'ktpwp' ) . '</strong> ' . esc_html( $zip_sess['orig_name'] ) . '</p>';
+		echo '<h2>' . esc_html__( 'Zip を受け付け済み', 'kantanpro' ) . '</h2>';
+		echo '<p><strong>' . esc_html__( 'ファイル:', 'kantanpro' ) . '</strong> ' . esc_html( $zip_sess['orig_name'] ) . '</p>';
 		echo '<form method="post" action="">';
 		wp_nonce_field( self::NONCE_AI_ZIP );
 		echo '<p><label><input type="checkbox" name="ktp_fm_zip_skip_dup_email" value="1" checked /> ';
-		echo esc_html__( '顧客・協力会社: メールが既に登録済みの行はスキップ', 'ktpwp' ) . '</label></p>';
+		echo esc_html__( '顧客・協力会社: メールが既に登録済みの行はスキップ', 'kantanpro' ) . '</label></p>';
 		echo '<p><label><input type="checkbox" name="ktp_fm_zip_skip_dup_service" value="1" checked /> ';
-		echo esc_html__( '商品: 同名のサービスが既に登録済みの行はスキップ', 'ktpwp' ) . '</label></p>';
+		echo esc_html__( '商品: 同名のサービスが既に登録済みの行はスキップ', 'kantanpro' ) . '</label></p>';
 		echo '<p><label><input type="checkbox" name="ktp_fm_zip_skip_dup_order" value="1" checked /> ';
-		echo esc_html__( '受注: 同一の外部ID（取り込み用）が既に登録済みの行はスキップ', 'ktpwp' ) . '</label></p>';
-		$confirm = __( 'OpenAI に Zip の概要を送信し、判別結果に基づきデータベースへ書き込みます。よろしいですか？', 'ktpwp' );
+		echo esc_html__( '受注: 同一の外部ID（取り込み用）が既に登録済みの行はスキップ', 'kantanpro' ) . '</label></p>';
+		$confirm = __( 'OpenAI に Zip の概要を送信し、判別結果に基づきデータベースへ書き込みます。よろしいですか？', 'kantanpro' );
 		echo '<p><button type="submit" name="ktp_fm_ai_zip_run" class="button button-primary" onclick="return confirm(\'' . esc_js( $confirm ) . '\');">';
-		echo esc_html__( 'AI で解析して取り込む', 'ktpwp' ) . '</button> ';
-		echo '<a class="button" href="' . esc_url( wp_nonce_url( admin_url( 'admin.php?page=ktp-fm-import&ktp_fm_reset=1' ), 'ktp_fm_reset', 'ktp_fm_reset_nonce' ) ) . '">' . esc_html__( '最初からやり直す', 'ktpwp' ) . '</a></p>';
+		echo esc_html__( 'AI で解析して取り込む', 'kantanpro' ) . '</button> ';
+		echo '<a class="button" href="' . esc_url( wp_nonce_url( admin_url( 'admin.php?page=ktp-fm-import&ktp_fm_reset=1' ), 'ktp_fm_reset', 'ktp_fm_reset_nonce' ) ) . '">' . esc_html__( '最初からやり直す', 'kantanpro' ) . '</a></p>';
 		echo '</form></div>';
 	}
 
@@ -2136,17 +2136,17 @@ PROMPT;
 		$dismiss = wp_nonce_url( admin_url( 'admin.php?page=ktp-fm-import&ktp_fm_dismiss_report=1' ), 'ktp_fm_dismiss_report', 'ktp_fm_dismiss_nonce' );
 
 		echo '<div class="card" style="max-width:960px;margin:16px 0;padding:16px;border-left:4px solid #2271b1;">';
-		echo '<h2>' . esc_html__( '直近の取り込みレポート', 'ktpwp' ) . '</h2>';
+		echo '<h2>' . esc_html__( '直近の取り込みレポート', 'kantanpro' ) . '</h2>';
 		if ( ! empty( $raw['zip_name'] ) ) {
-			echo '<p><strong>' . esc_html__( 'Zip:', 'ktpwp' ) . '</strong> ' . esc_html( (string) $raw['zip_name'] ) . '</p>';
+			echo '<p><strong>' . esc_html__( 'Zip:', 'kantanpro' ) . '</strong> ' . esc_html( (string) $raw['zip_name'] ) . '</p>';
 		}
 
 		if ( ! empty( $raw['imported'] ) && is_array( $raw['imported'] ) ) {
-			echo '<h3>' . esc_html__( '取り込んだファイル', 'ktpwp' ) . '</h3>';
+			echo '<h3>' . esc_html__( '取り込んだファイル', 'kantanpro' ) . '</h3>';
 			echo '<table class="widefat striped"><thead><tr>';
-			echo '<th>' . esc_html__( 'Zip 内パス', 'ktpwp' ) . '</th>';
-			echo '<th>' . esc_html__( '種別', 'ktpwp' ) . '</th>';
-			echo '<th>' . esc_html__( '追加', 'ktpwp' ) . '</th><th>' . esc_html__( 'スキップ', 'ktpwp' ) . '</th><th>' . esc_html__( 'エラー', 'ktpwp' ) . '</th>';
+			echo '<th>' . esc_html__( 'Zip 内パス', 'kantanpro' ) . '</th>';
+			echo '<th>' . esc_html__( '種別', 'kantanpro' ) . '</th>';
+			echo '<th>' . esc_html__( '追加', 'kantanpro' ) . '</th><th>' . esc_html__( 'スキップ', 'kantanpro' ) . '</th><th>' . esc_html__( 'エラー', 'kantanpro' ) . '</th>';
 			echo '</tr></thead><tbody>';
 			foreach ( $raw['imported'] as $row ) {
 				if ( ! is_array( $row ) ) {
@@ -2162,11 +2162,11 @@ PROMPT;
 			}
 			echo '</tbody></table>';
 		} else {
-			echo '<p class="description">' . esc_html__( '表ファイルとして DB に書き込んだものはありません（すべてスキップ・失敗・または対象外だった可能性があります）。', 'ktpwp' ) . '</p>';
+			echo '<p class="description">' . esc_html__( '表ファイルとして DB に書き込んだものはありません（すべてスキップ・失敗・または対象外だった可能性があります）。', 'kantanpro' ) . '</p>';
 		}
 
 		if ( ! empty( $raw['skipped_by_ai'] ) && is_array( $raw['skipped_by_ai'] ) ) {
-			echo '<h3>' . esc_html__( 'AI が取り込み対象外と判断したファイル', 'ktpwp' ) . '</h3>';
+			echo '<h3>' . esc_html__( 'AI が取り込み対象外と判断したファイル', 'kantanpro' ) . '</h3>';
 			echo '<ul style="list-style:disc;margin-left:1.5em;">';
 			foreach ( $raw['skipped_by_ai'] as $row ) {
 				if ( ! is_array( $row ) ) {
@@ -2178,7 +2178,7 @@ PROMPT;
 		}
 
 		if ( ! empty( $raw['failed'] ) && is_array( $raw['failed'] ) ) {
-			echo '<h3>' . esc_html__( '取り込めなかったファイル', 'ktpwp' ) . '</h3>';
+			echo '<h3>' . esc_html__( '取り込めなかったファイル', 'kantanpro' ) . '</h3>';
 			echo '<ul style="list-style:disc;margin-left:1.5em;">';
 			foreach ( $raw['failed'] as $row ) {
 				if ( ! is_array( $row ) ) {
@@ -2190,7 +2190,7 @@ PROMPT;
 		}
 
 		if ( ! empty( $raw['not_assigned'] ) && is_array( $raw['not_assigned'] ) ) {
-			echo '<h3>' . esc_html__( 'AI の応答に含まれなかった Zip 内ファイル', 'ktpwp' ) . '</h3>';
+			echo '<h3>' . esc_html__( 'AI の応答に含まれなかった Zip 内ファイル', 'kantanpro' ) . '</h3>';
 			echo '<ul style="list-style:disc;margin-left:1.5em;">';
 			foreach ( $raw['not_assigned'] as $row ) {
 				if ( ! is_array( $row ) ) {
@@ -2202,8 +2202,8 @@ PROMPT;
 		}
 
 		if ( ! empty( $raw['other_files'] ) && is_array( $raw['other_files'] ) ) {
-			echo '<h3>' . esc_html__( '表形式（csv/tsv/tab/txt）以外の Zip 内ファイル（自動取り込みの対象外）', 'ktpwp' ) . '</h3>';
-			echo '<p class="description">' . esc_html__( '画像・PDF・xlsx などはこの機能では取り込みません。', 'ktpwp' ) . '</p>';
+			echo '<h3>' . esc_html__( '表形式（csv/tsv/tab/txt）以外の Zip 内ファイル（自動取り込みの対象外）', 'kantanpro' ) . '</h3>';
+			echo '<p class="description">' . esc_html__( '画像・PDF・xlsx などはこの機能では取り込みません。', 'kantanpro' ) . '</p>';
 			echo '<ul style="list-style:disc;margin-left:1.5em;max-height:220px;overflow:auto;">';
 			foreach ( $raw['other_files'] as $op ) {
 				if ( ! is_string( $op ) || $op === '' ) {
@@ -2214,7 +2214,7 @@ PROMPT;
 			echo '</ul>';
 		}
 
-		echo '<p><a class="button" href="' . esc_url( $dismiss ) . '">' . esc_html__( 'レポートを閉じる', 'ktpwp' ) . '</a></p>';
+		echo '<p><a class="button" href="' . esc_url( $dismiss ) . '">' . esc_html__( 'レポートを閉じる', 'kantanpro' ) . '</a></p>';
 		echo '</div>';
 	}
 
@@ -2224,11 +2224,11 @@ PROMPT;
 	 */
 	private static function build_zip_manifest_for_ai( $zip_path ) {
 		if ( ! class_exists( 'ZipArchive', false ) ) {
-			return new WP_Error( 'ktp_fm_zip', __( 'ZipArchive がありません。', 'ktpwp' ) );
+			return new WP_Error( 'ktp_fm_zip', __( 'ZipArchive がありません。', 'kantanpro' ) );
 		}
 		$zip = new ZipArchive();
 		if ( $zip->open( $zip_path ) !== true ) {
-			return new WP_Error( 'ktp_fm_zip_open', __( 'Zip を開けませんでした。', 'ktpwp' ) );
+			return new WP_Error( 'ktp_fm_zip_open', __( 'Zip を開けませんでした。', 'kantanpro' ) );
 		}
 
 		$candidates = array();
@@ -2261,7 +2261,7 @@ PROMPT;
 					'path'        => $fn,
 					'headers'     => array(),
 					'sample_rows' => array(),
-					'parse_error' => __( '空または読み取れませんでした。', 'ktpwp' ),
+					'parse_error' => __( '空または読み取れませんでした。', 'kantanpro' ),
 				);
 				continue;
 			}
@@ -2394,7 +2394,7 @@ PROMPT;
 		$content = $res['content'];
 		$decoded = json_decode( $content, true );
 		if ( ! is_array( $decoded ) || ! isset( $decoded['per_file'] ) || ! is_array( $decoded['per_file'] ) ) {
-			return new WP_Error( 'ktp_fm_ai_bad', __( 'AI の応答形式が不正です（per_file がありません）。', 'ktpwp' ) );
+			return new WP_Error( 'ktp_fm_ai_bad', __( 'AI の応答形式が不正です（per_file がありません）。', 'kantanpro' ) );
 		}
 		return $decoded;
 	}
@@ -2500,12 +2500,12 @@ PROMPT;
 		$code = (int) wp_remote_retrieve_response_code( $response );
 		$raw  = json_decode( (string) wp_remote_retrieve_body( $response ), true );
 		if ( $code < 200 || $code >= 300 ) {
-			$msg = is_array( $raw ) && isset( $raw['error']['message'] ) ? (string) $raw['error']['message'] : __( 'OpenAI API エラー', 'ktpwp' );
+			$msg = is_array( $raw ) && isset( $raw['error']['message'] ) ? (string) $raw['error']['message'] : __( 'OpenAI API エラー', 'kantanpro' );
 			return new WP_Error( 'ktp_fm_openai_http', $msg );
 		}
 		$content = is_array( $raw ) && isset( $raw['choices'][0]['message']['content'] ) ? (string) $raw['choices'][0]['message']['content'] : '';
 		if ( $content === '' ) {
-			return new WP_Error( 'ktp_fm_openai_empty', __( 'OpenAI から空の応答でした。', 'ktpwp' ) );
+			return new WP_Error( 'ktp_fm_openai_empty', __( 'OpenAI から空の応答でした。', 'kantanpro' ) );
 		}
 		return array( 'content' => $content );
 	}
@@ -2569,19 +2569,19 @@ PROMPT;
 			if ( ! isset( $planned[ $path ] ) ) {
 				$report['not_assigned'][] = array(
 					'path'    => $path,
-					'message' => __( 'AI の per_file に含まれませんでした（入力が長すぎて省略された可能性があります）。', 'ktpwp' ),
+					'message' => __( 'AI の per_file に含まれませんでした（入力が長すぎて省略された可能性があります）。', 'kantanpro' ),
 				);
 			}
 		}
 
 		if ( ! class_exists( 'ZipArchive', false ) ) {
-			$report['failed'][] = array( 'path' => '-', 'message' => __( 'ZipArchive がありません。', 'ktpwp' ) );
+			$report['failed'][] = array( 'path' => '-', 'message' => __( 'ZipArchive がありません。', 'kantanpro' ) );
 			return $report;
 		}
 
 		$zip = new ZipArchive();
 		if ( $zip->open( $zip_path ) !== true ) {
-			$report['failed'][] = array( 'path' => '-', 'message' => __( 'Zip を開けませんでした。', 'ktpwp' ) );
+			$report['failed'][] = array( 'path' => '-', 'message' => __( 'Zip を開けませんでした。', 'kantanpro' ) );
 			return $report;
 		}
 
@@ -2602,7 +2602,7 @@ PROMPT;
 			if ( ! in_array( $entity, self::allowed_entities(), true ) ) {
 				$report['failed'][] = array(
 					'path'    => $path,
-					'message' => __( 'AI が返した entity が不正です。', 'ktpwp' ),
+					'message' => __( 'AI が返した entity が不正です。', 'kantanpro' ),
 				);
 				continue;
 			}
@@ -2617,7 +2617,7 @@ PROMPT;
 			if ( $headers === array() ) {
 				$report['failed'][] = array(
 					'path'    => $path,
-					'message' => __( '列ヘッダーがありません。', 'ktpwp' ),
+					'message' => __( '列ヘッダーがありません。', 'kantanpro' ),
 				);
 				continue;
 			}
@@ -2627,7 +2627,7 @@ PROMPT;
 			if ( $map === array() ) {
 				$report['failed'][] = array(
 					'path'    => $path,
-					'message' => __( '有効な列マッピングがありません（AI の column_map と列名が一致しませんでした）。', 'ktpwp' ),
+					'message' => __( '有効な列マッピングがありません（AI の column_map と列名が一致しませんでした）。', 'kantanpro' ),
 				);
 				continue;
 			}
@@ -2668,7 +2668,7 @@ PROMPT;
 			if ( ! is_string( $raw_full ) || $raw_full === '' ) {
 				$report['failed'][] = array(
 					'path'    => $path,
-					'message' => __( 'Zip からファイルを読み取れませんでした。', 'ktpwp' ),
+					'message' => __( 'Zip からファイルを読み取れませんでした。', 'kantanpro' ),
 				);
 				continue;
 			}

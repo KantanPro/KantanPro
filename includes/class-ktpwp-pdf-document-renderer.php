@@ -128,7 +128,7 @@ final class KTPWP_Pdf_Document_Renderer {
 		$accent             = esc_attr( $doc_settings['accent_color'] ?? '#374151' );
 		$title              = KTPWP_Pdf_Document_Settings::resolve_title(
 			KTPWP_Pdf_Document_Kind::BULK_INVOICE,
-			__( '請求書', 'ktpwp' )
+			__( '請求書', 'kantanpro' )
 		);
 		$logo_width_percent = (int) ( $doc_settings['issuer_logo_width_percent'] ?? KTPWP_Pdf_Document_Settings::ISSUER_LOGO_WIDTH_PERCENT_DEFAULT );
 		$logo_align         = KTPWP_Pdf_Document_Settings::resolve_issuer_logo_align(
@@ -177,7 +177,7 @@ final class KTPWP_Pdf_Document_Renderer {
 
 		$html .= '<div class="ktp-bulk-invoice-issuer-text-block">';
 		if ( $show_qualified ) {
-			$html .= '<div class="ktp-bulk-invoice-issuer-registration">' . esc_html__( '登録番号：', 'ktpwp' ) . esc_html( $qualified_invoice_number ) . '</div>';
+			$html .= '<div class="ktp-bulk-invoice-issuer-registration">' . esc_html__( '登録番号：', 'kantanpro' ) . esc_html( $qualified_invoice_number ) . '</div>';
 		}
 
 		if ( $has_company_text || $show_bank || $show_seal || $legacy_company_info_html !== '' ) {

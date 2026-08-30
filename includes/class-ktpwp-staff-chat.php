@@ -119,7 +119,7 @@ if ( ! class_exists( 'KTPWP_Staff_Chat' ) ) {
 			return $this->insert_initial_chat_if_absent(
 				$order_id,
 				(int) $user_id,
-				__( '受注書を作成しました。', 'ktpwp' )
+				__( '受注書を作成しました。', 'kantanpro' )
 			);
 		}
 
@@ -422,7 +422,7 @@ if ( ! class_exists( 'KTPWP_Staff_Chat' ) ) {
 			$display_name = (string) $display_name;
 
 			if ( $display_name === 'システム' || $display_name === 'System' ) {
-				return __( 'システム', 'ktpwp' );
+				return __( 'システム', 'kantanpro' );
 			}
 
 			return $display_name;
@@ -444,12 +444,12 @@ if ( ! class_exists( 'KTPWP_Staff_Chat' ) ) {
 
 			// Check if order_id is valid
 			if ( ! $order_id || $order_id <= 0 ) {
-				return '<p class="ktp-order-block">' . esc_html__( '注文IDが無効です。', 'ktpwp' ) . '</p>';
+				return '<p class="ktp-order-block">' . esc_html__( '注文IDが無効です。', 'kantanpro' ) . '</p>';
 			}
 
 			// Ensure table exists
 			if ( ! $this->create_table() ) {
-				return '<p class="ktp-order-block">' . esc_html__( 'データベーステーブルの作成に失敗しました。', 'ktpwp' ) . '</p>';
+				return '<p class="ktp-order-block">' . esc_html__( 'データベーステーブルの作成に失敗しました。', 'kantanpro' ) . '</p>';
 			}
 
 			// Get order creation time
@@ -483,12 +483,12 @@ if ( ! class_exists( 'KTPWP_Staff_Chat' ) ) {
 			}
 
 			$html  = '<details id="staff-chat-details" class="ktp-order-block ktp-order-details-toggle staff-chat-details"' . $details_open_attr . '>';
-			$html .= '<summary class="ktp-order-details-summary"><span class="staff-chat-title">' . esc_html__( 'スタッフチャット', 'ktpwp' ) . '</span></summary>';
+			$html .= '<summary class="ktp-order-details-summary"><span class="staff-chat-title">' . esc_html__( 'スタッフチャット', 'kantanpro' ) . '</span></summary>';
 
 			$html .= '<div id="staff-chat-content" class="staff-chat-content">';
 
 			if ( empty( $messages ) ) {
-				$html .= '<div class="staff-chat-empty">' . esc_html__( 'メッセージはありません。', 'ktpwp' ) . '</div>';
+				$html .= '<div class="staff-chat-empty">' . esc_html__( 'メッセージはありません。', 'kantanpro' ) . '</div>';
 			} else {
 				// Separate fixed header from scrollable messages
 				foreach ( $messages as $index => $message ) {
@@ -510,7 +510,7 @@ if ( ! class_exists( 'KTPWP_Staff_Chat' ) ) {
 						$header_html .= '<div class="staff-chat-header-line">';
 						$header_html .= '<span class="staff-chat-avatar-wrapper">' . $avatar . '</span>';
 						$header_html .= '<span class="staff-chat-user-name">' . $user_display_name . '</span>';
-						$header_html .= '<span class="staff-chat-order-time">' . esc_html__( '受注書作成', 'ktpwp' ) . ': ' . esc_html( $order_created_time ) . '</span>';
+						$header_html .= '<span class="staff-chat-order-time">' . esc_html__( '受注書作成', 'kantanpro' ) . ': ' . esc_html( $order_created_time ) . '</span>';
 						$header_html .= '</div>';
 						$header_html .= '</div>';
 						$header_html .= '</div>';
@@ -533,7 +533,7 @@ if ( ! class_exists( 'KTPWP_Staff_Chat' ) ) {
 					$user_display_name = esc_html( $this->localize_user_display_name( $message['user_display_name'] ) );
 					$message_text = isset( $message['message'] ) ? (string) $message['message'] : '';
 					if ( ! empty( $message['is_initial'] ) && $message_text === '受注書を作成しました。' ) {
-						$message_text = __( '受注書を作成しました。', 'ktpwp' );
+						$message_text = __( '受注書を作成しました。', 'kantanpro' );
 					}
 					$message_content = esc_html( $message_text );
 
@@ -569,7 +569,7 @@ if ( ! class_exists( 'KTPWP_Staff_Chat' ) ) {
 						} else {
 							$icon_html = '<span class="dashicons dashicons-trash" aria-hidden="true"></span>';
 						}
-						$html .= '<button type="button" class="staff-chat-delete" title="' . esc_attr__( 'このメッセージを削除', 'ktpwp' ) . '" aria-label="' . esc_attr__( 'このメッセージを削除', 'ktpwp' ) . '" data-message-id="' . intval( $message['id'] ) . '" data-order-id="' . intval( $order_id ) . '">' . $icon_html . '</button>';
+						$html .= '<button type="button" class="staff-chat-delete" title="' . esc_attr__( 'このメッセージを削除', 'kantanpro' ) . '" aria-label="' . esc_attr__( 'このメッセージを削除', 'kantanpro' ) . '" data-message-id="' . intval( $message['id'] ) . '" data-order-id="' . intval( $order_id ) . '">' . $icon_html . '</button>';
 					}
 					$html .= '</div>';
 					$html .= '<div class="staff-chat-message-content">' . nl2br( $message_content ) . '</div>';
@@ -587,8 +587,8 @@ if ( ! class_exists( 'KTPWP_Staff_Chat' ) ) {
 				$html .= '<input type="hidden" name="staff_chat_order_id" value="' . esc_attr( $order_id ) . '">';
 				$html .= wp_nonce_field( 'staff_chat_action', 'staff_chat_nonce', true, false );
 				$html .= '<div class="staff-chat-input-wrapper">';
-				$html .= '<textarea name="staff_chat_message" id="staff-chat-input" class="staff-chat-input" placeholder="' . esc_attr__( 'メッセージを入力してください...', 'ktpwp' ) . '" required></textarea>';
-				$html .= '<button type="submit" id="staff-chat-submit" class="staff-chat-submit">' . esc_html__( '送信', 'ktpwp' ) . '</button>';
+				$html .= '<textarea name="staff_chat_message" id="staff-chat-input" class="staff-chat-input" placeholder="' . esc_attr__( 'メッセージを入力してください...', 'kantanpro' ) . '" required></textarea>';
+				$html .= '<button type="submit" id="staff-chat-submit" class="staff-chat-submit">' . esc_html__( '送信', 'kantanpro' ) . '</button>';
 				$html .= '</div>';
 				$html .= '</form>';
 			}

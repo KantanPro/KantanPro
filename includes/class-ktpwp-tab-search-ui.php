@@ -49,7 +49,7 @@ if ( ! class_exists( 'KTPWP_Tab_Search_UI' ) ) {
 		 */
 		public function render_toolbar_form( $tab_name, $keep_params = array() ) {
 			$keyword             = $this->get_keyword();
-			$search_placeholder  = ( $keyword !== '' ) ? $keyword : __( 'フリーワード', 'ktpwp' );
+			$search_placeholder  = ( $keyword !== '' ) ? $keyword : __( 'フリーワード', 'kantanpro' );
 			$html                = '<div class="ktp-list-search-wrap" style="display:flex;align-items:center;gap:6px;">';
 			$html               .= '<form method="get" action="" class="ktp-list-search-form" style="display:flex;align-items:center;gap:6px;">';
 			$html               .= '<input type="hidden" name="tab_name" value="' . esc_attr( (string) $tab_name ) . '">';
@@ -61,8 +61,8 @@ if ( ! class_exists( 'KTPWP_Tab_Search_UI' ) ) {
 				$html .= '<input type="hidden" name="' . esc_attr( (string) $key ) . '" value="' . esc_attr( (string) $value ) . '">';
 			}
 
-			$html .= '<input type="search" name="list_search" value="" placeholder="' . esc_attr( $search_placeholder ) . '" aria-label="' . esc_attr__( 'フリーワード', 'ktpwp' ) . '" class="ktp-list-search-input" style="min-width:160px;padding:6px 8px;border:1px solid #ddd;border-radius:4px;">';
-			$html .= '<button type="submit" class="ktp-list-search-btn" title="' . esc_attr__( '検索', 'ktpwp' ) . '" style="padding:6px 10px;border:1px solid #ddd;border-radius:4px;background:#f5f5f5;cursor:pointer;">🔍</button>';
+			$html .= '<input type="search" name="list_search" value="" placeholder="' . esc_attr( $search_placeholder ) . '" aria-label="' . esc_attr__( 'フリーワード', 'kantanpro' ) . '" class="ktp-list-search-input" style="min-width:160px;padding:6px 8px;border:1px solid #ddd;border-radius:4px;">';
+			$html .= '<button type="submit" class="ktp-list-search-btn" title="' . esc_attr__( '検索', 'kantanpro' ) . '" style="padding:6px 10px;border:1px solid #ddd;border-radius:4px;background:#f5f5f5;cursor:pointer;">🔍</button>';
 			$html .= '</form></div>';
 
 			return $html;
@@ -115,7 +115,7 @@ if ( ! class_exists( 'KTPWP_Tab_Search_UI' ) ) {
 						$label .= ' - ' . $row->project_name;
 					}
 					$results[] = array(
-						'page_label' => __( '受注書', 'ktpwp' ),
+						'page_label' => __( '受注書', 'kantanpro' ),
 						'label'      => $label,
 						'url'        => add_query_arg( array( 'tab_name' => 'order', 'order_id' => (int) $row->id ) ),
 					);
@@ -141,7 +141,7 @@ if ( ! class_exists( 'KTPWP_Tab_Search_UI' ) ) {
 			if ( $clients ) {
 				foreach ( $clients as $row ) {
 					$results[] = array(
-						'page_label' => __( '顧客', 'ktpwp' ),
+						'page_label' => __( '顧客', 'kantanpro' ),
 						'label'      => ( $row->company_name ?: '' ) . ' (' . ( $row->name ?: '' ) . ')',
 						'url'        => add_query_arg( array( 'tab_name' => 'client', 'data_id' => (int) $row->id ) ),
 					);
@@ -167,7 +167,7 @@ if ( ! class_exists( 'KTPWP_Tab_Search_UI' ) ) {
 			if ( $services ) {
 				foreach ( $services as $row ) {
 					$results[] = array(
-						'page_label' => __( 'サービス', 'ktpwp' ),
+						'page_label' => __( 'サービス', 'kantanpro' ),
 						'label'      => (string) ( $row->service_name ?: '' ),
 						'url'        => add_query_arg( array( 'tab_name' => 'service', 'data_id' => (int) $row->id ) ),
 					);
@@ -193,7 +193,7 @@ if ( ! class_exists( 'KTPWP_Tab_Search_UI' ) ) {
 			if ( $suppliers ) {
 				foreach ( $suppliers as $row ) {
 					$results[] = array(
-						'page_label' => __( '協力会社', 'ktpwp' ),
+						'page_label' => __( '協力会社', 'kantanpro' ),
 						'label'      => ( $row->company_name ?: '' ) . ' (' . ( $row->name ?: '' ) . ')',
 						'url'        => add_query_arg( array( 'tab_name' => 'supplier', 'data_id' => (int) $row->id ) ),
 					);
@@ -202,20 +202,20 @@ if ( ! class_exists( 'KTPWP_Tab_Search_UI' ) ) {
 
 			$close_btn = '';
 			if ( $close_url !== '' ) {
-				$close_btn = '<a href="' . esc_url( $close_url ) . '" class="ktp-list-search-results-close" title="' . esc_attr__( '閉じる', 'ktpwp' ) . '" style="position:absolute;top:8px;right:8px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;color:#666;text-decoration:none;font-size:18px;line-height:1;border-radius:4px;">×</a>';
+				$close_btn = '<a href="' . esc_url( $close_url ) . '" class="ktp-list-search-results-close" title="' . esc_attr__( '閉じる', 'kantanpro' ) . '" style="position:absolute;top:8px;right:8px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;color:#666;text-decoration:none;font-size:18px;line-height:1;border-radius:4px;">×</a>';
 			}
 
 			if ( empty( $results ) ) {
 				$html  = '<div class="ktp-list-search-results" style="position:relative;margin-bottom:16px;padding:14px 18px;padding-right:44px;background:#f9f9f9;border:1px solid #eee;border-radius:6px;">';
 				$html .= $close_btn;
-				$html .= '<p style="margin:0;color:#666;font-size:14px;">' . esc_html__( '検索に一致するデータはありません。', 'ktpwp' ) . '</p></div>';
+				$html .= '<p style="margin:0;color:#666;font-size:14px;">' . esc_html__( '検索に一致するデータはありません。', 'kantanpro' ) . '</p></div>';
 
 				return $html;
 			}
 
 			$html  = '<div class="ktp-list-search-results" style="position:relative;margin-bottom:16px;padding:14px 18px;padding-right:44px;background:#f0f7ff;border:1px solid #bbdefb;border-radius:6px;">';
 			$html .= $close_btn;
-			$html .= '<p style="margin:0 0 10px 0;font-weight:bold;font-size:14px;color:#1565c0;">' . esc_html__( '検索結果', 'ktpwp' ) . '</p>';
+			$html .= '<p style="margin:0 0 10px 0;font-weight:bold;font-size:14px;color:#1565c0;">' . esc_html__( '検索結果', 'kantanpro' ) . '</p>';
 			$html .= '<ul style="margin:0;padding-left:20px;list-style:disc;">';
 			foreach ( $results as $r ) {
 				$html .= '<li style="margin-bottom:6px;"><span>' . esc_html( $r['label'] ) . '</span> ';
