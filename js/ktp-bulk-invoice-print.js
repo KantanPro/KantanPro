@@ -1,3 +1,10 @@
+// 同梱ライブラリ（js/lib/）の URL を解決する。
+// PHP 側の wp_localize_script( ..., 'ktpwpVendor', ... ) で注入される。
+function ktpVendorUrl(name) {
+    var vendor = window.ktpwpVendor || {};
+    return vendor[name] || '';
+}
+
 /**
  * 一括請求書: プレビュー操作・印刷・PDF保存（KantanBiz bulk-invoice-print.js 相当）
  * @package KTPWP
@@ -46,7 +53,7 @@ function loadKtpPdfLibraries() {
         if (typeof html2canvas === 'undefined') {
             pending++;
             var s1 = document.createElement('script');
-            s1.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+            s1.src = ktpVendorUrl('html2canvas');
             s1.onload = done;
             s1.onerror = function() { reject(new Error('html2canvas読み込み失敗')); };
             document.head.appendChild(s1);
@@ -54,7 +61,7 @@ function loadKtpPdfLibraries() {
         if (typeof jsPDF === 'undefined') {
             pending++;
             var s2 = document.createElement('script');
-            s2.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+            s2.src = ktpVendorUrl('jspdf');
             s2.onload = function() {
                 if (typeof window.jspdf !== 'undefined') {
                     window.jsPDF = window.jspdf.jsPDF;

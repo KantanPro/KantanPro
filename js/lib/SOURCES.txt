@@ -1,0 +1,17 @@
+このディレクトリのファイルは、変更を加えていない third-party ライブラリの配布物です。
+取得元とバージョンは以下のとおりです。
+
+html2canvas.min.js
+  html2canvas 1.4.1 (MIT License)
+  https://github.com/niklasvh/html2canvas
+  取得元: https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js
+
+jspdf.umd.min.js
+  jsPDF 2.5.1 (MIT License)
+  https://github.com/parallax/jsPDF
+  取得元: https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js
+
+chart.umd.min.js
+  Chart.js 4.4.9 (MIT License)
+  https://github.com/chartjs/Chart.js
+  取得元: https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js

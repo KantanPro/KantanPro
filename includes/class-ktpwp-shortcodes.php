@@ -386,8 +386,17 @@ class KTPWP_Shortcodes {
         if ( ! apply_filters( 'kantanpro_auto_fetch_official_central_banner', true ) ) {
             return false;
         }
-        // 無料版の広告バナーは配布先の管理画面設定に関わらず表示する仕様のため、
-        // ローカルの ktp_central_banner_settings[enabled] による無効化は無視する。
+        // WordPress.org 配布版では、管理画面の「中央バナーを表示する」設定を尊重する。
+        // 未設定なら表示し、明示的にオフにされていれば表示しない
+        // （WordPress.org プラグインガイドライン第 11 項）。
+        if ( function_exists( 'ktpwp_uses_self_hosted_updates' ) && ! ktpwp_uses_self_hosted_updates() ) {
+            $saved = get_option( 'ktp_central_banner_settings', null );
+            if ( is_array( $saved ) && array_key_exists( 'enabled', $saved ) && empty( $saved['enabled'] ) ) {
+                return false;
+            }
+        }
+
+        // 自社配布版の無料版広告バナーは、配布先の管理画面設定に関わらず表示する。
         return true;
     }
 

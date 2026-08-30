@@ -789,6 +789,12 @@ End',
             'queued'    => false,
         );
 
+        // WordPress.org 配布版では、利用者のメールアドレス・表示名・サイト URL を
+        // 開発元へ送信しない（WordPress.org プラグインガイドライン第 7 項）。
+        if ( function_exists( 'ktpwp_uses_self_hosted_updates' ) && ! ktpwp_uses_self_hosted_updates() ) {
+            return $result;
+        }
+
         if ( $this->notify_via_klm_api( $user_id ) ) {
             $result['klm_sent'] = true;
             return $result;
@@ -914,6 +920,11 @@ End',
      * 保留通知の再送
      */
     public function flush_pending_notifications() {
+        // WordPress.org 配布版では開発元への通知自体を行わない。
+        if ( function_exists( 'ktpwp_uses_self_hosted_updates' ) && ! ktpwp_uses_self_hosted_updates() ) {
+            return;
+        }
+
         $queue = get_option( $this->get_pending_option_name(), array() );
         if ( ! is_array( $queue ) || empty( $queue ) ) {
             return;

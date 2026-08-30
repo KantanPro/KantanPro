@@ -53,7 +53,7 @@ if ( ! class_exists( 'KTPWP_Graph_Renderer' ) ) {
 			$content .= '<div><canvas id="lineChart" width="320" height="240"></canvas><div style="text-align:center;">折れ線グラフ</div></div>';
 			$content .= '<div><canvas id="stackedBarChart" width="320" height="240"></canvas><div style="text-align:center;">帯グラフ</div></div>';
 			$content .= '</div></div>';
-			$content .= '<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>';
+			$content .= '<script src="' . esc_url( KANTANPRO_PLUGIN_URL . 'js/lib/chart.umd.min.js' ) . '"></script>';
 			$content .= '<script>
 // 色設定
 const colors = ["#e74c3c", "#3498db", "#f1c40f", "#bdc3c7"];

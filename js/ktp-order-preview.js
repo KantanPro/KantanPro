@@ -1,3 +1,10 @@
+// 同梱ライブラリ（js/lib/）の URL を解決する。
+// PHP 側の wp_localize_script( ..., 'ktpwpVendor', ... ) で注入される。
+function ktpVendorUrl(name) {
+    var vendor = window.ktpwpVendor || {};
+    return vendor[name] || '';
+}
+
 /**
  * 受注書プレビューポップアップ機能
  *
@@ -22,7 +29,7 @@
             // html2canvasの読み込み
             if (!html2canvasLoaded) {
                 const html2canvasScript = document.createElement('script');
-                html2canvasScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+                html2canvasScript.src = ktpVendorUrl('html2canvas');
                 html2canvasScript.onload = function() {
                     html2canvasLoaded = true;
                     if (jsPDFLoaded) resolve();
@@ -37,7 +44,7 @@
             // jsPDFの読み込み
             if (!jsPDFLoaded) {
                 const jsPDFScript = document.createElement('script');
-                jsPDFScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+                jsPDFScript.src = ktpVendorUrl('jspdf');
                 jsPDFScript.onload = function() {
                     // jsPDFをグローバルに設定
                     if (typeof window.jspdf !== 'undefined') {

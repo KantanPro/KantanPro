@@ -274,16 +274,7 @@ class KTPWP_Assets {
                 'media'  => 'all',
                 'admin'  => true,
             ),
-            // Material Symbolsを無効化し、SVGアイコンに置き換え
-            // 'material-symbols-outlined' => array(
-            //     'src'    => 'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0',
-            //     'deps'   => array(),
-            //     'ver'    => KTPWP_PLUGIN_VERSION,
-            //     'media'  => 'all',
-            //     'admin'  => false,
-            //     'cache'  => true, // キャッシュ有効
-            //     'preload' => true, // プリロード有効
-            // ),
+            // アイコンは同梱の SVG を使用する。外部フォント CDN は登録しない。
         );
     }
 
@@ -448,6 +439,14 @@ class KTPWP_Assets {
                 'ver'       => KTPWP_PLUGIN_VERSION . '.' . filemtime( KTPWP_PLUGIN_DIR . 'js/ktp-order-preview.js' ),
                 'in_footer' => true,
                 'admin'     => false,
+                'localize'  => array(
+                    'object' => 'ktpwpVendor',
+                    'data'   => array(
+                        'html2canvas' => KANTANPRO_PLUGIN_URL . 'js/lib/html2canvas.min.js',
+                        'jspdf'       => KANTANPRO_PLUGIN_URL . 'js/lib/jspdf.umd.min.js',
+                        'chartjs'     => KANTANPRO_PLUGIN_URL . 'js/lib/chart.umd.min.js',
+                    ),
+                ),
             ),
             'ktp-delivery-dates' => array(
                 'src'       => 'js/ktp-delivery-dates.js',
@@ -598,6 +597,14 @@ class KTPWP_Assets {
                 'ver'       => KTPWP_PLUGIN_VERSION . '.' . filemtime( KTPWP_PLUGIN_DIR . 'js/ktp-bulk-invoice-print.js' ),
                 'in_footer' => true,
                 'admin'     => false,
+                'localize'  => array(
+                    'object' => 'ktpwpVendor',
+                    'data'   => array(
+                        'html2canvas' => KANTANPRO_PLUGIN_URL . 'js/lib/html2canvas.min.js',
+                        'jspdf'       => KANTANPRO_PLUGIN_URL . 'js/lib/jspdf.umd.min.js',
+                        'chartjs'     => KANTANPRO_PLUGIN_URL . 'js/lib/chart.umd.min.js',
+                    ),
+                ),
             ),
             'ktp-service-contract-fields' => array(
                 'src'       => 'js/ktp-service-contract-fields.js',
@@ -1087,24 +1094,7 @@ class KTPWP_Assets {
      * プリロードリンクの追加
      */
     public function add_preload_links() {
-        // Material Symbolsを無効化し、SVGアイコンに置き換え
-        // Material Symbolsのプリロードは不要になったため、コメントアウト
-        /*
-        $material_symbols_cached = get_transient('ktpwp_material_symbols_cached');
-        
-        if (!$material_symbols_cached) {
-            // 初回読み込み時のみプリロード
-            echo '<link rel="preconnect" href="https://fonts.googleapis.com">' . "\n";
-            echo '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>' . "\n";
-            echo '<link rel="preload" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" as="style" onload="this.onload=null;this.rel=\'stylesheet\'">' . "\n";
-            
-            // キャッシュフラグを設定（24時間有効）
-            set_transient('ktpwp_material_symbols_cached', true, DAY_IN_SECONDS);
-        } else {
-            // キャッシュ済みの場合は直接読み込み
-            echo '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0">' . "\n";
-        }
-        */
+        // アイコンは同梱の SVG を使用するため、外部フォント CDN へのプリロードは行わない。
     }
 
     /**

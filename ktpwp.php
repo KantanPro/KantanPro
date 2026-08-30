@@ -33,6 +33,29 @@ if ( ! defined( 'KTPWP_EDITION' ) ) {
     define( 'KTPWP_EDITION', 'free' );
 }
 
+/**
+ * 配布経路。
+ *
+ * 'github' … 自社配布（GitHub リリース経由の自動更新を行う）
+ * 'wporg'  … WordPress.org プラグインディレクトリ配布（更新は WordPress 本体に任せる）
+ *
+ * WordPress.org 版のビルド時に build-wporg.sh が 'wporg' へ書き換える。
+ */
+if ( ! defined( 'KTPWP_DISTRIBUTION' ) ) {
+    define( 'KTPWP_DISTRIBUTION', 'github' );
+}
+
+if ( ! function_exists( 'ktpwp_uses_self_hosted_updates' ) ) {
+    /**
+     * 自社配布（GitHub リリース）による自動更新を使うかどうか。
+     *
+     * @return bool
+     */
+    function ktpwp_uses_self_hosted_updates() {
+        return KTPWP_DISTRIBUTION !== 'wporg';
+    }
+}
+
 if ( ! function_exists( 'ktpwp_is_plugin_active_by_basename' ) ) {
     function ktpwp_is_plugin_active_by_basename( $plugin_basename ) {
         $active_plugins = (array) get_option( 'active_plugins', array() );
@@ -605,6 +628,11 @@ function ktpwp_maybe_migrate_service_images() {
  * 更新チェッカーの初期化
  */
 function ktpwp_init_update_checker() {
+    // WordPress.org 配布版では更新は WordPress 本体が行うため、独自の更新チェッカーは動かさない。
+    if ( ! ktpwp_uses_self_hosted_updates() ) {
+        return;
+    }
+
     if ( ! class_exists( 'KTPWP_Update_Checker' ) ) {
         return;
     }
@@ -4144,20 +4172,9 @@ function ktpwp_scripts_and_styles( $hook = '' ) {
     // レポートタブ用のスタイルシートを追加
     wp_enqueue_style( 'ktp-report', plugins_url( 'css/ktp-report.css', __FILE__ ) . '?v=' . time(), array( 'ktp-css' ), KANTANPRO_PLUGIN_VERSION, 'all' );
 
-    // Material Symbolsを無効化し、SVGアイコンに置き換え
-    // wp_enqueue_style( 'ktpwp-material-icons', 'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0', array(), null );
-
-    // Google Fontsのプリロード設定も無効化
-    // add_action(
-    //     'wp_head',
-    //     function () {
-    //         echo '<link rel="preconnect" href="https://fonts.googleapis.com">' . "\n";
-    //         echo '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>' . "\n";
-    //         echo '<link rel="preload" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" as="style" onload="this.onload=null;this.rel=\'stylesheet\'">' . "\n";
-    //     },
-    //     1
-    // );
-    wp_enqueue_script( 'jquery', 'https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js', array(), '3.5.1', true );
+    // アイコンは同梱の SVG（js/ktp-svg-icons.js）を使用する。外部フォント CDN は読み込まない。
+    // jQuery は WordPress 同梱のものを使用する（外部 CDN からは読み込まない）。
+    wp_enqueue_script( 'jquery' );
 
     // ajaxurl をフロントエンドに渡す（nonce は AJAX クラス / Assets で設定するため、ここでは上書きしない）
     wp_add_inline_script( 'ktp-js', 'var ajaxurl = ' . json_encode( admin_url( 'admin-ajax.php' ) ) . ';' );

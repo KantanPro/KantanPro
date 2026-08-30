@@ -106,7 +106,7 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 			$content .= '</div>';
 
 			// Chart.js とカスタムスクリプトを読み込み
-			$content .= '<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>';
+			$content .= '<script src="' . esc_url( KANTANPRO_PLUGIN_URL . 'js/lib/chart.umd.min.js' ) . '"></script>';
 			
 			// AJAX設定を追加
 			$ajax_data = array(
