@@ -886,7 +886,7 @@ class KTPWP_Shortcodes {
             'client' => '',
             'service' => '',
             'supplier' => '',
-            'report' => ''
+            'info' => ''
         );
 
         // 現在のタブに応じてコンテンツを生成
@@ -911,8 +911,8 @@ class KTPWP_Shortcodes {
                 $tab_contents['supplier'] = $this->get_supplier_content($tab_name);
                 break;
 
-            case 'report':
-                $tab_contents['report'] = $this->get_report_content($tab_name);
+            case 'info':
+                $tab_contents['info'] = $this->get_info_content();
                 break;
 
             default:
@@ -929,7 +929,7 @@ class KTPWP_Shortcodes {
             $tab_contents['client'],
             $tab_contents['service'],
             $tab_contents['supplier'],
-            $tab_contents['report']
+            $tab_contents['info']
         );
     }
 
@@ -1093,38 +1093,22 @@ class KTPWP_Shortcodes {
     }
 
     /**
-     * レポートコンテンツ取得
+     * 情報タブのコンテンツ取得
      *
-     * @param string $tab_name タブ名
      * @return string コンテンツHTML
      */
-    private function get_report_content($tab_name) {
+    private function get_info_content() {
         if (!current_user_can('edit_posts') && !current_user_can('ktpwp_access')) {
             return $this->render_permission_error();
         }
-        if ( function_exists( 'ktpwp_is_feature_enabled' ) && ! ktpwp_is_feature_enabled( 'report' ) ) {
-            if ( ! class_exists( 'KTPWP_Ui_Generator' ) ) {
-                $this->load_required_class( 'class-ktpwp-ui-generator.php' );
-            }
-            if ( class_exists( 'KTPWP_Ui_Generator' ) ) {
-                $ui = new KTPWP_Ui_Generator();
-                $html = $ui->generate_free_edition_report_title_bar();
-                if ( class_exists( 'KTPWP_Edition' ) ) {
-                    $html .= KTPWP_Edition::get_upgrade_message_html( __( 'レポート', 'kantanpro' ) );
-                }
-                return $html;
-            }
+        if (!class_exists('KTPWP_Tab_Info')) {
+            $this->load_required_class('class-ktpwp-tab-info.php');
         }
-        if (!class_exists('KTPWP_Report_Class')) {
-            $this->load_required_class('class-ktpwp-tab-report.php');
+        if (class_exists('KTPWP_Tab_Info')) {
+            $info = new KTPWP_Tab_Info();
+            return $info->render();
         }
-
-        if (class_exists('KTPWP_Report_Class')) {
-            $report = new KTPWP_Report_Class();
-            return $report->Report_Tab_View($tab_name);
-        }
-
-        return $this->get_error_content('KTPWP_Report_Class');
+        return '';
     }
 
     /**
@@ -1182,10 +1166,10 @@ class KTPWP_Shortcodes {
      * @param string $client_content 顧客コンテンツ
      * @param string $service_content サービスコンテンツ
      * @param string $supplier_content 仕入先コンテンツ
-     * @param string $report_content レポートコンテンツ
+     * @param string $info_content 情報タブのコンテンツ
      * @return string タブビューHTML
      */
-    private function render_tabs_view($list_content, $order_content, $client_content, $service_content, $supplier_content, $report_content) {
+    private function render_tabs_view($list_content, $order_content, $client_content, $service_content, $supplier_content, $info_content) {
         if (!class_exists('KTPWP_View_Tabs_Class')) {
             $this->load_required_class('class-ktpwp-view-tab.php');
         }

@@ -2,9 +2,9 @@
 Contributors: kantanpro
 Tags: invoice, crm, order management, quotation, business
 Requires at least: 5.9
-Tested up to: 7.0
+Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.3.30
+Stable tag: 1.3.31
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -79,6 +79,19 @@ No, not by default. Your business data stays in your WordPress database. Three o
 features can contact an external service, and each of them is described under
 "External services" below. None of them is required to use the plugin.
 
+== A separate plugin with more features ==
+
+The same author also publishes **KantanProEX (WP)**, a separate paid plugin.
+It is not required for this plugin to work, and nothing here is disabled without it.
+KantanProEX adds:
+
+* Sales reports — revenue and profit over time, broken down by client and by service
+* Publishing your services on the site and receiving applications as orders
+* Card payments through Stripe
+* Use by several staff members on the same data
+
+Details: https://www.kantanpro.com/product/kantanpro-ex
+
 == Third-party libraries ==
 
 The following MIT-licensed libraries are bundled unmodified in `js/lib/`
@@ -135,6 +148,21 @@ fields. It only sends anything if you have entered your own OpenAI API key.
 
 The complete history is in `changelog.txt`, bundled with the plugin.
 
+= 1.3.31 - 2026-09-03 =
+* Removed the report tab and replaced it with an "Information" tab showing the plugin version,
+  environment and record counts. Reports are provided by a separate plugin.
+* Removed the custom CSS field. Use the WordPress customizer's Additional CSS instead.
+* Fixed a cross-site scripting hole where the `active_tab` cookie was written into an HTML
+  attribute without sanitizing.
+* Fixed the data-clear handler leaking buffered output into its JSON response.
+* Hardened input handling across the plugin: nonces, `$_SERVER` values, pagination arguments
+  and search terms are now sanitized before use.
+* Uploads now go through `wp_handle_upload()` instead of `move_uploaded_file()`.
+* AJAX actions are now prefixed with `ktp_` to avoid collisions with other plugins.
+* Scripts and styles that were printed inline are now registered through the WordPress
+  enqueue system.
+* The postal code lookup on the subcontractor form moved to its own JavaScript file.
+
 = 1.3.30 - 2026-08-30 =
 * Fixed a missing permission check in the internal handlers that return billing candidates
   and order data. Any logged-in user could read that data regardless of their role;
@@ -174,5 +202,5 @@ The complete history is in `changelog.txt`, bundled with the plugin.
 
 == Upgrade Notice ==
 
-= 1.3.30 =
-Security fix: the internal handlers returning billing and order data now require editing permission.
+= 1.3.31 =
+Security fixes (including an XSS in the design settings) and compliance changes for the WordPress.org directory.

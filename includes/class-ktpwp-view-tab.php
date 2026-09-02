@@ -12,7 +12,7 @@ class KTPWP_View_Tabs_Class {
         $client_content,
         $service_content,
         $supplier_content,
-        $report_content
+        $info_content
     ) {
 
         // AJAX設定を確実に出力（編集者権限がある場合のみ）
@@ -27,13 +27,10 @@ class KTPWP_View_Tabs_Class {
         } elseif ( isset( $_GET['tab_name'] ) ) {
             $position = sanitize_text_field( wp_unslash( $_GET['tab_name'] ) );
         }
-        $allowed_positions = array( 'list', 'order', 'client', 'service', 'supplier', 'report' );
+        $allowed_positions = array( 'list', 'order', 'client', 'service', 'supplier', 'info' );
         if ( ! in_array( $position, $allowed_positions, true ) ) {
             $position = 'list';
         }
-
-        $lock_icon = '<span class="ktp-lock-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M17 9h-1V7a4 4 0 0 0-8 0v2H7a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2Zm-7-2a2 2 0 1 1 4 0v2h-4V7Zm3 9.73V18h-2v-1.27a2 2 0 1 1 2 0Z"/></svg></span>';
-        $report_locked = function_exists( 'ktpwp_is_feature_enabled' ) && ! ktpwp_is_feature_enabled( 'report' );
 
         // タブの内容を配列で定義
         $tabs = array(
@@ -42,7 +39,7 @@ class KTPWP_View_Tabs_Class {
 			'client' => esc_html__( '顧客', 'kantanpro' ),
 			'service' => esc_html__( 'サービス', 'kantanpro' ),
 			'supplier' => esc_html__( '協力会社', 'kantanpro' ),
-			'report' => ( $report_locked ? $lock_icon : '' ) . esc_html__( 'レポート', 'kantanpro' ),
+			'info' => esc_html__( '情報', 'kantanpro' ),
         );
 
         // タブの内容を作成（プラグインコンテナクラスを追加してテーマとの競合を防止）
@@ -112,7 +109,7 @@ class KTPWP_View_Tabs_Class {
             'client' => $client_content,
             'service' => $service_content,
             'supplier' => $supplier_content,
-            'report' => $report_content,
+            'info' => $info_content,
         );
         foreach ( $panels as $panel_id => $panel_html ) {
 			$is_active    = ( $position === $panel_id );

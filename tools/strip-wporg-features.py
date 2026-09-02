@@ -99,39 +99,9 @@ autoload_pat = r"'(" + '|'.join(REMOVE_CLASSES) + r")'\s*=>"
 n = drop_lines('ktpwp.php', autoload_pat) + drop_lines('includes/class-ktpwp-loader.php', autoload_pat)
 print(f'オートローダ登録の削除: {n}行')
 
-# --- 3) レポートタブをUIから消す --------------------------------------------
-edit('includes/class-ktpwp-view-tab.php',
-     "$allowed_positions = array( 'list', 'order', 'client', 'service', 'supplier', 'report' );",
-     "$allowed_positions = array( 'list', 'order', 'client', 'service', 'supplier' );")
-
-edit('includes/class-ktpwp-view-tab.php',
-     """        $lock_icon = '<span class="ktp-lock-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M17 9h-1V7a4 4 0 0 0-8 0v2H7a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2Zm-7-2a2 2 0 1 1 4 0v2h-4V7Zm3 9.73V18h-2v-1.27a2 2 0 1 1 2 0Z"/></svg></span>';
-        $report_locked = function_exists( 'ktpwp_is_feature_enabled' ) && ! ktpwp_is_feature_enabled( 'report' );
-""", '')
-
-edit('includes/class-ktpwp-view-tab.php',
-     "\t\t\t'report' => ( $report_locked ? $lock_icon : '' ) . esc_html__( 'レポート', 'kantanpro' ),\n", '')
-edit('includes/class-ktpwp-view-tab.php',
-     "            'report' => $report_content,\n", '')
-
-# --- 4) ktpwp.php のレポート分岐を消す --------------------------------------
-edit('ktpwp.php', """                case 'report':
-                    if ( function_exists( 'ktpwp_is_feature_enabled' ) && ! ktpwp_is_feature_enabled( 'report' ) ) {
-                        if ( ! class_exists( 'KTPWP_Ui_Generator' ) ) {
-                            require_once KANTANPRO_PLUGIN_DIR . 'includes/class-ktpwp-ui-generator.php';
-                        }
-                        $ktpwp_report_ui_title = new KTPWP_Ui_Generator();
-                        $report_content        = $ktpwp_report_ui_title->generate_free_edition_report_title_bar();
-                        $report_content       .= class_exists( 'KTPWP_Edition' )
-                            ? KTPWP_Edition::get_upgrade_message_html( __( 'レポート', 'kantanpro' ) )
-                            : '';
-                    } else {
-                        $report = new KTPWP_Report_Class();
-                        $report_content = $report->Report_Tab_View( $tab_name );
-                    }
-                    break;
-""", '')
-
+# --- 3) レポートタブのUI除去は不要 ------------------------------------------
+#     2026-09-03 にソース側で6番目のタブを「情報」(KTPWP_Tab_Info) に置き換えたため、
+#     ここでタブを消す処理は要らなくなった。残す CSS の除去だけ行う。
 drop_lines('ktpwp.php', r"wp_enqueue_style\( 'ktp-report'")
 
 # ktpwp.php 末尾の「クラスが無ければ include」ブロック。
@@ -255,26 +225,85 @@ replace_method_body('includes/class-ktpwp-shortcodes.php',
 
 drop_lines('includes/class-ktpwp-shortcodes.php', r"wp-json/kantanpro/v1/central-banner")
 
-# レポートのコンテンツ生成も丸ごと不要（タブ自体を消しているので呼ばれない）。
-# load_required_class の行が残ると「削除済みファイルの読み込み」検査に引っかかる。
-replace_method_body('includes/class-ktpwp-shortcodes.php',
-                    '    private function get_report_content($tab_name) {',
+# 情報タブの案内は、wp.org 版では「売り込み」ではなく「別製品の紹介」に差し替える。
+#
+# レビュー本文の許容範囲:
+#   "Your plugin may point out which features are available through a
+#    separated plugin, but that's it."
+# つまり別プラグインの存在を示すのは可。不可なのは
+#   ・内蔵機能をロックして誘導する（ガイドライン5）
+#   ・管理画面を宣伝で占有する（ガイドライン11）
+# なので、無料版が制限されているという書き方をせず、
+# 「別製品がある」という事実だけを1箇所に静かに置く。
+replace_method_body('includes/class-ktpwp-tab-info.php',
+                    '\t\tprivate static function upgrade_notice() {',
                     '''
-        // レポート機能は同梱していないため、このタブは生成しない。
-        unset( $tab_name );
-        return '';
-    }''')
+			$html  = '<div class="ktp-info-section ktp-info-related">';
+			$html .= '<h4>' . esc_html__( '関連製品', 'kantanpro' ) . '</h4>';
+			$html .= '<p>' . esc_html__( '同じ開発元から、KantanProEX（WP）という別のプラグインも提供しています。売上レポート、自社商品の公開と申し込み受付、Stripe による決済、複数人での利用に対応しています。', 'kantanpro' ) . '</p>';
+			$html .= '<p><a href="' . esc_url( 'https://www.kantanpro.com/product/kantanpro-ex' )
+				. '" target="_blank" rel="noopener noreferrer">'
+				. esc_html__( 'KantanProEX（WP）について', 'kantanpro' )
+				. '</a></p>';
+			$html .= '</div>';
 
-edit('includes/class-ktpwp-shortcodes.php', """            case 'report':
-                $tab_contents['report'] = $this->get_report_content($tab_name);
-                break;
+			return $html;
+		}''')
+
+# --- 5d) スタッフ管理を外す（ガイドライン5） ---------------------------------
+#     無料版は staff_limit=0 でスタッフを追加できないのに、管理UIは同梱していて
+#     「チームで使うなら KantanProEX を」と誘導していた。レポートと同じ
+#     「内蔵機能をロックして有料版へ誘導」の形なので、機能ごと外す。
+#     （ユーザー判断 2026-09-03: 開放ではなく削除）
+#     参照は class-ktpwp-settings.php と class-ktpwp-edition.php の2ファイルだけ。
+
+# 管理メニューから外す
+edit('includes/class-ktpwp-settings.php', """        // サブメニュー - スタッフ管理
+        add_submenu_page(
+            'ktp-settings', // 親メニューのスラッグ
+            __( 'スタッフ管理', 'kantanpro' ), // ページタイトル
+            __( 'スタッフ管理', 'kantanpro' ), // メニュータイトル
+            'manage_options', // 権限
+            'ktp-staff', // メニューのスラッグ
+            array( $this, 'create_staff_page' ) // 表示を処理する関数
+        );
 
 """, '')
 
-# Chart.js は report ごと削除したので、vendor URL の受け渡しからも外す。
-# 残すと存在しないファイルのURLをJSに渡すことになる（利用側は report のみなので実害は無いが）。
-n_chart = drop_lines('includes/class-ktpwp-assets.php', r"'chartjs'\s*=>.*chart\.umd\.min\.js")
-print(f'Chart.js 参照の削除: {n_chart}行')
+# 管理ページ本体を空に
+replace_method_body('includes/class-ktpwp-settings.php',
+                    '    public function create_staff_page() {',
+                    '''
+        // スタッフ管理は WordPress.org 配布版には含めない。
+        return;
+    }''')
+
+# ヘッダーのリンクを外す
+drop_lines('ktpwp.php', r"admin\.php\?page=ktp-staff")
+
+# 上限まわりを「制限なし」に倒す（誘導文言を残さない）
+replace_method_body('includes/class-ktpwp-edition.php',
+                    '\tpublic static function get_staff_limit_reached_message() {',
+                    '''
+		// スタッフ管理を同梱していないため、この文言は使わない。
+		return '';
+	}''')
+
+# 受注書の「メール送信履歴・案件ファイル」のロック表示。
+# order_auxiliary は wp.org 版では開放しているので実行されないが、
+# aria-label="有料版機能" の鍵アイコンがコードに残っているとガイドライン5の
+# 「ロックされた機能」に見える。メソッドごと空にする。
+replace_method_body('includes/class-ktpwp-order-main.php',
+                    '\t\tprivate function render_free_edition_order_auxiliary_notice_blocks( $order_id ) {',
+                    '''
+			// wp.org 版ではこの機能を開放しているため、ロック表示は出さない。
+			unset( $order_id );
+			return '';
+		}''')
+
+print('受注書のロック表示の除去: 完了')
+
+print('スタッフ管理の除去: 完了')
 
 print('開発元への外部通信の除去: 完了')
 

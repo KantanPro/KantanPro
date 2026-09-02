@@ -8706,3 +8706,208 @@ body.ktpwp-modal-open {
   margin: 6px 0 12px;
   padding-left: 24px;
 }
+/* 情報タブは一覧と詳細の2カラムではなく、全幅で読ませる。
+   （6番目のタブをレポートから「情報」に置き換えた 2026-09-03） */
+/* 情報タブのコントローラーバー。
+   他タブ（.ktp-supplier-controller 等）は flex + space-between で
+   左に検索・右にアクションを置いている。高さと配置をそこに合わせる。 */
+.ktp-info-controller {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  /* 他タブは検索欄が入るぶん実高 56px になる。中身が違っても帯の高さは揃える。 */
+  min-height: 56px;
+  box-sizing: border-box;
+}
+
+.ktp-info-controller__title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+  padding: 6px 0;
+}
+
+/* どちらの配布版が動いているかのバッジ。
+   wp.org 版と GitHub 版は見た目がほぼ同じで区別できないので色で分ける。 */
+.ktp-info-dist-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+
+.ktp-info-dist-badge.is-wporg {
+  background: #dcfce7;
+  border: 1px solid #86efac;
+  color: #166534;
+}
+
+.ktp-info-dist-badge.is-github {
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  color: #92400e;
+}
+
+.ktp-info-controller__bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+/* 他タブの印刷ボタン（.js-tab-print-btn）と同じ寸法にする。
+   高さ36px / padding 8px 16px / font-size 12px / radius 6px。 */
+.ktp-info-controller__link {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #fff;
+  color: #374151;
+  font-size: 12px;
+  line-height: 12px;
+  /* 他タブの印刷ボタンは button 要素で実高 36px になる。
+     a 要素だと padding だけでは 30px にしかならないので最低高で合わせる。 */
+  min-height: 36px;
+  box-sizing: border-box;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.ktp-info-controller__link:hover,
+.ktp-info-controller__link:focus {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+  color: #111827;
+}
+
+.ktp-info-tab .ktp_data_list_box {
+  width: 100%;
+  max-width: none;
+  float: none;
+  /* 他タブは .controller の padding 10px で内容が始まる。
+     既定の 20px のままだと情報タブだけ内側に寄って見えるので揃える。 */
+  padding: 10px;
+}
+
+.ktp-info-tab .ktp-info-section {
+  margin: 0 0 20px;
+}
+
+.ktp-info-tab .ktp-info-section h3 {
+  margin: 0 0 8px;
+}
+
+.ktp-info-tab .ktp-info-version {
+  font-weight: normal;
+  opacity: 0.75;
+}
+
+.ktp-info-tab .ktp-info-table {
+  border-collapse: collapse;
+  width: 100%;
+  max-width: 520px;
+}
+
+.ktp-info-tab .ktp-info-table th,
+.ktp-info-tab .ktp-info-table td {
+  border: 1px solid #e2e8f0;
+  padding: 6px 12px;
+  text-align: left;
+}
+
+.ktp-info-tab .ktp-info-table th {
+  width: 40%;
+  background: #f8fafc;
+  font-weight: 600;
+}
+
+/* 情報タブの有料版案内（GitHub 配布版のみ表示）。
+   目立ちすぎないよう、他のセクションと同じ調子にとどめる。 */
+.ktp-info-tab .ktp-info-upgrade {
+  background: linear-gradient(180deg, #f8fbff 0%, #f1f6fe 100%);
+  border: 1px solid #cfe0fb;
+  border-radius: 8px;
+  padding: 18px 20px;
+  max-width: 760px;
+}
+
+.ktp-info-tab .ktp-info-upgrade h4 {
+  margin-top: 0;
+  font-size: 16px;
+}
+
+.ktp-info-tab .ktp-info-upgrade__lead {
+  margin: 6px 0 14px;
+}
+
+.ktp-info-tab .ktp-info-upgrade__list {
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 0;
+}
+
+.ktp-info-tab .ktp-info-upgrade__list li {
+  padding: 10px 0;
+  border-top: 1px solid #dbe7fb;
+}
+
+.ktp-info-tab .ktp-info-upgrade__list li:first-child {
+  border-top: none;
+}
+
+.ktp-info-tab .ktp-info-upgrade__point {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 3px;
+}
+
+.ktp-info-tab .ktp-info-upgrade__desc {
+  display: block;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.ktp-info-tab .ktp-info-upgrade__cta {
+  margin: 0 0 6px;
+}
+
+.ktp-info-tab .ktp-info-upgrade__note {
+  margin: 0;
+  font-size: 12px;
+  opacity: 0.75;
+}
+
+/* テーマによっては素のリンクが本文と同色になり、押せると分からない。
+   控えめなボタンにして触れると分かるようにする。 */
+.ktp-info-tab .ktp-info-upgrade-link {
+  display: inline-block;
+  padding: 10px 22px;
+  border: 1px solid #1d4ed8;
+  border-radius: 6px;
+  background: #1d4ed8;
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.ktp-info-tab .ktp-info-upgrade-link:hover,
+.ktp-info-tab .ktp-info-upgrade-link:focus {
+  background: #1e40af;
+  border-color: #1e40af;
+  color: #fff;
+}
+
+/* 情報タブの関連製品（wp.org 版で出る控えめな紹介）。
+   売り込みではないので、枠は付けずリンクと分かる程度にとどめる。 */
+.ktp-info-tab .ktp-info-related a {
+  color: #1d4ed8;
+  text-decoration: underline;
+}

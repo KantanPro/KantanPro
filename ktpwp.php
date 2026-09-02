@@ -3,7 +3,7 @@
  * Plugin Name: KantanPro
  * Plugin URI: https://www.kantanpro.com/
  * Description: スモールビジネスのための販売支援ツール。ショートコード[ktpwp_all_tab]を固定ページに設置してください。
- * Version: 1.3.30
+ * Version: 1.3.31
  * Author: KantanPro
  * Author URI: https://www.kantanpro.com/kantanpro-page
  * License: GPL v2 or later
@@ -177,7 +177,9 @@ if ( ! defined( 'KANTANPRO_PLUGIN_VERSION' ) ) {
     define( 'KANTANPRO_PLUGIN_VERSION', $detected_version );
 }
 if ( ! defined( 'KANTANPRO_PLUGIN_NAME' ) ) {
-    define( 'KANTANPRO_PLUGIN_NAME', 'KantanPro' );
+    // 画面（ヘッダー・フッター等）に出す表示名。
+    // WordPress 版であることを明示し、SaaS の KantanBiz と取り違えられないようにする。
+    define( 'KANTANPRO_PLUGIN_NAME', 'KantanPro(WP)' );
 }
 if ( ! defined( 'KANTANPRO_PLUGIN_DESCRIPTION' ) ) {
     // 翻訳読み込み警告を回避するため、initアクションで設定
@@ -205,15 +207,18 @@ if ( ! defined( 'KANTANPRO_PLUGIN_URL' ) ) {
 }
 
 if ( ! defined( 'KANTANPRO_PLUGIN_CANONICAL_DIR' ) ) {
-    define( 'KANTANPRO_PLUGIN_CANONICAL_DIR', 'KantanPro' );
+    // ディレクトリ名は配布形態で変わる（GitHub版=KantanPro / wp.org版=kantanpro）。
+    // 直書きすると片方でアセットURLがずれるので、実際の位置から導く。
+    define( 'KANTANPRO_PLUGIN_CANONICAL_DIR', basename( dirname( __FILE__ ) ) );
 }
 
 if ( ! function_exists( 'ktpwp_plugin_asset_url' ) ) {
     /**
      * プラグイン配下ファイルの公開 URL。
-     * 実フォルダが無料版の KantanPro や zipball 名のままでも、公式ディレクトリ名 KantanProEX を URL に使う。
+     * 実フォルダ名（GitHub版=KantanPro / wp.org版=kantanpro / zipball 名）に関わらず、
      *
-     * wp-config で KANTANPRO_PLUGIN_ROOT_RELATIVE_ASSETS が true のときはドメインなしのパス（/wp-content/plugins/KantanProEX/...）を返す。
+     * 実際に置かれているディレクトリを基準に URL を組み立てる。
+     * wp-config で KANTANPRO_PLUGIN_ROOT_RELATIVE_ASSETS が true のときはドメインなしのパスを返す。
      *
      * @param string $relative_path plugins_url 第1引数相当（例: images/default/icon.png）。
      * @return string
@@ -240,11 +245,12 @@ if ( ! function_exists( 'ktpwp_plugin_asset_url' ) ) {
             return apply_filters( 'ktpwp_plugin_asset_url', $path, $relative_path );
         }
 
-        // plugins_url(__FILE__) は実フォルダ名（例: 無料版 KantanPro）に依存し icon.png が別フォルダのとき 404 になる。
-        // 常に公式ディレクトリ KantanProEX 配下を content_url で指す（実体も KantanProEX に配置すること）。
+        // plugins_url(__FILE__) は実フォルダ名に依存し、フォルダ名が変わると icon.png が 404 になる。
+        // KANTANPRO_PLUGIN_CANONICAL_DIR（実ディレクトリ名）を基準に content_url で組み立てる。
         $url = content_url( 'plugins/' . $canonical . '/' . $relative_path );
 
-        // 取りこぼし対策（KantanProEX を誤って KantanProEXEX にしない）
+        // 旧パス /plugins/KantanPro/ が残っていたら現行ディレクトリへ寄せる。
+        // (?!EX) は KantanProEX を巻き込まないためのガード。
         $url = preg_replace( '#/plugins/KantanPro(?!EX)(/)#i', '/plugins/' . $canonical . '$1', $url );
 
         return apply_filters( 'ktpwp_plugin_asset_url', $url, $relative_path );
@@ -538,6 +544,7 @@ if ( ! function_exists( 'ktpwp_autoload_classes' ) ) {
         'KTPWP_License_Manager' => 'includes/class-ktpwp-license-manager.php',
         'KTPWP_Graph_Renderer'  => 'includes/class-ktpwp-graph-renderer.php',
         // POSTデータ安全処理クラス（Adminer警告対策）
+        'KTPWP_Tab_Info'        => 'includes/class-ktpwp-tab-info.php',
         'KTPWP_Upload'          => 'includes/class-ktpwp-upload.php',
         'KTPWP_Post_Data_Handler' => 'includes/class-ktpwp-post-handler.php',
         // クライアント管理の新クラス
@@ -3231,7 +3238,7 @@ function ktpwp_translate_admin_notice_message( $message ) {
 }
 
 function ktpwp_admin_notice_label() {
-    return defined( 'KANTANPRO_PLUGIN_NAME' ) ? KANTANPRO_PLUGIN_NAME : 'KantanPro';
+    return defined( 'KANTANPRO_PLUGIN_NAME' ) ? KANTANPRO_PLUGIN_NAME : 'KantanPro(WP)';
 }
 
 function ktpwp_admin_notices() {
@@ -4601,7 +4608,7 @@ function KTPWP_Index() {
             }
 
             // システム名はプラグイン定数を優先して固定表示（無料版の残存オプション値に影響されない）
-            $system_name = defined( 'KANTANPRO_PLUGIN_NAME' ) ? KANTANPRO_PLUGIN_NAME : 'KantanPro';
+            $system_name = defined( 'KANTANPRO_PLUGIN_NAME' ) ? KANTANPRO_PLUGIN_NAME : 'KantanPro(WP)';
             $system_description = defined( 'KANTANPRO_PLUGIN_DESCRIPTION' )
                 ? KANTANPRO_PLUGIN_DESCRIPTION
                 : 'スモールビジネスのための販売支援ツール';
@@ -4722,7 +4729,7 @@ function KTPWP_Index() {
             $client_content   = isset( $client_content ) ? $client_content : '';
             $service_content  = isset( $service_content ) ? $service_content : '';
             $supplier_content = isset( $supplier_content ) ? $supplier_content : '';
-            $report_content   = isset( $report_content ) ? $report_content : '';
+            $info_content     = isset( $info_content ) ? $info_content : '';
 
             if ( ! isset( $list_content ) ) {
                 $list_content = '';
@@ -4770,19 +4777,10 @@ function KTPWP_Index() {
                     }
                     $supplier_content = $supplier->View_Table( $tab_name );
                     break;
-                case 'report':
-                    if ( function_exists( 'ktpwp_is_feature_enabled' ) && ! ktpwp_is_feature_enabled( 'report' ) ) {
-                        if ( ! class_exists( 'KTPWP_Ui_Generator' ) ) {
-                            require_once KANTANPRO_PLUGIN_DIR . 'includes/class-ktpwp-ui-generator.php';
-                        }
-                        $ktpwp_report_ui_title = new KTPWP_Ui_Generator();
-                        $report_content        = $ktpwp_report_ui_title->generate_free_edition_report_title_bar();
-                        $report_content       .= class_exists( 'KTPWP_Edition' )
-                            ? KTPWP_Edition::get_upgrade_message_html( __( 'レポート', 'kantanpro' ) )
-                            : '';
-                    } else {
-                        $report = new KTPWP_Report_Class();
-                        $report_content = $report->Report_Tab_View( $tab_name );
+                case 'info':
+                    if ( class_exists( 'KTPWP_Tab_Info' ) ) {
+                        $info = new KTPWP_Tab_Info();
+                        $info_content = $info->render();
                     }
                     break;
                 default:
@@ -4794,8 +4792,8 @@ function KTPWP_Index() {
             }
             // view
             $view = new KTPWP_View_Tabs_Class();
-            $tab_view = $view->TabsView( $list_content, $order_content, $client_content, $service_content, $supplier_content, $report_content );
-            // KantanProEX では KTP banner を表示しない
+            $tab_view = $view->TabsView( $list_content, $order_content, $client_content, $service_content, $supplier_content, $info_content );
+            // 有料版が有効なときは KTP banner を表示しない
             $before_header_banner = '';
 
             $layout_attrs = class_exists( 'KTPWP_Settings' )
@@ -4803,7 +4801,7 @@ function KTPWP_Index() {
                 : 'class="ktpwp-page-layout"';
             $return_value = '<div ' . $layout_attrs . '>' . $before_header_banner . $front_message . $tab_view . '</div>';
 
-            // 出力 HTML 内の /plugins/KantanPro/ を KantanProEX に統一（src/data-src 等に旧パスが残る取りこぼし対策）
+            // 出力 HTML 内の /plugins/KantanPro/ を現行ディレクトリに統一（src/data-src 等の旧パス対策）
             if ( defined( 'KANTANPRO_PLUGIN_CANONICAL_DIR' ) ) {
                 $return_value = preg_replace(
                     '#/plugins/KantanPro(?!EX)(/)#i',
@@ -4829,7 +4827,7 @@ function KTPWP_Index() {
     add_shortcode( 'kantanAllTab', 'kantanAllTab' );
     // ktpwp_all_tab ショートコードを追加（同じ機能を別名で提供）
     add_shortcode( 'ktpwp_all_tab', 'kantanAllTab' );
-    // KantanProEX 用のショートコード
+    // 業務画面のショートコード
     add_shortcode( 'kantanpro_ex', 'kantanAllTab' );
 
     // ブロックエディタ環境（do_blocks が優先度9でショートコードを先に展開）では、

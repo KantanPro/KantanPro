@@ -40,7 +40,7 @@ class KTPWP_Edition {
 		return array(
 			'free' => array(
 				'slug'        => 'free',
-				'plugin_name' => 'KantanPro',
+				'plugin_name' => 'KantanPro(WP)',
 				'staff_limit' => 0, // 0 = スタッフ追加不可（管理者のみ）。有料 pro の 0（無制限）とは別扱い。
 				'label'       => __( '無料版', 'kantanpro' ),
 			),
@@ -128,7 +128,7 @@ class KTPWP_Edition {
 			return (string) KANTANPRO_PLUGIN_NAME;
 		}
 
-		return 'KantanPro';
+		return 'KantanPro(WP)';
 	}
 
 	/**
@@ -146,7 +146,7 @@ class KTPWP_Edition {
 	 * @return string
 	 */
 	public static function get_canonical_plugin_dir() {
-		return 'KantanPro';
+		return 'KantanPro(WP)';
 	}
 
 	/**
