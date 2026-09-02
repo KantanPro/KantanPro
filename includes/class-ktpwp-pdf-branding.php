@@ -127,9 +127,15 @@ final class KTPWP_Pdf_Branding {
 		);
 		$ext     = $ext_map[ $mime ] ?? 'bin';
 		$basename = $field . '-' . wp_generate_password( 8, false ) . '.' . $ext;
-		$dest     = trailingslashit( $dir ) . $basename;
 
-		if ( ! move_uploaded_file( $file['tmp_name'], $dest ) ) {
+		// move_uploaded_file() は WordPress のチェックを迂回するので使わない。
+		$mimes = array(
+			'jpg|jpeg' => 'image/jpeg',
+			'png'      => 'image/png',
+			'gif'      => 'image/gif',
+			'webp'     => 'image/webp',
+		);
+		if ( ! class_exists( 'KTPWP_Upload' ) || KTPWP_Upload::receive( $file, $dir, $basename, $mimes ) === null ) {
 			return null;
 		}
 

@@ -74,7 +74,7 @@ class KTPWP_Security {
             return $result;
         }
 
-        $request_uri = isset( $_SERVER['REQUEST_URI'] ) ? (string) $_SERVER['REQUEST_URI'] : '';
+        $request_uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
         if ( strpos( $request_uri, '/wp-json/' ) !== false ) {
             return $result;
         }
@@ -338,7 +338,7 @@ class KTPWP_Security {
             return false;
         }
 
-        $request_uri = isset( $_SERVER['REQUEST_URI'] ) ? (string) wp_unslash( $_SERVER['REQUEST_URI'] ) : '';
+        $request_uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
         $path        = (string) parse_url( $request_uri, PHP_URL_PATH );
 
         if ( $path === '' ) {

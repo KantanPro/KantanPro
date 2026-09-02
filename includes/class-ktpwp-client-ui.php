@@ -193,13 +193,13 @@ if ( ! class_exists( 'KTPWP_Client_UI' ) ) {
 			}
 
 			// リスト表示部分の開始
-			$html = <<<END
-        <div class="ktp_data_contents">
-            <div class="ktp_data_list_box">
-            <div id="ktp-clients-print-list-area">
-            <div id="ktp-clients-print-list-only">
-            <div class="data_list_title">$list_title $sort_dropdown</div>
-        END;
+			// HEREDOC は使わない（wp.org ガイドライン）。
+			// $list_title / $sort_dropdown は組み立て済みの HTML なのでそのまま連結する。
+			$html = '<div class="ktp_data_contents">'
+				. '<div class="ktp_data_list_box">'
+				. '<div id="ktp-clients-print-list-area">'
+				. '<div id="ktp-clients-print-list-only">'
+				. '<div class="data_list_title">' . $list_title . ' ' . $sort_dropdown . '</div>';
 
 			return $html;
 		}

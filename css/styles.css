@@ -1912,6 +1912,17 @@ form > .create-order-btn {
   overflow-x: auto;
 }
 
+/* 列数が多いとき（契約列を含むと7列）、コンテナ幅では table-layout:fixed が
+   各列を潰し、バッジと価格の文字が重なる。最小幅を与えて、足りない分は
+   横スクロールで見せる。モバイル側には既に同種の指定がある（下の @media）。 */
+.ktp_data_list_box .ktp-service-list-table-wrap > .ktp-list-table--service {
+  min-width: 38rem;
+}
+
+.ktp_data_list_box .ktp-service-list-table-wrap > .ktp-list-table--party {
+  min-width: 32rem;
+}
+
 @media (max-width: 767px) {
   .ktp_data_list_box .ktp-service-list-table-wrap {
     -webkit-overflow-scrolling: touch;

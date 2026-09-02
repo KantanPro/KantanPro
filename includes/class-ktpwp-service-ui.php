@@ -438,11 +438,10 @@ if ( ! class_exists( 'KTPWP_Service_UI' ) ) {
 			unset( $name, $base_page_url, $sort_by, $sort_order );
 
 			// リスト表示部分の開始
-			$html = <<<END
-        <div class="ktp_data_contents">
-            <div class="ktp_data_list_box">
-                <div class="data_list_title">■ サービスリスト</div>
-END;
+			// HEREDOC は使わない（wp.org ガイドライン: 未エスケープ変数を検査ツールが追えないため）
+			$html = '<div class="ktp_data_contents">'
+				. '<div class="ktp_data_list_box">'
+				. '<div class="data_list_title">■ ' . esc_html__( 'サービスリスト', 'kantanpro' ) . '</div>';
 
 			return $html;
 		}

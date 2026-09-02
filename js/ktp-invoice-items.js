@@ -32,7 +32,7 @@
         } else if (typeof ajaxurl !== 'undefined') {
             config.url = ajaxurl;
         } else {
-            config.url = '/wp-admin/admin-ajax.php';
+            config.url = ((typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) || (typeof ajaxurl !== 'undefined' ? ajaxurl : ''));
         }
         
         // nonceの取得（優先順位順）

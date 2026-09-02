@@ -238,7 +238,11 @@ final class KTPWP_FM_Import {
 			return '<div class="notice notice-error"><p>' . esc_html( $dest->get_error_message() ) . '</p></div>';
 		}
 
-		if ( ! @move_uploaded_file( $file['tmp_name'], $dest ) ) {
+		// move_uploaded_file() は WordPress のチェックを迂回するので使わない。
+		$stored = class_exists( 'KTPWP_Upload' )
+			? KTPWP_Upload::receive( $file, dirname( $dest ), basename( $dest ), array( 'zip' => 'application/zip' ) )
+			: null;
+		if ( $stored === null ) {
 			return '<div class="notice notice-error"><p>' . esc_html__( 'サーバーへ Zip を保存できませんでした。', 'kantanpro' ) . '</p></div>';
 		}
 

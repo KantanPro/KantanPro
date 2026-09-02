@@ -17,7 +17,12 @@ function add_general_custom_fields() {
     */
     register_setting(
         'ktp-group', // option_group
-        'ktp_activation_key' // option_name
+        'ktp_activation_key', // option_name
+        array(
+            'type'              => 'string',
+            'sanitize_callback' => 'sanitize_text_field',
+            'default'           => '',
+        )
     );
 }
 

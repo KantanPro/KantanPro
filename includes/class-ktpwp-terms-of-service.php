@@ -465,7 +465,7 @@ End',
         $table_name = $wpdb->prefix . 'ktp_terms_of_service';
 
         // --- 追加: 同意状態リセット処理 ---
-        if ( isset($_POST['ktp_terms_reset_nonce']) && wp_verify_nonce($_POST['ktp_terms_reset_nonce'], 'ktp_terms_reset') ) {
+        if ( isset($_POST['ktp_terms_reset_nonce']) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['ktp_terms_reset_nonce'] ) ), 'ktp_terms_reset') ) {
             $this->reset_user_terms_agreement();
             echo '<div class="notice notice-success is-dismissible"><p>利用規約同意状態をリセットしました（このユーザーのみ）。</p></div>';
         }
@@ -666,7 +666,7 @@ End',
             return;
         }
 
-        if ( isset( $_POST['ktp_terms_nonce'] ) && wp_verify_nonce( $_POST['ktp_terms_nonce'], 'ktp_terms_update' ) ) {
+        if ( isset( $_POST['ktp_terms_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['ktp_terms_nonce'] ) ), 'ktp_terms_update' ) ) {
             if ( $this->verify_developer_password() ) {
                 $this->update_terms();
             }

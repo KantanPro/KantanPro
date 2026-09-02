@@ -116,7 +116,7 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 					'general' => wp_create_nonce( 'ktpwp_ajax_nonce' )
 				)
 			);
-			$content .= '<script>var ktp_ajax_object = ' . json_encode( $ajax_data ) . ';</script>';
+			$content .= '<script>var ktp_ajax_object = ' . wp_json_encode( $ajax_data ) . ';</script>';
 			$report_charts_ver = KANTANPRO_PLUGIN_VERSION;
 			$report_print_ver  = KANTANPRO_PLUGIN_VERSION;
 			$report_charts_path = plugin_dir_path( dirname( __FILE__ ) ) . 'js/ktp-report-charts.js';

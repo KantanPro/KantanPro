@@ -120,7 +120,7 @@
         } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) {
             ajaxUrl = ktpwp_ajax.ajax_url;
         } else {
-            ajaxUrl = '/wp-admin/admin-ajax.php';
+            ajaxUrl = ((typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) || (typeof ajaxurl !== 'undefined' ? ajaxurl : ''));
         }
 
         // 統一されたnonce取得方法
@@ -151,7 +151,7 @@
             url: ajaxUrl,
             type: 'POST',
             data: {
-                action: 'get_purchase_order_email_content',
+                action: 'ktp_get_purchase_order_email_content',
                 order_id: orderId,
                 supplier_name: supplierName,
                 supplier_id: supplierId,
@@ -499,7 +499,7 @@
         supplierId = supplierId || 0;
         mode = (mode === 'quote') ? 'quote' : 'order';
         const formData = new FormData();
-        formData.append('action', 'send_purchase_order_email');
+        formData.append('action', 'ktp_send_purchase_order_email');
         formData.append('order_id', orderId || '');
         formData.append('supplier_name', supplierName || '');
         formData.append('supplier_id', supplierId);
@@ -560,7 +560,7 @@
         } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) {
             ajaxUrl = ktpwp_ajax.ajax_url;
         } else {
-            ajaxUrl = '/wp-admin/admin-ajax.php';
+            ajaxUrl = ((typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) || (typeof ajaxurl !== 'undefined' ? ajaxurl : ''));
         }
 
         $.ajax({
@@ -617,7 +617,7 @@
             window.ktpUpdatePurchaseStatusSelects && window.ktpUpdatePurchaseStatusSelects(supplierName, status);
             return;
         }
-        const ajaxUrl = (typeof ajaxurl !== 'undefined') ? ajaxurl : ((typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) ? ktpwp_ajax.ajax_url : '/wp-admin/admin-ajax.php');
+        const ajaxUrl = (typeof ajaxurl !== 'undefined') ? ajaxurl : ((typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) ? ktpwp_ajax.ajax_url : ((typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) || (typeof ajaxurl !== 'undefined' ? ajaxurl : '')));
         $.post(ajaxUrl, {
             action: 'ktp_set_cost_items_purchase_status',
             nonce: nonce,
@@ -676,7 +676,7 @@
         } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) {
             ajaxUrl = ktpwp_ajax.ajax_url;
         } else {
-            ajaxUrl = '/wp-admin/admin-ajax.php';
+            ajaxUrl = ((typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) || (typeof ajaxurl !== 'undefined' ? ajaxurl : ''));
         }
 
         let nonce = '';
@@ -696,7 +696,7 @@
             url: ajaxUrl,
             type: 'POST',
             data: {
-                action: 'get_purchase_order_print_html',
+                action: 'ktp_get_purchase_order_print_html',
                 order_id: orderId,
                 supplier_name: supplierName,
                 supplier_id: supplierId,

@@ -38,7 +38,7 @@
         } else if (typeof ajaxurl !== 'undefined') {
             config.url = ajaxurl;
         } else {
-            config.url = '/wp-admin/admin-ajax.php';
+            config.url = ((typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) || (typeof ajaxurl !== 'undefined' ? ajaxurl : ''));
         }
         
         // nonceの取得（優先順位順）
@@ -175,7 +175,7 @@
         const ajaxConfig = getAjaxConfig();
 
         const ajaxData = {
-            action: 'get_email_content',
+            action: 'ktp_get_email_content',
             order_id: orderId,
             nonce: ajaxConfig.nonce
         };
@@ -733,7 +733,7 @@
         
         // FormDataを使用してファイルと一緒にデータを送信
         const formData = new FormData();
-        formData.append('action', 'send_order_email');
+        formData.append('action', 'ktp_send_order_email');
         formData.append('order_id', orderId);
         formData.append('to', to);
         $('#email-send-form input[name="cc_emails[]"]:checked').each(function () {

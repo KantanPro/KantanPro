@@ -74,7 +74,7 @@
 
             // Make AJAX request
             $.ajax({
-                url: (typeof ktp_license_manager_vars !== 'undefined' && ktp_license_manager_vars.ajaxurl) ? ktp_license_manager_vars.ajaxurl : (typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php'),
+                url: (typeof ktp_license_manager_vars !== 'undefined' && ktp_license_manager_vars.ajaxurl) ? ktp_license_manager_vars.ajaxurl : (typeof ajaxurl !== 'undefined' ? ajaxurl : ((typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) || (typeof ajaxurl !== 'undefined' ? ajaxurl : ''))),
                 type: 'POST',
                 data: {
                     action: 'ktpwp_verify_license',

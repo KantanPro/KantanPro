@@ -126,7 +126,7 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 					error_log( 'KTPWP Service: POST request detected in View_Table' );
 					error_log( 'KTPWP Service: Full POST data: ' . print_r( $_POST, true ) );
 					error_log( 'KTPWP Service: Full GET data: ' . print_r( $_GET, true ) );
-					error_log( 'KTPWP Service: Request URI: ' . $_SERVER['REQUEST_URI'] );
+					error_log( 'KTPWP Service: Request URI: ' . sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) );
 				}
 
 				$query_post = isset( $_POST['query_post'] ) ? sanitize_text_field( $_POST['query_post'] ) : '';
@@ -155,7 +155,7 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 				?>
             <script>
             document.addEventListener("DOMContentLoaded", function() {
-                var messageType = "<?php echo esc_js( $_GET['message'] ); ?>";
+                var messageType = "<?php echo esc_js( sanitize_text_field( wp_unslash( $_GET['message'] ) ) ); ?>";
                 switch (messageType) {
                     case "updated":
                         if (typeof showSuccessNotification === 'function') showSuccessNotification("<?php echo esc_js( __( '更新しました。', 'kantanpro' ) ); ?>");
@@ -320,7 +320,7 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 							}
 							$search_results_html .= '</ul></div></div>';
 							// 閉じる＝検索モードへ。現在のリクエストURLからダイアログ用パラメータを除き検索モード用のみ付与
-							$close_redirect_base = home_url( wp_unslash( isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : '/' ) );
+							$close_redirect_base = home_url( esc_url_raw( wp_unslash( isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : '/' ) ) );
 							$close_redirect_base = remove_query_arg( array( 'multiple_results', 'search_service_name', 'search_category', 'message' ), $close_redirect_base );
 							$close_redirect_url = esc_url(
 								add_query_arg(
@@ -373,17 +373,16 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 			// リスト表示部分の開始
 			// 顧客・協力会社タブと同じラッパー（.data_contents は display:flex のため二段レイアウトと相性が悪い）
 			$list_title = esc_html__( '■ サービスリスト', 'kantanpro' );
-			$results_h = <<<END
-            <div class="ktp_data_contents">
-            <div class="ktp_data_list_box">
-            <div id="ktp-services-print-list-area">
-            <div id="ktp-services-print-list-only">
-            <div class="data_list_title">{$list_title}</div>
-        END;
+			// HEREDOC は使わない（wp.org ガイドライン）。$list_title は組み立て済みの HTML。
+			$results_h = '<div class="ktp_data_contents">'
+				. '<div class="ktp_data_list_box">'
+				. '<div id="ktp-services-print-list-area">'
+				. '<div id="ktp-services-print-list-only">'
+				. '<div class="data_list_title">' . $list_title . '</div>';
 			// スタート位置を決める
-			$page_stage = $_GET['page_stage'] ?? '';
-			$page_start = $_GET['page_start'] ?? 0;
-			$flg = $_GET['flg'] ?? '';
+			$page_stage = isset( $_GET['page_stage'] ) ? sanitize_text_field( wp_unslash( $_GET['page_stage'] ) ) : '';
+			$page_start = isset( $_GET['page_start'] ) ? absint( wp_unslash( $_GET['page_start'] ) ) : 0;
+			$flg = isset( $_GET['flg'] ) ? sanitize_text_field( wp_unslash( $_GET['flg'] ) ) : '';
 			if ( $page_stage == '' ) {
 				$page_start = 0;
 			}
@@ -734,8 +733,8 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 				$data_forms .= '<input type="hidden" name="tab_name" value="' . esc_attr( $name ) . '">';
 
 				// 検索条件の値を取得（POSTが優先、次にGET）
-				$search_service_name_value = isset( $_POST['search_service_name'] ) ? esc_attr( wp_unslash( $_POST['search_service_name'] ) ) : ( isset( $_GET['search_service_name'] ) ? esc_attr( urldecode( wp_unslash( $_GET['search_service_name'] ) ) ) : '' );
-				$search_category_value = isset( $_POST['search_category'] ) ? esc_attr( wp_unslash( $_POST['search_category'] ) ) : ( isset( $_GET['search_category'] ) ? esc_attr( urldecode( wp_unslash( $_GET['search_category'] ) ) ) : '' );
+				$search_service_name_value = isset( $_POST['search_service_name'] ) ? esc_attr( sanitize_text_field( wp_unslash( $_POST['search_service_name'] ) ) ) : ( isset( $_GET['search_service_name'] ) ? esc_attr( sanitize_text_field( urldecode( wp_unslash( $_GET['search_service_name'] ) ) ) ) : '' );
+				$search_category_value = isset( $_POST['search_category'] ) ? esc_attr( sanitize_text_field( wp_unslash( $_POST['search_category'] ) ) ) : ( isset( $_GET['search_category'] ) ? esc_attr( sanitize_text_field( urldecode( wp_unslash( $_GET['search_category'] ) ) ) ) : '' );
 
 				$data_forms .= '<div class="form-group" style="margin-bottom: 15px !important;">';
 				$data_forms .= '<input type="text" name="search_service_name" placeholder="' . esc_attr__( 'サービス名を入力', 'kantanpro' ) . '" value="' . $search_service_name_value . '" style="width: 100% !important; padding: 12px !important; font-size: 16px !important; border: 2px solid #ddd !important; border-radius: 5px !important; box-sizing: border-box !important; transition: border-color 0.3s ease !important;">';
@@ -816,17 +815,17 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 					$pattern = isset( $field['pattern'] ) ? ' pattern="' . esc_attr( $field['pattern'] ) . '"' : '';
 					$required = isset( $field['required'] ) && $field['required'] ? ' required' : '';
 					$fieldName = esc_attr( $field['name'] );
-					$placeholder = isset( $field['placeholder'] ) ? ' placeholder="' . esc_attr__( $field['placeholder'], 'kantanpro' ) . '"' : '';
-					$label_i18n = esc_html__( $label, 'kantanpro' );
+					$placeholder = isset( $field['placeholder'] ) ? ' placeholder="' . esc_attr( $field['placeholder'] ) . '"' : '';
+					$label_i18n = esc_html( $label );
 
 					if ( $field['type'] === 'textarea' ) {
 						$data_forms .= "<div class=\"form-group\"><label>{$label_i18n}：</label> <textarea name=\"{$fieldName}\"{$pattern}{$required}{$textarea_guard_attrs}>" . esc_textarea( $value ) . '</textarea></div>';
 					} elseif ( $field['type'] === 'select' ) {
 						$options = '';
 						foreach ( (array) $field['options'] as $option ) {
-							$options .= '<option value="' . esc_attr( $option ) . '">' . esc_html__( $option, 'kantanpro' ) . '</option>';
+							$options .= '<option value="' . esc_attr( $option ) . '">' . esc_html( $option ) . '</option>';
 						}
-						$default = isset( $field['default'] ) ? esc_html__( $field['default'], 'kantanpro' ) : '';
+						$default = isset( $field['default'] ) ? esc_html( $field['default'] ) : '';
 						$data_forms .= "<div class=\"form-group\"><label>{$label_i18n}：</label> <select name=\"{$fieldName}\"{$required}><option value=\"\">{$default}</option>{$options}</select></div>";
 					} else {
 						$data_forms .= "<div class=\"form-group\"><label>{$label_i18n}：</label> <input type=\"{$field['type']}\" name=\"{$fieldName}\" value=\"" . esc_attr( $value ) . "\"{$pattern}{$required}{$placeholder}></div>";
@@ -1027,17 +1026,17 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 					$pattern = isset( $field['pattern'] ) ? ' pattern="' . esc_attr( $field['pattern'] ) . '"' : '';
 					$required = isset( $field['required'] ) && $field['required'] ? ' required' : '';
 					$fieldName = esc_attr( $field['name'] );
-					$placeholder = isset( $field['placeholder'] ) ? ' placeholder="' . esc_attr__( $field['placeholder'], 'kantanpro' ) . '"' : '';
-					$label_i18n = esc_html__( $label, 'kantanpro' );
+					$placeholder = isset( $field['placeholder'] ) ? ' placeholder="' . esc_attr( $field['placeholder'] ) . '"' : '';
+					$label_i18n = esc_html( $label );
 					if ( $field['type'] === 'textarea' ) {
 						$data_forms .= "<div class=\"form-group\"><label>{$label_i18n}：</label> <textarea name=\"{$fieldName}\"{$pattern}{$required}{$textarea_guard_attrs}>" . esc_textarea( $value ) . '</textarea></div>';
 					} elseif ( $field['type'] === 'select' ) {
 						$options = '';
 						foreach ( (array) $field['options'] as $option ) {
 							$selected = $value === $option ? ' selected' : '';
-							$options .= '<option value="' . esc_attr( $option ) . "\"{$selected}>" . esc_html__( $option, 'kantanpro' ) . '</option>';
+							$options .= '<option value="' . esc_attr( $option ) . "\"{$selected}>" . esc_html( $option ) . '</option>';
 						}
-						$default = isset( $field['default'] ) ? esc_html__( $field['default'], 'kantanpro' ) : '';
+						$default = isset( $field['default'] ) ? esc_html( $field['default'] ) : '';
 						$data_forms .= "<div class=\"form-group\"><label>{$label_i18n}：</label> <select name=\"{$fieldName}\"{$required}><option value=\"\">{$default}</option>{$options}</select></div>";
 					} else {
 						$step = isset( $field['step'] ) ? ' step="' . esc_attr( $field['step'] ) . '"' : '';
@@ -1180,14 +1179,16 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 			}
 
 			// JavaScript
-			$print = <<<END
+			// HEREDOC は使わない（wp.org ガイドライン）。出力される JS は変更していない。
+			ob_start();
+			?>
         <script>
             // var isPreviewOpen = false; // プレビュー機能は廃止
             
             function printContent() {
-                var printContent = $service_preview_html;
+                var printContent = <?php echo $service_preview_html; ?>;
                 // ファイル名/タイトル生成（Print to PDF の提案名に使用される）
-                var serviceName = {$service_name_json};
+                var serviceName = <?php echo $service_name_json; ?>;
                 var printDate = new Date();
                 var yyyy = printDate.getFullYear();
                 var mm = String(printDate.getMonth() + 1).padStart(2, '0');
@@ -1226,7 +1227,7 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
             //         previewButton.innerHTML = '<span class="material-symbols-outlined" aria-label="プレビュー">preview</span>';
             //         isPreviewOpen = false;
             //     } else {
-            //         var printContent = $service_preview_html;
+            //         var printContent = <?php echo $service_preview_html; ?>;
             //         previewWindow.innerHTML = printContent;
             //         previewWindow.style.display = 'block';
             //         previewButton.innerHTML = '<span class="material-symbols-outlined" aria-label="閉じる">close</span>';
@@ -1237,20 +1238,20 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
         <!-- コントローラー（検索全幅1行、ボタン＋印刷は2行目） -->
         <div class="controller ktp-service-controller">
                 <div class="ktp-service-controller__search">
-                {$search_toolbar_html}
+                <?php echo $search_toolbar_html; ?>
                 </div>
                 <div class="ktp-service-controller__bar">
                 <div class="ktp-service-controller-actions">
-                {$service_ie_buttons}
+                <?php echo $service_ie_buttons; ?>
                 </div>
                 <div class="ktp-service-controller__tools">
-                {$tab_print_button}
+                <?php echo $tab_print_button; ?>
                 </div>
                 </div>
         </div>
-        {$service_ie_modal}
-        END;
-
+        <?php echo $service_ie_modal; ?>
+			<?php
+			$print = ob_get_clean();
 			// コンテンツを返す（複数検索結果ダイアログ用スクリプトを含む）
 			$content = $message . $print . $search_panel_html . $data_list . $data_title . $data_forms . $service_search_results_script . $div_end;
 			return $content;
@@ -1425,10 +1426,10 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 				);
 				// 現在のソート順を維持
 				if ( isset( $_GET['sort_by'] ) ) {
-					$prev_args['sort_by'] = $_GET['sort_by'];
+					$prev_args['sort_by'] = rawurlencode( sanitize_text_field( wp_unslash( $_GET['sort_by'] ) ) );
 				}
 				if ( isset( $_GET['sort_order'] ) ) {
-					$prev_args['sort_order'] = $_GET['sort_order'];
+					$prev_args['sort_order'] = rawurlencode( sanitize_text_field( wp_unslash( $_GET['sort_order'] ) ) );
 				}
 
 				$prev_url = esc_url( add_query_arg( $prev_args, $base_page_url ) );
@@ -1449,10 +1450,10 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 				);
 				// 現在のソート順を維持
 				if ( isset( $_GET['sort_by'] ) ) {
-					$first_args['sort_by'] = $_GET['sort_by'];
+					$first_args['sort_by'] = rawurlencode( sanitize_text_field( wp_unslash( $_GET['sort_by'] ) ) );
 				}
 				if ( isset( $_GET['sort_order'] ) ) {
-					$first_args['sort_order'] = $_GET['sort_order'];
+					$first_args['sort_order'] = rawurlencode( sanitize_text_field( wp_unslash( $_GET['sort_order'] ) ) );
 				}
 
 				$first_url = esc_url( add_query_arg( $first_args, $base_page_url ) );
@@ -1473,10 +1474,10 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 				);
 				// 現在のソート順を維持
 				if ( isset( $_GET['sort_by'] ) ) {
-					$page_args['sort_by'] = $_GET['sort_by'];
+					$page_args['sort_by'] = rawurlencode( sanitize_text_field( wp_unslash( $_GET['sort_by'] ) ) );
 				}
 				if ( isset( $_GET['sort_order'] ) ) {
-					$page_args['sort_order'] = $_GET['sort_order'];
+					$page_args['sort_order'] = rawurlencode( sanitize_text_field( wp_unslash( $_GET['sort_order'] ) ) );
 				}
 
 				$page_url = esc_url( add_query_arg( $page_args, $base_page_url ) );
@@ -1502,10 +1503,10 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 				);
 				// 現在のソート順を維持
 				if ( isset( $_GET['sort_by'] ) ) {
-					$last_args['sort_by'] = $_GET['sort_by'];
+					$last_args['sort_by'] = rawurlencode( sanitize_text_field( wp_unslash( $_GET['sort_by'] ) ) );
 				}
 				if ( isset( $_GET['sort_order'] ) ) {
-					$last_args['sort_order'] = $_GET['sort_order'];
+					$last_args['sort_order'] = rawurlencode( sanitize_text_field( wp_unslash( $_GET['sort_order'] ) ) );
 				}
 
 				$last_url = esc_url( add_query_arg( $last_args, $base_page_url ) );
@@ -1522,10 +1523,10 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 				);
 				// 現在のソート順を維持
 				if ( isset( $_GET['sort_by'] ) ) {
-					$next_args['sort_by'] = $_GET['sort_by'];
+					$next_args['sort_by'] = rawurlencode( sanitize_text_field( wp_unslash( $_GET['sort_by'] ) ) );
 				}
 				if ( isset( $_GET['sort_order'] ) ) {
-					$next_args['sort_order'] = $_GET['sort_order'];
+					$next_args['sort_order'] = rawurlencode( sanitize_text_field( wp_unslash( $_GET['sort_order'] ) ) );
 				}
 
 				$next_url = esc_url( add_query_arg( $next_args, $base_page_url ) );

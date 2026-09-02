@@ -119,7 +119,7 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 				}
 
 				// nonce検証
-				if ( ! isset( $_POST['ktp_client_nonce'] ) || ! wp_verify_nonce( $_POST['ktp_client_nonce'], 'ktp_client_action' ) ) {
+				if ( ! isset( $_POST['ktp_client_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['ktp_client_nonce'] ) ), 'ktp_client_action' ) ) {
 					wp_die( esc_html__( '不正なリクエストです。', 'kantanpro' ) );
 				}
 
@@ -661,7 +661,7 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 
 			$redirect_base = wp_get_referer();
 			if ( ! $redirect_base || $redirect_base === '' ) {
-				$redirect_base = home_url( wp_unslash( isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : '/' ) );
+				$redirect_base = home_url( esc_url_raw( wp_unslash( isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : '/' ) ) );
 			}
 
 			// 未入力で検索実行した場合は0件時と同じ扱い（フォームを維持し該当なしメッセージを表示）

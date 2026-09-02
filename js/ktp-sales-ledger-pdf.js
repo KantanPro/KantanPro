@@ -243,7 +243,7 @@
             // Ajaxで売上台帳PDFデータを取得
             $.ajax({
                 url: typeof ktp_ajax_object !== 'undefined' ? ktp_ajax_object.ajax_url : 
-                     typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php',
+                     typeof ajaxurl !== 'undefined' ? ajaxurl : ((typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) || (typeof ajaxurl !== 'undefined' ? ajaxurl : '')),
                 type: 'POST',
                 data: {
                     action: 'ktp_generate_sales_ledger_pdf',

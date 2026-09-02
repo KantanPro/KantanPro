@@ -10,7 +10,7 @@ jQuery(document).ready(function($) {
       || (typeof ajaxurl !== 'undefined' ? ajaxurl : '')
       || (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.ajax_url ? ktp_ajax_object.ajax_url : '')
       || (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url ? ktpwp_ajax.ajax_url : '')
-      || '/wp-admin/admin-ajax.php';
+      || ((typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) || (typeof ajaxurl !== 'undefined' ? ajaxurl : ''));
 
     return {
       url: url,

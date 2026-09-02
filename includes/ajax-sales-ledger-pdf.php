@@ -19,7 +19,7 @@ add_action( 'wp_ajax_ktp_generate_sales_ledger_pdf', 'ktp_handle_sales_ledger_pd
 
 function ktp_handle_sales_ledger_pdf_ajax() {
     // セキュリティチェック
-    if ( ! wp_verify_nonce( $_POST['nonce'] ?? '', 'ktpwp_ajax_nonce' ) ) {
+    if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), 'ktpwp_ajax_nonce' ) ) {
         wp_send_json_error( __( 'セキュリティチェックに失敗しました。', 'kantanpro' ) );
         return;
     }

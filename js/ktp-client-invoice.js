@@ -526,7 +526,7 @@ jQuery(document).ready(function($) {
             } else if (typeof window.ajaxurl !== 'undefined') {
                 ajaxurl = window.ajaxurl;
             } else {
-                ajaxurl = '/wp-admin/admin-ajax.php';
+                ajaxurl = ((typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) || (typeof ajaxurl !== 'undefined' ? ajaxurl : ''));
             }
         }
 
@@ -1048,7 +1048,7 @@ function ktpConfirmInvoicePrintWithProgress() {
 /** 印刷完了後に進捗を「請求済」へ更新 */
 function ktpRunInvoiceCompletedAfterPrint() {
     var xhr = new XMLHttpRequest();
-    xhr.open('POST', '/wp-admin/admin-ajax.php');
+    xhr.open('POST', ((typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) || (typeof ajaxurl !== 'undefined' ? ajaxurl : '')));
     xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
     var clientId = '';
     var urlParams = new URLSearchParams(window.location.search);

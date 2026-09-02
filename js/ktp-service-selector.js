@@ -134,7 +134,7 @@
         `);
 
         // Ajax設定の取得
-        let ajaxUrl = '/wp-admin/admin-ajax.php';
+        let ajaxUrl = ((typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) || (typeof ajaxurl !== 'undefined' ? ajaxurl : ''));
         let nonce = '';
 
         if (typeof ktp_service_ajax_object !== 'undefined') {

@@ -210,7 +210,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 				if ( $search_query === '' ) {
 					$redirect_base = wp_get_referer();
 					if ( ! $redirect_base || $redirect_base === '' ) {
-						$redirect_base = home_url( wp_unslash( isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : '/' ) );
+						$redirect_base = home_url( esc_url_raw( wp_unslash( isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : '/' ) ) );
 					}
 					wp_safe_redirect( add_query_arg( array( 'tab_name' => $tab_name, 'query_post' => 'srcmode', 'no_results' => '1' ), $redirect_base ) );
 					exit;
@@ -246,7 +246,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 					// 現在のURLを取得（顧客タブと同様に referer フォールバック）
 					$base_page_url = wp_get_referer();
 					if ( ! $base_page_url || $base_page_url === '' ) {
-						$base_page_url = home_url( wp_unslash( isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : '/' ) );
+						$base_page_url = home_url( esc_url_raw( wp_unslash( isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : '/' ) ) );
 					}
 					if ( ! $base_page_url ) {
 						global $wp;
@@ -285,7 +285,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 				elseif ( count( $results ) > 1 ) {
 					$redirect_base = wp_get_referer();
 					if ( ! $redirect_base || $redirect_base === '' ) {
-						$redirect_base = home_url( wp_unslash( isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : '/' ) );
+						$redirect_base = home_url( esc_url_raw( wp_unslash( isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : '/' ) ) );
 					}
 					if ( ! $redirect_base ) {
 						global $wp;
@@ -568,7 +568,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 			if ( isset( $_GET['message'] ) ) {
 				echo '<script>
             document.addEventListener("DOMContentLoaded", function() {
-                const messageType = "' . esc_js( $_GET['message'] ) . '";
+                const messageType = "' . esc_js( sanitize_text_field( wp_unslash( $_GET['message'] ) ) ) . '";
                 switch (messageType) {
                     case "updated":
                         showSuccessNotification("' . esc_js( __( '更新しました。', 'kantanpro' ) ) . '");
@@ -702,7 +702,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 						$search_results_html .= "<li style='text-align:left;'><a href='" . $link_url . "' style='text-align:left;'>ID：" . $id . " 会社名：" . $company_name . " 名前：" . $disp_name . ( $category !== '' ? " カテゴリー：" . $category : '' ) . "</a></li>";
 					}
 					$search_results_html .= '</ul></div></div>';
-					$close_redirect_base = home_url( wp_unslash( isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : '/' ) );
+					$close_redirect_base = home_url( esc_url_raw( wp_unslash( isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : '/' ) ) );
 					$close_redirect_base = remove_query_arg( array( 'multiple_results', 'search_query', 'message' ), $close_redirect_base );
 					$close_redirect_url = esc_url(
 						add_query_arg(
@@ -752,18 +752,17 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 			}
 
 			// リスト表示部分の開始 - ktp_data_contentsを開始
-			$results_h = <<<END
-        <div class="ktp_data_contents">
-            <div class="ktp_data_list_box">
-            <div id="ktp-suppliers-print-list-area">
-            <div id="ktp-suppliers-print-list-only">
-            <div class="data_list_title">■ 協力会社リスト</div>
-        END;
+			// HEREDOC は使わない（wp.org ガイドライン）
+			$results_h = '<div class="ktp_data_contents">'
+				. '<div class="ktp_data_list_box">'
+				. '<div id="ktp-suppliers-print-list-area">'
+				. '<div id="ktp-suppliers-print-list-only">'
+				. '<div class="data_list_title">■ ' . esc_html__( '協力会社リスト', 'kantanpro' ) . '</div>';
 
 			// スタート位置を決める
-			$page_stage = $_GET['page_stage'] ?? '';
-			$page_start = $_GET['page_start'] ?? 0;
-			$flg = $_GET['flg'] ?? '';
+			$page_stage = isset( $_GET['page_stage'] ) ? sanitize_text_field( wp_unslash( $_GET['page_stage'] ) ) : '';
+			$page_start = isset( $_GET['page_start'] ) ? absint( wp_unslash( $_GET['page_start'] ) ) : 0;
+			$flg = isset( $_GET['flg'] ) ? sanitize_text_field( wp_unslash( $_GET['flg'] ) ) : '';
 			if ( $page_stage == '' ) {
 				$page_start = 0;
 			}
@@ -892,10 +891,10 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 					  );
 					  // 現在のソート順を維持
 					  if ( isset( $_GET['sort_by'] ) ) {
-						  $query_args['sort_by'] = $_GET['sort_by'];
+						  $query_args['sort_by'] = rawurlencode( sanitize_text_field( wp_unslash( $_GET['sort_by'] ) ) );
 					  }
 					  if ( isset( $_GET['sort_order'] ) ) {
-						  $query_args['sort_order'] = $_GET['sort_order'];
+						  $query_args['sort_order'] = rawurlencode( sanitize_text_field( wp_unslash( $_GET['sort_order'] ) ) );
 					  }
 
 					  $item_link_url = esc_url( add_query_arg( $query_args, $base_page_url ) );
@@ -1287,30 +1286,16 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 				$data_title = '<div class="data_detail_box">' .
                           '<div class="data_detail_title">■ ' . esc_html__( '協力会社追加中', 'kantanpro' ) . '</div>';
 				// 郵便番号から住所を自動入力するためのJavaScriptコードを追加（日本郵政のAPIを利用）
-				$data_forms = <<<END
-            <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                var postalCode = document.querySelector('input[name="postal_code"]');
-                var prefecture = document.querySelector('input[name="prefecture"]');
-                var city = document.querySelector('input[name="city"]');
-                var address = document.querySelector('input[name="address"]');
-                postalCode.addEventListener('blur', function() {
-                    var xhr = new XMLHttpRequest();
-                    xhr.open('GET', 'https://zipcloud.ibsnet.co.jp/api/search?zipcode=' + postalCode.value);
-                    xhr.addEventListener('load', function() {
-                        var response = JSON.parse(xhr.responseText);
-                        if (response.results) {
-                            var data = response.results[0];
-                            prefecture.value = data.address1;
-                            city.value = data.address2 + data.address3; // 市区町村と町名を結合
-                            address.value = ''; // 番地は空欄に
-                        }
-                    });
-                    xhr.send();
-                });
-            });
-            </script>
-            END;
+				// 郵便番号→住所の自動入力は js/ktp-supplier-postal.js に切り出した。
+				// （インライン <script> と HEREDOC はどちらも wp.org のガイドライン違反）
+				wp_enqueue_script(
+					'ktp-supplier-postal',
+					plugins_url( 'js/ktp-supplier-postal.js', KTPWP_PLUGIN_FILE ),
+					array(),
+					KANTANPRO_PLUGIN_VERSION,
+					true
+				);
+				$data_forms = '';
 				// 空のフォームフィールドを生成
 				$data_forms .= '<form method="post" action="' . esc_url( $form_action_base_url ) . '">';
 				if ( function_exists( 'wp_nonce_field' ) ) {
@@ -1338,7 +1323,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 						$contact_html = class_exists( 'KTPWP_External_Url' )
 							? KTPWP_External_Url::maybe_render_form_group(
 								$fieldName,
-								__( $label, 'kantanpro' ),
+								$label,
 								$field_id,
 								$field,
 								(string) $value,
@@ -1394,9 +1379,9 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 				// 検索クエリの値を取得（POSTが優先、次にGET）
 				$search_query_value = '';
 				if ( isset( $_POST['search_query'] ) ) {
-					$search_query_value = esc_attr( $_POST['search_query'] );
+					$search_query_value = esc_attr( sanitize_text_field( wp_unslash( $_POST['search_query'] ) ) );
 				} elseif ( isset( $_GET['search_query'] ) ) {
-					$search_query_value = esc_attr( urldecode( $_GET['search_query'] ) );
+					$search_query_value = esc_attr( sanitize_text_field( urldecode( wp_unslash( $_GET['search_query'] ) ) ) );
 				}
 				$data_forms .= '<div class="form-group" style="margin-bottom: 15px !important;">';
 				$data_forms .= '<input type="text" name="search_query" placeholder="' . esc_attr__( 'フリーワード検索', 'kantanpro' ) . '" value="' . $search_query_value . '" style="width: 100% !important; padding: 12px !important; font-size: 16px !important; border: 2px solid #ddd !important; border-radius: 5px !important; box-sizing: border-box !important; transition: border-color 0.3s ease !important;">';
@@ -1454,32 +1439,16 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 			elseif ( $action !== 'srcmode' && $action !== 'istmode' ) {
 
 				// 郵便番号から住所を自動入力するためのJavaScriptコードを追加（日本郵政のAPIを利用）
-				$data_forms = <<<END
-            <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                var postalCode = document.querySelector('input[name="postal_code"]');
-                var prefecture = document.querySelector('input[name="prefecture"]');
-                var city = document.querySelector('input[name="city"]');
-                var address = document.querySelector('input[name="address"]');
-                if (postalCode) {
-                    postalCode.addEventListener('blur', function() {
-                        var xhr = new XMLHttpRequest();
-                        xhr.open('GET', 'https://zipcloud.ibsnet.co.jp/api/search?zipcode=' + postalCode.value);
-                        xhr.addEventListener('load', function() {
-                            var response = JSON.parse(xhr.responseText);
-                            if (response.results) {
-                                var data = response.results[0];
-                                if (prefecture) prefecture.value = data.address1;
-                                if (city) city.value = data.address2 + data.address3; // 市区町村と町名を結合
-                                if (address) address.value = ''; // 番地は空欄に
-                            }
-                        });
-                        xhr.send();
-                    });
-                }
-            });
-            </script>
-            END;
+				// 郵便番号→住所の自動入力は js/ktp-supplier-postal.js に切り出した。
+				// （インライン <script> と HEREDOC はどちらも wp.org のガイドライン違反）
+				wp_enqueue_script(
+					'ktp-supplier-postal',
+					plugins_url( 'js/ktp-supplier-postal.js', KTPWP_PLUGIN_FILE ),
+					array(),
+					KANTANPRO_PLUGIN_VERSION,
+					true
+				);
+				$data_forms = '';
 
 				// ボタングループHTML生成
 				$button_group_html = '<div class="button-group" style="display: flex; gap: 10px; margin-left: auto;">';
@@ -1561,7 +1530,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 						$contact_html = class_exists( 'KTPWP_External_Url' )
 							? KTPWP_External_Url::maybe_render_form_group(
 								$field['name'],
-								__( $label, 'kantanpro' ),
+								$label,
 								$field_id,
 								$field,
 								(string) $value,
@@ -1615,10 +1584,9 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 			$skills_section .= '</div>'; // ktp_data_list_boxの終了
 
 			// 詳細表示部分の終了
-			$div_end = <<<END
-            </div> <!-- data_detail_boxの終了 -->
-        </div> <!-- ktp_data_contentsの終了 -->
-        END;
+			// HEREDOC は使わない（wp.org ガイドライン）
+			$div_end = '</div><!-- data_detail_boxの終了 -->'
+				. '</div><!-- ktp_data_contentsの終了 -->';
 
 			// -----------------------------
 			// テンプレート印刷
@@ -1722,14 +1690,16 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 			}
 
 			// JavaScript
-			$print = <<<END
+			// HEREDOC は使わない（wp.org ガイドライン）。出力される JS は変更していない。
+			ob_start();
+			?>
         <script>
             // var isPreviewOpen = false; // プレビュー機能は廃止
             
             function printContent() {
-                var printContent = $supplier_preview_html;
+                var printContent = <?php echo $supplier_preview_html; ?>;
                 // ファイル名/タイトル生成（Print to PDF の提案名に使用される）
-                var companyName = {$company_name_json};
+                var companyName = <?php echo $company_name_json; ?>;
                 var printDate = new Date();
                 var yyyy = printDate.getFullYear();
                 var mm = String(printDate.getMonth() + 1).padStart(2, '0');
@@ -1830,7 +1800,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
             //         previewButton.innerHTML = '<span class="material-symbols-outlined" aria-label="プレビュー">preview</span>';
             //         isPreviewOpen = false;
             //     } else {
-            //         var printContent = $supplier_preview_html;
+            //         var printContent = <?php echo $supplier_preview_html; ?>;
             //         previewWindow.innerHTML = printContent;
             //         previewWindow.style.display = 'block';
             //         previewButton.innerHTML = '<span class="material-symbols-outlined" aria-label="閉じる">close</span>';
@@ -1841,19 +1811,19 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
         <!-- コントローラー（顧客タブと同様：検索全幅1行、ボタン1行＋印刷右寄せ） -->
         <div class="controller ktp-supplier-controller">
                 <div class="ktp-supplier-controller__search">
-                {$search_toolbar_html}
+                <?php echo $search_toolbar_html; ?>
                 </div>
                 <div class="ktp-supplier-controller__bar">
                 <div class="ktp-supplier-controller-actions">
-                <button type="button" id="supplierAddressLabelPrintButton" class="ktp-client-address-label-btn" onclick="printSupplierAddressLabel(); return false;" title="{$supplier_address_label_title}">{$supplier_address_label_icon}<span class="btn-label">{$supplier_address_label_text}</span></button>
+                <button type="button" id="supplierAddressLabelPrintButton" class="ktp-client-address-label-btn" onclick="printSupplierAddressLabel(); return false;" title="<?php echo $supplier_address_label_title; ?>"><?php echo $supplier_address_label_icon; ?><span class="btn-label"><?php echo $supplier_address_label_text; ?></span></button>
                 </div>
                 <div class="ktp-supplier-controller__tools">
-                {$tab_print_button}
+                <?php echo $tab_print_button; ?>
                 </div>
                 </div>
         </div>
-        END;
-
+			<?php
+			$print = ob_get_clean();
 			// コンテンツを返す（検索複数時ダイアログは $data_forms 内で既に出力済み）
 			$content = $print . $search_panel_html . $data_list . $skills_section . $data_title . $data_forms . $div_end;
 			return $content;
@@ -1873,12 +1843,12 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 			// Referer が無い環境（ブラウザ・CDN・プライバシー設定）では $_SERVER から絶対URLを組み立てる
 			if ( ! $redirect_base && isset( $_SERVER['HTTP_HOST'], $_SERVER['REQUEST_URI'] ) ) {
 				$https = is_ssl();
-				if ( isset( $_SERVER['HTTP_X_FORWARDED_PROTO'] ) && 'https' === strtolower( (string) $_SERVER['HTTP_X_FORWARDED_PROTO'] ) ) {
+				if ( isset( $_SERVER['HTTP_X_FORWARDED_PROTO'] ) && 'https' === strtolower( sanitize_text_field( wp_unslash( $_SERVER['HTTP_X_FORWARDED_PROTO'] ) ) ) ) {
 					$https = true;
 				}
 				$scheme = $https ? 'https' : 'http';
 				$host   = sanitize_text_field( wp_unslash( $_SERVER['HTTP_HOST'] ) );
-				$uri    = wp_unslash( $_SERVER['REQUEST_URI'] );
+				$uri    = sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) );
 				if ( $host !== '' ) {
 					$redirect_base = $scheme . '://' . $host . $uri;
 				}
@@ -1981,12 +1951,12 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 			$ref = wp_get_referer();
 			if ( ! $ref && isset( $_SERVER['HTTP_HOST'], $_SERVER['REQUEST_URI'] ) ) {
 				$https = is_ssl();
-				if ( isset( $_SERVER['HTTP_X_FORWARDED_PROTO'] ) && 'https' === strtolower( (string) $_SERVER['HTTP_X_FORWARDED_PROTO'] ) ) {
+				if ( isset( $_SERVER['HTTP_X_FORWARDED_PROTO'] ) && 'https' === strtolower( sanitize_text_field( wp_unslash( $_SERVER['HTTP_X_FORWARDED_PROTO'] ) ) ) ) {
 					$https = true;
 				}
 				$scheme = $https ? 'https' : 'http';
 				$host   = sanitize_text_field( wp_unslash( $_SERVER['HTTP_HOST'] ) );
-				$uri    = wp_unslash( $_SERVER['REQUEST_URI'] );
+				$uri    = sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) );
 				if ( $host !== '' ) {
 					$ref = $scheme . '://' . $host . $uri;
 				}
@@ -2179,10 +2149,10 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 				);
 				// 現在のソート順を維持
 				if ( isset( $_GET['sort_by'] ) ) {
-					$prev_args['sort_by'] = $_GET['sort_by'];
+					$prev_args['sort_by'] = rawurlencode( sanitize_text_field( wp_unslash( $_GET['sort_by'] ) ) );
 				}
 				if ( isset( $_GET['sort_order'] ) ) {
-					$prev_args['sort_order'] = $_GET['sort_order'];
+					$prev_args['sort_order'] = rawurlencode( sanitize_text_field( wp_unslash( $_GET['sort_order'] ) ) );
 				}
 
 				$prev_url = esc_url( add_query_arg( $prev_args, $base_page_url ) );
@@ -2203,10 +2173,10 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 				);
 				// 現在のソート順を維持
 				if ( isset( $_GET['sort_by'] ) ) {
-					$first_args['sort_by'] = $_GET['sort_by'];
+					$first_args['sort_by'] = rawurlencode( sanitize_text_field( wp_unslash( $_GET['sort_by'] ) ) );
 				}
 				if ( isset( $_GET['sort_order'] ) ) {
-					$first_args['sort_order'] = $_GET['sort_order'];
+					$first_args['sort_order'] = rawurlencode( sanitize_text_field( wp_unslash( $_GET['sort_order'] ) ) );
 				}
 
 				$first_url = esc_url( add_query_arg( $first_args, $base_page_url ) );
@@ -2227,10 +2197,10 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 				);
 				// 現在のソート順を維持
 				if ( isset( $_GET['sort_by'] ) ) {
-					$page_args['sort_by'] = $_GET['sort_by'];
+					$page_args['sort_by'] = rawurlencode( sanitize_text_field( wp_unslash( $_GET['sort_by'] ) ) );
 				}
 				if ( isset( $_GET['sort_order'] ) ) {
-					$page_args['sort_order'] = $_GET['sort_order'];
+					$page_args['sort_order'] = rawurlencode( sanitize_text_field( wp_unslash( $_GET['sort_order'] ) ) );
 				}
 
 				$page_url = esc_url( add_query_arg( $page_args, $base_page_url ) );
@@ -2256,10 +2226,10 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 				);
 				// 現在のソート順を維持
 				if ( isset( $_GET['sort_by'] ) ) {
-					$last_args['sort_by'] = $_GET['sort_by'];
+					$last_args['sort_by'] = rawurlencode( sanitize_text_field( wp_unslash( $_GET['sort_by'] ) ) );
 				}
 				if ( isset( $_GET['sort_order'] ) ) {
-					$last_args['sort_order'] = $_GET['sort_order'];
+					$last_args['sort_order'] = rawurlencode( sanitize_text_field( wp_unslash( $_GET['sort_order'] ) ) );
 				}
 
 				$last_url = esc_url( add_query_arg( $last_args, $base_page_url ) );
@@ -2276,10 +2246,10 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 				);
 				// 現在のソート順を維持
 				if ( isset( $_GET['sort_by'] ) ) {
-					$next_args['sort_by'] = $_GET['sort_by'];
+					$next_args['sort_by'] = rawurlencode( sanitize_text_field( wp_unslash( $_GET['sort_by'] ) ) );
 				}
 				if ( isset( $_GET['sort_order'] ) ) {
-					$next_args['sort_order'] = $_GET['sort_order'];
+					$next_args['sort_order'] = rawurlencode( sanitize_text_field( wp_unslash( $_GET['sort_order'] ) ) );
 				}
 
 				$next_url = esc_url( add_query_arg( $next_args, $base_page_url ) );

@@ -2,177 +2,177 @@
 Contributors: kantanpro
 Tags: invoice, crm, order management, quotation, business
 Requires at least: 5.9
-Tested up to: 6.9
+Tested up to: 7.0
 Requires PHP: 7.4
 Stable tag: 1.3.30
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-スモールビジネスのための受注・顧客・請求管理。WordPress に業務管理システムを追加します。
+Manage orders, clients, services and invoicing inside WordPress. A business management workspace for small businesses.
 
 == Description ==
 
-KantanPro は、受注案件・顧客・サービス・協力会社を WordPress 上で一元管理できるプラグインです。
-固定ページに `[ktpwp_all_tab]` を挿入するだけで、ログインユーザー向けの業務管理画面が表示されます。
+KantanPro turns a WordPress page into a workspace where you can manage orders, clients,
+services and subcontractors in one place. Add the shortcode `[ktpwp_all_tab]` to any page,
+and logged-in users with editing permission will see the management screen there.
 
-**主な機能**
+Everything is stored in your own database. The plugin does not require an account,
+a subscription, or a connection to any service in order to work.
 
-* **仕事リスト** — 受注案件の一覧・検索・進捗フィルター
-* **伝票処理** — 受注書・請求書の作成／編集／PDF 出力（個別・一括）
-* **顧客管理** — 顧客・部署・担当者のマスター管理、宛名印刷
-* **サービス管理** — 商品・サービスの価格／数量／単位のマスター管理
-* **協力会社管理** — 協力会社と職能のマスター管理、発注メール送信
-* **スタッフチャット** — 案件ごとの社内コミュニケーション（Ctrl+Enter 送信）
-* **ファイル添付** — ドラッグ＆ドロップ、複数ファイル、自動クリーンアップ
-* **消費税対応** — 軽減税率・税区分、適格請求書に対応した税額内訳
-* **モバイル対応** — iOS / Android 実機でのタッチ操作に最適化
+**Main features**
 
-**進捗管理**
+* **Work list** — list, search and filter orders by progress
+* **Documents** — create and edit quotations and invoices, and export them as PDF (single or batch)
+* **Client management** — clients, departments and contacts, with envelope address printing
+* **Service management** — your products and services with price, quantity and unit
+* **Subcontractor management** — partner companies and their skills, plus purchase-order email
+* **Recurring contracts** — recurring billing cycles, initial fees and billing history
+* **Staff chat** — internal discussion per order (send with Ctrl+Enter)
+* **File attachments** — drag and drop, multiple files, automatic cleanup
+* **Backup** — export and import your data as JSON or CSV
+* **Consumption tax** — reduced tax rates and tax categories, with a per-rate breakdown for qualified invoices
+* **Mobile ready** — tested for touch operation on iOS and Android devices
 
-受注案件は「受注 → 進行中 → 完了 → 請求 → 支払い」の 5 段階に「ボツ」「見積中」を加えた
-7 段階で管理できます。進捗を変更すると完了日が自動設定され、納期が近い案件には警告が表示されます。
+**Progress tracking**
 
-**PDF / 印刷**
+Each order moves through seven stages: Rejected, Estimating, Ordered, In progress,
+Completed, Invoiced and Paid. Changing the stage sets the completion date automatically,
+and orders approaching their delivery date are highlighted.
 
-受注書・請求書は PDF として保存・印刷できます。PC ではブラウザの印刷ダイアログ、
-iPad / iPhone では PDF ファイルとして出力されます。請求書は顧客単位での一括出力にも対応しています。
+**PDF and printing**
 
-**上位版について**
-
-レポート（売上・顧客・サービス別の集計とグラフ）、バックアップ、定期契約請求などの機能は
-上位版の KantanProEX で提供しています。本プラグインではこれらのタブはロック表示になります。
+Quotations and invoices can be saved and printed as PDF. On desktop browsers the normal
+print dialog is used; on iPad and iPhone the document is produced as a PDF file instead,
+because the print dialog does not render reliably there. Invoices can also be exported
+in batch, grouped by client.
 
 == Installation ==
 
-1. プラグインをインストールして有効化します（データベースの初期化が自動実行されます）。
-2. 固定ページを作成し、本文に `[ktpwp_all_tab]` を挿入します。
-3. 管理画面の「KantanPro」メニューから、自社情報・消費税・メール送信などの基本設定を行います。
-4. 作成した固定ページを開くと、業務管理画面が表示されます。
+1. Install and activate the plugin. The database tables are created automatically.
+2. Create a page and insert the shortcode `[ktpwp_all_tab]` into its content.
+3. Open the "KantanPro" menu in the admin area and fill in your company details,
+   consumption tax settings and email settings.
+4. Open the page you created. The management screen is displayed there.
 
 == Frequently Asked Questions ==
 
-= 誰が管理画面を使えますか？ =
+= Who can use the management screen? =
 
-`[ktpwp_all_tab]` を設置した固定ページは、ログインしていて編集権限を持つユーザーにのみ表示されます。
-未ログインの訪問者には内容は表示されません。
+The page containing `[ktpwp_all_tab]` is only rendered for users who are logged in and
+have editing permission. Visitors who are not logged in see a login prompt instead of
+your business data.
 
-= レポートタブが開けません =
+= The layout looks broken on mobile =
 
-レポート機能は上位版の KantanProEX の機能です。本プラグインではタブはロック表示になります。
+The screens are responsive, but your theme's CSS can conflict with them. Please check
+with a current browser first. If the problem remains, ask on the support forum and
+include your theme name.
 
-= モバイルで表示が崩れます =
+= I get a database error =
 
-レスポンシブデザインに対応していますが、テーマ側の CSS と競合する場合があります。
-最新のブラウザでご確認のうえ、改善しない場合はサポートフォーラムでご相談ください。
+Database migrations run automatically when the plugin is updated. If an error persists,
+deactivate the plugin and activate it again so the migration can run from a clean state.
 
-= データベースエラーが出ます =
+= Does the plugin send my data anywhere? =
 
-プラグインの更新時にデータベースの移行処理が自動実行されます。
-エラーが続く場合は、一度プラグインを停止してから再度有効化してください。
+No, not by default. Your business data stays in your WordPress database. Three optional
+features can contact an external service, and each of them is described under
+"External services" below. None of them is required to use the plugin.
 
 == Third-party libraries ==
 
-PDF 出力とグラフ描画に、以下の MIT ライセンスのライブラリを未改変のまま同梱しています
-（`js/lib/`、取得元は `js/lib/SOURCES.txt` に記載）。外部 CDN からは読み込みません。
+The following MIT-licensed libraries are bundled unmodified in `js/lib/`
+(the download sources are listed in `js/lib/SOURCES.txt`). They are never loaded from a CDN.
 
 * html2canvas 1.4.1 — https://github.com/niklasvh/html2canvas
 * jsPDF 2.5.1 — https://github.com/parallax/jsPDF
-* Chart.js 4.4.9 — https://github.com/chartjs/Chart.js
 
 == External services ==
 
-本プラグインは、以下の外部サービスに接続する場合があります。
-いずれも該当する機能を使用したときにのみ通信し、通常の閲覧時には通信しません。
+This plugin can connect to the following external services. Each one is used only when
+you actively use the corresponding feature. Nothing is sent while a visitor simply
+browses your site.
 
-**1. zipcloud（郵便番号検索 API）**
+**1. zipcloud (Japanese postal code lookup API)**
 
-顧客・協力会社の登録フォームで郵便番号から住所を自動入力する際に使用します。
-入力された郵便番号のみを送信し、個人情報は送信しません。
+Used to fill in an address automatically from a postal code, on the client and
+subcontractor forms. Only the postal code you typed is sent; no personal data is included.
 
-* 送信先: `https://zipcloud.ibsnet.co.jp/api/search`
-* 送信するデータ: 郵便番号
-* 利用規約: http://zipcloud.ibsnet.co.jp/rule/api
+* Sends to: `https://zipcloud.ibsnet.co.jp/api/search`
+* Data sent: the postal code
+* Terms of use: http://zipcloud.ibsnet.co.jp/rule/api
 
-**2. 日本郵便 デジタルアドレス API（任意・既定では無効）**
+**2. Japan Post Digital Address API (optional, disabled by default)**
 
-管理画面の一般設定で有効にした場合のみ、住所検索に使用します。
-利用には日本郵便から発行される API 認証情報が必要です。
+Used for address lookup, only if you enable it in the plugin's general settings.
+It requires API credentials issued to you by Japan Post.
 
-* 送信先: `https://api.da.pf.japanpost.jp`
-* 送信するデータ: 郵便番号またはデジタルアドレス、API 認証情報
-* 利用規約: https://guide-api.da.pf.japanpost.jp/
+* Sends to: `https://api.da.pf.japanpost.jp`
+* Data sent: a postal code or digital address, together with your API credentials
+* Terms of use: https://guide-api.da.pf.japanpost.jp/
+* Privacy policy: https://www.post.japanpost.jp/privacy/
 
-**3. OpenAI API（任意・既定では無効）**
+**3. OpenAI API (optional, disabled by default)**
 
-CSV / データ取り込み機能で、列の自動マッピングに使用します。
-利用者自身の OpenAI API キーを設定した場合にのみ通信します。
+Used by the data import feature to map the columns of an uploaded file to the plugin's
+fields. It only sends anything if you have entered your own OpenAI API key.
 
-* 送信先: `https://api.openai.com/v1/chat/completions`
-* 送信するデータ: 取り込むファイルの列見出しとサンプル行
-* 利用規約: https://openai.com/policies/terms-of-use
-* プライバシーポリシー: https://openai.com/policies/privacy-policy
+* Sends to: `https://api.openai.com/v1/chat/completions`
+* Data sent: the column headings and up to three sample rows of the file you are importing
+* Terms of use: https://openai.com/policies/terms-of-use
+* Privacy policy: https://openai.com/policies/privacy-policy
 
 == Screenshots ==
 
-1. 仕事リストタブ — 受注案件の一覧と進捗フィルター
-2. 伝票処理タブ — 受注書の編集画面
-3. 請求書のプレビューと PDF 出力
-4. 顧客タブ — 顧客マスターと部署管理
-5. スタッフチャット
-6. モバイル表示
+1. Work list — orders with progress filters
+2. Document editor — editing an order
+3. Invoice preview and PDF export
+4. Clients — client records and departments
+5. Staff chat
+6. Mobile view
 
 == Changelog ==
 
-過去のすべての変更履歴は、プラグインに同梱の changelog.txt を参照してください。
+The complete history is in `changelog.txt`, bundled with the plugin.
 
-= 1.3.30 - 2026年08月30日 =
-* 請求候補データと受注書データを返す内部処理で、権限の確認が抜けていた問題を修正しました。ログインしていれば権限に関わらずデータを取得できる状態でしたが、編集権限を必須にしました
+= 1.3.30 - 2026-08-30 =
+* Fixed a missing permission check in the internal handlers that return billing candidates
+  and order data. Any logged-in user could read that data regardless of their role;
+  editing permission is now required.
 
-= 1.3.29 - 2026年08月30日 =
-* PDF出力とグラフ描画に使うライブラリ（html2canvas / jsPDF / Chart.js）をプラグインに同梱するよう変更。外部CDNへの依存をなくし、CDNが利用できない環境でもPDFを出力できるようになりました
-* jQuery をWordPress同梱のものを使うよう変更。外部CDNから読み込まなくなりました
-* 翻訳の識別子を ktpwp から kantanpro へ変更。WordPress.org の翻訳システムに対応します
-* wp_die() で表示するメッセージなど、出力のエスケープ漏れを修正
-* 動作に必要な WordPress のバージョンを 5.0 から 5.9 に変更（wp_date() / str_contains() を使用しているため）
-* 無料版が自身を「KantanProEX」と表示していた箇所を修正
-* WordPress.org 配布版では、開発元からのお知らせバナーの表示と、利用規約同意時の開発元への通知を行わないよう変更
+= 1.3.29 - 2026-08-30 =
+* Bundled the PDF and chart libraries (html2canvas, jsPDF, Chart.js) with the plugin so
+  that PDF export works where an external CDN is unavailable.
+* Switched to the jQuery shipped with WordPress instead of loading it from a CDN.
+* Renamed the text domain from `ktpwp` to `kantanpro` for the WordPress.org translation system.
+* Fixed missing output escaping, including messages shown through `wp_die()`.
+* Raised the minimum WordPress version from 5.0 to 5.9 (`wp_date()` and `str_contains()` are used).
+* Fixed places where the free edition described itself as "KantanProEX".
 
-= 1.3.28 - 2026年08月17日 =
-* 宛名印刷を余白なしで出力するよう変更。プレビューに表示される「用紙の上端から◯mm・左端から◯mm」が実際の印刷位置とそのまま一致するようになり、印刷ダイアログの余白設定に左右されなくなりました（用紙に印刷される内容そのものは従来と同じです）
-* 宛名印刷のプレビューに「宛名位置を初期値に戻す」ボタンを追加。長形3号の窓付き封筒に合う初期位置（用紙の上端から16mm・左端から33mm）にワンクリックで戻せます
-* 宛名印刷のプレビューで用紙の外側をグレーの台紙にし、用紙に影を付けて表示。紙の端がひと目で分かるようになり、宛名の位置合わせがしやすくなりました
-* 宛名印刷のプレビュー上部の説明を簡潔にし、現在の宛名位置を常に表示するよう変更
+= 1.3.28 - 2026-08-17 =
+* Envelope address printing now prints without margins, so the offsets shown in the preview
+  match the printed position exactly and no longer depend on the print dialog's margin setting.
+* Added a "reset address position" button, returning to the default position for a
+  Japanese Nagagata-3 window envelope (16 mm from the top, 33 mm from the left).
+* The preview now shows the sheet on a grey background with a drop shadow, so the paper
+  edges are easy to see while positioning.
 
-= 1.3.27 - 2026年08月17日 =
-* 顧客・協力会社タブの宛名印刷プレビューで、宛名ブロックをドラッグして位置を調整できる機能を追加。窓付き封筒の窓に合わせやすくなりました。ドラッグ中は用紙の上端・左端からの距離が mm で表示され、離すとその位置が保存されます（調整・保存は管理者のみ）。調整した位置は印刷結果にも反映され、次回以降の宛名印刷にも引き継がれます
+= 1.3.27 - 2026-08-17 =
+* The address block in the print preview can now be dragged to adjust its position, which
+  makes it easier to line up with a window envelope. The distance from the top and left
+  edges is shown in millimetres while dragging, and the position is saved on release
+  (adjusting and saving is limited to administrators).
 
-= 1.3.26 - 2026年08月14日 =
-* 更新チェックがGitHubに接続できなかったとき「最新バージョンです」と表示され、新しいバージョンの公開に気付けない不具合を修正。取得に失敗した場合は「更新情報を取得できませんでした」と表示します
-* GitHubのアクセス制限（レート制限）を正しく判定するよう修正。共有サーバーなどで制限にかかると更新チェックが最大1日再試行されなかった問題を解消し、次のアクセスで再試行します
-* 通信エラー時に、表示済みの更新通知が消えてしまう問題を修正
+= 1.3.25 - 2026-08-07 =
+* Fixed invoice lines in order emails showing "service name: 0 × 0 = 0" when only the
+  service name was filled in. Such lines now show the name alone, without the calculation.
 
-= 1.3.25 - 2026年08月07日 =
-* 受注書メールの請求項目で、サービス名だけ入力されて単価・数量が未入力（0）の行が「サービス名：0 × 0 = 0円」と表示されていた不具合を修正。計算式を出さずサービス名のみを表示するよう改善
-
-= 1.3.24 - 2026年08月03日 =
-* ローテーション表示のCSS/JSが一部サイト（WP-Optimize等の「インラインCSS/JS結合」機能を持つプラグイン導入環境）で除去され、バナーが縦に2段表示されてしまう不具合を修正。本文中への直接出力をやめ、WordPress標準のenqueue API（wp_add_inline_style/wp_add_inline_script）経由で読み込むよう変更
-
-= 1.3.23 - 2026年08月03日 =
-* ローテーション表示時、wp_kses_post()が<style>/<script>タグを除去しCSS/JSがそのままテキスト表示されてしまう不具合を修正。CSS/JSはkses処理を経由せず別出力するよう分離
-
-= 1.3.22 - 2026年08月03日 =
-* 中央バナーが複数登録されている場合に、KTP Bannerプラグイン同様のローテーション表示（指定秒数ごとの切り替え）に対応
-
-= 1.3.21 - 2026年08月03日 =
-* 真の原因を特定して修正：実際のショートコード（[ktpwp_all_tab]等）は、バナー機能を持たない旧来の手続き型関数（ktpwp.phpのkantanAllTab、plugins_loadedフックで先に登録される）で処理されており、これまでのclass-ktpwp-shortcodes.php側の修正が反映されない状態だった。この実際に使われている関数にバナー挿入処理を追加
-
-= 1.3.20 - 2026年08月03日 =
-* 調査用の暫定デバッグ出力を削除（原因は2026年6月17日のEX solo統合マージで復活していた回帰バグと特定し、v1.3.17で修正済み）
-
-= 1.3.19 - 2026年08月03日 =
-* 中央バナー取得失敗の原因調査用に、管理者にのみ見えるHTMLコメントで診断情報を出力する暫定コードを追加（機能追加ではなく調査目的）
+= 1.3.24 - 2026-08-03 =
+* Fixed banner CSS and JS being stripped on sites using plugins that combine inline CSS/JS
+  (such as WP-Optimize), which made the banner render as two stacked rows. The assets are
+  now registered through `wp_add_inline_style()` and `wp_add_inline_script()`.
 
 == Upgrade Notice ==
 
-= 1.3.29 =
-PDF出力用のライブラリをプラグインに同梱しました。外部CDNが使えない環境でもPDFを出力できます。
+= 1.3.30 =
+Security fix: the internal handlers returning billing and order data now require editing permission.

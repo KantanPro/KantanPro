@@ -174,14 +174,14 @@ class KTPWP_View_Tabs_Class {
         $ajax_data = $nonce_manager->get_unified_ajax_config();
 
         echo '<script type="text/javascript">';
-        echo 'window.ktpwp_ajax = ' . json_encode( $ajax_data ) . ';';
-        echo 'window.ktp_ajax_object = ' . json_encode( $ajax_data ) . ';';
-        echo 'window.ajaxurl = ' . json_encode( $ajax_data['ajax_url'] ) . ';';
+        echo 'window.ktpwp_ajax = ' . wp_json_encode( $ajax_data ) . ';';
+        echo 'window.ktp_ajax_object = ' . wp_json_encode( $ajax_data ) . ';';
+        echo 'window.ajaxurl = ' . wp_json_encode( $ajax_data['ajax_url'] ) . ';';
         echo 'console.log("TabView: 統一AJAX設定を出力", window.ktpwp_ajax);';
         echo '</script>';
 
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            // error_log('KTPWP TabView: Unified AJAX config output: ' . json_encode($ajax_data));
+            // error_log('KTPWP TabView: Unified AJAX config output: ' . wp_json_encode($ajax_data));
         }
 
         $output_done = true;

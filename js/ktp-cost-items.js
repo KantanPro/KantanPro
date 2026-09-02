@@ -29,7 +29,7 @@
         } else if (typeof ajaxurl !== 'undefined') {
             config.url = ajaxurl;
         } else {
-            config.url = '/wp-admin/admin-ajax.php';
+            config.url = ((typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) || (typeof ajaxurl !== 'undefined' ? ajaxurl : ''));
         }
         
         // nonceの取得（優先順位順）
@@ -2212,7 +2212,7 @@
     // 仕入ステータスを協力会社単位で一括更新（メール送信を伴わない遷移用）
     function applyCostItemsPurchaseStatus(orderId, supplierName, supplierId, status, callback) {
         const nonce = (typeof ktp_ajax_nonce !== 'undefined') ? ktp_ajax_nonce : (typeof ktpwp_ajax_nonce !== 'undefined' ? ktpwp_ajax_nonce : '');
-        const ajaxUrl = (typeof ajaxurl !== 'undefined') ? ajaxurl : ((typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) ? ktpwp_ajax.ajax_url : '/wp-admin/admin-ajax.php');
+        const ajaxUrl = (typeof ajaxurl !== 'undefined') ? ajaxurl : ((typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) ? ktpwp_ajax.ajax_url : ((typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) || (typeof ajaxurl !== 'undefined' ? ajaxurl : '')));
         $.post(ajaxUrl, {
             action: 'ktp_set_cost_items_purchase_status',
             nonce: nonce,

@@ -29,7 +29,11 @@ class FixNullTaxRatesMigration {
         if ($result !== false) {
             return array(
                 'success' => true,
-                'message' => __( "税率を修正しました。更新件数: {$result}件", 'kantanpro' ),
+                'message' => sprintf(
+                    /* translators: %d: 更新した件数 */
+                    esc_html__( '税率を修正しました。更新件数: %d件', 'kantanpro' ),
+                    (int) $result
+                ),
                 'updated_count' => $result
             );
         } else {

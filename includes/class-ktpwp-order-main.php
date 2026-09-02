@@ -454,7 +454,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 			if ( $request_method === 'POST' && isset( $_POST['staff_chat_message'] ) && isset( $_POST['staff_chat_order_id'] ) ) {
             // Verify nonce
             if ( isset( $_POST['staff_chat_nonce'] ) &&
-                 wp_verify_nonce( $_POST['staff_chat_nonce'], 'staff_chat_action' ) ) {
+                 wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['staff_chat_nonce'] ) ), 'staff_chat_action' ) ) {
 
                 // Check user capabilities
                 if ( current_user_can( 'edit_posts' ) || current_user_can('ktpwp_access') ) {
@@ -471,7 +471,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
                                 'order_id' => $order_id,
                                 'chat_open' => '1',      // チャットを開いた状態を示すパラメータ
                                 'message_sent' => '1'    // メッセージ送信完了を示すパラメータ
-                            ), esc_url_raw( $_SERVER['REQUEST_URI'] ) );
+                            ), esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) ) );
 
                             // URLのパラメータをクリーンアップ（重複を避ける）
                             $redirect_url = remove_query_arg( array( 'message', 'action' ), $redirect_url );
@@ -489,7 +489,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 			if ( $request_method === 'POST' && isset( $_POST['send_order_mail_id'] ) ) {
 				// Verify nonce
 				// if ( ! isset( $_POST['order_mail_nonce'] ) ||
-				// ! wp_verify_nonce( $_POST['order_mail_nonce'], 'send_order_mail_action' ) ) {
+				// ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['order_mail_nonce'] ) ), 'send_order_mail_action' ) ) {
 				// wp_die( esc_html__( 'Security check failed. Please refresh the page and try again.', 'kantanpro' ) );
 				// }
 
@@ -1025,7 +1025,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 			if ( $_SERVER['REQUEST_METHOD'] === 'POST' && isset( $_POST['update_project_name_id'], $_POST['order_project_name'] ) ) {
 				// Verify nonce
 				// if ( ! isset( $_POST['project_name_nonce'] ) ||
-				// ! wp_verify_nonce( $_POST['project_name_nonce'], 'update_project_name_action' ) ) {
+				// ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['project_name_nonce'] ) ), 'update_project_name_action' ) ) {
 				// wp_die( esc_html__( 'Security check failed. Please refresh the page and try again.', 'kantanpro' ) );
 				// }
 
@@ -1039,7 +1039,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 				if ( $update_id > 0 ) {
 					$wpdb->update( $table_name, array( 'project_name' => $project_name ), array( 'id' => $update_id ), array( '%s' ), array( '%d' ) );
 					// POSTリダブミット防止のためリダイレクト
-					$redirect_url = esc_url_raw( $_SERVER['REQUEST_URI'] );
+					$redirect_url = esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) );
 					// wp_redirect( $redirect_url );
 					// exit;
 				}
@@ -1057,7 +1057,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 
 				// Verify nonce
 				// if ( ! isset( $_POST['progress_nonce'] ) ||
-				// ! wp_verify_nonce( $_POST['progress_nonce'], 'update_progress_action' ) ) {
+				// ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['progress_nonce'] ) ), 'update_progress_action' ) ) {
 				// wp_die( esc_html__( 'Security check failed. Please refresh the page and try again.', 'kantanpro' ) );
 				// }
 
@@ -1116,7 +1116,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 					}
 
 					// リダイレクトで再読み込み（POSTリダブミット防止）
-					$redirect_url = esc_url_raw( $_SERVER['REQUEST_URI'] );
+					$redirect_url = esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) );
 					error_log( 'KTPWP Order: リダイレクト先: ' . $redirect_url );
 					wp_redirect( $redirect_url );
 					exit;
@@ -1132,7 +1132,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 			if ( $_SERVER['REQUEST_METHOD'] === 'POST' && isset( $_POST['save_invoice_items'] ) && isset( $_POST['invoice_items'] ) ) {
 				// Verify nonce
 				if ( ! isset( $_POST['invoice_items_nonce'] ) ||
-                 ! wp_verify_nonce( $_POST['invoice_items_nonce'], 'save_invoice_items_action' ) ) {
+                 ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['invoice_items_nonce'] ) ), 'save_invoice_items_action' ) ) {
 					wp_die( esc_html__( 'Security check failed. Please refresh the page and try again.', 'kantanpro' ) );
 				}
 
@@ -1154,7 +1154,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 					}
 
 					// POSTリダブミット防止のためリダイレクト
-					$redirect_url = esc_url_raw( $_SERVER['REQUEST_URI'] );
+					$redirect_url = esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) );
 					wp_redirect( $redirect_url );
 					exit;
 				} else {
@@ -1176,7 +1176,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 					}
 
 					// POSTリダブミット防止のためリダイレクト
-					$redirect_url = esc_url_raw( $_SERVER['REQUEST_URI'] );
+					$redirect_url = esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) );
 					wp_redirect( $redirect_url );
 					exit;
 				} else {
@@ -1223,7 +1223,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 
 				// Verify nonce for delete action
 				// if ( ! isset( $_POST['delete_nonce'] ) ||
-				// ! wp_verify_nonce( $_POST['delete_nonce'], 'delete_order_action' ) ) {
+				// ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['delete_nonce'] ) ), 'delete_order_action' ) ) {
 				// wp_die( esc_html__( 'Security check failed. Please refresh the page and try again.', 'kantanpro' ) );
 				// }
 
@@ -1531,7 +1531,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 						$_SESSION['ktp_last_order_id'] = $order_id;
 					} else {
 						// 無効なIDの場合はGETパラメータをクリア
-						$current_url = remove_query_arg( 'order_id', $_SERVER['REQUEST_URI'] );
+						$current_url = remove_query_arg( 'order_id', sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) );
 						wp_redirect( $current_url );
 						exit;
 					}
@@ -2483,7 +2483,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 				'timestamp' => $current_time,
 			);
 
-			update_option( $lock_option, json_encode( $lock_data ) );
+			update_option( $lock_option, wp_json_encode( $lock_data ) );
 
 			return true;
 		}

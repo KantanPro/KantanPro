@@ -11,7 +11,6 @@
  * Text Domain: kantanpro
  * Domain Path: /languages
  * Requires at least: 5.9
- * Tested up to: 6.9.1
  * Requires PHP: 7.4
  * Update URI: https://github.com/KantanPro/KantanPro
  *
@@ -284,9 +283,34 @@ if ( ! function_exists( 'ktpwp_start_asset_url_normalizer_buffer' ) ) {
         }
 
         ob_start( 'ktpwp_normalize_plugin_asset_urls' );
+        $GLOBALS['ktpwp_asset_url_buffer_level'] = ob_get_level();
+    }
+}
+
+if ( ! function_exists( 'ktpwp_end_asset_url_normalizer_buffer' ) ) {
+    /**
+     * 上で開いた出力バッファを明示的に閉じる。
+     *
+     * PHP の自動フラッシュ任せにすると「閉じていない ob_start」になり、
+     * 他プラグインとバッファの入れ子が崩れたときに気づけない
+     * （wp.org レビュー 2026-09-02 の指摘）。
+     * **自分が開いたレベルと一致するときだけ閉じる。** ずれている場合は
+     * 他所のバッファなので触らない。
+     *
+     * @return void
+     */
+    function ktpwp_end_asset_url_normalizer_buffer() {
+        $level = isset( $GLOBALS['ktpwp_asset_url_buffer_level'] )
+            ? (int) $GLOBALS['ktpwp_asset_url_buffer_level']
+            : 0;
+        if ( $level > 0 && ob_get_level() === $level ) {
+            ob_end_flush();
+        }
+        unset( $GLOBALS['ktpwp_asset_url_buffer_level'] );
     }
 }
 add_action( 'template_redirect', 'ktpwp_start_asset_url_normalizer_buffer', 0 );
+add_action( 'shutdown', 'ktpwp_end_asset_url_normalizer_buffer', 0 );
 
 // KTPWP Prefixed constants for internal consistency
 if ( ! defined( 'KTPWP_PLUGIN_FILE' ) ) {
@@ -514,6 +538,7 @@ if ( ! function_exists( 'ktpwp_autoload_classes' ) ) {
         'KTPWP_License_Manager' => 'includes/class-ktpwp-license-manager.php',
         'KTPWP_Graph_Renderer'  => 'includes/class-ktpwp-graph-renderer.php',
         // POSTデータ安全処理クラス（Adminer警告対策）
+        'KTPWP_Upload'          => 'includes/class-ktpwp-upload.php',
         'KTPWP_Post_Data_Handler' => 'includes/class-ktpwp-post-handler.php',
         // クライアント管理の新クラス
         'KTPWP_Client_DB'       => 'includes/class-ktpwp-client-db.php',
@@ -792,7 +817,7 @@ function ktpwp_handle_clear_cache_ajax() {
     }
     
     // ナンスチェック
-    if ( ! wp_verify_nonce( $_POST['nonce'], 'ktpwp_clear_cache' ) ) {
+    if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'ktpwp_clear_cache' ) ) {
         wp_send_json_error( __( 'セキュリティチェックに失敗しました', 'kantanpro' ) );
     }
     
@@ -819,7 +844,7 @@ function ktpwp_handle_convert_all_images_ajax() {
     }
     
     // ナンスチェック
-    if ( ! wp_verify_nonce( $_POST['nonce'], 'ktpwp_image_optimization' ) ) {
+    if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'ktpwp_image_optimization' ) ) {
         wp_send_json_error( __( 'セキュリティチェックに失敗しました', 'kantanpro' ) );
     }
     
@@ -854,33 +879,21 @@ function ktpwp_handle_convert_all_images_ajax() {
             }
         }
         
-        wp_send_json_success( __( "{$converted_count} / {$total_count} 個の画像をWebPに変換しました", 'kantanpro' ) );
+        wp_send_json_success(
+            sprintf(
+                /* translators: 1: 変換できた枚数, 2: 対象の総数 */
+                esc_html__( '%1$d / %2$d 個の画像をWebPに変換しました', 'kantanpro' ),
+                (int) $converted_count,
+                (int) $total_count
+            )
+        );
         
     } catch ( Exception $e ) {
         wp_send_json_error( __( '一括変換に失敗しました: ', 'kantanpro' ) . $e->getMessage() );
     }
 }
 
-// 管理画面でキャッシュ管理スクリプトを読み込み
-add_action( 'admin_enqueue_scripts', 'ktpwp_enqueue_cache_admin_scripts' );
-function ktpwp_enqueue_cache_admin_scripts( $hook ) {
-    // KantanPro設定ページでのみ読み込み
-    if ( 'toplevel_page_ktp-settings' === $hook || 'settings_page_ktp-settings' === $hook ) {
-        wp_enqueue_script(
-            'ktpwp-cache-admin',
-            KANTANPRO_PLUGIN_URL . 'js/ktpwp-cache-admin.js',
-            array( 'jquery' ),
-            KANTANPRO_PLUGIN_VERSION,
-            true
-        );
-        
-        // ナンスを JavaScript に渡す
-        wp_localize_script( 'ktpwp-cache-admin', 'ktpwp_cache_admin', array(
-            'nonce' => wp_create_nonce( 'ktpwp_clear_cache' ),
-            'ajaxurl' => admin_url( 'admin-ajax.php' )
-        ) );
-    }
-}
+// キャッシュ管理スクリプト（js/ktpwp-cache-admin.js）は同梱していないため読み込まない。
 
 // 管理画面で画像最適化スクリプトを読み込み
 add_action( 'admin_enqueue_scripts', 'ktpwp_enqueue_image_optimizer_scripts' );
@@ -3086,7 +3099,7 @@ add_action( 'wp_ajax_ktpwp_run_qualified_invoice_migration', 'ktpwp_handle_quali
  */
 function ktpwp_handle_manual_db_update() {
     // セキュリティチェック
-    if ( ! wp_verify_nonce( $_POST['nonce'], 'ktpwp_manual_db_update' ) ) {
+    if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'ktpwp_manual_db_update' ) ) {
         wp_send_json_error( __( 'セキュリティチェックに失敗しました。', 'kantanpro' ) );
     }
     
@@ -3147,7 +3160,7 @@ function ktpwp_handle_manual_db_update() {
  */
 function ktpwp_handle_qualified_invoice_migration() {
     // セキュリティチェック
-    if ( ! wp_verify_nonce( $_POST['nonce'], 'ktpwp_run_qualified_invoice_migration' ) ) {
+    if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'ktpwp_run_qualified_invoice_migration' ) ) {
         wp_send_json_error( __( 'セキュリティチェックに失敗しました。', 'kantanpro' ) );
     }
     
@@ -3651,7 +3664,7 @@ function ktpwp_restrict_rest_api( $result ) {
     }
 
     // ブロックエディター関連のリクエストは制限しない
-    $request_uri = $_SERVER['REQUEST_URI'] ?? '';
+    $request_uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
     if ( strpos( $request_uri, '/wp-json/wp/v2/' ) !== false ) {
         // 投稿タイプ、タクソノミー、メディアなどの基本的なREST APIは許可
         return $result;
@@ -3709,7 +3722,7 @@ function ktpwp_allow_internal_requests( $result ) {
     }
 
     // WordPressの内部通信用エンドポイントは制限しない
-    $request_uri = $_SERVER['REQUEST_URI'] ?? '';
+    $request_uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
 
     // すべてのWordPress REST APIエンドポイントを許可
     if ( strpos( $request_uri, '/wp-json/' ) !== false ) {
@@ -4002,7 +4015,7 @@ if ( file_exists( MY_PLUGIN_PATH . 'includes/class-ktpwp-settings.php' ) ) {
     add_action(
         'admin_notices',
         function () {
-			echo '<div class="notice notice-error"><p>' . __( 'KTPWP Critical Error: includes/class-ktpwp-settings.php not found.', 'kantanpro' ) . '</p></div>';
+			echo '<div class="notice notice-error"><p>' . esc_html__( 'KTPWP Critical Error: includes/class-ktpwp-settings.php not found.', 'kantanpro' ) . '</p></div>';
 		}
     );
 }
@@ -4129,7 +4142,7 @@ function ktpwp_scripts_and_styles( $hook = '' ) {
             ) ) ||
             $current_page === 'site-health' ||
             $current_action === 'site-health' ||
-            ( isset( $_SERVER['REQUEST_URI'] ) && strpos( (string) $_SERVER['REQUEST_URI'], 'site-health' ) !== false )
+            ( isset( $_SERVER['REQUEST_URI'] ) && strpos( sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ), 'site-health' ) !== false )
         );
 
         if ( $is_site_health_page ) {
@@ -4152,15 +4165,33 @@ function ktpwp_scripts_and_styles( $hook = '' ) {
     );
     wp_enqueue_script( 'ktp-js', plugins_url( 'js/ktp-js.js', __FILE__ ) . '?v=' . time(), array( 'jquery', 'ktp-number-format' ), null, true );
 
+    // AJAX エンドポイントは admin_url() で解決して JS に渡す。
+    // wp-admin の場所は環境によって変わるので、JS 側で '/wp-admin/admin-ajax.php' と
+    // 直書きしてはいけない（2026-09-02 のレビュー指摘）。
+    wp_localize_script(
+        'ktp-js',
+        'ktpwp_ajax',
+        array(
+            'ajax_url'         => admin_url( 'admin-ajax.php' ),
+            'staff_chat_nonce' => wp_create_nonce( 'staff_chat_nonce' ),
+            'auto_save_nonce'  => wp_create_nonce( 'ktp_auto_save_nonce' ),
+        )
+    );
+    // 既存コードが素の ajaxurl を参照しているので、未定義のときだけ補う。
+    wp_add_inline_script(
+        'ktp-js',
+        'window.ajaxurl = window.ajaxurl || ktpwp_ajax.ajax_url;'
+    );
+
     // デバッグモードの設定（WP_DEBUGまたは開発環境でのみ有効）
     $debug_mode = ( defined( 'WP_DEBUG' ) && WP_DEBUG ) || ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG );
-    wp_add_inline_script( 'ktp-js', 'var ktpwpDebugMode = ' . json_encode( $debug_mode ) . ';' );
+    wp_add_inline_script( 'ktp-js', 'var ktpwpDebugMode = ' . wp_json_encode( $debug_mode ) . ';' );
 
     // コスト項目トグル用の国際化ラベルをJSに渡す
-    wp_add_inline_script( 'ktp-js', 'var ktpwpCostShowLabel = ' . json_encode( '表示' ) . ';' );
-    wp_add_inline_script( 'ktp-js', 'var ktpwpCostHideLabel = ' . json_encode( '非表示' ) . ';' );
-    wp_add_inline_script( 'ktp-js', 'var ktpwpStaffChatShowLabel = ' . json_encode( '表示' ) . ';' );
-    wp_add_inline_script( 'ktp-js', 'var ktpwpStaffChatHideLabel = ' . json_encode( '非表示' ) . ';' );
+    wp_add_inline_script( 'ktp-js', 'var ktpwpCostShowLabel = ' . wp_json_encode( '表示' ) . ';' );
+    wp_add_inline_script( 'ktp-js', 'var ktpwpCostHideLabel = ' . wp_json_encode( '非表示' ) . ';' );
+    wp_add_inline_script( 'ktp-js', 'var ktpwpStaffChatShowLabel = ' . wp_json_encode( '表示' ) . ';' );
+    wp_add_inline_script( 'ktp-js', 'var ktpwpStaffChatHideLabel = ' . wp_json_encode( '非表示' ) . ';' );
 
     // スタイルを読み込み（フロントエンドのみ）
     wp_register_style( 'ktp-css', plugins_url( 'css/styles.css', __FILE__ ) . '?v=' . time(), array(), KANTANPRO_PLUGIN_VERSION, 'all' );
@@ -4177,15 +4208,15 @@ function ktpwp_scripts_and_styles( $hook = '' ) {
     wp_enqueue_script( 'jquery' );
 
     // ajaxurl をフロントエンドに渡す（nonce は AJAX クラス / Assets で設定するため、ここでは上書きしない）
-    wp_add_inline_script( 'ktp-js', 'var ajaxurl = ' . json_encode( admin_url( 'admin-ajax.php' ) ) . ';' );
+    wp_add_inline_script( 'ktp-js', 'var ajaxurl = ' . wp_json_encode( admin_url( 'admin-ajax.php' ) ) . ';' );
 
     // Ajax nonceを追加 - AJAXクラスで管理されるため、ここでは設定しない
-    // wp_add_inline_script( 'ktp-invoice-items', 'var ktp_ajax_nonce = ' . json_encode( wp_create_nonce( 'ktp_ajax_nonce' ) ) . ';' );
-    // wp_add_inline_script( 'ktp-cost-items', 'var ktp_ajax_nonce = ' . json_encode( wp_create_nonce( 'ktp_ajax_nonce' ) ) . ';' );
+    // wp_add_inline_script( 'ktp-invoice-items', 'var ktp_ajax_nonce = ' . wp_json_encode( wp_create_nonce( 'ktp_ajax_nonce' ) ) . ';' );
+    // wp_add_inline_script( 'ktp-cost-items', 'var ktp_ajax_nonce = ' . wp_json_encode( wp_create_nonce( 'ktp_ajax_nonce' ) ) . ';' );
 
     // ajaxurlをJavaScriptで利用可能にする - AJAXクラスで管理されるため、ここでは設定しない
-    // wp_add_inline_script( 'ktp-invoice-items', 'var ajaxurl = ' . json_encode( admin_url( 'admin-ajax.php' ) ) . ';' );
-    // wp_add_inline_script( 'ktp-cost-items', 'var ajaxurl = ' . json_encode( admin_url( 'admin-ajax.php' ) ) . ';' );
+    // wp_add_inline_script( 'ktp-invoice-items', 'var ajaxurl = ' . wp_json_encode( admin_url( 'admin-ajax.php' ) ) . ';' );
+    // wp_add_inline_script( 'ktp-cost-items', 'var ajaxurl = ' . wp_json_encode( admin_url( 'admin-ajax.php' ) ) . ';' );
 
     // デバッグモードでAJAXデバッグスクリプトを読み込み（ファイルが存在する場合のみ）
     if ( defined( 'WP_DEBUG' ) && WP_DEBUG && file_exists( plugin_dir_path( __FILE__ ) . 'debug-ajax.js' ) ) {
@@ -4209,38 +4240,8 @@ function ktpwp_scripts_and_styles( $hook = '' ) {
         }
     }
 
-    // リファレンス機能のスクリプトを読み込み（ログイン済みユーザーのみ）
-    if ( is_user_logged_in() ) {
-        wp_enqueue_script(
-            'ktpwp-reference',
-            plugins_url( 'js/plugin-reference.js', __FILE__ ),
-            array( 'jquery' ),
-            KANTANPRO_PLUGIN_VERSION,
-            true
-        );
+    // リファレンス機能は同梱スクリプト（js/plugin-reference.js）が存在しないため読み込まない。
 
-        wp_add_inline_script(
-            'ktpwp-reference',
-            'var ktpwp_reference = ' . json_encode(
-                array(
-					'ajax_url' => admin_url( 'admin-ajax.php' ),
-					'nonce'    => wp_create_nonce( 'ktpwp_reference_nonce' ),
-					'strings'  => array(
-						'modal_title'         => esc_html__( 'プラグインリファレンス', 'kantanpro' ),
-						'loading'             => esc_html__( '読み込み中...', 'kantanpro' ),
-						'error_loading'       => esc_html__( 'コンテンツの読み込みに失敗しました。', 'kantanpro' ),
-						'close'               => esc_html__( '閉じる', 'kantanpro' ),
-						'nav_overview'        => esc_html__( '概要', 'kantanpro' ),
-						'nav_tabs'            => esc_html__( 'タブ機能', 'kantanpro' ),
-						'nav_shortcodes'      => esc_html__( 'ショートコード', 'kantanpro' ),
-						'nav_settings'        => esc_html__( '設定', 'kantanpro' ),
-						'nav_security'        => esc_html__( 'セキュリティ', 'kantanpro' ),
-						'nav_troubleshooting' => esc_html__( 'トラブルシューティング', 'kantanpro' ),
-					),
-                )
-            ) . ';'
-        );
-    }
 }
 // サイトヘルスページ専用のCSS読み込み
 function ktpwp_site_health_styles() {
@@ -4257,8 +4258,8 @@ add_action(
         strpos( $hook, 'site-health' ) !== false ||
         ( isset( $_GET['page'] ) && $_GET['page'] === 'site-health' ) ||
         ( isset( $_GET['action'] ) && $_GET['action'] === 'site-health' ) ||
-        ( isset( $_SERVER['REQUEST_URI'] ) && strpos( $_SERVER['REQUEST_URI'], 'site-health' ) !== false ) ||
-        ( isset( $_SERVER['REQUEST_URI'] ) && strpos( $_SERVER['REQUEST_URI'], 'tools.php?page=site-health' ) !== false )
+        ( isset( $_SERVER['REQUEST_URI'] ) && strpos( sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ), 'site-health' ) !== false ) ||
+        ( isset( $_SERVER['REQUEST_URI'] ) && strpos( sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ), 'tools.php?page=site-health' ) !== false )
 		);
 
 		if ( $is_site_health ) {
@@ -4447,8 +4448,8 @@ function KTPWP_Index() {
             // XSS対策: 画面に出力する変数は必ずエスケープ
 
             // ユーザーのログインログアウト状況を取得するためのAjaxを登録
-            add_action( 'wp_ajax_get_logged_in_users', 'get_logged_in_users' );
-            add_action( 'wp_ajax_nopriv_get_logged_in_users', 'get_logged_in_users' );
+            add_action( 'wp_ajax_ktp_get_logged_in_users', 'get_logged_in_users' );
+            add_action( 'wp_ajax_nopriv_ktp_get_logged_in_users', 'get_logged_in_users' );
 
             // get_logged_in_users の再宣言防止
             if ( ! function_exists( 'get_logged_in_users' ) ) {
@@ -5569,7 +5570,7 @@ function ktpwp_increment_record_frequency_on_view( $entity_key, $record_id ) {
 
     ktpwp_safe_session_start();
 
-    $uri_hash    = md5( isset( $_SERVER['REQUEST_URI'] ) ? (string) wp_unslash( $_SERVER['REQUEST_URI'] ) : '' );
+    $uri_hash    = md5( isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '' );
     $session_key = 'ktp_freq_view_' . sanitize_key( (string) $entity_key );
     $dedup_token = sanitize_key( (string) $entity_key ) . ':' . $record_id . ':' . $uri_hash;
 
@@ -5637,8 +5638,8 @@ function ktpwp_close_session_before_ajax() {
         'wp_ajax_nopriv_ktpwp_manual_update_check',
     );
     
-    $current_action = 'wp_ajax_' . ( $_POST['action'] ?? '' );
-    $current_action_nopriv = 'wp_ajax_nopriv_' . ( $_POST['action'] ?? '' );
+    $current_action = 'wp_ajax_' . ( isset( $_POST['action'] ) ? sanitize_key( wp_unslash( $_POST['action'] ) ) : '' );
+    $current_action_nopriv = 'wp_ajax_nopriv_' . ( isset( $_POST['action'] ) ? sanitize_key( wp_unslash( $_POST['action'] ) ) : '' );
     
     if ( in_array( $current_action, $close_session_actions ) || in_array( $current_action_nopriv, $close_session_actions ) ) {
         ktpwp_safe_session_close();
@@ -5858,7 +5859,7 @@ function ktpwp_distribution_admin_notices() {
     
     // 手動マイグレーション実行
     if ( isset( $_GET['ktpwp_manual_migration'] ) && $_GET['ktpwp_manual_migration'] === '1' ) {
-        if ( wp_verify_nonce( $_GET['_wpnonce'] ?? '', 'ktpwp_manual_migration' ) ) {
+        if ( wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ?? '' ) ), 'ktpwp_manual_migration' ) ) {
             ktpwp_execute_manual_migration();
         } else {
             // nonceが無い場合は確認画面を表示
@@ -5871,7 +5872,7 @@ function ktpwp_distribution_admin_notices() {
     
     // invoice_itemsカラム修正の緊急マイグレーション実行
     if ( isset( $_GET['ktpwp_invoice_items_fix'] ) && $_GET['ktpwp_invoice_items_fix'] === '1' ) {
-        if ( wp_verify_nonce( $_GET['_wpnonce'] ?? '', 'ktpwp_invoice_items_fix' ) ) {
+        if ( wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ?? '' ) ), 'ktpwp_invoice_items_fix' ) ) {
             ktpwp_execute_invoice_items_fix();
         } else {
             // nonceが無い場合は確認画面を表示
@@ -6637,7 +6638,7 @@ function ktpwp_handle_create_dummy_data_ajax() {
     
     try {
         // セキュリティチェック
-        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'ktpwp_dummy_data_nonce')) {
+        if (!isset($_POST['nonce']) || !wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'ktpwp_dummy_data_nonce')) {
             if (defined('WP_DEBUG') && WP_DEBUG) {
                 error_log('KTPWP: セキュリティチェックに失敗しました');
             }
@@ -6804,7 +6805,22 @@ function ktpwp_handle_create_dummy_data_ajax() {
  */
 function ktpwp_handle_clear_data_ajax() {
     // 出力バッファリングを開始（予期しない出力を防ぐ）
+    $ktpwp_clear_data_ob_level = ob_get_level();
     ob_start();
+
+    // wp_send_json_*() は wp_die() で終了するため finally 節に到達しない。
+    // そのままだとバッファがシャットダウン時に吐き出され、JSON の後ろに
+    // 余計な出力が混ざる。返す直前に必ずここでバッファを畳む。
+    $ktpwp_clear_data_respond = static function ( $ok, $payload ) {
+        $stray = ob_get_clean();
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG && ! empty( $stray ) ) {
+            error_log( 'KTPWP: データクリアAJAX中に予期しない出力を検出: ' . substr( $stray, 0, 1000 ) );
+        }
+        if ( $ok ) {
+            wp_send_json_success( $payload );
+        }
+        wp_send_json_error( $payload );
+    };
     
     // デバッグ情報をログに記録
     if (defined('WP_DEBUG') && WP_DEBUG) {
@@ -6813,11 +6829,11 @@ function ktpwp_handle_clear_data_ajax() {
     
     try {
         // セキュリティチェック
-        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'ktpwp_clear_data_nonce')) {
+        if (!isset($_POST['nonce']) || !wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'ktpwp_clear_data_nonce')) {
             if (defined('WP_DEBUG') && WP_DEBUG) {
                 error_log('KTPWP: セキュリティチェックに失敗しました');
             }
-            wp_send_json_error(array('message' => __( 'セキュリティチェックに失敗しました。', 'kantanpro' )));
+            $ktpwp_clear_data_respond( false, array('message' => __( 'セキュリティチェックに失敗しました。', 'kantanpro' )));
             return;
         }
         
@@ -6825,7 +6841,7 @@ function ktpwp_handle_clear_data_ajax() {
             if (defined('WP_DEBUG') && WP_DEBUG) {
                 error_log('KTPWP: 権限がありません');
             }
-            wp_send_json_error(array('message' => __( '権限がありません。', 'kantanpro' )));
+            $ktpwp_clear_data_respond( false, array('message' => __( '権限がありません。', 'kantanpro' )));
             return;
         }
         
@@ -6925,7 +6941,7 @@ function ktpwp_handle_clear_data_ajax() {
             error_log('KTPWP: データクリア成功 - ' . $success_message);
         }
         
-        wp_send_json_success(array(
+        $ktpwp_clear_data_respond( true, array(
             'message' => $success_message,
             'cleared_count' => $total_cleared
         ));
@@ -6935,16 +6951,18 @@ function ktpwp_handle_clear_data_ajax() {
             error_log('KTPWP: データクリアエラー - ' . $e->getMessage());
         }
         
-        wp_send_json_error(array(
+        $ktpwp_clear_data_respond( false, array(
             'message' => __( 'エラーが発生しました: ', 'kantanpro' ) . $e->getMessage()
         ));
     } finally {
-        // 出力バッファをクリア（予期しない出力を除去）
-        $output = ob_get_clean();
-        
-        // デバッグ時のみ、予期しない出力があればログに記録
-        if (defined('WP_DEBUG') && WP_DEBUG && !empty($output)) {
-            error_log('KTPWP: データクリアAJAX中に予期しない出力を検出: ' . substr($output, 0, 1000));
+        // 応答ヘルパーを通った場合は wp_die() で終了しているのでここには来ない。
+        // 万一どこも応答せずに抜けたときだけ、自分が開いたバッファを畳む。
+        // **無条件に ob_get_clean() を呼ぶと、他所が開いたバッファを閉じてしまう。**
+        if ( ob_get_level() > $ktpwp_clear_data_ob_level ) {
+            $output = ob_get_clean();
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG && ! empty( $output ) ) {
+                error_log( 'KTPWP: データクリアAJAX中に予期しない出力を検出: ' . substr( $output, 0, 1000 ) );
+            }
         }
     }
 }

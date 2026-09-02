@@ -152,7 +152,7 @@
         console.log('[SUPPLIER-SELECTOR] 協力会社リスト取得開始');
         
         // AJAX URLの設定（複数のフォールバック）
-        let ajaxUrl = '/wp-admin/admin-ajax.php';
+        let ajaxUrl = ((typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) || (typeof ajaxurl !== 'undefined' ? ajaxurl : ''));
         if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.ajax_url) {
             ajaxUrl = ktp_ajax_object.ajax_url;
         } else if (typeof ajaxurl !== 'undefined') {

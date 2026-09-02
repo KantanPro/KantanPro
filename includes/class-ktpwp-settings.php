@@ -767,7 +767,6 @@ class KTPWP_Settings {
             'public_product_card_bg_color' => '#e2e8f0',
             'header_bg_image' => 'images/default/header_bg_image.png',
             'page_content_widths' => array(),
-            'custom_css' => '',
         );
 
         return get_option( 'ktp_design_settings', $system_defaults );
@@ -811,8 +810,10 @@ class KTPWP_Settings {
         add_action( 'phpmailer_init', array( $this, 'setup_smtp_settings' ) );
         add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_styles' ) );
         add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_media_scripts' ) );
-        add_action( 'wp_head', array( $this, 'output_custom_styles' ) );
-        add_action( 'admin_head', array( $this, 'output_custom_styles' ) );
+        // wp_head/admin_head だと既にスタイルが出力済みで wp_add_inline_style が効かないため、
+        // enqueue のタイミング（遅めの優先度）に移す。
+        add_action( 'wp_enqueue_scripts', array( $this, 'output_custom_styles' ), 20 );
+        add_action( 'admin_enqueue_scripts', array( $this, 'output_custom_styles' ), 20 );
         add_action( 'wp_head', array( $this, 'output_page_content_width_styles' ), 20 );
         add_filter( 'body_class', array( $this, 'filter_body_class_for_page_content_width' ) );
         add_action( 'admin_init', array( $this, 'handle_default_settings_actions' ) );
@@ -956,7 +957,6 @@ class KTPWP_Settings {
             'public_product_card_bg_color' => '#e2e8f0',
             'header_bg_image' => 'images/default/header_bg_image.png',
             'page_content_widths' => self::build_default_page_content_widths(),
-            'custom_css' => '',
         );
 
         if ( false === get_option( $design_option_name ) ) {
@@ -1408,7 +1408,7 @@ class KTPWP_Settings {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( esc_html__( '権限がありません。', 'kantanpro' ) );
 		}
-		if ( ! isset( $_POST['ktpwp_export_nonce'] ) || ! wp_verify_nonce( $_POST['ktpwp_export_nonce'], 'ktpwp_export_data' ) ) {
+		if ( ! isset( $_POST['ktpwp_export_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['ktpwp_export_nonce'] ) ), 'ktpwp_export_data' ) ) {
 			wp_die( esc_html__( 'セキュリティチェックに失敗しました。', 'kantanpro' ) );
 		}
 
@@ -1499,7 +1499,7 @@ class KTPWP_Settings {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( esc_html__( '権限がありません。', 'kantanpro' ) );
 		}
-		if ( ! isset( $_POST['ktpwp_restore_nonce'] ) || ! wp_verify_nonce( $_POST['ktpwp_restore_nonce'], 'ktpwp_restore_data' ) ) {
+		if ( ! isset( $_POST['ktpwp_restore_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['ktpwp_restore_nonce'] ) ), 'ktpwp_restore_data' ) ) {
 			wp_die( esc_html__( 'セキュリティチェックに失敗しました。', 'kantanpro' ) );
 		}
 
@@ -1939,7 +1939,7 @@ class KTPWP_Settings {
                   name="ktp_donation_settings[notice_message]" 
                   rows="3" 
                   cols="50" 
-                  class="large-text"><?php echo isset( $options['notice_message'] ) ? esc_textarea( $options['notice_message'] ) : $default_message; ?></textarea>
+                  class="large-text"><?php echo esc_textarea( isset( $options['notice_message'] ) ? $options['notice_message'] : $default_message ); ?></textarea>
         <p class="description"><?php esc_html_e( 'KantanPro管理権限を持つユーザー向けにフロントエンドで表示される寄付通知のメッセージ', 'kantanpro' ); ?></p>
         <?php
     }
@@ -2537,7 +2537,7 @@ class KTPWP_Settings {
 
     public function create_admin_page() {
         if ( ! current_user_can( 'manage_options' ) ) {
-            wp_die( esc_html__( 'この設定ページにアクセスする権限がありません。' ) );
+            wp_die( esc_html__( 'この設定ページにアクセスする権限がありません。', 'kantanpro' ) );
         }
 
         // 初期設定値がない場合は作成
@@ -3292,7 +3292,11 @@ class KTPWP_Settings {
         }
 
         if ( class_exists( 'KTPWP_Stripe_Billing' ) ) {
-            $stripe_feature_enabled = ! function_exists( 'ktpwp_is_feature_enabled' ) || ktpwp_is_feature_enabled( 'stripe_billing' );
+            // 機能が有効でも、配布版によっては Stripe のクラスを同梱していない。
+            // クラスの存在も見ないと、存在しないクラスを add_settings_field の
+            // コールバックに登録して設定画面が fatal になる。
+            $stripe_feature_enabled = ( ! function_exists( 'ktpwp_is_feature_enabled' ) || ktpwp_is_feature_enabled( 'stripe_billing' ) )
+                && class_exists( 'KTPWP_Stripe_Billing' );
             add_settings_section(
                 'stripe_billing_setting_section',
                 __( 'Stripe 請求連携', 'kantanpro' ),
@@ -3590,14 +3594,10 @@ class KTPWP_Settings {
             'design_setting_section'
         );
 
-        // カスタムCSS
-        add_settings_field(
-            'custom_css',
-            __( 'カスタムCSS', 'kantanpro' ),
-            array( $this, 'custom_css_callback' ),
-            'ktp-design',
-            'design_setting_section'
-        );
+        // カスタムCSS入力は廃止した。
+        // WordPress.org のガイドラインで、プラグインが任意の CSS/JS/PHP を保存・出力する
+        // ことは認められていない（2026-09-02 のレビュー指摘）。
+        // 外観の調整は WordPress 標準の「追加CSS」（カスタマイザー）を使ってもらう。
     }
 
     /**
@@ -3699,9 +3699,7 @@ class KTPWP_Settings {
             }
         }
 
-        if ( isset( $input['custom_css'] ) ) {
-            $new_input['custom_css'] = wp_strip_all_tags( $input['custom_css'] );
-        }
+        // custom_css は廃止したため保存しない（既存の値も次回保存で消える）。
 
         $existing = get_option( 'ktp_design_settings', array() );
         $raw_widths = array();
@@ -4987,24 +4985,6 @@ class KTPWP_Settings {
         <?php
     }
 
-    /**
-     * カスタムCSSフィールドのコールバック
-     *
-     * @since 1.0.0
-     * @return void
-     */
-    public function custom_css_callback() {
-        $options = get_option( 'ktp_design_settings' );
-        $value = isset( $options['custom_css'] ) ? $options['custom_css'] : '';
-        ?>
-        <textarea id="custom_css" name="ktp_design_settings[custom_css]" 
-                  rows="10" cols="80" style="width:100%;max-width:600px;font-family:monospace;" 
-                  placeholder="<?php echo esc_attr__( 'カスタムCSSを入力してください...', 'kantanpro' ); ?>"><?php echo esc_textarea( $value ); ?></textarea>
-        <div style="font-size:12px;color:#555;margin-top:4px;">
-            <?php echo esc_html__( '※ プラグインに適用するカスタムCSSを記述してください。HTMLタグは使用できません。', 'kantanpro' ); ?>
-        </div>
-        <?php
-    }
 
     /**
      * Output custom styles to frontend
@@ -5204,16 +5184,14 @@ div.ktp_header > * {
             }
         }
 
-        // カスタムCSSの追加
-        if ( ! empty( $design_options['custom_css'] ) ) {
-            $custom_css .= "\n" . wp_strip_all_tags( $design_options['custom_css'] );
+        // 生の <style> を書き出さず、WordPress のスタイルキューに乗せる
+        // （wp.org ガイドライン: 静的CSSは wp_enqueue_style / インラインは wp_add_inline_style）。
+        if ( empty( $custom_css ) ) {
+            return;
         }
-
-        // スタイルを出力
-        if ( ! empty( $custom_css ) ) {
-            echo '<style type="text/css" id="ktp-custom-styles">';
-            echo $custom_css;
-            echo '</style>';
+        $handle = wp_style_is( 'ktp-css', 'registered' ) ? 'ktp-css' : 'ktp-admin-settings';
+        if ( wp_style_is( $handle, 'registered' ) ) {
+            wp_add_inline_style( $handle, $custom_css );
         }
     }
 
@@ -5285,7 +5263,7 @@ div.ktp_header > * {
 
         // 設定をデフォルト値にリセット
         if ( isset( $_POST['action'] ) && $_POST['action'] === 'reset_to_default' ) {
-            if ( ! wp_verify_nonce( $_POST['ktp_reset_to_default_nonce'], 'ktp_reset_to_default' ) ) {
+            if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['ktp_reset_to_default_nonce'] ) ), 'ktp_reset_to_default' ) ) {
                 wp_die( esc_html__( 'セキュリティチェックに失敗しました。', 'kantanpro' ) );
             }
 
@@ -5299,8 +5277,7 @@ div.ktp_header > * {
                 'public_product_card_bg_color' => '#e2e8f0',
                 'header_bg_image' => 'images/default/header_bg_image.png',
                 'page_content_widths' => self::build_default_page_content_widths(),
-                'custom_css' => '',
-            );
+                );
             update_option( 'ktp_design_settings', $system_defaults );
             add_settings_error(
                 'ktp_design_settings',
@@ -5342,7 +5319,7 @@ div.ktp_header > * {
      */
     public static function admin_page() {
         // 設定の保存処理
-        if ( isset( $_POST['submit'] ) && wp_verify_nonce( $_POST['ktpwp_settings_nonce'], 'ktpwp_settings' ) ) {
+        if ( isset( $_POST['submit'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['ktpwp_settings_nonce'] ) ), 'ktpwp_settings' ) ) {
             self::save_settings();
         }
 

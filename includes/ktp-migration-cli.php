@@ -1,16 +1,14 @@
 <?php
-// WordPressの初期化
+/**
+ * WP-CLI 用のマイグレーションコマンド登録。
+ *
+ * 以前はここで wp-config.php を直接 require して、素の `php` からも実行できるように
+ * していたが、コアの読み込みファイルを直接 include するのは wp.org のガイドライン違反
+ * （2026-09-02 のレビューで指摘）。WP-CLI 経由なら ABSPATH は必ず定義済みなので、
+ * 直接アクセスは単に弾く。
+ */
 if ( ! defined( 'ABSPATH' ) ) {
-    // 現在のディレクトリがWordPressのルートディレクトリかチェック
-    if ( file_exists( __DIR__ . '/../../../../wp-config.php' ) ) {
-        require_once __DIR__ . '/../../../../wp-config.php';
-    } elseif ( file_exists( __DIR__ . '/../../../wp-config.php' ) ) {
-        require_once __DIR__ . '/../../../wp-config.php';
-    } else {
-        echo "WordPressのルートディレクトリが見つかりません。\n";
-        echo "現在のディレクトリ: " . __DIR__ . "\n";
-        exit( 1 );
-    }
+    exit; // Exit if accessed directly
 }
 
 // コマンドライン引数を取得

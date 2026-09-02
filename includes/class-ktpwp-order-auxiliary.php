@@ -594,7 +594,8 @@ class KTPWP_Order_Auxiliary {
 		$dest_name = wp_unique_filename( $dir, $orig );
 		$dest_path = $dir . '/' . $dest_name;
 
-		if ( ! @move_uploaded_file( $file['tmp_name'], $dest_path ) ) {
+		// move_uploaded_file() は WordPress のチェックを迂回するので使わない。
+		if ( ! class_exists( 'KTPWP_Upload' ) || KTPWP_Upload::receive( $file, $dir, $dest_name ) === null ) {
 			return 'upload_err';
 		}
 

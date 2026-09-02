@@ -15,7 +15,7 @@ function getAjaxConfigForDeliveryDates() {
     } else if (typeof ajaxurl !== 'undefined') {
         config.url = ajaxurl;
     } else {
-        config.url = '/wp-admin/admin-ajax.php';
+        config.url = ((typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) || (typeof ajaxurl !== 'undefined' ? ajaxurl : ''));
     }
     // ページで1つに統一（Head の ktpwp_ajax.nonce を最優先）
     if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonce) {
@@ -197,7 +197,7 @@ jQuery(document).ready(function($) {
         } else if (typeof ajaxurl !== 'undefined') {
             config.url = ajaxurl;
         } else {
-            config.url = '/wp-admin/admin-ajax.php';
+            config.url = ((typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) || (typeof ajaxurl !== 'undefined' ? ajaxurl : ''));
         }
         
         // nonceはページで1つに統一（Head/TabView の ktpwp_ajax.nonce を最優先。複数出ると検証失敗するため）

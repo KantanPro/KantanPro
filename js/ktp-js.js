@@ -800,8 +800,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 var xhr = new XMLHttpRequest();
                 var url = (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) ? ktpwp_ajax.ajax_url :
                     (typeof ajaxurl !== 'undefined') ? ajaxurl :
-                        window.location.origin + '/wp-admin/admin-ajax.php';
-                var params = 'action=send_staff_chat_message&order_id=' + orderId + '&message=' + encodeURIComponent(messageInput.value.trim());
+                        ((typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) || (typeof ajaxurl !== 'undefined' ? ajaxurl : ''));
+                var params = 'action=ktp_send_staff_chat_message&order_id=' + orderId + '&message=' + encodeURIComponent(messageInput.value.trim());
 
                 // nonceを追加
                 if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.staff_chat) {
@@ -928,9 +928,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 var url = (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) ? ktpwp_ajax.ajax_url :
                     (typeof ajaxurl !== 'undefined') ? ajaxurl :
-                        window.location.origin + '/wp-admin/admin-ajax.php';
+                        ((typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) || (typeof ajaxurl !== 'undefined' ? ajaxurl : ''));
 
-                var params = 'action=delete_staff_chat_message&message_id=' + encodeURIComponent(messageId);
+                var params = 'action=ktp_delete_staff_chat_message&message_id=' + encodeURIComponent(messageId);
                 if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.staff_chat) {
                     params += '&_ajax_nonce=' + ktpwp_ajax.nonces.staff_chat;
                 }

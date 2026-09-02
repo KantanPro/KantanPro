@@ -94,7 +94,7 @@ function ktpVendorUrl(name) {
             
             // Ajaxで最新のプレビューデータを取得
             $.ajax({
-                url: typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php',
+                url: typeof ajaxurl !== 'undefined' ? ajaxurl : ((typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) || (typeof ajaxurl !== 'undefined' ? ajaxurl : '')),
                 type: 'POST',
                 data: {
                     action: 'ktp_get_order_preview',
@@ -157,7 +157,7 @@ function ktpVendorUrl(name) {
     // デバッグ用: Ajaxハンドラーのテスト関数
     window.ktpTestOrderPreview = function(orderId) {
         $.ajax({
-            url: typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php',
+            url: typeof ajaxurl !== 'undefined' ? ajaxurl : ((typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) || (typeof ajaxurl !== 'undefined' ? ajaxurl : '')),
             type: 'POST',
             data: {
                 action: 'ktp_get_order_preview',

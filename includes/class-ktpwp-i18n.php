@@ -44,6 +44,13 @@ class KTPWP_I18n {
     /**
      * Constructor.
      */
+    /**
+     * 自分が開いた出力バッファの深さ。0 は未開始。
+     *
+     * @var int
+     */
+    private $buffer_level = 0;
+
     private function __construct() {
     }
 
@@ -58,6 +65,10 @@ class KTPWP_I18n {
         add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_script_bridge' ), 0 );
         add_action( 'template_redirect', array( $this, 'start_frontend_buffer' ), 0 );
         add_action( 'admin_init', array( $this, 'start_admin_buffer' ), 0 );
+        // 開いたバッファは自分で閉じる。PHP の自動フラッシュ任せにすると
+        // 「閉じていない ob_start」として扱われ、他のバッファと入れ子が崩れたときに
+        // 気づけない（wp.org レビュー 2026-09-02 の指摘）。
+        add_action( 'shutdown', array( $this, 'end_buffer' ), 0 );
     }
 
     /**
@@ -135,6 +146,7 @@ class KTPWP_I18n {
         }
 
         ob_start( array( $this, 'translate_output' ) );
+        $this->buffer_level = ob_get_level();
     }
 
     /**
@@ -153,6 +165,26 @@ class KTPWP_I18n {
         }
 
         ob_start( array( $this, 'translate_output' ) );
+        $this->buffer_level = ob_get_level();
+    }
+
+    /**
+     * 自分が開いた出力バッファを閉じる。
+     *
+     * ob_start() を開きっぱなしにせず、shutdown で明示的に畳む。
+     * **自分より深いレベルが残っているときは触らない。** 他のプラグインや
+     * テーマが開いたバッファを閉じると、そちらの出力が壊れる。
+     *
+     * @return void
+     */
+    public function end_buffer() {
+        if ( $this->buffer_level <= 0 ) {
+            return;
+        }
+        if ( ob_get_level() === $this->buffer_level ) {
+            ob_end_flush();
+        }
+        $this->buffer_level = 0;
     }
 
     /**
@@ -724,3 +756,4 @@ if ( ! function_exists( 'ktpwp_translate_fixed_text' ) ) {
         return KTPWP_I18n::get_instance()->translate_fixed_text( $text );
     }
 }
+

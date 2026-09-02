@@ -949,7 +949,7 @@ foreach ($supplier_ids as $supplier_id) {
             'frequency' => rand(1, 100)
         );
         
-        safe_echo("職能データ: " . json_encode($skill_data, JSON_UNESCAPED_UNICODE));
+        safe_echo("職能データ: " . wp_json_encode($skill_data, JSON_UNESCAPED_UNICODE));
         
         $insert_id = safe_db_insert(
             $wpdb->prefix . 'ktp_supplier_skills',

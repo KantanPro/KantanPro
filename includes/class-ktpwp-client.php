@@ -469,7 +469,7 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 					}
 					$search_results_html .= '</ul></div></div>';
 					// 閉じる＝検索モードへ。現在のリクエストURLからダイアログ用パラメータを除き検索モード用のみ付与
-					$close_redirect_base = home_url( wp_unslash( isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : '/' ) );
+					$close_redirect_base = home_url( esc_url_raw( wp_unslash( isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : '/' ) ) );
 					$close_redirect_base = remove_query_arg( array( 'multiple_results', 'search_query', 'message' ), $close_redirect_base );
 					$close_redirect_url = esc_url(
 						add_query_arg(
@@ -532,9 +532,9 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 			$list_footer = '';
 
 			// スタート位置を決める
-			$page_stage = $_GET['page_stage'] ?? '';
-			$page_start = $_GET['page_start'] ?? 0;
-			$flg = $_GET['flg'] ?? '';
+			$page_stage = isset( $_GET['page_stage'] ) ? sanitize_text_field( wp_unslash( $_GET['page_stage'] ) ) : '';
+			$page_start = isset( $_GET['page_start'] ) ? absint( wp_unslash( $_GET['page_start'] ) ) : 0;
+			$flg = isset( $_GET['flg'] ) ? sanitize_text_field( wp_unslash( $_GET['flg'] ) ) : '';
 			if ( $page_stage == '' ) {
 				$page_start = 0;
 			}
@@ -696,11 +696,11 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 							}
 							$order_info .= ' <span style="float:right;" class="status-' . $progress . '">' . $progress_label . '</span>';
 
-							$results[] = <<<END
-                       <a href="{$detail_url}">
-                           <div class="ktp_data_list_item">{$order_info}</div>
-                       </a>
-                       END;
+							// HEREDOC は使わない。URL はここでエスケープする。
+							// $order_info は上で組み立て済みの HTML なのでそのまま出す。
+							$results[] = '<a href="' . esc_url( $detail_url ) . '">'
+								. '<div class="ktp_data_list_item">' . $order_info . '</div>'
+								. '</a>';
 						}
 					} else {
 						$results[] = '<div class="ktp_data_list_item" style="padding: 15px 20px; background: linear-gradient(135deg, #fff3cd 0%, #fff8e1 100%); border-radius: 6px; margin: 15px 0; color: #856404; font-weight: 600; text-align: center; box-shadow: 0 3px 12px rgba(0,0,0,0.07); display: flex; align-items: center; justify-content: center; font-size: 16px; gap: 10px;">'
@@ -1346,7 +1346,7 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 			if ( isset( $_GET['message'] ) ) {
 				echo '<script>
             document.addEventListener("DOMContentLoaded", function() {
-                const messageType = "' . esc_js( $_GET['message'] ) . '";
+                const messageType = "' . esc_js( sanitize_text_field( wp_unslash( $_GET['message'] ) ) ) . '";
                 switch (messageType) {
                     case "updated":
                         showSuccessNotification("' . esc_js( __( '更新しました。', 'kantanpro' ) ) . '");
@@ -1582,8 +1582,8 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 					$pattern = isset( $field['pattern'] ) ? " pattern=\"{$field['pattern']}\"" : '';
 					$required = isset( $field['required'] ) && $field['required'] ? ' required' : '';
 					$fieldName = $field['name'];
-					$placeholder = isset( $field['placeholder'] ) ? ' placeholder="' . esc_attr__( $field['placeholder'], 'kantanpro' ) . '"' : '';
-					$label_i18n = esc_html__( $label, 'kantanpro' );
+					$placeholder = isset( $field['placeholder'] ) ? ' placeholder="' . esc_attr( $field['placeholder'] ) . '"' : '';
+					$label_i18n = esc_html( $label );
 					if ( $field['type'] === 'textarea' ) {
 						$fieldId = 'ktp-client-' . preg_replace( '/[^a-zA-Z0-9_-]/', '', $fieldName );
 						$data_forms .= "<div class=\"form-group\"><label for=\"{$fieldId}\">{$label_i18n}：</label> <textarea id=\"{$fieldId}\" name=\"{$fieldName}\"{$pattern}{$required}>" . esc_textarea( $value ) . '</textarea></div>';
@@ -1599,7 +1599,7 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 							} else {
 								$selected = ( $value === $opt_value ) ? ' selected' : '';
 							}
-							$options .= '<option value="' . esc_attr( $opt_value ) . '"' . $selected . '>' . ( $options_assoc ? esc_html( $opt_label ) : esc_html__( $opt_label, 'kantanpro' ) ) . '</option>';
+							$options .= '<option value="' . esc_attr( $opt_value ) . '"' . $selected . '>' . ( $options_assoc ? esc_html( $opt_label ) : esc_html( $opt_label ) ) . '</option>';
 						}
 						$fieldId = 'ktp-client-' . preg_replace( '/[^a-zA-Z0-9_-]/', '', $fieldName );
 						$data_forms .= "<div class=\"form-group\"><label for=\"{$fieldId}\">{$label_i18n}：</label> <select id=\"{$fieldId}\" name=\"{$fieldName}\"{$required}>{$options}</select></div>";
@@ -1608,7 +1608,7 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 						$contact_html = class_exists( 'KTPWP_External_Url' )
 							? KTPWP_External_Url::maybe_render_form_group(
 								$fieldName,
-								__( $label, 'kantanpro' ),
+								$label,
 								$fieldId,
 								$field,
 								$value,
@@ -1679,9 +1679,9 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 				// 検索クエリの値を取得（POSTが優先、次にGET）
 				$search_query_value = '';
 				if ( isset( $_POST['search_query'] ) ) {
-					$search_query_value = esc_attr( $_POST['search_query'] );
+					$search_query_value = esc_attr( sanitize_text_field( wp_unslash( $_POST['search_query'] ) ) );
 				} elseif ( isset( $_GET['search_query'] ) ) {
-					$search_query_value = esc_attr( urldecode( $_GET['search_query'] ) );
+					$search_query_value = esc_attr( sanitize_text_field( urldecode( wp_unslash( $_GET['search_query'] ) ) ) );
 				}
 
 				$data_forms .= '<div class="form-group" style="margin-bottom: 15px !important;">';
@@ -1831,13 +1831,13 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 
 					$pattern = isset( $field['pattern'] ) ? ' pattern="' . esc_attr( $field['pattern'] ) . '"' : '';
 					$required = isset( $field['required'] ) && $field['required'] ? ' required' : '';
-					$placeholder = isset( $field['placeholder'] ) ? ' placeholder="' . esc_attr__( $field['placeholder'], 'kantanpro' ) . '"' : '';
+					$placeholder = isset( $field['placeholder'] ) ? ' placeholder="' . esc_attr( $field['placeholder'] ) . '"' : '';
 
 					$fieldId = 'ktp-client-' . preg_replace( '/[^a-zA-Z0-9_-]/', '', $field['name'] );
 					$contact_html = class_exists( 'KTPWP_External_Url' )
 						? KTPWP_External_Url::maybe_render_form_group(
 							$field['name'],
-							__( $basic_field_labels[ $field_name ], 'kantanpro' ),
+							$basic_field_labels[ $field_name ],
 							$fieldId,
 							$field,
 							$value,
@@ -1849,7 +1849,7 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 					if ( $contact_html !== null ) {
 						$data_forms .= $contact_html;
 					} else {
-						$data_forms .= '<div class="form-group"><label for="' . $fieldId . '">' . esc_html__( $basic_field_labels[ $field_name ], 'kantanpro' ) . '：</label> <input id="' . $fieldId . '" type="' . esc_attr( $field['type'] ) . '" name="' . esc_attr( $field['name'] ) . '" value="' . esc_attr( $value ) . '"' . $pattern . $required . $placeholder . '></div>';
+						$data_forms .= '<div class="form-group"><label for="' . $fieldId . '">' . esc_html( $basic_field_labels[ $field_name ] ) . '：</label> <input id="' . $fieldId . '" type="' . esc_attr( $field['type'] ) . '" name="' . esc_attr( $field['name'] ) . '" value="' . esc_attr( $value ) . '"' . $pattern . $required . $placeholder . '></div>';
 					}
 				}
 
@@ -2018,11 +2018,11 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 
 					$pattern = isset( $field['pattern'] ) ? ' pattern="' . esc_attr( $field['pattern'] ) . '"' : '';
 					$required = isset( $field['required'] ) && $field['required'] ? ' required' : '';
-					$placeholder = isset( $field['placeholder'] ) ? ' placeholder="' . esc_attr__( $field['placeholder'], 'kantanpro' ) . '"' : '';
+					$placeholder = isset( $field['placeholder'] ) ? ' placeholder="' . esc_attr( $field['placeholder'] ) . '"' : '';
 
 					if ( $field['type'] === 'textarea' ) {
 						$fieldId = 'ktp-client-' . preg_replace( '/[^a-zA-Z0-9_-]/', '', $field['name'] );
-						$data_forms .= '<div class="form-group"><label for="' . $fieldId . '">' . esc_html__( $field_key, 'kantanpro' ) . '：</label> <textarea id="' . $fieldId . '" name="' . esc_attr( $field['name'] ) . '"' . $pattern . $required . '>' . esc_textarea( $value ) . '</textarea></div>';
+						$data_forms .= '<div class="form-group"><label for="' . $fieldId . '">' . esc_html( $field_key ) . '：</label> <textarea id="' . $fieldId . '" name="' . esc_attr( $field['name'] ) . '"' . $pattern . $required . '>' . esc_textarea( $value ) . '</textarea></div>';
 					} elseif ( $field['type'] === 'select' ) {
 						$options = '';
 						$options_assoc = ! empty( $field['options_assoc'] );
@@ -2031,16 +2031,16 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 								$opt_value = $opt_label;
 							}
 							$selected = $value === $opt_value ? ' selected' : '';
-							$options .= '<option value="' . esc_attr( $opt_value ) . '"' . $selected . '>' . ( $options_assoc ? esc_html( $opt_label ) : esc_html__( $opt_label, 'kantanpro' ) ) . '</option>';
+							$options .= '<option value="' . esc_attr( $opt_value ) . '"' . $selected . '>' . ( $options_assoc ? esc_html( $opt_label ) : esc_html( $opt_label ) ) . '</option>';
 						}
 						$fieldId = 'ktp-client-' . preg_replace( '/[^a-zA-Z0-9_-]/', '', $field['name'] );
-						$data_forms .= '<div class="form-group"><label for="' . $fieldId . '">' . esc_html__( $field_key, 'kantanpro' ) . '：</label> <select id="' . $fieldId . '" name="' . esc_attr( $field['name'] ) . '"' . $required . '>' . $options . '</select></div>';
+						$data_forms .= '<div class="form-group"><label for="' . $fieldId . '">' . esc_html( $field_key ) . '：</label> <select id="' . $fieldId . '" name="' . esc_attr( $field['name'] ) . '"' . $required . '>' . $options . '</select></div>';
 					} else {
 						$fieldId = 'ktp-client-' . preg_replace( '/[^a-zA-Z0-9_-]/', '', $field['name'] );
 						$contact_html = class_exists( 'KTPWP_External_Url' )
 							? KTPWP_External_Url::maybe_render_form_group(
 								$field['name'],
-								__( $field_key, 'kantanpro' ),
+								$field_key,
 								$fieldId,
 								$field,
 								$value,
@@ -2052,7 +2052,7 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 						if ( $contact_html !== null ) {
 							$data_forms .= $contact_html;
 						} else {
-							$data_forms .= '<div class="form-group"><label for="' . $fieldId . '">' . esc_html__( $field_key, 'kantanpro' ) . '：</label> <input id="' . $fieldId . '" type="' . esc_attr( $field['type'] ) . '" name="' . esc_attr( $field['name'] ) . '" value="' . esc_attr( $value ) . '"' . $pattern . $required . $placeholder . '></div>';
+							$data_forms .= '<div class="form-group"><label for="' . $fieldId . '">' . esc_html( $field_key ) . '：</label> <input id="' . $fieldId . '" type="' . esc_attr( $field['type'] ) . '" name="' . esc_attr( $field['name'] ) . '" value="' . esc_attr( $value ) . '"' . $pattern . $required . $placeholder . '></div>';
 						}
 					}
 				}
@@ -2392,18 +2392,21 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 			}
 
 			// Simplified JavaScript - matching Update_Table approach
-			$print = <<<END
+			// HEREDOC は使わない（wp.org ガイドライン）。出力される JS は変更していない。
+			// 埋め込む2つの変数はいずれも wp_json_encode() 済みで、そのまま JS リテラルになる。
+			ob_start();
+			?>
         <script>
             // var isPreviewOpen = false; // プレビュー機能は廃止
 
             function printContent() {
-                var printContent = $customer_preview_html;
+                var printContent = <?php echo $customer_preview_html; // wp_json_encode 済み ?>;
                 var printHTML = '<!DOCTYPE html>';
                 printHTML += '<html lang="' + (document.documentElement.lang || 'ja') + '">';
                 printHTML += '<head>';
                 printHTML += '<meta charset="UTF-8">';
                 printHTML += '<meta name="viewport" content="width=device-width, initial-scale=1.0">';
-                printHTML += '<title>' + $customer_print_title + '</title>';
+                printHTML += '<title>' + <?php echo $customer_print_title; // wp_json_encode 済み ?> + '</title>';
                 printHTML += '<style>';
                 printHTML += '* { margin: 0; padding: 0; box-sizing: border-box; }';
                 printHTML += 'body { font-family: "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif; font-size: 12px; line-height: 1.4; color: #333; background: white; padding: 20px; }';
@@ -2539,7 +2542,7 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
             //         previewButton.style.borderColor = '#ddd';
             //         isPreviewOpen = false;
             //     } else {
-            //         var printContent = $customer_preview_html;
+            //         var printContent = <?php echo $customer_preview_html; // wp_json_encode 済み ?>;
 
             //         if (!previewWindow) {
             //             previewWindow = document.createElement('div');
@@ -2565,8 +2568,8 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
             //     }
             // }
         </script>
-        END;
-
+			<?php
+			$print = ob_get_clean();
 			// コンテンツを返す
 			// controller, workflow（受注書作成ボタン）を$print直後に追加
 			// controller_html, workflow_htmlが重複しないようにcontroller_htmlは1回のみ出力
@@ -2643,18 +2646,18 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 					$prev_args['view_mode'] = 'order_history';
 					$prev_args['data_id'] = $client_id;
 					if ( isset( $_GET['order_sort_by'] ) ) {
-						$prev_args['order_sort_by'] = $_GET['order_sort_by'];
+						$prev_args['order_sort_by'] = rawurlencode( sanitize_text_field( wp_unslash( $_GET['order_sort_by'] ) ) );
 					}
 					if ( isset( $_GET['order_sort_order'] ) ) {
-						$prev_args['order_sort_order'] = $_GET['order_sort_order'];
+						$prev_args['order_sort_order'] = rawurlencode( sanitize_text_field( wp_unslash( $_GET['order_sort_order'] ) ) );
 					}
 				} else {
 					// 通常の顧客リストモード
 					if ( isset( $_GET['sort_by'] ) ) {
-						$prev_args['sort_by'] = $_GET['sort_by'];
+						$prev_args['sort_by'] = rawurlencode( sanitize_text_field( wp_unslash( $_GET['sort_by'] ) ) );
 					}
 					if ( isset( $_GET['sort_order'] ) ) {
-						$prev_args['sort_order'] = $_GET['sort_order'];
+						$prev_args['sort_order'] = rawurlencode( sanitize_text_field( wp_unslash( $_GET['sort_order'] ) ) );
 					}
 				}
 
@@ -2680,18 +2683,18 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 					$first_args['view_mode'] = 'order_history';
 					$first_args['data_id'] = $client_id;
 					if ( isset( $_GET['order_sort_by'] ) ) {
-						$first_args['order_sort_by'] = $_GET['order_sort_by'];
+						$first_args['order_sort_by'] = rawurlencode( sanitize_text_field( wp_unslash( $_GET['order_sort_by'] ) ) );
 					}
 					if ( isset( $_GET['order_sort_order'] ) ) {
-						$first_args['order_sort_order'] = $_GET['order_sort_order'];
+						$first_args['order_sort_order'] = rawurlencode( sanitize_text_field( wp_unslash( $_GET['order_sort_order'] ) ) );
 					}
 				} else {
 					// 通常の顧客リストモード
 					if ( isset( $_GET['sort_by'] ) ) {
-						$first_args['sort_by'] = $_GET['sort_by'];
+						$first_args['sort_by'] = rawurlencode( sanitize_text_field( wp_unslash( $_GET['sort_by'] ) ) );
 					}
 					if ( isset( $_GET['sort_order'] ) ) {
-						$first_args['sort_order'] = $_GET['sort_order'];
+						$first_args['sort_order'] = rawurlencode( sanitize_text_field( wp_unslash( $_GET['sort_order'] ) ) );
 					}
 				}
 
@@ -2717,18 +2720,18 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 					$page_args['view_mode'] = 'order_history';
 					$page_args['data_id'] = $client_id;
 					if ( isset( $_GET['order_sort_by'] ) ) {
-						$page_args['order_sort_by'] = $_GET['order_sort_by'];
+						$page_args['order_sort_by'] = rawurlencode( sanitize_text_field( wp_unslash( $_GET['order_sort_by'] ) ) );
 					}
 					if ( isset( $_GET['order_sort_order'] ) ) {
-						$page_args['order_sort_order'] = $_GET['order_sort_order'];
+						$page_args['order_sort_order'] = rawurlencode( sanitize_text_field( wp_unslash( $_GET['order_sort_order'] ) ) );
 					}
 				} else {
 					// 通常の顧客リストモード
 					if ( isset( $_GET['sort_by'] ) ) {
-						$page_args['sort_by'] = $_GET['sort_by'];
+						$page_args['sort_by'] = rawurlencode( sanitize_text_field( wp_unslash( $_GET['sort_by'] ) ) );
 					}
 					if ( isset( $_GET['sort_order'] ) ) {
-						$page_args['sort_order'] = $_GET['sort_order'];
+						$page_args['sort_order'] = rawurlencode( sanitize_text_field( wp_unslash( $_GET['sort_order'] ) ) );
 					}
 				}
 
@@ -2759,18 +2762,18 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 					$last_args['view_mode'] = 'order_history';
 					$last_args['data_id'] = $client_id;
 					if ( isset( $_GET['order_sort_by'] ) ) {
-						$last_args['order_sort_by'] = $_GET['order_sort_by'];
+						$last_args['order_sort_by'] = rawurlencode( sanitize_text_field( wp_unslash( $_GET['order_sort_by'] ) ) );
 					}
 					if ( isset( $_GET['order_sort_order'] ) ) {
-						$last_args['order_sort_order'] = $_GET['order_sort_order'];
+						$last_args['order_sort_order'] = rawurlencode( sanitize_text_field( wp_unslash( $_GET['order_sort_order'] ) ) );
 					}
 				} else {
 					// 通常の顧客リストモード
 					if ( isset( $_GET['sort_by'] ) ) {
-						$last_args['sort_by'] = $_GET['sort_by'];
+						$last_args['sort_by'] = rawurlencode( sanitize_text_field( wp_unslash( $_GET['sort_by'] ) ) );
 					}
 					if ( isset( $_GET['sort_order'] ) ) {
-						$last_args['sort_order'] = $_GET['sort_order'];
+						$last_args['sort_order'] = rawurlencode( sanitize_text_field( wp_unslash( $_GET['sort_order'] ) ) );
 					}
 				}
 
@@ -2792,18 +2795,18 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 					$next_args['view_mode'] = 'order_history';
 					$next_args['data_id'] = $client_id;
 					if ( isset( $_GET['order_sort_by'] ) ) {
-						$next_args['order_sort_by'] = $_GET['order_sort_by'];
+						$next_args['order_sort_by'] = rawurlencode( sanitize_text_field( wp_unslash( $_GET['order_sort_by'] ) ) );
 					}
 					if ( isset( $_GET['order_sort_order'] ) ) {
-						$next_args['order_sort_order'] = $_GET['order_sort_order'];
+						$next_args['order_sort_order'] = rawurlencode( sanitize_text_field( wp_unslash( $_GET['order_sort_order'] ) ) );
 					}
 				} else {
 					// 通常の顧客リストモード
 					if ( isset( $_GET['sort_by'] ) ) {
-						$next_args['sort_by'] = $_GET['sort_by'];
+						$next_args['sort_by'] = rawurlencode( sanitize_text_field( wp_unslash( $_GET['sort_by'] ) ) );
 					}
 					if ( isset( $_GET['sort_order'] ) ) {
-						$next_args['sort_order'] = $_GET['sort_order'];
+						$next_args['sort_order'] = rawurlencode( sanitize_text_field( wp_unslash( $_GET['sort_order'] ) ) );
 					}
 				}
 
@@ -2866,10 +2869,10 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 
 				// 現在のソート順を維持
 				if ( isset( $_GET['order_sort_by'] ) ) {
-					$prev_args['order_sort_by'] = $_GET['order_sort_by'];
+					$prev_args['order_sort_by'] = rawurlencode( sanitize_text_field( wp_unslash( $_GET['order_sort_by'] ) ) );
 				}
 				if ( isset( $_GET['order_sort_order'] ) ) {
-					$prev_args['order_sort_order'] = $_GET['order_sort_order'];
+					$prev_args['order_sort_order'] = rawurlencode( sanitize_text_field( wp_unslash( $_GET['order_sort_order'] ) ) );
 				}
 
 				$prev_url = esc_url( add_query_arg( $prev_args, $base_page_url ) );
@@ -2893,10 +2896,10 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 
 				// 現在のソート順を維持
 				if ( isset( $_GET['order_sort_by'] ) ) {
-					$first_args['order_sort_by'] = $_GET['order_sort_by'];
+					$first_args['order_sort_by'] = rawurlencode( sanitize_text_field( wp_unslash( $_GET['order_sort_by'] ) ) );
 				}
 				if ( isset( $_GET['order_sort_order'] ) ) {
-					$first_args['order_sort_order'] = $_GET['order_sort_order'];
+					$first_args['order_sort_order'] = rawurlencode( sanitize_text_field( wp_unslash( $_GET['order_sort_order'] ) ) );
 				}
 
 				$first_url = esc_url( add_query_arg( $first_args, $base_page_url ) );
@@ -2920,10 +2923,10 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 
 				// 現在のソート順を維持
 				if ( isset( $_GET['order_sort_by'] ) ) {
-					$page_args['order_sort_by'] = $_GET['order_sort_by'];
+					$page_args['order_sort_by'] = rawurlencode( sanitize_text_field( wp_unslash( $_GET['order_sort_by'] ) ) );
 				}
 				if ( isset( $_GET['order_sort_order'] ) ) {
-					$page_args['order_sort_order'] = $_GET['order_sort_order'];
+					$page_args['order_sort_order'] = rawurlencode( sanitize_text_field( wp_unslash( $_GET['order_sort_order'] ) ) );
 				}
 
 				$page_url = esc_url( add_query_arg( $page_args, $base_page_url ) );
@@ -2952,10 +2955,10 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 
 				// 現在のソート順を維持
 				if ( isset( $_GET['order_sort_by'] ) ) {
-					$last_args['order_sort_by'] = $_GET['order_sort_by'];
+					$last_args['order_sort_by'] = rawurlencode( sanitize_text_field( wp_unslash( $_GET['order_sort_by'] ) ) );
 				}
 				if ( isset( $_GET['order_sort_order'] ) ) {
-					$last_args['order_sort_order'] = $_GET['order_sort_order'];
+					$last_args['order_sort_order'] = rawurlencode( sanitize_text_field( wp_unslash( $_GET['order_sort_order'] ) ) );
 				}
 
 				$last_url = esc_url( add_query_arg( $last_args, $base_page_url ) );
@@ -2975,10 +2978,10 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 
 				// 現在のソート順を維持
 				if ( isset( $_GET['order_sort_by'] ) ) {
-					$next_args['order_sort_by'] = $_GET['order_sort_by'];
+					$next_args['order_sort_by'] = rawurlencode( sanitize_text_field( wp_unslash( $_GET['order_sort_by'] ) ) );
 				}
 				if ( isset( $_GET['order_sort_order'] ) ) {
-					$next_args['order_sort_order'] = $_GET['order_sort_order'];
+					$next_args['order_sort_order'] = rawurlencode( sanitize_text_field( wp_unslash( $_GET['order_sort_order'] ) ) );
 				}
 
 				$next_url = esc_url( add_query_arg( $next_args, $base_page_url ) );

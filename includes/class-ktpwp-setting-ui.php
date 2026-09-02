@@ -20,22 +20,29 @@ class KTPWP_Setting_UI {
      * @return string HTML content for the tab
      */
     public static function render_tab_view( $tab_name ) {
-        $active_tab = isset( $_COOKIE['active_tab'] ) ? $_COOKIE['active_tab'] : 'Atena';
-        $atenaClass = $active_tab == 'Atena' ? 'active' : '';
+        // クッキーの値をそのまま HTML 属性に入れていたため XSS になっていた。
+        // 想定される値だけを許可し、それ以外は既定値に倒す。
+        $allowed_tabs = array( 'Atena' );
+        $active_tab   = isset( $_COOKIE['active_tab'] )
+            ? sanitize_text_field( wp_unslash( $_COOKIE['active_tab'] ) )
+            : 'Atena';
+        if ( ! in_array( $active_tab, $allowed_tabs, true ) ) {
+            $active_tab = 'Atena';
+        }
+        $atenaClass = ( 'Atena' === $active_tab ) ? 'active' : '';
 
-        $tab_buttons = <<<BUTTONS
-        <div class="controller" data-active-tab="$active_tab">
-                <button class="tablinks {$atenaClass}" onclick="switchTab(event, 'Atena');" title="印刷テンプレート" style="padding: 6px 10px; font-size: 12px;">
-                    <span class="material-symbols-outlined" aria-label="印刷テンプレート">print_add</span>
-                </button>
-                <button id="ktpwp-preview-btn" title="プレビュー" style="padding: 6px 10px; font-size: 12px;">
-                    <span class="material-symbols-outlined" aria-label="プレビュー">preview</span>
-                </button>
-        </div>
-
-        <div class="workflow">
-        </div>
-        BUTTONS;
+        // HEREDOC は使わない（wp.org ガイドライン）。変数はここでエスケープする。
+        $tab_buttons = '<div class="controller" data-active-tab="' . esc_attr( $active_tab ) . '">'
+            . '<button class="tablinks ' . esc_attr( $atenaClass ) . '" onclick="switchTab(event, \'Atena\');"'
+            . ' title="' . esc_attr__( '印刷テンプレート', 'kantanpro' ) . '" style="padding: 6px 10px; font-size: 12px;">'
+            . '<span class="material-symbols-outlined" aria-label="' . esc_attr__( '印刷テンプレート', 'kantanpro' ) . '">print_add</span>'
+            . '</button>'
+            . '<button id="ktpwp-preview-btn" title="' . esc_attr__( 'プレビュー', 'kantanpro' ) . '"'
+            . ' style="padding: 6px 10px; font-size: 12px;">'
+            . '<span class="material-symbols-outlined" aria-label="' . esc_attr__( 'プレビュー', 'kantanpro' ) . '">preview</span>'
+            . '</button>'
+            . '</div>'
+            . '<div class="workflow"></div>';
 
         $tab_script = <<<SCRIPT
         <script>

@@ -110,7 +110,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 			}
 
 			// Verify nonce for security
-			if ( ! isset( $_POST['_ktp_service_nonce'] ) || ! wp_verify_nonce( $_POST['_ktp_service_nonce'], 'ktp_service_action' ) ) {
+			if ( ! isset( $_POST['_ktp_service_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_ktp_service_nonce'] ) ), 'ktp_service_action' ) ) {
 				wp_die( esc_html__( 'Security check failed.', 'kantanpro' ) );
 			}
 
@@ -296,7 +296,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 			$table_name = $wpdb->prefix . 'ktp_' . sanitize_key( $tab_name );
 
 			// nonceを検証
-			if ( ! isset( $_POST['_ktp_service_nonce'] ) || ! wp_verify_nonce( $_POST['_ktp_service_nonce'], 'ktp_service_action' ) ) {
+			if ( ! isset( $_POST['_ktp_service_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_ktp_service_nonce'] ) ), 'ktp_service_action' ) ) {
 				wp_die( esc_html__( 'Nonce verification failed.', 'kantanpro' ) );
 			}
 
@@ -432,7 +432,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 			$table_name = $wpdb->prefix . 'ktp_' . sanitize_key( $tab_name );
 
 			// nonceを検証
-			if ( ! isset( $_POST['_ktp_service_nonce'] ) || ! wp_verify_nonce( $_POST['_ktp_service_nonce'], 'ktp_service_action' ) ) {
+			if ( ! isset( $_POST['_ktp_service_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_ktp_service_nonce'] ) ), 'ktp_service_action' ) ) {
 				wp_die( esc_html__( 'Nonce verification failed.', 'kantanpro' ) );
 			}
 
@@ -593,7 +593,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 				wp_die( esc_html__( 'Invalid request method.', 'kantanpro' ) );
 			}
 
-			if ( ! isset( $_POST['_ktp_service_nonce'] ) || ! wp_verify_nonce( $_POST['_ktp_service_nonce'], 'ktp_service_action' ) ) {
+			if ( ! isset( $_POST['_ktp_service_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_ktp_service_nonce'] ) ), 'ktp_service_action' ) ) {
 				wp_die( esc_html__( 'Nonce verification failed.', 'kantanpro' ) );
 			}
 
@@ -635,7 +635,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 			$table_name = $wpdb->prefix . 'ktp_' . sanitize_key( $tab_name );
 
 			// nonceを検証
-			if ( ! isset( $_POST['_ktp_service_nonce'] ) || ! wp_verify_nonce( $_POST['_ktp_service_nonce'], 'ktp_service_action' ) ) {
+			if ( ! isset( $_POST['_ktp_service_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_ktp_service_nonce'] ) ), 'ktp_service_action' ) ) {
 				wp_die( esc_html__( 'Nonce verification failed.', 'kantanpro' ) );
 			}
 
@@ -657,7 +657,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 				// リダイレクト先を参照元または現在のリクエストURLから組み立て（不正なリダイレクトを防ぐ）
 				$redirect_base = wp_get_referer();
 				if ( ! $redirect_base || $redirect_base === '' ) {
-					$redirect_base = home_url( wp_unslash( isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : '/' ) );
+					$redirect_base = home_url( esc_url_raw( wp_unslash( isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : '/' ) ) );
 				}
 				if ( ! $redirect_base ) {
 					$redirect_base = KTPWP_Main::get_current_page_base_url();
@@ -702,7 +702,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 					$_SESSION['ktp_service_search_mode'] = true;
 					$redirect_base = wp_get_referer();
 					if ( ! $redirect_base || $redirect_base === '' ) {
-						$redirect_base = home_url( wp_unslash( isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : '/' ) );
+						$redirect_base = home_url( esc_url_raw( wp_unslash( isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : '/' ) ) );
 					}
 					if ( ! $redirect_base ) {
 						$current_page_id = get_queried_object_id();
@@ -734,7 +734,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 
 					$redirect_base = wp_get_referer();
 					if ( ! $redirect_base || $redirect_base === '' ) {
-						$redirect_base = home_url( wp_unslash( isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : '/' ) );
+						$redirect_base = home_url( esc_url_raw( wp_unslash( isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : '/' ) ) );
 					}
 					if ( ! $redirect_base ) {
 						$current_page_id = get_queried_object_id();
@@ -1899,7 +1899,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 				ktpwp_safe_session_start();
 			}
 
-			$uri_hash    = md5( isset( $_SERVER['REQUEST_URI'] ) ? (string) wp_unslash( $_SERVER['REQUEST_URI'] ) : '' );
+			$uri_hash    = md5( isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '' );
 			$session_key = 'ktp_freq_view_service';
 			$dedup_token = 'service:' . $service_id . ':' . $uri_hash;
 			if ( isset( $_SESSION[ $session_key ] ) && $_SESSION[ $session_key ] === $dedup_token ) {

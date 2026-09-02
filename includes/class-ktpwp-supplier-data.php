@@ -162,7 +162,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
 					$search_query = isset( $post_data['search_query'] ) ? sanitize_text_field( $post_data['search_query'] ) : '';
 					$redirect_base = wp_get_referer();
 					if ( ! $redirect_base || $redirect_base === '' ) {
-						$redirect_base = home_url( wp_unslash( isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : '/' ) );
+						$redirect_base = home_url( esc_url_raw( wp_unslash( isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : '/' ) ) );
 					}
 					if ( ! $redirect_base ) {
 						$redirect_base = KTPWP_Main::get_current_page_base_url();

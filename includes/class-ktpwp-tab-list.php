@@ -78,7 +78,7 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 			$keep_params = array( 'progress', 'page_start', 'page_stage', 'flg', 'list_type' );
 			foreach ( $keep_params as $key ) {
 				if ( isset( $_GET[ $key ] ) && (string) $_GET[ $key ] !== '' ) {
-					$content .= '<input type="hidden" name="' . esc_attr( $key ) . '" value="' . esc_attr( wp_unslash( $_GET[ $key ] ) ) . '">';
+					$content .= '<input type="hidden" name="' . esc_attr( $key ) . '" value="' . esc_attr( sanitize_text_field( wp_unslash( $_GET[ $key ] ) ) ) . '">';
 				}
 			}
 			$search_placeholder = ( $list_search !== '' ) ? $list_search : __( 'フリーワード', 'kantanpro' );
@@ -955,7 +955,7 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 						KTPWP_Order_Progress_Effects::after_progress_updated( $update_id, $update_progress );
 					}
 					// リダイレクトで再読み込み（POSTリダブミット防止）
-					wp_redirect( esc_url_raw( $_SERVER['REQUEST_URI'] ) );
+					wp_redirect( esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) ) );
 					exit;
 				}
 			}

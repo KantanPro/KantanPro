@@ -674,14 +674,14 @@ if ( ! class_exists( 'KTPWP_Staff_Chat' ) ) {
 			$ajax_data = KTPWP_Nonce_Manager::get_instance()->get_unified_ajax_config();
 
 			$script = '<script type="text/javascript">';
-			$script .= 'window.ktpwp_ajax = ' . json_encode( $ajax_data ) . ';';
-			$script .= 'window.ktp_ajax_object = ' . json_encode( $ajax_data ) . ';';
-			$script .= 'window.ajaxurl = ' . json_encode( $ajax_data['ajax_url'] ) . ';';
+			$script .= 'window.ktpwp_ajax = ' . wp_json_encode( $ajax_data ) . ';';
+			$script .= 'window.ktp_ajax_object = ' . wp_json_encode( $ajax_data ) . ';';
+			$script .= 'window.ajaxurl = ' . wp_json_encode( $ajax_data['ajax_url'] ) . ';';
 			$script .= 'console.log("StaffChat: AJAX設定を出力 (unified nonce)", window.ktpwp_ajax);';
 			$script .= '</script>';
 
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( 'KTPWP StaffChat: AJAX config output with unified nonce: ' . json_encode( $ajax_data ) );
+				error_log( 'KTPWP StaffChat: AJAX config output with unified nonce: ' . wp_json_encode( $ajax_data ) );
 			}
 
 			$script_output = true;

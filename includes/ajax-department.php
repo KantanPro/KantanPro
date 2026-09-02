@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 function ktp_add_department_ajax() {
     // セキュリティチェック
-    if ( ! wp_verify_nonce( $_POST['nonce'], 'ktp_department_nonce' ) ) {
+    if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'ktp_department_nonce' ) ) {
         wp_die( esc_html__( 'セキュリティチェックに失敗しました。', 'kantanpro' ) );
     }
 
@@ -60,7 +60,7 @@ function ktp_add_department_ajax() {
  */
 function ktp_delete_department_ajax() {
     // セキュリティチェック
-    if ( ! wp_verify_nonce( $_POST['nonce'], 'ktp_department_nonce' ) ) {
+    if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'ktp_department_nonce' ) ) {
         wp_die( esc_html__( 'セキュリティチェックに失敗しました。', 'kantanpro' ) );
     }
 
@@ -106,7 +106,7 @@ function ktp_update_department_selection_ajax() {
     }
     
     // セキュリティチェック
-    if ( ! wp_verify_nonce( $_POST['nonce'], 'ktp_department_nonce' ) ) {
+    if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'ktp_department_nonce' ) ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
             error_log( 'KTPWP AJAX: Nonce verification failed' );
         }

@@ -75,7 +75,9 @@ if ( ! class_exists( 'KTPWP_Order_Contract_Draft_Resolver' ) ) {
 				'billing_cycle_label'  => class_exists( 'KTPWP_Contract_Billing_Cycle' )
 					? KTPWP_Contract_Billing_Cycle::get_label( $billing_cycle )
 					: $billing_cycle,
-				'from_web_application' => KTPWP_Public_Product_Order_Memo::is_web_application( $order->memo ?? '' ),
+				'from_web_application' => class_exists( 'KTPWP_Public_Product_Order_Memo' )
+					? KTPWP_Public_Product_Order_Memo::is_web_application( $order->memo ?? '' )
+					: false,
 				'initial_fees'         => $initial_fees,
 				'recurring_items'      => $recurring_items,
 				'client_id'            => (int) ( $order->client_id ?? 0 ),
@@ -118,7 +120,10 @@ if ( ! class_exists( 'KTPWP_Order_Contract_Draft_Resolver' ) ) {
 		 * @return object|null
 		 */
 		private function resolve_service( $order ) {
-			$service_id = KTPWP_Public_Product_Order_Memo::parse_service_id( $order->memo ?? '' );
+			// 公開商品まわりは配布版によっては同梱されないので、存在確認してから呼ぶ。
+			$service_id = class_exists( 'KTPWP_Public_Product_Order_Memo' )
+				? KTPWP_Public_Product_Order_Memo::parse_service_id( $order->memo ?? '' )
+				: null;
 			if ( $service_id !== null ) {
 				$service = $this->get_service_by_id( $service_id );
 				if ( $service ) {
