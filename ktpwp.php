@@ -3,7 +3,7 @@
  * Plugin Name: KantanPro
  * Plugin URI: https://www.kantanpro.com/
  * Description: スモールビジネスのための販売支援ツール。ショートコード[ktpwp_all_tab]を固定ページに設置してください。
- * Version: 1.3.36
+ * Version: 1.3.37
  * Author: KantanPro
  * Author URI: https://www.kantanpro.com/kantanpro-page
  * License: GPL v2 or later
@@ -135,17 +135,45 @@ require_once plugin_dir_path( __FILE__ ) . 'includes/class-ktpwp-edition.php';
 
 /**
  * WordPress 6.7+ の翻訳「早期読み込み」Notice を抑制
- * WooCommerce / WooCommerce for Japan / WooCommerce PayPal Payments 等が init 前に
- * 翻訳を読むと Notice が出力され "headers already sent" でリダイレクトが失敗するため、
- * _load_textdomain_just_in_time の doing_it_wrong を出さないようにする。
+ *
+ * WooCommerce / Google for WooCommerce / WooPayments / WooCommerce PayPal Payments 等が
+ * init 前に翻訳を読むと Notice が出力され、"headers already sent" でリダイレクトが失敗したり、
+ * フロントや REST の応答に HTML が混入したりするため、_load_textdomain_just_in_time の
+ * doing_it_wrong だけを抑制する。
+ *
+ * 判定にメッセージの英語表現を使わないこと。Notice 本文は __() を通るので、
+ * 日本語サイトでは「翻訳の読み込みが早すぎました」になり英語一致は必ず失敗する。
+ * ドメイン名は <code>...</code> で埋め込まれ翻訳されないため、そこから取り出して判定する。
+ * 自プラグインのドメインは抑制せず、こちらの実装ミスには気づけるようにしておく。
  */
 add_filter(
 	'doing_it_wrong_trigger_error',
 	function ( $trigger, $function_name, $message, $version ) {
-		if ( $function_name === '_load_textdomain_just_in_time' && strpos( $message, 'triggered too early' ) !== false ) {
-			return false;
+		if ( $function_name !== '_load_textdomain_just_in_time' ) {
+			return $trigger;
 		}
-		return $trigger;
+
+		// 翻訳によっては %1$s(ドメイン) と %2$s(init) の順序が入れ替わるため、init 以外の最初の <code> を採る。
+		$domain = '';
+		if ( preg_match_all( '#<code>([^<]+)</code>#', (string) $message, $matches ) ) {
+			foreach ( $matches[1] as $candidate ) {
+				if ( $candidate !== 'init' ) {
+					$domain = $candidate;
+					break;
+				}
+			}
+		}
+
+		// 自分たちの翻訳が早すぎる場合は握り潰さない（直すべきはこちらのコードなので）。
+		if ( in_array( $domain, array( 'ktpwp', 'kantanpro' ), true ) ) {
+			return $trigger;
+		}
+
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG && $domain !== '' ) {
+			error_log( sprintf( '%s: 他プラグインの翻訳早期読み込み Notice を抑制しました (domain: %s)', 'KantanPro', $domain ) );
+		}
+
+		return false;
 	},
 	10,
 	4

@@ -4,7 +4,7 @@ Tags: invoice, crm, order management, quotation, business
 Requires at least: 5.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.3.36
+Stable tag: 1.3.37
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -147,6 +147,12 @@ fields. It only sends anything if you have entered your own OpenAI API key.
 == Changelog ==
 
 The complete history is in `changelog.txt`, bundled with the plugin.
+
+= 1.3.37 - 2026-09-04 =
+* Fixed the notice suppression for the "translation loading was triggered too early"
+  warning raised by other plugins (WooCommerce and friends). It matched on the English
+  wording, so on Japanese sites the notice was still printed into the page. It now
+  identifies the text domain instead, and never suppresses this plugin's own domain.
 
 = 1.3.36 - 2026-09-03 =
 * Rolls the 1.3.32 through 1.3.35 fixes up into a release for the self-hosted
