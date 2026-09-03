@@ -4,7 +4,7 @@ Tags: invoice, crm, order management, quotation, business
 Requires at least: 5.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.3.35
+Stable tag: 1.3.36
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -148,6 +148,10 @@ fields. It only sends anything if you have entered your own OpenAI API key.
 
 The complete history is in `changelog.txt`, bundled with the plugin.
 
+= 1.3.36 - 2026-09-03 =
+* Rolls the 1.3.32 through 1.3.35 fixes up into a release for the self-hosted
+  (GitHub) distribution. No code changes in this version itself.
+
 = 1.3.35 - 2026-09-03 =
 * Added a direct-access guard to the three class files that were missing one.
 
@@ -220,6 +224,10 @@ The complete history is in `changelog.txt`, bundled with the plugin.
   now registered through `wp_add_inline_style()` and `wp_add_inline_script()`.
 
 == Upgrade Notice ==
+
+= 1.3.36 =
+Rollup release for the self-hosted distribution: the 1.3.32-1.3.35 fixes, including the
+jsPDF update and the move to the WordPress script and style APIs.
 
 = 1.3.32 =
 Inline script and style output moved to the WordPress APIs; unprefixed and undefined
