@@ -1133,15 +1133,15 @@ class KTPWP_Assets {
 
         $ajax_data = $this->get_unified_ajax_config();
 
-        echo '<script type="text/javascript">';
-        echo 'window.ktpwp_ajax = ' . wp_json_encode( $ajax_data ) . ';';
-        echo 'window.ktp_ajax_object = ' . wp_json_encode( $ajax_data ) . ';';
-        echo 'window.ktp_ajax_nonce = ' . wp_json_encode( $ajax_data['nonce'] ) . ';';
-        echo 'window.ajaxurl = ' . wp_json_encode( $ajax_data['ajax_url'] ) . ';';
-        if ( defined( 'KANTANPRO_VERBOSE_CONSOLE' ) && KANTANPRO_VERBOSE_CONSOLE ) {
-            echo 'console.log("Head: AJAX設定を出力", window.ktpwp_ajax);';
-        }
-        echo '</script>';
+        // 生の <script> を出さず WordPress のスクリプトキューに載せる
+        ktpwp_add_inline_script(
+            'window.ktpwp_ajax = ' . wp_json_encode( $ajax_data ) . ';'
+            . 'window.ktp_ajax_object = ' . wp_json_encode( $ajax_data ) . ';'
+            . 'window.ktp_ajax_nonce = ' . wp_json_encode( $ajax_data['nonce'] ) . ';'
+            . 'window.ajaxurl = ' . wp_json_encode( $ajax_data['ajax_url'] ) . ';'
+            . ( ( defined( 'KANTANPRO_VERBOSE_CONSOLE' ) && KANTANPRO_VERBOSE_CONSOLE )
+                ? 'console.log("Head: AJAX設定を出力", window.ktpwp_ajax);' : '' )
+        );
 
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
             error_log( 'KTPWP Assets: AJAX config output in head (debug mode): ' . wp_json_encode( $ajax_data ) );
@@ -1155,18 +1155,19 @@ class KTPWP_Assets {
         if ( ! $this->should_enqueue_frontend_assets() ) {
             return;
         }
-        echo '<script type="text/javascript">';
-        echo 'if (typeof window.ktpwp_ajax === "undefined") {';
         $ajax_data = $this->get_unified_ajax_config();
-        echo 'window.ktpwp_ajax = ' . wp_json_encode( $ajax_data ) . ';';
-        echo 'window.ktp_ajax_object = ' . wp_json_encode( $ajax_data ) . ';';
-        echo 'window.ktp_ajax_nonce = ' . wp_json_encode( $ajax_data['nonce'] ) . ';';
-        echo 'window.ajaxurl = ' . wp_json_encode( $ajax_data['ajax_url'] ) . ';';
-        if ( defined( 'KANTANPRO_VERBOSE_CONSOLE' ) && KANTANPRO_VERBOSE_CONSOLE ) {
-            echo 'console.log("Footer fallback: AJAX設定を出力", window.ktpwp_ajax);';
-        }
-        echo '}';
-        echo '</script>';
+
+        // 生の <script> を出さず WordPress のスクリプトキューに載せる
+        ktpwp_add_inline_script(
+            'if (typeof window.ktpwp_ajax === "undefined") {'
+            . 'window.ktpwp_ajax = ' . wp_json_encode( $ajax_data ) . ';'
+            . 'window.ktp_ajax_object = ' . wp_json_encode( $ajax_data ) . ';'
+            . 'window.ktp_ajax_nonce = ' . wp_json_encode( $ajax_data['nonce'] ) . ';'
+            . 'window.ajaxurl = ' . wp_json_encode( $ajax_data['ajax_url'] ) . ';'
+            . ( ( defined( 'KANTANPRO_VERBOSE_CONSOLE' ) && KANTANPRO_VERBOSE_CONSOLE )
+                ? 'console.log("Footer fallback: AJAX設定を出力", window.ktpwp_ajax);' : '' )
+            . '}'
+        );
 
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
             error_log( 'KTPWP Assets: Fallback AJAX config output in footer (debug mode)' );

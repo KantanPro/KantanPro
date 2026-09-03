@@ -635,7 +635,8 @@ class KTPWP_Shortcodes {
                 . '</div>'
                 . '</div>';
 
-            $logged_in_users_html .= '<script>(function(){'
+            // 生の <script> を出さずフッターのスクリプトに載せる（wp.org ガイドライン）
+            ktpwp_add_inline_script( '(function(){'
                 . 'if(window.__ktpReadonlyProfileInit){return;} window.__ktpReadonlyProfileInit=true;'
                 . 'function ktpwpRelocateReadonlyModal(){'
                 . 'var m=document.getElementById("ktp-readonly-profile-modal");'
@@ -671,7 +672,7 @@ class KTPWP_Shortcodes {
                 . 'if(closeTarget){window.ktpwpCloseReadonlyProfile();}'
                 . '});'
                 . 'document.addEventListener("keydown",function(e){if(e.key==="Escape"){window.ktpwpCloseReadonlyProfile();}});'
-                . '})();</script>';
+                . '})();' );
         }
 
         return $logged_in_users_html;

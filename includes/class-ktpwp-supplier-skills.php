@@ -729,7 +729,8 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 
 			// Add JavaScript for delete functionality
 			$nonce_field = wp_nonce_field( 'ktp_skills_action', 'ktp_skills_nonce', true, false );
-			$html .= '<script>
+			// 生の <script> を出さずフッターのスクリプトに載せる（wp.org ガイドライン）
+			ktpwp_add_inline_script( '
         document.addEventListener("DOMContentLoaded", function() {
             document.querySelectorAll(".delete-skill-btn").forEach(function(btn) {
                 btn.addEventListener("click", function() {
@@ -750,7 +751,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
                 });
             });
         });
-        </script>';
+        ' );
 
 			return $html;
 		}

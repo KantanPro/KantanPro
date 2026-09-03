@@ -140,7 +140,8 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 			$html .= '<input type="hidden" name="save_invoice_items" value="1" />';
 			$html .= '<input type="hidden" name="tax_category" value="' . esc_attr( $tax_category ) . '" />';
 			$html .= wp_nonce_field( 'save_invoice_items_action', 'invoice_items_nonce', true, false );
-			$html .= '<script>window.ktpClientTaxCategory = "' . esc_js( $tax_category ) . '";</script>';
+			// 生の <script> を出さず、フッターのスクリプトに載せる（wp.org ガイドライン）
+			ktpwp_add_inline_script( 'window.ktpClientTaxCategory = ' . wp_json_encode( (string) $tax_category ) . ';' );
 			$html .= '<div class="invoice-items-scroll-wrapper">';
 			$html .= '<table class="invoice-items-table" id="invoice-items-table-' . intval( $order_id ) . '">';
 			$html .= '<thead>';
@@ -452,18 +453,10 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 			$html .= '<input type="hidden" name="order_id" value="' . intval( $order_id ) . '" />';
 			$html .= '<input type="hidden" name="save_cost_items" value="1" />';
 			$html .= wp_nonce_field( 'save_cost_items_action', 'cost_items_nonce', true, false );
-			$html .= '<script>window.ktpClientTaxCategory = "' . esc_js( $tax_category ) . '";</script>';
+			// 生の <script> を出さず、フッターのスクリプトに載せる（wp.org ガイドライン）
+			ktpwp_add_inline_script( 'window.ktpClientTaxCategory = ' . wp_json_encode( (string) $tax_category ) . ';' );
 			
-			// デバッグ用のスクリプトを追加
-			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				$html .= '<script>console.log("[PHP] コスト項目税区分設定:", {';
-				$html .= 'orderId: "' . intval( $order_id ) . '", ';
-				$html .= 'taxCategory: "' . esc_js( $tax_category ) . '", ';
-				$html .= 'taxCategoryType: "' . gettype($tax_category) . '", ';
-				$html .= 'taxCategoryLength: ' . strlen($tax_category) . ', ';
-				$html .= 'isOutTax: "' . esc_js( $tax_category ) . '" === "外税"';
-				$html .= '});</script>';
-			}
+			// デバッグ用の console.log は削除した（生の <script> を出さないため）
 			$html .= '<div class="cost-items-scroll-wrapper">';
 			$html .= '<table class="cost-items-table" id="cost-items-table-' . intval( $order_id ) . '">';
 			$html .= '<thead>';

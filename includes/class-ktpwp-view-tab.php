@@ -170,12 +170,13 @@ class KTPWP_View_Tabs_Class {
         $nonce_manager = KTPWP_Nonce_Manager::getInstance();
         $ajax_data = $nonce_manager->get_unified_ajax_config();
 
-        echo '<script type="text/javascript">';
-        echo 'window.ktpwp_ajax = ' . wp_json_encode( $ajax_data ) . ';';
-        echo 'window.ktp_ajax_object = ' . wp_json_encode( $ajax_data ) . ';';
-        echo 'window.ajaxurl = ' . wp_json_encode( $ajax_data['ajax_url'] ) . ';';
-        echo 'console.log("TabView: 統一AJAX設定を出力", window.ktpwp_ajax);';
-        echo '</script>';
+        // 生の <script> を出さず WordPress のスクリプトキューに載せる
+        ktpwp_add_inline_script(
+            'window.ktpwp_ajax = ' . wp_json_encode( $ajax_data ) . ';'
+            . 'window.ktp_ajax_object = ' . wp_json_encode( $ajax_data ) . ';'
+            . 'window.ajaxurl = ' . wp_json_encode( $ajax_data['ajax_url'] ) . ';'
+            . 'console.log("TabView: 統一AJAX設定を出力", window.ktpwp_ajax);'
+        );
 
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
             // error_log('KTPWP TabView: Unified AJAX config output: ' . wp_json_encode($ajax_data));

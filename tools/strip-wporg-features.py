@@ -301,6 +301,17 @@ replace_method_body('includes/class-ktpwp-order-main.php',
 			return '';
 		}''')
 
+# 更新完了ガイド（admin_footer）は更新チェッカーが立てるトランジェント頼みで、
+# wp.org 版では到達しない。生の <script> を出すので中身ごと空にする。
+# （admin_footer はスクリプト出力後なので wp_add_inline_script では代替できない）
+replace_method_body('ktpwp.php', 'function ktpwp_footer_update_complete_guide() {',
+                    '''
+    // WordPress.org 配布版では自前の更新機能を持たないため、この案内は出さない。
+    return;
+}''')
+
+print('更新完了ガイドの除去: 完了')
+
 print('受注書のロック表示の除去: 完了')
 
 print('スタッフ管理の除去: 完了')

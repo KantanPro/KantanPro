@@ -390,7 +390,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 			);
 
 			if ( $insert_result === false ) {
-				echo "<script>alert('" . esc_js( esc_html__( '新規追加に失敗しました。', 'kantanpro' ) ) . "');</script>";
+				ktpwp_add_inline_notice( 'error', __( '新規追加に失敗しました。', 'kantanpro' ) );
 			} else {
 				if ( $this->is_contracts_feature_enabled() ) {
 					$this->sync_service_recurring_items_from_post( $new_id );
@@ -444,11 +444,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 				);
 
 				if ( $delete_result === false ) {
-					echo "<script>
-                document.addEventListener('DOMContentLoaded', function() {
-                    showErrorNotification('" . esc_js( esc_html__( '削除に失敗しました。', 'kantanpro' ) ) . "');
-                });
-                </script>";
+					ktpwp_add_inline_notice( 'error', __( '削除に失敗しました。', 'kantanpro' ) );
 				} else {
 					// 削除後は最新のレコード（ID降順のトップ）にリダイレクト
 					$next_record = $wpdb->get_row( "SELECT id FROM {$table_name} ORDER BY id DESC LIMIT 1" );

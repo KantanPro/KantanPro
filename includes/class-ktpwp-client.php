@@ -1344,28 +1344,7 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 			// URL パラメータからのメッセージ表示処理を追加
 			$session_message = '';
 			if ( isset( $_GET['message'] ) ) {
-				echo '<script>
-            document.addEventListener("DOMContentLoaded", function() {
-                const messageType = "' . esc_js( sanitize_text_field( wp_unslash( $_GET['message'] ) ) ) . '";
-                switch (messageType) {
-                    case "updated":
-                        showSuccessNotification("' . esc_js( __( '更新しました。', 'kantanpro' ) ) . '");
-                        break;
-                    case "added":
-                        showSuccessNotification("' . esc_js( __( '新しい顧客を追加しました。', 'kantanpro' ) ) . '");
-                        break;
-                    case "deleted":
-                        showSuccessNotification("' . esc_js( __( '削除しました。', 'kantanpro' ) ) . '");
-                        break;
-                    case "found":
-                        showInfoNotification("' . esc_js( __( '検索結果を表示しています。', 'kantanpro' ) ) . '");
-                        break;
-                    case "not_found":
-                        showWarningNotification("' . esc_js( __( '該当する顧客が見つかりませんでした。', 'kantanpro' ) ) . '");
-                        break;
-                }
-            });
-            </script>';
+				ktpwp_add_inline_notice( 'success', '' . __( '更新しました。', 'kantanpro' ) . '' );
 			}
 
 			// セッションメッセージの確認と表示
@@ -2066,8 +2045,8 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 				$data_forms .= $this->render_client_postal_lookup_script();
 
 				// 部署管理用JavaScript
-				$data_forms .= '<script>
-        function addDepartment() {
+				// 生の <script> を出さずフッターのスクリプトに載せる（wp.org ガイドライン）
+				ktpwp_add_inline_script( '        function addDepartment() {
             var departmentName = document.querySelector("input[name=\'department_name\']").value;
             var contactPerson = document.querySelector("input[name=\'contact_person\']").value;
             var email = document.querySelector("input[name=\'department_email\']").value;
@@ -2261,8 +2240,7 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
             } else {
                 console.log("selected-department-info div not found");
             }
-        }
-        </script>';
+        }' );
 
 				if ( function_exists( 'ktpwp_contracts_feature_enabled' ) && ktpwp_contracts_feature_enabled()
 					&& class_exists( 'KTPWP_Contract_UI' ) && ! empty( $data_id ) && is_numeric( $data_id ) ) {

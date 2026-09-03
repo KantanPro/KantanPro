@@ -498,17 +498,21 @@ final class KTPWP_FM_Import {
 			$role = '顧客（client）マスタ';
 		}
 
-		return <<<PROMPT
-あなたは KantanPro（FileMaker Pro 版）から CSV/TSV で書き出された列を、WordPress プラグイン KantanProEX の{$role}の列に対応づける専門家です。
-入力 JSON の headers（列名の配列）と sample_rows（最大3行の配列の配列）を見て、次の Kantan 側フィールド名ごとに「一致する元の列名」を1つ選ぶ。該当がなければ null。
-
-【対象フィールド】
-{$list}
-
-JSON のみ。形式:
-{ "column_map": { "フィールド名": "元CSVの列名またはnull", ... } }
-列名は headers に存在する文字列と完全一致にすること。
-PROMPT;
+		// HEREDOC は使わない（wp.org ガイドライン）。行ごとの配列を改行で連結する。
+		return implode(
+			"\n",
+			array(
+				'あなたは KantanPro（FileMaker Pro 版）から CSV/TSV で書き出された列を、WordPress プラグイン KantanProEX の' . $role . 'の列に対応づける専門家です。',
+				'入力 JSON の headers（列名の配列）と sample_rows（最大3行の配列の配列）を見て、次の Kantan 側フィールド名ごとに「一致する元の列名」を1つ選ぶ。該当がなければ null。',
+				'',
+				'【対象フィールド】',
+				$list,
+				'',
+				'JSON のみ。形式:',
+				'{ "column_map": { "フィールド名": "元CSVの列名またはnull", ... } }',
+				'列名は headers に存在する文字列と完全一致にすること。',
+			)
+		);
 	}
 
 	/**
@@ -776,7 +780,9 @@ PROMPT;
 		if ( ! is_string( $data_for_js ) ) {
 			$data_for_js = '{"entity":"client","headers":[],"samples":[]}';
 		}
-		echo '<script type="application/json" id="ktp-fm-import-bootstrap">' . esc_html( $data_for_js ) . '</script>';
+		// <script type="application/json"> のデータ島も生出力になるため、
+		// グローバル変数として WordPress のスクリプトキューで渡す。
+		ktpwp_add_inline_script( 'window.ktpFmImportBootstrap = ' . $data_for_js . ';' );
 
 		echo '</div>';
 	}
@@ -2434,34 +2440,38 @@ PROMPT;
 		$block_service  = implode( "\n", $fmt_service );
 		$block_order    = implode( "\n", $fmt_order );
 
-		return <<<PROMPT
-あなたは KantanPro（FileMaker Pro 版）のエクスポート Zip を解析し、WordPress プラグイン KantanProEX に取り込む担当です。
-入力は JSON。files 配列の各要素は Zip 内の1ファイルで path・headers（列名）・sample_rows（データ例）・parse_error（あれば）が含まれます。
-FileMaker の user.tab / order.tab などでは headers が COL_1, COL_2 のように列位置のみの場合があります。sample_rows と突き合わせて意味を推定し、column_map では必ずその文字列（COL_n）と完全一致させること。
-
-【タスク】
-各ファイルについて次を JSON で返すこと。
-- entity は次のいずれか: client（顧客マスタ）, supplier（協力会社）, service（商品・サービス）, order（受注）, skip（取り込み不要）
-- order のときは link_company_name を、Zip 内の顧客データと一致する会社名の列に必ず対応させること（取り込み後に顧客マスタの id と紐づく）。顧客マスタは通常 user.tab または user.csv（サーバ側で他ファイルより先に取り込まれる）。
-- column_map は Kantan 側のフィールドキー → そのファイルの headers に実在する列名（文字列）の対応。不要なキーは省略可。parse_error があるファイルは entity を skip にし reason を日本語で書くこと。
-
-【顧客 client のフィールド】
-{$block_client}
-
-【協力会社 supplier のフィールド】
-{$block_supplier}
-
-【商品 service のフィールド】
-{$block_service}
-
-【受注 order のフィールド】
-{$block_order}
-
-【出力 JSON の形式（この形のみ）】
-{ "per_file": [ { "path": "Zip内のパスと一致", "entity": "client|supplier|service|order|skip", "column_map": { "フィールドキー": "元の列名", ... }, "reason": "skip のときなど日本語で簡潔に" } ] }
-
-入力 files に列挙された path はすべて per_file にちょうど1回ずつ含めること。列名は headers と完全一致させること。
-PROMPT;
+		// HEREDOC は使わない（wp.org ガイドライン）。行ごとの配列を改行で連結する。
+		return implode(
+			"\n",
+			array(
+				'あなたは KantanPro（FileMaker Pro 版）のエクスポート Zip を解析し、WordPress プラグイン KantanProEX に取り込む担当です。',
+				'入力は JSON。files 配列の各要素は Zip 内の1ファイルで path・headers（列名）・sample_rows（データ例）・parse_error（あれば）が含まれます。',
+				'FileMaker の user.tab / order.tab などでは headers が COL_1, COL_2 のように列位置のみの場合があります。sample_rows と突き合わせて意味を推定し、column_map では必ずその文字列（COL_n）と完全一致させること。',
+				'',
+				'【タスク】',
+				'各ファイルについて次を JSON で返すこと。',
+				'- entity は次のいずれか: client（顧客マスタ）, supplier（協力会社）, service（商品・サービス）, order（受注）, skip（取り込み不要）',
+				'- order のときは link_company_name を、Zip 内の顧客データと一致する会社名の列に必ず対応させること（取り込み後に顧客マスタの id と紐づく）。顧客マスタは通常 user.tab または user.csv（サーバ側で他ファイルより先に取り込まれる）。',
+				'- column_map は Kantan 側のフィールドキー → そのファイルの headers に実在する列名（文字列）の対応。不要なキーは省略可。parse_error があるファイルは entity を skip にし reason を日本語で書くこと。',
+				'',
+				'【顧客 client のフィールド】',
+				$block_client,
+				'',
+				'【協力会社 supplier のフィールド】',
+				$block_supplier,
+				'',
+				'【商品 service のフィールド】',
+				$block_service,
+				'',
+				'【受注 order のフィールド】',
+				$block_order,
+				'',
+				'【出力 JSON の形式（この形のみ）】',
+				'{ "per_file": [ { "path": "Zip内のパスと一致", "entity": "client|supplier|service|order|skip", "column_map": { "フィールドキー": "元の列名", ... }, "reason": "skip のときなど日本語で簡潔に" } ] }',
+				'',
+				'入力 files に列挙された path はすべて per_file にちょうど1回ずつ含めること。列名は headers と完全一致させること。',
+			)
+		);
 	}
 
 	/**

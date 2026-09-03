@@ -260,11 +260,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
 							if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 								error_log( 'KTPWP: Supplier skills deletion failed before supplier delete. supplier_id=' . $data_id );
 							}
-							echo '<script>
-                        document.addEventListener("DOMContentLoaded", function() {
-                            showErrorNotification("' . esc_js( __( '職能データの削除に失敗しました。', 'kantanpro' ) ) . '");
-                        });
-                        </script>';
+							ktpwp_add_inline_notice( 'error', '' . __( '職能データの削除に失敗しました。', 'kantanpro' ) . '' );
 							return;
 						}
 
@@ -277,11 +273,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
 							}
 							
 							// ユーザーには適切なエラーメッセージのみ表示
-							echo '<script>
-                        document.addEventListener("DOMContentLoaded", function() {
-                            showErrorNotification("' . esc_js( __( '削除に失敗しました。', 'kantanpro' ) ) . '");
-                        });
-                        </script>';
+							ktpwp_add_inline_notice( 'error', '' . __( '削除に失敗しました。', 'kantanpro' ) . '' );
 						} else {
 							// Fire action hook after successful deletion
 							do_action( 'ktpwp_supplier_deleted', $data_id );
@@ -300,14 +292,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
                             );
 
 							// 成功メッセージのみ表示（デバッグログは含めない）
-							echo '<script>
-                            document.addEventListener("DOMContentLoaded", function() {
-                                showSuccessNotification("' . esc_js( esc_html__( '協力会社を削除しました。', 'kantanpro' ) ) . '");
-                                setTimeout(function() {
-                                    window.location.href = "' . esc_js( $redirect_url ) . '";
-                                }, 1000);
-                            });
-                        </script>';
+							ktpwp_add_inline_notice( 'success', '' . esc_html__( '協力会社を削除しました。', 'kantanpro' ) . '', '' . $redirect_url . '', 1000 );
 							return;
 						}
 					}
@@ -378,11 +363,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
 						);
 
 						if ( $update_result === false ) {
-							echo '<script>
-                        document.addEventListener("DOMContentLoaded", function() {
-                            showErrorNotification("' . esc_js( __( '更新に失敗しました。SQLエラー: ', 'kantanpro' ) ) . esc_js( $wpdb->last_error ) . '");
-                        });
-                        </script>';
+							ktpwp_add_inline_notice( 'error', '' . __( '更新に失敗しました。SQLエラー: ', 'kantanpro' ) . $wpdb->last_error . '' );
 						} else {
 							if ( function_exists( 'ktpwp_increment_record_frequency' ) ) {
 								ktpwp_increment_record_frequency( 'supplier', $data_id );
@@ -510,11 +491,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
 					);
 
 					if ( $insert_result === false ) {
-						echo '<script>
-                    document.addEventListener("DOMContentLoaded", function() {
-                        showErrorNotification("' . esc_js( __( '追加に失敗しました。SQLエラー: ', 'kantanpro' ) ) . esc_js( $wpdb->last_error ) . '");
-                    });
-                    </script>';
+						ktpwp_add_inline_notice( 'error', '' . __( '追加に失敗しました。SQLエラー: ', 'kantanpro' ) . $wpdb->last_error . '' );
 					} else {
 						// 成功時のリダイレクト処理
 						$redirect_url = add_query_arg(

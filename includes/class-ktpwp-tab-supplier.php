@@ -271,14 +271,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 					$cookie_name = 'ktp_' . $tab_name . '_id';
 					setcookie( $cookie_name, $data_id, time() + ( 86400 * 30 ), '/' );
 
-					echo '<script>
-                document.addEventListener("DOMContentLoaded", function() {
-                    showInfoNotification("' . esc_js( esc_html__( '検索結果を表示しています。', 'kantanpro' ) ) . '");
-                    setTimeout(function() {
-                        window.location.href = "' . esc_js( $redirect_url ) . '";
-                    }, 1000);
-                });
-            </script>';
+					ktpwp_add_inline_notice( 'info', '' . esc_html__( '検索結果を表示しています。', 'kantanpro' ) . '', '' . $redirect_url . '', 1000 );
 					exit;
 				}
 				// 検索結果が複数ある場合の処理（顧客タブと同様にリダイレクトし、GETでダイアログ表示）
@@ -389,11 +382,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 				if ( $insert_result === false ) {
 					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 						error_log( 'Insert error: ' . $wpdb->last_error ); }
-					echo '<script>
-                document.addEventListener("DOMContentLoaded", function() {
-                    showErrorNotification("追加に失敗しました。SQLエラー: ' . esc_js( $wpdb->last_error ) . '");
-                });
-                </script>';
+					ktpwp_add_inline_notice( 'error', '追加に失敗しました。SQLエラー: ' . $wpdb->last_error . '' );
 					$wpdb->query( 'UNLOCK TABLES;' );
 				} else {
 					$wpdb->query( 'UNLOCK TABLES;' );
@@ -418,14 +407,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
                         $base_page_url
                     );
 
-					echo '<script>
-                    document.addEventListener("DOMContentLoaded", function() {
-                        showSuccessNotification("' . esc_js( esc_html__( '新しい協力会社を追加しました。', 'kantanpro' ) ) . '");
-                        setTimeout(function() {
-                            window.location.href = "' . esc_js( $redirect_url ) . '";
-                        }, 1000);
-                    });
-                </script>';
+					ktpwp_add_inline_notice( 'success', '' . esc_html__( '新しい協力会社を追加しました。', 'kantanpro' ) . '', '' . $redirect_url . '', 1000 );
 					exit;
 				}
 			}
@@ -487,11 +469,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 				$insert_result = $wpdb->insert( $table_name, $data );
 				if ( $insert_result === false ) {
 					error_log( 'Duplication error: ' . $wpdb->last_error );
-					echo '<script>
-                document.addEventListener("DOMContentLoaded", function() {
-                    showErrorNotification("複製に失敗しました。SQLエラー: ' . esc_js( $wpdb->last_error ) . '");
-                });
-                </script>';
+					ktpwp_add_inline_notice( 'error', '複製に失敗しました。SQLエラー: ' . $wpdb->last_error . '' );
 				} else {
 					$new_data_id = $wpdb->insert_id;
 					$wpdb->query( 'UNLOCK TABLES;' );
@@ -512,14 +490,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 					$cookie_name = 'ktp_' . $tab_name . '_id';
 					setcookie( $cookie_name, $new_data_id, time() + ( 86400 * 30 ), '/' );
 
-					echo '<script>
-                    document.addEventListener("DOMContentLoaded", function() {
-                        showSuccessNotification("' . esc_js( esc_html__( '複製しました。', 'kantanpro' ) ) . '");
-                        setTimeout(function() {
-                            window.location.href = "' . esc_js( $redirect_url ) . '";
-                        }, 1000);
-                    });
-                </script>';
+					ktpwp_add_inline_notice( 'success', '' . esc_html__( '複製しました。', 'kantanpro' ) . '', '' . $redirect_url . '', 1000 );
 				}
 			}
 
@@ -566,63 +537,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 
 			// URL パラメータからのメッセージ表示処理を追加
 			if ( isset( $_GET['message'] ) ) {
-				echo '<script>
-            document.addEventListener("DOMContentLoaded", function() {
-                const messageType = "' . esc_js( sanitize_text_field( wp_unslash( $_GET['message'] ) ) ) . '";
-                switch (messageType) {
-                    case "updated":
-                        showSuccessNotification("' . esc_js( __( '更新しました。', 'kantanpro' ) ) . '");
-                        break;
-                    case "added":
-                        showSuccessNotification("' . esc_js( __( '新しい協力会社を追加しました。', 'kantanpro' ) ) . '");
-                        break;
-                    case "deleted":
-                        showSuccessNotification("' . esc_js( __( '削除しました。', 'kantanpro' ) ) . '");
-                        break;
-                    case "duplicated":
-                        showSuccessNotification("' . esc_js( __( '複製しました。', 'kantanpro' ) ) . '");
-                        break;
-                    case "skill_added":
-                        showSuccessNotification("' . esc_js( __( '商品・サービスを追加しました。', 'kantanpro' ) ) . '");
-                        break;
-                    case "skill_deleted":
-                        showSuccessNotification("' . esc_js( __( '商品・サービスを削除しました。', 'kantanpro' ) ) . '");
-                        break;
-                    case "skill_err_nonce":
-                        showErrorNotification("' . esc_js( __( 'セキュリティチェックに失敗しました。ページを更新して再度お試しください。', 'kantanpro' ) ) . '");
-                        break;
-                    case "skill_err_cap":
-                        showErrorNotification("' . esc_js( __( 'この操作を行う権限がありません。', 'kantanpro' ) ) . '");
-                        break;
-                    case "skill_err_system":
-                        showErrorNotification("' . esc_js( __( 'スキル管理システムが利用できません。', 'kantanpro' ) ) . '");
-                        break;
-                    case "skill_err_input":
-                        showErrorNotification("' . esc_js( __( '必要な情報が不足しているか、削除対象が無効です。', 'kantanpro' ) ) . '");
-                        break;
-                    case "skill_err_add":
-                        showErrorNotification("' . esc_js( __( '商品・サービスの追加に失敗しました。', 'kantanpro' ) ) . '");
-                        break;
-                    case "skill_err_delete":
-                        showErrorNotification("' . esc_js( __( '商品・サービスの削除に失敗しました。', 'kantanpro' ) ) . '");
-                        break;
-                    case "found":
-                        showInfoNotification("' . esc_js( __( '検索結果を表示しています。', 'kantanpro' ) ) . '");
-                        break;
-                    case "not_found":
-                        showWarningNotification("' . esc_js( __( '該当する協力会社が見つかりませんでした。', 'kantanpro' ) ) . '");
-                        break;
-                }
-                // URLからmessageパラメータを削除
-                if (window.history.replaceState) {
-                    var currentUrl = new URL(window.location.href);
-                    if (currentUrl.searchParams.has("message")) {
-                        currentUrl.searchParams.delete("message");
-                        window.history.replaceState({ path: currentUrl.href }, "", currentUrl.href);
-                    }
-                }
-            });
-            </script>';
+				ktpwp_add_inline_notice( 'success', '' . __( '更新しました。', 'kantanpro' ) . '' );
 			}
 
 			// $search_results_listの使用前に初期化
@@ -1900,11 +1815,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 				if ( $early_context ) {
 					$this->redirect_skills_error_notification( 'skill_err_nonce' );
 				}
-				echo '<script>
-            document.addEventListener("DOMContentLoaded", function() {
-                showErrorNotification("セキュリティチェックに失敗しました。ページを更新して再度お試しください。");
-            });
-            </script>';
+				ktpwp_add_inline_notice( 'error', 'セキュリティチェックに失敗しました。ページを更新して再度お試しください。' );
 				return;
 			}
 
@@ -1913,11 +1824,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 				if ( $early_context ) {
 					$this->redirect_skills_error_notification( 'skill_err_cap' );
 				}
-				echo '<script>
-            document.addEventListener("DOMContentLoaded", function() {
-                showErrorNotification("この操作を行う権限がありません。");
-            });
-            </script>';
+				ktpwp_add_inline_notice( 'error', 'この操作を行う権限がありません。' );
 				return;
 			}
 
@@ -1991,11 +1898,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 				if ( $early_context ) {
 					$this->redirect_skills_error_notification( 'skill_err_system' );
 				}
-				echo '<script>
-            document.addEventListener("DOMContentLoaded", function() {
-                showErrorNotification("スキル管理システムが利用できません。");
-            });
-            </script>';
+				ktpwp_add_inline_notice( 'error', 'スキル管理システムが利用できません。' );
 				return;
 			}
 
@@ -2015,11 +1918,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 				if ( $early_context ) {
 					$this->redirect_skills_error_notification( 'skill_err_input' );
 				}
-				echo '<script>
-            document.addEventListener("DOMContentLoaded", function() {
-                showErrorNotification("必要な情報が不足しています。");
-            });
-            </script>';
+				ktpwp_add_inline_notice( 'error', '必要な情報が不足しています。' );
 				return;
 			}
 
@@ -2032,11 +1931,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 				if ( $early_context ) {
 					$this->redirect_skills_error_notification( 'skill_err_add' );
 				}
-				echo '<script>
-            document.addEventListener("DOMContentLoaded", function() {
-                showErrorNotification("商品・サービスの追加に失敗しました。");
-            });
-            </script>';
+				ktpwp_add_inline_notice( 'error', '商品・サービスの追加に失敗しました。' );
 			}
 		}
 
@@ -2058,11 +1953,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 				if ( $early_context ) {
 					$this->redirect_skills_error_notification( 'skill_err_system' );
 				}
-				echo '<script>
-            document.addEventListener("DOMContentLoaded", function() {
-                showErrorNotification("スキル管理システムが利用できません。");
-            });
-            </script>';
+				ktpwp_add_inline_notice( 'error', 'スキル管理システムが利用できません。' );
 				return;
 			}
 
@@ -2074,11 +1965,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 				if ( $early_context ) {
 					$this->redirect_skills_error_notification( 'skill_err_input' );
 				}
-				echo '<script>
-            document.addEventListener("DOMContentLoaded", function() {
-                showErrorNotification("削除する商品・サービスが指定されていません。");
-            });
-            </script>';
+				ktpwp_add_inline_notice( 'error', '削除する商品・サービスが指定されていません。' );
 				return;
 			}
 
@@ -2095,11 +1982,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 				if ( $early_context ) {
 					$this->redirect_skills_error_notification( 'skill_err_delete' );
 				}
-				echo '<script>
-            document.addEventListener("DOMContentLoaded", function() {
-                showErrorNotification("商品・サービスの削除に失敗しました。");
-            });
-            </script>';
+				ktpwp_add_inline_notice( 'error', '商品・サービスの削除に失敗しました。' );
 			}
 		}
 

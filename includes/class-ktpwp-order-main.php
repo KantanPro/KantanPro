@@ -978,17 +978,9 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 										);
 									}
 									if ( $sent ) {
-										// echo '<script>
-										// document.addEventListener("DOMContentLoaded", function() {
-										// showSuccessNotification("メールを送信しました。\\n宛先: ' . esc_js($to) . '");
-										// });
-										// </script>';
+										// ktpwp_add_inline_notice( 'success', 'メールを送信しました。\\n宛先: ' . $to . '' );
 									} else {
-										// echo '<script>
-										// document.addEventListener("DOMContentLoaded", function() {
-										// showErrorNotification("メール送信に失敗しました。サーバー設定をご確認ください。");
-										// });
-										// </script>';
+										// ktpwp_add_inline_notice( 'error', 'メール送信に失敗しました。サーバー設定をご確認ください。' );
 									}
 								} else {
 									// 編集フォームHTMLを生成

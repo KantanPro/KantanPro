@@ -814,7 +814,8 @@ class KTPWP_Settings {
         // enqueue のタイミング（遅めの優先度）に移す。
         add_action( 'wp_enqueue_scripts', array( $this, 'output_custom_styles' ), 20 );
         add_action( 'admin_enqueue_scripts', array( $this, 'output_custom_styles' ), 20 );
-        add_action( 'wp_head', array( $this, 'output_page_content_width_styles' ), 20 );
+        // wp_head だとスタイル出力後で wp_add_inline_style が効かないため enqueue 時点に移す
+        add_action( 'wp_enqueue_scripts', array( $this, 'output_page_content_width_styles' ), 21 );
         add_filter( 'body_class', array( $this, 'filter_body_class_for_page_content_width' ) );
         add_action( 'admin_init', array( $this, 'handle_default_settings_actions' ) );
 
@@ -4097,19 +4098,8 @@ class KTPWP_Settings {
      * @param bool   $success 成功メッセージかどうか（true=成功、false=エラー）
      */
     private function show_notification( $message, $success = true ) {
-        $notification_type = $success ? 'success' : 'error';
-
-        echo '<script>
-            document.addEventListener("DOMContentLoaded", function() {
-                if (typeof showKtpNotification === "function") {
-                    showKtpNotification("' . esc_js( $message ) . '", "' . $notification_type . '");
-                } else {
-                    // フォールバック: 古い通知システム
-                    console.warn("KTP Notification system not loaded, using fallback");
-                    alert("' . esc_js( $message ) . '");
-                }
-            });
-        </script>';
+        // 生の <script> を出さず、共通の通知ヘルパーに寄せる（wp.org ガイドライン）。
+        ktpwp_add_inline_notice( $success ? 'success' : 'error', $message );
     }
 
     /**
@@ -5239,9 +5229,11 @@ div.ktp_header > * {
             return;
         }
 
-        echo '<style type="text/css" id="ktp-page-content-width-styles">';
-        echo $custom_css;
-        echo '</style>';
+        // 生の <style> を出さず WordPress のスタイルキューに載せる（wp.org ガイドライン）
+        $handle = wp_style_is( 'ktp-css', 'registered' ) ? 'ktp-css' : 'ktp-admin-settings';
+        if ( wp_style_is( $handle, 'registered' ) ) {
+            wp_add_inline_style( $handle, $custom_css );
+        }
     }
 
     /**

@@ -4,15 +4,10 @@
 	$(function () {
 		var $btn = $('#ktp-fm-ai-suggest');
 		var $status = $('#ktp-fm-ai-status');
-		var $bootstrap = $('#ktp-fm-import-bootstrap');
-		if (!$btn.length || !$bootstrap.length || typeof ktpFmImport === 'undefined') {
-			return;
-		}
-
-		var payload;
-		try {
-			payload = JSON.parse($bootstrap.text());
-		} catch (e) {
+		// 以前は <script type="application/json"> のデータ島から読んでいたが、
+		// 生の script 出力をやめたため PHP 側が window に直接渡すようになった。
+		var payload = window.ktpFmImportBootstrap;
+		if (!$btn.length || !payload || typeof ktpFmImport === 'undefined') {
 			return;
 		}
 

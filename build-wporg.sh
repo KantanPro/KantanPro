@@ -37,6 +37,13 @@ mkdir -p "$STAGE"
 
 echo "[INFO] KantanPro v$VERSION を WordPress.org 用にビルドします"
 
+# 除外の補足:
+#   class-ktpwp-setting-ui.php … 設定タブは廃止済みで誰からも呼ばれない
+#     （オートローダ登録も無い）。中身が HEREDOC のインライン script なので丸ごと外す。
+#   migrations/20250730_...    … 未参照の使い捨てスクリプト。未エスケープ echo と
+#     wp-config の直読みを持っていた。
+# **この注釈を rsync の継続行の途中に入れないこと。** rsync がコメント行を
+# 引数として受け取って syntax error になる（2026-09-03 に踏んだ）。
 rsync -a \
   --exclude '.git/' \
   --exclude '.github/' \
@@ -71,6 +78,7 @@ rsync -a \
   --exclude 'includes/class-ktpwp-license-manager.php' \
   --exclude 'languages/' \
   --exclude 'includes/migrations/20250730_fix_dummy_order_creation_dates.php' \
+  --exclude 'includes/class-ktpwp-setting-ui.php' \
   "$ROOT_DIR/" "$STAGE/"
 
 # 1) GitHub 自動更新を無効化（wp.org 版は WordPress 本体が更新する）

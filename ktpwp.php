@@ -318,6 +318,64 @@ if ( ! function_exists( 'ktpwp_end_asset_url_normalizer_buffer' ) ) {
 add_action( 'template_redirect', 'ktpwp_start_asset_url_normalizer_buffer', 0 );
 add_action( 'shutdown', 'ktpwp_end_asset_url_normalizer_buffer', 0 );
 
+/**
+ * 画面内の通知を、生の <script> ではなく WordPress のスクリプトキューで出す。
+ *
+ * もともと各所で `echo '<script>...showErrorNotification(...)...</script>'` と
+ * 直接書き出していた。WordPress.org のガイドラインでインラインスクリプトの直接出力は
+ * 認められていないため（2026-09-02 のレビュー指摘）、ここに集約する。
+ *
+ * メッセージは wp_json_encode() で JS リテラルにするので、
+ * 引用符や改行が混ざってもスクリプトが壊れない（従来の esc_js より安全）。
+ *
+ * @param string $type         'error' | 'success' | 'info'
+ * @param string $message      表示する文言。
+ * @param string $redirect_url 指定するとメッセージ表示後に遷移する。
+ * @param int    $delay_ms     遷移までの待ち時間（ミリ秒）。
+ * @return void
+ */
+if ( ! function_exists( 'ktpwp_add_inline_notice' ) ) {
+    function ktpwp_add_inline_notice( $type, $message, $redirect_url = '', $delay_ms = 1000 ) {
+        $map = array(
+            'error'   => 'showErrorNotification',
+            'success' => 'showSuccessNotification',
+            'info'    => 'showInfoNotification',
+        );
+        $fn = isset( $map[ $type ] ) ? $map[ $type ] : $map['info'];
+
+        $js = 'document.addEventListener("DOMContentLoaded",function(){'
+            . 'if(typeof ' . $fn . '==="function"){' . $fn . '(' . wp_json_encode( (string) $message ) . ');}';
+        if ( '' !== $redirect_url ) {
+            $js .= 'setTimeout(function(){window.location.href='
+                . wp_json_encode( $redirect_url ) . ';},' . (int) $delay_ms . ');';
+        }
+        $js .= '});';
+
+        ktpwp_add_inline_script( $js );
+    }
+}
+
+/**
+ * インライン JS を、登録済みのハンドルに載せて出力する。
+ *
+ * ktp-js はフッター出力なので、本文のレンダリング中に足しても間に合う。
+ * どのハンドルも無い画面（プラグインの画面外）では何も出さない。
+ *
+ * @param string $js 実行する JavaScript。
+ * @return bool 載せられたら true。
+ */
+if ( ! function_exists( 'ktpwp_add_inline_script' ) ) {
+    function ktpwp_add_inline_script( $js ) {
+        foreach ( array( 'ktp-js', 'ktp-admin-settings', 'jquery' ) as $handle ) {
+            if ( wp_script_is( $handle, 'enqueued' ) || wp_script_is( $handle, 'registered' ) ) {
+                wp_add_inline_script( $handle, $js );
+                return true;
+            }
+        }
+        return false;
+    }
+}
+
 // KTPWP Prefixed constants for internal consistency
 if ( ! defined( 'KTPWP_PLUGIN_FILE' ) ) {
     define( 'KTPWP_PLUGIN_FILE', __FILE__ );
@@ -4305,8 +4363,9 @@ function ktpwp_init_ajax_handlers() {
         error_log('KTPWP: ktpwp_handle_clear_data_ajax function not found');
     }
     
-    // テスト用AJAXハンドラー
-    add_action( 'wp_ajax_ktpwp_test_ajax', 'ktpwp_test_ajax_handler' );
+    // テスト用 AJAX ハンドラーは削除した。
+    // ktpwp_test_ajax_handler() はどこにも定義されておらず、
+    // 呼ばれれば PHP 8 で致命的エラーになるだけだった。
     
     // 通知非表示AJAXハンドラー
     add_action( 'wp_ajax_ktpwp_dismiss_invoice_items_fix_notification', 'ktpwp_dismiss_invoice_items_fix_notification' );
@@ -4401,14 +4460,9 @@ add_action(
     2
 );
 
-function check_activation_key() {
-    $activation_key = get_site_option( 'ktp_activation_key' );
-    return empty( $activation_key ) ? '' : '';
-}
-
-function add_htmx_to_head() {
-}
-add_action( 'wp_head', 'add_htmx_to_head' );
+// check_activation_key() と add_htmx_to_head() は削除した。
+// 前者は分岐の両方が '' を返すだけの空スタブ、後者は中身が空のまま wp_head に
+// 登録されていた。どちらも接頭辞が無く、この名前で他プラグインと衝突しうる。
 
 
 /**
@@ -4455,65 +4509,12 @@ function KTPWP_Index() {
             // XSS対策: 画面に出力する変数は必ずエスケープ
 
             // ユーザーのログインログアウト状況を取得するためのAjaxを登録
-            add_action( 'wp_ajax_ktp_get_logged_in_users', 'get_logged_in_users' );
-            add_action( 'wp_ajax_nopriv_ktp_get_logged_in_users', 'get_logged_in_users' );
-
-            // get_logged_in_users の再宣言防止
-            if ( ! function_exists( 'get_logged_in_users' ) ) {
-                function get_logged_in_users() {
-                    // スタッフ権限チェック
-                    if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
-                        wp_send_json_error( __( 'この操作を行う権限がありません。', 'kantanpro' ) );
-                        return;
-                    }
-
-                    // アクティブなセッションを持つユーザーを取得
-                    $users_with_sessions = get_users(
-                        array(
-							'meta_key' => 'session_tokens',
-							'meta_compare' => 'EXISTS',
-							'fields' => 'all',
-                        )
-                    );
-
-                    $logged_in_staff = array();
-                    foreach ( $users_with_sessions as $user ) {
-                        // セッションが有効かチェック
-                        $sessions = get_user_meta( $user->ID, 'session_tokens', true );
-                        if ( empty( $sessions ) ) {
-                            continue;
-                        }
-
-                        $has_valid_session = false;
-                        foreach ( $sessions as $session ) {
-                            if ( isset( $session['expiration'] ) && $session['expiration'] > time() ) {
-                                $has_valid_session = true;
-                                break;
-                            }
-                        }
-
-                        if ( ! $has_valid_session ) {
-                            continue;
-                        }
-
-                        // スタッフ権限をチェック（ktpwp_access または管理者権限）
-                        if ( in_array( 'administrator', $user->roles ) || user_can( $user->ID, 'ktpwp_access' ) ) {
-                            $nickname = get_user_meta( $user->ID, 'nickname', true );
-                            if ( empty( $nickname ) ) {
-                                $nickname = $user->display_name ? $user->display_name : $user->user_login;
-                            }
-                            $logged_in_staff[] = array(
-                                'id' => $user->ID,
-                                'name' => esc_html( $nickname ) . 'さん',
-                                'is_current' => ( get_current_user_id() === $user->ID ),
-                                'avatar_url' => get_avatar_url( $user->ID, array( 'size' => 32 ) ),
-                            );
-                        }
-                    }
-
-                    wp_send_json( $logged_in_staff );
-                }
-            }
+            // ログイン中ユーザー取得の AJAX はここでは登録しない。
+            // 実体は KTPWP_Ajax::ajax_get_logged_in_users() で、
+            // includes/class-ktpwp-ajax.php が正しい接頭辞つきで登録済み。
+            // ここにあったのは未接頭辞のグローバル関数 get_logged_in_users() の
+            // 重複定義で、ショートコードは admin-ajax.php では動かないため
+            // そもそも呼ばれることがなかった。
 
             // 現在メインのログインユーザー情報を取得
             global $current_user;
@@ -4522,7 +4523,10 @@ function KTPWP_Index() {
             $logout_link = esc_url( wp_logout_url() );
 
             // ヘッダー表示ログインユーザー名など
-            $act_key = esc_html( check_activation_key() );
+            // もとは check_activation_key() の戻り値。あの関数は分岐の両方で '' を
+            // 返すだけの空スタブだったので、出力を変えずに定数へ畳んだ。
+            // 下の $navigation_links への連結はそのまま残している。
+            $act_key = '';
 
             // ログイン中のユーザー情報を取得（ログインしている場合のみ）
             $logged_in_users_html       = '';
@@ -4674,7 +4678,9 @@ function KTPWP_Index() {
                 . '</div>'
                 . $readonly_profile_suffix_ktp;
 
-            $front_message .= '<script>(function(){'
+            // 生の <script> を出さずフッターのスクリプトに載せる（wp.org ガイドライン）
+            ktpwp_add_inline_script(
+                '(function(){'
                 . 'var logoUrl=' . wp_json_encode( esc_url_raw( $logo_url ) ) . ';'
                 . 'function fixKtpHeaderLogo(){'
                 . 'var img=document.querySelector(".ktp_header .header-logo");'
@@ -4686,9 +4692,12 @@ function KTPWP_Index() {
                 . '}'
                 . 'fixKtpHeaderLogo();'
                 . 'if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",fixKtpHeaderLogo);}else{setTimeout(fixKtpHeaderLogo,0);}'
-                . '})();</script>';
+                . '})();'
+            );
 
-            $front_message .= '<script>(function(){'
+            // 生の <script> を出さずフッターのスクリプトに載せる（wp.org ガイドライン）
+            ktpwp_add_inline_script(
+                '(function(){'
                 . 'if(window.__ktpHeaderSettingsMenuInit){return;}window.__ktpHeaderSettingsMenuInit=true;'
                 . 'function positionMenu(menu){var btn=menu&&menu.querySelector(".ktp-header-settings-toggle");var dropdown=menu&&menu.querySelector(".ktp-header-settings-dropdown");if(!btn||!dropdown){return;}var rect=btn.getBoundingClientRect();dropdown.style.position="fixed";dropdown.style.zIndex="2147483647";dropdown.style.top=(rect.bottom+6)+"px";var left=Math.max(8,Math.min(rect.right-dropdown.offsetWidth,window.innerWidth-dropdown.offsetWidth-8));dropdown.style.left=left+"px";dropdown.style.right="auto";}'
                 . 'function closeMenus(except){document.querySelectorAll(".ktp-header-settings-menu.is-open").forEach(function(menu){if(menu!==except){menu.classList.remove("is-open");var btn=menu.querySelector(".ktp-header-settings-toggle");var dropdown=menu.querySelector(".ktp-header-settings-dropdown");if(btn){btn.setAttribute("aria-expanded","false");}if(dropdown){dropdown.removeAttribute("style");}}});}'
@@ -4701,7 +4710,8 @@ function KTPWP_Index() {
                 . 'window.addEventListener("resize",repositionOpenMenus);'
                 . 'window.addEventListener("scroll",repositionOpenMenus,true);'
                 . 'document.addEventListener("keydown",function(e){if(e.key==="Escape"){closeMenus(null);}});'
-                . '})();</script>';
+                . '})();'
+            );
             
             // 更新通知用のアセットをフッターへ登録（jQuery 読み込み後に実行されるよう保証）
             if ( class_exists( 'KTPWP_Update_Checker' ) ) {

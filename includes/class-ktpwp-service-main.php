@@ -995,7 +995,12 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 				$image_section_html .= '</button>';
 				$image_section_html .= '</div>';
 				$image_section_html .= '</form>';
-				$image_section_html .= '<script>function checkImageUpload(form) { if (!form.image.value) { alert("画像が選択されていません。アップロードする画像を選択してください。"); return false; } return true; }</script>';
+				// 生の <script> を出さずフッターのスクリプトに載せる（wp.org ガイドライン）
+				ktpwp_add_inline_script(
+					'window.checkImageUpload = function(form){'
+					. 'if(!form.image.value){ alert(' . wp_json_encode( __( '画像が選択されていません。アップロードする画像を選択してください。', 'kantanpro' ) ) . '); return false; }'
+					. 'return true;};'
+				);
 				$image_section_html .= '</div>'; // image_upload_form終了
 				$image_section_html .= '</div>'; // 画像セクション終了
 

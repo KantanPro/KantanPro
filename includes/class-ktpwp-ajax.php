@@ -251,12 +251,16 @@ class KTPWP_Ajax {
 		$this->registered_handlers[] = 'ktp_update_department_selection';
 
 		// 部署追加
-		add_action( 'wp_ajax_ktp_add_department', 'ktpwp_ajax_add_department' );
+		// 実処理は ajax-department.php の ktp_add_department_ajax() が登録済み。
+		// ここで別のコールバックを足さないこと（存在しない関数を登録していて、
+		// 先に登録された側が wp_send_json で終了しなければ PHP 8 で致命的エラーになる）。
 		add_action( 'wp_ajax_nopriv_ktp_add_department', array( $this, 'ajax_require_login' ) );
 		$this->registered_handlers[] = 'ktp_add_department';
 
 		// 部署削除
-		add_action( 'wp_ajax_ktp_delete_department', 'ktpwp_ajax_delete_department' );
+		// 実処理は ajax-department.php の ktp_delete_department_ajax() が登録済み。
+		// ここで別のコールバックを足さないこと（存在しない関数を登録していて、
+		// 先に登録された側が wp_send_json で終了しなければ PHP 8 で致命的エラーになる）。
 		add_action( 'wp_ajax_nopriv_ktp_delete_department', array( $this, 'ajax_require_login' ) );
 		$this->registered_handlers[] = 'ktp_delete_department';
 
