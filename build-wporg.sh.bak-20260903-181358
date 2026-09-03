@@ -76,10 +76,6 @@ rsync -a \
   --exclude 'images/upload/*' \
   --exclude 'includes/class-ktpwp-update-checker.php' \
   --exclude 'includes/class-ktpwp-license-manager.php' \
-  --exclude 'js/ktpwp-update-checker.js' \
-  --exclude 'js/ktpwp-update-balloon.js' \
-  --exclude 'css/ktpwp-update-balloon.css' \
-  --exclude 'js/ktp-license-manager.js' \
   --exclude 'languages/' \
   --exclude 'includes/migrations/20250730_fix_dummy_order_creation_dates.php' \
   --exclude 'includes/class-ktpwp-setting-ui.php' \
@@ -122,9 +118,7 @@ if compgen -G "$STAGE/languages/*" > /dev/null; then
   echo "[ERROR] languages/ が残っています（翻訳は translate.wordpress.org に任せる）" >&2
   exit 1
 fi
-for f in includes/class-ktpwp-update-checker.php includes/class-ktpwp-license-manager.php \
-         js/ktpwp-update-checker.js js/ktpwp-update-balloon.js \
-         css/ktpwp-update-balloon.css js/ktp-license-manager.js; do
+for f in includes/class-ktpwp-update-checker.php includes/class-ktpwp-license-manager.php; do
   if [[ -e "$STAGE/$f" ]]; then
     echo "[ERROR] 除外したはずのファイルが残っています: $f" >&2
     exit 1

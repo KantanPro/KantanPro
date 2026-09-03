@@ -1,5 +1,10 @@
 <?php
 
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+
+
 class KTPWP_View_Tabs_Class {
 
     public function __construct() {

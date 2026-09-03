@@ -4,7 +4,7 @@ Tags: invoice, crm, order management, quotation, business
 Requires at least: 5.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.3.32
+Stable tag: 1.3.35
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -147,6 +147,18 @@ fields. It only sends anything if you have entered your own OpenAI API key.
 == Changelog ==
 
 The complete history is in `changelog.txt`, bundled with the plugin.
+
+= 1.3.35 - 2026-09-03 =
+* Added a direct-access guard to the three class files that were missing one.
+
+= 1.3.34 - 2026-09-03 =
+* Removed unreachable PDF generation code from the order preview script, along with
+  the library loader and vendor URLs it was the only consumer of.
+
+= 1.3.33 - 2026-09-03 =
+* Removed leftover script and style assets that belonged to the self-hosted update
+  checker and the license manager, which are not part of the WordPress.org build.
+* Updated the bundled jsPDF library from 2.5.1 to 4.2.1.
 
 = 1.3.32 - 2026-09-03 =
 * All generated script and style output now goes through `wp_add_inline_script()`,

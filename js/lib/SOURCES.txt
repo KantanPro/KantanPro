@@ -7,9 +7,9 @@ html2canvas.min.js
   取得元: https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js
 
 jspdf.umd.min.js
-  jsPDF 2.5.1 (MIT License)
+  jsPDF 4.2.1 (MIT License)
   https://github.com/parallax/jsPDF
-  取得元: https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js
+  取得元: https://cdnjs.cloudflare.com/ajax/libs/jspdf/4.2.1/jspdf.umd.min.js
 
 chart.umd.min.js
   Chart.js 4.4.9 (MIT License)

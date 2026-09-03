@@ -1,10 +1,3 @@
-// 同梱ライブラリ（js/lib/）の URL を解決する。
-// PHP 側の wp_localize_script( ..., 'ktpwpVendor', ... ) で注入される。
-function ktpVendorUrl(name) {
-    var vendor = window.ktpwpVendor || {};
-    return vendor[name] || '';
-}
-
 /**
  * 受注書プレビューポップアップ機能
  *
@@ -14,57 +7,6 @@ function ktpVendorUrl(name) {
 
 (function ($) {
     'use strict';
-
-    // PDF生成ライブラリの動的ロード
-    function loadPDFLibraries() {
-        return new Promise((resolve, reject) => {
-            if (typeof html2canvas !== 'undefined' && typeof jsPDF !== 'undefined') {
-                resolve();
-                return;
-            }
-
-            let html2canvasLoaded = typeof html2canvas !== 'undefined';
-            let jsPDFLoaded = typeof jsPDF !== 'undefined';
-
-            // html2canvasの読み込み
-            if (!html2canvasLoaded) {
-                const html2canvasScript = document.createElement('script');
-                html2canvasScript.src = ktpVendorUrl('html2canvas');
-                html2canvasScript.onload = function() {
-                    html2canvasLoaded = true;
-                    if (jsPDFLoaded) resolve();
-                };
-                html2canvasScript.onerror = function() {
-                    console.error('[ORDER-PREVIEW] html2canvas読み込み失敗');
-                    reject('html2canvas読み込み失敗');
-                };
-                document.head.appendChild(html2canvasScript);
-            }
-
-            // jsPDFの読み込み
-            if (!jsPDFLoaded) {
-                const jsPDFScript = document.createElement('script');
-                jsPDFScript.src = ktpVendorUrl('jspdf');
-                jsPDFScript.onload = function() {
-                    // jsPDFをグローバルに設定
-                    if (typeof window.jspdf !== 'undefined') {
-                        window.jsPDF = window.jspdf.jsPDF;
-                    }
-                    jsPDFLoaded = true;
-                    if (html2canvasLoaded) resolve();
-                };
-                jsPDFScript.onerror = function() {
-                    console.error('[ORDER-PREVIEW] jsPDF読み込み失敗');
-                    reject('jsPDF読み込み失敗');
-                };
-                document.head.appendChild(jsPDFScript);
-            }
-
-            if (html2canvasLoaded && jsPDFLoaded) {
-                resolve();
-            }
-        });
-    }
 
     // HTMLエンティティをデコードする関数
     function decodeHtmlEntities(text) {
@@ -183,75 +125,6 @@ function ktpVendorUrl(name) {
         
         // 現在のページで直接印刷する方法
         printOrderPreviewDirect(saveContent, filename, orderId);
-    }
-
-    // 直接ダウンロード方式でPDF生成（フォールバック用）
-    function generatePDFDirectDownload(content, filename, orderId) {
-        // 一時的な印刷用要素を作成
-        const printElement = document.createElement('div');
-        printElement.innerHTML = content;
-        printElement.style.position = 'fixed';
-        printElement.style.left = '-9999px';
-        printElement.style.top = '0';
-        printElement.style.width = '210mm';
-        printElement.style.backgroundColor = 'white';
-        printElement.style.fontFamily = '"Noto Sans JP", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif';
-        printElement.style.fontSize = '12px';
-        printElement.style.lineHeight = '1.4';
-        printElement.style.color = '#333';
-        
-        document.body.appendChild(printElement);
-        
-        // html2canvasとjsPDFを使用してPDF生成
-        if (typeof html2canvas !== 'undefined' && typeof jsPDF !== 'undefined') {
-            html2canvas(printElement, {
-                scale: 2,
-                useCORS: true,
-                allowTaint: true,
-                backgroundColor: '#ffffff',
-                width: printElement.scrollWidth,
-                height: printElement.scrollHeight
-            }).then(function(canvas) {
-                const imgData = canvas.toDataURL('image/png');
-                const pdf = new jsPDF('p', 'mm', 'a4');
-                
-                const imgWidth = 210; // A4幅
-                const pageHeight = 295; // A4高さ
-                const imgHeight = (canvas.height * imgWidth) / canvas.width;
-                let heightLeft = imgHeight;
-                let position = 0;
-                
-                // 最初のページ
-                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-                heightLeft -= pageHeight;
-                
-                // 複数ページの場合の処理
-                while (heightLeft >= 0) {
-                    position = heightLeft - imgHeight;
-                    pdf.addPage();
-                    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-                    heightLeft -= pageHeight;
-                }
-                
-                // PDFを保存
-                pdf.save(filename + '.pdf');
-                
-                // 一時要素を削除
-                document.body.removeChild(printElement);
-                
-            }).catch(function(error) {
-                console.error('[ORDER PREVIEW] Canvas生成エラー:', error);
-                document.body.removeChild(printElement);
-                
-                // フォールバック: 直接印刷方式
-                printOrderPreviewDirect(content, filename, orderId);
-            });
-        } else {
-            document.body.removeChild(printElement);
-            
-            // フォールバック: 直接印刷方式
-            printOrderPreviewDirect(content, filename, orderId);
-        }
     }
 
     // 現在のページで直接印刷する方法（隠しiframeで印刷し、タブを増やさない）

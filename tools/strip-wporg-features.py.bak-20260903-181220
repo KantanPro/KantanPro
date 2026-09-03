@@ -99,16 +99,6 @@ autoload_pat = r"'(" + '|'.join(REMOVE_CLASSES) + r")'\s*=>"
 n = drop_lines('ktpwp.php', autoload_pat) + drop_lines('includes/class-ktpwp-loader.php', autoload_pat)
 print(f'オートローダ登録の削除: {n}行')
 
-# --- 2.6) SOURCES.txt から、同梱しなくなったライブラリの記載を消す ----------
-#     chart.umd.min.js は REMOVE_FILES で消えるので、説明だけ残ると
-#     「無いファイルの出典」が配布物に載ってしまう。
-edit('js/lib/SOURCES.txt', """
-chart.umd.min.js
-  Chart.js 4.4.9 (MIT License)
-  https://github.com/chartjs/Chart.js
-  取得元: https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js
-""", '\n')
-
 # --- 3) レポートタブのUI除去は不要 ------------------------------------------
 #     2026-09-03 にソース側で6番目のタブを「情報」(KTPWP_Tab_Info) に置き換えたため、
 #     ここでタブを消す処理は要らなくなった。残す CSS の除去だけ行う。

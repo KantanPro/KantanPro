@@ -418,14 +418,6 @@ class KTPWP_Assets {
                 'ver'       => KTPWP_PLUGIN_VERSION . '.' . filemtime( KTPWP_PLUGIN_DIR . 'js/ktp-order-preview.js' ),
                 'in_footer' => true,
                 'admin'     => false,
-                'localize'  => array(
-                    'object' => 'ktpwpVendor',
-                    'data'   => array(
-                        'html2canvas' => KANTANPRO_PLUGIN_URL . 'js/lib/html2canvas.min.js',
-                        'jspdf'       => KANTANPRO_PLUGIN_URL . 'js/lib/jspdf.umd.min.js',
-                        'chartjs'     => KANTANPRO_PLUGIN_URL . 'js/lib/chart.umd.min.js',
-                    ),
-                ),
             ),
             'ktp-delivery-dates' => array(
                 'src'       => 'js/ktp-delivery-dates.js',
@@ -581,7 +573,6 @@ class KTPWP_Assets {
                     'data'   => array(
                         'html2canvas' => KANTANPRO_PLUGIN_URL . 'js/lib/html2canvas.min.js',
                         'jspdf'       => KANTANPRO_PLUGIN_URL . 'js/lib/jspdf.umd.min.js',
-                        'chartjs'     => KANTANPRO_PLUGIN_URL . 'js/lib/chart.umd.min.js',
                     ),
                 ),
             ),
