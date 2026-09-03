@@ -4,7 +4,7 @@ Tags: invoice, crm, order management, quotation, business
 Requires at least: 5.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.3.31
+Stable tag: 1.3.32
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -148,6 +148,13 @@ fields. It only sends anything if you have entered your own OpenAI API key.
 
 The complete history is in `changelog.txt`, bundled with the plugin.
 
+= 1.3.32 - 2026-09-03 =
+* All generated script and style output now goes through `wp_add_inline_script()`,
+  `wp_add_inline_style()` and `wp_localize_script()`.
+* Removed hook registrations that pointed at functions which were never defined.
+* Removed the unprefixed global functions `get_logged_in_users()`,
+  `check_activation_key()` and `add_htmx_to_head()`, and an unused admin form file.
+
 = 1.3.31 - 2026-09-03 =
 * Removed the report tab and replaced it with an "Information" tab showing the plugin version,
   environment and record counts. Reports are provided by a separate plugin.
@@ -201,6 +208,10 @@ The complete history is in `changelog.txt`, bundled with the plugin.
   now registered through `wp_add_inline_style()` and `wp_add_inline_script()`.
 
 == Upgrade Notice ==
+
+= 1.3.32 =
+Inline script and style output moved to the WordPress APIs; unprefixed and undefined
+functions removed.
 
 = 1.3.31 =
 Security fixes (including an XSS in the design settings) and compliance changes for the WordPress.org directory.
