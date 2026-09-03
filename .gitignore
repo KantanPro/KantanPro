@@ -16,6 +16,10 @@ Thumbs.db
 .env
 .env.*
 
+# バックアップファイル（配布物・zipball への混入を防ぐ）
+*.bak
+*.bak-*
+
 # 配布ZIP・一時ファイル
 *.zip
 ktpwp-*.zip

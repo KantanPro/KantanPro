@@ -65,6 +65,8 @@ rsync -a \
   --exclude='vendor/' \
   --exclude='*.zip' \
   --exclude='*.tmp' \
+  --exclude='*.bak' \
+  --exclude='*.bak-*' \
   --exclude='.DS_Store' \
   --exclude='wp-cli.phar' \
   --exclude='wp-cli.yml' \

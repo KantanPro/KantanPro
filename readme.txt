@@ -151,6 +151,8 @@ The complete history is in `changelog.txt`, bundled with the plugin.
 = 1.3.36 - 2026-09-03 =
 * Rolls the 1.3.32 through 1.3.35 fixes up into a release for the self-hosted
   (GitHub) distribution. No code changes in this version itself.
+* Removed three build-script backup files that were being packaged into the
+  distribution, and excluded that file pattern from future builds.
 
 = 1.3.35 - 2026-09-03 =
 * Added a direct-access guard to the three class files that were missing one.
