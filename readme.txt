@@ -148,8 +148,11 @@ fields. It only sends anything if you have entered your own OpenAI API key.
 
 The complete history is in `changelog.txt`, bundled with the plugin.
 
-= 1.3.38 - 2026年09月05日 =
-* プラグインのCSSが、テーマ側のプロフィール画像まで32ピクセルに縮めてしまう問題を修正しました。WordPress共通のクラス（avatar）を絞り込みなしで指定していたため、著者ボックスやコメント欄など、プラグインと関係のない場所の画像まで小さくなっていました
+= 1.3.38 - 2026-09-05 =
+* Fixed the plugin stylesheet shrinking profile pictures that belong to the theme.
+  The rule targeted WordPress's shared `avatar` class without any scoping, so author
+  boxes, comment avatars and anything else using that class were forced to 32px.
+  The rule is now limited to the plugin's own icons.
 
 = 1.3.37 - 2026-09-04 =
 * Fixed the notice suppression for the "translation loading was triggered too early"
