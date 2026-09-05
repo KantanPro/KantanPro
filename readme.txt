@@ -4,7 +4,7 @@ Tags: invoice, crm, order management, quotation, business
 Requires at least: 5.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.3.37
+Stable tag: 1.3.38
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -147,6 +147,9 @@ fields. It only sends anything if you have entered your own OpenAI API key.
 == Changelog ==
 
 The complete history is in `changelog.txt`, bundled with the plugin.
+
+= 1.3.38 - 2026年09月05日 =
+* プラグインのCSSが、テーマ側のプロフィール画像まで32ピクセルに縮めてしまう問題を修正しました。WordPress共通のクラス（avatar）を絞り込みなしで指定していたため、著者ボックスやコメント欄など、プラグインと関係のない場所の画像まで小さくなっていました
 
 = 1.3.37 - 2026-09-04 =
 * Fixed the notice suppression for the "translation loading was triggered too early"
