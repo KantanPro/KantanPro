@@ -37,6 +37,42 @@ mkdir -p "$STAGE"
 
 echo "[INFO] KantanPro v$VERSION を WordPress.org 用にビルドします"
 
+# tools/strip-wporg-features.py の KTPWP-WPORG-STRIP マーカーが
+# ソース側で BEGIN/END 対になっているかをステージング前に確認する。
+# ここで壊れていると、strip 側の検証エラーより先に原因箇所が分かる。
+python3 - "$ROOT_DIR" <<'PYEOF'
+import os, re, sys
+root = sys.argv[1]
+begin_re = re.compile(r'KTPWP-WPORG-STRIP (\S+) BEGIN')
+end_re = re.compile(r'KTPWP-WPORG-STRIP (\S+) END')
+bad = []
+for dp, dns, fns in os.walk(root):
+    dns[:] = [d for d in dns if d not in ('.git', 'node_modules', 'vendor')]
+    for fn in fns:
+        if not fn.endswith(('.php', '.js', '.css')):
+            continue
+        fp = os.path.join(dp, fn)
+        depth = {}
+        for i, line in enumerate(open(fp, encoding='utf-8', errors='replace'), 1):
+            m = begin_re.search(line)
+            if m:
+                depth[m.group(1)] = depth.get(m.group(1), 0) + 1
+            m = end_re.search(line)
+            if m:
+                depth[m.group(1)] = depth.get(m.group(1), 0) - 1
+                if depth[m.group(1)] < 0:
+                    bad.append(f'{os.path.relpath(fp, root)}:{i}: {m.group(1)} の END に対応する BEGIN がありません')
+                    depth[m.group(1)] = 0
+        for feature, n in depth.items():
+            if n != 0:
+                bad.append(f'{os.path.relpath(fp, root)}: {feature} の BEGIN/END が対になっていません（差分 {n}）')
+if bad:
+    print('[ERROR] KTPWP-WPORG-STRIP マーカーの対応が崩れています:', file=sys.stderr)
+    for b in bad:
+        print('  - ' + b, file=sys.stderr)
+    sys.exit(1)
+PYEOF
+
 # 除外の補足:
 #   class-ktpwp-setting-ui.php … 設定タブは廃止済みで誰からも呼ばれない
 #     （オートローダ登録も無い）。中身が HEREDOC のインライン script なので丸ごと外す。
@@ -83,6 +119,7 @@ rsync -a \
   --exclude 'languages/' \
   --exclude 'includes/migrations/20250730_fix_dummy_order_creation_dates.php' \
   --exclude 'includes/class-ktpwp-setting-ui.php' \
+  --exclude 'changelog.txt' \
   "$ROOT_DIR/" "$STAGE/"
 
 # 1) GitHub 自動更新を無効化（wp.org 版は WordPress 本体が更新する）

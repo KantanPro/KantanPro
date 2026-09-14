@@ -9,6 +9,13 @@ class KTPWP_Upgrade {
         $old_table = $wpdb->prefix . 'ktp_setting';
         $new_option = 'ktp_smtp_settings';
 
+        // 新規インストールにはこの旧テーブル自体が存在しない。
+        // 存在確認せずに SELECT すると、有効化直後の最初の init で毎回
+        // WordPress database error がログに出る（2026-09-14 クリーンインストールで確認）。
+        if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $old_table ) ) !== $old_table ) {
+            return;
+        }
+
         // 古いテーブルから設定を取得
         $old_settings = $wpdb->get_row( "SELECT * FROM $old_table WHERE id = 1" );
 

@@ -487,9 +487,13 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 					$default_thumb_url = $this->db_helper->get_default_image_url();
 					$row_url = esc_url( add_query_arg( $item_link_args, $base_page_url ) );
 					$price_unit_cell = '<td class="col-price-unit">' . $this->render_service_price_unit_display( $price, $unit ) . '</td>';
+					// WordPress.org 配布版では公開商品機能を同梱していないため、この既定値のまま使う。
+					$public_cell = '';
+					// KTPWP-WPORG-STRIP public_products BEGIN
 					$public_cell       = $this->is_public_products_enabled()
 						? '<td class="col-public">' . $this->render_service_public_badge( $is_public, $row_stock, (int) $row->id, $contract_cycle_value ) . '</td>'
 						: '';
+					// KTPWP-WPORG-STRIP public_products END
 					$row_attrs = class_exists( 'KTPWP_List_Table' )
 						? KTPWP_List_Table::row_nav_attrs( $row_url, 'ktp_' . $name . '_id', (int) $row->id )
 						: ' class="ktp-service-list-data-row" data-href="' . esc_url( $row_url ) . '" onclick="window.location.href=this.dataset.href"';
@@ -640,6 +644,7 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 						? KTPWP_Contract_Billing_Cycle::sanitize( $row->contract_billing_cycle )
 						: ( class_exists( 'KTPWP_Contract_Billing_Cycle' ) ? KTPWP_Contract_Billing_Cycle::NONE : 'none' );
 					$stock = isset( $row->stock ) ? max( 0, absint( $row->stock ) ) : 1;
+					// KTPWP-WPORG-STRIP public_products BEGIN
 					if ( $this->is_public_products_enabled() ) {
 						$public_quantity_fixed = class_exists( 'KTPWP_Service_DB' )
 							? KTPWP_Service_DB::sanitize_public_quantity_fixed( $row->public_quantity_fixed ?? null )
@@ -651,6 +656,7 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 							? (string) ( $row->public_html ?? '' )
 							: '';
 					}
+					// KTPWP-WPORG-STRIP public_products END
 				}
 			}
 			  			// 表示するフォーム要素を定義
@@ -832,7 +838,7 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 					}
 				}
 
-				$data_forms .= $this->render_public_product_fields_section( 0, 0, 0, '' );
+				$data_forms .= $this->render_public_product_fields_section( 0, 0, 0, '' ); // KTPWP-WPORG-STRIP public_products
 				$default_cycle = class_exists( 'KTPWP_Contract_Billing_Cycle' ) ? KTPWP_Contract_Billing_Cycle::NONE : 'none';
 				$data_forms .= $this->render_contract_fields_section( 0, $default_cycle, 1 );
 
@@ -1052,7 +1058,7 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 				$cycle_value = class_exists( 'KTPWP_Contract_Billing_Cycle' )
 					? KTPWP_Contract_Billing_Cycle::sanitize( $contract_billing_cycle )
 					: 'none';
-				$data_forms .= $this->render_public_product_fields_section( (int) $is_public, (int) $public_quantity_fixed, (int) $public_instant_purchase, (string) $public_html );
+				$data_forms .= $this->render_public_product_fields_section( (int) $is_public, (int) $public_quantity_fixed, (int) $public_instant_purchase, (string) $public_html ); // KTPWP-WPORG-STRIP public_products
 				$data_forms .= $this->render_contract_fields_section( (int) $data_id, $cycle_value, (int) $stock );
 				$data_forms .= '<input type="hidden" name="query_post" value="update">';
 				$data_forms .= "<input type=\"hidden\" name=\"data_id\" value=\"{$data_id}\">";
@@ -1581,6 +1587,7 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 				),
 			);
 
+			// KTPWP-WPORG-STRIP public_products BEGIN
 			if ( $this->is_public_products_enabled() ) {
 				$columns[] = array(
 					'class'    => 'col-public',
@@ -1588,6 +1595,7 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 					'sort_key' => 'is_public',
 				);
 			}
+			// KTPWP-WPORG-STRIP public_products END
 
 			if ( $this->is_contracts_feature_enabled() ) {
 				$columns[] = array(
@@ -1625,6 +1633,7 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 			return KTPWP_List_Table::open( $columns, $sort_context, 'ktp-list-table--service' );
 		}
 
+		// KTPWP-WPORG-STRIP public_products BEGIN
 		/**
 		 * 公開商品機能が有効か（無料版では false）。
 		 *
@@ -1633,6 +1642,7 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 		private function is_public_products_enabled() {
 			return ! function_exists( 'ktpwp_is_feature_enabled' ) || ktpwp_is_feature_enabled( 'public_products' );
 		}
+		// KTPWP-WPORG-STRIP public_products END
 
 		/**
 		 * 定期契約機能が有効か（無料版では false）。
@@ -1651,7 +1661,11 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 		 * @return bool
 		 */
 		private function should_show_service_stock_field() {
-			return $this->is_public_products_enabled() || $this->is_contracts_feature_enabled();
+			$show = $this->is_contracts_feature_enabled();
+			// KTPWP-WPORG-STRIP public_products BEGIN
+			$show = $this->is_public_products_enabled() || $this->is_contracts_feature_enabled();
+			// KTPWP-WPORG-STRIP public_products END
+			return $show;
 		}
 
 		/**
@@ -1690,6 +1704,7 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 			return $html;
 		}
 
+		// KTPWP-WPORG-STRIP public_products BEGIN
 		/**
 		 * 公開商品関連フィールド（無料版では EX 案内のみ）。
 		 *
@@ -1811,6 +1826,7 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 
 			return $html;
 		}
+		// KTPWP-WPORG-STRIP public_products END
 
 		/**
 		 * 契約（請求サイクル）セレクトの HTML を返す。
@@ -2125,6 +2141,7 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 			return $html;
 		}
 
+		// KTPWP-WPORG-STRIP public_products BEGIN
 		/**
 		 * サービスリスト用の公開状態バッジ HTML を返す。
 		 *
@@ -2182,6 +2199,7 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 				. esc_html__( '非公開', 'kantanpro' )
 				. '</span>';
 		}
+		// KTPWP-WPORG-STRIP public_products END
 	} // End class Kntan_Service_Class
 
 } // End if class_exists

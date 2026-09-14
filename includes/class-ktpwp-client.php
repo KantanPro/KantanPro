@@ -364,6 +364,11 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 		 * @return void
 		 */
 		function View_Table( $name ) {
+			// アクセス権限チェック（多層防御。主なゲートは ktpwp.php の kantanAllTab() 側）。
+			if ( function_exists( 'ktpwp_current_user_can_access' ) && ! ktpwp_current_user_can_access() ) {
+				return '';
+			}
+
 			global $wpdb;
 
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
@@ -1367,7 +1372,7 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
                 max-width: 90%;
             ">
             <span style="margin-right: 10px; color: #ff6b8b; font-size: 18px;" class="material-symbols-outlined">info</span>'
-                . esc_html( $_SESSION['ktp_search_message'] ) . '</div>';
+                . esc_html( sanitize_text_field( wp_unslash( $_SESSION['ktp_search_message'] ) ) ) . '</div>';
 				unset( $_SESSION['ktp_search_message'] ); // メッセージを表示後に削除
 			}
 

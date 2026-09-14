@@ -227,7 +227,8 @@ class KTPWP_Security {
 
         foreach ( $ip_keys as $key ) {
             if ( array_key_exists( $key, $_SERVER ) === true ) {
-                foreach ( explode( ',', $_SERVER[ $key ] ) as $ip ) {
+                $raw_value = sanitize_text_field( wp_unslash( $_SERVER[ $key ] ) );
+                foreach ( explode( ',', $raw_value ) as $ip ) {
                     $ip = trim( $ip );
 
                     if ( filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) !== false ) {
@@ -237,7 +238,7 @@ class KTPWP_Security {
             }
         }
 
-        return isset( $_SERVER['REMOTE_ADDR'] ) ? $_SERVER['REMOTE_ADDR'] : '';
+        return isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
     }
 
     /**
@@ -534,6 +535,10 @@ class KTPWP_Security {
      */
     private function get_basic_auth_request_password() {
         if ( isset( $_SERVER['PHP_AUTH_PW'] ) ) {
+            // この値はハッシュ比較（wp_check_password）にのみ使い、
+            // 出力にもSQLにも使わない。sanitize_text_field() をかけると
+            // タグに見える文字列や改行を含む正当なパスワードを壊すため、
+            // wp_unslash() のみに留める（意図的）。
             return (string) wp_unslash( $_SERVER['PHP_AUTH_PW'] );
         }
 
@@ -553,6 +558,9 @@ class KTPWP_Security {
      * @return string
      */
     private function get_authorization_header() {
+        // Base64 の Basic 認証ヘッダをこの後 base64_decode() するため、
+        // sanitize_text_field() は適用しない（タグ様の文字列や制御文字相当を
+        // 削って Base64 文字列を壊す可能性があるため意図的に wp_unslash() のみ）。
         if ( isset( $_SERVER['HTTP_AUTHORIZATION'] ) ) {
             return trim( (string) wp_unslash( $_SERVER['HTTP_AUTHORIZATION'] ) );
         }

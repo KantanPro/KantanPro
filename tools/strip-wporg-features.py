@@ -34,6 +34,8 @@ REMOVE_FILES = [
     # public_products
     'includes/class-ktpwp-public-product-order.php',
     'includes/class-ktpwp-public-product-order-memo.php',
+    'css/public-products.css',
+    'js/public-products.js',
     # stripe_billing / contract_invoice_auto_mail
     'includes/class-ktpwp-stripe-billing.php',
     'includes/class-ktpwp-stripe-subscription.php',
@@ -83,6 +85,72 @@ def drop_lines(rel, pattern):
     return len(lines) - len(keep)
 
 
+def strip_feature_markers(feature):
+    """ソース中の `KTPWP-WPORG-STRIP <feature>` マーカーで囲まれたコードをステージ全体から除去する。
+
+    大きな連続ブロックは
+        // KTPWP-WPORG-STRIP <feature> BEGIN
+        ...
+        // KTPWP-WPORG-STRIP <feature> END
+    （HTML テンプレート部分では `<!-- ... -->`）で囲み、その BEGIN/END の行ごと削除する。
+    1行だけの散在参照は行末に `// KTPWP-WPORG-STRIP <feature>` を付け、その行だけ削除する。
+
+    コメントの記法（`//` か `<!-- -->` か）は問わず、タグ文字列そのものを探すので
+    HTML テンプレートの中でも PHP コードの中でも同じマーカーが使える。
+
+    BEGIN と END の対応が崩れている場合はビルドを失敗させる
+    （リファクタでマーカーが片方だけ消えて、削除されるべきコードが
+    そのまま混入するのを防ぐのが目的）。
+    戻り値は (削除したブロック数, 削除した単独行数)。
+    """
+    begin_tag = f'KTPWP-WPORG-STRIP {feature} BEGIN'
+    end_tag = f'KTPWP-WPORG-STRIP {feature} END'
+    line_tag = f'KTPWP-WPORG-STRIP {feature}'
+    block_count = 0
+    line_count = 0
+
+    for dp, dns, fns in os.walk(stage):
+        for fn in fns:
+            if not fn.endswith(('.php', '.js', '.css')):
+                continue
+            fp = os.path.join(dp, fn)
+            rel = os.path.relpath(fp, stage)
+            lines = open(fp, encoding='utf-8').read().splitlines(keepends=True)
+            out = []
+            in_block = False
+            block_start_line = None
+            changed = False
+            for i, line in enumerate(lines, 1):
+                if begin_tag in line:
+                    if in_block:
+                        errors.append(f'{rel}:{i}: {feature} の BEGIN が入れ子になっています（{block_start_line}行目から未終了）')
+                    in_block = True
+                    block_start_line = i
+                    block_count += 1
+                    changed = True
+                    continue
+                if end_tag in line:
+                    if not in_block:
+                        errors.append(f'{rel}:{i}: {feature} の END に対応する BEGIN がありません')
+                    in_block = False
+                    changed = True
+                    continue
+                if in_block:
+                    changed = True
+                    continue
+                if line_tag in line:
+                    line_count += 1
+                    changed = True
+                    continue
+                out.append(line)
+            if in_block:
+                errors.append(f'{rel}:{block_start_line}: {feature} の BEGIN に対応する END がありません')
+            if changed:
+                open(fp, 'w', encoding='utf-8').writelines(out)
+
+    return block_count, line_count
+
+
 # --- 1) ファイルを消す -------------------------------------------------------
 removed = 0
 for rel in REMOVE_FILES:
@@ -93,6 +161,16 @@ for rel in REMOVE_FILES:
     else:
         errors.append(f'{rel}: 消そうとしたファイルが見つかりません')
 print(f'ファイル削除: {removed}件')
+
+# --- 1.5) public_products のマーカー付きコードを除去 -------------------------
+#     shortcodes.php のショートコード本体・service-main/db/ui.php のフォーム欄と
+#     一覧バッジ・settings.php のデザイン設定とドキュメント・order-items.php の
+#     Web申込み用請求行生成・ktpwp.php のブートストラップ呼び出しが対象。
+#     マイグレーション4本と ktp_service テーブルの4カラムはあえて残す
+#     （contracts 機能が同じテーブルの列順に依存しており、消すと有効化中の
+#     機能が壊れるため。カラムが残るだけでは「ロックされた機能」にはならない）。
+pp_blocks, pp_lines = strip_feature_markers('public_products')
+print(f'public_products マーカー除去: ブロック{pp_blocks}件 / 単独行{pp_lines}行')
 
 # --- 2) オートローダ登録を消す ----------------------------------------------
 autoload_pat = r"'(" + '|'.join(REMOVE_CLASSES) + r")'\s*=>"
@@ -119,7 +197,7 @@ drop_lines('ktpwp.php', r"wp_enqueue_style\( 'ktp-report'")
 # PHP Warning を吐いて全ページの先頭に出る（2026-09-03 に実機で発見）。
 # **class_exists ガードはファイルの存在を保証しない。** 参照検査だけでは拾えない。
 edit('ktpwp.php', """if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
-    include_once MY_PLUGIN_PATH . 'includes/class-ktpwp-tab-report.php';
+    include_once KANTANPRO_PLUGIN_DIR . 'includes/class-ktpwp-tab-report.php';
 }
 """, '')
 
@@ -140,9 +218,17 @@ edit('includes/class-ktpwp-edition.php',
 		// 同梱していない以上 UI も出してはいけないので、無効として扱う。
 		// （空配列にすると、実体の無い機能の列やボタンが描画されてしまう。
 		//   2026-09-03 にサービスタブの「公開」列が出て気づいた）
+		//
+		// 「公開商品」機能のキーは 2026-09-14 の指摘（Guideline 5 再指摘）を受けて
+		// ここから外した。report / stripe_billing とは扱いが違う: あちらは
+		// 「隠しているが読み手がいる」フラグとして残しても問題なかったが、
+		// 「公開商品」は関連コードを全て物理削除したため、
+		// このキーを読むコードがどこにも残っていない。
+		// 読み手のいない「無効機能」を配列に残すこと自体が、
+		// レビューのAIが検出しようとしている「実装はあるが隠されている」の
+		// 形そのものになるため、消したままにすること。
 		return array(
 			'report',
-			'public_products',
 			'stripe_billing',
 			'contract_invoice_auto_mail',
 		);""")
@@ -338,18 +424,139 @@ for rel in REMOVE_FILES:
 if leftovers:
     errors.append('消えていないファイル: ' + ', '.join(leftovers))
 
-# 消したファイルを include/require している箇所が残っていないか。
-# class_exists ガードがあっても、ファイルが無ければ Warning が出る。
+# 消したファイルを include/require、または enqueue/URL 参照している箇所が
+# 残っていないか。class_exists ガードがあっても、ファイルが無ければ
+# PHP Warning が出る（include/require）か、404 になる（CSS/JS の enqueue）。
+LOAD_REF_PATTERN = re.compile(
+    r'\b(include|include_once|require|require_once|load_required_class'
+    r'|wp_enqueue_style|wp_enqueue_script|wp_register_style|wp_register_script)\b'
+)
 for rel in REMOVE_FILES:
     base = os.path.basename(rel)
     for dp, dns, fns in os.walk(stage):
         for fn in fns:
-            if not fn.endswith('.php'):
+            if not fn.endswith(('.php', '.js')):
                 continue
             fp = os.path.join(dp, fn)
             for i, line in enumerate(open(fp, encoding='utf-8', errors='replace'), 1):
-                if base in line and re.search(r'\b(include|include_once|require|require_once|load_required_class)\b', line):
+                if base in line and (LOAD_REF_PATTERN.search(line) or "plugin_dir_url" in line or "plugins_url" in line):
                     errors.append(f'{os.path.relpath(fp, stage)}:{i} が削除済みの {base} を読み込もうとしています')
+
+# --- 6.5) public_products の痕跡が残っていないか -----------------------------
+#     マーカーで囲んだつもりでも、対応漏れやマーカー範囲外の書き忘れがあれば
+#     ここで捕まえる。次のレビューで同じ指摘を二度と受けないためのゲート。
+#
+# 許可リストに載っている箇所だけは、意図的に残す（理由を必ず書く）。
+# ここに安易に追加すると「隠しているだけ」に逆戻りするので、
+# 追加する前に「なぜ機能の実装ではないのか」を説明できることを確認する。
+PUBLIC_PRODUCTS_ALLOWED = {
+    # class-ktpwp-service-db.php: UI（フォーム欄・一覧バッジ・ショートコード）と
+    # 「無効なら値を強制的にクリアする」clamp_public_product_fields_for_edition() は
+    # マーカーで全て除去済み。残るのは ktp_service.get_schema() の列定義、
+    # $_POST から読んだ値をそのままDBへ保存するだけの配列組み立て、
+    # カラム有無を確認するヘルパー（service_table_has_public_*_column）、
+    # 値の型を揃えるだけのサニタイザ（sanitize_public_*／is_public_*／
+    # format_public_html_for_display）。UIが無い以上これらの値は
+    # 事実上常に既定値のままになるが、テーブル形状を無料版と同じに保つために
+    # 保存ロジック自体は残す。「機能を隠す」コードではなく
+    # 「列を持つテーブルへの一般的な読み書き」なので許可する。
+    ('includes/class-ktpwp-service-db.php', 'is_public'),
+    ('includes/class-ktpwp-service-db.php', 'public_quantity_fixed'),
+    ('includes/class-ktpwp-service-db.php', 'public_instant_purchase'),
+    ('includes/class-ktpwp-service-db.php', 'public_html'),
+    # class-ktpwp-service-main.php: 一覧のソート許可リストと $_GET 読み取り時の
+    # 初期化に、UI除去後は使われない既定値代入としてカラム名が残る。
+    # UIの列・バッジ・入力欄は除去済みで、値が変わっても表示に影響しない。
+    ('includes/class-ktpwp-service-main.php', 'is_public'),
+    ('includes/class-ktpwp-service-main.php', 'public_quantity_fixed'),
+    ('includes/class-ktpwp-service-main.php', 'public_instant_purchase'),
+    ('includes/class-ktpwp-service-main.php', 'public_html'),
+    # 4本のマイグレーション。列を追加する ALTER 文の中で、直前に追加した
+    # 列名を `AFTER \`...\`` として参照し合っている（実行順の連鎖）ため、
+    # 自分の列名だけでなく前段の列名も同じ行に同居する。
+    ('includes/migrations/20260611_add_is_public_to_service.php', 'is_public'),
+    ('includes/migrations/20260618_add_public_quantity_fixed_to_service.php', 'public_quantity_fixed'),
+    ('includes/migrations/20260619_add_public_html_to_service.php', 'public_html'),
+    ('includes/migrations/20260619_add_public_html_to_service.php', 'public_quantity_fixed'),
+    ('includes/migrations/20260620_add_public_instant_purchase_to_service.php', 'public_instant_purchase'),
+    ('includes/migrations/20260620_add_public_instant_purchase_to_service.php', 'public_quantity_fixed'),
+    # contracts の billing_cycle 列を is_public の直後に追加するための
+    # ALTER 文。同じ理由でカラム名を残す必要がある。
+    ('includes/migrations/20260613_add_contract_billing_cycle_to_service.php', 'is_public'),
+    # class-ktpwp-contract-service-public-availability.php: 在庫・契約可否の
+    # 判定で is_public カラムの値を読むだけで、フォーム/UI/保存ロジックは無い。
+    # contracts は無料版で開放している機能なので、この参照はそのまま必要。
+    ('includes/class-ktpwp-contract-service-public-availability.php', 'is_public'),
+    # 受注の external_source に保存済みの列挙値。DBに実データがある可能性があり、
+    # 契約枠の計算や受注ラベル表示がこの文字列に依存している。
+    # 保存済みデータの識別子であって「機能の実装」ではないため残す。
+    ('includes/class-ktpwp-order-admin-notification.php', 'public_product'),
+    ('includes/class-ktpwp-contract-service-public-availability.php', 'public_product'),
+    ('includes/class-ktpwp-service-related-orders.php', 'public_product'),
+    ('includes/class-ktpwp-staff-chat.php', 'public_product'),
+    ('includes/class-ktpwp-payment-timing.php', 'public_product'),
+    # KTPWP_Public_Product_Order_Memo への参照は class_exists() ガード済みで、
+    # 該当クラスファイルは REMOVE_FILES で物理削除される。ガードにより
+    # 常に false 側の分岐しか実行されない（Phase 1 と同じ確認済みの方式）。
+    ('includes/class-ktpwp-order-contract-draft-resolver.php', 'KTPWP_Public_Product'),
+    ('includes/class-ktpwp-service-related-orders.php', 'KTPWP_Public_Product'),
+    ('includes/class-ktpwp-payment-timing.php', 'KTPWP_Public_Product'),
+}
+
+# 「単語境界」付きで見るパターン。素の部分文字列だと
+# is_public_checkbox / is_public_products_enabled / render_public_html_field
+# のような **本来検出すべき複合識別子** まで許可リストが誤って隠してしまうため、
+# is_public 系はカラム名そのもの（前後が識別子文字ではない）にだけ絞る。
+PUBLIC_PRODUCTS_WORD_PATTERNS = [
+    'is_public', 'public_quantity_fixed', 'public_instant_purchase', 'public_html',
+]
+# 部分文字列のままでよいもの（このパターンが出る時点で複合識別子ごと怪しいので、
+# 逆に単語境界を付けると検出漏れが増える）。
+PUBLIC_PRODUCTS_SUBSTR_PATTERNS = [
+    'public_products', 'public-products', 'ktpwp_public_product',
+    'public_product_card_bg_color', 'KTPWP_Public_Product', 'public_product',
+]
+
+WORD_PATTERN_RE = {p: re.compile(r'(?<![A-Za-z0-9_])' + re.escape(p) + r'(?![A-Za-z0-9_])') for p in PUBLIC_PRODUCTS_WORD_PATTERNS}
+
+for dp, dns, fns in os.walk(stage):
+    for fn in fns:
+        if not fn.endswith(('.php', '.js', '.css', '.txt')):
+            continue
+        fp = os.path.join(dp, fn)
+        rel = os.path.relpath(fp, stage)
+        for i, line in enumerate(open(fp, encoding='utf-8', errors='replace'), 1):
+            hits = []
+            for pat in PUBLIC_PRODUCTS_SUBSTR_PATTERNS:
+                if pat in line:
+                    hits.append(pat)
+            for pat in PUBLIC_PRODUCTS_WORD_PATTERNS:
+                if WORD_PATTERN_RE[pat].search(line):
+                    hits.append(pat)
+            for pat in hits:
+                if (rel, pat) in PUBLIC_PRODUCTS_ALLOWED:
+                    continue
+                errors.append(f'{rel}:{i}: public_products の痕跡が残っています（{pat!r}） → {line.strip()[:100]!r}')
+
+# マーカー自体の消し忘れ（BEGIN/ENDの対応が壊れて片方だけ残った場合の保険）。
+for dp, dns, fns in os.walk(stage):
+    for fn in fns:
+        if not fn.endswith(('.php', '.js', '.css')):
+            continue
+        fp = os.path.join(dp, fn)
+        for i, line in enumerate(open(fp, encoding='utf-8', errors='replace'), 1):
+            if 'KTPWP-WPORG-STRIP' in line:
+                errors.append(f'{os.path.relpath(fp, stage)}:{i}: 除去し忘れたマーカーが残っています')
+
+# ショートコードとして登録されていないことの確認。
+for dp, dns, fns in os.walk(stage):
+    for fn in fns:
+        if not fn.endswith('.php'):
+            continue
+        fp = os.path.join(dp, fn)
+        for i, line in enumerate(open(fp, encoding='utf-8', errors='replace'), 1):
+            if re.search(r"(add_shortcode|shortcode_exists)\(\s*'ktpwp_public_products'", line):
+                errors.append(f'{os.path.relpath(fp, stage)}:{i}: ktpwp_public_products がショートコードとして残っています')
 
 # 削除したクラスへの参照が「ガードの外」に残っていないか。
 # ガードは同じ行とは限らず、数行前の if ( class_exists( ... ) ) のこともあるので

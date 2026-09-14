@@ -378,6 +378,7 @@ if ( ! class_exists( 'KTPWP_Service_UI' ) ) {
 				$html .= '<textarea id="memo" name="memo" rows="3"></textarea>';
 				$html .= '</div>';
 
+				// KTPWP-WPORG-STRIP public_products BEGIN
 				if ( function_exists( 'ktpwp_is_feature_enabled' ) && ! ktpwp_is_feature_enabled( 'public_products' ) ) {
 					if ( class_exists( 'KTPWP_Edition' ) ) {
 						$html .= KTPWP_Edition::get_upgrade_message_html( __( 'サイトに公開', 'kantanpro' ) );
@@ -387,6 +388,7 @@ if ( ! class_exists( 'KTPWP_Service_UI' ) ) {
 					$html .= '<label><input type="checkbox" name="is_public" value="1"><span class="ktpwp-service-public-field__text">' . esc_html__( 'サイトに公開', 'kantanpro' ) . '</span></label>';
 					$html .= '</div>';
 				}
+				// KTPWP-WPORG-STRIP public_products END
 
 				// 画像アップロード機能（新規サービス追加時）
 				$html .= '<div class="form-group">';

@@ -73,14 +73,18 @@ class KTPWP_JapanPost_Address_API {
 	 */
 	public static function get_request_client_ip() {
 		if ( ! empty( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ) {
-			$parts = explode( ',', (string) $_SERVER['HTTP_X_FORWARDED_FOR'] );
+			$forwarded_for = sanitize_text_field( wp_unslash( $_SERVER['HTTP_X_FORWARDED_FOR'] ) );
+			$parts = explode( ',', $forwarded_for );
 			$candidate = trim( $parts[0] );
 			if ( filter_var( $candidate, FILTER_VALIDATE_IP ) ) {
 				return $candidate;
 			}
 		}
-		if ( ! empty( $_SERVER['REMOTE_ADDR'] ) && filter_var( $_SERVER['REMOTE_ADDR'], FILTER_VALIDATE_IP ) ) {
-			return (string) $_SERVER['REMOTE_ADDR'];
+		if ( ! empty( $_SERVER['REMOTE_ADDR'] ) ) {
+			$remote_addr = sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) );
+			if ( filter_var( $remote_addr, FILTER_VALIDATE_IP ) ) {
+				return $remote_addr;
+			}
 		}
 		return '127.0.0.1';
 	}

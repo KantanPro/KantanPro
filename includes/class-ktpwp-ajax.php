@@ -983,7 +983,9 @@ class KTPWP_Ajax {
 	 * Ajax: 新規アイテム作成処理（強化版）
 	 */
 	public function ajax_create_new_item() {
-		error_log( '[AJAX_CREATE_NEW_ITEM] Method called - POST data: ' . print_r($_POST, true) );
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			error_log( '[AJAX_CREATE_NEW_ITEM] Method called - POST data: ' . print_r( $_POST, true ) );
+		}
 		
 		// 編集者以上の権限チェック
 		if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
@@ -1111,7 +1113,9 @@ class KTPWP_Ajax {
 		}
 
 		// 受け取ったパラメータをログに出力
-		error_log( '[AJAX_DELETE_ITEM] Received params: ' . print_r( $_POST, true ) );
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			error_log( '[AJAX_DELETE_ITEM] Received params: ' . print_r( $_POST, true ) );
+		}
 
 		// セキュリティチェック - 複数のnonce名でチェック
 		$nonce_verified = false;
@@ -1233,7 +1237,9 @@ class KTPWP_Ajax {
 	 * Ajax: アイテムの並び順更新処理
 	 */
 	public function ajax_update_item_order() {
-		error_log( '[AJAX_UPDATE_ITEM_ORDER] リクエスト開始: ' . print_r( $_POST, true ) );
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			error_log( '[AJAX_UPDATE_ITEM_ORDER] リクエスト開始: ' . print_r( $_POST, true ) );
+		}
 
 		// 編集者以上の権限チェック
 		if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
@@ -3066,12 +3072,17 @@ class KTPWP_Ajax {
 			if ( empty( $my_email ) ) {
 				global $wpdb;
 				$setting_table = $wpdb->prefix . 'ktp_setting';
-				$setting       = $wpdb->get_row(
-					$wpdb->prepare(
-						"SELECT * FROM `{$setting_table}` WHERE id = %d",
-						1
-					)
-				);
+				// 新規インストールにはこの旧テーブル自体が存在しないため、
+				// 存在確認してからクエリする（無ければ毎回 database error が出ていた）。
+				$setting = null;
+				if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $setting_table ) ) === $setting_table ) {
+					$setting = $wpdb->get_row(
+						$wpdb->prepare(
+							"SELECT * FROM `{$setting_table}` WHERE id = %d",
+							1
+						)
+					);
+				}
 				if ( $setting ) {
 					$my_email = sanitize_email( $setting->email_address );
 				}
@@ -3350,12 +3361,17 @@ class KTPWP_Ajax {
 			if ( empty( $my_email ) ) {
 				global $wpdb;
 				$setting_table = $wpdb->prefix . 'ktp_setting';
-				$setting       = $wpdb->get_row(
-                    $wpdb->prepare(
-                        "SELECT * FROM `{$setting_table}` WHERE id = %d",
-                        1
-                    )
-                );
+				// 新規インストールにはこの旧テーブル自体が存在しないため、
+				// 存在確認してからクエリする（無ければ毎回 database error が出ていた）。
+				$setting = null;
+				if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $setting_table ) ) === $setting_table ) {
+					$setting = $wpdb->get_row(
+						$wpdb->prepare(
+							"SELECT * FROM `{$setting_table}` WHERE id = %d",
+							1
+						)
+					);
+				}
 				if ( $setting ) {
 					$my_email = sanitize_email( $setting->email_address );
 				}
@@ -3371,12 +3387,17 @@ class KTPWP_Ajax {
 			if ( empty( $my_company ) ) {
 				global $wpdb;
 				$setting_table = $wpdb->prefix . 'ktp_setting';
-				$setting       = $wpdb->get_row(
-                    $wpdb->prepare(
-                        "SELECT * FROM `{$setting_table}` WHERE id = %d",
-                        1
-                    )
-                );
+				// 新規インストールにはこの旧テーブル自体が存在しないため、
+				// 存在確認してからクエリする（無ければ毎回 database error が出ていた）。
+				$setting = null;
+				if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $setting_table ) ) === $setting_table ) {
+					$setting = $wpdb->get_row(
+						$wpdb->prepare(
+							"SELECT * FROM `{$setting_table}` WHERE id = %d",
+							1
+						)
+					);
+				}
 				if ( $setting ) {
 					$my_company = sanitize_text_field( strip_tags( $setting->my_company_content ) );
 				}
@@ -3758,12 +3779,17 @@ class KTPWP_Ajax {
 			if ( empty( $company_info ) ) {
 				global $wpdb;
 				$setting_table = $wpdb->prefix . 'ktp_setting';
-				$setting       = $wpdb->get_row(
-                    $wpdb->prepare(
-                        "SELECT * FROM `{$setting_table}` WHERE id = %d",
-                        1
-                    )
-                );
+				// 新規インストールにはこの旧テーブル自体が存在しないため、
+				// 存在確認してからクエリする（無ければ毎回 database error が出ていた）。
+				$setting = null;
+				if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $setting_table ) ) === $setting_table ) {
+					$setting = $wpdb->get_row(
+						$wpdb->prepare(
+							"SELECT * FROM `{$setting_table}` WHERE id = %d",
+							1
+						)
+					);
+				}
 				if ( $setting ) {
 					$company_info = sanitize_text_field( strip_tags( $setting->my_company_content ) );
 				}
@@ -3914,6 +3940,18 @@ class KTPWP_Ajax {
 					array(
 						'success' => false,
 						'data'    => __( 'セキュリティトークンが無効です', 'kantanpro' ),
+					)
+				);
+				return;
+			}
+
+			// 権限チェック（nonce だけでは read 権限だけのユーザーが任意の受注のスタッフチャットを
+			// 取得できてしまっていたため、他のハンドラと同じ capability チェックを追加）
+			if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
+				$this->send_clean_json_response(
+					array(
+						'success' => false,
+						'data'    => __( 'この操作を行う権限がありません。', 'kantanpro' ),
 					)
 				);
 				return;
@@ -4521,7 +4559,9 @@ class KTPWP_Ajax {
 	public function ajax_save_delivery_date() {
 		try {
 			// デバッグ情報をログに出力
-			error_log( 'KTPWP Ajax save_delivery_date called with POST data: ' . print_r( $_POST, true ) );
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( 'KTPWP Ajax save_delivery_date called with POST data: ' . print_r( $_POST, true ) );
+			}
 
 			// パラメータ取得
 			$order_id   = isset( $_POST['order_id'] ) ? absint( $_POST['order_id'] ) : 0;
@@ -4583,11 +4623,11 @@ class KTPWP_Ajax {
 
 			foreach ( $nonce_names as $nonce_name ) {
 				if ( isset( $_POST[ $nonce_name ] ) ) {
-					$nonce_value = $_POST[ $nonce_name ];
+					$nonce_value = is_array( $_POST[ $nonce_name ] ) ? $_POST[ $nonce_name ] : sanitize_text_field( wp_unslash( $_POST[ $nonce_name ] ) );
 
 					// 配列の場合はvalueキーを取得
 					if ( is_array( $nonce_value ) && isset( $nonce_value['value'] ) ) {
-						$nonce_value = $nonce_value['value'];
+						$nonce_value = sanitize_text_field( wp_unslash( $nonce_value['value'] ) );
 					}
 
 					error_log( 'KTPWP Ajax: Found nonce field: ' . $nonce_name . ' = ' . $nonce_value );
@@ -5029,7 +5069,7 @@ class KTPWP_Ajax {
 
 		} catch ( Exception $e ) {
 			error_log( 'KTPWP Ajax ajax_get_creating_warning_count Error: ' . $e->getMessage() );
-			wp_send_json_error( __( 'エラーが発生しました: ' . $e->getMessage(), 'kantanpro' ) );
+			wp_send_json_error( __( 'エラーが発生しました: ', 'kantanpro' ) . $e->getMessage() );
 		}
 	}
 
@@ -5095,7 +5135,7 @@ class KTPWP_Ajax {
 
 		} catch ( Exception $e ) {
 			error_log( 'KTPWP Ajax ajax_get_client_tax_category Error: ' . $e->getMessage() );
-			wp_send_json_error( __( 'エラーが発生しました: ' . $e->getMessage(), 'kantanpro' ) );
+			wp_send_json_error( __( 'エラーが発生しました: ', 'kantanpro' ) . $e->getMessage() );
 		}
 	}
 
@@ -5189,7 +5229,7 @@ class KTPWP_Ajax {
 
 		} catch ( Exception $e ) {
 			error_log( 'KTPWP Ajax ajax_get_client_tax_category_by_order Error: ' . $e->getMessage() );
-			wp_send_json_error( __( 'エラーが発生しました: ' . $e->getMessage(), 'kantanpro' ) );
+			wp_send_json_error( __( 'エラーが発生しました: ', 'kantanpro' ) . $e->getMessage() );
 		}
 	}
 
@@ -5221,7 +5261,7 @@ class KTPWP_Ajax {
 
 			foreach ($nonce_sources as $source) {
 				if (isset($_POST[$source]) && !empty($_POST[$source])) {
-					$nonce_value = $_POST[$source];
+					$nonce_value = sanitize_text_field( wp_unslash( $_POST[$source] ) );
 					error_log('KTPWP Ajax: Trying tax category nonce from source: ' . $source . ' with value: ' . $nonce_value);
 					// 複数のnonce名で検証を試行
 					$nonce_names = [
@@ -5306,7 +5346,7 @@ class KTPWP_Ajax {
 
 		} catch ( Exception $e ) {
 			error_log( 'KTPWP Ajax ajax_get_supplier_tax_category Error: ' . $e->getMessage() );
-			wp_send_json_error( __( 'エラーが発生しました: ' . $e->getMessage(), 'kantanpro' ) );
+			wp_send_json_error( __( 'エラーが発生しました: ', 'kantanpro' ) . $e->getMessage() );
 		}
 	}
 
@@ -5418,7 +5458,7 @@ class KTPWP_Ajax {
 
 		} catch ( Exception $e ) {
 			error_log( 'KTPWP Ajax ajax_auto_save_field Error: ' . $e->getMessage() );
-			wp_send_json_error( __( 'エラーが発生しました: ' . $e->getMessage(), 'kantanpro' ) );
+			wp_send_json_error( __( 'エラーが発生しました: ', 'kantanpro' ) . $e->getMessage() );
 		}
 	}
 
@@ -5429,6 +5469,14 @@ class KTPWP_Ajax {
 	 * @param array  $context Additional context data
 	 */
 	private function log_ajax_error( $message, $context = array() ) {
+		// $context には $_POST がそのまま渡されることが多く、
+		// 常時ログへ書き出すと攻撃者制御下の入力がそのままサーバーログに残ってしまう。
+		// WP_DEBUG が有効なときだけ詳細（$context）を出す。
+		if ( ! defined( 'WP_DEBUG' ) || ! WP_DEBUG ) {
+			error_log( 'KTPWP Ajax Error: ' . $message );
+			return;
+		}
+
 		$log_message = 'KTPWP Ajax Error: ' . $message;
 		if ( ! empty( $context ) ) {
 			$log_message .= ' Context: ' . print_r( $context, true );
@@ -5464,7 +5512,7 @@ class KTPWP_Ajax {
 
 			foreach ($nonce_sources as $source) {
 				if (isset($_POST[$source]) && !empty($_POST[$source])) {
-					$nonce_value = $_POST[$source];
+					$nonce_value = sanitize_text_field( wp_unslash( $_POST[$source] ) );
 					error_log('KTPWP Ajax: Trying nonce from source: ' . $source . ' with value: ' . $nonce_value);
 					// 複数のnonce名で検証を試行
 					$nonce_names = [
@@ -5493,17 +5541,21 @@ class KTPWP_Ajax {
 			}
 			
 			if (!$nonce_verified) {
-				error_log('[AJAX_GET_SUPPLIER_QUALIFIED_INVOICE] Security check failed - all nonce sources: ' . print_r($nonce_sources, true));
-				error_log('[AJAX_GET_SUPPLIER_QUALIFIED_INVOICE] POST data: ' . print_r($_POST, true));
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					error_log('[AJAX_GET_SUPPLIER_QUALIFIED_INVOICE] Security check failed - all nonce sources: ' . print_r($nonce_sources, true));
+					error_log('[AJAX_GET_SUPPLIER_QUALIFIED_INVOICE] POST data: ' . print_r($_POST, true));
+				}
 				wp_send_json_error(__('セキュリティ検証に失敗しました', 'kantanpro'));
 				return;
 			}
 
 			// パラメータ取得
 			$supplier_id = isset( $_POST['supplier_id'] ) ? absint( $_POST['supplier_id'] ) : 0;
-			
+
 			// デバッグ情報をログに記録
-			error_log( 'KTPWP Ajax: ajax_get_supplier_qualified_invoice_number - supplier_id: ' . $supplier_id . ', POST data: ' . print_r($_POST, true) );
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( 'KTPWP Ajax: ajax_get_supplier_qualified_invoice_number - supplier_id: ' . $supplier_id . ', POST data: ' . print_r($_POST, true) );
+			}
 			
 			if ( $supplier_id <= 0 ) {
 				error_log( 'KTPWP Ajax: Invalid supplier ID: ' . $supplier_id );
@@ -5566,7 +5618,7 @@ class KTPWP_Ajax {
 
 		} catch ( Exception $e ) {
 			error_log( 'KTPWP Ajax ajax_get_supplier_qualified_invoice_number Error: ' . $e->getMessage() );
-			wp_send_json_error( __( 'エラーが発生しました: ' . $e->getMessage(), 'kantanpro' ) );
+			wp_send_json_error( __( 'エラーが発生しました: ', 'kantanpro' ) . $e->getMessage() );
 		}
 	}
 
@@ -6480,12 +6532,17 @@ class KTPWP_Ajax {
 			// 旧システムからも取得（後方互換性）
 			if ( empty( $my_company ) ) {
 				$setting_table = $wpdb->prefix . 'ktp_setting';
-				$setting = $wpdb->get_row(
-					$wpdb->prepare(
-						"SELECT * FROM `{$setting_table}` WHERE id = %d",
-						1
-					)
-				);
+				// 新規インストールにはこの旧テーブル自体が存在しないため、
+				// 存在確認してからクエリする（無ければ毎回 database error が出ていた）。
+				$setting = null;
+				if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $setting_table ) ) === $setting_table ) {
+					$setting = $wpdb->get_row(
+						$wpdb->prepare(
+							"SELECT * FROM `{$setting_table}` WHERE id = %d",
+							1
+						)
+					);
+				}
 				if ( $setting && isset( $setting->my_company_content ) ) {
 					$my_company = sanitize_text_field( strip_tags( $setting->my_company_content ) );
 				}

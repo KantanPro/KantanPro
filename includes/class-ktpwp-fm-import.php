@@ -405,9 +405,7 @@ final class KTPWP_FM_Import {
 			wp_send_json_error( array( 'message' => __( 'ヘッダーが不正です。', 'kantanpro' ) ) );
 		}
 		$headers = array_map( 'sanitize_text_field', array_map( 'strval', $headers ) );
-		if ( ! is_array( $samples ) ) {
-			$samples = array();
-		}
+		$samples = is_array( $samples ) ? map_deep( $samples, 'sanitize_text_field' ) : array();
 
 		$entity_post = isset( $_POST['entity'] ) ? wp_unslash( $_POST['entity'] ) : '';
 		$entity        = is_string( $entity_post ) ? self::normalize_entity( $entity_post ) : self::ENTITY_CLIENT;

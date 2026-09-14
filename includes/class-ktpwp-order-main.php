@@ -591,13 +591,18 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 								}
 
 								// 旧システムからも取得（後方互換性） - Use prepared statement
+								// 新規インストールにはこの旧テーブル自体が存在しないため、
+								// 存在確認してからクエリする（無ければ毎回 database error が出ていた）。
 								$setting_table = $wpdb->prefix . 'ktp_setting';
-								$setting = $wpdb->get_row(
-                                    $wpdb->prepare(
-                                        "SELECT * FROM `{$setting_table}` WHERE id = %d",
-                                        1
-                                    )
-								);
+								$setting = null;
+								if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $setting_table ) ) === $setting_table ) {
+									$setting = $wpdb->get_row(
+										$wpdb->prepare(
+											"SELECT * FROM `{$setting_table}` WHERE id = %d",
+											1
+										)
+									);
+								}
 
 								// 会社情報が新システムで見つからない場合は旧システムから取得
 								if ( empty( $my_company ) && $setting ) {

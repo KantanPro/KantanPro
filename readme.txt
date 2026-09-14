@@ -4,7 +4,7 @@ Tags: invoice, crm, order management, quotation, business
 Requires at least: 5.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.3.39
+Stable tag: 1.3.40
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -146,7 +146,29 @@ fields. It only sends anything if you have entered your own OpenAI API key.
 
 == Changelog ==
 
-The complete history is in `changelog.txt`, bundled with the plugin.
+= 1.3.40 - 2026-09-14 =
+* Fixed plugin activation not creating the required database tables on some
+  hosting environments (including WordPress Playground). The environment
+  check that ran before table creation required the `mysqli` PHP extension,
+  which some environments do not have, and misread an unlimited
+  `memory_limit` as insufficient. Table creation no longer depends on that
+  check, and activation now fails loudly with a clear message instead of
+  silently completing with tables missing.
+* Removed the public product listing and inquiry feature entirely, along
+  with its CSS, JavaScript and the "sell publicly" fields on the service
+  form. It shipped in the package while hidden behind a flag in the free
+  edition; it is now not present in the code at all.
+* Fixed a permission check on the shortcode entry point that only verified
+  the visitor was logged in, not that they had permission to view business
+  data. A logged-in Subscriber could previously see the client, order and
+  supplier lists.
+* Fixed several `WordPress database error` warnings that were logged on
+  every relevant page load when a legacy settings table from very old
+  versions of the plugin was absent, including one on the very first
+  front-end view after activation if the admin dashboard was never opened.
+* Additional hardening: input sanitization on several `$_SERVER`/`$_POST`
+  reads, nonce handling, translator-facing strings, and removed a handful
+  of unused constants and a dead admin-menu registration.
 
 = 1.3.39 - 2026-09-07 =
 * Removed the automatic rewriting of the site's root .htaccess file. The plugin no

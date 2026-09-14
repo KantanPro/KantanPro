@@ -15,7 +15,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @return bool
  */
 function ktpwp_contract_billing_ajax_can_manage() {
-	return current_user_can( 'edit_posts' ) || current_user_can( 'ktpwp_access' );
+	return function_exists( 'ktpwp_current_user_can_access' )
+		? ktpwp_current_user_can_access()
+		: ( current_user_can( 'edit_posts' ) || current_user_can( 'ktpwp_access' ) );
 }
 
 /**

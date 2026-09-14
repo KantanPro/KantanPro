@@ -40,15 +40,11 @@ function ktp_save_contract_ajax() {
 
 	$initial_fees_raw = isset( $_POST['initial_fees'] ) ? wp_unslash( $_POST['initial_fees'] ) : '[]';
 	$initial_fees     = json_decode( $initial_fees_raw, true );
-	if ( ! is_array( $initial_fees ) ) {
-		$initial_fees = array();
-	}
+	$initial_fees     = is_array( $initial_fees ) ? map_deep( $initial_fees, 'sanitize_text_field' ) : array();
 
 	$recurring_items_raw = isset( $_POST['recurring_items'] ) ? wp_unslash( $_POST['recurring_items'] ) : '[]';
 	$recurring_items     = json_decode( $recurring_items_raw, true );
-	if ( ! is_array( $recurring_items ) ) {
-		$recurring_items = array();
-	}
+	$recurring_items     = is_array( $recurring_items ) ? map_deep( $recurring_items, 'sanitize_text_field' ) : array();
 
 	$data = array(
 		'id'                 => absint( $_POST['contract_id'] ?? 0 ),

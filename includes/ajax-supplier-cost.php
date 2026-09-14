@@ -220,7 +220,10 @@ add_action(
 		// items配列で送信された場合の対応
 		$item = null;
 		if ( isset( $_POST['items'] ) ) {
-			$items = json_decode( stripslashes( $_POST['items'] ), true );
+			$items = json_decode( wp_unslash( $_POST['items'] ), true );
+			if ( is_array( $items ) ) {
+				$items = map_deep( $items, 'sanitize_text_field' );
+			}
 			if ( is_array( $items ) && isset( $items[0] ) ) {
 				$item = $items[0];
 			}

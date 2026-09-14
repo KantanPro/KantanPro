@@ -506,6 +506,11 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 		// -----------------------------
 
 		function View_Table( $name ) {
+			// アクセス権限チェック（多層防御。主なゲートは ktpwp.php の kantanAllTab() 側）。
+			if ( function_exists( 'ktpwp_current_user_can_access' ) && ! ktpwp_current_user_can_access() ) {
+				return '';
+			}
+
 			global $wpdb, $wp; // $wp をグローバルに追加
 
 			// ベースURLの構築

@@ -142,7 +142,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 				isset( $_POST['public_html'] ) ? wp_unslash( $_POST['public_html'] ) : ''
 			);
 			$public_instant_purchase = self::resolve_public_instant_purchase_from_post( $tab_name, $data_id );
-			$this->clamp_public_product_fields_for_edition( $data_id, $table_name, $is_public, $public_quantity_fixed, $public_html );
+			$this->clamp_public_product_fields_for_edition( $data_id, $table_name, $is_public, $public_quantity_fixed, $public_html ); // KTPWP-WPORG-STRIP public_products
 			$this->clamp_contract_fields_for_edition( $data_id, $table_name, $contract_billing_cycle, $stock );
 
 			// Create search field value
@@ -324,7 +324,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 				isset( $_POST['public_html'] ) ? wp_unslash( $_POST['public_html'] ) : ''
 			);
 			$public_instant_purchase = self::resolve_public_instant_purchase_from_post( $tab_name, 0 );
-			$this->clamp_public_product_fields_for_edition( 0, $table_name, $is_public, $public_quantity_fixed, $public_html );
+			$this->clamp_public_product_fields_for_edition( 0, $table_name, $is_public, $public_quantity_fixed, $public_html ); // KTPWP-WPORG-STRIP public_products
 			$this->clamp_contract_fields_for_edition( 0, $table_name, $contract_billing_cycle, $stock );
 
 			// 検索フィールド値を作成
@@ -1389,6 +1389,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 			return $default_url;
 		}
 
+		// KTPWP-WPORG-STRIP public_products BEGIN
 		/**
 		 * 公開中のサービスを ID で取得する。
 		 *
@@ -1449,6 +1450,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 				)
 			);
 		}
+		// KTPWP-WPORG-STRIP public_products END
 
 		/**
 		 * サービステーブルに is_public カラムがあるか確認する。
@@ -1597,6 +1599,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 			return ! function_exists( 'ktpwp_is_feature_enabled' ) || ktpwp_is_feature_enabled( 'contracts' );
 		}
 
+		// KTPWP-WPORG-STRIP public_products BEGIN
 		/**
 		 * 公開商品機能が無効なエディション向けに is_public 等を制限する。
 		 *
@@ -1634,6 +1637,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 				$public_html           = '';
 			}
 		}
+		// KTPWP-WPORG-STRIP public_products END
 
 		public static function sanitize_public_quantity_fixed( $raw ) {
 			return isset( $raw ) && '1' === (string) $raw ? 1 : 0;
@@ -1706,9 +1710,11 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 		 * @return int
 		 */
 		private static function resolve_public_instant_purchase_from_post( $tab_name, $data_id ) {
+			// KTPWP-WPORG-STRIP public_products BEGIN
 			if ( function_exists( 'ktpwp_is_feature_enabled' ) && ! ktpwp_is_feature_enabled( 'public_products' ) ) {
 				return 0;
 			}
+			// KTPWP-WPORG-STRIP public_products END
 
 			if ( isset( $_POST['public_instant_purchase'] ) ) {
 				return self::sanitize_public_instant_purchase( wp_unslash( $_POST['public_instant_purchase'] ) );

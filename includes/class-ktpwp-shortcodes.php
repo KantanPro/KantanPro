@@ -61,7 +61,7 @@ class KTPWP_Shortcodes {
      */
     private function init_hooks() {
         add_action( 'init', array( $this, 'register_shortcodes' ), 15 );
-        add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_public_products_assets' ) );
+        add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_public_products_assets' ) ); // KTPWP-WPORG-STRIP public_products
         add_action( 'wp_enqueue_scripts', array( $this, 'maybe_enqueue_banner_rotator_assets' ) );
         // ※Ajaxハンドラの登録は class-ktpwp-ajax.php 側でのみ行う
     }
@@ -128,7 +128,7 @@ class KTPWP_Shortcodes {
             'kantanAllTab'          => 'render_all_tabs',
             'ktpwp_all_tab'         => 'render_all_tabs',
             'kantanpro_ex'          => 'render_all_tabs',
-            'ktpwp_public_products' => 'render_public_products',
+            'ktpwp_public_products' => 'render_public_products', // KTPWP-WPORG-STRIP public_products
         );
 
         foreach ( $map as $tag => $method ) {
@@ -1244,6 +1244,7 @@ class KTPWP_Shortcodes {
         wp_send_json($users_data);
     }
 
+    // KTPWP-WPORG-STRIP public_products BEGIN
     /**
      * 公開商品ショートコード用アセットを読み込む。
      *
@@ -2316,6 +2317,7 @@ class KTPWP_Shortcodes {
 
         return '<div class="ktpwp-public-products-cards ktpwp-public-products-cards--cols-' . esc_attr( (string) $columns ) . '">' . $items . '</div>';
     }
+    // KTPWP-WPORG-STRIP public_products END
 
     /**
      * 登録済みショートコード一覧取得

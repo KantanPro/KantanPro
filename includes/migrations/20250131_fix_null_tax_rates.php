@@ -9,7 +9,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class FixNullTaxRatesMigration {
+class KTPWP_Fix_Null_Tax_Rates_Migration {
     
     public static function run() {
         global $wpdb;
@@ -70,10 +70,10 @@ class FixNullTaxRatesMigration {
 
 // マイグレーション実行用の関数
 function ktpwp_fix_null_tax_rates() {
-    return FixNullTaxRatesMigration::run();
+    return KTPWP_Fix_Null_Tax_Rates_Migration::run();
 }
 
 // チェック用の関数
 function ktpwp_check_null_tax_rates() {
-    return FixNullTaxRatesMigration::check();
+    return KTPWP_Fix_Null_Tax_Rates_Migration::check();
 } 

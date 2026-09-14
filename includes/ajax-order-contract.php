@@ -15,7 +15,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @return bool
  */
 function ktpwp_order_contract_ajax_can_manage() {
-	return current_user_can( 'edit_posts' ) || current_user_can( 'ktpwp_access' );
+	return function_exists( 'ktpwp_current_user_can_access' )
+		? ktpwp_current_user_can_access()
+		: ( current_user_can( 'edit_posts' ) || current_user_can( 'ktpwp_access' ) );
 }
 
 /**
@@ -100,15 +102,11 @@ function ktp_convert_order_to_contract_ajax() {
 
 	$initial_fees_raw = isset( $_POST['initial_fees'] ) ? wp_unslash( $_POST['initial_fees'] ) : '[]';
 	$initial_fees     = json_decode( $initial_fees_raw, true );
-	if ( ! is_array( $initial_fees ) ) {
-		$initial_fees = array();
-	}
+	$initial_fees     = is_array( $initial_fees ) ? map_deep( $initial_fees, 'sanitize_text_field' ) : array();
 
 	$recurring_items_raw = isset( $_POST['recurring_items'] ) ? wp_unslash( $_POST['recurring_items'] ) : '[]';
 	$recurring_items     = json_decode( $recurring_items_raw, true );
-	if ( ! is_array( $recurring_items ) ) {
-		$recurring_items = array();
-	}
+	$recurring_items     = is_array( $recurring_items ) ? map_deep( $recurring_items, 'sanitize_text_field' ) : array();
 
 	$link_order = ! empty( $_POST['link_order_as_billing'] );
 	$billing_period = sanitize_text_field( wp_unslash( $_POST['billing_period'] ?? '' ) );

@@ -764,7 +764,7 @@ class KTPWP_Settings {
             'tab_border_color' => '#B7CBFB',
             'odd_row_color' => '#E7EEFD',
             'even_row_color' => '#FFFFFF',
-            'public_product_card_bg_color' => '#e2e8f0',
+            'public_product_card_bg_color' => '#e2e8f0', // KTPWP-WPORG-STRIP public_products
             'header_bg_image' => 'images/default/header_bg_image.png',
             'page_content_widths' => array(),
         );
@@ -955,7 +955,7 @@ class KTPWP_Settings {
             'tab_border_color' => '#B7CBFB',
             'odd_row_color' => '#E7EEFD',
             'even_row_color' => '#FFFFFF',
-            'public_product_card_bg_color' => '#e2e8f0',
+            'public_product_card_bg_color' => '#e2e8f0', // KTPWP-WPORG-STRIP public_products
             'header_bg_image' => 'images/default/header_bg_image.png',
             'page_content_widths' => self::build_default_page_content_widths(),
         );
@@ -1286,8 +1286,8 @@ class KTPWP_Settings {
 	public function create_fm_import_page() {
 		try {
 			if ( ! class_exists( 'KTPWP_FM_Import', false ) ) {
-				$fm_path = ( defined( 'MY_PLUGIN_PATH' ) && is_string( MY_PLUGIN_PATH ) && MY_PLUGIN_PATH !== '' )
-					? trailingslashit( MY_PLUGIN_PATH ) . 'includes/class-ktpwp-fm-import.php'
+				$fm_path = ( defined( 'KANTANPRO_PLUGIN_DIR' ) && is_string( KANTANPRO_PLUGIN_DIR ) && KANTANPRO_PLUGIN_DIR !== '' )
+					? trailingslashit( KANTANPRO_PLUGIN_DIR ) . 'includes/class-ktpwp-fm-import.php'
 					: dirname( __DIR__ ) . '/includes/class-ktpwp-fm-import.php';
 				if ( is_readable( $fm_path ) ) {
 					require_once $fm_path;
@@ -2837,14 +2837,17 @@ class KTPWP_Settings {
                         <td><?php echo esc_html__( '上記と同じ（別名）', 'kantanpro' ); ?></td>
                         <td><?php echo esc_html__( 'ログイン必須。', 'kantanpro' ); ?></td>
                     </tr>
+                    <!-- KTPWP-WPORG-STRIP public_products BEGIN -->
                     <tr>
                         <td><code>[ktpwp_public_products]</code></td>
                         <td><?php echo esc_html__( '公開商品の一覧表示', 'kantanpro' ); ?></td>
                         <td><?php echo esc_html__( 'ログイン不要。商品編集で「サイトに公開」にチェックした商品のみ表示されます。', 'kantanpro' ); ?></td>
                     </tr>
+                    <!-- KTPWP-WPORG-STRIP public_products END -->
                 </tbody>
             </table>
 
+            <!-- KTPWP-WPORG-STRIP public_products BEGIN -->
             <h3 class="ktp-shortcodes-subheading"><?php echo esc_html__( '[ktpwp_public_products] の属性', 'kantanpro' ); ?></h3>
             <table class="widefat striped ktp-shortcodes-table">
                 <thead>
@@ -2897,6 +2900,7 @@ class KTPWP_Settings {
                 <li><code>[ktpwp_public_products category="Web制作" ids="2,5,8"]</code></li>
                 <li><code>[ktpwp_public_products category="サポート,WEB制作"]</code></li>
             </ul>
+            <!-- KTPWP-WPORG-STRIP public_products END -->
         </div>
         <?php
     }
@@ -3568,6 +3572,7 @@ class KTPWP_Settings {
             'design_setting_section'
         );
 
+        // KTPWP-WPORG-STRIP public_products BEGIN
         // 公開商品カードの背景色
         add_settings_field(
             'public_product_card_bg_color',
@@ -3576,6 +3581,7 @@ class KTPWP_Settings {
             'ktp-design',
             'design_setting_section'
         );
+        // KTPWP-WPORG-STRIP public_products END
 
         // ヘッダー背景画像
         add_settings_field(
@@ -3687,9 +3693,11 @@ class KTPWP_Settings {
             $new_input['even_row_color'] = sanitize_hex_color( $input['even_row_color'] );
         }
 
+        // KTPWP-WPORG-STRIP public_products BEGIN
         if ( isset( $input['public_product_card_bg_color'] ) ) {
             $new_input['public_product_card_bg_color'] = sanitize_hex_color( $input['public_product_card_bg_color'] );
         }
+        // KTPWP-WPORG-STRIP public_products END
 
         if ( isset( $input['header_bg_image'] ) ) {
             // 数値（添付ファイルID）または文字列（画像パス）に対応
@@ -4686,8 +4694,15 @@ class KTPWP_Settings {
             return; // 既に移行済み
         }
 
-        // 旧設定テーブルから会社情報を取得
+        // 旧設定テーブルから会社情報を取得。
+        // 新規インストールにはこの旧テーブル自体が存在しないため、
+        // クエリ前に存在確認する（無ければ WordPress database error が
+        // 有効化のたびにログへ出てしまう。2026-09-14 クリーンインストールで確認）。
         $setting_table = $wpdb->prefix . 'ktp_setting';
+        if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $setting_table ) ) !== $setting_table ) {
+            update_option( 'ktp_company_info_migrated', true );
+            return;
+        }
         $old_setting = $wpdb->get_row(
             $wpdb->prepare(
                 "SELECT my_company_content FROM {$setting_table} WHERE id = %d",
@@ -4805,6 +4820,7 @@ class KTPWP_Settings {
         <?php
     }
 
+    // KTPWP-WPORG-STRIP public_products BEGIN
     /**
      * 公開商品カードの背景色フィールドのコールバック
      *
@@ -4823,6 +4839,7 @@ class KTPWP_Settings {
         </div>
         <?php
     }
+    // KTPWP-WPORG-STRIP public_products END
 
     /**
      * ヘッダー背景画像フィールドのコールバック
@@ -5155,6 +5172,7 @@ div.ktp_header > * {
             }
         }
 
+        // KTPWP-WPORG-STRIP public_products BEGIN
         // 公開商品カードの背景色設定
         if ( ! empty( $design_options['public_product_card_bg_color'] ) ) {
             $public_product_card_bg_color = sanitize_hex_color( $design_options['public_product_card_bg_color'] );
@@ -5173,6 +5191,7 @@ div.ktp_header > * {
 }';
             }
         }
+        // KTPWP-WPORG-STRIP public_products END
 
         // 生の <style> を書き出さず、WordPress のスタイルキューに乗せる
         // （wp.org ガイドライン: 静的CSSは wp_enqueue_style / インラインは wp_add_inline_style）。
@@ -5266,7 +5285,7 @@ div.ktp_header > * {
                 'tab_border_color' => '#B7CBFB',
                 'odd_row_color' => '#E7EEFD',
                 'even_row_color' => '#FFFFFF',
-                'public_product_card_bg_color' => '#e2e8f0',
+                'public_product_card_bg_color' => '#e2e8f0', // KTPWP-WPORG-STRIP public_products
                 'header_bg_image' => 'images/default/header_bg_image.png',
                 'page_content_widths' => self::build_default_page_content_widths(),
                 );

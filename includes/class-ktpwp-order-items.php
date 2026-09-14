@@ -160,6 +160,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 			return $exists === $table_name;
 		}
 
+		// KTPWP-WPORG-STRIP public_products BEGIN
 		/**
 		 * 公開商品の Web お申込み用に請求項目を追加する（KantanBiz 公開商品 inbound と同仕様）。
 		 *
@@ -390,6 +391,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 
 			return KTPWP_Contract_Billing_Cycle::is_recurring( $service->contract_billing_cycle ?? 'none' );
 		}
+		// KTPWP-WPORG-STRIP public_products END
 
 		/**
 		 * 請求項目テーブルに指定カラムがあるか。

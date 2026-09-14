@@ -17,8 +17,13 @@ class KTPWP_Print_Class {
         global $wpdb;
         $table_name = $wpdb->prefix . 'ktp_setting'; // テーブル名を適切に設定してください
 
-        // データベースからテンプレートを取得
-        $template_row = $wpdb->get_row( "SELECT * FROM $table_name WHERE id = 1" );
+        // 廃止済みの旧テーブルで、新規インストールには存在しない。
+        // 存在確認せずに SELECT すると WordPress database error が出る。
+        $template_row = null;
+        if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) ) === $table_name ) {
+            // データベースからテンプレートを取得
+            $template_row = $wpdb->get_row( "SELECT * FROM $table_name WHERE id = 1" );
+        }
 
         // nullチェックを追加
         if ( $template_row === null ) {

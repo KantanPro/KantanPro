@@ -43,10 +43,10 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 		 * @return void
 		 */
 		public function List_Tab_View( $tab_name ) {
-			// Check user capabilities
-			// if ( ! current_user_can( 'manage_options' ) ) {
-			// wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'kantanpro' ) );
-			// }
+			// アクセス権限チェック（多層防御。主なゲートは ktpwp.php の kantanAllTab() 側）。
+			if ( function_exists( 'ktpwp_current_user_can_access' ) && ! ktpwp_current_user_can_access() ) {
+				return '';
+			}
 
 			if ( empty( $tab_name ) ) {
 				error_log( 'KTPWP: Empty tab_name provided to List_Tab_View method' );
