@@ -38,11 +38,11 @@ function ktp_save_contract_ajax() {
 
 	$db = KTPWP_Contract_DB::get_instance();
 
-	$initial_fees_raw = isset( $_POST['initial_fees'] ) ? wp_unslash( $_POST['initial_fees'] ) : '[]';
+	$initial_fees_raw = isset( $_POST['initial_fees'] ) ? sanitize_textarea_field( wp_unslash( $_POST['initial_fees'] ) ) : '[]';
 	$initial_fees     = json_decode( $initial_fees_raw, true );
 	$initial_fees     = is_array( $initial_fees ) ? map_deep( $initial_fees, 'sanitize_text_field' ) : array();
 
-	$recurring_items_raw = isset( $_POST['recurring_items'] ) ? wp_unslash( $_POST['recurring_items'] ) : '[]';
+	$recurring_items_raw = isset( $_POST['recurring_items'] ) ? sanitize_textarea_field( wp_unslash( $_POST['recurring_items'] ) ) : '[]';
 	$recurring_items     = json_decode( $recurring_items_raw, true );
 	$recurring_items     = is_array( $recurring_items ) ? map_deep( $recurring_items, 'sanitize_text_field' ) : array();
 

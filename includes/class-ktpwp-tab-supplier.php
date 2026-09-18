@@ -529,16 +529,6 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 			// フォームアクション用のベースURL (ページネーションパラメータ等は含めない)
 			$form_action_base_url = $base_page_url;
 
-			// --- DBエラー表示（セッションから） ---
-			ktpwp_safe_session_start();
-			if ( isset( $_SESSION['ktp_db_error_message'] ) ) {
-				echo '<div class="ktp-db-error" style="background:#ffeaea;color:#b30000;padding:14px 20px;margin:18px 0 20px 0;border:2px solid #b30000;border-radius:7px;font-weight:bold;font-size:1.1em;">'
-                . '<span style="font-size:1.2em;">⚠️ <b>DBエラー</b></span><br>'
-                . $_SESSION['ktp_db_error_message']
-                . '</div>';
-				unset( $_SESSION['ktp_db_error_message'] );
-			}
-			// --- ここまで ---
 
 			// URL パラメータからのメッセージ表示処理を追加
 			if ( isset( $_GET['message'] ) ) {
@@ -633,29 +623,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 							$close_redirect_base
 						)
 					);
-					$search_results_list = '<div id="' . esc_attr( $multi_results_id ) . '" style="display:none;">' . $search_results_html . '</div>' . "\n" . '<script>
-(function() {
-	var run = function() {
-		var el = document.getElementById("' . esc_js( $multi_results_id ) . '");
-		if (!el) return;
-		var searchResultsHtml = el.innerHTML;
-		var popup = document.createElement("div");
-		popup.innerHTML = searchResultsHtml;
-		popup.style.cssText = "position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;padding:20px;z-index:10001;width:80%;max-width:600px;border:1px solid #ccc;border-radius:5px;box-shadow:0 4px 6px rgba(0,0,0,0.1)";
-		document.body.appendChild(popup);
-		var closeBtn = document.createElement("button");
-		closeBtn.textContent = "' . esc_js( __( '閉じる', 'kantanpro' ) ) . '";
-		closeBtn.style.cssText = "font-size:0.8em;color:#000;display:block;margin:10px auto 0;padding:10px;background:#cdcccc;border-radius:5px;border-color:#999;cursor:pointer";
-		closeBtn.onclick = function() { document.body.removeChild(popup); location.href = "' . esc_js( $close_redirect_url ) . '"; };
-		popup.appendChild(closeBtn);
-	};
-	if (document.readyState === "loading") {
-		document.addEventListener("DOMContentLoaded", run);
-	} else {
-		run();
-	}
-})();
-</script>';
+					$search_results_list = KTPWP_Ui_Generator::render_multi_results_popup( $multi_results_id, $close_redirect_url, $search_results_html );
 				}
 			}
 
@@ -1021,7 +989,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 				// 現在のGETパラメータを維持するための隠しフィールド
 				foreach ( $_GET as $key => $value ) {
 					if ( ! in_array( $key, array( 'skills_sort_by', 'skills_sort_order' ) ) ) {
-						$skills_sort_dropdown .= '<input type="hidden" name="' . esc_attr( $key ) . '" value="' . esc_attr( $value ) . '">';
+						$skills_sort_dropdown .= '<input type="hidden" name="' . esc_attr( sanitize_text_field( wp_unslash( (string) $key ) ) ) . '" value="' . esc_attr( is_array( $value ) ? '' : sanitize_text_field( wp_unslash( (string) $value ) ) ) . '">';
 					}
 				}
 
@@ -1743,7 +1711,10 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
                 </div>
         </div>
 			<?php
-			$print = ob_get_clean();
+			// 印刷用の <script> は、ショートコード出力の許可リスト（KTPWP_Kses）を通さず、
+			// 出力位置にそのまま戻す。印刷の挙動（PC/iPad/iPhone の経路）は凍結しているため、
+			// JS の中身は1バイトも変えない。
+			$print = KTPWP_Kses::register_raw( ob_get_clean() );
 			// コンテンツを返す（検索複数時ダイアログは $data_forms 内で既に出力済み）
 			$content = $print . $search_panel_html . $data_list . $skills_section . $data_title . $data_forms . $div_end;
 			return $content;

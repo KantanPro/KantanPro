@@ -1505,43 +1505,76 @@ class KTPWP_Settings {
 		}
 
 		$redirect = admin_url( 'admin.php?page=ktp-data-tools' );
-		if ( ! isset( $_FILES['ktp_import_file'] ) || empty( $_FILES['ktp_import_file']['tmp_name'] ) ) {
-			wp_safe_redirect( add_query_arg( 'ktp_action', 'restore_failed', $redirect ) );
+		$failed   = add_query_arg( 'ktp_action', 'restore_failed', $redirect );
+
+		// 上限を設けるのは、巨大なファイルを丸ごとメモリに読み込ませないため（管理者のみの操作だが念のため）。
+		$max_bytes = 50 * MB_IN_BYTES;
+		$upload    = isset( $_FILES['ktp_import_file'] ) && is_array( $_FILES['ktp_import_file'] ) ? $_FILES['ktp_import_file'] : array();
+		$tmp_name  = isset( $upload['tmp_name'] ) && is_string( $upload['tmp_name'] ) ? $upload['tmp_name'] : '';
+		$file_name = isset( $upload['name'] ) && is_string( $upload['name'] ) ? sanitize_file_name( wp_unslash( $upload['name'] ) ) : '';
+		$file_ext  = strtolower( pathinfo( $file_name, PATHINFO_EXTENSION ) );
+		if ( $tmp_name === '' || ! is_uploaded_file( $tmp_name ) || ! in_array( $file_ext, array( 'json', 'csv' ), true ) || (int) filesize( $tmp_name ) > $max_bytes ) {
+			wp_safe_redirect( $failed );
 			exit;
 		}
-		
-		// 既存データを削除
-		$this->clear_existing_data();
 
-		$format = isset( $_POST['format'] ) ? sanitize_text_field( $_POST['format'] ) : 'json';
+		$format = isset( $_POST['format'] ) ? sanitize_text_field( wp_unslash( $_POST['format'] ) ) : 'json';
 		$format = in_array( $format, array( 'json', 'csv' ), true ) ? $format : 'json';
 
+		// ファイルの中身を検証してから、既存データの削除に進む。
+		// 壊れたファイルを渡されたときに、データだけ消えて復元は失敗、という状態にしないため。
 		if ( $format === 'json' ) {
-			$contents = file_get_contents( $_FILES['ktp_import_file']['tmp_name'] );
-			$data = json_decode( $contents, true );
-			if ( ! is_array( $data ) || ! isset( $data['tables'] ) || ! isset( $data['options'] ) ) {
-				wp_safe_redirect( add_query_arg( 'ktp_action', 'restore_failed', $redirect ) );
+			$contents = file_get_contents( $tmp_name );
+			$data     = is_string( $contents ) ? json_decode( $contents, true ) : null;
+			if ( ! is_array( $data ) || ! isset( $data['tables'] ) || ! isset( $data['options'] ) || ! is_array( $data['tables'] ) || ! is_array( $data['options'] ) ) {
+				wp_safe_redirect( $failed );
 				exit;
 			}
+			$options       = $data['options'];
+			$tables        = $data['tables'];
 			$source_prefix = isset( $data['metadata']['db_prefix'] ) ? (string) $data['metadata']['db_prefix'] : '';
-			$this->import_from_array( $data['options'], $data['tables'], $source_prefix );
+			if ( empty( $options ) && empty( $tables ) ) {
+				wp_safe_redirect( $failed );
+				exit;
+			}
 		} else {
 			// CSVインポート: 簡易フォーマット (#OPTIONS と #TABLE: テーブル名)
-			$raw = file( $_FILES['ktp_import_file']['tmp_name'], FILE_IGNORE_NEW_LINES );
+			$raw = file( $tmp_name, FILE_IGNORE_NEW_LINES );
 			if ( $raw === false ) {
-				wp_safe_redirect( add_query_arg( 'ktp_action', 'restore_failed', $redirect ) );
+				wp_safe_redirect( $failed );
 				exit;
 			}
 			list( $options, $tables, $source_prefix ) = $this->parse_mixed_csv( $raw );
-			if ( $options === null ) {
-				wp_safe_redirect( add_query_arg( 'ktp_action', 'restore_failed', $redirect ) );
+			// 中身が何も読み取れなかったファイルで既存データだけを消さない。
+			if ( $options === null || ( empty( $options ) && empty( $tables ) ) ) {
+				wp_safe_redirect( $failed );
 				exit;
 			}
-			$this->import_from_array( $options, $tables, $source_prefix );
 		}
+
+		// 既存データを削除
+		$this->clear_existing_data();
+		$this->import_from_array( $options, $tables, $source_prefix );
 
 		wp_safe_redirect( add_query_arg( 'ktp_action', 'restore_success', $redirect ) );
 		exit;
+	}
+
+	/**
+	 * 復元してよいオプション名か。
+	 *
+	 * エクスポート側（collect_plugin_options）が ktp_ / ktpwp_ で始まるものだけを
+	 * 書き出しているので、取り込みも同じ範囲に限る。ここで絞らないと、バックアップ
+	 * ファイルに default_role や users_can_register など WordPress 本体のオプション名を
+	 * 混ぜるだけで、任意のサイト設定を書き換えられてしまう。
+	 *
+	 * @param mixed $option_name オプション名。
+	 * @return bool
+	 */
+	private function is_restorable_option_name( $option_name ) {
+		return is_string( $option_name )
+			&& strlen( $option_name ) <= 191
+			&& (bool) preg_match( '/^ktp(?:wp)?_[A-Za-z0-9_\-]+$/', $option_name );
 	}
 
 	/**
@@ -1690,6 +1723,9 @@ class KTPWP_Settings {
 		global $wpdb;
 		// オプション
 		foreach ( $options as $option_name => $option_value ) {
+			if ( ! $this->is_restorable_option_name( $option_name ) ) {
+				continue;
+			}
 			update_option( $option_name, $option_value );
 		}
 		// テーブル
@@ -2738,6 +2774,7 @@ class KTPWP_Settings {
                             }
                         }
 
+                        // KTPWP-WPORG-STRIP stripe_billing BEGIN
                         // Stripe 請求連携
                         if ( isset( $wp_settings_sections['ktp-general']['stripe_billing_setting_section'] ) ) {
                             $section = $wp_settings_sections['ktp-general']['stripe_billing_setting_section'];
@@ -2755,6 +2792,7 @@ class KTPWP_Settings {
                                 echo '</table>';
                             }
                         }
+                        // KTPWP-WPORG-STRIP stripe_billing END
 
                         // 日本郵便 郵便番号・デジタルアドレスAPI（顧客フォームの住所自動入力）
                         if ( isset( $wp_settings_sections['ktp-general']['japanpost_api_setting_section'] ) ) {
@@ -2984,48 +3022,48 @@ class KTPWP_Settings {
         register_setting(
             'ktp_general_group',
             'ktp_general_settings',
-            array( $this, 'sanitize_general_settings' )
+            array( 'sanitize_callback' => array( $this, 'sanitize_general_settings' ) )
         );
 
         // ロゴマークの登録
         register_setting(
             'ktp_general_group',
             'ktp_logo_image',
-            array( $this, 'sanitize_fixed_logo_image' )
+            array( 'sanitize_callback' => array( $this, 'sanitize_fixed_logo_image' ) )
         );
 
         // システム名の登録
         register_setting(
             'ktp_general_group',
             'ktp_system_name',
-            array( $this, 'sanitize_fixed_system_name' )
+            array( 'sanitize_callback' => array( $this, 'sanitize_fixed_system_name' ) )
         );
 
         // システムの説明の登録
         register_setting(
             'ktp_general_group',
             'ktp_system_description',
-            array( $this, 'sanitize_fixed_system_description' )
+            array( 'sanitize_callback' => array( $this, 'sanitize_fixed_system_description' ) )
         );
 
         register_setting(
             $this->options_group,
             $this->option_name,
-            array( $this, 'sanitize' )
+            array( 'sanitize_callback' => array( $this, 'sanitize' ) )
         );
 
         // 一般設定ページ（page=ktp-settings）のフォームで保存するため ktp_general_group に登録
         register_setting(
             'ktp_general_group',
             'ktp_japanpost_api_settings',
-            array( $this, 'sanitize_japanpost_api_settings' )
+            array( 'sanitize_callback' => array( $this, 'sanitize_japanpost_api_settings' ) )
         );
 
         // デザイン設定グループの登録
         register_setting(
             'ktp_design_group',
             'ktp_design_settings',
-            array( $this, 'sanitize_design_settings' )
+            array( 'sanitize_callback' => array( $this, 'sanitize_design_settings' ) )
         );
 
         // 寄付設定グループの登録
@@ -3078,7 +3116,7 @@ class KTPWP_Settings {
         register_setting(
             'ktp_central_banner_group',
             'ktp_central_banner_settings',
-            array( $this, 'sanitize_central_banner_settings' )
+            array( 'sanitize_callback' => array( $this, 'sanitize_central_banner_settings' ) )
         );
 
         // 一般設定セクション
@@ -3296,6 +3334,7 @@ class KTPWP_Settings {
             );
         }
 
+        // KTPWP-WPORG-STRIP stripe_billing BEGIN
         if ( class_exists( 'KTPWP_Stripe_Billing' ) ) {
             // 機能が有効でも、配布版によっては Stripe のクラスを同梱していない。
             // クラスの存在も見ないと、存在しないクラスを add_settings_field の
@@ -3383,6 +3422,7 @@ class KTPWP_Settings {
                 'stripe_billing_setting_section'
             );
         }
+        // KTPWP-WPORG-STRIP stripe_billing END
 
         // プラグイン削除時の動作（エンドユーザー向け・一般設定ページに配置）
         add_settings_section(
@@ -3704,7 +3744,14 @@ class KTPWP_Settings {
             if ( is_numeric( $input['header_bg_image'] ) ) {
                 $new_input['header_bg_image'] = absint( $input['header_bg_image'] );
             } else {
-                $new_input['header_bg_image'] = sanitize_text_field( $input['header_bg_image'] );
+                $header_bg_raw = trim( (string) $input['header_bg_image'] );
+                if ( preg_match( '#^https?://#i', $header_bg_raw ) ) {
+                    // 絶対URLは URL として検証する（get_header_bg_image_url() がそのまま返すため）。
+                    $new_input['header_bg_image'] = esc_url_raw( $header_bg_raw, array( 'http', 'https' ) );
+                } else {
+                    // プラグイン内の相対パス（images/default/...）。
+                    $new_input['header_bg_image'] = ltrim( sanitize_text_field( $header_bg_raw ), '/' );
+                }
             }
         }
 

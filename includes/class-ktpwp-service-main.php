@@ -104,6 +104,10 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 		// -----------------------------
 
 		function View_Table( $name ) {
+			// アクセス権限チェック（多層防御。主なゲートは ktpwp.php の kantanAllTab() 側）。
+			if ( function_exists( 'ktpwp_current_user_can_access' ) && ! ktpwp_current_user_can_access() ) {
+				return '';
+			}
 
 			global $wpdb;
 
@@ -124,9 +128,6 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 				// Debug logging
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 					error_log( 'KTPWP Service: POST request detected in View_Table' );
-					error_log( 'KTPWP Service: Full POST data: ' . print_r( $_POST, true ) );
-					error_log( 'KTPWP Service: Full GET data: ' . print_r( $_GET, true ) );
-					error_log( 'KTPWP Service: Request URI: ' . sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) );
 				}
 
 				$query_post = isset( $_POST['query_post'] ) ? sanitize_text_field( $_POST['query_post'] ) : '';
@@ -151,39 +152,30 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 			}
 
 			// GETパラメータからのメッセージをフローティングアラート（JS通知）で表示（他タブと統一・安全な出力）
+			// 生の <script> を本文に出すとショートコード出力の許可リスト（KTPWP_Kses）で落ちるので、スクリプトキューに載せる。
 			if ( isset( $_GET['message'] ) ) {
-				?>
-            <script>
-            document.addEventListener("DOMContentLoaded", function() {
-                var messageType = "<?php echo esc_js( sanitize_text_field( wp_unslash( $_GET['message'] ) ) ); ?>";
-                switch (messageType) {
-                    case "updated":
-                        if (typeof showSuccessNotification === 'function') showSuccessNotification("<?php echo esc_js( __( '更新しました。', 'kantanpro' ) ); ?>");
-                        break;
-                    case "added":
-                        if (typeof showSuccessNotification === 'function') showSuccessNotification("<?php echo esc_js( __( '新しいサービスを追加しました。', 'kantanpro' ) ); ?>");
-                        break;
-                    case "deleted":
-                        if (typeof showSuccessNotification === 'function') showSuccessNotification("<?php echo esc_js( __( '削除しました。', 'kantanpro' ) ); ?>");
-                        break;
-                    case "duplicated":
-                        if (typeof showSuccessNotification === 'function') showSuccessNotification("<?php echo esc_js( __( '複製しました。', 'kantanpro' ) ); ?>");
-                        break;
-                    case "search_cancelled":
-                        if (typeof showInfoNotification === 'function') showInfoNotification("<?php echo esc_js( __( '検索をキャンセルしました。', 'kantanpro' ) ); ?>");
-                        break;
-                }
-                // URLからmessageパラメータを削除
-                if (window.history.replaceState) {
-                    var currentUrl = new URL(window.location.href);
-                    if (currentUrl.searchParams.has("message")) {
-                        currentUrl.searchParams.delete("message");
-                        window.history.replaceState({ path: currentUrl.href }, "", currentUrl.href);
-                    }
-                }
-            });
-            </script>
-				<?php
+				$toast_message_type = sanitize_text_field( wp_unslash( $_GET['message'] ) );
+				$toast_messages     = array(
+					'updated'          => array( 'showSuccessNotification', __( '更新しました。', 'kantanpro' ) ),
+					'added'            => array( 'showSuccessNotification', __( '新しいサービスを追加しました。', 'kantanpro' ) ),
+					'deleted'          => array( 'showSuccessNotification', __( '削除しました。', 'kantanpro' ) ),
+					'duplicated'       => array( 'showSuccessNotification', __( '複製しました。', 'kantanpro' ) ),
+					'search_cancelled' => array( 'showInfoNotification', __( '検索をキャンセルしました。', 'kantanpro' ) ),
+				);
+				$toast_js = 'document.addEventListener("DOMContentLoaded", function() {';
+				if ( isset( $toast_messages[ $toast_message_type ] ) ) {
+					list( $toast_fn, $toast_text ) = $toast_messages[ $toast_message_type ];
+					$toast_js .= 'if (typeof ' . $toast_fn . ' === "function") ' . $toast_fn . '(' . wp_json_encode( $toast_text ) . ');';
+				}
+				// URLからmessageパラメータを削除
+				$toast_js .= 'if (window.history.replaceState) {'
+					. 'var currentUrl = new URL(window.location.href);'
+					. 'if (currentUrl.searchParams.has("message")) {'
+					. 'currentUrl.searchParams.delete("message");'
+					. 'window.history.replaceState({ path: currentUrl.href }, "", currentUrl.href);'
+					. '}}'
+					. '});';
+				ktpwp_add_inline_script( $toast_js );
 			}
 
 			// セッション変数をチェックしてメッセージを表示 (これは前の修正の名残なので、GETパラメータ方式に統一した場合は削除またはコメントアウトを検討)
@@ -331,29 +323,7 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 									$close_redirect_base
 								)
 							);
-							$service_search_results_script = '<div id="' . esc_attr( $multi_results_id ) . '" style="display:none;">' . $search_results_html . '</div>' . "\n" . '<script>
-(function() {
-	var run = function() {
-		var el = document.getElementById("' . esc_js( $multi_results_id ) . '");
-		if (!el) return;
-		var searchResultsHtml = el.innerHTML;
-		var popup = document.createElement("div");
-		popup.innerHTML = searchResultsHtml;
-		popup.style.cssText = "position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;padding:20px;z-index:10001;width:80%;max-width:600px;border:1px solid #ccc;border-radius:5px;box-shadow:0 4px 6px rgba(0,0,0,0.1)";
-		document.body.appendChild(popup);
-		var closeBtn = document.createElement("button");
-		closeBtn.textContent = "' . esc_js( __( '閉じる', 'kantanpro' ) ) . '";
-		closeBtn.style.cssText = "font-size:0.8em;color:#000;display:block;margin:10px auto 0;padding:10px;background:#cdcccc;border-radius:5px;border-color:#999;cursor:pointer";
-		closeBtn.onclick = function() { document.body.removeChild(popup); location.href = "' . esc_js( $close_redirect_url ) . '"; };
-		popup.appendChild(closeBtn);
-	};
-	if (document.readyState === "loading") {
-		document.addEventListener("DOMContentLoaded", run);
-	} else {
-		run();
-	}
-})();
-</script>';
+							$service_search_results_script = KTPWP_Ui_Generator::render_multi_results_popup( $multi_results_id, $close_redirect_url, $search_results_html );
 						}
 					}
 				}
@@ -467,8 +437,13 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 					);
 					// 他のソートやフィルタ関連のGETパラメータを維持しつつ、'message'は含めない
 					foreach ( $_GET as $getKey => $getValue ) {
-						if ( ! in_array( $getKey, array( 'tab_name', 'data_id', 'page_start', 'page_stage', 'message', '_ktp_service_nonce', 'query_post', 'send_post' ) ) ) {
-							$item_link_args[ $getKey ] = $getValue;
+						$getKey = sanitize_key( (string) $getKey );
+						if ( $getKey === '' || is_array( $getValue ) ) {
+							continue;
+						}
+						if ( ! in_array( $getKey, array( 'tab_name', 'data_id', 'page_start', 'page_stage', 'message', '_ktp_service_nonce', 'query_post', 'send_post' ), true ) ) {
+							// add_query_arg() は値をエンコードしないので、ここで rawurlencode する。
+							$item_link_args[ $getKey ] = rawurlencode( sanitize_text_field( wp_unslash( (string) $getValue ) ) );
 						}
 					}
                     $formatted_price = number_format( $price, 0, '.', ',' );
@@ -556,8 +531,6 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 			// 安全性確保: GETリクエストの場合は危険なアクションを実行しない
 			if ( $_SERVER['REQUEST_METHOD'] === 'GET' && in_array( $action, array( 'duplicate', 'delete', 'insert', 'search', 'search_execute', 'upload_image' ) ) ) {
 				$action = 'update';
-				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				}
 			}
 
 			// 初期化
@@ -1262,7 +1235,10 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
         </div>
         <?php echo $service_ie_modal; ?>
 			<?php
-			$print = ob_get_clean();
+			// 印刷用の <script> は、ショートコード出力の許可リスト（KTPWP_Kses）を通さず、
+			// 出力位置にそのまま戻す。印刷の挙動（PC/iPad/iPhone の経路）は凍結しているため、
+			// JS の中身は1バイトも変えない。
+			$print = KTPWP_Kses::register_raw( ob_get_clean() );
 			// コンテンツを返す（複数検索結果ダイアログ用スクリプトを含む）
 			$content = $message . $print . $search_panel_html . $data_list . $data_title . $data_forms . $service_search_results_script . $div_end;
 			return $content;
@@ -2101,7 +2077,10 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 			}
 			$rendered = true;
 
-			return '<style id="ktpwp-service-contract-fields-css">'
+			// 定数の CSS だけを本文に出す（ユーザー入力を含まない）。wp_add_inline_style は wp_head 出力後には効かないため、
+			// ショートコード出力の許可リスト（KTPWP_Kses）を通さず、出力位置にそのまま戻す。
+			return KTPWP_Kses::register_raw(
+				'<style id="ktpwp-service-contract-fields-css">'
 				. '.ktpwp-service-field-block{display:grid;grid-template-columns:25% minmax(0,1fr);column-gap:12px;row-gap:0;margin-bottom:16px;align-items:start;}'
 				. '.ktpwp-service-field-block__label{text-align:right;padding-top:8px;}'
 				. '.ktpwp-service-field-block__label-text{display:block;font-size:14px;color:#444;line-height:1.4;font-weight:normal;}'
@@ -2121,7 +2100,8 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 				. '.ktpwp-service-detail-items__table td input{width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid #ddd;border-radius:4px;font-size:14px;background:#fff;}'
 				. '.ktpwp-service-initial-fees__presets{margin:8px 0 0;font-size:12px;line-height:1.45;color:#777;}'
 				. '@media screen and (max-width:767px){.ktpwp-service-field-block,.ktpwp-service-field-block--recurring .ktpwp-service-field-block__label,.ktpwp-service-field-block--initial-fees .ktpwp-service-field-block__label{grid-template-columns:1fr;}.ktpwp-service-field-block__label,.ktpwp-service-field-block--recurring .ktpwp-service-field-block__label-text,.ktpwp-service-field-block--recurring .ktpwp-service-field-block__hint,.ktpwp-service-field-block--initial-fees .ktpwp-service-field-block__label-text,.ktpwp-service-field-block--initial-fees .ktpwp-service-field-block__hint{text-align:left;}}'
-				. '</style>';
+				. '</style>'
+			);
 		}
 
 		/**

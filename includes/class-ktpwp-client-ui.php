@@ -171,7 +171,7 @@ if ( ! class_exists( 'KTPWP_Client_UI' ) ) {
 				// 現在のGETパラメータを維持するための隠しフィールド
 				foreach ( $_GET as $key => $value ) {
 					if ( $key !== 'order_sort_by' && $key !== 'order_sort_order' ) {
-						$sort_dropdown .= '<input type="hidden" name="' . esc_attr( $key ) . '" value="' . esc_attr( $value ) . '">';
+						$sort_dropdown .= '<input type="hidden" name="' . esc_attr( sanitize_text_field( wp_unslash( (string) $key ) ) ) . '" value="' . esc_attr( is_array( $value ) ? '' : sanitize_text_field( wp_unslash( (string) $value ) ) ) . '">';
 					}
 				}
 

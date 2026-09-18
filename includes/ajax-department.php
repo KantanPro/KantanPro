@@ -102,7 +102,6 @@ function ktp_delete_department_ajax() {
 function ktp_update_department_selection_ajax() {
     if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
         error_log( 'KTPWP AJAX: ktp_update_department_selection_ajax called' );
-        error_log( 'KTPWP AJAX: POST data: ' . print_r( $_POST, true ) );
     }
     
     // セキュリティチェック

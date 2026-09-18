@@ -535,11 +535,9 @@ class KTPWP_Security {
      */
     private function get_basic_auth_request_password() {
         if ( isset( $_SERVER['PHP_AUTH_PW'] ) ) {
-            // この値はハッシュ比較（wp_check_password）にのみ使い、
-            // 出力にもSQLにも使わない。sanitize_text_field() をかけると
-            // タグに見える文字列や改行を含む正当なパスワードを壊すため、
-            // wp_unslash() のみに留める（意図的）。
-            return (string) wp_unslash( $_SERVER['PHP_AUTH_PW'] );
+            // This value is only compared with wp_check_password(); it is never output or used in SQL.
+            // sanitize_text_field() would corrupt valid passwords that contain "<", newlines, etc., so only wp_unslash() is applied on purpose.
+            return (string) wp_unslash( $_SERVER['PHP_AUTH_PW'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- credential, see comment above.
         }
 
         $header = $this->get_authorization_header();
@@ -558,15 +556,14 @@ class KTPWP_Security {
      * @return string
      */
     private function get_authorization_header() {
-        // Base64 の Basic 認証ヘッダをこの後 base64_decode() するため、
-        // sanitize_text_field() は適用しない（タグ様の文字列や制御文字相当を
-        // 削って Base64 文字列を壊す可能性があるため意図的に wp_unslash() のみ）。
+        // The Basic-auth header is base64_decode()d and hash-compared afterwards; it is never output.
+        // sanitize_text_field() could corrupt the Base64 string, so only wp_unslash() is applied on purpose.
         if ( isset( $_SERVER['HTTP_AUTHORIZATION'] ) ) {
-            return trim( (string) wp_unslash( $_SERVER['HTTP_AUTHORIZATION'] ) );
+            return trim( (string) wp_unslash( $_SERVER['HTTP_AUTHORIZATION'] ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- credential, see comment above.
         }
 
         if ( isset( $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ) ) {
-            return trim( (string) wp_unslash( $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ) );
+            return trim( (string) wp_unslash( $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- credential, see comment above.
         }
 
         return '';

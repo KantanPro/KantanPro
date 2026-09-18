@@ -82,7 +82,7 @@ class KTPWP_View_Tabs_Class {
 				'skills_sort_by',
 				'skills_sort_order',
 				'skills_page',
-				'report_type',
+				'report_type', // KTPWP-WPORG-STRIP report
 				'period',
 				'tax_year',
 				'list_type',

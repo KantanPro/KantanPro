@@ -487,16 +487,16 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 
 			// Handle email sending with proper security checks
 			if ( $request_method === 'POST' && isset( $_POST['send_order_mail_id'] ) ) {
-				// Verify nonce
-				// if ( ! isset( $_POST['order_mail_nonce'] ) ||
-				// ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['order_mail_nonce'] ) ), 'send_order_mail_action' ) ) {
-				// wp_die( esc_html__( 'Security check failed. Please refresh the page and try again.', 'kantanpro' ) );
-				// }
+				// Verify nonce (the mail form emits it with wp_nonce_field( 'send_order_mail_action', 'order_mail_nonce' )).
+				if ( ! isset( $_POST['order_mail_nonce'] ) ||
+					! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['order_mail_nonce'] ) ), 'send_order_mail_action' ) ) {
+					wp_die( esc_html__( 'Security check failed. Please refresh the page and try again.', 'kantanpro' ) );
+				}
 
-				// Additional capability check
-				// if ( ! current_user_can( 'manage_options' ) ) {
-				// wp_die( esc_html__( 'You do not have sufficient permissions to send emails.', 'kantanpro' ) );
-				// }
+				// Same capability that gates the order screen itself: staff who can edit orders may send order mail.
+				if ( ! ( function_exists( 'ktpwp_current_user_can_access' ) && ktpwp_current_user_can_access() ) ) {
+					wp_die( esc_html__( 'You do not have sufficient permissions to send emails.', 'kantanpro' ) );
+				}
 
 				$order_id = absint( $_POST['send_order_mail_id'] );
 				if ( $order_id > 0 ) {
@@ -1049,8 +1049,6 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 			/*
 			if ( $_SERVER['REQUEST_METHOD'] === 'POST' && isset( $_POST['update_progress_id'], $_POST['update_progress'] ) ) {
 				error_log( 'KTPWP Order: 進捗更新処理が呼び出されました' );
-				error_log( 'KTPWP Order: POST data: ' . print_r( $_POST, true ) );
-				error_log( 'KTPWP Order: $_POST[completion_date] = ' . ( isset( $_POST['completion_date'] ) ? $_POST['completion_date'] : 'NOT SET' ) );
 
 				// Verify nonce
 				// if ( ! isset( $_POST['progress_nonce'] ) ||
@@ -3592,7 +3590,11 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 				. wp_json_encode( $message )
 				. ';document.addEventListener("click",function(e){var btn=e.target&&e.target.closest?e.target.closest(".ktp-order-delete-trigger"):null;if(!btn||btn.disabled){return;}var form=btn.closest("form.ktp-order-delete-form");if(!form){return;}e.preventDefault();e.stopPropagation();if(!window.confirm(msg)){return;}var field=form.querySelector("input[name=\\"delete_confirmed\\"]");if(field){field.value="1";}HTMLFormElement.prototype.submit.call(form);},true);})();';
 
-			return '<script>' . $script . '</script>';
+			// document への委譲リスナーなので、本文の外（フッターのスクリプトキュー）で問題ない。
+			// 本文に生の <script> を出すと、ショートコード出力の許可リスト（KTPWP_Kses）で落ちる。
+			ktpwp_add_inline_script( $script );
+
+			return '';
 		}
 	} // End of KTPWP_Order_Class
 

@@ -64,7 +64,7 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 			// 現在のGETパラメータを維持するための隠しフィールド
 			foreach ( $_GET as $key => $value ) {
 				if ( $key !== 'order_sort_by' && $key !== 'order_sort_order' ) {
-					$sort_dropdown .= '<input type="hidden" name="' . esc_attr( $key ) . '" value="' . esc_attr( $value ) . '">';
+					$sort_dropdown .= '<input type="hidden" name="' . esc_attr( sanitize_text_field( wp_unslash( (string) $key ) ) ) . '" value="' . esc_attr( is_array( $value ) ? '' : sanitize_text_field( wp_unslash( (string) $value ) ) ) . '">';
 				}
 			}
 
@@ -110,7 +110,7 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 				$json_flags
 			);
 
-			return '<script>
+			$js = '
 (function() {
 	// 入力ごとに data-ktp-postal-bound で二重バインドのみ防止する（ページ内にスクリプトが複数あっても全欄に付与できる）
 	var useJapanPost = ' . $use_jp_js . ';
@@ -252,7 +252,13 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 	setTimeout(bindAllPostalInputs, 0);
 	window.addEventListener("load", bindAllPostalInputs);
 })();
-</script>';
+';
+
+			// 本文に生の <script> を出すと、ショートコード出力の許可リスト（KTPWP_Kses）で落ちるため、
+			// スクリプトキュー経由で出力する。
+			ktpwp_add_inline_script( $js );
+
+			return '';
 		}
 
 		// -----------------------------
@@ -485,29 +491,7 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 							$close_redirect_base
 						)
 					);
-					$search_results_list = '<div id="' . esc_attr( $multi_results_id ) . '" style="display:none;">' . $search_results_html . '</div>' . "\n" . '<script>
-(function() {
-	var run = function() {
-		var el = document.getElementById("' . esc_js( $multi_results_id ) . '");
-		if (!el) return;
-		var searchResultsHtml = el.innerHTML;
-		var popup = document.createElement("div");
-		popup.innerHTML = searchResultsHtml;
-		popup.style.cssText = "position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;padding:20px;z-index:10001;width:80%;max-width:600px;border:1px solid #ccc;border-radius:5px;box-shadow:0 4px 6px rgba(0,0,0,0.1)";
-		document.body.appendChild(popup);
-		var closeBtn = document.createElement("button");
-		closeBtn.textContent = "' . esc_js( __( '閉じる', 'kantanpro' ) ) . '";
-		closeBtn.style.cssText = "font-size:0.8em;color:#000;display:block;margin:10px auto 0;padding:10px;background:#cdcccc;border-radius:5px;border-color:#999;cursor:pointer";
-		closeBtn.onclick = function() { document.body.removeChild(popup); location.href = "' . esc_js( $close_redirect_url ) . '"; };
-		popup.appendChild(closeBtn);
-	};
-	if (document.readyState === "loading") {
-		document.addEventListener("DOMContentLoaded", run);
-	} else {
-		run();
-	}
-})();
-</script>';
+					$search_results_list = KTPWP_Ui_Generator::render_multi_results_popup( $multi_results_id, $close_redirect_url, $search_results_html );
 				}
 			}
 
@@ -1752,7 +1736,10 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 				$button_group_html .= '<input type="hidden" name="data_id" value="' . esc_attr( $data_id ) . '">';
 				$button_group_html .= '<input type="hidden" name="query_post" value="delete">';
 				$button_group_html .= '<input type="hidden" name="delete_type" value="soft">';
-				$button_group_html .= '<button type="submit" name="send_post" title="' . esc_attr__( '削除（無効化）する', 'kantanpro' ) . '" onclick="return confirm(\"' . esc_js( __( 'この顧客を削除（無効化）しますか？\nデータは残りますが、表示ラベルが「対象外」に変更されます。', 'kantanpro' ) ) . '\")" class="button-style delete-submit-btn">';
+				// confirm() の引数は JSON 文字列にして属性へ入れる。以前は \" がそのまま HTML に出て onclick が壊れ、
+				// 確認ダイアログが出ないまま削除（無効化）が実行されていた。
+				$delete_confirm_message = __( "この顧客を削除（無効化）しますか？\nデータは残りますが、表示ラベルが「対象外」に変更されます。", 'kantanpro' );
+				$button_group_html     .= '<button type="submit" name="send_post" title="' . esc_attr__( '削除（無効化）する', 'kantanpro' ) . '" onclick="return confirm(' . esc_attr( wp_json_encode( $delete_confirm_message, JSON_UNESCAPED_UNICODE ) ) . ');" class="button-style delete-submit-btn">';
 				$button_group_html .= '<span class="material-symbols-outlined">delete</span>';
 				$button_group_html .= '</button>';
 				$button_group_html .= '</form>';
@@ -2552,7 +2539,10 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
             // }
         </script>
 			<?php
-			$print = ob_get_clean();
+			// 印刷用の <script> は、ショートコード出力の許可リスト（KTPWP_Kses）を通さず、
+			// 出力位置にそのまま戻す。印刷の挙動（PC/iPad/iPhone の経路）は凍結しているため、
+			// JS の中身は1バイトも変えない。
+			$print = KTPWP_Kses::register_raw( ob_get_clean() );
 			// コンテンツを返す
 			// controller, workflow（受注書作成ボタン）を$print直後に追加
 			// controller_html, workflow_htmlが重複しないようにcontroller_htmlは1回のみ出力

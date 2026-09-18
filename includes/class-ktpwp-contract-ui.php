@@ -62,9 +62,11 @@ if ( ! class_exists( 'KTPWP_Contract_UI' ) ) {
 
 			$html  = '<div class="ktp-contract-section" id="ktp-contract-section" data-client-id="' . esc_attr( (string) $client_id ) . '">';
 			$html .= '<h4 class="ktp-contract-section__title">' . esc_html__( '■ 定期契約', 'kantanpro' ) . '</h4>';
+			// KTPWP-WPORG-STRIP stripe_billing BEGIN
 			if ( function_exists( 'ktpwp_is_feature_enabled' ) && ! ktpwp_is_feature_enabled( 'stripe_billing' ) && class_exists( 'KTPWP_Edition' ) ) {
 				$html .= KTPWP_Edition::get_upgrade_message_html( __( 'Stripe 請求連携', 'kantanpro' ) );
 			}
+			// KTPWP-WPORG-STRIP stripe_billing END
 
 			if ( empty( $recurring_services ) ) {
 				$html .= '<p class="ktp-contract-section__hint">' . esc_html__( '定期請求に使えるサービスがありません。サービスタブで「契約（請求サイクル）」を都度以外に設定してください。', 'kantanpro' ) . '</p>';

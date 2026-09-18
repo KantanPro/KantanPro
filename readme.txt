@@ -4,7 +4,7 @@ Tags: invoice, crm, order management, quotation, business
 Requires at least: 5.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.3.40
+Stable tag: 1.3.41
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -82,7 +82,8 @@ features can contact an external service, and each of them is described under
 == A separate plugin with more features ==
 
 The same author also publishes **KantanProEX (WP)**, a separate paid plugin.
-It is not required for this plugin to work, and nothing here is disabled without it.
+This plugin is fully functional on its own: nothing in it is locked, limited or
+switched off until you buy or install anything else.
 KantanProEX adds:
 
 * Sales reports — revenue and profit over time, broken down by client and by service
@@ -145,6 +146,41 @@ fields. It only sends anything if you have entered your own OpenAI API key.
 6. Mobile view
 
 == Changelog ==
+
+= 1.3.41 - 2026-09-19 =
+* Removed the sales-ledger PDF feature and the sales report data endpoints from the
+  package. They were still bundled (only the report tab had been removed), which
+  left a feature that looked implemented but unavailable. The plugin no longer
+  contains any code that is locked, limited or switched off in this edition; the
+  list of disabled features is now empty.
+* Removed the edition/staff-limit settings screen and the remaining staff-limit
+  logic. There is no limit on staff in this edition.
+* Fixed the backup restore so that it can only write this plugin's own options
+  (`ktp_*` / `ktpwp_*`). Previously the options section of an uploaded backup
+  file could set any WordPress option. The uploaded file is now validated
+  before any existing data is removed, so a broken or empty file no longer wipes
+  the plugin's tables and then fails.
+* Added the missing nonce check on sending an order e-mail, and a nonce and
+  capability check on the supplier-cost AJAX requests. Removed two unused AJAX
+  actions that wrote data without any nonce check.
+* Required a logged-in user who can edit posts before a list view increments the
+  "frequency" counter of a record, and added a capability check to the service
+  list, matching the client list.
+* The business screens rendered by the shortcodes are now passed through an
+  explicit allow-list of HTML tags and attributes (`KTPWP_Kses`) instead of being
+  returned unescaped. Inline scripts that do not belong in the page body are now
+  added through `wp_add_inline_script()`.
+* Header background image URLs are now sanitized as URLs (`esc_url_raw`).
+* `register_setting()` calls now pass `sanitize_callback` in the arguments array.
+* Fixed `set_time_limit()` being restored with an undefined value (which meant
+  "no limit") when the dummy-data tool failed before saving the original limit.
+* Stopped writing raw `$_POST` / `$_GET` / `$_SERVER` values and nonces to the
+  debug log, and removed an unescaped `$_SESSION` output that nothing wrote to.
+* Fixed the confirmation dialog of the client "delete" button, which never
+  appeared because its `onclick` attribute was malformed, and the "close" button
+  of the multiple-search-results popup, which navigated to a broken URL.
+* Fixed the "Information" tab being ignored when selected through the shortcode
+  renderer, and a notice caused by an undefined variable there.
 
 = 1.3.40 - 2026-09-14 =
 * Fixed plugin activation not creating the required database tables on some

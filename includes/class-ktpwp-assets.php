@@ -725,7 +725,6 @@ class KTPWP_Assets {
 
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
             error_log( 'KTPWP_Assets: Frontend assets check - URL: ' . $current_url . ', Page: ' . $current_page . ', Should load: true' );
-            error_log( 'KTPWP_Assets: GET parameters: ' . print_r( $_GET, true ) );
         }
 
         $this->enqueue_styles( false );

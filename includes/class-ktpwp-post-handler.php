@@ -132,7 +132,6 @@ if ( ! class_exists( 'KTPWP_Post_Data_Handler' ) ) {
          */
         public static function log_post_data( $context = 'POST_DATA' ) {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( "[$context] POST data: " . print_r( $_POST, true ) );
                 error_log( "[$context] POST is_array: " . ( is_array( $_POST ) ? 'true' : 'false' ) );
                 error_log( "[$context] POST empty: " . ( empty( $_POST ) ? 'true' : 'false' ) );
             }

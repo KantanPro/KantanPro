@@ -310,7 +310,7 @@ if ( ! class_exists( 'KTPWP_External_Url' ) ) {
 		}
 
 		/**
-		 * Inline script: sync action links with input values (once per page).
+		 * Queues an inline script that syncs action links with input values (once per page).
 		 */
 		public static function maybe_script(): string {
 			if ( self::$script_printed ) {
@@ -318,7 +318,7 @@ if ( ! class_exists( 'KTPWP_External_Url' ) ) {
 			}
 			self::$script_printed = true;
 
-			return '<script>
+			$js = '
 (function() {
 	function normalizeUrl(raw) {
 		raw = (raw || "").trim();
@@ -396,7 +396,13 @@ if ( ! class_exists( 'KTPWP_External_Url' ) ) {
 		if (link) { e.preventDefault(); }
 	});
 })();
-</script>';
+';
+
+			// 本文に生の <script> を出すと、ショートコード出力の許可リスト（KTPWP_Kses）で落ちるため、
+			// スクリプトキュー経由で出力する。
+			ktpwp_add_inline_script( $js );
+
+			return '';
 		}
 	}
 }

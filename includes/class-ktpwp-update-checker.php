@@ -2237,7 +2237,6 @@ class KTPWP_Update_Checker {
     public function ajax_check_header_update() {
         try {
             error_log( 'KantanPro: ajax_check_header_update 開始' );
-            error_log( 'KantanPro: POSTデータ: ' . print_r( $_POST, true ) );
             
             // POSTデータの存在チェック
             if ( ! isset( $_POST['nonce'] ) ) {
@@ -2250,10 +2249,8 @@ class KTPWP_Update_Checker {
             }
             
             // セキュリティチェック
-            error_log( 'KantanPro: nonce検証開始 - 受信nonce: ' . $_POST['nonce'] );
             if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'ktpwp_header_update_check' ) ) {
                 error_log( 'KantanPro: ajax_check_header_update - nonce検証に失敗しました' );
-                error_log( 'KantanPro: 期待されるnonce: ' . wp_create_nonce( 'ktpwp_header_update_check' ) );
                 wp_send_json_error( array(
                     'message' => __( 'セキュリティチェックに失敗しました。', 'kantanpro' ),
                     'error_type' => 'security'

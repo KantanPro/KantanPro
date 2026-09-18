@@ -221,7 +221,8 @@ class KTPWP_Shortcodes {
         }
 
         echo '</div>'; // コンテナ終了
-        return ob_get_clean(); // バッファの内容を取得して返す
+        // kantanAllTab（ktpwp.php）と同じく、業務画面専用の許可リストで最終出力を絞る。
+        return KTPWP_Kses::business_screen( ob_get_clean() );
     }
 
     /**
@@ -949,7 +950,7 @@ class KTPWP_Shortcodes {
         }
 
         // 許可されたタブ名のホワイトリスト
-        $allowed_tabs = array('list', 'order', 'client', 'service', 'supplier', 'report');
+        $allowed_tabs = array('list', 'order', 'client', 'service', 'supplier', 'info');
 
         if (!in_array($tab_name, $allowed_tabs, true)) {
             $tab_name = 'list';
@@ -1177,7 +1178,7 @@ class KTPWP_Shortcodes {
 
         if (class_exists('KTPWP_View_Tabs_Class')) {
             $view = new KTPWP_View_Tabs_Class();
-            return $view->TabsView($list_content, $order_content, $client_content, $service_content, $supplier_content, $report_content);
+            return $view->TabsView($list_content, $order_content, $client_content, $service_content, $supplier_content, $info_content);
         }
 
         return $this->get_error_content('KTPWP_View_Tabs_Class');

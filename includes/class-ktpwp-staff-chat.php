@@ -596,8 +596,8 @@ if ( ! class_exists( 'KTPWP_Staff_Chat' ) ) {
 			$html .= '</div>'; // .staff-chat-content
 			$html .= '</details>';
 
-			// スタッフチャット用AJAX設定を確実に出力
-			$html .= $this->get_ajax_config_script();
+			// スタッフチャット用AJAX設定を確実に出力（スクリプトキューに載せる。本文には出さない）
+			$this->get_ajax_config_script();
 
 			return $html;
 		}
@@ -657,36 +657,32 @@ if ( ! class_exists( 'KTPWP_Staff_Chat' ) ) {
 		}
 
 		/**
-		 * AJAX設定スクリプトを生成
+		 * AJAX設定をスクリプトキューに載せる。
+		 *
+		 * 本文に生の <script> を出すと、ショートコード出力の許可リスト（KTPWP_Kses）で
+		 * 落ちてしまうため、wp_add_inline_script 経由で出力する。
 		 *
 		 * @since 1.0.0
-		 * @return string JavaScript スクリプト
+		 * @return void
 		 */
 		private function get_ajax_config_script() {
 			static $script_output = false;
 
 			// 重複出力を防止
 			if ( $script_output ) {
-				return '';
+				return;
 			}
 
 			// 統一されたナンス管理クラスを使用
 			$ajax_data = KTPWP_Nonce_Manager::get_instance()->get_unified_ajax_config();
 
-			$script = '<script type="text/javascript">';
-			$script .= 'window.ktpwp_ajax = ' . wp_json_encode( $ajax_data ) . ';';
+			$script  = 'window.ktpwp_ajax = ' . wp_json_encode( $ajax_data ) . ';';
 			$script .= 'window.ktp_ajax_object = ' . wp_json_encode( $ajax_data ) . ';';
 			$script .= 'window.ajaxurl = ' . wp_json_encode( $ajax_data['ajax_url'] ) . ';';
-			$script .= 'console.log("StaffChat: AJAX設定を出力 (unified nonce)", window.ktpwp_ajax);';
-			$script .= '</script>';
 
-			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( 'KTPWP StaffChat: AJAX config output with unified nonce: ' . wp_json_encode( $ajax_data ) );
-			}
+			ktpwp_add_inline_script( $script );
 
 			$script_output = true;
-
-			return $script;
 		}
 
 		/**

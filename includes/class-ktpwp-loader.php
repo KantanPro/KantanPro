@@ -86,6 +86,7 @@ class KTPWP_Loader {
             'KTPWP_Main'            => 'includes/class-ktpwp-main.php',
             'KTPWP_Loader'          => 'includes/class-ktpwp-loader.php',
             'KTPWP_Security'        => 'includes/class-ktpwp-security.php',
+            'KTPWP_Kses'            => 'includes/class-ktpwp-kses.php',
             'KTPWP_Ajax'            => 'includes/class-ktpwp-ajax.php',
             'KTPWP_Assets'          => 'includes/class-ktpwp-assets.php',
             'KTPWP_Nonce_Manager'   => 'includes/class-ktpwp-nonce-manager.php',

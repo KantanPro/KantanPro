@@ -33,14 +33,20 @@
         return div.innerHTML;
     }
 
+    // AJAX 用 nonce。サーバー側（ajax-supplier-cost.php）は ktp_ajax_nonce / ktpwp_ajax_nonce の両方を受け付ける。
+    function getCostAjaxNonce() {
+        return (typeof ktpwp_ajax_nonce !== 'undefined' && ktpwp_ajax_nonce)
+            || (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object && ktp_ajax_object.nonce)
+            || (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax && ktpwp_ajax.nonce)
+            || '';
+    }
+
     window.ktpwpIncrementSkillFrequency = function(skillId) {
         const id = parseInt(skillId, 10);
         if (!id || typeof ajaxurl === 'undefined') {
             return;
         }
-        const nonce = (typeof ktpwp_ajax_nonce !== 'undefined' && ktpwp_ajax_nonce)
-            || (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object && ktp_ajax_object.nonce)
-            || '';
+        const nonce = getCostAjaxNonce();
         $.post(ajaxurl, {
             action: 'ktpwp_increment_skill_frequency',
             skill_id: id,
@@ -339,7 +345,8 @@
         url: ajaxUrl,
         type: 'POST',
         data: {
-            action: 'ktpwp_get_suppliers_for_cost'
+            action: 'ktpwp_get_suppliers_for_cost',
+            nonce: getCostAjaxNonce()
         },
         dataType: 'json',
         timeout: 30000, // 30秒タイムアウト
@@ -430,7 +437,8 @@
                     type: 'POST',
                     data: {
                         action: 'ktpwp_get_supplier_skills_for_cost',
-                        supplier_id: supplierId
+                        supplier_id: supplierId,
+                        nonce: getCostAjaxNonce()
                     },
                     dataType: 'json',
                     timeout: 30000, // 30秒タイムアウト

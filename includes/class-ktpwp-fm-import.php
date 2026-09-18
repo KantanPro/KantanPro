@@ -399,8 +399,9 @@ final class KTPWP_FM_Import {
 			wp_send_json_error( array( 'message' => __( 'OpenAI API キーが未設定です。', 'kantanpro' ) ) );
 		}
 
-		$headers = isset( $_POST['headers'] ) ? json_decode( wp_unslash( (string) $_POST['headers'] ), true ) : null;
-		$samples = isset( $_POST['samples'] ) ? json_decode( wp_unslash( (string) $_POST['samples'] ), true ) : null;
+		// JSON は decode 前に文字列としてサニタイズし、decode 後も各値をサニタイズする。
+		$headers = isset( $_POST['headers'] ) ? json_decode( sanitize_textarea_field( wp_unslash( (string) $_POST['headers'] ) ), true ) : null;
+		$samples = isset( $_POST['samples'] ) ? json_decode( sanitize_textarea_field( wp_unslash( (string) $_POST['samples'] ) ), true ) : null;
 		if ( ! is_array( $headers ) || $headers === array() ) {
 			wp_send_json_error( array( 'message' => __( 'ヘッダーが不正です。', 'kantanpro' ) ) );
 		}

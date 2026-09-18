@@ -429,8 +429,10 @@ class KTPWP_Ajax {
 		add_action('wp_ajax_ktp_get_order_data', array($this, 'get_order_data'));
 		add_action('wp_ajax_nopriv_ktp_get_order_data', array($this, 'get_order_data'));
 
+		// KTPWP-WPORG-STRIP report BEGIN
 		// レポート機能用のAJAXアクション
 		add_action( 'wp_ajax_ktpwp_get_report_data', array( $this, 'get_report_data' ) );
+		// KTPWP-WPORG-STRIP report END
 		
 		// 登録完了フラグを設定
 		$this->handlers_registered = true;
@@ -860,20 +862,12 @@ class KTPWP_Ajax {
 		$nonce_value    = '';
 
 		// デバッグモード時のみ詳細ログを出力
-		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			error_log( '[AJAX_AUTO_SAVE] POST data received: ' . print_r( $_POST, true ) );
-		}
 
 		// 複数のnonce名でチェック
 		$nonce_fields = array( 'nonce', 'ktp_ajax_nonce', '_ajax_nonce', '_wpnonce' );
 		foreach ( $nonce_fields as $field ) {
 			if ( isset( $_POST[ $field ] ) ) {
-				$nonce_value = is_array( $_POST[ $field ] ) ? $_POST[ $field ] : sanitize_text_field( wp_unslash( $_POST[ $field ] ) );
-
-				// 配列の場合はvalueキーを取得
-				if ( is_array( $nonce_value ) && isset( $nonce_value['value'] ) ) {
-					$nonce_value = $nonce_value['value'];
-				}
+				$nonce_value = $this->extract_nonce_value( $_POST[ $field ] );
 
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 					error_log( "[AJAX_AUTO_SAVE] Checking nonce field '{$field}': '{$nonce_value}" );
@@ -900,8 +894,6 @@ class KTPWP_Ajax {
 		if ( ! $nonce_verified ) {
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 				error_log( '[AJAX_AUTO_SAVE] Security check failed - tried fields: ' . implode( ', ', $nonce_fields ) );
-				error_log( '[AJAX_AUTO_SAVE] Available POST fields: ' . implode( ', ', array_keys( $_POST ) ) );
-				error_log( '[AJAX_AUTO_SAVE] All POST values: ' . print_r( $_POST, true ) );
 			}
 			$this->log_ajax_error( 'Auto-save security check failed', $_POST );
 			wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'kantanpro' ) );
@@ -983,9 +975,6 @@ class KTPWP_Ajax {
 	 * Ajax: 新規アイテム作成処理（強化版）
 	 */
 	public function ajax_create_new_item() {
-		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			error_log( '[AJAX_CREATE_NEW_ITEM] Method called - POST data: ' . print_r( $_POST, true ) );
-		}
 		
 		// 編集者以上の権限チェック
 		if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
@@ -996,7 +985,6 @@ class KTPWP_Ajax {
 
 		// 安全性の初期チェック（Adminer警告対策）
 		if ( ! is_array( $_POST ) || empty( $_POST ) ) {
-			error_log( 'KTPWP Ajax: $_POST is not array or empty' );
 			wp_send_json_error( __( 'リクエストデータが無効です', 'kantanpro' ) );
 			return;
 		}
@@ -1009,12 +997,7 @@ class KTPWP_Ajax {
 		$nonce_fields = array( 'nonce', 'ktp_ajax_nonce', '_ajax_nonce', '_wpnonce' );
 		foreach ( $nonce_fields as $field ) {
 			if ( isset( $_POST[ $field ] ) ) {
-				$nonce_value = is_array( $_POST[ $field ] ) ? $_POST[ $field ] : sanitize_text_field( wp_unslash( $_POST[ $field ] ) );
-
-				// 配列の場合はvalueキーを取得
-				if ( is_array( $nonce_value ) && isset( $nonce_value['value'] ) ) {
-					$nonce_value = $nonce_value['value'];
-				}
+				$nonce_value = $this->extract_nonce_value( $_POST[ $field ] );
 
 				if ( wp_verify_nonce( $nonce_value, 'ktp_ajax_nonce' ) ) {
 					$nonce_verified = true;
@@ -1026,7 +1009,6 @@ class KTPWP_Ajax {
 
 		if ( ! $nonce_verified ) {
 			error_log( '[AJAX_CREATE_NEW_ITEM] Security check failed - tried fields: ' . implode( ', ', $nonce_fields ) );
-			error_log( '[AJAX_CREATE_NEW_ITEM] Available POST fields: ' . implode( ', ', array_keys( $_POST ) ) );
 			$this->log_ajax_error( 'Create new item security check failed', $_POST );
 			wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'kantanpro' ) );
 		}
@@ -1113,9 +1095,6 @@ class KTPWP_Ajax {
 		}
 
 		// 受け取ったパラメータをログに出力
-		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			error_log( '[AJAX_DELETE_ITEM] Received params: ' . print_r( $_POST, true ) );
-		}
 
 		// セキュリティチェック - 複数のnonce名でチェック
 		$nonce_verified = false;
@@ -1125,12 +1104,7 @@ class KTPWP_Ajax {
 		$nonce_fields = array( 'nonce', 'ktp_ajax_nonce', '_ajax_nonce', '_wpnonce' );
 		foreach ( $nonce_fields as $field ) {
 			if ( isset( $_POST[ $field ] ) ) {
-				$nonce_value = is_array( $_POST[ $field ] ) ? $_POST[ $field ] : sanitize_text_field( wp_unslash( $_POST[ $field ] ) );
-
-				// 配列の場合はvalueキーを取得
-				if ( is_array( $nonce_value ) && isset( $nonce_value['value'] ) ) {
-					$nonce_value = $nonce_value['value'];
-				}
+				$nonce_value = $this->extract_nonce_value( $_POST[ $field ] );
 
 				if ( wp_verify_nonce( $nonce_value, 'ktp_ajax_nonce' ) ) {
 					$nonce_verified = true;
@@ -1142,7 +1116,6 @@ class KTPWP_Ajax {
 
 		if ( ! $nonce_verified ) {
 			error_log( '[AJAX_DELETE_ITEM] Security check failed - tried fields: ' . implode( ', ', $nonce_fields ) );
-			error_log( '[AJAX_DELETE_ITEM] Available POST fields: ' . implode( ', ', array_keys( $_POST ) ) );
 			$this->log_ajax_error( 'Delete item security check failed', $_POST );
 			wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'kantanpro' ) );
 		}
@@ -1237,9 +1210,6 @@ class KTPWP_Ajax {
 	 * Ajax: アイテムの並び順更新処理
 	 */
 	public function ajax_update_item_order() {
-		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			error_log( '[AJAX_UPDATE_ITEM_ORDER] リクエスト開始: ' . print_r( $_POST, true ) );
-		}
 
 		// 編集者以上の権限チェック
 		if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
@@ -1257,12 +1227,7 @@ class KTPWP_Ajax {
 		$nonce_fields = array( 'nonce', 'ktp_ajax_nonce', '_ajax_nonce', '_wpnonce' );
 		foreach ( $nonce_fields as $field ) {
 			if ( isset( $_POST[ $field ] ) ) {
-				$nonce_value = is_array( $_POST[ $field ] ) ? $_POST[ $field ] : sanitize_text_field( wp_unslash( $_POST[ $field ] ) );
-
-				// 配列の場合はvalueキーを取得
-				if ( is_array( $nonce_value ) && isset( $nonce_value['value'] ) ) {
-					$nonce_value = $nonce_value['value'];
-				}
+				$nonce_value = $this->extract_nonce_value( $_POST[ $field ] );
 
 				$nonce_value = sanitize_text_field( $nonce_value );
 				if ( wp_verify_nonce( $nonce_value, 'ktp_ajax_nonce' ) ) {
@@ -1276,12 +1241,6 @@ class KTPWP_Ajax {
 
 		if ( ! $nonce_verified ) {
 			error_log( '[AJAX_UPDATE_ITEM_ORDER] Security check failed - tried fields: ' . implode( ', ', $nonce_fields ) );
-			error_log( '[AJAX_UPDATE_ITEM_ORDER] Available POST fields: ' . implode( ', ', array_keys( $_POST ) ) );
-			foreach ( $_POST as $key => $value ) {
-				if ( strpos( $key, 'nonce' ) !== false || strpos( $key, '_wp' ) !== false ) {
-					error_log( "[AJAX_UPDATE_ITEM_ORDER] Found nonce-like field: {$key} = " . substr( $value, 0, 10 ) . '...' );
-				}
-			}
 			$this->log_ajax_error( 'Update item order security check failed', $_POST );
 			wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'kantanpro' ) );
 		}
@@ -2060,9 +2019,6 @@ class KTPWP_Ajax {
 			);
 		}
 
-		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			error_log( $log_prefix . ': Processing file attachments - ' . print_r( $_FILES['attachments'], true ) );
-		}
 
 		$uploaded_files     = $_FILES['attachments'];
 		$max_file_size      = 10 * 1024 * 1024;
@@ -4559,9 +4515,6 @@ class KTPWP_Ajax {
 	public function ajax_save_delivery_date() {
 		try {
 			// デバッグ情報をログに出力
-			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( 'KTPWP Ajax save_delivery_date called with POST data: ' . print_r( $_POST, true ) );
-			}
 
 			// パラメータ取得
 			$order_id   = isset( $_POST['order_id'] ) ? absint( $_POST['order_id'] ) : 0;
@@ -4644,7 +4597,6 @@ class KTPWP_Ajax {
 			}
 
 			if ( ! $nonce_verified ) {
-				error_log( 'KTPWP Ajax: Nonce verification failed. Available fields: ' . implode( ', ', array_keys( $_POST ) ) );
 				throw new Exception( 'セキュリティ検証に失敗しました。' );
 			}
 
@@ -5463,6 +5415,22 @@ class KTPWP_Ajax {
 	}
 
 	/**
+	 * POST された nonce を文字列に正規化する。
+	 *
+	 * フロントから nonce が { value: '...' } の形で送られてくることがあるため、配列なら value を取り出す。
+	 * どの形でも wp_unslash + sanitize_text_field を通した文字列だけを返す（wp_verify_nonce はプラガブルなため）。
+	 *
+	 * @param mixed $raw $_POST の値。
+	 * @return string
+	 */
+	private function extract_nonce_value( $raw ) {
+		if ( is_array( $raw ) ) {
+			$raw = isset( $raw['value'] ) ? $raw['value'] : '';
+		}
+		return is_scalar( $raw ) ? sanitize_text_field( wp_unslash( (string) $raw ) ) : '';
+	}
+
+	/**
 	 * Log Ajax errors
 	 *
 	 * @param string $message Error message
@@ -5543,7 +5511,6 @@ class KTPWP_Ajax {
 			if (!$nonce_verified) {
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 					error_log('[AJAX_GET_SUPPLIER_QUALIFIED_INVOICE] Security check failed - all nonce sources: ' . print_r($nonce_sources, true));
-					error_log('[AJAX_GET_SUPPLIER_QUALIFIED_INVOICE] POST data: ' . print_r($_POST, true));
 				}
 				wp_send_json_error(__('セキュリティ検証に失敗しました', 'kantanpro'));
 				return;
@@ -5553,9 +5520,6 @@ class KTPWP_Ajax {
 			$supplier_id = isset( $_POST['supplier_id'] ) ? absint( $_POST['supplier_id'] ) : 0;
 
 			// デバッグ情報をログに記録
-			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( 'KTPWP Ajax: ajax_get_supplier_qualified_invoice_number - supplier_id: ' . $supplier_id . ', POST data: ' . print_r($_POST, true) );
-			}
 			
 			if ( $supplier_id <= 0 ) {
 				error_log( 'KTPWP Ajax: Invalid supplier ID: ' . $supplier_id );
@@ -6885,20 +6849,13 @@ class KTPWP_Ajax {
 		add_action( 'wp_ajax_ktp_get_departments', array( $this, 'get_departments' ) );
 		add_action( 'wp_ajax_ktp_get_supplier_costs', array( $this, 'get_supplier_costs' ) );
 		
+		// KTPWP-WPORG-STRIP report BEGIN
 		// レポートタブ用のAJAXハンドラー
 		add_action( 'wp_ajax_ktp_get_report_data', array( $this, 'get_report_data' ) );
-		add_action( 'wp_ajax_ktp_get_sales_data', array( $this, 'get_sales_data' ) );
-		add_action( 'wp_ajax_ktp_get_progress_data', array( $this, 'get_progress_data' ) );
-		add_action( 'wp_ajax_ktp_get_client_data', array( $this, 'get_client_data' ) );
-		add_action( 'wp_ajax_ktp_get_service_data', array( $this, 'get_service_data' ) );
-		add_action( 'wp_ajax_ktp_get_supplier_data', array( $this, 'get_supplier_data' ) );
-		
-		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			error_log( 'レポートAJAXハンドラー登録完了: ktp_get_report_data' );
-			error_log( '登録されたAJAXアクション: wp_ajax_ktp_get_report_data' );
-		}
+		// KTPWP-WPORG-STRIP report END
 	}
 
+	// KTPWP-WPORG-STRIP report BEGIN
 	/**
 	 * Get report data for charts
 	 *
@@ -7329,6 +7286,7 @@ class KTPWP_Ajax {
 
 		return $where_clause;
 	}
+	// KTPWP-WPORG-STRIP report END
 
 	/**
 	 * 一括請求プレビュー用に月別グループを【定期】【都度】【初回のみ】へ分割

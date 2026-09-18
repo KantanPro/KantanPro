@@ -336,7 +336,7 @@ document.addEventListener('DOMContentLoaded', function () {
         client: ['data_id', 'sort_by', 'sort_order', 'page_start', 'page_stage', 'view_mode', 'order_sort_by', 'order_sort_order'],
         service: ['data_id', 'sort_by', 'sort_order', 'page_start', 'page_stage'],
         supplier: ['data_id', 'sort_by', 'sort_order', 'page_start', 'page_stage', 'skills_sort_by', 'skills_sort_order', 'skills_page'],
-        report: ['report_type', 'period', 'tax_year']
+        report: ['report_type', 'period', 'tax_year'] // KTPWP-WPORG-STRIP report
     };
 
     function extractTabState(tabName, urlParams) {

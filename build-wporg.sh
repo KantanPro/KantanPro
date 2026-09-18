@@ -195,6 +195,19 @@ if [[ -n "$CDN_HITS" ]]; then
   echo "$CDN_HITS" >&2
   exit 1
 fi
+# ショートコード（業務画面）の出力が、専用の許可リスト（KTPWP_Kses）を必ず通ること。
+# 2026-09-18 のレビューで「ショートコードの戻り値が未エスケープ」を再指摘された。
+# 免除コメントで済ませる形に戻っていないか、呼び出しの有無で見張る。
+for f in ktpwp.php includes/class-ktpwp-shortcodes.php; do
+  if ! grep -q "KTPWP_Kses::business_screen(" "$STAGE/$f"; then
+    echo "[ERROR] $f のショートコード出力が KTPWP_Kses を通っていません" >&2
+    exit 1
+  fi
+done
+if [[ ! -f "$STAGE/includes/class-ktpwp-kses.php" ]]; then
+  echo "[ERROR] includes/class-ktpwp-kses.php がありません" >&2
+  exit 1
+fi
 php -l "$STAGE/ktpwp.php" > /dev/null
 
 ZIP="$OUT_DIR/${SLUG}-${VERSION}.zip"

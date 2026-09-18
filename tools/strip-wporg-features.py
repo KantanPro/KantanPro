@@ -31,6 +31,10 @@ REMOVE_FILES = [
     'js/ktp-report-print.js',
     'js/lib/chart.umd.min.js',
     'css/ktp-report.css',
+    # 売上台帳PDF（2026-09-18 の指摘の本体）。ktpwp.php の require_once は
+    # 下の edit() で外す。ファイルだけ消すと全リクエストで fatal になる。
+    'includes/ajax-sales-ledger-pdf.php',
+    'js/ktp-sales-ledger-pdf.js',
     # public_products
     'includes/class-ktpwp-public-product-order.php',
     'includes/class-ktpwp-public-product-order-memo.php',
@@ -172,6 +176,27 @@ print(f'ファイル削除: {removed}件')
 pp_blocks, pp_lines = strip_feature_markers('public_products')
 print(f'public_products マーカー除去: ブロック{pp_blocks}件 / 単独行{pp_lines}行')
 
+# --- 1.6) report のマーカー付きコードを除去 -------------------------------
+#     ・class-ktpwp-ajax.php のレポート用 AJAX 登録と集計メソッド
+#     ・class-ktpwp-ui-generator.php のレポートツールバー
+#     ・ktpwp.php の ktp-report CSS enqueue / view-tab.php の report_type
+#     レポートタブ本体を消しただけでは、集計 API とその UI 部品が
+#     「実装は残っているが隠されている」形で ZIP に残る（2026-09-18 の指摘）。
+rp_blocks, rp_lines = strip_feature_markers('report')
+print(f'report マーカー除去: ブロック{rp_blocks}件 / 単独行{rp_lines}行')
+
+# 売上台帳PDFハンドラの require_once。ガードが無いので、ファイルを消すと
+# 全リクエストで fatal になる。edit()（required）なのでソース側の表記が変わったら
+# 黙って通らずビルドが落ちる。
+edit('ktpwp.php', """// --- 売上台帳PDF生成AJAXハンドラを読み込む ---
+require_once __DIR__ . '/includes/ajax-sales-ledger-pdf.php';
+""", '')
+
+# report を無料版で使えないタブとして数えていた配列から 'report' を外す。
+edit('includes/class-ktpwp-assets.php',
+     "array( 'service', 'supplier', 'client', 'report', 'list' )",
+     "array( 'service', 'supplier', 'client', 'list' )")
+
 # --- 2) オートローダ登録を消す ----------------------------------------------
 autoload_pat = r"'(" + '|'.join(REMOVE_CLASSES) + r")'\s*=>"
 n = drop_lines('ktpwp.php', autoload_pat) + drop_lines('includes/class-ktpwp-loader.php', autoload_pat)
@@ -190,7 +215,7 @@ chart.umd.min.js
 # --- 3) レポートタブのUI除去は不要 ------------------------------------------
 #     2026-09-03 にソース側で6番目のタブを「情報」(KTPWP_Tab_Info) に置き換えたため、
 #     ここでタブを消す処理は要らなくなった。残す CSS の除去だけ行う。
-drop_lines('ktpwp.php', r"wp_enqueue_style\( 'ktp-report'")
+# ktp-report の enqueue は KTPWP-WPORG-STRIP report マーカーで消える（1.6）。
 
 # ktpwp.php 末尾の「クラスが無ければ include」ブロック。
 # class_exists ガードはあるが、ファイルが無いと include_once が
@@ -213,25 +238,12 @@ edit('includes/class-ktpwp-edition.php',
 			'public_products',
 			'contracts',
 		);""",
-     """		// WordPress.org 配布版では「有料だからロックする」機能は無い（ガイドライン5）。
-		// ここに残るのは **コードごと同梱していない機能** だけ。
-		// 同梱していない以上 UI も出してはいけないので、無効として扱う。
-		// （空配列にすると、実体の無い機能の列やボタンが描画されてしまう。
-		//   2026-09-03 にサービスタブの「公開」列が出て気づいた）
-		//
-		// 「公開商品」機能のキーは 2026-09-14 の指摘（Guideline 5 再指摘）を受けて
-		// ここから外した。report / stripe_billing とは扱いが違う: あちらは
-		// 「隠しているが読み手がいる」フラグとして残しても問題なかったが、
-		// 「公開商品」は関連コードを全て物理削除したため、
-		// このキーを読むコードがどこにも残っていない。
-		// 読み手のいない「無効機能」を配列に残すこと自体が、
-		// レビューのAIが検出しようとしている「実装はあるが隠されている」の
-		// 形そのものになるため、消したままにすること。
-		return array(
-			'report',
-			'stripe_billing',
-			'contract_invoice_auto_mail',
-		);""")
+     """		// WordPress.org 配布版にはロックされた機能は無い（ガイドライン5）。
+		// 「隠しているが実装はある」機能を配列に残すこと自体がトライアルウェアの形になる。
+		// 2026-09-18 のレビュー指摘を受けて、無効機能のキーが読み手ごと残る状態をやめた。
+		// 同梱していない機能はコードを物理削除し、それを読む側も
+		// ビルド時に取り除いている。よってここは常に空で正しい。
+		return array();""")
 
 print('ロック解除: 完了')
 # --- 5b) アップグレード誘導UIを空にする（ガイドライン11） --------------------
@@ -280,10 +292,8 @@ edit('includes/class-ktpwp-edition.php',
      "\t\t\t\t\t: __( 'この機能は有料版で利用できます。', 'kantanpro' )",
      "\t\t\t\t\t: ''")
 
-# report を消したので、無料版向けレポート見出し（ロック文言入り）も不要。
-replace_method_body('includes/class-ktpwp-ui-generator.php',
-                    '\t\tpublic function generate_free_edition_report_title_bar() {',
-                    "\n\t\t\t// レポート機能は同梱していないため、この見出しは使わない。\n\t\t\treturn '';\n\t\t}")
+# 無料版向けレポート見出し（generate_free_edition_report_title_bar）は
+# KTPWP-WPORG-STRIP report マーカーでメソッドごと消える（1.6）。
 
 # 翻訳辞書に残る誘導文言も消す
 drop_lines('includes/class-ktpwp-i18n.php', r"無料版では利用できません")
@@ -414,6 +424,66 @@ print('スタッフ管理の除去: 完了')
 
 print('開発元への外部通信の除去: 完了')
 
+# --- 5e) 無効機能キーの読み手を取り除く（ガイドライン5） --------------------
+#     get_free_disabled_features() を空にしたので、以下は到達しない。
+#     クラスは REMOVE_FILES で消えているため、ゲートごと消して
+#     「無料版では使えない機能の入口」がコードに残らないようにする。
+replace_method_body('ktpwp.php', 'function ktpwp_init_stripe_billing() {',
+                    '''
+    // WordPress.org 配布版は Stripe 請求連携を同梱していない。
+    return;
+}''')
+replace_method_body('ktpwp.php', 'function ktpwp_init_contract_invoice_mail() {',
+                    '''
+    // WordPress.org 配布版は請求メール自動送信を同梱していない。
+    return;
+}''')
+sb_blocks, sb_lines = strip_feature_markers('stripe_billing')
+print(f'stripe_billing マーカー除去: ブロック{sb_blocks}件 / 単独行{sb_lines}行')
+
+# --- 5f) スタッフ上限の残りを外す ---------------------------------------------
+#     スタッフ管理ページは 5d で空にしたが、エディション定義のスタッフ上限と
+#     開発者向け画面（ローカル/.test ホストで表示される）が残っていた。
+#     wp.org 版では上限を設けない（0 = 無制限）。
+edit('ktpwp.php',
+     "// 無料版: 0 = スタッフ追加不可（管理者のみ）。有料 pro の 0（無制限）とは別扱い。",
+     "// 0 = 無制限。")
+edit('includes/class-ktpwp-edition.php',
+     "\t * スタッフ上限（無料版の 0 = 追加不可。有料 pro の 0 = 無制限）",
+     "\t * スタッフ上限（0 = 無制限）")
+edit('includes/class-ktpwp-edition.php',
+     "\t * 無料版で無効な機能キー（solo / EX 有料版では有効）",
+     "\t * 無効な機能キー（この配布版では常に空）")
+edit('includes/class-ktpwp-edition.php',
+     "'staff_limit' => 0, // 0 = スタッフ追加不可（管理者のみ）。有料 pro の 0（無制限）とは別扱い。",
+     "'staff_limit' => 0, // 0 = 無制限。")
+replace_method_body('includes/class-ktpwp-edition.php',
+                    '\tpublic static function can_add_staff() {',
+                    '''
+\t\treturn true;
+\t}''')
+replace_method_body('includes/class-ktpwp-edition.php',
+                    '\tpublic static function format_staff_limit_display() {',
+                    '''
+\t\treturn __( '無制限', 'kantanpro' );
+\t}''')
+replace_method_body('includes/class-ktpwp-settings.php',
+                    '    private function render_developer_edition_settings() {',
+                    '''
+        // エディションとスタッフ上限の設定画面は WordPress.org 配布版には含めない。
+        return;
+    }''')
+drop_lines('includes/class-ktpwp-settings.php', r"'(スタッフ上限|登録スタッフ数)'")
+
+# --- 5g) レポート／ライセンス誘導の翻訳文言と説明文 ---------------------------
+#     翻訳辞書は class-ktpwp-i18n.php に残るので、消した機能の文言も
+#     ここで落とさないと「ライセンスが必要」等が grep に引っかかる。
+drop_lines('includes/class-ktpwp-i18n.php',
+           r"^\s*'(?:[^']*売上台帳[^']*|[^']*売上レポート[^']*|顧客別レポート|サービス別レポート|協力会社レポート"
+           r"|レポート|[^']*ライセンス[^']*|詳細な分析とレポート[^']*)'\s*=>")
+edit('includes/class-ktpwp-order-main.php',
+     "売上レポートの期間判定に使われる登録日です", "受注書の登録日です")
+
 
 
 # --- 6) 検証 -----------------------------------------------------------------
@@ -537,6 +607,74 @@ for dp, dns, fns in os.walk(stage):
                 if (rel, pat) in PUBLIC_PRODUCTS_ALLOWED:
                     continue
                 errors.append(f'{rel}:{i}: public_products の痕跡が残っています（{pat!r}） → {line.strip()[:100]!r}')
+
+# --- 6.6) トライアルウェアの痕跡が残っていないか ----------------------------
+#     2026-09-18 のレビューで、レポートタブを消したのに売上台帳PDFの実装
+#     (includes/ajax-sales-ledger-pdf.php) が ZIP に残り、しかもこのスクリプトの
+#     検証は REMOVE_FILES と public_products しか見ていなかったので「検証OK」のまま
+#     提出してしまった。**消したはずの機能の名前で ZIP を grep する**のがこのゲート。
+#
+# 許可リストに足すときは、「なぜ機能の実装ではないのか」を必ず書くこと。
+TRIALWARE_SUBSTR_PATTERNS = [
+    # 売上台帳PDF / レポート API / レポート UI
+    'sales_ledger', 'sales-ledger', '売上台帳',
+    'ktp_get_report_data', 'ktpwp_get_report_data',
+    'ktp_get_sales_data', 'ktp_get_progress_data', 'ktp_get_client_data',
+    'ktp_get_service_data', 'ktp_get_supplier_data',
+    'get_sales_chart_data', 'get_client_chart_data',
+    'get_service_chart_data', 'get_supplier_chart_data',
+    'generate_free_edition_report_title_bar',
+    'KTPWP_Report_Class', 'KTPWP_Graph_Renderer', 'report_type',
+    'ktp-report', 'chart.umd',
+    # ライセンス購入への誘導文言
+    'ライセンスを購入', 'ライセンスが必要', '詳細な分析とレポート',
+    'Purchase a license', 'license is required',
+]
+# 単語境界で見るもの（case-sensitive）。素の部分文字列だと reported / error_report 等に誤爆する。
+TRIALWARE_WORD_PATTERNS = ['report']
+TRIALWARE_WORD_RE = {p: re.compile(r'(?<![A-Za-z0-9_])' + re.escape(p) + r'(?![A-Za-z0-9_])') for p in TRIALWARE_WORD_PATTERNS}
+
+TRIALWARE_ALLOWED = {
+    # AI 一括取り込みの結果レポート（transient に取り込み件数を保存する変数名）。
+    # 売上レポートとは無関係で、取り込み画面の結果表示にだけ使われる。
+    ('includes/class-ktpwp-fm-import.php', 'report'): '取り込み結果の変数名',
+    # readme の「別製品の紹介」節と changelog。ガイドライン5は
+    # "may point out which features are available through a separated plugin" と
+    # 別製品の存在を示すことを認めている。ロックして誘導する形ではない。
+    ('readme.txt', 'report'): '別製品の紹介と changelog',
+    ('readme.txt', 'sales-ledger'): 'changelog（1.3.41 で削除したことの記載）',
+    # 削除済みのレポート UI 用セレクタ。参照する HTML が無いので何も描画されない。
+    # 1 枚の styles.css に他タブのスタイルと入り混じっていて安全に切り出せないため残す。
+    ('css/styles.css', 'ktp-report'): '死んだセレクタ（HTML 側は削除済み）',
+}
+
+for dp, dns, fns in os.walk(stage):
+    for fn in fns:
+        if not fn.endswith(('.php', '.js', '.css', '.txt')):
+            continue
+        fp = os.path.join(dp, fn)
+        rel = os.path.relpath(fp, stage)
+        for i, line in enumerate(open(fp, encoding='utf-8', errors='replace'), 1):
+            hits = [pat for pat in TRIALWARE_SUBSTR_PATTERNS if pat in line]
+            # CSS は見ない: 消したレポート UI 用のセレクタ（ktp-report-*）が styles.css に
+            # 他タブの規則と混在しており、単語境界が - で切れて誤爆する。HTML 側が無いので何も描画されない。
+            if not fn.endswith('.css'):
+                hits += [pat for pat in TRIALWARE_WORD_PATTERNS if TRIALWARE_WORD_RE[pat].search(line)]
+            for pat in hits:
+                if (rel, pat) in TRIALWARE_ALLOWED:
+                    continue
+                errors.append(f'{rel}:{i}: ロック機能／レポートの痕跡が残っています（{pat!r}） → {line.strip()[:100]!r}')
+
+# 無効機能リストが「空」であること。検索ではなく表明にしてあるのは、ソース側の
+# 書き方が変わって edit() の対象が見つからなくなっても、黙って通らないため。
+ed = open(path('includes/class-ktpwp-edition.php'), encoding='utf-8').read()
+m = re.search(r'function get_free_disabled_features\(\)\s*\{(.*?)\n\t\}', ed, re.S)
+if not m or not re.search(r'return array\(\s*\);', m.group(1)):
+    errors.append('get_free_disabled_features() が空配列を返していません（ガイドライン5）')
+if re.search(r"ktpwp_is_feature_enabled\(\s*'(report|stripe_billing|contract_invoice_auto_mail|public_products)'", '\n'.join(
+        open(os.path.join(dp, fn), encoding='utf-8', errors='replace').read()
+        for dp, dns, fns in os.walk(stage) for fn in fns if fn.endswith('.php'))):
+    errors.append("同梱していない機能のゲート（ktpwp_is_feature_enabled('report' 等)）が残っています")
 
 # マーカー自体の消し忘れ（BEGIN/ENDの対応が壊れて片方だけ残った場合の保険）。
 for dp, dns, fns in os.walk(stage):

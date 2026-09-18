@@ -3,7 +3,7 @@
  * Plugin Name: KantanPro
  * Plugin URI: https://www.kantanpro.com/
  * Description: スモールビジネスのための販売支援ツール。ショートコード[ktpwp_all_tab]を固定ページに設置してください。
- * Version: 1.3.40
+ * Version: 1.3.41
  * Author: KantanPro
  * Author URI: https://www.kantanpro.com/kantanpro-page
  * License: GPL v2 or later
@@ -627,6 +627,7 @@ if ( ! function_exists( 'ktpwp_autoload_classes' ) ) {
         // POSTデータ安全処理クラス（Adminer警告対策）
         'KTPWP_Tab_Info'        => 'includes/class-ktpwp-tab-info.php',
         'KTPWP_Upload'          => 'includes/class-ktpwp-upload.php',
+        'KTPWP_Kses'            => 'includes/class-ktpwp-kses.php',
         'KTPWP_Post_Data_Handler' => 'includes/class-ktpwp-post-handler.php',
         // クライアント管理の新クラス
         'KTPWP_Client_DB'       => 'includes/class-ktpwp-client-db.php',
@@ -4290,7 +4291,7 @@ function ktpwp_scripts_and_styles( $hook = '' ) {
     // 設定タブ用のスタイルシートを追加
     wp_enqueue_style( 'ktp-setting-tab', plugins_url( 'css/ktp-setting-tab.css', __FILE__ ) . '?v=' . time(), array( 'ktp-css' ), KANTANPRO_PLUGIN_VERSION, 'all' );
     // レポートタブ用のスタイルシートを追加
-    wp_enqueue_style( 'ktp-report', plugins_url( 'css/ktp-report.css', __FILE__ ) . '?v=' . time(), array( 'ktp-css' ), KANTANPRO_PLUGIN_VERSION, 'all' );
+    wp_enqueue_style( 'ktp-report', plugins_url( 'css/ktp-report.css', __FILE__ ) . '?v=' . time(), array( 'ktp-css' ), KANTANPRO_PLUGIN_VERSION, 'all' ); // KTPWP-WPORG-STRIP report
 
     // アイコンは同梱の SVG（js/ktp-svg-icons.js）を使用する。外部フォント CDN は読み込まない。
     // jQuery は WordPress 同梱のものを使用する（外部 CDN からは読み込まない）。
@@ -4562,7 +4563,6 @@ if ( ! function_exists( 'ktpwp_current_user_can_access' ) ) {
 }
 
 function KTPWP_Index() {
-    error_log("KTPWP-DEBUG: KTPWP_Index called");
 
     // すべてのタブのショートコード[kantanAllTab]
     function kantanAllTab() {
@@ -4879,18 +4879,12 @@ function KTPWP_Index() {
             // view
             $view = new KTPWP_View_Tabs_Class();
             $tab_view = $view->TabsView( $list_content, $order_content, $client_content, $service_content, $supplier_content, $info_content );
-            // 有料版が有効なときは KTP banner を表示しない
-            $before_header_banner = '';
-
             $layout_attrs = class_exists( 'KTPWP_Settings' )
                 ? KTPWP_Settings::get_page_layout_wrapper_attributes()
                 : 'class="ktpwp-page-layout"';
-            // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $front_message は
-            // esc_html()/esc_attr()/esc_url() 済みの断片を組み立てたもの（4638行以降参照）、
-            // $tab_view は各タブの <form>/<input>/<select> を含む業務画面 HTML で、
-            // wp_kses_post() を通すとフォームや data-* 属性が失われ画面が壊れるため、
-            // 最終合成時点でのエスケープ関数呼び出しは意図的に行っていない。
-            $return_value = '<div ' . $layout_attrs . '>' . $before_header_banner . $front_message . $tab_view . '</div>';
+            // 業務画面はフォーム・表・SVG・data-* を含むため、wp_kses_post() ではなく
+            // この画面専用の許可リスト（KTPWP_Kses）で最終出力を絞る。
+            $return_value = KTPWP_Kses::business_screen( '<div ' . $layout_attrs . '>' . $front_message . $tab_view . '</div>' );
 
             // 出力 HTML 内の /plugins/KantanPro/ を現行ディレクトリに統一（src/data-src 等の旧パス対策）
             if ( defined( 'KANTANPRO_PLUGIN_CANONICAL_DIR' ) ) {
@@ -5631,6 +5625,12 @@ function ktpwp_increment_record_frequency( $entity_key, $record_id ) {
  */
 function ktpwp_increment_record_frequency_on_view( $entity_key, $record_id ) {
     if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
+        return;
+    }
+
+    // GET の閲覧リンクで DB を更新するので、業務画面を使える権限のあるログイン済みユーザーに限る。
+    // （nonce は付けない: 通常のナビゲーションリンクなので、付けるとブックマークやタブ状態の復元が壊れる。）
+    if ( ! is_user_logged_in() || ! ktpwp_current_user_can_access() ) {
         return;
     }
 
@@ -6764,19 +6764,23 @@ function ktpwp_handle_create_dummy_data_ajax() {
         };
         set_error_handler($error_handler);
         
+        // 元の制限値は try の外で控える。catch でも必ず参照するので、接続確認の例外が
+        // 代入より先に起きても未定義変数にならないようにする
+        // （以前は set_time_limit( null ) → 0 = 無制限になっていた）。
+        $old_memory_limit       = ini_get('memory_limit');
+        $old_max_execution_time = (int) ini_get('max_execution_time');
+
         try {
             // データベース接続を確認
             if (!$wpdb->check_connection()) {
                 throw new Exception('データベース接続エラー');
             }
             
-            // メモリ制限を一時的に増加
-            $old_memory_limit = ini_get('memory_limit');
+            // メモリ制限と実行時間を、この処理の間だけ一時的に増やす（終了時に元へ戻す）
             ini_set('memory_limit', '256M');
-            
-            // 実行時間制限を一時的に増加
-            $old_max_execution_time = ini_get('max_execution_time');
-            set_time_limit(300); // 5分
+            if (function_exists('set_time_limit')) {
+                set_time_limit(300); // 5分
+            }
             
             if (defined('WP_DEBUG') && WP_DEBUG) {
                 error_log('KTPWP: ダミーデータ作成開始 - メモリ制限: ' . ini_get('memory_limit') . ', 実行時間制限: ' . ini_get('max_execution_time'));
@@ -6791,7 +6795,9 @@ function ktpwp_handle_create_dummy_data_ajax() {
             
             // 設定を復元
             ini_set('memory_limit', $old_memory_limit);
-            set_time_limit($old_max_execution_time);
+            if (function_exists('set_time_limit')) {
+                set_time_limit($old_max_execution_time);
+            }
             
             // エラーハンドラーを復元
             restore_error_handler();
@@ -6842,7 +6848,9 @@ function ktpwp_handle_create_dummy_data_ajax() {
         } catch (Exception $e) {
             // 設定を復元
             ini_set('memory_limit', $old_memory_limit);
-            set_time_limit($old_max_execution_time);
+            if (function_exists('set_time_limit')) {
+                set_time_limit($old_max_execution_time);
+            }
             
             // エラーハンドラーを復元
             restore_error_handler();

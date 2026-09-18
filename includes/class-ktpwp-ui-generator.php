@@ -17,6 +17,7 @@ if ( ! class_exists( 'KTPWP_Ui_Generator' ) ) {
 
 	class KTPWP_Ui_Generator {
 
+		// KTPWP-WPORG-STRIP report BEGIN
 		/**
 		 * Generate controller section
 		 *
@@ -123,6 +124,7 @@ if ( ! class_exists( 'KTPWP_Ui_Generator' ) ) {
 				. '<div class="ktp-report-controller__actions"></div>'
 				. '</div>';
 		}
+		// KTPWP-WPORG-STRIP report END
 
 		/**
 		 * Generate workflow section
@@ -132,6 +134,59 @@ if ( ! class_exists( 'KTPWP_Ui_Generator' ) ) {
 		 */
 		public function generate_workflow() {
 			return '<div class="workflow"></div>';
+		}
+
+		/**
+		 * 検索が複数件ヒットしたときの結果ポップアップ（顧客・サービス・協力会社で共通）。
+		 *
+		 * 結果の HTML は非表示の div に入れて本文へ返し、ポップアップを開く JavaScript は
+		 * スクリプトキューに載せる。本文に生の <script> を出すと、ショートコード出力の
+		 * 許可リスト（KTPWP_Kses）で落ちてしまうため。
+		 *
+		 * @param string $multi_results_id   非表示コンテナの id。
+		 * @param string $close_redirect_url 「閉じる」を押したときの遷移先。
+		 * @param string $results_html       検索結果の HTML。
+		 * @return string 非表示コンテナの HTML。
+		 */
+		public static function render_multi_results_popup( $multi_results_id, $close_redirect_url, $results_html ) {
+			// $close_redirect_url は esc_url() 済みで & が &#038; になっている。esc_js() も & を &amp; にするので、
+			// JS の location.href に使うと URL が壊れる（?page_id=5#038;tab_name=…）。実体参照を戻し、
+			// JS リテラルは wp_json_encode() で作る。
+			// 呼び出し元で複数回エスケープされていることがあるので、変化しなくなるまで戻す（最大3回）。
+			$close_redirect_url = (string) $close_redirect_url;
+			for ( $i = 0; $i < 3; $i++ ) {
+				$decoded = html_entity_decode( $close_redirect_url, ENT_QUOTES, 'UTF-8' );
+				if ( $decoded === $close_redirect_url ) {
+					break;
+				}
+				$close_redirect_url = $decoded;
+			}
+
+			$js = '(function() {
+	var run = function() {
+		var el = document.getElementById(' . wp_json_encode( (string) $multi_results_id ) . ');
+		if (!el) return;
+		var searchResultsHtml = el.innerHTML;
+		var popup = document.createElement("div");
+		popup.innerHTML = searchResultsHtml;
+		popup.style.cssText = "position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;padding:20px;z-index:10001;width:80%;max-width:600px;border:1px solid #ccc;border-radius:5px;box-shadow:0 4px 6px rgba(0,0,0,0.1)";
+		document.body.appendChild(popup);
+		var closeBtn = document.createElement("button");
+		closeBtn.textContent = ' . wp_json_encode( __( '閉じる', 'kantanpro' ) ) . ';
+		closeBtn.style.cssText = "font-size:0.8em;color:#000;display:block;margin:10px auto 0;padding:10px;background:#cdcccc;border-radius:5px;border-color:#999;cursor:pointer";
+		closeBtn.onclick = function() { document.body.removeChild(popup); location.href = ' . wp_json_encode( $close_redirect_url ) . '; };
+		popup.appendChild(closeBtn);
+	};
+	if (document.readyState === "loading") {
+		document.addEventListener("DOMContentLoaded", run);
+	} else {
+		run();
+	}
+})();';
+
+			ktpwp_add_inline_script( $js );
+
+			return '<div id="' . esc_attr( $multi_results_id ) . '" style="display:none;">' . $results_html . '</div>';
 		}
 
 		/**

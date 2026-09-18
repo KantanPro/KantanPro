@@ -114,8 +114,6 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 				// デバッグログを追加
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 					error_log( 'KTPWP Client Debug: update_table - POST request detected' );
-					error_log( 'KTPWP Client Debug: update_table - REQUEST_METHOD = ' . $_SERVER['REQUEST_METHOD'] );
-					error_log( 'KTPWP Client Debug: update_table - POST data keys = ' . implode( ', ', array_keys( $_POST ) ) );
 				}
 
 				// nonce検証
