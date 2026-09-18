@@ -3,7 +3,7 @@
  * Plugin Name: KantanPro
  * Plugin URI: https://www.kantanpro.com/
  * Description: スモールビジネスのための販売支援ツール。ショートコード[ktpwp_all_tab]を固定ページに設置してください。
- * Version: 1.3.41
+ * Version: 1.3.42
  * Author: KantanPro
  * Author URI: https://www.kantanpro.com/kantanpro-page
  * License: GPL v2 or later
@@ -200,9 +200,9 @@ if ( ! defined( 'KTPWP_STAFF_LIMIT' ) ) {
 // プラグイン定数定義
 if ( ! defined( 'KANTANPRO_PLUGIN_VERSION' ) ) {
     // プラグインヘッダーから Version を取得して動的に定義
-    $plugin_header = get_file_data( __FILE__, array( 'Version' => 'Version' ) );
-    $detected_version = ( isset( $plugin_header['Version'] ) && $plugin_header['Version'] !== '' ) ? $plugin_header['Version'] : '1.0.0';
-    define( 'KANTANPRO_PLUGIN_VERSION', $detected_version );
+    $ktpwp_plugin_header    = get_file_data( __FILE__, array( 'Version' => 'Version' ) );
+    $ktpwp_detected_version = ( isset( $ktpwp_plugin_header['Version'] ) && $ktpwp_plugin_header['Version'] !== '' ) ? $ktpwp_plugin_header['Version'] : '1.0.0';
+    define( 'KANTANPRO_PLUGIN_VERSION', $ktpwp_detected_version );
 }
 if ( ! defined( 'KANTANPRO_PLUGIN_NAME' ) ) {
     // 画面（ヘッダー・フッター等）に出す表示名。
@@ -598,7 +598,6 @@ if ( ! function_exists( 'ktpwp_autoload_classes' ) ) {
         'KTPWP_Assets'          => 'includes/class-ktpwp-assets.php',
         'KTPWP_Nonce_Manager'   => 'includes/class-ktpwp-nonce-manager.php',
         'KTPWP_Shortcodes'      => 'includes/class-ktpwp-shortcodes.php',
-        'KTPWP_Redirect'        => 'includes/class-ktpwp-redirect.php',
         'KTPWP_Contact_Form'    => 'includes/class-ktpwp-contact-form.php',
         'KTPWP_Inquiry_Field'   => 'includes/class-ktpwp-inquiry-field.php',
         'KTPWP_Inquiry_Client_Resolver' => 'includes/class-ktpwp-inquiry-client-resolver.php',
@@ -3864,167 +3863,6 @@ add_action( 'admin_init', 'ktpwp_add_security_headers' );
 // register_activation_hook( KANTANPRO_PLUGIN_FILE, array( 'KTP_Settings', 'activate' ) );
 
 
-
-// リダイレクト処理クラス
-class KTPWP_Redirect {
-
-    public function __construct() {
-        add_action( 'template_redirect', array( $this, 'handle_redirect' ) );
-        add_filter( 'post_link', array( $this, 'custom_post_link' ), 10, 2 );
-        add_filter( 'page_link', array( $this, 'custom_page_link' ), 10, 2 );
-    }
-
-    public function handle_redirect() {
-        if ( isset( $_GET['tab_name'] ) || $this->has_ktpwp_shortcode() ) {
-            return;
-        }
-
-        if ( is_single() || is_page() ) {
-            $post = get_queried_object();
-
-            if ( $post && $this->should_redirect( $post ) ) {
-                $external_url = $this->get_external_url( $post );
-                if ( $external_url ) {
-                    // 外部リダイレクト先の安全性を検証（ホワイトリスト方式）
-                    $allowed_hosts = array(
-                        'ktpwp.com',
-                        parse_url( home_url(), PHP_URL_HOST ),
-                    );
-                    $parsed = wp_parse_url( $external_url );
-                    $host = isset( $parsed['host'] ) ? $parsed['host'] : '';
-                    if ( in_array( $host, $allowed_hosts, true ) ) {
-                        $clean_external_url = $parsed['scheme'] . '://' . $host . ( isset( $parsed['path'] ) ? $parsed['path'] : '' );
-                        wp_redirect( $clean_external_url, 301 );
-                        exit;
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * 現在のページにKTPWPショートコードが含まれているかチェック
-     */
-    private function has_ktpwp_shortcode() {
-        $post = get_queried_object();
-        if ( ! $post || ! isset( $post->post_content ) ) {
-            return false;
-        }
-
-        return (
-            has_shortcode( $post->post_content, 'kantanAllTab' ) ||
-            has_shortcode( $post->post_content, 'ktpwp_all_tab' ) ||
-            has_shortcode( $post->post_content, 'kantanpro_ex' )
-        );
-    }
-
-    /**
-     * リダイレクト対象かどうかを判定
-     */
-    private function should_redirect( $post ) {
-        if ( ! $post ) {
-            return false;
-        }
-
-        // ショートコードが含まれるページの場合はリダイレクトしない
-        if ( $this->has_ktpwp_shortcode() ) {
-            return false;
-        }
-
-        // KTPWPのクエリパラメータがある場合はリダイレクトしない
-        if ( isset( $_GET['tab_name'] ) || isset( $_GET['from_client'] ) || isset( $_GET['order_id'] ) ) {
-            return false;
-        }
-
-        // external_urlが設定されている投稿のみリダイレクト対象とする
-        $external_url = get_post_meta( $post->ID, 'external_url', true );
-        if ( ! empty( $external_url ) ) {
-            return true;
-        }
-
-        // カスタム投稿タイプ「blog」で、特定の条件を満たす場合のみ
-        if ( $post->post_type === 'blog' ) {
-            // 特定のスラッグやタイトルの場合のみリダイレクト
-            $redirect_slugs = array( 'redirect-to-ktpwp', 'external-link' );
-            return in_array( $post->post_name, $redirect_slugs );
-        }
-
-        return false;
-    }
-
-    /**
-     * 外部URLを取得（クエリパラメータなし）
-     */
-    private function get_external_url( $post ) {
-        if ( ! $post ) {
-            return false;
-        }
-
-        $external_url = get_post_meta( $post->ID, 'external_url', true );
-
-        if ( empty( $external_url ) ) {
-            // デフォルトのベースURL
-            $base_url = 'https://ktpwp.com/blog/';
-
-            if ( $post->post_type === 'blog' ) {
-                $external_url = $base_url;
-            } elseif ( $post->post_type === 'post' ) {
-                $categories = wp_get_post_categories( $post->ID, array( 'fields' => 'slugs' ) );
-
-                if ( in_array( 'blog', $categories ) ) {
-                    $external_url = $base_url;
-                } elseif ( in_array( 'news', $categories ) ) {
-                    $external_url = $base_url . 'news/';
-                } elseif ( in_array( 'column', $categories ) ) {
-                    $external_url = $base_url . 'column/';
-                }
-            }
-        }
-
-        // URLからクエリパラメータを除去
-        if ( $external_url ) {
-            $external_url = strtok( $external_url, '?' );
-        }
-
-        return $external_url;
-    }
-
-    public function custom_post_link( $permalink, $post ) {
-        if ( $post->post_type === 'blog' ) {
-            $external_url = $this->get_external_url( $post );
-            if ( $external_url ) {
-                return $external_url;
-            }
-        }
-
-        if ( $post->post_type === 'post' ) {
-            $categories = wp_get_post_categories( $post->ID, array( 'fields' => 'slugs' ) );
-            $redirect_categories = array( 'blog', 'news', 'column' );
-
-            if ( ! empty( array_intersect( $categories, $redirect_categories ) ) ) {
-                $external_url = $this->get_external_url( $post );
-                if ( $external_url ) {
-                    return $external_url;
-                }
-            }
-        }
-
-        return $permalink;
-    }
-
-    public function custom_page_link( $permalink, $post_id ) {
-        $post = get_post( $post_id );
-
-        if ( $post && $this->should_redirect( $post ) ) {
-            $external_url = $this->get_external_url( $post );
-            if ( $external_url ) {
-                return $external_url;
-            }
-        }
-
-        return $permalink;
-    }
-}
 
 // POSTパラメータをGETパラメータに変換する処理
 function ktpwp_handle_form_redirect() {

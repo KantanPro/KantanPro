@@ -157,15 +157,6 @@ class KTPWP {
     }
 
     /**
-     * リダイレクトインスタンスを取得
-     *
-     * @return KTPWP_Redirect
-     */
-    public function get_redirect() {
-        return $this->main->get_redirect();
-    }
-
-    /**
      * Contact Formインスタンス取得
      *
      * @return KTPWP_Contact_Form

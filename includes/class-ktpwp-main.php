@@ -63,13 +63,6 @@ class KTPWP_Main {
     private $ajax;
 
     /**
-     * リダイレクト管理クラスインスタンス
-     *
-     * @var KTPWP_Redirect
-     */
-    private $redirect;
-
-    /**
      * Contact Form 7連携クラスインスタンス
      *
      * @var KTPWP_Contact_Form
@@ -247,7 +240,6 @@ class KTPWP_Main {
         $this->loader = KTPWP_Loader::get_instance();
         $this->security = KTPWP_Security::get_instance();
         $this->shortcodes = KTPWP_Shortcodes::get_instance();
-        $this->redirect = KTPWP_Redirect::get_instance();
         $this->database = KTPWP_Database::get_instance();
         */
 
@@ -479,15 +471,6 @@ class KTPWP_Main {
      */
     public function get_ajax() {
         return $this->ajax;
-    }
-
-    /**
-     * リダイレクトインスタンスを取得
-     *
-     * @return KTPWP_Redirect
-     */
-    public function get_redirect() {
-        return $this->redirect;
     }
 
     /**

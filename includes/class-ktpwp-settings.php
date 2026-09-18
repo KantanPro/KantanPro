@@ -2269,7 +2269,7 @@ class KTPWP_Settings {
                     } else {
                     $user_obj->add_cap( 'ktpwp_access' );
                     // 最終変更日時を記録
-                    update_user_meta( $user_id, 'last_activity', current_time( 'mysql' ) );
+                    update_user_meta( $user_id, 'ktpwp_last_activity', current_time( 'mysql' ) );
                     echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'KantanPro利用権限（ktpwp_access）を付加しました。', 'kantanpro' ) . '</p></div>';
 
                     // スタッフ追加時のメール通知を送信
@@ -2284,7 +2284,7 @@ class KTPWP_Settings {
                 } elseif ( $action === 'remove' ) {
                     $user_obj->remove_cap( 'ktpwp_access' );
                     // 最終変更日時を記録
-                    update_user_meta( $user_id, 'last_activity', current_time( 'mysql' ) );
+                    update_user_meta( $user_id, 'ktpwp_last_activity', current_time( 'mysql' ) );
                     echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'KantanPro利用権限（ktpwp_access）を削除しました。', 'kantanpro' ) . '</p></div>';
 
                     // スタッフ削除時のメール通知を送信
@@ -2417,7 +2417,7 @@ class KTPWP_Settings {
                                 <td>
                                     <?php
                                     // WordPressのユーザーメタからカスタムフィールドで最終更新日時を取得
-                                    $last_modified = get_user_meta( $user->ID, 'last_activity', true );
+                                    $last_modified = get_user_meta( $user->ID, 'ktpwp_last_activity', true );
 
                                     // カスタムフィールドがない場合は、ユーザー登録日時を使用
                                     if ( empty( $last_modified ) ) {
@@ -2568,7 +2568,7 @@ class KTPWP_Settings {
     public function record_user_last_login( $user_login, $user ) {
         // KantanPro利用権限を持つユーザーのみ記録
         if ( $user->has_cap( 'ktpwp_access' ) || $user->has_cap( 'manage_options' ) ) {
-            update_user_meta( $user->ID, 'last_activity', current_time( 'mysql' ) );
+            update_user_meta( $user->ID, 'ktpwp_last_activity', current_time( 'mysql' ) );
         }
     }
 

@@ -91,7 +91,6 @@ class KTPWP_Loader {
             'KTPWP_Assets'          => 'includes/class-ktpwp-assets.php',
             'KTPWP_Nonce_Manager'   => 'includes/class-ktpwp-nonce-manager.php',
             'KTPWP_Shortcodes'      => 'includes/class-ktpwp-shortcodes.php',
-            'KTPWP_Redirect'        => 'includes/class-ktpwp-redirect.php',
             'KTPWP_Contact_Form'    => 'includes/class-ktpwp-contact-form.php',
             'KTPWP_Database'        => 'includes/class-ktpwp-database.php',
             'KTPWP_Order'           => 'includes/class-ktpwp-order.php',

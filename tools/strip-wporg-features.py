@@ -626,6 +626,9 @@ TRIALWARE_SUBSTR_PATTERNS = [
     'generate_free_edition_report_title_bar',
     'KTPWP_Report_Class', 'KTPWP_Graph_Renderer', 'report_type',
     'ktp-report', 'chart.umd',
+    # 接頭辞のない保存キーと、どこからも呼ばれない転送クラス（1.3.42 で削除）。
+    # 一般的な名前は他プラグインと衝突するので、キーは必ず ktpwp_ を付けること。
+    "'external_url'", "'last_activity'", 'KTPWP_Redirect',
     # ライセンス購入への誘導文言
     'ライセンスを購入', 'ライセンスが必要', '詳細な分析とレポート',
     'Purchase a license', 'license is required',

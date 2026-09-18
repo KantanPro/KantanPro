@@ -4,7 +4,7 @@ Tags: invoice, crm, order management, quotation, business
 Requires at least: 5.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.3.41
+Stable tag: 1.3.42
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -146,6 +146,14 @@ fields. It only sends anything if you have entered your own OpenAI API key.
 6. Mobile view
 
 == Changelog ==
+
+= 1.3.42 - 2026-09-19 =
+* Prefixed the remaining generically named globals and stored keys: the user meta
+  `last_activity` is now `ktpwp_last_activity`, and two file-scope variables in the
+  main plugin file are now prefixed.
+* Removed an unused redirect class that was never instantiated. It read a generic
+  `external_url` post meta key and contained a hard-coded redirect target on the
+  author's own site.
 
 = 1.3.41 - 2026-09-19 =
 * Removed the sales-ledger PDF feature and the sales report data endpoints from the
