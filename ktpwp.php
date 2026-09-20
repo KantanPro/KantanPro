@@ -3,7 +3,7 @@
  * Plugin Name: KantanPro
  * Plugin URI: https://www.kantanpro.com/
  * Description: スモールビジネスのための販売支援ツール。ショートコード[ktpwp_all_tab]を固定ページに設置してください。
- * Version: 1.3.45
+ * Version: 1.3.46
  * Author: KantanPro
  * Author URI: https://www.kantanpro.com/kantanpro-page
  * License: GPL v2 or later
@@ -43,6 +43,27 @@ if ( ! defined( 'KTPWP_EDITION' ) ) {
  * @param mixed $message ログに出す内容。スカラー以外は JSON 化する。
  * @return void
  */
+/**
+ * 管理画面の inline スクリプトをキューに載せる
+ *
+ * 生の <script> を本文へ出さないための共通口。admin_notices や
+ * admin_footer-* は admin_print_footer_scripts より前に走るので、
+ * そこから呼んでもフッターの出力に間に合う。
+ *
+ * @param string $handle 一意なハンドル名。
+ * @param string $js     スクリプト本体（<script> タグは含めない）。
+ * @return void
+ */
+function ktpwp_enqueue_admin_inline_script( $handle, $js ) {
+    if ( ! wp_script_is( $handle, 'registered' ) ) {
+        wp_register_script( $handle, false, array(), KANTANPRO_PLUGIN_VERSION, true );
+    }
+    if ( ! wp_script_is( $handle, 'enqueued' ) ) {
+        wp_enqueue_script( $handle );
+    }
+    wp_add_inline_script( $handle, $js );
+}
+
 function ktpwp_debug_log( $message ) {
     if ( ! defined( 'WP_DEBUG' ) || ! WP_DEBUG ) {
         return;
@@ -469,26 +490,25 @@ if ( ! function_exists( 'ktpwp_ex_customize_delete_confirm_text' ) ) {
         $message_keep = __( '本当に KantanPro を削除してもよいですか？\n\n現在の設定は「データを残す」です。プラグインファイルのみ削除され、データは残ります。', 'kantanpro' );
         $message_full = __( '本当に KantanPro とそのデータを削除してもよいですか？\n\n現在の設定は「完全削除」です。関連データも削除されます。', 'kantanpro' );
         $message      = ( $mode === 'full_delete' ) ? $message_full : $message_keep;
-        ?>
-        <script>
-        (function() {
-            var row = document.querySelector('tr[data-plugin=<?php echo wp_json_encode( plugin_basename( __FILE__ ) ); ?>]');
-            if (!row) return;
-
-            var deleteLink = row.querySelector('.delete a');
-            if (!deleteLink) return;
-
-            deleteLink.addEventListener('click', function(event) {
-                event.preventDefault();
-                event.stopPropagation();
-
-                if (window.confirm(<?php echo wp_json_encode( $message ); ?>)) {
-                    window.location.href = deleteLink.getAttribute('href');
-                }
-            }, true);
-        })();
-        </script>
-        <?php
+        // 生の <script> を出さずスクリプトキューに載せる（wp.org ガイドライン）。
+        $js = sprintf(
+            '(function() {
+    var row = document.querySelector(%1$s);
+    if (!row) return;
+    var deleteLink = row.querySelector(".delete a");
+    if (!deleteLink) return;
+    deleteLink.addEventListener("click", function(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (window.confirm(%2$s)) {
+            window.location.href = deleteLink.getAttribute("href");
+        }
+    }, true);
+})();',
+            wp_json_encode( 'tr[data-plugin="' . plugin_basename( __FILE__ ) . '"]' ),
+            wp_json_encode( $message )
+        );
+        ktpwp_enqueue_admin_inline_script( 'ktp-plugins-delete-confirm', $js );
     }
 }
 add_action( 'admin_footer', 'ktpwp_ex_customize_delete_confirm_text', 99 );
@@ -3158,36 +3178,42 @@ function ktpwp_admin_migration_status() {
         echo '</div>';
         
         // JavaScript for manual database update
-        ?>
-        <script>
-        jQuery(document).ready(function($) {
-            $('#ktpwp-manual-db-update').on('click', function() {
+        // 生の <script> を出さずスクリプトキューに載せる（wp.org ガイドライン）。
+        $js = sprintf(
+            '        jQuery(document).ready(function($) {
+            $(\'#ktpwp-manual-db-update\').on(\'click\', function() {
                 var $button = $(this);
                 var originalText = $button.text();
                 
-                $button.text(<?php echo wp_json_encode( $updating_text ); ?>).prop('disabled', true);
+                $button.text(%1$s).prop(\'disabled\', true);
                 
                 $.post(ajaxurl, {
-                    action: 'ktpwp_manual_db_update',
-                    nonce: '<?php echo wp_create_nonce( 'ktpwp_manual_db_update' ); ?>'
+                    action: \'ktpwp_manual_db_update\',
+                    nonce: \'%2$s\'
                 }, function(response) {
                     if (response.success) {
-                        $button.text(<?php echo wp_json_encode( $update_done_text ); ?>).removeClass('button-primary').addClass('button-secondary');
+                        $button.text(%3$s).removeClass(\'button-primary\').addClass(\'button-secondary\');
                         setTimeout(function() {
                             window.location.reload();
                         }, 2000);
                     } else {
-                        alert(<?php echo wp_json_encode( $update_failed_prefix ); ?> + (response.data || <?php echo wp_json_encode( $unknown_error_text ); ?>));
-                        $button.text(originalText).prop('disabled', false);
+                        alert(%4$s + (response.data || %5$s));
+                        $button.text(originalText).prop(\'disabled\', false);
                     }
                 }).fail(function() {
-                    alert(<?php echo wp_json_encode( $network_error_text ); ?>);
-                    $button.text(originalText).prop('disabled', false);
+                    alert(%6$s);
+                    $button.text(originalText).prop(\'disabled\', false);
                 });
             });
-        });
-        </script>
-        <?php
+        });',
+            wp_json_encode( $updating_text ),
+            wp_create_nonce( 'ktpwp_manual_db_update' ),
+            wp_json_encode( $update_done_text ),
+            wp_json_encode( $update_failed_prefix ),
+            wp_json_encode( $unknown_error_text ),
+            wp_json_encode( $network_error_text )
+        );
+        ktpwp_enqueue_admin_inline_script( 'ktp-admin-manual-db-update', $js );
     }
     
     // 適格請求書ナンバー機能の状態表示
@@ -3207,36 +3233,42 @@ function ktpwp_admin_migration_status() {
         echo '</div>';
         
         // JavaScript for qualified invoice migration
-        ?>
-        <script>
-        jQuery(document).ready(function($) {
-            $('#ktpwp-run-qualified-invoice-migration').on('click', function() {
+        // 生の <script> を出さずスクリプトキューに載せる（wp.org ガイドライン）。
+        $js = sprintf(
+            '        jQuery(document).ready(function($) {
+            $(\'#ktpwp-run-qualified-invoice-migration\').on(\'click\', function() {
                 var $button = $(this);
                 var originalText = $button.text();
                 
-                $button.text(<?php echo wp_json_encode( $qualified_enabling_text ); ?>).prop('disabled', true);
+                $button.text(%1$s).prop(\'disabled\', true);
                 
                 $.post(ajaxurl, {
-                    action: 'ktpwp_run_qualified_invoice_migration',
-                    nonce: '<?php echo wp_create_nonce( 'ktpwp_run_qualified_invoice_migration' ); ?>'
+                    action: \'ktpwp_run_qualified_invoice_migration\',
+                    nonce: \'%2$s\'
                 }, function(response) {
                     if (response.success) {
-                        $button.text(<?php echo wp_json_encode( $qualified_enabled_text ); ?>).removeClass('button-primary').addClass('button-secondary');
+                        $button.text(%3$s).removeClass(\'button-primary\').addClass(\'button-secondary\');
                         setTimeout(function() {
                             window.location.reload();
                         }, 2000);
                     } else {
-                        alert(<?php echo wp_json_encode( $qualified_enable_failed_prefix ); ?> + (response.data || <?php echo wp_json_encode( $unknown_error_text ); ?>));
-                        $button.text(originalText).prop('disabled', false);
+                        alert(%4$s + (response.data || %5$s));
+                        $button.text(originalText).prop(\'disabled\', false);
                     }
                 }).fail(function() {
-                    alert(<?php echo wp_json_encode( $qualified_network_error_text ); ?>);
-                    $button.text(originalText).prop('disabled', false);
+                    alert(%6$s);
+                    $button.text(originalText).prop(\'disabled\', false);
                 });
             });
-        });
-        </script>
-        <?php
+        });',
+            wp_json_encode( $qualified_enabling_text ),
+            wp_create_nonce( 'ktpwp_run_qualified_invoice_migration' ),
+            wp_json_encode( $qualified_enabled_text ),
+            wp_json_encode( $qualified_enable_failed_prefix ),
+            wp_json_encode( $unknown_error_text ),
+            wp_json_encode( $qualified_network_error_text )
+        );
+        ktpwp_enqueue_admin_inline_script( 'ktp-admin-qualified-invoice-migration', $js );
     }
 }
 
@@ -4945,27 +4977,27 @@ add_action(
         );
 
         $message = ( $mode === 'full_delete' ) ? $msg_full : $msg_keep;
-        ?>
-<script>
-(function(){
-    var pluginFile = <?php echo wp_json_encode( $plugin_basename ); ?>;
-    var message    = <?php echo wp_json_encode( $message ); ?>;
+// 生の <script> を出さずスクリプトキューに載せる（wp.org ガイドライン）。
+$js = sprintf(
+    '(function(){
+    var pluginFile = %1$s;
+    var message    = %2$s;
 
-    document.addEventListener('click', function(e){
+    document.addEventListener(\'click\', function(e){
         var a = e.target;
-        while (a && a.tagName !== 'A') { a = a.parentNode; }
+        while (a && a.tagName !== \'A\') { a = a.parentNode; }
         if (!a || !a.href) return;
 
-        var href = (a.getAttribute('href') || '').split('#')[0];
+        var href = (a.getAttribute(\'href\') || \'\').split(\'#\')[0];
         // プラグイン更新では DB データは残るため、削除確認は出さない。更新系 URL はすべて除外
-        if (/[?&]action=upgrade-plugin\b|[?&]action=update-selected\b|\/update\.php(\?|$)/i.test(href)) {
+        if (/[?&]action=upgrade-plugin\\b|[?&]action=update-selected\\b|\\/update\\.php(\\?|$)/i.test(href)) {
             return;
         }
         // コアの「削除」は plugins.php のみ（ここ以外のリンクではカスタム確認しない）
-        if (href.indexOf('plugins.php') === -1) {
+        if (href.indexOf(\'plugins.php\') === -1) {
             return;
         }
-        if (href.indexOf('action=delete') === -1 && href.indexOf('action=delete-selected') === -1) {
+        if (href.indexOf(\'action=delete\') === -1 && href.indexOf(\'action=delete-selected\') === -1) {
             return;
         }
         if (href.indexOf(encodeURIComponent(pluginFile)) === -1 && href.indexOf(pluginFile) === -1) {
@@ -4978,9 +5010,11 @@ add_action(
             return false;
         }
     }, true);
-})();
-</script>
-        <?php
+})();',
+    wp_json_encode( $plugin_basename ),
+    wp_json_encode( $message )
+);
+ktpwp_enqueue_admin_inline_script( 'ktp-plugins-delete-notice', $js );
     }
 );
 
@@ -5271,6 +5305,8 @@ function ktpwp_check_terms_agreement() {
     ) {
         // 利用規約同意ダイアログを表示
         add_action( 'wp_footer', array( $terms_service, 'display_terms_dialog' ) );
+        // ダイアログの CSS は head で出す必要があるので、フッターとは別に登録する。
+        add_action( 'wp_enqueue_scripts', array( $terms_service, 'enqueue_terms_dialog_assets' ), 20 );
     }
 }
 
@@ -5307,6 +5343,8 @@ function ktpwp_check_terms_on_shortcode() {
 
     // 利用規約同意ダイアログを表示
     add_action( 'wp_footer', array( $terms_service, 'display_terms_dialog' ) );
+    // ダイアログの CSS は head で出す必要があるので、フッターとは別に登録する。
+    add_action( 'wp_enqueue_scripts', array( $terms_service, 'enqueue_terms_dialog_assets' ), 20 );
 }
 
 /**

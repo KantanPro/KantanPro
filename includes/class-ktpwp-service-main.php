@@ -2070,38 +2070,26 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 		 *
 		 * @return string
 		 */
+		/**
+		 * 契約フィールドの CSS は wp_enqueue_scripts 側で読み込む。
+		 *
+		 * 以前は本文中に生の <style> を戻していた。CSS は静的なので、
+		 * KTPWP_Service_Class::get_contract_fields_css() を KTPWP_Assets が
+		 * wp_add_inline_style() でスタイルキューに載せる。
+		 *
+		 * @return string 常に空文字。
+		 */
 		private function render_service_contract_fields_styles() {
-			static $rendered = false;
-			if ( $rendered ) {
-				return '';
-			}
-			$rendered = true;
+			return '';
+		}
 
-			// 定数の CSS だけを本文に出す（ユーザー入力を含まない）。wp_add_inline_style は wp_head 出力後には効かないため、
-			// ショートコード出力の許可リスト（KTPWP_Kses）を通さず、出力位置にそのまま戻す。
-			return KTPWP_Kses::register_raw(
-				'<style id="ktpwp-service-contract-fields-css">'
-				. '.ktpwp-service-field-block{display:grid;grid-template-columns:25% minmax(0,1fr);column-gap:12px;row-gap:0;margin-bottom:16px;align-items:start;}'
-				. '.ktpwp-service-field-block__label{text-align:right;padding-top:8px;}'
-				. '.ktpwp-service-field-block__label-text{display:block;font-size:14px;color:#444;line-height:1.4;font-weight:normal;}'
-				. '.ktpwp-service-field-block__section-title{margin-top:12px;font-weight:700;color:#333;}'
-				. '.ktpwp-service-field-block__hint{display:block;margin-top:3px;font-size:12px;line-height:1.45;color:#777;font-weight:normal;}'
-				. '.ktpwp-service-field-block__control{min-width:0;}'
-				. '.ktpwp-service-field-block__control select,.ktpwp-service-field-block__control input{width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid #ddd;border-radius:4px;font-size:14px;background:#fff;}'
-				. '.ktpwp-service-field-block--recurring,.ktpwp-service-field-block--initial-fees{display:block;}'
-				. '.ktpwp-service-recurring-fields--hidden{display:none !important;}'
-				. '.ktpwp-service-field-block--cycle .ktpwp-service-field-block__section-title{font-weight:600;}'
-				. '.ktpwp-service-field-block--recurring .ktpwp-service-field-block__label,.ktpwp-service-field-block--initial-fees .ktpwp-service-field-block__label{display:grid;grid-template-columns:25% minmax(0,1fr);column-gap:12px;margin-bottom:8px;padding-top:0;}'
-				. '.ktpwp-service-field-block--recurring .ktpwp-service-field-block__label-text,.ktpwp-service-field-block--recurring .ktpwp-service-field-block__hint,.ktpwp-service-field-block--initial-fees .ktpwp-service-field-block__label-text,.ktpwp-service-field-block--initial-fees .ktpwp-service-field-block__hint{grid-column:1;text-align:right;}'
-				. '.ktpwp-service-field-block__control--full{width:100%;}'
-				. '.ktpwp-service-detail-items__table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:13px;}'
-				. '.ktpwp-service-detail-items__table th,.ktpwp-service-detail-items__table td{border:1px solid #ddd;padding:8px;vertical-align:middle;font-size:13px;line-height:1.4;}'
-				. '.ktpwp-service-detail-items__table th{background:#ffeef1;color:#4b5563;font-weight:600;text-align:left;border-bottom:1px solid #fecdd3;}'
-				. '.ktpwp-service-detail-items__table td input{width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid #ddd;border-radius:4px;font-size:14px;background:#fff;}'
-				. '.ktpwp-service-initial-fees__presets{margin:8px 0 0;font-size:12px;line-height:1.45;color:#777;}'
-				. '@media screen and (max-width:767px){.ktpwp-service-field-block,.ktpwp-service-field-block--recurring .ktpwp-service-field-block__label,.ktpwp-service-field-block--initial-fees .ktpwp-service-field-block__label{grid-template-columns:1fr;}.ktpwp-service-field-block__label,.ktpwp-service-field-block--recurring .ktpwp-service-field-block__label-text,.ktpwp-service-field-block--recurring .ktpwp-service-field-block__hint,.ktpwp-service-field-block--initial-fees .ktpwp-service-field-block__label-text,.ktpwp-service-field-block--initial-fees .ktpwp-service-field-block__hint{text-align:left;}}'
-				. '</style>'
-			);
+		/**
+		 * 契約フィールドの CSS
+		 *
+		 * @return string
+		 */
+		public static function get_contract_fields_css() {
+			return '.ktpwp-service-field-block{display:grid;grid-template-columns:25% minmax(0,1fr);column-gap:12px;row-gap:0;margin-bottom:16px;align-items:start;}.ktpwp-service-field-block__label{text-align:right;padding-top:8px;}.ktpwp-service-field-block__label-text{display:block;font-size:14px;color:#444;line-height:1.4;font-weight:normal;}.ktpwp-service-field-block__section-title{margin-top:12px;font-weight:700;color:#333;}.ktpwp-service-field-block__hint{display:block;margin-top:3px;font-size:12px;line-height:1.45;color:#777;font-weight:normal;}.ktpwp-service-field-block__control{min-width:0;}.ktpwp-service-field-block__control select,.ktpwp-service-field-block__control input{width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid #ddd;border-radius:4px;font-size:14px;background:#fff;}.ktpwp-service-field-block--recurring,.ktpwp-service-field-block--initial-fees{display:block;}.ktpwp-service-recurring-fields--hidden{display:none !important;}.ktpwp-service-field-block--cycle .ktpwp-service-field-block__section-title{font-weight:600;}.ktpwp-service-field-block--recurring .ktpwp-service-field-block__label,.ktpwp-service-field-block--initial-fees .ktpwp-service-field-block__label{display:grid;grid-template-columns:25% minmax(0,1fr);column-gap:12px;margin-bottom:8px;padding-top:0;}.ktpwp-service-field-block--recurring .ktpwp-service-field-block__label-text,.ktpwp-service-field-block--recurring .ktpwp-service-field-block__hint,.ktpwp-service-field-block--initial-fees .ktpwp-service-field-block__label-text,.ktpwp-service-field-block--initial-fees .ktpwp-service-field-block__hint{grid-column:1;text-align:right;}.ktpwp-service-field-block__control--full{width:100%;}.ktpwp-service-detail-items__table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:13px;}.ktpwp-service-detail-items__table th,.ktpwp-service-detail-items__table td{border:1px solid #ddd;padding:8px;vertical-align:middle;font-size:13px;line-height:1.4;}.ktpwp-service-detail-items__table th{background:#ffeef1;color:#4b5563;font-weight:600;text-align:left;border-bottom:1px solid #fecdd3;}.ktpwp-service-detail-items__table td input{width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid #ddd;border-radius:4px;font-size:14px;background:#fff;}.ktpwp-service-initial-fees__presets{margin:8px 0 0;font-size:12px;line-height:1.45;color:#777;}@media screen and (max-width:767px){.ktpwp-service-field-block,.ktpwp-service-field-block--recurring .ktpwp-service-field-block__label,.ktpwp-service-field-block--initial-fees .ktpwp-service-field-block__label{grid-template-columns:1fr;}.ktpwp-service-field-block__label,.ktpwp-service-field-block--recurring .ktpwp-service-field-block__label-text,.ktpwp-service-field-block--recurring .ktpwp-service-field-block__hint,.ktpwp-service-field-block--initial-fees .ktpwp-service-field-block__label-text,.ktpwp-service-field-block--initial-fees .ktpwp-service-field-block__hint{text-align:left;}}';
 		}
 
 		/**

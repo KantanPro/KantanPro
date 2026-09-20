@@ -4,7 +4,7 @@ Tags: invoice, crm, order management, quotation, business
 Requires at least: 5.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.3.45
+Stable tag: 1.3.46
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -122,9 +122,10 @@ This is why some of the plugin's inline `<style>` and `<script>` blocks cannot b
 they belong to the print and PDF documents and to e-mail templates, which the guidelines
 list as an accepted exception.
 
-Elsewhere the plugin's stylesheets and scripts are registered and enqueued in the normal
-way. A few inline blocks remain on the plugin's own screens, and they are being moved to
-`wp_add_inline_script()` and `wp_add_inline_style()` as each screen is revisited.
+Everywhere else the plugin's stylesheets and scripts are registered and enqueued in the
+normal way, and snippets that have to be generated in PHP are attached with
+`wp_add_inline_script()` and `wp_add_inline_style()`. The plugin's own admin and
+front-end screens emit no inline `<script>` or `<style>` blocks.
 
 == External services ==
 
@@ -171,6 +172,13 @@ fields. It only sends anything if you have entered your own OpenAI API key.
 6. Mobile view
 
 == Changelog ==
+
+= 1.3.46 - 2026-09-20 =
+* The plugin's own screens no longer output inline <script> or <style> blocks. Their
+  scripts and styles are registered and enqueued, and the remaining snippets are added
+  with wp_add_inline_script() and wp_add_inline_style().
+* The only inline blocks left are inside the self-contained documents the plugin builds
+  for printing, PDF output and e-mail, which cannot be reached by the enqueue functions.
 
 = 1.3.45 - 2026-09-20 =
 * Debug logging now goes through a single function that only writes when WP_DEBUG is

@@ -1303,21 +1303,13 @@ End',
     /**
      * フッターに利用規約リンクを追加
      */
-    public function add_terms_footer_link() {
-        // フロントエンドでのみ表示
-        if ( is_admin() ) {
-            return;
-        }
-
-        // KantanProのショートコードが使用されているページでのみ表示
-        global $post;
-        if ( ! $post || ! has_shortcode( $post->post_content, 'ktpwp_all_tab' ) ) {
-            return;
-        }
-
-        $terms_url = admin_url( 'admin.php?page=ktp-terms&view=public' );
-        ?>
-        <script>
+    /**
+     * 規約フッターリンクの JS
+     *
+     * @return string
+     */
+    private function get_terms_footer_link_js() {
+        return <<<'JS'
         document.addEventListener('DOMContentLoaded', function() {
             // フッターのバージョン表示要素をクラスで特定
             var footerText = document.querySelector('.ktp-footer-text');
@@ -1344,54 +1336,45 @@ End',
             footerText.appendChild(document.createTextNode(' '));
             footerText.appendChild(termsLink);
         });
-        </script>
+JS;
+    }
+
+    public function add_terms_footer_link() {
+        // フロントエンドでのみ表示
+        if ( is_admin() ) {
+            return;
+        }
+
+        // KantanProのショートコードが使用されているページでのみ表示
+        global $post;
+        if ( ! $post || ! has_shortcode( $post->post_content, 'ktpwp_all_tab' ) ) {
+            return;
+        }
+
+        $terms_url = admin_url( 'admin.php?page=ktp-terms&view=public' );
+        ?>
+        <?php
+        // 生の <script> を出さずフッターのスクリプトキューに載せる（wp.org ガイドライン）。
+        $handle = 'ktp-terms-footer-link';
+        wp_register_script( $handle, false, array(), KANTANPRO_PLUGIN_VERSION, true );
+        wp_enqueue_script( $handle );
+        wp_add_inline_script( $handle, $this->get_terms_footer_link_js() );
+        ?>
         <?php
     }
 
     /**
      * 利用規約同意ダイアログを表示
      */
-    public function display_terms_dialog() {
-        // 管理者権限チェック（管理者のみに表示）
-        if ( ! current_user_can( 'manage_options' ) ) {
-            return;
-        }
-
-        if ( $this->has_user_agreed_to_terms() ) {
-            return;
-        }
-
-        $terms_content = $this->get_terms_content();
-        if ( empty( $terms_content ) ) {
-            return;
-        }
-
-        ?>
-        <div id="ktpwp-terms-dialog" style="display: none;">
-            <div class="ktpwp-terms-overlay"></div>
-            <div class="ktpwp-terms-modal">
-                <div class="ktpwp-terms-header">
-                    <h2><?php echo esc_html( /* translators: 1: サイト名, 2: プラグイン名 */ sprintf( __( '%1$s %2$s Terms of Service', 'kantanpro' ), KANTANPRO_PLUGIN_NAME, KANTANPRO_PLUGIN_VERSION ) ); ?></h2>
-                </div>
-                <div class="ktpwp-terms-content">
-                    <?php echo $this->format_terms_content( $terms_content ); ?>
-                </div>
-                <div class="ktpwp-terms-footer">
-                    <div class="ktpwp-terms-checkbox-container">
-                        <input type="checkbox" id="ktpwp-terms-checkbox" />
-                        <label for="ktpwp-terms-checkbox"><?php echo esc_html__( '確認しました', 'kantanpro' ); ?></label>
-                    </div>
-                    <button type="button" id="ktpwp-start-usage" class="ktpwp-start-btn" disabled>
-                        <?php echo esc_html__( '利用開始する', 'kantanpro' ); ?>
-                    </button>
-                    <div class="ktpwp-home-link">
-                        <a href="<?php echo esc_url( home_url( '/' ) ); ?>"><?php echo esc_html__( 'ホームへ', 'kantanpro' ); ?></a>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <style>
+    /**
+     * 利用規約ダイアログの CSS
+     *
+     * head で出力する必要があるため wp_enqueue_scripts 側から wp_add_inline_style() に渡す。
+     *
+     * @return string
+     */
+    private function get_terms_dialog_css() {
+        return <<<'CSS'
         .ktpwp-terms-overlay {
             position: fixed;
             top: 0;
@@ -1487,9 +1470,16 @@ End',
             text-decoration: underline;
         }
 
-        </style>
+CSS;
+    }
 
-        <script>
+    /**
+     * 利用規約ダイアログの JS
+     *
+     * @return string
+     */
+    private function get_terms_dialog_js() {
+        return <<<'JS'
         jQuery(document).ready(function($) {
             $('#ktpwp-terms-dialog').show();
             
@@ -1527,7 +1517,78 @@ End',
             
 
         });
-        </script>
+JS;
+    }
+
+    /**
+     * 利用規約ダイアログの CSS をスタイルキューに載せる
+     *
+     * display_terms_dialog() は wp_footer で走るため、そこからでは head に間に合わない。
+     * 表示条件は display_terms_dialog() と同じものを使う。
+     *
+     * @return void
+     */
+    public function enqueue_terms_dialog_assets() {
+        if ( is_admin() || ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
+        if ( $this->has_user_agreed_to_terms() ) {
+            return;
+        }
+        if ( ! wp_style_is( 'ktp-css', 'registered' ) && ! wp_style_is( 'ktp-css', 'enqueued' ) ) {
+            return;
+        }
+        wp_add_inline_style( 'ktp-css', $this->get_terms_dialog_css() );
+    }
+
+    public function display_terms_dialog() {
+        // 管理者権限チェック（管理者のみに表示）
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
+
+        if ( $this->has_user_agreed_to_terms() ) {
+            return;
+        }
+
+        $terms_content = $this->get_terms_content();
+        if ( empty( $terms_content ) ) {
+            return;
+        }
+
+        ?>
+        <div id="ktpwp-terms-dialog" style="display: none;">
+            <div class="ktpwp-terms-overlay"></div>
+            <div class="ktpwp-terms-modal">
+                <div class="ktpwp-terms-header">
+                    <h2><?php echo esc_html( /* translators: 1: サイト名, 2: プラグイン名 */ sprintf( __( '%1$s %2$s Terms of Service', 'kantanpro' ), KANTANPRO_PLUGIN_NAME, KANTANPRO_PLUGIN_VERSION ) ); ?></h2>
+                </div>
+                <div class="ktpwp-terms-content">
+                    <?php echo $this->format_terms_content( $terms_content ); ?>
+                </div>
+                <div class="ktpwp-terms-footer">
+                    <div class="ktpwp-terms-checkbox-container">
+                        <input type="checkbox" id="ktpwp-terms-checkbox" />
+                        <label for="ktpwp-terms-checkbox"><?php echo esc_html__( '確認しました', 'kantanpro' ); ?></label>
+                    </div>
+                    <button type="button" id="ktpwp-start-usage" class="ktpwp-start-btn" disabled>
+                        <?php echo esc_html__( '利用開始する', 'kantanpro' ); ?>
+                    </button>
+                    <div class="ktpwp-home-link">
+                        <a href="<?php echo esc_url( home_url( '/' ) ); ?>"><?php echo esc_html__( 'ホームへ', 'kantanpro' ); ?></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <?php
+        // 生の <script> を出さずフッターのスクリプトキューに載せる（wp.org ガイドライン）。
+        // この関数は wp_footer priority 10 で走り、スクリプト出力（priority 20）より前なので間に合う。
+        $handle = 'ktp-terms-dialog';
+        wp_register_script( $handle, false, array(), KANTANPRO_PLUGIN_VERSION, true );
+        wp_enqueue_script( $handle );
+        wp_add_inline_script( $handle, $this->get_terms_dialog_js() );
+        ?>
         <?php
     }
 }

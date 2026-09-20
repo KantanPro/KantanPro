@@ -1205,5 +1205,11 @@ JS;
             return;
         }
         wp_add_inline_style( 'ktp-css', KTPWP_SVG_Icons::get_styles() );
+
+        // サービスタブの契約フィールド用 CSS（静的）。
+        // 以前はショートコード出力の本文に生の <style> を混ぜていた。
+        if ( class_exists( 'KTPWP_Service_Class' ) && method_exists( 'KTPWP_Service_Class', 'get_contract_fields_css' ) ) {
+            wp_add_inline_style( 'ktp-css', KTPWP_Service_Class::get_contract_fields_css() );
+        }
     }
 }
