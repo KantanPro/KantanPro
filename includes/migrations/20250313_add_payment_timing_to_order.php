@@ -33,7 +33,7 @@ class KTPWP_Migration_20250313_Add_Payment_Timing_To_Order {
 
 		if ( ! $table_exists ) {
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( 'KTPWP Migration: Table ' . $order_table . ' does not exist. Skipping payment_timing columns.' );
+				ktpwp_debug_log( 'KTPWP Migration: Table ' . $order_table . ' does not exist. Skipping payment_timing columns.' );
 			}
 			return false;
 		}
@@ -51,12 +51,12 @@ class KTPWP_Migration_20250313_Add_Payment_Timing_To_Order {
 			}
 			$sql = "ALTER TABLE `{$order_table}` ADD COLUMN `{$col}` {$def}";
 			if ( $wpdb->query( $sql ) === false && defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( 'KTPWP Migration: Failed to add ' . $col . ' to ' . $order_table . '. ' . $wpdb->last_error );
+				ktpwp_debug_log( 'KTPWP Migration: Failed to add ' . $col . ' to ' . $order_table . '. ' . $wpdb->last_error );
 			}
 		}
 
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			error_log( 'KTPWP Migration: payment_timing columns check completed for ' . $order_table );
+			ktpwp_debug_log( 'KTPWP Migration: payment_timing columns check completed for ' . $order_table );
 		}
 		return true;
 	}

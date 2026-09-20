@@ -29,7 +29,7 @@ class KTPWP_Migration_20250131_Add_Qualified_Invoice_Profit_Calculation {
         global $wpdb;
         
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Migration: Starting qualified invoice profit calculation migration' );
+            ktpwp_debug_log( 'KTPWP Migration: Starting qualified invoice profit calculation migration' );
         }
 
         try {
@@ -48,12 +48,12 @@ class KTPWP_Migration_20250131_Add_Qualified_Invoice_Profit_Calculation {
                 $result = $wpdb->query( $sql );
                 
                 if ( $result === false ) {
-                    error_log( 'KTPWP Migration: Failed to add qualified_invoice_number column to supplier table. Error: ' . $wpdb->last_error );
+                    ktpwp_debug_log( 'KTPWP Migration: Failed to add qualified_invoice_number column to supplier table. Error: ' . $wpdb->last_error );
                     return false;
                 }
                 
                 if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                    error_log( 'KTPWP Migration: Successfully added qualified_invoice_number column to supplier table' );
+                    ktpwp_debug_log( 'KTPWP Migration: Successfully added qualified_invoice_number column to supplier table' );
                 }
             }
 
@@ -72,12 +72,12 @@ class KTPWP_Migration_20250131_Add_Qualified_Invoice_Profit_Calculation {
                 $result = $wpdb->query( $sql );
                 
                 if ( $result === false ) {
-                    error_log( 'KTPWP Migration: Failed to add supplier_id column to cost items table. Error: ' . $wpdb->last_error );
+                    ktpwp_debug_log( 'KTPWP Migration: Failed to add supplier_id column to cost items table. Error: ' . $wpdb->last_error );
                     return false;
                 }
                 
                 if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                    error_log( 'KTPWP Migration: Successfully added supplier_id column to cost items table' );
+                    ktpwp_debug_log( 'KTPWP Migration: Successfully added supplier_id column to cost items table' );
                 }
             }
 
@@ -93,13 +93,13 @@ class KTPWP_Migration_20250131_Add_Qualified_Invoice_Profit_Calculation {
             update_option( 'ktpwp_qualified_invoice_profit_calculation_timestamp', current_time( 'mysql' ) );
 
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP Migration: Successfully completed qualified invoice profit calculation migration' );
+                ktpwp_debug_log( 'KTPWP Migration: Successfully completed qualified invoice profit calculation migration' );
             }
 
             return true;
 
         } catch ( Exception $e ) {
-            error_log( 'KTPWP Migration Error: ' . $e->getMessage() );
+            ktpwp_debug_log( 'KTPWP Migration Error: ' . $e->getMessage() );
             return false;
         }
     }
@@ -134,7 +134,7 @@ class KTPWP_Migration_20250131_Add_Qualified_Invoice_Profit_Calculation {
             
             if ( $result !== false ) {
                 if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                    error_log( 'KTPWP Migration: Updated ' . $result . ' cost items with supplier_id based on purchase field' );
+                    ktpwp_debug_log( 'KTPWP Migration: Updated ' . $result . ' cost items with supplier_id based on purchase field' );
                 }
             }
         }
@@ -169,7 +169,7 @@ class KTPWP_Migration_20250131_Add_Qualified_Invoice_Profit_Calculation {
         global $wpdb;
         
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Migration: Rolling back qualified invoice profit calculation migration' );
+            ktpwp_debug_log( 'KTPWP Migration: Rolling back qualified invoice profit calculation migration' );
         }
 
         try {
@@ -182,13 +182,13 @@ class KTPWP_Migration_20250131_Add_Qualified_Invoice_Profit_Calculation {
             delete_option( 'ktpwp_qualified_invoice_profit_calculation_timestamp' );
 
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP Migration: Successfully rolled back qualified invoice profit calculation migration' );
+                ktpwp_debug_log( 'KTPWP Migration: Successfully rolled back qualified invoice profit calculation migration' );
             }
 
             return true;
 
         } catch ( Exception $e ) {
-            error_log( 'KTPWP Migration Rollback Error: ' . $e->getMessage() );
+            ktpwp_debug_log( 'KTPWP Migration Rollback Error: ' . $e->getMessage() );
             return false;
         }
     }

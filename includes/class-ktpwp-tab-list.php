@@ -49,7 +49,7 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 			}
 
 			if ( empty( $tab_name ) ) {
-				error_log( 'KTPWP: Empty tab_name provided to List_Tab_View method' );
+				ktpwp_debug_log( 'KTPWP: Empty tab_name provided to List_Tab_View method' );
 				return;
 			}
 
@@ -219,7 +219,7 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 					$errors = DateTime::getLastErrors();
 					if ( $dt === false || ( $errors && ( $errors['warning_count'] > 0 || $errors['error_count'] > 0 ) ) ) {
 						if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-							error_log( 'KTPWP: 不正なcompletion_date検出: ' . print_r( $completion_date, true ) );
+							ktpwp_debug_log( 'KTPWP: 不正なcompletion_date検出: ' . print_r( $completion_date, true ) );
 						}
 						continue;
 					}
@@ -651,7 +651,7 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 							// デバッグ情報（開発時のみ）
 							if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 								$debug_msg = '納期警告判定: 今日=' . $today->format( 'Y-m-d' ) . ', 納期=' . $delivery_date->format( 'Y-m-d' ) . ', 残り日数=' . $days_left . ', 警告日数=' . $warning_days . ', 表示=' . ( $show_warning ? 'YES' : 'NO' );
-								error_log( $debug_msg );
+								ktpwp_debug_log( $debug_msg );
 							}
 						}
 					}

@@ -184,7 +184,7 @@ class KTPWP_View_Tabs_Class {
         );
 
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            // error_log('KTPWP TabView: Unified AJAX config output: ' . wp_json_encode($ajax_data));
+            // ktpwp_debug_log('KTPWP TabView: Unified AJAX config output: ' . wp_json_encode($ajax_data));
         }
 
         $output_done = true;

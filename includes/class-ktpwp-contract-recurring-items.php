@@ -265,7 +265,7 @@ if ( ! class_exists( 'KTPWP_Contract_Recurring_Items' ) ) {
 
 			if ( ! self::ensure_tables() ) {
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					error_log( 'KTPWP: ktp_service_recurring_item テーブルを作成できませんでした。' );
+					ktpwp_debug_log( 'KTPWP: ktp_service_recurring_item テーブルを作成できませんでした。' );
 				}
 
 				return false;
@@ -297,7 +297,7 @@ if ( ! class_exists( 'KTPWP_Contract_Recurring_Items' ) ) {
 				$result = $wpdb->insert( $table, $insert_data, $insert_format );
 				if ( false === $result ) {
 					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-						error_log( 'KTPWP: 定期請求項目の保存に失敗しました: ' . $wpdb->last_error );
+						ktpwp_debug_log( 'KTPWP: 定期請求項目の保存に失敗しました: ' . $wpdb->last_error );
 					}
 
 					return false;

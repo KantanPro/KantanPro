@@ -104,7 +104,7 @@ class KTPWP_WooCommerce_Integration {
 		}
 		if ( ! $order ) {
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( 'KTPWP WooCommerce: Invalid order id ' . $order_id );
+				ktpwp_debug_log( 'KTPWP WooCommerce: Invalid order id ' . $order_id );
 			}
 			return;
 		}
@@ -116,7 +116,7 @@ class KTPWP_WooCommerce_Integration {
 		$existing_ktp_id = $this->get_ktp_order_id_by_wc_order_id( $order_id );
 		if ( $existing_ktp_id ) {
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( 'KTPWP WooCommerce: Order ' . $order_id . ' already synced to KantanPro (id=' . $existing_ktp_id . '), skip.' );
+				ktpwp_debug_log( 'KTPWP WooCommerce: Order ' . $order_id . ' already synced to KantanPro (id=' . $existing_ktp_id . '), skip.' );
 			}
 			return;
 		}
@@ -127,7 +127,7 @@ class KTPWP_WooCommerce_Integration {
 		}
 		if ( ! $order_manager || ! method_exists( $order_manager, 'create_order' ) ) {
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( 'KTPWP WooCommerce: KTPWP_Order not available.' );
+				ktpwp_debug_log( 'KTPWP WooCommerce: KTPWP_Order not available.' );
 			}
 			return;
 		}
@@ -168,10 +168,10 @@ class KTPWP_WooCommerce_Integration {
 		if ( ! $ktp_order_id ) {
 			global $wpdb;
 			$err = $wpdb->last_error ? $wpdb->last_error : 'unknown';
-			error_log( 'KTPWP WooCommerce: Failed to create KantanPro order for WC order ' . $order_id . '. DB error: ' . $err );
+			ktpwp_debug_log( 'KTPWP WooCommerce: Failed to create KantanPro order for WC order ' . $order_id . '. DB error: ' . $err );
 			set_transient( 'ktpwp_wc_sync_last_error', $err, 60 );
 			if ( strpos( $err, 'order_number' ) !== false || strpos( $err, 'external_source' ) !== false ) {
-				error_log( 'KTPWP WooCommerce: ヒント: 受注テーブルに order_number や external_source がない可能性があります。KantanPro を一度無効化して再有効化するか、管理画面で保存してマイグレーションを実行してください。' );
+				ktpwp_debug_log( 'KTPWP WooCommerce: ヒント: 受注テーブルに order_number や external_source がない可能性があります。KantanPro を一度無効化して再有効化するか、管理画面で保存してマイグレーションを実行してください。' );
 			}
 			return;
 		}
@@ -221,7 +221,7 @@ class KTPWP_WooCommerce_Integration {
 		}
 
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			error_log( 'KTPWP WooCommerce: Synced WC order ' . $order_id . ' to KantanPro order ' . $ktp_order_id );
+			ktpwp_debug_log( 'KTPWP WooCommerce: Synced WC order ' . $order_id . ' to KantanPro order ' . $ktp_order_id );
 		}
 	}
 
@@ -457,7 +457,7 @@ class KTPWP_WooCommerce_Integration {
 		$result = $wpdb->insert( $table, $row, $fmt );
 		if ( $result === false ) {
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( 'KTPWP WooCommerce: Failed to create client. ' . $wpdb->last_error );
+				ktpwp_debug_log( 'KTPWP WooCommerce: Failed to create client. ' . $wpdb->last_error );
 			}
 			return null;
 		}

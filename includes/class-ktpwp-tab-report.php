@@ -48,7 +48,7 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 		 */
 		public function Report_Tab_View( $tab_name ) {
 			if ( empty( $tab_name ) ) {
-				error_log( 'KTPWP: Empty tab_name provided to Report_Tab_View method' );
+				ktpwp_debug_log( 'KTPWP: Empty tab_name provided to Report_Tab_View method' );
 				return '';
 			}
 

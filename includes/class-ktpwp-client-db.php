@@ -113,7 +113,7 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 			if ( ktpwp_request_method() === 'POST' ) {
 				// デバッグログを追加
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					error_log( 'KTPWP Client Debug: update_table - POST request detected' );
+					ktpwp_debug_log( 'KTPWP Client Debug: update_table - POST request detected' );
 				}
 
 				// nonce検証
@@ -152,9 +152,9 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 					case 'insert':
 						// デバッグログを追加
 						if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-							error_log( 'KTPWP Client Debug: update_table - insert case called' );
-							error_log( 'KTPWP Client Debug: update_table - query_post = ' . $query_post );
-							error_log( 'KTPWP Client Debug: update_table - data_id = ' . $data_id );
+							ktpwp_debug_log( 'KTPWP Client Debug: update_table - insert case called' );
+							ktpwp_debug_log( 'KTPWP Client Debug: update_table - query_post = ' . $query_post );
+							ktpwp_debug_log( 'KTPWP Client Debug: update_table - data_id = ' . $data_id );
 						}
 						return $this->handle_insert( $table_name, $tab_name, $fields_data, $search_field_value );
 					case 'update':
@@ -184,8 +184,8 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 
 			// デバッグログを追加
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( 'KTPWP Client Debug: client_status from POST = ' . ( isset( $post_data['client_status'] ) ? $post_data['client_status'] : 'NOT_SET' ) );
-				error_log( 'KTPWP Client Debug: client_status after sanitize = ' . $client_status );
+				ktpwp_debug_log( 'KTPWP Client Debug: client_status from POST = ' . ( isset( $post_data['client_status'] ) ? $post_data['client_status'] : 'NOT_SET' ) );
+				ktpwp_debug_log( 'KTPWP Client Debug: client_status after sanitize = ' . $client_status );
 			}
 
 			return array(
@@ -241,7 +241,7 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 					// 通常削除：顧客データと部署データを物理削除（受注書は残す）
 					// 部署データを先に削除
 					if ( ! $this->delete_client_departments( $data_id ) ) {
-						error_log( 'KTPWP Client Delete Error: Failed to delete client departments. client_id=' . $data_id );
+						ktpwp_debug_log( 'KTPWP Client Delete Error: Failed to delete client departments. client_id=' . $data_id );
 						$result = false;
 					} else {
 						$result = $wpdb->delete(
@@ -291,7 +291,7 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 						);
 
 						if ( $result === false ) {
-							error_log( 'KTPWP Client Delete Error: Failed to delete client data. Error: ' . $wpdb->last_error );
+							ktpwp_debug_log( 'KTPWP Client Delete Error: Failed to delete client data. Error: ' . $wpdb->last_error );
 							throw new Exception( '顧客データの削除に失敗しました: ' . $wpdb->last_error );
 						}
 
@@ -301,7 +301,7 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 					} catch ( Exception $e ) {
 						// トランザクションロールバック
 						$wpdb->query( 'ROLLBACK' );
-						error_log( 'KTPWP Client Delete Error: ' . $e->getMessage() );
+						ktpwp_debug_log( 'KTPWP Client Delete Error: ' . $e->getMessage() );
 
 						// エラーが発生した場合は、ソフトデリートにフォールバック
 						// 部署データは復活可能にするため削除しない
@@ -314,7 +314,7 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 						);
 
 						if ( $result === false ) {
-							error_log( 'KTPWP Client Delete Error: Fallback to soft delete also failed. Error: ' . $wpdb->last_error );
+							ktpwp_debug_log( 'KTPWP Client Delete Error: Fallback to soft delete also failed. Error: ' . $wpdb->last_error );
 							return; // 処理を中断
 						}
 					}
@@ -346,7 +346,7 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 					exit;
 				} else {
 					// 削除処理が失敗した場合のエラーハンドリング
-					error_log( 'KTPWP Client Delete Error: Delete operation failed for client ID: ' . $data_id );
+					ktpwp_debug_log( 'KTPWP Client Delete Error: Delete operation failed for client ID: ' . $data_id );
 					// エラーメッセージを表示するためのリダイレクト
 					$redirect_url = add_query_arg(
                         array(
@@ -392,13 +392,13 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 
 			if ( $deleted_count === false ) {
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					error_log( "KTPWP Client Delete: 顧客ID {$client_id} の部署データ削除に失敗しました: " . $wpdb->last_error );
+					ktpwp_debug_log( "KTPWP Client Delete: 顧客ID {$client_id} の部署データ削除に失敗しました: " . $wpdb->last_error );
 				}
 				return false;
 			}
 
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( "KTPWP Client Delete: 顧客ID {$client_id} の部署データ {$deleted_count} 件を削除しました" );
+				ktpwp_debug_log( "KTPWP Client Delete: 顧客ID {$client_id} の部署データ {$deleted_count} 件を削除しました" );
 			}
 
 			return true;
@@ -418,10 +418,10 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 
 			// デバッグログを追加
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( 'KTPWP Client Debug: handle_insert called' );
-				error_log( 'KTPWP Client Debug: table_name = ' . $table_name );
-				error_log( 'KTPWP Client Debug: company_name = ' . $fields_data['company_name'] );
-				error_log( 'KTPWP Client Debug: user_name = ' . $fields_data['user_name'] );
+				ktpwp_debug_log( 'KTPWP Client Debug: handle_insert called' );
+				ktpwp_debug_log( 'KTPWP Client Debug: table_name = ' . $table_name );
+				ktpwp_debug_log( 'KTPWP Client Debug: company_name = ' . $fields_data['company_name'] );
+				ktpwp_debug_log( 'KTPWP Client Debug: user_name = ' . $fields_data['user_name'] );
 			}
 
 			// データが完全に0の場合、AUTO_INCREMENTカウンターを1にリセット
@@ -429,7 +429,7 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 			if ( $row_count == 0 ) {
 				$wpdb->query( "ALTER TABLE {$table_name} AUTO_INCREMENT = 1" );
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					error_log( 'KTPWP Client Debug: AUTO_INCREMENT reset to 1' );
+					ktpwp_debug_log( 'KTPWP Client Debug: AUTO_INCREMENT reset to 1' );
 				}
 			}
 
@@ -490,12 +490,12 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 
 			// デバッグログを追加
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( 'KTPWP Client Debug: insert result = ' . ( $result !== false ? 'success' : 'failed' ) );
+				ktpwp_debug_log( 'KTPWP Client Debug: insert result = ' . ( $result !== false ? 'success' : 'failed' ) );
 				if ( $result !== false ) {
 					$new_id = $wpdb->insert_id;
-					error_log( 'KTPWP Client Debug: new_id = ' . $new_id );
+					ktpwp_debug_log( 'KTPWP Client Debug: new_id = ' . $new_id );
 				} else {
-					error_log( 'KTPWP Client Debug: wpdb error = ' . $wpdb->last_error );
+					ktpwp_debug_log( 'KTPWP Client Debug: wpdb error = ' . $wpdb->last_error );
 				}
 			}
 
@@ -533,8 +533,8 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 
 			// デバッグログを追加
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( 'KTPWP Client Debug: handle_update - client_status = ' . $fields_data['client_status'] );
-				error_log( 'KTPWP Client Debug: handle_update - data_id = ' . $data_id );
+				ktpwp_debug_log( 'KTPWP Client Debug: handle_update - client_status = ' . $fields_data['client_status'] );
+				ktpwp_debug_log( 'KTPWP Client Debug: handle_update - data_id = ' . $data_id );
 			}
 
 			// 更新対象のIDが実在しない場合（削除済み・DBリセット後の古いURL等）は
@@ -544,7 +544,7 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 				$existing_id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table_name} WHERE id = %d", $data_id ) );
 				if ( ! $existing_id ) {
 					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-						error_log( 'KTPWP Client Debug: handle_update - data_id ' . $data_id . ' not found, falling back to insert' );
+						ktpwp_debug_log( 'KTPWP Client Debug: handle_update - data_id ' . $data_id . ' not found, falling back to insert' );
 					}
 					$this->handle_insert( $table_name, $tab_name, $fields_data, $search_field_value );
 					return;
@@ -608,9 +608,9 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 
 				// デバッグログを追加
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					error_log( 'KTPWP Client Debug: update result = ' . ( $result !== false ? 'success' : 'failed' ) );
+					ktpwp_debug_log( 'KTPWP Client Debug: update result = ' . ( $result !== false ? 'success' : 'failed' ) );
 					if ( $result === false ) {
-						error_log( 'KTPWP Client Debug: wpdb error = ' . $wpdb->last_error );
+						ktpwp_debug_log( 'KTPWP Client Debug: wpdb error = ' . $wpdb->last_error );
 					}
 				}
 

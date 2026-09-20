@@ -56,7 +56,7 @@ class KTPWP_Image_Processor {
             // MIME,拡張子,サイズチェック
             if ( ! in_array( $mime, $allowed_mimes, true ) || ! in_array( $ext, $allowed_exts, true ) || $size > $max_size ) {
                 if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                    error_log( 'KTPWP: 不正なファイルアップロード検出' );
+                    ktpwp_debug_log( 'KTPWP: 不正なファイルアップロード検出' );
                 }
                 return $default_image_url;
             }

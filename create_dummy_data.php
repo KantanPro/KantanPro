@@ -91,7 +91,7 @@ global $wpdb;
 
 // データベース接続チェック
 if (!$wpdb->check_connection()) {
-    error_log('KTPWP: データベース接続エラー');
+    ktpwp_debug_log('KTPWP: データベース接続エラー');
     return false;
 }
 
@@ -110,7 +110,7 @@ foreach ($required_tables as $table) {
     $table_name = $wpdb->prefix . $table;
     $table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$table_name}'");
     if (!$table_exists) {
-        error_log("KTPWP: 必要なテーブルが存在しません: {$table_name}");
+        ktpwp_debug_log("KTPWP: 必要なテーブルが存在しません: {$table_name}");
         return false;
     }
 }
@@ -584,7 +584,7 @@ function safe_db_insert($table, $data, $format = null) {
 
 	$data = ktp_dummy_filter_row_for_table( $table, $data );
 	if ( $data === array() ) {
-		error_log( "KTPWP: 挿入可能なカラムがありません - テーブル: {$table}" );
+		ktpwp_debug_log( "KTPWP: 挿入可能なカラムがありません - テーブル: {$table}" );
 		return false;
 	}
 	$format = ktp_dummy_guess_formats( $data );
@@ -592,12 +592,12 @@ function safe_db_insert($table, $data, $format = null) {
     try {
         $result = $wpdb->insert($table, $data, $format);
         if ($result === false) {
-            error_log("KTPWP: データベース挿入エラー - テーブル: {$table}, エラー: " . $wpdb->last_error);
+            ktpwp_debug_log("KTPWP: データベース挿入エラー - テーブル: {$table}, エラー: " . $wpdb->last_error);
             return false;
         }
         return $wpdb->insert_id;
     } catch (Exception $e) {
-        error_log("KTPWP: データベース挿入例外 - テーブル: {$table}, エラー: " . $e->getMessage());
+        ktpwp_debug_log("KTPWP: データベース挿入例外 - テーブル: {$table}, エラー: " . $e->getMessage());
         return false;
     }
 }

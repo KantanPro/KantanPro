@@ -362,7 +362,7 @@ if ( ! class_exists( 'KTPWP_Order' ) ) {
 			);
 
 			if ( $result === false ) {
-				error_log( 'KTPWP: Failed to create order: ' . $wpdb->last_error );
+				ktpwp_debug_log( 'KTPWP: Failed to create order: ' . $wpdb->last_error );
 				return false;
 			}
 
@@ -418,7 +418,7 @@ if ( ! class_exists( 'KTPWP_Order' ) ) {
 			);
 
 			if ( $result === false ) {
-				error_log( 'KTPWP: Failed to update order ' . $order_id . ': ' . $wpdb->last_error );
+				ktpwp_debug_log( 'KTPWP: Failed to update order ' . $order_id . ': ' . $wpdb->last_error );
 				return false;
 			}
 
@@ -450,7 +450,7 @@ if ( ! class_exists( 'KTPWP_Order' ) ) {
 			);
 
 			if ( $result === false ) {
-				error_log( 'KTPWP: Failed to delete order ' . $order_id . ': ' . $wpdb->last_error );
+				ktpwp_debug_log( 'KTPWP: Failed to delete order ' . $order_id . ': ' . $wpdb->last_error );
 				return false;
 			}
 

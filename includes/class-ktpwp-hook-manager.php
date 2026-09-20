@@ -118,7 +118,7 @@ class KTPWP_Hook_Manager {
         $this->removed_hooks_count += 1;
         
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( "KTPWP Hook Manager: Removed {$this->removed_hooks_count} admin-only hooks from frontend" );
+            ktpwp_debug_log( "KTPWP Hook Manager: Removed {$this->removed_hooks_count} admin-only hooks from frontend" );
         }
     }
 
@@ -130,7 +130,7 @@ class KTPWP_Hook_Manager {
         // （現在は該当するフックが少ないため、将来の拡張に備えて準備）
         
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( "KTPWP Hook Manager: Checked frontend-only hooks in admin" );
+            ktpwp_debug_log( "KTPWP Hook Manager: Checked frontend-only hooks in admin" );
         }
     }
 
@@ -160,7 +160,7 @@ class KTPWP_Hook_Manager {
             $this->removed_hooks_count++;
             
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP Hook Manager: Removed duplicate terms check hook from wp action' );
+                ktpwp_debug_log( 'KTPWP Hook Manager: Removed duplicate terms check hook from wp action' );
             }
         }
     }
@@ -176,7 +176,7 @@ class KTPWP_Hook_Manager {
             $this->removed_hooks_count += 2;
             
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP Hook Manager: Removed database integrity checks (not needed)' );
+                ktpwp_debug_log( 'KTPWP Hook Manager: Removed database integrity checks (not needed)' );
             }
         }
 
@@ -186,7 +186,7 @@ class KTPWP_Hook_Manager {
             $this->removed_hooks_count++;
             
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP Hook Manager: Removed auto migrations (not needed)' );
+                ktpwp_debug_log( 'KTPWP Hook Manager: Removed auto migrations (not needed)' );
             }
         }
     }
@@ -203,7 +203,7 @@ class KTPWP_Hook_Manager {
             $this->removed_hooks_count += 2;
             
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP Hook Manager: Removed debug hooks in production' );
+                ktpwp_debug_log( 'KTPWP Hook Manager: Removed debug hooks in production' );
             }
         }
     }
@@ -380,7 +380,7 @@ class KTPWP_Hook_Manager {
         $this->optimized_hooks_count = 0;
         
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Hook Manager: Optimization stats reset' );
+            ktpwp_debug_log( 'KTPWP Hook Manager: Optimization stats reset' );
         }
     }
 }

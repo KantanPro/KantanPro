@@ -375,7 +375,7 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 
 			// デバッグログを追加
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( 'KTPWP Cost Items Debug - Order ID: ' . $order_id . ', Tax Category: ' . $tax_category . ', Type: ' . gettype($tax_category) . ', Length: ' . strlen($tax_category) );
+				ktpwp_debug_log( 'KTPWP Cost Items Debug - Order ID: ' . $order_id . ', Tax Category: ' . $tax_category . ', Type: ' . gettype($tax_category) . ', Length: ' . strlen($tax_category) );
 			}
 
 			// sort_orderの昇順でソート
@@ -724,7 +724,7 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 			
 			if ( ! $order_id || $order_id <= 0 ) {
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					error_log( 'KTPWP Tax Category Debug - Invalid order ID: ' . $order_id );
+					ktpwp_debug_log( 'KTPWP Tax Category Debug - Invalid order ID: ' . $order_id );
 				}
 				return '内税'; // デフォルト値
 			}
@@ -740,7 +740,7 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 
 			if ( ! $order ) {
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					error_log( 'KTPWP Tax Category Debug - Order not found for ID: ' . $order_id );
+					ktpwp_debug_log( 'KTPWP Tax Category Debug - Order not found for ID: ' . $order_id );
 				}
 				return '内税'; // デフォルト値
 			}
@@ -759,7 +759,7 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 				);
 				
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					error_log( 'KTPWP Tax Category Debug - Using client_id: ' . $order->client_id . ', Tax Category: ' . ( $client ? $client->tax_category : 'not found' ) );
+					ktpwp_debug_log( 'KTPWP Tax Category Debug - Using client_id: ' . $order->client_id . ', Tax Category: ' . ( $client ? $client->tax_category : 'not found' ) );
 				}
 			}
 
@@ -774,7 +774,7 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 				);
 				
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					error_log( 'KTPWP Tax Category Debug - Using company_name/name: ' . $order->customer_name . '/' . $order->user_name . ', Tax Category: ' . ( $client ? $client->tax_category : 'not found' ) );
+					ktpwp_debug_log( 'KTPWP Tax Category Debug - Using company_name/name: ' . $order->customer_name . '/' . $order->user_name . ', Tax Category: ' . ( $client ? $client->tax_category : 'not found' ) );
 				}
 			}
 

@@ -101,7 +101,7 @@ class KTPWP_License_Manager {
                         'analytics' => false
                     )
                 ));
-                error_log( 'KTPWP License: Initializing license status to not_set (no license key)' );
+                ktpwp_debug_log( 'KTPWP License: Initializing license status to not_set (no license key)' );
             }
         }
     }
@@ -171,9 +171,9 @@ class KTPWP_License_Manager {
         $body_string = http_build_query( $payload, '', '&', PHP_QUERY_RFC3986 );
 
         // 送信前ログ
-        error_log( 'KTPWP License: Outbound Request -> method=POST, url=' . $this->api_endpoints['verify'] . ', content_type=application/x-www-form-urlencoded; charset=UTF-8' );
-        error_log( 'KTPWP License: Outbound Payload (encoded) -> ' . $body_string );
-        error_log( 'KTPWP License: site_url(final)=' . $site_url );
+        ktpwp_debug_log( 'KTPWP License: Outbound Request -> method=POST, url=' . $this->api_endpoints['verify'] . ', content_type=application/x-www-form-urlencoded; charset=UTF-8' );
+        ktpwp_debug_log( 'KTPWP License: Outbound Payload (encoded) -> ' . $body_string );
+        ktpwp_debug_log( 'KTPWP License: site_url(final)=' . $site_url );
 
         $response = wp_remote_post( $this->api_endpoints['verify'], array(
             'headers' => array(
@@ -196,8 +196,8 @@ class KTPWP_License_Manager {
         $body = wp_remote_retrieve_body( $response );
 
         // レスポンスログ
-        error_log( 'KTPWP License: Inbound Response -> status=' . $status_code );
-        error_log( 'KTPWP License: Inbound Body -> ' . $body );
+        ktpwp_debug_log( 'KTPWP License: Inbound Response -> status=' . $status_code );
+        ktpwp_debug_log( 'KTPWP License: Inbound Body -> ' . $body );
         $data = json_decode( $body, true );
 
         if ( ! $data ) {
@@ -211,7 +211,7 @@ class KTPWP_License_Manager {
         $is_valid   = ( ! isset( $data['valid'] ) || ( isset( $data['valid'] ) && true === $data['valid'] ) );
 
         if ( $is_success && $is_valid ) {
-            error_log( 'KTPWP License: Judgement -> API success, valid=true (no fallback)' );
+            ktpwp_debug_log( 'KTPWP License: Judgement -> API success, valid=true (no fallback)' );
             return array(
                 'success' => true,
                 'data'    => isset( $data['data'] ) ? $data['data'] : array(),
@@ -221,7 +221,7 @@ class KTPWP_License_Manager {
 
         $error_message = isset( $data['message'] ) ? $data['message'] : __( 'ライセンスの認証に失敗しました。', 'kantanpro' );
         $error_code    = isset( $data['error_code'] ) ? $data['error_code'] : '';
-        error_log( 'KTPWP License: Judgement -> API failure or invalid (error_code=' . $error_code . ')' );
+        ktpwp_debug_log( 'KTPWP License: Judgement -> API failure or invalid (error_code=' . $error_code . ')' );
         return array(
             'success' => false,
             'message' => $error_message,
@@ -284,12 +284,12 @@ class KTPWP_License_Manager {
         if ( $this->is_development_environment() ) {
             // 開発ライセンスが無効化されている場合は false
             if ( ! $this->is_dev_license_enabled() ) {
-                error_log( 'KTPWP License Check: Development license is disabled by setting.' );
+                ktpwp_debug_log( 'KTPWP License Check: Development license is disabled by setting.' );
                 return false;
             }
             
             // 開発環境であれば、ライセンスキーの検証をスキップして常に有効とみなす
-            error_log( 'KTPWP License Check: Development environment active, license assumed valid.' );
+            ktpwp_debug_log( 'KTPWP License Check: Development environment active, license assumed valid.' );
             return true;
         }
 
@@ -310,22 +310,22 @@ class KTPWP_License_Manager {
                         'analytics' => false
                     )
                 ));
-                error_log( 'KTPWP License Check: License key is empty, setting status to not_set' );
+                ktpwp_debug_log( 'KTPWP License Check: License key is empty, setting status to not_set' );
             }
             return false;
         }
 
         // デバッグログを追加
-        error_log( 'KTPWP License Check: license_key = set, status = ' . $license_status );
+        ktpwp_debug_log( 'KTPWP License Check: license_key = set, status = ' . $license_status );
 
         if ( $license_status !== 'active' ) {
-            error_log( 'KTPWP License Check: License status is not active: ' . $license_status );
+            ktpwp_debug_log( 'KTPWP License Check: License status is not active: ' . $license_status );
             return false;
         }
 
         // not_setステータスの場合も明示的に無効とする
         if ( $license_status === 'not_set' ) {
-            error_log( 'KTPWP License Check: License status is not_set' );
+            ktpwp_debug_log( 'KTPWP License Check: License status is not_set' );
             return false;
         }
 
@@ -335,13 +335,13 @@ class KTPWP_License_Manager {
             $result = $this->verify_license( $license_key );
             if ( ! $result['success'] ) {
                 update_option( 'ktp_license_status', 'invalid' );
-                error_log( 'KTPWP License Check: License verification failed' );
+                ktpwp_debug_log( 'KTPWP License Check: License verification failed' );
                 return false;
             }
             update_option( 'ktp_license_verified_at', current_time( 'timestamp' ) );
         }
 
-        error_log( 'KTPWP License Check: License is valid' );
+        ktpwp_debug_log( 'KTPWP License Check: License is valid' );
         return true;
     }
 
@@ -392,7 +392,7 @@ class KTPWP_License_Manager {
             $is_dev = KTPWP_DEVELOPMENT_MODE === true;
             $debug_info[] = 'KTPWP_DEVELOPMENT_MODE: ' . ( $is_dev ? 'true' : 'false' );
             if ( $is_dev ) {
-                error_log( 'KTPWP Dev Environment Check: Detected by KTPWP_DEVELOPMENT_MODE constant' );
+                ktpwp_debug_log( 'KTPWP Dev Environment Check: Detected by KTPWP_DEVELOPMENT_MODE constant' );
                 return true;
             }
         }
@@ -400,7 +400,7 @@ class KTPWP_License_Manager {
         // 2. WP_ENV 定数による判定
         if ( defined( 'WP_ENV' ) && 'development' === WP_ENV ) {
             $debug_info[] = 'WP_ENV: development';
-            error_log( 'KTPWP Dev Environment Check: Detected by WP_ENV constant' );
+            ktpwp_debug_log( 'KTPWP Dev Environment Check: Detected by WP_ENV constant' );
             return true;
         } else {
             $debug_info[] = 'WP_ENV: ' . ( defined( 'WP_ENV' ) ? WP_ENV : 'undefined' );
@@ -409,7 +409,7 @@ class KTPWP_License_Manager {
         // 3. 厳格なローカル開発環境の判定
         if ( $this->is_strict_local_environment() ) {
             $debug_info[] = 'strict_local_environment: true';
-            error_log( 'KTPWP Dev Environment Check: Detected by strict local environment check' );
+            ktpwp_debug_log( 'KTPWP Dev Environment Check: Detected by strict local environment check' );
             return true;
         } else {
             $debug_info[] = 'strict_local_environment: false';
@@ -418,14 +418,14 @@ class KTPWP_License_Manager {
         // 4. Docker環境でのローカル開発環境マーカー
         if ( $this->is_docker_local_development() ) {
             $debug_info[] = 'docker_local_development: true';
-            error_log( 'KTPWP Dev Environment Check: Detected by Docker local development markers' );
+            ktpwp_debug_log( 'KTPWP Dev Environment Check: Detected by Docker local development markers' );
             return true;
         } else {
             $debug_info[] = 'docker_local_development: false';
         }
 
         // デバッグ情報をログに記録
-        error_log( 'KTPWP Dev Environment Check: NOT development environment - ' . implode( ', ', $debug_info ) );
+        ktpwp_debug_log( 'KTPWP Dev Environment Check: NOT development environment - ' . implode( ', ', $debug_info ) );
 
         return false;
     }
@@ -746,7 +746,7 @@ class KTPWP_License_Manager {
         $nonce_ok = check_ajax_referer( 'ktp_license_nonce', 'nonce', false );
         if ( ! $nonce_ok ) {
             if ( current_user_can( 'manage_options' ) ) {
-                error_log( 'KTPWP License AJAX: Nonce verification failed, proceeding due to admin fallback.' );
+                ktpwp_debug_log( 'KTPWP License AJAX: Nonce verification failed, proceeding due to admin fallback.' );
             } else {
                 wp_send_json_error( __( 'セキュリティチェックに失敗しました。', 'kantanpro' ) );
             }
@@ -980,7 +980,7 @@ class KTPWP_License_Manager {
                 } else {
                     // ライセンスが無効な場合、ステータスを更新
                     update_option( 'ktp_license_status', 'invalid' );
-                    error_log( 'KTPWP License: License verification failed in get_license_status: ' . $result['message'] );
+                    ktpwp_debug_log( 'KTPWP License: License verification failed in get_license_status: ' . $result['message'] );
                     
                     return array(
                         'status' => 'invalid',
@@ -1030,7 +1030,7 @@ class KTPWP_License_Manager {
         delete_option( 'ktp_license_status' );
         delete_option( 'ktp_license_info' );
         delete_option( 'ktp_license_verified_at' );
-        error_log( 'KTPWP License: License deactivated' );
+        ktpwp_debug_log( 'KTPWP License: License deactivated' );
     }
 
     /**
@@ -1040,7 +1040,7 @@ class KTPWP_License_Manager {
      */
     public function reset_license_for_testing() {
         update_option( 'ktp_license_status', 'not_set' );
-        error_log( 'KTPWP License: License reset to not_set for testing' );
+        ktpwp_debug_log( 'KTPWP License: License reset to not_set for testing' );
     }
 
     /**
@@ -1053,7 +1053,7 @@ class KTPWP_License_Manager {
         delete_option( 'ktp_license_status' );
         delete_option( 'ktp_license_info' );
         delete_option( 'ktp_license_verified_at' );
-        error_log( 'KTPWP License: All license data cleared for testing' );
+        ktpwp_debug_log( 'KTPWP License: All license data cleared for testing' );
     }
 
     /**
@@ -1063,7 +1063,7 @@ class KTPWP_License_Manager {
      */
     public function set_development_license() {
         if ( ! $this->is_development_environment() ) {
-            error_log( 'KTPWP License: Cannot set development license in production environment' );
+            ktpwp_debug_log( 'KTPWP License: Cannot set development license in production environment' );
             return false;
         }
 
@@ -1079,7 +1079,7 @@ class KTPWP_License_Manager {
         ) );
         update_option( 'ktp_license_verified_at', current_time( 'timestamp' ) );
         
-        error_log( 'KTPWP License: Development license set successfully' );
+        ktpwp_debug_log( 'KTPWP License: Development license set successfully' );
         return true;
     }
 

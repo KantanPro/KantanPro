@@ -46,14 +46,14 @@ class KTPWP_Department_Migration {
             update_option( 'ktp_department_table_version', '1.0.0' );
 
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP: 部署テーブルが正常に作成されました。' );
+                ktpwp_debug_log( 'KTPWP: 部署テーブルが正常に作成されました。' );
             }
 
             return true;
         }
 
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP: 部署テーブルの作成に失敗しました。' );
+            ktpwp_debug_log( 'KTPWP: 部署テーブルの作成に失敗しました。' );
         }
 
         return false;

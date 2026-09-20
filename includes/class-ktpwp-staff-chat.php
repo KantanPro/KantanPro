@@ -141,7 +141,7 @@ if ( ! class_exists( 'KTPWP_Staff_Chat' ) ) {
 			$owner_id = $this->resolve_primary_admin_user_id();
 			if ( ! $owner_id ) {
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					error_log( 'KTPWP: Skipped inbound staff chat — no administrator user found (order_id=' . (int) $order_id . ')' );
+					ktpwp_debug_log( 'KTPWP: Skipped inbound staff chat — no administrator user found (order_id=' . (int) $order_id . ')' );
 				}
 				return false;
 			}
@@ -209,7 +209,7 @@ if ( ! class_exists( 'KTPWP_Staff_Chat' ) ) {
 				return true;
 			}
 
-			error_log( 'KTPWP: Failed to create initial staff chat: ' . $wpdb->last_error );
+			ktpwp_debug_log( 'KTPWP: Failed to create initial staff chat: ' . $wpdb->last_error );
 			return false;
 		}
 
@@ -304,7 +304,7 @@ if ( ! class_exists( 'KTPWP_Staff_Chat' ) ) {
 			);
 
 			if ( $messages === false ) {
-				error_log( 'KTPWP: Error getting staff chat messages: ' . $wpdb->last_error );
+				ktpwp_debug_log( 'KTPWP: Error getting staff chat messages: ' . $wpdb->last_error );
 				return false;
 			}
 
@@ -321,23 +321,23 @@ if ( ! class_exists( 'KTPWP_Staff_Chat' ) ) {
 		 */
 		public function add_message( $order_id, $message ) {
 			if ( ! $order_id || $order_id <= 0 ) {
-				error_log( 'KTPWP StaffChat: add_message failed - invalid order_id: ' . print_r( $order_id, true ) );
+				ktpwp_debug_log( 'KTPWP StaffChat: add_message failed - invalid order_id: ' . print_r( $order_id, true ) );
 				return false;
 			}
 			if ( empty( trim( $message ) ) ) {
-				error_log( 'KTPWP StaffChat: add_message failed - empty message for order_id: ' . print_r( $order_id, true ) );
+				ktpwp_debug_log( 'KTPWP StaffChat: add_message failed - empty message for order_id: ' . print_r( $order_id, true ) );
 				return false;
 			}
 
 			// Check user permissions
 			$current_user_id = get_current_user_id();
-			error_log( 'KTPWP StaffChat: add_message debug - current_user_id: ' . print_r( $current_user_id, true ) . ' order_id: ' . print_r( $order_id, true ) );
+			ktpwp_debug_log( 'KTPWP StaffChat: add_message debug - current_user_id: ' . print_r( $current_user_id, true ) . ' order_id: ' . print_r( $order_id, true ) );
 			if ( ! $current_user_id ) {
-				error_log( 'KTPWP StaffChat: add_message failed - no current user for order_id: ' . print_r( $order_id, true ) );
+				ktpwp_debug_log( 'KTPWP StaffChat: add_message failed - no current user for order_id: ' . print_r( $order_id, true ) );
 				return false;
 			}
 			if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
-				error_log( 'KTPWP StaffChat: add_message failed - permission denied for user_id: ' . $current_user_id . ' order_id: ' . print_r( $order_id, true ) );
+				ktpwp_debug_log( 'KTPWP StaffChat: add_message failed - permission denied for user_id: ' . $current_user_id . ' order_id: ' . print_r( $order_id, true ) );
 				return false;
 			}
 
@@ -347,16 +347,16 @@ if ( ! class_exists( 'KTPWP_Staff_Chat' ) ) {
 			// Get user info
 			$user_info = get_userdata( $current_user_id );
 			if ( ! $user_info ) {
-				error_log( 'KTPWP StaffChat: add_message failed - user not found for user_id: ' . $current_user_id . ' order_id: ' . print_r( $order_id, true ) );
+				ktpwp_debug_log( 'KTPWP StaffChat: add_message failed - user not found for user_id: ' . $current_user_id . ' order_id: ' . print_r( $order_id, true ) );
 				return false;
 			}
 
 			$display_name = $user_info->display_name ? $user_info->display_name : $user_info->user_login;
 
 			// デバッグログを追加
-			error_log( 'KTPWP StaffChat: add_message start - order_id: ' . $order_id . ', message: ' . $message );
-			error_log( 'KTPWP StaffChat: add_message - table_name: ' . $table_name );
-			error_log( 'KTPWP StaffChat: add_message - user_id: ' . $current_user_id . ', display_name: ' . $display_name );
+			ktpwp_debug_log( 'KTPWP StaffChat: add_message start - order_id: ' . $order_id . ', message: ' . $message );
+			ktpwp_debug_log( 'KTPWP StaffChat: add_message - table_name: ' . $table_name );
+			ktpwp_debug_log( 'KTPWP StaffChat: add_message - user_id: ' . $current_user_id . ', display_name: ' . $display_name );
 
 			// Start transaction for concurrent access
 			$wpdb->query( 'START TRANSACTION' );
@@ -372,7 +372,7 @@ if ( ! class_exists( 'KTPWP_Staff_Chat' ) ) {
                 );
 
 				if ( ! $order_exists ) {
-					error_log( 'KTPWP StaffChat: add_message failed - order does not exist: ' . print_r( $order_id, true ) );
+					ktpwp_debug_log( 'KTPWP StaffChat: add_message failed - order does not exist: ' . print_r( $order_id, true ) );
 					throw new Exception( 'Order does not exist' );
 				}
 
@@ -399,15 +399,15 @@ if ( ! class_exists( 'KTPWP_Staff_Chat' ) ) {
 
 				if ( $inserted ) {
 					$wpdb->query( 'COMMIT' );
-					error_log( 'KTPWP StaffChat: add_message success - order_id: ' . $order_id . ', user_id: ' . $current_user_id );
+					ktpwp_debug_log( 'KTPWP StaffChat: add_message success - order_id: ' . $order_id . ', user_id: ' . $current_user_id );
 					return true;
 				} else {
-					error_log( 'KTPWP StaffChat: add_message failed - DB insert error: ' . $wpdb->last_error . ' order_id: ' . print_r( $order_id, true ) );
+					ktpwp_debug_log( 'KTPWP StaffChat: add_message failed - DB insert error: ' . $wpdb->last_error . ' order_id: ' . print_r( $order_id, true ) );
 					throw new Exception( 'Failed to insert message: ' . $wpdb->last_error );
 				}
 			} catch ( Exception $e ) {
 				$wpdb->query( 'ROLLBACK' );
-				error_log( 'KTPWP StaffChat: Exception in add_message: ' . $e->getMessage() . ' order_id: ' . print_r( $order_id, true ) );
+				ktpwp_debug_log( 'KTPWP StaffChat: Exception in add_message: ' . $e->getMessage() . ' order_id: ' . print_r( $order_id, true ) );
 				return false;
 			}
 		}
@@ -503,7 +503,7 @@ if ( ! class_exists( 'KTPWP_Staff_Chat' ) ) {
 						// Get WordPress avatar
 						$user_id = intval( $message['user_id'] );
 						$avatar = get_avatar( $user_id, 32, '', $user_display_name, array( 'class' => 'staff-chat-wp-avatar' ) );
-						error_log( 'KTPWP StaffChat: generate_html avatar debug - user_id: ' . print_r( $user_id, true ) . ' avatar_html: ' . print_r( $avatar, true ) );
+						ktpwp_debug_log( 'KTPWP StaffChat: generate_html avatar debug - user_id: ' . print_r( $user_id, true ) . ' avatar_html: ' . print_r( $avatar, true ) );
 
 						$header_html .= '<div class="staff-chat-header-fixed">';
 						$header_html .= '<div class="staff-chat-message initial first-line">';
@@ -765,7 +765,7 @@ if ( ! class_exists( 'KTPWP_Staff_Chat' ) ) {
             } catch ( Exception $e ) {
                 $wpdb->query( 'ROLLBACK' );
                 if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                    error_log( 'KTPWP StaffChat: delete_message_by_author failed: ' . $e->getMessage() );
+                    ktpwp_debug_log( 'KTPWP StaffChat: delete_message_by_author failed: ' . $e->getMessage() );
                 }
                 return false;
             }

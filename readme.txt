@@ -4,7 +4,7 @@ Tags: invoice, crm, order management, quotation, business
 Requires at least: 5.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.3.44
+Stable tag: 1.3.45
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -146,6 +146,15 @@ fields. It only sends anything if you have entered your own OpenAI API key.
 6. Mobile view
 
 == Changelog ==
+
+= 1.3.45 - 2026-09-20 =
+* Debug logging now goes through a single function that only writes when WP_DEBUG is
+  on. There were over 900 direct error_log() calls, 244 of which were not guarded at
+  all and therefore wrote to the log on production sites.
+* Removed the dummy data tool from this package. The tool's script is not shipped, so
+  the admin screen reported "script not found" while still offering buttons that could
+  not work.
+* Failed security checks no longer record any part of the submitted nonce value.
 
 = 1.3.44 - 2026-09-20 =
 * Removed the "Domain Path" header. This package does not ship a languages folder,

@@ -17,7 +17,7 @@ if ( class_exists( 'KTPWP_Fresh_Install_Detector' ) ) {
     $fresh_detector = KTPWP_Fresh_Install_Detector::get_instance();
     if ( $fresh_detector->should_skip_migrations() ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Migration: 新規インストール環境のため20250703_cleanup_unused_columnsをスキップ' );
+            ktpwp_debug_log( 'KTPWP Migration: 新規インストール環境のため20250703_cleanup_unused_columnsをスキップ' );
         }
         return;
     }
@@ -29,7 +29,7 @@ $migration_completed = get_option( $migration_key, false );
 
 if ( $migration_completed ) {
     if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-        error_log( 'KTPWP Migration: カラムクリーンアップは既に実行済みです' );
+        ktpwp_debug_log( 'KTPWP Migration: カラムクリーンアップは既に実行済みです' );
     }
     return;
 }
@@ -49,7 +49,7 @@ if ( $production_order_exists === $production_order_table ) {
     $order_table = $production_order_table;
     $supplier_table = $production_supplier_table;
     if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-        error_log( 'KTPWP Migration: 本番環境を検出' );
+        ktpwp_debug_log( 'KTPWP Migration: 本番環境を検出' );
     }
 }
 
@@ -86,7 +86,7 @@ foreach ( $order_columns_to_drop as $column_name ) {
                 if ( $result !== false ) {
                     $order_dropped_indexes[] = $index_name;
                     if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                        error_log( "KTPWP Migration: インデックス '{$index_name}' を削除しました" );
+                        ktpwp_debug_log( "KTPWP Migration: インデックス '{$index_name}' を削除しました" );
                     }
                 }
             }
@@ -99,10 +99,10 @@ foreach ( $order_columns_to_drop as $column_name ) {
         if ( $result !== false ) {
             $order_dropped_columns[] = $column_name;
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( "KTPWP Migration: カラム '{$column_name}' を {$order_table} から削除しました" );
+                ktpwp_debug_log( "KTPWP Migration: カラム '{$column_name}' を {$order_table} から削除しました" );
             }
         } elseif ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( "KTPWP Migration Error: カラム '{$column_name}' の削除に失敗: " . $wpdb->last_error );
+                ktpwp_debug_log( "KTPWP Migration Error: カラム '{$column_name}' の削除に失敗: " . $wpdb->last_error );
         }
     }
 }
@@ -130,27 +130,27 @@ foreach ( $supplier_columns_to_drop as $column_name ) {
         if ( $result !== false ) {
             $supplier_dropped_columns[] = $column_name;
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( "KTPWP Migration: カラム '{$column_name}' を {$supplier_table} から削除しました" );
+                ktpwp_debug_log( "KTPWP Migration: カラム '{$column_name}' を {$supplier_table} から削除しました" );
             }
         } elseif ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( "KTPWP Migration Error: カラム '{$column_name}' の削除に失敗: " . $wpdb->last_error );
+                ktpwp_debug_log( "KTPWP Migration Error: カラム '{$column_name}' の削除に失敗: " . $wpdb->last_error );
         }
     }
 }
 
 // 最終結果のログ出力
 if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-    error_log( 'KTPWP Migration: カラムクリーンアップ完了' );
-    error_log( 'KTPWP Migration: ORDERテーブルから削除されたカラム: ' . implode( ', ', $order_dropped_columns ) );
-    error_log( 'KTPWP Migration: ORDERテーブルから削除されたインデックス: ' . implode( ', ', $order_dropped_indexes ) );
-    error_log( 'KTPWP Migration: SUPPLIERテーブルから削除されたカラム: ' . implode( ', ', $supplier_dropped_columns ) );
+    ktpwp_debug_log( 'KTPWP Migration: カラムクリーンアップ完了' );
+    ktpwp_debug_log( 'KTPWP Migration: ORDERテーブルから削除されたカラム: ' . implode( ', ', $order_dropped_columns ) );
+    ktpwp_debug_log( 'KTPWP Migration: ORDERテーブルから削除されたインデックス: ' . implode( ', ', $order_dropped_indexes ) );
+    ktpwp_debug_log( 'KTPWP Migration: SUPPLIERテーブルから削除されたカラム: ' . implode( ', ', $supplier_dropped_columns ) );
 
     // 最終的なカラム構造を確認
     $final_order_columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$order_table}`", 0 );
     $final_supplier_columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$supplier_table}`", 0 );
 
-    error_log( 'KTPWP Migration: 最終ORDERカラム数: ' . count( $final_order_columns ) );
-    error_log( 'KTPWP Migration: 最終SUPPLIERカラム数: ' . count( $final_supplier_columns ) );
+    ktpwp_debug_log( 'KTPWP Migration: 最終ORDERカラム数: ' . count( $final_order_columns ) );
+    ktpwp_debug_log( 'KTPWP Migration: 最終SUPPLIERカラム数: ' . count( $final_supplier_columns ) );
 }
 
 // マイグレーション完了フラグを設定
@@ -158,5 +158,5 @@ update_option( $migration_key, true );
 update_option( 'ktp_cleanup_unused_columns_timestamp', current_time( 'mysql' ) );
 
 if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-    error_log( 'KTPWP Migration: 20250703_cleanup_unused_columns 完了' );
+    ktpwp_debug_log( 'KTPWP Migration: 20250703_cleanup_unused_columns 完了' );
 }

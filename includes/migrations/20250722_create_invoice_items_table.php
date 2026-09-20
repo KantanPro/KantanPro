@@ -22,7 +22,7 @@ function ktpwp_create_invoice_items_table() {
     
     // テーブルが既に存在するかチェック
     if ($wpdb->get_var("SHOW TABLES LIKE '{$table_name}'") === $table_name) {
-        error_log("KTPWP: テーブル {$table_name} は既に存在します");
+        ktpwp_debug_log("KTPWP: テーブル {$table_name} は既に存在します");
         return true;
     }
     
@@ -47,10 +47,10 @@ function ktpwp_create_invoice_items_table() {
     $result = dbDelta($sql);
     
     if (empty($wpdb->last_error)) {
-        error_log("KTPWP: テーブル {$table_name} を作成しました");
+        ktpwp_debug_log("KTPWP: テーブル {$table_name} を作成しました");
         return true;
     } else {
-        error_log("KTPWP: テーブル {$table_name} の作成に失敗しました: " . $wpdb->last_error);
+        ktpwp_debug_log("KTPWP: テーブル {$table_name} の作成に失敗しました: " . $wpdb->last_error);
         return false;
     }
 }

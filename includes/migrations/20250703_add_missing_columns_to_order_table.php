@@ -17,7 +17,7 @@ if ( class_exists( 'KTPWP_Fresh_Install_Detector' ) ) {
     $fresh_detector = KTPWP_Fresh_Install_Detector::get_instance();
     if ( $fresh_detector->should_skip_migrations() ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Migration: 新規インストール環境のため20250703_add_missing_columns_to_order_tableをスキップ' );
+            ktpwp_debug_log( 'KTPWP Migration: 新規インストール環境のため20250703_add_missing_columns_to_order_tableをスキップ' );
         }
         return;
     }
@@ -37,17 +37,17 @@ if ( $production_exists === $production_table ) {
     $is_production = true;
     $table_name = $production_table;
     if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-        error_log( "KTPWP Migration: 本番環境を検出 - テーブル: {$table_name}" );
+        ktpwp_debug_log( "KTPWP Migration: 本番環境を検出 - テーブル: {$table_name}" );
     }
 } elseif ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-        error_log( "KTPWP Migration: ローカル環境を検出 - テーブル: {$table_name}" );
+        ktpwp_debug_log( "KTPWP Migration: ローカル環境を検出 - テーブル: {$table_name}" );
 }
 
 // 既存のカラムを取得
 $existing_columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$table_name}`", 0 );
 
 if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-    error_log( 'KTPWP Migration: 現在のカラム: ' . implode( ', ', $existing_columns ) );
+    ktpwp_debug_log( 'KTPWP Migration: 現在のカラム: ' . implode( ', ', $existing_columns ) );
 }
 
 // 追加するカラムの定義
@@ -83,18 +83,18 @@ foreach ( $columns_to_add as $column_name => $column_definition ) {
 
         if ( $result === false ) {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( "KTPWP Migration Error: カラム '{$column_name}' の追加に失敗: " . $wpdb->last_error );
+                ktpwp_debug_log( "KTPWP Migration Error: カラム '{$column_name}' の追加に失敗: " . $wpdb->last_error );
             }
         } else {
             $added_columns[] = $column_name;
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( "KTPWP Migration: カラム '{$column_name}' を {$table_name} に追加しました" );
+                ktpwp_debug_log( "KTPWP Migration: カラム '{$column_name}' を {$table_name} に追加しました" );
             }
         }
     } else {
         $skipped_columns[] = $column_name;
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( "KTPWP Migration: カラム '{$column_name}' は既に存在するためスキップ" );
+            ktpwp_debug_log( "KTPWP Migration: カラム '{$column_name}' は既に存在するためスキップ" );
         }
     }
 }
@@ -121,7 +121,7 @@ foreach ( $indexes as $index_name => $column_name ) {
             if ( $result !== false ) {
                 $added_indexes[] = $index_name;
                 if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                    error_log( "KTPWP Migration: インデックス '{$index_name}' を {$table_name} に追加しました" );
+                    ktpwp_debug_log( "KTPWP Migration: インデックス '{$index_name}' を {$table_name} に追加しました" );
                 }
             }
         }
@@ -130,13 +130,13 @@ foreach ( $indexes as $index_name => $column_name ) {
 
 // 最終結果のログ出力
 if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-    error_log( 'KTPWP Migration: マイグレーション完了' );
-    error_log( 'KTPWP Migration: 追加されたカラム: ' . implode( ', ', $added_columns ) );
-    error_log( 'KTPWP Migration: スキップされたカラム: ' . implode( ', ', $skipped_columns ) );
-    error_log( 'KTPWP Migration: 追加されたインデックス: ' . implode( ', ', $added_indexes ) );
+    ktpwp_debug_log( 'KTPWP Migration: マイグレーション完了' );
+    ktpwp_debug_log( 'KTPWP Migration: 追加されたカラム: ' . implode( ', ', $added_columns ) );
+    ktpwp_debug_log( 'KTPWP Migration: スキップされたカラム: ' . implode( ', ', $skipped_columns ) );
+    ktpwp_debug_log( 'KTPWP Migration: 追加されたインデックス: ' . implode( ', ', $added_indexes ) );
     // 最終的なカラム構造を確認
     $final_columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$table_name}`", 0 );
-    error_log( 'KTPWP Migration: 最終的なカラム: ' . implode( ', ', $final_columns ) );
+    ktpwp_debug_log( 'KTPWP Migration: 最終的なカラム: ' . implode( ', ', $final_columns ) );
 }
 
 // マイグレーション完了フラグを設定

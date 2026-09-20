@@ -21,11 +21,11 @@ if ( $wpdb->get_var( "SHOW TABLES LIKE '$invoice_table'" ) == $invoice_table ) {
     
     if ( $result !== false ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( "KTPWP Migration: Modified tax_rate column in $invoice_table to allow NULL" );
+            ktpwp_debug_log( "KTPWP Migration: Modified tax_rate column in $invoice_table to allow NULL" );
         }
     } else {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( "KTPWP Migration: Failed to modify tax_rate column in $invoice_table" );
+            ktpwp_debug_log( "KTPWP Migration: Failed to modify tax_rate column in $invoice_table" );
         }
     }
 }
@@ -40,11 +40,11 @@ if ( $wpdb->get_var( "SHOW TABLES LIKE '$cost_table'" ) == $cost_table ) {
     
     if ( $result !== false ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( "KTPWP Migration: Modified tax_rate column in $cost_table to allow NULL" );
+            ktpwp_debug_log( "KTPWP Migration: Modified tax_rate column in $cost_table to allow NULL" );
         }
     } else {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( "KTPWP Migration: Failed to modify tax_rate column in $cost_table" );
+            ktpwp_debug_log( "KTPWP Migration: Failed to modify tax_rate column in $cost_table" );
         }
     }
 }
@@ -59,11 +59,11 @@ if ( $wpdb->get_var( "SHOW TABLES LIKE '$service_table'" ) == $service_table ) {
     
     if ( $result !== false ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( "KTPWP Migration: Modified tax_rate column in $service_table to allow NULL" );
+            ktpwp_debug_log( "KTPWP Migration: Modified tax_rate column in $service_table to allow NULL" );
         }
     } else {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( "KTPWP Migration: Failed to modify tax_rate column in $service_table" );
+            ktpwp_debug_log( "KTPWP Migration: Failed to modify tax_rate column in $service_table" );
         }
     }
 }
@@ -76,7 +76,7 @@ if ( ! in_array( 'tax_rate', $invoice_columns ) ) {
     
     if ( $result !== false ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( "KTPWP Migration: Added tax_rate column to $invoice_table" );
+            ktpwp_debug_log( "KTPWP Migration: Added tax_rate column to $invoice_table" );
         }
     }
 }
@@ -89,7 +89,7 @@ if ( ! in_array( 'tax_rate', $cost_columns ) ) {
     
     if ( $result !== false ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( "KTPWP Migration: Added tax_rate column to $cost_table" );
+            ktpwp_debug_log( "KTPWP Migration: Added tax_rate column to $cost_table" );
         }
     }
 }
@@ -102,11 +102,11 @@ if ( ! in_array( 'tax_rate', $service_columns ) ) {
     
     if ( $result !== false ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( "KTPWP Migration: Added tax_rate column to $service_table" );
+            ktpwp_debug_log( "KTPWP Migration: Added tax_rate column to $service_table" );
         }
     }
 }
 
 if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-    error_log( "KTPWP Migration: Tax rate NULL support migration completed" );
+    ktpwp_debug_log( "KTPWP Migration: Tax rate NULL support migration completed" );
 } 

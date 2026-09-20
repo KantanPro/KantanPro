@@ -119,7 +119,7 @@ class KTPWP_Assets {
         }
 
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Assets: Interfering assets dequeued on KantanPro page: ' . implode( ', ', $handles ) );
+            ktpwp_debug_log( 'KTPWP Assets: Interfering assets dequeued on KantanPro page: ' . implode( ', ', $handles ) );
         }
     }
 
@@ -724,7 +724,7 @@ class KTPWP_Assets {
         $current_page = get_query_var( 'pagename' ) ?: get_query_var( 'page_id' );
 
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP_Assets: Frontend assets check - URL: ' . $current_url . ', Page: ' . $current_page . ', Should load: true' );
+            ktpwp_debug_log( 'KTPWP_Assets: Frontend assets check - URL: ' . $current_url . ', Page: ' . $current_page . ', Should load: true' );
         }
 
         $this->enqueue_styles( false );
@@ -738,7 +738,7 @@ class KTPWP_Assets {
         }
 
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP_Assets: Frontend assets enqueued for KantanPro page' );
+            ktpwp_debug_log( 'KTPWP_Assets: Frontend assets enqueued for KantanPro page' );
         }
     }
 
@@ -750,7 +750,7 @@ class KTPWP_Assets {
     public function enqueue_admin_assets( $hook_suffix ) {
         // デバッグ: フック名を出力
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP_Assets: Admin assets enqueue called for hook: ' . $hook_suffix );
+            ktpwp_debug_log( 'KTPWP_Assets: Admin assets enqueue called for hook: ' . $hook_suffix );
         }
 
         $this->enqueue_admin_menu_icons();
@@ -775,7 +775,7 @@ class KTPWP_Assets {
         }
 
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP_Assets: Admin assets enqueued for hook: ' . $hook_suffix );
+            ktpwp_debug_log( 'KTPWP_Assets: Admin assets enqueued for hook: ' . $hook_suffix );
         }
     }
 
@@ -941,7 +941,7 @@ class KTPWP_Assets {
 
 
                     if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                        error_log( 'KTPWP Assets: Admin AJAX config added for ktp-js with unified nonce: ' . wp_json_encode( $ajax_data ) );
+                        ktpwp_debug_log( 'KTPWP Assets: Admin AJAX config added for ktp-js with unified nonce: ' . wp_json_encode( $ajax_data ) );
                     }
                 }
 
@@ -956,14 +956,14 @@ class KTPWP_Assets {
     private function localize_frontend_scripts() {
         // デバッグログ
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Assets: localize_frontend_scripts called' );
+            ktpwp_debug_log( 'KTPWP Assets: localize_frontend_scripts called' );
         }
 
         // 統一されたAJAX設定を使用
         $ajax_data = $this->get_unified_ajax_config();
 
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Assets: AJAX data prepared with unified nonce: ' . wp_json_encode( $ajax_data ) );
+            ktpwp_debug_log( 'KTPWP Assets: AJAX data prepared with unified nonce: ' . wp_json_encode( $ajax_data ) );
         }
 
         wp_add_inline_script( 'ktp-js', 'var ktp_ajax_object = ' . wp_json_encode( $ajax_data ) . ';' );
@@ -980,7 +980,7 @@ class KTPWP_Assets {
 
 
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Assets: Inline scripts added with unified nonce' );
+            ktpwp_debug_log( 'KTPWP Assets: Inline scripts added with unified nonce' );
         }
     }
 
@@ -994,7 +994,7 @@ class KTPWP_Assets {
         // スクリプトが登録されているかチェック
         if ( ! wp_script_is( $handle, 'registered' ) ) {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( "KTPWP: Script handle '{$handle}' is not registered for localization." );
+                ktpwp_debug_log( "KTPWP: Script handle '{$handle}' is not registered for localization." );
             }
             return;
         }
@@ -1002,7 +1002,7 @@ class KTPWP_Assets {
         // ローカライズデータが配列でない場合は処理しない
         if ( ! is_array( $localize_data ) ) {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( "KTPWP: Localize data for '{$handle}' must be an array." );
+                ktpwp_debug_log( "KTPWP: Localize data for '{$handle}' must be an array." );
             }
             return;
         }
@@ -1029,7 +1029,7 @@ class KTPWP_Assets {
             $localize_array = is_array( $data ) ? $data : array( 'value' => $data );
             wp_localize_script( $handle, $localize_data['object'], $localize_array );
         } elseif ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( "KTPWP: Invalid localize data format for '{$handle}'. Expected 'object' and 'data' keys." );
+                ktpwp_debug_log( "KTPWP: Invalid localize data format for '{$handle}'. Expected 'object' and 'data' keys." );
         }
     }
 
@@ -1134,7 +1134,7 @@ class KTPWP_Assets {
         );
 
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Assets: AJAX config output in head (debug mode): ' . wp_json_encode( $ajax_data ) );
+            ktpwp_debug_log( 'KTPWP Assets: AJAX config output in head (debug mode): ' . wp_json_encode( $ajax_data ) );
         }
     }
 
@@ -1160,7 +1160,7 @@ class KTPWP_Assets {
         );
 
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Assets: Fallback AJAX config output in footer (debug mode)' );
+            ktpwp_debug_log( 'KTPWP Assets: Fallback AJAX config output in footer (debug mode)' );
         }
     }
 

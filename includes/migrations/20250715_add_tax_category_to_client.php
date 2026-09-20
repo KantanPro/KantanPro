@@ -39,7 +39,7 @@ class KTPWP_Migration_20250715_Add_Tax_Category_To_Client {
         
         if ( ! $table_exists ) {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP Migration: Table ' . $client_table . ' does not exist. Skipping tax_category column addition.' );
+                ktpwp_debug_log( 'KTPWP Migration: Table ' . $client_table . ' does not exist. Skipping tax_category column addition.' );
             }
             return false;
         }
@@ -54,7 +54,7 @@ class KTPWP_Migration_20250715_Add_Tax_Category_To_Client {
         
         if ( $column_exists ) {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP Migration: Column tax_category already exists in ' . $client_table . '. Skipping.' );
+                ktpwp_debug_log( 'KTPWP Migration: Column tax_category already exists in ' . $client_table . '. Skipping.' );
             }
             return true;
         }
@@ -66,7 +66,7 @@ class KTPWP_Migration_20250715_Add_Tax_Category_To_Client {
         
         if ( $result === false ) {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP Migration: Failed to add tax_category column to ' . $client_table . '. Error: ' . $wpdb->last_error );
+                ktpwp_debug_log( 'KTPWP Migration: Failed to add tax_category column to ' . $client_table . '. Error: ' . $wpdb->last_error );
             }
             return false;
         }
@@ -78,13 +78,13 @@ class KTPWP_Migration_20250715_Add_Tax_Category_To_Client {
         
         if ( $update_result !== false ) {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP Migration: Updated ' . $update_result . ' existing clients with default tax_category' );
+                ktpwp_debug_log( 'KTPWP Migration: Updated ' . $update_result . ' existing clients with default tax_category' );
             }
         }
         
         // Log success
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Migration: Successfully added tax_category column to ' . $client_table );
+            ktpwp_debug_log( 'KTPWP Migration: Successfully added tax_category column to ' . $client_table );
         }
         
         return true;
@@ -110,7 +110,7 @@ class KTPWP_Migration_20250715_Add_Tax_Category_To_Client {
         
         if ( ! $column_exists ) {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP Migration: Column tax_category does not exist in ' . $client_table . '. Nothing to remove.' );
+                ktpwp_debug_log( 'KTPWP Migration: Column tax_category does not exist in ' . $client_table . '. Nothing to remove.' );
             }
             return true;
         }
@@ -122,14 +122,14 @@ class KTPWP_Migration_20250715_Add_Tax_Category_To_Client {
         
         if ( $result === false ) {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP Migration: Failed to remove tax_category column from ' . $client_table . '. Error: ' . $wpdb->last_error );
+                ktpwp_debug_log( 'KTPWP Migration: Failed to remove tax_category column from ' . $client_table . '. Error: ' . $wpdb->last_error );
             }
             return false;
         }
         
         // Log success
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Migration: Successfully removed tax_category column from ' . $client_table );
+            ktpwp_debug_log( 'KTPWP Migration: Successfully removed tax_category column from ' . $client_table );
         }
         
         return true;

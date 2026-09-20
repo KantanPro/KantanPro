@@ -163,7 +163,7 @@ if ( ! class_exists( 'KTPWP_Service_Initial_Fees' ) ) {
 
 			if ( ! self::ensure_tables() ) {
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					error_log( 'KTPWP: ktp_service_initial_fee テーブルを作成できませんでした。' );
+					ktpwp_debug_log( 'KTPWP: ktp_service_initial_fee テーブルを作成できませんでした。' );
 				}
 
 				return false;
@@ -190,7 +190,7 @@ if ( ! class_exists( 'KTPWP_Service_Initial_Fees' ) ) {
 				$result = $wpdb->insert( $table, $insert_data, $insert_format );
 				if ( false === $result ) {
 					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-						error_log( 'KTPWP: 初回費用の保存に失敗しました: ' . $wpdb->last_error );
+						ktpwp_debug_log( 'KTPWP: 初回費用の保存に失敗しました: ' . $wpdb->last_error );
 					}
 
 					return false;

@@ -54,7 +54,7 @@ function ktp_handle_sales_ledger_pdf_ajax() {
         ) );
 
     } catch ( Exception $e ) {
-        error_log( 'KTPWP Sales Ledger PDF Error: ' . $e->getMessage() );
+        ktpwp_debug_log( 'KTPWP Sales Ledger PDF Error: ' . $e->getMessage() );
         wp_send_json_error( __( 'PDF生成中にエラーが発生しました: ', 'kantanpro' ) . $e->getMessage() );
     }
 }

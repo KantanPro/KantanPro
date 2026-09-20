@@ -33,7 +33,7 @@ class KTPWP_Migration_20250312_Add_Payment_Timing_To_Client {
 
 		if ( ! $table_exists ) {
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( 'KTPWP Migration: Table ' . $client_table . ' does not exist. Skipping payment_timing.' );
+				ktpwp_debug_log( 'KTPWP Migration: Table ' . $client_table . ' does not exist. Skipping payment_timing.' );
 			}
 			return false;
 		}
@@ -44,7 +44,7 @@ class KTPWP_Migration_20250312_Add_Payment_Timing_To_Client {
 
 		if ( $column_exists ) {
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( 'KTPWP Migration: Column payment_timing already exists in ' . $client_table );
+				ktpwp_debug_log( 'KTPWP Migration: Column payment_timing already exists in ' . $client_table );
 			}
 			return true;
 		}
@@ -54,7 +54,7 @@ class KTPWP_Migration_20250312_Add_Payment_Timing_To_Client {
 
 		if ( $result === false ) {
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( 'KTPWP Migration: Failed to add payment_timing to ' . $client_table . '. Error: ' . $wpdb->last_error );
+				ktpwp_debug_log( 'KTPWP Migration: Failed to add payment_timing to ' . $client_table . '. Error: ' . $wpdb->last_error );
 			}
 			return false;
 		}
@@ -62,7 +62,7 @@ class KTPWP_Migration_20250312_Add_Payment_Timing_To_Client {
 		$wpdb->query( "UPDATE `{$client_table}` SET `payment_timing` = 'postpay' WHERE `payment_timing` IS NULL OR `payment_timing` = ''" );
 
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			error_log( 'KTPWP Migration: Successfully added payment_timing to ' . $client_table );
+			ktpwp_debug_log( 'KTPWP Migration: Successfully added payment_timing to ' . $client_table );
 		}
 		return true;
 	}

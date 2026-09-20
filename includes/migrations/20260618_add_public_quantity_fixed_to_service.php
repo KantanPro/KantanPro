@@ -24,7 +24,7 @@ if ( ! in_array( 'public_quantity_fixed', $existing_columns, true ) ) {
 	$result = $wpdb->query( $sql );
 
 	if ( $result !== false && defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-		error_log( "KTPWP Migration: Added public_quantity_fixed column to {$service_table}" );
+		ktpwp_debug_log( "KTPWP Migration: Added public_quantity_fixed column to {$service_table}" );
 	}
 }
 

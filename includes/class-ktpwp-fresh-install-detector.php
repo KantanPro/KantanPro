@@ -63,7 +63,7 @@ class KTPWP_Fresh_Install_Detector {
         
         if (defined('WP_DEBUG') && WP_DEBUG) {
             $type = $is_fresh ? '新規インストール' : '既存環境';
-            error_log("KTPWP Fresh Install Detector: {$type}を検出");
+            ktpwp_debug_log("KTPWP Fresh Install Detector: {$type}を検出");
         }
 
         return $is_fresh;
@@ -147,7 +147,7 @@ class KTPWP_Fresh_Install_Detector {
         }
 
         if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log("KTPWP Fresh Install: 新規インストール用基本構造初期化を開始");
+            ktpwp_debug_log("KTPWP Fresh Install: 新規インストール用基本構造初期化を開始");
         }
 
         // KTPWP_Settings の基本テーブル作成処理を呼び出す
@@ -159,7 +159,7 @@ class KTPWP_Fresh_Install_Detector {
             update_option('ktpwp_fresh_install_timestamp', current_time('mysql'));
             
             if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log("KTPWP Fresh Install: 基本構造初期化が完了");
+                ktpwp_debug_log("KTPWP Fresh Install: 基本構造初期化が完了");
             }
             return true;
         }

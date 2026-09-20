@@ -33,7 +33,7 @@ if ( $wpdb->get_var( "SHOW TABLES LIKE '$invoice_table'" ) == $invoice_table ) {
             $result = $wpdb->query( $sql );
 
             if ( $result !== false && defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( "KTPWP Migration: Added column '$column_name' to $invoice_table" );
+                ktpwp_debug_log( "KTPWP Migration: Added column '$column_name' to $invoice_table" );
             }
         }
     }
@@ -61,7 +61,7 @@ if ( $wpdb->get_var( "SHOW TABLES LIKE '$cost_table'" ) == $cost_table ) {
             $result = $wpdb->query( $sql );
 
             if ( $result !== false && defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( "KTPWP Migration: Added column '$column_name' to $cost_table" );
+                ktpwp_debug_log( "KTPWP Migration: Added column '$column_name' to $cost_table" );
             }
         }
     }
@@ -88,7 +88,7 @@ if ( $wpdb->get_var( "SHOW TABLES LIKE '$chat_table'" ) == $chat_table ) {
             $result = $wpdb->query( $sql );
 
             if ( $result !== false && defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( "KTPWP Migration: Added column '$column_name' to $chat_table" );
+                ktpwp_debug_log( "KTPWP Migration: Added column '$column_name' to $chat_table" );
             }
         }
     }
@@ -115,6 +115,6 @@ if ( $wpdb->get_var( "SHOW TABLES LIKE '$order_table'" ) == $order_table ) {
     }
 
     if ( count( $empty_order_numbers ) > 0 && defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-        error_log( 'KTPWP Migration: Fixed ' . count( $empty_order_numbers ) . ' empty order_number records' );
+        ktpwp_debug_log( 'KTPWP Migration: Fixed ' . count( $empty_order_numbers ) . ' empty order_number records' );
     }
 }

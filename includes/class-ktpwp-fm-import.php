@@ -152,7 +152,7 @@ final class KTPWP_FM_Import {
 					self::render_mapping_and_import( $session_clean );
 				} catch ( \Throwable $e ) {
 					if ( defined( 'WP_DEBUG' ) && WP_DEBUG && defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG ) {
-						error_log( 'KTPWP_FM_Import: ' . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine() );
+						ktpwp_debug_log( 'KTPWP_FM_Import: ' . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine() );
 					}
 					echo '<div class="notice notice-error"><p>' . esc_html__( '取り込み画面の表示中にエラーが発生しました。「最初からやり直す」でセッションを消すか、ファイルを確認してください。', 'kantanpro' ) . '</p></div>';
 					self::render_upload_form();
@@ -1658,7 +1658,7 @@ final class KTPWP_FM_Import {
 			}
 		} catch ( \Throwable $e ) {
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG && defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG ) {
-				error_log( 'KTPWP_FM_Import finalize order: ' . $e->getMessage() );
+				ktpwp_debug_log( 'KTPWP_FM_Import finalize order: ' . $e->getMessage() );
 			}
 		}
 	}

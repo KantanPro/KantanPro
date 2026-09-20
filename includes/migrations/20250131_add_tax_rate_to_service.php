@@ -24,7 +24,7 @@ if ( $wpdb->get_var( "SHOW TABLES LIKE '$service_table'" ) == $service_table ) {
 
         if ( $result !== false ) {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( "KTPWP Migration: Added tax_rate column to $service_table" );
+                ktpwp_debug_log( "KTPWP Migration: Added tax_rate column to $service_table" );
             }
             
             // 既存のレコードにデフォルト税率を設定（オプション）
@@ -32,11 +32,11 @@ if ( $wpdb->get_var( "SHOW TABLES LIKE '$service_table'" ) == $service_table ) {
             $update_result = $wpdb->query( $update_sql );
             
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( "KTPWP Migration: Updated existing records with default tax rate in $service_table" );
+                ktpwp_debug_log( "KTPWP Migration: Updated existing records with default tax rate in $service_table" );
             }
         } else {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( "KTPWP Migration: Failed to add tax_rate column to $service_table" );
+                ktpwp_debug_log( "KTPWP Migration: Failed to add tax_rate column to $service_table" );
             }
         }
     } else {
@@ -47,7 +47,7 @@ if ( $wpdb->get_var( "SHOW TABLES LIKE '$service_table'" ) == $service_table ) {
             $result = $wpdb->query( $sql );
 
             if ( $result !== false && defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( "KTPWP Migration: Modified tax_rate column to allow NULL in $service_table" );
+                ktpwp_debug_log( "KTPWP Migration: Modified tax_rate column to allow NULL in $service_table" );
             }
         }
     }
@@ -57,5 +57,5 @@ if ( $wpdb->get_var( "SHOW TABLES LIKE '$service_table'" ) == $service_table ) {
 update_option( 'ktp_service_tax_rate_migration_completed', '2025-01-31' );
 
 if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-    error_log( "KTPWP Migration: Service tax rate migration completed successfully" );
+    ktpwp_debug_log( "KTPWP Migration: Service tax rate migration completed successfully" );
 } 

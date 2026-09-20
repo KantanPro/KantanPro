@@ -35,16 +35,16 @@ class KTPWP_Migration_20250131_Add_Qualified_Invoice_Number_To_Cost_Items {
                 $result = $wpdb->query( $sql );
                 
                 if ( $result === false ) {
-                    error_log( 'KTPWP Migration: Failed to add qualified_invoice_number column to cost items table. Error: ' . $wpdb->last_error );
+                    ktpwp_debug_log( 'KTPWP Migration: Failed to add qualified_invoice_number column to cost items table. Error: ' . $wpdb->last_error );
                     return false;
                 }
                 
                 if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                    error_log( 'KTPWP Migration: Successfully added qualified_invoice_number column to cost items table' );
+                    ktpwp_debug_log( 'KTPWP Migration: Successfully added qualified_invoice_number column to cost items table' );
                 }
             } else {
                 if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                    error_log( 'KTPWP Migration: qualified_invoice_number column already exists in cost items table' );
+                    ktpwp_debug_log( 'KTPWP Migration: qualified_invoice_number column already exists in cost items table' );
                 }
             }
 
@@ -53,13 +53,13 @@ class KTPWP_Migration_20250131_Add_Qualified_Invoice_Number_To_Cost_Items {
             update_option( 'ktpwp_qualified_invoice_number_cost_items_timestamp', current_time( 'mysql' ) );
 
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP Migration: Successfully completed qualified invoice number to cost items migration' );
+                ktpwp_debug_log( 'KTPWP Migration: Successfully completed qualified invoice number to cost items migration' );
             }
 
             return true;
 
         } catch ( Exception $e ) {
-            error_log( 'KTPWP Migration Error: ' . $e->getMessage() );
+            ktpwp_debug_log( 'KTPWP Migration Error: ' . $e->getMessage() );
             return false;
         }
     }
@@ -87,12 +87,12 @@ class KTPWP_Migration_20250131_Add_Qualified_Invoice_Number_To_Cost_Items {
                 $result = $wpdb->query( $sql );
                 
                 if ( $result === false ) {
-                    error_log( 'KTPWP Migration: Failed to drop qualified_invoice_number column from cost items table. Error: ' . $wpdb->last_error );
+                    ktpwp_debug_log( 'KTPWP Migration: Failed to drop qualified_invoice_number column from cost items table. Error: ' . $wpdb->last_error );
                     return false;
                 }
                 
                 if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                    error_log( 'KTPWP Migration: Successfully dropped qualified_invoice_number column from cost items table' );
+                    ktpwp_debug_log( 'KTPWP Migration: Successfully dropped qualified_invoice_number column from cost items table' );
                 }
             }
 
@@ -103,7 +103,7 @@ class KTPWP_Migration_20250131_Add_Qualified_Invoice_Number_To_Cost_Items {
             return true;
 
         } catch ( Exception $e ) {
-            error_log( 'KTPWP Migration Error: ' . $e->getMessage() );
+            ktpwp_debug_log( 'KTPWP Migration Error: ' . $e->getMessage() );
             return false;
         }
     }

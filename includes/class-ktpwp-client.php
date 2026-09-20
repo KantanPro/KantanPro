@@ -379,7 +379,7 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 				// View_Table method started
-				// error_log('KTPWP Client: View_Table method started');
+				// ktpwp_debug_log('KTPWP Client: View_Table method started');
 			}
 
 			// $search_results_listの使用前に初期化
@@ -921,7 +921,7 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 
 				// デバッグ情報を追加
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					error_log( "KTPWP Debug - Order History: client_id={$current_customer_id}, order_total_rows={$order_total_rows}, order_total_query={$order_total_query}" );
+					ktpwp_debug_log( "KTPWP Debug - Order History: client_id={$current_customer_id}, order_total_rows={$order_total_rows}, order_total_query={$order_total_query}" );
 				}
 
 				// 注文履歴のページを取得（order_pageパラメータを使用）
@@ -941,7 +941,7 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 
 				// デバッグ情報を追加
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					error_log( 'KTPWP Debug - Order History: order_rows_count=' . count( $order_rows ) . ", order_query={$order_query}" );
+					ktpwp_debug_log( 'KTPWP Debug - Order History: order_rows_count=' . count( $order_rows ) . ", order_query={$order_query}" );
 				}
 
 				// 注文履歴リスト表示（注文履歴ボタンと同じ表示形式）
@@ -1394,7 +1394,7 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 
 				// デバッグ情報を追加
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					error_log( "KTPWP Debug - Order Button Control: client_id={$current_client_id}, client_status={$current_client_status}, query={$current_client_data_query}" );
+					ktpwp_debug_log( "KTPWP Debug - Order Button Control: client_id={$current_client_id}, client_status={$current_client_status}, query={$current_client_data_query}" );
 				}
 			}
 
@@ -1774,9 +1774,9 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 				// 表題にボタングループを含める
 				// デバッグ用：data_idの値を確認
 				if (defined('WP_DEBUG') && WP_DEBUG) {
-					error_log('KTPWP Client Tab: data_id = ' . var_export($data_id, true));
-					error_log('KTPWP Client Tab: data_id type = ' . gettype($data_id));
-					error_log('KTPWP Client Tab: id_display condition = ' . (!empty($data_id) && $data_id !== '0' && $data_id !== 0 ? 'true' : 'false'));
+					ktpwp_debug_log('KTPWP Client Tab: data_id = ' . var_export($data_id, true));
+					ktpwp_debug_log('KTPWP Client Tab: data_id type = ' . gettype($data_id));
+					ktpwp_debug_log('KTPWP Client Tab: id_display condition = ' . (!empty($data_id) && $data_id !== '0' && $data_id !== 0 ? 'true' : 'false'));
 				}
 				$id_display = ( ! empty( $post_row ) && ! empty( $data_id ) && $data_id !== '0' && $data_id !== 0 ) ? '（ ID: ' . esc_html( $data_id ) . ' ）' : '';
 				$data_title = '<div class="data_detail_box"><div class="data_detail_title" style="display: flex; align-items: center; justify-content: space-between;">
@@ -1860,9 +1860,9 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 							}
 
 							if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-								error_log( "KTPWP Client Tab: 顧客ID {$data_id} の選択された部署ID: " . ( $selected_department_id ?: 'NULL' ) );
-								error_log( 'KTPWP Client Tab: 部署数: ' . count( $departments ) );
-								error_log( 'KTPWP Client Tab: ページリロード時の状態確認完了' );
+								ktpwp_debug_log( "KTPWP Client Tab: 顧客ID {$data_id} の選択された部署ID: " . ( $selected_department_id ?: 'NULL' ) );
+								ktpwp_debug_log( 'KTPWP Client Tab: 部署数: ' . count( $departments ) );
+								ktpwp_debug_log( 'KTPWP Client Tab: ページリロード時の状態確認完了' );
 							}
 
 							foreach ( $departments as $dept ) {
@@ -1872,7 +1872,7 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 								$checked = $is_checked ? ' checked' : '';
 
 								if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-									error_log( "KTPWP Client Tab: 部署ID {$dept->id} のチェック状態: " . ( $is_checked ? 'true' : 'false' ) );
+									ktpwp_debug_log( "KTPWP Client Tab: 部署ID {$dept->id} のチェック状態: " . ( $is_checked ? 'true' : 'false' ) );
 								}
 
 								$data_forms .= '<tr>';

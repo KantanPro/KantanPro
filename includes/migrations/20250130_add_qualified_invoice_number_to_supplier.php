@@ -39,7 +39,7 @@ class KTPWP_Migration_20250130_Add_Qualified_Invoice_Number_To_Supplier {
         ) === $table_name;
         
         if ( ! $table_exists ) {
-            error_log( 'KTPWP Migration: Table ' . $table_name . ' does not exist. Skipping qualified_invoice_number column addition.' );
+            ktpwp_debug_log( 'KTPWP Migration: Table ' . $table_name . ' does not exist. Skipping qualified_invoice_number column addition.' );
             return false;
         }
         
@@ -52,7 +52,7 @@ class KTPWP_Migration_20250130_Add_Qualified_Invoice_Number_To_Supplier {
         );
         
         if ( $column_exists ) {
-            error_log( 'KTPWP Migration: Column qualified_invoice_number already exists in ' . $table_name . '. Skipping.' );
+            ktpwp_debug_log( 'KTPWP Migration: Column qualified_invoice_number already exists in ' . $table_name . '. Skipping.' );
             return true;
         }
         
@@ -62,12 +62,12 @@ class KTPWP_Migration_20250130_Add_Qualified_Invoice_Number_To_Supplier {
         $result = $wpdb->query( $sql );
         
         if ( $result === false ) {
-            error_log( 'KTPWP Migration: Failed to add qualified_invoice_number column to ' . $table_name . '. Error: ' . $wpdb->last_error );
+            ktpwp_debug_log( 'KTPWP Migration: Failed to add qualified_invoice_number column to ' . $table_name . '. Error: ' . $wpdb->last_error );
             return false;
         }
         
         // Log success
-        error_log( 'KTPWP Migration: Successfully added qualified_invoice_number column to ' . $table_name );
+        ktpwp_debug_log( 'KTPWP Migration: Successfully added qualified_invoice_number column to ' . $table_name );
         
         return true;
     }
@@ -91,7 +91,7 @@ class KTPWP_Migration_20250130_Add_Qualified_Invoice_Number_To_Supplier {
         ) === $table_name;
         
         if ( ! $table_exists ) {
-            error_log( 'KTPWP Migration: Table ' . $table_name . ' does not exist. Skipping qualified_invoice_number column removal.' );
+            ktpwp_debug_log( 'KTPWP Migration: Table ' . $table_name . ' does not exist. Skipping qualified_invoice_number column removal.' );
             return false;
         }
         
@@ -104,7 +104,7 @@ class KTPWP_Migration_20250130_Add_Qualified_Invoice_Number_To_Supplier {
         );
         
         if ( ! $column_exists ) {
-            error_log( 'KTPWP Migration: Column qualified_invoice_number does not exist in ' . $table_name . '. Skipping.' );
+            ktpwp_debug_log( 'KTPWP Migration: Column qualified_invoice_number does not exist in ' . $table_name . '. Skipping.' );
             return true;
         }
         
@@ -114,12 +114,12 @@ class KTPWP_Migration_20250130_Add_Qualified_Invoice_Number_To_Supplier {
         $result = $wpdb->query( $sql );
         
         if ( $result === false ) {
-            error_log( 'KTPWP Migration: Failed to remove qualified_invoice_number column from ' . $table_name . '. Error: ' . $wpdb->last_error );
+            ktpwp_debug_log( 'KTPWP Migration: Failed to remove qualified_invoice_number column from ' . $table_name . '. Error: ' . $wpdb->last_error );
             return false;
         }
         
         // Log success
-        error_log( 'KTPWP Migration: Successfully removed qualified_invoice_number column from ' . $table_name );
+        ktpwp_debug_log( 'KTPWP Migration: Successfully removed qualified_invoice_number column from ' . $table_name );
         
         return true;
     }

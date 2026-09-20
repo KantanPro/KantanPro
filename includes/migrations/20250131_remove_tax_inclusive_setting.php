@@ -22,14 +22,14 @@ class KTPWP_Migration_20250131_Remove_Tax_Inclusive_Setting {
      * @return bool True on success, false on failure
      */
     public static function up() {
-        error_log( 'KTPWP Migration: Starting removal of tax_inclusive setting' );
+        ktpwp_debug_log( 'KTPWP Migration: Starting removal of tax_inclusive setting' );
         
         $success = self::remove_tax_inclusive_setting();
         
         if ( $success ) {
-            error_log( 'KTPWP Migration: Successfully removed tax_inclusive setting' );
+            ktpwp_debug_log( 'KTPWP Migration: Successfully removed tax_inclusive setting' );
         } else {
-            error_log( 'KTPWP Migration: Failed to remove tax_inclusive setting' );
+            ktpwp_debug_log( 'KTPWP Migration: Failed to remove tax_inclusive setting' );
         }
         
         return $success;
@@ -49,14 +49,14 @@ class KTPWP_Migration_20250131_Remove_Tax_Inclusive_Setting {
             
             $result = update_option( 'ktp_general_settings', $general_settings );
             if ( $result ) {
-                error_log( 'KTPWP Migration: Successfully removed tax_inclusive setting from general settings' );
+                ktpwp_debug_log( 'KTPWP Migration: Successfully removed tax_inclusive setting from general settings' );
                 return true;
             } else {
-                error_log( 'KTPWP Migration: Failed to remove tax_inclusive setting from general settings' );
+                ktpwp_debug_log( 'KTPWP Migration: Failed to remove tax_inclusive setting from general settings' );
                 return false;
             }
         } else {
-            error_log( 'KTPWP Migration: tax_inclusive setting does not exist. Nothing to remove.' );
+            ktpwp_debug_log( 'KTPWP Migration: tax_inclusive setting does not exist. Nothing to remove.' );
             return true;
         }
     }
@@ -67,7 +67,7 @@ class KTPWP_Migration_20250131_Remove_Tax_Inclusive_Setting {
      * @return bool True on success, false on failure
      */
     public static function down() {
-        error_log( 'KTPWP Migration: Rolling back removal of tax_inclusive setting' );
+        ktpwp_debug_log( 'KTPWP Migration: Rolling back removal of tax_inclusive setting' );
         
         $general_settings = get_option( 'ktp_general_settings', array() );
         
@@ -77,14 +77,14 @@ class KTPWP_Migration_20250131_Remove_Tax_Inclusive_Setting {
             
             $result = update_option( 'ktp_general_settings', $general_settings );
             if ( $result ) {
-                error_log( 'KTPWP Migration: Successfully restored tax_inclusive setting' );
+                ktpwp_debug_log( 'KTPWP Migration: Successfully restored tax_inclusive setting' );
                 return true;
             } else {
-                error_log( 'KTPWP Migration: Failed to restore tax_inclusive setting' );
+                ktpwp_debug_log( 'KTPWP Migration: Failed to restore tax_inclusive setting' );
                 return false;
             }
         } else {
-            error_log( 'KTPWP Migration: tax_inclusive setting already exists. Nothing to restore.' );
+            ktpwp_debug_log( 'KTPWP Migration: tax_inclusive setting already exists. Nothing to restore.' );
             return true;
         }
     }

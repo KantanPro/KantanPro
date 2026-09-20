@@ -3,7 +3,7 @@
  * Plugin Name: KantanPro
  * Plugin URI: https://www.kantanpro.com/
  * Description: スモールビジネスのための販売支援ツール。ショートコード[ktpwp_all_tab]を固定ページに設置してください。
- * Version: 1.3.44
+ * Version: 1.3.45
  * Author: KantanPro
  * Author URI: https://www.kantanpro.com/kantanpro-page
  * License: GPL v2 or later
@@ -30,6 +30,30 @@ if ( function_exists( 'ktpwp_autoload_classes' ) ) {
 
 if ( ! defined( 'KTPWP_EDITION' ) ) {
     define( 'KTPWP_EDITION', 'free' );
+}
+
+/**
+ * 開発用ログの唯一の出口
+ *
+ * 以前はプラグイン全体で ktpwp_debug_log() を 900 箇所以上直接呼んでおり、
+ * WP_DEBUG のガードが付いていないものも 244 箇所あった。
+ * 本番環境でログを書かないようにするため、また出口を 1 箇所に絞るため、
+ * ログはすべてこの関数を通す。新しいログもここを使うこと。
+ *
+ * @param mixed $message ログに出す内容。スカラー以外は JSON 化する。
+ * @return void
+ */
+function ktpwp_debug_log( $message ) {
+    if ( ! defined( 'WP_DEBUG' ) || ! WP_DEBUG ) {
+        return;
+    }
+
+    if ( ! is_scalar( $message ) ) {
+        $message = function_exists( 'wp_json_encode' ) ? wp_json_encode( $message ) : print_r( $message, true );
+    }
+
+    // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- プラグイン全体で唯一のログ出口。WP_DEBUG 時のみ到達する。
+    error_log( (string) $message );
 }
 
 /**
@@ -170,7 +194,7 @@ add_filter(
 		}
 
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG && $domain !== '' ) {
-			error_log( sprintf( '%s: 他プラグインの翻訳早期読み込み Notice を抑制しました (domain: %s)', 'KantanPro', $domain ) );
+			ktpwp_debug_log( sprintf( '%s: 他プラグインの翻訳早期読み込み Notice を抑制しました (domain: %s)', 'KantanPro', $domain ) );
 		}
 
 		return false;
@@ -535,7 +559,7 @@ if ( ! function_exists( 'ktpwp_upgrade' ) ) {
         }
 
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP: アップグレード処理開始 - ' . $old_ver . ' → ' . $new_ver );
+            ktpwp_debug_log( 'KTPWP: アップグレード処理開始 - ' . $old_ver . ' → ' . $new_ver );
         }
 
         do_action( 'ktpwp_upgrade', $new_ver, $old_ver );
@@ -557,11 +581,11 @@ if ( ! function_exists( 'ktpwp_upgrade' ) ) {
             }
 
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP: アップグレード処理正常完了' );
+                ktpwp_debug_log( 'KTPWP: アップグレード処理正常完了' );
             }
         } catch ( Exception $e ) {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP: アップグレード処理でエラー発生: ' . $e->getMessage() );
+                ktpwp_debug_log( 'KTPWP: アップグレード処理でエラー発生: ' . $e->getMessage() );
             }
         }
 
@@ -671,7 +695,7 @@ if ( ! function_exists( 'ktpwp_autoload_classes' ) ) {
             if ( file_exists( $full_path ) ) {
                 require_once $full_path;
                 if ( defined( 'WP_DEBUG' ) && WP_DEBUG && $class_name === 'KTPWP_Department_Manager' ) {
-                    error_log( "KTPWP: Loaded {$class_name} from {$file_path}" );
+                    ktpwp_debug_log( "KTPWP: Loaded {$class_name} from {$file_path}" );
                 }
             }
         }
@@ -820,11 +844,11 @@ function ktpwp_init_cache() {
         global $ktpwp_cache;
         $ktpwp_cache = KTPWP_Cache::get_instance();
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Cache: キャッシュマネージャーが初期化されました' );
+            ktpwp_debug_log( 'KTPWP Cache: キャッシュマネージャーが初期化されました' );
         }
     } else {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Cache: キャッシュマネージャークラスが見つかりません' );
+            ktpwp_debug_log( 'KTPWP Cache: キャッシュマネージャークラスが見つかりません' );
         }
     }
 }
@@ -837,11 +861,11 @@ function ktpwp_init_hook_manager() {
         global $ktpwp_hook_manager;
         $ktpwp_hook_manager = KTPWP_Hook_Manager::get_instance();
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Hook Manager: フックマネージャーが初期化されました' );
+            ktpwp_debug_log( 'KTPWP Hook Manager: フックマネージャーが初期化されました' );
         }
     } else {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Hook Manager: フックマネージャークラスが見つかりません' );
+            ktpwp_debug_log( 'KTPWP Hook Manager: フックマネージャークラスが見つかりません' );
         }
     }
 }
@@ -854,11 +878,11 @@ function ktpwp_init_image_optimizer() {
         global $ktpwp_image_optimizer;
         $ktpwp_image_optimizer = KTPWP_Image_Optimizer::get_instance();
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Image Optimizer: 画像最適化機能が初期化されました' );
+            ktpwp_debug_log( 'KTPWP Image Optimizer: 画像最適化機能が初期化されました' );
         }
     } else {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Image Optimizer: 画像最適化クラスが見つかりません' );
+            ktpwp_debug_log( 'KTPWP Image Optimizer: 画像最適化クラスが見つかりません' );
         }
     }
 }
@@ -911,12 +935,12 @@ function ktpwp_handle_clear_cache_ajax() {
         ktpwp_clear_all_cache();
         
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Cache: 管理画面からキャッシュをクリアしました' );
+            ktpwp_debug_log( 'KTPWP Cache: 管理画面からキャッシュをクリアしました' );
         }
         
         wp_send_json_success( __( 'キャッシュが正常にクリアされました', 'kantanpro' ) );
     } catch ( Exception $e ) {
-        error_log( 'KTPWP Cache Clear Error: ' . $e->getMessage() );
+        ktpwp_debug_log( 'KTPWP Cache Clear Error: ' . $e->getMessage() );
         wp_send_json_error( __( 'キャッシュのクリアに失敗しました。', 'kantanpro' ) );
     }
 }
@@ -975,7 +999,7 @@ function ktpwp_handle_convert_all_images_ajax() {
         );
         
     } catch ( Exception $e ) {
-        error_log( 'KTPWP Bulk WebP Convert Error: ' . $e->getMessage() );
+        ktpwp_debug_log( 'KTPWP Bulk WebP Convert Error: ' . $e->getMessage() );
         wp_send_json_error( __( '一括変換に失敗しました。', 'kantanpro' ) );
     }
 }
@@ -1075,7 +1099,7 @@ function ktpwp_clear_stale_migration_in_progress() {
     if ( $should_clear ) {
         delete_option( 'ktpwp_migration_in_progress' );
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP: スタックしたマイグレーション進行中フラグをクリアしました' );
+            ktpwp_debug_log( 'KTPWP: スタックしたマイグレーション進行中フラグをクリアしました' );
         }
         return true;
     }
@@ -1097,7 +1121,7 @@ function ktpwp_run_auto_migrations() {
     // マイグレーション進行中チェック（重複実行防止）
     if ( get_option( 'ktpwp_migration_in_progress', false ) ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Auto Migration: マイグレーションが既に進行中です' );
+            ktpwp_debug_log( 'KTPWP Auto Migration: マイグレーションが既に進行中です' );
         }
         ob_end_clean();
         return;
@@ -1111,7 +1135,7 @@ function ktpwp_run_auto_migrations() {
     if ( version_compare( $current_db_version, $plugin_version, '<' ) ) {
 
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Auto Migration: Starting migration from ' . $current_db_version . ' to ' . $plugin_version );
+            ktpwp_debug_log( 'KTPWP Auto Migration: Starting migration from ' . $current_db_version . ' to ' . $plugin_version );
         }
 
         try {
@@ -1133,7 +1157,7 @@ function ktpwp_run_auto_migrations() {
             if ( $migration_safety_ok ) {
                 if ( $is_new_installation ) {
                     if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                        error_log( 'KTPWP Auto Migration: 新規インストールを検出 - 基本構造のみで初期化' );
+                        ktpwp_debug_log( 'KTPWP Auto Migration: 新規インストールを検出 - 基本構造のみで初期化' );
                     }
 
                     // 新規インストール時は基本構造のみで初期化
@@ -1166,18 +1190,18 @@ function ktpwp_run_auto_migrations() {
                 // 強制的に再設定
                 update_option( 'ktpwp_db_version', $plugin_version );
                 if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                    error_log( 'KTPWP Auto Migration: バージョン同期を強制実行しました' );
+                    ktpwp_debug_log( 'KTPWP Auto Migration: バージョン同期を強制実行しました' );
                 }
             }
             ktpwp_flush_db_version_cache();
 
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP Auto Migration: Migration completed successfully' );
+                ktpwp_debug_log( 'KTPWP Auto Migration: Migration completed successfully' );
             }
 
         } catch ( Exception $e ) {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP Auto Migration Error: ' . $e->getMessage() );
+                ktpwp_debug_log( 'KTPWP Auto Migration Error: ' . $e->getMessage() );
             }
             
             // 配布環境での誤ったエラー設定を防ぐためのチェック
@@ -1196,7 +1220,7 @@ function ktpwp_run_auto_migrations() {
                     $should_record_error = false;
                     
                     if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                        error_log( 'KTPWP: 配布環境での誤ったマイグレーションエラー記録を防止しました' );
+                        ktpwp_debug_log( 'KTPWP: 配布環境での誤ったマイグレーションエラー記録を防止しました' );
                     }
                 }
             }
@@ -1218,7 +1242,7 @@ function ktpwp_run_auto_migrations() {
     
     // デバッグ時のみ、予期しない出力があればログに記録
     if ( defined( 'WP_DEBUG' ) && WP_DEBUG && ! empty( $output ) ) {
-        error_log( 'KTPWP Auto Migration: 予期しない出力を検出: ' . substr( $output, 0, 1000 ) );
+        ktpwp_debug_log( 'KTPWP Auto Migration: 予期しない出力を検出: ' . substr( $output, 0, 1000 ) );
     }
 }
 
@@ -1261,12 +1285,12 @@ function ktpwp_initialize_new_installation() {
         update_option( 'ktpwp_new_installation_timestamp', current_time( 'mysql' ) );
         
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP: 新規インストールの基本構造初期化が完了' );
+            ktpwp_debug_log( 'KTPWP: 新規インストールの基本構造初期化が完了' );
         }
         
     } catch ( Exception $e ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP New Installation Error: ' . $e->getMessage() );
+            ktpwp_debug_log( 'KTPWP New Installation Error: ' . $e->getMessage() );
         }
         throw $e;
     }
@@ -1314,12 +1338,12 @@ function ktpwp_run_staged_migrations( $from_version, $to_version ) {
         }
         
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP: 段階的マイグレーションが正常に完了' );
+            ktpwp_debug_log( 'KTPWP: 段階的マイグレーションが正常に完了' );
         }
         
     } catch ( Exception $e ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Staged Migration Error: ' . $e->getMessage() );
+            ktpwp_debug_log( 'KTPWP Staged Migration Error: ' . $e->getMessage() );
         }
         throw $e;
     }
@@ -1336,7 +1360,7 @@ function ktpwp_distribution_auto_migration() {
     
     if ( $is_new_installation || $needs_migration ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Distribution: Auto migration triggered - New install: ' . ($is_new_installation ? 'true' : 'false') . ', Needs migration: ' . ($needs_migration ? 'true' : 'false') );
+            ktpwp_debug_log( 'KTPWP Distribution: Auto migration triggered - New install: ' . ($is_new_installation ? 'true' : 'false') . ', Needs migration: ' . ($needs_migration ? 'true' : 'false') );
         }
         
         // 自動マイグレーションを実行
@@ -1373,7 +1397,7 @@ function ktpwp_record_migration_advisory( $message ) {
     update_option( 'ktpwp_environment_advisories', $advisories, false );
 
     if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-        error_log( 'KTPWP Migration Advisory: ' . $message );
+        ktpwp_debug_log( 'KTPWP Migration Advisory: ' . $message );
     }
 }
 
@@ -1397,7 +1421,7 @@ function ktpwp_verify_migration_safety() {
     // データベース接続チェック（致命的）
     if ( ! $wpdb->check_connection() ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Migration Safety: データベース接続エラー' );
+            ktpwp_debug_log( 'KTPWP Migration Safety: データベース接続エラー' );
         }
         return false;
     }
@@ -1412,7 +1436,7 @@ function ktpwp_verify_migration_safety() {
     delete_option( $test_option );
     if ( ! $test_written ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Migration Safety: オプションテーブル書き込み権限エラー' );
+            ktpwp_debug_log( 'KTPWP Migration Safety: オプションテーブル書き込み権限エラー' );
         }
         return false;
     }
@@ -1423,7 +1447,7 @@ function ktpwp_verify_migration_safety() {
         $create_result = $wpdb->query( "CREATE TABLE IF NOT EXISTS `{$test_table}` (id INT PRIMARY KEY)" );
         if ( $create_result === false ) {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP Migration Safety: テーブル作成権限エラー' );
+                ktpwp_debug_log( 'KTPWP Migration Safety: テーブル作成権限エラー' );
             }
             return false;
         }
@@ -1431,13 +1455,13 @@ function ktpwp_verify_migration_safety() {
         $drop_result = $wpdb->query( "DROP TABLE IF EXISTS `{$test_table}`" );
         if ( $drop_result === false ) {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP Migration Safety: テーブル削除権限エラー' );
+                ktpwp_debug_log( 'KTPWP Migration Safety: テーブル削除権限エラー' );
             }
             return false;
         }
     } catch ( Exception $e ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Migration Safety: データベース権限チェックエラー: ' . $e->getMessage() );
+            ktpwp_debug_log( 'KTPWP Migration Safety: データベース権限チェックエラー: ' . $e->getMessage() );
         }
         return false;
     }
@@ -1446,13 +1470,13 @@ function ktpwp_verify_migration_safety() {
     global $wp_version;
     if ( version_compare( $wp_version, '5.0', '<' ) ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Migration Safety: WordPressバージョンが古すぎます: ' . $wp_version );
+            ktpwp_debug_log( 'KTPWP Migration Safety: WordPressバージョンが古すぎます: ' . $wp_version );
         }
         return false;
     }
     if ( version_compare( PHP_VERSION, '7.4', '<' ) ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Migration Safety: PHPバージョンが古すぎます: ' . PHP_VERSION );
+            ktpwp_debug_log( 'KTPWP Migration Safety: PHPバージョンが古すぎます: ' . PHP_VERSION );
         }
         return false;
     }
@@ -1512,7 +1536,7 @@ function ktpwp_safe_table_setup() {
         ktp_table_setup();
     } catch ( Exception $e ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Safe Table Setup Error: ' . $e->getMessage() );
+            ktpwp_debug_log( 'KTPWP Safe Table Setup Error: ' . $e->getMessage() );
         }
         throw $e;
     }
@@ -1528,7 +1552,7 @@ function ktpwp_safe_create_department_table() {
         }
     } catch ( Exception $e ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Safe Department Table Creation Error: ' . $e->getMessage() );
+            ktpwp_debug_log( 'KTPWP Safe Department Table Creation Error: ' . $e->getMessage() );
         }
         // 部署テーブル作成エラーは致命的ではないため、ログのみ記録
     }
@@ -1544,7 +1568,7 @@ function ktpwp_safe_add_department_selection_column() {
         }
     } catch ( Exception $e ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Safe Department Selection Column Error: ' . $e->getMessage() );
+            ktpwp_debug_log( 'KTPWP Safe Department Selection Column Error: ' . $e->getMessage() );
         }
     }
 }
@@ -1559,7 +1583,7 @@ function ktpwp_safe_add_client_selected_department_column() {
         }
     } catch ( Exception $e ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Safe Client Department Column Error: ' . $e->getMessage() );
+            ktpwp_debug_log( 'KTPWP Safe Client Department Column Error: ' . $e->getMessage() );
         }
     }
 }
@@ -1574,7 +1598,7 @@ function ktpwp_safe_add_order_client_department_column() {
         }
     } catch ( Exception $e ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Safe Order Department Column Error: ' . $e->getMessage() );
+            ktpwp_debug_log( 'KTPWP Safe Order Department Column Error: ' . $e->getMessage() );
         }
     }
 }
@@ -1598,7 +1622,7 @@ function ktpwp_safe_run_migration_files( $from_version, $to_version ) {
 		}
     } catch ( Exception $e ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Safe Migration Files Error: ' . $e->getMessage() );
+            ktpwp_debug_log( 'KTPWP Safe Migration Files Error: ' . $e->getMessage() );
         }
         throw $e;
     }
@@ -1611,7 +1635,7 @@ function ktpwp_run_migration_files_directly( $from_version, $to_version ) {
     global $wpdb;
     
     if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-        error_log( 'KTPWP: マイグレーションファイルを直接実行します: ' . $from_version . ' -> ' . $to_version );
+        ktpwp_debug_log( 'KTPWP: マイグレーションファイルを直接実行します: ' . $from_version . ' -> ' . $to_version );
     }
     
     // マイグレーションディレクトリのパス
@@ -1620,7 +1644,7 @@ function ktpwp_run_migration_files_directly( $from_version, $to_version ) {
     // マイグレーションファイルが存在するかチェック
     if ( ! is_dir( $migration_dir ) ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP: マイグレーションディレクトリが存在しません: ' . $migration_dir );
+            ktpwp_debug_log( 'KTPWP: マイグレーションディレクトリが存在しません: ' . $migration_dir );
         }
 		return true; // 実行対象なしは成功扱い
     }
@@ -1630,7 +1654,7 @@ function ktpwp_run_migration_files_directly( $from_version, $to_version ) {
     
     if ( empty( $migration_files ) ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP: マイグレーションファイルが見つかりません' );
+            ktpwp_debug_log( 'KTPWP: マイグレーションファイルが見つかりません' );
         }
 		return true; // 実行対象なしは成功扱い
     }
@@ -1647,14 +1671,14 @@ function ktpwp_run_migration_files_directly( $from_version, $to_version ) {
         $migration_key = 'ktp_migration_' . md5( $filename );
         if ( get_option( $migration_key, false ) ) {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP: マイグレーションファイルは既に実行済みです: ' . $filename );
+                ktpwp_debug_log( 'KTPWP: マイグレーションファイルは既に実行済みです: ' . $filename );
             }
             continue;
         }
         
         try {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP: マイグレーションファイルを実行中: ' . $filename );
+                ktpwp_debug_log( 'KTPWP: マイグレーションファイルを実行中: ' . $filename );
             }
             
 			// マイグレーションファイルの echo を画面に出さない（更新直後の表示をすっきりさせる）
@@ -1701,20 +1725,20 @@ function ktpwp_run_migration_files_directly( $from_version, $to_version ) {
 				update_option( $migration_key, true );
 				update_option( $migration_key . '_timestamp', current_time( 'mysql' ) );
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					error_log( 'KTPWP: マイグレーションを正常に実行しました: ' . $filename );
+					ktpwp_debug_log( 'KTPWP: マイグレーションを正常に実行しました: ' . $filename );
 				}
 			} else {
 				// 実行できなかった場合はフラグを立てない（次回再試行）
 				$all_ok = false;
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					error_log( 'KTPWP: このマイグレーションファイルで実行可能な処理を見つけられませんでした（未完了扱い）: ' . $filename );
+					ktpwp_debug_log( 'KTPWP: このマイグレーションファイルで実行可能な処理を見つけられませんでした（未完了扱い）: ' . $filename );
 				}
 			}
 			ob_end_clean();
             
         } catch ( Exception $e ) {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP Migration File Error: ' . $filename . ' - ' . $e->getMessage() );
+                ktpwp_debug_log( 'KTPWP Migration File Error: ' . $filename . ' - ' . $e->getMessage() );
             }
 			// このファイルは未完了とみなし、全体成功フラグを下げる
 			$all_ok = false;
@@ -1737,7 +1761,7 @@ function ktpwp_safe_run_qualified_invoice_migration() {
         }
     } catch ( Exception $e ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Safe Qualified Invoice Migration Error: ' . $e->getMessage() );
+            ktpwp_debug_log( 'KTPWP Safe Qualified Invoice Migration Error: ' . $e->getMessage() );
         }
         // 適格請求書マイグレーションエラーは致命的ではないため、ログのみ記録
     }
@@ -1753,7 +1777,7 @@ function ktpwp_safe_fix_table_structures() {
         }
     } catch ( Exception $e ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Safe Table Structure Fix Error: ' . $e->getMessage() );
+            ktpwp_debug_log( 'KTPWP Safe Table Structure Fix Error: ' . $e->getMessage() );
         }
         // テーブル構造修正エラーは致命的ではないため、ログのみ記録
     }
@@ -1769,7 +1793,7 @@ function ktpwp_safe_repair_existing_data() {
         }
     } catch ( Exception $e ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Safe Data Repair Error: ' . $e->getMessage() );
+            ktpwp_debug_log( 'KTPWP Safe Data Repair Error: ' . $e->getMessage() );
         }
         // データ修復エラーは致命的ではないため、ログのみ記録
     }
@@ -1826,7 +1850,7 @@ function ktpwp_assert_core_tables_exist() {
 
     if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
         global $wpdb;
-        error_log( 'KTPWP: コアテーブルが不足しているため再作成を試みます: ' . implode( ', ', $missing ) . ' / last_error=' . $wpdb->last_error );
+        ktpwp_debug_log( 'KTPWP: コアテーブルが不足しているため再作成を試みます: ' . implode( ', ', $missing ) . ' / last_error=' . $wpdb->last_error );
     }
 
     // 1回だけ再実行（dbDeltaは冪等なので安全）
@@ -1838,7 +1862,7 @@ function ktpwp_assert_core_tables_exist() {
     if ( ! empty( $missing ) ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
             global $wpdb;
-            error_log( 'KTPWP: 再作成後もコアテーブルが不足しています: ' . implode( ', ', $missing ) . ' / last_error=' . $wpdb->last_error );
+            ktpwp_debug_log( 'KTPWP: 再作成後もコアテーブルが不足しています: ' . implode( ', ', $missing ) . ' / last_error=' . $wpdb->last_error );
         }
         return false;
     }
@@ -1856,7 +1880,7 @@ function ktpwp_verify_database_integrity() {
         $missing = ktpwp_missing_core_tables();
         if ( ! empty( $missing ) ) {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP Database Integrity: 必須テーブルが存在しません: ' . implode( ', ', $missing ) );
+                ktpwp_debug_log( 'KTPWP Database Integrity: 必須テーブルが存在しません: ' . implode( ', ', $missing ) );
             }
             return false;
         }
@@ -1864,7 +1888,7 @@ function ktpwp_verify_database_integrity() {
         return true;
     } catch ( Exception $e ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Database Integrity Check Error: ' . $e->getMessage() );
+            ktpwp_debug_log( 'KTPWP Database Integrity Check Error: ' . $e->getMessage() );
         }
         return false;
     }
@@ -1889,7 +1913,7 @@ function ktpwp_comprehensive_activation() {
     ob_start();
 
     if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-        error_log( 'KTPWP: 配布環境対応の包括的プラグイン有効化処理を開始' );
+        ktpwp_debug_log( 'KTPWP: 配布環境対応の包括的プラグイン有効化処理を開始' );
     }
 
     // コアテーブルが最終的に揃わなかった場合にだけ wp_die() で
@@ -1909,7 +1933,7 @@ function ktpwp_comprehensive_activation() {
             update_option( 'ktpwp_new_installation_detected', true );
 
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP: 新規インストールを検出' );
+                ktpwp_debug_log( 'KTPWP: 新規インストールを検出' );
             }
         }
 
@@ -1971,12 +1995,12 @@ function ktpwp_comprehensive_activation() {
         flush_rewrite_rules( false );
 
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP: 配布環境対応の包括的プラグイン有効化処理が正常に完了' );
+            ktpwp_debug_log( 'KTPWP: 配布環境対応の包括的プラグイン有効化処理が正常に完了' );
         }
 
     } catch ( Exception $e ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP: プラグイン有効化処理でエラーが発生: ' . $e->getMessage() );
+            ktpwp_debug_log( 'KTPWP: プラグイン有効化処理でエラーが発生: ' . $e->getMessage() );
         }
 
         // エラー情報を詳細に記録
@@ -2013,7 +2037,7 @@ function ktpwp_comprehensive_activation() {
     
     // デバッグ時のみ、予期しない出力があればログに記録
     if ( defined( 'WP_DEBUG' ) && WP_DEBUG && ! empty( $output ) ) {
-        error_log( 'KTPWP: プラグイン有効化処理中に予期しない出力を検出: ' . substr( $output, 0, 1000 ) );
+        ktpwp_debug_log( 'KTPWP: プラグイン有効化処理中に予期しない出力を検出: ' . substr( $output, 0, 1000 ) );
     }
 }
 
@@ -2031,7 +2055,7 @@ function ktpwp_check_reactivation_migration() {
     }
     
     if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-        error_log( 'KTPWP: プラグイン再有効化時のマイグレーションを実行' );
+        ktpwp_debug_log( 'KTPWP: プラグイン再有効化時のマイグレーションを実行' );
     }
     
     try {
@@ -2054,12 +2078,12 @@ function ktpwp_check_reactivation_migration() {
         set_transient( 'ktpwp_reactivation_success', 'プラグインの再有効化が正常に完了しました。', 60 );
         
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP: プラグイン再有効化時のマイグレーションが正常に完了' );
+            ktpwp_debug_log( 'KTPWP: プラグイン再有効化時のマイグレーションが正常に完了' );
         }
         
     } catch ( Exception $e ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP: プラグイン再有効化時のマイグレーションでエラー: ' . $e->getMessage() );
+            ktpwp_debug_log( 'KTPWP: プラグイン再有効化時のマイグレーションでエラー: ' . $e->getMessage() );
         }
         
         // エラー情報を詳細に記録
@@ -2181,7 +2205,7 @@ function ktpwp_detect_new_installation() {
         set_transient( 'ktpwp_new_installation_detected', true, DAY_IN_SECONDS );
         
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP: 新規インストールを検出しました' );
+            ktpwp_debug_log( 'KTPWP: 新規インストールを検出しました' );
         }
         
         // 新規インストール時の基本構造初期化
@@ -2189,18 +2213,18 @@ function ktpwp_detect_new_installation() {
             ktpwp_initialize_new_installation();
             
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP: 新規インストールの基本構造初期化が完了しました' );
+                ktpwp_debug_log( 'KTPWP: 新規インストールの基本構造初期化が完了しました' );
             }
         } catch ( Exception $e ) {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP: 新規インストール初期化エラー: ' . $e->getMessage() );
+                ktpwp_debug_log( 'KTPWP: 新規インストール初期化エラー: ' . $e->getMessage() );
             }
         }
     } else {
         // 既存環境の場合、マイグレーション必要性をチェック
         if ( ktpwp_needs_migration() ) {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP: 既存環境でマイグレーションが必要です' );
+                ktpwp_debug_log( 'KTPWP: 既存環境でマイグレーションが必要です' );
             }
             
             // 自動マイグレーションを実行
@@ -2208,7 +2232,7 @@ function ktpwp_detect_new_installation() {
                 ktpwp_run_auto_migrations();
             } catch ( Exception $e ) {
                 if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                    error_log( 'KTPWP: 既存環境マイグレーションエラー: ' . $e->getMessage() );
+                    ktpwp_debug_log( 'KTPWP: 既存環境マイグレーションエラー: ' . $e->getMessage() );
                 }
             }
         }
@@ -2275,13 +2299,13 @@ function ktpwp_run_qualified_invoice_migration() {
     
     if ( $migration_completed ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP: Qualified invoice profit calculation migration already completed' );
+            ktpwp_debug_log( 'KTPWP: Qualified invoice profit calculation migration already completed' );
         }
         return true;
     }
 
     if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-        error_log( 'KTPWP: Starting qualified invoice profit calculation migration' );
+        ktpwp_debug_log( 'KTPWP: Starting qualified invoice profit calculation migration' );
     }
 
     try {
@@ -2302,24 +2326,24 @@ function ktpwp_run_qualified_invoice_migration() {
                     update_option( 'ktpwp_qualified_invoice_profit_calculation_timestamp', current_time( 'mysql' ) );
                     
                     if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                        error_log( 'KTPWP: Successfully completed qualified invoice profit calculation migration' );
+                        ktpwp_debug_log( 'KTPWP: Successfully completed qualified invoice profit calculation migration' );
                     }
                     return true;
                 } else {
-                    error_log( 'KTPWP: Failed to execute qualified invoice profit calculation migration' );
+                    ktpwp_debug_log( 'KTPWP: Failed to execute qualified invoice profit calculation migration' );
                     return false;
                 }
             } else {
-                error_log( 'KTPWP: Qualified invoice profit calculation migration class not found' );
+                ktpwp_debug_log( 'KTPWP: Qualified invoice profit calculation migration class not found' );
                 return false;
             }
         } else {
-            error_log( 'KTPWP: Qualified invoice profit calculation migration file not found: ' . $migration_file );
+            ktpwp_debug_log( 'KTPWP: Qualified invoice profit calculation migration file not found: ' . $migration_file );
             return false;
         }
         
     } catch ( Exception $e ) {
-        error_log( 'KTPWP Qualified Invoice Migration Error: ' . $e->getMessage() );
+        ktpwp_debug_log( 'KTPWP Qualified Invoice Migration Error: ' . $e->getMessage() );
         return false;
     }
 }
@@ -2333,13 +2357,13 @@ function ktpwp_run_qualified_invoice_number_cost_items_migration() {
     
     if ( $migration_completed ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP: Qualified invoice number cost items migration already completed' );
+            ktpwp_debug_log( 'KTPWP: Qualified invoice number cost items migration already completed' );
         }
         return true;
     }
 
     if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-        error_log( 'KTPWP: Starting qualified invoice number cost items migration' );
+        ktpwp_debug_log( 'KTPWP: Starting qualified invoice number cost items migration' );
     }
 
     try {
@@ -2356,24 +2380,24 @@ function ktpwp_run_qualified_invoice_number_cost_items_migration() {
                 
                 if ( $result ) {
                     if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                        error_log( 'KTPWP: Successfully completed qualified invoice number cost items migration' );
+                        ktpwp_debug_log( 'KTPWP: Successfully completed qualified invoice number cost items migration' );
                     }
                     return true;
                 } else {
-                    error_log( 'KTPWP: Failed to execute qualified invoice number cost items migration' );
+                    ktpwp_debug_log( 'KTPWP: Failed to execute qualified invoice number cost items migration' );
                     return false;
                 }
             } else {
-                error_log( 'KTPWP: Qualified invoice number cost items migration class not found' );
+                ktpwp_debug_log( 'KTPWP: Qualified invoice number cost items migration class not found' );
                 return false;
             }
         } else {
-            error_log( 'KTPWP: Qualified invoice number cost items migration file not found: ' . $migration_file );
+            ktpwp_debug_log( 'KTPWP: Qualified invoice number cost items migration file not found: ' . $migration_file );
             return false;
         }
         
     } catch ( Exception $e ) {
-        error_log( 'KTPWP Qualified Invoice Number Cost Items Migration Error: ' . $e->getMessage() );
+        ktpwp_debug_log( 'KTPWP Qualified Invoice Number Cost Items Migration Error: ' . $e->getMessage() );
         return false;
     }
 }
@@ -2385,7 +2409,7 @@ function ktpwp_fix_table_structures() {
     global $wpdb;
 
     if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-        error_log( 'KTPWP: Starting table structure fixes' );
+        ktpwp_debug_log( 'KTPWP: Starting table structure fixes' );
     }
 
     // 1. 請求項目テーブルの修正
@@ -2401,7 +2425,7 @@ function ktpwp_fix_table_structures() {
             if ( in_array( $column, $existing_columns ) ) {
                 $wpdb->query( "ALTER TABLE `{$invoice_table}` DROP COLUMN `{$column}`" );
                 if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                    error_log( "KTPWP: Removed unwanted column '{$column}' from invoice table" );
+                    ktpwp_debug_log( "KTPWP: Removed unwanted column '{$column}' from invoice table" );
                 }
             }
         }
@@ -2416,7 +2440,7 @@ function ktpwp_fix_table_structures() {
             if ( ! in_array( $column, $existing_columns ) ) {
                 $wpdb->query( "ALTER TABLE `{$invoice_table}` ADD COLUMN `{$column}` {$definition}" );
                 if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                    error_log( "KTPWP: Added column '{$column}' to invoice table" );
+                    ktpwp_debug_log( "KTPWP: Added column '{$column}' to invoice table" );
                 }
             }
         }
@@ -2426,7 +2450,7 @@ function ktpwp_fix_table_structures() {
             $order_items = KTPWP_Order_Items::get_instance();
             $order_items->create_invoice_items_table();
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP: Created invoice items table' );
+                ktpwp_debug_log( 'KTPWP: Created invoice items table' );
             }
         }
     }
@@ -2447,7 +2471,7 @@ function ktpwp_fix_table_structures() {
             if ( ! in_array( $column, $existing_columns ) ) {
                 $wpdb->query( "ALTER TABLE `{$chat_table}` ADD COLUMN `{$column}` {$definition}" );
                 if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                    error_log( "KTPWP: Added column '{$column}' to staff chat table" );
+                    ktpwp_debug_log( "KTPWP: Added column '{$column}' to staff chat table" );
                 }
             }
         }
@@ -2457,13 +2481,13 @@ function ktpwp_fix_table_structures() {
             $staff_chat = KTPWP_Staff_Chat::get_instance();
             $staff_chat->create_table();
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP: Created staff chat table' );
+                ktpwp_debug_log( 'KTPWP: Created staff chat table' );
             }
         }
     }
 
     if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-        error_log( 'KTPWP: Table structure fixes completed' );
+        ktpwp_debug_log( 'KTPWP: Table structure fixes completed' );
     }
 }
 
@@ -2474,7 +2498,7 @@ function ktpwp_repair_existing_data() {
     global $wpdb;
 
     if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-        error_log( 'KTPWP: Starting existing data repair' );
+        ktpwp_debug_log( 'KTPWP: Starting existing data repair' );
     }
 
     // 既存の受注書にスタッフチャットの初期メッセージを作成
@@ -2515,13 +2539,13 @@ function ktpwp_repair_existing_data() {
             }
 
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( "KTPWP: Created initial chat messages for {$success_count} orders" );
+                ktpwp_debug_log( "KTPWP: Created initial chat messages for {$success_count} orders" );
             }
         }
     }
 
     if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-        error_log( 'KTPWP: Existing data repair completed' );
+        ktpwp_debug_log( 'KTPWP: Existing data repair completed' );
     }
 }
 
@@ -2561,7 +2585,7 @@ register_deactivation_hook( KANTANPRO_PLUGIN_FILE, 'ktpwp_plugin_deactivation' )
  */
 function ktpwp_plugin_activation() {
     if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-        error_log( 'KTPWP: プラグイン有効化処理を開始' );
+        ktpwp_debug_log( 'KTPWP: プラグイン有効化処理を開始' );
     }
 
     try {
@@ -2570,7 +2594,7 @@ function ktpwp_plugin_activation() {
         delete_option( 'ktpwp_migration_error_timestamp' );
         
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP: プラグイン有効化時に既存のマイグレーションエラーをクリアしました' );
+            ktpwp_debug_log( 'KTPWP: プラグイン有効化時に既存のマイグレーションエラーをクリアしました' );
         }
         
         // 自動マイグレーションを実行
@@ -2589,12 +2613,12 @@ function ktpwp_plugin_activation() {
         set_transient( 'ktpwp_activation_message', __( 'KantanProプラグインが正常に有効化されました。すべての機能が利用可能です。', 'kantanpro' ), 60 );
         
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP: プラグイン有効化処理が正常に完了' );
+            ktpwp_debug_log( 'KTPWP: プラグイン有効化処理が正常に完了' );
         }
         
     } catch ( Exception $e ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP: プラグイン有効化処理でエラーが発生: ' . $e->getMessage() );
+            ktpwp_debug_log( 'KTPWP: プラグイン有効化処理でエラーが発生: ' . $e->getMessage() );
         }
         
 		// エラーが発生した場合でも基本的な設定は保存（DBバージョンは更新しない）
@@ -2610,7 +2634,7 @@ function ktpwp_plugin_activation() {
  */
 function ktpwp_plugin_deactivation() {
     if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-        error_log( 'KTPWP: プラグイン無効化処理を開始' );
+        ktpwp_debug_log( 'KTPWP: プラグイン無効化処理を開始' );
     }
 
     try {
@@ -2644,12 +2668,12 @@ function ktpwp_plugin_deactivation() {
         delete_transient( 'ktpwp_activation_error' );
         
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP: プラグイン無効化処理が正常に完了（再有効化フラグを設定）' );
+            ktpwp_debug_log( 'KTPWP: プラグイン無効化処理が正常に完了（再有効化フラグを設定）' );
         }
         
     } catch ( Exception $e ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP: プラグイン無効化処理でエラーが発生: ' . $e->getMessage() );
+            ktpwp_debug_log( 'KTPWP: プラグイン無効化処理でエラーが発生: ' . $e->getMessage() );
         }
     }
 }
@@ -2750,21 +2774,21 @@ function ktpwp_create_department_table() {
             update_option( 'ktp_department_table_version', '1.1.0' );
 
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP: 部署テーブルが正常に作成されました（is_selectedカラム付き）。' );
+                ktpwp_debug_log( 'KTPWP: 部署テーブルが正常に作成されました（is_selectedカラム付き）。' );
             }
 
             return true;
         }
 
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP: 部署テーブルの作成に失敗しました。エラー: ' . $wpdb->last_error );
+            ktpwp_debug_log( 'KTPWP: 部署テーブルの作成に失敗しました。エラー: ' . $wpdb->last_error );
         }
 
         return false;
     }
 
     if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-        error_log( 'KTPWP: 部署テーブルは既に存在します。' );
+        ktpwp_debug_log( 'KTPWP: 部署テーブルは既に存在します。' );
     }
 
     return true;
@@ -2783,7 +2807,7 @@ function ktpwp_add_department_selection_column() {
 
     if ( $table_exists !== $department_table ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP: 部署テーブルが存在しないため、選択状態カラムの追加をスキップします。' );
+            ktpwp_debug_log( 'KTPWP: 部署テーブルが存在しないため、選択状態カラムの追加をスキップします。' );
         }
         return false;
     }
@@ -2800,19 +2824,19 @@ function ktpwp_add_department_selection_column() {
             $wpdb->query( "ALTER TABLE {$department_table} ADD INDEX is_selected (is_selected)" );
 
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP: 部署テーブルに選択状態カラムとインデックスを追加しました。' );
+                ktpwp_debug_log( 'KTPWP: 部署テーブルに選択状態カラムとインデックスを追加しました。' );
             }
             return true;
         } else {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP: 部署テーブルへの選択状態カラム追加に失敗しました。エラー: ' . $wpdb->last_error );
+                ktpwp_debug_log( 'KTPWP: 部署テーブルへの選択状態カラム追加に失敗しました。エラー: ' . $wpdb->last_error );
             }
             return false;
         }
     }
 
     if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-        error_log( 'KTPWP: 部署テーブルの選択状態カラムは既に存在します。' );
+        ktpwp_debug_log( 'KTPWP: 部署テーブルの選択状態カラムは既に存在します。' );
     }
 
     return true;
@@ -2831,7 +2855,7 @@ function ktpwp_add_client_selected_department_column() {
 
     if ( $table_exists !== $client_table ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP: 顧客テーブルが存在しないため、selected_department_idカラムの追加をスキップします。' );
+            ktpwp_debug_log( 'KTPWP: 顧客テーブルが存在しないため、selected_department_idカラムの追加をスキップします。' );
         }
         return false;
     }
@@ -2848,19 +2872,19 @@ function ktpwp_add_client_selected_department_column() {
             $wpdb->query( "ALTER TABLE {$client_table} ADD INDEX selected_department_id (selected_department_id)" );
 
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP: 顧客テーブルにselected_department_idカラムとインデックスを追加しました。' );
+                ktpwp_debug_log( 'KTPWP: 顧客テーブルにselected_department_idカラムとインデックスを追加しました。' );
             }
             return true;
         } else {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP: 顧客テーブルへのselected_department_idカラム追加に失敗しました。エラー: ' . $wpdb->last_error );
+                ktpwp_debug_log( 'KTPWP: 顧客テーブルへのselected_department_idカラム追加に失敗しました。エラー: ' . $wpdb->last_error );
             }
             return false;
         }
     }
 
     if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-        error_log( 'KTPWP: 顧客テーブルのselected_department_idカラムは既に存在します。' );
+        ktpwp_debug_log( 'KTPWP: 顧客テーブルのselected_department_idカラムは既に存在します。' );
     }
 
     return true;
@@ -2887,7 +2911,7 @@ function ktpwp_add_order_client_department_column() {
     $result = $wpdb->query( "ALTER TABLE {$order_table} ADD COLUMN client_department_id INT NULL DEFAULT NULL COMMENT '依頼元部署ID' AFTER client_id" );
     if ( $result === false ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP: 受注テーブルへの client_department_id カラム追加に失敗しました。エラー: ' . $wpdb->last_error );
+            ktpwp_debug_log( 'KTPWP: 受注テーブルへの client_department_id カラム追加に失敗しました。エラー: ' . $wpdb->last_error );
         }
         return false;
     }
@@ -2915,7 +2939,7 @@ function ktpwp_initialize_selected_department() {
 
     // 自動初期化は無効化（ユーザーが明示的に選択した場合のみ部署が選択される）
     if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-        error_log( 'KTPWP: 部署選択の自動初期化は無効化されています（' . count( $clients_without_selection ) . '件の顧客が選択なし状態）' );
+        ktpwp_debug_log( 'KTPWP: 部署選択の自動初期化は無効化されています（' . count( $clients_without_selection ) . '件の顧客が選択なし状態）' );
     }
 
     return true;
@@ -2932,7 +2956,7 @@ function ktpwp_plugin_upgrade_migration( $upgrader, $hook_extra ) {
     }
 
     if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-        error_log( 'KTPWP: Plugin upgrade detected, running enhanced migration' );
+        ktpwp_debug_log( 'KTPWP: Plugin upgrade detected, running enhanced migration' );
     }
 
     try {
@@ -2950,7 +2974,7 @@ function ktpwp_plugin_upgrade_migration( $upgrader, $hook_extra ) {
         
         if ( $is_new_installation ) {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP: アップグレード時に新規インストールを検出 - 基本構造のみで初期化' );
+                ktpwp_debug_log( 'KTPWP: アップグレード時に新規インストールを検出 - 基本構造のみで初期化' );
             }
             
             // 新規インストール時は基本構造のみで初期化
@@ -2984,12 +3008,12 @@ function ktpwp_plugin_upgrade_migration( $upgrader, $hook_extra ) {
         set_transient( 'ktpwp_redirect_to_settings_after_update', '1', 600 );
 
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP: Plugin upgrade migration completed successfully' );
+            ktpwp_debug_log( 'KTPWP: Plugin upgrade migration completed successfully' );
         }
         
     } catch ( Exception $e ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP: Plugin upgrade migration failed: ' . $e->getMessage() );
+            ktpwp_debug_log( 'KTPWP: Plugin upgrade migration failed: ' . $e->getMessage() );
         }
         
         // エラー情報を詳細に記録（管理者・ログ用）
@@ -3069,7 +3093,7 @@ function ktpwp_check_migration_status() {
             $migration_error = null;
             
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP: エンドユーザー向けにマイグレーションエラーを自動クリアしました' );
+                ktpwp_debug_log( 'KTPWP: エンドユーザー向けにマイグレーションエラーを自動クリアしました' );
             }
         }
     }
@@ -3317,7 +3341,7 @@ function ktpwp_handle_qualified_invoice_migration() {
         }
         
     } catch ( Exception $e ) {
-        error_log( 'KTPWP Qualified Invoice Manual Activation Error: ' . $e->getMessage() );
+        ktpwp_debug_log( 'KTPWP Qualified Invoice Manual Activation Error: ' . $e->getMessage() );
         wp_send_json_error( __( '有効化に失敗しました。', 'kantanpro' ) );
     }
 }
@@ -3338,7 +3362,7 @@ function ktpwp_auto_clear_migration_error_for_end_users() {
             delete_option( 'ktpwp_migration_error_timestamp' );
             
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP: 管理画面アクセス時にマイグレーションエラーを自動クリアしました' );
+                ktpwp_debug_log( 'KTPWP: 管理画面アクセス時にマイグレーションエラーを自動クリアしました' );
             }
         }
     }
@@ -3474,7 +3498,7 @@ function ktpwp_check_database_integrity() {
     global $wpdb;
 
     if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-        error_log( 'KTPWP: Checking database integrity' );
+        ktpwp_debug_log( 'KTPWP: Checking database integrity' );
     }
 
     $needs_fix = false;
@@ -3567,7 +3591,7 @@ function ktpwp_check_database_integrity() {
     // 修正が必要な場合は実行
     if ( $needs_fix ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP: Database integrity issues detected, running fixes' );
+            ktpwp_debug_log( 'KTPWP: Database integrity issues detected, running fixes' );
         }
 
         try {
@@ -3587,20 +3611,20 @@ function ktpwp_check_database_integrity() {
             update_option( 'ktpwp_department_migration_completed', '1' );
 
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP: Database integrity fixes completed successfully' );
+                ktpwp_debug_log( 'KTPWP: Database integrity fixes completed successfully' );
                 if ( $department_table_created ) {
-                    error_log( 'KTPWP: Department table created/verified during integrity check' );
+                    ktpwp_debug_log( 'KTPWP: Department table created/verified during integrity check' );
                 }
                 if ( $column_added ) {
-                    error_log( 'KTPWP: Department selection column added/verified during integrity check' );
+                    ktpwp_debug_log( 'KTPWP: Department selection column added/verified during integrity check' );
                 }
                 if ( $client_column_added ) {
-                    error_log( 'KTPWP: Client selected_department_id column added/verified during integrity check' );
+                    ktpwp_debug_log( 'KTPWP: Client selected_department_id column added/verified during integrity check' );
                 }
             }
         } catch ( Exception $e ) {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP: Database integrity fixes failed: ' . $e->getMessage() );
+                ktpwp_debug_log( 'KTPWP: Database integrity fixes failed: ' . $e->getMessage() );
             }
         }
     }
@@ -3622,7 +3646,7 @@ function ktpwp_sync_database_version() {
     $plugin_version = KANTANPRO_PLUGIN_VERSION;
 
     if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-        error_log( 'KTPWP: Syncing database version. Current DB version: ' . $current_db_version . ', Plugin version: ' . $plugin_version );
+        ktpwp_debug_log( 'KTPWP: Syncing database version. Current DB version: ' . $current_db_version . ', Plugin version: ' . $plugin_version );
     }
 
     // データベースバージョンが設定されていない場合、プラグインバージョンに同期
@@ -3637,12 +3661,12 @@ function ktpwp_sync_database_version() {
             update_option( 'ktpwp_db_version', $plugin_version );
             
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP: Database version synchronized to plugin version: ' . $plugin_version );
+                ktpwp_debug_log( 'KTPWP: Database version synchronized to plugin version: ' . $plugin_version );
             }
         } else {
             // テーブルが存在しない場合、新規インストール
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP: New installation detected, database version will be set during migration' );
+                ktpwp_debug_log( 'KTPWP: New installation detected, database version will be set during migration' );
             }
         }
     } else {
@@ -3650,7 +3674,7 @@ function ktpwp_sync_database_version() {
         if ( version_compare( $current_db_version, $plugin_version, '>' ) ) {
             // データベースバージョンがプラグインバージョンより新しい場合、警告ログ
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP: Warning - Database version (' . $current_db_version . ') is newer than plugin version (' . $plugin_version . ')' );
+                ktpwp_debug_log( 'KTPWP: Warning - Database version (' . $current_db_version . ') is newer than plugin version (' . $plugin_version . ')' );
             }
         }
     }
@@ -3661,7 +3685,7 @@ function ktpwp_sync_database_version() {
 
 // デバッグログ: プラグイン読み込み開始
 if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-    error_log( 'KTPWP Plugin: Loading started' );
+    ktpwp_debug_log( 'KTPWP Plugin: Loading started' );
 }
 
 
@@ -3692,11 +3716,11 @@ add_action(
     function () {
 		if ( class_exists( 'KTPWP_Main' ) ) {
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( 'KTPWP Plugin: KTPWP_Main class found, initializing on init hook...' );
+				ktpwp_debug_log( 'KTPWP Plugin: KTPWP_Main class found, initializing on init hook...' );
 			}
 			KTPWP_Main::get_instance();
 		} elseif ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Plugin: KTPWP_Main class not found on init hook' );
+            ktpwp_debug_log( 'KTPWP Plugin: KTPWP_Main class not found on init hook' );
 		}
 	},
     10
@@ -3708,11 +3732,11 @@ add_action(
     function () {
 		if ( class_exists( 'KTPWP_Contact_Form' ) ) {
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( 'KTPWP Plugin: KTPWP_Contact_Form class found, initializing...' );
+				ktpwp_debug_log( 'KTPWP Plugin: KTPWP_Contact_Form class found, initializing...' );
 			}
 			KTPWP_Contact_Form::get_instance();
 		} elseif ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Plugin: KTPWP_Contact_Form class not found' );
+            ktpwp_debug_log( 'KTPWP Plugin: KTPWP_Contact_Form class not found' );
 		}
 
 		// KTPWP-WPORG-STRIP public_products BEGIN
@@ -4195,7 +4219,7 @@ add_action(
 
 			// デバッグ用（必要に応じてコメントアウト）
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( 'KTPWP Site Health Reset CSS loaded for hook: ' . $hook );
+				ktpwp_debug_log( 'KTPWP Site Health Reset CSS loaded for hook: ' . $hook );
 			}
 		}
 	}
@@ -4212,7 +4236,7 @@ function ktpwp_init_ajax_handlers() {
     if (function_exists('ktpwp_handle_create_dummy_data_ajax')) {
         add_action( 'wp_ajax_ktpwp_create_dummy_data', 'ktpwp_handle_create_dummy_data_ajax' );
     } else {
-        error_log('KTPWP: ktpwp_handle_create_dummy_data_ajax function not found');
+        ktpwp_debug_log('KTPWP: ktpwp_handle_create_dummy_data_ajax function not found');
     }
     
     // 協力会社関連AJAXハンドラー（ajax-supplier-cost.phpで定義済み）
@@ -4223,7 +4247,7 @@ function ktpwp_init_ajax_handlers() {
     if (function_exists('ktpwp_handle_clear_data_ajax')) {
         add_action( 'wp_ajax_ktpwp_clear_data', 'ktpwp_handle_clear_data_ajax' );
     } else {
-        error_log('KTPWP: ktpwp_handle_clear_data_ajax function not found');
+        ktpwp_debug_log('KTPWP: ktpwp_handle_clear_data_ajax function not found');
     }
     
     // テスト用 AJAX ハンドラーは削除した。
@@ -4314,7 +4338,7 @@ function ktp_table_setup() {
     // dbDeltaの実行結果をログに出力
     if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
         if ( ! empty( $results ) ) {
-            error_log( "KTPWP: dbDelta execution results: " . print_r( $results, true ) );
+            ktpwp_debug_log( "KTPWP: dbDelta execution results: " . print_r( $results, true ) );
         }
     }
 
@@ -4323,7 +4347,7 @@ function ktp_table_setup() {
 
     // デバッグ時のみ、予期しない出力があればログに記録
     if ( defined( 'WP_DEBUG' ) && WP_DEBUG && ! empty( $output ) ) {
-        error_log( 'KTPWP: ktp_table_setup中に予期しない出力を検出: ' . substr( $output, 0, 1000 ) );
+        ktpwp_debug_log( 'KTPWP: ktp_table_setup中に予期しない出力を検出: ' . substr( $output, 0, 1000 ) );
     }
 
     return array(
@@ -4789,7 +4813,7 @@ add_action(
 				KTPWP_Plugin_Reference::clear_all_cache();
 
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					error_log( "KTPWP: バージョン更新を検出しました。{$stored_version} → " . KANTANPRO_PLUGIN_VERSION );
+					ktpwp_debug_log( "KTPWP: バージョン更新を検出しました。{$stored_version} → " . KANTANPRO_PLUGIN_VERSION );
 				}
 			}
 		}
@@ -5003,7 +5027,7 @@ add_action(
 					if ( $file_age > $cleanup_age ) {
 						unlink( $file );
 						if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-							error_log( 'KTPWP: Cleaned up temp file: ' . basename( $file ) );
+							ktpwp_debug_log( 'KTPWP: Cleaned up temp file: ' . basename( $file ) );
 						}
 					}
 				}
@@ -5057,7 +5081,7 @@ function ktpwp_ensure_terms_table() {
     
     if ( ! $table_exists ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP: Terms table not found, attempting to create' );
+            ktpwp_debug_log( 'KTPWP: Terms table not found, attempting to create' );
         }
         
         // 利用規約テーブルを直接作成
@@ -5068,7 +5092,7 @@ function ktpwp_ensure_terms_table() {
         
         if ( $terms_count == 0 ) {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP: Terms table exists but no active terms found, attempting to insert default' );
+                ktpwp_debug_log( 'KTPWP: Terms table exists but no active terms found, attempting to insert default' );
             }
             
             // デフォルトの利用規約を直接挿入
@@ -5078,7 +5102,7 @@ function ktpwp_ensure_terms_table() {
             $terms_data = $wpdb->get_row( "SELECT * FROM $terms_table WHERE is_active = 1 ORDER BY id DESC LIMIT 1" );
             if ( $terms_data && empty( trim( $terms_data->terms_content ) ) ) {
                 if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                    error_log( 'KTPWP: Terms content is empty, attempting to fix automatically' );
+                    ktpwp_debug_log( 'KTPWP: Terms content is empty, attempting to fix automatically' );
                 }
                 
                 // 空の利用規約を修復
@@ -5118,14 +5142,14 @@ function ktpwp_create_terms_table_directly() {
     
     if ( ! empty( $result ) ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP: Terms table created successfully during runtime' );
+            ktpwp_debug_log( 'KTPWP: Terms table created successfully during runtime' );
         }
         
         // テーブル作成後、デフォルトデータを挿入
         ktpwp_insert_default_terms_directly();
     } else {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP: Failed to create terms table during runtime' );
+            ktpwp_debug_log( 'KTPWP: Failed to create terms table during runtime' );
         }
     }
 }
@@ -5156,11 +5180,11 @@ function ktpwp_insert_default_terms_directly() {
     
     if ( $result ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP: Default terms inserted successfully during runtime' );
+            ktpwp_debug_log( 'KTPWP: Default terms inserted successfully during runtime' );
         }
     } else {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP: Failed to insert default terms during runtime: ' . $wpdb->last_error );
+            ktpwp_debug_log( 'KTPWP: Failed to insert default terms during runtime: ' . $wpdb->last_error );
         }
     }
 }
@@ -5191,11 +5215,11 @@ function ktpwp_fix_empty_terms_content( $terms_id ) {
     
     if ( $result !== false ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP: Empty terms content fixed successfully during runtime' );
+            ktpwp_debug_log( 'KTPWP: Empty terms content fixed successfully during runtime' );
         }
     } else {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP: Failed to fix empty terms content during runtime: ' . $wpdb->last_error );
+            ktpwp_debug_log( 'KTPWP: Failed to fix empty terms content during runtime: ' . $wpdb->last_error );
         }
     }
 }
@@ -5297,7 +5321,7 @@ function ktpwp_distribution_safety_check() {
     global $wpdb;
 
     if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-        error_log( 'KTPWP: Running distribution safety check' );
+        ktpwp_debug_log( 'KTPWP: Running distribution safety check' );
     }
 
     $issues_found = false;
@@ -5324,7 +5348,7 @@ function ktpwp_distribution_safety_check() {
     // 問題が見つかった場合の自動修復
     if ( $issues_found ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Distribution Safety: Issues found, attempting repair' );
+            ktpwp_debug_log( 'KTPWP Distribution Safety: Issues found, attempting repair' );
         }
 
         try {
@@ -5344,12 +5368,12 @@ function ktpwp_distribution_safety_check() {
             }
 
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP Distribution Safety: Repair completed' );
+                ktpwp_debug_log( 'KTPWP Distribution Safety: Repair completed' );
             }
 
         } catch ( Exception $e ) {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP Distribution Safety: Repair failed: ' . $e->getMessage() );
+                ktpwp_debug_log( 'KTPWP Distribution Safety: Repair failed: ' . $e->getMessage() );
             }
         }
     }
@@ -5594,7 +5618,7 @@ function ktpwp_admin_auto_migrations() {
     if ( version_compare( $current_db_version, $plugin_version, '<' ) ) {
 
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Admin Migration: Starting migration from ' . $current_db_version . ' to ' . $plugin_version );
+            ktpwp_debug_log( 'KTPWP Admin Migration: Starting migration from ' . $current_db_version . ' to ' . $plugin_version );
         }
 
         // 基本テーブル作成
@@ -5620,11 +5644,11 @@ function ktpwp_admin_auto_migrations() {
                         try {
                             require_once $file;
                             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                                error_log( 'KTPWP Admin Migration: Executed ' . basename( $file ) );
+                                ktpwp_debug_log( 'KTPWP Admin Migration: Executed ' . basename( $file ) );
                             }
                         } catch ( Exception $e ) {
                             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                                error_log( 'KTPWP Admin Migration Error: ' . $e->getMessage() . ' in ' . basename( $file ) );
+                                ktpwp_debug_log( 'KTPWP Admin Migration Error: ' . $e->getMessage() . ' in ' . basename( $file ) );
                             }
                         }
                     }
@@ -5642,15 +5666,15 @@ function ktpwp_admin_auto_migrations() {
         update_option( 'ktpwp_db_version', $plugin_version );
 
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Admin Migration: Updated DB version from ' . $current_db_version . ' to ' . $plugin_version );
+            ktpwp_debug_log( 'KTPWP Admin Migration: Updated DB version from ' . $current_db_version . ' to ' . $plugin_version );
             if ( $department_table_created ) {
-                error_log( 'KTPWP Admin Migration: Department table created/verified' );
+                ktpwp_debug_log( 'KTPWP Admin Migration: Department table created/verified' );
             }
             if ( $column_added ) {
-                error_log( 'KTPWP Admin Migration: Department selection column added/verified' );
+                ktpwp_debug_log( 'KTPWP Admin Migration: Department selection column added/verified' );
             }
             if ( $client_column_added ) {
-                error_log( 'KTPWP Admin Migration: Client selected_department_id column added/verified' );
+                ktpwp_debug_log( 'KTPWP Admin Migration: Client selected_department_id column added/verified' );
             }
         }
     }
@@ -5865,7 +5889,7 @@ function ktpwp_execute_invoice_items_fix() {
             require_once $migration_file;
             
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP: invoice_itemsカラム修正マイグレーションを実行しました' );
+                ktpwp_debug_log( 'KTPWP: invoice_itemsカラム修正マイグレーションを実行しました' );
             }
             
             set_transient( 'ktpwp_invoice_items_fix_success', 'invoice_itemsカラムの修正が正常に完了しました。', 60 );
@@ -6532,14 +6556,14 @@ function ktpwp_handle_create_dummy_data_ajax() {
     
     // デバッグ情報をログに記録
     if (defined('WP_DEBUG') && WP_DEBUG) {
-        error_log('KTPWP: ダミーデータ作成AJAXハンドラーが呼び出されました');
+        ktpwp_debug_log('KTPWP: ダミーデータ作成AJAXハンドラーが呼び出されました');
     }
     
     try {
         // セキュリティチェック
         if (!isset($_POST['nonce']) || !wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'ktpwp_dummy_data_nonce')) {
             if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('KTPWP: セキュリティチェックに失敗しました');
+                ktpwp_debug_log('KTPWP: セキュリティチェックに失敗しました');
             }
             wp_send_json_error(array('message' => __( 'セキュリティチェックに失敗しました。', 'kantanpro' )));
             return;
@@ -6547,7 +6571,7 @@ function ktpwp_handle_create_dummy_data_ajax() {
         
         if (!current_user_can('manage_options')) {
             if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('KTPWP: 権限がありません');
+                ktpwp_debug_log('KTPWP: 権限がありません');
             }
             wp_send_json_error(array('message' => __( '権限がありません。', 'kantanpro' )));
             return;
@@ -6586,7 +6610,7 @@ function ktpwp_handle_create_dummy_data_ajax() {
         // エラーハンドラーを設定
         $error_handler = function($errno, $errstr, $errfile, $errline) {
             if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log("KTPWP: ダミーデータ作成中にエラー: [$errno] $errstr in $errfile on line $errline");
+                ktpwp_debug_log("KTPWP: ダミーデータ作成中にエラー: [$errno] $errstr in $errfile on line $errline");
             }
             return false; // 標準のエラーハンドラーも実行
         };
@@ -6611,14 +6635,14 @@ function ktpwp_handle_create_dummy_data_ajax() {
             }
             
             if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('KTPWP: ダミーデータ作成開始 - メモリ制限: ' . ini_get('memory_limit') . ', 実行時間制限: ' . ini_get('max_execution_time'));
+                ktpwp_debug_log('KTPWP: ダミーデータ作成開始 - メモリ制限: ' . ini_get('memory_limit') . ', 実行時間制限: ' . ini_get('max_execution_time'));
             }
             
             // ダミーデータ作成スクリプトをインクルード
             include_once $dummy_data_script;
             
             if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('KTPWP: ダミーデータ作成スクリプト実行完了');
+                ktpwp_debug_log('KTPWP: ダミーデータ作成スクリプト実行完了');
             }
             
             // 設定を復元
@@ -6634,7 +6658,7 @@ function ktpwp_handle_create_dummy_data_ajax() {
             $output = ob_get_clean();
             
             if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('KTPWP: ダミーデータ作成成功 - 出力長: ' . strlen($output));
+                ktpwp_debug_log('KTPWP: ダミーデータ作成成功 - 出力長: ' . strlen($output));
             }
 
             // include が早期 return false した場合でも成功扱いになっていた不具合を防ぐ
@@ -6664,7 +6688,7 @@ function ktpwp_handle_create_dummy_data_ajax() {
                 setcookie('ktp_service_id', '1', $cookie_lifetime, $cookie_path);
                 setcookie('ktp_supplier_id', '1', $cookie_lifetime, $cookie_path);
             } else if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('KTPWP: ヘッダー送信後のため、初期表示クッキーを設定できませんでした');
+                ktpwp_debug_log('KTPWP: ヘッダー送信後のため、初期表示クッキーを設定できませんでした');
             }
 
             // 成功メッセージを返す
@@ -6684,15 +6708,15 @@ function ktpwp_handle_create_dummy_data_ajax() {
             restore_error_handler();
             error_reporting($old_error_reporting);
             
-            error_log('KTPWP: ダミーデータ作成中に例外が発生しました: ' . $e->getMessage());
+            ktpwp_debug_log('KTPWP: ダミーデータ作成中に例外が発生しました: ' . $e->getMessage());
             if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('KTPWP: 例外の詳細: ' . $e->getTraceAsString());
+                ktpwp_debug_log('KTPWP: 例外の詳細: ' . $e->getTraceAsString());
             }
             wp_send_json_error(array('message' => __( 'ダミーデータ作成中にエラーが発生しました。', 'kantanpro' )));
         }
 
     } catch (Exception $e) {
-        error_log('KTPWP: ダミーデータ作成中にエラーが発生しました: ' . $e->getMessage());
+        ktpwp_debug_log('KTPWP: ダミーデータ作成中にエラーが発生しました: ' . $e->getMessage());
         wp_send_json_error(array('message' => __( 'ダミーデータ作成中にエラーが発生しました。', 'kantanpro' )));
     } finally {
         // 出力バッファをクリア（予期しない出力を除去）
@@ -6700,7 +6724,7 @@ function ktpwp_handle_create_dummy_data_ajax() {
         
         // デバッグ時のみ、予期しない出力があればログに記録
         if (defined('WP_DEBUG') && WP_DEBUG && !empty($output)) {
-            error_log('KTPWP: ダミーデータ作成AJAX中に予期しない出力を検出: ' . substr($output, 0, 1000));
+            ktpwp_debug_log('KTPWP: ダミーデータ作成AJAX中に予期しない出力を検出: ' . substr($output, 0, 1000));
         }
     }
 }
@@ -6719,7 +6743,7 @@ function ktpwp_handle_clear_data_ajax() {
     $ktpwp_clear_data_respond = static function ( $ok, $payload ) {
         $stray = ob_get_clean();
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG && ! empty( $stray ) ) {
-            error_log( 'KTPWP: データクリアAJAX中に予期しない出力を検出: ' . substr( $stray, 0, 1000 ) );
+            ktpwp_debug_log( 'KTPWP: データクリアAJAX中に予期しない出力を検出: ' . substr( $stray, 0, 1000 ) );
         }
         if ( $ok ) {
             wp_send_json_success( $payload );
@@ -6729,14 +6753,14 @@ function ktpwp_handle_clear_data_ajax() {
     
     // デバッグ情報をログに記録
     if (defined('WP_DEBUG') && WP_DEBUG) {
-        error_log('KTPWP: データクリアAJAXハンドラーが呼び出されました');
+        ktpwp_debug_log('KTPWP: データクリアAJAXハンドラーが呼び出されました');
     }
     
     try {
         // セキュリティチェック
         if (!isset($_POST['nonce']) || !wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'ktpwp_clear_data_nonce')) {
             if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('KTPWP: セキュリティチェックに失敗しました');
+                ktpwp_debug_log('KTPWP: セキュリティチェックに失敗しました');
             }
             $ktpwp_clear_data_respond( false, array('message' => __( 'セキュリティチェックに失敗しました。', 'kantanpro' )));
             return;
@@ -6744,7 +6768,7 @@ function ktpwp_handle_clear_data_ajax() {
         
         if (!current_user_can('manage_options')) {
             if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('KTPWP: 権限がありません');
+                ktpwp_debug_log('KTPWP: 権限がありません');
             }
             $ktpwp_clear_data_respond( false, array('message' => __( '権限がありません。', 'kantanpro' )));
             return;
@@ -6843,7 +6867,7 @@ function ktpwp_handle_clear_data_ajax() {
         }
         
         if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('KTPWP: データクリア成功 - ' . $success_message);
+            ktpwp_debug_log('KTPWP: データクリア成功 - ' . $success_message);
         }
         
         $ktpwp_clear_data_respond( true, array(
@@ -6852,7 +6876,7 @@ function ktpwp_handle_clear_data_ajax() {
         ));
         
     } catch (Exception $e) {
-        error_log('KTPWP: データクリアエラー - ' . $e->getMessage());
+        ktpwp_debug_log('KTPWP: データクリアエラー - ' . $e->getMessage());
 
         $ktpwp_clear_data_respond( false, array(
             'message' => __( 'エラーが発生しました。', 'kantanpro' )
@@ -6864,7 +6888,7 @@ function ktpwp_handle_clear_data_ajax() {
         if ( ob_get_level() > $ktpwp_clear_data_ob_level ) {
             $output = ob_get_clean();
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG && ! empty( $output ) ) {
-                error_log( 'KTPWP: データクリアAJAX中に予期しない出力を検出: ' . substr( $output, 0, 1000 ) );
+                ktpwp_debug_log( 'KTPWP: データクリアAJAX中に予期しない出力を検出: ' . substr( $output, 0, 1000 ) );
             }
         }
     }

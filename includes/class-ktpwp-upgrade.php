@@ -47,11 +47,11 @@ class KTPWP_Upgrade {
                 );
             } catch ( Exception $e ) {
                 if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					error_log( 'KTPWP: Error removing old columns: ' . $e->getMessage() ); }
+					ktpwp_debug_log( 'KTPWP: Error removing old columns: ' . $e->getMessage() ); }
             }
 
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( 'KTPWP: Settings successfully migrated to WordPress options' ); }
+				ktpwp_debug_log( 'KTPWP: Settings successfully migrated to WordPress options' ); }
         }
     }
 }

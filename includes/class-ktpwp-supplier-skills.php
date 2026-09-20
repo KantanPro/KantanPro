@@ -128,7 +128,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 					$result = dbDelta( $sql );
 
 					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-						error_log( 'KTPWP: Supplier Skills table creation result: ' . print_r( $result, true ) );
+						ktpwp_debug_log( 'KTPWP: Supplier Skills table creation result: ' . print_r( $result, true ) );
 					}
 
 					if ( ! empty( $result ) ) {
@@ -136,11 +136,11 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 						return true;
 					}
 
-					error_log( 'KTPWP: Failed to create supplier skills table' );
+					ktpwp_debug_log( 'KTPWP: Failed to create supplier skills table' );
 					return false;
 				}
 
-				error_log( 'KTPWP: dbDelta function not available' );
+				ktpwp_debug_log( 'KTPWP: dbDelta function not available' );
 				return false;
 			} else {
 				// Table exists, check for column structure updates
@@ -157,9 +157,9 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 							$result = $wpdb->query( $drop_column_query );
 
 							if ( $result === false ) {
-								error_log( "KTPWP: Failed to drop column {$column} from supplier skills table" );
+								ktpwp_debug_log( "KTPWP: Failed to drop column {$column} from supplier skills table" );
 							} elseif ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-									error_log( "KTPWP: Successfully dropped column {$column} from supplier skills table" );
+									ktpwp_debug_log( "KTPWP: Successfully dropped column {$column} from supplier skills table" );
 							}
 						}
 					}
@@ -171,9 +171,9 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 					$result = $wpdb->query( $alter_column_query );
 
 					if ( $result === false ) {
-						error_log( 'KTPWP: Failed to update unit_price column precision in supplier skills table' );
+						ktpwp_debug_log( 'KTPWP: Failed to update unit_price column precision in supplier skills table' );
 					} elseif ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-							error_log( 'KTPWP: Successfully updated unit_price column precision in supplier skills table' );
+							ktpwp_debug_log( 'KTPWP: Successfully updated unit_price column precision in supplier skills table' );
 					}
 				}
 
@@ -185,9 +185,9 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 						$result = $wpdb->query( $alter_column_query );
 
 						if ( $result === false ) {
-							error_log( 'KTPWP: Failed to add tax_rate column to supplier skills table' );
+							ktpwp_debug_log( 'KTPWP: Failed to add tax_rate column to supplier skills table' );
 						} elseif ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-							error_log( 'KTPWP: Successfully added tax_rate column to supplier skills table' );
+							ktpwp_debug_log( 'KTPWP: Successfully added tax_rate column to supplier skills table' );
 						}
 					}
 				}
@@ -200,9 +200,9 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 						$result = $wpdb->query( $alter_column_query );
 
 						if ( $result === false ) {
-							error_log( 'KTPWP: Failed to modify tax_rate column to allow NULL values in supplier skills table' );
+							ktpwp_debug_log( 'KTPWP: Failed to modify tax_rate column to allow NULL values in supplier skills table' );
 						} elseif ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-							error_log( 'KTPWP: Successfully modified tax_rate column to allow NULL values in supplier skills table' );
+							ktpwp_debug_log( 'KTPWP: Successfully modified tax_rate column to allow NULL values in supplier skills table' );
 						}
 					}
 				}
@@ -369,7 +369,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 		);
 
 		if ( $result === false ) {
-			error_log( 'KTPWP: Failed to add supplier product: ' . $wpdb->last_error );
+			ktpwp_debug_log( 'KTPWP: Failed to add supplier product: ' . $wpdb->last_error );
 			return false;
 		}
 
@@ -438,7 +438,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 		);
 
 		if ( $result === false ) {
-			error_log( 'KTPWP: Failed to update supplier product: ' . $wpdb->last_error );
+			ktpwp_debug_log( 'KTPWP: Failed to update supplier product: ' . $wpdb->last_error );
 			return false;
 		}
 
@@ -482,7 +482,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 		);
 
 		if ( $result === false ) {
-			error_log( 'KTPWP: Failed to delete supplier skill: ' . $wpdb->last_error );
+			ktpwp_debug_log( 'KTPWP: Failed to delete supplier skill: ' . $wpdb->last_error );
 			return false;
 		}
 
@@ -520,14 +520,14 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 		if ( $result === false ) {
 			// エラーログはサーバーサイドのみに記録（ヘッダーに表示されない）
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( 'KTPWP: Failed to delete supplier skills: ' . $wpdb->last_error );
+				ktpwp_debug_log( 'KTPWP: Failed to delete supplier skills: ' . $wpdb->last_error );
 			}
 			return false;
 		}
 
 		// 成功時のログはサーバーサイドのみに記録（ヘッダーに表示されない）
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			error_log( "KTPWP: Deleted {$result} skills for supplier ID {$supplier_id}" );
+			ktpwp_debug_log( "KTPWP: Deleted {$result} skills for supplier ID {$supplier_id}" );
 		}
 
 		// Clear cache for this supplier after successful deletion

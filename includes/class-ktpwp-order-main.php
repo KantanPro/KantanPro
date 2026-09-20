@@ -108,7 +108,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 			if ( $inserted ) {
 				return true;
 			} else {
-				error_log( 'KTPWP: Failed to create initial invoice item: ' . $wpdb->last_error );
+				ktpwp_debug_log( 'KTPWP: Failed to create initial invoice item: ' . $wpdb->last_error );
 			}
 		}
 
@@ -270,13 +270,13 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 		 */
 		public function Create_Initial_Staff_Chat( $order_id, $creator_user_id = null ) {
 			if ( ! $order_id || $order_id <= 0 ) {
-				error_log( 'KTPWP: Create_Initial_Staff_Chat called with invalid order_id: ' . $order_id );
+				ktpwp_debug_log( 'KTPWP: Create_Initial_Staff_Chat called with invalid order_id: ' . $order_id );
 				return false;
 			}
 
 			// スタッフチャットクラスが利用可能かチェック
 			if ( ! class_exists( 'KTPWP_Staff_Chat' ) ) {
-				error_log( 'KTPWP: KTPWP_Staff_Chat class not found' );
+				ktpwp_debug_log( 'KTPWP: KTPWP_Staff_Chat class not found' );
 				return false;
 			}
 
@@ -286,15 +286,15 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 
 				if ( $result ) {
 					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-						error_log( 'KTPWP: Successfully created initial staff chat for order_id: ' . $order_id );
+						ktpwp_debug_log( 'KTPWP: Successfully created initial staff chat for order_id: ' . $order_id );
 					}
 					return true;
 				} else {
-					error_log( 'KTPWP: Failed to create initial staff chat for order_id: ' . $order_id );
+					ktpwp_debug_log( 'KTPWP: Failed to create initial staff chat for order_id: ' . $order_id );
 					return false;
 				}
 			} catch ( Exception $e ) {
-				error_log( 'KTPWP: Exception in Create_Initial_Staff_Chat: ' . $e->getMessage() . ' for order_id: ' . $order_id );
+				ktpwp_debug_log( 'KTPWP: Exception in Create_Initial_Staff_Chat: ' . $e->getMessage() . ' for order_id: ' . $order_id );
 				return false;
 			}
 		}
@@ -389,7 +389,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 			}
 
 			if ( empty( $tab_name ) ) {
-				error_log( 'KTPWP: Empty tab_name provided to Order_Tab_View method' );
+				ktpwp_debug_log( 'KTPWP: Empty tab_name provided to Order_Tab_View method' );
 				return;
 			}
 
@@ -1048,7 +1048,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 			// 進捗更新処理（POST時） - Add nonce verification
 			/*
 			if ( ktpwp_request_method() === 'POST' && isset( $_POST['update_progress_id'], $_POST['update_progress'] ) ) {
-				error_log( 'KTPWP Order: 進捗更新処理が呼び出されました' );
+				ktpwp_debug_log( 'KTPWP Order: 進捗更新処理が呼び出されました' );
 
 				// Verify nonce
 				// if ( ! isset( $_POST['progress_nonce'] ) ||
@@ -1064,29 +1064,29 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 				$update_id = absint( $_POST['update_progress_id'] );
 				$update_progress = absint( $_POST['update_progress'] );
 
-				error_log( 'KTPWP Order: 進捗更新 - ID: ' . $update_id . ', 新しい進捗: ' . $update_progress );
+				ktpwp_debug_log( 'KTPWP Order: 進捗更新 - ID: ' . $update_id . ', 新しい進捗: ' . $update_progress );
 
 				if ( $update_id > 0 && $update_progress >= 1 && $update_progress <= 7 ) {
 					// 現在の進捗を取得
 					$current_order = $wpdb->get_row( $wpdb->prepare( "SELECT progress FROM {$table_name} WHERE id = %d", $update_id ) );
 
-					error_log( 'KTPWP Order: 現在の進捗: ' . ( $current_order ? $current_order->progress : 'null' ) );
+					ktpwp_debug_log( 'KTPWP Order: 現在の進捗: ' . ( $current_order ? $current_order->progress : 'null' ) );
 
 					$update_data = array( 'progress' => $update_progress );
 
 					// 進捗が「完了」（progress = 4）に変更された場合、完了日を実行した日で記録
 					if ( $update_progress == 4 && $current_order && $current_order->progress != 4 ) {
 						$update_data['completion_date'] = current_time( 'Y-m-d' );
-						error_log( 'KTPWP Order: 完了日を実行日で設定: ' . $update_data['completion_date'] );
+						ktpwp_debug_log( 'KTPWP Order: 完了日を実行日で設定: ' . $update_data['completion_date'] );
 					}
 
 					// 進捗が受注以前（受付中、見積中、受注）に変更された場合、完了日をクリア
 					if ( in_array( $update_progress, array( 1, 2, 3 ) ) && $current_order && $current_order->progress > 3 ) {
 						$update_data['completion_date'] = null;
-						error_log( 'KTPWP Order: 完了日をクリアします' );
+						ktpwp_debug_log( 'KTPWP Order: 完了日をクリアします' );
 					}
 
-					error_log( 'KTPWP Order: 更新データ: ' . print_r( $update_data, true ) );
+					ktpwp_debug_log( 'KTPWP Order: 更新データ: ' . print_r( $update_data, true ) );
 
 					// データベース更新時のフォーマットを適切に設定
 					$update_formats = array();
@@ -1105,18 +1105,18 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 
 					$result = $wpdb->update( $table_name, $update_data, $update_conditions, $update_formats, $condition_formats );
 
-					error_log( 'KTPWP Order: データベース更新結果: ' . ( $result ? '成功' : '失敗' ) );
+					ktpwp_debug_log( 'KTPWP Order: データベース更新結果: ' . ( $result ? '成功' : '失敗' ) );
 					if ( ! $result ) {
-						error_log( 'KTPWP Order: データベースエラー: ' . $wpdb->last_error );
+						ktpwp_debug_log( 'KTPWP Order: データベースエラー: ' . $wpdb->last_error );
 					}
 
 					// リダイレクトで再読み込み（POSTリダブミット防止）
 					$redirect_url = esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) );
-					error_log( 'KTPWP Order: リダイレクト先: ' . $redirect_url );
+					ktpwp_debug_log( 'KTPWP Order: リダイレクト先: ' . $redirect_url );
 					wp_redirect( $redirect_url );
 					exit;
 				} else {
-					error_log( 'KTPWP Order: 進捗更新条件を満たしません - ID: ' . $update_id . ', 進捗: ' . $update_progress );
+					ktpwp_debug_log( 'KTPWP Order: 進捗更新条件を満たしません - ID: ' . $update_id . ', 進捗: ' . $update_progress );
 				}
 			}
 			*/
@@ -1354,7 +1354,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 					if ( $row_count == 0 ) {
 						$wpdb->query( "ALTER TABLE {$table_name} AUTO_INCREMENT = 1" );
 						if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-							error_log( 'KTPWP Order Tab: Order table AUTO_INCREMENT reset to 1' );
+							ktpwp_debug_log( 'KTPWP Order Tab: Order table AUTO_INCREMENT reset to 1' );
 						}
 					}
 
@@ -1451,13 +1451,13 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 						// 初期請求項目を作成
 						$invoice_result = $this->Create_Initial_Invoice_Item( $new_order_id );
 						if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-							error_log( 'KTPWP: Initial invoice item creation result: ' . ( $invoice_result ? 'success' : 'failed' ) . ' for order_id: ' . $new_order_id );
+							ktpwp_debug_log( 'KTPWP: Initial invoice item creation result: ' . ( $invoice_result ? 'success' : 'failed' ) . ' for order_id: ' . $new_order_id );
 						}
 
 						// 初期コスト項目を作成
 						$cost_result = $this->Create_Initial_Cost_Item( $new_order_id );
 						if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-							error_log( 'KTPWP: Initial cost item creation result: ' . ( $cost_result ? 'success' : 'failed' ) . ' for order_id: ' . $new_order_id );
+							ktpwp_debug_log( 'KTPWP: Initial cost item creation result: ' . ( $cost_result ? 'success' : 'failed' ) . ' for order_id: ' . $new_order_id );
 						}
 
 						// ダミーデータ作成時はスタッフチャットの初期メッセージを作成しない
@@ -1465,22 +1465,22 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 							// 初期スタッフチャットエントリを作成（重要：確実に実行）
 							$chat_result = $this->Create_Initial_Staff_Chat( $new_order_id, get_current_user_id() );
 							if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-								error_log( 'KTPWP: Initial staff chat creation result: ' . ( $chat_result ? 'success' : 'failed' ) . ' for order_id: ' . $new_order_id );
+								ktpwp_debug_log( 'KTPWP: Initial staff chat creation result: ' . ( $chat_result ? 'success' : 'failed' ) . ' for order_id: ' . $new_order_id );
 							}
 
 							// スタッフチャットの作成に失敗した場合は再試行
 							if ( ! $chat_result ) {
-								error_log( 'KTPWP: Retrying staff chat creation for order_id: ' . $new_order_id );
+								ktpwp_debug_log( 'KTPWP: Retrying staff chat creation for order_id: ' . $new_order_id );
 								// 少し待ってから再試行
 								sleep( 1 );
 								$chat_result = $this->Create_Initial_Staff_Chat( $new_order_id, get_current_user_id() );
 								if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-									error_log( 'KTPWP: Staff chat creation retry result: ' . ( $chat_result ? 'success' : 'failed' ) . ' for order_id: ' . $new_order_id );
+									ktpwp_debug_log( 'KTPWP: Staff chat creation retry result: ' . ( $chat_result ? 'success' : 'failed' ) . ' for order_id: ' . $new_order_id );
 								}
 							}
 						} else {
 							if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-								error_log( 'KTPWP: Skipping staff chat creation for dummy data order_id: ' . $new_order_id );
+								ktpwp_debug_log( 'KTPWP: Skipping staff chat creation for dummy data order_id: ' . $new_order_id );
 							}
 						}
 
@@ -1491,11 +1491,11 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 
 						// デバッグ用ログ
 						if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-							error_log( 'KTPWP: New order created successfully with ID: ' . $new_order_id );
+							ktpwp_debug_log( 'KTPWP: New order created successfully with ID: ' . $new_order_id );
 						}
 					} else {
 						// 挿入失敗時のエラーハンドリング
-						error_log( 'KTPWP: Failed to create new order: ' . $wpdb->last_error );
+						ktpwp_debug_log( 'KTPWP: Failed to create new order: ' . $wpdb->last_error );
 						$content .= '<div class="error">受注書の作成に失敗しました。</div>';
 					}
 				}
@@ -1774,7 +1774,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 					$promised_delivery_date = $ktp_norm_order_date( isset( $order_data->promised_delivery_date ) ? $order_data->promised_delivery_date : '' );
 					$completion_date = $ktp_norm_order_date( isset( $order_data->completion_date ) ? $order_data->completion_date : '' );
 					$original_completion_date = isset( $order_data->completion_date ) ? $order_data->completion_date : '';
-					error_log( 'KTPWP Order: 画面表示時の完了日: ' . $completion_date . ' (受注書ID: ' . $order_data->id . ', 元の値: ' . $original_completion_date . ')' );
+					ktpwp_debug_log( 'KTPWP Order: 画面表示時の完了日: ' . $completion_date . ' (受注書ID: ' . $order_data->id . ', 元の値: ' . $original_completion_date . ')' );
 
 					// 受付＝受注書登録日時（旧「作成」表示と同一・ここに統一）
 					$reception_date_value = '';
@@ -1838,18 +1838,18 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 							if ( ! empty( $client_company_name ) ) {
 								$display_customer_name = $client_company_name;
 								if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-									error_log( 'KTPWP Order Display: 会社名をデータベースから取得しました: ' . $display_customer_name . ' (受注書ID: ' . $order_data->id . ')' );
+									ktpwp_debug_log( 'KTPWP Order Display: 会社名をデータベースから取得しました: ' . $display_customer_name . ' (受注書ID: ' . $order_data->id . ')' );
 								}
 							} else {
 								$display_customer_name = $order_data->user_name;
 								if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-									error_log( 'KTPWP Order Display: 会社名が見つからないため、担当者名を使用: ' . $display_customer_name . ' (受注書ID: ' . $order_data->id . ')' );
+									ktpwp_debug_log( 'KTPWP Order Display: 会社名が見つからないため、担当者名を使用: ' . $display_customer_name . ' (受注書ID: ' . $order_data->id . ')' );
 								}
 							}
 						} else {
 							$display_customer_name = $order_data->user_name;
 							if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-								error_log( 'KTPWP Order Display: 顧客IDがないため、担当者名を使用: ' . $display_customer_name . ' (受注書ID: ' . $order_data->id . ')' );
+								ktpwp_debug_log( 'KTPWP Order Display: 顧客IDがないため、担当者名を使用: ' . $display_customer_name . ' (受注書ID: ' . $order_data->id . ')' );
 							}
 						}
 					}
@@ -2277,7 +2277,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 						$format[] = '%s';
 						$result = $wpdb->insert( $table_name, $data, $format );
 						if ( $result === false ) {
-							error_log( 'KTPWP Error: Invoice item INSERT failed: ' . $wpdb->last_error );
+							ktpwp_debug_log( 'KTPWP Error: Invoice item INSERT failed: ' . $wpdb->last_error );
 						}
 						$used_id = $wpdb->insert_id;
 					}
@@ -2311,7 +2311,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 			} catch ( Exception $e ) {
 				// Rollback transaction
 				$wpdb->query( 'ROLLBACK' );
-				error_log( 'KTPWP: Failed to save invoice items: ' . $e->getMessage() );
+				ktpwp_debug_log( 'KTPWP: Failed to save invoice items: ' . $e->getMessage() );
 				return false;
 			}
 		}
@@ -2397,7 +2397,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 						$format[] = '%s';
 						$result = $wpdb->insert( $table_name, $data, $format );
 						if ( $result === false ) {
-							error_log( 'KTPWP Error: Cost item INSERT failed: ' . $wpdb->last_error );
+							ktpwp_debug_log( 'KTPWP Error: Cost item INSERT failed: ' . $wpdb->last_error );
 						}
 						$used_id = $wpdb->insert_id;
 					}
@@ -2431,7 +2431,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 			} catch ( Exception $e ) {
 				// Rollback transaction
 				$wpdb->query( 'ROLLBACK' );
-				error_log( 'KTPWP: Failed to save cost items: ' . $e->getMessage() );
+				ktpwp_debug_log( 'KTPWP: Failed to save cost items: ' . $e->getMessage() );
 				return false;
 			}
 		}
@@ -2534,11 +2534,11 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 			);
 
 			if ( $result === false ) {
-				error_log( 'KTPWP: Failed to delete staff chat messages for order ID ' . $order_id . ': ' . $wpdb->last_error );
+				ktpwp_debug_log( 'KTPWP: Failed to delete staff chat messages for order ID ' . $order_id . ': ' . $wpdb->last_error );
 				return false;
 			}
 
-			error_log( 'KTPWP: Successfully deleted ' . $result . ' staff chat messages for order ID ' . $order_id );
+			ktpwp_debug_log( 'KTPWP: Successfully deleted ' . $result . ' staff chat messages for order ID ' . $order_id );
 			return true;
 		}
 
@@ -3395,7 +3395,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 			} else {
 				// テーブルが存在しない場合はログに記録
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					error_log( 'KTPWP: ktp_setting テーブルが存在しません。デフォルト会社情報を使用します。' );
+					ktpwp_debug_log( 'KTPWP: ktp_setting テーブルが存在しません。デフォルト会社情報を使用します。' );
 				}
 			}
 		}

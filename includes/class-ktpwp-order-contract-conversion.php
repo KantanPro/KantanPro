@@ -157,7 +157,7 @@ if ( ! class_exists( 'KTPWP_Order_Contract_Conversion' ) ) {
 					} elseif ( empty( $subscription_options['skip_subscription_start'] ) ) {
 						$result = KTPWP_Stripe_Subscription::get_instance()->maybe_start_for_contract( (int) $contract_id, $order_id );
 						if ( is_wp_error( $result ) && defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-							error_log( 'KTPWP Stripe Subscription start: ' . $result->get_error_message() );
+							ktpwp_debug_log( 'KTPWP Stripe Subscription start: ' . $result->get_error_message() );
 						}
 					}
 				}

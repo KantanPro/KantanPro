@@ -70,7 +70,7 @@ class KTPWP_Nonce_Manager {
         if ( ! isset( self::$nonce_cache['staff_chat'] ) ) {
             self::$nonce_cache['staff_chat'] = wp_create_nonce( 'ktpwp_staff_chat_nonce' );
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP Nonce Manager: Created unified staff_chat nonce: ' . self::$nonce_cache['staff_chat'] );
+                ktpwp_debug_log( 'KTPWP Nonce Manager: Created unified staff_chat nonce: ' . self::$nonce_cache['staff_chat'] );
             }
         }
         return self::$nonce_cache['staff_chat'];
@@ -85,7 +85,7 @@ class KTPWP_Nonce_Manager {
         if ( ! isset( self::$nonce_cache['auto_save'] ) ) {
             self::$nonce_cache['auto_save'] = wp_create_nonce( 'ktpwp_auto_save_nonce' );
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP Nonce Manager: Created unified auto_save nonce: ' . self::$nonce_cache['auto_save'] );
+                ktpwp_debug_log( 'KTPWP Nonce Manager: Created unified auto_save nonce: ' . self::$nonce_cache['auto_save'] );
             }
         }
         return self::$nonce_cache['auto_save'];
@@ -100,7 +100,7 @@ class KTPWP_Nonce_Manager {
         if ( ! isset( self::$nonce_cache['ktp_ajax'] ) ) {
             self::$nonce_cache['ktp_ajax'] = wp_create_nonce( 'ktp_ajax_nonce' );
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP Nonce Manager: Created unified ktp_ajax nonce: ' . self::$nonce_cache['ktp_ajax'] );
+                ktpwp_debug_log( 'KTPWP Nonce Manager: Created unified ktp_ajax nonce: ' . self::$nonce_cache['ktp_ajax'] );
             }
         }
         return self::$nonce_cache['ktp_ajax'];
@@ -128,7 +128,7 @@ class KTPWP_Nonce_Manager {
     public function clear_cache() {
         self::$nonce_cache = array();
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Nonce Manager: Cache cleared' );
+            ktpwp_debug_log( 'KTPWP Nonce Manager: Cache cleared' );
         }
     }
 }

@@ -18,7 +18,7 @@ if ( class_exists( 'KTPWP_Fresh_Install_Detector' ) ) {
     $fresh_detector = KTPWP_Fresh_Install_Detector::get_instance();
     if ( $fresh_detector->should_skip_migrations() ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Migration: 新規インストール環境のため20250108_fix_invoice_items_columnのALTERをスキップ（修復通知は不要のため完了扱い）' );
+            ktpwp_debug_log( 'KTPWP Migration: 新規インストール環境のため20250108_fix_invoice_items_columnのALTERをスキップ（修復通知は不要のため完了扱い）' );
         }
         // スキップ時も完了フラグを立てないと、管理画面に「invoice_itemsカラム修正」が永久表示される
         update_option( 'ktp_order_migration_20250108_invoice_items_completed', true );
@@ -34,7 +34,7 @@ $table_name = $wpdb->prefix . 'ktp_order';
 $table_exists = $wpdb->get_var( "SHOW TABLES LIKE '{$table_name}'" );
 if ( $table_exists !== $table_name ) {
     if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-        error_log( "KTPWP Migration Error: テーブル {$table_name} が存在しません" );
+        ktpwp_debug_log( "KTPWP Migration Error: テーブル {$table_name} が存在しません" );
     }
     return;
 }
@@ -43,7 +43,7 @@ if ( $table_exists !== $table_name ) {
 $existing_columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$table_name}`", 0 );
 
 if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-    error_log( 'KTPWP Migration: 現在のカラム: ' . implode( ', ', $existing_columns ) );
+    ktpwp_debug_log( 'KTPWP Migration: 現在のカラム: ' . implode( ', ', $existing_columns ) );
 }
 
 // 追加するカラムの定義（エラーメッセージで不足しているカラム）
@@ -63,31 +63,31 @@ foreach ( $columns_to_add as $column_name => $column_definition ) {
 
         if ( $result === false ) {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( "KTPWP Migration Error: カラム '{$column_name}' の追加に失敗: " . $wpdb->last_error );
+                ktpwp_debug_log( "KTPWP Migration Error: カラム '{$column_name}' の追加に失敗: " . $wpdb->last_error );
             }
         } else {
             $added_columns[] = $column_name;
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( "KTPWP Migration: カラム '{$column_name}' を {$table_name} に追加しました" );
+                ktpwp_debug_log( "KTPWP Migration: カラム '{$column_name}' を {$table_name} に追加しました" );
             }
         }
     } else {
         $skipped_columns[] = $column_name;
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( "KTPWP Migration: カラム '{$column_name}' は既に存在するためスキップ" );
+            ktpwp_debug_log( "KTPWP Migration: カラム '{$column_name}' は既に存在するためスキップ" );
         }
     }
 }
 
 // 最終結果のログ出力
 if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-    error_log( 'KTPWP Migration: invoice_itemsカラム修正マイグレーション完了' );
-    error_log( 'KTPWP Migration: 追加されたカラム: ' . implode( ', ', $added_columns ) );
-    error_log( 'KTPWP Migration: スキップされたカラム: ' . implode( ', ', $skipped_columns ) );
+    ktpwp_debug_log( 'KTPWP Migration: invoice_itemsカラム修正マイグレーション完了' );
+    ktpwp_debug_log( 'KTPWP Migration: 追加されたカラム: ' . implode( ', ', $added_columns ) );
+    ktpwp_debug_log( 'KTPWP Migration: スキップされたカラム: ' . implode( ', ', $skipped_columns ) );
     
     // 最終的なカラム構造を確認
     $final_columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$table_name}`", 0 );
-    error_log( 'KTPWP Migration: 最終的なカラム: ' . implode( ', ', $final_columns ) );
+    ktpwp_debug_log( 'KTPWP Migration: 最終的なカラム: ' . implode( ', ', $final_columns ) );
 }
 
 // マイグレーション完了フラグを設定
@@ -97,6 +97,6 @@ update_option( 'ktp_order_migration_20250108_invoice_items_timestamp', current_t
 // 成功メッセージ
 if ( ! empty( $added_columns ) ) {
     if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-        error_log( 'KTPWP Migration: invoice_itemsカラムの追加が正常に完了しました' );
+        ktpwp_debug_log( 'KTPWP Migration: invoice_itemsカラムの追加が正常に完了しました' );
     }
 } 

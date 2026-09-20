@@ -475,6 +475,78 @@ replace_method_body('includes/class-ktpwp-settings.php',
     }''')
 drop_lines('includes/class-ktpwp-settings.php', r"'(スタッフ上限|登録スタッフ数)'")
 
+# --- 5f2) ダミーデータ作成ツールを外す ---------------------------------------
+#     開発用のテストデータ生成ツール。本体の create_dummy_data.php は配布物に
+#     含めていない（build-wporg.sh の --exclude）のに、管理メニューと画面だけが
+#     残っていた。実機では「ダミーデータ作成スクリプトバージョン: スクリプトが
+#     見つかりません」と出たうえで「作成」「データをクリア」ボタンが並ぶ、
+#     動かない機能になっていた（2026-09-20 実機確認）。
+#     レビュアーが押せる壊れた機能を配布物に残さないため、UI ごと取り除く。
+edit(
+    'includes/class-ktpwp-settings.php',
+    """        // サブメニュー - ダミーデータ作成
+        add_submenu_page(
+            'ktp-settings', // 親メニューのスラッグ
+            __( 'ダミーデータ作成', 'kantanpro' ), // ページタイトル
+            __( 'ダミーデータ作成', 'kantanpro' ), // メニュータイトル
+            'manage_options', // 権限
+            'ktpwp-dummy-data', // メニューのスラッグ（既存ページのスラッグを踏襲）
+            'ktpwp_dummy_data_page' // 既存の表示関数を流用
+        );
+""",
+    "        // ダミーデータ作成ツールは WordPress.org 配布版には含めない。\n",
+)
+
+# ktpwp.php 側の実装 5 関数（メニュー登録・バージョン取得・画面・作成/クリアの AJAX）を
+# まとめて落とす。この docblock から EOF までがちょうどダミーデータ関連だけになっている。
+_dummy_head = """/**
+ * ダミーデータ作成メニューを追加
+ */
+function ktpwp_add_dummy_data_menu() {"""
+_p = path('ktpwp.php')
+_src = open(_p, encoding='utf-8').read()
+if _dummy_head in _src:
+    _cut = _src.index(_dummy_head)
+    _tail = _src[_cut:]
+    # 想定どおり、ここから先にダミーデータ以外のトップレベル定義が無いことを確かめる。
+    _others = [m.group(1) for m in re.finditer(r'^function\s+([a-zA-Z0-9_]+)', _tail, re.M)
+               if 'dummy_data' not in m.group(1) and m.group(1) not in ('ktpwp_handle_clear_data_ajax',)]
+    if _others:
+        errors.append('ktpwp.php: ダミーデータ以外の関数が末尾に混ざっています → ' + ', '.join(_others))
+    else:
+        open(_p, 'w', encoding='utf-8').write(
+            _src[:_cut].rstrip('\n')
+            + '\n\n// ダミーデータ作成ツールは WordPress.org 配布版には含めない。\n'
+        )
+        print('ダミーデータ作成ツールの除去: 完了')
+else:
+    errors.append('ktpwp.php: ダミーデータ作成メニューの定義が見つかりません')
+
+# ダミーデータ関連の AJAX 登録も落とす。function_exists() ガード内なので動作は
+# 壊れないが、存在しない関数への参照が配布物に残るとレビューで不審に見える。
+edit(
+    'ktpwp.php',
+    """    // ダミーデータ作成AJAXハンドラー
+    if (function_exists('ktpwp_handle_create_dummy_data_ajax')) {
+        add_action( 'wp_ajax_ktpwp_create_dummy_data', 'ktpwp_handle_create_dummy_data_ajax' );
+    } else {
+        ktpwp_debug_log('KTPWP: ktpwp_handle_create_dummy_data_ajax function not found');
+    }
+""",
+    "",
+)
+edit(
+    'ktpwp.php',
+    """    // データクリアAJAXハンドラー
+    if (function_exists('ktpwp_handle_clear_data_ajax')) {
+        add_action( 'wp_ajax_ktpwp_clear_data', 'ktpwp_handle_clear_data_ajax' );
+    } else {
+        ktpwp_debug_log('KTPWP: ktpwp_handle_clear_data_ajax function not found');
+    }
+""",
+    "",
+)
+
 # --- 5g) レポート／ライセンス誘導の翻訳文言と説明文 ---------------------------
 #     翻訳辞書は class-ktpwp-i18n.php に残るので、消した機能の文言も
 #     ここで落とさないと「ライセンスが必要」等が grep に引っかかる。

@@ -50,14 +50,14 @@ class KTPWP_Migration_Allow_Null_Tax_Rate_In_Supplier_Skills {
         // Check if table exists
         $table_exists = $wpdb->get_var( "SHOW TABLES LIKE '{$table_name}'" );
         if ( ! $table_exists ) {
-            error_log( 'KTPWP: Supplier skills table does not exist. Skipping migration.' );
+            ktpwp_debug_log( 'KTPWP: Supplier skills table does not exist. Skipping migration.' );
             return false;
         }
 
         // Check if tax_rate column exists
         $column_exists = $wpdb->get_var( "SHOW COLUMNS FROM `{$table_name}` LIKE 'tax_rate'" );
         if ( ! $column_exists ) {
-            error_log( 'KTPWP: tax_rate column does not exist in supplier skills table. Skipping migration.' );
+            ktpwp_debug_log( 'KTPWP: tax_rate column does not exist in supplier skills table. Skipping migration.' );
             return false;
         }
 
@@ -66,7 +66,7 @@ class KTPWP_Migration_Allow_Null_Tax_Rate_In_Supplier_Skills {
         
         // Check if column already allows NULL
         if ( $current_definition->Null === 'YES' ) {
-            error_log( 'KTPWP: tax_rate column already allows NULL values. Migration not needed.' );
+            ktpwp_debug_log( 'KTPWP: tax_rate column already allows NULL values. Migration not needed.' );
             update_option( self::OPTION_NAME, self::VERSION );
             return true;
         }
@@ -77,14 +77,14 @@ class KTPWP_Migration_Allow_Null_Tax_Rate_In_Supplier_Skills {
         $result = $wpdb->query( $sql );
 
         if ( $result === false ) {
-            error_log( 'KTPWP: Failed to modify tax_rate column to allow NULL values. Error: ' . $wpdb->last_error );
+            ktpwp_debug_log( 'KTPWP: Failed to modify tax_rate column to allow NULL values. Error: ' . $wpdb->last_error );
             return false;
         }
 
         // Update version
         update_option( self::OPTION_NAME, self::VERSION );
 
-        error_log( 'KTPWP: Successfully modified tax_rate column to allow NULL values in supplier skills table.' );
+        ktpwp_debug_log( 'KTPWP: Successfully modified tax_rate column to allow NULL values in supplier skills table.' );
         return true;
     }
 
@@ -124,14 +124,14 @@ class KTPWP_Migration_Allow_Null_Tax_Rate_In_Supplier_Skills {
         $result = $wpdb->query( $sql );
 
         if ( $result === false ) {
-            error_log( 'KTPWP: Failed to rollback tax_rate column modification. Error: ' . $wpdb->last_error );
+            ktpwp_debug_log( 'KTPWP: Failed to rollback tax_rate column modification. Error: ' . $wpdb->last_error );
             return false;
         }
 
         // Revert version
         update_option( self::OPTION_NAME, '3.3.0' );
 
-        error_log( 'KTPWP: Successfully rolled back tax_rate column modification.' );
+        ktpwp_debug_log( 'KTPWP: Successfully rolled back tax_rate column modification.' );
         return true;
     }
 }

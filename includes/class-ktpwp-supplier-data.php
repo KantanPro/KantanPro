@@ -122,7 +122,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
 			if ( empty( $tab_name ) ) {
 				// エラーログはサーバーサイドのみに記録（ヘッダーに表示されない）
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					error_log( 'KTPWP: Empty tab_name provided to update_table method' );
+					ktpwp_debug_log( 'KTPWP: Empty tab_name provided to update_table method' );
 				}
 				return;
 			}
@@ -139,7 +139,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
 				if ( $supplier_nonce === '' || ! wp_verify_nonce( $supplier_nonce, 'ktp_supplier_action' ) ) {
 					// エラーログはサーバーサイドのみに記録（ヘッダーに表示されない）
 					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-						error_log( 'KTPWP: Nonce verification failed' );
+						ktpwp_debug_log( 'KTPWP: Nonce verification failed' );
 					}
 					wp_die( esc_html__( 'Security check failed. Please refresh the page and try again.', 'kantanpro' ) );
 				}
@@ -156,7 +156,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
 
 			// Log operation without sensitive data (サーバーサイドのみ)
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( 'KTPWP: update_table called for tab: ' . $tab_name . ', action: ' . $query_post );
+				ktpwp_debug_log( 'KTPWP: update_table called for tab: ' . $tab_name . ', action: ' . $query_post );
 			}
 
 			// Handle different operations (update, delete, insert, etc.)
@@ -266,7 +266,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
 						$skills_deleted = $this->delete_supplier_skills_by_supplier_id( $data_id );
 						if ( ! $skills_deleted ) {
 							if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-								error_log( 'KTPWP: Supplier skills deletion failed before supplier delete. supplier_id=' . $data_id );
+								ktpwp_debug_log( 'KTPWP: Supplier skills deletion failed before supplier delete. supplier_id=' . $data_id );
 							}
 							ktpwp_add_inline_notice( 'error', '' . __( '職能データの削除に失敗しました。', 'kantanpro' ) . '' );
 							return;
@@ -277,7 +277,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
 						if ( $delete_result === false ) {
 							// エラーログはサーバーサイドのみに記録
 							if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-								error_log( 'KTPWP: Supplier deletion failed. SQL Error: ' . $wpdb->last_error );
+								ktpwp_debug_log( 'KTPWP: Supplier deletion failed. SQL Error: ' . $wpdb->last_error );
 							}
 							
 							// ユーザーには適切なエラーメッセージのみ表示
@@ -406,7 +406,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
 					// Check if table exists before attempting insert
 					$table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) ) === $table_name;
 					if ( ! $table_exists ) {
-						error_log( 'KTPWP ERROR: Table does not exist: ' . $table_name );
+						ktpwp_debug_log( 'KTPWP ERROR: Table does not exist: ' . $table_name );
 						wp_die( esc_html__( 'Database table does not exist. Please contact the administrator.', 'kantanpro' ) );
 					}
 
@@ -517,7 +517,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
 					break;
 
 				default:
-					error_log( 'KTPWP: Invalid query_post action: ' . $query_post );
+					ktpwp_debug_log( 'KTPWP: Invalid query_post action: ' . $query_post );
 					break;
 			}
 		}
@@ -582,7 +582,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
 
 			if ( $result === false ) {
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					error_log( 'KTPWP: Failed to delete supplier skills by supplier_id. SQL Error: ' . $wpdb->last_error );
+					ktpwp_debug_log( 'KTPWP: Failed to delete supplier skills by supplier_id. SQL Error: ' . $wpdb->last_error );
 				}
 				return false;
 			}

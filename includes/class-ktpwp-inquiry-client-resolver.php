@@ -174,7 +174,7 @@ if ( ! class_exists( 'KTPWP_Inquiry_Client_Resolver' ) ) {
 			);
 
 			if ( $result === false ) {
-				error_log( 'KTPWP Inquiry Client Resolver: Failed to insert client - ' . $wpdb->last_error );
+				ktpwp_debug_log( 'KTPWP Inquiry Client Resolver: Failed to insert client - ' . $wpdb->last_error );
 				return false;
 			}
 
@@ -386,7 +386,7 @@ if ( ! class_exists( 'KTPWP_Inquiry_Client_Resolver' ) ) {
 			);
 
 			if ( ! $department_id ) {
-				error_log( 'KTPWP Inquiry Client Resolver: Failed to create department for client ' . $client_id );
+				ktpwp_debug_log( 'KTPWP Inquiry Client Resolver: Failed to create department for client ' . $client_id );
 				return false;
 			}
 

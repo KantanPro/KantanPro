@@ -66,7 +66,7 @@ if ( ! class_exists( 'KTPWP_Order_Admin_Notification' ) ) {
 			$order = $this->get_order( $order_id );
 			if ( ! $order ) {
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					error_log( 'KTPWP Order Admin Notification: Order not found (id=' . $order_id . ')' );
+					ktpwp_debug_log( 'KTPWP Order Admin Notification: Order not found (id=' . $order_id . ')' );
 				}
 				return false;
 			}
@@ -74,7 +74,7 @@ if ( ! class_exists( 'KTPWP_Order_Admin_Notification' ) ) {
 			$recipients = $this->get_admin_recipient_emails();
 			if ( empty( $recipients ) ) {
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					error_log( 'KTPWP Order Admin Notification: No administrator email recipients found.' );
+					ktpwp_debug_log( 'KTPWP Order Admin Notification: No administrator email recipients found.' );
 				}
 				return false;
 			}
@@ -94,7 +94,7 @@ if ( ! class_exists( 'KTPWP_Order_Admin_Notification' ) ) {
 					$sent_any = true;
 				} elseif ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 					$err = isset( $outcome['error_message'] ) ? $outcome['error_message'] : 'unknown';
-					error_log( 'KTPWP Order Admin Notification: Failed to send to ' . $to . ' - ' . $err );
+					ktpwp_debug_log( 'KTPWP Order Admin Notification: Failed to send to ' . $to . ' - ' . $err );
 				}
 			}
 

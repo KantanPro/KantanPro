@@ -25,9 +25,9 @@ if ( ! in_array( 'public_instant_purchase', $existing_columns, true ) ) {
 	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.NotPrepared
 	$result = $wpdb->query( $sql );
 	if ( false === $result && defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-		error_log( "KTPWP Migration: Failed to add public_instant_purchase column to {$service_table}" );
+		ktpwp_debug_log( "KTPWP Migration: Failed to add public_instant_purchase column to {$service_table}" );
 	} elseif ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-		error_log( "KTPWP Migration: Added public_instant_purchase column to {$service_table}" );
+		ktpwp_debug_log( "KTPWP Migration: Added public_instant_purchase column to {$service_table}" );
 	}
 }
 

@@ -115,14 +115,14 @@ class KTPWP_Contact_Form {
             return;
         }
 
-        error_log( 'KTPWP DEBUG: init_hooks called' );
+        ktpwp_debug_log( 'KTPWP DEBUG: init_hooks called' );
         // Contact Form 7が有効な場合のみフックを追加
         if ( class_exists( 'WPCF7_ContactForm' ) ) {
             add_action( 'wpcf7_mail_sent', array( $this, 'capture_contact_form_data' ) );
-            error_log( 'KTPWP DEBUG: wpcf7_mail_sent hook registered' );
+            ktpwp_debug_log( 'KTPWP DEBUG: wpcf7_mail_sent hook registered' );
             self::$hooks_registered = true;
         } else {
-            error_log( 'KTPWP DEBUG: WPCF7_ContactForm class not found' );
+            ktpwp_debug_log( 'KTPWP DEBUG: WPCF7_ContactForm class not found' );
         }
     }
 
@@ -132,7 +132,7 @@ class KTPWP_Contact_Form {
     public function init_hooks_after_plugins_loaded() {
         // デバッグログ: plugins_loaded後の処理
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP CF7: init_hooks_after_plugins_loaded called' );
+            ktpwp_debug_log( 'KTPWP CF7: init_hooks_after_plugins_loaded called' );
         }
 
         $this->init_hooks();
@@ -144,7 +144,7 @@ class KTPWP_Contact_Form {
     public function init_hooks_after_init() {
         // デバッグログ: init後の処理
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP CF7: init_hooks_after_init called' );
+            ktpwp_debug_log( 'KTPWP CF7: init_hooks_after_init called' );
         }
 
         $this->init_hooks();
@@ -299,7 +299,7 @@ class KTPWP_Contact_Form {
 
         // デバッグログ: 調整されたフィールドマッピングを記録
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP CF7 Adjusted Field Mapping: ' . print_r( $this->field_mapping, true ) );
+            ktpwp_debug_log( 'KTPWP CF7 Adjusted Field Mapping: ' . print_r( $this->field_mapping, true ) );
         }
     }
 
@@ -363,13 +363,13 @@ class KTPWP_Contact_Form {
 
         // デバッグログ: フィールドマッピングの結果を記録
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP CF7 Field Mapping Debug:' );
-            error_log( '  - customer_name (your-name): ' . $customer_name );
-            error_log( '  - company_name (your_company_name): ' . $company_name );
-            error_log( '  - subject (your-subject): ' . $subject );
-            error_log( '  - field_mapping[name]: ' . print_r( $this->field_mapping['name'], true ) );
-            error_log( '  - field_mapping[company_name]: ' . print_r( $this->field_mapping['company_name'], true ) );
-            error_log( '  - field_mapping[subject]: ' . print_r( $this->field_mapping['subject'], true ) );
+            ktpwp_debug_log( 'KTPWP CF7 Field Mapping Debug:' );
+            ktpwp_debug_log( '  - customer_name (your-name): ' . $customer_name );
+            ktpwp_debug_log( '  - company_name (your_company_name): ' . $company_name );
+            ktpwp_debug_log( '  - subject (your-subject): ' . $subject );
+            ktpwp_debug_log( '  - field_mapping[name]: ' . print_r( $this->field_mapping['name'], true ) );
+            ktpwp_debug_log( '  - field_mapping[company_name]: ' . print_r( $this->field_mapping['company_name'], true ) );
+            ktpwp_debug_log( '  - field_mapping[subject]: ' . print_r( $this->field_mapping['subject'], true ) );
         }
 
         // 会社名が空の場合は、データベースから取得または個人名を使用
@@ -554,7 +554,7 @@ class KTPWP_Contact_Form {
         if ( $row_count == 0 ) {
             $wpdb->query( "ALTER TABLE {$table_name} AUTO_INCREMENT = 1" );
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP CF7: Client table AUTO_INCREMENT reset to 1' );
+                ktpwp_debug_log( 'KTPWP CF7: Client table AUTO_INCREMENT reset to 1' );
             }
         }
 
@@ -584,7 +584,7 @@ class KTPWP_Contact_Form {
         $client_id = $wpdb->insert_id;
 
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Contact Form: Client data saved with ID ' . $client_id );
+            ktpwp_debug_log( 'KTPWP Contact Form: Client data saved with ID ' . $client_id );
         }
 
         return $client_id;
@@ -606,7 +606,7 @@ class KTPWP_Contact_Form {
         if ( $row_count == 0 ) {
             $wpdb->query( "ALTER TABLE {$table_name} AUTO_INCREMENT = 1" );
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP CF7: Order table AUTO_INCREMENT reset to 1' );
+                ktpwp_debug_log( 'KTPWP CF7: Order table AUTO_INCREMENT reset to 1' );
             }
         }
 
@@ -708,7 +708,7 @@ class KTPWP_Contact_Form {
         }
 
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Contact Form: Order data saved with ID ' . $new_id );
+            ktpwp_debug_log( 'KTPWP Contact Form: Order data saved with ID ' . $new_id );
         }
 
         return $new_id;
@@ -726,10 +726,10 @@ class KTPWP_Contact_Form {
             setcookie( $cookie_name, $client_id, time() + ( 86400 * 30 ), COOKIEPATH, COOKIE_DOMAIN );
 
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP Contact Form: Client cookie set for ID ' . $client_id );
+                ktpwp_debug_log( 'KTPWP Contact Form: Client cookie set for ID ' . $client_id );
             }
         } elseif ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP Contact Form: Failed to set cookie - headers already sent' );
+                ktpwp_debug_log( 'KTPWP Contact Form: Failed to set cookie - headers already sent' );
         }
     }
 
@@ -792,7 +792,7 @@ class KTPWP_Contact_Form {
                 $log_message .= ' | Context: ' . wp_json_encode( $context );
             }
 
-            error_log( $log_message );
+            ktpwp_debug_log( $log_message );
         }
     }
 
@@ -843,7 +843,7 @@ class KTPWP_Contact_Form {
      */
     public function capture_contact_form_data_before( $contact_form ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP CF7: capture_contact_form_data_before method called' );
+            ktpwp_debug_log( 'KTPWP CF7: capture_contact_form_data_before method called' );
         }
 
         // メイン処理を呼び出し
@@ -858,8 +858,8 @@ class KTPWP_Contact_Form {
      */
     public function capture_contact_form_data_submit( $contact_form, $result ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP CF7: capture_contact_form_data_submit method called' );
-            error_log( 'KTPWP CF7 Submit Result: ' . print_r( $result, true ) );
+            ktpwp_debug_log( 'KTPWP CF7: capture_contact_form_data_submit method called' );
+            ktpwp_debug_log( 'KTPWP CF7 Submit Result: ' . print_r( $result, true ) );
         }
 
         // 送信が成功した場合のみ処理
@@ -876,8 +876,8 @@ class KTPWP_Contact_Form {
      */
     public function capture_posted_data( $posted_data ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP CF7: capture_posted_data filter called' );
-            error_log( 'KTPWP CF7 Posted Data Filter: ' . print_r( $posted_data, true ) );
+            ktpwp_debug_log( 'KTPWP CF7: capture_posted_data filter called' );
+            ktpwp_debug_log( 'KTPWP CF7 Posted Data Filter: ' . print_r( $posted_data, true ) );
         }
 
         // フィルターなので、データを変更せずに処理
@@ -910,7 +910,7 @@ class KTPWP_Contact_Form {
                 $order_data = $this->prepare_order_data( $posted_data, $client_id, $department_id );
 
                 if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                    error_log( 'KTPWP CF7 Prepared Order Data (from filter): ' . print_r( $order_data, true ) );
+                    ktpwp_debug_log( 'KTPWP CF7 Prepared Order Data (from filter): ' . print_r( $order_data, true ) );
                 }
 
                 $this->save_order_data( $order_data );

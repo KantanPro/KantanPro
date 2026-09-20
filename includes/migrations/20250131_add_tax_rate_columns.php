@@ -74,7 +74,7 @@ class KTPWP_Migration_20250131_Add_Tax_Rate_Columns {
         ) === $table_name;
         
         if ( ! $table_exists ) {
-            error_log( 'KTPWP Migration: Table ' . $table_name . ' does not exist. Skipping tax_rate column addition.' );
+            ktpwp_debug_log( 'KTPWP Migration: Table ' . $table_name . ' does not exist. Skipping tax_rate column addition.' );
             return false;
         }
         
@@ -87,7 +87,7 @@ class KTPWP_Migration_20250131_Add_Tax_Rate_Columns {
         );
         
         if ( $column_exists ) {
-            error_log( 'KTPWP Migration: Column tax_rate already exists in ' . $table_name . '. Skipping.' );
+            ktpwp_debug_log( 'KTPWP Migration: Column tax_rate already exists in ' . $table_name . '. Skipping.' );
             return true;
         }
         
@@ -102,12 +102,12 @@ class KTPWP_Migration_20250131_Add_Tax_Rate_Columns {
         $result = $wpdb->query( $sql );
         
         if ( $result === false ) {
-            error_log( 'KTPWP Migration: Failed to add tax_rate column to ' . $table_name . '. Error: ' . $wpdb->last_error );
+            ktpwp_debug_log( 'KTPWP Migration: Failed to add tax_rate column to ' . $table_name . '. Error: ' . $wpdb->last_error );
             return false;
         }
         
         // Log success
-        error_log( 'KTPWP Migration: Successfully added tax_rate column to ' . $table_name );
+        ktpwp_debug_log( 'KTPWP Migration: Successfully added tax_rate column to ' . $table_name );
         
         return true;
     }
@@ -138,10 +138,10 @@ class KTPWP_Migration_20250131_Add_Tax_Rate_Columns {
         if ( $tax_settings_added ) {
             $result = update_option( 'ktp_general_settings', $general_settings );
             if ( $result ) {
-                error_log( 'KTPWP Migration: Successfully added tax settings to general settings' );
+                ktpwp_debug_log( 'KTPWP Migration: Successfully added tax settings to general settings' );
                 return true;
             } else {
-                error_log( 'KTPWP Migration: Failed to add tax settings to general settings' );
+                ktpwp_debug_log( 'KTPWP Migration: Failed to add tax settings to general settings' );
                 return false;
             }
         }
@@ -204,7 +204,7 @@ class KTPWP_Migration_20250131_Add_Tax_Rate_Columns {
         ) === $table_name;
         
         if ( ! $table_exists ) {
-            error_log( 'KTPWP Migration: Table ' . $table_name . ' does not exist. Skipping tax_rate column removal.' );
+            ktpwp_debug_log( 'KTPWP Migration: Table ' . $table_name . ' does not exist. Skipping tax_rate column removal.' );
             return false;
         }
         
@@ -217,7 +217,7 @@ class KTPWP_Migration_20250131_Add_Tax_Rate_Columns {
         );
         
         if ( ! $column_exists ) {
-            error_log( 'KTPWP Migration: Column tax_rate does not exist in ' . $table_name . '. Skipping.' );
+            ktpwp_debug_log( 'KTPWP Migration: Column tax_rate does not exist in ' . $table_name . '. Skipping.' );
             return true;
         }
         
@@ -227,12 +227,12 @@ class KTPWP_Migration_20250131_Add_Tax_Rate_Columns {
         $result = $wpdb->query( $sql );
         
         if ( $result === false ) {
-            error_log( 'KTPWP Migration: Failed to remove tax_rate column from ' . $table_name . '. Error: ' . $wpdb->last_error );
+            ktpwp_debug_log( 'KTPWP Migration: Failed to remove tax_rate column from ' . $table_name . '. Error: ' . $wpdb->last_error );
             return false;
         }
         
         // Log success
-        error_log( 'KTPWP Migration: Successfully removed tax_rate column from ' . $table_name );
+        ktpwp_debug_log( 'KTPWP Migration: Successfully removed tax_rate column from ' . $table_name );
         
         return true;
     }
@@ -263,10 +263,10 @@ class KTPWP_Migration_20250131_Add_Tax_Rate_Columns {
         if ( $tax_settings_removed ) {
             $result = update_option( 'ktp_general_settings', $general_settings );
             if ( $result ) {
-                error_log( 'KTPWP Migration: Successfully removed tax settings from general settings' );
+                ktpwp_debug_log( 'KTPWP Migration: Successfully removed tax settings from general settings' );
                 return true;
             } else {
-                error_log( 'KTPWP Migration: Failed to remove tax settings from general settings' );
+                ktpwp_debug_log( 'KTPWP Migration: Failed to remove tax settings from general settings' );
                 return false;
             }
         }

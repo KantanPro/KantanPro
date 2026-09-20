@@ -140,9 +140,9 @@ if ( ! class_exists( 'KTPWP_Service_UI' ) ) {
 				$total_pages = ceil( $total_services / $query_limit );
 			} catch ( Exception $e ) {
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					error_log( 'KTPWP: Error retrieving service data: ' . $e->getMessage() );
+					ktpwp_debug_log( 'KTPWP: Error retrieving service data: ' . $e->getMessage() );
 				}
-				error_log( 'KTPWP: Exception Trace: ' . $e->getTraceAsString() );
+				ktpwp_debug_log( 'KTPWP: Exception Trace: ' . $e->getTraceAsString() );
 				$services = array();
 				$total_services = 0;
 				$total_pages = 1;

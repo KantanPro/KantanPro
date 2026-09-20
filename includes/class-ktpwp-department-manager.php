@@ -88,7 +88,7 @@ class KTPWP_Department_Manager {
 
         if ( $result === false ) {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP: 部署の追加に失敗しました。' . $wpdb->last_error );
+                ktpwp_debug_log( 'KTPWP: 部署の追加に失敗しました。' . $wpdb->last_error );
             }
             return false;
         }
@@ -136,7 +136,7 @@ class KTPWP_Department_Manager {
 
         if ( $result === false ) {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP: 部署の更新に失敗しました。' . $wpdb->last_error );
+                ktpwp_debug_log( 'KTPWP: 部署の更新に失敗しました。' . $wpdb->last_error );
             }
             return false;
         }
@@ -169,7 +169,7 @@ class KTPWP_Department_Manager {
 
         if ( $result === false ) {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP: 部署の削除に失敗しました。' . $wpdb->last_error );
+                ktpwp_debug_log( 'KTPWP: 部署の削除に失敗しました。' . $wpdb->last_error );
             }
             return false;
         }
@@ -266,7 +266,7 @@ class KTPWP_Department_Manager {
         $table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) );
 
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( "KTPWP Department: table_exists check - table_name: {$table_name}, exists: " . ( $table_exists === $table_name ? 'true' : 'false' ) );
+            ktpwp_debug_log( "KTPWP Department: table_exists check - table_name: {$table_name}, exists: " . ( $table_exists === $table_name ? 'true' : 'false' ) );
         }
 
         return $table_exists === $table_name;
@@ -375,12 +375,12 @@ class KTPWP_Department_Manager {
         $is_selected = ( $is_selected === true || $is_selected === 'true' ) ? 1 : 0;
 
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( "KTPWP Department: update_department_selection called - department_id: {$department_id}, is_selected: {$is_selected}" );
+            ktpwp_debug_log( "KTPWP Department: update_department_selection called - department_id: {$department_id}, is_selected: {$is_selected}" );
         }
 
         if ( empty( $department_id ) ) {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP Department: department_id is empty' );
+                ktpwp_debug_log( 'KTPWP Department: department_id is empty' );
             }
             return false;
         }
@@ -395,7 +395,7 @@ class KTPWP_Department_Manager {
 
         if ( ! $department ) {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( "KTPWP Department: department not found for id: {$department_id}" );
+                ktpwp_debug_log( "KTPWP Department: department not found for id: {$department_id}" );
             }
             return false;
         }
@@ -403,7 +403,7 @@ class KTPWP_Department_Manager {
         $client_id = $department->client_id;
 
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( "KTPWP Department: found client_id: {$client_id} for department_id: {$department_id}" );
+            ktpwp_debug_log( "KTPWP Department: found client_id: {$client_id} for department_id: {$department_id}" );
         }
 
         if ( $is_selected ) {
@@ -418,9 +418,9 @@ class KTPWP_Department_Manager {
 
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
                 if ( $result === false ) {
-                    error_log( 'KTPWP Department: failed to update selected_department_id - SQL error: ' . $wpdb->last_error );
+                    ktpwp_debug_log( 'KTPWP Department: failed to update selected_department_id - SQL error: ' . $wpdb->last_error );
                 } else {
-                    error_log( "KTPWP Department: successfully updated selected_department_id to {$department_id}" );
+                    ktpwp_debug_log( "KTPWP Department: successfully updated selected_department_id to {$department_id}" );
                 }
             }
         } else {
@@ -435,9 +435,9 @@ class KTPWP_Department_Manager {
 
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
                 if ( $result === false ) {
-                    error_log( 'KTPWP Department: failed to clear selected_department_id - SQL error: ' . $wpdb->last_error );
+                    ktpwp_debug_log( 'KTPWP Department: failed to clear selected_department_id - SQL error: ' . $wpdb->last_error );
                 } else {
-                    error_log( "KTPWP Department: successfully cleared selected_department_id for client_id: {$client_id}" );
+                    ktpwp_debug_log( "KTPWP Department: successfully cleared selected_department_id for client_id: {$client_id}" );
 
                     // 更新後の状態を確認
                     $updated_selection = $wpdb->get_var(
@@ -446,7 +446,7 @@ class KTPWP_Department_Manager {
                             $client_id
                         )
                     );
-                    error_log( 'KTPWP Department: updated selected_department_id is now: ' . ( $updated_selection ?: 'NULL' ) );
+                    ktpwp_debug_log( 'KTPWP Department: updated selected_department_id is now: ' . ( $updated_selection ?: 'NULL' ) );
                 }
             }
         }

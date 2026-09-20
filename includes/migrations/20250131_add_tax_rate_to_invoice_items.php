@@ -26,7 +26,7 @@ if ( $wpdb->get_var( "SHOW TABLES LIKE '$invoice_items_table'" ) == $invoice_ite
         
         if ( $result !== false ) {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( "KTPWP Migration: Added tax_rate column to $invoice_items_table" );
+                ktpwp_debug_log( "KTPWP Migration: Added tax_rate column to $invoice_items_table" );
             }
             
             // 既存データの税率を基本税率（10%）に設定
@@ -34,16 +34,16 @@ if ( $wpdb->get_var( "SHOW TABLES LIKE '$invoice_items_table'" ) == $invoice_ite
             $update_result = $wpdb->query( $update_sql );
             
             if ( $update_result !== false && defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( "KTPWP Migration: Updated existing invoice items with default tax rate" );
+                ktpwp_debug_log( "KTPWP Migration: Updated existing invoice items with default tax rate" );
             }
         } else {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( "KTPWP Migration: Failed to add tax_rate column to $invoice_items_table" );
+                ktpwp_debug_log( "KTPWP Migration: Failed to add tax_rate column to $invoice_items_table" );
             }
         }
     } else {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( "KTPWP Migration: tax_rate column already exists in $invoice_items_table" );
+            ktpwp_debug_log( "KTPWP Migration: tax_rate column already exists in $invoice_items_table" );
         }
     }
 }
@@ -63,7 +63,7 @@ if ( $wpdb->get_var( "SHOW TABLES LIKE '$cost_items_table'" ) == $cost_items_tab
         
         if ( $result !== false ) {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( "KTPWP Migration: Added tax_rate column to $cost_items_table" );
+                ktpwp_debug_log( "KTPWP Migration: Added tax_rate column to $cost_items_table" );
             }
             
             // 既存データの税率を基本税率（10%）に設定
@@ -71,16 +71,16 @@ if ( $wpdb->get_var( "SHOW TABLES LIKE '$cost_items_table'" ) == $cost_items_tab
             $update_result = $wpdb->query( $update_sql );
             
             if ( $update_result !== false && defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( "KTPWP Migration: Updated existing cost items with default tax rate" );
+                ktpwp_debug_log( "KTPWP Migration: Updated existing cost items with default tax rate" );
             }
         } else {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( "KTPWP Migration: Failed to add tax_rate column to $cost_items_table" );
+                ktpwp_debug_log( "KTPWP Migration: Failed to add tax_rate column to $cost_items_table" );
             }
         }
     } else {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( "KTPWP Migration: tax_rate column already exists in $cost_items_table" );
+            ktpwp_debug_log( "KTPWP Migration: tax_rate column already exists in $cost_items_table" );
         }
     }
 } 

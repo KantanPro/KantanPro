@@ -118,7 +118,7 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 			if ( ! $table_exists ) {
 				// Create table if it doesn't exist
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					error_log( 'KTPWP Service: Table does not exist, creating: ' . $table_name );
+					ktpwp_debug_log( 'KTPWP Service: Table does not exist, creating: ' . $table_name );
 				}
 				$this->create_table( $name );
 			}
@@ -127,12 +127,12 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 			if ( ktpwp_request_method() === 'POST' ) {
 				// Debug logging
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					error_log( 'KTPWP Service: POST request detected in View_Table' );
+					ktpwp_debug_log( 'KTPWP Service: POST request detected in View_Table' );
 				}
 
 				$query_post = isset( $_POST['query_post'] ) ? sanitize_text_field( $_POST['query_post'] ) : '';
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					error_log( 'KTPWP Service: Extracted query_post: "' . $query_post . '"' );
+					ktpwp_debug_log( 'KTPWP Service: Extracted query_post: "' . $query_post . '"' );
 				}
 
 				// 追加・検索モードは GET へリダイレクト（タブ状態復元で上書きされないよう PRG）
@@ -986,14 +986,14 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 				// 表題にボタングループと画像セクションを含める
 				// デバッグ用：data_idの値を確認
 				if (defined('WP_DEBUG') && WP_DEBUG) {
-					error_log('KTPWP Service Tab: data_id = ' . var_export($data_id, true));
-					error_log('KTPWP Service Tab: data_id type = ' . gettype($data_id));
-					error_log('KTPWP Service Tab: id_display condition = ' . (!empty($data_id) && $data_id !== '0' && $data_id !== 0 ? 'true' : 'false'));
+					ktpwp_debug_log('KTPWP Service Tab: data_id = ' . var_export($data_id, true));
+					ktpwp_debug_log('KTPWP Service Tab: data_id type = ' . gettype($data_id));
+					ktpwp_debug_log('KTPWP Service Tab: id_display condition = ' . (!empty($data_id) && $data_id !== '0' && $data_id !== 0 ? 'true' : 'false'));
 				}
 				$id_display = (empty($data_id) || $data_id === '0' || $data_id === 0) ? '' : '（ ID： ' . $data_id . ' ）';
 				// デバッグ用：実際の表示内容を確認
 				if (defined('WP_DEBUG') && WP_DEBUG) {
-					error_log('KTPWP Service Tab: Final id_display = ' . $id_display);
+					ktpwp_debug_log('KTPWP Service Tab: Final id_display = ' . $id_display);
 				}
 				$data_title = '<div class="data_detail_box"><div class="data_detail_title" style="display: flex; align-items: center; justify-content: space-between;">
         <div>' . esc_html__( '■ サービスの詳細', 'kantanpro' ) . $id_display . '</div>' . $button_group_html . '</div>' . $image_section_html;

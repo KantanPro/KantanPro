@@ -86,14 +86,14 @@ class KTPWP_Database {
                     if ( method_exists( $instance, 'Create_Table' ) ) {
                         $instance->Create_Table( $table_name );
                         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                            error_log( "KTPWP: Table created for {$table_name} using {$class_name}" );
+                            ktpwp_debug_log( "KTPWP: Table created for {$table_name} using {$class_name}" );
                         }
                     }
                 } catch ( Exception $e ) {
-                    error_log( "KTPWP Error: Failed to create table {$table_name}: " . $e->getMessage() );
+                    ktpwp_debug_log( "KTPWP Error: Failed to create table {$table_name}: " . $e->getMessage() );
                 }
             } else {
-                error_log( "KTPWP Error: Class {$class_name} not found for table {$table_name}" );
+                ktpwp_debug_log( "KTPWP Error: Class {$class_name} not found for table {$table_name}" );
             }
         }
     }
@@ -116,12 +116,12 @@ class KTPWP_Database {
                 if ( method_exists( $instance, 'Update_Table' ) ) {
                     $instance->Update_Table( $table_name );
                     if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                        error_log( "KTPWP: Table updated for {$table_name} using {$class_name}" );
+                        ktpwp_debug_log( "KTPWP: Table updated for {$table_name} using {$class_name}" );
                     }
                     return true;
                 }
             } catch ( Exception $e ) {
-                error_log( "KTPWP Error: Failed to update table {$table_name}: " . $e->getMessage() );
+                ktpwp_debug_log( "KTPWP Error: Failed to update table {$table_name}: " . $e->getMessage() );
             }
         }
 
@@ -145,10 +145,10 @@ class KTPWP_Database {
                     require_once $file_path;
 
                     if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                        error_log( "KTPWP: Loaded class file {$file_name}" );
+                        ktpwp_debug_log( "KTPWP: Loaded class file {$file_name}" );
                     }
                 } else {
-                    error_log( "KTPWP Error: Class file not found: {$file_path}" );
+                    ktpwp_debug_log( "KTPWP Error: Class file not found: {$file_path}" );
                 }
             }
         }
@@ -209,11 +209,11 @@ class KTPWP_Database {
 
         if ( $result !== false ) {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( "KTPWP: Table {$full_table_name} dropped successfully" );
+                ktpwp_debug_log( "KTPWP: Table {$full_table_name} dropped successfully" );
             }
             return true;
         } else {
-            error_log( "KTPWP Error: Failed to drop table {$full_table_name}" );
+            ktpwp_debug_log( "KTPWP Error: Failed to drop table {$full_table_name}" );
             return false;
         }
     }
@@ -254,11 +254,11 @@ class KTPWP_Database {
 
         if ( $result !== false ) {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( "KTPWP: Table data cleared for {$full_table_name}" );
+                ktpwp_debug_log( "KTPWP: Table data cleared for {$full_table_name}" );
             }
             return true;
         } else {
-            error_log( "KTPWP Error: Failed to clear table data for {$full_table_name}" );
+            ktpwp_debug_log( "KTPWP Error: Failed to clear table data for {$full_table_name}" );
             return false;
         }
     }

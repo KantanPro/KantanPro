@@ -180,7 +180,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 			}
 
 			if ( ! $this->ensure_invoice_items_table() ) {
-				error_log( 'KTPWP Public Product: Invoice items table is not available' );
+				ktpwp_debug_log( 'KTPWP Public Product: Invoice items table is not available' );
 				return false;
 			}
 
@@ -344,7 +344,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 
 			$result = $wpdb->insert( $table_name, $data, $format );
 			if ( $result === false ) {
-				error_log( 'KTPWP Public Product: Failed to insert invoice item - ' . $wpdb->last_error );
+				ktpwp_debug_log( 'KTPWP Public Product: Failed to insert invoice item - ' . $wpdb->last_error );
 				return false;
 			}
 
@@ -448,7 +448,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 			// テーブルの存在確認
 			$table_exists = $wpdb->get_var( "SHOW TABLES LIKE '$table_name'" );
 			if ( ! $table_exists ) {
-				error_log( "KTPWP: Invoice items table {$table_name} does not exist" );
+				ktpwp_debug_log( "KTPWP: Invoice items table {$table_name} does not exist" );
 				return array();
 			}
 
@@ -601,7 +601,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 						$format[] = '%s'; // created_at
 						$result = $wpdb->insert( $table_name, $data, $format );
 						if ( $result === false ) {
-							error_log( 'KTPWP Error: Item INSERT failed in save_invoice_items: ' . $wpdb->last_error . ' Data: ' . print_r( $data, true ) );
+							ktpwp_debug_log( 'KTPWP Error: Item INSERT failed in save_invoice_items: ' . $wpdb->last_error . ' Data: ' . print_r( $data, true ) );
 						}
 						$used_id = $wpdb->insert_id;
 					}
@@ -644,7 +644,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 			} catch ( Exception $e ) {
 				// Rollback transaction
 				$wpdb->query( 'ROLLBACK' );
-				error_log( 'KTPWP: Failed to save invoice items: ' . $e->getMessage() );
+				ktpwp_debug_log( 'KTPWP: Failed to save invoice items: ' . $e->getMessage() );
 				return false;
 			}
 		}
@@ -766,7 +766,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 						$format[] = '%s'; // created_at
 						$result = $wpdb->insert( $table_name, $data, $format );
 						if ( $result === false ) {
-							error_log( 'KTPWP Error: Cost item INSERT failed: ' . $wpdb->last_error );
+							ktpwp_debug_log( 'KTPWP Error: Cost item INSERT failed: ' . $wpdb->last_error );
 						}
 						$used_id = $wpdb->insert_id;
 					}
@@ -800,7 +800,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 
 			} catch ( Exception $e ) {
 				$wpdb->query( 'ROLLBACK' );
-				error_log( 'KTPWP: Failed to save cost items: ' . $e->getMessage() );
+				ktpwp_debug_log( 'KTPWP: Failed to save cost items: ' . $e->getMessage() );
 				return false;
 			}
 		}
@@ -820,10 +820,10 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 			if ( empty( $column ) ) {
 				$result = $wpdb->query( "ALTER TABLE `{$table_name}` ADD COLUMN supplier_id INT(11) DEFAULT NULL AFTER order_id" );
 				if ( $result === false ) {
-					error_log( 'KTPWP: supplier_idカラムの自動追加に失敗: ' . $wpdb->last_error );
+					ktpwp_debug_log( 'KTPWP: supplier_idカラムの自動追加に失敗: ' . $wpdb->last_error );
 					return false;
 				} else {
-					error_log( 'KTPWP: supplier_idカラムを自動追加しました' );
+					ktpwp_debug_log( 'KTPWP: supplier_idカラムを自動追加しました' );
 				}
 			}
 			return true;
@@ -844,10 +844,10 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 			if ( empty( $column ) ) {
 				$result = $wpdb->query( "ALTER TABLE `{$table_name}` ADD COLUMN purchase_status VARCHAR(20) NOT NULL DEFAULT 'pending' AFTER ordered" );
 				if ( $result === false ) {
-					error_log( 'KTPWP: purchase_statusカラムの自動追加に失敗: ' . $wpdb->last_error );
+					ktpwp_debug_log( 'KTPWP: purchase_statusカラムの自動追加に失敗: ' . $wpdb->last_error );
 					return false;
 				} else {
-					error_log( 'KTPWP: purchase_statusカラムを自動追加しました' );
+					ktpwp_debug_log( 'KTPWP: purchase_statusカラムを自動追加しました' );
 				}
 			}
 			return true;
@@ -868,10 +868,10 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 			if ( empty( $column ) ) {
 				$result = $wpdb->query( "ALTER TABLE `{$table_name}` ADD COLUMN purchase_status_date DATE NULL DEFAULT NULL AFTER purchase_status" );
 				if ( $result === false ) {
-					error_log( 'KTPWP: purchase_status_dateカラムの自動追加に失敗: ' . $wpdb->last_error );
+					ktpwp_debug_log( 'KTPWP: purchase_status_dateカラムの自動追加に失敗: ' . $wpdb->last_error );
 					return false;
 				} else {
-					error_log( 'KTPWP: purchase_status_dateカラムを自動追加しました' );
+					ktpwp_debug_log( 'KTPWP: purchase_status_dateカラムを自動追加しました' );
 				}
 			}
 			return true;
@@ -892,10 +892,10 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 			if ( empty( $column ) ) {
 				$result = $wpdb->query( "ALTER TABLE `{$table_name}` ADD COLUMN purchase_status_dates TEXT NULL DEFAULT NULL AFTER purchase_status_date" );
 				if ( $result === false ) {
-					error_log( 'KTPWP: purchase_status_datesカラムの自動追加に失敗: ' . $wpdb->last_error );
+					ktpwp_debug_log( 'KTPWP: purchase_status_datesカラムの自動追加に失敗: ' . $wpdb->last_error );
 					return false;
 				} else {
-					error_log( 'KTPWP: purchase_status_datesカラムを自動追加しました' );
+					ktpwp_debug_log( 'KTPWP: purchase_status_datesカラムを自動追加しました' );
 				}
 			}
 			return true;
@@ -1027,7 +1027,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 			);
 
 			if ( $result === false ) {
-				error_log( 'KTPWP: Failed to create initial invoice item: ' . $wpdb->last_error );
+				ktpwp_debug_log( 'KTPWP: Failed to create initial invoice item: ' . $wpdb->last_error );
 				return false;
 			}
 
@@ -1070,7 +1070,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 			);
 
 			if ( $result === false ) {
-				error_log( 'KTPWP: Failed to create initial cost item: ' . $wpdb->last_error );
+				ktpwp_debug_log( 'KTPWP: Failed to create initial cost item: ' . $wpdb->last_error );
 				return false;
 			}
 
@@ -1099,7 +1099,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 			);
 
 			if ( $result === false ) {
-				error_log( 'KTPWP: Failed to delete invoice items: ' . $wpdb->last_error );
+				ktpwp_debug_log( 'KTPWP: Failed to delete invoice items: ' . $wpdb->last_error );
 				return false;
 			}
 
@@ -1128,7 +1128,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 			);
 
 			if ( $result === false ) {
-				error_log( 'KTPWP: Failed to delete cost items: ' . $wpdb->last_error );
+				ktpwp_debug_log( 'KTPWP: Failed to delete cost items: ' . $wpdb->last_error );
 				return false;
 			}
 
@@ -1156,7 +1156,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 			// テーブルの存在確認
 			$table_exists = $wpdb->get_var( "SHOW TABLES LIKE '$table_name'" );
 			if ( ! $table_exists ) {
-				error_log( "KTPWP: Table {$table_name} does not exist" );
+				ktpwp_debug_log( "KTPWP: Table {$table_name} does not exist" );
 				return false;
 			}
 
@@ -1259,7 +1259,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 						$format[] = '%s';
 					} else {
 						// invoice itemsではpurchaseフィールドを無視
-						error_log( 'KTPWP: Attempted to update purchase field for invoice item - ignoring' );
+						ktpwp_debug_log( 'KTPWP: Attempted to update purchase field for invoice item - ignoring' );
 						return array(
 							'success' => true,
 							'value_changed' => false,
@@ -1289,7 +1289,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 						$format[] = '%s';
 						$purchase_status_history_label = self::format_purchase_status_history_label( $update_data['purchase_status_dates'] );
 					} else {
-						error_log( 'KTPWP: Attempted to update purchase_status field with invalid type/value - ignoring' );
+						ktpwp_debug_log( 'KTPWP: Attempted to update purchase_status field with invalid type/value - ignoring' );
 						return array(
 							'success' => true,
 							'value_changed' => false,
@@ -1310,7 +1310,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 						}
 					} else {
 						// invoice itemsではsupplier_idフィールドを無視
-						error_log( 'KTPWP: Attempted to update supplier_id field for invoice item - ignoring' );
+						ktpwp_debug_log( 'KTPWP: Attempted to update supplier_id field for invoice item - ignoring' );
 						return array(
 							'success' => true,
 							'value_changed' => false,
@@ -1347,7 +1347,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 			);
 
 			if ( $result === false ) {
-				error_log( 'KTPWP: Failed to update item field: ' . $wpdb->last_error );
+				ktpwp_debug_log( 'KTPWP: Failed to update item field: ' . $wpdb->last_error );
 				return array(
 					'success' => false,
 					'value_changed' => false,
@@ -1407,14 +1407,14 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 			// テーブルの存在確認
 			$table_exists = $wpdb->get_var( "SHOW TABLES LIKE '$table_name'" );
 			if ( ! $table_exists ) {
-				error_log( "KTPWP: Table {$table_name} does not exist" );
+				ktpwp_debug_log( "KTPWP: Table {$table_name} does not exist" );
 				return null;
 			}
 
 			// フィールドの存在確認
 			$columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$table_name}`", 0 );
 			if ( ! in_array( $field_name, $columns ) ) {
-				error_log( "KTPWP: Field {$field_name} does not exist in table {$table_name}" );
+				ktpwp_debug_log( "KTPWP: Field {$field_name} does not exist in table {$table_name}" );
 				return null;
 			}
 
@@ -1448,7 +1448,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 			if ( $request_id ) {
 				$transient_key = 'ktp_create_item_' . md5( $request_id );
 				if ( get_transient( $transient_key ) ) {
-					error_log( "[KTPWP] Duplicate create_new_item request blocked: {$request_id}" );
+					ktpwp_debug_log( "[KTPWP] Duplicate create_new_item request blocked: {$request_id}" );
 					return false;
 				}
 				// 30秒間のロックを設定
@@ -1458,7 +1458,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 			global $wpdb;
 			$table_name = $wpdb->prefix . 'ktp_order_' . $item_type . '_items';
 			
-			error_log( "[KTPWP] create_new_item called: item_type={$item_type}, order_id={$order_id}, initial_field_name={$initial_field_name}, initial_field_value={$initial_field_value}, request_id={$request_id}" );
+			ktpwp_debug_log( "[KTPWP] create_new_item called: item_type={$item_type}, order_id={$order_id}, initial_field_name={$initial_field_name}, initial_field_value={$initial_field_value}, request_id={$request_id}" );
 
 			// 新規作成時は現在の最大sort_order値+1を設定
 			$max_sort_order = $wpdb->get_var(
@@ -1565,12 +1565,12 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 						break;
 				}
 			}
-			error_log( "[KTPWP] create_new_item INSERT debug: table={$table_name}, data_count=" . count( $data_insert ) . ", data=" . print_r( $data_insert, true ) );
+			ktpwp_debug_log( "[KTPWP] create_new_item INSERT debug: table={$table_name}, data_count=" . count( $data_insert ) . ", data=" . print_r( $data_insert, true ) );
 			$result = $wpdb->insert( $table_name, $data_insert, $format_insert );
 
 			if ( $result === false ) {
-				error_log( 'KTPWP: Failed to create new item: ' . $wpdb->last_error );
-				error_log( 'KTPWP: Last SQL Query: ' . $wpdb->last_query );
+				ktpwp_debug_log( 'KTPWP: Failed to create new item: ' . $wpdb->last_error );
+				ktpwp_debug_log( 'KTPWP: Last SQL Query: ' . $wpdb->last_query );
 				// 失敗時はトランジェントを削除
 				if ( $request_id ) {
 					$transient_key = 'ktp_create_item_' . md5( $request_id );
@@ -1582,7 +1582,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 			$new_item_id = $wpdb->insert_id;
 			
 			// 成功時のログ
-			error_log( "[KTPWP] create_new_item success: new_item_id={$new_item_id}, item_type={$item_type}, order_id={$order_id}" );
+			ktpwp_debug_log( "[KTPWP] create_new_item success: new_item_id={$new_item_id}, item_type={$item_type}, order_id={$order_id}" );
 			
 			// 成功時はトランジェントを即座に削除（処理完了のため）
 			if ( $request_id ) {
@@ -1603,18 +1603,18 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 		 * @return bool True on success, false on failure
 		 */
 		public function delete_item( $item_type, $item_id, $order_id ) {
-			error_log( "[KTPWP_Order_Items] delete_item called with: item_type={$item_type}, item_id={$item_id}, order_id={$order_id}" );
+			ktpwp_debug_log( "[KTPWP_Order_Items] delete_item called with: item_type={$item_type}, item_id={$item_id}, order_id={$order_id}" );
 
 			if ( ! in_array( $item_type, array( 'invoice', 'cost' ) ) ) {
-				error_log( "[KTPWP_Order_Items] delete_item: Invalid item_type: {$item_type}" );
+				ktpwp_debug_log( "[KTPWP_Order_Items] delete_item: Invalid item_type: {$item_type}" );
 				return false;
 			}
 			if ( ! $item_id || $item_id <= 0 ) {
-				error_log( "[KTPWP_Order_Items] delete_item: Invalid item_id: {$item_id}" );
+				ktpwp_debug_log( "[KTPWP_Order_Items] delete_item: Invalid item_id: {$item_id}" );
 				return false;
 			}
 			if ( ! $order_id || $order_id <= 0 ) {
-				error_log( "[KTPWP_Order_Items] delete_item: Invalid order_id: {$order_id}" );
+				ktpwp_debug_log( "[KTPWP_Order_Items] delete_item: Invalid order_id: {$order_id}" );
 				return false;
 			}
 
@@ -1631,7 +1631,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
             );
 
 			if ( ! $item_exists ) {
-				error_log( "[KTPWP_Order_Items] delete_item: Item not found or does not belong to order. item_id={$item_id}, order_id={$order_id}, table_name={$table_name}" );
+				ktpwp_debug_log( "[KTPWP_Order_Items] delete_item: Item not found or does not belong to order. item_id={$item_id}, order_id={$order_id}, table_name={$table_name}" );
 				return false; // アイテムが存在しないか、order_idが一致しない
 			}
 
@@ -1645,19 +1645,19 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 			);
 
 			if ( $result === false ) {
-				error_log( "[KTPWP_Order_Items] delete_item: Failed to delete item from {$table_name}. item_id={$item_id}, order_id={$order_id}. DB Error: " . $wpdb->last_error );
+				ktpwp_debug_log( "[KTPWP_Order_Items] delete_item: Failed to delete item from {$table_name}. item_id={$item_id}, order_id={$order_id}. DB Error: " . $wpdb->last_error );
 				return false;
 			}
 
 			if ( $result === 0 ) {
 				// 削除対象の行が見つからなかった場合 (既に削除されているか、条件に一致しなかった)
 				// $item_exists チェックがあるので、ここに来る場合は稀だが、念のためログに残す
-				error_log( "[KTPWP_Order_Items] delete_item: No rows deleted from {$table_name}. item_id={$item_id}, order_id={$order_id}. Item might have been already deleted or conditions not met." );
+				ktpwp_debug_log( "[KTPWP_Order_Items] delete_item: No rows deleted from {$table_name}. item_id={$item_id}, order_id={$order_id}. Item might have been already deleted or conditions not met." );
 				// このケースを成功とみなすか失敗とみなすかは要件によるが、ここではfalseを返す
 				return false;
 			}
 
-			error_log( "[KTPWP_Order_Items] delete_item: Successfully deleted item_id={$item_id} from {$table_name} for order_id={$order_id}. Rows affected: {$result}" );
+			ktpwp_debug_log( "[KTPWP_Order_Items] delete_item: Successfully deleted item_id={$item_id} from {$table_name} for order_id={$order_id}. Rows affected: {$result}" );
 			return true;
 		}
 
@@ -1671,19 +1671,19 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 		 * @return bool True on success, false on failure
 		 */
 		public function update_items_order( $item_type, $order_id, $items ) {
-			error_log( "[KTPWP_Order_Items] update_items_order called with: item_type={$item_type}, order_id={$order_id}, items_count=" . count( $items ) );
-			error_log( '[KTPWP_Order_Items] Items data: ' . print_r( $items, true ) );
+			ktpwp_debug_log( "[KTPWP_Order_Items] update_items_order called with: item_type={$item_type}, order_id={$order_id}, items_count=" . count( $items ) );
+			ktpwp_debug_log( '[KTPWP_Order_Items] Items data: ' . print_r( $items, true ) );
 
 			if ( ! in_array( $item_type, array( 'invoice', 'cost' ) ) ) {
-				error_log( "[KTPWP_Order_Items] update_items_order: Invalid item_type: {$item_type}" );
+				ktpwp_debug_log( "[KTPWP_Order_Items] update_items_order: Invalid item_type: {$item_type}" );
 				return false;
 			}
 			if ( ! $order_id || $order_id <= 0 ) {
-				error_log( "[KTPWP_Order_Items] update_items_order: Invalid order_id: {$order_id}" );
+				ktpwp_debug_log( "[KTPWP_Order_Items] update_items_order: Invalid order_id: {$order_id}" );
 				return false;
 			}
 			if ( ! is_array( $items ) || empty( $items ) ) {
-				error_log( '[KTPWP_Order_Items] update_items_order: Items array is empty or not an array.' );
+				ktpwp_debug_log( '[KTPWP_Order_Items] update_items_order: Items array is empty or not an array.' );
 				return false;
 			}
 
@@ -1693,7 +1693,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 			// テーブルが存在するかチェック
 			$table_exists = $wpdb->get_var( "SHOW TABLES LIKE '{$table_name}'" ) === $table_name;
 			if ( ! $table_exists ) {
-				error_log( "[KTPWP_Order_Items] update_items_order: Table {$table_name} does not exist" );
+				ktpwp_debug_log( "[KTPWP_Order_Items] update_items_order: Table {$table_name} does not exist" );
 				return false;
 			}
 
@@ -1706,7 +1706,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 			foreach ( $items as $index => $item ) {
 				if ( ! isset( $item['id'] ) || ! isset( $item['sort_order'] ) ) {
 					$error_details[] = "Item at index {$index} missing id or sort_order: " . print_r( $item, true );
-					error_log( '[KTPWP_Order_Items] update_items_order: Skipping item due to missing id or sort_order. Item data: ' . print_r( $item, true ) );
+					ktpwp_debug_log( '[KTPWP_Order_Items] update_items_order: Skipping item due to missing id or sort_order. Item data: ' . print_r( $item, true ) );
 					continue; // Skip if data is incomplete
 				}
 
@@ -1715,19 +1715,19 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 
 				if ( $item_id <= 0 ) {
 					$error_details[] = "Invalid item_id {$item_id} at index {$index}";
-					error_log( "[KTPWP_Order_Items] update_items_order: Invalid item_id {$item_id} for order_id {$order_id}." );
+					ktpwp_debug_log( "[KTPWP_Order_Items] update_items_order: Invalid item_id {$item_id} for order_id {$order_id}." );
 					$all_successful = false;
 					break;
 				}
 
 				if ( $sort_order <= 0 ) {
 					$error_details[] = "Invalid sort_order {$sort_order} for item_id {$item_id}";
-					error_log( "[KTPWP_Order_Items] update_items_order: Invalid sort_order {$sort_order} for item_id {$item_id}" );
+					ktpwp_debug_log( "[KTPWP_Order_Items] update_items_order: Invalid sort_order {$sort_order} for item_id {$item_id}" );
 					$all_successful = false;
 					break;
 				}
 
-				error_log( "[KTPWP_Order_Items] Updating item_id: {$item_id} to sort_order: {$sort_order} in table: {$table_name} for order_id: {$order_id}" );
+				ktpwp_debug_log( "[KTPWP_Order_Items] Updating item_id: {$item_id} to sort_order: {$sort_order} in table: {$table_name} for order_id: {$order_id}" );
 
 				// アイテムが存在し、指定されたorder_idに属するかどうかを確認
 				$item_exists = $wpdb->get_var(
@@ -1740,7 +1740,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 
 				if ( ! $item_exists ) {
 					$error_details[] = "Item {$item_id} not found or does not belong to order {$order_id}";
-					error_log( "[KTPWP_Order_Items] update_items_order: Item {$item_id} not found or does not belong to order {$order_id}" );
+					ktpwp_debug_log( "[KTPWP_Order_Items] update_items_order: Item {$item_id} not found or does not belong to order {$order_id}" );
 					$all_successful = false;
 					break;
 				}
@@ -1761,26 +1761,26 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 
 				if ( $result === false ) {
 					$error_details[] = "Database error updating item {$item_id}: " . $wpdb->last_error;
-					error_log( "[KTPWP_Order_Items] update_items_order: Failed to update sort_order for item_id={$item_id}, order_id={$order_id}. DB Error: " . $wpdb->last_error );
+					ktpwp_debug_log( "[KTPWP_Order_Items] update_items_order: Failed to update sort_order for item_id={$item_id}, order_id={$order_id}. DB Error: " . $wpdb->last_error );
 					$all_successful = false;
 					break; // Exit loop on first error
 				}
 
 				if ( $result === 0 ) {
-					error_log( "[KTPWP_Order_Items] update_items_order: No rows affected for item_id={$item_id}, order_id={$order_id}. Item might not exist or sort_order was already correct." );
+					ktpwp_debug_log( "[KTPWP_Order_Items] update_items_order: No rows affected for item_id={$item_id}, order_id={$order_id}. Item might not exist or sort_order was already correct." );
 				} else {
 					$updated_count++;
-					error_log( "[KTPWP_Order_Items] update_items_order: Successfully updated item_id={$item_id} to sort_order={$sort_order}. Rows affected: {$result}" );
+					ktpwp_debug_log( "[KTPWP_Order_Items] update_items_order: Successfully updated item_id={$item_id} to sort_order={$sort_order}. Rows affected: {$result}" );
 				}
 			}
 
 			if ( $all_successful ) {
 				$wpdb->query( 'COMMIT' );
-				error_log( "[KTPWP_Order_Items] update_items_order: Successfully updated sort order for {$updated_count} items for order_id={$order_id}." );
+				ktpwp_debug_log( "[KTPWP_Order_Items] update_items_order: Successfully updated sort order for {$updated_count} items for order_id={$order_id}." );
 				return true;
 			} else {
 				$wpdb->query( 'ROLLBACK' );
-				error_log( "[KTPWP_Order_Items] update_items_order: Transaction rolled back due to errors for order_id={$order_id}. Error details: " . implode( '; ', $error_details ) );
+				ktpwp_debug_log( "[KTPWP_Order_Items] update_items_order: Transaction rolled back due to errors for order_id={$order_id}. Error details: " . implode( '; ', $error_details ) );
 				return false;
 			}
 		}

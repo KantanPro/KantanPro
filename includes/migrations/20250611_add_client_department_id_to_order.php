@@ -33,7 +33,7 @@ class KTPWP_Migration_20250611_Add_Client_Department_Id_To_Order {
 
 		if ( ! $table_exists ) {
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( 'KTPWP Migration: Table ' . $order_table . ' does not exist. Skipping client_department_id column.' );
+				ktpwp_debug_log( 'KTPWP Migration: Table ' . $order_table . ' does not exist. Skipping client_department_id column.' );
 			}
 			return false;
 		}
@@ -46,7 +46,7 @@ class KTPWP_Migration_20250611_Add_Client_Department_Id_To_Order {
 		$sql = "ALTER TABLE `{$order_table}` ADD COLUMN `client_department_id` INT NULL DEFAULT NULL COMMENT '依頼元部署ID' AFTER `client_id`";
 		if ( $wpdb->query( $sql ) === false ) {
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( 'KTPWP Migration: Failed to add client_department_id to ' . $order_table . '. ' . $wpdb->last_error );
+				ktpwp_debug_log( 'KTPWP Migration: Failed to add client_department_id to ' . $order_table . '. ' . $wpdb->last_error );
 			}
 			return false;
 		}
@@ -54,7 +54,7 @@ class KTPWP_Migration_20250611_Add_Client_Department_Id_To_Order {
 		$wpdb->query( "ALTER TABLE `{$order_table}` ADD INDEX `client_department_id` (`client_department_id`)" );
 
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			error_log( 'KTPWP Migration: client_department_id column added to ' . $order_table );
+			ktpwp_debug_log( 'KTPWP Migration: client_department_id column added to ' . $order_table );
 		}
 
 		return true;

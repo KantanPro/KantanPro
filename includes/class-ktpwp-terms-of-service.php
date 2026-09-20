@@ -853,7 +853,7 @@ End',
 
         if ( is_wp_error( $response ) ) {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP Terms Agreement: KLM API error - ' . $response->get_error_message() );
+                ktpwp_debug_log( 'KTPWP Terms Agreement: KLM API error - ' . $response->get_error_message() );
             }
             return false;
         }
@@ -864,13 +864,13 @@ End',
 
         if ( $status_code >= 200 && $status_code < 300 && is_array( $data ) && ! empty( $data['success'] ) ) {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP Terms Agreement: KLM API success (User ID: ' . $user_id . ')' );
+                ktpwp_debug_log( 'KTPWP Terms Agreement: KLM API success (User ID: ' . $user_id . ')' );
             }
             return true;
         }
 
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Terms Agreement: KLM API failed (status=' . $status_code . ', body=' . $body . ')' );
+            ktpwp_debug_log( 'KTPWP Terms Agreement: KLM API failed (status=' . $status_code . ', body=' . $body . ')' );
         }
 
         return false;
@@ -991,13 +991,13 @@ End',
     private function send_developer_notification( $user_id ) {
         // 重複送信防止のためのログ出力
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( 'KTPWP Terms Agreement: メール送信処理開始 (User ID: ' . $user_id . ')' );
+            ktpwp_debug_log( 'KTPWP Terms Agreement: メール送信処理開始 (User ID: ' . $user_id . ')' );
         }
 
         $user = get_userdata( $user_id );
         if ( ! $user ) {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( 'KTPWP Terms Agreement: ユーザー情報の取得に失敗しました (User ID: ' . $user_id . ')' );
+                ktpwp_debug_log( 'KTPWP Terms Agreement: ユーザー情報の取得に失敗しました (User ID: ' . $user_id . ')' );
             }
             return false;
         }
@@ -1042,7 +1042,7 @@ End',
         // 詳細なログ出力
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
             if ( $sent ) {
-                error_log( 'KTPWP Terms Agreement: 開発者通知メールを送信しました (User: ' . $user->display_name . ', Email: ' . $user->user_email . ', To: ' . $to . ')' );
+                ktpwp_debug_log( 'KTPWP Terms Agreement: 開発者通知メールを送信しました (User: ' . $user->display_name . ', Email: ' . $user->user_email . ', To: ' . $to . ')' );
             } else {
                 // PHPMailerのエラー情報を取得
                 global $phpmailer;
@@ -1050,7 +1050,7 @@ End',
                 if ( isset( $phpmailer ) && is_object( $phpmailer ) && ! empty( $phpmailer->ErrorInfo ) ) {
                     $error_message = $phpmailer->ErrorInfo;
                 }
-                error_log( 'KTPWP Terms Agreement: 開発者通知メールの送信に失敗しました (User: ' . $user->display_name . ', Email: ' . $user->user_email . ', To: ' . $to . ', Error: ' . $error_message . ')' );
+                ktpwp_debug_log( 'KTPWP Terms Agreement: 開発者通知メールの送信に失敗しました (User: ' . $user->display_name . ', Email: ' . $user->user_email . ', To: ' . $to . ', Error: ' . $error_message . ')' );
             }
         }
 

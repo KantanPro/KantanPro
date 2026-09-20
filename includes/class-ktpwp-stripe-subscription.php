@@ -165,7 +165,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Subscription' ) ) {
 					}
 				} catch ( Exception $e ) {
 					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-						error_log( 'KTPWP Stripe retrieve subscription: ' . $e->getMessage() );
+						ktpwp_debug_log( 'KTPWP Stripe retrieve subscription: ' . $e->getMessage() );
 					}
 				}
 			}
@@ -262,7 +262,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Subscription' ) ) {
 				$this->provision_contract_on_first_payment( (int) $order->id, (string) $subscription->id );
 			} catch ( Exception $e ) {
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					error_log( 'KTPWP Stripe after_order_paid: ' . $e->getMessage() );
+					ktpwp_debug_log( 'KTPWP Stripe after_order_paid: ' . $e->getMessage() );
 				}
 			}
 		}
@@ -387,7 +387,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Subscription' ) ) {
 				);
 			} catch ( Exception $e ) {
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					error_log( 'KTPWP Stripe attach subscription: ' . $e->getMessage() );
+					ktpwp_debug_log( 'KTPWP Stripe attach subscription: ' . $e->getMessage() );
 				}
 			}
 		}
@@ -515,7 +515,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Subscription' ) ) {
 				$this->save_subscription_id( $contract_id, (string) $subscription->id );
 
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					error_log(
+					ktpwp_debug_log(
 						sprintf(
 							'KTPWP Stripe Subscription started: contract=%d sub=%s trial_end=%s',
 							$contract_id,
@@ -554,7 +554,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Subscription' ) ) {
 					}
 				} catch ( Exception $e ) {
 					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-						error_log( 'KTPWP Stripe subscription invoice skip: ' . $e->getMessage() );
+						ktpwp_debug_log( 'KTPWP Stripe subscription invoice skip: ' . $e->getMessage() );
 					}
 				}
 			}
@@ -607,7 +607,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Subscription' ) ) {
 				$result = $billing->generate_order_for_contract( $contract_id, $period );
 				if ( is_wp_error( $result ) ) {
 					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-						error_log( 'KTPWP Stripe Subscription order gen: ' . $result->get_error_message() );
+						ktpwp_debug_log( 'KTPWP Stripe Subscription order gen: ' . $result->get_error_message() );
 					}
 					return;
 				}
@@ -679,7 +679,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Subscription' ) ) {
 				return $url;
 			} catch ( Exception $e ) {
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					error_log( 'KTPWP Stripe setup checkout: ' . $e->getMessage() );
+					ktpwp_debug_log( 'KTPWP Stripe setup checkout: ' . $e->getMessage() );
 				}
 
 				return '';
@@ -723,14 +723,14 @@ if ( ! class_exists( 'KTPWP_Stripe_Subscription' ) ) {
 					}
 				} catch ( Exception $e ) {
 					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-						error_log( 'KTPWP Stripe setup complete PM: ' . $e->getMessage() );
+						ktpwp_debug_log( 'KTPWP Stripe setup complete PM: ' . $e->getMessage() );
 					}
 				}
 			}
 
 			$result = $this->maybe_start_for_contract( $contract_id, 0 );
 			if ( is_wp_error( $result ) && defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( 'KTPWP Stripe Subscription after setup: ' . $result->get_error_message() );
+				ktpwp_debug_log( 'KTPWP Stripe Subscription after setup: ' . $result->get_error_message() );
 			}
 		}
 
@@ -758,7 +758,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Subscription' ) ) {
 				}
 			} catch ( Exception $e ) {
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					error_log( 'KTPWP Stripe Subscription cancel: ' . $e->getMessage() );
+					ktpwp_debug_log( 'KTPWP Stripe Subscription cancel: ' . $e->getMessage() );
 				}
 			}
 		}
@@ -803,7 +803,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Subscription' ) ) {
 				return true;
 			} catch ( Exception $e ) {
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					error_log( 'KTPWP Stripe sync PM: ' . $e->getMessage() );
+					ktpwp_debug_log( 'KTPWP Stripe sync PM: ' . $e->getMessage() );
 				}
 
 				return false;
@@ -887,7 +887,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Subscription' ) ) {
 				}
 			} catch ( Exception $e ) {
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					error_log( 'KTPWP Stripe attach PM: ' . $e->getMessage() );
+					ktpwp_debug_log( 'KTPWP Stripe attach PM: ' . $e->getMessage() );
 				}
 			}
 		}
@@ -913,7 +913,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Subscription' ) ) {
 				}
 			} catch ( Exception $e ) {
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					error_log( 'KTPWP Stripe resolve contract: ' . $e->getMessage() );
+					ktpwp_debug_log( 'KTPWP Stripe resolve contract: ' . $e->getMessage() );
 				}
 			}
 
@@ -1014,7 +1014,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Subscription' ) ) {
 				return (string) ( $product->id ?? '' );
 			} catch ( Exception $e ) {
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					error_log( 'KTPWP Stripe product create: ' . $e->getMessage() );
+					ktpwp_debug_log( 'KTPWP Stripe product create: ' . $e->getMessage() );
 				}
 
 				return '';
@@ -1254,7 +1254,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Subscription' ) ) {
 					}
 				} catch ( Exception $e ) {
 					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-						error_log( 'KTPWP Stripe void subscription invoice: ' . $e->getMessage() );
+						ktpwp_debug_log( 'KTPWP Stripe void subscription invoice: ' . $e->getMessage() );
 					}
 				}
 			}
@@ -1267,7 +1267,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Subscription' ) ) {
 					}
 				} catch ( Exception $e ) {
 					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-						error_log( 'KTPWP Stripe cancel subscription for recreate: ' . $e->getMessage() );
+						ktpwp_debug_log( 'KTPWP Stripe cancel subscription for recreate: ' . $e->getMessage() );
 					}
 				}
 			}

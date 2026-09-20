@@ -190,7 +190,7 @@ if ( ! class_exists( 'KTPWP_Public_Product_Order' ) ) {
 				}
 
 				if ( ! $invoice_saved ) {
-					error_log( 'KTPWP Public Product: Failed to save invoice items for order ' . $order_id );
+					ktpwp_debug_log( 'KTPWP Public Product: Failed to save invoice items for order ' . $order_id );
 				}
 
 				if ( method_exists( $order_items, 'create_initial_cost_item' ) ) {
@@ -207,7 +207,7 @@ if ( ! class_exists( 'KTPWP_Public_Product_Order' ) ) {
 					}
 				}
 			} catch ( Throwable $e ) {
-				error_log( 'KTPWP Public Product: Post-order setup failed for order ' . $order_id . ' - ' . $e->getMessage() );
+				ktpwp_debug_log( 'KTPWP Public Product: Post-order setup failed for order ' . $order_id . ' - ' . $e->getMessage() );
 			}
 
 			if ( class_exists( 'KTPWP_Order_Admin_Notification' ) ) {
@@ -515,7 +515,7 @@ if ( ! class_exists( 'KTPWP_Public_Product_Order' ) ) {
 			);
 
 			if ( ! $department_id ) {
-				error_log( 'KTPWP Public Product: Failed to create department for client ' . $client_id );
+				ktpwp_debug_log( 'KTPWP Public Product: Failed to create department for client ' . $client_id );
 				return false;
 			}
 
@@ -594,7 +594,7 @@ if ( ! class_exists( 'KTPWP_Public_Product_Order' ) ) {
 
 			$result = $wpdb->insert( $table_name, $insert_data, $format );
 			if ( $result === false ) {
-				error_log( 'KTPWP Public Product: Failed to insert order - ' . $wpdb->last_error );
+				ktpwp_debug_log( 'KTPWP Public Product: Failed to insert order - ' . $wpdb->last_error );
 				return false;
 			}
 

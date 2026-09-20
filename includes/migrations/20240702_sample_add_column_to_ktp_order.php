@@ -40,10 +40,10 @@ foreach ( $columns_to_add as $column_name => $column_definition ) {
 
         if ( $result === false ) {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( "KTPWP Migration Error: Failed to add column '$column_name': " . $wpdb->last_error );
+                ktpwp_debug_log( "KTPWP Migration Error: Failed to add column '$column_name': " . $wpdb->last_error );
             }
         } elseif ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( "KTPWP Migration: Added column '$column_name' to $table_name" );
+                ktpwp_debug_log( "KTPWP Migration: Added column '$column_name' to $table_name" );
         }
     }
 }
@@ -63,7 +63,7 @@ foreach ( $indexes as $index_name => $column_name ) {
         $result = $wpdb->query( $sql );
 
         if ( $result !== false && defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( "KTPWP Migration: Added index '$index_name' to $table_name" );
+            ktpwp_debug_log( "KTPWP Migration: Added index '$index_name' to $table_name" );
         }
     }
 }
