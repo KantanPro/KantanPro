@@ -55,10 +55,14 @@ class KTPWP_Assets {
         add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_frontend_assets' ) );
         add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );
         add_action( 'wp_head', array( $this, 'add_preload_links' ), 1 );
-        add_action( 'wp_head', array( $this, 'output_console_silencer' ), 2 );
+        // 生の <script> を wp_head に出さず、スクリプトキューに載せる（wp.org ガイドライン）。
+        // head で、かつプラグインの他スクリプトより前に実行される必要があるので、
+        // src を持たない専用ハンドルを head に登録して inline で載せる。
+        add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_console_silencer' ), 1 );
         add_action( 'wp_head', array( $this, 'output_ajax_config' ), 99 );
         add_action( 'wp_footer', array( $this, 'output_ajax_config_fallback' ), 1 );
-        add_action( 'wp_head', array( $this, 'output_svg_icon_styles' ), 100 );
+        // 生の <style> を出さず、スタイルキューに載せる（wp.org ガイドライン）。
+        add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_svg_icon_styles' ), 20 );
         // 干渉する他プラグインのフロント JS/CSS を KantanPro ページでのみ除外
         // （Gomoku Game 等が $(document) に張る委譲や MutationObserver が
         //   サービス／協力会社タブのメモ欄操作をフリーズさせる事象への対策）
@@ -179,7 +183,7 @@ class KTPWP_Assets {
      *
      * console.error / console.warn は常に通すので、エラー検出は可能。
      */
-    public function output_console_silencer() {
+    public function enqueue_console_silencer() {
         if ( ! $this->should_enqueue_frontend_assets() ) {
             return;
         }
@@ -187,8 +191,21 @@ class KTPWP_Assets {
         if ( defined( 'KANTANPRO_VERBOSE_CONSOLE' ) && KANTANPRO_VERBOSE_CONSOLE ) {
             return;
         }
-        ?>
-<script>
+
+        // src を持たないハンドル。WordPress は inline スクリプトだけを head に出す。
+        $handle = 'ktp-console-silencer';
+        wp_register_script( $handle, false, array(), KANTANPRO_PLUGIN_VERSION, false );
+        wp_enqueue_script( $handle );
+        wp_add_inline_script( $handle, $this->get_console_silencer_js() );
+    }
+
+    /**
+     * コンソール抑止の JS 本体
+     *
+     * @return string
+     */
+    private function get_console_silencer_js() {
+        return <<<'JS'
 (function(){
     try {
         if (!window.console || !console.log) return;
@@ -222,8 +239,7 @@ class KTPWP_Assets {
         };
     } catch(e) {}
 })();
-</script>
-        <?php
+JS;
     }
 
     /**
@@ -1178,12 +1194,16 @@ class KTPWP_Assets {
     /**
      * SVGアイコンのスタイルを出力
      */
-    public function output_svg_icon_styles() {
+    public function enqueue_svg_icon_styles() {
         if ( ! $this->should_enqueue_frontend_assets() ) {
             return;
         }
-        if ( class_exists( 'KTPWP_SVG_Icons' ) ) {
-            KTPWP_SVG_Icons::output_styles();
+        if ( ! class_exists( 'KTPWP_SVG_Icons' ) ) {
+            return;
         }
+        if ( ! wp_style_is( 'ktp-css', 'registered' ) && ! wp_style_is( 'ktp-css', 'enqueued' ) ) {
+            return;
+        }
+        wp_add_inline_style( 'ktp-css', KTPWP_SVG_Icons::get_styles() );
     }
 }

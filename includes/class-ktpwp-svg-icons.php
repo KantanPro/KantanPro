@@ -135,11 +135,14 @@ class KTPWP_SVG_Icons {
     }
 
     /**
-     * CSSスタイルを出力
+     * アイコン用 CSS を返す
+     *
+     * 生の <style> を出力せず、呼び出し側が wp_add_inline_style() に渡せるようにする。
+     *
+     * @return string CSS 本文（<style> タグは含めない）。
      */
-    public static function output_styles() {
-        ?>
-        <style>
+    public static function get_styles() {
+            return <<<'CSS'
         .ktp-svg-icon {
             display: inline-flex;
             align-items: center;
@@ -157,7 +160,15 @@ class KTPWP_SVG_Icons {
         .material-symbols-outlined {
             display: none;
         }
-        </style>
-        <?php
+CSS;
+    }
+
+    /**
+     * 後方互換: 直接出力する呼び出し元が残っている場合のため。
+     *
+     * @deprecated get_styles() と wp_add_inline_style() を使うこと。
+     */
+    public static function output_styles() {
+        wp_add_inline_style( 'ktp-css', self::get_styles() );
     }
 } 

@@ -859,6 +859,120 @@ class KTPWP_Settings {
      * @param string $hook Current admin page hook
      * @return void
      */
+    /**
+     * 管理画面の inline スクリプトを載せるハンドル
+     *
+     * 設定フィールドのコールバックは本文の描画中に走るので、生の <script> を
+     * その場に出す代わりに、フッターで出力されるハンドルへ inline で積む。
+     * （スタイルは head で出力済みのためこの方法は使えない。CSS は
+     *   enqueue_admin_styles() 側で wp_add_inline_style() に載せる。）
+     *
+     * @return string ハンドル名。
+     */
+    /**
+     * 寄付通知プレビューの JS
+     *
+     * @return string
+     */
+    private function get_donation_notice_preview_js() {
+        return <<<'JS'
+        function testNoticeDisplay() {
+            var $preview = jQuery('#ktpwp-notice-preview');
+            $preview.fadeOut(300, function() {
+                setTimeout(function() {
+                    $preview.fadeIn(500);
+                }, 100);
+            });
+        }
+        
+        function testNoticeDismiss() {
+            var $preview = jQuery('#ktpwp-notice-preview');
+            $preview.fadeOut(300);
+        }
+JS;
+    }
+
+    /**
+     * 寄付通知プレビューの CSS
+     *
+     * @return string
+     */
+    private function get_donation_notice_preview_css() {
+        return <<<'CSS'
+        .ktpwp-notice-preview-container {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        
+        .ktpwp-preview-controls {
+            margin: 15px 0;
+        }
+        
+        .ktpwp-preview-controls .button {
+            margin-right: 10px;
+        }
+        
+        .ktpwp-preview-info {
+            margin-top: 15px;
+            padding: 15px;
+            background: #fff;
+            border-left: 4px solid #0073aa;
+        }
+        
+        .ktpwp-preview-info ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        
+        .ktpwp-preview-info li {
+            margin: 5px 0;
+        }
+CSS;
+    }
+
+    /**
+     * ページ幅設定画面の JS
+     *
+     * @return string
+     */
+    private function get_page_content_widths_js() {
+        return <<<'JS'
+            (function () {
+                function toggleCustomWidthInput(select) {
+                    var pageId = select.getAttribute('data-page-id');
+                    var customInput = document.querySelector('.ktp-page-content-width-custom[data-page-id="' + pageId + '"]');
+                    var suffix = document.querySelector('.ktp-page-content-width-custom-suffix[data-page-id="' + pageId + '"]');
+                    var showCustom = select.value === 'custom';
+                    if (customInput) {
+                        customInput.style.display = showCustom ? '' : 'none';
+                    }
+                    if (suffix) {
+                        suffix.style.display = showCustom ? '' : 'none';
+                    }
+                }
+
+                document.querySelectorAll('.ktp-page-content-width-select').forEach(function (select) {
+                    select.addEventListener('change', function () {
+                        toggleCustomWidthInput(select);
+                    });
+                });
+            })();
+JS;
+    }
+
+    private function admin_inline_script_handle() {
+        $handle = 'ktp-admin-inline';
+        if ( ! wp_script_is( $handle, 'registered' ) ) {
+            wp_register_script( $handle, false, array( 'jquery' ), KANTANPRO_PLUGIN_VERSION, true );
+        }
+        if ( ! wp_script_is( $handle, 'enqueued' ) ) {
+            wp_enqueue_script( $handle );
+        }
+        return $handle;
+    }
+
     public function enqueue_admin_styles( $hook ) {
         // Load CSS on KTPWP settings pages only
         if ( ! current_user_can( 'manage_options' ) ) {
@@ -879,6 +993,9 @@ class KTPWP_Settings {
                 array(),
                 '1.0.1'
             );
+
+            // 設定画面の本文中に生の <style> を出さない（wp.org ガイドライン）。
+            wp_add_inline_style( 'ktp-admin-settings', $this->get_donation_notice_preview_css() );
         }
     }
 
@@ -2105,54 +2222,11 @@ class KTPWP_Settings {
             </div>
         </div>
 
-        <script>
-        function testNoticeDisplay() {
-            var $preview = jQuery('#ktpwp-notice-preview');
-            $preview.fadeOut(300, function() {
-                setTimeout(function() {
-                    $preview.fadeIn(500);
-                }, 100);
-            });
-        }
-        
-        function testNoticeDismiss() {
-            var $preview = jQuery('#ktpwp-notice-preview');
-            $preview.fadeOut(300);
-        }
-        </script>
-
-        <style>
-        .ktpwp-notice-preview-container {
-            background: #f9f9f9;
-            padding: 20px;
-            border-radius: 5px;
-            margin: 10px 0;
-        }
-        
-        .ktpwp-preview-controls {
-            margin: 15px 0;
-        }
-        
-        .ktpwp-preview-controls .button {
-            margin-right: 10px;
-        }
-        
-        .ktpwp-preview-info {
-            margin-top: 15px;
-            padding: 15px;
-            background: #fff;
-            border-left: 4px solid #0073aa;
-        }
-        
-        .ktpwp-preview-info ul {
-            margin: 10px 0;
-            padding-left: 20px;
-        }
-        
-        .ktpwp-preview-info li {
-            margin: 5px 0;
-        }
-        </style>
+        <?php
+        // 生の <script> / <style> を出さずキューに載せる（wp.org ガイドライン）。
+        // CSS は head で出力済みなので、ここではなく enqueue_admin_styles() 側に置く。
+        wp_add_inline_script( $this->admin_inline_script_handle(), $this->get_donation_notice_preview_js() );
+        ?>
         <?php
     }
 
@@ -5013,28 +5087,10 @@ class KTPWP_Settings {
                     <?php endforeach; ?>
                 </tbody>
             </table>
-            <script>
-            (function () {
-                function toggleCustomWidthInput(select) {
-                    var pageId = select.getAttribute('data-page-id');
-                    var customInput = document.querySelector('.ktp-page-content-width-custom[data-page-id="' + pageId + '"]');
-                    var suffix = document.querySelector('.ktp-page-content-width-custom-suffix[data-page-id="' + pageId + '"]');
-                    var showCustom = select.value === 'custom';
-                    if (customInput) {
-                        customInput.style.display = showCustom ? '' : 'none';
-                    }
-                    if (suffix) {
-                        suffix.style.display = showCustom ? '' : 'none';
-                    }
-                }
-
-                document.querySelectorAll('.ktp-page-content-width-select').forEach(function (select) {
-                    select.addEventListener('change', function () {
-                        toggleCustomWidthInput(select);
-                    });
-                });
-            })();
-            </script>
+            <?php
+            // 生の <script> を出さずキューに載せる（wp.org ガイドライン）。
+            wp_add_inline_script( $this->admin_inline_script_handle(), $this->get_page_content_widths_js() );
+            ?>
         <?php endif; ?>
         <?php
     }
