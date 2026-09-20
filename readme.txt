@@ -101,6 +101,31 @@ The following MIT-licensed libraries are bundled unmodified in `js/lib/`
 * html2canvas 1.4.1 — https://github.com/niklasvh/html2canvas
 * jsPDF 2.5.1 — https://github.com/parallax/jsPDF
 
+== Printing and PDF output ==
+
+Order documents, purchase orders, invoices and address labels are produced in the browser
+rather than on the server, so that what you see on screen is what you get on paper.
+
+* On a desktop browser the document is rendered into a hidden iframe and handed to the
+  browser's own print dialog.
+* On iPad and iPhone, and on narrow screens generally, the document is rendered to a PDF
+  using the bundled html2canvas and jsPDF libraries and offered as a download. The print
+  dialog does not give a usable result on those devices.
+
+Each printed document is a self-contained HTML page that the browser opens on its own, with
+its own `@page` rules and page-break handling. Its styles, and the few lines of script that
+trigger the print dialog and close the window afterwards, have to travel inside that
+document. `wp_enqueue_style()` and `wp_enqueue_script()` only affect the page currently
+being viewed, so they cannot be used for it.
+
+This is why some of the plugin's inline `<style>` and `<script>` blocks cannot be removed:
+they belong to the print and PDF documents and to e-mail templates, which the guidelines
+list as an accepted exception.
+
+Elsewhere the plugin's stylesheets and scripts are registered and enqueued in the normal
+way. A few inline blocks remain on the plugin's own screens, and they are being moved to
+`wp_add_inline_script()` and `wp_add_inline_style()` as each screen is revisited.
+
 == External services ==
 
 This plugin can connect to the following external services. Each one is used only when
@@ -155,6 +180,8 @@ fields. It only sends anything if you have entered your own OpenAI API key.
   the admin screen reported "script not found" while still offering buttons that could
   not work.
 * Failed security checks no longer record any part of the submitted nonce value.
+* Documented, in the new "Printing and PDF output" section, why the print, PDF and e-mail
+  documents carry their styles and scripts inline.
 
 = 1.3.44 - 2026-09-20 =
 * Removed the "Domain Path" header. This package does not ship a languages folder,
