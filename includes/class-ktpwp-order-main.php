@@ -407,7 +407,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 			$this->Create_Staff_Chat_Table();
 
 			// 支払タイミングの保存処理（POST 時は最優先で実行しリダイレクト）
-			if ( $_SERVER['REQUEST_METHOD'] === 'POST' && isset( $_POST['update_payment_timing_order_id'], $_POST['ktp_payment_timing_nonce'] ) ) {
+			if ( ktpwp_request_method() === 'POST' && isset( $_POST['update_payment_timing_order_id'], $_POST['ktp_payment_timing_nonce'] ) ) {
 				if ( wp_verify_nonce( sanitize_text_field( $_POST['ktp_payment_timing_nonce'] ), 'ktp_update_order_payment_timing' ) ) {
 					$update_id = absint( $_POST['update_payment_timing_order_id'] );
 					$raw = isset( $_POST['order_payment_timing'] ) ? sanitize_text_field( $_POST['order_payment_timing'] ) : '';
@@ -447,7 +447,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 
 			// Handle form submissions
 			$mail_form_html = '';
-			$request_method = isset( $_SERVER['REQUEST_METHOD'] ) ? $_SERVER['REQUEST_METHOD'] : 'NOT_SET';
+			$request_method = ktpwp_request_method( 'NOT_SET' );
 
 			// Handle staff chat message submission - AJAX処理に移行したためコメントアウト
 			/*
@@ -1019,7 +1019,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 
 			// この時点での実行確認
 			// 案件名の保存処理 - Add nonce verification
-			if ( $_SERVER['REQUEST_METHOD'] === 'POST' && isset( $_POST['update_project_name_id'], $_POST['order_project_name'] ) ) {
+			if ( ktpwp_request_method() === 'POST' && isset( $_POST['update_project_name_id'], $_POST['order_project_name'] ) ) {
 				// Verify nonce
 				// if ( ! isset( $_POST['project_name_nonce'] ) ||
 				// ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['project_name_nonce'] ) ), 'update_project_name_action' ) ) {
@@ -1047,7 +1047,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 			// 進捗更新処理はAjaxで処理するため、POST処理をコメントアウト
 			// 進捗更新処理（POST時） - Add nonce verification
 			/*
-			if ( $_SERVER['REQUEST_METHOD'] === 'POST' && isset( $_POST['update_progress_id'], $_POST['update_progress'] ) ) {
+			if ( ktpwp_request_method() === 'POST' && isset( $_POST['update_progress_id'], $_POST['update_progress'] ) ) {
 				error_log( 'KTPWP Order: 進捗更新処理が呼び出されました' );
 
 				// Verify nonce
@@ -1124,7 +1124,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 			// 重要なチェックポイント3を追加
 
 			// 請求項目の保存処理 - Add nonce verification
-			if ( $_SERVER['REQUEST_METHOD'] === 'POST' && isset( $_POST['save_invoice_items'] ) && isset( $_POST['invoice_items'] ) ) {
+			if ( ktpwp_request_method() === 'POST' && isset( $_POST['save_invoice_items'] ) && isset( $_POST['invoice_items'] ) ) {
 				// Verify nonce
 				if ( ! isset( $_POST['invoice_items_nonce'] ) ||
                  ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['invoice_items_nonce'] ) ), 'save_invoice_items_action' ) ) {
@@ -1157,7 +1157,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 			}
 
 			// コスト項目保存処理
-			if ( $_SERVER['REQUEST_METHOD'] === 'POST' && isset( $_POST['save_cost_items'] ) && $_POST['save_cost_items'] == 1 ) {
+			if ( ktpwp_request_method() === 'POST' && isset( $_POST['save_cost_items'] ) && $_POST['save_cost_items'] == 1 ) {
 
 				$order_id = isset( $_POST['order_id'] ) ? absint( $_POST['order_id'] ) : 0;
 				$cost_items = isset( $_POST['cost_items'] ) ? $_POST['cost_items'] : array();
@@ -1193,7 +1193,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 			// 削除処理のデバッグ情報を追加
 
 			// 削除処理が実行されるかの条件を個別にチェック
-			$is_post = $_SERVER['REQUEST_METHOD'] === 'POST';
+			$is_post = ktpwp_request_method() === 'POST';
 			$has_delete_order = isset( $_POST['delete_order'] ) && $_POST['delete_order'] == 1;
 			$has_order_id = isset( $_POST['order_id'] );
 
@@ -1203,7 +1203,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 			}
 
 			// 受注書削除処理 - Use POST method for deletion
-			if ( $_SERVER['REQUEST_METHOD'] === 'POST' && isset( $_POST['delete_order'] ) && $_POST['delete_order'] == 1 && isset( $_POST['order_id'] ) ) {
+			if ( ktpwp_request_method() === 'POST' && isset( $_POST['delete_order'] ) && $_POST['delete_order'] == 1 && isset( $_POST['order_id'] ) ) {
 				$delete_confirmed = isset( $_POST['delete_confirmed'] ) ? sanitize_text_field( wp_unslash( $_POST['delete_confirmed'] ) ) : '';
 
 				if ( $delete_confirmed !== '1' ) {
@@ -1288,13 +1288,6 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 				} else {
 					$content .= '<div class="error">受注書の削除に失敗しました。エラー: ' . esc_html( $wpdb->last_error ) . '</div>';
 				}
-				}
-			} else {
-				// 削除処理の条件が満たされない場合のデバッグ情報
-				if ( $_SERVER['REQUEST_METHOD'] !== 'POST' ) {
-				} elseif ( ! isset( $_POST['delete_order'] ) ) {
-				} elseif ( $_POST['delete_order'] != 1 ) {
-				} elseif ( ! isset( $_POST['order_id'] ) ) {
 				}
 			}
 

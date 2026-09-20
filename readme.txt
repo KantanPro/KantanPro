@@ -4,7 +4,7 @@ Tags: invoice, crm, order management, quotation, business
 Requires at least: 5.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.3.42
+Stable tag: 1.3.44
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -146,6 +146,41 @@ fields. It only sends anything if you have entered your own OpenAI API key.
 6. Mobile view
 
 == Changelog ==
+
+= 1.3.44 - 2026-09-20 =
+* Removed the "Domain Path" header. This package does not ship a languages folder,
+  so the header pointed at a directory that does not exist.
+* Removed a leftover comment and a filter relating to plugin auto-updates. The filter
+  forced the auto-update UI on for every plugin on the site, which is not this
+  plugin's business, and the comment was enough to trip the plugin updater check.
+* $_SERVER['REQUEST_METHOD'] is now read through a single sanitizing helper instead of
+  being used directly in 19 places.
+
+= 1.3.43 - 2026-09-20 =
+* Stopped forcing a PHP session on every request. The terms-of-service singleton is
+  created on every page load and its constructor started a session unconditionally,
+  which prevented full-page caching for anonymous visitors. Sessions are now started
+  only for logged-in users who can use the business screens, and only where a session
+  is actually needed.
+* Removed the `wp_ajax_init` registration. The action suffix was the generic name
+  "init" and the handler it pointed at was unreachable dead code.
+* Nonce checks are no longer substituted by capability checks. Four AJAX handlers
+  (staff chat send/delete, supplier tax category, supplier qualified invoice number)
+  accepted a request with a missing or invalid nonce as long as the user held an
+  editing capability. A valid nonce and a capability check are now both required.
+* `ktp_save_delivery_date` ran `DESCRIBE` and `ALTER TABLE` on the order table before
+  verifying the nonce and the user capability. The security checks now run first,
+  before any database access.
+* Added the missing nonce checks to the profit display and logged-in users endpoints.
+* Untrusted input is no longer written to the error log. Failed security checks logged
+  the raw `$_POST` array and the received nonce value; they now log only the sanitized
+  field names.
+* Sanitization: the supplier and skills nonces are sanitized before `wp_verify_nonce()`,
+  the `Authorization` header is validated against an allow-list instead of being used
+  raw, `$_SERVER['REQUEST_METHOD']` and `HTTP_X_REQUESTED_WITH` are sanitized, and
+  `$_POST` values are unslashed before sanitizing.
+* The supplier update path now checks the user capability in addition to the nonce.
+* Removed unused session helper functions that read and wrote `$_SESSION` directly.
 
 = 1.3.42 - 2026-09-19 =
 * Prefixed the remaining generically named globals and stored keys: the user meta

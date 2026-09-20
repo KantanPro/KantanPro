@@ -931,7 +931,7 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
                 . '</div>';
 			}
 			// 進捗更新処理
-			if ( $_SERVER['REQUEST_METHOD'] === 'POST' && isset( $_POST['update_progress_id'], $_POST['update_progress'] ) ) {
+			if ( ktpwp_request_method() === 'POST' && isset( $_POST['update_progress_id'], $_POST['update_progress'] ) ) {
 				$update_id = intval( $_POST['update_progress_id'] );
 				$update_progress = intval( $_POST['update_progress'] );
 				if ( $update_id > 0 && $update_progress >= 1 && $update_progress <= 7 ) {

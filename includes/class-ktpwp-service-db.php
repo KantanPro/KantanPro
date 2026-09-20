@@ -105,7 +105,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 			$table_name = $wpdb->prefix . 'ktp_' . sanitize_key( $tab_name );
 
 			// Only process POST requests
-			if ( $_SERVER['REQUEST_METHOD'] !== 'POST' ) {
+			if ( ktpwp_request_method() !== 'POST' ) {
 				return;
 			}
 
@@ -585,7 +585,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 		 * @return void
 		 */
 		private function handle_duplicate_service( $tab_name, $data_id ) {
-			if ( $_SERVER['REQUEST_METHOD'] !== 'POST' ) {
+			if ( ktpwp_request_method() !== 'POST' ) {
 				wp_die( esc_html__( 'Invalid request method.', 'kantanpro' ) );
 			}
 

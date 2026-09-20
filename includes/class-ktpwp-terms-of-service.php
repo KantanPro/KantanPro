@@ -61,8 +61,10 @@ class KTPWP_Terms_Of_Service {
             ktpwp_ensure_terms_table();
         }
 
-        // セッション開始（安全な方法で）
-        ktpwp_safe_session_start();
+        // セッションはここでは開始しない。
+        // このシングルトンは毎リクエストで生成されるため、ここで session_start() すると
+        // 匿名の閲覧者にもセッション Cookie が発行され、ページキャッシュが効かなくなる。
+        // セッションを必要とする画面側が、必要になった時点で ktpwp_safe_session_start() を呼ぶ。
 
         // フックの設定
         add_action( 'admin_init', array( $this, 'handle_terms_actions' ) );
@@ -486,7 +488,7 @@ End',
 
         // ログアウト処理
         if ( isset( $_GET['logout'] ) && $_GET['logout'] === '1' ) {
-            $_SESSION['ktp_developer_authenticated'] = false;
+            // 旧開発者パスワード認証は廃止済み。セッションに状態は持たない。
             echo '<div class="notice notice-info is-dismissible"><p>' . esc_html__( '認証を解除しました。', 'kantanpro' ) . '</p></div>';
         }
 

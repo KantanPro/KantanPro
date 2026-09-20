@@ -112,6 +112,12 @@ class KTPWP_Ajax {
 	 * Ajax: 最新の利益表示を取得
 	 */
 	public function ajax_get_profit_display() {
+		// nonce 検証（CSRF 対策）
+		if ( ! $this->verify_ajax_nonce( $this->cost_item_nonce_actions(), $this->cost_item_nonce_fields() ) ) {
+			$this->log_ajax_error( 'Profit display nonce verification failed', $this->posted_field_names() );
+			wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'kantanpro' ) );
+		}
+
 		// 権限チェック
 		if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
 			wp_send_json_error( __( 'この操作を行う権限がありません。', 'kantanpro' ) );
@@ -809,6 +815,12 @@ class KTPWP_Ajax {
 	 * Ajax: ログイン中ユーザー取得
 	 */
 	public function ajax_get_logged_in_users() {
+		// nonce 検証（CSRF 対策）
+		if ( ! $this->verify_ajax_nonce( $this->cost_item_nonce_actions(), $this->cost_item_nonce_fields() ) ) {
+			wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'kantanpro' ) );
+			return;
+		}
+
 		// 編集者以上の権限チェック
 		if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
 			wp_send_json_error( __( 'この操作を行う権限がありません。', 'kantanpro' ) );
@@ -816,11 +828,10 @@ class KTPWP_Ajax {
 		}
 
 		// Ajax以外からのアクセスは何も返さない
-		if (
-			! defined( 'DOING_AJAX' ) ||
-			! DOING_AJAX ||
-			( empty( $_SERVER['HTTP_X_REQUESTED_WITH'] ) || strtolower( $_SERVER['HTTP_X_REQUESTED_WITH'] ) !== 'xmlhttprequest' )
-		) {
+		$requested_with = isset( $_SERVER['HTTP_X_REQUESTED_WITH'] )
+			? strtolower( sanitize_text_field( wp_unslash( $_SERVER['HTTP_X_REQUESTED_WITH'] ) ) )
+			: '';
+		if ( ! defined( 'DOING_AJAX' ) || ! DOING_AJAX || $requested_with !== 'xmlhttprequest' ) {
 			wp_die();
 		}
 
@@ -895,7 +906,7 @@ class KTPWP_Ajax {
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 				error_log( '[AJAX_AUTO_SAVE] Security check failed - tried fields: ' . implode( ', ', $nonce_fields ) );
 			}
-			$this->log_ajax_error( 'Auto-save security check failed', $_POST );
+			$this->log_ajax_error( 'Auto-save security check failed', $this->posted_field_names() );
 			wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'kantanpro' ) );
 		}
 
@@ -1009,7 +1020,7 @@ class KTPWP_Ajax {
 
 		if ( ! $nonce_verified ) {
 			error_log( '[AJAX_CREATE_NEW_ITEM] Security check failed - tried fields: ' . implode( ', ', $nonce_fields ) );
-			$this->log_ajax_error( 'Create new item security check failed', $_POST );
+			$this->log_ajax_error( 'Create new item security check failed', $this->posted_field_names() );
 			wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'kantanpro' ) );
 		}
 
@@ -1089,7 +1100,7 @@ class KTPWP_Ajax {
 	public function ajax_delete_item() {
 		// 編集者以上の権限チェック
 		if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
-			$this->log_ajax_error( 'Delete item permission check failed', $_POST );
+			$this->log_ajax_error( 'Delete item permission check failed', $this->posted_field_names() );
 			wp_send_json_error( __( 'この操作を行う権限がありません。', 'kantanpro' ) );
 			return;
 		}
@@ -1116,7 +1127,7 @@ class KTPWP_Ajax {
 
 		if ( ! $nonce_verified ) {
 			error_log( '[AJAX_DELETE_ITEM] Security check failed - tried fields: ' . implode( ', ', $nonce_fields ) );
-			$this->log_ajax_error( 'Delete item security check failed', $_POST );
+			$this->log_ajax_error( 'Delete item security check failed', $this->posted_field_names() );
 			wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'kantanpro' ) );
 		}
 
@@ -1213,7 +1224,7 @@ class KTPWP_Ajax {
 
 		// 編集者以上の権限チェック
 		if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
-			$this->log_ajax_error( 'Update item order permission check failed', $_POST );
+			$this->log_ajax_error( 'Update item order permission check failed', $this->posted_field_names() );
 			wp_send_json_error( __( 'この操作を行う権限がありません。', 'kantanpro' ) );
 			return;
 		}
@@ -1241,7 +1252,7 @@ class KTPWP_Ajax {
 
 		if ( ! $nonce_verified ) {
 			error_log( '[AJAX_UPDATE_ITEM_ORDER] Security check failed - tried fields: ' . implode( ', ', $nonce_fields ) );
-			$this->log_ajax_error( 'Update item order security check failed', $_POST );
+			$this->log_ajax_error( 'Update item order security check failed', $this->posted_field_names() );
 			wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'kantanpro' ) );
 		}
 
@@ -1266,7 +1277,7 @@ class KTPWP_Ajax {
 		}
 
 		if ( empty( $items_data ) ) {
-			$this->log_ajax_error( 'No items data provided for updating order', $_POST );
+			$this->log_ajax_error( 'No items data provided for updating order', $this->posted_field_names() );
 			wp_send_json_error( __( '更新するアイテムデータがありません', 'kantanpro' ) );
 		}
 
@@ -3885,11 +3896,12 @@ class KTPWP_Ajax {
 			// Nonce検証（_ajax_nonceパラメータで送信される）
 			$nonce = isset( $_POST['_ajax_nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['_ajax_nonce'] ) ) : '';
 			if ( ! wp_verify_nonce( $nonce, $this->nonce_names['staff_chat'] ) ) {
+				// 受信した nonce の値そのものはログに残さない（入力由来のため）。
 				$this->log_ajax_error(
 					'Staff chat get messages nonce verification failed',
 					array(
-						'received_nonce'  => $nonce,
 						'expected_action' => $this->nonce_names['staff_chat'],
+						'nonce_present'   => ( $nonce !== '' ),
 					)
 				);
 				$this->send_clean_json_response(
@@ -4013,11 +4025,15 @@ class KTPWP_Ajax {
 			}
 
 			// Nonce検証（_ajax_nonceパラメータで送信される）
-			$nonce       = isset( $_POST['_ajax_nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['_ajax_nonce'] ) ) : '';
-			$nonce_valid = wp_verify_nonce( $nonce, $this->nonce_names['staff_chat'] );
-			// nonceが不正かつ権限もない場合のみエラー
-			if ( ! $nonce_valid && ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
-				wp_send_json_error( __( '権限がありません（nonce不正）', 'kantanpro' ) );
+			// nonce は認可の代わりにならないので、nonce と権限の両方を必須にする。
+			$nonce = isset( $_POST['_ajax_nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['_ajax_nonce'] ) ) : '';
+			if ( $nonce === '' || ! wp_verify_nonce( $nonce, $this->nonce_names['staff_chat'] ) ) {
+				wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'kantanpro' ) );
+				return;
+			}
+
+			if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
+				wp_send_json_error( __( '権限がありません', 'kantanpro' ) );
 				return;
 			}
 
@@ -4117,10 +4133,15 @@ class KTPWP_Ajax {
 				return;
 			}
 
-			$nonce       = isset( $_POST['_ajax_nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['_ajax_nonce'] ) ) : '';
-			$nonce_valid = wp_verify_nonce( $nonce, $this->nonce_names['staff_chat'] );
-			if ( ! $nonce_valid && ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
-				wp_send_json_error( __( '権限がありません（nonce不正）', 'kantanpro' ) );
+			// nonce は認可の代わりにならないので、nonce と権限の両方を必須にする。
+			$nonce = isset( $_POST['_ajax_nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['_ajax_nonce'] ) ) : '';
+			if ( $nonce === '' || ! wp_verify_nonce( $nonce, $this->nonce_names['staff_chat'] ) ) {
+				wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'kantanpro' ) );
+				return;
+			}
+
+			if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
+				wp_send_json_error( __( '権限がありません', 'kantanpro' ) );
 				return;
 			}
 
@@ -4385,7 +4406,8 @@ class KTPWP_Ajax {
 			return $default;
 		}
 
-		$value = $_POST[ $key ];
+		// wp_unslash() を通してから型ごとにサニタイズする。
+		$value = wp_unslash( $_POST[ $key ] );
 
 		switch ( $type ) {
 			case 'int':
@@ -4514,7 +4536,18 @@ class KTPWP_Ajax {
 	 */
 	public function ajax_save_delivery_date() {
 		try {
-			// デバッグ情報をログに出力
+			// セキュリティチェックは DB へ一切触れる前に行う。
+			// （以前はテーブル定義の確認と ALTER TABLE を先に実行しており、
+			//   認証・認可を通らないリクエストでもスキーマ操作が走っていた。）
+			if ( ! $this->verify_ajax_nonce( $this->cost_item_nonce_actions(), array( 'ktp_ajax_nonce', 'ktpwp_ajax_nonce', 'nonce' ) ) ) {
+				$this->log_ajax_error( 'Delivery date nonce verification failed', $this->posted_field_names() );
+				throw new Exception( 'セキュリティ検証に失敗しました。' );
+			}
+
+			// 権限チェック（nonce は CSRF 対策であり、認可の代わりにはならない）
+			if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
+				throw new Exception( '権限がありません。' );
+			}
 
 			// パラメータ取得
 			$order_id   = isset( $_POST['order_id'] ) ? absint( $_POST['order_id'] ) : 0;
@@ -4529,32 +4562,20 @@ class KTPWP_Ajax {
 				throw new Exception( '無効な受注書IDです。' );
 			}
 
-			// データベース接続のデバッグ情報を最初に出力
 			global $wpdb;
 			$table_name = $wpdb->prefix . 'ktp_order';
-			error_log( 'KTPWP Ajax: Table name = ' . $table_name );
-			error_log( 'KTPWP Ajax: wpdb->prefix = ' . $wpdb->prefix );
 
-			// テーブルの存在確認
-			$table_exists = $wpdb->get_var( "SHOW TABLES LIKE '{$table_name}'" );
-			error_log( 'KTPWP Ajax: Table exists = ' . ( $table_exists ? 'YES' : 'NO' ) );
-
-			// テーブル構造の確認
-			$columns = $wpdb->get_results( "DESCRIBE `{$table_name}`" );
-			error_log( 'KTPWP Ajax: Table columns = ' . print_r( $columns, true ) );
-
-			// 納期カラムの存在確認と追加
+			// 納期カラムが無い古いインストールへの補完。
+			$columns      = $wpdb->get_results( "DESCRIBE `{$table_name}`" );
 			$column_names = array();
-			foreach ( $columns as $column ) {
+			foreach ( (array) $columns as $column ) {
 				$column_names[] = $column->Field;
 			}
 
 			$delivery_columns = array( 'promised_delivery_date', 'desired_delivery_date', 'expected_delivery_date', 'completion_date' );
 			foreach ( $delivery_columns as $delivery_column ) {
-				if ( ! in_array( $delivery_column, $column_names ) ) {
-					error_log( 'KTPWP Ajax: Adding missing column: ' . $delivery_column );
+				if ( ! in_array( $delivery_column, $column_names, true ) ) {
 					$wpdb->query( "ALTER TABLE `{$table_name}` ADD COLUMN `{$delivery_column}` DATE NULL" );
-					error_log( 'KTPWP Ajax: Column added: ' . $delivery_column );
 				}
 			}
 
@@ -4568,41 +4589,6 @@ class KTPWP_Ajax {
 
 			if ( ! $order_exists ) {
 				throw new Exception( '受注書が見つかりません。' );
-			}
-
-			// セキュリティチェック - 複数のnonce名を試行
-			$nonce_verified = false;
-			$nonce_names    = array( 'ktp_ajax_nonce', 'ktpwp_ajax_nonce', 'nonce' );
-
-			foreach ( $nonce_names as $nonce_name ) {
-				if ( isset( $_POST[ $nonce_name ] ) ) {
-					$nonce_value = is_array( $_POST[ $nonce_name ] ) ? $_POST[ $nonce_name ] : sanitize_text_field( wp_unslash( $_POST[ $nonce_name ] ) );
-
-					// 配列の場合はvalueキーを取得
-					if ( is_array( $nonce_value ) && isset( $nonce_value['value'] ) ) {
-						$nonce_value = sanitize_text_field( wp_unslash( $nonce_value['value'] ) );
-					}
-
-					error_log( 'KTPWP Ajax: Found nonce field: ' . $nonce_name . ' = ' . $nonce_value );
-					if ( wp_verify_nonce( $nonce_value, 'ktp_ajax_nonce' ) ) {
-						$nonce_verified = true;
-						error_log( 'KTPWP Ajax: Nonce verified with field: ' . $nonce_name );
-						break;
-					} else {
-						error_log( 'KTPWP Ajax: Nonce verification failed for field: ' . $nonce_name );
-					}
-				} else {
-					error_log( 'KTPWP Ajax: Nonce field not found: ' . $nonce_name );
-				}
-			}
-
-			if ( ! $nonce_verified ) {
-				throw new Exception( 'セキュリティ検証に失敗しました。' );
-			}
-
-			// 権限チェック
-			if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
-				throw new Exception( '権限がありません。' );
 			}
 
 			// フィールド名の検証
@@ -5200,49 +5186,10 @@ class KTPWP_Ajax {
 				return;
 			}
 
-			// nonce検証（一時的に緩和版）
-			$nonce_verified = false;
-			$nonce_value = '';
-			$nonce_sources = [
-				'nonce',
-				'_wpnonce',
-				'_ajax_nonce',
-				'ktp_ajax_nonce',
-				'security'
-			];
-
-			foreach ($nonce_sources as $source) {
-				if (isset($_POST[$source]) && !empty($_POST[$source])) {
-					$nonce_value = sanitize_text_field( wp_unslash( $_POST[$source] ) );
-					error_log('KTPWP Ajax: Trying tax category nonce from source: ' . $source . ' with value: ' . $nonce_value);
-					// 複数のnonce名で検証を試行
-					$nonce_names = [
-						'ktp_ajax_nonce',
-						'_wpnonce',
-						'_ajax_nonce',
-						'auto_save',
-						'general'
-					];
-					foreach ($nonce_names as $name) {
-						if (wp_verify_nonce($nonce_value, $name)) {
-							$nonce_verified = true;
-							error_log('KTPWP Ajax: Tax category nonce verified with source: ' . $source . ' and name: ' . $name);
-							break 2;
-						}
-					}
-				}
-			}
-			
-			// 権限があるユーザーの場合は、nonce検証を一時的に緩和
-			if (!$nonce_verified && (current_user_can('edit_posts') || current_user_can('ktpwp_access'))) {
-				error_log('KTPWP Ajax: Tax category nonce verification failed but user has permissions, proceeding with caution');
-				error_log('KTPWP Ajax: Attempted tax category nonce value: ' . $nonce_value);
-				$nonce_verified = true;
-			}
-			
-			if (!$nonce_verified) {
-				error_log('KTPWP Ajax: Tax category nonce verification failed');
-				wp_send_json_error(__('セキュリティ検証に失敗しました', 'kantanpro'));
+			// nonce 検証。権限による代用はしない。
+			if ( ! $this->verify_ajax_nonce( $this->cost_item_nonce_actions(), $this->cost_item_nonce_fields() ) ) {
+				$this->log_ajax_error( 'Tax category nonce verification failed', $this->posted_field_names() );
+				wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'kantanpro' ) );
 				return;
 			}
 
@@ -5431,23 +5378,145 @@ class KTPWP_Ajax {
 	}
 
 	/**
+	 * コスト項目まわりの AJAX が許容する nonce action 名
+	 *
+	 * js/ktp-cost-items.js は ktpwp_ajax.nonces.auto_save を送り、無ければ general に落ちる。
+	 * ただし nonces.auto_save の中身は画面によって 2 種類ある。
+	 * wp_localize_script する側が ktp_ajax_nonce で作る場合と、
+	 * KTPWP_Nonce_Manager::get_auto_save_nonce()（= ktpwp_auto_save_nonce）で作る場合があるため、
+	 * ajax_auto_save_field と同じ 3 つを許容する。
+	 * （ここを 2 つに絞ると、後者の画面からのリクエストが正当なのに弾かれる。）
+	 *
+	 * @return array
+	 */
+	private function cost_item_nonce_actions() {
+		return array( 'ktp_ajax_nonce', 'ktpwp_ajax_nonce', 'ktpwp_auto_save_nonce' );
+	}
+
+	/**
+	 * コスト項目まわりの AJAX で nonce が入りうるフィールド名
+	 *
+	 * @return array
+	 */
+	private function cost_item_nonce_fields() {
+		return array( 'nonce', 'ktp_ajax_nonce', '_ajax_nonce', '_wpnonce', 'security' );
+	}
+
+	/**
+	 * AJAX リクエストの nonce を検証する
+	 *
+	 * 画面によって nonce を載せるフィールド名が異なるため候補を複数受け取るが、
+	 * 検証に使う action 名は実在するものだけに限る。
+	 * 検証に失敗した場合、権限で代用することは無い（nonce は CSRF 対策、
+	 * current_user_can() は認可であり、互いの代わりにはならない）。
+	 *
+	 * @param array $actions 許容する nonce action 名。
+	 * @param array $fields  nonce が入りうる POST フィールド名。
+	 * @return bool 検証できたら true。
+	 */
+	private function verify_ajax_nonce( array $actions, array $fields ) {
+		foreach ( $fields as $field ) {
+			if ( ! isset( $_POST[ $field ] ) || $_POST[ $field ] === '' ) {
+				continue;
+			}
+
+			// wp_verify_nonce() は差し替え可能な関数なので、生の入力は渡さない。
+			$value = sanitize_text_field( wp_unslash( $_POST[ $field ] ) );
+			if ( $value === '' ) {
+				continue;
+			}
+
+			foreach ( $actions as $action ) {
+				if ( wp_verify_nonce( $value, $action ) ) {
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * 送信されたフィールド名の一覧を返す（値は含めない）
+	 *
+	 * セキュリティ検証に失敗した理由を追うには「どのフィールドが来たか」で足り、
+	 * 値そのものは要らない。値をログに残すと攻撃者が入れた文字列が
+	 * サーバーログに残るため、キー名だけをサニタイズして返す。
+	 *
+	 * @return array サニタイズ済みのフィールド名。
+	 */
+	private function posted_field_names() {
+		if ( empty( $_POST ) || ! is_array( $_POST ) ) {
+			return array();
+		}
+
+		$names = array();
+		foreach ( array_keys( $_POST ) as $key ) {
+			$key = sanitize_key( (string) $key );
+			if ( $key !== '' ) {
+				$names[] = $key;
+			}
+		}
+
+		return array( 'posted_fields' => implode( ', ', $names ) );
+	}
+
+	/**
+	 * ログに出せる形へ整える
+	 *
+	 * 入力由来の値がそのままログへ流れないよう、スカラーへ潰したうえで
+	 * サニタイズし、長さも切り詰める。
+	 *
+	 * @param mixed $value 対象の値。
+	 * @param int   $depth 再帰の深さ。
+	 * @return string サニタイズ済みの文字列。
+	 */
+	private function sanitize_log_value( $value, $depth = 0 ) {
+		if ( is_array( $value ) ) {
+			if ( $depth >= 2 ) {
+				return '[array]';
+			}
+			$parts = array();
+			foreach ( $value as $key => $item ) {
+				$parts[] = sanitize_key( (string) $key ) . '=' . $this->sanitize_log_value( $item, $depth + 1 );
+			}
+			return '{' . implode( ', ', $parts ) . '}';
+		}
+
+		if ( is_bool( $value ) ) {
+			return $value ? 'true' : 'false';
+		}
+
+		if ( is_null( $value ) ) {
+			return 'null';
+		}
+
+		if ( is_object( $value ) ) {
+			return '[object ' . sanitize_key( get_class( $value ) ) . ']';
+		}
+
+		$value = sanitize_text_field( (string) $value );
+
+		return strlen( $value ) > 200 ? substr( $value, 0, 200 ) . '…' : $value;
+	}
+
+	/**
 	 * Log Ajax errors
 	 *
 	 * @param string $message Error message
 	 * @param array  $context Additional context data
 	 */
 	private function log_ajax_error( $message, $context = array() ) {
-		// $context には $_POST がそのまま渡されることが多く、
-		// 常時ログへ書き出すと攻撃者制御下の入力がそのままサーバーログに残ってしまう。
-		// WP_DEBUG が有効なときだけ詳細（$context）を出す。
+		// $context には入力由来の値が混ざりうるため、常時ログへ書き出さない。
+		// WP_DEBUG が有効なときだけ、サニタイズしたうえで出す。
 		if ( ! defined( 'WP_DEBUG' ) || ! WP_DEBUG ) {
-			error_log( 'KTPWP Ajax Error: ' . $message );
+			error_log( 'KTPWP Ajax Error: ' . sanitize_text_field( (string) $message ) );
 			return;
 		}
 
-		$log_message = 'KTPWP Ajax Error: ' . $message;
+		$log_message = 'KTPWP Ajax Error: ' . sanitize_text_field( (string) $message );
 		if ( ! empty( $context ) ) {
-			$log_message .= ' Context: ' . print_r( $context, true );
+			$log_message .= ' Context: ' . $this->sanitize_log_value( $context );
 		}
 		error_log( $log_message );
 	}
@@ -5467,52 +5536,10 @@ class KTPWP_Ajax {
 				return;
 			}
 
-			// nonce検証（一時的に緩和版）
-			$nonce_verified = false;
-			$nonce_value = '';
-			$nonce_sources = [
-				'nonce',
-				'_wpnonce',
-				'_ajax_nonce',
-				'ktp_ajax_nonce',
-				'security'
-			];
-
-			foreach ($nonce_sources as $source) {
-				if (isset($_POST[$source]) && !empty($_POST[$source])) {
-					$nonce_value = sanitize_text_field( wp_unslash( $_POST[$source] ) );
-					error_log('KTPWP Ajax: Trying nonce from source: ' . $source . ' with value: ' . $nonce_value);
-					// 複数のnonce名で検証を試行
-					$nonce_names = [
-						'ktp_ajax_nonce',
-						'_wpnonce',
-						'_ajax_nonce',
-						'auto_save',
-						'general'
-					];
-					foreach ($nonce_names as $name) {
-						if (wp_verify_nonce($nonce_value, $name)) {
-							$nonce_verified = true;
-							error_log('KTPWP Ajax: Nonce verified with source: ' . $source . ' and name: ' . $name);
-							break 2;
-						}
-					}
-				}
-			}
-			
-			// 権限があるユーザーの場合は、nonce検証を一時的に緩和
-			if (!$nonce_verified && (current_user_can('edit_posts') || current_user_can('ktpwp_access'))) {
-				error_log('KTPWP Ajax ajax_get_supplier_qualified_invoice_number: Nonce verification failed but user has permissions, proceeding with caution');
-				error_log('KTPWP Ajax: Attempted nonce value: ' . $nonce_value);
-				error_log('[AJAX_GET_SUPPLIER_QUALIFIED_INVOICE] Proceeding without nonce verification due to user permissions');
-				$nonce_verified = true;
-			}
-			
-			if (!$nonce_verified) {
-				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					error_log('[AJAX_GET_SUPPLIER_QUALIFIED_INVOICE] Security check failed - all nonce sources: ' . print_r($nonce_sources, true));
-				}
-				wp_send_json_error(__('セキュリティ検証に失敗しました', 'kantanpro'));
+			// nonce 検証。権限による代用はしない。
+			if ( ! $this->verify_ajax_nonce( $this->cost_item_nonce_actions(), $this->cost_item_nonce_fields() ) ) {
+				$this->log_ajax_error( 'Qualified invoice number nonce verification failed', $this->posted_field_names() );
+				wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'kantanpro' ) );
 				return;
 			}
 

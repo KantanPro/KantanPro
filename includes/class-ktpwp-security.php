@@ -535,9 +535,12 @@ class KTPWP_Security {
      */
     private function get_basic_auth_request_password() {
         if ( isset( $_SERVER['PHP_AUTH_PW'] ) ) {
-            // This value is only compared with wp_check_password(); it is never output or used in SQL.
-            // sanitize_text_field() would corrupt valid passwords that contain "<", newlines, etc., so only wp_unslash() is applied on purpose.
-            return (string) wp_unslash( $_SERVER['PHP_AUTH_PW'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- credential, see comment above.
+            // This value is only compared with wp_check_password(); it is never output, stored or used in SQL.
+            // sanitize_text_field() would corrupt valid passwords that contain "<", newlines, etc., so the raw
+            // value is kept on purpose. It is bounded in length and stripped of NUL bytes as a safety net.
+            $password = (string) wp_unslash( $_SERVER['PHP_AUTH_PW'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- credential, see comment above.
+
+            return substr( str_replace( "\0", '', $password ), 0, 4096 );
         }
 
         $header = $this->get_authorization_header();
@@ -556,17 +559,25 @@ class KTPWP_Security {
      * @return string
      */
     private function get_authorization_header() {
-        // The Basic-auth header is base64_decode()d and hash-compared afterwards; it is never output.
-        // sanitize_text_field() could corrupt the Base64 string, so only wp_unslash() is applied on purpose.
+        $raw = '';
         if ( isset( $_SERVER['HTTP_AUTHORIZATION'] ) ) {
-            return trim( (string) wp_unslash( $_SERVER['HTTP_AUTHORIZATION'] ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- credential, see comment above.
+            $raw = wp_unslash( $_SERVER['HTTP_AUTHORIZATION'] );
+        } elseif ( isset( $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ) ) {
+            $raw = wp_unslash( $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] );
         }
 
-        if ( isset( $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ) ) {
-            return trim( (string) wp_unslash( $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- credential, see comment above.
+        if ( ! is_string( $raw ) ) {
+            return '';
         }
 
-        return '';
+        // Validated against an allow-list instead of sanitize_text_field(), which would
+        // corrupt the Base64 payload. Anything that is not "Basic <base64>" is rejected
+        // outright, so no unvalidated input leaves this method.
+        if ( ! preg_match( '#^\s*Basic\s+([A-Za-z0-9+/]{4,4096}={0,2})\s*$#i', $raw, $matches ) ) {
+            return '';
+        }
+
+        return 'Basic ' . $matches[1];
     }
 
     /**

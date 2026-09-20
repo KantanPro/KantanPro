@@ -1047,7 +1047,7 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 			$action = isset( $_POST['query_post'] ) ? $_POST['query_post'] : ( isset( $_GET['query_post'] ) ? $_GET['query_post'] : 'update' );
 
 			// 安全性確保: GETリクエストの場合は危険なアクションを実行しない（srcmode/istmode は表示用のため許可）
-			if ( $_SERVER['REQUEST_METHOD'] === 'GET' && in_array( $action, array( 'delete', 'insert', 'search', 'duplicate' ) ) ) {
+			if ( ktpwp_request_method() === 'GET' && in_array( $action, array( 'delete', 'insert', 'search', 'duplicate' ) ) ) {
 				$action = 'update';
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 				}

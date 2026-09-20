@@ -331,7 +331,7 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 
 			foreach ( $periods as $key => $label ) {
 				$active_class = ( $current_period === $key ) ? 'style="background:#1976d2;color:#fff;"' : 'style="background:#fff;color:#333;"';
-				$url = add_query_arg( array( 'tab_name' => 'report', 'report_type' => $_GET['report_type'] ?? 'sales', 'period' => $key ) );
+				$url = add_query_arg( array( 'tab_name' => 'report', 'report_type' => isset( $_GET['report_type'] ) ? sanitize_key( wp_unslash( $_GET['report_type'] ) ) : 'sales', 'period' => $key ) );
 				
 				$content .= '<a href="' . esc_url( $url ) . '" class="period-btn" ' . $active_class . ' style="padding:6px 12px;border-radius:4px;text-decoration:none;border:1px solid #ddd;font-size:14px;transition:all 0.3s;">';
 				$content .= esc_html( $label );

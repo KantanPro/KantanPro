@@ -129,6 +129,21 @@ perl -0pi -e "s/        return KTPWP_DISTRIBUTION !== 'wporg';/        \/\/ Word
 # 2) Update URI ヘッダを削除（残っていると wp.org からの更新が適用されない）
 perl -ni -e "print unless m{^ \* Update URI:}" "$STAGE/ktpwp.php"
 
+# 2.1) Domain Path ヘッダを削除
+#      languages/ は wp.org 版では同梱しない（WordPress が翻訳を配信する）ので、
+#      ヘッダを残すと存在しないフォルダを指すことになり Plugin Check が
+#      plugin_header_nonexistent_domain_path を出す。
+perl -ni -e "print unless m{^ \* Domain Path:}" "$STAGE/ktpwp.php"
+
+# 2.2) 自動更新 UI の強制有効化を削除
+#      plugins_auto_update_enabled を __return_true で潰すと、このプラグインだけでなく
+#      サイト上の全プラグインの自動更新 UI を書き換えてしまう。
+#      wp.org 版の更新は WordPress 本体に任せるので不要。
+#      Plugin Check の update_modification_detected は `auto_update_plugin` を
+#      ファイル全文の正規表現で探すため、**コメントに書いてあるだけでも当たる**。
+#      直前の説明コメントと、除外済みの更新チェッカークラスに言及した古いコメントも一緒に消す。
+perl -0pi -e "s{// プラグインアクションリンクは更新チェッカークラスで管理\n\n// スクリプト読み込みも更新チェッカークラスで管理\n\n// プラグイン自動更新 UI を有効化[^\n]*\nadd_filter\( 'plugins_auto_update_enabled', '__return_true' \);\n}{// wp.org 版では更新まわりに手を加えない（WordPress 本体に任せる）。\n}s" "$STAGE/ktpwp.php"
+
 # 3) 除外したクラスのオートローダ登録を消す
 #    file_exists() ガードがあるので残っていても動作は壊れないが、
 #    レビュアーが「存在しないファイルへの参照」を不審に思うので消しておく。

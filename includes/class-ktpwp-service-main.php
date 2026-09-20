@@ -124,7 +124,7 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 			}
 
 			// Handle POST requests by calling update_table
-			if ( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
+			if ( ktpwp_request_method() === 'POST' ) {
 				// Debug logging
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 					error_log( 'KTPWP Service: POST request detected in View_Table' );
@@ -202,7 +202,7 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 				ktpwp_safe_session_start();
 			}
 			// タブクリックで遷移した場合（GET で query_post が無い）は検索モードを解除
-			if ( $_SERVER['REQUEST_METHOD'] === 'GET' && ! isset( $_GET['query_post'] ) ) {
+			if ( ktpwp_request_method() === 'GET' && ! isset( $_GET['query_post'] ) ) {
 				unset( $_SESSION['ktp_service_search_mode'] );
 				unset( $_SESSION['ktp_service_search_message'] );
 			}
@@ -211,7 +211,7 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 				$search_message = isset( $_SESSION['ktp_service_search_message'] ) ? $_SESSION['ktp_service_search_message'] : '';
 			}
 			// 本番等でセッションがリダイレクト後に引き継がれない場合の対策: GET の query_post=srcmode で検索フォームを表示
-			if ( ! $search_mode && $_SERVER['REQUEST_METHOD'] === 'GET' && isset( $_GET['query_post'] ) && $_GET['query_post'] === 'srcmode' ) {
+			if ( ! $search_mode && ktpwp_request_method() === 'GET' && isset( $_GET['query_post'] ) && $_GET['query_post'] === 'srcmode' ) {
 				$search_mode = true;
 				if ( isset( $_GET['no_results'] ) && $_GET['no_results'] === '1' ) {
 					$search_message = esc_html__( '該当するサービスが見つかりませんでした。条件を変更して再検索してください。', 'kantanpro' );
@@ -529,7 +529,7 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 			$action = isset( $_POST['query_post'] ) ? sanitize_text_field( $_POST['query_post'] ) : ( isset( $_GET['query_post'] ) ? sanitize_text_field( $_GET['query_post'] ) : 'update' );
 
 			// 安全性確保: GETリクエストの場合は危険なアクションを実行しない
-			if ( $_SERVER['REQUEST_METHOD'] === 'GET' && in_array( $action, array( 'duplicate', 'delete', 'insert', 'search', 'search_execute', 'upload_image' ) ) ) {
+			if ( ktpwp_request_method() === 'GET' && in_array( $action, array( 'duplicate', 'delete', 'insert', 'search', 'search_execute', 'upload_image' ) ) ) {
 				$action = 'update';
 			}
 

@@ -1206,12 +1206,17 @@ class KTPWP_Shortcodes {
      * Ajax: ログイン中ユーザー取得
      */
     public function ajax_get_logged_in_users() {
+        // 権限チェック（ログイン中スタッフの一覧を返すため、業務画面の権限を必須にする）
+        if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
+            wp_send_json_error( __( 'この操作を行う権限がありません。', 'kantanpro' ) );
+            return;
+        }
+
         // Ajax以外からのアクセスは何も返さない
-        if (
-            !defined('DOING_AJAX') ||
-            !DOING_AJAX ||
-            (empty($_SERVER['HTTP_X_REQUESTED_WITH']) || strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) !== 'xmlhttprequest')
-        ) {
+        $requested_with = isset( $_SERVER['HTTP_X_REQUESTED_WITH'] )
+            ? strtolower( sanitize_text_field( wp_unslash( $_SERVER['HTTP_X_REQUESTED_WITH'] ) ) )
+            : '';
+        if ( ! defined( 'DOING_AJAX' ) || ! DOING_AJAX || $requested_with !== 'xmlhttprequest' ) {
             wp_die();
         }
 

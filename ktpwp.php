@@ -3,7 +3,7 @@
  * Plugin Name: KantanPro
  * Plugin URI: https://www.kantanpro.com/
  * Description: スモールビジネスのための販売支援ツール。ショートコード[ktpwp_all_tab]を固定ページに設置してください。
- * Version: 1.3.42
+ * Version: 1.3.44
  * Author: KantanPro
  * Author URI: https://www.kantanpro.com/kantanpro-page
  * License: GPL v2 or later
@@ -496,7 +496,7 @@ if ( ! function_exists( 'ktpwp_supplier_skills_template_redirect' ) ) {
 		if ( is_admin() ) {
 			return;
 		}
-		if ( 'POST' !== strtoupper( (string) ( $_SERVER['REQUEST_METHOD'] ?? '' ) ) ) {
+		if ( 'POST' !== ktpwp_request_method() ) {
 			return;
 		}
 		if ( empty( $_POST['skills_action'] ) || empty( $_POST['ktp_skills_nonce'] ) ) {
@@ -5363,19 +5363,51 @@ function ktpwp_distribution_safety_check() {
  */
 
 /**
+ * リクエストメソッドをサニタイズして返す
+ *
+ * $_SERVER も入力として扱う必要があるため、直読みせずここを通す。
+ *
+ * @param string $default 取得できなかったときの値。
+ * @return string 大文字化したメソッド名（GET / POST など）。
+ */
+function ktpwp_request_method( $default = '' ) {
+    if ( ! isset( $_SERVER['REQUEST_METHOD'] ) ) {
+        return $default;
+    }
+
+    return strtoupper( sanitize_text_field( wp_unslash( $_SERVER['REQUEST_METHOD'] ) ) );
+}
+
+/**
  * 安全にセッションを開始
+ *
+ * セッションを持つ訪問者はページキャッシュ（Nginx / Varnish 等）を素通りするため、
+ * 匿名の閲覧者に対しては絶対にセッションを開始しない。
+ * 業務画面を使えるログイン済みユーザーだけが対象。
  */
 function ktpwp_safe_session_start() {
     // 既にセッションが開始されている場合は何もしない
     if ( session_status() === PHP_SESSION_ACTIVE ) {
         return true;
     }
-    
+
+    // 匿名の閲覧者にはセッション Cookie を発行しない（フルページキャッシュを壊さないため）。
+    // is_user_logged_in() は pluggable なので、まだ読み込まれていない早い段階では
+    // セッションを開始しない側に倒す。
+    if ( ! function_exists( 'is_user_logged_in' ) || ! is_user_logged_in() ) {
+        return false;
+    }
+
+    // 業務画面へのアクセス権限が無いログインユーザーも対象外。
+    if ( function_exists( 'ktpwp_current_user_can_access' ) && ! ktpwp_current_user_can_access() ) {
+        return false;
+    }
+
     // REST APIリクエストの場合はセッションを開始しない
     if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
         return false;
     }
-    
+
     // AJAXリクエストの場合はセッションを開始しない（必要な場合のみ）
     if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
         return false;
@@ -5507,54 +5539,12 @@ function ktpwp_should_skip_frequency_on_view() {
 }
 
 /**
- * セッションデータを取得
- */
-function ktpwp_get_session_data( $key, $default = null ) {
-    if ( session_status() !== PHP_SESSION_ACTIVE ) {
-        return $default;
-    }
-    
-    return isset( $_SESSION[ $key ] ) ? $_SESSION[ $key ] : $default;
-}
-
-/**
- * セッションデータを設定
- */
-function ktpwp_set_session_data( $key, $value ) {
-    if ( session_status() !== PHP_SESSION_ACTIVE ) {
-        return false;
-    }
-    
-    $_SESSION[ $key ] = $value;
-    return true;
-}
-
-/**
  * REST APIリクエスト前にセッションを閉じる
  */
 function ktpwp_close_session_before_rest() {
     ktpwp_safe_session_close();
 }
 add_action( 'rest_api_init', 'ktpwp_close_session_before_rest', 1 );
-
-/**
- * AJAXリクエスト前にセッションを閉じる（必要に応じて）
- */
-function ktpwp_close_session_before_ajax() {
-    // 特定のAJAXアクションでのみセッションを閉じる
-    $close_session_actions = array(
-        'wp_ajax_ktpwp_manual_update_check',
-        'wp_ajax_nopriv_ktpwp_manual_update_check',
-    );
-    
-    $current_action = 'wp_ajax_' . ( isset( $_POST['action'] ) ? sanitize_key( wp_unslash( $_POST['action'] ) ) : '' );
-    $current_action_nopriv = 'wp_ajax_nopriv_' . ( isset( $_POST['action'] ) ? sanitize_key( wp_unslash( $_POST['action'] ) ) : '' );
-    
-    if ( in_array( $current_action, $close_session_actions ) || in_array( $current_action_nopriv, $close_session_actions ) ) {
-        ktpwp_safe_session_close();
-    }
-}
-add_action( 'wp_ajax_init', 'ktpwp_close_session_before_ajax', 1 );
 
 /**
  * HTTPリクエスト前にセッションを閉じる

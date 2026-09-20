@@ -35,7 +35,8 @@ if ( ! class_exists( 'KTPWP_Post_Data_Handler' ) ) {
                 return $default;
             }
 
-            $value = $_POST[ $key ];
+            // wp_unslash() を通してから型ごとにサニタイズする。
+            $value = wp_unslash( $_POST[ $key ] );
 
             // null値の明示的チェック
             if ( $value === null ) {

@@ -831,7 +831,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 			}
 
 			// 安全性確保: GETリクエストの場合は危険なアクションを実行しない（srcmode/istmode は表示用のため許可）
-			if ( $_SERVER['REQUEST_METHOD'] === 'GET' && in_array( $action, array( 'delete', 'insert', 'search', 'duplicate' ) ) ) {
+			if ( ktpwp_request_method() === 'GET' && in_array( $action, array( 'delete', 'insert', 'search', 'duplicate' ) ) ) {
 				$action = 'update';
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 				}
@@ -1786,8 +1786,13 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 			}
 
 			// Security check - verify nonce
-			if ( ! isset( $post_data['ktp_skills_nonce'] ) ||
-             ! wp_verify_nonce( $post_data['ktp_skills_nonce'], 'ktp_skills_action' ) ) {
+			// wp_verify_nonce() は差し替え可能な関数なので、生の入力を渡さずサニタイズしてから比較する。
+			// （$post_data はスラッシュ付きで渡る場合と外された状態で渡る場合があるため、
+			//   英数字の nonce に対しては無害な wp_unslash() を通して正規化している。）
+			$skills_nonce = isset( $post_data['ktp_skills_nonce'] )
+				? sanitize_text_field( wp_unslash( (string) $post_data['ktp_skills_nonce'] ) )
+				: '';
+			if ( $skills_nonce === '' || ! wp_verify_nonce( $skills_nonce, 'ktp_skills_action' ) ) {
 				if ( $early_context ) {
 					$this->redirect_skills_error_notification( 'skill_err_nonce' );
 				}

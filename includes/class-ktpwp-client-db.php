@@ -110,7 +110,7 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 			}
 
 			// POST処理の場合のみ実行
-			if ( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
+			if ( ktpwp_request_method() === 'POST' ) {
 				// デバッグログを追加
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 					error_log( 'KTPWP Client Debug: update_table - POST request detected' );

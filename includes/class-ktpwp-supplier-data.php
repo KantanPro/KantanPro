@@ -131,14 +131,22 @@ if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
 			$table_name = $wpdb->prefix . 'ktp_' . sanitize_key( $tab_name );
 
 			// Security: CSRF protection - verify nonce on POST requests
-			if ( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
-				if ( ! isset( $post_data['ktp_supplier_nonce'] ) ||
-                 ! wp_verify_nonce( $post_data['ktp_supplier_nonce'], 'ktp_supplier_action' ) ) {
+			if ( ktpwp_request_method() === 'POST' ) {
+				// wp_verify_nonce() は差し替え可能な関数なので、生の入力を渡さずサニタイズしてから比較する。
+				$supplier_nonce = isset( $post_data['ktp_supplier_nonce'] )
+					? sanitize_text_field( wp_unslash( (string) $post_data['ktp_supplier_nonce'] ) )
+					: '';
+				if ( $supplier_nonce === '' || ! wp_verify_nonce( $supplier_nonce, 'ktp_supplier_action' ) ) {
 					// エラーログはサーバーサイドのみに記録（ヘッダーに表示されない）
 					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 						error_log( 'KTPWP: Nonce verification failed' );
 					}
 					wp_die( esc_html__( 'Security check failed. Please refresh the page and try again.', 'kantanpro' ) );
+				}
+
+				// nonce だけでは認可にならないため、権限も必ず確認する。
+				if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
+					wp_die( esc_html__( 'You do not have permission to perform this action.', 'kantanpro' ) );
 				}
 			}
 
