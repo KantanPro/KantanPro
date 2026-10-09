@@ -65,10 +65,8 @@
  * - 完成・請求済: 過去の納期と適切な完了日を設定
  */
 
-// エラーハンドリングを強化
-error_reporting(E_ALL);
-ini_set('display_errors', 0);
-ini_set('log_errors', 1);
+// エラー表示・報告レベルはサイトの設定（WP_DEBUG 等）に従う。
+// プラグインから PHP のエラー設定を書き換えない。
 
 // WordPress環境の読み込み
 $wp_config_path = dirname(__FILE__) . '/../../../wp-config.php';

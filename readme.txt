@@ -173,7 +173,7 @@ fields. It only sends anything if you have entered your own OpenAI API key.
   runs only through the Japan Post official API, server-side, and only when the site owner
   has explicitly enabled it and entered their own credentials (off by default). No external
   service is contacted without opt-in.
-* Removed all uses of error_reporting() and ini_set('display_errors'). AJAX responses are
+* Stopped changing PHP's error-reporting and error-display settings from the plugin. AJAX responses are
   kept clean with output buffering instead, so the plugin no longer changes site-wide PHP
   error settings.
 * Removed a leftover remote cdnjs URL embedded in the bundled jsPDF library; all assets are
