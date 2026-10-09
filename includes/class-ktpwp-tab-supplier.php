@@ -1176,13 +1176,26 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 				// 郵便番号から住所を自動入力するためのJavaScriptコードを追加（日本郵政のAPIを利用）
 				// 郵便番号→住所の自動入力は js/ktp-supplier-postal.js に切り出した。
 				// （インライン <script> と HEREDOC はどちらも wp.org のガイドライン違反）
-				wp_enqueue_script(
-					'ktp-supplier-postal',
-					plugins_url( 'js/ktp-supplier-postal.js', KTPWP_PLUGIN_FILE ),
-					array(),
-					KANTANPRO_PLUGIN_VERSION,
-					true
-				);
+				// 住所検索は管理者が明示的に有効化した日本郵便の公式API（サーバー側で呼び出し）
+				// 経由でのみ行う。既定では外部サービスへ通信しないため、未設定時はスクリプトを
+				// 読み込まない。
+				if ( class_exists( 'KTPWP_JapanPost_Address_API' ) && KTPWP_JapanPost_Address_API::is_enabled() ) {
+					wp_enqueue_script(
+						'ktp-supplier-postal',
+						plugins_url( 'js/ktp-supplier-postal.js', KTPWP_PLUGIN_FILE ),
+						array(),
+						KANTANPRO_PLUGIN_VERSION,
+						true
+					);
+					wp_localize_script(
+						'ktp-supplier-postal',
+						'ktpSupplierPostal',
+						array(
+							'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+							'nonce'   => wp_create_nonce( 'ktpwp_ajax_nonce' ),
+						)
+					);
+				}
 				$data_forms = '';
 				// 空のフォームフィールドを生成
 				$data_forms .= '<form method="post" action="' . esc_url( $form_action_base_url ) . '">';
@@ -1329,13 +1342,26 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 				// 郵便番号から住所を自動入力するためのJavaScriptコードを追加（日本郵政のAPIを利用）
 				// 郵便番号→住所の自動入力は js/ktp-supplier-postal.js に切り出した。
 				// （インライン <script> と HEREDOC はどちらも wp.org のガイドライン違反）
-				wp_enqueue_script(
-					'ktp-supplier-postal',
-					plugins_url( 'js/ktp-supplier-postal.js', KTPWP_PLUGIN_FILE ),
-					array(),
-					KANTANPRO_PLUGIN_VERSION,
-					true
-				);
+				// 住所検索は管理者が明示的に有効化した日本郵便の公式API（サーバー側で呼び出し）
+				// 経由でのみ行う。既定では外部サービスへ通信しないため、未設定時はスクリプトを
+				// 読み込まない。
+				if ( class_exists( 'KTPWP_JapanPost_Address_API' ) && KTPWP_JapanPost_Address_API::is_enabled() ) {
+					wp_enqueue_script(
+						'ktp-supplier-postal',
+						plugins_url( 'js/ktp-supplier-postal.js', KTPWP_PLUGIN_FILE ),
+						array(),
+						KANTANPRO_PLUGIN_VERSION,
+						true
+					);
+					wp_localize_script(
+						'ktp-supplier-postal',
+						'ktpSupplierPostal',
+						array(
+							'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+							'nonce'   => wp_create_nonce( 'ktpwp_ajax_nonce' ),
+						)
+					);
+				}
 				$data_forms = '';
 
 				// ボタングループHTML生成
@@ -1558,9 +1584,9 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
 					)
 				)
 				: '';
-			$supplier_address_label_title = esc_attr__( '宛名印刷', 'kantanpro' );
+			$supplier_address_label_title = __( '宛名印刷', 'kantanpro' );
 			$supplier_address_label_aria  = esc_attr__( '宛名', 'kantanpro' );
-			$supplier_address_label_text    = esc_html__( '宛名印刷', 'kantanpro' );
+			$supplier_address_label_text    = __( '宛名印刷', 'kantanpro' );
 			$supplier_address_label_icon    = class_exists( 'KTPWP_SVG_Icons' )
 				? KTPWP_SVG_Icons::get_icon( 'contact_mail', array( 'aria-label' => __( '宛名', 'kantanpro' ) ) )
 				: '<span class="material-symbols-outlined" aria-label="' . esc_attr__( '宛名', 'kantanpro' ) . '">contact_mail</span>';
@@ -1703,7 +1729,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Class' ) ) {
                 </div>
                 <div class="ktp-supplier-controller__bar">
                 <div class="ktp-supplier-controller-actions">
-                <button type="button" id="supplierAddressLabelPrintButton" class="ktp-client-address-label-btn" onclick="printSupplierAddressLabel(); return false;" title="<?php echo $supplier_address_label_title; ?>"><?php echo $supplier_address_label_icon; ?><span class="btn-label"><?php echo $supplier_address_label_text; ?></span></button>
+                <button type="button" id="supplierAddressLabelPrintButton" class="ktp-client-address-label-btn" onclick="printSupplierAddressLabel(); return false;" title="<?php echo esc_attr( $supplier_address_label_title ); ?>"><?php echo KTPWP_SVG_Icons::kses_icon( $supplier_address_label_icon ); ?><span class="btn-label"><?php echo esc_html( $supplier_address_label_text ); ?></span></button>
                 </div>
                 <div class="ktp-supplier-controller__tools">
                 <?php echo $tab_print_button; ?>

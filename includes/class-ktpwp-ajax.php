@@ -500,10 +500,10 @@ class KTPWP_Ajax {
 		// デバッグ用：Ajaxリクエスト監視（デバッグモード時のみ）
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 			add_action( 'wp_ajax_ktp_create_new_item', function() {
-				ktpwp_debug_log( '[AJAX_DEBUG_ALL] Ajaxリクエスト: action=' . ( isset( $_REQUEST['action'] ) ? $_REQUEST['action'] : 'NOT_SET' ) );
+				ktpwp_debug_log( '[AJAX_DEBUG_ALL] Ajaxリクエスト: action=' . ( isset( $_REQUEST['action'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['action'] ) ) : 'NOT_SET' ) );
 			}, 0 );
 			add_action( 'wp_ajax_nopriv_ktp_create_new_item', function() {
-				ktpwp_debug_log( '[AJAX_DEBUG_ALL] Ajaxリクエスト（非ログイン）: action=' . ( isset( $_REQUEST['action'] ) ? $_REQUEST['action'] : 'NOT_SET' ) );
+				ktpwp_debug_log( '[AJAX_DEBUG_ALL] Ajaxリクエスト（非ログイン）: action=' . ( isset( $_REQUEST['action'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['action'] ) ) : 'NOT_SET' ) );
 			}, 0 );
 		}
 	}
@@ -577,7 +577,7 @@ class KTPWP_Ajax {
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 			add_action( 'init', function() {
 				if ( wp_doing_ajax() ) {
-					ktpwp_debug_log( '[AJAX_DEBUG_INIT] Ajax処理中: action=' . ( isset( $_REQUEST['action'] ) ? $_REQUEST['action'] : 'NOT_SET' ) );
+					ktpwp_debug_log( '[AJAX_DEBUG_INIT] Ajax処理中: action=' . ( isset( $_REQUEST['action'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['action'] ) ) : 'NOT_SET' ) );
 				}
 			}, 1 );
 		}
@@ -1263,7 +1263,7 @@ class KTPWP_Ajax {
 
 		// サニタイズされたパラメータのログ
 		ktpwp_debug_log( "[AJAX_UPDATE_ITEM_ORDER] Sanitized params: order_id={$order_id}, item_type={$item_type}, items_count=" . count( $items_data ) );
-		ktpwp_debug_log( '[AJAX_UPDATE_ITEM_ORDER] Items data: ' . print_r( $items_data, true ) );
+		ktpwp_debug_log( '[AJAX_UPDATE_ITEM_ORDER] Items count: ' . count( $items_data ) );
 
 		// バリデーション
 		if ( $order_id <= 0 ) {
@@ -2369,10 +2369,10 @@ class KTPWP_Ajax {
 	 * メール内容取得のAJAX処理
 	 */
 	public function ajax_get_email_content() {
-		// エラー出力を抑制してHTMLエラーメッセージを防ぐ
-		$error_reporting = error_reporting();
-		error_reporting(0);
-		
+		// 出力バッファで stray output を抑え、JSON 応答の汚染を防ぐ
+		// （PHPのエラー報告レベルはプラグインから変更しない。本番サイト全体に影響するため）。
+		ob_start();
+
 		try {
 			// セキュリティチェック
 			if ( ! check_ajax_referer( 'ktpwp_ajax_nonce', 'nonce', false ) ) {
@@ -2936,8 +2936,10 @@ class KTPWP_Ajax {
 				)
 			);
 		} finally {
-			// エラー出力設定を復元
-			error_reporting($error_reporting);
+			// バッファに溜まった stray output を破棄する
+			if ( ob_get_level() > 0 ) {
+				ob_end_clean();
+			}
 		}
 	}
 
@@ -4043,11 +4045,8 @@ class KTPWP_Ajax {
 		// 新しいバッファを開始（レスポンス汚染防止）
 		ob_start();
 
-		// エラー出力を抑制（JSON汚染防止）
-		if ( ! defined( 'WP_DEBUG' ) || ! WP_DEBUG ) {
-			error_reporting( 0 );
-			ini_set( 'display_errors', 0 );
-		}
+		// JSON 汚染防止は上の ob_start() に任せる。
+		// PHPのエラー報告レベルや表示設定はプラグインから変更しない（サイト全体に影響するため）。
 
 		// 汚染される可能性のあるWordPressフックを一時的に無効化
 		$this->disable_potentially_interfering_hooks();

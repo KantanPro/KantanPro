@@ -4,7 +4,7 @@ Tags: invoice, crm, order management, quotation, business
 Requires at least: 5.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.3.47
+Stable tag: 1.3.48
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -133,26 +133,20 @@ This plugin can connect to the following external services. Each one is used onl
 you actively use the corresponding feature. Nothing is sent while a visitor simply
 browses your site.
 
-**1. zipcloud (Japanese postal code lookup API)**
+**1. Japan Post Digital Address API (optional, disabled by default)**
 
-Used to fill in an address automatically from a postal code, on the client and
-subcontractor forms. Only the postal code you typed is sent; no personal data is included.
-
-* Sends to: `https://zipcloud.ibsnet.co.jp/api/search`
-* Data sent: the postal code
-* Terms of use: http://zipcloud.ibsnet.co.jp/rule/api
-
-**2. Japan Post Digital Address API (optional, disabled by default)**
-
-Used for address lookup, only if you enable it in the plugin's general settings.
-It requires API credentials issued to you by Japan Post.
+Used to fill in an address automatically from a postal code on the client and
+subcontractor forms. It runs only if you enable it in the plugin's general settings and
+enter the API credentials issued to you by Japan Post. The request is made from your
+server (the visitor's browser never contacts the service directly). When it is disabled —
+the default — no address lookup happens and no external service is contacted.
 
 * Sends to: `https://api.da.pf.japanpost.jp`
 * Data sent: a postal code or digital address, together with your API credentials
 * Terms of use: https://guide-api.da.pf.japanpost.jp/
 * Privacy policy: https://www.post.japanpost.jp/privacy/
 
-**3. OpenAI API (optional, disabled by default)**
+**2. OpenAI API (optional, disabled by default)**
 
 Used by the data import feature to map the columns of an uploaded file to the plugin's
 fields. It only sends anything if you have entered your own OpenAI API key.
@@ -172,6 +166,23 @@ fields. It only sends anything if you have entered your own OpenAI API key.
 6. Mobile view
 
 == Changelog ==
+
+= 1.3.48 - 2026-10-09 =
+* Responded to the WordPress.org plugin review of 1.3.46:
+* Removed the browser-side call to the zipcloud postal API. Postal-code→address lookup now
+  runs only through the Japan Post official API, server-side, and only when the site owner
+  has explicitly enabled it and entered their own credentials (off by default). No external
+  service is contacted without opt-in.
+* Removed all uses of error_reporting() and ini_set('display_errors'). AJAX responses are
+  kept clean with output buffering instead, so the plugin no longer changes site-wide PHP
+  error settings.
+* Removed a leftover remote cdnjs URL embedded in the bundled jsPDF library; all assets are
+  served locally.
+* Hardened the FileMaker-import (OpenAI) feature's documentation: it is opt-in, uses your
+  own API key, and the external services it contacts are listed in the readme.
+* Additional sanitizing of request values written to the debug log, backtick-quoted and
+  allowlisted ORDER BY / identifier SQL, and late-escaping of the subcontractor address-label
+  button output.
 
 = 1.3.47 - 2026-10-09 =
 * Security: the order / purchase-order e-mail attachment handler accepted a file when

@@ -3973,7 +3973,7 @@ JS;
      * 日本郵便APIセクションの説明
      */
     public function print_japanpost_api_section_info() {
-        echo '<p>' . esc_html__( '顧客タブの郵便番号から住所を自動入力する際、日本郵便の公式APIを利用できます。郵便番号・デジタルアドレス for Biz で発行したクライアントID・シークレットを入力してください。未設定または無効のときは従来どおり zipcloud の公開APIを利用します。', 'kantanpro' ) . '</p>';
+        echo '<p>' . esc_html__( '顧客タブの郵便番号から住所を自動入力する際、日本郵便の公式APIを利用できます。郵便番号・デジタルアドレス for Biz で発行したクライアントID・シークレットを入力してください。未設定または無効のときは住所の自動入力は行わず、手動で入力します（外部サービスへは通信しません）。', 'kantanpro' ) . '</p>';
         echo '<p>' . esc_html__( '検証（スタブ）は API v2（/api/v2/）です。テスト用ドキュメントのとおり、郵便番号の例: 1020072・1020082・1010032・1010047 などが検索できます。', 'kantanpro' ) . '</p>';
         echo '<p><a href="https://lp-api.da.pf.japanpost.jp/" target="_blank" rel="noopener noreferrer">' . esc_html__( '郵便番号・デジタルアドレスAPI（日本郵便）', 'kantanpro' ) . '</a></p>';
     }
@@ -3987,7 +3987,7 @@ JS;
         ?>
         <label>
             <input type="checkbox" name="ktp_japanpost_api_settings[enabled]" value="1" <?php checked( $on ); ?> />
-            <?php echo esc_html__( '有効にする（オフのときは zipcloud で郵便番号から住所を取得）', 'kantanpro' ); ?>
+            <?php echo esc_html__( '有効にする（オフのときは住所の自動入力を行わない）', 'kantanpro' ); ?>
         </label>
         <?php
     }
@@ -5626,10 +5626,7 @@ define( 'WP_DEBUG', true );
 define( 'WP_DEBUG_LOG', true );
 
 <?php echo esc_html__( 'デバッグ表示を無効化（本番環境では必須）', 'kantanpro' ); ?>
-define( 'WP_DEBUG_DISPLAY', false );
-
-<?php echo esc_html__( 'スクリプトエラーの表示を無効化', 'kantanpro' ); ?>
-@ini_set( 'display_errors', 0 );</code></pre>
+define( 'WP_DEBUG_DISPLAY', false );</code></pre>
             </div>
         </div>
         <?php

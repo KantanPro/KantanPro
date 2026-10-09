@@ -113,9 +113,13 @@ $added_indexes = array();
 foreach ( $indexes as $index_name => $column_name ) {
     // カラムが存在する場合のみインデックスを追加
     if ( in_array( $column_name, $existing_columns ) || in_array( $column_name, $added_columns ) ) {
-        $existing_index = $wpdb->get_row( "SHOW INDEX FROM `{$table_name}` WHERE Key_name = '{$index_name}'" );
+        // $index_name / $column_name は上の $indexes 配列に直書きした定数で、ユーザー入力ではない。
+        $existing_index = $wpdb->get_row( $wpdb->prepare( "SHOW INDEX FROM `{$table_name}` WHERE Key_name = %s", $index_name ) );
         if ( ! $existing_index ) {
+            // インデックス名・カラム名は識別子でありプレースホルダに置けない。値は定数のみ。
+            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- 識別子は定数、ユーザー入力なし。
             $sql = "ALTER TABLE `{$table_name}` ADD INDEX `{$index_name}` (`{$column_name}`)";
+            // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- 上と同じ理由（識別子のみ）。
             $result = $wpdb->query( $sql );
 
             if ( $result !== false ) {

@@ -210,18 +210,24 @@ if ( ! class_exists( 'KTPWP_Order' ) ) {
 				$where_sql = 'WHERE ' . implode( ' AND ', $where_clauses );
 			}
 
-			// Sanitize order by and order
+			// Sanitize order by and order.
+			// ORDER BY のカラム名と方向はプレースホルダに置けないため、ハードコードした
+			// 許可リストと完全一致したものだけを使う（ユーザー入力は素通りしない）。
 			$allowed_order_by = array( 'id', 'time', 'customer_name', 'project_name', 'progress' );
-			if ( ! in_array( $args['order_by'], $allowed_order_by ) ) {
+			if ( ! in_array( $args['order_by'], $allowed_order_by, true ) ) {
 				$args['order_by'] = 'time';
 			}
 
-			$args['order'] = strtoupper( $args['order'] );
-			if ( ! in_array( $args['order'], array( 'ASC', 'DESC' ) ) ) {
+			$args['order'] = strtoupper( (string) $args['order'] );
+			if ( ! in_array( $args['order'], array( 'ASC', 'DESC' ), true ) ) {
 				$args['order'] = 'DESC';
 			}
 
-			$sql = "SELECT * FROM `{$table_name}` {$where_sql} ORDER BY {$args['order_by']} {$args['order']} LIMIT %d OFFSET %d";
+			// $order_by_column / $order_dir はいずれも上の許可リストに一致した定数値のみ。
+			$order_by_column = '`' . $args['order_by'] . '`';
+			$order_dir       = $args['order'];
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- 識別子は許可リスト照合済み、値は %d で bind。
+			$sql = "SELECT * FROM `{$table_name}` {$where_sql} ORDER BY {$order_by_column} {$order_dir} LIMIT %d OFFSET %d";
 
 			// Add limit and offset to values
 			$where_values[] = $args['limit'];

@@ -88,23 +88,25 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 		}
 
 		/**
-		 * 顧客フォームの郵便番号→住所（zipcloud または 日本郵便API）。
+		 * 顧客フォームの郵便番号→住所（管理者が有効化した日本郵便の公式APIをサーバー側で呼び出す。既定は無効）。
 		 * 同一フォームは input.form で解決し、各 postal_code に blur と input（7桁で短い遅延）を直接付与。
 		 *
 		 * @return string
 		 */
 		private function render_client_postal_lookup_script() {
-			$use_jp     = class_exists( 'KTPWP_JapanPost_Address_API' ) && KTPWP_JapanPost_Address_API::is_enabled();
+			// 郵便番号→住所の自動補完は、管理者が「日本郵便の住所API」を明示的に
+			// 有効化し認証情報を設定したときだけ動く（既定は無効）。
+			// 外部サービスへ利用者の同意なく通信しないよう、未設定時は
+			// スクリプトを一切出力しない（手動入力になる）。
+			$use_jp = class_exists( 'KTPWP_JapanPost_Address_API' ) && KTPWP_JapanPost_Address_API::is_enabled();
+			if ( ! $use_jp ) {
+				return '';
+			}
 			$ajax_url   = admin_url( 'admin-ajax.php' );
 			$nonce      = wp_create_nonce( 'ktpwp_ajax_nonce' );
-			$use_jp_js  = $use_jp ? 'true' : 'false';
 			$ajax_json  = wp_json_encode( $ajax_url );
 			$nonce_json = wp_json_encode( $nonce );
 			$json_flags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE;
-			$msg_zipcloud_empty = wp_json_encode(
-				__( 'この郵便番号では zipcloud から住所を取得できませんでした（大口事業所など、データに無いコードがあります）。一般設定で日本郵便の住所APIを有効にするか、手動で入力してください。', 'kantanpro' ),
-				$json_flags
-			);
 			$msg_jp_fail = wp_json_encode(
 				__( '日本郵便の住所APIから該当住所を取得できませんでした。手動で入力してください。', 'kantanpro' ),
 				$json_flags
@@ -113,10 +115,8 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 			$js = '
 (function() {
 	// 入力ごとに data-ktp-postal-bound で二重バインドのみ防止する（ページ内にスクリプトが複数あっても全欄に付与できる）
-	var useJapanPost = ' . $use_jp_js . ';
 	var ajaxUrl = ' . $ajax_json . ';
 	var ajaxNonce = ' . $nonce_json . ';
-	var msgZipcloudEmpty = ' . $msg_zipcloud_empty . ';
 	var msgJapanPostFail = ' . $msg_jp_fail . ';
 	var postalGuideToastMs = 16000;
 	function showPostalGuideToast(message) {
@@ -151,34 +151,6 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 			};
 		}
 		return { pref: null, cityIn: null, street: null };
-	}
-	function applyZipcloud(ctx, zip, postalEl) {
-		var pref = ctx.pref;
-		var cityIn = ctx.cityIn;
-		var xhr = new XMLHttpRequest();
-		xhr.open("GET", "https://zipcloud.ibsnet.co.jp/api/search?zipcode=" + encodeURIComponent(zip));
-		xhr.onload = function() {
-			if (xhr.status < 200 || xhr.status >= 300) { return; }
-			try {
-				var response = JSON.parse(xhr.responseText);
-				if (Number(response.status) !== 200 || !response.results || !response.results.length) {
-					warnPostal(postalEl, zip, "data-ktp-zipcloud-warned", msgZipcloudEmpty);
-					return;
-				}
-				var d = response.results[0];
-				var a1 = d.address1 != null ? String(d.address1) : "";
-				var a2 = d.address2 != null ? String(d.address2) : "";
-				var a3 = d.address3 != null ? String(d.address3) : "";
-				if (pref) { pref.value = a1; }
-				if (cityIn) { cityIn.value = a2 + a3; }
-				if (postalEl) {
-					postalEl.removeAttribute("data-ktp-zipcloud-warned");
-					postalEl.removeAttribute("data-ktp-jppost-warned");
-				}
-			} catch (err) { console.error("KTP zipcloud:", err); }
-		};
-		xhr.onerror = function() { console.warn("KTP zipcloud: network error"); };
-		xhr.send();
 	}
 	function applyJapanPost(ctx, zip, postalEl) {
 		var pref = ctx.pref;
@@ -223,7 +195,7 @@ if ( ! class_exists( 'KTPWP_Client_Class' ) ) {
 		if (zip.length !== 7) { return; }
 		var ctx = addressTargets(postalEl);
 		if (!ctx.pref && !ctx.cityIn) { return; }
-		if (useJapanPost) { applyJapanPost(ctx, zip, postalEl); } else { applyZipcloud(ctx, zip, postalEl); }
+		applyJapanPost(ctx, zip, postalEl);
 	}
 	function bindPostalInput(inp) {
 		if (!inp || inp.getAttribute("data-ktp-postal-bound") === "1") { return; }

@@ -1,15 +1,18 @@
 /**
  * 協力会社フォームの郵便番号 → 住所の自動入力。
  *
- * もともと class-ktpwp-tab-supplier.php の中に HEREDOC のインライン <script> として
- * 2箇所へ同じ内容が書かれていた。WordPress.org のガイドラインでインライン script と
- * HEREDOC の両方が禁じられているため、ファイルに切り出して enqueue する形にした。
- *
- * 通信先の zipcloud は readme.txt の "External services" に記載済み。
- * 送信するのは入力された郵便番号だけ。
+ * 住所検索は WordPress 側の AJAX（ktp_lookup_postal_address）経由で、
+ * 管理者が明示的に有効化した日本郵便の公式API（サーバー側で呼び出し）だけを使う。
+ * ブラウザから外部サービスへ直接通信しない。設定が無効なときはこのスクリプト自体が
+ * 読み込まれない（PHP 側で enqueue を抑止）。
  */
 (function () {
 	'use strict';
+
+	var cfg = window.ktpSupplierPostal || {};
+	if (!cfg.ajaxUrl || !cfg.nonce) {
+		return;
+	}
 
 	document.addEventListener('DOMContentLoaded', function () {
 		var postalCode = document.querySelector('input[name="postal_code"]');
@@ -27,32 +30,29 @@
 				return;
 			}
 
-			var xhr = new XMLHttpRequest();
-			xhr.open('GET', 'https://zipcloud.ibsnet.co.jp/api/search?zipcode=' + encodeURIComponent(zip));
-			xhr.addEventListener('load', function () {
-				var response;
-				try {
-					response = JSON.parse(xhr.responseText);
-				} catch (err) {
-					return;
-				}
-				if (!response || !response.results || !response.results[0]) {
-					return;
-				}
-				var data = response.results[0];
-				if (prefecture) {
-					prefecture.value = data.address1;
-				}
-				if (city) {
-					// 市区町村と町名を結合する
-					city.value = data.address2 + data.address3;
-				}
-				if (address) {
-					// 番地は利用者に入力してもらう
-					address.value = '';
-				}
-			});
-			xhr.send();
+			var fd = new FormData();
+			fd.append('action', 'ktp_lookup_postal_address');
+			fd.append('nonce', cfg.nonce);
+			fd.append('zipcode', zip);
+
+			fetch(cfg.ajaxUrl, { method: 'POST', body: fd, credentials: 'same-origin' })
+				.then(function (r) { return r.json(); })
+				.then(function (res) {
+					if (!res || !res.success || !res.data) {
+						return;
+					}
+					if (prefecture) {
+						prefecture.value = res.data.prefecture || '';
+					}
+					if (city) {
+						city.value = (res.data.city != null ? String(res.data.city) : '') || '';
+					}
+					if (address) {
+						// 番地は利用者に入力してもらう
+						address.value = (res.data.address != null ? String(res.data.address) : '') || '';
+					}
+				})
+				.catch(function () { /* 失敗時は手動入力 */ });
 		});
 	});
 })();

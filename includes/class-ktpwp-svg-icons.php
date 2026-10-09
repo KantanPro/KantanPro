@@ -86,6 +86,43 @@ class KTPWP_SVG_Icons {
     }
 
     /**
+     * アイコンのマークアップ（span/svg/path）を安全に出力するための wp_kses。
+     *
+     * アイコンはプラグインが生成する固定マークアップだが、echo の直前で
+     * エスケープする（escape late）ため、SVG を許可した許可リストを通す。
+     *
+     * @param string $icon_html get_icon() 等が返すアイコンHTML。
+     * @return string wp_kses 済みの安全なHTML。
+     */
+    public static function kses_icon( $icon_html ) {
+        $svg_attr = array(
+            'class'       => true,
+            'style'       => true,
+            'width'       => true,
+            'height'      => true,
+            'viewbox'     => true,
+            'fill'        => true,
+            'stroke'      => true,
+            'stroke-width' => true,
+            'aria-hidden' => true,
+            'aria-label'  => true,
+            'role'        => true,
+            'focusable'   => true,
+            'xmlns'       => true,
+        );
+        $allowed = array(
+            'span' => array( 'class' => true, 'style' => true, 'aria-hidden' => true, 'aria-label' => true, 'role' => true ),
+            'svg'  => $svg_attr,
+            'g'    => array( 'fill' => true, 'stroke' => true, 'transform' => true ),
+            'path' => array( 'd' => true, 'fill' => true, 'stroke' => true, 'stroke-width' => true, 'fill-rule' => true, 'clip-rule' => true, 'opacity' => true ),
+            'circle' => array( 'cx' => true, 'cy' => true, 'r' => true, 'fill' => true, 'stroke' => true ),
+            'rect' => array( 'x' => true, 'y' => true, 'width' => true, 'height' => true, 'rx' => true, 'ry' => true, 'fill' => true ),
+            'polygon' => array( 'points' => true, 'fill' => true ),
+        );
+        return wp_kses( (string) $icon_html, $allowed );
+    }
+
+    /**
      * Material SymbolsクラスをSVGアイコンに置換
      *
      * @param string $html HTML文字列

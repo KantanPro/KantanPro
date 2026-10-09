@@ -3,7 +3,7 @@
  * Plugin Name: KantanPro
  * Plugin URI: https://www.kantanpro.com/
  * Description: スモールビジネスのための販売支援ツール。ショートコード[ktpwp_all_tab]を固定ページに設置してください。
- * Version: 1.3.47
+ * Version: 1.3.48
  * Author: KantanPro
  * Author URI: https://www.kantanpro.com/kantanpro-page
  * License: GPL v2 or later
@@ -6641,11 +6641,7 @@ function ktpwp_handle_create_dummy_data_ajax() {
         // 出力をキャプチャするために出力バッファリングを使用
         ob_start();
         
-        // エラーハンドリングを強化
-        $old_error_reporting = error_reporting();
-        error_reporting(E_ALL);
-        
-        // エラーハンドラーを設定
+        // エラーハンドラーを設定（PHPのエラー報告レベルはプラグインから変更しない。サイト全体に影響するため）
         $error_handler = function($errno, $errstr, $errfile, $errline) {
             if (defined('WP_DEBUG') && WP_DEBUG) {
                 ktpwp_debug_log("KTPWP: ダミーデータ作成中にエラー: [$errno] $errstr in $errfile on line $errline");
@@ -6688,10 +6684,8 @@ function ktpwp_handle_create_dummy_data_ajax() {
             if (function_exists('set_time_limit')) {
                 set_time_limit($old_max_execution_time);
             }
-            
             // エラーハンドラーを復元
             restore_error_handler();
-            error_reporting($old_error_reporting);
             
             $output = ob_get_clean();
             
@@ -6741,10 +6735,8 @@ function ktpwp_handle_create_dummy_data_ajax() {
             if (function_exists('set_time_limit')) {
                 set_time_limit($old_max_execution_time);
             }
-            
             // エラーハンドラーを復元
             restore_error_handler();
-            error_reporting($old_error_reporting);
             
             ktpwp_debug_log('KTPWP: ダミーデータ作成中に例外が発生しました: ' . $e->getMessage());
             if (defined('WP_DEBUG') && WP_DEBUG) {
