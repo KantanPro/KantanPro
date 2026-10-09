@@ -2019,6 +2019,37 @@ class KTPWP_Ajax {
 	 * @param string $log_prefix デバッグログ用プレフィックス。
 	 * @return array{entries: array<int, array{path: string, name: string}>, temp_files: string[]}
 	 */
+	/**
+	 * アップロード用ディレクトリに実行防止・一覧防止の保護ファイルを置く。
+	 *
+	 * 万一許可されない拡張子が保存されても Web から実行・閲覧されないようにする
+	 * 多層防御。既にファイルがあれば何もしない。
+	 *
+	 * @param string $dir 保護対象ディレクトリ（末尾スラッシュ可）。
+	 * @return void
+	 */
+	private function ktpwp_protect_upload_dir( $dir ) {
+		$dir = rtrim( (string) $dir, '/\\' );
+		if ( $dir === '' || ! is_dir( $dir ) ) {
+			return;
+		}
+
+		$htaccess = $dir . '/.htaccess';
+		if ( ! file_exists( $htaccess ) ) {
+			$rules = "Options -Indexes\n"
+				. "<IfModule mod_php7.c>\nphp_flag engine off\n</IfModule>\n"
+				. "<IfModule mod_php.c>\nphp_flag engine off\n</IfModule>\n"
+				. "<FilesMatch \"\\.(php|phtml|php3|php4|php5|php7|phps|pht|phar)$\">\n"
+				. "Require all denied\n</FilesMatch>\n";
+			@file_put_contents( $htaccess, $rules );
+		}
+
+		$index = $dir . '/index.php';
+		if ( ! file_exists( $index ) ) {
+			@file_put_contents( $index, "<?php\n// Silence is golden.\n" );
+		}
+	}
+
 	private function ktpwp_collect_email_attachments_from_request( $log_prefix = 'KTPWP Email' ) {
 		$entries    = array();
 		$temp_files = array();
@@ -2094,7 +2125,9 @@ class KTPWP_Ajax {
 			$is_allowed_type = in_array( $file_type, $allowed_types, true );
 			$is_allowed_ext  = in_array( '.' . $file_ext, $allowed_extensions, true );
 
-			if ( ! $is_allowed_type && ! $is_allowed_ext ) {
+			// 拡張子ホワイトリストは必須。$file_type はクライアントが申告する MIME で
+			// 偽装できるため、これだけで許可すると .php などをアップロードされてしまう。
+			if ( ! $is_allowed_ext ) {
 				throw new Exception( "ファイル「{$file_name}」は対応していない形式です。" );
 			}
 
@@ -2105,6 +2138,8 @@ class KTPWP_Ajax {
 			if ( ! file_exists( $temp_dir ) ) {
 				wp_mkdir_p( $temp_dir );
 			}
+
+			$this->ktpwp_protect_upload_dir( $temp_dir );
 
 			$temp_file_path = $temp_dir . uniqid( 'ktp_', true ) . '_' . $safe_filename;
 

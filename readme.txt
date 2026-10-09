@@ -4,7 +4,7 @@ Tags: invoice, crm, order management, quotation, business
 Requires at least: 5.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.3.46
+Stable tag: 1.3.47
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -172,6 +172,14 @@ fields. It only sends anything if you have entered your own OpenAI API key.
 6. Mobile view
 
 == Changelog ==
+
+= 1.3.47 - 2026-10-09 =
+* Security: the order / purchase-order e-mail attachment handler accepted a file when
+  only the client-supplied MIME type matched the allow-list, so a .php file sent with a
+  forged Content-Type could be stored and executed. The file extension is now checked
+  against the allow-list unconditionally, and the attachment temp directory is hardened
+  with an .htaccess that disables script execution and directory listing. The issue
+  required an edit-capable account, but a fix is strongly recommended.
 
 = 1.3.46 - 2026-09-20 =
 * The plugin's own screens no longer output inline <script> or <style> blocks. Their
