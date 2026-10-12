@@ -63,6 +63,10 @@ rsync -a \
   --exclude='.idea/' \
   --exclude='node_modules/' \
   --exclude='vendor/' \
+  --exclude='/tools/' \
+  --exclude='/docs/' \
+  --exclude='/build-wporg.sh' \
+  --exclude='CLAUDE.md' \
   --exclude='*.zip' \
   --exclude='*.tmp' \
   --exclude='*.bak' \
@@ -167,7 +171,7 @@ if ! echo "$ZIP_LIST" | grep -Fxq "${PLUGIN_NAME}/readme.txt"; then
   exit 1
 fi
 
-FORBIDDEN_IN_ZIP=$(echo "$ZIP_LIST" | grep -E "^${PLUGIN_NAME}/(\.cursor/|\.vscode/|wp-cli\.yml|composer\.lock)" || true)
+FORBIDDEN_IN_ZIP=$(echo "$ZIP_LIST" | grep -E "^${PLUGIN_NAME}/(\.cursor/|\.vscode/|wp-cli\.yml|composer\.lock|tools/|docs/)" || true)
 if [[ -n "$FORBIDDEN_IN_ZIP" ]]; then
   print_error "ZIP に配布不要ファイルが含まれています:"
   echo "$FORBIDDEN_IN_ZIP"
