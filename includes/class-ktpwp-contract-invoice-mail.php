@@ -74,7 +74,7 @@ if ( ! class_exists( 'KTPWP_Contract_Invoice_Mail' ) ) {
 		 * @return bool
 		 */
 		public static function is_auto_send_enabled() {
-			$options = get_option( 'ktp_general_settings', array() );
+			$options = get_option( 'ktpwp_general_settings', array() );
 
 			return ! isset( $options['contract_invoice_auto_enabled'] ) || ! empty( $options['contract_invoice_auto_enabled'] );
 		}
@@ -208,7 +208,7 @@ if ( ! class_exists( 'KTPWP_Contract_Invoice_Mail' ) ) {
 				return new WP_Error( 'invalid_order', __( '案件が見つかりません。', 'kantanpro' ) );
 			}
 
-			$order_table = $wpdb->prefix . 'ktp_order';
+			$order_table = $wpdb->prefix . 'ktpwp_order';
 			$order       = $wpdb->get_row(
 				$wpdb->prepare(
 					"SELECT * FROM {$order_table} WHERE id = %d",
@@ -224,7 +224,7 @@ if ( ! class_exists( 'KTPWP_Contract_Invoice_Mail' ) ) {
 			if ( ! empty( $order->client_id ) ) {
 				$client = $wpdb->get_row(
 					$wpdb->prepare(
-						"SELECT * FROM {$wpdb->prefix}ktp_client WHERE id = %d",
+						"SELECT * FROM {$wpdb->prefix}ktpwp_client WHERE id = %d",
 						(int) $order->client_id
 					)
 				);
@@ -298,7 +298,7 @@ if ( ! class_exists( 'KTPWP_Contract_Invoice_Mail' ) ) {
 				return;
 			}
 
-			$order_table = $wpdb->prefix . 'ktp_order';
+			$order_table = $wpdb->prefix . 'ktpwp_order';
 			$order       = $wpdb->get_row(
 				$wpdb->prepare(
 					"SELECT contract_id, billing_period FROM {$order_table} WHERE id = %d",
@@ -373,7 +373,7 @@ if ( ! class_exists( 'KTPWP_Contract_Invoice_Mail' ) ) {
 		private function advance_progress_after_send( $order_id ) {
 			global $wpdb;
 
-			$order_table = $wpdb->prefix . 'ktp_order';
+			$order_table = $wpdb->prefix . 'ktpwp_order';
 			$order       = $wpdb->get_row(
 				$wpdb->prepare(
 					"SELECT progress FROM {$order_table} WHERE id = %d",
@@ -439,7 +439,7 @@ if ( ! class_exists( 'KTPWP_Contract_Invoice_Mail' ) ) {
 		 * @return string[]
 		 */
 		private function build_mail_headers() {
-			$smtp_settings = get_option( 'ktp_smtp_settings', array() );
+			$smtp_settings = get_option( 'ktpwp_smtp_settings', array() );
 			$from_email    = ! empty( $smtp_settings['email_address'] )
 				? sanitize_email( $smtp_settings['email_address'] )
 				: get_option( 'admin_email' );

@@ -1,6 +1,6 @@
 /* 顧客リスト・注文履歴のリストアイテムを統一したスタイルにする */
 .data_list_item,
-.ktp_data_list_item {
+.ktpwp_data_list_item {
   line-height: 1.5;
   border-bottom: 1px solid #e5e7eb;
   margin: 0;
@@ -12,39 +12,39 @@
 
 /* データリストの交互の行に色を付ける - アンカータグに対して適用 */
 .data_list_box > a:nth-of-type(odd) .data_list_item,
-.ktp_data_list_box > a:nth-of-type(odd) .data_list_item,
-.data_list_box > a:nth-of-type(odd) .ktp_data_list_item,
-.ktp_data_list_box > a:nth-of-type(odd) .ktp_data_list_item {
+.ktpwp_data_list_box > a:nth-of-type(odd) .data_list_item,
+.data_list_box > a:nth-of-type(odd) .ktpwp_data_list_item,
+.ktpwp_data_list_box > a:nth-of-type(odd) .ktpwp_data_list_item {
   background-color: #f9fafb; /* 薄いグレーブルー */
 }
 
 .data_list_box > a:nth-of-type(even) .data_list_item,
-.ktp_data_list_box > a:nth-of-type(even) .data_list_item,
-.data_list_box > a:nth-of-type(even) .ktp_data_list_item,
-.ktp_data_list_box > a:nth-of-type(even) .ktp_data_list_item {
+.ktpwp_data_list_box > a:nth-of-type(even) .data_list_item,
+.data_list_box > a:nth-of-type(even) .ktpwp_data_list_item,
+.ktpwp_data_list_box > a:nth-of-type(even) .ktpwp_data_list_item {
   background-color: #ffffff; /* 白 */
 }
 
 /* 直接データリストアイテムだけの場合（エラーメッセージなど） */
 .data_list_box > .data_list_item:nth-of-type(odd),
-.ktp_data_list_box > .data_list_item:nth-of-type(odd),
-.data_list_box > .ktp_data_list_item:nth-of-type(odd),
-.ktp_data_list_box > .ktp_data_list_item:nth-of-type(odd) {
+.ktpwp_data_list_box > .data_list_item:nth-of-type(odd),
+.data_list_box > .ktpwp_data_list_item:nth-of-type(odd),
+.ktpwp_data_list_box > .ktpwp_data_list_item:nth-of-type(odd) {
   background-color: #f9fafb; /* 薄いグレーブルー */
 }
 
 .data_list_box > .data_list_item:nth-of-type(even),
-.ktp_data_list_box > .data_list_item:nth-of-type(even),
-.data_list_box > .ktp_data_list_item:nth-of-type(even),
-.ktp_data_list_box > .ktp_data_list_item:nth-of-type(even) {
+.ktpwp_data_list_box > .data_list_item:nth-of-type(even),
+.data_list_box > .ktpwp_data_list_item:nth-of-type(even),
+.ktpwp_data_list_box > .ktpwp_data_list_item:nth-of-type(even) {
   background-color: #ffffff; /* 白 */
 }
 
 /* ホバー時の背景色と微妙な変化 */
 .data_list_box a:hover .data_list_item,
-.ktp_data_list_box a:hover .data_list_item,
-.data_list_box a:hover .ktp_data_list_item,
-.ktp_data_list_box a:hover .ktp_data_list_item {
+.ktpwp_data_list_box a:hover .data_list_item,
+.data_list_box a:hover .ktpwp_data_list_item,
+.ktpwp_data_list_box a:hover .ktpwp_data_list_item {
   background-color: #f0f7ff; /* 薄い青 */
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03); /* 微妙な影を追加 */
   z-index: 1; /* ホバー時に前面に */

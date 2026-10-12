@@ -11,9 +11,9 @@
    - resize: none で手動リサイズによるレイアウトスラッシングを防止
    - サービス／協力会社／顧客タブの詳細フォームに適用
 =========================================== */
-.ktp_plugin_container .data_detail_box textarea,
-.ktp_plugin_container .form-group textarea,
-.ktp_plugin_container textarea[name="memo"] {
+.ktpwp_plugin_container .data_detail_box textarea,
+.ktpwp_plugin_container .form-group textarea,
+.ktpwp_plugin_container textarea[name="memo"] {
     contain: layout style;
     will-change: contents;
     resize: vertical;
@@ -21,7 +21,7 @@
     backface-visibility: hidden;
 }
 /* 詳細ボックス全体もレイアウト分離（他タブ DOM に波及させない） */
-.ktp_plugin_container .data_detail_box {
+.ktpwp_plugin_container .data_detail_box {
     contain: layout style;
 }
 /* 受注書：折りたたみ（メール履歴・案件ファイル・コスト・スタッフチャット共通） */
@@ -695,7 +695,7 @@
    プロフィール画像にも付く。ここで単体指定すると、このプラグインと無関係な
    場所の画像まで 32px に縮んでしまうため、必ずスコープを付けること。
    このプラグインが出すアイコンは user_icon か、ヘッダー内に描画される。 */
-.ktp_header .avatar,
+.ktpwp_header .avatar,
 .user_icon {
   border-radius: 50% !important;
   overflow: hidden;
@@ -808,17 +808,17 @@
 }
 
 /* PC・タブレット表示用：ヘッダー内のユーザーアバター */
-.ktp_header .user-avatars-section .logged-in-staff-avatars {
+.ktpwp_header .user-avatars-section .logged-in-staff-avatars {
     gap: 4px;
     margin-top: 4px;
 }
 
-.ktp_header .user-avatars-section .user_icon {
+.ktpwp_header .user-avatars-section .user_icon {
     margin-right: 0;
     transition: all 0.3s ease;
 }
 
-.ktp_header .user-avatars-section .user_icon:hover {
+.ktpwp_header .user-avatars-section .user_icon:hover {
     transform: scale(1.05);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
@@ -887,7 +887,7 @@ a.ktp-avatar-trigger {
     display: block !important;
 }
 
-/* 一括請求プレビュー（.ktp_header z-index:100000 より手前・ページ幅制限から独立） */
+/* 一括請求プレビュー（.ktpwp_header z-index:100000 より手前・ページ幅制限から独立） */
 #ktp-invoice-preview-popup,
 .ktp-invoice-preview-popup {
   position: fixed !important;
@@ -1050,8 +1050,8 @@ a.ktp-avatar-trigger {
 @media screen and (max-width: 767px) {
   .data_detail_box .data_detail_title,
   .data_detail_box [id^="ktp-detail"],
-  .ktp_data_list_box > .data_list_title,
-  .ktp_data_list_box .data_list_title:first-child,
+  .ktpwp_data_list_box > .data_list_title,
+  .ktpwp_data_list_box .data_list_title:first-child,
   .data_list_box > .data_list_title,
   .data_list_box .data_list_title:first-child {
     scroll-margin-top: 12px;
@@ -1158,7 +1158,7 @@ a.ktp-avatar-trigger {
         gap: 2px;
     }
     
-    .ktp_header .user-avatars-section .logged-in-staff-avatars {
+    .ktpwp_header .user-avatars-section .logged-in-staff-avatars {
         gap: 3px;
         margin-top: 2px;
     }
@@ -1175,7 +1175,7 @@ a.ktp-avatar-trigger {
         gap: 1px;
     }
     
-    .ktp_header .user-avatars-section .logged-in-staff-avatars {
+    .ktpwp_header .user-avatars-section .logged-in-staff-avatars {
         gap: 2px;
         margin-top: 1px;
     }
@@ -1446,7 +1446,7 @@ a.ktp-avatar-trigger {
 
 /* 仕事リストタブ専用 全幅レイアウト */
 .work_list_box,
-.ktp_work_list_box {
+.ktpwp_work_list_box {
   width: 100%;
   max-width: 100%;
   padding: 20px;
@@ -1455,14 +1455,14 @@ a.ktp-avatar-trigger {
 }
 
 .work_list_box ul,
-.ktp_work_list_box ul {
+.ktpwp_work_list_box ul {
   padding-left: 0px;
   margin: 0;
   list-style: none;
 }
 
 .work_list_box li,
-.ktp_work_list_box li {
+.ktpwp_work_list_box li {
   margin: 0;
   padding: 0;
   list-style: none;
@@ -1471,20 +1471,20 @@ a.ktp-avatar-trigger {
 /* モバイル時の仕事リストタブ調整 */
 @media screen and (max-width: 767px) {
   .work_list_box,
-  .ktp_work_list_box {
+  .ktpwp_work_list_box {
     width: 100% !important;
     max-width: 100% !important;
     min-width: 100% !important;
     padding: 10px !important;
   }
   .work_list_box ul,
-  .ktp_work_list_box ul {
+  .ktpwp_work_list_box ul {
     padding-left: 0;
     margin: 0 !important;
     list-style: none;
   }
   .work_list_box li,
-  .ktp_work_list_box li {
+  .ktpwp_work_list_box li {
     font-size: 15px;
     padding: 8px 4px;
     border-bottom: 1px solid #eee;
@@ -1492,14 +1492,14 @@ a.ktp-avatar-trigger {
     list-style: none;
   }
   .work_list_box a,
-  .ktp_work_list_box a {
+  .ktpwp_work_list_box a {
     display: block;
     color: #1976d2;
     text-decoration: none;
     word-break: break-all;
   }
   .work_list_box a:hover,
-  .ktp_work_list_box a:hover {
+  .ktpwp_work_list_box a:hover {
     text-decoration: underline;
   }
   
@@ -1618,19 +1618,19 @@ a.ktp-avatar-trigger {
 /* 仕事リストタブ専用 レスポンシブ調整 */
 @media screen and (max-width: 767px) {
   .data_list_box,
-  .ktp_data_list_box {
+  .ktpwp_data_list_box {
     width: 100% !important;
     float: none !important;
     padding: 10px !important;
     box-sizing: border-box;
   }
   .data_list_box ul,
-  .ktp_data_list_box ul {
+  .ktpwp_data_list_box ul {
     padding-left: 0;
     margin: 0 !important;
   }
   .data_list_box li,
-  .ktp_data_list_box li {
+  .ktpwp_data_list_box li {
     font-size: 15px;
     padding: 8px 4px;
     border-bottom: 1px solid #eee;
@@ -1638,14 +1638,14 @@ a.ktp-avatar-trigger {
     list-style: none;
   }
   .data_list_box a,
-  .ktp_data_list_box a {
+  .ktpwp_data_list_box a {
     display: block;
     color: #1976d2;
     text-decoration: none;
     word-break: break-all;
   }
   .data_list_box a:hover,
-  .ktp_data_list_box a:hover {
+  .ktpwp_data_list_box a:hover {
     text-decoration: underline;
   }
 }
@@ -1769,7 +1769,7 @@ form > .create-order-btn {
 
 /* リストBOX */
 .data_list_box,
-.ktp_data_list_box {
+.ktpwp_data_list_box {
   width: 100%;
   padding: 20px;
   box-sizing: border-box;
@@ -1778,7 +1778,7 @@ form > .create-order-btn {
 
 /* 詳細BOX */
 .data_detail_box,
-.ktp_data_detail_box {
+.ktpwp_data_detail_box {
   width: 100%;
   padding: 20px;
   box-sizing: border-box;
@@ -1788,7 +1788,7 @@ form > .create-order-btn {
 
 /* 詳細カラムのスタイル改善 */
 .data_detail_box,
-.ktp_data_detail_box {
+.ktpwp_data_detail_box {
   background-color: #fff;
   border-radius: 6px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
@@ -1798,7 +1798,7 @@ form > .create-order-btn {
 
 /* 詳細BOXの見出し */
 .data_detail_box h3,
-.ktp_data_detail_box h3 {
+.ktpwp_data_detail_box h3 {
   background-color: #f0f4f8;
   margin: 0;
   padding: 12px 16px;
@@ -1811,38 +1811,38 @@ form > .create-order-btn {
 /* リストBOXと詳細BOXのレスポンシブ */
 @media screen and (min-width: 767px) {
   .data_list_box,
-  .ktp_data_list_box {
+  .ktpwp_data_list_box {
     width: 50%;
     float: left;
   }
 
   .data_detail_box,
-  .ktp_data_detail_box {
+  .ktpwp_data_detail_box {
     width: 50%;
     float: right;
   }
 
   /* 二段組時、リスト行の z-index（ホバー時 1）より詳細フォームを手前に固定（入力が反応しない原因になる重なりを防ぐ） */
-  .ktp_data_contents .data_list_box,
-  .ktp_data_contents .ktp_data_list_box {
+  .ktpwp_data_contents .data_list_box,
+  .ktpwp_data_contents .ktpwp_data_list_box {
     position: relative;
     z-index: 1;
   }
-  .ktp_data_contents .data_detail_box,
-  .ktp_data_contents .ktp_data_detail_box {
+  .ktpwp_data_contents .data_detail_box,
+  .ktpwp_data_contents .ktpwp_data_detail_box {
     position: relative;
     z-index: 3;
   }
 
   /* 職能リストは常に100%幅を維持 */
-  .ktp_data_skill_list_box {
+  .ktpwp_data_skill_list_box {
     width: 100% !important;
     float: none !important;
   }
 }
 
 /* フロートのクリアフィックス - 新しいクラス名用 */
-.ktp_data_contents::after {
+.ktpwp_data_contents::after {
   content: "";
   display: table;
   clear: both;
@@ -1860,29 +1860,29 @@ form > .create-order-btn {
 
 /* データリストの交互の行に色を付ける - アンカータグに対して適用 */
 .data_list_box > a:nth-of-type(odd) .data_list_item,
-.ktp_data_list_box > a:nth-of-type(odd) .ktp_data_list_item {
+.ktpwp_data_list_box > a:nth-of-type(odd) .ktpwp_data_list_item {
   background-color: #f9fafb; /* 薄いグレーブルー */
 }
 
 .data_list_box > a:nth-of-type(even) .data_list_item,
-.ktp_data_list_box > a:nth-of-type(even) .ktp_data_list_item {
+.ktpwp_data_list_box > a:nth-of-type(even) .ktpwp_data_list_item {
   background-color: #ffffff; /* 白 */
 }
 
 /* 直接データリストアイテムだけの場合（エラーメッセージなど） */
 .data_list_box > .data_list_item:nth-of-type(odd),
-.ktp_data_list_box > .ktp_data_list_item:nth-of-type(odd) {
+.ktpwp_data_list_box > .ktpwp_data_list_item:nth-of-type(odd) {
   background-color: #f9fafb; /* 薄いグレーブルー */
 }
 
 .data_list_box > .data_list_item:nth-of-type(even),
-.ktp_data_list_box > .ktp_data_list_item:nth-of-type(even) {
+.ktpwp_data_list_box > .ktpwp_data_list_item:nth-of-type(even) {
   background-color: #ffffff; /* 白 */
 }
 
 /* ホバー時の背景色と微妙な変化 */
 .data_list_box a:hover .data_list_item,
-.ktp_data_list_box a:hover .ktp_data_list_item {
+.ktpwp_data_list_box a:hover .ktpwp_data_list_item {
   background-color: #f0f7ff; /* 薄い青 */
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03); /* 微妙な影を追加 */
   z-index: 1; /* ホバー時に前面に */
@@ -1890,7 +1890,7 @@ form > .create-order-btn {
 
 /* データリストのリンクスタイル */
 .data_list_box a,
-.ktp_data_list_box a {
+.ktpwp_data_list_box a {
   text-decoration: none;
   color: #2c3e50;
   display: block;
@@ -1898,13 +1898,13 @@ form > .create-order-btn {
 }
 
 .data_list_box a:hover,
-.ktp_data_list_box a:hover {
+.ktpwp_data_list_box a:hover {
   color: #1a73e8;
 }
 
 /* データリストボックス全体のスタイル */
 .data_list_box,
-.ktp_data_list_box {
+.ktpwp_data_list_box {
   border: 1px solid #e5e7eb;
   border-radius: 4px;
   overflow: hidden;
@@ -1919,16 +1919,16 @@ form > .create-order-btn {
 /* 列数が多いとき（契約列を含むと7列）、コンテナ幅では table-layout:fixed が
    各列を潰し、バッジと価格の文字が重なる。最小幅を与えて、足りない分は
    横スクロールで見せる。モバイル側には既に同種の指定がある（下の @media）。 */
-.ktp_data_list_box .ktp-service-list-table-wrap > .ktp-list-table--service {
+.ktpwp_data_list_box .ktp-service-list-table-wrap > .ktp-list-table--service {
   min-width: 38rem;
 }
 
-.ktp_data_list_box .ktp-service-list-table-wrap > .ktp-list-table--party {
+.ktpwp_data_list_box .ktp-service-list-table-wrap > .ktp-list-table--party {
   min-width: 32rem;
 }
 
 @media (max-width: 767px) {
-  .ktp_data_list_box .ktp-service-list-table-wrap {
+  .ktpwp_data_list_box .ktp-service-list-table-wrap {
     -webkit-overflow-scrolling: touch;
     max-width: 100%;
     overflow-x: auto;
@@ -1937,38 +1937,38 @@ form > .create-order-btn {
     scrollbar-width: thin;
   }
 
-  .ktp_data_list_box .ktp-service-list-table-wrap > .ktp-service-list-table {
+  .ktpwp_data_list_box .ktp-service-list-table-wrap > .ktp-service-list-table {
     min-width: 100%;
     table-layout: auto;
     width: max-content;
   }
 
-  .ktp_data_list_box .ktp-service-list-table.ktp-list-table--party {
+  .ktpwp_data_list_box .ktp-service-list-table.ktp-list-table--party {
     min-width: 34rem;
   }
 
-  .ktp_data_list_box .ktp-service-list-table.ktp-list-table--service {
+  .ktpwp_data_list_box .ktp-service-list-table.ktp-list-table--service {
     min-width: 42rem;
   }
 
-  .ktp_data_list_box .ktp-service-list-table .col-company,
-  .ktp_data_list_box .ktp-service-list-table .col-name {
+  .ktpwp_data_list_box .ktp-service-list-table .col-company,
+  .ktpwp_data_list_box .ktp-service-list-table .col-name {
     max-width: none;
     min-width: 8rem;
     width: auto;
   }
 
-  .ktp_data_list_box .ktp-service-list-table .col-contact,
-  .ktp_data_list_box .ktp-service-list-table .col-phone,
-  .ktp_data_list_box .ktp-service-list-table .col-category {
+  .ktpwp_data_list_box .ktp-service-list-table .col-contact,
+  .ktpwp_data_list_box .ktp-service-list-table .col-phone,
+  .ktpwp_data_list_box .ktp-service-list-table .col-category {
     max-width: none;
     min-width: 5.5rem;
     width: auto;
   }
 
-  .ktp_data_list_box .ktp-service-list-table .col-price-unit,
-  .ktp_data_list_box .ktp-service-list-table .col-public,
-  .ktp_data_list_box .ktp-service-list-table .col-contract {
+  .ktpwp_data_list_box .ktp-service-list-table .col-price-unit,
+  .ktpwp_data_list_box .ktp-service-list-table .col-public,
+  .ktpwp_data_list_box .ktp-service-list-table .col-contract {
     max-width: none;
     min-width: 4.5rem;
     white-space: nowrap;
@@ -2094,15 +2094,15 @@ form > .create-order-btn {
   margin-top: 18px;
 }
 
-.ktp_data_list_box .ktp-service-related-list__rows > a:nth-of-type(odd) .ktp_data_list_item {
+.ktpwp_data_list_box .ktp-service-related-list__rows > a:nth-of-type(odd) .ktpwp_data_list_item {
   background-color: #e7eefd !important;
 }
 
-.ktp_data_list_box .ktp-service-related-list__rows > a:nth-of-type(even) .ktp_data_list_item {
+.ktpwp_data_list_box .ktp-service-related-list__rows > a:nth-of-type(even) .ktpwp_data_list_item {
   background-color: #ffffff !important;
 }
 
-.ktp_data_list_box .ktp-service-related-list__rows > a:hover .ktp_data_list_item {
+.ktpwp_data_list_box .ktp-service-related-list__rows > a:hover .ktpwp_data_list_item {
   background-color: #f0f7ff !important;
 }
 
@@ -2634,7 +2634,7 @@ form > .create-order-btn {
 }
 
 @media (max-width: 767px) {
-  .ktp_plugin_container .controller > div:first-of-type {
+  .ktpwp_plugin_container .controller > div:first-of-type {
     flex: 1 1 100% !important;
     width: 100% !important;
   }
@@ -3119,7 +3119,7 @@ form > .create-order-btn {
 
 /* データリストボックスの見出し */
 .data_list_box h3,
-.ktp_data_list_box h3 {
+.ktpwp_data_list_box h3 {
   background-color: #f0f4f8;
   margin: 0;
   padding: 12px 16px;
@@ -3130,7 +3130,7 @@ form > .create-order-btn {
 }
 
 /* ヘッダー */
-.ktp_header {
+.ktpwp_header {
   text-align: left;
   border: 1px solid;
   padding: 15px;
@@ -3148,7 +3148,7 @@ form > .create-order-btn {
 }
 
 /* ショートコードヘッダーのプラグインアイコン（汎用 .title / テーマの img ルールとの衝突を抑止） */
-.ktp_header .ktp-header-plugin-reload {
+.ktpwp_header .ktp-header-plugin-reload {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -3161,13 +3161,13 @@ form > .create-order-btn {
   line-height: 0;
 }
 
-.ktp_header .ktp-header-plugin-reload:focus {
+.ktpwp_header .ktp-header-plugin-reload:focus {
   outline: 2px solid rgba(0, 115, 170, 0.3);
   outline-offset: 2px;
   border-radius: 4px;
 }
 
-.ktp_header .ktp-header-plugin-icon {
+.ktpwp_header .ktp-header-plugin-icon {
   display: inline-block;
   width: auto;
   max-width: none;
@@ -3181,7 +3181,7 @@ form > .create-order-btn {
 }
 
 /* PC・タブレット表示用：ヘッダー右側セクション */
-.ktp_header .header-right-section {
+.ktpwp_header .header-right-section {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
@@ -3191,7 +3191,7 @@ form > .create-order-btn {
 }
 
 /* PC・タブレット表示用：ナビゲーションリンク */
-.ktp_header .navigation-links {
+.ktpwp_header .navigation-links {
   display: flex;
   align-items: center;
   gap: 4px; /* 8pxから4pxに変更 */
@@ -3201,7 +3201,7 @@ form > .create-order-btn {
 }
 
 /* PC・タブレット表示用：ナビゲーションリンク内の要素 */
-.ktp_header .navigation-links a {
+.ktpwp_header .navigation-links a {
   display: inline-flex;
   align-items: center;
   gap: 3px; /* 4pxから3pxに変更 */
@@ -3214,24 +3214,24 @@ form > .create-order-btn {
   padding: 2px 4px; /* モバイルではさらに小さく */
 }
 
-.ktp_header .navigation-links a:hover {
+.ktpwp_header .navigation-links a:hover {
   background-color: rgba(0, 115, 170, 0.1);
   color: #005a87;
 }
 
-.ktp_header .navigation-links a:focus {
+.ktpwp_header .navigation-links a:focus {
   outline: 2px solid rgba(0, 115, 170, 0.3);
   outline-offset: 2px;
 }
 
-.ktp_header .ktp-header-settings-menu {
+.ktpwp_header .ktp-header-settings-menu {
   display: inline-flex;
   position: relative;
   align-items: center;
   z-index: 100002;
 }
 
-.ktp_header .ktp-header-settings-toggle {
+.ktpwp_header .ktp-header-settings-toggle {
   display: inline-flex;
   align-items: center;
   gap: 3px;
@@ -3247,18 +3247,18 @@ form > .create-order-btn {
   transition: all 0.2s ease;
 }
 
-.ktp_header .ktp-header-settings-toggle:hover,
-.ktp_header .ktp-header-settings-menu.is-open .ktp-header-settings-toggle {
+.ktpwp_header .ktp-header-settings-toggle:hover,
+.ktpwp_header .ktp-header-settings-menu.is-open .ktp-header-settings-toggle {
   background-color: rgba(0, 115, 170, 0.1);
   color: #005a87;
 }
 
-.ktp_header .ktp-header-settings-toggle:focus {
+.ktpwp_header .ktp-header-settings-toggle:focus {
   outline: 2px solid rgba(0, 115, 170, 0.3);
   outline-offset: 2px;
 }
 
-.ktp_header .ktp-header-settings-dropdown {
+.ktpwp_header .ktp-header-settings-dropdown {
   display: none;
   position: absolute;
   top: calc(100% + 6px);
@@ -3272,11 +3272,11 @@ form > .create-order-btn {
   z-index: 2147483647;
 }
 
-.ktp_header .ktp-header-settings-menu.is-open .ktp-header-settings-dropdown {
+.ktpwp_header .ktp-header-settings-menu.is-open .ktp-header-settings-dropdown {
   display: block;
 }
 
-.ktp_header .ktp-header-settings-dropdown a {
+.ktpwp_header .ktp-header-settings-dropdown a {
   display: block;
   width: auto;
   min-width: 0;
@@ -3291,43 +3291,43 @@ form > .create-order-btn {
   line-height: 1.4;
 }
 
-.ktp_header .ktp-header-settings-dropdown a:hover,
-.ktp_header .ktp-header-settings-dropdown a:focus {
+.ktpwp_header .ktp-header-settings-dropdown a:hover,
+.ktpwp_header .ktp-header-settings-dropdown a:focus {
   background: #f0f6fc;
   color: #005a87;
   outline: none;
 }
 
 /* 寄付ボタンの特別なスタイル */
-.ktp_header .navigation-links a[href*="donation"],
-.ktp_header .navigation-links a[title*="寄付する"] {
+.ktpwp_header .navigation-links a[href*="donation"],
+.ktpwp_header .navigation-links a[title*="寄付する"] {
   background-color: #fff3cd;
   border: 1px solid #ffeaa7;
   color: #856404 !important;
   font-weight: 500;
 }
 
-.ktp_header .navigation-links a[href*="donation"]:hover,
-.ktp_header .navigation-links a[title*="寄付する"]:hover {
+.ktpwp_header .navigation-links a[href*="donation"]:hover,
+.ktpwp_header .navigation-links a[title*="寄付する"]:hover {
   background-color: #ffeaa7;
   border-color: #fdcb6e;
   color: #6c5ce7 !important;
 }
 
 /* ヘルプボタンの特別なスタイル */
-.ktp_header .navigation-links .ktpwp-reference-link {
+.ktpwp_header .navigation-links .ktpwp-reference-link {
   background-color: #f8f9fa;
   border: 1px solid #e9ecef;
   font-weight: 500;
 }
 
-.ktp_header .navigation-links .ktpwp-reference-link:hover {
+.ktpwp_header .navigation-links .ktpwp-reference-link:hover {
   background-color: #e9ecef;
   border-color: #0073aa;
 }
 
 /* PC表示用：システム情報エリア（ヘッダー全体の半分） */
-.ktp_header .logo-and-system-info {
+.ktpwp_header .logo-and-system-info {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
@@ -3339,11 +3339,11 @@ form > .create-order-btn {
   margin-right: auto; /* 左寄せを確実にする */
 }
 
-.ktp_header .header-logo {
+.ktpwp_header .header-logo {
   flex-shrink: 0;
 }
 
-.ktp_header .system-info {
+.ktpwp_header .system-info {
   text-align: left;
   margin-left: 8px;
   flex: 1;
@@ -3351,7 +3351,7 @@ form > .create-order-btn {
   max-width: none;
 }
 
-.ktp_header .system-name {
+.ktpwp_header .system-name {
   font-size: 18px;
   font-weight: bold;
   color: #333;
@@ -3362,7 +3362,7 @@ form > .create-order-btn {
   max-width: none;
 }
 
-.ktp_header .system-description {
+.ktpwp_header .system-description {
   font-size: 14px;
   color: #666;
   line-height: 1.2;
@@ -3372,7 +3372,7 @@ form > .create-order-btn {
 }
 
 /* PC表示用：ヘッダー右側の要素 */
-.ktp_header > *:not(.logo-and-system-info) {
+.ktpwp_header > *:not(.logo-and-system-info) {
   flex-shrink: 0;
   min-width: 120px;
   max-width: none; /* PC表示では制限なし */
@@ -3382,12 +3382,12 @@ form > .create-order-btn {
    タブレットサイズ（1024px以下）
    ========================================================================== */
 @media (max-width: 1024px) {
-  .ktp_header {
+  .ktpwp_header {
     gap: 12px;
     padding: 12px;
   }
   
-  .ktp_header .logo-and-system-info {
+  .ktpwp_header .logo-and-system-info {
     min-width: 180px;
     max-width: 100%; /* タブレットでも親要素の幅いっぱいに制限 */
     flex: 1; /* 利用可能な幅いっぱいに拡張 */
@@ -3395,12 +3395,12 @@ form > .create-order-btn {
     margin-right: auto; /* 左寄せを確実にする */
   }
   
-  .ktp_header .header-right-section {
+  .ktpwp_header .header-right-section {
     min-width: 120px;
     max-width: none;
   }
   
-  .ktp_header > *:not(.logo-and-system-info) {
+  .ktpwp_header > *:not(.logo-and-system-info) {
     min-width: 120px;
     max-width: none;
   }
@@ -3410,14 +3410,14 @@ form > .create-order-btn {
    モバイルサイズ（768px以下）- 完全に異なるレイアウト
    ========================================================================== */
 @media (max-width: 768px) {
-  .ktp_header {
+  .ktpwp_header {
     flex-direction: column; /* 縦並びに変更 */
     align-items: stretch;
     gap: 10px;
     padding: 12px;
   }
   
-  .ktp_header .parent {
+  .ktpwp_header .parent {
     width: 100%; /* モバイルでは全幅 */
     max-width: 100%; /* モバイルでは全幅 */
     min-width: 0;
@@ -3426,13 +3426,13 @@ form > .create-order-btn {
     margin-bottom: 8px;
   }
   
-  .ktp_header .title {
+  .ktpwp_header .title {
     margin-left: 0;
     margin-top: 8px;
   }
 
   /* テーマ・汎用 .title 内の img ルールと衝突してもアイコンを確実に表示 */
-  .ktp_header .ktp-header-plugin-icon {
+  .ktpwp_header .ktp-header-plugin-icon {
     display: inline-block !important;
     visibility: visible !important;
     opacity: 1 !important;
@@ -3448,7 +3448,7 @@ form > .create-order-btn {
   }
   
   /* モバイル時は右側の要素も縦並び */
-  .ktp_header .header-right-section {
+  .ktpwp_header .header-right-section {
     width: 100%;
     flex-direction: column;
     justify-content: flex-start;
@@ -3459,14 +3459,14 @@ form > .create-order-btn {
     gap: 8px;
   }
   
-  .ktp_header .navigation-links {
+  .ktpwp_header .navigation-links {
     justify-content: flex-start;
     flex-wrap: wrap;
     gap: 4px; /* モバイルでも適度な間隔 */
     width: 100%;
   }
   
-  .ktp_header .navigation-links a {
+  .ktpwp_header .navigation-links a {
     padding: 6px 8px; /* モバイルでもタップしやすいサイズ */
     font-size: 14px; /* モバイルでも読みやすいサイズ */
     white-space: nowrap;
@@ -3476,18 +3476,18 @@ form > .create-order-btn {
     transition: all 0.2s ease;
   }
   
-  .ktp_header .navigation-links a:hover {
+  .ktpwp_header .navigation-links a:hover {
     background-color: rgba(0, 115, 170, 0.1);
     border-color: rgba(0, 115, 170, 0.2);
   }
   
-  .ktp_header .user-avatars-section {
+  .ktpwp_header .user-avatars-section {
     justify-content: flex-start;
     width: 100%;
   }
   
   /* モバイル時は右側の要素も縦並び */
-  .ktp_header > *:not(.parent) {
+  .ktpwp_header > *:not(.parent) {
     margin-left: 0; /* 左寄せにリセット */
     margin-top: 8px;
     align-self: flex-start;
@@ -3501,24 +3501,24 @@ form > .create-order-btn {
    小さいモバイルサイズ（480px以下）
    ========================================================================== */
 @media (max-width: 480px) {
-  .ktp_header {
+  .ktpwp_header {
     padding: 10px;
     gap: 8px;
   }
   
-  .ktp_header .title {
+  .ktpwp_header .title {
     font-size: 16px;
   }
   
-  .ktp_header .version {
+  .ktpwp_header .version {
     font-size: 13px;
   }
   
-  .ktp_header .navigation-links {
+  .ktpwp_header .navigation-links {
     gap: 3px;
   }
   
-  .ktp_header .navigation-links a {
+  .ktpwp_header .navigation-links a {
     padding: 4px 6px;
     font-size: 13px;
     border-radius: 3px;
@@ -3527,12 +3527,12 @@ form > .create-order-btn {
     transition: all 0.2s ease;
   }
   
-  .ktp_header .navigation-links a:hover {
+  .ktpwp_header .navigation-links a:hover {
     background-color: rgba(0, 115, 170, 0.1);
     border-color: rgba(0, 115, 170, 0.2);
   }
   
-  .ktp_header .header-right-section {
+  .ktpwp_header .header-right-section {
     gap: 6px;
   }
 }
@@ -4093,19 +4093,19 @@ input[name="tab_item"] {
 }
 
 /* レポートタブ本体（白カード）の上マージンは 0 */
-.ktp_plugin_container .tab_content .ktp-report-print-area,
+.ktpwp_plugin_container .tab_content .ktp-report-print-area,
 div.ktp-report-print-area {
   margin-top: 0 !important;
 }
 
 /* メインタブ行自体の下の余白を0にし、本文と密着させる */
-.ktp_plugin_container.tabs {
+.ktpwp_plugin_container.tabs {
   padding-bottom: 0 !important;
   margin-bottom: 0 !important;
 }
 
 /* タブ直後の clearfix ダミーは高さ0で維持（float解除用） */
-.ktp_plugin_container .ktp-tab-panels-clearfix {
+.ktpwp_plugin_container .ktp-tab-panels-clearfix {
   margin: 0 !important;
   padding: 0 !important;
 }
@@ -4113,11 +4113,11 @@ div.ktp-report-print-area {
 /* レポート: 協力会社タブと同じく .controller にインライン style を付けない */
 
 /* タブコントローラー: PCは従来の横並び（検索＋ボタン＋印刷）※顧客タブは従来HTMLのまま対象外 */
-.ktp_plugin_container .controller.ktp-supplier-controller,
-.ktp_plugin_container .controller.ktp-list-controller,
-.ktp_plugin_container .controller.ktp-order-controller,
-.ktp_plugin_container .controller.ktp-service-controller,
-.ktp_plugin_container .controller.ktp-report-controller:not(.ktp-report-controller--free-notice) {
+.ktpwp_plugin_container .controller.ktp-supplier-controller,
+.ktpwp_plugin_container .controller.ktp-list-controller,
+.ktpwp_plugin_container .controller.ktp-order-controller,
+.ktpwp_plugin_container .controller.ktp-service-controller,
+.ktpwp_plugin_container .controller.ktp-report-controller:not(.ktp-report-controller--free-notice) {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
@@ -4132,71 +4132,71 @@ div.ktp-report-print-area {
 }
 
 /* タブコントローラー内ボタン: 下余白を統一（.controller button の margin-bottom を打ち消す） */
-.ktp_plugin_container .controller.ktp-supplier-controller button,
-.ktp_plugin_container .controller.ktp-list-controller button,
-.ktp_plugin_container .controller.ktp-order-controller button,
-.ktp_plugin_container .controller.ktp-service-controller button,
-.ktp_plugin_container .controller.ktp-report-controller:not(.ktp-report-controller--free-notice) button {
+.ktpwp_plugin_container .controller.ktp-supplier-controller button,
+.ktpwp_plugin_container .controller.ktp-list-controller button,
+.ktpwp_plugin_container .controller.ktp-order-controller button,
+.ktpwp_plugin_container .controller.ktp-service-controller button,
+.ktpwp_plugin_container .controller.ktp-report-controller:not(.ktp-report-controller--free-notice) button {
   margin-bottom: 0 !important;
   margin-top: 0;
 }
 
-.ktp_plugin_container .controller.ktp-supplier-controller form,
-.ktp_plugin_container .controller.ktp-list-controller form,
-.ktp_plugin_container .controller.ktp-order-controller form,
-.ktp_plugin_container .controller.ktp-service-controller form,
-.ktp_plugin_container .controller.ktp-report-controller:not(.ktp-report-controller--free-notice) form {
+.ktpwp_plugin_container .controller.ktp-supplier-controller form,
+.ktpwp_plugin_container .controller.ktp-list-controller form,
+.ktpwp_plugin_container .controller.ktp-order-controller form,
+.ktpwp_plugin_container .controller.ktp-service-controller form,
+.ktpwp_plugin_container .controller.ktp-report-controller:not(.ktp-report-controller--free-notice) form {
   display: inline-flex;
   align-items: center;
   margin: 0;
 }
 
-.ktp_plugin_container .controller.ktp-supplier-controller #create-order-form,
-.ktp_plugin_container .controller.ktp-order-controller #create-order-form {
+.ktpwp_plugin_container .controller.ktp-supplier-controller #create-order-form,
+.ktpwp_plugin_container .controller.ktp-order-controller #create-order-form {
   display: inline-flex !important;
   align-items: center;
 }
 
-.ktp_plugin_container .ktp-supplier-controller__search,
-.ktp_plugin_container .ktp-list-controller__search,
-.ktp_plugin_container .ktp-order-controller__search,
-.ktp_plugin_container .ktp-service-controller__search,
-.ktp_plugin_container .ktp-report-controller__search {
+.ktpwp_plugin_container .ktp-supplier-controller__search,
+.ktpwp_plugin_container .ktp-list-controller__search,
+.ktpwp_plugin_container .ktp-order-controller__search,
+.ktpwp_plugin_container .ktp-service-controller__search,
+.ktpwp_plugin_container .ktp-report-controller__search {
   width: auto;
   max-width: none;
   flex: 0 1 auto;
 }
 
-.ktp_plugin_container .ktp-supplier-controller__search .ktp-list-search-wrap,
-.ktp_plugin_container .ktp-supplier-controller__search .ktp-list-search-form,
-.ktp_plugin_container .ktp-list-controller__search .ktp-list-search-wrap,
-.ktp_plugin_container .ktp-list-controller__search .ktp-list-search-form,
-.ktp_plugin_container .ktp-order-controller__search .ktp-list-search-wrap,
-.ktp_plugin_container .ktp-order-controller__search .ktp-list-search-form,
-.ktp_plugin_container .ktp-service-controller__search .ktp-list-search-wrap,
-.ktp_plugin_container .ktp-service-controller__search .ktp-list-search-form,
-.ktp_plugin_container .ktp-report-controller__search .ktp-list-search-wrap,
-.ktp_plugin_container .ktp-report-controller__search .ktp-list-search-form {
+.ktpwp_plugin_container .ktp-supplier-controller__search .ktp-list-search-wrap,
+.ktpwp_plugin_container .ktp-supplier-controller__search .ktp-list-search-form,
+.ktpwp_plugin_container .ktp-list-controller__search .ktp-list-search-wrap,
+.ktpwp_plugin_container .ktp-list-controller__search .ktp-list-search-form,
+.ktpwp_plugin_container .ktp-order-controller__search .ktp-list-search-wrap,
+.ktpwp_plugin_container .ktp-order-controller__search .ktp-list-search-form,
+.ktpwp_plugin_container .ktp-service-controller__search .ktp-list-search-wrap,
+.ktpwp_plugin_container .ktp-service-controller__search .ktp-list-search-form,
+.ktpwp_plugin_container .ktp-report-controller__search .ktp-list-search-wrap,
+.ktpwp_plugin_container .ktp-report-controller__search .ktp-list-search-form {
   width: auto !important;
   max-width: none !important;
 }
 
-.ktp_plugin_container .ktp-supplier-controller__search .ktp-list-search-input,
-.ktp_plugin_container .ktp-list-controller__search .ktp-list-search-input,
-.ktp_plugin_container .ktp-order-controller__search .ktp-list-search-input,
-.ktp_plugin_container .ktp-service-controller__search .ktp-list-search-input,
-.ktp_plugin_container .ktp-report-controller__search .ktp-list-search-input {
+.ktpwp_plugin_container .ktp-supplier-controller__search .ktp-list-search-input,
+.ktpwp_plugin_container .ktp-list-controller__search .ktp-list-search-input,
+.ktpwp_plugin_container .ktp-order-controller__search .ktp-list-search-input,
+.ktpwp_plugin_container .ktp-service-controller__search .ktp-list-search-input,
+.ktpwp_plugin_container .ktp-report-controller__search .ktp-list-search-input {
   flex: 0 1 auto !important;
   width: auto !important;
   min-width: 160px !important;
   max-width: none !important;
 }
 
-.ktp_plugin_container .ktp-supplier-controller__bar,
-.ktp_plugin_container .ktp-list-controller__bar,
-.ktp_plugin_container .ktp-order-controller__bar,
-.ktp_plugin_container .ktp-service-controller__bar,
-.ktp_plugin_container .ktp-report-controller__bar {
+.ktpwp_plugin_container .ktp-supplier-controller__bar,
+.ktpwp_plugin_container .ktp-list-controller__bar,
+.ktpwp_plugin_container .ktp-order-controller__bar,
+.ktpwp_plugin_container .ktp-service-controller__bar,
+.ktpwp_plugin_container .ktp-report-controller__bar {
   display: flex;
   flex: 1 1 auto;
   flex-wrap: wrap;
@@ -4209,11 +4209,11 @@ div.ktp-report-print-area {
   margin-bottom: 0;
 }
 
-.ktp_plugin_container .ktp-supplier-controller-actions,
-.ktp_plugin_container .ktp-list-controller-actions,
-.ktp_plugin_container .ktp-order-controller-actions,
-.ktp_plugin_container .ktp-service-controller-actions,
-.ktp_plugin_container .ktp-report-controller__bar .ktp-report-controller__main {
+.ktpwp_plugin_container .ktp-supplier-controller-actions,
+.ktpwp_plugin_container .ktp-list-controller-actions,
+.ktpwp_plugin_container .ktp-order-controller-actions,
+.ktpwp_plugin_container .ktp-service-controller-actions,
+.ktpwp_plugin_container .ktp-report-controller__bar .ktp-report-controller__main {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
@@ -4222,7 +4222,7 @@ div.ktp-report-print-area {
   min-width: 0;
 }
 
-.ktp_plugin_container .ktp-report-controller__bar .ktp-report-controller__main {
+.ktpwp_plugin_container .ktp-report-controller__bar .ktp-report-controller__main {
   flex: 1 1 auto;
   gap: 4px;
 }
@@ -4256,11 +4256,11 @@ div.ktp-report-print-area {
   pointer-events: none;
 }
 
-.ktp_plugin_container .ktp-supplier-controller__tools,
-.ktp_plugin_container .ktp-list-controller__tools,
-.ktp_plugin_container .ktp-order-controller__tools,
-.ktp_plugin_container .ktp-service-controller__tools,
-.ktp_plugin_container .ktp-report-controller__actions {
+.ktpwp_plugin_container .ktp-supplier-controller__tools,
+.ktpwp_plugin_container .ktp-list-controller__tools,
+.ktpwp_plugin_container .ktp-order-controller__tools,
+.ktpwp_plugin_container .ktp-service-controller__tools,
+.ktpwp_plugin_container .ktp-report-controller__actions {
   display: flex;
   gap: 5px;
   align-items: center;
@@ -4270,56 +4270,56 @@ div.ktp-report-print-area {
 
 /* モバイルのみ: 検索全幅1行、ボタン行1行・印刷右寄せ（顧客タブは対象外） */
 @media (max-width: 767px) {
-  .ktp_plugin_container .controller.ktp-supplier-controller,
-  .ktp_plugin_container .controller.ktp-list-controller,
-  .ktp_plugin_container .controller.ktp-order-controller,
-  .ktp_plugin_container .controller.ktp-service-controller,
-  .ktp_plugin_container .controller.ktp-report-controller:not(.ktp-report-controller--free-notice) {
+  .ktpwp_plugin_container .controller.ktp-supplier-controller,
+  .ktpwp_plugin_container .controller.ktp-list-controller,
+  .ktpwp_plugin_container .controller.ktp-order-controller,
+  .ktpwp_plugin_container .controller.ktp-service-controller,
+  .ktpwp_plugin_container .controller.ktp-report-controller:not(.ktp-report-controller--free-notice) {
     flex-direction: column;
     align-items: stretch;
     gap: 10px;
   }
 
-  .ktp_plugin_container .ktp-supplier-controller__search,
-  .ktp_plugin_container .ktp-list-controller__search,
-  .ktp_plugin_container .ktp-order-controller__search,
-  .ktp_plugin_container .ktp-service-controller__search,
-  .ktp_plugin_container .ktp-report-controller__search {
+  .ktpwp_plugin_container .ktp-supplier-controller__search,
+  .ktpwp_plugin_container .ktp-list-controller__search,
+  .ktpwp_plugin_container .ktp-order-controller__search,
+  .ktpwp_plugin_container .ktp-service-controller__search,
+  .ktpwp_plugin_container .ktp-report-controller__search {
     width: 100%;
     max-width: 100%;
     flex: 1 1 100%;
   }
 
-  .ktp_plugin_container .ktp-supplier-controller__search .ktp-list-search-wrap,
-  .ktp_plugin_container .ktp-supplier-controller__search .ktp-list-search-form,
-  .ktp_plugin_container .ktp-list-controller__search .ktp-list-search-wrap,
-  .ktp_plugin_container .ktp-list-controller__search .ktp-list-search-form,
-  .ktp_plugin_container .ktp-order-controller__search .ktp-list-search-wrap,
-  .ktp_plugin_container .ktp-order-controller__search .ktp-list-search-form,
-  .ktp_plugin_container .ktp-service-controller__search .ktp-list-search-wrap,
-  .ktp_plugin_container .ktp-service-controller__search .ktp-list-search-form,
-  .ktp_plugin_container .ktp-report-controller__search .ktp-list-search-wrap,
-  .ktp_plugin_container .ktp-report-controller__search .ktp-list-search-form {
+  .ktpwp_plugin_container .ktp-supplier-controller__search .ktp-list-search-wrap,
+  .ktpwp_plugin_container .ktp-supplier-controller__search .ktp-list-search-form,
+  .ktpwp_plugin_container .ktp-list-controller__search .ktp-list-search-wrap,
+  .ktpwp_plugin_container .ktp-list-controller__search .ktp-list-search-form,
+  .ktpwp_plugin_container .ktp-order-controller__search .ktp-list-search-wrap,
+  .ktpwp_plugin_container .ktp-order-controller__search .ktp-list-search-form,
+  .ktpwp_plugin_container .ktp-service-controller__search .ktp-list-search-wrap,
+  .ktpwp_plugin_container .ktp-service-controller__search .ktp-list-search-form,
+  .ktpwp_plugin_container .ktp-report-controller__search .ktp-list-search-wrap,
+  .ktpwp_plugin_container .ktp-report-controller__search .ktp-list-search-form {
     width: 100% !important;
     max-width: 100% !important;
   }
 
-  .ktp_plugin_container .ktp-supplier-controller__search .ktp-list-search-input,
-  .ktp_plugin_container .ktp-list-controller__search .ktp-list-search-input,
-  .ktp_plugin_container .ktp-order-controller__search .ktp-list-search-input,
-  .ktp_plugin_container .ktp-service-controller__search .ktp-list-search-input,
-  .ktp_plugin_container .ktp-report-controller__search .ktp-list-search-input {
+  .ktpwp_plugin_container .ktp-supplier-controller__search .ktp-list-search-input,
+  .ktpwp_plugin_container .ktp-list-controller__search .ktp-list-search-input,
+  .ktpwp_plugin_container .ktp-order-controller__search .ktp-list-search-input,
+  .ktpwp_plugin_container .ktp-service-controller__search .ktp-list-search-input,
+  .ktpwp_plugin_container .ktp-report-controller__search .ktp-list-search-input {
     flex: 1 1 auto !important;
     width: 100% !important;
     min-width: 0 !important;
     max-width: 100% !important;
   }
 
-  .ktp_plugin_container .ktp-supplier-controller__bar,
-  .ktp_plugin_container .ktp-list-controller__bar,
-  .ktp_plugin_container .ktp-order-controller__bar,
-  .ktp_plugin_container .ktp-service-controller__bar,
-  .ktp_plugin_container .ktp-report-controller__bar {
+  .ktpwp_plugin_container .ktp-supplier-controller__bar,
+  .ktpwp_plugin_container .ktp-list-controller__bar,
+  .ktpwp_plugin_container .ktp-order-controller__bar,
+  .ktpwp_plugin_container .ktp-service-controller__bar,
+  .ktpwp_plugin_container .ktp-report-controller__bar {
     flex: 1 1 100%;
     flex-wrap: nowrap;
     width: 100%;
@@ -4327,10 +4327,10 @@ div.ktp-report-print-area {
     margin-bottom: 12px;
   }
 
-  .ktp_plugin_container .ktp-supplier-controller-actions,
-  .ktp_plugin_container .ktp-list-controller-actions,
-  .ktp_plugin_container .ktp-order-controller-actions,
-  .ktp_plugin_container .ktp-service-controller-actions {
+  .ktpwp_plugin_container .ktp-supplier-controller-actions,
+  .ktpwp_plugin_container .ktp-list-controller-actions,
+  .ktpwp_plugin_container .ktp-order-controller-actions,
+  .ktpwp_plugin_container .ktp-service-controller-actions {
     flex-wrap: nowrap !important;
   }
 }
@@ -4341,45 +4341,45 @@ div.ktp-report-print-area {
 }
 
 /* 各タブ .controller: 操作要素を行内で上下センター・高さ統一 */
-.ktp_plugin_container .tab_content .controller {
+.ktpwp_plugin_container .tab_content .controller {
   align-items: center;
 }
 
-.ktp_plugin_container .tab_content .controller > div,
-.ktp_plugin_container .tab_content .controller [class*="-controller__bar"],
-.ktp_plugin_container .tab_content .controller [class*="-controller__search"],
-.ktp_plugin_container .tab_content .controller [class*="-controller-actions"],
-.ktp_plugin_container .tab_content .controller [class*="-controller__tools"],
-.ktp_plugin_container .tab_content .controller [class*="-controller__main"],
-.ktp_plugin_container .tab_content .controller [class*="-controller__actions"],
-.ktp_plugin_container .tab_content .controller .ktp-client-controller-actions,
-.ktp_plugin_container .tab_content .controller .ktp-list-view-switcher,
-.ktp_plugin_container .tab_content .controller .ktp-list-type-filter,
-.ktp_plugin_container .tab_content .controller .ktp-order-title-actions,
-.ktp_plugin_container .tab_content .controller .ktp-order-controller-left,
-.ktp_plugin_container .tab_content .controller .ktp-list-search-wrap,
-.ktp_plugin_container .tab_content .controller .ktp-list-search-form {
+.ktpwp_plugin_container .tab_content .controller > div,
+.ktpwp_plugin_container .tab_content .controller [class*="-controller__bar"],
+.ktpwp_plugin_container .tab_content .controller [class*="-controller__search"],
+.ktpwp_plugin_container .tab_content .controller [class*="-controller-actions"],
+.ktpwp_plugin_container .tab_content .controller [class*="-controller__tools"],
+.ktpwp_plugin_container .tab_content .controller [class*="-controller__main"],
+.ktpwp_plugin_container .tab_content .controller [class*="-controller__actions"],
+.ktpwp_plugin_container .tab_content .controller .ktp-client-controller-actions,
+.ktpwp_plugin_container .tab_content .controller .ktp-list-view-switcher,
+.ktpwp_plugin_container .tab_content .controller .ktp-list-type-filter,
+.ktpwp_plugin_container .tab_content .controller .ktp-order-title-actions,
+.ktpwp_plugin_container .tab_content .controller .ktp-order-controller-left,
+.ktpwp_plugin_container .tab_content .controller .ktp-list-search-wrap,
+.ktpwp_plugin_container .tab_content .controller .ktp-list-search-form {
   display: flex;
   align-items: center;
 }
 
-.ktp_plugin_container .tab_content .controller .ktp-list-view-switcher,
-.ktp_plugin_container .tab_content .controller .ktp-list-type-filter {
+.ktpwp_plugin_container .tab_content .controller .ktp-list-view-switcher,
+.ktpwp_plugin_container .tab_content .controller .ktp-list-type-filter {
   display: inline-flex;
 }
 
-.ktp_plugin_container .tab_content .controller form {
+.ktpwp_plugin_container .tab_content .controller form {
   display: inline-flex;
   align-items: center;
   margin: 0;
 }
 
-.ktp_plugin_container .tab_content .controller button,
-.ktp_plugin_container .tab_content .controller .ktp-list-view-switcher__btn,
-.ktp_plugin_container .tab_content .controller .ktp-list-type-filter__btn,
-.ktp_plugin_container .tab_content .controller [class*="-controller__main"] > a,
-.ktp_plugin_container .tab_content .controller .ktp-service-import-btn,
-.ktp_plugin_container .tab_content .controller .ktp-service-export-btn {
+.ktpwp_plugin_container .tab_content .controller button,
+.ktpwp_plugin_container .tab_content .controller .ktp-list-view-switcher__btn,
+.ktpwp_plugin_container .tab_content .controller .ktp-list-type-filter__btn,
+.ktpwp_plugin_container .tab_content .controller [class*="-controller__main"] > a,
+.ktpwp_plugin_container .tab_content .controller .ktp-service-import-btn,
+.ktpwp_plugin_container .tab_content .controller .ktp-service-export-btn {
   margin-top: 0 !important;
   margin-bottom: 0 !important;
   display: inline-flex !important;
@@ -4392,58 +4392,58 @@ div.ktp-report-print-area {
   vertical-align: middle;
 }
 
-.ktp_plugin_container .tab_content .controller button > span,
-.ktp_plugin_container .tab_content .controller a > span,
-.ktp_plugin_container .tab_content .controller .material-symbols-outlined,
-.ktp_plugin_container .tab_content .controller .ktp-svg-icon,
-.ktp_plugin_container .tab_content .controller .report-btn-icon,
-.ktp_plugin_container .tab_content .controller .report-btn-text,
-.ktp_plugin_container .tab_content .controller .btn-label {
+.ktpwp_plugin_container .tab_content .controller button > span,
+.ktpwp_plugin_container .tab_content .controller a > span,
+.ktpwp_plugin_container .tab_content .controller .material-symbols-outlined,
+.ktpwp_plugin_container .tab_content .controller .ktp-svg-icon,
+.ktpwp_plugin_container .tab_content .controller .report-btn-icon,
+.ktpwp_plugin_container .tab_content .controller .report-btn-text,
+.ktpwp_plugin_container .tab_content .controller .btn-label {
   display: inline-flex !important;
   align-items: center !important;
   line-height: 1 !important;
 }
 
-.ktp_plugin_container .tab_content .controller svg {
+.ktpwp_plugin_container .tab_content .controller svg {
   display: block;
 }
 
-.ktp_plugin_container #client_content .controller .ktp-client-controller-actions,
-.ktp_plugin_container #client_content .controller > div:last-child,
-.ktp_plugin_container .tab_content .controller [class*="-controller-actions"],
-.ktp_plugin_container .tab_content .controller [class*="-controller__tools"],
-.ktp_plugin_container .tab_content .controller [class*="-controller__main"],
-.ktp_plugin_container .tab_content .controller [class*="-controller__actions"] {
+.ktpwp_plugin_container #client_content .controller .ktp-client-controller-actions,
+.ktpwp_plugin_container #client_content .controller > div:last-child,
+.ktpwp_plugin_container .tab_content .controller [class*="-controller-actions"],
+.ktpwp_plugin_container .tab_content .controller [class*="-controller__tools"],
+.ktpwp_plugin_container .tab_content .controller [class*="-controller__main"],
+.ktpwp_plugin_container .tab_content .controller [class*="-controller__actions"] {
   transform: translateY(-5px);
 }
 
-.ktp_plugin_container #service_content .controller .ktp-service-controller-actions {
+.ktpwp_plugin_container #service_content .controller .ktp-service-controller-actions {
   transform: translateY(-2px);
 }
 
-.ktp_plugin_container #client_content .controller .ktp-list-search-btn {
+.ktpwp_plugin_container #client_content .controller .ktp-list-search-btn {
   transform: translateY(5px);
 }
 
-.ktp_plugin_container #client_content .controller .ktp-list-search-input {
+.ktpwp_plugin_container #client_content .controller .ktp-list-search-input {
   transform: translateY(5px);
 }
 
 @media (max-width: 767px) {
-  .ktp_plugin_container #client_content .controller {
+  .ktpwp_plugin_container #client_content .controller {
     align-items: center !important;
     justify-content: flex-start !important;
     gap: 10px !important;
   }
 
-  .ktp_plugin_container #client_content .controller > div:first-child,
-  .ktp_plugin_container #client_content .controller .ktp-client-controller-actions {
+  .ktpwp_plugin_container #client_content .controller > div:first-child,
+  .ktpwp_plugin_container #client_content .controller .ktp-client-controller-actions {
     display: contents !important;
     transform: none !important;
   }
 
-  .ktp_plugin_container #client_content .controller .ktp-list-search-wrap,
-  .ktp_plugin_container #client_content .controller .ktp-list-search-form {
+  .ktpwp_plugin_container #client_content .controller .ktp-list-search-wrap,
+  .ktpwp_plugin_container #client_content .controller .ktp-list-search-form {
     display: flex !important;
     flex: 1 1 100% !important;
     width: 100% !important;
@@ -4451,11 +4451,11 @@ div.ktp-report-print-area {
     transform: none !important;
   }
 
-  .ktp_plugin_container #client_content .controller .ktp-list-search-form {
+  .ktpwp_plugin_container #client_content .controller .ktp-list-search-form {
     gap: 6px !important;
   }
 
-  .ktp_plugin_container #client_content .controller .ktp-list-search-input {
+  .ktpwp_plugin_container #client_content .controller .ktp-list-search-input {
     flex: 1 1 auto !important;
     width: 100% !important;
     min-width: 0 !important;
@@ -4464,30 +4464,30 @@ div.ktp-report-print-area {
     transform: none !important;
   }
 
-  .ktp_plugin_container #client_content .controller .ktp-list-search-btn {
+  .ktpwp_plugin_container #client_content .controller .ktp-list-search-btn {
     flex: 0 0 auto !important;
     transform: none !important;
   }
 
-  .ktp_plugin_container #client_content .controller #create-order-form,
-  .ktp_plugin_container #client_content .controller #invoiceButton,
-  .ktp_plugin_container #client_content .controller #addressLabelPrintButton,
-  .ktp_plugin_container #client_content .controller > div:last-child {
+  .ktpwp_plugin_container #client_content .controller #create-order-form,
+  .ktpwp_plugin_container #client_content .controller #invoiceButton,
+  .ktpwp_plugin_container #client_content .controller #addressLabelPrintButton,
+  .ktpwp_plugin_container #client_content .controller > div:last-child {
     transform: translateY(-5px);
     margin-bottom: 12px !important;
   }
 
-  .ktp_plugin_container #client_content .controller > div:last-child {
+  .ktpwp_plugin_container #client_content .controller > div:last-child {
     margin-left: auto !important;
   }
 
-  .ktp_plugin_container #client_content .controller #create-order-form {
+  .ktpwp_plugin_container #client_content .controller #create-order-form {
     flex: 0 0 auto !important;
   }
 
-  .ktp_plugin_container #client_content .controller #createOrderButton,
-  .ktp_plugin_container #client_content .controller #invoiceButton,
-  .ktp_plugin_container #client_content .controller #addressLabelPrintButton {
+  .ktpwp_plugin_container #client_content .controller #createOrderButton,
+  .ktpwp_plugin_container #client_content .controller #invoiceButton,
+  .ktpwp_plugin_container #client_content .controller #addressLabelPrintButton {
     width: auto !important;
     height: 36px !important;
     min-width: 0 !important;
@@ -4503,31 +4503,31 @@ div.ktp-report-print-area {
     white-space: nowrap !important;
   }
 
-  .ktp_plugin_container #client_content .controller #createOrderButton .btn-label,
-  .ktp_plugin_container #client_content .controller #invoiceButton .btn-label,
-  .ktp_plugin_container #client_content .controller #addressLabelPrintButton .btn-label {
+  .ktpwp_plugin_container #client_content .controller #createOrderButton .btn-label,
+  .ktpwp_plugin_container #client_content .controller #invoiceButton .btn-label,
+  .ktpwp_plugin_container #client_content .controller #addressLabelPrintButton .btn-label {
     display: inline-flex !important;
   }
 
-  .ktp_plugin_container #client_content .controller #createOrderButton .material-symbols-outlined,
-  .ktp_plugin_container #client_content .controller #invoiceButton .material-symbols-outlined,
-  .ktp_plugin_container #client_content .controller #addressLabelPrintButton .material-symbols-outlined,
-  .ktp_plugin_container #client_content .controller #createOrderButton .ktp-svg-icon,
-  .ktp_plugin_container #client_content .controller #invoiceButton .ktp-svg-icon,
-  .ktp_plugin_container #client_content .controller #addressLabelPrintButton .ktp-svg-icon {
+  .ktpwp_plugin_container #client_content .controller #createOrderButton .material-symbols-outlined,
+  .ktpwp_plugin_container #client_content .controller #invoiceButton .material-symbols-outlined,
+  .ktpwp_plugin_container #client_content .controller #addressLabelPrintButton .material-symbols-outlined,
+  .ktpwp_plugin_container #client_content .controller #createOrderButton .ktp-svg-icon,
+  .ktpwp_plugin_container #client_content .controller #invoiceButton .ktp-svg-icon,
+  .ktpwp_plugin_container #client_content .controller #addressLabelPrintButton .ktp-svg-icon {
     font-size: 16px !important;
     line-height: 1 !important;
     margin: 0 !important;
   }
 
-  .ktp_plugin_container #client_content .controller #createOrderButton .ktp-svg-icon svg,
-  .ktp_plugin_container #client_content .controller #invoiceButton .ktp-svg-icon svg,
-  .ktp_plugin_container #client_content .controller #addressLabelPrintButton .ktp-svg-icon svg {
+  .ktpwp_plugin_container #client_content .controller #createOrderButton .ktp-svg-icon svg,
+  .ktpwp_plugin_container #client_content .controller #invoiceButton .ktp-svg-icon svg,
+  .ktpwp_plugin_container #client_content .controller #addressLabelPrintButton .ktp-svg-icon svg {
     width: 16px !important;
     height: 16px !important;
   }
 
-  .ktp_plugin_container #supplier_content .controller #supplierAddressLabelPrintButton {
+  .ktpwp_plugin_container #supplier_content .controller #supplierAddressLabelPrintButton {
     width: auto !important;
     height: 36px !important;
     min-width: 0 !important;
@@ -4543,18 +4543,18 @@ div.ktp-report-print-area {
     white-space: nowrap !important;
   }
 
-  .ktp_plugin_container #supplier_content .controller #supplierAddressLabelPrintButton .btn-label {
+  .ktpwp_plugin_container #supplier_content .controller #supplierAddressLabelPrintButton .btn-label {
     display: inline-flex !important;
   }
 
-  .ktp_plugin_container #supplier_content .controller #supplierAddressLabelPrintButton .material-symbols-outlined,
-  .ktp_plugin_container #supplier_content .controller #supplierAddressLabelPrintButton .ktp-svg-icon {
+  .ktpwp_plugin_container #supplier_content .controller #supplierAddressLabelPrintButton .material-symbols-outlined,
+  .ktpwp_plugin_container #supplier_content .controller #supplierAddressLabelPrintButton .ktp-svg-icon {
     font-size: 16px !important;
     line-height: 1 !important;
     margin: 0 !important;
   }
 
-  .ktp_plugin_container #supplier_content .controller #supplierAddressLabelPrintButton .ktp-svg-icon svg {
+  .ktpwp_plugin_container #supplier_content .controller #supplierAddressLabelPrintButton .ktp-svg-icon svg {
     width: 16px !important;
     height: 16px !important;
   }
@@ -5609,7 +5609,7 @@ div.ktp-report-print-area {
    ========================================================================== */
 
 /* ヘッダー内のリファレンスリンク */
-.ktp_header .ktpwp-reference-link {
+.ktpwp_header .ktpwp-reference-link {
     color: #0073aa;
     text-decoration: none;
     font-size: 14px;
@@ -5621,13 +5621,13 @@ div.ktp-report-print-area {
     margin-left: 10px;
 }
 
-.ktp_header .ktpwp-reference-link:hover {
+.ktpwp_header .ktpwp-reference-link:hover {
     background: #0073aa;
     color: #fff;
     text-decoration: none;
 }
 
-.ktp_header .ktpwp-reference-link:focus {
+.ktpwp_header .ktpwp-reference-link:focus {
     outline: 2px solid #005a87;
     outline-offset: 1px;
 }
@@ -6753,9 +6753,9 @@ body.ktpwp-modal-open {
   margin-bottom: 0;
 }
 
-.ktp_plugin_container .controller.ktp-list-controller .ktp-list-view-switcher,
-.ktp_plugin_container .controller.ktp-list-controller .ktp-list-type-filter,
-.ktp_plugin_container .controller.ktp-order-controller .ktp-order-title-actions {
+.ktpwp_plugin_container .controller.ktp-list-controller .ktp-list-view-switcher,
+.ktpwp_plugin_container .controller.ktp-list-controller .ktp-list-type-filter,
+.ktpwp_plugin_container .controller.ktp-order-controller .ktp-order-title-actions {
   margin-bottom: 0;
 }
 
@@ -6922,14 +6922,14 @@ body.ktpwp-modal-open {
 }
 
 /* 緊急案件（納期が迫っている案件）のスタイル */
-.ktp_work_list_item.urgent-delivery {
+.ktpwp_work_list_item.urgent-delivery {
     background: linear-gradient(135deg, #fff3e0 0%, #ffebee 100%);
     border-left: 4px solid #f44336;
     box-shadow: 0 2px 8px rgba(244, 67, 54, 0.15);
     animation: urgent-pulse 2s infinite;
 }
 
-.ktp_work_list_item.urgent-delivery:hover {
+.ktpwp_work_list_item.urgent-delivery:hover {
     background: linear-gradient(135deg, #ffe0b2 0%, #ffcdd2 100%);
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(244, 67, 54, 0.25);
@@ -6942,12 +6942,12 @@ body.ktpwp-modal-open {
 }
 
 /* 緊急案件の納期フィールドのスタイル */
-.ktp_work_list_item.urgent-delivery .delivery-date-input {
+.ktpwp_work_list_item.urgent-delivery .delivery-date-input {
     border-color: #f44336;
     background-color: #ffebee;
 }
 
-.ktp_work_list_item.urgent-delivery .delivery-date-input:focus {
+.ktpwp_work_list_item.urgent-delivery .delivery-date-input:focus {
     border-color: #d32f2f;
     box-shadow: 0 0 0 2px rgba(244, 67, 54, 0.2);
 }
@@ -6970,8 +6970,8 @@ body.ktpwp-modal-open {
 }
 
 @media (max-width: 767px) {
-  .ktp_data_contents,
-  .ktp_data_list_box,
+  .ktpwp_data_contents,
+  .ktpwp_data_list_box,
   .data_list_title,
   .data_detail_box,
   .data_detail_title,
@@ -7017,7 +7017,7 @@ body.ktpwp-modal-open {
     font-size: 1em;
     box-sizing: border-box;
   }
-  .ktp_data_list_item {
+  .ktpwp_data_list_item {
     font-size: 0.98em !important;
     word-break: break-all !important;
     white-space: normal !important;
@@ -7154,7 +7154,7 @@ body.ktpwp-modal-open {
 }
 
 /* PC・タブレット表示用：ユーザーアバターセクション */
-.ktp_header .user-avatars-section {
+.ktpwp_header .user-avatars-section {
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -7197,9 +7197,9 @@ body.ktpwp-modal-open {
 }
 
 @media (max-width: 768px) {
-  .ktp_header .header-right-section,
-  .ktp_header .navigation-links,
-  .ktp_header .user-avatars-section {
+  .ktpwp_header .header-right-section,
+  .ktpwp_header .navigation-links,
+  .ktpwp_header .user-avatars-section {
     display: flex !important;
     visibility: visible !important;
     z-index: 1000;
@@ -7207,13 +7207,13 @@ body.ktpwp-modal-open {
   }
   
   /* モバイル表示でのヘッダー要素の強制表示 */
-  .ktp_header .navigation-links a {
+  .ktpwp_header .navigation-links a {
     display: inline-flex !important;
     visibility: visible !important;
     opacity: 1 !important;
   }
   
-  .ktp_header .user-avatars-section .logged-in-staff-avatars {
+  .ktpwp_header .user-avatars-section .logged-in-staff-avatars {
     display: inline-flex !important;
     visibility: visible !important;
     opacity: 1 !important;
@@ -7221,17 +7221,17 @@ body.ktpwp-modal-open {
 }
 
 /* --- gap→margin対応: ヘッダー内flex要素 --- */
-.ktp_header .navigation-links > * {
+.ktpwp_header .navigation-links > * {
   margin-right: 4px;
 }
-.ktp_header .navigation-links > *:last-child {
+.ktpwp_header .navigation-links > *:last-child {
   margin-right: 0;
 }
 
-.ktp_header .user-avatars-section > * {
+.ktpwp_header .user-avatars-section > * {
   margin-right: 4px;
 }
-.ktp_header .user-avatars-section > *:last-child {
+.ktpwp_header .user-avatars-section > *:last-child {
   margin-right: 0;
 }
 
@@ -7243,25 +7243,25 @@ body.ktpwp-modal-open {
 }
 
 /* gap指定を削除（上書き） */
-.ktp_header .navigation-links,
-.ktp_header .user-avatars-section,
+.ktpwp_header .navigation-links,
+.ktpwp_header .user-avatars-section,
 .logged-in-staff-avatars {
   gap: 0 !important;
 }
 
 @media (max-width: 768px) {
-  .ktp_header .navigation-links > * {
+  .ktpwp_header .navigation-links > * {
     margin-right: 3px;
     margin-bottom: 2px;
   }
-  .ktp_header .navigation-links > *:last-child {
+  .ktpwp_header .navigation-links > *:last-child {
     margin-right: 0;
   }
-  .ktp_header .user-avatars-section > * {
+  .ktpwp_header .user-avatars-section > * {
     margin-right: 3px;
     margin-bottom: 2px;
   }
-  .ktp_header .user-avatars-section > *:last-child {
+  .ktpwp_header .user-avatars-section > *:last-child {
     margin-right: 0;
   }
   .logged-in-staff-avatars > * {
@@ -7271,8 +7271,8 @@ body.ktpwp-modal-open {
   .logged-in-staff-avatars > *:last-child {
     margin-right: 0;
   }
-  .ktp_header .navigation-links,
-  .ktp_header .user-avatars-section,
+  .ktpwp_header .navigation-links,
+  .ktpwp_header .user-avatars-section,
   .logged-in-staff-avatars {
     gap: 0 !important;
   }
@@ -7280,23 +7280,23 @@ body.ktpwp-modal-open {
 
 /* モバイルヘッダー: 説明文を隠し、ログイン中スタッフのアバターを右上に表示 */
 @media (max-width: 768px) {
-  .ktp_header {
+  .ktpwp_header {
     min-height: 86px !important;
     overflow: visible !important;
   }
 
-  .ktp_header .system-description {
+  .ktpwp_header .system-description {
     display: none !important;
   }
 
-  .ktp_header .parent {
+  .ktpwp_header .parent {
     padding-right: 132px !important;
     box-sizing: border-box !important;
     position: relative !important;
     z-index: 1 !important;
   }
 
-  .ktp_header .header-right-section {
+  .ktpwp_header .header-right-section {
     width: 0 !important;
     height: 0 !important;
     min-width: 0 !important;
@@ -7306,25 +7306,25 @@ body.ktpwp-modal-open {
     overflow: visible !important;
   }
 
-  .ktp_header .logo-and-system-info {
+  .ktpwp_header .logo-and-system-info {
     align-items: center !important;
     flex-wrap: nowrap !important;
     min-width: 0 !important;
     width: 100% !important;
   }
 
-  .ktp_header .system-info {
+  .ktpwp_header .system-info {
     min-width: 0 !important;
   }
 
-  .ktp_header .system-name {
+  .ktpwp_header .system-name {
     margin-bottom: 0 !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
     white-space: nowrap !important;
   }
 
-  .ktp_header .navigation-links {
+  .ktpwp_header .navigation-links {
     display: flex !important;
     position: absolute !important;
     top: 10px !important;
@@ -7339,7 +7339,7 @@ body.ktpwp-modal-open {
     z-index: 100002 !important;
   }
 
-  .ktp_header .navigation-links a {
+  .ktpwp_header .navigation-links a {
     width: 26px !important;
     height: 26px !important;
     min-width: 26px !important;
@@ -7349,15 +7349,15 @@ body.ktpwp-modal-open {
     background-color: rgba(255, 255, 255, 0.75) !important;
   }
 
-  .ktp_header .navigation-links a > span:not(.ktp-svg-icon) {
+  .ktpwp_header .navigation-links a > span:not(.ktp-svg-icon) {
     display: none !important;
   }
 
-  .ktp_header .ktp-header-settings-menu {
+  .ktpwp_header .ktp-header-settings-menu {
     flex: 0 0 auto !important;
   }
 
-  .ktp_header .ktp-header-settings-toggle {
+  .ktpwp_header .ktp-header-settings-toggle {
     width: 26px !important;
     height: 26px !important;
     min-width: 26px !important;
@@ -7367,18 +7367,18 @@ body.ktpwp-modal-open {
     background-color: rgba(255, 255, 255, 0.75) !important;
   }
 
-  .ktp_header .ktp-header-settings-toggle > span:not(.ktp-svg-icon) {
+  .ktpwp_header .ktp-header-settings-toggle > span:not(.ktp-svg-icon) {
     display: none !important;
   }
 
-  .ktp_header .ktp-header-settings-dropdown {
+  .ktpwp_header .ktp-header-settings-dropdown {
     top: calc(100% + 8px) !important;
     right: 0 !important;
     min-width: 148px !important;
     z-index: 2147483647 !important;
   }
 
-  .ktp_header .ktp-header-settings-dropdown a {
+  .ktpwp_header .ktp-header-settings-dropdown a {
     display: block !important;
     width: auto !important;
     height: auto !important;
@@ -7390,7 +7390,7 @@ body.ktpwp-modal-open {
     text-align: left !important;
   }
 
-  .ktp_header .user-avatars-section {
+  .ktpwp_header .user-avatars-section {
     display: flex !important;
     position: absolute !important;
     top: 44px !important;
@@ -7405,7 +7405,7 @@ body.ktpwp-modal-open {
     pointer-events: auto !important;
   }
 
-  .ktp_header .user-avatars-section .logged-in-staff-avatars {
+  .ktpwp_header .user-avatars-section .logged-in-staff-avatars {
     display: inline-flex !important;
     flex-wrap: nowrap !important;
     align-items: center !important;
@@ -7414,9 +7414,9 @@ body.ktpwp-modal-open {
     opacity: 1 !important;
   }
 
-  .ktp_header .user-avatars-section .ktp-avatar-trigger,
-  .ktp_header .user-avatars-section .avatar,
-  .ktp_header .user-avatars-section .user_icon {
+  .ktpwp_header .user-avatars-section .ktp-avatar-trigger,
+  .ktpwp_header .user-avatars-section .avatar,
+  .ktpwp_header .user-avatars-section .user_icon {
     display: inline-flex !important;
     visibility: visible !important;
     opacity: 1 !important;
@@ -7425,8 +7425,8 @@ body.ktpwp-modal-open {
     z-index: 10001 !important;
   }
 
-  .ktp_header .user-avatars-section .avatar,
-  .ktp_header .user-avatars-section .user_icon {
+  .ktpwp_header .user-avatars-section .avatar,
+  .ktpwp_header .user-avatars-section .user_icon {
     width: 32px !important;
     height: 32px !important;
     max-width: none !important;
@@ -8792,7 +8792,7 @@ body.ktpwp-modal-open {
   color: #111827;
 }
 
-.ktp-info-tab .ktp_data_list_box {
+.ktp-info-tab .ktpwp_data_list_box {
   width: 100%;
   max-width: none;
   float: none;

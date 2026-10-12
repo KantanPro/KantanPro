@@ -23,8 +23,8 @@ function ktpwp_order_contract_ajax_can_manage() {
 /**
  * ドラフト取得
  */
-function ktp_get_order_contract_draft_ajax() {
-	if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), 'ktp_order_contract_nonce' ) ) {
+function ktpwp_get_order_contract_draft_ajax() {
+	if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), 'ktpwp_order_contract_nonce' ) ) {
 		wp_send_json_error( __( 'セキュリティチェックに失敗しました。', 'kantanpro' ) );
 	}
 
@@ -78,8 +78,8 @@ function ktp_get_order_contract_draft_ajax() {
 /**
  * 変換実行
  */
-function ktp_convert_order_to_contract_ajax() {
-	if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), 'ktp_order_contract_nonce' ) ) {
+function ktpwp_convert_order_to_contract_ajax() {
+	if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), 'ktpwp_order_contract_nonce' ) ) {
 		wp_send_json_error( __( 'セキュリティチェックに失敗しました。', 'kantanpro' ) );
 	}
 
@@ -153,5 +153,5 @@ function ktp_convert_order_to_contract_ajax() {
 	);
 }
 
-add_action( 'wp_ajax_ktp_get_order_contract_draft', 'ktp_get_order_contract_draft_ajax' );
-add_action( 'wp_ajax_ktp_convert_order_to_contract', 'ktp_convert_order_to_contract_ajax' );
+add_action( 'wp_ajax_ktpwp_get_order_contract_draft', 'ktpwp_get_order_contract_draft_ajax' );
+add_action( 'wp_ajax_ktpwp_convert_order_to_contract', 'ktpwp_convert_order_to_contract_ajax' );

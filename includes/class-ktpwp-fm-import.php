@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 final class KTPWP_FM_Import {
 
-	public const OPTION_OPENAI_KEY_ENC = 'ktp_fm_import_openai_key_enc';
+	public const OPTION_OPENAI_KEY_ENC = 'ktpwp_fm_import_openai_key_enc';
 
 	private const ENTITY_CLIENT   = 'client';
 	private const ENTITY_SUPPLIER = 'supplier';
@@ -22,9 +22,9 @@ final class KTPWP_FM_Import {
 	private const ENTITY_ORDER    = 'order';
 
 	/** transient キー先頭（ユーザー ID を連結） */
-	private const TRANSIENT_PREFIX     = 'ktp_fm_import_sess_';
-	private const TRANSIENT_ZIP_PREFIX = 'ktp_fm_import_zip_';
-	private const TRANSIENT_RPT_PREFIX = 'ktp_fm_import_rpt_';
+	private const TRANSIENT_PREFIX     = 'ktpwp_fm_import_sess_';
+	private const TRANSIENT_ZIP_PREFIX = 'ktpwp_fm_import_zip_';
+	private const TRANSIENT_RPT_PREFIX = 'ktpwp_fm_import_rpt_';
 	private const TRANSIENT_TTL        = 3600;
 	private const MAX_ZIP_BYTES        = 52428800; // 50 MiB（FileMaker エクスポート想定）
 	private const MAX_INNER_IMPORT_BYTES = 8388608; // Zip 内1ファイルあたり最大 8 MiB を取り込み対象
@@ -32,11 +32,11 @@ final class KTPWP_FM_Import {
 	private const MAX_FILES_IN_ZIP_AI  = 50;
 	private const MAX_AI_USER_JSON_CHARS = 90000;
 	private const MAX_DATA_ROWS        = 2000;
-	private const NONCE_UPLOAD         = 'ktp_fm_import_upload';
-	private const NONCE_IMPORT         = 'ktp_fm_import_run';
-	private const NONCE_OPENAI         = 'ktp_fm_import_openai';
-	private const NONCE_AJAX_AI        = 'ktp_fm_import_ai';
-	private const NONCE_AI_ZIP         = 'ktp_fm_ai_zip_import';
+	private const NONCE_UPLOAD         = 'ktpwp_fm_import_upload';
+	private const NONCE_IMPORT         = 'ktpwp_fm_import_run';
+	private const NONCE_OPENAI         = 'ktpwp_fm_import_openai';
+	private const NONCE_AJAX_AI        = 'ktpwp_fm_import_ai';
+	private const NONCE_AI_ZIP         = 'ktpwp_fm_ai_zip_import';
 
 	/**
 	 * @return void
@@ -49,7 +49,7 @@ final class KTPWP_FM_Import {
 		$done = true;
 
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_admin' ), 10, 1 );
-		add_action( 'wp_ajax_ktp_fm_import_ai_mapping', array( __CLASS__, 'ajax_ai_mapping' ) );
+		add_action( 'wp_ajax_ktpwp_fm_import_ai_mapping', array( __CLASS__, 'ajax_ai_mapping' ) );
 	}
 
 	/**
@@ -61,15 +61,15 @@ final class KTPWP_FM_Import {
 			return;
 		}
 		wp_enqueue_script(
-			'ktp-fm-import-admin',
+			'ktpwp-fm-import-admin',
 			plugin_dir_url( __FILE__ ) . '../js/ktp-fm-import-admin.js',
 			array( 'jquery' ),
 			defined( 'KANTANPRO_PLUGIN_VERSION' ) ? KANTANPRO_PLUGIN_VERSION : '1.0.0',
 			true
 		);
 		wp_localize_script(
-			'ktp-fm-import-admin',
-			'ktpFmImport',
+			'ktpwp-fm-import-admin',
+			'ktpwpFmImport',
 			array(
 				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 				'nonce'   => wp_create_nonce( self::NONCE_AJAX_AI ),
@@ -92,7 +92,7 @@ final class KTPWP_FM_Import {
 			wp_die( esc_html__( 'このページにアクセスする権限がありません。', 'kantanpro' ) );
 		}
 
-		if ( ! empty( $_GET['ktp_fm_reset'] ) && isset( $_GET['ktp_fm_reset_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['ktp_fm_reset_nonce'] ) ), 'ktp_fm_reset' ) ) {
+		if ( ! empty( KTPWP_Request::query( 'ktpwp_fm_reset' ) ) && KTPWP_Request::has_query( 'ktpwp_fm_reset_nonce' ) && wp_verify_nonce( KTPWP_Request::query( 'ktpwp_fm_reset_nonce' ), 'ktpwp_fm_reset' ) ) {
 			self::cleanup_zip_stored_file();
 			delete_transient( self::transient_key_for_user() );
 			delete_transient( self::transient_zip_session_key() );
@@ -101,7 +101,7 @@ final class KTPWP_FM_Import {
 			exit;
 		}
 
-		if ( ! empty( $_GET['ktp_fm_dismiss_report'] ) && isset( $_GET['ktp_fm_dismiss_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['ktp_fm_dismiss_nonce'] ) ), 'ktp_fm_dismiss_report' ) ) {
+		if ( ! empty( KTPWP_Request::query( 'ktpwp_fm_dismiss_report' ) ) && KTPWP_Request::has_query( 'ktpwp_fm_dismiss_nonce' ) && wp_verify_nonce( KTPWP_Request::query( 'ktpwp_fm_dismiss_nonce' ), 'ktpwp_fm_dismiss_report' ) ) {
 			delete_transient( self::transient_report_key() );
 			wp_safe_redirect( admin_url( 'admin.php?page=ktp-fm-import' ) );
 			exit;
@@ -169,13 +169,13 @@ final class KTPWP_FM_Import {
 	 * @return void
 	 */
 	private static function maybe_handle_save_openai_key(): void {
-		if ( ! isset( $_POST['ktp_fm_openai_save'], $_POST['_wpnonce'] ) ) {
+		if ( ! isset( $_POST['ktpwp_fm_openai_save'], $_POST['_wpnonce'] ) ) {
 			return;
 		}
 		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ), self::NONCE_OPENAI ) ) {
 			wp_die( esc_html__( 'セキュリティ検証に失敗しました。', 'kantanpro' ) );
 		}
-		$key = isset( $_POST['ktp_fm_openai_key'] ) ? sanitize_text_field( wp_unslash( $_POST['ktp_fm_openai_key'] ) ) : '';
+		$key = isset( $_POST['ktpwp_fm_openai_key'] ) ? sanitize_text_field( wp_unslash( $_POST['ktpwp_fm_openai_key'] ) ) : '';
 		if ( $key === '' ) {
 			delete_option( self::OPTION_OPENAI_KEY_ENC );
 		} else {
@@ -190,17 +190,23 @@ final class KTPWP_FM_Import {
 	 * @return string
 	 */
 	private static function maybe_handle_upload(): string {
-		if ( ! isset( $_POST['ktp_fm_upload'], $_POST['_wpnonce'] ) ) {
+		if ( ! isset( $_POST['ktpwp_fm_upload'], $_POST['_wpnonce'] ) ) {
 			return '';
 		}
 		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ), self::NONCE_UPLOAD ) ) {
 			return '<div class="notice notice-error"><p>' . esc_html__( 'セキュリティ検証に失敗しました。', 'kantanpro' ) . '</p></div>';
 		}
-		if ( empty( $_FILES['ktp_fm_file']['tmp_name'] ) ) {
+		if ( empty( $_FILES['ktpwp_fm_file']['tmp_name'] ) ) {
 			return '<div class="notice notice-error"><p>' . esc_html__( 'ファイルを選択してください。', 'kantanpro' ) . '</p></div>';
 		}
 
-		$file = $_FILES['ktp_fm_file'];
+		$file = array(
+			'name'     => sanitize_file_name( wp_unslash( $_FILES['ktpwp_fm_file']['name'] ?? '' ) ),
+			'type'     => sanitize_mime_type( wp_unslash( $_FILES['ktpwp_fm_file']['type'] ?? '' ) ),
+			'tmp_name' => sanitize_text_field( $_FILES['ktpwp_fm_file']['tmp_name'] ),
+			'error'    => absint( $_FILES['ktpwp_fm_file']['error'] ?? 0 ),
+			'size'     => absint( $_FILES['ktpwp_fm_file']['size'] ?? 0 ),
+		);
 		if ( ! empty( $file['error'] ) ) {
 			return '<div class="notice notice-error"><p>' . esc_html__( 'ファイルのアップロードに失敗しました。', 'kantanpro' ) . '</p></div>';
 		}
@@ -263,7 +269,7 @@ final class KTPWP_FM_Import {
 	 * @return string
 	 */
 	private static function maybe_handle_import(): string {
-		if ( ! isset( $_POST['ktp_fm_import_run'], $_POST['_wpnonce'] ) ) {
+		if ( ! isset( $_POST['ktpwp_fm_import_run'], $_POST['_wpnonce'] ) ) {
 			return '';
 		}
 		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ), self::NONCE_IMPORT ) ) {
@@ -281,7 +287,7 @@ final class KTPWP_FM_Import {
 		$headers = $session_clean['headers'];
 		$rows    = $session_clean['rows'];
 		$entity  = $session_clean['entity'];
-		$map_in  = isset( $_POST['ktp_fm_map'] ) && is_array( $_POST['ktp_fm_map'] ) ? wp_unslash( $_POST['ktp_fm_map'] ) : array();
+		$map_in  = isset( $_POST['ktpwp_fm_map'] ) && is_array( $_POST['ktpwp_fm_map'] ) ? map_deep( wp_unslash( $_POST['ktpwp_fm_map'] ), 'sanitize_text_field' ) : array();
 
 		$map = array();
 		foreach ( self::target_fields_for_entity( $entity ) as $field => $_label ) {
@@ -298,8 +304,8 @@ final class KTPWP_FM_Import {
 			}
 		}
 
-		$skip_dup_email   = ! empty( $_POST['ktp_fm_skip_dup_email'] );
-		$skip_dup_service = ! empty( $_POST['ktp_fm_skip_dup_service_name'] );
+		$skip_dup_email   = ! empty( $_POST['ktpwp_fm_skip_dup_email'] );
+		$skip_dup_service = ! empty( $_POST['ktpwp_fm_skip_dup_service_name'] );
 
 		if ( $entity === self::ENTITY_CLIENT ) {
 			$result = self::import_client_rows( $rows, $headers, $map, $skip_dup_email );
@@ -328,7 +334,7 @@ final class KTPWP_FM_Import {
 	 * @return string 画面上に出す HTML（空なら何もしない）
 	 */
 	private static function maybe_handle_ai_zip_import(): string {
-		if ( ! isset( $_POST['ktp_fm_ai_zip_run'], $_POST['_wpnonce'] ) ) {
+		if ( ! isset( $_POST['ktpwp_fm_ai_zip_run'], $_POST['_wpnonce'] ) ) {
 			return '';
 		}
 		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ), self::NONCE_AI_ZIP ) ) {
@@ -369,10 +375,10 @@ final class KTPWP_FM_Import {
 			return '<div class="notice notice-error"><p>' . esc_html( $decoded->get_error_message() ) . '</p></div>';
 		}
 
-		$skip_dup_email   = ! empty( $_POST['ktp_fm_zip_skip_dup_email'] );
-		$skip_dup_service = ! empty( $_POST['ktp_fm_zip_skip_dup_service'] );
+		$skip_dup_email   = ! empty( $_POST['ktpwp_fm_zip_skip_dup_email'] );
+		$skip_dup_service = ! empty( $_POST['ktpwp_fm_zip_skip_dup_service'] );
 
-		$skip_dup_order = ! empty( $_POST['ktp_fm_zip_skip_dup_order'] );
+		$skip_dup_order = ! empty( $_POST['ktpwp_fm_zip_skip_dup_order'] );
 		$report         = self::execute_ai_zip_plans( $zip_path, $manifest, $decoded, $skip_dup_email, $skip_dup_service, $skip_dup_order );
 		$report['zip_name']    = isset( $zip_sess['orig_name'] ) ? (string) $zip_sess['orig_name'] : basename( $zip_path );
 		$report['time']        = time();
@@ -408,7 +414,7 @@ final class KTPWP_FM_Import {
 		$headers = array_map( 'sanitize_text_field', array_map( 'strval', $headers ) );
 		$samples = is_array( $samples ) ? map_deep( $samples, 'sanitize_text_field' ) : array();
 
-		$entity_post = isset( $_POST['entity'] ) ? wp_unslash( $_POST['entity'] ) : '';
+		$entity_post = isset( $_POST['entity'] ) ? sanitize_key( wp_unslash( $_POST['entity'] ) ) : '';
 		$entity        = is_string( $entity_post ) ? self::normalize_entity( $entity_post ) : self::ENTITY_CLIENT;
 
 		$system = self::build_openai_system_prompt_for_entity( $entity );
@@ -555,7 +561,7 @@ final class KTPWP_FM_Import {
 		}
 		if ( $entity === self::ENTITY_ORDER ) {
 			return array(
-				'link_company_name' => __( '顧客マスタと紐づける会社名（必須・ktp_client.company_name と一致）', 'kantanpro' ),
+				'link_company_name' => __( '顧客マスタと紐づける会社名（必須・ktpwp_client.company_name と一致）', 'kantanpro' ),
 				'link_email'        => __( '顧客マスタと紐づけるメール（任意・会社名で一意に決められないとき）', 'kantanpro' ),
 				'project_name'      => __( '案件名（project_name）', 'kantanpro' ),
 				'customer_name'     => __( '受注書上の顧客表示名（空なら会社名にフォールバック可）', 'kantanpro' ),
@@ -601,8 +607,8 @@ final class KTPWP_FM_Import {
 		echo '<p class="description">' . esc_html__( 'Zip の自動解析・取り込みに使用します。キーはサイト内で暗号化して保存し、OpenAI の従量課金はご利用のアカウントに発生します。', 'kantanpro' ) . '</p>';
 		echo '<form method="post" action="">';
 		wp_nonce_field( self::NONCE_OPENAI );
-		echo '<p><input type="password" name="ktp_fm_openai_key" class="regular-text" autocomplete="off" placeholder="' . esc_attr( $has_key ? __( '（保存済み・上書きする場合のみ入力）', 'kantanpro' ) : '' ) . '" /></p>';
-		echo '<p><button type="submit" name="ktp_fm_openai_save" class="button">' . esc_html__( 'API キーを保存', 'kantanpro' ) . '</button> ';
+		echo '<p><input type="password" name="ktpwp_fm_openai_key" class="regular-text" autocomplete="off" placeholder="' . esc_attr( $has_key ? __( '（保存済み・上書きする場合のみ入力）', 'kantanpro' ) : '' ) . '" /></p>';
+		echo '<p><button type="submit" name="ktpwp_fm_openai_save" class="button">' . esc_html__( 'API キーを保存', 'kantanpro' ) . '</button> ';
 		if ( $has_key ) {
 			echo '<span class="description">' . esc_html__( '保存済みのキーを削除するには空のまま保存してください。', 'kantanpro' ) . '</span>';
 		}
@@ -617,7 +623,7 @@ final class KTPWP_FM_Import {
 		echo '<h2>' . esc_html__( 'Zip をアップロード', 'kantanpro' ) . '</h2>';
 		echo '<form method="post" enctype="multipart/form-data" action="">';
 		wp_nonce_field( self::NONCE_UPLOAD );
-		echo '<p><input type="file" name="ktp_fm_file" accept=".zip,application/zip" required /></p>';
+		echo '<p><input type="file" name="ktpwp_fm_file" accept=".zip,application/zip" required /></p>';
 		echo '<p class="description">' . esc_html(
 			sprintf(
 				/* translators: %s: max upload size */
@@ -625,7 +631,7 @@ final class KTPWP_FM_Import {
 				size_format( self::MAX_ZIP_BYTES )
 			)
 		) . '</p>';
-		echo '<p><button type="submit" name="ktp_fm_upload" class="button button-primary">' . esc_html__( 'Zip をアップロード', 'kantanpro' ) . '</button></p>';
+		echo '<p><button type="submit" name="ktpwp_fm_upload" class="button button-primary">' . esc_html__( 'Zip をアップロード', 'kantanpro' ) . '</button></p>';
 		echo '</form></div>';
 	}
 
@@ -712,7 +718,7 @@ final class KTPWP_FM_Import {
 		foreach ( self::target_fields_for_entity( $entity ) as $field => $label ) {
 			$selected = isset( $guess[ $field ] ) ? (int) $guess[ $field ] : '';
 			echo '<tr><th scope="row">' . esc_html( $label ) . '<br><code style="font-size:11px;">' . esc_html( $field ) . '</code></th><td>';
-			echo '<select name="ktp_fm_map[' . esc_attr( $field ) . ']">';
+			echo '<select name="ktpwp_fm_map[' . esc_attr( $field ) . ']">';
 			echo '<option value="__skip__">' . esc_html__( '（マッピングしない）', 'kantanpro' ) . '</option>';
 			foreach ( $headers as $i => $h ) {
 				$opt = esc_html( $h !== '' ? $h : (string) $i );
@@ -724,18 +730,18 @@ final class KTPWP_FM_Import {
 		echo '</tbody></table>';
 
 		if ( $entity === self::ENTITY_CLIENT || $entity === self::ENTITY_SUPPLIER ) {
-			echo '<p style="margin-top:12px;"><label><input type="checkbox" name="ktp_fm_skip_dup_email" value="1" checked /> ';
+			echo '<p style="margin-top:12px;"><label><input type="checkbox" name="ktpwp_fm_skip_dup_email" value="1" checked /> ';
 			echo esc_html__( 'メールアドレスが既に登録済みの行はスキップする', 'kantanpro' ) . '</label></p>';
 		}
 		if ( $entity === self::ENTITY_SERVICE ) {
-			echo '<p style="margin-top:12px;"><label><input type="checkbox" name="ktp_fm_skip_dup_service_name" value="1" checked /> ';
+			echo '<p style="margin-top:12px;"><label><input type="checkbox" name="ktpwp_fm_skip_dup_service_name" value="1" checked /> ';
 			echo esc_html__( '同名の商品（サービス名）が既に登録済みの行はスキップする', 'kantanpro' ) . '</label></p>';
 		}
 
 		$confirm = __( 'データベースに追加します。よろしいですか？', 'kantanpro' );
-		echo '<p><button type="submit" name="ktp_fm_import_run" class="button button-primary" onclick="return confirm(\'' . esc_js( $confirm ) . '\');">';
+		echo '<p><button type="submit" name="ktpwp_fm_import_run" class="button button-primary" onclick="return confirm(\'' . esc_js( $confirm ) . '\');">';
 		echo esc_html__( '取り込みを実行', 'kantanpro' ) . '</button> ';
-		echo '<a class="button" href="' . esc_url( wp_nonce_url( admin_url( 'admin.php?page=ktp-fm-import&ktp_fm_reset=1' ), 'ktp_fm_reset', 'ktp_fm_reset_nonce' ) ) . '">' . esc_html__( '最初からやり直す', 'kantanpro' ) . '</a></p>';
+		echo '<a class="button" href="' . esc_url( wp_nonce_url( admin_url( 'admin.php?page=ktp-fm-import&ktpwp_fm_reset=1' ), 'ktpwp_fm_reset', 'ktpwp_fm_reset_nonce' ) ) . '">' . esc_html__( '最初からやり直す', 'kantanpro' ) . '</a></p>';
 		echo '</form>';
 
 		echo '<h3>' . esc_html__( 'プレビュー（先頭5行）', 'kantanpro' ) . '</h3>';
@@ -781,7 +787,7 @@ final class KTPWP_FM_Import {
 		}
 		// <script type="application/json"> のデータ島も生出力になるため、
 		// グローバル変数として WordPress のスクリプトキューで渡す。
-		ktpwp_add_inline_script( 'window.ktpFmImportBootstrap = ' . $data_for_js . ';' );
+		ktpwp_add_inline_script( 'window.ktpwpFmImportBootstrap = ' . $data_for_js . ';' );
 
 		echo '</div>';
 	}
@@ -911,7 +917,7 @@ final class KTPWP_FM_Import {
 	 */
 	private static function import_client_rows( array $rows, array $headers, array $map, bool $skip_dup ): array {
 		global $wpdb;
-		$table = $wpdb->prefix . 'ktp_client';
+		$table = $wpdb->prefix . 'ktpwp_client';
 
 		$inserted = 0;
 		$skipped  = 0;
@@ -1110,7 +1116,7 @@ final class KTPWP_FM_Import {
 	 */
 	private static function import_supplier_rows( array $rows, array $headers, array $map, bool $skip_dup ): array {
 		global $wpdb;
-		$table = $wpdb->prefix . 'ktp_supplier';
+		$table = $wpdb->prefix . 'ktpwp_supplier';
 
 		$inserted = 0;
 		$skipped  = 0;
@@ -1272,7 +1278,7 @@ final class KTPWP_FM_Import {
 	 */
 	private static function import_service_rows( array $rows, array $headers, array $map, bool $skip_dup ): array {
 		global $wpdb;
-		$table = $wpdb->prefix . 'ktp_service';
+		$table = $wpdb->prefix . 'ktpwp_service';
 
 		$inserted = 0;
 		$skipped  = 0;
@@ -1363,13 +1369,13 @@ final class KTPWP_FM_Import {
 	 */
 	private static function import_order_rows( array $rows, array $headers, array $map, bool $skip_dup_external ): array {
 		global $wpdb;
-		$table = $wpdb->prefix . 'ktp_order';
+		$table = $wpdb->prefix . 'ktpwp_order';
 
 		$inserted = 0;
 		$skipped  = 0;
 		$errors   = 0;
 
-		$order_cols = self::ktp_order_table_columns();
+		$order_cols = self::ktpwp_order_table_columns();
 
 		foreach ( $rows as $row ) {
 			$d = self::build_order_import_row_from_map( $row, $map );
@@ -1468,14 +1474,14 @@ final class KTPWP_FM_Import {
 	/**
 	 * @return list<string>
 	 */
-	private static function ktp_order_table_columns(): array {
+	private static function ktpwp_order_table_columns(): array {
 		static $cols = null;
 		if ( $cols !== null ) {
 			return $cols;
 		}
 		global $wpdb;
-		$t = $wpdb->prefix . 'ktp_order';
-		$c = $wpdb->get_col( "SHOW COLUMNS FROM `{$t}`", 0 );
+		$t = $wpdb->prefix . 'ktpwp_order';
+		$c = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $t ), 0 );
 		$cols = is_array( $c ) ? $c : array();
 
 		return $cols;
@@ -1509,7 +1515,7 @@ final class KTPWP_FM_Import {
 		global $wpdb;
 		$company = trim( (string) $company );
 		$email   = trim( (string) $email );
-		$t       = $wpdb->prefix . 'ktp_client';
+		$t       = $wpdb->prefix . 'ktpwp_client';
 
 		if ( $company !== '' ) {
 			$id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM `{$t}` WHERE company_name = %s LIMIT 1", $company ) );
@@ -1540,12 +1546,12 @@ final class KTPWP_FM_Import {
 		if ( $ext_key === '' ) {
 			return false;
 		}
-		$cols = self::ktp_order_table_columns();
+		$cols = self::ktpwp_order_table_columns();
 		if ( ! in_array( 'external_source', $cols, true ) || ! in_array( 'external_order_id', $cols, true ) ) {
 			return false;
 		}
 		global $wpdb;
-		$t = $wpdb->prefix . 'ktp_order';
+		$t = $wpdb->prefix . 'ktpwp_order';
 		$n = (int) $wpdb->get_var(
 			$wpdb->prepare(
 				"SELECT COUNT(*) FROM `{$t}` WHERE external_source = %s AND external_order_id = %s",
@@ -1562,7 +1568,7 @@ final class KTPWP_FM_Import {
 	 */
 	private static function fm_generate_import_order_number(): string {
 		global $wpdb;
-		$table = $wpdb->prefix . 'ktp_order';
+		$table = $wpdb->prefix . 'ktpwp_order';
 		$ts    = (int) current_time( 'timestamp' );
 		$pref  = 'FM-' . gmdate( 'Ymd', $ts ) . '-';
 		$cnt   = (int) $wpdb->get_var(
@@ -1696,18 +1702,18 @@ final class KTPWP_FM_Import {
 		}
 		$lines = preg_split( '/\R/u', $raw, -1, PREG_SPLIT_NO_EMPTY );
 		if ( ! is_array( $lines ) || $lines === array() ) {
-			return new WP_Error( 'ktp_fm_empty', __( '有効な行がありません。', 'kantanpro' ) );
+			return new WP_Error( 'ktpwp_fm_empty', __( '有効な行がありません。', 'kantanpro' ) );
 		}
 
 		$first = $lines[0];
 		$delim = self::detect_delimiter( $first );
 		if ( $delim === null ) {
-			return new WP_Error( 'ktp_fm_delim', __( '区切り文字を判定できませんでした（カンマまたはタブを含む1行目が必要です）。', 'kantanpro' ) );
+			return new WP_Error( 'ktpwp_fm_delim', __( '区切り文字を判定できませんでした（カンマまたはタブを含む1行目が必要です）。', 'kantanpro' ) );
 		}
 
 		$headers = str_getcsv( $first, $delim );
 		if ( ! is_array( $headers ) || $headers === array() ) {
-			return new WP_Error( 'ktp_fm_header', __( 'ヘッダー行を読み取れませんでした。', 'kantanpro' ) );
+			return new WP_Error( 'ktpwp_fm_header', __( 'ヘッダー行を読み取れませんでした。', 'kantanpro' ) );
 		}
 		$headers = array_map(
 			static function ( $h ) {
@@ -1827,13 +1833,13 @@ final class KTPWP_FM_Import {
 		$raw   = str_replace( array( "\r\n", "\r" ), "\n", $raw );
 		$lines = preg_split( '/\R/u', $raw, -1, PREG_SPLIT_NO_EMPTY );
 		if ( ! is_array( $lines ) || $lines === array() ) {
-			return new WP_Error( 'ktp_fm_empty', __( '有効な行がありません。', 'kantanpro' ) );
+			return new WP_Error( 'ktpwp_fm_empty', __( '有効な行がありません。', 'kantanpro' ) );
 		}
 
 		$first = $lines[0];
 		$delim = self::detect_delimiter( $first );
 		if ( $delim === null ) {
-			return new WP_Error( 'ktp_fm_delim', __( '区切り文字を判定できませんでした。', 'kantanpro' ) );
+			return new WP_Error( 'ktpwp_fm_delim', __( '区切り文字を判定できませんでした。', 'kantanpro' ) );
 		}
 
 		$matrix = array();
@@ -1850,7 +1856,7 @@ final class KTPWP_FM_Import {
 			$matrix[] = $cells;
 		}
 		if ( $max < 1 || $matrix === array() ) {
-			return new WP_Error( 'ktp_fm_empty', __( '有効な行がありません。', 'kantanpro' ) );
+			return new WP_Error( 'ktpwp_fm_empty', __( '有効な行がありません。', 'kantanpro' ) );
 		}
 
 		$headers = array();
@@ -1956,16 +1962,16 @@ final class KTPWP_FM_Import {
 	private static function read_upload_delimited_raw( $tmp_path, $ext, &$outer_name ) {
 		if ( $ext !== 'zip' ) {
 			$raw = file_get_contents( $tmp_path );
-			return is_string( $raw ) ? $raw : new WP_Error( 'ktp_fm_read', __( 'ファイルを読み取れませんでした。', 'kantanpro' ) );
+			return is_string( $raw ) ? $raw : new WP_Error( 'ktpwp_fm_read', __( 'ファイルを読み取れませんでした。', 'kantanpro' ) );
 		}
 
 		if ( ! class_exists( 'ZipArchive' ) ) {
-			return new WP_Error( 'ktp_fm_zip', __( 'このサーバーでは Zip を展開できません（ZipArchive がありません）。', 'kantanpro' ) );
+			return new WP_Error( 'ktpwp_fm_zip', __( 'このサーバーでは Zip を展開できません（ZipArchive がありません）。', 'kantanpro' ) );
 		}
 
 		$zip = new ZipArchive();
 		if ( $zip->open( $tmp_path ) !== true ) {
-			return new WP_Error( 'ktp_fm_zip_open', __( 'Zip ファイルを開けませんでした。', 'kantanpro' ) );
+			return new WP_Error( 'ktpwp_fm_zip_open', __( 'Zip ファイルを開けませんでした。', 'kantanpro' ) );
 		}
 
 		$candidates = array();
@@ -1990,7 +1996,7 @@ final class KTPWP_FM_Import {
 		sort( $candidates, SORT_STRING );
 		if ( $candidates === array() ) {
 			$zip->close();
-			return new WP_Error( 'ktp_fm_zip_empty', __( 'Zip 内に csv/tsv/tab/txt が見つかりませんでした。', 'kantanpro' ) );
+			return new WP_Error( 'ktpwp_fm_zip_empty', __( 'Zip 内に csv/tsv/tab/txt が見つかりませんでした。', 'kantanpro' ) );
 		}
 
 		$first = $candidates[0];
@@ -1998,7 +2004,7 @@ final class KTPWP_FM_Import {
 		$zip->close();
 
 		if ( ! is_string( $raw ) || $raw === '' ) {
-			return new WP_Error( 'ktp_fm_zip_read', __( 'Zip 内のテーブルデータを読み取れませんでした。', 'kantanpro' ) );
+			return new WP_Error( 'ktpwp_fm_zip_read', __( 'Zip 内のテーブルデータを読み取れませんでした。', 'kantanpro' ) );
 		}
 
 		$outer_name = $outer_name . ' / ' . $first;
@@ -2059,11 +2065,11 @@ final class KTPWP_FM_Import {
 	private static function zip_storage_dir() {
 		$upload = wp_upload_dir();
 		if ( ! empty( $upload['error'] ) ) {
-			return new WP_Error( 'ktp_fm_upload_dir', __( 'アップロードディレクトリが利用できません。', 'kantanpro' ) );
+			return new WP_Error( 'ktpwp_fm_upload_dir', __( 'アップロードディレクトリが利用できません。', 'kantanpro' ) );
 		}
 		$dir = trailingslashit( $upload['basedir'] ) . 'ktp-fm-import-tmp';
 		if ( ! wp_mkdir_p( $dir ) ) {
-			return new WP_Error( 'ktp_fm_mkdir', __( '一時ディレクトリを作成できませんでした。', 'kantanpro' ) );
+			return new WP_Error( 'ktpwp_fm_mkdir', __( '一時ディレクトリを作成できませんでした。', 'kantanpro' ) );
 		}
 		$ht = trailingslashit( $dir ) . '.htaccess';
 		if ( ! file_exists( $ht ) ) {
@@ -2121,16 +2127,16 @@ final class KTPWP_FM_Import {
 		echo '<p><strong>' . esc_html__( 'ファイル:', 'kantanpro' ) . '</strong> ' . esc_html( $zip_sess['orig_name'] ) . '</p>';
 		echo '<form method="post" action="">';
 		wp_nonce_field( self::NONCE_AI_ZIP );
-		echo '<p><label><input type="checkbox" name="ktp_fm_zip_skip_dup_email" value="1" checked /> ';
+		echo '<p><label><input type="checkbox" name="ktpwp_fm_zip_skip_dup_email" value="1" checked /> ';
 		echo esc_html__( '顧客・協力会社: メールが既に登録済みの行はスキップ', 'kantanpro' ) . '</label></p>';
-		echo '<p><label><input type="checkbox" name="ktp_fm_zip_skip_dup_service" value="1" checked /> ';
+		echo '<p><label><input type="checkbox" name="ktpwp_fm_zip_skip_dup_service" value="1" checked /> ';
 		echo esc_html__( '商品: 同名のサービスが既に登録済みの行はスキップ', 'kantanpro' ) . '</label></p>';
-		echo '<p><label><input type="checkbox" name="ktp_fm_zip_skip_dup_order" value="1" checked /> ';
+		echo '<p><label><input type="checkbox" name="ktpwp_fm_zip_skip_dup_order" value="1" checked /> ';
 		echo esc_html__( '受注: 同一の外部ID（取り込み用）が既に登録済みの行はスキップ', 'kantanpro' ) . '</label></p>';
 		$confirm = __( 'OpenAI に Zip の概要を送信し、判別結果に基づきデータベースへ書き込みます。よろしいですか？', 'kantanpro' );
-		echo '<p><button type="submit" name="ktp_fm_ai_zip_run" class="button button-primary" onclick="return confirm(\'' . esc_js( $confirm ) . '\');">';
+		echo '<p><button type="submit" name="ktpwp_fm_ai_zip_run" class="button button-primary" onclick="return confirm(\'' . esc_js( $confirm ) . '\');">';
 		echo esc_html__( 'AI で解析して取り込む', 'kantanpro' ) . '</button> ';
-		echo '<a class="button" href="' . esc_url( wp_nonce_url( admin_url( 'admin.php?page=ktp-fm-import&ktp_fm_reset=1' ), 'ktp_fm_reset', 'ktp_fm_reset_nonce' ) ) . '">' . esc_html__( '最初からやり直す', 'kantanpro' ) . '</a></p>';
+		echo '<a class="button" href="' . esc_url( wp_nonce_url( admin_url( 'admin.php?page=ktp-fm-import&ktpwp_fm_reset=1' ), 'ktpwp_fm_reset', 'ktpwp_fm_reset_nonce' ) ) . '">' . esc_html__( '最初からやり直す', 'kantanpro' ) . '</a></p>';
 		echo '</form></div>';
 	}
 
@@ -2142,7 +2148,7 @@ final class KTPWP_FM_Import {
 		if ( ! is_array( $raw ) ) {
 			return;
 		}
-		$dismiss = wp_nonce_url( admin_url( 'admin.php?page=ktp-fm-import&ktp_fm_dismiss_report=1' ), 'ktp_fm_dismiss_report', 'ktp_fm_dismiss_nonce' );
+		$dismiss = wp_nonce_url( admin_url( 'admin.php?page=ktp-fm-import&ktpwp_fm_dismiss_report=1' ), 'ktpwp_fm_dismiss_report', 'ktpwp_fm_dismiss_nonce' );
 
 		echo '<div class="card" style="max-width:960px;margin:16px 0;padding:16px;border-left:4px solid #2271b1;">';
 		echo '<h2>' . esc_html__( '直近の取り込みレポート', 'kantanpro' ) . '</h2>';
@@ -2233,11 +2239,11 @@ final class KTPWP_FM_Import {
 	 */
 	private static function build_zip_manifest_for_ai( $zip_path ) {
 		if ( ! class_exists( 'ZipArchive', false ) ) {
-			return new WP_Error( 'ktp_fm_zip', __( 'ZipArchive がありません。', 'kantanpro' ) );
+			return new WP_Error( 'ktpwp_fm_zip', __( 'ZipArchive がありません。', 'kantanpro' ) );
 		}
 		$zip = new ZipArchive();
 		if ( $zip->open( $zip_path ) !== true ) {
-			return new WP_Error( 'ktp_fm_zip_open', __( 'Zip を開けませんでした。', 'kantanpro' ) );
+			return new WP_Error( 'ktpwp_fm_zip_open', __( 'Zip を開けませんでした。', 'kantanpro' ) );
 		}
 
 		$candidates = array();
@@ -2403,7 +2409,7 @@ final class KTPWP_FM_Import {
 		$content = $res['content'];
 		$decoded = json_decode( $content, true );
 		if ( ! is_array( $decoded ) || ! isset( $decoded['per_file'] ) || ! is_array( $decoded['per_file'] ) ) {
-			return new WP_Error( 'ktp_fm_ai_bad', __( 'AI の応答形式が不正です（per_file がありません）。', 'kantanpro' ) );
+			return new WP_Error( 'ktpwp_fm_ai_bad', __( 'AI の応答形式が不正です（per_file がありません）。', 'kantanpro' ) );
 		}
 		return $decoded;
 	}
@@ -2514,11 +2520,11 @@ final class KTPWP_FM_Import {
 		$raw  = json_decode( (string) wp_remote_retrieve_body( $response ), true );
 		if ( $code < 200 || $code >= 300 ) {
 			$msg = is_array( $raw ) && isset( $raw['error']['message'] ) ? (string) $raw['error']['message'] : __( 'OpenAI API エラー', 'kantanpro' );
-			return new WP_Error( 'ktp_fm_openai_http', $msg );
+			return new WP_Error( 'ktpwp_fm_openai_http', $msg );
 		}
 		$content = is_array( $raw ) && isset( $raw['choices'][0]['message']['content'] ) ? (string) $raw['choices'][0]['message']['content'] : '';
 		if ( $content === '' ) {
-			return new WP_Error( 'ktp_fm_openai_empty', __( 'OpenAI から空の応答でした。', 'kantanpro' ) );
+			return new WP_Error( 'ktpwp_fm_openai_empty', __( 'OpenAI から空の応答でした。', 'kantanpro' ) );
 		}
 		return array( 'content' => $content );
 	}
@@ -2760,7 +2766,7 @@ final class KTPWP_FM_Import {
 		if ( ! function_exists( 'openssl_encrypt' ) ) {
 			return '';
 		}
-		$key = hash( 'sha256', wp_salt( 'auth' ) . '|ktp_fm_import', true );
+		$key = hash( 'sha256', wp_salt( 'auth' ) . '|ktpwp_fm_import', true );
 		try {
 			$iv = random_bytes( 16 );
 		} catch ( \Exception $e ) {
@@ -2788,7 +2794,7 @@ final class KTPWP_FM_Import {
 		}
 		$iv  = substr( $bin, 0, 16 );
 		$enc = substr( $bin, 16 );
-		$key = hash( 'sha256', wp_salt( 'auth' ) . '|ktp_fm_import', true );
+		$key = hash( 'sha256', wp_salt( 'auth' ) . '|ktpwp_fm_import', true );
 		$dec = openssl_decrypt( $enc, 'aes-256-cbc', $key, OPENSSL_RAW_DATA, $iv );
 		return is_string( $dec ) ? $dec : '';
 	}

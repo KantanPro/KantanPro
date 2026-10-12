@@ -71,8 +71,8 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 			$tax_category = '内税'; // デフォルト値
 			if ( ! empty( $order_id ) ) {
 				global $wpdb;
-				$order_table = $wpdb->prefix . 'ktp_order';
-				$client_table = $wpdb->prefix . 'ktp_client';
+				$order_table = $wpdb->prefix . 'ktpwp_order';
+				$client_table = $wpdb->prefix . 'ktpwp_client';
 				
 				$order_data = $wpdb->get_row(
 					$wpdb->prepare(
@@ -141,7 +141,7 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 			$html .= '<input type="hidden" name="tax_category" value="' . esc_attr( $tax_category ) . '" />';
 			$html .= wp_nonce_field( 'save_invoice_items_action', 'invoice_items_nonce', true, false );
 			// 生の <script> を出さず、フッターのスクリプトに載せる（wp.org ガイドライン）
-			ktpwp_add_inline_script( 'window.ktpClientTaxCategory = ' . wp_json_encode( (string) $tax_category ) . ';' );
+			ktpwp_add_inline_script( 'window.ktpwpClientTaxCategory = ' . wp_json_encode( (string) $tax_category ) . ';' );
 			$html .= '<div class="invoice-items-scroll-wrapper">';
 			$html .= '<table class="invoice-items-table" id="invoice-items-table-' . intval( $order_id ) . '">';
 			$html .= '<thead>';
@@ -454,7 +454,7 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 			$html .= '<input type="hidden" name="save_cost_items" value="1" />';
 			$html .= wp_nonce_field( 'save_cost_items_action', 'cost_items_nonce', true, false );
 			// 生の <script> を出さず、フッターのスクリプトに載せる（wp.org ガイドライン）
-			ktpwp_add_inline_script( 'window.ktpClientTaxCategory = ' . wp_json_encode( (string) $tax_category ) . ';' );
+			ktpwp_add_inline_script( 'window.ktpwpClientTaxCategory = ' . wp_json_encode( (string) $tax_category ) . ';' );
 			
 			// デバッグ用の console.log は削除した（生の <script> を出さないため）
 			$html .= '<div class="cost-items-scroll-wrapper">';
@@ -730,7 +730,7 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 			}
 
 			// 受注書から顧客IDを取得
-			$order_table = $wpdb->prefix . 'ktp_order';
+			$order_table = $wpdb->prefix . 'ktpwp_order';
 			$order = $wpdb->get_row(
 				$wpdb->prepare(
 					"SELECT client_id, customer_name, user_name FROM {$order_table} WHERE id = %d",
@@ -746,7 +746,7 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 			}
 
 			// 顧客テーブルから税区分を取得（client_idを優先、なければ会社名と担当者名で検索）
-			$client_table = $wpdb->prefix . 'ktp_client';
+			$client_table = $wpdb->prefix . 'ktpwp_client';
 			$client = null;
 
 			// client_idがある場合はそれを使用
@@ -798,7 +798,7 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 			}
 
 			global $wpdb;
-			$supplier_table = $wpdb->prefix . 'ktp_supplier';
+			$supplier_table = $wpdb->prefix . 'ktpwp_supplier';
 			
 			$qualified_invoice_number = $wpdb->get_var(
 				$wpdb->prepare(
@@ -1105,7 +1105,7 @@ if ( ! class_exists( 'KTPWP_Order_UI' ) ) {
 			// 会社名が0や空の場合のフォールバック処理
 			if ( $customer_name === '0' || empty( $customer_name ) ) {
 				global $wpdb;
-				$client_table = $wpdb->prefix . 'ktp_client';
+				$client_table = $wpdb->prefix . 'ktpwp_client';
 				
 				// 顧客IDがある場合は顧客テーブルから会社名を取得
 				if ( ! empty( $order->client_id ) ) {

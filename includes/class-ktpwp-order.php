@@ -77,7 +77,7 @@ if ( ! class_exists( 'KTPWP_Order' ) ) {
 		 */
 		public function get_schema() {
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_order';
+			$table_name = $wpdb->prefix . 'ktpwp_order';
 			$charset_collate = $wpdb->get_charset_collate();
 
 			$sql = "CREATE TABLE {$table_name} (
@@ -147,7 +147,7 @@ if ( ! class_exists( 'KTPWP_Order' ) ) {
 			}
 
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_order';
+			$table_name = $wpdb->prefix . 'ktpwp_order';
 
 			return $wpdb->get_row(
                 $wpdb->prepare(
@@ -166,7 +166,7 @@ if ( ! class_exists( 'KTPWP_Order' ) ) {
 		 */
 		public function get_orders( $args = array() ) {
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_order';
+			$table_name = $wpdb->prefix . 'ktpwp_order';
 
 			$defaults = array(
 				'progress'    => null,
@@ -223,21 +223,18 @@ if ( ! class_exists( 'KTPWP_Order' ) ) {
 				$args['order'] = 'DESC';
 			}
 
-			// $order_by_column / $order_dir はいずれも上の許可リストに一致した定数値のみ。
-			$order_by_column = '`' . $args['order_by'] . '`';
-			$order_dir       = $args['order'];
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- 識別子は許可リスト照合済み、値は %d で bind。
-			$sql = "SELECT * FROM `{$table_name}` {$where_sql} ORDER BY {$order_by_column} {$order_dir} LIMIT %d OFFSET %d";
+			// テーブル名と並べ替え列は %i、方向は ASC / DESC の 2 通りの SQL を使い分ける（変数を連結しない）。
+			// $where_sql は上で組み立てたプレースホルダーだけの条件（値は $where_values）。
+			$order_sql = ( $args['order'] === 'ASC' )
+				? "SELECT * FROM %i {$where_sql} ORDER BY %i ASC LIMIT %d OFFSET %d"
+				: "SELECT * FROM %i {$where_sql} ORDER BY %i DESC LIMIT %d OFFSET %d";
 
-			// Add limit and offset to values
-			$where_values[] = $args['limit'];
-			$where_values[] = $args['offset'];
-
-			if ( ! empty( $where_values ) ) {
-				return $wpdb->get_results( $wpdb->prepare( $sql, $where_values ) );
-			} else {
-				return $wpdb->get_results( $sql );
-			}
+			return $wpdb->get_results(
+				$wpdb->prepare(
+					$order_sql, // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- 上記 2 通りの固定 SQL。
+					array_merge( array( $table_name ), $where_values, array( $args['order_by'], $args['limit'], $args['offset'] ) )
+				)
+			);
 		}
 
 		/**
@@ -249,7 +246,7 @@ if ( ! class_exists( 'KTPWP_Order' ) ) {
 		 */
 		public function get_orders_count( $args = array() ) {
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_order';
+			$table_name = $wpdb->prefix . 'ktpwp_order';
 
 			$defaults = array(
 				'progress'    => null,
@@ -289,13 +286,13 @@ if ( ! class_exists( 'KTPWP_Order' ) ) {
 				$where_sql = 'WHERE ' . implode( ' AND ', $where_clauses );
 			}
 
-			$sql = "SELECT COUNT(*) FROM `{$table_name}` {$where_sql}";
-
-			if ( ! empty( $where_values ) ) {
-				return (int) $wpdb->get_var( $wpdb->prepare( $sql, $where_values ) );
-			} else {
-				return (int) $wpdb->get_var( $sql );
-			}
+			// $where_sql はプレースホルダーだけの条件（値は $where_values）
+			return (int) $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT COUNT(*) FROM %i {$where_sql}", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- 上記のとおりプレースホルダーのみ。
+					array_merge( array( $table_name ), $where_values )
+				)
+			);
 		}
 
 		/**
@@ -307,7 +304,7 @@ if ( ! class_exists( 'KTPWP_Order' ) ) {
 		 */
 		public function create_order( $data ) {
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_order';
+			$table_name = $wpdb->prefix . 'ktpwp_order';
 
 			$defaults = array(
 				'time'           => time(),
@@ -389,7 +386,7 @@ if ( ! class_exists( 'KTPWP_Order' ) ) {
 			}
 
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_order';
+			$table_name = $wpdb->prefix . 'ktpwp_order';
 
 			// Remove non-updatable fields
 			unset( $data['id'] );
@@ -444,7 +441,7 @@ if ( ! class_exists( 'KTPWP_Order' ) ) {
 			}
 
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_order';
+			$table_name = $wpdb->prefix . 'ktpwp_order';
 
 			// First delete related data
 			$this->delete_order_related_data( $order_id );
@@ -473,15 +470,15 @@ if ( ! class_exists( 'KTPWP_Order' ) ) {
 			global $wpdb;
 
 			// Delete invoice items
-			$invoice_table = $wpdb->prefix . 'ktp_order_invoice_items';
+			$invoice_table = $wpdb->prefix . 'ktpwp_order_invoice_items';
 			$wpdb->delete( $invoice_table, array( 'order_id' => $order_id ), array( '%d' ) );
 
 			// Delete cost items
-			$cost_table = $wpdb->prefix . 'ktp_order_cost_items';
+			$cost_table = $wpdb->prefix . 'ktpwp_order_cost_items';
 			$wpdb->delete( $cost_table, array( 'order_id' => $order_id ), array( '%d' ) );
 
 			// Delete staff chat messages
-			$chat_table = $wpdb->prefix . 'ktp_order_staff_chat';
+			$chat_table = $wpdb->prefix . 'ktpwp_order_staff_chat';
 			$wpdb->delete( $chat_table, array( 'order_id' => $order_id ), array( '%d' ) );
 		}
 
@@ -510,7 +507,7 @@ if ( ! class_exists( 'KTPWP_Order' ) ) {
 		 */
 		public function get_progress_counts() {
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_order';
+			$table_name = $wpdb->prefix . 'ktpwp_order';
 
 			$results = $wpdb->get_results(
                 "SELECT progress, COUNT(*) as count FROM `{$table_name}` GROUP BY progress"
@@ -582,7 +579,7 @@ if ( ! class_exists( 'KTPWP_Order' ) ) {
 		 */
 		public function get_next_order_id( $deleted_order_id ) {
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_order';
+			$table_name = $wpdb->prefix . 'ktpwp_order';
 
 			// Try to get the next order with higher ID
 			$next_order = $wpdb->get_var(

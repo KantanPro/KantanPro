@@ -9,7 +9,7 @@
 
 /* レポートタブ本体（TabsView の .tab_content#report_content のみ）。
    旧: #report_content 単体 + margin-top:8px !important がメインタブ直下に隙間を作っていた */
-.ktp_plugin_container .tab_content#report_content {
+.ktpwp_plugin_container .tab_content#report_content {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
     line-height: 1.6;
     margin-top: 0 !important;
@@ -17,13 +17,13 @@
 }
 
 /* フリー版レポート：黄案内の左右を青バーと同一 18px にし、文言とボタンの縦位置を揃える */
-.ktp_plugin_container .tab_content#report_content .ktpwp-notice.ktp-report-free-ex-notice {
+.ktpwp_plugin_container .tab_content#report_content .ktpwp-notice.ktp-report-free-ex-notice {
     padding: 16px 18px;
     margin: 0;
     box-sizing: border-box;
 }
 
-.ktp_plugin_container .tab_content#report_content .ktp-ex-migrate-one-line {
+.ktpwp_plugin_container .tab_content#report_content .ktp-ex-migrate-one-line {
     display: flex !important;
     flex-direction: row;
     flex-wrap: nowrap;
@@ -34,7 +34,7 @@
     padding: 0;
 }
 
-.ktp_plugin_container .tab_content#report_content .ktp-ex-migrate-one-line .button.button-primary {
+.ktpwp_plugin_container .tab_content#report_content .ktp-ex-migrate-one-line .button.button-primary {
     flex-shrink: 0;
     margin: 0 !important;
     float: none !important;
@@ -58,8 +58,8 @@
     text-shadow: none !important;
 }
 
-.ktp_plugin_container .tab_content#report_content .ktp-ex-migrate-one-line .button.button-primary:hover,
-.ktp_plugin_container .tab_content#report_content .ktp-ex-migrate-one-line .button.button-primary:focus {
+.ktpwp_plugin_container .tab_content#report_content .ktp-ex-migrate-one-line .button.button-primary:hover,
+.ktpwp_plugin_container .tab_content#report_content .ktp-ex-migrate-one-line .button.button-primary:focus {
     background: #2e7d32 !important;
     background-color: #2e7d32 !important;
     border-color: #1b5e20 !important;
@@ -68,14 +68,14 @@
 }
 
 @media (max-width: 520px) {
-    .ktp_plugin_container .tab_content#report_content .ktp-ex-migrate-one-line {
+    .ktpwp_plugin_container .tab_content#report_content .ktp-ex-migrate-one-line {
         flex-wrap: wrap;
         align-items: center;
     }
 }
 
 /* フリー版レポート：青タイトルバー（高さアップ・左右パディングは黄ボックスと同一） */
-.ktp_plugin_container .tab_content#report_content .controller.ktp-report-controller--free-notice {
+.ktpwp_plugin_container .tab_content#report_content .controller.ktp-report-controller--free-notice {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -90,7 +90,7 @@
     background-color: rgb(212, 230, 241);
 }
 
-.ktp_plugin_container .tab_content#report_content .controller.ktp-report-controller--free-notice .ktp-report-free-edition-title {
+.ktpwp_plugin_container .tab_content#report_content .controller.ktp-report-controller--free-notice .ktp-report-free-edition-title {
     font-size: 16px;
     font-weight: 600;
     color: #000000;
@@ -349,7 +349,7 @@ canvas {
     }
 
     /* タブパネル全体ではなく本文カード側のみ余白（協力会社タブと同様の見え方） */
-    .ktp_plugin_container .tab_content#report_content .ktp-report-print-area {
+    .ktpwp_plugin_container .tab_content#report_content .ktp-report-print-area {
         padding: 16px 8px;
         margin-left: auto;
         margin-right: auto;
@@ -528,7 +528,7 @@ canvas {
         display: none;
     }
     
-    .ktp_plugin_container .tab_content#report_content .ktp-report-print-area {
+    .ktpwp_plugin_container .tab_content#report_content .ktp-report-print-area {
         box-shadow: none;
         border: 1px solid #000;
     }

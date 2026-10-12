@@ -41,13 +41,13 @@ class KTPWP_Migration_20250131_Remove_Tax_Inclusive_Setting {
      * @return bool True on success, false on failure
      */
     private static function remove_tax_inclusive_setting() {
-        $general_settings = get_option( 'ktp_general_settings', array() );
+        $general_settings = get_option( 'ktpwp_general_settings', array() );
         
         // Remove tax_inclusive setting if it exists
         if ( isset( $general_settings['tax_inclusive'] ) ) {
             unset( $general_settings['tax_inclusive'] );
             
-            $result = update_option( 'ktp_general_settings', $general_settings );
+            $result = update_option( 'ktpwp_general_settings', $general_settings );
             if ( $result ) {
                 ktpwp_debug_log( 'KTPWP Migration: Successfully removed tax_inclusive setting from general settings' );
                 return true;
@@ -69,13 +69,13 @@ class KTPWP_Migration_20250131_Remove_Tax_Inclusive_Setting {
     public static function down() {
         ktpwp_debug_log( 'KTPWP Migration: Rolling back removal of tax_inclusive setting' );
         
-        $general_settings = get_option( 'ktp_general_settings', array() );
+        $general_settings = get_option( 'ktpwp_general_settings', array() );
         
         // Add back tax_inclusive setting
         if ( ! isset( $general_settings['tax_inclusive'] ) ) {
             $general_settings['tax_inclusive'] = false; // 税抜き表示がデフォルト
             
-            $result = update_option( 'ktp_general_settings', $general_settings );
+            $result = update_option( 'ktpwp_general_settings', $general_settings );
             if ( $result ) {
                 ktpwp_debug_log( 'KTPWP Migration: Successfully restored tax_inclusive setting' );
                 return true;

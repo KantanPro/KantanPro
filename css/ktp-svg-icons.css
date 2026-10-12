@@ -1,0 +1,18 @@
+/* class-ktpwp-svg-icons.php から切り出し（以前は PHP の nowdoc で返していた） */
+.ktp-svg-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+}
+
+.ktp-svg-icon svg {
+    width: 1em;
+    height: 1em;
+    fill: currentColor;
+}
+
+/* Material Symbolsとの互換性のためのスタイル */
+.material-symbols-outlined {
+    display: none;
+}

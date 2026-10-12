@@ -145,7 +145,7 @@ class KTPWP_Update_Checker {
         }
         
         // 設定変更時にトークンを再読み込み
-        add_action( 'update_option_ktp_update_notification_settings', array( $this, 'reload_github_token' ), 10, 2 );
+        add_action( 'update_option_ktpwp_update_notification_settings', array( $this, 'reload_github_token' ), 10, 2 );
         
         // デバッグ用のログ出力
         ktpwp_debug_log( 'KantanPro Update Checker: 初期化完了 - basename: ' . $this->plugin_basename );
@@ -1144,7 +1144,7 @@ class KTPWP_Update_Checker {
      * 更新通知設定を取得（デフォルト値付き）
      */
     private function get_update_notification_settings() {
-        $update_settings = get_option( 'ktp_update_notification_settings', array() );
+        $update_settings = get_option( 'ktpwp_update_notification_settings', array() );
         
         // デフォルト値を設定
         $defaults = array(
@@ -1158,7 +1158,7 @@ class KTPWP_Update_Checker {
         
         // 設定が存在しない場合はデフォルト値を保存
         if ( empty( $update_settings ) ) {
-            update_option( 'ktp_update_notification_settings', $defaults );
+            update_option( 'ktpwp_update_notification_settings', $defaults );
             return $defaults;
         }
         
@@ -1167,7 +1167,7 @@ class KTPWP_Update_Checker {
         
         // 設定が更新された場合は保存
         if ( $merged_settings !== $update_settings ) {
-            update_option( 'ktp_update_notification_settings', $merged_settings );
+            update_option( 'ktpwp_update_notification_settings', $merged_settings );
         }
         
         return $merged_settings;
@@ -1384,7 +1384,7 @@ class KTPWP_Update_Checker {
             return;
         }
         
-        $page_type = isset( $_POST['page_type'] ) ? sanitize_text_field( $_POST['page_type'] ) : '';
+        $page_type = isset( $_POST['page_type'] ) ? sanitize_text_field( wp_unslash( $_POST['page_type'] ) ) : '';
         
         // KantanPro設置ページの場合のみ無視フラグを設定
         if ( $page_type === 'ktpwp' ) {
@@ -1620,7 +1620,7 @@ class KTPWP_Update_Checker {
             return;
         }
         
-        $version = sanitize_text_field( $_POST['version'] );
+        $version = sanitize_text_field( wp_unslash( $_POST['version'] ) );
         
         // 更新情報を取得
         $update_data = get_option( 'ktpwp_update_available', false );
@@ -2995,7 +2995,7 @@ class KTPWP_Update_Checker {
             return;
         }
 
-        if ( ! isset( $_GET['ktpwp_reloaded'] ) ) {
+        if ( ! KTPWP_Request::has_query( 'ktpwp_reloaded' ) ) {
             delete_transient( $this->key( 'admin_reload' ) );
             wp_safe_redirect( admin_url( 'plugins.php?ktpwp_reloaded=1&ktpwp_updated=1' ) );
             exit;

@@ -17,11 +17,11 @@ if (!defined('ABSPATH')) {
 function ktpwp_create_invoice_items_table() {
     global $wpdb;
     
-    $table_name = $wpdb->prefix . 'ktp_invoice_items';
+    $table_name = $wpdb->prefix . 'ktpwp_invoice_items';
     $charset_collate = $wpdb->get_charset_collate();
     
     // テーブルが既に存在するかチェック
-    if ($wpdb->get_var("SHOW TABLES LIKE '{$table_name}'") === $table_name) {
+    if ($wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) ) === $table_name) {
         ktpwp_debug_log("KTPWP: テーブル {$table_name} は既に存在します");
         return true;
     }
@@ -54,18 +54,3 @@ function ktpwp_create_invoice_items_table() {
         return false;
     }
 }
-
-// マイグレーション実行
-if (isset($_GET['run_migration']) && $_GET['run_migration'] === 'create_invoice_items_table') {
-    if (!current_user_can('manage_options')) {
-        wp_die( esc_html__( '権限がありません', 'kantanpro' ) );
-    }
-    
-    $result = ktpwp_create_invoice_items_table();
-    if ($result) {
-        echo "請求項目テーブルの作成が完了しました。";
-    } else {
-        echo "請求項目テーブルの作成に失敗しました。";
-    }
-    exit;
-} 

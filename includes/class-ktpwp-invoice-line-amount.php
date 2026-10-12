@@ -180,7 +180,7 @@ if ( ! class_exists( 'KTPWP_Invoice_Line_Amount' ) ) {
 				return;
 			}
 
-			$table = $wpdb->prefix . 'ktp_order_invoice_items';
+			$table = $wpdb->prefix . 'ktpwp_order_invoice_items';
 			$items = KTPWP_Order_Items::get_instance()->get_invoice_items( $order_id );
 			if ( empty( $items ) ) {
 				return;
@@ -225,7 +225,7 @@ if ( ! class_exists( 'KTPWP_Invoice_Line_Amount' ) ) {
 				return;
 			}
 
-			$table = $wpdb->prefix . 'ktp_order_invoice_items';
+			$table = $wpdb->prefix . 'ktpwp_order_invoice_items';
 			$items = KTPWP_Order_Items::get_instance()->get_invoice_items( $order_id );
 			if ( empty( $items ) ) {
 				return;

@@ -39,10 +39,10 @@
                 url: typeof ajaxurl !== 'undefined' ? ajaxurl : ((typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) || (typeof ajaxurl !== 'undefined' ? ajaxurl : '')),
                 type: 'POST',
                 data: {
-                    action: 'ktp_get_order_preview',
+                    action: 'ktpwp_get_order_preview',
                     order_id: orderId,
-                    nonce: typeof ktp_ajax_nonce !== 'undefined' ? ktp_ajax_nonce : 
-                          typeof ktp_ajax_object !== 'undefined' ? ktp_ajax_object.nonce : ''
+                    nonce: typeof ktpwp_ajax_nonce !== 'undefined' ? ktpwp_ajax_nonce : 
+                          typeof ktpwp_ajax_object !== 'undefined' ? ktpwp_ajax_object.nonce : ''
                 },
                 success: function(response) {
                     try {
@@ -54,7 +54,14 @@
                                 progress: result.data.progress,
                                 document_title: result.data.document_title
                             };
-                            saveOrderPreviewAsPDF(orderId, result.data.preview_html);
+                            // 帳票 CSS は応答で別に届く（PHP から <style> を出さないため）。</head> の直前に戻す
+                            var previewHtml = String(result.data.preview_html);
+                            if (result.data.preview_css) {
+                                previewHtml = previewHtml.replace('</head>', function () {
+                                    return '<style>' + result.data.preview_css + '</style></head>';
+                                });
+                            }
+                            saveOrderPreviewAsPDF(orderId, previewHtml);
                         } else {
                             console.error('[ORDER-PREVIEW] プレビューデータの取得に失敗:', result);
                             alert(ktpwpTranslate('プレビューデータの取得に失敗しました: ') + (result.data || 'エラー詳細不明'));
@@ -78,7 +85,7 @@
     });
 
     // 後方互換: 既存呼び出しがあっても直接印刷する
-    window.ktpShowOrderPreview = function (orderId, previewContent, orderInfo) {
+    window.ktpwpShowOrderPreview = function (orderId, previewContent, orderInfo) {
         window.currentOrderInfo = orderInfo || {};
 
         if (!orderId) {
@@ -97,15 +104,15 @@
     };
 
     // デバッグ用: Ajaxハンドラーのテスト関数
-    window.ktpTestOrderPreview = function(orderId) {
+    window.ktpwpTestOrderPreview = function(orderId) {
         $.ajax({
             url: typeof ajaxurl !== 'undefined' ? ajaxurl : ((typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) || (typeof ajaxurl !== 'undefined' ? ajaxurl : '')),
             type: 'POST',
             data: {
-                action: 'ktp_get_order_preview',
+                action: 'ktpwp_get_order_preview',
                 order_id: orderId,
-                nonce: typeof ktp_ajax_nonce !== 'undefined' ? ktp_ajax_nonce : 
-                      typeof ktp_ajax_object !== 'undefined' ? ktp_ajax_object.nonce : ''
+                nonce: typeof ktpwp_ajax_nonce !== 'undefined' ? ktpwp_ajax_nonce : 
+                      typeof ktpwp_ajax_object !== 'undefined' ? ktpwp_ajax_object.nonce : ''
             },
             success: function(response) {
                 console.log('[ORDER PREVIEW TEST] 成功:', response);

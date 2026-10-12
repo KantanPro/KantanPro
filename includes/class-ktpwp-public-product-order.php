@@ -245,7 +245,7 @@ if ( ! class_exists( 'KTPWP_Public_Product_Order' ) ) {
 				);
 			}
 
-			$service_id = isset( $_POST['service_id'] ) ? absint( $_POST['service_id'] ) : 0;
+			$service_id = isset( $_POST['service_id'] ) ? absint( wp_unslash( $_POST['service_id'] ) ) : 0;
 			$form       = array(
 				'company_name' => isset( $_POST['company_name'] ) ? wp_unslash( $_POST['company_name'] ) : '',
 				'contact_name' => isset( $_POST['contact_name'] ) ? wp_unslash( $_POST['contact_name'] ) : '',
@@ -347,7 +347,7 @@ if ( ! class_exists( 'KTPWP_Public_Product_Order' ) ) {
 		private function allocate_unset_company_name() {
 			global $wpdb;
 
-			$table  = $wpdb->prefix . 'ktp_client';
+			$table  = $wpdb->prefix . 'ktpwp_client';
 			$prefix = '未設定#';
 			$max    = 0;
 
@@ -417,7 +417,7 @@ if ( ! class_exists( 'KTPWP_Public_Product_Order' ) ) {
 		/**
 		 * フォーム会社名を部署として使うか（登録会社名と異なる場合のみ）。
 		 *
-		 * @param object $client       ktp_client 行。
+		 * @param object $client       ktpwp_client 行。
 		 * @param string $form_company フォームの会社名。
 		 * @return bool
 		 */
@@ -472,7 +472,7 @@ if ( ! class_exists( 'KTPWP_Public_Product_Order' ) ) {
 			}
 
 			global $wpdb;
-			$client_table = $wpdb->prefix . 'ktp_client';
+			$client_table = $wpdb->prefix . 'ktpwp_client';
 			$registered_company = $wpdb->get_var(
 				$wpdb->prepare(
 					"SELECT company_name FROM {$client_table} WHERE id = %d",
@@ -537,7 +537,7 @@ if ( ! class_exists( 'KTPWP_Public_Product_Order' ) ) {
 		private function generate_order_number( $timestamp ) {
 			global $wpdb;
 
-			$table_name = $wpdb->prefix . 'ktp_order';
+			$table_name = $wpdb->prefix . 'ktpwp_order';
 			$timestamp  = (int) $timestamp;
 			$prefix     = date( 'Y-md', $timestamp ) . '-';
 			$max_suffix = $wpdb->get_var(
@@ -554,7 +554,7 @@ if ( ! class_exists( 'KTPWP_Public_Product_Order' ) ) {
 		private function insert_order( array $order_data ) {
 			global $wpdb;
 
-			$table_name = $wpdb->prefix . 'ktp_order';
+			$table_name = $wpdb->prefix . 'ktpwp_order';
 			$timestamp  = isset( $order_data['time'] ) ? (int) $order_data['time'] : time();
 			$order_number = $this->generate_order_number( $timestamp );
 
@@ -577,7 +577,7 @@ if ( ! class_exists( 'KTPWP_Public_Product_Order' ) ) {
 				$insert_data['search_field'] = sanitize_textarea_field( $order_data['search_field'] );
 			}
 			if ( ! empty( $order_data['client_department_id'] ) ) {
-				$cols = $wpdb->get_col( "SHOW COLUMNS FROM `{$table_name}`", 0 );
+				$cols = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $table_name ), 0 );
 				if ( is_array( $cols ) && in_array( 'client_department_id', $cols, true ) ) {
 					$insert_data['client_department_id'] = (int) $order_data['client_department_id'];
 				}
@@ -611,8 +611,8 @@ if ( ! class_exists( 'KTPWP_Public_Product_Order' ) ) {
 		private function save_external_source( $order_id, $service_id ) {
 			global $wpdb;
 
-			$table = $wpdb->prefix . 'ktp_order';
-			$cols  = $wpdb->get_col( "SHOW COLUMNS FROM `{$table}`", 0 );
+			$table = $wpdb->prefix . 'ktpwp_order';
+			$cols  = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $table ), 0 );
 			$cols  = is_array( $cols ) ? $cols : array();
 			$update = array();
 

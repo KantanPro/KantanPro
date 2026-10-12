@@ -12,8 +12,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// ファイル内の変数をグローバルに出さないよう、処理全体を無名関数で包む（読み込んだ時点で実行される）。
+( static function () {
+
 /**
- * Migration class: Add payment_timing, external_source, external_order_id to ktp_order
+ * Migration class: Add payment_timing, external_source, external_order_id to ktpwp_order
  */
 class KTPWP_Migration_20250313_Add_Payment_Timing_To_Order {
 
@@ -25,7 +28,7 @@ class KTPWP_Migration_20250313_Add_Payment_Timing_To_Order {
 	public static function up() {
 		global $wpdb;
 
-		$order_table = $wpdb->prefix . 'ktp_order';
+		$order_table = $wpdb->prefix . 'ktpwp_order';
 
 		$table_exists = $wpdb->get_var(
 			$wpdb->prepare( "SHOW TABLES LIKE %s", $order_table )
@@ -38,7 +41,7 @@ class KTPWP_Migration_20250313_Add_Payment_Timing_To_Order {
 			return false;
 		}
 
-		$existing_columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$order_table}`", 0 );
+		$existing_columns = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $order_table ), 0 );
 		$columns_to_add = array(
 			'payment_timing'     => "VARCHAR(20) NULL DEFAULT NULL COMMENT '支払タイミング（NULL=顧客に従う, postpay, prepay）'",
 			'external_source'   => "VARCHAR(50) NULL DEFAULT NULL COMMENT '連携元（例: woocommerce）'",
@@ -49,8 +52,7 @@ class KTPWP_Migration_20250313_Add_Payment_Timing_To_Order {
 			if ( in_array( $col, $existing_columns, true ) ) {
 				continue;
 			}
-			$sql = "ALTER TABLE `{$order_table}` ADD COLUMN `{$col}` {$def}";
-			if ( $wpdb->query( $sql ) === false && defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			if ( ktpwp_migration_add_column( $order_table, $col, $def ) === false && defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 				ktpwp_debug_log( 'KTPWP Migration: Failed to add ' . $col . ' to ' . $order_table . '. ' . $wpdb->last_error );
 			}
 		}
@@ -68,15 +70,16 @@ class KTPWP_Migration_20250313_Add_Payment_Timing_To_Order {
 	 */
 	public static function down() {
 		global $wpdb;
-		$order_table = $wpdb->prefix . 'ktp_order';
-		$existing_columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$order_table}`", 0 );
+		$order_table = $wpdb->prefix . 'ktpwp_order';
+		$existing_columns = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $order_table ), 0 );
 		$to_drop = array( 'payment_timing', 'external_source', 'external_order_id' );
 		foreach ( $to_drop as $col ) {
 			if ( ! in_array( $col, $existing_columns, true ) ) {
 				continue;
 			}
-			$wpdb->query( "ALTER TABLE `{$order_table}` DROP COLUMN `{$col}`" );
+			$wpdb->query( $wpdb->prepare( "ALTER TABLE %i DROP COLUMN %i", $order_table, $col ) );
 		}
 		return true;
 	}
 }
+} )();

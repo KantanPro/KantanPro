@@ -185,7 +185,7 @@ if ( ! class_exists( 'KTPWP_Contract_Billing_UI' ) ) {
 			return add_query_arg(
 				array(
 					'tab_name' => $tab_name,
-					'progress' => isset( $_GET['progress'] ) ? absint( $_GET['progress'] ) : 4,
+					'progress' => KTPWP_Request::has_query( 'progress' ) ? absint( KTPWP_Request::query_unslashed( 'progress' ) ) : 4,
 				),
 				remove_query_arg( array( 'recurring_billing', 'billing_period', 'contract_id' ) )
 			);
@@ -201,18 +201,18 @@ if ( ! class_exists( 'KTPWP_Contract_Billing_UI' ) ) {
 		public function render_list_type_filter( $tab_name, $active ) {
 			global $wpdb;
 
-			$order_table = $wpdb->prefix . 'ktp_order';
-			$columns     = $wpdb->get_col( "SHOW COLUMNS FROM `{$order_table}`" );
+			$order_table = $wpdb->prefix . 'ktpwp_order';
+			$columns     = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $order_table ) );
 			if ( ! is_array( $columns ) || ! in_array( 'contract_id', $columns, true ) ) {
 				return '';
 			}
 
 			$base_args = array(
 				'tab_name' => $tab_name,
-				'progress' => isset( $_GET['progress'] ) ? absint( $_GET['progress'] ) : 1,
+				'progress' => KTPWP_Request::has_query( 'progress' ) ? absint( KTPWP_Request::query_unslashed( 'progress' ) ) : 1,
 			);
-			if ( isset( $_GET['list_search'] ) && (string) $_GET['list_search'] !== '' ) {
-				$base_args['list_search'] = sanitize_text_field( wp_unslash( $_GET['list_search'] ) );
+			if ( KTPWP_Request::has_query( 'list_search' ) && (string) KTPWP_Request::query_unslashed( 'list_search' ) !== '' ) {
+				$base_args['list_search'] = KTPWP_Request::query( 'list_search' );
 			}
 
 			$all_url = add_query_arg( $base_args, remove_query_arg( 'list_type' ) );

@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class KTPWP_JapanPost_Address_API {
 
-	const OPTION_KEY = 'ktp_japanpost_api_settings';
+	const OPTION_KEY = 'ktpwp_japanpost_api_settings';
 
 	const URL_PRODUCTION = 'https://api.da.pf.japanpost.jp';
 
@@ -98,11 +98,11 @@ class KTPWP_JapanPost_Address_API {
 	 */
 	public static function lookup_zip( $zip7, $xff_ip ) {
 		if ( ! self::is_enabled() ) {
-			return new WP_Error( 'ktp_jp_disabled', __( '日本郵便APIの設定が有効ではありません。', 'kantanpro' ) );
+			return new WP_Error( 'ktpwp_jp_disabled', __( '日本郵便APIの設定が有効ではありません。', 'kantanpro' ) );
 		}
 		$zip7 = preg_replace( '/\D/', '', (string) $zip7 );
 		if ( strlen( $zip7 ) !== 7 ) {
-			return new WP_Error( 'ktp_jp_zip', __( '郵便番号は7桁の数字で入力してください。', 'kantanpro' ) );
+			return new WP_Error( 'ktpwp_jp_zip', __( '郵便番号は7桁の数字で入力してください。', 'kantanpro' ) );
 		}
 		if ( ! filter_var( $xff_ip, FILTER_VALIDATE_IP ) ) {
 			$xff_ip = '127.0.0.1';
@@ -136,10 +136,10 @@ class KTPWP_JapanPost_Address_API {
 		$data = json_decode( $body, true );
 		if ( $code < 200 || $code >= 300 ) {
 			$msg = isset( $data['message'] ) ? (string) $data['message'] : __( '郵便番号検索に失敗しました。', 'kantanpro' );
-			return new WP_Error( 'ktp_jp_http', $msg, array( 'status' => $code ) );
+			return new WP_Error( 'ktpwp_jp_http', $msg, array( 'status' => $code ) );
 		}
 		if ( empty( $data['addresses'] ) || ! is_array( $data['addresses'] ) ) {
-			return new WP_Error( 'ktp_jp_empty', __( '該当する住所が見つかりませんでした。', 'kantanpro' ) );
+			return new WP_Error( 'ktpwp_jp_empty', __( '該当する住所が見つかりませんでした。', 'kantanpro' ) );
 		}
 
 		$rows = self::flatten_address_rows( $data['addresses'] );
@@ -151,7 +151,7 @@ class KTPWP_JapanPost_Address_API {
 			}
 		}
 		if ( ! is_array( $a ) ) {
-			return new WP_Error( 'ktp_jp_empty', __( '該当する住所が見つかりませんでした。', 'kantanpro' ) );
+			return new WP_Error( 'ktpwp_jp_empty', __( '該当する住所が見つかりませんでした。', 'kantanpro' ) );
 		}
 
 		return self::format_address_from_api_row( $a );
@@ -258,7 +258,7 @@ class KTPWP_JapanPost_Address_API {
 	 */
 	private static function get_bearer_token( $xff_ip ) {
 		$s        = self::get_settings();
-		$cache_key = 'ktp_jp_da_tok_' . md5( (string) $s['client_id'] . '|' . self::get_base_url() . '|' . self::api_prefix() );
+		$cache_key = 'ktpwp_jp_da_tok_' . md5( (string) $s['client_id'] . '|' . self::get_base_url() . '|' . self::api_prefix() );
 		$cached   = get_transient( $cache_key );
 		if ( is_string( $cached ) && $cached !== '' ) {
 			return $cached;
@@ -293,7 +293,7 @@ class KTPWP_JapanPost_Address_API {
 		$json = json_decode( wp_remote_retrieve_body( $response ), true );
 		if ( $code < 200 || $code >= 300 || empty( $json['token'] ) ) {
 			$msg = isset( $json['message'] ) ? (string) $json['message'] : __( 'アクセストークンの取得に失敗しました。クライアントIDとシークレットを確認してください。', 'kantanpro' );
-			return new WP_Error( 'ktp_jp_token', $msg, array( 'status' => $code ) );
+			return new WP_Error( 'ktpwp_jp_token', $msg, array( 'status' => $code ) );
 		}
 
 		$token      = (string) $json['token'];

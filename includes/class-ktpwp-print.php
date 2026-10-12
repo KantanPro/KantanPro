@@ -15,7 +15,7 @@ class KTPWP_Print_Class {
     // Generate HTML
     public function generateHTML() {
         global $wpdb;
-        $table_name = $wpdb->prefix . 'ktp_setting'; // テーブル名を適切に設定してください
+        $table_name = $wpdb->prefix . 'ktpwp_setting'; // テーブル名を適切に設定してください
 
         // 廃止済みの旧テーブルで、新規インストールには存在しない。
         // 存在確認せずに SELECT すると WordPress database error が出る。

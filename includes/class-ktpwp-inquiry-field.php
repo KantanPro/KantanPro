@@ -96,7 +96,7 @@ if ( ! class_exists( 'KTPWP_Inquiry_Field' ) ) {
 			$registered_company = '';
 			$client_id            = (int) $client_id;
 			if ( $client_id > 0 ) {
-				$table_name = $wpdb->prefix . 'ktp_client';
+				$table_name = $wpdb->prefix . 'ktpwp_client';
 				$registered_company = self::normalize_company_name(
 					$wpdb->get_var(
 						$wpdb->prepare(

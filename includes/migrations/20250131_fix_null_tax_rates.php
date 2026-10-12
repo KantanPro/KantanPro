@@ -14,17 +14,17 @@ class KTPWP_Fix_Null_Tax_Rates_Migration {
     public static function run() {
         global $wpdb;
         
-        $invoice_items_table = $wpdb->prefix . 'ktp_order_invoice_items';
+        $invoice_items_table = $wpdb->prefix . 'ktpwp_order_invoice_items';
         
         // 税率がNULLまたは空または0のレコードを10%に更新
-        $result = $wpdb->query("
-            UPDATE `{$invoice_items_table}` 
+        $result = $wpdb->query( $wpdb->prepare( "
+            UPDATE %i 
             SET tax_rate = 10.00 
             WHERE tax_rate IS NULL 
                OR tax_rate = '' 
                OR tax_rate = 0 
                OR tax_rate < 0
-        ");
+        ", $invoice_items_table ) );
         
         if ($result !== false) {
             return array(
@@ -48,7 +48,7 @@ class KTPWP_Fix_Null_Tax_Rates_Migration {
     public static function check() {
         global $wpdb;
         
-        $invoice_items_table = $wpdb->prefix . 'ktp_order_invoice_items';
+        $invoice_items_table = $wpdb->prefix . 'ktpwp_order_invoice_items';
         
         // 税率がNULLまたは空または0のレコード数を確認
         $count = $wpdb->get_var("

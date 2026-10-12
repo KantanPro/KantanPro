@@ -14,7 +14,7 @@ class KTPWP_Tax_Policy {
      * 取得: 一般設定
      */
     private static function get_general_settings(): array {
-        $settings = get_option( 'ktp_general_settings', array() );
+        $settings = get_option( 'ktpwp_general_settings', array() );
         return is_array( $settings ) ? $settings : array();
     }
 

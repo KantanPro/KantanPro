@@ -279,11 +279,11 @@
                 form.style.display = 'none';
 
                 // nonceフィールド
-                const nonceField = document.querySelector('input[name="ktp_client_nonce"]');
+                const nonceField = document.querySelector('input[name="ktpwp_client_nonce"]');
                 if (nonceField) {
                     const nonceInput = document.createElement('input');
                     nonceInput.type = 'hidden';
-                    nonceInput.name = 'ktp_client_nonce';
+                    nonceInput.name = 'ktpwp_client_nonce';
                     nonceInput.value = nonceField.value;
                     form.appendChild(nonceInput);
                 }
@@ -319,7 +319,7 @@
                 // 対象外に変更した場合は、送信後に確実にページを再読み込み
                 if (selectedOption === 'soft') {
                     // セッションストレージに削除フラグを設定
-                    sessionStorage.setItem('ktp_client_deleted', 'true');
+                    sessionStorage.setItem('ktpwp_client_deleted', 'true');
                     
                     form.addEventListener('submit', function() {
                         // 送信後に少し待ってからページを再読み込み
@@ -500,7 +500,7 @@
             }
             
             // セッションストレージから削除フラグを確認
-            const wasDeleted = sessionStorage.getItem('ktp_client_deleted');
+            const wasDeleted = sessionStorage.getItem('ktpwp_client_deleted');
             if (wasDeleted === 'true') {
                 const orderButton = document.querySelector('.create-order-btn');
                 if (orderButton) {
@@ -512,7 +512,7 @@
                     console.log('受注書作成ボタンを無効化しました（セッションストレージ）');
                 }
                 // フラグをクリア
-                sessionStorage.removeItem('ktp_client_deleted');
+                sessionStorage.removeItem('ktpwp_client_deleted');
             }
         }
     }

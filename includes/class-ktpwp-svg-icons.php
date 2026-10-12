@@ -172,40 +172,11 @@ class KTPWP_SVG_Icons {
     }
 
     /**
-     * アイコン用 CSS を返す
-     *
-     * 生の <style> を出力せず、呼び出し側が wp_add_inline_style() に渡せるようにする。
-     *
-     * @return string CSS 本文（<style> タグは含めない）。
-     */
-    public static function get_styles() {
-            return <<<'CSS'
-        .ktp-svg-icon {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            vertical-align: middle;
-        }
-        
-        .ktp-svg-icon svg {
-            width: 1em;
-            height: 1em;
-            fill: currentColor;
-        }
-        
-        /* Material Symbolsとの互換性のためのスタイル */
-        .material-symbols-outlined {
-            display: none;
-        }
-CSS;
-    }
-
-    /**
      * 後方互換: 直接出力する呼び出し元が残っている場合のため。
      *
-     * @deprecated get_styles() と wp_add_inline_style() を使うこと。
+     * @deprecated css/ktp-svg-icons.css を wp_enqueue_style() で読み込むこと。
      */
     public static function output_styles() {
-        wp_add_inline_style( 'ktp-css', self::get_styles() );
+        wp_enqueue_style( 'ktpwp-svg-icons', KANTANPRO_PLUGIN_URL . 'css/ktp-svg-icons.css', array( 'ktpwp-css' ), KANTANPRO_PLUGIN_VERSION );
     }
 } 

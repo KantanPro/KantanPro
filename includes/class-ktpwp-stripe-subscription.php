@@ -105,7 +105,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Subscription' ) ) {
 				return new WP_Error( 'invalid', __( 'Stripe 請求の対象外です。', 'kantanpro' ) );
 			}
 
-			$order_table = $wpdb->prefix . 'ktp_order';
+			$order_table = $wpdb->prefix . 'ktpwp_order';
 			$order       = $wpdb->get_row(
 				$wpdb->prepare(
 					"SELECT * FROM {$order_table} WHERE id = %d",
@@ -190,8 +190,8 @@ if ( ! class_exists( 'KTPWP_Stripe_Subscription' ) ) {
 						'collection_method'    => 'send_invoice',
 						'days_until_due'       => KTPWP_Stripe_Billing::get_days_until_due(),
 						'metadata'             => array(
-							'ktp_order_id'               => (string) $order_id,
-							'ktp_immediate_subscription' => '1',
+							'ktpwp_order_id'               => (string) $order_id,
+							'ktpwp_immediate_subscription' => '1',
 						),
 						'payment_settings'     => array(
 							'save_default_payment_method' => 'on_subscription',
@@ -255,7 +255,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Subscription' ) ) {
 					? $invoice->subscription
 					: $stripe->subscriptions->retrieve( (string) $invoice->subscription );
 
-				if ( empty( $subscription->metadata->ktp_immediate_subscription ) ) {
+				if ( empty( $subscription->metadata->ktpwp_immediate_subscription ) ) {
 					return;
 				}
 
@@ -284,7 +284,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Subscription' ) ) {
 
 			$order = $wpdb->get_row(
 				$wpdb->prepare(
-					"SELECT * FROM {$wpdb->prefix}ktp_order WHERE id = %d",
+					"SELECT * FROM {$wpdb->prefix}ktpwp_order WHERE id = %d",
 					$order_id
 				)
 			);
@@ -379,9 +379,9 @@ if ( ! class_exists( 'KTPWP_Stripe_Subscription' ) ) {
 					$subscription_id,
 					array(
 						'metadata' => array(
-							'ktp_contract_id'              => (string) $contract_id,
-							'ktp_immediate_subscription'   => '1',
-							'ktp_order_id'                 => $order_id > 0 ? (string) $order_id : null,
+							'ktpwp_contract_id'              => (string) $contract_id,
+							'ktpwp_immediate_subscription'   => '1',
+							'ktpwp_order_id'                 => $order_id > 0 ? (string) $order_id : null,
 						),
 					)
 				);
@@ -427,7 +427,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Subscription' ) ) {
 				global $wpdb;
 				$linked_sub = $wpdb->get_var(
 					$wpdb->prepare(
-						"SELECT stripe_subscription_id FROM {$wpdb->prefix}ktp_order WHERE id = %d",
+						"SELECT stripe_subscription_id FROM {$wpdb->prefix}ktpwp_order WHERE id = %d",
 						$source_order_id
 					)
 				);
@@ -458,7 +458,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Subscription' ) ) {
 				global $wpdb;
 				$order = $wpdb->get_row(
 					$wpdb->prepare(
-						"SELECT stripe_invoice_id FROM {$wpdb->prefix}ktp_order WHERE id = %d",
+						"SELECT stripe_invoice_id FROM {$wpdb->prefix}ktpwp_order WHERE id = %d",
 						$source_order_id
 					)
 				);
@@ -503,7 +503,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Subscription' ) ) {
 					'items'                => $items,
 					'trial_end'            => (int) $trial_end,
 					'metadata'             => array(
-						'ktp_contract_id' => (string) $contract_id,
+						'ktpwp_contract_id' => (string) $contract_id,
 					),
 					'payment_settings'     => array(
 						'save_default_payment_method' => 'on_subscription',
@@ -548,8 +548,8 @@ if ( ! class_exists( 'KTPWP_Stripe_Subscription' ) ) {
 					$subscription = is_object( $invoice->subscription )
 						? $invoice->subscription
 						: $stripe->subscriptions->retrieve( (string) $invoice->subscription );
-					if ( ! empty( $subscription->metadata->ktp_immediate_subscription )
-						&& empty( $subscription->metadata->ktp_contract_id ) ) {
+					if ( ! empty( $subscription->metadata->ktpwp_immediate_subscription )
+						&& empty( $subscription->metadata->ktpwp_contract_id ) ) {
 						return;
 					}
 				} catch ( Exception $e ) {
@@ -591,7 +591,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Subscription' ) ) {
 					if ( ! $log ) {
 						global $wpdb;
 						$wpdb->insert(
-							$wpdb->prefix . 'ktp_contract_billing_log',
+							$wpdb->prefix . 'ktpwp_contract_billing_log',
 							array(
 								'contract_id'    => $contract_id,
 								'order_id'       => $order_id,
@@ -651,19 +651,19 @@ if ( ! class_exists( 'KTPWP_Stripe_Subscription' ) ) {
 						'customer'   => $customer_id,
 						'currency'   => 'jpy',
 						'metadata'   => array(
-							'ktp_contract_id' => (string) absint( $contract_id ),
-							'ktp_setup_for'   => 'subscription',
+							'ktpwp_contract_id' => (string) absint( $contract_id ),
+							'ktpwp_setup_for'   => 'subscription',
 						),
 						'success_url' => add_query_arg(
 							array(
-								'ktp_stripe_setup' => 'success',
+								'ktpwp_stripe_setup' => 'success',
 								'contract_id'      => absint( $contract_id ),
 							),
 							home_url( '/' )
 						),
 						'cancel_url'  => add_query_arg(
 							array(
-								'ktp_stripe_setup' => 'cancel',
+								'ktpwp_stripe_setup' => 'cancel',
 								'contract_id'      => absint( $contract_id ),
 							),
 							home_url( '/' )
@@ -673,7 +673,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Subscription' ) ) {
 
 				$url = isset( $session->url ) ? (string) $session->url : '';
 				if ( $url !== '' ) {
-					update_option( 'ktp_stripe_setup_url_' . absint( $contract_id ), $url, false );
+					update_option( 'ktpwp_stripe_setup_url_' . absint( $contract_id ), $url, false );
 				}
 
 				return $url;
@@ -693,11 +693,11 @@ if ( ! class_exists( 'KTPWP_Stripe_Subscription' ) ) {
 		 * @return void
 		 */
 		public function handle_setup_checkout_completed( $session ) {
-			if ( ! $session || empty( $session->metadata->ktp_contract_id ) ) {
+			if ( ! $session || empty( $session->metadata->ktpwp_contract_id ) ) {
 				return;
 			}
 
-			$contract_id = absint( $session->metadata->ktp_contract_id );
+			$contract_id = absint( $session->metadata->ktpwp_contract_id );
 			if ( $contract_id <= 0 ) {
 				return;
 			}
@@ -897,8 +897,8 @@ if ( ! class_exists( 'KTPWP_Stripe_Subscription' ) ) {
 		 * @return int
 		 */
 		private function resolve_contract_id_from_invoice( $invoice ) {
-			if ( ! empty( $invoice->metadata->ktp_contract_id ) ) {
-				return absint( $invoice->metadata->ktp_contract_id );
+			if ( ! empty( $invoice->metadata->ktpwp_contract_id ) ) {
+				return absint( $invoice->metadata->ktpwp_contract_id );
 			}
 
 			if ( empty( $invoice->subscription ) || ! class_exists( '\Stripe\StripeClient' ) ) {
@@ -908,8 +908,8 @@ if ( ! class_exists( 'KTPWP_Stripe_Subscription' ) ) {
 			try {
 				$stripe       = new \Stripe\StripeClient( KTPWP_Stripe_Billing::get_secret_key() );
 				$subscription = $stripe->subscriptions->retrieve( (string) $invoice->subscription );
-				if ( ! empty( $subscription->metadata->ktp_contract_id ) ) {
-					return absint( $subscription->metadata->ktp_contract_id );
+				if ( ! empty( $subscription->metadata->ktpwp_contract_id ) ) {
+					return absint( $subscription->metadata->ktpwp_contract_id );
 				}
 			} catch ( Exception $e ) {
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
@@ -998,10 +998,10 @@ if ( ! class_exists( 'KTPWP_Stripe_Subscription' ) ) {
 			try {
 				$metadata = array();
 				if ( $contract_id > 0 ) {
-					$metadata['ktp_contract_id'] = (string) absint( $contract_id );
+					$metadata['ktpwp_contract_id'] = (string) absint( $contract_id );
 				}
 				if ( $order_id > 0 ) {
-					$metadata['ktp_order_id'] = (string) absint( $order_id );
+					$metadata['ktpwp_order_id'] = (string) absint( $order_id );
 				}
 
 				$product = $stripe->products->create(
@@ -1137,7 +1137,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Subscription' ) ) {
 			}
 
 			$wpdb->update(
-				$wpdb->prefix . 'ktp_contract',
+				$wpdb->prefix . 'ktpwp_contract',
 				array( 'stripe_subscription_id' => sanitize_text_field( $subscription_id ) ),
 				array( 'id' => absint( $contract_id ) ),
 				array( '%s' ),
@@ -1228,8 +1228,8 @@ if ( ! class_exists( 'KTPWP_Stripe_Subscription' ) ) {
 					? $invoice->subscription
 					: $stripe->subscriptions->retrieve( (string) $invoice->subscription );
 
-				return ! empty( $subscription->metadata->ktp_order_id )
-					? absint( $subscription->metadata->ktp_order_id )
+				return ! empty( $subscription->metadata->ktpwp_order_id )
+					? absint( $subscription->metadata->ktpwp_order_id )
 					: 0;
 			} catch ( Exception $e ) {
 				return 0;
@@ -1288,7 +1288,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Subscription' ) ) {
 			}
 
 			$wpdb->update(
-				$wpdb->prefix . 'ktp_order',
+				$wpdb->prefix . 'ktpwp_order',
 				array( 'stripe_subscription_id' => sanitize_text_field( $subscription_id ) ),
 				array( 'id' => absint( $order_id ) ),
 				array( '%s' ),
@@ -1304,13 +1304,13 @@ if ( ! class_exists( 'KTPWP_Stripe_Subscription' ) ) {
 			global $wpdb;
 
 			static $cache = array();
-			$table        = $wpdb->prefix . 'ktp_order';
+			$table        = $wpdb->prefix . 'ktpwp_order';
 
 			if ( isset( $cache[ $column ] ) ) {
 				return $cache[ $column ];
 			}
 
-			$columns          = $wpdb->get_col( "SHOW COLUMNS FROM `{$table}`" );
+			$columns          = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $table ) );
 			$cache[ $column ] = is_array( $columns ) && in_array( $column, $columns, true );
 
 			return $cache[ $column ];
@@ -1370,7 +1370,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Subscription' ) ) {
 				'setup_url'           => '',
 			);
 
-			$cached_setup_url = get_option( 'ktp_stripe_setup_url_' . $contract_id, '' );
+			$cached_setup_url = get_option( 'ktpwp_stripe_setup_url_' . $contract_id, '' );
 			if ( is_string( $cached_setup_url ) && $cached_setup_url !== '' ) {
 				$result['setup_url'] = esc_url_raw( $cached_setup_url );
 			}
@@ -1579,13 +1579,13 @@ if ( ! class_exists( 'KTPWP_Stripe_Subscription' ) ) {
 			global $wpdb;
 
 			static $cache = array();
-			$table        = $wpdb->prefix . 'ktp_contract';
+			$table        = $wpdb->prefix . 'ktpwp_contract';
 
 			if ( isset( $cache[ $column ] ) ) {
 				return $cache[ $column ];
 			}
 
-			$columns          = $wpdb->get_col( "SHOW COLUMNS FROM `{$table}`" );
+			$columns          = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $table ) );
 			$cache[ $column ] = is_array( $columns ) && in_array( $column, $columns, true );
 
 			return $cache[ $column ];

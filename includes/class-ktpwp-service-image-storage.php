@@ -24,7 +24,7 @@ class KTPWP_Service_Image_Storage {
 			return ktpwp_get_uninstall_mode() === 'keep_data';
 		}
 
-		$options = get_option( 'ktp_uninstall_settings', array() );
+		$options = get_option( 'ktpwp_uninstall_settings', array() );
 		$mode    = isset( $options['uninstall_mode'] ) ? (string) $options['uninstall_mode'] : 'keep_data';
 
 		return $mode !== 'full_delete';

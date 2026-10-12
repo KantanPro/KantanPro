@@ -164,8 +164,8 @@ class KTPWP_WooCommerce_Integration {
 			'search_field'   => $search_field,
 		);
 
-		$ktp_order_id = $order_manager->create_order( $data );
-		if ( ! $ktp_order_id ) {
+		$ktpwp_order_id = $order_manager->create_order( $data );
+		if ( ! $ktpwp_order_id ) {
 			global $wpdb;
 			$err = $wpdb->last_error ? $wpdb->last_error : 'unknown';
 			ktpwp_debug_log( 'KTPWP WooCommerce: Failed to create KantanPro order for WC order ' . $order_id . '. DB error: ' . $err );
@@ -179,7 +179,7 @@ class KTPWP_WooCommerce_Integration {
 		// 外部連携情報と支払いタイミング（WC受注）を保存（カラムが存在する場合のみ）
 		if ( $this->order_table_has_external_columns() ) {
 			$order_manager->update_order(
-				$ktp_order_id,
+				$ktpwp_order_id,
 				array(
 					'external_source'   => 'woocommerce',
 					'external_order_id' => (string) $order_id,
@@ -189,13 +189,13 @@ class KTPWP_WooCommerce_Integration {
 		}
 
 		// 請求項目: WC のラインアイテムを追加（なければ初期1件）
-		$this->sync_invoice_items( $ktp_order_id, $order );
+		$this->sync_invoice_items( $ktpwp_order_id, $order );
 
 		// 初期コスト項目
 		if ( class_exists( 'KTPWP_Order_Items' ) ) {
 			$order_items = KTPWP_Order_Items::get_instance();
 			if ( method_exists( $order_items, 'create_initial_cost_item' ) ) {
-				$order_items->create_initial_cost_item( $ktp_order_id );
+				$order_items->create_initial_cost_item( $ktpwp_order_id );
 			}
 		}
 
@@ -204,7 +204,7 @@ class KTPWP_WooCommerce_Integration {
 			$staff_chat = KTPWP_Staff_Chat::get_instance();
 			if ( method_exists( $staff_chat, 'create_inbound_initial_chat' ) ) {
 				$staff_chat->create_inbound_initial_chat(
-					$ktp_order_id,
+					$ktpwp_order_id,
 					KTPWP_Order_Admin_Notification::SOURCE_WOOCOMMERCE
 				);
 			}
@@ -212,7 +212,7 @@ class KTPWP_WooCommerce_Integration {
 
 		if ( class_exists( 'KTPWP_Order_Admin_Notification' ) ) {
 			KTPWP_Order_Admin_Notification::get_instance()->notify_new_order(
-				$ktp_order_id,
+				$ktpwp_order_id,
 				KTPWP_Order_Admin_Notification::SOURCE_WOOCOMMERCE,
 				array(
 					'wc_order_number' => $order_number,
@@ -221,7 +221,7 @@ class KTPWP_WooCommerce_Integration {
 		}
 
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			ktpwp_debug_log( 'KTPWP WooCommerce: Synced WC order ' . $order_id . ' to KantanPro order ' . $ktp_order_id );
+			ktpwp_debug_log( 'KTPWP WooCommerce: Synced WC order ' . $order_id . ' to KantanPro order ' . $ktpwp_order_id );
 		}
 	}
 
@@ -237,7 +237,7 @@ class KTPWP_WooCommerce_Integration {
 			return null;
 		}
 		global $wpdb;
-		$table = $wpdb->prefix . 'ktp_client';
+		$table = $wpdb->prefix . 'ktpwp_client';
 		$exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
 		if ( $exists !== $table ) {
 			return null;
@@ -297,8 +297,8 @@ class KTPWP_WooCommerce_Integration {
 		}
 
 		global $wpdb;
-		$table = $wpdb->prefix . 'ktp_client';
-		$cols  = $wpdb->get_col( "SHOW COLUMNS FROM `{$table}`", 0 );
+		$table = $wpdb->prefix . 'ktpwp_client';
+		$cols  = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $table ), 0 );
 		$cols  = is_array( $cols ) ? $cols : array();
 
 		$client = $wpdb->get_row(
@@ -353,14 +353,14 @@ class KTPWP_WooCommerce_Integration {
 
 	/**
 	 * WooCommerce 注文の請求先から KantanPro 顧客を取得または作成し、client_id を返す
-	 * 既存顧客はメインのメールアドレス（ktp_client.email）でのみ判定し、一致しなければ新規顧客を作成する。
+	 * 既存顧客はメインのメールアドレス（ktpwp_client.email）でのみ判定し、一致しなければ新規顧客を作成する。
 	 *
 	 * @param WC_Order $order
 	 * @return int|null 顧客ID。取得・作成に失敗した場合は null
 	 */
 	private function get_or_create_client_id_from_order( WC_Order $order ): ?int {
 		global $wpdb;
-		$table = $wpdb->prefix . 'ktp_client';
+		$table = $wpdb->prefix . 'ktpwp_client';
 		$exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
 		if ( $exists !== $table ) {
 			return null;
@@ -397,7 +397,7 @@ class KTPWP_WooCommerce_Integration {
 		// 新規顧客を作成
 		$search_parts = array_filter( array( $company_name, $name, $email, $phone, $state, $city, $address ) );
 		$search_field = implode( ' ', $search_parts );
-		$cols         = $wpdb->get_col( "SHOW COLUMNS FROM `{$table}`", 0 );
+		$cols         = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $table ), 0 );
 		$cols         = is_array( $cols ) ? $cols : array();
 
 		$row = array(
@@ -469,7 +469,7 @@ class KTPWP_WooCommerce_Integration {
 	 */
 	private function ensure_order_table_ready(): void {
 		global $wpdb;
-		$table = $wpdb->prefix . 'ktp_order';
+		$table = $wpdb->prefix . 'ktpwp_order';
 		$exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
 		if ( $exists !== $table ) {
 			// 受注テーブルが無い場合は KantanPro のテーブル作成を実行
@@ -481,7 +481,7 @@ class KTPWP_WooCommerce_Integration {
 				return;
 			}
 		}
-		$cols = $wpdb->get_col( "SHOW COLUMNS FROM `{$table}`", 0 );
+		$cols = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $table ), 0 );
 		$cols = is_array( $cols ) ? $cols : array();
 		$add = array(
 			'order_number'      => "VARCHAR(100) NULL DEFAULT NULL COMMENT '受注番号'",
@@ -497,14 +497,14 @@ class KTPWP_WooCommerce_Integration {
 	}
 
 	/**
-	 * ktp_order テーブルに external_source / external_order_id があるか
+	 * ktpwp_order テーブルに external_source / external_order_id があるか
 	 *
 	 * @return bool
 	 */
 	private function order_table_has_external_columns(): bool {
 		global $wpdb;
-		$table  = $wpdb->prefix . 'ktp_order';
-		$cols   = $wpdb->get_col( "SHOW COLUMNS FROM `{$table}`", 0 );
+		$table  = $wpdb->prefix . 'ktpwp_order';
+		$cols   = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $table ), 0 );
 		$cols   = is_array( $cols ) ? $cols : array();
 		return in_array( 'external_source', $cols, true ) && in_array( 'external_order_id', $cols, true );
 	}
@@ -520,7 +520,7 @@ class KTPWP_WooCommerce_Integration {
 			return null;
 		}
 		global $wpdb;
-		$table = $wpdb->prefix . 'ktp_order';
+		$table = $wpdb->prefix . 'ktpwp_order';
 		$col   = $wpdb->get_var(
 			$wpdb->prepare(
 				"SELECT id FROM `{$table}` WHERE external_source = 'woocommerce' AND external_order_id = %s LIMIT 1",
@@ -533,19 +533,19 @@ class KTPWP_WooCommerce_Integration {
 	/**
 	 * WooCommerce のラインアイテムを KantanPro の請求項目として同期
 	 *
-	 * @param int      $ktp_order_id KantanPro 受注ID
+	 * @param int      $ktpwp_order_id KantanPro 受注ID
 	 * @param WC_Order $order        WooCommerce 注文
 	 */
-	private function sync_invoice_items( int $ktp_order_id, WC_Order $order ): void {
+	private function sync_invoice_items( int $ktpwp_order_id, WC_Order $order ): void {
 		global $wpdb;
-		$table = $wpdb->prefix . 'ktp_order_invoice_items';
+		$table = $wpdb->prefix . 'ktpwp_order_invoice_items';
 
 		$items = $order->get_items();
 		if ( empty( $items ) ) {
 			if ( class_exists( 'KTPWP_Order_Items' ) ) {
 				$order_items = KTPWP_Order_Items::get_instance();
 				if ( method_exists( $order_items, 'create_initial_invoice_item' ) ) {
-					$order_items->create_initial_invoice_item( $ktp_order_id );
+					$order_items->create_initial_invoice_item( $ktpwp_order_id );
 				}
 			}
 			return;
@@ -572,7 +572,7 @@ class KTPWP_WooCommerce_Integration {
 			$tax_rate = $this->calc_line_tax_rate( $subtotal, $subtax, $total, $tax, $order_tax_rate_fallback );
 
 			$row = array(
-				'order_id'     => $ktp_order_id,
+				'order_id'     => $ktpwp_order_id,
 				'product_name' => $name,
 				'price'        => $price,
 				'unit'         => __( '個', 'kantanpro' ),
@@ -699,14 +699,14 @@ class KTPWP_WooCommerce_Integration {
 	/**
 	 * 指定 KTP 受注の請求項目を削除し、WooCommerce 注文から再同期する（税率を含む）
 	 *
-	 * @param int      $ktp_order_id KantanPro 受注ID
+	 * @param int      $ktpwp_order_id KantanPro 受注ID
 	 * @param WC_Order $order        WooCommerce 注文
 	 */
-	private function replace_invoice_items_from_wc_order( int $ktp_order_id, WC_Order $order ): void {
+	private function replace_invoice_items_from_wc_order( int $ktpwp_order_id, WC_Order $order ): void {
 		global $wpdb;
-		$table = $wpdb->prefix . 'ktp_order_invoice_items';
-		$wpdb->delete( $table, array( 'order_id' => $ktp_order_id ), array( '%d' ) );
-		$this->sync_invoice_items( $ktp_order_id, $order );
+		$table = $wpdb->prefix . 'ktpwp_order_invoice_items';
+		$wpdb->delete( $table, array( 'order_id' => $ktpwp_order_id ), array( '%d' ) );
+		$this->sync_invoice_items( $ktpwp_order_id, $order );
 	}
 
 	/**
@@ -817,7 +817,7 @@ class KTPWP_WooCommerce_Integration {
 			return 0;
 		}
 		global $wpdb;
-		$table = $wpdb->prefix . 'ktp_order';
+		$table = $wpdb->prefix . 'ktpwp_order';
 		$count = (int) $wpdb->get_var(
 			"SELECT COUNT(*) FROM `{$table}` WHERE external_source = 'woocommerce' AND (client_id = 0 OR client_id IS NULL)"
 		);
@@ -839,7 +839,7 @@ class KTPWP_WooCommerce_Integration {
 			exit;
 		}
 		global $wpdb;
-		$table   = $wpdb->prefix . 'ktp_order';
+		$table   = $wpdb->prefix . 'ktpwp_order';
 		$rows    = $wpdb->get_results(
 			"SELECT id, external_order_id FROM `{$table}` WHERE external_source = 'woocommerce' AND (client_id = 0 OR client_id IS NULL)",
 			ARRAY_A
@@ -848,7 +848,7 @@ class KTPWP_WooCommerce_Integration {
 		$linked  = 0;
 		$order_manager = KTPWP_Order::get_instance();
 		foreach ( $rows as $row ) {
-			$ktp_id   = (int) $row['id'];
+			$ktpwp_id   = (int) $row['id'];
 			$wc_id    = (int) $row['external_order_id'];
 			$order    = wc_get_order( $wc_id );
 			if ( ! $order || ! $order instanceof WC_Order ) {
@@ -882,7 +882,7 @@ class KTPWP_WooCommerce_Integration {
 			$user_name    = $user_name !== '' ? $user_name : $customer_name;
 			$order_number = $order->get_order_number();
 			$project_name = 'WC #' . $order_number;
-			$ok = $order_manager->update_order( $ktp_id, array(
+			$ok = $order_manager->update_order( $ktpwp_id, array(
 				'client_id'      => $client_id,
 				'customer_name'  => $customer_name,
 				'user_name'      => $user_name,
@@ -892,7 +892,7 @@ class KTPWP_WooCommerce_Integration {
 			) );
 			if ( $ok ) {
 				$linked++;
-				$this->replace_invoice_items_from_wc_order( $ktp_id, $order );
+				$this->replace_invoice_items_from_wc_order( $ktpwp_id, $order );
 			}
 		}
 		/* translators: %d: 紐付けた受注の件数 */
@@ -917,7 +917,7 @@ class KTPWP_WooCommerce_Integration {
 			exit;
 		}
 		global $wpdb;
-		$table   = $wpdb->prefix . 'ktp_order';
+		$table   = $wpdb->prefix . 'ktpwp_order';
 		$rows    = $wpdb->get_results(
 			"SELECT id, external_order_id FROM `{$table}` WHERE external_source = 'woocommerce'",
 			ARRAY_A
@@ -926,7 +926,7 @@ class KTPWP_WooCommerce_Integration {
 		$linked  = 0;
 		$order_manager = KTPWP_Order::get_instance();
 		foreach ( $rows as $row ) {
-			$ktp_id   = (int) $row['id'];
+			$ktpwp_id   = (int) $row['id'];
 			$wc_id    = (int) $row['external_order_id'];
 			$order    = wc_get_order( $wc_id );
 			if ( ! $order || ! $order instanceof WC_Order ) {
@@ -960,7 +960,7 @@ class KTPWP_WooCommerce_Integration {
 			$user_name    = $user_name !== '' ? $user_name : $customer_name;
 			$order_number = $order->get_order_number();
 			$project_name = 'WC #' . $order_number;
-			$ok = $order_manager->update_order( $ktp_id, array(
+			$ok = $order_manager->update_order( $ktpwp_id, array(
 				'client_id'      => $client_id,
 				'customer_name'  => $customer_name,
 				'user_name'      => $user_name,
@@ -970,7 +970,7 @@ class KTPWP_WooCommerce_Integration {
 			) );
 			if ( $ok ) {
 				$linked++;
-				$this->replace_invoice_items_from_wc_order( $ktp_id, $order );
+				$this->replace_invoice_items_from_wc_order( $ktpwp_id, $order );
 			}
 		}
 		/* translators: %d: 再紐付けした受注の件数 */

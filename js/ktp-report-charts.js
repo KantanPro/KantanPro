@@ -10,14 +10,14 @@
 (function() {
     'use strict';
 
-    function ktpReportTranslate(text) {
+    function ktpwpReportTranslate(text) {
         return typeof window.ktpwpTranslate === 'function' ? window.ktpwpTranslate(text) : text;
     }
-    function ktpReportFormatMoney(value) {
+    function ktpwpReportFormatMoney(value) {
         return typeof window.ktpwpFormatMoney === 'function' ? window.ktpwpFormatMoney(value) : Number(value || 0).toLocaleString();
     }
-    function ktpReportFormatCount(value) {
-        return ktpReportTranslate('%s件').replace('%s', Number(value || 0).toLocaleString());
+    function ktpwpReportFormatCount(value) {
+        return ktpwpReportTranslate('%s件').replace('%s', Number(value || 0).toLocaleString());
     }
 
     // 色設定
@@ -171,7 +171,7 @@
                     ticks: {
                         color: theme.textColor,
                         callback: function(value) {
-                            return ktpReportFormatMoney(value);
+                            return ktpwpReportFormatMoney(value);
                         }
                     }
                 }
@@ -215,14 +215,14 @@
 
     // ページ完全読み込み後・レポートタブのときだけグラフを初期化（確実に描画するため）
     function tryInitializeChartsWhenVisible() {
-        if (chartsInitialized || typeof ktp_ajax_object === 'undefined') {
+        if (chartsInitialized || typeof ktpwp_ajax_object === 'undefined') {
             return;
         }
         if (typeof Chart === 'undefined') {
             setTimeout(tryInitializeChartsWhenVisible, 100);
             return;
         }
-        window.ktp_report_nonce = ktp_ajax_object.nonce || '';
+        window.ktpwp_report_nonce = ktpwp_ajax_object.nonce || '';
         if (!isReportTabActive()) {
             return;
         }
@@ -231,14 +231,14 @@
     }
 
     document.addEventListener('DOMContentLoaded', function() {
-        if (typeof ktp_ajax_object !== 'undefined') {
-            window.ktp_report_nonce = ktp_ajax_object.nonce || '';
+        if (typeof ktpwp_ajax_object !== 'undefined') {
+            window.ktpwp_report_nonce = ktpwp_ajax_object.nonce || '';
             setTimeout(tryInitializeChartsWhenVisible, 100);
         }
     });
     window.addEventListener('load', function() {
         if (chartsInitialized) return;
-        if (typeof ktp_ajax_object === 'undefined') return;
+        if (typeof ktpwp_ajax_object === 'undefined') return;
         if (isReportTabActive()) {
             chartsInitialized = true;
             initializeCharts();
@@ -316,7 +316,7 @@
                         ...monthlyCommon.plugins,
                         title: {
                             display: true,
-                            text: ktpReportTranslate('月別売上推移'),
+                            text: ktpwpReportTranslate('月別売上推移'),
                             color: monthlyTheme.textColor,
                             font: { size: 16, weight: 'bold' }
                         }
@@ -329,7 +329,7 @@
                             ticks: {
                                 ...monthlyCommon.scales.y.ticks,
                                 callback: function(value) {
-                                    return ktpReportFormatMoney(value);
+                                    return ktpwpReportFormatMoney(value);
                                 }
                             }
                         }
@@ -340,7 +340,7 @@
                     data: {
                         labels: data.monthly_sales.labels,
                         datasets: [{
-                            label: ktpReportTranslate('売上金額'),
+                            label: ktpwpReportTranslate('売上金額'),
                             data: data.monthly_sales.data,
                             borderColor: chartColors.primary,
                             backgroundColor: 'rgba(25, 118, 210, 0.1)',
@@ -373,7 +373,7 @@
                         },
                         title: {
                             display: true,
-                            text: ktpReportTranslate('月別利益コスト比較'),
+                            text: ktpwpReportTranslate('月別利益コスト比較'),
                             color: profitTheme.textColor,
                             font: { size: 16, weight: 'bold' }
                         }
@@ -393,7 +393,7 @@
                             ticks: {
                                 color: profitTheme.textColor,
                                 callback: function(value) {
-                                    return ktpReportFormatMoney(value);
+                                    return ktpwpReportFormatMoney(value);
                                 }
                             },
                             beginAtZero: true
@@ -406,7 +406,7 @@
                         labels: data.profit_trend.labels,
                         datasets: [
                             {
-                                label: ktpReportTranslate('コスト'),
+                                label: ktpwpReportTranslate('コスト'),
                                 data: data.profit_trend.cost,
                                 backgroundColor: chartColors.warning,
                                 borderColor: chartColors.warning,
@@ -415,7 +415,7 @@
                                 yAxisID: 'y'
                             },
                             {
-                                label: ktpReportTranslate('利益'),
+                                label: ktpwpReportTranslate('利益'),
                                 data: data.profit_trend.profit,
                                 backgroundColor: chartColors.success,
                                 borderColor: chartColors.success,
@@ -455,7 +455,7 @@
                         ...clientSalesBarOpts.plugins,
                         title: {
                             display: true,
-                            text: ktpReportTranslate('顧客別売上'),
+                            text: ktpwpReportTranslate('顧客別売上'),
                             color: clientSalesTheme.textColor,
                             font: { size: 16, weight: 'bold' }
                         }
@@ -468,7 +468,7 @@
                             ticks: {
                                 ...clientSalesBarOpts.scales.y.ticks,
                                 callback: function(value) {
-                                    return ktpReportFormatMoney(value);
+                                    return ktpwpReportFormatMoney(value);
                                 }
                             }
                         }
@@ -479,7 +479,7 @@
                     data: {
                         labels: data.client_sales.labels,
                         datasets: [{
-                            label: ktpReportTranslate('売上金額'),
+                            label: ktpwpReportTranslate('売上金額'),
                             data: data.client_sales.data,
                             backgroundColor: data.client_sales.labels.map(function(_, index) {
                                 return getGradientColor(chartColors.gradients[index % chartColors.gradients.length]);
@@ -511,7 +511,7 @@
                         },
                         title: {
                             display: true,
-                            text: ktpReportTranslate('顧客別案件数'),
+                            text: ktpwpReportTranslate('顧客別案件数'),
                             color: clientOrderTheme.textColor,
                             font: { size: 16, weight: 'bold' }
                         }
@@ -557,7 +557,7 @@
                         ...serviceSalesBarOpts.plugins,
                         title: {
                             display: true,
-                            text: ktpReportTranslate('サービス別売上'),
+                            text: ktpwpReportTranslate('サービス別売上'),
                             color: serviceSalesTheme.textColor,
                             font: { size: 16, weight: 'bold' }
                         }
@@ -570,7 +570,7 @@
                             ticks: {
                                 ...serviceSalesBarOpts.scales.y.ticks,
                                 callback: function(value) {
-                                    return ktpReportFormatMoney(value);
+                                    return ktpwpReportFormatMoney(value);
                                 }
                             }
                         }
@@ -581,7 +581,7 @@
                     data: {
                         labels: data.service_sales.labels,
                         datasets: [{
-                            label: ktpReportTranslate('売上金額'),
+                            label: ktpwpReportTranslate('売上金額'),
                             data: data.service_sales.data,
                             backgroundColor: data.service_sales.labels.map(function(_, index) {
                                 return getGradientColor(chartColors.gradients[index % chartColors.gradients.length]);
@@ -613,7 +613,7 @@
                         },
                         title: {
                             display: true,
-                            text: ktpReportTranslate('サービス別比率（受注ベース）'),
+                            text: ktpwpReportTranslate('サービス別比率（受注ベース）'),
                             color: serviceQtyTheme.textColor,
                             font: { size: 16, weight: 'bold' }
                         },
@@ -624,7 +624,7 @@
                                     var value = context.parsed;
                                     var total = context.dataset.data.reduce(function(a, b) { return a + b; }, 0);
                                     var percentage = ((value / total) * 100).toFixed(1);
-                                    return label + ': ' + ktpReportFormatCount(value) + ' (' + percentage + '%)';
+                                    return label + ': ' + ktpwpReportFormatCount(value) + ' (' + percentage + '%)';
                                 }
                             }
                         }
@@ -670,7 +670,7 @@
                         ...supplierSkillsBarOpts.plugins,
                         title: {
                             display: true,
-                            text: ktpReportTranslate('協力会社別貢献度'),
+                            text: ktpwpReportTranslate('協力会社別貢献度'),
                             color: supplierSkillsTheme.textColor,
                             font: { size: 16, weight: 'bold' }
                         }
@@ -683,7 +683,7 @@
                             ticks: {
                                 ...supplierSkillsBarOpts.scales.y.ticks,
                                 callback: function(value) {
-                                    return ktpReportFormatMoney(value);
+                                    return ktpwpReportFormatMoney(value);
                                 }
                             }
                         }
@@ -694,7 +694,7 @@
                     data: {
                         labels: data.supplier_skills.labels,
                         datasets: [{
-                            label: ktpReportTranslate('貢献度'),
+                            label: ktpwpReportTranslate('貢献度'),
                             data: data.supplier_skills.data,
                             backgroundColor: data.supplier_skills.labels.map(function(_, index) {
                                 return getGradientColor(chartColors.gradients[index % chartColors.gradients.length]);
@@ -726,7 +726,7 @@
                         },
                         title: {
                             display: true,
-                            text: ktpReportTranslate('スキル別協力会社数'),
+                            text: ktpwpReportTranslate('スキル別協力会社数'),
                             color: skillSuppliersTheme.textColor,
                             font: { size: 16, weight: 'bold' }
                         }
@@ -757,7 +757,7 @@
         console.log('レポートデータ取得開始:', { reportType, period });
         
         return new Promise(function(resolve, reject) {
-            if (typeof ktp_ajax_object === 'undefined') {
+            if (typeof ktpwp_ajax_object === 'undefined') {
                 reject(new Error('AJAX設定が見つかりません'));
                 return;
             }
@@ -766,9 +766,9 @@
             formData.append('action', 'ktpwp_get_report_data');
             formData.append('report_type', reportType);
             formData.append('period', period);
-            formData.append('nonce', window.ktp_report_nonce || ktp_ajax_object.nonce);
+            formData.append('nonce', window.ktpwp_report_nonce || ktpwp_ajax_object.nonce);
 
-            fetch(ktp_ajax_object.ajax_url, {
+            fetch(ktpwp_ajax_object.ajax_url, {
                 method: 'POST',
                 body: formData
             })

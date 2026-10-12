@@ -1,14 +1,17 @@
 <?php
 /**
- * 本番環境向けマイグレーション: top_ktp_supplierテーブルに不足カラムを追加
+ * 本番環境向けマイグレーション: top_ktpwp_supplierテーブルに不足カラムを追加
  * 実行日: 2025-07-03
- * 対象: 本番環境 (top_ktp_supplier) と ローカル環境 (wp_ktp_supplier)
+ * 対象: 本番環境 (top_ktpwp_supplier) と ローカル環境 (wp_ktpwp_supplier)
  */
 
 // 直接実行禁止
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
+
+// ファイル内の変数をグローバルに出さないよう、処理全体を無名関数で包む（読み込んだ時点で実行される）。
+( static function () {
 
 global $wpdb;
 
@@ -25,14 +28,14 @@ if ( class_exists( 'KTPWP_Fresh_Install_Detector' ) ) {
 
 // 環境判定（本番かローカルか）
 $is_production = false;
-$table_name = $wpdb->prefix . 'ktp_supplier';
+$table_name = $wpdb->prefix . 'ktpwp_supplier';
 
 // 本番環境の判定（テーブル名で判定）
-$production_table = 'top_ktp_supplier';
-$local_table = $wpdb->prefix . 'ktp_supplier';
+$production_table = 'top_ktpwp_supplier';
+$local_table = $wpdb->prefix . 'ktpwp_supplier';
 
 // 本番テーブルが存在するかチェック
-$production_exists = $wpdb->get_var( "SHOW TABLES LIKE '{$production_table}'" );
+$production_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $production_table ) );
 if ( $production_exists === $production_table ) {
     $is_production = true;
     $table_name = $production_table;
@@ -44,7 +47,7 @@ if ( $production_exists === $production_table ) {
 }
 
 // マイグレーション実行済みチェック
-$migration_key = 'ktp_supplier_migration_20250703_completed';
+$migration_key = 'ktpwp_supplier_migration_20250703_completed';
 $migration_completed = get_option( $migration_key, false );
 
 if ( $migration_completed ) {
@@ -82,7 +85,7 @@ $columns_to_add = array(
 );
 
 // 現在のカラムを取得
-$existing_columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$table_name}`", 0 );
+$existing_columns = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $table_name ), 0 );
 
 if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
     ktpwp_debug_log( 'KTPWP Migration: 現在のカラム: ' . implode( ', ', $existing_columns ) );
@@ -113,13 +116,11 @@ $success_count = 0;
 $error_count = 0;
 
 foreach ( $missing_columns as $column_name => $column_definition ) {
-    $sql = "ALTER TABLE `{$table_name}` ADD COLUMN `{$column_name}` {$column_definition}";
-
     if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-        ktpwp_debug_log( "KTPWP Migration: 実行SQL: {$sql}" );
+        ktpwp_debug_log( "KTPWP Migration: カラム追加: {$column_name}" );
     }
 
-    $result = $wpdb->query( $sql );
+    $result = ktpwp_migration_add_column( $table_name, $column_name, $column_definition );
 
     if ( $result !== false ) {
         $success_count++;
@@ -143,8 +144,9 @@ if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 }
 
 // 最終確認
-$final_columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$table_name}`", 0 );
+$final_columns = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $table_name ), 0 );
 if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
     ktpwp_debug_log( 'KTPWP Migration: 最終カラム数: ' . count( $final_columns ) );
     ktpwp_debug_log( 'KTPWP Migration: 最終カラム: ' . implode( ', ', $final_columns ) );
 }
+} )();

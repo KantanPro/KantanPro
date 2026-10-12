@@ -22,7 +22,7 @@ class KTPWP_Department_Migration {
     public static function run() {
         global $wpdb;
 
-        $table_name = $wpdb->prefix . 'ktp_department';
+        $table_name = $wpdb->prefix . 'ktpwp_department';
         $charset_collate = $wpdb->get_charset_collate();
 
         $sql = "CREATE TABLE {$table_name} (
@@ -43,7 +43,7 @@ class KTPWP_Department_Migration {
 
         if ( ! empty( $result ) ) {
             // マイグレーション完了フラグを設定
-            update_option( 'ktp_department_table_version', '1.0.0' );
+            update_option( 'ktpwp_department_table_version', '1.0.0' );
 
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
                 ktpwp_debug_log( 'KTPWP: 部署テーブルが正常に作成されました。' );
@@ -65,7 +65,7 @@ class KTPWP_Department_Migration {
     public static function needs_migration() {
         global $wpdb;
 
-        $table_name = $wpdb->prefix . 'ktp_department';
+        $table_name = $wpdb->prefix . 'ktpwp_department';
         $table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) );
 
         return $table_exists !== $table_name;

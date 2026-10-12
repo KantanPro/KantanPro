@@ -92,7 +92,7 @@ if ( ! class_exists( 'KTPWP_Contract_Recurring_Items' ) ) {
 		public static function service_table_name() {
 			global $wpdb;
 
-			return $wpdb->prefix . 'ktp_service_recurring_item';
+			return $wpdb->prefix . 'ktpwp_service_recurring_item';
 		}
 
 		/**
@@ -103,7 +103,7 @@ if ( ! class_exists( 'KTPWP_Contract_Recurring_Items' ) ) {
 		public static function contract_table_name() {
 			global $wpdb;
 
-			return $wpdb->prefix . 'ktp_contract_recurring_item';
+			return $wpdb->prefix . 'ktpwp_contract_recurring_item';
 		}
 
 		/**
@@ -265,7 +265,7 @@ if ( ! class_exists( 'KTPWP_Contract_Recurring_Items' ) ) {
 
 			if ( ! self::ensure_tables() ) {
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					ktpwp_debug_log( 'KTPWP: ktp_service_recurring_item テーブルを作成できませんでした。' );
+					ktpwp_debug_log( 'KTPWP: ktpwp_service_recurring_item テーブルを作成できませんでした。' );
 				}
 
 				return false;
@@ -392,9 +392,7 @@ if ( ! class_exists( 'KTPWP_Contract_Recurring_Items' ) ) {
 			}
 
 			$found = $wpdb->get_var(
-				$wpdb->prepare(
-					"SHOW COLUMNS FROM `{$table}` LIKE %s",
-					$column
+				$wpdb->prepare( 'SHOW COLUMNS FROM %i LIKE %s', $table, $column
 				)
 			);
 

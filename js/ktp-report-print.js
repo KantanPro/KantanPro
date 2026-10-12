@@ -10,7 +10,7 @@
 (function ($) {
     'use strict';
 
-    function ktpReportPrintTranslate(text) {
+    function ktpwpReportPrintTranslate(text) {
         return typeof window.ktpwpTranslate === 'function' ? window.ktpwpTranslate(text) : text;
     }
     var forceLightAttr = 'data-ktp-force-light';
@@ -331,7 +331,7 @@
         return '<!DOCTYPE html>'
             + '<html lang="ja"><head>'
             + '<meta charset="UTF-8">'
-            + '<title>' + (filename || ktpReportPrintTranslate('レポート')) + '</title>'
+            + '<title>' + (filename || ktpwpReportPrintTranslate('レポート')) + '</title>'
             + '<style>'
             + '*{margin:0;padding:0;box-sizing:border-box;}'
             + 'html,body{background:#ffffff !important;color:#333333 !important;}'
@@ -418,11 +418,11 @@
         var $area = getReportArea();
         var printState = null;
         if (!$area.length) {
-            alert(ktpReportPrintTranslate('印刷する内容が見つかりません。'));
+            alert(ktpwpReportPrintTranslate('印刷する内容が見つかりません。'));
             return;
         }
 
-        var filename = ktpReportPrintTranslate('レポート') + '_' + (new Date().toISOString().slice(0, 10));
+        var filename = ktpwpReportPrintTranslate('レポート') + '_' + (new Date().toISOString().slice(0, 10));
 
         // 印刷時: グラフをライトで再描画 → 画像化直前に全Chartの文字色を黒・背景白に上書き → 直接印刷
         prepareChartsForLightPrint($area).then(function() {
@@ -436,13 +436,13 @@
             printDirect(html, filename);
         }).catch(function(err) {
             console.error('[KTP-REPORT-PRINT] build failed:', err);
-            alert(ktpReportPrintTranslate('印刷データの作成に失敗しました。'));
+            alert(ktpwpReportPrintTranslate('印刷データの作成に失敗しました。'));
         }).finally(function() {
             restoreChartStylesAfterPrint(printState);
             restoreChartsAfterPrint($area).catch(function() {});
         });
     }
 
-    window.ktpReportPrintOpen = showReportPrintPopup;
+    window.ktpwpReportPrintOpen = showReportPrintPopup;
 
 })(jQuery);

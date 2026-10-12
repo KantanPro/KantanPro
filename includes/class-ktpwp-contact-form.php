@@ -527,7 +527,7 @@ class KTPWP_Contact_Form {
         }
 
         global $wpdb;
-        $table = $wpdb->prefix . 'ktp_client_department';
+        $table = $wpdb->prefix . 'ktpwp_client_department';
         $name  = $wpdb->get_var(
             $wpdb->prepare(
                 "SELECT department_name FROM `{$table}` WHERE id = %d",
@@ -547,7 +547,7 @@ class KTPWP_Contact_Form {
     private function save_client_data( $client_data ) {
         global $wpdb;
 
-        $table_name = $wpdb->prefix . 'ktp_client';
+        $table_name = $wpdb->prefix . 'ktpwp_client';
 
         // データが完全に0の場合、AUTO_INCREMENTカウンターを1にリセット
         $row_count = $wpdb->get_var( "SELECT COUNT(*) FROM {$table_name}" );
@@ -599,7 +599,7 @@ class KTPWP_Contact_Form {
     private function save_order_data( $order_data ) {
         global $wpdb;
 
-        $table_name = $wpdb->prefix . 'ktp_order';
+        $table_name = $wpdb->prefix . 'ktpwp_order';
 
         // データが完全に0の場合、AUTO_INCREMENTカウンターを1にリセット
         $row_count = $wpdb->get_var( "SELECT COUNT(*) FROM {$table_name}" );
@@ -641,7 +641,7 @@ class KTPWP_Contact_Form {
         );
 
         if ( ! empty( $order_data['client_department_id'] ) ) {
-            $cols = $wpdb->get_col( "SHOW COLUMNS FROM `{$table_name}`", 0 );
+            $cols = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $table_name ), 0 );
             if ( is_array( $cols ) && in_array( 'client_department_id', $cols, true ) ) {
                 $insert_data['client_department_id'] = (int) $order_data['client_department_id'];
             }
@@ -679,7 +679,7 @@ class KTPWP_Contact_Form {
         if ( $new_id && class_exists( 'KTPWP_Order_Admin_Notification' ) ) {
             $client_email = '';
             if ( ! empty( $order_data['client_id'] ) ) {
-                $client_table = $wpdb->prefix . 'ktp_client';
+                $client_table = $wpdb->prefix . 'ktpwp_client';
                 $client_email = (string) $wpdb->get_var(
                     $wpdb->prepare(
                         "SELECT email FROM `{$client_table}` WHERE id = %d",
@@ -720,7 +720,7 @@ class KTPWP_Contact_Form {
      * @param int $client_id 顧客ID
      */
     private function set_client_cookie( $client_id ) {
-        $cookie_name = 'ktp_client_id';
+        $cookie_name = 'ktpwp_client_id';
 
         if ( ! headers_sent() ) {
             setcookie( $cookie_name, $client_id, time() + ( 86400 * 30 ), COOKIEPATH, COOKIE_DOMAIN );
@@ -810,7 +810,7 @@ class KTPWP_Contact_Form {
             $table_name
         );
 
-        return $wpdb->get_var( $query ) === $table_name;
+        return $wpdb->get_var( $query ) === $table_name; // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $query は $wpdb->prepare() 済み。
     }
 
     /**
@@ -822,8 +822,8 @@ class KTPWP_Contact_Form {
         global $wpdb;
 
         $required_tables = array(
-            $wpdb->prefix . 'ktp_client',
-            $wpdb->prefix . 'ktp_order',
+            $wpdb->prefix . 'ktpwp_client',
+            $wpdb->prefix . 'ktpwp_order',
         );
 
         foreach ( $required_tables as $table ) {

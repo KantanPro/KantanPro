@@ -39,7 +39,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Billing' ) ) {
 			$instance = self::get_instance();
 			add_action( 'rest_api_init', array( $instance, 'register_rest_routes' ) );
 			add_action( 'ktpwp_stripe_void_stale_drafts', array( $instance, 'void_stale_draft_invoices' ) );
-			add_action( 'update_option_ktp_general_settings', array( $instance, 'maybe_sync_business_profile_on_settings_save' ), 10, 2 );
+			add_action( 'update_option_ktpwp_general_settings', array( $instance, 'maybe_sync_business_profile_on_settings_save' ), 10, 2 );
 
 			if ( ! wp_next_scheduled( 'ktpwp_stripe_void_stale_drafts' ) ) {
 				wp_schedule_event( time(), 'daily', 'ktpwp_stripe_void_stale_drafts' );
@@ -65,7 +65,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Billing' ) ) {
 				return false;
 			}
 
-			$options = get_option( 'ktp_general_settings', array() );
+			$options = get_option( 'ktpwp_general_settings', array() );
 			if ( ! empty( $options['stripe_enabled'] ) ) {
 				return true;
 			}
@@ -80,7 +80,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Billing' ) ) {
 		 * @return bool
 		 */
 		public static function is_test_mode() {
-			$options = get_option( 'ktp_general_settings', array() );
+			$options = get_option( 'ktpwp_general_settings', array() );
 
 			return ! empty( $options['stripe_test_mode'] );
 		}
@@ -91,7 +91,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Billing' ) ) {
 		 * @return string
 		 */
 		public static function get_secret_key() {
-			$options = get_option( 'ktp_general_settings', array() );
+			$options = get_option( 'ktpwp_general_settings', array() );
 			$key     = self::is_test_mode()
 				? ( $options['stripe_secret_key_test'] ?? '' )
 				: ( $options['stripe_secret_key_live'] ?? '' );
@@ -105,7 +105,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Billing' ) ) {
 		 * @return string
 		 */
 		public static function get_webhook_secret() {
-			$options = get_option( 'ktp_general_settings', array() );
+			$options = get_option( 'ktpwp_general_settings', array() );
 			$key     = self::is_test_mode()
 				? ( $options['stripe_webhook_secret_test'] ?? '' )
 				: ( $options['stripe_webhook_secret_live'] ?? '' );
@@ -119,7 +119,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Billing' ) ) {
 		 * @return int
 		 */
 		public static function get_days_until_due() {
-			$options = get_option( 'ktp_general_settings', array() );
+			$options = get_option( 'ktpwp_general_settings', array() );
 			$days    = isset( $options['stripe_days_until_due'] ) ? absint( $options['stripe_days_until_due'] ) : 30;
 
 			return max( 1, min( 90, $days ) );
@@ -140,7 +140,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Billing' ) ) {
 		 * @return string
 		 */
 		public static function get_invoice_issuer_name() {
-			$options = get_option( 'ktp_general_settings', array() );
+			$options = get_option( 'ktpwp_general_settings', array() );
 			$custom  = trim( (string) ( $options['stripe_invoice_issuer_name'] ?? '' ) );
 			if ( $custom !== '' ) {
 				return $custom;
@@ -291,12 +291,12 @@ if ( ! class_exists( 'KTPWP_Stripe_Billing' ) ) {
 
 			if ( $type === 'customer.subscription.deleted' && class_exists( 'KTPWP_Stripe_Subscription' ) ) {
 				$subscription = $event->data->object ?? null;
-				if ( $subscription && ! empty( $subscription->metadata->ktp_contract_id ) ) {
+				if ( $subscription && ! empty( $subscription->metadata->ktpwp_contract_id ) ) {
 					global $wpdb;
-					$contract_id = absint( $subscription->metadata->ktp_contract_id );
+					$contract_id = absint( $subscription->metadata->ktpwp_contract_id );
 					if ( $contract_id > 0 ) {
-						$table = $wpdb->prefix . 'ktp_contract';
-						$cols  = $wpdb->get_col( "SHOW COLUMNS FROM `{$table}`" );
+						$table = $wpdb->prefix . 'ktpwp_contract';
+						$cols  = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $table ) );
 						if ( is_array( $cols ) && in_array( 'stripe_subscription_id', $cols, true ) ) {
 							$wpdb->update(
 								$table,
@@ -605,7 +605,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Billing' ) ) {
 				return new WP_Error( 'stripe_sdk_missing', __( 'Stripe SDK が読み込まれていません。', 'kantanpro' ) );
 			}
 
-			$order_table = $wpdb->prefix . 'ktp_order';
+			$order_table = $wpdb->prefix . 'ktpwp_order';
 			$order       = $wpdb->get_row(
 				$wpdb->prepare(
 					"SELECT * FROM {$order_table} WHERE id = %d",
@@ -655,13 +655,13 @@ if ( ! class_exists( 'KTPWP_Stripe_Billing' ) ) {
 			}
 
 			$metadata = array(
-				'ktp_order_id' => (string) $order_id,
+				'ktpwp_order_id' => (string) $order_id,
 			);
 			if ( ! empty( $order->contract_id ) ) {
-				$metadata['ktp_contract_id'] = (string) (int) $order->contract_id;
+				$metadata['ktpwp_contract_id'] = (string) (int) $order->contract_id;
 			}
 			if ( ! empty( $order->billing_period ) ) {
-				$metadata['ktp_billing_period'] = (string) $order->billing_period;
+				$metadata['ktpwp_billing_period'] = (string) $order->billing_period;
 			}
 
 			try {
@@ -786,8 +786,8 @@ if ( ! class_exists( 'KTPWP_Stripe_Billing' ) ) {
 				return false;
 			}
 
-			if ( isset( $invoice->metadata->ktp_order_id ) ) {
-				$meta_order = (int) $invoice->metadata->ktp_order_id;
+			if ( isset( $invoice->metadata->ktpwp_order_id ) ) {
+				$meta_order = (int) $invoice->metadata->ktpwp_order_id;
 				if ( $meta_order > 0 && $meta_order !== (int) $order_id ) {
 					return false;
 				}
@@ -885,7 +885,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Billing' ) ) {
 				return new WP_Error( 'invalid_client', __( '顧客が見つかりません。', 'kantanpro' ) );
 			}
 
-			$table  = $wpdb->prefix . 'ktp_client';
+			$table  = $wpdb->prefix . 'ktpwp_client';
 			$client = $wpdb->get_row(
 				$wpdb->prepare(
 					"SELECT * FROM {$table} WHERE id = %d",
@@ -916,7 +916,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Billing' ) ) {
 							'email'    => $email !== '' ? $email : null,
 							'name'     => $name !== '' ? $name : null,
 							'metadata' => array(
-								'ktp_client_id' => (string) $client_id,
+								'ktpwp_client_id' => (string) $client_id,
 							),
 						)
 					)
@@ -953,7 +953,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Billing' ) ) {
 				return;
 			}
 
-			$order_table = $wpdb->prefix . 'ktp_order';
+			$order_table = $wpdb->prefix . 'ktpwp_order';
 			$order       = $wpdb->get_row(
 				$wpdb->prepare(
 					"SELECT * FROM {$order_table} WHERE stripe_invoice_id = %s LIMIT 1",
@@ -1016,7 +1016,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Billing' ) ) {
 				return false;
 			}
 
-			$order_table = $wpdb->prefix . 'ktp_order';
+			$order_table = $wpdb->prefix . 'ktpwp_order';
 			$order       = $wpdb->get_row(
 				$wpdb->prepare(
 					"SELECT * FROM {$order_table} WHERE id = %d",
@@ -1088,7 +1088,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Billing' ) ) {
 				return false;
 			}
 
-			$order_table = $wpdb->prefix . 'ktp_order';
+			$order_table = $wpdb->prefix . 'ktpwp_order';
 			$updated     = $wpdb->update(
 				$order_table,
 				array( 'progress' => $new_progress ),
@@ -1139,7 +1139,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Billing' ) ) {
 				return;
 			}
 
-			$order_table = $wpdb->prefix . 'ktp_order';
+			$order_table = $wpdb->prefix . 'ktpwp_order';
 			$orders      = $wpdb->get_results(
 				$wpdb->prepare(
 					"SELECT id, stripe_invoice_id, stripe_paid_at FROM {$order_table}
@@ -1167,7 +1167,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Billing' ) ) {
 				return;
 			}
 
-			$order_table = $wpdb->prefix . 'ktp_order';
+			$order_table = $wpdb->prefix . 'ktpwp_order';
 			$invoice_id  = $wpdb->get_var(
 				$wpdb->prepare(
 					"SELECT stripe_invoice_id FROM {$order_table} WHERE id = %d",
@@ -1216,7 +1216,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Billing' ) ) {
 				return;
 			}
 
-			$order_table = $wpdb->prefix . 'ktp_order';
+			$order_table = $wpdb->prefix . 'ktpwp_order';
 			$cutoff_ts = time() - 7 * DAY_IN_SECONDS;
 
 			$rows = $wpdb->get_results(
@@ -1277,7 +1277,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Billing' ) ) {
 			}
 
 			$wpdb->update(
-				$wpdb->prefix . 'ktp_order',
+				$wpdb->prefix . 'ktpwp_order',
 				$data,
 				array( 'id' => absint( $order_id ) ),
 				$fmt,
@@ -1317,8 +1317,8 @@ if ( ! class_exists( 'KTPWP_Stripe_Billing' ) ) {
 		 */
 		private function order_table_has_column( $column ) {
 			global $wpdb;
-			$table = $wpdb->prefix . 'ktp_order';
-			$cols  = $wpdb->get_col( "SHOW COLUMNS FROM `{$table}`", 0 );
+			$table = $wpdb->prefix . 'ktpwp_order';
+			$cols  = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $table ), 0 );
 
 			return in_array( $column, $cols, true );
 		}
@@ -1329,8 +1329,8 @@ if ( ! class_exists( 'KTPWP_Stripe_Billing' ) ) {
 		 */
 		private function client_table_has_column( $column ) {
 			global $wpdb;
-			$table = $wpdb->prefix . 'ktp_client';
-			$cols  = $wpdb->get_col( "SHOW COLUMNS FROM `{$table}`", 0 );
+			$table = $wpdb->prefix . 'ktpwp_client';
+			$cols  = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $table ), 0 );
 
 			return in_array( $column, $cols, true );
 		}
@@ -1361,9 +1361,9 @@ if ( ! class_exists( 'KTPWP_Stripe_Billing' ) ) {
 				echo '<span class="description">' . esc_html__( 'フリー版では利用できません。', 'kantanpro' ) . '</span>';
 				return;
 			}
-			$options = get_option( 'ktp_general_settings', array() );
+			$options = get_option( 'ktpwp_general_settings', array() );
 			$checked = ! empty( $options['stripe_enabled'] );
-			echo '<label><input type="checkbox" name="ktp_general_settings[stripe_enabled]" value="1" ' . checked( $checked, true, false ) . '> ';
+			echo '<label><input type="checkbox" name="ktpwp_general_settings[stripe_enabled]" value="1" ' . checked( $checked, true, false ) . '> ';
 			echo esc_html__( 'Stripe 請求連携を有効にする', 'kantanpro' );
 			echo '</label>';
 		}
@@ -1374,9 +1374,9 @@ if ( ! class_exists( 'KTPWP_Stripe_Billing' ) ) {
 		 * @return void
 		 */
 		public static function render_test_mode_field() {
-			$options = get_option( 'ktp_general_settings', array() );
+			$options = get_option( 'ktpwp_general_settings', array() );
 			$checked = ! empty( $options['stripe_test_mode'] );
-			echo '<label><input type="checkbox" name="ktp_general_settings[stripe_test_mode]" value="1" ' . checked( $checked, true, false ) . '> ';
+			echo '<label><input type="checkbox" name="ktpwp_general_settings[stripe_test_mode]" value="1" ' . checked( $checked, true, false ) . '> ';
 			echo esc_html__( 'テストモード（テスト用 API キーを使用）', 'kantanpro' );
 			echo '</label>';
 		}
@@ -1387,9 +1387,9 @@ if ( ! class_exists( 'KTPWP_Stripe_Billing' ) ) {
 		 * @return void
 		 */
 		public static function render_secret_key_test_field() {
-			$options = get_option( 'ktp_general_settings', array() );
+			$options = get_option( 'ktpwp_general_settings', array() );
 			$value   = isset( $options['stripe_secret_key_test'] ) ? (string) $options['stripe_secret_key_test'] : '';
-			echo '<input type="password" name="ktp_general_settings[stripe_secret_key_test]" value="' . esc_attr( $value ) . '" class="regular-text" autocomplete="off">';
+			echo '<input type="password" name="ktpwp_general_settings[stripe_secret_key_test]" value="' . esc_attr( $value ) . '" class="regular-text" autocomplete="off">';
 		}
 
 		/**
@@ -1398,9 +1398,9 @@ if ( ! class_exists( 'KTPWP_Stripe_Billing' ) ) {
 		 * @return void
 		 */
 		public static function render_secret_key_live_field() {
-			$options = get_option( 'ktp_general_settings', array() );
+			$options = get_option( 'ktpwp_general_settings', array() );
 			$value   = isset( $options['stripe_secret_key_live'] ) ? (string) $options['stripe_secret_key_live'] : '';
-			echo '<input type="password" name="ktp_general_settings[stripe_secret_key_live]" value="' . esc_attr( $value ) . '" class="regular-text" autocomplete="off">';
+			echo '<input type="password" name="ktpwp_general_settings[stripe_secret_key_live]" value="' . esc_attr( $value ) . '" class="regular-text" autocomplete="off">';
 		}
 
 		/**
@@ -1409,9 +1409,9 @@ if ( ! class_exists( 'KTPWP_Stripe_Billing' ) ) {
 		 * @return void
 		 */
 		public static function render_webhook_secret_test_field() {
-			$options = get_option( 'ktp_general_settings', array() );
+			$options = get_option( 'ktpwp_general_settings', array() );
 			$value   = isset( $options['stripe_webhook_secret_test'] ) ? (string) $options['stripe_webhook_secret_test'] : '';
-			echo '<input type="password" name="ktp_general_settings[stripe_webhook_secret_test]" value="' . esc_attr( $value ) . '" class="regular-text" autocomplete="off">';
+			echo '<input type="password" name="ktpwp_general_settings[stripe_webhook_secret_test]" value="' . esc_attr( $value ) . '" class="regular-text" autocomplete="off">';
 		}
 
 		/**
@@ -1420,9 +1420,9 @@ if ( ! class_exists( 'KTPWP_Stripe_Billing' ) ) {
 		 * @return void
 		 */
 		public static function render_webhook_secret_live_field() {
-			$options = get_option( 'ktp_general_settings', array() );
+			$options = get_option( 'ktpwp_general_settings', array() );
 			$value   = isset( $options['stripe_webhook_secret_live'] ) ? (string) $options['stripe_webhook_secret_live'] : '';
-			echo '<input type="password" name="ktp_general_settings[stripe_webhook_secret_live]" value="' . esc_attr( $value ) . '" class="regular-text" autocomplete="off">';
+			echo '<input type="password" name="ktpwp_general_settings[stripe_webhook_secret_live]" value="' . esc_attr( $value ) . '" class="regular-text" autocomplete="off">';
 		}
 
 		/**
@@ -1431,9 +1431,9 @@ if ( ! class_exists( 'KTPWP_Stripe_Billing' ) ) {
 		 * @return void
 		 */
 		public static function render_days_until_due_field() {
-			$options = get_option( 'ktp_general_settings', array() );
+			$options = get_option( 'ktpwp_general_settings', array() );
 			$value   = isset( $options['stripe_days_until_due'] ) ? absint( $options['stripe_days_until_due'] ) : 30;
-			echo '<input type="number" min="1" max="90" step="1" name="ktp_general_settings[stripe_days_until_due]" value="' . esc_attr( (string) max( 1, $value ) ) . '" class="small-text"> ';
+			echo '<input type="number" min="1" max="90" step="1" name="ktpwp_general_settings[stripe_days_until_due]" value="' . esc_attr( (string) max( 1, $value ) ) . '" class="small-text"> ';
 			echo esc_html__( '日', 'kantanpro' );
 		}
 
@@ -1444,7 +1444,7 @@ if ( ! class_exists( 'KTPWP_Stripe_Billing' ) ) {
 		 */
 		public static function render_invoice_issuer_name_field() {
 			$value = self::get_invoice_issuer_name();
-			echo '<input type="text" name="ktp_general_settings[stripe_invoice_issuer_name]" value="' . esc_attr( $value ) . '" class="regular-text">';
+			echo '<input type="text" name="ktpwp_general_settings[stripe_invoice_issuer_name]" value="' . esc_attr( $value ) . '" class="regular-text">';
 			echo '<p class="description">' . esc_html__( 'Stripe 請求ページの「請求元」に表示されます。保存時と請求書作成時に Stripe アカウントへ同期されます。', 'kantanpro' ) . '</p>';
 		}
 
@@ -1460,9 +1460,9 @@ if ( ! class_exists( 'KTPWP_Stripe_Billing' ) ) {
 				}
 				return;
 			}
-			$options = get_option( 'ktp_general_settings', array() );
+			$options = get_option( 'ktpwp_general_settings', array() );
 			$checked = ! isset( $options['contract_invoice_auto_enabled'] ) || ! empty( $options['contract_invoice_auto_enabled'] );
-			echo '<label><input type="checkbox" name="ktp_general_settings[contract_invoice_auto_enabled]" value="1" ' . checked( $checked, true, false ) . '> ';
+			echo '<label><input type="checkbox" name="ktpwp_general_settings[contract_invoice_auto_enabled]" value="1" ' . checked( $checked, true, false ) . '> ';
 			echo esc_html__( '定期契約の請求メールを自動送信する（初回請求を除く・Subscription 契約は対象外）', 'kantanpro' );
 			echo '</label>';
 		}

@@ -9,6 +9,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// ファイル内の変数をグローバルに出さないよう、処理全体を無名関数で包む（読み込んだ時点で実行される）。
+( static function () {
+
 if ( ! function_exists( 'dbDelta' ) ) {
 	require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 }
@@ -17,9 +20,9 @@ global $wpdb;
 
 $charset_collate = $wpdb->get_charset_collate();
 
-$contract_table = $wpdb->prefix . 'ktp_contract';
-$initial_fee_table = $wpdb->prefix . 'ktp_contract_initial_fee';
-$billing_log_table = $wpdb->prefix . 'ktp_contract_billing_log';
+$contract_table = $wpdb->prefix . 'ktpwp_contract';
+$initial_fee_table = $wpdb->prefix . 'ktpwp_contract_initial_fee';
+$billing_log_table = $wpdb->prefix . 'ktpwp_contract_billing_log';
 
 $contract_sql = "CREATE TABLE {$contract_table} (
 	id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -74,7 +77,7 @@ dbDelta( $contract_sql );
 dbDelta( $initial_fee_sql );
 dbDelta( $billing_log_sql );
 
-update_option( 'ktp_contract_tables_migration_completed', '2026-06-13' );
+update_option( 'ktpwp_contract_tables_migration_completed', '2026-06-13' );
 
 if ( ! function_exists( 'ktpwp_create_contract_tables' ) ) {
 	/**
@@ -86,3 +89,4 @@ if ( ! function_exists( 'ktpwp_create_contract_tables' ) ) {
 		return true;
 	}
 }
+} )();

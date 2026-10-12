@@ -40,7 +40,7 @@ if ( ! class_exists( 'KTPWP_Contract_DB' ) ) {
 		public function get_contract_table_name() {
 			global $wpdb;
 
-			return $wpdb->prefix . 'ktp_contract';
+			return $wpdb->prefix . 'ktpwp_contract';
 		}
 
 		/**
@@ -51,7 +51,7 @@ if ( ! class_exists( 'KTPWP_Contract_DB' ) ) {
 		public function get_initial_fee_table_name() {
 			global $wpdb;
 
-			return $wpdb->prefix . 'ktp_contract_initial_fee';
+			return $wpdb->prefix . 'ktpwp_contract_initial_fee';
 		}
 
 		/**
@@ -62,7 +62,7 @@ if ( ! class_exists( 'KTPWP_Contract_DB' ) ) {
 		public function get_billing_log_table_name() {
 			global $wpdb;
 
-			return $wpdb->prefix . 'ktp_contract_billing_log';
+			return $wpdb->prefix . 'ktpwp_contract_billing_log';
 		}
 
 		/**
@@ -182,12 +182,12 @@ if ( ! class_exists( 'KTPWP_Contract_DB' ) ) {
 		public function get_recurring_services() {
 			global $wpdb;
 
-			$table = $wpdb->prefix . 'ktp_service';
+			$table = $wpdb->prefix . 'ktpwp_service';
 			if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) !== $table ) {
 				return array();
 			}
 
-			$columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$table}`" );
+			$columns = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $table ) );
 			if ( ! is_array( $columns ) || ! in_array( 'contract_billing_cycle', $columns, true ) ) {
 				return array();
 			}
@@ -393,7 +393,7 @@ if ( ! class_exists( 'KTPWP_Contract_DB' ) ) {
 				return false;
 			}
 
-			$table = $wpdb->prefix . 'ktp_client';
+			$table = $wpdb->prefix . 'ktpwp_client';
 			if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) !== $table ) {
 				return false;
 			}
@@ -422,12 +422,12 @@ if ( ! class_exists( 'KTPWP_Contract_DB' ) ) {
 				return false;
 			}
 
-			$table = $wpdb->prefix . 'ktp_service';
+			$table = $wpdb->prefix . 'ktpwp_service';
 			if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) !== $table ) {
 				return false;
 			}
 
-			$columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$table}`" );
+			$columns = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $table ) );
 			if ( ! is_array( $columns ) || ! in_array( 'contract_billing_cycle', $columns, true ) ) {
 				return false;
 			}
@@ -624,7 +624,7 @@ if ( ! class_exists( 'KTPWP_Contract_DB' ) ) {
 				return $cache[ $column ];
 			}
 
-			$columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$table}`" );
+			$columns = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $table ) );
 			$cache[ $column ] = is_array( $columns ) && in_array( $column, $columns, true );
 
 			return $cache[ $column ];

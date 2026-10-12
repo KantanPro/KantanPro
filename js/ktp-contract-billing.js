@@ -1,7 +1,7 @@
 (function () {
 	'use strict';
 
-	var cfg = window.ktpContractBilling || {};
+	var cfg = window.ktpwpContractBilling || {};
 	var panel = document.getElementById('ktp-contract-billing-panel');
 	if (!panel || !cfg.ajax_url) {
 		return;
@@ -73,7 +73,7 @@
 		if (generateOne) {
 			event.preventDefault();
 			generateOne.disabled = true;
-			post('ktp_generate_contract_order', {
+			post('ktpwp_generate_contract_order', {
 				contract_id: generateOne.getAttribute('data-contract-id') || '',
 				period: generateOne.getAttribute('data-period') || panel.getAttribute('data-period') || '',
 			})
@@ -110,7 +110,7 @@
 				return;
 			}
 			generateAll.disabled = true;
-			post('ktp_generate_all_contract_orders', {
+			post('ktpwp_generate_all_contract_orders', {
 				period: generateAll.getAttribute('data-period') || panel.getAttribute('data-period') || '',
 			})
 				.then(function (json) {
@@ -137,7 +137,7 @@
 		if (sendReminderOne) {
 			event.preventDefault();
 			sendReminderOne.disabled = true;
-			post('ktp_send_contract_reminder', {
+			post('ktpwp_send_contract_reminder', {
 				contract_id: sendReminderOne.getAttribute('data-contract-id') || '',
 				period: sendReminderOne.getAttribute('data-period') || panel.getAttribute('data-period') || '',
 			})
@@ -168,7 +168,7 @@
 				return;
 			}
 			sendRemindersAll.disabled = true;
-			post('ktp_send_pending_contract_reminders', {
+			post('ktpwp_send_pending_contract_reminders', {
 				period: sendRemindersAll.getAttribute('data-period') || panel.getAttribute('data-period') || '',
 			})
 				.then(function (json) {

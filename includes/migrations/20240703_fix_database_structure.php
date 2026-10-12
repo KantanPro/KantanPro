@@ -9,13 +9,16 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+// ファイル内の変数をグローバルに出さないよう、処理全体を無名関数で包む（読み込んだ時点で実行される）。
+( static function () {
+
 global $wpdb;
 
-// === ktp_invoice_items テーブルの修正 ===
-$invoice_table = $wpdb->prefix . 'ktp_invoice_items';
-if ( $wpdb->get_var( "SHOW TABLES LIKE '$invoice_table'" ) == $invoice_table ) {
+// === ktpwp_invoice_items テーブルの修正 ===
+$invoice_table = $wpdb->prefix . 'ktpwp_invoice_items';
+if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $invoice_table ) ) == $invoice_table ) {
 
-    $existing_columns = $wpdb->get_col( "SHOW COLUMNS FROM `$invoice_table`" );
+    $existing_columns = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $invoice_table ) );
 
     // 必要なカラムの追加
     $invoice_columns = array(
@@ -29,8 +32,7 @@ if ( $wpdb->get_var( "SHOW TABLES LIKE '$invoice_table'" ) == $invoice_table ) {
 
     foreach ( $invoice_columns as $column_name => $column_definition ) {
         if ( ! in_array( $column_name, $existing_columns ) ) {
-            $sql = "ALTER TABLE `$invoice_table` ADD COLUMN `$column_name` $column_definition";
-            $result = $wpdb->query( $sql );
+            $result = ktpwp_migration_add_column( $invoice_table, $column_name, $column_definition );
 
             if ( $result !== false && defined( 'WP_DEBUG' ) && WP_DEBUG ) {
                 ktpwp_debug_log( "KTPWP Migration: Added column '$column_name' to $invoice_table" );
@@ -39,11 +41,11 @@ if ( $wpdb->get_var( "SHOW TABLES LIKE '$invoice_table'" ) == $invoice_table ) {
     }
 }
 
-// === ktp_cost_items テーブルの修正 ===
-$cost_table = $wpdb->prefix . 'ktp_cost_items';
-if ( $wpdb->get_var( "SHOW TABLES LIKE '$cost_table'" ) == $cost_table ) {
+// === ktpwp_cost_items テーブルの修正 ===
+$cost_table = $wpdb->prefix . 'ktpwp_cost_items';
+if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $cost_table ) ) == $cost_table ) {
 
-    $existing_columns = $wpdb->get_col( "SHOW COLUMNS FROM `$cost_table`" );
+    $existing_columns = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $cost_table ) );
 
     // 必要なカラムの追加
     $cost_columns = array(
@@ -57,8 +59,7 @@ if ( $wpdb->get_var( "SHOW TABLES LIKE '$cost_table'" ) == $cost_table ) {
 
     foreach ( $cost_columns as $column_name => $column_definition ) {
         if ( ! in_array( $column_name, $existing_columns ) ) {
-            $sql = "ALTER TABLE `$cost_table` ADD COLUMN `$column_name` $column_definition";
-            $result = $wpdb->query( $sql );
+            $result = ktpwp_migration_add_column( $cost_table, $column_name, $column_definition );
 
             if ( $result !== false && defined( 'WP_DEBUG' ) && WP_DEBUG ) {
                 ktpwp_debug_log( "KTPWP Migration: Added column '$column_name' to $cost_table" );
@@ -67,11 +68,11 @@ if ( $wpdb->get_var( "SHOW TABLES LIKE '$cost_table'" ) == $cost_table ) {
     }
 }
 
-// === ktp_staff_chat テーブルの修正 ===
-$chat_table = $wpdb->prefix . 'ktp_staff_chat';
-if ( $wpdb->get_var( "SHOW TABLES LIKE '$chat_table'" ) == $chat_table ) {
+// === ktpwp_staff_chat テーブルの修正 ===
+$chat_table = $wpdb->prefix . 'ktpwp_staff_chat';
+if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $chat_table ) ) == $chat_table ) {
 
-    $existing_columns = $wpdb->get_col( "SHOW COLUMNS FROM `$chat_table`" );
+    $existing_columns = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $chat_table ) );
 
     // 必要なカラムの追加
     $chat_columns = array(
@@ -84,8 +85,7 @@ if ( $wpdb->get_var( "SHOW TABLES LIKE '$chat_table'" ) == $chat_table ) {
 
     foreach ( $chat_columns as $column_name => $column_definition ) {
         if ( ! in_array( $column_name, $existing_columns ) ) {
-            $sql = "ALTER TABLE `$chat_table` ADD COLUMN `$column_name` $column_definition";
-            $result = $wpdb->query( $sql );
+            $result = ktpwp_migration_add_column( $chat_table, $column_name, $column_definition );
 
             if ( $result !== false && defined( 'WP_DEBUG' ) && WP_DEBUG ) {
                 ktpwp_debug_log( "KTPWP Migration: Added column '$column_name' to $chat_table" );
@@ -95,8 +95,8 @@ if ( $wpdb->get_var( "SHOW TABLES LIKE '$chat_table'" ) == $chat_table ) {
 }
 
 // === 空のorder_numberレコードの修正 ===
-$order_table = $wpdb->prefix . 'ktp_order';
-if ( $wpdb->get_var( "SHOW TABLES LIKE '$order_table'" ) == $order_table ) {
+$order_table = $wpdb->prefix . 'ktpwp_order';
+if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $order_table ) ) == $order_table ) {
 
     // 空のorder_numberを持つレコードをUUIDで更新
     $empty_order_numbers = $wpdb->get_results(
@@ -118,3 +118,4 @@ if ( $wpdb->get_var( "SHOW TABLES LIKE '$order_table'" ) == $order_table ) {
         ktpwp_debug_log( 'KTPWP Migration: Fixed ' . count( $empty_order_numbers ) . ' empty order_number records' );
     }
 }
+} )();

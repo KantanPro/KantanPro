@@ -1,6 +1,6 @@
 // 同梱ライブラリ（js/lib/）の URL を解決する。
 // PHP 側の wp_localize_script( ..., 'ktpwpVendor', ... ) で注入される。
-function ktpVendorUrl(name) {
+function ktpwpVendorUrl(name) {
     var vendor = window.ktpwpVendor || {};
     return vendor[name] || '';
 }
@@ -53,7 +53,7 @@ function loadKtpPdfLibraries() {
         if (typeof html2canvas === 'undefined') {
             pending++;
             var s1 = document.createElement('script');
-            s1.src = ktpVendorUrl('html2canvas');
+            s1.src = ktpwpVendorUrl('html2canvas');
             s1.onload = done;
             s1.onerror = function() { reject(new Error('html2canvas読み込み失敗')); };
             document.head.appendChild(s1);
@@ -61,7 +61,7 @@ function loadKtpPdfLibraries() {
         if (typeof jsPDF === 'undefined') {
             pending++;
             var s2 = document.createElement('script');
-            s2.src = ktpVendorUrl('jspdf');
+            s2.src = ktpwpVendorUrl('jspdf');
             s2.onload = function() {
                 if (typeof window.jspdf !== 'undefined') {
                     window.jsPDF = window.jspdf.jsPDF;
@@ -83,19 +83,19 @@ function bindKtpBulkInvoiceOutputButtons() {
     if (!(printBtn instanceof HTMLButtonElement) && !(pdfBtn instanceof HTMLButtonElement)) {
         return;
     }
-    if (pdfBtn instanceof HTMLButtonElement && !pdfBtn.dataset.ktpBulkBound) {
-        pdfBtn.dataset.ktpBulkBound = '1';
+    if (pdfBtn instanceof HTMLButtonElement && !pdfBtn.dataset.ktpwpBulkBound) {
+        pdfBtn.dataset.ktpwpBulkBound = '1';
         pdfBtn.addEventListener('click', function() {
             if (bulkInvoiceOutputInProgress) { return; }
             pdfBtn.disabled = true;
             startBulkInvoicePdfSave(pdfBtn).finally(function() { pdfBtn.disabled = false; });
         });
     }
-    if (printBtn instanceof HTMLButtonElement && !printBtn.dataset.ktpBulkBound) {
-        printBtn.dataset.ktpBulkBound = '1';
+    if (printBtn instanceof HTMLButtonElement && !printBtn.dataset.ktpwpBulkBound) {
+        printBtn.dataset.ktpwpBulkBound = '1';
         printBtn.addEventListener('click', function() {
             if (bulkInvoiceOutputInProgress) { return; }
-            if (typeof window.ktpConfirmInvoicePrintWithProgress === 'function' && !window.ktpConfirmInvoicePrintWithProgress()) {
+            if (typeof window.ktpwpConfirmInvoicePrintWithProgress === 'function' && !window.ktpwpConfirmInvoicePrintWithProgress()) {
                 return;
             }
             printBtn.disabled = true;
@@ -365,8 +365,8 @@ function formatClosingYmdForFilename(ymd) {
 }
 
 function buildBulkInvoicePrintFilename(triggerBtn) {
-    if (typeof window.ktpBuildBulkInvoiceOutputHtml === 'function') {
-        var built = window.ktpBuildBulkInvoiceOutputHtml('pdf');
+    if (typeof window.ktpwpBuildBulkInvoiceOutputHtml === 'function') {
+        var built = window.ktpwpBuildBulkInvoiceOutputHtml('pdf');
         if (built && built.filename) {
             return built.filename;
         }
@@ -456,8 +456,8 @@ function shouldShowTaxAmountColumn() {
  * @param {BulkInvoiceOutputMode} mode
  */
 function buildBulkInvoicePrintHtml(mode) {
-    if (typeof window.ktpBuildBulkInvoiceOutputHtml === 'function') {
-        var built = window.ktpBuildBulkInvoiceOutputHtml(mode || 'pdf');
+    if (typeof window.ktpwpBuildBulkInvoiceOutputHtml === 'function') {
+        var built = window.ktpwpBuildBulkInvoiceOutputHtml(mode || 'pdf');
         return built && built.html ? built.html : null;
     }
     return null;
@@ -1342,8 +1342,8 @@ async function startBulkInvoicePrint(triggerBtn) {
         const afterPrint = () => {
             if (!markInvoicedAfter || submitted) { return; }
             submitted = true;
-            if (typeof window.ktpRunInvoiceCompletedAfterPrint === 'function') {
-                window.ktpRunInvoiceCompletedAfterPrint();
+            if (typeof window.ktpwpRunInvoiceCompletedAfterPrint === 'function') {
+                window.ktpwpRunInvoiceCompletedAfterPrint();
             }
         };
 

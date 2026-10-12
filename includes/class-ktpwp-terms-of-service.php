@@ -50,7 +50,7 @@ class KTPWP_Terms_Of_Service {
      */
     private function __construct() {
         global $wpdb;
-        $this->table_name = $wpdb->prefix . 'ktp_terms_of_service';
+        $this->table_name = $wpdb->prefix . 'ktpwp_terms_of_service';
 
         // テーブル存在チェックは本来 admin 側の plugins_loaded だけで行っており、
         // 管理者が wp-admin を一度も開かずショートコードのページへ直接来た場合、
@@ -117,7 +117,7 @@ class KTPWP_Terms_Of_Service {
      */
     public static function create_table() {
         global $wpdb;
-        $table_name = $wpdb->prefix . 'ktp_terms_of_service';
+        $table_name = $wpdb->prefix . 'ktpwp_terms_of_service';
         $charset_collate = $wpdb->get_charset_collate();
 
         $sql = "CREATE TABLE {$table_name} (
@@ -158,7 +158,7 @@ class KTPWP_Terms_Of_Service {
      */
     public static function insert_default_terms() {
         global $wpdb;
-        $table_name = $wpdb->prefix . 'ktp_terms_of_service';
+        $table_name = $wpdb->prefix . 'ktpwp_terms_of_service';
 
         // 既に利用規約が存在するかチェック
         $existing_terms = $wpdb->get_var( "SELECT COUNT(*) FROM {$table_name} WHERE is_active = 1" );
@@ -183,7 +183,7 @@ class KTPWP_Terms_Of_Service {
      */
     public static function maybe_upgrade_default_terms() {
         global $wpdb;
-        $table_name = $wpdb->prefix . 'ktp_terms_of_service';
+        $table_name = $wpdb->prefix . 'ktpwp_terms_of_service';
 
         $terms = $wpdb->get_row( "SELECT * FROM {$table_name} WHERE is_active = 1 ORDER BY id DESC LIMIT 1" );
         if ( ! $terms ) {
@@ -473,21 +473,21 @@ End',
      */
     private function display_terms_management_page() {
         global $wpdb;
-        $table_name = $wpdb->prefix . 'ktp_terms_of_service';
+        $table_name = $wpdb->prefix . 'ktpwp_terms_of_service';
 
         // --- 追加: 同意状態リセット処理 ---
-        if ( isset($_POST['ktp_terms_reset_nonce']) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['ktp_terms_reset_nonce'] ) ), 'ktp_terms_reset') ) {
+        if ( isset($_POST['ktpwp_terms_reset_nonce']) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['ktpwp_terms_reset_nonce'] ) ), 'ktpwp_terms_reset') ) {
             $this->reset_user_terms_agreement();
             echo '<div class="notice notice-success is-dismissible"><p>利用規約同意状態をリセットしました（このユーザーのみ）。</p></div>';
         }
 
         // 認証成功メッセージ
-        if ( isset( $_GET['authenticated'] ) && $_GET['authenticated'] === '1' ) {
+        if ( KTPWP_Request::has_query( 'authenticated' ) && KTPWP_Request::query_unslashed( 'authenticated' ) === '1' ) {
             echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( '認証に成功しました。利用規約の編集が可能です。', 'kantanpro' ) . '</p></div>';
         }
 
         // ログアウト処理
-        if ( isset( $_GET['logout'] ) && $_GET['logout'] === '1' ) {
+        if ( KTPWP_Request::has_query( 'logout' ) && KTPWP_Request::query_unslashed( 'logout' ) === '1' ) {
             // 旧開発者パスワード認証は廃止済み。セッションに状態は持たない。
             echo '<div class="notice notice-info is-dismissible"><p>' . esc_html__( '認証を解除しました。', 'kantanpro' ) . '</p></div>';
         }
@@ -510,7 +510,7 @@ End',
                 </div>
 
                 <form method="post" action="">
-                    <?php wp_nonce_field( 'ktp_terms_update', 'ktp_terms_nonce' ); ?>
+                    <?php wp_nonce_field( 'ktpwp_terms_update', 'ktpwp_terms_nonce' ); ?>
                     <table class="form-table">
                         <tr>
                             <th scope="row">
@@ -538,14 +538,14 @@ End',
                 <h3><?php echo esc_html__( '利用規約の表示', 'kantanpro' ); ?></h3>
                 <div style="background: #f9f9f9; padding: 20px; border: 1px solid #ddd; border-radius: 4px;">
                     <h2 style="color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; margin-bottom: 20px;"><?php echo esc_html( $this->get_terms_title() ); ?></h2>
-                    <?php echo $this->format_terms_content( $terms ? $terms->terms_content : '' ); ?>
+                    <?php echo wp_kses_post( $this->format_terms_content( $terms ? $terms->terms_content : '' ) ); ?>
                 </div>
             </div>
         </div>
         <?php
         ?>
         <form method="post" style="margin-top:20px;">
-            <?php wp_nonce_field('ktp_terms_reset', 'ktp_terms_reset_nonce'); ?>
+            <?php wp_nonce_field('ktpwp_terms_reset', 'ktpwp_terms_reset_nonce'); ?>
             <button type="submit" class="button button-secondary" onclick="return confirm('本当にこのユーザーの同意状態をリセットしますか？')">同意状態リセット（このユーザーのみ）</button>
         </form>
         <?php
@@ -677,22 +677,25 @@ End',
             return;
         }
 
-        if ( isset( $_POST['ktp_terms_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['ktp_terms_nonce'] ) ), 'ktp_terms_update' ) ) {
+        if ( isset( $_POST['ktpwp_terms_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['ktpwp_terms_nonce'] ) ), 'ktpwp_terms_update' ) ) {
             if ( $this->verify_developer_password() ) {
-                $this->update_terms();
+                $this->update_terms(
+                    isset( $_POST['terms_content'] ) ? sanitize_textarea_field( wp_unslash( $_POST['terms_content'] ) ) : '',
+                    isset( $_POST['terms_version'] ) ? sanitize_text_field( wp_unslash( $_POST['terms_version'] ) ) : ''
+                );
             }
         }
     }
 
     /**
      * 利用規約を更新
+     *
+     * @param string $terms_content 本文（呼び出し側で nonce 確認・sanitize_textarea_field 済み）。
+     * @param string $version       版（sanitize_text_field 済み）。
      */
-    private function update_terms() {
+    private function update_terms( $terms_content, $version ) {
         global $wpdb;
-        $table_name = $wpdb->prefix . 'ktp_terms_of_service';
-
-        $terms_content = sanitize_textarea_field( $_POST['terms_content'] );
-        $version = sanitize_text_field( $_POST['terms_version'] );
+        $table_name = $wpdb->prefix . 'ktpwp_terms_of_service';
 
         // 既存の利用規約を非アクティブにする
         $wpdb->update(
@@ -1022,7 +1025,7 @@ End',
         );
 
         // SMTP設定を取得
-        $smtp_settings = get_option( 'ktp_smtp_settings', array() );
+        $smtp_settings = get_option( 'ktpwp_smtp_settings', array() );
         $from_email = ! empty( $smtp_settings['email_address'] ) ? sanitize_email( $smtp_settings['email_address'] ) : get_option( 'admin_email' );
         $from_name = ! empty( $smtp_settings['smtp_from_name'] ) ? sanitize_text_field( $smtp_settings['smtp_from_name'] ) : get_bloginfo( 'name' );
 
@@ -1100,7 +1103,7 @@ End',
      */
     private function get_current_terms_version() {
         global $wpdb;
-        $table_name = $wpdb->prefix . 'ktp_terms_of_service';
+        $table_name = $wpdb->prefix . 'ktpwp_terms_of_service';
         
         $terms = $wpdb->get_row( "SELECT version FROM {$table_name} WHERE is_active = 1 ORDER BY id DESC LIMIT 1" );
         return $terms ? $terms->version : '1.0';
@@ -1167,10 +1170,10 @@ End',
      */
     public function get_terms_content() {
         global $wpdb;
-        $table_name = $wpdb->prefix . 'ktp_terms_of_service';
+        $table_name = $wpdb->prefix . 'ktpwp_terms_of_service';
         
         // テーブルの存在確認
-        $table_exists = $wpdb->get_var( "SHOW TABLES LIKE '$table_name'" );
+        $table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) );
         
         if ( ! $table_exists ) {
             // テーブルが存在しない場合は自動修復を試行
@@ -1179,7 +1182,7 @@ End',
             }
             
             // 修復後に再取得を試行
-            $table_exists = $wpdb->get_var( "SHOW TABLES LIKE '$table_name'" );
+            $table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) );
             if ( ! $table_exists ) {
                 // それでも失敗した場合はデフォルトの利用規約を返す
                 return $this->get_default_terms_content_for_locale();
@@ -1209,7 +1212,7 @@ End',
      * 公開利用規約ページの処理
      */
     public function handle_public_terms_view() {
-        if ( isset( $_GET['page'] ) && $_GET['page'] === 'ktp-terms' && isset( $_GET['view'] ) && $_GET['view'] === 'public' ) {
+        if ( KTPWP_Request::has_query( 'page' ) && KTPWP_Request::query_unslashed( 'page' ) === 'ktp-terms' && KTPWP_Request::has_query( 'view' ) && KTPWP_Request::query_unslashed( 'view' ) === 'public' ) {
             $this->display_public_terms_page();
             exit;
         }
@@ -1229,67 +1232,16 @@ End',
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title><?php echo esc_html( $terms_title ); ?></title>
-            <style>
-                body {
-                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-                    line-height: 1.6;
-                    color: #333;
-                    max-width: 800px;
-                    margin: 0 auto;
-                    padding: 20px;
-                    background-color: #f9f9f9;
-                }
-                .container {
-                    background: white;
-                    padding: 40px;
-                    border-radius: 8px;
-                    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-                }
-                h1 {
-                    color: #2c3e50;
-                    border-bottom: 2px solid #3498db;
-                    padding-bottom: 10px;
-                }
-                h2 {
-                    color: #34495e;
-                    margin-top: 30px;
-                }
-                h3 {
-                    color: #2c3e50;
-                    margin-top: 25px;
-                }
-                p {
-                    margin-bottom: 15px;
-                }
-                ol, ul {
-                    margin-bottom: 15px;
-                    padding-left: 20px;
-                }
-                li {
-                    margin-bottom: 5px;
-                }
-                strong {
-                    color: #2c3e50;
-                }
-                .back-link {
-                    margin-top: 30px;
-                    padding-top: 20px;
-                    border-top: 1px solid #eee;
-                    text-align: center;
-                }
-                .back-link a {
-                    color: #3498db;
-                    text-decoration: none;
-                }
-                .back-link a:hover {
-                    text-decoration: underline;
-                }
-            </style>
+            <?php
+            // 単独ページなので wp_head() は呼ばない。CSS は登録してこの場で出力する（wp.org ガイドライン）。
+            wp_register_style( 'ktpwp-terms-public', KANTANPRO_PLUGIN_URL . 'css/ktp-terms-public.css', array(), KANTANPRO_PLUGIN_VERSION );
+            wp_print_styles( 'ktpwp-terms-public' );
+            ?>
         </head>
         <body>
             <div class="container">
                 <h1><?php echo esc_html( $terms_title ); ?></h1>
-                <?php echo $this->format_terms_content( $terms_content ); ?>
+                <?php echo wp_kses_post( $this->format_terms_content( $terms_content ) ); ?>
                 
                 <div class="back-link">
                     <a href="javascript:window.close();"><?php echo esc_html__( 'このウィンドウを閉じる', 'kantanpro' ); ?></a>
@@ -1301,225 +1253,8 @@ End',
     }
 
     /**
-     * フッターに利用規約リンクを追加
-     */
-    /**
-     * 規約フッターリンクの JS
-     *
-     * @return string
-     */
-    private function get_terms_footer_link_js() {
-        return <<<'JS'
-        document.addEventListener('DOMContentLoaded', function() {
-            // フッターのバージョン表示要素をクラスで特定
-            var footerText = document.querySelector('.ktp-footer-text');
-            if (!footerText) {
-                return;
-            }
-
-            // 既にリンクがある場合は何もしない
-            if (footerText.querySelector('a[href*="ktp-terms"]')) {
-                return;
-            }
-
-            // 利用規約リンクを作成
-            var termsLink = document.createElement('a');
-            termsLink.href = '<?php echo esc_url( $terms_url ); ?>';
-            termsLink.target = '_blank';
-            termsLink.textContent = '<?php echo esc_js( __( '利用規約', 'kantanpro' ) ); ?>';
-            termsLink.style.marginLeft = '10px';
-            termsLink.style.color = '#666';
-            termsLink.style.textDecoration = 'none';
-            termsLink.style.fontSize = '12px';
-
-            // スペースを挟んで追加
-            footerText.appendChild(document.createTextNode(' '));
-            footerText.appendChild(termsLink);
-        });
-JS;
-    }
-
-    public function add_terms_footer_link() {
-        // フロントエンドでのみ表示
-        if ( is_admin() ) {
-            return;
-        }
-
-        // KantanProのショートコードが使用されているページでのみ表示
-        global $post;
-        if ( ! $post || ! has_shortcode( $post->post_content, 'ktpwp_all_tab' ) ) {
-            return;
-        }
-
-        $terms_url = admin_url( 'admin.php?page=ktp-terms&view=public' );
-        ?>
-        <?php
-        // 生の <script> を出さずフッターのスクリプトキューに載せる（wp.org ガイドライン）。
-        $handle = 'ktp-terms-footer-link';
-        wp_register_script( $handle, false, array(), KANTANPRO_PLUGIN_VERSION, true );
-        wp_enqueue_script( $handle );
-        wp_add_inline_script( $handle, $this->get_terms_footer_link_js() );
-        ?>
-        <?php
-    }
-
-    /**
      * 利用規約同意ダイアログを表示
      */
-    /**
-     * 利用規約ダイアログの CSS
-     *
-     * head で出力する必要があるため wp_enqueue_scripts 側から wp_add_inline_style() に渡す。
-     *
-     * @return string
-     */
-    private function get_terms_dialog_css() {
-        return <<<'CSS'
-        .ktpwp-terms-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 9999;
-        }
-        .ktpwp-terms-modal {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            padding: 0 50px;
-            border-radius: 8px;
-            width: 600px;
-            max-height: 80vh;
-            z-index: 10000;
-            display: flex;
-            flex-direction: column;
-        }
-        .ktpwp-terms-header {
-            border-bottom: 1px solid #ddd;
-            padding: 20px 20px 10px 20px;
-            margin-bottom: 0;
-            position: relative;
-            text-align: center;
-        }
-        .ktpwp-terms-header h2 {
-            margin: 0;
-            font-size: 18px;
-            color: #333;
-        }
-        .ktpwp-terms-content {
-            padding: 20px;
-            height: 500px;
-            overflow-y: auto;
-            line-height: 1.6;
-            border-bottom: 1px solid #ddd;
-            font-size: 14px;
-            background-color: #f8f8f8;
-        }
-        .ktpwp-terms-footer {
-            padding: 20px;
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 15px;
-        }
-        .ktpwp-terms-checkbox-container {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .ktpwp-terms-checkbox-container input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-        }
-        .ktpwp-terms-checkbox-container label {
-            font-size: 14px;
-            color: #333;
-            cursor: pointer;
-        }
-        .ktpwp-start-btn {
-            background-color: #0073aa;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 4px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-        .ktpwp-start-btn:hover:not(:disabled) {
-            background-color: #005a87;
-        }
-        .ktpwp-start-btn:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
-        }
-        .ktpwp-home-link {
-            margin-top: 10px;
-        }
-        .ktpwp-home-link a {
-            color: #0073aa;
-            text-decoration: none;
-            font-size: 14px;
-        }
-        .ktpwp-home-link a:hover {
-            text-decoration: underline;
-        }
-
-CSS;
-    }
-
-    /**
-     * 利用規約ダイアログの JS
-     *
-     * @return string
-     */
-    private function get_terms_dialog_js() {
-        return <<<'JS'
-        jQuery(document).ready(function($) {
-            $('#ktpwp-terms-dialog').show();
-            
-            // チェックボックスの状態に応じてボタンの有効/無効を切り替え
-            $('#ktpwp-terms-checkbox').change(function() {
-                $('#ktpwp-start-usage').prop('disabled', !this.checked);
-            });
-            
-            // 利用開始するボタンクリック
-            $('#ktpwp-start-usage').click(function() {
-                if (!$('#ktpwp-terms-checkbox').is(':checked')) {
-                    return;
-                }
-                
-                $.ajax({
-                    url: '<?php echo admin_url( 'admin-ajax.php' ); ?>',
-                    type: 'POST',
-                    data: {
-                        action: 'ktpwp_terms_agreement',
-                        nonce: '<?php echo wp_create_nonce( 'ktpwp_terms_agreement' ); ?>'
-                    },
-                    success: function(response) {
-                        if (response.success) {
-                            $('#ktpwp-terms-dialog').hide();
-                            location.reload();
-                        } else {
-                            alert(response.data.message);
-                        }
-                    },
-                    error: function() {
-                        alert('<?php echo esc_js( __( 'エラーが発生しました。', 'kantanpro' ) ); ?>');
-                    }
-                });
-            });
-            
-
-        });
-JS;
-    }
-
     /**
      * 利用規約ダイアログの CSS をスタイルキューに載せる
      *
@@ -1535,10 +1270,10 @@ JS;
         if ( $this->has_user_agreed_to_terms() ) {
             return;
         }
-        if ( ! wp_style_is( 'ktp-css', 'registered' ) && ! wp_style_is( 'ktp-css', 'enqueued' ) ) {
+        if ( ! wp_style_is( 'ktpwp-css', 'registered' ) && ! wp_style_is( 'ktpwp-css', 'enqueued' ) ) {
             return;
         }
-        wp_add_inline_style( 'ktp-css', $this->get_terms_dialog_css() );
+        wp_enqueue_style( 'ktpwp-terms-dialog', KANTANPRO_PLUGIN_URL . 'css/ktp-terms-dialog.css', array( 'ktpwp-css' ), KANTANPRO_PLUGIN_VERSION );
     }
 
     public function display_terms_dialog() {
@@ -1564,7 +1299,7 @@ JS;
                     <h2><?php echo esc_html( /* translators: 1: サイト名, 2: プラグイン名 */ sprintf( __( '%1$s %2$s Terms of Service', 'kantanpro' ), KANTANPRO_PLUGIN_NAME, KANTANPRO_PLUGIN_VERSION ) ); ?></h2>
                 </div>
                 <div class="ktpwp-terms-content">
-                    <?php echo $this->format_terms_content( $terms_content ); ?>
+                    <?php echo wp_kses_post( $this->format_terms_content( $terms_content ) ); ?>
                 </div>
                 <div class="ktpwp-terms-footer">
                     <div class="ktpwp-terms-checkbox-container">
@@ -1585,9 +1320,16 @@ JS;
         // 生の <script> を出さずフッターのスクリプトキューに載せる（wp.org ガイドライン）。
         // この関数は wp_footer priority 10 で走り、スクリプト出力（priority 20）より前なので間に合う。
         $handle = 'ktp-terms-dialog';
-        wp_register_script( $handle, false, array(), KANTANPRO_PLUGIN_VERSION, true );
-        wp_enqueue_script( $handle );
-        wp_add_inline_script( $handle, $this->get_terms_dialog_js() );
+        wp_enqueue_script( $handle, KANTANPRO_PLUGIN_URL . 'js/ktp-terms-dialog.js', array( 'jquery' ), KANTANPRO_PLUGIN_VERSION, true );
+        wp_localize_script(
+            $handle,
+            'ktpwpTermsDialog',
+            array(
+                'ajaxUrl'      => admin_url( 'admin-ajax.php' ),
+                'nonce'        => wp_create_nonce( 'ktpwp_terms_agreement' ),
+                'errorMessage' => __( 'エラーが発生しました。', 'kantanpro' ),
+            )
+        );
         ?>
         <?php
     }

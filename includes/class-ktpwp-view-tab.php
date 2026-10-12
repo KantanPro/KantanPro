@@ -26,12 +26,7 @@ class KTPWP_View_Tabs_Class {
         }
 
         // タブの位置（ショートコード側のコンテンツ生成と同様に POST の tab_name を優先）
-        $position = 'list';
-        if ( isset( $_POST['tab_name'] ) && is_string( $_POST['tab_name'] ) ) {
-            $position = sanitize_text_field( wp_unslash( $_POST['tab_name'] ) );
-        } elseif ( isset( $_GET['tab_name'] ) ) {
-            $position = sanitize_text_field( wp_unslash( $_GET['tab_name'] ) );
-        }
+        $position = ktpwp_resolve_tab_name( 'list' );
         $allowed_positions = array( 'list', 'order', 'client', 'service', 'supplier', 'info' );
         if ( ! in_array( $position, $allowed_positions, true ) ) {
             $position = 'list';
@@ -48,7 +43,7 @@ class KTPWP_View_Tabs_Class {
         );
 
         // タブの内容を作成（プラグインコンテナクラスを追加してテーマとの競合を防止）
-        $view = '<div class="tabs ktp_plugin_container">';
+        $view = '<div class="tabs ktpwp_plugin_container">';
         // 現在のURL情報を取得
         $current_url = add_query_arg( null, null );
 
@@ -178,7 +173,7 @@ class KTPWP_View_Tabs_Class {
         // 生の <script> を出さず WordPress のスクリプトキューに載せる
         ktpwp_add_inline_script(
             'window.ktpwp_ajax = ' . wp_json_encode( $ajax_data ) . ';'
-            . 'window.ktp_ajax_object = ' . wp_json_encode( $ajax_data ) . ';'
+            . 'window.ktpwp_ajax_object = ' . wp_json_encode( $ajax_data ) . ';'
             . 'window.ajaxurl = ' . wp_json_encode( $ajax_data['ajax_url'] ) . ';'
             . 'console.log("TabView: 統一AJAX設定を出力", window.ktpwp_ajax);'
         );

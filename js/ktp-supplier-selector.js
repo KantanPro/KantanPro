@@ -33,10 +33,10 @@
         return div.innerHTML;
     }
 
-    // AJAX 用 nonce。サーバー側（ajax-supplier-cost.php）は ktp_ajax_nonce / ktpwp_ajax_nonce の両方を受け付ける。
+    // AJAX 用 nonce。サーバー側（ajax-supplier-cost.php）は ktpwp_ajax_nonce / ktpwp_ajax_nonce の両方を受け付ける。
     function getCostAjaxNonce() {
         return (typeof ktpwp_ajax_nonce !== 'undefined' && ktpwp_ajax_nonce)
-            || (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object && ktp_ajax_object.nonce)
+            || (typeof ktpwp_ajax_object !== 'undefined' && ktpwp_ajax_object && ktpwp_ajax_object.nonce)
             || (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax && ktpwp_ajax.nonce)
             || '';
     }
@@ -55,15 +55,15 @@
     };
 
     // 即座に関数を定義してグローバルに露出
-    window.ktpShowSupplierSelector = function(currentRow) {
+    window.ktpwpShowSupplierSelector = function(currentRow) {
         console.log('[SUPPLIER-SELECTOR] ===== 協力会社選択開始 =====');
         console.log('[SUPPLIER-SELECTOR] currentRow:', currentRow);
         console.log('[SUPPLIER-SELECTOR] jQuery version:', $.fn.jquery);
-        console.log('[SUPPLIER-SELECTOR] ktp_ajax_object:', typeof ktp_ajax_object !== 'undefined' ? ktp_ajax_object : 'undefined');
+        console.log('[SUPPLIER-SELECTOR] ktpwp_ajax_object:', typeof ktpwp_ajax_object !== 'undefined' ? ktpwp_ajax_object : 'undefined');
         console.log('[SUPPLIER-SELECTOR] ajaxurl:', typeof ajaxurl !== 'undefined' ? ajaxurl : 'undefined');
         
         // グローバル変数としてcurrentRowを保持
-        window.ktpCurrentRow = currentRow;
+        window.ktpwpCurrentRow = currentRow;
         
     // 既存のポップアップがあれば削除
     $("#ktp-supplier-selector-modal").remove();
@@ -159,8 +159,8 @@
         
         // AJAX URLの設定（複数のフォールバック）
         let ajaxUrl = ((typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) || (typeof ajaxurl !== 'undefined' ? ajaxurl : ''));
-        if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.ajax_url) {
-            ajaxUrl = ktp_ajax_object.ajax_url;
+        if (typeof ktpwp_ajax_object !== 'undefined' && ktpwp_ajax_object.ajax_url) {
+            ajaxUrl = ktpwp_ajax_object.ajax_url;
         } else if (typeof ajaxurl !== 'undefined') {
             ajaxUrl = ajaxurl;
         } else if (typeof window.ktpwp_ajax !== 'undefined' && window.ktpwp_ajax.ajax_url) {
@@ -176,7 +176,7 @@
             if (Array.isArray(skills) && skills.length > 0) {
                 html = `<div style="display: flex; flex-direction: column; width: 100%;">`;
                 html += `
-                    <div class="ktp_data_list_box" style="
+                    <div class="ktpwp_data_list_box" style="
                         border: 1px solid #e5e7eb; 
                         border-radius: 4px; 
                         overflow: hidden; 
@@ -217,7 +217,7 @@
                     console.log('[SUPPLIER-SELECTOR] スキルデータ:', skillData);
 
                     html += `
-                        <div class="ktp_data_list_item" style="
+                        <div class="ktpwp_data_list_item" style="
                             line-height: 1.5;
                             border-bottom: 1px solid #e5e7eb;
                             margin: 0;
@@ -247,7 +247,7 @@
                                     <span style="color: #6b7280; font-size: ${isSmallScreen ? '12px' : '13px'}; flex-shrink: 0;"><strong>単価:</strong> ${ktpwpFormatMoney(unitPrice)}</span>
                                     <span style="color: #6b7280; font-size: ${isSmallScreen ? '12px' : '13px'}; flex-shrink: 0;"><strong>数量:</strong> ${window.escapeHtml(quantity)}</span>
                                     <span style="color: #6b7280; font-size: ${isSmallScreen ? '12px' : '13px'}; flex-shrink: 0;"><strong>単位:</strong> ${window.escapeHtml(unit)}</span>
-                                    ${ (window.ktp_tax_policy && (window.ktp_tax_policy.mode === 'abolished' || window.ktp_tax_policy.hide_columns)) ? '' : `<span style="color: #6b7280; font-size: ${isSmallScreen ? '12px' : '13px'}; flex-shrink: 0;"><strong>税率:</strong> ${skill.tax_rate === null ? 'なし（非課税）' : Math.round(skill.tax_rate || 10) + '%'}</span>` }
+                                    ${ (window.ktpwp_tax_policy && (window.ktpwp_tax_policy.mode === 'abolished' || window.ktpwp_tax_policy.hide_columns)) ? '' : `<span style="color: #6b7280; font-size: ${isSmallScreen ? '12px' : '13px'}; flex-shrink: 0;"><strong>税率:</strong> ${skill.tax_rate === null ? 'なし（非課税）' : Math.round(skill.tax_rate || 10) + '%'}</span>` }
                                     <span style="color: #6b7280; font-size: ${isSmallScreen ? '12px' : '13px'}; flex-shrink: 0;" title="アクセス頻度（クリックされた回数）"><strong>頻度:</strong> ${frequency}</span>
                                 </div>
                             </div>
@@ -305,7 +305,7 @@
                 html += `</div></div>`;
             } else {
                 html = `
-                    <div class="ktp_data_list_box" style="
+                    <div class="ktpwp_data_list_box" style="
                         border: 1px solid #e5e7eb; 
                         border-radius: 4px; 
                         overflow: hidden; 
@@ -401,16 +401,16 @@
                     console.log('[SUPPLIER-SELECTOR] 選択された協力会社ID:', supplierId);
                     
                     // グローバル変数に協力会社IDと協力会社名を保存
-                    window.ktpCurrentSupplierId = supplierId;
+                    window.ktpwpCurrentSupplierId = supplierId;
                     
                     // 選択された協力会社の名前を取得
                     const selectedOption = $(this).find('option:selected');
                     const supplierName = selectedOption.text();
-                    window.ktpCurrentSupplierName = supplierName;
+                    window.ktpwpCurrentSupplierName = supplierName;
                     
                     console.log('[SUPPLIER-SELECTOR] 協力会社情報を設定:', {
-                        supplierId: window.ktpCurrentSupplierId,
-                        supplierName: window.ktpCurrentSupplierName
+                        supplierId: window.ktpwpCurrentSupplierId,
+                        supplierName: window.ktpwpCurrentSupplierName
                     });
                     
                     if (!supplierId) {
@@ -489,8 +489,8 @@
 };
 
 // コスト項目に新規追加
-window.ktpAddCostRowFromSkill = function(skill, currentRow) {
-    console.log('[SUPPLIER-SELECTOR] ===== ktpAddCostRowFromSkill関数開始 =====');
+window.ktpwpAddCostRowFromSkill = function(skill, currentRow) {
+    console.log('[SUPPLIER-SELECTOR] ===== ktpwpAddCostRowFromSkill関数開始 =====');
     
     if (typeof skill === 'string') skill = JSON.parse(decodeURIComponent(skill));
     
@@ -518,9 +518,9 @@ window.ktpAddCostRowFromSkill = function(skill, currentRow) {
     });
     
     // 新規行のHTMLを生成
-    const isSupplier = !!window.ktpCurrentSupplierName;
+    const isSupplier = !!window.ktpwpCurrentSupplierName;
     
-    const hideColumns = !!(window.ktp_tax_policy && (window.ktp_tax_policy.mode === 'abolished' || window.ktp_tax_policy.hide_columns));
+    const hideColumns = !!(window.ktpwp_tax_policy && (window.ktpwp_tax_policy.mode === 'abolished' || window.ktpwp_tax_policy.hide_columns));
     const taxTd = hideColumns ? '' : `
             <td style="text-align:left;">
                 <div style="display:inline-flex;align-items:center;margin-left:0;padding-left:0;">
@@ -530,14 +530,14 @@ window.ktpAddCostRowFromSkill = function(skill, currentRow) {
             </td>`;
 
     const newRowHtml = `
-        <tr class="cost-item-row" data-row-id="0" data-newly-added="true" data-supplier-id="${window.ktpCurrentSupplierId || 0}">
+        <tr class="cost-item-row" data-row-id="0" data-newly-added="true" data-supplier-id="${window.ktpwpCurrentSupplierId || 0}">
             <td class="actions-column">
                 <span class="drag-handle" title="ドラッグして並び替え">&#9776;</span><button type="button" class="btn-add-row" title="行を追加">+</button><button type="button" class="btn-delete-row" title="行を削除">×</button><button type="button" class="btn-move-row" title="協力会社選択">></button>
             </td>
             <td>
                 <input type="text" name="cost_items[${newIndex}][product_name]" class="cost-item-input product-name" value="${skill.product_name || ''}">
                 <input type="hidden" name="cost_items[${newIndex}][id]" value="0">
-                <input type="hidden" name="cost_items[${newIndex}][supplier_id]" value="${window.ktpCurrentSupplierId || 0}" class="supplier-id">
+                <input type="hidden" name="cost_items[${newIndex}][supplier_id]" value="${window.ktpwpCurrentSupplierId || 0}" class="supplier-id">
             </td>
             <td style="text-align:left;">
                 <input type="number" name="cost_items[${newIndex}][price]" class="cost-item-input price" value="${window.formatDecimalDisplay(skill.unit_price || '')}" step="1" min="0" style="text-align:left;">
@@ -559,10 +559,10 @@ window.ktpAddCostRowFromSkill = function(skill, currentRow) {
             </td>
             <td>
                 <span class="purchase-display${isSupplier ? ' purchase-link' : ''}" 
-                    ${isSupplier ? `data-purchase='${window.ktpCurrentSupplierName}' style='color:#0073aa;cursor:pointer;text-decoration:underline;'` : ''}>
-                    ${isSupplier ? `${window.ktpCurrentSupplierName}に発注` : '手入力'}
+                    ${isSupplier ? `data-purchase='${window.ktpwpCurrentSupplierName}' style='color:#0073aa;cursor:pointer;text-decoration:underline;'` : ''}>
+                    ${isSupplier ? `${window.ktpwpCurrentSupplierName}に発注` : '手入力'}
                 </span>
-                <input type="hidden" name="cost_items[${newIndex}][purchase]" value="${isSupplier ? window.ktpCurrentSupplierName : ''}">
+                <input type="hidden" name="cost_items[${newIndex}][purchase]" value="${isSupplier ? window.ktpwpCurrentSupplierName : ''}">
             </td>
         </tr>
     `;
@@ -607,7 +607,7 @@ window.ktpAddCostRowFromSkill = function(skill, currentRow) {
         }
         return $('input[name="order_id"]').val() || $('#order_id').val() || '';
     })();
-    const supplierId = window.ktpCurrentSupplierId; // 現在選択されている協力会社ID
+    const supplierId = window.ktpwpCurrentSupplierId; // 現在選択されている協力会社ID
     
     if (orderId && orderId !== '0' && typeof createNewItem === 'function') {
         console.log('[SUPPLIER-SELECTOR] DB新規作成開始', {
@@ -638,8 +638,8 @@ window.ktpAddCostRowFromSkill = function(skill, currentRow) {
                     }
                     
                     // 協力会社名を「仕入」フィールドに保存
-                    if (window.ktpCurrentSupplierName) {
-                        const purchaseDisplayText = window.ktpCurrentSupplierName;
+                    if (window.ktpwpCurrentSupplierName) {
+                        const purchaseDisplayText = window.ktpwpCurrentSupplierName;
                         autoSaveItem('cost', newItemId, 'purchase', purchaseDisplayText, orderId);
                     }
                     
@@ -678,12 +678,12 @@ window.ktpAddCostRowFromSkill = function(skill, currentRow) {
         });
     }
     
-    console.log('[SUPPLIER-SELECTOR] ===== ktpAddCostRowFromSkill関数終了 =====');
+    console.log('[SUPPLIER-SELECTOR] ===== ktpwpAddCostRowFromSkill関数終了 =====');
 };
 
 // コスト項目を更新
-window.ktpUpdateCostRowFromSkill = function(skill, currentRow) {
-    console.log('[SUPPLIER-SELECTOR] ===== ktpUpdateCostRowFromSkill関数開始 =====');
+window.ktpwpUpdateCostRowFromSkill = function(skill, currentRow) {
+    console.log('[SUPPLIER-SELECTOR] ===== ktpwpUpdateCostRowFromSkill関数開始 =====');
     let originalValues = {};
     try {
         if (typeof skill === 'string') skill = JSON.parse(decodeURIComponent(skill));
@@ -710,16 +710,16 @@ window.ktpUpdateCostRowFromSkill = function(skill, currentRow) {
             currentRow.find('.tax-rate').val(taxRateValue);
             
             // 協力会社名を「仕入」欄（プルダウン＋仕入記録行）に反映
-            if (window.ktpCurrentSupplierName) {
-                const purchaseDisplayText = window.ktpCurrentSupplierName;
+            if (window.ktpwpCurrentSupplierName) {
+                const purchaseDisplayText = window.ktpwpCurrentSupplierName;
                 currentRow.find('input[name*="[purchase]"]').val(purchaseDisplayText);
-                currentRow.attr('data-supplier-id', window.ktpCurrentSupplierId || 0);
-                currentRow.find('input.supplier-id').val(window.ktpCurrentSupplierId || 0);
-                if (typeof window.ktpEnsurePurchaseStatusSelect === 'function') {
-                    window.ktpEnsurePurchaseStatusSelect(currentRow, purchaseDisplayText, window.ktpCurrentSupplierId || 0);
+                currentRow.attr('data-supplier-id', window.ktpwpCurrentSupplierId || 0);
+                currentRow.find('input.supplier-id').val(window.ktpwpCurrentSupplierId || 0);
+                if (typeof window.ktpwpEnsurePurchaseStatusSelect === 'function') {
+                    window.ktpwpEnsurePurchaseStatusSelect(currentRow, purchaseDisplayText, window.ktpwpCurrentSupplierId || 0);
                 }
-                if (typeof window.ktpRenderPurchaseRecordRow === 'function') {
-                    window.ktpRenderPurchaseRecordRow(currentRow, purchaseDisplayText, '');
+                if (typeof window.ktpwpRenderPurchaseRecordRow === 'function') {
+                    window.ktpwpRenderPurchaseRecordRow(currentRow, purchaseDisplayText, '');
                 }
             }
             // 金額を再計算
@@ -741,7 +741,7 @@ window.ktpUpdateCostRowFromSkill = function(skill, currentRow) {
                 }
                 return $('input[name="order_id"]').val() || $('#order_id').val() || '';
             })();
-            const supplierId = window.ktpCurrentSupplierId;
+            const supplierId = window.ktpwpCurrentSupplierId;
             
             // デバッグ情報を出力
             console.log('[SUPPLIER-SELECTOR] DB保存条件チェック:', {
@@ -766,8 +766,8 @@ window.ktpUpdateCostRowFromSkill = function(skill, currentRow) {
                     autoSaveItem('cost', itemId, 'tax_rate', taxRateForDB, orderId);
                     
                     // 協力会社名を「仕入」フィールドに保存
-                    if (window.ktpCurrentSupplierName) {
-                        const purchaseDisplayText = window.ktpCurrentSupplierName;
+                    if (window.ktpwpCurrentSupplierName) {
+                        const purchaseDisplayText = window.ktpwpCurrentSupplierName;
                         autoSaveItem('cost', itemId, 'purchase', purchaseDisplayText, orderId);
                     }
                     if (supplierId && supplierId > 0) {
@@ -821,8 +821,8 @@ window.ktpUpdateCostRowFromSkill = function(skill, currentRow) {
                                         autoSaveItem('cost', newItemId, 'tax_rate', taxRateForDB, orderId);
                                         
                                         // 協力会社名を「仕入」フィールドに保存
-                                        if (window.ktpCurrentSupplierName) {
-                                            autoSaveItem('cost', newItemId, 'purchase', window.ktpCurrentSupplierName, orderId);
+                                        if (window.ktpwpCurrentSupplierName) {
+                                            autoSaveItem('cost', newItemId, 'purchase', window.ktpwpCurrentSupplierName, orderId);
                                         }
                                         if (supplierId && supplierId > 0) {
                                             autoSaveItem('cost', newItemId, 'supplier_id', supplierId, orderId);
@@ -870,19 +870,19 @@ window.ktpUpdateCostRowFromSkill = function(skill, currentRow) {
             }
         } else {
             // 行が指定されていない場合は新規追加として処理
-            window.ktpAddCostRowFromSkill(skill, null);
+            window.ktpwpAddCostRowFromSkill(skill, null);
         }
     } catch (error) {
-        console.error('[SUPPLIER-SELECTOR] ktpUpdateCostRowFromSkill関数でエラーが発生:', error);
+        console.error('[SUPPLIER-SELECTOR] ktpwpUpdateCostRowFromSkill関数でエラーが発生:', error);
         alert(ktpwpTranslate('該当行の更新に失敗しました。\nエラー: ') + error.message);
     }
-    console.log('[SUPPLIER-SELECTOR] ===== ktpUpdateCostRowFromSkill関数終了 =====');
+    console.log('[SUPPLIER-SELECTOR] ===== ktpwpUpdateCostRowFromSkill関数終了 =====');
 };
 
     // ページロード時の処理
 $(function() {
         console.log('[SUPPLIER-SELECTOR] ページ読み込み完了');
-        console.log('[SUPPLIER-SELECTOR] ktpShowSupplierSelector関数の存在確認:', typeof window.ktpShowSupplierSelector);
+        console.log('[SUPPLIER-SELECTOR] ktpwpShowSupplierSelector関数の存在確認:', typeof window.ktpwpShowSupplierSelector);
         
     // コスト項目の並び順を変更する処理を削除
     // データベースから取得された順序を維持するため、JavaScriptでの並び替えは行わない
@@ -911,13 +911,13 @@ $(function() {
             return;
         }
         
-        // ktpAddCostRowFromSkill関数を呼び出し（新規追加）
-        console.log('[SUPPLIER-SELECTOR] ktpAddCostRowFromSkill関数の存在確認:', typeof window.ktpAddCostRowFromSkill);
-        if (typeof window.ktpAddCostRowFromSkill === 'function') {
-            console.log('[SUPPLIER-SELECTOR] ktpAddCostRowFromSkill関数を呼び出します');
+        // ktpwpAddCostRowFromSkill関数を呼び出し（新規追加）
+        console.log('[SUPPLIER-SELECTOR] ktpwpAddCostRowFromSkill関数の存在確認:', typeof window.ktpwpAddCostRowFromSkill);
+        if (typeof window.ktpwpAddCostRowFromSkill === 'function') {
+            console.log('[SUPPLIER-SELECTOR] ktpwpAddCostRowFromSkill関数を呼び出します');
             try {
-                window.ktpAddCostRowFromSkill(serviceData, null);
-                console.log('[SUPPLIER-SELECTOR] ktpAddCostRowFromSkill関数呼び出し成功');
+                window.ktpwpAddCostRowFromSkill(serviceData, null);
+                console.log('[SUPPLIER-SELECTOR] ktpwpAddCostRowFromSkill関数呼び出し成功');
                 if (serviceData.id && typeof window.ktpwpIncrementSkillFrequency === 'function') {
                     window.ktpwpIncrementSkillFrequency(serviceData.id);
                 }
@@ -925,11 +925,11 @@ $(function() {
                 // 追加処理では自動でポップアップを閉じない（ユーザーが手動で閉じるまで開いたまま）
                 console.log('[SUPPLIER-SELECTOR] 追加処理完了 - ポップアップは開いたままにします');
             } catch (error) {
-                console.error('[SUPPLIER-SELECTOR] ktpAddCostRowFromSkill関数実行エラー:', error);
+                console.error('[SUPPLIER-SELECTOR] ktpwpAddCostRowFromSkill関数実行エラー:', error);
                 alert(ktpwpTranslate('追加処理中にエラーが発生しました: ') + error.message);
             }
         } else {
-            console.error('[SUPPLIER-SELECTOR] ktpAddCostRowFromSkill関数が見つかりません');
+            console.error('[SUPPLIER-SELECTOR] ktpwpAddCostRowFromSkill関数が見つかりません');
             alert(ktpwpTranslate('追加処理に必要な関数が見つかりません。'));
         }
     });
@@ -955,25 +955,25 @@ $(function() {
         }
         
         // 現在選択されている行を取得
-        const currentRow = window.ktpCurrentSelectedRow || window.ktpCurrentRow || null;
+        const currentRow = window.ktpwpCurrentSelectedRow || window.ktpwpCurrentRow || null;
         console.log('[SUPPLIER-SELECTOR] 現在選択されている行:', currentRow);
         
-        // ktpUpdateCostRowFromSkill関数を呼び出し（行更新）
-        console.log('[SUPPLIER-SELECTOR] ktpUpdateCostRowFromSkill関数の存在確認:', typeof window.ktpUpdateCostRowFromSkill);
-        if (typeof window.ktpUpdateCostRowFromSkill === 'function') {
-            console.log('[SUPPLIER-SELECTOR] ktpUpdateCostRowFromSkill関数を呼び出します');
+        // ktpwpUpdateCostRowFromSkill関数を呼び出し（行更新）
+        console.log('[SUPPLIER-SELECTOR] ktpwpUpdateCostRowFromSkill関数の存在確認:', typeof window.ktpwpUpdateCostRowFromSkill);
+        if (typeof window.ktpwpUpdateCostRowFromSkill === 'function') {
+            console.log('[SUPPLIER-SELECTOR] ktpwpUpdateCostRowFromSkill関数を呼び出します');
             try {
-                window.ktpUpdateCostRowFromSkill(serviceData, currentRow);
-                console.log('[SUPPLIER-SELECTOR] ktpUpdateCostRowFromSkill関数呼び出し成功');
+                window.ktpwpUpdateCostRowFromSkill(serviceData, currentRow);
+                console.log('[SUPPLIER-SELECTOR] ktpwpUpdateCostRowFromSkill関数呼び出し成功');
                 if (serviceData.id && typeof window.ktpwpIncrementSkillFrequency === 'function') {
                     window.ktpwpIncrementSkillFrequency(serviceData.id);
                 }
             } catch (error) {
-                console.error('[SUPPLIER-SELECTOR] ktpUpdateCostRowFromSkill関数実行エラー:', error);
+                console.error('[SUPPLIER-SELECTOR] ktpwpUpdateCostRowFromSkill関数実行エラー:', error);
                 alert(ktpwpTranslate('更新処理中にエラーが発生しました: ') + error.message);
             }
         } else {
-            console.error('[SUPPLIER-SELECTOR] ktpUpdateCostRowFromSkill関数が見つかりません');
+            console.error('[SUPPLIER-SELECTOR] ktpwpUpdateCostRowFromSkill関数が見つかりません');
             alert(ktpwpTranslate('更新処理に必要な関数が見つかりません。'));
         }
     });

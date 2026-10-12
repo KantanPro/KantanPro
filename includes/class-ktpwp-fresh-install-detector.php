@@ -77,14 +77,14 @@ class KTPWP_Fresh_Install_Detector {
 
         // 1. メインテーブルの存在確認
         $main_tables = array(
-            $wpdb->prefix . 'ktp_order',
-            $wpdb->prefix . 'ktp_supplier',
-            $wpdb->prefix . 'ktp_client'
+            $wpdb->prefix . 'ktpwp_order',
+            $wpdb->prefix . 'ktpwp_supplier',
+            $wpdb->prefix . 'ktpwp_client'
         );
 
         $existing_tables = array();
         foreach ($main_tables as $table) {
-            if ($wpdb->get_var("SHOW TABLES LIKE '{$table}'") === $table) {
+            if ($wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) === $table) {
                 $existing_tables[] = $table;
             }
         }
@@ -113,7 +113,7 @@ class KTPWP_Fresh_Install_Detector {
         $plugin_options = array(
             'ktpwp_design_settings',
             'ktpwp_company_info',
-            'ktp_order_table_version'
+            'ktpwp_order_table_version'
         );
 
         foreach ($plugin_options as $option) {

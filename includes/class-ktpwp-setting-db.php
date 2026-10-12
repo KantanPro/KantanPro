@@ -22,7 +22,7 @@ class KTPWP_Setting_DB {
     public static function create_table( $tab_name ) {
         global $wpdb;
         $my_table_version = '1.0.1';
-        $table_name = $wpdb->prefix . 'ktp_' . sanitize_key( $tab_name );
+        $table_name = $wpdb->prefix . 'ktpwp_' . sanitize_key( $tab_name );
         $charset_collate = $wpdb->get_charset_collate();
 
         $columns_def = array(
@@ -42,7 +42,7 @@ class KTPWP_Setting_DB {
             $sql = "CREATE TABLE `{$table_name}` (" . implode( ', ', $columns_sql ) . ", PRIMARY KEY (id)) {$charset_collate};";
             require_once ABSPATH . 'wp-admin/includes/upgrade.php';
             dbDelta( $sql );
-            add_option( 'ktp_' . $tab_name . '_table_version', $my_table_version );
+            add_option( 'ktpwp_' . $tab_name . '_table_version', $my_table_version );
             return true;
         }
 
@@ -56,10 +56,10 @@ class KTPWP_Setting_DB {
      */
     public static function update_table( $tab_name ) {
         global $wpdb;
-        $table_name = $wpdb->prefix . 'ktp_' . $tab_name;
+        $table_name = $wpdb->prefix . 'ktpwp_' . $tab_name;
         $my_table_version = '1.0.2';
 
-        if ( get_option( 'ktp_' . $tab_name . '_table_version' ) != $my_table_version ) {
+        if ( get_option( 'ktpwp_' . $tab_name . '_table_version' ) != $my_table_version ) {
             $columns_def = array(
                 'id' => 'id mediumint(9) NOT NULL AUTO_INCREMENT',
                 'email_address' => 'email_address varchar(255) DEFAULT "" NOT NULL',
@@ -71,14 +71,14 @@ class KTPWP_Setting_DB {
                 'template_content' => 'template_content longtext DEFAULT "" NOT NULL',
             );
 
-            $existing_columns = $wpdb->get_col( "DESCRIBE $table_name", 0 );
+            $existing_columns = $wpdb->get_col( $wpdb->prepare( 'DESCRIBE %i', $table_name ), 0 );
             foreach ( $columns_def as $col_name => $col_def ) {
                 if ( ! in_array( $col_name, $existing_columns ) ) {
                     $wpdb->query( "ALTER TABLE $table_name ADD COLUMN $col_def" );
                 }
             }
 
-            update_option( 'ktp_' . $tab_name . '_table_version', $my_table_version );
+            update_option( 'ktpwp_' . $tab_name . '_table_version', $my_table_version );
         }
     }
 }

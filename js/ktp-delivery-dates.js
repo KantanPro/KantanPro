@@ -10,8 +10,8 @@ function getAjaxConfigForDeliveryDates() {
     var config = { url: '', nonce: '' };
     if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) {
         config.url = ktpwp_ajax.ajax_url;
-    } else if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.ajax_url) {
-        config.url = ktp_ajax_object.ajax_url;
+    } else if (typeof ktpwp_ajax_object !== 'undefined' && ktpwp_ajax_object.ajax_url) {
+        config.url = ktpwp_ajax_object.ajax_url;
     } else if (typeof ajaxurl !== 'undefined') {
         config.url = ajaxurl;
     } else {
@@ -20,18 +20,18 @@ function getAjaxConfigForDeliveryDates() {
     // ページで1つに統一（Head の ktpwp_ajax.nonce を最優先）
     if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonce) {
         config.nonce = ktpwp_ajax.nonce;
-    } else if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.nonce) {
-        config.nonce = ktp_ajax_object.nonce;
-    } else if (typeof ktp_ajax !== 'undefined' && ktp_ajax.nonce) {
-        config.nonce = ktp_ajax.nonce;
-    } else if (typeof ktp_ajax_nonce !== 'undefined') {
-        config.nonce = ktp_ajax_nonce;
+    } else if (typeof ktpwp_ajax_object !== 'undefined' && ktpwp_ajax_object.nonce) {
+        config.nonce = ktpwp_ajax_object.nonce;
+    } else if (typeof ktpwp_ajax_vars !== 'undefined' && ktpwp_ajax_vars.nonce) {
+        config.nonce = ktpwp_ajax_vars.nonce;
+    } else if (typeof ktpwp_autosave_nonce !== 'undefined') {
+        config.nonce = ktpwp_autosave_nonce;
     } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.delivery_dates) {
         config.nonce = ktpwp_ajax.nonces.delivery_dates;
     } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.general) {
         config.nonce = ktpwp_ajax.nonces.general;
-    } else if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.nonce) {
-        config.nonce = ktp_ajax_object.nonce;
+    } else if (typeof ktpwp_ajax_object !== 'undefined' && ktpwp_ajax_object.nonce) {
+        config.nonce = ktpwp_ajax_object.nonce;
     }
     return config;
 }
@@ -108,7 +108,7 @@ window.handleProgressChange = function(selectElement) {
         url: ajaxConfig.url,
         type: 'POST',
         data: {
-            action: 'ktp_update_progress',
+            action: 'ktpwp_update_progress',
             order_id: orderId,
             progress: newProgress,
             completion_date: $completionInput.val(),
@@ -192,8 +192,8 @@ jQuery(document).ready(function($) {
         // URLの取得（優先順位順）
         if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) {
             config.url = ktpwp_ajax.ajax_url;
-        } else if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.ajax_url) {
-            config.url = ktp_ajax_object.ajax_url;
+        } else if (typeof ktpwp_ajax_object !== 'undefined' && ktpwp_ajax_object.ajax_url) {
+            config.url = ktpwp_ajax_object.ajax_url;
         } else if (typeof ajaxurl !== 'undefined') {
             config.url = ajaxurl;
         } else {
@@ -203,12 +203,12 @@ jQuery(document).ready(function($) {
         // nonceはページで1つに統一（Head/TabView の ktpwp_ajax.nonce を最優先。複数出ると検証失敗するため）
         if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonce) {
             config.nonce = ktpwp_ajax.nonce;
-        } else if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.nonce) {
-            config.nonce = ktp_ajax_object.nonce;
-        } else if (typeof ktp_ajax !== 'undefined' && ktp_ajax.nonce) {
-            config.nonce = ktp_ajax.nonce;
-        } else if (typeof ktp_ajax_nonce !== 'undefined') {
-            config.nonce = ktp_ajax_nonce;
+        } else if (typeof ktpwp_ajax_object !== 'undefined' && ktpwp_ajax_object.nonce) {
+            config.nonce = ktpwp_ajax_object.nonce;
+        } else if (typeof ktpwp_ajax_vars !== 'undefined' && ktpwp_ajax_vars.nonce) {
+            config.nonce = ktpwp_ajax_vars.nonce;
+        } else if (typeof ktpwp_autosave_nonce !== 'undefined') {
+            config.nonce = ktpwp_autosave_nonce;
         } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.delivery_dates) {
             config.nonce = ktpwp_ajax.nonces.delivery_dates;
         } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.general) {
@@ -219,7 +219,7 @@ jQuery(document).ready(function($) {
     }
 
     // Ajax設定の確認
-    if (window.ktpDebugMode) {
+    if (window.ktpwpDebugMode) {
         const ajaxConfig = getAjaxConfig();
         console.log('[DELIVERY-DATES] 統一されたAJAX設定:', ajaxConfig);
     }
@@ -261,7 +261,7 @@ jQuery(document).ready(function($) {
             url: ajaxConfig.url,
             type: 'POST',
             data: {
-                action: 'ktp_update_delivery_date',
+                action: 'ktpwp_update_delivery_date',
                 order_id: orderId,
                 field: field,
                 value: value,
@@ -346,7 +346,7 @@ jQuery(document).ready(function($) {
             url: ajaxConfig.url,
             type: 'POST',
             data: {
-                action: 'ktp_update_delivery_date',
+                action: 'ktpwp_update_delivery_date',
                 order_id: orderId,
                 field: field,
                 value: value,
@@ -444,7 +444,7 @@ jQuery(document).ready(function($) {
             url: ajaxConfig.url,
             type: 'POST',
             data: {
-                action: 'ktp_update_delivery_date',
+                action: 'ktpwp_update_delivery_date',
                 order_id: orderId,
                 field: field,
                 value: value,
@@ -489,7 +489,7 @@ jQuery(document).ready(function($) {
         });
     });
 
-    // 受注書概要のメモ（1行・ktp_order.memo、change で保存）
+    // 受注書概要のメモ（1行・ktpwp_order.memo、change で保存）
     $(document).on('change', '.ktp-order-summary-memo-input', function() {
         var $input = $(this);
         var orderId = $input.data('order-id');
@@ -516,7 +516,7 @@ jQuery(document).ready(function($) {
             url: ajaxConfig.url,
             type: 'POST',
             data: {
-                action: 'ktp_update_delivery_date',
+                action: 'ktpwp_update_delivery_date',
                 order_id: orderId,
                 field: field,
                 value: value,
@@ -591,7 +591,7 @@ jQuery(document).ready(function($) {
         // 納期が設定されている場合のみ警告判定を行う
         if (deliveryDate && deliveryDate.trim() !== '') {
             // 進捗が「受注」かどうかを確認
-            var $progressSelect = $input.closest('.ktp_work_list_item').find('.progress-select');
+            var $progressSelect = $input.closest('.ktpwp_work_list_item').find('.progress-select');
             var currentProgress = parseInt($progressSelect.val());
             
             if (currentProgress === 3) { // 受注
@@ -606,8 +606,8 @@ jQuery(document).ready(function($) {
                 
                 // 警告日数を取得（デフォルト3日）
                 var warningDays = 3;
-                if (typeof ktp_ajax !== 'undefined' && ktp_ajax.settings && ktp_ajax.settings.delivery_warning_days) {
-                    warningDays = parseInt(ktp_ajax.settings.delivery_warning_days);
+                if (typeof ktpwp_ajax_vars !== 'undefined' && ktpwp_ajax_vars.settings && ktpwp_ajax_vars.settings.delivery_warning_days) {
+                    warningDays = parseInt(ktpwp_ajax_vars.settings.delivery_warning_days);
                 }
                 
                 // デバッグ情報をコンソールに出力
@@ -654,7 +654,7 @@ jQuery(document).ready(function($) {
             url: ajaxConfig.url,
             type: 'POST',
             data: {
-                action: 'ktp_get_creating_warning_count',
+                action: 'ktpwp_get_creating_warning_count',
                 nonce: nonce
             },
             success: function(response) {
@@ -774,7 +774,7 @@ jQuery(document).ready(function($) {
         console.log('[DELIVERY-DATES] 進捗プルダウンが変更されました（仕事リスト）');
         
         var $select = $(this);
-        var $listItem = $select.closest('.ktp_work_list_item');
+        var $listItem = $select.closest('.ktpwp_work_list_item');
         var $deliveryInput = $listItem.find('.delivery-date-input');
         var $completionInput = $listItem.find('.completion-date-input');
         
@@ -896,7 +896,7 @@ jQuery(document).ready(function($) {
             url: ajaxConfig.url,
             type: 'POST',
             data: {
-                action: 'ktp_auto_save_field',
+                action: 'ktpwp_auto_save_field',
                 order_id: orderId,
                 field_name: fieldName,
                 field_value: value,
@@ -962,7 +962,7 @@ jQuery(document).ready(function($) {
             url: ajaxConfig.url,
             type: 'POST',
             data: {
-                action: 'ktp_auto_save_field',
+                action: 'ktpwp_auto_save_field',
                 order_id: orderId,
                 field_name: fieldName,
                 field_value: value,

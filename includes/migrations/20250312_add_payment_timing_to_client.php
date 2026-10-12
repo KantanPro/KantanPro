@@ -12,8 +12,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// ファイル内の変数をグローバルに出さないよう、処理全体を無名関数で包む（読み込んだ時点で実行される）。
+( static function () {
+
 /**
- * Migration class: Add payment_timing to ktp_client
+ * Migration class: Add payment_timing to ktpwp_client
  */
 class KTPWP_Migration_20250312_Add_Payment_Timing_To_Client {
 
@@ -25,7 +28,7 @@ class KTPWP_Migration_20250312_Add_Payment_Timing_To_Client {
 	public static function up() {
 		global $wpdb;
 
-		$client_table = $wpdb->prefix . 'ktp_client';
+		$client_table = $wpdb->prefix . 'ktpwp_client';
 
 		$table_exists = $wpdb->get_var(
 			$wpdb->prepare( "SHOW TABLES LIKE %s", $client_table )
@@ -39,7 +42,7 @@ class KTPWP_Migration_20250312_Add_Payment_Timing_To_Client {
 		}
 
 		$column_exists = $wpdb->get_var(
-			$wpdb->prepare( "SHOW COLUMNS FROM `{$client_table}` LIKE %s", 'payment_timing' )
+			$wpdb->prepare( 'SHOW COLUMNS FROM %i LIKE %s', $client_table, 'payment_timing' )
 		);
 
 		if ( $column_exists ) {
@@ -49,8 +52,8 @@ class KTPWP_Migration_20250312_Add_Payment_Timing_To_Client {
 			return true;
 		}
 
-		$sql = "ALTER TABLE `{$client_table}` ADD COLUMN `payment_timing` VARCHAR(20) NOT NULL DEFAULT 'postpay' COMMENT '支払タイミング（postpay=後払い, prepay=前払い）'";
-		$result = $wpdb->query( $sql );
+		$sql = $wpdb->prepare( "ALTER TABLE %i ADD COLUMN `payment_timing` VARCHAR(20) NOT NULL DEFAULT 'postpay' COMMENT '支払タイミング（postpay=後払い, prepay=前払い）'", $client_table );
+		$result = $wpdb->query( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $sql は直前で $wpdb->prepare() 済み。
 
 		if ( $result === false ) {
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
@@ -59,7 +62,7 @@ class KTPWP_Migration_20250312_Add_Payment_Timing_To_Client {
 			return false;
 		}
 
-		$wpdb->query( "UPDATE `{$client_table}` SET `payment_timing` = 'postpay' WHERE `payment_timing` IS NULL OR `payment_timing` = ''" );
+		$wpdb->query( $wpdb->prepare( "UPDATE %i SET `payment_timing` = 'postpay' WHERE `payment_timing` IS NULL OR `payment_timing` = ''", $client_table ) );
 
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 			ktpwp_debug_log( 'KTPWP Migration: Successfully added payment_timing to ' . $client_table );
@@ -74,14 +77,15 @@ class KTPWP_Migration_20250312_Add_Payment_Timing_To_Client {
 	 */
 	public static function down() {
 		global $wpdb;
-		$client_table = $wpdb->prefix . 'ktp_client';
+		$client_table = $wpdb->prefix . 'ktpwp_client';
 		$column_exists = $wpdb->get_var(
-			$wpdb->prepare( "SHOW COLUMNS FROM `{$client_table}` LIKE %s", 'payment_timing' )
+			$wpdb->prepare( 'SHOW COLUMNS FROM %i LIKE %s', $client_table, 'payment_timing' )
 		);
 		if ( ! $column_exists ) {
 			return true;
 		}
-		$result = $wpdb->query( "ALTER TABLE `{$client_table}` DROP COLUMN `payment_timing`" );
+		$result = $wpdb->query( $wpdb->prepare( "ALTER TABLE %i DROP COLUMN `payment_timing`", $client_table ) );
 		return $result !== false;
 	}
 }
+} )();

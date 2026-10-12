@@ -8,9 +8,27 @@
 (function($) {
     'use strict';
 
+    // 発注書・見積依頼書の印刷用 CSS（以前は PHP 側の build_purchase_order_print_html() が <style> で出していた）
+    const PURCHASE_ORDER_PRINT_CSS = [
+        '@page { size: A4 portrait; margin: 15mm; }',
+        'body { font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif; color: #222; margin: 0; padding: 0; }',
+        '.doc-title { text-align: center; font-size: 24px; font-weight: bold; letter-spacing: 0.3em; margin: 0 0 24px; }',
+        '.doc-header { display: flex; justify-content: space-between; margin-bottom: 24px; }',
+        '.doc-header .to { font-size: 15px; }',
+        '.doc-header .to .company { font-size: 16px; font-weight: bold; border-bottom: 1px solid #333; padding-bottom: 4px; display: inline-block; min-width: 220px; }',
+        '.doc-header .meta { text-align: right; font-size: 12px; color: #444; }',
+        '.doc-header .from { margin-top: 16px; font-size: 12px; white-space: pre-line; }',
+        'table.items { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 12px; }',
+        'table.items th, table.items td { border: 1px solid #999; padding: 6px 8px; }',
+        'table.items th { background: #f0f0f0; }',
+        'table.items td.num { text-align: right; }',
+        '.totals { margin-top: 12px; text-align: right; font-size: 13px; }',
+        '.totals .grand { font-size: 16px; font-weight: bold; }'
+    ].join('\n');
+
     // 発注/見積依頼メールポップアップを表示（supplierIdは省略可。あると協力会社の検索が安定する）
     // mode: 'order'(発注) または 'quote'(見積依頼)
-    window.ktpShowPurchaseOrderEmailPopup = function(orderId, supplierName, supplierId, mode) {
+    window.ktpwpShowPurchaseOrderEmailPopup = function(orderId, supplierName, supplierId, mode) {
         if (!orderId || !supplierName) {
             alert(ktpwpTranslate('受注書IDまたは協力会社名が指定されていません。'));
             return;
@@ -100,10 +118,10 @@
 
     // ポップアップを閉じる。shouldRevert=true の場合、仕入ステータスの選択を変更前の値に戻す
     function closePurchaseOrderPopup(shouldRevert) {
-        if (shouldRevert && typeof window.ktpPurchaseStatusRevert === 'function') {
-            window.ktpPurchaseStatusRevert();
+        if (shouldRevert && typeof window.ktpwpPurchaseStatusRevert === 'function') {
+            window.ktpwpPurchaseStatusRevert();
         }
-        window.ktpPurchaseStatusRevert = null;
+        window.ktpwpPurchaseStatusRevert = null;
         $('#ktp-purchase-order-email-popup').remove();
     }
 
@@ -115,8 +133,8 @@
         let ajaxUrl = '';
         if (typeof ajaxurl !== 'undefined') {
             ajaxUrl = ajaxurl;
-        } else if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.ajax_url) {
-            ajaxUrl = ktp_ajax_object.ajax_url;
+        } else if (typeof ktpwp_ajax_object !== 'undefined' && ktpwp_ajax_object.ajax_url) {
+            ajaxUrl = ktpwp_ajax_object.ajax_url;
         } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) {
             ajaxUrl = ktpwp_ajax.ajax_url;
         } else {
@@ -127,10 +145,10 @@
         let nonce = '';
         if (typeof ktpwp_ajax_nonce !== 'undefined') {
             nonce = ktpwp_ajax_nonce;
-        } else if (typeof ktp_ajax_nonce !== 'undefined') {
-            nonce = ktp_ajax_nonce;
-        } else if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.nonce) {
-            nonce = ktp_ajax_object.nonce;
+        } else if (typeof ktpwp_autosave_nonce !== 'undefined') {
+            nonce = ktpwp_autosave_nonce;
+        } else if (typeof ktpwp_ajax_object !== 'undefined' && ktpwp_ajax_object.nonce) {
+            nonce = ktpwp_ajax_object.nonce;
         } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.general) {
             nonce = ktpwp_ajax.nonces.general;
         } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.auto_save) {
@@ -141,8 +159,8 @@
         if (!nonce) {
             console.error('[PURCHASE-ORDER-EMAIL] nonceが取得できません:', {
                 ktpwp_ajax_nonce: typeof ktpwp_ajax_nonce !== 'undefined' ? 'defined' : 'undefined',
-                ktp_ajax_nonce: typeof ktp_ajax_nonce !== 'undefined' ? 'defined' : 'undefined',
-                ktp_ajax_object: typeof ktp_ajax_object !== 'undefined' ? 'defined' : 'undefined',
+                ktpwp_ajax_nonce: typeof ktpwp_autosave_nonce !== 'undefined' ? 'defined' : 'undefined',
+                ktpwp_ajax_object: typeof ktpwp_ajax_object !== 'undefined' ? 'defined' : 'undefined',
                 ktpwp_ajax: typeof ktpwp_ajax !== 'undefined' ? 'defined' : 'undefined'
             });
         }
@@ -151,7 +169,7 @@
             url: ajaxUrl,
             type: 'POST',
             data: {
-                action: 'ktp_get_purchase_order_email_content',
+                action: 'ktpwp_get_purchase_order_email_content',
                 order_id: orderId,
                 supplier_name: supplierName,
                 supplier_id: supplierId,
@@ -499,7 +517,7 @@
         supplierId = supplierId || 0;
         mode = (mode === 'quote') ? 'quote' : 'order';
         const formData = new FormData();
-        formData.append('action', 'ktp_send_purchase_order_email');
+        formData.append('action', 'ktpwp_send_purchase_order_email');
         formData.append('order_id', orderId || '');
         formData.append('supplier_name', supplierName || '');
         formData.append('supplier_id', supplierId);
@@ -518,10 +536,10 @@
         let nonce = '';
         if (typeof ktpwp_ajax_nonce !== 'undefined') {
             nonce = ktpwp_ajax_nonce;
-        } else if (typeof ktp_ajax_nonce !== 'undefined') {
-            nonce = ktp_ajax_nonce;
-        } else if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.nonce) {
-            nonce = ktp_ajax_object.nonce;
+        } else if (typeof ktpwp_autosave_nonce !== 'undefined') {
+            nonce = ktpwp_autosave_nonce;
+        } else if (typeof ktpwp_ajax_object !== 'undefined' && ktpwp_ajax_object.nonce) {
+            nonce = ktpwp_ajax_object.nonce;
         } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.general) {
             nonce = ktpwp_ajax.nonces.general;
         } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.auto_save) {
@@ -555,8 +573,8 @@
         let ajaxUrl = '';
         if (typeof ajaxurl !== 'undefined') {
             ajaxUrl = ajaxurl;
-        } else if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.ajax_url) {
-            ajaxUrl = ktp_ajax_object.ajax_url;
+        } else if (typeof ktpwp_ajax_object !== 'undefined' && ktpwp_ajax_object.ajax_url) {
+            ajaxUrl = ktpwp_ajax_object.ajax_url;
         } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) {
             ajaxUrl = ktpwp_ajax.ajax_url;
         } else {
@@ -576,7 +594,7 @@
                     if (result.success) {
                         showSuccess((mode === 'quote') ? '見積依頼メールを送信しました。' : '発注メールを送信しました。');
                         // 送信成功時はステータス選択を元に戻さない
-                        window.ktpPurchaseStatusRevert = null;
+                        window.ktpwpPurchaseStatusRevert = null;
                         $('#ktp-purchase-order-email-popup').remove();
                         // 該当協力会社のコスト項目の仕入ステータスを更新
                         setCostItemsPurchaseStatusAndUpdateDisplay(orderId, supplierName, mode === 'quote' ? 'quote_requested' : 'ordered');
@@ -611,25 +629,25 @@
     // 発注/見積依頼メール送信後、該当協力会社のコスト項目の仕入ステータスをDB更新し、画面のプルダウンに反映
     function setCostItemsPurchaseStatusAndUpdateDisplay(orderId, supplierName, status) {
         if (!orderId || !supplierName || !status) return;
-        const nonce = (typeof ktp_ajax_nonce !== 'undefined') ? ktp_ajax_nonce : (typeof ktpwp_ajax_nonce !== 'undefined' ? ktpwp_ajax_nonce : '');
+        const nonce = (typeof ktpwp_autosave_nonce !== 'undefined') ? ktpwp_autosave_nonce : (typeof ktpwp_ajax_nonce !== 'undefined' ? ktpwp_ajax_nonce : '');
         if (!nonce) {
             console.warn('[PURCHASE-ORDER-EMAIL] nonceが取得できず仕入ステータス更新をスキップします');
-            window.ktpUpdatePurchaseStatusSelects && window.ktpUpdatePurchaseStatusSelects(supplierName, status);
+            window.ktpwpUpdatePurchaseStatusSelects && window.ktpwpUpdatePurchaseStatusSelects(supplierName, status);
             return;
         }
         const ajaxUrl = (typeof ajaxurl !== 'undefined') ? ajaxurl : ((typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) ? ktpwp_ajax.ajax_url : ((typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) || (typeof ajaxurl !== 'undefined' ? ajaxurl : '')));
         $.post(ajaxUrl, {
-            action: 'ktp_set_cost_items_purchase_status',
+            action: 'ktpwp_set_cost_items_purchase_status',
             nonce: nonce,
             order_id: orderId,
             supplier_name: supplierName,
             status: status
         }).done(function(res) {
             if (res && res.success) {
-                window.ktpUpdatePurchaseStatusSelects && window.ktpUpdatePurchaseStatusSelects(supplierName, status, res.data && res.data.records);
+                window.ktpwpUpdatePurchaseStatusSelects && window.ktpwpUpdatePurchaseStatusSelects(supplierName, status, res.data && res.data.records);
             }
         }).fail(function() {
-            window.ktpUpdatePurchaseStatusSelects && window.ktpUpdatePurchaseStatusSelects(supplierName, status);
+            window.ktpwpUpdatePurchaseStatusSelects && window.ktpwpUpdatePurchaseStatusSelects(supplierName, status);
         });
     }
 
@@ -659,7 +677,7 @@
 
     // 発注書/見積依頼書をPDF印刷／保存する（ブラウザの印刷ダイアログで「PDFに保存」を選ぶ運用）。
     // mode: 'order'(発注) または 'quote'(見積依頼)。onDone(success) は印刷ダイアログが閉じた後に呼ばれる。
-    window.ktpPrintPurchaseOrderDocument = function (orderId, supplierName, supplierId, mode, onDone) {
+    window.ktpwpPrintPurchaseOrderDocument = function (orderId, supplierName, supplierId, mode, onDone) {
         if (!orderId || !supplierName) {
             alert(ktpwpTranslate('受注書IDまたは協力会社名が指定されていません。'));
             if (typeof onDone === 'function') onDone(false);
@@ -671,8 +689,8 @@
         let ajaxUrl = '';
         if (typeof ajaxurl !== 'undefined') {
             ajaxUrl = ajaxurl;
-        } else if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.ajax_url) {
-            ajaxUrl = ktp_ajax_object.ajax_url;
+        } else if (typeof ktpwp_ajax_object !== 'undefined' && ktpwp_ajax_object.ajax_url) {
+            ajaxUrl = ktpwp_ajax_object.ajax_url;
         } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) {
             ajaxUrl = ktpwp_ajax.ajax_url;
         } else {
@@ -682,10 +700,10 @@
         let nonce = '';
         if (typeof ktpwp_ajax_nonce !== 'undefined') {
             nonce = ktpwp_ajax_nonce;
-        } else if (typeof ktp_ajax_nonce !== 'undefined') {
-            nonce = ktp_ajax_nonce;
-        } else if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.nonce) {
-            nonce = ktp_ajax_object.nonce;
+        } else if (typeof ktpwp_autosave_nonce !== 'undefined') {
+            nonce = ktpwp_autosave_nonce;
+        } else if (typeof ktpwp_ajax_object !== 'undefined' && ktpwp_ajax_object.nonce) {
+            nonce = ktpwp_ajax_object.nonce;
         } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.general) {
             nonce = ktpwp_ajax.nonces.general;
         } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.auto_save) {
@@ -696,7 +714,7 @@
             url: ajaxUrl,
             type: 'POST',
             data: {
-                action: 'ktp_get_purchase_order_print_html',
+                action: 'ktpwp_get_purchase_order_print_html',
                 order_id: orderId,
                 supplier_name: supplierName,
                 supplier_id: supplierId,
@@ -718,7 +736,7 @@
                         return;
                     }
                     const started = window.KTPPrintIframe.printHtmlInHiddenIframe({
-                        html: result.data.html,
+                        html: String(result.data.html).replace('</head>', '<style>' + PURCHASE_ORDER_PRINT_CSS + '</style></head>'),
                         filename: result.data.filename || (mode === 'quote' ? '見積依頼書' : '発注書'),
                         printDelayMs: 300,
                         fallbackCleanupMs: 30000,

@@ -1,7 +1,7 @@
 (function () {
 	'use strict';
 
-	var config = typeof ktpServiceContractFields !== 'undefined' ? ktpServiceContractFields : {};
+	var config = typeof ktpwpServiceContractFields !== 'undefined' ? ktpwpServiceContractFields : {};
 	var noneValue = config.none_value || 'none';
 
 	function toggleServiceContractFields(cycleSelect) {

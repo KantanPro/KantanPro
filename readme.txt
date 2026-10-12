@@ -1,10 +1,10 @@
 === KantanPro ===
 Contributors: kantanpro
 Tags: invoice, crm, order management, quotation, business
-Requires at least: 5.9
+Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.3.48
+Stable tag: 1.3.49
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -166,6 +166,24 @@ fields. It only sends anything if you have entered your own OpenAI API key.
 6. Mobile view
 
 == Changelog ==
+
+= 1.3.49 - 2026-10-12 =
+* Responded to the WordPress.org plugin review of 1.3.48.
+* Prefix: every function, class, option, database table, AJAX action, nonce, script handle and
+  JavaScript global now uses the ktpwp_ / KTPWP_ / ktpwp- prefix (the 3-letter ktp_ prefix is gone).
+* No inline <script> or <style> is printed any more. Print/PDF/e-mail document CSS and the
+  print-window scripts were moved to enqueued files or are added by the enqueued JavaScript.
+* Every request handler verifies a nonce before reading input, including list-screen forms,
+  the order progress form, cost-item saving, the bulk "mark as invoiced" action and the SMTP
+  test e-mail. Navigation-only query arguments (sorting, paging, search terms, record IDs) are
+  read through one sanitizing accessor (KTPWP_Request).
+* All $_POST / $_FILES input is unslashed and sanitized at the point of reading; uploaded file
+  entries are sanitized field by field.
+* Output and exception messages are escaped; the shortcode output is built as a string and
+  filtered through wp_kses with an allow-list.
+* SQL: table and column identifiers use the %i placeholder ($wpdb->prepare); ORDER BY direction
+  uses fixed SQL strings. Requires WordPress 6.2+.
+* Migration files no longer leak global variables, and unused legacy migrations were removed.
 
 = 1.3.48 - 2026-10-09 =
 * Responded to the WordPress.org plugin review of 1.3.46:

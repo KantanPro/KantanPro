@@ -32,7 +32,7 @@ class KTPWP_Payment_Timing {
 			global $wpdb;
 			$client = $wpdb->get_row(
 				$wpdb->prepare(
-					"SELECT payment_timing FROM `{$wpdb->prefix}ktp_client` WHERE id = %d",
+					"SELECT payment_timing FROM `{$wpdb->prefix}ktpwp_client` WHERE id = %d",
 					(int) $order->client_id
 				)
 			);
@@ -127,8 +127,8 @@ class KTPWP_Payment_Timing {
 			return '';
 		}
 		global $wpdb;
-		$order_table  = $wpdb->prefix . 'ktp_order';
-		$client_table = $wpdb->prefix . 'ktp_client';
+		$order_table  = $wpdb->prefix . 'ktpwp_order';
+		$client_table = $wpdb->prefix . 'ktpwp_client';
 		$order        = $wpdb->get_row(
 			$wpdb->prepare(
 				"SELECT o.id, o.payment_timing, o.external_source, o.client_id, o.memo FROM `{$order_table}` o WHERE o.id = %d",
@@ -163,8 +163,8 @@ class KTPWP_Payment_Timing {
 			return '';
 		}
 		global $wpdb;
-		$order_table = $wpdb->prefix . 'ktp_order';
-		$client_table = $wpdb->prefix . 'ktp_client';
+		$order_table = $wpdb->prefix . 'ktpwp_order';
+		$client_table = $wpdb->prefix . 'ktpwp_client';
 		$order = $wpdb->get_row(
 			$wpdb->prepare(
 				"SELECT o.id, o.payment_timing, o.external_source, o.client_id FROM `{$order_table}` o WHERE o.id = %d",

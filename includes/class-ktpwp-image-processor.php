@@ -11,16 +11,11 @@ class KTPWP_Image_Processor {
      * @param string $tab_name テーブル名
      * @param int    $data_id データID
      * @param string $default_image_url デフォルト画像のURL
+     * @param array|null $file アップロードされた画像（name / tmp_name）。無ければ null
      * @return string $image_url 画像のURL
      */
-    public function handle_image( $tab_name, $data_id, $default_image_url ) {
+    public function handle_image( $tab_name, $data_id, $default_image_url, $file = null ) {
         global $wpdb;
-
-        // デバッグログを追加
-        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            if ( isset( $_FILES['image'] ) ) {
-            }
-        }
 
         // 保存先ディレクトリ
         if ( class_exists( 'KTPWP_Service_Image_Storage' ) ) {
@@ -36,11 +31,9 @@ class KTPWP_Image_Processor {
         // 保存ファイル名
         // $file_path = $upload_dir . $data_id . '.jpeg'; // 修正前
 
-        if ( isset( $_FILES['image'] ) && is_uploaded_file( $_FILES['image']['tmp_name'] ) ) {
-            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            }
-
-            $file = $_FILES['image'];
+        // $file は呼び出し側（KTPWP_Service_DB::handle_upload_image）が nonce 確認後に渡す
+        // array( 'name' => sanitize_file_name 済み, 'tmp_name' => アップロードされた一時ファイル )。
+        if ( is_array( $file ) && isset( $file['tmp_name'], $file['name'] ) && is_uploaded_file( $file['tmp_name'] ) ) {
             $mime = mime_content_type( $file['tmp_name'] );
             $ext = strtolower( pathinfo( $file['name'], PATHINFO_EXTENSION ) );
             $size = filesize( $file['tmp_name'] );

@@ -53,7 +53,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
 		 */
 		public function get_schema() {
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_supplier';
+			$table_name = $wpdb->prefix . 'ktpwp_supplier';
 			$charset_collate = $wpdb->get_charset_collate();
 			$default_company = __( 'Regular Supplier', 'kantanpro' );
 			$default_tax = __( 'Tax Included', 'kantanpro' );
@@ -128,15 +128,15 @@ if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
 			}
 
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_' . sanitize_key( $tab_name );
+			$table_name = $wpdb->prefix . 'ktpwp_' . sanitize_key( $tab_name );
 
 			// Security: CSRF protection - verify nonce on POST requests
 			if ( ktpwp_request_method() === 'POST' ) {
 				// wp_verify_nonce() は差し替え可能な関数なので、生の入力を渡さずサニタイズしてから比較する。
-				$supplier_nonce = isset( $post_data['ktp_supplier_nonce'] )
-					? sanitize_text_field( wp_unslash( (string) $post_data['ktp_supplier_nonce'] ) )
+				$supplier_nonce = isset( $post_data['ktpwp_supplier_nonce'] )
+					? sanitize_text_field( wp_unslash( (string) $post_data['ktpwp_supplier_nonce'] ) )
 					: '';
-				if ( $supplier_nonce === '' || ! wp_verify_nonce( $supplier_nonce, 'ktp_supplier_action' ) ) {
+				if ( ! wp_verify_nonce( $supplier_nonce, 'ktpwp_supplier_action' ) ) {
 					// エラーログはサーバーサイドのみに記録（ヘッダーに表示されない）
 					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 						ktpwp_debug_log( 'KTPWP: Nonce verification failed' );
@@ -213,7 +213,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
 							);
 						}
 
-						$cookie_name = 'ktp_' . $tab_name . '_id';
+						$cookie_name = 'ktpwp_' . $tab_name . '_id';
 						setcookie( $cookie_name, (string) $found_id, time() + ( 86400 * 30 ), '/' );
 
 						// 該当なし画面から再検索でヒットした場合、query_post/no_results を外して詳細表示にする
@@ -286,7 +286,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
 							// Fire action hook after successful deletion
 							do_action( 'ktpwp_supplier_deleted', $data_id );
 
-							$cookie_name = 'ktp_' . $tab_name . '_id';
+							$cookie_name = 'ktpwp_' . $tab_name . '_id';
 							setcookie( $cookie_name, '', time() - 3600, '/' );
 
 							// Prepare redirect URL
@@ -377,7 +377,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
 								ktpwp_increment_record_frequency( 'supplier', $data_id );
 							}
 
-							$cookie_name = 'ktp_' . $tab_name . '_id';
+							$cookie_name = 'ktpwp_' . $tab_name . '_id';
 							setcookie( $cookie_name, $data_id, time() + ( 86400 * 30 ), '/' );
 
 							$redirect_base = class_exists( 'KTPWP_Main' )
@@ -414,8 +414,8 @@ if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
 					$sanitized_data = $this->sanitize_supplier_data( $post_data );
 
 					// 新しいIDを取得（データが完全に0の場合は1から開始）
-					$new_id_query = "SELECT COALESCE(MAX(id), 0) + 1 as new_id FROM {$table_name}";
-					$new_id_result = $wpdb->get_row( $new_id_query );
+					$new_id_query = $wpdb->prepare( "SELECT COALESCE(MAX(id), 0) + 1 as new_id FROM %i", $table_name );
+					$new_id_result = $wpdb->get_row( $new_id_query ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $new_id_query は直前で $wpdb->prepare() 済み。
 					$new_id = $new_id_result && isset( $new_id_result->new_id ) ? intval( $new_id_result->new_id ) : 1;
 
 					// Build search_field value
@@ -567,7 +567,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
 				return false;
 			}
 
-			$skills_table = $wpdb->prefix . 'ktp_supplier_skills';
+			$skills_table = $wpdb->prefix . 'ktpwp_supplier_skills';
 			$table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $skills_table ) );
 			if ( $table_exists !== $skills_table ) {
 				return true;
@@ -606,7 +606,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
 			if ( empty( $supplier_id ) || $supplier_id <= 0 ) {
 				return '内税'; // デフォルト
 			}
-			$table_name = $wpdb->prefix . 'ktp_supplier';
+			$table_name = $wpdb->prefix . 'ktpwp_supplier';
 			$tax_category = $wpdb->get_var( $wpdb->prepare( "SELECT tax_category FROM {$table_name} WHERE id = %d", $supplier_id ) );
 			if ( $tax_category === '外税' ) {
 				return '外税';
@@ -626,7 +626,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Data' ) ) {
 			if ( empty( $supplier_id ) || $supplier_id <= 0 ) {
 				return ''; // デフォルト
 			}
-			$table_name = $wpdb->prefix . 'ktp_supplier';
+			$table_name = $wpdb->prefix . 'ktpwp_supplier';
 			$qualified_invoice_number = $wpdb->get_var( $wpdb->prepare( "SELECT qualified_invoice_number FROM {$table_name} WHERE id = %d", $supplier_id ) );
 			return $qualified_invoice_number ? $qualified_invoice_number : '';
 		}

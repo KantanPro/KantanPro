@@ -1,17 +1,17 @@
 // KTP Client Invoice Script
 
-function ktpInvoiceSuppressTaxForInlineSuffix() {
-    return !!(window.ktp_tax_policy && (window.ktp_tax_policy.mode === 'abolished' || window.ktp_tax_policy.hide_columns));
+function ktpwpInvoiceSuppressTaxForInlineSuffix() {
+    return !!(window.ktpwp_tax_policy && (window.ktpwp_tax_policy.mode === 'abolished' || window.ktpwp_tax_policy.hide_columns));
 }
 
-function ktpInvoiceEffectiveItemTaxRate(item) {
+function ktpwpInvoiceEffectiveItemTaxRate(item) {
     var itemTaxRateRaw = item && item.tax_rate;
-    if (window.ktp_tax_policy) {
-        if (window.ktp_tax_policy.mode === 'abolished') {
+    if (window.ktpwp_tax_policy) {
+        if (window.ktpwp_tax_policy.mode === 'abolished') {
             return 0;
         }
-        if (window.ktp_tax_policy.mode === 'unified') {
-            return parseFloat(window.ktp_tax_policy.unified_tax_rate || 0) || 0;
+        if (window.ktpwp_tax_policy.mode === 'unified') {
+            return parseFloat(window.ktpwp_tax_policy.unified_tax_rate || 0) || 0;
         }
     }
     if (itemTaxRateRaw !== null && itemTaxRateRaw !== undefined && itemTaxRateRaw !== '' && !isNaN(parseFloat(itemTaxRateRaw))) {
@@ -20,7 +20,7 @@ function ktpInvoiceEffectiveItemTaxRate(item) {
     return 0;
 }
 
-function ktpInvoiceFormatRateLabel(rate) {
+function ktpwpInvoiceFormatRateLabel(rate) {
     var s = Number(rate).toFixed(2);
     if (s.indexOf('.') >= 0) {
         s = s.replace(/0+$/, '').replace(/\.$/, '');
@@ -29,7 +29,7 @@ function ktpInvoiceFormatRateLabel(rate) {
 }
 
 /** 一括請求：月別グループ・案件カードの印刷レイアウト（KantanBiz bulk-invoice-print-document 相当） */
-function ktpBulkInvoiceOrderLayoutPrintCss(containerSelector) {
+function ktpwpBulkInvoiceOrderLayoutPrintCss(containerSelector) {
     var root = containerSelector ? containerSelector + ' ' : '';
     var css = '';
     css += root + '.ktp-bulk-invoice-order-groups{display:flex;flex-direction:column;gap:16px;margin-bottom:24px;break-before:avoid-page;page-break-before:avoid;}';
@@ -47,7 +47,7 @@ function ktpBulkInvoiceOrderLayoutPrintCss(containerSelector) {
 }
 
 /** PDF/印刷キャプチャ用ミラー CSS（KantanBiz bulk-invoice-pdf-mirror-styles + iframe-styles 相当） */
-function ktpBulkInvoicePdfMirrorStylesCss() {
+function ktpwpBulkInvoicePdfMirrorStylesCss() {
     var css = '';
     css += '.ktp-bulk-invoice-pdf-save-mode .ktp-bulk-invoice-content-area{padding:8mm 10mm 10mm 10mm!important;--bulk-issuer-pad-right:6mm;}';
     css += '.ktp-bulk-invoice-pdf-save-mode .ktp-bulk-invoice-content-area.ktp-bulk-invoice-envelope-page{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;grid-template-rows:minmax(0,max-content) max-content!important;grid-template-areas:"addressee issuer" "body body"!important;column-gap:1rem!important;align-items:start!important;position:relative!important;width:100%!important;max-width:none!important;box-sizing:border-box!important;overflow:visible!important;}';
@@ -86,14 +86,14 @@ function ktpBulkInvoicePdfMirrorStylesCss() {
 /**
  * 請求項目配列から「 (内税|消費税 : 10%: xxx, 8%: yyy)」形式（KantanBiz InvoiceTaxInlineBreakdown と同式）
  */
-function ktpInvoiceTaxInlineSuffixFromItems(items, taxCategory, translateFn) {
+function ktpwpInvoiceTaxInlineSuffixFromItems(items, taxCategory, translateFn) {
     var tfn = typeof translateFn === 'function' ? translateFn : function (x) { return x; };
-    if (ktpInvoiceSuppressTaxForInlineSuffix() || !items || !items.length) {
+    if (ktpwpInvoiceSuppressTaxForInlineSuffix() || !items || !items.length) {
         return '';
     }
     var sums = {};
     items.forEach(function (item) {
-        var rate = ktpInvoiceEffectiveItemTaxRate(item);
+        var rate = ktpwpInvoiceEffectiveItemTaxRate(item);
         if (rate <= 0) {
             return;
         }
@@ -116,7 +116,7 @@ function ktpInvoiceTaxInlineSuffixFromItems(items, taxCategory, translateFn) {
             ? Math.ceil(groupAmount * (rate / 100))
             : Math.ceil((groupAmount * (rate / 100)) / (1 + rate / 100));
         if (tax > 0) {
-            parts.push(ktpInvoiceFormatRateLabel(rate) + '%: ' + (typeof ktpwpFormatMoney === 'function' ? ktpwpFormatMoney(tax) : String(tax)));
+            parts.push(ktpwpInvoiceFormatRateLabel(rate) + '%: ' + (typeof ktpwpFormatMoney === 'function' ? ktpwpFormatMoney(tax) : String(tax)));
         }
     });
     if (!parts.length) {
@@ -126,7 +126,7 @@ function ktpInvoiceTaxInlineSuffixFromItems(items, taxCategory, translateFn) {
     return ' (' + label + ' : ' + parts.join(', ') + ')';
 }
 
-function ktpInvoiceEscapeHtml(s) {
+function ktpwpInvoiceEscapeHtml(s) {
     return String(s == null ? '' : s)
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
@@ -135,14 +135,14 @@ function ktpInvoiceEscapeHtml(s) {
 }
 
 /** KantanBiz 相当の自社ブロック用に旧 company-info-box の外枠を外す */
-function ktpInvoiceUnwrapCompanyInfoBox(html) {
+function ktpwpInvoiceUnwrapCompanyInfoBox(html) {
     var str = String(html || '').trim();
     var m = str.match(/^<div\s+class="company-info-box"[^>]*>([\s\S]*)<\/div>\s*$/i);
     return m ? m[1].trim() : str;
 }
 
 /** KantanBiz 一括請求：帳票フォントのスケール（compact 時 75%） */
-function ktpBulkInvoiceScaledIssuerTextFontSizePx(bulkDoc) {
+function ktpwpBulkInvoiceScaledIssuerTextFontSizePx(bulkDoc) {
     bulkDoc = bulkDoc || {};
     var base = parseInt(bulkDoc.body_font_size, 10) || 14;
     base = Math.max(8, Math.min(16, base));
@@ -153,17 +153,17 @@ function ktpBulkInvoiceScaledIssuerTextFontSizePx(bulkDoc) {
 }
 
 /** KantanBiz 一括請求：挨拶文・issuer 内文の共通フォントサイズ（px） */
-function ktpBulkInvoiceLeadFontSizePx(bulkDoc) {
-    return ktpBulkInvoiceScaledIssuerTextFontSizePx(bulkDoc);
+function ktpwpBulkInvoiceLeadFontSizePx(bulkDoc) {
+    return ktpwpBulkInvoiceScaledIssuerTextFontSizePx(bulkDoc);
 }
 
 /** 一括請求：「請求書在中」ラベル（issuer タイトルと同じ 2em 相当の px） */
-function ktpBulkInvoiceEnvelopeLabelFontSizePx(bulkDoc) {
-    return ktpBulkInvoiceScaledIssuerTextFontSizePx(bulkDoc) * 2;
+function ktpwpBulkInvoiceEnvelopeLabelFontSizePx(bulkDoc) {
+    return ktpwpBulkInvoiceScaledIssuerTextFontSizePx(bulkDoc) * 2;
 }
 
 /** KantanBiz 一括請求：issuer stack 用 CSS 変数文字列 */
-function ktpBulkInvoiceEnvelopeStyleVars(bulkDoc) {
+function ktpwpBulkInvoiceEnvelopeStyleVars(bulkDoc) {
     bulkDoc = bulkDoc || {};
     var marginTop = parseInt(bulkDoc.margin_top_mm, 10);
     var marginLeft = parseInt(bulkDoc.margin_left_mm, 10);
@@ -177,7 +177,7 @@ function ktpBulkInvoiceEnvelopeStyleVars(bulkDoc) {
     if (isNaN(marginBottom)) { marginBottom = 5; }
     if (isNaN(envTop)) { envTop = 6; }
     if (isNaN(envLeft)) { envLeft = 23; }
-    var issuerTextFontSize = ktpBulkInvoiceScaledIssuerTextFontSizePx(bulkDoc);
+    var issuerTextFontSize = ktpwpBulkInvoiceScaledIssuerTextFontSizePx(bulkDoc);
     var envelopeLabelFontSize = issuerTextFontSize * 2;
     var envelopeLabelOffsetMm = Math.max(8, Math.round(10 * envelopeLabelFontSize / 28));
     var accent = bulkDoc.accent_color || '#374151';
@@ -185,7 +185,7 @@ function ktpBulkInvoiceEnvelopeStyleVars(bulkDoc) {
 }
 
 /** 一括請求・宛名の代表者行（representative_name 優先、なければ client_contact / name） */
-function ktpResolveBulkAddresseeRepresentativeName(res) {
+function ktpwpResolveBulkAddresseeRepresentativeName(res) {
     var rep = (res.representative_name || '').trim();
     if (rep !== '') {
         return rep;
@@ -194,7 +194,7 @@ function ktpResolveBulkAddresseeRepresentativeName(res) {
 }
 
 /** 顧客フォームでチェック中の部署ID */
-function ktpReadSelectedDepartmentIdFromDom() {
+function ktpwpReadSelectedDepartmentIdFromDom() {
     var checked = document.querySelector('input.department-checkbox:checked');
     if (!checked) {
         return '';
@@ -203,7 +203,7 @@ function ktpReadSelectedDepartmentIdFromDom() {
 }
 
 /** 部署名＋担当者名を一括請求宛名行に整形 */
-function ktpBuildBulkDepartmentContactLine(deptName, contactPerson) {
+function ktpwpBuildBulkDepartmentContactLine(deptName, contactPerson) {
     var dept = (deptName || '').trim();
     var contact = (contactPerson || '').trim();
     if (dept === '' && contact === '') {
@@ -219,7 +219,7 @@ function ktpBuildBulkDepartmentContactLine(deptName, contactPerson) {
 }
 
 /** DOM の部署チェックから Ajax データを補完（DB 未同期時のフォールバック） */
-function ktpEnrichBulkInvoiceClientData(data) {
+function ktpwpEnrichBulkInvoiceClientData(data) {
     if (!data || typeof data !== 'object') {
         return data;
     }
@@ -234,7 +234,7 @@ function ktpEnrichBulkInvoiceClientData(data) {
     if (!row || !row.cells || row.cells.length < 3) {
         return data;
     }
-    var line = ktpBuildBulkDepartmentContactLine(row.cells[1].textContent, row.cells[2].textContent);
+    var line = ktpwpBuildBulkDepartmentContactLine(row.cells[1].textContent, row.cells[2].textContent);
     if (line === '') {
         return data;
     }
@@ -251,7 +251,7 @@ function ktpEnrichBulkInvoiceClientData(data) {
 }
 
 /** 一括請求の宛名ブロック（請求書在中ラベル付き・担当表示切替対応） */
-function ktpBuildBulkInvoiceAddresseeHtml(res, customerHonorific, t) {
+function ktpwpBuildBulkInvoiceAddresseeHtml(res, customerHonorific, t) {
     var html = '<div class="ktp-bulk-invoice-addressee ktp-bulk-invoice-address-block">';
     html += '<div class="ktp-bulk-invoice-envelope-label-slot">';
     html += '<div class="ktp-bulk-invoice-envelope-label">' + t('請求書在中') + '</div>';
@@ -272,25 +272,25 @@ function ktpBuildBulkInvoiceAddresseeHtml(res, customerHonorific, t) {
     }
     if (address && address.trim() !== '' && address !== unsetLabel) {
         if (postalCode) {
-            html += '<div>' + ktpInvoiceEscapeHtml(postalCode) + '</div>';
+            html += '<div>' + ktpwpInvoiceEscapeHtml(postalCode) + '</div>';
         }
         if (addressWithoutPostal && addressWithoutPostal.trim() !== '') {
-            html += '<div>' + ktpInvoiceEscapeHtml(addressWithoutPostal) + '</div>';
+            html += '<div>' + ktpwpInvoiceEscapeHtml(addressWithoutPostal) + '</div>';
         }
     }
 
-    html += '<div>' + ktpInvoiceEscapeHtml(companyName) + '<span class="ktp-bulk-invoice-company-honorific"> ' + t('様') + '</span></div>';
+    html += '<div>' + ktpwpInvoiceEscapeHtml(companyName) + '<span class="ktp-bulk-invoice-company-honorific"> ' + t('様') + '</span></div>';
 
-    var representativeName = ktpResolveBulkAddresseeRepresentativeName(res);
+    var representativeName = ktpwpResolveBulkAddresseeRepresentativeName(res);
     if (representativeName !== '') {
         html += '<div class="ktp-bulk-invoice-representative-row ktp-bulk-invoice-addressee-contact-row" style="display:none;">'
-            + ktpInvoiceEscapeHtml(representativeName) + customerHonorific + '</div>';
+            + ktpwpInvoiceEscapeHtml(representativeName) + customerHonorific + '</div>';
     }
 
     var deptContactLine = (res.bulk_department_contact_line || '').trim();
     if (deptContactLine !== '') {
         html += '<div class="ktp-bulk-invoice-department-contact-row ktp-bulk-invoice-addressee-contact-row" style="display:none;">'
-            + ktpInvoiceEscapeHtml(deptContactLine) + customerHonorific + '</div>';
+            + ktpwpInvoiceEscapeHtml(deptContactLine) + customerHonorific + '</div>';
     }
 
     html += '</div>';
@@ -298,7 +298,7 @@ function ktpBuildBulkInvoiceAddresseeHtml(res, customerHonorific, t) {
 }
 
 /** 宛名ブロック: 会社名のみ / 代表者 / 部署・ご担当 の表示切替 */
-function ktpApplyAddresseeContactModeToRoot(root, inputName, forcedMode) {
+function ktpwpApplyAddresseeContactModeToRoot(root, inputName, forcedMode) {
     inputName = inputName || 'addressee-contact-mode';
     if (!root || !root.querySelector) {
         return;
@@ -323,7 +323,7 @@ function ktpApplyAddresseeContactModeToRoot(root, inputName, forcedMode) {
     });
 }
 
-function ktpBindAddresseeContactMode(inputName) {
+function ktpwpBindAddresseeContactMode(inputName) {
     inputName = inputName || 'addressee-contact-mode';
     var radios = document.querySelectorAll('input[name="' + inputName + '"]');
     if (!radios.length) {
@@ -333,7 +333,7 @@ function ktpBindAddresseeContactMode(inputName) {
 
     function update() {
         if (addresseeRoot) {
-            ktpApplyAddresseeContactModeToRoot(addresseeRoot, inputName);
+            ktpwpApplyAddresseeContactModeToRoot(addresseeRoot, inputName);
         }
     }
 
@@ -344,9 +344,9 @@ function ktpBindAddresseeContactMode(inputName) {
     return update;
 }
 
-function ktpBuildAddresseeContactModeFieldset(res, t, inputName) {
+function ktpwpBuildAddresseeContactModeFieldset(res, t, inputName) {
     inputName = inputName || 'addressee-contact-mode';
-    var representativeName = ktpResolveBulkAddresseeRepresentativeName(res);
+    var representativeName = ktpwpResolveBulkAddresseeRepresentativeName(res);
     var hasRepresentative = !!(
         res.has_representative_contact
         || representativeName !== ''
@@ -361,12 +361,12 @@ function ktpBuildAddresseeContactModeFieldset(res, t, inputName) {
     var html = '<fieldset class="ktp-bulk-invoice-addressee-mode" style="margin-bottom:8px;text-align:center;font-size:14px;color:#1f2937;">';
     html += '<legend style="margin-bottom:4px;font-size:12px;color:#6b7280;">' + t('宛名のご担当') + '</legend>';
     html += '<div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:12px 24px;">';
-    html += '<label style="display:inline-flex;align-items:center;gap:6px;"><input type="radio" name="' + ktpInvoiceEscapeHtml(inputName) + '" value="company" checked> ' + t('会社名のみ') + '</label>';
+    html += '<label style="display:inline-flex;align-items:center;gap:6px;"><input type="radio" name="' + ktpwpInvoiceEscapeHtml(inputName) + '" value="company" checked> ' + t('会社名のみ') + '</label>';
     if (hasRepresentative) {
-        html += '<label style="display:inline-flex;align-items:center;gap:6px;"><input type="radio" name="' + ktpInvoiceEscapeHtml(inputName) + '" value="representative"> ' + t('代表者名を表示') + '</label>';
+        html += '<label style="display:inline-flex;align-items:center;gap:6px;"><input type="radio" name="' + ktpwpInvoiceEscapeHtml(inputName) + '" value="representative"> ' + t('代表者名を表示') + '</label>';
     }
     if (hasDepartment) {
-        html += '<label style="display:inline-flex;align-items:center;gap:6px;"><input type="radio" name="' + ktpInvoiceEscapeHtml(inputName) + '" value="department"> ' + t('部署・ご担当を表示') + '</label>';
+        html += '<label style="display:inline-flex;align-items:center;gap:6px;"><input type="radio" name="' + ktpwpInvoiceEscapeHtml(inputName) + '" value="department"> ' + t('部署・ご担当を表示') + '</label>';
     }
     html += '</div></fieldset>';
     return html;
@@ -375,27 +375,27 @@ function ktpBuildAddresseeContactModeFieldset(res, t, inputName) {
 /**
  * 一括請求の自社情報（右上 issuer stack）— AJAX 未対応時のフォールバック
  */
-function ktpBuildBulkIssuerStackHtml(bulkDoc, branding, qualifiedNumber, bankTransferHtml, legacyHtml, t) {
+function ktpwpBuildBulkIssuerStackHtml(bulkDoc, branding, qualifiedNumber, bankTransferHtml, legacyHtml, t) {
     t = typeof t === 'function' ? t : function (x) { return x; };
     if (!branding || !bulkDoc) {
         return legacyHtml || '';
     }
     var showLogo = !!bulkDoc.show_logo && branding.logo_data_uri;
     var showSeal = !!bulkDoc.show_seal && branding.seal_data_uri;
-    var showQualified = !!bulkDoc.show_qualified_invoice_number && qualifiedNumber && String(qualifiedNumber).trim() !== '' && !(window.ktp_tax_policy && window.ktp_tax_policy.mode === 'abolished');
-    var bulkBankHtml = (typeof ktpClientInvoice !== 'undefined' && ktpClientInvoice.bank_transfer_bulk_issuer_html)
-        ? ktpClientInvoice.bank_transfer_bulk_issuer_html
-        : ktpInvoicePlainBankTransferHtml(bankTransferHtml);
+    var showQualified = !!bulkDoc.show_qualified_invoice_number && qualifiedNumber && String(qualifiedNumber).trim() !== '' && !(window.ktpwp_tax_policy && window.ktpwp_tax_policy.mode === 'abolished');
+    var bulkBankHtml = (typeof ktpwpClientInvoice !== 'undefined' && ktpwpClientInvoice.bank_transfer_bulk_issuer_html)
+        ? ktpwpClientInvoice.bank_transfer_bulk_issuer_html
+        : ktpwpInvoicePlainBankTransferHtml(bankTransferHtml);
     var showBank = !!bulkDoc.show_bank_transfer && bulkBankHtml && String(bulkBankHtml).trim() !== '';
     var lh = bulkDoc.issuer_line_height || 1.35;
-    var fontSize = ktpBulkInvoiceLeadFontSizePx(bulkDoc);
+    var fontSize = ktpwpBulkInvoiceLeadFontSizePx(bulkDoc);
     var accent = bulkDoc.accent_color || '#374151';
     var title = bulkDoc.title || t('請求書');
     var name = (branding.name || '').trim();
     var hasCompany = name !== '' || branding.address_html;
-    var canResize = typeof ktpClientInvoice !== 'undefined'
-        && ((ktpClientInvoice.bulkSealResize && ktpClientInvoice.bulkSealResize.enabled)
-            || (ktpClientInvoice.bulkLogoResize && ktpClientInvoice.bulkLogoResize.enabled));
+    var canResize = typeof ktpwpClientInvoice !== 'undefined'
+        && ((ktpwpClientInvoice.bulkSealResize && ktpwpClientInvoice.bulkSealResize.enabled)
+            || (ktpwpClientInvoice.bulkLogoResize && ktpwpClientInvoice.bulkLogoResize.enabled));
     if (!showLogo && !showSeal && !hasCompany && !showQualified && !showBank && !legacyHtml) {
         return '';
     }
@@ -414,11 +414,11 @@ function ktpBuildBulkIssuerStackHtml(bulkDoc, branding, qualifiedNumber, bankTra
 
     var sealSettingW = parseInt(bulkDoc.seal_max_width_px, 10) || 48;
     var sealSettingH = parseInt(bulkDoc.seal_max_height_px, 10) || 48;
-    var sealOverlayScale = (typeof ktpClientInvoice !== 'undefined' && ktpClientInvoice.bulkSealResize && ktpClientInvoice.bulkSealResize.overlayScale)
-        ? Number(ktpClientInvoice.bulkSealResize.overlayScale)
+    var sealOverlayScale = (typeof ktpwpClientInvoice !== 'undefined' && ktpwpClientInvoice.bulkSealResize && ktpwpClientInvoice.bulkSealResize.overlayScale)
+        ? Number(ktpwpClientInvoice.bulkSealResize.overlayScale)
         : (6 * 0.7 * 0.9);
-    var sealOverlayMax = (typeof ktpClientInvoice !== 'undefined' && ktpClientInvoice.bulkSealResize && ktpClientInvoice.bulkSealResize.overlayMax)
-        ? Number(ktpClientInvoice.bulkSealResize.overlayMax)
+    var sealOverlayMax = (typeof ktpwpClientInvoice !== 'undefined' && ktpwpClientInvoice.bulkSealResize && ktpwpClientInvoice.bulkSealResize.overlayMax)
+        ? Number(ktpwpClientInvoice.bulkSealResize.overlayMax)
         : 454;
     var sealDisplayW = Math.max(16, Math.min(sealOverlayMax, Math.round(sealSettingW * sealOverlayScale)));
     var sealDisplayH = Math.max(16, Math.min(sealOverlayMax, Math.round(sealSettingH * sealOverlayScale)));
@@ -426,9 +426,9 @@ function ktpBuildBulkIssuerStackHtml(bulkDoc, branding, qualifiedNumber, bankTra
 
     var html = '<div class="ktp-bulk-invoice-issuer-stack" aria-hidden="false">';
     html += '<div class="ktp-bulk-invoice-issuer-inner ktp-bulk-invoice-company-info" style="font-size:' + fontSize + 'px;color:#374151;line-height:' + lh + ';">';
-    html += '<div class="ktp-bulk-invoice-issuer-doc-title" style="color:' + ktpInvoiceEscapeHtml(accent) + ';">';
+    html += '<div class="ktp-bulk-invoice-issuer-doc-title" style="color:' + ktpwpInvoiceEscapeHtml(accent) + ';">';
     html += '<span class="ktp-bulk-invoice-issuer-doc-title-ornament" aria-hidden="true"><span></span><span></span><span></span></span>';
-    html += '<span class="ktp-bulk-invoice-issuer-doc-title-text">' + ktpInvoiceEscapeHtml(title) + '</span>';
+    html += '<span class="ktp-bulk-invoice-issuer-doc-title-text">' + ktpwpInvoiceEscapeHtml(title) + '</span>';
     html += '<span class="ktp-bulk-invoice-issuer-doc-title-ornament" aria-hidden="true"><span></span><span></span><span></span></span>';
     html += '</div>';
     if (showLogo) {
@@ -440,12 +440,12 @@ function ktpBuildBulkIssuerStackHtml(bulkDoc, branding, qualifiedNumber, bankTra
     }
     html += '<div class="ktp-bulk-invoice-issuer-text-block">';
     if (showQualified) {
-        html += '<div class="ktp-bulk-invoice-issuer-registration">' + t('登録番号：') + ktpInvoiceEscapeHtml(qualifiedNumber) + '</div>';
+        html += '<div class="ktp-bulk-invoice-issuer-registration">' + t('登録番号：') + ktpwpInvoiceEscapeHtml(qualifiedNumber) + '</div>';
     }
     if (hasCompany || showBank || showSeal || legacyHtml) {
         html += '<div class="ktp-bulk-invoice-issuer-seal-scope">';
         if (name) {
-            html += '<div style="font-weight:bold;">' + ktpInvoiceEscapeHtml(name) + '</div>';
+            html += '<div style="font-weight:bold;">' + ktpwpInvoiceEscapeHtml(name) + '</div>';
             if (branding.address_html) {
                 html += '<div>' + branding.address_html + '</div>';
             }
@@ -469,21 +469,21 @@ function ktpBuildBulkIssuerStackHtml(bulkDoc, branding, qualifiedNumber, bankTra
 }
 
 /** @deprecated 後方互換 */
-function ktpBuildBulkIssuerCompanyHtml(bulkDoc, branding, legacyHtml) {
-    return ktpBuildBulkIssuerStackHtml(bulkDoc, branding, '', '', legacyHtml, function (x) { return x; });
+function ktpwpBuildBulkIssuerCompanyHtml(bulkDoc, branding, legacyHtml) {
+    return ktpwpBuildBulkIssuerStackHtml(bulkDoc, branding, '', '', legacyHtml, function (x) { return x; });
 }
 
 /** 二重枠を避けるため振込ブロックの外側 div を外す */
-function ktpInvoiceUnwrapBankTransferBox(html) {
+function ktpwpInvoiceUnwrapBankTransferBox(html) {
     var str = String(html || '').trim();
     var m = str.match(/^<div\s+class="ktp-invoice-bank-transfer"[^>]*>([\s\S]*)<\/div>\s*$/i);
     return m ? m[1].trim() : str;
 }
 
 /** 一括請求 issuer stack 用の振込先 HTML（Ajax 未対応時は localized データを優先） */
-function ktpInvoicePlainBankTransferHtml(html) {
-    if (typeof ktpClientInvoice !== 'undefined' && ktpClientInvoice.bank_transfer_bulk_issuer_html) {
-        return ktpClientInvoice.bank_transfer_bulk_issuer_html;
+function ktpwpInvoicePlainBankTransferHtml(html) {
+    if (typeof ktpwpClientInvoice !== 'undefined' && ktpwpClientInvoice.bank_transfer_bulk_issuer_html) {
+        return ktpwpClientInvoice.bank_transfer_bulk_issuer_html;
     }
     return '';
 }
@@ -493,15 +493,15 @@ jQuery(document).ready(function($) {
     // 請求書発行機能
     //
     (function() {
-        if (typeof ktpClientInvoice === 'undefined') {
-            console.error("[請求書発行] Localized script object 'ktpClientInvoice' not found.");
+        if (typeof ktpwpClientInvoice === 'undefined') {
+            console.error("[請求書発行] Localized script object 'ktpwpClientInvoice' not found.");
             return;
         }
 
         // デザイン設定をグローバル変数として設定
-        window.ktp_design_settings = ktpClientInvoice.design_settings;
+        window.ktpwp_design_settings = ktpwpClientInvoice.design_settings;
         
-        var ajaxurl = ktpClientInvoice.ajax_url;
+        var ajaxurl = ktpwpClientInvoice.ajax_url;
         var t = function(text) { return typeof ktpwpTranslate === 'function' ? ktpwpTranslate(text) : text; };
         /** 請求プレビュー用: MySQL ゼロ日付などは「未設定」表示 */
         var formatInvoiceCompletionDate = function(d) {
@@ -517,10 +517,10 @@ jQuery(document).ready(function($) {
         var carryoverSym = (ccyForCarryover.symbol != null && String(ccyForCarryover.symbol).trim() !== '') ? String(ccyForCarryover.symbol).trim() : '';
         var carryoverCurrencyLabel = carryoverSym !== '' ? carryoverSym : (ccyForCarryover.code === 'JPY' ? '円' : (ccyForCarryover.code || 'JPY'));
         
-        // フォールバック: ktpClientInvoiceが利用できない場合の代替手段
+        // フォールバック: ktpwpClientInvoiceが利用できない場合の代替手段
         if (!ajaxurl) {
-            if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.ajax_url) {
-                ajaxurl = ktp_ajax_object.ajax_url;
+            if (typeof ktpwp_ajax_object !== 'undefined' && ktpwp_ajax_object.ajax_url) {
+                ajaxurl = ktpwp_ajax_object.ajax_url;
             } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) {
                 ajaxurl = ktpwp_ajax.ajax_url;
             } else if (typeof window.ajaxurl !== 'undefined') {
@@ -587,23 +587,23 @@ jQuery(document).ready(function($) {
                             var res = JSON.parse(xhr.responseText);
                             console.log("[請求書発行] レスポンス解析結果:", res);
                             if (res.success && res.data && res.data.monthly_groups && res.data.monthly_groups.length > 0) {
-                                res.data = ktpEnrichBulkInvoiceClientData(res.data);
-                                var bulkDocSettings = (typeof ktpClientInvoice !== 'undefined' && ktpClientInvoice.document_settings && ktpClientInvoice.document_settings.bulk_invoice)
-                                    ? ktpClientInvoice.document_settings.bulk_invoice
+                                res.data = ktpwpEnrichBulkInvoiceClientData(res.data);
+                                var bulkDocSettings = (typeof ktpwpClientInvoice !== 'undefined' && ktpwpClientInvoice.document_settings && ktpwpClientInvoice.document_settings.bulk_invoice)
+                                    ? ktpwpClientInvoice.document_settings.bulk_invoice
                                     : {};
                                 window.invoiceClientName = res.data.client_name || t('未設定');
 
-                                var html = '<div class="ktp-bulk-invoice-content-area ktp-bulk-invoice-envelope-page ktp-bulk-invoice-envelope-page--labeled" style="' + ktpBulkInvoiceEnvelopeStyleVars(bulkDocSettings) + '">';
-                                html += ktpBuildBulkInvoiceAddresseeHtml(res.data, customerHonorific, t);
+                                var html = '<div class="ktp-bulk-invoice-content-area ktp-bulk-invoice-envelope-page ktp-bulk-invoice-envelope-page--labeled" style="' + ktpwpBulkInvoiceEnvelopeStyleVars(bulkDocSettings) + '">';
+                                html += ktpwpBuildBulkInvoiceAddresseeHtml(res.data, customerHonorific, t);
 
                                 var issuerStackHtml = (res.data.issuer_stack_html && String(res.data.issuer_stack_html).trim() !== '')
                                     ? res.data.issuer_stack_html
-                                    : ktpBuildBulkIssuerStackHtml(
+                                    : ktpwpBuildBulkIssuerStackHtml(
                                         bulkDocSettings,
-                                        (typeof ktpClientInvoice !== 'undefined' ? ktpClientInvoice.branding : null),
+                                        (typeof ktpwpClientInvoice !== 'undefined' ? ktpwpClientInvoice.branding : null),
                                         res.data.qualified_invoice_number || '',
                                         res.data.bank_transfer_html || '',
-                                        res.data.company_info ? ktpInvoiceUnwrapCompanyInfoBox(res.data.company_info) : '',
+                                        res.data.company_info ? ktpwpInvoiceUnwrapCompanyInfoBox(res.data.company_info) : '',
                                         t
                                     );
                                 if (issuerStackHtml) {
@@ -617,8 +617,8 @@ jQuery(document).ready(function($) {
                                     : ((bulkDocSettings.lead && String(bulkDocSettings.lead).trim() !== '')
                                         ? bulkDocSettings.lead
                                         : t('この度はご用命いただき誠にありがとうございました。 以下の通りご請求させていただきますので、よろしくお願い申し上げます。'));
-                                var leadFontSize = ktpBulkInvoiceLeadFontSizePx(bulkDocSettings);
-                                html += '<p class="ktp-bulk-invoice-document-lead" style="font-size:' + leadFontSize + 'px;">' + ktpInvoiceEscapeHtml(documentLead) + '</p>';
+                                var leadFontSize = ktpwpBulkInvoiceLeadFontSizePx(bulkDocSettings);
+                                html += '<p class="ktp-bulk-invoice-document-lead" style="font-size:' + leadFontSize + 'px;">' + ktpwpInvoiceEscapeHtml(documentLead) + '</p>';
 
                                 // 消費税対応の全体合計計算
                                 var grandTotal = 0;
@@ -633,7 +633,7 @@ jQuery(document).ready(function($) {
 
                                 // 税区分に応じた表示（税廃止時は税情報を抑止）
                                 var taxCategory = res.data.tax_category || '内税';
-                                var suppressTax = !!(window.ktp_tax_policy && (window.ktp_tax_policy.mode === 'abolished' || window.ktp_tax_policy.hide_columns));
+                                var suppressTax = !!(window.ktpwp_tax_policy && (window.ktpwp_tax_policy.mode === 'abolished' || window.ktpwp_tax_policy.hide_columns));
                                 console.log("[請求書発行] 税区分:", taxCategory);
 
                                 var allPreviewItems = [];
@@ -644,7 +644,7 @@ jQuery(document).ready(function($) {
                                         });
                                     });
                                 });
-                                var grandTaxSuffix = suppressTax ? '' : ktpInvoiceTaxInlineSuffixFromItems(allPreviewItems, taxCategory, t);
+                                var grandTaxSuffix = suppressTax ? '' : ktpwpInvoiceTaxInlineSuffixFromItems(allPreviewItems, taxCategory, t);
 
                                 var paymentDueDate = res.data.payment_due_date || '';
                                 html += '<div class="ktp-bulk-invoice-summary-box ktp-biz-summary-box">';
@@ -667,9 +667,9 @@ jQuery(document).ready(function($) {
                                 window.invoiceTaxAmount = grandTaxAmount; // 消費税をグローバルに設定
                                 window.invoiceTaxCategory = res.data.tax_category;
 
-                                var oddRowColor = window.ktp_design_settings.odd_row_color || "#E7EEFD";
-                                var evenRowColor = window.ktp_design_settings.even_row_color || "#FFFFFF";
-                                var hideTaxCols = !!(window.ktp_tax_policy && window.ktp_tax_policy.hide_tax_columns);
+                                var oddRowColor = window.ktpwp_design_settings.odd_row_color || "#E7EEFD";
+                                var evenRowColor = window.ktpwp_design_settings.even_row_color || "#FFFFFF";
+                                var hideTaxCols = !!(window.ktpwp_tax_policy && window.ktpwp_tax_policy.hide_tax_columns);
                                 var showTaxRateCol = !hideTaxCols && bulkDocSettings.show_tax_column !== false;
                                 var defaultShowTaxAmount = !!bulkDocSettings.show_tax_amount_column;
 
@@ -727,21 +727,21 @@ jQuery(document).ready(function($) {
                                             if (quantity === "" && (!item.unit || String(item.unit).trim() === "")) {
                                                 quantityUnit = "";
                                             } else if (quantity === "") {
-                                                quantityUnit = ktpInvoiceEscapeHtml(unitPart);
+                                                quantityUnit = ktpwpInvoiceEscapeHtml(unitPart);
                                             } else if (!item.unit || String(item.unit).trim() === "") {
                                                 quantityUnit = quantity;
                                             } else {
-                                                quantityUnit = quantity + "/" + ktpInvoiceEscapeHtml(item.unit);
+                                                quantityUnit = quantity + "/" + ktpwpInvoiceEscapeHtml(item.unit);
                                             }
                                         }
                                         var totalPrice = (!isSectionTitle && amount > 0) ? ktpwpFormatMoney(amount) : "";
                                         var itemTaxRateRaw = item.tax_rate;
                                         var itemTaxRate = null;
-                                        if (window.ktp_tax_policy) {
-                                            if (window.ktp_tax_policy.mode === 'abolished') {
+                                        if (window.ktpwp_tax_policy) {
+                                            if (window.ktpwp_tax_policy.mode === 'abolished') {
                                                 itemTaxRate = 0;
-                                            } else if (window.ktp_tax_policy.mode === 'unified') {
-                                                itemTaxRate = parseFloat(window.ktp_tax_policy.unified_tax_rate || 0);
+                                            } else if (window.ktpwp_tax_policy.mode === 'unified') {
+                                                itemTaxRate = parseFloat(window.ktpwp_tax_policy.unified_tax_rate || 0);
                                             } else if (itemTaxRateRaw !== null && itemTaxRateRaw !== '' && !isNaN(parseFloat(itemTaxRateRaw))) {
                                                 itemTaxRate = parseFloat(itemTaxRateRaw);
                                             }
@@ -768,7 +768,7 @@ jQuery(document).ready(function($) {
                                         var rowBg = (index % 2 === 0) ? tableOptions.evenRowColor : tableOptions.oddRowColor;
                                         html += "<tr class=\"ktp-biz-inv-row\" style=\"border-bottom:1px solid #f3f4f6;background-color:" + rowBg + ";\">";
                                         html += "<td style=\"padding:8px 12px;color:#374151;\">" + (index + 1) + "</td>";
-                                        html += "<td style=\"padding:8px 12px;color:#111827;\">" + ktpInvoiceEscapeHtml(productName) + "</td>";
+                                        html += "<td style=\"padding:8px 12px;color:#111827;\">" + ktpwpInvoiceEscapeHtml(productName) + "</td>";
                                         html += "<td style=\"padding:8px 12px;text-align:right;color:#374151;white-space:nowrap;\">" + unitPrice + "</td>";
                                         html += "<td style=\"padding:8px 12px;text-align:right;color:#374151;white-space:nowrap;\">" + quantityUnit + "</td>";
                                         html += "<td style=\"padding:8px 12px;text-align:right;color:#111827;white-space:nowrap;\">" + totalPrice + "</td>";
@@ -780,7 +780,7 @@ jQuery(document).ready(function($) {
                                         }
                                         var remarksDisplay = "";
                                         if (!isSectionTitle) {
-                                            remarksDisplay = item.remarks ? ktpInvoiceEscapeHtml(item.remarks) : "—";
+                                            remarksDisplay = item.remarks ? ktpwpInvoiceEscapeHtml(item.remarks) : "—";
                                         }
                                         html += "<td style=\"padding:8px 12px;color:#374151;\">" + remarksDisplay + "</td>";
                                         html += "</tr>";
@@ -794,7 +794,7 @@ jQuery(document).ready(function($) {
                                     var blockHtml = "";
                                     var deptLine = "";
                                     if (res.data.selected_department) {
-                                        deptLine = t("部署：") + ktpInvoiceEscapeHtml(res.data.selected_department.department_name || "") + " ／ " + t("ご担当者名：") + ktpInvoiceEscapeHtml(res.data.selected_department.contact_person || "") + customerHonorific;
+                                        deptLine = t("部署：") + ktpwpInvoiceEscapeHtml(res.data.selected_department.department_name || "") + " ／ " + t("ご担当者名：") + ktpwpInvoiceEscapeHtml(res.data.selected_department.contact_person || "") + customerHonorific;
                                     } else {
                                         var cn = (res.data.client_contact || "").trim();
                                         deptLine = t("部署：") + t("代表窓口") + " ／ " + t("ご担当者名：") + (cn ? cn + customerHonorific : "—");
@@ -808,7 +808,7 @@ jQuery(document).ready(function($) {
 
                                     blockHtml += '<div class="ktp-bulk-invoice-order-card">';
                                     blockHtml += '<div class="ktp-bulk-invoice-order-card-header">';
-                                    blockHtml += 'ID: ' + order.id + ' - ' + ktpInvoiceEscapeHtml(order.project_name || '') + t('（完了日：') + formatInvoiceCompletionDate(order.completion_date) + '）' + recurringBadge + invoicedBadge;
+                                    blockHtml += 'ID: ' + order.id + ' - ' + ktpwpInvoiceEscapeHtml(order.project_name || '') + t('（完了日：') + formatInvoiceCompletionDate(order.completion_date) + '）' + recurringBadge + invoicedBadge;
                                     blockHtml += '<div style="margin-top:4px;font-size:12px;font-weight:normal;color:#4b5563;">' + deptLine + '</div>';
                                     blockHtml += '</div>';
 
@@ -816,7 +816,7 @@ jQuery(document).ready(function($) {
                                     if (tableResult.html) {
                                         blockHtml += tableResult.html;
                                         blockHtml += '<div class="ktp-bulk-invoice-order-card-footer">';
-                                        blockHtml += t('案件合計：') + ktpwpFormatMoney(tableResult.subtotal) + ktpInvoiceTaxInlineSuffixFromItems(tableResult.items, taxCategory, t);
+                                        blockHtml += t('案件合計：') + ktpwpFormatMoney(tableResult.subtotal) + ktpwpInvoiceTaxInlineSuffixFromItems(tableResult.items, taxCategory, t);
                                         blockHtml += '</div>';
                                     } else {
                                         blockHtml += "<div style=\"padding:12px;color:#6b7280;font-size:14px;\">" + t("請求項目なし") + "</div>";
@@ -856,7 +856,7 @@ jQuery(document).ready(function($) {
 
                                     sections.forEach(function(section) {
                                         if (section.label) {
-                                            html += "<div class=\"ktp-bulk-invoice-section__title\">" + ktpInvoiceEscapeHtml(section.label) + "</div>";
+                                            html += "<div class=\"ktp-bulk-invoice-section__title\">" + ktpwpInvoiceEscapeHtml(section.label) + "</div>";
                                         }
 
                                         if (section.key === 'initial' && section.lines && section.lines.length) {
@@ -878,7 +878,7 @@ jQuery(document).ready(function($) {
                                             var initialTable = renderInvoiceItemsTable(initialItems, res, taxCategory, tableOptions);
                                             html += initialTable.html;
                                             html += "<div style=\"padding:8px 12px;text-align:right;font-size:14px;font-weight:600;color:#111827;border-top:1px solid #f3f4f6;background-color:#fff;\">";
-                                            html += t("初回のみ合計：") + ktpwpFormatMoney(initialTable.subtotal) + ktpInvoiceTaxInlineSuffixFromItems(initialTable.items, taxCategory, t);
+                                            html += t("初回のみ合計：") + ktpwpFormatMoney(initialTable.subtotal) + ktpwpInvoiceTaxInlineSuffixFromItems(initialTable.items, taxCategory, t);
                                             html += "</div></div>";
                                             monthlyTotal += initialTable.subtotal;
                                             monthGroupItems = monthGroupItems.concat(initialTable.items);
@@ -895,7 +895,7 @@ jQuery(document).ready(function($) {
 
                                     html += '</div>';
                                     html += '<div class="ktp-bulk-invoice-order-group-footer">';
-                                    html += group.billing_period + t(' 月別合計：') + ktpwpFormatMoney(monthlyTotal) + ktpInvoiceTaxInlineSuffixFromItems(monthGroupItems, taxCategory, t);
+                                    html += group.billing_period + t(' 月別合計：') + ktpwpFormatMoney(monthlyTotal) + ktpwpInvoiceTaxInlineSuffixFromItems(monthGroupItems, taxCategory, t);
                                     html += '</div>';
                                     html += '</section>';
                                 });
@@ -906,7 +906,7 @@ jQuery(document).ready(function($) {
                                 html += '<div class="ktp-bulk-invoice-envelope-footer">';
                                 html += '<div class="ktp-bulk-invoice-note-box">';
                                 html += '<p class="ktp-bulk-invoice-envelope-margin-note">' + t('※ 本画面の印刷位置は、プリンタの印刷余白が上下左右いずれも10mmのときに長形３号窓明封筒の窓と揃うようレイアウトしています。') + '</p>';
-                                html += ktpBuildAddresseeContactModeFieldset(res.data, t);
+                                html += ktpwpBuildAddresseeContactModeFieldset(res.data, t);
                                 html += '<div id="ktp-invoice-footer-actions" style="margin-top:12px;text-align:center;">';
                                 if (!hideTaxCols) {
                                     html += '<label style="display:block;font-size:15px;font-weight:500;margin-bottom:12px;">';
@@ -919,11 +919,11 @@ jQuery(document).ready(function($) {
                                 html += t('対象受注書の進捗を「請求済」に変更する');
                                 html += '</label><br />';
                                 html += '<div class="ktp-invoice-output-actions" style="display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:4px;">';
-                                html += '<button type="button" id="ktp-invoice-print-btn" class="ktp-invoice-output-btn ktp-invoice-output-btn--print" data-client-name="' + ktpInvoiceEscapeHtml(res.data.client_name || window.invoiceClientName || '') + '">';
+                                html += '<button type="button" id="ktp-invoice-print-btn" class="ktp-invoice-output-btn ktp-invoice-output-btn--print" data-client-name="' + ktpwpInvoiceEscapeHtml(res.data.client_name || window.invoiceClientName || '') + '">';
                                 html += (typeof KTPSvgIcons !== 'undefined' ? KTPSvgIcons.getIcon('print', {'style': 'font-size:16px;vertical-align:middle;margin-right:5px;'}) : '<span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle;margin-right:5px;">print</span>');
                                 html += t('印刷');
                                 html += '</button>';
-                                html += '<button type="button" id="ktp-invoice-pdf-btn" class="ktp-invoice-output-btn ktp-invoice-output-btn--pdf" data-client-name="' + ktpInvoiceEscapeHtml(res.data.client_name || window.invoiceClientName || '') + '">';
+                                html += '<button type="button" id="ktp-invoice-pdf-btn" class="ktp-invoice-output-btn ktp-invoice-output-btn--pdf" data-client-name="' + ktpwpInvoiceEscapeHtml(res.data.client_name || window.invoiceClientName || '') + '">';
                                 html += (typeof KTPSvgIcons !== 'undefined' ? KTPSvgIcons.getIcon('picture_as_pdf', {'style': 'font-size:16px;vertical-align:middle;margin-right:5px;'}) : '<span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle;margin-right:5px;">picture_as_pdf</span>');
                                 html += t('PDF保存');
                                 html += '</button>';
@@ -934,7 +934,7 @@ jQuery(document).ready(function($) {
                                 html += '</div>';
 
                                 list.innerHTML = html;
-                                ktpBindAddresseeContactMode('addressee-contact-mode');
+                                ktpwpBindAddresseeContactMode('addressee-contact-mode');
                                 list.classList.toggle('ktp-bulk-show-tax-amount', defaultShowTaxAmount);
                                 var showTaxAmountCheckbox = document.getElementById('show-tax-amount-column');
                                 function updateKtpBulkTaxAmountVisibility() {
@@ -994,17 +994,17 @@ jQuery(document).ready(function($) {
                 }
 
                 console.log("[請求書発行] 最終的な顧客ID:", clientId);
-                var nonce = ktpClientInvoice.nonce;
+                var nonce = ktpwpClientInvoice.nonce;
                 
                 // フォールバック: nonceが利用できない場合の代替手段
                 if (!nonce) {
-                    console.warn("[請求書発行] ktpClientInvoice.nonce が利用できません。代替手段を試行します。");
-                    if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.nonce) {
-                        nonce = ktp_ajax_object.nonce;
-                        console.log("[請求書発行] ktp_ajax_object から nonce を取得");
-                    } else if (typeof ktp_ajax_nonce !== 'undefined') {
-                        nonce = ktp_ajax_nonce;
-                        console.log("[請求書発行] ktp_ajax_nonce から nonce を取得");
+                    console.warn("[請求書発行] ktpwpClientInvoice.nonce が利用できません。代替手段を試行します。");
+                    if (typeof ktpwp_ajax_object !== 'undefined' && ktpwp_ajax_object.nonce) {
+                        nonce = ktpwp_ajax_object.nonce;
+                        console.log("[請求書発行] ktpwp_ajax_object から nonce を取得");
+                    } else if (typeof ktpwp_autosave_nonce !== 'undefined') {
+                        nonce = ktpwp_autosave_nonce;
+                        console.log("[請求書発行] ktpwp_autosave_nonce から nonce を取得");
                     } else if (typeof window.ktpwp_ajax_nonce !== 'undefined') {
                         nonce = window.ktpwp_ajax_nonce;
                         console.log("[請求書発行] window.ktpwp_ajax_nonce から nonce を取得");
@@ -1015,8 +1015,8 @@ jQuery(document).ready(function($) {
                     }
                 }
                 
-                var params = "action=ktp_get_invoice_candidates&client_id=" + encodeURIComponent(clientId) + "&nonce=" + encodeURIComponent(nonce);
-                var selectedDeptId = ktpReadSelectedDepartmentIdFromDom();
+                var params = "action=ktpwp_get_invoice_candidates&client_id=" + encodeURIComponent(clientId) + "&nonce=" + encodeURIComponent(nonce);
+                var selectedDeptId = ktpwpReadSelectedDepartmentIdFromDom();
                 if (selectedDeptId) {
                     params += "&selected_department_id=" + encodeURIComponent(selectedDeptId);
                 }
@@ -1037,7 +1037,7 @@ jQuery(document).ready(function($) {
  * 印刷前の「請求済」確認（印刷ボタンのみ）
  * @returns {boolean}
  */
-function ktpConfirmInvoicePrintWithProgress() {
+function ktpwpConfirmInvoicePrintWithProgress() {
     var setInvoiceCompleted = document.getElementById('set-invoice-completed');
     if (!setInvoiceCompleted || !setInvoiceCompleted.checked) {
         return true;
@@ -1046,7 +1046,7 @@ function ktpConfirmInvoicePrintWithProgress() {
 }
 
 /** 印刷完了後に進捗を「請求済」へ更新 */
-function ktpRunInvoiceCompletedAfterPrint() {
+function ktpwpRunInvoiceCompletedAfterPrint() {
     var xhr = new XMLHttpRequest();
     xhr.open('POST', ((typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) || (typeof ajaxurl !== 'undefined' ? ajaxurl : '')));
     xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
@@ -1059,7 +1059,8 @@ function ktpRunInvoiceCompletedAfterPrint() {
             clientId = clientIdInput.value;
         }
     }
-    var params = 'action=ktp_set_invoice_completed&client_id=' + encodeURIComponent(clientId);
+    var nonce = (typeof ktpwpClientInvoice !== 'undefined' && ktpwpClientInvoice.nonce) ? ktpwpClientInvoice.nonce : '';
+    var params = 'action=ktpwp_set_invoice_completed&client_id=' + encodeURIComponent(clientId) + '&nonce=' + encodeURIComponent(nonce);
     xhr.onload = function() {
         if (xhr.status === 200) {
             try {
@@ -1078,14 +1079,14 @@ function ktpRunInvoiceCompletedAfterPrint() {
  * @param {string} mode 'pdf' | 'print'（いずれもプレビュー同等レイアウト）
  * @returns {{ html: string, filename: string } | null}
  */
-function ktpBuildBulkInvoiceOutputHtml(mode) {
+function ktpwpBuildBulkInvoiceOutputHtml(mode) {
     try {
         var sourceEl = document.querySelector('#invoiceList .ktp-bulk-invoice-content-area.ktp-bulk-invoice-envelope-page');
         if (!sourceEl) {
             return null;
         }
 
-        var designSettings = window.ktp_design_settings || {};
+        var designSettings = window.ktpwp_design_settings || {};
         var oddRowColor = designSettings.odd_row_color || '#E7EEFD';
         var evenRowColor = designSettings.even_row_color || '#FFFFFF';
 
@@ -1133,7 +1134,7 @@ function ktpBuildBulkInvoiceOutputHtml(mode) {
 
         var addresseeEl = clone.querySelector('.ktp-bulk-invoice-addressee');
         if (addresseeEl) {
-            ktpApplyAddresseeContactModeToRoot(addresseeEl, 'addressee-contact-mode', addresseeContactMode);
+            ktpwpApplyAddresseeContactModeToRoot(addresseeEl, 'addressee-contact-mode', addresseeContactMode);
         }
 
         var paymentDueDateInputInContent = clone.querySelector('#payment-due-date-input');
@@ -1228,8 +1229,8 @@ function ktpBuildBulkInvoiceOutputHtml(mode) {
         printHTML += '<title>' + filename + '</title>';
         printHTML += '<style id="ktp-bulk-invoice-pdf-mirror-styles">';
         printHTML += 'html,body.ktp-bulk-invoice-print-document{margin:0;padding:0;background:#fff!important;color:#111827;color-scheme:light;font-family:"Noto Sans JP","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;font-size:14px;line-height:1.5;-webkit-print-color-adjust:exact;print-color-adjust:exact;}';
-        printHTML += ktpBulkInvoicePdfMirrorStylesCss();
-        printHTML += ktpBulkInvoiceOrderLayoutPrintCss('.ktp-bulk-invoice-pdf-root');
+        printHTML += ktpwpBulkInvoicePdfMirrorStylesCss();
+        printHTML += ktpwpBulkInvoiceOrderLayoutPrintCss('.ktp-bulk-invoice-pdf-root');
         printHTML += '</style></head>';
         printHTML += '<body class="ktp-bulk-invoice-print-document ktp-bulk-invoice-pdf-save-mode">';
         printHTML += '<div class="' + rootClass + '"' + rootWidthAttr + '>' + invoiceContent + '</div>';
@@ -1247,7 +1248,7 @@ function ktpBuildBulkInvoiceOutputHtml(mode) {
  */
 function printInvoiceContent(outputMode) {
     var mode = (outputMode === 'pdf') ? 'pdf' : 'print';
-    if (mode === 'print' && !ktpConfirmInvoicePrintWithProgress()) {
+    if (mode === 'print' && !ktpwpConfirmInvoicePrintWithProgress()) {
         return;
     }
     if (typeof window.KTPBulkInvoicePrint !== 'undefined') {
@@ -1321,7 +1322,7 @@ function updateOrderHistoryProgress(clientId, oldProgress, newProgress) {
     };
     
     // 注文履歴リストの各項目を確認・更新
-    var orderListItems = document.querySelectorAll('.ktp_data_list_item');
+    var orderListItems = document.querySelectorAll('.ktpwp_data_list_item');
     var updatedCount = 0;
     
     orderListItems.forEach(function(item) {
@@ -1358,7 +1359,7 @@ function updateOrderHistoryProgress(clientId, oldProgress, newProgress) {
         allSpans.forEach(function(span) {
             if (span.textContent.trim() === progressLabels[oldProgress]) {
                 // 親要素がリストアイテムかどうか確認
-                var listItem = span.closest('.ktp_data_list_item');
+                var listItem = span.closest('.ktpwp_data_list_item');
                 if (listItem) {
                     span.textContent = progressLabels[newProgress] || '不明';
                     // クラスが存在する場合は更新

@@ -351,17 +351,17 @@
 
         $(document).on('click', '[data-tab-list-print]', function (event) {
             var btn = event.currentTarget;
-            if (!btn || btn.disabled || btn.dataset.ktpPrintBusy === '1') {
+            if (!btn || btn.disabled || btn.dataset.ktpwpPrintBusy === '1') {
                 return;
             }
 
             event.preventDefault();
             event.stopPropagation();
-            btn.dataset.ktpPrintBusy = '1';
+            btn.dataset.ktpwpPrintBusy = '1';
 
             handlePrint(btn).finally(function () {
                 window.setTimeout(function () {
-                    delete btn.dataset.ktpPrintBusy;
+                    delete btn.dataset.ktpwpPrintBusy;
                 }, 1500);
             });
         });

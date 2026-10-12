@@ -127,7 +127,7 @@ if ( ! class_exists( 'KTPWP_Order_Admin_Notification' ) ) {
 			}
 
 			global $wpdb;
-			$table = $wpdb->prefix . 'ktp_order';
+			$table = $wpdb->prefix . 'ktpwp_order';
 
 			return $wpdb->get_row(
 				$wpdb->prepare(
@@ -280,7 +280,7 @@ if ( ! class_exists( 'KTPWP_Order_Admin_Notification' ) ) {
 		 * @return string[]
 		 */
 		private function build_mail_headers() {
-			$smtp_settings = get_option( 'ktp_smtp_settings', array() );
+			$smtp_settings = get_option( 'ktpwp_smtp_settings', array() );
 			$from_email    = ! empty( $smtp_settings['email_address'] ) ? sanitize_email( $smtp_settings['email_address'] ) : sanitize_email( get_option( 'admin_email' ) );
 			$from_name     = ! empty( $smtp_settings['smtp_from_name'] ) ? sanitize_text_field( $smtp_settings['smtp_from_name'] ) : get_bloginfo( 'name' );
 
@@ -338,7 +338,7 @@ if ( ! class_exists( 'KTPWP_Order_Admin_Notification' ) ) {
 			}
 
 			global $wpdb;
-			$table = $wpdb->prefix . 'ktp_client';
+			$table = $wpdb->prefix . 'ktpwp_client';
 			$email = $wpdb->get_var(
 				$wpdb->prepare(
 					"SELECT email FROM `{$table}` WHERE id = %d",

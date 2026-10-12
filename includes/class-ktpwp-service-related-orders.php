@@ -36,7 +36,7 @@ if ( ! class_exists( 'KTPWP_Service_Related_Orders' ) ) {
 			}
 
 			$contract_table = $db->get_contract_table_name();
-			$client_table   = $wpdb->prefix . 'ktp_client';
+			$client_table   = $wpdb->prefix . 'ktpwp_client';
 
 			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 			$rows = $wpdb->get_results(
@@ -67,9 +67,9 @@ if ( ! class_exists( 'KTPWP_Service_Related_Orders' ) ) {
 				return array();
 			}
 
-			$order_table = $wpdb->prefix . 'ktp_order';
-			$client_table = $wpdb->prefix . 'ktp_client';
-			$cols        = $wpdb->get_col( "SHOW COLUMNS FROM `{$order_table}`", 0 );
+			$order_table = $wpdb->prefix . 'ktpwp_order';
+			$client_table = $wpdb->prefix . 'ktpwp_client';
+			$cols        = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $order_table ), 0 );
 			$cols        = is_array( $cols ) ? $cols : array();
 			$has_client  = in_array( 'client_id', $cols, true );
 			$client_join = $has_client ? "LEFT JOIN {$client_table} cl ON cl.id = o.client_id" : '';
@@ -215,7 +215,7 @@ if ( ! class_exists( 'KTPWP_Service_Related_Orders' ) ) {
 			}
 
 			if ( ! $has_rows ) {
-				$html .= '<div class="ktp_data_list_item ktp-service-related-list__empty">'
+				$html .= '<div class="ktpwp_data_list_item ktp-service-related-list__empty">'
 					. '<span class="material-symbols-outlined" aria-hidden="true">info</span>'
 					. esc_html__( 'このサービスに紐づく契約・案件はありません。', 'kantanpro' )
 					. '</div>';
@@ -255,7 +255,7 @@ if ( ! class_exists( 'KTPWP_Service_Related_Orders' ) ) {
 			$line .= ' <span class="ktp-service-related-list__status ktp-contract-status ktp-contract-status--' . esc_attr( $status ) . '">' . esc_html( $status_label ) . '</span>';
 
 			return '<a href="' . esc_url( $detail_url ) . '">'
-				. '<div class="ktp_data_list_item ktp-service-related-list__item">' . $line . '</div>'
+				. '<div class="ktpwp_data_list_item ktp-service-related-list__item">' . $line . '</div>'
 				. '</a>';
 		}
 
@@ -302,7 +302,7 @@ if ( ! class_exists( 'KTPWP_Service_Related_Orders' ) ) {
 			$line .= ' <span class="ktp-service-related-list__status status-' . esc_attr( (string) $progress ) . '">' . esc_html( $progress_label ) . '</span>';
 
 			return '<a href="' . esc_url( $detail_url ) . '">'
-				. '<div class="ktp_data_list_item ktp-service-related-list__item">' . $line . '</div>'
+				. '<div class="ktpwp_data_list_item ktp-service-related-list__item">' . $line . '</div>'
 				. '</a>';
 		}
 

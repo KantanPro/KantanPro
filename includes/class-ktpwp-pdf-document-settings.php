@@ -102,7 +102,7 @@ final class KTPWP_Pdf_Document_Settings {
 
 	public const ATENA_LABEL_POSITION_MM_MAX = 80;
 
-	public const OPTION_ATENA_LABEL_POSITION = 'ktp_atena_label_position';
+	public const OPTION_ATENA_LABEL_POSITION = 'ktpwp_atena_label_position';
 
 	/**
 	 * 保存値の座標基準。'paper' = 用紙端起点。
@@ -112,9 +112,9 @@ final class KTPWP_Pdf_Document_Settings {
 
 	private const ATENA_LABEL_LEGACY_OFFSET_MM = 10;
 
-	public const OPTION_DOCUMENT_SETTINGS = 'ktp_pdf_document_settings';
+	public const OPTION_DOCUMENT_SETTINGS = 'ktpwp_pdf_document_settings';
 
-	public const OPTION_PDF_LAYOUT = 'ktp_pdf_layout';
+	public const OPTION_PDF_LAYOUT = 'ktpwp_pdf_layout';
 
 	/** @var array<string, array<string, mixed>> */
 	private static $kind_defaults = array(

@@ -9,13 +9,13 @@
     'use strict';
 
     // デバッグモードを有効化（本番では false に設定）
-    window.ktpDebugMode = true; // 本番環境では false に設定
+    window.ktpwpDebugMode = true; // 本番環境では false に設定
 
     // 進行中のAJAXリクエストを追跡するオブジェクト
-    window.ktpInvoicePendingRequests = {};
+    window.ktpwpInvoicePendingRequests = {};
     
     // 金額自動保存のデバウンス用タイマー
-    window.ktpInvoiceAmountSaveTimers = {};
+    window.ktpwpInvoiceAmountSaveTimers = {};
 
     // 統一されたAJAX設定の取得
     function getAjaxConfig() {
@@ -27,8 +27,8 @@
         // URLの取得（優先順位順）
         if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) {
             config.url = ktpwp_ajax.ajax_url;
-        } else if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.ajax_url) {
-            config.url = ktp_ajax_object.ajax_url;
+        } else if (typeof ktpwp_ajax_object !== 'undefined' && ktpwp_ajax_object.ajax_url) {
+            config.url = ktpwp_ajax_object.ajax_url;
         } else if (typeof ajaxurl !== 'undefined') {
             config.url = ajaxurl;
         } else {
@@ -40,23 +40,23 @@
             config.nonce = ktpwp_ajax.nonces.auto_save;
         } else if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.general) {
             config.nonce = ktpwp_ajax.nonces.general;
-        } else if (typeof ktp_ajax_nonce !== 'undefined') {
-            config.nonce = ktp_ajax_nonce;
-        } else if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.nonce) {
-            config.nonce = ktp_ajax_object.nonce;
+        } else if (typeof ktpwp_autosave_nonce !== 'undefined') {
+            config.nonce = ktpwp_autosave_nonce;
+        } else if (typeof ktpwp_ajax_object !== 'undefined' && ktpwp_ajax_object.nonce) {
+            config.nonce = ktpwp_ajax_object.nonce;
         }
         
         return config;
     }
 
     // 利用可能な変数を確認（デバッグモード時のみ）
-    if (window.ktpDebugMode) {
+    if (window.ktpwpDebugMode) {
         const ajaxConfig = getAjaxConfig();
         console.log('[INVOICE] AJAX設定確認:');
         console.log('  - URL:', ajaxConfig.url);
         console.log('  - Nonce:', ajaxConfig.nonce ? '設定済み' : '未設定');
         console.log('  - ktpwp_ajax:', typeof ktpwp_ajax !== 'undefined' ? '利用可能' : '未定義');
-        console.log('  - ktp_ajax_object:', typeof ktp_ajax_object !== 'undefined' ? '利用可能' : '未定義');
+        console.log('  - ktpwp_ajax_object:', typeof ktpwp_ajax_object !== 'undefined' ? '利用可能' : '未定義');
     }
 
     // デバウンス機能付きの金額保存関数
@@ -64,46 +64,46 @@
         const timerKey = `${itemType}_${itemId}_amount`;
         
         // 既存のタイマーをクリア
-        if (window.ktpInvoiceAmountSaveTimers[timerKey]) {
-            clearTimeout(window.ktpInvoiceAmountSaveTimers[timerKey]);
+        if (window.ktpwpInvoiceAmountSaveTimers[timerKey]) {
+            clearTimeout(window.ktpwpInvoiceAmountSaveTimers[timerKey]);
         }
         
         // 新しいタイマーを設定（500ms後に実行）
-        window.ktpInvoiceAmountSaveTimers[timerKey] = setTimeout(function() {
-            if (window.ktpDebugMode) console.log('[INVOICE] debouncedAmountSave: 実行', {itemType, itemId, amount, orderId});
-            window.ktpInvoiceAutoSaveItem(itemType, itemId, 'amount', amount, orderId);
+        window.ktpwpInvoiceAmountSaveTimers[timerKey] = setTimeout(function() {
+            if (window.ktpwpDebugMode) console.log('[INVOICE] debouncedAmountSave: 実行', {itemType, itemId, amount, orderId});
+            window.ktpwpInvoiceAutoSaveItem(itemType, itemId, 'amount', amount, orderId);
         }, 500);
     }
 
     // グローバルスコープに関数を定義
-    window.ktpInvoiceAutoSaveItem = function (itemType, itemId, fieldName, fieldValue, orderId) {
-        if (window.ktpDebugMode) console.log('[INVOICE AUTO-SAVE] 呼び出し', { itemType, itemId, fieldName, fieldValue, orderId });
+    window.ktpwpInvoiceAutoSaveItem = function (itemType, itemId, fieldName, fieldValue, orderId) {
+        if (window.ktpwpDebugMode) console.log('[INVOICE AUTO-SAVE] 呼び出し', { itemType, itemId, fieldName, fieldValue, orderId });
         
         // リクエストキーを作成
         const requestKey = `${itemType}_${itemId}_${fieldName}`;
         
         // 既存のリクエストがあればキャンセル
-        if (window.ktpInvoicePendingRequests[requestKey]) {
-            if (window.ktpDebugMode) console.log('[INVOICE AUTO-SAVE] 既存のリクエストをキャンセル:', requestKey);
-            window.ktpInvoicePendingRequests[requestKey].abort();
+        if (window.ktpwpInvoicePendingRequests[requestKey]) {
+            if (window.ktpwpDebugMode) console.log('[INVOICE AUTO-SAVE] 既存のリクエストをキャンセル:', requestKey);
+            window.ktpwpInvoicePendingRequests[requestKey].abort();
         }
         
         // 統一されたAJAX設定を取得
         const ajaxConfig = getAjaxConfig();
 
         const ajaxData = {
-            action: 'ktp_auto_save_item',
+            action: 'ktpwp_auto_save_item',
             item_type: itemType,
             item_id: itemId,
             field_name: fieldName,
             field_value: fieldValue,
             order_id: orderId,
             nonce: ajaxConfig.nonce,
-            ktp_ajax_nonce: ajaxConfig.nonce  // 追加: PHPでチェックされるフィールド名
+            ktpwp_ajax_nonce: ajaxConfig.nonce  // 追加: PHPでチェックされるフィールド名
         };
         
-        if (window.ktpDebugMode) console.log('[INVOICE AUTO-SAVE] Ajax data:', ajaxData);
-        if (window.ktpDebugMode) console.log('[INVOICE AUTO-SAVE] Ajax URL:', ajaxConfig.url);
+        if (window.ktpwpDebugMode) console.log('[INVOICE AUTO-SAVE] Ajax data:', ajaxData);
+        if (window.ktpwpDebugMode) console.log('[INVOICE AUTO-SAVE] Ajax URL:', ajaxConfig.url);
         
         // AJAXリクエストを実行し、進行中のリクエストとして記録
         const xhr = $.ajax({
@@ -112,15 +112,15 @@
             data: ajaxData,
             timeout: 30000, // 30秒のタイムアウトに延長
             beforeSend: function(xhr) {
-                if (window.ktpDebugMode) console.log('[INVOICE AUTO-SAVE] Sending request with data:', ajaxData);
+                if (window.ktpwpDebugMode) console.log('[INVOICE AUTO-SAVE] Sending request with data:', ajaxData);
             },
             success: function (response) {
-                if (window.ktpDebugMode) console.log('[INVOICE AUTO-SAVE] Raw response:', response);
+                if (window.ktpwpDebugMode) console.log('[INVOICE AUTO-SAVE] Raw response:', response);
                 try {
                     const result = typeof response === 'string' ? JSON.parse(response) : response;
-                    if (window.ktpDebugMode) console.log('[INVOICE AUTO-SAVE] Parsed response:', result);
+                    if (window.ktpwpDebugMode) console.log('[INVOICE AUTO-SAVE] Parsed response:', result);
                     if (result.success) {
-                        if (window.ktpDebugMode) console.log('[INVOICE AUTO-SAVE] 保存成功 - field:', fieldName, 'value:', fieldValue);
+                        if (window.ktpwpDebugMode) console.log('[INVOICE AUTO-SAVE] 保存成功 - field:', fieldName, 'value:', fieldValue);
                         
                         // 成功通知を表示（条件付き）
                         // 実際に値が変更された場合のみ通知を表示
@@ -129,7 +129,7 @@
                             window.showSuccessNotification('請求項目が保存されました');
                         }
                     } else {
-                        if (window.ktpDebugMode) console.warn('[INVOICE AUTO-SAVE] 保存失敗 - field:', fieldName, 'response:', result);
+                        if (window.ktpwpDebugMode) console.warn('[INVOICE AUTO-SAVE] 保存失敗 - field:', fieldName, 'response:', result);
                         
                         // エラー通知を表示（タイムアウト以外のエラーのみ）
                         if (typeof window.showErrorNotification === 'function' && 
@@ -138,7 +138,7 @@
                         }
                     }
                 } catch (e) {
-                    if (window.ktpDebugMode) console.error('[INVOICE AUTO-SAVE] レスポンスパースエラー:', e, 'response:', response);
+                    if (window.ktpwpDebugMode) console.error('[INVOICE AUTO-SAVE] レスポンスパースエラー:', e, 'response:', response);
                     
                     // エラー通知を表示
                     if (typeof window.showErrorNotification === 'function') {
@@ -149,9 +149,9 @@
             error: function (xhr, status, error) {
                 // タイムアウトエラーの場合は警告レベルでログ出力
                 if (status === 'timeout') {
-                    if (window.ktpDebugMode) console.warn('[INVOICE AUTO-SAVE] タイムアウト (30秒) - field:', fieldName, 'value:', fieldValue);
+                    if (window.ktpwpDebugMode) console.warn('[INVOICE AUTO-SAVE] タイムアウト (30秒) - field:', fieldName, 'value:', fieldValue);
                 } else {
-                    if (window.ktpDebugMode) console.error('[INVOICE AUTO-SAVE] Ajax エラー:', {
+                    if (window.ktpwpDebugMode) console.error('[INVOICE AUTO-SAVE] Ajax エラー:', {
                         field: fieldName,
                         value: fieldValue,
                         status: status,
@@ -175,36 +175,36 @@
             },
             complete: function() {
                 // リクエスト完了時に進行中のリクエストから削除
-                delete window.ktpInvoicePendingRequests[requestKey];
-                if (window.ktpDebugMode) console.log('[INVOICE AUTO-SAVE] リクエスト完了:', requestKey);
+                delete window.ktpwpInvoicePendingRequests[requestKey];
+                if (window.ktpwpDebugMode) console.log('[INVOICE AUTO-SAVE] リクエスト完了:', requestKey);
             }
         });
         
         // 進行中のリクエストとして記録
-        window.ktpInvoicePendingRequests[requestKey] = xhr;
+        window.ktpwpInvoicePendingRequests[requestKey] = xhr;
     };
     // createNewItem関数にcallback引数を追加し、成功/失敗と新しいitem_idを返すように変更
-    window.ktpInvoiceCreateNewItem = function (itemType, fieldName, fieldValue, orderId, $row, callback, skipAmountCalculation = false) {
-        if (window.ktpDebugMode) console.log('[INVOICE] createNewItem呼び出し', { itemType, fieldName, fieldValue, orderId, $row });
+    window.ktpwpInvoiceCreateNewItem = function (itemType, fieldName, fieldValue, orderId, $row, callback, skipAmountCalculation = false) {
+        if (window.ktpwpDebugMode) console.log('[INVOICE] createNewItem呼び出し', { itemType, fieldName, fieldValue, orderId, $row });
         // 統一されたAJAX設定を取得
         const ajaxConfig = getAjaxConfig();
 
         const ajaxData = {
-            action: 'ktp_create_new_item',
+            action: 'ktpwp_create_new_item',
             item_type: itemType,
             field_name: fieldName,
             field_value: fieldValue,
             order_id: orderId,
             nonce: ajaxConfig.nonce,
-            ktp_ajax_nonce: ajaxConfig.nonce  // 追加: PHPでチェックされるフィールド名
+            ktpwp_ajax_nonce: ajaxConfig.nonce  // 追加: PHPでチェックされるフィールド名
         };
-        if (window.ktpDebugMode) console.log('[INVOICE] createNewItem送信', ajaxData);
+        if (window.ktpwpDebugMode) console.log('[INVOICE] createNewItem送信', ajaxData);
         $.ajax({
             url: ajaxConfig.url,
             type: 'POST',
             data: ajaxData,
             success: function (response) {
-                if (window.ktpDebugMode) console.log('[INVOICE] createNewItemレスポンス', response);
+                if (window.ktpwpDebugMode) console.log('[INVOICE] createNewItemレスポンス', response);
                 try {
                     const result = typeof response === 'string' ? JSON.parse(response) : response;
                     // wp_send_json_success はレスポンスを { success: true, data: { ... } } の形でラップする
@@ -215,42 +215,42 @@
                         if ($row.data('newly-added')) {
                             $row.removeAttr('data-newly-added');
                             $row.find('.invoice-item-input').not('.product-name').not('.amount').prop('disabled', false);
-                            if (window.ktpDebugMode) console.log('[INVOICE] createNewItem: 他のフィールドを有効化', $row);
+                            if (window.ktpwpDebugMode) console.log('[INVOICE] createNewItem: 他のフィールドを有効化', $row);
                             
                             // フィールド有効化後に金額計算を実行（スキップフラグがfalseの場合のみ）
                             if (!skipAmountCalculation) {
                                 setTimeout(function() {
                                     calculateAmount($row);
-                                    if (window.ktpDebugMode) console.log('[INVOICE] createNewItem: フィールド有効化後の金額計算実行');
+                                    if (window.ktpwpDebugMode) console.log('[INVOICE] createNewItem: フィールド有効化後の金額計算実行');
                                     
                                     // 新規レコード作成後に金額も保存
                                     const currentAmountValue = $row.find('.invoice-item-amount').attr('data-amount') || $row.find('.invoice-item-amount').text().replace(/,/g, '');
                                     const currentAmount = parseFloat(currentAmountValue) || 0;
                                     if (currentAmount && currentAmount !== '0') {
-                                        if (window.ktpDebugMode) console.log('[INVOICE] createNewItem: 新規レコード作成後の金額保存', {
+                                        if (window.ktpwpDebugMode) console.log('[INVOICE] createNewItem: 新規レコード作成後の金額保存', {
                                             newItemId: result.data.item_id,
                                             amount: currentAmount
                                         });
-                                        window.ktpInvoiceAutoSaveItem('invoice', result.data.item_id, 'amount', currentAmount, orderId);
+                                        window.ktpwpInvoiceAutoSaveItem('invoice', result.data.item_id, 'amount', currentAmount, orderId);
                                     }
                                 }, 100);
                             } else {
-                                if (window.ktpDebugMode) console.log('[INVOICE] createNewItem: 金額計算をスキップ（サービス選択から追加）');
+                                if (window.ktpwpDebugMode) console.log('[INVOICE] createNewItem: 金額計算をスキップ（サービス選択から追加）');
                             }
                         }
-                        if (window.ktpDebugMode) console.log('[INVOICE] createNewItem新規IDセット', result.data.item_id);
+                        if (window.ktpwpDebugMode) console.log('[INVOICE] createNewItem新規IDセット', result.data.item_id);
                         if (callback) callback(true, result.data.item_id); // コールバック呼び出し
                     } else {
-                        if (window.ktpDebugMode) console.warn('[INVOICE] createNewItem失敗（レスポンス構造確認）', result);
+                        if (window.ktpwpDebugMode) console.warn('[INVOICE] createNewItem失敗（レスポンス構造確認）', result);
                         if (callback) callback(false, null); // コールバック呼び出し
                     }
                 } catch (e) {
-                    if (window.ktpDebugMode) console.error('[INVOICE] createNewItemレスポンスパースエラー', e, response);
+                    if (window.ktpwpDebugMode) console.error('[INVOICE] createNewItemレスポンスパースエラー', e, response);
                     if (callback) callback(false, null); // コールバック呼び出し
                 }
             },
             error: function (xhr, status, error) {
-                if (window.ktpDebugMode) console.error('[INVOICE] createNewItemエラー', {
+                if (window.ktpwpDebugMode) console.error('[INVOICE] createNewItemエラー', {
                     status: status,
                     error: error,
                     responseText: xhr.responseText,
@@ -308,7 +308,7 @@
             $row.find('.invoice-item-input').not('.product-name').not('.amount').prop('disabled', false);
         }
 
-        if (window.ktp_tax_policy && window.ktp_tax_policy.lock_line_tax_rate) {
+        if (window.ktpwp_tax_policy && window.ktpwp_tax_policy.lock_line_tax_rate) {
             $row.find('.tax-rate').prop('readonly', true);
         }
     }
@@ -345,8 +345,8 @@
         const finalAmount = isNaN(amount) ? 0 : amount;
         
         // デバッグログ
-        if (window.ktpDebugMode) {
-            if (window.ktpDebugMode) console.log('[INVOICE] calculateAmount called:', {
+        if (window.ktpwpDebugMode) {
+            if (window.ktpwpDebugMode) console.log('[INVOICE] calculateAmount called:', {
                 priceValue: priceValue,
                 quantityValue: quantityValue,
                 price: price,
@@ -382,7 +382,7 @@
                 // 新規行の場合：商品名が入力済みなら金額も保存
                 const productName = row.find('.product-name').val().trim();
                 if (productName !== '') {
-                    if (window.ktpDebugMode) console.log('[INVOICE] calculateAmount: 新規行だが商品名入力済みのため金額保存実行', {
+                    if (window.ktpwpDebugMode) console.log('[INVOICE] calculateAmount: 新規行だが商品名入力済みのため金額保存実行', {
                         itemId, 
                         amount: finalAmount, 
                         productName: productName
@@ -392,7 +392,7 @@
                     setTimeout(function() {
                         const currentItemId = row.find('input[name*="[id]"]').val();
                         if (currentItemId && currentItemId !== '0') {
-                            if (window.ktpDebugMode) console.log('[INVOICE] calculateAmount: 遅延実行で金額保存', {
+                            if (window.ktpwpDebugMode) console.log('[INVOICE] calculateAmount: 遅延実行で金額保存', {
                                 currentItemId, 
                                 amount: finalAmount
                             });
@@ -401,18 +401,18 @@
                         }
                     }, 500);
                 } else {
-                    if (window.ktpDebugMode) console.log('[INVOICE] calculateAmount: 新規行で商品名未入力のため金額保存スキップ');
+                    if (window.ktpwpDebugMode) console.log('[INVOICE] calculateAmount: 新規行で商品名未入力のため金額保存スキップ');
                 }
             } else {
                 // 既存行の場合：デバウンス機能付きで金額を自動保存
-                if (window.ktpDebugMode) console.log('[INVOICE] calculateAmount: 既存行の金額自動保存実行', {
+                if (window.ktpwpDebugMode) console.log('[INVOICE] calculateAmount: 既存行の金額自動保存実行', {
                     itemId, 
                     amount: finalAmount
                 });
                 debouncedAmountSave('invoice', itemId, finalAmount, orderId);
             }
         } else {
-            if (window.ktpDebugMode) console.warn('[INVOICE] calculateAmount: 保存条件未満', {itemId, orderId});
+            if (window.ktpwpDebugMode) console.warn('[INVOICE] calculateAmount: 保存条件未満', {itemId, orderId});
         }
 
         // 請求項目合計と利益表示を更新
@@ -437,8 +437,8 @@
         const orderId = $('input[name="order_id"]').val() || $('#order_id').val();
         if (orderId) {
             // 既存の税区分情報があれば使用
-            if (typeof window.ktpClientTaxCategory !== 'undefined') {
-                taxCategory = window.ktpClientTaxCategory;
+            if (typeof window.ktpwpClientTaxCategory !== 'undefined') {
+                taxCategory = window.ktpwpClientTaxCategory;
             }
         }
 
@@ -473,7 +473,7 @@
             taxRateGroups[taxRateKey] += amount;
 
             // デバッグログ（各行の金額）
-            if (window.ktpDebugMode) {
+            if (window.ktpwpDebugMode) {
                 console.log('[INVOICE] 請求項目行:', {
                     rowIndex: $row.index(),
                     amountValue: amountValue,
@@ -486,9 +486,9 @@
 
         // 税制モード: 税廃止/一律税率の適用
         function normalizeRate(raw) {
-            if (window.ktp_tax_policy) {
-                if (window.ktp_tax_policy.mode === 'abolished') return 0;
-                if (window.ktp_tax_policy.mode === 'unified') return parseFloat(window.ktp_tax_policy.unified_tax_rate || 0);
+            if (window.ktpwp_tax_policy) {
+                if (window.ktpwp_tax_policy.mode === 'abolished') return 0;
+                if (window.ktpwp_tax_policy.mode === 'unified') return parseFloat(window.ktpwp_tax_policy.unified_tax_rate || 0);
             }
             const n = parseFloat(raw);
             return isNaN(n) ? null : n;
@@ -525,9 +525,9 @@
                 // 税率が設定されている場合のみ税額を計算
                 if (taxRateKey !== 'no_tax_rate') {
                     let rate = parseFloat(taxRateKey);
-                    if (window.ktp_tax_policy) {
-                        if (window.ktp_tax_policy.mode === 'abolished') rate = 0;
-                        if (window.ktp_tax_policy.mode === 'unified') rate = parseFloat(window.ktp_tax_policy.unified_tax_rate || 0);
+                    if (window.ktpwp_tax_policy) {
+                        if (window.ktpwp_tax_policy.mode === 'abolished') rate = 0;
+                        if (window.ktpwp_tax_policy.mode === 'unified') rate = parseFloat(window.ktpwp_tax_policy.unified_tax_rate || 0);
                     }
                     // 内税計算：各税率グループごとに税額を計算（切り上げ）
                     const taxAmount = Math.ceil(groupAmount * (rate / 100) / (1 + rate / 100));
@@ -679,7 +679,7 @@
         // コスト項目の金額合計表示を即時更新（受注書＞コスト項目の入力時に即時反映）
         const costTotalDisplay = $('.cost-items-total');
         if (costTotalDisplay.length > 0) {
-            const hideCostTax = window.ktp_tax_policy && (window.ktp_tax_policy.mode === 'abolished' || window.ktp_tax_policy.hide_tax_columns);
+            const hideCostTax = window.ktpwp_tax_policy && (window.ktpwp_tax_policy.mode === 'abolished' || window.ktpwp_tax_policy.hide_tax_columns);
             if (hideCostTax) {
                 costTotalDisplay.html(ktpwpTranslate('金額合計') + ' : ' + ktpwpFormatMoney(costTotalCeiled));
             } else {
@@ -709,21 +709,21 @@
             const orderId = $('input[name="order_id"]').val() || $('#order_id').val();
             if (orderId) {
                 // 請求テーブル側での入力は高頻度なのでデバウンス
-                if (!window.ktpInvoiceProfitRefreshTimer) {
-                    window.ktpInvoiceProfitRefreshTimer = null;
+                if (!window.ktpwpInvoiceProfitRefreshTimer) {
+                    window.ktpwpInvoiceProfitRefreshTimer = null;
                 }
-                clearTimeout(window.ktpInvoiceProfitRefreshTimer);
-                window.ktpInvoiceProfitRefreshTimer = setTimeout(function() {
+                clearTimeout(window.ktpwpInvoiceProfitRefreshTimer);
+                window.ktpwpInvoiceProfitRefreshTimer = setTimeout(function() {
                     // 統一されたAJAX設定を取得
                     const ajaxConfig = getAjaxConfig();
                     $.ajax({
                         url: ajaxConfig.url,
                         type: 'POST',
                         data: {
-                            action: 'ktp_get_profit_display',
+                            action: 'ktpwp_get_profit_display',
                             order_id: orderId,
                             nonce: ajaxConfig.nonce,
-                            ktp_ajax_nonce: ajaxConfig.nonce
+                            ktpwp_ajax_nonce: ajaxConfig.nonce
                         },
                         success: function(res) {
                             try {
@@ -736,21 +736,21 @@
                                     }
                                 }
                             } catch (e) {
-                                if (window.ktpDebugMode) console.warn('[INVOICE] 利益HTMLパース失敗', e, res);
+                                if (window.ktpwpDebugMode) console.warn('[INVOICE] 利益HTMLパース失敗', e, res);
                             }
                         },
                         error: function(xhr, status, error) {
-                            if (window.ktpDebugMode) console.warn('[INVOICE] 利益HTML取得エラー', {status, error});
+                            if (window.ktpwpDebugMode) console.warn('[INVOICE] 利益HTML取得エラー', {status, error});
                         }
                     });
                 }, 250);
             }
         } catch (e) {
-            if (window.ktpDebugMode) console.warn('[INVOICE] 利益HTML更新処理エラー', e);
+            if (window.ktpwpDebugMode) console.warn('[INVOICE] 利益HTML更新処理エラー', e);
         }
 
         // デバッグログ（利益計算の詳細）
-        if (window.ktpDebugMode) {
+        if (window.ktpwpDebugMode) {
             console.log('[INVOICE] 利益計算詳細:', {
                 invoiceTotal: invoiceTotal,
                 invoiceTotalCeiled: invoiceTotalCeiled,
@@ -768,7 +768,7 @@
         }
 
         // デバッグログ（税率別の集計情報）
-        if (window.ktpDebugMode) {
+        if (window.ktpwpDebugMode) {
             console.log('[INVOICE] 税率別集計:', {
                 taxCategory: taxCategory,
                 invoiceTaxRateGroups: taxRateGroups,
@@ -784,7 +784,7 @@
 
     // 新しい行を追加（重複防止機能付き）
     function addNewRow(currentRow, callId) { // callId を追加
-        if (window.ktpDebugMode) console.log(`[INVOICE][${callId}] addNewRow開始 (呼び出し元ID: ${callId})`);
+        if (window.ktpwpDebugMode) console.log(`[INVOICE][${callId}] addNewRow開始 (呼び出し元ID: ${callId})`);
 
         // 品名チェック (addNewRow関数側でも念のため)
         let rawProductName = currentRow.find('input.product-name').val();
@@ -798,12 +798,12 @@
         const productNameValue = (typeof rawProductName === 'string') ? rawProductName.trim() : '';
         if (productNameValue === '') {
             // alert(ktpwpTranslate('品名を入力してください。(addNewRow)')); // クリックハンドラでアラートを出すので、ここでは不要
-            if (window.ktpDebugMode) console.warn(`[INVOICE][${callId}] addNewRow: 品名が空の状態で呼び出されましたが、処理を続行します（本来はクリックハンドラでブロックされるべきです）。`);
+            if (window.ktpwpDebugMode) console.warn(`[INVOICE][${callId}] addNewRow: 品名が空の状態で呼び出されましたが、処理を続行します（本来はクリックハンドラでブロックされるべきです）。`);
             // return false; // ここで return false すると、クリックハンドラの品名チェックが機能していない場合に二重チェックになる
                           // ただし、現状問題が解決していないため、ここでも止めることを検討したが、まずはログで状況把握
         }
 
-        if (window.ktpDebugMode) console.log(`[INVOICE][${callId}] addNewRow 本処理開始`);
+        if (window.ktpwpDebugMode) console.log(`[INVOICE][${callId}] addNewRow 本処理開始`);
         // フラグ管理はクリックハンドラに集約
 
         const newIndex = $('#order_content .invoice-items-table tbody tr').length;
@@ -842,11 +842,11 @@
 
         let success = false;
         try {
-            if (window.ktpDebugMode) console.log(`[INVOICE][${callId}] currentRow.after(newRowHtml) を実行する直前。`);
+            if (window.ktpwpDebugMode) console.log(`[INVOICE][${callId}] currentRow.after(newRowHtml) を実行する直前。`);
             currentRow.after(newRowHtml);
             const $newRow = currentRow.next();
             if ($newRow && $newRow.length > 0 && $newRow.hasClass('invoice-item-row')) {
-                if (window.ktpDebugMode) console.log(`[INVOICE][${callId}] 新しい行がDOMに追加されました。`);
+                if (window.ktpwpDebugMode) console.log(`[INVOICE][${callId}] 新しい行がDOMに追加されました。`);
                 
                 // 新しい行で金額の自動計算を実行
                 calculateAmount($newRow);
@@ -854,15 +854,15 @@
                 $newRow.find('.product-name').focus();
                 success = true;
             } else {
-                if (window.ktpDebugMode) console.error(`[INVOICE][${callId}] 新しい行の追加に失敗したか、見つかりませんでした。`);
+                if (window.ktpwpDebugMode) console.error(`[INVOICE][${callId}] 新しい行の追加に失敗したか、見つかりませんでした。`);
                 success = false;
             }
         } catch (error) {
-            if (window.ktpDebugMode) console.error(`[INVOICE][${callId}] addNewRow エラー:`, error);
+            if (window.ktpwpDebugMode) console.error(`[INVOICE][${callId}] addNewRow エラー:`, error);
             success = false;
         } finally {
-            // window.ktpAddingInvoiceRow = false; // フラグ解除は呼び出し元の finally で
-            if (window.ktpDebugMode) console.log(`[INVOICE][${callId}] addNewRow終了`);
+            // window.ktpwpAddingInvoiceRow = false; // フラグ解除は呼び出し元の finally で
+            if (window.ktpwpDebugMode) console.log(`[INVOICE][${callId}] addNewRow終了`);
         }
         return success;
     }
@@ -882,7 +882,7 @@
             const itemId = currentRow.find('input[name*="[id]"]').val();
             const orderId = $('input[name="order_id"]').val() || $('#order_id').val();
 
-            if (window.ktpDebugMode) console.log('[INVOICE] deleteRow呼び出し', { itemId, orderId, row: currentRow });
+            if (window.ktpwpDebugMode) console.log('[INVOICE] deleteRow呼び出し', { itemId, orderId, row: currentRow });
 
             // Ajaxでサーバーに削除を通知
             if (itemId && itemId !== '0' && orderId) {
@@ -890,28 +890,28 @@
                 const ajaxConfig = getAjaxConfig();
 
                 const ajaxData = {
-                    action: 'ktp_delete_item',
+                    action: 'ktpwp_delete_item',
                     item_type: 'invoice',
                     item_id: itemId,
                     order_id: orderId,
                     nonce: ajaxConfig.nonce,
-                    ktp_ajax_nonce: ajaxConfig.nonce  // 追加: PHPでチェックされるフィールド名
+                    ktpwp_ajax_nonce: ajaxConfig.nonce  // 追加: PHPでチェックされるフィールド名
                 };
-                if (window.ktpDebugMode) console.log('[INVOICE] deleteRow送信', ajaxData);
+                if (window.ktpwpDebugMode) console.log('[INVOICE] deleteRow送信', ajaxData);
                 $.ajax({
                     url: ajaxConfig.url,
                     type: 'POST',
                     data: ajaxData,
                     success: function (response) {
-                        if (window.ktpDebugMode) console.log('[INVOICE] deleteRowレスポンス', response);
+                        if (window.ktpwpDebugMode) console.log('[INVOICE] deleteRowレスポンス', response);
                         try {
                             const result = typeof response === 'string' ? JSON.parse(response) : response;
                             if (result.success) {
-                                if (window.ktpDebugMode) console.log('[INVOICE] deleteRowサーバー側削除成功');
+                                if (window.ktpwpDebugMode) console.log('[INVOICE] deleteRowサーバー側削除成功');
                                 currentRow.remove();
                                 updateTotalAndProfit(); // 合計金額を更新
                             } else {
-                                if (window.ktpDebugMode) console.warn('[INVOICE] deleteRowサーバー側削除失敗', result);
+                                if (window.ktpwpDebugMode) console.warn('[INVOICE] deleteRowサーバー側削除失敗', result);
                                 let errorMessage = '行の削除に失敗しました。';
                                 if (result.data) {
                                     if (typeof result.data === 'string') {
@@ -925,12 +925,12 @@
                                 alert(errorMessage);
                             }
                         } catch (e) {
-                            if (window.ktpDebugMode) console.error('[INVOICE] deleteRowレスポンスパースエラー', e, response);
+                            if (window.ktpwpDebugMode) console.error('[INVOICE] deleteRowレスポンスパースエラー', e, response);
                             alert(ktpwpTranslate('行削除の応答処理中にエラーが発生しました。\n詳細: ') + (typeof response === 'string' ? response : JSON.stringify(response)));
                         }
                     },
                     error: function (xhr, status, error) {
-                        if (window.ktpDebugMode) console.error('[INVOICE] deleteRowエラー', { status, error, responseText: xhr.responseText, statusCode: xhr.status });
+                        if (window.ktpwpDebugMode) console.error('[INVOICE] deleteRowエラー', { status, error, responseText: xhr.responseText, statusCode: xhr.status });
                         let errorDetail = 'サーバーエラーが発生しました。';
                         if (xhr.responseText) {
                             try {
@@ -948,12 +948,12 @@
                 });
             } else if (itemId === '0') {
                 // サーバーに保存されていない行は、確認後すぐに削除
-                if (window.ktpDebugMode) console.log('[INVOICE] deleteRow: サーバー未保存行のため即時削除');
+                if (window.ktpwpDebugMode) console.log('[INVOICE] deleteRow: サーバー未保存行のため即時削除');
                 currentRow.remove();
                 updateTotalAndProfit(); // 合計金額を更新
             } else {
                 // itemIdがない、またはorderIdがない場合は、クライアント側でのみ削除（通常は発生しないはず）
-                if (window.ktpDebugMode) console.warn('[INVOICE] deleteRow: itemIdまたはorderIdが不足しているため、クライアント側でのみ削除');
+                if (window.ktpwpDebugMode) console.warn('[INVOICE] deleteRow: itemIdまたはorderIdが不足しているため、クライアント側でのみ削除');
                 currentRow.remove();
                 updateTotalAndProfit(); // 合計金額を更新
             }
@@ -992,15 +992,15 @@
             return;
         }
 
-        if (window.ktpDebugMode) console.log('[INVOICE] 📋 ページ初期化開始');
+        if (window.ktpwpDebugMode) console.log('[INVOICE] 📋 ページ初期化開始');
 
         // デバッグモードを有効化（金額計算・保存の詳細ログを表示）
-        window.ktpDebugMode = true;
-        if (window.ktpDebugMode) console.log('[INVOICE] デバッグモード有効化: 金額計算・保存の詳細ログを表示します');
+        window.ktpwpDebugMode = true;
+        if (window.ktpwpDebugMode) console.log('[INVOICE] デバッグモード有効化: 金額計算・保存の詳細ログを表示します');
 
         // 初期状態の確認
         const initialRowCount = $('#order_content .invoice-items-table tbody tr').length;
-        if (window.ktpDebugMode) console.log('[INVOICE] 📊 初期行数:', initialRowCount);
+        if (window.ktpwpDebugMode) console.log('[INVOICE] 📊 初期行数:', initialRowCount);
 
         // 並び替え（sortable）有効化（受注書タブにテーブルがあるときのみ。空の tbody に対しては初期化しない）
         const $invoiceSortTbody = $('#order_content .invoice-items-table tbody');
@@ -1012,7 +1012,7 @@
             axis: 'y',
             helper: 'clone',
             update: function (event, ui) {
-                if (window.ktpDebugMode) console.log('[INVOICE] 行の並び替え完了');
+                if (window.ktpwpDebugMode) console.log('[INVOICE] 行の並び替え完了');
                 const items = [];
                 const orderId = $('input[name="order_id"]').val() || $('#order_id').val();
                 $(this).find('tr').each(function (index) {
@@ -1026,45 +1026,45 @@
                     // 統一されたAJAX設定を取得
                     const ajaxConfig = getAjaxConfig();
                     
-                    if (window.ktpDebugMode) console.log('[INVOICE] 使用するnonce:', ajaxConfig.nonce);
+                    if (window.ktpwpDebugMode) console.log('[INVOICE] 使用するnonce:', ajaxConfig.nonce);
 
-                    if (window.ktpDebugMode) console.log('[INVOICE] updateItemOrder送信', { order_id: orderId, items: items });
+                    if (window.ktpwpDebugMode) console.log('[INVOICE] updateItemOrder送信', { order_id: orderId, items: items });
                     $.ajax({
                         url: ajaxConfig.url,
                         type: 'POST',
                         data: {
-                            action: 'ktp_update_item_order',
+                            action: 'ktpwp_update_item_order',
                             order_id: orderId,
                             items: items,
                             item_type: 'invoice', // Assuming this is for invoice items
                             nonce: ajaxConfig.nonce,
-                            ktp_ajax_nonce: ajaxConfig.nonce  // 追加: PHPでチェックされるフィールド名
+                            ktpwp_ajax_nonce: ajaxConfig.nonce  // 追加: PHPでチェックされるフィールド名
                         },
                         success: function (response) {
-                            if (window.ktpDebugMode) console.log('[INVOICE] updateItemOrderレスポンス', response);
+                            if (window.ktpwpDebugMode) console.log('[INVOICE] updateItemOrderレスポンス', response);
                             try {
                                 const result = typeof response === 'string' ? JSON.parse(response) : response;
                                 if (result.success) {
-                                    if (window.ktpDebugMode) console.log('[INVOICE] 並び順の保存に成功しました。');
+                                    if (window.ktpwpDebugMode) console.log('[INVOICE] 並び順の保存に成功しました。');
                                     // Optionally, re-index rows if your display depends on it,
                                     // but it seems your PHP handles sort_order directly.
                                     // updateRowIndexes($(event.target).closest('table'));
                                 } else {
-                                    if (window.ktpDebugMode) console.warn('[INVOICE] 並び順の保存に失敗しました。', result);
+                                    if (window.ktpwpDebugMode) console.warn('[INVOICE] 並び順の保存に失敗しました。', result);
                                     alert(ktpwpTranslate('並び順の保存に失敗しました。: ') + (result.data && result.data.message ? result.data.message : 'サーバーエラー'));
                                 }
                             } catch (e) {
-                                if (window.ktpDebugMode) console.error('[INVOICE] updateItemOrderレスポンスパースエラー', e, response);
+                                if (window.ktpwpDebugMode) console.error('[INVOICE] updateItemOrderレスポンスパースエラー', e, response);
                                 alert(ktpwpTranslate('並び順保存の応答処理中にエラーが発生しました。'));
                             }
                         },
                         error: function (xhr, status, error) {
-                            if (window.ktpDebugMode) console.error('[INVOICE] updateItemOrderエラー', { status, error, responseText: xhr.responseText });
+                            if (window.ktpwpDebugMode) console.error('[INVOICE] updateItemOrderエラー', { status, error, responseText: xhr.responseText });
                             alert(ktpwpTranslate('並び順の保存中にサーバーエラーが発生しました。'));
                         }
                     });
                 } else {
-                    if (window.ktpDebugMode) console.log('[INVOICE] 保存するアイテムがないか、orderIdがありません。');
+                    if (window.ktpwpDebugMode) console.log('[INVOICE] 保存するアイテムがないか、orderIdがありません。');
                 }
             },
             start: function (event, ui) {
@@ -1082,8 +1082,8 @@
             
             // disabled フィールドは処理をスキップ
             if ($field.prop('disabled')) {
-                if (window.ktpDebugMode) {
-                    if (window.ktpDebugMode) console.log('[INVOICE] Blur event skipped: field is disabled');
+                if (window.ktpwpDebugMode) {
+                    if (window.ktpwpDebugMode) console.log('[INVOICE] Blur event skipped: field is disabled');
                 }
                 return;
             }
@@ -1099,8 +1099,8 @@
             const row = $field.closest('tr');
             const fieldType = $field.hasClass('price') ? 'price' : 'quantity';
             
-            if (window.ktpDebugMode) {
-                if (window.ktpDebugMode) console.log('[INVOICE] Blur event triggered:', {
+            if (window.ktpwpDebugMode) {
+                if (window.ktpwpDebugMode) console.log('[INVOICE] Blur event triggered:', {
                     fieldType: fieldType,
                     originalValue: value,
                     formattedValue: formattedValue,
@@ -1124,8 +1124,8 @@
             const row = $field.closest('tr');
             const fieldType = $field.hasClass('price') ? 'price' : 'quantity';
             
-            if (window.ktpDebugMode) {
-                if (window.ktpDebugMode) console.log('[INVOICE] Input event triggered (spin):', {
+            if (window.ktpwpDebugMode) {
+                if (window.ktpwpDebugMode) console.log('[INVOICE] Input event triggered (spin):', {
                     fieldType: fieldType,
                     value: value,
                     rowIndex: row.index()
@@ -1149,8 +1149,8 @@
             const row = $field.closest('tr');
             const fieldType = $field.hasClass('price') ? 'price' : 'quantity';
             
-            if (window.ktpDebugMode) {
-                if (window.ktpDebugMode) console.log('[INVOICE] Change event triggered (spin):', {
+            if (window.ktpwpDebugMode) {
+                if (window.ktpwpDebugMode) console.log('[INVOICE] Change event triggered (spin):', {
                     fieldType: fieldType,
                     value: value,
                     rowIndex: row.index()
@@ -1181,7 +1181,7 @@
             const itemId = row.find('input[name*="[id]"]').val();
             const orderId = $('input[name="order_id"]').val() || $('#order_id').val();
             
-            if (window.ktpDebugMode) {
+            if (window.ktpwpDebugMode) {
                 console.log('[INVOICE] 税率変更イベント:', {
                     value: value,
                     rowIndex: row.index(),
@@ -1192,7 +1192,7 @@
             
             // 税率を自動保存
             if (itemId && itemId !== '0' && orderId) {
-                window.ktpInvoiceAutoSaveItem('invoice', itemId, 'tax_rate', value, orderId);
+                window.ktpwpInvoiceAutoSaveItem('invoice', itemId, 'tax_rate', value, orderId);
             }
             
             // 合計と利益を再計算
@@ -1211,7 +1211,7 @@
             const value = $field.val();
             const row = $field.closest('tr');
             
-            if (window.ktpDebugMode) {
+            if (window.ktpwpDebugMode) {
                 console.log('[INVOICE] 税率入力イベント:', {
                     value: value,
                     rowIndex: row.index()
@@ -1235,9 +1235,9 @@
 
         // [+]ボタンで行追加
         // 既存のハンドラを解除してから登録
-        $(document).off('click.ktpInvoiceAdd', '#order_content .invoice-items-table .btn-add-row');
-        $('body').off('click.ktpInvoiceAdd', '#order_content .invoice-items-table .btn-add-row');
-        $('#order_content .invoice-items-table').off('click.ktpInvoiceAdd', '.btn-add-row');
+        $(document).off('click.ktpwpInvoiceAdd', '#order_content .invoice-items-table .btn-add-row');
+        $('body').off('click.ktpwpInvoiceAdd', '#order_content .invoice-items-table .btn-add-row');
+        $('#order_content .invoice-items-table').off('click.ktpwpInvoiceAdd', '.btn-add-row');
 
         // より強力な解除（名前空間なしも試す）
         $(document).off('click', '#order_content .invoice-items-table .btn-add-row');
@@ -1245,9 +1245,9 @@
         $('#order_content .invoice-items-table').off('click', '.btn-add-row');
 
 
-        $(document).on('click.ktpInvoiceAdd', '#order_content .invoice-items-table .btn-add-row', function (e) {
+        $(document).on('click.ktpwpInvoiceAdd', '#order_content .invoice-items-table .btn-add-row', function (e) {
             const clickId = Date.now();
-            if (window.ktpDebugMode) console.log(`[INVOICE][${clickId}] +ボタンクリックイベント発生 (ktpInvoiceAdd)`);
+            if (window.ktpwpDebugMode) console.log(`[INVOICE][${clickId}] +ボタンクリックイベント発生 (ktpwpInvoiceAdd)`);
 
             e.preventDefault();
             e.stopPropagation();
@@ -1268,59 +1268,59 @@
 
             if (productNameValueCH === '') {
                 alert(ktpwpTranslate('品名を入力してください。'));
-                if (window.ktpDebugMode) console.log(`[INVOICE][${clickId}] クリックハンドラ: 品名未入力。 addNewRow を呼び出さずに処理を中断します。これがこのハンドラの最後のログになるはずです。`);
+                if (window.ktpwpDebugMode) console.log(`[INVOICE][${clickId}] クリックハンドラ: 品名未入力。 addNewRow を呼び出さずに処理を中断します。これがこのハンドラの最後のログになるはずです。`);
                 return false;
             }
 
-            if (window.ktpDebugMode) console.log(`[INVOICE][${clickId}] クリックハンドラ: 品名入力済み。ktpAddingInvoiceRow の状態 (呼び出し前):`, window.ktpAddingInvoiceRow);
+            if (window.ktpwpDebugMode) console.log(`[INVOICE][${clickId}] クリックハンドラ: 品名入力済み。ktpwpAddingInvoiceRow の状態 (呼び出し前):`, window.ktpwpAddingInvoiceRow);
 
             if ($button.prop('disabled') || $button.hasClass('processing')) {
-                if (window.ktpDebugMode) console.log(`[INVOICE][${clickId}] ボタンが無効または処理中のためスキップ`);
+                if (window.ktpwpDebugMode) console.log(`[INVOICE][${clickId}] ボタンが無効または処理中のためスキップ`);
                 return false;
             }
 
-            if (window.ktpAddingInvoiceRow === true) {
-                if (window.ktpDebugMode) console.log(`[INVOICE][${clickId}] 既に処理中のため中止 (ktpAddingInvoiceRow is true)`);
+            if (window.ktpwpAddingInvoiceRow === true) {
+                if (window.ktpwpDebugMode) console.log(`[INVOICE][${clickId}] 既に処理中のため中止 (ktpwpAddingInvoiceRow is true)`);
                 return false;
             }
 
             $button.prop('disabled', true).addClass('processing');
-            window.ktpAddingInvoiceRow = true;
-            if (window.ktpDebugMode) console.log(`[INVOICE][${clickId}] +ボタン処理開始、ボタン無効化、ktpAddingInvoiceRow を true に設定`);
+            window.ktpwpAddingInvoiceRow = true;
+            if (window.ktpwpDebugMode) console.log(`[INVOICE][${clickId}] +ボタン処理開始、ボタン無効化、ktpwpAddingInvoiceRow を true に設定`);
 
             let rowAddedSuccessfully = false;
             try {
-                if (window.ktpDebugMode) console.log(`[INVOICE][${clickId}] addNewRow を呼び出します。`);
+                if (window.ktpwpDebugMode) console.log(`[INVOICE][${clickId}] addNewRow を呼び出します。`);
                 rowAddedSuccessfully = addNewRow(currentRow, clickId); // clickId を渡す
-                if (window.ktpDebugMode) console.log(`[INVOICE][${clickId}] addNewRow の呼び出し結果:`, rowAddedSuccessfully);
+                if (window.ktpwpDebugMode) console.log(`[INVOICE][${clickId}] addNewRow の呼び出し結果:`, rowAddedSuccessfully);
 
                 if (!rowAddedSuccessfully) {
-                    if (window.ktpDebugMode) console.warn(`[INVOICE][${clickId}] addNewRow が false を返しました。`);
+                    if (window.ktpwpDebugMode) console.warn(`[INVOICE][${clickId}] addNewRow が false を返しました。`);
                 } else {
-                    if (window.ktpDebugMode) console.log(`[INVOICE][${clickId}] addNewRow が true を返しました。`);
+                    if (window.ktpwpDebugMode) console.log(`[INVOICE][${clickId}] addNewRow が true を返しました。`);
                 }
             } catch (error) {
-                if (window.ktpDebugMode) console.error(`[INVOICE][${clickId}] addNewRow 呼び出し中またはその前後でエラー:`, error);
+                if (window.ktpwpDebugMode) console.error(`[INVOICE][${clickId}] addNewRow 呼び出し中またはその前後でエラー:`, error);
                 rowAddedSuccessfully = false;
             } finally {
-                window.ktpAddingInvoiceRow = false;
+                window.ktpwpAddingInvoiceRow = false;
                 $button.prop('disabled', false).removeClass('processing');
-                if (window.ktpDebugMode) console.log(`[INVOICE][${clickId}] ボタン再有効化、ktpAddingInvoiceRow を false に設定 (finally)`);
+                if (window.ktpwpDebugMode) console.log(`[INVOICE][${clickId}] ボタン再有効化、ktpwpAddingInvoiceRow を false に設定 (finally)`);
             }
-            if (window.ktpDebugMode) console.log(`[INVOICE][${clickId}] クリックハンドラの末尾。`);
+            if (window.ktpwpDebugMode) console.log(`[INVOICE][${clickId}] クリックハンドラの末尾。`);
             return false;
         });
 
         // 行削除ボタン - イベント重複を防ぐ
-        $(document).off('click.ktpInvoiceDelete', '#order_content .invoice-items-table .btn-delete-row') // 名前空間付きイベントに変更
-            .on('click.ktpInvoiceDelete', '#order_content .invoice-items-table .btn-delete-row', function (e) {
+        $(document).off('click.ktpwpInvoiceDelete', '#order_content .invoice-items-table .btn-delete-row') // 名前空間付きイベントに変更
+            .on('click.ktpwpInvoiceDelete', '#order_content .invoice-items-table .btn-delete-row', function (e) {
                 e.preventDefault();
                 e.stopPropagation();
                 const currentRow = $(this).closest('tr');
                 if (isProvisionalInvoiceRow(currentRow)) {
                     return false;
                 }
-                if (window.ktpDebugMode) console.log('[INVOICE] 削除ボタンクリック', currentRow);
+                if (window.ktpwpDebugMode) console.log('[INVOICE] 削除ボタンクリック', currentRow);
                 deleteRow(currentRow);
             });
 
@@ -1328,32 +1328,32 @@
         $(document).on('click', '#order_content .invoice-items-table .btn-move-row', function (e) {
             e.preventDefault();
             e.stopPropagation();
-            if (window.ktpDebugMode) console.log('[INVOICE-ITEMS] [>]ボタンクリック - サービス選択開始');
-            if (window.ktpDebugMode) console.log('[INVOICE-ITEMS] クリックされた要素:', this);
-            if (window.ktpDebugMode) console.log('[INVOICE-ITEMS] 要素のクラス:', $(this).attr('class'));
+            if (window.ktpwpDebugMode) console.log('[INVOICE-ITEMS] [>]ボタンクリック - サービス選択開始');
+            if (window.ktpwpDebugMode) console.log('[INVOICE-ITEMS] クリックされた要素:', this);
+            if (window.ktpwpDebugMode) console.log('[INVOICE-ITEMS] 要素のクラス:', $(this).attr('class'));
             
             // サービス選択ポップアップを表示
             const currentRow = $(this).closest('tr');
             if (isProvisionalInvoiceRow(currentRow)) {
                 return false;
             }
-            if (window.ktpDebugMode) console.log('[INVOICE-ITEMS] currentRow:', currentRow);
+            if (window.ktpwpDebugMode) console.log('[INVOICE-ITEMS] currentRow:', currentRow);
             
-            // ktpShowServiceSelector関数の存在確認
-            if (window.ktpDebugMode) console.log('[INVOICE-ITEMS] ktpShowServiceSelector関数の存在確認:', typeof window.ktpShowServiceSelector);
-            if (window.ktpDebugMode) console.log('[INVOICE-ITEMS] window.ktpShowServiceSelector:', window.ktpShowServiceSelector);
+            // ktpwpShowServiceSelector関数の存在確認
+            if (window.ktpwpDebugMode) console.log('[INVOICE-ITEMS] ktpwpShowServiceSelector関数の存在確認:', typeof window.ktpwpShowServiceSelector);
+            if (window.ktpwpDebugMode) console.log('[INVOICE-ITEMS] window.ktpwpShowServiceSelector:', window.ktpwpShowServiceSelector);
             
-            if (typeof window.ktpShowServiceSelector === 'function') {
-                if (window.ktpDebugMode) console.log('[INVOICE-ITEMS] ktpShowServiceSelector関数を呼び出し');
+            if (typeof window.ktpwpShowServiceSelector === 'function') {
+                if (window.ktpwpDebugMode) console.log('[INVOICE-ITEMS] ktpwpShowServiceSelector関数を呼び出し');
                 try {
-                    window.ktpShowServiceSelector(currentRow);
-                    if (window.ktpDebugMode) console.log('[INVOICE-ITEMS] ktpShowServiceSelector関数呼び出し完了');
+                    window.ktpwpShowServiceSelector(currentRow);
+                    if (window.ktpwpDebugMode) console.log('[INVOICE-ITEMS] ktpwpShowServiceSelector関数呼び出し完了');
                 } catch (error) {
-                    if (window.ktpDebugMode) console.error('[INVOICE-ITEMS] ktpShowServiceSelector関数呼び出しエラー:', error);
+                    if (window.ktpwpDebugMode) console.error('[INVOICE-ITEMS] ktpwpShowServiceSelector関数呼び出しエラー:', error);
                 }
             } else {
-                if (window.ktpDebugMode) console.error('[INVOICE-ITEMS] ktpShowServiceSelector関数が見つかりません');
-                if (window.ktpDebugMode) console.error('[INVOICE-ITEMS] 利用可能なwindow関数:', Object.keys(window).filter(key => key.includes('ktp')));
+                if (window.ktpwpDebugMode) console.error('[INVOICE-ITEMS] ktpwpShowServiceSelector関数が見つかりません');
+                if (window.ktpwpDebugMode) console.error('[INVOICE-ITEMS] 利用可能なwindow関数:', Object.keys(window).filter(key => key.includes('ktp')));
                 alert(ktpwpTranslate('サービス選択機能の読み込みに失敗しました。ページを再読み込みしてください。'));
             }
         });
@@ -1379,7 +1379,7 @@
             let itemId = $row.find('input[name*="[id]"]').val();
             const orderId = $('input[name="order_id"]').val() || $('#order_id').val();
 
-            if (window.ktpDebugMode) {
+            if (window.ktpwpDebugMode) {
                 // Debug mode only if explicitly enabled
             }
 
@@ -1389,37 +1389,37 @@
                     // 新規行の場合：新しいレコードを作成
                     // 変更点: productName が空でなく、実際に何か入力された場合のみ createNewItem を呼び出す
                     if (productName.trim() !== '') {
-                        window.ktpInvoiceCreateNewItem('invoice', 'product_name', productName, orderId, $row, function(success, newItemId) {
+                        window.ktpwpInvoiceCreateNewItem('invoice', 'product_name', productName, orderId, $row, function(success, newItemId) {
                             if (success && newItemId) {
                                 $row.find('input[name*="[id]"]').val(newItemId);
                                 $row.data('pending-initial-creation', false); // フラグを解除
                                 // 他のフィールドがまだ無効なら有効化 (createNewItemのコールバックで処理されるはずだが念のため)
                                 if ($row.find('.price').prop('disabled')) {
                                     $row.find('.invoice-item-input').not('.product-name').not('.amount').prop('disabled', false);
-                                    if (window.ktpDebugMode) console.log('[INVOICE] product-name blur: 他のフィールドを有効化（再確認）', $row);
+                                    if (window.ktpwpDebugMode) console.log('[INVOICE] product-name blur: 他のフィールドを有効化（再確認）', $row);
                                 }
                                 // 単価フィールドにフォーカスを移動
                                 if ($row.find('.price').prop('disabled') === false) {
                                     $row.find('.price').focus();
                                 }
-                                if (window.ktpDebugMode) console.log('[INVOICE] product-name blur: createNewItem成功後、ID:', newItemId, 'pending-initial-creation:', $row.data('pending-initial-creation'));
+                                if (window.ktpwpDebugMode) console.log('[INVOICE] product-name blur: createNewItem成功後、ID:', newItemId, 'pending-initial-creation:', $row.data('pending-initial-creation'));
                             } else {
-                                if (window.ktpDebugMode) console.warn('[INVOICE] product-name blur: createNewItem失敗');
+                                if (window.ktpwpDebugMode) console.warn('[INVOICE] product-name blur: createNewItem失敗');
                             }
                         });
                     } else if ($row.data('newly-added') || itemId === '' || itemId === '0') { // 条件を明確化
                         // 商品名が空のままフォーカスが外れた新規行の場合の処理
-                        if (window.ktpDebugMode) {
-                            if (window.ktpDebugMode) console.log('Invoice product name is empty on blur for new/template row. Item not created/saved.', {row: $row[0].outerHTML, itemId: itemId});
+                        if (window.ktpwpDebugMode) {
+                            if (window.ktpwpDebugMode) console.log('Invoice product name is empty on blur for new/template row. Item not created/saved.', {row: $row[0].outerHTML, itemId: itemId});
                         }
                     }
                 } else {
                     // 既存行の場合：商品名を自動保存
-                    window.ktpInvoiceAutoSaveItem('invoice', itemId, 'product_name', productName, orderId);
+                    window.ktpwpInvoiceAutoSaveItem('invoice', itemId, 'product_name', productName, orderId);
                 }
             } else {
-                if (window.ktpDebugMode) {
-                    if (window.ktpDebugMode) console.warn('Order ID is missing. Cannot auto-save product name.');
+                if (window.ktpwpDebugMode) {
+                    if (window.ktpwpDebugMode) console.warn('Order ID is missing. Cannot auto-save product name.');
                 }
             }
         });
@@ -1434,10 +1434,10 @@
             calculateAmount($row);
             // item_idが0でなく、かつ空でない場合に保存
             if (orderId && itemId && itemId !== '0') {
-                if (window.ktpDebugMode) console.log('[INVOICE] blur: price - 既存更新/新規作成後', { price, itemId, orderId });
-                window.ktpInvoiceAutoSaveItem('invoice', itemId, 'price', price, orderId);
+                if (window.ktpwpDebugMode) console.log('[INVOICE] blur: price - 既存更新/新規作成後', { price, itemId, orderId });
+                window.ktpwpInvoiceAutoSaveItem('invoice', itemId, 'price', price, orderId);
             } else if (itemId === '0') {
-                if (window.ktpDebugMode) console.log('[INVOICE] blur: price - item_idが0のため保存スキップ。product_nameの入力/保存待ち。');
+                if (window.ktpwpDebugMode) console.log('[INVOICE] blur: price - item_idが0のため保存スキップ。product_nameの入力/保存待ち。');
             }
         });
         // 数量フィールドのblurイベントで自動保存
@@ -1450,10 +1450,10 @@
             // 金額を再計算
             calculateAmount($row);
             if (orderId && itemId && itemId !== '0') {
-                if (window.ktpDebugMode) console.log('[INVOICE] blur: quantity - 既存更新/新規作成後', { quantity, itemId, orderId });
-                window.ktpInvoiceAutoSaveItem('invoice', itemId, 'quantity', quantity, orderId);
+                if (window.ktpwpDebugMode) console.log('[INVOICE] blur: quantity - 既存更新/新規作成後', { quantity, itemId, orderId });
+                window.ktpwpInvoiceAutoSaveItem('invoice', itemId, 'quantity', quantity, orderId);
             } else if (itemId === '0') {
-                if (window.ktpDebugMode) console.log('[INVOICE] blur: quantity - item_idが0のため保存スキップ。product_nameの入力/保存待ち。');
+                if (window.ktpwpDebugMode) console.log('[INVOICE] blur: quantity - item_idが0のため保存スキップ。product_nameの入力/保存待ち。');
             }
         });
         // 備考フィールドのblurイベントで自動保存
@@ -1464,10 +1464,10 @@
             const itemId = $row.find('input[name*="[id]"]').val();
             const orderId = $('input[name="order_id"]').val() || $('#order_id').val();
             if (orderId && itemId && itemId !== '0') {
-                if (window.ktpDebugMode) console.log('[INVOICE] blur: remarks - 既存更新/新規作成後', { remarks, itemId, orderId });
-                window.ktpInvoiceAutoSaveItem('invoice', itemId, 'remarks', remarks, orderId);
+                if (window.ktpwpDebugMode) console.log('[INVOICE] blur: remarks - 既存更新/新規作成後', { remarks, itemId, orderId });
+                window.ktpwpInvoiceAutoSaveItem('invoice', itemId, 'remarks', remarks, orderId);
             } else if (itemId === '0') {
-                if (window.ktpDebugMode) console.log('[INVOICE] blur: remarks - item_idが0のため保存スキップ。product_nameの入力/保存待ち。');
+                if (window.ktpwpDebugMode) console.log('[INVOICE] blur: remarks - item_idが0のため保存スキップ。product_nameの入力/保存待ち。');
             }
         });
         // ユニットフィールドのblurイベントで自動保存
@@ -1478,10 +1478,10 @@
             const itemId = $row.find('input[name*="[id]"]').val();
             const orderId = $('input[name="order_id"]').val() || $('#order_id').val();
             if (orderId && itemId && itemId !== '0') {
-                if (window.ktpDebugMode) console.log('[INVOICE] blur: unit - 既存更新/新規作成後', { unit, itemId, orderId });
-                window.ktpInvoiceAutoSaveItem('invoice', itemId, 'unit', unit, orderId);
+                if (window.ktpwpDebugMode) console.log('[INVOICE] blur: unit - 既存更新/新規作成後', { unit, itemId, orderId });
+                window.ktpwpInvoiceAutoSaveItem('invoice', itemId, 'unit', unit, orderId);
             } else if (itemId === '0') {
-                if (window.ktpDebugMode) console.log('[INVOICE] blur: unit - item_idが0のため保存スキップ。product_nameの入力/保存待ち。');
+                if (window.ktpwpDebugMode) console.log('[INVOICE] blur: unit - item_idが0のため保存スキップ。product_nameの入力/保存待ち。');
             }
         });
 
@@ -1493,7 +1493,7 @@
             const itemId = $row.find('input[name*="[id]"]').val();
             const orderId = $('input[name="order_id"]').val() || $('#order_id').val();
             
-            if (window.ktpDebugMode) console.log('[INVOICE] 税率フィールドblurイベント発火:', {
+            if (window.ktpwpDebugMode) console.log('[INVOICE] 税率フィールドblurイベント発火:', {
                 taxRate: taxRate,
                 itemId: itemId,
                 orderId: orderId,
@@ -1502,14 +1502,14 @@
             });
             
             if (orderId && itemId && itemId !== '0') {
-                if (window.ktpDebugMode) console.log('[INVOICE] blur: tax_rate - 既存更新/新規作成後', { taxRate, itemId, orderId });
-                if (window.ktpDebugMode) console.log('[INVOICE] ktpInvoiceAutoSaveItem呼び出し開始');
-                window.ktpInvoiceAutoSaveItem('invoice', itemId, 'tax_rate', taxRate, orderId);
-                if (window.ktpDebugMode) console.log('[INVOICE] ktpInvoiceAutoSaveItem呼び出し完了');
+                if (window.ktpwpDebugMode) console.log('[INVOICE] blur: tax_rate - 既存更新/新規作成後', { taxRate, itemId, orderId });
+                if (window.ktpwpDebugMode) console.log('[INVOICE] ktpwpInvoiceAutoSaveItem呼び出し開始');
+                window.ktpwpInvoiceAutoSaveItem('invoice', itemId, 'tax_rate', taxRate, orderId);
+                if (window.ktpwpDebugMode) console.log('[INVOICE] ktpwpInvoiceAutoSaveItem呼び出し完了');
             } else if (itemId === '0') {
-                if (window.ktpDebugMode) console.log('[INVOICE] blur: tax_rate - item_idが0のため保存スキップ。product_nameの入力/保存待ち。');
+                if (window.ktpwpDebugMode) console.log('[INVOICE] blur: tax_rate - item_idが0のため保存スキップ。product_nameの入力/保存待ち。');
             } else {
-                if (window.ktpDebugMode) console.warn('[INVOICE] blur: tax_rate - 保存条件未満', {
+                if (window.ktpwpDebugMode) console.warn('[INVOICE] blur: tax_rate - 保存条件未満', {
                     orderId: orderId,
                     itemId: itemId,
                     hasOrderId: !!orderId,
@@ -1524,7 +1524,7 @@
             const $field = $(this);
             const $row = $field.closest('tr');
             
-            if (window.ktpDebugMode) console.log('[INVOICE] 税率フィールドinputイベント発火:', {
+            if (window.ktpwpDebugMode) console.log('[INVOICE] 税率フィールドinputイベント発火:', {
                 taxRate: $field.val(),
                 rowIndex: $row.index()
             });
@@ -1555,16 +1555,16 @@
 
     // デバッグ用関数をグローバルスコープに追加
     window.testInvoiceItemsDebug = function () {
-        if (window.ktpDebugMode) console.log('=== インボイス項目デバッグ ===');
+        if (window.ktpwpDebugMode) console.log('=== インボイス項目デバッグ ===');
 
         const tbody = $('#order_content .invoice-items-table tbody');
         if (tbody.length === 0) {
-            if (window.ktpDebugMode) console.log('インボイステーブルが見つかりません');
+            if (window.ktpwpDebugMode) console.log('インボイステーブルが見つかりません');
             return;
         }
 
         const rows = tbody.find('tr');
-        if (window.ktpDebugMode) console.log('現在の行数:', rows.length);
+        if (window.ktpwpDebugMode) console.log('現在の行数:', rows.length);
 
         const indexes = [];
         rows.each(function (i) {
@@ -1576,18 +1576,18 @@
                 if (match) {
                     const index = parseInt(match[1], 10);
                     indexes.push(index);
-                    if (window.ktpDebugMode) console.log(`行${i + 1}: インデックス=${index}, 商品名="${$nameInput.val()}"`);
+                    if (window.ktpwpDebugMode) console.log(`行${i + 1}: インデックス=${index}, 商品名="${$nameInput.val()}"`);
                 }
             }
         });
 
-        if (window.ktpDebugMode) console.log('使用中のインデックス:', indexes.sort((a, b) => a - b));
-        if (window.ktpDebugMode) console.log('最大インデックス:', Math.max(...indexes));
-        if (window.ktpDebugMode) console.log('次のインデックス:', Math.max(...indexes) + 1);
+        if (window.ktpwpDebugMode) console.log('使用中のインデックス:', indexes.sort((a, b) => a - b));
+        if (window.ktpwpDebugMode) console.log('最大インデックス:', Math.max(...indexes));
+        if (window.ktpwpDebugMode) console.log('次のインデックス:', Math.max(...indexes) + 1);
 
         // フラグ状態をチェック
-        if (window.ktpDebugMode) console.log('フラグ状態:', {
-            ktpAddingRow: window.ktpAddingRow,
+        if (window.ktpwpDebugMode) console.log('フラグ状態:', {
+            ktpwpAddingRow: window.ktpwpAddingRow,
             tableProcessing: $('#order_content .invoice-items-table').hasClass('processing-add'),
             processingButtons: $('.btn-add-row.processing').length
         });
@@ -1596,13 +1596,13 @@
     // 行カウンター機能
     window.countInvoiceRows = function () {
         const count = $('#order_content .invoice-items-table tbody tr').length;
-        if (window.ktpDebugMode) console.log('[INVOICE] 現在の行数:', count);
+        if (window.ktpwpDebugMode) console.log('[INVOICE] 現在の行数:', count);
         return count;
     };
 
     // 強化されたリアルタイム監視機能
     window.monitorInvoiceRows = function () {
-        if (window.ktpDebugMode) console.log('[INVOICE MONITOR] 現在の状況監視開始');
+        if (window.ktpwpDebugMode) console.log('[INVOICE MONITOR] 現在の状況監視開始');
 
         const observer = new MutationObserver(function (mutations) {
             mutations.forEach(function (mutation) {
@@ -1615,16 +1615,16 @@
                     );
 
                     if (addedRows.length > 0) {
-                        if (window.ktpDebugMode) console.warn('[INVOICE MONITOR] 行追加検出:', addedRows.length, '行');
+                        if (window.ktpwpDebugMode) console.warn('[INVOICE MONITOR] 行追加検出:', addedRows.length, '行');
 
                         // 即座に重複チェック
                         const duplicates = window.detectDuplicateRows();
                         if (duplicates.length > 0) {
-                            if (window.ktpDebugMode) console.error('[INVOICE MONITOR] 重複行検出 - 緊急対応が必要');
+                            if (window.ktpwpDebugMode) console.error('[INVOICE MONITOR] 重複行検出 - 緊急対応が必要');
                             // 重複行を削除
                             addedRows.forEach((row, index) => {
                                 if (index > 0) { // 最初の行以外を削除
-                                    if (window.ktpDebugMode) console.warn('[INVOICE MONITOR] 重複行削除:', row);
+                                    if (window.ktpwpDebugMode) console.warn('[INVOICE MONITOR] 重複行削除:', row);
                                     row.remove();
                                 }
                             });
@@ -1640,7 +1640,7 @@
                 childList: true,
                 subtree: true
             });
-            if (window.ktpDebugMode) console.log('[INVOICE MONITOR] DOM監視開始');
+            if (window.ktpwpDebugMode) console.log('[INVOICE MONITOR] DOM監視開始');
         }
 
         return observer;
@@ -1648,7 +1648,7 @@
 
     // 緊急時の重複行削除機能
     window.emergencyCleanDuplicateRows = function () {
-        if (window.ktpDebugMode) console.log('[INVOICE EMERGENCY] 緊急重複行削除開始');
+        if (window.ktpwpDebugMode) console.log('[INVOICE EMERGENCY] 緊急重複行削除開始');
 
         const rows = $('#order_content .invoice-items-table tbody tr');
         const indexMap = {};
@@ -1664,7 +1664,7 @@
                     const index = parseInt(match[1], 10);
                     if (indexMap[index]) {
                         duplicateRows.push($row);
-                        if (window.ktpDebugMode) console.warn('[INVOICE EMERGENCY] 重複行発見:', index);
+                        if (window.ktpwpDebugMode) console.warn('[INVOICE EMERGENCY] 重複行発見:', index);
                     } else {
                         indexMap[index] = $row;
                     }
@@ -1674,25 +1674,25 @@
 
         // 重複行を削除
         duplicateRows.forEach(function ($row) {
-            if (window.ktpDebugMode) console.warn('[INVOICE EMERGENCY] 重複行削除実行');
+            if (window.ktpwpDebugMode) console.warn('[INVOICE EMERGENCY] 重複行削除実行');
             $row.remove();
         });
 
-        if (window.ktpDebugMode) console.log('[INVOICE EMERGENCY] 完了 - 削除行数:', duplicateRows.length);
+        if (window.ktpwpDebugMode) console.log('[INVOICE EMERGENCY] 完了 - 削除行数:', duplicateRows.length);
         return duplicateRows.length;
     };
 
     // フラグ状態の強制リセット機能
     window.forceResetInvoiceFlags = function () {
-        if (window.ktpDebugMode) console.log('[INVOICE RESET] フラグ強制リセット開始');
+        if (window.ktpwpDebugMode) console.log('[INVOICE RESET] フラグ強制リセット開始');
 
         // 全てのフラグをリセット
-        window.ktpAddingRow = false;
+        window.ktpwpAddingRow = false;
         $('.invoice-item-row').removeClass('adding-row');
         $('#order_content .invoice-items-table').removeClass('processing-add');
         $('.btn-add-row').removeClass('processing').prop('disabled', false);
 
-        if (window.ktpDebugMode) console.log('[INVOICE RESET] 全フラグリセット完了');
+        if (window.ktpwpDebugMode) console.log('[INVOICE RESET] 全フラグリセット完了');
     };
 
     // 重複行検出機能
@@ -1719,9 +1719,9 @@
         });
 
         if (duplicates.length > 0) {
-            if (window.ktpDebugMode) console.warn('[INVOICE] 重複インデックス検出:', duplicates);
+            if (window.ktpwpDebugMode) console.warn('[INVOICE] 重複インデックス検出:', duplicates);
         } else {
-            if (window.ktpDebugMode) console.log('[INVOICE] 重複なし - 全インデックス:', indexes.sort((a, b) => a - b));
+            if (window.ktpwpDebugMode) console.log('[INVOICE] 重複なし - 全インデックス:', indexes.sort((a, b) => a - b));
         }
 
         return duplicates;

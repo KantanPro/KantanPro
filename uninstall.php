@@ -25,14 +25,14 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 /**
  * 現在のサイトの KantanPro データを削除する
  *
- * ktp_uninstall_settings.uninstall_mode が 'full_delete' のときのみ
+ * ktpwp_uninstall_settings.uninstall_mode が 'full_delete' のときのみ
  * 実データを削除する。'keep_data' の場合は何もしない。
  */
 function ktpwp_perform_uninstall_for_current_site() {
     global $wpdb;
 
     // ユーザー選択の取得
-    $settings = get_option( 'ktp_uninstall_settings', array() );
+    $settings = get_option( 'ktpwp_uninstall_settings', array() );
     $mode     = isset( $settings['uninstall_mode'] ) ? (string) $settings['uninstall_mode'] : 'keep_data';
 
     // データを残すモード: 何もせず終了
@@ -44,9 +44,9 @@ function ktpwp_perform_uninstall_for_current_site() {
 
     /* -----------------------------------------------------------
      * 1) カスタムテーブルを DROP
-     *    prefix_ktp_* で始まる全テーブルを対象にする
+     *    prefix_ktpwp_* で始まる全テーブルを対象にする
      * ----------------------------------------------------------- */
-    $table_like = $wpdb->esc_like( $prefix . 'ktp_' ) . '%';
+    $table_like = $wpdb->esc_like( $prefix . 'ktpwp_' ) . '%';
     $tables = $wpdb->get_col( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_like ) );
 
     if ( is_array( $tables ) && ! empty( $tables ) ) {
@@ -59,18 +59,18 @@ function ktpwp_perform_uninstall_for_current_site() {
 
     /* -----------------------------------------------------------
      * 2) オプション削除
-     *    KantanPro 系オプションは ktp_* / ktpwp_* プレフィックス。
-     *    トランジェント（_transient_ktp_*, _transient_timeout_ktp_*）
+     *    KantanPro 系オプションは ktpwp_* / ktpwp_* プレフィックス。
+     *    トランジェント（_transient_ktpwp_*, _transient_timeout_ktpwp_*）
      *    も併せて削除する。
      * ----------------------------------------------------------- */
-    $like_ktp       = $wpdb->esc_like( 'ktp_' ) . '%';
+    $like_ktp       = $wpdb->esc_like( 'ktpwp_' ) . '%';
     $like_ktpwp     = $wpdb->esc_like( 'ktpwp_' ) . '%';
-    $like_trans1    = $wpdb->esc_like( '_transient_ktp_' ) . '%';
-    $like_trans2    = $wpdb->esc_like( '_transient_timeout_ktp_' ) . '%';
+    $like_trans1    = $wpdb->esc_like( '_transient_ktpwp_' ) . '%';
+    $like_trans2    = $wpdb->esc_like( '_transient_timeout_ktpwp_' ) . '%';
     $like_trans3    = $wpdb->esc_like( '_transient_ktpwp_' ) . '%';
     $like_trans4    = $wpdb->esc_like( '_transient_timeout_ktpwp_' ) . '%';
-    $like_site_opt1 = $wpdb->esc_like( '_site_transient_ktp_' ) . '%';
-    $like_site_opt2 = $wpdb->esc_like( '_site_transient_timeout_ktp_' ) . '%';
+    $like_site_opt1 = $wpdb->esc_like( '_site_transient_ktpwp_' ) . '%';
+    $like_site_opt2 = $wpdb->esc_like( '_site_transient_timeout_ktpwp_' ) . '%';
     $like_site_opt3 = $wpdb->esc_like( '_site_transient_ktpwp_' ) . '%';
     $like_site_opt4 = $wpdb->esc_like( '_site_transient_timeout_ktpwp_' ) . '%';
 
@@ -97,9 +97,9 @@ function ktpwp_perform_uninstall_for_current_site() {
 
     /* -----------------------------------------------------------
      * 3) ユーザーメタ削除
-     *    ktp_ / ktpwp_ プレフィックスのユーザーメタを削除
+     *    ktpwp_ / ktpwp_ プレフィックスのユーザーメタを削除
      * ----------------------------------------------------------- */
-    $meta_like1 = $wpdb->esc_like( 'ktp_' ) . '%';
+    $meta_like1 = $wpdb->esc_like( 'ktpwp_' ) . '%';
     $meta_like2 = $wpdb->esc_like( 'ktpwp_' ) . '%';
     $wpdb->query(
         $wpdb->prepare(
@@ -111,9 +111,9 @@ function ktpwp_perform_uninstall_for_current_site() {
 
     /* -----------------------------------------------------------
      * 4) 投稿メタ削除（念のため）
-     *    _ktp_ / ktp_ / ktpwp_ 系の投稿メタを削除
+     *    _ktp_ / ktpwp_ / ktpwp_ 系の投稿メタを削除
      * ----------------------------------------------------------- */
-    $pm_like1 = $wpdb->esc_like( 'ktp_' ) . '%';
+    $pm_like1 = $wpdb->esc_like( 'ktpwp_' ) . '%';
     $pm_like2 = $wpdb->esc_like( '_ktp_' ) . '%';
     $pm_like3 = $wpdb->esc_like( 'ktpwp_' ) . '%';
     $pm_like4 = $wpdb->esc_like( '_ktpwp_' ) . '%';
@@ -132,10 +132,10 @@ function ktpwp_perform_uninstall_for_current_site() {
      * 5) スケジュールされたクロンイベントの解除
      * ----------------------------------------------------------- */
     $cron_hooks = array(
-        'ktp_check_updates',
-        'ktp_cleanup_transients',
-        'ktp_daily_maintenance',
-        'ktp_central_banner_refresh',
+        'ktpwp_check_updates',
+        'ktpwp_cleanup_transients',
+        'ktpwp_daily_maintenance',
+        'ktpwp_central_banner_refresh',
         'ktpwp_check_updates',
         'ktpwp_license_check',
         'ktpwp_donation_notice_cleanup',
@@ -195,15 +195,15 @@ if ( ! function_exists( 'ktpwp_uninstall_recursive_rmdir' ) ) {
 // マルチサイト対応: 全サブサイトで削除処理を実行する
 // ------------------------------------------------------------------
 if ( is_multisite() ) {
-    $site_ids = get_sites(
+    $ktpwp_site_ids = get_sites(
         array(
             'fields' => 'ids',
             'number' => 0,
         )
     );
-    if ( is_array( $site_ids ) ) {
-        foreach ( $site_ids as $site_id ) {
-            switch_to_blog( (int) $site_id );
+    if ( is_array( $ktpwp_site_ids ) ) {
+        foreach ( $ktpwp_site_ids as $ktpwp_site_id ) {
+            switch_to_blog( (int) $ktpwp_site_id );
             ktpwp_perform_uninstall_for_current_site();
             restore_current_blog();
         }

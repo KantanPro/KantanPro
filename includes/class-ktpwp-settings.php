@@ -37,14 +37,14 @@ class KTPWP_Settings {
      *
      * @var string
      */
-    private $options_group = 'ktp_settings';
+    private $options_group = 'ktpwp_settings';
 
     /**
      * Option name for SMTP settings
      *
      * @var string
      */
-    private $option_name = 'ktp_smtp_settings';
+    private $option_name = 'ktpwp_smtp_settings';
 
     /**
      * Test mail message
@@ -80,7 +80,7 @@ class KTPWP_Settings {
      * @return int Work list range setting (default: 20)
      */
     public static function get_work_list_range() {
-        $options = get_option( 'ktp_general_settings', array() );
+        $options = get_option( 'ktpwp_general_settings', array() );
         return isset( $options['work_list_range'] ) ? intval( $options['work_list_range'] ) : 20;
     }
 
@@ -91,7 +91,7 @@ class KTPWP_Settings {
      * @return int Delivery warning days setting (default: 3)
      */
     public static function get_delivery_warning_days() {
-        $options = get_option( 'ktp_general_settings', array() );
+        $options = get_option( 'ktpwp_general_settings', array() );
         return isset( $options['delivery_warning_days'] ) ? intval( $options['delivery_warning_days'] ) : 3;
     }
 
@@ -102,7 +102,7 @@ class KTPWP_Settings {
      * @return string Qualified invoice number setting
      */
     public static function get_qualified_invoice_number() {
-        $options = get_option( 'ktp_general_settings', array() );
+        $options = get_option( 'ktpwp_general_settings', array() );
         return isset( $options['qualified_invoice_number'] ) ? $options['qualified_invoice_number'] : '';
     }
 
@@ -113,7 +113,7 @@ class KTPWP_Settings {
      * @return string Company info setting
      */
     public static function get_company_info() {
-        $options = get_option( 'ktp_general_settings', array() );
+        $options = get_option( 'ktpwp_general_settings', array() );
         return isset( $options['company_info'] ) ? $options['company_info'] : '';
     }
 
@@ -189,8 +189,8 @@ class KTPWP_Settings {
      * @return int
      */
     public static function get_ktpwp_business_page_id() {
-        $options    = get_option( 'ktp_general_settings', array() );
-        $configured = isset( $options['ktp_page_id'] ) ? (int) $options['ktp_page_id'] : 0;
+        $options    = get_option( 'ktpwp_general_settings', array() );
+        $configured = isset( $options['ktpwp_page_id'] ) ? (int) $options['ktpwp_page_id'] : 0;
 
         if ( $configured > 0 && self::page_has_ktpwp_shortcode( $configured ) ) {
             return $configured;
@@ -315,7 +315,7 @@ class KTPWP_Settings {
             return;
         }
 
-        $design_option_name = 'ktp_design_settings';
+        $design_option_name = 'ktpwp_design_settings';
         $design             = get_option( $design_option_name, array() );
         if ( ! is_array( $design ) ) {
             $design = array();
@@ -405,8 +405,8 @@ class KTPWP_Settings {
      */
     public static function get_current_ktpwp_page_id() {
         $page_id = (int) get_queried_object_id();
-        if ( $page_id <= 0 && isset( $_GET['page_id'] ) ) {
-            $page_id = absint( wp_unslash( $_GET['page_id'] ) );
+        if ( $page_id <= 0 && KTPWP_Request::has_query( 'page_id' ) ) {
+            $page_id = absint( KTPWP_Request::query( 'page_id' ) );
         }
 
         return $page_id;
@@ -477,8 +477,8 @@ class KTPWP_Settings {
             $selector . ' .ktpwp-page-layout',
             $selector . ' .ktpwp-shortcode-container',
             $selector . ' .ktp-before-header-banner',
-            $selector . ' .ktp_header',
-            $selector . ' .tabs.ktp_plugin_container',
+            $selector . ' .ktpwp_header',
+            $selector . ' .tabs.ktpwp_plugin_container',
         );
 
         return implode( ',', $targets ) . '{'
@@ -496,8 +496,8 @@ class KTPWP_Settings {
      * @return int
      */
     public static function get_configured_ktpwp_business_page_id() {
-        $options = get_option( 'ktp_general_settings', array() );
-        return isset( $options['ktp_page_id'] ) ? (int) $options['ktp_page_id'] : 0;
+        $options = get_option( 'ktpwp_general_settings', array() );
+        return isset( $options['ktpwp_page_id'] ) ? (int) $options['ktpwp_page_id'] : 0;
     }
 
     /**
@@ -506,7 +506,7 @@ class KTPWP_Settings {
      * @return string 未入力のときは空文字
      */
     public static function get_bank_transfer_invoice_html() {
-        $options = get_option( 'ktp_general_settings', array() );
+        $options = get_option( 'ktpwp_general_settings', array() );
         $branch = isset( $options['bank_transfer_bank_branch'] ) ? trim( (string) $options['bank_transfer_bank_branch'] ) : '';
         $type   = isset( $options['bank_transfer_account_type'] ) && $options['bank_transfer_account_type'] === 'current' ? 'current' : 'ordinary';
         $number = isset( $options['bank_transfer_account_number'] ) ? trim( (string) $options['bank_transfer_account_number'] ) : '';
@@ -557,7 +557,7 @@ class KTPWP_Settings {
      * @return string 未入力のときは空文字
      */
     public static function get_bank_transfer_plain_text() {
-        $options = get_option( 'ktp_general_settings', array() );
+        $options = get_option( 'ktpwp_general_settings', array() );
         $branch = isset( $options['bank_transfer_bank_branch'] ) ? trim( (string) $options['bank_transfer_bank_branch'] ) : '';
         $type   = isset( $options['bank_transfer_account_type'] ) && $options['bank_transfer_account_type'] === 'current' ? 'current' : 'ordinary';
         $number = isset( $options['bank_transfer_account_number'] ) ? trim( (string) $options['bank_transfer_account_number'] ) : '';
@@ -636,7 +636,7 @@ class KTPWP_Settings {
      * @return string
      */
     public static function get_currency_code() {
-        $options = get_option( 'ktp_general_settings', array() );
+        $options = get_option( 'ktpwp_general_settings', array() );
         $code = isset( $options['currency_code'] ) ? strtoupper( sanitize_text_field( $options['currency_code'] ) ) : 'JPY';
         $supported = self::get_supported_currencies();
         return isset( $supported[ $code ] ) ? $code : 'JPY';
@@ -733,7 +733,7 @@ class KTPWP_Settings {
      * @return float Default tax rate setting (default: 10.00)
      */
     public static function get_default_tax_rate() {
-        $options = get_option( 'ktp_general_settings', array() );
+        $options = get_option( 'ktpwp_general_settings', array() );
         return isset( $options['default_tax_rate'] ) ? floatval( $options['default_tax_rate'] ) : 10.00;
     }
 
@@ -744,7 +744,7 @@ class KTPWP_Settings {
      * @return float Reduced tax rate setting (default: 8.00)
      */
     public static function get_reduced_tax_rate() {
-        $options = get_option( 'ktp_general_settings', array() );
+        $options = get_option( 'ktpwp_general_settings', array() );
         return isset( $options['reduced_tax_rate'] ) ? floatval( $options['reduced_tax_rate'] ) : 8.00;
     }
 
@@ -769,7 +769,7 @@ class KTPWP_Settings {
             'page_content_widths' => array(),
         );
 
-        return get_option( 'ktp_design_settings', $system_defaults );
+        return get_option( 'ktpwp_design_settings', $system_defaults );
     }
 
     /**
@@ -843,7 +843,7 @@ class KTPWP_Settings {
         if ( strpos( $hook, 'ktp-design' ) !== false ) {
             wp_enqueue_media();
             wp_enqueue_script(
-                'ktp-media-upload',
+                'ktpwp-media-upload',
                 plugin_dir_url( __DIR__ ) . 'js/ktp-media-upload.js',
                 array( 'jquery' ),
                 '1.0.0',
@@ -859,120 +859,6 @@ class KTPWP_Settings {
      * @param string $hook Current admin page hook
      * @return void
      */
-    /**
-     * 管理画面の inline スクリプトを載せるハンドル
-     *
-     * 設定フィールドのコールバックは本文の描画中に走るので、生の <script> を
-     * その場に出す代わりに、フッターで出力されるハンドルへ inline で積む。
-     * （スタイルは head で出力済みのためこの方法は使えない。CSS は
-     *   enqueue_admin_styles() 側で wp_add_inline_style() に載せる。）
-     *
-     * @return string ハンドル名。
-     */
-    /**
-     * 寄付通知プレビューの JS
-     *
-     * @return string
-     */
-    private function get_donation_notice_preview_js() {
-        return <<<'JS'
-        function testNoticeDisplay() {
-            var $preview = jQuery('#ktpwp-notice-preview');
-            $preview.fadeOut(300, function() {
-                setTimeout(function() {
-                    $preview.fadeIn(500);
-                }, 100);
-            });
-        }
-        
-        function testNoticeDismiss() {
-            var $preview = jQuery('#ktpwp-notice-preview');
-            $preview.fadeOut(300);
-        }
-JS;
-    }
-
-    /**
-     * 寄付通知プレビューの CSS
-     *
-     * @return string
-     */
-    private function get_donation_notice_preview_css() {
-        return <<<'CSS'
-        .ktpwp-notice-preview-container {
-            background: #f9f9f9;
-            padding: 20px;
-            border-radius: 5px;
-            margin: 10px 0;
-        }
-        
-        .ktpwp-preview-controls {
-            margin: 15px 0;
-        }
-        
-        .ktpwp-preview-controls .button {
-            margin-right: 10px;
-        }
-        
-        .ktpwp-preview-info {
-            margin-top: 15px;
-            padding: 15px;
-            background: #fff;
-            border-left: 4px solid #0073aa;
-        }
-        
-        .ktpwp-preview-info ul {
-            margin: 10px 0;
-            padding-left: 20px;
-        }
-        
-        .ktpwp-preview-info li {
-            margin: 5px 0;
-        }
-CSS;
-    }
-
-    /**
-     * ページ幅設定画面の JS
-     *
-     * @return string
-     */
-    private function get_page_content_widths_js() {
-        return <<<'JS'
-            (function () {
-                function toggleCustomWidthInput(select) {
-                    var pageId = select.getAttribute('data-page-id');
-                    var customInput = document.querySelector('.ktp-page-content-width-custom[data-page-id="' + pageId + '"]');
-                    var suffix = document.querySelector('.ktp-page-content-width-custom-suffix[data-page-id="' + pageId + '"]');
-                    var showCustom = select.value === 'custom';
-                    if (customInput) {
-                        customInput.style.display = showCustom ? '' : 'none';
-                    }
-                    if (suffix) {
-                        suffix.style.display = showCustom ? '' : 'none';
-                    }
-                }
-
-                document.querySelectorAll('.ktp-page-content-width-select').forEach(function (select) {
-                    select.addEventListener('change', function () {
-                        toggleCustomWidthInput(select);
-                    });
-                });
-            })();
-JS;
-    }
-
-    private function admin_inline_script_handle() {
-        $handle = 'ktp-admin-inline';
-        if ( ! wp_script_is( $handle, 'registered' ) ) {
-            wp_register_script( $handle, false, array( 'jquery' ), KANTANPRO_PLUGIN_VERSION, true );
-        }
-        if ( ! wp_script_is( $handle, 'enqueued' ) ) {
-            wp_enqueue_script( $handle );
-        }
-        return $handle;
-    }
-
     public function enqueue_admin_styles( $hook ) {
         // Load CSS on KTPWP settings pages only
         if ( ! current_user_can( 'manage_options' ) ) {
@@ -981,21 +867,21 @@ JS;
 
         if ( strpos( $hook, 'ktp-' ) !== false ) {
             wp_enqueue_style(
-                'ktp-admin-settings',
+                'ktpwp-admin-settings',
                 plugin_dir_url( __DIR__ ) . 'css/ktp-admin-settings.css',
                 array(),
                 '1.0.1'
             );
 
             wp_enqueue_style(
-                'ktp-setting-tab',
+                'ktpwp-setting-tab',
                 plugin_dir_url( __DIR__ ) . 'css/ktp-setting-tab.css',
                 array(),
                 '1.0.1'
             );
 
             // 設定画面の本文中に生の <style> を出さない（wp.org ガイドライン）。
-            wp_add_inline_style( 'ktp-admin-settings', $this->get_donation_notice_preview_css() );
+            wp_enqueue_style( 'ktpwp-donation-notice-preview', KANTANPRO_PLUGIN_URL . 'css/ktp-donation-notice-preview.css', array( 'ktpwp-admin-settings' ), KANTANPRO_PLUGIN_VERSION );
         }
     }
 
@@ -1009,7 +895,7 @@ JS;
         // 出力バッファリングを開始（予期しない出力を防ぐ）
         ob_start();
         
-        $option_name = 'ktp_smtp_settings';
+        $option_name = 'ktpwp_smtp_settings';
         if ( false === get_option( $option_name ) ) {
             add_option(
                 $option_name,
@@ -1026,7 +912,7 @@ JS;
         }
 
         // 一般設定のデフォルト値を設定
-        $general_option_name = 'ktp_general_settings';
+        $general_option_name = 'ktpwp_general_settings';
         if ( false === get_option( $general_option_name ) ) {
             add_option(
                 $general_option_name,
@@ -1054,8 +940,8 @@ JS;
                 $general_updated = true;
             }
 
-            if ( ! array_key_exists( 'ktp_page_id', $existing_general ) ) {
-                $existing_general['ktp_page_id'] = 0;
+            if ( ! array_key_exists( 'ktpwp_page_id', $existing_general ) ) {
+                $existing_general['ktpwp_page_id'] = 0;
                 $general_updated = true;
             }
 
@@ -1065,7 +951,7 @@ JS;
         }
 
         // デザイン設定のデフォルト値を設定
-        $design_option_name = 'ktp_design_settings';
+        $design_option_name = 'ktpwp_design_settings';
         $design_defaults = array(
             'tab_active_color' => '#B7CBFB',
             'tab_inactive_color' => '#E6EDFF',
@@ -1116,12 +1002,12 @@ JS;
         $default_logo = function_exists( 'ktpwp_plugin_asset_url' )
             ? ktpwp_plugin_asset_url( 'images/default/icon.png' )
             : plugins_url( 'images/default/icon.png', KANTANPRO_PLUGIN_FILE );
-        if ( false === get_option( 'ktp_logo_image' ) ) {
-            add_option( 'ktp_logo_image', $default_logo );
+        if ( false === get_option( 'ktpwp_logo_image' ) ) {
+            add_option( 'ktpwp_logo_image', $default_logo );
         }
 
         // 寄付設定のデフォルト値を設定
-        $donation_option_name = 'ktp_donation_settings';
+        $donation_option_name = 'ktpwp_donation_settings';
         if ( false === get_option( $donation_option_name ) ) {
             add_option(
                 $donation_option_name,
@@ -1163,7 +1049,7 @@ JS;
         }
 
         // 更新通知設定のデフォルト値を設定
-        $update_notification_option_name = 'ktp_update_notification_settings';
+        $update_notification_option_name = 'ktpwp_update_notification_settings';
         if ( false === get_option( $update_notification_option_name ) ) {
             add_option(
                 $update_notification_option_name,
@@ -1226,8 +1112,8 @@ JS;
         $charset_collate = $wpdb->get_charset_collate();
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 
-        // wp_ktp_client テーブル
-        $table_name_client = $wpdb->prefix . 'ktp_client';
+        // wp_ktpwp_client テーブル
+        $table_name_client = $wpdb->prefix . 'ktpwp_client';
         $sql_client = "CREATE TABLE $table_name_client (
             id mediumint(9) NOT NULL AUTO_INCREMENT,
             company_name varchar(255) DEFAULT '' NOT NULL,
@@ -1242,8 +1128,8 @@ JS;
         ) $charset_collate;";
         dbDelta( $sql_client );
 
-        // wp_ktp_order テーブル
-        $table_name_order = $wpdb->prefix . 'ktp_order';
+        // wp_ktpwp_order テーブル
+        $table_name_order = $wpdb->prefix . 'ktpwp_order';
         $sql_order = "CREATE TABLE $table_name_order (
             id MEDIUMINT(9) NOT NULL AUTO_INCREMENT,
             time BIGINT(11) DEFAULT 0 NOT NULL,
@@ -1277,8 +1163,8 @@ JS;
         }
 
         // 既存テーブルにカラムを追加
-        if ( $wpdb->get_var( "SHOW TABLES LIKE '$table_name_order'" ) == $table_name_order ) {
-            $column_exists = $wpdb->get_results( "SHOW COLUMNS FROM $table_name_order LIKE 'company_name'" );
+        if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name_order ) ) == $table_name_order ) {
+            $column_exists = $wpdb->get_results( $wpdb->prepare( 'SHOW COLUMNS FROM %i LIKE %s', $table_name_order, 'company_name' ) );
             if ( empty( $column_exists ) ) {
                 $wpdb->query( "ALTER TABLE $table_name_order ADD company_name VARCHAR(255) DEFAULT NULL;" );
             }
@@ -1449,15 +1335,15 @@ JS;
 		echo '<div class="wrap ktp-admin-wrap">';
 		if ( function_exists( 'ktpwp_is_feature_enabled' ) && ! ktpwp_is_feature_enabled( 'backup' ) ) {
 			echo class_exists( 'KTPWP_Edition' )
-				? KTPWP_Edition::get_admin_moved_to_ex_message_html( __( 'バックアップ機能', 'kantanpro' ) )
+				? wp_kses_post( KTPWP_Edition::get_admin_moved_to_ex_message_html( __( 'バックアップ機能', 'kantanpro' ) ) )
 				: '';
 			echo '</div>';
 			return;
 		}
 
 		$notice = '';
-		if ( isset( $_GET['ktp_action'] ) ) {
-			$action = sanitize_text_field( $_GET['ktp_action'] );
+		if ( KTPWP_Request::has_query( 'ktpwp_action' ) ) {
+			$action = KTPWP_Request::query( 'ktpwp_action' );
 			if ( $action === 'restore_success' ) {
 				$notice = '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'リストアが完了しました。', 'kantanpro' ) . '</p></div>';
 			} elseif ( $action === 'restore_failed' ) {
@@ -1472,7 +1358,7 @@ JS;
 		}
 
 		// バックアップページ用JavaScriptを読み込み
-		wp_enqueue_script( 'ktp-backup-page', plugin_dir_url( __FILE__ ) . '../js/ktp-backup-page.js', array(), KANTANPRO_PLUGIN_VERSION, true );
+		wp_enqueue_script( 'ktpwp-backup-page', plugin_dir_url( __FILE__ ) . '../js/ktp-backup-page.js', array(), KANTANPRO_PLUGIN_VERSION, true );
 
 		// エクスポート
 		echo '<div class="ktp-settings-section">';
@@ -1480,10 +1366,10 @@ JS;
 		echo '<p>' . esc_html__( 'KantanProの設定とデータを1つのファイルに出力します。', 'kantanpro' ) . '</p>';
 		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
 		echo '<input type="hidden" name="action" value="ktpwp_export_data" />';
-		echo wp_nonce_field( 'ktpwp_export_data', 'ktpwp_export_nonce', true, false );
+		wp_nonce_field( 'ktpwp_export_data', 'ktpwp_export_nonce' );
 		echo '<p>';
-		echo '<label for="ktp_export_format">' . esc_html__( '形式', 'kantanpro' ) . ':</label> ';
-		echo '<select id="ktp_export_format" name="format">';
+		echo '<label for="ktpwp_export_format">' . esc_html__( '形式', 'kantanpro' ) . ':</label> ';
+		echo '<select id="ktpwp_export_format" name="format">';
 		echo '<option value="json" selected>JSON</option>';
 		echo '<option value="csv">CSV</option>';
 		echo '</select>';
@@ -1499,15 +1385,15 @@ JS;
 		echo '<div class="notice notice-warning"><p><strong>' . esc_html__( '注意:', 'kantanpro' ) . '</strong> ' . esc_html__( 'リストアを実行すると、現在のデータは全て削除されます。', 'kantanpro' ) . '</p></div>';
 		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" enctype="multipart/form-data" id="ktp-restore-form">';
 		echo '<input type="hidden" name="action" value="ktpwp_restore_data" />';
-		echo wp_nonce_field( 'ktpwp_restore_data', 'ktpwp_restore_nonce', true, false );
+		wp_nonce_field( 'ktpwp_restore_data', 'ktpwp_restore_nonce' );
 		echo '<p>';
-		echo '<label for="ktp_import_format">' . esc_html__( '形式', 'kantanpro' ) . ':</label> ';
-		echo '<select id="ktp_import_format" name="format">';
+		echo '<label for="ktpwp_import_format">' . esc_html__( '形式', 'kantanpro' ) . ':</label> ';
+		echo '<select id="ktpwp_import_format" name="format">';
 		echo '<option value="json" selected>JSON</option>';
 		echo '<option value="csv">CSV</option>';
 		echo '</select>';
 		echo '</p>';
-		echo '<input type="file" name="ktp_import_file" accept="application/json,text/csv,.csv" required /> ';
+		echo '<input type="file" name="ktpwp_import_file" accept="application/json,text/csv,.csv" required /> ';
 		echo '<p><button type="submit" class="button button-primary" id="ktp-restore-button">' . esc_html__( 'リストア実行', 'kantanpro' ) . '</button></p>';
 		echo '</form>';
 		echo '</div>';
@@ -1555,7 +1441,7 @@ JS;
 			wp_die( esc_html__( 'エクスポートデータの生成に失敗しました。', 'kantanpro' ) );
 		}
 
-		$format = isset( $_POST['format'] ) ? sanitize_text_field( $_POST['format'] ) : 'json';
+		$format = isset( $_POST['format'] ) ? sanitize_text_field( wp_unslash( $_POST['format'] ) ) : 'json';
 		$format = in_array( $format, array( 'json', 'csv' ), true ) ? $format : 'json';
 
 		if ( $format === 'json' ) {
@@ -1622,13 +1508,12 @@ JS;
 		}
 
 		$redirect = admin_url( 'admin.php?page=ktp-data-tools' );
-		$failed   = add_query_arg( 'ktp_action', 'restore_failed', $redirect );
+		$failed   = add_query_arg( 'ktpwp_action', 'restore_failed', $redirect );
 
 		// 上限を設けるのは、巨大なファイルを丸ごとメモリに読み込ませないため（管理者のみの操作だが念のため）。
 		$max_bytes = 50 * MB_IN_BYTES;
-		$upload    = isset( $_FILES['ktp_import_file'] ) && is_array( $_FILES['ktp_import_file'] ) ? $_FILES['ktp_import_file'] : array();
-		$tmp_name  = isset( $upload['tmp_name'] ) && is_string( $upload['tmp_name'] ) ? $upload['tmp_name'] : '';
-		$file_name = isset( $upload['name'] ) && is_string( $upload['name'] ) ? sanitize_file_name( wp_unslash( $upload['name'] ) ) : '';
+		$tmp_name  = isset( $_FILES['ktpwp_import_file']['tmp_name'] ) && is_string( $_FILES['ktpwp_import_file']['tmp_name'] ) ? sanitize_text_field( $_FILES['ktpwp_import_file']['tmp_name'] ) : '';
+		$file_name = isset( $_FILES['ktpwp_import_file']['name'] ) && is_string( $_FILES['ktpwp_import_file']['name'] ) ? sanitize_file_name( wp_unslash( $_FILES['ktpwp_import_file']['name'] ) ) : '';
 		$file_ext  = strtolower( pathinfo( $file_name, PATHINFO_EXTENSION ) );
 		if ( $tmp_name === '' || ! is_uploaded_file( $tmp_name ) || ! in_array( $file_ext, array( 'json', 'csv' ), true ) || (int) filesize( $tmp_name ) > $max_bytes ) {
 			wp_safe_redirect( $failed );
@@ -1673,14 +1558,14 @@ JS;
 		$this->clear_existing_data();
 		$this->import_from_array( $options, $tables, $source_prefix );
 
-		wp_safe_redirect( add_query_arg( 'ktp_action', 'restore_success', $redirect ) );
+		wp_safe_redirect( add_query_arg( 'ktpwp_action', 'restore_success', $redirect ) );
 		exit;
 	}
 
 	/**
 	 * 復元してよいオプション名か。
 	 *
-	 * エクスポート側（collect_plugin_options）が ktp_ / ktpwp_ で始まるものだけを
+	 * エクスポート側（collect_plugin_options）が ktpwp_ / ktpwp_ で始まるものだけを
 	 * 書き出しているので、取り込みも同じ範囲に限る。ここで絞らないと、バックアップ
 	 * ファイルに default_role や users_can_register など WordPress 本体のオプション名を
 	 * 混ぜるだけで、任意のサイト設定を書き換えられてしまう。
@@ -1705,14 +1590,14 @@ JS;
 		
 		// 削除対象テーブル（外部キー制約のため順序が重要）
 		$tables_to_clear = array(
-			'ktp_order_cost_items',
-			'ktp_order_invoice_items', 
-			'ktp_order_staff_chat',
-			'ktp_order',
-			'ktp_supplier_skills',
-			'ktp_service',
-			'ktp_supplier',
-			'ktp_client',
+			'ktpwp_order_cost_items',
+			'ktpwp_order_invoice_items', 
+			'ktpwp_order_staff_chat',
+			'ktpwp_order',
+			'ktpwp_supplier_skills',
+			'ktpwp_service',
+			'ktpwp_supplier',
+			'ktpwp_client',
 		);
 		
 		foreach ( $tables_to_clear as $table ) {
@@ -1732,7 +1617,7 @@ JS;
 	 */
 	private function collect_plugin_options() {
 		global $wpdb;
-		$like1 = $wpdb->esc_like( 'ktp_' ) . '%';
+		$like1 = $wpdb->esc_like( 'ktpwp_' ) . '%';
 		$like2 = $wpdb->esc_like( 'ktpwp_' ) . '%';
 		$option_names = $wpdb->get_col( $wpdb->prepare( "SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s", $like1, $like2 ) );
 		$options = array();
@@ -1882,7 +1767,7 @@ JS;
 	 */
 	private function get_plugin_tables() {
 		global $wpdb;
-		$like = $wpdb->esc_like( $wpdb->prefix . 'ktp_' ) . '%';
+		$like = $wpdb->esc_like( $wpdb->prefix . 'ktpwp_' ) . '%';
 		$tables = $wpdb->get_col( $wpdb->prepare( 'SHOW TABLES LIKE %s', $like ) );
 		return is_array( $tables ) ? $tables : array();
 	}
@@ -1890,13 +1775,13 @@ JS;
 	/**
 	 * 別環境でエクスポートされたテーブル名を現在環境のプレフィックスに合わせて変換
 	 *
-	 * @param string $source_table  例: wp_ktp_order
+	 * @param string $source_table  例: wp_ktpwp_order
 	 * @param string $source_prefix 例: wp_
 	 * @param string $target_prefix 現在の $wpdb->prefix
 	 * @return string 変換後のテーブル名
 	 */
 	private function map_table_to_current_prefix( $source_table, $source_prefix, $target_prefix ) {
-		$pos = strpos( $source_table, 'ktp_' );
+		$pos = strpos( $source_table, 'ktpwp_' );
 		if ( $pos === false ) {
 			return '';
 		}
@@ -1915,10 +1800,10 @@ JS;
             wp_die( esc_html__( 'この設定ページは開発環境でのみアクセスできます。', 'kantanpro' ) );
         }
 
-        if ( isset( $_POST['ktp_developer_edition_override'] ) && check_admin_referer( 'ktp_developer_edition_settings', 'ktp_developer_edition_nonce' ) ) {
-            $override = sanitize_text_field( wp_unslash( $_POST['ktp_developer_edition_override'] ) );
+        if ( isset( $_POST['ktpwp_developer_edition_override'] ) && check_admin_referer( 'ktpwp_developer_edition_settings', 'ktpwp_developer_edition_nonce' ) ) {
+            $override = sanitize_text_field( wp_unslash( $_POST['ktpwp_developer_edition_override'] ) );
             if ( $override === '' || ( class_exists( 'KTPWP_Edition' ) && in_array( $override, KTPWP_Edition::get_valid_slugs(), true ) ) ) {
-                update_option( 'ktp_developer_edition_override', $override, false );
+                update_option( 'ktpwp_developer_edition_override', $override, false );
                 echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'エディション設定を保存しました。', 'kantanpro' ) . '</p></div>';
             } else {
                 echo '<div class="notice notice-error is-dismissible"><p>' . esc_html__( '無効なエディションが指定されました。', 'kantanpro' ) . '</p></div>';
@@ -1948,7 +1833,7 @@ JS;
 
         $baked_edition   = defined( 'KTPWP_EDITION' ) ? (string) KTPWP_EDITION : 'pro';
         $active_edition  = KTPWP_Edition::get_active_edition();
-        $override        = get_option( 'ktp_developer_edition_override', '' );
+        $override        = get_option( 'ktpwp_developer_edition_override', '' );
         $definitions     = KTPWP_Edition::get_definitions();
         $staff_count     = KTPWP_Edition::count_staff_users();
         $staff_limit     = KTPWP_Edition::get_staff_limit();
@@ -1979,13 +1864,13 @@ JS;
             </table>
 
             <form method="post" action="">
-                <?php wp_nonce_field( 'ktp_developer_edition_settings', 'ktp_developer_edition_nonce' ); ?>
+                <?php wp_nonce_field( 'ktpwp_developer_edition_settings', 'ktpwp_developer_edition_nonce' ); ?>
                 <table class="form-table" role="presentation">
                     <tbody>
                         <tr>
-                            <th scope="row"><label for="ktp_developer_edition_override"><?php esc_html_e( 'ローカル上書き', 'kantanpro' ); ?></label></th>
+                            <th scope="row"><label for="ktpwp_developer_edition_override"><?php esc_html_e( 'ローカル上書き', 'kantanpro' ); ?></label></th>
                             <td>
-                                <select name="ktp_developer_edition_override" id="ktp_developer_edition_override">
+                                <select name="ktpwp_developer_edition_override" id="ktpwp_developer_edition_override">
                                     <option value=""><?php esc_html_e( 'ビルド済みのまま（上書きなし）', 'kantanpro' ); ?></option>
                                     <?php foreach ( $definitions as $slug => $definition ) : ?>
                                         <option value="<?php echo esc_attr( $slug ); ?>" <?php selected( $override, $slug ); ?>>
@@ -2086,11 +1971,11 @@ JS;
      * 通知メッセージのコールバック
      */
     public function notice_message_callback() {
-        $options = get_option( 'ktp_donation_settings' );
+        $options = get_option( 'ktpwp_donation_settings' );
         $default_message = __( 'このサイトの運営にご協力いただける方は、寄付をお願いいたします。', 'kantanpro' );
         ?>
         <textarea id="notice_message" 
-                  name="ktp_donation_settings[notice_message]" 
+                  name="ktpwp_donation_settings[notice_message]" 
                   rows="3" 
                   cols="50" 
                   class="large-text"><?php echo esc_textarea( isset( $options['notice_message'] ) ? $options['notice_message'] : $default_message ); ?></textarea>
@@ -2113,12 +1998,12 @@ JS;
      * フロントエンド通知の有効化コールバック
      */
     public function frontend_notice_enabled_callback() {
-        $options = get_option( 'ktp_donation_settings' );
+        $options = get_option( 'ktpwp_donation_settings' );
         $enabled = isset( $options['frontend_notice_enabled'] ) ? $options['frontend_notice_enabled'] : false;
         ?>
         <input type="checkbox" 
                id="frontend_notice_enabled" 
-               name="ktp_donation_settings[frontend_notice_enabled]" 
+               name="ktpwp_donation_settings[frontend_notice_enabled]" 
                value="1" 
                <?php checked( $enabled, true ); ?>>
         <label for="frontend_notice_enabled"><?php esc_html_e( 'フロントエンド通知を有効にする', 'kantanpro' ); ?></label>
@@ -2130,12 +2015,12 @@ JS;
      * 通知表示間隔のコールバック
      */
     public function notice_display_interval_callback() {
-        $options = get_option( 'ktp_donation_settings' );
+        $options = get_option( 'ktpwp_donation_settings' );
         $interval = isset( $options['notice_display_interval'] ) ? $options['notice_display_interval'] : 7;
         ?>
         <input type="number" 
                id="notice_display_interval" 
-               name="ktp_donation_settings[notice_display_interval]" 
+               name="ktpwp_donation_settings[notice_display_interval]" 
                value="<?php echo esc_attr( $interval ); ?>" 
                min="0" 
                max="365" 
@@ -2150,11 +2035,11 @@ JS;
      * 寄付URLのコールバック
      */
     public function donation_url_callback() {
-        $options = get_option( 'ktp_donation_settings' );
+        $options = get_option( 'ktpwp_donation_settings' );
         ?>
         <input type="url" 
                id="donation_url" 
-               name="ktp_donation_settings[donation_url]" 
+               name="ktpwp_donation_settings[donation_url]" 
                value="<?php echo isset( $options['donation_url'] ) ? esc_url( $options['donation_url'] ) : ''; ?>" 
                class="regular-text" 
                placeholder="https://example.com/donation">
@@ -2167,7 +2052,7 @@ JS;
      * 寄付通知プレビューのコールバック
      */
     public function donation_notice_preview_callback() {
-        $donation_settings = get_option( 'ktp_donation_settings', array() );
+        $donation_settings = get_option( 'ktpwp_donation_settings', array() );
         $message = isset( $donation_settings['notice_message'] ) ? $donation_settings['notice_message'] : __( 'このサイトの運営にご協力いただける方は、寄付をお願いいたします。', 'kantanpro' );
         
         ?>
@@ -2225,7 +2110,7 @@ JS;
         <?php
         // 生の <script> / <style> を出さずキューに載せる（wp.org ガイドライン）。
         // CSS は head で出力済みなので、ここではなく enqueue_admin_styles() 側に置く。
-        wp_add_inline_script( $this->admin_inline_script_handle(), $this->get_donation_notice_preview_js() );
+        wp_enqueue_script( 'ktpwp-donation-notice-preview', KANTANPRO_PLUGIN_URL . 'js/ktp-donation-notice-preview.js', array( 'jquery' ), KANTANPRO_PLUGIN_VERSION, true );
         ?>
         <?php
     }
@@ -2251,7 +2136,7 @@ JS;
      */
     public function sanitize_donation_settings( $input ) {
         // 既存の設定を取得
-        $existing_settings = get_option( 'ktp_donation_settings', array() );
+        $existing_settings = get_option( 'ktpwp_donation_settings', array() );
         $new_input = $existing_settings;
         
         // フロントエンド通知の有効化（チェックボックス）
@@ -2332,9 +2217,9 @@ JS;
         }
 
         // KantanPro利用権限（ktpwp_access）付加/削除処理
-        if ( isset( $_POST['ktpwp_access_user'] ) && isset( $_POST['ktpwp_access_action'] ) && check_admin_referer( 'ktp_staff_role_action', 'ktp_staff_role_nonce' ) ) {
-            $user_id = intval( $_POST['ktpwp_access_user'] );
-            $action = sanitize_text_field( $_POST['ktpwp_access_action'] );
+        if ( isset( $_POST['ktpwp_access_user'] ) && isset( $_POST['ktpwp_access_action'] ) && check_admin_referer( 'ktpwp_staff_role_action', 'ktpwp_staff_role_nonce' ) ) {
+            $user_id = intval( wp_unslash( $_POST['ktpwp_access_user'] ) );
+            $action = sanitize_text_field( wp_unslash( $_POST['ktpwp_access_action'] ) );
             $user_obj = get_userdata( $user_id );
             if ( $user_obj ) {
                 if ( $action === 'add' ) {
@@ -2463,7 +2348,7 @@ JS;
                                         <?php endif; ?>
 
                                         <form method="post" class="ktpwp-staff-toggle-form" style="display: flex; align-items: center; gap: 10px; margin-bottom: 0;">
-                                            <?php wp_nonce_field( 'ktp_staff_role_action', 'ktp_staff_role_nonce' ); ?>
+                                            <?php wp_nonce_field( 'ktpwp_staff_role_action', 'ktpwp_staff_role_nonce' ); ?>
                                             <input type="hidden" name="ktpwp_access_user" value="<?php echo esc_attr( $user->ID ); ?>">
                                             <input type="hidden" name="ktpwp_access_action" class="ktpwp-staff-toggle-action" value="">
                                             <?php
@@ -2549,7 +2434,7 @@ JS;
         }
 
         // SMTP設定を取得
-        $smtp_settings = get_option( 'ktp_smtp_settings', array() );
+        $smtp_settings = get_option( 'ktpwp_smtp_settings', array() );
         $from_email = ! empty( $smtp_settings['email_address'] ) ? sanitize_email( $smtp_settings['email_address'] ) : get_option( 'admin_email' );
         $from_name = ! empty( $smtp_settings['smtp_from_name'] ) ? sanitize_text_field( $smtp_settings['smtp_from_name'] ) : get_bloginfo( 'name' );
 
@@ -2674,9 +2559,11 @@ JS;
             
             <?php
             // 通知表示
-            settings_errors( 'ktp_settings' );
+            settings_errors( 'ktpwp_settings' );
 
-            if ( isset( $_POST['test_email'] ) ) {
+            if ( isset( $_POST['test_email'], $_POST['ktpwp_test_email_nonce'] )
+                && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['ktpwp_test_email_nonce'] ) ), 'ktpwp_send_test_email' )
+                && current_user_can( 'manage_options' ) ) {
                 $this->send_test_email();
             }
 
@@ -2737,6 +2624,7 @@ JS;
             echo '<p>' . esc_html__( 'SMTPの設定が正しく機能しているか確認するためのテストメールを送信します。', 'kantanpro' ) . '</p>';
             echo '<form method="post">';
             echo '<input type="hidden" name="test_email" value="1">';
+            wp_nonce_field( 'ktpwp_send_test_email', 'ktpwp_test_email_nonce' );
             submit_button( __( 'テストメール送信', 'kantanpro' ), 'secondary', 'submit', false );
             echo '</form>';
             echo '</div>';
@@ -2766,14 +2654,14 @@ JS;
             
             <?php
             // 通知表示
-            settings_errors( 'ktp_general_settings' );
+            settings_errors( 'ktpwp_general_settings' );
             ?>
             
             <div class="ktp-settings-container">
                 <div class="ktp-settings-section">
                     <form method="post" action="options.php">
                         <?php
-                        settings_fields( 'ktp_general_group' );
+                        settings_fields( 'ktpwp_general_group' );
 
                         // 一般設定セクションの出力
                         global $wp_settings_sections, $wp_settings_fields;
@@ -3029,14 +2917,14 @@ JS;
             
             <?php
             // 通知表示
-            settings_errors( 'ktp_design_settings' );
+            settings_errors( 'ktpwp_design_settings' );
             ?>
             
             <div class="ktp-settings-container">
                 <div class="ktp-settings-section">
                     <form method="post" action="options.php">
                         <?php
-                        settings_fields( 'ktp_design_group' );
+                        settings_fields( 'ktpwp_design_group' );
 
                         // デザイン設定セクションの出力
                         global $wp_settings_sections, $wp_settings_fields;
@@ -3065,7 +2953,7 @@ JS;
                     <!-- デフォルト設定管理セクション -->
                     <div class="ktp-default-settings-section" style="margin-top: 30px;">
                         <form method="post" action="" onsubmit="return confirm('<?php echo esc_js( __( 'すべてのデザイン設定がデフォルト値にリセットされます。よろしいですか？', 'kantanpro' ) ); ?>');">
-                            <?php wp_nonce_field( 'ktp_reset_to_default', 'ktp_reset_to_default_nonce' ); ?>
+                            <?php wp_nonce_field( 'ktpwp_reset_to_default', 'ktpwp_reset_to_default_nonce' ); ?>
                             <input type="hidden" name="action" value="reset_to_default">
                             <?php submit_button( __( 'デフォルトに戻す', 'kantanpro' ), 'secondary', 'reset_to_default', false ); ?>
                         </form>
@@ -3081,7 +2969,7 @@ JS;
     public function page_init() {
 
         // メディアライブラリ用のスクリプトとスタイルを読み込み
-        if ( isset( $_GET['page'] ) && $_GET['page'] === 'ktp-settings' ) {
+        if ( KTPWP_Request::has_query( 'page' ) && KTPWP_Request::query_unslashed( 'page' ) === 'ktp-settings' ) {
             wp_enqueue_media();
             wp_enqueue_script( 'media-upload' );
             wp_enqueue_script( 'thickbox' );
@@ -3094,29 +2982,29 @@ JS;
 
         // 一般設定グループの登録
         register_setting(
-            'ktp_general_group',
-            'ktp_general_settings',
+            'ktpwp_general_group',
+            'ktpwp_general_settings',
             array( 'sanitize_callback' => array( $this, 'sanitize_general_settings' ) )
         );
 
         // ロゴマークの登録
         register_setting(
-            'ktp_general_group',
-            'ktp_logo_image',
+            'ktpwp_general_group',
+            'ktpwp_logo_image',
             array( 'sanitize_callback' => array( $this, 'sanitize_fixed_logo_image' ) )
         );
 
         // システム名の登録
         register_setting(
-            'ktp_general_group',
-            'ktp_system_name',
+            'ktpwp_general_group',
+            'ktpwp_system_name',
             array( 'sanitize_callback' => array( $this, 'sanitize_fixed_system_name' ) )
         );
 
         // システムの説明の登録
         register_setting(
-            'ktp_general_group',
-            'ktp_system_description',
+            'ktpwp_general_group',
+            'ktpwp_system_description',
             array( 'sanitize_callback' => array( $this, 'sanitize_fixed_system_description' ) )
         );
 
@@ -3126,24 +3014,24 @@ JS;
             array( 'sanitize_callback' => array( $this, 'sanitize' ) )
         );
 
-        // 一般設定ページ（page=ktp-settings）のフォームで保存するため ktp_general_group に登録
+        // 一般設定ページ（page=ktp-settings）のフォームで保存するため ktpwp_general_group に登録
         register_setting(
-            'ktp_general_group',
-            'ktp_japanpost_api_settings',
+            'ktpwp_general_group',
+            'ktpwp_japanpost_api_settings',
             array( 'sanitize_callback' => array( $this, 'sanitize_japanpost_api_settings' ) )
         );
 
         // デザイン設定グループの登録
         register_setting(
-            'ktp_design_group',
-            'ktp_design_settings',
+            'ktpwp_design_group',
+            'ktpwp_design_settings',
             array( 'sanitize_callback' => array( $this, 'sanitize_design_settings' ) )
         );
 
         // 寄付設定グループの登録
         register_setting(
-            'ktp_donation_group',
-            'ktp_donation_settings',
+            'ktpwp_donation_group',
+            'ktpwp_donation_settings',
             array(
                 'sanitize_callback' => array( $this, 'sanitize_donation_settings' ),
                 'type' => 'object',
@@ -3158,8 +3046,8 @@ JS;
 
         // 更新通知設定グループの登録
         register_setting(
-            'ktp_update_notification_group',
-            'ktp_update_notification_settings',
+            'ktpwp_update_notification_group',
+            'ktpwp_update_notification_settings',
             array(
                 'sanitize_callback' => array( $this, 'sanitize_update_notification_settings' ),
                 'type' => 'object',
@@ -3175,10 +3063,10 @@ JS;
         );
 
         // プラグイン削除時のデータ保持設定（エンドユーザー向け設定）
-        // 一般設定タブ(ktp-general)に表示するため、ktp_general_group に登録
+        // 一般設定タブ(ktp-general)に表示するため、ktpwp_general_group に登録
         register_setting(
-            'ktp_general_group',
-            'ktp_uninstall_settings',
+            'ktpwp_general_group',
+            'ktpwp_uninstall_settings',
             array(
                 'sanitize_callback' => array( $this, 'sanitize_uninstall_settings' ),
                 'type' => 'object',
@@ -3188,8 +3076,8 @@ JS;
             )
         );
         register_setting(
-            'ktp_central_banner_group',
-            'ktp_central_banner_settings',
+            'ktpwp_central_banner_group',
+            'ktpwp_central_banner_settings',
             array( 'sanitize_callback' => array( $this, 'sanitize_central_banner_settings' ) )
         );
 
@@ -3203,7 +3091,7 @@ JS;
 
         // ロゴマーク
         add_settings_field(
-            'ktp_logo_image',
+            'ktpwp_logo_image',
             __( 'ロゴマーク', 'kantanpro' ),
             array( $this, 'logo_image_callback' ),
             'ktp-general',
@@ -3212,7 +3100,7 @@ JS;
 
         // システム名
         add_settings_field(
-            'ktp_system_name',
+            'ktpwp_system_name',
             __( 'システム名', 'kantanpro' ),
             array( $this, 'system_name_callback' ),
             'ktp-general',
@@ -3221,7 +3109,7 @@ JS;
 
         // システムの説明
         add_settings_field(
-            'ktp_system_description',
+            'ktpwp_system_description',
             __( 'システムの説明', 'kantanpro' ),
             array( $this, 'system_description_callback' ),
             'ktp-general',
@@ -3229,9 +3117,9 @@ JS;
         );
 
         add_settings_field(
-            'ktp_page_id',
+            'ktpwp_page_id',
             __( '業務画面ページ', 'kantanpro' ),
-            array( $this, 'ktp_page_id_callback' ),
+            array( $this, 'ktpwp_page_id_callback' ),
             'ktp-general',
             'general_setting_section'
         );
@@ -3831,7 +3719,7 @@ JS;
 
         // custom_css は廃止したため保存しない（既存の値も次回保存で消える）。
 
-        $existing = get_option( 'ktp_design_settings', array() );
+        $existing = get_option( 'ktpwp_design_settings', array() );
         $raw_widths = array();
         if ( isset( $input['page_content_widths'] ) && is_array( $input['page_content_widths'] ) ) {
             $raw_widths = $input['page_content_widths'];
@@ -3951,7 +3839,7 @@ JS;
         $options = get_option( $this->option_name );
         $selected = isset( $options['smtp_secure'] ) ? $options['smtp_secure'] : '';
         ?>
-        <select id="smtp_secure" name="<?php echo $this->option_name; ?>[smtp_secure]">
+        <select id="smtp_secure" name="<?php echo esc_attr( $this->option_name ); ?>[smtp_secure]">
             <option value="" <?php selected( $selected, '' ); ?>><?php echo esc_html__( 'なし', 'kantanpro' ); ?></option>
             <option value="ssl" <?php selected( $selected, 'ssl' ); ?>>SSL</option>
             <option value="tls" <?php selected( $selected, 'tls' ); ?>>TLS</option>
@@ -3982,11 +3870,11 @@ JS;
      * @return void
      */
     public function japanpost_api_enabled_callback() {
-        $options = get_option( 'ktp_japanpost_api_settings', array() );
+        $options = get_option( 'ktpwp_japanpost_api_settings', array() );
         $on      = ! empty( $options['enabled'] );
         ?>
         <label>
-            <input type="checkbox" name="ktp_japanpost_api_settings[enabled]" value="1" <?php checked( $on ); ?> />
+            <input type="checkbox" name="ktpwp_japanpost_api_settings[enabled]" value="1" <?php checked( $on ); ?> />
             <?php echo esc_html__( '有効にする（オフのときは住所の自動入力を行わない）', 'kantanpro' ); ?>
         </label>
         <?php
@@ -3996,10 +3884,10 @@ JS;
      * @return void
      */
     public function japanpost_api_environment_callback() {
-        $options = get_option( 'ktp_japanpost_api_settings', array() );
+        $options = get_option( 'ktpwp_japanpost_api_settings', array() );
         $env     = isset( $options['environment'] ) && $options['environment'] === 'stub' ? 'stub' : 'production';
         ?>
-        <select name="ktp_japanpost_api_settings[environment]" id="ktp_japanpost_api_environment">
+        <select name="ktpwp_japanpost_api_settings[environment]" id="ktpwp_japanpost_api_environment">
             <option value="production" <?php selected( $env, 'production' ); ?>><?php echo esc_html__( '本番', 'kantanpro' ); ?></option>
             <option value="stub" <?php selected( $env, 'stub' ); ?>><?php echo esc_html__( '検証（スタブ）', 'kantanpro' ); ?></option>
         </select>
@@ -4014,10 +3902,10 @@ JS;
      * @return void
      */
     public function japanpost_api_client_id_callback() {
-        $options = get_option( 'ktp_japanpost_api_settings', array() );
+        $options = get_option( 'ktpwp_japanpost_api_settings', array() );
         $val     = isset( $options['client_id'] ) ? (string) $options['client_id'] : '';
         ?>
-        <input type="text" name="ktp_japanpost_api_settings[client_id]" id="ktp_japanpost_api_client_id" value="<?php echo esc_attr( $val ); ?>" class="regular-text" autocomplete="off" />
+        <input type="text" name="ktpwp_japanpost_api_settings[client_id]" id="ktpwp_japanpost_api_client_id" value="<?php echo esc_attr( $val ); ?>" class="regular-text" autocomplete="off" />
         <?php
     }
 
@@ -4026,7 +3914,7 @@ JS;
      */
     public function japanpost_api_secret_key_callback() {
         ?>
-        <input type="password" name="ktp_japanpost_api_settings[secret_key]" id="ktp_japanpost_api_secret_key" value="" class="regular-text" autocomplete="off" placeholder="<?php echo esc_attr__( '変更する場合のみ入力', 'kantanpro' ); ?>" />
+        <input type="password" name="ktpwp_japanpost_api_settings[secret_key]" id="ktpwp_japanpost_api_secret_key" value="" class="regular-text" autocomplete="off" placeholder="<?php echo esc_attr__( '変更する場合のみ入力', 'kantanpro' ); ?>" />
         <p class="description"><?php echo esc_html__( '登録済みのシークレットを維持する場合は空のまま保存してください。', 'kantanpro' ); ?></p>
         <?php
     }
@@ -4038,7 +3926,7 @@ JS;
      * @return array
      */
     public function sanitize_japanpost_api_settings( $input ) {
-        $prev = get_option( 'ktp_japanpost_api_settings', array() );
+        $prev = get_option( 'ktpwp_japanpost_api_settings', array() );
         if ( ! is_array( $prev ) ) {
             $prev = array();
         }
@@ -4106,7 +3994,7 @@ JS;
             return ! in_array( strtolower( $host ), $blocked_hosts, true );
         };
 
-        $smtp_settings = get_option( 'ktp_smtp_settings', array() );
+        $smtp_settings = get_option( 'ktpwp_smtp_settings', array() );
         $from_email    = ! empty( $smtp_settings['email_address'] ) ? sanitize_email( $smtp_settings['email_address'] ) : '';
         if ( $from_email !== '' && is_email( $from_email ) ) {
             $domain_parts = explode( '@', $from_email );
@@ -4188,7 +4076,7 @@ JS;
             $this->show_notification( __( 'テストメールを送信しました。メールボックスをご確認ください。', 'kantanpro' ), true );
 
             add_settings_error(
-                'ktp_settings',
+                'ktpwp_settings',
                 'test_mail_success',
                 __( 'テストメールを送信しました。メールボックスをご確認ください。', 'kantanpro' ),
                 'updated'
@@ -4212,7 +4100,7 @@ JS;
             $this->show_notification( __( 'テストメールの送信に失敗しました。SMTP設定をご確認ください。', 'kantanpro' ), false );
 
             add_settings_error(
-                'ktp_settings',
+                'ktpwp_settings',
                 'test_mail_error',
                 __( 'テストメールの送信に失敗しました。SMTP設定をご確認ください。', 'kantanpro' ),
                 'error'
@@ -4267,17 +4155,17 @@ JS;
             $new_input['currency_code'] = isset( $supported_currencies[ $currency_code ] ) ? $currency_code : 'JPY';
         }
 
-        if ( isset( $input['ktp_page_id'] ) ) {
-            $page_id = absint( $input['ktp_page_id'] );
+        if ( isset( $input['ktpwp_page_id'] ) ) {
+            $page_id = absint( $input['ktpwp_page_id'] );
             if ( $page_id === 0 ) {
-                $new_input['ktp_page_id'] = 0;
+                $new_input['ktpwp_page_id'] = 0;
             } elseif ( self::page_has_ktpwp_shortcode( $page_id ) ) {
-                $new_input['ktp_page_id'] = $page_id;
+                $new_input['ktpwp_page_id'] = $page_id;
             } else {
-                $existing = get_option( 'ktp_general_settings', array() );
-                $new_input['ktp_page_id'] = isset( $existing['ktp_page_id'] ) ? (int) $existing['ktp_page_id'] : 0;
+                $existing = get_option( 'ktpwp_general_settings', array() );
+                $new_input['ktpwp_page_id'] = isset( $existing['ktpwp_page_id'] ) ? (int) $existing['ktpwp_page_id'] : 0;
                 add_settings_error(
-                    'ktp_general_settings',
+                    'ktpwp_general_settings',
                     'invalid_ktp_page_id',
                     __( '業務画面ページには、[ktpwp_all_tab] または [kantanpro_ex] が設置された公開中の固定ページを選択してください。', 'kantanpro' ),
                     'error'
@@ -4298,7 +4186,7 @@ JS;
             if ( $new_input['tax_mode'] === 'unified' ) {
                 $rate_raw = isset( $input['unified_tax_rate'] ) ? trim( (string) $input['unified_tax_rate'] ) : '';
                 if ( $rate_raw === '' ) {
-                    add_settings_error( 'ktp_general_settings', 'unified_tax_rate_required', __( '一律税率モードでは、一律税率（%）の入力が必須です。', 'kantanpro' ), 'error' );
+                    add_settings_error( 'ktpwp_general_settings', 'unified_tax_rate_required', __( '一律税率モードでは、一律税率（%）の入力が必須です。', 'kantanpro' ), 'error' );
                 }
             }
         }
@@ -4389,7 +4277,7 @@ JS;
             $new_input['bank_transfer_account_holder_kana'] = sanitize_text_field( wp_unslash( (string) $input['bank_transfer_account_holder_kana'] ) );
         }
 
-        $existing = get_option( 'ktp_general_settings', array() );
+        $existing = get_option( 'ktpwp_general_settings', array() );
         if ( ! is_array( $existing ) ) {
             $existing = array();
         }
@@ -4444,17 +4332,17 @@ JS;
      * 税制モードフィールド
      */
     public function tax_mode_callback() {
-        $options = get_option( 'ktp_general_settings' );
+        $options = get_option( 'ktpwp_general_settings' );
         $saved_mode = isset( $options['tax_mode'] ) ? $options['tax_mode'] : 'multiple';
         ?>
         <label style="margin-right:16px;">
-            <input type="radio" name="ktp_general_settings[tax_mode]" value="multiple" <?php checked( $saved_mode, 'multiple' ); ?> /> <?php echo esc_html__( '消費税あり（行ごと税率）', 'kantanpro' ); ?>
+            <input type="radio" name="ktpwp_general_settings[tax_mode]" value="multiple" <?php checked( $saved_mode, 'multiple' ); ?> /> <?php echo esc_html__( '消費税あり（行ごと税率）', 'kantanpro' ); ?>
         </label>
         <label style="margin-right:16px;">
-            <input type="radio" name="ktp_general_settings[tax_mode]" value="unified" <?php checked( $saved_mode, 'unified' ); ?> /> <?php echo esc_html__( '一律税率（全明細に同一税率）', 'kantanpro' ); ?>
+            <input type="radio" name="ktpwp_general_settings[tax_mode]" value="unified" <?php checked( $saved_mode, 'unified' ); ?> /> <?php echo esc_html__( '一律税率（全明細に同一税率）', 'kantanpro' ); ?>
         </label>
         <label>
-            <input type="radio" name="ktp_general_settings[tax_mode]" value="abolished" <?php checked( $saved_mode, 'abolished' ); ?> /> <?php echo esc_html__( '消費税なし（税列非表示）', 'kantanpro' ); ?>
+            <input type="radio" name="ktpwp_general_settings[tax_mode]" value="abolished" <?php checked( $saved_mode, 'abolished' ); ?> /> <?php echo esc_html__( '消費税なし（税列非表示）', 'kantanpro' ); ?>
         </label>
         <div style="font-size:12px;color:#555;margin-top:4px;">
             <?php echo esc_html__( '※ 「一律税率」を選択すると入力した税率が全明細に適用され、行ごとの税率編集はできません。「消費税なし」を選択すると税率/税額列は非表示になります。', 'kantanpro' ); ?>
@@ -4466,12 +4354,12 @@ JS;
      * 一律税率フィールド
      */
     public function unified_tax_rate_callback() {
-        $options = get_option( 'ktp_general_settings' );
+        $options = get_option( 'ktpwp_general_settings' );
         $value = isset( $options['unified_tax_rate'] ) ? $options['unified_tax_rate'] : 5.00;
         $mode = class_exists('KTPWP_Tax_Policy') ? KTPWP_Tax_Policy::get_mode() : ( isset($options['tax_mode']) ? $options['tax_mode'] : 'multiple' );
         $disabled = ( $mode !== 'unified' ) ? 'disabled' : '';
         ?>
-        <input type="number" id="unified_tax_rate" name="ktp_general_settings[unified_tax_rate]" value="<?php echo esc_attr( $value ); ?>" step="1" min="0" style="width:100px;text-align:right;" placeholder="<?php echo esc_attr__( '例：10', 'kantanpro' ); ?>" <?php echo $disabled; ?>> %
+        <input type="number" id="unified_tax_rate" name="ktpwp_general_settings[unified_tax_rate]" value="<?php echo esc_attr( $value ); ?>" step="1" min="0" style="width:100px;text-align:right;" placeholder="<?php echo esc_attr__( '例：10', 'kantanpro' ); ?>" <?php echo esc_attr( $disabled ); ?>> %
         <div style="font-size:12px;color:#555;margin-top:4px;">
             <?php echo esc_html__( '※ この設定は「一律税率」モード選択時のみ有効です。未入力時は既定の5%が適用されます。0を入力した場合は0%で固定されます。', 'kantanpro' ); ?>
         </div>
@@ -4508,10 +4396,10 @@ JS;
         $default_logo = function_exists( 'ktpwp_plugin_asset_url' )
             ? ktpwp_plugin_asset_url( 'images/default/icon.png' )
             : plugins_url( 'images/default/icon.png', KANTANPRO_PLUGIN_FILE );
-        $current_logo = get_option( 'ktp_logo_image' );
+        $current_logo = get_option( 'ktpwp_logo_image' );
 
         if ( ! is_string( $current_logo ) || '' === trim( $current_logo ) || $current_logo !== $default_logo ) {
-            update_option( 'ktp_logo_image', $default_logo, false );
+            update_option( 'ktpwp_logo_image', $default_logo, false );
         }
     }
 
@@ -4524,7 +4412,7 @@ JS;
     public function logo_image_callback() {
         $value = $this->get_fixed_logo_image();
         ?>
-        <input type="hidden" id="ktp_logo_image" name="ktp_logo_image" value="<?php echo esc_attr( $value ); ?>" />
+        <input type="hidden" id="ktpwp_logo_image" name="ktpwp_logo_image" value="<?php echo esc_attr( $value ); ?>" />
         <div class="logo-preview" style="margin-bottom: 10px;">
             <img src="<?php echo esc_url( $value ); ?>" alt="<?php echo esc_attr__( 'ロゴマーク', 'kantanpro' ); ?>" style="max-width: 200px; max-height: 100px; display: block;" />
         </div>
@@ -4543,7 +4431,7 @@ JS;
     public function system_name_callback() {
         $value = $this->get_fixed_system_name();
         ?>
-        <input type="text" id="ktp_system_name" name="ktp_system_name" value="<?php echo esc_attr( $value ); ?>" class="regular-text" readonly />
+        <input type="text" id="ktpwp_system_name" name="ktpwp_system_name" value="<?php echo esc_attr( $value ); ?>" class="regular-text" readonly />
         <div style="font-size:12px;color:#555;margin-top:4px;">
             <?php echo esc_html__( '※ システム名は固定です（変更できません）。', 'kantanpro' ); ?>
         </div>
@@ -4559,7 +4447,7 @@ JS;
     public function system_description_callback() {
         $value = $this->get_fixed_system_description();
         ?>
-        <textarea id="ktp_system_description" name="ktp_system_description" rows="3" cols="50" class="large-text" readonly><?php echo esc_textarea( $value ); ?></textarea>
+        <textarea id="ktpwp_system_description" name="ktpwp_system_description" rows="3" cols="50" class="large-text" readonly><?php echo esc_textarea( $value ); ?></textarea>
         <div style="font-size:12px;color:#555;margin-top:4px;">
             <?php echo esc_html__( '※ システムの説明は固定です（変更できません）。', 'kantanpro' ); ?>
         </div>
@@ -4632,11 +4520,11 @@ JS;
      *
      * @return void
      */
-    public function ktp_page_id_callback() {
+    public function ktpwp_page_id_callback() {
         $selected   = self::get_configured_ktpwp_business_page_id();
         $candidates = self::get_ktpwp_shortcode_pages();
         ?>
-        <select id="ktp_page_id" name="ktp_general_settings[ktp_page_id]">
+        <select id="ktpwp_page_id" name="ktpwp_general_settings[ktpwp_page_id]">
             <option value="0" <?php selected( $selected, 0 ); ?>>
                 <?php echo esc_html__( '自動検出（ショートコード設置ページのうち ID が最小の公開ページ）', 'kantanpro' ); ?>
             </option>
@@ -4680,10 +4568,10 @@ JS;
      * @return void
      */
     public function work_list_range_callback() {
-        $options = get_option( 'ktp_general_settings' );
+        $options = get_option( 'ktpwp_general_settings' );
         $value = isset( $options['work_list_range'] ) ? $options['work_list_range'] : 20;
         ?>
-        <select id="work_list_range" name="ktp_general_settings[work_list_range]">
+        <select id="work_list_range" name="ktpwp_general_settings[work_list_range]">
             <option value="5" <?php selected( $value, 5 ); ?>><?php echo esc_html( /* translators: %d: 件数 */ sprintf( __( '%d件', 'kantanpro' ), 5 ) ); ?></option>
             <option value="10" <?php selected( $value, 10 ); ?>><?php echo esc_html( /* translators: %d: 件数 */ sprintf( __( '%d件', 'kantanpro' ), 10 ) ); ?></option>
             <option value="20" <?php selected( $value, 20 ); ?>><?php echo esc_html( /* translators: %d: 件数 */ sprintf( __( '%d件', 'kantanpro' ), 20 ) ); ?></option>
@@ -4706,10 +4594,10 @@ JS;
      * @return void
      */
     public function delivery_warning_days_callback() {
-        $options = get_option( 'ktp_general_settings' );
+        $options = get_option( 'ktpwp_general_settings' );
         $value = isset( $options['delivery_warning_days'] ) ? $options['delivery_warning_days'] : 3;
         ?>
-        <select id="delivery_warning_days" name="ktp_general_settings[delivery_warning_days]">
+        <select id="delivery_warning_days" name="ktpwp_general_settings[delivery_warning_days]">
             <option value="1" <?php selected( $value, 1 ); ?>><?php echo esc_html( /* translators: %d: 日数 */ sprintf( __( '%d日', 'kantanpro' ), 1 ) ); ?></option>
             <option value="3" <?php selected( $value, 3 ); ?>><?php echo esc_html( /* translators: %d: 日数 */ sprintf( __( '%d日', 'kantanpro' ), 3 ) ); ?></option>
             <option value="7" <?php selected( $value, 7 ); ?>><?php echo esc_html( /* translators: %d: 日数 */ sprintf( __( '%d日', 'kantanpro' ), 7 ) ); ?></option>
@@ -4729,16 +4617,16 @@ JS;
      * @return void
      */
     public function qualified_invoice_number_callback() {
-        $options = get_option( 'ktp_general_settings' );
+        $options = get_option( 'ktpwp_general_settings' );
         $value = isset( $options['qualified_invoice_number'] ) ? $options['qualified_invoice_number'] : '';
         $mode = class_exists('KTPWP_Tax_Policy') ? KTPWP_Tax_Policy::get_mode() : ( isset($options['tax_mode']) ? $options['tax_mode'] : 'multiple' );
         if ( $mode === 'abolished' ) {
             echo '<div style="color:#666;font-size:12px;">' . esc_html__( '消費税なし（税廃止）設定のため、適格請求書番号は使用しません。', 'kantanpro' ) . '</div>';
-            echo '<input type="hidden" name="ktp_general_settings[qualified_invoice_number]" value="" />';
+            echo '<input type="hidden" name="ktpwp_general_settings[qualified_invoice_number]" value="" />';
             return;
         }
         ?>
-        <input type="text" id="qualified_invoice_number" name="ktp_general_settings[qualified_invoice_number]" value="<?php echo esc_attr( $value ); ?>" class="regular-text" />
+        <input type="text" id="qualified_invoice_number" name="ktpwp_general_settings[qualified_invoice_number]" value="<?php echo esc_attr( $value ); ?>" class="regular-text" />
         <div style="font-size:12px;color:#555;margin-top:4px;">
             <?php echo esc_html__( '※ 適格請求書発行事業者の登録番号を入力してください。（例：T1234567890123）', 'kantanpro' ); ?>
         </div>
@@ -4752,11 +4640,11 @@ JS;
      * @return void
      */
     public function currency_code_callback() {
-        $options = get_option( 'ktp_general_settings', array() );
+        $options = get_option( 'ktpwp_general_settings', array() );
         $value = isset( $options['currency_code'] ) ? strtoupper( (string) $options['currency_code'] ) : 'JPY';
         $currencies = self::get_supported_currencies();
         ?>
-        <select id="currency_code" name="ktp_general_settings[currency_code]">
+        <select id="currency_code" name="ktpwp_general_settings[currency_code]">
             <?php foreach ( $currencies as $code => $currency ) : ?>
                 <option value="<?php echo esc_attr( $code ); ?>" <?php selected( $value, $code ); ?>>
                     <?php echo esc_html( $currency['label'] ); ?>
@@ -4776,14 +4664,14 @@ JS;
      * @return void
      */
     public function company_info_callback() {
-        $options = get_option( 'ktp_general_settings' );
+        $options = get_option( 'ktpwp_general_settings' );
         $value = isset( $options['company_info'] ) ? $options['company_info'] : '';
         // nullや非文字列の場合は空文字列に変換
         $value = is_string( $value ) ? $value : '';
         // WordPress Visual Editor (TinyMCE) を表示
         $editor_id = 'company_info_editor';
         $settings = array(
-            'textarea_name' => 'ktp_general_settings[company_info]',
+            'textarea_name' => 'ktpwp_general_settings[company_info]',
             'media_buttons' => true,
             'tinymce' => array(
                 'height' => 200,
@@ -4811,7 +4699,7 @@ JS;
         global $wpdb;
 
         // 移行済みフラグをチェック
-        if ( get_option( 'ktp_company_info_migrated' ) ) {
+        if ( get_option( 'ktpwp_company_info_migrated' ) ) {
             return; // 既に移行済み
         }
 
@@ -4819,9 +4707,9 @@ JS;
         // 新規インストールにはこの旧テーブル自体が存在しないため、
         // クエリ前に存在確認する（無ければ WordPress database error が
         // 有効化のたびにログへ出てしまう。2026-09-14 クリーンインストールで確認）。
-        $setting_table = $wpdb->prefix . 'ktp_setting';
+        $setting_table = $wpdb->prefix . 'ktpwp_setting';
         if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $setting_table ) ) !== $setting_table ) {
-            update_option( 'ktp_company_info_migrated', true );
+            update_option( 'ktpwp_company_info_migrated', true );
             return;
         }
         $old_setting = $wpdb->get_row(
@@ -4833,17 +4721,17 @@ JS;
 
         if ( $old_setting && ! empty( $old_setting->my_company_content ) ) {
             // 現在の一般設定を取得
-            $general_settings = get_option( 'ktp_general_settings', array() );
+            $general_settings = get_option( 'ktpwp_general_settings', array() );
 
             // 会社情報が未設定の場合のみ移行
             if ( empty( $general_settings['company_info'] ) ) {
                 $general_settings['company_info'] = $old_setting->my_company_content;
-                update_option( 'ktp_general_settings', $general_settings );
+                update_option( 'ktpwp_general_settings', $general_settings );
             }
         }
 
         // 移行完了フラグを設定
-        update_option( 'ktp_company_info_migrated', true );
+        update_option( 'ktpwp_company_info_migrated', true );
     }
 
     /**
@@ -4853,10 +4741,10 @@ JS;
      * @return void
      */
     public function tab_active_color_callback() {
-        $options = get_option( 'ktp_design_settings' );
+        $options = get_option( 'ktpwp_design_settings' );
         $value = isset( $options['tab_active_color'] ) ? $options['tab_active_color'] : '#cdcccc';
         ?>
-        <input type="color" id="tab_active_color" name="ktp_design_settings[tab_active_color]" 
+        <input type="color" id="tab_active_color" name="ktpwp_design_settings[tab_active_color]" 
                value="<?php echo esc_attr( $value ); ?>" 
                style="width:100px;height:40px;">
         <div style="font-size:12px;color:#555;margin-top:4px;">
@@ -4872,10 +4760,10 @@ JS;
      * @return void
      */
     public function tab_inactive_color_callback() {
-        $options = get_option( 'ktp_design_settings' );
+        $options = get_option( 'ktpwp_design_settings' );
         $value = isset( $options['tab_inactive_color'] ) ? $options['tab_inactive_color'] : '#bbbbbb';
         ?>
-        <input type="color" id="tab_inactive_color" name="ktp_design_settings[tab_inactive_color]" 
+        <input type="color" id="tab_inactive_color" name="ktpwp_design_settings[tab_inactive_color]" 
                value="<?php echo esc_attr( $value ); ?>" 
                style="width:100px;height:40px;">
         <div style="font-size:12px;color:#555;margin-top:4px;">
@@ -4891,10 +4779,10 @@ JS;
      * @return void
      */
     public function tab_border_color_callback() {
-        $options = get_option( 'ktp_design_settings' );
+        $options = get_option( 'ktpwp_design_settings' );
         $value = isset( $options['tab_border_color'] ) ? $options['tab_border_color'] : '#cdcccc';
         ?>
-        <input type="color" id="tab_border_color" name="ktp_design_settings[tab_border_color]" 
+        <input type="color" id="tab_border_color" name="ktpwp_design_settings[tab_border_color]" 
                value="<?php echo esc_attr( $value ); ?>" 
                style="width:100px;height:40px;">
         <div style="font-size:12px;color:#555;margin-top:4px;">
@@ -4910,10 +4798,10 @@ JS;
      * @return void
      */
     public function odd_row_color_callback() {
-        $options = get_option( 'ktp_design_settings' );
+        $options = get_option( 'ktpwp_design_settings' );
         $value = isset( $options['odd_row_color'] ) ? $options['odd_row_color'] : '#ffffff';
         ?>
-        <input type="color" id="odd_row_color" name="ktp_design_settings[odd_row_color]" 
+        <input type="color" id="odd_row_color" name="ktpwp_design_settings[odd_row_color]" 
                value="<?php echo esc_attr( $value ); ?>" 
                style="width:100px;height:40px;">
         <div style="font-size:12px;color:#555;margin-top:4px;">
@@ -4929,10 +4817,10 @@ JS;
      * @return void
      */
     public function even_row_color_callback() {
-        $options = get_option( 'ktp_design_settings' );
+        $options = get_option( 'ktpwp_design_settings' );
         $value = isset( $options['even_row_color'] ) ? $options['even_row_color'] : '#f9f9f9';
         ?>
-        <input type="color" id="even_row_color" name="ktp_design_settings[even_row_color]" 
+        <input type="color" id="even_row_color" name="ktpwp_design_settings[even_row_color]" 
                value="<?php echo esc_attr( $value ); ?>" 
                style="width:100px;height:40px;">
         <div style="font-size:12px;color:#555;margin-top:4px;">
@@ -4949,10 +4837,10 @@ JS;
      * @return void
      */
     public function public_product_card_bg_color_callback() {
-        $options = get_option( 'ktp_design_settings' );
+        $options = get_option( 'ktpwp_design_settings' );
         $value   = isset( $options['public_product_card_bg_color'] ) ? $options['public_product_card_bg_color'] : '#e2e8f0';
         ?>
-        <input type="color" id="public_product_card_bg_color" name="ktp_design_settings[public_product_card_bg_color]"
+        <input type="color" id="public_product_card_bg_color" name="ktpwp_design_settings[public_product_card_bg_color]"
                value="<?php echo esc_attr( $value ); ?>"
                style="width:100px;height:40px;">
         <div style="font-size:12px;color:#555;margin-top:4px;">
@@ -4969,7 +4857,7 @@ JS;
      * @return void
      */
     public function header_bg_image_callback() {
-        $options = get_option( 'ktp_design_settings' );
+        $options = get_option( 'ktpwp_design_settings' );
         $image_value = isset( $options['header_bg_image'] ) ? $options['header_bg_image'] : 'images/default/header_bg_image.png';
         $image_url = '';
 
@@ -4989,7 +4877,7 @@ JS;
             }
         } ?>
         <div class="ktp-image-upload-field">
-            <input type="hidden" id="header_bg_image" name="ktp_design_settings[header_bg_image]" value="<?php echo esc_attr( $image_value ); ?>" data-default-url="<?php echo esc_url( plugin_dir_url( __DIR__ ) . 'images/default/header_bg_image.png' ); ?>" />
+            <input type="hidden" id="header_bg_image" name="ktpwp_design_settings[header_bg_image]" value="<?php echo esc_attr( $image_value ); ?>" data-default-url="<?php echo esc_url( plugin_dir_url( __DIR__ ) . 'images/default/header_bg_image.png' ); ?>" />
             
             <div class="ktp-image-preview" style="margin-bottom: 10px;">
                 <img id="header_bg_image_preview" src="<?php echo esc_url( $image_url ); ?>" style="max-width: 300px; max-height: 200px; border: 1px solid #ddd; border-radius: 4px;" />
@@ -5058,8 +4946,8 @@ JS;
                             </td>
                             <td>
                                 <select
-                                    id="ktp_page_content_width_<?php echo esc_attr( (string) $page_id ); ?>"
-                                    name="ktp_design_settings[page_content_widths][<?php echo esc_attr( (string) $page_id ); ?>]"
+                                    id="ktpwp_page_content_width_<?php echo esc_attr( (string) $page_id ); ?>"
+                                    name="ktpwp_design_settings[page_content_widths][<?php echo esc_attr( (string) $page_id ); ?>]"
                                     class="ktp-page-content-width-select"
                                     data-page-id="<?php echo esc_attr( (string) $page_id ); ?>"
                                 >
@@ -5073,7 +4961,7 @@ JS;
                                     type="number"
                                     class="ktp-page-content-width-custom"
                                     data-page-id="<?php echo esc_attr( (string) $page_id ); ?>"
-                                    name="ktp_design_settings[page_content_width_custom][<?php echo esc_attr( (string) $page_id ); ?>]"
+                                    name="ktpwp_design_settings[page_content_width_custom][<?php echo esc_attr( (string) $page_id ); ?>]"
                                     value="<?php echo esc_attr( $custom_value ); ?>"
                                     min="320"
                                     max="3840"
@@ -5089,7 +4977,7 @@ JS;
             </table>
             <?php
             // 生の <script> を出さずキューに載せる（wp.org ガイドライン）。
-            wp_add_inline_script( $this->admin_inline_script_handle(), $this->get_page_content_widths_js() );
+            wp_enqueue_script( 'ktpwp-page-content-widths', KANTANPRO_PLUGIN_URL . 'js/ktp-page-content-widths.js', array(), KANTANPRO_PLUGIN_VERSION, true );
             ?>
         <?php endif; ?>
         <?php
@@ -5103,7 +4991,7 @@ JS;
      * @return void
      */
     public function output_custom_styles() {
-        $design_options = get_option( 'ktp_design_settings', array() );
+        $design_options = get_option( 'ktpwp_design_settings', array() );
 
         // デザイン設定が存在しない場合は何もしない
         if ( empty( $design_options ) ) {
@@ -5112,9 +5000,9 @@ JS;
 
         $custom_css = '';
 
-        // div.ktp_headerの基本スタイル
+        // div.ktpwp_headerの基本スタイル
         $custom_css .= '
-div.ktp_header {
+div.ktpwp_header {
     border: none !important;
     margin-bottom: 10px;
     position: relative;
@@ -5122,7 +5010,7 @@ div.ktp_header {
 
         // タブを手前に表示するためのz-index設定
         $custom_css .= '
-.tabs.ktp_plugin_container {
+.tabs.ktpwp_plugin_container {
     z-index: 200;
     position: relative;
 }';
@@ -5148,7 +5036,7 @@ div.ktp_header {
 
         if ( $image_url ) {
                 $custom_css .= '
-div.ktp_header {
+div.ktpwp_header {
     background-image: url(' . esc_url( $image_url ) . ');
     background-size: cover;
     background-position: center center;
@@ -5162,7 +5050,7 @@ div.ktp_header {
     overflow: hidden;
 }
 
-div.ktp_header::before {
+div.ktpwp_header::before {
     content: "";
     position: absolute;
     top: 0;
@@ -5173,7 +5061,7 @@ div.ktp_header::before {
     z-index: 1;
 }
 
-div.ktp_header > * {
+div.ktpwp_header > * {
     position: relative;
     z-index: 2;
 }';
@@ -5184,8 +5072,8 @@ div.ktp_header > * {
             $tab_active_color = sanitize_hex_color( $design_options['tab_active_color'] );
             if ( $tab_active_color ) {
                 $custom_css .= '
-.tabs.ktp_plugin_container input:checked + .tab_item,
-.tabs.ktp_plugin_container .tab_item.active {
+.tabs.ktpwp_plugin_container input:checked + .tab_item,
+.tabs.ktpwp_plugin_container .tab_item.active {
     background-color: ' . esc_attr( $tab_active_color ) . ' !important;
 }';
             }
@@ -5196,7 +5084,7 @@ div.ktp_header > * {
             $tab_inactive_color = sanitize_hex_color( $design_options['tab_inactive_color'] );
             if ( $tab_inactive_color ) {
                 $custom_css .= '
-.tabs.ktp_plugin_container .tab_item {
+.tabs.ktpwp_plugin_container .tab_item {
     background-color: ' . esc_attr( $tab_inactive_color ) . ' !important;
 }';
             }
@@ -5207,7 +5095,7 @@ div.ktp_header > * {
             $tab_border_color = sanitize_hex_color( $design_options['tab_border_color'] );
             if ( $tab_border_color ) {
                 $custom_css .= '
-.tabs.ktp_plugin_container .tab_item {
+.tabs.ktpwp_plugin_container .tab_item {
     border-bottom-color: ' . esc_attr( $tab_border_color ) . ' !important;
 }';
 
@@ -5229,21 +5117,21 @@ div.ktp_header > * {
             if ( $odd_row_color ) {
                 $custom_css .= '
 /* KTPWPプラグイン用奇数行色設定 - 固有プレフィックス付きでテーマとの競合を防止 */
-.ktp_data_list_box .ktp_list_item:nth-child(odd),
-.ktp_data_list_box > a:nth-of-type(odd) .ktp_data_list_item,
-.ktp_data_list_box > .ktp_data_list_item:nth-of-type(odd),
-.ktp_data_skill_list_box > .ktp_data_list_item:nth-child(odd),
-.ktp_work_list_box .ktp_work_list_item:nth-child(odd),
-.ktp_work_list_box ul li:nth-child(odd),
-.ktp_work_list_item:nth-child(odd),
-.ktp_list_item:nth-child(odd),
-.ktp_plugin_container ul li:nth-child(odd),
-.ktp_data_contents .ktp_data_list_box > a:nth-of-type(odd) .ktp_data_list_item,
-.ktp_data_list_box .ktp-service-related-list__rows > a:nth-of-type(odd) .ktp_data_list_item,
-.ktp_search_list_box ul li:nth-child(odd),
-.ktp_search_list_box > a:nth-of-type(odd) .ktp_data_list_item,
-.ktp_plugin_container tr:nth-child(odd),
-.ktp_plugin_container tbody tr:nth-child(odd) {
+.ktpwp_data_list_box .ktpwp_list_item:nth-child(odd),
+.ktpwp_data_list_box > a:nth-of-type(odd) .ktpwp_data_list_item,
+.ktpwp_data_list_box > .ktpwp_data_list_item:nth-of-type(odd),
+.ktpwp_data_skill_list_box > .ktpwp_data_list_item:nth-child(odd),
+.ktpwp_work_list_box .ktpwp_work_list_item:nth-child(odd),
+.ktpwp_work_list_box ul li:nth-child(odd),
+.ktpwp_work_list_item:nth-child(odd),
+.ktpwp_list_item:nth-child(odd),
+.ktpwp_plugin_container ul li:nth-child(odd),
+.ktpwp_data_contents .ktpwp_data_list_box > a:nth-of-type(odd) .ktpwp_data_list_item,
+.ktpwp_data_list_box .ktp-service-related-list__rows > a:nth-of-type(odd) .ktpwp_data_list_item,
+.ktpwp_search_list_box ul li:nth-child(odd),
+.ktpwp_search_list_box > a:nth-of-type(odd) .ktpwp_data_list_item,
+.ktpwp_plugin_container tr:nth-child(odd),
+.ktpwp_plugin_container tbody tr:nth-child(odd) {
     background-color: ' . esc_attr( $odd_row_color ) . ' !important;
 }';
             }
@@ -5255,21 +5143,21 @@ div.ktp_header > * {
             if ( $even_row_color ) {
                 $custom_css .= '
 /* KTPWPプラグイン用偶数行色設定 - 固有プレフィックス付きでテーマとの競合を防止 */
-.ktp_data_list_box .ktp_list_item:nth-child(even),
-.ktp_data_list_box > a:nth-of-type(even) .ktp_data_list_item,
-.ktp_data_list_box > .ktp_data_list_item:nth-of-type(even),
-.ktp_data_skill_list_box > .ktp_data_list_item:nth-child(even),
-.ktp_work_list_box .ktp_work_list_item:nth-child(even),
-.ktp_work_list_box ul li:nth-child(even),
-.ktp_work_list_item:nth-child(even),
-.ktp_list_item:nth-child(even),
-.ktp_plugin_container ul li:nth-child(even),
-.ktp_data_contents .ktp_data_list_box > a:nth-of-type(even) .ktp_data_list_item,
-.ktp_data_list_box .ktp-service-related-list__rows > a:nth-of-type(even) .ktp_data_list_item,
-.ktp_search_list_box ul li:nth-child(even),
-.ktp_search_list_box > a:nth-of-type(even) .ktp_data_list_item,
-.ktp_plugin_container tr:nth-child(even),
-.ktp_plugin_container tbody tr:nth-child(even) {
+.ktpwp_data_list_box .ktpwp_list_item:nth-child(even),
+.ktpwp_data_list_box > a:nth-of-type(even) .ktpwp_data_list_item,
+.ktpwp_data_list_box > .ktpwp_data_list_item:nth-of-type(even),
+.ktpwp_data_skill_list_box > .ktpwp_data_list_item:nth-child(even),
+.ktpwp_work_list_box .ktpwp_work_list_item:nth-child(even),
+.ktpwp_work_list_box ul li:nth-child(even),
+.ktpwp_work_list_item:nth-child(even),
+.ktpwp_list_item:nth-child(even),
+.ktpwp_plugin_container ul li:nth-child(even),
+.ktpwp_data_contents .ktpwp_data_list_box > a:nth-of-type(even) .ktpwp_data_list_item,
+.ktpwp_data_list_box .ktp-service-related-list__rows > a:nth-of-type(even) .ktpwp_data_list_item,
+.ktpwp_search_list_box ul li:nth-child(even),
+.ktpwp_search_list_box > a:nth-of-type(even) .ktpwp_data_list_item,
+.ktpwp_plugin_container tr:nth-child(even),
+.ktpwp_plugin_container tbody tr:nth-child(even) {
     background-color: ' . esc_attr( $even_row_color ) . ' !important;
 }';
             }
@@ -5301,9 +5189,9 @@ div.ktp_header > * {
         if ( empty( $custom_css ) ) {
             return;
         }
-        $handle = wp_style_is( 'ktp-css', 'registered' ) ? 'ktp-css' : 'ktp-admin-settings';
+        $handle = wp_style_is( 'ktpwp-css', 'registered' ) ? 'ktpwp-css' : 'ktpwp-admin-settings';
         if ( wp_style_is( $handle, 'registered' ) ) {
-            wp_add_inline_style( $handle, $custom_css );
+            wp_add_inline_style( $handle, wp_strip_all_tags( $custom_css ) );
         }
     }
 
@@ -5352,9 +5240,9 @@ div.ktp_header > * {
         }
 
         // 生の <style> を出さず WordPress のスタイルキューに載せる（wp.org ガイドライン）
-        $handle = wp_style_is( 'ktp-css', 'registered' ) ? 'ktp-css' : 'ktp-admin-settings';
+        $handle = wp_style_is( 'ktpwp-css', 'registered' ) ? 'ktpwp-css' : 'ktpwp-admin-settings';
         if ( wp_style_is( $handle, 'registered' ) ) {
-            wp_add_inline_style( $handle, $custom_css );
+            wp_add_inline_style( $handle, wp_strip_all_tags( $custom_css ) );
         }
     }
 
@@ -5371,13 +5259,13 @@ div.ktp_header > * {
         }
 
         // デザイン設定ページでのみ実行
-        if ( ! isset( $_GET['page'] ) || $_GET['page'] !== 'ktp-design-settings' ) {
+        if ( ! KTPWP_Request::has_query( 'page' ) || KTPWP_Request::query_unslashed( 'page' ) !== 'ktp-design-settings' ) {
             return;
         }
 
         // 設定をデフォルト値にリセット
         if ( isset( $_POST['action'] ) && $_POST['action'] === 'reset_to_default' ) {
-            if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['ktp_reset_to_default_nonce'] ) ), 'ktp_reset_to_default' ) ) {
+            if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['ktpwp_reset_to_default_nonce'] ) ), 'ktpwp_reset_to_default' ) ) {
                 wp_die( esc_html__( 'セキュリティチェックに失敗しました。', 'kantanpro' ) );
             }
 
@@ -5392,9 +5280,9 @@ div.ktp_header > * {
                 'header_bg_image' => 'images/default/header_bg_image.png',
                 'page_content_widths' => self::build_default_page_content_widths(),
                 );
-            update_option( 'ktp_design_settings', $system_defaults );
+            update_option( 'ktpwp_design_settings', $system_defaults );
             add_settings_error(
-                'ktp_design_settings',
+                'ktpwp_design_settings',
                 'reset_to_default',
                 __( 'デザイン設定をデフォルト値にリセットしました。', 'kantanpro' ),
                 'updated'
@@ -5433,7 +5321,7 @@ div.ktp_header > * {
      */
     public static function admin_page() {
         // 設定の保存処理
-        if ( isset( $_POST['submit'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['ktpwp_settings_nonce'] ) ), 'ktpwp_settings' ) ) {
+        if ( isset( $_POST['submit'], $_POST['ktpwp_settings_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['ktpwp_settings_nonce'] ) ), 'ktpwp_settings' ) ) {
             self::save_settings();
         }
 
@@ -5638,6 +5526,13 @@ define( 'WP_DEBUG_DISPLAY', false );</code></pre>
      * @since 1.3.0
      */
     private static function save_settings() {
+        // 呼び出し元でも確認しているが、POST を読む関数の中でも nonce と権限を確認する
+        if ( ! isset( $_POST['ktpwp_settings_nonce'] )
+            || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['ktpwp_settings_nonce'] ) ), 'ktpwp_settings' )
+            || ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
+
         // デバッグログ設定
         $debug_log_enabled = isset( $_POST['ktpwp_debug_log_enabled'] ) ? '1' : '0';
         update_option( 'ktpwp_debug_log_enabled', $debug_log_enabled );
@@ -5666,8 +5561,9 @@ define( 'WP_DEBUG_DISPLAY', false );</code></pre>
         update_option( 'ktpwp_admin_basic_auth_enabled', $admin_basic_auth_enabled );
         update_option( 'ktpwp_admin_basic_auth_user', $admin_basic_auth_user );
 
+        // 照合側（KTPWP_Security::get_basic_auth_request_password）と同じ sanitize_text_field() を通してからハッシュ化する
         $admin_basic_auth_pass_raw = isset( $_POST['ktpwp_admin_basic_auth_pass'] )
-            ? (string) wp_unslash( $_POST['ktpwp_admin_basic_auth_pass'] )
+            ? sanitize_text_field( wp_unslash( $_POST['ktpwp_admin_basic_auth_pass'] ) )
             : '';
         if ( $admin_basic_auth_pass_raw !== '' ) {
             update_option( 'ktpwp_admin_basic_auth_pass', wp_hash_password( $admin_basic_auth_pass_raw ) );
@@ -5977,12 +5873,12 @@ define( 'WP_DEBUG_DISPLAY', false );</code></pre>
      * 銀行名・支店名
      */
     public function bank_transfer_bank_branch_callback() {
-        $options = get_option( 'ktp_general_settings', array() );
+        $options = get_option( 'ktpwp_general_settings', array() );
         $value   = isset( $options['bank_transfer_bank_branch'] ) ? $options['bank_transfer_bank_branch'] : '';
         ?>
         <input type="text"
                id="bank_transfer_bank_branch"
-               name="ktp_general_settings[bank_transfer_bank_branch]"
+               name="ktpwp_general_settings[bank_transfer_bank_branch]"
                value="<?php echo esc_attr( $value ); ?>"
                class="regular-text"
                placeholder="<?php echo esc_attr__( '例：〇〇銀行 △△支店', 'kantanpro' ); ?>" />
@@ -5993,15 +5889,15 @@ define( 'WP_DEBUG_DISPLAY', false );</code></pre>
      * 口座種別（普通 / 当座）
      */
     public function bank_transfer_account_type_callback() {
-        $options = get_option( 'ktp_general_settings', array() );
+        $options = get_option( 'ktpwp_general_settings', array() );
         $saved   = isset( $options['bank_transfer_account_type'] ) ? $options['bank_transfer_account_type'] : 'ordinary';
         ?>
         <label style="margin-right:16px;">
-            <input type="radio" name="ktp_general_settings[bank_transfer_account_type]" value="ordinary" <?php checked( $saved, 'ordinary' ); ?> />
+            <input type="radio" name="ktpwp_general_settings[bank_transfer_account_type]" value="ordinary" <?php checked( $saved, 'ordinary' ); ?> />
             <?php echo esc_html__( '普通', 'kantanpro' ); ?>
         </label>
         <label>
-            <input type="radio" name="ktp_general_settings[bank_transfer_account_type]" value="current" <?php checked( $saved, 'current' ); ?> />
+            <input type="radio" name="ktpwp_general_settings[bank_transfer_account_type]" value="current" <?php checked( $saved, 'current' ); ?> />
             <?php echo esc_html__( '当座', 'kantanpro' ); ?>
         </label>
         <?php
@@ -6011,12 +5907,12 @@ define( 'WP_DEBUG_DISPLAY', false );</code></pre>
      * 口座番号
      */
     public function bank_transfer_account_number_callback() {
-        $options = get_option( 'ktp_general_settings', array() );
+        $options = get_option( 'ktpwp_general_settings', array() );
         $value   = isset( $options['bank_transfer_account_number'] ) ? $options['bank_transfer_account_number'] : '';
         ?>
         <input type="text"
                id="bank_transfer_account_number"
-               name="ktp_general_settings[bank_transfer_account_number]"
+               name="ktpwp_general_settings[bank_transfer_account_number]"
                value="<?php echo esc_attr( $value ); ?>"
                class="regular-text"
                inputmode="numeric"
@@ -6029,12 +5925,12 @@ define( 'WP_DEBUG_DISPLAY', false );</code></pre>
      * 口座名義（カタカナ）
      */
     public function bank_transfer_account_holder_kana_callback() {
-        $options = get_option( 'ktp_general_settings', array() );
+        $options = get_option( 'ktpwp_general_settings', array() );
         $value   = isset( $options['bank_transfer_account_holder_kana'] ) ? $options['bank_transfer_account_holder_kana'] : '';
         ?>
         <input type="text"
                id="bank_transfer_account_holder_kana"
-               name="ktp_general_settings[bank_transfer_account_holder_kana]"
+               name="ktpwp_general_settings[bank_transfer_account_holder_kana]"
                value="<?php echo esc_attr( $value ); ?>"
                class="regular-text"
                placeholder="<?php echo esc_attr__( '例：カブシキガイシャ ヤマダ', 'kantanpro' ); ?>" />
@@ -6046,19 +5942,19 @@ define( 'WP_DEBUG_DISPLAY', false );</code></pre>
      * 基本税率フィールドのコールバック
      */
     public function default_tax_rate_callback() {
-        $options = get_option( 'ktp_general_settings' );
+        $options = get_option( 'ktpwp_general_settings' );
         $value = isset( $options['default_tax_rate'] ) ? $options['default_tax_rate'] : 10.00;
         $mode = class_exists('KTPWP_Tax_Policy') ? KTPWP_Tax_Policy::get_mode() : ( isset($options['tax_mode']) ? $options['tax_mode'] : 'multiple' );
         $disabled = ( $mode === 'abolished' ) ? 'disabled' : '';
         ?>
         <input type="number" 
                id="default_tax_rate" 
-               name="ktp_general_settings[default_tax_rate]" 
+               name="ktpwp_general_settings[default_tax_rate]" 
                value="<?php echo esc_attr( $value ); ?>" 
                step="1" 
                min="0" 
                max="100" 
-               style="width: 100px;" <?php echo $disabled; ?> />
+               style="width: 100px;" <?php echo esc_attr( $disabled ); ?> />
         <span>%</span>
         <p class="description">
             <?php esc_html_e( '基本税率を設定してください（消費税なしの場合は自動的に無効）。例：10', 'kantanpro' ); ?>
@@ -6070,19 +5966,19 @@ define( 'WP_DEBUG_DISPLAY', false );</code></pre>
      * 軽減税率フィールドのコールバック
      */
     public function reduced_tax_rate_callback() {
-        $options = get_option( 'ktp_general_settings' );
+        $options = get_option( 'ktpwp_general_settings' );
         $value = isset( $options['reduced_tax_rate'] ) ? $options['reduced_tax_rate'] : 8.00;
         $mode = class_exists('KTPWP_Tax_Policy') ? KTPWP_Tax_Policy::get_mode() : ( isset($options['tax_mode']) ? $options['tax_mode'] : 'multiple' );
         $disabled = ( $mode === 'abolished' ) ? 'disabled' : '';
         ?>
         <input type="number" 
                id="reduced_tax_rate" 
-               name="ktp_general_settings[reduced_tax_rate]" 
+               name="ktpwp_general_settings[reduced_tax_rate]" 
                value="<?php echo esc_attr( $value ); ?>" 
                step="1" 
                min="0" 
                max="100" 
-               style="width: 100px;" <?php echo $disabled; ?> />
+               style="width: 100px;" <?php echo esc_attr( $disabled ); ?> />
         <span>%</span>
         <p class="description">
             <?php esc_html_e( '軽減税率を設定してください（消費税なしの場合は自動的に無効）。例：8', 'kantanpro' ); ?>
@@ -6101,13 +5997,13 @@ define( 'WP_DEBUG_DISPLAY', false );</code></pre>
      * 更新通知の有効化コールバック
      */
     public function enable_notifications_callback() {
-        $options = get_option( 'ktp_update_notification_settings', array() );
+        $options = get_option( 'ktpwp_update_notification_settings', array() );
         $value = isset( $options['enable_notifications'] ) ? $options['enable_notifications'] : true;
         ?>
         <label>
             <input type="checkbox" 
                    id="enable_notifications" 
-                   name="ktp_update_notification_settings[enable_notifications]" 
+                   name="ktpwp_update_notification_settings[enable_notifications]" 
                    value="1" 
                    <?php checked( $value, true ); ?> />
             <?php esc_html_e( '更新通知を有効にする', 'kantanpro' ); ?>
@@ -6120,13 +6016,13 @@ define( 'WP_DEBUG_DISPLAY', false );</code></pre>
      * 管理画面通知の有効化コールバック
      */
     public function enable_admin_notifications_callback() {
-        $options = get_option( 'ktp_update_notification_settings', array() );
+        $options = get_option( 'ktpwp_update_notification_settings', array() );
         $value = isset( $options['enable_admin_notifications'] ) ? $options['enable_admin_notifications'] : true;
         ?>
         <label>
             <input type="checkbox" 
                    id="enable_admin_notifications" 
-                   name="ktp_update_notification_settings[enable_admin_notifications]" 
+                   name="ktpwp_update_notification_settings[enable_admin_notifications]" 
                    value="1" 
                    <?php checked( $value, true ); ?> />
             <?php esc_html_e( '管理画面での更新通知を有効にする', 'kantanpro' ); ?>
@@ -6139,13 +6035,13 @@ define( 'WP_DEBUG_DISPLAY', false );</code></pre>
      * フロントエンド通知の有効化コールバック
      */
     public function enable_frontend_notifications_callback() {
-        $options = get_option( 'ktp_update_notification_settings', array() );
+        $options = get_option( 'ktpwp_update_notification_settings', array() );
         $value = isset( $options['enable_frontend_notifications'] ) ? $options['enable_frontend_notifications'] : true;
         ?>
         <label>
             <input type="checkbox" 
                    id="enable_frontend_notifications" 
-                   name="ktp_update_notification_settings[enable_frontend_notifications]" 
+                   name="ktpwp_update_notification_settings[enable_frontend_notifications]" 
                    value="1" 
                    <?php checked( $value, true ); ?> />
             <?php esc_html_e( 'フロントエンドでの更新通知を有効にする', 'kantanpro' ); ?>
@@ -6158,12 +6054,12 @@ define( 'WP_DEBUG_DISPLAY', false );</code></pre>
      * チェック間隔コールバック
      */
     public function check_interval_callback() {
-        $options = get_option( 'ktp_update_notification_settings', array() );
+        $options = get_option( 'ktpwp_update_notification_settings', array() );
         $value = isset( $options['check_interval'] ) ? $options['check_interval'] : 24;
         ?>
         <input type="number" 
                id="check_interval" 
-               name="ktp_update_notification_settings[check_interval]" 
+               name="ktpwp_update_notification_settings[check_interval]" 
                value="<?php echo esc_attr( $value ); ?>" 
                min="1" 
                max="168" 
@@ -6176,7 +6072,7 @@ define( 'WP_DEBUG_DISPLAY', false );</code></pre>
      * 通知対象ユーザー権限コールバック
      */
     public function notification_roles_callback() {
-        $options = get_option( 'ktp_update_notification_settings', array() );
+        $options = get_option( 'ktpwp_update_notification_settings', array() );
         $selected_roles = isset( $options['notification_roles'] ) ? $options['notification_roles'] : array( 'administrator' );
         
         $available_roles = array(
@@ -6191,7 +6087,7 @@ define( 'WP_DEBUG_DISPLAY', false );</code></pre>
             ?>
             <label style="display: block; margin-bottom: 5px;">
                 <input type="checkbox" 
-                       name="ktp_update_notification_settings[notification_roles][]" 
+                       name="ktpwp_update_notification_settings[notification_roles][]" 
                        value="<?php echo esc_attr( $role ); ?>" 
                        <?php checked( in_array( $role, $selected_roles ), true ); ?> />
                 <?php echo esc_html( $label ); ?>
@@ -6206,12 +6102,12 @@ define( 'WP_DEBUG_DISPLAY', false );</code></pre>
      * GitHubトークンコールバック
      */
     public function github_token_callback() {
-        $options = get_option( 'ktp_update_notification_settings', array() );
+        $options = get_option( 'ktpwp_update_notification_settings', array() );
         $value = isset( $options['github_token'] ) ? $options['github_token'] : '';
         ?>
         <input type="password" 
                id="github_token" 
-               name="ktp_update_notification_settings[github_token]" 
+               name="ktpwp_update_notification_settings[github_token]" 
                value="<?php echo esc_attr( $value ); ?>" 
                style="width: 400px;" />
         <p class="description">
@@ -6242,13 +6138,13 @@ define( 'WP_DEBUG_DISPLAY', false );</code></pre>
      * プラグイン削除時の動作モード選択コールバック
      */
     public function uninstall_mode_callback() {
-        $options = get_option( 'ktp_uninstall_settings', array() );
+        $options = get_option( 'ktpwp_uninstall_settings', array() );
         $current = isset( $options['uninstall_mode'] ) ? $options['uninstall_mode'] : 'keep_data';
         ?>
         <fieldset>
             <label style="display:block;margin-bottom:10px;line-height:1.6;">
                 <input type="radio"
-                       name="ktp_uninstall_settings[uninstall_mode]"
+                       name="ktpwp_uninstall_settings[uninstall_mode]"
                        value="keep_data"
                        <?php checked( $current, 'keep_data' ); ?> />
                 <strong><?php esc_html_e( 'データを残す（推奨）', 'kantanpro' ); ?></strong><br />
@@ -6258,7 +6154,7 @@ define( 'WP_DEBUG_DISPLAY', false );</code></pre>
             </label>
             <label style="display:block;line-height:1.6;">
                 <input type="radio"
-                       name="ktp_uninstall_settings[uninstall_mode]"
+                       name="ktpwp_uninstall_settings[uninstall_mode]"
                        value="full_delete"
                        <?php checked( $current, 'full_delete' ); ?> />
                 <strong style="color:#d63638;"><?php esc_html_e( '完全削除（すべてのデータを消す）', 'kantanpro' ); ?></strong><br />
@@ -6377,7 +6273,7 @@ define( 'WP_DEBUG_DISPLAY', false );</code></pre>
             'alt_text'   => '',
         );
 
-        $settings = get_option( 'ktp_central_banner_settings', array() );
+        $settings = get_option( 'ktpwp_central_banner_settings', array() );
         if ( ! is_array( $settings ) ) {
             $settings = array();
         }
@@ -6415,7 +6311,7 @@ define( 'WP_DEBUG_DISPLAY', false );</code></pre>
         $settings = $this->get_central_banner_settings();
         ?>
         <label>
-            <input type="checkbox" name="ktp_central_banner_settings[enabled]" value="1" <?php checked( 1, (int) $settings['enabled'] ); ?> />
+            <input type="checkbox" name="ktpwp_central_banner_settings[enabled]" value="1" <?php checked( 1, (int) $settings['enabled'] ); ?> />
             <?php esc_html_e( '中央バナー配信を有効にする', 'kantanpro' ); ?>
         </label>
         <?php
@@ -6429,7 +6325,7 @@ define( 'WP_DEBUG_DISPLAY', false );</code></pre>
     public function central_banner_source_url_callback() {
         $settings = $this->get_central_banner_settings();
         ?>
-        <input type="url" class="regular-text" name="ktp_central_banner_settings[source_url]" value="<?php echo esc_attr( $settings['source_url'] ); ?>" placeholder="https://example.com/banner.json" />
+        <input type="url" class="regular-text" name="ktpwp_central_banner_settings[source_url]" value="<?php echo esc_attr( $settings['source_url'] ); ?>" placeholder="https://example.com/banner.json" />
         <p class="description">
             <?php esc_html_e( '設定すると、このURLのJSONを優先してバナー表示に使用します。JSON例: {"enabled":true,"image_url":"https://...","link_url":"https://...","alt_text":"..."}', 'kantanpro' ); ?>
         </p>
@@ -6444,7 +6340,7 @@ define( 'WP_DEBUG_DISPLAY', false );</code></pre>
     public function central_banner_image_url_callback() {
         $settings = $this->get_central_banner_settings();
         ?>
-        <input type="url" class="regular-text" name="ktp_central_banner_settings[image_url]" value="<?php echo esc_attr( $settings['image_url'] ); ?>" placeholder="https://example.com/banner.png" />
+        <input type="url" class="regular-text" name="ktpwp_central_banner_settings[image_url]" value="<?php echo esc_attr( $settings['image_url'] ); ?>" placeholder="https://example.com/banner.png" />
         <p class="description"><?php esc_html_e( 'KTP Banner プラグインで画像を設定している場合はそちらが優先されます。未使用のときは REST 配信にこの URL が使われます。', 'kantanpro' ); ?></p>
         <?php
     }
@@ -6457,7 +6353,7 @@ define( 'WP_DEBUG_DISPLAY', false );</code></pre>
     public function central_banner_link_url_callback() {
         $settings = $this->get_central_banner_settings();
         ?>
-        <input type="url" class="regular-text" name="ktp_central_banner_settings[link_url]" value="<?php echo esc_attr( $settings['link_url'] ); ?>" placeholder="https://example.com/" />
+        <input type="url" class="regular-text" name="ktpwp_central_banner_settings[link_url]" value="<?php echo esc_attr( $settings['link_url'] ); ?>" placeholder="https://example.com/" />
         <?php
     }
 
@@ -6469,7 +6365,7 @@ define( 'WP_DEBUG_DISPLAY', false );</code></pre>
     public function central_banner_alt_text_callback() {
         $settings = $this->get_central_banner_settings();
         ?>
-        <input type="text" class="regular-text" name="ktp_central_banner_settings[alt_text]" value="<?php echo esc_attr( $settings['alt_text'] ); ?>" />
+        <input type="text" class="regular-text" name="ktpwp_central_banner_settings[alt_text]" value="<?php echo esc_attr( $settings['alt_text'] ); ?>" />
         <?php
     }
 
@@ -6497,7 +6393,7 @@ define( 'WP_DEBUG_DISPLAY', false );</code></pre>
      */
     public function get_central_banner_rest_response() {
         $settings = $this->get_central_banner_settings();
-        $legacy_banner = get_option( 'ktp_banner_options', array() );
+        $legacy_banner = get_option( 'ktpwp_banner_options', array() );
 
         $image_url = '';
         $link_url  = '';

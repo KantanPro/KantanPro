@@ -6,8 +6,8 @@
 	}
 
 	function getOrderDeleteConfirmMessage() {
-		if (typeof window.ktpOrderDeleteConfirm !== 'undefined' && window.ktpOrderDeleteConfirm.message) {
-			return window.ktpOrderDeleteConfirm.message;
+		if (typeof window.ktpwpOrderDeleteConfirm !== 'undefined' && window.ktpwpOrderDeleteConfirm.message) {
+			return window.ktpwpOrderDeleteConfirm.message;
 		}
 		return '本当にこの受注書を削除しますか？\n\n請求明細・原価明細・スタッフチャット・添付ファイル・メール送信履歴も削除されます。\nこの操作は元に戻せません。';
 	}

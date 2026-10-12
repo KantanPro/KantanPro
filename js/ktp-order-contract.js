@@ -9,7 +9,7 @@
     }
 
     function getConfig() {
-        return typeof ktpOrderContract !== 'undefined' ? ktpOrderContract : null;
+        return typeof ktpwpOrderContract !== 'undefined' ? ktpwpOrderContract : null;
     }
 
     function iconHtml(name) {
@@ -289,7 +289,7 @@
         showMessage(t('読み込み中…', '読み込み中…'), false);
 
         var body = new FormData();
-        body.append('action', 'ktp_get_order_contract_draft');
+        body.append('action', 'ktpwp_get_order_contract_draft');
         body.append('nonce', config.nonce);
         body.append('order_id', String(orderId));
 
@@ -345,7 +345,7 @@
         showMessage(t('登録中…', '登録中…'), false);
 
         var body = new FormData();
-        body.append('action', 'ktp_convert_order_to_contract');
+        body.append('action', 'ktpwp_convert_order_to_contract');
         body.append('nonce', config.nonce);
         body.append('order_id', orderId.value);
         body.append('client_id', clientId.value);

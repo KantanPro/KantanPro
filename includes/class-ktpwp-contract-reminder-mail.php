@@ -74,7 +74,7 @@ if ( ! class_exists( 'KTPWP_Contract_Reminder_Mail' ) ) {
 		 * @return bool
 		 */
 		public static function is_auto_send_enabled() {
-			$options = get_option( 'ktp_general_settings', array() );
+			$options = get_option( 'ktpwp_general_settings', array() );
 
 			return ! isset( $options['contract_reminder_enabled'] ) || ! empty( $options['contract_reminder_enabled'] );
 		}
@@ -85,7 +85,7 @@ if ( ! class_exists( 'KTPWP_Contract_Reminder_Mail' ) ) {
 		 * @return int
 		 */
 		public static function get_days_before() {
-			$options = get_option( 'ktp_general_settings', array() );
+			$options = get_option( 'ktpwp_general_settings', array() );
 			$days    = isset( $options['contract_reminder_days_before'] ) ? absint( $options['contract_reminder_days_before'] ) : 3;
 
 			return max( 1, min( 30, $days ) );
@@ -123,7 +123,7 @@ if ( ! class_exists( 'KTPWP_Contract_Reminder_Mail' ) ) {
 		 * @return string
 		 */
 		public static function get_subject_template() {
-			$options = get_option( 'ktp_general_settings', array() );
+			$options = get_option( 'ktpwp_general_settings', array() );
 			$value   = isset( $options['contract_reminder_subject'] ) ? (string) $options['contract_reminder_subject'] : '';
 
 			return $value !== '' ? $value : self::get_default_subject_template();
@@ -135,7 +135,7 @@ if ( ! class_exists( 'KTPWP_Contract_Reminder_Mail' ) ) {
 		 * @return string
 		 */
 		public static function get_body_template() {
-			$options = get_option( 'ktp_general_settings', array() );
+			$options = get_option( 'ktpwp_general_settings', array() );
 			$value   = isset( $options['contract_reminder_body'] ) ? (string) $options['contract_reminder_body'] : '';
 
 			return $value !== '' ? $value : self::get_default_body_template();
@@ -147,9 +147,9 @@ if ( ! class_exists( 'KTPWP_Contract_Reminder_Mail' ) ) {
 		 * @return void
 		 */
 		public static function render_enabled_field() {
-			$options = get_option( 'ktp_general_settings', array() );
+			$options = get_option( 'ktpwp_general_settings', array() );
 			$checked = ! isset( $options['contract_reminder_enabled'] ) || ! empty( $options['contract_reminder_enabled'] );
-			echo '<label><input type="checkbox" name="ktp_general_settings[contract_reminder_enabled]" value="1" ' . checked( $checked, true, false ) . '> ';
+			echo '<label><input type="checkbox" name="ktpwp_general_settings[contract_reminder_enabled]" value="1" ' . checked( $checked, true, false ) . '> ';
 			echo esc_html__( '請求予定メールを自動送信する', 'kantanpro' );
 			echo '</label>';
 		}
@@ -160,9 +160,9 @@ if ( ! class_exists( 'KTPWP_Contract_Reminder_Mail' ) ) {
 		 * @return void
 		 */
 		public static function render_days_before_field() {
-			$options = get_option( 'ktp_general_settings', array() );
+			$options = get_option( 'ktpwp_general_settings', array() );
 			$value   = isset( $options['contract_reminder_days_before'] ) ? absint( $options['contract_reminder_days_before'] ) : 3;
-			echo '<input type="number" min="1" max="30" step="1" name="ktp_general_settings[contract_reminder_days_before]" value="' . esc_attr( (string) max( 1, $value ) ) . '" class="small-text"> ';
+			echo '<input type="number" min="1" max="30" step="1" name="ktpwp_general_settings[contract_reminder_days_before]" value="' . esc_attr( (string) max( 1, $value ) ) . '" class="small-text"> ';
 			echo esc_html__( '日前', 'kantanpro' );
 		}
 
@@ -173,7 +173,7 @@ if ( ! class_exists( 'KTPWP_Contract_Reminder_Mail' ) ) {
 		 */
 		public static function render_subject_field() {
 			$value = self::get_subject_template();
-			echo '<input type="text" name="ktp_general_settings[contract_reminder_subject]" value="' . esc_attr( $value ) . '" class="large-text">';
+			echo '<input type="text" name="ktpwp_general_settings[contract_reminder_subject]" value="' . esc_attr( $value ) . '" class="large-text">';
 			echo '<p class="description">' . esc_html__( '利用可能: {client_name}, {contract_name}, {period_label}, {billing_date}, {amount}, {payment_due}', 'kantanpro' ) . '</p>';
 		}
 
@@ -184,7 +184,7 @@ if ( ! class_exists( 'KTPWP_Contract_Reminder_Mail' ) ) {
 		 */
 		public static function render_body_field() {
 			$value = self::get_body_template();
-			echo '<textarea name="ktp_general_settings[contract_reminder_body]" rows="12" class="large-text code">' . esc_textarea( $value ) . '</textarea>';
+			echo '<textarea name="ktpwp_general_settings[contract_reminder_body]" rows="12" class="large-text code">' . esc_textarea( $value ) . '</textarea>';
 			echo '<p class="description">' . esc_html__( '利用可能: {client_name}, {contract_name}, {period_label}, {billing_date}, {amount}, {payment_due}, {initial_fee_note}, {bank_info}, {company_info}', 'kantanpro' ) . '</p>';
 		}
 
@@ -285,7 +285,7 @@ if ( ! class_exists( 'KTPWP_Contract_Reminder_Mail' ) ) {
 			$target_billing_date  = wp_date( 'Y-m-d', strtotime( '+' . $days_before . ' days', current_time( 'timestamp' ) ) );
 			$period               = wp_date( 'Y-m', strtotime( $target_billing_date ) );
 			$contract_table       = $this->contract_db->get_contract_table_name();
-			$client_table         = $wpdb->prefix . 'ktp_client';
+			$client_table         = $wpdb->prefix . 'ktpwp_client';
 
 			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 			$contracts = $wpdb->get_results(
@@ -364,7 +364,7 @@ if ( ! class_exists( 'KTPWP_Contract_Reminder_Mail' ) ) {
 
 			$client = $wpdb->get_row(
 				$wpdb->prepare(
-					"SELECT * FROM {$wpdb->prefix}ktp_client WHERE id = %d",
+					"SELECT * FROM {$wpdb->prefix}ktpwp_client WHERE id = %d",
 					(int) $contract->client_id
 				)
 			);
@@ -630,7 +630,7 @@ if ( ! class_exists( 'KTPWP_Contract_Reminder_Mail' ) ) {
 		 * @return string[]
 		 */
 		private function build_mail_headers() {
-			$smtp_settings = get_option( 'ktp_smtp_settings', array() );
+			$smtp_settings = get_option( 'ktpwp_smtp_settings', array() );
 			$from_email    = ! empty( $smtp_settings['email_address'] )
 				? sanitize_email( $smtp_settings['email_address'] )
 				: get_option( 'admin_email' );

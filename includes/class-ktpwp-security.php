@@ -535,12 +535,9 @@ class KTPWP_Security {
      */
     private function get_basic_auth_request_password() {
         if ( isset( $_SERVER['PHP_AUTH_PW'] ) ) {
-            // This value is only compared with wp_check_password(); it is never output, stored or used in SQL.
-            // sanitize_text_field() would corrupt valid passwords that contain "<", newlines, etc., so the raw
-            // value is kept on purpose. It is bounded in length and stripped of NUL bytes as a safety net.
-            $password = (string) wp_unslash( $_SERVER['PHP_AUTH_PW'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- credential, see comment above.
-
-            return substr( str_replace( "\0", '', $password ), 0, 4096 );
+            // 保存時（KTPWP_Settings::save_settings）と同じ sanitize_text_field() を通してから照合する。
+            // 両側で同じ処理をするので、照合結果は変わらない。
+            return substr( sanitize_text_field( wp_unslash( (string) $_SERVER['PHP_AUTH_PW'] ) ), 0, 4096 );
         }
 
         $header = $this->get_authorization_header();
@@ -548,7 +545,7 @@ class KTPWP_Security {
             $decoded = base64_decode( substr( $header, 6 ), true );
             if ( is_string( $decoded ) && false !== strpos( $decoded, ':' ) ) {
                 $parts = explode( ':', $decoded, 2 );
-                return isset( $parts[1] ) ? (string) $parts[1] : '';
+                return isset( $parts[1] ) ? substr( sanitize_text_field( (string) $parts[1] ), 0, 4096 ) : '';
             }
         }
 
@@ -561,9 +558,10 @@ class KTPWP_Security {
     private function get_authorization_header() {
         $raw = '';
         if ( isset( $_SERVER['HTTP_AUTHORIZATION'] ) ) {
-            $raw = wp_unslash( $_SERVER['HTTP_AUTHORIZATION'] );
+            // "Basic <base64>" は sanitize_text_field() で変化しない（Base64 の文字だけで構成される）。
+            $raw = sanitize_text_field( wp_unslash( $_SERVER['HTTP_AUTHORIZATION'] ) );
         } elseif ( isset( $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ) ) {
-            $raw = wp_unslash( $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] );
+            $raw = sanitize_text_field( wp_unslash( $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ) );
         }
 
         if ( ! is_string( $raw ) ) {

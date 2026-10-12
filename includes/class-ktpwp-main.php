@@ -177,7 +177,7 @@ class KTPWP_Main {
             add_action( 'init', function() {
                 if ( $this->ajax && method_exists( $this->ajax, 'register_ajax_handlers' ) ) {
                     // AJAXハンドラーが登録されているかチェック（重複登録を防ぐ）
-                    if ( !has_action( 'wp_ajax_ktp_get_supplier_qualified_invoice_number' ) ) {
+                    if ( !has_action( 'wp_ajax_ktpwp_get_supplier_qualified_invoice_number' ) ) {
                         if ( class_exists( 'KTPWP_Settings' ) ) {
                             KTPWP_Settings::log_debug( 'AJAX handlers not registered, registering manually', array(), 'info' );
                         }
@@ -329,7 +329,7 @@ class KTPWP_Main {
 
         // 設定テーブルが存在しない場合は即座に作成
         global $wpdb;
-        $setting_table = $wpdb->prefix . 'ktp_setting';
+        $setting_table = $wpdb->prefix . 'ktpwp_setting';
         $table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $setting_table ) );
         
         if ( ! $table_exists ) {
@@ -395,7 +395,7 @@ class KTPWP_Main {
             
             // 初期データの挿入（存在しない場合のみ）
             global $wpdb;
-            $setting_table = $wpdb->prefix . 'ktp_setting';
+            $setting_table = $wpdb->prefix . 'ktpwp_setting';
             $existing_row = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM `{$setting_table}` WHERE id = %d", 1 ) );
             
             if ( ! $existing_row ) {
@@ -502,8 +502,8 @@ class KTPWP_Main {
 
         $current_page_id = (int) get_queried_object_id();
         // フロントでクエリのみ（例: localhost:8081/?tab_name=client）のとき ID が 0 になりがち → GET の page_id を参照
-        if ( $current_page_id <= 0 && isset( $_GET['page_id'] ) ) {
-            $current_page_id = absint( wp_unslash( $_GET['page_id'] ) );
+        if ( $current_page_id <= 0 && KTPWP_Request::has_query( 'page_id' ) ) {
+            $current_page_id = absint( KTPWP_Request::query( 'page_id' ) );
         }
 
         if ( $current_page_id > 0 ) {

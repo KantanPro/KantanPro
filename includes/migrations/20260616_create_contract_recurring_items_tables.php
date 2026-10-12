@@ -9,6 +9,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// ファイル内の変数をグローバルに出さないよう、処理全体を無名関数で包む（読み込んだ時点で実行される）。
+( static function () {
+
 if ( ! function_exists( 'dbDelta' ) ) {
 	require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 }
@@ -17,8 +20,8 @@ global $wpdb;
 
 $charset_collate = $wpdb->get_charset_collate();
 
-$service_table = $wpdb->prefix . 'ktp_service_recurring_item';
-$contract_table = $wpdb->prefix . 'ktp_contract_recurring_item';
+$service_table = $wpdb->prefix . 'ktpwp_service_recurring_item';
+$contract_table = $wpdb->prefix . 'ktpwp_contract_recurring_item';
 
 $service_sql = "CREATE TABLE {$service_table} (
 	id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -47,7 +50,7 @@ $contract_sql = "CREATE TABLE {$contract_table} (
 dbDelta( $service_sql );
 dbDelta( $contract_sql );
 
-update_option( 'ktp_contract_recurring_items_migration_completed', '2026-06-16' );
+update_option( 'ktpwp_contract_recurring_items_migration_completed', '2026-06-16' );
 
 if ( ! function_exists( 'ktpwp_create_contract_recurring_items_tables' ) ) {
 	/**
@@ -63,3 +66,4 @@ if ( ! function_exists( 'ktpwp_create_contract_recurring_items_tables' ) ) {
 		return false;
 	}
 }
+} )();

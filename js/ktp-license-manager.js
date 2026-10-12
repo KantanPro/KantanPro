@@ -34,7 +34,7 @@
             $(document).on('submit', '#ktp-license-form', this.handleLicenseVerification.bind(this));
             
             // License key input validation
-            $(document).on('input', '#ktp_license_key', this.validateLicenseKey.bind(this));
+            $(document).on('input', '#ktpwp_license_key', this.validateLicenseKey.bind(this));
             
             // Show/hide license key
             $(document).on('click', '.ktp-toggle-license-key', this.toggleLicenseKey.bind(this));
@@ -61,7 +61,7 @@
             const $submitButton = $form.find('input[type="submit"]');
             const $statusMessage = $('.ktp-license-status-message');
             
-            const licenseKey = $('#ktp_license_key').val().trim();
+            const licenseKey = $('#ktpwp_license_key').val().trim();
             
             if (!licenseKey) {
                 this.showMessage('ライセンスキーを入力してください。', 'error');
@@ -74,12 +74,12 @@
 
             // Make AJAX request
             $.ajax({
-                url: (typeof ktp_license_manager_vars !== 'undefined' && ktp_license_manager_vars.ajaxurl) ? ktp_license_manager_vars.ajaxurl : (typeof ajaxurl !== 'undefined' ? ajaxurl : ((typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) || (typeof ajaxurl !== 'undefined' ? ajaxurl : ''))),
+                url: (typeof ktpwp_license_manager_vars !== 'undefined' && ktpwp_license_manager_vars.ajaxurl) ? ktpwp_license_manager_vars.ajaxurl : (typeof ajaxurl !== 'undefined' ? ajaxurl : ((typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) || (typeof ajaxurl !== 'undefined' ? ajaxurl : ''))),
                 type: 'POST',
                 data: {
                     action: 'ktpwp_verify_license',
                     license_key: licenseKey,
-                    nonce: ktp_license_manager_vars.nonce
+                    nonce: ktpwp_license_manager_vars.nonce
                 },
                 success: (response, textStatus, xhr) => {
                     // JSON以外の文字列応答やセキュリティ系テキストならフォーム送信へフォールバック
@@ -160,7 +160,7 @@
         toggleLicenseKey(e) {
             e.preventDefault();
             
-            const $input = $('#ktp_license_key');
+            const $input = $('#ktpwp_license_key');
             const $toggleButton = $(e.target);
             
             if ($input.attr('type') === 'password') {
@@ -185,7 +185,7 @@
                 type: 'POST',
                 data: {
                     action: 'ktpwp_get_license_info',
-                    nonce: ktp_license_manager_vars.nonce
+                    nonce: ktpwp_license_manager_vars.nonce
                 },
                 success: (response) => {
                     if (response.success) {
@@ -209,7 +209,7 @@
          * Update license status display
          */
         updateLicenseStatus() {
-            const licenseKey = $('#ktp_license_key').val();
+            const licenseKey = $('#ktpwp_license_key').val();
             const $statusDisplay = $('.ktp-license-status-display');
             
             if (!licenseKey) {
@@ -295,7 +295,7 @@
                 type: 'POST',
                 data: {
                     action: 'ktpwp_toggle_dev_license',
-                    nonce: ktp_license_manager_vars.nonce
+                    nonce: ktpwp_license_manager_vars.nonce
                 },
                 success: (response) => {
                     if (response.success) {
@@ -307,7 +307,7 @@
                     }
                 },
                 error: () => {
-                    alert(ktp_license_manager_vars.messages.ajax_error);
+                    alert(ktpwp_license_manager_vars.messages.ajax_error);
                     $button.prop('disabled', false);
                     $spinner.removeClass('is-active');
                 }
@@ -317,7 +317,7 @@
 
     // Initialize license manager when document is ready
     $(document).ready(function() {
-        if (typeof ktp_license_manager_vars !== 'undefined') {
+        if (typeof ktpwp_license_manager_vars !== 'undefined') {
             new KTPLicenseManager();
         }
     });

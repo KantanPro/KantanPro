@@ -1,0 +1,95 @@
+/* class-ktpwp-terms-of-service.php から切り出し（以前は PHP の nowdoc で返していた） */
+.ktpwp-terms-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9999;
+}
+.ktpwp-terms-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 0 50px;
+    border-radius: 8px;
+    width: 600px;
+    max-height: 80vh;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+}
+.ktpwp-terms-header {
+    border-bottom: 1px solid #ddd;
+    padding: 20px 20px 10px 20px;
+    margin-bottom: 0;
+    position: relative;
+    text-align: center;
+}
+.ktpwp-terms-header h2 {
+    margin: 0;
+    font-size: 18px;
+    color: #333;
+}
+.ktpwp-terms-content {
+    padding: 20px;
+    height: 500px;
+    overflow-y: auto;
+    line-height: 1.6;
+    border-bottom: 1px solid #ddd;
+    font-size: 14px;
+    background-color: #f8f8f8;
+}
+.ktpwp-terms-footer {
+    padding: 20px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+.ktpwp-terms-checkbox-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.ktpwp-terms-checkbox-container input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+}
+.ktpwp-terms-checkbox-container label {
+    font-size: 14px;
+    color: #333;
+    cursor: pointer;
+}
+.ktpwp-start-btn {
+    background-color: #0073aa;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 4px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+.ktpwp-start-btn:hover:not(:disabled) {
+    background-color: #005a87;
+}
+.ktpwp-start-btn:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+.ktpwp-home-link {
+    margin-top: 10px;
+}
+.ktpwp-home-link a {
+    color: #0073aa;
+    text-decoration: none;
+    font-size: 14px;
+}
+.ktpwp-home-link a:hover {
+    text-decoration: underline;
+}

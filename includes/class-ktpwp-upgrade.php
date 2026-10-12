@@ -6,8 +6,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 class KTPWP_Upgrade {
     public static function migrate_settings() {
         global $wpdb;
-        $old_table = $wpdb->prefix . 'ktp_setting';
-        $new_option = 'ktp_smtp_settings';
+        $old_table = $wpdb->prefix . 'ktpwp_setting';
+        $new_option = 'ktpwp_smtp_settings';
 
         // 新規インストールにはこの旧テーブル自体が存在しない。
         // 存在確認せずに SELECT すると、有効化直後の最初の init で毎回
@@ -61,9 +61,9 @@ add_action(
     'init',
     function () {
 		// アップグレードが未実行の場合のみ実行
-		if ( ! get_option( 'ktp_settings_migrated' ) ) {
+		if ( ! get_option( 'ktpwp_settings_migrated' ) ) {
 			KTPWP_Upgrade::migrate_settings();
-			update_option( 'ktp_settings_migrated', true );
+			update_option( 'ktpwp_settings_migrated', true );
 		}
 	}
 );

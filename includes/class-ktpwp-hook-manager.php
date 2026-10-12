@@ -254,7 +254,7 @@ class KTPWP_Hook_Manager {
         }
         
         // 管理画面で特定のページにアクセスした場合
-        if ( is_admin() && isset( $_GET['page'] ) && strpos( $_GET['page'], 'ktp-' ) === 0 ) {
+        if ( is_admin() && KTPWP_Request::has_query( 'page' ) && strpos( KTPWP_Request::query_unslashed( 'page' ), 'ktp-' ) === 0 ) {
             return true;
         }
         
@@ -331,7 +331,7 @@ class KTPWP_Hook_Manager {
                     break;
                 
                 case 'page':
-                    if ( ! isset( $_GET['page'] ) || $_GET['page'] !== $value ) {
+                    if ( ! KTPWP_Request::has_query( 'page' ) || KTPWP_Request::query_unslashed( 'page' ) !== $value ) {
                         return false;
                     }
                     break;

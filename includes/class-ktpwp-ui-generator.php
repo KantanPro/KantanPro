@@ -26,7 +26,7 @@ if ( ! class_exists( 'KTPWP_Ui_Generator' ) ) {
 		 */
 		public function generate_controller() {
 			// レポート種類ボタンを生成
-			$current_report = isset( $_GET['report_type'] ) ? sanitize_text_field( $_GET['report_type'] ) : 'sales';
+			$current_report = KTPWP_Request::has_query( 'report_type' ) ? KTPWP_Request::query( 'report_type' ) : 'sales';
 			
 			$reports = array(
 				'sales' => array(
@@ -92,7 +92,7 @@ if ( ! class_exists( 'KTPWP_Ui_Generator' ) ) {
 					'id'      => 'js-report-print-btn',
 					'label'   => __( 'レポート印刷', 'kantanpro' ),
 					'title'   => __( '印刷（ブラウザの印刷／PDFに保存）', 'kantanpro' ),
-					'onclick' => "typeof ktpReportPrintOpen === 'function' && ktpReportPrintOpen();",
+					'onclick' => "typeof ktpwpReportPrintOpen === 'function' && ktpwpReportPrintOpen();",
 				)
 			);
 

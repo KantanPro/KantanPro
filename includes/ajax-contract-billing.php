@@ -55,8 +55,8 @@ function ktpwp_contract_billing_get_frontend_base_url() {
 /**
  * 単一契約の案件紐付け
  */
-function ktp_generate_contract_order_ajax() {
-	if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), 'ktp_contract_billing_nonce' ) ) {
+function ktpwp_generate_contract_order_ajax() {
+	if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), 'ktpwp_contract_billing_nonce' ) ) {
 		wp_send_json_error( __( 'セキュリティチェックに失敗しました。', 'kantanpro' ) );
 	}
 
@@ -101,8 +101,8 @@ function ktp_generate_contract_order_ajax() {
 /**
  * 未紐付け分を一括案件紐付け
  */
-function ktp_generate_all_contract_orders_ajax() {
-	if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), 'ktp_contract_billing_nonce' ) ) {
+function ktpwp_generate_all_contract_orders_ajax() {
+	if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), 'ktpwp_contract_billing_nonce' ) ) {
 		wp_send_json_error( __( 'セキュリティチェックに失敗しました。', 'kantanpro' ) );
 	}
 
@@ -139,14 +139,14 @@ function ktp_generate_all_contract_orders_ajax() {
 	);
 }
 
-add_action( 'wp_ajax_ktp_generate_contract_order', 'ktp_generate_contract_order_ajax' );
-add_action( 'wp_ajax_ktp_generate_all_contract_orders', 'ktp_generate_all_contract_orders_ajax' );
+add_action( 'wp_ajax_ktpwp_generate_contract_order', 'ktpwp_generate_contract_order_ajax' );
+add_action( 'wp_ajax_ktpwp_generate_all_contract_orders', 'ktpwp_generate_all_contract_orders_ajax' );
 
 /**
  * 1契約の予告メール送信
  */
-function ktp_send_contract_reminder_ajax() {
-	if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), 'ktp_contract_billing_nonce' ) ) {
+function ktpwp_send_contract_reminder_ajax() {
+	if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), 'ktpwp_contract_billing_nonce' ) ) {
 		wp_send_json_error( __( 'セキュリティチェックに失敗しました。', 'kantanpro' ) );
 	}
 
@@ -183,8 +183,8 @@ function ktp_send_contract_reminder_ajax() {
 /**
  * 未送信の予告メールを一括送信
  */
-function ktp_send_pending_contract_reminders_ajax() {
-	if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), 'ktp_contract_billing_nonce' ) ) {
+function ktpwp_send_pending_contract_reminders_ajax() {
+	if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), 'ktpwp_contract_billing_nonce' ) ) {
 		wp_send_json_error( __( 'セキュリティチェックに失敗しました。', 'kantanpro' ) );
 	}
 
@@ -224,5 +224,5 @@ function ktp_send_pending_contract_reminders_ajax() {
 	);
 }
 
-add_action( 'wp_ajax_ktp_send_contract_reminder', 'ktp_send_contract_reminder_ajax' );
-add_action( 'wp_ajax_ktp_send_pending_contract_reminders', 'ktp_send_pending_contract_reminders_ajax' );
+add_action( 'wp_ajax_ktpwp_send_contract_reminder', 'ktpwp_send_contract_reminder_ajax' );
+add_action( 'wp_ajax_ktpwp_send_pending_contract_reminders', 'ktpwp_send_pending_contract_reminders_ajax' );

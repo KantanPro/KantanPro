@@ -1,0 +1,31 @@
+/* class-ktpwp-settings.php から切り出し（以前は PHP の nowdoc で返していた） */
+.ktpwp-notice-preview-container {
+    background: #f9f9f9;
+    padding: 20px;
+    border-radius: 5px;
+    margin: 10px 0;
+}
+
+.ktpwp-preview-controls {
+    margin: 15px 0;
+}
+
+.ktpwp-preview-controls .button {
+    margin-right: 10px;
+}
+
+.ktpwp-preview-info {
+    margin-top: 15px;
+    padding: 15px;
+    background: #fff;
+    border-left: 4px solid #0073aa;
+}
+
+.ktpwp-preview-info ul {
+    margin: 10px 0;
+    padding-left: 20px;
+}
+
+.ktpwp-preview-info li {
+    margin: 5px 0;
+}

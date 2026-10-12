@@ -54,18 +54,18 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 			}
 
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_order';
+			$table_name = $wpdb->prefix . 'ktpwp_order';
 
 			$content = '';
 
-			$recurring_billing_view = isset( $_GET['recurring_billing'] ) && '1' === (string) wp_unslash( $_GET['recurring_billing'] );
-			$list_type_recurring    = isset( $_GET['list_type'] ) && 'recurring' === sanitize_key( wp_unslash( $_GET['list_type'] ) );
-			$order_columns          = $wpdb->get_col( "SHOW COLUMNS FROM `{$table_name}`" );
+			$recurring_billing_view = KTPWP_Request::has_query( 'recurring_billing' ) && '1' === (string) KTPWP_Request::query_unslashed( 'recurring_billing' );
+			$list_type_recurring    = KTPWP_Request::has_query( 'list_type' ) && 'recurring' === sanitize_key( KTPWP_Request::query( 'list_type' ) );
+			$order_columns          = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $table_name ) );
 			$order_has_contract_id  = is_array( $order_columns ) && in_array( 'contract_id', $order_columns, true );
 			$list_type_where        = ( $list_type_recurring && $order_has_contract_id ) ? ' AND contract_id > 0' : '';
 
 			// フリーワード検索用GETパラメータ
-			$list_search = isset( $_GET['list_search'] ) ? sanitize_text_field( wp_unslash( $_GET['list_search'] ) ) : '';
+			$list_search = KTPWP_Request::has_query( 'list_search' ) ? KTPWP_Request::query( 'list_search' ) : '';
 
     // Controller container display at top（検索全幅1行、フィルタ＋印刷は2行目）
 			$content .= '<div class="controller ktp-list-controller">';
@@ -77,8 +77,8 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 			// 既存クエリを保持（tab_nameは上で固定したので除外）
 			$keep_params = array( 'progress', 'page_start', 'page_stage', 'flg', 'list_type' );
 			foreach ( $keep_params as $key ) {
-				if ( isset( $_GET[ $key ] ) && (string) $_GET[ $key ] !== '' ) {
-					$content .= '<input type="hidden" name="' . esc_attr( $key ) . '" value="' . esc_attr( sanitize_text_field( wp_unslash( $_GET[ $key ] ) ) ) . '">';
+				if ( KTPWP_Request::query( $key ) !== '' ) {
+					$content .= '<input type="hidden" name="' . esc_attr( $key ) . '" value="' . esc_attr( KTPWP_Request::query( $key ) ) . '">';
 				}
 			}
 			$search_placeholder = ( $list_search !== '' ) ? $list_search : __( 'フリーワード', 'kantanpro' );
@@ -100,7 +100,7 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 			}
 			$content .= '</div>';
 
-			$selected_progress = isset( $_GET['progress'] ) ? absint( $_GET['progress'] ) : 1;
+			$selected_progress = KTPWP_Request::has_query( 'progress' ) ? absint( KTPWP_Request::query_unslashed( 'progress' ) ) : 1;
 
 			$progress_labels_for_print = array(
 				1 => __( '受付中', 'kantanpro' ),
@@ -165,7 +165,7 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 			);
 
 			// 印刷時だけページネーションを無視して全件取得する
-			$print_all = isset( $_GET['print_all'] ) && (string) $_GET['print_all'] !== '' && (string) $_GET['print_all'] !== '0';
+			$print_all = KTPWP_Request::has_query( 'print_all' ) && (string) KTPWP_Request::query_unslashed( 'print_all' ) !== '' && (string) KTPWP_Request::query_unslashed( 'print_all' ) !== '0';
 
 			// Get count for each progress status with prepared statements
 			$progress_counts = array();
@@ -205,8 +205,8 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 			$invoice_warning_count = 0;
 			if ( isset( $progress_labels[4] ) ) {
 				// プレースホルダーが不要なクエリなので、直接実行
-				$query_invoice_warning = "SELECT o.id, o.client_id, o.completion_date, c.closing_day FROM {$table_name} o LEFT JOIN {$wpdb->prefix}ktp_client c ON o.client_id = c.id WHERE o.progress = 4 AND o.completion_date IS NOT NULL AND c.closing_day IS NOT NULL AND c.closing_day != 'なし'";
-				$orders_for_invoice_warning = $wpdb->get_results( $query_invoice_warning );
+				$query_invoice_warning = $wpdb->prepare( "SELECT o.id, o.client_id, o.completion_date, c.closing_day FROM %i o LEFT JOIN %i c ON o.client_id = c.id WHERE o.progress = 4 AND o.completion_date IS NOT NULL AND c.closing_day IS NOT NULL AND c.closing_day != 'なし'", $table_name, $wpdb->prefix . 'ktpwp_client' );
+				$orders_for_invoice_warning = $wpdb->get_results( $query_invoice_warning ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $query_invoice_warning は直前で $wpdb->prepare() 済み。
 				$today = new DateTime();
 				$today->setTime( 0, 0, 0 );
 				foreach ( $orders_for_invoice_warning as $order ) {
@@ -254,9 +254,9 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 			// ▼▼▼ 請求済タブの入金予定日（支払期日）超過件数をカウント（前入金済は対象外） ▼▼▼
 			$payment_warning_count = 0;
 			if ( isset( $progress_labels[5] ) ) {
-				$client_table = $wpdb->prefix . 'ktp_client';
-				$query_payment_warning = "SELECT o.id, o.client_id, o.completion_date, o.payment_timing AS order_payment_timing, c.closing_day, c.payment_month, c.payment_day, c.payment_timing AS client_payment_timing FROM {$table_name} o LEFT JOIN {$client_table} c ON o.client_id = c.id WHERE o.progress = 5 AND o.completion_date IS NOT NULL AND c.payment_month IS NOT NULL AND c.payment_day IS NOT NULL";
-				$orders_for_payment_warning = $wpdb->get_results( $query_payment_warning );
+				$client_table = $wpdb->prefix . 'ktpwp_client';
+				$query_payment_warning = $wpdb->prepare( "SELECT o.id, o.client_id, o.completion_date, o.payment_timing AS order_payment_timing, c.closing_day, c.payment_month, c.payment_day, c.payment_timing AS client_payment_timing FROM %i o LEFT JOIN %i c ON o.client_id = c.id WHERE o.progress = 5 AND o.completion_date IS NOT NULL AND c.payment_month IS NOT NULL AND c.payment_day IS NOT NULL", $table_name, $client_table );
+				$orders_for_payment_warning = $wpdb->get_results( $query_payment_warning ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $query_payment_warning は直前で $wpdb->prepare() 済み。
 
 				$today = new DateTime();
 				$today->setTime( 0, 0, 0 );
@@ -376,11 +376,11 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 			}
 
 			// 印刷対象エリア開始（現在表示されている内容を印刷するためのラッパー）
-			$content .= '<div id="ktp_list_print_area">';
+			$content .= '<div id="ktpwp_list_print_area">';
 
 			if ( function_exists( 'ktpwp_contracts_feature_enabled' ) && ktpwp_contracts_feature_enabled()
 				&& $recurring_billing_view && class_exists( 'KTPWP_Contract_Billing_UI' ) ) {
-				$billing_period = isset( $_GET['billing_period'] ) ? sanitize_text_field( wp_unslash( $_GET['billing_period'] ) ) : null;
+				$billing_period = KTPWP_Request::has_query( 'billing_period' ) ? KTPWP_Request::query( 'billing_period' ) : null;
 				$content       .= KTPWP_Contract_Billing_UI::get_instance()->render_monthly_panel( $tab_name, $billing_period );
 			} else {
 
@@ -471,10 +471,10 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 			} else {
 				$query_limit = 20; // フォールバック値
 			}
-			$page_stage = isset( $_GET['page_stage'] ) ? $_GET['page_stage'] : '';
-			$page_start = isset( $_GET['page_start'] ) ? intval( $_GET['page_start'] ) : 0;
-			$flg = isset( $_GET['flg'] ) ? $_GET['flg'] : '';
-			$selected_progress = isset( $_GET['progress'] ) ? intval( $_GET['progress'] ) : 1;
+			$page_stage = KTPWP_Request::has_query( 'page_stage' ) ? KTPWP_Request::query_unslashed( 'page_stage' ) : '';
+			$page_start = KTPWP_Request::has_query( 'page_start' ) ? intval( KTPWP_Request::query_unslashed( 'page_start' ) ) : 0;
+			$flg = KTPWP_Request::has_query( 'flg' ) ? KTPWP_Request::query_unslashed( 'flg' ) : '';
+			$selected_progress = KTPWP_Request::has_query( 'progress' ) ? intval( KTPWP_Request::query_unslashed( 'progress' ) ) : 1;
 			if ( $page_stage == '' ) {
 				$page_start = 0;
 			}
@@ -482,7 +482,7 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 			$list_search_args = array();
 			if ( $list_search !== '' ) {
 				$list_like = '%' . $wpdb->esc_like( $list_search ) . '%';
-				$order_cols = $wpdb->get_col( "SHOW COLUMNS FROM `{$table_name}`" );
+				$order_cols = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $table_name ) );
 				$search_columns = array( 'customer_name', 'user_name', 'project_name' );
 				if ( is_array( $order_cols ) && in_array( 'memo', $order_cols, true ) ) {
 					$search_columns[] = 'memo';
@@ -492,7 +492,9 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 				}
 				$search_parts = array();
 				foreach ( $search_columns as $search_column ) {
-					$search_parts[] = "`{$search_column}` LIKE %s";
+					// 列名は上の固定リストから選んだもの。%i（識別子）で渡す
+					$search_parts[] = '%i LIKE %s';
+					$list_search_args[] = $search_column;
 					$list_search_args[] = $list_like;
 				}
 				$list_search_where = ' AND ( ' . implode( ' OR ', $search_parts ) . ' )';
@@ -502,7 +504,7 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 				"SELECT COUNT(*) FROM {$table_name} WHERE progress = %d{$list_search_where}{$list_type_where}",
 				array_merge( array( $selected_progress ), $list_search_args )
 			);
-			$total_rows = $wpdb->get_var( $total_query );
+			$total_rows = $wpdb->get_var( $total_query ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $total_query は $wpdb->prepare() 済み。
 			$total_pages = ceil( $total_rows / $query_limit );
 			$current_page = floor( $page_start / $query_limit ) + 1;
 
@@ -561,7 +563,7 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 				}
 			}
 
-			$order_list = $wpdb->get_results( $query );
+			$order_list = $wpdb->get_results( $query ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $query は $wpdb->prepare() 済み。
 
 			// --- ここからラッパー追加 ---
 			$my_company = '';
@@ -576,8 +578,8 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 			$my_company = preg_replace( '/\S+@\S+\.\S+/', '', $my_company );
 			$my_company = preg_replace( '/\s+/', ' ', trim( $my_company ) );
 
-			$content .= '<div class="ktp_work_list_box">';
-			$content .= '<div id="ktp_list_my_company_name" style="display:none;">' . esc_html( $my_company ) . '</div>';
+			$content .= '<div class="ktpwp_work_list_box">';
+			$content .= '<div id="ktpwp_list_my_company_name" style="display:none;">' . esc_html( $my_company ) . '</div>';
 
 			// 受注の場合はソート順を説明
 			if ( $selected_progress == 3 ) {
@@ -663,7 +665,7 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 						// 顧客IDから締め日を取得
 						$client_id = isset( $order->client_id ) ? intval( $order->client_id ) : 0;
 						if ( $client_id > 0 ) {
-							$client_table = $wpdb->prefix . 'ktp_client';
+							$client_table = $wpdb->prefix . 'ktpwp_client';
 							$client_info = $wpdb->get_row( $wpdb->prepare( "SELECT closing_day FROM {$client_table} WHERE id = %d", $client_id ) );
 							if ( $client_info && $client_info->closing_day && $client_info->closing_day !== 'なし' ) {
 								// 案件の完了日を取得
@@ -721,7 +723,7 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 						$client_id = isset( $order->client_id ) ? (int) $order->client_id : 0;
 						$completion_date_raw = isset( $order->completion_date ) ? trim( (string) $order->completion_date ) : '';
 						if ( $client_id > 0 && $completion_date_raw !== '' ) {
-							$client_table = $wpdb->prefix . 'ktp_client';
+							$client_table = $wpdb->prefix . 'ktpwp_client';
 							$client_info = $wpdb->get_row(
 								$wpdb->prepare(
 									"SELECT closing_day, payment_month, payment_day FROM {$client_table} WHERE id = %d",
@@ -856,9 +858,9 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 					$urgent_class = ( $is_urgent || $show_invoice_warning || $show_payment_warning ) ? 'urgent-delivery' : '';
 					$row_click_handler   = "if (!event.target.closest('input, select, button, a, form, label')) { window.location.href = this.dataset.detailUrl; }";
 					$row_keydown_handler = "if ((event.key === 'Enter' || event.key === ' ') && !event.target.closest('input, select, button, a, form, label')) { event.preventDefault(); window.location.href = this.dataset.detailUrl; }";
-					$content .= '<li class="ktp_work_list_item ' . esc_attr( $urgent_class ) . '" data-detail-url="' . esc_url( $detail_url ) . '" role="link" tabindex="0" onclick="' . esc_attr( $row_click_handler ) . '" onkeydown="' . esc_attr( $row_keydown_handler ) . '">';
+					$content .= '<li class="ktpwp_work_list_item ' . esc_attr( $urgent_class ) . '" data-detail-url="' . esc_url( $detail_url ) . '" role="link" tabindex="0" onclick="' . esc_attr( $row_click_handler ) . '" onkeydown="' . esc_attr( $row_keydown_handler ) . '">';
 					// 左寄せブロック（ID・顧客名・担当者・プロジェクト・日時を一まとまりで左寄せ）
-					$content .= '<span class="ktp_work_list_item_text">';
+					$content .= '<span class="ktpwp_work_list_item_text">';
 					// 行全体を受注書詳細へのリンクに統一し、顧客詳細リンクは廃止
 					$content .= 'ID: ' . $order_id;
 					if ( $list_client_label !== '' ) {
@@ -912,6 +914,7 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 					// 進捗プルダウンを納期コンテナ内に配置
 					$content .= "<form method='post' action='' style='margin: 0px 0 0px 0;display:inline;'>";
 					$content .= "<input type='hidden' name='update_progress_id' value='{$order_id}' />";
+					$content .= wp_nonce_field( 'update_progress_action', 'progress_nonce', true, false );
 					$content .= "<select name='update_progress' class='progress-select status-{$progress}' onchange='this.form.submit()'>";
 					foreach ( $progress_labels as $num => $label ) {
 						$selected = ( $progress === $num ) ? 'selected' : '';
@@ -924,7 +927,7 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 				}
 				$content .= '</ul>';
 			} else {
-				$content .= '<div class="ktp_data_list_item" style="padding: 15px 20px; background: linear-gradient(135deg, #e3f2fd 0%, #fce4ec 100%); border-radius: 8px; margin: 18px 0; color: #333; font-weight: 600; box-shadow: 0 3px 12px rgba(0,0,0,0.07); display: flex; align-items: center; font-size: 15px; gap: 10px;">'
+				$content .= '<div class="ktpwp_data_list_item" style="padding: 15px 20px; background: linear-gradient(135deg, #e3f2fd 0%, #fce4ec 100%); border-radius: 8px; margin: 18px 0; color: #333; font-weight: 600; box-shadow: 0 3px 12px rgba(0,0,0,0.07); display: flex; align-items: center; font-size: 15px; gap: 10px;">'
                 . '<span class="material-symbols-outlined" aria-label="データなし">search_off</span>'
                 . '<span style="font-size: 1em; font-weight: 600;">' . esc_html__( '受注書データがありません。', 'kantanpro' ) . '</span>'
                 . '<span style="margin-left: 18px; font-size: 13px; color: #888;">' . esc_html__( '顧客タブで顧客情報を入力し受注書を作成してください', 'kantanpro' ) . '</span>'
@@ -932,8 +935,16 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 			}
 			// 進捗更新処理
 			if ( ktpwp_request_method() === 'POST' && isset( $_POST['update_progress_id'], $_POST['update_progress'] ) ) {
-				$update_id = intval( $_POST['update_progress_id'] );
-				$update_progress = intval( $_POST['update_progress'] );
+				// 受注の進捗を書き換えるので、nonce と権限を必ず確認する
+				if ( ! isset( $_POST['progress_nonce'] )
+					|| ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['progress_nonce'] ) ), 'update_progress_action' ) ) {
+					wp_die( esc_html__( 'Security check failed. Please refresh the page and try again.', 'kantanpro' ) );
+				}
+				if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
+					wp_die( esc_html__( 'You do not have sufficient permissions to update progress.', 'kantanpro' ) );
+				}
+				$update_id = intval( wp_unslash( $_POST['update_progress_id'] ) );
+				$update_progress = intval( wp_unslash( $_POST['update_progress'] ) );
 				if ( $update_id > 0 && $update_progress >= 1 && $update_progress <= 7 ) {
 					// 現在の進捗を取得
 					$current_order = $wpdb->get_row( $wpdb->prepare( "SELECT progress FROM {$table_name} WHERE id = %d", $update_id ) );
@@ -965,15 +976,15 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 			if ( ! $print_all ) {
 				$content .= $this->render_pagination( $current_page, $total_pages, $query_limit, $tab_name, $flg, $selected_progress, $total_rows );
 			}
-			$content .= '</div>'; // .ktp_work_list_box 終了
+			$content .= '</div>'; // .ktpwp_work_list_box 終了
 			// --- ここまでラッパー追加 ---
 
 			} // end recurring_billing_view else (通常の仕事リスト)
 
-			$content .= '</div>'; // #ktp_list_print_area 終了
+			$content .= '</div>'; // #ktpwp_list_print_area 終了
 
 			// 納期フィールドのJavaScriptファイルを読み込み
-			wp_enqueue_script( 'ktp-delivery-dates' );
+			wp_enqueue_script( 'ktpwp-delivery-dates' );
 
 			return $content;
 		}
@@ -991,10 +1002,10 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 			$results = array();
 
 			// 受注書（memo/search_field はテーブルに存在する前提でLIKEに含める）
-			$order_table = $wpdb->prefix . 'ktp_order';
+			$order_table = $wpdb->prefix . 'ktpwp_order';
 			$order_args = array( $like, $like, $like );
 			$order_where = " ( customer_name LIKE %s OR user_name LIKE %s OR project_name LIKE %s ";
-			$order_cols = $wpdb->get_col( "SHOW COLUMNS FROM `{$order_table}`" );
+			$order_cols = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $order_table ) );
 			if ( is_array( $order_cols ) && in_array( 'memo', $order_cols, true ) ) {
 				$order_where .= " OR memo LIKE %s ";
 				$order_args[] = $like;
@@ -1029,8 +1040,8 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 			}
 
 			// 顧客
-			$client_table = $wpdb->prefix . 'ktp_client';
-			$client_cols = $wpdb->get_col( "SHOW COLUMNS FROM `{$client_table}`" );
+			$client_table = $wpdb->prefix . 'ktpwp_client';
+			$client_cols = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $client_table ) );
 			$client_where = " ( company_name LIKE %s OR name LIKE %s ";
 			$client_args = array( $like, $like );
 			if ( is_array( $client_cols ) && in_array( 'memo', $client_cols, true ) ) {
@@ -1058,8 +1069,8 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 			}
 
 			// サービス
-			$service_table = $wpdb->prefix . 'ktp_service';
-			$service_cols = $wpdb->get_col( "SHOW COLUMNS FROM `{$service_table}`" );
+			$service_table = $wpdb->prefix . 'ktpwp_service';
+			$service_cols = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $service_table ) );
 			$service_where = " ( service_name LIKE %s ";
 			$service_args = array( $like );
 			if ( is_array( $service_cols ) ) {
@@ -1093,10 +1104,10 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 			}
 
 			// 協力会社（職能・スキル名 product_name も検索対象）
-			$supplier_table = $wpdb->prefix . 'ktp_supplier';
-			$supplier_skills_table = $wpdb->prefix . 'ktp_supplier_skills';
+			$supplier_table = $wpdb->prefix . 'ktpwp_supplier';
+			$supplier_skills_table = $wpdb->prefix . 'ktpwp_supplier_skills';
 			$supplier_skills_exists = ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $supplier_skills_table ) ) === $supplier_skills_table );
-			$supplier_cols = $wpdb->get_col( "SHOW COLUMNS FROM `{$supplier_table}`" );
+			$supplier_cols = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $supplier_table ) );
 			$supplier_where = $supplier_skills_exists ? " ( s.company_name LIKE %s OR s.name LIKE %s " : " ( company_name LIKE %s OR name LIKE %s ";
 			$supplier_args = array( $like, $like );
 			if ( is_array( $supplier_cols ) ) {
@@ -1200,7 +1211,7 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 			$hover_effect = 'onmouseover="this.style.backgroundColor=\'#f5f5f5\'; this.style.transform=\'translateY(-1px)\'; this.style.boxShadow=\'0 2px 5px rgba(0,0,0,0.15)\';" onmouseout="this.style.backgroundColor=\'#fff\'; this.style.transform=\'none\'; this.style.boxShadow=\'0 1px 3px rgba(0,0,0,0.1)\';"';
 
 			// ページネーションのリンクにはprogressを必ず付与
-			$add_progress = isset( $_GET['progress'] );
+			$add_progress = KTPWP_Request::has_query( 'progress' );
 
 			// 前のページボタン
 			if ( $current_page > 1 && $total_pages > 1 ) {

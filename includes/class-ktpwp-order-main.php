@@ -30,6 +30,9 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 		/** @var array<string, mixed> プレビュー生成時の帳票レイアウト設定 */
 		private $preview_doc_settings = array();
 
+		/** @var string 直近のプレビュー生成で使った帳票 CSS（JS 側が <style> にして差し込む） */
+		private $preview_doc_styles = '';
+
 		/**
 		 * Constructor
 		 *
@@ -48,6 +51,19 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 		 */
 		public function Generate_Order_Preview_HTML_Public( $order_data ) {
 			return $this->Generate_Order_Preview_HTML( $order_data );
+		}
+
+		/**
+		 * 直近の Generate_Order_Preview_HTML_Public() で使った帳票 CSS。
+		 *
+		 * プレビュー HTML には <style> を入れず、AJAX 応答で別に返す
+		 * （PHP から <style> を出さない。wp.org ガイドライン）。
+		 * js/ktp-order-preview.js が </head> の直前に差し込むので、印刷される HTML は以前と同じ。
+		 *
+		 * @return string CSS 本文（<style> タグは含めない）。
+		 */
+		public function Get_Last_Preview_Doc_Styles_Public() {
+			return $this->preview_doc_styles;
 		}
 
 		/**
@@ -394,8 +410,8 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 			}
 
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_order';
-			$client_table = $wpdb->prefix . 'ktp_client';
+			$table_name = $wpdb->prefix . 'ktpwp_order';
+			$client_table = $wpdb->prefix . 'ktpwp_client';
 
 			// Initialize invoice items table (with migration)
 			$this->Create_Invoice_Items_Table();
@@ -407,17 +423,17 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 			$this->Create_Staff_Chat_Table();
 
 			// 支払タイミングの保存処理（POST 時は最優先で実行しリダイレクト）
-			if ( ktpwp_request_method() === 'POST' && isset( $_POST['update_payment_timing_order_id'], $_POST['ktp_payment_timing_nonce'] ) ) {
-				if ( wp_verify_nonce( sanitize_text_field( $_POST['ktp_payment_timing_nonce'] ), 'ktp_update_order_payment_timing' ) ) {
-					$update_id = absint( $_POST['update_payment_timing_order_id'] );
-					$raw = isset( $_POST['order_payment_timing'] ) ? sanitize_text_field( $_POST['order_payment_timing'] ) : '';
+			if ( ktpwp_request_method() === 'POST' && isset( $_POST['update_payment_timing_order_id'], $_POST['ktpwp_payment_timing_nonce'] ) ) {
+				if ( wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['ktpwp_payment_timing_nonce'] ) ), 'ktpwp_update_order_payment_timing' ) ) {
+					$update_id = absint( wp_unslash( $_POST['update_payment_timing_order_id'] ) );
+					$raw = isset( $_POST['order_payment_timing'] ) ? sanitize_text_field( wp_unslash( $_POST['order_payment_timing'] ) ) : '';
 					if ( $raw === 'prepay_wc' ) {
 						$raw = 'prepay';
 					}
 					$payment_timing = in_array( $raw, array( 'postpay', 'prepay' ), true ) ? $raw : null;
 					if ( $update_id > 0 ) {
 						// カラムが無い場合はマイグレーションを実行
-						$cols = $wpdb->get_col( "SHOW COLUMNS FROM `{$table_name}`", 0 );
+						$cols = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $table_name ), 0 );
 						if ( ! is_array( $cols ) || ! in_array( 'payment_timing', $cols, true ) ) {
 							$migration_file = plugin_dir_path( __FILE__ ) . 'migrations/20250313_add_payment_timing_to_order.php';
 							if ( file_exists( $migration_file ) ) {
@@ -458,8 +474,8 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 
                 // Check user capabilities
                 if ( current_user_can( 'edit_posts' ) || current_user_can('ktpwp_access') ) {
-                    $order_id = absint( $_POST['staff_chat_order_id'] );
-                    $message = sanitize_textarea_field( $_POST['staff_chat_message'] );
+                    $order_id = absint( wp_unslash( $_POST['staff_chat_order_id'] ) );
+                    $message = sanitize_textarea_field( wp_unslash( $_POST['staff_chat_message'] ) );
 
                     if ( ! empty( $message ) && $order_id > 0 ) {
                         $success = $this->Add_Staff_Chat_Message( $order_id, $message );
@@ -498,7 +514,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 					wp_die( esc_html__( 'You do not have sufficient permissions to send emails.', 'kantanpro' ) );
 				}
 
-				$order_id = absint( $_POST['send_order_mail_id'] );
+				$order_id = absint( wp_unslash( $_POST['send_order_mail_id'] ) );
 				if ( $order_id > 0 ) {
 					$order = $wpdb->get_row(
                         $wpdb->prepare(
@@ -581,7 +597,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 								$mail_form_html .= '</div>';
 							} else {
 								// 自社情報取得 - 新しい設定システムを優先
-								$smtp_settings = get_option( 'ktp_smtp_settings', array() );
+								$smtp_settings = get_option( 'ktpwp_smtp_settings', array() );
 								$my_email = ! empty( $smtp_settings['email_address'] ) ? sanitize_email( $smtp_settings['email_address'] ) : '';
 
 								// 会社情報を新しい一般設定から取得
@@ -593,7 +609,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 								// 旧システムからも取得（後方互換性） - Use prepared statement
 								// 新規インストールにはこの旧テーブル自体が存在しないため、
 								// 存在確認してからクエリする（無ければ毎回 database error が出ていた）。
-								$setting_table = $wpdb->prefix . 'ktp_setting';
+								$setting_table = $wpdb->prefix . 'ktpwp_setting';
 								$setting = null;
 								if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $setting_table ) ) === $setting_table ) {
 									$setting = $wpdb->get_row(
@@ -949,8 +965,8 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 								}
 
 								// Sanitize email content input
-								$edit_subject = isset( $_POST['edit_subject'] ) ? sanitize_text_field( stripslashes( $_POST['edit_subject'] ) ) : $subject;
-								$edit_body = isset( $_POST['edit_body'] ) ? sanitize_textarea_field( stripslashes( $_POST['edit_body'] ) ) : $body;
+								$edit_subject = isset( $_POST['edit_subject'] ) ? sanitize_text_field( wp_unslash( $_POST['edit_subject'] ) ) : $subject;
+								$edit_body = isset( $_POST['edit_body'] ) ? sanitize_textarea_field( wp_unslash( $_POST['edit_body'] ) ) : $body;
 
 								// 送信ボタンが押された場合
 								if ( isset( $_POST['do_send_mail'] ) && $_POST['do_send_mail'] == '1' ) {
@@ -1031,8 +1047,8 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 				// wp_die( esc_html__( 'You do not have sufficient permissions to update project names.', 'kantanpro' ) );
 				// }
 
-				$update_id = absint( $_POST['update_project_name_id'] );
-				$project_name = sanitize_text_field( $_POST['order_project_name'] );
+				$update_id = absint( wp_unslash( $_POST['update_project_name_id'] ) );
+				$project_name = sanitize_text_field( wp_unslash( $_POST['order_project_name'] ) );
 				if ( $update_id > 0 ) {
 					$wpdb->update( $table_name, array( 'project_name' => $project_name ), array( 'id' => $update_id ), array( '%s' ), array( '%d' ) );
 					// POSTリダブミット防止のためリダイレクト
@@ -1050,19 +1066,17 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 			if ( ktpwp_request_method() === 'POST' && isset( $_POST['update_progress_id'], $_POST['update_progress'] ) ) {
 				ktpwp_debug_log( 'KTPWP Order: 進捗更新処理が呼び出されました' );
 
-				// Verify nonce
-				// if ( ! isset( $_POST['progress_nonce'] ) ||
-				// ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['progress_nonce'] ) ), 'update_progress_action' ) ) {
-				// wp_die( esc_html__( 'Security check failed. Please refresh the page and try again.', 'kantanpro' ) );
-				// }
+				// 受注の進捗を書き換えるので、nonce と権限を必ず確認する（フォームは progress_nonce を送る）
+				if ( ! isset( $_POST['progress_nonce'] )
+					|| ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['progress_nonce'] ) ), 'update_progress_action' ) ) {
+					wp_die( esc_html__( 'Security check failed. Please refresh the page and try again.', 'kantanpro' ) );
+				}
+				if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
+					wp_die( esc_html__( 'You do not have sufficient permissions to update progress.', 'kantanpro' ) );
+				}
 
-				// Check user capabilities
-				// if ( ! current_user_can( 'manage_options' ) ) {
-				// wp_die( esc_html__( 'You do not have sufficient permissions to update progress.', 'kantanpro' ) );
-				// }
-
-				$update_id = absint( $_POST['update_progress_id'] );
-				$update_progress = absint( $_POST['update_progress'] );
+				$update_id = absint( wp_unslash( $_POST['update_progress_id'] ) );
+				$update_progress = absint( wp_unslash( $_POST['update_progress'] ) );
 
 				ktpwp_debug_log( 'KTPWP Order: 進捗更新 - ID: ' . $update_id . ', 新しい進捗: ' . $update_progress );
 
@@ -1136,8 +1150,9 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 					wp_die( esc_html__( 'You do not have sufficient permissions to update invoice items.', 'kantanpro' ) );
 				}
 
-				$order_id = isset( $_POST['order_id'] ) ? absint( $_POST['order_id'] ) : 0;
-				$invoice_items = isset( $_POST['invoice_items'] ) ? $_POST['invoice_items'] : array();
+				$order_id = isset( $_POST['order_id'] ) ? absint( wp_unslash( $_POST['order_id'] ) ) : 0;
+				$invoice_items = isset( $_POST['invoice_items'] ) && is_array( $_POST['invoice_items'] ) ? map_deep( wp_unslash( $_POST['invoice_items'] ), 'sanitize_textarea_field' ) : array(); // 項目ごとの仕上げは下の sanitize_form_value。
+				array_walk_recursive( $invoice_items, array( 'KTPWP_Request', 'sanitize_form_value' ) );
 
 				if ( $order_id > 0 && is_array( $invoice_items ) ) {
 					$result = $this->Save_Invoice_Items( $order_id, $invoice_items );
@@ -1157,10 +1172,19 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 			}
 
 			// コスト項目保存処理
-			if ( ktpwp_request_method() === 'POST' && isset( $_POST['save_cost_items'] ) && $_POST['save_cost_items'] == 1 ) {
+			if ( ktpwp_request_method() === 'POST' && isset( $_POST['save_cost_items'] ) && '1' === sanitize_text_field( wp_unslash( $_POST['save_cost_items'] ) ) ) {
+				// 受注のコスト項目を書き換えるので、nonce と権限を必ず確認する（請求項目と同じ）
+				if ( ! isset( $_POST['cost_items_nonce'] ) ||
+					! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['cost_items_nonce'] ) ), 'save_cost_items_action' ) ) {
+					wp_die( esc_html__( 'Security check failed. Please refresh the page and try again.', 'kantanpro' ) );
+				}
+				if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
+					wp_die( esc_html__( 'You do not have sufficient permissions to update invoice items.', 'kantanpro' ) );
+				}
 
-				$order_id = isset( $_POST['order_id'] ) ? absint( $_POST['order_id'] ) : 0;
-				$cost_items = isset( $_POST['cost_items'] ) ? $_POST['cost_items'] : array();
+				$order_id = isset( $_POST['order_id'] ) ? absint( wp_unslash( $_POST['order_id'] ) ) : 0;
+				$cost_items = isset( $_POST['cost_items'] ) && is_array( $_POST['cost_items'] ) ? map_deep( wp_unslash( $_POST['cost_items'] ), 'sanitize_textarea_field' ) : array(); // 項目ごとの仕上げは下の sanitize_form_value。
+				array_walk_recursive( $cost_items, array( 'KTPWP_Request', 'sanitize_form_value' ) );
 
 				if ( $order_id > 0 && is_array( $cost_items ) ) {
 
@@ -1181,10 +1205,10 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 			// 重要なチェックポイント4を追加
 
 			// URLパラメータから顧客情報を取得 - Sanitize input
-			$customer_name = isset( $_GET['customer_name'] ) ? sanitize_text_field( $_GET['customer_name'] ) : '';
-			$user_name = isset( $_GET['user_name'] ) ? sanitize_text_field( $_GET['user_name'] ) : '';
-			$from_client = isset( $_GET['from_client'] ) ? absint( $_GET['from_client'] ) : 0; // 顧客タブからの遷移フラグ
-			$order_id = isset( $_GET['order_id'] ) ? absint( $_GET['order_id'] ) : 0; // 表示する受注書ID
+			$customer_name = KTPWP_Request::has_query( 'customer_name' ) ? KTPWP_Request::query( 'customer_name' ) : '';
+			$user_name = KTPWP_Request::has_query( 'user_name' ) ? KTPWP_Request::query( 'user_name' ) : '';
+			$from_client = KTPWP_Request::has_query( 'from_client' ) ? absint( KTPWP_Request::query_unslashed( 'from_client' ) ) : 0; // 顧客タブからの遷移フラグ
+			$order_id = KTPWP_Request::has_query( 'order_id' ) ? absint( KTPWP_Request::query_unslashed( 'order_id' ) ) : 0; // 表示する受注書ID
 
 			$content = ''; // 表示するHTMLコンテンツ
 
@@ -1211,8 +1235,8 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 						. esc_html__( '受注書の削除は確認後にのみ実行できます。ページを再読み込みして、もう一度お試しください。', 'kantanpro' )
 						. '</div>';
 				} else {
-				$order_id_to_delete = absint( $_POST['order_id'] );
-				$client_exists = isset( $_POST['client_exists'] ) ? intval( $_POST['client_exists'] ) : 0;
+				$order_id_to_delete = absint( wp_unslash( $_POST['order_id'] ) );
+				$client_exists = isset( $_POST['client_exists'] ) ? intval( wp_unslash( $_POST['client_exists'] ) ) : 0;
 
 				// 顧客データが存在しない場合でも削除を許可するため、顧客データの存在チェックは行わない
 
@@ -1294,7 +1318,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 			// 重要なチェックポイント6を追加
 
 			// 削除処理が完了した場合は新規受注書作成をスキップ
-			$deletion_completed = isset( $_GET['message'] ) && ( $_GET['message'] === 'deleted' || $_GET['message'] === 'deleted_all' );
+			$deletion_completed = KTPWP_Request::has_query( 'message' ) && ( KTPWP_Request::query_unslashed( 'message' ) === 'deleted' || KTPWP_Request::query_unslashed( 'message' ) === 'deleted_all' );
 
 			// 顧客タブから遷移してきた場合（新規受注書作成）
 			if ( $from_client === 1 && $customer_name !== '' && ! $deletion_completed ) {
@@ -1305,11 +1329,11 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 
 				// 顧客IDを取得（優先順位：GET > DB > SESSION > COOKIE > POST）
 				// 1. GETパラメータから取得（ktpwp.phpでリダイレクト時に設定される）
-				$client_id = isset( $_GET['client_id'] ) ? absint( $_GET['client_id'] ) : 0;
+				$client_id = KTPWP_Request::has_query( 'client_id' ) ? absint( KTPWP_Request::query_unslashed( 'client_id' ) ) : 0;
 
 				// 2. POSTパラメータも確認
-				if ( $client_id <= 0 && isset( $_POST['client_id'] ) && absint( $_POST['client_id'] ) > 0 ) {
-					$client_id = absint( $_POST['client_id'] );
+				if ( $client_id <= 0 && isset( $_POST['client_id'] ) && absint( wp_unslash( $_POST['client_id'] ) ) > 0 ) {
+					$client_id = absint( wp_unslash( $_POST['client_id'] ) );
 				}
 
 				// 最終手段：顧客IDが提供されなかった場合は、会社名と担当者名から顧客IDを検索
@@ -1401,7 +1425,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 					);
 					$client_department_id = null;
 					if ( $client_id > 0 && class_exists( 'KTPWP_Department_Manager' ) ) {
-						$order_cols = $wpdb->get_col( "SHOW COLUMNS FROM `{$table_name}`", 0 );
+						$order_cols = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $table_name ), 0 );
 						if ( is_array( $order_cols ) && in_array( 'client_department_id', $order_cols, true ) ) {
 							$selected_department = KTPWP_Department_Manager::get_selected_department_by_client( $client_id );
 							if ( $selected_department ) {
@@ -1504,19 +1528,19 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 			// 重要なチェックポイント7を追加
 
 			// 削除処理完了後は受注書の自動取得をスキップ
-			$deletion_completed = isset( $_GET['message'] ) && ( $_GET['message'] === 'deleted' || $_GET['message'] === 'deleted_all' );
+			$deletion_completed = KTPWP_Request::has_query( 'message' ) && ( KTPWP_Request::query_unslashed( 'message' ) === 'deleted' || KTPWP_Request::query_unslashed( 'message' ) === 'deleted_all' );
 
 			// 受注書IDの決定ロジック（優先順位：GET > セッション記憶 > 最新）
 			if ( $order_id === 0 && ! $deletion_completed ) {
 				// 1. GETパラメータで指定された受注書IDを優先
-				if ( isset( $_GET['order_id'] ) && ! empty( $_GET['order_id'] ) ) {
-					$get_order_id = absint( $_GET['order_id'] );
+				if ( KTPWP_Request::has_query( 'order_id' ) && ! empty( KTPWP_Request::query( 'order_id' ) ) ) {
+					$get_order_id = absint( KTPWP_Request::query_unslashed( 'order_id' ) );
 					// 有効な受注書IDかチェック
 					$valid_order = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM `{$table_name}` WHERE id = %d", $get_order_id ) );
 					if ( $valid_order ) {
 						$order_id = $get_order_id;
 						// 有効な受注書IDの場合、セッションに記憶
-						$_SESSION['ktp_last_order_id'] = $order_id;
+						$_SESSION['ktpwp_last_order_id'] = $order_id;
 					} else {
 						// 無効なIDの場合はGETパラメータをクリア
 						$current_url = remove_query_arg( 'order_id', sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) );
@@ -1525,15 +1549,15 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 					}
 				}
 				// 2. セッションに記憶された受注書IDを確認
-				elseif ( isset( $_SESSION['ktp_last_order_id'] ) && ! empty( $_SESSION['ktp_last_order_id'] ) ) {
-					$session_order_id = absint( $_SESSION['ktp_last_order_id'] );
+				elseif ( isset( $_SESSION['ktpwp_last_order_id'] ) && ! empty( $_SESSION['ktpwp_last_order_id'] ) ) {
+					$session_order_id = absint( $_SESSION['ktpwp_last_order_id'] );
 					// 記憶されたIDが有効な受注書かチェック
 					$valid_order = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM `{$table_name}` WHERE id = %d", $session_order_id ) );
 					if ( $valid_order ) {
 						$order_id = $session_order_id;
 					} else {
 						// 無効なIDの場合はセッションから削除
-						unset( $_SESSION['ktp_last_order_id'] );
+						unset( $_SESSION['ktpwp_last_order_id'] );
 					}
 				}
 				// 3. 最新の受注書IDを取得
@@ -1547,7 +1571,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 					if ( $latest_order ) {
 						$order_id = $latest_order->id;
 						// 最新の受注書IDもセッションに記憶
-						$_SESSION['ktp_last_order_id'] = $order_id;
+						$_SESSION['ktpwp_last_order_id'] = $order_id;
 					}
 				}
 			} else {
@@ -1556,11 +1580,11 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 					// 有効な受注書IDかチェック
 					$valid_order = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM `{$table_name}` WHERE id = %d", $order_id ) );
 					if ( $valid_order ) {
-						$_SESSION['ktp_last_order_id'] = $order_id;
+						$_SESSION['ktpwp_last_order_id'] = $order_id;
 					} else {
 						// 無効なIDの場合はリセット
 						$order_id = 0;
-						unset( $_SESSION['ktp_last_order_id'] );
+						unset( $_SESSION['ktpwp_last_order_id'] );
 					}
 				}
 			}
@@ -1580,10 +1604,10 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 
 				if ( $order_data ) {
 					// 現在表示中の受注書IDをセッションに記憶（確実に保存）
-					$_SESSION['ktp_last_order_id'] = $order_id;
+					$_SESSION['ktpwp_last_order_id'] = $order_id;
 
-					if ( isset( $_GET['ktp_of_notice'] ) ) {
-						$n = sanitize_key( wp_unslash( $_GET['ktp_of_notice'] ) );
+					if ( KTPWP_Request::has_query( 'ktpwp_of_notice' ) ) {
+						$n = sanitize_key( KTPWP_Request::query( 'ktpwp_of_notice' ) );
 						$map = array(
 							'upload_ok'        => array( 'border-color:#4caf50;background:#e8f5e9;', __( 'ファイルを追加しました。', 'kantanpro' ) ),
 							'upload_err'       => array( 'border-color:#f44336;background:#ffebee;', __( 'ファイルを追加できませんでした。', 'kantanpro' ) ),
@@ -1724,7 +1748,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 
 					// Email button (opens popup)
 					if ( $can_send_email ) {
-						$content .= '<button type="button" id="orderMailButton" class="ktp-title-icon-btn order-mail-btn" onclick="ktpShowEmailPopup(' . esc_attr( $order_data->id ) . ')" title="' . $mail_button_title . '" aria-label="' . esc_attr__( 'メール送信', 'kantanpro' ) . '">';
+						$content .= '<button type="button" id="orderMailButton" class="ktp-title-icon-btn order-mail-btn" onclick="ktpwpShowEmailPopup(' . esc_attr( $order_data->id ) . ')" title="' . $mail_button_title . '" aria-label="' . esc_attr__( 'メール送信', 'kantanpro' ) . '">';
 					} else {
 						$content .= '<button type="button" id="orderMailButton" class="ktp-title-icon-btn order-mail-btn" disabled title="' . $mail_button_title . '" aria-label="' . esc_attr__( 'メール送信不可', 'kantanpro' ) . '">';
 					}
@@ -1763,16 +1787,16 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 					);
 
 					// 受注書詳細の表示（カードレイアウト・KantanBiz型）
-					$ktp_norm_order_date = function ( $v ) {
+					$ktpwp_norm_order_date = function ( $v ) {
 						if ( empty( $v ) || '0000-00-00' === (string) $v || '0000-00-00 00:00:00' === (string) $v ) {
 							return '';
 						}
 						return (string) $v;
 					};
-					$desired_delivery_date = $ktp_norm_order_date( isset( $order_data->desired_delivery_date ) ? $order_data->desired_delivery_date : '' );
-					$expected_delivery_date = $ktp_norm_order_date( isset( $order_data->expected_delivery_date ) ? $order_data->expected_delivery_date : '' );
-					$promised_delivery_date = $ktp_norm_order_date( isset( $order_data->promised_delivery_date ) ? $order_data->promised_delivery_date : '' );
-					$completion_date = $ktp_norm_order_date( isset( $order_data->completion_date ) ? $order_data->completion_date : '' );
+					$desired_delivery_date = $ktpwp_norm_order_date( isset( $order_data->desired_delivery_date ) ? $order_data->desired_delivery_date : '' );
+					$expected_delivery_date = $ktpwp_norm_order_date( isset( $order_data->expected_delivery_date ) ? $order_data->expected_delivery_date : '' );
+					$promised_delivery_date = $ktpwp_norm_order_date( isset( $order_data->promised_delivery_date ) ? $order_data->promised_delivery_date : '' );
+					$completion_date = $ktpwp_norm_order_date( isset( $order_data->completion_date ) ? $order_data->completion_date : '' );
 					$original_completion_date = isset( $order_data->completion_date ) ? $order_data->completion_date : '';
 					ktpwp_debug_log( 'KTPWP Order: 画面表示時の完了日: ' . $completion_date . ' (受注書ID: ' . $order_data->id . ', 元の値: ' . $original_completion_date . ')' );
 
@@ -1987,7 +2011,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 					$content .= '<option value="prepay_wc"' . ( $order_payment_timing === 'prepay_wc' ? ' selected' : '' ) . '>' . esc_html__( 'WC受注', 'kantanpro' ) . '</option>';
 					$content .= '</select>';
 					$content .= '<input type="hidden" name="update_payment_timing_order_id" value="' . esc_attr( $order_data->id ) . '" />';
-					$content .= '<input type="hidden" name="ktp_payment_timing_nonce" value="' . esc_attr( wp_create_nonce( 'ktp_update_order_payment_timing' ) ) . '" />';
+					$content .= '<input type="hidden" name="ktpwp_payment_timing_nonce" value="' . esc_attr( wp_create_nonce( 'ktpwp_update_order_payment_timing' ) ) . '" />';
 					$content .= '</form></div>';
 					if ( $reception_date_value !== '' ) {
 						$content .= '<div class="ktp-order-summary-date-cell ktp-order-summary-date-cell--reception"><span class="ktp-order-summary-field-label">' . esc_html__( '受付', 'kantanpro' ) . '：</span>';
@@ -2036,7 +2060,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 
 					$content .= '<div class="ktp-order-summary-memo-line ktp-order-summary-memo-wrap">';
 					$content .= '<span class="ktp-order-summary-memo-label">' . esc_html__( 'メモ', 'kantanpro' ) . '：</span>';
-					$content .= '<input type="text" id="ktp_order_summary_memo_' . (int) $order_data->id . '" class="ktp-order-summary-memo-input" maxlength="10000" autocomplete="off" ';
+					$content .= '<input type="text" id="ktpwp_order_summary_memo_' . (int) $order_data->id . '" class="ktp-order-summary-memo-input" maxlength="10000" autocomplete="off" ';
 					$content .= 'value="' . esc_attr( $summary_memo ) . '" data-order-id="' . esc_attr( $order_data->id ) . '" data-field="memo" />';
 					$content .= '</div>';
 
@@ -2116,7 +2140,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 					}
 
 					// 統一された案内表示
-					$content .= '<div class="ktp_data_list_item" style="padding: 15px 20px; background: linear-gradient(135deg, #e3f2fd 0%, #fce4ec 100%); border-radius: 8px; margin: 18px 0; color: #333; font-weight: 600; box-shadow: 0 3px 12px rgba(0,0,0,0.07); display: flex; align-items: center; font-size: 15px; gap: 10px;">'
+					$content .= '<div class="ktpwp_data_list_item" style="padding: 15px 20px; background: linear-gradient(135deg, #e3f2fd 0%, #fce4ec 100%); border-radius: 8px; margin: 18px 0; color: #333; font-weight: 600; box-shadow: 0 3px 12px rgba(0,0,0,0.07); display: flex; align-items: center; font-size: 15px; gap: 10px;">'
 					. '<span class="material-symbols-outlined" aria-label="データなし">search_off</span>'
 					. '<span style="font-size: 1em; font-weight: 600;">' . esc_html__( '受注書データがありません。', 'kantanpro' ) . '</span>'
 					. '<span style="margin-left: 18px; font-size: 13px; color: #888;">' . esc_html__( '顧客タブで顧客情報を入力し受注書を作成してください', 'kantanpro' ) . '</span>'
@@ -2161,7 +2185,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 				}
 
 				// 仕事リストタブと統一されたデータ0の時の案内表示
-				$content .= '<div class="ktp_order_content ktp-no-order-data" style="padding: 15px 20px; background: linear-gradient(135deg, #e3f2fd 0%, #fce4ec 100%); border-radius: 8px; margin: 18px 0; color: #333; font-weight: 600; box-shadow: 0 3px 12px rgba(0,0,0,0.07); display: flex; align-items: center; font-size: 15px; gap: 10px;">'
+				$content .= '<div class="ktpwp_order_content ktp-no-order-data" style="padding: 15px 20px; background: linear-gradient(135deg, #e3f2fd 0%, #fce4ec 100%); border-radius: 8px; margin: 18px 0; color: #333; font-weight: 600; box-shadow: 0 3px 12px rgba(0,0,0,0.07); display: flex; align-items: center; font-size: 15px; gap: 10px;">'
                 . '<span class="material-symbols-outlined" aria-label="データなし">search_off</span>'
                 . '<span style="font-size: 1em; font-weight: 600;">' . esc_html__( '受注書データがありません。', 'kantanpro' ) . '</span>'
                 . '<span style="margin-left: 18px; font-size: 13px; color: #888;">' . esc_html__( '顧客タブで顧客情報を入力し受注書を作成してください', 'kantanpro' ) . '</span>'
@@ -2170,12 +2194,12 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 
 			// ページネーションロジック（表示はしないが計算は残す）
 			$query_limit = 20; // 1ページあたりの表示件数
-			$page_start = isset( $_GET['page_start'] ) ? intval( $_GET['page_start'] ) : 0; // 表示開始位置
+			$page_start = KTPWP_Request::has_query( 'page_start' ) ? intval( KTPWP_Request::query_unslashed( 'page_start' ) ) : 0; // 表示開始位置
 			$page_start = max( 0, $page_start ); // 負の値を防ぐ安全対策
 
 			// 全データ数を取得 - Use prepared statement
-			$total_query = "SELECT COUNT(*) FROM `{$table_name}`";
-			$total_rows = $wpdb->get_var( $total_query );
+			$total_query = $wpdb->prepare( "SELECT COUNT(*) FROM %i", $table_name );
+			$total_rows = $wpdb->get_var( $total_query ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $total_query は直前で $wpdb->prepare() 済み。
 			$total_pages = ceil( $total_rows / $query_limit );
 
 			// 現在のページ番号を計算
@@ -2189,7 +2213,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 			// デバッグログ追加
 
 			// 納期フィールドのJavaScriptファイルを読み込み
-			wp_enqueue_script( 'ktp-delivery-dates' );
+			wp_enqueue_script( 'ktpwp-delivery-dates' );
 
 
 
@@ -2211,7 +2235,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 			}
 
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_order_invoice_items';
+			$table_name = $wpdb->prefix . 'ktpwp_order_invoice_items';
 
 			// Start transaction
 			$wpdb->query( 'START TRANSACTION' );
@@ -2300,7 +2324,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
                         "DELETE FROM {$table_name} WHERE order_id = %d AND id NOT IN ({$ids_placeholder})",
                         array_merge( array( $order_id ), $submitted_ids )
 					);
-					$wpdb->query( $delete_query );
+					$wpdb->query( $delete_query ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $delete_query は $wpdb->prepare() 済み。
 				}
 
 				// Commit transaction
@@ -2331,7 +2355,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 			}
 
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_order_cost_items';
+			$table_name = $wpdb->prefix . 'ktpwp_order_cost_items';
 
 			// Start transaction
 			$wpdb->query( 'START TRANSACTION' );
@@ -2420,7 +2444,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
                         "DELETE FROM {$table_name} WHERE order_id = %d AND id NOT IN ({$ids_placeholder})",
                         array_merge( array( $order_id ), $submitted_ids )
 					);
-					$wpdb->query( $delete_query );
+					$wpdb->query( $delete_query ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $delete_query は $wpdb->prepare() 済み。
 				}
 
 				// Commit transaction
@@ -2444,7 +2468,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 		 * @return bool True if safe to proceed, false if conflict detected
 		 */
 		private function Check_Concurrent_Access( $order_id ) {
-			$lock_option = 'ktp_order_editing_' . $order_id;
+			$lock_option = 'ktpwp_order_editing_' . $order_id;
 			$current_time = time();
 			$lock_timeout = 30; // 30秒でタイムアウト
 
@@ -2483,7 +2507,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 		 * @param int $order_id Order ID
 		 */
 		private function Release_Concurrent_Access_Lock( $order_id ) {
-			$lock_option = 'ktp_order_editing_' . $order_id;
+			$lock_option = 'ktpwp_order_editing_' . $order_id;
 			delete_option( $lock_option );
 		}
 
@@ -2524,7 +2548,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 			}
 
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_order_staff_chat';
+			$table_name = $wpdb->prefix . 'ktpwp_order_staff_chat';
 
 			// Delete all staff chat messages for this order
 			$result = $wpdb->delete(
@@ -2611,9 +2635,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 
 			// プレビューHTML生成 - A4サイズに最適化
 			$html = '<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><title>受注書プレビュー</title>';
-			if ( $doc_styles !== '' ) {
-				$html .= '<style>' . $doc_styles . '</style>';
-			}
+			$this->preview_doc_styles = $doc_styles;
 			$html .= '</head><body class="ktp-pdf-doc' . esc_attr( $compact_class ) . '">';
 			$html .= '<div class="order-preview-document ktp-pdf-doc" style="font-family: \'Noto Sans JP\', \'Hiragino Kaku Gothic ProN\', Meiryo, sans-serif; line-height: 1.4; color: #333; max-width: 210mm; margin: 0 auto; padding: 50px; background: #fff; min-height: 297mm; box-sizing: border-box;">';
 
@@ -2624,7 +2646,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 			$display_customer_name = $order_data->customer_name;
 			if ( $display_customer_name === '0' || empty( $display_customer_name ) ) {
 				global $wpdb;
-				$client_table = $wpdb->prefix . 'ktp_client';
+				$client_table = $wpdb->prefix . 'ktpwp_client';
 				
 				// 顧客IDがある場合は顧客テーブルから会社名を取得
 				if ( ! empty( $order_data->client_id ) ) {
@@ -2658,7 +2680,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 			$parent_company_name = $display_customer_name;
 			if ( ! empty( $order_data->client_id ) ) {
 				global $wpdb;
-				$client_table        = $wpdb->prefix . 'ktp_client';
+				$client_table        = $wpdb->prefix . 'ktpwp_client';
 				$client_company_name = $wpdb->get_var(
 					$wpdb->prepare(
 						"SELECT company_name FROM `{$client_table}` WHERE id = %d",
@@ -2910,7 +2932,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 			}
 
 			global $wpdb;
-			$supplier_table = $wpdb->prefix . 'ktp_supplier';
+			$supplier_table = $wpdb->prefix . 'ktpwp_supplier';
 
 			$html  = '<h3 style="font-size: 16px; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #333;">';
 			$html .= esc_html__( '原価明細', 'kantanpro' );
@@ -2971,7 +2993,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 			$tax_category = $this->get_client_tax_category( $order_id );
 
 			// デザイン設定から奇数偶数の背景色を取得
-			$design_options = get_option( 'ktp_design_settings', array() );
+			$design_options = get_option( 'ktpwp_design_settings', array() );
 			$odd_row_color = isset( $design_options['odd_row_color'] ) ? $design_options['odd_row_color'] : '#E7EEFD';
 			$even_row_color = isset( $design_options['even_row_color'] ) ? $design_options['even_row_color'] : '#FFFFFF';
 
@@ -3333,7 +3355,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 			global $wpdb;
 			
 			// 受注書から顧客IDを取得
-			$order_table = $wpdb->prefix . 'ktp_order';
+			$order_table = $wpdb->prefix . 'ktpwp_order';
 			$order = $wpdb->get_row(
 				$wpdb->prepare(
 					"SELECT client_id FROM {$order_table} WHERE id = %d",
@@ -3346,7 +3368,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 			}
 			
 			// 顧客テーブルから税区分を取得
-			$client_table = $wpdb->prefix . 'ktp_client';
+			$client_table = $wpdb->prefix . 'ktpwp_client';
 			$client = $wpdb->get_row(
 				$wpdb->prepare(
 					"SELECT tax_category FROM {$client_table} WHERE id = %d",
@@ -3377,7 +3399,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 					// 旧システムからも取得（後方互換性）
 		if ( empty( $company_info ) ) {
 			global $wpdb;
-			$setting_table = $wpdb->prefix . 'ktp_setting';
+			$setting_table = $wpdb->prefix . 'ktpwp_setting';
 			
 			// テーブルの存在確認
 			$table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $setting_table ) );
@@ -3395,7 +3417,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 			} else {
 				// テーブルが存在しない場合はログに記録
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					ktpwp_debug_log( 'KTPWP: ktp_setting テーブルが存在しません。デフォルト会社情報を使用します。' );
+					ktpwp_debug_log( 'KTPWP: ktpwp_setting テーブルが存在しません。デフォルト会社情報を使用します。' );
 				}
 			}
 		}
@@ -3449,7 +3471,7 @@ if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 			}
 
 			global $wpdb;
-			$client_table = $wpdb->prefix . 'ktp_client';
+			$client_table = $wpdb->prefix . 'ktpwp_client';
 
 			// 顧客テーブルから住所情報を取得（class-tab-client.phpと同じ方法）
 			$customer = $wpdb->get_row(

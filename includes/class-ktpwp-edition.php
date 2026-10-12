@@ -65,7 +65,7 @@ class KTPWP_Edition {
 		$edition = defined( 'KTPWP_EDITION' ) ? (string) KTPWP_EDITION : 'free';
 
 		if ( self::is_developer_override_enabled() ) {
-			$override = get_option( 'ktp_developer_edition_override', '' );
+			$override = get_option( 'ktpwp_developer_edition_override', '' );
 			if ( is_string( $override ) && $override !== '' && isset( self::get_definitions()[ $override ] ) ) {
 				$edition = $override;
 			}

@@ -75,7 +75,7 @@ if ( ! class_exists( 'KTPWP_Contract_Billing' ) ) {
 
 			global $wpdb;
 			$contract_table = $this->contract_db->get_contract_table_name();
-			$client_table   = $wpdb->prefix . 'ktp_client';
+			$client_table   = $wpdb->prefix . 'ktpwp_client';
 
 			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 			$contracts = $wpdb->get_results(
@@ -101,7 +101,7 @@ if ( ! class_exists( 'KTPWP_Contract_Billing' ) ) {
 				if ( $log && (int) $log->order_id > 0 ) {
 					$order = $wpdb->get_row(
 						$wpdb->prepare(
-							"SELECT id, progress FROM {$wpdb->prefix}ktp_order WHERE id = %d",
+							"SELECT id, progress FROM {$wpdb->prefix}ktpwp_order WHERE id = %d",
 							(int) $log->order_id
 						)
 					);
@@ -283,7 +283,7 @@ if ( ! class_exists( 'KTPWP_Contract_Billing' ) ) {
 
 			$client = $wpdb->get_row(
 				$wpdb->prepare(
-					"SELECT * FROM {$wpdb->prefix}ktp_client WHERE id = %d",
+					"SELECT * FROM {$wpdb->prefix}ktpwp_client WHERE id = %d",
 					(int) $contract->client_id
 				)
 			);
@@ -297,12 +297,12 @@ if ( ! class_exists( 'KTPWP_Contract_Billing' ) ) {
 
 			$service = $wpdb->get_row(
 				$wpdb->prepare(
-					"SELECT * FROM {$wpdb->prefix}ktp_service WHERE id = %d",
+					"SELECT * FROM {$wpdb->prefix}ktpwp_service WHERE id = %d",
 					(int) $contract->service_id
 				)
 			);
 
-			$order_table = $wpdb->prefix . 'ktp_order';
+			$order_table = $wpdb->prefix . 'ktpwp_order';
 			$timestamp   = current_time( 'timestamp' );
 			$today       = wp_date( 'Y-m-d', $timestamp );
 			$order_prefix = wp_date( 'Y-md', $timestamp ) . '-';
@@ -442,7 +442,7 @@ if ( ! class_exists( 'KTPWP_Contract_Billing' ) ) {
 				return null;
 			}
 
-			$order_table = $wpdb->prefix . 'ktp_order';
+			$order_table = $wpdb->prefix . 'ktpwp_order';
 
 			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 			return $wpdb->get_row(
@@ -550,7 +550,7 @@ if ( ! class_exists( 'KTPWP_Contract_Billing' ) ) {
 				return;
 			}
 
-			$invoice_table = $wpdb->prefix . 'ktp_order_invoice_items';
+			$invoice_table = $wpdb->prefix . 'ktpwp_order_invoice_items';
 			$wpdb->delete( $invoice_table, array( 'order_id' => $order_id ), array( '%d' ) );
 
 			$unit     = ( $service && ! empty( $service->unit ) ) ? (string) $service->unit : __( '式', 'kantanpro' );
@@ -626,7 +626,7 @@ if ( ! class_exists( 'KTPWP_Contract_Billing' ) ) {
 		private function insert_invoice_line( $order_id, $product_name, $price, $quantity, $unit, $tax_rate, $sort_order, $remarks = '' ) {
 			global $wpdb;
 
-			$table = $wpdb->prefix . 'ktp_order_invoice_items';
+			$table = $wpdb->prefix . 'ktpwp_order_invoice_items';
 			$data  = array(
 				'order_id'     => absint( $order_id ),
 				'product_name' => sanitize_text_field( $product_name ),
@@ -659,13 +659,13 @@ if ( ! class_exists( 'KTPWP_Contract_Billing' ) ) {
 			global $wpdb;
 
 			static $cache = array();
-			$table        = $wpdb->prefix . 'ktp_order';
+			$table        = $wpdb->prefix . 'ktpwp_order';
 
 			if ( isset( $cache[ $column ] ) ) {
 				return $cache[ $column ];
 			}
 
-			$columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$table}`" );
+			$columns = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $table ) );
 			$cache[ $column ] = is_array( $columns ) && in_array( $column, $columns, true );
 
 			return $cache[ $column ];

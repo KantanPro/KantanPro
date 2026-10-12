@@ -11,13 +11,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 final class KTPWP_Pdf_Branding {
 
-	public const OPTION_LOGO_PATH = 'ktp_pdf_logo_path';
+	public const OPTION_LOGO_PATH = 'ktpwp_pdf_logo_path';
 
-	public const OPTION_SEAL_PATH = 'ktp_pdf_seal_path';
+	public const OPTION_SEAL_PATH = 'ktpwp_pdf_seal_path';
 
-	public const OPTION_ISSUER_NAME = 'ktp_pdf_issuer_name';
+	public const OPTION_ISSUER_NAME = 'ktpwp_pdf_issuer_name';
 
-	public const OPTION_ISSUER_ADDRESS = 'ktp_pdf_issuer_address';
+	public const OPTION_ISSUER_ADDRESS = 'ktpwp_pdf_issuer_address';
 
 	/** @var list<string> */
 	private static $allowed_mimes = array(
@@ -87,15 +87,16 @@ final class KTPWP_Pdf_Branding {
 	}
 
 	/**
-	 * @param string $field logo|seal
+	 * @param string $field logo|seal（保存ファイル名の接頭辞）
+	 * @param array  $file  呼び出し側（KTPWP_Pdf_Branding_Admin::handle_save）が nonce 確認後に
+	 *                      項目ごとにサニタイズして渡す $_FILES の 1 件分。
 	 * @return string|null
 	 */
-	public static function handle_upload( $field ) {
-		if ( empty( $_FILES[ $field ]['tmp_name'] ) || ! is_uploaded_file( $_FILES[ $field ]['tmp_name'] ) ) {
+	public static function handle_upload( $field, array $file ) {
+		if ( empty( $file['tmp_name'] ) || ! is_uploaded_file( $file['tmp_name'] ) ) {
 			return null;
 		}
 
-		$file = $_FILES[ $field ];
 		if ( (int) $file['size'] > 1024 * 1024 ) {
 			return null;
 		}

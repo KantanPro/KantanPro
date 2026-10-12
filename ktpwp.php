@@ -3,14 +3,14 @@
  * Plugin Name: KantanPro
  * Plugin URI: https://www.kantanpro.com/
  * Description: スモールビジネスのための販売支援ツール。ショートコード[ktpwp_all_tab]を固定ページに設置してください。
- * Version: 1.3.48
+ * Version: 1.3.49
  * Author: KantanPro
  * Author URI: https://www.kantanpro.com/kantanpro-page
  * License: GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: kantanpro
  * Domain Path: /languages
- * Requires at least: 5.9
+ * Requires at least: 6.2
  * Requires PHP: 7.4
  * Update URI: https://github.com/KantanPro/KantanPro
  *
@@ -25,6 +25,73 @@ if ( ! defined( 'ABSPATH' ) ) {
 // 更新の一時展開で別パスから本ファイルが二重 require される場合の対策。
 if ( function_exists( 'ktpwp_autoload_classes' ) ) {
     return;
+}
+
+// 画面移動用クエリ引数の読み取り口。どのファイルからも使うので最初に読み込む。
+require_once __DIR__ . '/includes/class-ktpwp-request.php';
+
+if ( ! function_exists( 'ktpwp_migration_add_column' ) ) {
+    /**
+     * マイグレーション用: テーブルに列を追加する。
+     *
+     * テーブル名と列名は %i プレースホルダーで渡す。列定義（"VARCHAR(100) NOT NULL" など）は
+     * プレースホルダーで表せないため、各マイグレーションファイルに直書きした定数だけを受け取り、
+     * 型・制約の記述に使う文字だけで構成されているかをここで確認してから連結する。
+     *
+     * @param string $table      テーブル名（$wpdb->prefix 付き）。
+     * @param string $column     列名。
+     * @param string $definition 列定義（マイグレーションファイル内の定数）。
+     * @return int|bool $wpdb->query() の戻り値。定義が不正なら false。
+     */
+    function ktpwp_migration_add_column( $table, $column, $definition ) {
+        global $wpdb;
+
+        $definition = trim( (string) $definition );
+        if ( $definition === ''
+            || ! preg_match( "/^[\\p{L}\\p{N}_ (),.'`%=\\-（）:]+$/u", $definition )
+            || preg_match( '/;|--|\\/\\*/', $definition ) ) {
+            return false;
+        }
+
+        // 列定義は検証済みの定数（上記）。% は prepare() 用にエスケープする。
+        return $wpdb->query( $wpdb->prepare( 'ALTER TABLE %i ADD COLUMN %i ' . str_replace( '%', '%%', $definition ), $table, $column ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnescapedLiteral, WordPress.DB.PreparedSQLPlaceholders.UnsupportedPlaceholder, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange -- 列定義はマイグレーションファイル内の定数を許可文字で検証したもの。
+    }
+}
+
+if ( ! function_exists( 'ktpwp_resolve_tab_name' ) ) {
+    /**
+     * 表示するタブ名を決める。
+     *
+     * 業務フォームの POST に tab_name があり、そのフォームの nonce を確認できたときはそれを優先する
+     * （フォーム送信後も送信元のタブを表示するため）。それ以外は URL の ?tab_name= を使う。
+     *
+     * @param string $default どちらにも無いときの値。
+     * @return string サニタイズ済みのタブ名（許可リストでの検証は呼び出し側）。
+     */
+    function ktpwp_resolve_tab_name( $default = '' ) {
+        if ( isset( $_POST['tab_name'] ) && is_string( $_POST['tab_name'] ) ) {
+            $form_nonces = array(
+                'ktpwp_client_nonce'   => 'ktpwp_client_action',
+                '_ktp_service_nonce'   => 'ktpwp_service_action',
+                'ktpwp_supplier_nonce' => 'ktpwp_supplier_action',
+                'ktpwp_skills_nonce'   => 'ktpwp_skills_action',
+                'progress_nonce'       => 'update_progress_action',
+                'delete_nonce'         => 'delete_order_action',
+                'invoice_items_nonce'  => 'save_invoice_items_action',
+                'cost_items_nonce'     => 'save_cost_items_action',
+                'order_mail_nonce'     => 'send_order_mail_action',
+                'staff_chat_nonce'     => 'staff_chat_action',
+            );
+            foreach ( $form_nonces as $field => $action ) {
+                if ( isset( $_POST[ $field ] )
+                    && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST[ $field ] ) ), $action ) ) {
+                    return sanitize_text_field( wp_unslash( $_POST['tab_name'] ) );
+                }
+            }
+        }
+
+        return KTPWP_Request::has_query( 'tab_name' ) ? KTPWP_Request::query( 'tab_name' ) : $default;
+    }
 }
 
 
@@ -152,10 +219,10 @@ if ( ! function_exists( 'ktpwp_is_pro_edition_active' ) ) {
 if ( ! function_exists( 'ktpwp_should_bootstrap_free_edition' ) ) {
     function ktpwp_should_bootstrap_free_edition() {
         if ( ktpwp_is_pro_edition_active() ) {
-            update_option( 'ktp_active_edition', 'pro', false );
+            update_option( 'ktpwp_active_edition', 'pro', false );
             return false;
         }
-        update_option( 'ktp_active_edition', 'free', false );
+        update_option( 'ktpwp_active_edition', 'free', false );
         return true;
     }
 }
@@ -439,7 +506,7 @@ if ( ! function_exists( 'ktpwp_add_inline_notice' ) ) {
  */
 if ( ! function_exists( 'ktpwp_add_inline_script' ) ) {
     function ktpwp_add_inline_script( $js ) {
-        foreach ( array( 'ktp-js', 'ktp-admin-settings', 'jquery' ) as $handle ) {
+        foreach ( array( 'ktpwp-js', 'ktpwp-admin-settings', 'jquery' ) as $handle ) {
             if ( wp_script_is( $handle, 'enqueued' ) || wp_script_is( $handle, 'registered' ) ) {
                 wp_add_inline_script( $handle, $js );
                 return true;
@@ -484,7 +551,7 @@ if ( ! function_exists( 'ktpwp_ex_customize_delete_confirm_text' ) ) {
             return;
         }
 
-        $settings = get_option( 'ktp_uninstall_settings', array() );
+        $settings = get_option( 'ktpwp_uninstall_settings', array() );
         $mode     = isset( $settings['uninstall_mode'] ) ? (string) $settings['uninstall_mode'] : 'keep_data';
 
         $message_keep = __( '本当に KantanPro を削除してもよいですか？\n\n現在の設定は「データを残す」です。プラグインファイルのみ削除され、データは残ります。', 'kantanpro' );
@@ -543,14 +610,14 @@ if ( ! function_exists( 'ktpwp_supplier_skills_template_redirect' ) ) {
 		if ( 'POST' !== ktpwp_request_method() ) {
 			return;
 		}
-		if ( empty( $_POST['skills_action'] ) || empty( $_POST['ktp_skills_nonce'] ) ) {
+		if ( empty( $_POST['skills_action'] ) || empty( $_POST['ktpwp_skills_nonce'] ) ) {
 			return;
 		}
 		if ( ! is_user_logged_in() || ! current_user_can( 'edit_posts' ) ) {
 			return;
 		}
-		$nonce = isset( $_POST['ktp_skills_nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['ktp_skills_nonce'] ) ) : '';
-		if ( ! wp_verify_nonce( $nonce, 'ktp_skills_action' ) ) {
+		$nonce = isset( $_POST['ktpwp_skills_nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['ktpwp_skills_nonce'] ) ) : '';
+		if ( ! wp_verify_nonce( $nonce, 'ktpwp_skills_action' ) ) {
 			return;
 		}
 
@@ -671,7 +738,6 @@ if ( ! function_exists( 'ktpwp_autoload_classes' ) ) {
         'KTPWP_Tab_Info'        => 'includes/class-ktpwp-tab-info.php',
         'KTPWP_Upload'          => 'includes/class-ktpwp-upload.php',
         'KTPWP_Kses'            => 'includes/class-ktpwp-kses.php',
-        'KTPWP_Post_Data_Handler' => 'includes/class-ktpwp-post-handler.php',
         // クライアント管理の新クラス
         'KTPWP_Client_DB'       => 'includes/class-ktpwp-client-db.php',
         'KTPWP_Client_UI'       => 'includes/class-ktpwp-client-ui.php',
@@ -1550,10 +1616,10 @@ function ktpwp_verify_migration_safety() {
  */
 function ktpwp_safe_table_setup() {
     try {
-        // ktp_table_setup() は本ファイルにトップレベルで無条件定義されており、
+        // ktpwp_table_setup() は本ファイルにトップレベルで無条件定義されており、
         // function_exists() が false になることはない。以前ここにあった
         // ktpwp_create_basic_tables() へのフォールバックは到達不能な死にコードだったため削除した。
-        ktp_table_setup();
+        ktpwp_table_setup();
     } catch ( Exception $e ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
             ktpwp_debug_log( 'KTPWP Safe Table Setup Error: ' . $e->getMessage() );
@@ -1688,7 +1754,7 @@ function ktpwp_run_migration_files_directly( $from_version, $to_version ) {
         $filename = basename( $migration_file );
         
         // 既に実行済みかチェック
-        $migration_key = 'ktp_migration_' . md5( $filename );
+        $migration_key = 'ktpwp_migration_' . md5( $filename );
         if ( get_option( $migration_key, false ) ) {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
                 ktpwp_debug_log( 'KTPWP: マイグレーションファイルは既に実行済みです: ' . $filename );
@@ -1825,17 +1891,17 @@ function ktpwp_safe_repair_existing_data() {
 function ktpwp_core_table_names() {
     global $wpdb;
     return array(
-        $wpdb->prefix . 'ktp_order',
-        $wpdb->prefix . 'ktp_supplier',
-        $wpdb->prefix . 'ktp_client',
-        $wpdb->prefix . 'ktp_service',
+        $wpdb->prefix . 'ktpwp_order',
+        $wpdb->prefix . 'ktpwp_supplier',
+        $wpdb->prefix . 'ktpwp_client',
+        $wpdb->prefix . 'ktpwp_service',
         // KTPWP_Order_Items / KTPWP_Staff_Chat が実際に使うテーブル名は
-        // クラス名から連想した ktp_order_items / ktp_staff_chat ではなく
-        // ktp_order_invoice_items / ktp_order_staff_chat だった。
+        // クラス名から連想した ktpwp_order_items / ktpwp_staff_chat ではなく
+        // ktpwp_order_invoice_items / ktpwp_order_staff_chat だった。
         // クリーンインストールの実機テストで判明（2026-09-14）。
-        $wpdb->prefix . 'ktp_order_invoice_items',
-        $wpdb->prefix . 'ktp_order_staff_chat',
-        $wpdb->prefix . 'ktp_department',
+        $wpdb->prefix . 'ktpwp_order_invoice_items',
+        $wpdb->prefix . 'ktpwp_order_staff_chat',
+        $wpdb->prefix . 'ktpwp_department',
     );
 }
 
@@ -1874,8 +1940,8 @@ function ktpwp_assert_core_tables_exist() {
     }
 
     // 1回だけ再実行（dbDeltaは冪等なので安全）
-    if ( function_exists( 'ktp_table_setup' ) ) {
-        ktp_table_setup();
+    if ( function_exists( 'ktpwp_table_setup' ) ) {
+        ktpwp_table_setup();
     }
 
     $missing = ktpwp_missing_core_tables();
@@ -1893,7 +1959,7 @@ function ktpwp_assert_core_tables_exist() {
 /**
  * データベース整合性チェック。
  * コアテーブルの存在確認は ktpwp_missing_core_tables() に一本化した
- * （以前は ktp_order_items / ktp_staff_chat / ktp_department が確認漏れだった）。
+ * （以前は ktpwp_order_items / ktpwp_staff_chat / ktpwp_department が確認漏れだった）。
  */
 function ktpwp_verify_database_integrity() {
     try {
@@ -2133,15 +2199,15 @@ function ktpwp_is_new_installation() {
     
     // 1. メインテーブルの存在確認
     $main_tables = array(
-        $wpdb->prefix . 'ktp_order',
-        $wpdb->prefix . 'ktp_supplier',
-        $wpdb->prefix . 'ktp_client',
-        $wpdb->prefix . 'ktp_service'
+        $wpdb->prefix . 'ktpwp_order',
+        $wpdb->prefix . 'ktpwp_supplier',
+        $wpdb->prefix . 'ktpwp_client',
+        $wpdb->prefix . 'ktpwp_service'
     );
 
     $existing_tables = array();
     foreach ( $main_tables as $table ) {
-        if ( $wpdb->get_var( "SHOW TABLES LIKE '{$table}'" ) === $table ) {
+        if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) === $table ) {
             $existing_tables[] = $table;
         }
     }
@@ -2172,7 +2238,7 @@ function ktpwp_is_new_installation() {
     $plugin_options = array(
         'ktpwp_design_settings',
         'ktpwp_company_info',
-        'ktp_order_table_version',
+        'ktpwp_order_table_version',
         'ktpwp_version',
         'ktpwp_db_version'
     );
@@ -2184,9 +2250,9 @@ function ktpwp_is_new_installation() {
         }
     }
 
-    // 4. マイグレーション履歴の確認（ktp_migration_* はマイグレーションファイル実行時のフラグ名と一致させる）
+    // 4. マイグレーション履歴の確認（ktpwp_migration_* はマイグレーションファイル実行時のフラグ名と一致させる）
     $migration_hit = $wpdb->get_var(
-        "SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE 'ktpwp_migration_%' OR option_name LIKE 'ktp_migration_%' LIMIT 1"
+        "SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE 'ktpwp_migration_%' OR option_name LIKE 'ktpwp_migration_%' LIMIT 1"
     );
 
     if ( ! empty( $migration_hit ) ) {
@@ -2271,8 +2337,8 @@ function ktpwp_check_migration_compatibility( $filename, $from_version, $to_vers
     $is_production = false;
     
     // 本番環境の判定
-    $production_order_table = 'top_ktp_order';
-    $production_exists = $wpdb->get_var( "SHOW TABLES LIKE '{$production_order_table}'" );
+    $production_order_table = 'top_ktpwp_order';
+    $production_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $production_order_table ) );
     if ( $production_exists === $production_order_table ) {
         $is_production = true;
     }
@@ -2433,11 +2499,11 @@ function ktpwp_fix_table_structures() {
     }
 
     // 1. 請求項目テーブルの修正
-    $invoice_table = $wpdb->prefix . 'ktp_order_invoice_items';
-    $table_exists = $wpdb->get_var( "SHOW TABLES LIKE '$invoice_table'" );
+    $invoice_table = $wpdb->prefix . 'ktpwp_order_invoice_items';
+    $table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $invoice_table ) );
 
     if ( $table_exists ) {
-        $existing_columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$invoice_table}`", 0 );
+        $existing_columns = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $invoice_table ), 0 );
 
         // 不要なカラムを削除
         $unwanted_columns = array( 'purchase', 'ordered' );
@@ -2476,11 +2542,11 @@ function ktpwp_fix_table_structures() {
     }
 
     // 2. スタッフチャットテーブルの修正
-    $chat_table = $wpdb->prefix . 'ktp_order_staff_chat';
-    $table_exists = $wpdb->get_var( "SHOW TABLES LIKE '$chat_table'" );
+    $chat_table = $wpdb->prefix . 'ktpwp_order_staff_chat';
+    $table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $chat_table ) );
 
     if ( $table_exists ) {
-        $existing_columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$chat_table}`", 0 );
+        $existing_columns = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $chat_table ), 0 );
 
         // 必要なカラムを追加
         $required_columns = array(
@@ -2522,10 +2588,10 @@ function ktpwp_repair_existing_data() {
     }
 
     // 既存の受注書にスタッフチャットの初期メッセージを作成
-    $chat_table = $wpdb->prefix . 'ktp_order_staff_chat';
-    $order_table = $wpdb->prefix . 'ktp_order';
+    $chat_table = $wpdb->prefix . 'ktpwp_order_staff_chat';
+    $order_table = $wpdb->prefix . 'ktpwp_order';
 
-    if ( $wpdb->get_var( "SHOW TABLES LIKE '$chat_table'" ) && $wpdb->get_var( "SHOW TABLES LIKE '$order_table'" ) ) {
+    if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $chat_table ) ) && $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $order_table ) ) ) {
         // スタッフチャットが存在しない受注書を取得
         $orders_without_chat = $wpdb->get_results(
             "
@@ -2764,7 +2830,7 @@ add_action( 'init', 'ktpwp_distribution_safety_check', 1 );
 function ktpwp_create_department_table() {
     global $wpdb;
 
-    $table_name = $wpdb->prefix . 'ktp_department';
+    $table_name = $wpdb->prefix . 'ktpwp_department';
     $charset_collate = $wpdb->get_charset_collate();
 
     // テーブルが既に存在するかチェック
@@ -2791,7 +2857,7 @@ function ktpwp_create_department_table() {
 
         if ( ! empty( $result ) ) {
             // マイグレーション完了フラグを設定
-            update_option( 'ktp_department_table_version', '1.1.0' );
+            update_option( 'ktpwp_department_table_version', '1.1.0' );
 
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
                 ktpwp_debug_log( 'KTPWP: 部署テーブルが正常に作成されました（is_selectedカラム付き）。' );
@@ -2820,7 +2886,7 @@ function ktpwp_create_department_table() {
 function ktpwp_add_department_selection_column() {
     global $wpdb;
 
-    $department_table = $wpdb->prefix . 'ktp_department';
+    $department_table = $wpdb->prefix . 'ktpwp_department';
 
     // 部署テーブルが存在するかチェック
     $table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $department_table ) );
@@ -2833,7 +2899,7 @@ function ktpwp_add_department_selection_column() {
     }
 
     // is_selectedカラムが存在するかチェック
-    $column_exists = $wpdb->get_results( $wpdb->prepare( "SHOW COLUMNS FROM `{$department_table}` LIKE %s", 'is_selected' ) );
+    $column_exists = $wpdb->get_results( $wpdb->prepare( 'SHOW COLUMNS FROM %i LIKE %s', $department_table, 'is_selected' ) );
 
     if ( empty( $column_exists ) ) {
         // カラム追加を試行
@@ -2868,7 +2934,7 @@ function ktpwp_add_department_selection_column() {
 function ktpwp_add_client_selected_department_column() {
     global $wpdb;
 
-    $client_table = $wpdb->prefix . 'ktp_client';
+    $client_table = $wpdb->prefix . 'ktpwp_client';
 
     // 顧客テーブルが存在するかチェック
     $table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $client_table ) );
@@ -2881,7 +2947,7 @@ function ktpwp_add_client_selected_department_column() {
     }
 
     // selected_department_idカラムが存在するかチェック
-    $column_exists = $wpdb->get_results( $wpdb->prepare( "SHOW COLUMNS FROM `{$client_table}` LIKE %s", 'selected_department_id' ) );
+    $column_exists = $wpdb->get_results( $wpdb->prepare( 'SHOW COLUMNS FROM %i LIKE %s', $client_table, 'selected_department_id' ) );
 
     if ( empty( $column_exists ) ) {
         // カラム追加を試行
@@ -2916,14 +2982,14 @@ function ktpwp_add_client_selected_department_column() {
 function ktpwp_add_order_client_department_column() {
     global $wpdb;
 
-    $order_table = $wpdb->prefix . 'ktp_order';
+    $order_table = $wpdb->prefix . 'ktpwp_order';
     $table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $order_table ) );
 
     if ( $table_exists !== $order_table ) {
         return false;
     }
 
-    $column_exists = $wpdb->get_results( $wpdb->prepare( "SHOW COLUMNS FROM `{$order_table}` LIKE %s", 'client_department_id' ) );
+    $column_exists = $wpdb->get_results( $wpdb->prepare( 'SHOW COLUMNS FROM %i LIKE %s', $order_table, 'client_department_id' ) );
     if ( ! empty( $column_exists ) ) {
         return true;
     }
@@ -2947,8 +3013,8 @@ function ktpwp_add_order_client_department_column() {
 function ktpwp_initialize_selected_department() {
     global $wpdb;
 
-    $client_table = $wpdb->prefix . 'ktp_client';
-    $department_table = $wpdb->prefix . 'ktp_department';
+    $client_table = $wpdb->prefix . 'ktpwp_client';
+    $department_table = $wpdb->prefix . 'ktpwp_department';
 
     // 選択された部署IDが設定されていない顧客を取得
     $clients_without_selection = $wpdb->get_results(
@@ -3273,7 +3339,7 @@ function ktpwp_admin_migration_status() {
 }
 
 // 管理画面でのマイグレーション状態表示（KantanPro設定ページでのみ実行）
-if ( is_admin() && isset( $_GET['page'] ) && strpos( $_GET['page'], 'ktp-' ) === 0 ) {
+if ( is_admin() && KTPWP_Request::has_query( 'page' ) && strpos( KTPWP_Request::query_unslashed( 'page' ), 'ktp-' ) === 0 ) {
     add_action( 'admin_notices', 'ktpwp_admin_migration_status' );
     
     // エンドユーザー向け: 管理画面アクセス時に自動的にエラーをクリア
@@ -3536,11 +3602,11 @@ function ktpwp_check_database_integrity() {
     $needs_fix = false;
 
     // 1. 請求項目テーブルのチェック
-    $invoice_table = $wpdb->prefix . 'ktp_order_invoice_items';
-    $table_exists = $wpdb->get_var( "SHOW TABLES LIKE '$invoice_table'" );
+    $invoice_table = $wpdb->prefix . 'ktpwp_order_invoice_items';
+    $table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $invoice_table ) );
 
     if ( $table_exists ) {
-        $existing_columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$invoice_table}`", 0 );
+        $existing_columns = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $invoice_table ), 0 );
 
         // 不要なカラムが存在するかチェック
         $unwanted_columns = array( 'purchase', 'ordered' );
@@ -3564,11 +3630,11 @@ function ktpwp_check_database_integrity() {
     }
 
     // 2. スタッフチャットテーブルのチェック
-    $chat_table = $wpdb->prefix . 'ktp_order_staff_chat';
-    $table_exists = $wpdb->get_var( "SHOW TABLES LIKE '$chat_table'" );
+    $chat_table = $wpdb->prefix . 'ktpwp_order_staff_chat';
+    $table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $chat_table ) );
 
     if ( $table_exists ) {
-        $existing_columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$chat_table}`", 0 );
+        $existing_columns = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $chat_table ), 0 );
 
         // 必要なカラムが不足しているかチェック
         if ( ! in_array( 'is_initial', $existing_columns ) ) {
@@ -3579,33 +3645,33 @@ function ktpwp_check_database_integrity() {
     }
 
     // 3. 部署テーブルのチェック
-    $department_table = $wpdb->prefix . 'ktp_department';
-    $table_exists = $wpdb->get_var( "SHOW TABLES LIKE '$department_table'" );
+    $department_table = $wpdb->prefix . 'ktpwp_department';
+    $table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $department_table ) );
 
     if ( ! $table_exists ) {
         $needs_fix = true;
     } else {
         // 部署テーブルが存在する場合、選択状態カラムの存在をチェック
-        $existing_columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$department_table}`", 0 );
+        $existing_columns = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $department_table ), 0 );
         if ( ! in_array( 'is_selected', $existing_columns ) ) {
             $needs_fix = true;
         }
     }
 
     // 4. 顧客テーブルのselected_department_idカラムチェック
-    $client_table = $wpdb->prefix . 'ktp_client';
-    $client_table_exists = $wpdb->get_var( "SHOW TABLES LIKE '$client_table'" );
+    $client_table = $wpdb->prefix . 'ktpwp_client';
+    $client_table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $client_table ) );
 
     if ( $client_table_exists ) {
-        $client_columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$client_table}`", 0 );
+        $client_columns = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $client_table ), 0 );
         if ( ! in_array( 'selected_department_id', $client_columns ) ) {
             $needs_fix = true;
         }
     }
 
     // 5. 既存データのチェック
-    $order_table = $wpdb->prefix . 'ktp_order';
-    if ( $wpdb->get_var( "SHOW TABLES LIKE '$chat_table'" ) && $wpdb->get_var( "SHOW TABLES LIKE '$order_table'" ) ) {
+    $order_table = $wpdb->prefix . 'ktpwp_order';
+    if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $chat_table ) ) && $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $order_table ) ) ) {
         $orders_without_chat = $wpdb->get_var(
             "
             SELECT COUNT(*) 
@@ -3685,8 +3751,8 @@ function ktpwp_sync_database_version() {
     if ( $current_db_version === '0.0.0' || empty( $current_db_version ) ) {
         // 既存のテーブルが存在するかチェック
         global $wpdb;
-        $main_table = $wpdb->prefix . 'ktp_order';
-        $table_exists = $wpdb->get_var( "SHOW TABLES LIKE '$main_table'" );
+        $main_table = $wpdb->prefix . 'ktpwp_order';
+        $table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $main_table ) );
 
         if ( $table_exists ) {
             // テーブルが存在する場合、既存インストールと判断してバージョンを同期
@@ -3921,46 +3987,37 @@ add_action( 'admin_init', 'ktpwp_add_security_headers' );
 
 
 // POSTパラメータをGETパラメータに変換する処理
+// 顧客タブの「受注書作成」フォーム（ktpwp_client_nonce 付き）を、受注書タブの URL へ移す。
 function ktpwp_handle_form_redirect() {
-    // POSTデータハンドラーを使用した安全な処理
-    if ( ! KTPWP_Post_Data_Handler::has_post_keys( array( 'tab_name', 'from_client' ) ) ) {
+    if ( ! isset( $_POST['tab_name'], $_POST['from_client'], $_POST['ktpwp_client_nonce'] ) ) {
+        return;
+    }
+    if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['ktpwp_client_nonce'] ) ), 'ktpwp_client_action' ) ) {
         return;
     }
 
-    $post_data = KTPWP_Post_Data_Handler::get_multiple_post_data(
-        array(
-			'tab_name' => 'text',
-			'from_client' => 'text',
-        )
-    );
-
-    // orderタブのチェック
-    if ( $post_data['tab_name'] !== 'order' ) {
+    $tab_name = sanitize_text_field( wp_unslash( $_POST['tab_name'] ) );
+    if ( $tab_name !== 'order' ) {
         return;
     }
 
-    // リダイレクトパラメータの構築
+    // add_query_arg() は値をエンコードしないので、ここで rawurlencode する
     $redirect_params = array(
-        'tab_name' => $post_data['tab_name'],
-        'from_client' => $post_data['from_client'],
+        'tab_name'    => $tab_name,
+        'from_client' => rawurlencode( sanitize_text_field( wp_unslash( $_POST['from_client'] ) ) ),
     );
 
-    // オプションパラメータの追加
-    $optional_params = KTPWP_Post_Data_Handler::get_multiple_post_data(
-        array(
-			'customer_name' => 'text',
-			'user_name' => 'text',
-			'client_id' => array(
-				'type' => 'int',
-				'default' => 0,
-			),
-        )
-    );
-
-    foreach ( $optional_params as $key => $value ) {
-        if ( ! empty( $value ) && ( $key !== 'client_id' || $value > 0 ) ) {
-            $redirect_params[ $key ] = $value;
-        }
+    $customer_name = isset( $_POST['customer_name'] ) ? sanitize_text_field( wp_unslash( $_POST['customer_name'] ) ) : '';
+    $user_name     = isset( $_POST['user_name'] ) ? sanitize_text_field( wp_unslash( $_POST['user_name'] ) ) : '';
+    $client_id     = isset( $_POST['client_id'] ) ? absint( wp_unslash( $_POST['client_id'] ) ) : 0;
+    if ( $customer_name !== '' ) {
+        $redirect_params['customer_name'] = rawurlencode( $customer_name );
+    }
+    if ( $user_name !== '' ) {
+        $redirect_params['user_name'] = rawurlencode( $user_name );
+    }
+    if ( $client_id > 0 ) {
+        $redirect_params['client_id'] = $client_id;
     }
 
     // 現在のURLからKTPWPパラメータを除去してクリーンなベースURLを作成
@@ -4011,35 +4068,35 @@ add_action( 'plugins_loaded', 'KTPWP_Index' );
  * KTPWP_Index 経由で ktpwp_all_tab のみ登録された場合でも、公開用ショートコード等を確実に登録する。
  */
 function ktpwp_ensure_shortcodes_registered() {
-    if ( ! get_option( 'ktp_service_is_public_migration_completed' ) ) {
+    if ( ! get_option( 'ktpwp_service_is_public_migration_completed' ) ) {
         $migration_file = plugin_dir_path( __FILE__ ) . 'includes/migrations/20260611_add_is_public_to_service.php';
         if ( file_exists( $migration_file ) ) {
             require_once $migration_file;
         }
     }
 
-    if ( ! get_option( 'ktp_service_stock_migration_completed' ) ) {
+    if ( ! get_option( 'ktpwp_service_stock_migration_completed' ) ) {
         $migration_file = plugin_dir_path( __FILE__ ) . 'includes/migrations/20260617_add_stock_to_service.php';
         if ( file_exists( $migration_file ) ) {
             require_once $migration_file;
         }
     }
 
-    if ( ! get_option( 'ktp_service_public_quantity_fixed_migration_completed' ) ) {
+    if ( ! get_option( 'ktpwp_service_public_quantity_fixed_migration_completed' ) ) {
         $migration_file = plugin_dir_path( __FILE__ ) . 'includes/migrations/20260618_add_public_quantity_fixed_to_service.php';
         if ( file_exists( $migration_file ) ) {
             require_once $migration_file;
         }
     }
 
-    if ( ! get_option( 'ktp_service_public_html_migration_completed' ) ) {
+    if ( ! get_option( 'ktpwp_service_public_html_migration_completed' ) ) {
         $migration_file = plugin_dir_path( __FILE__ ) . 'includes/migrations/20260619_add_public_html_to_service.php';
         if ( file_exists( $migration_file ) ) {
             require_once $migration_file;
         }
     }
 
-    if ( ! get_option( 'ktp_service_public_instant_purchase_migration_completed' ) ) {
+    if ( ! get_option( 'ktpwp_service_public_instant_purchase_migration_completed' ) ) {
         $migration_file = plugin_dir_path( __FILE__ ) . 'includes/migrations/20260620_add_public_instant_purchase_to_service.php';
         if ( file_exists( $migration_file ) ) {
             require_once $migration_file;
@@ -4074,7 +4131,7 @@ function ktpwp_is_frontend_kantanpro_app_page() {
         return false;
     }
 
-    if ( isset( $_GET['tab_name'] ) && (string) wp_unslash( $_GET['tab_name'] ) !== '' ) {
+    if ( KTPWP_Request::has_query( 'tab_name' ) && (string) KTPWP_Request::query_unslashed( 'tab_name' ) !== '' ) {
         return true;
     }
 
@@ -4115,8 +4172,8 @@ function ktpwp_scripts_and_styles( $hook = '' ) {
     // KantanPro 管理画面向けアセットは includes/class-ktpwp-assets.php の admin_enqueue_scripts で読み込む。
     if ( is_admin() ) {
         $current_screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
-        $current_page   = isset( $_GET['page'] ) ? sanitize_text_field( wp_unslash( $_GET['page'] ) ) : '';
-        $current_action = isset( $_GET['action'] ) ? sanitize_text_field( wp_unslash( $_GET['action'] ) ) : '';
+        $current_page   = KTPWP_Request::has_query( 'page' ) ? KTPWP_Request::query( 'page' ) : '';
+        $current_action = KTPWP_Request::has_query( 'action' ) ? KTPWP_Request::query( 'action' ) : '';
 
         $is_site_health_page = (
             ( $current_screen && (
@@ -4141,62 +4198,62 @@ function ktpwp_scripts_and_styles( $hook = '' ) {
     }
 
     wp_enqueue_script(
-        'ktp-number-format',
+        'ktpwp-number-format',
         plugins_url( 'js/ktp-number-format.js', __FILE__ ),
         array(),
         KANTANPRO_PLUGIN_VERSION,
         true
     );
-    wp_enqueue_script( 'ktp-js', plugins_url( 'js/ktp-js.js', __FILE__ ) . '?v=' . time(), array( 'jquery', 'ktp-number-format' ), null, true );
+    wp_enqueue_script( 'ktpwp-js', plugins_url( 'js/ktp-js.js', __FILE__ ) . '?v=' . time(), array( 'jquery', 'ktpwp-number-format' ), null, true );
 
     // AJAX エンドポイントは admin_url() で解決して JS に渡す。
     // wp-admin の場所は環境によって変わるので、JS 側で '/wp-admin/admin-ajax.php' と
     // 直書きしてはいけない（2026-09-02 のレビュー指摘）。
     wp_localize_script(
-        'ktp-js',
+        'ktpwp-js',
         'ktpwp_ajax',
         array(
             'ajax_url'         => admin_url( 'admin-ajax.php' ),
             'staff_chat_nonce' => wp_create_nonce( 'staff_chat_nonce' ),
-            'auto_save_nonce'  => wp_create_nonce( 'ktp_auto_save_nonce' ),
+            'auto_save_nonce'  => wp_create_nonce( 'ktpwp_auto_save_nonce' ),
         )
     );
     // 既存コードが素の ajaxurl を参照しているので、未定義のときだけ補う。
     wp_add_inline_script(
-        'ktp-js',
+        'ktpwp-js',
         'window.ajaxurl = window.ajaxurl || ktpwp_ajax.ajax_url;'
     );
 
     // デバッグモードの設定（WP_DEBUGまたは開発環境でのみ有効）
     $debug_mode = ( defined( 'WP_DEBUG' ) && WP_DEBUG ) || ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG );
-    wp_add_inline_script( 'ktp-js', 'var ktpwpDebugMode = ' . wp_json_encode( $debug_mode ) . ';' );
+    wp_add_inline_script( 'ktpwp-js', 'var ktpwpDebugMode = ' . wp_json_encode( $debug_mode ) . ';' );
 
     // コスト項目トグル用の国際化ラベルをJSに渡す
-    wp_add_inline_script( 'ktp-js', 'var ktpwpCostShowLabel = ' . wp_json_encode( '表示' ) . ';' );
-    wp_add_inline_script( 'ktp-js', 'var ktpwpCostHideLabel = ' . wp_json_encode( '非表示' ) . ';' );
-    wp_add_inline_script( 'ktp-js', 'var ktpwpStaffChatShowLabel = ' . wp_json_encode( '表示' ) . ';' );
-    wp_add_inline_script( 'ktp-js', 'var ktpwpStaffChatHideLabel = ' . wp_json_encode( '非表示' ) . ';' );
+    wp_add_inline_script( 'ktpwp-js', 'var ktpwpCostShowLabel = ' . wp_json_encode( '表示' ) . ';' );
+    wp_add_inline_script( 'ktpwp-js', 'var ktpwpCostHideLabel = ' . wp_json_encode( '非表示' ) . ';' );
+    wp_add_inline_script( 'ktpwp-js', 'var ktpwpStaffChatShowLabel = ' . wp_json_encode( '表示' ) . ';' );
+    wp_add_inline_script( 'ktpwp-js', 'var ktpwpStaffChatHideLabel = ' . wp_json_encode( '非表示' ) . ';' );
 
     // スタイルを読み込み（フロントエンドのみ）
-    wp_register_style( 'ktp-css', plugins_url( 'css/styles.css', __FILE__ ) . '?v=' . time(), array(), KANTANPRO_PLUGIN_VERSION, 'all' );
-    wp_enqueue_style( 'ktp-css' );
+    wp_register_style( 'ktpwp-css', plugins_url( 'css/styles.css', __FILE__ ) . '?v=' . time(), array(), KANTANPRO_PLUGIN_VERSION, 'all' );
+    wp_enqueue_style( 'ktpwp-css' );
     // 進捗プルダウン用のスタイルシートを追加
-    wp_enqueue_style( 'ktp-progress-select', plugins_url( 'css/progress-select.css', __FILE__ ) . '?v=' . time(), array( 'ktp-css' ), KANTANPRO_PLUGIN_VERSION, 'all' );
+    wp_enqueue_style( 'ktpwp-progress-select', plugins_url( 'css/progress-select.css', __FILE__ ) . '?v=' . time(), array( 'ktpwp-css' ), KANTANPRO_PLUGIN_VERSION, 'all' );
     // 設定タブ用のスタイルシートを追加
-    wp_enqueue_style( 'ktp-setting-tab', plugins_url( 'css/ktp-setting-tab.css', __FILE__ ) . '?v=' . time(), array( 'ktp-css' ), KANTANPRO_PLUGIN_VERSION, 'all' );
+    wp_enqueue_style( 'ktpwp-setting-tab', plugins_url( 'css/ktp-setting-tab.css', __FILE__ ) . '?v=' . time(), array( 'ktpwp-css' ), KANTANPRO_PLUGIN_VERSION, 'all' );
     // レポートタブ用のスタイルシートを追加
-    wp_enqueue_style( 'ktp-report', plugins_url( 'css/ktp-report.css', __FILE__ ) . '?v=' . time(), array( 'ktp-css' ), KANTANPRO_PLUGIN_VERSION, 'all' ); // KTPWP-WPORG-STRIP report
+    wp_enqueue_style( 'ktpwp-report', plugins_url( 'css/ktp-report.css', __FILE__ ) . '?v=' . time(), array( 'ktpwp-css' ), KANTANPRO_PLUGIN_VERSION, 'all' ); // KTPWP-WPORG-STRIP report
 
     // アイコンは同梱の SVG（js/ktp-svg-icons.js）を使用する。外部フォント CDN は読み込まない。
     // jQuery は WordPress 同梱のものを使用する（外部 CDN からは読み込まない）。
     wp_enqueue_script( 'jquery' );
 
     // ajaxurl をフロントエンドに渡す（nonce は AJAX クラス / Assets で設定するため、ここでは上書きしない）
-    wp_add_inline_script( 'ktp-js', 'var ajaxurl = ' . wp_json_encode( admin_url( 'admin-ajax.php' ) ) . ';' );
+    wp_add_inline_script( 'ktpwp-js', 'var ajaxurl = ' . wp_json_encode( admin_url( 'admin-ajax.php' ) ) . ';' );
 
     // Ajax nonceを追加 - AJAXクラスで管理されるため、ここでは設定しない
-    // wp_add_inline_script( 'ktp-invoice-items', 'var ktp_ajax_nonce = ' . wp_json_encode( wp_create_nonce( 'ktp_ajax_nonce' ) ) . ';' );
-    // wp_add_inline_script( 'ktp-cost-items', 'var ktp_ajax_nonce = ' . wp_json_encode( wp_create_nonce( 'ktp_ajax_nonce' ) ) . ';' );
+    // wp_add_inline_script( 'ktp-invoice-items', 'var ktpwp_ajax_nonce = ' . wp_json_encode( wp_create_nonce( 'ktpwp_ajax_nonce' ) ) . ';' );
+    // wp_add_inline_script( 'ktp-cost-items', 'var ktpwp_ajax_nonce = ' . wp_json_encode( wp_create_nonce( 'ktpwp_ajax_nonce' ) ) . ';' );
 
     // ajaxurlをJavaScriptで利用可能にする - AJAXクラスで管理されるため、ここでは設定しない
     // wp_add_inline_script( 'ktp-invoice-items', 'var ajaxurl = ' . wp_json_encode( admin_url( 'admin-ajax.php' ) ) . ';' );
@@ -4205,7 +4262,7 @@ function ktpwp_scripts_and_styles( $hook = '' ) {
     // デバッグモードでAJAXデバッグスクリプトを読み込み（ファイルが存在する場合のみ）
     if ( defined( 'WP_DEBUG' ) && WP_DEBUG && file_exists( plugin_dir_path( __FILE__ ) . 'debug-ajax.js' ) ) {
         wp_enqueue_script(
-            'ktp-ajax-debug',
+            'ktpwp-ajax-debug',
             plugins_url( 'debug-ajax.js', __FILE__ ),
             array( 'jquery' ),
             KANTANPRO_PLUGIN_VERSION,
@@ -4213,8 +4270,8 @@ function ktpwp_scripts_and_styles( $hook = '' ) {
         );
         
         // デバッグ用nonce をスクリプトに渡す
-        wp_localize_script( 'ktp-ajax-debug', 'ktp_ajax_debug', array(
-            'nonce' => wp_create_nonce( 'ktp_ajax_debug_nonce' ),
+        wp_localize_script( 'ktpwp-ajax-debug', 'ktpwp_ajax_debug', array(
+            'nonce' => wp_create_nonce( 'ktpwp_ajax_debug_nonce' ),
             'ajaxurl' => admin_url( 'admin-ajax.php' )
         ) );
         
@@ -4240,8 +4297,8 @@ add_action(
 		// より確実なサイトヘルスページ検出
 		$is_site_health = (
         strpos( $hook, 'site-health' ) !== false ||
-        ( isset( $_GET['page'] ) && $_GET['page'] === 'site-health' ) ||
-        ( isset( $_GET['action'] ) && $_GET['action'] === 'site-health' ) ||
+        ( KTPWP_Request::has_query( 'page' ) && KTPWP_Request::query_unslashed( 'page' ) === 'site-health' ) ||
+        ( KTPWP_Request::has_query( 'action' ) && KTPWP_Request::query_unslashed( 'action' ) === 'site-health' ) ||
         ( isset( $_SERVER['REQUEST_URI'] ) && strpos( sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ), 'site-health' ) !== false ) ||
         ( isset( $_SERVER['REQUEST_URI'] ) && strpos( sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ), 'tools.php?page=site-health' ) !== false )
 		);
@@ -4291,7 +4348,7 @@ function ktpwp_init_ajax_handlers() {
 }
 add_action( 'init', 'ktpwp_init_ajax_handlers' );
 
-function ktp_table_setup() {
+function ktpwp_table_setup() {
     // 出力バッファリングを開始（予期しない出力を防ぐ）
     ob_start();
 
@@ -4379,7 +4436,7 @@ function ktp_table_setup() {
 
     // デバッグ時のみ、予期しない出力があればログに記録
     if ( defined( 'WP_DEBUG' ) && WP_DEBUG && ! empty( $output ) ) {
-        ktpwp_debug_log( 'KTPWP: ktp_table_setup中に予期しない出力を検出: ' . substr( $output, 0, 1000 ) );
+        ktpwp_debug_log( 'KTPWP: ktpwp_table_setup中に予期しない出力を検出: ' . substr( $output, 0, 1000 ) );
     }
 
     return array(
@@ -4388,7 +4445,7 @@ function ktp_table_setup() {
     );
 }
 // 包括的アクティベーションで処理されるため、個別のフックは不要
-// register_activation_hook( KANTANPRO_PLUGIN_FILE, 'ktp_table_setup' ); // テーブル作成処理
+// register_activation_hook( KANTANPRO_PLUGIN_FILE, 'ktpwp_table_setup' ); // テーブル作成処理
 // register_activation_hook( KANTANPRO_PLUGIN_FILE, array( 'KTP_Settings', 'activate' ) ); // 設定クラスのアクティベート処理
 // register_activation_hook( KANTANPRO_PLUGIN_FILE, array( 'KTPWP_Plugin_Reference', 'on_plugin_activation' ) ); // プラグインリファレンス更新処理
 
@@ -4459,7 +4516,7 @@ if ( ! function_exists( 'ktpwp_current_user_can_access' ) ) {
 function KTPWP_Index() {
 
     // すべてのタブのショートコード[kantanAllTab]
-    function kantanAllTab() {
+    function ktpwp_render_all_tab_shortcode() {
 
         if ( ktpwp_should_suppress_shortcode_output() ) {
             return '';
@@ -4524,7 +4581,7 @@ function KTPWP_Index() {
 
             // ヘッダー更新バッジ表示判定（ナビリンク生成前）
             $show_update_badge = false;
-            $update_settings = get_option( 'ktp_update_notification_settings', array() );
+            $update_settings = get_option( 'ktpwp_update_notification_settings', array() );
             $enable_notifications = isset( $update_settings['enable_notifications'] ) ? $update_settings['enable_notifications'] : true;
             if ( $enable_notifications && class_exists( 'KTPWP_Update_Checker' ) ) {
                 global $ktpwp_update_checker;
@@ -4587,7 +4644,7 @@ function KTPWP_Index() {
                 ? KANTANPRO_PLUGIN_DESCRIPTION
                 : 'スモールビジネスのための販売支援ツール';
 
-            // ロゴは一般設定で固定の icon.png。オプション ktp_logo_image は zip 展開フォルダ移行や旧URLのまま残ると 404 になるため、表示は常に現行プラグインルート基準の URL とする。
+            // ロゴは一般設定で固定の icon.png。オプション ktpwp_logo_image は zip 展開フォルダ移行や旧URLのまま残ると 404 になるため、表示は常に現行プラグインルート基準の URL とする。
             $logo_url = ktpwp_plugin_asset_url( 'images/default/icon.png' );
 
             // 更新通知設定を確認
@@ -4608,28 +4665,28 @@ function KTPWP_Index() {
             
             // KantanProロゴヘッダーの上にバナーを表示する（有料版では非表示）。
             // KTPWP_Shortcodes::render_all_tabs() と同じ優先順位で解決する。
-            $ktp_before_header_banner = '';
-            $ktp_hide_banner = function_exists( 'ktpwp_should_hide_ktp_banner' ) && ktpwp_should_hide_ktp_banner();
-            if ( ! $ktp_hide_banner ) {
+            $ktpwp_before_header_banner = '';
+            $ktpwp_hide_banner = function_exists( 'ktpwp_should_hide_ktp_banner' ) && ktpwp_should_hide_ktp_banner();
+            if ( ! $ktpwp_hide_banner ) {
                 ob_start();
                 do_action( 'ktpwp_between_pagination_footer' );
-                $ktp_before_header_banner = ob_get_clean();
+                $ktpwp_before_header_banner = ob_get_clean();
 
-                if ( empty( $ktp_before_header_banner ) && shortcode_exists( 'ktp_banner' ) ) {
-                    $ktp_before_header_banner = do_shortcode( '[ktp_banner]' );
+                if ( empty( $ktpwp_before_header_banner ) && shortcode_exists( 'ktpwp_banner' ) ) {
+                    $ktpwp_before_header_banner = do_shortcode( '[ktpwp_banner]' );
                 }
-                if ( empty( $ktp_before_header_banner ) && class_exists( 'KTPWP_Shortcodes' ) ) {
-                    $ktp_before_header_banner = KTPWP_Shortcodes::get_instance()->get_banner_fallback_html_after_hooks();
+                if ( empty( $ktpwp_before_header_banner ) && class_exists( 'KTPWP_Shortcodes' ) ) {
+                    $ktpwp_before_header_banner = KTPWP_Shortcodes::get_instance()->get_banner_fallback_html_after_hooks();
                 }
             }
             $front_message = '';
-            if ( ! empty( $ktp_before_header_banner ) ) {
+            if ( ! empty( $ktpwp_before_header_banner ) ) {
                 $front_message .= '<div class="ktp-before-header-banner" style="width:100%;max-width:100%;margin:0;text-align:center;box-sizing:border-box;">'
-                    . wp_kses_post( $ktp_before_header_banner )
+                    . wp_kses_post( $ktpwp_before_header_banner )
                     . '</div>';
             }
 
-            $front_message .= '<div class="ktp_header">'
+            $front_message .= '<div class="ktpwp_header">'
                 . '<div class="parent">'
                 . '<div class="logo-and-system-info">'
                 . '<button type="button" class="ktp-header-plugin-reload" title="' . esc_attr__( 'リロード', 'kantanpro' ) . '" aria-label="' . esc_attr__( 'リロード', 'kantanpro' ) . '" onclick="window.location.reload();">'
@@ -4653,7 +4710,7 @@ function KTPWP_Index() {
                 '(function(){'
                 . 'var logoUrl=' . wp_json_encode( esc_url_raw( $logo_url ) ) . ';'
                 . 'function fixKtpHeaderLogo(){'
-                . 'var img=document.querySelector(".ktp_header .header-logo");'
+                . 'var img=document.querySelector(".ktpwp_header .header-logo");'
                 . 'if(!img){return;}'
                 . 'img.setAttribute("src",logoUrl);'
                 . 'img.setAttribute("data-src",logoUrl);'
@@ -4699,10 +4756,8 @@ function KTPWP_Index() {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
                 $front_message .= '<!-- KantanPro Debug: update balloon assets enqueued -->';
             }
-            // POST 時は tab_name を POST から優先（検索フォーム送信でタブが維持されるようにする）
-            $tab_name = ( isset( $_POST['tab_name'] ) && is_string( $_POST['tab_name'] ) )
-                ? sanitize_text_field( wp_unslash( $_POST['tab_name'] ) )
-                : ( isset( $_GET['tab_name'] ) ? sanitize_text_field( wp_unslash( $_GET['tab_name'] ) ) : 'default_tab' );
+            // フォーム送信後も送信元のタブを表示する（nonce を確認できた POST の tab_name を優先）
+            $tab_name = ktpwp_resolve_tab_name( 'default_tab' );
 
             // $order_content など未定義変数の初期化
             $order_content    = isset( $order_content ) ? $order_content : '';
@@ -4732,7 +4787,7 @@ function KTPWP_Index() {
                     if ( current_user_can( 'edit_posts' ) ) {
                         $client->Create_Table( $tab_name );
                         // POSTリクエストがある場合のみUpdate_Tableを呼び出す
-                        if ( ! empty( $_POST ) ) {
+                        if ( ktpwp_request_method() === 'POST' ) {
                             $client->Update_Table( $tab_name );
                         }
                     }
@@ -4751,7 +4806,7 @@ function KTPWP_Index() {
                     if ( current_user_can( 'edit_posts' ) ) {
                         $supplier->Create_Table( $tab_name );
 
-                        if ( ! empty( $_POST ) ) {
+                        if ( ktpwp_request_method() === 'POST' ) {
                             $supplier->Update_Table( $tab_name );
                         }
                     }
@@ -4803,11 +4858,11 @@ function KTPWP_Index() {
             }
         }
     }
-    add_shortcode( 'kantanAllTab', 'kantanAllTab' );
+    add_shortcode( 'kantanAllTab', 'ktpwp_render_all_tab_shortcode' );
     // ktpwp_all_tab ショートコードを追加（同じ機能を別名で提供）
-    add_shortcode( 'ktpwp_all_tab', 'kantanAllTab' );
+    add_shortcode( 'ktpwp_all_tab', 'ktpwp_render_all_tab_shortcode' );
     // 業務画面のショートコード
-    add_shortcode( 'kantanpro_ex', 'kantanAllTab' );
+    add_shortcode( 'kantanpro_ex', 'ktpwp_render_all_tab_shortcode' );
 
     // ブロックエディタ環境（do_blocks が優先度9でショートコードを先に展開）では、
     // このショートコードが出力する一覧テーブルの onclick 内のシングルクオートが
@@ -4899,7 +4954,7 @@ register_deactivation_hook( __FILE__, 'ktpwp_unschedule_temp_file_cleanup' );
  * @return string 'keep_data' | 'full_delete'
  */
 function ktpwp_get_uninstall_mode() {
-    $options = get_option( 'ktp_uninstall_settings', array() );
+    $options = get_option( 'ktpwp_uninstall_settings', array() );
     $mode    = isset( $options['uninstall_mode'] ) ? (string) $options['uninstall_mode'] : 'keep_data';
     return ( $mode === 'full_delete' ) ? 'full_delete' : 'keep_data';
 }
@@ -5083,7 +5138,7 @@ function ktpwp_manual_cleanup_temp_files() {
 }
 
 /**
- * Contact Form 7の送信データをwp_ktp_clientテーブルに登録する
+ * Contact Form 7の送信データをwp_ktpwp_clientテーブルに登録する
  *
  * @param WPCF7_ContactForm $contact_form Contact Form 7のフォームオブジェクト.
  */
@@ -5110,8 +5165,8 @@ add_action( 'admin_menu', array( 'KTPWP_Settings', 'add_admin_menu' ) );
 function ktpwp_ensure_terms_table() {
     global $wpdb;
     
-    $terms_table = $wpdb->prefix . 'ktp_terms_of_service';
-    $table_exists = $wpdb->get_var( "SHOW TABLES LIKE '$terms_table'" );
+    $terms_table = $wpdb->prefix . 'ktpwp_terms_of_service';
+    $table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $terms_table ) );
     
     if ( ! $table_exists ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
@@ -5156,7 +5211,7 @@ function ktpwp_ensure_terms_table() {
 function ktpwp_create_terms_table_directly() {
     global $wpdb;
     
-    $terms_table = $wpdb->prefix . 'ktp_terms_of_service';
+    $terms_table = $wpdb->prefix . 'ktpwp_terms_of_service';
     $charset_collate = $wpdb->get_charset_collate();
     
     $sql = "CREATE TABLE {$terms_table} (
@@ -5198,7 +5253,7 @@ function ktpwp_insert_default_terms_directly() {
         return;
     }
     
-    $terms_table = $wpdb->prefix . 'ktp_terms_of_service';
+    $terms_table = $wpdb->prefix . 'ktpwp_terms_of_service';
     $default_terms = KTPWP_Terms_Of_Service::get_default_terms_content();
     $version = KTPWP_Terms_Of_Service::get_default_terms_version();
     
@@ -5233,7 +5288,7 @@ function ktpwp_fix_empty_terms_content( $terms_id ) {
         return;
     }
     
-    $terms_table = $wpdb->prefix . 'ktp_terms_of_service';
+    $terms_table = $wpdb->prefix . 'ktpwp_terms_of_service';
     $default_terms = KTPWP_Terms_Of_Service::get_default_terms_content();
     
     $result = $wpdb->update(
@@ -5343,8 +5398,9 @@ function ktpwp_check_terms_on_shortcode() {
 
     // 利用規約同意ダイアログを表示
     add_action( 'wp_footer', array( $terms_service, 'display_terms_dialog' ) );
-    // ダイアログの CSS は head で出す必要があるので、フッターとは別に登録する。
-    add_action( 'wp_enqueue_scripts', array( $terms_service, 'enqueue_terms_dialog_assets' ), 20 );
+    // ショートコードの描画中は wp_enqueue_scripts が終わっているので、ここで直接キューに入れる
+    // （WordPress がフッターで出力する。以前はフックに足していたため CSS が出ず、ダイアログが見えなかった）。
+    $terms_service->enqueue_terms_dialog_assets();
 }
 
 /**
@@ -5365,10 +5421,10 @@ function ktpwp_distribution_safety_check() {
     $issues_found = false;
 
     // 必須テーブルの存在チェック
-    $required_tables = array( 'ktp_order', 'ktp_client', 'ktp_staff', 'ktp_department' );
+    $required_tables = array( 'ktpwp_order', 'ktpwp_client', 'ktpwp_staff', 'ktpwp_department' );
     foreach ( $required_tables as $table_name ) {
         $full_table_name = $wpdb->prefix . $table_name;
-        $table_exists = $wpdb->get_var( "SHOW TABLES LIKE '$full_table_name'" );
+        $table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $full_table_name ) );
         if ( ! $table_exists ) {
             $issues_found = true;
             break;
@@ -5391,8 +5447,8 @@ function ktpwp_distribution_safety_check() {
 
         try {
             // 基本テーブルの作成
-            if ( function_exists( 'ktp_table_setup' ) ) {
-                ktp_table_setup();
+            if ( function_exists( 'ktpwp_table_setup' ) ) {
+                ktpwp_table_setup();
             }
 
             // 部署テーブル関連の修正
@@ -5509,10 +5565,10 @@ function ktpwp_get_frequency_table_name( $entity_key ) {
     global $wpdb;
 
     $tables = array(
-        'client'         => $wpdb->prefix . 'ktp_client',
-        'supplier'       => $wpdb->prefix . 'ktp_supplier',
-        'service'        => $wpdb->prefix . 'ktp_service',
-        'supplier_skill' => $wpdb->prefix . 'ktp_supplier_skills',
+        'client'         => $wpdb->prefix . 'ktpwp_client',
+        'supplier'       => $wpdb->prefix . 'ktpwp_supplier',
+        'service'        => $wpdb->prefix . 'ktpwp_service',
+        'supplier_skill' => $wpdb->prefix . 'ktpwp_supplier_skills',
     );
 
     $entity_key = sanitize_key( (string) $entity_key );
@@ -5574,7 +5630,7 @@ function ktpwp_increment_record_frequency_on_view( $entity_key, $record_id ) {
     ktpwp_safe_session_start();
 
     $uri_hash    = md5( isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '' );
-    $session_key = 'ktp_freq_view_' . sanitize_key( (string) $entity_key );
+    $session_key = 'ktpwp_freq_view_' . sanitize_key( (string) $entity_key );
     $dedup_token = sanitize_key( (string) $entity_key ) . ':' . $record_id . ':' . $uri_hash;
 
     if ( isset( $_SESSION[ $session_key ] ) && $_SESSION[ $session_key ] === $dedup_token ) {
@@ -5591,11 +5647,11 @@ function ktpwp_increment_record_frequency_on_view( $entity_key, $record_id ) {
  * @return bool
  */
 function ktpwp_should_skip_frequency_on_view() {
-    if ( ! isset( $_GET['message'] ) ) {
+    if ( ! KTPWP_Request::has_query( 'message' ) ) {
         return false;
     }
 
-    $message = sanitize_key( wp_unslash( (string) $_GET['message'] ) );
+    $message = sanitize_key( wp_unslash( (string) KTPWP_Request::query_unslashed( 'message' ) ) );
 
     return in_array( $message, array( 'updated', 'found' ), true );
 }
@@ -5660,7 +5716,7 @@ function ktpwp_admin_auto_migrations() {
         }
 
         // 基本テーブル作成
-        ktp_table_setup();
+        ktpwp_table_setup();
 
         // 部署関連テーブルの作成
         ktpwp_create_department_table();
@@ -5819,8 +5875,8 @@ function ktpwp_distribution_admin_notices() {
     }
     
     // 手動マイグレーション実行
-    if ( isset( $_GET['ktpwp_manual_migration'] ) && $_GET['ktpwp_manual_migration'] === '1' ) {
-        if ( wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ?? '' ) ), 'ktpwp_manual_migration' ) ) {
+    if ( KTPWP_Request::has_query( 'ktpwp_manual_migration' ) && KTPWP_Request::query_unslashed( 'ktpwp_manual_migration' ) === '1' ) {
+        if ( wp_verify_nonce( sanitize_text_field( wp_unslash( KTPWP_Request::query_unslashed( '_wpnonce' ) ?? '' ) ), 'ktpwp_manual_migration' ) ) {
             ktpwp_execute_manual_migration();
         } else {
             // nonceが無い場合は確認画面を表示
@@ -5832,8 +5888,8 @@ function ktpwp_distribution_admin_notices() {
     }
     
     // invoice_itemsカラム修正の緊急マイグレーション実行
-    if ( isset( $_GET['ktpwp_invoice_items_fix'] ) && $_GET['ktpwp_invoice_items_fix'] === '1' ) {
-        if ( wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ?? '' ) ), 'ktpwp_invoice_items_fix' ) ) {
+    if ( KTPWP_Request::has_query( 'ktpwp_invoice_items_fix' ) && KTPWP_Request::query_unslashed( 'ktpwp_invoice_items_fix' ) === '1' ) {
+        if ( wp_verify_nonce( sanitize_text_field( wp_unslash( KTPWP_Request::query_unslashed( '_wpnonce' ) ?? '' ) ), 'ktpwp_invoice_items_fix' ) ) {
             ktpwp_execute_invoice_items_fix();
         } else {
             // nonceが無い場合は確認画面を表示
@@ -5872,7 +5928,7 @@ function ktpwp_distribution_admin_notices() {
     }
     
     // マイグレーション完了チェック
-    $migration_completed = get_option( 'ktp_order_migration_20250108_invoice_items_completed', false );
+    $migration_completed = get_option( 'ktpwp_order_migration_20250108_invoice_items_completed', false );
     $notification_dismissed = get_option( 'ktpwp_invoice_items_fix_notification_dismissed', false );
     
     // マイグレーションが完了していない場合のみ通知を表示
@@ -5974,21 +6030,21 @@ function ktpwp_sync_invoice_items_migration_notice_flag() {
     if ( ! current_user_can( 'manage_options' ) ) {
         return;
     }
-    if ( get_option( 'ktp_order_migration_20250108_invoice_items_completed', false ) ) {
+    if ( get_option( 'ktpwp_order_migration_20250108_invoice_items_completed', false ) ) {
         return;
     }
     global $wpdb;
-    $table_name = $wpdb->prefix . 'ktp_order';
+    $table_name = $wpdb->prefix . 'ktpwp_order';
     if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) ) !== $table_name ) {
         return;
     }
-    $existing_columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$table_name}`", 0 );
+    $existing_columns = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $table_name ), 0 );
     if ( ! is_array( $existing_columns ) ) {
         return;
     }
     if ( in_array( 'invoice_items', $existing_columns, true ) && in_array( 'cost_items', $existing_columns, true ) ) {
-        update_option( 'ktp_order_migration_20250108_invoice_items_completed', true );
-        update_option( 'ktp_order_migration_20250108_invoice_items_timestamp', current_time( 'mysql' ) );
+        update_option( 'ktpwp_order_migration_20250108_invoice_items_completed', true );
+        update_option( 'ktpwp_order_migration_20250108_invoice_items_timestamp', current_time( 'mysql' ) );
     }
 }
 add_action( 'admin_init', 'ktpwp_sync_invoice_items_migration_notice_flag', 5 );
@@ -6006,7 +6062,7 @@ function ktpwp_redirect_to_settings_after_first_activation() {
     if ( ! current_user_can( 'manage_options' ) ) {
         return;
     }
-    $page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
+    $page = KTPWP_Request::has_query( 'page' ) ? sanitize_key( KTPWP_Request::query( 'page' ) ) : '';
     if ( 'ktp-settings' === $page ) {
         delete_option( 'ktpwp_pending_admin_settings_redirect' );
         return;
@@ -6426,7 +6482,7 @@ function ktpwp_get_dummy_data_script_version() {
  */
 function ktpwp_dummy_data_page() {
     // CSSファイルを読み込み
-    wp_enqueue_style('ktp-dummy-data', plugins_url('css/ktp-dummy-data.css', __FILE__), array(), KANTANPRO_PLUGIN_VERSION);
+    wp_enqueue_style('ktpwp-dummy-data', plugins_url('css/ktp-dummy-data.css', __FILE__), array(), KANTANPRO_PLUGIN_VERSION);
     
     // jQueryを確実に読み込み
     wp_enqueue_script('jquery');
@@ -6476,7 +6532,7 @@ function ktpwp_dummy_data_page() {
     
     <script>
     jQuery(document).ready(function($) {
-        var ktpDummyDataStrings = <?php echo wp_json_encode( array(
+        var ktpwpDummyDataStrings = <?php echo wp_json_encode( array(
             'creating' => __( '作成中...', 'kantanpro' ),
             'creating_message' => __( 'ダミーデータを作成中...', 'kantanpro' ),
             'create_button' => __( 'ダミーデータを作成', 'kantanpro' ),
@@ -6494,8 +6550,8 @@ function ktpwp_dummy_data_page() {
             var button = $(this);
             var resultDiv = $('#dummy-data-result');
             
-            button.prop('disabled', true).text(ktpDummyDataStrings.creating);
-            resultDiv.html('<div class="ktp-dummy-data-result info"><p>' + ktpDummyDataStrings.creating_message + '</p></div>');
+            button.prop('disabled', true).text(ktpwpDummyDataStrings.creating);
+            resultDiv.html('<div class="ktp-dummy-data-result info"><p>' + ktpwpDummyDataStrings.creating_message + '</p></div>');
             
             $.ajax({
                 url: ajaxurl,
@@ -6509,12 +6565,12 @@ function ktpwp_dummy_data_page() {
                     if (response.success) {
                         resultDiv.html('<div class="ktp-dummy-data-result success"><p>' + response.data.message + '</p></div>');
                     } else {
-                        resultDiv.html('<div class="ktp-dummy-data-result error"><p>' + ktpDummyDataStrings.error_prefix + (response.data ? response.data.message : ktpDummyDataStrings.unknown_error) + '</p></div>');
+                        resultDiv.html('<div class="ktp-dummy-data-result error"><p>' + ktpwpDummyDataStrings.error_prefix + (response.data ? response.data.message : ktpwpDummyDataStrings.unknown_error) + '</p></div>');
                     }
                 },
                 error: function(xhr, status, error) {
                     console.error('AJAX Error:', {xhr: xhr, status: status, error: error});
-                    var errorMessage = ktpDummyDataStrings.network_error;
+                    var errorMessage = ktpwpDummyDataStrings.network_error;
                     if (xhr.responseText) {
                         try {
                             var response = JSON.parse(xhr.responseText);
@@ -6522,28 +6578,28 @@ function ktpwp_dummy_data_page() {
                                 errorMessage = response.data.message;
                             }
                         } catch (e) {
-                            errorMessage = ktpDummyDataStrings.server_error_prefix + xhr.status + ' ' + xhr.statusText;
+                            errorMessage = ktpwpDummyDataStrings.server_error_prefix + xhr.status + ' ' + xhr.statusText;
                         }
                     }
                     resultDiv.html('<div class="ktp-dummy-data-result error"><p>' + errorMessage + '</p></div>');
                 },
                 complete: function() {
-                    button.prop('disabled', false).text(ktpDummyDataStrings.create_button);
+                    button.prop('disabled', false).text(ktpwpDummyDataStrings.create_button);
                 }
             });
         });
         
         // データクリアボタン
         $('#clear-data').on('click', function() {
-            if (!confirm(ktpDummyDataStrings.clear_confirm)) {
+            if (!confirm(ktpwpDummyDataStrings.clear_confirm)) {
                 return;
             }
             
             var button = $(this);
             var resultDiv = $('#dummy-data-result');
             
-            button.prop('disabled', true).text(ktpDummyDataStrings.clearing);
-            resultDiv.html('<div class="ktp-dummy-data-result info"><p>' + ktpDummyDataStrings.clearing_message + '</p></div>');
+            button.prop('disabled', true).text(ktpwpDummyDataStrings.clearing);
+            resultDiv.html('<div class="ktp-dummy-data-result info"><p>' + ktpwpDummyDataStrings.clearing_message + '</p></div>');
             
             $.ajax({
                 url: ajaxurl,
@@ -6557,12 +6613,12 @@ function ktpwp_dummy_data_page() {
                     if (response.success) {
                         resultDiv.html('<div class="ktp-dummy-data-result success"><p>' + response.data.message + '</p></div>');
                     } else {
-                        resultDiv.html('<div class="ktp-dummy-data-result error"><p>' + ktpDummyDataStrings.error_prefix + (response.data ? response.data.message : ktpDummyDataStrings.unknown_error) + '</p></div>');
+                        resultDiv.html('<div class="ktp-dummy-data-result error"><p>' + ktpwpDummyDataStrings.error_prefix + (response.data ? response.data.message : ktpwpDummyDataStrings.unknown_error) + '</p></div>');
                     }
                 },
                 error: function(xhr, status, error) {
                     console.error('Clear Data AJAX Error:', {xhr: xhr, status: status, error: error});
-                    var errorMessage = ktpDummyDataStrings.network_error;
+                    var errorMessage = ktpwpDummyDataStrings.network_error;
                     if (xhr.responseText) {
                         try {
                             var response = JSON.parse(xhr.responseText);
@@ -6570,13 +6626,13 @@ function ktpwp_dummy_data_page() {
                                 errorMessage = response.data.message;
                             }
                         } catch (e) {
-                            errorMessage = ktpDummyDataStrings.server_error_prefix + xhr.status + ' ' + xhr.statusText;
+                            errorMessage = ktpwpDummyDataStrings.server_error_prefix + xhr.status + ' ' + xhr.statusText;
                         }
                     }
                     resultDiv.html('<div class="ktp-dummy-data-result error"><p>' + errorMessage + '</p></div>');
                 },
                 complete: function() {
-                    button.prop('disabled', false).text(ktpDummyDataStrings.clear_button);
+                    button.prop('disabled', false).text(ktpwpDummyDataStrings.clear_button);
                 }
             });
         });
@@ -6618,10 +6674,10 @@ function ktpwp_handle_create_dummy_data_ajax() {
         global $wpdb;
         
         // 既存データのチェック
-        $existing_clients = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}ktp_client");
-        $existing_orders = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}ktp_order");
-        $existing_suppliers = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}ktp_supplier");
-        $existing_services = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}ktp_service");
+        $existing_clients = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}ktpwp_client");
+        $existing_orders = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}ktpwp_order");
+        $existing_suppliers = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}ktpwp_supplier");
+        $existing_services = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}ktpwp_service");
         
         if ($existing_clients > 0 || $existing_orders > 0 || $existing_suppliers > 0 || $existing_services > 0) {
             wp_send_json_error(array(
@@ -6694,8 +6750,8 @@ function ktpwp_handle_create_dummy_data_ajax() {
             }
 
             // include が早期 return false した場合でも成功扱いになっていた不具合を防ぐ
-            $client_count = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}ktp_client" );
-            $order_count  = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}ktp_order" );
+            $client_count = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}ktpwp_client" );
+            $order_count  = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}ktpwp_order" );
             if ( $client_count < 1 ) {
                 wp_send_json_error( array( 'message' => __( 'ダミーデータの作成に失敗しました。必要なテーブルが存在するか、PHPエラーログを確認してください。', 'kantanpro' ) ) );
                 return;
@@ -6716,9 +6772,9 @@ function ktpwp_handle_create_dummy_data_ajax() {
                 $cookie_lifetime = time() + (86400 * 30);
                 $cookie_path = '/';
                 // 顧客・サービス・協力会社のID選択クッキー
-                setcookie('ktp_client_id', '1', $cookie_lifetime, $cookie_path);
-                setcookie('ktp_service_id', '1', $cookie_lifetime, $cookie_path);
-                setcookie('ktp_supplier_id', '1', $cookie_lifetime, $cookie_path);
+                setcookie('ktpwp_client_id', '1', $cookie_lifetime, $cookie_path);
+                setcookie('ktpwp_service_id', '1', $cookie_lifetime, $cookie_path);
+                setcookie('ktpwp_supplier_id', '1', $cookie_lifetime, $cookie_path);
             } else if (defined('WP_DEBUG') && WP_DEBUG) {
                 ktpwp_debug_log('KTPWP: ヘッダー送信後のため、初期表示クッキーを設定できませんでした');
             }
@@ -6810,9 +6866,9 @@ function ktpwp_handle_clear_data_ajax() {
         $total_cleared = 0;
         
         // 1. 受注書関連テーブルをクリア（外部キー制約のため順序が重要）
-        $cost_items_count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}ktp_order_cost_items");
+        $cost_items_count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}ktpwp_order_cost_items");
         if ($cost_items_count > 0) {
-            $result = $wpdb->query("DELETE FROM {$wpdb->prefix}ktp_order_cost_items");
+            $result = $wpdb->query("DELETE FROM {$wpdb->prefix}ktpwp_order_cost_items");
             if ($result !== false) {
                 /* translators: %d: 件数 */
                 $cleared_tables[] = sprintf( __( 'コスト項目: %d件', 'kantanpro' ), $cost_items_count );
@@ -6820,9 +6876,9 @@ function ktpwp_handle_clear_data_ajax() {
             }
         }
         
-        $invoice_items_count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}ktp_order_invoice_items");
+        $invoice_items_count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}ktpwp_order_invoice_items");
         if ($invoice_items_count > 0) {
-            $result = $wpdb->query("DELETE FROM {$wpdb->prefix}ktp_order_invoice_items");
+            $result = $wpdb->query("DELETE FROM {$wpdb->prefix}ktpwp_order_invoice_items");
             if ($result !== false) {
                 /* translators: %d: 件数 */
                 $cleared_tables[] = sprintf( __( '請求項目: %d件', 'kantanpro' ), $invoice_items_count );
@@ -6831,9 +6887,9 @@ function ktpwp_handle_clear_data_ajax() {
         }
         
         // 2. 受注書テーブルをクリア
-        $order_count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}ktp_order");
+        $order_count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}ktpwp_order");
         if ($order_count > 0) {
-            $result = $wpdb->query("DELETE FROM {$wpdb->prefix}ktp_order");
+            $result = $wpdb->query("DELETE FROM {$wpdb->prefix}ktpwp_order");
             if ($result !== false) {
                 /* translators: %d: 件数 */
                 $cleared_tables[] = sprintf( __( '受注書: %d件', 'kantanpro' ), $order_count );
@@ -6842,9 +6898,9 @@ function ktpwp_handle_clear_data_ajax() {
         }
         
         // 3. 顧客テーブルをクリア
-        $client_count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}ktp_client");
+        $client_count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}ktpwp_client");
         if ($client_count > 0) {
-            $result = $wpdb->query("DELETE FROM {$wpdb->prefix}ktp_client");
+            $result = $wpdb->query("DELETE FROM {$wpdb->prefix}ktpwp_client");
             if ($result !== false) {
                 /* translators: %d: 件数 */
                 $cleared_tables[] = sprintf( __( '顧客: %d件', 'kantanpro' ), $client_count );
@@ -6853,9 +6909,9 @@ function ktpwp_handle_clear_data_ajax() {
         }
         
         // 4. 協力会社職能テーブルをクリア
-        $supplier_skills_count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}ktp_supplier_skills");
+        $supplier_skills_count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}ktpwp_supplier_skills");
         if ($supplier_skills_count > 0) {
-            $result = $wpdb->query("DELETE FROM {$wpdb->prefix}ktp_supplier_skills");
+            $result = $wpdb->query("DELETE FROM {$wpdb->prefix}ktpwp_supplier_skills");
             if ($result !== false) {
                 /* translators: %d: 件数 */
                 $cleared_tables[] = sprintf( __( '協力会社職能: %d件', 'kantanpro' ), $supplier_skills_count );
@@ -6864,9 +6920,9 @@ function ktpwp_handle_clear_data_ajax() {
         }
         
         // 5. 協力会社テーブルをクリア
-        $supplier_count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}ktp_supplier");
+        $supplier_count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}ktpwp_supplier");
         if ($supplier_count > 0) {
-            $result = $wpdb->query("DELETE FROM {$wpdb->prefix}ktp_supplier");
+            $result = $wpdb->query("DELETE FROM {$wpdb->prefix}ktpwp_supplier");
             if ($result !== false) {
                 /* translators: %d: 件数 */
                 $cleared_tables[] = sprintf( __( '協力会社: %d件', 'kantanpro' ), $supplier_count );
@@ -6875,9 +6931,9 @@ function ktpwp_handle_clear_data_ajax() {
         }
         
         // 6. サービステーブルをクリア
-        $service_count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}ktp_service");
+        $service_count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}ktpwp_service");
         if ($service_count > 0) {
-            $result = $wpdb->query("DELETE FROM {$wpdb->prefix}ktp_service");
+            $result = $wpdb->query("DELETE FROM {$wpdb->prefix}ktpwp_service");
             if ($result !== false) {
                 /* translators: %d: 件数 */
                 $cleared_tables[] = sprintf( __( 'サービス: %d件', 'kantanpro' ), $service_count );

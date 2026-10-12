@@ -1,7 +1,7 @@
 /**
  * 協力会社フォームの郵便番号 → 住所の自動入力。
  *
- * 住所検索は WordPress 側の AJAX（ktp_lookup_postal_address）経由で、
+ * 住所検索は WordPress 側の AJAX（ktpwp_lookup_postal_address）経由で、
  * 管理者が明示的に有効化した日本郵便の公式API（サーバー側で呼び出し）だけを使う。
  * ブラウザから外部サービスへ直接通信しない。設定が無効なときはこのスクリプト自体が
  * 読み込まれない（PHP 側で enqueue を抑止）。
@@ -9,7 +9,7 @@
 (function () {
 	'use strict';
 
-	var cfg = window.ktpSupplierPostal || {};
+	var cfg = window.ktpwpSupplierPostal || {};
 	if (!cfg.ajaxUrl || !cfg.nonce) {
 		return;
 	}
@@ -31,7 +31,7 @@
 			}
 
 			var fd = new FormData();
-			fd.append('action', 'ktp_lookup_postal_address');
+			fd.append('action', 'ktpwp_lookup_postal_address');
 			fd.append('nonce', cfg.nonce);
 			fd.append('zipcode', zip);
 

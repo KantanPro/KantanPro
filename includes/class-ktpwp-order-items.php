@@ -75,7 +75,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 			$charset_collate = $wpdb->get_charset_collate();
 
 			// Schema for invoice_items table
-			$table_name_invoice = $wpdb->prefix . 'ktp_order_invoice_items';
+			$table_name_invoice = $wpdb->prefix . 'ktpwp_order_invoice_items';
 			$sql_invoice = "CREATE TABLE {$table_name_invoice} (
 				id MEDIUMINT(9) NOT NULL AUTO_INCREMENT,
 				order_id MEDIUMINT(9) NOT NULL,
@@ -95,7 +95,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 			) {$charset_collate};";
 
 			// Schema for cost_items table
-			$table_name_cost = $wpdb->prefix . 'ktp_order_cost_items';
+			$table_name_cost = $wpdb->prefix . 'ktpwp_order_cost_items';
 			$sql_cost = "CREATE TABLE {$table_name_cost} (
 				id MEDIUMINT(9) NOT NULL AUTO_INCREMENT,
 				order_id MEDIUMINT(9) NOT NULL,
@@ -142,7 +142,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 		public function ensure_invoice_items_table() {
 			global $wpdb;
 
-			$table_name = $wpdb->prefix . 'ktp_order_invoice_items';
+			$table_name = $wpdb->prefix . 'ktpwp_order_invoice_items';
 			$exists     = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) );
 
 			if ( $exists !== $table_name ) {
@@ -164,12 +164,12 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 		/**
 		 * 公開商品の Web お申込み用に請求項目を追加する（KantanBiz 公開商品 inbound と同仕様）。
 		 *
-		 * 定期請求項目（ktp_service_recurring_item）を全行コピーし、
+		 * 定期請求項目（ktpwp_service_recurring_item）を全行コピーし、
 		 * 定期契約サービスなら初回費用（既定）も remarks「初回のみ」で追加する。
 		 * 定期項目が未登録の場合のみ、サービス名 + price の 1 行にフォールバックする。
 		 *
 		 * @param int    $order_id 案件 ID。
-		 * @param object $service  ktp_service 行。
+		 * @param object $service  ktpwp_service 行。
 		 * @param float  $quantity 数量。
 		 * @return bool
 		 */
@@ -312,7 +312,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 		private function insert_public_product_invoice_row( $order_id, $name, $price, $unit, $quantity, $remarks, $tax_rate, $sort_order, $is_provisional = false ) {
 			global $wpdb;
 
-			$table_name = $wpdb->prefix . 'ktp_order_invoice_items';
+			$table_name = $wpdb->prefix . 'ktpwp_order_invoice_items';
 			$is_provisional = (bool) $is_provisional;
 			$row_amount       = $is_provisional
 				? 0
@@ -370,7 +370,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 		}
 
 		/**
-		 * @param object $service ktp_service 行。
+		 * @param object $service ktpwp_service 行。
 		 * @return bool
 		 */
 		private function service_is_recurring_contract( $service ) {
@@ -403,16 +403,14 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 			global $wpdb;
 
 			$column     = sanitize_key( (string) $column );
-			$table_name = $wpdb->prefix . 'ktp_order_invoice_items';
+			$table_name = $wpdb->prefix . 'ktpwp_order_invoice_items';
 
 			if ( $column === '' ) {
 				return false;
 			}
 
 			$found = $wpdb->get_var(
-				$wpdb->prepare(
-					"SHOW COLUMNS FROM `{$table_name}` LIKE %s",
-					$column
+				$wpdb->prepare( 'SHOW COLUMNS FROM %i LIKE %s', $table_name, $column
 				)
 			);
 
@@ -443,10 +441,10 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 			}
 
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_order_invoice_items';
+			$table_name = $wpdb->prefix . 'ktpwp_order_invoice_items';
 
 			// テーブルの存在確認
-			$table_exists = $wpdb->get_var( "SHOW TABLES LIKE '$table_name'" );
+			$table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) );
 			if ( ! $table_exists ) {
 				ktpwp_debug_log( "KTPWP: Invoice items table {$table_name} does not exist" );
 				return array();
@@ -477,7 +475,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 			}
 
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_order_cost_items';
+			$table_name = $wpdb->prefix . 'ktpwp_order_cost_items';
 
 			// sort_orderが設定されている場合はそれを使用し、設定されていない場合はid順でソート
 			// これにより、ドラッグ&ドロップで並び替えた順序が維持され、新規追加項目は最後に表示される
@@ -506,7 +504,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 			}
 
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_order_invoice_items';
+			$table_name = $wpdb->prefix . 'ktpwp_order_invoice_items';
 
 			if ( ! $this->ensure_invoice_items_table() ) {
 				return false;
@@ -627,7 +625,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
                         "DELETE FROM `{$table_name}` WHERE order_id = %d AND id NOT IN ({$ids_placeholder})",
                         array_merge( array( $order_id ), $final_ids_to_keep )
 					);
-					$wpdb->query( $delete_query );
+					$wpdb->query( $delete_query ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $delete_query は $wpdb->prepare() 済み。
 				} else {
 					// Delete all items for this order_id ONLY IF the initial $items array was empty.
 					// This prevents deleting all items if $items contained only new rows with empty product_names
@@ -664,7 +662,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 			}
 
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_order_cost_items';
+			$table_name = $wpdb->prefix . 'ktpwp_order_cost_items';
 
 			// Ajax送信データのキー補正（unit_price→price など）
 			foreach ( $items as &$item ) {
@@ -727,7 +725,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 					$format = array( '%d', '%s', '%f', '%s', '%f', '%f', ( $tax_rate !== null ? '%f' : null ), '%s', '%s', '%s' );
 
 					// supplier_idカラムが存在する場合のみ追加
-					$columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$table_name}` LIKE 'supplier_id'", 0 );
+					$columns = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i LIKE %s', $table_name, 'supplier_id' ), 0 );
 					if ( ! empty( $columns ) ) {
 						$data['supplier_id'] = $supplier_id;
 						$format[] = '%d';
@@ -790,7 +788,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
                         "DELETE FROM `{$table_name}` WHERE order_id = %d AND id NOT IN ({$ids_placeholder})",
                         array_merge( array( $order_id ), $final_ids_to_keep )
 					);
-					$wpdb->query( $delete_query );
+					$wpdb->query( $delete_query ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $delete_query は $wpdb->prepare() 済み。
 				} elseif ( empty( $items ) ) {
 						$wpdb->delete( $table_name, array( 'order_id' => $order_id ), array( '%d' ) );
 				}
@@ -813,10 +811,8 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 		 */
 		public function add_supplier_id_column_if_missing() {
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_order_cost_items';
-			$column = $wpdb->get_results(
-                "SHOW COLUMNS FROM `{$table_name}` LIKE 'supplier_id'"
-			);
+			$table_name = $wpdb->prefix . 'ktpwp_order_cost_items';
+			$column = $wpdb->get_results( $wpdb->prepare( 'SHOW COLUMNS FROM %i LIKE %s', $table_name, 'supplier_id' ) );
 			if ( empty( $column ) ) {
 				$result = $wpdb->query( "ALTER TABLE `{$table_name}` ADD COLUMN supplier_id INT(11) DEFAULT NULL AFTER order_id" );
 				if ( $result === false ) {
@@ -837,10 +833,8 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 		 */
 		public function add_purchase_status_column_if_missing() {
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_order_cost_items';
-			$column = $wpdb->get_results(
-                "SHOW COLUMNS FROM `{$table_name}` LIKE 'purchase_status'"
-			);
+			$table_name = $wpdb->prefix . 'ktpwp_order_cost_items';
+			$column = $wpdb->get_results( $wpdb->prepare( 'SHOW COLUMNS FROM %i LIKE %s', $table_name, 'purchase_status' ) );
 			if ( empty( $column ) ) {
 				$result = $wpdb->query( "ALTER TABLE `{$table_name}` ADD COLUMN purchase_status VARCHAR(20) NOT NULL DEFAULT 'pending' AFTER ordered" );
 				if ( $result === false ) {
@@ -861,10 +855,8 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 		 */
 		public function add_purchase_status_date_column_if_missing() {
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_order_cost_items';
-			$column = $wpdb->get_results(
-                "SHOW COLUMNS FROM `{$table_name}` LIKE 'purchase_status_date'"
-			);
+			$table_name = $wpdb->prefix . 'ktpwp_order_cost_items';
+			$column = $wpdb->get_results( $wpdb->prepare( 'SHOW COLUMNS FROM %i LIKE %s', $table_name, 'purchase_status_date' ) );
 			if ( empty( $column ) ) {
 				$result = $wpdb->query( "ALTER TABLE `{$table_name}` ADD COLUMN purchase_status_date DATE NULL DEFAULT NULL AFTER purchase_status" );
 				if ( $result === false ) {
@@ -885,10 +877,8 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 		 */
 		public function add_purchase_status_dates_column_if_missing() {
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_order_cost_items';
-			$column = $wpdb->get_results(
-                "SHOW COLUMNS FROM `{$table_name}` LIKE 'purchase_status_dates'"
-			);
+			$table_name = $wpdb->prefix . 'ktpwp_order_cost_items';
+			$column = $wpdb->get_results( $wpdb->prepare( 'SHOW COLUMNS FROM %i LIKE %s', $table_name, 'purchase_status_dates' ) );
 			if ( empty( $column ) ) {
 				$result = $wpdb->query( "ALTER TABLE `{$table_name}` ADD COLUMN purchase_status_dates TEXT NULL DEFAULT NULL AFTER purchase_status_date" );
 				if ( $result === false ) {
@@ -1004,7 +994,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 			}
 
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_order_invoice_items';
+			$table_name = $wpdb->prefix . 'ktpwp_order_invoice_items';
 
 			$data = array(
 				'order_id' => $order_id,
@@ -1047,7 +1037,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 			}
 
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_order_cost_items';
+			$table_name = $wpdb->prefix . 'ktpwp_order_cost_items';
 
 			$data = array(
 				'order_id' => $order_id,
@@ -1090,7 +1080,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 			}
 
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_order_invoice_items';
+			$table_name = $wpdb->prefix . 'ktpwp_order_invoice_items';
 
 			$result = $wpdb->delete(
                 $table_name,
@@ -1119,7 +1109,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 			}
 
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_order_cost_items';
+			$table_name = $wpdb->prefix . 'ktpwp_order_cost_items';
 
 			$result = $wpdb->delete(
                 $table_name,
@@ -1151,10 +1141,10 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 			}
 
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_order_' . $item_type . '_items';
+			$table_name = $wpdb->prefix . 'ktpwp_order_' . $item_type . '_items';
 
 			// テーブルの存在確認
-			$table_exists = $wpdb->get_var( "SHOW TABLES LIKE '$table_name'" );
+			$table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) );
 			if ( ! $table_exists ) {
 				ktpwp_debug_log( "KTPWP: Table {$table_name} does not exist" );
 				return false;
@@ -1303,7 +1293,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 				case 'supplier_id':
 					// supplier_idカラムはcost itemsのみで使用
 					if ( $item_type === 'cost' ) {
-						$columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$table_name}` LIKE 'supplier_id'", 0 );
+						$columns = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i LIKE %s', $table_name, 'supplier_id' ), 0 );
 						if ( ! empty( $columns ) ) {
 							$update_data['supplier_id'] = intval( $field_value ) ?: null;
 							$format[] = '%d';
@@ -1402,17 +1392,17 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 			}
 
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_order_' . $item_type . '_items';
+			$table_name = $wpdb->prefix . 'ktpwp_order_' . $item_type . '_items';
 
 			// テーブルの存在確認
-			$table_exists = $wpdb->get_var( "SHOW TABLES LIKE '$table_name'" );
+			$table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) );
 			if ( ! $table_exists ) {
 				ktpwp_debug_log( "KTPWP: Table {$table_name} does not exist" );
 				return null;
 			}
 
 			// フィールドの存在確認
-			$columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$table_name}`", 0 );
+			$columns = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $table_name ), 0 );
 			if ( ! in_array( $field_name, $columns ) ) {
 				ktpwp_debug_log( "KTPWP: Field {$field_name} does not exist in table {$table_name}" );
 				return null;
@@ -1446,7 +1436,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 
 			// 重複リクエスト防止（リクエストIDが提供された場合）
 			if ( $request_id ) {
-				$transient_key = 'ktp_create_item_' . md5( $request_id );
+				$transient_key = 'ktpwp_create_item_' . md5( $request_id );
 				if ( get_transient( $transient_key ) ) {
 					ktpwp_debug_log( "[KTPWP] Duplicate create_new_item request blocked: {$request_id}" );
 					return false;
@@ -1456,7 +1446,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 			}
 
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_order_' . $item_type . '_items';
+			$table_name = $wpdb->prefix . 'ktpwp_order_' . $item_type . '_items';
 			
 			ktpwp_debug_log( "[KTPWP] create_new_item called: item_type={$item_type}, order_id={$order_id}, initial_field_name={$initial_field_name}, initial_field_value={$initial_field_value}, request_id={$request_id}" );
 
@@ -1519,20 +1509,20 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 				$data['ordered'] = 0;
 
 				// purchase_statusカラムが存在する場合のみ追加
-				$purchase_status_columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$table_name}` LIKE 'purchase_status'", 0 );
+				$purchase_status_columns = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i LIKE %s', $table_name, 'purchase_status' ), 0 );
 				if ( ! empty( $purchase_status_columns ) ) {
 					$data['purchase_status'] = 'pending';
 				}
 
 				// supplier_idカラムが存在する場合のみ追加
-				$columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$table_name}` LIKE 'supplier_id'", 0 );
+				$columns = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i LIKE %s', $table_name, 'supplier_id' ), 0 );
 				if ( ! empty( $columns ) ) {
 					$data['supplier_id'] = null;
 				}
 			}
 			
 			// 税率カラムが存在するかチェックし、存在しない場合は削除
-			$columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$table_name}`", 0 );
+			$columns = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $table_name ), 0 );
 			if ( ! in_array( 'tax_rate', $columns ) ) {
 				unset( $data['tax_rate'] );
 			}
@@ -1573,7 +1563,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 				ktpwp_debug_log( 'KTPWP: Last SQL Query: ' . $wpdb->last_query );
 				// 失敗時はトランジェントを削除
 				if ( $request_id ) {
-					$transient_key = 'ktp_create_item_' . md5( $request_id );
+					$transient_key = 'ktpwp_create_item_' . md5( $request_id );
 					delete_transient( $transient_key );
 				}
 				return false;
@@ -1586,7 +1576,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 			
 			// 成功時はトランジェントを即座に削除（処理完了のため）
 			if ( $request_id ) {
-				$transient_key = 'ktp_create_item_' . md5( $request_id );
+				$transient_key = 'ktpwp_create_item_' . md5( $request_id );
 				delete_transient( $transient_key );
 			}
 			
@@ -1619,7 +1609,7 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 			}
 
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_order_' . $item_type . '_items';
+			$table_name = $wpdb->prefix . 'ktpwp_order_' . $item_type . '_items';
 
 			// アイテムが存在し、指定されたorder_idに属するかどうかを確認 (オプションだが推奨)
 			$item_exists = $wpdb->get_var(
@@ -1688,10 +1678,10 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 			}
 
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_order_' . $item_type . '_items';
+			$table_name = $wpdb->prefix . 'ktpwp_order_' . $item_type . '_items';
 
 			// テーブルが存在するかチェック
-			$table_exists = $wpdb->get_var( "SHOW TABLES LIKE '{$table_name}'" ) === $table_name;
+			$table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) ) === $table_name;
 			if ( ! $table_exists ) {
 				ktpwp_debug_log( "[KTPWP_Order_Items] update_items_order: Table {$table_name} does not exist" );
 				return false;

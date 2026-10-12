@@ -12,7 +12,7 @@ if ( ! function_exists( 'ktpwp_supplier_cost_ajax_authorize' ) ) {
 	/**
 	 * コスト項目用 AJAX の共通チェック（権限と nonce）。失敗したら JSON エラーで終了する。
 	 *
-	 * 画面側のスクリプトは ktp_ajax_nonce / ktpwp_ajax_nonce のどちらの nonce を
+	 * 画面側のスクリプトは ktpwp_ajax_nonce / ktpwp_ajax_nonce のどちらの nonce を
 	 * 持っている場合もあるため、class-ktpwp-ajax.php と同じく両方を受け付ける。
 	 *
 	 * @return void
@@ -23,7 +23,7 @@ if ( ! function_exists( 'ktpwp_supplier_cost_ajax_authorize' ) ) {
 		}
 
 		$nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
-		if ( $nonce === '' || ( ! wp_verify_nonce( $nonce, 'ktp_ajax_nonce' ) && ! wp_verify_nonce( $nonce, 'ktpwp_ajax_nonce' ) ) ) {
+		if ( ! wp_verify_nonce( $nonce, 'ktpwp_ajax_nonce' ) ) {
 			wp_send_json_error( __( 'セキュリティチェックに失敗しました。', 'kantanpro' ) );
 		}
 	}
@@ -33,9 +33,10 @@ add_action(
 	'wp_ajax_ktpwp_get_suppliers_for_cost',
 	function () {
 		ktpwp_supplier_cost_ajax_authorize();
+		check_ajax_referer( 'ktpwp_ajax_nonce', 'nonce' );
 
 		global $wpdb;
-		$table = $wpdb->prefix . 'ktp_supplier';
+		$table = $wpdb->prefix . 'ktpwp_supplier';
 
 		// テーブルの存在確認
 		$table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $table ) ) ) === $table;
@@ -57,6 +58,7 @@ add_action(
 	'wp_ajax_ktpwp_get_supplier_skills_for_cost',
 	function () {
 		ktpwp_supplier_cost_ajax_authorize();
+		check_ajax_referer( 'ktpwp_ajax_nonce', 'nonce' );
 
 		$supplier_id = isset( $_POST['supplier_id'] ) ? absint( wp_unslash( $_POST['supplier_id'] ) ) : 0;
 		if ( ! $supplier_id ) {
@@ -64,7 +66,7 @@ add_action(
 		}
 
 		global $wpdb;
-		$table = $wpdb->prefix . 'ktp_supplier_skills';
+		$table = $wpdb->prefix . 'ktpwp_supplier_skills';
 
 		if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 			require_once __DIR__ . '/class-ktpwp-supplier-skills.php';
@@ -119,6 +121,7 @@ add_action(
 	'wp_ajax_ktpwp_increment_skill_frequency',
 	function () {
 		ktpwp_supplier_cost_ajax_authorize();
+		check_ajax_referer( 'ktpwp_ajax_nonce', 'nonce' );
 
 		$skill_id = isset( $_POST['skill_id'] ) ? absint( wp_unslash( $_POST['skill_id'] ) ) : 0;
 		if ( $skill_id <= 0 ) {

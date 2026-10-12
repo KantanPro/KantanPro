@@ -13,7 +13,7 @@
     /**
      * ポップアップを閉じる（jQuery に依存しない。noConflict・他プラグインとの競合を避ける）
      */
-    window.ktpCloseEmailPopup = function () {
+    window.ktpwpCloseEmailPopup = function () {
         var wrap = document.getElementById('ktp-email-popup');
         if (wrap && wrap.parentNode) {
             wrap.parentNode.removeChild(wrap);
@@ -33,8 +33,8 @@
         // URLの取得（優先順位順）
         if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) {
             config.url = ktpwp_ajax.ajax_url;
-        } else if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.ajax_url) {
-            config.url = ktp_ajax_object.ajax_url;
+        } else if (typeof ktpwp_ajax_object !== 'undefined' && ktpwp_ajax_object.ajax_url) {
+            config.url = ktpwp_ajax_object.ajax_url;
         } else if (typeof ajaxurl !== 'undefined') {
             config.url = ajaxurl;
         } else {
@@ -48,10 +48,10 @@
             config.nonce = ktpwp_ajax.nonces.general;
         } else if (typeof ktpwp_ajax_nonce !== 'undefined') {
             config.nonce = ktpwp_ajax_nonce;
-        } else if (typeof ktp_ajax_nonce !== 'undefined') {
-            config.nonce = ktp_ajax_nonce;
-        } else if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.nonce) {
-            config.nonce = ktp_ajax_object.nonce;
+        } else if (typeof ktpwp_autosave_nonce !== 'undefined') {
+            config.nonce = ktpwp_autosave_nonce;
+        } else if (typeof ktpwp_ajax_object !== 'undefined' && ktpwp_ajax_object.nonce) {
+            config.nonce = ktpwp_ajax_object.nonce;
         }
         
         return config;
@@ -71,14 +71,14 @@
     $(document).ready(function() {
         console.log('[EMAIL-POPUP] DOM準備完了');
         console.log('[EMAIL-POPUP] jQuery available:', typeof $ !== 'undefined');
-        if (window.ktpDebugMode) {
+        if (window.ktpwpDebugMode) {
             const ajaxConfig = getAjaxConfig();
             console.log('[EMAIL-POPUP] 統一されたAJAX設定:', ajaxConfig);
         }
     });
 
     // メール送信ポップアップの表示
-    window.ktpShowEmailPopup = function (orderId) {
+    window.ktpwpShowEmailPopup = function (orderId) {
         if (!orderId) {
             alert(ktpwpTranslate('受注書IDが見つかりません。'));
             return;
@@ -149,20 +149,20 @@
 
         // 閉じるボタン（×）のイベント
         $(document).on('click', '#ktp-email-popup-close', function () {
-            window.ktpCloseEmailPopup();
+            window.ktpwpCloseEmailPopup();
         });
 
         // Escapeキーで閉じる
         $(document).on('keyup.email-popup', function (e) {
             if (e.keyCode === 27) { // Escape key
-                window.ktpCloseEmailPopup();
+                window.ktpwpCloseEmailPopup();
             }
         });
 
         // 背景クリックで閉じる
         $(document).on('click', '#ktp-email-popup', function (e) {
             if (e.target === this) {
-                window.ktpCloseEmailPopup();
+                window.ktpwpCloseEmailPopup();
             }
         });
 
@@ -175,7 +175,7 @@
         const ajaxConfig = getAjaxConfig();
 
         const ajaxData = {
-            action: 'ktp_get_email_content',
+            action: 'ktpwp_get_email_content',
             order_id: orderId,
             nonce: ajaxConfig.nonce
         };
@@ -635,19 +635,19 @@
         };
     }
 
-    /** メールポップアップ用: 自動保存 API は ktp_ajax_nonce 優先（ktpwp 一般 nonce もサーバで受可） */
+    /** メールポップアップ用: 自動保存 API は ktpwp_ajax_nonce 優先（ktpwp 一般 nonce もサーバで受可） */
     function getAutoSaveNonceForEmail() {
-        if (typeof ktp_ajax_nonce !== 'undefined' && ktp_ajax_nonce) {
-            return ktp_ajax_nonce;
+        if (typeof ktpwp_autosave_nonce !== 'undefined' && ktpwp_autosave_nonce) {
+            return ktpwp_autosave_nonce;
         }
         if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.auto_save) {
             return ktpwp_ajax.nonces.auto_save;
         }
-        if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.nonces && ktp_ajax_object.nonces.auto_save) {
-            return ktp_ajax_object.nonces.auto_save;
+        if (typeof ktpwp_ajax_object !== 'undefined' && ktpwp_ajax_object.nonces && ktpwp_ajax_object.nonces.auto_save) {
+            return ktpwp_ajax_object.nonces.auto_save;
         }
-        if (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.nonce) {
-            return ktp_ajax_object.nonce;
+        if (typeof ktpwp_ajax_object !== 'undefined' && ktpwp_ajax_object.nonce) {
+            return ktpwp_ajax_object.nonce;
         }
         const cfg = getAjaxConfig();
         return cfg.nonce || '';
@@ -659,7 +659,7 @@
             const ajaxConfig = getAjaxConfig();
             const saveNonce = getAutoSaveNonceForEmail();
 
-            // 請求項目の最新金額を保存（action は wp_ajax_ktp_auto_save_item に合わせる）
+            // 請求項目の最新金額を保存（action は wp_ajax_ktpwp_auto_save_item に合わせる）
             $('.invoice-items-table tbody tr').each(function() {
                 const $row = $(this);
                 const itemId = $row.find('input[name*="[id]"]').val();
@@ -671,7 +671,7 @@
                         url: ajaxConfig.url,
                         type: 'POST',
                         data: {
-                            action: 'ktp_auto_save_item',
+                            action: 'ktpwp_auto_save_item',
                             item_type: 'invoice',
                             item_id: itemId,
                             field_name: 'amount',
@@ -696,7 +696,7 @@
                         url: ajaxConfig.url,
                         type: 'POST',
                         data: {
-                            action: 'ktp_auto_save_item',
+                            action: 'ktpwp_auto_save_item',
                             item_type: 'cost',
                             item_id: itemId,
                             field_name: 'amount',
@@ -733,7 +733,7 @@
         
         // FormDataを使用してファイルと一緒にデータを送信
         const formData = new FormData();
-        formData.append('action', 'ktp_send_order_email');
+        formData.append('action', 'ktpwp_send_order_email');
         formData.append('order_id', orderId);
         formData.append('to', to);
         $('#email-send-form input[name="cc_emails[]"]:checked').each(function () {
@@ -857,7 +857,7 @@
                                     border-radius: 4px;
                                     cursor: pointer;
                                     pointer-events: auto;
-                                " onclick="if(typeof window.ktpCloseEmailPopup==='function'){window.ktpCloseEmailPopup();}return false;">
+                                " onclick="if(typeof window.ktpwpCloseEmailPopup==='function'){window.ktpwpCloseEmailPopup();}return false;">
                                     ${ktpwpTranslate('閉じる')}
                                 </button>
                             </div>
@@ -873,7 +873,7 @@
                             function (ev) {
                                 ev.preventDefault();
                                 ev.stopPropagation();
-                                window.ktpCloseEmailPopup();
+                                window.ktpwpCloseEmailPopup();
                             },
                             true
                         );
@@ -887,7 +887,7 @@
                             </div>
                             <div style="font-size: 14px;">${errorMessage}</div>
                             <div style="margin-top: 20px;">
-                                <button type="button" onclick="ktpShowEmailPopup(${orderId})" style="
+                                <button type="button" onclick="ktpwpShowEmailPopup(${orderId})" style="
                                     background: #dc3545;
                                     color: white;
                                     border: none;
@@ -917,7 +917,7 @@
                         </div>
                         <div style="font-size: 14px;">${ktpwpTranslate('ステータス')}: ${xhr.status} ${status}</div>
                         <div style="margin-top: 20px;">
-                            <button type="button" onclick="ktpShowEmailPopup(${orderId})" style="
+                            <button type="button" onclick="ktpwpShowEmailPopup(${orderId})" style="
                                 background: #dc3545;
                                 color: white;
                                 border: none;

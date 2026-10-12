@@ -27,7 +27,7 @@ class KTPWP_Migration_20250715_Add_Tax_Category_To_Client {
     public static function up() {
         global $wpdb;
         
-        $client_table = $wpdb->prefix . 'ktp_client';
+        $client_table = $wpdb->prefix . 'ktpwp_client';
         
         // Check if the table exists
         $table_exists = $wpdb->get_var( 
@@ -46,9 +46,7 @@ class KTPWP_Migration_20250715_Add_Tax_Category_To_Client {
         
         // Check if the column already exists
         $column_exists = $wpdb->get_var( 
-            $wpdb->prepare( 
-                "SHOW COLUMNS FROM `{$client_table}` LIKE %s", 
-                'tax_category' 
+            $wpdb->prepare( 'SHOW COLUMNS FROM %i LIKE %s', $client_table, 'tax_category' 
             ) 
         );
         
@@ -60,9 +58,9 @@ class KTPWP_Migration_20250715_Add_Tax_Category_To_Client {
         }
         
         // Add the tax_category column
-        $sql = "ALTER TABLE `{$client_table}` ADD COLUMN `tax_category` ENUM('内税', '外税') NOT NULL DEFAULT '内税' COMMENT '税区分（内税・外税）' AFTER `email`";
+        $sql = $wpdb->prepare( "ALTER TABLE %i ADD COLUMN `tax_category` ENUM('内税', '外税') NOT NULL DEFAULT '内税' COMMENT '税区分（内税・外税）' AFTER `email`", $client_table );
         
-        $result = $wpdb->query( $sql );
+        $result = $wpdb->query( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $sql は直前で $wpdb->prepare() 済み。
         
         if ( $result === false ) {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
@@ -72,9 +70,7 @@ class KTPWP_Migration_20250715_Add_Tax_Category_To_Client {
         }
         
         // Update existing clients to have default tax_category
-        $update_result = $wpdb->query( 
-            "UPDATE `{$client_table}` SET `tax_category` = '内税' WHERE `tax_category` IS NULL OR `tax_category` = ''" 
-        );
+        $update_result = $wpdb->query( $wpdb->prepare( "UPDATE %i SET `tax_category` = '内税' WHERE `tax_category` IS NULL OR `tax_category` = ''", $client_table ) );
         
         if ( $update_result !== false ) {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
@@ -98,13 +94,11 @@ class KTPWP_Migration_20250715_Add_Tax_Category_To_Client {
     public static function down() {
         global $wpdb;
         
-        $client_table = $wpdb->prefix . 'ktp_client';
+        $client_table = $wpdb->prefix . 'ktpwp_client';
         
         // Check if the column exists
         $column_exists = $wpdb->get_var( 
-            $wpdb->prepare( 
-                "SHOW COLUMNS FROM `{$client_table}` LIKE %s", 
-                'tax_category' 
+            $wpdb->prepare( 'SHOW COLUMNS FROM %i LIKE %s', $client_table, 'tax_category' 
             ) 
         );
         
@@ -116,9 +110,9 @@ class KTPWP_Migration_20250715_Add_Tax_Category_To_Client {
         }
         
         // Remove the tax_category column
-        $sql = "ALTER TABLE `{$client_table}` DROP COLUMN `tax_category`";
+        $sql = $wpdb->prepare( "ALTER TABLE %i DROP COLUMN `tax_category`", $client_table );
         
-        $result = $wpdb->query( $sql );
+        $result = $wpdb->query( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $sql は直前で $wpdb->prepare() 済み。
         
         if ( $result === false ) {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
@@ -143,7 +137,7 @@ class KTPWP_Migration_20250715_Add_Tax_Category_To_Client {
     public static function needs_migration() {
         global $wpdb;
         
-        $client_table = $wpdb->prefix . 'ktp_client';
+        $client_table = $wpdb->prefix . 'ktpwp_client';
         
         // Check if table exists
         $table_exists = $wpdb->get_var( 
@@ -159,9 +153,7 @@ class KTPWP_Migration_20250715_Add_Tax_Category_To_Client {
         
         // Check if column exists
         $column_exists = $wpdb->get_var( 
-            $wpdb->prepare( 
-                "SHOW COLUMNS FROM `{$client_table}` LIKE %s", 
-                'tax_category' 
+            $wpdb->prepare( 'SHOW COLUMNS FROM %i LIKE %s', $client_table, 'tax_category' 
             ) 
         );
         

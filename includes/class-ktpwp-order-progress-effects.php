@@ -45,7 +45,7 @@ if ( ! class_exists( 'KTPWP_Order_Progress_Effects' ) ) {
 				return;
 			}
 
-			$order_table = $wpdb->prefix . 'ktp_order';
+			$order_table = $wpdb->prefix . 'ktpwp_order';
 			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 			$order = $wpdb->get_row(
 				$wpdb->prepare(

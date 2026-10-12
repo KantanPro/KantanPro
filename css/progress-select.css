@@ -184,7 +184,7 @@
 }
 
 /* 仕事リストの行スタイル - 顧客リストと同等のシンプルスタイル */
-li.ktp_work_list_item {
+li.ktpwp_work_list_item {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -198,21 +198,21 @@ li.ktp_work_list_item {
   cursor: pointer;
 }
 
-li.ktp_work_list_item:focus {
+li.ktpwp_work_list_item:focus {
   outline: 2px solid #1976d2;
   outline-offset: 2px;
 }
 
-li.ktp_work_list_item input,
-li.ktp_work_list_item select,
-li.ktp_work_list_item button,
-li.ktp_work_list_item form,
-li.ktp_work_list_item label {
+li.ktpwp_work_list_item input,
+li.ktpwp_work_list_item select,
+li.ktpwp_work_list_item button,
+li.ktpwp_work_list_item form,
+li.ktpwp_work_list_item label {
   cursor: auto;
 }
 
 /* 左寄せブロック（ID・顧客名・担当者・日時を一まとまりで左に表示） */
-.ktp_work_list_item .ktp_work_list_item_text {
+.ktpwp_work_list_item .ktpwp_work_list_item_text {
   flex: 1;
   min-width: 0;
   white-space: nowrap;
@@ -221,11 +221,11 @@ li.ktp_work_list_item label {
 }
 
 /* リンクのスタイル - シンプル版（ラッパー内のaは伸ばさず左寄せ維持） */
-.ktp_work_list_item a {
+.ktpwp_work_list_item a {
   color: #2c3e50;
   text-decoration: none;
 }
-.ktp_work_list_item .ktp_work_list_item_text a {
+.ktpwp_work_list_item .ktpwp_work_list_item_text a {
   flex: none;
 }
 
@@ -236,8 +236,8 @@ li.ktp_work_list_item label {
 }
 
 /* 納期フィールドと進捗プルダウンのコンテナ */
-.ktp_work_list_item .delivery-dates-container,
-.ktp_work_list_item form {
+.ktpwp_work_list_item .delivery-dates-container,
+.ktpwp_work_list_item form {
   margin-left: auto;
   flex-shrink: 0;
   display: flex;
@@ -246,19 +246,19 @@ li.ktp_work_list_item label {
 }
 
 /* 仕事リストの進捗プルダウンを右寄せ */
-.ktp_work_list_item form {
+.ktpwp_work_list_item form {
   margin-left: 8px;
   flex-shrink: 0;
 }
 
 /* .article ul li, .article ol li のマージンを上書き */
-.article ul li.ktp_work_list_item,
-.article ol li.ktp_work_list_item {
+.article ul li.ktpwp_work_list_item,
+.article ol li.ktpwp_work_list_item {
   margin: 0 !important;
 }
 
 /* 顧客リスト（データリスト）のアイテムにパディング5px追加 */
-.ktp_data_list_item {
+.ktpwp_data_list_item {
   padding: 5px;
   font-size: 14px;
 }
@@ -405,7 +405,7 @@ li.ktp_work_list_item label {
 /* モバイル表示での調整 */
 @media screen and (max-width: 768px) {
   /* 仕事リストの行をモバイル対応 - 2行レイアウト */
-  li.ktp_work_list_item {
+  li.ktpwp_work_list_item {
     flex-direction: column;
     align-items: stretch;
     gap: 8px;
@@ -413,7 +413,7 @@ li.ktp_work_list_item label {
   }
 
   /* 1行目：ID〜日時のリンク */
-  .ktp_work_list_item a {
+  .ktpwp_work_list_item a {
     order: 1;
     white-space: normal;
     word-wrap: break-word;
@@ -422,7 +422,7 @@ li.ktp_work_list_item label {
   }
 
   /* 2行目：納期と進捗を1つのコンテナに配置 */
-  .ktp_work_list_item .delivery-dates-container {
+  .ktpwp_work_list_item .delivery-dates-container {
     order: 2;
     margin-left: 0;
     justify-content: flex-start;
@@ -499,7 +499,7 @@ li.ktp_work_list_item label {
   }
 
   /* 進捗プルダウンフォームの調整 - ラベルとプルダウンを1行に */
-  .ktp_work_list_item form {
+  .ktpwp_work_list_item form {
     display: flex;
     align-items: center;
     gap: 4px;
@@ -510,7 +510,7 @@ li.ktp_work_list_item label {
   }
 
   /* 進捗ラベルを追加 */
-  .ktp_work_list_item form::before {
+  .ktpwp_work_list_item form::before {
     content: "進捗";
     font-size: 12px;
     font-weight: bold;
@@ -524,7 +524,7 @@ li.ktp_work_list_item label {
 
 /* さらに小さい画面での調整 */
 @media screen and (max-width: 480px) {
-  li.ktp_work_list_item {
+  li.ktpwp_work_list_item {
     padding: 8px 10px;
     gap: 6px;
   }
@@ -561,22 +561,22 @@ li.ktp_work_list_item label {
   }
 
   /* モバイル表示時にラベルを切り替え（仕事リストのみ） */
-  .ktp_work_list_item .completion-label-desktop {
+  .ktpwp_work_list_item .completion-label-desktop {
     display: none;
   }
 
-  .ktp_work_list_item .completion-label-mobile {
+  .ktpwp_work_list_item .completion-label-mobile {
     display: inline;
   }
 
-  .ktp_work_list_item form::before {
+  .ktpwp_work_list_item form::before {
     font-size: 11px;
   }
 }
 
 /* モバイル幅を押し広げないよう、仕事リスト本体の各要素を折り返す */
 @media screen and (max-width: 768px) {
-  li.ktp_work_list_item {
+  li.ktpwp_work_list_item {
     width: 100% !important;
     max-width: 100% !important;
     min-width: 0 !important;
@@ -584,8 +584,8 @@ li.ktp_work_list_item label {
     overflow-wrap: anywhere !important;
   }
 
-  .ktp_work_list_item .ktp_work_list_item_text,
-  .ktp_work_list_item a {
+  .ktpwp_work_list_item .ktpwp_work_list_item_text,
+  .ktpwp_work_list_item a {
     width: 100% !important;
     max-width: 100% !important;
     min-width: 0 !important;
@@ -597,7 +597,7 @@ li.ktp_work_list_item label {
     box-sizing: border-box !important;
   }
 
-  .ktp_work_list_item .delivery-dates-container {
+  .ktpwp_work_list_item .delivery-dates-container {
     width: 100% !important;
     max-width: 100% !important;
     min-width: 0 !important;
@@ -607,9 +607,9 @@ li.ktp_work_list_item label {
     box-sizing: border-box !important;
   }
 
-  .ktp_work_list_item .delivery-input-wrapper,
-  .ktp_work_list_item .completion-input-wrapper,
-  .ktp_work_list_item form {
+  .ktpwp_work_list_item .delivery-input-wrapper,
+  .ktpwp_work_list_item .completion-input-wrapper,
+  .ktpwp_work_list_item form {
     max-width: 100% !important;
     min-width: 0 !important;
     flex: 1 1 100% !important;
@@ -618,9 +618,9 @@ li.ktp_work_list_item label {
     box-sizing: border-box !important;
   }
 
-  .ktp_work_list_item .delivery-date-input,
-  .ktp_work_list_item .completion-date-input,
-  .ktp_work_list_item .progress-select {
+  .ktpwp_work_list_item .delivery-date-input,
+  .ktpwp_work_list_item .completion-date-input,
+  .ktpwp_work_list_item .progress-select {
     width: 100% !important;
     max-width: 100% !important;
     min-width: 0 !important;

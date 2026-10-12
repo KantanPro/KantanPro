@@ -92,18 +92,18 @@ class KTPWP_Nonce_Manager {
     }
 
     /**
-     * 統一されたktp_ajaxナンス値を取得
+     * 統一されたktpwp_ajax_varsナンス値を取得
      *
      * @return string ナンス値
      */
     public function get_ktp_ajax_nonce() {
-        if ( ! isset( self::$nonce_cache['ktp_ajax'] ) ) {
-            self::$nonce_cache['ktp_ajax'] = wp_create_nonce( 'ktp_ajax_nonce' );
+        if ( ! isset( self::$nonce_cache['ktpwp_ajax_vars'] ) ) {
+            self::$nonce_cache['ktpwp_ajax_vars'] = wp_create_nonce( 'ktpwp_ajax_nonce' );
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                ktpwp_debug_log( 'KTPWP Nonce Manager: Created unified ktp_ajax nonce: ' . self::$nonce_cache['ktp_ajax'] );
+                ktpwp_debug_log( 'KTPWP Nonce Manager: Created unified ktpwp_ajax_vars nonce: ' . self::$nonce_cache['ktpwp_ajax_vars'] );
             }
         }
-        return self::$nonce_cache['ktp_ajax'];
+        return self::$nonce_cache['ktpwp_ajax_vars'];
     }
 
     /**

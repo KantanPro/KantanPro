@@ -1,13 +1,13 @@
 /* KTPWP Service Styles Fix */
 /* サービスリストのスタイル修正 */
 
-.ktp_data_contents, 
+.ktpwp_data_contents, 
 .data_contents {
     margin-top: 20px;
     width: 100%;
 }
 
-.ktp_data_list_box,
+.ktpwp_data_list_box,
 .data_list_box {
     border: 1px solid #e0e0e0;
     border-radius: 5px;
@@ -28,7 +28,7 @@
 }
 
 /* データリストアイテムのスタイル */
-.ktp_data_list_item,
+.ktpwp_data_list_item,
 .data_list_item {
     line-height: 1.5;
     border-bottom: 1px solid #e5e7eb;
@@ -41,7 +41,7 @@
 
 /* サービスリスト：列レイアウト */
 .ktp-service-list-header,
-.ktp_data_list_item--service-row {
+.ktpwp_data_list_item--service-row {
     align-items: center;
     column-gap: 12px;
     display: grid;
@@ -49,7 +49,7 @@
 }
 
 .ktp-service-list-header.ktp-service-list--hide-tax,
-.ktp_data_list_item--service-row.ktp-service-list--hide-tax {
+.ktpwp_data_list_item--service-row.ktp-service-list--hide-tax {
     grid-template-columns: 3em 48px minmax(120px, 2fr) 6em 4em minmax(80px, 1fr) 4em;
 }
 
@@ -97,34 +97,34 @@
     font-weight: 600;
 }
 
-.ktp_service_table .column-image {
+.ktpwp_service_table .column-image {
     width: 64px;
 }
 
 /* データリストの交互の行に色を付ける */
-.ktp_data_list_box > a:nth-of-type(odd) .ktp_data_list_item,
+.ktpwp_data_list_box > a:nth-of-type(odd) .ktpwp_data_list_item,
 .data_list_box > a:nth-of-type(odd) .data_list_item {
     background-color: #f9fafb;
 }
 
-.ktp_data_list_box > a:nth-of-type(even) .ktp_data_list_item,
+.ktpwp_data_list_box > a:nth-of-type(even) .ktpwp_data_list_item,
 .data_list_box > a:nth-of-type(even) .data_list_item {
     background-color: #ffffff;
 }
 
 /* 直接データリストアイテムだけの場合（エラーメッセージなど） */
-.ktp_data_list_box > .ktp_data_list_item:nth-of-type(odd),
+.ktpwp_data_list_box > .ktpwp_data_list_item:nth-of-type(odd),
 .data_list_box > .data_list_item:nth-of-type(odd) {
     background-color: #f9fafb;
 }
 
-.ktp_data_list_box > .ktp_data_list_item:nth-of-type(even),
+.ktpwp_data_list_box > .ktpwp_data_list_item:nth-of-type(even),
 .data_list_box > .data_list_item:nth-of-type(even) {
     background-color: #ffffff;
 }
 
 /* ホバー時の背景色と微妙な変化 */
-.ktp_data_list_box a:hover .ktp_data_list_item,
+.ktpwp_data_list_box a:hover .ktpwp_data_list_item,
 .data_list_box a:hover .data_list_item {
     background-color: #f0f7ff;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
@@ -133,7 +133,7 @@
 
 /* ページネーションのスタイル */
 .pagination,
-.ktp_pagination {
+.ktpwp_pagination {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -142,7 +142,7 @@
 }
 
 .pagination a, .pagination span,
-.ktp_pagination a, .ktp_pagination span {
+.ktpwp_pagination a, .ktpwp_pagination span {
     margin: 0 5px;
     padding: 5px 10px;
     border: 1px solid #ddd;
@@ -152,12 +152,12 @@
 }
 
 .pagination a:hover,
-.ktp_pagination a:hover {
+.ktpwp_pagination a:hover {
     background-color: #f5f5f5;
 }
 
 .pagination .stage,
-.ktp_pagination .stage {
+.ktpwp_pagination .stage {
     margin-left: 10px;
     color: #666;
 }
@@ -176,13 +176,13 @@
 }
 
 /* サービスリストの強制修正 - レイアウトを改善 */
-.ktp_data_list_box {
+.ktpwp_data_list_box {
     width: 100% !important;
     box-sizing: border-box !important;
     display: block !important;
 }
 
-.data_contents, .ktp_data_contents {
+.data_contents, .ktpwp_data_contents {
     width: 100% !important;
     box-sizing: border-box !important;
     display: block !important;
@@ -247,7 +247,7 @@
     border-radius: 4px;
 }
 
-.ktp_new_service_form h3 {
+.ktpwp_new_service_form h3 {
     margin-top: 30px;
     margin-bottom: 15px;
     padding-bottom: 5px;

@@ -461,7 +461,7 @@ class KTPWP_Image_Optimizer {
      * WebP変換のAJAX処理
      */
     public function ajax_convert_to_webp() {
-        $attachment_id = isset( $_POST['attachment_id'] ) ? intval( $_POST['attachment_id'] ) : 0;
+        $attachment_id = isset( $_POST['attachment_id'] ) ? intval( wp_unslash( $_POST['attachment_id'] ) ) : 0;
         $nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
         
         if ( ! wp_verify_nonce( $nonce, 'ktpwp_webp_conversion_' . $attachment_id ) ) {

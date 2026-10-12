@@ -61,7 +61,7 @@ if ( ! class_exists( 'KTPWP_Service_Initial_Fees' ) ) {
 		public static function table_name() {
 			global $wpdb;
 
-			return $wpdb->prefix . 'ktp_service_initial_fee';
+			return $wpdb->prefix . 'ktpwp_service_initial_fee';
 		}
 
 		/**
@@ -163,7 +163,7 @@ if ( ! class_exists( 'KTPWP_Service_Initial_Fees' ) ) {
 
 			if ( ! self::ensure_tables() ) {
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					ktpwp_debug_log( 'KTPWP: ktp_service_initial_fee テーブルを作成できませんでした。' );
+					ktpwp_debug_log( 'KTPWP: ktpwp_service_initial_fee テーブルを作成できませんでした。' );
 				}
 
 				return false;

@@ -28,14 +28,14 @@ if ( ! class_exists( 'KTPWP_Tab_Search_UI' ) ) {
 		 * GET list_search（後方互換: search_query / search_service_name）
 		 */
 		public function get_keyword() {
-			if ( isset( $_GET['list_search'] ) ) {
-				return trim( sanitize_text_field( wp_unslash( $_GET['list_search'] ) ) );
+			if ( KTPWP_Request::has_query( 'list_search' ) ) {
+				return trim( KTPWP_Request::query( 'list_search' ) );
 			}
-			if ( isset( $_GET['search_query'] ) ) {
-				return trim( sanitize_text_field( wp_unslash( $_GET['search_query'] ) ) );
+			if ( KTPWP_Request::has_query( 'search_query' ) ) {
+				return trim( KTPWP_Request::query( 'search_query' ) );
 			}
-			if ( isset( $_GET['search_service_name'] ) ) {
-				return trim( sanitize_text_field( wp_unslash( $_GET['search_service_name'] ) ) );
+			if ( KTPWP_Request::has_query( 'search_service_name' ) ) {
+				return trim( KTPWP_Request::query( 'search_service_name' ) );
 			}
 
 			return '';
@@ -86,10 +86,10 @@ if ( ! class_exists( 'KTPWP_Tab_Search_UI' ) ) {
 			$results = array();
 
 			// 受注書
-			$order_table = $wpdb->prefix . 'ktp_order';
+			$order_table = $wpdb->prefix . 'ktpwp_order';
 			$order_args  = array( $like, $like, $like );
 			$order_where = ' ( customer_name LIKE %s OR user_name LIKE %s OR project_name LIKE %s ';
-			$order_cols  = $wpdb->get_col( "SHOW COLUMNS FROM `{$order_table}`" );
+			$order_cols  = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $order_table ) );
 			if ( is_array( $order_cols ) && in_array( 'memo', $order_cols, true ) ) {
 				$order_where .= ' OR memo LIKE %s ';
 				$order_args[] = $like;
@@ -123,8 +123,8 @@ if ( ! class_exists( 'KTPWP_Tab_Search_UI' ) ) {
 			}
 
 			// 顧客
-			$client_table = $wpdb->prefix . 'ktp_client';
-			$client_cols  = $wpdb->get_col( "SHOW COLUMNS FROM `{$client_table}`" );
+			$client_table = $wpdb->prefix . 'ktpwp_client';
+			$client_cols  = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $client_table ) );
 			$client_where = ' ( company_name LIKE %s OR name LIKE %s ';
 			$client_args  = array( $like, $like );
 			if ( is_array( $client_cols ) && in_array( 'memo', $client_cols, true ) ) {
@@ -149,8 +149,8 @@ if ( ! class_exists( 'KTPWP_Tab_Search_UI' ) ) {
 			}
 
 			// サービス
-			$service_table = $wpdb->prefix . 'ktp_service';
-			$service_cols  = $wpdb->get_col( "SHOW COLUMNS FROM `{$service_table}`" );
+			$service_table = $wpdb->prefix . 'ktpwp_service';
+			$service_cols  = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $service_table ) );
 			$service_where = ' ( service_name LIKE %s ';
 			$service_args  = array( $like );
 			if ( is_array( $service_cols ) ) {
@@ -175,8 +175,8 @@ if ( ! class_exists( 'KTPWP_Tab_Search_UI' ) ) {
 			}
 
 			// 協力会社
-			$supplier_table = $wpdb->prefix . 'ktp_supplier';
-			$supplier_cols  = $wpdb->get_col( "SHOW COLUMNS FROM `{$supplier_table}`" );
+			$supplier_table = $wpdb->prefix . 'ktpwp_supplier';
+			$supplier_cols  = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $supplier_table ) );
 			$supplier_where = ' ( company_name LIKE %s OR name LIKE %s ';
 			$supplier_args  = array( $like, $like );
 			if ( is_array( $supplier_cols ) ) {
@@ -243,7 +243,7 @@ if ( ! class_exists( 'KTPWP_Tab_Search_UI' ) ) {
 			}
 
 			$like = '%' . $wpdb->esc_like( $keyword ) . '%';
-			$cols = $wpdb->get_col( "SHOW COLUMNS FROM `{$table_name}`" );
+			$cols = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $table_name ) );
 			if ( ! is_array( $cols ) ) {
 				return array( '', array() );
 			}
@@ -258,7 +258,8 @@ if ( ! class_exists( 'KTPWP_Tab_Search_UI' ) ) {
 				}
 				foreach ( array( 'memo', 'category', 'search_field', 'unit' ) as $col ) {
 					if ( in_array( $col, $cols, true ) ) {
-						$parts[] = "`{$col}` LIKE %s";
+						$parts[] = '%i LIKE %s';
+						$args[]  = $col;
 						$args[]  = $like;
 					}
 				}
@@ -273,7 +274,8 @@ if ( ! class_exists( 'KTPWP_Tab_Search_UI' ) ) {
 				}
 				foreach ( array( 'memo', 'search_field', 'email', 'category', 'representative_name', 'phone' ) as $col ) {
 					if ( in_array( $col, $cols, true ) ) {
-						$parts[] = "`{$col}` LIKE %s";
+						$parts[] = '%i LIKE %s';
+						$args[]  = $col;
 						$args[]  = $like;
 					}
 				}

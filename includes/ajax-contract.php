@@ -21,8 +21,8 @@ function ktpwp_contract_ajax_can_manage() {
 /**
  * 契約保存
  */
-function ktp_save_contract_ajax() {
-	if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), 'ktp_contract_nonce' ) ) {
+function ktpwp_save_contract_ajax() {
+	if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), 'ktpwp_contract_nonce' ) ) {
 		wp_send_json_error( __( 'セキュリティチェックに失敗しました。', 'kantanpro' ) );
 	}
 
@@ -79,8 +79,8 @@ function ktp_save_contract_ajax() {
 /**
  * 契約取得（編集用）
  */
-function ktp_get_contract_ajax() {
-	if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), 'ktp_contract_nonce' ) ) {
+function ktpwp_get_contract_ajax() {
+	if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), 'ktpwp_contract_nonce' ) ) {
 		wp_send_json_error( __( 'セキュリティチェックに失敗しました。', 'kantanpro' ) );
 	}
 
@@ -117,8 +117,8 @@ function ktp_get_contract_ajax() {
 /**
  * 契約削除
  */
-function ktp_delete_contract_ajax() {
-	if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), 'ktp_contract_nonce' ) ) {
+function ktpwp_delete_contract_ajax() {
+	if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), 'ktpwp_contract_nonce' ) ) {
 		wp_send_json_error( __( 'セキュリティチェックに失敗しました。', 'kantanpro' ) );
 	}
 
@@ -148,8 +148,8 @@ function ktp_delete_contract_ajax() {
 /**
  * カード登録 Setup Checkout URL 発行
  */
-function ktp_create_contract_setup_checkout_ajax() {
-	if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), 'ktp_contract_nonce' ) ) {
+function ktpwp_create_contract_setup_checkout_ajax() {
+	if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), 'ktpwp_contract_nonce' ) ) {
 		wp_send_json_error( __( 'セキュリティチェックに失敗しました。', 'kantanpro' ) );
 	}
 
@@ -187,7 +187,7 @@ function ktp_create_contract_setup_checkout_ajax() {
 	);
 }
 
-add_action( 'wp_ajax_ktp_save_contract', 'ktp_save_contract_ajax' );
-add_action( 'wp_ajax_ktp_get_contract', 'ktp_get_contract_ajax' );
-add_action( 'wp_ajax_ktp_delete_contract', 'ktp_delete_contract_ajax' );
-add_action( 'wp_ajax_ktp_create_contract_setup_checkout', 'ktp_create_contract_setup_checkout_ajax' );
+add_action( 'wp_ajax_ktpwp_save_contract', 'ktpwp_save_contract_ajax' );
+add_action( 'wp_ajax_ktpwp_get_contract', 'ktpwp_get_contract_ajax' );
+add_action( 'wp_ajax_ktpwp_delete_contract', 'ktpwp_delete_contract_ajax' );
+add_action( 'wp_ajax_ktpwp_create_contract_setup_checkout', 'ktpwp_create_contract_setup_checkout_ajax' );

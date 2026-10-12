@@ -66,7 +66,7 @@ if ( ! class_exists( 'KTPWP_Inquiry_Client_Resolver' ) ) {
 		public static function resolve( array $data, $create_new_client = null ) {
 			global $wpdb;
 
-			$table_name   = $wpdb->prefix . 'ktp_client';
+			$table_name   = $wpdb->prefix . 'ktpwp_client';
 			$email        = self::normalize_email_for_lookup( $data['email'] ?? '' );
 			$company_name = self::normalize_company_name( $data['company_name'] ?? '' );
 			$contact_name = isset( $data['name'] ) ? sanitize_text_field( $data['name'] ) : '';
@@ -137,7 +137,7 @@ if ( ! class_exists( 'KTPWP_Inquiry_Client_Resolver' ) ) {
 		private static function insert_default_client( array $data ) {
 			global $wpdb;
 
-			$table_name   = $wpdb->prefix . 'ktp_client';
+			$table_name   = $wpdb->prefix . 'ktpwp_client';
 			$email        = self::normalize_email_for_lookup( $data['email'] ?? '' );
 			$company_name = self::normalize_company_name( $data['company_name'] ?? '' );
 
@@ -198,7 +198,7 @@ if ( ! class_exists( 'KTPWP_Inquiry_Client_Resolver' ) ) {
 				return null;
 			}
 
-			$table_name = $wpdb->prefix . 'ktp_client';
+			$table_name = $wpdb->prefix . 'ktpwp_client';
 
 			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 			return $wpdb->get_row(
@@ -227,7 +227,7 @@ if ( ! class_exists( 'KTPWP_Inquiry_Client_Resolver' ) ) {
 		private static function allocate_unset_company_name() {
 			global $wpdb;
 
-			$table  = $wpdb->prefix . 'ktp_client';
+			$table  = $wpdb->prefix . 'ktpwp_client';
 			$prefix = '未設定#';
 			$max    = 0;
 
@@ -253,7 +253,7 @@ if ( ! class_exists( 'KTPWP_Inquiry_Client_Resolver' ) ) {
 		/**
 		 * フォーム会社名を部署として使うか（登録会社名と異なる場合のみ）。
 		 *
-		 * @param object $client       ktp_client 行。
+		 * @param object $client       ktpwp_client 行。
 		 * @param string $form_company フォームの会社名。
 		 * @return bool
 		 */
@@ -343,7 +343,7 @@ if ( ! class_exists( 'KTPWP_Inquiry_Client_Resolver' ) ) {
 			}
 
 			global $wpdb;
-			$client_table = $wpdb->prefix . 'ktp_client';
+			$client_table = $wpdb->prefix . 'ktpwp_client';
 			$registered_company = $wpdb->get_var(
 				$wpdb->prepare(
 					"SELECT company_name FROM {$client_table} WHERE id = %d",

@@ -36,10 +36,10 @@
     }
 
     function readConfig() {
-        if (typeof ktpClientInvoice === 'undefined' || !ktpClientInvoice.bulkLogoResize) {
+        if (typeof ktpwpClientInvoice === 'undefined' || !ktpwpClientInvoice.bulkLogoResize) {
             return null;
         }
-        return ktpClientInvoice.bulkLogoResize;
+        return ktpwpClientInvoice.bulkLogoResize;
     }
 
     function findPageRoot() {
@@ -342,7 +342,7 @@
             return;
         }
 
-        if (img.dataset.ktpBulkLogoResizeBound === '1') {
+        if (img.dataset.ktpwpBulkLogoResizeBound === '1') {
             activeImg = img;
             activeWrap = img.closest('.ktp-bulk-invoice-issuer-logo-wrap');
             return;
@@ -353,7 +353,7 @@
             return;
         }
 
-        img.dataset.ktpBulkLogoResizeBound = '1';
+        img.dataset.ktpwpBulkLogoResizeBound = '1';
         activeImg = img;
         activeWrap = wrap;
         bindGlobals();

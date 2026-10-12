@@ -170,7 +170,7 @@ print(f'ファイル削除: {removed}件')
 #     shortcodes.php のショートコード本体・service-main/db/ui.php のフォーム欄と
 #     一覧バッジ・settings.php のデザイン設定とドキュメント・order-items.php の
 #     Web申込み用請求行生成・ktpwp.php のブートストラップ呼び出しが対象。
-#     マイグレーション4本と ktp_service テーブルの4カラムはあえて残す
+#     マイグレーション4本と ktpwp_service テーブルの4カラムはあえて残す
 #     （contracts 機能が同じテーブルの列順に依存しており、消すと有効化中の
 #     機能が壊れるため。カラムが残るだけでは「ロックされた機能」にはならない）。
 pp_blocks, pp_lines = strip_feature_markers('public_products')
@@ -594,7 +594,7 @@ for rel in REMOVE_FILES:
 PUBLIC_PRODUCTS_ALLOWED = {
     # class-ktpwp-service-db.php: UI（フォーム欄・一覧バッジ・ショートコード）と
     # 「無効なら値を強制的にクリアする」clamp_public_product_fields_for_edition() は
-    # マーカーで全て除去済み。残るのは ktp_service.get_schema() の列定義、
+    # マーカーで全て除去済み。残るのは ktpwp_service.get_schema() の列定義、
     # $_POST から読んだ値をそのままDBへ保存するだけの配列組み立て、
     # カラム有無を確認するヘルパー（service_table_has_public_*_column）、
     # 値の型を揃えるだけのサニタイザ（sanitize_public_*／is_public_*／
@@ -690,9 +690,9 @@ for dp, dns, fns in os.walk(stage):
 TRIALWARE_SUBSTR_PATTERNS = [
     # 売上台帳PDF / レポート API / レポート UI
     'sales_ledger', 'sales-ledger', '売上台帳',
-    'ktp_get_report_data', 'ktpwp_get_report_data',
-    'ktp_get_sales_data', 'ktp_get_progress_data', 'ktp_get_client_data',
-    'ktp_get_service_data', 'ktp_get_supplier_data',
+    'ktpwp_get_report_data', 'ktpwp_get_report_data',
+    'ktpwp_get_sales_data', 'ktpwp_get_progress_data', 'ktpwp_get_client_data',
+    'ktpwp_get_service_data', 'ktpwp_get_supplier_data',
     'get_sales_chart_data', 'get_client_chart_data',
     'get_service_chart_data', 'get_supplier_chart_data',
     'generate_free_edition_report_title_bar',

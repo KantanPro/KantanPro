@@ -14,9 +14,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * 部署追加AJAX処理
  */
-function ktp_add_department_ajax() {
+function ktpwp_add_department_ajax() {
     // セキュリティチェック
-    if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'ktp_department_nonce' ) ) {
+    if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'ktpwp_department_nonce' ) ) {
         wp_die( esc_html__( 'セキュリティチェックに失敗しました。', 'kantanpro' ) );
     }
 
@@ -36,10 +36,10 @@ function ktp_add_department_ajax() {
     }
 
     // パラメータの取得とバリデーション
-    $client_id = intval( $_POST['client_id'] );
-    $department_name = sanitize_text_field( $_POST['department_name'] );
-    $contact_person = sanitize_text_field( $_POST['contact_person'] );
-    $email = sanitize_email( $_POST['email'] );
+    $client_id = intval( wp_unslash( $_POST['client_id'] ) );
+    $department_name = sanitize_text_field( wp_unslash( $_POST['department_name'] ) );
+    $contact_person = sanitize_text_field( wp_unslash( $_POST['contact_person'] ) );
+    $email = sanitize_email( wp_unslash( $_POST['email'] ) );
 
     if ( empty( $client_id ) || empty( $contact_person ) || empty( $email ) ) {
         wp_send_json_error( __( '担当者名とメールアドレスを入力してください。', 'kantanpro' ) );
@@ -58,9 +58,9 @@ function ktp_add_department_ajax() {
 /**
  * 部署削除AJAX処理
  */
-function ktp_delete_department_ajax() {
+function ktpwp_delete_department_ajax() {
     // セキュリティチェック
-    if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'ktp_department_nonce' ) ) {
+    if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'ktpwp_department_nonce' ) ) {
         wp_die( esc_html__( 'セキュリティチェックに失敗しました。', 'kantanpro' ) );
     }
 
@@ -80,7 +80,7 @@ function ktp_delete_department_ajax() {
     }
 
     // パラメータの取得とバリデーション
-    $department_id = intval( $_POST['department_id'] );
+    $department_id = intval( wp_unslash( $_POST['department_id'] ) );
 
     if ( empty( $department_id ) ) {
         wp_send_json_error( __( '部署IDが指定されていません。', 'kantanpro' ) );
@@ -99,13 +99,13 @@ function ktp_delete_department_ajax() {
 /**
  * 部署選択状態更新AJAX処理
  */
-function ktp_update_department_selection_ajax() {
+function ktpwp_update_department_selection_ajax() {
     if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-        ktpwp_debug_log( 'KTPWP AJAX: ktp_update_department_selection_ajax called' );
+        ktpwp_debug_log( 'KTPWP AJAX: ktpwp_update_department_selection_ajax called' );
     }
     
     // セキュリティチェック
-    if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'ktp_department_nonce' ) ) {
+    if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'ktpwp_department_nonce' ) ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
             ktpwp_debug_log( 'KTPWP AJAX: Nonce verification failed' );
         }
@@ -149,8 +149,8 @@ function ktp_update_department_selection_ajax() {
     }
 
     // パラメータの取得とバリデーション
-    $department_id = intval( $_POST['department_id'] );
-    $is_selected_raw = isset( $_POST['is_selected'] ) ? wp_unslash( $_POST['is_selected'] ) : '0';
+    $department_id = intval( wp_unslash( $_POST['department_id'] ) );
+    $is_selected_raw = isset( $_POST['is_selected'] ) ? sanitize_text_field( wp_unslash( $_POST['is_selected'] ) ) : '0';
     $is_selected     = in_array( strtolower( (string) $is_selected_raw ), array( '1', 'true', 'yes', 'on' ), true );
 
     if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
@@ -178,9 +178,9 @@ function ktp_update_department_selection_ajax() {
 }
 
 // AJAXアクションを登録
-add_action( 'wp_ajax_ktp_add_department', 'ktp_add_department_ajax' );
-add_action( 'wp_ajax_ktp_delete_department', 'ktp_delete_department_ajax' );
-add_action( 'wp_ajax_ktp_update_department_selection', 'ktp_update_department_selection_ajax' );
+add_action( 'wp_ajax_ktpwp_add_department', 'ktpwp_add_department_ajax' );
+add_action( 'wp_ajax_ktpwp_delete_department', 'ktpwp_delete_department_ajax' );
+add_action( 'wp_ajax_ktpwp_update_department_selection', 'ktpwp_update_department_selection_ajax' );
 
 if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
     ktpwp_debug_log( 'KTPWP AJAX: Department AJAX handlers registered' );

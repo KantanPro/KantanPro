@@ -43,13 +43,13 @@ class KTPWP_Ajax {
 	 * @var array
 	 */
 	private $nonce_names = array(
-		'auto_save'    => 'ktp_ajax_nonce',
-		'project_name' => 'ktp_update_project_name',
+		'auto_save'    => 'ktpwp_ajax_nonce',
+		'project_name' => 'ktpwp_update_project_name',
 		'inline_edit'  => 'ktpwp_inline_edit_nonce',
 		'general'      => 'ktpwp_ajax_nonce',
 		'staff_chat'   => 'ktpwp_staff_chat_nonce',
-		'invoice_candidates' => 'ktp_get_invoice_candidates',
-		'progress_update' => 'ktp_ajax_nonce',
+		'invoice_candidates' => 'ktpwp_get_invoice_candidates',
+		'progress_update' => 'ktpwp_ajax_nonce',
 	);
 
 	/**
@@ -113,8 +113,9 @@ class KTPWP_Ajax {
 	 */
 	public function ajax_get_profit_display() {
 		// nonce 検証（CSRF 対策）
-		if ( ! $this->verify_ajax_nonce( $this->cost_item_nonce_actions(), $this->cost_item_nonce_fields() ) ) {
-			$this->log_ajax_error( 'Profit display nonce verification failed', $this->posted_field_names() );
+		$nonce = $this->request_nonce_value( $this->cost_item_nonce_fields() );
+		if ( ! wp_verify_nonce( $nonce, 'ktpwp_ajax_nonce' ) && ! wp_verify_nonce( $nonce, 'ktpwp_auto_save_nonce' ) ) {
+			$this->log_ajax_error( 'Profit display nonce verification failed', array() );
 			wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'kantanpro' ) );
 		}
 
@@ -123,7 +124,7 @@ class KTPWP_Ajax {
 			wp_send_json_error( __( 'この操作を行う権限がありません。', 'kantanpro' ) );
 		}
 
-		$order_id = isset( $_POST['order_id'] ) ? intval( $_POST['order_id'] ) : 0;
+		$order_id = isset( $_POST['order_id'] ) ? intval( wp_unslash( $_POST['order_id'] ) ) : 0;
 		if ( $order_id <= 0 ) {
 			wp_send_json_error( __( '無効なIDです', 'kantanpro' ) );
 		}
@@ -142,9 +143,9 @@ class KTPWP_Ajax {
 		}
 
 		// プロジェクト名インライン編集（管理者のみ）
-		add_action( 'wp_ajax_ktp_update_project_name', array( $this, 'ajax_update_project_name' ) );
-		add_action( 'wp_ajax_nopriv_ktp_update_project_name', array( $this, 'ajax_require_login' ) );
-		$this->registered_handlers[] = 'ktp_update_project_name';
+		add_action( 'wp_ajax_ktpwp_update_project_name', array( $this, 'ajax_update_project_name' ) );
+		add_action( 'wp_ajax_nopriv_ktpwp_update_project_name', array( $this, 'ajax_require_login' ) );
+		$this->registered_handlers[] = 'ktpwp_update_project_name';
 
 		// 受注関連のAjax処理を初期化
 		$this->init_order_ajax_handlers();
@@ -156,169 +157,169 @@ class KTPWP_Ajax {
 		$this->init_staff_chat_ajax_handlers();
 
 		// ログイン中ユーザー取得
-		add_action( 'wp_ajax_ktp_get_logged_in_users', array( $this, 'ajax_get_logged_in_users' ) );
-		add_action( 'wp_ajax_nopriv_ktp_get_logged_in_users', array( $this, 'ajax_get_logged_in_users' ) );
+		add_action( 'wp_ajax_ktpwp_get_logged_in_users', array( $this, 'ajax_get_logged_in_users' ) );
+		add_action( 'wp_ajax_nopriv_ktpwp_get_logged_in_users', array( $this, 'ajax_get_logged_in_users' ) );
 		$this->registered_handlers[] = 'get_logged_in_users';
 
 		// メール内容取得
-		add_action( 'wp_ajax_ktp_get_email_content', array( $this, 'ajax_get_email_content' ) );
-		add_action( 'wp_ajax_nopriv_ktp_get_email_content', array( $this, 'ajax_require_login' ) );
+		add_action( 'wp_ajax_ktpwp_get_email_content', array( $this, 'ajax_get_email_content' ) );
+		add_action( 'wp_ajax_nopriv_ktpwp_get_email_content', array( $this, 'ajax_require_login' ) );
 		$this->registered_handlers[] = 'get_email_content';
 
 		// メール送信
-		add_action( 'wp_ajax_ktp_send_order_email', array( $this, 'ajax_send_order_email' ) );
-		add_action( 'wp_ajax_nopriv_ktp_send_order_email', array( $this, 'ajax_require_login' ) );
+		add_action( 'wp_ajax_ktpwp_send_order_email', array( $this, 'ajax_send_order_email' ) );
+		add_action( 'wp_ajax_nopriv_ktpwp_send_order_email', array( $this, 'ajax_require_login' ) );
 		$this->registered_handlers[] = 'send_order_email';
 
 		// 協力会社メールアドレス取得
-		add_action( 'wp_ajax_ktp_get_supplier_email', array( $this, 'ajax_get_supplier_email' ) );
-		add_action( 'wp_ajax_nopriv_ktp_get_supplier_email', array( $this, 'ajax_require_login' ) );
+		add_action( 'wp_ajax_ktpwp_get_supplier_email', array( $this, 'ajax_get_supplier_email' ) );
+		add_action( 'wp_ajax_nopriv_ktpwp_get_supplier_email', array( $this, 'ajax_require_login' ) );
 		$this->registered_handlers[] = 'get_supplier_email';
 
 		// 発注書メール内容取得
-		add_action( 'wp_ajax_ktp_get_purchase_order_email_content', array( $this, 'ajax_get_purchase_order_email_content' ) );
-		add_action( 'wp_ajax_nopriv_ktp_get_purchase_order_email_content', array( $this, 'ajax_require_login' ) );
+		add_action( 'wp_ajax_ktpwp_get_purchase_order_email_content', array( $this, 'ajax_get_purchase_order_email_content' ) );
+		add_action( 'wp_ajax_nopriv_ktpwp_get_purchase_order_email_content', array( $this, 'ajax_require_login' ) );
 		$this->registered_handlers[] = 'get_purchase_order_email_content';
 
 		// 発注書メール送信
-		add_action( 'wp_ajax_ktp_send_purchase_order_email', array( $this, 'ajax_send_purchase_order_email' ) );
-		add_action( 'wp_ajax_nopriv_ktp_send_purchase_order_email', array( $this, 'ajax_require_login' ) );
+		add_action( 'wp_ajax_ktpwp_send_purchase_order_email', array( $this, 'ajax_send_purchase_order_email' ) );
+		add_action( 'wp_ajax_nopriv_ktpwp_send_purchase_order_email', array( $this, 'ajax_require_login' ) );
 		$this->registered_handlers[] = 'send_purchase_order_email';
 
 		// 発注書/見積依頼書 印刷用HTML取得（PDF保存）
-		add_action( 'wp_ajax_ktp_get_purchase_order_print_html', array( $this, 'ajax_get_purchase_order_print_html' ) );
-		add_action( 'wp_ajax_nopriv_ktp_get_purchase_order_print_html', array( $this, 'ajax_require_login' ) );
+		add_action( 'wp_ajax_ktpwp_get_purchase_order_print_html', array( $this, 'ajax_get_purchase_order_print_html' ) );
+		add_action( 'wp_ajax_nopriv_ktpwp_get_purchase_order_print_html', array( $this, 'ajax_require_login' ) );
 		$this->registered_handlers[] = 'get_purchase_order_print_html';
 
 		// 会社情報取得
-		add_action( 'wp_ajax_ktp_get_company_info', array( $this, 'ajax_get_company_info' ) );
-		add_action( 'wp_ajax_nopriv_ktp_get_company_info', array( $this, 'ajax_require_login' ) );
+		add_action( 'wp_ajax_ktpwp_get_company_info', array( $this, 'ajax_get_company_info' ) );
+		add_action( 'wp_ajax_nopriv_ktpwp_get_company_info', array( $this, 'ajax_require_login' ) );
 		$this->registered_handlers[] = 'get_company_info';
 
-		add_action( 'wp_ajax_ktp_lookup_postal_address', array( $this, 'ajax_lookup_postal_address' ) );
-		add_action( 'wp_ajax_nopriv_ktp_lookup_postal_address', array( $this, 'ajax_require_login' ) );
-		$this->registered_handlers[] = 'ktp_lookup_postal_address';
+		add_action( 'wp_ajax_ktpwp_lookup_postal_address', array( $this, 'ajax_lookup_postal_address' ) );
+		add_action( 'wp_ajax_nopriv_ktpwp_lookup_postal_address', array( $this, 'ajax_require_login' ) );
+		$this->registered_handlers[] = 'ktpwp_lookup_postal_address';
 
 		// 協力会社担当者情報取得
-		add_action( 'wp_ajax_ktp_get_supplier_contact_info', array( $this, 'ajax_get_supplier_contact_info' ) );
-		add_action( 'wp_ajax_nopriv_ktp_get_supplier_contact_info', array( $this, 'ajax_require_login' ) );
+		add_action( 'wp_ajax_ktpwp_get_supplier_contact_info', array( $this, 'ajax_get_supplier_contact_info' ) );
+		add_action( 'wp_ajax_nopriv_ktpwp_get_supplier_contact_info', array( $this, 'ajax_require_login' ) );
 		$this->registered_handlers[] = 'get_supplier_contact_info';
 
 		// 最新の受注書プレビューデータ取得
-		add_action( 'wp_ajax_ktp_get_order_preview', array( $this, 'get_order_preview' ) );
-		add_action( 'wp_ajax_nopriv_ktp_get_order_preview', array( $this, 'ajax_require_login' ) );
-		$this->registered_handlers[] = 'ktp_get_order_preview';
+		add_action( 'wp_ajax_ktpwp_get_order_preview', array( $this, 'get_order_preview' ) );
+		add_action( 'wp_ajax_nopriv_ktpwp_get_order_preview', array( $this, 'ajax_require_login' ) );
+		$this->registered_handlers[] = 'ktpwp_get_order_preview';
 
 		// アイテム並び順更新
-		add_action( 'wp_ajax_ktp_update_item_order', array( $this, 'ajax_update_item_order' ) );
-		add_action( 'wp_ajax_nopriv_ktp_update_item_order', array( $this, 'ajax_require_login' ) ); // 非ログインユーザーはエラー
-		$this->registered_handlers[] = 'ktp_update_item_order';
+		add_action( 'wp_ajax_ktpwp_update_item_order', array( $this, 'ajax_update_item_order' ) );
+		add_action( 'wp_ajax_nopriv_ktpwp_update_item_order', array( $this, 'ajax_require_login' ) ); // 非ログインユーザーはエラー
+		$this->registered_handlers[] = 'ktpwp_update_item_order';
 
 		// 納期フィールド保存
-		add_action( 'wp_ajax_ktp_save_delivery_date', array( $this, 'ajax_save_delivery_date' ) );
-		add_action( 'wp_ajax_nopriv_ktp_save_delivery_date', array( $this, 'ajax_require_login' ) ); // 非ログインユーザーはエラー
-		$this->registered_handlers[] = 'ktp_save_delivery_date';
+		add_action( 'wp_ajax_ktpwp_save_delivery_date', array( $this, 'ajax_save_delivery_date' ) );
+		add_action( 'wp_ajax_nopriv_ktpwp_save_delivery_date', array( $this, 'ajax_require_login' ) ); // 非ログインユーザーはエラー
+		$this->registered_handlers[] = 'ktpwp_save_delivery_date';
 
 		// 納期フィールド更新
-		add_action( 'wp_ajax_ktp_update_delivery_date', array( $this, 'ajax_update_delivery_date' ) );
-		add_action( 'wp_ajax_nopriv_ktp_update_delivery_date', array( $this, 'ajax_require_login' ) ); // 非ログインユーザーはエラー
-		$this->registered_handlers[] = 'ktp_update_delivery_date';
+		add_action( 'wp_ajax_ktpwp_update_delivery_date', array( $this, 'ajax_update_delivery_date' ) );
+		add_action( 'wp_ajax_nopriv_ktpwp_update_delivery_date', array( $this, 'ajax_require_login' ) ); // 非ログインユーザーはエラー
+		$this->registered_handlers[] = 'ktpwp_update_delivery_date';
 
 		// 作成中の納期警告件数取得
-		add_action( 'wp_ajax_ktp_get_creating_warning_count', array( $this, 'ajax_get_creating_warning_count' ) );
-		add_action( 'wp_ajax_nopriv_ktp_get_creating_warning_count', array( $this, 'ajax_require_login' ) ); // 非ログインユーザーはエラー
-		$this->registered_handlers[] = 'ktp_get_creating_warning_count';
+		add_action( 'wp_ajax_ktpwp_get_creating_warning_count', array( $this, 'ajax_get_creating_warning_count' ) );
+		add_action( 'wp_ajax_nopriv_ktpwp_get_creating_warning_count', array( $this, 'ajax_require_login' ) ); // 非ログインユーザーはエラー
+		$this->registered_handlers[] = 'ktpwp_get_creating_warning_count';
 
 		// フィールド自動保存（完了日など）
-		add_action( 'wp_ajax_ktp_auto_save_field', array( $this, 'ajax_auto_save_field' ) );
-		add_action( 'wp_ajax_nopriv_ktp_auto_save_field', array( $this, 'ajax_require_login' ) ); // 非ログインユーザーはエラー
-		$this->registered_handlers[] = 'ktp_auto_save_field';
+		add_action( 'wp_ajax_ktpwp_auto_save_field', array( $this, 'ajax_auto_save_field' ) );
+		add_action( 'wp_ajax_nopriv_ktpwp_auto_save_field', array( $this, 'ajax_require_login' ) ); // 非ログインユーザーはエラー
+		$this->registered_handlers[] = 'ktpwp_auto_save_field';
 
 		// 顧客IDを受け取り、完了日が締日を超えている案件リストをJSONで返す
-		add_action( 'wp_ajax_ktp_get_invoice_candidates', array( $this, 'ajax_get_invoice_candidates' ) );
-		add_action( 'wp_ajax_nopriv_ktp_get_invoice_candidates', array( $this, 'ajax_require_login' ) ); // 非ログインユーザーはエラー
-		$this->registered_handlers[] = 'ktp_get_invoice_candidates';
+		add_action( 'wp_ajax_ktpwp_get_invoice_candidates', array( $this, 'ajax_get_invoice_candidates' ) );
+		add_action( 'wp_ajax_nopriv_ktpwp_get_invoice_candidates', array( $this, 'ajax_require_login' ) ); // 非ログインユーザーはエラー
+		$this->registered_handlers[] = 'ktpwp_get_invoice_candidates';
 
-		add_action( 'wp_ajax_ktp_update_bulk_invoice_seal_size', array( $this, 'ajax_update_bulk_invoice_seal_size' ) );
-		add_action( 'wp_ajax_nopriv_ktp_update_bulk_invoice_seal_size', array( $this, 'ajax_require_login' ) );
-		$this->registered_handlers[] = 'ktp_update_bulk_invoice_seal_size';
+		add_action( 'wp_ajax_ktpwp_update_bulk_invoice_seal_size', array( $this, 'ajax_update_bulk_invoice_seal_size' ) );
+		add_action( 'wp_ajax_nopriv_ktpwp_update_bulk_invoice_seal_size', array( $this, 'ajax_require_login' ) );
+		$this->registered_handlers[] = 'ktpwp_update_bulk_invoice_seal_size';
 
-		add_action( 'wp_ajax_ktp_update_bulk_invoice_logo_width', array( $this, 'ajax_update_bulk_invoice_logo_width' ) );
-		add_action( 'wp_ajax_nopriv_ktp_update_bulk_invoice_logo_width', array( $this, 'ajax_require_login' ) );
-		$this->registered_handlers[] = 'ktp_update_bulk_invoice_logo_width';
+		add_action( 'wp_ajax_ktpwp_update_bulk_invoice_logo_width', array( $this, 'ajax_update_bulk_invoice_logo_width' ) );
+		add_action( 'wp_ajax_nopriv_ktpwp_update_bulk_invoice_logo_width', array( $this, 'ajax_require_login' ) );
+		$this->registered_handlers[] = 'ktpwp_update_bulk_invoice_logo_width';
 
-		add_action( 'wp_ajax_ktp_update_atena_label_position', array( $this, 'ajax_update_atena_label_position' ) );
-		add_action( 'wp_ajax_nopriv_ktp_update_atena_label_position', array( $this, 'ajax_require_login' ) );
-		$this->registered_handlers[] = 'ktp_update_atena_label_position';
+		add_action( 'wp_ajax_ktpwp_update_atena_label_position', array( $this, 'ajax_update_atena_label_position' ) );
+		add_action( 'wp_ajax_nopriv_ktpwp_update_atena_label_position', array( $this, 'ajax_require_login' ) );
+		$this->registered_handlers[] = 'ktpwp_update_atena_label_position';
 
 		// 部署選択状態更新（ajax-department.phpで登録済み）
-		// add_action( 'wp_ajax_ktp_update_department_selection', 'ktp_update_department_selection_ajax' );
-		add_action( 'wp_ajax_nopriv_ktp_update_department_selection', array( $this, 'ajax_require_login' ) );
-		$this->registered_handlers[] = 'ktp_update_department_selection';
+		// add_action( 'wp_ajax_ktpwp_update_department_selection', 'ktpwp_update_department_selection_ajax' );
+		add_action( 'wp_ajax_nopriv_ktpwp_update_department_selection', array( $this, 'ajax_require_login' ) );
+		$this->registered_handlers[] = 'ktpwp_update_department_selection';
 
 		// 部署追加
-		// 実処理は ajax-department.php の ktp_add_department_ajax() が登録済み。
+		// 実処理は ajax-department.php の ktpwp_add_department_ajax() が登録済み。
 		// ここで別のコールバックを足さないこと（存在しない関数を登録していて、
 		// 先に登録された側が wp_send_json で終了しなければ PHP 8 で致命的エラーになる）。
-		add_action( 'wp_ajax_nopriv_ktp_add_department', array( $this, 'ajax_require_login' ) );
-		$this->registered_handlers[] = 'ktp_add_department';
+		add_action( 'wp_ajax_nopriv_ktpwp_add_department', array( $this, 'ajax_require_login' ) );
+		$this->registered_handlers[] = 'ktpwp_add_department';
 
 		// 部署削除
-		// 実処理は ajax-department.php の ktp_delete_department_ajax() が登録済み。
+		// 実処理は ajax-department.php の ktpwp_delete_department_ajax() が登録済み。
 		// ここで別のコールバックを足さないこと（存在しない関数を登録していて、
 		// 先に登録された側が wp_send_json で終了しなければ PHP 8 で致命的エラーになる）。
-		add_action( 'wp_ajax_nopriv_ktp_delete_department', array( $this, 'ajax_require_login' ) );
-		$this->registered_handlers[] = 'ktp_delete_department';
+		add_action( 'wp_ajax_nopriv_ktpwp_delete_department', array( $this, 'ajax_require_login' ) );
+		$this->registered_handlers[] = 'ktpwp_delete_department';
 
 		// 顧客税区分取得
-		add_action( 'wp_ajax_ktp_get_client_tax_category', array( $this, 'ajax_get_client_tax_category' ) );
-		add_action( 'wp_ajax_nopriv_ktp_get_client_tax_category', array( $this, 'ajax_require_login' ) );
-		$this->registered_handlers[] = 'ktp_get_client_tax_category';
+		add_action( 'wp_ajax_ktpwp_get_client_tax_category', array( $this, 'ajax_get_client_tax_category' ) );
+		add_action( 'wp_ajax_nopriv_ktpwp_get_client_tax_category', array( $this, 'ajax_require_login' ) );
+		$this->registered_handlers[] = 'ktpwp_get_client_tax_category';
 
 		// 受注書IDから顧客税区分取得
-		add_action( 'wp_ajax_ktp_get_client_tax_category_by_order', array( $this, 'ajax_get_client_tax_category_by_order' ) );
-		add_action( 'wp_ajax_nopriv_ktp_get_client_tax_category_by_order', array( $this, 'ajax_require_login' ) );
-		$this->registered_handlers[] = 'ktp_get_client_tax_category_by_order';
+		add_action( 'wp_ajax_ktpwp_get_client_tax_category_by_order', array( $this, 'ajax_get_client_tax_category_by_order' ) );
+		add_action( 'wp_ajax_nopriv_ktpwp_get_client_tax_category_by_order', array( $this, 'ajax_require_login' ) );
+		$this->registered_handlers[] = 'ktpwp_get_client_tax_category_by_order';
 
 		// 協力会社税区分取得
-		add_action( 'wp_ajax_ktp_get_supplier_tax_category', array( $this, 'ajax_get_supplier_tax_category' ) );
-		add_action( 'wp_ajax_nopriv_ktp_get_supplier_tax_category', array( $this, 'ajax_require_login' ) );
-		$this->registered_handlers[] = 'ktp_get_supplier_tax_category';
+		add_action( 'wp_ajax_ktpwp_get_supplier_tax_category', array( $this, 'ajax_get_supplier_tax_category' ) );
+		add_action( 'wp_ajax_nopriv_ktpwp_get_supplier_tax_category', array( $this, 'ajax_require_login' ) );
+		$this->registered_handlers[] = 'ktpwp_get_supplier_tax_category';
 
 		// 協力会社適格請求書番号取得
-		add_action( 'wp_ajax_ktp_get_supplier_qualified_invoice_number', array( $this, 'ajax_get_supplier_qualified_invoice_number' ) );
-		add_action( 'wp_ajax_nopriv_ktp_get_supplier_qualified_invoice_number', array( $this, 'ajax_require_login' ) );
-		$this->registered_handlers[] = 'ktp_get_supplier_qualified_invoice_number';
+		add_action( 'wp_ajax_ktpwp_get_supplier_qualified_invoice_number', array( $this, 'ajax_get_supplier_qualified_invoice_number' ) );
+		add_action( 'wp_ajax_nopriv_ktpwp_get_supplier_qualified_invoice_number', array( $this, 'ajax_require_login' ) );
+		$this->registered_handlers[] = 'ktpwp_get_supplier_qualified_invoice_number';
 
 		// 利益表示の最新化（請求項目変更に連動）
-		add_action( 'wp_ajax_ktp_get_profit_display', array( $this, 'ajax_get_profit_display' ) );
-		add_action( 'wp_ajax_nopriv_ktp_get_profit_display', array( $this, 'ajax_require_login' ) );
-		$this->registered_handlers[] = 'ktp_get_profit_display';
+		add_action( 'wp_ajax_ktpwp_get_profit_display', array( $this, 'ajax_get_profit_display' ) );
+		add_action( 'wp_ajax_nopriv_ktpwp_get_profit_display', array( $this, 'ajax_require_login' ) );
+		$this->registered_handlers[] = 'ktpwp_get_profit_display';
 
 		// 進捗更新Ajax
-		add_action( 'wp_ajax_ktp_update_progress', array( $this, 'ajax_update_progress' ) );
-		add_action( 'wp_ajax_nopriv_ktp_update_progress', array( $this, 'ajax_require_login' ) );
-		$this->registered_handlers[] = 'ktp_update_progress';
+		add_action( 'wp_ajax_ktpwp_update_progress', array( $this, 'ajax_update_progress' ) );
+		add_action( 'wp_ajax_nopriv_ktpwp_update_progress', array( $this, 'ajax_require_login' ) );
+		$this->registered_handlers[] = 'ktpwp_update_progress';
 
 		// ▼▼▼ 一括請求書「請求済」進捗変更Ajax ▼▼▼
 		add_action(
-            'wp_ajax_ktp_set_invoice_completed',
+            'wp_ajax_ktpwp_set_invoice_completed',
             function () {
 				// 権限チェック
 				if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
 					wp_send_json_error( __( '権限がありません', 'kantanpro' ) );
 				}
-				// nonceチェック（必要ならPOSTでnonceも送る）
-				// if ( ! isset($_POST['nonce']) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'ktp_ajax_nonce') ) {
-				// wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'kantanpro' ) );
-				// }
+				// nonceチェック（受注の進捗を書き換えるので必須。js/ktp-client-invoice.js が ktpwpClientInvoice.nonce を送る）
+				if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'ktpwp_ajax_nonce' ) ) {
+					wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'kantanpro' ) );
+				}
 				global $wpdb;
-				$client_id = isset( $_POST['client_id'] ) ? intval( $_POST['client_id'] ) : 0;
+				$client_id = isset( $_POST['client_id'] ) ? absint( wp_unslash( $_POST['client_id'] ) ) : 0;
 				if ( ! $client_id ) {
 					wp_send_json_error( __( 'client_idが指定されていません', 'kantanpro' ) );
 				}
-				$order_table = $wpdb->prefix . 'ktp_order';
-				$client_table = $wpdb->prefix . 'ktp_client';
+				$order_table = $wpdb->prefix . 'ktpwp_order';
+				$client_table = $wpdb->prefix . 'ktpwp_client';
 				// progress=4（完了）→5（請求済）に一括更新。前払い（WC受注・前入金済等）は後払い請求対象外のため除外する。
 				$result = $wpdb->query(
                     $wpdb->prepare(
@@ -340,20 +341,20 @@ class KTPWP_Ajax {
 
 		// ▼▼▼ コスト項目「仕入ステータス」一括更新Ajax（協力会社単位） ▼▼▼
 		add_action(
-            'wp_ajax_ktp_set_cost_items_purchase_status',
+            'wp_ajax_ktpwp_set_cost_items_purchase_status',
             function () {
 				// 権限チェック
 				if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
 					wp_send_json_error( __( '権限がありません', 'kantanpro' ) );
 				}
 				// nonceチェック
-				if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'ktp_ajax_nonce' ) ) {
+				if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'ktpwp_ajax_nonce' ) ) {
 					wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'kantanpro' ) );
 				}
 				global $wpdb;
-				$order_id = isset( $_POST['order_id'] ) ? intval( $_POST['order_id'] ) : 0;
-				$supplier_name = isset( $_POST['supplier_name'] ) ? sanitize_text_field( $_POST['supplier_name'] ) : '';
-				$status = isset( $_POST['status'] ) ? sanitize_key( $_POST['status'] ) : 'ordered';
+				$order_id = isset( $_POST['order_id'] ) ? absint( wp_unslash( $_POST['order_id'] ) ) : 0;
+				$supplier_name = isset( $_POST['supplier_name'] ) ? sanitize_text_field( wp_unslash( $_POST['supplier_name'] ) ) : '';
+				$status = isset( $_POST['status'] ) ? sanitize_key( wp_unslash( $_POST['status'] ) ) : 'ordered';
 				if ( ! $order_id || ! $supplier_name ) {
 					wp_send_json_error( __( 'order_idまたはsupplier_nameが指定されていません', 'kantanpro' ) );
 				}
@@ -371,7 +372,7 @@ class KTPWP_Ajax {
 				$status_date = ( $status === 'pending' ) ? null : $today;
 				// ※ $wpdb->prepare() の %s に null を渡すと空文字列になりDATE型としては不正なため、SQL文自体を分岐する
 				$status_date_sql = ( $status_date === null ) ? 'NULL' : '%s';
-				$table_name = $wpdb->prefix . 'ktp_order_cost_items';
+				$table_name = $wpdb->prefix . 'ktpwp_order_cost_items';
 				// 旧形式（purchase = 会社名）と新形式（purchase = 会社名 > サービス名）の両方を対象に更新
 				$like_pattern = $wpdb->esc_like( $supplier_name ) . ' > %';
 
@@ -432,8 +433,8 @@ class KTPWP_Ajax {
 		// ▲▲▲ コスト項目「仕入ステータス」一括更新Ajax ▲▲▲
 
 		// 受注書データ取得
-		add_action('wp_ajax_ktp_get_order_data', array($this, 'get_order_data'));
-		add_action('wp_ajax_nopriv_ktp_get_order_data', array($this, 'get_order_data'));
+		add_action('wp_ajax_ktpwp_get_order_data', array($this, 'get_order_data'));
+		add_action('wp_ajax_nopriv_ktpwp_get_order_data', array($this, 'get_order_data'));
 
 		// KTPWP-WPORG-STRIP report BEGIN
 		// レポート機能用のAJAXアクション
@@ -461,27 +462,27 @@ class KTPWP_Ajax {
 		}
 		
 		// 自動保存
-		add_action( 'wp_ajax_ktp_auto_save_item', array( $this, 'ajax_auto_save_item' ) );
-		add_action( 'wp_ajax_nopriv_ktp_auto_save_item', array( $this, 'ajax_auto_save_item' ) );
-		$this->registered_handlers[] = 'ktp_auto_save_item';
+		add_action( 'wp_ajax_ktpwp_auto_save_item', array( $this, 'ajax_auto_save_item' ) );
+		add_action( 'wp_ajax_nopriv_ktpwp_auto_save_item', array( $this, 'ajax_auto_save_item' ) );
+		$this->registered_handlers[] = 'ktpwp_auto_save_item';
 
 		// 新規アイテム作成
-		add_action( 'wp_ajax_ktp_create_new_item', array( $this, 'ajax_create_new_item' ) );
-		add_action( 'wp_ajax_nopriv_ktp_create_new_item', array( $this, 'ajax_create_new_item' ) );
-		$this->registered_handlers[] = 'ktp_create_new_item';
+		add_action( 'wp_ajax_ktpwp_create_new_item', array( $this, 'ajax_create_new_item' ) );
+		add_action( 'wp_ajax_nopriv_ktpwp_create_new_item', array( $this, 'ajax_create_new_item' ) );
+		$this->registered_handlers[] = 'ktpwp_create_new_item';
 		if ( class_exists( 'KTPWP_Settings' ) ) {
-			KTPWP_Settings::log_debug( 'ktp_create_new_item handler registered', array(), 'debug' );
+			KTPWP_Settings::log_debug( 'ktpwp_create_new_item handler registered', array(), 'debug' );
 		}
 
 		// アイテム削除
-		add_action( 'wp_ajax_ktp_delete_item', array( $this, 'ajax_delete_item' ) );
-		add_action( 'wp_ajax_nopriv_ktp_delete_item', array( $this, 'ajax_require_login' ) ); // 非ログインユーザーはエラー
-		$this->registered_handlers[] = 'ktp_delete_item';
+		add_action( 'wp_ajax_ktpwp_delete_item', array( $this, 'ajax_delete_item' ) );
+		add_action( 'wp_ajax_nopriv_ktpwp_delete_item', array( $this, 'ajax_require_login' ) ); // 非ログインユーザーはエラー
+		$this->registered_handlers[] = 'ktpwp_delete_item';
 
 		// アイテム並び順更新
-		add_action( 'wp_ajax_ktp_update_item_order', array( $this, 'ajax_update_item_order' ) );
-		add_action( 'wp_ajax_nopriv_ktp_update_item_order', array( $this, 'ajax_require_login' ) ); // 非ログインユーザーはエラー
-		$this->registered_handlers[] = 'ktp_update_item_order';
+		add_action( 'wp_ajax_ktpwp_update_item_order', array( $this, 'ajax_update_item_order' ) );
+		add_action( 'wp_ajax_nopriv_ktpwp_update_item_order', array( $this, 'ajax_require_login' ) ); // 非ログインユーザーはエラー
+		$this->registered_handlers[] = 'ktpwp_update_item_order';
 		
 		if ( class_exists( 'KTPWP_Settings' ) ) {
 			KTPWP_Settings::log_debug( '受注関連Ajaxハンドラー登録完了', array( 'count' => count($this->registered_handlers) ), 'info' );
@@ -489,23 +490,14 @@ class KTPWP_Ajax {
 		
 		// デバッグ用：Ajaxリクエスト監視（デバッグモード時のみ）
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			add_action( 'wp_ajax_ktp_create_new_item', function() {
-				ktpwp_debug_log( '[AJAX_DEBUG] wp_ajax_ktp_create_new_item アクションが呼び出されました' );
+			add_action( 'wp_ajax_ktpwp_create_new_item', function() {
+				ktpwp_debug_log( '[AJAX_DEBUG] wp_ajax_ktpwp_create_new_item アクションが呼び出されました' );
 			}, 1 );
-			add_action( 'wp_ajax_nopriv_ktp_create_new_item', function() {
-				ktpwp_debug_log( '[AJAX_DEBUG] wp_ajax_nopriv_ktp_create_new_item アクションが呼び出されました' );
+			add_action( 'wp_ajax_nopriv_ktpwp_create_new_item', function() {
+				ktpwp_debug_log( '[AJAX_DEBUG] wp_ajax_nopriv_ktpwp_create_new_item アクションが呼び出されました' );
 			}, 1 );
 		}
-		
-		// デバッグ用：Ajaxリクエスト監視（デバッグモード時のみ）
-		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			add_action( 'wp_ajax_ktp_create_new_item', function() {
-				ktpwp_debug_log( '[AJAX_DEBUG_ALL] Ajaxリクエスト: action=' . ( isset( $_REQUEST['action'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['action'] ) ) : 'NOT_SET' ) );
-			}, 0 );
-			add_action( 'wp_ajax_nopriv_ktp_create_new_item', function() {
-				ktpwp_debug_log( '[AJAX_DEBUG_ALL] Ajaxリクエスト（非ログイン）: action=' . ( isset( $_REQUEST['action'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['action'] ) ) : 'NOT_SET' ) );
-			}, 0 );
-		}
+
 	}
 
 	/**
@@ -520,17 +512,17 @@ class KTPWP_Ajax {
 
 			if ( class_exists( 'KTPWP_Staff_Chat' ) ) {
 				// 最新チャットメッセージ取得
-				add_action( 'wp_ajax_ktp_get_latest_staff_chat', array( $this, 'ajax_get_latest_staff_chat' ) );
-				add_action( 'wp_ajax_nopriv_ktp_get_latest_staff_chat', array( $this, 'ajax_require_login' ) );
+				add_action( 'wp_ajax_ktpwp_get_latest_staff_chat', array( $this, 'ajax_get_latest_staff_chat' ) );
+				add_action( 'wp_ajax_nopriv_ktpwp_get_latest_staff_chat', array( $this, 'ajax_require_login' ) );
 				$this->registered_handlers[] = 'get_latest_staff_chat';
 
 				// チャットメッセージ送信
-				add_action( 'wp_ajax_ktp_send_staff_chat_message', array( $this, 'ajax_send_staff_chat_message' ) );
-				add_action( 'wp_ajax_nopriv_ktp_send_staff_chat_message', array( $this, 'ajax_send_staff_chat_message' ) ); // For testing nopriv
+				add_action( 'wp_ajax_ktpwp_send_staff_chat_message', array( $this, 'ajax_send_staff_chat_message' ) );
+				add_action( 'wp_ajax_nopriv_ktpwp_send_staff_chat_message', array( $this, 'ajax_send_staff_chat_message' ) ); // For testing nopriv
 				$this->registered_handlers[] = 'send_staff_chat_message';
 
 				// チャットメッセージ削除（投稿者/管理者）
-				add_action( 'wp_ajax_ktp_delete_staff_chat_message', array( $this, 'ajax_delete_staff_chat_message' ) );
+				add_action( 'wp_ajax_ktpwp_delete_staff_chat_message', array( $this, 'ajax_delete_staff_chat_message' ) );
 				$this->registered_handlers[] = 'delete_staff_chat_message';
 			}
 		}
@@ -545,31 +537,31 @@ class KTPWP_Ajax {
 		}
 		
 		// サービス一覧取得
-		add_action( 'wp_ajax_ktp_get_service_list', array( $this, 'ajax_get_service_list' ) );
-		add_action( 'wp_ajax_nopriv_ktp_get_service_list', array( $this, 'ajax_get_service_list' ) );
-		$this->registered_handlers[] = 'ktp_get_service_list';
+		add_action( 'wp_ajax_ktpwp_get_service_list', array( $this, 'ajax_get_service_list' ) );
+		add_action( 'wp_ajax_nopriv_ktpwp_get_service_list', array( $this, 'ajax_get_service_list' ) );
+		$this->registered_handlers[] = 'ktpwp_get_service_list';
 
 		// サービス複製（軽量 Ajax。Cookie 肥大化環境での 431 回避）
-		add_action( 'wp_ajax_ktp_duplicate_service', array( $this, 'ajax_duplicate_service' ) );
-		add_action( 'wp_ajax_nopriv_ktp_duplicate_service', array( $this, 'ajax_require_login' ) );
-		$this->registered_handlers[] = 'ktp_duplicate_service';
+		add_action( 'wp_ajax_ktpwp_duplicate_service', array( $this, 'ajax_duplicate_service' ) );
+		add_action( 'wp_ajax_nopriv_ktpwp_duplicate_service', array( $this, 'ajax_require_login' ) );
+		$this->registered_handlers[] = 'ktpwp_duplicate_service';
 		
 		if ( class_exists( 'KTPWP_Settings' ) ) {
 			KTPWP_Settings::log_debug( 'サービスAjaxハンドラー登録完了', array( 
-				'handler' => 'ktp_get_service_list',
+				'handler' => 'ktpwp_get_service_list',
 				'total_handlers' => count( $this->registered_handlers ),
-				'wp_ajax_registered' => has_action( 'wp_ajax_ktp_get_service_list' ) ? '登録済み' : '未登録',
-				'wp_ajax_nopriv_registered' => has_action( 'wp_ajax_nopriv_ktp_get_service_list' ) ? '登録済み' : '未登録'
+				'wp_ajax_registered' => has_action( 'wp_ajax_ktpwp_get_service_list' ) ? '登録済み' : '未登録',
+				'wp_ajax_nopriv_registered' => has_action( 'wp_ajax_nopriv_ktpwp_get_service_list' ) ? '登録済み' : '未登録'
 			), 'info' );
 		}
 		
 		// デバッグ用：Ajaxリクエスト監視（デバッグモード時のみ）
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			add_action( 'wp_ajax_ktp_get_service_list', function() {
-				ktpwp_debug_log( '[AJAX_DEBUG] wp_ajax_ktp_get_service_list アクションが呼び出されました' );
+			add_action( 'wp_ajax_ktpwp_get_service_list', function() {
+				ktpwp_debug_log( '[AJAX_DEBUG] wp_ajax_ktpwp_get_service_list アクションが呼び出されました' );
 			}, 1 );
-			add_action( 'wp_ajax_nopriv_ktp_get_service_list', function() {
-				ktpwp_debug_log( '[AJAX_DEBUG] wp_ajax_nopriv_ktp_get_service_list アクションが呼び出されました' );
+			add_action( 'wp_ajax_nopriv_ktpwp_get_service_list', function() {
+				ktpwp_debug_log( '[AJAX_DEBUG] wp_ajax_nopriv_ktpwp_get_service_list アクションが呼び出されました' );
 			}, 1 );
 		}
 		
@@ -577,7 +569,7 @@ class KTPWP_Ajax {
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 			add_action( 'init', function() {
 				if ( wp_doing_ajax() ) {
-					ktpwp_debug_log( '[AJAX_DEBUG_INIT] Ajax処理中: action=' . ( isset( $_REQUEST['action'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['action'] ) ) : 'NOT_SET' ) );
+					ktpwp_debug_log( '[AJAX_DEBUG_INIT] Ajax処理中: ' . current_action() );
 				}
 			}, 1 );
 		}
@@ -631,29 +623,29 @@ class KTPWP_Ajax {
 		// JavaScriptファイルがエンキューされている場合のみlocalizeを実行
 		global $wp_scripts;
 
-		if ( isset( $wp_scripts->registered['ktp-js'] ) ) {
-			// ktp_ajax_objectにnonceプロパティを追加
+		if ( isset( $wp_scripts->registered['ktpwp-js'] ) ) {
+			// ktpwp_ajax_objectにnonceプロパティを追加
 			$ajax_data['nonce'] = $ajax_data['nonces']['general'];
-			wp_add_inline_script( 'ktp-js', 'var ktp_ajax_object = ' . wp_json_encode( $ajax_data ) . ';' );
-			wp_add_inline_script( 'ktp-js', 'var ktpwp_ajax = ' . wp_json_encode( $ajax_data ) . ';' );
-			wp_add_inline_script( 'ktp-js', 'var ajaxurl = ' . wp_json_encode( $ajax_data['ajax_url'] ) . ';' );
-			wp_add_inline_script( 'ktp-js', 'var ktpwp_ajax_nonce = ' . wp_json_encode( $ajax_data['nonces']['general'] ) . ';' );
+			wp_add_inline_script( 'ktpwp-js', 'var ktpwp_ajax_object = ' . wp_json_encode( $ajax_data ) . ';' );
+			wp_add_inline_script( 'ktpwp-js', 'var ktpwp_ajax = ' . wp_json_encode( $ajax_data ) . ';' );
+			wp_add_inline_script( 'ktpwp-js', 'var ajaxurl = ' . wp_json_encode( $ajax_data['ajax_url'] ) . ';' );
+			wp_add_inline_script( 'ktpwp-js', 'var ktpwp_ajax_nonce = ' . wp_json_encode( $ajax_data['nonces']['general'] ) . ';' );
 		}
 
 		if ( isset( $wp_scripts->registered['ktp-invoice-items'] ) ) {
-			wp_add_inline_script( 'ktp-invoice-items', 'var ktp_ajax_nonce = ' . wp_json_encode( $ajax_data['nonces']['auto_save'] ) . ';' );
+			wp_add_inline_script( 'ktp-invoice-items', 'var ktpwp_autosave_nonce = ' . wp_json_encode( $ajax_data['nonces']['auto_save'] ) . ';' );
 			wp_add_inline_script( 'ktp-invoice-items', 'var ajaxurl = ' . wp_json_encode( $ajax_data['ajax_url'] ) . ';' );
 		}
 
 		if ( isset( $wp_scripts->registered['ktp-cost-items'] ) ) {
-			wp_add_inline_script( 'ktp-cost-items', 'var ktp_ajax_nonce = ' . wp_json_encode( $ajax_data['nonces']['auto_save'] ) . ';' );
+			wp_add_inline_script( 'ktp-cost-items', 'var ktpwp_autosave_nonce = ' . wp_json_encode( $ajax_data['nonces']['auto_save'] ) . ';' );
 			wp_add_inline_script( 'ktp-cost-items', 'var ajaxurl = ' . wp_json_encode( $ajax_data['ajax_url'] ) . ';' );
 		}
 
 		// 発注メール用のnonce設定
 		if ( isset( $wp_scripts->registered['ktp-purchase-order-email'] ) ) {
 			wp_add_inline_script( 'ktp-purchase-order-email', 'var ktpwp_ajax_nonce = ' . wp_json_encode( $ajax_data['nonces']['general'] ) . ';' );
-			wp_add_inline_script( 'ktp-purchase-order-email', 'var ktp_ajax_nonce = ' . wp_json_encode( $ajax_data['nonces']['auto_save'] ) . ';' );
+			wp_add_inline_script( 'ktp-purchase-order-email', 'var ktpwp_autosave_nonce = ' . wp_json_encode( $ajax_data['nonces']['auto_save'] ) . ';' );
 			wp_add_inline_script( 'ktp-purchase-order-email', 'var ajaxurl = ' . wp_json_encode( $ajax_data['ajax_url'] ) . ';' );
 		}
 
@@ -661,7 +653,7 @@ class KTPWP_Ajax {
 		if ( isset( $wp_scripts->registered['ktp-service-selector'] ) ) {
 			wp_add_inline_script(
 				'ktp-service-selector',
-				'var ktp_service_ajax_object = ' . wp_json_encode(
+				'var ktpwp_service_ajax_object = ' . wp_json_encode(
 					array(
 						'ajax_url' => $ajax_data['ajax_url'],
 						'nonce'    => $ajax_data['nonces']['auto_save'],
@@ -685,10 +677,10 @@ class KTPWP_Ajax {
 		}
 
 		// 納期フィールド用のAjax設定
-		if ( isset( $wp_scripts->registered['ktp-delivery-dates'] ) ) {
+		if ( isset( $wp_scripts->registered['ktpwp-delivery-dates'] ) ) {
 			wp_add_inline_script(
-				'ktp-delivery-dates',
-				'var ktp_ajax = ' . wp_json_encode(
+				'ktpwp-delivery-dates',
+				'var ktpwp_ajax_vars = ' . wp_json_encode(
 					array(
 						'ajax_url' => $ajax_data['ajax_url'],
 						'nonce'    => $ajax_data['nonces']['auto_save'],
@@ -705,7 +697,7 @@ class KTPWP_Ajax {
 		if ( isset( $wp_scripts->registered['ktp-supplier-selector'] ) ) {
 			wp_add_inline_script(
 				'ktp-supplier-selector',
-				'var ktp_ajax_nonce = ' . wp_json_encode( $ajax_data['nonces']['auto_save'] ) . ';'
+				'var ktpwp_autosave_nonce = ' . wp_json_encode( $ajax_data['nonces']['auto_save'] ) . ';'
 			);
 			wp_add_inline_script(
 				'ktp-supplier-selector',
@@ -730,7 +722,7 @@ class KTPWP_Ajax {
 		}
 
 		// KTPWPのスクリプトが読み込まれている場合のみ実行
-		if ( wp_script_is( 'ktp-js', 'done' ) || wp_script_is( 'ktp-js', 'enqueued' ) ) {
+		if ( wp_script_is( 'ktpwp-js', 'done' ) || wp_script_is( 'ktpwp-js', 'enqueued' ) ) {
 			$this->ensure_ajax_localization();
 		}
 	}
@@ -740,7 +732,7 @@ class KTPWP_Ajax {
 	 */
 	public function ensure_ajax_localization() {
 		// グローバル変数が設定されていない場合のフォールバック
-		if ( ! wp_script_is( 'ktp-js', 'done' ) && ! wp_script_is( 'ktp-js', 'enqueued' ) ) {
+		if ( ! wp_script_is( 'ktpwp-js', 'done' ) && ! wp_script_is( 'ktpwp-js', 'enqueued' ) ) {
 			return;
 		}
 
@@ -748,7 +740,7 @@ class KTPWP_Ajax {
 		$ajax_data = array(
 			'ajax_url'         => admin_url( 'admin-ajax.php' ),
 			'staff_chat_nonce' => wp_create_nonce( 'staff_chat_nonce' ),
-			'auto_save_nonce'  => wp_create_nonce( 'ktp_auto_save_nonce' ),
+			'auto_save_nonce'  => wp_create_nonce( 'ktpwp_auto_save_nonce' ),
 		);
 
 		// 生の <script> を書き出さず wp_add_inline_script() を使う（2026-09-02 のレビュー指摘）。
@@ -756,7 +748,7 @@ class KTPWP_Ajax {
 		// ここはそれが効かなかった場合の保険。
 		$js = 'window.ktpwp_ajax = window.ktpwp_ajax || ' . wp_json_encode( $ajax_data ) . ';'
 			. 'window.ajaxurl = window.ajaxurl || ktpwp_ajax.ajax_url;';
-		wp_add_inline_script( 'ktp-js', $js );
+		wp_add_inline_script( 'ktpwp-js', $js );
 	}
 
 	/**
@@ -768,11 +760,11 @@ class KTPWP_Ajax {
 		}
 
 		$nonce = isset( $_POST['_wpnonce'] ) ? sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ) : '';
-		if ( $nonce === '' || ! wp_verify_nonce( $nonce, 'ktp_update_project_name' ) ) {
+		if ( ! wp_verify_nonce( $nonce, 'ktpwp_update_project_name' ) ) {
 			wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'kantanpro' ) );
 		}
 
-		$order_id     = isset( $_POST['order_id'] ) ? absint( $_POST['order_id'] ) : 0;
+		$order_id     = isset( $_POST['order_id'] ) ? absint( wp_unslash( $_POST['order_id'] ) ) : 0;
 		$project_name = isset( $_POST['project_name'] ) ? wp_strip_all_tags( wp_unslash( $_POST['project_name'] ) ) : '';
 		$project_name = class_exists( 'KTPWP_Order' )
 			? KTPWP_Order::project_name_for_storage( $project_name )
@@ -783,7 +775,7 @@ class KTPWP_Ajax {
 		}
 
 		global $wpdb;
-		$table  = $wpdb->prefix . 'ktp_order';
+		$table  = $wpdb->prefix . 'ktpwp_order';
 		$result = $wpdb->update(
 			$table,
 			array( 'project_name' => $project_name ),
@@ -816,7 +808,8 @@ class KTPWP_Ajax {
 	 */
 	public function ajax_get_logged_in_users() {
 		// nonce 検証（CSRF 対策）
-		if ( ! $this->verify_ajax_nonce( $this->cost_item_nonce_actions(), $this->cost_item_nonce_fields() ) ) {
+		$nonce = $this->request_nonce_value( $this->cost_item_nonce_fields() );
+		if ( ! wp_verify_nonce( $nonce, 'ktpwp_ajax_nonce' ) && ! wp_verify_nonce( $nonce, 'ktpwp_auto_save_nonce' ) ) {
 			wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'kantanpro' ) );
 			return;
 		}
@@ -875,16 +868,16 @@ class KTPWP_Ajax {
 		// デバッグモード時のみ詳細ログを出力
 
 		// 複数のnonce名でチェック
-		$nonce_fields = array( 'nonce', 'ktp_ajax_nonce', '_ajax_nonce', '_wpnonce' );
+		$nonce_fields = array( 'nonce', 'ktpwp_ajax_nonce', '_ajax_nonce', '_wpnonce' );
 		foreach ( $nonce_fields as $field ) {
 			if ( isset( $_POST[ $field ] ) ) {
-				$nonce_value = $this->extract_nonce_value( $_POST[ $field ] );
+				$nonce_value = $this->request_nonce_value( array( $field ) );
 
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 					ktpwp_debug_log( "[AJAX_AUTO_SAVE] Checking nonce field '{$field}'" ); // nonce の値自体はログに残さない
 				}
 
-				if ( wp_verify_nonce( $nonce_value, 'ktp_ajax_nonce' ) || wp_verify_nonce( $nonce_value, 'ktpwp_ajax_nonce' ) ) {
+				if ( wp_verify_nonce( $nonce_value, 'ktpwp_ajax_nonce' ) || wp_verify_nonce( $nonce_value, 'ktpwp_auto_save_nonce' ) ) {
 					$nonce_verified = true;
 					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 						ktpwp_debug_log( "[AJAX_AUTO_SAVE] Nonce verified with field: {$field}" );
@@ -906,16 +899,16 @@ class KTPWP_Ajax {
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 				ktpwp_debug_log( '[AJAX_AUTO_SAVE] Security check failed - tried fields: ' . implode( ', ', $nonce_fields ) );
 			}
-			$this->log_ajax_error( 'Auto-save security check failed', $this->posted_field_names() );
+			$this->log_ajax_error( 'Auto-save security check failed', array() );
 			wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'kantanpro' ) );
 		}
 
 		// POSTデータの取得とサニタイズ
-		$item_type   = $this->sanitize_ajax_input( 'item_type', 'text' );
-		$item_id     = $this->sanitize_ajax_input( 'item_id', 'int' );
-		$field_name  = $this->sanitize_ajax_input( 'field_name', 'text' );
-		$field_value = $this->sanitize_ajax_input( 'field_value', 'text' );
-		$order_id    = $this->sanitize_ajax_input( 'order_id', 'int' );
+		$item_type   = ( isset( $_POST['item_type'] ) ? sanitize_text_field( wp_unslash( $_POST['item_type'] ) ) : '' );
+		$item_id     = ( isset( $_POST['item_id'] ) ? intval( wp_unslash( $_POST['item_id'] ) ) : '' );
+		$field_name  = ( isset( $_POST['field_name'] ) ? sanitize_text_field( wp_unslash( $_POST['field_name'] ) ) : '' );
+		$field_value = ( isset( $_POST['field_value'] ) ? sanitize_text_field( wp_unslash( $_POST['field_value'] ) ) : '' );
+		$order_id    = ( isset( $_POST['order_id'] ) ? intval( wp_unslash( $_POST['order_id'] ) ) : '' );
 
 		// バリデーション
 		if ( ! in_array( $item_type, array( 'invoice', 'cost' ), true ) ) {
@@ -1005,12 +998,12 @@ class KTPWP_Ajax {
 		$nonce_value    = '';
 
 		// 複数のnonce名でチェック
-		$nonce_fields = array( 'nonce', 'ktp_ajax_nonce', '_ajax_nonce', '_wpnonce' );
+		$nonce_fields = array( 'nonce', 'ktpwp_ajax_nonce', '_ajax_nonce', '_wpnonce' );
 		foreach ( $nonce_fields as $field ) {
 			if ( isset( $_POST[ $field ] ) ) {
-				$nonce_value = $this->extract_nonce_value( $_POST[ $field ] );
+				$nonce_value = $this->request_nonce_value( array( $field ) );
 
-				if ( wp_verify_nonce( $nonce_value, 'ktp_ajax_nonce' ) ) {
+				if ( wp_verify_nonce( $nonce_value, 'ktpwp_ajax_nonce' ) || wp_verify_nonce( $nonce_value, 'ktpwp_auto_save_nonce' ) ) {
 					$nonce_verified = true;
 					ktpwp_debug_log( "[AJAX_CREATE_NEW_ITEM] Nonce verified with field: {$field}" );
 					break;
@@ -1020,16 +1013,16 @@ class KTPWP_Ajax {
 
 		if ( ! $nonce_verified ) {
 			ktpwp_debug_log( '[AJAX_CREATE_NEW_ITEM] Security check failed - tried fields: ' . implode( ', ', $nonce_fields ) );
-			$this->log_ajax_error( 'Create new item security check failed', $this->posted_field_names() );
+			$this->log_ajax_error( 'Create new item security check failed', array() );
 			wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'kantanpro' ) );
 		}
 
 		// POSTデータの取得とサニタイズ（強化版）
-		$item_type   = $this->sanitize_ajax_input( 'item_type', 'text' );
-		$field_name  = $this->sanitize_ajax_input( 'field_name', 'text' );
-		$field_value = $this->sanitize_ajax_input( 'field_value', 'text' );
-		$order_id    = $this->sanitize_ajax_input( 'order_id', 'int' );
-		$request_id  = $this->sanitize_ajax_input( 'request_id', 'text' );
+		$item_type   = ( isset( $_POST['item_type'] ) ? sanitize_text_field( wp_unslash( $_POST['item_type'] ) ) : '' );
+		$field_name  = ( isset( $_POST['field_name'] ) ? sanitize_text_field( wp_unslash( $_POST['field_name'] ) ) : '' );
+		$field_value = ( isset( $_POST['field_value'] ) ? sanitize_text_field( wp_unslash( $_POST['field_value'] ) ) : '' );
+		$order_id    = ( isset( $_POST['order_id'] ) ? intval( wp_unslash( $_POST['order_id'] ) ) : '' );
+		$request_id  = ( isset( $_POST['request_id'] ) ? sanitize_text_field( wp_unslash( $_POST['request_id'] ) ) : '' );
 
 		// バリデーション
 		if ( ! in_array( $item_type, array( 'invoice', 'cost' ), true ) ) {
@@ -1100,7 +1093,7 @@ class KTPWP_Ajax {
 	public function ajax_delete_item() {
 		// 編集者以上の権限チェック
 		if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
-			$this->log_ajax_error( 'Delete item permission check failed', $this->posted_field_names() );
+			$this->log_ajax_error( 'Delete item permission check failed', array() );
 			wp_send_json_error( __( 'この操作を行う権限がありません。', 'kantanpro' ) );
 			return;
 		}
@@ -1112,12 +1105,12 @@ class KTPWP_Ajax {
 		$nonce_value    = '';
 
 		// 複数のnonce名でチェック
-		$nonce_fields = array( 'nonce', 'ktp_ajax_nonce', '_ajax_nonce', '_wpnonce' );
+		$nonce_fields = array( 'nonce', 'ktpwp_ajax_nonce', '_ajax_nonce', '_wpnonce' );
 		foreach ( $nonce_fields as $field ) {
 			if ( isset( $_POST[ $field ] ) ) {
-				$nonce_value = $this->extract_nonce_value( $_POST[ $field ] );
+				$nonce_value = $this->request_nonce_value( array( $field ) );
 
-				if ( wp_verify_nonce( $nonce_value, 'ktp_ajax_nonce' ) ) {
+				if ( wp_verify_nonce( $nonce_value, 'ktpwp_ajax_nonce' ) || wp_verify_nonce( $nonce_value, 'ktpwp_auto_save_nonce' ) ) {
 					$nonce_verified = true;
 					ktpwp_debug_log( "[AJAX_DELETE_ITEM] Nonce verified with field: {$field}" );
 					break;
@@ -1127,14 +1120,14 @@ class KTPWP_Ajax {
 
 		if ( ! $nonce_verified ) {
 			ktpwp_debug_log( '[AJAX_DELETE_ITEM] Security check failed - tried fields: ' . implode( ', ', $nonce_fields ) );
-			$this->log_ajax_error( 'Delete item security check failed', $this->posted_field_names() );
+			$this->log_ajax_error( 'Delete item security check failed', array() );
 			wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'kantanpro' ) );
 		}
 
 		// POSTデータの取得とサニタイズ
-		$item_type = $this->sanitize_ajax_input( 'item_type', 'text' );
-		$item_id   = $this->sanitize_ajax_input( 'item_id', 'int' );
-		$order_id  = $this->sanitize_ajax_input( 'order_id', 'int' );
+		$item_type = ( isset( $_POST['item_type'] ) ? sanitize_text_field( wp_unslash( $_POST['item_type'] ) ) : '' );
+		$item_id   = ( isset( $_POST['item_id'] ) ? intval( wp_unslash( $_POST['item_id'] ) ) : '' );
+		$order_id  = ( isset( $_POST['order_id'] ) ? intval( wp_unslash( $_POST['order_id'] ) ) : '' );
 
 		// パラメータのログ出力（サニタイズ後）
 		ktpwp_debug_log( "[AJAX_DELETE_ITEM] Sanitized params: item_type={$item_type}, item_id={$item_id}, order_id={$order_id}" );
@@ -1224,7 +1217,7 @@ class KTPWP_Ajax {
 
 		// 編集者以上の権限チェック
 		if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'ktpwp_access' ) ) {
-			$this->log_ajax_error( 'Update item order permission check failed', $this->posted_field_names() );
+			$this->log_ajax_error( 'Update item order permission check failed', array() );
 			wp_send_json_error( __( 'この操作を行う権限がありません。', 'kantanpro' ) );
 			return;
 		}
@@ -1235,13 +1228,13 @@ class KTPWP_Ajax {
 		$verified_field = '';
 
 		// 複数のnonce名でチェック
-		$nonce_fields = array( 'nonce', 'ktp_ajax_nonce', '_ajax_nonce', '_wpnonce' );
+		$nonce_fields = array( 'nonce', 'ktpwp_ajax_nonce', '_ajax_nonce', '_wpnonce' );
 		foreach ( $nonce_fields as $field ) {
 			if ( isset( $_POST[ $field ] ) ) {
-				$nonce_value = $this->extract_nonce_value( $_POST[ $field ] );
+				$nonce_value = $this->request_nonce_value( array( $field ) );
 
 				$nonce_value = sanitize_text_field( $nonce_value );
-				if ( wp_verify_nonce( $nonce_value, 'ktp_ajax_nonce' ) ) {
+				if ( wp_verify_nonce( $nonce_value, 'ktpwp_ajax_nonce' ) || wp_verify_nonce( $nonce_value, 'ktpwp_auto_save_nonce' ) ) {
 					$nonce_verified = true;
 					$verified_field = $field;
 					ktpwp_debug_log( "[AJAX_UPDATE_ITEM_ORDER] Nonce verified with field: {$field}" ); // nonce の値自体はログに残さない
@@ -1252,14 +1245,15 @@ class KTPWP_Ajax {
 
 		if ( ! $nonce_verified ) {
 			ktpwp_debug_log( '[AJAX_UPDATE_ITEM_ORDER] Security check failed - tried fields: ' . implode( ', ', $nonce_fields ) );
-			$this->log_ajax_error( 'Update item order security check failed', $this->posted_field_names() );
+			$this->log_ajax_error( 'Update item order security check failed', array() );
 			wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'kantanpro' ) );
 		}
 
 		// POSTデータの取得とサニタイズ
-		$order_id   = $this->sanitize_ajax_input( 'order_id', 'int' );
-		$items_data = isset( $_POST['items'] ) && is_array( $_POST['items'] ) ? $_POST['items'] : array();
-		$item_type  = $this->sanitize_ajax_input( 'item_type', 'text' ); // 'invoice' or 'cost'
+		$order_id   = ( isset( $_POST['order_id'] ) ? intval( wp_unslash( $_POST['order_id'] ) ) : '' );
+		// 各要素は id と sort_order（どちらも整数）。値は下で intval して検証する。
+		$items_data = isset( $_POST['items'] ) && is_array( $_POST['items'] ) ? map_deep( wp_unslash( $_POST['items'] ), 'sanitize_text_field' ) : array();
+		$item_type  = ( isset( $_POST['item_type'] ) ? sanitize_text_field( wp_unslash( $_POST['item_type'] ) ) : '' ); // 'invoice' or 'cost'
 
 		// サニタイズされたパラメータのログ
 		ktpwp_debug_log( "[AJAX_UPDATE_ITEM_ORDER] Sanitized params: order_id={$order_id}, item_type={$item_type}, items_count=" . count( $items_data ) );
@@ -1277,7 +1271,7 @@ class KTPWP_Ajax {
 		}
 
 		if ( empty( $items_data ) ) {
-			$this->log_ajax_error( 'No items data provided for updating order', $this->posted_field_names() );
+			$this->log_ajax_error( 'No items data provided for updating order', array() );
 			wp_send_json_error( __( '更新するアイテムデータがありません', 'kantanpro' ) );
 		}
 
@@ -1398,7 +1392,7 @@ class KTPWP_Ajax {
 		}
 
 		// 簡単なnonceチェック
-		if ( ! check_ajax_referer( 'ktp_ajax_nonce', 'nonce', false ) ) {
+		if ( ! check_ajax_referer( 'ktpwp_ajax_nonce', 'nonce', false ) ) {
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 				ktpwp_debug_log( '[AJAX] サービス一覧取得: nonce検証失敗' );
 			}
@@ -1407,7 +1401,7 @@ class KTPWP_Ajax {
 		}
 
 		// パラメータ取得
-		$page = isset( $_POST['page'] ) ? absint( $_POST['page'] ) : 1;
+		$page = isset( $_POST['page'] ) ? absint( wp_unslash( $_POST['page'] ) ) : 1;
 
 		// 一般設定から表示件数を取得
 		if ( isset( $_POST['limit'] ) && $_POST['limit'] === 'auto' ) {
@@ -1418,11 +1412,11 @@ class KTPWP_Ajax {
 				$limit = 20; // フォールバック値
 			}
 		} else {
-			$limit = isset( $_POST['limit'] ) ? absint( $_POST['limit'] ) : 20;
+			$limit = isset( $_POST['limit'] ) ? absint( wp_unslash( $_POST['limit'] ) ) : 20;
 		}
 
-		$search   = isset( $_POST['search'] ) ? sanitize_text_field( $_POST['search'] ) : '';
-		$category = isset( $_POST['category'] ) ? sanitize_text_field( $_POST['category'] ) : '';
+		$search   = isset( $_POST['search'] ) ? sanitize_text_field( wp_unslash( $_POST['search'] ) ) : '';
+		$category = isset( $_POST['category'] ) ? sanitize_text_field( wp_unslash( $_POST['category'] ) ) : '';
 
 		if ( $limit > 500 ) {
 			$limit = 500; // 一般設定の最大値に合わせる
@@ -1602,11 +1596,11 @@ class KTPWP_Ajax {
 		}
 
 		$nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
-		if ( empty( $nonce ) || ( ! wp_verify_nonce( $nonce, 'ktp_ajax_nonce' ) && ! wp_verify_nonce( $nonce, 'ktpwp_ajax_nonce' ) ) ) {
+		if ( ! wp_verify_nonce( $nonce, 'ktpwp_ajax_nonce' ) ) {
 			wp_send_json_error( __( 'セキュリティチェックに失敗しました', 'kantanpro' ) );
 		}
 
-		$data_id = isset( $_POST['data_id'] ) ? absint( $_POST['data_id'] ) : 0;
+		$data_id = isset( $_POST['data_id'] ) ? absint( wp_unslash( $_POST['data_id'] ) ) : 0;
 		if ( $data_id <= 0 ) {
 			wp_send_json_error( __( '複製元のサービス ID が不正です。', 'kantanpro' ) );
 		}
@@ -1622,12 +1616,12 @@ class KTPWP_Ajax {
 		}
 
 		$new_id = (int) $result['new_id'];
-		$cookie_name = 'ktp_service_id';
+		$cookie_name = 'ktpwp_service_id';
 		if ( ! headers_sent() ) {
 			setcookie( $cookie_name, (string) $new_id, time() + ( 86400 * 30 ), '/' );
 		}
 
-		$posted_base   = isset( $_POST['redirect_base'] ) ? wp_unslash( $_POST['redirect_base'] ) : '';
+		$posted_base   = isset( $_POST['redirect_base'] ) ? esc_url_raw( wp_unslash( $_POST['redirect_base'] ) ) : '';
 		$base_page_url = class_exists( 'KTPWP_Main' ) ? KTPWP_Main::resolve_page_base_url_for_redirect( $posted_base ) : home_url( '/' );
 		$redirect_url  = add_query_arg(
 			array(
@@ -1650,7 +1644,7 @@ class KTPWP_Ajax {
 	/**
 	 * 顧客メールの宛先候補（代表メール1件＋部署メール、重複除去）。KantanBiz の contactEmailCandidates に相当。
 	 *
-	 * @param object|null $client ktp_client 行。
+	 * @param object|null $client ktpwp_client 行。
 	 * @return string[]
 	 */
 	private function ktpwp_order_mail_contact_email_candidates( $client ) {
@@ -1709,8 +1703,8 @@ class KTPWP_Ajax {
 	/**
 	 * 既定の To（選択部署メール優先、なければ代表メール）。
 	 *
-	 * @param object|null $client ktp_client 行。
-	 * @param object|null $order  ktp_order 行。
+	 * @param object|null $client ktpwp_client 行。
+	 * @param object|null $order  ktpwp_order 行。
 	 * @return string
 	 */
 	private function ktpwp_order_mail_default_to_email( $client, $order = null ) {
@@ -1748,7 +1742,7 @@ class KTPWP_Ajax {
 	/**
 	 * 部署行からメール宛先ラベルを組み立てる（例: アットサイン 野中-atsign07@gmail.com）。
 	 *
-	 * @param object $department ktp_department 行。
+	 * @param object $department ktpwp_department 行。
 	 * @param string $email      メールアドレス。
 	 * @return string
 	 */
@@ -1774,8 +1768,8 @@ class KTPWP_Ajax {
 	/**
 	 * 受注の担当者名・会社名から宛先ラベルを組み立てる（例: アットサイン 野中-foo@example.com）。
 	 *
-	 * @param object      $client ktp_client 行。
-	 * @param object      $order  ktp_order 行。
+	 * @param object      $client ktpwp_client 行。
+	 * @param object      $order  ktpwp_order 行。
 	 * @param string      $email  メールアドレス。
 	 * @return string
 	 */
@@ -1812,9 +1806,9 @@ class KTPWP_Ajax {
 	/**
 	 * 宛先候補の表示ラベル（部署名 担当者-メール 等）。
 	 *
-	 * @param object|null $client ktp_client 行。
+	 * @param object|null $client ktpwp_client 行。
 	 * @param string      $email  メールアドレス。
-	 * @param object|null $order  ktp_order 行（受注に紐づく部署を優先）。
+	 * @param object|null $order  ktpwp_order 行（受注に紐づく部署を優先）。
 	 * @return string
 	 */
 	private function ktpwp_order_mail_recipient_label_for_email( $client, $email, $order = null ) {
@@ -1893,8 +1887,8 @@ class KTPWP_Ajax {
 	/**
 	 * 宛先候補一覧（email + label）。
 	 *
-	 * @param object|null $client ktp_client 行。
-	 * @param object|null $order  ktp_order 行。
+	 * @param object|null $client ktpwp_client 行。
+	 * @param object|null $order  ktpwp_order 行。
 	 * @return array<int, array{email: string, label: string}>
 	 */
 	private function ktpwp_order_mail_build_recipient_options( $client, $order = null ) {
@@ -1914,9 +1908,11 @@ class KTPWP_Ajax {
 	 *
 	 * @param string   $to_email  To。
 	 * @param string[] $allowed   顧客・部署の許可メール一覧。
+	 * @param array    $cc_raw    チェックされた CC（sanitize_email 済み）。
+	 * @param string   $extra_raw その他の CC の自由入力（sanitize_textarea_field 済み）。
 	 * @return string[]
 	 */
-	private function ktpwp_order_mail_resolve_cc_recipients( $to_email, array $allowed ) {
+	private function ktpwp_order_mail_resolve_cc_recipients( $to_email, array $allowed, array $cc_raw, $extra_raw ) {
 		$to_lower = strtolower( trim( (string) $to_email ) );
 		$allowed_lc = array();
 		foreach ( $allowed as $email ) {
@@ -1924,7 +1920,6 @@ class KTPWP_Ajax {
 		}
 
 		$contact_cc = array();
-		$cc_raw     = isset( $_POST['cc_emails'] ) ? wp_unslash( $_POST['cc_emails'] ) : array();
 		if ( is_array( $cc_raw ) ) {
 			foreach ( $cc_raw as $raw_email ) {
 				$email = sanitize_email( trim( (string) $raw_email ) );
@@ -1938,11 +1933,7 @@ class KTPWP_Ajax {
 			}
 		}
 
-		$extra_raw = isset( $_POST['cc_emails_extra'] ) ? (string) wp_unslash( $_POST['cc_emails_extra'] ) : '';
-		if ( $extra_raw === '' && isset( $_POST['cc'] ) ) {
-			$extra_raw = (string) wp_unslash( $_POST['cc'] );
-		}
-		$extra_cc = $this->ktpwp_order_mail_parse_email_list( $extra_raw );
+		$extra_cc = $this->ktpwp_order_mail_parse_email_list( (string) $extra_raw );
 		foreach ( $extra_cc as $email ) {
 			$clean = sanitize_email( $email );
 			if ( $clean === '' || ! is_email( $clean ) ) {
@@ -1980,12 +1971,13 @@ class KTPWP_Ajax {
 	/**
 	 * BCC 宛先を解決（自由入力のみ）。
 	 *
-	 * @param string $to_email To。
+	 * @param string $to_email  To。
+	 * @param string $extra_raw BCC の自由入力（sanitize_textarea_field 済み）。
 	 * @return string[]
 	 */
-	private function ktpwp_order_mail_resolve_bcc_recipients( $to_email ) {
+	private function ktpwp_order_mail_resolve_bcc_recipients( $to_email, $extra_raw ) {
 		$to_lower  = strtolower( trim( (string) $to_email ) );
-		$extra_raw = isset( $_POST['bcc_emails_extra'] ) ? (string) wp_unslash( $_POST['bcc_emails_extra'] ) : '';
+		$extra_raw = (string) $extra_raw;
 		$bcc_list  = $this->ktpwp_order_mail_parse_email_list( $extra_raw );
 
 		foreach ( $bcc_list as $email ) {
@@ -2050,19 +2042,24 @@ class KTPWP_Ajax {
 		}
 	}
 
-	private function ktpwp_collect_email_attachments_from_request( $log_prefix = 'KTPWP Email' ) {
+	/**
+	 * 添付ファイルを一時ディレクトリへ受け取る。
+	 *
+	 * @param array  $uploaded_files $_FILES['attachments']（nonce 検証済みのハンドラーから渡す）。各項目はここでサニタイズする。
+	 * @param string $log_prefix     ログの接頭辞。
+	 * @return array{entries: array, temp_files: array}
+	 */
+	private function ktpwp_collect_email_attachments_from_request( array $uploaded_files, $log_prefix = 'KTPWP Email' ) {
 		$entries    = array();
 		$temp_files = array();
 
-		if ( empty( $_FILES['attachments'] ) ) {
+		if ( empty( $uploaded_files ) || ! isset( $uploaded_files['name'] ) ) {
 			return array(
 				'entries'    => $entries,
 				'temp_files' => $temp_files,
 			);
 		}
 
-
-		$uploaded_files     = $_FILES['attachments'];
 		$max_file_size      = 10 * 1024 * 1024;
 		$max_total_size     = 50 * 1024 * 1024;
 		$allowed_types      = array(
@@ -2089,11 +2086,16 @@ class KTPWP_Ajax {
 		}
 
 		for ( $i = 0; $i < $file_count; $i++ ) {
-			$file_name  = is_array( $uploaded_files['name'] ) ? $uploaded_files['name'][ $i ] : $uploaded_files['name'];
-			$file_tmp   = is_array( $uploaded_files['tmp_name'] ) ? $uploaded_files['tmp_name'][ $i ] : $uploaded_files['tmp_name'];
-			$file_size  = is_array( $uploaded_files['size'] ) ? $uploaded_files['size'][ $i ] : $uploaded_files['size'];
-			$file_type  = is_array( $uploaded_files['type'] ) ? $uploaded_files['type'][ $i ] : $uploaded_files['type'];
-			$file_error = is_array( $uploaded_files['error'] ) ? $uploaded_files['error'][ $i ] : $uploaded_files['error'];
+			$file_name  = sanitize_file_name( (string) ( is_array( $uploaded_files['name'] ) ? $uploaded_files['name'][ $i ] : $uploaded_files['name'] ) );
+			$file_tmp   = (string) ( is_array( $uploaded_files['tmp_name'] ) ? $uploaded_files['tmp_name'][ $i ] : $uploaded_files['tmp_name'] );
+			$file_size  = absint( is_array( $uploaded_files['size'] ) ? $uploaded_files['size'][ $i ] : $uploaded_files['size'] );
+			$file_type  = sanitize_mime_type( (string) ( is_array( $uploaded_files['type'] ) ? $uploaded_files['type'][ $i ] : $uploaded_files['type'] ) );
+			$file_error = absint( is_array( $uploaded_files['error'] ) ? $uploaded_files['error'][ $i ] : $uploaded_files['error'] );
+
+			// tmp_name は PHP が付けた一時パス。アップロードされたファイル以外は扱わない。
+			if ( $file_tmp !== '' && ! is_uploaded_file( $file_tmp ) ) {
+				throw new Exception( 'アップロードされたファイルを確認できませんでした。' );
+			}
 
 			if ( $file_name === '' && (int) $file_error === UPLOAD_ERR_NO_FILE ) {
 				continue;
@@ -2105,15 +2107,15 @@ class KTPWP_Ajax {
 
 			if ( $file_error !== UPLOAD_ERR_OK ) {
 				$upload_error_message = $this->ktpwp_email_upload_error_message( (int) $file_error );
-				throw new Exception( "ファイル「{$file_name}」のアップロードでエラーが発生しました。（{$upload_error_message}）" );
+				throw new Exception( esc_html( "ファイル「{$file_name}」のアップロードでエラーが発生しました。（{$upload_error_message}）" ) );
 			}
 
 			if ( $file_size > $max_file_size ) {
-				throw new Exception( "ファイル「{$file_name}」は10MBを超えています。" );
+				throw new Exception( esc_html( "ファイル「{$file_name}」は10MBを超えています。" ) );
 			}
 
 			if ( $file_size <= 0 ) {
-				throw new Exception( "ファイル「{$file_name}」が空です。" );
+				throw new Exception( esc_html( "ファイル「{$file_name}」が空です。" ) );
 			}
 
 			$total_size += $file_size;
@@ -2128,7 +2130,7 @@ class KTPWP_Ajax {
 			// 拡張子ホワイトリストは必須。$file_type はクライアントが申告する MIME で
 			// 偽装できるため、これだけで許可すると .php などをアップロードされてしまう。
 			if ( ! $is_allowed_ext ) {
-				throw new Exception( "ファイル「{$file_name}」は対応していない形式です。" );
+				throw new Exception( esc_html( "ファイル「{$file_name}」は対応していない形式です。" ) );
 			}
 
 			$safe_filename = $this->ktpwp_email_attachment_display_name( $file_name );
@@ -2141,7 +2143,7 @@ class KTPWP_Ajax {
 
 			$this->ktpwp_protect_upload_dir( $temp_dir );
 
-			$temp_file_path = $temp_dir . uniqid( 'ktp_', true ) . '_' . $safe_filename;
+			$temp_file_path = $temp_dir . uniqid( 'ktpwp_', true ) . '_' . $safe_filename;
 
 			// move_uploaded_file() は WordPress のチェックを迂回するので使わない。
 			// 複数添付は $_FILES が配列になっているため、1件分の形に組み直して渡す。
@@ -2156,7 +2158,7 @@ class KTPWP_Ajax {
 				? KTPWP_Upload::receive( $single_file, untrailingslashit( $temp_dir ), basename( $temp_file_path ) )
 				: null;
 			if ( $stored_path === null ) {
-				throw new Exception( "ファイル「{$file_name}」の保存に失敗しました。" );
+				throw new Exception( esc_html( "ファイル「{$file_name}」の保存に失敗しました。" ) );
 			}
 
 			$entries[]    = array(
@@ -2277,7 +2279,7 @@ class KTPWP_Ajax {
 			$file_contents = file_get_contents( $path );
 			if ( $file_contents === false || $file_contents === '' ) {
 				$label = $original_name !== '' ? $original_name : basename( $path );
-				throw new Exception( sprintf( '添付ファイル「%s」が空です。', $label ) );
+				throw new Exception( esc_html( sprintf( '添付ファイル「%s」が空です。', $label ) ) );
 			}
 
 			$display_name = $this->ktpwp_email_attachment_display_name( $original_name );
@@ -2342,9 +2344,10 @@ class KTPWP_Ajax {
 	 * クライアントが期待する添付件数とサーバー処理結果を突き合わせる。
 	 *
 	 * @param array<int, array{path: string, name: string}> $attachment_entries
+	 * @param int $expected クライアントが送ろうとした件数（POST の attachment_count）。
 	 */
-	private function ktpwp_validate_email_attachment_count( array $attachment_entries ) {
-		$expected = isset( $_POST['attachment_count'] ) ? absint( $_POST['attachment_count'] ) : 0;
+	private function ktpwp_validate_email_attachment_count( array $attachment_entries, $expected ) {
+		$expected = absint( $expected );
 		$actual   = count( $attachment_entries );
 
 		if ( $expected <= 0 ) {
@@ -2357,10 +2360,12 @@ class KTPWP_Ajax {
 
 		if ( $actual < $expected ) {
 			throw new Exception(
-				sprintf(
-					'添付ファイルの一部を処理できませんでした（%d件中%d件）。',
-					$expected,
-					$actual
+				esc_html(
+					sprintf(
+						'添付ファイルの一部を処理できませんでした（%d件中%d件）。',
+						$expected,
+						$actual
+					)
 				)
 			);
 		}
@@ -2384,7 +2389,7 @@ class KTPWP_Ajax {
 				throw new Exception( '権限がありません。' );
 			}
 
-			$order_id = isset( $_POST['order_id'] ) ? absint( $_POST['order_id'] ) : 0;
+			$order_id = isset( $_POST['order_id'] ) ? absint( wp_unslash( $_POST['order_id'] ) ) : 0;
 			if ( $order_id <= 0 ) {
 				throw new Exception( '無効な受注書IDです。' );
 			}
@@ -2393,8 +2398,8 @@ class KTPWP_Ajax {
 			$this->update_latest_amounts_before_email($order_id);
 
 			global $wpdb;
-			$table_name   = $wpdb->prefix . 'ktp_order';
-			$client_table = $wpdb->prefix . 'ktp_client';
+			$table_name   = $wpdb->prefix . 'ktpwp_order';
+			$client_table = $wpdb->prefix . 'ktpwp_client';
 
 			// 受注書データを取得
 			$order = $wpdb->get_row(
@@ -2514,7 +2519,7 @@ class KTPWP_Ajax {
 			);
 
 			// 自社情報取得
-			$smtp_settings = get_option( 'ktp_smtp_settings', array() );
+			$smtp_settings = get_option( 'ktpwp_smtp_settings', array() );
 			$my_email      = ! empty( $smtp_settings['email_address'] ) ? sanitize_email( $smtp_settings['email_address'] ) : '';
 
 			$my_company = '';
@@ -2524,8 +2529,8 @@ class KTPWP_Ajax {
 
 			// 旧システムからも取得（後方互換性）
 			if ( empty( $my_company ) ) {
-				// wp_ktp_settingテーブルが存在する場合のみ参照
-				$setting_table = $wpdb->prefix . 'ktp_setting';
+				// wp_ktpwp_settingテーブルが存在する場合のみ参照
+				$setting_table = $wpdb->prefix . 'ktpwp_setting';
 				try {
 					$table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $setting_table ) );
 					
@@ -2547,7 +2552,7 @@ class KTPWP_Ajax {
 				} catch ( Exception $e ) {
 					// テーブルが存在しない場合のエラーを無視
 					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-						ktpwp_debug_log( 'KTPWP Ajax get_email_content: wp_ktp_setting table not accessible: ' . $e->getMessage() );
+						ktpwp_debug_log( 'KTPWP Ajax get_email_content: wp_ktpwp_setting table not accessible: ' . $e->getMessage() );
 					}
 				}
 			}
@@ -2754,7 +2759,7 @@ class KTPWP_Ajax {
 			// 会社名が0や空の場合のフォールバック処理
 			if ( $customer_name === '0' || empty( $customer_name ) ) {
 				global $wpdb;
-				$client_table = $wpdb->prefix . 'ktp_client';
+				$client_table = $wpdb->prefix . 'ktpwp_client';
 				
 				// 顧客IDがある場合は顧客テーブルから会社名を取得
 				if ( ! empty( $order->client_id ) ) {
@@ -2959,7 +2964,7 @@ class KTPWP_Ajax {
 		try {
 			global $wpdb;
 			
-			$invoice_items_table = $wpdb->prefix . 'ktp_order_invoice_items';
+			$invoice_items_table = $wpdb->prefix . 'ktpwp_order_invoice_items';
 			
 			// 現在の請求項目を取得
 			$current_items = $wpdb->get_results(
@@ -2994,7 +2999,7 @@ class KTPWP_Ajax {
 			}
 			
 			// コスト項目の最新金額を取得してデータベースに保存
-			$cost_items_table = $wpdb->prefix . 'ktp_cost_items';
+			$cost_items_table = $wpdb->prefix . 'ktpwp_cost_items';
 			
 			// 現在のコスト項目を取得
 			$current_cost_items = $wpdb->get_results(
@@ -3051,10 +3056,10 @@ class KTPWP_Ajax {
 				throw new Exception( '権限がありません。' );
 			}
 
-			$order_id = isset( $_POST['order_id'] ) ? absint( $_POST['order_id'] ) : 0;
-			$to       = isset( $_POST['to'] ) ? sanitize_email( $_POST['to'] ) : '';
-			$subject  = isset( $_POST['subject'] ) ? sanitize_text_field( $_POST['subject'] ) : '';
-			$body     = isset( $_POST['body'] ) ? sanitize_textarea_field( $_POST['body'] ) : '';
+			$order_id = isset( $_POST['order_id'] ) ? absint( wp_unslash( $_POST['order_id'] ) ) : 0;
+			$to       = isset( $_POST['to'] ) ? sanitize_email( wp_unslash( $_POST['to'] ) ) : '';
+			$subject  = isset( $_POST['subject'] ) ? sanitize_text_field( wp_unslash( $_POST['subject'] ) ) : '';
+			$body     = isset( $_POST['body'] ) ? sanitize_textarea_field( wp_unslash( $_POST['body'] ) ) : '';
 
 			if ( $order_id <= 0 ) {
 				throw new Exception( '無効な受注書IDです。' );
@@ -3069,13 +3074,13 @@ class KTPWP_Ajax {
 			}
 
 			// 自社メールアドレスを取得
-			$smtp_settings = get_option( 'ktp_smtp_settings', array() );
+			$smtp_settings = get_option( 'ktpwp_smtp_settings', array() );
 			$my_email      = ! empty( $smtp_settings['email_address'] ) ? sanitize_email( $smtp_settings['email_address'] ) : '';
 
 			// 旧システムからも取得（後方互換性）
 			if ( empty( $my_email ) ) {
 				global $wpdb;
-				$setting_table = $wpdb->prefix . 'ktp_setting';
+				$setting_table = $wpdb->prefix . 'ktpwp_setting';
 				// 新規インストールにはこの旧テーブル自体が存在しないため、
 				// 存在確認してからクエリする（無ければ毎回 database error が出ていた）。
 				$setting = null;
@@ -3099,8 +3104,8 @@ class KTPWP_Ajax {
 			}
 
 			global $wpdb;
-			$order_table  = $wpdb->prefix . 'ktp_order';
-			$client_table = $wpdb->prefix . 'ktp_client';
+			$order_table  = $wpdb->prefix . 'ktpwp_order';
+			$client_table = $wpdb->prefix . 'ktpwp_client';
 			$order_row    = $wpdb->get_row(
 				$wpdb->prepare(
 					"SELECT * FROM `{$order_table}` WHERE id = %d",
@@ -3111,7 +3116,7 @@ class KTPWP_Ajax {
 			if ( $order_row && class_exists( 'KTPWP_Stripe_Billing' ) ) {
 				$stripe_result = KTPWP_Stripe_Billing::get_instance()->finalize_and_append_to_body( $order_row, $body );
 				if ( is_wp_error( $stripe_result ) ) {
-					throw new Exception( $stripe_result->get_error_message() );
+					throw new Exception( esc_html( $stripe_result->get_error_message() ) );
 				}
 				$body = $stripe_result;
 			}
@@ -3126,8 +3131,13 @@ class KTPWP_Ajax {
 				);
 			}
 			$allowed  = $this->ktpwp_order_mail_contact_email_candidates( $client_row );
-			$cc_list  = $this->ktpwp_order_mail_resolve_cc_recipients( $to, $allowed );
-			$bcc_list = $this->ktpwp_order_mail_resolve_bcc_recipients( $to );
+			$cc_contacts = isset( $_POST['cc_emails'] ) && is_array( $_POST['cc_emails'] ) ? map_deep( wp_unslash( $_POST['cc_emails'] ), 'sanitize_email' ) : array();
+			$cc_extra    = isset( $_POST['cc_emails_extra'] ) ? sanitize_textarea_field( wp_unslash( $_POST['cc_emails_extra'] ) ) : '';
+			if ( $cc_extra === '' && isset( $_POST['cc'] ) ) {
+				$cc_extra = sanitize_textarea_field( wp_unslash( $_POST['cc'] ) );
+			}
+			$cc_list  = $this->ktpwp_order_mail_resolve_cc_recipients( $to, $allowed, $cc_contacts, $cc_extra );
+			$bcc_list = $this->ktpwp_order_mail_resolve_bcc_recipients( $to, isset( $_POST['bcc_emails_extra'] ) ? sanitize_textarea_field( wp_unslash( $_POST['bcc_emails_extra'] ) ) : '' );
 			if ( $cc_list !== array() ) {
 				$headers[] = 'Cc: ' . implode( ', ', $cc_list );
 			}
@@ -3136,10 +3146,10 @@ class KTPWP_Ajax {
 			}
 
 			// ファイル添付処理
-			$collected           = $this->ktpwp_collect_email_attachments_from_request( 'KTPWP Email' );
+			$collected           = $this->ktpwp_collect_email_attachments_from_request( isset( $_FILES['attachments'] ) && is_array( $_FILES['attachments'] ) ? $_FILES['attachments'] : array(), 'KTPWP Email' ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- 各項目は受け取り側で個別にサニタイズする。
 			$attachment_entries  = $collected['entries'];
 			$temp_files          = $collected['temp_files'];
-			$this->ktpwp_validate_email_attachment_count( $attachment_entries );
+			$this->ktpwp_validate_email_attachment_count( $attachment_entries, isset( $_POST['attachment_count'] ) ? absint( wp_unslash( $_POST['attachment_count'] ) ) : 0 );
 
 			// メール送信
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
@@ -3187,7 +3197,7 @@ class KTPWP_Ajax {
 				$new_progress    = null;
 				$new_completion_date = null;
 				global $wpdb;
-				$order_table  = $wpdb->prefix . 'ktp_order';
+				$order_table  = $wpdb->prefix . 'ktpwp_order';
 				$current_order = $wpdb->get_row( $wpdb->prepare( "SELECT progress FROM {$order_table} WHERE id = %d", $order_id ) );
 				if ( $current_order ) {
 					$current_progress = (int) $current_order->progress;
@@ -3278,7 +3288,7 @@ class KTPWP_Ajax {
 				throw new Exception( '権限がありません。' );
 			}
 
-			$supplier_name = isset( $_POST['supplier_name'] ) ? sanitize_text_field( $_POST['supplier_name'] ) : '';
+			$supplier_name = isset( $_POST['supplier_name'] ) ? sanitize_text_field( wp_unslash( $_POST['supplier_name'] ) ) : '';
 
 			if ( empty( $supplier_name ) ) {
 				throw new Exception( '協力会社名が指定されていません。' );
@@ -3286,7 +3296,7 @@ class KTPWP_Ajax {
 
 			// 協力会社テーブルからメールアドレスを取得
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_supplier';
+			$table_name = $wpdb->prefix . 'ktpwp_supplier';
 			$supplier = $wpdb->get_row(
                 $wpdb->prepare(
                     "SELECT email, name FROM {$table_name} WHERE company_name = %s",
@@ -3337,11 +3347,11 @@ class KTPWP_Ajax {
 				throw new Exception( '権限がありません。' );
 			}
 
-			$order_id      = isset( $_POST['order_id'] ) ? absint( $_POST['order_id'] ) : 0;
-			$to            = isset( $_POST['to'] ) ? sanitize_email( $_POST['to'] ) : '';
-			$subject       = isset( $_POST['subject'] ) ? sanitize_text_field( $_POST['subject'] ) : '';
-			$body          = isset( $_POST['body'] ) ? sanitize_textarea_field( $_POST['body'] ) : '';
-			$supplier_name = isset( $_POST['supplier_name'] ) ? sanitize_text_field( $_POST['supplier_name'] ) : '';
+			$order_id      = isset( $_POST['order_id'] ) ? absint( wp_unslash( $_POST['order_id'] ) ) : 0;
+			$to            = isset( $_POST['to'] ) ? sanitize_email( wp_unslash( $_POST['to'] ) ) : '';
+			$subject       = isset( $_POST['subject'] ) ? sanitize_text_field( wp_unslash( $_POST['subject'] ) ) : '';
+			$body          = isset( $_POST['body'] ) ? sanitize_textarea_field( wp_unslash( $_POST['body'] ) ) : '';
+			$supplier_name = isset( $_POST['supplier_name'] ) ? sanitize_text_field( wp_unslash( $_POST['supplier_name'] ) ) : '';
 			$mode          = ( isset( $_POST['mode'] ) && $_POST['mode'] === 'quote' ) ? 'quote' : 'order';
 			$mail_log_type = ( $mode === 'quote' ) ? 'quote_request' : 'purchase_order';
 
@@ -3358,13 +3368,13 @@ class KTPWP_Ajax {
 			}
 
 			// 自社メールアドレスを取得
-			$smtp_settings = get_option( 'ktp_smtp_settings', array() );
+			$smtp_settings = get_option( 'ktpwp_smtp_settings', array() );
 			$my_email      = ! empty( $smtp_settings['email_address'] ) ? sanitize_email( $smtp_settings['email_address'] ) : '';
 
 			// 旧システムからも取得（後方互換性）
 			if ( empty( $my_email ) ) {
 				global $wpdb;
-				$setting_table = $wpdb->prefix . 'ktp_setting';
+				$setting_table = $wpdb->prefix . 'ktpwp_setting';
 				// 新規インストールにはこの旧テーブル自体が存在しないため、
 				// 存在確認してからクエリする（無ければ毎回 database error が出ていた）。
 				$setting = null;
@@ -3390,7 +3400,7 @@ class KTPWP_Ajax {
 			// 旧システムからも取得（後方互換性）
 			if ( empty( $my_company ) ) {
 				global $wpdb;
-				$setting_table = $wpdb->prefix . 'ktp_setting';
+				$setting_table = $wpdb->prefix . 'ktpwp_setting';
 				// 新規インストールにはこの旧テーブル自体が存在しないため、
 				// 存在確認してからクエリする（無ければ毎回 database error が出ていた）。
 				$setting = null;
@@ -3422,7 +3432,7 @@ class KTPWP_Ajax {
 			}
 
 			$cc_list = array();
-			$cc_raw  = isset( $_POST['cc'] ) ? wp_unslash( $_POST['cc'] ) : '';
+			$cc_raw  = isset( $_POST['cc'] ) ? sanitize_textarea_field( wp_unslash( $_POST['cc'] ) ) : '';
 			if ( is_array( $cc_raw ) ) {
 				$parts = $cc_raw;
 			} elseif ( is_string( $cc_raw ) && $cc_raw !== '' ) {
@@ -3447,10 +3457,10 @@ class KTPWP_Ajax {
 			}
 
 			// ファイル添付処理
-			$collected          = $this->ktpwp_collect_email_attachments_from_request( 'KTPWP Purchase Order Email' );
+			$collected          = $this->ktpwp_collect_email_attachments_from_request( isset( $_FILES['attachments'] ) && is_array( $_FILES['attachments'] ) ? $_FILES['attachments'] : array(), 'KTPWP Purchase Order Email' ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- 各項目は受け取り側で個別にサニタイズする。
 			$attachment_entries = $collected['entries'];
 			$temp_files         = $collected['temp_files'];
-			$this->ktpwp_validate_email_attachment_count( $attachment_entries );
+			$this->ktpwp_validate_email_attachment_count( $attachment_entries, isset( $_POST['attachment_count'] ) ? absint( wp_unslash( $_POST['attachment_count'] ) ) : 0 );
 
 			// メール送信
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
@@ -3555,8 +3565,8 @@ class KTPWP_Ajax {
 				throw new Exception( '権限がありません。' );
 			}
 
-			$order_id      = isset( $_POST['order_id'] ) ? absint( $_POST['order_id'] ) : 0;
-			$supplier_id   = isset( $_POST['supplier_id'] ) ? absint( $_POST['supplier_id'] ) : 0;
+			$order_id      = isset( $_POST['order_id'] ) ? absint( wp_unslash( $_POST['order_id'] ) ) : 0;
+			$supplier_id   = isset( $_POST['supplier_id'] ) ? absint( wp_unslash( $_POST['supplier_id'] ) ) : 0;
 			$supplier_name = isset( $_POST['supplier_name'] ) ? trim( sanitize_text_field( wp_unslash( $_POST['supplier_name'] ) ) ) : '';
 			$mode          = ( isset( $_POST['mode'] ) && $_POST['mode'] === 'quote' ) ? 'quote' : 'order';
 
@@ -3569,7 +3579,7 @@ class KTPWP_Ajax {
 
 			global $wpdb;
 
-			$order_table = $wpdb->prefix . 'ktp_order';
+			$order_table = $wpdb->prefix . 'ktpwp_order';
 			$order = $wpdb->get_row(
 				$wpdb->prepare( "SELECT * FROM `{$order_table}` WHERE id = %d", $order_id )
 			);
@@ -3577,7 +3587,7 @@ class KTPWP_Ajax {
 				throw new Exception( '受注書が見つかりません。' );
 			}
 
-			$supplier_table = $wpdb->prefix . 'ktp_supplier';
+			$supplier_table = $wpdb->prefix . 'ktpwp_supplier';
 			$supplier = null;
 			if ( $supplier_id > 0 ) {
 				$supplier = $wpdb->get_row(
@@ -3641,8 +3651,8 @@ class KTPWP_Ajax {
 	 *
 	 * @since 1.2.0
 	 * @param string $doc_title   帳票タイトル（発注書／見積依頼書）
-	 * @param object $order       ktp_order 行
-	 * @param object $supplier    ktp_supplier 行
+	 * @param object $order       ktpwp_order 行
+	 * @param object $supplier    ktpwp_supplier 行
 	 * @param array  $cost_items  対象協力会社に絞り込んだコスト項目
 	 * @param string $my_company  自社情報（テキスト）
 	 * @return string
@@ -3702,22 +3712,9 @@ class KTPWP_Ajax {
 		);
 
 		$html  = '<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><title>' . esc_html( $doc_title ) . '</title>';
-		$html .= '<style>
-			@page { size: A4 portrait; margin: 15mm; }
-			body { font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif; color: #222; margin: 0; padding: 0; }
-			.doc-title { text-align: center; font-size: 24px; font-weight: bold; letter-spacing: 0.3em; margin: 0 0 24px; }
-			.doc-header { display: flex; justify-content: space-between; margin-bottom: 24px; }
-			.doc-header .to { font-size: 15px; }
-			.doc-header .to .company { font-size: 16px; font-weight: bold; border-bottom: 1px solid #333; padding-bottom: 4px; display: inline-block; min-width: 220px; }
-			.doc-header .meta { text-align: right; font-size: 12px; color: #444; }
-			.doc-header .from { margin-top: 16px; font-size: 12px; white-space: pre-line; }
-			table.items { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 12px; }
-			table.items th, table.items td { border: 1px solid #999; padding: 6px 8px; }
-			table.items th { background: #f0f0f0; }
-			table.items td.num { text-align: right; }
-			.totals { margin-top: 12px; text-align: right; font-size: 13px; }
-			.totals .grand { font-size: 16px; font-weight: bold; }
-		</style></head><body>';
+		// 書類の CSS は js/ktp-purchase-order-email.js が </head> の直前に差し込む
+		// （PHP から <style> を出さない。wp.org ガイドライン）。
+		$html .= '</head><body>';
 
 		$html .= '<div class="doc-title">' . esc_html( $doc_title ) . '</div>';
 		$html .= '<div class="doc-header">';
@@ -3782,7 +3779,7 @@ class KTPWP_Ajax {
 			// 旧システムからも取得（後方互換性）
 			if ( empty( $company_info ) ) {
 				global $wpdb;
-				$setting_table = $wpdb->prefix . 'ktp_setting';
+				$setting_table = $wpdb->prefix . 'ktpwp_setting';
 				// 新規インストールにはこの旧テーブル自体が存在しないため、
 				// 存在確認してからクエリする（無ければ毎回 database error が出ていた）。
 				$setting = null;
@@ -3856,7 +3853,7 @@ class KTPWP_Ajax {
 				throw new Exception( '権限がありません。' );
 			}
 
-			$supplier_name = isset( $_POST['supplier_name'] ) ? sanitize_text_field( $_POST['supplier_name'] ) : '';
+			$supplier_name = isset( $_POST['supplier_name'] ) ? sanitize_text_field( wp_unslash( $_POST['supplier_name'] ) ) : '';
 
 			if ( empty( $supplier_name ) ) {
 				throw new Exception( '協力会社名が指定されていません。' );
@@ -3864,7 +3861,7 @@ class KTPWP_Ajax {
 
 			// 協力会社情報を取得
 			global $wpdb;
-			$supplier_table = $wpdb->prefix . 'ktp_supplier';
+			$supplier_table = $wpdb->prefix . 'ktpwp_supplier';
 			$supplier = $wpdb->get_row(
                 $wpdb->prepare(
                     "SELECT * FROM `{$supplier_table}` WHERE company_name = %s",
@@ -3963,8 +3960,8 @@ class KTPWP_Ajax {
 			}
 
 			// パラメータの取得とサニタイズ
-			$order_id  = $this->sanitize_ajax_input( 'order_id', 'int' );
-			$last_time = $this->sanitize_ajax_input( 'last_time', 'text' );
+			$order_id  = ( isset( $_POST['order_id'] ) ? intval( wp_unslash( $_POST['order_id'] ) ) : '' );
+			$last_time = ( isset( $_POST['last_time'] ) ? sanitize_text_field( wp_unslash( $_POST['last_time'] ) ) : '' );
 
 			if ( empty( $order_id ) ) {
 				$this->send_clean_json_response(
@@ -4061,7 +4058,7 @@ class KTPWP_Ajax {
 			// Nonce検証（_ajax_nonceパラメータで送信される）
 			// nonce は認可の代わりにならないので、nonce と権限の両方を必須にする。
 			$nonce = isset( $_POST['_ajax_nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['_ajax_nonce'] ) ) : '';
-			if ( $nonce === '' || ! wp_verify_nonce( $nonce, $this->nonce_names['staff_chat'] ) ) {
+			if ( ! wp_verify_nonce( $nonce, $this->nonce_names['staff_chat'] ) ) {
 				wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'kantanpro' ) );
 				return;
 			}
@@ -4072,8 +4069,8 @@ class KTPWP_Ajax {
 			}
 
 			// パラメータの取得とサニタイズ
-			$order_id = $this->sanitize_ajax_input( 'order_id', 'int' );
-			$message  = $this->sanitize_ajax_input( 'message', 'text' );
+			$order_id = ( isset( $_POST['order_id'] ) ? intval( wp_unslash( $_POST['order_id'] ) ) : '' );
+			$message  = ( isset( $_POST['message'] ) ? sanitize_text_field( wp_unslash( $_POST['message'] ) ) : '' );
 
 			if ( empty( $order_id ) || empty( $message ) ) {
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
@@ -4169,7 +4166,7 @@ class KTPWP_Ajax {
 
 			// nonce は認可の代わりにならないので、nonce と権限の両方を必須にする。
 			$nonce = isset( $_POST['_ajax_nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['_ajax_nonce'] ) ) : '';
-			if ( $nonce === '' || ! wp_verify_nonce( $nonce, $this->nonce_names['staff_chat'] ) ) {
+			if ( ! wp_verify_nonce( $nonce, $this->nonce_names['staff_chat'] ) ) {
 				wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'kantanpro' ) );
 				return;
 			}
@@ -4179,7 +4176,7 @@ class KTPWP_Ajax {
 				return;
 			}
 
-			$message_id = $this->sanitize_ajax_input( 'message_id', 'int' );
+			$message_id = ( isset( $_POST['message_id'] ) ? intval( wp_unslash( $_POST['message_id'] ) ) : '' );
 			if ( empty( $message_id ) ) {
 				wp_send_json_error( __( 'メッセージIDが必要です', 'kantanpro' ) );
 				return;
@@ -4235,7 +4232,7 @@ class KTPWP_Ajax {
 	public function get_order_preview() {
 		try {
 			// nonce検証
-			if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'ktp_ajax_nonce' ) ) {
+			if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'ktpwp_ajax_nonce' ) ) {
 				throw new Exception( 'セキュリティチェックに失敗しました。' );
 			}
 
@@ -4245,13 +4242,13 @@ class KTPWP_Ajax {
 			}
 
 			// パラメータ取得
-			$order_id = isset( $_POST['order_id'] ) ? absint( $_POST['order_id'] ) : 0;
+			$order_id = isset( $_POST['order_id'] ) ? absint( wp_unslash( $_POST['order_id'] ) ) : 0;
 			if ( $order_id <= 0 ) {
 				throw new Exception( '無効な受注書IDです。' );
 			}
 
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_order';
+			$table_name = $wpdb->prefix . 'ktpwp_order';
 
 			// 受注書データを取得
 			$order = $wpdb->get_row(
@@ -4274,6 +4271,7 @@ class KTPWP_Ajax {
 
 			// パブリックメソッドを使用して最新のプレビューHTMLを生成
 			$preview_html = $order_class->Generate_Order_Preview_HTML_Public( $order );
+			$preview_css  = $order_class->Get_Last_Preview_Doc_Styles_Public();
 
 			// 進捗状況に応じた帳票タイトルを取得
 			$document_info = $order_class->Get_Document_Info_By_Progress_Public( $order->progress );
@@ -4281,6 +4279,7 @@ class KTPWP_Ajax {
 			wp_send_json_success(
 				array(
 					'preview_html'   => $preview_html,
+					'preview_css'    => $preview_css,
 					'order_id'       => $order_id,
 					'progress'       => $order->progress,
 					'document_title' => $document_info['title'],
@@ -4428,52 +4427,14 @@ class KTPWP_Ajax {
 	}
 
 	/**
-	 * Ajax入力データのサニタイズ処理
-	 *
-	 * @param string $key 取得するPOSTキー
-	 * @param string $type サニタイズのタイプ
-	 * @param mixed  $default デフォルト値
-	 * @return mixed サニタイズされた値
-	 */
-	private function sanitize_ajax_input( $key, $type = 'text', $default = '' ) {
-		if ( ! isset( $_POST[ $key ] ) ) {
-			return $default;
-		}
-
-		// wp_unslash() を通してから型ごとにサニタイズする。
-		$value = wp_unslash( $_POST[ $key ] );
-
-		switch ( $type ) {
-			case 'int':
-				return intval( $value );
-			case 'float':
-				return floatval( $value );
-			case 'email':
-				return sanitize_email( $value );
-			case 'url':
-				return esc_url_raw( $value );
-			case 'textarea':
-				return sanitize_textarea_field( $value );
-			case 'html':
-				return wp_kses_post( $value );
-			case 'key':
-				return sanitize_key( $value );
-			case 'title':
-				return sanitize_title( $value );
-			case 'text':
-			default:
-				return sanitize_text_field( $value );
-		}
-	}
-
-	/**
 	 * 受注書 memo カラム用（最大10000文字、KantanBiz相当）
 	 *
 	 * @param mixed $raw POST の生値（未 unstslash 可）
 	 * @return string
 	 */
 	private function sanitize_ktp_order_memo( $raw ) {
-		$memo = sanitize_textarea_field( wp_unslash( $raw ) );
+		// 呼び出し側で wp_unslash() + sanitize_textarea_field() 済み。ここでは長さだけ揃える。
+		$memo = sanitize_textarea_field( (string) $raw );
 		if ( function_exists( 'mb_strlen' ) && mb_strlen( $memo ) > 10000 ) {
 			return mb_substr( $memo, 0, 10000 );
 		}
@@ -4502,7 +4463,7 @@ class KTPWP_Ajax {
 		}
 
 		global $wpdb;
-		$table_name = $wpdb->prefix . 'ktp_order';
+		$table_name = $wpdb->prefix . 'ktpwp_order';
 		$order = $wpdb->get_row(
 			$wpdb->prepare(
 				"SELECT `time`, `created_at` FROM `{$table_name}` WHERE id = %d",
@@ -4554,7 +4515,7 @@ class KTPWP_Ajax {
 		);
 
 		if ( $result === false ) {
-			throw new Exception( 'データベースの更新に失敗しました: ' . $wpdb->last_error );
+			throw new Exception( esc_html( 'データベースの更新に失敗しました: ' . $wpdb->last_error ) );
 		}
 
 		return array(
@@ -4573,8 +4534,9 @@ class KTPWP_Ajax {
 			// セキュリティチェックは DB へ一切触れる前に行う。
 			// （以前はテーブル定義の確認と ALTER TABLE を先に実行しており、
 			//   認証・認可を通らないリクエストでもスキーマ操作が走っていた。）
-			if ( ! $this->verify_ajax_nonce( $this->cost_item_nonce_actions(), array( 'ktp_ajax_nonce', 'ktpwp_ajax_nonce', 'nonce' ) ) ) {
-				$this->log_ajax_error( 'Delivery date nonce verification failed', $this->posted_field_names() );
+			$nonce = $this->request_nonce_value( array( 'ktpwp_ajax_nonce', 'nonce' ) );
+			if ( ! wp_verify_nonce( $nonce, 'ktpwp_ajax_nonce' ) && ! wp_verify_nonce( $nonce, 'ktpwp_auto_save_nonce' ) ) {
+				$this->log_ajax_error( 'Delivery date nonce verification failed', array() );
 				throw new Exception( 'セキュリティ検証に失敗しました。' );
 			}
 
@@ -4584,10 +4546,10 @@ class KTPWP_Ajax {
 			}
 
 			// パラメータ取得
-			$order_id   = isset( $_POST['order_id'] ) ? absint( $_POST['order_id'] ) : 0;
+			$order_id   = isset( $_POST['order_id'] ) ? absint( wp_unslash( $_POST['order_id'] ) ) : 0;
 			$field_name = isset( $_POST['field_name'] ) ? sanitize_text_field( wp_unslash( $_POST['field_name'] ) ) : '';
 			if ( $field_name === 'memo' ) {
-				$field_value = isset( $_POST['field_value'] ) ? $this->sanitize_ktp_order_memo( $_POST['field_value'] ) : '';
+				$field_value = isset( $_POST['field_value'] ) ? $this->sanitize_ktp_order_memo( sanitize_textarea_field( wp_unslash( $_POST['field_value'] ) ) ) : '';
 			} else {
 				$field_value = isset( $_POST['field_value'] ) ? sanitize_text_field( wp_unslash( $_POST['field_value'] ) ) : '';
 			}
@@ -4597,10 +4559,10 @@ class KTPWP_Ajax {
 			}
 
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_order';
+			$table_name = $wpdb->prefix . 'ktpwp_order';
 
 			// 納期カラムが無い古いインストールへの補完。
-			$columns      = $wpdb->get_results( "DESCRIBE `{$table_name}`" );
+			$columns      = $wpdb->get_results( $wpdb->prepare( 'DESCRIBE %i', $table_name ) );
 			$column_names = array();
 			foreach ( (array) $columns as $column ) {
 				$column_names[] = $column->Field;
@@ -4664,7 +4626,7 @@ class KTPWP_Ajax {
 			);
 
 			if ( $result === false ) {
-				throw new Exception( 'データベースの更新に失敗しました: ' . $wpdb->last_error );
+				throw new Exception( esc_html( 'データベースの更新に失敗しました: ' . $wpdb->last_error ) );
 			}
 
 			$save_ok_message = ( $field_name === 'memo' ) ? 'メモが正常に保存されました。' : '納期が正常に保存されました。';
@@ -4699,8 +4661,8 @@ class KTPWP_Ajax {
 			}
 
 			// nonce検証（複数キー・複数アクションに対応：仕事リスト・WC受注・受注書詳細のいずれでも通るようにする）
-			$nonce_keys    = array( 'nonce', 'security', '_wpnonce', 'ktp_ajax_nonce' );
-			$nonce_actions = array( 'ktp_ajax_nonce', 'ktpwp_ajax_nonce', 'ktpwp_auto_save_nonce' );
+			$nonce_keys    = array( 'nonce', 'security', '_wpnonce', 'ktpwp_ajax_nonce' );
+			$nonce_actions = array( 'ktpwp_ajax_nonce', 'ktpwp_auto_save_nonce' );
 			$nonce_value   = '';
 			foreach ( $nonce_keys as $key ) {
 				if ( ! empty( $_POST[ $key ] ) && is_string( $_POST[ $key ] ) ) {
@@ -4723,12 +4685,12 @@ class KTPWP_Ajax {
 			}
 
 			// POSTデータの取得とサニタイズ
-			$order_id = $this->sanitize_ajax_input( 'order_id', 'int' );
-			$field    = $this->sanitize_ajax_input( 'field', 'text' );
+			$order_id = ( isset( $_POST['order_id'] ) ? intval( wp_unslash( $_POST['order_id'] ) ) : '' );
+			$field    = ( isset( $_POST['field'] ) ? sanitize_text_field( wp_unslash( $_POST['field'] ) ) : '' );
 			if ( $field === 'memo' ) {
-				$value = isset( $_POST['value'] ) ? $this->sanitize_ktp_order_memo( $_POST['value'] ) : '';
+				$value = isset( $_POST['value'] ) ? $this->sanitize_ktp_order_memo( sanitize_textarea_field( wp_unslash( $_POST['value'] ) ) ) : '';
 			} else {
-				$value = $this->sanitize_ajax_input( 'value', 'text' );
+				$value = ( isset( $_POST['value'] ) ? sanitize_text_field( wp_unslash( $_POST['value'] ) ) : '' );
 			}
 
 			// バリデーション
@@ -4768,7 +4730,7 @@ class KTPWP_Ajax {
 			}
 
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_order';
+			$table_name = $wpdb->prefix . 'ktpwp_order';
 
 			// デバッグログを追加
 			ktpwp_debug_log( 'KTPWP Ajax: Table name: ' . $table_name );
@@ -4777,20 +4739,20 @@ class KTPWP_Ajax {
 			ktpwp_debug_log( 'KTPWP Ajax: Value: ' . $value );
 
 			// テーブルの存在確認
-			$table_exists = $wpdb->get_var( "SHOW TABLES LIKE '{$table_name}'" );
+			$table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) );
 			ktpwp_debug_log( 'KTPWP Ajax: Table exists: ' . ( $table_exists ? 'YES' : 'NO' ) );
 
 			// 日付カラムが未作成の環境向けに自動追加
 			$auto_add_date_fields = array( 'promised_delivery_date', 'desired_delivery_date', 'expected_delivery_date', 'completion_date' );
 			if ( in_array( $field, $auto_add_date_fields, true ) ) {
-				$column_exists = $wpdb->get_var( $wpdb->prepare( "SHOW COLUMNS FROM `{$table_name}` LIKE %s", $field ) );
+				$column_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW COLUMNS FROM %i LIKE %s', $table_name, $field ) );
 				if ( ! $column_exists ) {
 					$wpdb->query( "ALTER TABLE `{$table_name}` ADD COLUMN `{$field}` DATE NULL" );
 				}
 			}
 
 			// カラムの存在確認
-			$column_exists = $wpdb->get_var( $wpdb->prepare( "SHOW COLUMNS FROM `{$table_name}` LIKE %s", $field ) );
+			$column_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW COLUMNS FROM %i LIKE %s', $table_name, $field ) );
 			ktpwp_debug_log( 'KTPWP Ajax: Column exists: ' . ( $column_exists ? 'YES' : 'NO' ) );
 
 			// データベース更新
@@ -4838,14 +4800,14 @@ class KTPWP_Ajax {
 			}
 
 			// nonce検証
-			if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'ktp_ajax_nonce' ) ) {
+			if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'ktpwp_ajax_nonce' ) ) {
 				ktpwp_debug_log( 'KTPWP Ajax: Nonce verification failed' );
 				wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'kantanpro' ) );
 				return;
 			}
 
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_order';
+			$table_name = $wpdb->prefix . 'ktpwp_order';
 
 			// 一般設定から警告日数を取得
 			$warning_days = 3; // デフォルト値
@@ -4864,7 +4826,7 @@ class KTPWP_Ajax {
 
 			ktpwp_debug_log( 'KTPWP Ajax: Query: ' . $query );
 
-			$warning_count = $wpdb->get_var( $query );
+			$warning_count = $wpdb->get_var( $query ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $query は $wpdb->prepare() 済み。
 
 			if ( $warning_count === null ) {
 				ktpwp_debug_log( 'KTPWP Ajax: Database error: ' . $wpdb->last_error );
@@ -4876,9 +4838,9 @@ class KTPWP_Ajax {
 
 			// 完了タブ（progress=4）の請求書締日警告件数（リアルタイム更新用）
 			$invoice_warning_count = 0;
-			$client_table           = $wpdb->prefix . 'ktp_client';
-			$query_invoice          = "SELECT o.id, o.client_id, o.completion_date, c.closing_day FROM {$table_name} o LEFT JOIN {$client_table} c ON o.client_id = c.id WHERE o.progress = 4 AND o.completion_date IS NOT NULL AND c.closing_day IS NOT NULL AND c.closing_day != 'なし'";
-			$orders_invoice         = $wpdb->get_results( $query_invoice );
+			$client_table           = $wpdb->prefix . 'ktpwp_client';
+			$query_invoice          = $wpdb->prepare( "SELECT o.id, o.client_id, o.completion_date, c.closing_day FROM %i o LEFT JOIN %i c ON o.client_id = c.id WHERE o.progress = 4 AND o.completion_date IS NOT NULL AND c.closing_day IS NOT NULL AND c.closing_day != 'なし'", $table_name, $client_table );
+			$orders_invoice         = $wpdb->get_results( $query_invoice ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $query_invoice は直前で $wpdb->prepare() 済み。
 			$today                  = new DateTime();
 			$today->setTime( 0, 0, 0 );
 			foreach ( $orders_invoice as $order ) {
@@ -4919,8 +4881,8 @@ class KTPWP_Ajax {
 
 			// 請求済タブ（progress=5）の入金予定日（支払期日）超過件数（前入金済は対象外・リアルタイム更新用）
 			$payment_warning_count = 0;
-			$query_payment         = "SELECT o.id, o.client_id, o.completion_date, o.payment_timing AS order_payment_timing, c.closing_day, c.payment_month, c.payment_day, c.payment_timing AS client_payment_timing FROM {$table_name} o LEFT JOIN {$client_table} c ON o.client_id = c.id WHERE o.progress = 5 AND o.completion_date IS NOT NULL AND c.payment_month IS NOT NULL AND c.payment_day IS NOT NULL";
-			$orders_payment        = $wpdb->get_results( $query_payment );
+			$query_payment         = $wpdb->prepare( "SELECT o.id, o.client_id, o.completion_date, o.payment_timing AS order_payment_timing, c.closing_day, c.payment_month, c.payment_day, c.payment_timing AS client_payment_timing FROM %i o LEFT JOIN %i c ON o.client_id = c.id WHERE o.progress = 5 AND o.completion_date IS NOT NULL AND c.payment_month IS NOT NULL AND c.payment_day IS NOT NULL", $table_name, $client_table );
+			$orders_payment        = $wpdb->get_results( $query_payment ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $query_payment は直前で $wpdb->prepare() 済み。
 			foreach ( $orders_payment as $order ) {
 				// 前入金済みは未入金警告対象外
 				if ( class_exists( 'KTPWP_Payment_Timing' ) ) {
@@ -5061,21 +5023,21 @@ class KTPWP_Ajax {
 			}
 
 			// nonce検証
-			if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'ktp_ajax_nonce' ) ) {
+			if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'ktpwp_ajax_nonce' ) ) {
 				ktpwp_debug_log( 'KTPWP Ajax: Nonce verification failed' );
 				wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'kantanpro' ) );
 				return;
 			}
 
 			// パラメータ取得
-			$client_id = isset( $_POST['client_id'] ) ? absint( $_POST['client_id'] ) : 0;
+			$client_id = isset( $_POST['client_id'] ) ? absint( wp_unslash( $_POST['client_id'] ) ) : 0;
 
 			if ( $client_id <= 0 ) {
 				wp_send_json_error( __( '顧客IDが無効です', 'kantanpro' ) );
 			}
 
 			global $wpdb;
-			$client_table = $wpdb->prefix . 'ktp_client';
+			$client_table = $wpdb->prefix . 'ktpwp_client';
 
 			// 顧客の税区分を取得
 			$tax_category = $wpdb->get_var(
@@ -5127,22 +5089,22 @@ class KTPWP_Ajax {
 			}
 
 			// nonce検証
-			if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'ktp_ajax_nonce' ) ) {
+			if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'ktpwp_ajax_nonce' ) ) {
 				ktpwp_debug_log( 'KTPWP Ajax: Nonce verification failed' );
 				wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'kantanpro' ) );
 				return;
 			}
 
 			// パラメータ取得
-			$order_id = isset( $_POST['order_id'] ) ? absint( $_POST['order_id'] ) : 0;
+			$order_id = isset( $_POST['order_id'] ) ? absint( wp_unslash( $_POST['order_id'] ) ) : 0;
 
 			if ( $order_id <= 0 ) {
 				wp_send_json_error( __( '受注書IDが無効です', 'kantanpro' ) );
 			}
 
 			global $wpdb;
-			$order_table = $wpdb->prefix . 'ktp_order';
-			$client_table = $wpdb->prefix . 'ktp_client';
+			$order_table = $wpdb->prefix . 'ktpwp_order';
+			$client_table = $wpdb->prefix . 'ktpwp_client';
 
 			// 受注書から顧客IDを取得
 			$client_id = $wpdb->get_var(
@@ -5221,21 +5183,22 @@ class KTPWP_Ajax {
 			}
 
 			// nonce 検証。権限による代用はしない。
-			if ( ! $this->verify_ajax_nonce( $this->cost_item_nonce_actions(), $this->cost_item_nonce_fields() ) ) {
-				$this->log_ajax_error( 'Tax category nonce verification failed', $this->posted_field_names() );
+			$nonce = $this->request_nonce_value( $this->cost_item_nonce_fields() );
+			if ( ! wp_verify_nonce( $nonce, 'ktpwp_ajax_nonce' ) && ! wp_verify_nonce( $nonce, 'ktpwp_auto_save_nonce' ) ) {
+				$this->log_ajax_error( 'Tax category nonce verification failed', array() );
 				wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'kantanpro' ) );
 				return;
 			}
 
 			// パラメータ取得
-			$supplier_id = isset( $_POST['supplier_id'] ) ? absint( $_POST['supplier_id'] ) : 0;
+			$supplier_id = isset( $_POST['supplier_id'] ) ? absint( wp_unslash( $_POST['supplier_id'] ) ) : 0;
 
 			if ( $supplier_id <= 0 ) {
 				wp_send_json_error( __( '協力会社IDが無効です', 'kantanpro' ) );
 			}
 
 			global $wpdb;
-			$supplier_table = $wpdb->prefix . 'ktp_supplier';
+			$supplier_table = $wpdb->prefix . 'ktpwp_supplier';
 
 			// 協力会社の税区分を取得
 			$tax_category = $wpdb->get_var(
@@ -5299,8 +5262,8 @@ class KTPWP_Ajax {
 			}
 
 			// nonce検証（複数キー・複数アクションに対応：仕事リスト・WC受注・受注書詳細のいずれでも通るようにする）
-			$nonce_keys   = array( 'nonce', 'security', '_wpnonce', 'ktp_ajax_nonce' );
-			$nonce_actions = array( 'ktp_ajax_nonce', 'ktpwp_ajax_nonce', 'ktpwp_auto_save_nonce' );
+			$nonce_keys   = array( 'nonce', 'security', '_wpnonce', 'ktpwp_ajax_nonce' );
+			$nonce_actions = array( 'ktpwp_ajax_nonce', 'ktpwp_auto_save_nonce' );
 			$nonce_value  = '';
 			foreach ( $nonce_keys as $key ) {
 				if ( ! empty( $_POST[ $key ] ) && is_string( $_POST[ $key ] ) ) {
@@ -5324,10 +5287,10 @@ class KTPWP_Ajax {
 			}
 
 			// パラメータ取得
-			$order_id = isset( $_POST['order_id'] ) ? absint( $_POST['order_id'] ) : 0;
+			$order_id = isset( $_POST['order_id'] ) ? absint( wp_unslash( $_POST['order_id'] ) ) : 0;
 			$field_name = isset( $_POST['field_name'] ) ? sanitize_text_field( wp_unslash( $_POST['field_name'] ) ) : '';
 			if ( $field_name === 'memo' ) {
-				$field_value = isset( $_POST['field_value'] ) ? $this->sanitize_ktp_order_memo( $_POST['field_value'] ) : '';
+				$field_value = isset( $_POST['field_value'] ) ? $this->sanitize_ktp_order_memo( sanitize_textarea_field( wp_unslash( $_POST['field_value'] ) ) ) : '';
 			} else {
 				$field_value = isset( $_POST['field_value'] ) ? sanitize_text_field( wp_unslash( $_POST['field_value'] ) ) : '';
 			}
@@ -5360,11 +5323,11 @@ class KTPWP_Ajax {
 			}
 
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_order';
+			$table_name = $wpdb->prefix . 'ktpwp_order';
 
 			$date_autocreate = array( 'promised_delivery_date', 'desired_delivery_date', 'expected_delivery_date', 'completion_date' );
 			if ( in_array( $field_name, $date_autocreate, true ) ) {
-				$col = $wpdb->get_var( $wpdb->prepare( "SHOW COLUMNS FROM `{$table_name}` LIKE %s", $field_name ) );
+				$col = $wpdb->get_var( $wpdb->prepare( 'SHOW COLUMNS FROM %i LIKE %s', $table_name, $field_name ) );
 				if ( ! $col ) {
 					$wpdb->query( "ALTER TABLE `{$table_name}` ADD COLUMN `{$field_name}` DATE NULL" );
 				}
@@ -5396,103 +5359,38 @@ class KTPWP_Ajax {
 	}
 
 	/**
-	 * POST された nonce を文字列に正規化する。
-	 *
-	 * フロントから nonce が { value: '...' } の形で送られてくることがあるため、配列なら value を取り出す。
-	 * どの形でも wp_unslash + sanitize_text_field を通した文字列だけを返す（wp_verify_nonce はプラガブルなため）。
-	 *
-	 * @param mixed $raw $_POST の値。
-	 * @return string
-	 */
-	private function extract_nonce_value( $raw ) {
-		if ( is_array( $raw ) ) {
-			$raw = isset( $raw['value'] ) ? $raw['value'] : '';
-		}
-		return is_scalar( $raw ) ? sanitize_text_field( wp_unslash( (string) $raw ) ) : '';
-	}
-
-	/**
-	 * コスト項目まわりの AJAX が許容する nonce action 名
-	 *
-	 * js/ktp-cost-items.js は ktpwp_ajax.nonces.auto_save を送り、無ければ general に落ちる。
-	 * ただし nonces.auto_save の中身は画面によって 2 種類ある。
-	 * wp_localize_script する側が ktp_ajax_nonce で作る場合と、
-	 * KTPWP_Nonce_Manager::get_auto_save_nonce()（= ktpwp_auto_save_nonce）で作る場合があるため、
-	 * ajax_auto_save_field と同じ 3 つを許容する。
-	 * （ここを 2 つに絞ると、後者の画面からのリクエストが正当なのに弾かれる。）
-	 *
-	 * @return array
-	 */
-	private function cost_item_nonce_actions() {
-		return array( 'ktp_ajax_nonce', 'ktpwp_ajax_nonce', 'ktpwp_auto_save_nonce' );
-	}
-
-	/**
 	 * コスト項目まわりの AJAX で nonce が入りうるフィールド名
 	 *
 	 * @return array
 	 */
 	private function cost_item_nonce_fields() {
-		return array( 'nonce', 'ktp_ajax_nonce', '_ajax_nonce', '_wpnonce', 'security' );
+		return array( 'nonce', 'ktpwp_ajax_nonce', '_ajax_nonce', '_wpnonce', 'security' );
 	}
 
 	/**
-	 * AJAX リクエストの nonce を検証する
+	 * AJAX リクエストから nonce の値を取り出す（検証は呼び出し側で wp_verify_nonce() を使う）
 	 *
-	 * 画面によって nonce を載せるフィールド名が異なるため候補を複数受け取るが、
-	 * 検証に使う action 名は実在するものだけに限る。
-	 * 検証に失敗した場合、権限で代用することは無い（nonce は CSRF 対策、
-	 * current_user_can() は認可であり、互いの代わりにはならない）。
+	 * 画面によって nonce を載せるフィールド名が異なるため候補を複数受け取り、
+	 * 最初に値が入っているものを返す。
 	 *
-	 * @param array $actions 許容する nonce action 名。
-	 * @param array $fields  nonce が入りうる POST フィールド名。
-	 * @return bool 検証できたら true。
+	 * @param array $fields nonce が入りうる POST フィールド名。
+	 * @return string サニタイズ済みの nonce（無ければ空文字）。
 	 */
-	private function verify_ajax_nonce( array $actions, array $fields ) {
+	private function request_nonce_value( array $fields ) {
 		foreach ( $fields as $field ) {
-			if ( ! isset( $_POST[ $field ] ) || $_POST[ $field ] === '' ) {
-				continue;
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce そのものを読み出す処理（検証は呼び出し側）。
+			$raw = isset( $_POST[ $field ] ) ? map_deep( wp_unslash( $_POST[ $field ] ), 'sanitize_text_field' ) : '';
+			// フロントから nonce が { value: '...' } の形で届くことがある
+			if ( is_array( $raw ) ) {
+				$raw = isset( $raw['value'] ) ? $raw['value'] : '';
 			}
-
-			// wp_verify_nonce() は差し替え可能な関数なので、生の入力は渡さない。
-			$value = sanitize_text_field( wp_unslash( $_POST[ $field ] ) );
-			if ( $value === '' ) {
-				continue;
-			}
-
-			foreach ( $actions as $action ) {
-				if ( wp_verify_nonce( $value, $action ) ) {
-					return true;
-				}
+			$value = is_scalar( $raw ) ? sanitize_text_field( (string) $raw ) : '';
+			if ( $value !== '' ) {
+				return $value;
 			}
 		}
 
-		return false;
-	}
-
-	/**
-	 * 送信されたフィールド名の一覧を返す（値は含めない）
-	 *
-	 * セキュリティ検証に失敗した理由を追うには「どのフィールドが来たか」で足り、
-	 * 値そのものは要らない。値をログに残すと攻撃者が入れた文字列が
-	 * サーバーログに残るため、キー名だけをサニタイズして返す。
-	 *
-	 * @return array サニタイズ済みのフィールド名。
-	 */
-	private function posted_field_names() {
-		if ( empty( $_POST ) || ! is_array( $_POST ) ) {
-			return array();
-		}
-
-		$names = array();
-		foreach ( array_keys( $_POST ) as $key ) {
-			$key = sanitize_key( (string) $key );
-			if ( $key !== '' ) {
-				$names[] = $key;
-			}
-		}
-
-		return array( 'posted_fields' => implode( ', ', $names ) );
+		return '';
 	}
 
 	/**
@@ -5571,14 +5469,15 @@ class KTPWP_Ajax {
 			}
 
 			// nonce 検証。権限による代用はしない。
-			if ( ! $this->verify_ajax_nonce( $this->cost_item_nonce_actions(), $this->cost_item_nonce_fields() ) ) {
-				$this->log_ajax_error( 'Qualified invoice number nonce verification failed', $this->posted_field_names() );
+			$nonce = $this->request_nonce_value( $this->cost_item_nonce_fields() );
+			if ( ! wp_verify_nonce( $nonce, 'ktpwp_ajax_nonce' ) && ! wp_verify_nonce( $nonce, 'ktpwp_auto_save_nonce' ) ) {
+				$this->log_ajax_error( 'Qualified invoice number nonce verification failed', array() );
 				wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'kantanpro' ) );
 				return;
 			}
 
 			// パラメータ取得
-			$supplier_id = isset( $_POST['supplier_id'] ) ? absint( $_POST['supplier_id'] ) : 0;
+			$supplier_id = isset( $_POST['supplier_id'] ) ? absint( wp_unslash( $_POST['supplier_id'] ) ) : 0;
 
 			// デバッグ情報をログに記録
 			
@@ -5589,10 +5488,10 @@ class KTPWP_Ajax {
 			}
 
 			global $wpdb;
-			$supplier_table = $wpdb->prefix . 'ktp_supplier';
+			$supplier_table = $wpdb->prefix . 'ktpwp_supplier';
 
 			// テーブルが存在するかチェック
-			$table_exists = $wpdb->get_var("SHOW TABLES LIKE '$supplier_table'") === $supplier_table;
+			$table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $supplier_table ) ) === $supplier_table;
 			if (!$table_exists) {
 				ktpwp_debug_log('KTPWP Ajax: Supplier table does not exist: ' . $supplier_table);
 				wp_send_json_error(__('協力会社テーブルが存在しません', 'kantanpro'));
@@ -5659,15 +5558,15 @@ class KTPWP_Ajax {
 
 		// nonceチェック（進捗更新は general / progress_update のどちらでも可）
 		$nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
-		if ( empty( $nonce ) || ( ! wp_verify_nonce( $nonce, 'ktp_ajax_nonce' ) && ! wp_verify_nonce( $nonce, 'ktpwp_ajax_nonce' ) ) ) {
+		if ( ! wp_verify_nonce( $nonce, 'ktpwp_ajax_nonce' ) ) {
 			wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'kantanpro' ) );
 		}
 
 		global $wpdb;
-		$table_name = $wpdb->prefix . 'ktp_order';
+		$table_name = $wpdb->prefix . 'ktpwp_order';
 
-		$order_id = isset( $_POST['order_id'] ) ? absint( $_POST['order_id'] ) : 0;
-		$new_progress = isset( $_POST['progress'] ) ? absint( $_POST['progress'] ) : 0;
+		$order_id = isset( $_POST['order_id'] ) ? absint( wp_unslash( $_POST['order_id'] ) ) : 0;
+		$new_progress = isset( $_POST['progress'] ) ? absint( wp_unslash( $_POST['progress'] ) ) : 0;
 
 		if ( $order_id <= 0 || $new_progress < 1 || $new_progress > 7 ) {
 			wp_send_json_error( __( 'パラメータが不正です', 'kantanpro' ) );
@@ -5725,13 +5624,13 @@ class KTPWP_Ajax {
 		}
 
 		// セキュリティチェック
-		if (!isset($_POST['ktp_ajax_nonce']) || !wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['ktp_ajax_nonce'] ) ), 'ktp_ajax_nonce')) {
+		if (!isset($_POST['ktpwp_ajax_nonce']) || !wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['ktpwp_ajax_nonce'] ) ), 'ktpwp_ajax_nonce')) {
 			wp_send_json_error( __( 'セキュリティチェックに失敗しました。', 'kantanpro' ) );
 			return;
 		}
 		
 		// 受注書IDを取得
-		$order_id = isset($_POST['order_id']) ? absint($_POST['order_id']) : 0;
+		$order_id = isset($_POST['order_id']) ? absint( wp_unslash( $_POST['order_id'] ) ) : 0;
 		if (!$order_id) {
 			wp_send_json_error( __( '受注書IDが指定されていません。', 'kantanpro' ) );
 			return;
@@ -5739,7 +5638,7 @@ class KTPWP_Ajax {
 		
 		// 受注書データを取得
 		global $wpdb;
-		$table_name = $wpdb->prefix . 'ktp_order';
+		$table_name = $wpdb->prefix . 'ktpwp_order';
 		$order_data = $wpdb->get_row($wpdb->prepare("SELECT * FROM `{$table_name}` WHERE id = %d", $order_id));
 		
 		if (!$order_data) {
@@ -5770,7 +5669,7 @@ class KTPWP_Ajax {
 	 */
 	public function ajax_update_bulk_invoice_seal_size() {
 		$nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
-		if ( $nonce === '' || ! wp_verify_nonce( $nonce, 'ktp_ajax_nonce' ) ) {
+		if ( ! wp_verify_nonce( $nonce, 'ktpwp_ajax_nonce' ) ) {
 			wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'kantanpro' ) );
 		}
 		if ( ! current_user_can( 'manage_options' ) ) {
@@ -5804,7 +5703,7 @@ class KTPWP_Ajax {
 	 */
 	public function ajax_update_bulk_invoice_logo_width() {
 		$nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
-		if ( $nonce === '' || ! wp_verify_nonce( $nonce, 'ktp_ajax_nonce' ) ) {
+		if ( ! wp_verify_nonce( $nonce, 'ktpwp_ajax_nonce' ) ) {
 			wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'kantanpro' ) );
 		}
 		if ( ! current_user_can( 'manage_options' ) ) {
@@ -5834,7 +5733,7 @@ class KTPWP_Ajax {
 	 */
 	public function ajax_update_atena_label_position() {
 		$nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
-		if ( $nonce === '' || ! wp_verify_nonce( $nonce, 'ktp_ajax_nonce' ) ) {
+		if ( ! wp_verify_nonce( $nonce, 'ktpwp_ajax_nonce' ) ) {
 			wp_send_json_error( __( 'セキュリティ検証に失敗しました', 'kantanpro' ) );
 		}
 		if ( ! current_user_can( 'manage_options' ) ) {
@@ -5869,13 +5768,13 @@ class KTPWP_Ajax {
 		}
 
 		// セキュリティチェック
-		if (!isset($_POST['nonce']) || !wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'ktp_ajax_nonce')) {
+		if (!isset($_POST['nonce']) || !wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'ktpwp_ajax_nonce')) {
 			wp_send_json_error( __( 'セキュリティチェックに失敗しました。', 'kantanpro' ) );
 			return;
 		}
 		
 		// 顧客IDを取得
-		$client_id = isset($_POST['client_id']) ? absint($_POST['client_id']) : 0;
+		$client_id = isset($_POST['client_id']) ? absint( wp_unslash( $_POST['client_id'] ) ) : 0;
 		if (!$client_id) {
 			wp_send_json_error( __( '顧客IDが指定されていません。', 'kantanpro' ) );
 			return;
@@ -5884,7 +5783,7 @@ class KTPWP_Ajax {
 		global $wpdb;
 		
 		// 顧客情報を取得
-		$client_table = $wpdb->prefix . 'ktp_client';
+		$client_table = $wpdb->prefix . 'ktpwp_client';
 		$client_data = $wpdb->get_row($wpdb->prepare(
 			"SELECT * FROM `{$client_table}` WHERE id = %d",
 			$client_id
@@ -5896,7 +5795,7 @@ class KTPWP_Ajax {
 		}
 		
 		// 受注書データを取得（完了済みで請求済みでないもの）
-		$order_table = $wpdb->prefix . 'ktp_order';
+		$order_table = $wpdb->prefix . 'ktpwp_order';
 		$orders = $wpdb->get_results($wpdb->prepare(
 			"SELECT * FROM `{$order_table}` 
 			WHERE client_id = %d 
@@ -5987,7 +5886,7 @@ class KTPWP_Ajax {
 			}
 			
 			// 請求項目を取得
-			$invoice_items_table = $wpdb->prefix . 'ktp_order_invoice_items';
+			$invoice_items_table = $wpdb->prefix . 'ktpwp_order_invoice_items';
 			$invoice_items = $wpdb->get_results($wpdb->prepare(
 				"SELECT * FROM `{$invoice_items_table}` WHERE order_id = %d ORDER BY COALESCE(sort_order, id) ASC, id ASC",
 				$order->id
@@ -6010,7 +5909,7 @@ class KTPWP_Ajax {
 		$monthly_groups = array_values($monthly_groups);
 		
 		// 部署情報を取得
-		$department_table = $wpdb->prefix . 'ktp_department';
+		$department_table = $wpdb->prefix . 'ktpwp_department';
 		$departments = $wpdb->get_results($wpdb->prepare(
 			"SELECT * FROM `{$department_table}` WHERE client_id = %d",
 			$client_id
@@ -6018,7 +5917,7 @@ class KTPWP_Ajax {
 		
 		// 適格請求書番号を取得（一般設定から）
 		$qualified_invoice_number = '';
-		$general_settings = get_option('ktp_general_settings', array());
+		$general_settings = get_option('ktpwp_general_settings', array());
 		if (isset($general_settings['qualified_invoice_number']) && !empty($general_settings['qualified_invoice_number'])) {
 			$qualified_invoice_number = $general_settings['qualified_invoice_number'];
 		}
@@ -6088,7 +5987,7 @@ class KTPWP_Ajax {
 			$bank_transfer_html = KTPWP_Settings::get_bank_transfer_invoice_html();
 		}
 
-		// 請求元（自社）情報：一般設定・旧 ktp_setting と同じロジックで HTML 化
+		// 請求元（自社）情報：一般設定・旧 ktpwp_setting と同じロジックで HTML 化
 		$company_info_html = '';
 		if ( ! class_exists( 'KTPWP_Order_Class' ) ) {
 			require_once KTPWP_PLUGIN_DIR . 'includes/class-ktpwp-order-main.php';
@@ -6125,7 +6024,7 @@ class KTPWP_Ajax {
 		}
 		if ( class_exists( 'KTPWP_Department_Manager' ) ) {
 			$selected_dept_row = null;
-			$requested_dept_id = isset( $_POST['selected_department_id'] ) ? absint( $_POST['selected_department_id'] ) : 0;
+			$requested_dept_id = isset( $_POST['selected_department_id'] ) ? absint( wp_unslash( $_POST['selected_department_id'] ) ) : 0;
 			if ( $requested_dept_id > 0 ) {
 				$candidate_dept = KTPWP_Department_Manager::get_department( $requested_dept_id );
 				if ( $candidate_dept && (int) $candidate_dept->client_id === (int) $client_id ) {
@@ -6230,7 +6129,7 @@ class KTPWP_Ajax {
 	/**
 	 * 請求書プレビュー用に住所を1～2行の文字列へまとめる（郵便・都道府県・市区町村・番地・建物。従来は address のみ返して空になりがちだった）
 	 *
-	 * @param object $client_data ktp_client 行
+	 * @param object $client_data ktpwp_client 行
 	 * @return string
 	 */
 	private function format_client_address_for_invoice_preview( $client_data ) {
@@ -6418,8 +6317,8 @@ class KTPWP_Ajax {
 				throw new Exception( '権限がありません。' );
 			}
 
-			$order_id     = isset( $_POST['order_id'] ) ? absint( $_POST['order_id'] ) : 0;
-			$supplier_id  = isset( $_POST['supplier_id'] ) ? absint( $_POST['supplier_id'] ) : 0;
+			$order_id     = isset( $_POST['order_id'] ) ? absint( wp_unslash( $_POST['order_id'] ) ) : 0;
+			$supplier_id  = isset( $_POST['supplier_id'] ) ? absint( wp_unslash( $_POST['supplier_id'] ) ) : 0;
 			$supplier_name = isset( $_POST['supplier_name'] ) ? trim( sanitize_text_field( wp_unslash( $_POST['supplier_name'] ) ) ) : '';
 			$mode         = ( isset( $_POST['mode'] ) && $_POST['mode'] === 'quote' ) ? 'quote' : 'order';
 
@@ -6434,7 +6333,7 @@ class KTPWP_Ajax {
 			global $wpdb;
 
 			// 受注書データを取得
-			$order_table = $wpdb->prefix . 'ktp_order';
+			$order_table = $wpdb->prefix . 'ktpwp_order';
 			$order = $wpdb->get_row(
 				$wpdb->prepare(
 					"SELECT * FROM `{$order_table}` WHERE id = %d",
@@ -6447,7 +6346,7 @@ class KTPWP_Ajax {
 			}
 
 			// 協力会社データを取得（ID優先、なければ会社名で検索。名前は前後空白を無視）
-			$supplier_table = $wpdb->prefix . 'ktp_supplier';
+			$supplier_table = $wpdb->prefix . 'ktpwp_supplier';
 			$supplier = null;
 			if ( $supplier_id > 0 ) {
 				$supplier = $wpdb->get_row(
@@ -6472,7 +6371,7 @@ class KTPWP_Ajax {
 			$supplier_name = $supplier->company_name;
 
 			// 顧客データを取得
-			$client_table = $wpdb->prefix . 'ktp_client';
+			$client_table = $wpdb->prefix . 'ktpwp_client';
 			$client = null;
 			if ( ! empty( $order->client_id ) ) {
 				$client = $wpdb->get_row(
@@ -6547,7 +6446,7 @@ class KTPWP_Ajax {
 			}
 
 			// 自社情報を取得
-			$smtp_settings = get_option( 'ktp_smtp_settings', array() );
+			$smtp_settings = get_option( 'ktpwp_smtp_settings', array() );
 			$my_email = ! empty( $smtp_settings['email_address'] ) ? sanitize_email( $smtp_settings['email_address'] ) : '';
 			$my_company = '';
 			if ( class_exists( 'KTPWP_Settings' ) ) {
@@ -6556,7 +6455,7 @@ class KTPWP_Ajax {
 
 			// 旧システムからも取得（後方互換性）
 			if ( empty( $my_company ) ) {
-				$setting_table = $wpdb->prefix . 'ktp_setting';
+				$setting_table = $wpdb->prefix . 'ktpwp_setting';
 				// 新規インストールにはこの旧テーブル自体が存在しないため、
 				// 存在確認してからクエリする（無ければ毎回 database error が出ていた）。
 				$setting = null;
@@ -6782,7 +6681,7 @@ class KTPWP_Ajax {
 			// 最後に、直接データベースから取得を試行
 			if ( empty( $supplier_tax_category ) || $supplier_tax_category === '内税' ) {
 				global $wpdb;
-				$supplier_table = $wpdb->prefix . 'ktp_supplier';
+				$supplier_table = $wpdb->prefix . 'ktpwp_supplier';
 				$tax_category = $wpdb->get_var(
 					$wpdb->prepare(
 						"SELECT tax_category FROM `{$supplier_table}` WHERE id = %d",
@@ -6907,12 +6806,12 @@ class KTPWP_Ajax {
 	 */
 	public function init() {
 		// 既存のAJAXハンドラー
-		add_action( 'wp_ajax_ktp_get_departments', array( $this, 'get_departments' ) );
-		add_action( 'wp_ajax_ktp_get_supplier_costs', array( $this, 'get_supplier_costs' ) );
+		add_action( 'wp_ajax_ktpwp_get_departments', array( $this, 'get_departments' ) );
+		add_action( 'wp_ajax_ktpwp_get_supplier_costs', array( $this, 'get_supplier_costs' ) );
 		
 		// KTPWP-WPORG-STRIP report BEGIN
 		// レポートタブ用のAJAXハンドラー
-		add_action( 'wp_ajax_ktp_get_report_data', array( $this, 'get_report_data' ) );
+		add_action( 'wp_ajax_ktpwp_get_report_data', array( $this, 'get_report_data' ) );
 		// KTPWP-WPORG-STRIP report END
 	}
 
@@ -6945,8 +6844,8 @@ class KTPWP_Ajax {
 			ktpwp_debug_log( 'レポートAJAX nonce検証成功' );
 		}
 
-		$report_type = sanitize_text_field( $_POST['report_type'] );
-		$period = sanitize_text_field( $_POST['period'] );
+		$report_type = sanitize_text_field( wp_unslash( $_POST['report_type'] ) );
+		$period = sanitize_text_field( wp_unslash( $_POST['period'] ) );
 
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 			ktpwp_debug_log( 'レポートAJAX リクエスト詳細: report_type=' . $report_type . ', period=' . $period );
@@ -6994,11 +6893,11 @@ class KTPWP_Ajax {
 			ktpwp_debug_log( '売上データ取得開始: period=' . $period . ', where_clause=' . $where_clause );
 			
 			// データベースの全件数を確認
-			$total_count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}ktp_order");
+			$total_count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}ktpwp_order");
 			ktpwp_debug_log( '注文テーブル総件数: ' . $total_count );
 			
 			// 期間別件数を確認
-			$period_count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}ktp_order o WHERE 1=1 {$where_clause}");
+			$period_count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}ktpwp_order o WHERE 1=1 {$where_clause}");
 			ktpwp_debug_log( '期間別件数: ' . $period_count );
 		}
 
@@ -7006,8 +6905,8 @@ class KTPWP_Ajax {
 		$monthly_query = "SELECT 
 			DATE_FORMAT(o.completion_date, '%Y-%m') as month,
 			SUM(ii.amount) as total_sales
-			FROM {$wpdb->prefix}ktp_order o
-			LEFT JOIN {$wpdb->prefix}ktp_order_invoice_items ii ON o.id = ii.order_id
+			FROM {$wpdb->prefix}ktpwp_order o
+			LEFT JOIN {$wpdb->prefix}ktpwp_order_invoice_items ii ON o.id = ii.order_id
 			WHERE 1=1 {$where_clause} AND ii.amount IS NOT NULL AND o.progress >= 5 AND o.progress != 7 AND o.completion_date IS NOT NULL
 			GROUP BY DATE_FORMAT(o.completion_date, '%Y-%m')
 			ORDER BY month";
@@ -7027,15 +6926,15 @@ class KTPWP_Ajax {
 			DATE_FORMAT(o.completion_date, '%Y-%m') as month,
 			SUM(ii.amount) as total_sales,
 			SUM(COALESCE(oci.amount, 0)) as total_cost
-			FROM {$wpdb->prefix}ktp_order o
+			FROM {$wpdb->prefix}ktpwp_order o
 			LEFT JOIN (
 				SELECT order_id, SUM(amount) as amount 
-				FROM {$wpdb->prefix}ktp_order_invoice_items 
+				FROM {$wpdb->prefix}ktpwp_order_invoice_items 
 				GROUP BY order_id
 			) ii ON o.id = ii.order_id
 			LEFT JOIN (
 				SELECT order_id, SUM(amount) as amount 
-				FROM {$wpdb->prefix}ktp_order_cost_items 
+				FROM {$wpdb->prefix}ktpwp_order_cost_items 
 				GROUP BY order_id
 			) oci ON o.id = oci.order_id
 			WHERE 1=1 {$where_clause} AND ii.amount IS NOT NULL AND o.progress >= 5 AND o.progress != 7 AND o.completion_date IS NOT NULL
@@ -7107,8 +7006,8 @@ class KTPWP_Ajax {
 		$sales_query = "SELECT 
 			o.customer_name,
 			SUM(ii.amount) as total_sales
-			FROM {$wpdb->prefix}ktp_order o
-			LEFT JOIN {$wpdb->prefix}ktp_order_invoice_items ii ON o.id = ii.order_id
+			FROM {$wpdb->prefix}ktpwp_order o
+			LEFT JOIN {$wpdb->prefix}ktpwp_order_invoice_items ii ON o.id = ii.order_id
 			WHERE 1=1 {$where_clause} 
 			AND ii.amount IS NOT NULL 
 			AND o.progress >= 5 
@@ -7124,7 +7023,7 @@ class KTPWP_Ajax {
 		$order_query = "SELECT 
 			o.customer_name,
 			COUNT(o.id) as order_count
-			FROM {$wpdb->prefix}ktp_order o
+			FROM {$wpdb->prefix}ktpwp_order o
 			WHERE 1=1 {$where_clause} 
 			AND o.progress >= 5 
 			AND o.progress != 7
@@ -7180,8 +7079,8 @@ class KTPWP_Ajax {
 			$sales_query = "SELECT 
 				ii.product_name as service_name,
 				SUM(ii.amount) as total_sales
-				FROM {$wpdb->prefix}ktp_order o 
-				LEFT JOIN {$wpdb->prefix}ktp_order_invoice_items ii ON o.id = ii.order_id 
+				FROM {$wpdb->prefix}ktpwp_order o 
+				LEFT JOIN {$wpdb->prefix}ktpwp_order_invoice_items ii ON o.id = ii.order_id 
 				WHERE 1=1 {$where_clause} 
 				AND ii.amount IS NOT NULL 
 				AND o.progress >= 5 
@@ -7197,8 +7096,8 @@ class KTPWP_Ajax {
 			$usage_query = "SELECT 
 				ii.product_name as service_name,
 				COUNT(DISTINCT o.id) as usage_count
-				FROM {$wpdb->prefix}ktp_order o 
-				LEFT JOIN {$wpdb->prefix}ktp_order_invoice_items ii ON o.id = ii.order_id 
+				FROM {$wpdb->prefix}ktpwp_order o 
+				LEFT JOIN {$wpdb->prefix}ktpwp_order_invoice_items ii ON o.id = ii.order_id 
 				WHERE 1=1 {$where_clause} 
 				AND ii.amount IS NOT NULL 
 				AND o.progress >= 3 
@@ -7254,9 +7153,9 @@ class KTPWP_Ajax {
 			$contribution_query = "SELECT 
 				s.company_name,
 				SUM(oci.amount) as total_contribution
-				FROM {$wpdb->prefix}ktp_order o 
-				LEFT JOIN {$wpdb->prefix}ktp_order_cost_items oci ON o.id = oci.order_id 
-				LEFT JOIN {$wpdb->prefix}ktp_supplier s ON oci.supplier_id = s.id 
+				FROM {$wpdb->prefix}ktpwp_order o 
+				LEFT JOIN {$wpdb->prefix}ktpwp_order_cost_items oci ON o.id = oci.order_id 
+				LEFT JOIN {$wpdb->prefix}ktpwp_supplier s ON oci.supplier_id = s.id 
 				WHERE 1=1 {$where_clause} 
 				AND oci.supplier_id IS NOT NULL 
 				AND o.progress >= 5 
@@ -7272,8 +7171,8 @@ class KTPWP_Ajax {
 			$skill_query = "SELECT 
 				ss.product_name,
 				COUNT(*) as skill_count
-				FROM {$wpdb->prefix}ktp_supplier_skills ss
-				LEFT JOIN {$wpdb->prefix}ktp_supplier s ON ss.supplier_id = s.id
+				FROM {$wpdb->prefix}ktpwp_supplier_skills ss
+				LEFT JOIN {$wpdb->prefix}ktpwp_supplier s ON ss.supplier_id = s.id
 				WHERE ss.product_name IS NOT NULL
 				GROUP BY ss.product_name
 				ORDER BY skill_count DESC

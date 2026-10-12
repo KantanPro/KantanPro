@@ -45,10 +45,10 @@ if ( ! class_exists( 'KTPWP_Client_UI' ) ) {
 			// -----------------------------
 
 			// テーブル名
-			$table_name = $wpdb->prefix . 'ktp_' . $name;
+			$table_name = $wpdb->prefix . 'ktpwp_' . $name;
 
 			// 表示モードの取得（デフォルトは顧客一覧）
-			$view_mode = isset( $_GET['view_mode'] ) ? sanitize_text_field( $_GET['view_mode'] ) : 'customer_list';
+			$view_mode = KTPWP_Request::has_query( 'view_mode' ) ? KTPWP_Request::query( 'view_mode' ) : 'customer_list';
 
 			// ソート順の取得（デフォルトはIDの降順）
 			$sort_by = 'id';
@@ -58,8 +58,8 @@ if ( ! class_exists( 'KTPWP_Client_UI' ) ) {
 			$order_sort_by = 'time';
 			$order_sort_order = class_exists( 'KTPWP_List_Table' ) ? KTPWP_List_Table::default_sort_order() : 'DESC';
 
-			if ( isset( $_GET['sort_by'] ) ) {
-				$sort_by = sanitize_text_field( $_GET['sort_by'] );
+			if ( KTPWP_Request::has_query( 'sort_by' ) ) {
+				$sort_by = KTPWP_Request::query( 'sort_by' );
 				// 安全なカラム名のみ許可（SQLインジェクション対策）
 				$allowed_columns = array( 'id', 'company_name', 'name', 'phone', 'frequency', 'time', 'client_status' );
 				if ( ! in_array( $sort_by, $allowed_columns ) ) {
@@ -67,15 +67,15 @@ if ( ! class_exists( 'KTPWP_Client_UI' ) ) {
 				}
 			}
 
-			if ( isset( $_GET['sort_order'] ) ) {
+			if ( KTPWP_Request::has_query( 'sort_order' ) ) {
 				$sort_order = class_exists( 'KTPWP_List_Table' )
-					? KTPWP_List_Table::sanitize_sort_order( sanitize_text_field( $_GET['sort_order'] ) )
+					? KTPWP_List_Table::sanitize_sort_order( KTPWP_Request::query( 'sort_order' ) )
 					: 'DESC';
 			}
 
 			// 注文履歴のソート順を取得
-			if ( isset( $_GET['order_sort_by'] ) ) {
-				$order_sort_by = sanitize_text_field( $_GET['order_sort_by'] );
+			if ( KTPWP_Request::has_query( 'order_sort_by' ) ) {
+				$order_sort_by = KTPWP_Request::query( 'order_sort_by' );
 				// 安全なカラム名のみ許可（SQLインジェクション対策）
 				$allowed_order_columns = array( 'id', 'time', 'progress', 'project_name' );
 				if ( ! in_array( $order_sort_by, $allowed_order_columns ) ) {
@@ -83,9 +83,9 @@ if ( ! class_exists( 'KTPWP_Client_UI' ) ) {
 				}
 			}
 
-			if ( isset( $_GET['order_sort_order'] ) ) {
+			if ( KTPWP_Request::has_query( 'order_sort_order' ) ) {
 				$order_sort_order = class_exists( 'KTPWP_List_Table' )
-					? KTPWP_List_Table::sanitize_sort_order( sanitize_text_field( $_GET['order_sort_order'] ) )
+					? KTPWP_List_Table::sanitize_sort_order( KTPWP_Request::query( 'order_sort_order' ) )
 					: 'DESC';
 			}
 
@@ -145,11 +145,11 @@ if ( ! class_exists( 'KTPWP_Client_UI' ) ) {
 			// 注文履歴のソートプルダウン
 			if ( $view_mode === 'order_history' ) {
 				// 現在表示中の顧客ID
-				$cookie_name = 'ktp_' . $name . '_id';
+				$cookie_name = 'ktpwp_' . $name . '_id';
 				$client_id = null;
 
-				if ( isset( $_GET['data_id'] ) ) {
-					$client_id = filter_input( INPUT_GET, 'data_id', FILTER_SANITIZE_NUMBER_INT );
+				if ( KTPWP_Request::has_query( 'data_id' ) ) {
+					$client_id = KTPWP_Request::query_number( 'data_id' );
 				} elseif ( isset( $_COOKIE[ $cookie_name ] ) ) {
 					$client_id = filter_input( INPUT_COOKIE, $cookie_name, FILTER_SANITIZE_NUMBER_INT );
 				}
@@ -169,7 +169,7 @@ if ( ! class_exists( 'KTPWP_Client_UI' ) ) {
 					'<form method="get" action="' . esc_url( $sort_url ) . '" style="display:flex;align-items:center;">';
 
 				// 現在のGETパラメータを維持するための隠しフィールド
-				foreach ( $_GET as $key => $value ) {
+				foreach ( KTPWP_Request::query_all() as $key => $value ) {
 					if ( $key !== 'order_sort_by' && $key !== 'order_sort_order' ) {
 						$sort_dropdown .= '<input type="hidden" name="' . esc_attr( sanitize_text_field( wp_unslash( (string) $key ) ) ) . '" value="' . esc_attr( is_array( $value ) ? '' : sanitize_text_field( wp_unslash( (string) $value ) ) ) . '">';
 					}
@@ -195,8 +195,8 @@ if ( ! class_exists( 'KTPWP_Client_UI' ) ) {
 			// リスト表示部分の開始
 			// HEREDOC は使わない（wp.org ガイドライン）。
 			// $list_title / $sort_dropdown は組み立て済みの HTML なのでそのまま連結する。
-			$html = '<div class="ktp_data_contents">'
-				. '<div class="ktp_data_list_box">'
+			$html = '<div class="ktpwp_data_contents">'
+				. '<div class="ktpwp_data_list_box">'
 				. '<div id="ktp-clients-print-list-area">'
 				. '<div id="ktp-clients-print-list-only">'
 				. '<div class="data_list_title">' . $list_title . ' ' . $sort_dropdown . '</div>';
@@ -211,13 +211,13 @@ if ( ! class_exists( 'KTPWP_Client_UI' ) ) {
 		 * @return int Sanitized ID value
 		 */
 		public function set_cookie( $name ) {
-			$cookie_name = 'ktp_' . sanitize_key( $name ) . '_id';
+			$cookie_name = 'ktpwp_' . sanitize_key( $name ) . '_id';
 			$query_id = 1; // Default value
 
 			if ( isset( $_COOKIE[ $cookie_name ] ) ) {
 				$query_id = filter_input( INPUT_COOKIE, $cookie_name, FILTER_SANITIZE_NUMBER_INT );
-			} elseif ( isset( $_GET['data_id'] ) ) {
-				$query_id = filter_input( INPUT_GET, 'data_id', FILTER_SANITIZE_NUMBER_INT );
+			} elseif ( KTPWP_Request::has_query( 'data_id' ) ) {
+				$query_id = KTPWP_Request::query_number( 'data_id' );
 			}
 
 			// Ensure we have a valid positive integer

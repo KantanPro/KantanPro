@@ -18,7 +18,7 @@ global $wpdb;
 echo "ダミーデータ受注書の作成日時修正を開始します...\n";
 
 // 対象テーブル
-$table_name = $wpdb->prefix . 'ktp_order';
+$table_name = $wpdb->prefix . 'ktpwp_order';
 
 // timeフィールドが0またはNULLの受注書を取得
 $orders_to_fix = $wpdb->get_results(

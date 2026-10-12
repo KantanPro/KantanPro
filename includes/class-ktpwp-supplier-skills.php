@@ -62,7 +62,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 
 		/**
 		 * 職能テーブルが存在しない場合のみ作成（リクエスト内1回）
-		 * 新規インストールで ktp_table_setup より前に UI が開かれた場合などの自己修復用。
+		 * 新規インストールで ktpwp_table_setup より前に UI が開かれた場合などの自己修復用。
 		 *
 		 * @since 1.2.39
 		 */
@@ -75,11 +75,11 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 			}
 			$checked = true;
 
-			$table_name = $wpdb->prefix . 'ktp_supplier_skills';
+			$table_name = $wpdb->prefix . 'ktpwp_supplier_skills';
 			$exists     = ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) ) === $table_name );
 			if ( ! $exists ) {
 				// オプションだけ残って dbDelta がスキップされるのを防ぐ
-				delete_option( 'ktp_supplier_skills_table_version' );
+				delete_option( 'ktpwp_supplier_skills_table_version' );
 				$this->create_table();
 			}
 		}
@@ -93,9 +93,9 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 		public function create_table() {
 			global $wpdb;
 
-			$table_name = $wpdb->prefix . 'ktp_supplier_skills';
+			$table_name = $wpdb->prefix . 'ktpwp_supplier_skills';
 			$my_table_version = '3.4.0'; // バージョンを更新（税率NULL許可対応）
-			$option_name = 'ktp_supplier_skills_table_version';
+			$option_name = 'ktpwp_supplier_skills_table_version';
 
 			// Check if table needs to be created or updated
 			$installed_version = get_option( $option_name );
@@ -144,7 +144,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 				return false;
 			} else {
 				// Table exists, check for column structure updates
-				$existing_columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$table_name}`", 0 );
+				$existing_columns = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $table_name ), 0 );
 
 				// If version is less than 3.0.0, perform migration
 				if ( version_compare( $installed_version, '3.0.0', '<' ) ) {
@@ -153,8 +153,8 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 
 					foreach ( $columns_to_remove as $column ) {
 						if ( in_array( $column, $existing_columns, true ) ) {
-							$drop_column_query = "ALTER TABLE `{$table_name}` DROP COLUMN `{$column}`";
-							$result = $wpdb->query( $drop_column_query );
+							$drop_column_query = $wpdb->prepare( "ALTER TABLE %i DROP COLUMN %i", $table_name, $column );
+							$result = $wpdb->query( $drop_column_query ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $drop_column_query は直前で $wpdb->prepare() 済み。
 
 							if ( $result === false ) {
 								ktpwp_debug_log( "KTPWP: Failed to drop column {$column} from supplier skills table" );
@@ -167,8 +167,8 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 
 				// If version is less than 3.2.0, update unit_price precision
 				if ( version_compare( $installed_version, '3.2.0', '<' ) ) {
-					$alter_column_query = "ALTER TABLE `{$table_name}` MODIFY COLUMN `unit_price` DECIMAL(20,10) NOT NULL DEFAULT 0 COMMENT '単価'";
-					$result = $wpdb->query( $alter_column_query );
+					$alter_column_query = $wpdb->prepare( "ALTER TABLE %i MODIFY COLUMN `unit_price` DECIMAL(20,10) NOT NULL DEFAULT 0 COMMENT '単価'", $table_name );
+					$result = $wpdb->query( $alter_column_query ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $alter_column_query は直前で $wpdb->prepare() 済み。
 
 					if ( $result === false ) {
 						ktpwp_debug_log( 'KTPWP: Failed to update unit_price column precision in supplier skills table' );
@@ -179,10 +179,10 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 
 				// If version is less than 3.3.0, add tax_rate column
 				if ( version_compare( $installed_version, '3.3.0', '<' ) ) {
-					$tax_rate_column = $wpdb->get_results( "SHOW COLUMNS FROM `{$table_name}` LIKE 'tax_rate'" );
+					$tax_rate_column = $wpdb->get_results( $wpdb->prepare( 'SHOW COLUMNS FROM %i LIKE %s', $table_name, 'tax_rate' ) );
 					if ( empty( $tax_rate_column ) ) {
-						$alter_column_query = "ALTER TABLE `{$table_name}` ADD COLUMN `tax_rate` DECIMAL(5,2) NOT NULL DEFAULT 10.00 COMMENT '税率' AFTER `unit`";
-						$result = $wpdb->query( $alter_column_query );
+						$alter_column_query = $wpdb->prepare( "ALTER TABLE %i ADD COLUMN `tax_rate` DECIMAL(5,2) NOT NULL DEFAULT 10.00 COMMENT '税率' AFTER `unit`", $table_name );
+						$result = $wpdb->query( $alter_column_query ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $alter_column_query は直前で $wpdb->prepare() 済み。
 
 						if ( $result === false ) {
 							ktpwp_debug_log( 'KTPWP: Failed to add tax_rate column to supplier skills table' );
@@ -194,10 +194,10 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 
 				// If version is less than 3.4.0, allow NULL values for tax_rate column
 				if ( version_compare( $installed_version, '3.4.0', '<' ) ) {
-					$tax_rate_column = $wpdb->get_row( "SHOW COLUMNS FROM `{$table_name}` WHERE Field = 'tax_rate'" );
+					$tax_rate_column = $wpdb->get_row( $wpdb->prepare( 'SHOW COLUMNS FROM %i WHERE Field = %s', $table_name, 'tax_rate' ) );
 					if ( $tax_rate_column && $tax_rate_column->Null === 'NO' ) {
-						$alter_column_query = "ALTER TABLE `{$table_name}` MODIFY COLUMN `tax_rate` DECIMAL(5,2) NULL DEFAULT 10.00 COMMENT '税率'";
-						$result = $wpdb->query( $alter_column_query );
+						$alter_column_query = $wpdb->prepare( "ALTER TABLE %i MODIFY COLUMN `tax_rate` DECIMAL(5,2) NULL DEFAULT 10.00 COMMENT '税率'", $table_name );
+						$result = $wpdb->query( $alter_column_query ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $alter_column_query は直前で $wpdb->prepare() 済み。
 
 						if ( $result === false ) {
 							ktpwp_debug_log( 'KTPWP: Failed to modify tax_rate column to allow NULL values in supplier skills table' );
@@ -232,7 +232,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 
 			$this->ensure_table_exists();
 
-			$table_name = $wpdb->prefix . 'ktp_supplier_skills';
+			$table_name = $wpdb->prefix . 'ktpwp_supplier_skills';
 			$supplier_id = absint( $supplier_id );
 
 			$results = $wpdb->get_results(
@@ -264,7 +264,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 
 			$this->ensure_table_exists();
 
-			$table_name = $wpdb->prefix . 'ktp_supplier_skills';
+			$table_name = $wpdb->prefix . 'ktpwp_supplier_skills';
 			$supplier_id = absint( $supplier_id );
 			$limit = absint( $limit );
 			$offset = absint( $offset );
@@ -305,7 +305,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 
 			$this->ensure_table_exists();
 
-			$table_name = $wpdb->prefix . 'ktp_supplier_skills';
+			$table_name = $wpdb->prefix . 'ktpwp_supplier_skills';
 			$supplier_id = absint( $supplier_id );
 
 			$count = $wpdb->get_var(
@@ -340,7 +340,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 
 		$this->ensure_table_exists();
 
-		$table_name = $wpdb->prefix . 'ktp_supplier_skills';
+		$table_name = $wpdb->prefix . 'ktpwp_supplier_skills';
 		$supplier_id = absint( $supplier_id );
 
 		// Sanitize product data
@@ -401,7 +401,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 
 		$this->ensure_table_exists();
 
-		$table_name = $wpdb->prefix . 'ktp_supplier_skills';
+		$table_name = $wpdb->prefix . 'ktpwp_supplier_skills';
 		$skill_id = absint( $skill_id );
 
 		// Get supplier_id before update to clear cache
@@ -464,7 +464,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 
 		$this->ensure_table_exists();
 
-		$table_name = $wpdb->prefix . 'ktp_supplier_skills';
+		$table_name = $wpdb->prefix . 'ktpwp_supplier_skills';
 		$skill_id = absint( $skill_id );
 
 		// Get supplier_id before deletion to clear cache
@@ -508,7 +508,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 
 		$this->ensure_table_exists();
 
-		$table_name = $wpdb->prefix . 'ktp_supplier_skills';
+		$table_name = $wpdb->prefix . 'ktpwp_supplier_skills';
 		$supplier_id = absint( $supplier_id );
 
 		$result = $wpdb->delete(
@@ -552,7 +552,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 
 			$this->ensure_table_exists();
 
-			$table_name = $wpdb->prefix . 'ktp_supplier_skills';
+			$table_name = $wpdb->prefix . 'ktpwp_supplier_skills';
 			$skill_id = absint( $skill_id );
 
 			$result = $wpdb->get_row(
@@ -582,8 +582,8 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 			$sort_by = 'frequency';
 			$sort_order = class_exists( 'KTPWP_List_Table' ) ? KTPWP_List_Table::default_sort_order() : 'DESC';
 
-			if ( isset( $_GET['skills_sort_by'] ) ) {
-				$sort_by = sanitize_text_field( $_GET['skills_sort_by'] );
+			if ( KTPWP_Request::has_query( 'skills_sort_by' ) ) {
+				$sort_by = KTPWP_Request::query( 'skills_sort_by' );
 				// 安全なカラム名のみ許可（SQLインジェクション対策）
 				$allowed_columns = array( 'id', 'product_name', 'frequency' );
 				if ( ! in_array( $sort_by, $allowed_columns ) ) {
@@ -591,9 +591,9 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 				}
 			}
 
-			if ( isset( $_GET['skills_sort_order'] ) ) {
+			if ( KTPWP_Request::has_query( 'skills_sort_order' ) ) {
 				$sort_order = class_exists( 'KTPWP_List_Table' )
-					? KTPWP_List_Table::sanitize_sort_order( sanitize_text_field( $_GET['skills_sort_order'] ) )
+					? KTPWP_List_Table::sanitize_sort_order( KTPWP_Request::query( 'skills_sort_order' ) )
 					: 'DESC';
 			}
 
@@ -605,7 +605,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 				$query_limit = 10; // フォールバック値（職能リストは10件）
 			}
 
-			$current_page = isset( $_GET['skills_page'] ) ? absint( $_GET['skills_page'] ) : 1;
+			$current_page = KTPWP_Request::has_query( 'skills_page' ) ? absint( KTPWP_Request::query_unslashed( 'skills_page' ) ) : 1;
 			$current_page = max( 1, $current_page );
 			$offset = ( $current_page - 1 ) * $query_limit;
 
@@ -621,7 +621,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 			// Add new product form - 1行バー型
 			$html .= '<div class="add-skill-form" style="margin-bottom: 20px;">';
 			$html .= '<form method="post" style="background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; padding: 12px; display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">';
-			$html .= wp_nonce_field( 'ktp_skills_action', 'ktp_skills_nonce', true, false );
+			$html .= wp_nonce_field( 'ktpwp_skills_action', 'ktpwp_skills_nonce', true, false );
 			$html .= '<input type="hidden" name="skills_action" value="add_skill">';
 			$html .= '<input type="hidden" name="supplier_id" value="' . $supplier_id . '">';
 			// POST 時にクエリが付かない環境でもショートコードが協力会社タブを処理できるよう明示する
@@ -670,7 +670,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 
 			// 職能リストを追加フォームの後に表示（協力会社リストと同じスタイルに統一）
 			if ( ! empty( $skills ) ) {
-				$html .= '<div class="ktp_data_skill_list_box" style="margin-top: 15px;">';
+				$html .= '<div class="ktpwp_data_skill_list_box" style="margin-top: 15px;">';
 
 				$skill_index = 0;
 				foreach ( $skills as $skill ) {
@@ -684,7 +684,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 					$tax_rate = isset( $skill['tax_rate'] ) ? $skill['tax_rate'] : null;
 					$frequency = isset( $skill['frequency'] ) ? absint( $skill['frequency'] ) : 0;
 
-					$html .= '<div class="ktp_data_list_item skill-item" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; line-height: 1.2; min-height: 48px;">';
+					$html .= '<div class="ktpwp_data_list_item skill-item" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; line-height: 1.2; min-height: 48px;">';
 
 					// 商品情報を完全に1行で表示（IDを先頭に、頻度を末尾に追加）
 					$html .= '<div style="flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">';
@@ -718,7 +718,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 				// ページネーションを職能リストの下に表示
 				$html .= $this->render_skills_pagination( $current_page, $total_pages, $total_skills, $supplier_id );
 			} else {
-				$html .= '<div class="ktp_data_list_item" style="padding: 15px 20px; background: linear-gradient(135deg, #fff3cd 0%, #fff8e1 100%); border-radius: 6px; margin: 15px 0; color: #856404; font-weight: 600; text-align: center; box-shadow: 0 3px 12px rgba(0,0,0,0.07); display: flex; align-items: center; justify-content: center; font-size: 16px; gap: 10px;">';
+				$html .= '<div class="ktpwp_data_list_item" style="padding: 15px 20px; background: linear-gradient(135deg, #fff3cd 0%, #fff8e1 100%); border-radius: 6px; margin: 15px 0; color: #856404; font-weight: 600; text-align: center; box-shadow: 0 3px 12px rgba(0,0,0,0.07); display: flex; align-items: center; justify-content: center; font-size: 16px; gap: 10px;">';
 				$html .= '<span class="material-symbols-outlined" style="color: #ffc107;">info</span>';
 				$html .= 'まだサービスがありません。';
 				$html .= '</div>';
@@ -728,7 +728,7 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 			}
 
 			// Add JavaScript for delete functionality
-			$nonce_field = wp_nonce_field( 'ktp_skills_action', 'ktp_skills_nonce', true, false );
+			$nonce_field = wp_nonce_field( 'ktpwp_skills_action', 'ktpwp_skills_nonce', true, false );
 			// 生の <script> を出さずフッターのスクリプトに載せる（wp.org ガイドライン）
 			ktpwp_add_inline_script( '
         document.addEventListener("DOMContentLoaded", function() {
@@ -775,10 +775,10 @@ if ( ! class_exists( 'KTPWP_Supplier_Skills' ) ) {
 			}
 
 			// 現在のソートパラメータを取得
-			$sort_by = isset( $_GET['skills_sort_by'] ) ? sanitize_text_field( $_GET['skills_sort_by'] ) : 'frequency';
-			$sort_order = isset( $_GET['skills_sort_order'] )
+			$sort_by = KTPWP_Request::has_query( 'skills_sort_by' ) ? KTPWP_Request::query( 'skills_sort_by' ) : 'frequency';
+			$sort_order = KTPWP_Request::has_query( 'skills_sort_order' )
 				? ( class_exists( 'KTPWP_List_Table' )
-					? KTPWP_List_Table::sanitize_sort_order( sanitize_text_field( $_GET['skills_sort_order'] ) )
+					? KTPWP_List_Table::sanitize_sort_order( KTPWP_Request::query( 'skills_sort_order' ) )
 					: 'DESC' )
 				: ( class_exists( 'KTPWP_List_Table' ) ? KTPWP_List_Table::default_sort_order() : 'DESC' );
 

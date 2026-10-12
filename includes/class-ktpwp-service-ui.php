@@ -48,6 +48,11 @@ if ( ! class_exists( 'KTPWP_Service_UI' ) ) {
 		 * @return string HTML content
 		 */
 		public function view_table( $name ) {
+			// フォームから来た POST（表示モード・検索語）は、このタブの nonce を確認できたときだけ使う。
+			// データの変更はここではなく、nonce と権限を確認する保存処理側で行う。
+			$ktpwp_form_ok = isset( $_POST['_ktp_service_nonce'] )
+				&& wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_ktp_service_nonce'] ) ), 'ktpwp_service_action' );
+
 			global $wpdb;
 
 			// 表示結果を格納する変数
@@ -58,14 +63,14 @@ if ( ! class_exists( 'KTPWP_Service_UI' ) ) {
 			// -----------------------------
 
 			// テーブル名
-			$table_name = $wpdb->prefix . 'ktp_' . $name;
+			$table_name = $wpdb->prefix . 'ktpwp_' . $name;
 
 			// ソート順の取得（デフォルトはIDの降順 - 新しい順）
 			$sort_by = 'id';
 			$sort_order = class_exists( 'KTPWP_List_Table' ) ? KTPWP_List_Table::default_sort_order() : 'DESC';
 
-			if ( isset( $_GET['sort_by'] ) ) {
-				$sort_by = sanitize_text_field( $_GET['sort_by'] );
+			if ( KTPWP_Request::has_query( 'sort_by' ) ) {
+				$sort_by = KTPWP_Request::query( 'sort_by' );
 				// 安全なカラム名のみ許可（SQLインジェクション対策）
 				$allowed_columns = array( 'id', 'service_name', 'price', 'unit', 'frequency', 'time', 'category', 'tax_rate' );
 				if ( ! in_array( $sort_by, $allowed_columns ) ) {
@@ -73,9 +78,9 @@ if ( ! class_exists( 'KTPWP_Service_UI' ) ) {
 				}
 			}
 
-			if ( isset( $_GET['sort_order'] ) ) {
+			if ( KTPWP_Request::has_query( 'sort_order' ) ) {
 				$sort_order = class_exists( 'KTPWP_List_Table' )
-					? KTPWP_List_Table::sanitize_sort_order( sanitize_text_field( $_GET['sort_order'] ) )
+					? KTPWP_List_Table::sanitize_sort_order( KTPWP_Request::query( 'sort_order' ) )
 					: 'DESC';
 			}
 
@@ -91,7 +96,7 @@ if ( ! class_exists( 'KTPWP_Service_UI' ) ) {
 			}
 
 			// 現在のページ番号を取得
-			$paged = isset( $_GET['paged'] ) ? absint( $_GET['paged'] ) : 1;
+			$paged = KTPWP_Request::has_query( 'paged' ) ? absint( KTPWP_Request::query_unslashed( 'paged' ) ) : 1;
 			$offset = ( $paged - 1 ) * $query_limit;
 
 			// 検索パラメータを取得
@@ -99,20 +104,20 @@ if ( ! class_exists( 'KTPWP_Service_UI' ) ) {
 			$category = '';
 
 			// POSTデータから検索条件を取得
-			if ( isset( $_POST['query_post'] ) && $_POST['query_post'] === 'search_execute' ) {
+			if ( $ktpwp_form_ok && isset( $_POST['query_post'] ) && $_POST['query_post'] === 'search_execute' ) {
 				// 検索フォームからの入力を取得
-				if ( isset( $_POST['search_service_name'] ) ) {
-					$search = sanitize_text_field( $_POST['search_service_name'] );
+				if ( $ktpwp_form_ok && isset( $_POST['search_service_name'] ) ) {
+					$search = sanitize_text_field( wp_unslash( $_POST['search_service_name'] ) );
 				}
-				if ( isset( $_POST['search_category'] ) ) {
-					$category = sanitize_text_field( $_POST['search_category'] );
+				if ( $ktpwp_form_ok && isset( $_POST['search_category'] ) ) {
+					$category = sanitize_text_field( wp_unslash( $_POST['search_category'] ) );
 				}
-			} elseif ( isset( $_GET['search'] ) ) {
+			} elseif ( KTPWP_Request::has_query( 'search' ) ) {
 				// GETパラメータからの検索条件
-				$search = sanitize_text_field( $_GET['search'] );
-			} elseif ( isset( $_GET['category'] ) ) {
+				$search = KTPWP_Request::query( 'search' );
+			} elseif ( KTPWP_Request::has_query( 'category' ) ) {
 				// GETパラメータからのカテゴリー条件
-				$category = sanitize_text_field( $_GET['category'] );
+				$category = KTPWP_Request::query( 'category' );
 			}
 
 			// 検索条件の配列
@@ -152,8 +157,8 @@ if ( ! class_exists( 'KTPWP_Service_UI' ) ) {
 			$message_type = '';
 			$is_searching = false;
 
-			if ( isset( $_GET['message'] ) ) {
-				$message_type = sanitize_key( $_GET['message'] );
+			if ( KTPWP_Request::has_query( 'message' ) ) {
+				$message_type = sanitize_key( KTPWP_Request::query_unslashed( 'message' ) );
 			}
 
 			if ( ! empty( $search ) || ! empty( $category ) ) {
@@ -161,7 +166,7 @@ if ( ! class_exists( 'KTPWP_Service_UI' ) ) {
 				$message_type = 'search_found';
 			}
 
-			if ( isset( $_POST['query_post'] ) && $_POST['query_post'] === 'search_cancel' ) {
+			if ( $ktpwp_form_ok && isset( $_POST['query_post'] ) && $_POST['query_post'] === 'search_cancel' ) {
 				$is_searching = false;
 				$message_type = 'search_cancelled';
 			}
@@ -181,8 +186,8 @@ if ( ! class_exists( 'KTPWP_Service_UI' ) ) {
 			$html .= $this->render_search_form( $name );
 
 			// サービス一覧テーブルのヘッダー
-			$html .= '<div class="ktp_service_list_container">';
-			$html .= '<table class="ktp_service_table wp-list-table widefat fixed striped">';
+			$html .= '<div class="ktpwp_service_list_container">';
+			$html .= '<table class="ktpwp_service_table wp-list-table widefat fixed striped">';
             $html .= '<thead>
             <tr>
                 <th class="manage-column column-id">ID</th>
@@ -260,7 +265,7 @@ if ( ! class_exists( 'KTPWP_Service_UI' ) ) {
 
 					// 削除フォーム
 					$html .= '<form method="post" action="' . esc_url( $base_page_url ) . '" style="display:inline;" onsubmit="return confirm(\'' . esc_js( __( 'このサービスを削除してもよろしいですか？', 'kantanpro' ) ) . '\');">';
-					$html .= '<input type="hidden" name="_ktp_service_nonce" value="' . wp_create_nonce( 'ktp_service_action' ) . '">';
+					$html .= '<input type="hidden" name="_ktp_service_nonce" value="' . wp_create_nonce( 'ktpwp_service_action' ) . '">';
 					$html .= '<input type="hidden" name="tab_name" value="' . esc_attr( $name ) . '">';
 					$html .= '<input type="hidden" name="data_id" value="' . esc_attr( $service_id ) . '">';
 					$html .= '<input type="hidden" name="query_post" value="delete">';
@@ -340,14 +345,14 @@ if ( ! class_exists( 'KTPWP_Service_UI' ) ) {
 			$html .= '</div>';
 			$html .= '</div>';
 
-			$html .= '</div>'; // .ktp_service_list_container
+			$html .= '</div>'; // .ktpwp_service_list_container
 
 			// 新規サービス追加フォーム
 			if ( current_user_can( 'manage_options' ) ) {
-				$html .= '<div class="ktp_new_service_form">';
+				$html .= '<div class="ktpwp_new_service_form">';
 				$html .= '<h3>' . esc_html__( '新規サービスを追加', 'kantanpro' ) . '</h3>';
 				$html .= '<form method="post" action="' . esc_url( $base_page_url ) . '" class="ktp-service-form">';
-				$html .= '<input type="hidden" name="_ktp_service_nonce" value="' . wp_create_nonce( 'ktp_service_action' ) . '">';
+				$html .= '<input type="hidden" name="_ktp_service_nonce" value="' . wp_create_nonce( 'ktpwp_service_action' ) . '">';
 				$html .= '<input type="hidden" name="tab_name" value="' . esc_attr( $name ) . '">';
 				$html .= '<input type="hidden" name="query_post" value="new">';
 
@@ -406,8 +411,8 @@ if ( ! class_exists( 'KTPWP_Service_UI' ) ) {
 			}
 
 			// リストフッター
-			$html .= '</div>'; // .ktp_data_list_box
-			$html .= '</div>'; // .ktp_data_contents
+			$html .= '</div>'; // .ktpwp_data_list_box
+			$html .= '</div>'; // .ktpwp_data_contents
 
 			return $html;
 		}
@@ -441,8 +446,8 @@ if ( ! class_exists( 'KTPWP_Service_UI' ) ) {
 
 			// リスト表示部分の開始
 			// HEREDOC は使わない（wp.org ガイドライン: 未エスケープ変数を検査ツールが追えないため）
-			$html = '<div class="ktp_data_contents">'
-				. '<div class="ktp_data_list_box">'
+			$html = '<div class="ktpwp_data_contents">'
+				. '<div class="ktpwp_data_list_box">'
 				. '<div class="data_list_title">■ ' . esc_html__( 'サービスリスト', 'kantanpro' ) . '</div>';
 
 			return $html;
@@ -459,7 +464,7 @@ if ( ! class_exists( 'KTPWP_Service_UI' ) ) {
 			$current_page_id = get_queried_object_id();
 			$base_page_url = add_query_arg( array( 'page_id' => $current_page_id ), home_url( $wp->request ) );
 
-			$nonce = wp_create_nonce( 'ktp_service_action' );
+			$nonce = wp_create_nonce( 'ktpwp_service_action' );
 
 			// 検索フォームのHTML
 			$html = '<div class="search-form-container" style="padding: 15px; background: #f9f9f9; border-radius: 5px; margin-bottom: 20px;">';
@@ -554,13 +559,13 @@ if ( ! class_exists( 'KTPWP_Service_UI' ) ) {
 				return 1;
 			}
 
-			$cookie_name = 'ktp_' . sanitize_key( $name ) . '_id';
+			$cookie_name = 'ktpwp_' . sanitize_key( $name ) . '_id';
 			$query_id = 1;
 
 			if ( isset( $_COOKIE[ $cookie_name ] ) ) {
 				$query_id = absint( $_COOKIE[ $cookie_name ] );
-			} elseif ( isset( $_GET['data_id'] ) ) {
-				$query_id = absint( $_GET['data_id'] );
+			} elseif ( KTPWP_Request::has_query( 'data_id' ) ) {
+				$query_id = absint( KTPWP_Request::query_unslashed( 'data_id' ) );
 			}
 
 			// Validate ID is positive

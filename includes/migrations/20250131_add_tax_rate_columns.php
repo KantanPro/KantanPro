@@ -29,20 +29,20 @@ class KTPWP_Migration_20250131_Add_Tax_Rate_Columns {
         
         $success = true;
         
-        // Add tax_rate column to ktp_order_invoice_items table
-        $invoice_table = $wpdb->prefix . 'ktp_order_invoice_items';
+        // Add tax_rate column to ktpwp_order_invoice_items table
+        $invoice_table = $wpdb->prefix . 'ktpwp_order_invoice_items';
         if ( self::add_tax_rate_column( $invoice_table, 'invoice_items' ) === false ) {
             $success = false;
         }
         
-        // Add tax_rate column to ktp_order_cost_items table
-        $cost_table = $wpdb->prefix . 'ktp_order_cost_items';
+        // Add tax_rate column to ktpwp_order_cost_items table
+        $cost_table = $wpdb->prefix . 'ktpwp_order_cost_items';
         if ( self::add_tax_rate_column( $cost_table, 'cost_items' ) === false ) {
             $success = false;
         }
         
-        // Add tax_rate column to ktp_service table
-        $service_table = $wpdb->prefix . 'ktp_service';
+        // Add tax_rate column to ktpwp_service table
+        $service_table = $wpdb->prefix . 'ktpwp_service';
         if ( self::add_tax_rate_column( $service_table, 'service' ) === false ) {
             $success = false;
         }
@@ -80,9 +80,7 @@ class KTPWP_Migration_20250131_Add_Tax_Rate_Columns {
         
         // Check if the column already exists
         $column_exists = $wpdb->get_var( 
-            $wpdb->prepare( 
-                "SHOW COLUMNS FROM `{$table_name}` LIKE %s", 
-                'tax_rate' 
+            $wpdb->prepare( 'SHOW COLUMNS FROM %i LIKE %s', $table_name, 'tax_rate' 
             ) 
         );
         
@@ -93,13 +91,13 @@ class KTPWP_Migration_20250131_Add_Tax_Rate_Columns {
         
         // Add the tax_rate column
         // テーブルによってカラムの位置を調整
-        if ( $table_name === $wpdb->prefix . 'ktp_service' ) {
-            $sql = "ALTER TABLE `{$table_name}` ADD COLUMN `tax_rate` DECIMAL(5,2) NOT NULL DEFAULT 10.00 COMMENT '税率（%）' AFTER `price`";
+        if ( $table_name === $wpdb->prefix . 'ktpwp_service' ) {
+            $sql = $wpdb->prepare( "ALTER TABLE %i ADD COLUMN `tax_rate` DECIMAL(5,2) NOT NULL DEFAULT 10.00 COMMENT '税率（%%）' AFTER `price`", $table_name );
         } else {
-            $sql = "ALTER TABLE `{$table_name}` ADD COLUMN `tax_rate` DECIMAL(5,2) NOT NULL DEFAULT 10.00 COMMENT '税率（%）' AFTER `amount`";
+            $sql = $wpdb->prepare( "ALTER TABLE %i ADD COLUMN `tax_rate` DECIMAL(5,2) NOT NULL DEFAULT 10.00 COMMENT '税率（%%）' AFTER `amount`", $table_name );
         }
         
-        $result = $wpdb->query( $sql );
+        $result = $wpdb->query( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $sql は直前で $wpdb->prepare() 済み。
         
         if ( $result === false ) {
             ktpwp_debug_log( 'KTPWP Migration: Failed to add tax_rate column to ' . $table_name . '. Error: ' . $wpdb->last_error );
@@ -118,7 +116,7 @@ class KTPWP_Migration_20250131_Add_Tax_Rate_Columns {
      * @return bool True on success, false on failure
      */
     private static function add_tax_settings() {
-        $general_settings = get_option( 'ktp_general_settings', array() );
+        $general_settings = get_option( 'ktpwp_general_settings', array() );
         
         // Add default tax settings if they don't exist
         $tax_settings_added = false;
@@ -136,7 +134,7 @@ class KTPWP_Migration_20250131_Add_Tax_Rate_Columns {
 
         
         if ( $tax_settings_added ) {
-            $result = update_option( 'ktp_general_settings', $general_settings );
+            $result = update_option( 'ktpwp_general_settings', $general_settings );
             if ( $result ) {
                 ktpwp_debug_log( 'KTPWP Migration: Successfully added tax settings to general settings' );
                 return true;
@@ -159,20 +157,20 @@ class KTPWP_Migration_20250131_Add_Tax_Rate_Columns {
         
         $success = true;
         
-        // Remove tax_rate column from ktp_order_invoice_items table
-        $invoice_table = $wpdb->prefix . 'ktp_order_invoice_items';
+        // Remove tax_rate column from ktpwp_order_invoice_items table
+        $invoice_table = $wpdb->prefix . 'ktpwp_order_invoice_items';
         if ( self::remove_tax_rate_column( $invoice_table, 'invoice_items' ) === false ) {
             $success = false;
         }
         
-        // Remove tax_rate column from ktp_order_cost_items table
-        $cost_table = $wpdb->prefix . 'ktp_order_cost_items';
+        // Remove tax_rate column from ktpwp_order_cost_items table
+        $cost_table = $wpdb->prefix . 'ktpwp_order_cost_items';
         if ( self::remove_tax_rate_column( $cost_table, 'cost_items' ) === false ) {
             $success = false;
         }
         
-        // Remove tax_rate column from ktp_service table
-        $service_table = $wpdb->prefix . 'ktp_service';
+        // Remove tax_rate column from ktpwp_service table
+        $service_table = $wpdb->prefix . 'ktpwp_service';
         if ( self::remove_tax_rate_column( $service_table, 'service' ) === false ) {
             $success = false;
         }
@@ -210,9 +208,7 @@ class KTPWP_Migration_20250131_Add_Tax_Rate_Columns {
         
         // Check if the column exists
         $column_exists = $wpdb->get_var( 
-            $wpdb->prepare( 
-                "SHOW COLUMNS FROM `{$table_name}` LIKE %s", 
-                'tax_rate' 
+            $wpdb->prepare( 'SHOW COLUMNS FROM %i LIKE %s', $table_name, 'tax_rate' 
             ) 
         );
         
@@ -222,9 +218,9 @@ class KTPWP_Migration_20250131_Add_Tax_Rate_Columns {
         }
         
         // Remove the tax_rate column
-        $sql = "ALTER TABLE `{$table_name}` DROP COLUMN `tax_rate`";
+        $sql = $wpdb->prepare( "ALTER TABLE %i DROP COLUMN `tax_rate`", $table_name );
         
-        $result = $wpdb->query( $sql );
+        $result = $wpdb->query( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $sql は直前で $wpdb->prepare() 済み。
         
         if ( $result === false ) {
             ktpwp_debug_log( 'KTPWP Migration: Failed to remove tax_rate column from ' . $table_name . '. Error: ' . $wpdb->last_error );
@@ -243,7 +239,7 @@ class KTPWP_Migration_20250131_Add_Tax_Rate_Columns {
      * @return bool True on success, false on failure
      */
     private static function remove_tax_settings() {
-        $general_settings = get_option( 'ktp_general_settings', array() );
+        $general_settings = get_option( 'ktpwp_general_settings', array() );
         
         // Remove tax settings if they exist
         $tax_settings_removed = false;
@@ -261,7 +257,7 @@ class KTPWP_Migration_20250131_Add_Tax_Rate_Columns {
 
         
         if ( $tax_settings_removed ) {
-            $result = update_option( 'ktp_general_settings', $general_settings );
+            $result = update_option( 'ktpwp_general_settings', $general_settings );
             if ( $result ) {
                 ktpwp_debug_log( 'KTPWP Migration: Successfully removed tax settings from general settings' );
                 return true;

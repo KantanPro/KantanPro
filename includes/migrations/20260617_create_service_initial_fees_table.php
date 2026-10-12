@@ -9,6 +9,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// ファイル内の変数をグローバルに出さないよう、処理全体を無名関数で包む（読み込んだ時点で実行される）。
+( static function () {
+
 if ( ! function_exists( 'dbDelta' ) ) {
 	require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 }
@@ -16,7 +19,7 @@ if ( ! function_exists( 'dbDelta' ) ) {
 global $wpdb;
 
 $charset_collate = $wpdb->get_charset_collate();
-$table           = $wpdb->prefix . 'ktp_service_initial_fee';
+$table           = $wpdb->prefix . 'ktpwp_service_initial_fee';
 
 $sql = "CREATE TABLE {$table} (
 	id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -32,7 +35,7 @@ $sql = "CREATE TABLE {$table} (
 
 dbDelta( $sql );
 
-update_option( 'ktp_service_initial_fees_migration_completed', '2026-06-17' );
+update_option( 'ktpwp_service_initial_fees_migration_completed', '2026-06-17' );
 
 if ( ! function_exists( 'ktpwp_create_service_initial_fees_table' ) ) {
 	/**
@@ -48,3 +51,4 @@ if ( ! function_exists( 'ktpwp_create_service_initial_fees_table' ) ) {
 		return false;
 	}
 }
+} )();

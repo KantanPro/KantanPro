@@ -11,20 +11,6 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Exit if accessed directly
 }
 
-// コマンドライン引数を取得
-$command = isset( $argv[1] ) ? $argv[1] : '';
-
-// WP-CLIコマンド登録: wp ktp migrate_table
-if ( defined( 'WP_CLI' ) && WP_CLI ) {
-    WP_CLI::add_command(
-        'ktp migrate_table',
-        function () {
-			require_once dirname( __DIR__ ) . '/migrate-table-structure.php';
-			WP_CLI::success( 'マイグレーション完了' );
-		}
-    );
-}
-
 // WP-CLI用マイグレーション一括実行コマンド
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
     WP_CLI::add_command(
@@ -66,7 +52,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 // ダミーデータ受注書の作成日時修正コマンド
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
     WP_CLI::add_command(
-        'ktp fix-order-dates',
+        'ktpwp fix-order-dates',
         function ( $args, $assoc_args ) {
             global $wpdb;
             
@@ -80,7 +66,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
             WP_CLI::log('対象: timeフィールドが0またはNULL、または顧客情報が空の受注書');
             
             // 対象テーブル
-            $table_name = $wpdb->prefix . 'ktp_order';
+            $table_name = $wpdb->prefix . 'ktpwp_order';
             
             // timeフィールドが0またはNULL、または顧客情報が空の受注書を取得
             $orders_to_fix = $wpdb->get_results(
@@ -125,7 +111,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
                 // 顧客情報を取得
                 $client_info = null;
                 if ($order->client_id) {
-                    $client_table = $wpdb->prefix . 'ktp_client';
+                    $client_table = $wpdb->prefix . 'ktpwp_client';
                     $client_info = $wpdb->get_row(
                         $wpdb->prepare(
                             "SELECT company_name, name FROM {$client_table} WHERE id = %d",
@@ -207,50 +193,4 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
             }
         }
     );
-}
-
-// 消費税対応マイグレーションの実行
-if ( $command === 'tax-rate-migration' ) {
-    echo "消費税対応マイグレーションを実行します...\n";
-    
-    // マイグレーションファイルを読み込み
-    require_once plugin_dir_path( __FILE__ ) . 'migrations/20250131_add_tax_rate_columns.php';
-    
-    // マイグレーションを実行
-    $result = KTPWP_Migration_20250131_Add_Tax_Rate_Columns::up();
-    
-    if ( $result ) {
-        echo "✅ 消費税対応マイグレーションが正常に完了しました。\n";
-        echo "- ktp_order_invoice_itemsテーブルにtax_rateカラムを追加\n";
-        echo "- ktp_order_cost_itemsテーブルにtax_rateカラムを追加\n";
-        echo "- ktp_serviceテーブルにtax_rateカラムを追加\n";
-        echo "- 一般設定に税率設定を追加\n";
-    } else {
-        echo "❌ 消費税対応マイグレーションでエラーが発生しました。\n";
-        echo "エラーログを確認してください。\n";
-    }
-    
-    exit;
-}
-
-// 消費税対応マイグレーションのロールバック
-if ( $command === 'tax-rate-migration-rollback' ) {
-    echo "消費税対応マイグレーションをロールバックします...\n";
-    
-    // マイグレーションファイルを読み込み
-    require_once plugin_dir_path( __FILE__ ) . 'migrations/20250131_add_tax_rate_columns.php';
-    
-    // マイグレーションをロールバック
-    $result = KTPWP_Migration_20250131_Add_Tax_Rate_Columns::down();
-    
-    if ( $result ) {
-        echo "✅ 消費税対応マイグレーションのロールバックが正常に完了しました。\n";
-        echo "- tax_rateカラムを削除\n";
-        echo "- 税率設定を削除\n";
-    } else {
-        echo "❌ 消費税対応マイグレーションのロールバックでエラーが発生しました。\n";
-        echo "エラーログを確認してください。\n";
-    }
-    
-    exit;
 }

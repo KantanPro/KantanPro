@@ -33,8 +33,8 @@ class KTPWP_Order_Auxiliary {
 	public static function install_tables() {
 		global $wpdb;
 
-		$mail_table = $wpdb->prefix . 'ktp_order_customer_mail_log';
-		$file_table = $wpdb->prefix . 'ktp_order_file';
+		$mail_table = $wpdb->prefix . 'ktpwp_order_customer_mail_log';
+		$file_table = $wpdb->prefix . 'ktpwp_order_file';
 
 		$mail_exists = ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $mail_table ) ) === $mail_table );
 		$file_exists = ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $file_table ) ) === $file_table );
@@ -92,12 +92,12 @@ class KTPWP_Order_Auxiliary {
 	public static function upgrade_mail_log_schema() {
 		global $wpdb;
 
-		$table = $wpdb->prefix . 'ktp_order_customer_mail_log';
+		$table = $wpdb->prefix . 'ktpwp_order_customer_mail_log';
 		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) !== $table ) {
 			return;
 		}
 
-		$columns = $wpdb->get_results( "SHOW COLUMNS FROM `{$table}`" );
+		$columns = $wpdb->get_results( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $table ) );
 		$names   = array();
 		foreach ( (array) $columns as $col ) {
 			if ( isset( $col->Field ) ) {
@@ -109,7 +109,7 @@ class KTPWP_Order_Auxiliary {
 			$wpdb->query( "ALTER TABLE `{$table}` ADD COLUMN mail_kind varchar(32) NOT NULL DEFAULT 'customer' AFTER user_id" );
 		}
 
-		$columns = $wpdb->get_results( "SHOW COLUMNS FROM `{$table}`" );
+		$columns = $wpdb->get_results( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $table ) );
 		$names   = array();
 		foreach ( (array) $columns as $col ) {
 			if ( isset( $col->Field ) ) {
@@ -120,7 +120,7 @@ class KTPWP_Order_Auxiliary {
 			$wpdb->query( "ALTER TABLE `{$table}` ADD COLUMN context_note varchar(500) DEFAULT NULL AFTER mail_kind" );
 		}
 
-		$columns = $wpdb->get_results( "SHOW COLUMNS FROM `{$table}`" );
+		$columns = $wpdb->get_results( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $table ) );
 		$names   = array();
 		foreach ( (array) $columns as $col ) {
 			if ( isset( $col->Field ) ) {
@@ -204,7 +204,7 @@ class KTPWP_Order_Auxiliary {
 
 		self::install_tables();
 
-		$table   = $wpdb->prefix . 'ktp_order_customer_mail_log';
+		$table   = $wpdb->prefix . 'ktpwp_order_customer_mail_log';
 		$uid     = get_current_user_id();
 		$uid_db  = $uid > 0 ? $uid : 0;
 		$cc_json = null;
@@ -270,7 +270,7 @@ class KTPWP_Order_Auxiliary {
 		global $wpdb;
 
 		self::install_tables();
-		$table = $wpdb->prefix . 'ktp_order_customer_mail_log';
+		$table = $wpdb->prefix . 'ktpwp_order_customer_mail_log';
 
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
@@ -290,7 +290,7 @@ class KTPWP_Order_Auxiliary {
 		global $wpdb;
 
 		self::install_tables();
-		$table = $wpdb->prefix . 'ktp_order_file';
+		$table = $wpdb->prefix . 'ktpwp_order_file';
 
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
@@ -529,7 +529,7 @@ class KTPWP_Order_Auxiliary {
 
 		self::install_tables();
 
-		$table_order = $wpdb->prefix . 'ktp_order';
+		$table_order = $wpdb->prefix . 'ktpwp_order';
 		$exists      = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM `{$table_order}` WHERE id = %d", $order_id ) );
 		if ( $exists < 1 ) {
 			return 'upload_err_order';
@@ -603,7 +603,7 @@ class KTPWP_Order_Auxiliary {
 		$uid      = get_current_user_id();
 		$uid_db   = $uid > 0 ? $uid : 0;
 
-		$file_table = $wpdb->prefix . 'ktp_order_file';
+		$file_table = $wpdb->prefix . 'ktpwp_order_file';
 		$wpdb->insert(
 			$file_table,
 			array(
@@ -633,7 +633,7 @@ class KTPWP_Order_Auxiliary {
 		}
 
 		self::install_tables();
-		$table = $wpdb->prefix . 'ktp_order_file';
+		$table = $wpdb->prefix . 'ktpwp_order_file';
 		$row   = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM `{$table}` WHERE id = %d AND order_id = %d", $file_id, $order_id ) );
 		if ( ! $row ) {
 			return 'del_err';
@@ -658,7 +658,7 @@ class KTPWP_Order_Auxiliary {
 
 		self::install_tables();
 
-		$file_table = $wpdb->prefix . 'ktp_order_file';
+		$file_table = $wpdb->prefix . 'ktpwp_order_file';
 		$rows       = $wpdb->get_results( $wpdb->prepare( "SELECT storage_path FROM `{$file_table}` WHERE order_id = %d", $order_id ) );
 		if ( is_array( $rows ) ) {
 			$upload = wp_upload_dir();
@@ -672,7 +672,7 @@ class KTPWP_Order_Auxiliary {
 		}
 		$wpdb->delete( $file_table, array( 'order_id' => $order_id ), array( '%d' ) );
 
-		$mail_table = $wpdb->prefix . 'ktp_order_customer_mail_log';
+		$mail_table = $wpdb->prefix . 'ktpwp_order_customer_mail_log';
 		$wpdb->delete( $mail_table, array( 'order_id' => $order_id ), array( '%d' ) );
 	}
 
@@ -684,7 +684,8 @@ class KTPWP_Order_Auxiliary {
 			wp_die( esc_html__( '権限がありません。', 'kantanpro' ), '', array( 'response' => 403 ) );
 		}
 
-		$order_id = isset( $_POST['order_id_for_file'] ) ? absint( $_POST['order_id_for_file'] ) : 0;
+		// nonce のアクション名に受注書 ID を含めているので、ID だけは検証の前に読む（absint 済み）。
+		$order_id = isset( $_POST['order_id_for_file'] ) ? absint( wp_unslash( $_POST['order_id_for_file'] ) ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- 直後に wp_verify_nonce() で検証する。
 		if ( $order_id <= 0 ) {
 			wp_die( esc_html__( '無効なリクエストです。', 'kantanpro' ), '', array( 'response' => 400 ) );
 		}
@@ -694,15 +695,24 @@ class KTPWP_Order_Auxiliary {
 			wp_die( esc_html__( '無効なリクエストです。', 'kantanpro' ), '', array( 'response' => 403 ) );
 		}
 
-		$redirect = self::resolve_order_file_redirect( $order_id );
+		$redirect = self::resolve_order_file_redirect( $order_id, isset( $_POST['ktpwp_redirect'] ) ? esc_url_raw( wp_unslash( $_POST['ktpwp_redirect'] ) ) : '' );
 
 		if ( empty( $_FILES['ktpwp_order_file']['name'] ) || ! isset( $_FILES['ktpwp_order_file'] ) ) {
 			$notice = 'upload_err';
 		} else {
-			$notice = self::handle_file_upload( $order_id, $_FILES['ktpwp_order_file'] );
+			$notice = self::handle_file_upload(
+				$order_id,
+				array(
+					'name'     => sanitize_file_name( wp_unslash( $_FILES['ktpwp_order_file']['name'] ) ),
+					'type'     => sanitize_mime_type( wp_unslash( $_FILES['ktpwp_order_file']['type'] ?? '' ) ),
+					'tmp_name' => sanitize_text_field( $_FILES['ktpwp_order_file']['tmp_name'] ?? '' ),
+					'error'    => absint( $_FILES['ktpwp_order_file']['error'] ?? 0 ),
+					'size'     => absint( $_FILES['ktpwp_order_file']['size'] ?? 0 ),
+				)
+			);
 		}
 
-		wp_safe_redirect( add_query_arg( 'ktp_of_notice', $notice, $redirect ) );
+		wp_safe_redirect( add_query_arg( 'ktpwp_of_notice', $notice, $redirect ) );
 		exit;
 	}
 
@@ -714,7 +724,8 @@ class KTPWP_Order_Auxiliary {
 			wp_die( esc_html__( '権限がありません。', 'kantanpro' ), '', array( 'response' => 403 ) );
 		}
 
-		$order_id = isset( $_POST['order_id_for_file'] ) ? absint( $_POST['order_id_for_file'] ) : 0;
+		// nonce のアクション名に受注書 ID を含めているので、ID だけは検証の前に読む（absint 済み）。
+		$order_id = isset( $_POST['order_id_for_file'] ) ? absint( wp_unslash( $_POST['order_id_for_file'] ) ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- 直後に wp_verify_nonce() で検証する。
 		if ( $order_id <= 0 ) {
 			wp_die( esc_html__( '無効なリクエストです。', 'kantanpro' ), '', array( 'response' => 400 ) );
 		}
@@ -724,18 +735,19 @@ class KTPWP_Order_Auxiliary {
 			wp_die( esc_html__( '無効なリクエストです。', 'kantanpro' ), '', array( 'response' => 403 ) );
 		}
 
-		$redirect = self::resolve_order_file_redirect( $order_id );
-		$file_id  = isset( $_POST['ktpwp_order_file_id'] ) ? absint( $_POST['ktpwp_order_file_id'] ) : 0;
+		$redirect = self::resolve_order_file_redirect( $order_id, isset( $_POST['ktpwp_redirect'] ) ? esc_url_raw( wp_unslash( $_POST['ktpwp_redirect'] ) ) : '' );
+		$file_id  = isset( $_POST['ktpwp_order_file_id'] ) ? absint( wp_unslash( $_POST['ktpwp_order_file_id'] ) ) : 0;
 		$notice   = self::handle_file_delete( $order_id, $file_id );
 
-		wp_safe_redirect( add_query_arg( 'ktp_of_notice', $notice, $redirect ) );
+		wp_safe_redirect( add_query_arg( 'ktpwp_of_notice', $notice, $redirect ) );
 		exit;
 	}
 
 	/**
-	 * @param int $order_id 受注書 ID（フォールバック URL 用）
+	 * @param int    $order_id  受注書 ID（フォールバック URL 用）
+	 * @param string $requested 送信された戻り先（呼び出し側で nonce 確認・esc_url_raw 済み）。
 	 */
-	private static function resolve_order_file_redirect( int $order_id ): string {
+	private static function resolve_order_file_redirect( int $order_id, string $requested = '' ): string {
 		$fallback = home_url( '/' );
 		if ( class_exists( 'KTPWP_Main' ) ) {
 			$fallback = add_query_arg(
@@ -747,13 +759,11 @@ class KTPWP_Order_Auxiliary {
 			);
 		}
 
-		if ( empty( $_POST['ktpwp_redirect'] ) ) {
+		if ( $requested === '' ) {
 			return $fallback;
 		}
 
-		$candidate = esc_url_raw( wp_unslash( (string) $_POST['ktpwp_redirect'] ) );
-
-		return wp_validate_redirect( $candidate, $fallback );
+		return wp_validate_redirect( $requested, $fallback );
 	}
 
 	public static function handle_download() {
@@ -761,7 +771,7 @@ class KTPWP_Order_Auxiliary {
 			wp_die( esc_html__( '権限がありません。', 'kantanpro' ), 403 );
 		}
 
-		$file_id = isset( $_GET['file_id'] ) ? absint( $_GET['file_id'] ) : 0;
+		$file_id = KTPWP_Request::has_query( 'file_id' ) ? absint( KTPWP_Request::query_unslashed( 'file_id' ) ) : 0;
 		if ( $file_id <= 0 ) {
 			wp_die( esc_html__( '無効なリクエストです。', 'kantanpro' ), 400 );
 		}
@@ -770,7 +780,7 @@ class KTPWP_Order_Auxiliary {
 
 		global $wpdb;
 		self::install_tables();
-		$table = $wpdb->prefix . 'ktp_order_file';
+		$table = $wpdb->prefix . 'ktpwp_order_file';
 		$row   = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM `{$table}` WHERE id = %d", $file_id ) );
 		if ( ! $row ) {
 			wp_die( esc_html__( 'ファイルが見つかりません。', 'kantanpro' ), 404 );
@@ -782,7 +792,7 @@ class KTPWP_Order_Auxiliary {
 			wp_die( esc_html__( 'ファイルが見つかりません。', 'kantanpro' ), 404 );
 		}
 
-		$inline = isset( $_GET['inline'] ) && (string) $_GET['inline'] === '1';
+		$inline = KTPWP_Request::has_query( 'inline' ) && (string) KTPWP_Request::query_unslashed( 'inline' ) === '1';
 		$mime   = is_string( $row->mime_type ) && $row->mime_type !== '' ? (string) $row->mime_type : 'application/octet-stream';
 		if ( $mime === 'application/octet-stream' && strtolower( pathinfo( (string) $row->original_filename, PATHINFO_EXTENSION ) ) === 'pdf' ) {
 			$mime = 'application/pdf';

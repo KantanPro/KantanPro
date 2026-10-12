@@ -12,7 +12,7 @@
  * - 請求項目とコスト項目を各受注書に追加
  * 
  * 対象外データ：
- * - スタッフチャット（ktp_order_staff_chat）は削除対象に含めるが、新規作成時は初期メッセージを作成しない
+ * - スタッフチャット（ktpwp_order_staff_chat）は削除対象に含めるが、新規作成時は初期メッセージを作成しない
  * 
  * 修正内容（v2.6.2）:
  * - 受注書 INSERT をテーブル構造に合わせて動的にカラムを選ぶよう修正（案件が作成されない不具合）
@@ -26,7 +26,7 @@
  * - 進捗ラベルをアプリ仕様（受付中・見積中・受注・完了・請求済・入金済）に合わせて修正
  * 
  * 修正内容（v2.5.3）:
- * - スタッフチャットテーブル（ktp_order_staff_chat）を削除対象に含める
+ * - スタッフチャットテーブル（ktpwp_order_staff_chat）を削除対象に含める
  * - ダミーデータ作成時はスタッフチャットの初期メッセージを作成しない
  * 
  * 修正内容（v2.5.2）:
@@ -95,18 +95,18 @@ if (!$wpdb->check_connection()) {
 
 // テーブル存在チェック
 $required_tables = array(
-    'ktp_client',
-    'ktp_supplier', 
-    'ktp_service',
-    'ktp_supplier_skills',
-    'ktp_order',
-    'ktp_order_invoice_items',
-    'ktp_order_cost_items'
+    'ktpwp_client',
+    'ktpwp_supplier', 
+    'ktpwp_service',
+    'ktpwp_supplier_skills',
+    'ktpwp_order',
+    'ktpwp_order_invoice_items',
+    'ktpwp_order_cost_items'
 );
 
 foreach ($required_tables as $table) {
     $table_name = $wpdb->prefix . $table;
-    $table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$table_name}'");
+    $table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) );
     if (!$table_exists) {
         ktpwp_debug_log("KTPWP: 必要なテーブルが存在しません: {$table_name}");
         return false;
@@ -118,7 +118,7 @@ foreach ($required_tables as $table) {
  *
  * @return bool
  */
-function ktp_dummy_data_uses_japanese() {
+function ktpwp_dummy_data_uses_japanese() {
 	if ( function_exists( 'determine_locale' ) ) {
 		$locale = determine_locale();
 	} elseif ( function_exists( 'get_locale' ) ) {
@@ -136,7 +136,7 @@ function ktp_dummy_data_uses_japanese() {
  * @param array<int|string, mixed> $items 候補。
  * @return mixed
  */
-function ktp_dummy_pick( array $items ) {
+function ktpwp_dummy_pick( array $items ) {
 	if ( $items === array() ) {
 		return '';
 	}
@@ -151,7 +151,7 @@ function ktp_dummy_pick( array $items ) {
  * @param int                      $count 件数。
  * @return array<int, mixed>
  */
-function ktp_dummy_pick_many( array $items, $count ) {
+function ktpwp_dummy_pick_many( array $items, $count ) {
 	$count = max( 0, (int) $count );
 	if ( $count === 0 || $items === array() ) {
 		return array();
@@ -172,7 +172,7 @@ function ktp_dummy_pick_many( array $items, $count ) {
  *
  * @return string
  */
-function ktp_dummy_random_japanese_person_name() {
+function ktpwp_dummy_random_japanese_person_name() {
 	$family = array(
 		'山田', '佐藤', '鈴木', '田中', '高橋', '伊藤', '渡辺', '中村', '小林', '加藤',
 		'吉田', '山本', '松本', '井上', '木村', '林', '斎藤', '清水', '山口', '阿部',
@@ -184,7 +184,7 @@ function ktp_dummy_random_japanese_person_name() {
 		'智子', '亮', '麻衣', '慎一', '優子', '和也', '里奈', '雄大', '千尋', '光',
 	);
 
-	return ktp_dummy_pick( $family ) . ktp_dummy_pick( $given );
+	return ktpwp_dummy_pick( $family ) . ktpwp_dummy_pick( $given );
 }
 
 /**
@@ -192,13 +192,13 @@ function ktp_dummy_random_japanese_person_name() {
  *
  * @return array<string, mixed>
  */
-function ktp_dummy_data_get_config() {
+function ktpwp_dummy_data_get_config() {
 	static $config = null;
 	if ( $config !== null ) {
 		return $config;
 	}
 
-	$ja = ktp_dummy_data_uses_japanese();
+	$ja = ktpwp_dummy_data_uses_japanese();
 
 	if ( $ja ) {
 		$config = array(
@@ -493,7 +493,7 @@ function ktp_dummy_data_get_config() {
  * @param array<string, mixed> $config カタログ。
  * @return float|null
  */
-function ktp_dummy_get_tax_rate_by_category_key( $category_key, array $config ) {
+function ktpwp_dummy_get_tax_rate_by_category_key( $category_key, array $config ) {
 	if ( ! isset( $config['categories'][ $category_key ] ) ) {
 		return 10.00;
 	}
@@ -507,14 +507,14 @@ function ktp_dummy_get_tax_rate_by_category_key( $category_key, array $config ) 
  * @param string $prefix 接頭辞。
  * @return string
  */
-function ktp_dummy_random_email( $prefix = 'demo' ) {
+function ktpwp_dummy_random_email( $prefix = 'demo' ) {
 	$suffix = strtolower( bin2hex( random_bytes( 3 ) ) );
 
 	return sanitize_email( $prefix . '+' . $suffix . '@example.com' );
 }
 
 // カタログ読み込み
-$dummy_config = ktp_dummy_data_get_config();
+$dummy_config = ktpwp_dummy_data_get_config();
 $categories = $dummy_config['categories'];
 $category_data = $dummy_config['category_data'];
 
@@ -525,13 +525,13 @@ $category_data = $dummy_config['category_data'];
  * @param string $table_name テーブル名。
  * @return string[]
  */
-function ktp_dummy_get_table_columns( $table_name ) {
+function ktpwp_dummy_get_table_columns( $table_name ) {
 	static $cache = array();
 	if ( isset( $cache[ $table_name ] ) ) {
 		return $cache[ $table_name ];
 	}
 	global $wpdb;
-	$columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$table_name}`", 0 );
+	$columns = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $table_name ), 0 );
 	$cache[ $table_name ] = is_array( $columns ) ? $columns : array();
 
 	return $cache[ $table_name ];
@@ -544,8 +544,8 @@ function ktp_dummy_get_table_columns( $table_name ) {
  * @param array<string, mixed> $data       行データ。
  * @return array<string, mixed>
  */
-function ktp_dummy_filter_row_for_table( $table_name, array $data ) {
-	$columns  = ktp_dummy_get_table_columns( $table_name );
+function ktpwp_dummy_filter_row_for_table( $table_name, array $data ) {
+	$columns  = ktpwp_dummy_get_table_columns( $table_name );
 	$filtered = array();
 	foreach ( $data as $key => $value ) {
 		if ( in_array( $key, $columns, true ) ) {
@@ -562,7 +562,7 @@ function ktp_dummy_filter_row_for_table( $table_name, array $data ) {
  * @param array<string, mixed> $data 行データ。
  * @return string[]
  */
-function ktp_dummy_guess_formats( array $data ) {
+function ktpwp_dummy_guess_formats( array $data ) {
 	$formats = array();
 	foreach ( $data as $value ) {
 		if ( is_int( $value ) ) {
@@ -580,12 +580,12 @@ function ktp_dummy_guess_formats( array $data ) {
 function safe_db_insert($table, $data, $format = null) {
     global $wpdb;
 
-	$data = ktp_dummy_filter_row_for_table( $table, $data );
+	$data = ktpwp_dummy_filter_row_for_table( $table, $data );
 	if ( $data === array() ) {
 		ktpwp_debug_log( "KTPWP: 挿入可能なカラムがありません - テーブル: {$table}" );
 		return false;
 	}
-	$format = ktp_dummy_guess_formats( $data );
+	$format = ktpwp_dummy_guess_formats( $data );
     
     try {
         $result = $wpdb->insert($table, $data, $format);
@@ -623,7 +623,7 @@ function weighted_random_choice($weights) {
  * @param int $count 件数。
  * @return int[]
  */
-function ktp_dummy_build_balanced_progress_sequence( $count ) {
+function ktpwp_dummy_build_balanced_progress_sequence( $count ) {
 	$count            = max( 1, (int) $count );
 	$progress_values  = array( 1, 2, 3, 4, 5, 6 );
 	$sequence         = array();
@@ -649,12 +649,12 @@ function ktp_dummy_build_balanced_progress_sequence( $count ) {
  * @param int                $count       件数。
  * @return string[]
  */
-function ktp_dummy_pick_unique_order_names( array $order_names, $count ) {
+function ktpwp_dummy_pick_unique_order_names( array $order_names, $count ) {
 	$count = max( 1, (int) $count );
-	$picked = ktp_dummy_pick_many( $order_names, min( $count, count( $order_names ) ) );
+	$picked = ktpwp_dummy_pick_many( $order_names, min( $count, count( $order_names ) ) );
 
 	while ( count( $picked ) < $count ) {
-		$picked[] = ktp_dummy_pick( $order_names );
+		$picked[] = ktpwp_dummy_pick( $order_names );
 	}
 
 	return $picked;
@@ -664,10 +664,10 @@ function ktp_dummy_pick_unique_order_names( array $order_names, $count ) {
 function get_tax_rate_by_category( $category_key ) {
 	global $dummy_config;
 	if ( ! isset( $dummy_config ) ) {
-		$dummy_config = ktp_dummy_data_get_config();
+		$dummy_config = ktpwp_dummy_data_get_config();
 	}
 
-	return ktp_dummy_get_tax_rate_by_category_key( $category_key, $dummy_config );
+	return ktpwp_dummy_get_tax_rate_by_category_key( $category_key, $dummy_config );
 }
 
 // 安全な出力関数
@@ -704,15 +704,15 @@ foreach ( $dummy_config['client_categories'] as $category_key ) {
 		continue;
 	}
 	$cat_meta = $categories[ $category_key ];
-	$company_name = ktp_dummy_pick( $category_data[ $category_key ]['companies'] );
-	$name = ktp_dummy_data_uses_japanese()
-		? ktp_dummy_random_japanese_person_name()
-		: ktp_dummy_pick( array( 'John Smith', 'Emily Johnson', 'Michael Brown', 'Sarah Davis', 'David Wilson', 'Jessica Taylor', 'Robert Lee', 'Amanda Clark', 'Daniel White', 'Laura Martinez' ) );
+	$company_name = ktpwp_dummy_pick( $category_data[ $category_key ]['companies'] );
+	$name = ktpwp_dummy_data_uses_japanese()
+		? ktpwp_dummy_random_japanese_person_name()
+		: ktpwp_dummy_pick( array( 'John Smith', 'Emily Johnson', 'Michael Brown', 'Sarah Davis', 'David Wilson', 'Jessica Taylor', 'Robert Lee', 'Amanda Clark', 'Daniel White', 'Laura Martinez' ) );
 
 	$clients[] = array(
 		'company_name' => $company_name,
 		'name'         => $name,
-		'email'        => ktp_dummy_random_email( 'client' ),
+		'email'        => ktpwp_dummy_random_email( 'client' ),
 		'memo'         => $cat_meta['description'],
 		'category'     => $cat_meta['label'],
 		'category_key' => $category_key,
@@ -723,7 +723,7 @@ $client_ids = array();
 foreach ($clients as $client) {
     $now = current_time( 'mysql' );
     $insert_id = safe_db_insert(
-        $wpdb->prefix . 'ktp_client',
+        $wpdb->prefix . 'ktpwp_client',
         array(
             'company_name' => $client['company_name'],
             'name' => $client['name'],
@@ -752,15 +752,15 @@ foreach ( $dummy_config['supplier_categories'] as $category_key ) {
 		continue;
 	}
 	$cat_meta = $categories[ $category_key ];
-	$company_name = ktp_dummy_pick( $category_data[ $category_key ]['companies'] );
-	$name = ktp_dummy_data_uses_japanese()
-		? ktp_dummy_random_japanese_person_name()
-		: ktp_dummy_pick( array( 'Robert Anderson', 'Laura Martinez', 'William Thompson', 'Karen White', 'James Harris', 'Linda Clark', 'Thomas Young', 'Susan King', 'Charles Wright', 'Nancy Scott' ) );
+	$company_name = ktpwp_dummy_pick( $category_data[ $category_key ]['companies'] );
+	$name = ktpwp_dummy_data_uses_japanese()
+		? ktpwp_dummy_random_japanese_person_name()
+		: ktpwp_dummy_pick( array( 'Robert Anderson', 'Laura Martinez', 'William Thompson', 'Karen White', 'James Harris', 'Linda Clark', 'Thomas Young', 'Susan King', 'Charles Wright', 'Nancy Scott' ) );
 
 	$suppliers[] = array(
 		'company_name' => $company_name,
 		'name'         => $name,
-		'email'        => ktp_dummy_random_email( 'supplier' ),
+		'email'        => ktpwp_dummy_random_email( 'supplier' ),
 		'memo'         => $cat_meta['description'],
 		'category'     => $cat_meta['label'],
 		'category_key' => $category_key,
@@ -774,7 +774,7 @@ foreach ($suppliers as $supplier) {
     $now = current_time( 'mysql' );
     
     $insert_id = safe_db_insert(
-        $wpdb->prefix . 'ktp_supplier',
+        $wpdb->prefix . 'ktpwp_supplier',
         array(
             'company_name' => $supplier['company_name'],
             'name' => $supplier['name'],
@@ -805,16 +805,16 @@ foreach ( $dummy_config['service_categories'] as $category_key ) {
 	}
 	$cat_meta       = $categories[ $category_key ];
 	$service_names  = $category_data[ $category_key ]['services'];
-	$selected_names = ktp_dummy_pick_many( $service_names, 2 );
+	$selected_names = ktpwp_dummy_pick_many( $service_names, 2 );
 
 	foreach ( $selected_names as $service_name ) {
-		$tax_rate = ktp_dummy_get_tax_rate_by_category_key( $category_key, $dummy_config );
+		$tax_rate = ktpwp_dummy_get_tax_rate_by_category_key( $category_key, $dummy_config );
 		if ( $tax_rate === null ) {
 			$tax_rate = 10.00;
 		}
 
 		$price = rand( 50000, 800000 );
-		$unit  = ktp_dummy_pick( $dummy_config['units'] );
+		$unit  = ktpwp_dummy_pick( $dummy_config['units'] );
 
 		$services[] = array(
 			'service_name' => $service_name,
@@ -831,7 +831,7 @@ $service_ids = array();
 foreach ($services as $service) {
     $now = current_time( 'mysql' );
     $insert_id = safe_db_insert(
-        $wpdb->prefix . 'ktp_service',
+        $wpdb->prefix . 'ktpwp_service',
         array(
             'service_name' => $service['service_name'],
             'price' => $service['price'],
@@ -863,7 +863,7 @@ foreach ($supplier_ids as $supplier_id) {
     // 協力会社のカテゴリーを取得
     $supplier_info = $wpdb->get_row(
         $wpdb->prepare(
-            "SELECT category FROM {$wpdb->prefix}ktp_supplier WHERE id = %d",
+            "SELECT category FROM {$wpdb->prefix}ktpwp_supplier WHERE id = %d",
             $supplier_id
         )
     );
@@ -908,7 +908,7 @@ foreach ($supplier_ids as $supplier_id) {
         safe_echo("税率8%用職能名: " . implode(', ', $skill_names_for_tax_8));
         safe_echo("税率10%用職能名: " . implode(', ', $skill_names_for_tax_10));
     } else {
-        $category_tax = ktp_dummy_get_tax_rate_by_category_key( $supplier_category_key, $dummy_config );
+        $category_tax = ktpwp_dummy_get_tax_rate_by_category_key( $supplier_category_key, $dummy_config );
         if ( $category_tax === null ) {
             $tax_patterns = array( null, 10.00, 10.00 );
         } else {
@@ -950,7 +950,7 @@ foreach ($supplier_ids as $supplier_id) {
         safe_echo("職能データ: " . wp_json_encode($skill_data, JSON_UNESCAPED_UNICODE));
         
         $insert_id = safe_db_insert(
-            $wpdb->prefix . 'ktp_supplier_skills',
+            $wpdb->prefix . 'ktpwp_supplier_skills',
             $skill_data,
             array("%d", "%s", "%f", "%d", "%s", "%f", "%d")
         );
@@ -972,9 +972,9 @@ $progress_totals = array_fill( 1, 6, 0 );
 
 $order_ids = array();
 foreach ( $client_ids as $client_id ) {
-	$progress_sequence = ktp_dummy_build_balanced_progress_sequence( $orders_per_client );
+	$progress_sequence = ktpwp_dummy_build_balanced_progress_sequence( $orders_per_client );
 	shuffle( $progress_sequence );
-	$client_project_names = ktp_dummy_pick_unique_order_names( $order_names, $orders_per_client );
+	$client_project_names = ktpwp_dummy_pick_unique_order_names( $order_names, $orders_per_client );
 
 	foreach ( $progress_sequence as $order_index => $status ) {
 		$project_name = $client_project_names[ $order_index ];
@@ -1058,7 +1058,7 @@ foreach ( $client_ids as $client_id ) {
         $search_field = '';
         
         if ($client_id) {
-            $client_table = $wpdb->prefix . 'ktp_client';
+            $client_table = $wpdb->prefix . 'ktpwp_client';
             $client_info = $wpdb->get_row(
                 $wpdb->prepare(
                     "SELECT company_name, name FROM {$client_table} WHERE id = %d",
@@ -1108,7 +1108,7 @@ foreach ( $client_ids as $client_id ) {
             $order_data['completion_date'] = $completion_date;
         }
 
-        $order_id = safe_db_insert( $wpdb->prefix . 'ktp_order', $order_data );
+        $order_id = safe_db_insert( $wpdb->prefix . 'ktpwp_order', $order_data );
 
         if ( $order_id === false ) {
             safe_echo( 'ERROR: 受注書作成に失敗しました: ' . $wpdb->last_error );
@@ -1191,7 +1191,7 @@ function add_invoice_items_to_order($order_id, $service_ids) {
     global $wpdb, $dummy_config;
     
     // order_invoice_itemsテーブルが存在するかチェック
-    $table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$wpdb->prefix}ktp_order_invoice_items'");
+    $table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$wpdb->prefix}ktpwp_order_invoice_items'");
     
     if ($table_exists) {
         // 1-3個のサービスをランダムに選択
@@ -1206,7 +1206,7 @@ function add_invoice_items_to_order($order_id, $service_ids) {
         foreach ($selected_services as $service_id) {
             // サービス情報を取得
             $service = $wpdb->get_row($wpdb->prepare(
-                "SELECT * FROM {$wpdb->prefix}ktp_service WHERE id = %d",
+                "SELECT * FROM {$wpdb->prefix}ktpwp_service WHERE id = %d",
                 $service_id
             ));
             
@@ -1216,7 +1216,7 @@ function add_invoice_items_to_order($order_id, $service_ids) {
                 $total_price = $quantity * $unit_price;
                 
                 $wpdb->insert(
-                    $wpdb->prefix . 'ktp_order_invoice_items',
+                    $wpdb->prefix . 'ktpwp_order_invoice_items',
                     array(
                         'order_id' => $order_id,
                         'product_name' => $service->service_name,
@@ -1246,7 +1246,7 @@ function add_cost_items_to_order($order_id, $supplier_ids) {
     echo "DEBUG: コスト項目作成開始 - 受注書ID: {$order_id}, 協力会社数: " . count($supplier_ids) . "\n";
     
     // order_cost_itemsテーブルが存在するかチェック
-    $table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$wpdb->prefix}ktp_order_cost_items'");
+    $table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$wpdb->prefix}ktpwp_order_cost_items'");
     
     if ($table_exists) {
         echo "DEBUG: コスト項目テーブルが存在します\n";
@@ -1270,7 +1270,7 @@ function add_cost_items_to_order($order_id, $supplier_ids) {
                 
         // 協力会社の職能をランダムに選択
         $skill = $wpdb->get_row($wpdb->prepare(
-            "SELECT * FROM {$wpdb->prefix}ktp_supplier_skills WHERE supplier_id = %d ORDER BY RAND() LIMIT 1",
+            "SELECT * FROM {$wpdb->prefix}ktpwp_supplier_skills WHERE supplier_id = %d ORDER BY RAND() LIMIT 1",
             $supplier_id
         ));
         
@@ -1287,7 +1287,7 @@ function add_cost_items_to_order($order_id, $supplier_ids) {
             // 適格請求書番号カラムが存在するかチェック
             $qualified_invoice_column_exists = $wpdb->get_var(
                 $wpdb->prepare(
-                    "SHOW COLUMNS FROM {$wpdb->prefix}ktp_order_cost_items LIKE %s",
+                    "SHOW COLUMNS FROM {$wpdb->prefix}ktpwp_order_cost_items LIKE %s",
                     'qualified_invoice_number'
                 )
             );
@@ -1320,7 +1320,7 @@ function add_cost_items_to_order($order_id, $supplier_ids) {
             }
             
             $result = $wpdb->insert(
-                $wpdb->prefix . 'ktp_order_cost_items',
+                $wpdb->prefix . 'ktpwp_order_cost_items',
                 $insert_data,
                 $format_array
             );
@@ -1355,14 +1355,14 @@ function clear_dummy_data() {
     
     // 関連テーブルから削除（IDリセット対象）
     $tables_to_clear = array(
-        'ktp_order_cost_items',
-        'ktp_order_invoice_items',
-        'ktp_order',
-        'ktp_supplier_skills',
-        'ktp_service',
-        'ktp_supplier',
-        'ktp_client',
-        'ktp_order_staff_chat'  // スタッフチャットも削除対象に含める
+        'ktpwp_order_cost_items',
+        'ktpwp_order_invoice_items',
+        'ktpwp_order',
+        'ktpwp_supplier_skills',
+        'ktpwp_service',
+        'ktpwp_supplier',
+        'ktpwp_client',
+        'ktpwp_order_staff_chat'  // スタッフチャットも削除対象に含める
     );
     
     foreach ($tables_to_clear as $table) {

@@ -15,9 +15,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Ajax handler for sales ledger PDF generation
  */
-add_action( 'wp_ajax_ktp_generate_sales_ledger_pdf', 'ktp_handle_sales_ledger_pdf_ajax' );
+add_action( 'wp_ajax_ktpwp_generate_sales_ledger_pdf', 'ktpwp_handle_sales_ledger_pdf_ajax' );
 
-function ktp_handle_sales_ledger_pdf_ajax() {
+function ktpwp_handle_sales_ledger_pdf_ajax() {
     // セキュリティチェック
     if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), 'ktpwp_ajax_nonce' ) ) {
         wp_send_json_error( __( 'セキュリティチェックに失敗しました。', 'kantanpro' ) );
@@ -39,10 +39,10 @@ function ktp_handle_sales_ledger_pdf_ajax() {
 
     try {
         // 売上台帳データを取得
-        $sales_data = ktp_get_sales_ledger_data_for_pdf( $year );
+        $sales_data = ktpwp_get_sales_ledger_data_for_pdf( $year );
         
         // PDF用HTMLを生成
-        $pdf_html = ktp_generate_sales_ledger_pdf_html( $sales_data, $year );
+        $pdf_html = ktpwp_generate_sales_ledger_pdf_html( $sales_data, $year );
         
         wp_send_json_success( array(
             'pdf_html' => $pdf_html,
@@ -65,7 +65,7 @@ function ktp_handle_sales_ledger_pdf_ajax() {
  * @param int $year Target year
  * @return array Sales data
  */
-function ktp_get_sales_ledger_data_for_pdf( $year ) {
+function ktpwp_get_sales_ledger_data_for_pdf( $year ) {
     global $wpdb;
 
     // 売上台帳用のデータを取得（請求済以降の進捗状況の案件のみ）
@@ -77,8 +77,8 @@ function ktp_get_sales_ledger_data_for_pdf( $year ) {
         o.customer_name as client_name,
         COALESCE(SUM(ii.amount), 0) as total_amount,
         GROUP_CONCAT(ii.product_name SEPARATOR ', ') as products
-    FROM {$wpdb->prefix}ktp_order o
-    LEFT JOIN {$wpdb->prefix}ktp_order_invoice_items ii ON o.id = ii.order_id
+    FROM {$wpdb->prefix}ktpwp_order o
+    LEFT JOIN {$wpdb->prefix}ktpwp_order_invoice_items ii ON o.id = ii.order_id
     WHERE YEAR(o.completion_date) = %d
     AND o.progress >= 5
     AND o.progress != 7
@@ -114,7 +114,7 @@ function ktp_get_sales_ledger_data_for_pdf( $year ) {
  * @param int $year Target year
  * @return string PDF HTML content
  */
-function ktp_generate_sales_ledger_pdf_html( $sales_data, $year ) {
+function ktpwp_generate_sales_ledger_pdf_html( $sales_data, $year ) {
     $total_amount = array_sum( array_column( $sales_data, 'total_amount' ) );
     $total_records = count( $sales_data );
     $current_date = wp_date( __( 'Y年m月d日', 'kantanpro' ) );

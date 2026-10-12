@@ -32,7 +32,7 @@
         }
         if (!footer) {
             try {
-                footer = ($('#ktp_list_print_area').find('#ktp_list_my_company_name').text() || '').trim();
+                footer = ($('#ktpwp_list_print_area').find('#ktpwp_list_my_company_name').text() || '').trim();
             } catch (e) {}
         }
         if (!footer) {
@@ -123,7 +123,7 @@
      * 仕事リストを直接印刷ダイアログで開く（プレビューUIは表示しない）
      */
     function showListPrintPopup(triggerBtn) {
-        var $area = $('#ktp_list_print_area');
+        var $area = $('#ktpwp_list_print_area');
         if (!$area.length) {
             alert(ktpwpTranslate('印刷する内容が見つかりません。'));
             return;
@@ -157,11 +157,11 @@
             iframe.onload = function() {
                 try {
                     var doc = iframe.contentDocument || iframe.contentWindow.document;
-                    var listBox = doc.querySelector('#ktp_list_print_area .ktp_work_list_box');
+                    var listBox = doc.querySelector('#ktpwp_list_print_area .ktpwp_work_list_box');
                     if (listBox) {
                         printListDirect(listBox.outerHTML, meta.filename, meta.headerText, meta.footerText);
                     } else {
-                        var areaHtml = doc.querySelector('#ktp_list_print_area');
+                        var areaHtml = doc.querySelector('#ktpwp_list_print_area');
                         printListDirect(areaHtml ? areaHtml.innerHTML : meta.areaHtmlFallback, meta.filename, meta.headerText, meta.footerText);
                     }
                 } catch (e) {
@@ -267,18 +267,18 @@
             + '.print-footer{position:fixed;bottom:0;left:0;right:0;height:10mm;display:flex;align-items:center;justify-content:center;border-top:1px solid #ddd;background:#fff;font-size:11px;z-index:9999;pointer-events:none;margin:0;padding:0;}'
             + '.page-container{max-width:210mm;margin:0 auto;background:#fff;padding:20px;}'
             + '.workflow,.progress-filter{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;}'
-            + '.ktp_work_list_box ul{list-style:none;padding-left:0;}'
-            + '.ktp_work_list_box li{border:none;padding:10px 0;margin:0 0 12px 0;border-radius:0;'
+            + '.ktpwp_work_list_box ul{list-style:none;padding-left:0;}'
+            + '.ktpwp_work_list_box li{border:none;padding:10px 0;margin:0 0 12px 0;border-radius:0;'
             + 'break-inside:avoid !important;break-inside:avoid-page !important;page-break-inside:avoid !important;-webkit-column-break-inside:avoid !important;}'
-            + '.ktp_work_list_box li.ktp_work_list_item{position:relative;padding-left:70px;display:block;width:100%;overflow:visible;}'
-            + '.ktp_work_list_box li.ktp_work_list_item::before{content:"☐";position:absolute;left:0;top:2px;font-size:44px;line-height:1;color:#333;}'
-            + '.ktp_work_list_box li.ktp_work_list_item{border-bottom:1px solid #ddd;}'
-            + '.ktp_work_list_item_text,.delivery-dates-container{'
+            + '.ktpwp_work_list_box li.ktpwp_work_list_item{position:relative;padding-left:70px;display:block;width:100%;overflow:visible;}'
+            + '.ktpwp_work_list_box li.ktpwp_work_list_item::before{content:"☐";position:absolute;left:0;top:2px;font-size:44px;line-height:1;color:#333;}'
+            + '.ktpwp_work_list_box li.ktpwp_work_list_item{border-bottom:1px solid #ddd;}'
+            + '.ktpwp_work_list_item_text,.delivery-dates-container{'
             + 'break-inside:avoid;page-break-inside:avoid;-webkit-column-break-inside:avoid;}'
             + '.delivery-dates-container{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:6px;}'
             + '.delivery-input-wrapper,.completion-input-wrapper{'
             + 'break-inside:avoid;page-break-inside:avoid;-webkit-column-break-inside:avoid;}'
-            + '.ktp_work_list_box a{color:#1976d2;}'
+            + '.ktpwp_work_list_box a{color:#1976d2;}'
             + '.delivery-warning-mark-row,.invoice-warning-mark-row,.payment-warning-mark-row{'
             + 'display:inline-flex;align-items:center;justify-content:center;'
             + 'min-width:16px;height:16px;margin-left:6px;padding:0 4px;'
@@ -313,24 +313,24 @@
 
     $(document).on('click', '#js-work-list-print-btn', function (event) {
         var btn = event.currentTarget;
-        if (!btn || btn.disabled || btn.dataset.ktpPrintBusy === '1') {
+        if (!btn || btn.disabled || btn.dataset.ktpwpPrintBusy === '1') {
             return;
         }
 
         event.preventDefault();
         event.stopPropagation();
-        btn.dataset.ktpPrintBusy = '1';
+        btn.dataset.ktpwpPrintBusy = '1';
 
         try {
             showListPrintPopup(btn);
         } finally {
             window.setTimeout(function () {
-                delete btn.dataset.ktpPrintBusy;
+                delete btn.dataset.ktpwpPrintBusy;
             }, 1500);
         }
     });
 
-    window.ktpListPrintOpen = function (triggerBtn) {
+    window.ktpwpListPrintOpen = function (triggerBtn) {
         showListPrintPopup(triggerBtn || document.getElementById('js-work-list-print-btn'));
     };
 

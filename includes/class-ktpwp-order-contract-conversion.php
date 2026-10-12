@@ -91,7 +91,7 @@ if ( ! class_exists( 'KTPWP_Order_Contract_Conversion' ) ) {
 				return new WP_Error( 'no_tables', __( '定期契約機能が利用できません。', 'kantanpro' ) );
 			}
 
-			$order_table = $wpdb->prefix . 'ktp_order';
+			$order_table = $wpdb->prefix . 'ktpwp_order';
 			$wpdb->query( 'START TRANSACTION' );
 
 			try {
@@ -104,16 +104,16 @@ if ( ! class_exists( 'KTPWP_Order_Contract_Conversion' ) ) {
 				);
 
 				if ( ! $order ) {
-					throw new Exception( __( '案件が見つかりません。', 'kantanpro' ) );
+					throw new Exception( esc_html__( '案件が見つかりません。', 'kantanpro' ) );
 				}
 
 				if ( isset( $order->contract_id ) && (int) $order->contract_id > 0 ) {
-					throw new Exception( __( 'この案件はすでに定期契約に紐付いています。', 'kantanpro' ) );
+					throw new Exception( esc_html__( 'この案件はすでに定期契約に紐付いています。', 'kantanpro' ) );
 				}
 
 				$client_id = (int) ( $contract_data['client_id'] ?? $order->client_id ?? 0 );
 				if ( $client_id <= 0 ) {
-					throw new Exception( __( '顧客が見つかりません。', 'kantanpro' ) );
+					throw new Exception( esc_html__( '顧客が見つかりません。', 'kantanpro' ) );
 				}
 
 				$save_data = array_merge(
@@ -126,7 +126,7 @@ if ( ! class_exists( 'KTPWP_Order_Contract_Conversion' ) ) {
 
 				$contract_id = $this->contract_db->save_contract( $save_data, $initial_fees, $recurring_items );
 				if ( is_wp_error( $contract_id ) ) {
-					throw new Exception( $contract_id->get_error_message() );
+					throw new Exception( esc_html( $contract_id->get_error_message() ) );
 				}
 
 				if ( $link_order ) {
@@ -183,20 +183,20 @@ if ( ! class_exists( 'KTPWP_Order_Contract_Conversion' ) ) {
 
 			$contract = $this->contract_db->get_contract_by_id( $contract_id );
 			if ( ! $contract ) {
-				throw new Exception( __( '契約が見つかりません。', 'kantanpro' ) );
+				throw new Exception( esc_html__( '契約が見つかりません。', 'kantanpro' ) );
 			}
 
 			if ( ! $this->billing->is_contract_due_in_period( $contract, $period ) ) {
-				throw new Exception( __( '選択した月はこの契約の請求対象ではありません。', 'kantanpro' ) );
+				throw new Exception( esc_html__( '選択した月はこの契約の請求対象ではありません。', 'kantanpro' ) );
 			}
 
 			$existing_log = $this->billing->get_billing_log( $contract_id, $period );
 			if ( $existing_log && (int) $existing_log->order_id > 0 && (int) $existing_log->order_id !== (int) $order->id ) {
-				throw new Exception( __( '選択した月にはすでに別の定期請求案件があります。', 'kantanpro' ) );
+				throw new Exception( esc_html__( '選択した月にはすでに別の定期請求案件があります。', 'kantanpro' ) );
 			}
 
-			$order_table = $wpdb->prefix . 'ktp_order';
-			$columns     = $wpdb->get_col( "SHOW COLUMNS FROM `{$order_table}`" );
+			$order_table = $wpdb->prefix . 'ktpwp_order';
+			$columns     = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $order_table ) );
 
 			if ( is_array( $columns ) && in_array( 'contract_id', $columns, true ) && in_array( 'billing_period', $columns, true ) ) {
 				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
@@ -212,7 +212,7 @@ if ( ! class_exists( 'KTPWP_Order_Contract_Conversion' ) ) {
 				);
 
 				if ( $duplicate ) {
-					throw new Exception( __( '選択した月にはすでに別の定期請求案件があります。', 'kantanpro' ) );
+					throw new Exception( esc_html__( '選択した月にはすでに別の定期請求案件があります。', 'kantanpro' ) );
 				}
 			}
 
@@ -249,7 +249,7 @@ if ( ! class_exists( 'KTPWP_Order_Contract_Conversion' ) ) {
 				);
 
 				if ( false === $result ) {
-					throw new Exception( __( '案件の紐付けに失敗しました。', 'kantanpro' ) );
+					throw new Exception( esc_html__( '案件の紐付けに失敗しました。', 'kantanpro' ) );
 				}
 			}
 

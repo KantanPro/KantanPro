@@ -77,10 +77,10 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 		private function render_comprehensive_reports() {
 			global $wpdb;
 
-			$content = '<div id="ktp_report_inner_content" class="ktp-report-print-area" style="background:#fcfcfc;padding:16px 12px 32px 12px;max-width:1200px;margin:0 auto;border-radius:10px;box-shadow:0 2px 8px #eee;">';
+			$content = '<div id="ktpwp_report_inner_content" class="ktp-report-print-area" style="background:#fcfcfc;padding:16px 12px 32px 12px;max-width:1200px;margin:0 auto;border-radius:10px;box-shadow:0 2px 8px #eee;">';
 			
 			// 現在選択されているレポートタイプを取得
-			$report_type = isset( $_GET['report_type'] ) ? sanitize_text_field( $_GET['report_type'] ) : 'sales';
+			$report_type = KTPWP_Request::has_query( 'report_type' ) ? KTPWP_Request::query( 'report_type' ) : 'sales';
 			
 			switch ( $report_type ) {
 				case 'sales':
@@ -116,7 +116,7 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 					'general' => wp_create_nonce( 'ktpwp_ajax_nonce' )
 				)
 			);
-			$content .= '<script>var ktp_ajax_object = ' . wp_json_encode( $ajax_data ) . ';</script>';
+			$content .= '<script>var ktpwp_ajax_object = ' . wp_json_encode( $ajax_data ) . ';</script>';
 			$report_charts_ver = KANTANPRO_PLUGIN_VERSION;
 			$report_print_ver  = KANTANPRO_PLUGIN_VERSION;
 			$report_charts_path = plugin_dir_path( dirname( __FILE__ ) ) . 'js/ktp-report-charts.js';
@@ -133,7 +133,7 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 			$content .= '<script src="' . esc_url( plugins_url( 'js/ktp-report-print.js', dirname( __FILE__ ) ) ) . '?v=' . esc_attr( $report_print_ver ) . '"></script>';
 
 			// 確定申告タブの場合は売上台帳PDF用スクリプトも読み込み
-			$report_type = isset( $_GET['report_type'] ) ? sanitize_text_field( $_GET['report_type'] ) : 'sales';
+			$report_type = KTPWP_Request::has_query( 'report_type' ) ? KTPWP_Request::query( 'report_type' ) : 'sales';
 			if ( $report_type === 'tax_return' ) {
 				$sales_ledger_print_ver  = KANTANPRO_PLUGIN_VERSION;
 				$sales_ledger_print_path = plugin_dir_path( dirname( __FILE__ ) ) . 'js/ktp-sales-ledger-pdf.js';
@@ -206,7 +206,7 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 			$content .= '<h3 style="margin-top:0;margin-bottom:8px;color:#333;">' . esc_html__( '顧客別レポート', 'kantanpro' ) . '</h3>';
 			
 			// 期間の説明を追加
-			$period = isset( $_GET['period'] ) ? sanitize_text_field( $_GET['period'] ) : 'all_time';
+			$period = KTPWP_Request::has_query( 'period' ) ? KTPWP_Request::query( 'period' ) : 'all_time';
 			$period_description = $this->get_period_description( $period );
 			/* translators: %s: 集計の対象期間 */
 			$content .= '<p style="margin:0 0 24px 0;color:#666;font-size:14px;">' . esc_html( sprintf( __( '売上は「請求済」以降の進捗状況の案件のみを対象としています。「ボツ」案件は売上計算から除外されています。対象期間：%s', 'kantanpro' ), $period_description ) ) . '</p>';
@@ -243,7 +243,7 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 			$content .= '<h3 style="margin-top:0;margin-bottom:8px;color:#333;">' . esc_html__( 'サービス別レポート', 'kantanpro' ) . '</h3>';
 			
 			// 期間の説明を追加
-			$period = isset( $_GET['period'] ) ? sanitize_text_field( $_GET['period'] ) : 'all_time';
+			$period = KTPWP_Request::has_query( 'period' ) ? KTPWP_Request::query( 'period' ) : 'all_time';
 			$period_description = $this->get_period_description( $period );
 			/* translators: %s: 集計の対象期間 */
 			$content .= '<p style="margin:0 0 24px 0;color:#666;font-size:14px;">' . esc_html( sprintf( __( '売上は「請求済」以降の進捗状況の案件のみを対象としています。サービス別比率は「受注」以降の進捗状況の案件を対象としています。「ボツ」案件は計算から除外されています。対象期間：%s', 'kantanpro' ), $period_description ) ) . '</p>';
@@ -280,7 +280,7 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 			$content .= '<h3 style="margin-top:0;margin-bottom:8px;color:#333;">' . esc_html__( '協力会社レポート', 'kantanpro' ) . '</h3>';
 			
 			// 期間の説明を追加
-			$period = isset( $_GET['period'] ) ? sanitize_text_field( $_GET['period'] ) : 'all_time';
+			$period = KTPWP_Request::has_query( 'period' ) ? KTPWP_Request::query( 'period' ) : 'all_time';
 			$period_description = $this->get_period_description( $period );
 			/* translators: %s: 集計の対象期間 */
 			$content .= '<p style="margin:0 0 24px 0;color:#666;font-size:14px;">' . esc_html( sprintf( __( '貢献度は「請求済」以降の進捗状況の案件のみを対象としています。「ボツ」案件は計算から除外されています。対象期間：%s', 'kantanpro' ), $period_description ) ) . '</p>';
@@ -313,7 +313,7 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 		 * @return string HTML content
 		 */
 		private function render_period_selector() {
-			$current_period = isset( $_GET['period'] ) ? sanitize_text_field( $_GET['period'] ) : 'all_time';
+			$current_period = KTPWP_Request::has_query( 'period' ) ? KTPWP_Request::query( 'period' ) : 'all_time';
 			
 			$periods = array(
 				'all_time' => __( '全期間', 'kantanpro' ),
@@ -331,7 +331,7 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 
 			foreach ( $periods as $key => $label ) {
 				$active_class = ( $current_period === $key ) ? 'style="background:#1976d2;color:#fff;"' : 'style="background:#fff;color:#333;"';
-				$url = add_query_arg( array( 'tab_name' => 'report', 'report_type' => isset( $_GET['report_type'] ) ? sanitize_key( wp_unslash( $_GET['report_type'] ) ) : 'sales', 'period' => $key ) );
+				$url = add_query_arg( array( 'tab_name' => 'report', 'report_type' => KTPWP_Request::has_query( 'report_type' ) ? sanitize_key( KTPWP_Request::query( 'report_type' ) ) : 'sales', 'period' => $key ) );
 				
 				$content .= '<a href="' . esc_url( $url ) . '" class="period-btn" ' . $active_class . ' style="padding:6px 12px;border-radius:4px;text-decoration:none;border:1px solid #ddd;font-size:14px;transition:all 0.3s;">';
 				$content .= esc_html( $label );
@@ -352,20 +352,20 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 		private function render_sales_summary() {
 			global $wpdb;
 
-			$period = isset( $_GET['period'] ) ? sanitize_text_field( $_GET['period'] ) : 'all_time';
+			$period = KTPWP_Request::has_query( 'period' ) ? KTPWP_Request::query( 'period' ) : 'all_time';
 			
 			// 期間に応じたWHERE句を生成
 			$where_clause = $this->get_period_where_clause( $period );
 
 			// 総売上（請求済以降の進捗で、請求項目がある案件のみ）
 			$total_sales_query = "SELECT SUM(ii.amount) as total 
-								 FROM {$wpdb->prefix}ktp_order o 
-								 LEFT JOIN {$wpdb->prefix}ktp_order_invoice_items ii ON o.id = ii.order_id 
+								 FROM {$wpdb->prefix}ktpwp_order o 
+								 LEFT JOIN {$wpdb->prefix}ktpwp_order_invoice_items ii ON o.id = ii.order_id 
 								 WHERE 1=1 {$where_clause} AND ii.amount IS NOT NULL AND o.progress >= 5 AND o.progress != 7 AND o.completion_date IS NOT NULL";
 			$total_sales = $wpdb->get_var( $total_sales_query ) ?: 0;
 
 			// 案件数（請求済以降の進捗のみ）
-			$order_count_query = "SELECT COUNT(*) as count FROM {$wpdb->prefix}ktp_order o WHERE 1=1 {$where_clause} AND o.progress >= 5 AND o.progress != 7 AND o.completion_date IS NOT NULL";
+			$order_count_query = "SELECT COUNT(*) as count FROM {$wpdb->prefix}ktpwp_order o WHERE 1=1 {$where_clause} AND o.progress >= 5 AND o.progress != 7 AND o.completion_date IS NOT NULL";
 			$order_count = $wpdb->get_var( $order_count_query ) ?: 0;
 
 			// 平均単価
@@ -403,14 +403,14 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 		private function render_client_summary() {
 			global $wpdb;
 
-			$period = isset( $_GET['period'] ) ? sanitize_text_field( $_GET['period'] ) : 'all_time';
+			$period = KTPWP_Request::has_query( 'period' ) ? KTPWP_Request::query( 'period' ) : 'all_time';
 			$where_clause = $this->get_period_where_clause( $period );
 
 			// 顧客別売上TOP5（請求済以降の進捗状況の案件のみ）
 			$client_query = "SELECT COALESCE(c.company_name, '(Customer not set)') AS company_name, SUM(ii.amount) AS total_sales, COUNT(DISTINCT o.id) AS order_count 
-				FROM {$wpdb->prefix}ktp_order o 
-				LEFT JOIN {$wpdb->prefix}ktp_client c ON o.client_id = c.id 
-				LEFT JOIN {$wpdb->prefix}ktp_order_invoice_items ii ON o.id = ii.order_id 
+				FROM {$wpdb->prefix}ktpwp_order o 
+				LEFT JOIN {$wpdb->prefix}ktpwp_client c ON o.client_id = c.id 
+				LEFT JOIN {$wpdb->prefix}ktpwp_order_invoice_items ii ON o.id = ii.order_id 
 				WHERE 1=1 {$where_clause} 
 				AND ii.amount IS NOT NULL 
 				AND o.progress >= 5 
@@ -458,13 +458,13 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 		private function render_service_summary() {
 			global $wpdb;
 
-			$period = isset( $_GET['period'] ) ? sanitize_text_field( $_GET['period'] ) : 'all_time';
+			$period = KTPWP_Request::has_query( 'period' ) ? KTPWP_Request::query( 'period' ) : 'all_time';
 			$where_clause = $this->get_period_where_clause( $period );
 
 			// サービス別売上TOP5（請求済以降の進捗状況の案件のみ）
 			$service_query = "SELECT COALESCE(ii.product_name, '(Not set)') AS service_name, SUM(ii.amount) AS total_sales, COUNT(DISTINCT o.id) AS order_count 
-				FROM {$wpdb->prefix}ktp_order o 
-				LEFT JOIN {$wpdb->prefix}ktp_order_invoice_items ii ON o.id = ii.order_id 
+				FROM {$wpdb->prefix}ktpwp_order o 
+				LEFT JOIN {$wpdb->prefix}ktpwp_order_invoice_items ii ON o.id = ii.order_id 
 				WHERE 1=1 {$where_clause} 
 				AND ii.amount IS NOT NULL 
 				AND o.progress >= 5 
@@ -512,14 +512,14 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 		private function render_supplier_summary() {
 			global $wpdb;
 
-			$period = isset( $_GET['period'] ) ? sanitize_text_field( $_GET['period'] ) : 'all_time';
+			$period = KTPWP_Request::has_query( 'period' ) ? KTPWP_Request::query( 'period' ) : 'all_time';
 			$where_clause = $this->get_period_where_clause( $period );
 
 			// 協力会社別貢献度TOP5（請求済以降の進捗状況の案件のみ）
 			$supplier_query = "SELECT COALESCE(s.company_name, '(Supplier not set)') AS company_name, COUNT(DISTINCT o.id) AS order_count, SUM(oci.amount) AS total_contribution 
-				FROM {$wpdb->prefix}ktp_order o 
-				LEFT JOIN {$wpdb->prefix}ktp_order_cost_items oci ON o.id = oci.order_id 
-				LEFT JOIN {$wpdb->prefix}ktp_supplier s ON oci.supplier_id = s.id 
+				FROM {$wpdb->prefix}ktpwp_order o 
+				LEFT JOIN {$wpdb->prefix}ktpwp_order_cost_items oci ON o.id = oci.order_id 
+				LEFT JOIN {$wpdb->prefix}ktpwp_supplier s ON oci.supplier_id = s.id 
 				WHERE 1=1 {$where_clause} 
 				AND oci.supplier_id IS NOT NULL 
 				AND o.progress >= 5 
@@ -652,7 +652,7 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 	 * @return string HTML content
 	 */
 	private function render_tax_year_selector() {
-		$current_year = isset( $_GET['tax_year'] ) ? intval( $_GET['tax_year'] ) : date('Y');
+		$current_year = KTPWP_Request::has_query( 'tax_year' ) ? intval( KTPWP_Request::query_unslashed( 'tax_year' ) ) : date('Y');
 		$start_year = 2020; // 開始年
 		$end_year = date('Y') + 1; // 来年まで
 
@@ -684,7 +684,7 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 	private function render_sales_ledger_section() {
 		global $wpdb;
 
-		$tax_year = isset( $_GET['tax_year'] ) ? intval( $_GET['tax_year'] ) : date('Y');
+		$tax_year = KTPWP_Request::has_query( 'tax_year' ) ? intval( KTPWP_Request::query_unslashed( 'tax_year' ) ) : date('Y');
 		
 		// 売上台帳データを取得
 		$sales_data = $this->get_sales_ledger_data( $tax_year );
@@ -827,8 +827,8 @@ if ( ! class_exists( 'KTPWP_Report_Class' ) ) {
 			o.progress,
 			o.customer_name as client_name,
 			COALESCE(SUM(ii.amount), 0) as total_amount
-		FROM {$wpdb->prefix}ktp_order o
-		LEFT JOIN {$wpdb->prefix}ktp_order_invoice_items ii ON o.id = ii.order_id
+		FROM {$wpdb->prefix}ktpwp_order o
+		LEFT JOIN {$wpdb->prefix}ktpwp_order_invoice_items ii ON o.id = ii.order_id
 		WHERE YEAR(o.completion_date) = %d
 		AND o.progress >= 5
 		AND o.progress != 7

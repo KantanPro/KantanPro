@@ -34,18 +34,16 @@ class KTPWP_Migration_20250131_Add_Qualified_Invoice_Profit_Calculation {
 
         try {
             // 1. 協力会社テーブルの適格請求書ナンバーカラム確認
-            $supplier_table = $wpdb->prefix . 'ktp_supplier';
+            $supplier_table = $wpdb->prefix . 'ktpwp_supplier';
             $column_exists = $wpdb->get_var( 
-                $wpdb->prepare( 
-                    "SHOW COLUMNS FROM `{$supplier_table}` LIKE %s", 
-                    'qualified_invoice_number' 
+                $wpdb->prepare( 'SHOW COLUMNS FROM %i LIKE %s', $supplier_table, 'qualified_invoice_number' 
                 ) 
             );
             
             if ( ! $column_exists ) {
                 // 適格請求書ナンバーカラムが存在しない場合は追加
-                $sql = "ALTER TABLE `{$supplier_table}` ADD COLUMN `qualified_invoice_number` VARCHAR(100) NOT NULL DEFAULT '' AFTER `memo`";
-                $result = $wpdb->query( $sql );
+                $sql = $wpdb->prepare( "ALTER TABLE %i ADD COLUMN `qualified_invoice_number` VARCHAR(100) NOT NULL DEFAULT '' AFTER `memo`", $supplier_table );
+                $result = $wpdb->query( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $sql は直前で $wpdb->prepare() 済み。
                 
                 if ( $result === false ) {
                     ktpwp_debug_log( 'KTPWP Migration: Failed to add qualified_invoice_number column to supplier table. Error: ' . $wpdb->last_error );
@@ -58,18 +56,16 @@ class KTPWP_Migration_20250131_Add_Qualified_Invoice_Profit_Calculation {
             }
 
             // 2. コスト項目テーブルのsupplier_idカラム確認
-            $cost_items_table = $wpdb->prefix . 'ktp_order_cost_items';
+            $cost_items_table = $wpdb->prefix . 'ktpwp_order_cost_items';
             $supplier_id_exists = $wpdb->get_var( 
-                $wpdb->prepare( 
-                    "SHOW COLUMNS FROM `{$cost_items_table}` LIKE %s", 
-                    'supplier_id' 
+                $wpdb->prepare( 'SHOW COLUMNS FROM %i LIKE %s', $cost_items_table, 'supplier_id' 
                 ) 
             );
             
             if ( ! $supplier_id_exists ) {
                 // supplier_idカラムが存在しない場合は追加
-                $sql = "ALTER TABLE `{$cost_items_table}` ADD COLUMN `supplier_id` INT(11) DEFAULT NULL AFTER `order_id`";
-                $result = $wpdb->query( $sql );
+                $sql = $wpdb->prepare( "ALTER TABLE %i ADD COLUMN `supplier_id` INT(11) DEFAULT NULL AFTER `order_id`", $cost_items_table );
+                $result = $wpdb->query( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $sql は直前で $wpdb->prepare() 済み。
                 
                 if ( $result === false ) {
                     ktpwp_debug_log( 'KTPWP Migration: Failed to add supplier_id column to cost items table. Error: ' . $wpdb->last_error );
@@ -110,27 +106,25 @@ class KTPWP_Migration_20250131_Add_Qualified_Invoice_Profit_Calculation {
     private static function update_existing_cost_items_supplier_id() {
         global $wpdb;
         
-        $cost_items_table = $wpdb->prefix . 'ktp_order_cost_items';
-        $supplier_table = $wpdb->prefix . 'ktp_supplier';
+        $cost_items_table = $wpdb->prefix . 'ktpwp_order_cost_items';
+        $supplier_table = $wpdb->prefix . 'ktpwp_supplier';
 
         // purchaseカラムが存在するかチェック
         $purchase_exists = $wpdb->get_var( 
-            $wpdb->prepare( 
-                "SHOW COLUMNS FROM `{$cost_items_table}` LIKE %s", 
-                'purchase' 
+            $wpdb->prepare( 'SHOW COLUMNS FROM %i LIKE %s', $cost_items_table, 'purchase' 
             ) 
         );
 
         if ( $purchase_exists ) {
             // purchaseカラムの値を使ってsupplier_idを更新
-            $sql = "
-                UPDATE `{$cost_items_table}` ci
-                INNER JOIN `{$supplier_table}` s ON ci.purchase = s.company_name
+            $sql = $wpdb->prepare( "
+                UPDATE %i ci
+                INNER JOIN %i s ON ci.purchase = s.company_name
                 SET ci.supplier_id = s.id
                 WHERE ci.supplier_id IS NULL AND ci.purchase != ''
-            ";
+            ", $cost_items_table, $supplier_table );
             
-            $result = $wpdb->query( $sql );
+            $result = $wpdb->query( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $sql は直前で $wpdb->prepare() 済み。
             
             if ( $result !== false ) {
                 if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {

@@ -35,7 +35,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* KTPWP固有の要素を非表示 */
-.ktp_header,
+.ktpwp_header,
 .ktp-floating-notification,
 .ktpwp-modal {
     display: none !important;

@@ -37,13 +37,13 @@ if ( ! class_exists( 'KTPWP_Supplier_Security' ) ) {
 				return 1;
 			}
 
-			$cookie_name = 'ktp_' . sanitize_key( $name ) . '_id';
+			$cookie_name = 'ktpwp_' . sanitize_key( $name ) . '_id';
 			$query_id = 1;
 
 			if ( isset( $_COOKIE[ $cookie_name ] ) ) {
 				$query_id = absint( $_COOKIE[ $cookie_name ] );
-			} elseif ( isset( $_GET['data_id'] ) ) {
-				$query_id = absint( $_GET['data_id'] );
+			} elseif ( KTPWP_Request::has_query( 'data_id' ) ) {
+				$query_id = absint( KTPWP_Request::query_unslashed( 'data_id' ) );
 			}
 
 			// Validate ID is positive

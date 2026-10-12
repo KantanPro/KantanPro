@@ -289,7 +289,7 @@ if ( ! class_exists( 'KTPWP_Contract_Service_Public_Availability' ) ) {
 				return 0;
 			}
 
-			$table       = $wpdb->prefix . 'ktp_order';
+			$table       = $wpdb->prefix . 'ktpwp_order';
 			$placeholders = implode( ', ', array_fill( 0, count( $order_ids ), '%d' ) );
 			$params       = array_merge( array( 7 ), $order_ids );
 
@@ -380,8 +380,8 @@ if ( ! class_exists( 'KTPWP_Contract_Service_Public_Availability' ) ) {
 				return $orders;
 			}
 
-			$table = $wpdb->prefix . 'ktp_order';
-			$cols  = $wpdb->get_col( "SHOW COLUMNS FROM `{$table}`", 0 );
+			$table = $wpdb->prefix . 'ktpwp_order';
+			$cols  = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $table ), 0 );
 			$cols  = is_array( $cols ) ? $cols : array();
 
 			if ( in_array( 'external_source', $cols, true ) && in_array( 'external_order_id', $cols, true ) ) {
@@ -445,7 +445,7 @@ if ( ! class_exists( 'KTPWP_Contract_Service_Public_Availability' ) ) {
 				return null;
 			}
 
-			$table = $wpdb->prefix . 'ktp_service';
+			$table = $wpdb->prefix . 'ktpwp_service';
 
 			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 			return $wpdb->get_row(
@@ -470,8 +470,8 @@ if ( ! class_exists( 'KTPWP_Contract_Service_Public_Availability' ) ) {
 				return false;
 			}
 
-			$table = $wpdb->prefix . 'ktp_service';
-			$cols  = $wpdb->get_col( "SHOW COLUMNS FROM `{$table}`", 0 );
+			$table = $wpdb->prefix . 'ktpwp_service';
+			$cols  = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $table ), 0 );
 			if ( ! is_array( $cols ) || ! in_array( 'contract_billing_cycle', $cols, true ) ) {
 				return false;
 			}
@@ -502,8 +502,8 @@ if ( ! class_exists( 'KTPWP_Contract_Service_Public_Availability' ) ) {
 				return false;
 			}
 
-			$table = $wpdb->prefix . 'ktp_order';
-			$cols  = $wpdb->get_col( "SHOW COLUMNS FROM `{$table}`", 0 );
+			$table = $wpdb->prefix . 'ktpwp_order';
+			$cols  = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $table ), 0 );
 			$cols  = is_array( $cols ) ? $cols : array();
 
 			if ( in_array( 'external_source', $cols, true ) && in_array( 'external_order_id', $cols, true ) ) {
@@ -656,7 +656,7 @@ if ( ! class_exists( 'KTPWP_Contract_Service_Public_Availability' ) ) {
 				return $cache[ $cache_key ];
 			}
 
-			$columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$table_name}`" );
+			$columns = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $table_name ) );
 			$cache[ $cache_key ] = is_array( $columns ) && in_array( $column_name, $columns, true );
 
 			return $cache[ $cache_key ];

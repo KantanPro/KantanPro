@@ -136,7 +136,7 @@ function ktpwp_kses_diff_run( $label, array $get ) {
 wp_set_current_user( 1 );
 
 $first_id = function ( $table ) use ( $wpdb ) {
-	$t = $wpdb->prefix . 'ktp_' . $table;
+	$t = $wpdb->prefix . 'ktpwp_' . $table;
 	if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $t ) ) !== $t ) {
 		return 0;
 	}

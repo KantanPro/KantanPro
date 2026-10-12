@@ -11,13 +11,16 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+// ファイル内の変数をグローバルに出さないよう、処理全体を無名関数で包む（読み込んだ時点で実行される）。
+( static function () {
+
 /**
  * Update tax category labels in client table
  */
 function ktpwp_update_tax_category_labels() {
     global $wpdb;
     
-    $table_name = $wpdb->prefix . 'ktp_client';
+    $table_name = $wpdb->prefix . 'ktpwp_client';
     
     // Check if table exists
     $table_exists = $wpdb->get_var( $wpdb->prepare( "SHOW TABLES LIKE %s", $table_name ) );
@@ -27,7 +30,7 @@ function ktpwp_update_tax_category_labels() {
     }
     
     // Check if tax_category column exists
-    $column_exists = $wpdb->get_results( $wpdb->prepare( "SHOW COLUMNS FROM `{$table_name}` LIKE %s", 'tax_category' ) );
+    $column_exists = $wpdb->get_results( $wpdb->prepare( 'SHOW COLUMNS FROM %i LIKE %s', $table_name, 'tax_category' ) );
     if ( empty( $column_exists ) ) {
         ktpwp_debug_log( 'KTPWP Migration: tax_category column does not exist' );
         return false;
@@ -74,4 +77,5 @@ function ktpwp_update_tax_category_labels() {
 // Run migration if not already done
 if ( ! get_option( 'ktpwp_tax_category_labels_updated' ) ) {
     ktpwp_update_tax_category_labels();
-} 
+}
+} )();

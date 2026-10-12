@@ -1,6 +1,6 @@
 (function () {
     function getKtpAjaxConfig() {
-        return window.ktpwp_ajax || window.ktp_ajax_object || {};
+        return window.ktpwp_ajax || window.ktpwp_ajax_object || {};
     }
 
     function getKtpAjaxNonce() {
@@ -8,7 +8,7 @@
         return ajaxConfig.nonce
             || (ajaxConfig.nonces && ajaxConfig.nonces.general)
             || window.ktpwp_ajax_nonce
-            || window.ktp_ajax_nonce
+            || window.ktpwp_autosave_nonce
             || '';
     }
 
@@ -29,7 +29,7 @@
         }
     }
 
-    window.ktpDuplicateServiceViaAjax = function (button) {
+    window.ktpwpDuplicateServiceViaAjax = function (button) {
         if (!button || button.disabled) {
             return;
         }
@@ -52,7 +52,7 @@
         button.disabled = true;
 
         var body = new URLSearchParams();
-        body.set('action', 'ktp_duplicate_service');
+        body.set('action', 'ktpwp_duplicate_service');
         body.set('nonce', nonce);
         body.set('data_id', serviceId);
         body.set('redirect_base', getKtpServiceRedirectBase());
@@ -99,18 +99,18 @@
             return;
         }
         e.preventDefault();
-        window.ktpDuplicateServiceViaAjax(duplicateBtn);
+        window.ktpwpDuplicateServiceViaAjax(duplicateBtn);
     });
 })();
 
 document.addEventListener('DOMContentLoaded', function () {
     // 業務画面（[ktpwp_all_tab]）以外ではタブ状態復元等を実行しない
-    if (!document.querySelector('.tabs.ktp_plugin_container')) {
+    if (!document.querySelector('.tabs.ktpwp_plugin_container')) {
         return;
     }
 
     // デバッグモードの設定
-    window.ktpDebugMode = window.ktpDebugMode || false;
+    window.ktpwpDebugMode = window.ktpwpDebugMode || false;
     
     // =============================
     // 受注書状態記憶機能
@@ -131,8 +131,8 @@ document.addEventListener('DOMContentLoaded', function () {
     // 受注書IDをローカルストレージに保存
     function saveOrderId(orderId) {
         if (orderId && orderId !== '') {
-            localStorage.setItem('ktp_last_order_id', orderId);
-            if (window.ktpDebugMode) {
+            localStorage.setItem('ktpwp_last_order_id', orderId);
+            if (window.ktpwpDebugMode) {
                 console.log('KTPWP: 受注書IDを保存しました:', orderId);
             }
         }
@@ -140,7 +140,7 @@ document.addEventListener('DOMContentLoaded', function () {
     
     // 保存された受注書IDを取得
     function getSavedOrderId() {
-        return localStorage.getItem('ktp_last_order_id');
+        return localStorage.getItem('ktpwp_last_order_id');
     }
     
     // 受注書タブに戻った時に記憶されたIDを復元
@@ -148,38 +148,38 @@ document.addEventListener('DOMContentLoaded', function () {
         var currentTab = getCurrentTabName();
         var currentOrderId = getCurrentOrderId();
         
-        if (window.ktpDebugMode) {
+        if (window.ktpwpDebugMode) {
             console.log('KTPWP: restoreOrderId - currentTab:', currentTab, 'currentOrderId:', currentOrderId);
         }
         
         // 受注書タブで、かつ現在のURLにorder_idが指定されていない場合
         if (currentTab === 'order' && !currentOrderId) {
             var savedOrderId = getSavedOrderId();
-            if (window.ktpDebugMode) {
+            if (window.ktpwpDebugMode) {
                 console.log('KTPWP: restoreOrderId - savedOrderId:', savedOrderId);
             }
             
             if (savedOrderId) {
                 // 記憶された受注書IDが有効かどうかを確認
                 // まず、現在のページに受注書データが表示されているかチェック
-                var orderContent = document.querySelector('.ktp_order_content');
+                var orderContent = document.querySelector('.ktpwp_order_content');
                 var noOrderData = document.querySelector('.ktp-no-order-data');
                 var hasOrderData = orderContent && orderContent.innerHTML.trim() !== '' && !noOrderData;
                 
-                if (window.ktpDebugMode) {
+                if (window.ktpwpDebugMode) {
                     console.log('KTPWP: restoreOrderId - hasOrderData:', hasOrderData, 'noOrderData:', !!noOrderData);
                 }
                 
                 // 受注書データが既に表示されている場合はリロードしない
                 if (hasOrderData) {
-                    if (window.ktpDebugMode) {
+                    if (window.ktpwpDebugMode) {
                         console.log('KTPWP: 受注書データが既に表示されているため、リロードをスキップします');
                     }
                     return false;
                 }
                 
                 // Ajaxで受注書データを取得して表示（ページリロードを避ける）
-                if (window.ktpDebugMode) {
+                if (window.ktpwpDebugMode) {
                     console.log('KTPWP: 記憶された受注書IDをAjaxで復元します:', savedOrderId);
                 }
                 
@@ -208,15 +208,15 @@ document.addEventListener('DOMContentLoaded', function () {
         if (typeof ktpwp_ajax !== 'undefined') {
             ajaxUrl = ktpwp_ajax.ajax_url;
             nonce = ktpwp_ajax.nonce;
-        } else if (typeof ktp_ajax_object !== 'undefined') {
-            ajaxUrl = ktp_ajax_object.ajax_url;
-            nonce = ktp_ajax_object.nonce;
+        } else if (typeof ktpwp_ajax_object !== 'undefined') {
+            ajaxUrl = ktpwp_ajax_object.ajax_url;
+            nonce = ktpwp_ajax_object.nonce;
         } else if (typeof ajaxurl !== 'undefined') {
             ajaxUrl = ajaxurl;
         }
         
         if (!ajaxUrl) {
-            if (window.ktpDebugMode) {
+            if (window.ktpwpDebugMode) {
                 console.error('KTPWP: Ajax URLが取得できません');
             }
             return;
@@ -235,34 +235,34 @@ document.addEventListener('DOMContentLoaded', function () {
                         if (response.success && response.data) {
                             // 受注書データを表示
                             updateOrderDisplay(response.data);
-                            if (window.ktpDebugMode) {
+                            if (window.ktpwpDebugMode) {
                                 console.log('KTPWP: 受注書データをAjaxで正常に取得しました');
                             }
                         } else {
-                            if (window.ktpDebugMode) {
+                            if (window.ktpwpDebugMode) {
                                 console.error('KTPWP: 受注書データの取得に失敗しました:', response);
                             }
                             // 失敗した場合は無効なIDとしてクリア
-                            localStorage.removeItem('ktp_last_order_id');
+                            localStorage.removeItem('ktpwp_last_order_id');
                         }
                     } catch (e) {
-                        if (window.ktpDebugMode) {
+                        if (window.ktpwpDebugMode) {
                             console.error('KTPWP: レスポンスの解析に失敗しました:', e);
                         }
-                        localStorage.removeItem('ktp_last_order_id');
+                        localStorage.removeItem('ktpwp_last_order_id');
                     }
                 } else {
-                    if (window.ktpDebugMode) {
+                    if (window.ktpwpDebugMode) {
                         console.error('KTPWP: Ajaxリクエストが失敗しました:', xhr.status);
                     }
-                    localStorage.removeItem('ktp_last_order_id');
+                    localStorage.removeItem('ktpwp_last_order_id');
                 }
             }
         };
         
-        var data = 'action=ktp_get_order_data&order_id=' + encodeURIComponent(orderId);
+        var data = 'action=ktpwp_get_order_data&order_id=' + encodeURIComponent(orderId);
         if (nonce) {
-            data += '&ktp_ajax_nonce=' + encodeURIComponent(nonce);
+            data += '&ktpwp_ajax_nonce=' + encodeURIComponent(nonce);
         }
         
         xhr.send(data);
@@ -271,7 +271,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // 受注書表示を更新する関数
     function updateOrderDisplay(orderData) {
         // 受注書コンテンツエリアを取得
-        var orderContent = document.querySelector('.ktp_order_content');
+        var orderContent = document.querySelector('.ktpwp_order_content');
         if (!orderContent) {
             // コンテンツエリアがない場合は、ページ全体を更新
             window.location.reload();
@@ -294,8 +294,8 @@ document.addEventListener('DOMContentLoaded', function () {
         var noOrderData = document.querySelector('.ktp-no-order-data');
         if (noOrderData) {
             // 受注書データが存在しない場合、記憶されたIDをクリア
-            localStorage.removeItem('ktp_last_order_id');
-            if (window.ktpDebugMode) {
+            localStorage.removeItem('ktpwp_last_order_id');
+            if (window.ktpwpDebugMode) {
                 console.log('KTPWP: 無効な受注書IDをローカルストレージからクリアしました');
             }
         }
@@ -309,8 +309,8 @@ document.addEventListener('DOMContentLoaded', function () {
             var noOrderData = document.querySelector('.ktp-no-order-data');
             if (noOrderData) {
                 // 無効なIDが指定されている場合、ローカルストレージからクリア
-                localStorage.removeItem('ktp_last_order_id');
-                if (window.ktpDebugMode) {
+                localStorage.removeItem('ktpwp_last_order_id');
+                if (window.ktpwpDebugMode) {
                     console.log('KTPWP: 無効な受注書IDを検出し、ローカルストレージからクリアしました:', currentOrderId);
                 }
                 
@@ -319,7 +319,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 newUrl.searchParams.delete('order_id');
                 window.history.replaceState({}, '', newUrl.toString());
                 
-                if (window.ktpDebugMode) {
+                if (window.ktpwpDebugMode) {
                     console.log('KTPWP: URLから無効な受注書IDを削除しました');
                 }
             }
@@ -329,7 +329,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // =============================
     // タブ表示状態の記憶（ソート・ページ・選択ID 等）
     // =============================
-    var TAB_STATE_PREFIX = 'ktp_tab_state_';
+    var TAB_STATE_PREFIX = 'ktpwp_tab_state_';
     var TAB_STATE_KEYS = {
         list: ['progress', 'page_start', 'page_stage', 'flg', 'list_type'],
         order: ['order_id'],
@@ -357,11 +357,11 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         try {
             localStorage.setItem(TAB_STATE_PREFIX + tabName, JSON.stringify(state || {}));
-            if (window.ktpDebugMode) {
+            if (window.ktpwpDebugMode) {
                 console.log('KTPWP: タブ状態を保存しました:', tabName, state);
             }
         } catch (e) {
-            if (window.ktpDebugMode) {
+            if (window.ktpwpDebugMode) {
                 console.warn('KTPWP: タブ状態の保存に失敗しました:', e);
             }
         }
@@ -440,7 +440,7 @@ document.addEventListener('DOMContentLoaded', function () {
             url.searchParams.set(key, saved[key]);
         });
 
-        if (window.ktpDebugMode) {
+        if (window.ktpwpDebugMode) {
             console.log('KTPWP: タブ状態を復元します:', tabName, saved);
         }
 
@@ -588,8 +588,8 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
     */
-    if (window.ktpDebugMode) {
-        if (window.ktpDebugMode) console.log('KTPWP: DOM loaded, initializing toggle functionality');
+    if (window.ktpwpDebugMode) {
+        if (window.ktpwpDebugMode) console.log('KTPWP: DOM loaded, initializing toggle functionality');
     }
 
     // HTMLエスケープ関数
@@ -653,23 +653,23 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 
     // コスト項目トグル - 詳細デバッグ
-    if (window.ktpDebugMode) {
-        if (window.ktpDebugMode) console.log('KTPWP: Searching for cost toggle elements...');
+    if (window.ktpwpDebugMode) {
+        if (window.ktpwpDebugMode) console.log('KTPWP: Searching for cost toggle elements...');
     }
 
     // 全ての .toggle-cost-items 要素を検索
     var allToggleButtons = document.querySelectorAll('.toggle-cost-items');
-    if (window.ktpDebugMode) {
-        if (window.ktpDebugMode) console.log('KTPWP: Found toggle buttons:', allToggleButtons.length, allToggleButtons);
+    if (window.ktpwpDebugMode) {
+        if (window.ktpwpDebugMode) console.log('KTPWP: Found toggle buttons:', allToggleButtons.length, allToggleButtons);
     }
 
     // ページ内の全ての要素を確認（デバッグ用）
     var allButtons = document.querySelectorAll('button');
-    if (window.ktpDebugMode) console.log('KTPWP: All buttons on page:', allButtons.length);
+    if (window.ktpwpDebugMode) console.log('KTPWP: All buttons on page:', allButtons.length);
 
     var costDetailsEl = document.querySelector('details.order-cost-details');
 
-    if (window.ktpDebugMode) console.log('KTPWP: Cost details element found:', !!costDetailsEl);
+    if (window.ktpwpDebugMode) console.log('KTPWP: Cost details element found:', !!costDetailsEl);
 
     if (costDetailsEl) {
         setupCostDetailsToggle(costDetailsEl);
@@ -689,10 +689,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // スタッフチャット（<details> パネル）
     function setupStaffChatPanel(detailsEl, content) {
-        if (window.ktpDebugMode) console.log('KTPWP: Setting up staff chat panel');
+        if (window.ktpwpDebugMode) console.log('KTPWP: Setting up staff chat panel');
         if (!detailsEl || !content) return;
-        if (detailsEl.dataset.ktpStaffChatInit === '1') return;
-        detailsEl.dataset.ktpStaffChatInit = '1';
+        if (detailsEl.dataset.ktpwpStaffChatInit === '1') return;
+        detailsEl.dataset.ktpwpStaffChatInit = '1';
 
         content.style.display = 'block';
         window.updateStaffChatButtonText = function () {};
@@ -701,7 +701,7 @@ document.addEventListener('DOMContentLoaded', function () {
             || (document.querySelector('input[name="staff_chat_order_id"]') ? document.querySelector('input[name="staff_chat_order_id"]').value : '')
             || (document.querySelector('input[name="order_id"]') ? document.querySelector('input[name="order_id"]').value : '')
             || 'global';
-        var staffChatCookieName = 'ktp_staff_chat_toggle_' + currentOrderIdForChatCookie;
+        var staffChatCookieName = 'ktpwp_staff_chat_toggle_' + currentOrderIdForChatCookie;
 
         var urlParams = new URLSearchParams(window.location.search);
         var messageSent = urlParams.get('message_sent') === '1';
@@ -801,7 +801,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 var url = (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) ? ktpwp_ajax.ajax_url :
                     (typeof ajaxurl !== 'undefined') ? ajaxurl :
                         ((typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) || (typeof ajaxurl !== 'undefined' ? ajaxurl : ''));
-                var params = 'action=ktp_send_staff_chat_message&order_id=' + orderId + '&message=' + encodeURIComponent(messageInput.value.trim());
+                var params = 'action=ktpwp_send_staff_chat_message&order_id=' + orderId + '&message=' + encodeURIComponent(messageInput.value.trim());
 
                 // nonceを追加
                 if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.staff_chat) {
@@ -812,11 +812,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
 
                 // 送信パラメータをデバッグ出力
-                if (window.ktpDebugMode) console.log('[KTPWPスタッフチャット送信] url:', url);
-                if (window.ktpDebugMode) console.log('[KTPWPスタッフチャット送信] params:', params);
-                if (window.ktpDebugMode) console.log('[KTPWPスタッフチャット送信] order_id:', orderId, 'message:', messageInput.value.trim());
+                if (window.ktpwpDebugMode) console.log('[KTPWPスタッフチャット送信] url:', url);
+                if (window.ktpwpDebugMode) console.log('[KTPWPスタッフチャット送信] params:', params);
+                if (window.ktpwpDebugMode) console.log('[KTPWPスタッフチャット送信] order_id:', orderId, 'message:', messageInput.value.trim());
                 if (typeof ktpwp_ajax !== 'undefined') {
-                    if (window.ktpDebugMode) console.log('[KTPWPスタッフチャット送信] ktpwp_ajax:', ktpwp_ajax);
+                    if (window.ktpwpDebugMode) console.log('[KTPWPスタッフチャット送信] ktpwp_ajax:', ktpwp_ajax);
                 }
 
                 xhr.onreadystatechange = function () {
@@ -854,7 +854,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                                 updateStaffChatButtonText();
                                             } else {
                                                 // fallback: reload
-                                                localStorage.setItem('ktp_scroll_to_chat', 'true');
+                                                localStorage.setItem('ktpwp_scroll_to_chat', 'true');
                                                 window.location.reload();
                                             }
                                         });
@@ -876,7 +876,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                 }
                             }
                             alert(msg);
-                            if (window.ktpDebugMode) console.error('スタッフチャット送信エラー詳細:', xhr.responseText);
+                            if (window.ktpwpDebugMode) console.error('スタッフチャット送信エラー詳細:', xhr.responseText);
                         }
                     }
                 };
@@ -930,7 +930,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     (typeof ajaxurl !== 'undefined') ? ajaxurl :
                         ((typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) || (typeof ajaxurl !== 'undefined' ? ajaxurl : ''));
 
-                var params = 'action=ktp_delete_staff_chat_message&message_id=' + encodeURIComponent(messageId);
+                var params = 'action=ktpwp_delete_staff_chat_message&message_id=' + encodeURIComponent(messageId);
                 if (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.nonces && ktpwp_ajax.nonces.staff_chat) {
                     params += '&_ajax_nonce=' + ktpwp_ajax.nonces.staff_chat;
                 }
@@ -996,17 +996,17 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         }
 
-        if (window.ktpDebugMode) console.log('KTPWP: Staff chat panel setup complete');
+        if (window.ktpwpDebugMode) console.log('KTPWP: Staff chat panel setup complete');
     }
 
     // コスト項目 <details> + クッキーで開閉状態を復元
     function setupCostDetailsToggle(detailsEl) {
-        if (!detailsEl || detailsEl.dataset.ktpCostDetailsInit === '1') return;
-        detailsEl.dataset.ktpCostDetailsInit = '1';
+        if (!detailsEl || detailsEl.dataset.ktpwpCostDetailsInit === '1') return;
+        detailsEl.dataset.ktpwpCostDetailsInit = '1';
         var currentOrderIdForCookie = (typeof getCurrentOrderId === 'function' && getCurrentOrderId())
             || (document.querySelector('input[name="order_id"]') ? document.querySelector('input[name="order_id"]').value : '')
             || 'global';
-        var costToggleCookieName = 'ktp_cost_toggle_' + currentOrderIdForCookie;
+        var costToggleCookieName = 'ktpwp_cost_toggle_' + currentOrderIdForCookie;
         var savedToggleState = getCookie(costToggleCookieName);
         if (savedToggleState === '1') {
             detailsEl.open = true;
@@ -1020,17 +1020,17 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // メール履歴・案件ファイルなどの <details>（data-ktp-order-toggle 付き）をクッキーで記憶
     function setupOrderBlockDetailsToggle(detailsEl) {
-        if (!detailsEl || detailsEl.dataset.ktpOrderBlockToggleInit === '1') return;
+        if (!detailsEl || detailsEl.dataset.ktpwpOrderBlockToggleInit === '1') return;
         var toggleKey = detailsEl.getAttribute('data-ktp-order-toggle');
         if (!toggleKey) return;
-        detailsEl.dataset.ktpOrderBlockToggleInit = '1';
+        detailsEl.dataset.ktpwpOrderBlockToggleInit = '1';
         var oidAttr = detailsEl.getAttribute('data-ktp-order-id');
         var oid = (oidAttr && oidAttr !== '')
             ? oidAttr
             : ((typeof getCurrentOrderId === 'function' && getCurrentOrderId())
                 || (document.querySelector('input[name="order_id"]') ? document.querySelector('input[name="order_id"]').value : '')
                 || 'global');
-        var cookieName = 'ktp_order_section_' + toggleKey + '_' + oid;
+        var cookieName = 'ktpwp_order_section_' + toggleKey + '_' + oid;
         var saved = getCookie(cookieName);
         if (saved === '1') {
             detailsEl.open = true;
@@ -1051,13 +1051,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // コスト項目トグル機能をセットアップする関数（レガシー・ボタンUI用）
     function setupCostToggle(toggleBtn, content) {
-        if (window.ktpDebugMode) console.log('KTPWP: Setting up cost toggle functionality');
+        if (window.ktpwpDebugMode) console.log('KTPWP: Setting up cost toggle functionality');
 
         // クッキー名を決定（受注書ID単位）
         var currentOrderIdForCookie = (typeof getCurrentOrderId === 'function' && getCurrentOrderId())
             || (document.querySelector('input[name="order_id"]') ? document.querySelector('input[name="order_id"]').value : '')
             || 'global';
-        var costToggleCookieName = 'ktp_cost_toggle_' + currentOrderIdForCookie;
+        var costToggleCookieName = 'ktpwp_cost_toggle_' + currentOrderIdForCookie;
 
         // 初期状態をクッキーから復元（デフォルトは非表示）
         var savedToggleState = getCookie(costToggleCookieName); // '1' = 展開, '0' = 非表示
@@ -1077,22 +1077,22 @@ document.addEventListener('DOMContentLoaded', function () {
             var isExpanded = toggleBtn.getAttribute('aria-expanded') === 'true';
             var buttonText = (isExpanded ? hideLabel : showLabel) + '（' + itemCount + '項目）';
             toggleBtn.textContent = buttonText;
-            if (window.ktpDebugMode) console.log('KTPWP: Button text updated to:', buttonText);
+            if (window.ktpwpDebugMode) console.log('KTPWP: Button text updated to:', buttonText);
         };
 
         toggleBtn.addEventListener('click', function (e) {
             e.preventDefault();
-            if (window.ktpDebugMode) console.log('KTPWP: Cost toggle button clicked');
+            if (window.ktpwpDebugMode) console.log('KTPWP: Cost toggle button clicked');
 
             var expanded = toggleBtn.getAttribute('aria-expanded') === 'true';
             if (expanded) {
                 content.style.display = 'none';
                 toggleBtn.setAttribute('aria-expanded', 'false');
-                if (window.ktpDebugMode) console.log('KTPWP: Cost content hidden');
+                if (window.ktpwpDebugMode) console.log('KTPWP: Cost content hidden');
             } else {
                 content.style.display = 'block';
                 toggleBtn.setAttribute('aria-expanded', 'true');
-                if (window.ktpDebugMode) console.log('KTPWP: Cost content shown');
+                if (window.ktpwpDebugMode) console.log('KTPWP: Cost content shown');
             }
             // 状態をクッキーへ保存（365日保持）
             var newIsExpanded = toggleBtn.getAttribute('aria-expanded') === 'true';
@@ -1111,14 +1111,14 @@ document.addEventListener('DOMContentLoaded', function () {
         // 初期状態のボタンテキストを設定
         updateCostButtonText();
 
-        if (window.ktpDebugMode) console.log('KTPWP: Cost toggle setup complete');
+        if (window.ktpwpDebugMode) console.log('KTPWP: Cost toggle setup complete');
     }
 
     // スタッフチャット（<details>）
     var staffChatDetails = document.getElementById('staff-chat-details');
     var staffChatContent = document.getElementById('staff-chat-content');
 
-    if (window.ktpDebugMode) {
+    if (window.ktpwpDebugMode) {
         console.log('KTPWP: Staff chat details element:', !!staffChatDetails, 'content:', !!staffChatContent);
     }
 
@@ -1135,8 +1135,8 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // フォールバック再読込後：クッキー復元の後に開く（記憶と矛盾しないよう cookie も更新）
-    if (localStorage.getItem('ktp_scroll_to_chat') === 'true') {
-        localStorage.removeItem('ktp_scroll_to_chat');
+    if (localStorage.getItem('ktpwp_scroll_to_chat') === 'true') {
+        localStorage.removeItem('ktpwp_scroll_to_chat');
         var staffD2 = document.getElementById('staff-chat-details');
         if (staffD2) {
             staffD2.open = true;
@@ -1144,7 +1144,7 @@ document.addEventListener('DOMContentLoaded', function () {
         var oidChat = (document.querySelector('input[name="staff_chat_order_id"]') && document.querySelector('input[name="staff_chat_order_id"]').value)
             || (document.querySelector('input[name="order_id"]') && document.querySelector('input[name="order_id"]').value)
             || 'global';
-        setCookie('ktp_staff_chat_toggle_' + oidChat, '1', 365);
+        setCookie('ktpwp_staff_chat_toggle_' + oidChat, '1', 365);
         var staffC2 = document.getElementById('staff-chat-content');
         setTimeout(function () {
             var chatSection = document.querySelector('.staff-chat-title') || document.getElementById('staff-chat-details');
@@ -1176,12 +1176,12 @@ document.addEventListener('DOMContentLoaded', function () {
         initOrderAuxSectionDetailsToggles();
 
         // その他の受注書関連イベントリスナーを再設定
-        if (typeof ktpInvoiceSetupEventListeners === 'function') {
-            ktpInvoiceSetupEventListeners();
+        if (typeof ktpwpInvoiceSetupEventListeners === 'function') {
+            ktpwpInvoiceSetupEventListeners();
         }
         
-        if (typeof ktpCostSetupEventListeners === 'function') {
-            ktpCostSetupEventListeners();
+        if (typeof ktpwpCostSetupEventListeners === 'function') {
+            ktpwpCostSetupEventListeners();
         }
     }
 
@@ -1189,48 +1189,48 @@ document.addEventListener('DOMContentLoaded', function () {
 
 // グローバル関数：スタッフチャットトグルをテスト
 window.testStaffChatToggle = function () {
-    if (window.ktpDebugMode) console.log('=== スタッフチャット <details> テスト開始 ===');
+    if (window.ktpwpDebugMode) console.log('=== スタッフチャット <details> テスト開始 ===');
     var d = document.getElementById('staff-chat-details');
     if (!d) {
-        if (window.ktpDebugMode) console.error('staff-chat-details が見つかりません');
+        if (window.ktpwpDebugMode) console.error('staff-chat-details が見つかりません');
         return false;
     }
     d.open = !d.open;
-    if (window.ktpDebugMode) console.log('open:', d.open);
+    if (window.ktpwpDebugMode) console.log('open:', d.open);
     return true;
 };
 
 // グローバル関数：両方のトグルをテスト
 window.testAllToggles = function () {
-    if (window.ktpDebugMode) console.log('=== 全トグル機能テスト開始 ===');
+    if (window.ktpwpDebugMode) console.log('=== 全トグル機能テスト開始 ===');
 
     var costResult = window.testCostToggle();
     var staffResult = window.testStaffChatToggle();
 
-    if (window.ktpDebugMode) console.log('テスト結果:');
-    if (window.ktpDebugMode) console.log('- コスト項目トグル:', costResult ? '成功' : '失敗');
-    if (window.ktpDebugMode) console.log('- スタッフチャットトグル:', staffResult ? '成功' : '失敗');
+    if (window.ktpwpDebugMode) console.log('テスト結果:');
+    if (window.ktpwpDebugMode) console.log('- コスト項目トグル:', costResult ? '成功' : '失敗');
+    if (window.ktpwpDebugMode) console.log('- スタッフチャットトグル:', staffResult ? '成功' : '失敗');
 
     if (costResult && staffResult) {
         window.showSuccessNotification('全てのトグル機能が正常に動作しています');
     } else {
-        if (window.ktpDebugMode) console.error('一部のトグル機能に問題があります');
+        if (window.ktpwpDebugMode) console.error('一部のトグル機能に問題があります');
     }
 
-    if (window.ktpDebugMode) console.log('=== 全テスト完了 ===');
+    if (window.ktpwpDebugMode) console.log('=== 全テスト完了 ===');
     return costResult && staffResult;
 };
 
 // グローバル関数：コスト項目トグルをテスト
 window.testCostToggle = function () {
-    if (window.ktpDebugMode) console.log('=== コスト項目 <details> テスト開始 ===');
+    if (window.ktpwpDebugMode) console.log('=== コスト項目 <details> テスト開始 ===');
     var d = document.querySelector('details.order-cost-details');
     if (!d) {
-        if (window.ktpDebugMode) console.error('order-cost-details が見つかりません');
+        if (window.ktpwpDebugMode) console.error('order-cost-details が見つかりません');
         return false;
     }
     d.open = !d.open;
-    if (window.ktpDebugMode) console.log('open:', d.open);
+    if (window.ktpwpDebugMode) console.log('open:', d.open);
     return true;
 };
 

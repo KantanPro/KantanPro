@@ -28,13 +28,13 @@ final class KTPWP_Pdf_Branding_Admin {
 	}
 
 	public static function handle_save() {
-		if ( ! isset( $_POST['ktp_pdf_branding_save'] ) ) {
+		if ( ! isset( $_POST['ktpwp_pdf_branding_save'] ) ) {
 			return;
 		}
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
-		check_admin_referer( 'ktp_pdf_branding_save', 'ktp_pdf_branding_nonce' );
+		check_admin_referer( 'ktpwp_pdf_branding_save', 'ktpwp_pdf_branding_nonce' );
 
 		update_option( KTPWP_Pdf_Branding::OPTION_ISSUER_NAME, sanitize_text_field( wp_unslash( $_POST['pdf_issuer_name'] ?? '' ) ) );
 		update_option( KTPWP_Pdf_Branding::OPTION_ISSUER_ADDRESS, sanitize_textarea_field( wp_unslash( $_POST['pdf_issuer_address'] ?? '' ) ) );
@@ -42,7 +42,16 @@ final class KTPWP_Pdf_Branding_Admin {
 		if ( ! empty( $_POST['remove_logo'] ) ) {
 			KTPWP_Pdf_Branding::remove_file( KTPWP_Pdf_Branding::OPTION_LOGO_PATH );
 		} elseif ( ! empty( $_FILES['pdf_logo']['tmp_name'] ) ) {
-			$path = KTPWP_Pdf_Branding::handle_upload( 'pdf_logo' );
+			$path = KTPWP_Pdf_Branding::handle_upload(
+				'pdf_logo',
+				array(
+					'name'     => sanitize_file_name( wp_unslash( $_FILES['pdf_logo']['name'] ?? '' ) ),
+					'type'     => sanitize_mime_type( wp_unslash( $_FILES['pdf_logo']['type'] ?? '' ) ),
+					'tmp_name' => sanitize_text_field( $_FILES['pdf_logo']['tmp_name'] ),
+					'error'    => absint( $_FILES['pdf_logo']['error'] ?? 0 ),
+					'size'     => absint( $_FILES['pdf_logo']['size'] ?? 0 ),
+				)
+			);
 			if ( $path ) {
 				KTPWP_Pdf_Branding::remove_file( KTPWP_Pdf_Branding::OPTION_LOGO_PATH );
 				update_option( KTPWP_Pdf_Branding::OPTION_LOGO_PATH, $path );
@@ -53,7 +62,16 @@ final class KTPWP_Pdf_Branding_Admin {
 		if ( ! empty( $_POST['remove_seal'] ) ) {
 			KTPWP_Pdf_Branding::remove_file( KTPWP_Pdf_Branding::OPTION_SEAL_PATH );
 		} elseif ( ! empty( $_FILES['pdf_seal']['tmp_name'] ) ) {
-			$path = KTPWP_Pdf_Branding::handle_upload( 'pdf_seal' );
+			$path = KTPWP_Pdf_Branding::handle_upload(
+				'pdf_seal',
+				array(
+					'name'     => sanitize_file_name( wp_unslash( $_FILES['pdf_seal']['name'] ?? '' ) ),
+					'type'     => sanitize_mime_type( wp_unslash( $_FILES['pdf_seal']['type'] ?? '' ) ),
+					'tmp_name' => sanitize_text_field( $_FILES['pdf_seal']['tmp_name'] ),
+					'error'    => absint( $_FILES['pdf_seal']['error'] ?? 0 ),
+					'size'     => absint( $_FILES['pdf_seal']['size'] ?? 0 ),
+				)
+			);
 			if ( $path ) {
 				KTPWP_Pdf_Branding::remove_file( KTPWP_Pdf_Branding::OPTION_SEAL_PATH );
 				update_option( KTPWP_Pdf_Branding::OPTION_SEAL_PATH, $path );
@@ -62,8 +80,10 @@ final class KTPWP_Pdf_Branding_Admin {
 		}
 
 		$raw = isset( $_POST['pdf_document_settings'] ) && is_array( $_POST['pdf_document_settings'] )
-			? wp_unslash( $_POST['pdf_document_settings'] )
+			? map_deep( wp_unslash( $_POST['pdf_document_settings'] ), 'sanitize_textarea_field' ) // 項目ごとの仕上げは下の sanitize_form_value。
 			: array();
+		// 挨拶文（lead）は改行を残し、それ以外は 1 行のテキストとして扱う。型と範囲は normalize_from_request() で検証する
+		array_walk_recursive( $raw, array( 'KTPWP_Request', 'sanitize_form_value' ) );
 		$normalized = KTPWP_Pdf_Document_Settings::normalize_from_request( $raw );
 		update_option( KTPWP_Pdf_Document_Settings::OPTION_DOCUMENT_SETTINGS, $normalized );
 
@@ -86,13 +106,13 @@ final class KTPWP_Pdf_Branding_Admin {
 		?>
 		<div class="wrap">
 			<h1><?php esc_html_e( '帳票表示設定', 'kantanpro' ); ?></h1>
-			<?php if ( isset( $_GET['updated'] ) ) : ?>
+			<?php if ( KTPWP_Request::has_query( 'updated' ) ) : ?>
 				<div class="notice notice-success is-dismissible"><p><?php esc_html_e( '保存しました。', 'kantanpro' ); ?></p></div>
 			<?php endif; ?>
 			<p><?php esc_html_e( '見積書・案件帳票・一括請求書ごとにレイアウト・表示項目・ロゴ・印影を設定できます。', 'kantanpro' ); ?></p>
 			<form method="post" enctype="multipart/form-data">
-				<?php wp_nonce_field( 'ktp_pdf_branding_save', 'ktp_pdf_branding_nonce' ); ?>
-				<input type="hidden" name="ktp_pdf_branding_save" value="1" />
+				<?php wp_nonce_field( 'ktpwp_pdf_branding_save', 'ktpwp_pdf_branding_nonce' ); ?>
+				<input type="hidden" name="ktpwp_pdf_branding_save" value="1" />
 				<table class="form-table" role="presentation">
 					<tr>
 						<th scope="row"><label for="pdf_issuer_name"><?php esc_html_e( '帳票に出す社名', 'kantanpro' ); ?></label></th>

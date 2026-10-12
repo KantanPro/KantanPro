@@ -2,7 +2,7 @@
 /**
  * Migration: Add qualified_invoice_number column to supplier table
  *
- * This migration adds the qualified_invoice_number column to the ktp_supplier table
+ * This migration adds the qualified_invoice_number column to the ktpwp_supplier table
  * to support qualified invoice number functionality.
  *
  * @package KTPWP
@@ -28,7 +28,7 @@ class KTPWP_Migration_20250130_Add_Qualified_Invoice_Number_To_Supplier {
     public static function up() {
         global $wpdb;
         
-        $table_name = $wpdb->prefix . 'ktp_supplier';
+        $table_name = $wpdb->prefix . 'ktpwp_supplier';
         
         // Check if the table exists
         $table_exists = $wpdb->get_var( 
@@ -45,9 +45,7 @@ class KTPWP_Migration_20250130_Add_Qualified_Invoice_Number_To_Supplier {
         
         // Check if the column already exists
         $column_exists = $wpdb->get_var( 
-            $wpdb->prepare( 
-                "SHOW COLUMNS FROM `{$table_name}` LIKE %s", 
-                'qualified_invoice_number' 
+            $wpdb->prepare( 'SHOW COLUMNS FROM %i LIKE %s', $table_name, 'qualified_invoice_number' 
             ) 
         );
         
@@ -57,9 +55,9 @@ class KTPWP_Migration_20250130_Add_Qualified_Invoice_Number_To_Supplier {
         }
         
         // Add the qualified_invoice_number column
-        $sql = "ALTER TABLE `{$table_name}` ADD COLUMN `qualified_invoice_number` VARCHAR(100) NOT NULL DEFAULT '' AFTER `memo`";
+        $sql = $wpdb->prepare( "ALTER TABLE %i ADD COLUMN `qualified_invoice_number` VARCHAR(100) NOT NULL DEFAULT '' AFTER `memo`", $table_name );
         
-        $result = $wpdb->query( $sql );
+        $result = $wpdb->query( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $sql は直前で $wpdb->prepare() 済み。
         
         if ( $result === false ) {
             ktpwp_debug_log( 'KTPWP Migration: Failed to add qualified_invoice_number column to ' . $table_name . '. Error: ' . $wpdb->last_error );
@@ -80,7 +78,7 @@ class KTPWP_Migration_20250130_Add_Qualified_Invoice_Number_To_Supplier {
     public static function down() {
         global $wpdb;
         
-        $table_name = $wpdb->prefix . 'ktp_supplier';
+        $table_name = $wpdb->prefix . 'ktpwp_supplier';
         
         // Check if the table exists
         $table_exists = $wpdb->get_var( 
@@ -97,9 +95,7 @@ class KTPWP_Migration_20250130_Add_Qualified_Invoice_Number_To_Supplier {
         
         // Check if the column exists
         $column_exists = $wpdb->get_var( 
-            $wpdb->prepare( 
-                "SHOW COLUMNS FROM `{$table_name}` LIKE %s", 
-                'qualified_invoice_number' 
+            $wpdb->prepare( 'SHOW COLUMNS FROM %i LIKE %s', $table_name, 'qualified_invoice_number' 
             ) 
         );
         
@@ -109,9 +105,9 @@ class KTPWP_Migration_20250130_Add_Qualified_Invoice_Number_To_Supplier {
         }
         
         // Remove the qualified_invoice_number column
-        $sql = "ALTER TABLE `{$table_name}` DROP COLUMN `qualified_invoice_number`";
+        $sql = $wpdb->prepare( "ALTER TABLE %i DROP COLUMN `qualified_invoice_number`", $table_name );
         
-        $result = $wpdb->query( $sql );
+        $result = $wpdb->query( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $sql は直前で $wpdb->prepare() 済み。
         
         if ( $result === false ) {
             ktpwp_debug_log( 'KTPWP Migration: Failed to remove qualified_invoice_number column from ' . $table_name . '. Error: ' . $wpdb->last_error );

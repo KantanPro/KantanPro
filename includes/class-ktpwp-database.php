@@ -166,9 +166,9 @@ class KTPWP_Database {
         
         return ktpwp_distribution_cache( $cache_key, function() use ($table_name) {
             global $wpdb;
-            $full_table_name = $wpdb->prefix . 'ktp_' . $table_name;
+            $full_table_name = $wpdb->prefix . 'ktpwp_' . $table_name;
             $query = $wpdb->prepare( 'SHOW TABLES LIKE %s', $full_table_name );
-            return $wpdb->get_var( $query ) === $full_table_name;
+            return $wpdb->get_var( $query ) === $full_table_name; // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $query は直前で $wpdb->prepare() 済み。
         }, 7200 ); // 2時間に延長
     }
 
@@ -189,8 +189,8 @@ class KTPWP_Database {
             }
             
             global $wpdb;
-            $full_table_name = $wpdb->prefix . 'ktp_' . $table_name;
-            return $wpdb->get_results( "DESCRIBE {$full_table_name}", ARRAY_A );
+            $full_table_name = $wpdb->prefix . 'ktpwp_' . $table_name;
+            return $wpdb->get_results( $wpdb->prepare( 'DESCRIBE %i', $full_table_name ), ARRAY_A );
         }, 7200 ); // 2時間に延長
     }
 
@@ -202,10 +202,10 @@ class KTPWP_Database {
      */
     public function drop_table( $table_name ) {
         global $wpdb;
-        $full_table_name = $wpdb->prefix . 'ktp_' . $table_name;
+        $full_table_name = $wpdb->prefix . 'ktpwp_' . $table_name;
 
-        $query = "DROP TABLE IF EXISTS {$full_table_name}";
-        $result = $wpdb->query( $query );
+        $query = $wpdb->prepare( "DROP TABLE IF EXISTS %i", $full_table_name );
+        $result = $wpdb->query( $query ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $query は直前で $wpdb->prepare() 済み。
 
         if ( $result !== false ) {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
@@ -243,14 +243,14 @@ class KTPWP_Database {
      */
     public function clear_table_data( $table_name ) {
         global $wpdb;
-        $full_table_name = $wpdb->prefix . 'ktp_' . $table_name;
+        $full_table_name = $wpdb->prefix . 'ktpwp_' . $table_name;
 
         if ( ! $this->table_exists( $table_name ) ) {
             return false;
         }
 
-        $query = "TRUNCATE TABLE {$full_table_name}";
-        $result = $wpdb->query( $query );
+        $query = $wpdb->prepare( "TRUNCATE TABLE %i", $full_table_name );
+        $result = $wpdb->query( $query ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $query は直前で $wpdb->prepare() 済み。
 
         if ( $result !== false ) {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {

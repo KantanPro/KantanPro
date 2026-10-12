@@ -9,7 +9,7 @@
     }
 
     function getConfig() {
-        return typeof ktpClientContract !== 'undefined' ? ktpClientContract : null;
+        return typeof ktpwpClientContract !== 'undefined' ? ktpwpClientContract : null;
     }
 
     function qs(sel, root) {
@@ -319,7 +319,7 @@
 
     function collectFormData(config) {
         return {
-            action: 'ktp_save_contract',
+            action: 'ktpwp_save_contract',
             nonce: config.nonce,
             contract_id: (qs('#ktp-contract-id') || {}).value || '0',
             client_id: (qs('#ktp-contract-client-id') || {}).value || config.client_id,
@@ -466,7 +466,7 @@
         }
 
         postFormData(config, {
-            action: 'ktp_create_contract_setup_checkout',
+            action: 'ktpwp_create_contract_setup_checkout',
             nonce: config.nonce,
             contract_id: contractId,
             client_id: config.client_id
@@ -545,7 +545,7 @@
 
     function loadContract(config, contractId) {
         postFormData(config, {
-            action: 'ktp_get_contract',
+            action: 'ktpwp_get_contract',
             nonce: config.nonce,
             contract_id: contractId,
             client_id: config.client_id
@@ -566,7 +566,7 @@
             return;
         }
         postFormData(config, {
-            action: 'ktp_delete_contract',
+            action: 'ktpwp_delete_contract',
             nonce: config.nonce,
             contract_id: contractId,
             client_id: config.client_id

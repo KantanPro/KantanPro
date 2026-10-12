@@ -15,10 +15,10 @@
         $(document).off('mouseenter.ktp-service-item mouseleave.ktp-service-item');
     }
 
-    window.ktpCloseServiceSelector = closeServiceSelector;
+    window.ktpwpCloseServiceSelector = closeServiceSelector;
 
     // サービス選択ポップアップの表示
-    window.ktpShowServiceSelector = function (targetRow, mode = 'add') {
+    window.ktpwpShowServiceSelector = function (targetRow, mode = 'add') {
 
         const orderId = $('input[name="order_id"]').val() || $('#order_id').val();
         if (!orderId) {
@@ -137,20 +137,20 @@
         let ajaxUrl = ((typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) || (typeof ajaxurl !== 'undefined' ? ajaxurl : ''));
         let nonce = '';
 
-        if (typeof ktp_service_ajax_object !== 'undefined') {
-            ajaxUrl = ktp_service_ajax_object.ajax_url;
-            nonce = ktp_service_ajax_object.nonce;
-        } else if (typeof ktp_ajax_object !== 'undefined') {
-            ajaxUrl = ktp_ajax_object.ajax_url;
-            nonce = ktp_ajax_object.nonce;
+        if (typeof ktpwp_service_ajax_object !== 'undefined') {
+            ajaxUrl = ktpwp_service_ajax_object.ajax_url;
+            nonce = ktpwp_service_ajax_object.nonce;
+        } else if (typeof ktpwp_ajax_object !== 'undefined') {
+            ajaxUrl = ktpwp_ajax_object.ajax_url;
+            nonce = ktpwp_ajax_object.nonce;
         } else if (typeof ajaxurl !== 'undefined') {
             ajaxUrl = ajaxurl;
         }
 
         // nonceの取得優先順位
         if (!nonce) {
-            if (typeof ktp_ajax_nonce !== 'undefined') {
-                nonce = ktp_ajax_nonce;
+            if (typeof ktpwp_autosave_nonce !== 'undefined') {
+                nonce = ktpwp_autosave_nonce;
             } else if (typeof window.ktpwp_ajax !== 'undefined' && window.ktpwp_ajax.nonces) {
                 nonce = window.ktpwp_ajax.nonces.auto_save || window.ktpwp_ajax.nonces.general || '';
             }
@@ -159,7 +159,7 @@
         console.log('[SERVICE SELECTOR] Ajax設定', { ajaxUrl, nonce: nonce ? '設定済み' : '未設定' });
 
         const ajaxData = {
-            action: 'ktp_get_service_list',
+            action: 'ktpwp_get_service_list',
             nonce: nonce,
             page: page,
             limit: 'auto' // サーバーサイドで一般設定から取得
@@ -168,10 +168,10 @@
         console.log('[SERVICE SELECTOR] Ajax送信データ', ajaxData);
         console.log('[SERVICE SELECTOR] Ajax URL:', ajaxUrl);
         console.log('[SERVICE SELECTOR] 使用可能なグローバル変数:', {
-            ktp_service_ajax_object: typeof ktp_service_ajax_object,
-            ktp_ajax_object: typeof ktp_ajax_object,
+            ktpwp_service_ajax_object: typeof ktpwp_service_ajax_object,
+            ktpwp_ajax_object: typeof ktpwp_ajax_object,
             ajaxurl: typeof ajaxurl,
-            ktp_ajax_nonce: typeof ktp_ajax_nonce
+            ktpwp_ajax_nonce: typeof ktpwp_autosave_nonce
         });
 
         console.log('[SERVICE SELECTOR] Ajaxリクエスト送信開始...');
@@ -226,7 +226,7 @@
                         <div style="font-size: 16px; font-weight: bold; margin-bottom: 10px;">${errorMessage}</div>
                         <div style="font-size: 14px; margin-bottom: 15px; color: #666;">${errorDetails}</div>
                         <div style="font-size: 12px; margin-top: 8px; color: #666;">
-                            <button type="button" onclick="window.ktpShowServiceSelector && window.ktpShowServiceSelector(${targetRow ? targetRow.attr('id') || 'null' : 'null'}, '${mode}')" style="
+                            <button type="button" onclick="window.ktpwpShowServiceSelector && window.ktpwpShowServiceSelector(${targetRow ? targetRow.attr('id') || 'null' : 'null'}, '${mode}')" style="
                                 background: #007cba; 
                                 color: white; 
                                 border: none; 
@@ -263,7 +263,7 @@
             const pagination = result.data.pagination || {};
 
             // サービスデータをグローバル変数に保存（サービス選択時に使用）
-            window.ktpServiceSelectorLastServices = services;
+            window.ktpwpServiceSelectorLastServices = services;
             console.log('[SERVICE SELECTOR] サービスデータを保存:', {
                 servicesCount: services.length,
                 services: services,
@@ -277,7 +277,7 @@
 
             if (services.length === 0) {
                 html += `
-                    <div class="ktp_data_list_box" style="
+                    <div class="ktpwp_data_list_box" style="
                         border: 1px solid #e5e7eb; 
                         border-radius: 4px; 
                         overflow: hidden; 
@@ -311,7 +311,7 @@
             } else {
                 // サービス一覧をカード型リストで表示
                 html += `
-                    <div class="ktp_data_list_box" style="
+                    <div class="ktpwp_data_list_box" style="
                         border: 1px solid #e5e7eb; 
                         border-radius: 4px; 
                         overflow: hidden; 
@@ -351,11 +351,11 @@
                     const isSmallScreen = window.innerWidth < 600;
 
                     // 税制モードにより税率表示を抑制
-                    const suppressTax = !!(window.ktp_tax_policy && (window.ktp_tax_policy.mode === 'abolished' || window.ktp_tax_policy.hide_columns));
+                    const suppressTax = !!(window.ktpwp_tax_policy && (window.ktpwp_tax_policy.mode === 'abolished' || window.ktpwp_tax_policy.hide_columns));
                     const taxInfoSegment = suppressTax ? '' : `<span style="color: #6b7280; font-size: ${isSmallScreen ? '12px' : '13px'}; flex-shrink: 0;"><strong>税率:</strong> ${taxRate !== null ? Math.floor(taxRate) + '%' : '非課税'}</span>`;
 
                     html += `
-                        <div class="ktp_data_list_item" style="
+                        <div class="ktpwp_data_list_item" style="
                             line-height: 1.5;
                             border-bottom: 1px solid #e5e7eb;
                             margin: 0;
@@ -468,12 +468,12 @@
             $('#ktp-service-selector-content').html(html);
 
             // サービスデータをグローバル変数に保存（追加・更新ボタンで使用）
-            window.ktpServiceSelectorLastServices = services;
+            window.ktpwpServiceSelectorLastServices = services;
             console.log('[SERVICE SELECTOR] サービスデータを保存:', {
-                services: window.ktpServiceSelectorLastServices,
-                servicesCount: window.ktpServiceSelectorLastServices ? window.ktpServiceSelectorLastServices.length : 0,
-                firstService: window.ktpServiceSelectorLastServices && window.ktpServiceSelectorLastServices.length > 0 ? window.ktpServiceSelectorLastServices[0] : null,
-                firstServiceName: window.ktpServiceSelectorLastServices && window.ktpServiceSelectorLastServices.length > 0 ? window.ktpServiceSelectorLastServices[0].service_name : 'N/A'
+                services: window.ktpwpServiceSelectorLastServices,
+                servicesCount: window.ktpwpServiceSelectorLastServices ? window.ktpwpServiceSelectorLastServices.length : 0,
+                firstService: window.ktpwpServiceSelectorLastServices && window.ktpwpServiceSelectorLastServices.length > 0 ? window.ktpwpServiceSelectorLastServices[0] : null,
+                firstServiceName: window.ktpwpServiceSelectorLastServices && window.ktpwpServiceSelectorLastServices.length > 0 ? window.ktpwpServiceSelectorLastServices[0].service_name : 'N/A'
             });
 
             // ボタンイベントの設定（イベント委譲を使用して再レンダリング後も動作するように修正）
@@ -482,7 +482,7 @@
                     console.log('[SERVICE SELECTOR] サービス追加ボタンクリック検出');
                     
                     const serviceId = $(this).data('service-id');
-                    const services = typeof window.ktpServiceSelectorLastServices === 'object' ? window.ktpServiceSelectorLastServices : [];
+                    const services = typeof window.ktpwpServiceSelectorLastServices === 'object' ? window.ktpwpServiceSelectorLastServices : [];
                     const found = services.find(s => String(s.id) === String(serviceId));
                     
                                             console.log('[SERVICE SELECTOR] サービス追加ボタン押下:', {
@@ -518,7 +518,7 @@
                     console.log('[SERVICE SELECTOR] サービス更新ボタンクリック検出');
                     
                     const serviceId = $(this).data('service-id');
-                    const services = typeof window.ktpServiceSelectorLastServices === 'object' ? window.ktpServiceSelectorLastServices : [];
+                    const services = typeof window.ktpwpServiceSelectorLastServices === 'object' ? window.ktpwpServiceSelectorLastServices : [];
                     const found = services.find(s => String(s.id) === String(serviceId));
                     
                     console.log('[SERVICE SELECTOR] サービス更新ボタン押下:', {
@@ -583,7 +583,7 @@
 
             // カード型リストアイテムのホバーエフェクト
             $(document).off('mouseenter.ktp-service-item mouseleave.ktp-service-item')
-                .on('mouseenter.ktp-service-item', '#ktp-service-selector-popup .ktp_data_list_item', function() {
+                .on('mouseenter.ktp-service-item', '#ktp-service-selector-popup .ktpwp_data_list_item', function() {
                     // ホバー時のエフェクト
                     $(this).css({
                         'background-color': '#e3f2fd',
@@ -592,7 +592,7 @@
                         'border-radius': '4px'
                     });
                 })
-                .on('mouseleave.ktp-service-item', '#ktp-service-selector-popup .ktp_data_list_item', function() {
+                .on('mouseleave.ktp-service-item', '#ktp-service-selector-popup .ktpwp_data_list_item', function() {
                     // ホバー解除時
                     const index = $(this).index();
                     const originalBg = index % 2 === 0 ? '#f9fafb' : '#ffffff';
@@ -791,7 +791,7 @@
             serviceNameEscaped: escapeHtml(serviceData.service_name)
         });
         
-        const hideColumns = !!(window.ktp_tax_policy && (window.ktp_tax_policy.mode === 'abolished' || window.ktp_tax_policy.hide_columns));
+        const hideColumns = !!(window.ktpwp_tax_policy && (window.ktpwp_tax_policy.mode === 'abolished' || window.ktpwp_tax_policy.hide_columns));
         const taxTd = hideColumns ? '' : `
                 <td style="text-align:left;">
                     <input type="number" name="invoice_items[${newIndex}][tax_rate]" class="invoice-item-input tax-rate" value="${serviceData.tax_rate !== undefined && serviceData.tax_rate !== null ? Math.round(serviceData.tax_rate) : ''}" step="1" min="0" max="100" style="width: 50px; max-width: 60px; text-align: right !important;"> %
@@ -852,15 +852,15 @@
 
         // データベースに保存
         const orderId = $('input[name="order_id"]').val() || $('#order_id').val();
-        if (orderId && typeof window.ktpInvoiceCreateNewItem === 'function') {
+        if (orderId && typeof window.ktpwpInvoiceCreateNewItem === 'function') {
             console.log('[SERVICE SELECTOR] サービス追加データ保存開始', {
                 serviceData: serviceData,
                 orderId: orderId,
                 serviceNameForDB: serviceData.service_name
             });
             
-            window.ktpInvoiceCreateNewItem('invoice', 'product_name', serviceData.service_name, orderId, $newRow, function(success, newItemId) {
-                console.log('[SERVICE SELECTOR] ktpInvoiceCreateNewItemコールバック:', {
+            window.ktpwpInvoiceCreateNewItem('invoice', 'product_name', serviceData.service_name, orderId, $newRow, function(success, newItemId) {
+                console.log('[SERVICE SELECTOR] ktpwpInvoiceCreateNewItemコールバック:', {
                     success: success,
                     newItemId: newItemId,
                     serviceNameUsed: serviceData.service_name
@@ -872,7 +872,7 @@
                     console.log('[SERVICE SELECTOR] 新規サービス保存成功', newItemId);
                     
                     // 各フィールドを個別に保存
-                    if (typeof window.ktpInvoiceAutoSaveItem === 'function') {
+                    if (typeof window.ktpwpInvoiceAutoSaveItem === 'function') {
                         console.log('[SERVICE SELECTOR] 単価・数量・単位・税率を保存中...', {
                             price: serviceData.price,
                             quantity: 1,
@@ -883,20 +883,20 @@
                         
                         // product_nameも明示的に保存（新規作成時は空で作成されるため）
                         console.log('[SERVICE SELECTOR] product_name保存開始:', serviceData.service_name);
-                        window.ktpInvoiceAutoSaveItem('invoice', newItemId, 'product_name', serviceData.service_name, orderId);
-                        window.ktpInvoiceAutoSaveItem('invoice', newItemId, 'price', serviceData.price, orderId);
-                        window.ktpInvoiceAutoSaveItem('invoice', newItemId, 'quantity', 1, orderId);
-                        window.ktpInvoiceAutoSaveItem('invoice', newItemId, 'unit', serviceData.unit, orderId);
+                        window.ktpwpInvoiceAutoSaveItem('invoice', newItemId, 'product_name', serviceData.service_name, orderId);
+                        window.ktpwpInvoiceAutoSaveItem('invoice', newItemId, 'price', serviceData.price, orderId);
+                        window.ktpwpInvoiceAutoSaveItem('invoice', newItemId, 'quantity', 1, orderId);
+                        window.ktpwpInvoiceAutoSaveItem('invoice', newItemId, 'unit', serviceData.unit, orderId);
                         // 税率も保存（非課税の場合はnullを明示的に保存）
                         if (serviceData.tax_rate !== undefined) {
-                            window.ktpInvoiceAutoSaveItem('invoice', newItemId, 'tax_rate', serviceData.tax_rate, orderId);
+                            window.ktpwpInvoiceAutoSaveItem('invoice', newItemId, 'tax_rate', serviceData.tax_rate, orderId);
                         } else {
                             // 税率が未定義の場合は明示的にnullを保存
-                            window.ktpInvoiceAutoSaveItem('invoice', newItemId, 'tax_rate', null, orderId);
+                            window.ktpwpInvoiceAutoSaveItem('invoice', newItemId, 'tax_rate', null, orderId);
                         }
                         // 備考も保存
                         if (serviceData.remarks !== undefined) {
-                            window.ktpInvoiceAutoSaveItem('invoice', newItemId, 'remarks', serviceData.remarks, orderId);
+                            window.ktpwpInvoiceAutoSaveItem('invoice', newItemId, 'remarks', serviceData.remarks, orderId);
                         }
                     }
                     
@@ -917,7 +917,7 @@
         } else {
             console.error('[SERVICE SELECTOR] データベース保存条件不満足:', {
                 orderId: orderId,
-                ktpInvoiceCreateNewItem: typeof window.ktpInvoiceCreateNewItem
+                ktpwpInvoiceCreateNewItem: typeof window.ktpwpInvoiceCreateNewItem
             });
         }
 
@@ -932,7 +932,7 @@
         }
 
         // デバッグ用：サービス追加時の金額計算確認
-        window.ktpDebugServiceAmountCalculation = function() {
+        window.ktpwpDebugServiceAmountCalculation = function() {
             console.log('=== サービス追加後の金額計算確認 ===');
             $('#order_content .invoice-items-table tbody tr').each(function(index) {
                 const $row = $(this);
@@ -997,11 +997,11 @@
             itemId: itemId,
             itemIdType: typeof itemId,
             itemIdIsZero: itemId === '0',
-            ktpInvoiceAutoSaveItemExists: typeof window.ktpInvoiceAutoSaveItem === 'function',
-            willSave: orderId && itemId && itemId !== '0' && typeof window.ktpInvoiceAutoSaveItem === 'function'
+            ktpwpInvoiceAutoSaveItemExists: typeof window.ktpwpInvoiceAutoSaveItem === 'function',
+            willSave: orderId && itemId && itemId !== '0' && typeof window.ktpwpInvoiceAutoSaveItem === 'function'
         });
         
-        if (orderId && itemId && itemId !== '0' && typeof window.ktpInvoiceAutoSaveItem === 'function') {
+        if (orderId && itemId && itemId !== '0' && typeof window.ktpwpInvoiceAutoSaveItem === 'function') {
             console.log('[SERVICE SELECTOR] 既存行のサービス更新データ保存中...', {
                 itemId: itemId,
                 price: serviceData.price,
@@ -1010,21 +1010,21 @@
             });
             
             // 各フィールドを順次保存
-            window.ktpInvoiceAutoSaveItem('invoice', itemId, 'product_name', serviceData.service_name, orderId);
-            window.ktpInvoiceAutoSaveItem('invoice', itemId, 'price', serviceData.price, orderId);
-            window.ktpInvoiceAutoSaveItem('invoice', itemId, 'unit', serviceData.unit, orderId);
-            window.ktpInvoiceAutoSaveItem('invoice', itemId, 'quantity', 1, orderId);
+            window.ktpwpInvoiceAutoSaveItem('invoice', itemId, 'product_name', serviceData.service_name, orderId);
+            window.ktpwpInvoiceAutoSaveItem('invoice', itemId, 'price', serviceData.price, orderId);
+            window.ktpwpInvoiceAutoSaveItem('invoice', itemId, 'unit', serviceData.unit, orderId);
+            window.ktpwpInvoiceAutoSaveItem('invoice', itemId, 'quantity', 1, orderId);
             // 税率も保存（非課税の場合はnullを明示的に保存）
             if (serviceData.tax_rate !== undefined) {
-                window.ktpInvoiceAutoSaveItem('invoice', itemId, 'tax_rate', serviceData.tax_rate, orderId);
+                window.ktpwpInvoiceAutoSaveItem('invoice', itemId, 'tax_rate', serviceData.tax_rate, orderId);
             } else {
                 // 税率が未定義の場合は明示的にnullを保存
-                window.ktpInvoiceAutoSaveItem('invoice', itemId, 'tax_rate', null, orderId);
+                window.ktpwpInvoiceAutoSaveItem('invoice', itemId, 'tax_rate', null, orderId);
             }
             
             // 備考も保存
             if (serviceData.remarks !== undefined) {
-                window.ktpInvoiceAutoSaveItem('invoice', itemId, 'remarks', serviceData.remarks, orderId);
+                window.ktpwpInvoiceAutoSaveItem('invoice', itemId, 'remarks', serviceData.remarks, orderId);
             }
 
             // 保存後に合計と利益を更新（金額計算は既に完了済み）
@@ -1033,15 +1033,15 @@
                     updateTotalAndProfit();
                 }
             }, 200);
-        } else if (orderId && itemId === '0' && typeof window.ktpInvoiceCreateNewItem === 'function') {
+        } else if (orderId && itemId === '0' && typeof window.ktpwpInvoiceCreateNewItem === 'function') {
             // 新規作成された行の場合、新規作成処理を実行
             console.log('[SERVICE SELECTOR] 新規行のサービス更新データ保存中...', {
                 serviceData: serviceData,
                 orderId: orderId
             });
             
-            window.ktpInvoiceCreateNewItem('invoice', 'product_name', serviceData.service_name, orderId, targetRow, function(success, newItemId) {
-                console.log('[SERVICE SELECTOR] ktpInvoiceCreateNewItemコールバック:', {
+            window.ktpwpInvoiceCreateNewItem('invoice', 'product_name', serviceData.service_name, orderId, targetRow, function(success, newItemId) {
+                console.log('[SERVICE SELECTOR] ktpwpInvoiceCreateNewItemコールバック:', {
                     success: success,
                     newItemId: newItemId,
                     serviceNameUsed: serviceData.service_name
@@ -1053,7 +1053,7 @@
                     console.log('[SERVICE SELECTOR] 新規サービス保存成功', newItemId);
                     
                     // 各フィールドを個別に保存
-                    if (typeof window.ktpInvoiceAutoSaveItem === 'function') {
+                    if (typeof window.ktpwpInvoiceAutoSaveItem === 'function') {
                         console.log('[SERVICE SELECTOR] 単価・数量・単位・税率を保存中...', {
                             price: serviceData.price,
                             quantity: 1,
@@ -1064,19 +1064,19 @@
                         
                         // product_nameも明示的に保存（新規作成時は空で作成されるため）
                         console.log('[SERVICE SELECTOR] product_name保存開始:', serviceData.service_name);
-                        window.ktpInvoiceAutoSaveItem('invoice', newItemId, 'product_name', serviceData.service_name, orderId);
-                        window.ktpInvoiceAutoSaveItem('invoice', newItemId, 'price', serviceData.price, orderId);
-                        window.ktpInvoiceAutoSaveItem('invoice', newItemId, 'quantity', 1, orderId);
-                        window.ktpInvoiceAutoSaveItem('invoice', newItemId, 'unit', serviceData.unit, orderId);
+                        window.ktpwpInvoiceAutoSaveItem('invoice', newItemId, 'product_name', serviceData.service_name, orderId);
+                        window.ktpwpInvoiceAutoSaveItem('invoice', newItemId, 'price', serviceData.price, orderId);
+                        window.ktpwpInvoiceAutoSaveItem('invoice', newItemId, 'quantity', 1, orderId);
+                        window.ktpwpInvoiceAutoSaveItem('invoice', newItemId, 'unit', serviceData.unit, orderId);
                         // 税率も保存（非課税の場合はnullを明示的に保存）
                         if (serviceData.tax_rate !== undefined && serviceData.tax_rate !== null) {
-                            window.ktpInvoiceAutoSaveItem('invoice', newItemId, 'tax_rate', serviceData.tax_rate, orderId);
+                            window.ktpwpInvoiceAutoSaveItem('invoice', newItemId, 'tax_rate', serviceData.tax_rate, orderId);
                         } else {
-                            window.ktpInvoiceAutoSaveItem('invoice', newItemId, 'tax_rate', null, orderId);
+                            window.ktpwpInvoiceAutoSaveItem('invoice', newItemId, 'tax_rate', null, orderId);
                         }
                         // 備考も保存
                         if (serviceData.remarks !== undefined) {
-                            window.ktpInvoiceAutoSaveItem('invoice', newItemId, 'remarks', serviceData.remarks, orderId);
+                            window.ktpwpInvoiceAutoSaveItem('invoice', newItemId, 'remarks', serviceData.remarks, orderId);
                         }
                     }
                 }
@@ -1085,8 +1085,8 @@
             console.warn('[SERVICE SELECTOR] DB保存スキップ:', {
                 orderId: orderId,
                 itemId: itemId,
-                ktpInvoiceAutoSaveItemExists: typeof window.ktpInvoiceAutoSaveItem === 'function',
-                ktpInvoiceCreateNewItemExists: typeof window.ktpInvoiceCreateNewItem === 'function'
+                ktpwpInvoiceAutoSaveItemExists: typeof window.ktpwpInvoiceAutoSaveItem === 'function',
+                ktpwpInvoiceCreateNewItemExists: typeof window.ktpwpInvoiceCreateNewItem === 'function'
             });
         }
 

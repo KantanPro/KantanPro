@@ -1,14 +1,17 @@
 <?php
 /**
- * 本番環境向けマイグレーション: top_ktp_orderテーブルに不足カラムを追加
+ * 本番環境向けマイグレーション: top_ktpwp_orderテーブルに不足カラムを追加
  * 実行日: 2025-07-03
- * 対象: 本番環境 (top_ktp_order) と ローカル環境 (wp_ktp_order)
+ * 対象: 本番環境 (top_ktpwp_order) と ローカル環境 (wp_ktpwp_order)
  */
 
 // 直接実行禁止
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
+
+// ファイル内の変数をグローバルに出さないよう、処理全体を無名関数で包む（読み込んだ時点で実行される）。
+( static function () {
 
 global $wpdb;
 
@@ -25,14 +28,14 @@ if ( class_exists( 'KTPWP_Fresh_Install_Detector' ) ) {
 
 // 環境判定（本番かローカルか）
 $is_production = false;
-$table_name = $wpdb->prefix . 'ktp_order';
+$table_name = $wpdb->prefix . 'ktpwp_order';
 
 // 本番環境の判定（テーブル名で判定）
-$production_table = 'top_ktp_order';
-$local_table = $wpdb->prefix . 'ktp_order';
+$production_table = 'top_ktpwp_order';
+$local_table = $wpdb->prefix . 'ktpwp_order';
 
 // 本番テーブルが存在するかチェック
-$production_exists = $wpdb->get_var( "SHOW TABLES LIKE '{$production_table}'" );
+$production_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $production_table ) );
 if ( $production_exists === $production_table ) {
     $is_production = true;
     $table_name = $production_table;
@@ -44,7 +47,7 @@ if ( $production_exists === $production_table ) {
 }
 
 // 既存のカラムを取得
-$existing_columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$table_name}`", 0 );
+$existing_columns = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $table_name ), 0 );
 
 if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
     ktpwp_debug_log( 'KTPWP Migration: 現在のカラム: ' . implode( ', ', $existing_columns ) );
@@ -78,8 +81,7 @@ $skipped_columns = array();
 
 foreach ( $columns_to_add as $column_name => $column_definition ) {
     if ( ! in_array( $column_name, $existing_columns ) ) {
-        $sql = "ALTER TABLE `{$table_name}` ADD COLUMN `{$column_name}` {$column_definition}";
-        $result = $wpdb->query( $sql );
+        $result = ktpwp_migration_add_column( $table_name, $column_name, $column_definition );
 
         if ( $result === false ) {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
@@ -114,13 +116,13 @@ foreach ( $indexes as $index_name => $column_name ) {
     // カラムが存在する場合のみインデックスを追加
     if ( in_array( $column_name, $existing_columns ) || in_array( $column_name, $added_columns ) ) {
         // $index_name / $column_name は上の $indexes 配列に直書きした定数で、ユーザー入力ではない。
-        $existing_index = $wpdb->get_row( $wpdb->prepare( "SHOW INDEX FROM `{$table_name}` WHERE Key_name = %s", $index_name ) );
+        $existing_index = $wpdb->get_row( $wpdb->prepare( 'SHOW INDEX FROM %i WHERE Key_name = %s', $table_name, $index_name ) );
         if ( ! $existing_index ) {
             // インデックス名・カラム名は識別子でありプレースホルダに置けない。値は定数のみ。
             // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- 識別子は定数、ユーザー入力なし。
-            $sql = "ALTER TABLE `{$table_name}` ADD INDEX `{$index_name}` (`{$column_name}`)";
+            $sql = $wpdb->prepare( "ALTER TABLE %i ADD INDEX %i (%i)", $table_name, $index_name, $column_name );
             // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- 上と同じ理由（識別子のみ）。
-            $result = $wpdb->query( $sql );
+            $result = $wpdb->query( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $sql は直前で $wpdb->prepare() 済み。
 
             if ( $result !== false ) {
                 $added_indexes[] = $index_name;
@@ -139,10 +141,11 @@ if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
     ktpwp_debug_log( 'KTPWP Migration: スキップされたカラム: ' . implode( ', ', $skipped_columns ) );
     ktpwp_debug_log( 'KTPWP Migration: 追加されたインデックス: ' . implode( ', ', $added_indexes ) );
     // 最終的なカラム構造を確認
-    $final_columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$table_name}`", 0 );
+    $final_columns = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $table_name ), 0 );
     ktpwp_debug_log( 'KTPWP Migration: 最終的なカラム: ' . implode( ', ', $final_columns ) );
 }
 
 // マイグレーション完了フラグを設定
-update_option( 'ktp_order_migration_20250703_completed', true );
-update_option( 'ktp_order_migration_20250703_timestamp', current_time( 'mysql' ) );
+update_option( 'ktpwp_order_migration_20250703_completed', true );
+update_option( 'ktpwp_order_migration_20250703_timestamp', current_time( 'mysql' ) );
+} )();

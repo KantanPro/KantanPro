@@ -29,10 +29,10 @@
     }
 
     function readConfig() {
-        if (typeof ktpClientInvoice === 'undefined' || !ktpClientInvoice.bulkSealResize) {
+        if (typeof ktpwpClientInvoice === 'undefined' || !ktpwpClientInvoice.bulkSealResize) {
             return null;
         }
-        return ktpClientInvoice.bulkSealResize;
+        return ktpwpClientInvoice.bulkSealResize;
     }
 
     function findPageRoot() {
@@ -293,7 +293,7 @@
             return;
         }
 
-        if (img.dataset.ktpBulkSealResizeBound === '1') {
+        if (img.dataset.ktpwpBulkSealResizeBound === '1') {
             activeImg = img;
             activeScope = img.closest('.ktp-bulk-invoice-issuer-seal-scope');
             activeConfig = config;
@@ -305,7 +305,7 @@
             return;
         }
 
-        img.dataset.ktpBulkSealResizeBound = '1';
+        img.dataset.ktpwpBulkSealResizeBound = '1';
         activeImg = img;
         activeScope = scope;
         activeConfig = config;

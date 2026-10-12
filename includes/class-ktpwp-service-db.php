@@ -49,7 +49,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 		 */
 		public function get_schema() {
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_service';
+			$table_name = $wpdb->prefix . 'ktpwp_service';
 			$charset_collate = $wpdb->get_charset_collate();
 
 			// Column definitions with internationalization
@@ -102,7 +102,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 			}
 
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_' . sanitize_key( $tab_name );
+			$table_name = $wpdb->prefix . 'ktpwp_' . sanitize_key( $tab_name );
 
 			// Only process POST requests
 			if ( ktpwp_request_method() !== 'POST' ) {
@@ -110,13 +110,13 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 			}
 
 			// Verify nonce for security
-			if ( ! isset( $_POST['_ktp_service_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_ktp_service_nonce'] ) ), 'ktp_service_action' ) ) {
+			if ( ! isset( $_POST['_ktp_service_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_ktp_service_nonce'] ) ), 'ktpwp_service_action' ) ) {
 				wp_die( esc_html__( 'Security check failed.', 'kantanpro' ) );
 			}
 
 			// Sanitize and validate POST data
-			$data_id = isset( $_POST['data_id'] ) ? absint( $_POST['data_id'] ) : 0;
-			$query_post = isset( $_POST['query_post'] ) ? sanitize_text_field( $_POST['query_post'] ) : '';
+			$data_id = isset( $_POST['data_id'] ) ? absint( wp_unslash( $_POST['data_id'] ) ) : 0;
+			$query_post = isset( $_POST['query_post'] ) ? sanitize_text_field( wp_unslash( $_POST['query_post'] ) ) : '';
 
 			// Empty query_post should not be processed
 			if ( empty( $query_post ) ) {
@@ -124,24 +124,24 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 			}
 
 			// Sanitize form fields
-			$service_name = isset( $_POST['service_name'] ) ? sanitize_text_field( $_POST['service_name'] ) : '';
-			$price = isset( $_POST['price'] ) ? floatval( $_POST['price'] ) : 0;
-			$tax_rate = isset( $_POST['tax_rate'] ) && $_POST['tax_rate'] !== '' ? floatval( $_POST['tax_rate'] ) : null;
-			$unit = isset( $_POST['unit'] ) ? sanitize_text_field( $_POST['unit'] ) : '';
-			$memo = isset( $_POST['memo'] ) ? sanitize_textarea_field( $_POST['memo'] ) : '';
-			$category = isset( $_POST['category'] ) ? sanitize_text_field( $_POST['category'] ) : '';
-			$is_public = isset( $_POST['is_public'] ) && '1' === (string) $_POST['is_public'] ? 1 : 0;
+			$service_name = isset( $_POST['service_name'] ) ? sanitize_text_field( wp_unslash( $_POST['service_name'] ) ) : '';
+			$price = isset( $_POST['price'] ) ? floatval( wp_unslash( $_POST['price'] ) ) : 0;
+			$tax_rate = isset( $_POST['tax_rate'] ) && $_POST['tax_rate'] !== '' ? floatval( wp_unslash( $_POST['tax_rate'] ) ) : null;
+			$unit = isset( $_POST['unit'] ) ? sanitize_text_field( wp_unslash( $_POST['unit'] ) ) : '';
+			$memo = isset( $_POST['memo'] ) ? sanitize_textarea_field( wp_unslash( $_POST['memo'] ) ) : '';
+			$category = isset( $_POST['category'] ) ? sanitize_text_field( wp_unslash( $_POST['category'] ) ) : '';
+			$is_public = isset( $_POST['is_public'] ) && '1' === sanitize_text_field( wp_unslash( $_POST['is_public'] ) ) ? 1 : 0;
 			$contract_billing_cycle = class_exists( 'KTPWP_Contract_Billing_Cycle' )
-				? KTPWP_Contract_Billing_Cycle::sanitize( isset( $_POST['contract_billing_cycle'] ) ? wp_unslash( $_POST['contract_billing_cycle'] ) : '' )
+				? KTPWP_Contract_Billing_Cycle::sanitize( isset( $_POST['contract_billing_cycle'] ) ? sanitize_key( wp_unslash( $_POST['contract_billing_cycle'] ) ) : '' )
 				: 'none';
-			$stock = isset( $_POST['stock'] ) ? max( 0, absint( $_POST['stock'] ) ) : 1;
+			$stock = isset( $_POST['stock'] ) ? max( 0, absint( wp_unslash( $_POST['stock'] ) ) ) : 1;
 			$public_quantity_fixed = self::sanitize_public_quantity_fixed(
-				isset( $_POST['public_quantity_fixed'] ) ? wp_unslash( $_POST['public_quantity_fixed'] ) : null
+				isset( $_POST['public_quantity_fixed'] ) ? sanitize_text_field( wp_unslash( $_POST['public_quantity_fixed'] ) ) : null
 			);
 			$public_html = self::sanitize_public_html(
-				isset( $_POST['public_html'] ) ? wp_unslash( $_POST['public_html'] ) : ''
+				isset( $_POST['public_html'] ) ? wp_kses_post( wp_unslash( $_POST['public_html'] ) ) : ''
 			);
-			$public_instant_purchase = self::resolve_public_instant_purchase_from_post( $tab_name, $data_id );
+			$public_instant_purchase = self::resolve_public_instant_purchase_from_post( $tab_name, $data_id, isset( $_POST['public_instant_purchase'] ) ? sanitize_text_field( wp_unslash( $_POST['public_instant_purchase'] ) ) : null );
 			$this->clamp_public_product_fields_for_edition( $data_id, $table_name, $is_public, $public_quantity_fixed, $public_html ); // KTPWP-WPORG-STRIP public_products
 			$this->clamp_contract_fields_for_edition( $data_id, $table_name, $contract_billing_cycle, $stock );
 
@@ -230,8 +230,8 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 							$this->increment_frequency( $tab_name, $data_id );
 						}
 						if ( $this->is_contracts_feature_enabled() ) {
-							$this->sync_service_recurring_items_from_post( $data_id );
-							$this->sync_service_initial_fees_from_post( $data_id );
+							$this->sync_service_recurring_items_from_post( $data_id, isset( $_POST['recurring_items'] ) && is_array( $_POST['recurring_items'] ) ? map_deep( wp_unslash( $_POST['recurring_items'] ), 'sanitize_text_field' ) : array() );
+							$this->sync_service_initial_fees_from_post( $data_id, isset( $_POST['initial_fees'] ) && is_array( $_POST['initial_fees'] ) ? map_deep( wp_unslash( $_POST['initial_fees'] ), 'sanitize_text_field' ) : array() );
 						}
 						$this->sync_service_public_availability( $data_id );
 
@@ -293,37 +293,37 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 		 */
 		private function handle_new_service( $tab_name ) {
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_' . sanitize_key( $tab_name );
+			$table_name = $wpdb->prefix . 'ktpwp_' . sanitize_key( $tab_name );
 
 			// nonceを検証
-			if ( ! isset( $_POST['_ktp_service_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_ktp_service_nonce'] ) ), 'ktp_service_action' ) ) {
+			if ( ! isset( $_POST['_ktp_service_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_ktp_service_nonce'] ) ), 'ktpwp_service_action' ) ) {
 				wp_die( esc_html__( 'Nonce verification failed.', 'kantanpro' ) );
 			}
 
 			// 新しいIDを取得
-			$new_id_query = "SELECT COALESCE(MAX(id), 0) + 1 as new_id FROM {$table_name}";
-			$new_id_result = $wpdb->get_row( $new_id_query );
+			$new_id_query = $wpdb->prepare( "SELECT COALESCE(MAX(id), 0) + 1 as new_id FROM %i", $table_name );
+			$new_id_result = $wpdb->get_row( $new_id_query ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $new_id_query は直前で $wpdb->prepare() 済み。
 			$new_id = $new_id_result && isset( $new_id_result->new_id ) ? intval( $new_id_result->new_id ) : 1;
 
 			// フォームからのデータを取得
-			$service_name = isset( $_POST['service_name'] ) ? sanitize_text_field( $_POST['service_name'] ) : esc_html__( '新しいサービス', 'kantanpro' );
-			$price = isset( $_POST['price'] ) ? floatval( $_POST['price'] ) : 0;
-			$tax_rate = isset( $_POST['tax_rate'] ) && $_POST['tax_rate'] !== '' ? floatval( $_POST['tax_rate'] ) : null;
-			$unit = isset( $_POST['unit'] ) ? sanitize_text_field( $_POST['unit'] ) : '';
-			$memo = isset( $_POST['memo'] ) ? sanitize_textarea_field( $_POST['memo'] ) : '';
-			$category = isset( $_POST['category'] ) ? sanitize_text_field( $_POST['category'] ) : '';
-			$is_public = isset( $_POST['is_public'] ) && '1' === (string) $_POST['is_public'] ? 1 : 0;
+			$service_name = isset( $_POST['service_name'] ) ? sanitize_text_field( wp_unslash( $_POST['service_name'] ) ) : esc_html__( '新しいサービス', 'kantanpro' );
+			$price = isset( $_POST['price'] ) ? floatval( wp_unslash( $_POST['price'] ) ) : 0;
+			$tax_rate = isset( $_POST['tax_rate'] ) && $_POST['tax_rate'] !== '' ? floatval( wp_unslash( $_POST['tax_rate'] ) ) : null;
+			$unit = isset( $_POST['unit'] ) ? sanitize_text_field( wp_unslash( $_POST['unit'] ) ) : '';
+			$memo = isset( $_POST['memo'] ) ? sanitize_textarea_field( wp_unslash( $_POST['memo'] ) ) : '';
+			$category = isset( $_POST['category'] ) ? sanitize_text_field( wp_unslash( $_POST['category'] ) ) : '';
+			$is_public = isset( $_POST['is_public'] ) && '1' === sanitize_text_field( wp_unslash( $_POST['is_public'] ) ) ? 1 : 0;
 			$contract_billing_cycle = class_exists( 'KTPWP_Contract_Billing_Cycle' )
-				? KTPWP_Contract_Billing_Cycle::sanitize( isset( $_POST['contract_billing_cycle'] ) ? wp_unslash( $_POST['contract_billing_cycle'] ) : '' )
+				? KTPWP_Contract_Billing_Cycle::sanitize( isset( $_POST['contract_billing_cycle'] ) ? sanitize_key( wp_unslash( $_POST['contract_billing_cycle'] ) ) : '' )
 				: 'none';
-			$stock = isset( $_POST['stock'] ) ? max( 0, absint( $_POST['stock'] ) ) : 1;
+			$stock = isset( $_POST['stock'] ) ? max( 0, absint( wp_unslash( $_POST['stock'] ) ) ) : 1;
 			$public_quantity_fixed = self::sanitize_public_quantity_fixed(
-				isset( $_POST['public_quantity_fixed'] ) ? wp_unslash( $_POST['public_quantity_fixed'] ) : null
+				isset( $_POST['public_quantity_fixed'] ) ? sanitize_text_field( wp_unslash( $_POST['public_quantity_fixed'] ) ) : null
 			);
 			$public_html = self::sanitize_public_html(
-				isset( $_POST['public_html'] ) ? wp_unslash( $_POST['public_html'] ) : ''
+				isset( $_POST['public_html'] ) ? wp_kses_post( wp_unslash( $_POST['public_html'] ) ) : ''
 			);
-			$public_instant_purchase = self::resolve_public_instant_purchase_from_post( $tab_name, 0 );
+			$public_instant_purchase = self::resolve_public_instant_purchase_from_post( $tab_name, 0, isset( $_POST['public_instant_purchase'] ) ? sanitize_text_field( wp_unslash( $_POST['public_instant_purchase'] ) ) : null );
 			$this->clamp_public_product_fields_for_edition( 0, $table_name, $is_public, $public_quantity_fixed, $public_html ); // KTPWP-WPORG-STRIP public_products
 			$this->clamp_contract_fields_for_edition( 0, $table_name, $contract_billing_cycle, $stock );
 
@@ -393,8 +393,8 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 				ktpwp_add_inline_notice( 'error', __( '新規追加に失敗しました。', 'kantanpro' ) );
 			} else {
 				if ( $this->is_contracts_feature_enabled() ) {
-					$this->sync_service_recurring_items_from_post( $new_id );
-					$this->sync_service_initial_fees_from_post( $new_id );
+					$this->sync_service_recurring_items_from_post( $new_id, isset( $_POST['recurring_items'] ) && is_array( $_POST['recurring_items'] ) ? map_deep( wp_unslash( $_POST['recurring_items'] ), 'sanitize_text_field' ) : array() );
+					$this->sync_service_initial_fees_from_post( $new_id, isset( $_POST['initial_fees'] ) && is_array( $_POST['initial_fees'] ) ? map_deep( wp_unslash( $_POST['initial_fees'] ), 'sanitize_text_field' ) : array() );
 				}
 				$this->sync_service_public_availability( $new_id );
 
@@ -429,10 +429,10 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 		 */
 		private function handle_delete_service( $tab_name, $data_id ) {
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_' . sanitize_key( $tab_name );
+			$table_name = $wpdb->prefix . 'ktpwp_' . sanitize_key( $tab_name );
 
 			// nonceを検証
-			if ( ! isset( $_POST['_ktp_service_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_ktp_service_nonce'] ) ), 'ktp_service_action' ) ) {
+			if ( ! isset( $_POST['_ktp_service_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_ktp_service_nonce'] ) ), 'ktpwp_service_action' ) ) {
 				wp_die( esc_html__( 'Nonce verification failed.', 'kantanpro' ) );
 			}
 
@@ -479,7 +479,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 
 			$data_id    = absint( $data_id );
 			$tab_name   = 'service';
-			$table_name = $wpdb->prefix . 'ktp_' . sanitize_key( $tab_name );
+			$table_name = $wpdb->prefix . 'ktpwp_' . sanitize_key( $tab_name );
 
 			if ( $data_id <= 0 ) {
 				return new WP_Error( 'invalid_id', __( '複製元のサービス ID が不正です。', 'kantanpro' ) );
@@ -490,8 +490,8 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 				return new WP_Error( 'not_found', __( '複製元のサービスが見つかりません。', 'kantanpro' ) );
 			}
 
-			$new_id_query  = "SELECT COALESCE(MAX(id), 0) + 1 as new_id FROM {$table_name}";
-			$new_id_result = $wpdb->get_row( $new_id_query );
+			$new_id_query  = $wpdb->prepare( "SELECT COALESCE(MAX(id), 0) + 1 as new_id FROM %i", $table_name );
+			$new_id_result = $wpdb->get_row( $new_id_query ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $new_id_query は直前で $wpdb->prepare() 済み。
 			$new_id        = $new_id_result && isset( $new_id_result->new_id ) ? intval( $new_id_result->new_id ) : 1;
 
 			$duplicate_data = array(
@@ -589,7 +589,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 				wp_die( esc_html__( 'Invalid request method.', 'kantanpro' ) );
 			}
 
-			if ( ! isset( $_POST['_ktp_service_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_ktp_service_nonce'] ) ), 'ktp_service_action' ) ) {
+			if ( ! isset( $_POST['_ktp_service_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_ktp_service_nonce'] ) ), 'ktpwp_service_action' ) ) {
 				wp_die( esc_html__( 'Nonce verification failed.', 'kantanpro' ) );
 			}
 
@@ -599,7 +599,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 			}
 
 			$new_id = (int) $result['new_id'];
-			$cookie_name = 'ktp_' . sanitize_key( $tab_name ) . '_id';
+			$cookie_name = 'ktpwp_' . sanitize_key( $tab_name ) . '_id';
 			if ( ! headers_sent() ) {
 				setcookie( $cookie_name, (string) $new_id, time() + ( 86400 * 30 ), '/' );
 			}
@@ -628,10 +628,10 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 		 */
 		private function handle_search_operations( $tab_name, $query_post ) {
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_' . sanitize_key( $tab_name );
+			$table_name = $wpdb->prefix . 'ktpwp_' . sanitize_key( $tab_name );
 
 			// nonceを検証
-			if ( ! isset( $_POST['_ktp_service_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_ktp_service_nonce'] ) ), 'ktp_service_action' ) ) {
+			if ( ! isset( $_POST['_ktp_service_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_ktp_service_nonce'] ) ), 'ktpwp_service_action' ) ) {
 				wp_die( esc_html__( 'Nonce verification failed.', 'kantanpro' ) );
 			}
 
@@ -641,14 +641,14 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 
 			if ( $query_post === 'search' ) {
 				// 検索モードフラグをセット
-				$_SESSION['ktp_service_search_mode'] = true;
-				$_SESSION['ktp_service_search_message'] = esc_html__( '検索モードです。条件を入力して検索してください。', 'kantanpro' );
+				$_SESSION['ktpwp_service_search_mode'] = true;
+				$_SESSION['ktpwp_service_search_message'] = esc_html__( '検索モードです。条件を入力して検索してください。', 'kantanpro' );
 				$wpdb->query( 'UNLOCK TABLES;' );
 				return;
 			} elseif ( $query_post === 'search_cancel' ) {
 				// 検索モードを解除
-				unset( $_SESSION['ktp_service_search_mode'] );
-				unset( $_SESSION['ktp_service_search_message'] );
+				unset( $_SESSION['ktpwp_service_search_mode'] );
+				unset( $_SESSION['ktpwp_service_search_message'] );
 
 				// リダイレクト先を参照元または現在のリクエストURLから組み立て（不正なリダイレクトを防ぐ）
 				$redirect_base = wp_get_referer();
@@ -671,8 +671,8 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 				wp_safe_redirect( $url );
 				exit;
 			} elseif ( $query_post === 'search_execute' ) {
-				$search_service_name = isset( $_POST['search_service_name'] ) ? sanitize_text_field( $_POST['search_service_name'] ) : '';
-				$search_category = isset( $_POST['search_category'] ) ? sanitize_text_field( $_POST['search_category'] ) : '';
+				$search_service_name = isset( $_POST['search_service_name'] ) ? sanitize_text_field( wp_unslash( $_POST['search_service_name'] ) ) : '';
+				$search_category = isset( $_POST['search_category'] ) ? sanitize_text_field( wp_unslash( $_POST['search_category'] ) ) : '';
 
 				// 検索条件の構築（顧客タブと同様: search_field が NULL でも service_name / category でヒット）
 				$where_conditions = array();
@@ -694,8 +694,8 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 
 				if ( empty( $where_conditions ) ) {
 					// 未入力で検索実行した場合は0件時と同じ扱い（フォームを維持し該当なしメッセージを表示）
-					$_SESSION['ktp_service_search_message'] = esc_html__( '該当するサービスが見つかりませんでした。条件を変更して再検索してください。', 'kantanpro' );
-					$_SESSION['ktp_service_search_mode'] = true;
+					$_SESSION['ktpwp_service_search_message'] = esc_html__( '該当するサービスが見つかりませんでした。条件を変更して再検索してください。', 'kantanpro' );
+					$_SESSION['ktpwp_service_search_mode'] = true;
 					$redirect_base = wp_get_referer();
 					if ( ! $redirect_base || $redirect_base === '' ) {
 						$redirect_base = home_url( esc_url_raw( wp_unslash( isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : '/' ) ) );
@@ -744,8 +744,8 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 					if ( $search_results ) {
 						$result_count = count( $search_results );
 						// 検索モードを解除
-						unset( $_SESSION['ktp_service_search_mode'] );
-						unset( $_SESSION['ktp_service_search_message'] );
+						unset( $_SESSION['ktpwp_service_search_mode'] );
+						unset( $_SESSION['ktpwp_service_search_message'] );
 
 						if ( $result_count === 1 ) {
 							// 1件のみ: その詳細にリダイレクト（頻度は表示時に加算）
@@ -777,8 +777,8 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 						}
 					} else {
 						// 検索結果が無い場合
-						$_SESSION['ktp_service_search_message'] = esc_html__( '該当するサービスが見つかりませんでした。条件を変更して再検索してください。', 'kantanpro' );
-						$_SESSION['ktp_service_search_mode'] = true;
+						$_SESSION['ktpwp_service_search_message'] = esc_html__( '該当するサービスが見つかりませんでした。条件を変更して再検索してください。', 'kantanpro' );
+						$_SESSION['ktpwp_service_search_mode'] = true;
 
 						// 0件時は必ず検索モードへ戻す（istmode混在を防止）
 						$redirect_base = remove_query_arg(
@@ -814,7 +814,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 		 */
 		private function handle_upload_image( $tab_name, $data_id ) {
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_' . sanitize_key( $tab_name );
+			$table_name = $wpdb->prefix . 'ktpwp_' . sanitize_key( $tab_name );
 
 			// 先にKTPWP_Image_Processorクラスが存在するか確認
 			if ( ! class_exists( 'KTPWP_Image_Processor' ) ) {
@@ -829,11 +829,19 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 				// デフォルト画像が存在しない場合のエラーは記録しない（プロダクション環境）
 			}
 
-			if ( isset( $_FILES['image'] ) && is_uploaded_file( $_FILES['image']['tmp_name'] ) ) {
+			// 保存処理（update_table）から呼ばれる。ここでも nonce を確認してからファイルを受け取る
+			$uploaded_image = null;
+			if ( isset( $_POST['_ktp_service_nonce'], $_FILES['image']['tmp_name'], $_FILES['image']['name'] )
+				&& wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_ktp_service_nonce'] ) ), 'ktpwp_service_action' )
+				&& is_uploaded_file( sanitize_text_field( $_FILES['image']['tmp_name'] ) ) ) {
+				$uploaded_image = array(
+					'name'     => sanitize_file_name( wp_unslash( $_FILES['image']['name'] ) ),
+					'tmp_name' => sanitize_text_field( $_FILES['image']['tmp_name'] ),
+				);
 				$this->delete_uploaded_image_files( $data_id );
 			}
 
-			$image_url = $image_processor->handle_image( $tab_name, $data_id, $default_image_url );
+			$image_url = $image_processor->handle_image( $tab_name, $data_id, $default_image_url, $uploaded_image );
 
 			$update_result = $wpdb->update(
                 $table_name,
@@ -882,7 +890,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 		 */
 		private function handle_delete_image( $tab_name, $data_id ) {
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_' . sanitize_key( $tab_name );
+			$table_name = $wpdb->prefix . 'ktpwp_' . sanitize_key( $tab_name );
 
 			// デフォルト画像のURLを設定
 			$default_image_url = $this->get_default_image_url();
@@ -942,7 +950,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
                 "SELECT id FROM {$table_name} WHERE id < %d ORDER BY id DESC LIMIT 1",
                 $deleted_id
 			);
-			$next_id = $wpdb->get_var( $next_id_query );
+			$next_id = $wpdb->get_var( $next_id_query ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $next_id_query は直前で $wpdb->prepare() 済み。
 
 			// If no previous ID, try to get next ID
 			if ( null === $next_id ) {
@@ -950,12 +958,12 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
                     "SELECT id FROM {$table_name} WHERE id > %d ORDER BY id ASC LIMIT 1",
                     $deleted_id
 				);
-				$next_id = $wpdb->get_var( $next_id_query );
+				$next_id = $wpdb->get_var( $next_id_query ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $next_id_query は直前で $wpdb->prepare() 済み。
 
 				// If no next ID either, get highest available ID
 				if ( null === $next_id ) {
-					$next_id_query = "SELECT id FROM {$table_name} ORDER BY id DESC LIMIT 1";
-					$next_id = $wpdb->get_var( $next_id_query );
+					$next_id_query = $wpdb->prepare( "SELECT id FROM %i ORDER BY id DESC LIMIT 1", $table_name );
+					$next_id = $wpdb->get_var( $next_id_query ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $next_id_query は直前で $wpdb->prepare() 済み。
 				}
 			}
 
@@ -1017,7 +1025,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 			}
 
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_' . sanitize_key( $tab_name );
+			$table_name = $wpdb->prefix . 'ktpwp_' . sanitize_key( $tab_name );
 
 			$defaults = array(
 				'limit'       => 20,
@@ -1087,20 +1095,22 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 
 			// クエリの構築
 			$limit = (int) $args['limit'];
+			// テーブル名と並べ替え列は %i、方向は ASC / DESC の固定 SQL を使い分ける（変数を連結しない）。
+			// $where_sql は上で組み立てたプレースホルダーだけの条件（値は $where_values）。
+			$is_asc = ( $args['order'] === 'ASC' );
 			if ( $limit > 0 ) {
-				$sql = "SELECT * FROM `{$table_name}` {$where_sql} ORDER BY {$args['order_by']} {$args['order']} LIMIT %d OFFSET %d";
-				$where_values[] = $limit;
-				$where_values[] = (int) $args['offset'];
+				$sql = $is_asc
+					? "SELECT * FROM %i {$where_sql} ORDER BY %i ASC LIMIT %d OFFSET %d"
+					: "SELECT * FROM %i {$where_sql} ORDER BY %i DESC LIMIT %d OFFSET %d";
+				$values = array_merge( array( $table_name ), $where_values, array( $args['order_by'], $limit, (int) $args['offset'] ) );
 			} else {
-				$sql = "SELECT * FROM `{$table_name}` {$where_sql} ORDER BY {$args['order_by']} {$args['order']}";
+				$sql = $is_asc
+					? "SELECT * FROM %i {$where_sql} ORDER BY %i ASC"
+					: "SELECT * FROM %i {$where_sql} ORDER BY %i DESC";
+				$values = array_merge( array( $table_name ), $where_values, array( $args['order_by'] ) );
 			}
 
-			// プリペアードステートメントの実行
-			if ( ! empty( $where_values ) ) {
-				$results = $wpdb->get_results( $wpdb->prepare( $sql, $where_values ) );
-			} else {
-				$results = $wpdb->get_results( $sql );
-			}
+			$results = $wpdb->get_results( $wpdb->prepare( $sql, $values ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- 上記の固定 SQL。
 
 			return $results ? $results : array();
 		}
@@ -1118,7 +1128,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 			}
 
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_' . sanitize_key( $tab_name );
+			$table_name = $wpdb->prefix . 'ktpwp_' . sanitize_key( $tab_name );
 
 			$defaults = array(
 				'search'      => '',
@@ -1166,15 +1176,13 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 				$where_sql = 'WHERE ' . implode( ' AND ', $where_clauses );
 			}
 
-			// カウントクエリの構築
-			$sql = "SELECT COUNT(*) FROM `{$table_name}` {$where_sql}";
-
-			// プリペアードステートメントの実行
-			if ( ! empty( $where_values ) ) {
-				$count = $wpdb->get_var( $wpdb->prepare( $sql, $where_values ) );
-			} else {
-				$count = $wpdb->get_var( $sql );
-			}
+			// $where_sql はプレースホルダーだけの条件（値は $where_values）
+			$count = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT COUNT(*) FROM %i {$where_sql}", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- 上記のとおりプレースホルダーのみ。
+					array_merge( array( $table_name ), $where_values )
+				)
+			);
 
 			return $count ? (int) $count : 0;
 		}
@@ -1403,7 +1411,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 			}
 
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_service';
+			$table_name = $wpdb->prefix . 'ktpwp_service';
 
 			if ( ! $this->service_table_has_is_public_column( $table_name ) ) {
 				return null;
@@ -1425,7 +1433,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 		public function get_public_service_categories() {
 			global $wpdb;
 
-			$table_name = $wpdb->prefix . 'ktp_service';
+			$table_name = $wpdb->prefix . 'ktpwp_service';
 
 			if ( ! $this->service_table_has_is_public_column( $table_name ) ) {
 				return array();
@@ -1467,7 +1475,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 				return $cache[ $table_name ];
 			}
 
-			$columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$table_name}`" );
+			$columns = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $table_name ) );
 			$cache[ $table_name ] = is_array( $columns ) && in_array( 'is_public', $columns, true );
 
 			return $cache[ $table_name ];
@@ -1488,7 +1496,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 				return $cache[ $table_name ];
 			}
 
-			$columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$table_name}`" );
+			$columns = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $table_name ) );
 			$cache[ $table_name ] = is_array( $columns ) && in_array( 'contract_billing_cycle', $columns, true );
 
 			return $cache[ $table_name ];
@@ -1509,7 +1517,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 				return $cache[ $table_name ];
 			}
 
-			$columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$table_name}`" );
+			$columns = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $table_name ) );
 			$cache[ $table_name ] = is_array( $columns ) && in_array( 'stock', $columns, true );
 
 			return $cache[ $table_name ];
@@ -1530,7 +1538,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 				return $cache[ $table_name ];
 			}
 
-			$columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$table_name}`" );
+			$columns = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $table_name ) );
 			$cache[ $table_name ] = is_array( $columns ) && in_array( 'public_quantity_fixed', $columns, true );
 
 			return $cache[ $table_name ];
@@ -1551,7 +1559,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 				return $cache[ $table_name ];
 			}
 
-			$columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$table_name}`" );
+			$columns = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $table_name ) );
 			$cache[ $table_name ] = is_array( $columns ) && in_array( 'public_html', $columns, true );
 
 			return $cache[ $table_name ];
@@ -1672,7 +1680,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 				return $cache[ $table_name ];
 			}
 
-			$columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$table_name}`" );
+			$columns = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $table_name ) );
 			$cache[ $table_name ] = is_array( $columns ) && in_array( 'public_instant_purchase', $columns, true );
 
 			return $cache[ $table_name ];
@@ -1707,17 +1715,18 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 		 *
 		 * @param string $tab_name テーブル接尾辞。
 		 * @param int    $data_id  更新対象 ID（新規は 0）。
+		 * @param string|null $posted 送信値（呼び出し側で nonce 確認・サニタイズ済み）。未送信は null。
 		 * @return int
 		 */
-		private static function resolve_public_instant_purchase_from_post( $tab_name, $data_id ) {
+		private static function resolve_public_instant_purchase_from_post( $tab_name, $data_id, $posted = null ) {
 			// KTPWP-WPORG-STRIP public_products BEGIN
 			if ( function_exists( 'ktpwp_is_feature_enabled' ) && ! ktpwp_is_feature_enabled( 'public_products' ) ) {
 				return 0;
 			}
 			// KTPWP-WPORG-STRIP public_products END
 
-			if ( isset( $_POST['public_instant_purchase'] ) ) {
-				return self::sanitize_public_instant_purchase( wp_unslash( $_POST['public_instant_purchase'] ) );
+			if ( $posted !== null ) {
+				return self::sanitize_public_instant_purchase( $posted );
 			}
 
 			$data_id = (int) $data_id;
@@ -1726,7 +1735,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 			}
 
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_' . sanitize_key( $tab_name );
+			$table_name = $wpdb->prefix . 'ktpwp_' . sanitize_key( $tab_name );
 			$instance   = self::get_instance();
 			if ( ! $instance->service_table_has_public_instant_purchase_column( $table_name ) ) {
 				return 0;
@@ -1782,15 +1791,15 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 		/**
 		 * POST の定期請求項目をサービスに保存する。
 		 *
-		 * @param int $service_id サービス ID。
+		 * @param int   $service_id サービス ID。
+		 * @param array $rows       送信された行（呼び出し側で nonce 確認・sanitize_text_field 済み）。
 		 * @return void
 		 */
-		private function sync_service_recurring_items_from_post( $service_id ) {
+		private function sync_service_recurring_items_from_post( $service_id, $rows ) {
 			if ( ! class_exists( 'KTPWP_Contract_Recurring_Items' ) ) {
 				return;
 			}
 
-			$rows = isset( $_POST['recurring_items'] ) ? wp_unslash( $_POST['recurring_items'] ) : array();
 			if ( ! is_array( $rows ) ) {
 				$rows = array();
 			}
@@ -1820,15 +1829,15 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 		/**
 		 * POST の初回費用をサービスに保存する。
 		 *
-		 * @param int $service_id サービス ID。
+		 * @param int   $service_id サービス ID。
+		 * @param array $rows       送信された行（呼び出し側で nonce 確認・sanitize_text_field 済み）。
 		 * @return void
 		 */
-		private function sync_service_initial_fees_from_post( $service_id ) {
+		private function sync_service_initial_fees_from_post( $service_id, $rows ) {
 			if ( ! class_exists( 'KTPWP_Service_Initial_Fees' ) ) {
 				return;
 			}
 
-			$rows = isset( $_POST['initial_fees'] ) ? wp_unslash( $_POST['initial_fees'] ) : array();
 			if ( ! is_array( $rows ) ) {
 				$rows = array();
 			}
@@ -1869,7 +1878,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 				return;
 			}
 
-			$table_name = $wpdb->prefix . 'ktp_' . sanitize_key( $tab_name );
+			$table_name = $wpdb->prefix . 'ktpwp_' . sanitize_key( $tab_name );
 			$wpdb->query(
 				$wpdb->prepare(
 					"UPDATE {$table_name} SET frequency = COALESCE(frequency, 0) + 1 WHERE id = %d",
@@ -1902,7 +1911,7 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 			}
 
 			$uri_hash    = md5( isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '' );
-			$session_key = 'ktp_freq_view_service';
+			$session_key = 'ktpwp_freq_view_service';
 			$dedup_token = 'service:' . $service_id . ':' . $uri_hash;
 			if ( isset( $_SESSION[ $session_key ] ) && $_SESSION[ $session_key ] === $dedup_token ) {
 				return;

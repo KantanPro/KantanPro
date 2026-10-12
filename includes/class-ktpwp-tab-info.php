@@ -51,8 +51,8 @@ if ( ! class_exists( 'KTPWP_Tab_Info' ) ) {
 				. esc_html__( '設定画面を開く', 'kantanpro' ) . '</a>';
 			$html .= '</div></div>';
 
-			$html .= '<div class="ktp_data_contents ktp-info-tab">';
-			$html .= '<div class="ktp_data_list_box">';
+			$html .= '<div class="ktpwp_data_contents ktp-info-tab">';
+			$html .= '<div class="ktpwp_data_list_box">';
 
 			// 概要
 			$html .= '<div class="ktp-info-section">';
@@ -220,10 +220,10 @@ if ( ! class_exists( 'KTPWP_Tab_Info' ) ) {
 			global $wpdb;
 
 			$targets = array(
-				__( '顧客', 'kantanpro' )     => 'ktp_client',
-				__( '受注書', 'kantanpro' )   => 'ktp_order',
-				__( 'サービス', 'kantanpro' ) => 'ktp_service',
-				__( '協力会社', 'kantanpro' ) => 'ktp_supplier',
+				__( '顧客', 'kantanpro' )     => 'ktpwp_client',
+				__( '受注書', 'kantanpro' )   => 'ktpwp_order',
+				__( 'サービス', 'kantanpro' ) => 'ktpwp_service',
+				__( '協力会社', 'kantanpro' ) => 'ktpwp_supplier',
 			);
 
 			$out = array();

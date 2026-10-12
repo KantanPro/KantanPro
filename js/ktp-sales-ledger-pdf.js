@@ -242,14 +242,14 @@
 
             // Ajaxで売上台帳PDFデータを取得
             $.ajax({
-                url: typeof ktp_ajax_object !== 'undefined' ? ktp_ajax_object.ajax_url : 
+                url: typeof ktpwp_ajax_object !== 'undefined' ? ktpwp_ajax_object.ajax_url : 
                      typeof ajaxurl !== 'undefined' ? ajaxurl : ((typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) || (typeof ajaxurl !== 'undefined' ? ajaxurl : '')),
                 type: 'POST',
                 data: {
-                    action: 'ktp_generate_sales_ledger_pdf',
+                    action: 'ktpwp_generate_sales_ledger_pdf',
                     year: year,
-                    nonce: typeof ktp_ajax_object !== 'undefined' ? ktp_ajax_object.nonce : 
-                           typeof ktp_ajax_nonce !== 'undefined' ? ktp_ajax_nonce : ''
+                    nonce: typeof ktpwp_ajax_object !== 'undefined' ? ktpwp_ajax_object.nonce : 
+                           typeof ktpwp_ajax_nonce !== 'undefined' ? ktpwp_ajax_nonce : ''
                 },
                 success: function(response) {
                     try {

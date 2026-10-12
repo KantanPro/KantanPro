@@ -12,8 +12,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// ファイル内の変数をグローバルに出さないよう、処理全体を無名関数で包む（読み込んだ時点で実行される）。
+( static function () {
+
 /**
- * Migration class: Add client_department_id to ktp_order
+ * Migration class: Add client_department_id to ktpwp_order
  */
 class KTPWP_Migration_20250611_Add_Client_Department_Id_To_Order {
 
@@ -25,7 +28,7 @@ class KTPWP_Migration_20250611_Add_Client_Department_Id_To_Order {
 	public static function up() {
 		global $wpdb;
 
-		$order_table = $wpdb->prefix . 'ktp_order';
+		$order_table = $wpdb->prefix . 'ktpwp_order';
 
 		$table_exists = $wpdb->get_var(
 			$wpdb->prepare( 'SHOW TABLES LIKE %s', $order_table )
@@ -38,20 +41,20 @@ class KTPWP_Migration_20250611_Add_Client_Department_Id_To_Order {
 			return false;
 		}
 
-		$existing_columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$order_table}`", 0 );
+		$existing_columns = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $order_table ), 0 );
 		if ( in_array( 'client_department_id', $existing_columns, true ) ) {
 			return true;
 		}
 
-		$sql = "ALTER TABLE `{$order_table}` ADD COLUMN `client_department_id` INT NULL DEFAULT NULL COMMENT '依頼元部署ID' AFTER `client_id`";
-		if ( $wpdb->query( $sql ) === false ) {
+		$sql = $wpdb->prepare( "ALTER TABLE %i ADD COLUMN `client_department_id` INT NULL DEFAULT NULL COMMENT '依頼元部署ID' AFTER `client_id`", $order_table );
+		if ( $wpdb->query( $sql ) === false ) { // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $sql は直前で $wpdb->prepare() 済み。
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 				ktpwp_debug_log( 'KTPWP Migration: Failed to add client_department_id to ' . $order_table . '. ' . $wpdb->last_error );
 			}
 			return false;
 		}
 
-		$wpdb->query( "ALTER TABLE `{$order_table}` ADD INDEX `client_department_id` (`client_department_id`)" );
+		$wpdb->query( $wpdb->prepare( "ALTER TABLE %i ADD INDEX `client_department_id` (`client_department_id`)", $order_table ) );
 
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 			ktpwp_debug_log( 'KTPWP Migration: client_department_id column added to ' . $order_table );
@@ -68,14 +71,15 @@ class KTPWP_Migration_20250611_Add_Client_Department_Id_To_Order {
 	public static function down() {
 		global $wpdb;
 
-		$order_table = $wpdb->prefix . 'ktp_order';
-		$existing_columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$order_table}`", 0 );
+		$order_table = $wpdb->prefix . 'ktpwp_order';
+		$existing_columns = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $order_table ), 0 );
 		if ( ! in_array( 'client_department_id', $existing_columns, true ) ) {
 			return true;
 		}
 
-		$wpdb->query( "ALTER TABLE `{$order_table}` DROP COLUMN `client_department_id`" );
+		$wpdb->query( $wpdb->prepare( "ALTER TABLE %i DROP COLUMN `client_department_id`", $order_table ) );
 
 		return true;
 	}
 }
+} )();

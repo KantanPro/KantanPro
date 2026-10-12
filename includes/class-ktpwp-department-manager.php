@@ -23,7 +23,7 @@ class KTPWP_Department_Manager {
      */
     public static function get_table_name() {
         global $wpdb;
-        return $wpdb->prefix . 'ktp_department';
+        return $wpdb->prefix . 'ktpwp_department';
     }
 
     /**
@@ -327,7 +327,7 @@ class KTPWP_Department_Manager {
         global $wpdb;
 
         $table_name = self::get_table_name();
-        $client_table = $wpdb->prefix . 'ktp_client';
+        $client_table = $wpdb->prefix . 'ktpwp_client';
 
         $client_id = intval( $client_id );
 
@@ -368,7 +368,7 @@ class KTPWP_Department_Manager {
         global $wpdb;
 
         $table_name = self::get_table_name();
-        $client_table = $wpdb->prefix . 'ktp_client';
+        $client_table = $wpdb->prefix . 'ktpwp_client';
 
         $department_id = intval( $department_id );
         // 文字列の"false"も正しく処理する
@@ -497,8 +497,8 @@ class KTPWP_Department_Manager {
     /**
      * 受注ヘッダー・メール用の親会社名（顧客マスタの登録会社名を優先）。
      *
-     * @param object|null $order               ktp_order 行。
-     * @param object|null $client              ktp_client 行。
+     * @param object|null $order               ktpwp_order 行。
+     * @param object|null $client              ktpwp_client 行。
      * @param string      $display_customer_name 画面表示用の会社名。
      * @param object|null $selected_department 選択部署。
      * @return string
@@ -516,7 +516,7 @@ class KTPWP_Department_Manager {
     /**
      * 受注の担当者名（フォームのお名前を優先）。
      *
-     * @param object|null $order ktp_order 行。
+     * @param object|null $order ktpwp_order 行。
      * @return string
      */
     public static function resolve_contact_name_for_order( $order ) {
@@ -536,7 +536,7 @@ class KTPWP_Department_Manager {
 
         if ( ! empty( $order->client_id ) ) {
             global $wpdb;
-            $client_table = $wpdb->prefix . 'ktp_client';
+            $client_table = $wpdb->prefix . 'ktpwp_client';
             $client_contact = $wpdb->get_var(
                 $wpdb->prepare(
                     "SELECT COALESCE(NULLIF(representative_name, ''), name) FROM {$client_table} WHERE id = %d",
@@ -600,7 +600,7 @@ class KTPWP_Department_Manager {
     /**
      * 受注に紐づく部署を解決する（受注の client_department_id を優先。顧客の選択部署は使わない）。
      *
-     * @param object|null $order ktp_order 行。
+     * @param object|null $order ktpwp_order 行。
      * @return object|null
      */
     public static function resolve_department_for_order( $order ) {
@@ -623,7 +623,7 @@ class KTPWP_Department_Manager {
     /**
      * 受注に紐づく部署メールアドレス（なければ空文字）。
      *
-     * @param object|null $order ktp_order 行。
+     * @param object|null $order ktpwp_order 行。
      * @return string
      */
     public static function get_department_email_for_order( $order ) {
@@ -641,7 +641,7 @@ class KTPWP_Department_Manager {
     /**
      * 仕事リスト等の顧客表示用（親会社・部署・担当者）。
      *
-     * @param object|null $order ktp_order 行。
+     * @param object|null $order ktpwp_order 行。
      * @return array{parent: string, department: string, contact: string}
      */
     public static function work_list_client_parts_for_order( $order ) {
@@ -658,7 +658,7 @@ class KTPWP_Department_Manager {
 
         if ( $client_id > 0 ) {
             global $wpdb;
-            $client_table = $wpdb->prefix . 'ktp_client';
+            $client_table = $wpdb->prefix . 'ktpwp_client';
             $client       = $wpdb->get_row(
                 $wpdb->prepare(
                     "SELECT company_name, name, representative_name FROM {$client_table} WHERE id = %d",
@@ -684,7 +684,7 @@ class KTPWP_Department_Manager {
     /**
      * 仕事リスト行の顧客ラベル（空白区切り）。
      *
-     * @param object|null $order ktp_order 行。
+     * @param object|null $order ktpwp_order 行。
      * @return string
      */
     public static function format_work_list_client_label_for_order( $order ) {
@@ -701,7 +701,7 @@ class KTPWP_Department_Manager {
     /**
      * 一括請求・宛名印刷の「部署 ご担当」行（例: 営業部 山田太郎）。
      *
-     * @param object|null $department ktp_department 行。
+     * @param object|null $department ktpwp_department 行。
      * @return string
      */
     public static function bulk_invoice_department_contact_line( $department ) {

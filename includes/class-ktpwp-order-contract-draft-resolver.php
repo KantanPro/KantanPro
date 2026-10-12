@@ -105,7 +105,7 @@ if ( ! class_exists( 'KTPWP_Order_Contract_Draft_Resolver' ) ) {
 				return null;
 			}
 
-			$table = $wpdb->prefix . 'ktp_order';
+			$table = $wpdb->prefix . 'ktpwp_order';
 
 			return $wpdb->get_row(
 				$wpdb->prepare(
@@ -159,7 +159,7 @@ if ( ! class_exists( 'KTPWP_Order_Contract_Draft_Resolver' ) ) {
 				return null;
 			}
 
-			$table = $wpdb->prefix . 'ktp_service';
+			$table = $wpdb->prefix . 'ktpwp_service';
 
 			return $wpdb->get_row(
 				$wpdb->prepare(
@@ -181,8 +181,8 @@ if ( ! class_exists( 'KTPWP_Order_Contract_Draft_Resolver' ) ) {
 				return null;
 			}
 
-			$table = $wpdb->prefix . 'ktp_service';
-			$columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$table}`" );
+			$table = $wpdb->prefix . 'ktpwp_service';
+			$columns = $wpdb->get_col( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $table ) );
 			if ( ! is_array( $columns ) || ! in_array( 'contract_billing_cycle', $columns, true ) ) {
 				return null;
 			}
@@ -306,7 +306,7 @@ if ( ! class_exists( 'KTPWP_Order_Contract_Draft_Resolver' ) ) {
 
 			global $wpdb;
 
-			$contract_table = $wpdb->prefix . 'ktp_contract';
+			$contract_table = $wpdb->prefix . 'ktpwp_contract';
 			if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $contract_table ) ) !== $contract_table ) {
 				return array();
 			}
@@ -433,7 +433,7 @@ if ( ! class_exists( 'KTPWP_Order_Contract_Draft_Resolver' ) ) {
 
 			global $wpdb;
 
-			$contract_table = $wpdb->prefix . 'ktp_contract';
+			$contract_table = $wpdb->prefix . 'ktpwp_contract';
 			if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $contract_table ) ) !== $contract_table ) {
 				return array();
 			}

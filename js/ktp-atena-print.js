@@ -2,7 +2,7 @@
  * 宛名印刷：プレビュー（編集）画面・罫線メモ（全体1テキストエリア）・localStorage 保存
  *
  * 宛名ブロックは請求書プレビューと同じくドラッグで位置を調整でき、
- * 移動後の 上／左 mm は帳票設定（ktp_atena_label_position）へ保存される（管理者のみ）。
+ * 移動後の 上／左 mm は帳票設定（ktpwp_atena_label_position）へ保存される（管理者のみ）。
  *
  * 基本レイアウト（一括請求書と同じく @page margin:0 の余白なし印刷が前提。
  * 位置指定はすべて A4 用紙の左上端が原点なので、画面の表示値＝実際の印刷位置になる）
@@ -179,7 +179,7 @@
 
     /** 宛名ドラッグの設定（localize 済みなら管理者のみ enabled） */
     function readDragConfig() {
-        var settings = global.ktpAtenaPrintSettings;
+        var settings = global.ktpwpAtenaPrintSettings;
         if (!settings || !settings.labelDrag) {
             return null;
         }

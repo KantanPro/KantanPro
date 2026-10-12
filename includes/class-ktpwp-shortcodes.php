@@ -111,13 +111,13 @@ class KTPWP_Shortcodes {
             . '}'
             . 'document.querySelectorAll(".ktp-banner-rotator").forEach(initKtpBannerRotator);';
 
-        wp_register_style( 'ktp-banner-rotator', false, array(), KANTANPRO_PLUGIN_VERSION );
-        wp_enqueue_style( 'ktp-banner-rotator' );
-        wp_add_inline_style( 'ktp-banner-rotator', $css );
+        wp_register_style( 'ktpwp-banner-rotator', false, array(), KANTANPRO_PLUGIN_VERSION );
+        wp_enqueue_style( 'ktpwp-banner-rotator' );
+        wp_add_inline_style( 'ktpwp-banner-rotator', wp_strip_all_tags( $css ) );
 
-        wp_register_script( 'ktp-banner-rotator', false, array(), KANTANPRO_PLUGIN_VERSION, true );
-        wp_enqueue_script( 'ktp-banner-rotator' );
-        wp_add_inline_script( 'ktp-banner-rotator', $js );
+        wp_register_script( 'ktpwp-banner-rotator', false, array(), KANTANPRO_PLUGIN_VERSION, true );
+        wp_enqueue_script( 'ktpwp-banner-rotator' );
+        wp_add_inline_script( 'ktpwp-banner-rotator', $js );
     }
 
     /**
@@ -176,16 +176,20 @@ class KTPWP_Shortcodes {
             'cache' => 'true',
         ), $atts, 'kantanpro_ex');
 
-        ob_start(); // 出力バッファリングを開始
+        // 画面 HTML を組み立て、最後に業務画面用の許可リスト（KTPWP_Kses）で絞って返す
+        $ktpwp_html = '';
         $layout_attrs = class_exists( 'KTPWP_Settings' )
             ? KTPWP_Settings::get_page_layout_wrapper_attributes( 0, array( 'ktpwp-shortcode-container' ) )
             : 'class="ktpwp-page-layout ktpwp-shortcode-container"';
-        echo '<div ' . $layout_attrs . '>'; // コンテナ開始
+        $ktpwp_html .= '<div ' . $layout_attrs . '>'; // コンテナ開始
 
         try {
             // 各種コンテンツの取得
+            // 組み立て中に直接出力されるもの（各タブの描画処理など）は、以前と同じ位置に差し込む
+            ob_start();
             $header_content = $this->get_header_content();
             $tab_content = $this->get_tab_content();
+            $ktpwp_html .= ob_get_clean();
 
             // 有料版では KTP banner を表示しない（free では表示）
             $hide_banner = function_exists( 'ktpwp_should_hide_ktp_banner' ) && ktpwp_should_hide_ktp_banner();
@@ -196,8 +200,8 @@ class KTPWP_Shortcodes {
                 $before_header_content = ob_get_clean();
 
                 // フック未登録時の互換フォールバック: ショートコード直接描画
-                if ( empty( $before_header_content ) && shortcode_exists( 'ktp_banner' ) ) {
-                    $before_header_content = do_shortcode( '[ktp_banner]' );
+                if ( empty( $before_header_content ) && shortcode_exists( 'ktpwp_banner' ) ) {
+                    $before_header_content = do_shortcode( '[ktpwp_banner]' );
                 }
                 // さらに空の場合はオプション値から直接描画（最終フォールバック）
                 if ( empty( $before_header_content ) ) {
@@ -205,28 +209,28 @@ class KTPWP_Shortcodes {
                 }
 
                 if ( ! empty( $before_header_content ) ) {
-                    echo '<div class="ktp-before-header-banner" style="width:100%;max-width:100%;margin:0;text-align:center;box-sizing:border-box;">';
-                    echo wp_kses_post( $before_header_content );
-                    echo '</div>';
+                    $ktpwp_html .= '<div class="ktp-before-header-banner" style="width:100%;max-width:100%;margin:0;text-align:center;box-sizing:border-box;">';
+                    $ktpwp_html .= wp_kses_post( $before_header_content );
+                    $ktpwp_html .= '</div>';
                 }
             }
 
-            echo $header_content . $tab_content; // バッファに出力
+            $ktpwp_html .= $header_content . $tab_content; // バッファに出力
 
         } catch (Exception $e) {
             if (defined('WP_DEBUG') && WP_DEBUG) {
                 ktpwp_debug_log('KTPWP Shortcode Error: ' . $e->getMessage());
             }
-            echo '<div class="ktpwp-error">' . esc_html__('エラーが発生しました。', 'kantanpro') . '</div>'; // バッファに出力
+            $ktpwp_html .= '<div class="ktpwp-error">' . esc_html__('エラーが発生しました。', 'kantanpro') . '</div>'; // バッファに出力
         }
 
-        echo '</div>'; // コンテナ終了
+        $ktpwp_html .= '</div>'; // コンテナ終了
         // kantanAllTab（ktpwp.php）と同じく、業務画面専用の許可リストで最終出力を絞る。
-        return KTPWP_Kses::business_screen( ob_get_clean() );
+        return KTPWP_Kses::business_screen( $ktpwp_html );
     }
 
     /**
-     * フック・[ktp_banner] 経由が空のときのバナー HTML（ktpwp.php の kantanAllTab からも利用）
+     * フック・[ktpwp_banner] 経由が空のときのバナー HTML（ktpwp.php の kantanAllTab からも利用）
      *
      * @return string
      */
@@ -313,7 +317,7 @@ class KTPWP_Shortcodes {
             return '';
         }
 
-        return '<div class="ktp-banner-rotator" data-interval="' . (int) $rotation_interval . '" style="position:relative;width:100%;max-width:100%;box-sizing:border-box;overflow:hidden;">' . $items . '</div>';
+        return '<div class="ktpwp-banner-rotator" data-interval="' . (int) $rotation_interval . '" style="position:relative;width:100%;max-width:100%;box-sizing:border-box;overflow:hidden;">' . $items . '</div>';
     }
 
     /**
@@ -326,7 +330,7 @@ class KTPWP_Shortcodes {
      * @return array
      */
     private function get_central_banner_options() {
-        $options = get_option( 'ktp_central_banner_settings', array() );
+        $options = get_option( 'ktpwp_central_banner_settings', array() );
         if ( ! is_array( $options ) ) {
             $options = array();
         }
@@ -377,7 +381,7 @@ class KTPWP_Shortcodes {
     /**
      * 公式サイトの既定バナー JSON を取りに行くか
      *
-     * @param array $options ktp_central_banner_settings
+     * @param array $options ktpwp_central_banner_settings
      * @return bool
      */
     private function should_fetch_official_central_banner_feed( $options ) {
@@ -411,7 +415,7 @@ class KTPWP_Shortcodes {
         }
 
         // v2: enabled と image_url の不整合でキャッシュされた古い値を使わない
-        $cache_key = 'ktp_central_banner_remote_v2_' . md5( $source_url );
+        $cache_key = 'ktpwp_central_banner_remote_v2_' . md5( $source_url );
         $cached    = get_transient( $cache_key );
         if ( is_array( $cached ) ) {
             return $cached;
@@ -489,7 +493,7 @@ class KTPWP_Shortcodes {
      * @return array
      */
     private function get_legacy_banner_options() {
-        $options = get_option( 'ktp_banner_options', array() );
+        $options = get_option( 'ktpwp_banner_options', array() );
         if ( ! is_array( $options ) ) {
             return array();
         }
@@ -524,7 +528,7 @@ class KTPWP_Shortcodes {
         $navigation_links = $this->get_navigation_links();
 
         // ヘッダーHTML構築（PC・タブレット表示用）
-        $header_html = '<div class="ktp_header">';
+        $header_html = '<div class="ktpwp_header">';
         $header_html .= '<div class="parent">';
         $header_html .= '<div class="title ktp-header-title">' . $icon_img . $plugin_name . '</div>';
         $header_html .= '<div class="version">v' . $plugin_version . '</div>';
@@ -869,7 +873,7 @@ class KTPWP_Shortcodes {
      * @return string アクティベーションキー状態
      */
     private function check_activation_key() {
-        $activation_key = get_site_option('ktp_activation_key');
+        $activation_key = get_site_option('ktpwp_activation_key');
         return empty($activation_key) ? '' : '';
     }
 
@@ -942,12 +946,7 @@ class KTPWP_Shortcodes {
      */
     private function get_current_tab() {
         // TabsView / kantanAllTab と同様に POST の tab_name を優先（フォーム送信後も正しいタブのコンテンツを生成する）
-        $tab_name = 'list';
-        if (isset($_POST['tab_name']) && is_string($_POST['tab_name'])) {
-            $tab_name = sanitize_text_field(wp_unslash($_POST['tab_name']));
-        } elseif (isset($_GET['tab_name'])) {
-            $tab_name = sanitize_text_field(wp_unslash($_GET['tab_name']));
-        }
+        $tab_name = ktpwp_resolve_tab_name( 'list' );
 
         // 許可されたタブ名のホワイトリスト
         $allowed_tabs = array('list', 'order', 'client', 'service', 'supplier', 'info');
@@ -1083,7 +1082,7 @@ class KTPWP_Shortcodes {
             if (current_user_can('edit_posts') || current_user_can('ktpwp_access')) {
                 $supplier->Create_Table($tab_name);
                 
-                if (!empty($_POST)) {
+                if (ktpwp_request_method() === 'POST') {
                     $supplier->Update_Table($tab_name);
                 }
             }

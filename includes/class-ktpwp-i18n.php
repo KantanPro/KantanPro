@@ -159,7 +159,7 @@ class KTPWP_I18n {
             return;
         }
 
-        $page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
+        $page = KTPWP_Request::has_query( 'page' ) ? sanitize_key( KTPWP_Request::query( 'page' ) ) : '';
         if ( strpos( $page, 'ktp' ) !== 0 && strpos( $page, 'kantanpro' ) !== 0 ) {
             return;
         }

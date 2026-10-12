@@ -30,7 +30,7 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 		 */
 		public function get_schema() {
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_client';
+			$table_name = $wpdb->prefix . 'ktpwp_client';
 			$charset_collate = $wpdb->get_charset_collate();
 
 			$sql = "CREATE TABLE {$table_name} (
@@ -86,16 +86,16 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 		 */
 		public function update_table( $tab_name ) {
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_' . $tab_name;
+			$table_name = $wpdb->prefix . 'ktpwp_' . $tab_name;
 
 			// 'category' カラムが存在するか確認し、なければ追加する (マイグレーション)
-			$column_exists = $wpdb->get_results( $wpdb->prepare( "SHOW COLUMNS FROM `{$table_name}` LIKE %s", 'category' ) );
+			$column_exists = $wpdb->get_results( $wpdb->prepare( 'SHOW COLUMNS FROM %i LIKE %s', $table_name, 'category' ) );
 			if ( empty( $column_exists ) ) {
 				$wpdb->query( "ALTER TABLE {$table_name} ADD COLUMN category VARCHAR(255) NULL" );
 			}
 
 			// 空のカテゴリーフィールドを「対象」に更新（一度だけ実行）
-			$migration_option = 'ktp_client_category_migration_done';
+			$migration_option = 'ktpwp_client_category_migration_done';
 			if ( ! get_option( $migration_option ) ) {
 				$update_result = $wpdb->query(
                     $wpdb->prepare(
@@ -117,13 +117,13 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 				}
 
 				// nonce検証
-				if ( ! isset( $_POST['ktp_client_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['ktp_client_nonce'] ) ), 'ktp_client_action' ) ) {
+				if ( ! isset( $_POST['ktpwp_client_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['ktpwp_client_nonce'] ) ), 'ktpwp_client_action' ) ) {
 					wp_die( esc_html__( '不正なリクエストです。', 'kantanpro' ) );
 				}
 
 				// POST データの取得とサニタイズ
-				$query_post = isset( $_POST['query_post'] ) ? sanitize_text_field( $_POST['query_post'] ) : '';
-				$data_id = isset( $_POST['data_id'] ) ? intval( $_POST['data_id'] ) : 0;
+				$query_post = isset( $_POST['query_post'] ) ? sanitize_text_field( wp_unslash( $_POST['query_post'] ) ) : '';
+				$data_id = isset( $_POST['data_id'] ) ? intval( wp_unslash( $_POST['data_id'] ) ) : 0;
 
 				// フィールドデータの取得
 				$fields_data = $this->sanitize_post_data( $_POST );
@@ -148,7 +148,7 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 				// 操作に応じた処理
 				switch ( $query_post ) {
 					case 'delete':
-						return $this->handle_delete( $table_name, $tab_name, $data_id );
+						return $this->handle_delete( $table_name, $tab_name, $data_id, isset( $_POST['delete_type'] ) ? sanitize_key( wp_unslash( $_POST['delete_type'] ) ) : 'soft' );
 					case 'insert':
 						// デバッグログを追加
 						if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
@@ -219,12 +219,13 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 		 * @param string $table_name Table name
 		 * @param string $tab_name Tab name
 		 * @param int    $data_id Data ID
+		 * @param string $delete_type soft / hard など（呼び出し側で sanitize_key 済み）
 		 * @return void
 		 */
-		private function handle_delete( $table_name, $tab_name, $data_id ) {
+		private function handle_delete( $table_name, $tab_name, $data_id, $delete_type = 'soft' ) {
 			global $wpdb;
 
-			$delete_type = isset( $_POST['delete_type'] ) ? $_POST['delete_type'] : 'soft';
+			// $delete_type は呼び出し側（update_table、nonce 確認済み）が sanitize_key して渡す。
 
 			if ( $data_id > 0 ) {
 				if ( $delete_type === 'soft' ) {
@@ -257,7 +258,7 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 						$wpdb->query( 'START TRANSACTION' );
 
 						// 1. 受注書テーブルからclient_id一致の受注書IDを取得
-						$order_table = $wpdb->prefix . 'ktp_order';
+						$order_table = $wpdb->prefix . 'ktpwp_order';
 						$order_ids = $wpdb->get_col( $wpdb->prepare( "SELECT id FROM {$order_table} WHERE client_id = %d", $data_id ) );
 
 						if ( ! empty( $order_ids ) ) {
@@ -271,7 +272,7 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 								}
 
 								// スタッフチャットメッセージを削除
-								$wpdb->delete( $wpdb->prefix . 'ktp_order_staff_chat', array( 'order_id' => $order_id ), array( '%d' ) );
+								$wpdb->delete( $wpdb->prefix . 'ktpwp_order_staff_chat', array( 'order_id' => $order_id ), array( '%d' ) );
 
 								// 受注書自体を削除
 								$wpdb->delete( $order_table, array( 'id' => $order_id ), array( '%d' ) );
@@ -332,7 +333,7 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 
 				if ( $result !== false ) {
 					$next_id = $this->get_next_display_id( $table_name, $data_id );
-					$cookie_name = 'ktp_' . $tab_name . '_id';
+					$cookie_name = 'ktpwp_' . $tab_name . '_id';
 					setcookie( $cookie_name, $next_id, time() + ( 86400 * 30 ), '/' );
 					$redirect_url = add_query_arg(
                         array(
@@ -375,7 +376,7 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 				return false;
 			}
 
-			$department_table = $wpdb->prefix . 'ktp_department';
+			$department_table = $wpdb->prefix . 'ktpwp_department';
 			$table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $department_table ) );
 
 			if ( $table_exists !== $department_table ) {
@@ -501,7 +502,7 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 
 			if ( $result !== false ) {
 				$new_id = $wpdb->insert_id;
-				$cookie_name = 'ktp_' . $tab_name . '_id';
+				$cookie_name = 'ktpwp_' . $tab_name . '_id';
 				setcookie( $cookie_name, $new_id, time() + ( 86400 * 30 ), '/' );
 
 				$redirect_url = add_query_arg(
@@ -626,7 +627,7 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 						);
 					}
 
-					if ( isset( $_GET['sort_by'] ) || isset( $_GET['sort_order'] ) ) {
+					if ( KTPWP_Request::has_query( 'sort_by' ) || KTPWP_Request::has_query( 'sort_order' ) ) {
 						wp_redirect( remove_query_arg( 'message', wp_get_referer() ) );
 					} else {
 						$redirect_url = add_query_arg(
@@ -701,7 +702,7 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 						);
 					}
 
-					$cookie_name = 'ktp_' . $tab_name . '_id';
+					$cookie_name = 'ktpwp_' . $tab_name . '_id';
 					setcookie( $cookie_name, $found_id, time() + ( 86400 * 30 ), '/' );
 
 					// 該当なし画面から再検索でヒットした場合、query_post/no_results を外して詳細表示にする
@@ -779,20 +780,20 @@ if ( ! class_exists( 'KTPWP_Client_DB' ) ) {
 
 		public function get_client_by_id( $client_id ) {
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_client';
+			$table_name = $wpdb->prefix . 'ktpwp_client';
 			return $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table_name WHERE id = %d", $client_id ) );
 		}
 
 		public function get_all_clients() {
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_clients';
-			return $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $table_name ORDER BY client_name ASC", array() ) );
+			$table_name = $wpdb->prefix . 'ktpwp_clients';
+			return $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM %i ORDER BY client_name ASC', $table_name ) );
 		}
 
 		public function get_total_clients() {
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_clients';
-			return $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM $table_name", array() ) );
+			$table_name = $wpdb->prefix . 'ktpwp_clients';
+			return $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i', $table_name ) );
 		}
 	}
 }

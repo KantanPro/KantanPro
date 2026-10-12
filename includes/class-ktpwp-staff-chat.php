@@ -63,7 +63,7 @@ if ( ! class_exists( 'KTPWP_Staff_Chat' ) ) {
 		 */
 		public function get_schema() {
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_order_staff_chat';
+			$table_name = $wpdb->prefix . 'ktpwp_order_staff_chat';
 			$charset_collate = $wpdb->get_charset_collate();
 
 			$sql = "CREATE TABLE {$table_name} (
@@ -165,7 +165,7 @@ if ( ! class_exists( 'KTPWP_Staff_Chat' ) ) {
 			}
 
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_order_staff_chat';
+			$table_name = $wpdb->prefix . 'ktpwp_order_staff_chat';
 
 			$existing_chat = $wpdb->get_var(
 				$wpdb->prepare(
@@ -293,7 +293,7 @@ if ( ! class_exists( 'KTPWP_Staff_Chat' ) ) {
 			}
 
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_order_staff_chat';
+			$table_name = $wpdb->prefix . 'ktpwp_order_staff_chat';
 
 			$messages = $wpdb->get_results(
                 $wpdb->prepare(
@@ -342,7 +342,7 @@ if ( ! class_exists( 'KTPWP_Staff_Chat' ) ) {
 			}
 
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_order_staff_chat';
+			$table_name = $wpdb->prefix . 'ktpwp_order_staff_chat';
 
 			// Get user info
 			$user_info = get_userdata( $current_user_id );
@@ -363,7 +363,7 @@ if ( ! class_exists( 'KTPWP_Staff_Chat' ) ) {
 
 			try {
 				// Verify order exists
-				$order_table = $wpdb->prefix . 'ktp_order';
+				$order_table = $wpdb->prefix . 'ktpwp_order';
 				$order_exists = $wpdb->get_var(
                     $wpdb->prepare(
                         "SELECT COUNT(*) FROM `{$order_table}` WHERE id = %d",
@@ -453,7 +453,7 @@ if ( ! class_exists( 'KTPWP_Staff_Chat' ) ) {
 			}
 
 			// Get order creation time
-			$order_table = $wpdb->prefix . 'ktp_order';
+			$order_table = $wpdb->prefix . 'ktpwp_order';
 			$order = $wpdb->get_row(
                 $wpdb->prepare(
                     "SELECT time FROM `{$order_table}` WHERE id = %d",
@@ -477,8 +477,8 @@ if ( ! class_exists( 'KTPWP_Staff_Chat' ) ) {
 
 			// デフォルトは閉じ。送信直後・明示オープンのみ HTML で開く（以降は JS がクッキーで復元）
 			$details_open_attr = '';
-			if ( ( isset( $_GET['message_sent'] ) && $_GET['message_sent'] === '1' )
-				|| ( isset( $_GET['chat_open'] ) && $_GET['chat_open'] === '1' ) ) {
+			if ( ( KTPWP_Request::has_query( 'message_sent' ) && KTPWP_Request::query_unslashed( 'message_sent' ) === '1' )
+				|| ( KTPWP_Request::has_query( 'chat_open' ) && KTPWP_Request::query_unslashed( 'chat_open' ) === '1' ) ) {
 				$details_open_attr = ' open';
 			}
 
@@ -621,7 +621,7 @@ if ( ! class_exists( 'KTPWP_Staff_Chat' ) ) {
 			}
 
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'ktp_order_staff_chat';
+			$table_name = $wpdb->prefix . 'ktpwp_order_staff_chat';
 
 			// Build query with proper escaping
 			$sql = "SELECT * FROM `{$table_name}` WHERE order_id = %d";
@@ -677,7 +677,7 @@ if ( ! class_exists( 'KTPWP_Staff_Chat' ) ) {
 			$ajax_data = KTPWP_Nonce_Manager::get_instance()->get_unified_ajax_config();
 
 			$script  = 'window.ktpwp_ajax = ' . wp_json_encode( $ajax_data ) . ';';
-			$script .= 'window.ktp_ajax_object = ' . wp_json_encode( $ajax_data ) . ';';
+			$script .= 'window.ktpwp_ajax_object = ' . wp_json_encode( $ajax_data ) . ';';
 			$script .= 'window.ajaxurl = ' . wp_json_encode( $ajax_data['ajax_url'] ) . ';';
 
 			ktpwp_add_inline_script( $script );
@@ -704,7 +704,7 @@ if ( ! class_exists( 'KTPWP_Staff_Chat' ) ) {
             }
 
             global $wpdb;
-            $table_name = $wpdb->prefix . 'ktp_order_staff_chat';
+            $table_name = $wpdb->prefix . 'ktpwp_order_staff_chat';
 
             // 対象メッセージ取得（order_id / created_at も取得）
             $message = $wpdb->get_row(

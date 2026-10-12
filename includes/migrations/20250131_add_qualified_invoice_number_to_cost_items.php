@@ -2,7 +2,7 @@
 /**
  * コスト項目テーブルに適格請求書番号カラムを追加するマイグレーション
  * 
- * このマイグレーションは、ktp_order_cost_itemsテーブルに
+ * このマイグレーションは、ktpwp_order_cost_itemsテーブルに
  * qualified_invoice_numberカラムを追加します。
  */
 
@@ -19,20 +19,18 @@ class KTPWP_Migration_20250131_Add_Qualified_Invoice_Number_To_Cost_Items {
         global $wpdb;
 
         try {
-            $cost_items_table = $wpdb->prefix . 'ktp_order_cost_items';
+            $cost_items_table = $wpdb->prefix . 'ktpwp_order_cost_items';
 
             // qualified_invoice_numberカラムが存在するかチェック
             $qualified_invoice_number_exists = $wpdb->get_var( 
-                $wpdb->prepare( 
-                    "SHOW COLUMNS FROM `{$cost_items_table}` LIKE %s", 
-                    'qualified_invoice_number' 
+                $wpdb->prepare( 'SHOW COLUMNS FROM %i LIKE %s', $cost_items_table, 'qualified_invoice_number' 
                 ) 
             );
             
             if ( ! $qualified_invoice_number_exists ) {
                 // qualified_invoice_numberカラムが存在しない場合は追加
-                $sql = "ALTER TABLE `{$cost_items_table}` ADD COLUMN `qualified_invoice_number` VARCHAR(255) DEFAULT NULL AFTER `purchase`";
-                $result = $wpdb->query( $sql );
+                $sql = $wpdb->prepare( "ALTER TABLE %i ADD COLUMN `qualified_invoice_number` VARCHAR(255) DEFAULT NULL AFTER `purchase`", $cost_items_table );
+                $result = $wpdb->query( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $sql は直前で $wpdb->prepare() 済み。
                 
                 if ( $result === false ) {
                     ktpwp_debug_log( 'KTPWP Migration: Failed to add qualified_invoice_number column to cost items table. Error: ' . $wpdb->last_error );
@@ -71,20 +69,18 @@ class KTPWP_Migration_20250131_Add_Qualified_Invoice_Number_To_Cost_Items {
         global $wpdb;
 
         try {
-            $cost_items_table = $wpdb->prefix . 'ktp_order_cost_items';
+            $cost_items_table = $wpdb->prefix . 'ktpwp_order_cost_items';
 
             // qualified_invoice_numberカラムが存在するかチェック
             $qualified_invoice_number_exists = $wpdb->get_var( 
-                $wpdb->prepare( 
-                    "SHOW COLUMNS FROM `{$cost_items_table}` LIKE %s", 
-                    'qualified_invoice_number' 
+                $wpdb->prepare( 'SHOW COLUMNS FROM %i LIKE %s', $cost_items_table, 'qualified_invoice_number' 
                 ) 
             );
             
             if ( $qualified_invoice_number_exists ) {
                 // qualified_invoice_numberカラムが存在する場合は削除
-                $sql = "ALTER TABLE `{$cost_items_table}` DROP COLUMN `qualified_invoice_number`";
-                $result = $wpdb->query( $sql );
+                $sql = $wpdb->prepare( "ALTER TABLE %i DROP COLUMN `qualified_invoice_number`", $cost_items_table );
+                $result = $wpdb->query( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $sql は直前で $wpdb->prepare() 済み。
                 
                 if ( $result === false ) {
                     ktpwp_debug_log( 'KTPWP Migration: Failed to drop qualified_invoice_number column from cost items table. Error: ' . $wpdb->last_error );

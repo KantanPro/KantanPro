@@ -8,7 +8,7 @@ jQuery(document).ready(function($) {
     var cfg = (typeof ktpwp_inline_edit_nonce !== 'undefined' && ktpwp_inline_edit_nonce) ? ktpwp_inline_edit_nonce : {};
     var url = cfg.ajax_url
       || (typeof ajaxurl !== 'undefined' ? ajaxurl : '')
-      || (typeof ktp_ajax_object !== 'undefined' && ktp_ajax_object.ajax_url ? ktp_ajax_object.ajax_url : '')
+      || (typeof ktpwp_ajax_object !== 'undefined' && ktpwp_ajax_object.ajax_url ? ktpwp_ajax_object.ajax_url : '')
       || (typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url ? ktpwp_ajax.ajax_url : '')
       || ((typeof ktpwp_ajax !== 'undefined' && ktpwp_ajax.ajax_url) || (typeof ajaxurl !== 'undefined' ? ajaxurl : ''));
 
@@ -66,7 +66,7 @@ jQuery(document).ready(function($) {
       type: 'POST',
       dataType: 'json',
       data: {
-        action: 'ktp_update_project_name',
+        action: 'ktpwp_update_project_name',
         order_id: orderId,
         project_name: newName,
         _wpnonce: ajaxConfig.nonce
@@ -94,7 +94,7 @@ jQuery(document).ready(function($) {
       error: function(xhr) {
         $input.addClass('autosave-error');
         setTimeout(function(){ $input.removeClass('autosave-error'); }, 1200);
-        if (window.ktpDebugMode) {
+        if (window.ktpwpDebugMode) {
           console.error('[KTPWP] project name save failed', xhr.status, xhr.responseText);
         }
       }
