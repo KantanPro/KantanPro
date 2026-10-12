@@ -293,8 +293,8 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 					}
 					if ( ! empty( $where_conditions ) ) {
 						$where_clause = ' WHERE ' . implode( ' AND ', $where_conditions );
-						$multi_query = "SELECT * FROM {$table_name}" . $where_clause . ' ORDER BY id DESC';
-						$multi_results = $wpdb->get_results( $wpdb->prepare( $multi_query, $where_values ) );
+						$multi_query = "SELECT * FROM %i" . $where_clause . ' ORDER BY id DESC';
+						$multi_results = $wpdb->get_results( $wpdb->prepare( $multi_query, array_merge( array( $table_name ), $where_values ) ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- 直前で組み立てたプレースホルダーのみの SQL。
 						if ( ! empty( $multi_results ) ) {
 							$multi_results_id = 'ktp-service-multi-results-' . wp_rand( 10000, 99999 );
 							$search_results_html = "<div class='data_contents'><div class='search_list_box'><div class='data_list_title'>■ " . esc_html__( '検索結果が複数あります！', 'kantanpro' ) . "</div><ul>";
@@ -934,8 +934,7 @@ if ( ! class_exists( 'KTPWP_Service_Class' ) ) {
 				$table_name = $wpdb->prefix . 'ktpwp_' . $name;
 
 				// データを取得
-				$query = "SELECT * FROM {$table_name} WHERE id = %d";
-				$post_row = $wpdb->get_results( $wpdb->prepare( $query, $data_id ) );
+				$post_row = $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM %i WHERE id = %d', $table_name, $data_id ) );
 				$db_image_url = '';
 				foreach ( $post_row as $row ) {
 					$db_image_url = isset( $row->image_url ) ? (string) $row->image_url : '';

@@ -51,14 +51,14 @@ class KTPWP_Fix_Null_Tax_Rates_Migration {
         $invoice_items_table = $wpdb->prefix . 'ktpwp_order_invoice_items';
         
         // 税率がNULLまたは空または0のレコード数を確認
-        $count = $wpdb->get_var("
+        $count = $wpdb->get_var( $wpdb->prepare( "
             SELECT COUNT(*) 
-            FROM `{$invoice_items_table}` 
+            FROM %i 
             WHERE tax_rate IS NULL 
-               OR tax_rate = '' 
+               OR tax_rate = %s 
                OR tax_rate = 0 
                OR tax_rate < 0
-        ");
+        ", $invoice_items_table, '' ) );
         
         return array(
             'has_issues' => $count > 0,

@@ -624,8 +624,8 @@ if ( ! class_exists( 'KTPWP_Staff_Chat' ) ) {
 			$table_name = $wpdb->prefix . 'ktpwp_order_staff_chat';
 
 			// Build query with proper escaping
-			$sql = "SELECT * FROM `{$table_name}` WHERE order_id = %d";
-			$params = array( $order_id );
+			$sql = "SELECT * FROM %i WHERE order_id = %d";
+			$params = array( $table_name, $order_id );
 
 			if ( ! empty( $last_time ) ) {
 				$sql .= ' AND created_at > %s';
@@ -634,7 +634,7 @@ if ( ! class_exists( 'KTPWP_Staff_Chat' ) ) {
 
 			$sql .= ' ORDER BY created_at ASC';
 
-			$messages = $wpdb->get_results( $wpdb->prepare( $sql, $params ), ARRAY_A );
+			$messages = $wpdb->get_results( $wpdb->prepare( $sql, $params ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- 直前で組み立てたプレースホルダーのみの SQL。
 
 			if ( ! $messages ) {
 				return array();

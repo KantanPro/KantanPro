@@ -725,8 +725,8 @@ if ( ! class_exists( 'KTPWP_Service_DB' ) ) {
 				} else {
 					// 検索実行
 					$where_clause = ' WHERE ' . implode( ' AND ', $where_conditions );
-					$search_query = "SELECT * FROM {$table_name}" . $where_clause . ' ORDER BY id DESC';
-					$search_results = $wpdb->get_results( $wpdb->prepare( $search_query, $where_values ) );
+					$search_query = "SELECT * FROM %i" . $where_clause . ' ORDER BY id DESC';
+					$search_results = $wpdb->get_results( $wpdb->prepare( $search_query, array_merge( array( $table_name ), $where_values ) ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- 直前で組み立てたプレースホルダーのみの SQL。
 
 					$redirect_base = wp_get_referer();
 					if ( ! $redirect_base || $redirect_base === '' ) {

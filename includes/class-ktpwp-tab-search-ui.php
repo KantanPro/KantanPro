@@ -100,8 +100,8 @@ if ( ! class_exists( 'KTPWP_Tab_Search_UI' ) ) {
 			}
 			$order_where .= ') ';
 			$order_args[] = 50;
-			$order_sql    = "SELECT id, client_id, customer_name, user_name, project_name FROM `{$order_table}` WHERE {$order_where} ORDER BY time DESC LIMIT %d";
-			$orders       = $wpdb->get_results( $wpdb->prepare( $order_sql, $order_args ) );
+			$order_sql    = "SELECT id, client_id, customer_name, user_name, project_name FROM %i WHERE {$order_where} ORDER BY time DESC LIMIT %d";
+			$orders       = $wpdb->get_results( $wpdb->prepare( $order_sql, array_merge( array( $order_table ), $order_args ) ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- 直前で組み立てたプレースホルダーのみの SQL。
 			if ( $orders ) {
 				foreach ( $orders as $row ) {
 					$client_label = class_exists( 'KTPWP_Department_Manager' )

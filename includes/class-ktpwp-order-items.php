@@ -1153,7 +1153,9 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 			// 現在の値を取得して変更があったかチェック
 			$current_value = $wpdb->get_var(
                 $wpdb->prepare(
-                    "SELECT {$field_name} FROM `{$table_name}` WHERE id = %d",
+                    'SELECT %i FROM %i WHERE id = %d',
+                    $field_name,
+                    $table_name,
                     $item_id
                 )
             );
@@ -1410,7 +1412,9 @@ if ( ! class_exists( 'KTPWP_Order_Items' ) ) {
 
 			$value = $wpdb->get_var(
                 $wpdb->prepare(
-                    "SELECT {$field_name} FROM `{$table_name}` WHERE id = %d",
+                    'SELECT %i FROM %i WHERE id = %d',
+                    $field_name,
+                    $table_name,
                     $item_id
                 )
             );

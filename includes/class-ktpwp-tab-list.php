@@ -1016,8 +1016,8 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 			}
 			$order_where .= ') ';
 			$order_args[] = 50;
-			$order_sql = "SELECT id, client_id, customer_name, user_name, project_name FROM `{$order_table}` WHERE " . $order_where . " ORDER BY time DESC LIMIT %d";
-			$orders = $wpdb->get_results( $wpdb->prepare( $order_sql, $order_args ) );
+			$order_sql = "SELECT id, client_id, customer_name, user_name, project_name FROM %i WHERE " . $order_where . " ORDER BY time DESC LIMIT %d";
+			$orders = $wpdb->get_results( $wpdb->prepare( $order_sql, array_merge( array( $order_table ), $order_args ) ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- 直前で組み立てたプレースホルダーのみの SQL。
 			if ( $orders ) {
 				foreach ( $orders as $row ) {
 					$client_label = class_exists( 'KTPWP_Department_Manager' )
@@ -1054,8 +1054,8 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 			}
 			$client_where .= ') ';
 			$client_args[] = 50;
-			$client_sql = "SELECT id, company_name, name FROM `{$client_table}` WHERE " . $client_where . " ORDER BY id DESC LIMIT %d";
-			$clients = $wpdb->get_results( $wpdb->prepare( $client_sql, $client_args ) );
+			$client_sql = "SELECT id, company_name, name FROM %i WHERE " . $client_where . " ORDER BY id DESC LIMIT %d";
+			$clients = $wpdb->get_results( $wpdb->prepare( $client_sql, array_merge( array( $client_table ), $client_args ) ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- 直前で組み立てたプレースホルダーのみの SQL。
 			if ( $clients ) {
 				foreach ( $clients as $row ) {
 					$label = ( $row->company_name ?: '' ) . ' (' . ( $row->name ?: '' ) . ')';
@@ -1089,8 +1089,8 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 			}
 			$service_where .= ') ';
 			$service_args[] = 50;
-			$service_sql = "SELECT id, service_name FROM `{$service_table}` WHERE " . $service_where . " ORDER BY id DESC LIMIT %d";
-			$services = $wpdb->get_results( $wpdb->prepare( $service_sql, $service_args ) );
+			$service_sql = "SELECT id, service_name FROM %i WHERE " . $service_where . " ORDER BY id DESC LIMIT %d";
+			$services = $wpdb->get_results( $wpdb->prepare( $service_sql, array_merge( array( $service_table ), $service_args ) ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- 直前で組み立てたプレースホルダーのみの SQL。
 			if ( $services ) {
 				foreach ( $services as $row ) {
 					$label = ( $row->service_name ?: '' );
@@ -1127,12 +1127,13 @@ if ( ! class_exists( 'KTPWP_List_Class' ) ) {
 			}
 			$supplier_where .= ') ';
 			$supplier_args[] = 50;
+			$supplier_tables = $supplier_skills_exists ? array( $supplier_table, $supplier_skills_table ) : array( $supplier_table );
 			if ( $supplier_skills_exists ) {
-				$supplier_sql = "SELECT DISTINCT s.id, s.company_name, s.name FROM `{$supplier_table}` s LEFT JOIN `{$supplier_skills_table}` ss ON ss.supplier_id = s.id WHERE " . $supplier_where . " ORDER BY s.id DESC LIMIT %d";
+				$supplier_sql = "SELECT DISTINCT s.id, s.company_name, s.name FROM %i s LEFT JOIN %i ss ON ss.supplier_id = s.id WHERE " . $supplier_where . " ORDER BY s.id DESC LIMIT %d";
 			} else {
-				$supplier_sql = "SELECT id, company_name, name FROM `{$supplier_table}` WHERE " . $supplier_where . " ORDER BY id DESC LIMIT %d";
+				$supplier_sql = "SELECT id, company_name, name FROM %i WHERE " . $supplier_where . " ORDER BY id DESC LIMIT %d";
 			}
-			$suppliers = $wpdb->get_results( $wpdb->prepare( $supplier_sql, $supplier_args ) );
+			$suppliers = $wpdb->get_results( $wpdb->prepare( $supplier_sql, array_merge( $supplier_tables, $supplier_args ) ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- 直前で組み立てたプレースホルダーのみの SQL。
 			if ( $suppliers ) {
 				foreach ( $suppliers as $row ) {
 					$label = ( $row->company_name ?: '' ) . ' (' . ( $row->name ?: '' ) . ')';
