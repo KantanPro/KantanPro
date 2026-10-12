@@ -35,6 +35,14 @@ if ( ! class_exists( 'KTPWP_Legacy_Prefix_Import' ) ) {
 		const RESULT_TRANSIENT = 'ktpwp_legacy_prefix_import_result';
 
 		/**
+		 * 「更新後にもう使われている」と判断する根拠にするテーブル。
+		 *
+		 * スタッフチャット等は、引き継ぎの最中に別のリクエストが受注を表示しただけで初期メッセージが入る。
+		 * それを根拠にすると設定を引き継がなくなり、デザイン等が 1.3.49 の初期値のまま残る（1.3.50 で実際に起きた）。
+		 */
+		const CORE_TABLES = array( 'client', 'order', 'service', 'supplier' );
+
+		/**
 		 * 1.3.49 で ktp_ から ktpwp_ に名前が変わったオプション（tools/ktp-prefix-renamed.json から抜き出したもの）。
 		 *
 		 * @var string[]
@@ -112,7 +120,9 @@ if ( ! class_exists( 'KTPWP_Legacy_Prefix_Import' ) ) {
 					}
 
 					if ( ! self::is_effectively_empty( $target, $suffix ) ) {
-						$new_had_data = true;
+						if ( in_array( $suffix, self::CORE_TABLES, true ) ) {
+							$new_had_data = true;
+						}
 						if ( self::count_rows( $source ) > 0 ) {
 							$conflicts[] = $suffix;
 						}
@@ -153,7 +163,21 @@ if ( ! class_exists( 'KTPWP_Legacy_Prefix_Import' ) ) {
 		}
 
 		/**
+		 * 新しい名前の設定に欠けている項目を、旧版の値で埋める（入っている値は変えない）。
+		 *
+		 * 1.3.50 で設定を引き継がなかったサイト向け。旧版の ktp_* が残っているときだけ働く。
+		 * 自動マイグレーション（バージョンが上がったとき）から呼ぶ。
+		 *
+		 * @return void
+		 */
+		public static function fill_missing_options() {
+			self::copy_options( false );
+		}
+
+		/**
 		 * ktp_* のオプションを ktpwp_* へコピーする（元の ktp_* は残す）。
+		 *
+		 * 上書きしない場合も、設定が配列なら新しい側に無い項目だけは旧版の値で埋める。
 		 *
 		 * @param bool $overwrite 新しい名前の値があっても旧版の値で上書きするか。
 		 * @return void
@@ -170,10 +194,18 @@ if ( ! class_exists( 'KTPWP_Legacy_Prefix_Import' ) ) {
 				}
 				$name    = 'ktpwp_' . substr( (string) $legacy, strlen( 'ktp_' ) );
 				$current = get_option( $name, $missing );
+				$value   = get_option( $legacy );
 				if ( $current !== $missing && ! $overwrite ) {
-					continue;
+					if ( ! is_array( $current ) || ! is_array( $value ) ) {
+						continue;
+					}
+					// 配列の和: 新しい側の値を優先し、無い項目だけ旧版から足す（数値キーも振り直さない）
+					$value = $current + $value;
+					if ( $value === $current ) {
+						continue;
+					}
 				}
-				update_option( $name, get_option( $legacy ) );
+				update_option( $name, $value );
 			}
 		}
 

@@ -3,7 +3,7 @@
  * Plugin Name: KantanPro
  * Plugin URI: https://www.kantanpro.com/
  * Description: スモールビジネスのための販売支援ツール。ショートコード[ktpwp_all_tab]を固定ページに設置してください。
- * Version: 1.3.50
+ * Version: 1.3.51
  * Author: KantanPro
  * Author URI: https://www.kantanpro.com/kantanpro-page
  * License: GPL v2 or later
@@ -1242,6 +1242,8 @@ function ktpwp_run_auto_migrations() {
 
             // 1.3.48 以前のテーブル（wp_ktp_*）があれば、テーブル作成より先に新しい名前へ引き継ぐ
             KTPWP_Legacy_Prefix_Import::run();
+            // 1.3.50 で引き継ぎ損ねた設定項目（デザインの色など）を旧版の値で埋める
+            KTPWP_Legacy_Prefix_Import::fill_missing_options();
 
             // コアテーブルの作成は環境チェックの結果にかかわらず必ず行う
             // （ktpwp_comprehensive_activation() と同じ理由。dbDelta は冪等・加算のみ）。

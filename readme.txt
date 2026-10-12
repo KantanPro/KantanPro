@@ -4,7 +4,7 @@ Tags: invoice, crm, order management, quotation, business
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.3.50
+Stable tag: 1.3.51
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -166,6 +166,12 @@ fields. It only sends anything if you have entered your own OpenAI API key.
 6. Mobile view
 
 == Changelog ==
+
+= 1.3.51 - 2026-10-12 =
+* Fixed: when updating from 1.3.48 or earlier, settings (design colors, general settings) could stay at the
+  1.3.49 defaults if another page view wrote to a secondary table (such as the staff chat) during the data
+  migration. Only the client, order, service and supplier tables now decide whether the site was already in use.
+  Settings that 1.3.50 left incomplete are filled from the old values (existing values are kept).
 
 = 1.3.50 - 2026-10-12 =
 * Fixed: sites updated from 1.3.48 or earlier showed empty data after updating to 1.3.49, because the
