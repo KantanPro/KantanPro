@@ -4,7 +4,7 @@ Tags: invoice, crm, order management, quotation, business
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.3.49
+Stable tag: 1.3.50
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -166,6 +166,16 @@ fields. It only sends anything if you have entered your own OpenAI API key.
 6. Mobile view
 
 == Changelog ==
+
+= 1.3.50 - 2026-10-12 =
+* Fixed: sites updated from 1.3.48 or earlier showed empty data after updating to 1.3.49, because the
+  database tables and options were renamed from ktp_ to ktpwp_ without carrying the data over.
+  The old wp_ktp_* tables are now renamed to wp_ktpwp_* and the ktp_* options are copied to ktpwp_*.
+  If both the old and the new table contain data, nothing is overwritten and an admin notice lists the tables.
+* Fixed: the automatic database migration could be retried on every page load, writing a large
+  amount of database errors to the PHP error log (on nginx + PHP-FPM this caused 502 Bad Gateway).
+  Migration files that run when loaded are now recorded as done, database errors are not written to
+  the log during migration, and after a failure the next retry waits one hour.
 
 = 1.3.49 - 2026-10-12 =
 * Responded to the WordPress.org plugin review of 1.3.48.

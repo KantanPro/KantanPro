@@ -3,7 +3,7 @@
  * Plugin Name: KantanPro
  * Plugin URI: https://www.kantanpro.com/
  * Description: スモールビジネスのための販売支援ツール。ショートコード[ktpwp_all_tab]を固定ページに設置してください。
- * Version: 1.3.49
+ * Version: 1.3.50
  * Author: KantanPro
  * Author URI: https://www.kantanpro.com/kantanpro-page
  * License: GPL v2 or later
@@ -29,6 +29,9 @@ if ( function_exists( 'ktpwp_autoload_classes' ) ) {
 
 // 画面移動用クエリ引数の読み取り口。どのファイルからも使うので最初に読み込む。
 require_once __DIR__ . '/includes/class-ktpwp-request.php';
+// 1.3.48 以前（接頭辞 ktp_）のテーブル・オプションの引き継ぎ。マイグレーションより先に使うので最初に読み込む。
+require_once __DIR__ . '/includes/class-ktpwp-legacy-prefix-import.php';
+add_action( 'admin_notices', array( 'KTPWP_Legacy_Prefix_Import', 'admin_notices' ) );
 
 if ( ! function_exists( 'ktpwp_migration_add_column' ) ) {
     /**
@@ -1218,17 +1221,27 @@ function ktpwp_run_auto_migrations() {
     $plugin_version = KANTANPRO_PLUGIN_VERSION;
 
     // DBバージョンが古い場合、または新規インストールの場合
-    if ( version_compare( $current_db_version, $plugin_version, '<' ) ) {
+    // （前回失敗した直後は 1 時間待つ。失敗のたびに毎リクエストでやり直すと、DB エラーの出力が
+    //  溜まって nginx が 502 を返す。1.3.49 で実際に起きた）
+    if ( version_compare( $current_db_version, $plugin_version, '<' ) && ! get_transient( 'ktpwp_migration_retry_wait' ) ) {
+        global $wpdb;
 
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
             ktpwp_debug_log( 'KTPWP Auto Migration: Starting migration from ' . $current_db_version . ' to ' . $plugin_version );
         }
+
+        // 既にある列・索引を足そうとしたときの DB エラーを error_log（php-fpm では stderr）に流さない。
+        // 大量に出ると FastCGI のヘッダ領域があふれて 502 になる。last_error は従来どおり取れる。
+        $suppress_errors = $wpdb->suppress_errors( true );
 
         try {
             // マイグレーション開始フラグを設定
             update_option( 'ktpwp_migration_in_progress', true );
             update_option( 'ktpwp_migration_start_time', current_time( 'mysql' ) );
             update_option( 'ktpwp_migration_attempts', get_option( 'ktpwp_migration_attempts', 0 ) + 1 );
+
+            // 1.3.48 以前のテーブル（wp_ktp_*）があれば、テーブル作成より先に新しい名前へ引き継ぐ
+            KTPWP_Legacy_Prefix_Import::run();
 
             // コアテーブルの作成は環境チェックの結果にかかわらず必ず行う
             // （ktpwp_comprehensive_activation() と同じ理由。dbDelta は冪等・加算のみ）。
@@ -1317,9 +1330,13 @@ function ktpwp_run_auto_migrations() {
                 update_option( 'ktpwp_migration_error_timestamp', current_time( 'mysql' ) );
                 update_option( 'ktpwp_migration_error_count', get_option( 'ktpwp_migration_error_count', 0 ) + 1 );
             }
+
+            // 次の再試行は 1 時間後（毎リクエストでやり直さない）
+            set_transient( 'ktpwp_migration_retry_wait', 1, HOUR_IN_SECONDS );
         } finally {
             // マイグレーション進行中フラグをクリア
             delete_option( 'ktpwp_migration_in_progress' );
+            $wpdb->suppress_errors( $suppress_errors );
         }
     }
     
@@ -1775,12 +1792,14 @@ function ktpwp_run_migration_files_directly( $from_version, $to_version ) {
 			$after_classes = get_declared_classes();
 			$new_classes = array_diff( $after_classes, $before_classes );
 			
-			$executed = false;
+			$executed  = false;
+			$has_entry = false; // 呼び出し口（up() / ktpwp_<名前>() / run()）があったか
 			
 			// 1) 新規に宣言されたクラスから up() を呼ぶ
 			foreach ( $new_classes as $class_name ) {
 				if ( method_exists( $class_name, 'up' ) ) {
-					$result = call_user_func( array( $class_name, 'up' ) );
+					$has_entry = true;
+					$result    = call_user_func( array( $class_name, 'up' ) );
 					if ( $result !== false ) {
 						$executed = true;
 					}
@@ -1788,7 +1807,7 @@ function ktpwp_run_migration_files_directly( $from_version, $to_version ) {
 			}
 			
 			// 2) ファイル名から関数名を推測して実行（例: 20250722_create_invoice_items_table → ktpwp_create_invoice_items_table）
-			if ( ! $executed ) {
+			if ( ! $has_entry ) {
 				$base = preg_replace( '/\.php$/', '', $filename );
 				if ( preg_match( '/^\d{8,}[_-]?(.*)$/', $base, $m ) ) {
 					$slug = $m[1];
@@ -1799,11 +1818,32 @@ function ktpwp_run_migration_files_directly( $from_version, $to_version ) {
 				$slug = str_replace( '-', '_', $slug );
 				$candidate_function = 'ktpwp_' . $slug;
 				if ( function_exists( $candidate_function ) ) {
-					$result = call_user_func( $candidate_function );
+					$has_entry = true;
+					$result    = call_user_func( $candidate_function );
 					if ( $result !== false ) {
 						$executed = true;
 					}
 				}
+			}
+			
+			// 3) up() が無く run() だけを持つクラス（20250131_allow_null_tax_rate_in_supplier_skills など）
+			if ( ! $has_entry ) {
+				foreach ( $new_classes as $class_name ) {
+					if ( method_exists( $class_name, 'run' ) ) {
+						$has_entry = true;
+						$result    = call_user_func( array( $class_name, 'run' ) );
+						if ( $result !== false ) {
+							$executed = true;
+						}
+					}
+				}
+			}
+			
+			// 4) 呼び出し口が無いファイルは、読み込んだ時点で処理が走る書き方（無名関数で包んだもの等）。
+			//    読み込みが例外なく終わった時点で実行済みとする。以前はここで未完了扱いにしていたため、
+			//    該当ファイルが 1 本でもあると全体が失敗扱いになり、毎リクエストでやり直していた。
+			if ( ! $has_entry ) {
+				$executed = true;
 			}
 			
 			if ( $executed ) {
@@ -1813,12 +1853,10 @@ function ktpwp_run_migration_files_directly( $from_version, $to_version ) {
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 					ktpwp_debug_log( 'KTPWP: マイグレーションを正常に実行しました: ' . $filename );
 				}
-			} else {
-				// 実行できなかった場合はフラグを立てない（次回再試行）
-				$all_ok = false;
-				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					ktpwp_debug_log( 'KTPWP: このマイグレーションファイルで実行可能な処理を見つけられませんでした（未完了扱い）: ' . $filename );
-				}
+			} elseif ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				// 処理が false を返した（対象テーブルが無い等）。フラグは立てず、次のバージョン更新時に再試行する。
+				// 全体は失敗扱いにしない（失敗扱いにすると DB バージョンが上がらず毎リクエストでやり直す）。
+				ktpwp_debug_log( 'KTPWP: マイグレーションが false を返しました（次回の更新時に再試行）: ' . $filename );
 			}
 			ob_end_clean();
             
@@ -2011,6 +2049,10 @@ function ktpwp_comprehensive_activation() {
         delete_transient( 'ktpwp_new_installation_check' );
         delete_option( 'ktpwp_activation_error' );
         delete_transient( 'ktpwp_activation_error' );
+        delete_transient( 'ktpwp_migration_retry_wait' );
+
+        // 1.3.48 以前のテーブル（wp_ktp_*）があれば先に引き継ぐ（新規インストールと誤判定させない）
+        KTPWP_Legacy_Prefix_Import::run();
 
         // 新規インストール判定
         $is_new_installation = ktpwp_is_new_installation();
